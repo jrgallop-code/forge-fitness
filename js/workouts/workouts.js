@@ -665,7 +665,17 @@ function savePlan() {
     );
 
 
-    renderSavedPlans();
+    renderSavedPlans(plans);
+
+
+    document
+        .getElementById(
+            "saved-plans-list"
+        )
+        ?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
 
 }
 
@@ -706,7 +716,9 @@ function getSavedPlans() {
 
 
 
-function renderSavedPlans() {
+function renderSavedPlans(
+    suppliedPlans = null
+) {
 
     const container =
         document.getElementById(
@@ -720,170 +732,209 @@ function renderSavedPlans() {
 
 
     const plans =
-        getSavedPlans();
+        (
+            Array.isArray(suppliedPlans)
+                ? suppliedPlans
+                : getSavedPlans()
+        )
+        .filter(plan =>
+            plan &&
+            typeof plan === "object"
+        );
+
+
+    container.replaceChildren();
 
 
     if (!plans.length) {
 
-        container.innerHTML = `
-            <p class="empty-state">
-                No custom plans yet. Create a plan or use a Forge template.
-            </p>
-        `;
+        const emptyState =
+            document.createElement("p");
+
+
+        emptyState.className =
+            "empty-state";
+
+
+        emptyState.textContent =
+            "No custom plans yet. Create a plan or use a Forge template.";
+
+
+        container.appendChild(
+            emptyState
+        );
+
 
         return;
 
     }
 
 
-    container.innerHTML =
-        plans.map(plan => {
+    plans.forEach(plan => {
 
-            const days =
-                Array.isArray(plan.days)
-                    ? plan.days
-                    : [];
-
-
-            const totalSets =
-                days.reduce(
-                    (planTotal, day) =>
-                        planTotal +
-                        (
-                            Array.isArray(day.exercises)
-                                ? day.exercises.reduce(
-                                    (dayTotal, exercise) =>
-                                        dayTotal +
-                                        (
-                                            Number(exercise.sets) ||
-                                            0
-                                        ),
-                                    0
-                                )
-                                : 0
-                        ),
-                    0
-                );
+        const days =
+            Array.isArray(plan.days)
+                ? plan.days
+                : [];
 
 
-            const dayNames =
-                days
-                    .map(day =>
-                        escapeHtml(
-                            day.name ||
-                            "Unnamed Day"
+        const totalSets =
+            days.reduce(
+                (planTotal, day) => {
+
+                    const exercises =
+                        Array.isArray(
+                            day?.exercises
                         )
-                    )
-                    .join(" • ");
+                            ? day.exercises
+                            : [];
 
 
-            return `
-                <article class="preset-plan-card">
-
-                    <strong>
-                        ${escapeHtml(
-                            plan.name ||
-                            "My Workout Plan"
-                        )}
-                    </strong>
-
-                    <span>
-                        ${days.length}
-                        ${days.length === 1
-                            ? "session"
-                            : "sessions"}/week
-                    </span>
-
-                    <span>
-                        ${totalSets} planned working sets
-                    </span>
-
-                    <small>
-                        ${dayNames || "No training days added"}
-                    </small>
-
-                    <button
-                        class="edit-saved-plan-btn secondary-btn"
-                        data-plan-id="${escapeHtml(plan.id || "")}"
-                        type="button"
-                    >
-                        Edit Plan
-                    </button>
-
-                </article>
-            `;
-
-        }).join("");
-
-
-    document
-        .querySelectorAll(
-            ".edit-saved-plan-btn"
-        )
-        .forEach(button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    const plan =
-                        plans.find(
-                            savedPlan =>
-                                savedPlan.id ===
-                                button.dataset.planId
+                    return planTotal +
+                        exercises.reduce(
+                            (dayTotal, exercise) =>
+                                dayTotal +
+                                (
+                                    Number(
+                                        exercise?.sets
+                                    ) ||
+                                    0
+                                ),
+                            0
                         );
 
-
-                    if (!plan) {
-                        return;
-                    }
-
-
-                    workingPlan =
-                        JSON.parse(
-                            JSON.stringify(
-                                plan
-                            )
-                        );
-
-
-                    showBuilder();
-
-
-                    const nameInput =
-                        document.getElementById(
-                            "plan-name"
-                        );
-
-
-                    if (nameInput) {
-
-                        nameInput.value =
-                            workingPlan.name ||
-                            "";
-
-                    }
-
-
-                    renderWorkoutDays();
-
-                }
+                },
+                0
             );
 
-        });
 
-}
+        const card =
+            document.createElement(
+                "article"
+            );
 
 
+        card.className =
+            "preset-plan-card";
 
-function escapeHtml(value) {
 
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        const title =
+            document.createElement(
+                "strong"
+            );
+
+
+        title.textContent =
+            plan.name ||
+            "My Workout Plan";
+
+
+        const sessions =
+            document.createElement(
+                "span"
+            );
+
+
+        sessions.textContent =
+            `${days.length} ${days.length === 1
+                ? "session"
+                : "sessions"}/week`;
+
+
+        const sets =
+            document.createElement(
+                "span"
+            );
+
+
+        sets.textContent =
+            `${totalSets} planned working sets`;
+
+
+        const dayNames =
+            document.createElement(
+                "small"
+            );
+
+
+        dayNames.textContent =
+            days
+                .map(day =>
+                    day?.name ||
+                    "Unnamed Day"
+                )
+                .join(" • ") ||
+            "No training days added";
+
+
+        const editButton =
+            document.createElement(
+                "button"
+            );
+
+
+        editButton.className =
+            "edit-saved-plan-btn secondary-btn";
+
+
+        editButton.type =
+            "button";
+
+
+        editButton.textContent =
+            "Edit Plan";
+
+
+        editButton.addEventListener(
+            "click",
+            () => {
+
+                workingPlan =
+                    JSON.parse(
+                        JSON.stringify(
+                            plan
+                        )
+                    );
+
+
+                showBuilder();
+
+
+                const nameInput =
+                    document.getElementById(
+                        "plan-name"
+                    );
+
+
+                if (nameInput) {
+
+                    nameInput.value =
+                        workingPlan.name ||
+                        "";
+
+                }
+
+
+                renderWorkoutDays();
+
+            }
+        );
+
+
+        card.append(
+            title,
+            sessions,
+            sets,
+            dayNames,
+            editButton
+        );
+
+
+        container.appendChild(
+            card
+        );
+
+    });
 
 }
 
