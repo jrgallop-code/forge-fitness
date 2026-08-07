@@ -8,6 +8,33 @@ const SESSION_STORAGE_KEY =
     "forge_workout_sessions";
 
 
+export function getLastWorkoutForPlan(
+    planId
+) {
+
+    return getSavedSessions()
+        .filter(session =>
+            session.planId ===
+            planId
+        )
+        .sort(
+            (a, b) =>
+                String(
+                    b.completedAt ||
+                    b.date
+                )
+                .localeCompare(
+                    String(
+                        a.completedAt ||
+                        a.date
+                    )
+                )
+        )[0] ||
+        null;
+
+}
+
+
 export function openWorkoutLogger(plan) {
 
     const days =
@@ -308,8 +335,9 @@ function renderSessionExercises(
                         <div class="session-set-header">
 
                             <span>Set</span>
-                            <span>Weight</span>
-                            <span>Reps</span>
+                            <span>Last Workout</span>
+                            <span>Today's Weight</span>
+                            <span>Today's Reps</span>
 
                         </div>
 
@@ -335,6 +363,12 @@ function renderSessionExercises(
                                         <strong>
                                             ${setIndex + 1}
                                         </strong>
+
+                                        <span class="previous-set-value">
+                                            ${previousSet
+                                                ? `${previousSet.weight ?? "—"} × ${previousSet.reps ?? "—"}`
+                                                : "Hasn't started"}
+                                        </span>
 
                                         <input
                                             class="session-weight"
@@ -517,6 +551,32 @@ function saveCompletedSession({
 
     }
 
+
+    const planCard =
+        [
+            ...document.querySelectorAll(
+                "[data-custom-plan-id]"
+            )
+        ]
+        .find(card =>
+            card.dataset.customPlanId ===
+            plan.id
+        );
+
+
+    const lastWorkout =
+        planCard?.querySelector(
+            ".plan-last-workout"
+        );
+
+
+    if (lastWorkout) {
+
+        lastWorkout.textContent =
+            `Last workout: ${formatWorkoutDate(date)}`;
+
+    }
+
 }
 
 
@@ -646,6 +706,35 @@ function formatPrevious(previous) {
     return completedSets.length
         ? completedSets.join(" • ")
         : "No previous performance recorded.";
+
+}
+
+
+
+function formatWorkoutDate(
+    dateValue
+) {
+
+    if (!dateValue) {
+        return "Unknown date";
+    }
+
+
+    const date =
+        new Date(
+            `${dateValue}T00:00:00`
+        );
+
+
+    return new Intl.DateTimeFormat(
+        undefined,
+        {
+            year: "numeric",
+            month: "short",
+            day: "numeric"
+        }
+    )
+    .format(date);
 
 }
 
