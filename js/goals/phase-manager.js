@@ -50,7 +50,6 @@ export function getPhaseData() {
 }
 
 
-
 function savePhaseData(data) {
 
     localStorage.setItem(
@@ -59,7 +58,6 @@ function savePhaseData(data) {
     );
 
 }
-
 
 
 export function startPhase({
@@ -109,7 +107,6 @@ export function startPhase({
 }
 
 
-
 export function endCurrentPhase({
     endDate,
     endWeight = null
@@ -152,7 +149,6 @@ export function endCurrentPhase({
 }
 
 
-
 export function getCurrentPhase() {
 
     return (
@@ -163,7 +159,6 @@ export function getCurrentPhase() {
 }
 
 
-
 export function getPhaseHistory() {
 
     return (
@@ -172,7 +167,6 @@ export function getPhaseHistory() {
     );
 
 }
-
 
 
 export function getPhaseForDate(date) {
