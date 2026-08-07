@@ -616,17 +616,34 @@ function updateSummary(
             );
 
 
-    if (weeklyElement) {
+   if (weeklyElement) {
+
+    if (latestRate) {
 
         weeklyElement.textContent =
-            latestRate
-                ? formatRate(
-                    latestRate.rate
-                )
-                : "--";
+            formatRate(
+                latestRate.rate
+            );
+
+
+        weeklyElement.className =
+            getRateClass(
+                latestRate.rate
+            );
 
     }
 
+    else {
+
+        weeklyElement.textContent =
+            "--";
+
+        weeklyElement.className =
+            "";
+
+    }
+
+}
 
     const overallRate =
         calculateOverallRate(
@@ -636,15 +653,32 @@ function updateSummary(
 
     if (overallElement) {
 
+    if (overallRate !== null) {
+
         overallElement.textContent =
-            overallRate !== null
-                ? formatRate(
-                    overallRate
-                )
-                : "--";
+            formatRate(
+                overallRate
+            );
+
+
+        overallElement.className =
+            getRateClass(
+                overallRate
+            );
 
     }
 
+    else {
+
+        overallElement.textContent =
+            "--";
+
+        overallElement.className =
+            "";
+
+    }
+
+}
 }
 
 
@@ -726,17 +760,25 @@ function updateHistory(
                                     : "--"
                             }
                         </span>
-
-                        <span>
-                            ${
-                                row.weeklyRate !== null &&
-                                row.weeklyRate !== undefined
-                                    ? formatRate(
-                                        row.weeklyRate
-                                    )
-                                    : "--"
-                            }
-                        </span>
+<span
+    class="${
+        row.weeklyRate !== null &&
+        row.weeklyRate !== undefined
+            ? getRateClass(
+                row.weeklyRate
+            )
+            : ""
+    }"
+>
+    ${
+        row.weeklyRate !== null &&
+        row.weeklyRate !== undefined
+            ? formatRate(
+                row.weeklyRate
+            )
+            : "--"
+    }
+</span>
 
                     </div>
 
@@ -767,6 +809,26 @@ function formatRate(rate) {
 
 }
 
+function getRateClass(rate) {
+
+    if (!Number.isFinite(rate)) {
+        return "";
+    }
+
+
+    if (rate < 0) {
+        return "rate-negative";
+    }
+
+
+    if (rate > 0) {
+        return "rate-positive";
+    }
+
+
+    return "rate-neutral";
+
+}
 
 
 function drawWeightChart(

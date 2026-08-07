@@ -105,7 +105,7 @@ export function renderProgress() {
 
                         <div>
 
-                            <h3>7-Day Trend</h3>
+                            <h3>7-Day Average</h3>
 
                             <p id="weight-trend">
                                 --

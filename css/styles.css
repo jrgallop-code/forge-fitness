@@ -696,3 +696,28 @@ font-size:16px;
     }
 
 }
+.rate-negative {
+
+    color:#4ade80 !important;
+
+    font-weight:700;
+
+}
+
+
+.rate-positive {
+
+    color:#ff4d4d !important;
+
+    font-weight:700;
+
+}
+
+
+.rate-neutral {
+
+    color:var(--text) !important;
+
+    font-weight:700;
+
+}
