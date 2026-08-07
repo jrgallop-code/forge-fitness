@@ -1,160 +1,96 @@
+import { renderDashboard }
+from "../dashboard/dashboard-ui.js";
+
 import { renderProgress }
 from "../progress/progress-ui.js";
-
 
 import { initializeWeightTracker }
 from "../progress/weight-tracker.js";
 
-import {renderDashboard}
-from "../dashboard/dashboard-ui.js";
 
+export function navigate(page) {
 
-export function navigate(page){
+    const content =
+        document.getElementById("content");
 
-const content =
-document.getElementById("content");
 
+    if (!content) {
+        return;
+    }
 
-switch(page){
 
+    switch (page) {
 
-case "home":
 
-content.innerHTML =
-renderDashboard();
+        case "home":
 
-break;
+            content.innerHTML =
+                renderDashboard();
 
+            break;
 
-case "workout":
 
-content.innerHTML = `
+        case "workout":
 
-<section class="section-card">
+            content.innerHTML = `
 
-<h2>
-Today's Workout
-</h2>
+                <section class="section-card">
 
-<p>
-No workout started yet.
-</p>
+                    <h2>
+                        Today's Workout
+                    </h2>
 
+                    <p>
+                        No workout started yet.
+                    </p>
 
-<button class="primary-btn">
-Start Workout
-</button>
+                    <button class="primary-btn">
+                        Start Workout
+                    </button>
 
-</section>
+                </section>
 
-`;
+            `;
 
-break;
+            break;
 
 
+        case "progress":
 
-case "progress":
+            content.innerHTML =
+                renderProgress();
 
-    content.innerHTML =
-        renderProgress();
+            initializeWeightTracker();
 
-    initializeWeightTracker();
+            break;
 
-    break;
 
+        case "goals":
 
+            content.innerHTML = `
 
-case "goals":
+                <section class="section-card">
 
-content.innerHTML = `
+                    <h2>
+                        🎯 Goals & Calories
+                    </h2>
 
+                    <p>
+                        Goal phase system temporarily disconnected while debugging.
+                    </p>
 
-<section class="section-card">
+                </section>
 
+            `;
 
-<h2>
-🎯 Goals & Calories
-</h2>
+            break;
 
 
-<p>
-Set your body goals and calorie targets.
-</p>
+        default:
 
+            content.innerHTML =
+                renderDashboard();
 
-<div class="goal-box">
-
-
-<h3>
-Current Goal
-</h3>
-
-
-<select>
-
-<option>
-Cut
-</option>
-
-<option>
-Maintain
-</option>
-
-<option>
-Bulk
-</option>
-
-
-</select>
-
-
-</div>
-
-
-
-<div class="goal-box">
-
-
-<h3>
-Estimated TDEE
-</h3>
-
-
-<p>
-2650 kcal/day
-</p>
-
-
-</div>
-
-
-
-<div class="goal-box">
-
-
-<h3>
-Daily Target
-</h3>
-
-
-<p>
-2250 kcal/day
-</p>
-
-
-</div>
-
-
-
-</section>
-
-
-`;
-
-
-break;
-
-
-}
+    }
 
 }

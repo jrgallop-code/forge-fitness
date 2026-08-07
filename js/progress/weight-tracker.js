@@ -1,3 +1,10 @@
+
+import {
+    getCurrentPhase,
+    getPhaseForDate
+}
+from "../goals/phase-manager.js";
+
 const WEIGHT_STORAGE_KEY =
     "forge_weight_entries";
 
