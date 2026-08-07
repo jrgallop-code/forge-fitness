@@ -1,0 +1,344 @@
+:root {
+
+    --bg:#080808;
+    --surface:#151515;
+    --card:#202020;
+
+    --red:#e10600;
+    --red-dark:#8b0000;
+
+    --text:#ffffff;
+    --muted:#a0a0a0;
+
+}
+
+
+/* Global Reset */
+
+* {
+
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+
+}
+
+
+/* Main App */
+
+body {
+
+    background:var(--bg);
+
+    color:var(--text);
+
+    font-family:
+    Arial, Helvetica, sans-serif;
+
+    min-height:100vh;
+
+}
+
+
+/* Header */
+
+.hero {
+
+    background:
+    linear-gradient(
+        135deg,
+        #8b0000,
+        #e10600
+    );
+
+    padding:40px 20px;
+
+    text-align:center;
+
+}
+
+
+.hero h1 {
+
+    font-size:42px;
+
+    letter-spacing:4px;
+
+    font-weight:800;
+
+}
+
+
+.hero p {
+
+    margin-top:10px;
+
+    color:#eeeeee;
+
+}
+
+
+/* Dashboard */
+
+.dashboard {
+
+    padding:20px;
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(2,1fr);
+
+    gap:15px;
+
+}
+
+
+/* Metric Cards */
+
+.metric-card {
+
+    background:var(--card);
+
+    padding:20px;
+
+    border-radius:18px;
+
+    display:flex;
+
+    gap:15px;
+
+    align-items:center;
+
+    border-left:
+    5px solid var(--red);
+
+    box-shadow:
+    0 8px 20px rgba(0,0,0,.35);
+
+}
+
+
+.metric-icon {
+
+    font-size:30px;
+
+}
+
+
+.metric-card h3 {
+
+    margin:0;
+
+    color:var(--muted);
+
+    font-size:14px;
+
+}
+
+
+.metric-card p {
+
+    margin-top:8px;
+
+    font-size:22px;
+
+    font-weight:bold;
+
+}
+
+
+/* Content Sections */
+
+.section-card {
+
+    margin:20px;
+
+    padding:20px;
+
+    background:var(--surface);
+
+    border-radius:18px;
+
+    box-shadow:
+    0 8px 20px rgba(0,0,0,.35);
+
+}
+
+
+.section-card h2 {
+
+    margin-bottom:15px;
+
+}
+
+
+/* Buttons */
+
+.primary-btn {
+
+    background:var(--red);
+
+    color:white;
+
+    border:none;
+
+    padding:14px 25px;
+
+    border-radius:12px;
+
+    font-size:16px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+}
+
+
+.primary-btn:hover {
+
+    background:#ff1a1a;
+
+}
+
+
+.primary-btn:active {
+
+    transform:scale(.97);
+
+}
+
+
+/* Bottom Navigation */
+
+.bottom-nav {
+
+    position:fixed;
+
+    bottom:0;
+
+    left:0;
+
+    width:100%;
+
+    background:#111;
+
+    border-top:
+    2px solid var(--red);
+
+    display:flex;
+
+    justify-content:space-around;
+
+    padding:12px;
+
+}
+
+
+.bottom-nav button {
+
+    background:none;
+
+    border:none;
+
+    color:white;
+
+    font-size:20px;
+
+    cursor:pointer;
+
+}
+
+
+.bottom-nav button:hover {
+
+    color:var(--red);
+
+}
+
+
+.bottom-nav span {
+
+    display:block;
+
+    font-size:12px;
+
+    margin-top:4px;
+
+}
+
+
+/* Mobile Optimization */
+
+@media(max-width:600px) {
+
+
+    .dashboard {
+
+        grid-template-columns:1fr;
+
+    }
+
+
+    .hero h1 {
+
+        font-size:36px;
+
+    }
+
+
+}
+
+.goal-box{
+
+background:#202020;
+
+padding:15px;
+
+margin-top:15px;
+
+border-radius:14px;
+
+border-left:4px solid var(--red);
+
+}
+
+
+.goal-box h3{
+
+color:var(--muted);
+
+font-size:14px;
+
+margin-bottom:8px;
+
+}
+
+
+.goal-box p{
+
+font-size:22px;
+
+font-weight:bold;
+
+}
+
+
+select{
+
+width:100%;
+
+padding:12px;
+
+background:#111;
+
+color:white;
+
+border:1px solid var(--red);
+
+border-radius:10px;
+
+font-size:16px;
+
+}
