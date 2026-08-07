@@ -17,6 +17,7 @@ from "./workout-ui.js";
 
 
 import {
+    getLastWorkoutForPlan,
     openWorkoutLogger
 }
 from "./workout-session.js";
@@ -817,6 +818,11 @@ function renderSavedPlans(
             "preset-plan-card";
 
 
+        card.dataset.customPlanId =
+            plan.id ||
+            "";
+
+
         const label =
             document.createElement(
                 "span"
@@ -852,6 +858,30 @@ function renderSavedPlans(
             `${days.length} ${days.length === 1
                 ? "session"
                 : "sessions"}/week • ${totalSets} planned working sets`;
+
+
+        const lastSession =
+            getLastWorkoutForPlan(
+                plan.id
+            );
+
+
+        const lastWorkout =
+            document.createElement(
+                "p"
+            );
+
+
+        lastWorkout.className =
+            "plan-last-workout";
+
+
+        lastWorkout.textContent =
+            lastSession
+                ? `Last workout: ${formatPlanWorkoutDate(
+                    lastSession.date
+                )}`
+                : "Hasn't started yet";
 
 
         const dayNames =
@@ -1075,6 +1105,7 @@ function renderSavedPlans(
             label,
             title,
             summary,
+            lastWorkout,
             dayNames,
             cardActions
         );
@@ -1085,6 +1116,33 @@ function renderSavedPlans(
         );
 
     });
+
+}
+
+
+
+function formatPlanWorkoutDate(
+    dateValue
+) {
+
+    if (!dateValue) {
+        return "Unknown date";
+    }
+
+
+    return new Intl.DateTimeFormat(
+        undefined,
+        {
+            year: "numeric",
+            month: "short",
+            day: "numeric"
+        }
+    )
+    .format(
+        new Date(
+            `${dateValue}T00:00:00`
+        )
+    );
 
 }
 
