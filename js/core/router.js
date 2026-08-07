@@ -1,3 +1,10 @@
+import { renderProgress }
+from "../progress/progress-ui.js";
+
+
+import { initializeWeightTracker }
+from "../progress/weight-tracker.js";
+
 import {renderDashboard}
 from "../dashboard/dashboard-ui.js";
 
@@ -48,23 +55,12 @@ break;
 
 case "progress":
 
-content.innerHTML = `
+    content.innerHTML =
+        renderProgress();
 
-<section class="section-card">
+    initializeWeightTracker();
 
-<h2>
-Progress Analytics
-</h2>
-
-<p>
-Graphs and performance tracking coming soon.
-</p>
-
-</section>
-
-`;
-
-break;
+    break;
 
 
 
