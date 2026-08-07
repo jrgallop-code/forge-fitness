@@ -922,12 +922,117 @@ function renderSavedPlans(
         );
 
 
+        const deleteButton =
+            document.createElement(
+                "button"
+            );
+
+
+        deleteButton.className =
+            "secondary-btn remove-exercise-btn";
+
+
+        deleteButton.type =
+            "button";
+
+
+        deleteButton.textContent =
+            "Delete Plan";
+
+
+        deleteButton.addEventListener(
+            "click",
+            () => {
+
+                const confirmed =
+                    window.confirm(
+                        `Delete "${plan.name || "My Workout Plan"}"? This cannot be undone.`
+                    );
+
+
+                if (!confirmed) {
+                    return;
+                }
+
+
+                const updatedPlans =
+                    getSavedPlans()
+                        .filter(savedPlan =>
+                            savedPlan.id !==
+                            plan.id
+                        );
+
+
+                localStorage.setItem(
+                    PLAN_STORAGE_KEY,
+                    JSON.stringify(
+                        updatedPlans
+                    )
+                );
+
+
+                if (
+                    workingPlan.id ===
+                    plan.id
+                ) {
+
+                    workingPlan = {
+                        name: "",
+                        days: []
+                    };
+
+
+                    const builder =
+                        document.getElementById(
+                            "plan-builder"
+                        );
+
+
+                    if (builder) {
+
+                        builder.hidden =
+                            true;
+
+                    }
+
+                }
+
+
+                renderSavedPlans(
+                    updatedPlans
+                );
+
+
+                showMessage(
+                    "Workout plan deleted."
+                );
+
+            }
+        );
+
+
+        const cardActions =
+            document.createElement(
+                "div"
+            );
+
+
+        cardActions.className =
+            "builder-footer";
+
+
+        cardActions.append(
+            editButton,
+            deleteButton
+        );
+
+
         card.append(
             label,
             title,
             summary,
             dayNames,
-            editButton
+            cardActions
         );
 
 
