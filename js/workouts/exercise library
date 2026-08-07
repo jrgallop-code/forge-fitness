@@ -1,0 +1,423 @@
+export const exercises = [
+
+    // CHEST
+
+    {
+        id: "barbell-bench-press",
+        name: "Barbell Bench Press",
+        muscleGroup: "Chest",
+        type: "compound",
+        equipment: "Barbell",
+        recommendedReps: "6-10",
+        defaultSets: 3
+    },
+
+    {
+        id: "dumbbell-bench-press",
+        name: "Dumbbell Bench Press",
+        muscleGroup: "Chest",
+        type: "compound",
+        equipment: "Dumbbells",
+        recommendedReps: "8-12",
+        defaultSets: 3
+    },
+
+    {
+        id: "incline-dumbbell-press",
+        name: "Incline Dumbbell Press",
+        muscleGroup: "Chest",
+        type: "compound",
+        equipment: "Dumbbells",
+        recommendedReps: "8-12",
+        defaultSets: 3
+    },
+
+    {
+        id: "chest-press-machine",
+        name: "Chest Press Machine",
+        muscleGroup: "Chest",
+        type: "compound",
+        equipment: "Machine",
+        recommendedReps: "8-12",
+        defaultSets: 3
+    },
+
+    {
+        id: "cable-fly",
+        name: "Cable Fly",
+        muscleGroup: "Chest",
+        type: "isolation",
+        equipment: "Cable",
+        recommendedReps: "10-15",
+        defaultSets: 3
+    },
+
+    {
+        id: "pec-deck",
+        name: "Pec Deck",
+        muscleGroup: "Chest",
+        type: "isolation",
+        equipment: "Machine",
+        recommendedReps: "10-15",
+        defaultSets: 3
+    },
+
+
+    // BACK
+
+    {
+        id: "lat-pulldown",
+        name: "Lat Pulldown",
+        muscleGroup: "Back",
+        type: "compound",
+        equipment: "Cable",
+        recommendedReps: "8-12",
+        defaultSets: 3
+    },
+
+    {
+        id: "pull-up",
+        name: "Pull-Up",
+        muscleGroup: "Back",
+        type: "compound",
+        equipment: "Bodyweight",
+        recommendedReps: "6-12",
+        defaultSets: 3
+    },
+
+    {
+        id: "barbell-row",
+        name: "Barbell Row",
+        muscleGroup: "Back",
+        type: "compound",
+        equipment: "Barbell",
+        recommendedReps: "6-10",
+        defaultSets: 3
+    },
+
+    {
+        id: "seated-cable-row",
+        name: "Seated Cable Row",
+        muscleGroup: "Back",
+        type: "compound",
+        equipment: "Cable",
+        recommendedReps: "8-12",
+        defaultSets: 3
+    },
+
+    {
+        id: "chest-supported-row",
+        name: "Chest Supported Row",
+        muscleGroup: "Back",
+        type: "compound",
+        equipment: "Machine",
+        recommendedReps: "8-12",
+        defaultSets: 3
+    },
+
+    {
+        id: "straight-arm-pulldown",
+        name: "Straight Arm Pulldown",
+        muscleGroup: "Back",
+        type: "isolation",
+        equipment: "Cable",
+        recommendedReps: "10-15",
+        defaultSets: 3
+    },
+
+
+    // SHOULDERS
+
+    {
+        id: "overhead-press",
+        name: "Overhead Press",
+        muscleGroup: "Shoulders",
+        type: "compound",
+        equipment: "Barbell",
+        recommendedReps: "6-10",
+        defaultSets: 3
+    },
+
+    {
+        id: "dumbbell-shoulder-press",
+        name: "Dumbbell Shoulder Press",
+        muscleGroup: "Shoulders",
+        type: "compound",
+        equipment: "Dumbbells",
+        recommendedReps: "8-12",
+        defaultSets: 3
+    },
+
+    {
+        id: "lateral-raise",
+        name: "Lateral Raise",
+        muscleGroup: "Shoulders",
+        type: "isolation",
+        equipment: "Dumbbells",
+        recommendedReps: "12-20",
+        defaultSets: 3
+    },
+
+    {
+        id: "cable-lateral-raise",
+        name: "Cable Lateral Raise",
+        muscleGroup: "Shoulders",
+        type: "isolation",
+        equipment: "Cable",
+        recommendedReps: "12-20",
+        defaultSets: 3
+    },
+
+    {
+        id: "reverse-pec-deck",
+        name: "Reverse Pec Deck",
+        muscleGroup: "Rear Delts",
+        type: "isolation",
+        equipment: "Machine",
+        recommendedReps: "12-20",
+        defaultSets: 3
+    },
+
+    {
+        id: "face-pull",
+        name: "Face Pull",
+        muscleGroup: "Rear Delts",
+        type: "isolation",
+        equipment: "Cable",
+        recommendedReps: "12-20",
+        defaultSets: 3
+    },
+
+
+    // BICEPS
+
+    {
+        id: "barbell-curl",
+        name: "Barbell Curl",
+        muscleGroup: "Biceps",
+        type: "isolation",
+        equipment: "Barbell",
+        recommendedReps: "8-12",
+        defaultSets: 3
+    },
+
+    {
+        id: "dumbbell-curl",
+        name: "Dumbbell Curl",
+        muscleGroup: "Biceps",
+        type: "isolation",
+        equipment: "Dumbbells",
+        recommendedReps: "8-15",
+        defaultSets: 3
+    },
+
+    {
+        id: "hammer-curl",
+        name: "Hammer Curl",
+        muscleGroup: "Biceps",
+        type: "isolation",
+        equipment: "Dumbbells",
+        recommendedReps: "8-15",
+        defaultSets: 3
+    },
+
+    {
+        id: "preacher-curl",
+        name: "Preacher Curl",
+        muscleGroup: "Biceps",
+        type: "isolation",
+        equipment: "Machine",
+        recommendedReps: "10-15",
+        defaultSets: 3
+    },
+
+
+    // TRICEPS
+
+    {
+        id: "tricep-pushdown",
+        name: "Tricep Pushdown",
+        muscleGroup: "Triceps",
+        type: "isolation",
+        equipment: "Cable",
+        recommendedReps: "10-15",
+        defaultSets: 3
+    },
+
+    {
+        id: "overhead-tricep-extension",
+        name: "Overhead Tricep Extension",
+        muscleGroup: "Triceps",
+        type: "isolation",
+        equipment: "Cable",
+        recommendedReps: "10-15",
+        defaultSets: 3
+    },
+
+    {
+        id: "close-grip-bench",
+        name: "Close-Grip Bench Press",
+        muscleGroup: "Triceps",
+        type: "compound",
+        equipment: "Barbell",
+        recommendedReps: "6-10",
+        defaultSets: 3
+    },
+
+
+    // QUADS
+
+    {
+        id: "back-squat",
+        name: "Back Squat",
+        muscleGroup: "Quads",
+        type: "compound",
+        equipment: "Barbell",
+        recommendedReps: "6-10",
+        defaultSets: 3
+    },
+
+    {
+        id: "leg-press",
+        name: "Leg Press",
+        muscleGroup: "Quads",
+        type: "compound",
+        equipment: "Machine",
+        recommendedReps: "8-15",
+        defaultSets: 3
+    },
+
+    {
+        id: "hack-squat",
+        name: "Hack Squat",
+        muscleGroup: "Quads",
+        type: "compound",
+        equipment: "Machine",
+        recommendedReps: "8-12",
+        defaultSets: 3
+    },
+
+    {
+        id: "bulgarian-split-squat",
+        name: "Bulgarian Split Squat",
+        muscleGroup: "Quads",
+        type: "compound",
+        equipment: "Dumbbells",
+        recommendedReps: "8-12",
+        defaultSets: 3
+    },
+
+    {
+        id: "leg-extension",
+        name: "Leg Extension",
+        muscleGroup: "Quads",
+        type: "isolation",
+        equipment: "Machine",
+        recommendedReps: "10-15",
+        defaultSets: 3
+    },
+
+
+    // HAMSTRINGS / GLUTES
+
+    {
+        id: "romanian-deadlift",
+        name: "Romanian Deadlift",
+        muscleGroup: "Hamstrings",
+        type: "compound",
+        equipment: "Barbell",
+        recommendedReps: "6-10",
+        defaultSets: 3
+    },
+
+    {
+        id: "leg-curl",
+        name: "Leg Curl",
+        muscleGroup: "Hamstrings",
+        type: "isolation",
+        equipment: "Machine",
+        recommendedReps: "10-15",
+        defaultSets: 3
+    },
+
+    {
+        id: "hip-thrust",
+        name: "Hip Thrust",
+        muscleGroup: "Glutes",
+        type: "compound",
+        equipment: "Barbell",
+        recommendedReps: "8-12",
+        defaultSets: 3
+    },
+
+
+    // CALVES
+
+    {
+        id: "standing-calf-raise",
+        name: "Standing Calf Raise",
+        muscleGroup: "Calves",
+        type: "isolation",
+        equipment: "Machine",
+        recommendedReps: "10-20",
+        defaultSets: 3
+    },
+
+    {
+        id: "seated-calf-raise",
+        name: "Seated Calf Raise",
+        muscleGroup: "Calves",
+        type: "isolation",
+        equipment: "Machine",
+        recommendedReps: "10-20",
+        defaultSets: 3
+    },
+
+
+    // CORE
+
+    {
+        id: "cable-crunch",
+        name: "Cable Crunch",
+        muscleGroup: "Core",
+        type: "isolation",
+        equipment: "Cable",
+        recommendedReps: "10-20",
+        defaultSets: 3
+    },
+
+    {
+        id: "hanging-leg-raise",
+        name: "Hanging Leg Raise",
+        muscleGroup: "Core",
+        type: "isolation",
+        equipment: "Bodyweight",
+        recommendedReps: "8-15",
+        defaultSets: 3
+    }
+
+];
+
+
+export function getExerciseById(id) {
+
+    return exercises.find(
+        exercise =>
+            exercise.id === id
+    );
+
+}
+
+
+export function getExerciseGroups() {
+
+    return [
+        ...new Set(
+            exercises.map(
+                exercise =>
+                    exercise.muscleGroup
+            )
+        )
+    ];
+
+}

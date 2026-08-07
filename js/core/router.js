@@ -1,3 +1,9 @@
+import { renderWorkoutBuilder }
+from "../workouts/workout-ui.js";
+
+import { initializeWorkoutBuilder }
+from "../workouts/workouts.js";
+
 import { renderDashboard }
 from "../dashboard/dashboard-ui.js";
 
@@ -30,29 +36,14 @@ export function navigate(page) {
             break;
 
 
-        case "workout":
+    case "workout":
 
-            content.innerHTML = `
+    content.innerHTML =
+        renderWorkoutBuilder();
 
-                <section class="section-card">
+    initializeWorkoutBuilder();
 
-                    <h2>
-                        Today's Workout
-                    </h2>
-
-                    <p>
-                        No workout started yet.
-                    </p>
-
-                    <button class="primary-btn">
-                        Start Workout
-                    </button>
-
-                </section>
-
-            `;
-
-            break;
+    break;
 
 
         case "progress":

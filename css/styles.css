@@ -721,3 +721,291 @@ font-size:16px;
     font-weight:700;
 
 }
+.workout-builder-actions {
+
+    margin:20px 0;
+
+}
+
+
+.preset-section {
+
+    margin-top:25px;
+
+}
+
+
+.preset-grid {
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap:12px;
+
+    margin-top:15px;
+
+}
+
+
+.preset-plan-card {
+
+    background:#111;
+
+    color:white;
+
+    border:1px solid #444;
+
+    border-radius:14px;
+
+    padding:18px;
+
+    text-align:left;
+
+    cursor:pointer;
+
+}
+
+
+.preset-plan-card:hover {
+
+    border-color:var(--red);
+
+}
+
+
+.preset-plan-card strong {
+
+    display:block;
+
+    margin-bottom:10px;
+
+    font-size:16px;
+
+}
+
+
+.preset-plan-card span {
+
+    display:block;
+
+    color:#ddd;
+
+    margin-top:4px;
+
+}
+
+
+.preset-plan-card small {
+
+    display:block;
+
+    color:var(--muted);
+
+    margin-top:10px;
+
+    line-height:1.4;
+
+}
+
+
+.plan-builder {
+
+    margin-top:30px;
+
+}
+
+
+.plan-builder > input {
+
+    width:100%;
+
+    background:#090909;
+
+    color:white;
+
+    border:1px solid #444;
+
+    border-radius:10px;
+
+    padding:13px;
+
+    margin-top:8px;
+
+}
+
+
+.workout-day-card {
+
+    margin-top:20px;
+
+    background:#111;
+
+    border-radius:14px;
+
+    padding:18px;
+
+    border-left:
+        4px solid var(--red);
+
+}
+
+
+.day-name-input {
+
+    width:100%;
+
+    background:#181818;
+
+    color:white;
+
+    border:1px solid #444;
+
+    padding:12px;
+
+    border-radius:9px;
+
+    font-size:18px;
+
+    font-weight:bold;
+
+}
+
+
+.exercise-builder-row {
+
+    margin-top:15px;
+
+    padding:14px;
+
+    background:#1b1b1b;
+
+    border-radius:10px;
+
+}
+
+
+.exercise-builder-row select {
+
+    width:100%;
+
+    padding:12px;
+
+    background:#080808;
+
+    color:white;
+
+    border:1px solid #444;
+
+    border-radius:8px;
+
+}
+
+
+.exercise-prescription {
+
+    display:grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap:10px;
+
+    margin-top:12px;
+
+}
+
+
+.exercise-prescription label {
+
+    color:var(--muted);
+
+    font-size:13px;
+
+}
+
+
+.exercise-prescription input {
+
+    width:100%;
+
+    display:block;
+
+    margin-top:5px;
+
+    padding:10px;
+
+    background:#080808;
+
+    color:white;
+
+    border:1px solid #444;
+
+    border-radius:8px;
+
+}
+
+
+.exercise-recommendation {
+
+    margin-top:10px;
+
+    padding:10px;
+
+    background:#101010;
+
+    border-radius:8px;
+
+    color:var(--muted);
+
+}
+
+
+.exercise-recommendation span {
+
+    text-transform:capitalize;
+
+    margin-right:10px;
+
+}
+
+
+.exercise-recommendation strong {
+
+    color:white;
+
+}
+
+
+.remove-exercise-btn {
+
+    margin-top:10px;
+
+    background:none;
+
+    color:#ff6b6b;
+
+    border:none;
+
+    cursor:pointer;
+
+}
+
+
+.add-exercise-btn {
+
+    margin-top:15px;
+
+}
+
+
+@media(max-width:700px) {
+
+    .preset-grid {
+
+        grid-template-columns:1fr;
+
+    }
+
+}
