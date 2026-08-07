@@ -1409,3 +1409,115 @@ font-size:16px;
     }
 
 }
+
+/* Active Workout Logger */
+
+.workout-session-logger {
+    scroll-margin-top:20px;
+}
+
+.workout-start-fields {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin:20px 0;
+}
+
+.workout-start-fields label {
+    color:var(--muted);
+    font-size:13px;
+    font-weight:700;
+}
+
+.workout-start-fields input,
+.workout-start-fields select {
+    width:100%;
+    margin-top:7px;
+    padding:13px;
+    background:#080808;
+    color:white;
+    border:1px solid #444;
+    border-radius:9px;
+    font-size:16px;
+}
+
+.session-exercise-card {
+    margin:20px 0;
+    padding:18px;
+    background:#161616;
+    border-left:4px solid var(--red);
+    border-radius:14px;
+}
+
+.session-exercise-card h4 {
+    font-size:19px;
+}
+
+.session-target {
+    margin-top:6px;
+    color:var(--muted);
+}
+
+.previous-performance {
+    display:grid;
+    gap:5px;
+    margin:14px 0;
+    padding:11px;
+    background:#0d0d0d;
+    border-radius:9px;
+    color:var(--muted);
+}
+
+.previous-performance strong {
+    color:white;
+    font-size:13px;
+}
+
+.session-set-header,
+.session-set-row {
+    display:grid;
+    grid-template-columns:50px 1fr 1fr;
+    gap:10px;
+    align-items:center;
+}
+
+.session-set-header {
+    margin-top:12px;
+    padding:0 8px;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:700;
+}
+
+.session-set-row {
+    margin-top:8px;
+}
+
+.session-set-row strong {
+    text-align:center;
+}
+
+.session-set-row input {
+    width:100%;
+    min-width:0;
+    padding:13px 10px;
+    background:#080808;
+    color:white;
+    border:1px solid #444;
+    border-radius:9px;
+    font-size:16px;
+}
+
+@media(max-width:600px) {
+
+    .workout-start-fields {
+        grid-template-columns:1fr;
+    }
+
+    .session-set-header,
+    .session-set-row {
+        grid-template-columns:42px 1fr 1fr;
+        gap:7px;
+    }
+
+}
