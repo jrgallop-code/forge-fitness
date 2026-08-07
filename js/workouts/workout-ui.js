@@ -16,15 +16,26 @@ export function renderWorkoutBuilder() {
                 Build your own weekly plan or start from a Forge template.
             </p>
 
-            <div class="workout-builder-actions">
+            <div class="custom-plans-section">
 
-                <button
-                    id="new-plan-btn"
-                    class="primary-btn"
-                    type="button"
-                >
-                    + Create My Plan
-                </button>
+                <h3>Custom Workout Plans</h3>
+
+                <div
+                    id="saved-plans-list"
+                    class="preset-grid"
+                ></div>
+
+                <div class="workout-builder-actions">
+
+                    <button
+                        id="new-plan-btn"
+                        class="primary-btn"
+                        type="button"
+                    >
+                        + Create New Plan
+                    </button>
+
+                </div>
 
             </div>
 
@@ -59,6 +70,16 @@ export function renderWorkoutBuilder() {
                     `).join("")}
 
                 </div>
+
+            </div>
+
+            <div class="preset-section">
+
+                <h3>Recent Workouts</h3>
+
+                <p class="empty-state">
+                    Completed workout logging is coming in a later stage.
+                </p>
 
             </div>
 
