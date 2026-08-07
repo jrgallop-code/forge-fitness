@@ -16,6 +16,12 @@ import {
 from "./workout-ui.js";
 
 
+import {
+    openWorkoutLogger
+}
+from "./workout-session.js";
+
+
 const PLAN_STORAGE_KEY =
     "forge_workout_plans";
 
@@ -918,7 +924,44 @@ function renderSavedPlans(
 
                 renderWorkoutDays();
 
+
+                document
+                    .getElementById(
+                        "plan-builder"
+                    )
+                    ?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
+
             }
+        );
+
+
+        const logButton =
+            document.createElement(
+                "button"
+            );
+
+
+        logButton.className =
+            "primary-btn";
+
+
+        logButton.type =
+            "button";
+
+
+        logButton.textContent =
+            "Log a Workout";
+
+
+        logButton.addEventListener(
+            "click",
+            () =>
+                openWorkoutLogger(
+                    plan
+                )
         );
 
 
@@ -1022,6 +1065,7 @@ function renderSavedPlans(
 
 
         cardActions.append(
+            logButton,
             editButton,
             deleteButton
         );
