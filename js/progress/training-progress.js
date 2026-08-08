@@ -377,7 +377,14 @@ function populateExerciseSelector(
                 sessions.flatMap(
                     session =>
                         session.exercises
-                            ?.map(
+                            ?.filter(exercise =>
+                                exercise.sets
+                                    ?.some(set =>
+                                        Number(set.weight) > 0 &&
+                                        Number(set.reps) > 0
+                                    )
+                            )
+                            .map(
                                 exercise =>
                                     exercise.exerciseId
                             ) ||
@@ -576,14 +583,18 @@ function getExerciseRecords(
                 [];
 
 
+            if (!completed.length) {
+                return null;
+            }
+
+
             const bestSet =
                 [...completed]
                     .sort(
                         (a, b) =>
                             estimateOneRepMax(b) -
                             estimateOneRepMax(a)
-                    )[0] ||
-                null;
+                    )[0];
 
 
             return {
@@ -594,11 +605,9 @@ function getExerciseRecords(
                 bestSet,
 
                 estimatedOneRepMax:
-                    bestSet
-                        ? estimateOneRepMax(
-                            bestSet
-                        )
-                        : 0,
+                    estimateOneRepMax(
+                        bestSet
+                    ),
 
                 completedSets:
                     completed.length
