@@ -81,7 +81,7 @@ import {
     renderGoalProjection,
     initializeGoalProjection
 }
-from "../nutrition/goal-projection.js?v=selected-target-projection-3";
+from "../nutrition/goal-projection.js?v=selected-target-projection-4";
 
 import {
     renderMore,
