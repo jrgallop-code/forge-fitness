@@ -7,6 +7,11 @@ from "../workouts/workouts.js?v=workout-flow-4";
 import { renderDashboard }
 from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 
+import {
+    initializeDashboardNutritionTargets
+}
+from "../dashboard/nutrition-target-card.js?v=adaptive-plan-1";
+
 import { renderProgress }
 from "../progress/progress-ui.js?v=progress-sleep-2";
 
@@ -43,10 +48,15 @@ import {
 from "../nutrition/protein-target-ui.js?v=protein-target-1";
 
 import {
+    initializeNutritionPlanUI
+}
+from "../nutrition/nutrition-plan-ui.js?v=adaptive-plan-1";
+
+import {
     renderGoalProjection,
     initializeGoalProjection
 }
-from "../nutrition/goal-projection.js?v=nutrition-dashboard-2";
+from "../nutrition/goal-projection.js?v=adaptive-plan-1";
 
 import {
     renderMore,
@@ -83,6 +93,7 @@ export function navigate(page) {
             content.innerHTML =
                 renderDashboard();
 
+            initializeDashboardNutritionTargets();
             initializeBackupManager();
             initializeGoogleDriveSync();
             break;
@@ -158,6 +169,7 @@ export function navigate(page) {
             initializeEnergyProfile();
             initializeProteinTargetExplanation();
             initializeGoalProjection();
+            initializeNutritionPlanUI();
             break;
 
         case "more":
@@ -177,6 +189,7 @@ export function navigate(page) {
         default:
             content.innerHTML =
                 renderDashboard();
+            initializeDashboardNutritionTargets();
     }
 }
 
