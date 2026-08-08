@@ -74,6 +74,70 @@ export function renderNutrition() {
             </article>
 
 
+            <article class="section-card">
+
+                <span class="eyebrow">
+                    EDUCATIONAL ESTIMATE
+                </span>
+
+                <h2>Estimated Daily Energy Needs</h2>
+
+                <p class="section-description">
+                    This adult calculator provides a rough estimate for
+                    general education. It is not a calorie target or medical
+                    advice, and actual needs can vary.
+                </p>
+
+                <div class="weight-entry-card">
+
+                    <label for="energy-age">Age</label>
+                    <input id="energy-age" type="number" min="1" step="1">
+
+                    <label for="energy-height">Height (cm)</label>
+                    <input id="energy-height" type="number" min="1" step="0.1">
+
+                    <label for="energy-weight">Weight (kg)</label>
+                    <input id="energy-weight" type="number" min="1" step="0.1">
+
+                    <label for="energy-equation">Equation profile</label>
+                    <select id="energy-equation">
+                        <option value="female">Female</option>
+                        <option value="male">Male</option>
+                    </select>
+
+                    <label for="energy-activity">General activity</label>
+                    <select id="energy-activity">
+                        <option value="1.2">Mostly sedentary</option>
+                        <option value="1.375">Lightly active</option>
+                        <option value="1.55">Moderately active</option>
+                        <option value="1.725">Very active</option>
+                        <option value="1.9">Highly active</option>
+                    </select>
+
+                    <button
+                        id="calculate-energy-btn"
+                        class="primary-btn"
+                        type="button"
+                    >
+                        Calculate Estimate
+                    </button>
+
+                </div>
+
+                <div class="metric-card">
+                    <h3>Estimated Daily Energy Needs</h3>
+                    <p id="energy-estimate">--</p>
+                </div>
+
+                <p
+                    id="energy-estimate-message"
+                    class="nutrition-message"
+                    aria-live="polite"
+                ></p>
+
+            </article>
+
+
             <article class="section-card nutrition-intro">
 
                 <div>
@@ -366,6 +430,15 @@ export function renderNutrition() {
 
 export function initializeNutrition() {
 
+    document
+        .getElementById(
+            "calculate-energy-btn"
+        )
+        ?.addEventListener(
+            "click",
+            calculateEnergyEstimate
+        );
+
     const dateInput =
         document.getElementById(
             "nutrition-date"
@@ -398,6 +471,103 @@ export function initializeNutrition() {
 
 
     loadSelectedDay();
+
+}
+
+
+function calculateEnergyEstimate() {
+
+    const age =
+        Number(document.getElementById("energy-age")?.value);
+
+    const height =
+        Number(document.getElementById("energy-height")?.value);
+
+    const weight =
+        Number(document.getElementById("energy-weight")?.value);
+
+    const activity =
+        Number(document.getElementById("energy-activity")?.value);
+
+    const equation =
+        document.getElementById("energy-equation")?.value;
+
+    const result =
+        document.getElementById("energy-estimate");
+
+    const message =
+        document.getElementById("energy-estimate-message");
+
+
+    if (
+        !Number.isFinite(age) ||
+        !Number.isFinite(height) ||
+        !Number.isFinite(weight) ||
+        !Number.isFinite(activity) ||
+        age <= 0 ||
+        height <= 0 ||
+        weight <= 0
+    ) {
+
+        if (result) {
+            result.textContent = "--";
+        }
+
+        if (message) {
+            message.textContent =
+                "Enter valid values in every field.";
+        }
+
+        return;
+
+    }
+
+
+    if (age < 18) {
+
+        if (result) {
+            result.textContent = "--";
+        }
+
+        if (message) {
+            message.textContent =
+                "Energy needs during growth require individual guidance. Talk with a parent or guardian and a qualified healthcare professional.";
+        }
+
+        return;
+
+    }
+
+
+    const equationAdjustment =
+        equation === "male"
+            ? 5
+            : -161;
+
+
+    const restingEstimate =
+        10 * weight +
+        6.25 * height -
+        5 * age +
+        equationAdjustment;
+
+
+    const dailyEstimate =
+        Math.round(
+            restingEstimate * activity
+        );
+
+
+    if (result) {
+        result.textContent =
+            `${dailyEstimate.toLocaleString()} kcal/day`;
+    }
+
+
+    if (message) {
+        message.textContent =
+            "Adult estimate using the Mifflin–St Jeor equation and a general activity multiplier. Do not treat it as a prescribed intake.";
+    }
 
 }
 
