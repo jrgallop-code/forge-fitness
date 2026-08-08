@@ -56,6 +56,28 @@ export const GOAL_PRESETS = {
 };
 
 
+export const MACRO_PRESETS = {
+    balanced: {
+        label: "Balanced",
+        fatShare: 0.30,
+        description: "A general-purpose split with moderate carbohydrate and fat intake."
+    },
+    higher_carb: {
+        label: "Higher Carb",
+        fatShare: 0.25,
+        description: "Allocates more of the remaining calories to carbohydrate for training fuel."
+    },
+    higher_fat: {
+        label: "Higher Fat",
+        fatShare: 0.35,
+        description: "Allocates more of the remaining calories to dietary fat while keeping protein fixed."
+    }
+};
+
+
+export const PROTEIN_GRAMS_PER_KG = 1.6;
+
+
 export function calculateBmr({ age, sex, heightCm, weightKg }) {
     const base =
         (10 * weightKg) +
@@ -99,6 +121,72 @@ export function calculateGoalCalories(tdee, goalId) {
         adjustment: goal.adjustment,
         calories: Math.round(tdee * (1 + goal.adjustment)),
         description: goal.description
+    };
+}
+
+
+export function calculateProteinTarget(weightKg) {
+    if (!Number.isFinite(weightKg) || weightKg <= 0) {
+        return null;
+    }
+
+    return Math.round(
+        weightKg * PROTEIN_GRAMS_PER_KG
+    );
+}
+
+
+export function calculateMacroTargets({
+    calories,
+    weightKg,
+    macroPreset = "balanced"
+}) {
+    const preset =
+        MACRO_PRESETS[macroPreset] ||
+        MACRO_PRESETS.balanced;
+
+    if (
+        !Number.isFinite(calories) ||
+        calories <= 0 ||
+        !Number.isFinite(weightKg) ||
+        weightKg <= 0
+    ) {
+        return null;
+    }
+
+    const protein =
+        calculateProteinTarget(weightKg);
+
+    const proteinCalories =
+        protein * 4;
+
+    const fatCalories =
+        calories * preset.fatShare;
+
+    const fat =
+        Math.round(fatCalories / 9);
+
+    const carbohydrateCalories =
+        calories -
+        proteinCalories -
+        fatCalories;
+
+    if (carbohydrateCalories < 0) {
+        return null;
+    }
+
+    const carbs =
+        Math.round(carbohydrateCalories / 4);
+
+    return {
+        calories: Math.round(calories),
+        protein,
+        carbs,
+        fat,
+        proteinGramsPerKg: PROTEIN_GRAMS_PER_KG,
+        macroPreset,
+        macroPresetLabel: preset.label,
+        macroPresetDescription: preset.description
     };
 }
 
