@@ -150,7 +150,7 @@ export function renderProgress() {
 
                             <span>Weight</span>
 
-                            <span>7-Entry Moving Average</span>
+                            <span>7-Day Moving Average</span>
 
                             <span>Actions</span>
 
