@@ -16,6 +16,12 @@ from "../progress/weight-tracker.js";
 import { initializeTrainingProgress }
 from "../progress/training-progress.js";
 
+import {
+    renderNutrition,
+    initializeNutrition
+}
+from "../nutrition/nutrition-ui.js";
+
 
 export function navigate(page) {
 
@@ -63,21 +69,10 @@ export function navigate(page) {
 
         case "nutrition":
 
-            content.innerHTML = `
+            content.innerHTML =
+                renderNutrition();
 
-                <section class="section-card">
-
-                    <h2>
-                        🌿 Nutrition
-                    </h2>
-
-                    <p>
-                        Build balanced nutrition habits that support training, recovery, and everyday health.
-                    </p>
-
-                </section>
-
-            `;
+            initializeNutrition();
 
             break;
 
