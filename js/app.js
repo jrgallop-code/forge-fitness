@@ -1,13 +1,13 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-workout-flow-2";
+from "./core/router.js?v=router-workout-flow-3";
 
 
 import {
 renderNavbar
 }
-from "./components/navbar.js?v=navbar-workout-flow-2";
+from "./components/navbar.js?v=navbar-workout-flow-3";
 
 import {
 initializeWorkoutRuntime
