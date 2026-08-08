@@ -1,5 +1,5 @@
 import { renderWorkoutBuilder }
-from "../workouts/workout-ui.js?v=workout-flow-1";
+from "../workouts/workout-ui.js?v=workout-flow-2";
 
 import { initializeWorkoutBuilder }
 from "../workouts/workouts.js?v=workout-flow-2";
