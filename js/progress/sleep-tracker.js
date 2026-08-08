@@ -1,6 +1,9 @@
 const SLEEP_STORAGE_KEY =
     "level_up_sleep_entries";
 
+const SLEEP_AGE_GROUP_KEY =
+    "level_up_sleep_age_group";
+
 
 let editingSleepDate =
     null;
@@ -17,6 +20,12 @@ export function renderSleepTracker() {
         </div>
 
         <div class="weight-entry-card">
+            <label for="sleep-age-group">Age group</label>
+            <select id="sleep-age-group">
+                <option value="teen">Teen — ages 13–18</option>
+                <option value="adult">Adult — age 18 or older</option>
+            </select>
+
             <label for="sleep-date">Date</label>
             <input id="sleep-date" type="date">
 
@@ -50,6 +59,17 @@ export function renderSleepTracker() {
         </div>
 
         <p id="sleep-message" class="workout-message" aria-live="polite"></p>
+
+        <p id="sleep-guidance" class="workout-message" aria-live="polite"></p>
+
+        <p class="weight-history-help">
+            Guidance uses the lower end of the American Academy of Sleep
+            Medicine consensus ranges:
+            <a href="https://jcsm.aasm.org/doi/10.5664/jcsm.6288" target="_blank" rel="noopener noreferrer">8–10 hours for ages 13–18</a>
+            and
+            <a href="https://jcsm.aasm.org/doi/10.5664/jcsm.4758" target="_blank" rel="noopener noreferrer">7 or more hours for adults</a>.
+            Individual needs can vary.
+        </p>
 
         <div class="weight-summary">
             <div class="metric-card">
@@ -113,6 +133,30 @@ export function initializeSleepTracker() {
     if (dateInput) {
         dateInput.value =
             getLocalDateValue();
+    }
+
+
+    const ageGroup =
+        document.getElementById("sleep-age-group");
+
+
+    if (ageGroup) {
+        ageGroup.value =
+            localStorage.getItem(
+                SLEEP_AGE_GROUP_KEY
+            ) ||
+            "teen";
+
+        ageGroup.addEventListener(
+            "change",
+            () => {
+                localStorage.setItem(
+                    SLEEP_AGE_GROUP_KEY,
+                    ageGroup.value
+                );
+                updateSleepDisplay();
+            }
+        );
     }
 
 
@@ -353,10 +397,46 @@ function updateSleepDisplay() {
 
 
     renderSleepHistory(entries);
+    updateSleepGuidance(latest);
     drawSleepChart(
         entries,
         averages
     );
+
+}
+
+
+function updateSleepGuidance(latest) {
+
+    const guidance =
+        document.getElementById("sleep-guidance");
+
+
+    if (!guidance) {
+        return;
+    }
+
+
+    if (!latest) {
+        guidance.textContent = "";
+        return;
+    }
+
+
+    const ageGroup =
+        document.getElementById("sleep-age-group")?.value ||
+        "teen";
+
+    const minimumHours =
+        ageGroup === "adult"
+            ? 7
+            : 8;
+
+
+    guidance.textContent =
+        latest.duration < minimumHours
+            ? `This entry is below the usual ${minimumHours}-hour minimum for the selected age group. Consider prioritizing sleep and a consistent sleep routine. If this happens often or sleep is difficult, talk with a trusted adult or healthcare professional.`
+            : "";
 
 }
 
