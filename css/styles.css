@@ -1808,3 +1808,48 @@ font-size:16px;
     line-height:1.45;
     font-size:13px;
 }
+
+
+.custom-exercise-form {
+    margin:22px 0;
+    padding:18px;
+    background:#161616;
+    border:1px solid #444;
+    border-radius:14px;
+}
+
+.custom-exercise-form[hidden] {
+    display:none;
+}
+
+.custom-exercise-grid {
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+    margin-top:15px;
+}
+
+.custom-exercise-grid label {
+    color:var(--muted);
+    font-size:12px;
+    font-weight:700;
+}
+
+.custom-exercise-grid input,
+.custom-exercise-grid select {
+    width:100%;
+    margin-top:6px;
+    padding:12px;
+    color:white;
+    background:#080808;
+    border:1px solid #444;
+    border-radius:9px;
+}
+
+@media(max-width:600px) {
+
+    .custom-exercise-grid {
+        grid-template-columns:1fr;
+    }
+
+}
