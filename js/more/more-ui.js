@@ -35,10 +35,10 @@ export function renderMore() {
             </button>
 
             <button class="more-menu-card" type="button" data-more-page="energy">
-                <span class="more-menu-icon">⚡</span>
+                <span class="more-menu-icon">🥗</span>
                 <span>
-                    <strong>Energy Estimate</strong>
-                    <small>Open the educational adult energy-needs calculator.</small>
+                    <strong>Nutrition Planner</strong>
+                    <small>Manage energy needs, calorie goals, macros and your goal timeline.</small>
                 </span>
                 <span class="more-menu-arrow">›</span>
             </button>
