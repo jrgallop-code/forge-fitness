@@ -1,19 +1,13 @@
 import {
-    GOAL_PRESETS
+    getNutritionProfile
 }
-from "./tdee-calculator.js?v=active-target-2";
-
-import {
-    getNutritionProfile,
-    getNutritionGoal
-}
-from "./nutrition-storage.js?v=active-target-2";
+from "./nutrition-storage.js?v=active-target-3";
 
 import {
     getSelectedTarget,
     syncSelectedTargetToPlan
 }
-from "./active-calorie-target.js?v=active-target-2";
+from "./active-calorie-target.js?v=active-target-3";
 
 const GOAL_WEIGHT_STORAGE_KEY =
     "level_up_goal_weight";
@@ -29,15 +23,15 @@ export function renderGoalProjection() {
             hidden
         >
             <button class="nutrition-planner-back" type="button" data-nutrition-back>
-                ← Nutrition Planner
+                ← Calorie Planner
             </button>
 
             <span class="eyebrow">GOAL PROJECTION</span>
             <h2>Goal Weight & Timeline</h2>
 
             <p class="section-description">
-                Set an adult goal weight and Level Up will create a rough timeline
-                using the calorie target you selected in Goals & Calories.
+                Your projection uses the active calorie target selected in Goals & Calories.
+                Switch between Auto Target and Manual Target there, and these stats update to match.
             </p>
 
             <div class="weight-entry-card">
@@ -63,10 +57,12 @@ export function renderGoalProjection() {
             </div>
 
             <div class="weight-summary nutrition-energy-summary">
+                <div class="metric-card"><div><h3>Target Source</h3><p id="projection-target-source">--</p></div></div>
+                <div class="metric-card"><div><h3>Target Calories</h3><p id="projection-active-calories">--</p></div></div>
+                <div class="metric-card"><div><h3>Maintenance Calories</h3><p id="projection-maintenance-calories">--</p></div></div>
+                <div class="metric-card"><div><h3>Target Weekly Change</h3><p id="projection-weekly-rate">--</p></div></div>
                 <div class="metric-card"><div><h3>Starting Weight</h3><p id="projection-current-weight">--</p></div></div>
                 <div class="metric-card"><div><h3>Goal Weight</h3><p id="projection-goal-weight">--</p></div></div>
-                <div class="metric-card"><div><h3>Projected Weekly Change</h3><p id="projection-weekly-rate">--</p></div></div>
-                <div class="metric-card"><div><h3>Target Calories</h3><p id="projection-active-calories">--</p></div></div>
                 <div class="metric-card"><div><h3>Estimated Timeline</h3><p id="projection-weeks">--</p></div></div>
                 <div class="metric-card"><div><h3>Projected Date</h3><p id="projection-date">--</p></div></div>
                 <div class="metric-card"><div><h3>Weight Source</h3><p id="projection-weight-source">--</p></div></div>
@@ -97,6 +93,7 @@ export function initializeGoalProjection() {
     }
     else {
         updateStartingWeightDisplay();
+        updateSelectedTargetDisplay();
     }
 
     document
@@ -105,7 +102,12 @@ export function initializeGoalProjection() {
 
     window.addEventListener("levelup:nutrition-updated", () => {
         const goalWeight = getStoredGoalWeight();
-        if (goalWeight !== null) updateProjection(goalWeight);
+        if (goalWeight !== null) {
+            updateProjection(goalWeight);
+        }
+        else {
+            updateSelectedTargetDisplay();
+        }
     });
 }
 
@@ -137,9 +139,41 @@ function saveGoalWeightFromForm() {
     window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
 }
 
+function updateSelectedTargetDisplay() {
+    const target = syncSelectedTargetToPlan() || getSelectedTarget();
+
+    if (!target) {
+        setProjectionValue("projection-target-source", "--");
+        setProjectionValue("projection-active-calories", "--");
+        setProjectionValue("projection-maintenance-calories", "--");
+        setProjectionValue("projection-weekly-rate", "--");
+        return null;
+    }
+
+    setProjectionValue(
+        "projection-target-source",
+        target.source === "manual" ? "Manual Target" : "Auto Target"
+    );
+    setProjectionValue(
+        "projection-active-calories",
+        `${Math.round(target.calories)} kcal/day`
+    );
+    setProjectionValue(
+        "projection-maintenance-calories",
+        `${Math.round(target.maintenance)} kcal/day`
+    );
+    setProjectionValue(
+        "projection-weekly-rate",
+        Math.abs(target.weeklyRate) < 0.05
+            ? "Maintain"
+            : `${target.weeklyRate > 0 ? "+" : ""}${target.weeklyRate.toFixed(2)} lb/wk`
+    );
+
+    return target;
+}
+
 function updateProjection(goalWeight) {
     const profile = getNutritionProfile();
-    const savedGoal = getNutritionGoal();
     const message = document.getElementById("goal-projection-message");
 
     if (!profile) {
@@ -154,19 +188,11 @@ function updateProjection(goalWeight) {
         return;
     }
 
-    if (!savedGoal?.goalId || !GOAL_PRESETS[savedGoal.goalId]) {
-        clearProjection();
-        updateStartingWeightDisplay();
-        setGoalWeightDisplay(goalWeight);
-        setMessage(message, "Save a Nutrition Goal first so Level Up can estimate a timeline.");
-        return;
-    }
-
-    const target = syncSelectedTargetToPlan() || getSelectedTarget();
+    const target = updateSelectedTargetDisplay();
 
     if (!target) {
         clearProjection();
-        setMessage(message, "Choose an Auto or Manual active target in Goals & Calories first.");
+        setMessage(message, "Choose a valid Auto or Manual target in Goals & Calories first.");
         return;
     }
 
@@ -176,16 +202,21 @@ function updateProjection(goalWeight) {
     updateStartingWeightDisplay(currentWeightData);
     setGoalWeightDisplay(goalWeight);
 
-    const activeCalories = target.calories;
-    const weeklyChange = target.weeklyRate;
+    const weeklyChange = Number(target.weeklyRate);
 
-    setProjectionValue("projection-active-calories", `${Math.round(activeCalories)} kcal/day`);
+    if (!Number.isFinite(weeklyChange)) {
+        clearTimelineOnly();
+        setMessage(message, "The selected calorie target does not have a valid weekly-change rate.");
+        return;
+    }
 
     if (Math.abs(weeklyChange) < 0.05) {
-        setProjectionValue("projection-weekly-rate", "Maintain");
         setProjectionValue("projection-weeks", "No timeline");
         setProjectionValue("projection-date", "--");
-        setMessage(message, `Your ${target.source === "manual" ? "Manual" : "Auto"} Target is set near maintenance, so no weight-change timeline is shown.`);
+        setMessage(
+            message,
+            `Your ${target.source === "manual" ? "Manual" : "Auto"} Target is set near maintenance, so no weight-change timeline is shown.`
+        );
         return;
     }
 
@@ -194,13 +225,13 @@ function updateProjection(goalWeight) {
 
     if (isCut && goalWeight >= currentWeight) {
         clearTimelineOnly();
-        setMessage(message, "With the current target projecting weight loss, enter a goal weight below your current trend weight.");
+        setMessage(message, "With the selected target projecting weight loss, enter a goal weight below your current trend weight.");
         return;
     }
 
     if (isBulk && goalWeight <= currentWeight) {
         clearTimelineOnly();
-        setMessage(message, "With the current target projecting weight gain, enter a goal weight above your current trend weight.");
+        setMessage(message, "With the selected target projecting weight gain, enter a goal weight above your current trend weight.");
         return;
     }
 
@@ -210,10 +241,6 @@ function updateProjection(goalWeight) {
 
     projectedDate.setDate(projectedDate.getDate() + Math.ceil(weeks * 7));
 
-    setProjectionValue(
-        "projection-weekly-rate",
-        `${weeklyChange > 0 ? "+" : ""}${weeklyChange.toFixed(2)} lb/wk`
-    );
     setProjectionValue("projection-weeks", `${weeks.toFixed(1)} weeks`);
     setProjectionValue(
         "projection-date",
@@ -227,9 +254,7 @@ function updateProjection(goalWeight) {
     const targetLabel = target.source === "manual" ? "Manual Target" : "Auto Target";
     setMessage(
         message,
-        currentWeightData.source.startsWith("Weight Tracker")
-            ? `Projection updated using your recent Weight Tracker average and ${targetLabel}.`
-            : `Projection updated using the weight saved in your Body Profile and ${targetLabel}.`
+        `Projection is linked to your ${targetLabel}: ${Math.round(target.calories)} kcal/day, ${Math.round(target.maintenance)} kcal/day maintenance, and ${formatRate(target.weeklyRate)}.`
     );
 }
 
@@ -303,19 +328,27 @@ function setGoalWeightDisplay(goalWeight) {
 }
 
 function clearProjection() {
+    setProjectionValue("projection-target-source", "--");
+    setProjectionValue("projection-active-calories", "--");
+    setProjectionValue("projection-maintenance-calories", "--");
     setProjectionValue("projection-current-weight", "--");
     setProjectionValue("projection-goal-weight", "--");
     setProjectionValue("projection-weekly-rate", "--");
-    setProjectionValue("projection-active-calories", "--");
     setProjectionValue("projection-weeks", "--");
     setProjectionValue("projection-date", "--");
     setProjectionValue("projection-weight-source", "--");
 }
 
 function clearTimelineOnly() {
-    setProjectionValue("projection-weekly-rate", "--");
     setProjectionValue("projection-weeks", "--");
     setProjectionValue("projection-date", "--");
+}
+
+function formatRate(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return "--";
+    if (Math.abs(number) < 0.05) return "maintenance";
+    return `${number > 0 ? "+" : ""}${number.toFixed(2)} lb/wk`;
 }
 
 function setProjectionValue(id, value) {
