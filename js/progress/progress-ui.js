@@ -261,6 +261,13 @@ export function renderProgress() {
                 </div>
 
 
+                <p
+                    id="training-demo-message"
+                    class="workout-message"
+                    aria-live="polite"
+                ></p>
+
+
                 <div class="training-summary-grid">
 
                     <div class="training-summary-card">
