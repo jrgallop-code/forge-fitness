@@ -684,8 +684,7 @@ function updateWeightDisplay() {
 
     updateHistory(
         entries,
-        trend,
-        weeklyRates
+        regression.points
     );
 
 
@@ -867,8 +866,7 @@ function updateSummary(
 
 function updateHistory(
     entries,
-    trend,
-    weeklyRates
+    regression
 ) {
 
     const container =
@@ -899,36 +897,42 @@ function updateHistory(
 
     const rows =
         entries.map(
-            (entry, index) => ({
+            (entry, index) => {
 
-                date:
-                    entry.date,
+                const bestFit =
+                    regression[index]
+                        ?.weight ??
+                    null;
 
-                weight:
-                    entry.weight,
 
-                trend:
-                    trend[index]
-                        ?.weight,
+                return {
 
-                weeklyRate:
-                    weeklyRates[index]
-                        ?.rate,
+                    date:
+                        entry.date,
 
-                weightChange:
-                    index > 0
-                        ? entry.weight -
-                            entries[index - 1].weight
-                        : null,
+                    weight:
+                        entry.weight,
 
-                trendChange:
-                    index > 0 &&
-                    trend[index - 1]
-                        ? trend[index].weight -
-                            trend[index - 1].weight
-                        : null
+                    bestFit,
 
-            })
+                    difference:
+                        bestFit ===
+                            null
+                            ? null
+                            : entry.weight -
+                                bestFit,
+
+                    weightChange:
+                        index > 0
+                            ? entry.weight -
+                                entries[
+                                    index - 1
+                                ].weight
+                            : null
+
+                };
+
+            }
         );
 
 
@@ -952,35 +956,30 @@ function updateHistory(
                         </strong>
 
                         <span>
-                            ${
-                                row.trend !== undefined &&
-                                row.trend !== null
-                                    ? formatDirectionalWeight(
-                                        row.trend,
-                                        row.trendChange
-                                    )
-                                    : "--"
-                            }
+                            ${row.bestFit ===
+                                null
+                                    ? "--"
+                                    : `${row.bestFit.toFixed(
+                                        1
+                                    )} lb`}
                         </span>
-<span
-    class="${
-        row.weeklyRate !== null &&
-        row.weeklyRate !== undefined
-            ? getRateClass(
-                row.weeklyRate
-            )
-            : ""
-    }"
->
-    ${
-        row.weeklyRate !== null &&
-        row.weeklyRate !== undefined
-            ? formatRate(
-                row.weeklyRate
-            )
-            : "--"
-    }
-</span>
+
+                        <span
+                            class="${row.difference ===
+                                null
+                                    ? ""
+                                    : row.difference >
+                                        0
+                                        ? "rate-positive"
+                                        : row.difference <
+                                            0
+                                            ? "rate-negative"
+                                            : "rate-neutral"}"
+                        >
+                            ${formatFitDifference(
+                                row.difference
+                            )}
+                        </span>
 
                         <div class="weight-entry-actions">
 
@@ -1852,6 +1851,32 @@ function initializeProgressTabs() {
 
         }
     );
+
+}
+
+
+
+function formatFitDifference(
+    difference
+) {
+
+    if (
+        difference ===
+        null
+    ) {
+        return "--";
+    }
+
+
+    const prefix =
+        difference > 0
+            ? "+"
+            : "";
+
+
+    return `${prefix}${difference.toFixed(
+        1
+    )} lb`;
 
 }
 
