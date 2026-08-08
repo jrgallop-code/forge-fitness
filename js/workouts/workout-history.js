@@ -11,7 +11,7 @@ import {
     openActiveWorkout,
     openCompletedWorkoutForEdit
 }
-from "./workout-session.js?v=workout-session-2";
+from "./workout-session.js?v=workout-session-3";
 
 
 export function renderWorkoutHistory() {
