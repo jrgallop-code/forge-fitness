@@ -227,16 +227,36 @@ export function renderProgress() {
 
                     </div>
 
-                    <label>
-                        Date range
+                    <div class="training-header-actions">
 
-                        <select id="progress-range">
-                            <option value="28">4 Weeks</option>
-                            <option value="84" selected>12 Weeks</option>
-                            <option value="180">6 Months</option>
-                            <option value="0">All</option>
-                        </select>
-                    </label>
+                        <label>
+                            Date range
+
+                            <select id="progress-range">
+                                <option value="28">4 Weeks</option>
+                                <option value="84" selected>12 Weeks</option>
+                                <option value="180">6 Months</option>
+                                <option value="0">All</option>
+                            </select>
+                        </label>
+
+                        <button
+                            id="load-training-demo"
+                            class="secondary-btn"
+                            type="button"
+                        >
+                            Load 12-Week Demo
+                        </button>
+
+                        <button
+                            id="remove-training-demo"
+                            class="secondary-btn"
+                            type="button"
+                        >
+                            Remove Demo Data
+                        </button>
+
+                    </div>
 
                 </div>
 
