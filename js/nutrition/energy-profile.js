@@ -1,20 +1,24 @@
 import {
     ACTIVITY_LEVELS,
     GOAL_PRESETS,
+    MACRO_PRESETS,
     calculateTdee,
     calculateGoalCalories,
+    calculateMacroTargets,
     poundsToKg,
     feetAndInchesToCm
 }
-from "./tdee-calculator.js?v=nutrition-goals-2";
+from "./tdee-calculator.js?v=nutrition-macros-1";
 
 import {
     getNutritionProfile,
     saveNutritionProfile,
     getNutritionGoal,
-    saveNutritionGoal
+    saveNutritionGoal,
+    getNutritionMacroPreference,
+    saveNutritionMacroPreference
 }
-from "./nutrition-storage.js?v=nutrition-goals-2";
+from "./nutrition-storage.js?v=nutrition-macros-1";
 
 
 export function renderEnergyProfile() {
@@ -122,6 +126,63 @@ export function renderEnergyProfile() {
                     real-world weight trends, training performance, recovery and professional guidance.
                 </small>
             </div>
+
+            <div class="goal-box nutrition-goal-card">
+                <h3>Protein & Macro Starting Point</h3>
+                <p class="section-description">
+                    After you save a Body Profile and Nutrition Goal, Level Up can
+                    turn your calorie target into a simple daily macro starting point.
+                </p>
+
+                <label for="nutrition-macro-select">Macro Style</label>
+                <select id="nutrition-macro-select">
+                    ${Object.entries(MACRO_PRESETS).map(([value, preset]) => `
+                        <option value="${value}">${preset.label}</option>
+                    `).join("")}
+                </select>
+
+                <div id="nutrition-macro-description" class="nutrition-message"></div>
+
+                <button id="save-nutrition-macro-btn" class="primary-btn" type="button">
+                    Save Macro Preference
+                </button>
+
+                <div class="weight-summary nutrition-energy-summary">
+                    <div class="metric-card">
+                        <div>
+                            <h3>Protein</h3>
+                            <p id="nutrition-protein-target">--</p>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div>
+                            <h3>Carbohydrate</h3>
+                            <p id="nutrition-carb-target">--</p>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div>
+                            <h3>Fat</h3>
+                            <p id="nutrition-fat-target">--</p>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div>
+                            <h3>Calories Used</h3>
+                            <p id="nutrition-macro-calories">--</p>
+                        </div>
+                    </div>
+                </div>
+
+                <p id="nutrition-macro-message" class="nutrition-message" aria-live="polite"></p>
+                <small>
+                    Protein is set at about 1.6 g/kg/day for healthy adults doing resistance training.
+                    Carbohydrate and fat are flexible starting allocations, not required targets.
+                </small>
+            </div>
         </section>
     `;
 }
@@ -130,6 +191,7 @@ export function renderEnergyProfile() {
 export function initializeEnergyProfile() {
     const savedProfile = getNutritionProfile();
     const savedGoal = getNutritionGoal();
+    const savedMacro = getNutritionMacroPreference();
 
     if (savedProfile) {
         populateProfile(savedProfile);
@@ -145,6 +207,21 @@ export function initializeEnergyProfile() {
         updateGoalDisplay(savedProfile, savedGoal.goalId);
     }
 
+    const macroPreset =
+        savedMacro?.macroPreset ||
+        "balanced";
+
+    setValue("nutrition-macro-select", macroPreset);
+    updateMacroDescription(macroPreset);
+
+    if (savedProfile && savedGoal) {
+        updateMacroDisplay(
+            savedProfile,
+            savedGoal.goalId,
+            macroPreset
+        );
+    }
+
     document
         .getElementById("save-nutrition-profile-btn")
         ?.addEventListener("click", saveProfileFromForm);
@@ -158,6 +235,16 @@ export function initializeEnergyProfile() {
     document
         .getElementById("save-nutrition-goal-btn")
         ?.addEventListener("click", saveGoalFromForm);
+
+    document
+        .getElementById("nutrition-macro-select")
+        ?.addEventListener("change", event => {
+            updateMacroDescription(event.target.value);
+        });
+
+    document
+        .getElementById("save-nutrition-macro-btn")
+        ?.addEventListener("click", saveMacroFromForm);
 }
 
 
@@ -176,8 +263,15 @@ function saveProfileFromForm() {
     updateEstimate(profile);
 
     const savedGoal = getNutritionGoal();
+    const savedMacro = getNutritionMacroPreference();
+
     if (savedGoal?.goalId) {
         updateGoalDisplay(profile, savedGoal.goalId);
+        updateMacroDisplay(
+            profile,
+            savedGoal.goalId,
+            savedMacro?.macroPreset || "balanced"
+        );
     }
 
     if (message) {
@@ -220,8 +314,61 @@ function saveGoalFromForm() {
     saveNutritionGoal(goal);
     updateGoalDisplay(profile, goalId);
 
+    const savedMacro = getNutritionMacroPreference();
+    updateMacroDisplay(
+        profile,
+        goalId,
+        savedMacro?.macroPreset || "balanced"
+    );
+
     if (message) {
         message.textContent = "Nutrition goal saved.";
+    }
+}
+
+
+function saveMacroFromForm() {
+    const profile = getNutritionProfile();
+    const goal = getNutritionGoal();
+    const macroPreset =
+        document.getElementById("nutrition-macro-select")?.value;
+    const message =
+        document.getElementById("nutrition-macro-message");
+
+    if (!profile || !goal?.goalId) {
+        if (message) {
+            message.textContent = "Save your Body Profile and Nutrition Goal first.";
+        }
+        return;
+    }
+
+    if (!Number.isFinite(Number(profile.age)) || Number(profile.age) < 18) {
+        if (message) {
+            message.textContent = "Macro planning in this tool is for adults only.";
+        }
+        return;
+    }
+
+    if (!MACRO_PRESETS[macroPreset]) {
+        if (message) {
+            message.textContent = "Choose a macro style first.";
+        }
+        return;
+    }
+
+    saveNutritionMacroPreference({
+        macroPreset,
+        updatedAt: new Date().toISOString()
+    });
+
+    updateMacroDisplay(
+        profile,
+        goal.goalId,
+        macroPreset
+    );
+
+    if (message) {
+        message.textContent = "Macro preference saved.";
     }
 }
 
@@ -337,5 +484,71 @@ function updateGoalDisplay(profile, goalId) {
 
     if (caloriesElement) {
         caloriesElement.textContent = `${target.calories.toLocaleString()} kcal/day`;
+    }
+}
+
+
+function updateMacroDescription(macroPreset) {
+    const element =
+        document.getElementById("nutrition-macro-description");
+    const preset = MACRO_PRESETS[macroPreset];
+
+    if (!element) {
+        return;
+    }
+
+    element.textContent = preset
+        ? preset.description
+        : "";
+}
+
+
+function updateMacroDisplay(profile, goalId, macroPreset) {
+    const results = getEnergyResults(profile);
+    const goalTarget = calculateGoalCalories(results.tdee, goalId);
+
+    const weightKg =
+        profile.weightKg ||
+        poundsToKg(profile.weightLb);
+
+    const macros = goalTarget
+        ? calculateMacroTargets({
+            calories: goalTarget.calories,
+            weightKg,
+            macroPreset
+        })
+        : null;
+
+    const proteinElement =
+        document.getElementById("nutrition-protein-target");
+    const carbElement =
+        document.getElementById("nutrition-carb-target");
+    const fatElement =
+        document.getElementById("nutrition-fat-target");
+    const caloriesElement =
+        document.getElementById("nutrition-macro-calories");
+
+    if (!macros) {
+        if (proteinElement) proteinElement.textContent = "--";
+        if (carbElement) carbElement.textContent = "--";
+        if (fatElement) fatElement.textContent = "--";
+        if (caloriesElement) caloriesElement.textContent = "--";
+        return;
+    }
+
+    if (proteinElement) {
+        proteinElement.textContent = `${macros.protein} g/day`;
+    }
+
+    if (carbElement) {
+        carbElement.textContent = `${macros.carbs} g/day`;
+    }
+
+    if (fatElement) {
+        fatElement.textContent = `${macros.fat} g/day`;
+    }
+
+    if (caloriesElement) {
+        caloriesElement.textContent = `${macros.calories.toLocaleString()} kcal/day`;
     }
 }
