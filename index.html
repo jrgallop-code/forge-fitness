@@ -2,44 +2,52 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-  <title>Forge Fitness</title>
+  <title>Level Up — Hypertrophy Training</title>
 
-  <meta name="theme-color" content="#B71C1C" />
+  <meta name="description" content="Plan workouts, log training, and review your progress with Level Up.">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Level Up">
 
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="assets/level-up-logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/level-up-logo.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 
 <body>
 
 <div id="app">
 
-<header class="hero">
+  <header class="hero">
+    <div class="hero-inner">
 
-    <h1>FORGE</h1>
+      <a class="brand" href="./" aria-label="Level Up home">
+        <img
+          class="brand-logo"
+          src="assets/level-up-logo.svg"
+          alt="Level Up"
+          width="164"
+          height="164"
+        >
+      </a>
 
-    <p>Train Smarter. Progress Stronger.</p>
+      <div class="hero-copy">
+        <span class="hero-kicker">HYPERTROPHY TRAINING</span>
+        <h1>Train with purpose.<br><span>Progress with proof.</span></h1>
+        <p>Build your plan, record every session, and see how your training develops over time.</p>
+      </div>
 
-</header>
+    </div>
+  </header>
 
-<nav class="bottom-nav">
+  <main id="content"></main>
 
-<button>🏠<br>Home</button>
-
-<button>💪<br>Workout</button>
-
-<button>📈<br>Progress</button>
-
-<button>⚙️<br>Settings</button>
-
-</nav>
-
-<main id="content">
-
-</main>
+</div>
 
 <script type="module" src="js/app.js"></script>
 
