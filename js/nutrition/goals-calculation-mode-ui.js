@@ -5,7 +5,7 @@ import {
     getManualTarget,
     syncSelectedTargetToPlan
 }
-from "./active-calorie-target.js?v=active-target-1";
+from "./active-calorie-target.js?v=active-target-persist-1";
 
 const CALCULATION_MODE_KEY = "level_up_goal_calculation_mode";
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
@@ -36,22 +36,11 @@ export function initializeGoalsCalculationModeUI() {
             "beforebegin",
             `
                 <div id="goal-calculation-mode-picker" class="goal-calculation-mode-picker">
-                    <button
-                        id="goal-mode-auto"
-                        class="goal-calculation-mode-btn"
-                        type="button"
-                        data-goal-calculation-mode="auto"
-                    >
+                    <button id="goal-mode-auto" class="goal-calculation-mode-btn" type="button" data-goal-calculation-mode="auto">
                         <strong>Auto Calculate</strong>
                         <small>Use your profile, estimated TDEE and selected goal</small>
                     </button>
-
-                    <button
-                        id="goal-mode-manual"
-                        class="goal-calculation-mode-btn"
-                        type="button"
-                        data-goal-calculation-mode="manual"
-                    >
+                    <button id="goal-mode-manual" class="goal-calculation-mode-btn" type="button" data-goal-calculation-mode="manual">
                         <strong>Manual Calculate</strong>
                         <small>Use your known maintenance and custom weekly target</small>
                     </button>
@@ -66,12 +55,7 @@ export function initializeGoalsCalculationModeUI() {
     if (!autoPanel.querySelector(".goal-mode-panel-heading")) {
         autoPanel.insertAdjacentHTML(
             "afterbegin",
-            `
-                <div class="goal-mode-panel-heading">
-                    <span class="eyebrow">AUTO CALCULATE</span>
-                    <p>Choose a goal and Level Up will calculate a starting calorie target automatically.</p>
-                </div>
-            `
+            `<div class="goal-mode-panel-heading"><span class="eyebrow">AUTO CALCULATE</span><p>Choose a goal and Level Up will calculate a starting calorie target automatically.</p></div>`
         );
     }
 
@@ -82,70 +66,44 @@ export function initializeGoalsCalculationModeUI() {
     const manualHeading = manualPanel.querySelector(":scope > h3");
     const manualIntro = manualPanel.querySelector(":scope > .nutrition-message");
 
-    if (manualEyebrow) {
-        manualEyebrow.textContent = "MANUAL CALCULATION";
-    }
+    if (manualEyebrow) manualEyebrow.textContent = "MANUAL CALCULATION";
+    if (manualHeading) manualHeading.textContent = "Manual Calorie Calculation";
+    if (manualIntro) manualIntro.textContent = "Enter the values you already know, then Level Up will calculate your target from those inputs.";
 
-    if (manualHeading) {
-        manualHeading.textContent = "Manual Calorie Calculation";
-    }
+    ensureActiveTargetPicker(manualPanel);
 
-    if (manualIntro) {
-        manualIntro.textContent =
-            "Enter the values you already know, then Level Up will calculate your target from those inputs.";
-    }
-
-    ensureActiveTargetPicker(goalsView, manualPanel);
-
-    document
-        .querySelectorAll("[data-goal-calculation-mode]")
-        .forEach(button => {
-            button.addEventListener("click", () => {
-                setCalculationMode(button.dataset.goalCalculationMode);
-                renderCalculationMode(autoPanel, manualPanel);
-            });
+    document.querySelectorAll("[data-goal-calculation-mode]").forEach(button => {
+        button.addEventListener("click", () => {
+            setCalculationMode(button.dataset.goalCalculationMode);
+            renderCalculationMode(autoPanel, manualPanel);
         });
+    });
 
-    document
-        .querySelectorAll("[data-active-target-source]")
-        .forEach(button => {
-            button.addEventListener("click", () => {
-                const source = button.dataset.activeTargetSource === "manual"
-                    ? "manual"
-                    : "auto";
+    document.querySelectorAll("[data-active-target-source]").forEach(button => {
+        button.addEventListener("click", () => {
+            const source = button.dataset.activeTargetSource === "manual" ? "manual" : "auto";
+            const target = source === "manual" ? getManualTarget() : getAutoTarget();
 
-                const target = source === "manual"
-                    ? getManualTarget()
-                    : getAutoTarget();
+            if (!target) {
+                updateActiveTargetMessage(source === "manual"
+                    ? "Complete the manual calculation first."
+                    : "Save your Body Profile and nutrition goal first.");
+                return;
+            }
 
-                if (!target) {
-                    updateActiveTargetMessage(
-                        source === "manual"
-                            ? "Complete the manual calculation first."
-                            : "Save your Body Profile and nutrition goal first."
-                    );
-                    return;
-                }
-
-                setActiveTargetSource(source);
-                syncSelectedTargetToPlan();
-                renderActiveTargetPicker();
-                renderSelectedTargetOutputs();
-
-                window.dispatchEvent(
-                    new CustomEvent("levelup:nutrition-updated")
-                );
-
-                requestAnimationFrame(() => {
-                    syncSelectedTargetToPlan();
-                    renderActiveTargetPicker();
-                    renderSelectedTargetOutputs();
-                });
-            });
+            setActiveTargetSource(source);
+            syncSelectedTargetToPlan();
+            renderActiveTargetPicker();
+            renderSelectedTargetOutputs();
+            window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
         });
+    });
 
     applyStoredMode();
-    syncSelectedTargetToPlan();
+
+    // Do not recalculate the selected target simply because the Calories page
+    // was reopened. The persisted target remains the source of truth until the
+    // user changes calculator inputs or explicitly selects Auto/Manual again.
     renderCalculationMode(autoPanel, manualPanel);
     renderActiveTargetPicker();
     renderSelectedTargetOutputs();
@@ -157,10 +115,8 @@ export function initializeGoalsCalculationModeUI() {
     });
 }
 
-function ensureActiveTargetPicker(goalsView, manualPanel) {
-    if (document.getElementById("active-target-picker")) {
-        return;
-    }
+function ensureActiveTargetPicker(manualPanel) {
+    if (document.getElementById("active-target-picker")) return;
 
     manualPanel.insertAdjacentHTML(
         "afterend",
@@ -168,30 +124,17 @@ function ensureActiveTargetPicker(goalsView, manualPanel) {
             <div id="active-target-picker" class="goal-box nutrition-goal-card active-target-picker">
                 <span class="eyebrow">ACTIVE TARGET</span>
                 <h3>Dashboard Target</h3>
-                <p class="nutrition-message">
-                    Choose which calculation Level Up should use as your active calorie target across the Dashboard, macros, Goal Projection and Adaptive Coach.
-                </p>
-
+                <p class="nutrition-message">Choose which calculation Level Up should use as your active calorie target across the Dashboard, macros, Goal Projection and Adaptive Coach.</p>
                 <div class="active-target-actions">
-                    <button
-                        class="goal-calculation-mode-btn"
-                        type="button"
-                        data-active-target-source="auto"
-                    >
+                    <button class="goal-calculation-mode-btn" type="button" data-active-target-source="auto">
                         <strong>Use Auto Target</strong>
                         <small id="active-auto-target-value">--</small>
                     </button>
-
-                    <button
-                        class="goal-calculation-mode-btn"
-                        type="button"
-                        data-active-target-source="manual"
-                    >
+                    <button class="goal-calculation-mode-btn" type="button" data-active-target-source="manual">
                         <strong>Use Manual Target</strong>
                         <small id="active-manual-target-value">--</small>
                     </button>
                 </div>
-
                 <p id="active-target-message" class="nutrition-status-message" aria-live="polite"></p>
             </div>
         `
@@ -203,42 +146,25 @@ function renderActiveTargetPicker() {
     const autoTarget = getAutoTarget();
     const manualTarget = getManualTarget();
 
-    setText(
-        "active-auto-target-value",
-        autoTarget ? `${autoTarget.calories} kcal/day` : "Not available"
-    );
+    setText("active-auto-target-value", autoTarget ? `${autoTarget.calories} kcal/day` : "Not available");
+    setText("active-manual-target-value", manualTarget ? `${manualTarget.calories} kcal/day` : "Not available");
 
-    setText(
-        "active-manual-target-value",
-        manualTarget ? `${manualTarget.calories} kcal/day` : "Not available"
-    );
-
-    document
-        .querySelectorAll("[data-active-target-source]")
-        .forEach(button => {
-            const active = button.dataset.activeTargetSource === source;
-            button.classList.toggle("is-active", active);
-            button.setAttribute("aria-pressed", String(active));
-        });
+    document.querySelectorAll("[data-active-target-source]").forEach(button => {
+        const active = button.dataset.activeTargetSource === source;
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-pressed", String(active));
+    });
 
     const selected = source === "manual" ? manualTarget : autoTarget;
-
-    updateActiveTargetMessage(
-        selected
-            ? `Currently using ${source === "manual" ? "Manual" : "Auto"} Target · ${selected.calories} kcal/day`
-            : `Currently using ${source === "manual" ? "Manual" : "Auto"} Target`
-    );
+    updateActiveTargetMessage(selected
+        ? `Currently using ${source === "manual" ? "Manual" : "Auto"} Target · ${selected.calories} kcal/day`
+        : `Currently using ${source === "manual" ? "Manual" : "Auto"} Target`);
 }
 
 function renderSelectedTargetOutputs() {
     const source = getActiveTargetSource();
-    const selected = source === "manual"
-        ? getManualTarget()
-        : getAutoTarget();
-
-    if (!selected || !Number.isFinite(Number(selected.calories))) {
-        return;
-    }
+    const selected = source === "manual" ? getManualTarget() : getAutoTarget();
+    if (!selected || !Number.isFinite(Number(selected.calories))) return;
 
     const calories = Math.round(Number(selected.calories));
     const maintenance = Math.round(Number(selected.maintenance));
@@ -246,18 +172,8 @@ function renderSelectedTargetOutputs() {
 
     setText("current-calorie-target", `${calories} kcal/day`);
     setText("calculated-calorie-target", `${calories} kcal/day`);
-
-    if (Number.isFinite(maintenance)) {
-        setText("override-working-maintenance", `${maintenance} kcal/day`);
-    }
-
-    if (Number.isFinite(weeklyRate)) {
-        setText(
-            "override-effective-rate",
-            `${weeklyRate > 0 ? "+" : ""}${weeklyRate.toFixed(2)} lb/wk`
-        );
-    }
-
+    if (Number.isFinite(maintenance)) setText("override-working-maintenance", `${maintenance} kcal/day`);
+    if (Number.isFinite(weeklyRate)) setText("override-effective-rate", `${weeklyRate > 0 ? "+" : ""}${weeklyRate.toFixed(2)} lb/wk`);
     setText("planner-summary-calories", `${calories} kcal`);
 }
 
@@ -267,45 +183,20 @@ function updateActiveTargetMessage(message) {
 
 function getCalculationMode() {
     const stored = localStorage.getItem(CALCULATION_MODE_KEY);
+    if (stored === "auto" || stored === "manual") return stored;
 
-    if (stored === "auto" || stored === "manual") {
-        return stored;
-    }
-
-    const hasManualValues =
-        localStorage.getItem(MANUAL_MAINTENANCE_KEY) !== null ||
-        localStorage.getItem(CUSTOM_WEEKLY_RATE_KEY) !== null;
-
+    const hasManualValues = localStorage.getItem(MANUAL_MAINTENANCE_KEY) !== null || localStorage.getItem(CUSTOM_WEEKLY_RATE_KEY) !== null;
     return hasManualValues ? "manual" : "auto";
 }
 
 function setCalculationMode(mode) {
     const normalized = mode === "manual" ? "manual" : "auto";
-
-    if (normalized === "auto") {
-        stashManualValues();
-    }
-    else {
-        restoreManualValues();
-    }
-
-    localStorage.setItem(
-        CALCULATION_MODE_KEY,
-        normalized
-    );
-
-    window.dispatchEvent(
-        new CustomEvent("levelup:nutrition-updated")
-    );
+    if (normalized === "auto") stashManualValues(); else restoreManualValues();
+    localStorage.setItem(CALCULATION_MODE_KEY, normalized);
 }
 
 function applyStoredMode() {
-    if (getCalculationMode() === "auto") {
-        stashManualValues();
-    }
-    else {
-        restoreManualValues();
-    }
+    if (getCalculationMode() === "auto") stashManualValues(); else restoreManualValues();
 }
 
 function stashManualValues() {
@@ -320,41 +211,29 @@ function restoreManualValues() {
 
 function stashValue(activeKey, savedKey) {
     const activeValue = localStorage.getItem(activeKey);
-
-    if (activeValue === null || activeValue === "") {
-        return;
-    }
-
+    if (activeValue === null || activeValue === "") return;
     localStorage.setItem(savedKey, activeValue);
     localStorage.removeItem(activeKey);
 }
 
 function restoreValue(savedKey, activeKey) {
     const savedValue = localStorage.getItem(savedKey);
-
-    if (savedValue !== null && savedValue !== "") {
-        localStorage.setItem(activeKey, savedValue);
-    }
+    if (savedValue !== null && savedValue !== "") localStorage.setItem(activeKey, savedValue);
 }
 
 function renderCalculationMode(autoPanel, manualPanel) {
     const mode = getCalculationMode();
-
     autoPanel.hidden = mode !== "auto";
     manualPanel.hidden = mode !== "manual";
 
-    document
-        .querySelectorAll("[data-goal-calculation-mode]")
-        .forEach(button => {
-            const active = button.dataset.goalCalculationMode === mode;
-            button.classList.toggle("is-active", active);
-            button.setAttribute("aria-pressed", String(active));
-        });
+    document.querySelectorAll("[data-goal-calculation-mode]").forEach(button => {
+        const active = button.dataset.goalCalculationMode === mode;
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-pressed", String(active));
+    });
 }
 
 function setText(id, value) {
     const element = document.getElementById(id);
-    if (element) {
-        element.textContent = value;
-    }
+    if (element) element.textContent = value;
 }
