@@ -1,13 +1,13 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-active-target-2";
+from "./core/router.js?v=router-calorie-nav-2";
 
 
 import {
 renderNavbar
 }
-from "./components/navbar.js?v=navbar-calorie-planner-1";
+from "./components/navbar.js?v=navbar-calorie-planner-2";
 
 import {
 initializeWorkoutRuntime
@@ -17,7 +17,7 @@ from "./workouts/workout-session.js?v=workout-session-4";
 import {
 initializeCaloriePlannerLabels
 }
-from "./nutrition/calorie-planner-labels.js?v=calorie-planner-1";
+from "./nutrition/calorie-planner-labels.js?v=calorie-planner-2";
 
 
 initializeWorkoutRuntime();
