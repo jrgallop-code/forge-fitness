@@ -1,7 +1,7 @@
 import {
     navigate
 }
-from "../core/router.js?v=router-workout-flow-3";
+from "../core/router.js?v=router-workout-flow-4";
 
 import {
     deleteCompletedWorkout,
