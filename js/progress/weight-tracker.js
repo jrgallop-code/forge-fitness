@@ -738,7 +738,20 @@ function updateHistory(
 
                 weeklyRate:
                     weeklyRates[index]
-                        ?.rate
+                        ?.rate,
+
+                weightChange:
+                    index > 0
+                        ? entry.weight -
+                            entries[index - 1].weight
+                        : null,
+
+                trendChange:
+                    index > 0 &&
+                    trend[index - 1]
+                        ? trend[index].weight -
+                            trend[index - 1].weight
+                        : null
 
             })
         );
@@ -757,13 +770,19 @@ function updateHistory(
                         </span>
 
                         <strong>
-                            ${row.weight.toFixed(1)}
+                            ${formatDirectionalWeight(
+                                row.weight,
+                                row.weightChange
+                            )}
                         </strong>
 
                         <span>
                             ${
                                 row.trend !== undefined
-                                    ? row.trend.toFixed(1)
+                                    ? formatDirectionalWeight(
+                                        row.trend,
+                                        row.trendChange
+                                    )
                                     : "--"
                             }
                         </span>
@@ -804,6 +823,14 @@ function formatRate(rate) {
     }
 
 
+    const arrow =
+        rate > 0
+            ? "↑"
+            : rate < 0
+                ? "↓"
+                : "→";
+
+
     const prefix =
         rate > 0
             ? "+"
@@ -811,7 +838,7 @@ function formatRate(rate) {
 
 
     return (
-        `${prefix}${rate.toFixed(2)} lb/wk`
+        `${arrow} ${prefix}${rate.toFixed(2)} lb/wk`
     );
 
 }
@@ -993,6 +1020,90 @@ function drawWeightChart(
     }
 
 
+    for (
+        let index = 0;
+        index <
+            entries.length - 1;
+        index++
+    ) {
+
+        const date =
+            new Date(
+                `${entries[index].date}T00:00:00`
+            );
+
+
+        const weekNumber =
+            Math.floor(
+                index /
+                7
+            );
+
+
+        if (
+            weekNumber % 2 ===
+            0
+        ) {
+
+            const startX =
+                xPosition(
+                    index
+                );
+
+
+            const endX =
+                xPosition(
+                    index + 1
+                );
+
+
+            context.fillStyle =
+                "rgba(255,255,255,.035)";
+
+
+            context.fillRect(
+                startX,
+                padding.top,
+                endX -
+                startX,
+                chartHeight
+            );
+
+        }
+
+
+        if (
+            date.getDay() ===
+            1
+        ) {
+
+            context.strokeStyle =
+                "#252525";
+
+
+            context.beginPath();
+
+
+            context.moveTo(
+                xPosition(index),
+                padding.top
+            );
+
+
+            context.lineTo(
+                xPosition(index),
+                padding.top +
+                chartHeight
+            );
+
+
+            context.stroke();
+
+        }
+
+    }
+
+
     context.strokeStyle =
         "#333";
 
@@ -1032,7 +1143,165 @@ function drawWeightChart(
 
         context.stroke();
 
+
+        const tickValue =
+            maximum -
+            (
+                maximum -
+                minimum
+            ) *
+            i /
+            4;
+
+
+        context.fillStyle =
+            "#a0a0a0";
+
+
+        context.font =
+            "11px Arial";
+
+
+        context.textAlign =
+            "right";
+
+
+        context.fillText(
+            tickValue.toFixed(1),
+            padding.left -
+            8,
+            y +
+            4
+        );
+
     }
+
+
+    context.save();
+
+
+    context.translate(
+        16,
+        padding.top +
+        chartHeight /
+        2
+    );
+
+
+    context.rotate(
+        -Math.PI /
+        2
+    );
+
+
+    context.fillStyle =
+        "#a0a0a0";
+
+
+    context.font =
+        "12px Arial";
+
+
+    context.textAlign =
+        "center";
+
+
+    context.fillText(
+        "Weight (lb)",
+        0,
+        0
+    );
+
+
+    context.restore();
+
+
+    let previousMonth =
+        null;
+
+
+    entries.forEach(
+        (entry, index) => {
+
+            const date =
+                new Date(
+                    `${entry.date}T00:00:00`
+                );
+
+
+            const monthKey =
+                `${date.getFullYear()}-${date.getMonth()}`;
+
+
+            if (
+                monthKey ===
+                previousMonth
+            ) {
+                return;
+            }
+
+
+            previousMonth =
+                monthKey;
+
+
+            const x =
+                xPosition(
+                    index
+                );
+
+
+            context.strokeStyle =
+                "#555";
+
+
+            context.beginPath();
+
+
+            context.moveTo(
+                x,
+                padding.top
+            );
+
+
+            context.lineTo(
+                x,
+                padding.top +
+                chartHeight
+            );
+
+
+            context.stroke();
+
+
+            context.fillStyle =
+                "#a0a0a0";
+
+
+            context.font =
+                "11px Arial";
+
+
+            context.textAlign =
+                "left";
+
+
+            context.fillText(
+                date.toLocaleDateString(
+                    undefined,
+                    {
+                        month:
+                            "short"
+                    }
+                ),
+                x +
+                4,
+                height -
+                18
+            );
+
+        }
+    );
 
 
     context.strokeStyle =
@@ -1253,6 +1522,35 @@ function initializeProgressTabs() {
 
         }
     );
+
+}
+
+
+
+function formatDirectionalWeight(
+    value,
+    change
+) {
+
+    if (
+        change === null ||
+        change === undefined
+    ) {
+
+        return value.toFixed(1);
+
+    }
+
+
+    const arrow =
+        change > 0
+            ? "↑"
+            : change < 0
+                ? "↓"
+                : "→";
+
+
+    return `${arrow} ${value.toFixed(1)}`;
 
 }
 
