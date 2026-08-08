@@ -1,5 +1,5 @@
 import {
-    exercises
+    getAllExercises
 }
 from "./exercise-library.js";
 
@@ -226,6 +226,114 @@ export function renderWorkoutBuilder() {
                 </div>
 
 
+                <section
+                    id="custom-exercise-form"
+                    class="custom-exercise-form"
+                    hidden
+                >
+
+                    <h4>Add Custom Exercise</h4>
+
+                    <div class="custom-exercise-grid">
+
+                        <label>
+                            Exercise Name
+                            <input
+                                id="custom-exercise-name"
+                                type="text"
+                                placeholder="Example: Landmine Row"
+                            >
+                        </label>
+
+                        <label>
+                            Primary Muscle
+                            <select id="custom-exercise-muscle">
+                                <option>Chest</option>
+                                <option>Back</option>
+                                <option>Shoulders</option>
+                                <option>Rear Delts</option>
+                                <option>Biceps</option>
+                                <option>Triceps</option>
+                                <option>Quads</option>
+                                <option>Hamstrings</option>
+                                <option>Glutes</option>
+                                <option>Calves</option>
+                                <option>Core</option>
+                                <option>Other</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            Equipment
+                            <select id="custom-exercise-equipment">
+                                <option>Barbell</option>
+                                <option>Dumbbells</option>
+                                <option>Cable</option>
+                                <option>Machine</option>
+                                <option>Bodyweight</option>
+                                <option>Other</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            Exercise Type
+                            <select id="custom-exercise-type">
+                                <option value="compound">Compound</option>
+                                <option value="isolation">Isolation</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            Rep Range
+                            <input
+                                id="custom-exercise-reps"
+                                type="text"
+                                value="8-12"
+                            >
+                        </label>
+
+                        <label>
+                            Default Sets
+                            <input
+                                id="custom-exercise-sets"
+                                type="number"
+                                min="1"
+                                max="10"
+                                value="3"
+                            >
+                        </label>
+
+                    </div>
+
+                    <div class="builder-footer">
+
+                        <button
+                            id="save-custom-exercise-btn"
+                            class="primary-btn"
+                            type="button"
+                        >
+                            Add Exercise
+                        </button>
+
+                        <button
+                            id="cancel-custom-exercise-btn"
+                            class="secondary-btn"
+                            type="button"
+                        >
+                            Cancel
+                        </button>
+
+                    </div>
+
+                    <p
+                        id="custom-exercise-message"
+                        class="workout-message"
+                        aria-live="polite"
+                    ></p>
+
+                </section>
+
+
                 <div id="workout-days"></div>
 
 
@@ -302,23 +410,90 @@ export function renderWorkoutBuilder() {
 
 export function getExerciseOptions() {
 
-    return `
+    const allExercises =
+        getAllExercises()
+            .sort(
+                (a, b) =>
+                    a.muscleGroup.localeCompare(
+                        b.muscleGroup
+                    ) ||
+                    a.name.localeCompare(
+                        b.name
+                    )
+            );
 
+
+    const groups =
+        new Map();
+
+
+    allExercises.forEach(exercise => {
+
+        if (
+            !groups.has(
+                exercise.muscleGroup
+            )
+        ) {
+
+            groups.set(
+                exercise.muscleGroup,
+                []
+            );
+
+        }
+
+
+        groups.get(
+            exercise.muscleGroup
+        )
+        .push(
+            exercise
+        );
+
+    });
+
+
+    return `
         <option value="">
             Choose Exercise
         </option>
 
-        ${exercises.map(
-            exercise => `
+        ${[
+            ...groups.entries()
+        ]
+        .map(
+            ([group, groupExercises]) => `
+                <optgroup label="${escapeHtml(group)}">
 
-                <option value="${exercise.id}">
-                    ${exercise.name}
-                    — ${exercise.muscleGroup}
-                </option>
+                    ${groupExercises.map(exercise => `
+                        <option value="${escapeHtml(exercise.id)}">
+                            ${escapeHtml(exercise.name)}
+                            ${exercise.isCustom ? " — Custom" : ""}
+                        </option>
+                    `).join("")}
 
+                </optgroup>
             `
-        ).join("")}
+        )
+        .join("")}
 
+        <option
+            value="__add_custom__"
+        >
+            + Add Custom Exercise
+        </option>
     `;
+
+}
+
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 
 }
