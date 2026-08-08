@@ -1,0 +1,24 @@
+body {
+    padding-bottom: calc(82px + env(safe-area-inset-bottom));
+}
+
+.bottom-nav {
+    z-index: 10000;
+    isolation: isolate;
+    pointer-events: auto;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+
+.bottom-nav .nav-btn {
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
+    min-width: 52px;
+    min-height: 48px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav .nav-btn > * {
+    pointer-events: none;
+}
