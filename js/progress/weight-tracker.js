@@ -13,6 +13,10 @@ const WEIGHT_RESET_KEY =
     "level_up_weight_reset_2026_08_07";
 
 
+let editingWeightDate =
+    null;
+
+
 export function initializeWeightTracker() {
 
     clearExistingWeightDataOnce();
@@ -175,6 +179,35 @@ function saveWeightEntry() {
         getWeightEntries();
 
 
+    if (
+        editingWeightDate &&
+        editingWeightDate !==
+            date
+    ) {
+
+        const originalIndex =
+            entries.findIndex(
+                entry =>
+                    entry.date ===
+                    editingWeightDate
+            );
+
+
+        if (
+            originalIndex >=
+            0
+        ) {
+
+            entries.splice(
+                originalIndex,
+                1
+            );
+
+        }
+
+    }
+
+
     const existing =
         entries.find(
             entry =>
@@ -213,6 +246,22 @@ function saveWeightEntry() {
 
     if (weightElement) {
         weightElement.value = "";
+    }
+
+
+    editingWeightDate =
+        null;
+
+
+    const saveButton =
+        document.getElementById(
+            "save-weight-btn"
+        );
+
+
+    if (saveButton) {
+        saveButton.textContent =
+            "Save Weight";
     }
 
 
@@ -758,11 +807,61 @@ function updateHistory(
     }
 </span>
 
+                        <div class="weight-entry-actions">
+
+                            <button
+                                class="edit-weight-entry"
+                                type="button"
+                                data-date="${row.date}"
+                            >
+                                Edit
+                            </button>
+
+                            <button
+                                class="remove-weight-entry"
+                                type="button"
+                                data-date="${row.date}"
+                            >
+                                Remove
+                            </button>
+
+                        </div>
+
                     </div>
 
                 `
             )
             .join("");
+
+
+    container
+        .querySelectorAll(
+            ".edit-weight-entry"
+        )
+        .forEach(button =>
+            button.addEventListener(
+                "click",
+                () =>
+                    editWeightEntry(
+                        button.dataset.date
+                    )
+            )
+        );
+
+
+    container
+        .querySelectorAll(
+            ".remove-weight-entry"
+        )
+        .forEach(button =>
+            button.addEventListener(
+                "click",
+                () =>
+                    removeWeightEntry(
+                        button.dataset.date
+                    )
+            )
+        );
 
 }
 
@@ -1474,6 +1573,161 @@ function initializeProgressTabs() {
 
         }
     );
+
+}
+
+
+
+function editWeightEntry(date) {
+
+    const entry =
+        getWeightEntries()
+            .find(item =>
+                item.date ===
+                date
+            );
+
+
+    if (!entry) {
+        return;
+    }
+
+
+    const dateInput =
+        document.getElementById(
+            "weight-date"
+        );
+
+
+    const weightInput =
+        document.getElementById(
+            "daily-weight"
+        );
+
+
+    if (dateInput) {
+        dateInput.value =
+            entry.date;
+    }
+
+
+    if (weightInput) {
+
+        weightInput.value =
+            entry.weight;
+
+
+        weightInput.focus();
+
+    }
+
+
+    editingWeightDate =
+        entry.date;
+
+
+    const saveButton =
+        document.getElementById(
+            "save-weight-btn"
+        );
+
+
+    if (saveButton) {
+        saveButton.textContent =
+            "Update Entry";
+    }
+
+
+    document
+        .querySelector(
+            ".weight-entry-card"
+        )
+        ?.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+
+}
+
+
+
+function removeWeightEntry(date) {
+
+    const entry =
+        getWeightEntries()
+            .find(item =>
+                item.date ===
+                date
+            );
+
+
+    if (!entry) {
+        return;
+    }
+
+
+    const confirmed =
+        window.confirm(
+            `Remove the weight entry for ${formatDate(
+                date
+            )}? This cannot be undone.`
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    const remaining =
+        getWeightEntries()
+            .filter(item =>
+                item.date !==
+                date
+            );
+
+
+    saveWeightEntries(
+        remaining
+    );
+
+
+    if (
+        editingWeightDate ===
+        date
+    ) {
+
+        editingWeightDate =
+            null;
+
+
+        const weightInput =
+            document.getElementById(
+                "daily-weight"
+            );
+
+
+        if (weightInput) {
+            weightInput.value =
+                "";
+        }
+
+
+        const saveButton =
+            document.getElementById(
+                "save-weight-btn"
+            );
+
+
+        if (saveButton) {
+            saveButton.textContent =
+                "Save Weight";
+        }
+
+    }
+
+
+    updateWeightDisplay();
 
 }
 
