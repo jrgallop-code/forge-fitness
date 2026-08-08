@@ -34,13 +34,13 @@ import {
     initializeNutrition,
     showNutritionView
 }
-from "../nutrition/nutrition-ui.js?v=nutrition-more-1";
+from "../nutrition/nutrition-ui.js?v=nutrition-more-2";
 
 import {
     renderEnergyProfile,
     initializeEnergyProfile
 }
-from "../nutrition/energy-profile.js?v=nutrition-protein-1";
+from "../nutrition/energy-profile.js?v=calorie-planner-2";
 
 import {
     initializeProteinTargetExplanation
@@ -87,7 +87,7 @@ import {
     renderMore,
     initializeMore
 }
-from "../more/more-ui-v2.js?v=more-menu-live-1";
+from "../more/more-ui-v2.js?v=more-nutrition-2";
 
 import {
     renderWorkoutHistory,
@@ -186,7 +186,7 @@ export function navigate(page) {
                             type="button"
                             data-nutrition-back
                         >
-                            ← Nutrition Planner
+                            ← Calorie Planner
                         </button>
 
                         ${renderGoalProjection()}
