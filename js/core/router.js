@@ -35,19 +35,19 @@ import {
     renderEnergyProfile,
     initializeEnergyProfile
 }
-from "../nutrition/energy-profile.js?v=nutrition-dashboard-1";
+from "../nutrition/energy-profile.js?v=nutrition-dashboard-2";
 
 import {
     renderGoalProjection,
     initializeGoalProjection
 }
-from "../nutrition/goal-projection.js?v=nutrition-dashboard-1";
+from "../nutrition/goal-projection.js?v=nutrition-dashboard-2";
 
 import {
     renderMore,
     initializeMore
 }
-from "../more/more-ui.js?v=more-menu-3";
+from "../more/more-ui-v2.js?v=more-menu-live-1";
 
 import {
     renderWorkoutHistory,
@@ -132,8 +132,23 @@ export function navigate(page) {
 
         case "energy":
             content.innerHTML =
-                renderEnergyProfile() +
-                renderGoalProjection();
+                renderEnergyProfile() + `
+                    <div
+                        class="nutrition-planner-view nutrition-projection-view"
+                        data-planner-view="projection"
+                        hidden
+                    >
+                        <button
+                            class="nutrition-planner-back"
+                            type="button"
+                            data-nutrition-back
+                        >
+                            ← Nutrition Planner
+                        </button>
+
+                        ${renderGoalProjection()}
+                    </div>
+                `;
 
             initializeEnergyProfile();
             initializeGoalProjection();
