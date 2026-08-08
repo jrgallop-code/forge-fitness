@@ -186,6 +186,8 @@ export function renderProgress() {
 
                             <span>Weekly Rate</span>
 
+                            <span>Actions</span>
+
                         </div>
 
 
