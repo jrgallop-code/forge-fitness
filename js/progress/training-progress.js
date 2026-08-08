@@ -39,6 +39,19 @@ export function initializeTrainingProgress() {
 
     document
         .getElementById(
+            "lifting-tab"
+        )
+        ?.addEventListener(
+            "click",
+            () =>
+                requestAnimationFrame(
+                    renderTrainingProgress
+                )
+        );
+
+
+    document
+        .getElementById(
             "exercise-progress-select"
         )
         ?.addEventListener(
