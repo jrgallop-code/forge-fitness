@@ -542,6 +542,8 @@ function renderSessionExercises({
     container.innerHTML = `
         ${editingSessionId ? "" : renderRestTimerPanel(session)}
 
+        ${editingSessionId ? renderEditWorkoutExerciseControls() : ""}
+
         ${(day.exercises || []).map((plannedExercise, exerciseIndex) => {
             const exercise =
                 getExerciseById(plannedExercise.id);
@@ -574,6 +576,13 @@ function renderSessionExercises({
                 <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-tracking-type="reps">
                     <h4>${escapeHtml(exercise?.name || "Exercise")}</h4>
                     <p class="session-target">Target: ${state.sets.length} sets × ${escapeHtml(plannedExercise.reps || "—")} reps</p>
+                    ${editingSessionId ? `
+                        <div class="routine-set-editor">
+                            <strong>${state.sets.length} ${state.sets.length === 1 ? "set" : "sets"}</strong>
+                            <button class="remove-session-set secondary-btn" type="button" ${state.sets.length <= 1 ? "disabled" : ""} aria-label="Remove one set">− Set</button>
+                            <button class="add-session-set primary-btn" type="button" aria-label="Add one set">+ Set</button>
+                        </div>
+                    ` : ""}
                     <div class="previous-performance"><strong>Previous workout</strong><span>${formatPrevious(previous)}</span></div>
                     <div class="session-set-header"><span>Set</span><span>Last Workout</span><span>Weight</span><span>Reps</span></div>
                     ${state.sets.map((set, setIndex) => {
@@ -591,16 +600,12 @@ function renderSessionExercises({
                     }).join("")}
                     ${editingSessionId ? `
                         <div class="edit-session-exercise-actions">
-                            <button class="add-session-set secondary-btn" type="button">Add Set</button>
-                            <button class="remove-session-set secondary-btn" type="button" ${state.sets.length <= 1 ? "disabled" : ""}>Remove Last Set</button>
                             <button class="remove-session-exercise secondary-btn" type="button">Remove Exercise</button>
                         </div>
                     ` : ""}
                 </article>
             `;
         }).join("")}
-
-        ${editingSessionId ? renderEditWorkoutExerciseControls() : ""}
 
         <div class="session-completion-actions">
             <button id="save-session-btn" class="primary-btn" type="button">
@@ -665,9 +670,9 @@ function renderEditWorkoutExerciseControls() {
     return `
         <section class="edit-workout-exercises">
             <div>
-                <span class="eyebrow">EDIT ROUTINE</span>
-                <h4>Add another exercise</h4>
-                <p>Additions apply to this saved workout and do not change the original workout plan.</p>
+                <span class="eyebrow">WORKOUT ROUTINE</span>
+                <h4>Add exercises and sets</h4>
+                <p>Build out this workout just like a new routine. Use the set controls on each exercise below.</p>
             </div>
             <label>
                 Exercise
@@ -683,7 +688,7 @@ function renderEditWorkoutExerciseControls() {
                 Target reps
                 <input id="history-add-exercise-reps" type="text" maxlength="20" value="8-12" placeholder="8-12">
             </label>
-            <button id="history-add-exercise-btn" class="primary-btn" type="button">Add Exercise</button>
+            <button id="history-add-exercise-btn" class="primary-btn" type="button">+ Add Exercise</button>
         </section>
     `;
 
