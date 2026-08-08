@@ -600,16 +600,52 @@ function updateSummary(
 
     if (latestElement) {
 
+        const previousEntry =
+            entries.length > 1
+                ? entries[
+                    entries.length - 2
+                ]
+                : null;
+
+
+        const change =
+            previousEntry
+                ? latest.weight -
+                    previousEntry.weight
+                : null;
+
+
         latestElement.textContent =
-            `${latest.weight.toFixed(1)} lb`;
+            `${formatDirectionalWeight(
+                latest.weight,
+                change
+            )} lb`;
 
     }
 
 
     if (trendElement) {
 
+        const previousTrend =
+            trend.length > 1
+                ? trend[
+                    trend.length - 2
+                ]
+                : null;
+
+
+        const change =
+            previousTrend
+                ? latestTrend.weight -
+                    previousTrend.weight
+                : null;
+
+
         trendElement.textContent =
-            `${latestTrend.weight.toFixed(1)} lb`;
+            `${formatDirectionalWeight(
+                latestTrend.weight,
+                change
+            )} lb`;
 
     }
 
