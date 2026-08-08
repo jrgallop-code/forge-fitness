@@ -1,11 +1,11 @@
 import { renderWorkoutBuilder }
-from "../workouts/workout-ui.js";
+from "../workouts/workout-ui.js?v=workout-flow-1";
 
 import { initializeWorkoutBuilder }
-from "../workouts/workouts.js";
+from "../workouts/workouts.js?v=workout-flow-1";
 
 import { renderDashboard }
-from "../dashboard/dashboard-ui.js?v=dashboard-recovery-1";
+from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 
 import { renderProgress }
 from "../progress/progress-ui.js?v=progress-sleep-2";
@@ -20,7 +20,7 @@ import {
 from "../progress/photo-journal.js";
 
 import { initializeTrainingProgress }
-from "../progress/training-progress.js";
+from "../progress/training-progress.js?v=training-duration-1";
 
 import { initializeSleepTracker }
 from "../progress/sleep-tracker.js?v=sleep-tracker-2";
@@ -36,19 +36,25 @@ import {
     renderMore,
     initializeMore
 }
-from "../more/more-ui.js?v=more-menu-1";
+from "../more/more-ui.js?v=more-menu-2";
+
+import {
+    renderWorkoutHistory,
+    initializeWorkoutHistory
+}
+from "../workouts/workout-history.js?v=workout-history-1";
 
 
 import {
     initializeBackupManager
 }
-from "./backup-manager.js?v=recovery-backup-1";
+from "./backup-manager.js?v=active-workout-backup-1";
 
 
 import {
     initializeGoogleDriveSync
 }
-from "./google-drive-sync.js?v=recovery-backup-1";
+from "./google-drive-sync.js?v=active-workout-backup-1";
 
 
 export function navigate(page) {
@@ -157,6 +163,16 @@ export function navigate(page) {
                 renderMore();
 
             initializeMore();
+
+            break;
+
+
+        case "history":
+
+            content.innerHTML =
+                renderWorkoutHistory();
+
+            initializeWorkoutHistory();
 
             break;
 
