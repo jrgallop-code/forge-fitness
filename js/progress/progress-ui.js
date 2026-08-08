@@ -145,7 +145,7 @@ export function renderProgress() {
                             <div class="rate-stat">
 
                                 <span>
-                                    Overall Rate
+                                    Overall Average Change
                                 </span>
 
                                 <strong id="overall-weight-rate">
