@@ -1,17 +1,33 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-more-1";
+from "./core/router.js?v=router-workout-flow-1";
 
 
 import {
 renderNavbar
 }
-from "./components/navbar.js?v=navbar-more-1";
+from "./components/navbar.js?v=navbar-workout-flow-1";
+
+import {
+initializeWorkoutRuntime
+}
+from "./workouts/workout-session.js?v=workout-session-2";
 
 
+
+initializeWorkoutRuntime();
 
 navigate("home");
+
+
+if (
+"serviceWorker" in navigator
+) {
+navigator.serviceWorker.register("./service-worker.js").catch(error =>
+console.warn("Service worker registration failed:", error)
+);
+}
 
 
 
