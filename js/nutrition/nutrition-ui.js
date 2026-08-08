@@ -96,7 +96,7 @@ export function renderNutrition() {
                     <label for="energy-height">Height (cm)</label>
                     <input id="energy-height" type="number" min="1" step="0.1">
 
-                    <label for="energy-weight">Weight (kg)</label>
+                    <label for="energy-weight">Weight (lb)</label>
                     <input id="energy-weight" type="number" min="1" step="0.1">
 
                     <label for="energy-equation">Equation profile</label>
@@ -483,7 +483,7 @@ function calculateEnergyEstimate() {
     const height =
         Number(document.getElementById("energy-height")?.value);
 
-    const weight =
+    const weightPounds =
         Number(document.getElementById("energy-weight")?.value);
 
     const activity =
@@ -502,11 +502,11 @@ function calculateEnergyEstimate() {
     if (
         !Number.isFinite(age) ||
         !Number.isFinite(height) ||
-        !Number.isFinite(weight) ||
+        !Number.isFinite(weightPounds) ||
         !Number.isFinite(activity) ||
         age <= 0 ||
         height <= 0 ||
-        weight <= 0
+        weightPounds <= 0
     ) {
 
         if (result) {
@@ -545,8 +545,12 @@ function calculateEnergyEstimate() {
             : -161;
 
 
+    const weightKilograms =
+        weightPounds / 2.2046226218;
+
+
     const restingEstimate =
-        10 * weight +
+        10 * weightKilograms +
         6.25 * height -
         5 * age +
         equationAdjustment;
