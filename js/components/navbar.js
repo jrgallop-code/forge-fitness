@@ -1,5 +1,5 @@
 import {navigate}
-from "../core/router.js";
+from "../core/router.js?v=router-more-1";
 
 
 export function renderNavbar(){
@@ -88,6 +88,17 @@ Progress
 
 <span>
 Nutrition
+</span>
+
+</button>
+
+
+<button class="nav-btn" data-page="more" aria-label="More">
+
+•••
+
+<span>
+More
 </span>
 
 </button>
