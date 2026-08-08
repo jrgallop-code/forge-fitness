@@ -1,0 +1,167 @@
+.nutrition-planner-shell {
+    padding-bottom: 24px;
+}
+
+.nutrition-planner-dashboard h2,
+.nutrition-planner-view h2 {
+    margin-bottom: 8px;
+}
+
+.nutrition-plan-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 18px 0;
+}
+
+.nutrition-plan-summary > div {
+    background: #111;
+    border: 1px solid #2f2f2f;
+    border-left: 4px solid var(--red);
+    border-radius: 14px;
+    padding: 14px;
+    min-width: 0;
+}
+
+.nutrition-plan-summary span {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.nutrition-plan-summary strong {
+    display: block;
+    color: #fff;
+    font-size: 17px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.nutrition-planner-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.nutrition-planner-card {
+    min-height: 132px;
+    background: linear-gradient(180deg, #191919, #101010);
+    color: #fff;
+    border: 1px solid #343434;
+    border-radius: 18px;
+    padding: 16px;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 6px;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, .24);
+    transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.nutrition-planner-card:hover {
+    border-color: var(--red);
+    background: linear-gradient(180deg, #202020, #121212);
+}
+
+.nutrition-planner-card:active {
+    transform: scale(.98);
+}
+
+.nutrition-planner-icon {
+    font-size: 28px;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.nutrition-planner-card strong {
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.nutrition-planner-card small {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.nutrition-planner-view[hidden],
+#nutrition-planner-dashboard[hidden] {
+    display: none !important;
+}
+
+.nutrition-planner-back {
+    appearance: none;
+    background: transparent;
+    color: #fff;
+    border: 1px solid #3c3c3c;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 18px;
+}
+
+.nutrition-planner-back:hover {
+    border-color: var(--red);
+    color: #fff;
+}
+
+.nutrition-height-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.nutrition-projection-view {
+    margin-top: 20px;
+}
+
+.nutrition-projection-placeholder {
+    margin-top: 18px;
+    min-height: 120px;
+    border: 1px dashed #3a3a3a;
+    border-radius: 14px;
+    background: #101010;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--muted);
+    text-align: center;
+    padding: 16px;
+}
+
+.nutrition-projection-placeholder span {
+    color: #fff;
+    font-weight: 700;
+}
+
+@media (max-width: 420px) {
+    .nutrition-plan-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .nutrition-planner-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .nutrition-planner-card {
+        min-height: 124px;
+        padding: 14px;
+    }
+
+    .nutrition-planner-card strong {
+        font-size: 15px;
+    }
+
+    .nutrition-planner-card small {
+        font-size: 11px;
+    }
+}
