@@ -1,8 +1,8 @@
 import { renderWorkoutBuilder }
-from "../workouts/workout-ui.js?v=workout-flow-2";
+from "../workouts/workout-ui.js?v=workout-flow-3";
 
 import { initializeWorkoutBuilder }
-from "../workouts/workouts.js?v=workout-flow-2";
+from "../workouts/workouts.js?v=workout-flow-3";
 
 import { renderDashboard }
 from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
