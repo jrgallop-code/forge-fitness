@@ -8,6 +8,7 @@ import {
 from "../nutrition/nutrition-storage.js?v=adaptive-plan-1";
 
 import {
+    GOAL_PRESETS,
     calculateTdee,
     calculateGoalCalories,
     calculateMacroTargets,
@@ -15,10 +16,12 @@ import {
 }
 from "../nutrition/tdee-calculator.js?v=adaptive-plan-1";
 
+const CALCULATION_MODE_KEY = "level_up_goal_calculation_mode";
+const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
+const CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
 
 export function initializeDashboardNutritionTargets() {
-    const dashboard =
-        document.querySelector(".dashboard");
+    const dashboard = document.querySelector(".dashboard");
 
     if (!dashboard) {
         return;
@@ -36,25 +39,24 @@ export function initializeDashboardNutritionTargets() {
     }
 
     const estimate = calculateTdee(profile);
-    const recommendation =
-        calculateGoalCalories(
-            estimate.tdee,
-            goal.goalId
-        );
+    const mode = getCalculationMode();
+    const calculatedTarget = getCalculatedTarget({
+        mode,
+        estimatedTdee: estimate.tdee,
+        goalId: goal.goalId
+    });
 
-    if (!recommendation) {
+    if (!Number.isFinite(calculatedTarget) || calculatedTarget <= 0) {
         return;
     }
 
-    syncCalculatedCalories(
-        recommendation.calories
-    );
+    syncCalculatedCalories(calculatedTarget);
 
     const plan = getNutritionPlan();
     const currentCalories =
         Number.isFinite(plan.currentCalories)
             ? plan.currentCalories
-            : recommendation.calories;
+            : calculatedTarget;
 
     const macroPreset =
         getNutritionMacroPreference()?.macroPreset ||
@@ -71,7 +73,7 @@ export function initializeDashboardNutritionTargets() {
             <div class="metric-icon">🔥</div>
             <div>
                 <h3>Daily Calorie Target</h3>
-                <p>${currentCalories} kcal</p>
+                <p>${Math.round(currentCalories)} kcal</p>
             </div>
         </div>
     `;
@@ -92,4 +94,73 @@ export function initializeDashboardNutritionTargets() {
         "afterbegin",
         calorieCard + proteinCard
     );
+}
+
+function getCalculationMode() {
+    const mode = localStorage.getItem(CALCULATION_MODE_KEY);
+    return mode === "manual" ? "manual" : "auto";
+}
+
+function getCalculatedTarget({ mode, estimatedTdee, goalId }) {
+    if (mode === "manual") {
+        const manualMaintenance = Number(
+            localStorage.getItem(MANUAL_MAINTENANCE_KEY)
+        );
+
+        const customRate = Number(
+            localStorage.getItem(CUSTOM_WEEKLY_RATE_KEY)
+        );
+
+        const workingMaintenance =
+            Number.isFinite(manualMaintenance) && manualMaintenance > 0
+                ? manualMaintenance
+                : estimatedTdee;
+
+        const weeklyRate =
+            Number.isFinite(customRate)
+                ? customRate
+                : getPresetWeeklyRate(goalId);
+
+        if (
+            Number.isFinite(workingMaintenance) &&
+            Number.isFinite(weeklyRate)
+        ) {
+            return Math.round(
+                workingMaintenance + ((weeklyRate * 3500) / 7)
+            );
+        }
+    }
+
+    const recommendation =
+        calculateGoalCalories(
+            estimatedTdee,
+            goalId
+        );
+
+    return recommendation?.calories ?? null;
+}
+
+function getPresetWeeklyRate(goalId) {
+    const preset = GOAL_PRESETS[goalId];
+
+    if (!preset) {
+        return NaN;
+    }
+
+    const direct = Number(
+        preset.weeklyWeightChangeLb ??
+        preset.weeklyChangeLb
+    );
+
+    if (Number.isFinite(direct)) {
+        return direct;
+    }
+
+    const adjustment = Number(
+        preset.dailyCalorieAdjustment
+    );
+
+    return Number.isFinite(adjustment)
+        ? (adjustment * 7) / 3500
+        : NaN;
 }
