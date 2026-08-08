@@ -1,4 +1,5 @@
 import {
+    exercises,
     getExerciseById
 }
 from "../workouts/exercise-library.js";
@@ -57,6 +58,26 @@ export function initializeTrainingProgress() {
         ?.addEventListener(
             "change",
             renderExerciseProgress
+        );
+
+
+    document
+        .getElementById(
+            "load-training-demo"
+        )
+        ?.addEventListener(
+            "click",
+            loadTrainingDemoData
+        );
+
+
+    document
+        .getElementById(
+            "remove-training-demo"
+        )
+        ?.addEventListener(
+            "click",
+            removeTrainingDemoData
         );
 
 
@@ -1641,6 +1662,290 @@ function setText(id, value) {
             value;
 
     }
+
+}
+
+
+
+function loadTrainingDemoData() {
+
+    const realSessions =
+        getSessions()
+            .filter(session =>
+                !session.isDemo
+            );
+
+
+    const demoSessions =
+        createTrainingDemoData();
+
+
+    localStorage.setItem(
+        SESSION_STORAGE_KEY,
+        JSON.stringify([
+            ...realSessions,
+            ...demoSessions
+        ])
+    );
+
+
+    renderTrainingProgress();
+
+
+    const message =
+        document.getElementById(
+            "training-demo-message"
+        );
+
+
+    if (message) {
+
+        message.textContent =
+            "12 weeks of demo workouts loaded. Your real workout records were preserved.";
+
+    }
+
+}
+
+
+
+function removeTrainingDemoData() {
+
+    const realSessions =
+        getSessions()
+            .filter(session =>
+                !session.isDemo
+            );
+
+
+    localStorage.setItem(
+        SESSION_STORAGE_KEY,
+        JSON.stringify(
+            realSessions
+        )
+    );
+
+
+    renderTrainingProgress();
+
+
+    const message =
+        document.getElementById(
+            "training-demo-message"
+        );
+
+
+    if (message) {
+
+        message.textContent =
+            "Demo workouts removed. Real workout records were preserved.";
+
+    }
+
+}
+
+
+
+function createTrainingDemoData() {
+
+    const sessions = [];
+
+
+    const groups =
+        [
+            exercises.filter(
+                (_, index) =>
+                    index % 3 === 0
+            ),
+            exercises.filter(
+                (_, index) =>
+                    index % 3 === 1
+            ),
+            exercises.filter(
+                (_, index) =>
+                    index % 3 === 2
+            )
+        ];
+
+
+    const names =
+        [
+            "Full Body A",
+            "Full Body B",
+            "Full Body C"
+        ];
+
+
+    const endDate =
+        new Date();
+
+
+    const startDate =
+        new Date(
+            endDate
+        );
+
+
+    startDate.setDate(
+        startDate.getDate() -
+        83
+    );
+
+
+    for (
+        let week = 0;
+        week < 12;
+        week++
+    ) {
+
+        for (
+            let workoutIndex = 0;
+            workoutIndex < 3;
+            workoutIndex++
+        ) {
+
+            const date =
+                new Date(
+                    startDate
+                );
+
+
+            date.setDate(
+                date.getDate() +
+                week * 7 +
+                workoutIndex * 2
+            );
+
+
+            if (date > endDate) {
+                continue;
+            }
+
+
+            const sessionExercises =
+                groups[
+                    workoutIndex
+                ]
+                .map(
+                    (
+                        exercise,
+                        exerciseIndex
+                    ) => {
+
+                        const baseWeight =
+                            20 +
+                            (
+                                exerciseIndex +
+                                workoutIndex * 2
+                            ) *
+                            10;
+
+
+                        const progression =
+                            Math.floor(
+                                week / 3
+                            ) *
+                            5;
+
+
+                        const targetSets =
+                            exercise.defaultSets ||
+                            3;
+
+
+                        return {
+
+                            exerciseId:
+                                exercise.id,
+
+                            sets:
+                                Array.from(
+                                    {
+                                        length:
+                                            targetSets
+                                    },
+                                    (_, setIndex) => ({
+
+                                        weight:
+                                            baseWeight +
+                                            progression,
+
+                                        reps:
+                                            Math.max(
+                                                5,
+                                                8 +
+                                                week % 4 -
+                                                setIndex
+                                            )
+
+                                    })
+                                )
+
+                        };
+
+                    }
+                );
+
+
+            sessions.push({
+
+                id:
+                    `demo-session-${week}-${workoutIndex}`,
+
+                isDemo:
+                    true,
+
+                date:
+                    toDateValue(
+                        date
+                    ),
+
+                planId:
+                    "demo-12-week-plan",
+
+                planName:
+                    "12-Week Demo Program",
+
+                trainingDayIndex:
+                    workoutIndex,
+
+                trainingDayName:
+                    names[
+                        workoutIndex
+                    ],
+
+                completedAt:
+                    date.toISOString(),
+
+                exercises:
+                    sessionExercises
+
+            });
+
+        }
+
+    }
+
+
+    return sessions;
+
+}
+
+
+
+function toDateValue(date) {
+
+    const local =
+        new Date(
+            date.getTime() -
+            date.getTimezoneOffset() *
+            60000
+        );
+
+
+    return local
+        .toISOString()
+        .slice(0, 10);
 
 }
 
