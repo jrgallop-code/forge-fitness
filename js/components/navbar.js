@@ -1,111 +1,85 @@
-import {navigate}
-from "../core/router.js?v=router-calorie-nav-1";
+import { navigate }
+from "../core/router.js?v=router-nav-stable-1";
 
 
-export function renderNavbar(){
+export function renderNavbar() {
+    return `
+        <nav class="bottom-nav" aria-label="Primary navigation">
+            <button class="nav-btn active" data-page="home" aria-label="Home" type="button">
+                🏠
+                <span>Home</span>
+            </button>
 
-setTimeout(()=>{
+            <button class="nav-btn" data-page="workout" aria-label="Workout" type="button">
+                💪
+                <span>Workout</span>
+            </button>
 
+            <button class="nav-btn" data-page="progress" aria-label="Progress" type="button">
+                📈
+                <span>Progress</span>
+            </button>
 
-document.querySelectorAll(".nav-btn")
+            <button class="nav-btn" data-page="energy" aria-label="Calorie Planner" type="button">
+                🔥
+                <span>Calories</span>
+            </button>
 
-.forEach(button=>{
-
-
-button.addEventListener(
-"click",
-
-()=>{
-
-document.querySelectorAll(".nav-btn")
-.forEach(item =>
-item.classList.toggle(
-"active",
-item === button
-)
-);
-
-navigate(
-button.dataset.page
-);
-
+            <button class="nav-btn" data-page="more" aria-label="More" type="button">
+                •••
+                <span>More</span>
+            </button>
+        </nav>
+    `;
 }
 
-);
 
+export function initializeNavbar() {
+    const nav =
+        document.querySelector(".bottom-nav");
 
-});
+    if (!nav || nav.dataset.bound === "true") {
+        return;
+    }
 
+    nav.dataset.bound = "true";
 
-},0);
+    nav.addEventListener(
+        "click",
+        event => {
+            const button =
+                event.target.closest(".nav-btn");
 
+            if (!button || !nav.contains(button)) {
+                return;
+            }
 
+            const page =
+                button.dataset.page;
 
-return `
+            if (!page) {
+                return;
+            }
 
-<nav class="bottom-nav" aria-label="Primary navigation">
+            event.preventDefault();
 
+            nav.querySelectorAll(".nav-btn")
+                .forEach(item =>
+                    item.classList.toggle(
+                        "active",
+                        item === button
+                    )
+                );
 
-<button class="nav-btn active" data-page="home" aria-label="Home">
-
-🏠
-
-<span>
-Home
-</span>
-
-</button>
-
-
-
-<button class="nav-btn" data-page="workout" aria-label="Workout">
-
-💪
-
-<span>
-Workout
-</span>
-
-</button>
-
-
-
-<button class="nav-btn" data-page="progress" aria-label="Progress">
-
-📈
-
-<span>
-Progress
-</span>
-
-</button>
-
-
-
-<button class="nav-btn" data-page="energy" aria-label="Calorie Planner">
-
-🔥
-
-<span>
-Calories
-</span>
-
-</button>
-
-
-<button class="nav-btn" data-page="more" aria-label="More">
-
-•••
-
-<span>
-More
-</span>
-
-</button>
-
-
-</nav>
-
-`;
-
+            try {
+                navigate(page);
+            }
+            catch (error) {
+                console.error(
+                    `Navigation to ${page} failed:`,
+                    error
+                );
+            }
+        }
+    );
 }
