@@ -35,7 +35,7 @@ import {
     renderEnergyProfile,
     initializeEnergyProfile
 }
-from "../nutrition/energy-profile.js?v=nutrition-profile-1";
+from "../nutrition/energy-profile.js?v=nutrition-profile-2";
 
 import {
     renderMore,
@@ -106,7 +106,6 @@ export function navigate(page) {
                 "Sleep tracker",
                 initializeSleepTracker
             );
-
             break;
 
         case "nutrition":
