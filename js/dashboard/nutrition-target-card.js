@@ -103,13 +103,18 @@ function getCalculationMode() {
 
 function getCalculatedTarget({ mode, estimatedTdee, goalId }) {
     if (mode === "manual") {
-        const manualMaintenance = Number(
-            localStorage.getItem(MANUAL_MAINTENANCE_KEY)
-        );
+        const maintenanceRaw = localStorage.getItem(MANUAL_MAINTENANCE_KEY);
+        const rateRaw = localStorage.getItem(CUSTOM_WEEKLY_RATE_KEY);
 
-        const customRate = Number(
-            localStorage.getItem(CUSTOM_WEEKLY_RATE_KEY)
-        );
+        const manualMaintenance =
+            maintenanceRaw !== null && maintenanceRaw !== ""
+                ? Number(maintenanceRaw)
+                : NaN;
+
+        const customRate =
+            rateRaw !== null && rateRaw !== ""
+                ? Number(rateRaw)
+                : NaN;
 
         const workingMaintenance =
             Number.isFinite(manualMaintenance) && manualMaintenance > 0
