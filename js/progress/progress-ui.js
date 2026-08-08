@@ -173,6 +173,12 @@ export function renderProgress() {
 
                     <h3>Weight History</h3>
 
+                    <p class="weight-history-help">
+                        Best-Fit Value is the value on the regression line.
+                        Difference from Fit shows how far each measurement
+                        is above or below that line.
+                    </p>
+
 
                     <div class="weight-table">
 
@@ -182,9 +188,9 @@ export function renderProgress() {
 
                             <span>Weight</span>
 
-                            <span>Trend</span>
+                            <span>Best-Fit Value</span>
 
-                            <span>Weekly Rate</span>
+                            <span>Difference from Fit</span>
 
                             <span>Actions</span>
 
