@@ -575,12 +575,6 @@ function updateWeightDisplay() {
         );
 
 
-    const regression =
-        calculateLinearRegression(
-            entries
-        );
-
-
     updateSummary(
         entries
     );
@@ -594,7 +588,7 @@ function updateWeightDisplay() {
 
     drawWeightChart(
         entries,
-        regression.points,
+        [],
         getReferenceWeight()
     );
 
@@ -1418,11 +1412,6 @@ function drawWeightChart(
             color: "#ffffff",
             label: "Measurements",
             dashed: false
-        },
-        {
-            color: "#7dd3fc",
-            label: "Best-fit line",
-            dashed: true
         },
         ...(referenceWeight === null
             ? []
