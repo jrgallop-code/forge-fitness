@@ -11,8 +11,7 @@ import {
 from "./nutrition-storage.js?v=active-target-3";
 
 import {
-    getSelectedTarget,
-    syncSelectedTargetToPlan
+    getSelectedTarget
 }
 from "./active-calorie-target.js?v=active-target-3";
 
@@ -37,7 +36,7 @@ export function renderGoalProjection() {
             <h2>Goal Weight & Timeline</h2>
 
             <p class="section-description">
-                Your projection uses the exact calorie target currently selected in Goals & Calories.
+                Your projection uses the exact active calorie target saved in Goals & Calories.
             </p>
 
             <div class="weight-entry-card">
@@ -146,27 +145,38 @@ function saveGoalWeightFromForm() {
 }
 
 function getActiveProjectionTarget() {
-    const selectedTarget =
-        syncSelectedTargetToPlan() ||
-        getSelectedTarget();
+    const selectedTarget = getSelectedTarget();
+    const activePlan = getNutritionPlan();
 
     if (!selectedTarget) {
         return null;
     }
 
-    const activePlan = getNutritionPlan();
-
+    // The saved Current Daily Target is the app-wide source of truth.
+    // Do not recalculate or overwrite it here; Goal Projection must mirror
+    // the exact number shown in Goals & Calories and on the Dashboard.
     const calories = Number.isFinite(Number(activePlan.currentCalories))
         ? Number(activePlan.currentCalories)
         : Number(selectedTarget.calories);
 
-    if (!Number.isFinite(calories) || calories <= 0) {
+    const maintenance = Number(selectedTarget.maintenance);
+
+    if (
+        !Number.isFinite(calories) || calories <= 0 ||
+        !Number.isFinite(maintenance) || maintenance <= 0
+    ) {
         return null;
     }
 
+    const weeklyRate =
+        ((calories - maintenance) * 7) /
+        3500;
+
     return {
         ...selectedTarget,
-        calories
+        calories,
+        maintenance,
+        weeklyRate
     };
 }
 
@@ -271,7 +281,7 @@ function updateProjection(goalWeight) {
         setProjectionValue("projection-weekly-rate", "Maintain");
         setProjectionValue("projection-weeks", "No timeline");
         setProjectionValue("projection-date", "--");
-        setMessage(message, `Using your ${target.source === "manual" ? "Manual" : "Auto"} Target of ${Math.round(activeCalories)} kcal/day.`);
+        setMessage(message, `Using your exact saved target of ${Math.round(activeCalories)} kcal/day.`);
         return;
     }
 
