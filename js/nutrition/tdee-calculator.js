@@ -30,28 +30,33 @@ export const ACTIVITY_LEVELS = {
 export const GOAL_PRESETS = {
     maintain: {
         label: "Maintain",
-        adjustment: 0,
+        dailyCalorieAdjustment: 0,
+        weeklyWeightChangeLb: 0,
         description: "Stay close to estimated maintenance calories."
     },
     cut_gentle: {
         label: "Fat Loss — Gentle",
-        adjustment: -0.10,
-        description: "A modest starting deficit designed to prioritize training performance and adherence."
+        dailyCalorieAdjustment: -250,
+        weeklyWeightChangeLb: -0.5,
+        description: "Targets about 0.5 lb/week using an estimated 250 kcal/day deficit."
     },
     cut_moderate: {
         label: "Fat Loss — Moderate",
-        adjustment: -0.15,
-        description: "A moderate starting deficit for adults who want a somewhat faster rate of loss."
+        dailyCalorieAdjustment: -500,
+        weeklyWeightChangeLb: -1,
+        description: "Targets about 1.0 lb/week using an estimated 500 kcal/day deficit."
     },
     bulk_conservative: {
         label: "Lean Bulk — Conservative",
-        adjustment: 0.05,
-        description: "A small surplus intended to support muscle gain while limiting unnecessary weight gain."
+        dailyCalorieAdjustment: 125,
+        weeklyWeightChangeLb: 0.25,
+        description: "Targets about 0.25 lb/week using an estimated 125 kcal/day surplus."
     },
     bulk_standard: {
         label: "Lean Bulk — Standard",
-        adjustment: 0.10,
-        description: "A moderate surplus that may suit newer or intermediate lifters."
+        dailyCalorieAdjustment: 250,
+        weeklyWeightChangeLb: 0.5,
+        description: "Targets about 0.5 lb/week using an estimated 250 kcal/day surplus."
     }
 };
 
@@ -118,8 +123,9 @@ export function calculateGoalCalories(tdee, goalId) {
     return {
         goalId,
         label: goal.label,
-        adjustment: goal.adjustment,
-        calories: Math.round(tdee * (1 + goal.adjustment)),
+        dailyCalorieAdjustment: goal.dailyCalorieAdjustment,
+        weeklyWeightChangeLb: goal.weeklyWeightChangeLb,
+        calories: Math.round(tdee + goal.dailyCalorieAdjustment),
         description: goal.description
     };
 }
