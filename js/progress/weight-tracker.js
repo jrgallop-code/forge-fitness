@@ -9,6 +9,10 @@ const WEIGHT_STORAGE_KEY =
     "forge_weight_entries";
 
 
+const REFERENCE_WEIGHT_STORAGE_KEY =
+    "forge_reference_weight";
+
+
 let editingWeightDate =
     null;
 
@@ -24,6 +28,16 @@ export function initializeWeightTracker() {
     const dateInput =
         document.getElementById(
             "weight-date"
+        );
+
+    const referenceButton =
+        document.getElementById(
+            "save-reference-weight-btn"
+        );
+
+    const referenceInput =
+        document.getElementById(
+            "reference-weight"
         );
 
 
@@ -43,7 +57,88 @@ export function initializeWeightTracker() {
     );
 
 
+    referenceButton?.addEventListener(
+        "click",
+        saveReferenceWeight
+    );
+
+
+    const referenceWeight =
+        getReferenceWeight();
+
+
+    if (
+        referenceInput &&
+        referenceWeight !== null
+    ) {
+        referenceInput.value =
+            referenceWeight;
+    }
+
+
     initializeProgressTabs();
+
+    updateWeightDisplay();
+
+}
+
+
+
+function getReferenceWeight() {
+
+    const value =
+        Number(
+            localStorage.getItem(
+                REFERENCE_WEIGHT_STORAGE_KEY
+            )
+        );
+
+
+    return Number.isFinite(value) &&
+        value > 0
+            ? value
+            : null;
+
+}
+
+
+
+function saveReferenceWeight() {
+
+    const input =
+        document.getElementById(
+            "reference-weight"
+        );
+
+
+    const value =
+        Number(
+            input?.value
+        );
+
+
+    if (!Number.isFinite(value) || value <= 0) {
+
+        localStorage.removeItem(
+            REFERENCE_WEIGHT_STORAGE_KEY
+        );
+
+
+        if (input) {
+            input.value = "";
+        }
+
+    }
+
+    else {
+
+        localStorage.setItem(
+            REFERENCE_WEIGHT_STORAGE_KEY,
+            String(value)
+        );
+
+    }
+
 
     updateWeightDisplay();
 
@@ -345,7 +440,8 @@ function calculateLinearRegression(
     if (entries.length < 2) {
 
         return {
-            points: []
+            points: [],
+            weeklyRate: null
         };
 
     }
@@ -432,7 +528,8 @@ function calculateLinearRegression(
     if (!denominator) {
 
         return {
-            points: []
+            points: [],
+            weeklyRate: null
         };
 
     }
@@ -450,6 +547,9 @@ function calculateLinearRegression(
 
 
     return {
+
+        weeklyRate:
+            slope * 7,
 
         points:
             values.map(item => ({
@@ -487,7 +587,8 @@ function updateWeightDisplay() {
 
 
     updateSummary(
-        entries
+        entries,
+        regression.weeklyRate
     );
 
 
@@ -499,7 +600,8 @@ function updateWeightDisplay() {
 
     drawWeightChart(
         entries,
-        regression.points
+        regression.points,
+        getReferenceWeight()
     );
 
 }
@@ -507,12 +609,18 @@ function updateWeightDisplay() {
 
 
 function updateSummary(
-    entries
+    entries,
+    weeklyRate
 ) {
 
     const latestElement =
         document.getElementById(
             "latest-weight"
+        );
+
+    const weeklyElement =
+        document.getElementById(
+            "weekly-weight-change"
         );
 
 
@@ -525,6 +633,11 @@ function updateSummary(
 
         latestElement.textContent =
             "--";
+
+        if (weeklyElement) {
+            weeklyElement.textContent =
+                "--";
+        }
 
         return;
 
@@ -541,6 +654,33 @@ function updateSummary(
         `${latest.weight.toFixed(
             1
         )} lb`;
+
+
+    if (weeklyElement) {
+
+        if (Number.isFinite(weeklyRate)) {
+
+            const arrow =
+                weeklyRate > 0
+                    ? "↑"
+                    : weeklyRate < 0
+                        ? "↓"
+                        : "→";
+
+
+            weeklyElement.textContent =
+                `${arrow} ${Math.abs(weeklyRate).toFixed(
+                    2
+                )} lb/week`;
+
+        }
+
+        else {
+            weeklyElement.textContent =
+                "--";
+        }
+
+    }
 
 }
 
@@ -800,7 +940,8 @@ function initializeProgressTabs() {
 
 function drawWeightChart(
     entries,
-    regression
+    regression,
+    referenceWeight
 ) {
 
     const canvas =
@@ -911,7 +1052,10 @@ function drawWeightChart(
         ...regression.map(
             item =>
                 item.weight
-        )
+        ),
+        ...(referenceWeight === null
+            ? []
+            : [referenceWeight])
     ];
 
 
@@ -1228,6 +1372,32 @@ function drawWeightChart(
     }
 
 
+    if (referenceWeight !== null) {
+
+        context.save();
+        context.strokeStyle =
+            "#facc15";
+        context.lineWidth =
+            2;
+        context.setLineDash([
+            4,
+            4
+        ]);
+        context.beginPath();
+        context.moveTo(
+            padding.left,
+            yPosition(referenceWeight)
+        );
+        context.lineTo(
+            width - padding.right,
+            yPosition(referenceWeight)
+        );
+        context.stroke();
+        context.restore();
+
+    }
+
+
     const legend = [
         {
             color: "#ffffff",
@@ -1238,7 +1408,14 @@ function drawWeightChart(
             color: "#7dd3fc",
             label: "Best-fit line",
             dashed: true
-        }
+        },
+        ...(referenceWeight === null
+            ? []
+            : [{
+                color: "#facc15",
+                label: `Reference ${referenceWeight.toFixed(1)} lb`,
+                dashed: true
+            }])
     ];
 
 
