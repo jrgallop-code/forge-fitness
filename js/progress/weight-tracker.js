@@ -9,17 +9,11 @@ const WEIGHT_STORAGE_KEY =
     "forge_weight_entries";
 
 
-const WEIGHT_RESET_KEY =
-    "level_up_weight_reset_2026_08_07";
-
-
 let editingWeightDate =
     null;
 
 
 export function initializeWeightTracker() {
-
-    clearExistingWeightDataOnce();
 
 
     const saveButton =
@@ -57,33 +51,6 @@ export function initializeWeightTracker() {
 
 
 
-function clearExistingWeightDataOnce() {
-
-    if (
-        localStorage.getItem(
-            WEIGHT_RESET_KEY
-        )
-    ) {
-
-        return;
-
-    }
-
-
-    localStorage.removeItem(
-        WEIGHT_STORAGE_KEY
-    );
-
-
-    localStorage.setItem(
-        WEIGHT_RESET_KEY,
-        "complete"
-    );
-
-}
-
-
-
 function getWeightEntries() {
 
     const stored =
@@ -108,11 +75,26 @@ function getWeightEntries() {
         }
 
 
-        return entries.sort(
-            (a, b) =>
-                new Date(a.date) -
-                new Date(b.date)
-        );
+        return entries
+            .map(entry => ({
+                ...entry,
+                weight:
+                    Number(
+                        entry.weight
+                    )
+            }))
+            .filter(entry =>
+                entry.date &&
+                Number.isFinite(
+                    entry.weight
+                ) &&
+                entry.weight > 0
+            )
+            .sort(
+                (a, b) =>
+                    new Date(a.date) -
+                    new Date(b.date)
+            );
 
     }
 
