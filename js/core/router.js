@@ -53,6 +53,11 @@ import {
 from "../nutrition/nutrition-plan-ui.js?v=adaptive-plan-1";
 
 import {
+    initializeNutritionPlanHooks
+}
+from "../nutrition/nutrition-plan-hooks.js?v=adaptive-plan-1";
+
+import {
     renderGoalProjection,
     initializeGoalProjection
 }
@@ -170,6 +175,7 @@ export function navigate(page) {
             initializeProteinTargetExplanation();
             initializeGoalProjection();
             initializeNutritionPlanUI();
+            initializeNutritionPlanHooks();
             break;
 
         case "more":
