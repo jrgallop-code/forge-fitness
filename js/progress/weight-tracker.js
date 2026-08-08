@@ -590,6 +590,16 @@ function updateHistory(
                         ?.weight ??
                     null,
 
+                averageChange:
+                    index > 0 &&
+                    movingAverage[index]
+                        ?.weight !== undefined &&
+                    movingAverage[index - 1]
+                        ?.weight !== undefined
+                        ? movingAverage[index].weight -
+                            movingAverage[index - 1].weight
+                        : null,
+
                 weightChange:
                     index > 0
                         ? entry.weight -
@@ -624,8 +634,9 @@ function updateHistory(
                             ${row.average ===
                                 null
                                     ? "--"
-                                    : `${row.average.toFixed(
-                                        1
+                                    : `${formatDirectionalWeight(
+                                        row.average,
+                                        row.averageChange
                                     )} lb`}
                         </span>
 
