@@ -1,13 +1,15 @@
 import {
-    GOAL_PRESETS
+    GOAL_PRESETS,
+    calculateTdee
 }
-from "./tdee-calculator.js?v=nutrition-dashboard-1";
+from "./tdee-calculator.js?v=adaptive-plan-1";
 
 import {
     getNutritionProfile,
-    getNutritionGoal
+    getNutritionGoal,
+    getNutritionPlan
 }
-from "./nutrition-storage.js?v=nutrition-dashboard-1";
+from "./nutrition-storage.js?v=adaptive-plan-1";
 
 
 const GOAL_WEIGHT_STORAGE_KEY =
@@ -33,8 +35,8 @@ export function renderGoalProjection() {
 
             <p class="section-description">
                 Set an adult goal weight and Level Up will create a rough timeline
-                from your current nutrition plan. If you use the Weight Tracker,
-                your recent average is used as the starting weight.
+                from your current calorie target. If you manually adjust calories,
+                the projection uses that active target instead of the original estimate.
             </p>
 
             <div class="weight-entry-card">
@@ -76,8 +78,15 @@ export function renderGoalProjection() {
 
                 <div class="metric-card">
                     <div>
-                        <h3>Target Weekly Change</h3>
+                        <h3>Projected Weekly Change</h3>
                         <p id="projection-weekly-rate">--</p>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div>
+                        <h3>Active Calories</h3>
+                        <p id="projection-active-calories">--</p>
                     </div>
                 </div>
 
@@ -147,6 +156,16 @@ export function initializeGoalProjection() {
             "click",
             saveGoalWeightFromForm
         );
+
+    window.addEventListener(
+        "levelup:nutrition-updated",
+        () => {
+            const goalWeight = getStoredGoalWeight();
+            if (goalWeight !== null) {
+                updateProjection(goalWeight);
+            }
+        }
+    );
 }
 
 
@@ -201,6 +220,9 @@ function updateProjection(goalWeight) {
     const savedGoal =
         getNutritionGoal();
 
+    const plan =
+        getNutritionPlan();
+
     const message =
         document.getElementById("goal-projection-message");
 
@@ -239,19 +261,43 @@ function updateProjection(goalWeight) {
     updateStartingWeightDisplay(currentWeightData);
     setGoalWeightDisplay(goalWeight);
 
-    const preset =
-        GOAL_PRESETS[savedGoal.goalId];
+    const tdee =
+        calculateTdee(profile).tdee;
+
+    const activeCalories =
+        Number.isFinite(Number(plan.currentCalories))
+            ? Number(plan.currentCalories)
+            : tdee + Number(GOAL_PRESETS[savedGoal.goalId].dailyCalorieAdjustment || 0);
+
+    setProjectionValue(
+        "projection-active-calories",
+        `${Math.round(activeCalories)} kcal/day`
+    );
 
     const weeklyChange =
-        Number(preset.weeklyWeightChangeLb);
+        ((activeCalories - tdee) * 7) /
+        3500;
 
-    if (savedGoal.goalId === "maintain" || weeklyChange === 0) {
+    if (
+        savedGoal.goalId === "maintain" &&
+        Math.abs(weeklyChange) < 0.05
+    ) {
         setProjectionValue("projection-weekly-rate", "Maintain");
         setProjectionValue("projection-weeks", "No timeline");
         setProjectionValue("projection-date", "--");
         setMessage(
             message,
-            "Maintenance does not create a weight-change timeline."
+            "Your active calorie target is close to estimated maintenance, so no weight-change timeline is shown."
+        );
+        return;
+    }
+
+    if (Math.abs(weeklyChange) < 0.05) {
+        clearTimelineOnly();
+        setProjectionValue("projection-weekly-rate", "~0 lb/wk");
+        setMessage(
+            message,
+            "Your active calorie target is too close to estimated maintenance to create a useful projection."
         );
         return;
     }
@@ -266,7 +312,7 @@ function updateProjection(goalWeight) {
         clearTimelineOnly();
         setMessage(
             message,
-            "For a fat-loss phase, enter a goal weight below your current trend weight."
+            "With the current calorie target projecting weight loss, enter a goal weight below your current trend weight."
         );
         return;
     }
@@ -275,7 +321,7 @@ function updateProjection(goalWeight) {
         clearTimelineOnly();
         setMessage(
             message,
-            "For a lean-bulk phase, enter a goal weight above your current trend weight."
+            "With the current calorie target projecting weight gain, enter a goal weight above your current trend weight."
         );
         return;
     }
@@ -297,7 +343,7 @@ function updateProjection(goalWeight) {
 
     setProjectionValue(
         "projection-weekly-rate",
-        `${weeklyChange > 0 ? "+" : ""}${weeklyChange.toFixed(2).replace(/\.00$/, "")} lb/wk`
+        `${weeklyChange > 0 ? "+" : ""}${weeklyChange.toFixed(2)} lb/wk`
     );
 
     setProjectionValue(
@@ -320,8 +366,8 @@ function updateProjection(goalWeight) {
     setMessage(
         message,
         currentWeightData.source.startsWith("Weight Tracker")
-            ? "Projection updated using your recent Weight Tracker average."
-            : "Projection updated using the current weight saved in your Body Profile."
+            ? "Projection updated using your recent Weight Tracker average and current calorie target."
+            : "Projection updated using the weight saved in your Body Profile and current calorie target."
     );
 }
 
@@ -446,6 +492,7 @@ function clearProjection() {
     setProjectionValue("projection-current-weight", "--");
     setProjectionValue("projection-goal-weight", "--");
     setProjectionValue("projection-weekly-rate", "--");
+    setProjectionValue("projection-active-calories", "--");
     setProjectionValue("projection-weeks", "--");
     setProjectionValue("projection-date", "--");
     setProjectionValue("projection-weight-source", "--");
