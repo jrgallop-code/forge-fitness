@@ -19,9 +19,10 @@ from "./workout-ui.js";
 
 import {
     getLastWorkoutForPlan,
+    initializeActiveWorkoutUI,
     openWorkoutLogger
 }
-from "./workout-session.js";
+from "./workout-session.js?v=workout-session-2";
 
 
 const PLAN_STORAGE_KEY =
@@ -115,6 +116,8 @@ export function initializeWorkoutBuilder() {
 
 
     renderSavedPlans();
+
+    initializeActiveWorkoutUI();
 
 }
 
