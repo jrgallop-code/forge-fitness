@@ -77,7 +77,7 @@ export function renderNutrition() {
             </article>
 
 
-            <article class="section-card">
+            <article class="section-card" data-more-tool="energy">
 
                 <span class="eyebrow">
                     EDUCATIONAL ESTIMATE
@@ -157,7 +157,7 @@ export function renderNutrition() {
             </article>
 
 
-            <article class="section-card">
+            <article class="section-card" data-more-tool="water">
                 <span class="eyebrow">HYDRATION LOG</span>
                 <h2>Water Recorded</h2>
                 <p class="section-description">
@@ -559,6 +559,32 @@ export function initializeNutrition() {
 
 
     loadSelectedDay();
+
+}
+
+
+export function showNutritionView(view = "main") {
+
+    document
+        .querySelectorAll(
+            ".nutrition-page > [data-more-tool]"
+        )
+        .forEach(section => {
+            section.hidden =
+                view === "main" ||
+                section.dataset.moreTool !== view;
+        });
+
+
+    if (view !== "main") {
+        document
+            .querySelectorAll(
+                ".nutrition-page > :not([data-more-tool])"
+            )
+            .forEach(section => {
+                section.hidden = true;
+            });
+    }
 
 }
 
