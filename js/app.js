@@ -1,7 +1,7 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-calorie-nav-2";
+from "./core/router.js?v=router-exercise-progress-1";
 
 
 import {
