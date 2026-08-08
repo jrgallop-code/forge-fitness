@@ -1,7 +1,7 @@
 import {
     navigate
 }
-from "../core/router.js?v=router-workout-flow-4";
+from "../core/router.js?v=router-workout-flow-5";
 
 import {
     deleteCompletedWorkout,
@@ -11,7 +11,7 @@ import {
     openActiveWorkout,
     openCompletedWorkoutForEdit
 }
-from "./workout-session.js?v=workout-session-3";
+from "./workout-session.js?v=workout-session-4";
 
 
 export function renderWorkoutHistory() {
