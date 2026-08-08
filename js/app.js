@@ -1,7 +1,7 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-weight-goals-1";
+from "./core/router.js?v=router-adaptive-nutrition-1";
 
 
 import {
