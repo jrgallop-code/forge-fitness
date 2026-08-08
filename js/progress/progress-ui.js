@@ -3,6 +3,11 @@ import {
 }
 from "./photo-journal.js";
 
+import {
+    renderSleepTracker
+}
+from "./sleep-tracker.js";
+
 
 export function renderProgress() {
 
@@ -33,6 +38,14 @@ export function renderProgress() {
                     type="button"
                 >
                     🏋️ Lifting
+                </button>
+
+                <button
+                    class="progress-tab"
+                    id="sleep-tab"
+                    type="button"
+                >
+                    🌙 Sleep
                 </button>
 
             </div>
@@ -200,6 +213,11 @@ export function renderProgress() {
 
                 ${renderPhotoJournal()}
 
+            </div>
+
+
+            <div id="sleep-progress" hidden>
+                ${renderSleepTracker()}
             </div>
 
 
