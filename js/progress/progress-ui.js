@@ -135,7 +135,7 @@ export function renderProgress() {
                     <h3>Weight History</h3>
 
                     <p class="weight-history-help">
-                        The 7-Entry Moving Average uses the current entry
+                        The 7-Day Moving Average uses the current entry
                         and the six entries immediately before it. It begins
                         after seven measurements. The best-fit line is used
                         only as a visual overlay on the graph.
