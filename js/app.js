@@ -1,7 +1,7 @@
 import {
     navigate
 }
-from "./core/router.js?v=router-nav-stable-5";
+from "./core/router.js?v=router-calorie-persist-1";
 
 import {
     renderNavbar,
@@ -14,28 +14,14 @@ import {
 }
 from "./workouts/workout-session.js?v=workout-session-4";
 
-
 initializeWorkoutRuntime();
-
 navigate("home");
 
-if (
-    "serviceWorker" in navigator
-) {
+if ("serviceWorker" in navigator) {
     navigator.serviceWorker
         .register("./service-worker.js")
-        .catch(error =>
-            console.warn(
-                "Service worker registration failed:",
-                error
-            )
-        );
+        .catch(error => console.warn("Service worker registration failed:", error));
 }
 
-
-document.body.insertAdjacentHTML(
-    "beforeend",
-    renderNavbar()
-);
-
+document.body.insertAdjacentHTML("beforeend", renderNavbar());
 initializeNavbar();
