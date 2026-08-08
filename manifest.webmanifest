@@ -1,0 +1,18 @@
+{
+  "name": "Level Up — Hypertrophy Training",
+  "short_name": "Level Up",
+  "description": "Plan workouts, log training, and review your progress.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "icons": [
+    {
+      "src": "assets/level-up-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
