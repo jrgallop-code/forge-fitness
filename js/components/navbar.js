@@ -1,5 +1,5 @@
 import {navigate}
-from "../core/router.js?v=router-workout-flow-5";
+from "../core/router.js?v=router-calorie-nav-1";
 
 
 export function renderNavbar(){
@@ -82,12 +82,12 @@ Progress
 
 
 
-<button class="nav-btn" data-page="nutrition" aria-label="Nutrition">
+<button class="nav-btn" data-page="energy" aria-label="Calorie Planner">
 
-🌿
+🔥
 
 <span>
-Nutrition
+Calories
 </span>
 
 </button>
