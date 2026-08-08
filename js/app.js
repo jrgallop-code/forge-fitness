@@ -1,7 +1,7 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-exercise-progress-1";
+from "./core/router.js?v=router-exercise-progress-2";
 
 
 import {
