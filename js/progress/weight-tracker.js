@@ -16,11 +16,6 @@ export function initializeWeightTracker() {
             "save-weight-btn"
         );
 
-    const demoButton =
-        document.getElementById(
-            "load-demo-weight-btn"
-        );
-
     const dateInput =
         document.getElementById(
             "weight-date"
@@ -40,12 +35,6 @@ export function initializeWeightTracker() {
     saveButton?.addEventListener(
         "click",
         saveWeightEntry
-    );
-
-
-    demoButton?.addEventListener(
-        "click",
-        loadDemoData
     );
 
 
@@ -191,81 +180,6 @@ function saveWeightEntry() {
     if (weightElement) {
         weightElement.value = "";
     }
-
-
-    updateWeightDisplay();
-
-}
-
-
-
-function loadDemoData() {
-
-    const demoEntries = [
-
-        { date: "2026-06-20", weight: 164.8 },
-        { date: "2026-06-21", weight: 165.2 },
-        { date: "2026-06-22", weight: 164.5 },
-        { date: "2026-06-23", weight: 164.9 },
-        { date: "2026-06-24", weight: 164.1 },
-        { date: "2026-06-25", weight: 164.4 },
-        { date: "2026-06-26", weight: 163.9 },
-
-        { date: "2026-06-27", weight: 164.3 },
-        { date: "2026-06-28", weight: 163.7 },
-        { date: "2026-06-29", weight: 164.0 },
-        { date: "2026-06-30", weight: 163.5 },
-
-        { date: "2026-07-01", weight: 163.8 },
-        { date: "2026-07-02", weight: 163.2 },
-        { date: "2026-07-03", weight: 163.6 },
-        { date: "2026-07-04", weight: 163.0 },
-        { date: "2026-07-05", weight: 163.4 },
-        { date: "2026-07-06", weight: 162.9 },
-        { date: "2026-07-07", weight: 163.1 },
-
-        { date: "2026-07-08", weight: 162.6 },
-        { date: "2026-07-09", weight: 163.0 },
-        { date: "2026-07-10", weight: 162.5 },
-        { date: "2026-07-11", weight: 162.7 },
-        { date: "2026-07-12", weight: 162.2 },
-        { date: "2026-07-13", weight: 162.6 },
-        { date: "2026-07-14", weight: 162.1 },
-
-        { date: "2026-07-15", weight: 162.4 },
-        { date: "2026-07-16", weight: 161.9 },
-        { date: "2026-07-17", weight: 162.2 },
-        { date: "2026-07-18", weight: 161.7 },
-        { date: "2026-07-19", weight: 162.0 },
-        { date: "2026-07-20", weight: 161.5 },
-        { date: "2026-07-21", weight: 161.8 },
-
-        { date: "2026-07-22", weight: 161.3 },
-        { date: "2026-07-23", weight: 161.7 },
-        { date: "2026-07-24", weight: 161.1 },
-        { date: "2026-07-25", weight: 161.4 },
-        { date: "2026-07-26", weight: 160.9 },
-        { date: "2026-07-27", weight: 161.2 },
-        { date: "2026-07-28", weight: 160.7 },
-
-        { date: "2026-07-29", weight: 161.0 },
-        { date: "2026-07-30", weight: 160.5 },
-        { date: "2026-07-31", weight: 160.8 },
-
-        { date: "2026-08-01", weight: 160.3 },
-        { date: "2026-08-02", weight: 160.6 },
-        { date: "2026-08-03", weight: 160.1 },
-        { date: "2026-08-04", weight: 160.4 },
-        { date: "2026-08-05", weight: 159.9 },
-        { date: "2026-08-06", weight: 160.2 },
-        { date: "2026-08-07", weight: 159.7 }
-
-    ];
-
-
-    saveWeightEntries(
-        demoEntries
-    );
 
 
     updateWeightDisplay();
@@ -600,25 +514,9 @@ function updateSummary(
 
     if (latestElement) {
 
-        const previousEntry =
-            entries.length > 1
-                ? entries[
-                    entries.length - 2
-                ]
-                : null;
-
-
-        const change =
-            previousEntry
-                ? latest.weight -
-                    previousEntry.weight
-                : null;
-
-
         latestElement.textContent =
-            `${formatDirectionalWeight(
-                latest.weight,
-                change
+            `${latest.weight.toFixed(
+                1
             )} lb`;
 
     }
@@ -626,25 +524,9 @@ function updateSummary(
 
     if (trendElement) {
 
-        const previousTrend =
-            trend.length > 1
-                ? trend[
-                    trend.length - 2
-                ]
-                : null;
-
-
-        const change =
-            previousTrend
-                ? latestTrend.weight -
-                    previousTrend.weight
-                : null;
-
-
         trendElement.textContent =
-            `${formatDirectionalWeight(
-                latestTrend.weight,
-                change
+            `${latestTrend.weight.toFixed(
+                1
             )} lb`;
 
     }
