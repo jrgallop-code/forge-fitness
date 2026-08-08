@@ -82,12 +82,12 @@ Progress
 
 
 
-<button class="nav-btn" data-page="goals" aria-label="Nutrition">
+<button class="nav-btn" data-page="nutrition" aria-label="Nutrition">
 
 🌿
 
 <span>
-Goals
+Nutrition
 </span>
 
 </button>
