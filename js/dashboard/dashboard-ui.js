@@ -19,6 +19,9 @@ const PLAN_STORAGE_KEY =
 const NUTRITION_STORAGE_KEY =
     "level_up_nutrition_habits";
 
+const WEIGHT_STORAGE_KEY =
+    "forge_weight_entries";
+
 
 export function renderDashboard() {
 
@@ -98,6 +101,10 @@ export function renderDashboard() {
         getNutritionToday();
 
 
+    const latestWeight =
+        getLatestRecordedWeight();
+
+
     const latest =
         sessions[0] ||
         null;
@@ -161,6 +168,14 @@ export function renderDashboard() {
                     plans.length
                 ),
                 "📋"
+            )}
+
+            ${createCard(
+                "Latest Recorded Weight",
+                latestWeight === null
+                    ? "--"
+                    : `${latestWeight.toFixed(1)} lb`,
+                "⚖️"
             )}
 
         </section>
@@ -712,6 +727,45 @@ function getNutritionToday() {
             ""
 
     };
+
+}
+
+
+function getLatestRecordedWeight() {
+
+    const entries =
+        getStoredArray(
+            WEIGHT_STORAGE_KEY
+        )
+        .map(entry => ({
+            date:
+                String(
+                    entry?.date ||
+                    ""
+                ),
+            weight:
+                Number(
+                    entry?.weight
+                )
+        }))
+        .filter(entry =>
+            entry.date &&
+            Number.isFinite(
+                entry.weight
+            ) &&
+            entry.weight > 0
+        )
+        .sort(
+            (a, b) =>
+                b.date.localeCompare(
+                    a.date
+                )
+        );
+
+
+    return entries[0]
+        ?.weight ??
+        null;
 
 }
 
