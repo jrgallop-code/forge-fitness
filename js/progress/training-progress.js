@@ -2133,32 +2133,62 @@ function exportSessionsAsCsv() {
         "exercise_id",
         "set_number",
         "weight",
-        "reps"
+        "reps",
+        "notes"
     ]];
 
 
     getSessions()
         .forEach(session =>
             session.exercises
-                ?.forEach(exercise =>
-                    exercise.sets
-                        ?.forEach(
-                            (set, index) => {
+                ?.forEach(exercise => {
 
-                                rows.push([
-                                    session.id,
-                                    session.date,
-                                    session.planName,
-                                    session.trainingDayName,
-                                    exercise.exerciseId,
-                                    index + 1,
-                                    set.weight ?? "",
-                                    set.reps ?? ""
-                                ]);
-
-                            }
+                    const sets =
+                        Array.isArray(
+                            exercise.sets
                         )
-                )
+                            ? exercise.sets
+                            : [];
+
+
+                    if (!sets.length) {
+
+                        rows.push([
+                            session.id,
+                            session.date,
+                            session.planName,
+                            session.trainingDayName,
+                            exercise.exerciseId,
+                            "",
+                            "",
+                            "",
+                            exercise.notes ?? ""
+                        ]);
+
+                        return;
+
+                    }
+
+
+                    sets.forEach(
+                        (set, index) => {
+
+                            rows.push([
+                                session.id,
+                                session.date,
+                                session.planName,
+                                session.trainingDayName,
+                                exercise.exerciseId,
+                                index + 1,
+                                set.weight ?? "",
+                                set.reps ?? "",
+                                exercise.notes ?? ""
+                            ]);
+
+                        }
+                    );
+
+                })
         );
 
 
