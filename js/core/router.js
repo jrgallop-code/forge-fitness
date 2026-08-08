@@ -74,11 +74,20 @@ export function navigate(page) {
             content.innerHTML =
                 renderProgress();
 
-            initializeWeightTracker();
+            initializeProgressFeature(
+                "Weight tracker",
+                initializeWeightTracker
+            );
 
-            initializePhotoJournal();
+            initializeProgressFeature(
+                "Photo journal",
+                initializePhotoJournal
+            );
 
-            initializeTrainingProgress();
+            initializeProgressFeature(
+                "Training progress",
+                initializeTrainingProgress
+            );
 
             break;
 
@@ -97,6 +106,29 @@ export function navigate(page) {
 
             content.innerHTML =
                 renderDashboard();
+
+    }
+
+}
+
+
+function initializeProgressFeature(
+    name,
+    initializer
+) {
+
+    try {
+
+        initializer();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            `${name} failed to initialize:`,
+            error
+        );
 
     }
 
