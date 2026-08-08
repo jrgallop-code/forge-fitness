@@ -1,3 +1,9 @@
+import {
+    renderPhotoJournal
+}
+from "./photo-journal.js";
+
+
 export function renderProgress() {
 
     return `
@@ -168,6 +174,9 @@ export function renderProgress() {
                     </div>
 
                 </div>
+
+
+                ${renderPhotoJournal()}
 
             </div>
 
