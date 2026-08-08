@@ -84,7 +84,7 @@ export function renderWorkoutBuilder() {
                         </h4>
 
                         <p>
-                            Create a plan from scratch or use a Forge
+                            Create a plan from scratch or use a Level Up
                             template as your starting point.
                         </p>
 
@@ -355,39 +355,6 @@ export function renderWorkoutBuilder() {
                     >
                         Save Workout Plan
                     </button>
-
-                </div>
-
-            </section>
-
-
-            <!-- RECENT WORKOUTS -->
-
-            <section class="workout-home-section">
-
-                <div class="workout-section-heading">
-
-                    <div>
-
-                        <h3>
-                            Recent Workouts
-                        </h3>
-
-                        <p>
-                            Completed training sessions will
-                            appear here once workout logging is enabled.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <div class="workout-empty-state compact">
-
-                    <p>
-                        No completed workouts yet.
-                    </p>
 
                 </div>
 
