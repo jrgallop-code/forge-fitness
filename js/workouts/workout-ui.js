@@ -95,7 +95,7 @@ export function renderWorkoutBuilder() {
             </section>
 
 
-            <!-- FORGE TEMPLATES -->
+            <!-- LEVEL UP TEMPLATES -->
 
             <section class="workout-home-section">
 
@@ -104,7 +104,7 @@ export function renderWorkoutBuilder() {
                     <div>
 
                         <h3>
-                            Forge Templates
+                            Level Up Templates
                         </h3>
 
                         <p>
@@ -131,7 +131,7 @@ export function renderWorkoutBuilder() {
                                 <div class="template-card-top">
 
                                     <span class="plan-type-label">
-                                        FORGE TEMPLATE
+                                        LEVEL UP TEMPLATE
                                     </span>
 
                                     <span class="template-frequency">
