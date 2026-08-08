@@ -1,18 +1,18 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-workout-flow-4";
+from "./core/router.js?v=router-workout-flow-5";
 
 
 import {
 renderNavbar
 }
-from "./components/navbar.js?v=navbar-workout-flow-4";
+from "./components/navbar.js?v=navbar-workout-flow-5";
 
 import {
 initializeWorkoutRuntime
 }
-from "./workouts/workout-session.js?v=workout-session-3";
+from "./workouts/workout-session.js?v=workout-session-4";
 
 
 
