@@ -290,6 +290,71 @@ export function renderDashboard() {
                 )}
 
         </section>
+
+
+        <section class="section-card dashboard-backup">
+
+            <div class="backup-icon">
+                ☁️
+            </div>
+
+            <div class="backup-copy">
+                <span class="eyebrow">
+                    DATA SAFETY
+                </span>
+
+                <h2>
+                    Backup & Restore
+                </h2>
+
+                <p>
+                    Download a copy of your workout plans, completed
+                    sessions, custom exercises, weight entries and
+                    nutrition check-ins. Store it somewhere secure
+                    before testing on another device.
+                </p>
+
+                <div class="backup-details">
+                    <span>✓ One portable JSON file</span>
+                    <span>✓ Works between phone and computer</span>
+                    <span>✓ Stored only where you choose</span>
+                </div>
+            </div>
+
+            <div class="backup-actions">
+
+                <button
+                    id="export-backup-btn"
+                    class="primary-btn"
+                    type="button"
+                >
+                    ↓ Export Backup
+                </button>
+
+                <button
+                    id="import-backup-btn"
+                    class="secondary-btn"
+                    type="button"
+                >
+                    ↑ Restore Backup
+                </button>
+
+                <input
+                    id="backup-file-input"
+                    type="file"
+                    accept=".json,application/json"
+                    hidden
+                >
+
+                <span
+                    id="backup-message"
+                    class="backup-message"
+                    aria-live="polite"
+                ></span>
+
+            </div>
+
+
     `;
 
 }
