@@ -1759,3 +1759,26 @@ font-size:16px;
     }
 
 }
+
+
+.training-header-actions {
+    display:flex;
+    align-items:end;
+    justify-content:flex-end;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+@media(max-width:650px) {
+
+    .training-header-actions {
+        width:100%;
+        justify-content:stretch;
+    }
+
+    .training-header-actions label,
+    .training-header-actions button {
+        width:100%;
+    }
+
+}
