@@ -55,7 +55,7 @@ from "../nutrition/nutrition-plan-ui-v4.js?v=goals-flow-2";
 import {
     initializeGoalsCalculationModeUI
 }
-from "../nutrition/goals-calculation-mode-ui.js?v=active-target-2";
+from "../nutrition/goals-calculation-mode-ui.js?v=active-target-3";
 
 import {
     initializeActiveTargetSyncHooks
