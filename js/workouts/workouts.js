@@ -1,4 +1,5 @@
 import {
+    addCustomExercise,
     getExerciseById
 }
 from "./exercise-library.js";
@@ -33,6 +34,10 @@ let workingPlan = {
     days: []
 
 };
+
+
+let customExerciseTarget =
+    null;
 
 
 export function initializeWorkoutBuilder() {
@@ -89,7 +94,211 @@ export function initializeWorkoutBuilder() {
         );
 
 
+    document
+        .getElementById(
+            "save-custom-exercise-btn"
+        )
+        ?.addEventListener(
+            "click",
+            saveCustomExercise
+        );
+
+
+    document
+        .getElementById(
+            "cancel-custom-exercise-btn"
+        )
+        ?.addEventListener(
+            "click",
+            hideCustomExerciseForm
+        );
+
+
     renderSavedPlans();
+
+}
+
+
+function showCustomExerciseForm() {
+
+    const form =
+        document.getElementById(
+            "custom-exercise-form"
+        );
+
+
+    if (form) {
+
+        form.hidden =
+            false;
+
+
+        form.scrollIntoView({
+            behavior:
+                "smooth",
+
+            block:
+                "start"
+        });
+
+    }
+
+}
+
+
+function hideCustomExerciseForm() {
+
+    const form =
+        document.getElementById(
+            "custom-exercise-form"
+        );
+
+
+    if (form) {
+
+        form.hidden =
+            true;
+
+    }
+
+
+    customExerciseTarget =
+        null;
+
+}
+
+
+function saveCustomExercise() {
+
+    if (!customExerciseTarget) {
+        return;
+    }
+
+
+    const name =
+        document
+            .getElementById(
+                "custom-exercise-name"
+            )
+            ?.value
+            .trim();
+
+
+    const message =
+        document.getElementById(
+            "custom-exercise-message"
+        );
+
+
+    if (!name) {
+
+        if (message) {
+
+            message.textContent =
+                "Enter an exercise name.";
+
+        }
+
+
+        return;
+
+    }
+
+
+    const exercise =
+        addCustomExercise({
+
+            name,
+
+            muscleGroup:
+                document
+                    .getElementById(
+                        "custom-exercise-muscle"
+                    )
+                    ?.value,
+
+            equipment:
+                document
+                    .getElementById(
+                        "custom-exercise-equipment"
+                    )
+                    ?.value,
+
+            type:
+                document
+                    .getElementById(
+                        "custom-exercise-type"
+                    )
+                    ?.value,
+
+            recommendedReps:
+                document
+                    .getElementById(
+                        "custom-exercise-reps"
+                    )
+                    ?.value,
+
+            defaultSets:
+                document
+                    .getElementById(
+                        "custom-exercise-sets"
+                    )
+                    ?.value
+
+        });
+
+
+    if (!exercise) {
+        return;
+    }
+
+
+    const target =
+        workingPlan
+            .days[
+                customExerciseTarget
+                    .dayIndex
+            ]
+            ?.exercises[
+                customExerciseTarget
+                    .exerciseIndex
+            ];
+
+
+    if (target) {
+
+        target.id =
+            exercise.id;
+
+
+        target.sets =
+            exercise.defaultSets;
+
+
+        target.reps =
+            exercise.recommendedReps;
+
+    }
+
+
+    const nameInput =
+        document.getElementById(
+            "custom-exercise-name"
+        );
+
+
+    if (nameInput) {
+
+        nameInput.value =
+            "";
+
+    }
+
+
+    hideCustomExerciseForm();
+
+
+    renderWorkoutDays();
 
 }
 
@@ -475,6 +684,29 @@ function attachBuilderListeners() {
                 select.addEventListener(
                     "change",
                     () => {
+
+                        if (
+                            select.value ===
+                            "__add_custom__"
+                        ) {
+
+                            customExerciseTarget = {
+                                dayIndex,
+                                exerciseIndex
+                            };
+
+
+                            showCustomExerciseForm();
+
+
+                            select.value =
+                                current.id;
+
+
+                            return;
+
+                        }
+
 
                         const exercise =
                             getExerciseById(
