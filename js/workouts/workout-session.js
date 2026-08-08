@@ -332,6 +332,11 @@ function renderSessionExercises(
 
                         </div>
 
+                        ${renderRepTargetAchievement(
+                            previous,
+                            plannedExercise
+                        )}
+
                         <div class="session-set-header">
 
                             <span>Set</span>
@@ -546,8 +551,27 @@ function saveCompletedSession({
 
     if (message) {
 
+        const achievements =
+            completedExercises
+                .map(
+                    (
+                        completedExercise,
+                        index
+                    ) =>
+                        getRepTargetAchievement(
+                            completedExercise,
+                            day?.exercises?.[
+                                index
+                            ]
+                        )
+                )
+                .filter(Boolean);
+
+
         message.textContent =
-            "Workout saved. Previous performance will appear the next time you log this training day.";
+            achievements.length
+                ? `Workout saved. ⭐ Rep target achieved for ${achievements.length} ${achievements.length === 1 ? "exercise" : "exercises"}.`
+                : "Workout saved. Previous performance will appear the next time you log this training day.";
 
     }
 
@@ -673,6 +697,121 @@ function getSavedSessions() {
         return [];
 
     }
+
+}
+
+
+
+function renderRepTargetAchievement(
+    completedExercise,
+    plannedExercise
+) {
+
+    const achievement =
+        getRepTargetAchievement(
+            completedExercise,
+            plannedExercise
+        );
+
+
+    if (!achievement) {
+        return "";
+    }
+
+
+    return `
+        <div class="rep-target-achievement">
+
+            <strong>
+                ⭐ Rep target achieved
+            </strong>
+
+            <span>
+                All ${achievement.plannedSets}
+                planned sets reached
+                ${achievement.maxReps} reps.
+                You may be ready to review the load
+                for your next session.
+            </span>
+
+        </div>
+    `;
+
+}
+
+
+
+function getRepTargetAchievement(
+    completedExercise,
+    plannedExercise
+) {
+
+    const repNumbers =
+        String(
+            plannedExercise?.reps ||
+            ""
+        )
+        .match(
+            /\d+/g
+        )
+        ?.map(Number) ||
+        [];
+
+
+    const maxReps =
+        repNumbers.length
+            ? Math.max(
+                ...repNumbers
+            )
+            : null;
+
+
+    const plannedSets =
+        Math.max(
+            1,
+            Number(
+                plannedExercise?.sets
+            ) ||
+            1
+        );
+
+
+    const completedSets =
+        Array.isArray(
+            completedExercise?.sets
+        )
+            ? completedExercise.sets
+                .slice(
+                    0,
+                    plannedSets
+                )
+            : [];
+
+
+    if (
+        !maxReps ||
+        completedSets.length <
+            plannedSets
+    ) {
+
+        return null;
+
+    }
+
+
+    const reachedTarget =
+        completedSets.every(set =>
+            Number(set.reps) >=
+            maxReps
+        );
+
+
+    return reachedTarget
+        ? {
+            maxReps,
+            plannedSets
+        }
+        : null;
 
 }
 
