@@ -24,6 +24,16 @@
     margin-top: 8px;
 }
 
+.nutrition-status-message {
+    min-height: 18px;
+    margin: 8px 0 0;
+    color: #8fbe9d;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+}
+
 .nutrition-adjustment-history {
     margin-top: 20px;
 }
@@ -52,5 +62,9 @@
 @media (max-width: 480px) {
     .nutrition-target-actions {
         grid-template-columns: 1fr;
+    }
+
+    .nutrition-status-message {
+        font-size: 12.5px;
     }
 }
