@@ -1,7 +1,7 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-adaptive-nutrition-1";
+from "./core/router.js?v=router-visible-drive-backup-1";
 
 
 import {
