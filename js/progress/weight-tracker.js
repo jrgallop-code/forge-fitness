@@ -441,7 +441,6 @@ function calculateLinearRegression(
 
         return {
             points: [],
-            weeklyRate: null
         };
 
     }
@@ -529,7 +528,6 @@ function calculateLinearRegression(
 
         return {
             points: [],
-            weeklyRate: null
         };
 
     }
@@ -547,9 +545,6 @@ function calculateLinearRegression(
 
 
     return {
-
-        weeklyRate:
-            slope * 7,
 
         points:
             values.map(item => ({
@@ -587,8 +582,7 @@ function updateWeightDisplay() {
 
 
     updateSummary(
-        entries,
-        regression.weeklyRate
+        entries
     );
 
 
@@ -609,20 +603,13 @@ function updateWeightDisplay() {
 
 
 function updateSummary(
-    entries,
-    weeklyRate
+    entries
 ) {
 
     const latestElement =
         document.getElementById(
             "latest-weight"
         );
-
-    const weeklyElement =
-        document.getElementById(
-            "weekly-weight-change"
-        );
-
 
     if (!latestElement) {
         return;
@@ -633,11 +620,6 @@ function updateSummary(
 
         latestElement.textContent =
             "--";
-
-        if (weeklyElement) {
-            weeklyElement.textContent =
-                "--";
-        }
 
         return;
 
@@ -654,34 +636,6 @@ function updateSummary(
         `${latest.weight.toFixed(
             1
         )} lb`;
-
-
-    if (weeklyElement) {
-
-        if (Number.isFinite(weeklyRate)) {
-
-            const arrow =
-                weeklyRate > 0
-                    ? "↑"
-                    : weeklyRate < 0
-                        ? "↓"
-                        : "→";
-
-
-            weeklyElement.textContent =
-                `${arrow} ${Math.abs(weeklyRate).toFixed(
-                    2
-                )} lb/week`;
-
-        }
-
-        else {
-            weeklyElement.textContent =
-                "--";
-        }
-
-    }
-
 }
 
 
