@@ -22,6 +22,12 @@ const NUTRITION_STORAGE_KEY =
 const WEIGHT_STORAGE_KEY =
     "forge_weight_entries";
 
+const WATER_STORAGE_KEY =
+    "level_up_water_entries";
+
+const SLEEP_STORAGE_KEY =
+    "level_up_sleep_entries";
+
 
 export function renderDashboard() {
 
@@ -104,6 +110,12 @@ export function renderDashboard() {
     const latestWeight =
         getLatestRecordedWeight();
 
+    const waterToday =
+        getWaterRecordedToday();
+
+    const latestSleep =
+        getLatestSleepDuration();
+
 
     const latest =
         sessions[0] ||
@@ -176,6 +188,22 @@ export function renderDashboard() {
                     ? "--"
                     : `${latestWeight.toFixed(1)} lb`,
                 "⚖️"
+            )}
+
+            ${createCard(
+                "Water Recorded Today",
+                waterToday === null
+                    ? "--"
+                    : `${waterToday.toLocaleString()} mL`,
+                "💧"
+            )}
+
+            ${createCard(
+                "Latest Sleep Duration",
+                latestSleep === null
+                    ? "--"
+                    : formatSleepDuration(latestSleep),
+                "🌙"
             )}
 
         </section>
@@ -766,6 +794,69 @@ function getLatestRecordedWeight() {
     return entries[0]
         ?.weight ??
         null;
+
+}
+
+
+function getWaterRecordedToday() {
+
+    const entry =
+        getStoredArray(
+            WATER_STORAGE_KEY
+        )
+        .find(item =>
+            item?.date ===
+                getLocalDateValue()
+        );
+
+    const amount =
+        Number(entry?.amount);
+
+
+    return Number.isFinite(amount) &&
+        amount >= 0
+            ? amount
+            : null;
+
+}
+
+
+function getLatestSleepDuration() {
+
+    const entry =
+        getStoredArray(
+            SLEEP_STORAGE_KEY
+        )
+        .filter(item =>
+            item?.date &&
+            Number.isFinite(
+                Number(item.duration)
+            )
+        )
+        .sort((a, b) =>
+            String(b.date).localeCompare(
+                String(a.date)
+            )
+        )[0];
+
+    const duration =
+        Number(entry?.duration);
+
+
+    return Number.isFinite(duration)
+        ? duration
+        : null;
+
+}
+
+
+function formatSleepDuration(hours) {
+
+    const minutes =
+        Math.round(hours * 60);
+
+
+    return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 
 }
 
