@@ -85,7 +85,7 @@ export function renderGoalProjection() {
 
                 <div class="metric-card">
                     <div>
-                        <h3>Active Calories</h3>
+                        <h3>Target Calories</h3>
                         <p id="projection-active-calories">--</p>
                     </div>
                 </div>
