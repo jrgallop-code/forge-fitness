@@ -11,7 +11,7 @@ import { renderProgress }
 from "../progress/progress-ui.js";
 
 import { initializeWeightTracker }
-from "../progress/weight-tracker.js?v=weight-tracker-3";
+from "../progress/weight-tracker.js?v=weight-tracker-4";
 
 
 import {
