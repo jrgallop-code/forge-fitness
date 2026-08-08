@@ -1,6 +1,8 @@
 const CALCULATION_MODE_KEY = "level_up_goal_calculation_mode";
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
+const SAVED_MANUAL_MAINTENANCE_KEY = "level_up_saved_manual_maintenance_calories";
+const SAVED_CUSTOM_WEEKLY_RATE_KEY = "level_up_saved_custom_weekly_rate";
 
 export function initializeGoalsCalculationModeUI() {
     const goalsView = document.querySelector('[data-planner-view="goals"]');
@@ -81,7 +83,7 @@ export function initializeGoalsCalculationModeUI() {
 
     if (manualIntro) {
         manualIntro.textContent =
-            "Enter the values you already know, then Level Up will calculate your calorie target from those inputs.";
+            "Enter the values you already know, then Level Up will calculate your target from those inputs.";
     }
 
     document
@@ -93,6 +95,7 @@ export function initializeGoalsCalculationModeUI() {
             });
         });
 
+    applyStoredMode();
     renderCalculationMode(autoPanel, manualPanel);
 }
 
@@ -113,6 +116,13 @@ function getCalculationMode() {
 function setCalculationMode(mode) {
     const normalized = mode === "manual" ? "manual" : "auto";
 
+    if (normalized === "auto") {
+        stashManualValues();
+    }
+    else {
+        restoreManualValues();
+    }
+
     localStorage.setItem(
         CALCULATION_MODE_KEY,
         normalized
@@ -121,6 +131,46 @@ function setCalculationMode(mode) {
     window.dispatchEvent(
         new CustomEvent("levelup:nutrition-updated")
     );
+}
+
+function applyStoredMode() {
+    if (getCalculationMode() === "auto") {
+        stashManualValues();
+    }
+    else {
+        restoreManualValues();
+    }
+}
+
+function stashManualValues() {
+    stashValue(MANUAL_MAINTENANCE_KEY, SAVED_MANUAL_MAINTENANCE_KEY);
+    stashValue(CUSTOM_WEEKLY_RATE_KEY, SAVED_CUSTOM_WEEKLY_RATE_KEY);
+}
+
+function restoreManualValues() {
+    restoreValue(SAVED_MANUAL_MAINTENANCE_KEY, MANUAL_MAINTENANCE_KEY);
+    restoreValue(SAVED_CUSTOM_WEEKLY_RATE_KEY, CUSTOM_WEEKLY_RATE_KEY);
+}
+
+function stashValue(activeKey, savedKey) {
+    const activeValue = localStorage.getItem(activeKey);
+
+    if (activeValue === null || activeValue === "") {
+        localStorage.removeItem(savedKey);
+    }
+    else {
+        localStorage.setItem(savedKey, activeValue);
+    }
+
+    localStorage.removeItem(activeKey);
+}
+
+function restoreValue(savedKey, activeKey) {
+    const savedValue = localStorage.getItem(savedKey);
+
+    if (savedValue !== null && savedValue !== "") {
+        localStorage.setItem(activeKey, savedValue);
+    }
 }
 
 function renderCalculationMode(autoPanel, manualPanel) {
