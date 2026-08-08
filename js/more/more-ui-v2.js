@@ -1,7 +1,7 @@
 import {
     navigate
 }
-from "../core/router.js?v=router-nutrition-dashboard-2";
+from "../core/router.js?v=router-calorie-nav-1";
 
 export function renderMore() {
     return `
@@ -32,11 +32,11 @@ export function renderMore() {
                 <span class="more-menu-arrow">›</span>
             </button>
 
-            <button class="more-menu-card" type="button" data-more-page="energy">
-                <span class="more-menu-icon">🥗</span>
+            <button class="more-menu-card" type="button" data-more-page="nutrition">
+                <span class="more-menu-icon">🌿</span>
                 <span>
-                    <strong>Nutrition Planner</strong>
-                    <small>Manage energy needs, calorie goals, macros and your goal timeline.</small>
+                    <strong>Nutrition</strong>
+                    <small>Open nutrition tracking and related tools.</small>
                 </span>
                 <span class="more-menu-arrow">›</span>
             </button>
