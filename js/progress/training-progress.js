@@ -1169,7 +1169,7 @@ function drawLineChart(
         context,
         canvas,
         points,
-        "Estimated 1RM (lb)"
+        "Epley Estimated 1RM (lb)"
     );
 
 
@@ -1187,10 +1187,10 @@ function drawLineChart(
 
 
     const padding = {
-        top: 30,
+        top: 35,
         right: 20,
         bottom: 45,
-        left: 45
+        left: 55
     };
 
 
@@ -1213,10 +1213,139 @@ function drawLineChart(
         );
 
 
-    const range =
+    const rawRange =
         maximum -
-        minimum ||
-        1;
+        minimum;
+
+
+    const margin =
+        Math.max(
+            5,
+            rawRange *
+            .15
+        );
+
+
+    const axisMinimum =
+        Math.max(
+            0,
+            Math.floor(
+                (
+                    minimum -
+                    margin
+                ) /
+                5
+            ) *
+            5
+        );
+
+
+    let axisMaximum =
+        Math.ceil(
+            (
+                maximum +
+                margin
+            ) /
+            5
+        ) *
+        5;
+
+
+    if (
+        axisMaximum <=
+        axisMinimum
+    ) {
+
+        axisMaximum =
+            axisMinimum +
+            10;
+
+    }
+
+
+    const axisRange =
+        axisMaximum -
+        axisMinimum;
+
+
+    const tickCount = 4;
+
+
+    for (
+        let tick = 0;
+        tick <= tickCount;
+        tick++
+    ) {
+
+        const value =
+            axisMinimum +
+            axisRange *
+            tick /
+            tickCount;
+
+
+        const y =
+            height -
+            padding.bottom -
+            (
+                value -
+                axisMinimum
+            ) /
+            axisRange *
+            (
+                height -
+                padding.top -
+                padding.bottom
+            );
+
+
+        context.strokeStyle =
+            "#2f2f2f";
+
+
+        context.lineWidth = 1;
+
+
+        context.beginPath();
+
+
+        context.moveTo(
+            padding.left,
+            y
+        );
+
+
+        context.lineTo(
+            width -
+            padding.right,
+            y
+        );
+
+
+        context.stroke();
+
+
+        context.fillStyle =
+            "#a0a0a0";
+
+
+        context.font =
+            "11px Arial";
+
+
+        context.textAlign =
+            "right";
+
+
+        context.fillText(
+            value.toFixed(0),
+            padding.left -
+            8,
+            y +
+            4
+        );
+
+    }
 
 
     const coordinates =
@@ -1245,12 +1374,13 @@ function drawLineChart(
                     ),
 
                 y:
-                    padding.top +
+                    height -
+                    padding.bottom -
                     (
-                        maximum -
-                        point.value
+                        point.value -
+                        axisMinimum
                     ) /
-                    range *
+                    axisRange *
                     (
                         height -
                         padding.top -
@@ -1301,47 +1431,69 @@ function drawLineChart(
     context.stroke();
 
 
-    coordinates.forEach(point => {
+    coordinates.forEach(
+        (
+            point,
+            index
+        ) => {
 
-        context.fillStyle =
-            "#ffffff";
-
-
-        context.beginPath();
-
-
-        context.arc(
-            point.x,
-            point.y,
-            4,
-            0,
-            Math.PI * 2
-        );
+            context.fillStyle =
+                "#ffffff";
 
 
-        context.fill();
+            context.beginPath();
 
 
-        context.fillStyle =
-            "#a0a0a0";
+            context.arc(
+                point.x,
+                point.y,
+                4,
+                0,
+                Math.PI * 2
+            );
 
 
-        context.font =
-            "11px Arial";
+            context.fill();
 
 
-        context.textAlign =
-            "center";
+            context.fillStyle =
+                "#a0a0a0";
 
 
-        context.fillText(
-            point.label,
-            point.x,
-            height -
-            18
-        );
+            context.font =
+                "11px Arial";
 
-    });
+
+            context.textAlign =
+                "center";
+
+
+            const showLabel =
+                coordinates.length <= 8 ||
+                index === 0 ||
+                index ===
+                    coordinates.length - 1 ||
+                index %
+                    Math.ceil(
+                        coordinates.length /
+                        6
+                    ) ===
+                    0;
+
+
+            if (showLabel) {
+
+                context.fillText(
+                    point.label,
+                    point.x,
+                    height -
+                    18
+                );
+
+            }
+
+        }
+    );
 
 }
 
