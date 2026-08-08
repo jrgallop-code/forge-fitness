@@ -2802,3 +2802,324 @@ textarea:focus {
         width:100%;
     }
 }
+
+
+/* Live dashboard */
+
+.dashboard-welcome {
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:24px;
+    margin-bottom:22px;
+}
+
+.dashboard-welcome h2 {
+    font-size:clamp(30px, 4vw, 44px);
+    line-height:1;
+    letter-spacing:-.04em;
+}
+
+.dashboard-welcome p {
+    max-width:650px;
+    margin-top:10px;
+    color:var(--muted);
+}
+
+.dashboard-status {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 12px;
+    color:#b9b9c1;
+    background:#15151a;
+    border:1px solid var(--line);
+    border-radius:999px;
+    font-size:11px;
+    font-weight:750;
+    white-space:nowrap;
+}
+
+.status-dot {
+    width:8px;
+    height:8px;
+    background:#4ade80;
+    border-radius:50%;
+    box-shadow:0 0 0 4px rgba(74,222,128,.1);
+}
+
+.dashboard-detail-grid {
+    display:grid;
+    grid-template-columns:minmax(0, 1.35fr) minmax(300px, .65fr);
+    gap:16px;
+}
+
+.dashboard-detail-grid .section-card {
+    margin:0 0 22px;
+}
+
+.dashboard-card-heading {
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:20px;
+}
+
+.dashboard-card-heading time,
+.dashboard-total {
+    padding:7px 10px;
+    color:#b9b9c1;
+    background:#202027;
+    border:1px solid var(--line);
+    border-radius:9px;
+    font-size:11px;
+    font-weight:750;
+    white-space:nowrap;
+}
+
+.latest-workout-title {
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-top:23px;
+}
+
+.latest-workout-icon {
+    display:grid;
+    place-items:center;
+    width:54px;
+    height:54px;
+    background:rgba(239,24,33,.11);
+    border:1px solid rgba(239,24,33,.24);
+    border-radius:15px;
+    font-size:25px;
+}
+
+.latest-workout-title h3 {
+    font-size:20px;
+}
+
+.latest-workout-title p {
+    margin-top:3px;
+    color:var(--muted);
+    font-size:13px;
+}
+
+.latest-workout-stats {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:19px;
+}
+
+.latest-workout-stats > div {
+    padding:13px;
+    background:#111115;
+    border:1px solid var(--line);
+    border-radius:12px;
+}
+
+.latest-workout-stats span,
+.latest-workout-stats strong {
+    display:block;
+}
+
+.latest-workout-stats span {
+    color:var(--muted);
+    font-size:11px;
+}
+
+.latest-workout-stats strong {
+    margin-top:5px;
+    font-size:21px;
+}
+
+.latest-exercise-list {
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px;
+    margin-top:16px;
+}
+
+.latest-exercise-list span {
+    padding:7px 10px;
+    color:#d5d5da;
+    background:#202027;
+    border:1px solid var(--line);
+    border-radius:999px;
+    font-size:11px;
+}
+
+.nutrition-dashboard-score {
+    color:#72df98;
+    font-size:24px;
+    font-weight:850;
+}
+
+.nutrition-dashboard-progress {
+    height:9px;
+    overflow:hidden;
+    margin-top:25px;
+    background:#292930;
+    border-radius:99px;
+}
+
+.nutrition-dashboard-progress span {
+    display:block;
+    height:100%;
+    background:linear-gradient(90deg, #2a9a55, #72df98);
+    border-radius:inherit;
+}
+
+.dashboard-nutrition > p {
+    margin-top:15px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.55;
+}
+
+.dashboard-note {
+    display:grid;
+    gap:4px;
+    margin-top:16px;
+    padding:12px;
+    background:#111115;
+    border:1px solid var(--line);
+    border-radius:11px;
+}
+
+.dashboard-note strong {
+    font-size:11px;
+}
+
+.dashboard-note span {
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.5;
+}
+
+.dashboard-history {
+    margin:0 0 22px;
+}
+
+.dashboard-session-list {
+    display:grid;
+    margin-top:18px;
+}
+
+.dashboard-session-row {
+    display:grid;
+    grid-template-columns:54px minmax(0, 1fr) auto;
+    gap:14px;
+    align-items:center;
+    padding:13px 0;
+    border-bottom:1px solid var(--line);
+}
+
+.dashboard-session-row:last-child {
+    border-bottom:0;
+}
+
+.session-date-badge {
+    display:grid;
+    place-items:center;
+    width:50px;
+    height:50px;
+    background:#202027;
+    border:1px solid var(--line);
+    border-radius:12px;
+}
+
+.session-date-badge strong,
+.session-date-badge span {
+    display:block;
+    line-height:1;
+}
+
+.session-date-badge strong {
+    font-size:18px;
+}
+
+.session-date-badge span {
+    margin-top:3px;
+    color:var(--muted);
+    font-size:9px;
+    font-weight:800;
+    text-transform:uppercase;
+}
+
+.dashboard-session-name strong,
+.dashboard-session-name span,
+.dashboard-session-summary strong,
+.dashboard-session-summary span {
+    display:block;
+}
+
+.dashboard-session-name span,
+.dashboard-session-summary span {
+    margin-top:3px;
+    color:var(--muted);
+    font-size:11px;
+}
+
+.dashboard-session-summary {
+    text-align:right;
+}
+
+.dashboard-session-summary strong {
+    font-size:12px;
+}
+
+.dashboard-empty {
+    display:grid;
+    place-items:center;
+    min-height:190px;
+    padding:25px;
+    text-align:center;
+}
+
+.dashboard-empty > span {
+    display:grid;
+    place-items:center;
+    width:44px;
+    height:44px;
+    margin-bottom:10px;
+    color:#ff464e;
+    background:rgba(239,24,33,.09);
+    border:1px solid rgba(239,24,33,.2);
+    border-radius:13px;
+    font-size:23px;
+}
+
+.dashboard-empty p {
+    max-width:400px;
+    margin-top:5px;
+    color:var(--muted);
+    font-size:12px;
+}
+
+@media(max-width:800px) {
+    .dashboard-detail-grid {
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:600px) {
+    .dashboard-welcome {
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .dashboard-status {
+        align-self:flex-start;
+    }
+
+    .dashboard-session-row {
+        grid-template-columns:48px minmax(0, 1fr);
+    }
+
+    .dashboard-session-summary {
+        grid-column:2;
+        text-align:left;
+    }
+}
