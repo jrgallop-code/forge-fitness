@@ -85,6 +85,22 @@ export function initializeGoogleDriveSync() {
 
     updateLastSyncDisplay();
 
+    setConnectedState(
+        Boolean(
+            accessToken
+        )
+    );
+
+    if (accessToken) {
+
+        setDriveMessage(
+            remoteFile
+                ? `Connected. A Drive backup from ${formatDriveDate(remoteFile.modifiedTime)} is available.`
+                : "Connected to Google Drive for this session."
+        );
+
+    }
+
 }
 
 
