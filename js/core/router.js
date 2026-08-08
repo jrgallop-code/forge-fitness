@@ -2,7 +2,7 @@ import { renderWorkoutBuilder }
 from "../workouts/workout-ui.js?v=workout-flow-1";
 
 import { initializeWorkoutBuilder }
-from "../workouts/workouts.js?v=workout-flow-1";
+from "../workouts/workouts.js?v=workout-flow-2";
 
 import { renderDashboard }
 from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
@@ -42,7 +42,7 @@ import {
     renderWorkoutHistory,
     initializeWorkoutHistory
 }
-from "../workouts/workout-history.js?v=workout-history-1";
+from "../workouts/workout-history.js?v=workout-history-2";
 
 
 import {
