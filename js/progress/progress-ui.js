@@ -101,23 +101,6 @@ export function renderProgress() {
                     </div>
 
 
-                    <div class="metric-card">
-
-                        <div>
-
-                            <h3>Weekly Weight Change</h3>
-
-                            <p id="weekly-weight-change">
-                                --
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-
-
                 </div>
 
 
