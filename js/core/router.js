@@ -13,7 +13,6 @@ from "../progress/progress-ui.js?v=progress-sleep-2";
 import { initializeWeightTracker }
 from "../progress/weight-tracker.js?v=weight-tracker-7";
 
-
 import {
     initializePhotoJournal
 }
@@ -33,6 +32,12 @@ import {
 from "../nutrition/nutrition-ui.js?v=nutrition-more-1";
 
 import {
+    renderEnergyProfile,
+    initializeEnergyProfile
+}
+from "../nutrition/energy-profile.js?v=nutrition-profile-1";
+
+import {
     renderMore,
     initializeMore
 }
@@ -44,57 +49,41 @@ import {
 }
 from "../workouts/workout-history.js?v=workout-history-3";
 
-
 import {
     initializeBackupManager
 }
 from "./backup-manager.js?v=active-workout-backup-1";
-
 
 import {
     initializeGoogleDriveSync
 }
 from "./google-drive-sync.js?v=active-workout-backup-1";
 
-
 export function navigate(page) {
-
     const content =
         document.getElementById("content");
-
 
     if (!content) {
         return;
     }
 
-
     switch (page) {
-
-
         case "home":
-
             content.innerHTML =
                 renderDashboard();
 
             initializeBackupManager();
-
             initializeGoogleDriveSync();
-
             break;
 
+        case "workout":
+            content.innerHTML =
+                renderWorkoutBuilder();
 
-    case "workout":
-
-    content.innerHTML =
-        renderWorkoutBuilder();
-
-    initializeWorkoutBuilder();
-
-    break;
-
+            initializeWorkoutBuilder();
+            break;
 
         case "progress":
-
             content.innerHTML =
                 renderProgress();
 
@@ -120,91 +109,60 @@ export function navigate(page) {
 
             break;
 
-
         case "nutrition":
-
             content.innerHTML =
                 renderNutrition();
 
             initializeNutrition();
-
             showNutritionView("main");
-
             break;
-
 
         case "water":
-
             content.innerHTML =
                 renderNutrition();
 
             initializeNutrition();
-
             showNutritionView("water");
-
             break;
-
 
         case "energy":
-
             content.innerHTML =
-                renderNutrition();
+                renderEnergyProfile();
 
-            initializeNutrition();
-
-            showNutritionView("energy");
-
+            initializeEnergyProfile();
             break;
 
-
         case "more":
-
             content.innerHTML =
                 renderMore();
 
             initializeMore();
-
             break;
 
-
         case "history":
-
             content.innerHTML =
                 renderWorkoutHistory();
 
             initializeWorkoutHistory();
-
             break;
 
-
         default:
-
             content.innerHTML =
                 renderDashboard();
-
     }
-
 }
-
 
 function initializeProgressFeature(
     name,
     initializer
 ) {
-
     try {
-
         initializer();
-
     }
-
     catch (error) {
-
         console.error(
             `${name} failed to initialize:`,
             error
         );
-
     }
-
 }
