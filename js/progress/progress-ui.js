@@ -121,7 +121,7 @@ export function renderProgress() {
                             <h3>Weight Trend</h3>
 
                             <p>
-                                Measurements, seven-entry average and best-fit trend
+                                Measurements and best-fit trend
                             </p>
 
                         </div>
