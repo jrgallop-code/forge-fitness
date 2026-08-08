@@ -1,7 +1,7 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-goal-mode-dashboard-1";
+from "./core/router.js?v=router-active-target-2";
 
 
 import {
