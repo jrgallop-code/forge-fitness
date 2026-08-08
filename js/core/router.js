@@ -83,7 +83,7 @@ from "./backup-manager.js?v=active-workout-backup-1";
 import {
     initializeGoogleDriveSync
 }
-from "./google-drive-sync.js?v=active-workout-backup-1";
+from "./google-drive-sync-v2.js?v=visible-drive-backup-1";
 
 export function navigate(page) {
     const content =
