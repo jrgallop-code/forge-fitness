@@ -26,7 +26,7 @@ import {
     renderNutrition,
     initializeNutrition
 }
-from "../nutrition/nutrition-ui.js?v=nutrition-energy-2";
+from "../nutrition/nutrition-ui.js?v=nutrition-energy-4";
 
 
 import {
