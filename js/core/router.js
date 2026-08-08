@@ -24,7 +24,7 @@ import {
 from "../progress/photo-journal.js";
 
 import { initializeTrainingProgress }
-from "../progress/training-progress.js?v=training-duration-1";
+from "../progress/training-progress.js?v=exercise-progress-1rm-null-1";
 
 import { initializeSleepTracker }
 from "../progress/sleep-tracker.js?v=sleep-tracker-2";
