@@ -1,0 +1,56 @@
+.nutrition-current-target-card {
+    margin-top: 20px;
+}
+
+.nutrition-current-target-card input,
+.nutrition-current-target-card select {
+    width: 100%;
+    margin: 8px 0 14px;
+}
+
+.nutrition-current-target-card input {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #444;
+    background: #0b0b0b;
+    color: #fff;
+    font-size: 16px;
+}
+
+.nutrition-target-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.nutrition-adjustment-history {
+    margin-top: 20px;
+}
+
+.nutrition-adjustment-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 5px 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nutrition-adjustment-row span {
+    text-align: right;
+}
+
+.nutrition-adjustment-row small {
+    grid-column: 1 / -1;
+    color: var(--muted);
+}
+
+.dashboard-nutrition-target-card {
+    min-width: 0;
+}
+
+@media (max-width: 480px) {
+    .nutrition-target-actions {
+        grid-template-columns: 1fr;
+    }
+}
