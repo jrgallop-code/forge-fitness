@@ -793,6 +793,520 @@ function initializeProgressTabs() {
 
 
 
+function drawWeightChart(
+    entries,
+    regression
+) {
+
+    const canvas =
+        document.getElementById(
+            "weight-chart"
+        );
+
+
+    if (!canvas) {
+        return;
+    }
+
+
+    const context =
+        canvas.getContext(
+            "2d"
+        );
+
+
+    const width =
+        canvas.clientWidth ||
+        800;
+
+
+    const height =
+        400;
+
+
+    const scale =
+        window.devicePixelRatio ||
+        1;
+
+
+    canvas.width =
+        width *
+        scale;
+
+
+    canvas.height =
+        height *
+        scale;
+
+
+    context.setTransform(
+        scale,
+        0,
+        0,
+        scale,
+        0,
+        0
+    );
+
+
+    context.clearRect(
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    if (entries.length < 2) {
+
+        context.fillStyle =
+            "#a0a0a0";
+
+
+        context.font =
+            "14px Arial";
+
+
+        context.fillText(
+            "Add at least two entries to display the graph.",
+            20,
+            45
+        );
+
+        return;
+
+    }
+
+
+    const padding = {
+        left: 58,
+        right: 22,
+        top: 42,
+        bottom: 48
+    };
+
+
+    const chartWidth =
+        width -
+        padding.left -
+        padding.right;
+
+
+    const chartHeight =
+        height -
+        padding.top -
+        padding.bottom;
+
+
+    const values = [
+        ...entries.map(
+            item =>
+                item.weight
+        ),
+        ...regression.map(
+            item =>
+                item.weight
+        )
+    ];
+
+
+    const minimum =
+        Math.min(
+            ...values
+        ) -
+        1;
+
+
+    const maximum =
+        Math.max(
+            ...values
+        ) +
+        1;
+
+
+    const firstTime =
+        new Date(
+            `${entries[0].date}T00:00:00`
+        )
+        .getTime();
+
+
+    const lastTime =
+        new Date(
+            `${entries[
+                entries.length - 1
+            ].date}T00:00:00`
+        )
+        .getTime();
+
+
+    const elapsed =
+        Math.max(
+            1,
+            lastTime -
+            firstTime
+        );
+
+
+    const xPosition =
+        date =>
+            padding.left +
+            (
+                new Date(
+                    `${date}T00:00:00`
+                )
+                .getTime() -
+                firstTime
+            ) /
+            elapsed *
+            chartWidth;
+
+
+    const yPosition =
+        weight =>
+            padding.top +
+            (
+                maximum -
+                weight
+            ) /
+            (
+                maximum -
+                minimum
+            ) *
+            chartHeight;
+
+
+    context.strokeStyle =
+        "#303037";
+
+
+    context.lineWidth =
+        1;
+
+
+    for (
+        let index = 0;
+        index <= 4;
+        index++
+    ) {
+
+        const y =
+            padding.top +
+            chartHeight *
+            index /
+            4;
+
+
+        context.beginPath();
+        context.moveTo(
+            padding.left,
+            y
+        );
+        context.lineTo(
+            width -
+            padding.right,
+            y
+        );
+        context.stroke();
+
+
+        const value =
+            maximum -
+            (
+                maximum -
+                minimum
+            ) *
+            index /
+            4;
+
+
+        context.fillStyle =
+            "#a0a0a8";
+
+
+        context.font =
+            "11px Arial";
+
+
+        context.textAlign =
+            "right";
+
+
+        context.fillText(
+            value.toFixed(
+                1
+            ),
+            padding.left -
+            8,
+            y +
+            4
+        );
+
+    }
+
+
+    context.fillStyle =
+        "#a0a0a8";
+
+
+    context.font =
+        "11px Arial";
+
+
+    context.textAlign =
+        "left";
+
+
+    context.fillText(
+        formatDate(
+            entries[0].date
+        ),
+        padding.left,
+        height -
+        16
+    );
+
+
+    context.textAlign =
+        "right";
+
+
+    context.fillText(
+        formatDate(
+            entries[
+                entries.length - 1
+            ].date
+        ),
+        width -
+        padding.right,
+        height -
+        16
+    );
+
+
+    context.strokeStyle =
+        "#777780";
+
+
+    context.lineWidth =
+        1.5;
+
+
+    context.beginPath();
+
+
+    entries.forEach(
+        (entry, index) => {
+
+            const x =
+                xPosition(
+                    entry.date
+                );
+
+
+            const y =
+                yPosition(
+                    entry.weight
+                );
+
+
+            if (index === 0) {
+                context.moveTo(
+                    x,
+                    y
+                );
+            }
+
+            else {
+                context.lineTo(
+                    x,
+                    y
+                );
+            }
+
+        }
+    );
+
+
+    context.stroke();
+
+
+    context.fillStyle =
+        "#ffffff";
+
+
+    entries.forEach(entry => {
+
+        context.beginPath();
+
+
+        context.arc(
+            xPosition(
+                entry.date
+            ),
+            yPosition(
+                entry.weight
+            ),
+            4,
+            0,
+            Math.PI *
+            2
+        );
+
+
+        context.fill();
+
+    });
+
+
+    if (
+        regression.length >=
+        2
+    ) {
+
+        context.save();
+
+
+        context.strokeStyle =
+            "#7dd3fc";
+
+
+        context.lineWidth =
+            2.5;
+
+
+        context.setLineDash([
+            8,
+            5
+        ]);
+
+
+        context.beginPath();
+
+
+        regression.forEach(
+            (entry, index) => {
+
+                const x =
+                    xPosition(
+                        entry.date
+                    );
+
+
+                const y =
+                    yPosition(
+                        entry.weight
+                    );
+
+
+                if (index === 0) {
+                    context.moveTo(
+                        x,
+                        y
+                    );
+                }
+
+                else {
+                    context.lineTo(
+                        x,
+                        y
+                    );
+                }
+
+            }
+        );
+
+
+        context.stroke();
+        context.restore();
+
+    }
+
+
+    const legend = [
+        {
+            color: "#ffffff",
+            label: "Measurements",
+            dashed: false
+        },
+        {
+            color: "#7dd3fc",
+            label: "Best-fit line",
+            dashed: true
+        }
+    ];
+
+
+    let legendX =
+        padding.left;
+
+
+    legend.forEach(item => {
+
+        context.save();
+
+
+        context.strokeStyle =
+            item.color;
+
+
+        context.lineWidth =
+            2;
+
+
+        if (item.dashed) {
+            context.setLineDash([
+                5,
+                4
+            ]);
+        }
+
+
+        context.beginPath();
+        context.moveTo(
+            legendX,
+            18
+        );
+        context.lineTo(
+            legendX +
+            18,
+            18
+        );
+        context.stroke();
+        context.restore();
+
+
+        context.fillStyle =
+            "#b9b9c1";
+
+
+        context.font =
+            "10px Arial";
+
+
+        context.textAlign =
+            "left";
+
+
+        context.fillText(
+            item.label,
+            legendX +
+            23,
+            21
+        );
+
+
+        legendX +=
+            item.label.length *
+            6 +
+            48;
+
+    });
+
+}
+
+
+
 function editWeightEntry(date) {
 
     const entry =
