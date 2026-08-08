@@ -1,7 +1,7 @@
 import {
     navigate
 }
-from "../core/router.js?v=router-more-1";
+from "../core/router.js?v=router-workout-flow-1";
 
 
 export function renderMore() {
@@ -16,6 +16,15 @@ export function renderMore() {
         </section>
 
         <section class="more-menu-grid" aria-label="More tools">
+            <button class="more-menu-card" type="button" data-more-page="history">
+                <span class="more-menu-icon">🕘</span>
+                <span>
+                    <strong>Workout History</strong>
+                    <small>Resume unfinished workouts or edit completed sessions.</small>
+                </span>
+                <span class="more-menu-arrow">›</span>
+            </button>
+
             <button class="more-menu-card" type="button" data-more-page="water">
                 <span class="more-menu-icon">💧</span>
                 <span>
