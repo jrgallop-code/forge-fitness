@@ -8,7 +8,7 @@ import {
     poundsToKg,
     feetAndInchesToCm
 }
-from "./tdee-calculator.js?v=nutrition-macros-1";
+from "./tdee-calculator.js?v=nutrition-dashboard-1";
 
 import {
     getNutritionProfile,
@@ -18,172 +18,269 @@ import {
     getNutritionMacroPreference,
     saveNutritionMacroPreference
 }
-from "./nutrition-storage.js?v=nutrition-macros-1";
+from "./nutrition-storage.js?v=nutrition-dashboard-1";
+
+
+const GOAL_WEIGHT_STORAGE_KEY =
+    "level_up_goal_weight";
 
 
 export function renderEnergyProfile() {
     return `
-        <section class="section-card">
-            <span class="eyebrow">NUTRITION PROFILE</span>
-            <h2>Body Profile & Energy Needs</h2>
-            <p class="section-description">
-                Save your profile once and use it as the starting point for
-                nutrition planning. Estimated energy needs are a starting
-                estimate, not a guarantee of true maintenance calories.
-            </p>
+        <section class="section-card nutrition-planner-shell">
 
-            <div class="weight-entry-card">
-                <label for="nutrition-age">Age</label>
-                <input id="nutrition-age" type="number" min="18" step="1" placeholder="Age">
-
-                <label for="nutrition-sex">Sex used for equation</label>
-                <select id="nutrition-sex">
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                </select>
-
-                <label>Height</label>
-                <div class="nutrition-height-grid">
-                    <input id="nutrition-height-feet" type="number" min="3" max="8" step="1" placeholder="Feet">
-                    <input id="nutrition-height-inches" type="number" min="0" max="11" step="1" placeholder="Inches">
-                </div>
-
-                <label for="nutrition-weight">Current Weight (lb)</label>
-                <input id="nutrition-weight" type="number" min="1" step="0.1" placeholder="Weight">
-
-                <label for="nutrition-activity">Activity Level</label>
-                <select id="nutrition-activity">
-                    ${Object.entries(ACTIVITY_LEVELS).map(([value, level]) => `
-                        <option value="${value}">
-                            ${level.label} — ${level.description}
-                        </option>
-                    `).join("")}
-                </select>
-
-                <button id="save-nutrition-profile-btn" class="primary-btn" type="button">
-                    Save Profile & Calculate
-                </button>
-            </div>
-
-            <div class="weight-summary nutrition-energy-summary">
-                <div class="metric-card">
-                    <div>
-                        <h3>Estimated BMR</h3>
-                        <p id="nutrition-bmr">--</p>
-                    </div>
-                </div>
-
-                <div class="metric-card">
-                    <div>
-                        <h3>Estimated TDEE</h3>
-                        <p id="nutrition-tdee">--</p>
-                    </div>
-                </div>
-            </div>
-
-            <p class="nutrition-message" id="nutrition-profile-message" aria-live="polite"></p>
-
-            <div class="goal-box nutrition-goal-card">
-                <h3>Nutrition Goal</h3>
+            <div id="nutrition-planner-dashboard" class="nutrition-planner-dashboard">
+                <span class="eyebrow">NUTRITION PLANNER</span>
+                <h2>Your Nutrition Plan</h2>
                 <p class="section-description">
-                    Choose an adult nutrition phase. Level Up uses a conservative
-                    percentage of your estimated maintenance calories as a starting point.
+                    Review the essentials at a glance, then open only the section you want to change.
                 </p>
 
-                <label for="nutrition-goal-select">Goal</label>
-                <select id="nutrition-goal-select">
-                    <option value="">Choose a goal</option>
-                    ${Object.entries(GOAL_PRESETS).map(([value, goal]) => `
-                        <option value="${value}">${goal.label}</option>
-                    `).join("")}
-                </select>
+                <div class="nutrition-plan-summary">
+                    <div>
+                        <span>Calories</span>
+                        <strong id="planner-summary-calories">--</strong>
+                    </div>
+                    <div>
+                        <span>Protein</span>
+                        <strong id="planner-summary-protein">--</strong>
+                    </div>
+                    <div>
+                        <span>Current Goal</span>
+                        <strong id="planner-summary-goal">Not set</strong>
+                    </div>
+                    <div>
+                        <span>Goal Weight</span>
+                        <strong id="planner-summary-goal-weight">--</strong>
+                    </div>
+                </div>
 
-                <div id="nutrition-goal-description" class="nutrition-message"></div>
+                <div class="nutrition-planner-grid" aria-label="Nutrition planner sections">
+                    <button class="nutrition-planner-card" type="button" data-nutrition-view="profile">
+                        <span class="nutrition-planner-icon">👤</span>
+                        <strong>Body Profile</strong>
+                        <small>Age, height, weight & TDEE</small>
+                    </button>
 
-                <button id="save-nutrition-goal-btn" class="primary-btn" type="button">
-                    Save Nutrition Goal
-                </button>
+                    <button class="nutrition-planner-card" type="button" data-nutrition-view="goals">
+                        <span class="nutrition-planner-icon">🎯</span>
+                        <strong>Goals & Calories</strong>
+                        <small>Cut, maintain or lean bulk</small>
+                    </button>
+
+                    <button class="nutrition-planner-card" type="button" data-nutrition-view="macros">
+                        <span class="nutrition-planner-icon">🥩</span>
+                        <strong>Protein & Macros</strong>
+                        <small>Daily nutrition targets</small>
+                    </button>
+
+                    <button class="nutrition-planner-card" type="button" data-nutrition-view="projection">
+                        <span class="nutrition-planner-icon">📉</span>
+                        <strong>Goal Projection</strong>
+                        <small>Weight timeline & forecast</small>
+                    </button>
+                </div>
+            </div>
+
+
+            <div class="nutrition-planner-view" data-planner-view="profile" hidden>
+                ${renderBackButton()}
+
+                <span class="eyebrow">BODY PROFILE</span>
+                <h2>Body Profile & Energy Needs</h2>
+                <p class="section-description">
+                    Save your profile once and use it as the starting point for nutrition planning.
+                    Estimated energy needs are a starting estimate, not a guarantee of true maintenance calories.
+                </p>
+
+                <div class="weight-entry-card">
+                    <label for="nutrition-age">Age</label>
+                    <input id="nutrition-age" type="number" min="18" step="1" placeholder="Age">
+
+                    <label for="nutrition-sex">Sex used for equation</label>
+                    <select id="nutrition-sex">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+
+                    <label>Height</label>
+                    <div class="nutrition-height-grid">
+                        <input id="nutrition-height-feet" type="number" min="3" max="8" step="1" placeholder="Feet">
+                        <input id="nutrition-height-inches" type="number" min="0" max="11" step="1" placeholder="Inches">
+                    </div>
+
+                    <label for="nutrition-weight">Current Weight (lb)</label>
+                    <input id="nutrition-weight" type="number" min="1" step="0.1" placeholder="Weight">
+
+                    <label for="nutrition-activity">Activity Level</label>
+                    <select id="nutrition-activity">
+                        ${Object.entries(ACTIVITY_LEVELS).map(([value, level]) => `
+                            <option value="${value}">
+                                ${level.label} — ${level.description}
+                            </option>
+                        `).join("")}
+                    </select>
+
+                    <button id="save-nutrition-profile-btn" class="primary-btn" type="button">
+                        Save Profile & Calculate
+                    </button>
+                </div>
 
                 <div class="weight-summary nutrition-energy-summary">
                     <div class="metric-card">
                         <div>
-                            <h3>Estimated Maintenance</h3>
-                            <p id="nutrition-goal-maintenance">--</p>
+                            <h3>Estimated BMR</h3>
+                            <p id="nutrition-bmr">--</p>
                         </div>
                     </div>
 
                     <div class="metric-card">
                         <div>
-                            <h3>Starting Calorie Target</h3>
-                            <p id="nutrition-goal-calories">--</p>
+                            <h3>Estimated TDEE</h3>
+                            <p id="nutrition-tdee">--</p>
                         </div>
                     </div>
                 </div>
 
-                <p id="nutrition-goal-message" class="nutrition-message" aria-live="polite"></p>
-                <small>
-                    Adult-use estimate only. Treat this as a starting point and adjust from
-                    real-world weight trends, training performance, recovery and professional guidance.
-                </small>
+                <p class="nutrition-message" id="nutrition-profile-message" aria-live="polite"></p>
             </div>
 
-            <div class="goal-box nutrition-goal-card">
-                <h3>Protein & Macro Starting Point</h3>
+
+            <div class="nutrition-planner-view" data-planner-view="goals" hidden>
+                ${renderBackButton()}
+
+                <span class="eyebrow">GOALS & CALORIES</span>
+                <h2>Choose Your Nutrition Goal</h2>
                 <p class="section-description">
-                    After you save a Body Profile and Nutrition Goal, Level Up can
-                    turn your calorie target into a simple daily macro starting point.
+                    Level Up uses simple daily calorie adjustments as a starting point.
+                    The common 3,500 kcal-per-pound rule is an approximation, so actual progress may differ.
                 </p>
 
-                <label for="nutrition-macro-select">Macro Style</label>
-                <select id="nutrition-macro-select">
-                    ${Object.entries(MACRO_PRESETS).map(([value, preset]) => `
-                        <option value="${value}">${preset.label}</option>
-                    `).join("")}
-                </select>
+                <div class="goal-box nutrition-goal-card">
+                    <label for="nutrition-goal-select">Goal</label>
+                    <select id="nutrition-goal-select">
+                        <option value="">Choose a goal</option>
+                        ${Object.entries(GOAL_PRESETS).map(([value, goal]) => `
+                            <option value="${value}">${goal.label}</option>
+                        `).join("")}
+                    </select>
 
-                <div id="nutrition-macro-description" class="nutrition-message"></div>
+                    <div id="nutrition-goal-description" class="nutrition-message"></div>
 
-                <button id="save-nutrition-macro-btn" class="primary-btn" type="button">
-                    Save Macro Preference
-                </button>
+                    <button id="save-nutrition-goal-btn" class="primary-btn" type="button">
+                        Save Nutrition Goal
+                    </button>
 
-                <div class="weight-summary nutrition-energy-summary">
-                    <div class="metric-card">
-                        <div>
-                            <h3>Protein</h3>
-                            <p id="nutrition-protein-target">--</p>
+                    <div class="weight-summary nutrition-energy-summary">
+                        <div class="metric-card">
+                            <div>
+                                <h3>Estimated TDEE</h3>
+                                <p id="nutrition-goal-maintenance">--</p>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div>
+                                <h3>Daily Adjustment</h3>
+                                <p id="nutrition-goal-adjustment">--</p>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div>
+                                <h3>Target Weekly Change</h3>
+                                <p id="nutrition-goal-weekly-rate">--</p>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div>
+                                <h3>Recommended Calories</h3>
+                                <p id="nutrition-goal-calories">--</p>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="metric-card">
-                        <div>
-                            <h3>Carbohydrate</h3>
-                            <p id="nutrition-carb-target">--</p>
-                        </div>
-                    </div>
-
-                    <div class="metric-card">
-                        <div>
-                            <h3>Fat</h3>
-                            <p id="nutrition-fat-target">--</p>
-                        </div>
-                    </div>
-
-                    <div class="metric-card">
-                        <div>
-                            <h3>Calories Used</h3>
-                            <p id="nutrition-macro-calories">--</p>
-                        </div>
-                    </div>
+                    <p id="nutrition-goal-message" class="nutrition-message" aria-live="polite"></p>
+                    <small>
+                        Adult-use estimate only. Treat this as a starting point and adjust from real-world
+                        weight trends, training performance, recovery and professional guidance.
+                    </small>
                 </div>
-
-                <p id="nutrition-macro-message" class="nutrition-message" aria-live="polite"></p>
-                <small>
-                    Protein is set at about 1.6 g/kg/day for healthy adults doing resistance training.
-                    Carbohydrate and fat are flexible starting allocations, not required targets.
-                </small>
             </div>
+
+
+            <div class="nutrition-planner-view" data-planner-view="macros" hidden>
+                ${renderBackButton()}
+
+                <span class="eyebrow">PROTEIN & MACROS</span>
+                <h2>Daily Macro Starting Point</h2>
+                <p class="section-description">
+                    Use your saved calorie target to create a simple protein, carbohydrate and fat starting point.
+                </p>
+
+                <div class="goal-box nutrition-goal-card">
+                    <label for="nutrition-macro-select">Macro Style</label>
+                    <select id="nutrition-macro-select">
+                        ${Object.entries(MACRO_PRESETS).map(([value, preset]) => `
+                            <option value="${value}">${preset.label}</option>
+                        `).join("")}
+                    </select>
+
+                    <div id="nutrition-macro-description" class="nutrition-message"></div>
+
+                    <button id="save-nutrition-macro-btn" class="primary-btn" type="button">
+                        Save Macro Preference
+                    </button>
+
+                    <div class="weight-summary nutrition-energy-summary">
+                        <div class="metric-card">
+                            <div>
+                                <h3>Protein</h3>
+                                <p id="nutrition-protein-target">--</p>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div>
+                                <h3>Carbohydrate</h3>
+                                <p id="nutrition-carb-target">--</p>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div>
+                                <h3>Fat</h3>
+                                <p id="nutrition-fat-target">--</p>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div>
+                                <h3>Calories Used</h3>
+                                <p id="nutrition-macro-calories">--</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p id="nutrition-macro-message" class="nutrition-message" aria-live="polite"></p>
+                    <small>
+                        Protein is set at about 1.6 g/kg/day for healthy adults doing resistance training.
+                        Carbohydrate and fat are flexible starting allocations, not required ratios.
+                    </small>
+                </div>
+            </div>
+
         </section>
+    `;
+}
+
+
+function renderBackButton() {
+    return `
+        <button class="nutrition-planner-back" type="button" data-nutrition-back>
+            ← Nutrition Planner
+        </button>
     `;
 }
 
@@ -222,6 +319,9 @@ export function initializeEnergyProfile() {
         );
     }
 
+    initializePlannerNavigation();
+    refreshPlannerSummary();
+
     document
         .getElementById("save-nutrition-profile-btn")
         ?.addEventListener("click", saveProfileFromForm);
@@ -245,6 +345,75 @@ export function initializeEnergyProfile() {
     document
         .getElementById("save-nutrition-macro-btn")
         ?.addEventListener("click", saveMacroFromForm);
+
+    window.addEventListener(
+        "levelup:nutrition-updated",
+        refreshPlannerSummary
+    );
+}
+
+
+function initializePlannerNavigation() {
+    document
+        .querySelectorAll("[data-nutrition-view]")
+        .forEach(button => {
+            button.addEventListener("click", () => {
+                showPlannerView(button.dataset.nutritionView);
+            });
+        });
+
+    document
+        .querySelectorAll("[data-nutrition-back]")
+        .forEach(button => {
+            button.addEventListener("click", () => {
+                showPlannerDashboard();
+            });
+        });
+}
+
+
+function showPlannerView(viewName) {
+    const dashboard =
+        document.getElementById("nutrition-planner-dashboard");
+
+    if (dashboard) {
+        dashboard.hidden = true;
+    }
+
+    document
+        .querySelectorAll("[data-planner-view]")
+        .forEach(section => {
+            section.hidden =
+                section.dataset.plannerView !== viewName;
+        });
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+
+function showPlannerDashboard() {
+    document
+        .querySelectorAll("[data-planner-view]")
+        .forEach(section => {
+            section.hidden = true;
+        });
+
+    const dashboard =
+        document.getElementById("nutrition-planner-dashboard");
+
+    if (dashboard) {
+        dashboard.hidden = false;
+    }
+
+    refreshPlannerSummary();
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
 }
 
 
@@ -273,6 +442,8 @@ function saveProfileFromForm() {
             savedMacro?.macroPreset || "balanced"
         );
     }
+
+    refreshPlannerSummary();
 
     if (message) {
         message.textContent = "Profile saved. Your energy estimate has been updated.";
@@ -321,6 +492,8 @@ function saveGoalFromForm() {
         savedMacro?.macroPreset || "balanced"
     );
 
+    refreshPlannerSummary();
+
     if (message) {
         message.textContent = "Nutrition goal saved.";
     }
@@ -366,6 +539,8 @@ function saveMacroFromForm() {
         goal.goalId,
         macroPreset
     );
+
+    refreshPlannerSummary();
 
     if (message) {
         message.textContent = "Macro preference saved.";
@@ -470,16 +645,34 @@ function updateGoalDisplay(profile, goalId) {
     const results = getEnergyResults(profile);
     const target = calculateGoalCalories(results.tdee, goalId);
     const maintenanceElement = document.getElementById("nutrition-goal-maintenance");
+    const adjustmentElement = document.getElementById("nutrition-goal-adjustment");
+    const weeklyRateElement = document.getElementById("nutrition-goal-weekly-rate");
     const caloriesElement = document.getElementById("nutrition-goal-calories");
 
     if (!target) {
         if (maintenanceElement) maintenanceElement.textContent = "--";
+        if (adjustmentElement) adjustmentElement.textContent = "--";
+        if (weeklyRateElement) weeklyRateElement.textContent = "--";
         if (caloriesElement) caloriesElement.textContent = "--";
         return;
     }
 
     if (maintenanceElement) {
         maintenanceElement.textContent = `${results.tdee.toLocaleString()} kcal/day`;
+    }
+
+    if (adjustmentElement) {
+        const value = target.dailyCalorieAdjustment;
+        adjustmentElement.textContent =
+            `${value > 0 ? "+" : ""}${value.toLocaleString()} kcal/day`;
+    }
+
+    if (weeklyRateElement) {
+        const rate = target.weeklyWeightChangeLb;
+        weeklyRateElement.textContent =
+            rate === 0
+                ? "Maintain"
+                : `${rate > 0 ? "+" : ""}${rate.toFixed(2).replace(/\.00$/, "")} lb/week`;
     }
 
     if (caloriesElement) {
@@ -550,5 +743,66 @@ function updateMacroDisplay(profile, goalId, macroPreset) {
 
     if (caloriesElement) {
         caloriesElement.textContent = `${macros.calories.toLocaleString()} kcal/day`;
+    }
+}
+
+
+function refreshPlannerSummary() {
+    const profile = getNutritionProfile();
+    const goal = getNutritionGoal();
+    const macroPreference = getNutritionMacroPreference();
+
+    let calorieText = "--";
+    let proteinText = "--";
+    let goalText = "Not set";
+
+    if (profile && goal?.goalId && GOAL_PRESETS[goal.goalId]) {
+        const energy = getEnergyResults(profile);
+        const goalTarget = calculateGoalCalories(
+            energy.tdee,
+            goal.goalId
+        );
+
+        if (goalTarget) {
+            calorieText = `${goalTarget.calories.toLocaleString()} kcal`;
+            goalText = goalTarget.label;
+
+            const macros = calculateMacroTargets({
+                calories: goalTarget.calories,
+                weightKg:
+                    profile.weightKg ||
+                    poundsToKg(profile.weightLb),
+                macroPreset:
+                    macroPreference?.macroPreset ||
+                    "balanced"
+            });
+
+            if (macros) {
+                proteinText = `${macros.protein} g`;
+            }
+        }
+    }
+
+    const goalWeight = Number(
+        localStorage.getItem(GOAL_WEIGHT_STORAGE_KEY)
+    );
+
+    setText("planner-summary-calories", calorieText);
+    setText("planner-summary-protein", proteinText);
+    setText("planner-summary-goal", goalText);
+    setText(
+        "planner-summary-goal-weight",
+        Number.isFinite(goalWeight) && goalWeight > 0
+            ? `${goalWeight.toFixed(1)} lb`
+            : "--"
+    );
+}
+
+
+function setText(id, value) {
+    const element = document.getElementById(id);
+
+    if (element) {
+        element.textContent = value;
     }
 }
