@@ -22,7 +22,7 @@ import {
     initializeActiveWorkoutUI,
     openWorkoutLogger
 }
-from "./workout-session.js?v=workout-session-2";
+from "./workout-session.js?v=workout-session-3";
 
 
 const PLAN_STORAGE_KEY =
