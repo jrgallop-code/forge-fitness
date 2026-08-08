@@ -1,3 +1,10 @@
+import {
+    exportPhotoRecords,
+    importPhotoRecords
+}
+from "../progress/photo-journal.js";
+
+
 const BACKUP_KEYS = [
     "forge_workout_plans",
     "forge_workout_sessions",
@@ -8,7 +15,7 @@ const BACKUP_KEYS = [
 
 
 const MAX_BACKUP_SIZE =
-    5 *
+    100 *
     1024 *
     1024;
 
@@ -59,7 +66,7 @@ export function initializeBackupManager() {
 }
 
 
-function exportBackup() {
+async function exportBackup() {
 
     const data = {};
 
@@ -113,7 +120,10 @@ function exportBackup() {
             new Date()
                 .toISOString(),
 
-        data
+        data,
+
+        photos:
+            await exportPhotoRecords()
 
     };
 
@@ -267,6 +277,15 @@ async function importBackup(
             );
 
         });
+
+
+        await importPhotoRecords(
+            Array.isArray(
+                backup.photos
+            )
+                ? backup.photos
+                : []
+        );
 
 
         window.alert(
