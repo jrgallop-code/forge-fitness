@@ -25,17 +25,15 @@ initializeCaloriePlannerLabels
 from "./nutrition/calorie-planner-labels.js?v=calorie-planner-2";
 
 import {
-initializeExerciseProgressZeroGuard
+initializeExerciseProgressV2
 }
-from "./progress/exercise-progress-zero-guard.js?v=zero-reps-no-data-1";
+from "./progress/exercise-progress-v2.js?v=exercise-progress-svg-1";
 
 
-// Clean existing workout history before any progress feature reads it,
-// and intercept future workout-session saves so reps <= 0 never become data.
 installWorkoutSessionSanitizer();
 initializeWorkoutRuntime();
 initializeCaloriePlannerLabels();
-initializeExerciseProgressZeroGuard();
+initializeExerciseProgressV2();
 
 navigate("home");
 
