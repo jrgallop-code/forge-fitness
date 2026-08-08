@@ -27,9 +27,16 @@ from "../progress/sleep-tracker.js?v=sleep-tracker-2";
 
 import {
     renderNutrition,
-    initializeNutrition
+    initializeNutrition,
+    showNutritionView
 }
-from "../nutrition/nutrition-ui.js?v=nutrition-water-1";
+from "../nutrition/nutrition-ui.js?v=nutrition-more-1";
+
+import {
+    renderMore,
+    initializeMore
+}
+from "../more/more-ui.js?v=more-menu-1";
 
 
 import {
@@ -114,6 +121,42 @@ export function navigate(page) {
                 renderNutrition();
 
             initializeNutrition();
+
+            showNutritionView("main");
+
+            break;
+
+
+        case "water":
+
+            content.innerHTML =
+                renderNutrition();
+
+            initializeNutrition();
+
+            showNutritionView("water");
+
+            break;
+
+
+        case "energy":
+
+            content.innerHTML =
+                renderNutrition();
+
+            initializeNutrition();
+
+            showNutritionView("energy");
+
+            break;
+
+
+        case "more":
+
+            content.innerHTML =
+                renderMore();
+
+            initializeMore();
 
             break;
 
