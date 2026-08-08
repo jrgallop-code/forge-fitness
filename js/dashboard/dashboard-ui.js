@@ -1,65 +1,759 @@
-import {createCard}
+import {
+    createCard
+}
 from "../components/card.js";
 
 
-export function renderDashboard(){
-
-return `
-
-<section class="dashboard">
-
-
-${createCard(
-"Weight",
-"159.8 lb",
-"⚖️"
-)}
+import {
+    getExerciseById
+}
+from "../workouts/exercise-library.js";
 
 
-${createCard(
-"Workout Streak",
-"12 Days",
-"🔥"
-)}
+const SESSION_STORAGE_KEY =
+    "forge_workout_sessions";
+
+const PLAN_STORAGE_KEY =
+    "forge_workout_plans";
+
+const NUTRITION_STORAGE_KEY =
+    "level_up_nutrition_habits";
 
 
-${createCard(
-"Weekly Volume",
-"42,350 lb",
-"🏋️"
-)}
+export function renderDashboard() {
+
+    const sessions =
+        getStoredArray(
+            SESSION_STORAGE_KEY
+        )
+        .sort(
+            (a, b) =>
+                getSessionTime(b) -
+                getSessionTime(a)
+        );
 
 
-${createCard(
-"Goal",
-"Build Strength",
-"🎯"
-)}
-
-${createCard(
-"Calorie Target",
-"2300 kcal/day",
-"🍽️"
-)}
-
-</section>
+    const plans =
+        getStoredArray(
+            PLAN_STORAGE_KEY
+        );
 
 
-
-<section class="section-card">
-
-<h2>
-Recent Workout
-</h2>
+    const recentSessions =
+        sessions.slice(0, 4);
 
 
-<p>
-Upper Body • Bench Press • Pull-ups
-</p>
+    const weekStart =
+        new Date();
+
+    weekStart.setHours(
+        0,
+        0,
+        0,
+        0
+    );
+
+    weekStart.setDate(
+        weekStart.getDate() -
+        6
+    );
 
 
-</section>
+    const weeklySessions =
+        sessions.filter(session =>
+            getSessionTime(session) >=
+            weekStart.getTime()
+        );
 
-`;
+
+    const weeklySets =
+        weeklySessions.reduce(
+            (
+                total,
+                session
+            ) =>
+                total +
+                countCompletedSets(
+                    session
+                ),
+            0
+        );
+
+
+    const weeklyExercises =
+        weeklySessions.reduce(
+            (
+                total,
+                session
+            ) =>
+                total +
+                countRecordedExercises(
+                    session
+                ),
+            0
+        );
+
+
+    const nutritionToday =
+        getNutritionToday();
+
+
+    const latest =
+        sessions[0] ||
+        null;
+
+
+    return `
+        <section class="dashboard-welcome">
+
+            <div>
+                <span class="eyebrow">
+                    YOUR TRAINING
+                </span>
+
+                <h2>
+                    Dashboard
+                </h2>
+
+                <p>
+                    A live overview built from the workouts,
+                    plans and daily check-ins saved in this browser.
+                </p>
+            </div>
+
+            <div class="dashboard-status">
+                <span class="status-dot"></span>
+                Local data connected
+            </div>
+
+        </section>
+
+
+        <section class="dashboard">
+
+            ${createCard(
+                "Workouts — Last 7 Days",
+                String(
+                    weeklySessions.length
+                ),
+                "🏋️"
+            )}
+
+            ${createCard(
+                "Completed Sets — Last 7 Days",
+                String(
+                    weeklySets
+                ),
+                "✓"
+            )}
+
+            ${createCard(
+                "Exercises — Last 7 Days",
+                String(
+                    weeklyExercises
+                ),
+                "💪"
+            )}
+
+            ${createCard(
+                "Saved Workout Plans",
+                String(
+                    plans.length
+                ),
+                "📋"
+            )}
+
+        </section>
+
+
+        <section class="dashboard-detail-grid">
+
+            <article class="section-card dashboard-latest">
+
+                <div class="dashboard-card-heading">
+                    <div>
+                        <span class="eyebrow">
+                            LATEST ACTIVITY
+                        </span>
+                        <h2>
+                            Most Recent Workout
+                        </h2>
+                    </div>
+
+                    ${latest
+                        ? `
+                            <time datetime="${escapeHtml(
+                                latest.date ||
+                                ""
+                            )}">
+                                ${formatDate(
+                                    latest.date
+                                )}
+                            </time>
+                        `
+                        : ""}
+
+                </div>
+
+                ${latest
+                    ? renderLatestWorkout(
+                        latest
+                    )
+                    : renderEmptyState(
+                        "No completed workouts yet",
+                        "Log a workout from one of your saved plans and it will appear here."
+                    )}
+
+            </article>
+
+
+            <article class="section-card dashboard-nutrition">
+
+                <div class="dashboard-card-heading">
+                    <div>
+                        <span class="eyebrow">
+                            TODAY
+                        </span>
+                        <h2>
+                            Nutrition Check-In
+                        </h2>
+                    </div>
+
+                    <span class="nutrition-dashboard-score">
+                        ${nutritionToday.completed}/6
+                    </span>
+                </div>
+
+                <div class="nutrition-dashboard-progress">
+                    <span
+                        style="width:${Math.round(
+                            nutritionToday.completed /
+                            6 *
+                            100
+                        )}%"
+                    ></span>
+                </div>
+
+                <p>
+                    ${nutritionToday.saved
+                        ? `${nutritionToday.completed} helpful ${nutritionToday.completed === 1 ? "habit" : "habits"} checked today.`
+                        : "No Nutrition check-in has been saved for today."}
+                </p>
+
+                ${nutritionToday.notes
+                    ? `
+                        <div class="dashboard-note">
+                            <strong>Today's note</strong>
+                            <span>
+                                ${escapeHtml(
+                                    nutritionToday.notes
+                                )}
+                            </span>
+                        </div>
+                    `
+                    : ""}
+
+            </article>
+
+        </section>
+
+
+        <section class="section-card dashboard-history">
+
+            <div class="dashboard-card-heading">
+                <div>
+                    <span class="eyebrow">
+                        HISTORY
+                    </span>
+                    <h2>
+                        Recent Workouts
+                    </h2>
+                </div>
+
+                <span class="dashboard-total">
+                    ${sessions.length}
+                    total
+                </span>
+            </div>
+
+            ${recentSessions.length
+                ? `
+                    <div class="dashboard-session-list">
+                        ${recentSessions.map(
+                            renderSessionRow
+                        ).join("")}
+                    </div>
+                `
+                : renderEmptyState(
+                    "Your workout history is empty",
+                    "Completed sessions will be listed here automatically."
+                )}
+
+        </section>
+    `;
+
+}
+
+
+function renderLatestWorkout(
+    session
+) {
+
+    const exercises =
+        Array.isArray(
+            session.exercises
+        )
+            ? session.exercises
+            : [];
+
+
+    const names =
+        exercises
+            .map(exercise =>
+                getExerciseById(
+                    exercise.exerciseId
+                )?.name ||
+                "Exercise"
+            );
+
+
+    return `
+        <div class="latest-workout-title">
+
+            <div class="latest-workout-icon">
+                🏋️
+            </div>
+
+            <div>
+                <h3>
+                    ${escapeHtml(
+                        session.planName ||
+                        "Workout"
+                    )}
+                </h3>
+
+                <p>
+                    ${escapeHtml(
+                        session.trainingDayName ||
+                        "Training Day"
+                    )}
+                </p>
+            </div>
+
+        </div>
+
+        <div class="latest-workout-stats">
+
+            <div>
+                <span>Exercises recorded</span>
+                <strong>
+                    ${countRecordedExercises(
+                        session
+                    )}
+                </strong>
+            </div>
+
+            <div>
+                <span>Completed sets</span>
+                <strong>
+                    ${countCompletedSets(
+                        session
+                    )}
+                </strong>
+            </div>
+
+        </div>
+
+        <div class="latest-exercise-list">
+            ${names.length
+                ? names.map(name => `
+                    <span>
+                        ${escapeHtml(name)}
+                    </span>
+                `).join("")
+                : `
+                    <span>
+                        No exercise details
+                    </span>
+                `}
+        </div>
+    `;
+
+}
+
+
+function renderSessionRow(
+    session
+) {
+
+    const setCount =
+        countCompletedSets(
+            session
+        );
+
+
+    const exerciseCount =
+        countRecordedExercises(
+            session
+        );
+
+
+    return `
+        <article class="dashboard-session-row">
+
+            <div class="session-date-badge">
+                <strong>
+                    ${formatDay(
+                        session.date
+                    )}
+                </strong>
+                <span>
+                    ${formatMonth(
+                        session.date
+                    )}
+                </span>
+            </div>
+
+            <div class="dashboard-session-name">
+                <strong>
+                    ${escapeHtml(
+                        session.planName ||
+                        "Workout"
+                    )}
+                </strong>
+
+                <span>
+                    ${escapeHtml(
+                        session.trainingDayName ||
+                        "Training Day"
+                    )}
+                </span>
+            </div>
+
+            <div class="dashboard-session-summary">
+                <strong>
+                    ${exerciseCount}
+                    ${exerciseCount === 1
+                        ? "exercise"
+                        : "exercises"}
+                </strong>
+
+                <span>
+                    ${setCount}
+                    completed
+                    ${setCount === 1
+                        ? "set"
+                        : "sets"}
+                </span>
+            </div>
+
+        </article>
+    `;
+
+}
+
+
+function countCompletedSets(
+    session
+) {
+
+    return (
+        session.exercises ||
+        []
+    )
+    .reduce(
+        (
+            total,
+            exercise
+        ) =>
+            total +
+            (
+                exercise.sets ||
+                []
+            )
+            .filter(set =>
+                set.weight !==
+                    null ||
+                set.reps !==
+                    null
+            )
+            .length,
+        0
+    );
+
+}
+
+
+function countRecordedExercises(
+    session
+) {
+
+    return (
+        session.exercises ||
+        []
+    )
+    .filter(exercise => {
+
+        const hasSets =
+            (
+                exercise.sets ||
+                []
+            )
+            .some(set =>
+                set.weight !==
+                    null ||
+                set.reps !==
+                    null
+            );
+
+
+        const hasNotes =
+            Boolean(
+                exercise.notes
+                    ?.trim()
+            );
+
+
+        return hasSets ||
+            hasNotes;
+
+    })
+    .length;
+
+}
+
+
+function getNutritionToday() {
+
+    const data =
+        getStoredObject(
+            NUTRITION_STORAGE_KEY
+        );
+
+
+    const entry =
+        data[
+            getLocalDateValue()
+        ];
+
+
+    return {
+
+        saved:
+            Boolean(entry),
+
+        completed:
+            Array.isArray(
+                entry?.habits
+            )
+                ? entry.habits.length
+                : 0,
+
+        notes:
+            entry?.notes ||
+            ""
+
+    };
+
+}
+
+
+function getStoredArray(key) {
+
+    try {
+
+        const parsed =
+            JSON.parse(
+                localStorage.getItem(
+                    key
+                ) ||
+                "[]"
+            );
+
+
+        return Array.isArray(
+            parsed
+        )
+            ? parsed
+            : [];
+
+    }
+
+    catch {
+
+        return [];
+
+    }
+
+}
+
+
+function getStoredObject(key) {
+
+    try {
+
+        const parsed =
+            JSON.parse(
+                localStorage.getItem(
+                    key
+                ) ||
+                "{}"
+            );
+
+
+        return parsed &&
+            typeof parsed ===
+                "object" &&
+            !Array.isArray(parsed)
+                ? parsed
+                : {};
+
+    }
+
+    catch {
+
+        return {};
+
+    }
+
+}
+
+
+function getSessionTime(
+    session
+) {
+
+    const value =
+        session.completedAt ||
+        (
+            session.date
+                ? `${session.date}T12:00:00`
+                : ""
+        );
+
+
+    const time =
+        new Date(value)
+            .getTime();
+
+
+    return Number.isFinite(
+        time
+    )
+        ? time
+        : 0;
+
+}
+
+
+function renderEmptyState(
+    title,
+    detail
+) {
+
+    return `
+        <div class="dashboard-empty">
+            <span>＋</span>
+            <strong>
+                ${escapeHtml(title)}
+            </strong>
+            <p>
+                ${escapeHtml(detail)}
+            </p>
+        </div>
+    `;
+
+}
+
+
+function formatDate(value) {
+
+    if (!value) {
+        return "Unknown date";
+    }
+
+
+    return new Intl.DateTimeFormat(
+        undefined,
+        {
+            month: "short",
+            day: "numeric",
+            year: "numeric"
+        }
+    )
+    .format(
+        new Date(
+            `${value}T12:00:00`
+        )
+    );
+
+}
+
+
+function formatDay(value) {
+
+    if (!value) {
+        return "—";
+    }
+
+
+    return new Date(
+        `${value}T12:00:00`
+    )
+    .getDate();
+
+}
+
+
+function formatMonth(value) {
+
+    if (!value) {
+        return "";
+    }
+
+
+    return new Intl.DateTimeFormat(
+        undefined,
+        {
+            month: "short"
+        }
+    )
+    .format(
+        new Date(
+            `${value}T12:00:00`
+        )
+    );
+
+}
+
+
+function getLocalDateValue() {
+
+    const now =
+        new Date();
+
+
+    return new Date(
+        now.getTime() -
+        now.getTimezoneOffset() *
+        60000
+    )
+    .toISOString()
+    .slice(0, 10);
+
+}
+
+
+function escapeHtml(value) {
+
+    return String(
+        value ??
+        ""
+    )
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 
 }
