@@ -3,6 +3,11 @@ import {
 }
 from "./exercise-library.js";
 
+import {
+    getExerciseOptions
+}
+from "./workout-ui.js";
+
 
 const SESSION_STORAGE_KEY =
     "forge_workout_sessions";
@@ -560,6 +565,7 @@ function renderSessionExercises({
                         <label class="cardio-notes-label">Today's notes
                             <textarea class="session-cardio-notes" maxlength="500">${escapeHtml(state.notes || "")}</textarea>
                         </label>
+                        ${editingSessionId ? '<button class="remove-session-exercise secondary-btn" type="button">Remove Exercise</button>' : ""}
                     </article>
                 `;
             }
@@ -583,9 +589,18 @@ function renderSessionExercises({
                             </div>
                         `;
                     }).join("")}
+                    ${editingSessionId ? `
+                        <div class="edit-session-exercise-actions">
+                            <button class="add-session-set secondary-btn" type="button">Add Set</button>
+                            <button class="remove-session-set secondary-btn" type="button" ${state.sets.length <= 1 ? "disabled" : ""}>Remove Last Set</button>
+                            <button class="remove-session-exercise secondary-btn" type="button">Remove Exercise</button>
+                        </div>
+                    ` : ""}
                 </article>
             `;
         }).join("")}
+
+        ${editingSessionId ? renderEditWorkoutExerciseControls() : ""}
 
         <div class="session-completion-actions">
             <button id="save-session-btn" class="primary-btn" type="button">
@@ -601,6 +616,15 @@ function renderSessionExercises({
         session,
         editingSessionId
     });
+
+    if (editingSessionId) {
+        bindEditWorkoutExerciseControls({
+            plan,
+            logger,
+            session,
+            editingSessionId
+        });
+    }
 
     if (!editingSessionId) {
         bindRestTimerControls(logger);
@@ -632,6 +656,199 @@ function renderSessionExercises({
         );
 
     updateTimerDisplays();
+
+}
+
+
+function renderEditWorkoutExerciseControls() {
+
+    return `
+        <section class="edit-workout-exercises">
+            <div>
+                <span class="eyebrow">EDIT ROUTINE</span>
+                <h4>Add another exercise</h4>
+                <p>Additions apply to this saved workout and do not change the original workout plan.</p>
+            </div>
+            <label>
+                Exercise
+                <select id="history-add-exercise-select">
+                    ${getExerciseOptions()}
+                </select>
+            </label>
+            <label>
+                Sets
+                <input id="history-add-exercise-sets" type="number" inputmode="numeric" min="1" max="20" step="1" value="3">
+            </label>
+            <label>
+                Target reps
+                <input id="history-add-exercise-reps" type="text" maxlength="20" value="8-12" placeholder="8-12">
+            </label>
+            <button id="history-add-exercise-btn" class="primary-btn" type="button">Add Exercise</button>
+        </section>
+    `;
+
+}
+
+
+function bindEditWorkoutExerciseControls({
+    plan,
+    logger,
+    session,
+    editingSessionId
+}) {
+
+    const dayIndex =
+        Number(session.trainingDayIndex) || 0;
+    const day =
+        plan.days[dayIndex];
+
+    if (!day) {
+        return;
+    }
+
+    logger
+        .querySelector("#history-add-exercise-btn")
+        ?.addEventListener(
+            "click",
+            () => {
+                const exerciseId =
+                    logger.querySelector("#history-add-exercise-select")?.value;
+                const exercise =
+                    getExerciseById(exerciseId);
+
+                if (!exercise) {
+                    return;
+                }
+
+                const setCount =
+                    Math.min(
+                        20,
+                        Math.max(
+                            1,
+                            Number(logger.querySelector("#history-add-exercise-sets")?.value) || 3
+                        )
+                    );
+                const targetReps =
+                    logger.querySelector("#history-add-exercise-reps")?.value.trim() ||
+                    exercise.recommendedReps ||
+                    "8-12";
+                const plannedExercise = {
+                    id: exercise.id,
+                    sets: exercise.trackingType === "notes" ? 1 : setCount,
+                    reps: targetReps
+                };
+
+                day.exercises.push(plannedExercise);
+                session.exercises.push(
+                    createExerciseState({
+                        exercises: [plannedExercise]
+                    })[0]
+                );
+                session.planSnapshot =
+                    clone(plan);
+
+                renderSessionExercises({
+                    plan,
+                    logger,
+                    session,
+                    editingSessionId
+                });
+            }
+        );
+
+    logger
+        .querySelectorAll(".session-exercise-card")
+        .forEach(card => {
+            const exerciseIndex =
+                Number(card.dataset.exerciseIndex);
+
+            card
+                .querySelector(".add-session-set")
+                ?.addEventListener(
+                    "click",
+                    () => {
+                        const state =
+                            session.exercises[exerciseIndex];
+                        const plannedExercise =
+                            day.exercises[exerciseIndex];
+
+                        state.sets.push({
+                            weight: null,
+                            reps: null,
+                            completed: false
+                        });
+                        plannedExercise.sets =
+                            state.sets.length;
+                        session.planSnapshot =
+                            clone(plan);
+
+                        renderSessionExercises({
+                            plan,
+                            logger,
+                            session,
+                            editingSessionId
+                        });
+                    }
+                );
+
+            card
+                .querySelector(".remove-session-set")
+                ?.addEventListener(
+                    "click",
+                    () => {
+                        const state =
+                            session.exercises[exerciseIndex];
+
+                        if (state.sets.length <= 1) {
+                            return;
+                        }
+
+                        state.sets.pop();
+                        day.exercises[exerciseIndex].sets =
+                            state.sets.length;
+                        session.planSnapshot =
+                            clone(plan);
+
+                        renderSessionExercises({
+                            plan,
+                            logger,
+                            session,
+                            editingSessionId
+                        });
+                    }
+                );
+
+            card
+                .querySelector(".remove-session-exercise")
+                ?.addEventListener(
+                    "click",
+                    () => {
+                        const exerciseName =
+                            getExerciseById(card.dataset.exerciseId)?.name ||
+                            "this exercise";
+                        const confirmed =
+                            window.confirm(
+                                `Remove ${exerciseName} and its recorded data from this workout?`
+                            );
+
+                        if (!confirmed) {
+                            return;
+                        }
+
+                        day.exercises.splice(exerciseIndex, 1);
+                        session.exercises.splice(exerciseIndex, 1);
+                        session.planSnapshot =
+                            clone(plan);
+
+                        renderSessionExercises({
+                            plan,
+                            logger,
+                            session,
+                            editingSessionId
+                        });
+                    }
+                );
+        });
 
 }
 
