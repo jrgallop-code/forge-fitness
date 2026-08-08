@@ -121,7 +121,7 @@ export function renderProgress() {
                             <h3>Weight Trend</h3>
 
                             <p>
-                                Daily measurements and smoothed trend
+                                Measurements, seven-entry average and best-fit trend
                             </p>
 
                         </div>
@@ -145,7 +145,7 @@ export function renderProgress() {
                             <div class="rate-stat">
 
                                 <span>
-                                    Overall Average Change
+                                    Best-Fit Average Change
                                 </span>
 
                                 <strong id="overall-weight-rate">
