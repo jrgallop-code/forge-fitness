@@ -6,7 +6,7 @@ import {
     poundsToKg,
     feetAndInchesToCm
 }
-from "./tdee-calculator.js";
+from "./tdee-calculator.js?v=nutrition-goals-2";
 
 import {
     getNutritionProfile,
@@ -14,7 +14,7 @@ import {
     getNutritionGoal,
     saveNutritionGoal
 }
-from "./nutrition-storage.js";
+from "./nutrition-storage.js?v=nutrition-goals-2";
 
 
 export function renderEnergyProfile() {
