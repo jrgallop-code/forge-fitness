@@ -50,7 +50,7 @@ from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import {
     initializeNutritionPlanUI
 }
-from "../nutrition/nutrition-plan-ui-v2.js?v=manual-goals-1";
+from "../nutrition/nutrition-plan-ui-v3.js?v=goals-flow-1";
 
 import {
     initializeNutritionPlanHooks
