@@ -38,13 +38,7 @@ export function renderProgress() {
 
                     <h3>Weight Progress</h3>
 
-                    <button
-                        id="load-demo-weight-btn"
-                        class="secondary-btn"
-                        type="button"
-                    >
-                        📊 Load Demo Data
-                    </button>
+
 
                 </div>
 
