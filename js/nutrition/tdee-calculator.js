@@ -26,6 +26,36 @@ export const ACTIVITY_LEVELS = {
     }
 };
 
+
+export const GOAL_PRESETS = {
+    maintain: {
+        label: "Maintain",
+        adjustment: 0,
+        description: "Stay close to estimated maintenance calories."
+    },
+    cut_gentle: {
+        label: "Fat Loss — Gentle",
+        adjustment: -0.10,
+        description: "A modest starting deficit designed to prioritize training performance and adherence."
+    },
+    cut_moderate: {
+        label: "Fat Loss — Moderate",
+        adjustment: -0.15,
+        description: "A moderate starting deficit for adults who want a somewhat faster rate of loss."
+    },
+    bulk_conservative: {
+        label: "Lean Bulk — Conservative",
+        adjustment: 0.05,
+        description: "A small surplus intended to support muscle gain while limiting unnecessary weight gain."
+    },
+    bulk_standard: {
+        label: "Lean Bulk — Standard",
+        adjustment: 0.10,
+        description: "A moderate surplus that may suit newer or intermediate lifters."
+    }
+};
+
+
 export function calculateBmr({ age, sex, heightCm, weightKg }) {
     const base =
         (10 * weightKg) +
@@ -38,6 +68,7 @@ export function calculateBmr({ age, sex, heightCm, weightKg }) {
 
     return base - 161;
 }
+
 
 export function calculateTdee(profile) {
     const activity =
@@ -54,9 +85,28 @@ export function calculateTdee(profile) {
     };
 }
 
+
+export function calculateGoalCalories(tdee, goalId) {
+    const goal = GOAL_PRESETS[goalId];
+
+    if (!goal || !Number.isFinite(tdee) || tdee <= 0) {
+        return null;
+    }
+
+    return {
+        goalId,
+        label: goal.label,
+        adjustment: goal.adjustment,
+        calories: Math.round(tdee * (1 + goal.adjustment)),
+        description: goal.description
+    };
+}
+
+
 export function poundsToKg(pounds) {
     return pounds * 0.45359237;
 }
+
 
 export function feetAndInchesToCm(feet, inches) {
     return ((feet * 12) + inches) * 2.54;
