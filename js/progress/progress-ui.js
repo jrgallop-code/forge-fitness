@@ -387,8 +387,9 @@ export function renderProgress() {
                         </h4>
 
                         <p class="analytics-note">
-                            Estimated 1RM is calculated from the best completed
-                            set. It is an estimate, not a tested maximum.
+                            Y-axis: Epley estimated one-rep maximum in pounds.
+                            Formula: weight × (1 + reps ÷ 30), using the best
+                            completed set. It is an estimate, not a tested maximum.
                         </p>
 
                         <canvas
