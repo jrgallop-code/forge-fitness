@@ -75,19 +75,36 @@
 }
 
 .goal-mode-panel-heading {
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .goal-mode-panel-heading p {
-    margin: 5px 0 0;
+    margin: 4px 0 0;
     color: rgba(255, 255, 255, 0.68);
-    font-size: 12.5px;
-    line-height: 1.45;
+    font-size: 12px;
+    line-height: 1.35;
     font-weight: 400;
 }
 
+/* Keep Goals & Calories helper/status copy compact and neutral. */
+.nutrition-planner-view[data-planner-view="goals"] .nutrition-message,
+.nutrition-planner-view[data-planner-view="goals"] .nutrition-status-message {
+    color: rgba(255, 255, 255, 0.72) !important;
+    font-size: 11.5px !important;
+    line-height: 1.35 !important;
+    font-weight: 400 !important;
+    margin-top: 5px;
+    margin-bottom: 7px;
+}
+
+.nutrition-planner-view[data-planner-view="goals"] .goal-box,
+.nutrition-planner-view[data-planner-view="goals"] .nutrition-manual-settings {
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
 .active-target-picker {
-    margin-top: 18px;
+    margin-top: 16px;
 }
 
 .active-target-picker > h3 {
@@ -95,28 +112,29 @@
 }
 
 .active-target-actions .goal-calculation-mode-btn {
-    min-height: 82px;
+    min-height: 74px;
+    padding: 11px 12px;
 }
 
 .nutrition-status-message {
-    min-height: 16px;
-    margin: 6px 0 0;
+    min-height: 14px;
+    margin: 5px 0 0;
     color: rgba(255, 255, 255, 0.72);
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 400;
-    line-height: 1.35;
+    line-height: 1.3;
     letter-spacing: 0.01em;
 }
 
 .nutrition-adjustment-history {
-    margin-top: 20px;
+    margin-top: 18px;
 }
 
 .nutrition-adjustment-row {
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 5px 12px;
-    padding: 12px 0;
+    padding: 10px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -153,23 +171,26 @@
     }
 
     .goal-calculation-mode-btn {
-        min-height: 88px;
-        padding: 12px;
+        min-height: 82px;
+        padding: 11px;
     }
 
     .active-target-actions .goal-calculation-mode-btn {
-        min-height: 78px;
+        min-height: 70px;
     }
 
     .goal-calculation-mode-btn strong {
-        font-size: 14px;
+        font-size: 13.5px;
     }
 
     .goal-calculation-mode-btn small {
-        font-size: 10.5px;
+        font-size: 10px;
+        line-height: 1.25;
     }
 
-    .nutrition-status-message {
-        font-size: 11.5px;
+    .nutrition-planner-view[data-planner-view="goals"] .nutrition-message,
+    .nutrition-planner-view[data-planner-view="goals"] .nutrition-status-message {
+        font-size: 11px !important;
+        line-height: 1.3 !important;
     }
 }
