@@ -1,6 +1,9 @@
 const NUTRITION_STORAGE_KEY =
     "level_up_nutrition_habits";
 
+const WATER_STORAGE_KEY =
+    "level_up_water_entries";
+
 
 const HABITS = [
     {
@@ -151,6 +154,55 @@ export function renderNutrition() {
                     aria-live="polite"
                 ></p>
 
+            </article>
+
+
+            <article class="section-card">
+                <span class="eyebrow">HYDRATION LOG</span>
+                <h2>Water Recorded</h2>
+                <p class="section-description">
+                    Record how much water you drank without applying a required daily target.
+                </p>
+
+                <div class="weight-entry-card">
+                    <label for="water-date">Date</label>
+                    <input id="water-date" type="date">
+
+                    <label for="water-amount">Water (mL)</label>
+                    <input
+                        id="water-amount"
+                        type="number"
+                        min="0"
+                        step="50"
+                        placeholder="Enter daily amount"
+                    >
+
+                    <button id="save-water-btn" class="primary-btn" type="button">
+                        Save Water
+                    </button>
+                </div>
+
+                <div class="metric-card">
+                    <h3>Water Recorded Today</h3>
+                    <p id="water-today">--</p>
+                </div>
+
+                <p id="water-message" class="nutrition-message" aria-live="polite"></p>
+
+                <div class="weight-history">
+                    <h3>Water History</h3>
+                    <div class="weight-table">
+                        <div class="weight-table-header">
+                            <span>Date</span>
+                            <span>Water</span>
+                            <span>Status</span>
+                            <span>Actions</span>
+                        </div>
+                        <div id="water-history-list">
+                            <p class="empty-state">No water entries yet.</p>
+                        </div>
+                    </div>
+                </div>
             </article>
 
 
@@ -446,6 +498,26 @@ export function renderNutrition() {
 
 export function initializeNutrition() {
 
+    const waterDate =
+        document.getElementById("water-date");
+
+
+    if (waterDate) {
+        waterDate.value =
+            getLocalDateValue();
+    }
+
+
+    document
+        .getElementById("save-water-btn")
+        ?.addEventListener(
+            "click",
+            saveWaterEntry
+        );
+
+
+    renderWaterEntries();
+
     document
         .getElementById(
             "calculate-energy-btn"
@@ -488,6 +560,203 @@ export function initializeNutrition() {
 
     loadSelectedDay();
 
+}
+
+
+function getWaterEntries() {
+
+    try {
+        const parsed =
+            JSON.parse(
+                localStorage.getItem(
+                    WATER_STORAGE_KEY
+                ) ||
+                "[]"
+            );
+
+        return Array.isArray(parsed)
+            ? parsed
+                .map(entry => ({
+                    date: String(entry?.date || ""),
+                    amount: Number(entry?.amount)
+                }))
+                .filter(entry =>
+                    entry.date &&
+                    Number.isFinite(entry.amount) &&
+                    entry.amount >= 0
+                )
+                .sort((a, b) =>
+                    a.date.localeCompare(b.date)
+                )
+            : [];
+    }
+    catch {
+        return [];
+    }
+
+}
+
+
+function saveWaterEntry() {
+
+    const date =
+        document.getElementById("water-date")?.value;
+
+    const amount =
+        Number(
+            document.getElementById("water-amount")?.value
+        );
+
+
+    if (!date || !Number.isFinite(amount) || amount < 0) {
+        setWaterMessage(
+            "Enter a valid date and water amount."
+        );
+        return;
+    }
+
+
+    const entries =
+        getWaterEntries()
+            .filter(entry =>
+                entry.date !== date
+            );
+
+
+    entries.push({
+        date,
+        amount
+    });
+
+
+    entries.sort((a, b) =>
+        a.date.localeCompare(b.date)
+    );
+
+
+    localStorage.setItem(
+        WATER_STORAGE_KEY,
+        JSON.stringify(entries)
+    );
+
+
+    setWaterMessage(
+        "Water entry saved."
+    );
+
+
+    renderWaterEntries();
+
+}
+
+
+function renderWaterEntries() {
+
+    const entries =
+        getWaterEntries();
+
+    const today =
+        entries.find(entry =>
+            entry.date === getLocalDateValue()
+        );
+
+    const todayElement =
+        document.getElementById("water-today");
+
+
+    if (todayElement) {
+        todayElement.textContent =
+            today
+                ? `${today.amount.toLocaleString()} mL`
+                : "--";
+    }
+
+
+    const container =
+        document.getElementById("water-history-list");
+
+
+    if (!container) {
+        return;
+    }
+
+
+    if (!entries.length) {
+        container.innerHTML =
+            '<p class="empty-state">No water entries yet.</p>';
+        return;
+    }
+
+
+    container.innerHTML =
+        [...entries]
+            .reverse()
+            .slice(0, 14)
+            .map(entry => `
+                <div class="weight-table-row">
+                    <span>${formatNutritionDate(entry.date)}</span>
+                    <strong>${entry.amount.toLocaleString()} mL</strong>
+                    <span>Saved</span>
+                    <div class="weight-entry-actions">
+                        <button class="remove-water-entry" type="button" data-date="${entry.date}">Remove</button>
+                    </div>
+                </div>
+            `)
+            .join("");
+
+
+    container
+        .querySelectorAll(".remove-water-entry")
+        .forEach(button =>
+            button.addEventListener(
+                "click",
+                () => removeWaterEntry(button.dataset.date)
+            )
+        );
+
+}
+
+
+function removeWaterEntry(date) {
+
+    const entries =
+        getWaterEntries()
+            .filter(entry =>
+                entry.date !== date
+            );
+
+
+    localStorage.setItem(
+        WATER_STORAGE_KEY,
+        JSON.stringify(entries)
+    );
+
+
+    renderWaterEntries();
+
+}
+
+
+function setWaterMessage(value) {
+    const message =
+        document.getElementById("water-message");
+
+    if (message) {
+        message.textContent = value;
+    }
+}
+
+
+function formatNutritionDate(date) {
+    return new Date(
+        `${date}T12:00:00`
+    ).toLocaleDateString(
+        undefined,
+        {
+            month: "short",
+            day: "numeric"
+        }
+    );
 }
 
 
