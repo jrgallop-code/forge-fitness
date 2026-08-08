@@ -24,7 +24,7 @@ import {
 from "../progress/photo-journal.js";
 
 import { initializeTrainingProgress }
-from "../progress/training-progress.js?v=exercise-progress-1rm-null-1";
+from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
 
 import { initializeSleepTracker }
 from "../progress/sleep-tracker.js?v=sleep-tracker-2";
@@ -81,7 +81,7 @@ import {
     renderGoalProjection,
     initializeGoalProjection
 }
-from "../nutrition/goal-projection.js?v=selected-target-projection-2";
+from "../nutrition/goal-projection.js?v=selected-target-projection-3";
 
 import {
     renderMore,
