@@ -17,6 +17,14 @@ button.addEventListener(
 
 ()=>{
 
+document.querySelectorAll(".nav-btn")
+.forEach(item =>
+item.classList.toggle(
+"active",
+item === button
+)
+);
+
 navigate(
 button.dataset.page
 );
@@ -35,10 +43,10 @@ button.dataset.page
 
 return `
 
-<nav class="bottom-nav">
+<nav class="bottom-nav" aria-label="Primary navigation">
 
 
-<button class="nav-btn" data-page="home">
+<button class="nav-btn active" data-page="home" aria-label="Home">
 
 🏠
 
@@ -50,7 +58,7 @@ Home
 
 
 
-<button class="nav-btn" data-page="workout">
+<button class="nav-btn" data-page="workout" aria-label="Workout">
 
 💪
 
@@ -62,7 +70,7 @@ Workout
 
 
 
-<button class="nav-btn" data-page="progress">
+<button class="nav-btn" data-page="progress" aria-label="Progress">
 
 📈
 
@@ -74,9 +82,9 @@ Progress
 
 
 
-<button class="nav-btn" data-page="goals">
+<button class="nav-btn" data-page="goals" aria-label="Nutrition">
 
-🎯
+🌿
 
 <span>
 Goals
