@@ -279,19 +279,29 @@ function calculateMovingAverage(
     return entries.map(
         (entry, index) => {
 
-            const startIndex =
-                Math.max(
-                    0,
-                    index -
-                    windowSize +
-                    1
-                );
+            if (
+                index <
+                windowSize - 1
+            ) {
+
+                return {
+                    date:
+                        entry.date,
+
+                    weight:
+                        null
+                };
+
+            }
 
 
             const windowEntries =
                 entries.slice(
-                    startIndex,
-                    index + 1
+                    index -
+                    windowSize +
+                    1,
+                    index +
+                    1
                 );
 
 
@@ -304,11 +314,6 @@ function calculateMovingAverage(
                 );
 
 
-            const average =
-                total /
-                windowEntries.length;
-
-
             return {
 
                 date:
@@ -316,13 +321,156 @@ function calculateMovingAverage(
 
                 weight:
                     Number(
-                        average.toFixed(2)
+                        (
+                            total /
+                            windowSize
+                        )
+                        .toFixed(2)
                     )
 
             };
 
         }
     );
+
+}
+
+
+function calculateLinearRegression(
+    entries
+) {
+
+    if (entries.length < 2) {
+
+        return {
+            points: [],
+            slopePerDay: null
+        };
+
+    }
+
+
+    const firstTime =
+        new Date(
+            `${entries[0].date}T00:00:00`
+        )
+        .getTime();
+
+
+    const values =
+        entries.map(entry => ({
+
+            x:
+                (
+                    new Date(
+                        `${entry.date}T00:00:00`
+                    )
+                    .getTime() -
+                    firstTime
+                ) /
+                86400000,
+
+            y:
+                entry.weight,
+
+            date:
+                entry.date
+
+        }));
+
+
+    const count =
+        values.length;
+
+
+    const meanX =
+        values.reduce(
+            (sum, item) =>
+                sum +
+                item.x,
+            0
+        ) /
+        count;
+
+
+    const meanY =
+        values.reduce(
+            (sum, item) =>
+                sum +
+                item.y,
+            0
+        ) /
+        count;
+
+
+    const numerator =
+        values.reduce(
+            (sum, item) =>
+                sum +
+                (
+                    item.x -
+                    meanX
+                ) *
+                (
+                    item.y -
+                    meanY
+                ),
+            0
+        );
+
+
+    const denominator =
+        values.reduce(
+            (sum, item) =>
+                sum +
+                (
+                    item.x -
+                    meanX
+                ) **
+                2,
+            0
+        );
+
+
+    if (!denominator) {
+
+        return {
+            points: [],
+            slopePerDay: null
+        };
+
+    }
+
+
+    const slopePerDay =
+        numerator /
+        denominator;
+
+
+    const intercept =
+        meanY -
+        slopePerDay *
+        meanX;
+
+
+    return {
+
+        slopePerDay,
+
+        points:
+            values.map(item => ({
+
+                date:
+                    item.date,
+
+                weight:
+                    intercept +
+                    slopePerDay *
+                    item.x
+
+            }))
+
+    };
 
 }
 
@@ -361,6 +509,22 @@ function calculateWeeklyRates(
     return trend.map(
         (current, index) => {
 
+            if (
+                current.weight ===
+                null
+            ) {
+
+                return {
+                    date:
+                        current.date,
+
+                    rate:
+                        null
+                };
+
+            }
+
+
             let previous =
                 null;
 
@@ -370,6 +534,14 @@ function calculateWeeklyRates(
                 i >= 0;
                 i--
             ) {
+
+                if (
+                    trend[i].weight ===
+                    null
+                ) {
+                    continue;
+                }
+
 
                 const days =
                     daysBetween(
@@ -449,20 +621,12 @@ function calculateOverallRate(
     }
 
 
-    const first =
-        entries[0];
-
-
-    const last =
-        entries[
-            entries.length - 1
-        ];
-
-
     const elapsedDays =
         daysBetween(
-            first.date,
-            last.date
+            entries[0].date,
+            entries[
+                entries.length - 1
+            ].date
         );
 
 
@@ -471,13 +635,17 @@ function calculateOverallRate(
     }
 
 
-    return (
-        (
-            last.weight -
-            first.weight
-        ) /
-        elapsedDays
-    ) * 7;
+    const regression =
+        calculateLinearRegression(
+            entries
+        );
+
+
+    return regression.slopePerDay ===
+        null
+            ? null
+            : regression.slopePerDay *
+                7;
 
 }
 
@@ -491,6 +659,12 @@ function updateWeightDisplay() {
 
     const trend =
         calculateMovingAverage(
+            entries
+        );
+
+
+    const regression =
+        calculateLinearRegression(
             entries
         );
 
@@ -517,7 +691,8 @@ function updateWeightDisplay() {
 
     drawWeightChart(
         entries,
-        trend
+        trend,
+        regression.points
     );
 
 }
@@ -584,9 +759,13 @@ function updateSummary(
 
 
     const latestTrend =
-        trend[
-            trend.length - 1
-        ];
+        [...trend]
+            .reverse()
+            .find(item =>
+                item.weight !==
+                null
+            ) ||
+        null;
 
 
     if (latestElement) {
@@ -602,9 +781,11 @@ function updateSummary(
     if (trendElement) {
 
         trendElement.textContent =
-            `${latestTrend.weight.toFixed(
-                1
-            )} lb`;
+            latestTrend
+                ? `${latestTrend.weight.toFixed(
+                    1
+                )} lb`
+                : "--";
 
     }
 
@@ -773,7 +954,8 @@ function updateHistory(
 
                         <span>
                             ${
-                                row.trend !== undefined
+                                row.trend !== undefined &&
+                                row.trend !== null
                                     ? formatDirectionalWeight(
                                         row.trend,
                                         row.trendChange
@@ -912,7 +1094,8 @@ function getRateClass(rate) {
 
 function drawWeightChart(
     entries,
-    trend
+    trend,
+    regression
 ) {
 
     const canvas =
@@ -997,7 +1180,16 @@ function drawWeightChart(
                 item.weight
         ),
 
-        ...trend.map(
+        ...trend
+            .filter(item =>
+                item.weight !==
+                null
+            )
+            .map(item =>
+                item.weight
+            ),
+
+        ...regression.map(
             item =>
                 item.weight
         )
@@ -1426,7 +1618,7 @@ function drawWeightChart(
 
 
     context.strokeStyle =
-        "#e10600";
+        "#ef1821";
 
 
     context.lineWidth =
@@ -1436,8 +1628,20 @@ function drawWeightChart(
     context.beginPath();
 
 
+    let movingAverageStarted =
+        false;
+
+
     trend.forEach(
         (entry, index) => {
+
+            if (
+                entry.weight ===
+                null
+            ) {
+                return;
+            }
+
 
             const x =
                 xPosition(index);
@@ -1449,12 +1653,16 @@ function drawWeightChart(
                 );
 
 
-            if (index === 0) {
+            if (!movingAverageStarted) {
 
                 context.moveTo(
                     x,
                     y
                 );
+
+
+                movingAverageStarted =
+                    true;
 
             }
 
@@ -1471,7 +1679,167 @@ function drawWeightChart(
     );
 
 
-    context.stroke();
+    if (movingAverageStarted) {
+        context.stroke();
+    }
+
+
+    if (
+        regression.length >=
+        2
+    ) {
+
+        context.save();
+
+
+        context.strokeStyle =
+            "#7dd3fc";
+
+
+        context.lineWidth =
+            2;
+
+
+        context.setLineDash([
+            7,
+            5
+        ]);
+
+
+        context.beginPath();
+
+
+        regression.forEach(
+            (entry, index) => {
+
+                const x =
+                    xPosition(index);
+
+
+                const y =
+                    yPosition(
+                        entry.weight
+                    );
+
+
+                if (index === 0) {
+
+                    context.moveTo(
+                        x,
+                        y
+                    );
+
+                }
+
+                else {
+
+                    context.lineTo(
+                        x,
+                        y
+                    );
+
+                }
+
+            }
+        );
+
+
+        context.stroke();
+        context.restore();
+
+    }
+
+
+    const legendItems = [
+        {
+            color: "#ffffff",
+            label: "Measurements",
+            dashed: false
+        },
+        {
+            color: "#ef1821",
+            label: "7-entry average",
+            dashed: false
+        },
+        {
+            color: "#7dd3fc",
+            label: "Best-fit trend",
+            dashed: true
+        }
+    ];
+
+
+    let legendX =
+        padding.left;
+
+
+    legendItems.forEach(item => {
+
+        context.save();
+
+
+        context.strokeStyle =
+            item.color;
+
+
+        context.lineWidth =
+            2;
+
+
+        if (item.dashed) {
+            context.setLineDash([
+                5,
+                4
+            ]);
+        }
+
+
+        context.beginPath();
+
+
+        context.moveTo(
+            legendX,
+            14
+        );
+
+
+        context.lineTo(
+            legendX +
+            18,
+            14
+        );
+
+
+        context.stroke();
+        context.restore();
+
+
+        context.fillStyle =
+            "#b9b9c1";
+
+
+        context.font =
+            "10px Arial";
+
+
+        context.textAlign =
+            "left";
+
+
+        context.fillText(
+            item.label,
+            legendX +
+            23,
+            17
+        );
+
+
+        legendX +=
+            item.label.length *
+            6 +
+            48;
+
+    });
 
 }
 
