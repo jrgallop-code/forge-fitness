@@ -1,7 +1,7 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-adaptive-coach-demo-1";
+from "./core/router.js?v=router-manual-goals-1";
 
 
 import {
