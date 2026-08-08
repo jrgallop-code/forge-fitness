@@ -10,7 +10,7 @@ from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import {
     initializeDashboardNutritionTargets
 }
-from "../dashboard/nutrition-target-card.js?v=goal-mode-dashboard-1";
+from "../dashboard/nutrition-target-card.js?v=active-target-2";
 
 import { renderProgress }
 from "../progress/progress-ui.js?v=progress-sleep-2";
@@ -55,7 +55,12 @@ from "../nutrition/nutrition-plan-ui-v4.js?v=goals-flow-2";
 import {
     initializeGoalsCalculationModeUI
 }
-from "../nutrition/goals-calculation-mode-ui.js?v=goal-mode-1";
+from "../nutrition/goals-calculation-mode-ui.js?v=active-target-2";
+
+import {
+    initializeActiveTargetSyncHooks
+}
+from "../nutrition/active-target-sync-hooks.js?v=active-target-2";
 
 import {
     initializeNutritionPlanHooks
@@ -76,7 +81,7 @@ import {
     renderGoalProjection,
     initializeGoalProjection
 }
-from "../nutrition/goal-projection.js?v=target-calories-1";
+from "../nutrition/goal-projection.js?v=active-target-2";
 
 import {
     renderMore,
@@ -193,6 +198,7 @@ export function navigate(page) {
             initializeGoalProjection();
             initializeNutritionPlanUI();
             initializeGoalsCalculationModeUI();
+            initializeActiveTargetSyncHooks();
             initializeNutritionPlanHooks();
             initializeAdaptiveCoachDemo();
             initializeManualGoalSync();
