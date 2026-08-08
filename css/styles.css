@@ -12,6 +12,44 @@
 
 }
 
+.edit-workout-exercises {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(110px, 0.4fr)) auto;
+    gap: 14px;
+    align-items: end;
+    margin-top: 18px;
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.edit-workout-exercises > div {
+    grid-column: 1 / -1;
+}
+
+.edit-workout-exercises h4,
+.edit-workout-exercises p {
+    margin: 4px 0 0;
+}
+
+.edit-session-exercise-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+@media (max-width: 720px) {
+    .edit-workout-exercises {
+        grid-template-columns: 1fr;
+    }
+
+    .edit-workout-exercises > div {
+        grid-column: auto;
+    }
+}
+
 
 /* Global Reset */
 
