@@ -5,13 +5,13 @@ import { initializeWorkoutBuilder }
 from "../workouts/workouts.js";
 
 import { renderDashboard }
-from "../dashboard/dashboard-ui.js?v=dashboard-weight-1";
+from "../dashboard/dashboard-ui.js?v=dashboard-recovery-1";
 
 import { renderProgress }
-from "../progress/progress-ui.js";
+from "../progress/progress-ui.js?v=progress-sleep-1";
 
 import { initializeWeightTracker }
-from "../progress/weight-tracker.js?v=weight-tracker-5";
+from "../progress/weight-tracker.js?v=weight-tracker-6";
 
 
 import {
@@ -22,23 +22,26 @@ from "../progress/photo-journal.js";
 import { initializeTrainingProgress }
 from "../progress/training-progress.js";
 
+import { initializeSleepTracker }
+from "../progress/sleep-tracker.js?v=sleep-tracker-1";
+
 import {
     renderNutrition,
     initializeNutrition
 }
-from "../nutrition/nutrition-ui.js?v=nutrition-energy-4";
+from "../nutrition/nutrition-ui.js?v=nutrition-water-1";
 
 
 import {
     initializeBackupManager
 }
-from "./backup-manager.js";
+from "./backup-manager.js?v=recovery-backup-1";
 
 
 import {
     initializeGoogleDriveSync
 }
-from "./google-drive-sync.js";
+from "./google-drive-sync.js?v=recovery-backup-1";
 
 
 export function navigate(page) {
@@ -95,6 +98,11 @@ export function navigate(page) {
             initializeProgressFeature(
                 "Training progress",
                 initializeTrainingProgress
+            );
+
+            initializeProgressFeature(
+                "Sleep tracker",
+                initializeSleepTracker
             );
 
             break;
