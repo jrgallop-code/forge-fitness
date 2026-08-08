@@ -1853,3 +1853,51 @@ font-size:16px;
     }
 
 }
+
+
+/* Notes-based cardio planning and workout logging */
+
+.cardio-prescription {
+    grid-template-columns:1fr;
+}
+
+.exercise-notes,
+.session-cardio-notes {
+    width:100%;
+    min-height:96px;
+    margin-top:7px;
+    padding:12px;
+    resize:vertical;
+    color:white;
+    background:#080808;
+    border:1px solid #444;
+    border-radius:9px;
+    font:inherit;
+    line-height:1.45;
+}
+
+.exercise-notes:focus,
+.session-cardio-notes:focus {
+    border-color:var(--red);
+    outline:2px solid color-mix(in srgb, var(--red) 35%, transparent);
+}
+
+.cardio-session-card {
+    display:grid;
+    gap:12px;
+}
+
+.cardio-plan-note {
+    margin:0;
+    padding:11px 12px;
+    color:#ddd;
+    background:#161616;
+    border-radius:9px;
+    line-height:1.45;
+}
+
+.cardio-notes-label {
+    color:var(--muted);
+    font-size:12px;
+    font-weight:700;
+}
