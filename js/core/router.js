@@ -10,7 +10,7 @@ from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import {
     initializeDashboardNutritionTargets
 }
-from "../dashboard/nutrition-target-card.js?v=active-target-2";
+from "../dashboard/nutrition-target-card.js?v=active-target-persist-1";
 
 import { renderProgress }
 from "../progress/progress-ui.js?v=progress-sleep-2";
@@ -18,9 +18,7 @@ from "../progress/progress-ui.js?v=progress-sleep-2";
 import { initializeWeightTracker }
 from "../progress/weight-tracker.js?v=weight-tracker-8";
 
-import {
-    initializePhotoJournal
-}
+import { initializePhotoJournal }
 from "../progress/photo-journal.js";
 
 import { initializeTrainingProgress }
@@ -42,39 +40,25 @@ import {
 }
 from "../nutrition/energy-profile.js?v=calorie-planner-2";
 
-import {
-    initializeProteinTargetExplanation
-}
+import { initializeProteinTargetExplanation }
 from "../nutrition/protein-target-ui.js?v=protein-target-1";
 
-import {
-    initializeNutritionPlanUI
-}
+import { initializeNutritionPlanUI }
 from "../nutrition/nutrition-plan-ui-v4.js?v=goals-flow-2";
 
-import {
-    initializeGoalsCalculationModeUI
-}
-from "../nutrition/goals-calculation-mode-ui.js?v=active-target-4";
+import { initializeGoalsCalculationModeUI }
+from "../nutrition/goals-calculation-mode-ui.js?v=active-target-persist-1";
 
-import {
-    initializeActiveTargetSyncHooks
-}
+import { initializeActiveTargetSyncHooks }
 from "../nutrition/active-target-sync-hooks.js?v=active-target-2";
 
-import {
-    initializeNutritionPlanHooks
-}
+import { initializeNutritionPlanHooks }
 from "../nutrition/nutrition-plan-hooks.js?v=adaptive-plan-1";
 
-import {
-    initializeAdaptiveCoachDemo
-}
+import { initializeAdaptiveCoachDemo }
 from "../nutrition/adaptive-coach-demo.js?v=coach-demo-1";
 
-import {
-    initializeManualGoalSync
-}
+import { initializeManualGoalSync }
 from "../nutrition/manual-goal-sync.js?v=manual-goals-1";
 
 import {
@@ -95,47 +79,32 @@ import {
 }
 from "../workouts/workout-history.js?v=workout-history-3";
 
-import {
-    initializeBackupManager
-}
+import { initializeBackupManager }
 from "./backup-manager.js?v=active-workout-backup-1";
 
-import {
-    initializeGoogleDriveSync
-}
+import { initializeGoogleDriveSync }
 from "./google-drive-sync-v2.js?v=visible-drive-backup-1";
 
-
 export function navigate(page) {
-    const content =
-        document.getElementById("content");
-
-    if (!content) {
-        return;
-    }
+    const content = document.getElementById("content");
+    if (!content) return;
 
     try {
         switch (page) {
             case "home":
-                content.innerHTML =
-                    renderDashboard();
-
+                content.innerHTML = renderDashboard();
                 safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets);
                 safeInitialize("Backup manager", initializeBackupManager);
                 safeInitialize("Google Drive sync", initializeGoogleDriveSync);
                 break;
 
             case "workout":
-                content.innerHTML =
-                    renderWorkoutBuilder();
-
+                content.innerHTML = renderWorkoutBuilder();
                 safeInitialize("Workout builder", initializeWorkoutBuilder);
                 break;
 
             case "progress":
-                content.innerHTML =
-                    renderProgress();
-
+                content.innerHTML = renderProgress();
                 safeInitialize("Weight tracker", initializeWeightTracker);
                 safeInitialize("Manual goal sync", initializeManualGoalSync);
                 safeInitialize("Photo journal", initializePhotoJournal);
@@ -144,46 +113,24 @@ export function navigate(page) {
                 break;
 
             case "nutrition":
-                content.innerHTML =
-                    renderNutrition();
-
+                content.innerHTML = renderNutrition();
                 safeInitialize("Nutrition", initializeNutrition);
-                safeInitialize(
-                    "Nutrition main view",
-                    () => showNutritionView("main")
-                );
+                safeInitialize("Nutrition main view", () => showNutritionView("main"));
                 break;
 
             case "water":
-                content.innerHTML =
-                    renderNutrition();
-
+                content.innerHTML = renderNutrition();
                 safeInitialize("Nutrition", initializeNutrition);
-                safeInitialize(
-                    "Water view",
-                    () => showNutritionView("water")
-                );
+                safeInitialize("Water view", () => showNutritionView("water"));
                 break;
 
             case "energy":
-                content.innerHTML =
-                    renderEnergyProfile() + `
-                        <div
-                            class="nutrition-planner-view nutrition-projection-view"
-                            data-planner-view="projection"
-                            hidden
-                        >
-                            <button
-                                class="nutrition-planner-back"
-                                type="button"
-                                data-nutrition-back
-                            >
-                                ← Calorie Planner
-                            </button>
-
-                            ${renderGoalProjection()}
-                        </div>
-                    `;
+                content.innerHTML = renderEnergyProfile() + `
+                    <div class="nutrition-planner-view nutrition-projection-view" data-planner-view="projection" hidden>
+                        <button class="nutrition-planner-back" type="button" data-nutrition-back>← Calorie Planner</button>
+                        ${renderGoalProjection()}
+                    </div>
+                `;
 
                 safeInitialize("Energy profile", initializeEnergyProfile);
                 safeInitialize("Protein target explanation", initializeProteinTargetExplanation);
@@ -197,51 +144,36 @@ export function navigate(page) {
                 break;
 
             case "more":
-                content.innerHTML =
-                    renderMore();
-
+                content.innerHTML = renderMore();
                 safeInitialize("More", initializeMore);
                 break;
 
             case "history":
-                content.innerHTML =
-                    renderWorkoutHistory();
-
+                content.innerHTML = renderWorkoutHistory();
                 safeInitialize("Workout history", initializeWorkoutHistory);
                 break;
 
             default:
-                content.innerHTML =
-                    renderDashboard();
+                content.innerHTML = renderDashboard();
                 safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets);
         }
     }
     catch (error) {
-        console.error(
-            `Route ${page} failed while rendering:`,
-            error
-        );
-
+        console.error(`Route ${page} failed while rendering:`, error);
         content.innerHTML = `
             <section class="section-card">
                 <h2>Page could not load</h2>
-                <p class="section-description">
-                    The page hit an initialization error. Navigation is still available below.
-                </p>
+                <p class="section-description">The page hit an initialization error. Navigation is still available below.</p>
             </section>
         `;
     }
 }
-
 
 function safeInitialize(name, initializer) {
     try {
         initializer();
     }
     catch (error) {
-        console.error(
-            `${name} failed to initialize:`,
-            error
-        );
+        console.error(`${name} failed to initialize:`, error);
     }
 }
