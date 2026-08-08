@@ -14,6 +14,7 @@ import {
 from "./nutrition-storage.js?v=active-target-1";
 
 const ACTIVE_TARGET_KEY = "level_up_active_calorie_target_source";
+const ACTIVE_TARGET_SNAPSHOT_KEY = "level_up_active_calorie_target_snapshot";
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
 const SAVED_MANUAL_MAINTENANCE_KEY = "level_up_saved_manual_maintenance_calories";
@@ -95,17 +96,24 @@ export function getManualTarget() {
 }
 
 export function getSelectedTarget() {
-    return getActiveTargetSource() === "manual"
-        ? getManualTarget()
-        : getAutoTarget();
+    const source = getActiveTargetSource();
+    const saved = readSavedTarget();
+
+    if (saved && saved.source === source) {
+        return saved;
+    }
+
+    return calculateSelectedTarget();
 }
 
 export function syncSelectedTargetToPlan() {
-    const target = getSelectedTarget();
+    const target = calculateSelectedTarget();
 
-    if (!target || !Number.isFinite(target.calories) || target.calories <= 0) {
+    if (!isValidTarget(target)) {
         return null;
     }
+
+    saveTargetSnapshot(target);
 
     const plan = getNutritionPlan();
 
@@ -116,6 +124,63 @@ export function syncSelectedTargetToPlan() {
     });
 
     return target;
+}
+
+function calculateSelectedTarget() {
+    return getActiveTargetSource() === "manual"
+        ? getManualTarget()
+        : getAutoTarget();
+}
+
+function saveTargetSnapshot(target) {
+    localStorage.setItem(
+        ACTIVE_TARGET_SNAPSHOT_KEY,
+        JSON.stringify({
+            source: target.source,
+            calories: Math.round(Number(target.calories)),
+            maintenance: Number(target.maintenance),
+            weeklyRate: Number(target.weeklyRate),
+            updatedAt: new Date().toISOString()
+        })
+    );
+}
+
+function readSavedTarget() {
+    const stored = localStorage.getItem(ACTIVE_TARGET_SNAPSHOT_KEY);
+
+    if (!stored) {
+        return null;
+    }
+
+    try {
+        const parsed = JSON.parse(stored);
+
+        if (!isValidTarget(parsed)) {
+            return null;
+        }
+
+        return {
+            source: parsed.source === "manual" ? "manual" : "auto",
+            calories: Math.round(Number(parsed.calories)),
+            maintenance: Number(parsed.maintenance),
+            weeklyRate: Number(parsed.weeklyRate)
+        };
+    }
+    catch {
+        return null;
+    }
+}
+
+function isValidTarget(target) {
+    return Boolean(
+        target &&
+        (target.source === "auto" || target.source === "manual") &&
+        Number.isFinite(Number(target.calories)) &&
+        Number(target.calories) > 0 &&
+        Number.isFinite(Number(target.maintenance)) &&
+        Number(target.maintenance) > 0 &&
+        Number.isFinite(Number(target.weeklyRate))
+    );
 }
 
 function readNumberFromEither(activeKey, savedKey) {
