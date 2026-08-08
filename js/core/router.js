@@ -35,19 +35,19 @@ import {
     renderEnergyProfile,
     initializeEnergyProfile
 }
-from "../nutrition/energy-profile.js?v=nutrition-profile-3";
+from "../nutrition/energy-profile.js?v=nutrition-dashboard-1";
 
 import {
     renderGoalProjection,
     initializeGoalProjection
 }
-from "../nutrition/goal-projection.js?v=nutrition-goal-projection-1";
+from "../nutrition/goal-projection.js?v=nutrition-dashboard-1";
 
 import {
     renderMore,
     initializeMore
 }
-from "../more/more-ui.js?v=more-menu-2";
+from "../more/more-ui.js?v=more-menu-3";
 
 import {
     renderWorkoutHistory,
