@@ -13,6 +13,12 @@ from "../progress/progress-ui.js";
 import { initializeWeightTracker }
 from "../progress/weight-tracker.js";
 
+
+import {
+    initializePhotoJournal
+}
+from "../progress/photo-journal.js";
+
 import { initializeTrainingProgress }
 from "../progress/training-progress.js";
 
@@ -69,6 +75,8 @@ export function navigate(page) {
                 renderProgress();
 
             initializeWeightTracker();
+
+            initializePhotoJournal();
 
             initializeTrainingProgress();
 
