@@ -578,9 +578,10 @@ font-size:16px;
 
     grid-template-columns:
         1.2fr
-        1fr
-        1fr
-        1.3fr;
+        .85fr
+        .85fr
+        1.1fr
+        1.15fr;
 
     gap:10px;
 
@@ -669,8 +670,9 @@ font-size:16px;
 
         grid-template-columns:
             1fr
-            .8fr
-            .8fr
+            .75fr
+            .75fr
+            1fr
             1.2fr;
 
         font-size:12px;
@@ -3121,5 +3123,46 @@ textarea:focus {
     .dashboard-session-summary {
         grid-column:2;
         text-align:left;
+    }
+}
+
+
+.weight-entry-actions {
+    display:flex;
+    gap:6px;
+    justify-content:flex-end;
+}
+
+.weight-entry-actions button {
+    padding:7px 9px;
+    color:#e8e8ec;
+    background:#24242a;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:11px;
+    font-weight:750;
+    cursor:pointer;
+}
+
+.weight-entry-actions .edit-weight-entry:hover {
+    border-color:#7dd3fc;
+}
+
+.weight-entry-actions .remove-weight-entry {
+    color:#ff8d92;
+}
+
+.weight-entry-actions .remove-weight-entry:hover {
+    border-color:#ef1821;
+}
+
+@media(max-width:600px) {
+    .weight-entry-actions {
+        flex-direction:column;
+    }
+
+    .weight-entry-actions button {
+        padding:6px;
+        font-size:9px;
     }
 }
