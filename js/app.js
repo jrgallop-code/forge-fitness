@@ -1,7 +1,7 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-goals-flow-2";
+from "./core/router.js?v=router-goal-mode-1";
 
 
 import {
