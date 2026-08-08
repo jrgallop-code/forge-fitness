@@ -909,13 +909,26 @@ function renderSessionHistory(
                         <span>
                             ${countCompletedSets(
                                 session
-                            )} sets
+                            )} sets${formatHistoryDuration(session)}
                         </span>
 
                     </div>
 
                 </article>
             `).join("");
+
+}
+
+
+function formatHistoryDuration(session) {
+
+    const milliseconds =
+        Number(session?.durationMs) ||
+        Number(session?.durationMinutes) * 60000;
+
+    return milliseconds > 0
+        ? ` • ${Math.max(1, Math.round(milliseconds / 60000))} min`
+        : "";
 
 }
 
