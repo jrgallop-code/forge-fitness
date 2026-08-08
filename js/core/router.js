@@ -5,7 +5,7 @@ import { initializeWorkoutBuilder }
 from "../workouts/workouts.js";
 
 import { renderDashboard }
-from "../dashboard/dashboard-ui.js";
+from "../dashboard/dashboard-ui.js?v=dashboard-weight-1";
 
 import { renderProgress }
 from "../progress/progress-ui.js";
