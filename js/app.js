@@ -19,9 +19,15 @@ initializeCaloriePlannerLabels
 }
 from "./nutrition/calorie-planner-labels.js?v=calorie-planner-2";
 
+import {
+initializeExerciseProgressZeroGuard
+}
+from "./progress/exercise-progress-zero-guard.js?v=zero-reps-no-data-1";
+
 
 initializeWorkoutRuntime();
 initializeCaloriePlannerLabels();
+initializeExerciseProgressZeroGuard();
 
 navigate("home");
 
