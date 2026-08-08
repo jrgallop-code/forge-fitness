@@ -15,25 +15,15 @@ initializeWorkoutRuntime
 from "./workouts/workout-session.js?v=workout-session-4";
 
 import {
-installWorkoutSessionSanitizer
-}
-from "./workouts/workout-session-sanitizer.js?v=zero-reps-storage-1";
-
-import {
 initializeCaloriePlannerLabels
 }
 from "./nutrition/calorie-planner-labels.js?v=calorie-planner-2";
 
-import {
-initializeExerciseProgressV2
-}
-from "./progress/exercise-progress-v2.js?v=exercise-progress-svg-1";
 
-
-installWorkoutSessionSanitizer();
+// Keep app startup limited to stable core modules.
+// Exercise-progress filtering belongs inside the progress module, not app boot.
 initializeWorkoutRuntime();
 initializeCaloriePlannerLabels();
-initializeExerciseProgressV2();
 
 navigate("home");
 
