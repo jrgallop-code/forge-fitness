@@ -35,6 +35,12 @@ import {
 from "./backup-manager.js";
 
 
+import {
+    initializeGoogleDriveSync
+}
+from "./google-drive-sync.js";
+
+
 export function navigate(page) {
 
     const content =
@@ -55,6 +61,8 @@ export function navigate(page) {
                 renderDashboard();
 
             initializeBackupManager();
+
+            initializeGoogleDriveSync();
 
             break;
 
