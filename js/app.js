@@ -1,7 +1,7 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-nutrition-dashboard-2";
+from "./core/router.js?v=router-weight-goals-1";
 
 
 import {
