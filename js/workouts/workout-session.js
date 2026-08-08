@@ -60,6 +60,11 @@ export function initializeWorkoutRuntime() {
 export function initializeActiveWorkoutUI() {
 
     renderActiveWorkoutBanner();
+
+    if (getActiveWorkout()) {
+        openActiveWorkout();
+    }
+
     resumeRuntimeTimers();
 
 }
