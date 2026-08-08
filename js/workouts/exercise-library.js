@@ -698,7 +698,48 @@ export const exercises = [
         "recommendedReps": "6-15",
         "defaultSets": 3,
         "trackingType": "reps"
+    },
+    {
+        "id": "indoor-rower",
+        "name": "Indoor Rower",
+        "muscleGroup": "Cardio",
+        "type": "cardio",
+        "equipment": "Machine",
+        "recommendedReps": "",
+        "defaultSets": 1,
+        "trackingType": "notes"
+    },
+    {
+        "id": "ski-erg",
+        "name": "Ski Erg",
+        "muscleGroup": "Cardio",
+        "type": "cardio",
+        "equipment": "Machine",
+        "recommendedReps": "",
+        "defaultSets": 1,
+        "trackingType": "notes"
+    },
+    {
+        "id": "stationary-bike",
+        "name": "Stationary Bike",
+        "muscleGroup": "Cardio",
+        "type": "cardio",
+        "equipment": "Machine",
+        "recommendedReps": "",
+        "defaultSets": 1,
+        "trackingType": "notes"
+    },
+    {
+        "id": "running",
+        "name": "Running",
+        "muscleGroup": "Cardio",
+        "type": "cardio",
+        "equipment": "Bodyweight",
+        "recommendedReps": "",
+        "defaultSets": 1,
+        "trackingType": "notes"
     }
+
 ];
 
 
