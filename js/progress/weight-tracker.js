@@ -271,383 +271,19 @@ function saveWeightEntry() {
 
 
 
-function calculateMovingAverage(
-    entries,
-    windowSize = 7
-) {
 
-    return entries.map(
-        (entry, index) => {
 
-            if (
-                index <
-                windowSize - 1
-            ) {
 
-                return {
-                    date:
-                        entry.date,
 
-                    weight:
-                        null
-                };
 
-            }
 
 
-            const windowEntries =
-                entries.slice(
-                    index -
-                    windowSize +
-                    1,
-                    index +
-                    1
-                );
 
 
-            const total =
-                windowEntries.reduce(
-                    (sum, current) =>
-                        sum +
-                        current.weight,
-                    0
-                );
 
 
-            return {
 
-                date:
-                    entry.date,
 
-                weight:
-                    Number(
-                        (
-                            total /
-                            windowSize
-                        )
-                        .toFixed(2)
-                    )
-
-            };
-
-        }
-    );
-
-}
-
-
-function calculateLinearRegression(
-    entries
-) {
-
-    if (entries.length < 2) {
-
-        return {
-            points: [],
-            slopePerDay: null
-        };
-
-    }
-
-
-    const firstTime =
-        new Date(
-            `${entries[0].date}T00:00:00`
-        )
-        .getTime();
-
-
-    const values =
-        entries.map(entry => ({
-
-            x:
-                (
-                    new Date(
-                        `${entry.date}T00:00:00`
-                    )
-                    .getTime() -
-                    firstTime
-                ) /
-                86400000,
-
-            y:
-                entry.weight,
-
-            date:
-                entry.date
-
-        }));
-
-
-    const count =
-        values.length;
-
-
-    const meanX =
-        values.reduce(
-            (sum, item) =>
-                sum +
-                item.x,
-            0
-        ) /
-        count;
-
-
-    const meanY =
-        values.reduce(
-            (sum, item) =>
-                sum +
-                item.y,
-            0
-        ) /
-        count;
-
-
-    const numerator =
-        values.reduce(
-            (sum, item) =>
-                sum +
-                (
-                    item.x -
-                    meanX
-                ) *
-                (
-                    item.y -
-                    meanY
-                ),
-            0
-        );
-
-
-    const denominator =
-        values.reduce(
-            (sum, item) =>
-                sum +
-                (
-                    item.x -
-                    meanX
-                ) **
-                2,
-            0
-        );
-
-
-    if (!denominator) {
-
-        return {
-            points: [],
-            slopePerDay: null
-        };
-
-    }
-
-
-    const slopePerDay =
-        numerator /
-        denominator;
-
-
-    const intercept =
-        meanY -
-        slopePerDay *
-        meanX;
-
-
-    return {
-
-        slopePerDay,
-
-        points:
-            values.map(item => ({
-
-                date:
-                    item.date,
-
-                weight:
-                    intercept +
-                    slopePerDay *
-                    item.x
-
-            }))
-
-    };
-
-}
-
-
-
-function daysBetween(
-    firstDate,
-    secondDate
-) {
-
-    const first =
-        new Date(
-            `${firstDate}T00:00:00`
-        );
-
-
-    const second =
-        new Date(
-            `${secondDate}T00:00:00`
-        );
-
-
-    return (
-        second - first
-    ) /
-    86400000;
-
-}
-
-
-
-function calculateWeeklyRates(
-    trend
-) {
-
-    return trend.map(
-        (current, index) => {
-
-            if (
-                current.weight ===
-                null
-            ) {
-
-                return {
-                    date:
-                        current.date,
-
-                    rate:
-                        null
-                };
-
-            }
-
-
-            let previous =
-                null;
-
-
-            for (
-                let i = index - 1;
-                i >= 0;
-                i--
-            ) {
-
-                if (
-                    trend[i].weight ===
-                    null
-                ) {
-                    continue;
-                }
-
-
-                const days =
-                    daysBetween(
-                        trend[i].date,
-                        current.date
-                    );
-
-
-                if (days >= 7) {
-
-                    previous =
-                        trend[i];
-
-                    break;
-
-                }
-
-            }
-
-
-            if (!previous) {
-
-                return {
-                    date:
-                        current.date,
-
-                    rate:
-                        null
-                };
-
-            }
-
-
-            const elapsedDays =
-                daysBetween(
-                    previous.date,
-                    current.date
-                );
-
-
-            const weightChange =
-                current.weight -
-                previous.weight;
-
-
-            const weeklyRate =
-                weightChange /
-                elapsedDays *
-                7;
-
-
-            return {
-
-                date:
-                    current.date,
-
-                rate:
-                    Number(
-                        weeklyRate.toFixed(2)
-                    )
-
-            };
-
-        }
-    );
-
-}
-
-
-
-function calculateOverallRate(
-    entries
-) {
-
-    if (entries.length < 2) {
-        return null;
-    }
-
-
-    const elapsedDays =
-        daysBetween(
-            entries[0].date,
-            entries[
-                entries.length - 1
-            ].date
-        );
-
-
-    if (elapsedDays < 7) {
-        return null;
-    }
-
-
-    const regression =
-        calculateLinearRegression(
-            entries
-        );
-
-
-    return regression.slopePerDay ===
-        null
-            ? null
-            : regression.slopePerDay *
-                7;
-
-}
 
 
 
@@ -657,34 +293,19 @@ function updateWeightDisplay() {
         getWeightEntries();
 
 
-    const trend =
-        calculateMovingAverage(
-            entries
-        );
-
-
     const regression =
         calculateLinearRegression(
             entries
         );
 
 
-    const weeklyRates =
-        calculateWeeklyRates(
-            trend
-        );
-
-
     updateSummary(
-        entries,
-        trend,
-        weeklyRates
+        entries
     );
 
 
     updateHistory(
-        entries,
-        regression.points
+        entries
     );
 
 
@@ -698,9 +319,7 @@ function updateWeightDisplay() {
 
 
 function updateSummary(
-    entries,
-    trend,
-    weeklyRates
+    entries
 ) {
 
     const latestElement =
@@ -709,41 +328,15 @@ function updateSummary(
         );
 
 
-    const trendElement =
-        document.getElementById(
-            "weight-trend"
-        );
-
-
-    const weeklyElement =
-        document.getElementById(
-            "current-weekly-rate"
-        );
-
-
-    const overallElement =
-        document.getElementById(
-            "overall-weight-rate"
-        );
+    if (!latestElement) {
+        return;
+    }
 
 
     if (!entries.length) {
 
-        if (latestElement) {
-            latestElement.textContent = "--";
-        }
-
-        if (trendElement) {
-            trendElement.textContent = "--";
-        }
-
-        if (weeklyElement) {
-            weeklyElement.textContent = "--";
-        }
-
-        if (overallElement) {
-            overallElement.textContent = "--";
-        }
+        latestElement.textContent =
+            "--";
 
         return;
 
@@ -756,117 +349,17 @@ function updateSummary(
         ];
 
 
-    const latestTrend =
-        [...trend]
-            .reverse()
-            .find(item =>
-                item.weight !==
-                null
-            ) ||
-        null;
+    latestElement.textContent =
+        `${latest.weight.toFixed(
+            1
+        )} lb`;
 
-
-    if (latestElement) {
-
-        latestElement.textContent =
-            `${latest.weight.toFixed(
-                1
-            )} lb`;
-
-    }
-
-
-    if (trendElement) {
-
-        trendElement.textContent =
-            latestTrend
-                ? `${latestTrend.weight.toFixed(
-                    1
-                )} lb`
-                : "--";
-
-    }
-
-
-    const latestRate =
-        [...weeklyRates]
-            .reverse()
-            .find(
-                item =>
-                    item.rate !== null
-            );
-
-
-   if (weeklyElement) {
-
-    if (latestRate) {
-
-        weeklyElement.textContent =
-            formatRate(
-                latestRate.rate
-            );
-
-
-        weeklyElement.className =
-            getRateClass(
-                latestRate.rate
-            );
-
-    }
-
-    else {
-
-        weeklyElement.textContent =
-            "--";
-
-        weeklyElement.className =
-            "";
-
-    }
-
-}
-
-    const overallRate =
-        calculateOverallRate(
-            entries
-        );
-
-
-    if (overallElement) {
-
-    if (overallRate !== null) {
-
-        overallElement.textContent =
-            formatRate(
-                overallRate
-            );
-
-
-        overallElement.className =
-            getRateClass(
-                overallRate
-            );
-
-    }
-
-    else {
-
-        overallElement.textContent =
-            "--";
-
-        overallElement.className =
-            "";
-
-    }
-
-}
 }
 
 
 
 function updateHistory(
-    entries,
-    regression
+    entries
 ) {
 
     const container =
@@ -883,11 +376,9 @@ function updateHistory(
     if (!entries.length) {
 
         container.innerHTML = `
-
             <p class="empty-state">
                 No weight entries yet.
             </p>
-
         `;
 
         return;
@@ -897,47 +388,23 @@ function updateHistory(
 
     const rows =
         entries.map(
-            (entry, index) => {
+            (entry, index) => ({
 
-                const bestFit =
-                    regression[index]
-                        ?.weight ??
-                    null;
+                date:
+                    entry.date,
 
+                weight:
+                    entry.weight,
 
-                return {
+                weightChange:
+                    index > 0
+                        ? entry.weight -
+                            entries[
+                                index - 1
+                            ].weight
+                        : null
 
-                    date:
-                        entry.date,
-
-                    weight:
-                        entry.weight,
-
-                    bestFit,
-
-                    difference:
-                        bestFit ===
-                            null
-                            ? null
-                            : Number(
-                                (
-                                    entry.weight -
-                                    bestFit
-                                )
-                                .toFixed(2)
-                            ),
-
-                    weightChange:
-                        index > 0
-                            ? entry.weight -
-                                entries[
-                                    index - 1
-                                ].weight
-                            : null
-
-                };
-
-            }
+            })
         );
 
 
@@ -946,7 +413,6 @@ function updateHistory(
             .reverse()
             .map(
                 row => `
-
                     <div class="weight-table-row">
 
                         <span>
@@ -957,34 +423,8 @@ function updateHistory(
                             ${formatDirectionalWeight(
                                 row.weight,
                                 row.weightChange
-                            )}
+                            )} lb
                         </strong>
-
-                        <span>
-                            ${row.bestFit ===
-                                null
-                                    ? "--"
-                                    : `${row.bestFit.toFixed(
-                                        1
-                                    )} lb`}
-                        </span>
-
-                        <span
-                            class="${row.difference ===
-                                null
-                                    ? ""
-                                    : row.difference >
-                                        0
-                                        ? "rate-positive"
-                                        : row.difference <
-                                            0
-                                            ? "rate-negative"
-                                            : "rate-neutral"}"
-                        >
-                            ${formatFitDifference(
-                                row.difference
-                            )}
-                        </span>
 
                         <div class="weight-entry-actions">
 
@@ -1007,7 +447,6 @@ function updateHistory(
                         </div>
 
                     </div>
-
                 `
             )
             .join("");
@@ -1046,723 +485,7 @@ function updateHistory(
 
 
 
-function formatRate(rate) {
 
-    if (!Number.isFinite(rate)) {
-        return "--";
-    }
-
-
-    const arrow =
-        rate > 0
-            ? "↑"
-            : rate < 0
-                ? "↓"
-                : "→";
-
-
-    const prefix =
-        rate > 0
-            ? "+"
-            : "";
-
-
-    return (
-        `${arrow} ${prefix}${rate.toFixed(2)} lb/wk`
-    );
-
-}
-
-function getRateClass(rate) {
-
-    if (!Number.isFinite(rate)) {
-        return "";
-    }
-
-
-    if (rate < 0) {
-        return "rate-negative";
-    }
-
-
-    if (rate > 0) {
-        return "rate-positive";
-    }
-
-
-    return "rate-neutral";
-
-}
-
-
-function drawWeightChart(
-    entries,
-    regression
-) {
-
-    const canvas =
-        document.getElementById(
-            "weight-chart"
-        );
-
-
-    if (!canvas) {
-        return;
-    }
-
-
-    const context =
-        canvas.getContext("2d");
-
-
-    const width =
-        canvas.clientWidth || 800;
-
-
-    const height =
-        400;
-
-
-    const scale =
-        window.devicePixelRatio || 1;
-
-
-    canvas.width =
-        width * scale;
-
-
-    canvas.height =
-        height * scale;
-
-
-    context.setTransform(
-        scale,
-        0,
-        0,
-        scale,
-        0,
-        0
-    );
-
-
-    context.clearRect(
-        0,
-        0,
-        width,
-        height
-    );
-
-
-    if (entries.length < 2) {
-
-        context.fillStyle =
-            "#a0a0a0";
-
-
-        context.font =
-            "16px Arial";
-
-
-        context.fillText(
-            "Add at least two weigh-ins to display the trend.",
-            20,
-            50
-        );
-
-
-        return;
-
-    }
-
-
-    const values = [
-
-        ...entries.map(
-            item =>
-                item.weight
-        ),
-
-        ...regression.map(
-            item =>
-                item.weight
-        )
-
-    ];
-
-
-    const minimum =
-        Math.min(...values) - 1;
-
-
-    const maximum =
-        Math.max(...values) + 1;
-
-
-    const padding = {
-
-        left: 55,
-        right: 20,
-        top: 30,
-        bottom: 45
-
-    };
-
-
-    const chartWidth =
-        width -
-        padding.left -
-        padding.right;
-
-
-    const chartHeight =
-        height -
-        padding.top -
-        padding.bottom;
-
-
-    function xPosition(index) {
-
-        return (
-            padding.left +
-            index /
-            (
-                entries.length - 1
-            ) *
-            chartWidth
-        );
-
-    }
-
-
-    function yPosition(weight) {
-
-        return (
-            padding.top +
-            (
-                maximum - weight
-            ) /
-            (
-                maximum - minimum
-            ) *
-            chartHeight
-        );
-
-    }
-
-
-    for (
-        let index = 0;
-        index <
-            entries.length - 1;
-        index++
-    ) {
-
-        const date =
-            new Date(
-                `${entries[index].date}T00:00:00`
-            );
-
-
-        const weekNumber =
-            Math.floor(
-                index /
-                7
-            );
-
-
-        if (
-            weekNumber % 2 ===
-            0
-        ) {
-
-            const startX =
-                xPosition(
-                    index
-                );
-
-
-            const endX =
-                xPosition(
-                    index + 1
-                );
-
-
-            context.fillStyle =
-                "rgba(255,255,255,.035)";
-
-
-            context.fillRect(
-                startX,
-                padding.top,
-                endX -
-                startX,
-                chartHeight
-            );
-
-        }
-
-
-        if (
-            date.getDay() ===
-            1
-        ) {
-
-            context.strokeStyle =
-                "#252525";
-
-
-            context.beginPath();
-
-
-            context.moveTo(
-                xPosition(index),
-                padding.top
-            );
-
-
-            context.lineTo(
-                xPosition(index),
-                padding.top +
-                chartHeight
-            );
-
-
-            context.stroke();
-
-        }
-
-    }
-
-
-    context.strokeStyle =
-        "#333";
-
-
-    context.lineWidth =
-        1;
-
-
-    for (
-        let i = 0;
-        i <= 4;
-        i++
-    ) {
-
-        const y =
-            padding.top +
-            chartHeight *
-            i /
-            4;
-
-
-        context.beginPath();
-
-
-        context.moveTo(
-            padding.left,
-            y
-        );
-
-
-        context.lineTo(
-            width -
-            padding.right,
-            y
-        );
-
-
-        context.stroke();
-
-
-        const tickValue =
-            maximum -
-            (
-                maximum -
-                minimum
-            ) *
-            i /
-            4;
-
-
-        context.fillStyle =
-            "#a0a0a0";
-
-
-        context.font =
-            "11px Arial";
-
-
-        context.textAlign =
-            "right";
-
-
-        context.fillText(
-            tickValue.toFixed(1),
-            padding.left -
-            8,
-            y +
-            4
-        );
-
-    }
-
-
-    context.save();
-
-
-    context.translate(
-        16,
-        padding.top +
-        chartHeight /
-        2
-    );
-
-
-    context.rotate(
-        -Math.PI /
-        2
-    );
-
-
-    context.fillStyle =
-        "#a0a0a0";
-
-
-    context.font =
-        "12px Arial";
-
-
-    context.textAlign =
-        "center";
-
-
-    context.fillText(
-        "Weight (lb)",
-        0,
-        0
-    );
-
-
-    context.restore();
-
-
-    let previousMonth =
-        null;
-
-
-    entries.forEach(
-        (entry, index) => {
-
-            const date =
-                new Date(
-                    `${entry.date}T00:00:00`
-                );
-
-
-            const monthKey =
-                `${date.getFullYear()}-${date.getMonth()}`;
-
-
-            if (
-                monthKey ===
-                previousMonth
-            ) {
-                return;
-            }
-
-
-            previousMonth =
-                monthKey;
-
-
-            const x =
-                xPosition(
-                    index
-                );
-
-
-            context.strokeStyle =
-                "#555";
-
-
-            context.beginPath();
-
-
-            context.moveTo(
-                x,
-                padding.top
-            );
-
-
-            context.lineTo(
-                x,
-                padding.top +
-                chartHeight
-            );
-
-
-            context.stroke();
-
-
-            context.fillStyle =
-                "#a0a0a0";
-
-
-            context.font =
-                "11px Arial";
-
-
-            context.textAlign =
-                "left";
-
-
-            context.fillText(
-                date.toLocaleDateString(
-                    undefined,
-                    {
-                        month:
-                            "short"
-                    }
-                ),
-                x +
-                4,
-                height -
-                18
-            );
-
-        }
-    );
-
-
-    context.strokeStyle =
-        "#777";
-
-
-    context.lineWidth =
-        1.5;
-
-
-    context.beginPath();
-
-
-    entries.forEach(
-        (entry, index) => {
-
-            const x =
-                xPosition(index);
-
-
-            const y =
-                yPosition(
-                    entry.weight
-                );
-
-
-            if (index === 0) {
-
-                context.moveTo(
-                    x,
-                    y
-                );
-
-            }
-
-            else {
-
-                context.lineTo(
-                    x,
-                    y
-                );
-
-            }
-
-        }
-    );
-
-
-    context.stroke();
-
-
-    context.fillStyle =
-        "#ffffff";
-
-
-    entries.forEach(
-        (entry, index) => {
-
-            context.beginPath();
-
-
-            context.arc(
-                xPosition(index),
-                yPosition(
-                    entry.weight
-                ),
-                4,
-                0,
-                Math.PI * 2
-            );
-
-
-            context.fill();
-
-        }
-    );
-
-
-    if (
-        regression.length >=
-        2
-    ) {
-
-        context.save();
-
-
-        context.strokeStyle =
-            "#7dd3fc";
-
-
-        context.lineWidth =
-            2;
-
-
-        context.setLineDash([
-            7,
-            5
-        ]);
-
-
-        context.beginPath();
-
-
-        regression.forEach(
-            (entry, index) => {
-
-                const x =
-                    xPosition(index);
-
-
-                const y =
-                    yPosition(
-                        entry.weight
-                    );
-
-
-                if (index === 0) {
-
-                    context.moveTo(
-                        x,
-                        y
-                    );
-
-                }
-
-                else {
-
-                    context.lineTo(
-                        x,
-                        y
-                    );
-
-                }
-
-            }
-        );
-
-
-        context.stroke();
-        context.restore();
-
-    }
-
-
-    const legendItems = [
-        {
-            color: "#ffffff",
-            label: "Measurements",
-            dashed: false
-        },
-        {
-            color: "#7dd3fc",
-            label: "Best-fit trend",
-            dashed: true
-        }
-    ];
-
-
-    let legendX =
-        padding.left;
-
-
-    legendItems.forEach(item => {
-
-        context.save();
-
-
-        context.strokeStyle =
-            item.color;
-
-
-        context.lineWidth =
-            2;
-
-
-        if (item.dashed) {
-            context.setLineDash([
-                5,
-                4
-            ]);
-        }
-
-
-        context.beginPath();
-
-
-        context.moveTo(
-            legendX,
-            14
-        );
-
-
-        context.lineTo(
-            legendX +
-            18,
-            14
-        );
-
-
-        context.stroke();
-        context.restore();
-
-
-        context.fillStyle =
-            "#b9b9c1";
-
-
-        context.font =
-            "10px Arial";
-
-
-        context.textAlign =
-            "left";
-
-
-        context.fillText(
-            item.label,
-            legendX +
-            23,
-            17
-        );
-
-
-        legendX +=
-            item.label.length *
-            6 +
-            48;
-
-    });
-
-}
 
 
 
@@ -1861,36 +584,7 @@ function initializeProgressTabs() {
 
 
 
-function formatFitDifference(
-    difference
-) {
 
-    if (
-        difference ===
-        null
-    ) {
-        return "--";
-    }
-
-
-    const rounded =
-        Math.abs(difference) <
-            0.05
-            ? 0
-            : difference;
-
-
-    const prefix =
-        rounded > 0
-            ? "+"
-            : "";
-
-
-    return `${prefix}${rounded.toFixed(
-        1
-    )} lb`;
-
-}
 
 
 
