@@ -1,7 +1,7 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-workout-flow-5";
+from "./core/router.js?v=router-nutrition-dashboard-1";
 
 
 import {
