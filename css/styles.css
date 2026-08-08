@@ -40,6 +40,22 @@
     margin-top: 14px;
 }
 
+.routine-set-editor {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 12px 0;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(225, 6, 0, 0.08);
+    border: 1px solid rgba(225, 6, 0, 0.25);
+}
+
+.routine-set-editor strong {
+    margin-right: auto;
+}
+
 @media (max-width: 720px) {
     .edit-workout-exercises {
         grid-template-columns: 1fr;
