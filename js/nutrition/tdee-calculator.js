@@ -80,7 +80,8 @@ export const MACRO_PRESETS = {
 };
 
 
-export const PROTEIN_GRAMS_PER_KG = 1.6;
+export const PROTEIN_GRAMS_PER_LB = 1;
+export const PROTEIN_GRAMS_PER_KG = 2.20462;
 
 
 export function calculateBmr({ age, sex, heightCm, weightKg }) {
@@ -136,8 +137,11 @@ export function calculateProteinTarget(weightKg) {
         return null;
     }
 
+    const weightLb =
+        weightKg / 0.45359237;
+
     return Math.round(
-        weightKg * PROTEIN_GRAMS_PER_KG
+        weightLb * PROTEIN_GRAMS_PER_LB
     );
 }
 
@@ -189,6 +193,7 @@ export function calculateMacroTargets({
         protein,
         carbs,
         fat,
+        proteinGramsPerLb: PROTEIN_GRAMS_PER_LB,
         proteinGramsPerKg: PROTEIN_GRAMS_PER_KG,
         macroPreset,
         macroPresetLabel: preset.label,
