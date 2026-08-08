@@ -38,6 +38,12 @@ import {
 from "../nutrition/energy-profile.js?v=nutrition-profile-3";
 
 import {
+    renderGoalProjection,
+    initializeGoalProjection
+}
+from "../nutrition/goal-projection.js?v=nutrition-goal-projection-1";
+
+import {
     renderMore,
     initializeMore
 }
@@ -126,9 +132,11 @@ export function navigate(page) {
 
         case "energy":
             content.innerHTML =
-                renderEnergyProfile();
+                renderEnergyProfile() +
+                renderGoalProjection();
 
             initializeEnergyProfile();
+            initializeGoalProjection();
             break;
 
         case "more":
