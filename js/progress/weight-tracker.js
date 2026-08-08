@@ -468,6 +468,44 @@ function calculateLinearRegression(
 
 
 
+function updateWeightDisplay() {
+
+    const entries =
+        getWeightEntries();
+
+
+    const movingAverage =
+        calculateMovingAverage(
+            entries
+        );
+
+
+    const regression =
+        calculateLinearRegression(
+            entries
+        );
+
+
+    updateSummary(
+        entries
+    );
+
+
+    updateHistory(
+        entries,
+        movingAverage
+    );
+
+
+    drawWeightChart(
+        entries,
+        regression.points
+    );
+
+}
+
+
+
 function updateSummary(
     entries
 ) {
