@@ -1,7 +1,7 @@
 import {
     navigate
 }
-from "./core/router.js?v=router-nav-stable-2";
+from "./core/router.js?v=router-nav-stable-3";
 
 import {
     renderNavbar,
