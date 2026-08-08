@@ -61,18 +61,18 @@ export function navigate(page) {
             break;
 
 
-        case "goals":
+        case "nutrition":
 
             content.innerHTML = `
 
                 <section class="section-card">
 
                     <h2>
-                        🎯 Goals & Calories
+                        🌿 Nutrition
                     </h2>
 
                     <p>
-                        Goal phase system temporarily disconnected while debugging.
+                        Build balanced nutrition habits that support training, recovery, and everyday health.
                     </p>
 
                 </section>
