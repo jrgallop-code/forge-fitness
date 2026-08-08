@@ -1,3 +1,12 @@
+import {
+    getActiveTargetSource,
+    setActiveTargetSource,
+    getAutoTarget,
+    getManualTarget,
+    syncSelectedTargetToPlan
+}
+from "./active-calorie-target.js?v=active-target-1";
+
 const CALCULATION_MODE_KEY = "level_up_goal_calculation_mode";
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
@@ -43,7 +52,7 @@ export function initializeGoalsCalculationModeUI() {
                         type="button"
                         data-goal-calculation-mode="manual"
                     >
-                        <strong>Manual Calculation</strong>
+                        <strong>Manual Calculate</strong>
                         <small>Use your known maintenance and custom weekly target</small>
                     </button>
                 </div>
@@ -86,6 +95,8 @@ export function initializeGoalsCalculationModeUI() {
             "Enter the values you already know, then Level Up will calculate your target from those inputs.";
     }
 
+    ensureActiveTargetPicker(goalsView, manualPanel);
+
     document
         .querySelectorAll("[data-goal-calculation-mode]")
         .forEach(button => {
@@ -95,8 +106,123 @@ export function initializeGoalsCalculationModeUI() {
             });
         });
 
+    document
+        .querySelectorAll("[data-active-target-source]")
+        .forEach(button => {
+            button.addEventListener("click", () => {
+                const source = button.dataset.activeTargetSource === "manual"
+                    ? "manual"
+                    : "auto";
+
+                const target = source === "manual"
+                    ? getManualTarget()
+                    : getAutoTarget();
+
+                if (!target) {
+                    updateActiveTargetMessage(
+                        source === "manual"
+                            ? "Complete the manual calculation first."
+                            : "Save your Body Profile and nutrition goal first."
+                    );
+                    return;
+                }
+
+                setActiveTargetSource(source);
+                syncSelectedTargetToPlan();
+                renderActiveTargetPicker();
+
+                window.dispatchEvent(
+                    new CustomEvent("levelup:nutrition-updated")
+                );
+            });
+        });
+
     applyStoredMode();
+    syncSelectedTargetToPlan();
     renderCalculationMode(autoPanel, manualPanel);
+    renderActiveTargetPicker();
+
+    window.addEventListener("levelup:nutrition-updated", () => {
+        syncSelectedTargetToPlan();
+        renderActiveTargetPicker();
+    });
+}
+
+function ensureActiveTargetPicker(goalsView, manualPanel) {
+    if (document.getElementById("active-target-picker")) {
+        return;
+    }
+
+    manualPanel.insertAdjacentHTML(
+        "afterend",
+        `
+            <div id="active-target-picker" class="goal-box nutrition-goal-card active-target-picker">
+                <span class="eyebrow">ACTIVE TARGET</span>
+                <h3>Dashboard Target</h3>
+                <p class="nutrition-message">
+                    Choose which calculation Level Up should use as your active calorie target across the Dashboard, macros, Goal Projection and Adaptive Coach.
+                </p>
+
+                <div class="active-target-actions">
+                    <button
+                        class="goal-calculation-mode-btn"
+                        type="button"
+                        data-active-target-source="auto"
+                    >
+                        <strong>Use Auto Target</strong>
+                        <small id="active-auto-target-value">--</small>
+                    </button>
+
+                    <button
+                        class="goal-calculation-mode-btn"
+                        type="button"
+                        data-active-target-source="manual"
+                    >
+                        <strong>Use Manual Target</strong>
+                        <small id="active-manual-target-value">--</small>
+                    </button>
+                </div>
+
+                <p id="active-target-message" class="nutrition-status-message" aria-live="polite"></p>
+            </div>
+        `
+    );
+}
+
+function renderActiveTargetPicker() {
+    const source = getActiveTargetSource();
+    const autoTarget = getAutoTarget();
+    const manualTarget = getManualTarget();
+
+    setText(
+        "active-auto-target-value",
+        autoTarget ? `${autoTarget.calories} kcal/day` : "Not available"
+    );
+
+    setText(
+        "active-manual-target-value",
+        manualTarget ? `${manualTarget.calories} kcal/day` : "Not available"
+    );
+
+    document
+        .querySelectorAll("[data-active-target-source]")
+        .forEach(button => {
+            const active = button.dataset.activeTargetSource === source;
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", String(active));
+        });
+
+    const selected = source === "manual" ? manualTarget : autoTarget;
+
+    updateActiveTargetMessage(
+        selected
+            ? `Currently using ${source === "manual" ? "Manual" : "Auto"} Target · ${selected.calories} kcal/day`
+            : `Currently using ${source === "manual" ? "Manual" : "Auto"} Target`
+    );
+}
+
+function updateActiveTargetMessage(message) {
+    setText("active-target-message", message);
 }
 
 function getCalculationMode() {
@@ -156,12 +282,10 @@ function stashValue(activeKey, savedKey) {
     const activeValue = localStorage.getItem(activeKey);
 
     if (activeValue === null || activeValue === "") {
-        localStorage.removeItem(savedKey);
-    }
-    else {
-        localStorage.setItem(savedKey, activeValue);
+        return;
     }
 
+    localStorage.setItem(savedKey, activeValue);
     localStorage.removeItem(activeKey);
 }
 
@@ -186,4 +310,11 @@ function renderCalculationMode(autoPanel, manualPanel) {
             button.classList.toggle("is-active", active);
             button.setAttribute("aria-pressed", String(active));
         });
+}
+
+function setText(id, value) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = value;
+    }
 }
