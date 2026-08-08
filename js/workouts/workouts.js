@@ -498,37 +498,57 @@ function renderWorkoutDays() {
                                         </select>
 
 
-                                        <div class="exercise-prescription">
+                                        ${exercise?.trackingType === "notes"
+                                            ? `
+                                                <div class="exercise-prescription cardio-prescription">
 
-                                            <label>
-                                                Sets
+                                                    <label>
+                                                        Cardio Notes
 
-                                                <input
-                                                    class="exercise-sets"
-                                                    data-day-index="${dayIndex}"
-                                                    data-exercise-index="${exerciseIndex}"
-                                                    type="number"
-                                                    min="1"
-                                                    max="10"
-                                                    value="${plannedExercise.sets}"
-                                                >
-                                            </label>
+                                                        <textarea
+                                                            class="exercise-notes"
+                                                            data-day-index="${dayIndex}"
+                                                            data-exercise-index="${exerciseIndex}"
+                                                            placeholder="Example: 20 min, 4 km, moderate pace, resistance 6"
+                                                        >${plannedExercise.notes || ""}</textarea>
+                                                    </label>
+
+                                                </div>
+                                            `
+                                            : `
+                                                <div class="exercise-prescription">
+
+                                                    <label>
+                                                        Sets
+
+                                                        <input
+                                                            class="exercise-sets"
+                                                            data-day-index="${dayIndex}"
+                                                            data-exercise-index="${exerciseIndex}"
+                                                            type="number"
+                                                            min="1"
+                                                            max="10"
+                                                            value="${plannedExercise.sets}"
+                                                        >
+                                                    </label>
 
 
-                                            <label>
-                                                Reps
+                                                    <label>
+                                                        Reps
 
-                                                <input
-                                                    class="exercise-reps"
-                                                    data-day-index="${dayIndex}"
-                                                    data-exercise-index="${exerciseIndex}"
-                                                    type="text"
-                                                    value="${plannedExercise.reps}"
-                                                    placeholder="8-12"
-                                                >
-                                            </label>
+                                                        <input
+                                                            class="exercise-reps"
+                                                            data-day-index="${dayIndex}"
+                                                            data-exercise-index="${exerciseIndex}"
+                                                            type="text"
+                                                            value="${plannedExercise.reps}"
+                                                            placeholder="8-12"
+                                                        >
+                                                    </label>
 
-                                        </div>
+                                                </div>
+                                            `
+                                        }
 
 
                                         <div class="exercise-recommendation">
@@ -541,9 +561,10 @@ function renderWorkoutDays() {
                                                         </span>
 
                                                         <strong>
-                                                            Suggested:
-                                                            ${exercise.recommendedReps}
-                                                            reps
+                                                            ${exercise.trackingType === "notes"
+                                                                ? "Record the session details in your notes."
+                                                                : `Suggested: ${exercise.recommendedReps} reps`
+                                                            }
                                                         </strong>
                                                     `
                                                     : `
@@ -727,6 +748,11 @@ function attachBuilderListeners() {
                             current.reps =
                                 exercise.recommendedReps;
 
+
+                            current.notes =
+                                current.notes ||
+                                "";
+
                         }
 
 
@@ -771,6 +797,44 @@ function attachBuilderListeners() {
                             Number(
                                 input.value
                             );
+
+                    }
+                );
+
+            }
+        );
+
+
+    document
+        .querySelectorAll(
+            ".exercise-notes"
+        )
+        .forEach(
+            input => {
+
+                input.addEventListener(
+                    "change",
+                    () => {
+
+                        const dayIndex =
+                            Number(
+                                input.dataset.dayIndex
+                            );
+
+
+                        const exerciseIndex =
+                            Number(
+                                input.dataset.exerciseIndex
+                            );
+
+
+                        workingPlan
+                            .days[dayIndex]
+                            .exercises[
+                                exerciseIndex
+                            ]
+                            .notes =
+                            input.value;
 
                     }
                 );
