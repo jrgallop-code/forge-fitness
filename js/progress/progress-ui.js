@@ -95,19 +95,7 @@ export function renderProgress() {
                     </div>
 
 
-                    <div class="metric-card">
 
-                        <div>
-
-                            <h3>7-Day Average</h3>
-
-                            <p id="weight-trend">
-                                --
-                            </p>
-
-                        </div>
-
-                    </div>
 
                 </div>
 
@@ -127,34 +115,7 @@ export function renderProgress() {
                         </div>
 
 
-                        <div class="chart-rate-summary">
 
-                            <div class="rate-stat">
-
-                                <span>
-                                    Weekly Change
-                                </span>
-
-                                <strong id="current-weekly-rate">
-                                    --
-                                </strong>
-
-                            </div>
-
-
-                            <div class="rate-stat">
-
-                                <span>
-                                    Best-Fit Average Change
-                                </span>
-
-                                <strong id="overall-weight-rate">
-                                    --
-                                </strong>
-
-                            </div>
-
-                        </div>
 
                     </div>
 
@@ -174,9 +135,10 @@ export function renderProgress() {
                     <h3>Weight History</h3>
 
                     <p class="weight-history-help">
-                        Best-Fit Value is the value on the regression line.
-                        Difference from Fit shows how far each measurement
-                        is above or below that line.
+                        The 7-Entry Moving Average uses the current entry
+                        and the six entries immediately before it. It begins
+                        after seven measurements. The best-fit line is used
+                        only as a visual overlay on the graph.
                     </p>
 
 
@@ -188,9 +150,7 @@ export function renderProgress() {
 
                             <span>Weight</span>
 
-                            <span>Best-Fit Value</span>
-
-                            <span>Difference from Fit</span>
+                            <span>7-Entry Moving Average</span>
 
                             <span>Actions</span>
 
