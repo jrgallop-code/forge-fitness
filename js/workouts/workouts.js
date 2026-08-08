@@ -1056,7 +1056,7 @@ function renderSavedPlans(
                 </h4>
 
                 <p>
-                    Create a plan from scratch or use a Forge
+                    Create a plan from scratch or use a Level Up
                     template as your starting point.
                 </p>
 
