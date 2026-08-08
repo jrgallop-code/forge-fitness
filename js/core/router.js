@@ -53,6 +53,11 @@ import {
 from "../nutrition/nutrition-plan-ui-v4.js?v=goals-flow-2";
 
 import {
+    initializeGoalsCalculationModeUI
+}
+from "../nutrition/goals-calculation-mode-ui.js?v=goal-mode-1";
+
+import {
     initializeNutritionPlanHooks
 }
 from "../nutrition/nutrition-plan-hooks.js?v=adaptive-plan-1";
@@ -71,7 +76,7 @@ import {
     renderGoalProjection,
     initializeGoalProjection
 }
-from "../nutrition/goal-projection.js?v=adaptive-plan-1";
+from "../nutrition/goal-projection.js?v=target-calories-1";
 
 import {
     renderMore,
@@ -187,6 +192,7 @@ export function navigate(page) {
             initializeProteinTargetExplanation();
             initializeGoalProjection();
             initializeNutritionPlanUI();
+            initializeGoalsCalculationModeUI();
             initializeNutritionPlanHooks();
             initializeAdaptiveCoachDemo();
             initializeManualGoalSync();
