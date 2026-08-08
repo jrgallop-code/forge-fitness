@@ -22,7 +22,9 @@ const BACKUP_KEYS = [
     "forge_workout_sessions",
     "forge_custom_exercises",
     "forge_weight_entries",
-    "level_up_nutrition_habits"
+    "level_up_nutrition_habits",
+    "level_up_water_entries",
+    "level_up_sleep_entries"
 ];
 
 
