@@ -96,8 +96,14 @@ export function renderNutrition() {
                     <label for="energy-height">Height (cm)</label>
                     <input id="energy-height" type="number" min="1" step="0.1">
 
-                    <label for="energy-weight">Weight (lb)</label>
-                    <input id="energy-weight" type="number" min="1" step="0.1">
+                    <label for="energy-weight">Body Weight (lb)</label>
+                    <input
+                        id="energy-weight"
+                        type="number"
+                        min="1"
+                        step="0.1"
+                        placeholder="Enter weight in pounds"
+                    >
 
                     <label for="energy-equation">Equation profile</label>
                     <select id="energy-equation">
@@ -107,11 +113,21 @@ export function renderNutrition() {
 
                     <label for="energy-activity">General activity</label>
                     <select id="energy-activity">
-                        <option value="1.2">Mostly sedentary</option>
-                        <option value="1.375">Lightly active</option>
-                        <option value="1.55">Moderately active</option>
-                        <option value="1.725">Very active</option>
-                        <option value="1.9">Highly active</option>
+                        <option value="1.2">
+                            Mostly sedentary — mainly seated, little planned activity
+                        </option>
+                        <option value="1.375">
+                            Lightly active — light activity about 1–3 days per week
+                        </option>
+                        <option value="1.55">
+                            Moderately active — moderate activity about 3–5 days per week
+                        </option>
+                        <option value="1.725">
+                            Very active — challenging activity about 6–7 days per week
+                        </option>
+                        <option value="1.9">
+                            Highly active — intense training plus a physically active routine
+                        </option>
                     </select>
 
                     <button
