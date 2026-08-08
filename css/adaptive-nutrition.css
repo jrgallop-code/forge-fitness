@@ -17,7 +17,8 @@
     font-size: 16px;
 }
 
-.nutrition-target-actions {
+.nutrition-target-actions,
+.active-target-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
@@ -85,6 +86,18 @@
     font-weight: 400;
 }
 
+.active-target-picker {
+    margin-top: 18px;
+}
+
+.active-target-picker > h3 {
+    margin-top: 4px;
+}
+
+.active-target-actions .goal-calculation-mode-btn {
+    min-height: 82px;
+}
+
 .nutrition-status-message {
     min-height: 16px;
     margin: 6px 0 0;
@@ -120,11 +133,20 @@
     min-width: 0;
 }
 
+.dashboard-nutrition-target-card small {
+    display: block;
+    margin-top: 4px;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 11px;
+    font-weight: 400;
+}
+
 @media (max-width: 480px) {
     .nutrition-target-actions {
         grid-template-columns: 1fr;
     }
 
+    .active-target-actions,
     .goal-calculation-mode-picker {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
@@ -133,6 +155,10 @@
     .goal-calculation-mode-btn {
         min-height: 88px;
         padding: 12px;
+    }
+
+    .active-target-actions .goal-calculation-mode-btn {
+        min-height: 78px;
     }
 
     .goal-calculation-mode-btn strong {
