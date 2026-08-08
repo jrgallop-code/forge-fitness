@@ -35,7 +35,7 @@ import {
     renderEnergyProfile,
     initializeEnergyProfile
 }
-from "../nutrition/energy-profile.js?v=nutrition-profile-2";
+from "../nutrition/energy-profile.js?v=nutrition-profile-3";
 
 import {
     renderMore,
