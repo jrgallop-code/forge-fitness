@@ -1632,6 +1632,11 @@ font-size:16px;
     gap:16px;
 }
 
+
+.training-progress-view[hidden] {
+    display:none;
+}
+
 .analytics-card {
     padding:18px;
     background:#101010;
