@@ -5,8 +5,7 @@ from "./tdee-calculator.js?v=active-target-3";
 
 import {
     getNutritionProfile,
-    getNutritionGoal,
-    getNutritionPlan
+    getNutritionGoal
 }
 from "./nutrition-storage.js?v=active-target-3";
 
@@ -36,7 +35,7 @@ export function renderGoalProjection() {
             <h2>Goal Weight & Timeline</h2>
 
             <p class="section-description">
-                Your projection uses the exact active calorie target saved in Goals & Calories.
+                Your projection uses the selected Auto or Manual calorie target from Goals & Calories.
             </p>
 
             <div class="weight-entry-card">
@@ -146,31 +145,26 @@ function saveGoalWeightFromForm() {
 
 function getActiveProjectionTarget() {
     const selectedTarget = getSelectedTarget();
-    const activePlan = getNutritionPlan();
 
     if (!selectedTarget) {
         return null;
     }
 
-    // The saved Current Daily Target is the app-wide source of truth.
-    // Do not recalculate or overwrite it here; Goal Projection must mirror
-    // the exact number shown in Goals & Calories and on the Dashboard.
-    const calories = Number.isFinite(Number(activePlan.currentCalories))
-        ? Number(activePlan.currentCalories)
-        : Number(selectedTarget.calories);
-
+    // IMPORTANT: Goal Projection must use the selected calculator result directly.
+    // Do not read nutritionPlan.currentCalories here because that value may contain
+    // an older Adaptive Coach/current-plan adjustment and can differ from the
+    // Auto/Manual target currently selected in Goals & Calories.
+    const calories = Number(selectedTarget.calories);
     const maintenance = Number(selectedTarget.maintenance);
+    const weeklyRate = Number(selectedTarget.weeklyRate);
 
     if (
         !Number.isFinite(calories) || calories <= 0 ||
-        !Number.isFinite(maintenance) || maintenance <= 0
+        !Number.isFinite(maintenance) || maintenance <= 0 ||
+        !Number.isFinite(weeklyRate)
     ) {
         return null;
     }
-
-    const weeklyRate =
-        ((calories - maintenance) * 7) /
-        3500;
 
     return {
         ...selectedTarget,
@@ -271,17 +265,11 @@ function updateProjection(goalWeight) {
         formatWeeklyRate(weeklyChange)
     );
 
-    if (!Number.isFinite(weeklyChange)) {
-        clearTimelineOnly();
-        setMessage(message, "The selected calorie target does not have a valid weekly-change target yet.");
-        return;
-    }
-
     if (Math.abs(weeklyChange) < 0.05) {
         setProjectionValue("projection-weekly-rate", "Maintain");
         setProjectionValue("projection-weeks", "No timeline");
         setProjectionValue("projection-date", "--");
-        setMessage(message, `Using your exact saved target of ${Math.round(activeCalories)} kcal/day.`);
+        setMessage(message, `Using your selected target of ${Math.round(activeCalories)} kcal/day.`);
         return;
     }
 
