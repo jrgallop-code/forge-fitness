@@ -1,13 +1,13 @@
 import {
 navigate
 }
-from "./core/router.js";
+from "./core/router.js?v=router-more-1";
 
 
 import {
 renderNavbar
 }
-from "./components/navbar.js";
+from "./components/navbar.js?v=navbar-more-1";
 
 
 
