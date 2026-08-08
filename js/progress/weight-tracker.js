@@ -691,7 +691,6 @@ function updateWeightDisplay() {
 
     drawWeightChart(
         entries,
-        trend,
         regression.points
     );
 
@@ -1094,7 +1093,6 @@ function getRateClass(rate) {
 
 function drawWeightChart(
     entries,
-    trend,
     regression
 ) {
 
@@ -1179,15 +1177,6 @@ function drawWeightChart(
             item =>
                 item.weight
         ),
-
-        ...trend
-            .filter(item =>
-                item.weight !==
-                null
-            )
-            .map(item =>
-                item.weight
-            ),
 
         ...regression.map(
             item =>
@@ -1617,73 +1606,6 @@ function drawWeightChart(
     );
 
 
-    context.strokeStyle =
-        "#ef1821";
-
-
-    context.lineWidth =
-        3;
-
-
-    context.beginPath();
-
-
-    let movingAverageStarted =
-        false;
-
-
-    trend.forEach(
-        (entry, index) => {
-
-            if (
-                entry.weight ===
-                null
-            ) {
-                return;
-            }
-
-
-            const x =
-                xPosition(index);
-
-
-            const y =
-                yPosition(
-                    entry.weight
-                );
-
-
-            if (!movingAverageStarted) {
-
-                context.moveTo(
-                    x,
-                    y
-                );
-
-
-                movingAverageStarted =
-                    true;
-
-            }
-
-            else {
-
-                context.lineTo(
-                    x,
-                    y
-                );
-
-            }
-
-        }
-    );
-
-
-    if (movingAverageStarted) {
-        context.stroke();
-    }
-
-
     if (
         regression.length >=
         2
@@ -1754,11 +1676,6 @@ function drawWeightChart(
         {
             color: "#ffffff",
             label: "Measurements",
-            dashed: false
-        },
-        {
-            color: "#ef1821",
-            label: "7-entry average",
             dashed: false
         },
         {
