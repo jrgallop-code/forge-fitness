@@ -288,225 +288,69 @@ function saveWeightEntry() {
 
 
 function calculateMovingAverage(
-    entries,
-    windowSize = 7
-) {
-
-    return entries.map(
-        (entry, index) => {
-
-            if (
-                index <
-                windowSize - 1
-            ) {
-
-                return {
-                    date:
-                        entry.date,
-
-                    weight:
-                        null
-                };
-
-            }
-
-
-            const window =
-                entries.slice(
-                    index -
-                    windowSize +
-                    1,
-                    index +
-                    1
-                );
-
-
-            const average =
-                window.reduce(
-                    (total, item) =>
-                        total +
-                        item.weight,
-                    0
-                ) /
-                windowSize;
-
-
-            return {
-                date:
-                    entry.date,
-
-                weight:
-                    Number(
-                        average.toFixed(
-                            2
-                        )
-                    )
-            };
-
-        }
-    );
-
-}
-
-
-function calculateLinearRegression(
     entries
 ) {
 
-    if (entries.length < 2) {
-        return {
-            points: []
-        };
-    }
+    return entries.map(entry => {
+
+        const currentDate =
+            new Date(
+                `${entry.date}T00:00:00`
+            );
 
 
-    const firstTime =
-        new Date(
-            `${entries[0].date}T00:00:00`
-        )
-        .getTime();
+        const windowStart =
+            new Date(
+                currentDate
+            );
 
 
-    const values =
-        entries.map(entry => ({
+        windowStart.setDate(
+            windowStart.getDate() -
+            6
+        );
 
-            x:
-                (
+
+        const windowEntries =
+            entries.filter(item => {
+
+                const itemDate =
                     new Date(
-                        `${entry.date}T00:00:00`
-                    )
-                    .getTime() -
-                    firstTime
-                ) /
-                86400000,
-
-            y:
-                entry.weight,
-
-            date:
-                entry.date
-
-        }));
+                        `${item.date}T00:00:00`
+                    );
 
 
-    const meanX =
-        values.reduce(
-            (sum, item) =>
-                sum +
-                item.x,
-            0
-        ) /
-        values.length;
+                return itemDate >=
+                    windowStart &&
+                    itemDate <=
+                    currentDate;
+
+            });
 
 
-    const meanY =
-        values.reduce(
-            (sum, item) =>
-                sum +
-                item.y,
-            0
-        ) /
-        values.length;
+        const average =
+            windowEntries.reduce(
+                (total, item) =>
+                    total +
+                    item.weight,
+                0
+            ) /
+            windowEntries.length;
 
 
-    const numerator =
-        values.reduce(
-            (sum, item) =>
-                sum +
-                (
-                    item.x -
-                    meanX
-                ) *
-                (
-                    item.y -
-                    meanY
-                ),
-            0
-        );
-
-
-    const denominator =
-        values.reduce(
-            (sum, item) =>
-                sum +
-                (
-                    item.x -
-                    meanX
-                ) **
-                2,
-            0
-        );
-
-
-    if (!denominator) {
         return {
-            points: []
+            date:
+                entry.date,
+
+            weight:
+                Number(
+                    average.toFixed(
+                        2
+                    )
+                )
         };
-    }
 
-
-    const slope =
-        numerator /
-        denominator;
-
-
-    const intercept =
-        meanY -
-        slope *
-        meanX;
-
-
-    return {
-
-        points:
-            values.map(item => ({
-                date:
-                    item.date,
-
-                weight:
-                    intercept +
-                    slope *
-                    item.x
-            }))
-
-    };
-
-}
-
-
-function updateWeightDisplay() {
-
-    const entries =
-        getWeightEntries();
-
-
-    const movingAverage =
-        calculateMovingAverage(
-            entries
-        );
-
-
-    const regression =
-        calculateLinearRegression(
-            entries
-        );
-
-
-    updateSummary(
-        entries
-    );
-
-
-    updateHistory(
-        entries,
-        movingAverage
-    );
-
-
-    drawWeightChart(
-        entries,
-        regression.points
-    );
+    });
 
 }
 
@@ -629,7 +473,7 @@ function updateHistory(
                         <span>
                             ${row.average ===
                                 null
-                                    ? "Needs 7 entries"
+                                    ? "--"
                                     : `${row.average.toFixed(
                                         1
                                     )} lb`}
