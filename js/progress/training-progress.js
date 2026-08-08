@@ -721,8 +721,8 @@ function renderRecentImprovements(
                 </strong>
 
                 <span>
-                    +${item.change.toFixed(1)}
-                    estimated strength
+                    Estimated 1RM increased by
+                    ${item.change.toFixed(1)} lb
                 </span>
 
             </div>
@@ -1169,7 +1169,7 @@ function drawLineChart(
         context,
         canvas,
         points,
-        "Estimated strength"
+        "Estimated 1RM (lb)"
     );
 
 
