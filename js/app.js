@@ -1,7 +1,7 @@
 import {
 navigate
 }
-from "./core/router.js?v=router-nutrition-dashboard-1";
+from "./core/router.js?v=router-nutrition-dashboard-2";
 
 
 import {
