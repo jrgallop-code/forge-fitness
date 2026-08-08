@@ -919,8 +919,13 @@ function updateHistory(
                         bestFit ===
                             null
                             ? null
-                            : entry.weight -
-                                bestFit,
+                            : Number(
+                                (
+                                    entry.weight -
+                                    bestFit
+                                )
+                                .toFixed(2)
+                            ),
 
                     weightChange:
                         index > 0
@@ -1868,13 +1873,20 @@ function formatFitDifference(
     }
 
 
+    const rounded =
+        Math.abs(difference) <
+            0.05
+            ? 0
+            : difference;
+
+
     const prefix =
-        difference > 0
+        rounded > 0
             ? "+"
             : "";
 
 
-    return `${prefix}${difference.toFixed(
+    return `${prefix}${rounded.toFixed(
         1
     )} lb`;
 
