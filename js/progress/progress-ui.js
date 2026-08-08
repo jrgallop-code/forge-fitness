@@ -101,7 +101,46 @@ export function renderProgress() {
                     </div>
 
 
+                    <div class="metric-card">
 
+                        <div>
+
+                            <h3>Weekly Weight Change</h3>
+
+                            <p id="weekly-weight-change">
+                                --
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+
+
+                </div>
+
+
+                <div class="weight-entry-card">
+
+                    <label for="reference-weight">
+                        Reference Weight (lb)
+                    </label>
+
+                    <input
+                        id="reference-weight"
+                        type="number"
+                        step="0.1"
+                        placeholder="Optional reference"
+                    >
+
+                    <button
+                        id="save-reference-weight-btn"
+                        class="secondary-btn"
+                        type="button"
+                    >
+                        Save Reference
+                    </button>
 
                 </div>
 
