@@ -150,7 +150,7 @@ export function renderProgress() {
                             <h3>Weight Trend</h3>
 
                             <p>
-                                Measurements and best-fit trend
+                                Daily measurements
                             </p>
 
                         </div>
@@ -177,9 +177,8 @@ export function renderProgress() {
 
                     <p class="weight-history-help">
                         The 7-Day Moving Average uses the current entry
-                        and the six entries immediately before it. It begins
-                        after seven measurements. The best-fit line is used
-                        only as a visual overlay on the graph.
+                        and measurements from the six days immediately
+                        before it.
                     </p>
 
 
