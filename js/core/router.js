@@ -50,7 +50,7 @@ from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import {
     initializeNutritionPlanUI
 }
-from "../nutrition/nutrition-plan-ui.js?v=adaptive-plan-1";
+from "../nutrition/nutrition-plan-ui-v2.js?v=manual-goals-1";
 
 import {
     initializeNutritionPlanHooks
@@ -61,6 +61,11 @@ import {
     initializeAdaptiveCoachDemo
 }
 from "../nutrition/adaptive-coach-demo.js?v=coach-demo-1";
+
+import {
+    initializeManualGoalSync
+}
+from "../nutrition/manual-goal-sync.js?v=manual-goals-1";
 
 import {
     renderGoalProjection,
@@ -124,6 +129,8 @@ export function navigate(page) {
                 initializeWeightTracker
             );
 
+            initializeManualGoalSync();
+
             initializeProgressFeature(
                 "Photo journal",
                 initializePhotoJournal
@@ -182,6 +189,7 @@ export function navigate(page) {
             initializeNutritionPlanUI();
             initializeNutritionPlanHooks();
             initializeAdaptiveCoachDemo();
+            initializeManualGoalSync();
             break;
 
         case "more":
