@@ -90,7 +90,7 @@ export function openWorkoutLogger(plan) {
             </h3>
 
             <p>
-                Select a training day and date, then record each set.
+                Select a training day and date, then record your workout details.
             </p>
 
         </div>
@@ -282,6 +282,76 @@ function renderSessionExercises(
                     );
 
 
+                if (
+                    exercise?.trackingType ===
+                    "notes"
+                ) {
+
+                    return `
+                        <article
+                            class="session-exercise-card cardio-session-card"
+                            data-exercise-index="${exerciseIndex}"
+                            data-exercise-id="${escapeHtml(
+                                plannedExercise.id ||
+                                ""
+                            )}"
+                            data-tracking-type="notes"
+                        >
+
+                            <h4>
+                                ${escapeHtml(
+                                    exercise.name ||
+                                    "Cardio"
+                                )}
+                            </h4>
+
+                            <p class="session-target">
+                                Record time, distance, pace, resistance,
+                                intervals, or any other useful details.
+                            </p>
+
+                            ${plannedExercise.notes
+                                ? `
+                                    <p class="cardio-plan-note">
+                                        <strong>Plan notes:</strong>
+                                        ${escapeHtml(
+                                            plannedExercise.notes
+                                        )}
+                                    </p>
+                                `
+                                : ""}
+
+                            <div class="previous-performance">
+
+                                <strong>
+                                    Previous workout
+                                </strong>
+
+                                <span>
+                                    ${previous?.notes
+                                        ? escapeHtml(
+                                            previous.notes
+                                        )
+                                        : "Hasn't started"}
+                                </span>
+
+                            </div>
+
+                            <label class="cardio-notes-label">
+                                Today's notes
+
+                                <textarea
+                                    class="session-cardio-notes"
+                                    placeholder="Example: 20 min, 4 km, moderate pace, resistance 6"
+                                ></textarea>
+                            </label>
+
+                        </article>
+                    `;
+
+                }
+
+
                 const plannedSets =
                     Math.max(
                         1,
@@ -300,6 +370,7 @@ function renderSessionExercises(
                             plannedExercise.id ||
                             ""
                         )}"
+                        data-tracking-type="reps"
                     >
 
                         <h4>
@@ -454,52 +525,89 @@ function saveCompletedSession({
 
 
     const completedExercises =
-        exerciseCards.map(card => ({
+        exerciseCards.map(card => {
 
-            exerciseId:
-                card.dataset.exerciseId,
-
-            sets:
-                [
-                    ...card.querySelectorAll(
-                        ".session-set-row"
-                    )
-                ]
-                .map(row => {
-
-                    const weightValue =
-                        row.querySelector(
-                            ".session-weight"
-                        )?.value;
+            const exerciseId =
+                card.dataset.exerciseId;
 
 
-                    const repsValue =
-                        row.querySelector(
-                            ".session-reps"
-                        )?.value;
+            if (
+                card.dataset.trackingType ===
+                "notes"
+            ) {
+
+                return {
+
+                    exerciseId,
+
+                    trackingType:
+                        "notes",
+
+                    notes:
+                        card.querySelector(
+                            ".session-cardio-notes"
+                        )
+                        ?.value
+                        .trim() ||
+                        "",
+
+                    sets: []
+
+                };
+
+            }
 
 
-                    return {
+            return {
 
-                        weight:
-                            weightValue === ""
-                                ? null
-                                : Number(
-                                    weightValue
-                                ),
+                exerciseId,
 
-                        reps:
-                            repsValue === ""
-                                ? null
-                                : Number(
-                                    repsValue
-                                )
+                trackingType:
+                    "reps",
 
-                    };
+                sets:
+                    [
+                        ...card.querySelectorAll(
+                            ".session-set-row"
+                        )
+                    ]
+                    .map(row => {
 
-                })
+                        const weightValue =
+                            row.querySelector(
+                                ".session-weight"
+                            )?.value;
 
-        }));
+
+                        const repsValue =
+                            row.querySelector(
+                                ".session-reps"
+                            )?.value;
+
+
+                        return {
+
+                            weight:
+                                weightValue === ""
+                                    ? null
+                                    : Number(
+                                        weightValue
+                                    ),
+
+                            reps:
+                                repsValue === ""
+                                    ? null
+                                    : Number(
+                                        repsValue
+                                    )
+
+                        };
+
+                    })
+
+            };
+
+        });
 
 
     const sessions =
