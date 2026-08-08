@@ -215,11 +215,230 @@ export function renderProgress() {
                 hidden
             >
 
-                <h3>Lifting Progress</h3>
+                <div class="training-progress-header">
 
-                <p class="empty-state">
-                    Exercise progression analytics will be added here next.
-                </p>
+                    <div>
+
+                        <h3>Training Progress</h3>
+
+                        <p>
+                            Review strength, training volume and completed sessions.
+                        </p>
+
+                    </div>
+
+                    <label>
+                        Date range
+
+                        <select id="progress-range">
+                            <option value="28">4 Weeks</option>
+                            <option value="84" selected>12 Weeks</option>
+                            <option value="180">6 Months</option>
+                            <option value="0">All</option>
+                        </select>
+                    </label>
+
+                </div>
+
+
+                <div class="training-summary-grid">
+
+                    <div class="training-summary-card">
+                        <span>Workouts</span>
+                        <strong id="progress-workout-count">0</strong>
+                    </div>
+
+                    <div class="training-summary-card">
+                        <span>Working Sets</span>
+                        <strong id="progress-set-count">0</strong>
+                    </div>
+
+                    <div class="training-summary-card">
+                        <span>Exercises Tracked</span>
+                        <strong id="progress-exercise-count">0</strong>
+                    </div>
+
+                    <div class="training-summary-card">
+                        <span>Latest Session</span>
+                        <strong id="progress-latest-session">Not started</strong>
+                    </div>
+
+                </div>
+
+
+                <div class="training-progress-tabs">
+
+                    <button
+                        class="training-progress-tab active"
+                        data-view="overview"
+                        type="button"
+                    >
+                        Overview
+                    </button>
+
+                    <button
+                        class="training-progress-tab"
+                        data-view="exercises"
+                        type="button"
+                    >
+                        Exercises
+                    </button>
+
+                    <button
+                        class="training-progress-tab"
+                        data-view="training"
+                        type="button"
+                    >
+                        Training
+                    </button>
+
+                    <button
+                        class="training-progress-tab"
+                        data-view="history"
+                        type="button"
+                    >
+                        History & Data
+                    </button>
+
+                </div>
+
+
+                <section
+                    class="training-progress-view"
+                    data-view="overview"
+                >
+
+                    <div class="analytics-card">
+
+                        <h4>Weekly Workouts</h4>
+
+                        <canvas
+                            id="weekly-workouts-chart"
+                            class="training-chart"
+                            aria-label="Weekly completed workouts"
+                        ></canvas>
+
+                    </div>
+
+                    <div class="analytics-card">
+
+                        <h4>Recent Improvements</h4>
+
+                        <div id="recent-improvements"></div>
+
+                    </div>
+
+                </section>
+
+
+                <section
+                    class="training-progress-view"
+                    data-view="exercises"
+                    hidden
+                >
+
+                    <div class="exercise-progress-controls">
+
+                        <label>
+                            Exercise
+
+                            <select id="exercise-progress-select"></select>
+                        </label>
+
+                    </div>
+
+                    <div class="analytics-card">
+
+                        <h4 id="exercise-progress-title">
+                            Exercise Progress
+                        </h4>
+
+                        <p class="analytics-note">
+                            Estimated strength is based on the best completed set.
+                        </p>
+
+                        <canvas
+                            id="exercise-strength-chart"
+                            class="training-chart"
+                            aria-label="Estimated exercise strength"
+                        ></canvas>
+
+                    </div>
+
+                    <div class="analytics-card">
+
+                        <div class="exercise-history-header">
+                            <span>Date</span>
+                            <span>Best Set</span>
+                            <span>Est. Strength</span>
+                            <span>Sets</span>
+                        </div>
+
+                        <div id="exercise-history-body"></div>
+
+                    </div>
+
+                </section>
+
+
+                <section
+                    class="training-progress-view"
+                    data-view="training"
+                    hidden
+                >
+
+                    <div class="analytics-card">
+
+                        <h4>Weekly Working Sets</h4>
+
+                        <canvas
+                            id="weekly-sets-chart"
+                            class="training-chart"
+                            aria-label="Weekly working sets"
+                        ></canvas>
+
+                    </div>
+
+                    <div class="analytics-card">
+
+                        <h4>Sets by Muscle Group</h4>
+
+                        <div id="muscle-distribution"></div>
+
+                    </div>
+
+                </section>
+
+
+                <section
+                    class="training-progress-view"
+                    data-view="history"
+                    hidden
+                >
+
+                    <div class="history-export-actions">
+
+                        <button
+                            id="export-workouts-csv"
+                            class="secondary-btn"
+                            type="button"
+                        >
+                            Export CSV
+                        </button>
+
+                        <button
+                            id="export-workouts-json"
+                            class="secondary-btn"
+                            type="button"
+                        >
+                            Export JSON
+                        </button>
+
+                    </div>
+
+                    <div id="workout-history-list"></div>
+
+                </section>
 
             </div>
 
