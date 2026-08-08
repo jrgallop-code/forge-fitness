@@ -806,6 +806,11 @@ function initializeProgressTabs() {
             "lifting-tab"
         );
 
+    const sleepButton =
+        document.getElementById(
+            "sleep-tab"
+        );
+
 
     const weightSection =
         document.getElementById(
@@ -818,6 +823,11 @@ function initializeProgressTabs() {
             "lifting-progress"
         );
 
+    const sleepSection =
+        document.getElementById(
+            "sleep-progress"
+        );
+
 
     weightButton?.addEventListener(
         "click",
@@ -825,7 +835,8 @@ function initializeProgressTabs() {
 
             if (
                 !weightSection ||
-                !liftingSection
+                !liftingSection ||
+                !sleepSection
             ) {
                 return;
             }
@@ -838,6 +849,9 @@ function initializeProgressTabs() {
             liftingSection.hidden =
                 true;
 
+            sleepSection.hidden =
+                true;
+
 
             weightButton.classList.add(
                 "active"
@@ -845,6 +859,10 @@ function initializeProgressTabs() {
 
 
             liftingButton?.classList.remove(
+                "active"
+            );
+
+            sleepButton?.classList.remove(
                 "active"
             );
 
@@ -858,7 +876,8 @@ function initializeProgressTabs() {
 
             if (
                 !weightSection ||
-                !liftingSection
+                !liftingSection ||
+                !sleepSection
             ) {
                 return;
             }
@@ -871,6 +890,9 @@ function initializeProgressTabs() {
             liftingSection.hidden =
                 false;
 
+            sleepSection.hidden =
+                true;
+
 
             liftingButton.classList.add(
                 "active"
@@ -878,6 +900,45 @@ function initializeProgressTabs() {
 
 
             weightButton?.classList.remove(
+                "active"
+            );
+
+            sleepButton?.classList.remove(
+                "active"
+            );
+
+        }
+    );
+
+
+    sleepButton?.addEventListener(
+        "click",
+        () => {
+
+            if (
+                !weightSection ||
+                !liftingSection ||
+                !sleepSection
+            ) {
+                return;
+            }
+
+
+            weightSection.hidden =
+                true;
+            liftingSection.hidden =
+                true;
+            sleepSection.hidden =
+                false;
+
+
+            sleepButton.classList.add(
+                "active"
+            );
+            weightButton?.classList.remove(
+                "active"
+            );
+            liftingButton?.classList.remove(
                 "active"
             );
 
