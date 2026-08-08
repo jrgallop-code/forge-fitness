@@ -9,7 +9,14 @@ const WEIGHT_STORAGE_KEY =
     "forge_weight_entries";
 
 
+const WEIGHT_RESET_KEY =
+    "level_up_weight_reset_2026_08_07";
+
+
 export function initializeWeightTracker() {
+
+    clearExistingWeightDataOnce();
+
 
     const saveButton =
         document.getElementById(
@@ -41,6 +48,33 @@ export function initializeWeightTracker() {
     initializeProgressTabs();
 
     updateWeightDisplay();
+
+}
+
+
+
+function clearExistingWeightDataOnce() {
+
+    if (
+        localStorage.getItem(
+            WEIGHT_RESET_KEY
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    localStorage.removeItem(
+        WEIGHT_STORAGE_KEY
+    );
+
+
+    localStorage.setItem(
+        WEIGHT_RESET_KEY,
+        "complete"
+    );
 
 }
 
