@@ -441,27 +441,21 @@ function calculateWeeklyRates(
 
 
 function calculateOverallRate(
-    trend
+    entries
 ) {
 
-    if (trend.length < 2) {
+    if (entries.length < 2) {
         return null;
     }
 
 
-    const startIndex =
-        trend.length >= 7
-            ? 6
-            : 0;
-
-
     const first =
-        trend[startIndex];
+        entries[0];
 
 
     const last =
-        trend[
-            trend.length - 1
+        entries[
+            entries.length - 1
         ];
 
 
@@ -472,7 +466,7 @@ function calculateOverallRate(
         );
 
 
-    if (elapsedDays <= 0) {
+    if (elapsedDays < 7) {
         return null;
     }
 
@@ -655,7 +649,7 @@ function updateSummary(
 
     const overallRate =
         calculateOverallRate(
-            trend
+            entries
         );
 
 
