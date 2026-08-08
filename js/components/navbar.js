@@ -1,5 +1,5 @@
 import {navigate}
-from "../core/router.js?v=router-more-1";
+from "../core/router.js?v=router-workout-flow-1";
 
 
 export function renderNavbar(){
