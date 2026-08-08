@@ -12,7 +12,7 @@ from "./components/navbar.js?v=navbar-workout-flow-1";
 import {
 initializeWorkoutRuntime
 }
-from "./workouts/workout-session.js?v=workout-session-2";
+from "./workouts/workout-session.js?v=workout-session-3";
 
 
 
