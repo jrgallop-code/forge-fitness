@@ -35,7 +35,12 @@ import {
     renderEnergyProfile,
     initializeEnergyProfile
 }
-from "../nutrition/energy-profile.js?v=nutrition-dashboard-2";
+from "../nutrition/energy-profile.js?v=nutrition-protein-1";
+
+import {
+    initializeProteinTargetExplanation
+}
+from "../nutrition/protein-target-ui.js?v=protein-target-1";
 
 import {
     renderGoalProjection,
@@ -151,6 +156,7 @@ export function navigate(page) {
                 `;
 
             initializeEnergyProfile();
+            initializeProteinTargetExplanation();
             initializeGoalProjection();
             break;
 
