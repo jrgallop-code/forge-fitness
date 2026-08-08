@@ -14,14 +14,8 @@ import {
 }
 from "./workouts/workout-session.js?v=workout-session-4";
 
-import {
-    initializeCaloriePlannerLabels
-}
-from "./nutrition/calorie-planner-labels.js?v=calorie-planner-2";
-
 
 initializeWorkoutRuntime();
-initializeCaloriePlannerLabels();
 
 navigate("home");
 
