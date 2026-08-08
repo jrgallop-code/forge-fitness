@@ -12,10 +12,9 @@ import {
 from "../nutrition/tdee-calculator.js?v=active-target-2";
 
 import {
-    getSelectedTarget,
-    syncSelectedTargetToPlan
+    getSelectedTarget
 }
-from "../nutrition/active-calorie-target.js?v=active-target-2";
+from "../nutrition/active-calorie-target.js?v=active-target-persist-1";
 
 export function initializeDashboardNutritionTargets() {
     const dashboard = document.querySelector(".dashboard");
@@ -35,9 +34,10 @@ export function initializeDashboardNutritionTargets() {
         return;
     }
 
-    const target =
-        syncSelectedTargetToPlan() ||
-        getSelectedTarget();
+    // The Dashboard must display the target the user explicitly selected.
+    // Do not recalculate it here, because recalculation on navigation can
+    // overwrite a recently chosen target with an older/default value.
+    const target = getSelectedTarget();
 
     if (!target || !Number.isFinite(target.calories) || target.calories <= 0) {
         return;
