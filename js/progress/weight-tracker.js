@@ -356,6 +356,136 @@ function calculateMovingAverage(
 
 
 
+function calculateLinearRegression(
+    entries
+) {
+
+    if (entries.length < 2) {
+
+        return {
+            points: []
+        };
+
+    }
+
+
+    const firstTime =
+        new Date(
+            `${entries[0].date}T00:00:00`
+        )
+        .getTime();
+
+
+    const values =
+        entries.map(entry => ({
+
+            x:
+                (
+                    new Date(
+                        `${entry.date}T00:00:00`
+                    )
+                    .getTime() -
+                    firstTime
+                ) /
+                86400000,
+
+            y:
+                entry.weight,
+
+            date:
+                entry.date
+
+        }));
+
+
+    const meanX =
+        values.reduce(
+            (sum, item) =>
+                sum +
+                item.x,
+            0
+        ) /
+        values.length;
+
+
+    const meanY =
+        values.reduce(
+            (sum, item) =>
+                sum +
+                item.y,
+            0
+        ) /
+        values.length;
+
+
+    const numerator =
+        values.reduce(
+            (sum, item) =>
+                sum +
+                (
+                    item.x -
+                    meanX
+                ) *
+                (
+                    item.y -
+                    meanY
+                ),
+            0
+        );
+
+
+    const denominator =
+        values.reduce(
+            (sum, item) =>
+                sum +
+                (
+                    item.x -
+                    meanX
+                ) **
+                2,
+            0
+        );
+
+
+    if (!denominator) {
+
+        return {
+            points: []
+        };
+
+    }
+
+
+    const slope =
+        numerator /
+        denominator;
+
+
+    const intercept =
+        meanY -
+        slope *
+        meanX;
+
+
+    return {
+
+        points:
+            values.map(item => ({
+                date:
+                    item.date,
+
+                weight:
+                    intercept +
+                    slope *
+                    item.x
+            }))
+
+    };
+
+}
+
+
+
 function updateSummary(
     entries
 ) {
