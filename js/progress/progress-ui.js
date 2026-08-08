@@ -349,7 +349,13 @@ export function renderProgress() {
 
                     <div class="analytics-card">
 
-                        <h4>Recent Improvements</h4>
+                        <h4>Recent Estimated Strength Improvements</h4>
+
+                        <p class="analytics-note">
+                            Compares estimated one-rep max (1RM) from the
+                            best logged set in each of the two latest workouts.
+                            This is an estimate, not a tested maximum.
+                        </p>
 
                         <div id="recent-improvements"></div>
 
@@ -381,7 +387,8 @@ export function renderProgress() {
                         </h4>
 
                         <p class="analytics-note">
-                            Estimated strength is based on the best completed set.
+                            Estimated 1RM is calculated from the best completed
+                            set. It is an estimate, not a tested maximum.
                         </p>
 
                         <canvas
@@ -397,7 +404,7 @@ export function renderProgress() {
                         <div class="exercise-history-header">
                             <span>Date</span>
                             <span>Best Set</span>
-                            <span>Est. Strength</span>
+                            <span>Est. 1RM</span>
                             <span>Sets</span>
                         </div>
 
