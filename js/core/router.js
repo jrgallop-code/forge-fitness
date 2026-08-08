@@ -11,7 +11,7 @@ import { renderProgress }
 from "../progress/progress-ui.js";
 
 import { initializeWeightTracker }
-from "../progress/weight-tracker.js?v=weight-tracker-4";
+from "../progress/weight-tracker.js?v=weight-tracker-5";
 
 
 import {
@@ -26,7 +26,7 @@ import {
     renderNutrition,
     initializeNutrition
 }
-from "../nutrition/nutrition-ui.js?v=nutrition-energy-1";
+from "../nutrition/nutrition-ui.js?v=nutrition-energy-2";
 
 
 import {
