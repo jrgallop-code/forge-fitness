@@ -645,11 +645,30 @@ function renderSessionRow(
                     ${setCount === 1
                         ? "set"
                         : "sets"}
+                    ${formatSessionDuration(session)}
                 </span>
             </div>
 
         </article>
     `;
+
+}
+
+
+function formatSessionDuration(session) {
+
+    const milliseconds =
+        Number(session?.durationMs) ||
+        Number(session?.durationMinutes) * 60000;
+
+    if (!(milliseconds > 0)) {
+        return "";
+    }
+
+    const minutes =
+        Math.max(1, Math.round(milliseconds / 60000));
+
+    return ` • ${minutes} min`;
 
 }
 
