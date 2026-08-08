@@ -23,6 +23,12 @@ import {
 from "../nutrition/nutrition-ui.js";
 
 
+import {
+    initializeBackupManager
+}
+from "./backup-manager.js";
+
+
 export function navigate(page) {
 
     const content =
@@ -41,6 +47,8 @@ export function navigate(page) {
 
             content.innerHTML =
                 renderDashboard();
+
+            initializeBackupManager();
 
             break;
 
