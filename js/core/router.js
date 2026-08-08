@@ -8,10 +8,10 @@ import { renderDashboard }
 from "../dashboard/dashboard-ui.js?v=dashboard-recovery-1";
 
 import { renderProgress }
-from "../progress/progress-ui.js?v=progress-sleep-1";
+from "../progress/progress-ui.js?v=progress-sleep-2";
 
 import { initializeWeightTracker }
-from "../progress/weight-tracker.js?v=weight-tracker-6";
+from "../progress/weight-tracker.js?v=weight-tracker-7";
 
 
 import {
@@ -23,7 +23,7 @@ import { initializeTrainingProgress }
 from "../progress/training-progress.js";
 
 import { initializeSleepTracker }
-from "../progress/sleep-tracker.js?v=sleep-tracker-1";
+from "../progress/sleep-tracker.js?v=sleep-tracker-2";
 
 import {
     renderNutrition,
