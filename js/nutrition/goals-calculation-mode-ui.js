@@ -130,10 +130,17 @@ export function initializeGoalsCalculationModeUI() {
                 setActiveTargetSource(source);
                 syncSelectedTargetToPlan();
                 renderActiveTargetPicker();
+                renderSelectedTargetOutputs();
 
                 window.dispatchEvent(
                     new CustomEvent("levelup:nutrition-updated")
                 );
+
+                requestAnimationFrame(() => {
+                    syncSelectedTargetToPlan();
+                    renderActiveTargetPicker();
+                    renderSelectedTargetOutputs();
+                });
             });
         });
 
@@ -141,10 +148,12 @@ export function initializeGoalsCalculationModeUI() {
     syncSelectedTargetToPlan();
     renderCalculationMode(autoPanel, manualPanel);
     renderActiveTargetPicker();
+    renderSelectedTargetOutputs();
 
     window.addEventListener("levelup:nutrition-updated", () => {
         syncSelectedTargetToPlan();
         renderActiveTargetPicker();
+        renderSelectedTargetOutputs();
     });
 }
 
@@ -219,6 +228,37 @@ function renderActiveTargetPicker() {
             ? `Currently using ${source === "manual" ? "Manual" : "Auto"} Target · ${selected.calories} kcal/day`
             : `Currently using ${source === "manual" ? "Manual" : "Auto"} Target`
     );
+}
+
+function renderSelectedTargetOutputs() {
+    const source = getActiveTargetSource();
+    const selected = source === "manual"
+        ? getManualTarget()
+        : getAutoTarget();
+
+    if (!selected || !Number.isFinite(Number(selected.calories))) {
+        return;
+    }
+
+    const calories = Math.round(Number(selected.calories));
+    const maintenance = Math.round(Number(selected.maintenance));
+    const weeklyRate = Number(selected.weeklyRate);
+
+    setText("current-calorie-target", `${calories} kcal/day`);
+    setText("calculated-calorie-target", `${calories} kcal/day`);
+
+    if (Number.isFinite(maintenance)) {
+        setText("override-working-maintenance", `${maintenance} kcal/day`);
+    }
+
+    if (Number.isFinite(weeklyRate)) {
+        setText(
+            "override-effective-rate",
+            `${weeklyRate > 0 ? "+" : ""}${weeklyRate.toFixed(2)} lb/wk`
+        );
+    }
+
+    setText("planner-summary-calories", `${calories} kcal`);
 }
 
 function updateActiveTargetMessage(message) {
