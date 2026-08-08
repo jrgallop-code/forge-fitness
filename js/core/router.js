@@ -105,6 +105,7 @@ import {
 }
 from "./google-drive-sync-v2.js?v=visible-drive-backup-1";
 
+
 export function navigate(page) {
     const content =
         document.getElementById("content");
@@ -113,122 +114,127 @@ export function navigate(page) {
         return;
     }
 
-    switch (page) {
-        case "home":
-            content.innerHTML =
-                renderDashboard();
+    try {
+        switch (page) {
+            case "home":
+                content.innerHTML =
+                    renderDashboard();
 
-            initializeDashboardNutritionTargets();
-            initializeBackupManager();
-            initializeGoogleDriveSync();
-            break;
+                safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets);
+                safeInitialize("Backup manager", initializeBackupManager);
+                safeInitialize("Google Drive sync", initializeGoogleDriveSync);
+                break;
 
-        case "workout":
-            content.innerHTML =
-                renderWorkoutBuilder();
+            case "workout":
+                content.innerHTML =
+                    renderWorkoutBuilder();
 
-            initializeWorkoutBuilder();
-            break;
+                safeInitialize("Workout builder", initializeWorkoutBuilder);
+                break;
 
-        case "progress":
-            content.innerHTML =
-                renderProgress();
+            case "progress":
+                content.innerHTML =
+                    renderProgress();
 
-            initializeProgressFeature(
-                "Weight tracker",
-                initializeWeightTracker
-            );
+                safeInitialize("Weight tracker", initializeWeightTracker);
+                safeInitialize("Manual goal sync", initializeManualGoalSync);
+                safeInitialize("Photo journal", initializePhotoJournal);
+                safeInitialize("Training progress", initializeTrainingProgress);
+                safeInitialize("Sleep tracker", initializeSleepTracker);
+                break;
 
-            initializeManualGoalSync();
+            case "nutrition":
+                content.innerHTML =
+                    renderNutrition();
 
-            initializeProgressFeature(
-                "Photo journal",
-                initializePhotoJournal
-            );
+                safeInitialize("Nutrition", initializeNutrition);
+                safeInitialize(
+                    "Nutrition main view",
+                    () => showNutritionView("main")
+                );
+                break;
 
-            initializeProgressFeature(
-                "Training progress",
-                initializeTrainingProgress
-            );
+            case "water":
+                content.innerHTML =
+                    renderNutrition();
 
-            initializeProgressFeature(
-                "Sleep tracker",
-                initializeSleepTracker
-            );
-            break;
+                safeInitialize("Nutrition", initializeNutrition);
+                safeInitialize(
+                    "Water view",
+                    () => showNutritionView("water")
+                );
+                break;
 
-        case "nutrition":
-            content.innerHTML =
-                renderNutrition();
-
-            initializeNutrition();
-            showNutritionView("main");
-            break;
-
-        case "water":
-            content.innerHTML =
-                renderNutrition();
-
-            initializeNutrition();
-            showNutritionView("water");
-            break;
-
-        case "energy":
-            content.innerHTML =
-                renderEnergyProfile() + `
-                    <div
-                        class="nutrition-planner-view nutrition-projection-view"
-                        data-planner-view="projection"
-                        hidden
-                    >
-                        <button
-                            class="nutrition-planner-back"
-                            type="button"
-                            data-nutrition-back
+            case "energy":
+                content.innerHTML =
+                    renderEnergyProfile() + `
+                        <div
+                            class="nutrition-planner-view nutrition-projection-view"
+                            data-planner-view="projection"
+                            hidden
                         >
-                            ← Calorie Planner
-                        </button>
+                            <button
+                                class="nutrition-planner-back"
+                                type="button"
+                                data-nutrition-back
+                            >
+                                ← Calorie Planner
+                            </button>
 
-                        ${renderGoalProjection()}
-                    </div>
-                `;
+                            ${renderGoalProjection()}
+                        </div>
+                    `;
 
-            initializeEnergyProfile();
-            initializeProteinTargetExplanation();
-            initializeGoalProjection();
-            initializeNutritionPlanUI();
-            initializeGoalsCalculationModeUI();
-            initializeActiveTargetSyncHooks();
-            initializeNutritionPlanHooks();
-            initializeAdaptiveCoachDemo();
-            initializeManualGoalSync();
-            break;
+                safeInitialize("Energy profile", initializeEnergyProfile);
+                safeInitialize("Protein target explanation", initializeProteinTargetExplanation);
+                safeInitialize("Goal projection", initializeGoalProjection);
+                safeInitialize("Nutrition plan UI", initializeNutritionPlanUI);
+                safeInitialize("Goals calculation mode", initializeGoalsCalculationModeUI);
+                safeInitialize("Active target sync", initializeActiveTargetSyncHooks);
+                safeInitialize("Nutrition plan hooks", initializeNutritionPlanHooks);
+                safeInitialize("Adaptive coach demo", initializeAdaptiveCoachDemo);
+                safeInitialize("Manual goal sync", initializeManualGoalSync);
+                break;
 
-        case "more":
-            content.innerHTML =
-                renderMore();
+            case "more":
+                content.innerHTML =
+                    renderMore();
 
-            initializeMore();
-            break;
+                safeInitialize("More", initializeMore);
+                break;
 
-        case "history":
-            content.innerHTML =
-                renderWorkoutHistory();
+            case "history":
+                content.innerHTML =
+                    renderWorkoutHistory();
 
-            initializeWorkoutHistory();
-            break;
+                safeInitialize("Workout history", initializeWorkoutHistory);
+                break;
 
-        default:
-            content.innerHTML =
-                renderDashboard();
-            initializeDashboardNutritionTargets();
+            default:
+                content.innerHTML =
+                    renderDashboard();
+                safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets);
+        }
+    }
+    catch (error) {
+        console.error(
+            `Route ${page} failed while rendering:`,
+            error
+        );
+
+        content.innerHTML = `
+            <section class="section-card">
+                <h2>Page could not load</h2>
+                <p class="section-description">
+                    The page hit an initialization error. Navigation is still available below.
+                </p>
+            </section>
+        `;
     }
 }
 
-function initializeProgressFeature(
-    name,
-    initializer
-) {
+
+function safeInitialize(name, initializer) {
     try {
         initializer();
     }
