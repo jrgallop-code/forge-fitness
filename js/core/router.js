@@ -13,7 +13,7 @@ import {
 from "../dashboard/nutrition-target-card.js?v=dashboard-icons-1";
 
 import { renderProgress }
-from "../progress/progress-ui.js?v=progress-10-weeks-1";
+from "../progress/progress-ui.js?v=progress-more-sleep-1";
 
 import { initializeWeightTracker }
 from "../progress/weight-tracker.js?v=weight-tracker-8";
@@ -27,8 +27,17 @@ from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
 import { initializeWeeklyMuscleVolume }
 from "../progress/weekly-muscle-volume.js?v=training-analytics-5";
 
-import { initializeSleepTracker }
+import {
+    renderSleepTracker,
+    initializeSleepTracker
+}
 from "../progress/sleep-tracker.js?v=sleep-tracker-2";
+
+import {
+    renderMeasurementsTracker,
+    initializeMeasurementsTracker
+}
+from "../progress/measurements-tracker.js?v=measurements-1";
 
 import {
     renderNutrition,
@@ -74,7 +83,7 @@ import {
     renderMore,
     initializeMore
 }
-from "../more/more-ui-v2.js?v=more-nutrition-2";
+from "../more/more-ui-v2.js?v=more-tools-3";
 
 import {
     renderWorkoutHistory,
@@ -114,7 +123,27 @@ export function navigate(page) {
                 safeInitialize("Photo journal", initializePhotoJournal);
                 safeInitialize("Training progress", initializeTrainingProgress);
                 safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume);
+                break;
+
+            case "sleep":
+                content.innerHTML = `
+                    <section class="section-card">
+                        <div class="training-progress-header">
+                            <div>
+                                <span class="eyebrow">RECOVERY</span>
+                                <h2>Sleep</h2>
+                                <p>Track sleep duration, quality and recovery notes.</p>
+                            </div>
+                        </div>
+                        ${renderSleepTracker()}
+                    </section>
+                `;
                 safeInitialize("Sleep tracker", initializeSleepTracker);
+                break;
+
+            case "measurements":
+                content.innerHTML = renderMeasurementsTracker();
+                safeInitialize("Measurements tracker", initializeMeasurementsTracker);
                 break;
 
             case "nutrition":
