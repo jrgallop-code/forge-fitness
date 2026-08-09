@@ -496,6 +496,69 @@ export function renderNutrition() {
 }
 
 
+export function renderWater() {
+    return `
+        <section class="nutrition-page water-only-page">
+            <section class="dashboard-welcome">
+                <div>
+                    <span class="eyebrow">HYDRATION</span>
+                    <h2>Water Log</h2>
+                    <p>Record daily water and review your recent entries.</p>
+                </div>
+            </section>
+
+            <article class="section-card" data-more-tool="water">
+                <span class="eyebrow">HYDRATION LOG</span>
+                <h2>Water Recorded</h2>
+                <p class="section-description">
+                    Record how much water you drank without applying a required daily target.
+                </p>
+
+                <div class="weight-entry-card">
+                    <label for="water-date">Date</label>
+                    <input id="water-date" type="date">
+
+                    <label for="water-amount">Water (mL)</label>
+                    <input
+                        id="water-amount"
+                        type="number"
+                        min="0"
+                        step="50"
+                        placeholder="Enter daily amount"
+                    >
+
+                    <button id="save-water-btn" class="primary-btn" type="button">
+                        Save Water
+                    </button>
+                </div>
+
+                <div class="metric-card">
+                    <h3>Water Recorded Today</h3>
+                    <p id="water-today">--</p>
+                </div>
+
+                <p id="water-message" class="nutrition-message" aria-live="polite"></p>
+
+                <div class="weight-history">
+                    <h3>Water History</h3>
+                    <div class="weight-table">
+                        <div class="weight-table-header">
+                            <span>Date</span>
+                            <span>Water</span>
+                            <span>Status</span>
+                            <span>Actions</span>
+                        </div>
+                        <div id="water-history-list">
+                            <p class="empty-state">No water entries yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </section>
+    `;
+}
+
+
 export function initializeNutrition() {
 
     const waterDate =
