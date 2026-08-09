@@ -9,33 +9,37 @@ const MIN_AVERAGE_DAYS = 7;
 export function initializeWeeklyMuscleVolume() {
     const liftingTab = document.getElementById("lifting-tab");
 
-    liftingTab?.addEventListener("click", () => requestAnimationFrame(renderTrainingVolumeAnalytics));
+    liftingTab?.addEventListener("click", () =>
+        requestAnimationFrame(renderTrainingVolumeAnalytics)
+    );
 
     document
         .querySelectorAll('.training-progress-tab[data-view="training"]')
         .forEach(button => {
-            button.addEventListener("click", () => requestAnimationFrame(renderTrainingVolumeAnalytics));
+            button.addEventListener("click", () =>
+                requestAnimationFrame(renderTrainingVolumeAnalytics)
+            );
         });
 
     renderTrainingVolumeAnalytics();
 }
 
 function renderTrainingVolumeAnalytics() {
-    const canvas = document.getElementById("weekly-sets-chart");
+    const oldCanvas = document.getElementById("weekly-sets-chart");
     const muscleDistribution = document.getElementById("muscle-distribution");
-    if (!canvas || !muscleDistribution) return;
+    if (!oldCanvas || !muscleDistribution) return;
 
-    const trainingView = canvas.closest('.training-progress-view[data-view="training"]');
-    const weeklyCard = canvas.closest(".analytics-card");
+    const weeklyCard = oldCanvas.closest(".analytics-card");
     const averageCard = muscleDistribution.closest(".analytics-card");
-    if (!trainingView || !weeklyCard || !averageCard) return;
+    if (!weeklyCard || !averageCard) return;
 
     const weeklyHeading = weeklyCard.querySelector("h4");
     const averageHeading = averageCard.querySelector("h4");
     if (weeklyHeading) weeklyHeading.textContent = "Weekly Sets by Muscle Group";
     if (averageHeading) averageHeading.textContent = "Average Weekly Sets by Muscle Group";
 
-    canvas.hidden = true;
+    // Remove the old generic red weekly working-sets canvas entirely.
+    oldCanvas.remove();
     muscleDistribution.innerHTML = "";
     ensureAnalyticsCards(averageCard);
 
@@ -95,7 +99,7 @@ function renderWeeklyMuscleChart(card, muscleData, weeks) {
 
     container.innerHTML = `
         <p class="weekly-volume-note">
-            ${windowText} Exact completed working sets are grouped by Monday–Sunday training week. Demo sessions are excluded and 0 reps is treated as no data.
+            ${windowText} Completed working sets are grouped by Monday–Sunday training week. 0 reps is treated as no data.
         </p>
         <div class="volume-heatmap-wrap">
             <div class="volume-heatmap" style="--week-count:${weeks.length}">
@@ -145,7 +149,10 @@ function renderAverageWeeklySets(muscleData, weeks, hasFullWeek) {
         <div class="weekly-volume-bars">
             ${entries.map(([muscle, average]) => `
                 <div class="weekly-volume-row">
-                    <div class="weekly-volume-row-top"><strong>${escapeHtml(muscle)}</strong><span>${average} sets/wk</span></div>
+                    <div class="weekly-volume-row-top">
+                        <strong>${escapeHtml(muscle)}</strong>
+                        <span>${average} sets/wk</span>
+                    </div>
                     <div class="weekly-volume-track">
                         <div class="weekly-volume-target-zone" style="left:${TARGET_MIN / maximum * 100}%; width:${(TARGET_MAX - TARGET_MIN) / maximum * 100}%"></div>
                         <div class="weekly-volume-fill ${getVolumeClass(average)}" style="width:${Math.min(100, average / maximum * 100)}%"></div>
@@ -350,21 +357,15 @@ function getSessions() {
         const parsed = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || "[]");
         if (!Array.isArray(parsed)) return [];
 
+        // Include demo sessions here so the demo can exercise the same analytics
+        // as real data. Removing demo data from storage removes it from the charts.
         return parsed
             .filter(session => session && isValidDateValue(session.date))
-            .filter(session => !isDemoSession(session))
             .sort(sortByDate);
     }
     catch {
         return [];
     }
-}
-
-function isDemoSession(session) {
-    return session.isDemo === true ||
-        String(session.id || "").startsWith("demo-session-") ||
-        session.planId === "demo-12-week-plan" ||
-        session.planName === "12-Week Demo Program";
 }
 
 function isValidDateValue(value) {
