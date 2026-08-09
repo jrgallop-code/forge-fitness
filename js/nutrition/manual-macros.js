@@ -52,6 +52,10 @@ function percentages(macros) {
     return { protein, carbs, fat };
 }
 
+function setTextIfChanged(element, text) {
+    if (element && element.textContent !== text) element.textContent = text;
+}
+
 function setMacroText(macros, calories = null) {
     const pct = percentages(macros);
     const protein = document.getElementById("nutrition-protein-target");
@@ -59,15 +63,15 @@ function setMacroText(macros, calories = null) {
     const fat = document.getElementById("nutrition-fat-target");
     const caloriesEl = document.getElementById("nutrition-macro-calories");
 
-    if (protein) protein.textContent = `${Math.round(macros.protein)} g/day (${pct.protein}%)`;
-    if (carbs) carbs.textContent = `${Math.round(macros.carbs)} g/day (${pct.carbs}%)`;
-    if (fat) fat.textContent = `${Math.round(macros.fat)} g/day (${pct.fat}%)`;
+    setTextIfChanged(protein, `${Math.round(macros.protein)} g/day (${pct.protein}%)`);
+    setTextIfChanged(carbs, `${Math.round(macros.carbs)} g/day (${pct.carbs}%)`);
+    setTextIfChanged(fat, `${Math.round(macros.fat)} g/day (${pct.fat}%)`);
 
     const total = Number.isFinite(Number(calories))
         ? Math.round(Number(calories))
         : Math.round(macroTotalCalories(macros));
 
-    if (caloriesEl) caloriesEl.textContent = `${total.toLocaleString()} kcal/day`;
+    setTextIfChanged(caloriesEl, `${total.toLocaleString()} kcal/day`);
 }
 
 function targetCalories() {
@@ -92,19 +96,24 @@ function renderManualStatus(macros) {
 
     const total = Math.round(macroTotalCalories(macros));
     const target = targetCalories();
+    let text;
+    let state;
 
     if (!Number.isFinite(target) || target <= 0) {
-        status.textContent = `${total.toLocaleString()} kcal from your manual macros.`;
-        status.dataset.state = "neutral";
-        return;
+        text = `${total.toLocaleString()} kcal from your manual macros.`;
+        state = "neutral";
+    }
+    else {
+        const difference = total - Math.round(target);
+        const abs = Math.abs(difference);
+        text = abs <= 5
+            ? `${total.toLocaleString()} kcal — matches your ${Math.round(target).toLocaleString()} kcal target.`
+            : `${total.toLocaleString()} kcal from macros — ${abs.toLocaleString()} kcal ${difference > 0 ? "above" : "below"} your ${Math.round(target).toLocaleString()} kcal target.`;
+        state = abs <= 5 ? "match" : "warning";
     }
 
-    const difference = total - Math.round(target);
-    const abs = Math.abs(difference);
-    status.textContent = abs <= 5
-        ? `${total.toLocaleString()} kcal — matches your ${Math.round(target).toLocaleString()} kcal target.`
-        : `${total.toLocaleString()} kcal from macros — ${abs.toLocaleString()} kcal ${difference > 0 ? "above" : "below"} your ${Math.round(target).toLocaleString()} kcal target.`;
-    status.dataset.state = abs <= 5 ? "match" : "warning";
+    setTextIfChanged(status, text);
+    if (status.dataset.state !== state) status.dataset.state = state;
 }
 
 function updateManualPreview() {
@@ -115,9 +124,9 @@ function updateManualPreview() {
 
     const macros = { protein, carbs, fat };
     const pct = percentages(macros);
-    document.getElementById("manual-protein-percent").textContent = `(${pct.protein}%)`;
-    document.getElementById("manual-carb-percent").textContent = `(${pct.carbs}%)`;
-    document.getElementById("manual-fat-percent").textContent = `(${pct.fat}%)`;
+    setTextIfChanged(document.getElementById("manual-protein-percent"), `(${pct.protein}%)`);
+    setTextIfChanged(document.getElementById("manual-carb-percent"), `(${pct.carbs}%)`);
+    setTextIfChanged(document.getElementById("manual-fat-percent"), `(${pct.fat}%)`);
     renderManualStatus(macros);
 }
 
@@ -135,6 +144,7 @@ function applySavedManualIfNeeded() {
 }
 
 function decoratePresetPercentages() {
+    if (!document.getElementById("nutrition-protein-target")) return;
     if (applySavedManualIfNeeded()) return;
 
     const macros = getDisplayedMacros();
@@ -226,10 +236,8 @@ function injectManualControls() {
         savedNow.useManual = Boolean(event.target.checked);
         savedNow.updatedAt = new Date().toISOString();
         writeSavedMacro(savedNow);
-        setTimeout(() => {
-            if (!applySavedManualIfNeeded()) decoratePresetPercentages();
-            updatePlannerProteinSummary();
-        }, 0);
+        if (!applySavedManualIfNeeded()) decoratePresetPercentages();
+        updatePlannerProteinSummary();
     });
 
     document.getElementById("nutrition-macro-select")?.addEventListener("change", () => {
@@ -258,26 +266,28 @@ function injectManualControls() {
     });
 
     updateManualPreview();
-    setTimeout(decoratePresetPercentages, 0);
+    decoratePresetPercentages();
 }
 
 function updatePlannerProteinSummary() {
     const saved = readSavedMacro();
     if (!saved?.useManual || !saved.manualMacros) return;
     const summary = document.getElementById("planner-summary-protein");
-    if (summary) summary.textContent = `${Math.round(Number(saved.manualMacros.protein) || 0)} g`;
+    if (summary) setTextIfChanged(summary, `${Math.round(Number(saved.manualMacros.protein) || 0)} g`);
 }
 
-function enhance() {
+function enhanceIfPresent() {
+    const macrosView = document.querySelector('[data-planner-view="macros"]');
+    if (!macrosView) return;
     injectManualControls();
     decoratePresetPercentages();
     updatePlannerProteinSummary();
 }
 
-const observer = new MutationObserver(() => enhance());
-observer.observe(document.body, { childList: true, subtree: true });
-window.addEventListener("levelup:nutrition-updated", () => setTimeout(enhance, 0));
-setInterval(() => {
-    if (document.querySelector('[data-planner-view="macros"]:not([hidden])')) decoratePresetPercentages();
-}, 800);
-enhance();
+// Do not observe the entire app DOM. The previous global MutationObserver reacted
+// to its own text updates and could create a render loop that blocked bottom-nav taps.
+// A lightweight presence check is enough because the Calories route is rendered as a unit.
+const presenceTimer = window.setInterval(enhanceIfPresent, 1200);
+window.addEventListener("levelup:nutrition-updated", enhanceIfPresent);
+window.addEventListener("pagehide", () => window.clearInterval(presenceTimer), { once: true });
+enhanceIfPresent();
