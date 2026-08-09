@@ -2437,6 +2437,14 @@ textarea:focus {
     font-size:24px;
 }
 
+.more-menu-icon .app-silhouette-icon {
+    width:26px;
+    height:26px;
+    color:#fff;
+    fill:currentColor;
+    flex:0 0 auto;
+}
+
 .more-menu-card strong,
 .more-menu-card small {
     display:block;
