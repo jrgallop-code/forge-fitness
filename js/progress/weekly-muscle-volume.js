@@ -21,15 +21,29 @@ export function initializeWeeklyMuscleVolume() {
             );
         });
 
+    // Demo buttons change workout storage in the existing training-progress module.
+    // Re-render after that click handler finishes so the demo immediately appears.
+    ["load-training-demo", "remove-training-demo"].forEach(id => {
+        document.getElementById(id)?.addEventListener("click", () => {
+            setTimeout(renderTrainingVolumeAnalytics, 0);
+        });
+    });
+
     renderTrainingVolumeAnalytics();
 }
 
 function renderTrainingVolumeAnalytics() {
     const oldCanvas = document.getElementById("weekly-sets-chart");
     const muscleDistribution = document.getElementById("muscle-distribution");
-    if (!oldCanvas || !muscleDistribution) return;
+    if (!muscleDistribution) return;
 
-    const weeklyCard = oldCanvas.closest(".analytics-card");
+    let weeklyCard = document.getElementById("weekly-muscle-volume-card");
+
+    if (!weeklyCard && oldCanvas) {
+        weeklyCard = oldCanvas.closest(".analytics-card");
+        if (weeklyCard) weeklyCard.id = "weekly-muscle-volume-card";
+    }
+
     const averageCard = muscleDistribution.closest(".analytics-card");
     if (!weeklyCard || !averageCard) return;
 
@@ -39,7 +53,7 @@ function renderTrainingVolumeAnalytics() {
     if (averageHeading) averageHeading.textContent = "Average Weekly Sets by Muscle Group";
 
     // Remove the old generic red weekly working-sets canvas entirely.
-    oldCanvas.remove();
+    oldCanvas?.remove();
     muscleDistribution.innerHTML = "";
     ensureAnalyticsCards(averageCard);
 
@@ -357,8 +371,8 @@ function getSessions() {
         const parsed = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || "[]");
         if (!Array.isArray(parsed)) return [];
 
-        // Include demo sessions here so the demo can exercise the same analytics
-        // as real data. Removing demo data from storage removes it from the charts.
+        // Demo sessions intentionally use the same analytics path as real data so
+        // the demo can test these charts. Removing demo data removes it here too.
         return parsed
             .filter(session => session && isValidDateValue(session.date))
             .sort(sortByDate);
