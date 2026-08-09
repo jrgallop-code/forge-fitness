@@ -3,6 +3,8 @@ import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session
 const TIMER_SETTINGS_KEY = 'level_up_exercise_rest_settings';
 let inlineTimerInterval = null;
 let observer = null;
+let audioContext = null;
+let lastAlarmKey = null;
 
 function getTimerSettings() {
   try {
@@ -36,6 +38,49 @@ function formatSeconds(seconds) {
   const m = Math.floor(value / 60);
   const s = value % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function getAudioContext() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return null;
+  if (!audioContext) audioContext = new AudioContextClass();
+  return audioContext;
+}
+
+function primeAlarmAudio() {
+  const context = getAudioContext();
+  if (!context) return;
+  if (context.state === 'suspended') {
+    context.resume().catch(() => {});
+  }
+}
+
+function playRestAlarm() {
+  const context = getAudioContext();
+  if (!context) return;
+
+  const play = () => {
+    const now = context.currentTime;
+    [0, 0.28, 0.56].forEach((offset, index) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(index === 2 ? 1046 : 880, now + offset);
+      gain.gain.setValueAtTime(0.0001, now + offset);
+      gain.gain.exponentialRampToValueAtTime(0.32, now + offset + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.2);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(now + offset);
+      oscillator.stop(now + offset + 0.22);
+    });
+  };
+
+  if (context.state === 'suspended') {
+    context.resume().then(play).catch(() => {});
+  } else {
+    play();
+  }
 }
 
 function ensureHiddenRestSelect(logger) {
@@ -74,6 +119,8 @@ function enhanceLogger(logger) {
 
   logger.querySelector('.rest-timer-panel')?.remove();
   ensureHiddenRestSelect(logger);
+
+  logger.addEventListener('pointerdown', primeAlarmAudio, { once: true, passive: true });
 
   logger.querySelectorAll('.session-exercise-card[data-tracking-type="reps"]').forEach(card => {
     const exerciseIndex = Number(card.dataset.exerciseIndex);
@@ -121,6 +168,7 @@ function enhanceLogger(logger) {
 
     menuButton.addEventListener('click', event => {
       event.stopPropagation();
+      primeAlarmAudio();
       logger.querySelectorAll('.exercise-options-popover').forEach(other => {
         if (other !== menu) other.hidden = true;
       });
@@ -130,6 +178,7 @@ function enhanceLogger(logger) {
     const timerToggle = menu.querySelector('.exercise-timer-enabled');
     const timerDuration = menu.querySelector('.exercise-rest-duration');
     const persistSetting = () => {
+      primeAlarmAudio();
       const all = getTimerSettings();
       all[exerciseId] = {
         enabled: Boolean(timerToggle?.checked),
@@ -157,6 +206,7 @@ function enhanceLogger(logger) {
         complete.setAttribute('aria-label', `Complete set ${setIndex + 1}`);
 
         complete.addEventListener('pointerdown', () => {
+          primeAlarmAudio();
           applyExerciseTimerToCore(logger, exerciseId);
         }, true);
 
@@ -170,6 +220,9 @@ function enhanceLogger(logger) {
             if (!setting.enabled && row.classList.contains('completed')) {
               active.restTimer = null;
               saveActive(active);
+            }
+            if (setting.enabled && row.classList.contains('completed')) {
+              lastAlarmKey = null;
             }
             updateInlineTimers();
           }, 0);
@@ -229,9 +282,17 @@ function updateInlineTimers() {
 
   let remainingMs = Number(active.restTimer.remainingMs) || 0;
   if (active.restTimer.status === 'running' && active.restTimer.endAt) {
-    remainingMs = Math.max(0, new Date(active.restTimer.endAt).getTime() - Date.now());
+    remainingMs = new Date(active.restTimer.endAt).getTime() - Date.now();
   }
-  if (remainingMs <= 0) return;
+
+  if (remainingMs <= 0) {
+    const alarmKey = active.restTimer.endAt || `${active.currentExerciseIndex}-${active.currentSetIndex}-${active.restTimer.durationSeconds}`;
+    if (active.restTimer.status === 'running' && lastAlarmKey !== alarmKey) {
+      lastAlarmKey = alarmKey;
+      playRestAlarm();
+    }
+    return;
+  }
 
   const selector = `.inline-rest-timer[data-exercise-index="${active.currentExerciseIndex}"][data-set-index="${active.currentSetIndex}"]`;
   const line = document.querySelector(selector);
@@ -255,5 +316,5 @@ observer = new MutationObserver(mutations => {
 });
 observer.observe(document.body, { childList: true, subtree: true });
 
-inlineTimerInterval = setInterval(updateInlineTimers, 500);
+inlineTimerInterval = setInterval(updateInlineTimers, 250);
 scanForLogger();
