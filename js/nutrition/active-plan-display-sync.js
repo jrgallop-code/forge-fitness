@@ -4,13 +4,13 @@ import {
     getNutritionMacroPreference,
     getNutritionPlan
 }
-from "./nutrition-storage.js?v=plan-source-1";
+from "./nutrition-storage.js?v=single-calorie-target-1";
 
 import {
     calculateMacroTargets,
     poundsToKg
 }
-from "./tdee-calculator.js?v=plan-source-1";
+from "./tdee-calculator.js?v=single-calorie-target-1";
 
 function setText(id, value) {
     const el = document.getElementById(id);
@@ -21,7 +21,7 @@ function syncActivePlanDisplays() {
     const profile = getNutritionProfile();
     const goal = getNutritionGoal();
     const plan = getNutritionPlan();
-    const calories = Number(plan.currentCalories);
+    const calories = Number(plan.calculatedCalories);
 
     if (!profile || !goal?.goalId || !Number.isFinite(calories) || calories <= 0) {
         return;
@@ -36,6 +36,8 @@ function syncActivePlanDisplays() {
 
     setText("planner-summary-calories", `${Math.round(calories).toLocaleString()} kcal`);
     setText("nutrition-macro-calories", `${Math.round(calories).toLocaleString()} kcal/day`);
+    setText("calculated-calorie-target", `${Math.round(calories).toLocaleString()} kcal/day`);
+    setText("coach-current-calories", `${Math.round(calories).toLocaleString()} kcal/day`);
 
     if (macros) {
         setText("planner-summary-protein", `${macros.protein} g`);
