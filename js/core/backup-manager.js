@@ -5,8 +5,11 @@ import {
 from "../progress/photo-journal.js";
 
 const MAX_BACKUP_SIZE = 100 * 1024 * 1024;
+const INVALID_STORAGE_KEYS = new Set(["setItem"]);
 
 export function initializeBackupManager() {
+    cleanupInvalidStorageKeys();
+
     const exportButton = document.getElementById("export-backup-btn");
     const importButton = document.getElementById("import-backup-btn");
     const fileInput = document.getElementById("backup-file-input");
@@ -14,16 +17,22 @@ export function initializeBackupManager() {
     exportButton?.addEventListener("click", exportBackup);
     importButton?.addEventListener("click", () => fileInput?.click());
     fileInput?.addEventListener("change", event => importBackup(event.target.files?.[0], fileInput));
+
+    renderBackupSummary();
+}
+
+function cleanupInvalidStorageKeys() {
+    const straySetItem = localStorage.getItem("setItem");
+    if (typeof straySetItem === "string" && straySetItem.includes("function")) {
+        localStorage.removeItem("setItem");
+    }
 }
 
 function getBackupKeys() {
-    // Level Up owns this GitHub Pages origin, so every localStorage key on the
-    // origin is app data. Exporting dynamically prevents newer features from
-    // being missed when new storage keys are added later.
     const keys = [];
     for (let index = 0; index < localStorage.length; index += 1) {
         const key = localStorage.key(index);
-        if (key) keys.push(key);
+        if (key && !INVALID_STORAGE_KEYS.has(key)) keys.push(key);
     }
     return keys.sort();
 }
@@ -46,6 +55,63 @@ function readStorageValue(key) {
     }
 }
 
+function asArray(value) {
+    return Array.isArray(value) ? value : [];
+}
+
+function getBackupSummary(data) {
+    const nutritionPlan = data.level_up_nutrition_plan || {};
+    const calorieSnapshot = data.level_up_active_calorie_target_snapshot || {};
+    const phases = asArray(data.level_up_nutrition_phases);
+    const activePhase = [...phases].reverse().find(phase => !phase?.endDate) || null;
+
+    const calculatedCalories = Number(nutritionPlan.calculatedCalories);
+    const snapshotCalories = Number(calorieSnapshot.calories);
+    const calories = Number.isFinite(calculatedCalories) && calculatedCalories > 0
+        ? calculatedCalories
+        : Number.isFinite(snapshotCalories) && snapshotCalories > 0
+            ? snapshotCalories
+            : null;
+
+    return {
+        workoutPlans: asArray(data.forge_workout_plans).length,
+        completedWorkouts: asArray(data.forge_workout_sessions).length,
+        weightEntries: asArray(data.forge_weight_entries).length,
+        measurementEntries: asArray(data.level_up_body_measurements).length,
+        sleepEntries: asArray(data.level_up_sleep_entries).length,
+        calorieTarget: calories,
+        maintenanceCalories: Number(data.level_up_manual_maintenance_calories) || null,
+        weeklyRate: Number.isFinite(Number(data.level_up_custom_weekly_rate))
+            ? Number(data.level_up_custom_weekly_rate)
+            : null,
+        goalWeight: Number(data.level_up_goal_weight) || null,
+        nutritionGoal: data.level_up_nutrition_goal?.goalId || null,
+        activeNutritionPhase: activePhase?.type || null,
+        nutritionPhaseCount: phases.length
+    };
+}
+
+function formatSummary(summary) {
+    const calorieText = Number.isFinite(summary.calorieTarget)
+        ? `${summary.calorieTarget} kcal target`
+        : "no calorie target";
+
+    return `${summary.completedWorkouts} workouts · ${summary.weightEntries} weigh-ins · ${summary.measurementEntries} measurements · ${calorieText} · ${summary.nutritionPhaseCount} nutrition phase${summary.nutritionPhaseCount === 1 ? "" : "s"}`;
+}
+
+function renderBackupSummary() {
+    const element = document.getElementById("backup-summary");
+    if (!element) return;
+
+    const data = {};
+    getBackupKeys().forEach(key => {
+        data[key] = readStorageValue(key);
+    });
+
+    const summary = getBackupSummary(data);
+    element.textContent = formatSummary(summary);
+}
+
 async function createBackupSnapshot() {
     const keys = getBackupKeys();
     const data = {};
@@ -55,10 +121,11 @@ async function createBackupSnapshot() {
 
     return {
         app: "level-up",
-        formatVersion: 3,
+        formatVersion: 4,
         exportedAt: new Date().toISOString(),
         storageMode: "complete-local-storage",
         storageKeyCount: keys.length,
+        summary: getBackupSummary(data),
         data,
         photos: await exportPhotoRecords()
     };
@@ -84,10 +151,8 @@ async function exportBackup() {
         if (file && navigator.share && navigator.canShare?.({ files: [file] })) {
             try {
                 await navigator.share({ files: [file], title: "Level Up Backup" });
-                setBackupMessage(
-                    `Complete backup ready: ${backup.storageKeyCount} data sections${backup.photos?.length ? ` + ${backup.photos.length} photo record${backup.photos.length === 1 ? "" : "s"}` : ""}.`,
-                    "success"
-                );
+                setBackupMessage(`Backup ready: ${formatSummary(backup.summary)}.`, "success");
+                renderBackupSummary();
                 return;
             }
             catch (error) {
@@ -107,10 +172,8 @@ async function exportBackup() {
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-        setBackupMessage(
-            `Complete backup exported: ${backup.storageKeyCount} data sections${backup.photos?.length ? ` + ${backup.photos.length} photo record${backup.photos.length === 1 ? "" : "s"}` : ""}.`,
-            "success"
-        );
+        setBackupMessage(`Backup exported: ${formatSummary(backup.summary)}.`, "success");
+        renderBackupSummary();
     }
     catch (error) {
         console.error("Backup export failed:", error);
@@ -129,13 +192,14 @@ async function importBackup(file, fileInput) {
             throw new Error("This is not a valid Level Up backup.");
         }
 
-        const incomingKeys = Object.keys(backup.data);
+        const incomingKeys = Object.keys(backup.data).filter(key => !INVALID_STORAGE_KEYS.has(key));
         if (!incomingKeys.length && !Array.isArray(backup.photos)) {
             throw new Error("This backup does not contain Level Up data.");
         }
 
+        const incomingSummary = backup.summary || getBackupSummary(backup.data);
         const confirmed = window.confirm(
-            `Import this Level Up backup? ${incomingKeys.length} app data sections will be restored. Existing local data for included sections will be replaced.`
+            `Import this Level Up backup?\n\n${formatSummary(incomingSummary)}\n\nExisting local data for included sections will be replaced.`
         );
         if (!confirmed) {
             setBackupMessage("Restore cancelled.");
@@ -151,6 +215,8 @@ async function importBackup(file, fileInput) {
                 localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
             }
         });
+
+        cleanupInvalidStorageKeys();
 
         if (Array.isArray(backup.photos)) await importPhotoRecords(backup.photos);
 
