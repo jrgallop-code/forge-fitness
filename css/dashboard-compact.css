@@ -18,8 +18,35 @@
 }
 
 .dashboard .metric-icon {
-    font-size: 26px;
-    line-height: 1;
+    display:grid;
+    place-items:center;
+    width:42px;
+    height:42px;
+    border:1px solid rgba(239,24,33,.35);
+    border-radius:13px;
+    background:rgba(239,24,33,.08);
+    color:#fff;
+    line-height:1;
+}
+
+.dashboard .metric-icon .app-silhouette-icon {
+    width:24px;
+    height:24px;
+    display:block;
+    fill:currentColor;
+}
+
+.dashboard .metric-icon .app-silhouette-stroke {
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.9;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+
+.dashboard .metric-icon .bicep-silhouette-icon {
+    width:27px;
+    height:27px;
 }
 
 .dashboard .metric-card h3 {
@@ -47,7 +74,18 @@
     }
 
     .dashboard .metric-icon {
-        font-size: 24px;
+        width:40px;
+        height:40px;
+    }
+
+    .dashboard .metric-icon .app-silhouette-icon {
+        width:23px;
+        height:23px;
+    }
+
+    .dashboard .metric-icon .bicep-silhouette-icon {
+        width:26px;
+        height:26px;
     }
 
     .dashboard .metric-card h3 {
