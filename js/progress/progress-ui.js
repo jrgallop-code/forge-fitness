@@ -3,11 +3,6 @@ import {
 }
 from "./photo-journal.js";
 
-import {
-    renderSleepTracker
-}
-from "./sleep-tracker.js";
-
 
 export function renderProgress() {
 
@@ -40,14 +35,6 @@ export function renderProgress() {
                     🏋️ Lifting
                 </button>
 
-                <button
-                    class="progress-tab"
-                    id="sleep-tab"
-                    type="button"
-                >
-                    🌙 Sleep
-                </button>
-
             </div>
 
 
@@ -56,8 +43,6 @@ export function renderProgress() {
                 <div class="weight-section-header">
 
                     <h3>Weight Progress</h3>
-
-
 
                 </div>
 
@@ -113,7 +98,6 @@ export function renderProgress() {
 
                     </div>
 
-
                 </div>
 
 
@@ -154,9 +138,6 @@ export function renderProgress() {
                             </p>
 
                         </div>
-
-
-
 
                     </div>
 
@@ -212,11 +193,6 @@ export function renderProgress() {
 
                 ${renderPhotoJournal()}
 
-            </div>
-
-
-            <div id="sleep-progress" hidden>
-                ${renderSleepTracker()}
             </div>
 
 
