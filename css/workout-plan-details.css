@@ -1,0 +1,188 @@
+/* Compact workout plan detail screen */
+
+.workout-plan-detail-screen {
+    position:relative;
+    z-index:5;
+    margin-top:8px;
+    padding-bottom:110px;
+}
+
+.workout-page.showing-plan-details > :not(#workout-plan-detail-screen) {
+    display:none !important;
+}
+
+.plan-detail-back {
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    margin:0 0 18px;
+    padding:10px 12px;
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:12px;
+    background:#151519;
+    color:#f4f4f6;
+    font:inherit;
+    font-size:13px;
+    font-weight:700;
+}
+
+.plan-detail-header h2 {
+    margin:4px 0 8px;
+    font-size:30px;
+    line-height:1.08;
+}
+
+.plan-detail-header p {
+    margin:0;
+    color:#a5a5ad;
+    line-height:1.45;
+}
+
+.plan-detail-stats {
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:8px;
+    margin:18px 0;
+}
+
+.plan-detail-stats > div {
+    min-width:0;
+    padding:12px 8px;
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:14px;
+    background:#121216;
+    text-align:center;
+}
+
+.plan-detail-stats strong,
+.plan-detail-stats span {
+    display:block;
+}
+
+.plan-detail-stats strong {
+    color:#fff;
+    font-size:20px;
+    line-height:1.1;
+}
+
+.plan-detail-stats span {
+    margin-top:4px;
+    color:#92929b;
+    font-size:10px;
+    font-weight:700;
+    line-height:1.2;
+}
+
+.plan-detail-days {
+    display:grid;
+    gap:10px;
+}
+
+.plan-detail-day {
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:16px;
+    background:#121216;
+}
+
+.plan-detail-day-heading {
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:12px;
+    padding:13px 14px 11px;
+    border-bottom:1px solid rgba(255,255,255,.07);
+}
+
+.plan-detail-day-heading span {
+    display:block;
+    color:var(--red);
+    font-size:9px;
+    font-weight:800;
+    letter-spacing:1.1px;
+}
+
+.plan-detail-day-heading h3 {
+    margin:3px 0 0;
+    font-size:16px;
+    line-height:1.2;
+}
+
+.plan-detail-day-heading > strong {
+    flex:0 0 auto;
+    color:#8f8f98;
+    font-size:10px;
+}
+
+.plan-detail-exercise-list {
+    padding:2px 14px 5px;
+}
+
+.plan-detail-exercise-row {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:12px;
+    align-items:center;
+    min-height:42px;
+    border-bottom:1px solid rgba(255,255,255,.055);
+}
+
+.plan-detail-exercise-row:last-child {
+    border-bottom:none;
+}
+
+.plan-detail-exercise-name {
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    color:#f5f5f7;
+    font-size:13px;
+    font-weight:700;
+}
+
+.plan-detail-exercise-target {
+    color:#9a9aa2;
+    font-size:11px;
+    text-align:right;
+    white-space:nowrap;
+}
+
+.plan-detail-empty {
+    margin:12px 0;
+    color:#8f8f98;
+    font-size:12px;
+}
+
+.plan-detail-bottom-actions {
+    position:sticky;
+    bottom:calc(86px + env(safe-area-inset-bottom));
+    display:grid;
+    grid-template-columns:1fr 1.15fr;
+    gap:10px;
+    margin-top:18px;
+    padding:12px;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:16px;
+    background:rgba(14,14,18,.96);
+    backdrop-filter:blur(14px);
+    box-shadow:0 -10px 30px rgba(0,0,0,.28);
+}
+
+.plan-detail-bottom-actions button {
+    min-height:48px;
+    margin:0;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:800;
+}
+
+@media (max-width:600px) {
+    .plan-detail-header h2 {
+        font-size:27px;
+    }
+
+    .plan-detail-bottom-actions {
+        bottom:calc(92px + env(safe-area-inset-bottom));
+    }
+}
