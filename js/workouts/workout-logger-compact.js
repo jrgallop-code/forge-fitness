@@ -4,7 +4,7 @@ const TIMER_SETTINGS_KEY = 'level_up_exercise_rest_settings';
 let inlineTimerInterval = null;
 let observer = null;
 let audioContext = null;
-let lastAlarmKey = null;
+let previousTimerHadTime = false;
 
 function getTimerSettings() {
   try {
@@ -41,46 +41,41 @@ function formatSeconds(seconds) {
 }
 
 function getAudioContext() {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return null;
-  if (!audioContext) audioContext = new AudioContextClass();
+  if (audioContext) return audioContext;
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return null;
+  audioContext = new AudioCtx();
   return audioContext;
 }
 
-function primeAlarmAudio() {
+function unlockAlarmAudio() {
   const context = getAudioContext();
   if (!context) return;
-  if (context.state === 'suspended') {
-    context.resume().catch(() => {});
-  }
+  if (context.state === 'suspended') context.resume().catch(() => {});
 }
 
 function playRestAlarm() {
   const context = getAudioContext();
   if (!context) return;
-
-  const play = () => {
-    const now = context.currentTime;
-    [0, 0.28, 0.56].forEach((offset, index) => {
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(index === 2 ? 1046 : 880, now + offset);
-      gain.gain.setValueAtTime(0.0001, now + offset);
-      gain.gain.exponentialRampToValueAtTime(0.32, now + offset + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.2);
-      oscillator.connect(gain);
-      gain.connect(context.destination);
-      oscillator.start(now + offset);
-      oscillator.stop(now + offset + 0.22);
-    });
-  };
-
   if (context.state === 'suspended') {
-    context.resume().then(play).catch(() => {});
-  } else {
-    play();
+    context.resume().then(playRestAlarm).catch(() => {});
+    return;
   }
+
+  const start = context.currentTime;
+  [0, 0.2, 0.4].forEach((offset, index) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.value = index === 2 ? 1046 : 880;
+    gain.gain.setValueAtTime(0.0001, start + offset);
+    gain.gain.exponentialRampToValueAtTime(0.18, start + offset + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + 0.15);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(start + offset);
+    oscillator.stop(start + offset + 0.17);
+  });
 }
 
 function ensureHiddenRestSelect(logger) {
@@ -112,15 +107,95 @@ function applyExerciseTimerToCore(logger, exerciseId) {
   return setting;
 }
 
+function getRepRangeUpperBound(repTarget) {
+  const values = String(repTarget || '')
+    .match(/\d+(?:\.\d+)?/g)
+    ?.map(Number)
+    .filter(Number.isFinite) || [];
+  return values.length ? Math.max(...values) : null;
+}
+
+function getRecommendedLoad(weight) {
+  const current = Number(weight);
+  if (!Number.isFinite(current) || current <= 0) return null;
+
+  const lower = current * 1.02;
+  const upper = current * 1.05;
+  const increments = [5, 2.5, 1, 0.5];
+
+  for (const increment of increments) {
+    const candidate = Math.ceil((lower - 1e-9) / increment) * increment;
+    if (candidate <= upper + 1e-9) {
+      return Number(candidate.toFixed(1));
+    }
+  }
+
+  return Number((Math.round(lower * 2) / 2).toFixed(1));
+}
+
+function formatLoad(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function updateProgressionPrompt(card, exerciseIndex) {
+  const prompt = card.querySelector('.progression-prompt');
+  if (!prompt) return;
+
+  const active = getActive();
+  const planned = active?.planSnapshot?.days?.[active.trainingDayIndex]?.exercises?.[exerciseIndex];
+  const state = active?.exercises?.[exerciseIndex];
+  const upperBound = getRepRangeUpperBound(planned?.reps);
+
+  if (!active || !state || !upperBound || !Array.isArray(state.sets)) {
+    prompt.hidden = true;
+    return;
+  }
+
+  const qualifyingSets = state.sets.filter(set =>
+    set?.completed &&
+    Number(set.reps) >= upperBound &&
+    Number(set.weight) > 0
+  );
+
+  if (!qualifyingSets.length) {
+    prompt.hidden = true;
+    return;
+  }
+
+  const qualifying = qualifyingSets.reduce((best, set) =>
+    Number(set.weight) > Number(best.weight) ? set : best
+  );
+  const currentWeight = Number(qualifying.weight);
+  const nextWeight = getRecommendedLoad(currentWeight);
+
+  if (!nextWeight || nextWeight <= currentWeight) {
+    prompt.hidden = true;
+    return;
+  }
+
+  const increasePercent = ((nextWeight / currentWeight) - 1) * 100;
+  const completedCount = state.sets.filter(set => set?.completed).length;
+  const plannedCount = state.sets.length;
+
+  prompt.innerHTML = `
+    <span class="progression-arrow">↑</span>
+    <div>
+      <strong>Increase weight next session</strong>
+      <p>You reached ${upperBound} reps at ${formatLoad(currentWeight)} lb${completedCount < plannedCount ? ` with ${completedCount} of ${plannedCount} sets completed` : ''}. Recommended next load: <b>${formatLoad(nextWeight)} lb</b> (+${increasePercent.toFixed(1)}%).</p>
+      <small>Level Up recommendation: increase load by about 2–5% after reaching the top of your rep range.</small>
+    </div>
+  `;
+  prompt.hidden = false;
+}
+
 function enhanceLogger(logger) {
   if (!logger || logger.dataset.compactEnhanced === 'true') return;
   logger.dataset.compactEnhanced = 'true';
   logger.classList.add('compact-workout-logger');
 
+  logger.addEventListener('pointerdown', unlockAlarmAudio, { once: true });
   logger.querySelector('.rest-timer-panel')?.remove();
   ensureHiddenRestSelect(logger);
-
-  logger.addEventListener('pointerdown', primeAlarmAudio, { once: true, passive: true });
 
   logger.querySelectorAll('.session-exercise-card[data-tracking-type="reps"]').forEach(card => {
     const exerciseIndex = Number(card.dataset.exerciseIndex);
@@ -167,8 +242,8 @@ function enhanceLogger(logger) {
     header.appendChild(menu);
 
     menuButton.addEventListener('click', event => {
+      unlockAlarmAudio();
       event.stopPropagation();
-      primeAlarmAudio();
       logger.querySelectorAll('.exercise-options-popover').forEach(other => {
         if (other !== menu) other.hidden = true;
       });
@@ -178,7 +253,6 @@ function enhanceLogger(logger) {
     const timerToggle = menu.querySelector('.exercise-timer-enabled');
     const timerDuration = menu.querySelector('.exercise-rest-duration');
     const persistSetting = () => {
-      primeAlarmAudio();
       const all = getTimerSettings();
       all[exerciseId] = {
         enabled: Boolean(timerToggle?.checked),
@@ -193,6 +267,13 @@ function enhanceLogger(logger) {
     card.querySelector('.session-target')?.classList.add('compact-target');
     card.querySelector('.previous-performance')?.remove();
 
+    const progressionPrompt = document.createElement('div');
+    progressionPrompt.className = 'progression-prompt';
+    progressionPrompt.hidden = true;
+    const target = card.querySelector('.session-target');
+    if (target) target.insertAdjacentElement('afterend', progressionPrompt);
+    else header.insertAdjacentElement('afterend', progressionPrompt);
+
     const setHeader = card.querySelector('.session-set-header');
     if (setHeader) {
       setHeader.innerHTML = '<span>Set</span><span>Previous</span><span>lbs</span><span>Reps</span><span>✓</span>';
@@ -206,7 +287,7 @@ function enhanceLogger(logger) {
         complete.setAttribute('aria-label', `Complete set ${setIndex + 1}`);
 
         complete.addEventListener('pointerdown', () => {
-          primeAlarmAudio();
+          unlockAlarmAudio();
           applyExerciseTimerToCore(logger, exerciseId);
         }, true);
 
@@ -221,13 +302,18 @@ function enhanceLogger(logger) {
               active.restTimer = null;
               saveActive(active);
             }
-            if (setting.enabled && row.classList.contains('completed')) {
-              lastAlarmKey = null;
-            }
             updateInlineTimers();
+            updateProgressionPrompt(card, exerciseIndex);
           }, 0);
         });
       }
+
+      row.querySelector('.session-weight')?.addEventListener('input', () => {
+        setTimeout(() => updateProgressionPrompt(card, exerciseIndex), 0);
+      });
+      row.querySelector('.session-reps')?.addEventListener('input', () => {
+        setTimeout(() => updateProgressionPrompt(card, exerciseIndex), 0);
+      });
 
       const timerLine = document.createElement('div');
       timerLine.className = 'inline-rest-timer';
@@ -254,6 +340,8 @@ function enhanceLogger(logger) {
         openActiveWorkout();
       });
     }
+
+    updateProgressionPrompt(card, exerciseIndex);
   });
 
   logger.addEventListener('click', event => {
@@ -278,22 +366,23 @@ function updateInlineTimers() {
     line.hidden = true;
     line.textContent = '';
   });
-  if (!active?.restTimer) return;
-
-  let remainingMs = Number(active.restTimer.remainingMs) || 0;
-  if (active.restTimer.status === 'running' && active.restTimer.endAt) {
-    remainingMs = new Date(active.restTimer.endAt).getTime() - Date.now();
-  }
-
-  if (remainingMs <= 0) {
-    const alarmKey = active.restTimer.endAt || `${active.currentExerciseIndex}-${active.currentSetIndex}-${active.restTimer.durationSeconds}`;
-    if (active.restTimer.status === 'running' && lastAlarmKey !== alarmKey) {
-      lastAlarmKey = alarmKey;
-      playRestAlarm();
-    }
+  if (!active?.restTimer) {
+    previousTimerHadTime = false;
     return;
   }
 
+  let remainingMs = Number(active.restTimer.remainingMs) || 0;
+  if (active.restTimer.status === 'running' && active.restTimer.endAt) {
+    remainingMs = Math.max(0, new Date(active.restTimer.endAt).getTime() - Date.now());
+  }
+
+  if (remainingMs <= 0) {
+    if (previousTimerHadTime) playRestAlarm();
+    previousTimerHadTime = false;
+    return;
+  }
+
+  previousTimerHadTime = true;
   const selector = `.inline-rest-timer[data-exercise-index="${active.currentExerciseIndex}"][data-set-index="${active.currentSetIndex}"]`;
   const line = document.querySelector(selector);
   if (!line) return;
@@ -316,5 +405,5 @@ observer = new MutationObserver(mutations => {
 });
 observer.observe(document.body, { childList: true, subtree: true });
 
-inlineTimerInterval = setInterval(updateInlineTimers, 250);
+inlineTimerInterval = setInterval(updateInlineTimers, 500);
 scanForLogger();
