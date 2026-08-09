@@ -1,0 +1,7 @@
+.dashboard-nutrition {
+  display: none !important;
+}
+
+.dashboard-detail-grid:has(.dashboard-nutrition) {
+  grid-template-columns: 1fr;
+}
