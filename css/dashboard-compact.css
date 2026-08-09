@@ -36,17 +36,17 @@
     fill:currentColor;
 }
 
+.dashboard .metric-icon .app-lifter-icon {
+    width:27px;
+    height:27px;
+}
+
 .dashboard .metric-icon .app-silhouette-stroke {
     fill:none;
     stroke:currentColor;
     stroke-width:1.9;
     stroke-linecap:round;
     stroke-linejoin:round;
-}
-
-.dashboard .metric-icon .bicep-silhouette-icon {
-    width:27px;
-    height:27px;
 }
 
 .dashboard .metric-card h3 {
@@ -58,6 +58,26 @@
     margin-top: 5px;
     font-size: 20px;
     line-height: 1.1;
+}
+
+.app-inline-icon {
+    width:1.15em;
+    height:1.15em;
+    display:inline-block;
+    vertical-align:-0.18em;
+    margin-right:.28em;
+    fill:currentColor;
+    color:#fff;
+    flex:0 0 auto;
+}
+
+.app-exercise-person-icon {
+    width:1.25em;
+    height:1.25em;
+}
+
+button .app-exercise-person-icon {
+    margin-right:.42em;
 }
 
 .icon-title-heading {
@@ -96,7 +116,7 @@
         height:23px;
     }
 
-    .dashboard .metric-icon .bicep-silhouette-icon {
+    .dashboard .metric-icon .app-lifter-icon {
         width:26px;
         height:26px;
     }
