@@ -119,82 +119,59 @@ export function renderMeasurementsTracker() {
 }
 
 function renderFrontBodyFigure() {
-    return `
-        <svg class="anatomy-svg" viewBox="0 0 430 720" aria-hidden="true">
-            <g class="anatomy-outline">
-                <ellipse cx="215" cy="59" rx="29" ry="37"/>
-                <path d="M199 94c-1 12-4 20-11 26M231 94c1 12 4 20 11 26"/>
-                <path d="M188 120c-11 7-24 10-38 14-25 7-38 20-42 43-4 25 1 54 7 79l14 64c3 12 1 26-2 39l-10 42c-3 13 3 23 14 25 11 2 19-6 22-18l13-59c3-16 3-31-1-47l-11-49c-2-12-2-25 1-38"/>
-                <path d="M242 120c11 7 24 10 38 14 25 7 38 20 42 43 4 25-1 54-7 79l-14 64c-3 12-1 26 2 39l10 42c3 13-3 23-14 25-11 2-19-6-22-18l-13-59c-3-16-3-31 1-47l11-49c2-12 2-25-1-38"/>
-                <path d="M188 120c-12 13-24 31-27 54-5 37 7 76 17 105 5 15 5 34-1 50-7 18-12 39-9 60 3 20 12 36 24 47"/>
-                <path d="M242 120c12 13 24 31 27 54 5 37-7 76-17 105-5 15-5 34 1 50 7 18 12 39 9 60-3 20-12 36-24 47"/>
-                <path d="M192 436c-10 29-14 63-13 99 1 39 5 74 1 105l-5 47c-1 12 7 20 18 20 11 0 18-7 19-19l3-93"/>
-                <path d="M238 436c10 29 14 63 13 99-1 39-5 74-1 105l5 47c1 12-7 20-18 20-11 0-18-7-19-19l-3-93"/>
-                <path d="M192 436c7 9 15 14 23 14s16-5 23-14"/>
-                <path d="M179 535c10 6 21 9 33 9M251 535c-10 6-21 9-33 9"/>
-                <path d="M180 640c9 4 19 6 31 6M250 640c-9 4-19 6-31 6"/>
-                <path d="M188 121c7 13 16 19 27 19s20-6 27-19"/>
-                <path d="M169 159c15-9 30-13 46-13s31 4 46 13"/>
-                <path d="M167 183c15-8 31-12 48-12s33 4 48 12"/>
-                <path d="M170 204c13 18 28 27 45 27s32-9 45-27"/>
-                <path d="M215 171v118M186 236c8 7 18 10 29 10s21-3 29-10"/>
-                <path d="M187 266c8 7 17 10 28 10s20-3 28-10M188 294c8 7 17 10 27 10s19-3 27-10"/>
-                <path d="M178 334c10 10 23 15 37 15s27-5 37-15"/>
-                <path d="M171 373c12 18 27 27 44 27s32-9 44-27"/>
-                <path d="M195 450c-7 27-9 53-7 80M235 450c7 27 9 53 7 80"/>
-                <path d="M187 553c10 7 19 10 28 10s18-3 28-10"/>
-            </g>
-
-            ${measurementBand(190, 116, 50, 1, "Neck", "right")}
-            ${measurementBand(150, 150, 130, 2, "Shoulders", "left")}
-            ${measurementBand(164, 190, 102, 3, "Chest", "right")}
-            ${measurementBand(119, 225, 34, 4, "Upper arm", "left")}
-            ${measurementBand(178, 300, 74, 5, "Waist", "right")}
-            ${measurementBand(169, 356, 92, 6, "Hips", "left")}
-            ${measurementBand(105, 321, 31, 7, "Forearm", "left")}
-            ${measurementBand(178, 461, 42, 8, "Thigh", "right")}
-            ${measurementBand(180, 585, 36, 9, "Calf", "right")}
-        </svg>
-    `;
+    return renderBodyFigure("front");
 }
 
 function renderBackBodyFigure() {
+    return renderBodyFigure("back");
+}
+
+function renderBodyFigure(view) {
+    const isBack = view === "back";
     return `
-        <svg class="anatomy-svg" viewBox="0 0 430 720" aria-hidden="true">
+        <svg class="anatomy-svg anatomy-silhouette" viewBox="0 0 430 720" aria-hidden="true">
             <g class="anatomy-outline">
-                <ellipse cx="215" cy="59" rx="29" ry="37"/>
-                <path d="M199 94c-1 12-4 20-11 26M231 94c1 12 4 20 11 26"/>
-                <path d="M188 120c-11 7-24 10-38 14-25 7-38 20-42 43-4 25 1 54 7 79l14 64c3 12 1 26-2 39l-10 42c-3 13 3 23 14 25 11 2 19-6 22-18l13-59c3-16 3-31-1-47l-11-49c-2-12-2-25 1-38"/>
-                <path d="M242 120c11 7 24 10 38 14 25 7 38 20 42 43 4 25-1 54-7 79l-14 64c-3 12-1 26 2 39l10 42c3 13-3 23-14 25-11 2-19-6-22-18l-13-59c-3-16-3-31 1-47l11-49c2-12 2-25-1-38"/>
-                <path d="M188 120c-12 13-24 31-27 54-5 37 7 76 17 105 5 15 5 34-1 50-7 18-12 39-9 60 3 20 12 36 24 47"/>
-                <path d="M242 120c12 13 24 31 27 54 5 37-7 76-17 105-5 15-5 34 1 50 7 18 12 39 9 60-3 20-12 36-24 47"/>
-                <path d="M192 436c-10 29-14 63-13 99 1 39 5 74 1 105l-5 47c-1 12 7 20 18 20 11 0 18-7 19-19l3-93"/>
-                <path d="M238 436c10 29 14 63 13 99-1 39-5 74-1 105l5 47c1 12-7 20-18 20-11 0-18-7-19-19l-3-93"/>
-                <path d="M192 436c7 9 15 14 23 14s16-5 23-14"/>
-                <path d="M179 535c10 6 21 9 33 9M251 535c-10 6-21 9-33 9"/>
-                <path d="M180 640c9 4 19 6 31 6M250 640c-9 4-19 6-31 6"/>
-                <path d="M188 121c7 13 16 19 27 19s20-6 27-19"/>
-                <path d="M215 140v190"/>
-                <path d="M168 166c12-12 27-18 47-19M262 166c-12-12-27-18-47-19"/>
-                <path d="M170 184c13 9 27 19 45 29M260 184c-13 9-27 19-45 29"/>
-                <path d="M176 221c12 13 25 20 39 20s27-7 39-20"/>
-                <path d="M184 270c8 8 18 12 31 12s23-4 31-12"/>
-                <path d="M180 330c9 11 21 16 35 16s26-5 35-16"/>
-                <path d="M171 373c11-17 26-25 44-25s33 8 44 25"/>
-                <path d="M173 382c10 20 24 31 42 31s32-11 42-31"/>
-                <path d="M215 351v74"/>
-                <path d="M195 450c-7 27-9 53-7 80M235 450c7 27 9 53 7 80"/>
-                <path d="M187 553c10 7 19 10 28 10s18-3 28-10"/>
+                <ellipse cx="215" cy="52" rx="25" ry="32"/>
+                <path d="M197 78c1 14 0 23-5 29-5 6-12 9-19 12"/>
+                <path d="M233 78c-1 14 0 23 5 29 5 6 12 9 19 12"/>
+
+                <path d="M173 119c-23 6-34 17-36 38-2 20-1 34-3 48"/>
+                <path d="M257 119c23 6 34 17 36 38 2 20 1 34 3 48"/>
+                <path d="M173 119c-12 17-20 37-19 61 1 27 9 49 17 69 7 18 10 37 8 59l-4 51c-1 29 2 55 9 78"/>
+                <path d="M257 119c12 17 20 37 19 61-1 27-9 49-17 69-7 18-10 37-8 59l4 51c1 29-2 55-9 78"/>
+                <path d="M175 359c-1 26 2 51 9 78-8 34-12 69-11 104 1 28 4 52-3 78-5 18-6 38-7 58l-5 10c-3 7 4 11 18 11h12c7 0 10-4 8-10l-2-10 3-39c8-34 10-65 8-97-2-38 0-74 10-111"/>
+                <path d="M255 359c1 26-2 51-9 78 8 34 12 69 11 104-1 28-4 52 3 78 5 18 6 38 7 58l5 10c3 7-4 11-18 11h-12c-7 0-10-4-8-10l2-10-3-39c-8-34-10-65-8-97 2-38 0-74-10-111"/>
+                <path d="M184 437c9-10 19-15 31-15s22 5 31 15"/>
+
+                <path d="M137 157c-8 13-9 28-10 48-1 25-5 45-13 66l-17 48c-5 16-9 27-17 36l-22 20"/>
+                <path d="M154 181c-2 17-5 33-10 50l-13 45-15 54c-3 12-7 22-14 29l-18 18"/>
+                <path d="M293 157c8 13 9 28 10 48 1 25 5 45 13 66l17 48c5 16 9 27 17 36l22 20"/>
+                <path d="M276 181c2 17 5 33 10 50l13 45 15 54c3 12 7 22 14 29l18 18"/>
+
+                <path d="M58 375l-19 14-10 7c-3 2-1 6 2 5l14-7-10 15c-2 4 2 6 5 3l11-14-6 20c-1 4 4 5 6 1l7-19-2 20c0 4 5 4 6 0l3-20 3 17c1 4 6 3 6-1l-1-25 11-14"/>
+                <path d="M372 375l19 14 10 7c3 2 1 6-2 5l-14-7 10 15c2 4-2 6-5 3l-11-14 6 20c1 4-4 5-6 1l-7-19 2 20c0 4-5 4-6 0l-3-20-3 17c-1 4-6 3-6-1l1-25-11-14"/>
+
+                ${isBack ? `
+                    <path class="anatomy-landmark" d="M215 119v211"/>
+                    <path class="anatomy-landmark" d="M174 151c13 5 26 15 41 28M256 151c-13 5-26 15-41 28"/>
+                    <path class="anatomy-landmark" d="M181 367c8-11 19-17 34-17s26 6 34 17"/>
+                    <path class="anatomy-landmark" d="M215 350v68"/>
+                ` : `
+                    <path class="anatomy-landmark" d="M190 137c8 5 16 7 25 7s17-2 25-7"/>
+                    <path class="anatomy-landmark" d="M215 173v115"/>
+                    <circle class="anatomy-landmark anatomy-navel" cx="215" cy="292" r="2"/>
+                `}
             </g>
 
-            ${measurementBand(190, 116, 50, 1, "Neck", "left")}
-            ${measurementBand(150, 150, 130, 2, "Shoulders", "right")}
-            ${measurementBand(119, 225, 34, 4, "Upper arm", "left")}
-            ${measurementBand(178, 300, 74, 5, "Waist", "right")}
-            ${measurementBand(169, 356, 92, 6, "Hips", "left")}
-            ${measurementBand(105, 321, 31, 7, "Forearm", "left")}
-            ${measurementBand(178, 461, 42, 8, "Thigh", "right")}
-            ${measurementBand(180, 585, 36, 9, "Calf", "right")}
+            ${measurementBand(190, 103, 50, 1, "Neck", isBack ? "left" : "right")}
+            ${measurementBand(157, 132, 116, 2, "Shoulders", isBack ? "right" : "left")}
+            ${isBack ? "" : measurementBand(165, 180, 100, 3, "Chest", "right")}
+            ${measurementBand(128, 216, 31, 4, "Upper arm", "left")}
+            ${measurementBand(177, 300, 76, 5, "Waist", "right")}
+            ${measurementBand(168, 365, 94, 6, "Hips", "left")}
+            ${measurementBand(101, 302, 30, 7, "Forearm", "left")}
+            ${measurementBand(176, 466, 38, 8, "Thigh", "right")}
+            ${measurementBand(169, 585, 35, 9, "Calf", "right")}
         </svg>
     `;
 }
