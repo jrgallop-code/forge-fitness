@@ -110,6 +110,56 @@
     background:rgba(255,102,110,.04);
 }
 
+/* Level Up template plans stay as compact cards, two side-by-side. */
+.workout-page .preset-grid {
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:10px;
+}
+
+.workout-page .preset-grid .preset-plan-card {
+    min-width:0;
+    padding:14px;
+    border-radius:16px;
+}
+
+.workout-page .preset-grid .preset-plan-card h4 {
+    margin:11px 0 6px;
+    font-size:16px;
+    line-height:1.2;
+}
+
+.workout-page .preset-grid .preset-plan-card p {
+    font-size:12px;
+    line-height:1.35;
+}
+
+.workout-page .preset-grid .template-card-top {
+    align-items:flex-start;
+    gap:6px;
+}
+
+.workout-page .preset-grid .plan-type-label {
+    font-size:8px;
+    letter-spacing:.8px;
+}
+
+.workout-page .preset-grid .template-frequency {
+    font-size:10px;
+    text-align:right;
+}
+
+.workout-page .preset-grid .template-details {
+    margin-top:12px;
+    font-size:10px;
+    flex-wrap:wrap;
+}
+
+.workout-page .preset-grid .template-action {
+    margin-top:12px;
+    font-size:11px;
+}
+
 @media (max-width:600px) {
     #saved-plan-list.workout-plan-grid {
         gap:9px;
@@ -141,5 +191,14 @@
         min-height:32px;
         padding:7px 8px;
         font-size:10px;
+    }
+
+    .workout-page .preset-grid {
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+        gap:8px;
+    }
+
+    .workout-page .preset-grid .preset-plan-card {
+        padding:12px;
     }
 }
