@@ -22,3 +22,28 @@ body {
 .bottom-nav .nav-btn > * {
     pointer-events: none;
 }
+
+.bottom-nav .nav-icon {
+    width: 27px;
+    height: 27px;
+    display: block;
+    margin: 0 auto 5px;
+    fill: currentColor;
+    color: #f4f4f6;
+}
+
+.bottom-nav .nav-icon-stroke {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.bottom-nav .nav-btn:not(.active) .nav-icon {
+    color: #d5d5da;
+}
+
+.bottom-nav .nav-btn.active .nav-icon {
+    color: #ffffff;
+}
