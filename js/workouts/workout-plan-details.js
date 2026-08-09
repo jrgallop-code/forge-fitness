@@ -49,46 +49,22 @@ function exerciseName(id) {
 }
 
 function exerciseThumbnail(id) {
-    const common = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+    const exercise = getExerciseById(id);
+    const isCardio =
+        exercise?.muscleGroup === "Cardio" ||
+        exercise?.trackingType === "notes";
 
-    if (id === "barbell-bench-press" || id === "dumbbell-bench-press" || id === "incline-dumbbell-press") {
+    if (isCardio) {
         return `
-            <svg viewBox="0 0 64 64" aria-hidden="true" ${common}>
-                <path d="M9 46h39M18 42h28M21 42l4-13 12-5 8 7"/>
-                <circle cx="31" cy="22" r="4"/>
-                <path d="M21 18h28M17 15v6M21 13v10M49 15v6M45 13v10"/>
-                <path d="M25 29 20 22M38 27l6-5"/>
-            </svg>
-        `;
-    }
-
-    if (id === "back-squat" || id === "hack-squat" || id === "leg-press") {
-        return `
-            <svg viewBox="0 0 64 64" aria-hidden="true" ${common}>
-                <path d="M12 16h40M8 12v8M12 10v12M56 12v8M52 10v12"/>
-                <circle cx="32" cy="24" r="4"/>
-                <path d="M24 20h16M27 28l-4 12 8 8M37 28l4 12-8 8"/>
-                <path d="M28 29h8M23 40h-8M41 40h8"/>
-                <path d="M31 48l-5 8M33 48l5 8"/>
-            </svg>
-        `;
-    }
-
-    if (id === "lat-pulldown" || id === "pull-up" || id === "seated-cable-row") {
-        return `
-            <svg viewBox="0 0 64 64" aria-hidden="true" ${common}>
-                <path d="M13 10h38M15 10l7 13M49 10l-7 13"/>
-                <circle cx="32" cy="26" r="4"/>
-                <path d="M27 30h10l3 12H24l3-12Z"/>
-                <path d="M27 31 21 22M37 31l6-9"/>
-                <path d="M27 42l-4 12M37 42l4 12M20 54h8M36 54h8"/>
+            <svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M32 52S10 39 10 23c0-7 5-12 12-12 5 0 8 3 10 7 2-4 5-7 10-7 7 0 12 5 12 12 0 16-22 29-22 29Z"/>
             </svg>
         `;
     }
 
     return `
-        <svg viewBox="0 0 64 64" aria-hidden="true" ${common}>
-            <path d="M10 28h7v8h-7zM17 24h6v16h-6zM23 30h18M41 24h6v16h-6zM47 28h7v8h-7z"/>
+        <svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 27h7v10H9V27Zm7-5h7v20h-7V22Zm7 10h18M41 22h7v20h-7V22Zm7 5h7v10h-7V27Z"/>
         </svg>
     `;
 }
