@@ -1,0 +1,43 @@
+.exercise-strength-trend-summary {
+    margin: 10px 0 14px;
+    padding: 12px 14px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    background: rgba(255,255,255,.025);
+    display: grid;
+    gap: 3px;
+}
+
+.exercise-strength-trend-summary .strength-trend-label {
+    color: #a6a6ad;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+.exercise-strength-trend-summary strong {
+    font-size: 20px;
+    line-height: 1.15;
+}
+
+.exercise-strength-trend-summary strong span {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.exercise-strength-trend-summary small {
+    color: #9b9ba3;
+    font-size: 12px;
+}
+
+.exercise-strength-trend-summary.is-increase strong {
+    color: #43d17a;
+}
+
+.exercise-strength-trend-summary.is-decrease strong {
+    color: #ff424d;
+}
+
+.exercise-strength-trend-summary.is-neutral strong {
+    color: #f5f5f7;
+}
