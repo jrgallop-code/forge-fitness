@@ -50,7 +50,8 @@ function cleanupAdaptiveCoachDemo() {
 
         localStorage.removeItem(DEMO_BACKUP_KEY);
         localStorage.removeItem(DEMO_ACTIVE_KEY);
-
         window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
     }
 }
+
+cleanupAdaptiveCoachDemo();
