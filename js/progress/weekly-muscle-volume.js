@@ -23,62 +23,56 @@ export function initializeWeeklyMuscleVolume() {
 function renderTrainingVolumeAnalytics() {
     const canvas = document.getElementById("weekly-sets-chart");
     const muscleDistribution = document.getElementById("muscle-distribution");
-
     if (!canvas || !muscleDistribution) return;
 
     const trainingView = canvas.closest('.training-progress-view[data-view="training"]');
     const weeklyCard = canvas.closest(".analytics-card");
     const averageCard = muscleDistribution.closest(".analytics-card");
-
     if (!trainingView || !weeklyCard || !averageCard) return;
 
     const weeklyHeading = weeklyCard.querySelector("h4");
     const averageHeading = averageCard.querySelector("h4");
-
     if (weeklyHeading) weeklyHeading.textContent = "Weekly Sets by Muscle Group";
     if (averageHeading) averageHeading.textContent = "Average Weekly Sets by Muscle Group";
 
     canvas.hidden = true;
     muscleDistribution.innerHTML = "";
-
-    ensureAnalyticsCards(trainingView, averageCard);
+    ensureAnalyticsCards(averageCard);
 
     const days = Number(document.getElementById("progress-range")?.value || 0);
-    const sessions = getFilteredSessions(days);
-    const weeks = buildWeekRange(days, sessions);
+    const allSessions = getSessions();
+    const weeks = buildWeekRange(days, allSessions);
+    const sessions = filterSessionsToWeeks(allSessions, weeks);
     const muscleData = buildMuscleData(sessions, weeks);
 
     renderWeeklyMuscleChart(weeklyCard, muscleData, weeks);
-    renderAverageWeeklySets(averageCard, muscleData, weeks);
+    renderAverageWeeklySets(muscleData, weeks);
     renderFrequency(muscleData, weeks);
     renderOverallWeeklySets(sessions, weeks);
     renderVolumeStatus(muscleData, weeks);
 }
 
-function ensureAnalyticsCards(trainingView, averageCard) {
-    if (!document.getElementById("muscle-frequency-card")) {
-        averageCard.insertAdjacentHTML("afterend", `
-            <div class="analytics-card" id="muscle-frequency-card">
-                <h4>Training Frequency by Muscle Group</h4>
-                <div id="muscle-frequency"></div>
-            </div>
+function ensureAnalyticsCards(averageCard) {
+    if (document.getElementById("muscle-frequency-card")) return;
 
-            <div class="analytics-card" id="overall-weekly-sets-card">
-                <h4>Overall Weekly Working Sets</h4>
-                <div id="overall-weekly-sets"></div>
-            </div>
-
-            <div class="analytics-card" id="hypertrophy-volume-status-card">
-                <h4>Hypertrophy Volume Status</h4>
-                <div id="hypertrophy-volume-status"></div>
-            </div>
-        `);
-    }
+    averageCard.insertAdjacentHTML("afterend", `
+        <div class="analytics-card" id="muscle-frequency-card">
+            <h4>Training Frequency by Muscle Group</h4>
+            <div id="muscle-frequency"></div>
+        </div>
+        <div class="analytics-card" id="overall-weekly-sets-card">
+            <h4>Overall Weekly Working Sets</h4>
+            <div id="overall-weekly-sets"></div>
+        </div>
+        <div class="analytics-card" id="hypertrophy-volume-status-card">
+            <h4>Hypertrophy Volume Status</h4>
+            <div id="hypertrophy-volume-status"></div>
+        </div>
+    `);
 }
 
 function renderWeeklyMuscleChart(card, muscleData, weeks) {
     let container = document.getElementById("weekly-muscle-volume");
-
     if (!container) {
         container = document.createElement("div");
         container.id = "weekly-muscle-volume";
@@ -97,7 +91,7 @@ function renderWeeklyMuscleChart(card, muscleData, weeks) {
 
     container.innerHTML = `
         <p class="weekly-volume-note">
-            Completed working sets by week. Sets with 0 reps are treated as no data.
+            Exact completed working sets by Monday–Sunday training week. Demo sessions are excluded. A set counts only when it was performed; 0 reps is no data.
         </p>
         <div class="volume-heatmap-wrap">
             <div class="volume-heatmap" style="--week-count:${weeks.length}">
@@ -120,7 +114,7 @@ function renderWeeklyMuscleChart(card, muscleData, weeks) {
     `;
 }
 
-function renderAverageWeeklySets(card, muscleData, weeks) {
+function renderAverageWeeklySets(muscleData, weeks) {
     const container = document.getElementById("muscle-distribution");
     if (!container) return;
 
@@ -137,16 +131,12 @@ function renderAverageWeeklySets(card, muscleData, weeks) {
     }
 
     const maximum = Math.max(TARGET_MAX, ...entries.map(([, average]) => average));
-
     container.innerHTML = `
-        <p class="weekly-volume-note">Average completed sets per week across the selected date range. Decimals are rounded down.</p>
+        <p class="weekly-volume-note">Average completed sets per week across exactly ${weeks.length} training week${weeks.length === 1 ? "" : "s"}. Decimals are rounded down.</p>
         <div class="weekly-volume-bars">
             ${entries.map(([muscle, average]) => `
                 <div class="weekly-volume-row">
-                    <div class="weekly-volume-row-top">
-                        <strong>${escapeHtml(muscle)}</strong>
-                        <span>${average} sets/wk</span>
-                    </div>
+                    <div class="weekly-volume-row-top"><strong>${escapeHtml(muscle)}</strong><span>${average} sets/wk</span></div>
                     <div class="weekly-volume-track">
                         <div class="weekly-volume-target-zone" style="left:${TARGET_MIN / maximum * 100}%; width:${(TARGET_MAX - TARGET_MIN) / maximum * 100}%"></div>
                         <div class="weekly-volume-fill ${getVolumeClass(average)}" style="width:${Math.min(100, average / maximum * 100)}%"></div>
@@ -174,9 +164,8 @@ function renderFrequency(muscleData, weeks) {
     }
 
     const maximum = Math.max(1, ...entries.map(([, frequency]) => frequency));
-
     container.innerHTML = `
-        <p class="weekly-volume-note">Average number of sessions per week in which each muscle received at least one completed working set.</p>
+        <p class="weekly-volume-note">Average sessions per week in which each muscle received at least one completed working set.</p>
         <div class="frequency-bars">
             ${entries.map(([muscle, frequency]) => `
                 <div class="frequency-row">
@@ -199,24 +188,19 @@ function renderOverallWeeklySets(sessions, weeks) {
     }
 
     const totals = Object.fromEntries(weeks.map(week => [week, 0]));
-
     sessions.forEach(session => {
         const week = getWeekStart(session.date);
-        if (!(week in totals)) return;
-        totals[week] += countCompletedSets(session);
+        if (week in totals) totals[week] += countCompletedSets(session);
     });
 
     const maximum = Math.max(1, ...Object.values(totals));
-
     container.innerHTML = `
         <p class="weekly-volume-note">Total completed working sets across all exercises each week.</p>
         <div class="overall-week-chart">
             ${weeks.map(week => `
                 <div class="overall-week-column">
                     <span class="overall-week-value">${totals[week]}</span>
-                    <div class="overall-week-bar-wrap">
-                        <div class="overall-week-bar" style="height:${totals[week] / maximum * 100}%"></div>
-                    </div>
+                    <div class="overall-week-bar-wrap"><div class="overall-week-bar" style="height:${totals[week] / maximum * 100}%"></div></div>
                     <small>${escapeHtml(formatWeekLabel(week))}</small>
                 </div>
             `).join("")}
@@ -231,10 +215,7 @@ function renderVolumeStatus(muscleData, weeks) {
     const divisor = Math.max(1, weeks.length);
     const entries = Object.entries(muscleData)
         .filter(([muscle]) => muscle !== "Other")
-        .map(([muscle, data]) => ({
-            muscle,
-            average: Math.floor(data.totalSets / divisor)
-        }))
+        .map(([muscle, data]) => ({ muscle, average: Math.floor(data.totalSets / divisor) }))
         .filter(item => item.average > 0)
         .sort((a, b) => b.average - a.average);
 
@@ -248,13 +229,7 @@ function renderVolumeStatus(muscleData, weeks) {
         <div class="volume-status-grid">
             ${entries.map(item => {
                 const status = getVolumeStatus(item.average);
-                return `
-                    <div class="volume-status-card ${status.className}">
-                        <span>${escapeHtml(item.muscle)}</span>
-                        <strong>${item.average} sets/wk</strong>
-                        <small>${status.label}</small>
-                    </div>
-                `;
+                return `<div class="volume-status-card ${status.className}"><span>${escapeHtml(item.muscle)}</span><strong>${item.average} sets/wk</strong><small>${status.label}</small></div>`;
             }).join("")}
         </div>
     `;
@@ -268,13 +243,11 @@ function buildMuscleData(sessions, weeks) {
         if (!weeks.includes(week)) return;
 
         const sessionMuscles = new Set();
-
         session.exercises?.forEach(exercise => {
-            const completedSets = exercise.sets?.filter(set => Number(set.reps) > 0).length || 0;
+            const completedSets = exercise.sets?.filter(isCompletedWorkingSet).length || 0;
             if (!completedSets) return;
 
             const muscle = getExerciseById(exercise.exerciseId)?.muscleGroup || "Other";
-
             if (!data[muscle]) {
                 data[muscle] = {
                     totalSets: 0,
@@ -288,69 +261,96 @@ function buildMuscleData(sessions, weeks) {
             sessionMuscles.add(muscle);
         });
 
-        sessionMuscles.forEach(muscle => {
-            data[muscle].sessionCount += 1;
-        });
+        sessionMuscles.forEach(muscle => data[muscle].sessionCount += 1);
     });
 
     return data;
 }
 
-function buildWeekRange(days, sessions) {
-    const end = new Date();
-    end.setHours(0, 0, 0, 0);
+function isCompletedWorkingSet(set) {
+    if (!set || Number(set.reps) <= 0) return false;
 
-    let start;
+    // New logger records have an explicit completed flag. Respect it so partially
+    // entered sets do not appear in analytics. Older saved sessions did not have
+    // this field, so positive reps remain the backwards-compatible signal.
+    if (Object.prototype.hasOwnProperty.call(set, "completed")) {
+        return set.completed === true;
+    }
+
+    return true;
+}
+
+function buildWeekRange(days, sessions) {
+    const currentWeek = getWeekStart(toDateValue(new Date()));
 
     if (days > 0) {
-        start = new Date(end);
-        start.setDate(start.getDate() - days + 1);
-    }
-    else if (sessions.length) {
-        start = new Date(`${sessions[0].date}T00:00:00`);
-    }
-    else {
-        return [];
+        const weekCount = Math.max(1, Math.ceil(days / 7));
+        const weeks = [];
+        const last = new Date(`${currentWeek}T00:00:00`);
+
+        for (let offset = weekCount - 1; offset >= 0; offset--) {
+            const week = new Date(last);
+            week.setDate(week.getDate() - offset * 7);
+            weeks.push(toDateValue(week));
+        }
+
+        return weeks;
     }
 
-    const firstWeek = new Date(`${getWeekStart(toDateValue(start))}T00:00:00`);
-    const lastWeek = new Date(`${getWeekStart(toDateValue(end))}T00:00:00`);
+    if (!sessions.length) return [];
+
+    const validWeekStarts = sessions
+        .map(session => getWeekStart(session.date))
+        .filter(Boolean)
+        .sort();
+
+    if (!validWeekStarts.length) return [];
+
+    const first = new Date(`${validWeekStarts[0]}T00:00:00`);
+    const last = new Date(`${currentWeek}T00:00:00`);
     const weeks = [];
 
-    for (let cursor = new Date(firstWeek); cursor <= lastWeek; cursor.setDate(cursor.getDate() + 7)) {
+    for (let cursor = new Date(first); cursor <= last; cursor.setDate(cursor.getDate() + 7)) {
         weeks.push(toDateValue(cursor));
     }
 
     return weeks;
 }
 
-function getFilteredSessions(days) {
-    const sessions = getSessions().sort(sortByDate);
-    if (!days) return sessions;
-
-    const cutoff = new Date();
-    cutoff.setHours(0, 0, 0, 0);
-    cutoff.setDate(cutoff.getDate() - days + 1);
-
-    return sessions.filter(session => {
-        const date = new Date(`${session.date}T23:59:59`);
-        return !Number.isNaN(date.getTime()) && date >= cutoff;
-    });
+function filterSessionsToWeeks(sessions, weeks) {
+    const allowed = new Set(weeks);
+    return sessions.filter(session => allowed.has(getWeekStart(session.date)));
 }
 
 function getSessions() {
     try {
         const parsed = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || "[]");
-        return Array.isArray(parsed) ? parsed : [];
+        if (!Array.isArray(parsed)) return [];
+
+        return parsed
+            .filter(session => session && isValidDateValue(session.date))
+            .filter(session => !isDemoSession(session))
+            .sort(sortByDate);
     }
     catch {
         return [];
     }
 }
 
+function isDemoSession(session) {
+    return session.isDemo === true ||
+        String(session.id || "").startsWith("demo-session-") ||
+        session.planId === "demo-12-week-plan" ||
+        session.planName === "12-Week Demo Program";
+}
+
+function isValidDateValue(value) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""));
+}
+
 function countCompletedSets(session) {
     return session.exercises?.reduce((total, exercise) => {
-        return total + (exercise.sets?.filter(set => Number(set.reps) > 0).length || 0);
+        return total + (exercise.sets?.filter(isCompletedWorkingSet).length || 0);
     }, 0) || 0;
 }
 
@@ -372,17 +372,17 @@ function formatFrequency(value) {
 }
 
 function getWeekStart(dateValue) {
+    if (!isValidDateValue(dateValue)) return "";
     const date = new Date(`${dateValue}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return "";
     const day = date.getDay();
     date.setDate(date.getDate() - (day === 0 ? 6 : day - 1));
     return toDateValue(date);
 }
 
 function formatWeekLabel(value) {
-    return new Intl.DateTimeFormat(undefined, {
-        month: "short",
-        day: "numeric"
-    }).format(new Date(`${value}T00:00:00`));
+    return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" })
+        .format(new Date(`${value}T00:00:00`));
 }
 
 function toDateValue(date) {
