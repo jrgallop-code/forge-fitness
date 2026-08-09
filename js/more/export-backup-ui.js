@@ -13,11 +13,15 @@ export function renderExportBackup() {
             <div class="backup-copy">
                 <span class="eyebrow">LOCAL BACKUP</span>
                 <h2>Backup & Restore</h2>
-                <p>Download a copy of your workout plans, completed sessions, custom exercises, weight entries and nutrition data.</p>
+                <p>Export all locally saved Level Up data, including workouts, weight history, measurements, nutrition targets, phases, sleep and settings.</p>
                 <div class="backup-details">
                     <span>✓ One portable JSON file</span>
+                    <span>✓ Includes all current local app data</span>
                     <span>✓ Works between phone and computer</span>
-                    <span>✓ Stored only where you choose</span>
+                </div>
+                <div class="backup-integrity-summary">
+                    <span class="eyebrow">CURRENT BACKUP CONTENTS</span>
+                    <strong id="backup-summary">Checking saved data…</strong>
                 </div>
             </div>
             <div class="backup-actions">
