@@ -28,8 +28,6 @@ function formatLoad(value) {
 function getPracticalIncrement(exerciseId) {
   const exercise = getExerciseById(exerciseId);
   const equipment = String(exercise?.equipment || '').toLowerCase();
-
-  // Default to common real-world gym jumps. We can make these user-configurable later.
   if (equipment.includes('dumbbell')) return 5;
   if (equipment.includes('barbell')) return 5;
   if (equipment.includes('cable')) return 5;
@@ -40,12 +38,11 @@ function getPracticalIncrement(exerciseId) {
 function getRecommendedLoad(currentWeight, exerciseId) {
   const current = Number(currentWeight);
   if (!Number.isFinite(current) || current <= 0) return null;
-
   const increment = getPracticalIncrement(exerciseId);
   return Number((Math.ceil((current + 1e-9) / increment) * increment).toFixed(1));
 }
 
-function findPreviousQualifyingSet(active, exerciseIndex, upperBound) {
+function findPreviousProgressionSource(active, exerciseIndex, upperBound) {
   const planned = active?.planSnapshot?.days?.[active.trainingDayIndex]?.exercises?.[exerciseIndex];
   const exerciseId = planned?.id;
   if (!exerciseId) return null;
@@ -68,18 +65,35 @@ function findPreviousQualifyingSet(active, exerciseIndex, upperBound) {
     const state = session?.exercises?.[savedIndex];
     if (!state || !Array.isArray(state.sets)) continue;
 
-    const qualifying = state.sets
-      .filter(set => set?.completed && Number(set.reps) >= upperBound && Number(set.weight) > 0)
-      .sort((a, b) => Number(b.weight) - Number(a.weight))[0];
+    const completedSets = state.sets.filter(set =>
+      set?.completed &&
+      Number(set.weight) > 0 &&
+      Number(set.reps) > 0
+    );
+    if (!completedSets.length) continue;
 
-    if (qualifying) {
-      return {
-        exerciseId,
-        set: qualifying,
-        completedCount: state.sets.filter(set => set?.completed).length,
-        plannedCount: state.sets.length
-      };
-    }
+    // Progression triggers in either of two cases:
+    // 1) every completed set reached at least the top of the target range; or
+    // 2) any completed set exceeded the target maximum.
+    // This preserves partial-workout progression (e.g. 2 of 3 sets both hit 12)
+    // while also catching obvious overshoots such as 14 reps on an 8-12 target.
+    const allAtTop = completedSets.every(set => Number(set.reps) >= upperBound);
+    const anyExceeded = completedSets.some(set => Number(set.reps) > upperBound);
+    if (!allAtTop && !anyExceeded) continue;
+
+    const sourceSet = [...completedSets]
+      .filter(set => Number(set.reps) >= upperBound)
+      .sort((a, b) => Number(b.weight) - Number(a.weight))[0];
+    if (!sourceSet) continue;
+
+    return {
+      exerciseId,
+      set: sourceSet,
+      completedCount: completedSets.length,
+      plannedCount: state.sets.length,
+      maxReps: Math.max(...completedSets.map(set => Number(set.reps) || 0)),
+      exceeded: anyExceeded
+    };
   }
 
   return null;
@@ -88,7 +102,6 @@ function findPreviousQualifyingSet(active, exerciseIndex, upperBound) {
 function ensurePrompt(card) {
   let prompt = card.querySelector('.progression-prompt');
   if (prompt) return prompt;
-
   prompt = document.createElement('div');
   prompt.className = 'progression-prompt';
   prompt.hidden = true;
@@ -112,15 +125,14 @@ function renderPrompt(card) {
   const exerciseIndex = Number(card.dataset.exerciseIndex);
   const planned = active?.planSnapshot?.days?.[active.trainingDayIndex]?.exercises?.[exerciseIndex];
   const upperBound = getRepRangeUpperBound(planned?.reps);
-
   if (!upperBound) {
     prompt.hidden = true;
     return;
   }
 
-  // Important: never use performance from the workout currently being logged.
-  // A progression recommendation only appears if a PREVIOUS SAVED SESSION qualified.
-  const source = findPreviousQualifyingSet(active, exerciseIndex, upperBound);
+  // Never use the workout currently being logged. Progression is earned in a
+  // previous saved session and displayed at the start of the following one.
+  const source = findPreviousProgressionSource(active, exerciseIndex, upperBound);
   if (!source) {
     prompt.hidden = true;
     prompt.innerHTML = '';
@@ -138,6 +150,9 @@ function renderPrompt(card) {
   const partial = source.completedCount < source.plannedCount
     ? ` with ${source.completedCount} of ${source.plannedCount} sets completed`
     : '';
+  const repText = source.exceeded
+    ? `you exceeded the ${upperBound}-rep target and reached ${source.maxReps} reps`
+    : `all completed sets reached at least ${upperBound} reps`;
   const largeJumpNote = pct > 10
     ? ' This is a larger percentage jump because the next practical equipment increment is 5 lb.'
     : '';
@@ -146,8 +161,8 @@ function renderPrompt(card) {
     <span class="progression-arrow">↑</span>
     <div>
       <strong>Increase weight this session</strong>
-      <p>Last workout you reached ${upperBound} reps at ${formatLoad(currentWeight)} lb${partial}. Recommended load for this session: <b>${formatLoad(nextWeight)} lb</b> (+${pct.toFixed(1)}%).</p>
-      <small>Progression uses the next practical 5 lb gym increment after reaching the top of the programmed rep range.${largeJumpNote}</small>
+      <p>Last workout ${repText} at ${formatLoad(currentWeight)} lb${partial}. Recommended load for this session: <b>${formatLoad(nextWeight)} lb</b> (+${pct.toFixed(1)}%).</p>
+      <small>Progression uses the next practical 5 lb gym increment after meeting or exceeding the top of the programmed rep range.${largeJumpNote}</small>
     </div>
   `;
   prompt.hidden = false;
@@ -162,22 +177,13 @@ function refreshLogger(logger) {
 function bindLogger(logger) {
   if (!logger || logger.dataset.progressionV2Bound === 'true') return;
   logger.dataset.progressionV2Bound = 'true';
-
   const refresh = () => refreshLogger(logger);
   refresh();
-
-  // Older logger modules may try to show a prompt from the current session.
-  // Re-apply the previous-session-only rule after their handlers finish.
   logger.addEventListener('input', event => {
-    if (event.target.matches('.session-weight, .session-reps')) {
-      setTimeout(refresh, 60);
-    }
+    if (event.target.matches('.session-weight, .session-reps')) setTimeout(refresh, 60);
   });
-
   logger.addEventListener('click', event => {
-    if (event.target.closest('.complete-set-btn')) {
-      setTimeout(refresh, 80);
-    }
+    if (event.target.closest('.complete-set-btn')) setTimeout(refresh, 80);
   });
 }
 
