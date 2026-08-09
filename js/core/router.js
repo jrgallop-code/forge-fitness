@@ -7,9 +7,7 @@ from "../workouts/workouts.js?v=workout-flow-4";
 import { renderDashboard }
 from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 
-import {
-    initializeDashboardNutritionTargets
-}
+import { initializeDashboardNutritionTargets }
 from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
 
 import { renderProgress }
@@ -27,29 +25,19 @@ from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
 import { initializeWeeklyMuscleVolume }
 from "../progress/weekly-muscle-volume.js?v=training-analytics-5";
 
-import {
-    renderSleepTracker,
-    initializeSleepTracker
-}
+import { renderSleepTracker, initializeSleepTracker }
 from "../progress/sleep-tracker.js?v=sleep-tracker-2";
 
-import {
-    renderMeasurementsTracker,
-    initializeMeasurementsTracker
-}
+import { renderMeasurementsTracker, initializeMeasurementsTracker }
 from "../progress/measurements-tracker.js?v=measurements-1";
 
-import {
-    renderNutrition,
-    initializeNutrition,
-    showNutritionView
-}
+import { initializeMeasurementHistoryDetail }
+from "../progress/measurements-history-detail.js?v=measurement-history-1";
+
+import { renderNutrition, initializeNutrition, showNutritionView }
 from "../nutrition/nutrition-ui.js?v=nutrition-more-4";
 
-import {
-    renderEnergyProfile,
-    initializeEnergyProfile
-}
+import { renderEnergyProfile, initializeEnergyProfile }
 from "../nutrition/energy-profile.js?v=calorie-planner-2";
 
 import { initializeProteinTargetExplanation }
@@ -58,22 +46,13 @@ from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI }
 from "../nutrition/nutrition-plan-ui-v4.js?v=goals-flow-3";
 
-import {
-    renderGoalProjection,
-    initializeGoalProjection
-}
+import { renderGoalProjection, initializeGoalProjection }
 from "../nutrition/goal-projection.js?v=selected-target-projection-4";
 
-import {
-    renderMore,
-    initializeMore
-}
+import { renderMore, initializeMore }
 from "../more/more-ui-v2.js?v=more-tools-3";
 
-import {
-    renderWorkoutHistory,
-    initializeWorkoutHistory
-}
+import { renderWorkoutHistory, initializeWorkoutHistory }
 from "../workouts/workout-history.js?v=workout-history-3";
 
 import { initializeBackupManager }
@@ -128,6 +107,7 @@ export function navigate(page) {
             case "measurements":
                 content.innerHTML = renderMeasurementsTracker();
                 safeInitialize("Measurements tracker", initializeMeasurementsTracker);
+                safeInitialize("Measurement history detail", initializeMeasurementHistoryDetail);
                 break;
 
             case "nutrition":
@@ -149,10 +129,6 @@ export function navigate(page) {
                         ${renderGoalProjection()}
                     </div>
                 `;
-
-                // Keep calorie-plan state handling intentionally simple.
-                // Energy Profile owns goal selection; Nutrition Plan UI owns the
-                // saved manual maintenance/rate values and active calorie plan.
                 safeInitialize("Energy profile", initializeEnergyProfile);
                 safeInitialize("Protein target explanation", initializeProteinTargetExplanation);
                 safeInitialize("Goal projection", initializeGoalProjection);
