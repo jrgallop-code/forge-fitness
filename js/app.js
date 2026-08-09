@@ -1,7 +1,7 @@
 import {
     navigate
 }
-from "./core/router.js?v=router-icons-stage-2";
+from "./core/router.js?v=router-data-storage-1";
 
 import {
     renderNavbar,
