@@ -29,7 +29,7 @@ import { renderSleepTracker, initializeSleepTracker }
 from "../progress/sleep-tracker.js?v=sleep-tracker-2";
 
 import { renderMeasurementsTracker, initializeMeasurementsTracker }
-from "../progress/measurements-tracker.js?v=measurements-1";
+from "../progress/measurements-tracker.js?v=measurements-persistence-2";
 
 import { initializeMeasurementHistoryDetail }
 from "../progress/measurements-history-detail.js?v=measurement-history-1";
@@ -50,13 +50,13 @@ import { renderGoalProjection, initializeGoalProjection }
 from "../nutrition/goal-projection.js?v=selected-target-projection-4";
 
 import { renderMore, initializeMore }
-from "../more/more-ui-v2.js?v=more-tools-4";
+from "../more/more-ui-v2.js?v=more-tools-5";
 
 import { renderWorkoutHistory, initializeWorkoutHistory }
 from "../workouts/workout-history.js?v=workout-history-3";
 
 import { initializeBackupManager }
-from "./backup-manager.js?v=backup-complete-2";
+from "./backup-manager.js?v=backup-complete-3";
 
 import { initializeGoogleDriveSync }
 from "./google-drive-sync-v2.js?v=visible-drive-backup-1";
