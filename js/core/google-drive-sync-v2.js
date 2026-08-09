@@ -34,7 +34,8 @@ const BACKUP_KEYS = [
     "level_up_nutrition_macro",
     "level_up_nutrition_plan",
     "level_up_water_entries",
-    "level_up_sleep_entries"
+    "level_up_sleep_entries",
+    "level_up_body_measurements"
 ];
 
 let tokenClient = null;
