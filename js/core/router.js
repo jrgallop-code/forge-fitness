@@ -25,7 +25,7 @@ import { initializeTrainingProgress }
 from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
 
 import { initializeWeeklyMuscleVolume }
-from "../progress/weekly-muscle-volume.js?v=training-analytics-3";
+from "../progress/weekly-muscle-volume.js?v=training-analytics-4";
 
 import { initializeSleepTracker }
 from "../progress/sleep-tracker.js?v=sleep-tracker-2";
