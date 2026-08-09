@@ -13,7 +13,7 @@ import {
 from "../dashboard/nutrition-target-card.js?v=active-target-persist-1";
 
 import { renderProgress }
-from "../progress/progress-ui.js?v=progress-sleep-2";
+from "../progress/progress-ui.js?v=progress-10-weeks-1";
 
 import { initializeWeightTracker }
 from "../progress/weight-tracker.js?v=weight-tracker-8";
