@@ -89,7 +89,7 @@ function enhanceLogger(logger) {
     const menuButton = document.createElement('button');
     menuButton.type = 'button';
     menuButton.className = 'exercise-more-btn';
-    menuButton.setAttribute('aria-label', 'Exercise options');
+    menuButton.setAttribute('aria-label', 'Exercise options and rest timer');
     menuButton.textContent = '•••';
     header.appendChild(menuButton);
 
@@ -108,12 +108,12 @@ function enhanceLogger(logger) {
         </label>
       </div>
       <label class="exercise-duration-row">
-        <span>Duration</span>
-        <select class="exercise-rest-duration">
+        <span>Rest period</span>
+        <select class="exercise-rest-duration" aria-label="Suggested rest period">
           <option value="60" ${current.seconds === 60 ? 'selected' : ''}>1:00</option>
           <option value="90" ${current.seconds === 90 ? 'selected' : ''}>1:30</option>
           <option value="120" ${current.seconds === 120 ? 'selected' : ''}>2:00</option>
-          <option value="180" ${current.seconds === 180 ? 'selected' : ''}>3:00</option>
+          <option value="180" ${current.seconds === 180 ? 'selected' : ''}>3:00 (optimal for hypertrophy)</option>
         </select>
       </label>
     `;
