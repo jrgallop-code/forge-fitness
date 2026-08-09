@@ -14,6 +14,7 @@ from "./nutrition-storage.js?v=manual-goals-1";
 
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
+const CUSTOM_WEEKLY_RATE_GOAL_KEY = "level_up_custom_weekly_rate_goal_id";
 
 function getPresetRate(goalId) {
     const preset = goalId ? GOAL_PRESETS[goalId] : null;
@@ -115,6 +116,25 @@ function setText(id, value) {
     if (element) element.textContent = value;
 }
 
+function hydrateSavedInputs() {
+    const maintenanceInput = document.getElementById("manual-maintenance-calories");
+    const rateInput = document.getElementById("custom-weekly-rate");
+    const savedMaintenance = getSavedManualMaintenance();
+    const savedRate = getSavedCustomRate();
+
+    if (maintenanceInput) {
+        maintenanceInput.value = savedMaintenance !== null
+            ? String(savedMaintenance)
+            : "";
+    }
+
+    if (rateInput) {
+        rateInput.value = savedRate !== null
+            ? String(savedRate)
+            : "";
+    }
+}
+
 function previewFromInputs() {
     const values = getCurrentInputs({ preferTyped: true });
     if (!values) return;
@@ -130,6 +150,11 @@ function previewFromInputs() {
     );
     setText("calculated-calorie-target", `${values.calculatedCalories} kcal/day`);
     setText("current-calorie-target", `${values.calculatedCalories} kcal/day`);
+}
+
+function restoreGoalView() {
+    hydrateSavedInputs();
+    previewFromInputs();
 }
 
 function commitSavedInputsToPlan() {
@@ -165,6 +190,17 @@ document.addEventListener("click", event => {
     const target = event.target;
     if (!(target instanceof Element)) return;
 
+    if (target.closest("#save-custom-weekly-rate")) {
+        const goalId = getNutritionGoal()?.goalId;
+        if (goalId) {
+            localStorage.setItem(CUSTOM_WEEKLY_RATE_GOAL_KEY, goalId);
+        }
+    }
+
+    if (target.closest("#reset-custom-weekly-rate")) {
+        localStorage.removeItem(CUSTOM_WEEKLY_RATE_GOAL_KEY);
+    }
+
     if (
         target.closest("#save-manual-maintenance") ||
         target.closest("#save-custom-weekly-rate") ||
@@ -172,6 +208,10 @@ document.addEventListener("click", event => {
         target.closest("#reset-custom-weekly-rate")
     ) {
         queueMicrotask(commitSavedInputsToPlan);
+    }
+
+    if (target.closest('[data-nutrition-view="goals"]')) {
+        queueMicrotask(restoreGoalView);
     }
 });
 
