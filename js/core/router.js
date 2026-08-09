@@ -11,7 +11,7 @@ import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.j
 import { renderSleepTracker, initializeSleepTracker } from "../progress/sleep-tracker.js?v=sleep-tracker-2";
 import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../progress/measurements-tracker.js?v=measurements-image-1";
 import { initializeMeasurementHistoryDetail } from "../progress/measurements-history-detail.js?v=measurement-history-1";
-import { renderNutrition, initializeNutrition, showNutritionView } from "../nutrition/nutrition-ui.js?v=nutrition-more-4";
+import { renderNutrition, renderWater, initializeNutrition, showNutritionView } from "../nutrition/nutrition-ui.js?v=water-only-1";
 import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energy-profile.js?v=calorie-planner-2";
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=goals-flow-3";
@@ -44,7 +44,7 @@ export function navigate(page) {
             case "nutrition":
                 content.innerHTML = renderNutrition(); safeInitialize("Nutrition", initializeNutrition); safeInitialize("Nutrition main view", () => showNutritionView("main")); break;
             case "water":
-                content.innerHTML = renderNutrition(); safeInitialize("Nutrition", initializeNutrition); safeInitialize("Water view", () => showNutritionView("water")); break;
+                content.innerHTML = renderWater(); safeInitialize("Water log", initializeNutrition); break;
             case "energy":
                 content.innerHTML = renderEnergyProfile() + `<div class="nutrition-planner-view nutrition-projection-view" data-planner-view="projection" hidden><button class="nutrition-planner-back" type="button" data-nutrition-back>← Calorie Planner</button>${renderGoalProjection()}</div>`; safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Goal projection", initializeGoalProjection); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); break;
             case "more": content.innerHTML = renderMore(); safeInitialize("More", initializeMore); break;
