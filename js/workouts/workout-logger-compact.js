@@ -1,6 +1,8 @@
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=workout-session-4';
 
 const TIMER_SETTINGS_KEY = 'level_up_exercise_rest_settings';
+let inlineTimerInterval = null;
+let observer = null;
 
 function getTimerSettings() {
   try {
@@ -36,12 +38,42 @@ function formatSeconds(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-function enhanceLogger() {
-  const logger = document.getElementById('workout-session-logger');
+function ensureHiddenRestSelect(logger) {
+  let select = logger.querySelector('#rest-duration-select');
+  if (!select) {
+    select = document.createElement('select');
+    select.id = 'rest-duration-select';
+    select.hidden = true;
+    select.innerHTML = '<option value="60">60</option><option value="90">90</option><option value="120">120</option><option value="180">180</option>';
+    logger.appendChild(select);
+  }
+  return select;
+}
+
+function applyExerciseTimerToCore(logger, exerciseId) {
+  const setting = getTimerSettings()[exerciseId] || { enabled: false, seconds: 120 };
+  const select = ensureHiddenRestSelect(logger);
+  select.value = String(setting.enabled ? setting.seconds : 0);
+  if (!setting.enabled) {
+    let off = select.querySelector('option[value="0"]');
+    if (!off) {
+      off = document.createElement('option');
+      off.value = '0';
+      off.textContent = 'Off';
+      select.appendChild(off);
+    }
+    select.value = '0';
+  }
+  return setting;
+}
+
+function enhanceLogger(logger) {
   if (!logger || logger.dataset.compactEnhanced === 'true') return;
   logger.dataset.compactEnhanced = 'true';
+  logger.classList.add('compact-workout-logger');
 
   logger.querySelector('.rest-timer-panel')?.remove();
+  ensureHiddenRestSelect(logger);
 
   logger.querySelectorAll('.session-exercise-card[data-tracking-type="reps"]').forEach(card => {
     const exerciseIndex = Number(card.dataset.exerciseIndex);
@@ -61,11 +93,12 @@ function enhanceLogger() {
     menuButton.textContent = '•••';
     header.appendChild(menuButton);
 
+    const settings = getTimerSettings();
+    const current = settings[exerciseId] || { enabled: false, seconds: 120 };
+
     const menu = document.createElement('div');
     menu.className = 'exercise-options-popover';
     menu.hidden = true;
-    const settings = getTimerSettings();
-    const current = settings[exerciseId] || { enabled: false, seconds: 120 };
     menu.innerHTML = `
       <div class="exercise-option-row">
         <span>Rest timer</span>
@@ -103,6 +136,7 @@ function enhanceLogger() {
         seconds: Number(timerDuration?.value) || 120
       };
       saveTimerSettings(all);
+      updateAddSetLabel(card, exerciseId);
     };
     timerToggle?.addEventListener('change', persistSetting);
     timerDuration?.addEventListener('change', persistSetting);
@@ -110,13 +144,36 @@ function enhanceLogger() {
     card.querySelector('.session-target')?.classList.add('compact-target');
     card.querySelector('.previous-performance')?.remove();
 
-    const rows = [...card.querySelectorAll('.session-set-row')];
-    rows.forEach(row => {
+    const setHeader = card.querySelector('.session-set-header');
+    if (setHeader) {
+      setHeader.innerHTML = '<span>Set</span><span>Previous</span><span>lbs</span><span>Reps</span><span>✓</span>';
+    }
+
+    [...card.querySelectorAll('.session-set-row')].forEach(row => {
       const setIndex = Number(row.dataset.setIndex);
       const complete = row.querySelector('.complete-set-btn');
       if (complete) {
-        complete.textContent = row.classList.contains('completed') ? '✓' : '✓';
+        complete.textContent = '✓';
         complete.setAttribute('aria-label', `Complete set ${setIndex + 1}`);
+
+        complete.addEventListener('pointerdown', () => {
+          applyExerciseTimerToCore(logger, exerciseId);
+        }, true);
+
+        complete.addEventListener('click', () => {
+          setTimeout(() => {
+            const setting = getTimerSettings()[exerciseId] || { enabled: false, seconds: 120 };
+            const active = getActive();
+            if (!active) return;
+            active.currentExerciseIndex = exerciseIndex;
+            active.currentSetIndex = setIndex;
+            if (!setting.enabled && row.classList.contains('completed')) {
+              active.restTimer = null;
+              saveActive(active);
+            }
+            updateInlineTimers();
+          }, 0);
+        });
       }
 
       const timerLine = document.createElement('div');
@@ -125,40 +182,14 @@ function enhanceLogger() {
       timerLine.dataset.setIndex = String(setIndex);
       timerLine.hidden = true;
       row.insertAdjacentElement('afterend', timerLine);
-
-      complete?.addEventListener('click', () => {
-        setTimeout(() => {
-          const active = getActive();
-          if (!active) return;
-          const all = getTimerSettings();
-          const setting = all[exerciseId] || { enabled: false, seconds: 120 };
-          active.currentExerciseIndex = exerciseIndex;
-          active.currentSetIndex = setIndex;
-          if (setting.enabled && row.classList.contains('completed')) {
-            const seconds = Number(setting.seconds) || 120;
-            active.restTimer = {
-              status: 'running',
-              durationSeconds: seconds,
-              endAt: new Date(Date.now() + seconds * 1000).toISOString(),
-              remainingMs: seconds * 1000,
-              notified: false
-            };
-          } else {
-            active.restTimer = null;
-          }
-          saveActive(active);
-          updateInlineTimers();
-        }, 0);
-      });
     });
 
     if (!logger.dataset.editingSessionId) {
       const addSet = document.createElement('button');
       addSet.type = 'button';
       addSet.className = 'compact-add-set-btn';
-      const timerSetting = current.enabled ? ` (${formatSeconds(current.seconds)})` : '';
-      addSet.textContent = `+ Add Set${timerSetting}`;
       card.appendChild(addSet);
+      updateAddSetLabel(card, exerciseId);
       addSet.addEventListener('click', () => {
         const active = getActive();
         const state = active?.exercises?.[exerciseIndex];
@@ -172,12 +203,20 @@ function enhanceLogger() {
     }
   });
 
-  document.addEventListener('click', closeMenus, { once: true });
+  logger.addEventListener('click', event => {
+    if (!event.target.closest('.exercise-more-btn, .exercise-options-popover')) {
+      logger.querySelectorAll('.exercise-options-popover').forEach(menu => menu.hidden = true);
+    }
+  });
+
   updateInlineTimers();
 }
 
-function closeMenus() {
-  document.querySelectorAll('.exercise-options-popover').forEach(menu => menu.hidden = true);
+function updateAddSetLabel(card, exerciseId) {
+  const button = card.querySelector('.compact-add-set-btn');
+  if (!button) return;
+  const setting = getTimerSettings()[exerciseId] || { enabled: false, seconds: 120 };
+  button.textContent = setting.enabled ? `+ Add Set (${formatSeconds(setting.seconds)})` : '+ Add Set';
 }
 
 function updateInlineTimers() {
@@ -201,7 +240,20 @@ function updateInlineTimers() {
   line.textContent = formatSeconds(remainingMs / 1000);
 }
 
-const observer = new MutationObserver(enhanceLogger);
+function scanForLogger() {
+  const logger = document.getElementById('workout-session-logger');
+  if (logger) enhanceLogger(logger);
+}
+
+observer = new MutationObserver(mutations => {
+  const needsScan = mutations.some(mutation =>
+    [...mutation.addedNodes].some(node =>
+      node.nodeType === 1 && (node.id === 'workout-session-logger' || node.querySelector?.('#workout-session-logger'))
+    )
+  );
+  if (needsScan) scanForLogger();
+});
 observer.observe(document.body, { childList: true, subtree: true });
-setInterval(updateInlineTimers, 500);
-enhanceLogger();
+
+inlineTimerInterval = setInterval(updateInlineTimers, 500);
+scanForLogger();
