@@ -1,7 +1,7 @@
 import {
     navigate
 }
-from "./core/router.js?v=router-calorie-persist-1";
+from "./core/router.js?v=router-progress-volume-1";
 
 import {
     renderNavbar,
