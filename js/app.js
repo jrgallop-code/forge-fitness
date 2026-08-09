@@ -1,4 +1,4 @@
-import { navigate } from "./core/router.js?v=router-water-only-1";
+import { navigate } from "./core/router.js?v=router-water-only-2";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=navbar-icons-3";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-session-4";
 
