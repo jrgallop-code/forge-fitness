@@ -128,66 +128,42 @@ function renderBackBodyFigure() {
 
 function renderBodyFigure(view) {
     const isBack = view === "back";
+    const imagePath = isBack
+        ? "assets/measurement-body-back-v1.svg"
+        : "assets/measurement-body-front-v1.svg";
+    const viewHeight = isBack ? 1393 : 1384;
+
     return `
-        <svg class="anatomy-svg anatomy-silhouette" viewBox="0 0 430 720" aria-hidden="true">
-            <g class="anatomy-outline">
-                <ellipse cx="215" cy="52" rx="25" ry="32"/>
-                <path d="M197 78c1 14 0 23-5 29-5 6-12 9-19 12"/>
-                <path d="M233 78c-1 14 0 23 5 29 5 6 12 9 19 12"/>
-
-                <path d="M173 119c-23 6-34 17-36 38-2 20-1 34-3 48"/>
-                <path d="M257 119c23 6 34 17 36 38 2 20 1 34 3 48"/>
-                <path d="M173 119c-12 17-20 37-19 61 1 27 9 49 17 69 7 18 10 37 8 59l-4 51c-1 29 2 55 9 78"/>
-                <path d="M257 119c12 17 20 37 19 61-1 27-9 49-17 69-7 18-10 37-8 59l4 51c1 29-2 55-9 78"/>
-                <path d="M175 359c-1 26 2 51 9 78-8 34-12 69-11 104 1 28 4 52-3 78-5 18-6 38-7 58l-5 10c-3 7 4 11 18 11h12c7 0 10-4 8-10l-2-10 3-39c8-34 10-65 8-97-2-38 0-74 10-111"/>
-                <path d="M255 359c1 26-2 51-9 78 8 34 12 69 11 104-1 28-4 52 3 78 5 18 6 38 7 58l5 10c3 7-4 11-18 11h-12c-7 0-10-4-8-10l2-10-3-39c-8-34-10-65-8-97 2-38 0-74-10-111"/>
-                <path d="M184 437c9-10 19-15 31-15s22 5 31 15"/>
-
-                <path d="M137 157c-8 13-9 28-10 48-1 25-5 45-13 66l-17 48c-5 16-9 27-17 36l-22 20"/>
-                <path d="M154 181c-2 17-5 33-10 50l-13 45-15 54c-3 12-7 22-14 29l-18 18"/>
-                <path d="M293 157c8 13 9 28 10 48 1 25 5 45 13 66l17 48c5 16 9 27 17 36l22 20"/>
-                <path d="M276 181c2 17 5 33 10 50l13 45 15 54c3 12 7 22 14 29l18 18"/>
-
-                <path d="M58 375l-19 14-10 7c-3 2-1 6 2 5l14-7-10 15c-2 4 2 6 5 3l11-14-6 20c-1 4 4 5 6 1l7-19-2 20c0 4 5 4 6 0l3-20 3 17c1 4 6 3 6-1l-1-25 11-14"/>
-                <path d="M372 375l19 14 10 7c3 2 1 6-2 5l-14-7 10 15c2 4-2 6-5 3l-11-14 6 20c1 4-4 5-6 1l-7-19 2 20c0 4-5 4-6 0l-3-20-3 17c-1 4-6 3-6-1l1-25-11-14"/>
-
-                ${isBack ? `
-                    <path class="anatomy-landmark" d="M215 119v211"/>
-                    <path class="anatomy-landmark" d="M174 151c13 5 26 15 41 28M256 151c-13 5-26 15-41 28"/>
-                    <path class="anatomy-landmark" d="M181 367c8-11 19-17 34-17s26 6 34 17"/>
-                    <path class="anatomy-landmark" d="M215 350v68"/>
-                ` : `
-                    <path class="anatomy-landmark" d="M190 137c8 5 16 7 25 7s17-2 25-7"/>
-                    <path class="anatomy-landmark" d="M215 173v115"/>
-                    <circle class="anatomy-landmark anatomy-navel" cx="215" cy="292" r="2"/>
-                `}
-            </g>
-
-            ${measurementBand(190, 103, 50, 1, "Neck", isBack ? "left" : "right")}
-            ${measurementBand(157, 132, 116, 2, "Shoulders", isBack ? "right" : "left")}
-            ${isBack ? "" : measurementBand(165, 180, 100, 3, "Chest", "right")}
-            ${measurementBand(128, 216, 31, 4, "Upper arm", "left")}
-            ${measurementBand(177, 300, 76, 5, "Waist", "right")}
-            ${measurementBand(168, 365, 94, 6, "Hips", "left")}
-            ${measurementBand(101, 302, 30, 7, "Forearm", "left")}
-            ${measurementBand(176, 466, 38, 8, "Thigh", "right")}
-            ${measurementBand(169, 585, 35, 9, "Calf", "right")}
-        </svg>
+        <div class="measurement-artwork">
+            <img class="measurement-body-image" src="${imagePath}" alt="" aria-hidden="true">
+            <svg class="measurement-overlay" viewBox="0 0 640 ${viewHeight}" aria-hidden="true">
+                ${measurementBand(286, 196, 68, 1, "Neck", isBack ? "left" : "right")}
+                ${measurementBand(174, 274, 292, 2, "Shoulders", isBack ? "right" : "left")}
+                ${isBack ? "" : measurementBand(196, 370, 248, 3, "Chest", "right")}
+                ${measurementBand(128, 430, 48, 4, "Upper arm", "left")}
+                ${measurementBand(212, 598, 216, 5, "Waist", "right")}
+                ${measurementBand(194, 728, 252, 6, "Hips", "left")}
+                ${measurementBand(87, 585, 52, 7, "Forearm", "left")}
+                ${measurementBand(205, 874, 82, 8, "Thigh", "right")}
+                ${measurementBand(198, 1080, 64, 9, "Calf", "right")}
+            </svg>
+        </div>
     `;
 }
 
 function measurementBand(x, y, width, number, label, side) {
-    const lineEnd = side === "left" ? 52 : 378;
-    const labelX = side === "left" ? 18 : 412;
+    const lineEnd = side === "left" ? 44 : 596;
+    const markerX = side === "left" ? 58 : 582;
+    const labelX = side === "left" ? 18 : 622;
     const anchor = side === "left" ? "start" : "end";
     const startX = side === "left" ? x : x + width;
     return `
         <g class="anatomy-measure">
             <line class="body-band" x1="${x}" y1="${y}" x2="${x + width}" y2="${y}"/>
             <line class="leader-line" x1="${startX}" y1="${y}" x2="${lineEnd}" y2="${y}"/>
-            <circle class="measure-number" cx="${side === "left" ? 36 : 394}" cy="${y}" r="13"/>
-            <text class="measure-number-text" x="${side === "left" ? 36 : 394}" y="${y + 4}" text-anchor="middle">${number}</text>
-            <text class="measure-label" x="${labelX}" y="${y - 19}" text-anchor="${anchor}">${label}</text>
+            <circle class="measure-number" cx="${markerX}" cy="${y}" r="19"/>
+            <text class="measure-number-text" x="${markerX}" y="${y + 6}" text-anchor="middle">${number}</text>
+            <text class="measure-label" x="${labelX}" y="${y - 27}" text-anchor="${anchor}">${label}</text>
         </g>
     `;
 }
