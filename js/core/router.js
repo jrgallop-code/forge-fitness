@@ -10,7 +10,7 @@ from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import {
     initializeDashboardNutritionTargets
 }
-from "../dashboard/nutrition-target-card.js?v=active-target-persist-1";
+from "../dashboard/nutrition-target-card.js?v=dashboard-icons-1";
 
 import { renderProgress }
 from "../progress/progress-ui.js?v=progress-10-weeks-1";
@@ -103,6 +103,7 @@ export function navigate(page) {
 
             case "workout":
                 content.innerHTML = renderWorkoutBuilder();
+                decorateWorkoutTitle(content);
                 safeInitialize("Workout builder", initializeWorkoutBuilder);
                 break;
 
@@ -171,6 +172,20 @@ export function navigate(page) {
             </section>
         `;
     }
+}
+
+function decorateWorkoutTitle(content) {
+    const heading = content.querySelector(".workout-page-title h2");
+    if (!heading) return;
+
+    heading.classList.add("icon-title-heading");
+    heading.innerHTML = `
+        <svg class="title-bicep-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7.2 3.1c.8-.5 1.8-.2 2.3.5l.8 1.2 1.1-.8c.7-.5 1.7-.3 2.2.4.4.6.3 1.5-.2 2l-2.1 1.8v3.2l1.1-1c1.2-1.1 2.8-1.7 4.4-1.7 2.9 0 5.3 2.1 5.7 4.9.5 3.6-2.3 6.9-6 6.9H8.1c-3.1 0-5.6-2.5-5.6-5.6 0-1.7.8-3.4 2.1-4.4l2.3-1.8V5.1c0-.8.1-1.5.3-2Z"/>
+            <path d="M7.1 2.8 9 2.1l1.2 2-2.1.9-1-2.2Zm3.3 2 1.8-1.3 1.2 1.7-2 1.5-1-1.9Z"/>
+        </svg>
+        <span>Workout</span>
+    `;
 }
 
 function safeInitialize(name, initializer) {
