@@ -44,7 +44,7 @@ import {
     initializeNutrition,
     showNutritionView
 }
-from "../nutrition/nutrition-ui.js?v=nutrition-more-2";
+from "../nutrition/nutrition-ui.js?v=nutrition-more-3";
 
 import {
     renderEnergyProfile,
