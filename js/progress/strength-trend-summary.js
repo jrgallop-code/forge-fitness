@@ -139,7 +139,10 @@ function initializeStrengthTrendSummary() {
     const content = document.getElementById("content");
     if (content) {
         new MutationObserver(() => {
-            if (document.getElementById("exercise-strength-chart")) {
+            if (
+                document.getElementById("exercise-strength-chart") &&
+                !document.getElementById("exercise-strength-trend-summary")
+            ) {
                 renderStrengthTrendSummary();
             }
         }).observe(content, { childList: true, subtree: true });
