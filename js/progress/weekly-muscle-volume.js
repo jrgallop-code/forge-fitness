@@ -3,12 +3,12 @@ import { getExerciseById } from "../workouts/exercise-library.js";
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const TARGET_MIN = 10;
 const TARGET_MAX = 20;
+const MAX_WEEKS = 10;
+const MIN_AVERAGE_DAYS = 7;
 
 export function initializeWeeklyMuscleVolume() {
-    const range = document.getElementById("progress-range");
     const liftingTab = document.getElementById("lifting-tab");
 
-    range?.addEventListener("change", renderTrainingVolumeAnalytics);
     liftingTab?.addEventListener("click", () => requestAnimationFrame(renderTrainingVolumeAnalytics));
 
     document
@@ -39,17 +39,17 @@ function renderTrainingVolumeAnalytics() {
     muscleDistribution.innerHTML = "";
     ensureAnalyticsCards(averageCard);
 
-    const days = Number(document.getElementById("progress-range")?.value || 0);
     const allSessions = getSessions();
-    const weeks = buildWeekRange(days, allSessions);
+    const weeks = buildRecentWeekRange(allSessions);
     const sessions = filterSessionsToWeeks(allSessions, weeks);
     const muscleData = buildMuscleData(sessions, weeks);
+    const hasFullWeek = hasAtLeastOneWeekOfData(allSessions);
 
     renderWeeklyMuscleChart(weeklyCard, muscleData, weeks);
-    renderAverageWeeklySets(muscleData, weeks);
-    renderFrequency(muscleData, weeks);
+    renderAverageWeeklySets(muscleData, weeks, hasFullWeek);
+    renderFrequency(muscleData, weeks, hasFullWeek);
     renderOverallWeeklySets(sessions, weeks);
-    renderVolumeStatus(muscleData, weeks);
+    renderVolumeStatus(muscleData, weeks, hasFullWeek);
 }
 
 function ensureAnalyticsCards(averageCard) {
@@ -89,9 +89,13 @@ function renderWeeklyMuscleChart(card, muscleData, weeks) {
         return;
     }
 
+    const windowText = weeks.length === MAX_WEEKS
+        ? `Showing the latest ${MAX_WEEKS} weeks of training data.`
+        : `Showing ${weeks.length} week${weeks.length === 1 ? "" : "s"} of available training data.`;
+
     container.innerHTML = `
         <p class="weekly-volume-note">
-            Exact completed working sets by Monday–Sunday training week. Demo sessions are excluded. A set counts only when it was performed; 0 reps is no data.
+            ${windowText} Exact completed working sets are grouped by Monday–Sunday training week. Demo sessions are excluded and 0 reps is treated as no data.
         </p>
         <div class="volume-heatmap-wrap">
             <div class="volume-heatmap" style="--week-count:${weeks.length}">
@@ -114,9 +118,14 @@ function renderWeeklyMuscleChart(card, muscleData, weeks) {
     `;
 }
 
-function renderAverageWeeklySets(muscleData, weeks) {
+function renderAverageWeeklySets(muscleData, weeks, hasFullWeek) {
     const container = document.getElementById("muscle-distribution");
     if (!container) return;
+
+    if (!hasFullWeek) {
+        container.innerHTML = renderBuildingAverageMessage();
+        return;
+    }
 
     const divisor = Math.max(1, weeks.length);
     const entries = Object.entries(muscleData)
@@ -132,7 +141,7 @@ function renderAverageWeeklySets(muscleData, weeks) {
 
     const maximum = Math.max(TARGET_MAX, ...entries.map(([, average]) => average));
     container.innerHTML = `
-        <p class="weekly-volume-note">Average completed sets per week across exactly ${weeks.length} training week${weeks.length === 1 ? "" : "s"}. Decimals are rounded down.</p>
+        <p class="weekly-volume-note">Average completed sets per week across the available window, capped at the latest ${MAX_WEEKS} weeks. Decimals are rounded down.</p>
         <div class="weekly-volume-bars">
             ${entries.map(([muscle, average]) => `
                 <div class="weekly-volume-row">
@@ -147,9 +156,14 @@ function renderAverageWeeklySets(muscleData, weeks) {
     `;
 }
 
-function renderFrequency(muscleData, weeks) {
+function renderFrequency(muscleData, weeks, hasFullWeek) {
     const container = document.getElementById("muscle-frequency");
     if (!container) return;
+
+    if (!hasFullWeek) {
+        container.innerHTML = renderBuildingAverageMessage("A full week of training data is needed before weekly frequency is calculated.");
+        return;
+    }
 
     const divisor = Math.max(1, weeks.length);
     const entries = Object.entries(muscleData)
@@ -208,9 +222,14 @@ function renderOverallWeeklySets(sessions, weeks) {
     `;
 }
 
-function renderVolumeStatus(muscleData, weeks) {
+function renderVolumeStatus(muscleData, weeks, hasFullWeek) {
     const container = document.getElementById("hypertrophy-volume-status");
     if (!container) return;
+
+    if (!hasFullWeek) {
+        container.innerHTML = renderBuildingAverageMessage("A full week of training data is needed before hypertrophy volume status is assessed.");
+        return;
+    }
 
     const divisor = Math.max(1, weeks.length);
     const entries = Object.entries(muscleData)
@@ -231,6 +250,15 @@ function renderVolumeStatus(muscleData, weeks) {
                 const status = getVolumeStatus(item.average);
                 return `<div class="volume-status-card ${status.className}"><span>${escapeHtml(item.muscle)}</span><strong>${item.average} sets/wk</strong><small>${status.label}</small></div>`;
             }).join("")}
+        </div>
+    `;
+}
+
+function renderBuildingAverageMessage(message = "A full week of training data is needed before weekly averages are calculated.") {
+    return `
+        <div class="average-building-state">
+            <strong>Building your weekly average</strong>
+            <p>${escapeHtml(message)}</p>
         </div>
     `;
 }
@@ -270,9 +298,6 @@ function buildMuscleData(sessions, weeks) {
 function isCompletedWorkingSet(set) {
     if (!set || Number(set.reps) <= 0) return false;
 
-    // New logger records have an explicit completed flag. Respect it so partially
-    // entered sets do not appear in analytics. Older saved sessions did not have
-    // this field, so positive reps remain the backwards-compatible signal.
     if (Object.prototype.hasOwnProperty.call(set, "completed")) {
         return set.completed === true;
     }
@@ -280,31 +305,16 @@ function isCompletedWorkingSet(set) {
     return true;
 }
 
-function buildWeekRange(days, sessions) {
-    const currentWeek = getWeekStart(toDateValue(new Date()));
-
-    if (days > 0) {
-        const weekCount = Math.max(1, Math.ceil(days / 7));
-        const weeks = [];
-        const last = new Date(`${currentWeek}T00:00:00`);
-
-        for (let offset = weekCount - 1; offset >= 0; offset--) {
-            const week = new Date(last);
-            week.setDate(week.getDate() - offset * 7);
-            weeks.push(toDateValue(week));
-        }
-
-        return weeks;
-    }
-
+function buildRecentWeekRange(sessions) {
     if (!sessions.length) return [];
 
+    const currentWeek = getWeekStart(toDateValue(new Date()));
     const validWeekStarts = sessions
         .map(session => getWeekStart(session.date))
         .filter(Boolean)
         .sort();
 
-    if (!validWeekStarts.length) return [];
+    if (!validWeekStarts.length || !currentWeek) return [];
 
     const first = new Date(`${validWeekStarts[0]}T00:00:00`);
     const last = new Date(`${currentWeek}T00:00:00`);
@@ -314,7 +324,20 @@ function buildWeekRange(days, sessions) {
         weeks.push(toDateValue(cursor));
     }
 
-    return weeks;
+    return weeks.slice(-MAX_WEEKS);
+}
+
+function hasAtLeastOneWeekOfData(sessions) {
+    if (!sessions.length) return false;
+
+    const firstDate = new Date(`${sessions[0].date}T00:00:00`);
+    if (Number.isNaN(firstDate.getTime())) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const elapsedDays = Math.floor((today - firstDate) / 86400000);
+    return elapsedDays >= MIN_AVERAGE_DAYS;
 }
 
 function filterSessionsToWeeks(sessions, weeks) {
