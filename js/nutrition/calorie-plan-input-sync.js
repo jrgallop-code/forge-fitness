@@ -14,7 +14,6 @@ from "./nutrition-storage.js?v=manual-goals-1";
 
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
-const CUSTOM_WEEKLY_RATE_GOAL_KEY = "level_up_custom_weekly_rate_goal_id";
 
 function getPresetRate(goalId) {
     const preset = goalId ? GOAL_PRESETS[goalId] : null;
@@ -25,9 +24,7 @@ function getPresetRate(goalId) {
         preset.weeklyChangeLb
     );
 
-    if (Number.isFinite(direct)) {
-        return direct;
-    }
+    if (Number.isFinite(direct)) return direct;
 
     const adjustment = Number(preset.dailyCalorieAdjustment);
     return Number.isFinite(adjustment)
@@ -40,9 +37,7 @@ function getSavedManualMaintenance() {
     if (raw === null || raw === "") return null;
 
     const value = Number(raw);
-    return Number.isFinite(value) && value > 0
-        ? value
-        : null;
+    return Number.isFinite(value) && value > 0 ? value : null;
 }
 
 function getSavedCustomRate() {
@@ -50,18 +45,14 @@ function getSavedCustomRate() {
     if (raw === null || raw === "") return null;
 
     const value = Number(raw);
-    return Number.isFinite(value)
-        ? value
-        : null;
+    return Number.isFinite(value) ? value : null;
 }
 
 function getCurrentInputs({ preferTyped = false } = {}) {
     const profile = getNutritionProfile();
     const goal = getNutritionGoal();
 
-    if (!profile || !goal?.goalId || !GOAL_PRESETS[goal.goalId]) {
-        return null;
-    }
+    if (!profile || !goal?.goalId || !GOAL_PRESETS[goal.goalId]) return null;
 
     const estimatedTdee = calculateTdee(profile)?.tdee;
     if (!Number.isFinite(estimatedTdee)) return null;
@@ -71,7 +62,6 @@ function getCurrentInputs({ preferTyped = false } = {}) {
 
     const typedMaintenance = Number(maintenanceInput?.value);
     const typedRate = Number(rateInput?.value);
-
     const savedMaintenance = getSavedManualMaintenance();
     const savedRate = getSavedCustomRate();
 
@@ -85,25 +75,15 @@ function getCurrentInputs({ preferTyped = false } = {}) {
             ? typedRate
             : savedRate ?? getPresetRate(goal.goalId);
 
-    if (!Number.isFinite(maintenance) || !Number.isFinite(weeklyRate)) {
-        return null;
-    }
+    if (!Number.isFinite(maintenance) || !Number.isFinite(weeklyRate)) return null;
 
     return {
         estimatedTdee,
         maintenance,
         weeklyRate,
-        calculatedCalories: Math.round(
-            maintenance + ((weeklyRate * 3500) / 7)
-        ),
-        manualMaintenance:
-            preferTyped && maintenanceInput?.value !== ""
-                ? true
-                : savedMaintenance !== null,
-        customRate:
-            preferTyped && rateInput?.value !== ""
-                ? true
-                : savedRate !== null
+        calculatedCalories: Math.round(maintenance + ((weeklyRate * 3500) / 7)),
+        manualMaintenance: savedMaintenance !== null || (preferTyped && maintenanceInput?.value !== ""),
+        customRate: savedRate !== null || (preferTyped && rateInput?.value !== "")
     };
 }
 
@@ -123,15 +103,11 @@ function hydrateSavedInputs() {
     const savedRate = getSavedCustomRate();
 
     if (maintenanceInput) {
-        maintenanceInput.value = savedMaintenance !== null
-            ? String(savedMaintenance)
-            : "";
+        maintenanceInput.value = savedMaintenance !== null ? String(savedMaintenance) : "";
     }
 
     if (rateInput) {
-        rateInput.value = savedRate !== null
-            ? String(savedRate)
-            : "";
+        rateInput.value = savedRate !== null ? String(savedRate) : "";
     }
 }
 
@@ -152,12 +128,23 @@ function previewFromInputs() {
     setText("current-calorie-target", `${values.calculatedCalories} kcal/day`);
 }
 
-function restoreGoalView() {
-    hydrateSavedInputs();
-    previewFromInputs();
+function saveTypedValue(target) {
+    if (target.id === "manual-maintenance-calories") {
+        const value = Number(target.value);
+        if (target.value !== "" && Number.isFinite(value) && value > 0) {
+            localStorage.setItem(MANUAL_MAINTENANCE_KEY, String(Math.round(value)));
+        }
+    }
+
+    if (target.id === "custom-weekly-rate") {
+        const value = Number(target.value);
+        if (target.value !== "" && Number.isFinite(value)) {
+            localStorage.setItem(CUSTOM_WEEKLY_RATE_KEY, String(value));
+        }
+    }
 }
 
-function commitSavedInputsToPlan() {
+function commitSavedInputsToPlan({ notify = true } = {}) {
     const values = getCurrentInputs();
     if (!values) return;
 
@@ -169,20 +156,25 @@ function commitSavedInputsToPlan() {
         currentCalories: values.calculatedCalories
     });
 
-    window.dispatchEvent(
-        new CustomEvent("levelup:nutrition-updated")
-    );
+    if (notify) {
+        window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
+    }
+}
+
+function restoreGoalView() {
+    hydrateSavedInputs();
+    previewFromInputs();
+    commitSavedInputsToPlan({ notify: false });
 }
 
 document.addEventListener("input", event => {
     const target = event.target;
     if (!(target instanceof HTMLInputElement)) return;
 
-    if (
-        target.id === "manual-maintenance-calories" ||
-        target.id === "custom-weekly-rate"
-    ) {
+    if (target.id === "manual-maintenance-calories" || target.id === "custom-weekly-rate") {
+        saveTypedValue(target);
         previewFromInputs();
+        commitSavedInputsToPlan({ notify: false });
     }
 });
 
@@ -190,24 +182,26 @@ document.addEventListener("click", event => {
     const target = event.target;
     if (!(target instanceof Element)) return;
 
-    if (target.closest("#save-custom-weekly-rate")) {
-        const goalId = getNutritionGoal()?.goalId;
-        if (goalId) {
-            localStorage.setItem(CUSTOM_WEEKLY_RATE_GOAL_KEY, goalId);
-        }
-    }
-
-    if (target.closest("#reset-custom-weekly-rate")) {
-        localStorage.removeItem(CUSTOM_WEEKLY_RATE_GOAL_KEY);
+    if (
+        target.closest("#save-manual-maintenance") ||
+        target.closest("#save-custom-weekly-rate")
+    ) {
+        queueMicrotask(() => {
+            hydrateSavedInputs();
+            commitSavedInputsToPlan();
+            previewFromInputs();
+        });
     }
 
     if (
-        target.closest("#save-manual-maintenance") ||
-        target.closest("#save-custom-weekly-rate") ||
         target.closest("#reset-manual-maintenance") ||
         target.closest("#reset-custom-weekly-rate")
     ) {
-        queueMicrotask(commitSavedInputsToPlan);
+        queueMicrotask(() => {
+            hydrateSavedInputs();
+            commitSavedInputsToPlan();
+            previewFromInputs();
+        });
     }
 
     if (target.closest('[data-nutrition-view="goals"]')) {
@@ -216,5 +210,8 @@ document.addEventListener("click", event => {
 });
 
 window.addEventListener("levelup:nutrition-updated", () => {
-    queueMicrotask(previewFromInputs);
+    queueMicrotask(() => {
+        const goalsView = document.querySelector('[data-planner-view="goals"]');
+        if (goalsView && !goalsView.hidden) restoreGoalView();
+    });
 });
