@@ -3,31 +3,12 @@ const SESSION_STORAGE_KEY = "forge_workout_sessions";
 let installed = false;
 
 export function installWorkoutSessionSanitizer() {
-    if (installed) {
-        sanitizeExistingWorkoutSessions();
-        return;
-    }
-
+    // Do not monkey-patch localStorage.setItem. On some browsers Storage uses
+    // named properties, so assigning localStorage.setItem can accidentally
+    // create a persistent key named "setItem". Sanitization is intentionally
+    // explicit and limited to existing workout-session data.
     installed = true;
-
-    const originalSetItem = localStorage.setItem.bind(localStorage);
-
-    localStorage.setItem = function(key, value) {
-        if (key !== SESSION_STORAGE_KEY) {
-            return originalSetItem(key, value);
-        }
-
-        try {
-            const parsed = JSON.parse(value);
-            const sanitized = sanitizeSessions(parsed);
-            return originalSetItem(key, JSON.stringify(sanitized));
-        }
-        catch {
-            return originalSetItem(key, value);
-        }
-    };
-
-    sanitizeExistingWorkoutSessions();
+    return sanitizeExistingWorkoutSessions();
 }
 
 export function sanitizeExistingWorkoutSessions() {
@@ -107,7 +88,5 @@ function isPerformedSet(set) {
     }
 
     const reps = Number(set.reps);
-
-    // Core rule: zero, blank, missing, negative, NaN = exercise not performed.
     return Number.isFinite(reps) && reps > 0;
 }
