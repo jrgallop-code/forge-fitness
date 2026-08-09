@@ -56,22 +56,7 @@ import { initializeProteinTargetExplanation }
 from "../nutrition/protein-target-ui.js?v=protein-target-1";
 
 import { initializeNutritionPlanUI }
-from "../nutrition/nutrition-plan-ui-v4.js?v=goals-flow-2";
-
-import { initializeGoalsCalculationModeUI }
-from "../nutrition/goals-calculation-mode-ui.js?v=active-target-persist-1";
-
-import { initializeActiveTargetSyncHooks }
-from "../nutrition/active-target-sync-hooks.js?v=active-target-2";
-
-import { initializeNutritionPlanHooks }
-from "../nutrition/nutrition-plan-hooks.js?v=adaptive-plan-1";
-
-import { initializeAdaptiveCoachDemo }
-from "../nutrition/adaptive-coach-demo.js?v=coach-demo-1";
-
-import { initializeManualGoalSync }
-from "../nutrition/manual-goal-sync.js?v=manual-goals-1";
+from "../nutrition/nutrition-plan-ui-v4.js?v=goals-flow-3";
 
 import {
     renderGoalProjection,
@@ -119,7 +104,6 @@ export function navigate(page) {
             case "progress":
                 content.innerHTML = renderProgress();
                 safeInitialize("Weight tracker", initializeWeightTracker);
-                safeInitialize("Manual goal sync", initializeManualGoalSync);
                 safeInitialize("Photo journal", initializePhotoJournal);
                 safeInitialize("Training progress", initializeTrainingProgress);
                 safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume);
@@ -166,15 +150,13 @@ export function navigate(page) {
                     </div>
                 `;
 
+                // Keep calorie-plan state handling intentionally simple.
+                // Energy Profile owns goal selection; Nutrition Plan UI owns the
+                // saved manual maintenance/rate values and active calorie plan.
                 safeInitialize("Energy profile", initializeEnergyProfile);
                 safeInitialize("Protein target explanation", initializeProteinTargetExplanation);
                 safeInitialize("Goal projection", initializeGoalProjection);
                 safeInitialize("Nutrition plan UI", initializeNutritionPlanUI);
-                safeInitialize("Goals calculation mode", initializeGoalsCalculationModeUI);
-                safeInitialize("Active target sync", initializeActiveTargetSyncHooks);
-                safeInitialize("Nutrition plan hooks", initializeNutritionPlanHooks);
-                safeInitialize("Adaptive coach demo", initializeAdaptiveCoachDemo);
-                safeInitialize("Manual goal sync", initializeManualGoalSync);
                 break;
 
             case "more":
