@@ -24,6 +24,9 @@ from "../progress/photo-journal.js";
 import { initializeTrainingProgress }
 from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
 
+import { initializeWeeklyMuscleVolume }
+from "../progress/weekly-muscle-volume.js?v=weekly-muscle-volume-1";
+
 import { initializeSleepTracker }
 from "../progress/sleep-tracker.js?v=sleep-tracker-2";
 
@@ -109,6 +112,7 @@ export function navigate(page) {
                 safeInitialize("Manual goal sync", initializeManualGoalSync);
                 safeInitialize("Photo journal", initializePhotoJournal);
                 safeInitialize("Training progress", initializeTrainingProgress);
+                safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume);
                 safeInitialize("Sleep tracker", initializeSleepTracker);
                 break;
 
