@@ -1,4 +1,5 @@
 const MACRO_STORAGE_KEY = "level_up_nutrition_macro";
+const MANUAL_VALUE = "manual";
 
 function readSavedMacro() {
     try {
@@ -20,11 +21,21 @@ function numberFromText(value) {
     return match ? Number(match[0]) : null;
 }
 
-function getDisplayedMacros() {
+function getOutputElements() {
     return {
-        protein: numberFromText(document.getElementById("nutrition-protein-target")?.textContent),
-        carbs: numberFromText(document.getElementById("nutrition-carb-target")?.textContent),
-        fat: numberFromText(document.getElementById("nutrition-fat-target")?.textContent)
+        protein: document.getElementById("nutrition-protein-target"),
+        carbs: document.getElementById("nutrition-carb-target"),
+        fat: document.getElementById("nutrition-fat-target"),
+        calories: document.getElementById("nutrition-macro-calories")
+    };
+}
+
+function getDisplayedMacros() {
+    const els = getOutputElements();
+    return {
+        protein: numberFromText(els.protein?.textContent),
+        carbs: numberFromText(els.carbs?.textContent),
+        fat: numberFromText(els.fat?.textContent)
     };
 }
 
@@ -57,237 +68,232 @@ function setTextIfChanged(element, text) {
 }
 
 function setMacroText(macros, calories = null) {
+    const els = getOutputElements();
     const pct = percentages(macros);
-    const protein = document.getElementById("nutrition-protein-target");
-    const carbs = document.getElementById("nutrition-carb-target");
-    const fat = document.getElementById("nutrition-fat-target");
-    const caloriesEl = document.getElementById("nutrition-macro-calories");
-
-    setTextIfChanged(protein, `${Math.round(macros.protein)} g/day (${pct.protein}%)`);
-    setTextIfChanged(carbs, `${Math.round(macros.carbs)} g/day (${pct.carbs}%)`);
-    setTextIfChanged(fat, `${Math.round(macros.fat)} g/day (${pct.fat}%)`);
+    setTextIfChanged(els.protein, `${Math.round(macros.protein)} g/day (${pct.protein}%)`);
+    setTextIfChanged(els.carbs, `${Math.round(macros.carbs)} g/day (${pct.carbs}%)`);
+    setTextIfChanged(els.fat, `${Math.round(macros.fat)} g/day (${pct.fat}%)`);
 
     const total = Number.isFinite(Number(calories))
         ? Math.round(Number(calories))
         : Math.round(macroTotalCalories(macros));
-
-    setTextIfChanged(caloriesEl, `${total.toLocaleString()} kcal/day`);
-}
-
-function targetCalories() {
-    const plan = (() => {
-        try {
-            return JSON.parse(localStorage.getItem("level_up_nutrition_plan") || "null");
-        }
-        catch {
-            return null;
-        }
-    })();
-
-    const active = Number(plan?.currentCalories);
-    if (Number.isFinite(active) && active > 0) return active;
-
-    return numberFromText(document.getElementById("nutrition-macro-calories")?.textContent);
-}
-
-function renderManualStatus(macros) {
-    const status = document.getElementById("manual-macro-status");
-    if (!status) return;
-
-    const total = Math.round(macroTotalCalories(macros));
-    const target = targetCalories();
-    let text;
-    let state;
-
-    if (!Number.isFinite(target) || target <= 0) {
-        text = `${total.toLocaleString()} kcal from your manual macros.`;
-        state = "neutral";
-    }
-    else {
-        const difference = total - Math.round(target);
-        const abs = Math.abs(difference);
-        text = abs <= 5
-            ? `${total.toLocaleString()} kcal — matches your ${Math.round(target).toLocaleString()} kcal target.`
-            : `${total.toLocaleString()} kcal from macros — ${abs.toLocaleString()} kcal ${difference > 0 ? "above" : "below"} your ${Math.round(target).toLocaleString()} kcal target.`;
-        state = abs <= 5 ? "match" : "warning";
-    }
-
-    setTextIfChanged(status, text);
-    if (status.dataset.state !== state) status.dataset.state = state;
-}
-
-function updateManualPreview() {
-    const protein = Number(document.getElementById("manual-macro-protein")?.value);
-    const carbs = Number(document.getElementById("manual-macro-carbs")?.value);
-    const fat = Number(document.getElementById("manual-macro-fat")?.value);
-    if (![protein, carbs, fat].every(value => Number.isFinite(value) && value >= 0)) return;
-
-    const macros = { protein, carbs, fat };
-    const pct = percentages(macros);
-    setTextIfChanged(document.getElementById("manual-protein-percent"), `(${pct.protein}%)`);
-    setTextIfChanged(document.getElementById("manual-carb-percent"), `(${pct.carbs}%)`);
-    setTextIfChanged(document.getElementById("manual-fat-percent"), `(${pct.fat}%)`);
-    renderManualStatus(macros);
-}
-
-function applySavedManualIfNeeded() {
-    const saved = readSavedMacro();
-    if (!saved?.useManual || !saved.manualMacros) return false;
-
-    const macros = saved.manualMacros;
-    if (![macros.protein, macros.carbs, macros.fat].every(value => Number.isFinite(Number(value)))) {
-        return false;
-    }
-
-    setMacroText(macros, macroTotalCalories(macros));
-    return true;
+    setTextIfChanged(els.calories, `${total.toLocaleString()} kcal/day`);
 }
 
 function decoratePresetPercentages() {
-    if (!document.getElementById("nutrition-protein-target")) return;
-    if (applySavedManualIfNeeded()) return;
+    const select = document.getElementById("nutrition-macro-select");
+    if (!select || select.value === MANUAL_VALUE) return;
 
     const macros = getDisplayedMacros();
     if (![macros.protein, macros.carbs, macros.fat].every(Number.isFinite)) return;
-    setMacroText(macros, numberFromText(document.getElementById("nutrition-macro-calories")?.textContent));
+    const calories = numberFromText(document.getElementById("nutrition-macro-calories")?.textContent);
+    setMacroText(macros, calories);
 }
 
-function injectManualControls() {
-    const macroCard = document.querySelector('[data-planner-view="macros"] .nutrition-goal-card');
-    if (!macroCard || macroCard.querySelector("[data-manual-macros]")) return;
+function ensureManualOption() {
+    const select = document.getElementById("nutrition-macro-select");
+    if (!select) return null;
 
-    const summary = macroCard.querySelector(".weight-summary");
-    if (!summary) return;
+    if (!select.querySelector(`option[value="${MANUAL_VALUE}"]`)) {
+        const option = document.createElement("option");
+        option.value = MANUAL_VALUE;
+        option.textContent = "Manual";
+        select.appendChild(option);
+    }
+    return select;
+}
 
+function readManualInputs() {
+    return {
+        protein: Number(document.querySelector('[data-manual-macro="protein"]')?.value),
+        carbs: Number(document.querySelector('[data-manual-macro="carbs"]')?.value),
+        fat: Number(document.querySelector('[data-manual-macro="fat"]')?.value)
+    };
+}
+
+function validMacros(macros) {
+    return [macros?.protein, macros?.carbs, macros?.fat]
+        .every(value => Number.isFinite(Number(value)) && Number(value) >= 0);
+}
+
+function editableMarkup(key, value, percent) {
+    return `
+        <span class="macro-output-editor">
+            <input data-manual-macro="${key}" type="number" inputmode="numeric" min="0" step="1" value="${Math.round(Number(value) || 0)}" aria-label="${key} grams per day">
+            <span class="macro-output-unit">g/day</span>
+            <span class="macro-output-percent" data-manual-percent="${key}">(${percent}%)</span>
+        </span>
+    `;
+}
+
+function updateManualOutputPreview() {
+    const macros = readManualInputs();
+    if (!validMacros(macros)) return;
+
+    const pct = percentages(macros);
+    ["protein", "carbs", "fat"].forEach(key => {
+        const el = document.querySelector(`[data-manual-percent="${key}"]`);
+        setTextIfChanged(el, `(${pct[key]}%)`);
+    });
+
+    const total = Math.round(macroTotalCalories(macros));
+    setTextIfChanged(
+        document.getElementById("nutrition-macro-calories"),
+        `${total.toLocaleString()} kcal/day`
+    );
+
+    const plan = (() => {
+        try { return JSON.parse(localStorage.getItem("level_up_nutrition_plan") || "null"); }
+        catch { return null; }
+    })();
+    const target = Number(plan?.currentCalories);
+    const message = document.getElementById("nutrition-macro-message");
+    if (message && Number.isFinite(target) && target > 0) {
+        const difference = total - Math.round(target);
+        const abs = Math.abs(difference);
+        message.textContent = abs <= 5
+            ? `Manual macros match your ${Math.round(target).toLocaleString()} kcal target.`
+            : `Manual macros total ${total.toLocaleString()} kcal — ${abs.toLocaleString()} kcal ${difference > 0 ? "above" : "below"} your calorie target.`;
+    }
+}
+
+function renderManualMode(macros) {
+    if (!validMacros(macros)) return;
+    const els = getOutputElements();
+    const pct = percentages(macros);
+
+    if (els.protein) els.protein.innerHTML = editableMarkup("protein", macros.protein, pct.protein);
+    if (els.carbs) els.carbs.innerHTML = editableMarkup("carbs", macros.carbs, pct.carbs);
+    if (els.fat) els.fat.innerHTML = editableMarkup("fat", macros.fat, pct.fat);
+
+    document.querySelectorAll("[data-manual-macro]").forEach(input => {
+        input.addEventListener("input", updateManualOutputPreview);
+    });
+
+    const button = document.getElementById("save-nutrition-macro-btn");
+    if (button) button.textContent = "Save Manual Macros";
+    updateManualOutputPreview();
+}
+
+function enterManualMode() {
     const saved = readSavedMacro();
     const displayed = getDisplayedMacros();
-    const starting = saved?.manualMacros || {
-        protein: Number.isFinite(displayed.protein) ? displayed.protein : 160,
-        carbs: Number.isFinite(displayed.carbs) ? displayed.carbs : 200,
-        fat: Number.isFinite(displayed.fat) ? displayed.fat : 60
-    };
+    const macros = validMacros(saved?.manualMacros)
+        ? saved.manualMacros
+        : validMacros(displayed)
+            ? displayed
+            : { protein: 160, carbs: 200, fat: 60 };
 
-    const panel = document.createElement("section");
-    panel.className = "manual-macro-panel";
-    panel.dataset.manualMacros = "true";
-    panel.innerHTML = `
-        <div class="manual-macro-heading">
-            <div>
-                <span class="eyebrow">CUSTOM TARGETS</span>
-                <h3>Manually Adjust Macros</h3>
-                <p>Enter your preferred daily grams. Percentages update automatically from the calories provided by each macro.</p>
-            </div>
-            <label class="manual-macro-toggle">
-                <input id="manual-macro-enabled" type="checkbox" ${saved?.useManual ? "checked" : ""}>
-                <span>Use manual</span>
-            </label>
-        </div>
+    renderManualMode(macros);
 
-        <div class="manual-macro-input-grid">
-            <label>Protein <span id="manual-protein-percent">(--%)</span>
-                <div><input id="manual-macro-protein" type="number" inputmode="numeric" min="0" step="1" value="${Math.round(starting.protein)}"><span>g</span></div>
-            </label>
-            <label>Carbs <span id="manual-carb-percent">(--%)</span>
-                <div><input id="manual-macro-carbs" type="number" inputmode="numeric" min="0" step="1" value="${Math.round(starting.carbs)}"><span>g</span></div>
-            </label>
-            <label>Fat <span id="manual-fat-percent">(--%)</span>
-                <div><input id="manual-macro-fat" type="number" inputmode="numeric" min="0" step="1" value="${Math.round(starting.fat)}"><span>g</span></div>
-            </label>
-        </div>
-
-        <p id="manual-macro-status" class="manual-macro-status"></p>
-        <button id="save-manual-macros" class="secondary-btn" type="button">Save Manual Macros</button>
-    `;
-
-    summary.insertAdjacentElement("beforebegin", panel);
-
-    ["manual-macro-protein", "manual-macro-carbs", "manual-macro-fat"]
-        .forEach(id => document.getElementById(id)?.addEventListener("input", updateManualPreview));
-
-    document.getElementById("save-manual-macros")?.addEventListener("click", () => {
-        const macros = {
-            protein: Number(document.getElementById("manual-macro-protein")?.value),
-            carbs: Number(document.getElementById("manual-macro-carbs")?.value),
-            fat: Number(document.getElementById("manual-macro-fat")?.value)
-        };
-
-        if (![macros.protein, macros.carbs, macros.fat].every(value => Number.isFinite(value) && value >= 0)) return;
-
-        const previous = readSavedMacro() || {};
-        const useManual = Boolean(document.getElementById("manual-macro-enabled")?.checked);
-        writeSavedMacro({
-            ...previous,
-            macroPreset: previous.macroPreset || document.getElementById("nutrition-macro-select")?.value || "balanced",
-            useManual,
-            manualMacros: macros,
-            updatedAt: new Date().toISOString()
-        });
-
-        if (useManual) setMacroText(macros, macroTotalCalories(macros));
-        else decoratePresetPercentages();
-
-        const message = document.getElementById("nutrition-macro-message");
-        if (message) message.textContent = useManual ? "Manual macro targets saved." : "Manual macros saved. Preset targets remain active.";
-        updatePlannerProteinSummary();
-    });
-
-    document.getElementById("manual-macro-enabled")?.addEventListener("change", event => {
-        const savedNow = readSavedMacro() || {};
-        savedNow.useManual = Boolean(event.target.checked);
-        savedNow.updatedAt = new Date().toISOString();
-        writeSavedMacro(savedNow);
-        if (!applySavedManualIfNeeded()) decoratePresetPercentages();
-        updatePlannerProteinSummary();
-    });
-
-    document.getElementById("nutrition-macro-select")?.addEventListener("change", () => {
-        const savedNow = readSavedMacro();
-        if (savedNow?.useManual) {
-            savedNow.useManual = false;
-            writeSavedMacro(savedNow);
-            const toggle = document.getElementById("manual-macro-enabled");
-            if (toggle) toggle.checked = false;
-        }
-        setTimeout(decoratePresetPercentages, 0);
-    });
-
-    document.getElementById("save-nutrition-macro-btn")?.addEventListener("click", () => {
-        setTimeout(() => {
-            const savedNow = readSavedMacro() || {};
-            if (savedNow.useManual) {
-                savedNow.useManual = false;
-                writeSavedMacro(savedNow);
-                const toggle = document.getElementById("manual-macro-enabled");
-                if (toggle) toggle.checked = false;
-            }
-            decoratePresetPercentages();
-            updatePlannerProteinSummary();
-        }, 0);
-    });
-
-    updateManualPreview();
-    decoratePresetPercentages();
+    const description = document.getElementById("nutrition-macro-description");
+    if (description) {
+        description.textContent = "Adjust the calculated protein, carbohydrate and fat outputs directly. Percentages and calories update automatically.";
+    }
 }
 
-function updatePlannerProteinSummary() {
+function leaveManualMode() {
     const saved = readSavedMacro();
-    if (!saved?.useManual || !saved.manualMacros) return;
+    const baseline = saved?.autoBaseline;
+    if (validMacros(baseline)) {
+        setMacroText(baseline, saved?.autoBaselineCalories);
+    }
+
+    const button = document.getElementById("save-nutrition-macro-btn");
+    if (button) button.textContent = "Save Macro Preference";
+}
+
+function rememberAutoBaseline() {
+    const displayed = getDisplayedMacros();
+    if (!validMacros(displayed)) return;
+
+    const previous = readSavedMacro() || {};
+    writeSavedMacro({
+        ...previous,
+        autoBaseline: displayed,
+        autoBaselineCalories: numberFromText(document.getElementById("nutrition-macro-calories")?.textContent)
+    });
+}
+
+function saveManualMacros(event) {
+    const select = document.getElementById("nutrition-macro-select");
+    if (select?.value !== MANUAL_VALUE) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+
+    const macros = readManualInputs();
+    if (!validMacros(macros)) return;
+
+    const previous = readSavedMacro() || {};
+    writeSavedMacro({
+        ...previous,
+        macroPreset: previous.macroPreset || "balanced",
+        useManual: true,
+        manualMacros: macros,
+        updatedAt: new Date().toISOString()
+    });
+
+    const message = document.getElementById("nutrition-macro-message");
+    if (message) message.textContent = "Manual macro targets saved.";
+
     const summary = document.getElementById("planner-summary-protein");
-    if (summary) setTextIfChanged(summary, `${Math.round(Number(saved.manualMacros.protein) || 0)} g`);
+    if (summary) summary.textContent = `${Math.round(macros.protein)} g`;
+}
+
+function initializeManualMacroUI() {
+    const select = ensureManualOption();
+    if (!select || select.dataset.manualMacroReady === "true") return;
+    select.dataset.manualMacroReady = "true";
+
+    // Remove the old standalone manual section if a cached version is present.
+    document.querySelector("[data-manual-macros]")?.remove();
+
+    const saved = readSavedMacro();
+    if (saved?.useManual && validMacros(saved.manualMacros)) {
+        select.value = MANUAL_VALUE;
+        enterManualMode();
+    }
+    else {
+        decoratePresetPercentages();
+    }
+
+    select.addEventListener("change", () => {
+        if (select.value === MANUAL_VALUE) {
+            rememberAutoBaseline();
+            const current = readSavedMacro() || {};
+            current.useManual = true;
+            writeSavedMacro(current);
+            enterManualMode();
+        }
+        else {
+            const current = readSavedMacro() || {};
+            current.useManual = false;
+            current.macroPreset = select.value;
+            writeSavedMacro(current);
+            leaveManualMode();
+            // The existing calculator updates the selected preset when Save is tapped.
+            setTimeout(decoratePresetPercentages, 0);
+        }
+    });
+
+    document.getElementById("save-nutrition-macro-btn")
+        ?.addEventListener("click", saveManualMacros, true);
+
+    // After the existing preset save handler runs, add percentages to its outputs.
+    document.getElementById("save-nutrition-macro-btn")
+        ?.addEventListener("click", () => {
+            if (select.value !== MANUAL_VALUE) setTimeout(decoratePresetPercentages, 0);
+        });
 }
 
 function enhanceIfPresent() {
-    const macrosView = document.querySelector('[data-planner-view="macros"]');
-    if (!macrosView) return;
-    injectManualControls();
-    decoratePresetPercentages();
-    updatePlannerProteinSummary();
+    if (!document.querySelector('[data-planner-view="macros"]')) return;
+    initializeManualMacroUI();
 }
 
-// Do not observe the entire app DOM. The previous global MutationObserver reacted
-// to its own text updates and could create a render loop that blocked bottom-nav taps.
-// A lightweight presence check is enough because the Calories route is rendered as a unit.
+// Keep this lightweight: no global MutationObserver, so navigation remains responsive.
 const presenceTimer = window.setInterval(enhanceIfPresent, 1200);
-window.addEventListener("levelup:nutrition-updated", enhanceIfPresent);
 window.addEventListener("pagehide", () => window.clearInterval(presenceTimer), { once: true });
 enhanceIfPresent();
