@@ -7,7 +7,7 @@ import {
     renderNavbar,
     initializeNavbar
 }
-from "./components/navbar.js?v=navbar-icons-1";
+from "./components/navbar.js?v=navbar-icons-2";
 
 import {
     initializeWorkoutRuntime
