@@ -56,20 +56,8 @@ function markup() {
 }
 
 function upgradeNutrition() {
-  const page = document.querySelector('.nutrition-page');
+  const page = document.querySelector('.nutrition-page[data-active-view="main"]');
   if (!page || page.querySelector('[data-nutrition-guidance-v2]')) return;
-
-  // The Water route reuses renderNutrition(), then hides everything except
-  // the water tool. Do not inject the nutrition guide when a focused tool
-  // route is being displayed.
-  const visibleFocusedTool = [...page.querySelectorAll(':scope > [data-more-tool]')]
-    .some(tool => !tool.hidden);
-  const mainContentHidden = [...page.children]
-    .filter(node => !node.hasAttribute('data-more-tool'))
-    .some(node => node.hidden);
-
-  if (visibleFocusedTool && mainContentHidden) return;
-
   const tools = [...page.querySelectorAll(':scope > [data-more-tool]')];
   const mainNodes = [...page.children].filter(node => !node.hasAttribute('data-more-tool'));
   if (!mainNodes.length) return;
@@ -80,5 +68,5 @@ function upgradeNutrition() {
 }
 
 const observer = new MutationObserver(() => upgradeNutrition());
-observer.observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['hidden']});
+observer.observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['data-active-view']});
 upgradeNutrition();
