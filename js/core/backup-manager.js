@@ -13,7 +13,8 @@ const BACKUP_KEYS = [
     "forge_weight_entries",
     "level_up_nutrition_habits",
     "level_up_water_entries",
-    "level_up_sleep_entries"
+    "level_up_sleep_entries",
+    "level_up_body_measurements"
 ];
 
 
@@ -162,7 +163,6 @@ async function exportBackup() {
     link.href =
         url;
 
-
     link.download =
         `level-up-backup-${getLocalDateValue()}.json`;
 
@@ -179,247 +179,81 @@ async function exportBackup() {
     URL.revokeObjectURL(
         url
     );
-
-
-    setBackupMessage(
-        "Backup downloaded. Save the file somewhere secure."
-    );
-
 }
 
 
-async function importBackup(
-    file,
-    fileInput
-) {
-
-    if (!file) {
-        return;
-    }
-
-
-    if (
-        file.size >
-        MAX_BACKUP_SIZE
-    ) {
-
-        setBackupMessage(
-            "That file is too large to be a Level Up backup.",
-            true
-        );
-
-        resetFileInput(
-            fileInput
-        );
-
-        return;
-
-    }
-
-
+async function importBackup(file, fileInput) {
     try {
-
-        const backup =
-            JSON.parse(
-                await file.text()
-            );
-
-
-        validateBackup(
-            backup
-        );
-
-
-        const confirmed =
-            window.confirm(
-                "Restore this backup? Current workout, weight and nutrition data in this browser will be replaced. This cannot be undone."
-            );
-
-
-        if (!confirmed) {
-
-            resetFileInput(
-                fileInput
-            );
-
+        if (!file) {
             return;
-
         }
 
+        if (file.size > MAX_BACKUP_SIZE) {
+            throw new Error("Backup file is too large.");
+        }
+
+        const text = await file.text();
+        const backup = JSON.parse(text);
+
+        if (
+            backup?.app !== "level-up" ||
+            typeof backup?.data !== "object" ||
+            backup.data === null
+        ) {
+            throw new Error("This is not a valid Level Up backup.");
+        }
+
+        const confirmed = window.confirm(
+            "Import this Level Up backup? Existing local data for included sections will be replaced."
+        );
+
+        if (!confirmed) {
+            return;
+        }
 
         BACKUP_KEYS.forEach(key => {
-
-            const value =
-                backup.data[key];
-
-
-            if (
-                value ===
-                null ||
-                value ===
-                undefined
-            ) {
-
-                localStorage.removeItem(
-                    key
-                );
-
+            if (!(key in backup.data)) {
                 return;
-
             }
 
+            const value = backup.data[key];
+
+            if (value === null || value === undefined) {
+                localStorage.removeItem(key);
+                return;
+            }
 
             localStorage.setItem(
                 key,
-                typeof value ===
-                    "string"
+                typeof value === "string"
                     ? value
-                    : JSON.stringify(
-                        value
-                    )
+                    : JSON.stringify(value)
             );
-
         });
 
+        if (Array.isArray(backup.photos)) {
+            await importPhotoRecords(backup.photos);
+        }
 
-        await importPhotoRecords(
-            Array.isArray(
-                backup.photos
-            )
-                ? backup.photos
-                : []
-        );
-
-
-        window.alert(
-            "Backup restored successfully. Level Up will now reload."
-        );
-
-
+        window.alert("Backup imported. Reloading Level Up now.");
         window.location.reload();
-
     }
-
     catch (error) {
-
-        setBackupMessage(
-            error instanceof Error
-                ? error.message
-                : "The backup could not be restored.",
-            true
-        );
-
-
-        resetFileInput(
-            fileInput
-        );
-
+        console.error("Backup import failed:", error);
+        window.alert(error?.message || "The backup could not be imported.");
     }
-
-}
-
-
-function validateBackup(
-    backup
-) {
-
-    if (
-        !backup ||
-        typeof backup !==
-            "object" ||
-        backup.app !==
-            "level-up" ||
-        backup.formatVersion !==
-            1 ||
-        !backup.data ||
-        typeof backup.data !==
-            "object" ||
-        Array.isArray(
-            backup.data
-        )
-    ) {
-
-        throw new Error(
-            "This is not a valid Level Up backup file."
-        );
-
+    finally {
+        if (fileInput) {
+            fileInput.value = "";
+        }
     }
-
-
-    const knownKeys =
-        BACKUP_KEYS.filter(key =>
-            Object.prototype
-                .hasOwnProperty
-                .call(
-                    backup.data,
-                    key
-                )
-        );
-
-
-    if (!knownKeys.length) {
-
-        throw new Error(
-            "The backup file does not contain recognized Level Up data."
-        );
-
-    }
-
-}
-
-
-function setBackupMessage(
-    message,
-    isError = false
-) {
-
-    const element =
-        document.getElementById(
-            "backup-message"
-        );
-
-
-    if (!element) {
-        return;
-    }
-
-
-    element.textContent =
-        message;
-
-
-    element.classList.toggle(
-        "error",
-        isError
-    );
-
-}
-
-
-function resetFileInput(
-    fileInput
-) {
-
-    if (fileInput) {
-        fileInput.value =
-            "";
-    }
-
 }
 
 
 function getLocalDateValue() {
-
-    const now =
-        new Date();
-
-
-    return new Date(
-        now.getTime() -
-        now.getTimezoneOffset() *
-        60000
-    )
-    .toISOString()
-    .slice(0, 10);
-
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
 }
