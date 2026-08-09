@@ -5,18 +5,10 @@ import {
 from "../progress/photo-journal.js";
 
 
-const BACKUP_KEYS = [
-    "forge_workout_plans",
-    "forge_workout_sessions",
-    "level_up_active_workout",
-    "forge_custom_exercises",
-    "forge_weight_entries",
-    "level_up_nutrition_habits",
-    "level_up_water_entries",
-    "level_up_sleep_entries",
-    "level_up_body_measurements"
+const APP_STORAGE_PREFIXES = [
+    "forge_",
+    "level_up_"
 ];
-
 
 const MAX_BACKUP_SIZE =
     100 *
@@ -31,31 +23,26 @@ export function initializeBackupManager() {
             "export-backup-btn"
         );
 
-
     const importButton =
         document.getElementById(
             "import-backup-btn"
         );
-
 
     const fileInput =
         document.getElementById(
             "backup-file-input"
         );
 
-
     exportButton?.addEventListener(
         "click",
         exportBackup
     );
-
 
     importButton?.addEventListener(
         "click",
         () =>
             fileInput?.click()
     );
-
 
     fileInput?.addEventListener(
         "change",
@@ -70,115 +57,205 @@ export function initializeBackupManager() {
 }
 
 
-async function exportBackup() {
-
-    const data = {};
-
-
-    BACKUP_KEYS.forEach(key => {
-
-        const stored =
-            localStorage.getItem(
-                key
-            );
+function isLevelUpStorageKey(key) {
+    return APP_STORAGE_PREFIXES.some(prefix =>
+        String(key || "").startsWith(prefix)
+    );
+}
 
 
-        if (stored === null) {
+function getBackupKeys() {
+    const keys = [];
 
-            data[key] =
-                null;
-
-            return;
-
+    for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (key && isLevelUpStorageKey(key)) {
+            keys.push(key);
         }
+    }
+
+    return keys.sort();
+}
 
 
-        try {
+function setBackupMessage(message, type = "") {
+    const element =
+        document.getElementById(
+            "backup-message"
+        );
 
-            data[key] =
-                JSON.parse(
-                    stored
+    if (!element) {
+        return;
+    }
+
+    element.textContent = message;
+    element.dataset.status = type;
+}
+
+
+async function exportBackup() {
+    try {
+        setBackupMessage(
+            "Preparing backup…"
+        );
+
+        const data = {};
+        const backupKeys = getBackupKeys();
+
+        backupKeys.forEach(key => {
+
+            const stored =
+                localStorage.getItem(
+                    key
                 );
 
-        }
-
-        catch {
-
-            data[key] =
-                stored;
-
-        }
-
-    });
-
-
-    const backup = {
-
-        app:
-            "level-up",
-
-        formatVersion:
-            1,
-
-        exportedAt:
-            new Date()
-                .toISOString(),
-
-        data,
-
-        photos:
-            await exportPhotoRecords()
-
-    };
-
-
-    const blob =
-        new Blob(
-            [
-                JSON.stringify(
-                    backup,
-                    null,
-                    2
-                )
-            ],
-            {
-                type:
-                    "application/json"
+            if (stored === null) {
+                data[key] = null;
+                return;
             }
+
+            try {
+                data[key] =
+                    JSON.parse(
+                        stored
+                    );
+            }
+            catch {
+                data[key] = stored;
+            }
+
+        });
+
+        const photos =
+            await exportPhotoRecords();
+
+        const backup = {
+            app: "level-up",
+            formatVersion: 2,
+            exportedAt:
+                new Date()
+                    .toISOString(),
+            storageKeyCount:
+                backupKeys.length,
+            data,
+            photos
+        };
+
+        const json =
+            JSON.stringify(
+                backup,
+                null,
+                2
+            );
+
+        // Verify the payload before offering it to the user.
+        const verification = JSON.parse(json);
+        if (
+            verification?.app !== "level-up" ||
+            typeof verification?.data !== "object" ||
+            verification.data === null
+        ) {
+            throw new Error(
+                "Backup verification failed."
+            );
+        }
+
+        const blob =
+            new Blob(
+                [json],
+                {
+                    type:
+                        "application/json"
+                }
+            );
+
+        const filename =
+            `level-up-backup-${getLocalDateValue()}.json`;
+
+        const file =
+            typeof File === "function"
+                ? new File(
+                    [blob],
+                    filename,
+                    {
+                        type:
+                            "application/json"
+                    }
+                )
+                : null;
+
+        // On iPhone/iPad, the native share sheet is more reliable than a
+        // synthetic download and lets the user save directly to Files.
+        if (
+            file &&
+            navigator.share &&
+            navigator.canShare?.({ files: [file] })
+        ) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: "Level Up Backup"
+                });
+
+                setBackupMessage(
+                    `Backup ready: ${backupKeys.length} app data sections${photos?.length ? ` + ${photos.length} photo record${photos.length === 1 ? "" : "s"}` : ""}.`,
+                    "success"
+                );
+                return;
+            }
+            catch (error) {
+                if (error?.name === "AbortError") {
+                    setBackupMessage(
+                        "Backup prepared. Export cancelled before saving."
+                    );
+                    return;
+                }
+                // Fall back to a normal browser download below.
+            }
+        }
+
+        const url =
+            URL.createObjectURL(
+                blob
+            );
+
+        const link =
+            document.createElement(
+                "a"
+            );
+
+        link.href = url;
+        link.download = filename;
+
+        document.body.appendChild(
+            link
         );
 
+        link.click();
+        link.remove();
 
-    const url =
-        URL.createObjectURL(
-            blob
+        setTimeout(
+            () => URL.revokeObjectURL(url),
+            1000
         );
 
-
-    const link =
-        document.createElement(
-            "a"
+        setBackupMessage(
+            `Backup exported: ${backupKeys.length} app data sections${photos?.length ? ` + ${photos.length} photo record${photos.length === 1 ? "" : "s"}` : ""}.`,
+            "success"
+        );
+    }
+    catch (error) {
+        console.error(
+            "Backup export failed:",
+            error
         );
 
-
-    link.href =
-        url;
-
-    link.download =
-        `level-up-backup-${getLocalDateValue()}.json`;
-
-
-    document.body.appendChild(
-        link
-    );
-
-
-    link.click();
-    link.remove();
-
-
-    URL.revokeObjectURL(
-        url
-    );
+        setBackupMessage(
+            error?.message ||
+            "The backup could not be exported.",
+            "error"
+        );
+    }
 }
 
 
@@ -189,36 +266,60 @@ async function importBackup(file, fileInput) {
         }
 
         if (file.size > MAX_BACKUP_SIZE) {
-            throw new Error("Backup file is too large.");
+            throw new Error(
+                "Backup file is too large."
+            );
         }
 
-        const text = await file.text();
-        const backup = JSON.parse(text);
+        setBackupMessage(
+            "Checking backup…"
+        );
+
+        const text =
+            await file.text();
+        const backup =
+            JSON.parse(text);
 
         if (
             backup?.app !== "level-up" ||
             typeof backup?.data !== "object" ||
             backup.data === null
         ) {
-            throw new Error("This is not a valid Level Up backup.");
+            throw new Error(
+                "This is not a valid Level Up backup."
+            );
         }
 
-        const confirmed = window.confirm(
-            "Import this Level Up backup? Existing local data for included sections will be replaced."
-        );
+        const incomingKeys =
+            Object.keys(backup.data)
+                .filter(isLevelUpStorageKey);
+
+        if (!incomingKeys.length && !Array.isArray(backup.photos)) {
+            throw new Error(
+                "This backup does not contain Level Up data."
+            );
+        }
+
+        const confirmed =
+            window.confirm(
+                `Import this Level Up backup? ${incomingKeys.length} app data sections will be restored. Existing local data for included sections will be replaced.`
+            );
 
         if (!confirmed) {
+            setBackupMessage(
+                "Restore cancelled."
+            );
             return;
         }
 
-        BACKUP_KEYS.forEach(key => {
-            if (!(key in backup.data)) {
-                return;
-            }
+        incomingKeys.forEach(key => {
+            const value =
+                backup.data[key];
 
-            const value = backup.data[key];
-
-            if (value === null || value === undefined) {
+            if (
+                value === null ||
+                value === undefined
+            ) {
                 localStorage.removeItem(key);
                 return;
             }
@@ -232,15 +333,32 @@ async function importBackup(file, fileInput) {
         });
 
         if (Array.isArray(backup.photos)) {
-            await importPhotoRecords(backup.photos);
+            await importPhotoRecords(
+                backup.photos
+            );
         }
 
-        window.alert("Backup imported. Reloading Level Up now.");
+        window.alert(
+            "Backup imported successfully. Level Up will reload now."
+        );
         window.location.reload();
     }
     catch (error) {
-        console.error("Backup import failed:", error);
-        window.alert(error?.message || "The backup could not be imported.");
+        console.error(
+            "Backup import failed:",
+            error
+        );
+
+        setBackupMessage(
+            error?.message ||
+            "The backup could not be imported.",
+            "error"
+        );
+
+        window.alert(
+            error?.message ||
+            "The backup could not be imported."
+        );
     }
     finally {
         if (fileInput) {
@@ -253,7 +371,12 @@ async function importBackup(file, fileInput) {
 function getLocalDateValue() {
     const now = new Date();
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
+    const month = String(
+        now.getMonth() + 1
+    ).padStart(2, "0");
+    const day = String(
+        now.getDate()
+    ).padStart(2, "0");
+
     return `${year}-${month}-${day}`;
 }
