@@ -1,7 +1,7 @@
 import {
     navigate
 }
-from "./core/router.js?v=router-progress-10-weeks-1";
+from "./core/router.js?v=router-icons-stage-2";
 
 import {
     renderNavbar,
