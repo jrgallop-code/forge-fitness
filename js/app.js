@@ -1,7 +1,7 @@
 import {
     navigate
 }
-from "./core/router.js?v=router-training-analytics-2";
+from "./core/router.js?v=router-training-analytics-3";
 
 import {
     renderNavbar,
