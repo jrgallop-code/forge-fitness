@@ -4,13 +4,13 @@ import {
     getNutritionMacroPreference,
     getNutritionPlan
 }
-from "../nutrition/nutrition-storage.js?v=plan-source-1";
+from "../nutrition/nutrition-storage.js?v=single-calorie-target-1";
 
 import {
     calculateMacroTargets,
     poundsToKg
 }
-from "../nutrition/tdee-calculator.js?v=plan-source-1";
+from "../nutrition/tdee-calculator.js?v=single-calorie-target-1";
 
 const CALORIE_ICON = `
     <svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -35,12 +35,12 @@ export function initializeDashboardNutritionTargets() {
 
     if (!profile || !goal?.goalId || Number(profile.age) < 18) return;
 
-    const currentCalories = Number(plan.currentCalories);
-    if (!Number.isFinite(currentCalories) || currentCalories <= 0) return;
+    const calories = Number(plan.calculatedCalories);
+    if (!Number.isFinite(calories) || calories <= 0) return;
 
     const macroPreset = getNutritionMacroPreference()?.macroPreset || "balanced";
     const macros = calculateMacroTargets({
-        calories: currentCalories,
+        calories,
         weightKg: poundsToKg(Number(profile.weightLb)),
         macroPreset
     });
@@ -50,8 +50,8 @@ export function initializeDashboardNutritionTargets() {
             <div class="metric-icon">${CALORIE_ICON}</div>
             <div>
                 <h3>Daily Calorie Target</h3>
-                <p>${Math.round(currentCalories)} kcal</p>
-                <small>Saved Target</small>
+                <p>${Math.round(calories)} kcal</p>
+                <small>Calculated Target</small>
             </div>
         </div>
     `;
