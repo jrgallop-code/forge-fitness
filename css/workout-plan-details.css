@@ -115,20 +115,45 @@
 }
 
 .plan-detail-exercise-list {
-    padding:2px 14px 5px;
+    padding:3px 12px 6px;
 }
 
 .plan-detail-exercise-row {
     display:grid;
-    grid-template-columns:minmax(0,1fr) auto;
-    gap:12px;
+    grid-template-columns:48px minmax(0,1fr);
+    gap:10px;
     align-items:center;
-    min-height:42px;
+    min-height:58px;
+    padding:6px 0;
     border-bottom:1px solid rgba(255,255,255,.055);
 }
 
 .plan-detail-exercise-row:last-child {
     border-bottom:none;
+}
+
+.plan-detail-exercise-thumb {
+    display:grid;
+    place-items:center;
+    width:44px;
+    height:44px;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;
+    background:linear-gradient(145deg, rgba(255,43,54,.18), rgba(255,255,255,.025));
+    color:#fff;
+}
+
+.plan-detail-exercise-thumb svg {
+    width:36px;
+    height:36px;
+}
+
+.plan-detail-exercise-copy {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    min-width:0;
+    gap:12px;
 }
 
 .plan-detail-exercise-name {
@@ -142,6 +167,7 @@
 }
 
 .plan-detail-exercise-target {
+    flex:0 0 auto;
     color:#9a9aa2;
     font-size:11px;
     text-align:right;
@@ -184,5 +210,20 @@
 
     .plan-detail-bottom-actions {
         bottom:calc(92px + env(safe-area-inset-bottom));
+    }
+
+    .plan-detail-exercise-copy {
+        display:block;
+    }
+
+    .plan-detail-exercise-name,
+    .plan-detail-exercise-target {
+        display:block;
+    }
+
+    .plan-detail-exercise-target {
+        margin-top:3px;
+        text-align:left;
+        white-space:normal;
     }
 }
