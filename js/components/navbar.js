@@ -1,5 +1,4 @@
-import { navigate }
-from "../core/router.js?v=router-nav-stable-1";
+import { navigate } from "../core/router.js?v=router-water-only-2";
 
 
 export function renderNavbar() {
