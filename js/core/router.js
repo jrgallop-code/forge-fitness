@@ -10,7 +10,7 @@ from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import {
     initializeDashboardNutritionTargets
 }
-from "../dashboard/nutrition-target-card.js?v=dashboard-icons-1";
+from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
 
 import { renderProgress }
 from "../progress/progress-ui.js?v=progress-more-sleep-1";
