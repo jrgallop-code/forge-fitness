@@ -1,7 +1,7 @@
-import {
-    navigate
-}
-from "../core/router.js?v=router-more-tools-1";
+import { navigate } from "../core/router.js?v=router-more-tools-1";
+import { renderExportBackup } from "./export-backup-ui.js?v=exports-backup-1";
+import { initializeBackupManager } from "../core/backup-manager.js?v=active-workout-backup-1";
+import { initializeGoogleDriveSync } from "../core/google-drive-sync-v2.js?v=visible-drive-backup-1";
 
 const ICONS = {
     history: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 1-7.2 4.5H2l3.6-3.6L9.2 8.5H6.8A6 6 0 1 0 12 6v3l2.8 1.7-1 1.7L10 10V4h2Z"/></svg>',
@@ -13,26 +13,28 @@ const ICONS = {
 };
 
 export function renderMore() {
-    return `
-        <section class="dashboard-welcome">
-            <div>
-                <span class="eyebrow">TOOLS & TRACKERS</span>
-                <h2>More</h2>
-                <p>Open a focused tool without scrolling through a long page.</p>
-            </div>
-        </section>
-
-        <section class="more-menu-grid" aria-label="More tools">
-            <button class="more-menu-card" type="button" data-more-page="history"><span class="more-menu-icon">${ICONS.history}</span><span><strong>Workout History</strong><small>Resume unfinished workouts or edit completed sessions.</small></span><span class="more-menu-arrow">›</span></button>
-            <button class="more-menu-card" type="button" data-more-page="sleep"><span class="more-menu-icon">${ICONS.sleep}</span><span><strong>Sleep</strong><small>Track sleep duration, quality and recovery notes.</small></span><span class="more-menu-arrow">›</span></button>
-            <button class="more-menu-card" type="button" data-more-page="measurements"><span class="more-menu-icon">${ICONS.measurements}</span><span><strong>Measurements</strong><small>Track body measurements and directional changes over time.</small></span><span class="more-menu-arrow">›</span></button>
-            <button class="more-menu-card" type="button" data-more-page="water"><span class="more-menu-icon">${ICONS.water}</span><span><strong>Water Log</strong><small>Record daily water and review recent entries.</small></span><span class="more-menu-arrow">›</span></button>
-            <button class="more-menu-card" type="button" data-more-page="nutrition"><span class="more-menu-icon">${ICONS.nutrition}</span><span><strong>Nutrition</strong><small>Open nutrition guidance and related tools.</small></span><span class="more-menu-arrow">›</span></button>
-            <button class="more-menu-card" type="button" data-more-page="exports-backup"><span class="more-menu-icon">${ICONS.backup}</span><span><strong>Exports & Backup</strong><small>Export, restore and transfer your Level Up data with Google Drive.</small></span><span class="more-menu-arrow">›</span></button>
-        </section>
-    `;
+    return `<section class="dashboard-welcome"><div><span class="eyebrow">TOOLS & TRACKERS</span><h2>More</h2><p>Open a focused tool without scrolling through a long page.</p></div></section>
+    <section class="more-menu-grid" aria-label="More tools">
+    <button class="more-menu-card" type="button" data-more-page="history"><span class="more-menu-icon">${ICONS.history}</span><span><strong>Workout History</strong><small>Resume unfinished workouts or edit completed sessions.</small></span><span class="more-menu-arrow">›</span></button>
+    <button class="more-menu-card" type="button" data-more-page="sleep"><span class="more-menu-icon">${ICONS.sleep}</span><span><strong>Sleep</strong><small>Track sleep duration, quality and recovery notes.</small></span><span class="more-menu-arrow">›</span></button>
+    <button class="more-menu-card" type="button" data-more-page="measurements"><span class="more-menu-icon">${ICONS.measurements}</span><span><strong>Measurements</strong><small>Track body measurements and directional changes over time.</small></span><span class="more-menu-arrow">›</span></button>
+    <button class="more-menu-card" type="button" data-more-page="water"><span class="more-menu-icon">${ICONS.water}</span><span><strong>Water Log</strong><small>Record daily water and review recent entries.</small></span><span class="more-menu-arrow">›</span></button>
+    <button class="more-menu-card" type="button" data-more-page="nutrition"><span class="more-menu-icon">${ICONS.nutrition}</span><span><strong>Nutrition</strong><small>Open nutrition guidance and related tools.</small></span><span class="more-menu-arrow">›</span></button>
+    <button class="more-menu-card" type="button" data-more-page="exports-backup"><span class="more-menu-icon">${ICONS.backup}</span><span><strong>Exports & Backup</strong><small>Export, restore and transfer your Level Up data with Google Drive.</small></span><span class="more-menu-arrow">›</span></button>
+    </section>`;
 }
 
 export function initializeMore() {
-    document.querySelectorAll("[data-more-page]").forEach(button => button.addEventListener("click", () => navigate(button.dataset.morePage)));
+    document.querySelectorAll("[data-more-page]").forEach(button => button.addEventListener("click", () => {
+        if (button.dataset.morePage === "exports-backup") {
+            const content = document.getElementById("content");
+            if (!content) return;
+            content.innerHTML = renderExportBackup();
+            initializeBackupManager();
+            initializeGoogleDriveSync();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+        }
+        navigate(button.dataset.morePage);
+    }));
 }
