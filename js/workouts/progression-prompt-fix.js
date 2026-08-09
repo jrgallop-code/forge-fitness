@@ -138,8 +138,8 @@ function renderPrompt(card) {
   prompt.innerHTML = `
     <span class="progression-arrow">↑</span>
     <div>
-      <strong>Increase weight next session</strong>
-      <p>${sourceLabel} ${upperBound} reps at ${formatLoad(currentWeight)} lb${partial}. Recommended next load: <b>${formatLoad(nextWeight)} lb</b> (+${pct.toFixed(1)}%).</p>
+      <strong>Increase weight this session</strong>
+      <p>${sourceLabel} ${upperBound} reps at ${formatLoad(currentWeight)} lb${partial}. Recommended load for this session: <b>${formatLoad(nextWeight)} lb</b> (+${pct.toFixed(1)}%).</p>
       <small>Recommended increase: about 2–5% after reaching the top of the programmed rep range.</small>
     </div>
   `;
