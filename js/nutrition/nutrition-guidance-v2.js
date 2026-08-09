@@ -28,7 +28,7 @@ function markup() {
       </header>
 
       <section class="nutrition-guide-grid">
-        ${card(ICONS.protein,'Prioritize protein','Protein provides the amino acids used to repair and build muscle. For adults who resistance train, a practical daily target is often around 1.6 g/kg, with individual needs varying. Spread protein across meals rather than relying on one very large serving.')}
+        ${card(ICONS.protein,'Prioritize protein','Protein provides the amino acids used to repair and build muscle. For adults who resistance train, a practical daily target is often around 0.7-1.0 g of protein per lb of body weight. Spread protein across meals rather than relying on one very large serving.')}
         ${card(ICONS.plate,'Build the rest of the plate','After protein, include carbohydrate foods to support training and recovery, plus fruits and vegetables for fibre and micronutrients. Dietary fat is essential too; avoid driving it extremely low. Your calorie target still determines whether body weight tends to rise, fall or remain stable.')}
         ${card(ICONS.cut,'When cutting','Keep the calorie deficit reasonable and make each calorie work harder. Lean protein, vegetables, fruit, potatoes, oats, beans, yogurt and other filling foods can make a lower-calorie intake easier to sustain. Hunger is information—not a contest to ignore.')}
         ${card(ICONS.food,'Whole foods first','Build most meals around minimally processed foods you enjoy. They often provide more protein, fibre, water and micronutrients per calorie. Flexible foods can still fit; consistency matters more than trying to eat perfectly.')}
@@ -46,7 +46,7 @@ function markup() {
         <span class="eyebrow">SIMPLE RULES</span><h2>What matters most</h2>
         <div class="nutrition-principle-list">
           <div><strong>1</strong><p><b>Calories set the direction.</b> Your overall energy intake is the main nutritional driver of weight gain or loss.</p></div>
-          <div><strong>2</strong><p><b>Protein supports muscle.</b> Pair adequate protein with progressive resistance training.</p></div>
+          <div><strong>2</strong><p><b>Protein supports muscle.</b> Pair roughly 0.7-1.0 g/lb per day with progressive resistance training.</p></div>
           <div><strong>3</strong><p><b>Carbs are useful fuel.</b> They can support hard training and do not need to be avoided.</p></div>
           <div><strong>4</strong><p><b>Keep enough fat.</b> Include sources such as nuts, seeds, olive oil, avocado, eggs and fatty fish.</p></div>
           <div><strong>5</strong><p><b>Choose sustainable foods.</b> A plan you can repeat is more useful than a theoretically perfect diet you dislike.</p></div>
