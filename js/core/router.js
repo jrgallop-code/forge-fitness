@@ -50,13 +50,13 @@ import { renderGoalProjection, initializeGoalProjection }
 from "../nutrition/goal-projection.js?v=selected-target-projection-4";
 
 import { renderMore, initializeMore }
-from "../more/more-ui-v2.js?v=more-tools-3";
+from "../more/more-ui-v2.js?v=more-tools-4";
 
 import { renderWorkoutHistory, initializeWorkoutHistory }
 from "../workouts/workout-history.js?v=workout-history-3";
 
 import { initializeBackupManager }
-from "./backup-manager.js?v=active-workout-backup-1";
+from "./backup-manager.js?v=backup-complete-2";
 
 import { initializeGoogleDriveSync }
 from "./google-drive-sync-v2.js?v=visible-drive-backup-1";
