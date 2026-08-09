@@ -1,20 +1,16 @@
 import {
     getNutritionProfile,
     getNutritionGoal,
-    getNutritionMacroPreference
+    getNutritionMacroPreference,
+    getNutritionPlan
 }
-from "../nutrition/nutrition-storage.js?v=active-target-2";
+from "../nutrition/nutrition-storage.js?v=plan-source-1";
 
 import {
     calculateMacroTargets,
     poundsToKg
 }
-from "../nutrition/tdee-calculator.js?v=active-target-2";
-
-import {
-    getSelectedTarget
-}
-from "../nutrition/active-calorie-target.js?v=active-target-persist-1";
+from "../nutrition/tdee-calculator.js?v=plan-source-1";
 
 const CALORIE_ICON = `
     <svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -31,47 +27,23 @@ const PROTEIN_ICON = `
 
 export function initializeDashboardNutritionTargets() {
     const dashboard = document.querySelector(".dashboard");
-
-    if (!dashboard) {
-        return;
-    }
+    if (!dashboard) return;
 
     const profile = getNutritionProfile();
     const goal = getNutritionGoal();
+    const plan = getNutritionPlan();
 
-    if (
-        !profile ||
-        !goal?.goalId ||
-        Number(profile.age) < 18
-    ) {
-        return;
-    }
+    if (!profile || !goal?.goalId || Number(profile.age) < 18) return;
 
-    // The Dashboard must display the target the user explicitly selected.
-    // Do not recalculate it here, because recalculation on navigation can
-    // overwrite a recently chosen target with an older/default value.
-    const target = getSelectedTarget();
+    const currentCalories = Number(plan.currentCalories);
+    if (!Number.isFinite(currentCalories) || currentCalories <= 0) return;
 
-    if (!target || !Number.isFinite(target.calories) || target.calories <= 0) {
-        return;
-    }
-
-    const currentCalories = target.calories;
-
-    const macroPreset =
-        getNutritionMacroPreference()?.macroPreset ||
-        "balanced";
-
+    const macroPreset = getNutritionMacroPreference()?.macroPreset || "balanced";
     const macros = calculateMacroTargets({
         calories: currentCalories,
         weightKg: poundsToKg(Number(profile.weightLb)),
         macroPreset
     });
-
-    const sourceLabel =
-        target.source === "manual"
-            ? "Manual Target"
-            : "Auto Target";
 
     const calorieCard = `
         <div class="metric-card dashboard-nutrition-target-card">
@@ -79,7 +51,7 @@ export function initializeDashboardNutritionTargets() {
             <div>
                 <h3>Daily Calorie Target</h3>
                 <p>${Math.round(currentCalories)} kcal</p>
-                <small>${sourceLabel}</small>
+                <small>Saved Target</small>
             </div>
         </div>
     `;
@@ -96,8 +68,5 @@ export function initializeDashboardNutritionTargets() {
         `
         : "";
 
-    dashboard.insertAdjacentHTML(
-        "afterbegin",
-        calorieCard + proteinCard
-    );
+    dashboard.insertAdjacentHTML("afterbegin", calorieCard + proteinCard);
 }
