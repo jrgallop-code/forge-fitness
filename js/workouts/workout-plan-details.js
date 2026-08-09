@@ -73,7 +73,7 @@ function renderDay(day, index) {
     const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
 
     return `
-        <section class="plan-detail-day">
+        <section class="plan-detail-day" data-plan-day-index="${index}">
             <div class="plan-detail-day-heading">
                 <div>
                     <span>DAY ${index + 1}</span>
@@ -100,6 +100,31 @@ function renderDay(day, index) {
             </div>
         </section>
     `;
+}
+
+function initializeDayCarousel(screen, dayCount) {
+    const scroller = screen.querySelector(".plan-detail-days");
+    const dots = [...screen.querySelectorAll("[data-plan-day-dot]")];
+    const counter = screen.querySelector("[data-plan-day-counter]");
+    if (!scroller || dayCount <= 1) return;
+
+    const updateIndicator = () => {
+        const width = scroller.clientWidth || 1;
+        const index = Math.max(0, Math.min(dayCount - 1, Math.round(scroller.scrollLeft / width)));
+        dots.forEach((dot, dotIndex) => {
+            dot.classList.toggle("active", dotIndex === index);
+            dot.setAttribute("aria-current", dotIndex === index ? "true" : "false");
+        });
+        if (counter) counter.textContent = `Day ${index + 1} of ${dayCount}`;
+    };
+
+    scroller.addEventListener("scroll", () => requestAnimationFrame(updateIndicator), { passive: true });
+    dots.forEach((dot, index) => {
+        dot.addEventListener("click", () => {
+            scroller.scrollTo({ left: scroller.clientWidth * index, behavior: "smooth" });
+        });
+    });
+    updateIndicator();
 }
 
 function showPlanDetails({ plan, type, card }) {
@@ -129,9 +154,19 @@ function showPlanDetails({ plan, type, card }) {
             <div><strong>${stats.workingSets}</strong><span>Working sets</span></div>
         </div>
 
-        <div class="plan-detail-days">
+        <div class="plan-detail-days" aria-label="Workout days">
             ${days.map(renderDay).join("")}
         </div>
+
+        ${days.length > 1 ? `
+            <div class="plan-day-swipe-guide">
+                <div class="plan-day-dots" aria-label="Workout day navigation">
+                    ${days.map((_, index) => `<button type="button" data-plan-day-dot="${index}" aria-label="Show day ${index + 1}" class="${index === 0 ? "active" : ""}"></button>`).join("")}
+                </div>
+                <span data-plan-day-counter>Day 1 of ${days.length}</span>
+                <strong>Swipe left or right to view each day</strong>
+            </div>
+        ` : ""}
 
         <div class="plan-detail-bottom-actions">
             <button id="modify-workout-plan" class="secondary-btn" type="button">Modify Workout</button>
@@ -141,6 +176,8 @@ function showPlanDetails({ plan, type, card }) {
 
     page.appendChild(screen);
     page.classList.add("showing-plan-details");
+
+    initializeDayCarousel(screen, days.length);
 
     screen.querySelector(".plan-detail-back")?.addEventListener("click", closePlanDetails);
 
