@@ -168,13 +168,20 @@ function exerciseThumbnail(id) {
 }
 
 
+
+function muscleCropClass(muscle) {
+    if (["Quads", "Adductors", "Hamstrings"].includes(muscle)) return "crop-lower";
+    if (["Glutes", "Spinal Erectors"].includes(muscle)) return "crop-mid";
+    return "crop-upper";
+}
+
 function renderMuscleCards(guide) {
     return [
         ...guide.primary.map(muscle => ({ muscle, role: "primary" })),
         ...guide.secondary.map(muscle => ({ muscle, role: "secondary" }))
     ].map(item => `
         <article class="exercise-muscle-card">
-            <img class="exercise-muscle-figure" src="${escapeHtml(MUSCLE_IMAGE_PATHS[item.muscle])}" alt="${escapeHtml(item.muscle)} highlighted" loading="lazy" width="420" height="420">
+            <div class="exercise-muscle-image-frame ${muscleCropClass(item.muscle)}">\n                <img class="exercise-muscle-figure" src="${escapeHtml(MUSCLE_IMAGE_PATHS[item.muscle])}" alt="${escapeHtml(item.muscle)} highlighted" loading="lazy">\n            </div>
             <strong>${escapeHtml(item.muscle)}</strong>
             <span class="${item.role}">${item.role}</span>
         </article>
