@@ -1,4 +1,4 @@
-import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=workout-session-5';
+import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=workout-session-6';
 
 const TIMER_SETTINGS_KEY = 'level_up_exercise_rest_settings';
 let inlineTimerInterval = null;
@@ -188,6 +188,143 @@ function updateProgressionPrompt(card, exerciseIndex) {
   prompt.hidden = false;
 }
 
+function getSavedWorkoutSessions() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem('forge_workout_sessions') || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function getWarmupWorkingLoad(exerciseId, exerciseIndex) {
+  const active = getActive();
+  const currentSets = active?.exercises?.[exerciseIndex]?.sets || [];
+  const currentLoad = currentSets
+    .map(set => Number(set?.weight))
+    .find(weight => Number.isFinite(weight) && weight > 0);
+
+  if (currentLoad) {
+    return { load: currentLoad, source: "today's entered working load" };
+  }
+
+  const previous = getSavedWorkoutSessions()
+    .filter(session => session?.planId === active?.planId)
+    .sort((a, b) => String(b.completedAt || b.updatedAt || b.date || '')
+      .localeCompare(String(a.completedAt || a.updatedAt || a.date || '')))
+    .map(session => (session.exercises || []).find(exercise =>
+      (exercise.exerciseId || exercise.id) === exerciseId
+    ))
+    .find(exercise => (exercise?.sets || []).some(set =>
+      set?.completed &&
+      Number.isFinite(Number(set?.weight)) &&
+      Number(set.weight) > 0
+    ));
+
+  const previousLoad = (previous?.sets || [])
+    .filter(set => set?.completed)
+    .map(set => Number(set?.weight))
+    .find(weight => Number.isFinite(weight) && weight > 0);
+
+  return previousLoad
+    ? { load: previousLoad, source: 'your last completed working load' }
+    : null;
+}
+
+function roundWarmupLoad(load) {
+  const rounded = Math.round(Number(load) / 5) * 5;
+  return Math.max(5, rounded);
+}
+
+function getWarmupSteps(workingLoad, isFirstWeightedExercise) {
+  const scheme = isFirstWeightedExercise
+    ? [
+        { percent: 40, reps: 8 },
+        { percent: 60, reps: 5 },
+        { percent: 80, reps: 3 }
+      ]
+    : [
+        { percent: 50, reps: 6 },
+        { percent: 75, reps: 3 }
+      ];
+
+  return scheme.map(step => ({
+    ...step,
+    load: roundWarmupLoad(workingLoad * step.percent / 100)
+  }));
+}
+
+function renderWarmupCalculator(panel, workingLoad, isFirstWeightedExercise, source) {
+  if (!workingLoad) {
+    panel.innerHTML = `
+      <div class="exercise-warmup-title">
+        <div>
+          <strong>Optional warm-up</strong>
+          <small>Not recorded</small>
+        </div>
+        <button class="warmup-close-btn" type="button" aria-label="Hide optional warm-up">×</button>
+      </div>
+      <p class="exercise-warmup-optional">You may do all, some, or none of these warm-up sets.</p>
+      <form class="warmup-load-form">
+        <label>
+          Expected working weight
+          <span class="warmup-load-entry">
+            <input class="warmup-working-load" type="number" inputmode="decimal" min="1" step="0.5" placeholder="Weight in lb" required>
+            <button class="primary-btn" type="submit">Calculate</button>
+          </span>
+        </label>
+      </form>
+      <p class="exercise-warmup-help">No previous working load was found. This number is used only for the temporary calculation and is not saved.</p>
+    `;
+
+    panel.querySelector('.warmup-load-form')?.addEventListener('submit', event => {
+      event.preventDefault();
+      const load = Number(panel.querySelector('.warmup-working-load')?.value);
+      if (!Number.isFinite(load) || load <= 0) return;
+      renderWarmupCalculator(panel, load, isFirstWeightedExercise, 'the working weight you entered');
+    });
+  } else {
+    const steps = getWarmupSteps(workingLoad, isFirstWeightedExercise);
+    panel.innerHTML = `
+      <div class="exercise-warmup-title">
+        <div>
+          <strong>Optional warm-up suggestions</strong>
+          <small>Based on ${source}</small>
+        </div>
+        <button class="warmup-close-btn" type="button" aria-label="Hide optional warm-up">×</button>
+      </div>
+      <p class="exercise-warmup-optional"><b>Do all, some, or none.</b> These sets are optional and are not recorded.</p>
+      <div class="warmup-suggestion-list">
+        ${steps.map((step, index) => `
+          <div class="warmup-suggestion-row">
+            <span>Set ${index + 1}</span>
+            <strong>${formatLoad(step.load)} lb</strong>
+            <span>${step.reps} reps</span>
+            <small>${step.percent}%</small>
+          </div>
+        `).join('')}
+      </div>
+      <div class="warmup-panel-actions">
+        <button class="warmup-change-load secondary-btn" type="button">Change working weight</button>
+        <button class="warmup-done-btn primary-btn" type="button">Hide</button>
+      </div>
+      <p class="exercise-warmup-help">Adjust or skip any suggestion that does not feel appropriate. Calculated loads are rounded to practical 5 lb increments.</p>
+    `;
+
+    panel.querySelector('.warmup-change-load')?.addEventListener('click', () => {
+      renderWarmupCalculator(panel, null, isFirstWeightedExercise, '');
+    });
+  }
+
+  const hide = () => {
+    panel.hidden = true;
+    const button = panel.closest('.session-exercise-card')?.querySelector('.exercise-warmup-btn');
+    button?.setAttribute('aria-expanded', 'false');
+  };
+  panel.querySelector('.warmup-close-btn')?.addEventListener('click', hide);
+  panel.querySelector('.warmup-done-btn')?.addEventListener('click', hide);
+}
+
 function enhanceLogger(logger) {
   if (!logger || logger.dataset.compactEnhanced === 'true') return;
   logger.dataset.compactEnhanced = 'true';
@@ -208,12 +345,45 @@ function enhanceLogger(logger) {
     heading.parentNode.insertBefore(header, heading);
     header.appendChild(heading);
 
+    const headerActions = document.createElement('div');
+    headerActions.className = 'compact-exercise-actions';
+
+    const warmupButton = document.createElement('button');
+    warmupButton.type = 'button';
+    warmupButton.className = 'exercise-warmup-btn';
+    warmupButton.textContent = 'Warm-up';
+    warmupButton.setAttribute('aria-label', 'Show optional warm-up suggestions');
+    warmupButton.setAttribute('aria-expanded', 'false');
+    headerActions.appendChild(warmupButton);
+
     const menuButton = document.createElement('button');
     menuButton.type = 'button';
     menuButton.className = 'exercise-more-btn';
     menuButton.setAttribute('aria-label', 'Exercise options and rest timer');
     menuButton.textContent = '•••';
-    header.appendChild(menuButton);
+    headerActions.appendChild(menuButton);
+    header.appendChild(headerActions);
+
+    const warmupPanel = document.createElement('div');
+    warmupPanel.className = 'exercise-warmup-panel';
+    warmupPanel.hidden = true;
+    header.insertAdjacentElement('afterend', warmupPanel);
+
+    warmupButton.addEventListener('click', () => {
+      const opening = warmupPanel.hidden;
+      warmupPanel.hidden = !opening;
+      warmupButton.setAttribute('aria-expanded', String(opening));
+      if (!opening) return;
+
+      const firstWeightedCard = logger.querySelector('.session-exercise-card[data-tracking-type="reps"]');
+      const working = getWarmupWorkingLoad(exerciseId, exerciseIndex);
+      renderWarmupCalculator(
+        warmupPanel,
+        working?.load || null,
+        card === firstWeightedCard,
+        working?.source || ''
+      );
+    });
 
     const settings = getTimerSettings();
     const current = settings[exerciseId] || { enabled: false, seconds: 120 };
