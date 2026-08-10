@@ -215,7 +215,11 @@ function getWarmupWorkingLoad(exerciseId, exerciseIndex) {
     .map(session => (session.exercises || []).find(exercise =>
       (exercise.exerciseId || exercise.id) === exerciseId
     ))
-    .find(Boolean);
+    .find(exercise => (exercise?.sets || []).some(set =>
+      set?.completed &&
+      Number.isFinite(Number(set?.weight)) &&
+      Number(set.weight) > 0
+    ));
 
   const previousLoad = (previous?.sets || [])
     .filter(set => set?.completed)
