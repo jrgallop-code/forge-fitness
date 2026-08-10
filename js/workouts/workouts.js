@@ -507,7 +507,7 @@ function renderWorkoutDays() {
                                                 data-exercise-id="${exercise.id}"
                                                 type="button"
                                             >
-                                                Form guide
+                                                View Form Guide
                                             </button>
                                         ` : ""}
 
