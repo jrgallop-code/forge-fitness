@@ -80,45 +80,37 @@ export function renderWorkoutBuilder() {
 
                 </section>
 
-                <!-- CATALOGUE ENTRY -->
+                <!-- NATIVE EXPANDABLE CATALOGUE -->
 
-                <section class="workout-home-section workout-catalogue-entry">
+                <details class="workout-home-section workout-catalogue-details">
 
-                    <div>
+                    <summary class="catalogue-summary">
 
-                        <span class="eyebrow">WORKOUT CATALOGUE</span>
+                        <span class="catalogue-summary-copy">
 
-                        <h3>Find Your Next Plan</h3>
+                            <span class="eyebrow">WORKOUT CATALOGUE</span>
 
-                        <p>Browse templates by schedule, equipment and workout length.</p>
+                            <strong>Find Your Next Plan</strong>
 
-                    </div>
+                            <small>Browse by schedule, equipment and workout length.</small>
 
-                    <button class="primary-btn" type="button" data-catalogue-open onclick="const page=this.closest('.workout-page');page.querySelector('[data-workout-home]').hidden=true;page.querySelector('[data-catalogue-view]').hidden=false;window.scrollTo({top:page.offsetTop,behavior:'smooth'});">
-                        Browse Templates
-                    </button>
+                        </span>
 
-                </section>
+                        <span class="primary-btn catalogue-summary-action">Browse Templates</span>
 
-            </div>
+                    </summary>
 
-            <!-- CATALOGUE VIEW -->
+                    <div class="workout-catalogue-view" data-catalogue-view>
 
-            <section class="workout-catalogue-view" data-catalogue-view hidden>
+                        <div class="workout-catalogue-title">
 
-                <button class="workout-back-btn" type="button" data-catalogue-back onclick="const page=this.closest('.workout-page');page.querySelector('[data-catalogue-view]').hidden=true;page.querySelector('[data-workout-home]').hidden=false;">
-                    ← Workout
-                </button>
+                            <span class="eyebrow">LEVEL UP</span>
 
-                <div class="workout-catalogue-title">
+                            <h3>Workout Catalogue</h3>
 
-                    <span class="eyebrow">LEVEL UP</span>
+                            <p>Choose a structure, preview it, then customize it.</p>
 
-                    <h3>Workout Catalogue</h3>
-
-                    <p>Choose a structure, preview it, then customize it.</p>
-
-                </div>
+                        </div>
 
                 <div class="catalogue-search-row">
 
@@ -222,7 +214,13 @@ export function renderWorkoutBuilder() {
                     No templates match those filters.
                 </div>
 
-            </section>
+
+
+                    </div>
+
+                </details>
+
+            </div>
 
 
             <!-- BUILDER -->
