@@ -18,25 +18,16 @@ const DRIVE_FILE_NAME =
 const LAST_SYNC_KEY =
     "level_up_drive_last_sync";
 
-// Keep this list in sync with data that should move between devices.
-const BACKUP_KEYS = [
-    "forge_workout_plans",
-    "forge_workout_sessions",
-    "level_up_active_workout",
-    "forge_custom_exercises",
-    "forge_weight_entries",
-    "forge_reference_weight",
-    "level_up_goal_weight",
-    "forge_phase_data",
-    "level_up_nutrition_habits",
-    "level_up_nutrition_profile",
-    "level_up_nutrition_goal",
-    "level_up_nutrition_macro",
-    "level_up_nutrition_plan",
-    "level_up_water_entries",
-    "level_up_sleep_entries",
-    "level_up_body_measurements"
-];
+const INVALID_STORAGE_KEYS = new Set(["setItem"]);
+
+function getBackupKeys() {
+    const keys = [];
+    for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (key && !INVALID_STORAGE_KEYS.has(key)) keys.push(key);
+    }
+    return keys.sort();
+}
 
 let tokenClient = null;
 let accessToken = null;
@@ -206,7 +197,7 @@ async function uploadToDrive() {
         updateLastSyncDisplay();
 
         setDriveMessage(
-            `Upload complete. ${DRIVE_FILE_NAME} is now visible in My Drive and includes your current Level Up nutrition, weight and training data.`
+            `Upload complete. ${DRIVE_FILE_NAME} is now visible in My Drive and includes all current Level Up app data and settings.`
         );
     }
     catch (error) {
@@ -401,7 +392,9 @@ async function driveFetch(url, options = {}) {
 async function createBackupSnapshot() {
     const data = {};
 
-    BACKUP_KEYS.forEach(key => {
+    const keys = getBackupKeys();
+
+    keys.forEach(key => {
         const stored =
             localStorage.getItem(key);
 
@@ -420,7 +413,9 @@ async function createBackupSnapshot() {
 
     return {
         app: "level-up",
-        formatVersion: 2,
+        formatVersion: 3,
+        storageMode: "complete-local-storage",
+        storageKeyCount: keys.length,
         exportedAt: new Date().toISOString(),
         source: "google-drive-visible",
         data,
@@ -432,7 +427,9 @@ async function createBackupSnapshot() {
 async function restoreBackupSnapshot(backup) {
     validateBackup(backup);
 
-    BACKUP_KEYS.forEach(key => {
+    Object.keys(backup.data)
+        .filter(key => !INVALID_STORAGE_KEYS.has(key))
+        .forEach(key => {
         const value = backup.data[key];
 
         if (
@@ -465,7 +462,7 @@ function validateBackup(backup) {
         !backup ||
         typeof backup !== "object" ||
         backup.app !== "level-up" ||
-        ![1, 2].includes(backup.formatVersion) ||
+        ![1, 2, 3, 4].includes(backup.formatVersion) ||
         !backup.data ||
         typeof backup.data !== "object" ||
         Array.isArray(backup.data)

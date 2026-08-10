@@ -13,7 +13,7 @@ export function renderExportBackup() {
             <div class="backup-copy">
                 <span class="eyebrow">LOCAL BACKUP</span>
                 <h2>Backup & Restore</h2>
-                <p>Export all locally saved Level Up data, including workouts, weight history, measurements, nutrition targets, phases, sleep and settings.</p>
+                <p>Export all locally saved Level Up data, including workouts, weight history, measurements, nutrition targets, phases, sleep, workout schedules, rest-timer preferences and all other settings.</p>
                 <div class="backup-details">
                     <span>✓ One portable JSON file</span>
                     <span>✓ Includes all current local app data</span>
@@ -37,7 +37,7 @@ export function renderExportBackup() {
             <div class="backup-copy">
                 <span class="eyebrow">MULTI-DEVICE BETA</span>
                 <h2>Google Drive</h2>
-                <p>Connect your Google account to transfer Level Up data between this device and your private app-data folder in Google Drive.</p>
+                <p>Connect your Google account to transfer the same complete Level Up backup between this device and a visible backup file in Google Drive.</p>
                 <div class="drive-state-row">
                     <span id="google-drive-status" class="drive-status">Not connected</span>
                     <span id="google-drive-last-sync">No Drive transfer completed on this device.</span>
