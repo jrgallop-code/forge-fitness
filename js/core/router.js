@@ -1,5 +1,6 @@
 import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=plan-builder-exit-flow-1";
 import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=cardio-fields-1";
+import { initializeOneOffWorkout } from "../workouts/one-off-workout.js?v=one-off-workout-1";
 import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=workout-catalogue-form-coach-removed-1";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
@@ -19,7 +20,7 @@ import { initializeProteinTargetExplanation } from "../nutrition/protein-target-
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=goals-flow-3";
 import { renderGoalProjection, initializeGoalProjection } from "../nutrition/goal-projection.js?v=selected-target-projection-4";
 import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=more-water-route-1";
-import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=workout-history-3";
+import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=workout-history-one-off-1";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-3";
 import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-drive-backup-1";
 
@@ -38,7 +39,7 @@ export function navigate(page) {
                 safeInitialize("Google Drive sync", initializeGoogleDriveSync);
                 break;
             case "workout":
-                content.innerHTML = renderWorkoutBuilder(); decorateWorkoutTitle(content); safeInitialize("Workout builder", initializeWorkoutBuilder); safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content)); safeInitialize("Workout catalogue", () => initializeWorkoutCatalogue(content)); break;
+                content.innerHTML = renderWorkoutBuilder(); decorateWorkoutTitle(content); safeInitialize("Workout builder", initializeWorkoutBuilder); safeInitialize("One-off workout", initializeOneOffWorkout); safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content)); safeInitialize("Workout catalogue", () => initializeWorkoutCatalogue(content)); break;
             case "progress":
                 content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); break;
             case "sleep":
