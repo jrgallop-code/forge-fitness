@@ -255,3 +255,13 @@
     font-size: 0.78rem;
   }
 }
+
+.exercise-effort-guide{margin:8px 0 10px;border:1px solid rgba(255,255,255,.09);border-radius:10px;background:rgba(255,255,255,.025);overflow:hidden}
+.effort-guide-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:0;background:transparent;color:#fff;text-align:left;font:inherit}
+.effort-guide-toggle>span:first-child{display:flex;flex-direction:column;gap:2px}.effort-guide-toggle strong{font-size:.72rem}.effort-guide-toggle small{color:var(--muted,#a1a1aa);font-size:.62rem}.effort-guide-toggle>span:last-child{transition:transform .2s ease}.effort-guide-toggle[aria-expanded="true"]>span:last-child{transform:rotate(180deg)}
+.effort-guide-panel{padding:0 10px 10px;border-top:1px solid rgba(255,255,255,.07)}.effort-guide-panel>p{margin:9px 0;color:#d4d4d8;font-size:.68rem;line-height:1.42}
+.effort-guide-scale{display:grid;gap:5px}.effort-guide-scale span{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;background:rgba(255,255,255,.035);color:var(--muted,#a1a1aa);font-size:.64rem}.effort-guide-scale strong{min-width:24px;color:#fff;font-size:.68rem}
+.effort-guide-panel .effort-guide-safety{margin-bottom:0;color:var(--muted,#a1a1aa);font-size:.61rem}
+.effort-rir-check{padding:9px 10px 10px;border-top:1px solid rgba(255,255,255,.08);background:rgba(239,24,33,.045)}.effort-rir-check>strong{display:block;margin-bottom:7px;font-size:.69rem}
+.effort-rir-options{display:flex;flex-wrap:wrap;gap:5px}.effort-rir-options button{min-width:34px;padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:7px;background:rgba(255,255,255,.04);color:#fff;font:inherit;font-size:.65rem;font-weight:800}.effort-rir-options button.selected{border-color:var(--red,#ef1821);background:rgba(239,24,33,.18)}
+.effort-rir-feedback{margin:7px 0 0;color:#e4e4e7;font-size:.64rem;line-height:1.38}
