@@ -39,13 +39,14 @@ function getRecommendedLoad(currentWeight, exerciseId) {
   const current = Number(currentWeight);
   if (!Number.isFinite(current) || current <= 0) return null;
 
-  const increment = getPracticalIncrement(exerciseId);
-  const minimumIncrease = current * 0.02;
-  const practicalIncrease = Math.max(increment, Math.ceil(minimumIncrease / increment) * increment);
-  const increasePercent = practicalIncrease / current * 100;
+  const minimumIncrement = getPracticalIncrement(exerciseId);
+  const increases = minimumIncrement === 2.5
+    ? [10, 7.5, 5, 2.5]
+    : [10, 5];
+  const increase = increases.find(value => value / current * 100 <= 11)
+    ?? minimumIncrement;
 
-  if (increasePercent > 10) return null;
-  return Number((current + practicalIncrease).toFixed(1));
+  return Number((current + increase).toFixed(1));
 }
 
 function findPreviousProgressionSource(active, exerciseIndex, upperBound) {
@@ -146,7 +147,6 @@ function renderPrompt(card) {
   }
 
   const currentWeight = Number(source.set.weight);
-  const practicalIncrement = getPracticalIncrement(source.exerciseId);
   const nextWeight = getRecommendedLoad(currentWeight, source.exerciseId);
   if (!nextWeight || nextWeight <= currentWeight) {
     prompt.hidden = true;
@@ -165,7 +165,7 @@ function renderPrompt(card) {
     <div>
       <strong>Increase weight this session</strong>
       <p>Last workout ${repText} at ${formatLoad(currentWeight)} lb${partial}. Recommended load for this session: <b>${formatLoad(nextWeight)} lb</b> (+${pct.toFixed(1)}%).</p>
-      <small>Progression uses the smallest practical ${formatLoad(practicalIncrement)} lb equipment steps that produce a 2–10% load increase.</small>
+      <small>Progression uses the largest practical increase up to 10 lb that stays within 11%, or the minimum equipment increment when necessary.</small>
     </div>
   `;
   prompt.hidden = false;
