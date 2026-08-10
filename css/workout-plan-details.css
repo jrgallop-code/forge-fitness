@@ -329,3 +329,21 @@
 .builder-exercise-guide:active {
     background:rgba(255,255,255,.09);
 }
+
+
+/* Keep the builder guide action obvious without adding a separate screen row. */
+.builder-exercise-guide {
+    display:flex;
+    justify-content:center;
+    width:100%;
+    min-height:36px;
+    margin-top:8px;
+    border-color:rgba(239,68,68,.34);
+    background:rgba(239,68,68,.08);
+    color:#f4f4f5;
+    font-size:10px;
+}
+
+.builder-exercise-guide:active {
+    background:rgba(239,68,68,.16);
+}
