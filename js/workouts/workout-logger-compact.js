@@ -116,18 +116,21 @@ function getRepRangeUpperBound(repTarget) {
   return values.length ? Math.max(...values) : null;
 }
 
-function getRecommendedLoad(weight, exerciseId) {
+function getRecommendedLoadRange(weight, exerciseId) {
   const current = Number(weight);
   if (!Number.isFinite(current) || current <= 0) return null;
 
   const equipment = String(getExerciseById(exerciseId)?.equipment || '').toLowerCase();
-  const increases = equipment.includes('cable')
-    ? [10, 7.5, 5, 2.5]
-    : [10, 5];
-  const increase = increases.find(value => value / current * 100 <= 11)
-    ?? increases[increases.length - 1];
+  const minimumIncrease = equipment.includes('cable') ? 2.5 : 5;
+  const thresholdIncrease = Math.floor((current * 0.11 + 1e-9) / minimumIncrease) * minimumIncrease;
+  const maximumIncrease = Math.max(minimumIncrease, thresholdIncrease);
 
-  return Number((current + increase).toFixed(1));
+  return {
+    minimumIncrease,
+    maximumIncrease,
+    minimumLoad: Number((current + minimumIncrease).toFixed(1)),
+    maximumLoad: Number((current + maximumIncrease).toFixed(1))
+  };
 }
 
 function formatLoad(value) {
@@ -163,23 +166,28 @@ function updateProgressionPrompt(card, exerciseIndex) {
     Number(set.weight) > Number(best.weight) ? set : best
   );
   const currentWeight = Number(qualifying.weight);
-  const nextWeight = getRecommendedLoad(currentWeight, planned?.id);
+  const range = getRecommendedLoadRange(currentWeight, planned?.id);
 
-  if (!nextWeight || nextWeight <= currentWeight) {
+  if (!range) {
     prompt.hidden = true;
     return;
   }
 
-  const increasePercent = ((nextWeight / currentWeight) - 1) * 100;
   const completedCount = state.sets.filter(set => set?.completed).length;
   const plannedCount = state.sets.length;
+  const increaseRange = range.minimumIncrease === range.maximumIncrease
+    ? `${formatLoad(range.minimumIncrease)} lb`
+    : `${formatLoad(range.minimumIncrease)}–${formatLoad(range.maximumIncrease)} lb`;
+  const loadRange = range.minimumLoad === range.maximumLoad
+    ? `${formatLoad(range.minimumLoad)} lb`
+    : `${formatLoad(range.minimumLoad)}–${formatLoad(range.maximumLoad)} lb`;
 
   prompt.innerHTML = `
     <span class="progression-arrow">↑</span>
     <div>
       <strong>Increase weight next session</strong>
-      <p>You reached ${upperBound} reps at ${formatLoad(currentWeight)} lb${completedCount < plannedCount ? ` with ${completedCount} of ${plannedCount} sets completed` : ''}. Recommended next load: <b>${formatLoad(nextWeight)} lb</b> (+${increasePercent.toFixed(1)}%).</p>
-      <small>Level Up recommendation: use the largest practical increase up to 10 lb that stays within 11%, or the minimum equipment increment when necessary.</small>
+      <p>You reached ${upperBound} reps at ${formatLoad(currentWeight)} lb${completedCount < plannedCount ? ` with ${completedCount} of ${plannedCount} sets completed` : ''}. Recommended increase: <b>${increaseRange}</b>. Suggested load: <b>${loadRange}</b>.</p>
+      <small>Start at the lower end of the range to see how it feels. The upper end is the largest practical equipment increment within 11%.</small>
     </div>
   `;
   prompt.hidden = false;
