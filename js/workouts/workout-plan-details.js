@@ -1,6 +1,7 @@
 import { getPresetPlan } from "./workout-plans.js";
 import { getExerciseById } from "./exercise-library.js";
 import { openWorkoutLogger } from "./workout-session.js?v=workout-session-4";
+import { createGeneratedExerciseGuide } from "./exercise-guide-generator.js?v=full-library-guides-1";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 let bypassNextPlanClick = false;
@@ -20,7 +21,9 @@ const MUSCLE_IMAGE_PATHS = {
     "Hamstrings": "assets/exercise-guides/hamstrings.webp?v=1",
     "Rectus Abdominis": "assets/exercise-guides/rectus-abdominis.webp?v=1",
     "Obliques": "assets/exercise-guides/obliques.webp?v=1",
-    "Deep Core": "assets/exercise-guides/deep-core.webp?v=1"
+    "Deep Core": "assets/exercise-guides/deep-core.webp?v=1",
+    "Side Delts": "assets/exercise-guides/side-delts.webp?v=1",
+    "Calves": "assets/exercise-guides/calves.webp?v=1"
 };
 
 const EXERCISE_GUIDES = {
@@ -237,10 +240,14 @@ function exerciseThumbnail(id) {
 
 
 function muscleCropClass(muscle) {
-    if (["Rectus Abdominis", "Obliques", "Deep Core"].includes(muscle)) return "crop-core";
+    if (["Rectus Abdominis", "Obliques", "Deep Core", "Calves"].includes(muscle)) return "crop-core";
     if (["Quads", "Adductors", "Hamstrings"].includes(muscle)) return "crop-lower";
     if (["Glutes", "Spinal Erectors"].includes(muscle)) return "crop-mid";
     return "crop-upper";
+}
+
+function getExerciseGuide(exerciseId) {
+    return EXERCISE_GUIDES[exerciseId] || createGeneratedExerciseGuide(getExerciseById(exerciseId));
 }
 
 function renderMuscleCards(guide) {
@@ -257,7 +264,7 @@ function renderMuscleCards(guide) {
 }
 
 function showExerciseGuide(planScreen, exerciseId) {
-    const guide = EXERCISE_GUIDES[exerciseId];
+    const guide = getExerciseGuide(exerciseId);
     const page = planScreen.closest(".workout-page");
     if (!guide || !page) return;
 
@@ -317,7 +324,7 @@ function renderDay(day, index) {
 
             <div class="plan-detail-exercise-list">
                 ${exercises.length ? exercises.map(exercise => {
-                    const hasGuide = Boolean(EXERCISE_GUIDES[exercise?.id]);
+                    const hasGuide = Boolean(getExerciseGuide(exercise?.id));
                     const tag = hasGuide ? "button" : "div";
                     return `
                     <${tag} class="plan-detail-exercise-row ${hasGuide ? "has-exercise-guide" : ""}" ${hasGuide ? `type="button" data-exercise-guide="${escapeHtml(exercise.id)}" aria-label="Open ${escapeHtml(exerciseName(exercise.id))} exercise guide"` : ""}>
