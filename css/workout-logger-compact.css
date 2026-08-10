@@ -184,3 +184,74 @@
         width: 100%;
     }
 }
+
+/* One-exercise workout carousel */
+#workout-session-logger #session-exercises {
+  touch-action: pan-y;
+}
+
+#workout-session-logger .session-exercise-card[hidden] {
+  display: none !important;
+}
+
+.exercise-carousel-controls {
+  display: grid;
+  grid-template-columns: minmax(84px, auto) 1fr minmax(84px, auto);
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 12px;
+}
+
+.exercise-carousel-controls button {
+  min-height: 42px;
+  padding: 9px 12px;
+}
+
+.exercise-carousel-controls button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.exercise-carousel-position {
+  display: grid;
+  gap: 2px;
+  text-align: center;
+  color: #fff;
+}
+
+.exercise-carousel-position strong {
+  font-size: 0.9rem;
+}
+
+.exercise-carousel-position small {
+  color: var(--muted, #a1a1aa);
+  font-size: 0.72rem;
+}
+
+#workout-session-logger .active-exercise-card {
+  animation: exercise-card-enter 160ms ease-out;
+}
+
+@keyframes exercise-card-enter {
+  from {
+    opacity: 0.35;
+    transform: translateX(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 430px) {
+  .exercise-carousel-controls {
+    grid-template-columns: 76px 1fr 76px;
+    gap: 7px;
+  }
+
+  .exercise-carousel-controls button {
+    padding-inline: 8px;
+    font-size: 0.78rem;
+  }
+}
