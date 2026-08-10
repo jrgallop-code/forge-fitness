@@ -39,6 +39,60 @@ export function renderWorkoutBuilder() {
 
 
             <div data-workout-home>
+                <details class="workout-home-section form-coach-beta" data-form-coach>
+                    <summary class="form-coach-summary">
+                        <span class="catalogue-summary-copy">
+                            <span class="eyebrow">VIDEO REVIEW <span class="form-coach-beta-badge">BETA</span></span>
+                            <strong>Form Coach</strong>
+                            <small>Review a lift video with exercise-specific technique prompts.</small>
+                        </span>
+                        <span class="secondary-btn catalogue-summary-action">Try Beta</span>
+                    </summary>
+
+                    <div class="form-coach-body">
+                        <div class="form-coach-notice">
+                            <strong>Private test version</strong>
+                            <p>Your video stays on this device and disappears when you leave this screen. It is not uploaded, saved, exported, or included in analytics.</p>
+                        </div>
+
+                        <div class="form-coach-fields">
+                            <label>
+                                Exercise
+                                <select data-form-coach-exercise>
+                                    ${getAllExercises()
+                        .filter(exercise => exercise.trackingType === "reps")
+                        .map(exercise => `<option value="${escapeHtml(exercise.id)}">${escapeHtml(exercise.name)}</option>`)
+                        .join("")}
+                                </select>
+                            </label>
+                            <label>
+                                Camera angle
+                                <select data-form-coach-angle>
+                                    <option value="side">Side</option>
+                                    <option value="front">Front</option>
+                                    <option value="rear">Rear</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <label class="form-coach-upload">
+                            <span>Record or choose a short video</span>
+                            <input type="file" accept="video/*" capture="environment" data-form-coach-video>
+                            <small>For a useful review, show the full body and equipment for 3–5 repetitions.</small>
+                        </label>
+
+                        <div class="form-coach-preview" data-form-coach-preview hidden>
+                            <video controls playsinline preload="metadata" data-form-coach-player></video>
+                            <p data-form-coach-file></p>
+                            <button class="primary-btn" type="button" data-form-coach-review>Show review checklist</button>
+                        </div>
+
+                        <div class="form-coach-feedback" data-form-coach-feedback hidden aria-live="polite"></div>
+
+                        <p class="form-coach-limit"><b>Beta limitation:</b> this version helps you review the clip but does not yet automatically interpret body position. It cannot diagnose pain or injury and is not a substitute for an in-person qualified coach.</p>
+                    </div>
+                </details>
+
 
                 <!-- MY WORKOUTS -->
 
@@ -223,59 +277,6 @@ export function renderWorkoutBuilder() {
 
                 </details>
 
-                <details class="workout-home-section form-coach-beta" data-form-coach>
-                    <summary class="form-coach-summary">
-                        <span class="catalogue-summary-copy">
-                            <span class="eyebrow">VIDEO REVIEW <span class="form-coach-beta-badge">BETA</span></span>
-                            <strong>Form Coach</strong>
-                            <small>Review a lift video with exercise-specific technique prompts.</small>
-                        </span>
-                        <span class="secondary-btn catalogue-summary-action">Try Beta</span>
-                    </summary>
-
-                    <div class="form-coach-body">
-                        <div class="form-coach-notice">
-                            <strong>Private test version</strong>
-                            <p>Your video stays on this device and disappears when you leave this screen. It is not uploaded, saved, exported, or included in analytics.</p>
-                        </div>
-
-                        <div class="form-coach-fields">
-                            <label>
-                                Exercise
-                                <select data-form-coach-exercise>
-                                    ${getAllExercises()
-                        .filter(exercise => exercise.trackingType === "reps")
-                        .map(exercise => `<option value="${escapeHtml(exercise.id)}">${escapeHtml(exercise.name)}</option>`)
-                        .join("")}
-                                </select>
-                            </label>
-                            <label>
-                                Camera angle
-                                <select data-form-coach-angle>
-                                    <option value="side">Side</option>
-                                    <option value="front">Front</option>
-                                    <option value="rear">Rear</option>
-                                </select>
-                            </label>
-                        </div>
-
-                        <label class="form-coach-upload">
-                            <span>Record or choose a short video</span>
-                            <input type="file" accept="video/*" capture="environment" data-form-coach-video>
-                            <small>For a useful review, show the full body and equipment for 3–5 repetitions.</small>
-                        </label>
-
-                        <div class="form-coach-preview" data-form-coach-preview hidden>
-                            <video controls playsinline preload="metadata" data-form-coach-player></video>
-                            <p data-form-coach-file></p>
-                            <button class="primary-btn" type="button" data-form-coach-review>Show review checklist</button>
-                        </div>
-
-                        <div class="form-coach-feedback" data-form-coach-feedback hidden aria-live="polite"></div>
-
-                        <p class="form-coach-limit"><b>Beta limitation:</b> this version helps you review the clip but does not yet automatically interpret body position. It cannot diagnose pain or injury and is not a substitute for an in-person qualified coach.</p>
-                    </div>
-                </details>
 
             </div>
 
