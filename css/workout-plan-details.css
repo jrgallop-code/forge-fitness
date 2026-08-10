@@ -173,6 +173,9 @@
 }
 
 .plan-detail-exercise-name {
+    display:flex;
+    align-items:center;
+    gap:5px;
     min-width:0;
     overflow:hidden;
     text-overflow:ellipsis;
@@ -180,6 +183,19 @@
     color:#f5f5f7;
     font-size:13px;
     font-weight:700;
+}
+
+.exercise-guide-label {
+    flex:0 0 auto;
+    padding:2px 5px;
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:999px;
+    color:#a5a5ad;
+    font-size:8px;
+    font-weight:800;
+    letter-spacing:.03em;
+    line-height:1.2;
+    text-transform:uppercase;
 }
 
 .plan-detail-exercise-target {
@@ -289,4 +305,4 @@
     }
 }
 
-.plan-detail-exercise-row.has-exercise-guide{width:100%;border:1px solid rgba(255,255,255,.08);background:#121216;color:inherit;font:inherit;text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;-webkit-tap-highlight-color:transparent}.plan-detail-exercise-row.has-exercise-guide:active{transform:scale(.99);background:rgba(239,68,68,.08)}.exercise-guide-chevron{margin-left:auto;color:#ef4444;font-size:1.8rem;line-height:1}.exercise-guide-screen{padding-bottom:110px}.exercise-guide-header{margin-bottom:15px}.exercise-guide-header h2{margin:5px 0 7px}.exercise-guide-header p{margin:0;color:var(--muted,#a1a1aa);font-size:.8rem;line-height:1.5}.exercise-guide-section{margin-top:12px;padding:14px;border:1px solid rgba(255,255,255,.1);border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018))}.exercise-guide-section h3{margin:0 0 11px;font-size:1rem}.exercise-guide-section ol,.exercise-guide-section ul{margin:0;padding-left:21px}.exercise-guide-section li{margin:8px 0;color:#e4e4e7;font-size:.79rem;line-height:1.45}.exercise-muscle-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.exercise-muscle-card{display:flex;min-width:0;flex-direction:column;align-items:center;padding:10px 7px;border:1px solid rgba(255,255,255,.08);border-radius:13px;background:#0d0d10;text-align:center}.exercise-muscle-image-frame{position:relative;width:100%;height:150px;margin-bottom:8px;overflow:hidden;border-radius:10px;background:#050506}.exercise-muscle-figure{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;filter:drop-shadow(0 8px 10px rgba(0,0,0,.45));transition:transform .2s ease}.exercise-muscle-image-frame.crop-upper .exercise-muscle-figure{transform:scale(1.75);transform-origin:center 25%}.exercise-muscle-image-frame.crop-mid .exercise-muscle-figure{transform:scale(1.65);transform-origin:center 56%}.exercise-muscle-image-frame.crop-lower .exercise-muscle-figure{transform:scale(1.65);transform-origin:center 78%}.exercise-muscle-card strong{font-size:.76rem}.exercise-muscle-card>span{margin-top:5px;padding:3px 7px;border-radius:999px;font-size:.56rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase}.exercise-muscle-card>span.primary{background:#dc2626;color:#fff}.exercise-muscle-card>span.secondary{background:#3f3f46;color:#e4e4e7}.exercise-cue-list{display:flex;flex-wrap:wrap;gap:7px}.exercise-cue-list span{padding:7px 9px;border:1px solid rgba(239,68,68,.34);border-radius:999px;background:rgba(239,68,68,.08);color:#fca5a5;font-size:.7rem;font-weight:800}@media(min-width:520px){.exercise-muscle-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.plan-detail-exercise-row.has-exercise-guide{width:100%;border:1px solid rgba(255,255,255,.08);background:#121216;color:inherit;font:inherit;text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;-webkit-tap-highlight-color:transparent}.plan-detail-exercise-row.has-exercise-guide:active{transform:scale(.99);background:rgba(239,68,68,.08)}.exercise-guide-screen{padding-bottom:110px}.exercise-guide-header{margin-bottom:15px}.exercise-guide-header h2{margin:5px 0 7px}.exercise-guide-header p{margin:0;color:var(--muted,#a1a1aa);font-size:.8rem;line-height:1.5}.exercise-guide-section{margin-top:12px;padding:14px;border:1px solid rgba(255,255,255,.1);border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018))}.exercise-guide-section h3{margin:0 0 11px;font-size:1rem}.exercise-guide-section ol,.exercise-guide-section ul{margin:0;padding-left:21px}.exercise-guide-section li{margin:8px 0;color:#e4e4e7;font-size:.79rem;line-height:1.45}.exercise-muscle-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.exercise-muscle-card{display:flex;min-width:0;flex-direction:column;align-items:center;padding:10px 7px;border:1px solid rgba(255,255,255,.08);border-radius:13px;background:#0d0d10;text-align:center}.exercise-muscle-image-frame{position:relative;width:100%;height:150px;margin-bottom:8px;overflow:hidden;border-radius:10px;background:#050506}.exercise-muscle-figure{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;filter:drop-shadow(0 8px 10px rgba(0,0,0,.45));transition:transform .2s ease}.exercise-muscle-image-frame.crop-core .exercise-muscle-figure{transform:scale(1.08);transform-origin:center center}.exercise-muscle-image-frame.crop-upper .exercise-muscle-figure{transform:scale(1.75);transform-origin:center 25%}.exercise-muscle-image-frame.crop-mid .exercise-muscle-figure{transform:scale(1.65);transform-origin:center 56%}.exercise-muscle-image-frame.crop-lower .exercise-muscle-figure{transform:scale(1.65);transform-origin:center 78%}.exercise-muscle-card strong{font-size:.76rem}.exercise-muscle-card>span{margin-top:5px;padding:3px 7px;border-radius:999px;font-size:.56rem;font-weight:900;letter-spacing:.07em;text-transform:uppercase}.exercise-muscle-card>span.primary{background:#dc2626;color:#fff}.exercise-muscle-card>span.secondary{background:#3f3f46;color:#e4e4e7}.exercise-cue-list{display:flex;flex-wrap:wrap;gap:7px}.exercise-cue-list span{padding:7px 9px;border:1px solid rgba(239,68,68,.34);border-radius:999px;background:rgba(239,68,68,.08);color:#fca5a5;font-size:.7rem;font-weight:800}@media(min-width:520px){.exercise-muscle-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
