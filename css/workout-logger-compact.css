@@ -276,3 +276,21 @@
         touch-action: manipulation;
     }
 }
+
+/* Compact access to the existing exercise guide from the active logger. */
+.workout-session-logger .logger-form-guide-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-height: 34px;
+    margin: 4px 0 10px;
+    padding: 7px 12px;
+    color: #f4f4f6;
+    background: rgba(239, 24, 33, .10);
+    border: 1px solid rgba(239, 24, 33, .48);
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+}
