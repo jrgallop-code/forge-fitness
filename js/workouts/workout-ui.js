@@ -94,7 +94,7 @@ export function renderWorkoutBuilder() {
 
                     </div>
 
-                    <button class="primary-btn" type="button" data-catalogue-open>
+                    <button class="primary-btn" type="button" data-catalogue-open onclick="const page=this.closest('.workout-page');page.querySelector('[data-workout-home]').hidden=true;page.querySelector('[data-catalogue-view]').hidden=false;window.scrollTo({top:page.offsetTop,behavior:'smooth'});">
                         Browse Templates
                     </button>
 
@@ -106,7 +106,7 @@ export function renderWorkoutBuilder() {
 
             <section class="workout-catalogue-view" data-catalogue-view hidden>
 
-                <button class="workout-back-btn" type="button" data-catalogue-back>
+                <button class="workout-back-btn" type="button" data-catalogue-back onclick="const page=this.closest('.workout-page');page.querySelector('[data-catalogue-view]').hidden=true;page.querySelector('[data-workout-home]').hidden=false;">
                     ← Workout
                 </button>
 
