@@ -1,4 +1,4 @@
-import { navigate } from "./core/router.js?v=router-routine-review-removed-1";
+import { navigate } from "./core/router.js?v=router-form-coach-beta-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=navbar-water-route-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-session-6";
 
