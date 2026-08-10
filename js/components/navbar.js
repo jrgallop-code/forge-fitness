@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=router-water-only-2";
+import { navigate } from "../core/router.js?v=builder-form-guide-links-1";
 
 
 export function renderNavbar() {
