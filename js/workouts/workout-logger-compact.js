@@ -1,4 +1,5 @@
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=workout-session-6';
+import { getExerciseById } from './exercise-library.js';
 
 const TIMER_SETTINGS_KEY = 'level_up_exercise_rest_settings';
 let inlineTimerInterval = null;
@@ -236,16 +237,14 @@ function roundWarmupLoad(load) {
   return Math.max(5, rounded);
 }
 
-function getWarmupSteps(workingLoad, isFirstWeightedExercise) {
-  const scheme = isFirstWeightedExercise
+function getWarmupSteps(workingLoad, exerciseType) {
+  const scheme = exerciseType === 'isolation'
     ? [
-        { percent: 40, reps: 8 },
-        { percent: 60, reps: 5 },
-        { percent: 80, reps: 3 }
+        { percent: 50, reps: 5 }
       ]
     : [
-        { percent: 50, reps: 6 },
-        { percent: 75, reps: 3 }
+        { percent: 50, reps: 8 },
+        { percent: 75, reps: 5 }
       ];
 
   return scheme.map(step => ({
@@ -254,7 +253,7 @@ function getWarmupSteps(workingLoad, isFirstWeightedExercise) {
   }));
 }
 
-function renderWarmupCalculator(panel, workingLoad, isFirstWeightedExercise, source) {
+function renderWarmupCalculator(panel, workingLoad, exerciseType, source) {
   if (!workingLoad) {
     panel.innerHTML = `
       <div class="exercise-warmup-title">
@@ -281,10 +280,10 @@ function renderWarmupCalculator(panel, workingLoad, isFirstWeightedExercise, sou
       event.preventDefault();
       const load = Number(panel.querySelector('.warmup-working-load')?.value);
       if (!Number.isFinite(load) || load <= 0) return;
-      renderWarmupCalculator(panel, load, isFirstWeightedExercise, 'the working weight you entered');
+      renderWarmupCalculator(panel, load, exerciseType, 'the working weight you entered');
     });
   } else {
-    const steps = getWarmupSteps(workingLoad, isFirstWeightedExercise);
+    const steps = getWarmupSteps(workingLoad, exerciseType);
     panel.innerHTML = `
       <div class="exercise-warmup-title">
         <div>
@@ -308,11 +307,11 @@ function renderWarmupCalculator(panel, workingLoad, isFirstWeightedExercise, sou
         <button class="warmup-change-load secondary-btn" type="button">Change working weight</button>
         <button class="warmup-done-btn primary-btn" type="button">Hide</button>
       </div>
-      <p class="exercise-warmup-help">Adjust or skip any suggestion that does not feel appropriate. Calculated loads are rounded to practical 5 lb increments.</p>
+      <p class="exercise-warmup-help">For adults. Adjust or skip any suggestion that does not feel appropriate. Calculated loads are rounded to practical 5 lb increments.</p>
     `;
 
     panel.querySelector('.warmup-change-load')?.addEventListener('click', () => {
-      renderWarmupCalculator(panel, null, isFirstWeightedExercise, '');
+      renderWarmupCalculator(panel, null, exerciseType, '');
     });
   }
 
@@ -385,12 +384,14 @@ function enhanceLogger(logger) {
       warmupButton.setAttribute('aria-expanded', String(opening));
       if (!opening) return;
 
-      const firstWeightedCard = logger.querySelector('.session-exercise-card[data-tracking-type="reps"]');
+      const exerciseType = getExerciseById(exerciseId)?.type === 'isolation'
+        ? 'isolation'
+        : 'compound';
       const working = getWarmupWorkingLoad(exerciseId, exerciseIndex);
       renderWarmupCalculator(
         warmupPanel,
         working?.load || null,
-        card === firstWeightedCard,
+        exerciseType,
         working?.source || ''
       );
     });
