@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=builder-form-guide-links-1";
+import { navigate } from "../core/router.js?v=visible-builder-guide-1";
 
 
 export function renderNavbar() {
