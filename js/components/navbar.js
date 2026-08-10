@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=plan-builder-exit-flow-1";
+import { navigate } from "../core/router.js?v=cardio-fields-1";
 
 
 export function renderNavbar() {
