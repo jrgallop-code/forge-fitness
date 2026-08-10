@@ -417,15 +417,14 @@ function createEffortGuide() {
   root.className = 'exercise-effort-guide';
   root.innerHTML = `
     <button class="effort-guide-toggle" type="button" aria-expanded="false">
-      <span><strong>Target effort: 2–3 reps remaining</strong><small>How to choose your working weight</small></span>
+      <span><strong>Target effort: 1–3 reps in reserve</strong><small>How to choose your working weight</small></span>
       <span aria-hidden="true">⌄</span>
     </button>
     <div class="effort-guide-panel" hidden>
-      <p>Choose a load or variation that lets you finish the target rep range with consistent technique and about 2–3 good repetitions still possible.</p>
+      <p>Choose a load or variation that lets you finish the target rep range with consistent technique and about 1–3 good repetitions still possible.</p>
       <div class="effort-guide-scale">
         <span><strong>4+</strong> Consider slightly more resistance</span>
-        <span><strong>2–3</strong> Target effort for most working sets</span>
-        <span><strong>1</strong> Very challenging; use selectively</span>
+        <span><strong>1–3</strong> Target effort for most working sets</span>
         <span><strong>0</strong> Technical failure; not routinely required</span>
       </div>
       <p class="effort-guide-safety">Stop when another repetition would require substantially changing technique. Use appropriate supervision or safety equipment where a failed repetition could be unsafe.</p>
@@ -465,10 +464,8 @@ function createEffortGuide() {
     const value = button.dataset.rir;
     feedback.textContent = value === '0'
       ? 'You reached technical failure. Consider leaving 1–3 repetitions on the next set.'
-      : value === '1'
-        ? 'Very challenging. Technical failure is not required on every set.'
-        : value === '2' || value === '3'
-          ? 'Target effort reached.'
+      : value === '1' || value === '2' || value === '3'
+        ? 'Target effort reached.'
           : value === '4'
             ? 'This was below the target effort. Consider a small resistance increase when appropriate.'
             : 'That is okay. Estimating repetitions remaining becomes easier with practice.';
@@ -482,8 +479,39 @@ function createEffortGuide() {
   };
 }
 
+function enhanceEffortGuide(card) {
+  if (!card || card.dataset.effortGuideEnhanced === 'true') return;
+  card.dataset.effortGuideEnhanced = 'true';
+
+  const target = card.querySelector('.session-target');
+  const header = card.querySelector('.compact-exercise-header') || card.querySelector('h4');
+  if (!target && !header) return;
+
+  const effortGuide = createEffortGuide();
+  if (target) target.insertAdjacentElement('afterend', effortGuide.root);
+  else header.insertAdjacentElement('afterend', effortGuide.root);
+
+  card.addEventListener('click', event => {
+    const complete = event.target.closest('.complete-set-btn');
+    if (!complete) return;
+    const row = complete.closest('.session-set-row');
+    if (!row) return;
+
+    setTimeout(() => {
+      const setRows = [...card.querySelectorAll('.session-set-row')];
+      if (row.classList.contains('completed') && row === setRows.at(-1)) {
+        effortGuide.showFinalSetCheck();
+      }
+    }, 0);
+  });
+}
+
 function enhanceLogger(logger) {
   if (!logger) return;
+
+  logger.querySelectorAll(
+    '.session-exercise-card[data-tracking-type="reps"]:not([data-effort-guide-enhanced="true"])'
+  ).forEach(enhanceEffortGuide);
 
   const initialEnhancement = logger.dataset.compactEnhanced !== 'true';
   const unenhancedCards = logger.querySelectorAll(
@@ -613,14 +641,11 @@ function enhanceLogger(logger) {
     target?.classList.add('compact-target');
     card.querySelector('.previous-performance')?.remove();
 
-    const effortGuide = createEffortGuide();
-    if (target) target.insertAdjacentElement('afterend', effortGuide.root);
-    else header.insertAdjacentElement('afterend', effortGuide.root);
-
     const progressionPrompt = document.createElement('div');
     progressionPrompt.className = 'progression-prompt';
     progressionPrompt.hidden = true;
-    effortGuide.root.insertAdjacentElement('afterend', progressionPrompt);
+    if (target) target.insertAdjacentElement('afterend', progressionPrompt);
+    else header.insertAdjacentElement('afterend', progressionPrompt);
 
     const setHeader = card.querySelector('.session-set-header');
     if (setHeader) {
@@ -652,10 +677,6 @@ function enhanceLogger(logger) {
             }
             updateInlineTimers();
             updateProgressionPrompt(card, exerciseIndex);
-            const setRows = [...card.querySelectorAll('.session-set-row')];
-            if (row.classList.contains('completed') && row === setRows.at(-1)) {
-              effortGuide.showFinalSetCheck();
-            }
           }, 0);
         });
       }
