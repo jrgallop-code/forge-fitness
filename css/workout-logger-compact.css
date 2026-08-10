@@ -265,3 +265,14 @@
 .effort-rir-check{padding:9px 10px 10px;border-top:1px solid rgba(255,255,255,.08);background:rgba(239,24,33,.045)}.effort-rir-check>strong{display:block;margin-bottom:7px;font-size:.69rem}
 .effort-rir-options{display:flex;flex-wrap:wrap;gap:5px}.effort-rir-options button{min-width:34px;padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:7px;background:rgba(255,255,255,.04);color:#fff;font:inherit;font-size:.65rem;font-weight:800}.effort-rir-options button.selected{border-color:var(--red,#ef1821);background:rgba(239,24,33,.18)}
 .effort-rir-feedback{margin:7px 0 0;color:#e4e4e7;font-size:.64rem;line-height:1.38}
+
+/* Keep iPhone Safari from zooming and repainting the workout logger on field focus. */
+@media (max-width: 700px) {
+    .workout-session-logger input[type="number"],
+    .workout-session-logger input[type="text"],
+    .workout-session-logger textarea,
+    .workout-session-logger select {
+        font-size: 16px !important;
+        touch-action: manipulation;
+    }
+}
