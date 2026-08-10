@@ -38,11 +38,9 @@ function getPracticalIncrement(exerciseId) {
 function getRecommendedLoadRange(currentWeight, exerciseId) {
   const current = Number(currentWeight);
   if (!Number.isFinite(current) || current <= 0) return null;
-
   const minimumIncrease = getPracticalIncrement(exerciseId);
   const thresholdIncrease = Math.floor((current * 0.11 + 1e-9) / minimumIncrease) * minimumIncrease;
   const maximumIncrease = Math.max(minimumIncrease, thresholdIncrease);
-
   return {
     minimumIncrease,
     maximumIncrease,
@@ -51,61 +49,87 @@ function getRecommendedLoadRange(currentWeight, exerciseId) {
   };
 }
 
-function findPreviousProgressionSource(active, exerciseIndex, upperBound) {
-  const planned = active?.planSnapshot?.days?.[active.trainingDayIndex]?.exercises?.[exerciseIndex];
-  const exerciseId = planned?.id;
-  if (!exerciseId) return null;
+function compareSessionsNewest(a, b) {
+  return String(b?.completedAt || b?.updatedAt || b?.date || '')
+    .localeCompare(String(a?.completedAt || a?.updatedAt || a?.date || ''));
+}
 
+function hasRecordedSetData(set) {
+  return set && (set.weight !== null && set.weight !== '' && set.weight !== undefined ||
+    set.reps !== null && set.reps !== '' && set.reps !== undefined);
+}
+
+function getPreferredRecordedSets(performance) {
+  const recorded = Array.isArray(performance?.sets)
+    ? performance.sets.filter(hasRecordedSetData)
+    : [];
+  const completed = recorded.filter(set => set?.completed);
+  return completed.length ? completed : recorded;
+}
+
+function hasValidPerformance(performance) {
+  if (!performance) return false;
+  if (getPreferredRecordedSets(performance).length) return true;
+  return Number(performance.durationMinutes) > 0 ||
+    Boolean(String(performance.distance || '').trim()) ||
+    Boolean(String(performance.notes || '').trim());
+}
+
+function findExercisePerformance(session, exerciseId) {
+  const direct = (session?.exercises || []).find(item => item?.exerciseId === exerciseId);
+  if (direct) return direct;
+  const planned = session?.planSnapshot?.days?.[session?.trainingDayIndex]?.exercises || [];
+  const index = planned.findIndex(item => item?.id === exerciseId);
+  return index >= 0 ? session?.exercises?.[index] || null : null;
+}
+
+function findPreviousPerformance(exerciseId, excludedSessionId = null) {
   const sessions = readJson(SESSION_STORAGE_KEY, []);
   if (!Array.isArray(sessions)) return null;
-
-  const matching = sessions
-    .filter(session =>
-      session?.planId === active.planId &&
-      Number(session.trainingDayIndex) === Number(active.trainingDayIndex)
-    )
-    .sort((a, b) => String(b.completedAt || b.date || '').localeCompare(String(a.completedAt || a.date || '')));
-
-  for (const session of matching) {
-    const dayExercises = session?.planSnapshot?.days?.[session.trainingDayIndex]?.exercises || [];
-    const savedIndex = dayExercises.findIndex(item => item?.id === exerciseId);
-    if (savedIndex < 0) continue;
-
-    const state = session?.exercises?.[savedIndex];
-    if (!state || !Array.isArray(state.sets)) continue;
-
-    const completedSets = state.sets.filter(set =>
-      set?.completed &&
-      Number(set.weight) > 0 &&
-      Number(set.reps) > 0
-    );
-    if (!completedSets.length) continue;
-
-    // Progression triggers in either of two cases:
-    // 1) every completed set reached at least the top of the target range; or
-    // 2) any completed set exceeded the target maximum.
-    // This preserves partial-workout progression (e.g. 2 of 3 sets both hit 12)
-    // while also catching obvious overshoots such as 14 reps on an 8-12 target.
-    const allAtTop = completedSets.every(set => Number(set.reps) >= upperBound);
-    const anyExceeded = completedSets.some(set => Number(set.reps) > upperBound);
-    if (!allAtTop && !anyExceeded) continue;
-
-    const sourceSet = [...completedSets]
-      .filter(set => Number(set.reps) >= upperBound)
-      .sort((a, b) => Number(b.weight) - Number(a.weight))[0];
-    if (!sourceSet) continue;
-
-    return {
-      exerciseId,
-      set: sourceSet,
-      completedCount: completedSets.length,
-      plannedCount: state.sets.length,
-      maxReps: Math.max(...completedSets.map(set => Number(set.reps) || 0)),
-      exceeded: anyExceeded
-    };
+  for (const session of [...sessions].filter(item => item?.id !== excludedSessionId).sort(compareSessionsNewest)) {
+    const performance = findExercisePerformance(session, exerciseId);
+    if (hasValidPerformance(performance)) return { session, performance };
   }
-
   return null;
+}
+
+function formatPreviousSet(set) {
+  if (!set) return "Hasn't started";
+  return `${set.weight ?? '—'} × ${set.reps ?? '—'}`;
+}
+
+function formatPreviousSummary(performance) {
+  const sets = getPreferredRecordedSets(performance);
+  return sets.length ? sets.map(formatPreviousSet).join(' • ') : 'No previous performance recorded.';
+}
+
+function formatCardioPrevious(performance) {
+  if (!performance) return "Hasn't started";
+  const details = [];
+  if (Number(performance.durationMinutes) > 0) details.push(`${performance.durationMinutes} min`);
+  if (String(performance.distance || '').trim()) details.push(String(performance.distance).trim());
+  if (String(performance.notes || '').trim()) details.push(String(performance.notes).trim());
+  return details.length ? details.join(' • ') : 'No previous details recorded.';
+}
+
+function syncPreviousDisplay(card, source) {
+  const performance = source?.performance || null;
+  const summary = card.querySelector('.previous-performance span');
+  if (card.dataset.trackingType === 'notes') {
+    if (summary) summary.textContent = performance ? formatCardioPrevious(performance) : "Hasn't started";
+    return;
+  }
+  const sets = performance ? getPreferredRecordedSets(performance) : [];
+  if (summary) summary.textContent = performance ? formatPreviousSummary(performance) : 'No previous performance recorded.';
+  card.querySelectorAll('.session-set-row').forEach((row, index) => {
+    const previousSet = sets[index];
+    const value = row.querySelector('.previous-set-value');
+    if (value) value.textContent = formatPreviousSet(previousSet);
+    const weight = row.querySelector('.session-weight');
+    const reps = row.querySelector('.session-reps');
+    if (weight) weight.placeholder = previousSet?.weight ?? 'Weight';
+    if (reps) reps.placeholder = previousSet?.reps ?? 'Reps';
+  });
 }
 
 function ensurePrompt(card) {
@@ -120,46 +144,74 @@ function ensurePrompt(card) {
   return prompt;
 }
 
-function renderPrompt(card) {
+function renderCard(card) {
   const logger = card.closest('#workout-session-logger');
-  if (!logger || logger.dataset.editingSessionId) return;
+  if (!logger) return;
+  const exerciseId = card.dataset.exerciseId;
+  if (!exerciseId) return;
+  const excludedSessionId = logger.dataset.editingSessionId || null;
+  const source = findPreviousPerformance(exerciseId, excludedSessionId);
+  syncPreviousDisplay(card, source);
 
+  if (card.dataset.trackingType !== 'reps') return;
   const prompt = ensurePrompt(card);
-  const active = readJson(ACTIVE_WORKOUT_STORAGE_KEY, null);
-  if (!active) {
-    prompt.hidden = true;
-    return;
-  }
-
-  const exerciseIndex = Number(card.dataset.exerciseIndex);
-  const planned = active?.planSnapshot?.days?.[active.trainingDayIndex]?.exercises?.[exerciseIndex];
-  const upperBound = getRepRangeUpperBound(planned?.reps);
-  if (!upperBound) {
-    prompt.hidden = true;
-    return;
-  }
-
-  // Never use the workout currently being logged. Progression is earned in a
-  // previous saved session and displayed at the start of the following one.
-  const source = findPreviousProgressionSource(active, exerciseIndex, upperBound);
-  if (!source) {
+  if (excludedSessionId) {
     prompt.hidden = true;
     prompt.innerHTML = '';
     return;
   }
 
-  const currentWeight = Number(source.set.weight);
-  const range = getRecommendedLoadRange(currentWeight, source.exerciseId);
+  const active = readJson(ACTIVE_WORKOUT_STORAGE_KEY, null);
+  if (!active || !source) {
+    prompt.hidden = true;
+    prompt.innerHTML = '';
+    return;
+  }
+  const exerciseIndex = Number(card.dataset.exerciseIndex);
+  const planned = active?.planSnapshot?.days?.[active.trainingDayIndex]?.exercises?.[exerciseIndex];
+  const upperBound = getRepRangeUpperBound(planned?.reps);
+  if (!upperBound) {
+    prompt.hidden = true;
+    prompt.innerHTML = '';
+    return;
+  }
+
+  const state = source.performance;
+  const completedSets = Array.isArray(state?.sets)
+    ? state.sets.filter(set => set?.completed && Number(set.reps) > 0)
+    : [];
+  if (!completedSets.length) {
+    prompt.hidden = true;
+    prompt.innerHTML = '';
+    return;
+  }
+  const allAtTop = completedSets.every(set => Number(set.reps) >= upperBound);
+  const anyExceeded = completedSets.some(set => Number(set.reps) > upperBound);
+  if (!allAtTop && !anyExceeded) {
+    prompt.hidden = true;
+    prompt.innerHTML = '';
+    return;
+  }
+  const sourceSet = [...completedSets]
+    .filter(set => Number(set.reps) >= upperBound && Number(set.weight) > 0)
+    .sort((a, b) => Number(b.weight) - Number(a.weight))[0];
+  if (!sourceSet) {
+    prompt.hidden = true;
+    prompt.innerHTML = '';
+    return;
+  }
+
+  const currentWeight = Number(sourceSet.weight);
+  const range = getRecommendedLoadRange(currentWeight, exerciseId);
   if (!range) {
     prompt.hidden = true;
     return;
   }
-
-  const partial = source.completedCount < source.plannedCount
-    ? ` with ${source.completedCount} of ${source.plannedCount} sets completed`
-    : '';
-  const repText = source.exceeded
-    ? `you exceeded the ${upperBound}-rep target and reached ${source.maxReps} reps`
+  const plannedCount = Array.isArray(state.sets) ? state.sets.length : completedSets.length;
+  const partial = completedSets.length < plannedCount ? ` with ${completedSets.length} of ${plannedCount} sets completed` : '';
+  const maxReps = Math.max(...completedSets.map(set => Number(set.reps) || 0));
+  const repText = anyExceeded
+    ? `you exceeded the ${upperBound}-rep target and reached ${maxReps} reps`
     : `all completed sets reached at least ${upperBound} reps`;
   const increaseRange = range.minimumIncrease === range.maximumIncrease
     ? `${formatLoad(range.minimumIncrease)} lb`
@@ -180,9 +232,7 @@ function renderPrompt(card) {
 }
 
 function refreshLogger(logger) {
-  logger
-    .querySelectorAll('.session-exercise-card[data-tracking-type="reps"]')
-    .forEach(renderPrompt);
+  logger.querySelectorAll('.session-exercise-card').forEach(renderCard);
 }
 
 function bindLogger(logger) {
@@ -212,7 +262,6 @@ const observer = new MutationObserver(mutations => {
       )
     )
   );
-
   if (needsRefresh) setTimeout(scan, 20);
 });
 
