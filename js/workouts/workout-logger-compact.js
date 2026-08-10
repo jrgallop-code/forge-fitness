@@ -116,22 +116,13 @@ function getRepRangeUpperBound(repTarget) {
   return values.length ? Math.max(...values) : null;
 }
 
-function getRecommendedLoad(weight) {
+function getRecommendedLoad(weight, exerciseId) {
   const current = Number(weight);
   if (!Number.isFinite(current) || current <= 0) return null;
 
-  const lower = current * 1.02;
-  const upper = current * 1.05;
-  const increments = [5, 2.5, 1, 0.5];
-
-  for (const increment of increments) {
-    const candidate = Math.ceil((lower - 1e-9) / increment) * increment;
-    if (candidate <= upper + 1e-9) {
-      return Number(candidate.toFixed(1));
-    }
-  }
-
-  return Number((Math.round(lower * 2) / 2).toFixed(1));
+  const equipment = String(getExerciseById(exerciseId)?.equipment || '').toLowerCase();
+  const increment = equipment.includes('cable') ? 2.5 : 5;
+  return Number((Math.ceil((current + 1e-9) / increment) * increment).toFixed(1));
 }
 
 function formatLoad(value) {
@@ -167,7 +158,7 @@ function updateProgressionPrompt(card, exerciseIndex) {
     Number(set.weight) > Number(best.weight) ? set : best
   );
   const currentWeight = Number(qualifying.weight);
-  const nextWeight = getRecommendedLoad(currentWeight);
+  const nextWeight = getRecommendedLoad(currentWeight, planned?.id);
 
   if (!nextWeight || nextWeight <= currentWeight) {
     prompt.hidden = true;
