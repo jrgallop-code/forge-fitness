@@ -138,10 +138,9 @@ function startScheduledWorkout(planId) {
     const context = getTodayContext();
     const plan = getPlans().find(item => item.id === planId);
     if (!plan || context.dayIndex === null || context.dayIndex === undefined) return;
-    const reordered = { ...plan, days: [plan.days[context.dayIndex], ...plan.days.filter((_, index) => index !== context.dayIndex)] };
-    openWorkoutLogger(reordered);
+    openWorkoutLogger(plan);
     const select = document.querySelector("#session-day-select");
-    if (select) select.value = "0";
+    if (select) select.value = String(context.dayIndex);
 }
 
 function getTodayContext() {
