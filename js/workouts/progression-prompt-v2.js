@@ -200,16 +200,23 @@ function bindLogger(logger) {
 
 function scan() {
   const logger = document.getElementById('workout-session-logger');
-  if (logger) bindLogger(logger);
+  if (!logger) return;
+  bindLogger(logger);
+  refreshLogger(logger);
 }
 
 const observer = new MutationObserver(mutations => {
-  if (mutations.some(mutation => [...mutation.addedNodes].some(node =>
-    node.nodeType === 1 &&
-    (node.id === 'workout-session-logger' || node.querySelector?.('#workout-session-logger'))
-  ))) {
-    setTimeout(scan, 20);
-  }
+  const needsRefresh = mutations.some(mutation =>
+    [...mutation.addedNodes].some(node =>
+      node.nodeType === 1 && (
+        node.id === 'workout-session-logger' ||
+        node.matches?.('.session-exercise-card') ||
+        node.querySelector?.('#workout-session-logger, .session-exercise-card')
+      )
+    )
+  );
+
+  if (needsRefresh) setTimeout(scan, 20);
 });
 
 observer.observe(document.body, { childList: true, subtree: true });
