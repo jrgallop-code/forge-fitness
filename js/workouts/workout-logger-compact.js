@@ -357,13 +357,14 @@ function setupExerciseCarousel(logger) {
       card.classList.toggle('active-exercise-card', cardIndex === index);
     });
 
-    const position = controls.querySelector('.exercise-carousel-position');
+    const currentControls = container.querySelector('.exercise-carousel-controls');
+    const position = currentControls?.querySelector('.exercise-carousel-position');
     if (position) {
       position.innerHTML = `<strong>Exercise ${index + 1} of ${latestCards.length}</strong><small>Swipe right for next</small>`;
     }
 
-    const previousButton = controls.querySelector('.exercise-carousel-prev');
-    const nextButton = controls.querySelector('.exercise-carousel-next');
+    const previousButton = currentControls?.querySelector('.exercise-carousel-prev');
+    const nextButton = currentControls?.querySelector('.exercise-carousel-next');
     if (previousButton) previousButton.disabled = index === 0;
     if (nextButton) nextButton.disabled = index === latestCards.length - 1;
 
