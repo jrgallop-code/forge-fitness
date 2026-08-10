@@ -1,4 +1,4 @@
-import { navigate } from "./core/router.js?v=router-workout-plans-1";
+import { navigate } from "./core/router.js?v=router-weight-trend-summary-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=navbar-water-route-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-session-4";
 
