@@ -482,8 +482,39 @@ function createEffortGuide() {
   };
 }
 
+function enhanceEffortGuide(card) {
+  if (!card || card.dataset.effortGuideEnhanced === 'true') return;
+  card.dataset.effortGuideEnhanced = 'true';
+
+  const target = card.querySelector('.session-target');
+  const header = card.querySelector('.compact-exercise-header') || card.querySelector('h4');
+  if (!target && !header) return;
+
+  const effortGuide = createEffortGuide();
+  if (target) target.insertAdjacentElement('afterend', effortGuide.root);
+  else header.insertAdjacentElement('afterend', effortGuide.root);
+
+  card.addEventListener('click', event => {
+    const complete = event.target.closest('.complete-set-btn');
+    if (!complete) return;
+    const row = complete.closest('.session-set-row');
+    if (!row) return;
+
+    setTimeout(() => {
+      const setRows = [...card.querySelectorAll('.session-set-row')];
+      if (row.classList.contains('completed') && row === setRows.at(-1)) {
+        effortGuide.showFinalSetCheck();
+      }
+    }, 0);
+  });
+}
+
 function enhanceLogger(logger) {
   if (!logger) return;
+
+  logger.querySelectorAll(
+    '.session-exercise-card[data-tracking-type="reps"]:not([data-effort-guide-enhanced="true"])'
+  ).forEach(enhanceEffortGuide);
 
   const initialEnhancement = logger.dataset.compactEnhanced !== 'true';
   const unenhancedCards = logger.querySelectorAll(
@@ -613,14 +644,11 @@ function enhanceLogger(logger) {
     target?.classList.add('compact-target');
     card.querySelector('.previous-performance')?.remove();
 
-    const effortGuide = createEffortGuide();
-    if (target) target.insertAdjacentElement('afterend', effortGuide.root);
-    else header.insertAdjacentElement('afterend', effortGuide.root);
-
     const progressionPrompt = document.createElement('div');
     progressionPrompt.className = 'progression-prompt';
     progressionPrompt.hidden = true;
-    effortGuide.root.insertAdjacentElement('afterend', progressionPrompt);
+    if (target) target.insertAdjacentElement('afterend', progressionPrompt);
+    else header.insertAdjacentElement('afterend', progressionPrompt);
 
     const setHeader = card.querySelector('.session-set-header');
     if (setHeader) {
@@ -652,10 +680,6 @@ function enhanceLogger(logger) {
             }
             updateInlineTimers();
             updateProgressionPrompt(card, exerciseIndex);
-            const setRows = [...card.querySelectorAll('.session-set-row')];
-            if (row.classList.contains('completed') && row === setRows.at(-1)) {
-              effortGuide.showFinalSetCheck();
-            }
           }, 0);
         });
       }
