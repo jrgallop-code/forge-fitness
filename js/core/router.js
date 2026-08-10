@@ -7,8 +7,7 @@ import { renderMuscleRecoveryDashboard, initializeMuscleRecoveryDashboard } from
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=workout-schedule-2";
 import { renderProgress } from "../progress/progress-ui.js?v=progress-more-sleep-1";
-import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-tracker-9";
-import { initializeWeightTrendSummary } from "../progress/weight-trend-summary.js?v=weight-trend-summary-1";
+import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-tracker-8";
 import { initializePhotoJournal } from "../progress/photo-journal.js";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
 import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.js?v=training-analytics-5";
@@ -42,7 +41,7 @@ export function navigate(page) {
             case "workout":
                 content.innerHTML = renderWorkoutBuilder(); decorateWorkoutTitle(content); safeInitialize("Workout builder", initializeWorkoutBuilder); safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content)); safeInitialize("Workout catalogue", () => initializeWorkoutCatalogue(content)); break;
             case "progress":
-                content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Weight trend summary", () => initializeWeightTrendSummary(content)); safeInitialize("Photo journal", initializePhotoJournal); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); break;
+                content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Photo journal", initializePhotoJournal); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); break;
             case "sleep":
                 content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>Track sleep duration, quality and recovery notes.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
             case "measurements":
