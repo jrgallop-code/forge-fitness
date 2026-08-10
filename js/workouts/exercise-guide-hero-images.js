@@ -1,5 +1,9 @@
 const GUIDE_IMAGE_PATHS = {
-    "barbell-bench-press": "assets/exercise-guides/performance/barbell-bench-press-guide.webp?v=1"
+    "barbell-bench-press": "assets/exercise-guides/performance/barbell-bench-press-guide.webp?v=1",
+    "machine-chest-press": "assets/exercise-guides/performance/machine-chest-press.webp?v=1",
+    "cable-fly": "assets/exercise-guides/performance/cable-fly.webp?v=1",
+    "pec-deck": "assets/exercise-guides/performance/pec-deck.webp?v=1",
+    "push-up": "assets/exercise-guides/performance/push-up.webp?v=1"
 };
 
 let stylesAdded = false;
@@ -44,7 +48,7 @@ function addGuideImage(exerciseId) {
 
     const image = document.createElement("img");
     image.src = source;
-    image.alt = "Barbell Bench Press anatomy guide showing primary muscles in red and secondary muscles in orange";
+    image.alt = `${exerciseId.replaceAll("-", " ")} anatomy guide showing primary muscles in red and secondary muscles in orange`;
     image.loading = "eager";
     image.decoding = "async";
 
