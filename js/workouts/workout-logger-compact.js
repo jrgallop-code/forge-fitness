@@ -328,6 +328,90 @@ function renderWarmupCalculator(panel, workingLoad, exerciseType, source) {
   panel.querySelector('.warmup-done-btn')?.addEventListener('click', hide);
 }
 
+function setupExerciseCarousel(logger) {
+  const container = logger.querySelector('#session-exercises');
+  const cards = [...(container?.querySelectorAll('.session-exercise-card') || [])];
+  if (!container || !cards.length) return;
+
+  let controls = container.querySelector('.exercise-carousel-controls');
+  if (!controls) {
+    controls = document.createElement('div');
+    controls.className = 'exercise-carousel-controls';
+    controls.innerHTML = `
+      <button class="exercise-carousel-prev secondary-btn" type="button" aria-label="Show previous exercise">← Previous</button>
+      <div class="exercise-carousel-position" aria-live="polite"></div>
+      <button class="exercise-carousel-next primary-btn" type="button" aria-label="Show next exercise">Next →</button>
+    `;
+    cards[0].insertAdjacentElement('beforebegin', controls);
+  }
+
+  const showExercise = requestedIndex => {
+    const latestCards = [...container.querySelectorAll('.session-exercise-card')];
+    if (!latestCards.length) return;
+
+    const index = Math.max(0, Math.min(Number(requestedIndex) || 0, latestCards.length - 1));
+    logger.dataset.carouselExerciseIndex = String(index);
+
+    latestCards.forEach((card, cardIndex) => {
+      card.hidden = cardIndex !== index;
+      card.classList.toggle('active-exercise-card', cardIndex === index);
+    });
+
+    const currentControls = container.querySelector('.exercise-carousel-controls');
+    const position = currentControls?.querySelector('.exercise-carousel-position');
+    if (position) {
+      position.innerHTML = `<strong>Exercise ${index + 1} of ${latestCards.length}</strong><small>Swipe right for next</small>`;
+    }
+
+    const previousButton = currentControls?.querySelector('.exercise-carousel-prev');
+    const nextButton = currentControls?.querySelector('.exercise-carousel-next');
+    if (previousButton) previousButton.disabled = index === 0;
+    if (nextButton) nextButton.disabled = index === latestCards.length - 1;
+
+    if (!logger.dataset.editingSessionId) {
+      const active = getActive();
+      if (active) {
+        active.currentExerciseIndex = Number(latestCards[index].dataset.exerciseIndex) || index;
+        saveActive(active);
+      }
+    }
+  };
+
+  const savedIndex = Number(logger.dataset.carouselExerciseIndex);
+  const activeIndex = Number(getActive()?.currentExerciseIndex);
+  showExercise(Number.isFinite(savedIndex) ? savedIndex : (Number.isFinite(activeIndex) ? activeIndex : 0));
+
+  if (container.dataset.exerciseCarouselBound === 'true') return;
+  container.dataset.exerciseCarouselBound = 'true';
+
+  container.addEventListener('click', event => {
+    const current = Number(logger.dataset.carouselExerciseIndex) || 0;
+    if (event.target.closest('.exercise-carousel-next')) showExercise(current + 1);
+    if (event.target.closest('.exercise-carousel-prev')) showExercise(current - 1);
+  });
+
+  let swipeStart = null;
+  container.addEventListener('pointerdown', event => {
+    if (event.pointerType !== 'touch' || event.target.closest('button, input, select, textarea, label')) return;
+    swipeStart = { x: event.clientX, y: event.clientY };
+  });
+
+  container.addEventListener('pointerup', event => {
+    if (!swipeStart || event.pointerType !== 'touch') return;
+    const deltaX = event.clientX - swipeStart.x;
+    const deltaY = event.clientY - swipeStart.y;
+    swipeStart = null;
+    if (Math.abs(deltaX) < 55 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+
+    const current = Number(logger.dataset.carouselExerciseIndex) || 0;
+    showExercise(deltaX > 0 ? current + 1 : current - 1);
+  });
+
+  container.addEventListener('pointercancel', () => {
+    swipeStart = null;
+  });
+}
+
 function enhanceLogger(logger) {
   if (!logger) return;
 
@@ -336,7 +420,10 @@ function enhanceLogger(logger) {
     '.session-exercise-card[data-tracking-type="reps"]:not([data-compact-card-enhanced="true"])'
   );
 
-  if (!initialEnhancement && !unenhancedCards.length) return;
+  if (!initialEnhancement && !unenhancedCards.length) {
+    setupExerciseCarousel(logger);
+    return;
+  }
 
   if (initialEnhancement) {
     logger.dataset.compactEnhanced = 'true';
@@ -537,6 +624,7 @@ function enhanceLogger(logger) {
     });
   }
 
+  setupExerciseCarousel(logger);
   updateInlineTimers();
 }
 
