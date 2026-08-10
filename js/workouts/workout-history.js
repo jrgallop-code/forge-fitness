@@ -41,7 +41,7 @@ export function renderWorkoutHistory() {
         ${active
             ? `
                 <section class="section-card history-active-workout">
-                    <span class="eyebrow">IN PROGRESS</span>
+                    <span class="eyebrow">${isOneOff(active) ? "ONE-OFF WORKOUT • IN PROGRESS" : "IN PROGRESS"}</span>
                     <h3>${escapeHtml(active.planName || "Active Workout")}</h3>
                     <p>${escapeHtml(active.trainingDayName || "Training day")} • ${formatDate(active.date)}</p>
                     <p>${formatProgress(active)} recorded • ${formatDuration(getActiveDuration(active))}</p>
@@ -140,7 +140,7 @@ function renderHistoryCard(session) {
     return `
         <article class="history-workout-card">
             <div class="history-workout-card-top">
-                <span class="history-status completed">Completed</span>
+                <span class="history-status completed">${isOneOff(session) ? "One-Off Workout" : "Completed"}</span>
                 <time datetime="${escapeHtml(session.date || "")}">${formatDate(session.date)}</time>
             </div>
             <h3>${escapeHtml(session.planName || "Workout")}</h3>
@@ -159,6 +159,15 @@ function renderHistoryCard(session) {
 }
 
 
+function isOneOff(session) {
+    return Boolean(
+        session?.isOneOff ||
+        session?.planSnapshot?.isOneOff ||
+        String(session?.planId || "").startsWith("one-off-")
+    );
+}
+
+
 function formatProgress(session) {
 
     const sets =
@@ -172,15 +181,19 @@ function formatProgress(session) {
             set.weight !== null ||
             set.reps !== null
         ).length;
-    const notes =
+    const cardioEntries =
         (session.exercises || [])
             .filter(exercise =>
                 exercise.trackingType === "notes" &&
-                exercise.notes
+                (
+                    Number(exercise.durationMinutes) > 0 ||
+                    String(exercise.distance || "").trim() ||
+                    String(exercise.notes || "").trim()
+                )
             ).length;
 
     if (!sets.length) {
-        return `${notes} ${notes === 1 ? "entry" : "entries"}`;
+        return `${cardioEntries} ${cardioEntries === 1 ? "entry" : "entries"}`;
     }
     return `${completed}/${sets.length} sets`;
 
