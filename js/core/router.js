@@ -1,5 +1,5 @@
 import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=workout-form-coach-removed-1";
-import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=builder-form-guide-links-1";
+import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=visible-builder-guide-1";
 import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=workout-catalogue-form-coach-removed-1";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
