@@ -1,0 +1,12 @@
+.routine-review-card{margin-top:18px;border-color:rgba(245,158,11,.28);background:linear-gradient(145deg,rgba(245,158,11,.07),rgba(255,255,255,.015))}
+.routine-review-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.routine-review-head h2{margin:3px 0 0}
+.routine-review-badge{padding:5px 9px;border:1px solid rgba(245,158,11,.45);border-radius:999px;background:rgba(245,158,11,.1);color:#fbbf24;font-size:.66rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+.routine-review-lead{margin:12px 0 10px;color:#e4e4e7;font-size:.86rem;line-height:1.45}.routine-review-lead strong{color:#fff}
+.routine-review-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.routine-review-summary span{display:flex;flex-direction:column;gap:2px;padding:9px 5px;border-radius:9px;background:rgba(255,255,255,.04);font-size:.67rem;text-align:center}.routine-review-summary strong{font-size:1rem}
+.routine-review-card .is-progressing{color:#4ade80}.routine-review-card .is-stable{color:#e4e4e7}.routine-review-card .is-declining{color:#f87171}
+.routine-review-context{margin:10px 0 0;color:var(--muted,#a1a1aa);font-size:.72rem;line-height:1.45}
+.routine-review-actions{display:flex;align-items:center;gap:10px;margin-top:12px}.routine-review-actions .secondary-btn{flex:1}.routine-review-actions .text-btn{padding:8px;color:var(--muted,#a1a1aa)}
+.routine-review-details{margin-top:10px;border-top:1px solid rgba(255,255,255,.09)}.routine-review-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.routine-review-row>div{display:flex;min-width:0;flex-direction:column;gap:2px}.routine-review-row strong{font-size:.76rem}.routine-review-row small{color:var(--muted,#a1a1aa);font-size:.64rem}.routine-review-row>span{flex:0 0 auto;font-size:.66rem;font-weight:800;text-align:right}
+.routine-review-details>p{margin:9px 0 0;color:var(--muted,#a1a1aa);font-size:.64rem;line-height:1.4}
+@media(max-width:360px){.routine-review-row{align-items:flex-start;flex-direction:column}.routine-review-row>span{text-align:left}}
