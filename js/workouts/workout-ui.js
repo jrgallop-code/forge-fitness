@@ -255,6 +255,15 @@ export function renderWorkoutBuilder() {
 
                     </div>
 
+                    <button
+                        id="close-plan-builder-btn"
+                        class="secondary-btn"
+                        type="button"
+                        aria-label="Close plan builder"
+                    >
+                        Close Builder
+                    </button>
+
                 </div>
 
 
