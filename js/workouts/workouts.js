@@ -2,19 +2,19 @@ import {
     addCustomExercise,
     getExerciseById
 }
-from "./exercise-library.js";
+from "./exercise-library.js?v=exercise-library-catalogue-1";
 
 
 import {
     getPresetPlan
 }
-from "./workout-plans.js";
+from "./workout-plans.js?v=workout-plans-2";
 
 
 import {
     getExerciseOptions
 }
-from "./workout-ui.js";
+from "./workout-ui.js?v=workout-catalogue-4";
 
 
 import {
