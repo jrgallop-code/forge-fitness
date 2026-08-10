@@ -314,13 +314,24 @@ function showExerciseGuide(planScreen, exerciseId, options = {}) {
     screen.querySelector(".exercise-guide-back")?.addEventListener("click", () => {
         screen.remove();
         planScreen.hidden = false;
-        window.scrollTo({
-            top: options.restoreScroll ? previousScrollY : 0,
-            behavior: options.preserveViewport ? "auto" : "smooth"
+
+        requestAnimationFrame(() => {
+            window.scrollTo({
+                top: options.restoreScroll ? previousScrollY : 0,
+                behavior: options.preserveViewport ? "auto" : "smooth"
+            });
         });
     });
 
-    if (options.preserveViewport) {
+    if (options.focusGuideStart) {
+        requestAnimationFrame(() => {
+            screen.scrollIntoView({
+                behavior: "auto",
+                block: "start"
+            });
+        });
+    }
+    else if (options.preserveViewport) {
         requestAnimationFrame(() => {
             window.scrollTo({
                 top: previousScrollY,
@@ -340,7 +351,8 @@ document.addEventListener("levelup:open-exercise-guide", event => {
     showExerciseGuide(sourceScreen, exerciseId, {
         backLabel: event.detail?.backLabel || "← Plan Builder",
         restoreScroll: true,
-        preserveViewport: true
+        preserveViewport: true,
+        focusGuideStart: Boolean(event.detail?.focusGuideStart)
     });
 });
 
