@@ -4,6 +4,7 @@ import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workou
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
 import { renderMuscleRecoveryDashboard, initializeMuscleRecoveryDashboard } from "../dashboard/muscle-recovery.js?v=muscle-recovery-1";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
+import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=workout-schedule-1";
 import { renderProgress } from "../progress/progress-ui.js?v=progress-more-sleep-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-tracker-8";
 import { initializePhotoJournal } from "../progress/photo-journal.js";
@@ -31,12 +32,13 @@ export function navigate(page) {
                 content.innerHTML = renderDashboardWithPerformance() + renderMuscleRecoveryDashboard();
                 safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets);
                 safeInitialize("Workout performance", initializeWorkoutPerformance);
+                safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
                 safeInitialize("Muscle recovery", initializeMuscleRecoveryDashboard);
                 safeInitialize("Backup manager", initializeBackupManager);
                 safeInitialize("Google Drive sync", initializeGoogleDriveSync);
                 break;
             case "workout":
-                content.innerHTML = renderWorkoutBuilder(); decorateWorkoutTitle(content); safeInitialize("Workout builder", initializeWorkoutBuilder); break;
+                content.innerHTML = renderWorkoutBuilder(); decorateWorkoutTitle(content); safeInitialize("Workout builder", initializeWorkoutBuilder); safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content)); break;
             case "progress":
                 content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Photo journal", initializePhotoJournal); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); break;
             case "sleep":
@@ -53,6 +55,7 @@ export function navigate(page) {
             case "history": content.innerHTML = renderWorkoutHistory(); safeInitialize("Workout history", initializeWorkoutHistory); break;
             default:
                 content.innerHTML = renderDashboardWithPerformance() + renderMuscleRecoveryDashboard(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Workout performance", initializeWorkoutPerformance);
+                safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
                 safeInitialize("Muscle recovery", initializeMuscleRecoveryDashboard);
         }
     } catch (error) {
@@ -63,14 +66,14 @@ export function navigate(page) {
 
 function renderDashboardWithPerformance() {
     const dashboard = renderDashboard();
-    const insertionPoint = '<section class="dashboard-detail-grid">';
-    if (!dashboard.includes(insertionPoint)) {
-        return dashboard + renderWorkoutPerformanceDashboard();
-    }
-    return dashboard.replace(
-        insertionPoint,
-        renderWorkoutPerformanceDashboard() + insertionPoint
-    );
+    const statsPoint = '<section class="dashboard">';
+    const detailPoint = '<section class="dashboard-detail-grid">';
+    const withSchedule = dashboard.includes(statsPoint)
+        ? dashboard.replace(statsPoint, renderDashboardSchedule() + statsPoint)
+        : renderDashboardSchedule() + dashboard;
+    return withSchedule.includes(detailPoint)
+        ? withSchedule.replace(detailPoint, renderWorkoutPerformanceDashboard() + detailPoint)
+        : withSchedule + renderWorkoutPerformanceDashboard();
 }
 
 function decorateWorkoutTitle(content) {
