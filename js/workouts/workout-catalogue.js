@@ -85,19 +85,20 @@ function initializeFormCoach(page) {
     if (!root || root.dataset.formCoachBound === "true") return;
     root.dataset.formCoachBound = "true";
 
-    const input = root.querySelector("[data-form-coach-video]");
+    const inputs = [...root.querySelectorAll("[data-form-coach-video-source]")];
     const player = root.querySelector("[data-form-coach-player]");
     const preview = root.querySelector("[data-form-coach-preview]");
     const fileLabel = root.querySelector("[data-form-coach-file]");
     const feedback = root.querySelector("[data-form-coach-feedback]");
     let videoUrl = "";
 
-    input?.addEventListener("change", () => {
+    inputs.forEach(input => input.addEventListener("change", () => {
         const file = input.files?.[0];
+        inputs.filter(other => other !== input).forEach(other => { other.value = ""; });
         if (videoUrl) URL.revokeObjectURL(videoUrl);
         videoUrl = "";
 
-        if (!file || !file.type.startsWith("video/")) {
+        if (!file || (!file.type.startsWith("video/") && !/\.(mov|mp4|m4v)$/i.test(file.name))) {
             if (preview) preview.hidden = true;
             if (feedback) feedback.hidden = true;
             return;
@@ -108,7 +109,7 @@ function initializeFormCoach(page) {
         if (fileLabel) fileLabel.textContent = `${file.name} · ${formatFileSize(file.size)}`;
         if (preview) preview.hidden = false;
         if (feedback) feedback.hidden = true;
-    });
+    }));
 
     root.querySelector("[data-form-coach-review]")?.addEventListener("click", () => {
         const exerciseId = root.querySelector("[data-form-coach-exercise]")?.value || "";
