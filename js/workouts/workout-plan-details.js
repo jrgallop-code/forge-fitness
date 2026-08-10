@@ -4,6 +4,22 @@ import { openWorkoutLogger } from "./workout-session.js?v=workout-session-4";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 let bypassNextPlanClick = false;
+const MUSCLE_IMAGE_PATHS = {
+    "Chest": "assets/exercise-guides/chest.webp?v=1",
+    "Triceps": "assets/exercise-guides/triceps.webp?v=1",
+    "Front Delts": "assets/exercise-guides/front-delts.webp?v=1",
+    "Quads": "assets/exercise-guides/quads.webp?v=1",
+    "Glutes": "assets/exercise-guides/glutes.webp?v=1",
+    "Adductors": "assets/exercise-guides/adductors.webp?v=1",
+    "Spinal Erectors": "assets/exercise-guides/spinal-erectors.webp?v=1",
+    "Lats": "assets/exercise-guides/lats.webp?v=1",
+    "Upper Back": "assets/exercise-guides/upper-back.webp?v=1",
+    "Rear Delts": "assets/exercise-guides/rear-delts.webp?v=1",
+    "Biceps": "assets/exercise-guides/biceps.webp?v=1",
+    "Forearms": "assets/exercise-guides/forearms.webp?v=1",
+    "Hamstrings": "assets/exercise-guides/hamstrings.webp?v=1"
+};
+
 const EXERCISE_GUIDES = {
     "barbell-bench-press": {
         primary: ["Chest"],
@@ -152,57 +168,13 @@ function exerciseThumbnail(id) {
 }
 
 
-function muscleGraphic(muscle, role) {
-    const key = String(muscle).toLowerCase().replace(/\s+/g, "-");
-    return `
-        <svg class="exercise-muscle-figure" viewBox="0 0 120 150" role="img" aria-label="${escapeHtml(muscle)} highlighted">
-            <defs>
-                <linearGradient id="body-shade-${key}-${role}" x1="0" x2="1">
-                    <stop offset="0" stop-color="#d4d4d8"/>
-                    <stop offset=".5" stop-color="#f4f4f5"/>
-                    <stop offset="1" stop-color="#a1a1aa"/>
-                </linearGradient>
-                <linearGradient id="muscle-shade-${key}-${role}" x1="0" x2="1">
-                    <stop offset="0" stop-color="${role === "primary" ? "#991b1b" : "#7f1d1d"}"/>
-                    <stop offset=".55" stop-color="${role === "primary" ? "#ef4444" : "#dc2626"}"/>
-                    <stop offset="1" stop-color="#7f1d1d"/>
-                </linearGradient>
-            </defs>
-            <circle cx="60" cy="17" r="12" fill="url(#body-shade-${key}-${role})"/>
-            <path d="M42 31 Q60 25 78 31 L88 72 76 101 72 140H60l-3-40-3 40H42l2-39-12-29Z" fill="url(#body-shade-${key}-${role})" stroke="#71717a" stroke-width="1.3"/>
-            <path d="M43 35 27 78M77 35l16 43" fill="none" stroke="url(#body-shade-${key}-${role})" stroke-width="11" stroke-linecap="round"/>
-            ${muscleHighlight(key, role)}
-        </svg>
-    `;
-}
-
-function muscleHighlight(key, role) {
-    const fill = `url(#muscle-shade-${key}-${role})`;
-    const shapes = {
-        "chest": `<path d="M44 38q8-7 16 0v18q-10 4-17-3Zm32 0q-8-7-16 0v18q10 4 17-3Z" fill="${fill}"/>`,
-        "front-delts": `<circle cx="41" cy="39" r="6" fill="${fill}"/><circle cx="79" cy="39" r="6" fill="${fill}"/>`,
-        "rear-delts": `<circle cx="41" cy="39" r="6" fill="${fill}"/><circle cx="79" cy="39" r="6" fill="${fill}"/>`,
-        "triceps": `<path d="m36 47-6 20 8 2 6-19Z" fill="${fill}"/><path d="m84 47 6 20-8 2-6-19Z" fill="${fill}"/>`,
-        "biceps": `<ellipse cx="36" cy="57" rx="5" ry="12" fill="${fill}"/><ellipse cx="84" cy="57" rx="5" ry="12" fill="${fill}"/>`,
-        "forearms": `<path d="m31 68-7 13 7 3 8-14Z" fill="${fill}"/><path d="m89 68 7 13-7 3-8-14Z" fill="${fill}"/>`,
-        "lats": `<path d="M43 39q17 8 34 0l-5 35-12 12-12-12Z" fill="${fill}"/>`,
-        "upper-back": `<path d="M43 36q17-8 34 0l-7 23H50Z" fill="${fill}"/>`,
-        "spinal-erectors": `<path d="M55 43h4l-2 48h-6Zm6 0h4l4 48h-6Z" fill="${fill}"/>`,
-        "glutes": `<ellipse cx="51" cy="86" rx="10" ry="8" fill="${fill}"/><ellipse cx="69" cy="86" rx="10" ry="8" fill="${fill}"/>`,
-        "hamstrings": `<path d="m47 94-3 30 10 1 3-31Zm26 0 3 30-10 1-3-31Z" fill="${fill}"/>`,
-        "quads": `<path d="m46 94-2 29 11 2 2-31Zm28 0 2 29-11 2-2-31Z" fill="${fill}"/>`,
-        "adductors": `<path d="m55 94-1 26h6l-1-26Zm10 0 1 26h-6l1-26Z" fill="${fill}"/>`
-    };
-    return shapes[key] || `<circle cx="60" cy="65" r="12" fill="${fill}"/>`;
-}
-
 function renderMuscleCards(guide) {
     return [
         ...guide.primary.map(muscle => ({ muscle, role: "primary" })),
         ...guide.secondary.map(muscle => ({ muscle, role: "secondary" }))
     ].map(item => `
         <article class="exercise-muscle-card">
-            ${muscleGraphic(item.muscle, item.role)}
+            <img class="exercise-muscle-figure" src="${escapeHtml(MUSCLE_IMAGE_PATHS[item.muscle])}" alt="${escapeHtml(item.muscle)} highlighted" loading="lazy" width="420" height="420">
             <strong>${escapeHtml(item.muscle)}</strong>
             <span class="${item.role}">${item.role}</span>
         </article>
