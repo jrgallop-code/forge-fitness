@@ -75,4 +75,6 @@ export function initializeWorkoutCatalogue(root = document) {
         const empty = page.querySelector("[data-catalogue-empty]");
         if (empty) empty.hidden = visible !== 0;
     }
+
+    applyFilters();
 }
