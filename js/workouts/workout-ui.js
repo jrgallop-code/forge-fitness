@@ -38,144 +38,188 @@ export function renderWorkoutBuilder() {
             </div>
 
 
-            <!-- CUSTOM PLANS -->
+            <div data-workout-home>
 
-            <section class="workout-home-section">
+                <!-- MY WORKOUTS -->
 
-                <div class="workout-section-heading">
+                <section class="workout-home-section">
 
-                    <div>
+                    <div class="workout-section-heading compact-workout-heading">
 
-                        <h3>
-                            Custom Workout Plans
-                        </h3>
+                        <div>
 
-                        <p>
-                            Build and save your own weekly training programs.
-                        </p>
+                            <h3>My Workouts</h3>
+
+                            <p>Your saved plans, ready when you are.</p>
+
+                        </div>
+
+                        <button id="new-plan-btn" class="secondary-btn" type="button">
+                            + Create
+                        </button>
 
                     </div>
 
+                    <div id="saved-plan-list" class="workout-plan-grid is-collapsed">
 
-                    <button
-                        id="new-plan-btn"
-                        class="primary-btn"
-                        type="button"
-                    >
-                        + Create New Plan
+                        <div class="workout-empty-state">
+
+                            <div class="empty-state-icon">＋</div>
+
+                            <h4>Your workouts will appear here</h4>
+
+                            <p>Create a plan or start with a Level Up template.</p>
+
+                        </div>
+
+                    </div>
+
+                    <button class="workout-text-action" type="button" data-workout-view-all hidden>
+                        View All Workouts
+                    </button>
+
+                </section>
+
+                <!-- CATALOGUE ENTRY -->
+
+                <section class="workout-home-section workout-catalogue-entry">
+
+                    <div>
+
+                        <span class="eyebrow">WORKOUT CATALOGUE</span>
+
+                        <h3>Find Your Next Plan</h3>
+
+                        <p>Browse templates by schedule, equipment and workout length.</p>
+
+                    </div>
+
+                    <button class="primary-btn" type="button" data-catalogue-open>
+                        Browse Templates
+                    </button>
+
+                </section>
+
+            </div>
+
+            <!-- CATALOGUE VIEW -->
+
+            <section class="workout-catalogue-view" data-catalogue-view hidden>
+
+                <button class="workout-back-btn" type="button" data-catalogue-back>
+                    ← Workout
+                </button>
+
+                <div class="workout-catalogue-title">
+
+                    <span class="eyebrow">LEVEL UP</span>
+
+                    <h3>Workout Catalogue</h3>
+
+                    <p>Choose a structure, preview it, then customize it.</p>
+
+                </div>
+
+                <div class="catalogue-search-row">
+
+                    <input data-catalogue-search type="search" placeholder="Search workouts" aria-label="Search workout templates">
+
+                    <button class="secondary-btn" type="button" data-catalogue-more>
+                        More Filters
                     </button>
 
                 </div>
 
+                <div class="catalogue-filter-row">
 
-                <div
-                    id="saved-plan-list"
-                    class="workout-plan-grid"
-                >
+                    <select data-catalogue-days aria-label="Filter by days per week">
+                        <option value="">Any days</option>
+                        <option value="2">2 days</option>
+                        <option value="3">3 days</option>
+                        <option value="4">4 days</option>
+                        <option value="5">5 days</option>
+                        <option value="6">6 days</option>
+                    </select>
 
-                    <div class="workout-empty-state">
+                    <select data-catalogue-equipment aria-label="Filter by equipment">
+                        <option value="">Any equipment</option>
+                        <option value="barbell">Barbell</option>
+                        <option value="dumbbell">Dumbbells</option>
+                        <option value="machine">Machines</option>
+                        <option value="cable">Cable</option>
+                        <option value="bodyweight">Bodyweight</option>
+                    </select>
 
-                        <div class="empty-state-icon">
-                            ＋
-                        </div>
-
-                        <h4>
-                            Your custom plans will appear here
-                        </h4>
-
-                        <p>
-                            Create a plan from scratch or use a Level Up
-                            template as your starting point.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- LEVEL UP TEMPLATES -->
-
-            <section class="workout-home-section">
-
-                <div class="workout-section-heading">
-
-                    <div>
-
-                        <h3>
-                            Level Up Templates
-                        </h3>
-
-                        <p>
-                            Ready-made training structures that can
-                            be customized to suit your program.
-                        </p>
-
-                    </div>
+                    <select data-catalogue-duration aria-label="Filter by duration">
+                        <option value="">Any duration</option>
+                        <option value="45">Up to 45 min</option>
+                        <option value="60">46–60 min</option>
+                        <option value="61">60+ min</option>
+                    </select>
 
                 </div>
 
+                <div class="catalogue-more-filters" data-catalogue-more-panel hidden>
 
-                <div class="preset-grid">
+                    <select data-catalogue-level aria-label="Filter by experience level">
+                        <option value="">Any experience</option>
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                    </select>
 
-                    ${presetPlans.map(
-                        plan => `
+                </div>
 
+                <p class="catalogue-result-count" data-catalogue-count></p>
+
+                <div class="preset-grid catalogue-grid">
+
+                    ${presetPlans.map(plan => {
+                        const equipment = getPlanEquipment(plan);
+                        return `
                             <button
-                                class="preset-plan-card"
+                                class="preset-plan-card catalogue-plan-card"
                                 data-plan-id="${plan.id}"
+                                data-name="${escapeHtml(plan.name.toLowerCase())}"
+                                data-days="${plan.daysPerWeek}"
+                                data-duration="${escapeHtml(plan.estimatedMinutes)}"
+                                data-level="${escapeHtml(plan.level.toLowerCase())}"
+                                data-equipment="${escapeHtml(equipment.toLowerCase())}"
                                 type="button"
                             >
 
                                 <div class="template-card-top">
 
-                                    <span class="plan-type-label">
-                                        LEVEL UP TEMPLATE
-                                    </span>
+                                    <span class="plan-type-label">LEVEL UP TEMPLATE</span>
 
-                                    <span class="template-frequency">
-                                        ${plan.daysPerWeek}
-                                        days/week
-                                    </span>
+                                    <span class="template-frequency">${plan.daysPerWeek} days/week</span>
 
                                 </div>
 
+                                <h4>${plan.name}</h4>
 
-                                <h4>
-                                    ${plan.name}
-                                </h4>
-
-
-                                <p>
-                                    ${plan.description}
-                                </p>
-
+                                <p>${plan.description}</p>
 
                                 <div class="template-details">
 
-                                    <span>
-                                        ⏱
-                                        ${plan.estimatedMinutes}
-                                        min
-                                    </span>
+                                    <span>⏱ ${plan.estimatedMinutes} min</span>
 
-                                    <span>
-                                        ${plan.level}
-                                    </span>
+                                    <span>${plan.level}</span>
 
                                 </div>
 
+                                <div class="catalogue-equipment">${escapeHtml(equipment)}</div>
 
-                                <div class="template-action">
-                                    View & Customize →
-                                </div>
+                                <div class="template-action">View & Customize →</div>
 
                             </button>
+                        `;
+                    }).join("")}
 
-                        `
-                    ).join("")}
+                </div>
 
+                <div class="catalogue-empty" data-catalogue-empty hidden>
+                    No templates match those filters.
                 </div>
 
             </section>
@@ -451,6 +495,20 @@ export function getExerciseOptions() {
         </option>
     `;
 
+}
+
+
+
+function getPlanEquipment(plan) {
+    const exerciseMap = new Map(getAllExercises().map(exercise => [exercise.id, exercise]));
+    const equipment = new Set();
+    (plan.days || []).forEach(day => (day.exercises || []).forEach(item => {
+        const value = exerciseMap.get(item.id)?.equipment;
+        if (value) equipment.add(value);
+    }));
+    if (!equipment.size) return "Standard gym";
+    if (equipment.size > 3) return "Mixed equipment";
+    return [...equipment].join(" · ");
 }
 
 

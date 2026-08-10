@@ -39,17 +39,24 @@ function renderWorkoutSchedulePanel() {
         return `<section class="workout-home-section workout-schedule-shell"><div class="schedule-empty"><span class="eyebrow">WORKOUT SCHEDULE</span><h3>Create a workout plan first</h3><p>Your saved plan days will become available for weekly scheduling.</p></div></section>`;
     }
     const context = getTodayContext();
-    return `<section class="workout-home-section workout-schedule-shell">
-        <div class="schedule-heading"><div><span class="eyebrow">WORKOUT SCHEDULE</span><h3>${schedule ? "This Week" : "Plan Your Week"}</h3></div><button class="secondary-btn schedule-edit-btn" type="button" data-schedule-edit>${schedule ? "Edit" : "Set Up"}</button></div>
-        ${schedule ? `${renderWeekStrip(schedule)}<div class="schedule-today-card"><div><span>Today</span><strong>${escapeHtml(context.title)}</strong><small>${escapeHtml(context.subtitle)}</small></div>${renderScheduleActions(context, "workout")}</div>` : '<p class="schedule-intro">Assign your saved workout days to the week. Rest days can stay empty.</p>'}
-        <div class="schedule-editor" data-schedule-editor ${schedule ? "hidden" : ""}>
-            <label>Workout plan<select data-schedule-plan>${plans.map(plan => `<option value="${escapeHtml(plan.id)}" ${plan.id === schedule?.planId ? "selected" : ""}>${escapeHtml(plan.name || "Workout Plan")}</option>`).join("")}</select></label>
-            <div class="schedule-day-editor" data-schedule-days></div>
-            <div class="schedule-editor-actions"><button class="primary-btn" type="button" data-schedule-save>Save Schedule</button><button class="secondary-btn" type="button" data-schedule-cancel ${schedule ? "" : "hidden"}>Cancel</button></div>
-        </div>
+    const editor = `<div class="schedule-editor" data-schedule-editor hidden>
+        <label>Workout plan<select data-schedule-plan>${plans.map(plan => `<option value="${escapeHtml(plan.id)}" ${plan.id === schedule?.planId ? "selected" : ""}>${escapeHtml(plan.name || "Workout Plan")}</option>`).join("")}</select></label>
+        <div class="schedule-day-editor" data-schedule-days></div>
+        <div class="schedule-editor-actions"><button class="primary-btn" type="button" data-schedule-save>Save Schedule</button><button class="secondary-btn" type="button" data-schedule-cancel>Cancel</button></div>
+    </div>`;
+    if (!schedule) {
+        return `<section class="workout-home-section workout-schedule-shell schedule-setup-shell">
+            <button class="primary-btn schedule-set-btn" type="button" data-schedule-edit>Set Schedule</button>
+            ${editor}
+        </section>`;
+    }
+    return `<section class="workout-home-section workout-schedule-shell schedule-banner">
+        <div class="schedule-banner-top"><div><span class="eyebrow">WORKOUT SCHEDULE</span><strong>${escapeHtml(context.title)}</strong></div><button class="schedule-edit-link" type="button" data-schedule-edit>Edit</button></div>
+        ${renderWeekStrip(schedule)}
+        <div class="schedule-banner-actions"><span>${escapeHtml(context.subtitle)}</span>${renderScheduleActions(context, "workout")}</div>
+        ${editor}
     </section>`;
 }
-
 function renderWeekStrip(schedule) {
     const week = getWeekDates();
     const plan = getPlans().find(item => item.id === schedule.planId);
