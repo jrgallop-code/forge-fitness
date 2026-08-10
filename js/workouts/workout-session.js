@@ -390,11 +390,10 @@ function renderWorkoutLogger({
                             plan,
                             logger
                         );
-                    renderSessionExercises({
+                    renderOptionalWarmup({
                         plan,
                         logger,
-                        session: created,
-                        editingSessionId: null
+                        session: created
                     });
                 }
             );
@@ -516,6 +515,172 @@ function createExerciseState(day) {
                     )
             };
         });
+
+}
+
+
+function renderOptionalWarmup({
+    plan,
+    logger,
+    session
+}) {
+
+    const dayIndex =
+        Number(session.trainingDayIndex) || 0;
+    const day =
+        plan.days[dayIndex] ||
+        { exercises: [] };
+    const firstWeightedIndex =
+        (session.exercises || [])
+            .findIndex(exercise =>
+                exercise.trackingType === "reps"
+            );
+    const firstPlannedExercise =
+        firstWeightedIndex >= 0
+            ? day.exercises?.[firstWeightedIndex]
+            : null;
+    const firstExercise =
+        firstPlannedExercise
+            ? getExerciseById(firstPlannedExercise.id)
+            : null;
+    const firstExerciseName =
+        firstExercise?.name ||
+        "your first exercise";
+    const container =
+        logger.querySelector("#session-exercises");
+
+    if (!container) {
+        renderSessionExercises({
+            plan,
+            logger,
+            session,
+            editingSessionId: null
+        });
+        return;
+    }
+
+    const startWorkingSets = () => {
+        renderSessionExercises({
+            plan,
+            logger,
+            session,
+            editingSessionId: null
+        });
+    };
+
+    container.innerHTML = `
+        <section class="optional-warmup-card" aria-labelledby="optional-warmup-title">
+            <div class="optional-warmup-heading">
+                <span class="warmup-label">Optional warm-up</span>
+                <span class="warmup-time">About 5 min</span>
+            </div>
+            <h3 id="optional-warmup-title">Prepare before your working sets</h3>
+            <p class="warmup-note">This checklist is optional. Nothing entered here is saved or included in volume, performance scores, records or progression.</p>
+            <div class="warmup-choice-actions">
+                <button id="start-warmup-btn" class="primary-btn" type="button">Start Warm-up</button>
+                <button id="skip-warmup-btn" class="secondary-btn" type="button">Skip Warm-up</button>
+            </div>
+        </section>
+    `;
+
+    container
+        .querySelector("#skip-warmup-btn")
+        ?.addEventListener(
+            "click",
+            startWorkingSets
+        );
+
+    container
+        .querySelector("#start-warmup-btn")
+        ?.addEventListener(
+            "click",
+            () => {
+                const card =
+                    container.querySelector(
+                        ".optional-warmup-card"
+                    );
+
+                if (!card) {
+                    startWorkingSets();
+                    return;
+                }
+
+                card.innerHTML = `
+                    <div class="optional-warmup-heading">
+                        <span class="warmup-label">Optional warm-up</span>
+                        <span class="warmup-time">Not recorded</span>
+                    </div>
+                    <h3>Warm up for ${escapeHtml(firstExerciseName)}</h3>
+                    <div class="warmup-checklist">
+                        <button class="warmup-step" type="button" aria-pressed="false">
+                            <span class="warmup-check" aria-hidden="true">1</span>
+                            <span><strong>General movement</strong><small>Move comfortably for 2–3 minutes.</small></span>
+                        </button>
+                        <button class="warmup-step" type="button" aria-pressed="false">
+                            <span class="warmup-check" aria-hidden="true">2</span>
+                            <span><strong>Easy preparation set</strong><small>Use an easy version or light load with controlled reps.</small></span>
+                        </button>
+                        <button class="warmup-step" type="button" aria-pressed="false">
+                            <span class="warmup-check" aria-hidden="true">3</span>
+                            <span><strong>Final preparation set</strong><small>Gradually approach the first working set without tiring yourself out.</small></span>
+                        </button>
+                    </div>
+                    <div class="warmup-choice-actions">
+                        <button id="start-working-sets-btn" class="primary-btn" type="button">Start Working Sets</button>
+                        <button id="skip-remaining-warmup-btn" class="secondary-btn" type="button">Skip Remaining Warm-up</button>
+                    </div>
+                `;
+
+                card
+                    .querySelectorAll(".warmup-step")
+                    .forEach(step => {
+                        step.addEventListener(
+                            "click",
+                            () => {
+                                const complete =
+                                    step.getAttribute(
+                                        "aria-pressed"
+                                    ) === "true";
+                                step.setAttribute(
+                                    "aria-pressed",
+                                    String(!complete)
+                                );
+                                step.classList.toggle(
+                                    "completed",
+                                    !complete
+                                );
+                                const check =
+                                    step.querySelector(
+                                        ".warmup-check"
+                                    );
+                                if (check) {
+                                    check.textContent =
+                                        complete
+                                            ? String(
+                                                [...card.querySelectorAll(".warmup-step")]
+                                                    .indexOf(step) + 1
+                                            )
+                                            : "✓";
+                                }
+                            }
+                        );
+                    });
+
+                card
+                    .querySelector("#start-working-sets-btn")
+                    ?.addEventListener(
+                        "click",
+                        startWorkingSets
+                    );
+
+                card
+                    .querySelector("#skip-remaining-warmup-btn")
+                    ?.addEventListener(
+                        "click",
+                        startWorkingSets
+                    );
+            }
+        );
 
 }
 
