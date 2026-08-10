@@ -1,6 +1,6 @@
-import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=workout-catalogue-3";
-import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=workout-flow-4";
-import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=workout-catalogue-2";
+import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=workout-catalogue-4";
+import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=workout-catalogue-plans-1";
+import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=workout-catalogue-3";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
 import { renderMuscleRecoveryDashboard, initializeMuscleRecoveryDashboard } from "../dashboard/muscle-recovery.js?v=muscle-recovery-1";
