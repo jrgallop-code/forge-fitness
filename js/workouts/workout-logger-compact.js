@@ -1,5 +1,5 @@
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=workout-session-6';
-import { getExerciseById } from './exercise-library.js';
+import { getExerciseById } from './exercise-library.js?v=exercise-library-3';
 
 const TIMER_SETTINGS_KEY = 'level_up_exercise_rest_settings';
 let inlineTimerInterval = null;
@@ -454,7 +454,10 @@ function enhanceLogger(logger) {
     warmupButton.textContent = 'Warm-up';
     warmupButton.setAttribute('aria-label', 'Show optional warm-up suggestions');
     warmupButton.setAttribute('aria-expanded', 'false');
-    headerActions.appendChild(warmupButton);
+
+    const equipment = String(getExerciseById(exerciseId)?.equipment || '').toLowerCase();
+    const isBodyweightOnly = equipment === 'bodyweight';
+    if (!isBodyweightOnly) headerActions.appendChild(warmupButton);
 
     const menuButton = document.createElement('button');
     menuButton.type = 'button';

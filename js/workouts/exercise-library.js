@@ -90,6 +90,16 @@ export const exercises = [
         "trackingType": "reps"
     },
     {
+        "id": "weighted-pull-up",
+        "name": "Weighted Pull-Up",
+        "muscleGroup": "Back",
+        "type": "compound",
+        "equipment": "Weighted Bodyweight",
+        "recommendedReps": "5-10",
+        "defaultSets": 3,
+        "trackingType": "reps"
+    },
+    {
         "id": "chin-up",
         "name": "Chin-Up",
         "muscleGroup": "Back",
