@@ -9,7 +9,7 @@
   "theme_color": "#09090b",
   "icons": [
     {
-      "src": "assets/level-up-logo.svg",
+      "src": "assets/level-up-home-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
