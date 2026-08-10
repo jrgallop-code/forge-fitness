@@ -1,5 +1,5 @@
-const GUIDE_IMAGE_DATA = {
-    "barbell-bench-press": "assets/exercise-guides/performance/barbell-bench-press.b64?v=1"
+const GUIDE_IMAGE_PATHS = {
+    "barbell-bench-press": "assets/exercise-guides/performance/barbell-bench-press-guide.webp?v=1"
 };
 
 let stylesAdded = false;
@@ -29,8 +29,8 @@ function ensureStyles() {
     document.head.appendChild(style);
 }
 
-async function addGuideImage(exerciseId) {
-    const source = GUIDE_IMAGE_DATA[exerciseId];
+function addGuideImage(exerciseId) {
+    const source = GUIDE_IMAGE_PATHS[exerciseId];
     if (!source) return;
 
     const screen = document.querySelector(".exercise-guide-screen");
@@ -39,30 +39,21 @@ async function addGuideImage(exerciseId) {
 
     ensureStyles();
 
-    try {
-        const response = await fetch(source, { cache: "force-cache" });
-        if (!response.ok) return;
-        const base64 = (await response.text()).trim();
-        if (!base64) return;
+    const figure = document.createElement("figure");
+    figure.className = "exercise-guide-hero-figure";
 
-        const figure = document.createElement("figure");
-        figure.className = "exercise-guide-hero-figure";
+    const image = document.createElement("img");
+    image.src = source;
+    image.alt = "Barbell Bench Press anatomy guide showing primary muscles in red and secondary muscles in orange";
+    image.loading = "eager";
+    image.decoding = "async";
 
-        const image = document.createElement("img");
-        image.src = `data:image/webp;base64,${base64}`;
-        image.alt = "Barbell Bench Press anatomy guide showing primary muscles in red and secondary muscles in orange";
-        image.decoding = "async";
-
-        figure.appendChild(image);
-        header.insertAdjacentElement("afterend", figure);
-    }
-    catch (error) {
-        console.warn("Exercise guide image could not load:", error);
-    }
+    figure.appendChild(image);
+    header.insertAdjacentElement("afterend", figure);
 }
 
 document.addEventListener("levelup:open-exercise-guide", event => {
     const exerciseId = event.detail?.exerciseId;
-    if (!GUIDE_IMAGE_DATA[exerciseId]) return;
+    if (!GUIDE_IMAGE_PATHS[exerciseId]) return;
     queueMicrotask(() => addGuideImage(exerciseId));
 });
