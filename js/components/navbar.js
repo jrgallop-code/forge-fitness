@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=visible-builder-guide-1";
+import { navigate } from "../core/router.js?v=plan-builder-exit-flow-1";
 
 
 export function renderNavbar() {
