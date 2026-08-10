@@ -112,17 +112,15 @@ export function renderWorkoutBuilder() {
 
                         </div>
 
-                <div class="catalogue-search-row">
-
-                    <input data-catalogue-search type="search" placeholder="Search workouts" aria-label="Search workout templates">
-
-                    <button class="secondary-btn" type="button" data-catalogue-more>
-                        More Filters
-                    </button>
-
-                </div>
-
                 <div class="catalogue-filter-row">
+
+                    <select data-catalogue-type aria-label="Filter by workout type">
+                        <option value="">Any type</option>
+                        <option value="hypertrophy">Hypertrophy</option>
+                        <option value="hybrid">Hybrid (Weights + Cardio)</option>
+                        <option value="cardio">Cardio</option>
+                    </select>
+
 
                     <select data-catalogue-days aria-label="Filter by days per week">
                         <option value="">Any days</option>
@@ -151,6 +149,8 @@ export function renderWorkoutBuilder() {
 
                 </div>
 
+                <button class="secondary-btn catalogue-more-btn" type="button" data-catalogue-more>More Filters</button>
+
                 <div class="catalogue-more-filters" data-catalogue-more-panel hidden>
 
                     <select data-catalogue-level aria-label="Filter by experience level">
@@ -176,6 +176,7 @@ export function renderWorkoutBuilder() {
                                 data-days="${plan.daysPerWeek}"
                                 data-duration="${escapeHtml(plan.estimatedMinutes)}"
                                 data-level="${escapeHtml(plan.level.toLowerCase())}"
+                                data-type="${escapeHtml((plan.trainingType || "Hypertrophy").toLowerCase())}"
                                 data-equipment="${escapeHtml(equipment.toLowerCase())}"
                                 type="button"
                             >
@@ -195,6 +196,8 @@ export function renderWorkoutBuilder() {
                                 <div class="template-details">
 
                                     <span>⏱ ${plan.estimatedMinutes} min</span>
+
+                                    <span>${plan.trainingType || "Hypertrophy"}</span>
 
                                     <span>${plan.level}</span>
 
