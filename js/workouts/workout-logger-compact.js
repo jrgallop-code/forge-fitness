@@ -326,15 +326,25 @@ function renderWarmupCalculator(panel, workingLoad, isFirstWeightedExercise, sou
 }
 
 function enhanceLogger(logger) {
-  if (!logger || logger.dataset.compactEnhanced === 'true') return;
-  logger.dataset.compactEnhanced = 'true';
-  logger.classList.add('compact-workout-logger');
+  if (!logger) return;
 
-  logger.addEventListener('pointerdown', unlockAlarmAudio, { once: true });
-  logger.querySelector('.rest-timer-panel')?.remove();
-  ensureHiddenRestSelect(logger);
+  const initialEnhancement = logger.dataset.compactEnhanced !== 'true';
+  const unenhancedCards = logger.querySelectorAll(
+    '.session-exercise-card[data-tracking-type="reps"]:not([data-compact-card-enhanced="true"])'
+  );
 
-  logger.querySelectorAll('.session-exercise-card[data-tracking-type="reps"]').forEach(card => {
+  if (!initialEnhancement && !unenhancedCards.length) return;
+
+  if (initialEnhancement) {
+    logger.dataset.compactEnhanced = 'true';
+    logger.classList.add('compact-workout-logger');
+    logger.addEventListener('pointerdown', unlockAlarmAudio, { once: true });
+    logger.querySelector('.rest-timer-panel')?.remove();
+    ensureHiddenRestSelect(logger);
+  }
+
+  unenhancedCards.forEach(card => {
+    card.dataset.compactCardEnhanced = 'true';
     const exerciseIndex = Number(card.dataset.exerciseIndex);
     const exerciseId = card.dataset.exerciseId || `exercise-${exerciseIndex}`;
     const heading = card.querySelector('h4');
@@ -514,11 +524,13 @@ function enhanceLogger(logger) {
     updateProgressionPrompt(card, exerciseIndex);
   });
 
-  logger.addEventListener('click', event => {
-    if (!event.target.closest('.exercise-more-btn, .exercise-options-popover')) {
-      logger.querySelectorAll('.exercise-options-popover').forEach(menu => menu.hidden = true);
-    }
-  });
+  if (initialEnhancement) {
+    logger.addEventListener('click', event => {
+      if (!event.target.closest('.exercise-more-btn, .exercise-options-popover')) {
+        logger.querySelectorAll('.exercise-options-popover').forEach(menu => menu.hidden = true);
+      }
+    });
+  }
 
   updateInlineTimers();
 }
@@ -568,7 +580,11 @@ function scanForLogger() {
 observer = new MutationObserver(mutations => {
   const needsScan = mutations.some(mutation =>
     [...mutation.addedNodes].some(node =>
-      node.nodeType === 1 && (node.id === 'workout-session-logger' || node.querySelector?.('#workout-session-logger'))
+      node.nodeType === 1 && (
+        node.id === 'workout-session-logger' ||
+        node.matches?.('.session-exercise-card') ||
+        node.querySelector?.('#workout-session-logger, .session-exercise-card')
+      )
     )
   );
   if (needsScan) scanForLogger();
