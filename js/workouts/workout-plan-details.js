@@ -303,16 +303,34 @@ function showExerciseGuide(planScreen, exerciseId, options = {}) {
     `;
 
     planScreen.hidden = true;
-    page.appendChild(screen);
+
+    if (options.preserveViewport) {
+        planScreen.insertAdjacentElement("beforebegin", screen);
+    }
+    else {
+        page.appendChild(screen);
+    }
+
     screen.querySelector(".exercise-guide-back")?.addEventListener("click", () => {
         screen.remove();
         planScreen.hidden = false;
         window.scrollTo({
             top: options.restoreScroll ? previousScrollY : 0,
-            behavior: "smooth"
+            behavior: options.preserveViewport ? "auto" : "smooth"
         });
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    if (options.preserveViewport) {
+        requestAnimationFrame(() => {
+            window.scrollTo({
+                top: previousScrollY,
+                behavior: "auto"
+            });
+        });
+    }
+    else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
 }
 
 document.addEventListener("levelup:open-exercise-guide", event => {
@@ -321,7 +339,8 @@ document.addEventListener("levelup:open-exercise-guide", event => {
     if (!exerciseId || !sourceScreen) return;
     showExerciseGuide(sourceScreen, exerciseId, {
         backLabel: "← Plan Builder",
-        restoreScroll: true
+        restoreScroll: true,
+        preserveViewport: true
     });
 });
 
