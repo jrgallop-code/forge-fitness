@@ -501,6 +501,17 @@ function renderWorkoutDays() {
                                         </select>
 
 
+                                        ${exercise ? `
+                                            <button
+                                                class="builder-exercise-guide"
+                                                data-exercise-id="${exercise.id}"
+                                                type="button"
+                                            >
+                                                Form guide
+                                            </button>
+                                        ` : ""}
+
+
                                         ${exercise?.trackingType === "notes"
                                             ? `
                                                 <div class="exercise-prescription cardio-prescription">
@@ -665,6 +676,36 @@ function attachBuilderListeners() {
                                 button.dataset.exerciseIndex
                             )
 
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+    document
+        .querySelectorAll(
+            ".builder-exercise-guide"
+        )
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        document.dispatchEvent(
+                            new CustomEvent(
+                                "levelup:open-exercise-guide",
+                                {
+                                    detail: {
+                                        exerciseId: button.dataset.exerciseId,
+                                        sourceSelector: "#plan-builder"
+                                    }
+                                }
+                            )
                         );
 
                     }
