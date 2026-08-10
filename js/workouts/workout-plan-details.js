@@ -263,15 +263,18 @@ function renderMuscleCards(guide) {
     `).join("");
 }
 
-function showExerciseGuide(planScreen, exerciseId) {
+function showExerciseGuide(planScreen, exerciseId, options = {}) {
     const guide = getExerciseGuide(exerciseId);
     const page = planScreen.closest(".workout-page");
     if (!guide || !page) return;
 
+    const previousScrollY = window.scrollY;
+    page.querySelector(".exercise-guide-screen")?.remove();
+
     const screen = document.createElement("section");
     screen.className = "exercise-guide-screen";
     screen.innerHTML = `
-        <button class="plan-detail-back exercise-guide-back" type="button">← Workout Plan</button>
+        <button class="plan-detail-back exercise-guide-back" type="button">${escapeHtml(options.backLabel || "← Workout Plan")}</button>
         <header class="exercise-guide-header">
             <span class="eyebrow">EXERCISE GUIDE</span>
             <h2>${escapeHtml(exerciseName(exerciseId))}</h2>
@@ -304,10 +307,23 @@ function showExerciseGuide(planScreen, exerciseId) {
     screen.querySelector(".exercise-guide-back")?.addEventListener("click", () => {
         screen.remove();
         planScreen.hidden = false;
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({
+            top: options.restoreScroll ? previousScrollY : 0,
+            behavior: "smooth"
+        });
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
+
+document.addEventListener("levelup:open-exercise-guide", event => {
+    const exerciseId = event.detail?.exerciseId;
+    const sourceScreen = document.querySelector(event.detail?.sourceSelector || "#plan-builder");
+    if (!exerciseId || !sourceScreen) return;
+    showExerciseGuide(sourceScreen, exerciseId, {
+        backLabel: "← Plan Builder",
+        restoreScroll: true
+    });
+});
 
 function renderDay(day, index) {
     const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
