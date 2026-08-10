@@ -1,5 +1,5 @@
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=workout-session-6';
-import { getExerciseById } from './exercise-library.js?v=exercise-library-2';
+import { getExerciseById } from './exercise-library.js';
 
 const TIMER_SETTINGS_KEY = 'level_up_exercise_rest_settings';
 let inlineTimerInterval = null;
