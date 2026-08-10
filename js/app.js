@@ -1,5 +1,5 @@
 import { navigate } from "./core/router.js?v=builder-form-guide-links-1";
-import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=navbar-water-route-1";
+import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=builder-guide-nav-cache-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-session-6";
 
 const FILLED_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
