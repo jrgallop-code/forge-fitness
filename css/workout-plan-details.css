@@ -7,7 +7,7 @@
     padding-bottom:110px;
 }
 
-.workout-page.showing-plan-details > :not(#workout-plan-detail-screen) {
+.workout-page.showing-plan-details > :not(#workout-plan-detail-screen):not(.exercise-guide-screen) {
     display:none !important;
 }
 
