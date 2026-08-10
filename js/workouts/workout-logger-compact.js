@@ -529,7 +529,8 @@ function enhanceLoggerFormGuides(logger) {
             detail: {
               exerciseId,
               sourceSelector: '#workout-session-logger',
-              backLabel: '← Workout'
+              backLabel: '← Workout',
+              focusGuideStart: true
             }
           })
         );
