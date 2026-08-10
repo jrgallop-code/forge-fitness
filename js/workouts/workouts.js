@@ -14,7 +14,7 @@ from "./workout-plans.js?v=workout-plans-2";
 import {
     getExerciseOptions
 }
-from "./workout-ui.js?v=workout-catalogue-4";
+from "./workout-ui.js?v=plan-builder-exit-flow-1";
 
 
 import {
@@ -92,6 +92,16 @@ export function initializeWorkoutBuilder() {
         ?.addEventListener(
             "click",
             savePlan
+        );
+
+
+    document
+        .getElementById(
+            "close-plan-builder-btn"
+        )
+        ?.addEventListener(
+            "click",
+            closeBuilder
         );
 
 
@@ -377,13 +387,81 @@ function showBuilder() {
             "plan-builder"
         );
 
+    const workoutHome =
+        document.querySelector(
+            "[data-workout-home]"
+        );
+
+
+    if (workoutHome) {
+
+        workoutHome.hidden =
+            true;
+
+    }
+
 
     if (builder) {
 
         builder.hidden =
             false;
 
+        builder.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
     }
+
+}
+
+
+function closeBuilder({
+    revealSavedPlan = false
+} = {}) {
+
+    const builder =
+        document.getElementById(
+            "plan-builder"
+        );
+
+    const workoutHome =
+        document.querySelector(
+            "[data-workout-home]"
+        );
+
+
+    if (builder) {
+
+        builder.hidden =
+            true;
+
+    }
+
+
+    hideCustomExerciseForm();
+
+
+    if (workoutHome) {
+
+        workoutHome.hidden =
+            false;
+
+    }
+
+
+    const destination =
+        revealSavedPlan && workingPlan.id
+            ? document.querySelector(
+                `[data-custom-plan-id="${workingPlan.id}"]`
+            )
+            : workoutHome;
+
+
+    destination?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
 
 }
 
@@ -1013,6 +1091,11 @@ function savePlan() {
     showMessage(
         "Workout plan saved."
     );
+
+
+    closeBuilder({
+        revealSavedPlan: true
+    });
 
 }
 
