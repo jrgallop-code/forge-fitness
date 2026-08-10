@@ -47,3 +47,17 @@ body {
 .bottom-nav .nav-btn.active .nav-icon {
     color: #ffffff;
 }
+
+/*
+ * Mobile keyboards resize the visual viewport and can lift fixed navigation
+ * over the active workout fields. Keep the logger clear while typing.
+ */
+@media (max-width: 720px) {
+    body:has(.workout-session-logger input:focus) .bottom-nav,
+    body:has(.workout-session-logger select:focus) .bottom-nav,
+    body:has(.workout-session-logger textarea:focus) .bottom-nav {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+}
