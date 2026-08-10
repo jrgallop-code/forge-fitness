@@ -307,7 +307,7 @@ function renderWarmupCalculator(panel, workingLoad, exerciseType, source) {
         <button class="warmup-change-load secondary-btn" type="button">Change working weight</button>
         <button class="warmup-done-btn primary-btn" type="button">Hide</button>
       </div>
-      <p class="exercise-warmup-help">Adjust or skip any suggestion that does not feel appropriate. Calculated loads are rounded to practical 5 lb increments.</p>
+      <p class="exercise-warmup-help">For adults. Adjust or skip any suggestion that does not feel appropriate. Calculated loads are rounded to practical 5 lb increments.</p>
     `;
 
     panel.querySelector('.warmup-change-load')?.addEventListener('click', () => {
