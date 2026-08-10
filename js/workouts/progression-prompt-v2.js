@@ -190,9 +190,6 @@ function bindLogger(logger) {
   logger.dataset.progressionV2Bound = 'true';
   const refresh = () => refreshLogger(logger);
   refresh();
-  logger.addEventListener('input', event => {
-    if (event.target.matches('.session-weight, .session-reps')) setTimeout(refresh, 60);
-  });
   logger.addEventListener('click', event => {
     if (event.target.closest('.complete-set-btn')) setTimeout(refresh, 80);
   });

@@ -681,13 +681,6 @@ function enhanceLogger(logger) {
         });
       }
 
-      row.querySelector('.session-weight')?.addEventListener('input', () => {
-        setTimeout(() => updateProgressionPrompt(card, exerciseIndex), 0);
-      });
-      row.querySelector('.session-reps')?.addEventListener('input', () => {
-        setTimeout(() => updateProgressionPrompt(card, exerciseIndex), 0);
-      });
-
       const timerLine = document.createElement('div');
       timerLine.className = 'inline-rest-timer';
       timerLine.dataset.exerciseIndex = String(exerciseIndex);
