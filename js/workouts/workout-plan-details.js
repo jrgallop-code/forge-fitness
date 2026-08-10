@@ -338,7 +338,7 @@ document.addEventListener("levelup:open-exercise-guide", event => {
     const sourceScreen = document.querySelector(event.detail?.sourceSelector || "#plan-builder");
     if (!exerciseId || !sourceScreen) return;
     showExerciseGuide(sourceScreen, exerciseId, {
-        backLabel: "← Plan Builder",
+        backLabel: event.detail?.backLabel || "← Plan Builder",
         restoreScroll: true,
         preserveViewport: true
     });
