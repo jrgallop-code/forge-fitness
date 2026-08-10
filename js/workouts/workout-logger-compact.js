@@ -506,8 +506,43 @@ function enhanceEffortGuide(card) {
   });
 }
 
+function enhanceLoggerFormGuides(logger) {
+  logger
+    .querySelectorAll('.session-exercise-card:not([data-logger-form-guide-enhanced="true"])')
+    .forEach(card => {
+      card.dataset.loggerFormGuideEnhanced = 'true';
+
+      const exerciseIndex = Number(card.dataset.exerciseIndex);
+      const exerciseId = card.dataset.exerciseId || `exercise-${exerciseIndex}`;
+      const anchor = card.querySelector('.compact-exercise-header') || card.querySelector('h4');
+      if (!anchor || !getExerciseById(exerciseId)) return;
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'logger-form-guide-btn';
+      button.textContent = 'Form Guide';
+      button.setAttribute('aria-label', `Open form guide for ${getExerciseById(exerciseId)?.name || 'exercise'}`);
+
+      button.addEventListener('click', () => {
+        document.dispatchEvent(
+          new CustomEvent('levelup:open-exercise-guide', {
+            detail: {
+              exerciseId,
+              sourceSelector: '#workout-session-logger',
+              backLabel: '← Workout'
+            }
+          })
+        );
+      });
+
+      anchor.insertAdjacentElement('afterend', button);
+    });
+}
+
 function enhanceLogger(logger) {
   if (!logger) return;
+
+  enhanceLoggerFormGuides(logger);
 
   logger.querySelectorAll(
     '.session-exercise-card[data-tracking-type="reps"]:not([data-effort-guide-enhanced="true"])'
