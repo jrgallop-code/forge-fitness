@@ -1,10 +1,11 @@
-import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=workout-flow-3";
+import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=workout-catalogue-1";
 import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=workout-flow-4";
+import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=workout-catalogue-1";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
 import { renderMuscleRecoveryDashboard, initializeMuscleRecoveryDashboard } from "../dashboard/muscle-recovery.js?v=muscle-recovery-1";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
-import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=workout-schedule-1";
+import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=workout-schedule-2";
 import { renderProgress } from "../progress/progress-ui.js?v=progress-more-sleep-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-tracker-8";
 import { initializePhotoJournal } from "../progress/photo-journal.js";
@@ -38,7 +39,7 @@ export function navigate(page) {
                 safeInitialize("Google Drive sync", initializeGoogleDriveSync);
                 break;
             case "workout":
-                content.innerHTML = renderWorkoutBuilder(); decorateWorkoutTitle(content); safeInitialize("Workout builder", initializeWorkoutBuilder); safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content)); break;
+                content.innerHTML = renderWorkoutBuilder(); decorateWorkoutTitle(content); safeInitialize("Workout builder", initializeWorkoutBuilder); safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content)); safeInitialize("Workout catalogue", () => initializeWorkoutCatalogue(content)); break;
             case "progress":
                 content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Photo journal", initializePhotoJournal); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); break;
             case "sleep":
