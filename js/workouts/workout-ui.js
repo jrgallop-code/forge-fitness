@@ -76,9 +76,9 @@ export function renderWorkoutBuilder() {
                         </div>
 
                         <label class="form-coach-upload">
-                            <span>Record or choose a short video</span>
-                            <input type="file" accept="video/*" capture="environment" data-form-coach-video>
-                            <small>For a useful review, show the full body and equipment for 3–5 repetitions.</small>
+                            <span>Choose or record a short video</span>
+                            <input type="file" accept="video/*" data-form-coach-video>
+                            <small>Choose an existing clip from your photo library or files, or record a new one. For a useful review, show the full body and equipment for 3–5 repetitions.</small>
                         </label>
 
                         <div class="form-coach-preview" data-form-coach-preview hidden>
