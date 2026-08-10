@@ -41,11 +41,11 @@ export function initializeWorkoutCatalogue(root = document) {
         moreButton.textContent = morePanel.hidden ? "More Filters" : "Fewer Filters";
     });
 
-    const filters = page.querySelectorAll("[data-catalogue-search], [data-catalogue-days], [data-catalogue-equipment], [data-catalogue-duration], [data-catalogue-level]");
-    filters.forEach(control => control.addEventListener(control.matches("[type=search]") ? "input" : "change", applyFilters));
+    const filters = page.querySelectorAll("[data-catalogue-type], [data-catalogue-days], [data-catalogue-equipment], [data-catalogue-duration], [data-catalogue-level]");
+    filters.forEach(control => control.addEventListener("change", applyFilters));
 
     function applyFilters() {
-        const query = page.querySelector("[data-catalogue-search]")?.value.trim().toLowerCase() || "";
+        const type = page.querySelector("[data-catalogue-type]")?.value || "";
         const days = page.querySelector("[data-catalogue-days]")?.value || "";
         const equipment = page.querySelector("[data-catalogue-equipment]")?.value || "";
         const duration = page.querySelector("[data-catalogue-duration]")?.value || "";
@@ -61,7 +61,7 @@ export function initializeWorkoutCatalogue(root = document) {
                 || (duration === "45" && maximum <= 45)
                 || (duration === "60" && minimum <= 60 && maximum > 45)
                 || (duration === "61" && maximum > 60);
-            const matches = (!query || card.dataset.name.includes(query))
+            const matches = (!type || card.dataset.type.includes(type))
                 && (!days || card.dataset.days === days)
                 && (!equipment || card.dataset.equipment.includes(equipment))
                 && (!level || card.dataset.level.includes(level))
