@@ -327,3 +327,5 @@
         grid-template-columns:105px repeat(var(--week-count), 50px);
     }
 }
+
+.progress-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.progress-tabs .progress-tab{min-width:0;padding-left:7px;padding-right:7px}.photo-log-coming-soon{display:flex;min-height:260px;align-items:center;justify-content:center;flex-direction:column;padding:28px 18px;text-align:center}.photo-log-placeholder-icon{display:grid;width:58px;height:58px;place-items:center;margin:12px 0;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:rgba(255,255,255,.035)}.photo-log-placeholder-icon svg{width:30px;height:30px;fill:none;stroke:#fff;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.photo-log-coming-soon h3{margin:0 0 6px}.photo-log-coming-soon p{max-width:330px;margin:0;color:var(--muted,#a1a1aa);font-size:.82rem;line-height:1.45}@media(max-width:380px){.progress-tabs .progress-tab{font-size:.72rem}}
