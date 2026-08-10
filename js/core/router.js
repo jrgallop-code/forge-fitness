@@ -28,7 +28,7 @@ export function navigate(page) {
     try {
         switch (page) {
             case "home":
-                content.innerHTML = renderDashboard() + renderWorkoutPerformanceDashboard() + renderMuscleRecoveryDashboard();
+                content.innerHTML = renderDashboardWithPerformance() + renderMuscleRecoveryDashboard();
                 safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets);
                 safeInitialize("Workout performance", initializeWorkoutPerformance);
                 safeInitialize("Muscle recovery", initializeMuscleRecoveryDashboard);
@@ -52,13 +52,25 @@ export function navigate(page) {
             case "more": content.innerHTML = renderMore(); safeInitialize("More", initializeMore); break;
             case "history": content.innerHTML = renderWorkoutHistory(); safeInitialize("Workout history", initializeWorkoutHistory); break;
             default:
-                content.innerHTML = renderDashboard() + renderWorkoutPerformanceDashboard() + renderMuscleRecoveryDashboard(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Workout performance", initializeWorkoutPerformance);
+                content.innerHTML = renderDashboardWithPerformance() + renderMuscleRecoveryDashboard(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Workout performance", initializeWorkoutPerformance);
                 safeInitialize("Muscle recovery", initializeMuscleRecoveryDashboard);
         }
     } catch (error) {
         console.error(`Route ${page} failed while rendering:`, error);
         content.innerHTML = `<section class="section-card"><h2>Page could not load</h2><p class="section-description">The page hit an initialization error. Navigation is still available below.</p></section>`;
     }
+}
+
+function renderDashboardWithPerformance() {
+    const dashboard = renderDashboard();
+    const insertionPoint = '<section class="dashboard-detail-grid">';
+    if (!dashboard.includes(insertionPoint)) {
+        return dashboard + renderWorkoutPerformanceDashboard();
+    }
+    return dashboard.replace(
+        insertionPoint,
+        renderWorkoutPerformanceDashboard() + insertionPoint
+    );
 }
 
 function decorateWorkoutTitle(content) {
