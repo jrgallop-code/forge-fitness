@@ -3,6 +3,7 @@ import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=workout-flow
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
 import { renderMuscleRecoveryDashboard, initializeMuscleRecoveryDashboard } from "../dashboard/muscle-recovery.js?v=muscle-recovery-1";
+import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderProgress } from "../progress/progress-ui.js?v=progress-more-sleep-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-tracker-8";
 import { initializePhotoJournal } from "../progress/photo-journal.js";
@@ -27,8 +28,9 @@ export function navigate(page) {
     try {
         switch (page) {
             case "home":
-                content.innerHTML = renderDashboard() + renderMuscleRecoveryDashboard();
+                content.innerHTML = renderDashboard() + renderWorkoutPerformanceDashboard() + renderMuscleRecoveryDashboard();
                 safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets);
+                safeInitialize("Workout performance", initializeWorkoutPerformance);
                 safeInitialize("Muscle recovery", initializeMuscleRecoveryDashboard);
                 safeInitialize("Backup manager", initializeBackupManager);
                 safeInitialize("Google Drive sync", initializeGoogleDriveSync);
@@ -50,7 +52,8 @@ export function navigate(page) {
             case "more": content.innerHTML = renderMore(); safeInitialize("More", initializeMore); break;
             case "history": content.innerHTML = renderWorkoutHistory(); safeInitialize("Workout history", initializeWorkoutHistory); break;
             default:
-                content.innerHTML = renderDashboard() + renderMuscleRecoveryDashboard(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Muscle recovery", initializeMuscleRecoveryDashboard);
+                content.innerHTML = renderDashboard() + renderWorkoutPerformanceDashboard() + renderMuscleRecoveryDashboard(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Workout performance", initializeWorkoutPerformance);
+                safeInitialize("Muscle recovery", initializeMuscleRecoveryDashboard);
         }
     } catch (error) {
         console.error(`Route ${page} failed while rendering:`, error);
