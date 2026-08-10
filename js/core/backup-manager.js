@@ -74,6 +74,7 @@ function getBackupSummary(data) {
             : null;
 
     return {
+        savedSections: Object.keys(data).length,
         workoutPlans: asArray(data.forge_workout_plans).length,
         completedWorkouts: asArray(data.forge_workout_sessions).length,
         weightEntries: asArray(data.forge_weight_entries).length,
@@ -96,7 +97,7 @@ function formatSummary(summary) {
         ? `${summary.calorieTarget} kcal target`
         : "no calorie target";
 
-    return `${summary.completedWorkouts} workouts · ${summary.weightEntries} weigh-ins · ${summary.measurementEntries} measurements · ${calorieText} · ${summary.nutritionPhaseCount} nutrition phase${summary.nutritionPhaseCount === 1 ? "" : "s"}`;
+    return `${summary.completedWorkouts} workouts · ${summary.weightEntries} weigh-ins · ${summary.measurementEntries} measurements · ${calorieText} · ${summary.nutritionPhaseCount} nutrition phase${summary.nutritionPhaseCount === 1 ? "" : "s"} · ${summary.savedSections || 0} saved sections`;
 }
 
 function renderBackupSummary() {
