@@ -8,65 +8,101 @@ function compactWeightProgress() {
     const weightEntry = entryCards[0];
     const goalEntry = entryCards[1];
     const summary = section.querySelector(".weight-summary");
-
-    if (!weightEntry || !goalEntry || !summary) return;
+    const header = section.querySelector(".weight-section-header");
+    if (!weightEntry || !goalEntry || !summary || !header) return;
 
     const dateLabel = weightEntry.querySelector('label[for="weight-date"]');
     const dateInput = weightEntry.querySelector("#weight-date");
     const weightLabel = weightEntry.querySelector('label[for="daily-weight"]');
     const weightInput = weightEntry.querySelector("#daily-weight");
     const saveWeightButton = weightEntry.querySelector("#save-weight-btn");
-
     const goalLabel = goalEntry.querySelector('label[for="reference-weight"]');
     const goalInput = goalEntry.querySelector("#reference-weight");
     const saveGoalButton = goalEntry.querySelector("#save-reference-weight-btn");
-
     if (!dateInput || !weightInput || !saveWeightButton || !goalInput || !saveGoalButton) return;
 
+    const addButton = document.createElement("button");
+    addButton.className = "primary-btn weight-add-toggle";
+    addButton.type = "button";
+    addButton.textContent = "+ Add Weight";
+    addButton.setAttribute("aria-expanded", "false");
+    addButton.setAttribute("aria-controls", "weight-entry-panel");
+    header.appendChild(addButton);
+
+    weightEntry.id = "weight-entry-panel";
     weightEntry.classList.add("weight-entry-card-compact");
+    weightEntry.hidden = true;
     weightEntry.innerHTML = "";
 
     const fields = document.createElement("div");
     fields.className = "weight-compact-fields";
+    fields.append(
+        makeField("weight-date", dateLabel?.textContent?.trim() || "Date", dateInput),
+        makeField("daily-weight", weightLabel?.textContent?.trim() || "Weight (lb)", weightInput)
+    );
 
-    const dateField = document.createElement("label");
-    dateField.className = "weight-compact-field";
-    dateField.htmlFor = "weight-date";
-    dateField.innerHTML = `<span>${dateLabel?.textContent?.trim() || "Date"}</span>`;
-    dateField.appendChild(dateInput);
-
-    const weightField = document.createElement("label");
-    weightField.className = "weight-compact-field";
-    weightField.htmlFor = "daily-weight";
-    weightField.innerHTML = `<span>${weightLabel?.textContent?.trim() || "Weight (lb)"}</span>`;
-    weightField.appendChild(weightInput);
-
-    fields.append(dateField, weightField);
-
-    const goalField = document.createElement("label");
-    goalField.className = "weight-compact-field weight-goal-field";
-    goalField.htmlFor = "reference-weight";
-    goalField.innerHTML = `<span>${goalLabel?.textContent?.trim() || "Goal Weight (lb)"}</span>`;
-    goalField.appendChild(goalInput);
+    const closeButton = document.createElement("button");
+    closeButton.className = "secondary-btn";
+    closeButton.type = "button";
+    closeButton.textContent = "Close";
 
     const actions = document.createElement("div");
     actions.className = "weight-compact-actions";
-    actions.append(saveWeightButton, saveGoalButton);
+    actions.append(saveWeightButton, closeButton);
+    weightEntry.append(fields, actions);
 
-    weightEntry.append(fields, goalField, actions);
+    const goalDetails = document.createElement("details");
+    goalDetails.className = "weight-goal-settings";
+    goalDetails.innerHTML = '<summary>Set Goal Weight</summary><div class="weight-goal-settings-body"></div>';
+    const goalBody = goalDetails.querySelector(".weight-goal-settings-body");
+    goalBody.append(
+        makeField("reference-weight", goalLabel?.textContent?.trim() || "Goal Weight (lb)", goalInput),
+        saveGoalButton
+    );
+    weightEntry.insertAdjacentElement("afterend", goalDetails);
     goalEntry.remove();
 
     if (!document.getElementById("goal-weight-summary")) {
         const goalCard = document.createElement("div");
         goalCard.className = "metric-card";
-        goalCard.innerHTML = `<div><h3>Goal Weight</h3><p id="goal-weight-summary">--</p></div>`;
+        goalCard.innerHTML = '<div><h3>Goal Weight</h3><p id="goal-weight-summary">--</p></div>';
         const latest = summary.querySelector(".metric-card");
         if (latest?.nextSibling) summary.insertBefore(goalCard, latest.nextSibling);
         else summary.appendChild(goalCard);
     }
 
+    const setOpen = open => {
+        weightEntry.hidden = !open;
+        addButton.textContent = open ? "Close Entry" : "+ Add Weight";
+        addButton.setAttribute("aria-expanded", String(open));
+        if (open) window.setTimeout(() => weightInput.focus(), 0);
+    };
+
+    addButton.addEventListener("click", () => setOpen(weightEntry.hidden));
+    closeButton.addEventListener("click", () => setOpen(false));
+    saveWeightButton.addEventListener("click", () => {
+        const valid = Boolean(dateInput.value) && Number(weightInput.value) > 0;
+        if (valid) window.setTimeout(() => setOpen(false), 0);
+    }, true);
+    saveGoalButton.addEventListener("click", () => window.setTimeout(() => {
+        updateGoalWeightSummary();
+        goalDetails.open = false;
+    }, 0));
+    section.addEventListener("click", event => {
+        if (event.target.closest(".edit-weight-entry")) setOpen(true);
+    });
+
     updateGoalWeightSummary();
     section.dataset.compactLayout = "true";
+}
+
+function makeField(forId, labelText, input) {
+    const field = document.createElement("label");
+    field.className = "weight-compact-field";
+    field.htmlFor = forId;
+    field.innerHTML = `<span>${labelText}</span>`;
+    field.appendChild(input);
+    return field;
 }
 
 function updateGoalWeightSummary() {

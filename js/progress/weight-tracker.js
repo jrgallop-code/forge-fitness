@@ -761,122 +761,29 @@ function updateHistory(
 
 
 function initializeProgressTabs() {
-    const weightButton =
-        document.getElementById(
-            "weight-tab"
-        );
+    const buttons = {
+        weight: document.getElementById("weight-tab"),
+        lifting: document.getElementById("lifting-tab"),
+        photo: document.getElementById("photo-log-tab")
+    };
+    const sections = {
+        weight: document.getElementById("weight-progress"),
+        lifting: document.getElementById("lifting-progress"),
+        photo: document.getElementById("photo-log-progress")
+    };
+    if (Object.values(buttons).some(button => !button) || Object.values(sections).some(section => !section)) return;
 
-    const liftingButton =
-        document.getElementById(
-            "lifting-tab"
-        );
+    const show = name => {
+        Object.entries(sections).forEach(([key, section]) => { section.hidden = key !== name; });
+        Object.entries(buttons).forEach(([key, button]) => button.classList.toggle("active", key === name));
+        if (name === "weight") requestAnimationFrame(updateWeightDisplay);
+        if (name === "lifting") window.dispatchEvent(new Event("resize"));
+    };
 
-    const sleepButton =
-        document.getElementById(
-            "sleep-tab"
-        );
-
-    const weightSection =
-        document.getElementById(
-            "weight-progress"
-        );
-
-    const liftingSection =
-        document.getElementById(
-            "lifting-progress"
-        );
-
-    const sleepSection =
-        document.getElementById(
-            "sleep-progress"
-        );
-
-    weightButton?.addEventListener(
-        "click",
-        () => {
-            if (
-                !weightSection ||
-                !liftingSection ||
-                !sleepSection
-            ) {
-                return;
-            }
-
-            weightSection.hidden = false;
-            liftingSection.hidden = true;
-            sleepSection.hidden = true;
-
-            weightButton.classList.add(
-                "active"
-            );
-            liftingButton?.classList.remove(
-                "active"
-            );
-            sleepButton?.classList.remove(
-                "active"
-            );
-
-            requestAnimationFrame(
-                updateWeightDisplay
-            );
-        }
-    );
-
-    liftingButton?.addEventListener(
-        "click",
-        () => {
-            if (
-                !weightSection ||
-                !liftingSection ||
-                !sleepSection
-            ) {
-                return;
-            }
-
-            weightSection.hidden = true;
-            liftingSection.hidden = false;
-            sleepSection.hidden = true;
-
-            liftingButton.classList.add(
-                "active"
-            );
-            weightButton?.classList.remove(
-                "active"
-            );
-            sleepButton?.classList.remove(
-                "active"
-            );
-        }
-    );
-
-    sleepButton?.addEventListener(
-        "click",
-        () => {
-            if (
-                !weightSection ||
-                !liftingSection ||
-                !sleepSection
-            ) {
-                return;
-            }
-
-            weightSection.hidden = true;
-            liftingSection.hidden = true;
-            sleepSection.hidden = false;
-
-            sleepButton.classList.add(
-                "active"
-            );
-            weightButton?.classList.remove(
-                "active"
-            );
-            liftingButton?.classList.remove(
-                "active"
-            );
-        }
-    );
+    buttons.weight.addEventListener("click", () => show("weight"));
+    buttons.lifting.addEventListener("click", () => show("lifting"));
+    buttons.photo.addEventListener("click", () => show("photo"));
 }
-
 
 function drawWeightChart(
     entries,
