@@ -38,8 +38,14 @@ function getPracticalIncrement(exerciseId) {
 function getRecommendedLoad(currentWeight, exerciseId) {
   const current = Number(currentWeight);
   if (!Number.isFinite(current) || current <= 0) return null;
+
   const increment = getPracticalIncrement(exerciseId);
-  return Number((Math.ceil((current + 1e-9) / increment) * increment).toFixed(1));
+  const minimumIncrease = current * 0.02;
+  const practicalIncrease = Math.max(increment, Math.ceil(minimumIncrease / increment) * increment);
+  const increasePercent = practicalIncrease / current * 100;
+
+  if (increasePercent > 10) return null;
+  return Number((current + practicalIncrease).toFixed(1));
 }
 
 function findPreviousProgressionSource(active, exerciseIndex, upperBound) {
@@ -154,16 +160,12 @@ function renderPrompt(card) {
   const repText = source.exceeded
     ? `you exceeded the ${upperBound}-rep target and reached ${source.maxReps} reps`
     : `all completed sets reached at least ${upperBound} reps`;
-  const largeJumpNote = pct > 10
-    ? ` This is a larger percentage jump because the next practical equipment increment is ${formatLoad(practicalIncrement)} lb.`
-    : '';
-
   prompt.innerHTML = `
     <span class="progression-arrow">↑</span>
     <div>
       <strong>Increase weight this session</strong>
       <p>Last workout ${repText} at ${formatLoad(currentWeight)} lb${partial}. Recommended load for this session: <b>${formatLoad(nextWeight)} lb</b> (+${pct.toFixed(1)}%).</p>
-      <small>Progression uses the next practical ${formatLoad(practicalIncrement)} lb gym increment after meeting or exceeding the top of the programmed rep range.${largeJumpNote}</small>
+      <small>Progression uses the smallest practical ${formatLoad(practicalIncrement)} lb equipment steps that produce a 2–10% load increase.</small>
     </div>
   `;
   prompt.hidden = false;

@@ -122,7 +122,12 @@ function getRecommendedLoad(weight, exerciseId) {
 
   const equipment = String(getExerciseById(exerciseId)?.equipment || '').toLowerCase();
   const increment = equipment.includes('cable') ? 2.5 : 5;
-  return Number((Math.ceil((current + 1e-9) / increment) * increment).toFixed(1));
+  const minimumIncrease = current * 0.02;
+  const practicalIncrease = Math.max(increment, Math.ceil(minimumIncrease / increment) * increment);
+  const increasePercent = practicalIncrease / current * 100;
+
+  if (increasePercent > 10) return null;
+  return Number((current + practicalIncrease).toFixed(1));
 }
 
 function formatLoad(value) {
@@ -174,7 +179,7 @@ function updateProgressionPrompt(card, exerciseIndex) {
     <div>
       <strong>Increase weight next session</strong>
       <p>You reached ${upperBound} reps at ${formatLoad(currentWeight)} lb${completedCount < plannedCount ? ` with ${completedCount} of ${plannedCount} sets completed` : ''}. Recommended next load: <b>${formatLoad(nextWeight)} lb</b> (+${increasePercent.toFixed(1)}%).</p>
-      <small>Level Up recommendation: increase load by about 2–5% after reaching the top of your rep range.</small>
+      <small>Level Up recommendation: increase load by 2–10% after reaching the top of your rep range, using practical equipment increments.</small>
     </div>
   `;
   prompt.hidden = false;
