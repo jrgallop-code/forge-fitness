@@ -739,7 +739,37 @@ export const exercises = [
         "defaultSets": 1,
         "trackingType": "notes"
     }
-
+,
+{
+    "id": "goblet-squat",
+    "name": "Goblet Squat",
+    "muscleGroup": "Quads",
+    "type": "compound",
+    "equipment": "Dumbbells",
+    "recommendedReps": "8-15",
+    "defaultSets": 3,
+    "trackingType": "reps"
+},
+{
+    "id": "bodyweight-squat",
+    "name": "Bodyweight Squat",
+    "muscleGroup": "Quads",
+    "type": "compound",
+    "equipment": "Bodyweight",
+    "recommendedReps": "12-25",
+    "defaultSets": 3,
+    "trackingType": "reps"
+},
+{
+    "id": "pike-push-up",
+    "name": "Pike Push-Up",
+    "muscleGroup": "Shoulders",
+    "type": "compound",
+    "equipment": "Bodyweight",
+    "recommendedReps": "8-15",
+    "defaultSets": 3,
+    "trackingType": "reps"
+}
 ];
 
 
