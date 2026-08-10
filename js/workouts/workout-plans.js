@@ -500,7 +500,7 @@ export const presetPlans = [
             "name": "Day 1 - Dumbbell Full Body A",
             "exercises": [
                 {
-                    "id": "front-squat",
+                    "id": "goblet-squat",
                     "sets": 3,
                     "reps": "8-12"
                 },
@@ -716,7 +716,7 @@ export const presetPlans = [
             "name": "Day 1 - Home Full Body A",
             "exercises": [
                 {
-                    "id": "front-squat",
+                    "id": "goblet-squat",
                     "sets": 3,
                     "reps": "8-15"
                 },
@@ -1032,7 +1032,7 @@ export const presetPlans = [
                     "reps": "6-12"
                 },
                 {
-                    "id": "dumbbell-shoulder-press",
+                    "id": "pike-push-up",
                     "sets": 3,
                     "reps": "8-15"
                 },
@@ -1052,7 +1052,7 @@ export const presetPlans = [
             "name": "Day 2 - Legs",
             "exercises": [
                 {
-                    "id": "back-squat",
+                    "id": "bodyweight-squat",
                     "sets": 4,
                     "reps": "12-25"
                 },
@@ -1159,7 +1159,7 @@ export const presetPlans = [
             "name": "Day 2 - Dumbbell Lower",
             "exercises": [
                 {
-                    "id": "front-squat",
+                    "id": "goblet-squat",
                     "sets": 4,
                     "reps": "8-15"
                 },
@@ -1455,7 +1455,7 @@ export const presetPlans = [
             "name": "Day 2 - Lower A",
             "exercises": [
                 {
-                    "id": "front-squat",
+                    "id": "goblet-squat",
                     "sets": 4,
                     "reps": "8-15"
                 },
@@ -1567,7 +1567,7 @@ export const presetPlans = [
             "name": "Day 2 - Lower A",
             "exercises": [
                 {
-                    "id": "back-squat",
+                    "id": "bodyweight-squat",
                     "sets": 4,
                     "reps": "15-25"
                 },
@@ -1592,7 +1592,7 @@ export const presetPlans = [
             "name": "Day 3 - Upper B",
             "exercises": [
                 {
-                    "id": "dumbbell-shoulder-press",
+                    "id": "pike-push-up",
                     "sets": 4,
                     "reps": "8-15"
                 },
@@ -2087,7 +2087,7 @@ export const presetPlans = [
             "name": "Day 3 - Dumbbell Lower",
             "exercises": [
                 {
-                    "id": "front-squat",
+                    "id": "goblet-squat",
                     "sets": 4,
                     "reps": "8-15"
                 },
