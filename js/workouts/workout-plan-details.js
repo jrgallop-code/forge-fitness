@@ -17,7 +17,10 @@ const MUSCLE_IMAGE_PATHS = {
     "Rear Delts": "assets/exercise-guides/rear-delts.webp?v=1",
     "Biceps": "assets/exercise-guides/biceps.webp?v=1",
     "Forearms": "assets/exercise-guides/forearms.webp?v=1",
-    "Hamstrings": "assets/exercise-guides/hamstrings.webp?v=1"
+    "Hamstrings": "assets/exercise-guides/hamstrings.webp?v=1",
+    "Rectus Abdominis": "assets/exercise-guides/rectus-abdominis.webp?v=1",
+    "Obliques": "assets/exercise-guides/obliques.webp?v=1",
+    "Deep Core": "assets/exercise-guides/deep-core.webp?v=1"
 };
 
 const EXERCISE_GUIDES = {
@@ -100,6 +103,70 @@ const EXERCISE_GUIDES = {
         ],
         cues: ["No swinging start", "Elbows down", "Controlled return"],
         mistakes: ["Kicking for momentum", "Shrugging throughout the pull", "Dropping quickly from the top"]
+    },
+    "plank": {
+        primary: ["Deep Core"],
+        secondary: ["Rectus Abdominis", "Obliques"],
+        setup: ["Place the forearms beneath the shoulders and extend both legs.", "Keep the head, ribcage and pelvis in a comfortable neutral line.", "Brace gently before lifting the knees from the floor."],
+        execution: ["Press the forearms and toes into the floor.", "Hold a steady body position while breathing normally.", "End the set when you can no longer maintain the same position."],
+        cues: ["Long straight line", "Breathe while braced", "Push the floor away"],
+        mistakes: ["Letting the hips sag", "Holding the breath", "Continuing after position changes substantially"]
+    },
+    "side-plank": {
+        primary: ["Obliques"],
+        secondary: ["Deep Core"],
+        setup: ["Place the elbow beneath the shoulder and stack or stagger the feet.", "Align the head, ribs, hips and legs.", "Use a bent-knee variation if needed for control."],
+        execution: ["Lift the hips away from the floor.", "Hold the torso steady without rotating forward or backward.", "Lower with control when the target time is complete."],
+        cues: ["Elbow under shoulder", "Hips tall", "Stay square"],
+        mistakes: ["Shrugging into the shoulder", "Letting the hips drift down", "Rotating the chest toward the floor"]
+    },
+    "dead-bug": {
+        primary: ["Deep Core"],
+        secondary: ["Rectus Abdominis"],
+        setup: ["Lie on your back with the hips and knees comfortably bent.", "Reach the arms upward and gently brace the trunk.", "Keep the lower back position steady without forcing it flat."],
+        execution: ["Slowly extend the opposite arm and leg.", "Move only as far as the trunk can remain controlled.", "Return to the start and alternate sides."],
+        cues: ["Move slowly", "Keep ribs controlled", "Shorten the range if needed"],
+        mistakes: ["Arching as the limbs lower", "Rushing between sides", "Using a range that cannot be controlled"]
+    },
+    "bird-dog": {
+        primary: ["Deep Core"],
+        secondary: ["Obliques", "Spinal Erectors"],
+        setup: ["Begin on hands and knees with hands below shoulders and knees below hips.", "Find a comfortable neutral spine.", "Brace lightly before moving."],
+        execution: ["Reach the opposite arm and leg away from the body.", "Keep the pelvis and ribcage facing the floor.", "Return with control and alternate sides."],
+        cues: ["Reach long", "Hips stay level", "Slow return"],
+        mistakes: ["Rotating the pelvis", "Overarching the back", "Lifting the limbs higher than control allows"]
+    },
+    "cable-crunch": {
+        primary: ["Rectus Abdominis"],
+        secondary: ["Obliques"],
+        setup: ["Kneel at a cable with the rope held near the sides of the head.", "Choose a stable knee and hip position.", "Begin with enough space for the cable to stay tensioned."],
+        execution: ["Bring the ribs toward the pelvis by flexing the trunk.", "Keep the hips relatively steady rather than sitting back.", "Return slowly until the abdominal muscles are lengthened comfortably."],
+        cues: ["Ribs toward pelvis", "Hips stay quiet", "Control the return"],
+        mistakes: ["Pulling mainly with the arms", "Turning the movement into a hip hinge", "Using momentum to move the stack"]
+    },
+    "pallof-press": {
+        primary: ["Obliques", "Deep Core"],
+        secondary: [],
+        setup: ["Stand or kneel sideways to a cable with a stable base.", "Hold the handle close to the chest with both hands.", "Move far enough from the stack to create manageable tension."],
+        execution: ["Press the handle straight away from the chest.", "Resist being rotated toward the cable.", "Pause briefly, then return the handle under control."],
+        cues: ["Stay square", "Press straight out", "Do not rotate"],
+        mistakes: ["Choosing tension that pulls the body around", "Leaning away from the cable", "Rushing the return"]
+    },
+    "hanging-knee-raise": {
+        primary: ["Rectus Abdominis"],
+        secondary: ["Obliques"],
+        setup: ["Take a secure grip and begin from a controlled hang.", "Let the legs settle before starting.", "Use a supported captain's-chair variation if grip is limiting."],
+        execution: ["Raise the knees while gently curling the pelvis upward.", "Pause without swinging.", "Lower slowly until the body is steady again."],
+        cues: ["Start without swinging", "Curl the pelvis", "Slow lower"],
+        mistakes: ["Using momentum", "Only flexing at the hips", "Dropping the legs quickly"]
+    },
+    "ab-wheel-rollout": {
+        primary: ["Rectus Abdominis"],
+        secondary: ["Deep Core", "Obliques"],
+        setup: ["Kneel with the wheel below the shoulders and hands secure.", "Brace the trunk and begin with a modest range.", "Use a clear, non-slip path for the wheel."],
+        execution: ["Roll forward while the hips and shoulders travel together.", "Stop before the lower back position changes.", "Pull the wheel back by maintaining trunk tension."],
+        cues: ["Ribs controlled", "Hips and shoulders together", "Own the range"],
+        mistakes: ["Allowing the lower back to sag", "Sending the hips back without moving the shoulders", "Rolling farther than can be controlled"]
     }
 };
 
@@ -170,6 +237,7 @@ function exerciseThumbnail(id) {
 
 
 function muscleCropClass(muscle) {
+    if (["Rectus Abdominis", "Obliques", "Deep Core"].includes(muscle)) return "crop-core";
     if (["Quads", "Adductors", "Hamstrings"].includes(muscle)) return "crop-lower";
     if (["Glutes", "Spinal Erectors"].includes(muscle)) return "crop-mid";
     return "crop-upper";
@@ -257,13 +325,12 @@ function renderDay(day, index) {
                             ${exerciseThumbnail(exercise?.id)}
                         </span>
                         <span class="plan-detail-exercise-copy">
-                            <span class="plan-detail-exercise-name">${escapeHtml(exerciseName(exercise?.id))}</span>
+                            <span class="plan-detail-exercise-name">${escapeHtml(exerciseName(exercise?.id))}${hasGuide ? '<span class="exercise-guide-label">Form guide</span>' : ""}</span>
                             <span class="plan-detail-exercise-target">
                                 ${Number(exercise?.sets) || 0} sets
                                 ${exercise?.reps ? ` × ${escapeHtml(exercise.reps)} reps` : ""}
                             </span>
                         </span>
-                        ${hasGuide ? '<span class="exercise-guide-chevron" aria-hidden="true">›</span>' : ""}
                     </${tag}>
                 `;
                 }).join("") : '<p class="plan-detail-empty">No exercises added.</p>'}
