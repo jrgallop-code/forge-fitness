@@ -1,13 +1,13 @@
 import {
     getAllExercises
 }
-from "./exercise-library.js";
+from "./exercise-library.js?v=exercise-library-catalogue-1";
 
 
 import {
     presetPlans
 }
-from "./workout-plans.js";
+from "./workout-plans.js?v=workout-plans-2";
 
 
 export function renderWorkoutBuilder() {
