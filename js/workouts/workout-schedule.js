@@ -63,6 +63,9 @@ function renderWeekStrip(schedule) {
 }
 
 function renderScheduleActions(context, location) {
+    if (context.status === "complete") {
+        return `<div class="schedule-actions"><button class="secondary-btn" type="button" data-schedule-open>View Schedule</button></div>`;
+    }
     if (!context.dayIndex && context.dayIndex !== 0) {
         return `<div class="schedule-actions"><button class="secondary-btn" type="button" data-schedule-open>View Schedule</button></div>`;
     }
