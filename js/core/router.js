@@ -5,7 +5,6 @@ import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workou
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
 import { renderMuscleRecoveryDashboard, initializeMuscleRecoveryDashboard } from "../dashboard/muscle-recovery.js?v=muscle-recovery-1";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
-import { renderRoutineReviewPreview, initializeRoutineReviewPreview } from "../dashboard/routine-review-preview.js?v=routine-review-preview-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=workout-schedule-2";
 import { renderProgress } from "../progress/progress-ui.js?v=progress-photo-tab-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-tracker-photo-tab-1";
@@ -30,10 +29,9 @@ export function navigate(page) {
     try {
         switch (page) {
             case "home":
-                content.innerHTML = renderDashboardWithPerformance() + renderRoutineReviewPreview() + renderMuscleRecoveryDashboard();
+                content.innerHTML = renderDashboardWithPerformance() + renderMuscleRecoveryDashboard();
                 safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets);
                 safeInitialize("Workout performance", initializeWorkoutPerformance);
-                safeInitialize("Routine review preview", initializeRoutineReviewPreview);
                 safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
                 safeInitialize("Muscle recovery", initializeMuscleRecoveryDashboard);
                 safeInitialize("Backup manager", initializeBackupManager);
@@ -56,8 +54,7 @@ export function navigate(page) {
             case "more": content.innerHTML = renderMore(); safeInitialize("More", initializeMore); break;
             case "history": content.innerHTML = renderWorkoutHistory(); safeInitialize("Workout history", initializeWorkoutHistory); break;
             default:
-                content.innerHTML = renderDashboardWithPerformance() + renderRoutineReviewPreview() + renderMuscleRecoveryDashboard(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Workout performance", initializeWorkoutPerformance);
-                safeInitialize("Routine review preview", initializeRoutineReviewPreview);
+                content.innerHTML = renderDashboardWithPerformance() + renderMuscleRecoveryDashboard(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Workout performance", initializeWorkoutPerformance);
                 safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
                 safeInitialize("Muscle recovery", initializeMuscleRecoveryDashboard);
         }
