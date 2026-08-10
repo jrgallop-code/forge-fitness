@@ -1,4 +1,4 @@
-import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=workout-form-coach-beta-1";
+import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=workout-form-coach-beta-2";
 import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=workout-catalogue-plans-1";
 import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=workout-catalogue-form-coach-1";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
