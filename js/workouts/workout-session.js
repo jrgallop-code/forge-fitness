@@ -491,6 +491,8 @@ function createExerciseState(day) {
                 return {
                     exerciseId: plannedExercise.id,
                     trackingType: "notes",
+                    durationMinutes: null,
+                    distance: "",
                     notes: "",
                     sets: []
                 };
@@ -567,10 +569,18 @@ function renderSessionExercises({
                 return `
                     <article class="session-exercise-card cardio-session-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-tracking-type="notes">
                         <h4>${escapeHtml(exercise?.name || "Cardio")}</h4>
-                        <p class="session-target">Record time, distance, pace or useful details.</p>
-                        <div class="previous-performance"><strong>Previous workout</strong><span>${escapeHtml(previous?.notes || "Hasn't started")}</span></div>
-                        <label class="cardio-notes-label">Today's notes
-                            <textarea class="session-cardio-notes" maxlength="500">${escapeHtml(state.notes || "")}</textarea>
+                        <p class="session-target">Record your cardio time, with optional distance and notes.</p>
+                        <div class="previous-performance"><strong>Previous workout</strong><span>${escapeHtml(formatCardioPrevious(previous))}</span></div>
+                        <div class="cardio-metrics-grid">
+                            <label>Time (minutes)
+                                <input class="session-cardio-duration" type="number" inputmode="decimal" min="0" step="0.1" value="${state.durationMinutes ?? ""}" placeholder="20">
+                            </label>
+                            <label>Distance (optional)
+                                <input class="session-cardio-distance" type="text" maxlength="40" value="${escapeHtml(state.distance || "")}" placeholder="4 km or 2.5 mi">
+                            </label>
+                        </div>
+                        <label class="cardio-notes-label">Notes (optional)
+                            <textarea class="session-cardio-notes" maxlength="500" placeholder="Pace, resistance, intervals…">${escapeHtml(state.notes || "")}</textarea>
                         </label>
                         ${editingSessionId ? '<button class="remove-session-exercise secondary-btn" type="button">Remove Exercise</button>' : ""}
                     </article>
@@ -913,6 +923,34 @@ function bindSessionInputs({
         .forEach(card => {
             const exerciseIndex =
                 Number(card.dataset.exerciseIndex);
+
+            card
+                .querySelector(".session-cardio-duration")
+                ?.addEventListener(
+                    "input",
+                    event => {
+                        session.exercises[exerciseIndex].durationMinutes =
+                            event.target.value === ""
+                                ? null
+                                : Number(event.target.value);
+                        session.currentExerciseIndex =
+                            exerciseIndex;
+                        persist();
+                    }
+                );
+
+            card
+                .querySelector(".session-cardio-distance")
+                ?.addEventListener(
+                    "input",
+                    event => {
+                        session.exercises[exerciseIndex].distance =
+                            event.target.value;
+                        session.currentExerciseIndex =
+                            exerciseIndex;
+                        persist();
+                    }
+                );
 
             card
                 .querySelector(".session-cardio-notes")
@@ -1682,6 +1720,31 @@ function compareSessionsNewest(a, b) {
     ).localeCompare(
         String(a.completedAt || a.updatedAt || a.date || "")
     );
+}
+
+
+function formatCardioPrevious(previous) {
+    if (!previous) {
+        return "Hasn't started";
+    }
+
+    const details = [];
+
+    if (Number(previous.durationMinutes) > 0) {
+        details.push(`${previous.durationMinutes} min`);
+    }
+
+    if (String(previous.distance || "").trim()) {
+        details.push(String(previous.distance).trim());
+    }
+
+    if (String(previous.notes || "").trim()) {
+        details.push(String(previous.notes).trim());
+    }
+
+    return details.length
+        ? details.join(" • ")
+        : "No previous details recorded.";
 }
 
 
