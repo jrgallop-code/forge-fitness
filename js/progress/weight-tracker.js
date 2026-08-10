@@ -259,14 +259,6 @@ function saveWeightEntries(entries) {
         WEIGHT_STORAGE_KEY,
         JSON.stringify(entries)
     );
-
-    window.dispatchEvent(
-        new CustomEvent("levelup:weight-updated", {
-            detail: {
-                entryCount: Array.isArray(entries) ? entries.length : 0
-            }
-        })
-    );
 }
 
 
