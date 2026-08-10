@@ -4,6 +4,88 @@ import { openWorkoutLogger } from "./workout-session.js?v=workout-session-4";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 let bypassNextPlanClick = false;
+const EXERCISE_GUIDES = {
+    "barbell-bench-press": {
+        primary: ["Chest"],
+        secondary: ["Triceps", "Front Delts"],
+        setup: [
+            "Set your eyes slightly behind the bar and place both feet firmly.",
+            "Use a comfortable grip that lets the forearms approach vertical near the bottom.",
+            "Keep the upper back supported and unrack the bar with control."
+        ],
+        execution: [
+            "Lower the bar toward the mid-to-lower chest using a repeatable path.",
+            "Keep the wrists stacked over the forearms and press smoothly.",
+            "Finish each repetition under control without bouncing the bar."
+        ],
+        cues: ["Stable feet", "Controlled touch", "Repeatable bar path"],
+        mistakes: ["Losing foot pressure", "Letting the wrists fold back excessively", "Changing the touch point between repetitions"]
+    },
+    "back-squat": {
+        primary: ["Quads", "Glutes"],
+        secondary: ["Adductors", "Spinal Erectors"],
+        setup: [
+            "Place the bar securely on the upper back and choose a comfortable stance.",
+            "Keep the feet planted and take a breath before beginning the repetition.",
+            "Use safety arms or suitable supervision when appropriate."
+        ],
+        execution: [
+            "Bend the knees and hips together while keeping pressure through the whole foot.",
+            "Descend only as far as you can control with a consistent position.",
+            "Stand by driving the floor away and keeping the hips and shoulders moving together."
+        ],
+        cues: ["Whole foot planted", "Knees track with feet", "Hips and shoulders rise together"],
+        mistakes: ["Rushing the descent", "Allowing the heels to lift", "Turning the final repetitions into a different movement"]
+    },
+    "conventional-deadlift": {
+        primary: ["Glutes", "Hamstrings"],
+        secondary: ["Spinal Erectors", "Upper Back", "Forearms"],
+        setup: [
+            "Position the bar over the middle of the foot and use a stable stance.",
+            "Take a secure grip, bring the body close to the bar and brace before lifting.",
+            "Use an appropriate starting height if the floor position cannot be reached comfortably."
+        ],
+        execution: [
+            "Push through the floor while keeping the bar close to the body.",
+            "Extend the knees and hips smoothly without jerking the bar.",
+            "Finish standing tall, then return the bar with control."
+        ],
+        cues: ["Brace before lifting", "Keep the bar close", "Push the floor away"],
+        mistakes: ["Rushing the setup", "Letting the bar drift forward", "Leaning backward at the top"]
+    },
+    "barbell-row": {
+        primary: ["Lats", "Upper Back"],
+        secondary: ["Rear Delts", "Biceps", "Spinal Erectors"],
+        setup: [
+            "Use a stable stance and hinge to a torso angle you can maintain.",
+            "Brace before lifting and let the arms begin long.",
+            "Choose a load that does not require excessive body movement."
+        ],
+        execution: [
+            "Pull the bar toward the lower ribs using a repeatable path.",
+            "Keep the torso controlled while the elbows travel back.",
+            "Lower the bar until the arms are long again without losing the setup."
+        ],
+        cues: ["Stable torso", "Elbows travel back", "Controlled lowering"],
+        mistakes: ["Standing taller on every repetition", "Shrugging toward the ears", "Using momentum to shorten the range"]
+    },
+    "pull-up": {
+        primary: ["Lats"],
+        secondary: ["Upper Back", "Biceps", "Forearms"],
+        setup: [
+            "Take a secure, comfortable grip and begin from a controlled hang.",
+            "Keep the body organized rather than swinging before the first repetition.",
+            "Use assistance when needed to keep the repetitions consistent."
+        ],
+        execution: [
+            "Pull the elbows down while bringing the upper chest toward the bar.",
+            "Use a comfortable range without forcing the neck forward.",
+            "Lower under control before beginning the next repetition."
+        ],
+        cues: ["No swinging start", "Elbows down", "Controlled return"],
+        mistakes: ["Kicking for momentum", "Shrugging throughout the pull", "Dropping quickly from the top"]
+    }
+};
 
 function getSavedPlans() {
     try {
@@ -69,6 +151,110 @@ function exerciseThumbnail(id) {
     `;
 }
 
+
+function muscleGraphic(muscle, role) {
+    const key = String(muscle).toLowerCase().replace(/\s+/g, "-");
+    return `
+        <svg class="exercise-muscle-figure" viewBox="0 0 120 150" role="img" aria-label="${escapeHtml(muscle)} highlighted">
+            <defs>
+                <linearGradient id="body-shade-${key}-${role}" x1="0" x2="1">
+                    <stop offset="0" stop-color="#d4d4d8"/>
+                    <stop offset=".5" stop-color="#f4f4f5"/>
+                    <stop offset="1" stop-color="#a1a1aa"/>
+                </linearGradient>
+                <linearGradient id="muscle-shade-${key}-${role}" x1="0" x2="1">
+                    <stop offset="0" stop-color="${role === "primary" ? "#991b1b" : "#7f1d1d"}"/>
+                    <stop offset=".55" stop-color="${role === "primary" ? "#ef4444" : "#dc2626"}"/>
+                    <stop offset="1" stop-color="#7f1d1d"/>
+                </linearGradient>
+            </defs>
+            <circle cx="60" cy="17" r="12" fill="url(#body-shade-${key}-${role})"/>
+            <path d="M42 31 Q60 25 78 31 L88 72 76 101 72 140H60l-3-40-3 40H42l2-39-12-29Z" fill="url(#body-shade-${key}-${role})" stroke="#71717a" stroke-width="1.3"/>
+            <path d="M43 35 27 78M77 35l16 43" fill="none" stroke="url(#body-shade-${key}-${role})" stroke-width="11" stroke-linecap="round"/>
+            ${muscleHighlight(key, role)}
+        </svg>
+    `;
+}
+
+function muscleHighlight(key, role) {
+    const fill = `url(#muscle-shade-${key}-${role})`;
+    const shapes = {
+        "chest": `<path d="M44 38q8-7 16 0v18q-10 4-17-3Zm32 0q-8-7-16 0v18q10 4 17-3Z" fill="${fill}"/>`,
+        "front-delts": `<circle cx="41" cy="39" r="6" fill="${fill}"/><circle cx="79" cy="39" r="6" fill="${fill}"/>`,
+        "rear-delts": `<circle cx="41" cy="39" r="6" fill="${fill}"/><circle cx="79" cy="39" r="6" fill="${fill}"/>`,
+        "triceps": `<path d="m36 47-6 20 8 2 6-19Z" fill="${fill}"/><path d="m84 47 6 20-8 2-6-19Z" fill="${fill}"/>`,
+        "biceps": `<ellipse cx="36" cy="57" rx="5" ry="12" fill="${fill}"/><ellipse cx="84" cy="57" rx="5" ry="12" fill="${fill}"/>`,
+        "forearms": `<path d="m31 68-7 13 7 3 8-14Z" fill="${fill}"/><path d="m89 68 7 13-7 3-8-14Z" fill="${fill}"/>`,
+        "lats": `<path d="M43 39q17 8 34 0l-5 35-12 12-12-12Z" fill="${fill}"/>`,
+        "upper-back": `<path d="M43 36q17-8 34 0l-7 23H50Z" fill="${fill}"/>`,
+        "spinal-erectors": `<path d="M55 43h4l-2 48h-6Zm6 0h4l4 48h-6Z" fill="${fill}"/>`,
+        "glutes": `<ellipse cx="51" cy="86" rx="10" ry="8" fill="${fill}"/><ellipse cx="69" cy="86" rx="10" ry="8" fill="${fill}"/>`,
+        "hamstrings": `<path d="m47 94-3 30 10 1 3-31Zm26 0 3 30-10 1-3-31Z" fill="${fill}"/>`,
+        "quads": `<path d="m46 94-2 29 11 2 2-31Zm28 0 2 29-11 2-2-31Z" fill="${fill}"/>`,
+        "adductors": `<path d="m55 94-1 26h6l-1-26Zm10 0 1 26h-6l1-26Z" fill="${fill}"/>`
+    };
+    return shapes[key] || `<circle cx="60" cy="65" r="12" fill="${fill}"/>`;
+}
+
+function renderMuscleCards(guide) {
+    return [
+        ...guide.primary.map(muscle => ({ muscle, role: "primary" })),
+        ...guide.secondary.map(muscle => ({ muscle, role: "secondary" }))
+    ].map(item => `
+        <article class="exercise-muscle-card">
+            ${muscleGraphic(item.muscle, item.role)}
+            <strong>${escapeHtml(item.muscle)}</strong>
+            <span class="${item.role}">${item.role}</span>
+        </article>
+    `).join("");
+}
+
+function showExerciseGuide(planScreen, exerciseId) {
+    const guide = EXERCISE_GUIDES[exerciseId];
+    const page = planScreen.closest(".workout-page");
+    if (!guide || !page) return;
+
+    const screen = document.createElement("section");
+    screen.className = "exercise-guide-screen";
+    screen.innerHTML = `
+        <button class="plan-detail-back exercise-guide-back" type="button">← Workout Plan</button>
+        <header class="exercise-guide-header">
+            <span class="eyebrow">EXERCISE GUIDE</span>
+            <h2>${escapeHtml(exerciseName(exerciseId))}</h2>
+            <p>Use these instructions as general technique guidance. Choose a comfortable range of motion and stop if an exercise causes pain.</p>
+        </header>
+        <section class="exercise-guide-section">
+            <h3>Muscles Used</h3>
+            <div class="exercise-muscle-grid">${renderMuscleCards(guide)}</div>
+        </section>
+        <section class="exercise-guide-section">
+            <h3>Setup</h3>
+            <ol>${guide.setup.map(step => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
+        </section>
+        <section class="exercise-guide-section">
+            <h3>How to Perform It</h3>
+            <ol>${guide.execution.map(step => `<li>${escapeHtml(step)}</li>`).join("")}</ol>
+        </section>
+        <section class="exercise-guide-section exercise-cue-section">
+            <h3>Key Cues</h3>
+            <div class="exercise-cue-list">${guide.cues.map(cue => `<span>${escapeHtml(cue)}</span>`).join("")}</div>
+        </section>
+        <section class="exercise-guide-section">
+            <h3>Common Mistakes</h3>
+            <ul>${guide.mistakes.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </section>
+    `;
+
+    planScreen.hidden = true;
+    page.appendChild(screen);
+    screen.querySelector(".exercise-guide-back")?.addEventListener("click", () => {
+        screen.remove();
+        planScreen.hidden = false;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 function renderDay(day, index) {
     const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
 
@@ -83,8 +269,11 @@ function renderDay(day, index) {
             </div>
 
             <div class="plan-detail-exercise-list">
-                ${exercises.length ? exercises.map(exercise => `
-                    <div class="plan-detail-exercise-row">
+                ${exercises.length ? exercises.map(exercise => {
+                    const hasGuide = Boolean(EXERCISE_GUIDES[exercise?.id]);
+                    const tag = hasGuide ? "button" : "div";
+                    return `
+                    <${tag} class="plan-detail-exercise-row ${hasGuide ? "has-exercise-guide" : ""}" ${hasGuide ? `type="button" data-exercise-guide="${escapeHtml(exercise.id)}" aria-label="Open ${escapeHtml(exerciseName(exercise.id))} exercise guide"` : ""}>
                         <span class="plan-detail-exercise-thumb" aria-hidden="true">
                             ${exerciseThumbnail(exercise?.id)}
                         </span>
@@ -95,8 +284,10 @@ function renderDay(day, index) {
                                 ${exercise?.reps ? ` × ${escapeHtml(exercise.reps)} reps` : ""}
                             </span>
                         </span>
-                    </div>
-                `).join("") : '<p class="plan-detail-empty">No exercises added.</p>'}
+                        ${hasGuide ? '<span class="exercise-guide-chevron" aria-hidden="true">›</span>' : ""}
+                    </${tag}>
+                `;
+                }).join("") : '<p class="plan-detail-empty">No exercises added.</p>'}
             </div>
         </section>
     `;
@@ -178,6 +369,11 @@ function showPlanDetails({ plan, type, card }) {
     page.classList.add("showing-plan-details");
 
     initializeDayCarousel(screen, days.length);
+
+    screen.addEventListener("click", event => {
+        const trigger = event.target.closest("[data-exercise-guide]");
+        if (trigger) showExerciseGuide(screen, trigger.dataset.exerciseGuide);
+    });
 
     screen.querySelector(".plan-detail-back")?.addEventListener("click", closePlanDetails);
 
