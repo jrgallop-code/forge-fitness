@@ -1,9 +1,3 @@
-import {
-    renderPhotoJournal
-}
-from "./photo-journal.js";
-
-
 export function renderProgress() {
 
     return `
@@ -33,6 +27,14 @@ export function renderProgress() {
                     type="button"
                 >
                     🏋️ Lifting
+                </button>
+
+                <button
+                    class="progress-tab"
+                    id="photo-log-tab"
+                    type="button"
+                >
+                    Photo Log
                 </button>
 
             </div>
@@ -190,8 +192,6 @@ export function renderProgress() {
 
                 </div>
 
-
-                ${renderPhotoJournal()}
 
             </div>
 
@@ -452,6 +452,17 @@ export function renderProgress() {
 
                 </section>
 
+            </div>
+
+            <div id="photo-log-progress" hidden>
+                <section class="photo-log-coming-soon">
+                    <span class="eyebrow">PHOTO LOG</span>
+                    <div class="photo-log-placeholder-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M4 7.5h3l1.2-2h7.6l1.2 2h3v11H4v-11Z"/><circle cx="12" cy="13" r="3.2"/></svg>
+                    </div>
+                    <h3>Photo Log Coming Soon</h3>
+                    <p>A dedicated place for organizing photo records is planned for a future update.</p>
+                </section>
             </div>
 
         </section>
