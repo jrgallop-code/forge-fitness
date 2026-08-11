@@ -1,4 +1,4 @@
-import { navigate } from "./core/router.js?v=workout-pr-badges-1";
+import { navigate } from "./core/router.js?v=unified-goals-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=cardio-fields-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-session-7-cardio-fields";
 
