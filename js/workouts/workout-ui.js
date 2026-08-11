@@ -398,7 +398,6 @@ export function renderWorkoutBuilder() {
                     <button
                         id="add-day-btn"
                         class="secondary-btn"
-                        data-day-index="0"
                         type="button"
                     >
                         + Add Training Day
