@@ -1,2 +1,46 @@
-/* Keep the completion box compact while placing its readable label beside it. */
-.workout-session-logger .complete-set-btn{position:relative!important;width:35px!important;height:35px!important;min-width:35px!important;min-height:35px!important;padding:0!important;font-size:0!important;overflow:visible!important;white-space:nowrap!important}.workout-session-logger .complete-set-btn::before{content:"";display:block;width:13px;height:13px;border:1.5px solid #fff;border-radius:3px;box-sizing:border-box}.workout-session-logger .complete-set-btn::after{content:"Complete Set"!important;position:absolute;left:42px;top:50%;transform:translateY(-50%);font-size:7.5px!important;font-weight:800;line-height:1!important;letter-spacing:-.02em;color:#fff;white-space:nowrap}.workout-session-logger .session-set-row.completed .complete-set-btn::before{content:"✓";display:grid;place-items:center;font-size:10px;line-height:1}.workout-session-logger .session-set-row.completed .complete-set-btn::after{content:"Completed"!important;font-size:7.5px!important}@media(max-width:380px){.workout-session-logger .complete-set-btn{width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important}.workout-session-logger .complete-set-btn::after,.workout-session-logger .session-set-row.completed .complete-set-btn::after{left:40px;font-size:7.5px!important}}
+/* Keep the completion control fully contained in the final set-grid column. */
+.workout-session-logger .complete-set-btn {
+  position: relative !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 35px !important;
+  height: 35px !important;
+  min-width: 35px !important;
+  min-height: 35px !important;
+  padding: 0 !important;
+  font-size: 0 !important;
+  overflow: hidden !important;
+}
+
+.workout-session-logger .complete-set-btn::before {
+  content: "";
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid #fff;
+  border-radius: 3px;
+  box-sizing: border-box;
+}
+
+/* The column header already identifies this control as Complete, so do not
+   position an extra label outside the grid column. */
+.workout-session-logger .complete-set-btn::after {
+  content: none !important;
+  display: none !important;
+}
+
+.workout-session-logger .session-set-row.completed .complete-set-btn::before {
+  content: "✓";
+  font-size: 10px;
+  line-height: 1;
+}
+
+@media (max-width: 380px) {
+  .workout-session-logger .complete-set-btn {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+  }
+}
