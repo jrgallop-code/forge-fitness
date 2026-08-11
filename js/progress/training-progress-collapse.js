@@ -2,14 +2,23 @@ export function initializeTrainingProgressCollapse() {
     const liftingProgress = document.getElementById("lifting-progress");
     if (!liftingProgress || liftingProgress.querySelector(".training-progress-disclosure")) return;
 
+    const header = liftingProgress.querySelector(".training-progress-header");
+    const demoMessage = liftingProgress.querySelector("#training-demo-message");
+    const summaryGrid = liftingProgress.querySelector(".training-summary-grid");
+
+    if (!header || !summaryGrid) return;
+
+    const titleBlock = header.querySelector(":scope > div:first-child");
+    const actions = header.querySelector(".training-header-actions");
+
     const details = document.createElement("details");
     details.className = "training-progress-disclosure";
 
     const summary = document.createElement("summary");
     summary.innerHTML = `
         <span class="training-summary-title-wrap">
-            <strong>Training Progress</strong>
-            <small>Strength, volume, exercise trends and workout history</small>
+            <strong>${titleBlock?.querySelector("h3")?.textContent || "Training Progress"}</strong>
+            <small>${titleBlock?.querySelector("p")?.textContent || "Review strength, training volume and completed sessions."}</small>
         </span>
         <span class="training-summary-toggle" aria-hidden="true">
             <svg class="training-summary-chevron" viewBox="0 0 24 24">
@@ -21,22 +30,12 @@ export function initializeTrainingProgressCollapse() {
     const panel = document.createElement("div");
     panel.className = "training-progress-disclosure-panel";
 
-    while (liftingProgress.firstChild) {
-        panel.appendChild(liftingProgress.firstChild);
-    }
+    if (actions) panel.appendChild(actions);
+    if (demoMessage) panel.appendChild(demoMessage);
+    panel.appendChild(summaryGrid);
 
     details.append(summary, panel);
-    liftingProgress.appendChild(details);
-
-    details.addEventListener("toggle", () => {
-        if (!details.open) return;
-
-        requestAnimationFrame(() => {
-            const range = document.getElementById("progress-range");
-            range?.dispatchEvent(new Event("change", { bubbles: true }));
-            window.dispatchEvent(new Event("resize"));
-        });
-    });
+    header.replaceWith(details);
 }
 
 document.addEventListener("click", event => {
