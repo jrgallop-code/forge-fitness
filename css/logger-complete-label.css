@@ -1,88 +1,46 @@
-/* Keep the completion control aligned as a true fifth data-entry column. */
-.workout-session-logger .session-set-header,
-.workout-session-logger .session-set-row{
-    grid-template-columns:27px minmax(74px,1.15fr) minmax(58px,.72fr) minmax(52px,.65fr) minmax(76px,.85fr)!important;
+/* Keep the completion control fully contained in the final set-grid column. */
+.workout-session-logger .complete-set-btn {
+  position: relative !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 35px !important;
+  height: 35px !important;
+  min-width: 35px !important;
+  min-height: 35px !important;
+  padding: 0 !important;
+  font-size: 0 !important;
+  overflow: hidden !important;
 }
 
-.workout-session-logger .complete-set-btn{
-    position:relative!important;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:flex-start!important;
-    gap:5px!important;
-    width:100%!important;
-    height:36px!important;
-    min-width:0!important;
-    min-height:36px!important;
-    padding:0 4px!important;
-    border-radius:8px!important;
-    font-size:0!important;
-    overflow:hidden!important;
-    white-space:nowrap!important;
-    box-sizing:border-box!important;
+.workout-session-logger .complete-set-btn::before {
+  content: "";
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid #fff;
+  border-radius: 3px;
+  box-sizing: border-box;
 }
 
-.workout-session-logger .complete-set-btn::before{
-    content:"";
-    display:grid;
-    place-items:center;
-    flex:0 0 13px;
-    width:13px;
-    height:13px;
-    border:1.5px solid #fff;
-    border-radius:3px;
-    box-sizing:border-box;
+/* The column header already identifies this control as Complete, so do not
+   position an extra label outside the grid column. */
+.workout-session-logger .complete-set-btn::after {
+  content: none !important;
+  display: none !important;
 }
 
-.workout-session-logger .complete-set-btn::after{
-    content:"Complete Set"!important;
-    position:static!important;
-    transform:none!important;
-    display:block;
-    min-width:0;
-    font-size:7.5px!important;
-    font-weight:800;
-    line-height:1!important;
-    letter-spacing:-.02em;
-    color:#fff;
-    white-space:nowrap;
+.workout-session-logger .session-set-row.completed .complete-set-btn::before {
+  content: "✓";
+  font-size: 10px;
+  line-height: 1;
 }
 
-.workout-session-logger .session-set-row.completed .complete-set-btn::before{
-    content:"✓";
-    font-size:10px;
-    line-height:1;
-}
-
-.workout-session-logger .session-set-row.completed .complete-set-btn::after{
-    content:"Completed"!important;
-    font-size:7.5px!important;
-}
-
-@media(max-width:520px){
-    .workout-session-logger .session-set-header,
-    .workout-session-logger .session-set-row{
-        grid-template-columns:25px minmax(64px,1.05fr) minmax(52px,.7fr) minmax(47px,.62fr) minmax(72px,.82fr)!important;
-        gap:4px!important;
-    }
-
-    .workout-session-logger .complete-set-btn{
-        height:35px!important;
-        min-height:35px!important;
-        padding:0 3px!important;
-        gap:4px!important;
-    }
-}
-
-@media(max-width:380px){
-    .workout-session-logger .session-set-header,
-    .workout-session-logger .session-set-row{
-        grid-template-columns:23px minmax(59px,1fr) minmax(49px,.68fr) minmax(44px,.6fr) minmax(68px,.8fr)!important;
-        gap:3px!important;
-    }
-
-    .workout-session-logger .complete-set-btn::after,
-    .workout-session-logger .session-set-row.completed .complete-set-btn::after{
-        font-size:7px!important;
-    }
+@media (max-width: 380px) {
+  .workout-session-logger .complete-set-btn {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+  }
 }
