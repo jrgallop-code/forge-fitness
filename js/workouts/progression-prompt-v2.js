@@ -160,6 +160,42 @@ function hidePrompt(prompt) {
   prompt.innerHTML = '';
 }
 
+function getLiveCompletedSets(card) {
+  return [...card.querySelectorAll('.session-set-row')]
+    .filter(row => row.classList.contains('completed'))
+    .map(row => ({
+      weight: Number(row.querySelector('.session-weight')?.value),
+      reps: Number(row.querySelector('.session-reps')?.value)
+    }))
+    .filter(set => Number.isFinite(set.reps) && set.reps > 0);
+}
+
+function renderLiveBelowTargetPrompt(card, prompt, repRange, exerciseId) {
+  const completedSets = getLiveCompletedSets(card);
+  if (completedSets.length < 2) return false;
+
+  const belowTarget = completedSets.filter(set => set.reps < repRange.lower);
+  if (belowTarget.length <= completedSets.length / 2) return false;
+
+  const weightedSets = completedSets.filter(set => Number.isFinite(set.weight) && set.weight > 0);
+  const currentWeight = weightedSets.length ? weightedSets[weightedSets.length - 1].weight : 0;
+  const reduction = getRecommendedReducedLoad(currentWeight, exerciseId);
+  if (!reduction) return false;
+
+  const repsText = completedSets.map(set => set.reps).join(', ');
+  prompt.classList.add('progression-prompt-down');
+  prompt.innerHTML = `
+    <span class="progression-arrow">↓</span>
+    <div>
+      <strong>Consider a lighter load</strong>
+      <p>So far, ${belowTarget.length} of ${completedSets.length} completed sets are below your ${repRange.lower}–${repRange.upper} rep target (${repsText} reps). Consider trying about <b>${formatLoad(reduction.suggestedLoad)} lb</b> for your remaining sets or next workout.</p>
+      <small>Level Up waits for at least two completed sets and only suggests a reduction when most completed sets fall below the programmed rep range.</small>
+    </div>
+  `;
+  prompt.hidden = false;
+  return true;
+}
+
 function renderCard(card) {
   const logger = card.closest('#workout-session-logger');
   if (!logger) return;
@@ -177,7 +213,7 @@ function renderCard(card) {
   }
 
   const active = readJson(ACTIVE_WORKOUT_STORAGE_KEY, null);
-  if (!active || !source) {
+  if (!active) {
     hidePrompt(prompt);
     return;
   }
@@ -185,6 +221,13 @@ function renderCard(card) {
   const planned = active?.planSnapshot?.days?.[active.trainingDayIndex]?.exercises?.[exerciseIndex];
   const repRange = getRepRange(planned?.reps);
   if (!repRange || repRange.lower === repRange.upper) {
+    hidePrompt(prompt);
+    return;
+  }
+
+  if (renderLiveBelowTargetPrompt(card, prompt, repRange, exerciseId)) return;
+
+  if (!source) {
     hidePrompt(prompt);
     return;
   }
