@@ -39,7 +39,7 @@ function refreshLiveDisplay() {
     }
 
     const { status } = getStatus();
-    logger.querySelectorAll(".live-pr-set-badge").forEach(element => element.remove());
+    logger.querySelectorAll(".live-pr-exercise-badge").forEach(element => element.remove());
     logger.querySelectorAll(".session-set-row.live-pr-set").forEach(row => row.classList.remove("live-pr-set"));
 
     let counter = logger.querySelector(".live-pr-workout-count");
@@ -57,13 +57,15 @@ function refreshLiveDisplay() {
     status.details.forEach(detail => {
         const card = [...logger.querySelectorAll(".session-exercise-card")]
             .find(element => String(element.dataset.exerciseId || "") === String(detail.exerciseId));
-        const row = card?.querySelector(`.session-set-row[data-set-index="${detail.bestSetIndex}"]`);
-        if (!row) return;
-        row.classList.add("live-pr-set");
-        const badge = document.createElement("span");
-        badge.className = "live-pr-set-badge";
-        badge.innerHTML = `${trophyIcon()}<span>PR</span>`;
-        row.appendChild(badge);
+        if (!card) return;
+
+        const row = card.querySelector(`.session-set-row[data-set-index="${detail.bestSetIndex}"]`);
+        row?.classList.add("live-pr-set");
+
+        const badge = document.createElement("div");
+        badge.className = "live-pr-exercise-badge";
+        badge.innerHTML = `${trophyIcon()}<span>PR achieved</span>`;
+        card.querySelector("h4")?.insertAdjacentElement("afterend", badge);
     });
 
     if (document.querySelector(".history-session-card, .history-workout-card")) initializeWorkoutPrBadges();
@@ -99,14 +101,14 @@ function showPrToast(exerciseId, detail) {
     toast.className = "live-pr-toast";
     toast.setAttribute("role", "status");
     toast.setAttribute("aria-live", "polite");
-    toast.innerHTML = `<div class="live-pr-toast-icon">${trophyIcon()}</div><div><span>NEW PR</span><strong>${escapeHtml(exerciseName)}</strong><small>${escapeHtml(formatPrDetail(detail))}</small></div>`;
+    toast.innerHTML = `<div class="live-pr-toast-icon">${trophyIcon()}</div><div><span>CONGRATS! NEW PR!</span><strong>${escapeHtml(exerciseName)}</strong><small>${escapeHtml(formatPrDetail(detail))} · Awesome work!</small></div>`;
     document.body.appendChild(toast);
     requestAnimationFrame(() => toast.classList.add("show"));
 
     toastTimer = window.setTimeout(() => {
         toast.classList.remove("show");
         window.setTimeout(() => toast.remove(), 220);
-    }, 3200);
+    }, 3600);
 }
 
 function formatPrDetail(detail) {
