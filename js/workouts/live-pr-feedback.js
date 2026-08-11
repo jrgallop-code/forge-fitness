@@ -1,5 +1,5 @@
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-cardio-3";
-import { evaluateLiveWorkoutPrs, initializeWorkoutPrBadges } from "./workout-pr-badges.js?v=workout-pr-badges-3";
+import { evaluateLiveWorkoutPrs, initializeWorkoutPrBadges } from "./workout-pr-badges.js?v=workout-pr-badges-4";
 
 const ACTIVE_KEY = "level_up_active_workout";
 const SESSION_KEY = "forge_workout_sessions";
@@ -32,6 +32,10 @@ function getStatus() {
 }
 
 function refreshLiveDisplay() {
+    if (document.querySelector(".history-session-card, .history-workout-card")) {
+        initializeWorkoutPrBadges();
+    }
+
     const logger = document.getElementById("workout-session-logger");
     if (!logger || logger.dataset.editingSessionId) {
         document.querySelector(".live-pr-toast")?.remove();
@@ -67,8 +71,6 @@ function refreshLiveDisplay() {
         badge.innerHTML = `${trophyIcon()}<span>PR achieved</span>`;
         card.querySelector("h4")?.insertAdjacentElement("afterend", badge);
     });
-
-    if (document.querySelector(".history-session-card, .history-workout-card")) initializeWorkoutPrBadges();
 }
 
 function handleCompletedSet(button, beforeStatus) {
