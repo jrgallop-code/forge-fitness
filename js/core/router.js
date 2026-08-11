@@ -20,7 +20,7 @@ import { initializeProteinTargetExplanation } from "../nutrition/protein-target-
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=goals-flow-3";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=unified-goals-2";
 import { renderGoalProjection, initializeGoalProjection } from "../nutrition/goal-projection.js?v=selected-target-projection-4";
-import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=more-water-route-1";
+import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=more-bmi-1";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=workout-history-one-off-1";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-1";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-3";
