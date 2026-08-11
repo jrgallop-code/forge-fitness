@@ -258,7 +258,7 @@ function renderCard(card) {
     : `${formatLoad(range.minimumIncrease)}–${formatLoad(range.maximumIncrease)} lb`;
   const loadRange = range.minimumLoad === range.maximumLoad
     ? `${formatLoad(range.minimumLoad)} lb`
-    : `${formatLoad(range.maximumLoad)} lb`;
+    : `${formatLoad(range.minimumLoad)}–${formatLoad(range.maximumLoad)} lb`;
 
   prompt.classList.remove('progression-prompt-down');
   prompt.innerHTML = `
