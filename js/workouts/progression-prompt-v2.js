@@ -12,12 +12,13 @@ function readJson(key, fallback) {
   }
 }
 
-function getRepRangeUpperBound(repTarget) {
+function getRepRange(repTarget) {
   const values = String(repTarget || '')
     .match(/\d+(?:\.\d+)?/g)
     ?.map(Number)
     .filter(Number.isFinite) || [];
-  return values.length ? Math.max(...values) : null;
+  if (!values.length) return null;
+  return { lower: Math.min(...values), upper: Math.max(...values) };
 }
 
 function formatLoad(value) {
@@ -47,6 +48,15 @@ function getRecommendedLoadRange(currentWeight, exerciseId) {
     minimumLoad: Number((current + minimumIncrease).toFixed(1)),
     maximumLoad: Number((current + maximumIncrease).toFixed(1))
   };
+}
+
+function getRecommendedReducedLoad(currentWeight, exerciseId) {
+  const current = Number(currentWeight);
+  if (!Number.isFinite(current) || current <= 0) return null;
+  const decrement = getPracticalIncrement(exerciseId);
+  const suggestedLoad = Math.max(0, Number((current - decrement).toFixed(1)));
+  if (suggestedLoad >= current) return null;
+  return { decrement, suggestedLoad };
 }
 
 function compareSessionsNewest(a, b) {
@@ -144,6 +154,12 @@ function ensurePrompt(card) {
   return prompt;
 }
 
+function hidePrompt(prompt) {
+  prompt.hidden = true;
+  prompt.classList.remove('progression-prompt-down');
+  prompt.innerHTML = '';
+}
+
 function renderCard(card) {
   const logger = card.closest('#workout-session-logger');
   if (!logger) return;
@@ -156,23 +172,20 @@ function renderCard(card) {
   if (card.dataset.trackingType !== 'reps') return;
   const prompt = ensurePrompt(card);
   if (excludedSessionId) {
-    prompt.hidden = true;
-    prompt.innerHTML = '';
+    hidePrompt(prompt);
     return;
   }
 
   const active = readJson(ACTIVE_WORKOUT_STORAGE_KEY, null);
   if (!active || !source) {
-    prompt.hidden = true;
-    prompt.innerHTML = '';
+    hidePrompt(prompt);
     return;
   }
   const exerciseIndex = Number(card.dataset.exerciseIndex);
   const planned = active?.planSnapshot?.days?.[active.trainingDayIndex]?.exercises?.[exerciseIndex];
-  const upperBound = getRepRangeUpperBound(planned?.reps);
-  if (!upperBound) {
-    prompt.hidden = true;
-    prompt.innerHTML = '';
+  const repRange = getRepRange(planned?.reps);
+  if (!repRange || repRange.lower === repRange.upper) {
+    hidePrompt(prompt);
     return;
   }
 
@@ -181,45 +194,73 @@ function renderCard(card) {
     ? state.sets.filter(set => set?.completed && Number(set.reps) > 0)
     : [];
   if (!completedSets.length) {
-    prompt.hidden = true;
-    prompt.innerHTML = '';
+    hidePrompt(prompt);
     return;
   }
-  const allAtTop = completedSets.every(set => Number(set.reps) >= upperBound);
-  const anyExceeded = completedSets.some(set => Number(set.reps) > upperBound);
+
+  const allAtTop = completedSets.every(set => Number(set.reps) >= repRange.upper);
+  const anyExceeded = completedSets.some(set => Number(set.reps) > repRange.upper);
+
   if (!allAtTop && !anyExceeded) {
-    prompt.hidden = true;
-    prompt.innerHTML = '';
+    const belowTarget = completedSets.filter(set => Number(set.reps) < repRange.lower);
+    const majorityBelow = belowTarget.length > completedSets.length / 2;
+    if (!majorityBelow) {
+      hidePrompt(prompt);
+      return;
+    }
+
+    const weightedSets = completedSets.filter(set => Number(set.weight) > 0);
+    const commonWeight = weightedSets.length
+      ? weightedSets.map(set => Number(set.weight)).sort((a, b) => b - a)[0]
+      : 0;
+    const reduction = getRecommendedReducedLoad(commonWeight, exerciseId);
+    if (!reduction) {
+      hidePrompt(prompt);
+      return;
+    }
+
+    const repsText = completedSets.map(set => Number(set.reps)).join(', ');
+    prompt.classList.add('progression-prompt-down');
+    prompt.innerHTML = `
+      <span class="progression-arrow">↓</span>
+      <div>
+        <strong>Consider a lighter load next time</strong>
+        <p>Last workout, ${belowTarget.length} of ${completedSets.length} completed sets were below your ${repRange.lower}–${repRange.upper} rep target (${repsText} reps). Consider reducing from <b>${formatLoad(commonWeight)} lb</b> to about <b>${formatLoad(reduction.suggestedLoad)} lb</b>.</p>
+        <small>One low set can happen from normal fatigue, so Level Up only suggests a reduction when most completed sets fall below the target range.</small>
+      </div>
+    `;
+    prompt.hidden = false;
     return;
   }
+
   const sourceSet = [...completedSets]
-    .filter(set => Number(set.reps) >= upperBound && Number(set.weight) > 0)
+    .filter(set => Number(set.reps) >= repRange.upper && Number(set.weight) > 0)
     .sort((a, b) => Number(b.weight) - Number(a.weight))[0];
   if (!sourceSet) {
-    prompt.hidden = true;
-    prompt.innerHTML = '';
+    hidePrompt(prompt);
     return;
   }
 
   const currentWeight = Number(sourceSet.weight);
   const range = getRecommendedLoadRange(currentWeight, exerciseId);
   if (!range) {
-    prompt.hidden = true;
+    hidePrompt(prompt);
     return;
   }
   const plannedCount = Array.isArray(state.sets) ? state.sets.length : completedSets.length;
   const partial = completedSets.length < plannedCount ? ` with ${completedSets.length} of ${plannedCount} sets completed` : '';
   const maxReps = Math.max(...completedSets.map(set => Number(set.reps) || 0));
   const repText = anyExceeded
-    ? `you exceeded the ${upperBound}-rep target and reached ${maxReps} reps`
-    : `all completed sets reached at least ${upperBound} reps`;
+    ? `you exceeded the ${repRange.upper}-rep target and reached ${maxReps} reps`
+    : `all completed sets reached at least ${repRange.upper} reps`;
   const increaseRange = range.minimumIncrease === range.maximumIncrease
     ? `${formatLoad(range.minimumIncrease)} lb`
     : `${formatLoad(range.minimumIncrease)}–${formatLoad(range.maximumIncrease)} lb`;
   const loadRange = range.minimumLoad === range.maximumLoad
     ? `${formatLoad(range.minimumLoad)} lb`
-    : `${formatLoad(range.minimumLoad)}–${formatLoad(range.maximumLoad)} lb`;
+    : `${formatLoad(range.maximumLoad)} lb`;
 
+  prompt.classList.remove('progression-prompt-down');
   prompt.innerHTML = `
     <span class="progression-arrow">↑</span>
     <div>
