@@ -37,7 +37,7 @@ function wireRefreshTriggers() {
 
 function decorateWorkoutHistoryCards(prCounts) {
     document.querySelectorAll(".history-workout-card").forEach(card => {
-        const sessionId = card.querySelector(".edit-history-workout")?.dataset.sessionId;
+        const sessionId = card.dataset.sessionId || card.querySelector(".edit-history-workout")?.dataset.sessionId;
         const count = sessionId ? (prCounts.get(sessionId) || 0) : 0;
         const target = card.querySelector(".history-workout-metrics");
         updateBadge(target, count);
@@ -82,7 +82,7 @@ function trophyIcon() {
     `;
 }
 
-function calculatePrCounts(sessions) {
+export function calculatePrCounts(sessions) {
     const counts = new Map();
     const records = new Map();
 
