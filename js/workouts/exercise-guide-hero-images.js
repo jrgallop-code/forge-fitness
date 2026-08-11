@@ -9,6 +9,17 @@ const GUIDE_IMAGE_PATHS = {
     "push-up": "assets/exercise-guides/performance/push-up.webp?v=1"
 };
 
+const GUIDE_IDS_BY_NAME = {
+    "Barbell Bench Press": "barbell-bench-press",
+    "Dumbbell Bench Press": "dumbbell-bench-press",
+    "Incline Barbell Press": "incline-barbell-press",
+    "Incline Dumbbell Press": "incline-dumbbell-press",
+    "Machine Chest Press": "machine-chest-press",
+    "Cable Fly": "cable-fly",
+    "Pec Deck": "pec-deck",
+    "Push-Up": "push-up"
+};
+
 let stylesAdded = false;
 
 function ensureStyles() {
@@ -36,11 +47,11 @@ function ensureStyles() {
     document.head.appendChild(style);
 }
 
-function addGuideImage(exerciseId) {
+function addGuideImage(exerciseId, targetScreen = null) {
     const source = GUIDE_IMAGE_PATHS[exerciseId];
     if (!source) return;
 
-    const screen = document.querySelector(".exercise-guide-screen");
+    const screen = targetScreen || document.querySelector(".exercise-guide-screen");
     const header = screen?.querySelector(".exercise-guide-header");
     if (!screen || !header || screen.querySelector(".exercise-guide-hero-figure")) return;
 
@@ -59,8 +70,28 @@ function addGuideImage(exerciseId) {
     header.insertAdjacentElement("afterend", figure);
 }
 
+function addImageToRenderedGuide(screen) {
+    if (!(screen instanceof Element) || !screen.matches(".exercise-guide-screen")) return;
+    const title = screen.querySelector(".exercise-guide-header h2")?.textContent?.trim();
+    const exerciseId = GUIDE_IDS_BY_NAME[title];
+    if (exerciseId) addGuideImage(exerciseId, screen);
+}
+
 document.addEventListener("levelup:open-exercise-guide", event => {
     const exerciseId = event.detail?.exerciseId;
     if (!GUIDE_IMAGE_PATHS[exerciseId]) return;
     queueMicrotask(() => addGuideImage(exerciseId));
 });
+
+const guideObserver = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(node => {
+            if (!(node instanceof Element)) return;
+            if (node.matches(".exercise-guide-screen")) addImageToRenderedGuide(node);
+            node.querySelectorAll?.(".exercise-guide-screen").forEach(addImageToRenderedGuide);
+        });
+    });
+});
+
+guideObserver.observe(document.documentElement, { childList: true, subtree: true });
+document.querySelectorAll(".exercise-guide-screen").forEach(addImageToRenderedGuide);
