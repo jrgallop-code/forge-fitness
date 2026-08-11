@@ -1,10 +1,11 @@
-import { getExerciseById } from '../workouts/exercise-library.js?v=recovery-secondary-1';
-import { createGeneratedExerciseGuide } from '../workouts/exercise-guide-generator.js?v=recovery-secondary-1';
+import { getExerciseById } from '../workouts/exercise-library.js?v=recovery-secondary-2';
+import { createGeneratedExerciseGuide } from '../workouts/exercise-guide-generator.js?v=recovery-secondary-2';
 
 const SESSION_KEY = 'forge_workout_sessions';
 const FULL_RECOVERY_HOURS = 72;
 const PRIMARY_IMPACT = 1;
 const SECONDARY_IMPACT = 0.5;
+const SET_EQUIVALENTS_FOR_FULL_FATIGUE = 3;
 const DETAIL_GROUPS = [
   ['Chest','Chest'],['Back','Back'],['Shoulders','Shoulders'],['Rear Delts','Rear Delts'],
   ['Biceps','Biceps'],['Triceps','Triceps'],['Forearms','Forearms'],['Abs','Core'],
@@ -18,18 +19,45 @@ function getSessions() {
   } catch { return []; }
 }
 
-function sessionTime(session) {
-  const raw = session?.completedAt || session?.endTime || session?.date;
-  if (!raw) return 0;
-  const time = new Date(raw).getTime();
-  return Number.isFinite(time) ? time : 0;
+function localDateKey(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
-function performed(exercise) {
-  return (exercise?.sets || []).some(set =>
-    Number(set?.reps) > 0 || Number(set?.weight) > 0 ||
+function sessionTrainingTime(session) {
+  const trainingDate = String(session?.date || '').trim();
+  const exactCandidates = [session?.completedAt, session?.endTime, session?.startedAt].filter(Boolean);
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trainingDate)) {
+    for (const raw of exactCandidates) {
+      const candidate = new Date(raw);
+      if (Number.isFinite(candidate.getTime()) && localDateKey(candidate) === trainingDate) {
+        return candidate.getTime();
+      }
+    }
+
+    const [year, month, day] = trainingDate.split('-').map(Number);
+    const anchored = new Date(year, month - 1, day, 12, 0, 0, 0);
+    return Number.isFinite(anchored.getTime()) ? anchored.getTime() : 0;
+  }
+
+  for (const raw of exactCandidates) {
+    const time = new Date(raw).getTime();
+    if (Number.isFinite(time)) return time;
+  }
+  return 0;
+}
+
+function performedSetCount(exercise) {
+  if (exercise?.trackingType === 'notes') return 0;
+  return (exercise?.sets || []).filter(set =>
+    set?.completed === true || Number(set?.reps) > 0 ||
     Number(set?.duration) > 0 || Number(set?.durationMinutes) > 0
-  );
+  ).length;
 }
 
 function normalizeRecoveryGroup(value) {
@@ -70,16 +98,23 @@ function exerciseImpacts(definition, exercise) {
 function buildStates() {
   const exposures = new Map();
   getSessions().forEach(session => {
-    const time = sessionTime(session);
+    const time = sessionTrainingTime(session);
     if (!time) return;
     (session.exercises || []).forEach(exercise => {
-      if (!performed(exercise)) return;
+      const setCount = performedSetCount(exercise);
+      if (!setCount) return;
       const definition = getExerciseById(exercise.exerciseId);
       const name = definition?.name || exercise.name || 'Exercise';
       exerciseImpacts(definition, exercise).forEach((impact, group) => {
         if (/cardio|other/i.test(group)) return;
         if (!exposures.has(group)) exposures.set(group, []);
-        exposures.get(group).push({ time, name, ...impact });
+        exposures.get(group).push({
+          time,
+          name,
+          setCount,
+          role: impact.role,
+          setEquivalents: setCount * impact.weight
+        });
       });
     });
   });
@@ -92,23 +127,40 @@ function buildStates() {
     items.forEach(item => {
       const hours = Math.max(0, (now - item.time) / 3600000);
       const remaining = Math.max(0, 1 - hours / FULL_RECOVERY_HOURS);
-      fatigue += item.weight * remaining;
+      const initialFatigue = Math.min(1, item.setEquivalents / SET_EQUIVALENTS_FOR_FULL_FATIGUE);
+      fatigue += initialFatigue * remaining;
     });
     fatigue = Math.min(1, fatigue);
+
     const percent = Math.max(0, Math.min(100, Math.round((1 - fatigue) * 100)));
     const latestTime = items[0]?.time || 0;
     const hours = latestTime ? Math.max(0, (now - latestTime) / 3600000) : Infinity;
-    const recentNames = [];
+    const recentDetails = [];
     const seen = new Set();
-    items.filter(item => ((now - item.time) / 3600000) < FULL_RECOVERY_HOURS).forEach(item => {
-      const key = `${item.name}|${item.role}`;
-      if (seen.has(key) || recentNames.length >= 3) return;
-      seen.add(key);
-      recentNames.push(item.role === 'secondary' ? `${item.name} (secondary)` : item.name);
-    });
-    if (!recentNames.length && items[0]) recentNames.push(items[0].role === 'secondary' ? `${items[0].name} (secondary)` : items[0].name);
+
+    items
+      .filter(item => ((now - item.time) / 3600000) < FULL_RECOVERY_HOURS)
+      .forEach(item => {
+        const key = `${item.name}|${item.role}|${item.time}`;
+        if (seen.has(key) || recentDetails.length >= 3) return;
+        seen.add(key);
+        const itemHours = Math.max(0, (now - item.time) / 3600000);
+        const role = item.role === 'secondary' ? ' (secondary)' : '';
+        recentDetails.push(`${item.name}${role} · ${item.setCount} ${item.setCount === 1 ? 'set' : 'sets'} · ${elapsed(itemHours)}`);
+      });
+
+    if (!recentDetails.length && items[0]) {
+      const item = items[0];
+      const itemHours = Math.max(0, (now - item.time) / 3600000);
+      const role = item.role === 'secondary' ? ' (secondary)' : '';
+      recentDetails.push(`${item.name}${role} · ${item.setCount} ${item.setCount === 1 ? 'set' : 'sets'} · ${elapsed(itemHours)}`);
+    }
+
     states.set(group, {
-      group, percent, hours, names: recentNames,
+      group,
+      percent,
+      hours,
+      details: recentDetails,
       status: percent >= 100 ? 'Ready' : percent >= 67 ? 'Nearly Ready' : 'Recovering',
       opacity: Math.max(.04, .96 * fatigue)
     });
@@ -119,6 +171,7 @@ function buildStates() {
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 }
+
 function elapsed(hours) {
   if (!Number.isFinite(hours)) return 'No recent exercise';
   if (hours < 1) return 'trained recently';
@@ -126,6 +179,7 @@ function elapsed(hours) {
   const days = Math.floor(hours / 24);
   return days === 1 ? 'yesterday' : `${days} days ago`;
 }
+
 function colorForPercent(percent) {
   const p = Math.max(0, Math.min(100, Number(percent) || 0)) / 100;
   const fatigued = [255,49,95], recovered = [133,135,147];
@@ -145,7 +199,7 @@ function applyBody(states) {
 
 function detailRow(label, group, state) {
   if (!state) return `<article class="recovery-detail-row no-data"><div class="recovery-mini"></div><div><strong>${escapeHtml(label)}</strong><span>No recent exercises</span></div><b>—</b></article>`;
-  return `<article class="recovery-detail-row" style="--recovery-percent:${state.percent}%"><div class="recovery-mini" style="--recovery-fill:${colorForPercent(state.percent)}"></div><div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(state.names.join(', '))} · ${elapsed(state.hours)}</span><small>${state.status}</small><div class="recovery-row-progress"><span></span></div></div><b>${state.percent}%</b></article>`;
+  return `<article class="recovery-detail-row" style="--recovery-percent:${state.percent}%"><div class="recovery-mini" style="--recovery-fill:${colorForPercent(state.percent)}"></div><div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(state.details.join(' • '))}</span><small>${state.status}</small><div class="recovery-row-progress"><span></span></div></div><b>${state.percent}%</b></article>`;
 }
 
 function applyDetails(states) {
