@@ -1,7 +1,7 @@
 import {
     getAllExercises
 }
-from "./exercise-library.js?v=exercise-library-catalogue-1";
+from "./exercise-library.js?v=exercise-library-catalogue-2";
 
 
 import {
