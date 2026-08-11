@@ -38,3 +38,10 @@ export function initializeTrainingProgressCollapse() {
         });
     });
 }
+
+document.addEventListener("click", event => {
+    if (!event.target.closest?.("#lifting-tab")) return;
+    requestAnimationFrame(initializeTrainingProgressCollapse);
+});
+
+initializeTrainingProgressCollapse();
