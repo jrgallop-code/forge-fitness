@@ -2,7 +2,7 @@ import {
     addCustomExercise,
     getExerciseById
 }
-from "./exercise-library.js?v=exercise-library-catalogue-1";
+from "./exercise-library.js?v=exercise-library-catalogue-2";
 
 
 import {
@@ -14,7 +14,7 @@ from "./workout-plans.js?v=workout-plans-2";
 import {
     getExerciseOptions
 }
-from "./workout-ui.js?v=plan-builder-exit-flow-1";
+from "./workout-ui.js?v=plan-builder-library-refresh-1";
 
 
 import {
