@@ -18,7 +18,7 @@ import { renderNutrition, renderWater, initializeNutrition, showNutritionView } 
 import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energy-profile.js?v=calorie-planner-2";
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=goals-flow-3";
-import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=unified-goals-1";
+import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=unified-goals-2";
 import { renderGoalProjection, initializeGoalProjection } from "../nutrition/goal-projection.js?v=selected-target-projection-4";
 import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=more-water-route-1";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=workout-history-one-off-1";
