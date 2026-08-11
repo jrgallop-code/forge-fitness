@@ -1,5 +1,8 @@
 const GUIDE_IMAGE_PATHS = {
     "barbell-bench-press": "assets/exercise-guides/performance/barbell-bench-press-guide.webp?v=1",
+    "dumbbell-bench-press": "assets/exercise-guides/performance/dumbbell-bench-press.webp?v=1",
+    "incline-barbell-press": "assets/exercise-guides/performance/incline-barbell-press.webp?v=1",
+    "incline-dumbbell-press": "assets/exercise-guides/performance/incline-dumbbell-press.webp?v=1",
     "machine-chest-press": "assets/exercise-guides/performance/machine-chest-press.webp?v=1",
     "cable-fly": "assets/exercise-guides/performance/cable-fly.webp?v=1",
     "pec-deck": "assets/exercise-guides/performance/pec-deck.webp?v=1",
