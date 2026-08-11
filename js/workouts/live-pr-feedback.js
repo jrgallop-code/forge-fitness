@@ -28,10 +28,7 @@ function getHistoricalSessions() {
 function getStatus() {
     const active = getActiveSession();
     if (!active) return { active: null, status: { count: 0, details: new Map() } };
-    return {
-        active,
-        status: evaluateLiveWorkoutPrs(active, getHistoricalSessions())
-    };
+    return { active, status: evaluateLiveWorkoutPrs(active, getHistoricalSessions()) };
 }
 
 function refreshLiveDisplay() {
@@ -69,9 +66,7 @@ function refreshLiveDisplay() {
         row.appendChild(badge);
     });
 
-    if (document.querySelector(".history-session-card, .history-workout-card")) {
-        initializeWorkoutPrBadges();
-    }
+    if (document.querySelector(".history-session-card, .history-workout-card")) initializeWorkoutPrBadges();
 }
 
 function handleCompletedSet(button, beforeStatus) {
@@ -92,7 +87,6 @@ function handleCompletedSet(button, beforeStatus) {
     const newlyEstablished = !beforeDetail;
     const improvedAgain = beforeDetail && afterDetail.score > beforeDetail.score + SCORE_EPSILON;
     if (!newlyEstablished && !improvedAgain) return;
-
     showPrToast(exerciseId, afterDetail);
 }
 
@@ -146,7 +140,7 @@ document.addEventListener("click", event => {
         return;
     }
     window.setTimeout(refreshLiveDisplay, 0);
-});
+}, true);
 
 document.addEventListener("change", event => {
     if (event.target?.id === "progress-range") window.setTimeout(refreshLiveDisplay, 0);
