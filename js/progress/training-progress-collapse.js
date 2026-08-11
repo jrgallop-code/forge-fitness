@@ -1,10 +1,36 @@
+function unwrapLegacyDisclosure(liftingProgress) {
+    const existing = liftingProgress.querySelector(":scope > .training-progress-disclosure");
+    if (!existing) return false;
+
+    const containsAnalytics = Boolean(
+        existing.querySelector(".training-progress-tabs, .training-progress-view")
+    );
+
+    if (!containsAnalytics) return false;
+
+    const panel = existing.querySelector(":scope > .training-progress-disclosure-panel");
+    if (!panel) return false;
+
+    while (panel.firstChild) {
+        liftingProgress.insertBefore(panel.firstChild, existing);
+    }
+
+    existing.remove();
+    return true;
+}
+
 export function initializeTrainingProgressCollapse() {
     const liftingProgress = document.getElementById("lifting-progress");
-    if (!liftingProgress || liftingProgress.querySelector(".training-progress-disclosure")) return;
+    if (!liftingProgress) return;
 
-    const header = liftingProgress.querySelector(".training-progress-header");
-    const demoMessage = liftingProgress.querySelector("#training-demo-message");
-    const summaryGrid = liftingProgress.querySelector(".training-summary-grid");
+    unwrapLegacyDisclosure(liftingProgress);
+
+    const existing = liftingProgress.querySelector(":scope > .training-progress-disclosure");
+    if (existing) return;
+
+    const header = liftingProgress.querySelector(":scope > .training-progress-header");
+    const demoMessage = liftingProgress.querySelector(":scope > #training-demo-message");
+    const summaryGrid = liftingProgress.querySelector(":scope > .training-summary-grid");
 
     if (!header || !summaryGrid) return;
 
@@ -43,4 +69,4 @@ document.addEventListener("click", event => {
     requestAnimationFrame(initializeTrainingProgressCollapse);
 });
 
-initializeTrainingProgressCollapse();
+requestAnimationFrame(initializeTrainingProgressCollapse);
