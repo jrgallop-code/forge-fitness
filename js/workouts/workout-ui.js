@@ -1,7 +1,7 @@
 import {
     getAllExercises
 }
-from "./exercise-library.js?v=exercise-library-catalogue-1";
+from "./exercise-library.js?v=exercise-library-catalogue-2";
 
 
 import {
@@ -398,6 +398,7 @@ export function renderWorkoutBuilder() {
                     <button
                         id="add-day-btn"
                         class="secondary-btn"
+                        data-day-index="0"
                         type="button"
                     >
                         + Add Training Day
