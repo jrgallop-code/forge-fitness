@@ -3,6 +3,7 @@ const EPSILON = 0.01;
 
 export function initializeWorkoutPrBadges() {
     decoratePrBadges();
+    requestAnimationFrame(decoratePrBadges);
     wireRefreshTriggers();
 }
 
@@ -23,6 +24,12 @@ function wireRefreshTriggers() {
         element.addEventListener(eventName, () => requestAnimationFrame(decoratePrBadges));
     });
 
+    document.querySelectorAll(".training-progress-tab").forEach(button => {
+        if (button.dataset.prBadgeRefreshBound === "true") return;
+        button.dataset.prBadgeRefreshBound = "true";
+        button.addEventListener("click", () => requestAnimationFrame(decoratePrBadges));
+    });
+
     document.querySelectorAll(".delete-history-workout").forEach(button => {
         if (button.dataset.prBadgeRefreshBound === "true") return;
         button.dataset.prBadgeRefreshBound = "true";
@@ -33,7 +40,7 @@ function wireRefreshTriggers() {
 function decorateWorkoutHistoryCards(prCounts) {
     document.querySelectorAll(".history-workout-card").forEach(card => {
         const sessionId = card.dataset.sessionId || card.querySelector(".edit-history-workout")?.dataset.sessionId;
-        const count = sessionId ? (prCounts.get(sessionId) || 0) : 0;
+        const count = sessionId ? (prCounts.get(String(sessionId)) || 0) : 0;
         updateBadge(card.querySelector(".history-workout-metrics"), count);
     });
 }
@@ -48,7 +55,9 @@ function decorateTrainingHistoryCards(allSessions, prCounts) {
 
     cards.forEach((card, index) => {
         const session = visibleSessions[index];
-        const count = session?.id ? (prCounts.get(session.id) || 0) : 0;
+        const sessionId = session?.id ? String(session.id) : "";
+        if (sessionId) card.dataset.sessionId = sessionId;
+        const count = sessionId ? (prCounts.get(sessionId) || 0) : 0;
         updateBadge(card.firstElementChild || card, count);
     });
 }
@@ -94,7 +103,7 @@ export function calculatePrCounts(sessions) {
             if (isPr) count += 1;
         });
 
-        if (session?.id) counts.set(session.id, count);
+        if (session?.id) counts.set(String(session.id), count);
     });
 
     return counts;
