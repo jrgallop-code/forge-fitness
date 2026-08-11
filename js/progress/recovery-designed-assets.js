@@ -156,7 +156,10 @@ document.addEventListener('click', event => {
 
 const content = document.getElementById('content');
 if (content) {
-  const observer = new MutationObserver(installDesignedAssets);
+  const observer = new MutationObserver(() => {
+    const pending = content.querySelector('.muscle-recovery-map-view [data-recovery-body-front]:not([data-designed-recovery-asset="true"])');
+    if (pending) installDesignedAssets();
+  });
   observer.observe(content, { childList: true, subtree: true });
 }
 
