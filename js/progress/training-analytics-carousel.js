@@ -1,22 +1,34 @@
 const TRAINING_VIEW_SELECTOR = '.training-progress-view[data-view="training"]';
 const EXCLUDED_CARD_IDS = new Set(["muscle-frequency-card"]);
+let initialized = false;
 
 export function initializeTrainingAnalyticsCarousel() {
+    if (initialized) return;
+    initialized = true;
+
     setupCarousel();
 
-    document
-        .querySelectorAll('.training-progress-tab[data-view="training"]')
-        .forEach(button => {
-            button.addEventListener("click", () =>
-                requestAnimationFrame(setupCarousel)
-            );
-        });
+    document.addEventListener("click", event => {
+        const target = event.target instanceof Element ? event.target : null;
+        if (!target) return;
 
-    ["load-training-demo", "remove-training-demo"].forEach(id => {
-        document.getElementById(id)?.addEventListener("click", () => {
-            setTimeout(setupCarousel, 0);
-        });
+        const shouldRefresh =
+            target.closest('.training-progress-tab[data-view="training"]') ||
+            target.closest("#lifting-tab") ||
+            target.closest("#load-training-demo") ||
+            target.closest("#remove-training-demo");
+
+        if (shouldRefresh) {
+            requestAnimationFrame(() => requestAnimationFrame(setupCarousel));
+        }
     });
+
+    window.addEventListener("resize", () => {
+        const shell = document.querySelector(".training-analytics-carousel");
+        const track = shell?.querySelector(".training-analytics-carousel-track");
+        if (!shell || !track) return;
+        updateCarouselState(shell, track, getSlides(track).length);
+    }, { passive: true });
 }
 
 function setupCarousel() {
@@ -139,3 +151,5 @@ function scrollToPage(shell, track, index) {
     });
     updateCarouselState(shell, track, slides.length);
 }
+
+initializeTrainingAnalyticsCarousel();
