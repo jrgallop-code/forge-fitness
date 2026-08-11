@@ -1,5 +1,5 @@
-import { getExerciseById } from '../workouts/exercise-library.js?v=recovery-secondary-2';
-import { createGeneratedExerciseGuide } from '../workouts/exercise-guide-generator.js?v=recovery-secondary-2';
+import { getExerciseById } from '../workouts/exercise-library.js?v=recovery-secondary-3';
+import { createGeneratedExerciseGuide } from '../workouts/exercise-guide-generator.js?v=recovery-secondary-3';
 
 const SESSION_KEY = 'forge_workout_sessions';
 const FULL_RECOVERY_HOURS = 72;
@@ -28,24 +28,33 @@ function localDateKey(value) {
   return `${year}-${month}-${day}`;
 }
 
+function dateOnlyTimestamp(trainingDate) {
+  const parts = String(trainingDate || '').split('-').map(Number);
+  if (parts.length !== 3 || parts.some(part => !Number.isFinite(part))) return 0;
+  const [year, month, day] = parts;
+  const anchored = new Date(year, month - 1, day, 12, 0, 0, 0);
+  return Number.isFinite(anchored.getTime()) ? anchored.getTime() : 0;
+}
+
 function sessionTrainingTime(session) {
   const trainingDate = String(session?.date || '').trim();
-  const exactCandidates = [session?.completedAt, session?.endTime, session?.startedAt].filter(Boolean);
+  const hasRecordedDate = /^\d{4}-\d{2}-\d{2}$/.test(trainingDate);
+  const today = localDateKey(new Date());
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trainingDate)) {
+  if (hasRecordedDate) {
+    if (trainingDate !== today) return dateOnlyTimestamp(trainingDate);
+
+    const exactCandidates = [session?.completedAt, session?.endTime, session?.startedAt].filter(Boolean);
     for (const raw of exactCandidates) {
       const candidate = new Date(raw);
       if (Number.isFinite(candidate.getTime()) && localDateKey(candidate) === trainingDate) {
         return candidate.getTime();
       }
     }
-
-    const [year, month, day] = trainingDate.split('-').map(Number);
-    const anchored = new Date(year, month - 1, day, 12, 0, 0, 0);
-    return Number.isFinite(anchored.getTime()) ? anchored.getTime() : 0;
+    return dateOnlyTimestamp(trainingDate);
   }
 
-  for (const raw of exactCandidates) {
+  for (const raw of [session?.completedAt, session?.endTime, session?.startedAt].filter(Boolean)) {
     const time = new Date(raw).getTime();
     if (Number.isFinite(time)) return time;
   }
@@ -174,10 +183,8 @@ function escapeHtml(value) {
 
 function elapsed(hours) {
   if (!Number.isFinite(hours)) return 'No recent exercise';
-  if (hours < 1) return 'trained recently';
-  if (hours < 24) return `${Math.floor(hours)}h ago`;
-  const days = Math.floor(hours / 24);
-  return days === 1 ? 'yesterday' : `${days} days ago`;
+  if (hours < 1) return '<1h ago';
+  return `${Math.floor(hours)}h ago`;
 }
 
 function colorForPercent(percent) {
@@ -217,13 +224,19 @@ function applySecondaryRecovery() {
   applyDetails(states);
 }
 
+function scheduleRecoveryRefresh() {
+  applySecondaryRecovery();
+  requestAnimationFrame(applySecondaryRecovery);
+  window.setTimeout(applySecondaryRecovery, 40);
+}
+
 document.addEventListener('click', event => {
   if (event.target.closest?.('.training-progress-tab[data-view="recovery"], [data-recovery-facing], [data-recovery-map-button], [data-recovery-details-button], [data-recovery-mode]')) {
-    window.setTimeout(applySecondaryRecovery, 0);
+    scheduleRecoveryRefresh();
   }
 }, true);
 
 const content = document.getElementById('content');
 if (content) new MutationObserver(() => window.setTimeout(applySecondaryRecovery, 0)).observe(content, { childList:true, subtree:true });
-window.addEventListener('focus', applySecondaryRecovery);
-window.setTimeout(applySecondaryRecovery, 0);
+window.addEventListener('focus', scheduleRecoveryRefresh);
+window.setTimeout(scheduleRecoveryRefresh, 0);
