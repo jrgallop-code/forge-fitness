@@ -1,0 +1,67 @@
+.exercise-more-btn {
+    display:inline-grid;
+    place-items:center;
+}
+
+.exercise-alarm-clock-icon {
+    width:19px;
+    height:19px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.8;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+
+.cardio-stopwatch-panel {
+    display:grid;
+    gap:12px;
+    margin:12px 0 14px;
+    padding:14px;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:12px;
+    background:rgba(255,255,255,.025);
+}
+
+.cardio-stopwatch-heading {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+}
+
+.cardio-stopwatch-heading span {
+    color:var(--muted,#a0a0a0);
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+}
+
+.cardio-stopwatch-display {
+    color:#fff;
+    font-size:22px;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:.04em;
+}
+
+.cardio-stopwatch-actions {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+}
+
+.cardio-stopwatch-actions .cardio-timer-reset {
+    grid-column:1 / -1;
+}
+
+.cardio-stopwatch-panel small {
+    color:var(--muted,#a0a0a0);
+    font-size:11px;
+    line-height:1.4;
+}
+
+.cardio-session-card .session-cardio-duration:disabled {
+    opacity:.72;
+    cursor:not-allowed;
+}
