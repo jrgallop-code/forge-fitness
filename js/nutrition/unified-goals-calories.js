@@ -1,12 +1,16 @@
-import { GOAL_PRESETS, calculateTdee } from "./tdee-calculator.js?v=unified-goals-1";
-import { getNutritionProfile, getNutritionGoal, saveNutritionGoal, getNutritionPlan, syncCalculatedCalories } from "./nutrition-storage.js?v=unified-goals-1";
+import { GOAL_PRESETS, calculateTdee } from "./tdee-calculator.js?v=unified-goals-2";
+import { getNutritionProfile, getNutritionGoal, saveNutritionGoal, getNutritionPlan, syncCalculatedCalories } from "./nutrition-storage.js?v=unified-goals-2";
 
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
-const CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
+const LEGACY_CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
 
 export function initializeUnifiedGoalsCalories() {
     const view = document.querySelector('[data-planner-view="goals"]');
     if (!view) return;
+
+    // Custom weekly rates are no longer user-configurable. Clear any legacy
+    // override so the programmed goal preset is always the source of truth.
+    localStorage.removeItem(LEGACY_CUSTOM_WEEKLY_RATE_KEY);
 
     document.getElementById("active-calorie-target-card")?.remove();
     const oldCard = view.querySelector(".goal-box.nutrition-goal-card");
@@ -21,12 +25,10 @@ export function initializeUnifiedGoalsCalories() {
     }
 
     hydrateMaintenance();
-    hydrateCustomRate();
     refreshPreview();
 
     document.getElementById("unified-goal-select")?.addEventListener("change", refreshPreview);
     document.getElementById("unified-maintenance")?.addEventListener("input", refreshPreview);
-    document.getElementById("unified-custom-rate")?.addEventListener("input", refreshPreview);
     document.getElementById("unified-use-estimate")?.addEventListener("click", useEstimatedMaintenance);
     document.getElementById("unified-save-plan")?.addEventListener("click", saveUnifiedPlan);
 
@@ -62,22 +64,15 @@ function renderUnifiedCard() {
             <small class="unified-help">This editable number is the maintenance value used to calculate your calorie target.</small>
         </div>
 
-        <details class="unified-calorie-advanced">
-            <summary>Advanced weekly target</summary>
-            <p>Optional. Leave blank to use the selected goal's standard rate.</p>
-            <label for="unified-custom-rate">Custom weekly change (lb/week)</label>
-            <input id="unified-custom-rate" type="number" step="0.05" placeholder="Example: -0.7">
-        </details>
-
         <div class="unified-calorie-summary">
             <div><span>Daily Adjustment</span><strong id="unified-daily-adjustment">--</strong></div>
-            <div><span>Weekly Target</span><strong id="unified-weekly-target">--</strong></div>
+            <div><span>Programmed Weekly Target</span><strong id="unified-weekly-target">--</strong></div>
             <div class="unified-active-target"><span>Active Daily Target</span><strong id="unified-active-target">--</strong><small>This is the calorie value used throughout Level Up.</small></div>
         </div>
 
         <button id="unified-save-plan" class="primary-btn" type="button">Save Calorie Plan</button>
         <p id="unified-calorie-message" class="nutrition-message" aria-live="polite"></p>
-        <small class="unified-adult-note">Adult-use estimate only. Use real-world weight trends and recovery to refine your target over time.</small>
+        <small class="unified-adult-note">Adult-use estimate only. Use real-world weight trends and recovery to refine your maintenance estimate over time.</small>
     `;
 }
 
@@ -97,13 +92,6 @@ function getStoredManualMaintenance() {
     return Number.isFinite(value) && value > 0 ? Math.round(value) : null;
 }
 
-function getStoredCustomRate() {
-    const raw = localStorage.getItem(CUSTOM_WEEKLY_RATE_KEY);
-    if (raw === null || raw === "") return null;
-    const value = Number(raw);
-    return Number.isFinite(value) ? value : null;
-}
-
 function hydrateMaintenance(force = true) {
     const estimated = getEstimatedMaintenance();
     setText("unified-estimated-maintenance", Number.isFinite(estimated) ? `${estimated} kcal/day` : "Save Body Profile first");
@@ -113,13 +101,6 @@ function hydrateMaintenance(force = true) {
     if (!force && document.activeElement === input) return;
     const manual = getStoredManualMaintenance();
     input.value = Number.isFinite(manual) ? String(manual) : Number.isFinite(estimated) ? String(estimated) : "";
-}
-
-function hydrateCustomRate() {
-    const input = document.getElementById("unified-custom-rate");
-    if (!input) return;
-    const custom = getStoredCustomRate();
-    input.value = Number.isFinite(custom) ? String(custom) : "";
 }
 
 function useEstimatedMaintenance() {
@@ -133,30 +114,20 @@ function useEstimatedMaintenance() {
     refreshPreview();
 }
 
-function getEffectiveRate(goalId) {
-    const customInput = document.getElementById("unified-custom-rate");
-    const raw = String(customInput?.value ?? "").trim();
-    if (raw !== "") {
-        const custom = Number(raw);
-        if (Number.isFinite(custom)) return custom;
-    }
-    return GOAL_PRESETS[goalId]?.weeklyWeightChangeLb ?? null;
-}
-
 function calculatePreview() {
     const goalId = document.getElementById("unified-goal-select")?.value;
     const goal = GOAL_PRESETS[goalId];
     const maintenance = Number(document.getElementById("unified-maintenance")?.value);
-    const rate = getEffectiveRate(goalId);
+    const rate = goal?.weeklyWeightChangeLb;
     if (!goal || !Number.isFinite(maintenance) || maintenance <= 0 || !Number.isFinite(rate)) return null;
-    const dailyAdjustment = Math.round((rate * 3500) / 7);
+
     return {
         goalId,
         goal,
         maintenance: Math.round(maintenance),
         rate,
-        dailyAdjustment,
-        target: Math.round(maintenance + dailyAdjustment)
+        dailyAdjustment: goal.dailyCalorieAdjustment,
+        target: Math.round(maintenance + goal.dailyCalorieAdjustment)
     };
 }
 
@@ -201,13 +172,7 @@ function saveUnifiedPlan() {
         localStorage.setItem(MANUAL_MAINTENANCE_KEY, String(preview.maintenance));
     }
 
-    const customRaw = String(document.getElementById("unified-custom-rate")?.value ?? "").trim();
-    if (customRaw === "") {
-        localStorage.removeItem(CUSTOM_WEEKLY_RATE_KEY);
-    } else {
-        localStorage.setItem(CUSTOM_WEEKLY_RATE_KEY, String(preview.rate));
-    }
-
+    localStorage.removeItem(LEGACY_CUSTOM_WEEKLY_RATE_KEY);
     saveNutritionGoal({ goalId: preview.goalId, updatedAt: new Date().toISOString() });
     syncCalculatedCalories(preview.target);
     window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
