@@ -9,18 +9,13 @@ export function initializeWorkoutPrBadges() {
 function decoratePrBadges() {
     const sessions = getSessions();
     if (!sessions.length) return;
-
     const prCounts = calculatePrCounts(sessions);
     decorateWorkoutHistoryCards(prCounts);
     decorateTrainingHistoryCards(sessions, prCounts);
 }
 
 function wireRefreshTriggers() {
-    [
-        "load-training-demo",
-        "remove-training-demo",
-        "progress-range"
-    ].forEach(id => {
+    ["load-training-demo", "remove-training-demo", "progress-range"].forEach(id => {
         const element = document.getElementById(id);
         if (!element || element.dataset.prBadgeRefreshBound === "true") return;
         element.dataset.prBadgeRefreshBound = "true";
@@ -39,8 +34,7 @@ function decorateWorkoutHistoryCards(prCounts) {
     document.querySelectorAll(".history-workout-card").forEach(card => {
         const sessionId = card.dataset.sessionId || card.querySelector(".edit-history-workout")?.dataset.sessionId;
         const count = sessionId ? (prCounts.get(sessionId) || 0) : 0;
-        const target = card.querySelector(".history-workout-metrics");
-        updateBadge(target, count);
+        updateBadge(card.querySelector(".history-workout-metrics"), count);
     });
 }
 
@@ -55,8 +49,7 @@ function decorateTrainingHistoryCards(allSessions, prCounts) {
     cards.forEach((card, index) => {
         const session = visibleSessions[index];
         const count = session?.id ? (prCounts.get(session.id) || 0) : 0;
-        const target = card.firstElementChild || card;
-        updateBadge(target, count);
+        updateBadge(card.firstElementChild || card, count);
     });
 }
 
@@ -73,25 +66,13 @@ function updateBadge(target, count) {
 }
 
 function trophyIcon() {
-    return `
-        <svg class="workout-pr-trophy" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M8 4h8v3.5c0 3.2-1.7 5.5-4 5.5s-4-2.3-4-5.5V4Z"/>
-            <path d="M8 6H4.5v1.3c0 2.4 1.5 4.2 3.9 4.5M16 6h3.5v1.3c0 2.4-1.5 4.2-3.9 4.5"/>
-            <path d="M12 13v4M8.5 20h7M10 17h4"/>
-        </svg>
-    `;
+    return `<svg class="workout-pr-trophy" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v3.5c0 3.2-1.7 5.5-4 5.5s-4-2.3-4-5.5V4Z"/><path d="M8 6H4.5v1.3c0 2.4 1.5 4.2 3.9 4.5M16 6h3.5v1.3c0 2.4-1.5 4.2-3.9 4.5"/><path d="M12 13v4M8.5 20h7M10 17h4"/></svg>`;
 }
 
 export function calculatePrCounts(sessions) {
     const counts = new Map();
     const records = new Map();
-
-    const ordered = sessions
-        .map((session, index) => ({ session, index }))
-        .sort((a, b) => {
-            const timeDifference = getSessionTime(a.session) - getSessionTime(b.session);
-            return timeDifference || a.index - b.index;
-        });
+    const ordered = orderSessions(sessions);
 
     ordered.forEach(({ session }) => {
         let count = 0;
@@ -102,19 +83,11 @@ export function calculatePrCounts(sessions) {
             let isPr = false;
 
             if (score.weighted != null) {
-                if (previous.weighted != null && score.weighted > previous.weighted + EPSILON) {
-                    isPr = true;
-                }
-                previous.weighted = previous.weighted == null
-                    ? score.weighted
-                    : Math.max(previous.weighted, score.weighted);
+                if (previous.weighted != null && score.weighted > previous.weighted + EPSILON) isPr = true;
+                previous.weighted = previous.weighted == null ? score.weighted : Math.max(previous.weighted, score.weighted);
             } else if (score.reps != null) {
-                if (previous.reps != null && score.reps > previous.reps) {
-                    isPr = true;
-                }
-                previous.reps = previous.reps == null
-                    ? score.reps
-                    : Math.max(previous.reps, score.reps);
+                if (previous.reps != null && score.reps > previous.reps) isPr = true;
+                previous.reps = previous.reps == null ? score.reps : Math.max(previous.reps, score.reps);
             }
 
             records.set(exerciseId, previous);
@@ -127,12 +100,74 @@ export function calculatePrCounts(sessions) {
     return counts;
 }
 
+export function evaluateLiveWorkoutPrs(activeSession, historicalSessions = []) {
+    const records = buildHistoricalRecords(historicalSessions);
+    const details = new Map();
+
+    (activeSession?.exercises || []).forEach(exercise => {
+        if (exercise?.trackingType === "notes") return;
+        const exerciseId = exercise?.exerciseId || exercise?.id;
+        if (!exerciseId) return;
+
+        const validSets = (exercise.sets || [])
+            .map((set, setIndex) => ({ set, setIndex }))
+            .filter(({ set }) => isValidRecordedSet(set));
+        if (!validSets.length) return;
+
+        const previous = records.get(exerciseId) || {};
+        const weighted = validSets
+            .filter(({ set }) => Number(set.weight) > 0 && Number(set.reps) > 0)
+            .map(({ set, setIndex }) => ({ set, setIndex, score: estimateOneRepMax(set) }));
+
+        let result = null;
+        if (weighted.length) {
+            const best = weighted.sort((a, b) => b.score - a.score)[0];
+            if (previous.weighted != null && best.score > previous.weighted + EPSILON) {
+                result = { exerciseId, mode: "weighted", bestSetIndex: best.setIndex, bestSet: best.set, score: best.score, previousScore: previous.weighted };
+            }
+        } else {
+            const repSets = validSets
+                .map(({ set, setIndex }) => ({ set, setIndex, score: Number(set.reps) }))
+                .filter(item => item.score > 0)
+                .sort((a, b) => b.score - a.score);
+            const best = repSets[0];
+            if (best && previous.reps != null && best.score > previous.reps) {
+                result = { exerciseId, mode: "reps", bestSetIndex: best.setIndex, bestSet: best.set, score: best.score, previousScore: previous.reps };
+            }
+        }
+
+        if (result) details.set(exerciseId, result);
+    });
+
+    return { count: details.size, details };
+}
+
+function buildHistoricalRecords(sessions) {
+    const records = new Map();
+    orderSessions(sessions).forEach(({ session }) => {
+        getSessionExerciseScores(session).forEach((score, exerciseId) => {
+            const record = records.get(exerciseId) || {};
+            if (score.weighted != null) record.weighted = record.weighted == null ? score.weighted : Math.max(record.weighted, score.weighted);
+            if (score.reps != null) record.reps = record.reps == null ? score.reps : Math.max(record.reps, score.reps);
+            records.set(exerciseId, record);
+        });
+    });
+    return records;
+}
+
+function orderSessions(sessions) {
+    return (sessions || [])
+        .map((session, index) => ({ session, index }))
+        .sort((a, b) => {
+            const timeDifference = getSessionTime(a.session) - getSessionTime(b.session);
+            return timeDifference || a.index - b.index;
+        });
+}
+
 function getSessionExerciseScores(session) {
     const scores = new Map();
-
     (session?.exercises || []).forEach(exercise => {
         if (exercise?.trackingType === "notes") return;
-
         const exerciseId = exercise?.exerciseId || exercise?.id;
         if (!exerciseId) return;
 
@@ -141,30 +176,21 @@ function getSessionExerciseScores(session) {
 
         const weightedScores = sets
             .filter(set => Number(set.weight) > 0 && Number(set.reps) > 0)
-            .map(set => estimateOneRepMax(set));
-
+            .map(estimateOneRepMax);
         const current = scores.get(exerciseId) || { weighted: null, reps: null };
 
         if (weightedScores.length) {
             const bestWeighted = Math.max(...weightedScores);
-            current.weighted = current.weighted == null
-                ? bestWeighted
-                : Math.max(current.weighted, bestWeighted);
+            current.weighted = current.weighted == null ? bestWeighted : Math.max(current.weighted, bestWeighted);
         } else {
-            const repScores = sets
-                .map(set => Number(set.reps))
-                .filter(reps => reps > 0);
+            const repScores = sets.map(set => Number(set.reps)).filter(reps => reps > 0);
             if (repScores.length) {
                 const bestReps = Math.max(...repScores);
-                current.reps = current.reps == null
-                    ? bestReps
-                    : Math.max(current.reps, bestReps);
+                current.reps = current.reps == null ? bestReps : Math.max(current.reps, bestReps);
             }
         }
-
         scores.set(exerciseId, current);
     });
-
     return scores;
 }
 
@@ -182,7 +208,6 @@ function estimateOneRepMax(set) {
 function getSessionTime(session) {
     const completedAt = Date.parse(session?.completedAt || "");
     if (Number.isFinite(completedAt)) return completedAt;
-
     const date = Date.parse(`${session?.date || "1970-01-01"}T12:00:00`);
     return Number.isFinite(date) ? date : 0;
 }
@@ -190,19 +215,14 @@ function getSessionTime(session) {
 function getFilteredSessions(sessions) {
     const days = Number(document.getElementById("progress-range")?.value || 0);
     if (!days) return [...sessions];
-
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-
-    return sessions.filter(session =>
-        new Date(`${session.date}T23:59:59`) >= cutoff
-    );
+    return sessions.filter(session => new Date(`${session.date}T23:59:59`) >= cutoff);
 }
 
 function getSessions() {
     const stored = localStorage.getItem(SESSION_STORAGE_KEY);
     if (!stored) return [];
-
     try {
         const sessions = JSON.parse(stored);
         return Array.isArray(sessions) ? sessions : [];
