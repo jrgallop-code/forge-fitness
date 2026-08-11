@@ -1,5 +1,5 @@
-import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=plan-builder-exit-flow-1";
-import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=cardio-fields-1";
+import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=plan-builder-library-refresh-1";
+import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=builder-library-refresh-1";
 import { initializeOneOffWorkout } from "../workouts/one-off-workout.js?v=one-off-workout-1";
 import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=workout-catalogue-form-coach-removed-1";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
