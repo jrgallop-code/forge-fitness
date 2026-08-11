@@ -44,7 +44,16 @@ function renderRecoveryShell() {
         <div data-recovery-map-panel>
             <div class="recovery-summary-strip"><div><strong id="recovery-fresh-count">0</strong><span>Ready muscle groups</span></div><div><strong id="recovery-last-workout">—</strong><span>Last workout</span></div></div>
             <div class="recovery-facing-toggle" role="group" aria-label="Muscle map view"><button class="active" type="button" data-recovery-facing="front">Front</button><button type="button" data-recovery-facing="back">Back</button></div>
-            <div class="recovery-scale"><span>0% Fatigued</span><div class="recovery-scale-bar"></div><span>100% Recovered</span></div>
+            <div class="recovery-scale" aria-label="Recovery scale from fatigued to recovered">
+                <div class="recovery-scale-bar"></div>
+                <div class="recovery-scale-points">
+                    <span><b>0%</b><small>Fatigued</small></span>
+                    <span><b>25%</b></span>
+                    <span><b>50%</b><small>Recovering</small></span>
+                    <span><b>75%</b></span>
+                    <span><b>100%</b><small>Recovered</small></span>
+                </div>
+            </div>
             <div class="recovery-body-wrap" data-recovery-body-front>${frontBodySvg()}</div>
             <div class="recovery-body-wrap" data-recovery-body-back hidden>${backBodySvg()}</div>
             <div class="recovery-map-note">0% represents a recently trained/fatigued muscle. Recovery rises with time and reaches 100% at 72+ hours, matching Level Up's existing thresholds: under 48h Recovering, 48–72h Nearly Ready, and 72+h Ready.</div>
