@@ -1,4 +1,6 @@
 import { navigate } from "../core/router.js?v=router-workout-flow-5";
+import { exercises } from "./exercise-library.js?v=exercise-library-cardio-3";
+import { calculatePrCounts } from "./workout-pr-badges.js?v=workout-pr-badges-2";
 import { deleteCompletedWorkout, discardActiveWorkout, getActiveWorkout, getWorkoutSessions, openActiveWorkout, openCompletedWorkoutForEdit } from "./workout-session.js?v=workout-session-4";
 
 export function renderWorkoutHistory() {
@@ -32,10 +34,12 @@ export function initializeWorkoutHistory() {
 }
 
 function openWorkoutPreview(sessionId) {
-    const session = getWorkoutSessions().find(item => String(item.id) === String(sessionId));
+    const allSessions = getWorkoutSessions();
+    const session = allSessions.find(item => String(item.id) === String(sessionId));
     if (!session) return;
+    const prCount = calculatePrCounts(allSessions).get(session.id) || 0;
     document.getElementById("workout-history-preview")?.remove();
-    document.body.insertAdjacentHTML("beforeend", renderWorkoutPreview(session));
+    document.body.insertAdjacentHTML("beforeend", renderWorkoutPreview(session, prCount));
     const modal = document.getElementById("workout-history-preview");
     const close = () => modal?.remove();
     modal?.querySelector("[data-preview-close]")?.addEventListener("click", close);
@@ -43,25 +47,50 @@ function openWorkoutPreview(sessionId) {
     modal?.querySelector("[data-preview-edit]")?.addEventListener("click", () => { close(); navigate("workout"); openCompletedWorkoutForEdit(session.id); });
 }
 
-function renderWorkoutPreview(session) {
-    const exercises = (session.exercises || []).filter(hasRecordedExerciseData);
+function renderWorkoutPreview(session, prCount) {
+    const recordedExercises = (session.exercises || []).filter(hasRecordedExerciseData);
     const volume = calculateVolume(session);
     return `<div class="workout-history-preview-backdrop" id="workout-history-preview" role="dialog" aria-modal="true" aria-labelledby="workout-preview-title">
         <section class="workout-history-preview-sheet">
             <div class="workout-preview-header"><button class="workout-preview-close" data-preview-close type="button" aria-label="Close">×</button><div><span class="eyebrow">${isOneOff(session) ? "ONE-OFF WORKOUT" : "WORKOUT SUMMARY"}</span><h2 id="workout-preview-title">${escapeHtml(session.planName || "Workout")}</h2><p>${escapeHtml(session.trainingDayName || "Training day")} • ${formatDate(session.date)}</p></div><button class="workout-preview-edit" data-preview-edit type="button">Edit</button></div>
-            <div class="workout-preview-stats"><div><span>Duration</span><strong>${formatSavedDuration(session)}</strong></div><div><span>Volume</span><strong>${volume > 0 ? `${formatNumber(volume)} lb` : "—"}</strong></div><div><span>Completed</span><strong>${formatProgress(session)}</strong></div></div>
-            <div class="workout-preview-exercises">${exercises.length ? exercises.map(renderPreviewExercise).join("") : `<p class="workout-preview-empty">No recorded exercise data in this workout.</p>`}</div>
+            <div class="workout-preview-stats"><div><span>Duration</span><strong>${formatSavedDuration(session)}</strong></div><div><span>Volume</span><strong>${volume > 0 ? `${formatNumber(volume)} lb` : "—"}</strong></div><div><span>Completed</span><strong>${formatProgress(session)}</strong></div><div class="workout-preview-pr-stat"><span>Personal Records</span><strong>${prCount > 0 ? `${trophyIcon()} PR · ${prCount}` : "—"}</strong></div></div>
+            <div class="workout-preview-exercises">${recordedExercises.length ? recordedExercises.map(renderPreviewExercise).join("") : `<p class="workout-preview-empty">No recorded exercise data in this workout.</p>`}</div>
         </section>
     </div>`;
 }
 
 function renderPreviewExercise(exercise) {
-    if (exercise.trackingType === "notes") {
-        const details = [Number(exercise.durationMinutes) > 0 ? `${Number(exercise.durationMinutes)} min` : "", String(exercise.distance || "").trim(), String(exercise.notes || "").trim()].filter(Boolean);
-        return `<section class="workout-preview-exercise"><h3>${escapeHtml(exercise.name || "Cardio")}</h3><p class="workout-preview-cardio">${details.map(escapeHtml).join(" • ") || "Recorded"}</p></section>`;
+    const details = resolveExerciseDetails(exercise);
+    if (exercise.trackingType === "notes" || details.trackingType === "notes") {
+        const cardioDetails = [Number(exercise.durationMinutes) > 0 ? `${Number(exercise.durationMinutes)} min` : "", String(exercise.distance || "").trim(), String(exercise.notes || "").trim()].filter(Boolean);
+        return `<section class="workout-preview-exercise"><div class="workout-preview-exercise-heading"><div><h3>${escapeHtml(details.name)}</h3><p class="workout-preview-exercise-meta">${escapeHtml(formatExerciseMeta(details, true))}</p></div><span class="workout-preview-type-pill">Cardio</span></div><p class="workout-preview-cardio">${cardioDetails.map(escapeHtml).join(" • ") || "Recorded"}</p></section>`;
     }
     const sets = (exercise.sets || []).filter(set => set.completed || set.weight !== null || set.reps !== null).filter(set => Number.isFinite(Number(set.weight)) || Number.isFinite(Number(set.reps)));
-    return `<section class="workout-preview-exercise"><h3>${escapeHtml(exercise.name || "Exercise")}</h3><div class="workout-preview-set-list">${sets.map((set, index) => `<div><span>${index + 1}</span><strong>${formatSet(set)}</strong></div>`).join("") || `<p>No completed sets</p>`}</div></section>`;
+    return `<section class="workout-preview-exercise"><div class="workout-preview-exercise-heading"><div><h3>${escapeHtml(details.name)}</h3><p class="workout-preview-exercise-meta">${escapeHtml(formatExerciseMeta(details, false))}</p></div><span class="workout-preview-type-pill">${escapeHtml(capitalize(details.type || "Resistance"))}</span></div><div class="workout-preview-set-list">${sets.map((set, index) => `<div><span>${index + 1}</span><strong>${formatSet(set)}</strong></div>`).join("") || `<p>No completed sets</p>`}</div></section>`;
+}
+
+function resolveExerciseDetails(exercise) {
+    const id = exercise?.exerciseId || exercise?.id;
+    const libraryExercise = id ? exercises.find(item => String(item.id) === String(id)) : null;
+    return {
+        name: exercise?.name || exercise?.exerciseName || libraryExercise?.name || (exercise?.trackingType === "notes" ? "Cardio" : "Exercise"),
+        muscleGroup: exercise?.muscleGroup || libraryExercise?.muscleGroup || "",
+        type: exercise?.type || libraryExercise?.type || (exercise?.trackingType === "notes" ? "cardio" : "resistance"),
+        equipment: exercise?.equipment || libraryExercise?.equipment || "",
+        trackingType: exercise?.trackingType || libraryExercise?.trackingType || "reps"
+    };
+}
+
+function formatExerciseMeta(details, cardio) {
+    const parts = [];
+    if (details.muscleGroup) parts.push(details.muscleGroup);
+    if (details.equipment) parts.push(details.equipment);
+    if (!parts.length) parts.push(cardio ? "Cardio exercise" : "Resistance exercise");
+    return parts.join(" • ");
+}
+
+function trophyIcon() {
+    return `<svg class="workout-pr-trophy" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v3.5c0 3.2-1.7 5.5-4 5.5s-4-2.3-4-5.5V4Z"/><path d="M8 6H4.5v1.3c0 2.4 1.5 4.2 3.9 4.5M16 6h3.5v1.3c0 2.4-1.5 4.2-3.9 4.5"/><path d="M12 13v4M8.5 20h7M10 17h4"/></svg>`;
 }
 
 function renderHistoryCard(session) {
@@ -93,6 +122,7 @@ function formatSet(set) {
     return "Recorded";
 }
 
+function capitalize(value) { const text = String(value || ""); return text ? text.charAt(0).toUpperCase() + text.slice(1) : ""; }
 function formatNumber(value) { return Math.round(value).toLocaleString(); }
 function refreshHistory() { const content = document.getElementById("content"); if (content) { content.innerHTML = renderWorkoutHistory(); initializeWorkoutHistory(); } }
 function isOneOff(session) { return Boolean(session?.isOneOff || session?.planSnapshot?.isOneOff || String(session?.planId || "").startsWith("one-off-")); }
