@@ -1,0 +1,100 @@
+.training-analytics-carousel {
+    width:100%;
+    min-width:0;
+}
+
+.training-analytics-carousel-track {
+    display:flex;
+    width:100%;
+    gap:0;
+    overflow-x:auto;
+    overflow-y:visible;
+    scroll-snap-type:x mandatory;
+    scroll-behavior:smooth;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+    overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-x pan-y;
+}
+
+.training-analytics-carousel-track::-webkit-scrollbar {
+    display:none;
+}
+
+.training-analytics-carousel-track > .training-analytics-slide {
+    flex:0 0 100%;
+    width:100%;
+    min-width:100%;
+    margin:0;
+    scroll-snap-align:start;
+    scroll-snap-stop:always;
+}
+
+.training-analytics-carousel-controls {
+    display:grid;
+    grid-template-columns:40px 1fr 40px;
+    align-items:center;
+    gap:10px;
+    margin-top:12px;
+}
+
+.training-carousel-arrow {
+    display:grid;
+    width:40px;
+    height:36px;
+    place-items:center;
+    padding:0;
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:10px;
+    background:#111115;
+    color:#fff;
+    font-size:25px;
+    line-height:1;
+}
+
+.training-carousel-arrow:disabled {
+    opacity:.3;
+}
+
+.training-carousel-status {
+    display:flex;
+    min-width:0;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    color:#aaaab2;
+    font-size:12px;
+    font-weight:800;
+}
+
+.training-carousel-dots {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+}
+
+.training-carousel-dot {
+    display:block;
+    width:6px;
+    height:6px;
+    border-radius:999px;
+    background:rgba(255,255,255,.22);
+    transition:width .16s ease, background .16s ease;
+}
+
+.training-carousel-dot.active {
+    width:16px;
+    background:#fff;
+}
+
+@media(max-width:700px) {
+    .training-analytics-carousel-track > .training-analytics-slide {
+        border-radius:14px;
+    }
+
+    .training-analytics-carousel-controls {
+        margin-top:10px;
+    }
+}
