@@ -41,7 +41,7 @@ function showRecoveryView() {
 
 function renderRecoveryShell() {
     return `<div class="recovery-map-shell">
-        <div class="recovery-map-header"><div><span class="eyebrow">TRAINING RECOVERY</span><h4>Muscle Recovery</h4><p>Muscle color shows estimated recovery from your completed workouts.</p></div><button class="secondary-btn recovery-detail-open" type="button" data-recovery-details-button>View Details</button></div>
+        <div class="recovery-map-header"><div><span class="eyebrow">TRAINING RECOVERY</span><h4>Muscle Recovery</h4><p>Muscle highlight intensity shows estimated recovery from your completed workouts.</p></div><button class="secondary-btn recovery-detail-open" type="button" data-recovery-details-button>View Details</button></div>
         <div data-recovery-map-panel>
             <div class="recovery-summary-strip"><div><strong id="recovery-fresh-count">0</strong><span>Ready muscle groups</span></div><div><strong id="recovery-last-workout">—</strong><span>Last workout</span></div></div>
             <div class="recovery-facing-toggle" role="group" aria-label="Muscle map view"><button class="active" type="button" data-recovery-facing="front">Front</button><button type="button" data-recovery-facing="back">Back</button></div>
@@ -55,9 +55,9 @@ function renderRecoveryShell() {
                     <span><b>100%</b><small>Recovered</small></span>
                 </div>
             </div>
-            <div class="recovery-body-wrap" data-recovery-body-front>${frontBodySvg()}</div>
-            <div class="recovery-body-wrap" data-recovery-body-back hidden>${backBodySvg()}</div>
-            <div class="recovery-map-note">Bright red means more fatigued. As a muscle recovers, its highlight fades toward the neutral body color. 0% = recently trained; 100% = fully recovered under Level Up's current 72-hour recovery model.</div>
+            <div class="recovery-body-wrap recovery-traced-wrap" data-recovery-body-front>${frontBodySvg()}</div>
+            <div class="recovery-body-wrap recovery-traced-wrap" data-recovery-body-back hidden>${backBodySvg()}</div>
+            <div class="recovery-map-note">0% means recently trained and shows the strongest red highlight. As recovery rises, the red overlay becomes more transparent until the neutral gray body is visible at 100%. Recovery timing still uses Level Up's current 72-hour model.</div>
         </div>
         <div data-recovery-details-panel hidden>
             <div class="recovery-detail-top"><button class="secondary-btn" type="button" data-recovery-map-button>← Body Map</button><div><span class="eyebrow">RECOVERY DETAILS</span><h4>Muscle Groups</h4></div></div>
@@ -77,7 +77,9 @@ function renderRecoveryData() {
 
     document.querySelectorAll("[data-recovery-muscle]").forEach(shape => {
         const item = byMuscle.get(shape.dataset.recoveryMuscle);
-        shape.style.setProperty("--recovery-fill", item ? colorForPercent(item.percent) : "#555663");
+        const percent = item?.percent ?? 100;
+        shape.style.setProperty("--recovery-opacity", recoveryOpacity(percent));
+        shape.style.setProperty("--recovery-fill", colorForPercent(percent));
         shape.classList.toggle("no-data", !item);
     });
 
@@ -122,6 +124,7 @@ function setFacing(facing, root = document) {
 function showDetails() { document.querySelector("[data-recovery-map-panel]")?.setAttribute("hidden", ""); document.querySelector("[data-recovery-details-panel]")?.removeAttribute("hidden"); renderRecoveryData(); }
 function showMap() { document.querySelector("[data-recovery-details-panel]")?.setAttribute("hidden", ""); document.querySelector("[data-recovery-map-panel]")?.removeAttribute("hidden"); }
 function getStatus(hours) { if (hours < 48) return "Recovering"; if (hours < 72) return "Nearly Ready"; return "Ready"; }
+function recoveryOpacity(percent) { const p = Math.max(0, Math.min(100, Number(percent) || 0)); return String(Math.max(0.04, 0.96 * (1 - p / 100))); }
 function colorForPercent(percent) {
     const p = Math.max(0, Math.min(100, Number(percent) || 0)) / 100;
     const fatigued = [255, 49, 95];
@@ -138,60 +141,46 @@ function getSessionTime(session) { const raw = session?.completedAt || session?.
 function normalizeMuscle(value) { const text = String(value || "").trim(); if (!text || /cardio|other/i.test(text)) return ""; const aliases = { Quadriceps: "Quads", Hamstring: "Hamstrings", Shoulder: "Shoulders", Glute: "Glutes", Calf: "Calves" }; return aliases[text] || text; }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c])); }
 
+function musclePath(muscle, d) { return `<path class="recovery-muscle-overlay" data-recovery-muscle="${muscle}" d="${d}"/>`; }
+
 function frontBodySvg() {
-    return `<svg class="recovery-body-svg recovery-vector-anatomy" viewBox="0 0 360 720" role="img" aria-label="Front muscle recovery map">
-      <g class="body-base">
-        <path d="M180 25c-29 0-43 20-43 48 0 25 8 47 25 57l-4 20-36 17-38 16-22 41-13 73-19 91 17 5 30-91 15-47 13 24-11 74-20 88 18 6 35-84 10-60 8 69-12 89-8 103 10 107 14 86 18 0 3-91 10-89 1 0 10 89 3 91 18 0 14-86 10-107-8-103-12-89 8-69 10 60 35 84 18-6-20-88-11-74 13-24 15 47 30 91 17-5-19-91-13-73-22-41-38-16-36-17-4-20c17-10 25-32 25-57 0-28-14-48-43-48z"/>
-      </g>
-      <g class="body-detail neutral-detail">
-        <path d="M158 145l22 24 22-24 15 31-37 18-37-18z"/>
-        <path d="M146 269l18-19 16 14-3 35-19 1zM214 269l-18-19-16 14 3 35 19 1z"/>
-        <path d="M160 303h18v39h-21zM182 303h18l3 39h-21zM157 346h21v39h-25zM182 346h21l4 39h-25z"/>
-        <path d="M139 295l18 8-4 82-16-24zM221 295l-18 8 4 82 16-24z"/>
-        <path d="M83 326l18 5-20 81-17-6zM277 326l-18 5 20 81 17-6z"/>
-      </g>
-      <g class="muscles">
-        <path data-recovery-muscle="Shoulders" d="M117 183c-28 4-44 19-46 48l13 29 31-18 14-46z"/>
-        <path data-recovery-muscle="Shoulders" d="M243 183c28 4 44 19 46 48l-13 29-31-18-14-46z"/>
-        <path data-recovery-muscle="Chest" d="M128 197c17-12 33-17 50-13v70c-24 5-44 1-59-14l-4-29z"/>
-        <path data-recovery-muscle="Chest" d="M232 197c-17-12-33-17-50-13v70c24 5 44 1 59-14l4-29z"/>
-        <path data-recovery-muscle="Biceps" d="M99 252c-14 18-20 45-18 76 5 15 14 21 25 18 12-13 17-31 18-54l-8-37z"/>
-        <path data-recovery-muscle="Biceps" d="M261 252c14 18 20 45 18 76-5 15-14 21-25 18-12-13-17-31-18-54l8-37z"/>
-        <path data-recovery-muscle="Quads" d="M132 414c-15 38-20 83-14 133 4 34 13 56 28 65 17-10 24-38 24-82l-3-107z"/>
-        <path data-recovery-muscle="Quads" d="M228 414c15 38 20 83 14 133-4 34-13 56-28 65-17-10-24-38-24-82l3-107z"/>
-        <path data-recovery-muscle="Quads" d="M150 424l28-9-2 119-18 61-10-62z"/>
-        <path data-recovery-muscle="Quads" d="M210 424l-28-9 2 119 18 61 10-62z"/>
-        <path data-recovery-muscle="Calves" d="M137 580c-12 31-11 72 2 116l17-43 7-61-8-18z"/>
-        <path data-recovery-muscle="Calves" d="M223 580c12 31 11 72-2 116l-17-43-7-61 8-18z"/>
-      </g>
+    const outline = "M 222,10 L 203,11 L 185,28 L 178,60 L 189,81 L 187,108 L 112,148 L 95,236 L 75,265 L 57,336 L 26,368 L 37,373 L 34,399 L 44,408 L 69,399 L 81,344 L 121,282 L 129,246 L 148,228 L 160,266 L 135,401 L 145,482 L 133,545 L 143,658 L 114,689 L 129,702 L 153,701 L 175,678 L 184,517 L 211,410 L 220,411 L 245,517 L 254,682 L 279,703 L 314,695 L 285,658 L 296,548 L 285,505 L 294,393 L 270,269 L 281,228 L 300,246 L 309,285 L 345,340 L 359,400 L 384,408 L 393,400 L 391,373 L 402,370 L 370,334 L 355,269 L 332,230 L 316,146 L 240,106 L 250,54 L 241,23 Z";
+    return `<svg class="recovery-body-svg recovery-traced-anatomy" viewBox="0 0 430 735" role="img" aria-label="Front muscle recovery map">
+        <path class="recovery-master-silhouette" d="${outline}"/>
+        <g class="recovery-muscle-boundaries">
+            ${musclePath("Shoulders", "M111 149 C94 154 89 174 94 200 C101 214 113 222 128 217 C140 203 147 182 146 163 C137 153 125 147 111 149 Z")}
+            ${musclePath("Shoulders", "M319 149 C336 154 341 174 336 200 C329 214 317 222 302 217 C290 203 283 182 284 163 C293 153 305 147 319 149 Z")}
+            ${musclePath("Chest", "M129 161 C151 149 177 146 210 154 L210 225 C180 231 151 226 129 207 C121 192 120 175 129 161 Z")}
+            ${musclePath("Chest", "M301 161 C279 149 253 146 220 154 L220 225 C250 231 279 226 301 207 C309 192 310 175 301 161 Z")}
+            ${musclePath("Biceps", "M101 205 C88 224 84 253 91 280 C97 295 108 300 119 292 C130 274 136 247 132 222 C125 209 114 202 101 205 Z")}
+            ${musclePath("Biceps", "M329 205 C342 224 346 253 339 280 C333 295 322 300 311 292 C300 274 294 247 298 222 C305 209 316 202 329 205 Z")}
+            ${musclePath("Quads", "M149 397 C136 425 134 470 140 514 C144 548 154 571 168 584 C181 566 186 534 184 492 L179 414 C169 404 159 398 149 397 Z")}
+            ${musclePath("Quads", "M281 397 C294 425 296 470 290 514 C286 548 276 571 262 584 C249 566 244 534 246 492 L251 414 C261 404 271 398 281 397 Z")}
+            ${musclePath("Quads", "M180 405 C193 400 204 402 212 413 L205 515 C198 548 191 571 183 588 C176 560 174 532 177 495 Z")}
+            ${musclePath("Quads", "M250 405 C237 400 226 402 218 413 L225 515 C232 548 239 571 247 588 C254 560 256 532 253 495 Z")}
+            ${musclePath("Calves", "M143 548 C134 577 136 620 146 655 C151 670 158 676 164 669 C172 644 176 611 172 575 C163 557 154 548 143 548 Z")}
+            ${musclePath("Calves", "M287 548 C296 577 294 620 284 655 C279 670 272 676 266 669 C258 644 254 611 258 575 C267 557 276 548 287 548 Z")}
+        </g>
     </svg>`;
 }
 
 function backBodySvg() {
-    return `<svg class="recovery-body-svg recovery-vector-anatomy" viewBox="0 0 360 720" role="img" aria-label="Back muscle recovery map">
-      <g class="body-base">
-        <path d="M180 25c-29 0-43 20-43 48 0 25 8 47 25 57l-4 20-36 17-38 16-22 41-13 73-19 91 17 5 30-91 15-47 13 24-11 74-20 88 18 6 35-84 10-60 8 69-12 89-8 103 10 107 14 86 18 0 3-91 10-89 1 0 10 89 3 91 18 0 14-86 10-107-8-103-12-89 8-69 10 60 35 84 18-6-20-88-11-74 13-24 15 47 30 91 17-5-19-91-13-73-22-41-38-16-36-17-4-20c17-10 25-32 25-57 0-28-14-48-43-48z"/>
-      </g>
-      <g class="body-detail neutral-detail">
-        <path d="M85 326l17 4-20 83-17-6zM275 326l-17 4 20 83 17-6z"/>
-        <path d="M164 382l16 24 16-24 10 31-26 25-26-25z"/>
-      </g>
-      <g class="muscles">
-        <path data-recovery-muscle="Shoulders" d="M118 183c-28 4-45 20-47 48l14 29 31-17 14-47z"/>
-        <path data-recovery-muscle="Shoulders" d="M242 183c28 4 45 20 47 48l-14 29-31-17-14-47z"/>
-        <path data-recovery-muscle="Back" d="M159 145l21 26 21-26 22 34-8 70-35 96-35-96-8-70z"/>
-        <path data-recovery-muscle="Back" d="M133 209l43 25-13 115-31 45-24-95 10-54z"/>
-        <path data-recovery-muscle="Back" d="M227 209l-43 25 13 115 31 45 24-95-10-54z"/>
-        <path data-recovery-muscle="Triceps" d="M99 253c-12 17-18 44-17 76 5 16 13 23 24 20 13-16 18-35 18-57l-8-37z"/>
-        <path data-recovery-muscle="Triceps" d="M261 253c12 17 18 44 17 76-5 16-13 23-24 20-13-16-18-35-18-57l8-37z"/>
-        <path data-recovery-muscle="Glutes" d="M126 390c16-20 34-22 52-7v72c-22 13-42 9-57-14z"/>
-        <path data-recovery-muscle="Glutes" d="M234 390c-16-20-34-22-52-7v72c22 13 42 9 57-14z"/>
-        <path data-recovery-muscle="Hamstrings" d="M130 457c-10 45-10 93 1 145 5 22 13 37 24 44 15-18 20-49 18-92l-7-91z"/>
-        <path data-recovery-muscle="Hamstrings" d="M230 457c10 45 10 93-1 145-5 22-13 37-24 44-15-18-20-49-18-92l7-91z"/>
-        <path data-recovery-muscle="Hamstrings" d="M157 462l19 5-3 92-17 73-9-45z"/>
-        <path data-recovery-muscle="Hamstrings" d="M203 462l-19 5 3 92 17 73 9-45z"/>
-        <path data-recovery-muscle="Calves" d="M137 580c-12 31-11 72 2 116l17-43 7-61-8-18z"/>
-        <path data-recovery-muscle="Calves" d="M223 580c12 31 11 72-2 116l-17-43-7-61 8-18z"/>
-      </g>
+    const outline = "M 258,10 L 237,25 L 228,58 L 239,103 L 157,150 L 140,238 L 120,269 L 105,336 L 72,374 L 85,377 L 81,402 L 93,414 L 118,404 L 129,346 L 163,292 L 183,232 L 192,231 L 208,276 L 183,409 L 186,513 L 174,555 L 187,653 L 162,686 L 196,702 L 218,694 L 216,634 L 234,571 L 231,526 L 260,415 L 269,414 L 297,524 L 309,693 L 331,702 L 365,685 L 340,653 L 354,550 L 342,507 L 347,403 L 325,281 L 340,231 L 362,255 L 369,290 L 404,347 L 413,401 L 427,413 L 444,413 L 444,347 L 429,340 L 414,272 L 393,240 L 375,149 L 293,102 L 303,64 L 297,29 L 280,12 Z";
+    return `<svg class="recovery-body-svg recovery-traced-anatomy" viewBox="0 0 445 735" role="img" aria-label="Back muscle recovery map">
+        <path class="recovery-master-silhouette" d="${outline}"/>
+        <g class="recovery-muscle-boundaries">
+            ${musclePath("Shoulders", "M154 151 C137 160 132 181 139 205 C148 217 161 223 176 217 C187 204 192 186 190 166 C181 154 168 149 154 151 Z")}
+            ${musclePath("Shoulders", "M376 151 C393 160 398 181 391 205 C382 217 369 223 354 217 C343 204 338 186 340 166 C349 154 362 149 376 151 Z")}
+            ${musclePath("Back", "M198 142 C220 120 243 111 265 111 L265 306 C241 289 218 261 201 225 C188 194 187 164 198 142 Z")}
+            ${musclePath("Back", "M332 142 C310 120 287 111 265 111 L265 306 C289 289 312 261 329 225 C342 194 343 164 332 142 Z")}
+            ${musclePath("Triceps", "M143 208 C132 230 130 259 137 286 C143 299 153 303 164 295 C175 276 180 251 177 227 C169 214 157 207 143 208 Z")}
+            ${musclePath("Triceps", "M387 208 C398 230 400 259 393 286 C387 299 377 303 366 295 C355 276 350 251 353 227 C361 214 373 207 387 208 Z")}
+            ${musclePath("Glutes", "M205 345 C224 329 245 329 263 343 L263 406 C247 422 226 424 207 410 C195 392 194 367 205 345 Z")}
+            ${musclePath("Glutes", "M325 345 C306 329 285 329 267 343 L267 406 C283 422 304 424 323 410 C335 392 336 367 325 345 Z")}
+            ${musclePath("Hamstrings", "M198 413 C185 445 184 493 191 535 C197 566 208 585 221 590 C233 572 238 541 236 502 L231 424 C220 414 209 410 198 413 Z")}
+            ${musclePath("Hamstrings", "M332 413 C345 445 346 493 339 535 C333 566 322 585 309 590 C297 572 292 541 294 502 L299 424 C310 414 321 410 332 413 Z")}
+            ${musclePath("Calves", "M187 548 C177 579 179 622 190 655 C196 670 203 676 210 668 C218 642 221 611 216 576 C207 557 197 548 187 548 Z")}
+            ${musclePath("Calves", "M343 548 C353 579 351 622 340 655 C334 670 327 676 320 668 C312 642 309 611 314 576 C323 557 333 548 343 548 Z")}
+        </g>
     </svg>`;
 }
