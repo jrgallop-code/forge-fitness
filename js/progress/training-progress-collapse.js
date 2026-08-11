@@ -34,7 +34,6 @@ export function initializeTrainingProgressCollapse() {
 
     if (!header || !summaryGrid) return;
 
-    const titleBlock = header.querySelector(":scope > div:first-child");
     const actions = header.querySelector(".training-header-actions");
 
     const details = document.createElement("details");
@@ -43,8 +42,7 @@ export function initializeTrainingProgressCollapse() {
     const summary = document.createElement("summary");
     summary.innerHTML = `
         <span class="training-summary-title-wrap">
-            <strong>${titleBlock?.querySelector("h3")?.textContent || "Training Progress"}</strong>
-            <small>${titleBlock?.querySelector("p")?.textContent || "Review strength, training volume and completed sessions."}</small>
+            <strong>Workout Snapshot</strong>
         </span>
         <span class="training-summary-toggle" aria-hidden="true">
             <svg class="training-summary-chevron" viewBox="0 0 24 24">
