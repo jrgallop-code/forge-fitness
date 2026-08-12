@@ -16,10 +16,7 @@ const MAX_ADJUSTMENT_KCAL = 200;
 
 function refreshAdaptiveTrend() {
     const coach = document.querySelector('[data-planner-view="coach"]');
-    if (!coach || coach.hidden) return;
-
-    ensureDemoControls(coach);
-    if (getActivePhase()) return;
+    if (!coach || coach.hidden || getActivePhase()) return;
 
     const profile = getNutritionProfile();
     const goal = getNutritionGoal();
@@ -33,12 +30,11 @@ function refreshAdaptiveTrend() {
     renderCoachState({
         trend,
         goalRate,
-        currentCalories: plan.currentCalories,
-        isDemo: false
+        currentCalories: plan.currentCalories
     });
 }
 
-function renderCoachState({ trend, goalRate, currentCalories, isDemo }) {
+function renderCoachState({ trend, goalRate, currentCalories }) {
     const actualRate = trend.weeklyChange;
     const actualElement = document.getElementById("coach-actual-rate");
     const actualHeading = actualElement?.closest(".metric-card")?.querySelector("h3");
@@ -53,8 +49,7 @@ function renderCoachState({ trend, goalRate, currentCalories, isDemo }) {
     if (actualElement) actualElement.textContent = Number.isFinite(actualRate) ? formatRate(actualRate) : "--";
     if (confidence) {
         const status = trend.status === "actual" ? "Established" : trend.status === "preliminary" ? "Preliminary" : "Insufficient";
-        const suffix = isDemo ? " · DEMO" : "";
-        confidence.textContent = `${status} · ${trend.windowEntries} weigh-ins / ${trend.windowDays} days${suffix}`;
+        confidence.textContent = `${status} · ${trend.windowEntries} weigh-ins / ${trend.windowDays} days`;
     }
 
     if (trend.status !== "actual" || !Number.isFinite(actualRate)) {
@@ -97,19 +92,13 @@ function renderCoachState({ trend, goalRate, currentCalories, isDemo }) {
     if (suggestedText) suggestedText.textContent = `Suggested target: ${suggested} kcal/day`;
 
     if (applyButton) {
-        if (isDemo) {
-            applyButton.hidden = true;
-            applyButton.onclick = null;
-        }
-        else {
-            applyButton.hidden = false;
-            applyButton.onclick = () => {
-                setCurrentCalories(suggested, "Adaptive Coach regression recommendation");
-                window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
-                if (recommendation) recommendation.textContent = "Recommendation applied. Your current calorie target has been updated.";
-                hideApply(applyButton);
-            };
-        }
+        applyButton.hidden = false;
+        applyButton.onclick = () => {
+            setCurrentCalories(suggested, "Adaptive Coach regression recommendation");
+            window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
+            if (recommendation) recommendation.textContent = "Recommendation applied. Your current calorie target has been updated.";
+            hideApply(applyButton);
+        };
     }
 }
 
@@ -117,75 +106,6 @@ function calculateSuggestedAdjustment(rateDifference) {
     const impliedDailyCalories = Math.abs(Number(rateDifference)) * 3500 / 7;
     const rounded = Math.round(impliedDailyCalories / 50) * 50;
     return Math.min(MAX_ADJUSTMENT_KCAL, Math.max(MIN_ADJUSTMENT_KCAL, rounded));
-}
-
-function ensureDemoControls(coach) {
-    if (document.getElementById("adaptive-coach-demo-controls")) return;
-
-    const recommendationCard = document.getElementById("coach-recommendation")?.closest(".goal-box");
-    if (!recommendationCard) return;
-
-    const controls = document.createElement("div");
-    controls.id = "adaptive-coach-demo-controls";
-    controls.className = "nutrition-target-actions";
-    controls.innerHTML = `
-        <button class="secondary-btn" type="button" data-coach-demo="on-target">Preview On Target</button>
-        <button class="secondary-btn" type="button" data-coach-demo="too-slow">Preview Needs Change</button>
-        <button class="secondary-btn" type="button" data-coach-demo="preliminary">Preview Preliminary</button>
-        <button class="secondary-btn" type="button" data-coach-demo="live" hidden>Return to Live</button>
-    `;
-    recommendationCard.appendChild(controls);
-
-    controls.addEventListener("click", event => {
-        const button = event.target.closest("[data-coach-demo]");
-        if (!button) return;
-        const mode = button.dataset.coachDemo;
-        if (mode === "live") {
-            controls.querySelector('[data-coach-demo="live"]').hidden = true;
-            window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
-            refreshSoon();
-            return;
-        }
-
-        controls.querySelector('[data-coach-demo="live"]').hidden = false;
-        renderDemoScenario(mode);
-    });
-}
-
-function renderDemoScenario(mode) {
-    const currentCalories = Number(getNutritionPlan().currentCalories) || 2000;
-    const goalRate = -1.00;
-
-    const demos = {
-        "on-target": {
-            status: "actual",
-            label: "Actual Weekly Change",
-            weeklyChange: -0.92,
-            windowEntries: 18,
-            windowDays: 21
-        },
-        "too-slow": {
-            status: "actual",
-            label: "Actual Weekly Change",
-            weeklyChange: -0.63,
-            windowEntries: 18,
-            windowDays: 21
-        },
-        preliminary: {
-            status: "preliminary",
-            label: "Preliminary Weekly Trend",
-            weeklyChange: -0.74,
-            windowEntries: 8,
-            windowDays: 9
-        }
-    };
-
-    renderCoachState({
-        trend: demos[mode] || demos["on-target"],
-        goalRate,
-        currentCalories,
-        isDemo: true
-    });
 }
 
 function getWeightEntries() {
