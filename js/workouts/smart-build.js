@@ -1,15 +1,81 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
-const MUSCLES = ["Chest", "Back", "Shoulders", "Biceps", "Triceps", "Quads", "Hamstrings", "Glutes", "Calves"];
+const MUSCLES = ["Chest","Back","Shoulders","Biceps","Triceps","Quads","Hamstrings","Glutes","Calves"];
+
 const GOALS = {
-    muscle: { label: "Build Muscle", copy: "Prioritize hypertrophy volume, exercise quality and recovery." },
-    strength: { label: "Build Strength", copy: "Prioritize heavy compound practice with enough accessory work to support it." },
-    hybrid: { label: "Strength + Muscle", copy: "Blend strength-focused compounds with hypertrophy-focused volume." },
-    maintain: { label: "Maintain Muscle & Strength", copy: "Use a lower training dose while preserving meaningful intensity and practice." }
+  muscle: { label: "Build Muscle", copy: "Optimize weekly hypertrophy volume and distribute it across the week." },
+  strength: { label: "Build Strength", copy: "Prioritize compound practice, lower rep ranges and manageable accessory volume." },
+  hybrid: { label: "Strength + Muscle", copy: "Blend strength-focused compounds with enough volume for hypertrophy." },
+  maintain: { label: "Maintain", copy: "Use the minimum effective dose needed to maintain muscle and strength." }
 };
 
-const state = {
+const SPLITS = {
+  2: [
+    { name:"Full Body A", muscles:MUSCLES },
+    { name:"Full Body B", muscles:MUSCLES }
+  ],
+  3: [
+    { name:"Upper", muscles:["Chest","Back","Shoulders","Biceps","Triceps"] },
+    { name:"Lower", muscles:["Quads","Hamstrings","Glutes","Calves"] },
+    { name:"Full Body", muscles:MUSCLES }
+  ],
+  4: [
+    { name:"Upper A", muscles:["Chest","Back","Shoulders","Biceps","Triceps"] },
+    { name:"Lower A", muscles:["Quads","Hamstrings","Glutes","Calves"] },
+    { name:"Upper B", muscles:["Chest","Back","Shoulders","Biceps","Triceps"] },
+    { name:"Lower B", muscles:["Quads","Hamstrings","Glutes","Calves"] }
+  ],
+  5: [
+    { name:"Push", muscles:["Chest","Shoulders","Triceps"] },
+    { name:"Pull", muscles:["Back","Biceps"] },
+    { name:"Legs", muscles:["Quads","Hamstrings","Glutes","Calves"] },
+    { name:"Upper", muscles:["Chest","Back","Shoulders","Biceps","Triceps"] },
+    { name:"Lower", muscles:["Quads","Hamstrings","Glutes","Calves"] }
+  ],
+  6: [
+    { name:"Push A", muscles:["Chest","Shoulders","Triceps"] },
+    { name:"Pull A", muscles:["Back","Biceps"] },
+    { name:"Legs A", muscles:["Quads","Hamstrings","Glutes","Calves"] },
+    { name:"Push B", muscles:["Chest","Shoulders","Triceps"] },
+    { name:"Pull B", muscles:["Back","Biceps"] },
+    { name:"Legs B", muscles:["Quads","Hamstrings","Glutes","Calves"] }
+  ]
+};
+
+const NEVER_SUPERSET = [
+  /\bsquat\b/i, /\bdeadlift\b/i, /\brdl\b/i, /\bleg press\b/i, /\bhack squat\b/i,
+  /\bbarbell row\b/i, /\bpendlay row\b/i, /\bbench press\b/i,
+  /\boverhead press\b/i, /\bmilitary press\b/i
+];
+
+const INTERFERENCE = new Set([
+  "Chest|Triceps","Chest|Shoulders","Back|Biceps","Shoulders|Triceps",
+  "Quads|Glutes","Hamstrings|Glutes","Quads|Hamstrings"
+].flatMap(x => [x, x.split("|").reverse().join("|")]));
+
+const state = freshState();
+
+export function initializeSmartBuild(root = document) {
+  const home = root.querySelector?.("[data-workout-home]");
+  if (!home) return;
+
+  home.querySelector("[data-smart-build-launcher]")?.remove();
+  root.querySelector("[data-smart-build-wizard]")?.remove();
+
+  home.insertAdjacentHTML("afterbegin", renderLauncher());
+  home.insertAdjacentHTML("afterend", renderWizardShell());
+
+  if (root.dataset.smartBuildCleanBound !== "true") {
+    root.dataset.smartBuildCleanBound = "true";
+    root.addEventListener("click", event => handleClick(root, event));
+    root.addEventListener("change", event => handleChange(root, event));
+    root.addEventListener("input", event => handleInput(root, event));
+  }
+}
+
+function freshState() {
+  return {
     step: 0,
     goal: "muscle",
     days: 4,
@@ -19,213 +85,425 @@ const state = {
     equipment: ["Full Gym"],
     preferredIds: [],
     excludedIds: [],
-    style: "no-preference",
     supersets: true,
     variation: 0,
     generated: null
-};
+  };
+}
 
-export function initializeSmartBuild(root = document) {
-    const home = root.querySelector?.("[data-workout-home]");
-    if (!home || home.querySelector("[data-smart-build-launcher]")) return;
-    home.insertAdjacentHTML("afterbegin", renderLauncher());
-    home.insertAdjacentHTML("afterend", renderWizardShell());
+function resetState() {
+  Object.assign(state, freshState());
+}
 
-    root.querySelector("[data-manual-build]")?.addEventListener("click", () => root.querySelector("#new-plan-btn")?.click());
-    root.querySelector("[data-template-build]")?.addEventListener("click", () => {
-        const details = root.querySelector(".workout-catalogue-details");
-        if (details) { details.open = true; details.scrollIntoView({ behavior: "smooth", block: "start" }); }
-    });
-    root.querySelector("[data-smart-build]")?.addEventListener("click", () => openWizard(root));
-    root.querySelector("[data-smart-close]")?.addEventListener("click", () => closeWizard(root));
+function handleClick(root, event) {
+  const button = event.target.closest?.("button");
+  if (!button || !root.contains(button)) return;
+
+  if (button.matches("[data-manual-build]")) {
+    root.querySelector("#new-plan-btn")?.click();
+    return;
+  }
+  if (button.matches("[data-template-build]")) {
+    const details = root.querySelector(".workout-catalogue-details");
+    if (details) {
+      details.open = true;
+      details.scrollIntoView({ behavior:"smooth", block:"start" });
+    }
+    return;
+  }
+  if (button.matches("[data-smart-build]")) {
+    resetState();
+    openWizard(root);
+    return;
+  }
+  if (button.matches("[data-smart-close]")) {
+    closeWizard(root);
+    return;
+  }
+  if (button.matches("[data-smart-back]")) {
+    state.step = Math.max(0, state.step - 1);
     renderStep(root);
+    return;
+  }
+  if (button.matches("[data-smart-next]")) {
+    if (state.step === 4) {
+      state.generated = generateProgram();
+      state.step = 5;
+    } else {
+      state.step += 1;
+    }
+    renderStep(root);
+    return;
+  }
+
+  if (button.dataset.goal) state.goal = button.dataset.goal;
+  else if (button.dataset.days) state.days = Number(button.dataset.days);
+  else if (button.dataset.duration) state.duration = Number(button.dataset.duration);
+  else if (button.dataset.experience) state.experience = button.dataset.experience;
+  else if (button.dataset.priority) togglePriority(button.dataset.priority);
+  else if (button.dataset.equipment) toggleEquipment(button.dataset.equipment);
+  else if (button.dataset.preferId) chooseExercise(button.dataset.preferId, "prefer");
+  else if (button.dataset.excludeId) chooseExercise(button.dataset.excludeId, "exclude");
+  else if (button.dataset.removePreferred) state.preferredIds = state.preferredIds.filter(id => id !== button.dataset.removePreferred);
+  else if (button.dataset.removeExcluded) state.excludedIds = state.excludedIds.filter(id => id !== button.dataset.removeExcluded);
+  else if (button.matches("[data-picker-toggle]")) {
+    const panel = root.querySelector("[data-picker-panel]");
+    if (panel) {
+      panel.hidden = !panel.hidden;
+      if (!panel.hidden) renderExerciseResults(root, root.querySelector("[data-smart-exercise-search]")?.value || "");
+    }
+    return;
+  } else if (button.matches("[data-smart-regenerate]")) {
+    state.variation += 1;
+    state.generated = generateProgram();
+  } else if (button.matches("[data-smart-edit]")) {
+    state.step = 0;
+  } else if (button.matches("[data-smart-save]")) {
+    saveGeneratedPlan(root);
+    return;
+  } else if (button.dataset.adjustSet) {
+    adjustSets(Number(button.dataset.dayIndex), Number(button.dataset.exerciseIndex), Number(button.dataset.adjustSet));
+  } else if (button.matches("[data-replace-exercise]")) {
+    replaceExercise(Number(button.dataset.dayIndex), Number(button.dataset.exerciseIndex));
+  } else {
+    return;
+  }
+
+  renderStep(root);
+}
+
+function handleChange(root, event) {
+  if (event.target.matches?.("[data-supersets]")) state.supersets = event.target.checked;
+}
+
+function handleInput(root, event) {
+  if (event.target.matches?.("[data-smart-exercise-search]")) renderExerciseResults(root, event.target.value);
 }
 
 function renderLauncher() {
-    return `<section class="smart-build-launcher" data-smart-build-launcher>
-        <div class="smart-build-launcher-head"><span class="eyebrow">BUILD A PROGRAM</span><p>Choose how you want to create your training plan.</p></div>
-        <div class="smart-build-choice-grid">
-            <button class="smart-build-choice" type="button" data-manual-build><span class="smart-build-choice-title">Manual Build</span><small>Build it yourself</small></button>
-            <button class="smart-build-choice" type="button" data-template-build><span class="smart-build-choice-title">Templates</span><small>Start from a proven split</small></button>
-            <button class="smart-build-choice smart-build-choice-primary" type="button" data-smart-build><span class="smart-build-badge">GUIDED</span><span class="smart-build-choice-title">Smart Build</span><small>Goal-driven personalized programming</small></button>
-        </div>
-    </section>`;
+  return `<section class="smart-build-launcher" data-smart-build-launcher>
+    <div class="smart-build-launcher-head"><span class="eyebrow">BUILD A PROGRAM</span><p>Choose how you want to create your training plan.</p></div>
+    <div class="smart-build-choice-grid">
+      <button class="smart-build-choice" type="button" data-manual-build><span class="smart-build-choice-title">Manual Build</span><small>Build it yourself</small></button>
+      <button class="smart-build-choice" type="button" data-template-build><span class="smart-build-choice-title">Templates</span><small>Start from a proven split</small></button>
+      <button class="smart-build-choice smart-build-choice-primary" type="button" data-smart-build><span class="smart-build-badge">GUIDED</span><span class="smart-build-choice-title">Smart Build</span><small>Goal-driven personalized programming</small></button>
+    </div>
+  </section>`;
 }
 
 function renderWizardShell() {
-    return `<section class="smart-build-wizard" data-smart-build-wizard hidden>
-        <div class="smart-build-topbar"><div><span class="eyebrow">SMART BUILD</span><h3 data-smart-heading>Program Builder</h3></div><button class="secondary-btn smart-build-close" type="button" data-smart-close>Close</button></div>
-        <div class="smart-build-progress"><span data-smart-progress></span></div><div data-smart-step></div>
-    </section>`;
+  return `<section class="smart-build-wizard" data-smart-build-wizard hidden>
+    <div class="smart-build-topbar"><div><span class="eyebrow">SMART BUILD</span><h3 data-smart-heading>Program Builder</h3></div><button class="secondary-btn smart-build-close" type="button" data-smart-close>Close</button></div>
+    <div class="smart-build-progress"><span data-smart-progress></span></div>
+    <div data-smart-step></div>
+  </section>`;
 }
 
 function openWizard(root) {
-    root.querySelector("[data-workout-home]")?.setAttribute("hidden", "");
-    const wizard = root.querySelector("[data-smart-build-wizard]");
-    if (!wizard) return;
-    wizard.hidden = false; state.step = 0; renderStep(root); wizard.scrollIntoView({ behavior: "smooth", block: "start" });
+  root.querySelector("[data-workout-home]")?.setAttribute("hidden","");
+  const wizard = root.querySelector("[data-smart-build-wizard]");
+  if (!wizard) return;
+  wizard.hidden = false;
+  renderStep(root);
+  wizard.scrollIntoView({ behavior:"smooth", block:"start" });
 }
+
 function closeWizard(root) {
-    const wizard = root.querySelector("[data-smart-build-wizard]");
-    const home = root.querySelector("[data-workout-home]");
-    if (wizard) wizard.hidden = true;
-    if (home) { home.hidden = false; home.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  const wizard = root.querySelector("[data-smart-build-wizard]");
+  const home = root.querySelector("[data-workout-home]");
+  if (wizard) wizard.hidden = true;
+  if (home) home.hidden = false;
 }
 
 function renderStep(root) {
-    const host = root.querySelector("[data-smart-step]");
-    const progress = root.querySelector("[data-smart-progress]");
-    const heading = root.querySelector("[data-smart-heading]");
-    if (!host || !progress) return;
-    const steps = [renderGoalStep, renderDaysStep, renderDurationStep, renderPriorityStep, renderExperienceStep, renderEquipmentStep, renderExercisePreferenceStep, renderStyleStep, renderReview];
-    progress.style.width = `${Math.min(100, ((state.step + 1) / 8) * 100)}%`;
-    if (heading) heading.textContent = state.goal ? `${GOALS[state.goal].label} Program` : "Program Builder";
-    host.innerHTML = steps[state.step]();
-    bindStep(root);
+  const host = root.querySelector("[data-smart-step]");
+  const progress = root.querySelector("[data-smart-progress]");
+  const heading = root.querySelector("[data-smart-heading]");
+  if (!host || !progress) return;
+  const steps = [renderGoalStep, renderScheduleStep, renderPriorityExperienceStep, renderEquipmentStep, renderProgrammingStep, renderResultStep];
+  progress.style.width = `${((state.step + 1) / steps.length) * 100}%`;
+  if (heading) heading.textContent = `${GOALS[state.goal].label} Program`;
+  host.innerHTML = steps[state.step]();
 }
 
 function renderGoalStep() {
-    return questionCard("1", "Primary goal", "What should this program optimize for?", Object.entries(GOALS).map(([value, goal]) => `
-        <button class="smart-option ${state.goal === value ? "selected" : ""}" type="button" data-goal="${value}"><strong>${goal.label}</strong><small>${goal.copy}</small></button>`).join(""), false);
+  return questionCard("1","Primary goal","What should this program optimize for?", Object.entries(GOALS).map(([value,goal]) => `<button class="smart-option ${state.goal===value?"selected":""}" type="button" data-goal="${value}"><strong>${goal.label}</strong><small>${goal.copy}</small></button>`).join(""), false);
 }
-function renderDaysStep() { return questionCard("2", "Training days", "How many days per week do you want to train?", chipRow([2,3,4,5,6], state.days, "days")); }
-function renderDurationStep() { return questionCard("3", "Session length", "How long should most workouts take?", chipRow([30,45,60,75,90], state.duration, "duration", v => v === 90 ? "90+ min" : `${v} min`)); }
-function renderPriorityStep() {
-    const verb = state.goal === "maintain" ? "keep especially strong" : state.goal === "strength" ? "prioritize for strength" : "prioritize for growth";
-    return questionCard("4", "Muscle priorities", `Choose up to 3 muscles to ${verb}. Priority targets are protected when time is limited.`, `<div class="smart-chip-grid">${MUSCLES.map(m => `<button type="button" class="smart-chip ${state.priorities.includes(m) ? "selected" : ""}" data-priority="${m}">${m}</button>`).join("")}</div><p class="smart-helper">${state.priorities.length}/3 selected</p>`);
+
+function renderScheduleStep() {
+  return questionCard("2","Schedule","Choose your weekly frequency and typical session length.", `<strong class="smart-field-label">Days per week</strong>${chipRow([2,3,4,5,6],state.days,"days")}<strong class="smart-field-label">Session length</strong>${chipRow([30,45,60,75,90],state.duration,"duration",v=>v===90?"90+ min":`${v} min`)}`);
 }
-function renderExperienceStep() {
-    const options = [["beginner","Beginner","Lower starting dose and simpler exercise distribution"],["intermediate","Intermediate","Moderate starting dose with balanced frequency"],["advanced","Advanced","Higher starting dose when time and recovery allow"]];
-    return questionCard("5", "Training experience", "Experience adjusts the starting prescription; it does not automatically force maximum volume.", options.map(([v,l,c]) => `<button class="smart-option ${state.experience===v?"selected":""}" type="button" data-experience="${v}"><strong>${l}</strong><small>${c}</small></button>`).join(""));
+
+function renderPriorityExperienceStep() {
+  const exp = [
+    ["beginner","Beginner — ~0–1 year","Still developing technique and consistent progression."],
+    ["intermediate","Intermediate — ~1–3 years","Solid technique and comfortable with progressive overload."],
+    ["advanced","Advanced — ~3+ years","Highly experienced; progress requires more precise programming."]
+  ];
+  return questionCard("3","Priorities & experience","Choose up to 3 muscles to emphasize. Priority muscles receive a larger weekly set target.", `<div class="smart-chip-grid">${MUSCLES.map(m=>`<button type="button" class="smart-chip ${state.priorities.includes(m)?"selected":""}" data-priority="${m}">${m}</button>`).join("")}</div><p class="smart-helper">${state.priorities.length}/3 selected</p><div class="smart-option-stack">${exp.map(([v,l,c])=>`<button class="smart-option ${state.experience===v?"selected":""}" type="button" data-experience="${v}"><strong>${l}</strong><small>${c}</small></button>`).join("")}</div><p class="smart-helper">Years are only a guide. Not sure? Choose Intermediate.</p>`);
 }
+
 function renderEquipmentStep() {
-    const options = ["Full Gym", "Barbell", "Dumbbells", "Machines", "Cables", "Bodyweight", "Home Gym"];
-    return questionCard("6", "Available equipment", "Select what you can reliably use.", `<div class="smart-chip-grid">${options.map(x => `<button type="button" class="smart-chip ${state.equipment.includes(x)?"selected":""}" data-equipment="${x}">${x}</button>`).join("")}</div>`);
+  const options = ["Full Gym","Barbell","Dumbbells","Machines","Cables","Bodyweight","Home Gym"];
+  return questionCard("4","Equipment & exercise preferences","Tell Smart Build what you can use and anything you prefer or want to avoid.", `<div class="smart-chip-grid">${options.map(x=>`<button type="button" class="smart-chip ${state.equipment.includes(x)?"selected":""}" data-equipment="${x}">${x}</button>`).join("")}</div><div class="smart-picker-block"><button class="smart-picker-toggle" type="button" data-picker-toggle>Choose preferred / avoided exercises ▾</button><div class="smart-picker-panel" data-picker-panel hidden><input type="search" data-smart-exercise-search placeholder="Search exercise, muscle or equipment"><div class="smart-search-results" data-smart-search-results></div></div></div><div class="smart-pref-columns"><div><strong>Preferred</strong><div class="smart-selected-list">${renderSelectedExercises(state.preferredIds,"preferred")}</div></div><div><strong>Avoid / discomfort</strong><div class="smart-selected-list">${renderSelectedExercises(state.excludedIds,"excluded")}</div></div></div>`);
 }
-function renderExercisePreferenceStep() {
-    return questionCard("7", "Exercise preferences / discomfort", "Choose exercises you want included or exercises you want Smart Build to avoid.", `
-        <div class="smart-picker-block"><button class="smart-picker-toggle" type="button" data-picker-toggle>Choose exercises ▾</button>
-        <div class="smart-picker-panel" data-picker-panel hidden><input type="search" data-smart-exercise-search placeholder="Search exercise, muscle or equipment"><div class="smart-search-results" data-smart-search-results></div></div></div>
-        <div class="smart-pref-columns"><div><strong>Preferred</strong><div class="smart-selected-list">${renderSelectedExercises(state.preferredIds,"preferred")}</div></div><div><strong>Avoid / discomfort</strong><div class="smart-selected-list">${renderSelectedExercises(state.excludedIds,"excluded")}</div></div></div>`);
+
+function renderProgrammingStep() {
+  const targets = getVolumeTargets();
+  return questionCard("5","Programming approach","Smart Build will fit these weekly targets into your available time.", `<div class="smart-volume-summary">${MUSCLES.map(m=>`<div><span>${m}${state.priorities.includes(m)?" ★":""}</span><strong>${targets[m]} sets/wk</strong></div>`).join("")}</div><label class="smart-superset-toggle"><input type="checkbox" data-supersets ${state.supersets?"checked":""}><span><strong>Allow time-saving supersets</strong><small>Accessory-focused. Squats, deadlifts, leg press, bench press, heavy rows and overhead press stay standalone.</small></span></label><p class="smart-helper">Targets are starting prescriptions, not biological maximums. Higher growth priorities receive more weekly volume; if time is tight, non-priority work is reduced first.</p>`, true,"Build Program");
 }
-function renderStyleStep() {
-    const options = [["no-preference","No equipment preference"],["machines","Prefer machines / cables"],["free-weights","Prefer free weights"]];
-    return questionCard("8", "Programming preferences", "One final preference. Smart Build may use non-competing supersets when the session-time target is tight.", `${options.map(([v,l]) => `<button class="smart-option ${state.style===v?"selected":""}" type="button" data-style="${v}"><strong>${l}</strong></button>`).join("")}<label class="smart-superset-toggle"><input type="checkbox" data-supersets ${state.supersets?"checked":""}><span><strong>Allow time-saving supersets</strong><small>Used mainly for non-competing accessory exercises when needed.</small></span></label>`, true, "Generate Program");
+
+function renderResultStep() {
+  if (!state.generated) return `<p class="smart-helper">Program could not be generated.</p>`;
+  const targets = getVolumeTargets();
+  const actual = calculateWeeklySets(state.generated);
+  return `<div class="smart-question-card"><div class="smart-question-number">✓</div><h4>${escapeHtml(GOALS[state.goal].label)} — ${state.days} days</h4><p>${escapeHtml(state.generated.summary)}</p><div class="smart-volume-summary">${MUSCLES.map(m=>`<div><span>${m}${state.priorities.includes(m)?" ★":""}</span><strong>${actual[m]||0}/${targets[m]} sets</strong></div>`).join("")}</div><div class="smart-review-grid">${state.generated.days.map((day,di)=>`<article class="smart-review-day"><h5>${escapeHtml(day.name)}</h5>${day.exercises.map((item,ei)=>renderExerciseRow(item,di,ei)).join("")}</article>`).join("")}</div><div class="smart-question-actions smart-result-actions"><button class="secondary-btn" type="button" data-smart-edit>Edit Inputs</button><button class="secondary-btn" type="button" data-smart-regenerate>Regenerate</button><button class="primary-btn" type="button" data-smart-save>Save Plan</button></div></div>`;
 }
-function questionCard(number,title,copy,body,showBack=true,nextLabel="Continue") { return `<div class="smart-question-card"><div class="smart-question-number">${number}</div><h4>${title}</h4><p>${copy}</p><div class="smart-question-body">${body}</div><div class="smart-question-actions">${showBack?'<button class="secondary-btn" type="button" data-smart-back>Back</button>':'<span></span>'}<button class="primary-btn" type="button" data-smart-next>${nextLabel}</button></div></div>`; }
-function chipRow(values,selected,key,labeler=String) { return `<div class="smart-chip-grid">${values.map(v => `<button type="button" class="smart-chip ${selected===v?"selected":""}" data-${key}="${v}">${labeler(v)}</button>`).join("")}</div>`; }
 
-function bindStep(root) {
-    root.querySelector("[data-smart-back]")?.addEventListener("click", () => { state.step=Math.max(0,state.step-1); renderStep(root); });
-    root.querySelector("[data-smart-next]")?.addEventListener("click", () => { if(state.step===7){ state.generated=generateProgram(); state.step=8; } else state.step+=1; renderStep(root); });
-    root.querySelectorAll("[data-goal]").forEach(b=>b.addEventListener("click",()=>{state.goal=b.dataset.goal;renderStep(root);}));
-    root.querySelectorAll("[data-days]").forEach(b=>b.addEventListener("click",()=>{state.days=Number(b.dataset.days);renderStep(root);}));
-    root.querySelectorAll("[data-duration]").forEach(b=>b.addEventListener("click",()=>{state.duration=Number(b.dataset.duration);renderStep(root);}));
-    root.querySelectorAll("[data-experience]").forEach(b=>b.addEventListener("click",()=>{state.experience=b.dataset.experience;renderStep(root);}));
-    root.querySelectorAll("[data-style]").forEach(b=>b.addEventListener("click",()=>{state.style=b.dataset.style;renderStep(root);}));
-    root.querySelector("[data-supersets]")?.addEventListener("change", e => { state.supersets=e.target.checked; });
-    root.querySelectorAll("[data-priority]").forEach(b=>b.addEventListener("click",()=>{const m=b.dataset.priority;if(state.priorities.includes(m))state.priorities=state.priorities.filter(x=>x!==m);else if(state.priorities.length<3)state.priorities.push(m);renderStep(root);}));
-    root.querySelectorAll("[data-equipment]").forEach(b=>b.addEventListener("click",()=>{const x=b.dataset.equipment;if(x==="Full Gym")state.equipment=["Full Gym"];else{state.equipment=state.equipment.filter(v=>v!=="Full Gym");state.equipment=state.equipment.includes(x)?state.equipment.filter(v=>v!==x):[...state.equipment,x];if(!state.equipment.length)state.equipment=["Full Gym"];}renderStep(root);}));
+function renderExerciseRow(item, dayIndex, exerciseIndex) {
+  const def = exerciseMap().get(item.id);
+  const superset = item.supersetGroup ? `<em>Superset ${item.supersetGroup}</em>` : "";
+  return `<div class="smart-review-exercise ${item.supersetGroup?"is-superset":""}"><div><strong>${escapeHtml(def?.name || item.name || item.id)}</strong><small>${item.sets} × ${escapeHtml(item.reps)} · ${escapeHtml(def?.muscleGroup || "")}</small>${superset}</div><div class="smart-review-controls"><button type="button" data-adjust-set="-1" data-day-index="${dayIndex}" data-exercise-index="${exerciseIndex}" aria-label="Remove set">−</button><button type="button" data-adjust-set="1" data-day-index="${dayIndex}" data-exercise-index="${exerciseIndex}" aria-label="Add set">+</button><button type="button" data-replace-exercise data-day-index="${dayIndex}" data-exercise-index="${exerciseIndex}">Replace</button></div></div>`;
+}
 
-    const panel=root.querySelector("[data-picker-panel]");
-    root.querySelector("[data-picker-toggle]")?.addEventListener("click",()=>{if(panel){panel.hidden=!panel.hidden;if(!panel.hidden){renderExerciseResults(root,"");root.querySelector("[data-smart-exercise-search]")?.focus();}}});
-    root.querySelector("[data-smart-exercise-search]")?.addEventListener("input",e=>renderExerciseResults(root,e.target.value));
-    root.querySelectorAll("[data-remove-preferred]").forEach(b=>b.addEventListener("click",()=>{state.preferredIds=state.preferredIds.filter(x=>x!==b.dataset.removePreferred);renderStep(root);}));
-    root.querySelectorAll("[data-remove-excluded]").forEach(b=>b.addEventListener("click",()=>{state.excludedIds=state.excludedIds.filter(x=>x!==b.dataset.removeExcluded);renderStep(root);}));
+function questionCard(number,title,copy,body,showBack=true,nextLabel="Continue") {
+  return `<div class="smart-question-card"><div class="smart-question-number">${number}</div><h4>${title}</h4><p>${copy}</p><div class="smart-question-body">${body}</div><div class="smart-question-actions">${showBack?'<button class="secondary-btn" type="button" data-smart-back>Back</button>':'<span></span>'}<button class="primary-btn" type="button" data-smart-next>${nextLabel}</button></div></div>`;
+}
 
-    root.querySelector("[data-smart-regenerate-exercises]")?.addEventListener("click",()=>{state.variation+=1;state.generated=generateProgram({keepStructure:true});renderStep(root);});
-    root.querySelector("[data-smart-regenerate-program]")?.addEventListener("click",()=>{state.variation+=1;state.generated=generateProgram({alternateSplit:true});renderStep(root);});
-    root.querySelector("[data-smart-save]")?.addEventListener("click",()=>saveGeneratedPlan(root));
-    root.querySelector("[data-smart-edit]")?.addEventListener("click",()=>{state.step=0;renderStep(root);});
+function chipRow(values, selected, key, labeler=String) {
+  return `<div class="smart-chip-grid">${values.map(v=>`<button type="button" class="smart-chip ${selected===v?"selected":""}" data-${key}="${v}">${labeler(v)}</button>`).join("")}</div>`;
+}
+
+function togglePriority(muscle) {
+  if (state.priorities.includes(muscle)) state.priorities = state.priorities.filter(m=>m!==muscle);
+  else if (state.priorities.length < 3) state.priorities.push(muscle);
+}
+
+function toggleEquipment(value) {
+  if (value === "Full Gym") { state.equipment = ["Full Gym"]; return; }
+  state.equipment = state.equipment.filter(x=>x!=="Full Gym");
+  state.equipment = state.equipment.includes(value) ? state.equipment.filter(x=>x!==value) : [...state.equipment,value];
+  if (!state.equipment.length) state.equipment = ["Full Gym"];
+}
+
+function chooseExercise(id, mode) {
+  if (mode === "prefer") {
+    state.excludedIds = state.excludedIds.filter(x=>x!==id);
+    if (!state.preferredIds.includes(id)) state.preferredIds.push(id);
+  } else {
+    state.preferredIds = state.preferredIds.filter(x=>x!==id);
+    if (!state.excludedIds.includes(id)) state.excludedIds.push(id);
+  }
 }
 
 function renderExerciseResults(root, query) {
-    const host=root.querySelector("[data-smart-search-results]"); if(!host)return;
-    const term=String(query||"").trim().toLowerCase();
-    const results=getAllExercises().filter(e=>e.trackingType!=="notes").filter(e=>!term||[e.name,e.muscleGroup,e.equipment].some(v=>String(v||"").toLowerCase().includes(term))).sort((a,b)=>a.muscleGroup.localeCompare(b.muscleGroup)||a.name.localeCompare(b.name)).slice(0,30);
-    host.innerHTML=results.length?results.map(e=>`<div class="smart-search-row"><div><strong>${escapeHtml(e.name)}</strong><small>${escapeHtml(e.muscleGroup)} · ${escapeHtml(e.equipment)}</small></div><button type="button" data-prefer-id="${e.id}">Prefer</button><button type="button" data-exclude-id="${e.id}">Avoid</button></div>`).join(""):`<p class="smart-helper">No matching exercises.</p>`;
-    host.querySelectorAll("[data-prefer-id]").forEach(b=>b.addEventListener("click",()=>{const id=b.dataset.preferId;state.excludedIds=state.excludedIds.filter(x=>x!==id);if(!state.preferredIds.includes(id))state.preferredIds.push(id);renderStep(root);setTimeout(()=>root.querySelector("[data-picker-toggle]")?.click(),0);}));
-    host.querySelectorAll("[data-exclude-id]").forEach(b=>b.addEventListener("click",()=>{const id=b.dataset.excludeId;state.preferredIds=state.preferredIds.filter(x=>x!==id);if(!state.excludedIds.includes(id))state.excludedIds.push(id);renderStep(root);setTimeout(()=>root.querySelector("[data-picker-toggle]")?.click(),0);}));
+  const host = root.querySelector("[data-smart-search-results]");
+  if (!host) return;
+  const term = String(query||"").trim().toLowerCase();
+  const results = getAllExercises().filter(e=>e.trackingType!=="notes").filter(e=>!term || [e.name,e.muscleGroup,e.equipment].some(v=>String(v||"").toLowerCase().includes(term))).sort((a,b)=>String(a.muscleGroup).localeCompare(String(b.muscleGroup)) || String(a.name).localeCompare(String(b.name))).slice(0,40);
+  host.innerHTML = results.length ? results.map(e=>`<div class="smart-search-row"><div><strong>${escapeHtml(e.name)}</strong><small>${escapeHtml(e.muscleGroup)} · ${escapeHtml(e.equipment)}</small></div><button type="button" data-prefer-id="${escapeHtml(e.id)}">Prefer</button><button type="button" data-exclude-id="${escapeHtml(e.id)}">Avoid</button></div>`).join("") : `<p class="smart-helper">No matching exercises.</p>`;
 }
-function renderSelectedExercises(ids,type){const map=new Map(getAllExercises().map(e=>[e.id,e]));return ids.length?ids.map(id=>`<button type="button" class="smart-selected-chip" data-remove-${type}="${id}">${escapeHtml(map.get(id)?.name||id)} ×</button>`).join(""):`<small>None selected</small>`;}
+
+function renderSelectedExercises(ids,type) {
+  const map = exerciseMap();
+  return ids.length ? ids.map(id=>`<button type="button" class="smart-selected-chip" data-remove-${type}="${escapeHtml(id)}">${escapeHtml(map.get(id)?.name || id)} ×</button>`).join("") : `<small>None selected</small>`;
+}
 
 function getVolumeTargets() {
-    const expIndex={beginner:0,intermediate:1,advanced:2}[state.experience]??1;
-    const targets={};
-    MUSCLES.forEach(m=>{
-        if(state.goal==="maintain") targets[m]=[4,5,6][expIndex];
-        else if(state.goal==="strength") targets[m]=[5,6,7][expIndex];
-        else if(state.goal==="hybrid") targets[m]=[7,9,10][expIndex];
-        else targets[m]=[8,10,12][expIndex];
-    });
-    state.priorities.forEach(m=>{
-        if(state.goal==="maintain") targets[m]=[6,7,8][expIndex];
-        else if(state.goal==="strength") targets[m]=[7,9,10][expIndex];
-        else if(state.goal==="hybrid") targets[m]=[10,13,15][expIndex];
-        else targets[m]=[12,14,16][expIndex];
-    });
-    return fitVolumeToTime(targets);
+  const exp = { beginner:0, intermediate:1, advanced:2 }[state.experience] ?? 1;
+  const base = { muscle:[8,10,12], strength:[5,6,7], hybrid:[7,9,10], maintain:[4,5,6] }[state.goal][exp];
+  const priorityBoost = { muscle:[3,4,4], strength:[2,2,3], hybrid:[3,3,4], maintain:[1,1,2] }[state.goal][exp];
+  return Object.fromEntries(MUSCLES.map(m=>[m, Math.min(18, base + (state.priorities.includes(m) ? priorityBoost : 0))]));
 }
 
-function fitVolumeToTime(targets) {
-    const result={...targets};
-    const capacityPerSession=Math.max(8,Math.round(state.duration/5));
-    const supersetBonus=state.supersets?Math.round(capacityPerSession*0.2):0;
-    const weeklyCapacity=(capacityPerSession+supersetBonus)*state.days;
-    let total=sumValues(result);
-    const floors={muscle:6,hybrid:6,strength:4,maintain:3};
-    const floor=floors[state.goal]||6;
-    const reductionOrder=MUSCLES.filter(m=>!state.priorities.includes(m)).sort((a,b)=>result[b]-result[a]);
-    let guard=500;
-    while(total>weeklyCapacity&&guard--){let changed=false;for(const m of reductionOrder){if(result[m]>floor){result[m]-=1;total-=1;changed=true;if(total<=weeklyCapacity)break;}}if(!changed)break;}
-    if(total>weeklyCapacity){const priorityFloor=state.goal==="muscle"?10:state.goal==="hybrid"?8:state.goal==="strength"?6:4;for(const m of state.priorities){while(total>weeklyCapacity&&result[m]>priorityFloor){result[m]-=1;total-=1;}}}
-    return result;
+function generateProgram() {
+  const targets = getVolumeTargets();
+  const days = SPLITS[state.days].map(day=>({ name:day.name, muscles:[...day.muscles], exercises:[] }));
+  const usedByMuscle = new Map(MUSCLES.map(m=>[m,[]]));
+  const preferred = new Set(state.preferredIds);
+  const order = [...MUSCLES].sort((a,b)=>Number(state.priorities.includes(b))-Number(state.priorities.includes(a)) || targets[b]-targets[a]);
+
+  order.forEach(muscle => {
+    const eligibleDays = days.map((d,i)=>d.muscles.includes(muscle)?i:-1).filter(i=>i>=0);
+    if (!eligibleDays.length) return;
+    let remaining = targets[muscle];
+    let cursor = state.variation % eligibleDays.length;
+    while (remaining > 0) {
+      const dayIndex = eligibleDays[cursor % eligibleDays.length];
+      const chunk = Math.min(3, remaining);
+      const def = chooseExerciseForMuscle(muscle, usedByMuscle.get(muscle), preferred, dayIndex);
+      if (!def) break;
+      const existing = days[dayIndex].exercises.find(x=>x.id===def.id);
+      if (existing) existing.sets += chunk;
+      else days[dayIndex].exercises.push({ id:def.id, name:def.name, sets:chunk, reps:repRangeFor(def), muscleGroup:muscle });
+      usedByMuscle.get(muscle).push(def.id);
+      remaining -= chunk;
+      cursor += 1;
+    }
+  });
+
+  days.forEach(day => {
+    day.exercises = sortExercises(day.exercises);
+    fitSessionTime(day);
+    if (state.supersets) assignSupersets(day);
+  });
+
+  return { days, summary:buildSummary(days) };
 }
 
-function generateProgram(options={}) {
-    const all=getAllExercises().filter(e=>e.trackingType!=="notes"&&!state.excludedIds.includes(e.id));
-    const volumes=getVolumeTargets();
-    const split=getSplitNames(state.days,options.alternateSplit||false);
-    const days=split.map(name=>({name,exercises:[]}));
-    const mapping=assignMusclesToDays(state.days,options.alternateSplit||false);
-    const used=new Set();
-    Object.entries(volumes).forEach(([muscle,weeklySets])=>{
-        const targets=mapping[muscle]||[0];let remaining=weeklySets;
-        targets.forEach((dayIndex,i)=>{const left=targets.length-i;const sets=Math.max(2,Math.round(remaining/left));remaining-=sets;addMuscleWork(days[dayIndex],muscle,sets,all,used,options.keepStructure);});
-    });
-    days.forEach(day=>{day.exercises.sort((a,b)=>Number(b._compound)-Number(a._compound));day.exercises.forEach(x=>delete x._compound);applySupersets(day);});
-    const effective=calculateEffectiveVolume(days);
-    return {name:buildPlanName(),days,smartBuild:{version:2,goal:GOALS[state.goal].label,duration:state.duration,experience:state.experience,priorities:[...state.priorities],supersetsAllowed:state.supersets,generatedAt:new Date().toISOString()},volumes,effective};
+function chooseExerciseForMuscle(muscle, used, preferred, dayIndex) {
+  const pool = availableExercises().filter(e=>e.muscleGroup===muscle);
+  if (!pool.length) return null;
+  return pool.map(e=>{
+    let score = 0;
+    if (preferred.has(e.id)) score += 100;
+    if (!used.includes(e.id)) score += 20;
+    if (state.goal==="strength" && e.type==="compound") score += 12;
+    if (state.goal==="muscle" && e.type==="isolation") score += 2;
+    score += deterministicNoise(e.id, dayIndex + state.variation);
+    return {e,score};
+  }).sort((a,b)=>b.score-a.score)[0]?.e || null;
 }
-function buildPlanName(){const priority=state.priorities.length?` — ${state.priorities.join(" + ")} Priority`:"";return `${state.days}-Day ${GOALS[state.goal].label} Program${priority}`;}
 
-function addMuscleWork(day,muscle,totalSets,exercises,used,variationMode){
-    let candidates=exercises.filter(e=>normalizedMuscle(e.muscleGroup)===normalizedMuscle(muscle)&&equipmentAllowed(e));
-    candidates.sort((a,b)=>scoreExercise(b,used,variationMode)-scoreExercise(a,used,variationMode));if(!candidates.length)return;
-    const exerciseCount=totalSets>=8?3:totalSets>=5?2:1;const picks=candidates.slice(0,Math.min(exerciseCount,candidates.length));let remaining=totalSets;
-    picks.forEach((e,i)=>{const left=picks.length-i;const sets=Math.max(2,Math.round(remaining/left));remaining-=sets;day.exercises.push({id:e.id,sets,reps:getRepTarget(e),_compound:e.type==="compound",primaryMuscle:normalizedDisplayMuscle(e.muscleGroup)});used.add(e.id);});
+function availableExercises() {
+  const excluded = new Set(state.excludedIds);
+  return getAllExercises().filter(e=>e.trackingType!=="notes" && MUSCLES.includes(e.muscleGroup) && !excluded.has(e.id) && equipmentAllowed(e));
 }
-function getRepTarget(e){if(state.goal==="strength"&&e.type==="compound")return "4-6";if(state.goal==="hybrid"&&e.type==="compound")return "5-8";return e.recommendedReps||"8-12";}
-function scoreExercise(e,used,variationMode){let s=e.type==="compound"?12:8;if(state.preferredIds.includes(e.id))s+=100;if(used.has(e.id))s-=16;if(state.style==="machines"&&["Machine","Cable"].includes(e.equipment))s+=10;if(state.style==="free-weights"&&["Barbell","Dumbbells"].includes(e.equipment))s+=10;const seed=(hashString(e.id)+state.variation*17)%23;if(variationMode||state.variation)s+=seed;return s;}
 
-function applySupersets(day){if(!state.supersets||state.duration>=75)return;const eligible=day.exercises.map((x,i)=>({x,i})).filter(({x})=>!isHeavyCompound(x));let group=0;for(let i=0;i<eligible.length-1;i+=2){const a=eligible[i],b=eligible[i+1];if(!canSuperset(a.x,b.x))continue;group+=1;a.x.supersetGroup=`S${group}`;b.x.supersetGroup=`S${group}`;}}
-function isHeavyCompound(item){const e=getAllExercises().find(x=>x.id===item.id);return e?.type==="compound"&&(state.goal==="strength"||state.goal==="hybrid");}
-function canSuperset(a,b){const ma=a.primaryMuscle,mb=b.primaryMuscle;if(ma===mb)return false;const competing=[new Set(["Chest","Triceps"]),new Set(["Back","Biceps"]),new Set(["Shoulders","Triceps"]),new Set(["Quads","Glutes"]),new Set(["Hamstrings","Glutes"])];return !competing.some(set=>set.has(ma)&&set.has(mb));}
+function equipmentAllowed(exercise) {
+  if (state.equipment.includes("Full Gym")) return true;
+  const eq = String(exercise.equipment||"").toLowerCase();
+  const selected = state.equipment.map(x=>x.toLowerCase());
+  if (selected.includes("home gym")) return true;
+  return selected.some(x=>{
+    if (x==="dumbbells") return eq.includes("dumbbell");
+    if (x==="machines") return eq.includes("machine");
+    if (x==="cables") return eq.includes("cable");
+    return eq.includes(x.replace(/s$/,""));
+  });
+}
 
-function calculateEffectiveVolume(days){const totals=Object.fromEntries(MUSCLES.map(m=>[m,0]));const exerciseMap=new Map(getAllExercises().map(e=>[e.id,e]));days.forEach(day=>day.exercises.forEach(item=>{const e=exerciseMap.get(item.id);if(!e)return;const primary=normalizedDisplayMuscle(e.muscleGroup);if(totals[primary]!=null)totals[primary]+=item.sets;secondaryMuscles(e).forEach(m=>{if(totals[m]!=null)totals[m]+=item.sets*0.5;});}));Object.keys(totals).forEach(m=>totals[m]=Math.round(totals[m]*10)/10);return totals;}
-function secondaryMuscles(e){if(e.type!=="compound")return[];const m=normalizedDisplayMuscle(e.muscleGroup);if(m==="Chest")return["Triceps","Shoulders"];if(m==="Back")return["Biceps"];if(m==="Shoulders")return["Triceps"];if(m==="Quads")return["Glutes"];if(m==="Hamstrings")return["Glutes"];return[];}
+function repRangeFor(def) {
+  if (state.goal==="strength" && def.type==="compound") return "4-8";
+  if (state.goal==="hybrid" && def.type==="compound") return "5-10";
+  return def.recommendedReps || (def.type==="compound" ? "6-12" : "10-15");
+}
 
-function getSplitNames(days,alternate){const primary={2:["Full Body A","Full Body B"],3:["Upper","Lower","Full Body"],4:["Upper A","Lower A","Upper B","Lower B"],5:["Upper","Lower","Push","Pull","Legs"],6:["Push A","Pull A","Legs A","Push B","Pull B","Legs B"]};const alt={2:["Full Body 1","Full Body 2"],3:["Full Body A","Full Body B","Full Body C"],4:["Push","Pull","Lower A","Lower B"],5:["Push","Pull","Legs","Upper","Lower"],6:["Upper A","Lower A","Upper B","Lower B","Upper C","Lower C"]};return(alternate?alt:primary)[days]||Array.from({length:days},(_,i)=>`Day ${i+1}`);}
-function assignMusclesToDays(days,alternate){if(alternate&&days===3)return Object.fromEntries(MUSCLES.map(m=>[m,[0,1,2]]));if(alternate&&days===4)return{Chest:[0,2],Back:[1,3],Shoulders:[0,1],Biceps:[1,3],Triceps:[0,2],Quads:[2,3],Hamstrings:[2,3],Glutes:[2,3],Calves:[2,3]};if(days===2)return Object.fromEntries(MUSCLES.map(m=>[m,[0,1]]));if(days===3)return{Chest:[0,2],Back:[0,2],Shoulders:[0,2],Biceps:[0,2],Triceps:[0,2],Quads:[1,2],Hamstrings:[1,2],Glutes:[1,2],Calves:[1,2]};if(days===4)return{Chest:[0,2],Back:[0,2],Shoulders:[0,2],Biceps:[0,2],Triceps:[0,2],Quads:[1,3],Hamstrings:[1,3],Glutes:[1,3],Calves:[1,3]};if(days===5)return{Chest:[0,2],Back:[0,3],Shoulders:[0,2],Biceps:[0,3],Triceps:[0,2],Quads:[1,4],Hamstrings:[1,4],Glutes:[1,4],Calves:[1,4]};return{Chest:[0,3],Back:[1,4],Shoulders:[0,3],Biceps:[1,4],Triceps:[0,3],Quads:[2,5],Hamstrings:[2,5],Glutes:[2,5],Calves:[2,5]};}
+function sortExercises(items) {
+  return [...items].sort((a,b)=>Number(belongsToProtectedCompound(exerciseMap().get(b.id)))-Number(belongsToProtectedCompound(exerciseMap().get(a.id))) || Number(exerciseMap().get(b.id)?.type==="compound")-Number(exerciseMap().get(a.id)?.type==="compound") || Number(state.priorities.includes(b.muscleGroup))-Number(state.priorities.includes(a.muscleGroup)));
+}
 
-function renderReview(){const p=state.generated;const map=new Map(getAllExercises().map(e=>[e.id,e]));const volumeRows=Object.entries(p.volumes).map(([m,s])=>`<div class="${state.priorities.includes(m)?"priority":""}"><span>${m}${state.priorities.includes(m)?" · priority":""}</span><strong>${s} target sets</strong></div>`).join("");const effectiveRows=Object.entries(p.effective).filter(([,s])=>s>0).map(([m,s])=>`<div><span>${m}</span><strong>${s} effective</strong></div>`).join("");const days=p.days.map(day=>`<details class="smart-review-day"><summary><strong>${escapeHtml(day.name)}</strong><span>${day.exercises.length} exercises</span></summary><div>${day.exercises.map(item=>`<p class="${item.supersetGroup?"is-superset":""}"><strong>${item.supersetGroup?`<em>${item.supersetGroup}</em> `:""}${escapeHtml(map.get(item.id)?.name||item.id)}</strong><span>${item.sets} × ${escapeHtml(item.reps)}</span></p>`).join("")}</div></details>`).join("");return `<div class="smart-review"><span class="eyebrow">YOUR PROGRAM</span><h3>${escapeHtml(p.name)}</h3><div class="smart-review-meta"><span>${state.days} days/week</span><span>~${state.duration} min/session</span><span>${capitalize(state.experience)}</span><span>${GOALS[state.goal].label}</span></div><h4>Weekly target sets</h4><p class="smart-helper">Priority muscles are protected first when time is limited.</p><div class="smart-volume-grid">${volumeRows}</div><h4>Estimated effective volume</h4><p class="smart-helper">Compound exercises add fractional credit to commonly involved secondary muscles.</p><div class="smart-volume-grid effective">${effectiveRows}</div><h4>Workout days</h4><div class="smart-review-days">${days}</div><p class="smart-review-note">These are evidence-informed starting targets, not a claim that one exact weekly set number is universally optimal. Higher volume can support more hypertrophy, but returns diminish and individual recovery varies.</p><div class="smart-review-actions"><button class="secondary-btn" type="button" data-smart-edit>Edit Answers</button><button class="secondary-btn" type="button" data-smart-regenerate-exercises>New Exercises</button><button class="secondary-btn" type="button" data-smart-regenerate-program>New Program</button><button class="primary-btn" type="button" data-smart-save>Save Plan</button></div></div>`;}
+function fitSessionTime(day) {
+  const cap = state.duration;
+  let estimate = estimateMinutes(day.exercises, false);
+  while (estimate > cap) {
+    const candidate = day.exercises.map((x,i)=>({x,i})).filter(({x})=>!state.priorities.includes(x.muscleGroup) && x.sets>1).sort((a,b)=>Number(exerciseMap().get(a.x.id)?.type==="compound")-Number(exerciseMap().get(b.x.id)?.type==="compound"))[0];
+    if (!candidate) break;
+    candidate.x.sets -= 1;
+    estimate = estimateMinutes(day.exercises, state.supersets);
+  }
+  day.exercises = day.exercises.filter(x=>x.sets>0);
+}
 
-function saveGeneratedPlan(root){if(!state.generated)return;const saved=getSavedPlans();const plan=JSON.parse(JSON.stringify(state.generated));delete plan.volumes;delete plan.effective;plan.id=`plan-${Date.now()}`;saved.push(plan);localStorage.setItem(PLAN_STORAGE_KEY,JSON.stringify(saved));const b=root.querySelector("[data-smart-save]");if(b){b.textContent="Saved ✓";b.disabled=true;}setTimeout(()=>document.querySelector('.nav-btn[data-page="workout"]')?.click(),250);}
-function getSavedPlans(){try{const x=JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY)||"[]");return Array.isArray(x)?x:[];}catch{return[];}}
-function equipmentAllowed(e){if(state.equipment.includes("Full Gym"))return true;const eq=String(e.equipment||"").toLowerCase();const selected=state.equipment.map(x=>x.toLowerCase());if(selected.includes("home gym"))return["dumbbells","bodyweight","barbell"].some(x=>eq.includes(x));return selected.some(x=>eq.includes(x.replace(/s$/,""))||x.includes(eq.replace(/s$/,"")));}
-function normalizedMuscle(v){const m=String(v||"").toLowerCase();if(m==="rear delts")return"shoulders";if(m==="lats")return"back";return m;}
-function normalizedDisplayMuscle(v){const n=normalizedMuscle(v);return MUSCLES.find(m=>m.toLowerCase()===n)||v;}
-function sumValues(o){return Object.values(o).reduce((a,b)=>a+Number(b||0),0);}
-function hashString(v){return String(v).split("").reduce((h,c)=>((h<<5)-h+c.charCodeAt(0))|0,0);}
-function capitalize(v){return String(v||"").charAt(0).toUpperCase()+String(v||"").slice(1);}
-function escapeHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;");}
+function estimateMinutes(items, withSupersets) {
+  let total = 5;
+  items.forEach(item=>{
+    const def = exerciseMap().get(item.id);
+    const perSet = belongsToProtectedCompound(def) ? 3.2 : def?.type==="compound" ? 2.5 : 1.7;
+    total += item.sets * perSet;
+  });
+  if (withSupersets) total *= 0.88;
+  return total;
+}
+
+function assignSupersets(day) {
+  let groupNum = 1;
+  day.exercises.forEach(item=>delete item.supersetGroup);
+  for (let i=0;i<day.exercises.length-1;i++) {
+    const a = day.exercises[i], b = day.exercises[i+1];
+    if (a.supersetGroup || b.supersetGroup) continue;
+    const ad = exerciseMap().get(a.id), bd = exerciseMap().get(b.id);
+    if (!canSuperset(ad,bd)) continue;
+    const group = `S${groupNum++}`;
+    a.supersetGroup = group;
+    b.supersetGroup = group;
+    i += 1;
+  }
+}
+
+function canSuperset(a,b) {
+  if (!a || !b) return false;
+  if (belongsToProtectedCompound(a) || belongsToProtectedCompound(b)) return false;
+  if (a.muscleGroup===b.muscleGroup) return false;
+  if (INTERFERENCE.has(`${a.muscleGroup}|${b.muscleGroup}`)) return false;
+  return a.type==="isolation" || b.type==="isolation";
+}
+
+function belongsToProtectedCompound(def) {
+  return !!def && NEVER_SUPERSET.some(pattern=>pattern.test(def.name||""));
+}
+
+function replaceExercise(dayIndex, exerciseIndex) {
+  const item = state.generated?.days?.[dayIndex]?.exercises?.[exerciseIndex];
+  if (!item) return;
+  const pool = availableExercises().filter(e=>e.muscleGroup===item.muscleGroup && e.id!==item.id);
+  if (!pool.length) return;
+  const next = pool[(state.variation + exerciseIndex + dayIndex + 1) % pool.length];
+  item.id = next.id;
+  item.name = next.name;
+  item.reps = repRangeFor(next);
+  if (state.supersets) assignSupersets(state.generated.days[dayIndex]);
+}
+
+function adjustSets(dayIndex, exerciseIndex, delta) {
+  const item = state.generated?.days?.[dayIndex]?.exercises?.[exerciseIndex];
+  if (!item) return;
+  item.sets = Math.max(1, Math.min(6, item.sets + delta));
+}
+
+function calculateWeeklySets(program) {
+  const totals = Object.fromEntries(MUSCLES.map(m=>[m,0]));
+  program.days.forEach(day=>day.exercises.forEach(item=>{ if (totals[item.muscleGroup]!==undefined) totals[item.muscleGroup] += Number(item.sets)||0; }));
+  return totals;
+}
+
+function buildSummary(days) {
+  const totalSets = days.reduce((sum,d)=>sum+d.exercises.reduce((s,e)=>s+e.sets,0),0);
+  const priorityText = state.priorities.length ? ` Priority: ${state.priorities.join(", ")}.` : "";
+  const supersetText = state.supersets ? " Accessory supersets are used only when pairings are low-interference." : "";
+  return `${totalSets} working sets across ${days.length} days.${priorityText}${supersetText}`;
+}
+
+function saveGeneratedPlan(root) {
+  if (!state.generated) return;
+  const plans = readPlans();
+  const plan = {
+    id:`smart-${Date.now()}`,
+    name:`Smart Build — ${GOALS[state.goal].label}`,
+    days:state.generated.days.map(day=>({ name:day.name, exercises:day.exercises.map(item=>{ const out={id:item.id,sets:item.sets,reps:item.reps}; if(item.supersetGroup) out.supersetGroup=item.supersetGroup; return out; }) })),
+    smartBuild:{ version:4, goal:state.goal, days:state.days, duration:state.duration, priorities:[...state.priorities], experience:state.experience, equipment:[...state.equipment], supersets:state.supersets, createdAt:new Date().toISOString() }
+  };
+  plans.push(plan);
+  localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(plans));
+  const button = root.querySelector("[data-smart-save]");
+  if (button) { button.disabled=true; button.textContent="Saved ✓"; }
+  window.setTimeout(()=>document.querySelector('.nav-btn[data-page="workout"]')?.click(),150);
+}
+
+function readPlans() {
+  try { const value=JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY)||"[]"); return Array.isArray(value)?value:[]; } catch { return []; }
+}
+
+function exerciseMap() {
+  return new Map(getAllExercises().map(e=>[e.id,e]));
+}
+
+function deterministicNoise(text, seed) {
+  let h = 2166136261 ^ Number(seed||0);
+  for (const ch of String(text||"")) { h ^= ch.charCodeAt(0); h = Math.imul(h,16777619); }
+  return Math.abs(h % 17);
+}
+
+function escapeHtml(value) {
+  return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+}
