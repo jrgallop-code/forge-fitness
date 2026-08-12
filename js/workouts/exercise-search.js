@@ -1,3 +1,4 @@
+import './exercise-library-expansion.js?v=exercise-library-expansion-1';
 import { getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 
 const SEARCH_PLACEHOLDER = 'Search exercises…';
@@ -6,7 +7,7 @@ function ensureStyles() {
   if (document.querySelector('link[data-exercise-search-styles]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = 'css/exercise-search.css?v=exercise-search-3';
+  link.href = 'css/exercise-search.css?v=exercise-search-4';
   link.dataset.exerciseSearchStyles = 'true';
   document.head.appendChild(link);
 }
@@ -198,8 +199,11 @@ function enhanceRow(row) {
 
     const result = event.target.closest('.exercise-search-result');
     if (!result) return;
-    select.value = result.dataset.exerciseId || '';
+    const exerciseId = result.dataset.exerciseId || '';
+    select.value = exerciseId;
     select.dispatchEvent(new Event('change', { bubbles: true }));
+    const exercise = getExerciseById(exerciseId);
+    if (exercise) search.value = exercise.name;
     closeResults();
   });
 
