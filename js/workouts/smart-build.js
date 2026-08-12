@@ -99,10 +99,19 @@ function generateProgram(){
       const canAdd=day.exercises.length<normalCap||(state.priorities.includes(muscle)&&day.exercises.length<hardCap);
       if(!canAdd){cursor+=1;if(eligible.every(i=>days[i].exercises.length>=normalCap))break;continue;}
       const def=chooseExerciseForMuscle(muscle,usedByMuscle.get(muscle),preferred,dayIndex);if(!def)break;
-      const chunk=Math.min(3,remaining,maxDirectSetsPerMuscleSession()-muscleSets);day.exercises.push({id:def.id,name:def.name,sets:chunk,reps:repRangeFor(def),muscleGroup:muscle});usedByMuscle.get(muscle).push(def.id);remaining-=chunk;cursor+=1;
+      const room=maxDirectSetsPerMuscleSession()-muscleSets;
+      const chunk=Math.min(3,remaining,room);
+      if(chunk<2){
+        const receiver=day.exercises.find(x=>x.muscleGroup===muscle&&x.sets<6);
+        if(receiver){receiver.sets=Math.min(6,receiver.sets+chunk);remaining-=chunk;}
+        break;
+      }
+      day.exercises.push({id:def.id,name:def.name,sets:chunk,reps:repRangeFor(def),muscleGroup:muscle});usedByMuscle.get(muscle).push(def.id);remaining-=chunk;cursor+=1;
     }
   });
-  days.forEach(day=>{consolidateSession(day);day.exercises=sortExercises(day.exercises);fitSessionTime(day);if(state.supersets)assignSupersets(day);});
+  days.forEach(day=>{consolidateSession(day);day.exercises=sortExercises(day.exercises);fitSessionTime(day);});
+  validateGeneratedProgram(days,preferred);
+  days.forEach(day=>{day.exercises=sortExercises(day.exercises);if(state.supersets)assignSupersets(day);});
   return{days,summary:buildSummary(days)};
 }
 function dayMuscleSets(day,muscle){return day.exercises.filter(x=>x.muscleGroup===muscle).reduce((s,x)=>s+(Number(x.sets)||0),0);}
@@ -115,21 +124,47 @@ function consolidateSession(day){
     if(same){same.sets=Math.min(6,same.sets+remove.x.sets);day.exercises.splice(remove.i,1);}else break;
   }
 }
+function validateGeneratedProgram(days,preferred){
+  days.forEach((day,dayIndex)=>{
+    day.exercises.forEach(item=>{item.sets=Math.max(2,Number(item.sets)||2);});
+    if(/full body/i.test(day.name)){
+      ensureDayCategory(day,["Chest","Shoulders"],preferred,dayIndex);
+      ensureDayCategory(day,["Back"],preferred,dayIndex);
+      ensureDayCategory(day,["Quads","Hamstrings","Glutes"],preferred,dayIndex);
+    }else if(/^upper/i.test(day.name)){
+      ensureDayCategory(day,["Chest","Shoulders"],preferred,dayIndex);
+      ensureDayCategory(day,["Back"],preferred,dayIndex);
+    }else if(/^(lower|legs)/i.test(day.name)){
+      ensureDayCategory(day,["Quads","Glutes"],preferred,dayIndex);
+      ensureDayCategory(day,["Hamstrings","Glutes"],preferred,dayIndex);
+    }
+  });
+}
+function ensureDayCategory(day,muscles,preferred,dayIndex){
+  if(day.exercises.some(x=>muscles.includes(x.muscleGroup)))return;
+  const candidates=muscles.map(m=>chooseExerciseForMuscle(m,day.exercises.map(x=>x.id),preferred,dayIndex)).filter(Boolean);
+  const def=candidates[0];if(!def)return;
+  const newItem={id:def.id,name:def.name,sets:def.type==="compound"?3:2,reps:repRangeFor(def),muscleGroup:def.muscleGroup};
+  if(day.exercises.length<sessionHardCap()){day.exercises.push(newItem);return;}
+  const counts=day.exercises.reduce((map,x)=>(map[x.muscleGroup]=(map[x.muscleGroup]||0)+1,map),{});
+  const replaceIndex=day.exercises.findIndex(x=>!state.priorities.includes(x.muscleGroup)&&(counts[x.muscleGroup]||0)>1&&!belongsToProtectedCompound(exerciseMap().get(x.id)));
+  if(replaceIndex>=0)day.exercises.splice(replaceIndex,1,newItem);
+}
 function chooseExerciseForMuscle(muscle,used,preferred,dayIndex){const pool=availableExercises().filter(e=>e.muscleGroup===muscle);if(!pool.length)return null;return pool.map(e=>{let score=0;if(preferred.has(e.id))score+=100;if(!used.includes(e.id))score+=20;if(state.goal==="strength"&&e.type==="compound")score+=12;if(state.goal==="muscle"&&e.type==="isolation")score+=2;score+=deterministicNoise(e.id,dayIndex+state.variation);return{e,score};}).sort((a,b)=>b.score-a.score)[0]?.e||null;}
 function availableExercises(){const excluded=new Set(state.excludedIds);return getAllExercises().filter(e=>e.trackingType!=="notes"&&MUSCLES.includes(e.muscleGroup)&&!excluded.has(e.id)&&equipmentAllowed(e));}
 function equipmentAllowed(exercise){if(state.equipment.includes("Full Gym"))return true;const eq=String(exercise.equipment||"").toLowerCase(),selected=state.equipment.map(x=>x.toLowerCase());if(selected.includes("home gym"))return true;return selected.some(x=>{if(x==="dumbbells")return eq.includes("dumbbell");if(x==="machines & cables")return eq.includes("machine")||eq.includes("cable");return eq.includes(x.replace(/s$/,""));});}
 function repRangeFor(def){if(state.goal==="strength"&&def.type==="compound")return"4-8";if(state.goal==="hybrid"&&def.type==="compound")return"5-10";return def.recommendedReps||(def.type==="compound"?"6-12":"10-15");}
 function sortExercises(items){return[...items].sort((a,b)=>Number(belongsToProtectedCompound(exerciseMap().get(b.id)))-Number(belongsToProtectedCompound(exerciseMap().get(a.id)))||Number(exerciseMap().get(b.id)?.type==="compound")-Number(exerciseMap().get(a.id)?.type==="compound")||Number(state.priorities.includes(b.muscleGroup))-Number(state.priorities.includes(a.muscleGroup)));}
-function fitSessionTime(day){const cap=state.duration;let estimate=estimateMinutes(day.exercises,false);while(estimate>cap){const candidate=day.exercises.map((x,i)=>({x,i})).filter(({x})=>!state.priorities.includes(x.muscleGroup)&&x.sets>1).sort((a,b)=>Number(exerciseMap().get(a.x.id)?.type==="compound")-Number(exerciseMap().get(b.x.id)?.type==="compound"))[0];if(!candidate)break;candidate.x.sets-=1;estimate=estimateMinutes(day.exercises,state.supersets);}day.exercises=day.exercises.filter(x=>x.sets>0);}
+function fitSessionTime(day){const cap=state.duration;let estimate=estimateMinutes(day.exercises,false);while(estimate>cap){const candidate=day.exercises.map((x,i)=>({x,i})).filter(({x})=>!state.priorities.includes(x.muscleGroup)&&x.sets>2).sort((a,b)=>Number(exerciseMap().get(a.x.id)?.type==="compound")-Number(exerciseMap().get(b.x.id)?.type==="compound"))[0];if(!candidate)break;candidate.x.sets-=1;estimate=estimateMinutes(day.exercises,state.supersets);}day.exercises=day.exercises.filter(x=>x.sets>=2);}
 function estimateMinutes(items,withSupersets){let total=5;items.forEach(item=>{const def=exerciseMap().get(item.id),perSet=belongsToProtectedCompound(def)?3.2:def?.type==="compound"?2.5:1.7;total+=item.sets*perSet;});if(withSupersets)total*=.88;return total;}
 function assignSupersets(day){let n=1;day.exercises.forEach(x=>delete x.supersetGroup);for(let i=0;i<day.exercises.length-1;i++){const a=day.exercises[i],b=day.exercises[i+1];if(a.supersetGroup||b.supersetGroup)continue;const ad=exerciseMap().get(a.id),bd=exerciseMap().get(b.id);if(!canSuperset(ad,bd))continue;const g=`S${n++}`;a.supersetGroup=g;b.supersetGroup=g;i+=1;}}
 function canSuperset(a,b){if(!a||!b||belongsToProtectedCompound(a)||belongsToProtectedCompound(b)||a.muscleGroup===b.muscleGroup||INTERFERENCE.has(`${a.muscleGroup}|${b.muscleGroup}`))return false;return a.type==="isolation"||b.type==="isolation";}
 function belongsToProtectedCompound(def){if(!def)return false;const lowerBody=["Quads","Hamstrings","Glutes"].includes(def.muscleGroup)&&def.type==="compound";return lowerBody||NEVER_SUPERSET.some(p=>p.test(def.name||""));}
 function replaceExercise(di,ei){const item=state.generated?.days?.[di]?.exercises?.[ei];if(!item)return;const pool=availableExercises().filter(e=>e.muscleGroup===item.muscleGroup&&e.id!==item.id);if(!pool.length)return;const next=pool[(state.variation+ei+di+1)%pool.length];item.id=next.id;item.name=next.name;item.reps=repRangeFor(next);if(state.supersets)assignSupersets(state.generated.days[di]);}
-function adjustSets(di,ei,delta){const item=state.generated?.days?.[di]?.exercises?.[ei];if(!item)return;item.sets=Math.max(1,Math.min(6,item.sets+delta));}
+function adjustSets(di,ei,delta){const item=state.generated?.days?.[di]?.exercises?.[ei];if(!item)return;item.sets=Math.max(2,Math.min(6,item.sets+delta));}
 function calculateWeeklySets(program){const totals=Object.fromEntries(MUSCLES.map(m=>[m,0]));program.days.forEach(d=>d.exercises.forEach(x=>{if(totals[x.muscleGroup]!==undefined)totals[x.muscleGroup]+=Number(x.sets)||0;}));return totals;}
 function buildSummary(days){const totalSets=days.reduce((sum,d)=>sum+d.exercises.reduce((s,e)=>s+e.sets,0),0),counts=days.map(d=>d.exercises.length),priority=state.priorities.length?` Priority: ${state.priorities.join(", ")}.`:"",ss=state.supersets?" Accessory supersets are used only when pairings are low-interference.":"";return`${totalSets} working sets across ${days.length} days; ${Math.min(...counts)}–${Math.max(...counts)} exercises per session.${priority}${ss}`;}
-function saveGeneratedPlan(root){if(!state.generated)return;const plans=readPlans(),plan={id:`smart-${Date.now()}`,name:`Smart Build — ${GOALS[state.goal].label}`,days:state.generated.days.map(d=>({name:d.name,exercises:d.exercises.map(item=>{const out={id:item.id,sets:item.sets,reps:item.reps};if(item.supersetGroup)out.supersetGroup=item.supersetGroup;return out;})})),smartBuild:{version:5,goal:state.goal,days:state.days,duration:state.duration,priorities:[...state.priorities],experience:state.experience,equipment:[...state.equipment],supersets:state.supersets,createdAt:new Date().toISOString()}};plans.push(plan);localStorage.setItem(PLAN_STORAGE_KEY,JSON.stringify(plans));const button=root.querySelector("[data-smart-save]");if(button){button.disabled=true;button.textContent="Saved ✓";}window.setTimeout(()=>document.querySelector('.nav-btn[data-page="workout"]')?.click(),150);}
+function saveGeneratedPlan(root){if(!state.generated)return;const plans=readPlans(),plan={id:`smart-${Date.now()}`,name:`Smart Build — ${GOALS[state.goal].label}`,days:state.generated.days.map(d=>({name:d.name,exercises:d.exercises.map(item=>{const out={id:item.id,sets:item.sets,reps:item.reps};if(item.supersetGroup)out.supersetGroup=item.supersetGroup;return out;})})),smartBuild:{version:6,goal:state.goal,days:state.days,duration:state.duration,priorities:[...state.priorities],experience:state.experience,equipment:[...state.equipment],supersets:state.supersets,createdAt:new Date().toISOString()}};plans.push(plan);localStorage.setItem(PLAN_STORAGE_KEY,JSON.stringify(plans));const button=root.querySelector("[data-smart-save]");if(button){button.disabled=true;button.textContent="Saved ✓";}window.setTimeout(()=>document.querySelector('.nav-btn[data-page="workout"]')?.click(),150);}
 function readPlans(){try{const v=JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY)||"[]");return Array.isArray(v)?v:[];}catch{return[];}}
 function exerciseMap(){return new Map(getAllExercises().map(e=>[e.id,e]));}
 function deterministicNoise(text,seed){let h=2166136261^Number(seed||0);for(const ch of String(text||"")){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return Math.abs(h%17);}
