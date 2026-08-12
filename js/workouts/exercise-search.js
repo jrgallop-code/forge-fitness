@@ -1,4 +1,4 @@
-import { getAllExercises } from './exercise-library.js?v=exercise-library-catalogue-2';
+import { getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 
 const SEARCH_PLACEHOLDER = 'Search exercises…';
 
@@ -6,7 +6,7 @@ function ensureStyles() {
   if (document.querySelector('link[data-exercise-search-styles]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = 'css/exercise-search.css?v=exercise-search-2';
+  link.href = 'css/exercise-search.css?v=exercise-search-3';
   link.dataset.exerciseSearchStyles = 'true';
   document.head.appendChild(link);
 }
@@ -84,23 +84,24 @@ function renderResults(search, panel) {
     groups.get(group).push(exercise);
   });
 
-  if (!matches.length) {
-    panel.innerHTML = '<div class="exercise-search-empty">No matching exercises</div>';
-    panel.hidden = false;
-    return;
-  }
+  const resultMarkup = matches.length
+    ? [...groups.entries()].map(([group, exercises]) => `
+        <section class="exercise-search-group">
+          <div class="exercise-search-group-label">${escapeHtml(group)}</div>
+          ${exercises.map(exercise => `
+            <button class="exercise-search-result" type="button" data-exercise-id="${escapeHtml(exercise.id)}">
+              <span class="exercise-search-result-main">${escapeHtml(exercise.name)}${exercise.isCustom ? ' — Custom' : ''}</span>
+              <span class="exercise-search-result-meta">${escapeHtml(exercise.equipment || '')}</span>
+            </button>
+          `).join('')}
+        </section>
+      `).join('')
+    : '<div class="exercise-search-empty">No matching exercises</div>';
 
-  panel.innerHTML = [...groups.entries()].map(([group, exercises]) => `
-    <section class="exercise-search-group">
-      <div class="exercise-search-group-label">${escapeHtml(group)}</div>
-      ${exercises.map(exercise => `
-        <button class="exercise-search-result" type="button" data-exercise-id="${escapeHtml(exercise.id)}">
-          <span class="exercise-search-result-main">${escapeHtml(exercise.name)}${exercise.isCustom ? ' — Custom' : ''}</span>
-          <span class="exercise-search-result-meta">${escapeHtml(exercise.equipment || '')}</span>
-        </button>
-      `).join('')}
-    </section>
-  `).join('');
+  panel.innerHTML = `${resultMarkup}
+    <button class="exercise-search-custom" type="button" data-add-custom-exercise>
+      + Add Custom Exercise
+    </button>`;
   panel.hidden = false;
 }
 
@@ -120,6 +121,9 @@ function enhanceRow(row) {
   if (!select) return;
 
   row.dataset.exerciseSearchEnhanced = 'true';
+  select.classList.add('exercise-select-internal');
+  select.setAttribute('aria-hidden', 'true');
+  select.tabIndex = -1;
 
   const searchWrap = document.createElement('div');
   searchWrap.className = 'exercise-search-wrap';
@@ -132,6 +136,9 @@ function enhanceRow(row) {
   search.spellcheck = false;
   search.setAttribute('aria-label', 'Search exercise library');
   search.setAttribute('aria-expanded', 'false');
+
+  const selectedExercise = getExerciseById(select.value);
+  if (selectedExercise) search.value = selectedExercise.name;
 
   const panel = document.createElement('div');
   panel.className = 'exercise-search-results';
@@ -150,11 +157,16 @@ function enhanceRow(row) {
     search.setAttribute('aria-expanded', 'false');
   };
 
-  search.addEventListener('focus', openResults);
+  search.addEventListener('focus', () => {
+    search.select();
+    openResults();
+  });
+
   search.addEventListener('input', () => {
     filterSelect(search, select);
     openResults();
   });
+
   search.addEventListener('search', () => {
     filterSelect(search, select);
     openResults();
@@ -176,6 +188,14 @@ function enhanceRow(row) {
   });
 
   panel.addEventListener('click', event => {
+    const custom = event.target.closest('[data-add-custom-exercise]');
+    if (custom) {
+      select.value = '__add_custom__';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      closeResults();
+      return;
+    }
+
     const result = event.target.closest('.exercise-search-result');
     if (!result) return;
     select.value = result.dataset.exerciseId || '';
