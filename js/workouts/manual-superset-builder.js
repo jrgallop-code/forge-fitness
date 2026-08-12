@@ -85,11 +85,22 @@ function decorateBuilder(daysHost) {
         ensureDayState(dayIndex, rows.length);
 
         rows.forEach((row, exerciseIndex) => {
-            row.querySelector(".manual-superset-control")?.remove();
+            const group = pairingState[dayIndex]?.[exerciseIndex] || null;
+            const desiredState = group
+                ? `group:${group}`
+                : exerciseIndex < rows.length - 1
+                    ? "pairable"
+                    : "last";
+
+            const existingControl = row.querySelector(".manual-superset-control");
+            if (existingControl && row.dataset.manualSupersetState === desiredState) {
+                return;
+            }
+
+            existingControl?.remove();
             row.classList.remove("manual-superset-member");
             row.removeAttribute("data-superset-group");
 
-            const group = pairingState[dayIndex]?.[exerciseIndex] || null;
             const control = document.createElement("div");
             control.className = "manual-superset-control";
 
@@ -103,6 +114,7 @@ function decorateBuilder(daysHost) {
                 control.innerHTML = `<span class="manual-superset-hint">Add another exercise to create a superset.</span>`;
             }
 
+            row.dataset.manualSupersetState = desiredState;
             const removeButton = row.querySelector(".remove-exercise-btn");
             if (removeButton) row.insertBefore(control, removeButton);
             else row.appendChild(control);
