@@ -1,5 +1,5 @@
 import { navigate } from "./core/router.js?v=recovery-traced-1";
-import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=cardio-fields-1";
+import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=rounded-pulse-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-session-7-cardio-fields";
 
 const FILLED_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
