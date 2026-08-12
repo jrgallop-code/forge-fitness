@@ -16,6 +16,7 @@ export function initializeManualSupersetBuilder(root = document) {
     if (root.dataset?.manualSupersetDelegationBound !== "true") {
         root.dataset.manualSupersetDelegationBound = "true";
         root.addEventListener("click", handleBuilderClick);
+        root.addEventListener("change", handleBuilderChange);
     }
 
     saveButton.addEventListener("click", () => {
@@ -24,11 +25,6 @@ export function initializeManualSupersetBuilder(root = document) {
 
     saveButton.addEventListener("click", () => {
         persistSupersetsAfterCoreSave();
-    });
-
-    new MutationObserver(() => decorateBuilder(daysHost)).observe(daysHost, {
-        childList: true,
-        subtree: true
     });
 
     decorateBuilder(daysHost);
@@ -74,6 +70,17 @@ function handleBuilderClick(event) {
         const exerciseIndex = Number(target.dataset.exerciseIndex);
         removePair(dayIndex, exerciseIndex);
         queueDecorate();
+        return;
+    }
+
+    if (target.matches(".add-exercise-btn, #add-day-btn, #save-custom-exercise-btn")) {
+        queueDecorate();
+    }
+}
+
+function handleBuilderChange(event) {
+    if (event.target?.matches?.(".exercise-select")) {
+        queueDecorate();
     }
 }
 
@@ -93,9 +100,7 @@ function decorateBuilder(daysHost) {
                     : "last";
 
             const existingControl = row.querySelector(".manual-superset-control");
-            if (existingControl && row.dataset.manualSupersetState === desiredState) {
-                return;
-            }
+            if (existingControl && row.dataset.manualSupersetState === desiredState) return;
 
             existingControl?.remove();
             row.classList.remove("manual-superset-member");
