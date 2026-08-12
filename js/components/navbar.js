@@ -76,6 +76,15 @@ export function initializeNavbar() {
 
             event.preventDefault();
 
+            button.classList.remove("nav-pulse");
+            void button.offsetWidth;
+            button.classList.add("nav-pulse");
+            button.addEventListener(
+                "animationend",
+                () => button.classList.remove("nav-pulse"),
+                { once: true }
+            );
+
             nav.querySelectorAll(".nav-btn")
                 .forEach(item =>
                     item.classList.toggle(
