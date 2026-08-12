@@ -99,7 +99,10 @@ function bindManualBuildLauncher(content) {
     const manualButton = original.cloneNode(true);
     original.replaceWith(manualButton);
 
-    manualButton.addEventListener("click", () => openManualBuildMenu(content));
+    manualButton.addEventListener("click", event => {
+        event.stopPropagation();
+        openManualBuildMenu(content);
+    });
 }
 
 function openManualBuildMenu(content) {
