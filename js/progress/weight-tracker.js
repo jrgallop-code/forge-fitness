@@ -665,15 +665,6 @@ function updateHistory(
                     movingAverage[index]
                         ?.weight ??
                     null,
-                averageChange:
-                    index > 0 &&
-                    movingAverage[index]
-                        ?.weight !== undefined &&
-                    movingAverage[index - 1]
-                        ?.weight !== undefined
-                        ? movingAverage[index].weight -
-                            movingAverage[index - 1].weight
-                        : null,
                 weightChange:
                     index > 0
                         ? entry.weight -
@@ -702,10 +693,7 @@ function updateHistory(
                         <span>
                             ${row.average === null
                                 ? "--"
-                                : `${formatDirectionalWeight(
-                                    row.average,
-                                    row.averageChange
-                                )} lb`}
+                                : `${row.average.toFixed(1)} lb`}
                         </span>
 
                         <div class="weight-entry-actions">
