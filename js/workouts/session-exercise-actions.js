@@ -220,6 +220,8 @@ function ensureActionMenu(card, logger) {
 
   let menu = card.querySelector('.exercise-options-popover');
   if (!menu) {
+    if ((card.dataset.trackingType || 'reps') === 'reps') return;
+
     const heading = card.querySelector('h4');
     if (!heading) return;
     let header = heading.closest('.compact-exercise-header');
