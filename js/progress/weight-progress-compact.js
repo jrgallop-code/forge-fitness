@@ -1,8 +1,12 @@
+import { calculateWeightTrend } from "../core/weight-trend.js?v=weight-trend-regression-1";
+
 const GOAL_WEIGHT_STORAGE_KEY = "level_up_goal_weight";
+const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 
 export function initializeWeightProgressCompact() {
     compactWeightProgress();
     updateGoalWeightSummary();
+    updateWeightTrendSummary();
 }
 
 function compactWeightProgress() {
@@ -87,7 +91,12 @@ function compactWeightProgress() {
     closeButton.addEventListener("click", () => setOpen(false));
     saveWeightButton.addEventListener("click", () => {
         const valid = Boolean(dateInput.value) && Number(weightInput.value) > 0;
-        if (valid) window.setTimeout(() => setOpen(false), 0);
+        if (valid) {
+            window.setTimeout(() => {
+                setOpen(false);
+                updateWeightTrendSummary();
+            }, 0);
+        }
     }, true);
     saveGoalButton.addEventListener("click", () => window.setTimeout(() => {
         updateGoalWeightSummary();
@@ -95,9 +104,11 @@ function compactWeightProgress() {
     }, 0));
     section.addEventListener("click", event => {
         if (event.target.closest(".edit-weight-entry")) setOpen(true);
+        if (event.target.closest(".remove-weight-entry")) window.setTimeout(updateWeightTrendSummary, 0);
     });
 
     updateGoalWeightSummary();
+    updateWeightTrendSummary();
     section.dataset.compactLayout = "true";
 }
 
@@ -117,5 +128,35 @@ function updateGoalWeightSummary() {
     target.textContent = Number.isFinite(value) && value > 0 ? `${value.toFixed(1)} lb` : "--";
 }
 
-window.addEventListener("levelup:nutrition-updated", updateGoalWeightSummary);
+function updateWeightTrendSummary() {
+    const target = document.getElementById("actual-weekly-weight-change");
+    if (!target) return;
+
+    const trend = calculateWeightTrend(readWeightEntries());
+    const heading = target.closest(".metric-card")?.querySelector("h3");
+    if (heading) heading.textContent = trend.label;
+
+    if (!Number.isFinite(trend.weeklyChange)) {
+        target.textContent = "Need more data";
+        return;
+    }
+
+    const direction = trend.weeklyChange > 0 ? "↑" : trend.weeklyChange < 0 ? "↓" : "→";
+    target.textContent = `${direction} ${Math.abs(trend.weeklyChange).toFixed(2)} lb/wk`;
+}
+
+function readWeightEntries() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(WEIGHT_STORAGE_KEY) || "[]");
+        return Array.isArray(parsed) ? parsed : [];
+    }
+    catch {
+        return [];
+    }
+}
+
+window.addEventListener("levelup:nutrition-updated", () => {
+    updateGoalWeightSummary();
+    updateWeightTrendSummary();
+});
 initializeWeightProgressCompact();
