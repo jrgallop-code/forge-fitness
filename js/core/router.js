@@ -1,5 +1,6 @@
 import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=plan-builder-library-refresh-1";
 import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=builder-library-refresh-1";
+import { initializeManualSupersetBuilder } from "../workouts/manual-superset-builder.js?v=manual-supersets-1";
 import { initializeOneOffWorkout } from "../workouts/one-off-workout.js?v=one-off-workout-1";
 import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=workout-catalogue-form-coach-removed-1";
 import { initializeSmartBuild } from "../workouts/smart-build.js?v=smart-build-2";
@@ -48,6 +49,7 @@ export function navigate(page) {
                 content.innerHTML = renderWorkoutBuilder();
                 decorateWorkoutTitle(content);
                 safeInitialize("Workout builder", initializeWorkoutBuilder);
+                safeInitialize("Manual supersets", () => initializeManualSupersetBuilder(content));
                 safeInitialize("Smart Build", () => initializeSmartBuild(content));
                 safeInitialize("One-off workout", initializeOneOffWorkout);
                 safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
