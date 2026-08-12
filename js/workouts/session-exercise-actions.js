@@ -204,23 +204,23 @@ function ensureInlineSwap(card, logger) {
 
 function enhanceActiveLogger() {
   const logger = document.getElementById('workout-session-logger');
-  if (!logger || logger.dataset.editingSessionId || !readActiveWorkout()) return;
+  if (!logger || logger.dataset.editingSessionId) return;
   logger.querySelectorAll('.session-exercise-card').forEach(card => ensureInlineSwap(card, logger));
 }
 
-const observer = new MutationObserver(mutations => {
-  const relevant = mutations.some(mutation => [...mutation.addedNodes].some(node =>
-    node.nodeType === 1 && (
-      node.id === 'workout-session-logger' ||
-      node.matches?.('.session-exercise-card, .compact-exercise-header, .compact-exercise-actions') ||
-      node.querySelector?.('#workout-session-logger, .session-exercise-card, .compact-exercise-header, .compact-exercise-actions')
-    )
-  ));
-  if (relevant) requestAnimationFrame(enhanceActiveLogger);
+const observer = new MutationObserver(() => requestAnimationFrame(enhanceActiveLogger));
+observer.observe(document.body, { childList: true, subtree: true });
+
+document.addEventListener('click', event => {
+  if (event.target.closest('#begin-session-btn, [data-page="workout"], .nav-workout')) {
+    setTimeout(enhanceActiveLogger, 0);
+    setTimeout(enhanceActiveLogger, 100);
+    setTimeout(enhanceActiveLogger, 400);
+  }
 });
 
-observer.observe(document.body, { childList: true, subtree: true });
-document.addEventListener('click', event => {
-  if (event.target.closest('#begin-session-btn')) setTimeout(enhanceActiveLogger, 50);
-});
+window.setInterval(() => {
+  if (document.getElementById('workout-session-logger')) enhanceActiveLogger();
+}, 500);
+
 enhanceActiveLogger();
