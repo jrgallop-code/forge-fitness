@@ -1,5 +1,7 @@
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const WEEK_COUNT = 7;
+const LEGACY_CANVAS_ID = "weekly-workouts-chart";
+const OWNED_CANVAS_ID = "weekly-workouts-seven-week-chart";
 
 function getSessions() {
     try {
@@ -73,6 +75,17 @@ function buildSevenWeekPoints() {
     }));
 }
 
+function claimCanvas() {
+    let canvas = document.getElementById(OWNED_CANVAS_ID);
+    if (canvas) return canvas;
+
+    canvas = document.getElementById(LEGACY_CANVAS_ID);
+    if (!canvas) return null;
+
+    canvas.id = OWNED_CANVAS_ID;
+    return canvas;
+}
+
 function prepareCanvas(canvas) {
     const context = canvas.getContext("2d");
     if (!context) return null;
@@ -90,7 +103,7 @@ function prepareCanvas(canvas) {
 }
 
 function drawSevenWeekWorkoutChart() {
-    const canvas = document.getElementById("weekly-workouts-chart");
+    const canvas = claimCanvas();
     if (!canvas || canvas.closest("[hidden]")) return;
 
     const prepared = prepareCanvas(canvas);
@@ -161,20 +174,21 @@ function drawSevenWeekWorkoutChart() {
     });
 }
 
-function scheduleDraw() {
-    requestAnimationFrame(() => setTimeout(drawSevenWeekWorkoutChart, 40));
+function scheduleDraw(delay = 40) {
+    requestAnimationFrame(() => setTimeout(drawSevenWeekWorkoutChart, delay));
 }
 
 document.addEventListener("click", event => {
     if (
+        event.target.closest('[data-page="progress"]') ||
         event.target.closest("#lifting-tab") ||
         event.target.closest('[data-view="overview"]') ||
         event.target.closest("#load-training-demo") ||
         event.target.closest("#remove-training-demo")
     ) {
-        scheduleDraw();
+        scheduleDraw(60);
     }
-});
+}, true);
 
-window.addEventListener("resize", scheduleDraw);
+window.addEventListener("resize", () => scheduleDraw(20));
 scheduleDraw();
