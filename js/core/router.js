@@ -8,7 +8,7 @@ import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from 
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=workout-schedule-2";
 import { renderProgress } from "../progress/progress-ui.js?v=progress-photo-tab-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-tracker-moving-average-no-arrows-1";
-import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-progress-immediate-1";
+import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-trend-regression-1";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
 import { initializeTrainingProgressCollapse } from "../progress/training-progress-collapse.js?v=training-progress-collapse-3";
 import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=overall-strength-index-1";
