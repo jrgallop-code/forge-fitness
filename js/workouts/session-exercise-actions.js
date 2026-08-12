@@ -32,40 +32,20 @@ function getCurrentExercise(card) {
 function hasEnteredData(state) {
   if (!state) return false;
   if (state.trackingType === 'notes') {
-    return Boolean(
-      Number(state.durationMinutes) > 0 ||
-      String(state.distance || '').trim() ||
-      String(state.notes || '').trim()
-    );
+    return Boolean(Number(state.durationMinutes) > 0 || String(state.distance || '').trim() || String(state.notes || '').trim());
   }
-  return (state.sets || []).some(set =>
-    Number(set?.weight) > 0 ||
-    Number(set?.reps) > 0 ||
-    set?.completed
-  );
+  return (state.sets || []).some(set => Number(set?.weight) > 0 || Number(set?.reps) > 0 || set?.completed);
 }
 
 function createReplacementState(exercise, priorState) {
   if (exercise?.trackingType === 'notes') {
-    return {
-      exerciseId: exercise.id,
-      trackingType: 'notes',
-      durationMinutes: null,
-      distance: '',
-      notes: '',
-      sets: []
-    };
+    return { exerciseId: exercise.id, trackingType: 'notes', durationMinutes: null, distance: '', notes: '', sets: [] };
   }
-
   const setCount = Math.max(1, Number(priorState?.sets?.length) || 1);
   return {
     exerciseId: exercise.id,
     trackingType: 'reps',
-    sets: Array.from({ length: setCount }, () => ({
-      weight: null,
-      reps: null,
-      completed: false
-    }))
+    sets: Array.from({ length: setCount }, () => ({ weight: null, reps: null, completed: false }))
   };
 }
 
@@ -85,15 +65,10 @@ function buildSwapOptions(currentExercise) {
   const choices = getEligibleExercises(currentExercise);
   const sameGroup = choices.filter(item => item.muscleGroup === currentExercise?.muscleGroup);
   const others = choices.filter(item => item.muscleGroup !== currentExercise?.muscleGroup);
-
   const renderOptions = items => items.map(item =>
     `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)} · ${escapeHtml(item.equipment || '')}</option>`
   ).join('');
-
-  return `
-    ${sameGroup.length ? `<optgroup label="${escapeHtml(currentExercise?.muscleGroup || 'Similar')} options">${renderOptions(sameGroup)}</optgroup>` : ''}
-    ${others.length ? `<optgroup label="Other exercises">${renderOptions(others)}</optgroup>` : ''}
-  `;
+  return `${sameGroup.length ? `<optgroup label="${escapeHtml(currentExercise?.muscleGroup || 'Similar')} options">${renderOptions(sameGroup)}</optgroup>` : ''}${others.length ? `<optgroup label="Other exercises">${renderOptions(others)}</optgroup>` : ''}`;
 }
 
 function closeSwapSheet(sheet) {
@@ -119,26 +94,25 @@ function ensureSwapSheet(logger) {
         </div>
         <button class="session-swap-close" type="button" aria-label="Close swap exercise">×</button>
       </div>
-      <p class="session-swap-note">Your saved workout plan will not be changed.</p>
+      <p class="session-swap-note">This changes only today's workout. Your saved plan stays untouched.</p>
       <label class="session-swap-field">
         <span>Replace with</span>
         <select class="session-swap-select"></select>
       </label>
       <div class="session-swap-actions">
-        <button class="secondary-btn session-swap-cancel" type="button">Cancel</button>
+        <button class="secondary-btn session-remove-today" type="button">Remove for Today</button>
         <button class="primary-btn session-swap-confirm" type="button">Swap for Today</button>
       </div>
-    </div>
-  `;
+      <button class="session-swap-cancel" type="button">Cancel</button>
+    </div>`;
   logger.appendChild(sheet);
 
   const close = () => closeSwapSheet(sheet);
   sheet.querySelector('.session-swap-close')?.addEventListener('click', close);
   sheet.querySelector('.session-swap-cancel')?.addEventListener('click', close);
-  sheet.addEventListener('click', event => {
-    if (event.target === sheet) close();
-  });
+  sheet.addEventListener('click', event => { if (event.target === sheet) close(); });
   sheet.querySelector('.session-swap-confirm')?.addEventListener('click', () => applySwap(sheet));
+  sheet.querySelector('.session-remove-today')?.addEventListener('click', () => removeExerciseForToday(sheet));
   return sheet;
 }
 
@@ -156,7 +130,6 @@ function openSwapSheet(card, logger) {
   if (title) title.textContent = `Swap ${currentExercise.name}`;
   if (select) select.innerHTML = buildSwapOptions(currentExercise);
   sheet.hidden = false;
-  select?.focus();
 }
 
 function applySwap(sheet) {
@@ -172,10 +145,7 @@ function applySwap(sheet) {
   const replacement = getExerciseById(replacementId);
   if (!plannedExercise || !priorState || !replacement) return;
 
-  if (hasEnteredData(priorState)) {
-    const confirmed = window.confirm('Swapping this exercise will clear the data already entered for it today. Continue?');
-    if (!confirmed) return;
-  }
+  if (hasEnteredData(priorState) && !window.confirm('Swapping this exercise will clear the data already entered for it today. Continue?')) return;
 
   plannedExercise.id = replacement.id;
   active.exercises[exerciseIndex] = createReplacementState(replacement, priorState);
@@ -186,22 +156,21 @@ function applySwap(sheet) {
   openActiveWorkout();
 }
 
-function removeExerciseForToday(card) {
+function removeExerciseForToday(source) {
   const active = readActiveWorkout();
-  if (!active) return;
-  const exerciseIndex = Number(card.dataset.exerciseIndex);
+  const exerciseIndex = Number(source?.dataset?.exerciseIndex);
+  if (!active || !Number.isInteger(exerciseIndex)) return;
+
   const dayIndex = Number(active.trainingDayIndex) || 0;
   const day = active.planSnapshot?.days?.[dayIndex];
-  if (!Number.isInteger(exerciseIndex) || !day?.exercises?.[exerciseIndex]) return;
-
-  if ((day.exercises || []).length <= 1) {
+  if (!day?.exercises?.[exerciseIndex]) return;
+  if (day.exercises.length <= 1) {
     window.alert('Keep at least one exercise in the active workout.');
     return;
   }
 
   const exerciseName = getExerciseById(day.exercises[exerciseIndex].id)?.name || 'this exercise';
-  const confirmed = window.confirm(`Remove ${exerciseName} from today's workout only? Your saved plan will stay unchanged.`);
-  if (!confirmed) return;
+  if (!window.confirm(`Remove ${exerciseName} from today's workout only? Your saved plan will stay unchanged.`)) return;
 
   day.exercises.splice(exerciseIndex, 1);
   active.exercises.splice(exerciseIndex, 1);
@@ -211,80 +180,43 @@ function removeExerciseForToday(card) {
   openActiveWorkout();
 }
 
-function ensureActionMenu(card, logger) {
-  if (card.dataset.sessionActionsEnhanced === 'true') return;
-  if (logger.dataset.editingSessionId) return;
+function ensureInlineSwap(card, logger) {
+  if (card.querySelector('.session-inline-swap')) return;
 
-  const current = getCurrentExercise(card);
-  if (!current) return;
+  const actions = card.querySelector('.compact-exercise-actions');
+  const heading = card.querySelector('.compact-exercise-header h4');
+  if (!actions || !heading) return;
 
-  let menu = card.querySelector('.exercise-options-popover');
-  if (!menu) {
-    if ((card.dataset.trackingType || 'reps') === 'reps') return;
-
-    const heading = card.querySelector('h4');
-    if (!heading) return;
-    let header = heading.closest('.compact-exercise-header');
-    if (!header) {
-      header = document.createElement('div');
-      header.className = 'compact-exercise-header';
-      heading.parentNode.insertBefore(header, heading);
-      header.appendChild(heading);
-    }
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'exercise-more-btn';
-    button.setAttribute('aria-label', 'Exercise options');
-    button.textContent = '•••';
-    menu = document.createElement('div');
-    menu.className = 'exercise-options-popover';
-    menu.hidden = true;
-    header.append(button, menu);
-    button.addEventListener('click', event => {
-      event.stopPropagation();
-      menu.hidden = !menu.hidden;
-    });
-  }
-
-  const actions = document.createElement('div');
-  actions.className = 'session-exercise-actions';
-  actions.innerHTML = `
-    <button class="session-swap-exercise" type="button">Swap Exercise</button>
-    <button class="session-remove-exercise" type="button">Remove for Today</button>
-  `;
-  menu.appendChild(actions);
-  actions.querySelector('.session-swap-exercise')?.addEventListener('click', event => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'session-inline-swap';
+  button.textContent = 'Swap';
+  button.setAttribute('aria-label', `Swap ${heading.textContent?.trim() || 'exercise'} for today only`);
+  button.addEventListener('click', event => {
     event.stopPropagation();
-    menu.hidden = true;
     openSwapSheet(card, logger);
   });
-  actions.querySelector('.session-remove-exercise')?.addEventListener('click', event => {
-    event.stopPropagation();
-    menu.hidden = true;
-    removeExerciseForToday(card);
-  });
 
-  card.dataset.sessionActionsEnhanced = 'true';
+  const timerButton = actions.querySelector('.exercise-more-btn');
+  if (timerButton) actions.insertBefore(button, timerButton);
+  else actions.appendChild(button);
 }
 
 function enhanceActiveLogger() {
   const logger = document.getElementById('workout-session-logger');
-  if (!logger || logger.dataset.editingSessionId) return;
-  if (!readActiveWorkout()) return;
-
-  logger.querySelectorAll('.session-exercise-card').forEach(card => ensureActionMenu(card, logger));
+  if (!logger || logger.dataset.editingSessionId || !readActiveWorkout()) return;
+  logger.querySelectorAll('.session-exercise-card').forEach(card => ensureInlineSwap(card, logger));
 }
 
 const observer = new MutationObserver(mutations => {
-  if (mutations.some(mutation => [...mutation.addedNodes].some(node =>
+  const relevant = mutations.some(mutation => [...mutation.addedNodes].some(node =>
     node.nodeType === 1 && (
       node.id === 'workout-session-logger' ||
-      node.matches?.('.session-exercise-card, .exercise-options-popover') ||
-      node.querySelector?.('#workout-session-logger, .session-exercise-card, .exercise-options-popover')
+      node.matches?.('.session-exercise-card, .compact-exercise-header, .compact-exercise-actions') ||
+      node.querySelector?.('#workout-session-logger, .session-exercise-card, .compact-exercise-header, .compact-exercise-actions')
     )
-  ))) {
-    setTimeout(enhanceActiveLogger, 0);
-  }
+  ));
+  if (relevant) requestAnimationFrame(enhanceActiveLogger);
 });
 
 observer.observe(document.body, { childList: true, subtree: true });
