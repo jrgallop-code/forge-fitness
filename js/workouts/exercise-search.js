@@ -6,7 +6,7 @@ function ensureStyles() {
   if (document.querySelector('link[data-exercise-search-styles]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = 'css/exercise-search.css?v=exercise-search-1';
+  link.href = 'css/exercise-search.css?v=exercise-search-2';
   link.dataset.exerciseSearchStyles = 'true';
   document.head.appendChild(link);
 }
@@ -74,7 +74,37 @@ function buildOptions(query) {
   };
 }
 
-function filterSelect(search, select, countLabel) {
+function renderResults(search, panel) {
+  const matches = getMatches(search.value);
+  const groups = new Map();
+
+  matches.forEach(exercise => {
+    const group = exercise.muscleGroup || 'Other';
+    if (!groups.has(group)) groups.set(group, []);
+    groups.get(group).push(exercise);
+  });
+
+  if (!matches.length) {
+    panel.innerHTML = '<div class="exercise-search-empty">No matching exercises</div>';
+    panel.hidden = false;
+    return;
+  }
+
+  panel.innerHTML = [...groups.entries()].map(([group, exercises]) => `
+    <section class="exercise-search-group">
+      <div class="exercise-search-group-label">${escapeHtml(group)}</div>
+      ${exercises.map(exercise => `
+        <button class="exercise-search-result" type="button" data-exercise-id="${escapeHtml(exercise.id)}">
+          <span class="exercise-search-result-main">${escapeHtml(exercise.name)}${exercise.isCustom ? ' — Custom' : ''}</span>
+          <span class="exercise-search-result-meta">${escapeHtml(exercise.equipment || '')}</span>
+        </button>
+      `).join('')}
+    </section>
+  `).join('');
+  panel.hidden = false;
+}
+
+function filterSelect(search, select) {
   const previousValue = select.value;
   const result = buildOptions(search.value);
   select.innerHTML = result.html;
@@ -82,14 +112,6 @@ function filterSelect(search, select, countLabel) {
   if ([...select.options].some(option => option.value === previousValue)) {
     select.value = previousValue;
   }
-
-  if (countLabel) {
-    countLabel.textContent = search.value.trim()
-      ? `${result.count} match${result.count === 1 ? '' : 'es'}`
-      : '';
-  }
-
-  search.dataset.matchCount = String(result.count);
 }
 
 function enhanceRow(row) {
@@ -109,26 +131,61 @@ function enhanceRow(row) {
   search.autocomplete = 'off';
   search.spellcheck = false;
   search.setAttribute('aria-label', 'Search exercise library');
+  search.setAttribute('aria-expanded', 'false');
 
-  const count = document.createElement('span');
-  count.className = 'exercise-search-count';
-  count.setAttribute('aria-live', 'polite');
+  const panel = document.createElement('div');
+  panel.className = 'exercise-search-results';
+  panel.hidden = true;
 
-  searchWrap.append(search, count);
+  searchWrap.append(search, panel);
   select.insertAdjacentElement('beforebegin', searchWrap);
 
-  search.addEventListener('input', () => filterSelect(search, select, count));
+  const openResults = () => {
+    renderResults(search, panel);
+    search.setAttribute('aria-expanded', 'true');
+  };
+
+  const closeResults = () => {
+    panel.hidden = true;
+    search.setAttribute('aria-expanded', 'false');
+  };
+
+  search.addEventListener('focus', openResults);
+  search.addEventListener('input', () => {
+    filterSelect(search, select);
+    openResults();
+  });
+  search.addEventListener('search', () => {
+    filterSelect(search, select);
+    openResults();
+  });
 
   search.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      closeResults();
+      search.blur();
+      return;
+    }
     if (event.key !== 'Enter') return;
     const matches = getMatches(search.value);
     if (matches.length !== 1) return;
     event.preventDefault();
     select.value = matches[0].id;
     select.dispatchEvent(new Event('change', { bubbles: true }));
+    closeResults();
   });
 
-  search.addEventListener('search', () => filterSelect(search, select, count));
+  panel.addEventListener('click', event => {
+    const result = event.target.closest('.exercise-search-result');
+    if (!result) return;
+    select.value = result.dataset.exerciseId || '';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    closeResults();
+  });
+
+  document.addEventListener('pointerdown', event => {
+    if (!searchWrap.contains(event.target)) closeResults();
+  });
 }
 
 function scanBuilder() {
