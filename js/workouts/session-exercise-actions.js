@@ -63,12 +63,14 @@ function getEligibleExercises(currentExercise) {
 
 function buildSwapOptions(currentExercise) {
   const choices = getEligibleExercises(currentExercise);
-  const sameGroup = choices.filter(item => item.muscleGroup === currentExercise?.muscleGroup);
-  const others = choices.filter(item => item.muscleGroup !== currentExercise?.muscleGroup);
+  const sameGroup = choices.filter(item => item.muscleGroup && item.muscleGroup === currentExercise?.muscleGroup);
+  const others = choices.filter(item => !item.muscleGroup || item.muscleGroup !== currentExercise?.muscleGroup);
   const renderOptions = items => items.map(item =>
-    `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)} · ${escapeHtml(item.equipment || '')}</option>`
+    `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}${item.equipment ? ` · ${escapeHtml(item.equipment)}` : ''}</option>`
   ).join('');
-  return `${sameGroup.length ? `<optgroup label="${escapeHtml(currentExercise?.muscleGroup || 'Similar')} options">${renderOptions(sameGroup)}</optgroup>` : ''}${others.length ? `<optgroup label="Other exercises">${renderOptions(others)}</optgroup>` : ''}`;
+
+  if (!choices.length) return '<option value="">No compatible exercises available</option>';
+  return `${sameGroup.length ? `<optgroup label="${escapeHtml(currentExercise?.muscleGroup || 'Similar')} options">${renderOptions(sameGroup)}</optgroup>` : ''}${others.length ? `<optgroup label="${currentExercise?.trackingType === 'notes' ? 'Other cardio exercises' : 'Other exercises'}">${renderOptions(others)}</optgroup>` : ''}`;
 }
 
 function closeSwapSheet(sheet) {
@@ -180,26 +182,44 @@ function removeExerciseForToday(source) {
   openActiveWorkout();
 }
 
-function ensureInlineSwap(card, logger) {
-  if (card.querySelector('.session-inline-swap')) return;
-
-  const actions = card.querySelector('.compact-exercise-actions');
-  const heading = card.querySelector('.compact-exercise-header h4');
-  if (!actions || !heading) return;
-
+function createSwapButton(card, logger, heading) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'session-inline-swap';
   button.textContent = 'Swap';
-  button.setAttribute('aria-label', `Swap ${heading.textContent?.trim() || 'exercise'} for today only`);
+  button.setAttribute('aria-label', `Swap ${heading?.textContent?.trim() || 'exercise'} for today only`);
   button.addEventListener('click', event => {
     event.stopPropagation();
     openSwapSheet(card, logger);
   });
+  return button;
+}
 
-  const timerButton = actions.querySelector('.exercise-more-btn');
-  if (timerButton) actions.insertBefore(button, timerButton);
-  else actions.appendChild(button);
+function ensureInlineSwap(card, logger) {
+  if (card.querySelector('.session-inline-swap')) return;
+
+  const liftingActions = card.querySelector('.compact-exercise-actions');
+  const liftingHeading = card.querySelector('.compact-exercise-header h4');
+  if (liftingActions && liftingHeading) {
+    const button = createSwapButton(card, logger, liftingHeading);
+    const timerButton = liftingActions.querySelector('.exercise-more-btn');
+    if (timerButton) liftingActions.insertBefore(button, timerButton);
+    else liftingActions.appendChild(button);
+    return;
+  }
+
+  if (card.classList.contains('cardio-session-card')) {
+    const heading = card.querySelector('h4');
+    if (!heading) return;
+    let header = card.querySelector('.cardio-session-action-header');
+    if (!header) {
+      header = document.createElement('div');
+      header.className = 'cardio-session-action-header';
+      heading.parentNode.insertBefore(header, heading);
+      header.appendChild(heading);
+    }
+    header.appendChild(createSwapButton(card, logger, heading));
+  }
 }
 
 function enhanceActiveLogger() {
