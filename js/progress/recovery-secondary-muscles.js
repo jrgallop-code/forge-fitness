@@ -3,7 +3,6 @@ import { createGeneratedExerciseGuide } from '../workouts/exercise-guide-generat
 
 const SESSION_KEY = 'forge_workout_sessions';
 const FULL_RECOVERY_HOURS = 72;
-const PRIMARY_IMPACT = 1;
 const SECONDARY_IMPACT = 0.5;
 const SET_EQUIVALENTS_FOR_FULL_FATIGUE = 3;
 const DETAIL_GROUPS = [
@@ -11,6 +10,10 @@ const DETAIL_GROUPS = [
   ['Biceps','Biceps'],['Triceps','Triceps'],['Forearms','Forearms'],['Abs','Core'],
   ['Quads','Quads'],['Hamstrings','Hamstrings'],['Glutes','Glutes'],['Calves','Calves']
 ];
+
+function recoveryUiPresent() {
+  return Boolean(document.querySelector('[data-recovery-muscle], [data-recovery-detail-list], #recovery-fresh-count'));
+}
 
 function getSessions() {
   try {
@@ -40,20 +43,14 @@ function sessionTrainingTime(session) {
   const trainingDate = String(session?.date || '').trim();
   const hasRecordedDate = /^\d{4}-\d{2}-\d{2}$/.test(trainingDate);
   const today = localDateKey(new Date());
-
   if (hasRecordedDate) {
     if (trainingDate !== today) return dateOnlyTimestamp(trainingDate);
-
-    const exactCandidates = [session?.completedAt, session?.endTime, session?.startedAt].filter(Boolean);
-    for (const raw of exactCandidates) {
+    for (const raw of [session?.completedAt, session?.endTime, session?.startedAt].filter(Boolean)) {
       const candidate = new Date(raw);
-      if (Number.isFinite(candidate.getTime()) && localDateKey(candidate) === trainingDate) {
-        return candidate.getTime();
-      }
+      if (Number.isFinite(candidate.getTime()) && localDateKey(candidate) === trainingDate) return candidate.getTime();
     }
     return dateOnlyTimestamp(trainingDate);
   }
-
   for (const raw of [session?.completedAt, session?.endTime, session?.startedAt].filter(Boolean)) {
     const time = new Date(raw).getTime();
     if (Number.isFinite(time)) return time;
@@ -64,8 +61,7 @@ function sessionTrainingTime(session) {
 function performedSetCount(exercise) {
   if (exercise?.trackingType === 'notes') return 0;
   return (exercise?.sets || []).filter(set =>
-    set?.completed === true || Number(set?.reps) > 0 ||
-    Number(set?.duration) > 0 || Number(set?.durationMinutes) > 0
+    set?.completed === true || Number(set?.reps) > 0 || Number(set?.duration) > 0 || Number(set?.durationMinutes) > 0
   ).length;
 }
 
@@ -99,7 +95,7 @@ function exerciseImpacts(definition, exercise) {
   });
   roles.primary.forEach(muscle => {
     const group = normalizeRecoveryGroup(muscle);
-    if (group) impacts.set(group, { weight: PRIMARY_IMPACT, role: 'primary' });
+    if (group) impacts.set(group, { weight: 1, role: 'primary' });
   });
   return impacts;
 }
@@ -117,13 +113,7 @@ function buildStates() {
       exerciseImpacts(definition, exercise).forEach((impact, group) => {
         if (/cardio|other/i.test(group)) return;
         if (!exposures.has(group)) exposures.set(group, []);
-        exposures.get(group).push({
-          time,
-          name,
-          setCount,
-          role: impact.role,
-          setEquivalents: setCount * impact.weight
-        });
+        exposures.get(group).push({ time, name, setCount, role: impact.role, setEquivalents: setCount * impact.weight });
       });
     });
   });
@@ -136,41 +126,23 @@ function buildStates() {
     items.forEach(item => {
       const hours = Math.max(0, (now - item.time) / 3600000);
       const remaining = Math.max(0, 1 - hours / FULL_RECOVERY_HOURS);
-      const initialFatigue = item.role === 'primary'
-        ? 1
-        : Math.min(1, item.setEquivalents / SET_EQUIVALENTS_FOR_FULL_FATIGUE);
+      const initialFatigue = item.role === 'primary' ? 1 : Math.min(1, item.setEquivalents / SET_EQUIVALENTS_FOR_FULL_FATIGUE);
       fatigue = Math.max(fatigue, initialFatigue * remaining);
     });
-
     const percent = Math.max(0, Math.min(100, Math.round((1 - fatigue) * 100)));
     const latestTime = items[0]?.time || 0;
     const hours = latestTime ? Math.max(0, (now - latestTime) / 3600000) : Infinity;
-    const recentDetails = [];
+    const details = [];
     const seen = new Set();
-
-    items
-      .filter(item => ((now - item.time) / 3600000) < FULL_RECOVERY_HOURS)
-      .forEach(item => {
-        const key = `${item.name}|${item.role}|${item.time}`;
-        if (seen.has(key) || recentDetails.length >= 3) return;
-        seen.add(key);
-        const itemHours = Math.max(0, (now - item.time) / 3600000);
-        const role = item.role === 'secondary' ? ' (secondary)' : '';
-        recentDetails.push(`${item.name}${role} · ${item.setCount} ${item.setCount === 1 ? 'set' : 'sets'} · ${elapsed(itemHours)}`);
-      });
-
-    if (!recentDetails.length && items[0]) {
-      const item = items[0];
-      const itemHours = Math.max(0, (now - item.time) / 3600000);
+    items.filter(item => ((now - item.time) / 3600000) < FULL_RECOVERY_HOURS).forEach(item => {
+      const key = `${item.name}|${item.role}|${item.time}`;
+      if (seen.has(key) || details.length >= 3) return;
+      seen.add(key);
       const role = item.role === 'secondary' ? ' (secondary)' : '';
-      recentDetails.push(`${item.name}${role} · ${item.setCount} ${item.setCount === 1 ? 'set' : 'sets'} · ${elapsed(itemHours)}`);
-    }
-
+      details.push(`${item.name}${role} · ${item.setCount} ${item.setCount === 1 ? 'set' : 'sets'} · ${elapsed(Math.max(0, (now-item.time)/3600000))}`);
+    });
     states.set(group, {
-      group,
-      percent,
-      hours,
-      details: recentDetails,
+      group, percent, hours, details,
       status: percent >= 100 ? 'Ready' : percent >= 67 ? 'Nearly Ready' : 'Recovering',
       opacity: Math.max(.04, .96 * fatigue)
     });
@@ -194,41 +166,36 @@ function colorForPercent(percent) {
   return `rgb(${fatigued.map((v,i)=>Math.round(v + (recovered[i]-v)*p)).join(',')})`;
 }
 
-function applyBody(states) {
+function applySecondaryRecovery() {
+  if (!recoveryUiPresent()) return;
+  const states = buildStates();
   document.querySelectorAll('[data-recovery-muscle]').forEach(node => {
     const state = states.get(node.dataset.recoveryMuscle);
     node.classList.toggle('no-data', !state);
-    const percent = state?.percent ?? 100;
     node.style.setProperty('--recovery-opacity', String(state?.opacity ?? .04));
     node.style.setProperty('--recovery-fill', '#ff315f');
-    node.dataset.recoveryPercent = String(percent);
+    node.dataset.recoveryPercent = String(state?.percent ?? 100);
   });
-}
-
-function detailRow(label, group, state) {
-  if (!state) return `<article class="recovery-detail-row no-data"><div class="recovery-mini"></div><div><strong>${escapeHtml(label)}</strong><span>No recent exercises</span></div><b>—</b></article>`;
-  return `<article class="recovery-detail-row" style="--recovery-percent:${state.percent}%"><div class="recovery-mini" style="--recovery-fill:${colorForPercent(state.percent)}"></div><div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(state.details.join(' • '))}</span><small>${state.status}</small><div class="recovery-row-progress"><span></span></div></div><b>${state.percent}%</b></article>`;
-}
-
-function applyDetails(states) {
   document.querySelectorAll('[data-recovery-detail-list]').forEach(list => {
-    list.innerHTML = DETAIL_GROUPS.map(([label,group]) => detailRow(label, group, states.get(group))).join('');
+    list.innerHTML = DETAIL_GROUPS.map(([label,group]) => {
+      const state = states.get(group);
+      if (!state) return `<article class="recovery-detail-row no-data"><div class="recovery-mini"></div><div><strong>${escapeHtml(label)}</strong><span>No recent exercises</span></div><b>—</b></article>`;
+      return `<article class="recovery-detail-row" style="--recovery-percent:${state.percent}%"><div class="recovery-mini" style="--recovery-fill:${colorForPercent(state.percent)}"></div><div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(state.details.join(' • '))}</span><small>${state.status}</small><div class="recovery-row-progress"><span></span></div></div><b>${state.percent}%</b></article>`;
+    }).join('');
   });
   document.querySelectorAll('#recovery-fresh-count').forEach(node => {
     node.textContent = String(DETAIL_GROUPS.filter(([,group]) => states.get(group)?.percent >= 100).length);
   });
 }
 
-function applySecondaryRecovery() {
-  const states = buildStates();
-  applyBody(states);
-  applyDetails(states);
-}
-
+let refreshQueued = false;
 function scheduleRecoveryRefresh() {
-  applySecondaryRecovery();
-  requestAnimationFrame(applySecondaryRecovery);
-  window.setTimeout(applySecondaryRecovery, 40);
+  if (!recoveryUiPresent() || refreshQueued) return;
+  refreshQueued = true;
+  requestAnimationFrame(() => {
+    refreshQueued = false;
+    applySecondaryRecovery();
+  });
 }
 
 document.addEventListener('click', event => {
@@ -238,6 +205,10 @@ document.addEventListener('click', event => {
 }, true);
 
 const content = document.getElementById('content');
-if (content) new MutationObserver(() => window.setTimeout(applySecondaryRecovery, 0)).observe(content, { childList:true, subtree:true });
+if (content) {
+  new MutationObserver(() => {
+    if (recoveryUiPresent()) scheduleRecoveryRefresh();
+  }).observe(content, { childList:true, subtree:true });
+}
 window.addEventListener('focus', scheduleRecoveryRefresh);
 window.setTimeout(scheduleRecoveryRefresh, 0);
