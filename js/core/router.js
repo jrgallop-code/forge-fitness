@@ -2,7 +2,7 @@ import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=plan-builder-l
 import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=builder-library-refresh-1";
 import { initializeOneOffWorkout } from "../workouts/one-off-workout.js?v=one-off-workout-1";
 import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=workout-catalogue-form-coach-removed-1";
-import { initializeSmartBuild } from "../workouts/smart-build.js?v=smart-build-1";
+import { initializeSmartBuild } from "../workouts/smart-build.js?v=smart-build-2";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
@@ -134,7 +134,7 @@ function ensureSmartBuildStyles() {
     if (document.querySelector('link[data-smart-build-styles]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/smart-build.css?v=smart-build-1";
+    link.href = "css/smart-build.css?v=smart-build-2";
     link.dataset.smartBuildStyles = "true";
     document.head.appendChild(link);
 }
