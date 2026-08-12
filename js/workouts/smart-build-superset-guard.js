@@ -1,4 +1,5 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
+import { initializeManualSupersetBuilder } from "./manual-superset-builder.js?v=manual-superset-builder-1";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 
@@ -20,6 +21,8 @@ const NEVER_SUPERSET_PATTERNS = [
 ];
 
 export function initializeSmartBuildSupersetGuard(root = document) {
+    initializeManualSupersetBuilder(root);
+
     const wizard = root.querySelector?.("[data-smart-build-wizard]");
     if (!wizard || wizard.dataset.supersetGuardBound === "true") return;
     wizard.dataset.supersetGuardBound = "true";
