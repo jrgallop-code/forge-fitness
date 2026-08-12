@@ -82,26 +82,62 @@ function ensureStrengthIndexCard() {
 
     overview.insertAdjacentHTML("afterbegin", `
         <div class="analytics-card overall-strength-index-card">
-            <h4>Overall Strength Index</h4>
-            <p class="analytics-note">
-                Tracks overall strength using one representative lift from each of six major movement categories.
-            </p>
-            <canvas
-                id="overall-strength-index-chart"
-                class="training-chart"
-                aria-label="Overall strength index over time"
-            ></canvas>
-            <p id="overall-strength-index-summary" class="analytics-note">
-                100 = baseline strength. An index of 105 means overall estimated strength is about 5% above baseline; 95 means about 5% below baseline.
-            </p>
-            <details class="analytics-note overall-strength-index-info">
-                <summary>ⓘ How this works</summary>
+            <div class="overall-strength-index-header">
+                <h4>Overall Strength Index</h4>
+                <button id="overall-strength-index-info-btn" class="secondary-btn" type="button" aria-controls="overall-strength-index-method-view" aria-expanded="false">
+                    ⓘ How this works
+                </button>
+            </div>
+
+            <div id="overall-strength-index-chart-view">
+                <p class="analytics-note">
+                    Tracks overall strength using one representative lift from each of six major movement categories.
+                </p>
+                <canvas
+                    id="overall-strength-index-chart"
+                    class="training-chart"
+                    aria-label="Overall strength index over time"
+                ></canvas>
+                <p id="overall-strength-index-summary" class="analytics-note">
+                    100 = baseline strength. An index of 105 means overall estimated strength is about 5% above baseline; 95 means about 5% below baseline.
+                </p>
+            </div>
+
+            <div id="overall-strength-index-method-view" class="analytics-note overall-strength-index-info" hidden>
                 <div id="overall-strength-index-method">
                     Level Up uses six representative movement categories. Each selected lift is normalized to its own first valid estimated 1RM, which equals 100, then the available category indexes are averaged.
                 </div>
-            </details>
+                <button id="overall-strength-index-back-btn" class="secondary-btn" type="button">
+                    ← Back to Strength Index
+                </button>
+            </div>
         </div>
     `);
+
+    const chartView = document.getElementById("overall-strength-index-chart-view");
+    const methodView = document.getElementById("overall-strength-index-method-view");
+    const infoButton = document.getElementById("overall-strength-index-info-btn");
+    const backButton = document.getElementById("overall-strength-index-back-btn");
+
+    const showMethod = () => {
+        if (!chartView || !methodView || !infoButton) return;
+        chartView.hidden = true;
+        methodView.hidden = false;
+        infoButton.hidden = true;
+        infoButton.setAttribute("aria-expanded", "true");
+    };
+
+    const showChart = () => {
+        if (!chartView || !methodView || !infoButton) return;
+        methodView.hidden = true;
+        chartView.hidden = false;
+        infoButton.hidden = false;
+        infoButton.setAttribute("aria-expanded", "false");
+        requestAnimationFrame(renderOverallStrengthIndex);
+    };
+
+    infoButton?.addEventListener("click", showMethod);
+    backButton?.addEventListener("click", showChart);
 }
 
 function renderOverallStrengthIndex() {
