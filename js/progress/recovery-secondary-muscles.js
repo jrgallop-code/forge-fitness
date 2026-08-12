@@ -136,7 +136,9 @@ function buildStates() {
     items.forEach(item => {
       const hours = Math.max(0, (now - item.time) / 3600000);
       const remaining = Math.max(0, 1 - hours / FULL_RECOVERY_HOURS);
-      const initialFatigue = Math.min(1, item.setEquivalents / SET_EQUIVALENTS_FOR_FULL_FATIGUE);
+      const initialFatigue = item.role === 'primary'
+        ? 1
+        : Math.min(1, item.setEquivalents / SET_EQUIVALENTS_FOR_FULL_FATIGUE);
       fatigue = Math.max(fatigue, initialFatigue * remaining);
     });
 
