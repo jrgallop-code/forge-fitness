@@ -2,6 +2,15 @@ import { getAllExercises } from './exercise-library.js?v=exercise-library-catalo
 
 const SEARCH_PLACEHOLDER = 'Search exercises…';
 
+function ensureStyles() {
+  if (document.querySelector('link[data-exercise-search-styles]')) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'css/exercise-search.css?v=exercise-search-1';
+  link.dataset.exerciseSearchStyles = 'true';
+  document.head.appendChild(link);
+}
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -141,4 +150,5 @@ document.addEventListener('change', event => {
   if (event.target.closest('.exercise-select')) scheduleScan();
 });
 
+ensureStyles();
 scanBuilder();
