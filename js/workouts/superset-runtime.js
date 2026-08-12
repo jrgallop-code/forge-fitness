@@ -2,6 +2,7 @@ import { ACTIVE_WORKOUT_STORAGE_KEY } from "./workout-session.js?v=workout-sessi
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
 
 const TIMER_SETTINGS_KEY = "level_up_exercise_rest_settings";
+const SESSION_STORAGE_KEY = "forge_workout_sessions";
 let observer = null;
 
 function getActive() {
@@ -21,6 +22,10 @@ function saveActive(active) {
 
 function getDay(active) {
     return active?.planSnapshot?.days?.[Number(active.trainingDayIndex) || 0] || null;
+}
+
+function hasSupersets(active) {
+    return Boolean(getDay(active)?.exercises?.some(exercise => exercise?.supersetGroup));
 }
 
 function getGroupMembers(active, group) {
@@ -82,9 +87,7 @@ function goToExercise(logger, targetIndex) {
     if (!targetCard) return;
 
     let current = Number(logger.dataset.carouselExerciseIndex);
-    if (!Number.isFinite(current)) {
-        current = cards.findIndex(card => !card.hidden);
-    }
+    if (!Number.isFinite(current)) current = cards.findIndex(card => !card.hidden);
     if (!Number.isFinite(current) || current < 0) current = 0;
 
     const targetPosition = cards.indexOf(targetCard);
@@ -92,9 +95,9 @@ function goToExercise(logger, targetIndex) {
     const previous = logger.querySelector(".exercise-carousel-prev");
 
     if (next && previous && targetPosition !== current) {
-        const button = targetPosition > current ? next : previous;
+        const nav = targetPosition > current ? next : previous;
         const steps = Math.abs(targetPosition - current);
-        for (let i = 0; i < steps; i += 1) button.click();
+        for (let i = 0; i < steps; i += 1) nav.click();
         return;
     }
 
@@ -127,9 +130,7 @@ function getNextRoundTarget(active, members, completedSetIndex) {
 
     const firstSets = active.exercises?.[first.index]?.sets || [];
     for (let setIndex = completedSetIndex + 1; setIndex < firstSets.length; setIndex += 1) {
-        if (!firstSets[setIndex]?.completed) {
-            return { exerciseIndex: first.index, setIndex };
-        }
+        if (!firstSets[setIndex]?.completed) return { exerciseIndex: first.index, setIndex };
     }
 
     for (const member of members) {
@@ -139,6 +140,86 @@ function getNextRoundTarget(active, members, completedSetIndex) {
     }
 
     return null;
+}
+
+function reconcileCompletionFromDom(logger = document.getElementById("workout-session-logger")) {
+    if (!logger || logger.dataset.editingSessionId) return;
+    const active = getActive();
+    if (!active || !hasSupersets(active)) return;
+
+    logger.querySelectorAll(".session-exercise-card[data-exercise-index]").forEach(card => {
+        const exerciseIndex = Number(card.dataset.exerciseIndex);
+        const state = active.exercises?.[exerciseIndex];
+        if (!state?.sets?.length) return;
+        card.querySelectorAll(".session-set-row[data-set-index]").forEach(row => {
+            const setIndex = Number(row.dataset.setIndex);
+            if (!state.sets[setIndex]) return;
+            state.sets[setIndex].completed = row.classList.contains("completed");
+        });
+    });
+
+    saveActive(active);
+}
+
+function scheduleReconcile(logger) {
+    setTimeout(() => reconcileCompletionFromDom(logger), 0);
+}
+
+function getElapsedMs(active) {
+    const accumulated = Number(active?.accumulatedMs) || 0;
+    if (!active?.startedAt || active?.pausedAt) return accumulated;
+    return accumulated + Math.max(0, Date.now() - new Date(active.startedAt).getTime());
+}
+
+function getSavedSessions() {
+    try {
+        const sessions = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || "[]");
+        return Array.isArray(sessions) ? sessions : [];
+    } catch {
+        return [];
+    }
+}
+
+function completeSupersetSession(logger) {
+    reconcileCompletionFromDom(logger);
+    const active = getActive();
+    if (!active || !hasSupersets(active)) return false;
+
+    const durationMs = getElapsedMs(active);
+    const completed = {
+        id: String(active.id || `active-${Date.now()}`).replace(/^active-/, "session-"),
+        date: logger.querySelector("#session-date")?.value || active.date,
+        planId: active.planId,
+        planName: active.planName,
+        planSnapshot: JSON.parse(JSON.stringify(active.planSnapshot || {})),
+        trainingDayIndex: Number(active.trainingDayIndex) || 0,
+        trainingDayName: active.trainingDayName || getDay(active)?.name || "Workout",
+        startedAt: active.startedAt || null,
+        completedAt: new Date().toISOString(),
+        durationMs,
+        durationMinutes: Math.round(durationMs / 60000),
+        exercises: JSON.parse(JSON.stringify(active.exercises || []))
+    };
+
+    const sessions = getSavedSessions();
+    const existingIndex = sessions.findIndex(item => item.id === completed.id);
+    if (existingIndex >= 0) sessions[existingIndex] = completed;
+    else sessions.push(completed);
+
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessions));
+    localStorage.removeItem(ACTIVE_WORKOUT_STORAGE_KEY);
+    document.getElementById("active-workout-banner")?.remove();
+
+    const message = logger.querySelector("#session-message");
+    if (message) message.textContent = "Workout completed and saved.";
+    const button = logger.querySelector("#save-session-btn");
+    if (button) {
+        button.textContent = "Workout Saved ✓";
+        button.disabled = true;
+    }
+
+    setTimeout(() => document.querySelector('.nav-btn[data-page="workout"]')?.click(), 350);
+    return true;
 }
 
 function annotateLogger(logger = document.getElementById("workout-session-logger")) {
@@ -173,7 +254,20 @@ function annotateLogger(logger = document.getElementById("workout-session-logger
     });
 }
 
-function handleSupersetCompletion(event) {
+function handleClick(event) {
+    const saveButton = event.target.closest?.("#save-session-btn");
+    if (saveButton) {
+        const logger = saveButton.closest("#workout-session-logger");
+        const active = getActive();
+        if (logger && !logger.dataset.editingSessionId && active && hasSupersets(active)) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            completeSupersetSession(logger);
+        }
+        return;
+    }
+
     const button = event.target.closest?.(".complete-set-btn");
     if (!button) return;
 
@@ -190,7 +284,11 @@ function handleSupersetCompletion(event) {
     const setIndex = Number(row.dataset.setIndex);
     const planned = day?.exercises?.[exerciseIndex];
     const group = planned?.supersetGroup;
-    if (!active || !group) return;
+
+    if (!active || !group) {
+        if (active && hasSupersets(active)) scheduleReconcile(logger);
+        return;
+    }
 
     const members = getGroupMembers(active, group);
     if (members.length < 2) return;
@@ -251,6 +349,13 @@ function handleSupersetCompletion(event) {
     if (next) setTimeout(() => goToExercise(logger, next.exerciseIndex), 0);
 }
 
+function handleInput(event) {
+    const logger = event.target.closest?.("#workout-session-logger");
+    if (!logger || logger.dataset.editingSessionId) return;
+    const active = getActive();
+    if (active && hasSupersets(active)) scheduleReconcile(logger);
+}
+
 function escapeHtml(value) {
     return String(value ?? "")
         .replace(/&/g, "&amp;")
@@ -260,7 +365,8 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
-document.addEventListener("click", handleSupersetCompletion, true);
+document.addEventListener("click", handleClick, true);
+document.addEventListener("input", handleInput, true);
 
 observer = new MutationObserver(() => annotateLogger());
 observer.observe(document.body, { childList: true, subtree: true });
