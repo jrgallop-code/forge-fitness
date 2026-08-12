@@ -182,16 +182,10 @@ function removeExerciseForToday(source) {
 
 function ensureInlineSwap(card, logger) {
   if (card.querySelector('.session-inline-swap')) return;
-  const heading = card.querySelector('h4');
-  if (!heading) return;
 
-  let header = heading.closest('.compact-exercise-header');
-  if (!header) {
-    header = document.createElement('div');
-    header.className = 'compact-exercise-header';
-    heading.parentNode.insertBefore(header, heading);
-    header.appendChild(heading);
-  }
+  const actions = card.querySelector('.compact-exercise-actions');
+  const heading = card.querySelector('.compact-exercise-header h4');
+  if (!actions || !heading) return;
 
   const button = document.createElement('button');
   button.type = 'button';
@@ -203,13 +197,9 @@ function ensureInlineSwap(card, logger) {
     openSwapSheet(card, logger);
   });
 
-  const actions = header.querySelector('.compact-exercise-actions');
-  if (actions) actions.prepend(button);
-  else {
-    const moreButton = header.querySelector('.exercise-more-btn');
-    if (moreButton) header.insertBefore(button, moreButton);
-    else header.appendChild(button);
-  }
+  const timerButton = actions.querySelector('.exercise-more-btn');
+  if (timerButton) actions.insertBefore(button, timerButton);
+  else actions.appendChild(button);
 }
 
 function enhanceActiveLogger() {
@@ -222,8 +212,8 @@ const observer = new MutationObserver(mutations => {
   const relevant = mutations.some(mutation => [...mutation.addedNodes].some(node =>
     node.nodeType === 1 && (
       node.id === 'workout-session-logger' ||
-      node.matches?.('.session-exercise-card, .compact-exercise-header') ||
-      node.querySelector?.('#workout-session-logger, .session-exercise-card, .compact-exercise-header')
+      node.matches?.('.session-exercise-card, .compact-exercise-header, .compact-exercise-actions') ||
+      node.querySelector?.('#workout-session-logger, .session-exercise-card, .compact-exercise-header, .compact-exercise-actions')
     )
   ));
   if (relevant) requestAnimationFrame(enhanceActiveLogger);
