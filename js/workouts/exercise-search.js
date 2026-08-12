@@ -6,7 +6,7 @@ function ensureStyles() {
   if (document.querySelector('link[data-exercise-search-styles]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = 'css/exercise-search.css?v=exercise-search-1';
+  link.href = 'css/exercise-search.css?v=exercise-search-2';
   link.dataset.exerciseSearchStyles = 'true';
   document.head.appendChild(link);
 }
@@ -34,8 +34,12 @@ function getMatches(query) {
   if (!term) return exercises;
 
   return exercises.filter(exercise => {
-    const haystack = [exercise.name, exercise.muscleGroup, exercise.equipment, exercise.type]
-      .map(normalize).join(' ');
+    const haystack = [
+      exercise.name,
+      exercise.muscleGroup,
+      exercise.equipment,
+      exercise.type
+    ].map(normalize).join(' ');
     return haystack.includes(term);
   });
 }
@@ -43,34 +47,83 @@ function getMatches(query) {
 function buildOptions(query) {
   const matches = getMatches(query);
   const groups = new Map();
+
   matches.forEach(exercise => {
     const group = exercise.muscleGroup || 'Other';
     if (!groups.has(group)) groups.set(group, []);
     groups.get(group).push(exercise);
   });
 
+  const groupedOptions = [...groups.entries()].map(([group, exercises]) => `
+    <optgroup label="${escapeHtml(group)}">
+      ${exercises.map(exercise => `
+        <option value="${escapeHtml(exercise.id)}">
+          ${escapeHtml(exercise.name)}${exercise.isCustom ? ' — Custom' : ''}
+        </option>
+      `).join('')}
+    </optgroup>
+  `).join('');
+
   return {
     count: matches.length,
-    html: `<option value="">${matches.length ? 'Choose Exercise' : 'No matching exercises'}</option>${[...groups.entries()].map(([group, exercises]) => `<optgroup label="${escapeHtml(group)}">${exercises.map(exercise => `<option value="${escapeHtml(exercise.id)}">${escapeHtml(exercise.name)}${exercise.isCustom ? ' — Custom' : ''}</option>`).join('')}</optgroup>`).join('')}<option value="__add_custom__">+ Add Custom Exercise</option>`
+    html: `
+      <option value="">${matches.length ? 'Choose Exercise' : 'No matching exercises'}</option>
+      ${groupedOptions}
+      <option value="__add_custom__">+ Add Custom Exercise</option>
+    `
   };
 }
 
-function filterSelect(search, select, countLabel) {
+function renderResults(search, panel) {
+  const matches = getMatches(search.value);
+  const groups = new Map();
+
+  matches.forEach(exercise => {
+    const group = exercise.muscleGroup || 'Other';
+    if (!groups.has(group)) groups.set(group, []);
+    groups.get(group).push(exercise);
+  });
+
+  if (!matches.length) {
+    panel.innerHTML = '<div class="exercise-search-empty">No matching exercises</div>';
+    panel.hidden = false;
+    return;
+  }
+
+  panel.innerHTML = [...groups.entries()].map(([group, exercises]) => `
+    <section class="exercise-search-group">
+      <div class="exercise-search-group-label">${escapeHtml(group)}</div>
+      ${exercises.map(exercise => `
+        <button class="exercise-search-result" type="button" data-exercise-id="${escapeHtml(exercise.id)}">
+          <span class="exercise-search-result-main">${escapeHtml(exercise.name)}${exercise.isCustom ? ' — Custom' : ''}</span>
+          <span class="exercise-search-result-meta">${escapeHtml(exercise.equipment || '')}</span>
+        </button>
+      `).join('')}
+    </section>
+  `).join('');
+  panel.hidden = false;
+}
+
+function filterSelect(search, select) {
   const previousValue = select.value;
   const result = buildOptions(search.value);
   select.innerHTML = result.html;
-  if ([...select.options].some(option => option.value === previousValue)) select.value = previousValue;
-  if (countLabel) countLabel.textContent = search.value.trim() ? `${result.count} match${result.count === 1 ? '' : 'es'}` : '';
+
+  if ([...select.options].some(option => option.value === previousValue)) {
+    select.value = previousValue;
+  }
 }
 
 function enhanceRow(row) {
   if (!row || row.dataset.exerciseSearchEnhanced === 'true') return;
   const select = row.querySelector('.exercise-select');
   if (!select) return;
+
   row.dataset.exerciseSearchEnhanced = 'true';
 
   const searchWrap = document.createElement('div');
   searchWrap.className = 'exercise-search-wrap';
+
   const search = document.createElement('input');
   search.type = 'search';
   search.className = 'exercise-search-input';
@@ -78,35 +131,78 @@ function enhanceRow(row) {
   search.autocomplete = 'off';
   search.spellcheck = false;
   search.setAttribute('aria-label', 'Search exercise library');
-  const count = document.createElement('span');
-  count.className = 'exercise-search-count';
-  count.setAttribute('aria-live', 'polite');
-  searchWrap.append(search, count);
+  search.setAttribute('aria-expanded', 'false');
+
+  const panel = document.createElement('div');
+  panel.className = 'exercise-search-results';
+  panel.hidden = true;
+
+  searchWrap.append(search, panel);
   select.insertAdjacentElement('beforebegin', searchWrap);
 
-  search.addEventListener('input', () => filterSelect(search, select, count));
+  const openResults = () => {
+    renderResults(search, panel);
+    search.setAttribute('aria-expanded', 'true');
+  };
+
+  const closeResults = () => {
+    panel.hidden = true;
+    search.setAttribute('aria-expanded', 'false');
+  };
+
+  search.addEventListener('focus', openResults);
+  search.addEventListener('input', () => {
+    filterSelect(search, select);
+    openResults();
+  });
+  search.addEventListener('search', () => {
+    filterSelect(search, select);
+    openResults();
+  });
+
   search.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      closeResults();
+      search.blur();
+      return;
+    }
     if (event.key !== 'Enter') return;
     const matches = getMatches(search.value);
     if (matches.length !== 1) return;
     event.preventDefault();
     select.value = matches[0].id;
     select.dispatchEvent(new Event('change', { bubbles: true }));
+    closeResults();
   });
-  search.addEventListener('search', () => filterSelect(search, select, count));
+
+  panel.addEventListener('click', event => {
+    const result = event.target.closest('.exercise-search-result');
+    if (!result) return;
+    select.value = result.dataset.exerciseId || '';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    closeResults();
+  });
+
+  document.addEventListener('pointerdown', event => {
+    if (!searchWrap.contains(event.target)) closeResults();
+  });
 }
 
 function scanBuilder() {
   document.querySelectorAll('#workout-days .exercise-builder-row').forEach(enhanceRow);
 }
+
 function scheduleScan() {
   requestAnimationFrame(scanBuilder);
   setTimeout(scanBuilder, 60);
 }
 
 document.addEventListener('click', event => {
-  if (event.target.closest('#new-plan-btn, .preset-plan-card, .add-exercise-btn, .remove-exercise-btn, #save-custom-exercise-btn, #cancel-custom-exercise-btn, #add-day-btn')) scheduleScan();
+  if (event.target.closest('#new-plan-btn, .preset-plan-card, .add-exercise-btn, .remove-exercise-btn, #save-custom-exercise-btn, #cancel-custom-exercise-btn, #add-day-btn')) {
+    scheduleScan();
+  }
 });
+
 document.addEventListener('change', event => {
   if (event.target.closest('.exercise-select')) scheduleScan();
 });
