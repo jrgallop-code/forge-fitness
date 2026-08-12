@@ -1,7 +1,7 @@
 let loading = false;
-let loaded = false;
 let settleTimer = null;
 let observer = null;
+let loadGeneration = 0;
 
 function plannerReady() {
     return Boolean(
@@ -10,21 +10,27 @@ function plannerReady() {
     );
 }
 
+function phaseButtonExists() {
+    return Boolean(
+        document.querySelector(
+            '.nutrition-planner-grid [data-nutrition-view="phases"]'
+        )
+    );
+}
+
 function loadNutritionPhases() {
-    if (loaded || loading || !plannerReady()) return;
+    if (loading || !plannerReady() || phaseButtonExists()) return;
 
     loading = true;
-    import("./nutrition-phases.js?v=nutrition-phases-runtime-3")
-        .then(() => {
-            loaded = true;
-            observer?.disconnect();
-            observer = null;
-        })
+    const generation = loadGeneration++;
+
+    import(`./nutrition-phases.js?v=nutrition-phases-runtime-4-${generation}`)
         .catch(error => {
             console.error("Nutrition phases failed to load:", error);
         })
         .finally(() => {
             loading = false;
+            scheduleStableLoad();
         });
 }
 
@@ -35,11 +41,11 @@ function scheduleStableLoad() {
 
     settleTimer = window.setTimeout(() => {
         loadNutritionPhases();
-    }, 120);
+    }, 80);
 }
 
 function watchForPlanner() {
-    if (loaded || observer) return;
+    if (observer) return;
 
     observer = new MutationObserver(() => {
         scheduleStableLoad();
@@ -54,7 +60,7 @@ function watchForPlanner() {
 }
 
 document.addEventListener("click", scheduleStableLoad, true);
-window.addEventListener("load", watchForPlanner);
-window.addEventListener("popstate", watchForPlanner);
+window.addEventListener("load", scheduleStableLoad);
+window.addEventListener("popstate", scheduleStableLoad);
 
 watchForPlanner();
