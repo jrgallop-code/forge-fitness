@@ -33,17 +33,33 @@ function formatShortDate(dateValue) {
 }
 
 function buildSevenWeekPoints() {
+    const sessions = getSessions();
+    const sessionWeeks = sessions
+        .map(session => getWeekStart(session?.date))
+        .filter(Boolean)
+        .sort();
+
+    if (!sessionWeeks.length) return [];
+
     const currentWeek = getWeekStart(new Date().toISOString().slice(0, 10));
     if (!currentWeek) return [];
 
-    const firstWeek = addDays(currentWeek, -(WEEK_COUNT - 1) * 7);
-    const totals = new Map();
+    const firstRecordedWeek = sessionWeeks[0];
+    const sevenWeekFloor = addDays(currentWeek, -(WEEK_COUNT - 1) * 7);
+    const firstVisibleWeek = firstRecordedWeek > sevenWeekFloor
+        ? firstRecordedWeek
+        : sevenWeekFloor;
 
-    for (let index = 0; index < WEEK_COUNT; index++) {
-        totals.set(addDays(firstWeek, index * 7), 0);
+    const totals = new Map();
+    for (
+        let week = firstVisibleWeek;
+        week <= currentWeek;
+        week = addDays(week, 7)
+    ) {
+        totals.set(week, 0);
     }
 
-    getSessions().forEach(session => {
+    sessions.forEach(session => {
         const week = getWeekStart(session?.date);
         if (week && totals.has(week)) {
             totals.set(week, totals.get(week) + 1);
@@ -105,6 +121,14 @@ function drawSevenWeekWorkoutChart() {
     context.rotate(-Math.PI / 2);
     context.fillText("Workouts", 0, 0);
     context.restore();
+
+    if (!points.length) {
+        context.fillStyle = "#a0a0a0";
+        context.font = "12px Arial";
+        context.textAlign = "center";
+        context.fillText("No workout history yet", width / 2, height / 2);
+        return;
+    }
 
     const maximum = Math.max(1, ...points.map(point => point.value));
     const plotHeight = height - padding.top - padding.bottom;
