@@ -11,6 +11,7 @@ import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-progress-immediate-1";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
 import { initializeTrainingProgressCollapse } from "../progress/training-progress-collapse.js?v=training-progress-collapse-3";
+import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=overall-strength-index-1";
 import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.js?v=training-analytics-5";
 import { initializeMuscleRecoveryMap } from "../progress/muscle-recovery-map.js?v=recovery-traced-1";
 import { renderSleepTracker, initializeSleepTracker } from "../progress/sleep-tracker.js?v=sleep-tracker-2";
@@ -49,6 +50,7 @@ export function navigate(page) {
                 safeInitialize("Weight tracker", initializeWeightTracker);
                 safeInitialize("Compact weight progress", initializeWeightProgressCompact);
                 safeInitialize("Training progress", initializeTrainingProgress);
+                safeInitialize("Overall strength index", initializeOverallStrengthIndex);
                 safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume);
                 safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap);
                 safeInitialize("Workout PR badges", initializeWorkoutPrBadges);
