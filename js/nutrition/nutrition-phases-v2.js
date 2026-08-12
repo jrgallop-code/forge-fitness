@@ -1,3 +1,5 @@
+import { calculateWeightTrend } from "../core/weight-trend.js?v=weight-trend-regression-1";
+
 const PHASES_KEY = "level_up_nutrition_phases";
 const WEIGHT_KEY = "forge_weight_entries";
 const GOAL_WEIGHT_KEY = "level_up_goal_weight";
@@ -91,38 +93,18 @@ function calculatePhaseMovingAverage(entries) {
     });
 }
 
-function calculateWeeklyChangeFromMovingAverage(movingAverage) {
-    if (movingAverage.length < 2) return null;
-
-    const latest = movingAverage[movingAverage.length - 1];
-    const latestTime = dateMs(latest.date);
-    let comparison = null;
-
-    for (let index = movingAverage.length - 2; index >= 0; index--) {
-        const candidate = movingAverage[index];
-        const days = (latestTime - dateMs(candidate.date)) / 86400000;
-        if (days >= 7) {
-            comparison = { ...candidate, days };
-            break;
-        }
-    }
-
-    if (!comparison) return null;
-
-    return ((latest.weight - comparison.weight) / comparison.days) * 7;
-}
-
 function getPhaseStats(phase) {
     const entries = getPhaseWeights(phase);
     const movingAverage = calculatePhaseMovingAverage(entries);
     const latestAverage = movingAverage.at(-1)?.weight ?? null;
-    const weeklyChange = calculateWeeklyChangeFromMovingAverage(movingAverage);
+    const trend = calculateWeightTrend(entries);
 
     return {
         entries,
         movingAverage,
         latestAverage,
-        weeklyChange
+        weeklyChange: trend.weeklyChange,
+        trend
     };
 }
 
@@ -189,19 +171,20 @@ function ensurePhaseGoalMetrics() {
         if (!trendMetric) {
             trendMetric = document.createElement("div");
             trendMetric.dataset.phaseMetric = "ma-trend";
-            trendMetric.innerHTML = "<span>7-Day Avg Change</span><strong>--</strong>";
+            trendMetric.innerHTML = "<span>Weekly Trend</span><strong>--</strong>";
             metrics.appendChild(trendMetric);
         }
+        trendMetric.querySelector("span").textContent = stats.trend.label;
         trendMetric.querySelector("strong").textContent = Number.isFinite(stats.weeklyChange)
             ? `${signed(stats.weeklyChange)} lb/wk`
             : "Collecting data";
     }
 
     const oldTrendRow = [...card.querySelectorAll(".phase-goal-row")]
-        .find(row => row.querySelector("span")?.textContent?.trim() === "Current phase trend");
+        .find(row => ["Current phase trend", "Trend Method"].includes(row.querySelector("span")?.textContent?.trim()));
     if (oldTrendRow) {
         oldTrendRow.querySelector("span").textContent = "Trend Method";
-        oldTrendRow.querySelector("strong").textContent = "Phase-only 7-day moving averages";
+        oldTrendRow.querySelector("strong").textContent = "Recent phase weigh-ins · regression";
     }
 
     let goalRow = card.querySelector('[data-phase-row="goal-weight"]');
@@ -235,7 +218,7 @@ function patchMockPreview() {
 
     const onTrack = sample.querySelector(".phase-on-track");
     if (onTrack) {
-        onTrack.innerHTML = "ON TRACK <small>7-day average trend +0.23 lb/week</small>";
+        onTrack.innerHTML = "ON TRACK <small>regression trend +0.23 lb/week</small>";
     }
 
     if (!sample.querySelector('[data-sample-row="goal"]')) {
@@ -269,16 +252,21 @@ function patchAdaptiveCoach() {
     const goalEl = document.getElementById("coach-goal-rate");
     const actualEl = document.getElementById("coach-actual-rate");
     const confidenceEl = document.getElementById("coach-confidence");
+    const actualHeading = actualEl?.closest(".metric-card")?.querySelector("h3");
 
     if (goalEl && Number.isFinite(targetRate)) goalEl.textContent = `${signed(targetRate)} lb/wk`;
+    if (actualHeading) actualHeading.textContent = stats.trend.label;
     if (actualEl) actualEl.textContent = Number.isFinite(stats.weeklyChange)
         ? `${signed(stats.weeklyChange)} lb/wk`
         : "--";
-    if (confidenceEl) confidenceEl.textContent = `${stats.entries.length} phase weigh-ins · 7-day avg`;
+    if (confidenceEl) {
+        const status = stats.trend.status === "actual" ? "Established" : stats.trend.status === "preliminary" ? "Preliminary" : "Insufficient";
+        confidenceEl.textContent = `${status} · ${stats.trend.windowEntries} weigh-ins / ${stats.trend.windowDays} days`;
+    }
 
-    if (phaseDays < 14 || stats.entries.length < 7 || !Number.isFinite(stats.weeklyChange)) {
+    if (stats.trend.status !== "actual" || !Number.isFinite(stats.weeklyChange)) {
         if (recommendation) {
-            recommendation.textContent = `${phaseName} started ${phaseDays} day${phaseDays === 1 ? "" : "s"} ago. Keep logging weight consistently. Level Up will judge progress using phase-only 7-day moving averages once enough current-phase data is available.`;
+            recommendation.textContent = `${phaseName} started ${phaseDays} day${phaseDays === 1 ? "" : "s"} ago. Keep logging weight consistently. A preliminary rate can appear after 7 days; Level Up waits for at least 14 calendar days and 7 valid weigh-ins before using the trend for coaching.`;
         }
         return;
     }
@@ -288,8 +276,8 @@ function patchAdaptiveCoach() {
 
     if (recommendation) {
         recommendation.textContent = Math.abs(difference) <= 0.2
-            ? `On track for this ${phaseName.toLowerCase()} phase. Your phase-only 7-day average is changing ${signed(stats.weeklyChange)} lb/week versus a target of ${signed(targetRate)} lb/week. Keep calories unchanged.`
-            : `This ${phaseName.toLowerCase()} phase is trending ${difference > 0 ? "faster" : "slower"} than planned. The coach is comparing phase-only 7-day moving averages and ignores weight data from before ${formatDate(phase.startDate)}.`;
+            ? `On track for this ${phaseName.toLowerCase()} phase. Your recent regression trend is ${signed(stats.weeklyChange)} lb/week versus a target of ${signed(targetRate)} lb/week. Keep calories unchanged.`
+            : `This ${phaseName.toLowerCase()} phase is trending ${difference > 0 ? "faster" : "slower"} than planned. The coach uses a regression of recent phase-only weigh-ins and ignores weight data from before ${formatDate(phase.startDate)}.`;
     }
 }
 
