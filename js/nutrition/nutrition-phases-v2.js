@@ -1,8 +1,12 @@
 import { calculateWeightTrend } from "../core/weight-trend.js?v=weight-trend-regression-1";
+import { getNutritionPlan, setCurrentCalories } from "./nutrition-storage.js?v=manual-goals-1";
 
 const PHASES_KEY = "level_up_nutrition_phases";
 const WEIGHT_KEY = "forge_weight_entries";
 const GOAL_WEIGHT_KEY = "level_up_goal_weight";
+const COACH_TOLERANCE_LB_PER_WEEK = 0.20;
+const MIN_ADJUSTMENT_KCAL = 100;
+const MAX_ADJUSTMENT_KCAL = 200;
 
 const PHASE_LABELS = {
     fat_loss: "Fat Loss",
@@ -248,11 +252,14 @@ function patchAdaptiveCoach() {
     const targetRate = Number(phase.targetWeeklyRate);
     const phaseName = PHASE_LABELS[phase.type] || "Current Phase";
     const phaseDays = Math.floor(daysBetween(phase.startDate, today())) + 1;
+    const plan = getNutritionPlan();
 
     const goalEl = document.getElementById("coach-goal-rate");
     const actualEl = document.getElementById("coach-actual-rate");
     const confidenceEl = document.getElementById("coach-confidence");
     const actualHeading = actualEl?.closest(".metric-card")?.querySelector("h3");
+    const suggestedText = document.getElementById("coach-suggested-calories");
+    const applyButton = document.getElementById("apply-coach-recommendation");
 
     if (goalEl && Number.isFinite(targetRate)) goalEl.textContent = `${signed(targetRate)} lb/wk`;
     if (actualHeading) actualHeading.textContent = stats.trend.label;
@@ -266,19 +273,71 @@ function patchAdaptiveCoach() {
 
     if (stats.trend.status !== "actual" || !Number.isFinite(stats.weeklyChange)) {
         if (recommendation) {
-            recommendation.textContent = `${phaseName} started ${phaseDays} day${phaseDays === 1 ? "" : "s"} ago. Keep logging weight consistently. A preliminary rate can appear after 7 days; Level Up waits for at least 14 calendar days and 7 valid weigh-ins before using the trend for coaching.`;
+            recommendation.textContent = stats.trend.status === "preliminary"
+                ? `${phaseName} preliminary regression trend: ${signed(stats.weeklyChange)} lb/week. Level Up shows the rate now, but waits for at least 14 calendar days and 7 valid weigh-ins before suggesting a calorie change.`
+                : `${phaseName} started ${phaseDays} day${phaseDays === 1 ? "" : "s"} ago. Keep logging weight consistently. A preliminary rate can appear after 7 days; Level Up waits for at least 14 calendar days and 7 valid weigh-ins before coaching.`;
         }
+        if (suggestedText) suggestedText.textContent = "";
+        hideApply(applyButton);
         return;
     }
 
-    if (!Number.isFinite(targetRate)) return;
+    if (!Number.isFinite(targetRate)) {
+        if (suggestedText) suggestedText.textContent = "";
+        hideApply(applyButton);
+        return;
+    }
+
     const difference = stats.weeklyChange - targetRate;
+    if (Math.abs(difference) <= COACH_TOLERANCE_LB_PER_WEEK) {
+        if (recommendation) {
+            recommendation.textContent = `On track for this ${phaseName.toLowerCase()} phase. Your recent regression trend is ${signed(stats.weeklyChange)} lb/week versus a target of ${signed(targetRate)} lb/week. The difference is within ±${COACH_TOLERANCE_LB_PER_WEEK.toFixed(2)} lb/week, so keep calories unchanged.`;
+        }
+        if (suggestedText) suggestedText.textContent = "";
+        hideApply(applyButton);
+        return;
+    }
+
+    if (!Number.isFinite(plan.currentCalories)) {
+        if (recommendation) recommendation.textContent = `Your ${phaseName.toLowerCase()} trend is established, but Level Up needs a current calorie target before calculating an adjustment.`;
+        if (suggestedText) suggestedText.textContent = "";
+        hideApply(applyButton);
+        return;
+    }
+
+    const direction = difference > 0 ? -1 : 1;
+    const adjustment = calculateSuggestedAdjustment(difference);
+    const suggested = Math.round(plan.currentCalories + direction * adjustment);
+    const actionText = direction < 0
+        ? `reduce calories by about ${adjustment} kcal/day`
+        : `increase calories by about ${adjustment} kcal/day`;
 
     if (recommendation) {
-        recommendation.textContent = Math.abs(difference) <= 0.2
-            ? `On track for this ${phaseName.toLowerCase()} phase. Your recent regression trend is ${signed(stats.weeklyChange)} lb/week versus a target of ${signed(targetRate)} lb/week. Keep calories unchanged.`
-            : `This ${phaseName.toLowerCase()} phase is trending ${difference > 0 ? "faster" : "slower"} than planned. The coach uses a regression of recent phase-only weigh-ins and ignores weight data from before ${formatDate(phase.startDate)}.`;
+        recommendation.textContent = `Your ${phaseName.toLowerCase()} regression trend is ${Math.abs(difference).toFixed(2)} lb/week away from target. Based on that rate difference, consider whether you want to ${actionText}. Level Up only uses phase weigh-ins from ${formatDate(phase.startDate)} onward and caps each review at a practical 100–200 kcal/day change.`;
     }
+    if (suggestedText) suggestedText.textContent = `Suggested target: ${suggested} kcal/day`;
+
+    if (applyButton) {
+        applyButton.hidden = false;
+        applyButton.onclick = () => {
+            setCurrentCalories(suggested, "Adaptive Coach phase regression recommendation");
+            window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
+            if (recommendation) recommendation.textContent = "Recommendation applied. Your current calorie target has been updated.";
+            hideApply(applyButton);
+        };
+    }
+}
+
+function calculateSuggestedAdjustment(rateDifference) {
+    const impliedDailyCalories = Math.abs(Number(rateDifference)) * 3500 / 7;
+    const rounded = Math.round(impliedDailyCalories / 50) * 50;
+    return Math.min(MAX_ADJUSTMENT_KCAL, Math.max(MIN_ADJUSTMENT_KCAL, rounded));
+}
+
+function hideApply(button) {
+    if (!button) return;
+    button.hidden = true;
+    button.onclick = null;
 }
 
 function refreshPhaseEnhancements() {
