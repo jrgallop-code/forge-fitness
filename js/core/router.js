@@ -2,6 +2,7 @@ import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=plan-builder-l
 import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=builder-library-refresh-1";
 import { initializeOneOffWorkout } from "../workouts/one-off-workout.js?v=one-off-workout-1";
 import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=workout-catalogue-form-coach-removed-1";
+import { initializeSmartBuild } from "../workouts/smart-build.js?v=smart-build-1";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
@@ -43,7 +44,15 @@ export function navigate(page) {
                 safeInitialize("Google Drive sync", initializeGoogleDriveSync);
                 break;
             case "workout":
-                content.innerHTML = renderWorkoutBuilder(); decorateWorkoutTitle(content); safeInitialize("Workout builder", initializeWorkoutBuilder); safeInitialize("One-off workout", initializeOneOffWorkout); safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content)); safeInitialize("Workout catalogue", () => initializeWorkoutCatalogue(content)); break;
+                ensureSmartBuildStyles();
+                content.innerHTML = renderWorkoutBuilder();
+                decorateWorkoutTitle(content);
+                safeInitialize("Workout builder", initializeWorkoutBuilder);
+                safeInitialize("Smart Build", () => initializeSmartBuild(content));
+                safeInitialize("One-off workout", initializeOneOffWorkout);
+                safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
+                safeInitialize("Workout catalogue", () => initializeWorkoutCatalogue(content));
+                break;
             case "progress":
                 content.innerHTML = renderProgress();
                 safeInitialize("Training progress collapse", initializeTrainingProgressCollapse);
@@ -56,19 +65,44 @@ export function navigate(page) {
                 safeInitialize("Workout PR badges", initializeWorkoutPrBadges);
                 break;
             case "sleep":
-                content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>Track sleep duration, quality and recovery notes.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
+                content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>Track sleep duration, quality and recovery notes.</p></div></div>${renderSleepTracker()}</section>`;
+                safeInitialize("Sleep tracker", initializeSleepTracker);
+                break;
             case "measurements":
-                content.innerHTML = renderMeasurementsTracker(); safeInitialize("Measurements tracker", initializeMeasurementsTracker); safeInitialize("Measurement history detail", initializeMeasurementHistoryDetail); break;
+                content.innerHTML = renderMeasurementsTracker();
+                safeInitialize("Measurements tracker", initializeMeasurementsTracker);
+                safeInitialize("Measurement history detail", initializeMeasurementHistoryDetail);
+                break;
             case "nutrition":
-                content.innerHTML = renderNutrition(); safeInitialize("Nutrition", initializeNutrition); safeInitialize("Nutrition main view", () => showNutritionView("main")); break;
+                content.innerHTML = renderNutrition();
+                safeInitialize("Nutrition", initializeNutrition);
+                safeInitialize("Nutrition main view", () => showNutritionView("main"));
+                break;
             case "water":
-                content.innerHTML = renderWater(); safeInitialize("Water log", initializeNutrition); break;
+                content.innerHTML = renderWater();
+                safeInitialize("Water log", initializeNutrition);
+                break;
             case "energy":
-                content.innerHTML = renderEnergyProfile() + `<div class="nutrition-planner-view nutrition-projection-view" data-planner-view="projection" hidden><button class="nutrition-planner-back" type="button" data-nutrition-back>← Calorie Planner</button>${renderGoalProjection()}</div>`; safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Goal projection", initializeGoalProjection); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); break;
-            case "more": content.innerHTML = renderMore(); safeInitialize("More", initializeMore); break;
-            case "history": content.innerHTML = renderWorkoutHistory(); safeInitialize("Workout history", initializeWorkoutHistory); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
+                content.innerHTML = renderEnergyProfile() + `<div class="nutrition-planner-view nutrition-projection-view" data-planner-view="projection" hidden><button class="nutrition-planner-back" type="button" data-nutrition-back>← Calorie Planner</button>${renderGoalProjection()}</div>`;
+                safeInitialize("Energy profile", initializeEnergyProfile);
+                safeInitialize("Protein target explanation", initializeProteinTargetExplanation);
+                safeInitialize("Goal projection", initializeGoalProjection);
+                safeInitialize("Nutrition plan UI", initializeNutritionPlanUI);
+                safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories);
+                break;
+            case "more":
+                content.innerHTML = renderMore();
+                safeInitialize("More", initializeMore);
+                break;
+            case "history":
+                content.innerHTML = renderWorkoutHistory();
+                safeInitialize("Workout history", initializeWorkoutHistory);
+                safeInitialize("Workout PR badges", initializeWorkoutPrBadges);
+                break;
             default:
-                content.innerHTML = renderDashboardWithPerformance(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Workout performance", initializeWorkoutPerformance);
+                content.innerHTML = renderDashboardWithPerformance();
+                safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets);
+                safeInitialize("Workout performance", initializeWorkoutPerformance);
                 safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
         }
     } catch (error) {
@@ -90,8 +124,25 @@ function renderDashboardWithPerformance() {
 }
 
 function decorateWorkoutTitle(content) {
-    const heading = content.querySelector(".workout-page-title h2"); if (!heading) return;
+    const heading = content.querySelector(".workout-page-title h2");
+    if (!heading) return;
     heading.classList.add("icon-title-heading");
     heading.innerHTML = `<svg class="title-bicep-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.1c.8-.5 1.8-.2 2.3.5l.8 1.2 1.1-.8c.7-.5 1.7-.3 2.2.4.4.6.3 1.5-.2 2l-2.1 1.8v3.2l1.1-1c1.2-1.1 2.8-1.7 4.4-1.7 2.9 0 5.3 2.1 5.7 4.9.5 3.6-2.3 6.9-6 6.9H8.1c-3.1 0-5.6-2.5-5.6-5.6 0-1.7.8-3.4 2.1-4.4l2.3-1.8V5.1c0-.8.1-1.5.3-2Z"/><path d="M7.1 2.8 9 2.1l1.2 2-2.1.9-1-2.2Zm3.3 2 1.8-1.3 1.2 1.7-2 1.5-1-1.9Z"/></svg><span>Workout</span>`;
 }
-function safeInitialize(name, initializer) { try { initializer(); } catch (error) { console.error(`${name} failed to initialize:`, error); } }
+
+function ensureSmartBuildStyles() {
+    if (document.querySelector('link[data-smart-build-styles]')) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "css/smart-build.css?v=smart-build-1";
+    link.dataset.smartBuildStyles = "true";
+    document.head.appendChild(link);
+}
+
+function safeInitialize(name, initializer) {
+    try {
+        initializer();
+    } catch (error) {
+        console.error(`${name} failed to initialize:`, error);
+    }
+}
