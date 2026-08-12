@@ -2,6 +2,7 @@ import { navigate } from "./core/router.js?v=overall-strength-index-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=rounded-pulse-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-session-7-cardio-fields";
 import "./workouts/exercise-search.js?v=exercise-search-4";
+import "./workouts/smart-build-experience-copy.js?v=smart-build-experience-1";
 
 const FILLED_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
 const STROKE_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${paths}</svg>`;
