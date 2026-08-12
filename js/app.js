@@ -1,4 +1,4 @@
-import { navigate } from "./core/router.js?v=overall-strength-index-1";
+import { navigate } from "./core/router.js?v=smart-build-v2-restore-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=rounded-pulse-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-session-7-cardio-fields";
 import "./workouts/exercise-search.js?v=exercise-search-4";
