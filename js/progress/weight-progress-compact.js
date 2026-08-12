@@ -1,5 +1,10 @@
 const GOAL_WEIGHT_STORAGE_KEY = "level_up_goal_weight";
 
+export function initializeWeightProgressCompact() {
+    compactWeightProgress();
+    updateGoalWeightSummary();
+}
+
 function compactWeightProgress() {
     const section = document.getElementById("weight-progress");
     if (!section || section.dataset.compactLayout === "true") return;
@@ -112,15 +117,5 @@ function updateGoalWeightSummary() {
     target.textContent = Number.isFinite(value) && value > 0 ? `${value.toFixed(1)} lb` : "--";
 }
 
-function initialize() {
-    compactWeightProgress();
-    updateGoalWeightSummary();
-}
-
-const timer = window.setInterval(() => {
-    if (document.getElementById("weight-progress")) initialize();
-}, 1000);
-
 window.addEventListener("levelup:nutrition-updated", updateGoalWeightSummary);
-window.addEventListener("pagehide", () => clearInterval(timer), { once: true });
-initialize();
+initializeWeightProgressCompact();
