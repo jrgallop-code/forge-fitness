@@ -21,7 +21,7 @@ export function initializeWorkoutSchedule(scope = document) {
     const page = scope.querySelector?.(".workout-page");
     if (!page) return;
     page.querySelector(".workout-schedule-shell")?.remove();
-    const firstSection = page.querySelector(".workout-home-section");
+    const firstSection = page.querySelector("[data-smart-build-launcher], .workout-home-section");
     if (!firstSection) return;
     firstSection.insertAdjacentHTML("beforebegin", renderWorkoutSchedulePanel());
     bindWorkoutScheduleControls(page);
