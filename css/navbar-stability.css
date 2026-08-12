@@ -8,7 +8,7 @@ body {
     pointer-events: auto;
     left: 50%;
     right: auto;
-    bottom: calc(8px + env(safe-area-inset-bottom));
+    bottom: env(safe-area-inset-bottom);
     width: calc(100vw - 20px);
     max-width: calc(100vw - 20px);
     transform: translateX(-50%);
