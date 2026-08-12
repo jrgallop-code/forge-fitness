@@ -11,7 +11,7 @@ import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-progress-immediate-1";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
 import { initializeTrainingProgressCollapse } from "../progress/training-progress-collapse.js?v=training-progress-collapse-3";
-import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=overall-strength-index-1";
+import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=overall-strength-index-core-2";
 import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.js?v=training-analytics-5";
 import { initializeMuscleRecoveryMap } from "../progress/muscle-recovery-map.js?v=recovery-traced-1";
 import { renderSleepTracker, initializeSleepTracker } from "../progress/sleep-tracker.js?v=sleep-tracker-2";
@@ -55,43 +55,20 @@ export function navigate(page) {
                 safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap);
                 safeInitialize("Workout PR badges", initializeWorkoutPrBadges);
                 break;
-            case "sleep":
-                content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>Track sleep duration, quality and recovery notes.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
-            case "measurements":
-                content.innerHTML = renderMeasurementsTracker(); safeInitialize("Measurements tracker", initializeMeasurementsTracker); safeInitialize("Measurement history detail", initializeMeasurementHistoryDetail); break;
-            case "nutrition":
-                content.innerHTML = renderNutrition(); safeInitialize("Nutrition", initializeNutrition); safeInitialize("Nutrition main view", () => showNutritionView("main")); break;
-            case "water":
-                content.innerHTML = renderWater(); safeInitialize("Water log", initializeNutrition); break;
-            case "energy":
-                content.innerHTML = renderEnergyProfile() + `<div class="nutrition-planner-view nutrition-projection-view" data-planner-view="projection" hidden><button class="nutrition-planner-back" type="button" data-nutrition-back>← Calorie Planner</button>${renderGoalProjection()}</div>`; safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Goal projection", initializeGoalProjection); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); break;
+            case "sleep": content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>Track sleep duration, quality and recovery notes.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
+            case "measurements": content.innerHTML = renderMeasurementsTracker(); safeInitialize("Measurements tracker", initializeMeasurementsTracker); safeInitialize("Measurement history detail", initializeMeasurementHistoryDetail); break;
+            case "nutrition": content.innerHTML = renderNutrition(); safeInitialize("Nutrition", initializeNutrition); safeInitialize("Nutrition main view", () => showNutritionView("main")); break;
+            case "water": content.innerHTML = renderWater(); safeInitialize("Water log", initializeNutrition); break;
+            case "energy": content.innerHTML = renderEnergyProfile() + `<div class="nutrition-planner-view nutrition-projection-view" data-planner-view="projection" hidden><button class="nutrition-planner-back" type="button" data-nutrition-back>← Calorie Planner</button>${renderGoalProjection()}</div>`; safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Goal projection", initializeGoalProjection); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); break;
             case "more": content.innerHTML = renderMore(); safeInitialize("More", initializeMore); break;
             case "history": content.innerHTML = renderWorkoutHistory(); safeInitialize("Workout history", initializeWorkoutHistory); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
-            default:
-                content.innerHTML = renderDashboardWithPerformance(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Workout performance", initializeWorkoutPerformance);
-                safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
+            default: content.innerHTML = renderDashboardWithPerformance(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Workout performance", initializeWorkoutPerformance); safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
         }
     } catch (error) {
         console.error(`Route ${page} failed while rendering:`, error);
         content.innerHTML = `<section class="section-card"><h2>Page could not load</h2><p class="section-description">The page hit an initialization error. Navigation is still available below.</p></section>`;
     }
 }
-
-function renderDashboardWithPerformance() {
-    const dashboard = renderDashboard();
-    const statsPoint = '<section class="dashboard">';
-    const detailPoint = '<section class="dashboard-detail-grid">';
-    const withSchedule = dashboard.includes(statsPoint)
-        ? dashboard.replace(statsPoint, renderDashboardSchedule() + statsPoint)
-        : renderDashboardSchedule() + dashboard;
-    return withSchedule.includes(detailPoint)
-        ? withSchedule.replace(detailPoint, renderWorkoutPerformanceDashboard() + detailPoint)
-        : withSchedule + renderWorkoutPerformanceDashboard();
-}
-
-function decorateWorkoutTitle(content) {
-    const heading = content.querySelector(".workout-page-title h2"); if (!heading) return;
-    heading.classList.add("icon-title-heading");
-    heading.innerHTML = `<svg class="title-bicep-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.1c.8-.5 1.8-.2 2.3.5l.8 1.2 1.1-.8c.7-.5 1.7-.3 2.2.4.4.6.3 1.5-.2 2l-2.1 1.8v3.2l1.1-1c1.2-1.1 2.8-1.7 4.4-1.7 2.9 0 5.3 2.1 5.7 4.9.5 3.6-2.3 6.9-6 6.9H8.1c-3.1 0-5.6-2.5-5.6-5.6 0-1.7.8-3.4 2.1-4.4l2.3-1.8V5.1c0-.8.1-1.5.3-2Z"/><path d="M7.1 2.8 9 2.1l1.2 2-2.1.9-1-2.2Zm3.3 2 1.8-1.3 1.2 1.7-2 1.5-1-1.9Z"/></svg><span>Workout</span>`;
-}
-function safeInitialize(name, initializer) { try { initializer(); } catch (error) { console.error(`${name} failed to initialize:`, error); } }
+function renderDashboardWithPerformance() { const dashboard=renderDashboard(),statsPoint='<section class="dashboard">',detailPoint='<section class="dashboard-detail-grid">',withSchedule=dashboard.includes(statsPoint)?dashboard.replace(statsPoint,renderDashboardSchedule()+statsPoint):renderDashboardSchedule()+dashboard; return withSchedule.includes(detailPoint)?withSchedule.replace(detailPoint,renderWorkoutPerformanceDashboard()+detailPoint):withSchedule+renderWorkoutPerformanceDashboard(); }
+function decorateWorkoutTitle(content) { const heading=content.querySelector(".workout-page-title h2");if(!heading)return;heading.classList.add("icon-title-heading");heading.innerHTML=`<svg class="title-bicep-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.1c.8-.5 1.8-.2 2.3.5l.8 1.2 1.1-.8c.7-.5 1.7-.3 2.2.4.4.6.3 1.5-.2 2l-2.1 1.8v3.2l1.1-1c1.2-1.1 2.8-1.7 4.4-1.7 2.9 0 5.3 2.1 5.7 4.9.5 3.6-2.3 6.9-6 6.9H8.1c-3.1 0-5.6-2.5-5.6-5.6 0-1.7.8-3.4 2.1-4.4l2.3-1.8V5.1c0-.8.1-1.5.3-2Z"/><path d="M7.1 2.8 9 2.1l1.2 2-2.1.9-1-2.2Zm3.3 2 1.8-1.3 1.2 1.7-2 1.5-1-1.9Z"/></svg><span>Workout</span>`; }
+function safeInitialize(name,initializer){try{initializer();}catch(error){console.error(`${name} failed to initialize:`,error);}}
