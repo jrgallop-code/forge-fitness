@@ -3,18 +3,20 @@ const PLAN_STORAGE_KEY = "forge_workout_plans";
 let editingPlanId = null;
 let pairingState = [];
 let preSavePlanIds = new Set();
-let initialized = false;
 
 export function initializeManualSupersetBuilder(root = document) {
     const builder = root.querySelector?.("#plan-builder");
     const daysHost = root.querySelector?.("#workout-days");
     const saveButton = root.querySelector?.("#save-plan-btn");
-    if (!builder || !daysHost || !saveButton || initialized) return;
-    initialized = true;
+    if (!builder || !daysHost || !saveButton || builder.dataset.manualSupersetBound === "true") return;
+    builder.dataset.manualSupersetBound = "true";
 
     injectStyles();
 
-    root.addEventListener("click", handleBuilderClick);
+    if (root.dataset?.manualSupersetDelegationBound !== "true") {
+        root.dataset.manualSupersetDelegationBound = "true";
+        root.addEventListener("click", handleBuilderClick);
+    }
 
     saveButton.addEventListener("click", () => {
         preSavePlanIds = new Set(getPlans().map(plan => plan.id));
