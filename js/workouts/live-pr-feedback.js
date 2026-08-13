@@ -162,3 +162,4 @@ if (!document.querySelector('link[data-workout-complete-recap-style]')) {
     document.head.appendChild(recapStyle);
 }
 import("./workout-complete-recap.js?v=workout-complete-recap-2");
+import("./workout-complete-recap-preview.js?v=workout-complete-recap-preview-1");
