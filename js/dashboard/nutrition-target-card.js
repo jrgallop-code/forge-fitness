@@ -5,12 +5,15 @@ import {
     getNutritionPlan
 }
 from "../nutrition/nutrition-storage.js?v=single-calorie-target-1";
+import { getActiveNutritionPhase } from "../nutrition/nutrition-phase.js?v=phase-tolerance-1";
 
 import {
     calculateMacroTargets,
     poundsToKg
 }
 from "../nutrition/tdee-calculator.js?v=single-calorie-target-1";
+
+let listenersBound = false;
 
 const CALORIE_ICON = `
     <svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -26,16 +29,29 @@ const PROTEIN_ICON = `
 `;
 
 export function initializeDashboardNutritionTargets() {
+    renderDashboardNutritionTargets();
+    if (listenersBound) return;
+    listenersBound = true;
+    window.addEventListener("levelup:nutrition-updated", renderDashboardNutritionTargets);
+    window.addEventListener("levelup:nutrition-phase-updated", renderDashboardNutritionTargets);
+}
+
+function renderDashboardNutritionTargets() {
     const dashboard = document.querySelector(".dashboard");
     if (!dashboard) return;
+
+    dashboard.querySelectorAll(".dashboard-nutrition-target-card").forEach(card => card.remove());
 
     const profile = getNutritionProfile();
     const goal = getNutritionGoal();
     const plan = getNutritionPlan();
+    const phase = getActiveNutritionPhase();
 
-    if (!profile || !goal?.goalId || Number(profile.age) < 18) return;
+    if (!profile || (!phase && !goal?.goalId) || Number(profile.age) < 18) return;
 
-    const calories = Number(plan.calculatedCalories);
+    const phaseCalories = Number(phase?.currentCalories ?? phase?.startCalories);
+    const savedCalories = Number(plan.currentCalories ?? plan.calculatedCalories);
+    const calories = Number.isFinite(phaseCalories) && phaseCalories > 0 ? phaseCalories : savedCalories;
     if (!Number.isFinite(calories) || calories <= 0) return;
 
     const macroPreset = getNutritionMacroPreference()?.macroPreset || "balanced";
@@ -51,7 +67,7 @@ export function initializeDashboardNutritionTargets() {
             <div>
                 <h3>Daily Calorie Target</h3>
                 <p>${Math.round(calories)} kcal</p>
-                <small>Calculated Target</small>
+                <small>${phase ? "Active Phase Target" : "Saved Calorie Target"}</small>
             </div>
         </div>
     `;
