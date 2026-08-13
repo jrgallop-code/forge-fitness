@@ -1,0 +1,51 @@
+name: Fix workout complete arm asset
+
+on:
+  push:
+    branches:
+      - agent/bicep-workout-complete-hero
+
+permissions:
+  contents: write
+
+jobs:
+  decode-arm-asset:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/bicep-workout-complete-hero
+          fetch-depth: 0
+
+      - name: Decode and validate WebP
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+
+          path = Path('assets/workout-complete-arm.webp')
+          raw = path.read_text(encoding='ascii').strip()
+          data = base64.b64decode(raw, validate=True)
+
+          assert data[:4] == b'RIFF', 'Missing RIFF signature'
+          assert data[8:12] == b'WEBP', 'Missing WEBP signature'
+          assert int.from_bytes(data[4:8], 'little') + 8 == len(data), 'RIFF size mismatch'
+          assert data[12:16] == b'VP8X', 'Expected extended WebP container'
+          assert data[20] & 0x10, 'Expected alpha/transparency flag'
+
+          width = 1 + int.from_bytes(data[24:27], 'little')
+          height = 1 + int.from_bytes(data[27:30], 'little')
+          assert width == 420 and height == 350, f'Unexpected dimensions: {width}x{height}'
+
+          path.write_bytes(data)
+          print(f'Validated binary transparent WebP: {width}x{height}, {len(data)} bytes')
+          PY
+
+      - name: Commit binary asset and remove one-time workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/workout-complete-arm.webp
+          git rm .github/workflows/fix-workout-complete-arm.yml
+          git commit -m "Store workout complete hero as binary WebP"
+          git push origin HEAD:agent/bicep-workout-complete-hero
