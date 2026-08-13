@@ -28,6 +28,9 @@ import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/work
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-2";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-3";
 import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-drive-backup-1";
+import { getCurrentGoal } from "./current-goal.js?v=current-goal-1";
+
+getCurrentGoal();
 
 export function navigate(page) {
     const content = document.getElementById("content");
@@ -49,7 +52,7 @@ export function navigate(page) {
             case "sleep":
                 content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>Track sleep duration, quality and recovery notes.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
             case "measurements":
-                content.innerHTML = renderMeasurementsTracker(); safeInitialize("Measurements tracker", initializeMeasurementsTracker); safeInitialize("Measurement history detail", initializeMeasurementHistoryDetail); break;
+                content.innerHTML = renderMeasurementsTracker(); safeInitialize("Measurements tracker", initializeMeasurementHistoryDetail); safeInitialize("Measurements tracker", initializeMeasurementsTracker); break;
             case "nutrition":
                 content.innerHTML = renderNutrition(); safeInitialize("Nutrition", initializeNutrition); safeInitialize("Nutrition main view", () => showNutritionView("main")); break;
             case "water":
