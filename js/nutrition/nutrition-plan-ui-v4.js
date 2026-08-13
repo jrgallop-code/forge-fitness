@@ -2,8 +2,11 @@ import { calculateMacroTargets, poundsToKg } from "./tdee-calculator.js?v=phase-
 import { getNutritionProfile, getNutritionMacroPreference, getNutritionPlan, setCurrentCalories } from "./nutrition-storage.js?v=phase-tolerance-1";
 import { getActiveNutritionPhase, getActivePhaseMetrics, saveNutritionPhase } from "./nutrition-phase.js?v=phase-tolerance-1";
 
-const MIN_ADJUSTMENT_KCAL = 100;
-const MAX_ADJUSTMENT_KCAL = 200;
+const FULL_GAP_INCREMENT = 50;
+const FIRST_STEP_FRACTION = 0.5;
+const FIRST_STEP_INCREMENT = 25;
+const REASSESSMENT_DAYS = 21;
+const REASSESSMENT_HOLD_KEY = "level_up_phase_reassessment_hold";
 
 export function initializeNutritionPlanUI() {
     removeLegacyPlanUI();
@@ -30,36 +33,47 @@ function ensureGoalCheckInUI() {
             <p id="goal-check-in-message" class="nutrition-message">Start a nutrition phase and log weight consistently to begin.</p>
             <strong id="goal-check-in-suggested"></strong>
             <div class="nutrition-target-actions">
-                <button id="goal-check-in-apply" class="primary-btn" type="button" hidden>Apply Suggested Target</button>
+                <button id="goal-check-in-apply" class="primary-btn" type="button" hidden>Apply First Adjustment</button>
                 <button id="goal-check-in-keep" class="secondary-btn" type="button">Keep Current Target</button>
             </div>
         </article>`);
     document.getElementById("goal-check-in-keep")?.addEventListener("click", () => {
-        const plan = getNutritionPlan();
-        setText("goal-check-in-message", Number.isFinite(plan.currentCalories) ? `Keep calories at ${plan.currentCalories} kcal/day.` : "No calorie target is saved yet.");
+        const calories = getActiveCalories();
+        setText("goal-check-in-message", Number.isFinite(calories) ? `Keep calories at ${calories} kcal/day.` : "No calorie target is saved yet.");
         hideApply();
     });
 }
 
 function refreshNutritionPlanUI() {
     removeLegacyPlanUI(); ensureGoalCheckInUI();
-    const profile = getNutritionProfile(); const plan = getNutritionPlan();
-    refreshMacrosFromCurrentTarget(profile, plan); refreshGoalCheckIn(plan);
+    const profile = getNutritionProfile();
+    const calories = getActiveCalories();
+    refreshMacrosFromCurrentTarget(profile, calories);
+    refreshGoalCheckIn();
 }
 
-function refreshMacrosFromCurrentTarget(profile, plan) {
-    if (!isAdultProfile(profile) || !Number.isFinite(plan.currentCalories)) return;
+function getActiveCalories() {
+    const phase = getActiveNutritionPhase();
+    const phaseCalories = Number(phase?.currentCalories ?? phase?.startCalories);
+    if (Number.isFinite(phaseCalories) && phaseCalories > 0) return Math.round(phaseCalories);
+    const plan = getNutritionPlan();
+    const planCalories = Number(plan.currentCalories);
+    return Number.isFinite(planCalories) && planCalories > 0 ? Math.round(planCalories) : null;
+}
+
+function refreshMacrosFromCurrentTarget(profile, calories) {
+    if (!isAdultProfile(profile) || !Number.isFinite(calories)) return;
     const macroPreference = getNutritionMacroPreference()?.macroPreset || "balanced";
     const weightLb = Number(profile.weightLb);
     if (!Number.isFinite(weightLb) || weightLb <= 0) return;
-    const macros = calculateMacroTargets({ calories: plan.currentCalories, weightKg: poundsToKg(weightLb), macroPreset: macroPreference });
+    const macros = calculateMacroTargets({ calories, weightKg: poundsToKg(weightLb), macroPreset: macroPreference });
     if (!macros) return;
     setText("nutrition-protein-target", `${macros.protein} g/day`); setText("nutrition-carb-target", `${macros.carbs} g/day`);
     setText("nutrition-fat-target", `${macros.fat} g/day`); setText("nutrition-macro-calories", `${macros.calories} kcal/day`);
-    setText("planner-summary-calories", `${plan.currentCalories} kcal`); setText("planner-summary-protein", `${macros.protein} g`);
+    setText("planner-summary-calories", `${calories} kcal`); setText("planner-summary-protein", `${macros.protein} g`);
 }
 
-function refreshGoalCheckIn(plan) {
+function refreshGoalCheckIn() {
     const phase = getActiveNutritionPhase();
     if (!phase) {
         setText("goal-check-in-status", "NO ACTIVE PHASE"); setText("goal-check-in-confidence", "");
@@ -85,7 +99,7 @@ function refreshGoalCheckIn(plan) {
 
     const actual = Number(metrics.actualRateLbPerWeek);
     const target = Number(metrics.targetRateLbPerWeek);
-    const currentCalories = Number(plan.currentCalories);
+    const currentCalories = getActiveCalories();
 
     if (metrics.status === "PRELIMINARY") {
         setText("goal-check-in-message", `Preliminary phase rate: ${formatRate(actual)}. Level Up waits for at least 14 days and enough weigh-ins before judging the phase.`);
@@ -98,6 +112,13 @@ function refreshGoalCheckIn(plan) {
         setText("goal-check-in-suggested", ""); hideApply(); return;
     }
 
+    const reassessment = getReassessmentWait(phase, currentCalories);
+    if (reassessment) {
+        setText("goal-check-in-message", "The 50% first adjustment is active. Hold the current target long enough to measure the response before making another change.");
+        setText("goal-check-in-suggested", `Current target: ${currentCalories} kcal/day · Reassess in ${reassessment.daysRemaining} day${reassessment.daysRemaining === 1 ? "" : "s"}.`);
+        hideApply(); return;
+    }
+
     if (!metrics.recommendationReady) {
         setText("goal-check-in-message", `Actual: ${formatRate(actual)} · Target: ${formatRate(target)}. The trend is ${statusPhrase(metrics.status)}, but Level Up waits for a full 21-day phase window before suggesting a calorie change.`);
         setText("goal-check-in-suggested", ""); hideApply(); return;
@@ -106,41 +127,65 @@ function refreshGoalCheckIn(plan) {
     if (!Number.isFinite(currentCalories) || !Number.isFinite(target)) { hideApply(); return; }
 
     const recommendation = buildCalorieRecommendation({ actual, target, currentCalories });
-    setText("goal-check-in-message", `Actual: ${formatRate(actual)} · Target: ${formatRate(target)}. The phase is ${statusPhrase(metrics.status)} across the established 21-day window.`);
-    setText("goal-check-in-suggested", `${recommendation.verb} calories by ${recommendation.adjustment} kcal/day → ${recommendation.suggestedCalories} kcal/day. This keeps the same phase and target rate.`);
+    setText("goal-check-in-message", `Actual: ${formatRate(actual)} · Target: ${formatRate(target)}. The full estimated calorie gap is shown below; Level Up applies 50% first, then reassesses the phase trend.`);
+    setText("goal-check-in-suggested", `Estimated target: ${recommendation.estimatedTargetCalories} kcal/day · Gap ${formatSignedCalories(recommendation.fullGapCalories)} kcal/day · First step ${formatSignedCalories(recommendation.firstStepDelta)} kcal/day → ${recommendation.firstStepCalories} kcal/day.`);
 
     const apply = document.getElementById("goal-check-in-apply");
     if (apply) {
         apply.hidden = false;
-        apply.textContent = `${recommendation.verb} ${recommendation.adjustment} kcal/day`;
+        apply.textContent = `Apply ${formatSignedCalories(recommendation.firstStepDelta)} kcal/day`;
         apply.onclick = () => {
-            saveNutritionPhase({ goalId: phase.goalId, maintenanceCalories: phase.maintenanceCalories, targetCalories: recommendation.suggestedCalories });
-            setCurrentCalories(recommendation.suggestedCalories, "Nutrition phase check-in recommendation");
-            setText("goal-check-in-message", `Applied ${recommendation.signedAdjustment} kcal/day. New target: ${recommendation.suggestedCalories} kcal/day. The ${phase.label || "current"} phase start date and target rate are unchanged; reassess after more phase data accumulates.`);
-            setText("goal-check-in-suggested", ""); hideApply();
+            saveNutritionPhase({ goalId: phase.goalId, maintenanceCalories: phase.maintenanceCalories, targetCalories: recommendation.firstStepCalories });
+            setCurrentCalories(recommendation.firstStepCalories, "50% phase calorie-gap adjustment");
+            saveReassessmentHold({ phaseId: phase.id, calories: recommendation.firstStepCalories, estimatedTargetCalories: recommendation.estimatedTargetCalories });
+            setText("goal-check-in-message", `Applied the 50% first step (${formatSignedCalories(recommendation.firstStepDelta)} kcal/day). New target: ${recommendation.firstStepCalories} kcal/day. The ${phase.label || "current"} phase start date and target rate are unchanged.`);
+            setText("goal-check-in-suggested", `Estimated target before reassessment: ${recommendation.estimatedTargetCalories} kcal/day. Hold ${recommendation.firstStepCalories} kcal/day for the next 21-day assessment window.`); hideApply();
         };
     }
 }
 
 function buildCalorieRecommendation({ actual, target, currentCalories }) {
-    const difference = Number(actual) - Number(target);
-    const direction = difference > 0 ? -1 : 1;
-    const adjustment = calculateSuggestedAdjustment(difference);
-    const delta = direction * adjustment;
-    const suggestedCalories = Math.max(1, Math.round(Number(currentCalories) + delta));
-    return {
-        adjustment,
-        delta,
-        suggestedCalories,
-        verb: delta > 0 ? "Increase" : "Decrease",
-        signedAdjustment: `${delta > 0 ? "+" : "−"}${Math.abs(delta)}`
-    };
+    const rawGap = (Number(target) - Number(actual)) * (3500 / 7);
+    let fullGapCalories = Math.round(rawGap / FULL_GAP_INCREMENT) * FULL_GAP_INCREMENT;
+    if (fullGapCalories === 0 && Math.abs(rawGap) > 0.001) fullGapCalories = Math.sign(rawGap) * FULL_GAP_INCREMENT;
+    const estimatedTargetCalories = Math.max(1, Math.round(Number(currentCalories) + fullGapCalories));
+    let firstStepDelta = Math.round((fullGapCalories * FIRST_STEP_FRACTION) / FIRST_STEP_INCREMENT) * FIRST_STEP_INCREMENT;
+    if (firstStepDelta === 0 && fullGapCalories !== 0) firstStepDelta = Math.sign(fullGapCalories) * FIRST_STEP_INCREMENT;
+    const firstStepCalories = Math.max(1, Math.round(Number(currentCalories) + firstStepDelta));
+    return { fullGapCalories, estimatedTargetCalories, firstStepDelta, firstStepCalories };
 }
 
-function calculateSuggestedAdjustment(diffLbPerWeek) {
-    const implied = Math.abs(Number(diffLbPerWeek)) * 3500 / 7;
-    const rounded = Math.round(implied / 50) * 50;
-    return Math.min(MAX_ADJUSTMENT_KCAL, Math.max(MIN_ADJUSTMENT_KCAL, rounded || MIN_ADJUSTMENT_KCAL));
+function saveReassessmentHold({ phaseId, calories, estimatedTargetCalories }) {
+    localStorage.setItem(REASSESSMENT_HOLD_KEY, JSON.stringify({ phaseId, calories, estimatedTargetCalories, appliedAt: new Date().toISOString() }));
+}
+
+function getReassessmentWait(phase, currentCalories) {
+    let hold;
+    try { hold = JSON.parse(localStorage.getItem(REASSESSMENT_HOLD_KEY) || "null"); }
+    catch { hold = null; }
+    if (!hold || hold.phaseId !== phase?.id) return null;
+    if (Math.round(Number(hold.calories)) !== Math.round(Number(currentCalories))) {
+        localStorage.removeItem(REASSESSMENT_HOLD_KEY);
+        return null;
+    }
+    const time = new Date(hold.appliedAt).getTime();
+    if (!Number.isFinite(time)) {
+        localStorage.removeItem(REASSESSMENT_HOLD_KEY);
+        return null;
+    }
+    const daysElapsed = Math.max(0, Math.floor((Date.now() - time) / 86400000));
+    if (daysElapsed >= REASSESSMENT_DAYS) {
+        localStorage.removeItem(REASSESSMENT_HOLD_KEY);
+        return null;
+    }
+    return { daysElapsed, daysRemaining: REASSESSMENT_DAYS - daysElapsed, estimatedTargetCalories: Number(hold.estimatedTargetCalories) || null };
+}
+
+function formatSignedCalories(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return "--";
+    if (Math.abs(number) < 0.5) return "0";
+    return `${number > 0 ? "+" : "−"}${Math.abs(Math.round(number))}`;
 }
 
 function statusPhrase(status) {

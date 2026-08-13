@@ -5,6 +5,7 @@ import {
     getNutritionPlan
 }
 from "./nutrition-storage.js?v=single-calorie-target-1";
+import { getActiveNutritionPhase } from "./nutrition-phase.js?v=phase-tolerance-1";
 
 import {
     calculateMacroTargets,
@@ -14,16 +15,19 @@ from "./tdee-calculator.js?v=single-calorie-target-1";
 
 function setText(id, value) {
     const el = document.getElementById(id);
-    if (el) el.textContent = value;
+    if (el && el.textContent !== value) el.textContent = value;
 }
 
 function syncActivePlanDisplays() {
     const profile = getNutritionProfile();
     const goal = getNutritionGoal();
     const plan = getNutritionPlan();
-    const calories = Number(plan.calculatedCalories);
+    const phase = getActiveNutritionPhase();
+    const phaseCalories = Number(phase?.currentCalories ?? phase?.startCalories);
+    const savedCalories = Number(plan.calculatedCalories);
+    const calories = Number.isFinite(phaseCalories) && phaseCalories > 0 ? phaseCalories : savedCalories;
 
-    if (!profile || !goal?.goalId || !Number.isFinite(calories) || calories <= 0) {
+    if (!profile || (!phase && !goal?.goalId) || !Number.isFinite(calories) || calories <= 0) {
         return;
     }
 
@@ -52,6 +56,10 @@ document.addEventListener("click", () => {
 });
 
 window.addEventListener("levelup:nutrition-updated", () => {
+    setTimeout(syncActivePlanDisplays, 0);
+});
+
+window.addEventListener("levelup:nutrition-phase-updated", () => {
     setTimeout(syncActivePlanDisplays, 0);
 });
 
