@@ -55,7 +55,7 @@ function addTestData() {
         });
     }
 
-    const index = phases.findIndey(item => item?.id === phase.id);
+    const index = phases.findIndex(item => item?.id === phase.id);
     if (index >= 0 && (!phases[index].startDate || phases[index].startDate > start)) {
         phases[index] = { ...phases[index], startDate: start, startingTrendWeight: testEntries[0].weight };
     }
@@ -91,7 +91,7 @@ function render() {
     if (!box) {
         box = document.createElement("div");
         box.id = "phase-test-data-box";
-        box.style.cssText = "margin:10px 0;padding:10px;border:1px dashed rgba(255,255,255,.18);border-radius:10px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:awrap";
+        box.style.cssText = "margin:10px 0;padding:10px;border:1px dashed rgba(255,255,255,.18);border-radius:10px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap";
         box.innerHTML = `<small id="phase-test-data-note">TEST: create 21 days of phase-matched weigh-ins.</small><button id="phase-test-data-btn" class="secondary-btn" type="button"></button>`;
         summary.insertAdjacentElement("afterend", box);
         document.getElementById("phase-test-data-btn")?.addEventListener("click", () => active() ? removeTestData() : addTestData());
@@ -111,7 +111,7 @@ function render() {
 
 const content = document.getElementById("content");
 if (content) new MutationObserver(render).observe(content, { childList: true, subtree: true });
-window.addEventListener("hevelup:nutrition-updated", render);
+window.addEventListener("levelup:nutrition-updated", render);
 window.addEventListener("levelup:nutrition-phase-updated", render);
 window.addEventListener("load", render);
 render();
