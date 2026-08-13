@@ -1,0 +1,148 @@
+name: Current Goal integration
+
+on:
+  push:
+    branches:
+      - "agent/current-goal-consolidation"
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/current-goal-consolidation
+          fetch-depth: 0
+
+      - name: Wire Current Goal into live app
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"Expected 1 match in {path}, found {count}: {old[:120]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          router = "js/core/router.js"
+          replace_once(router,
+              'import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-progress-immediate-1";',
+              'import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=current-goal-1";')
+          replace_once(router,
+              'import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=goals-flow-3";',
+              'import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1";')
+          replace_once(router,
+              'import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=unified-goals-2";',
+              'import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=current-goal-1";')
+          replace_once(router,
+              'import { renderGoalProjection, initializeGoalProjection } from "../nutrition/goal-projection.js?v=selected-target-projection-4";\n',
+              '')
+          replace_once(router,
+              '                content.innerHTML = renderEnergyProfile() + `<div class="nutrition-planner-view nutrition-projection-view" data-planner-view="projection" hidden><button class="nutrition-planner-back" type="button" data-nutrition-back>← Calorie Planner</button>${renderGoalProjection()}</div>`; safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Goal projection", initializeGoalProjection); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); break;',
+              '                content.innerHTML = renderEnergyProfile(); safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); break;')
+
+          replace_once("js/app.js",
+              'import { navigate } from "./core/router.js?v=smart-build-exercise-range-1";',
+              'import { navigate } from "./core/router.js?v=current-goal-1";')
+
+          index = "index.html"
+          replace_once(index,
+              '<link rel="stylesheet" href="css/nutrition-phases.css?v=nutrition-phases-1">',
+              '')
+          replace_once(index,
+              '<link rel="stylesheet" href="css/superset-runtime.css?v=superset-runtime-1">',
+              '<link rel="stylesheet" href="css/superset-runtime.css?v=superset-runtime-1"><link rel="stylesheet" href="css/current-goal.css?v=current-goal-1">')
+          replace_once(index,
+              'js/app.js?v=level-up-214-smart-build-exercise-range',
+              'js/app.js?v=level-up-215-current-goal')
+          replace_once(index,
+              '<script type="module" src="js/nutrition/nutrition-phases-bootstrap.js?v=nutrition-phases-bootstrap-1"></script>',
+              '')
+          replace_once(index,
+              '<script type="module" src="js/nutrition/nutrition-phases-v2.js?v=nutrition-phases-regression-2"></script>',
+              '')
+          replace_once(index,
+              '<script type="module" src="js/nutrition/adaptive-weight-trend-sync.js?v=adaptive-weight-trend-regression-2"></script>',
+              '')
+          replace_once(index,
+              'js/progress/weight-progress-compact.js?v=weight-trend-regression-1',
+              'js/progress/weight-progress-compact.js?v=current-goal-1')
+
+          tracker = "js/progress/weight-tracker.js"
+          replace_once(tracker,
+              'const WEIGHT_STORAGE_KEY =\n    "forge_weight_entries";',
+              'import { calculateWeightTrend } from "../core/weight-trend.js?v=current-goal-1";\n\nconst WEIGHT_STORAGE_KEY =\n    "forge_weight_entries";')
+          replace_once(tracker,
+              '    const actualWeeklyChange =\n        calculateActualWeeklyChange(\n            movingAverage\n        );',
+              '    const actualWeeklyChange =\n        calculateWeightTrend(entries).weeklyChange;')
+
+          goal = "js/core/current-goal.js"
+          replace_once(goal,
+              '    const status = calculateStatus(goal, phaseTrend, actualRatePctPerWeek, goalReached);',
+              '    const status = calculateStatus(goal, phaseTrend, actualRatePctPerWeek, goalReached, trendWeight);')
+          replace_once(goal,
+              '''function calculateStatus(goal, trend, actualPct, goalReached) {
+    if (goalReached) return "GOAL REACHED";
+    if (trend?.status !== "actual" || !Number.isFinite(actualPct)) return "CALIBRATING";
+    if (goal.type === "maintenance") {
+        if (Math.abs(actualPct) <= 0.15) return "MAINTAINING";
+        return actualPct > 0 ? "TRENDING ABOVE TARGET" : "TRENDING BELOW TARGET";
+    }''',
+              '''function calculateStatus(goal, trend, actualPct, goalReached, trendWeight) {
+    if (goalReached) return "GOAL REACHED";
+    if (trend?.status !== "actual" || !Number.isFinite(actualPct)) return "CALIBRATING";
+    if (goal.type === "maintenance") {
+        const targetWeight = Number(goal.targetWeight);
+        const zone = Number.isFinite(targetWeight) ? Math.max(1, targetWeight * 0.01) : 1;
+        if (Number.isFinite(trendWeight) && Number.isFinite(targetWeight)) {
+            if (trendWeight > targetWeight + zone && actualPct >= -0.05) return "TRENDING ABOVE TARGET";
+            if (trendWeight < targetWeight - zone && actualPct <= 0.05) return "TRENDING BELOW TARGET";
+            if (Math.abs(trendWeight - targetWeight) <= zone && Math.abs(actualPct) <= 0.15) return "MAINTAINING";
+        }
+        return actualPct > 0 ? "TRENDING ABOVE TARGET" : actualPct < 0 ? "TRENDING BELOW TARGET" : "MAINTAINING";
+    }''')
+          PY
+
+      - name: Validate syntax and consolidation guardrails
+        run: |
+          node --check js/core/current-goal.js
+          node --check js/progress/weight-progress-compact.js
+          node --check js/progress/weight-tracker.js
+          node --check js/nutrition/unified-goals-calories.js
+          node --check js/nutrition/nutrition-plan-ui-v4.js
+          node --check js/core/router.js
+          node --check js/app.js
+          python - <<'PY'
+          from pathlib import Path
+          index = Path('index.html').read_text()
+          router = Path('js/core/router.js').read_text()
+          tracker = Path('js/progress/weight-tracker.js').read_text()
+          goal = Path('js/core/current-goal.js').read_text()
+          assert 'level_up_current_goal' in goal
+          assert 'calculateWeightTrend(entries).weeklyChange' in tracker
+          assert 'goal-projection.js' not in router
+          assert 'renderGoalProjection' not in router
+          assert 'nutrition-phases-bootstrap.js' not in index
+          assert 'nutrition-phases-v2.js' not in index
+          assert 'adaptive-weight-trend-sync.js' not in index
+          assert 'css/current-goal.css?v=current-goal-1' in index
+          assert 'weight-progress-compact.js?v=current-goal-1' in index
+          assert 'js/app.js?v=level-up-215-current-goal' in index
+          print('Current Goal consolidation guardrails validated')
+          PY
+          git diff --check
+
+      - name: Commit integration wiring
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/core/current-goal.js js/core/router.js js/app.js js/progress/weight-tracker.js index.html
+          git commit -m "Wire Current Goal into live app"
+          git push origin HEAD:agent/current-goal-consolidation
