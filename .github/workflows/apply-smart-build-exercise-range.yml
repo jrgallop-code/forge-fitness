@@ -1,0 +1,173 @@
+name: Apply Smart Build exercise range
+
+on:
+  push:
+    branches:
+      - agent/smart-build-exercise-range
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/smart-build-exercise-range
+          fetch-depth: 0
+
+      - name: Patch Smart Build logic
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"Expected exactly one match in {path}, found {count}: {old[:100]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          path = "js/workouts/smart-build.js"
+
+          replace_once(
+              path,
+              'For ${state.duration===90?"90+":state.duration}-minute sessions, Smart Build generally aims for ${range.min}–${range.max} exercises. Extra weekly volume is distributed across days or added to existing movements before adding unnecessary exercises.',
+              'For ${state.duration===90?"90+":state.duration}-minute sessions, Smart Build targets about ${range.target} exercises, with a 4-exercise floor and an 8-exercise hard cap. Weekly volume is redistributed across movements first so variety improves without padding the session.'
+          )
+          replace_once(
+              path,
+              'Volume targets remain the programming priority. Exercise count is a practical session constraint, not the goal.',
+              'Most sessions should land around 5–7 exercises when time and weekly volume allow; shorter or lower-volume days can settle at 4.'
+          )
+          replace_once(
+              path,
+              'function sessionExerciseRange(){if(state.duration<=30)return{min:3,max:5};if(state.duration<=45)return{min:4,max:6};if(state.duration<=60)return{min:5,max:7};return{min:6,max:8};}\nfunction sessionHardCap(){return Math.min(10,sessionExerciseRange().max+1);}',
+              'function sessionExerciseRange(){if(state.duration<=30)return{min:4,target:5,max:5};if(state.duration<=45)return{min:4,target:5,max:6};if(state.duration<=60)return{min:4,target:6,max:7};return{min:4,target:7,max:8};}\nfunction sessionHardCap(){return 8;}'
+          )
+          replace_once(
+              path,
+              '''      const existingForMuscle=day.exercises.filter(x=>x.muscleGroup===muscle).sort((a,b)=>a.sets-b.sets)[0];
+      if(existingForMuscle&&existingForMuscle.sets<4){const add=Math.min(4-existingForMuscle.sets,maxDirectSetsPerMuscleSession()-muscleSets,remaining);existingForMuscle.sets+=add;remaining-=add;cursor+=1;continue;}
+      const normalCap=sessionExerciseRange().max,hardCap=sessionHardCap();
+      const canAdd=day.exercises.length<normalCap||(state.priorities.includes(muscle)&&day.exercises.length<hardCap);
+      if(!canAdd){cursor+=1;if(eligible.every(i=>days[i].exercises.length>=normalCap))break;continue;}''',
+              '''      const existingForMuscle=day.exercises.filter(x=>x.muscleGroup===muscle).sort((a,b)=>a.sets-b.sets)[0];
+      const setCeiling=day.exercises.length<sessionExerciseRange().target?3:4;
+      if(existingForMuscle&&existingForMuscle.sets<setCeiling){const add=Math.min(setCeiling-existingForMuscle.sets,maxDirectSetsPerMuscleSession()-muscleSets,remaining);existingForMuscle.sets+=add;remaining-=add;cursor+=1;continue;}
+      const normalCap=sessionExerciseRange().max;
+      const canAdd=day.exercises.length<normalCap;
+      if(!canAdd){
+        const receiver=day.exercises.filter(x=>x.muscleGroup===muscle&&x.sets<6).sort((a,b)=>a.sets-b.sets)[0];
+        if(receiver){const add=Math.min(6-receiver.sets,maxDirectSetsPerMuscleSession()-muscleSets,remaining);if(add>0){receiver.sets+=add;remaining-=add;cursor+=1;continue;}}
+        cursor+=1;if(eligible.every(i=>days[i].exercises.length>=normalCap))break;continue;
+      }'''
+          )
+          replace_once(
+              path,
+              '''  days.forEach(day=>{consolidateSession(day);day.exercises=sortExercises(day.exercises);fitSessionTime(day);});
+  validateGeneratedProgram(days,preferred);
+  days.forEach(day=>{day.exercises=sortExercises(day.exercises);if(state.supersets)assignSupersets(day);});''',
+              '''  days.forEach(day=>{consolidateSession(day);day.exercises=sortExercises(day.exercises);});
+  validateGeneratedProgram(days,preferred);
+  ensureSessionVariety(days,preferred);
+  days.forEach(day=>{consolidateSession(day);day.exercises=sortExercises(day.exercises);fitSessionTime(day);day.exercises=sortExercises(day.exercises);if(state.supersets)assignSupersets(day);});'''
+          )
+          replace_once(
+              path,
+              '''function dayMuscleSets(day,muscle){return day.exercises.filter(x=>x.muscleGroup===muscle).reduce((s,x)=>s+(Number(x.sets)||0),0);}
+function consolidateSession(day){''',
+              '''function dayMuscleSets(day,muscle){return day.exercises.filter(x=>x.muscleGroup===muscle).reduce((s,x)=>s+(Number(x.sets)||0),0);}
+function ensureSessionVariety(days,preferred){
+  const range=sessionExerciseRange();
+  days.forEach((day,dayIndex)=>{
+    while(day.exercises.length<range.target&&day.exercises.length<range.max){
+      if(!redistributeSetsForVariety(days,day,preferred,dayIndex))break;
+    }
+    while(day.exercises.length<range.min&&day.exercises.length<sessionHardCap()){
+      if(redistributeSetsForVariety(days,day,preferred,dayIndex))continue;
+      if(!addMinimumVarietyExercise(days,day,preferred,dayIndex))break;
+    }
+  });
+}
+function redistributeSetsForVariety(days,day,preferred,dayIndex){
+  if(day.exercises.length>=sessionHardCap())return false;
+  const usedIds=day.exercises.map(x=>x.id);
+  const muscles=[...day.muscles].sort((a,b)=>day.exercises.filter(x=>x.muscleGroup===a).length-day.exercises.filter(x=>x.muscleGroup===b).length||Number(state.priorities.includes(b))-Number(state.priorities.includes(a))||transferableSets(days,b)-transferableSets(days,a));
+  for(const muscle of muscles){
+    if(dayMuscleSets(day,muscle)+2>maxDirectSetsPerMuscleSession())continue;
+    const def=chooseVarietyExerciseForMuscle(muscle,preferred,dayIndex,usedIds);if(!def)continue;
+    const donors=[];
+    days.forEach(source=>source.exercises.forEach(item=>{if(item.muscleGroup===muscle&&item.sets>2)donors.push({source,item,available:item.sets-2});}));
+    donors.sort((a,b)=>Number(b.source===day)-Number(a.source===day)||Number(belongsToProtectedCompound(exerciseMap().get(a.item.id)))-Number(belongsToProtectedCompound(exerciseMap().get(b.item.id))||b.available-a.available));
+    if(donors.reduce((sum,donor)=>sum+donor.available,0)<2)continue;
+    let need=2;
+    for(const donor of donors){const take=Math.min(need,donor.available);donor.item.sets-=take;need-=take;if(!need)break;}
+    day.exercises.push({id:def.id,name:def.name,sets:2,reps:repRangeFor(def),muscleGroup:muscle});
+    return true;
+  }
+  return false;
+}
+function transferableSets(days,muscle){return days.reduce((sum,day)=>sum+day.exercises.filter(x=>x.muscleGroup===muscle).reduce((s,x)=>s+Math.max(0,(Number(x.sets)||0)-2),0),0);}
+function addMinimumVarietyExercise(days,day,preferred,dayIndex){
+  const targets=getVolumeTargets(),totals=Object.fromEntries(MUSCLES.map(m=>[m,0]));
+  days.forEach(source=>source.exercises.forEach(item=>{if(totals[item.muscleGroup]!==undefined)totals[item.muscleGroup]+=Number(item.sets)||0;}));
+  const usedIds=day.exercises.map(x=>x.id);
+  const choices=day.muscles.map(muscle=>{
+    if(dayMuscleSets(day,muscle)+2>maxDirectSetsPerMuscleSession())return null;
+    const def=chooseVarietyExerciseForMuscle(muscle,preferred,dayIndex,usedIds);if(!def)return null;
+    return{muscle,def,movementCount:day.exercises.filter(x=>x.muscleGroup===muscle).length,over:(totals[muscle]||0)-(targets[muscle]||0)};
+  }).filter(Boolean).sort((a,b)=>a.movementCount-b.movementCount||a.over-b.over||Number(state.priorities.includes(a.muscle))-Number(state.priorities.includes(b.muscle))||deterministicNoise(a.def.id,dayIndex)-deterministicNoise(b.def.id,dayIndex));
+  const choice=choices[0];if(!choice)return false;
+  day.exercises.push({id:choice.def.id,name:choice.def.name,sets:2,reps:repRangeFor(choice.def),muscleGroup:choice.muscle});
+  return true;
+}
+function chooseVarietyExerciseForMuscle(muscle,preferred,dayIndex,forbidden=[]){const blocked=new Set(forbidden);const pool=availableExercises().filter(e=>e.muscleGroup===muscle&&!blocked.has(e.id));if(!pool.length)return null;return pool.map(e=>{let score=0;if(preferred.has(e.id))score+=100;if(e.type==="isolation")score+=16;if(!belongsToProtectedCompound(e))score+=8;score+=deterministicNoise(e.id,dayIndex+state.variation);return{e,score};}).sort((a,b)=>b.score-a.score)[0]?.e||null;}
+function consolidateSession(day){'''
+          )
+          replace_once(path, 'smartBuild:{version:7,', 'smartBuild:{version:8,')
+
+          replace_once(
+              "js/core/router.js",
+              'import { initializeSmartBuild } from "../workouts/smart-build.js?v=smart-build-clean-1";',
+              'import { initializeSmartBuild } from "../workouts/smart-build.js?v=smart-build-exercise-range-1";'
+          )
+          replace_once(
+              "js/app.js",
+              'import { navigate } from "./core/router.js?v=smart-build-clean-2";',
+              'import { navigate } from "./core/router.js?v=smart-build-exercise-range-1";'
+          )
+          replace_once(
+              "index.html",
+              'js/app.js?v=level-up-213-smart-build-clean',
+              'js/app.js?v=level-up-214-smart-build-exercise-range'
+          )
+          PY
+
+      - name: Validate syntax and guardrails
+        run: |
+          node --check js/workouts/smart-build.js
+          node --check js/core/router.js
+          node --check js/app.js
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('js/workouts/smart-build.js').read_text()
+          assert 'function sessionHardCap(){return 8;}' in text
+          assert 'return{min:4,target:5,max:5}' in text
+          assert 'return{min:4,target:7,max:8}' in text
+          assert 'ensureSessionVariety(days,preferred);' in text
+          assert 'smartBuild:{version:8,' in text
+          print('Smart Build range guardrails validated')
+          PY
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/workouts/smart-build.js js/core/router.js js/app.js index.html
+          git diff --cached --check
+          git commit -m "Balance Smart Build exercise variety"
+          git push origin HEAD:agent/smart-build-exercise-range
