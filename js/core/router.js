@@ -52,7 +52,7 @@ export function navigate(page) {
             case "sleep":
                 content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>Track sleep duration, quality and recovery notes.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
             case "measurements":
-                content.innerHTML = renderMeasurementsTracker(); safeInitialize("Measurements tracker", initializeMeasurementHistoryDetail); safeInitialize("Measurements tracker", initializeMeasurementsTracker); break;
+                content.innerHTML = renderMeasurementsTracker(); safeInitialize("Measurements tracker", initializeMeasurementsTracker); safeInitialize("Measurement history detail", initializeMeasurementHistoryDetail); break;
             case "nutrition":
                 content.innerHTML = renderNutrition(); safeInitialize("Nutrition", initializeNutrition); safeInitialize("Nutrition main view", () => showNutritionView("main")); break;
             case "water":
