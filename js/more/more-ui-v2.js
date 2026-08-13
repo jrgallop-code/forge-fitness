@@ -5,6 +5,7 @@ import { initializeGoogleDriveSync } from "../core/google-drive-sync-v2.js?v=vis
 import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-card-1";
 
 const ICONS = {
+    profile: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c4.4 0 8 2.3 8 5.2V21H4v-2.8C4 15.3 7.6 13 12 13Zm-5.9 6h11.8v-.8c0-1.3-2.4-3.2-5.9-3.2s-5.9 1.9-5.9 3.2v.8Z"/></svg>',
     history: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 1-7.2 4.5H2l3.6-3.6L9.2 8.5H6.8A6 6 0 1 0 12 6v3l2.8 1.7-1 1.7L10 10V4h2Z"/></svg>',
     water: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2s6 6.7 6 12a6 6 0 1 1-12 0c0-5.3 6-12 6-12Zm0 16a4 4 0 0 0 4-4c0-2.4-2.2-5.7-4-7.9-1.8 2.2-4 5.5-4 7.9a4 4 0 0 0 4 4Z"/></svg>',
     nutrition: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21C7.6 18.7 5 15.4 5 11.8 5 8 7.7 5 11.2 5c.5 0 1 .1 1.5.2C14 3.3 16.2 2 19 2c0 2.8-1.3 5-3.3 6.3.2.5.3 1 .3 1.5 0 4.6-3.4 8.6-4 11.2Z"/></svg>',
@@ -17,6 +18,7 @@ const ICONS = {
 export function renderMore() {
     return `<section class="dashboard-welcome"><div><span class="eyebrow">TOOLS & TRACKERS</span><h2>More</h2><p>Open a focused tool without scrolling through a long page.</p></div></section>
     <section class="more-menu-grid" aria-label="More tools">
+    <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Update Goals & Profile</strong><small>Review your goal, profile, training availability, priorities and exercise preferences.</small></span><span class="more-menu-arrow">›</span></button>
     <button class="more-menu-card" type="button" data-more-page="history"><span class="more-menu-icon">${ICONS.history}</span><span><strong>Workout History</strong><small>Review completed workouts, summaries and training details.</small></span><span class="more-menu-arrow">›</span></button>
     <button class="more-menu-card" type="button" data-more-page="bmi"><span class="more-menu-icon">${ICONS.bmi}</span><span><strong>BMI</strong><small>View BMI calculated from your Body Profile height and weight.</small></span><span class="more-menu-arrow">›</span></button>
     <button class="more-menu-card" type="button" data-more-page="sleep"><span class="more-menu-icon">${ICONS.sleep}</span><span><strong>Sleep</strong><small>Track sleep duration, quality and recovery notes.</small></span><span class="more-menu-arrow">›</span></button>
@@ -30,6 +32,10 @@ export function renderMore() {
 export function initializeMore() {
     document.querySelectorAll("[data-more-page]").forEach(button => button.addEventListener("click", () => {
         const page = button.dataset.morePage;
+        if (page === "profile-setup") {
+            document.dispatchEvent(new CustomEvent("levelup:open-profile-setup"));
+            return;
+        }
         if (page === "bmi") {
             const content = document.getElementById("content");
             if (!content) return;
