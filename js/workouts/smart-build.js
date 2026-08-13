@@ -1,4 +1,5 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
+import { getTrainingPreferences } from "../core/training-preferences.js?v=onboarding-1";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 const MUSCLES = ["Chest","Back","Shoulders","Biceps","Triceps","Quads","Hamstrings","Glutes","Calves"];
@@ -28,7 +29,16 @@ export function initializeSmartBuild(root=document){
     root.addEventListener("click",e=>handleClick(root,e)); root.addEventListener("change",e=>handleChange(root,e)); root.addEventListener("input",e=>handleInput(root,e));
   }
 }
-function freshState(){return{step:0,goal:"muscle",days:4,duration:60,priorities:[],experience:"intermediate",equipment:["Full Gym"],preferredIds:[],excludedIds:[],supersets:true,variation:0,generated:null};}
+function freshState(){
+  const prefs=getTrainingPreferences();
+  const goalMap={build_muscle:"muscle",build_strength:"strength",maintain_muscle:"maintain",lose_fat_maintain_muscle:"maintain"};
+  const experienceMap={new:"beginner",intermediate:"intermediate",experienced:"advanced",advanced:"advanced"};
+  const days=[2,3,4,5,6].includes(Number(prefs.days))?Number(prefs.days):4;
+  const duration=[30,45,60,75,90].includes(Number(prefs.duration))?Number(prefs.duration):60;
+  const priorities=(Array.isArray(prefs.priorities)?prefs.priorities:[]).filter(muscle=>MUSCLES.includes(muscle)).slice(0,3);
+  const excludedIds=Array.isArray(prefs.excludedIds)?[...prefs.excludedIds]:[];
+  return{step:0,goal:goalMap[prefs.primaryGoal]||"muscle",days,duration,priorities,experience:experienceMap[prefs.experience]||"intermediate",equipment:["Full Gym"],preferredIds:[],excludedIds,supersets:true,variation:0,generated:null};
+}
 function resetState(){Object.assign(state,freshState());}
 function handleClick(root,event){
   const button=event.target.closest?.("button"); if(!button||!root.contains(button))return;

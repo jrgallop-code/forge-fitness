@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=cardio-fields-1";
+import { navigate } from "../core/router.js?v=first-run-onboarding-1";
 
 
 export function renderNavbar() {
