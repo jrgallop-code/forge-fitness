@@ -86,7 +86,7 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase()) {
         ? referenceWeight * BODYWEIGHT_TOLERANCE_PCT
         : DEFAULT_TOLERANCE_LB;
     const targetTolerance = Number.isFinite(target) ? Math.abs(target) * TARGET_TOLERANCE_FRACTION : 0;
-    const tolerance = Math.max(DEFAULT_TOLERANCE_LB, bodyweightTolerance, targetTolerance);
+    const tolerance = Math.max(bodyweightTolerance, targetTolerance);
 
     if (trend.status === "insufficient" || !Number.isFinite(actual)) {
         return buildMetrics("NEED MORE PHASE DATA", trend, actual, target, tolerance, referenceWeight, false);
