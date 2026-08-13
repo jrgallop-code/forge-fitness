@@ -29,16 +29,34 @@ jobs:
 
           assert data[:4] == b'RIFF', 'Missing RIFF signature'
           assert data[8:12] == b'WEBP', 'Missing WEBP signature'
-          assert int.from_bytes(data[4:8], 'little') + 8 == len(data), 'RIFF size mismatch'
-          assert data[12:16] == b'VP8X', 'Expected extended WebP container'
-          assert data[20] & 0x10, 'Expected alpha/transparency flag'
+          declared_size = int.from_bytes(data[4:8], 'little') + 8
+          print(f'Decoded payload bytes: {len(data)}; declared WebP bytes: {declared_size}')
+          assert 12 <= declared_size <= len(data), 'Invalid RIFF declared size'
+          webp = data[:declared_size]
 
-          width = 1 + int.from_bytes(data[24:27], 'little')
-          height = 1 + int.from_bytes(data[27:30], 'little')
+          assert webp[12:16] == b'VP8X', 'Expected extended WebP container'
+          assert webp[20] & 0x10, 'Expected alpha/transparency flag'
+          width = 1 + int.from_bytes(webp[24:27], 'little')
+          height = 1 + int.from_bytes(webp[27:30], 'little')
           assert width == 420 and height == 350, f'Unexpected dimensions: {width}x{height}'
 
-          path.write_bytes(data)
-          print(f'Validated binary transparent WebP: {width}x{height}, {len(data)} bytes')
+          pos = 12
+          chunks = []
+          while pos < len(webp):
+            assert pos + 8 <= len(webp), f'Truncated chunk header at {pos}'
+            fourcc = webp[pos:pos+4].decode('ascii', errors='strict')
+            size = int.from_bytes(webp[pos+4:pos+8], 'little')
+            data_end = pos + 8 + size
+            assert data_end <= len(webp), f'Truncated {fourcc} chunk'
+            chunks.append(fourcc)
+            pos = data_end + (size & 1)
+          assert pos == len(webp), 'WebP chunk alignment mismatch'
+          assert any(chunk in chunks for chunk in ('ALPH', 'VP8L')), 'No alpha-bearing WebP chunk found'
+
+          trailing = len(data) - declared_size
+          print(f'Validated chunks: {chunks}; trailing decoded bytes ignored: {trailing}')
+          path.write_bytes(webp)
+          print(f'Validated binary transparent WebP: {width}x{height}, {len(webp)} bytes')
           PY
 
       - name: Commit binary asset and remove one-time workflow
