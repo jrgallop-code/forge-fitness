@@ -86,7 +86,7 @@ function chooseExercise(id,mode){if(mode==="prefer"){state.excludedIds=state.exc
 function renderExerciseResults(root,q,mode){const host=root.querySelector(mode==="prefer"?"[data-preferred-results]":"[data-avoid-results]");if(!host)return;const term=String(q||"").trim().toLowerCase();const results=getAllExercises().filter(e=>e.trackingType!=="notes").filter(e=>!term||[e.name,e.muscleGroup,e.equipment].some(v=>String(v||"").toLowerCase().includes(term))).sort((a,b)=>String(a.muscleGroup).localeCompare(String(b.muscleGroup))||String(a.name).localeCompare(String(b.name))).slice(0,40);host.innerHTML=results.length?results.map(e=>`<div class="smart-search-row"><div><strong>${escapeHtml(e.name)}</strong><small>${escapeHtml(e.muscleGroup)} · ${escapeHtml(e.equipment)}</small></div><button type="button" ${mode==="prefer"?`data-prefer-id="${escapeHtml(e.id)}"`:`data-exclude-id="${escapeHtml(e.id)}"`}>${mode==="prefer"?"Prefer":"Avoid"}</button></div>`).join(""):`<p class="smart-helper">No matching exercises.</p>`;}
 function renderSelectedExercises(ids,type){const map=exerciseMap();return ids.length?ids.map(id=>`<button type="button" class="smart-selected-chip" data-remove-${type}="${escapeHtml(id)}">${escapeHtml(map.get(id)?.name||id)} ×</button>`).join(""):`<small>None selected</small>`;}
 function getVolumeTargets(){const exp={beginner:0,intermediate:1,advanced:2}[state.experience]??1,base={muscle:[8,10,12],strength:[5,6,7],hybrid:[7,9,10],maintain:[4,5,6]}[state.goal][exp],boost={muscle:[3,4,4],strength:[2,2,3],hybrid:[3,3,4],maintain:[1,1,2]}[state.goal][exp];return Object.fromEntries(MUSCLES.map(m=>[m,Math.min(18,base+(state.priorities.includes(m)?boost:0))]));}
-function sessionExerciseRange(){if(state.duration<=30)return{min:4,target:5,max:5};if(state.duration<=45)return{min:4,target:5,max:6};if(state.duration<=60)return{min:4,target:6,max:7};return{min:4,target:7,max:8};}
+function sessionExerciseRange(){if(state.duration<=30)return{min:4,target:4,max:5};if(state.duration<=45)return{min:4,target:5,max:6};if(state.duration<=60)return{min:4,target:6,max:7};return{min:4,target:7,max:8};}
 function sessionHardCap(){return 8;}
 function maxDirectSetsPerMuscleSession(){return 8;}
 
@@ -149,7 +149,7 @@ function redistributeSetsForVariety(days,day,preferred,dayIndex){
     const def=chooseVarietyExerciseForMuscle(muscle,preferred,dayIndex,usedIds);if(!def)continue;
     const donors=[];
     days.forEach(source=>source.exercises.forEach(item=>{if(item.muscleGroup===muscle&&item.sets>2)donors.push({source,item,available:item.sets-2});}));
-    donors.sort((a,b)=>Number(b.source===day)-Number(a.source===day)||Number(belongsToProtectedCompound(exerciseMap().get(a.item.id)))-Number(belongsToProtectedCompound(exerciseMap().get(b.item.id))||b.available-a.available));
+    donors.sort((a,b)=>Number(b.source===day)-Number(a.source===day)||Number(belongsToProtectedCompound(exerciseMap().get(a.item.id)))-Number(belongsToProtectedCompound(exerciseMap().get(b.item.id)))||b.available-a.available);
     if(donors.reduce((sum,donor)=>sum+donor.available,0)<2)continue;
     let need=2;
     for(const donor of donors){const take=Math.min(need,donor.available);donor.item.sets-=take;need-=take;if(!need)break;}
@@ -204,7 +204,7 @@ function ensureDayCategory(day,muscles,preferred,dayIndex){
   const candidates=muscles.map(m=>chooseExerciseForMuscle(m,[],preferred,dayIndex,dayExerciseIds)).filter(Boolean);
   const def=candidates[0];if(!def)return;
   const newItem={id:def.id,name:def.name,sets:def.type==="compound"?3:2,reps:repRangeFor(def),muscleGroup:def.muscleGroup};
-  if(day.exercises.length<sessionHardCap()){day.exercises.push(newItem);return;}
+  if(day.exercises.length<sessionExerciseRange().max){day.exercises.push(newItem);return;}
   const counts=day.exercises.reduce((map,x)=>(map[x.muscleGroup]=(map[x.muscleGroup]||0)+1,map),{});
   const replaceIndex=day.exercises.findIndex(x=>!state.priorities.includes(x.muscleGroup)&&(counts[x.muscleGroup]||0)>1&&!belongsToProtectedCompound(exerciseMap().get(x.id)));
   if(replaceIndex>=0)day.exercises.splice(replaceIndex,1,newItem);
