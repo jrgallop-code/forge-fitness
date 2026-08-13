@@ -1,4 +1,5 @@
 import { initializeUnifiedGoalsCalories } from "./unified-goals-calories.js?v=calorie-goal-presets-2";
+import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
 
 function ensureCalorieGoalSelector() {
     const view = document.querySelector('[data-planner-view="goals"]');
@@ -7,9 +8,20 @@ function ensureCalorieGoalSelector() {
     view.dataset.calorieGoalPresetFix = "1";
 }
 
+function ensureWeightOnlyUi() {
+    if (!document.getElementById("weight-progress")) return;
+    initializeWeightProgressCompact();
+}
+
 function scheduleRefresh() {
-    window.setTimeout(ensureCalorieGoalSelector, 0);
-    window.setTimeout(ensureCalorieGoalSelector, 120);
+    window.setTimeout(() => {
+        ensureCalorieGoalSelector();
+        ensureWeightOnlyUi();
+    }, 0);
+    window.setTimeout(() => {
+        ensureCalorieGoalSelector();
+        ensureWeightOnlyUi();
+    }, 120);
 }
 
 document.addEventListener("click", event => {
@@ -22,6 +34,11 @@ document.addEventListener("click", event => {
     }
     scheduleRefresh();
 }, true);
+
+const content = document.getElementById("content");
+if (content) {
+    new MutationObserver(scheduleRefresh).observe(content, { childList: true, subtree: true });
+}
 
 window.addEventListener("levelup:nutrition-updated", scheduleRefresh);
 window.addEventListener("load", scheduleRefresh);
