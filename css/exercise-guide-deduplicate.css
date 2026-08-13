@@ -1,0 +1,12 @@
+.exercise-guide-section .exercise-muscle-image-frame {
+    display: none !important;
+}
+
+.exercise-guide-section .exercise-muscle-card {
+    min-height: 0;
+    padding: 10px 12px;
+}
+
+.exercise-guide-section .exercise-muscle-card strong {
+    margin-top: 0;
+}
