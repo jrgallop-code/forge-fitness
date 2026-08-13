@@ -75,7 +75,7 @@ function renderEquipmentStep(){
   const presets=["Full Gym","Barbell","Dumbbells","Machines & Cables","Bodyweight"];
   return questionCard("4","Choose your equipment","Select everything you have access to. Full Gym includes all equipment types.",`<strong class="smart-field-label">Available equipment</strong><div class="smart-chip-grid">${presets.map(x=>`<button type="button" class="smart-chip ${state.equipment.includes(x)?"selected":""}" data-equipment="${escapeHtml(x)}">${escapeHtml(x)}</button>`).join("")}</div><p class="smart-helper">Selected: ${state.equipment.join(", ")}</p><div class="smart-picker-block"><button class="smart-picker-toggle" type="button" data-preferred-toggle>Preferred exercises ▾</button><div class="smart-picker-panel" data-preferred-panel hidden><input type="search" data-preferred-search placeholder="Search exercises to prefer"><div class="smart-search-results" data-preferred-results></div></div></div><div class="smart-selected-list">${renderSelectedExercises(state.preferredIds,"preferred")}</div><div class="smart-picker-block"><button class="smart-picker-toggle" type="button" data-avoid-toggle>Avoid / discomfort ▾</button><div class="smart-picker-panel" data-avoid-panel hidden><input type="search" data-avoid-search placeholder="Search exercises to avoid"><div class="smart-search-results" data-avoid-results></div></div></div><div class="smart-selected-list">${renderSelectedExercises(state.excludedIds,"excluded")}</div>`);
 }
-function renderProgrammingStep(){const t=getVolumeTargets(),range=sessionExerciseRange();return questionCard("5","Programming approach","Weekly volume is the priority. Smart Build distributes it across your available days while keeping sessions practical.",`<div class="smart-volume-summary">${MUSCLES.map(m=>`<div><span>${m}${state.priorities.includes(m)?" ★":""}</span><strong>${t[m]} sets/wk</strong></div>`).join("")}</div><p class="smart-helper">For ${state.duration===90?"90+":state.duration}-minute sessions, Smart Build generally aims for ${range.min}–${range.max} exercises. Extra weekly volume is distributed across days or added to existing movements before adding unnecessary exercises.</p><label class="smart-superset-toggle"><input type="checkbox" data-supersets ${state.supersets?"checked":""}><span><strong>Allow time-saving supersets</strong><small>Accessory-focused. High-fatigue compounds stay standalone.</small></span></label><p class="smart-helper">Volume targets remain the programming priority. Exercise count is a practical session constraint, not the goal.</p>`,true,"Build Program");}
+function renderProgrammingStep(){const t=getVolumeTargets(),range=sessionExerciseRange();return questionCard("5","Programming approach","Weekly volume is the priority. Smart Build distributes it across your available days while keeping sessions practical.",`<div class="smart-volume-summary">${MUSCLES.map(m=>`<div><span>${m}${state.priorities.includes(m)?" ★":""}</span><strong>${t[m]} sets/wk</strong></div>`).join("")}</div><p class="smart-helper">For ${state.duration===90?"90+":state.duration}-minute sessions, Smart Build targets about ${range.target} exercises, with a 4-exercise floor and an 8-exercise hard cap. Weekly volume is redistributed across movements first so variety improves without padding the session.</p><label class="smart-superset-toggle"><input type="checkbox" data-supersets ${state.supersets?"checked":""}><span><strong>Allow time-saving supersets</strong><small>Accessory-focused. High-fatigue compounds stay standalone.</small></span></label><p class="smart-helper">Most sessions should land around 5–7 exercises when time and weekly volume allow; shorter or lower-volume days can settle at 4.</p>`,true,"Build Program");}
 function renderResultStep(){if(!state.generated)return `<p class="smart-helper">Program could not be generated.</p>`;const t=getVolumeTargets(),a=calculateWeeklySets(state.generated);return `<div class="smart-question-card"><div class="smart-question-number">✓</div><h4>${escapeHtml(GOALS[state.goal].label)} — ${state.days} days</h4><p>${escapeHtml(state.generated.summary)}</p><div class="smart-volume-summary">${MUSCLES.map(m=>`<div><span>${m}${state.priorities.includes(m)?" ★":""}</span><strong>${a[m]||0}/${t[m]} sets</strong></div>`).join("")}</div><div class="smart-review-grid">${state.generated.days.map((d,di)=>`<article class="smart-review-day"><h5>${escapeHtml(d.name)}</h5>${d.exercises.map((x,ei)=>renderExerciseRow(x,di,ei)).join("")}</article>`).join("")}</div><div class="smart-question-actions smart-result-actions"><button class="secondary-btn" type="button" data-smart-edit>Edit Inputs</button><button class="secondary-btn" type="button" data-smart-regenerate>Regenerate</button><button class="primary-btn" type="button" data-smart-save>Save Plan</button></div></div>`;}
 function renderExerciseRow(item,di,ei){const def=exerciseMap().get(item.id),ss=item.supersetGroup?`<em>Superset ${item.supersetGroup}</em>`:"";return `<div class="smart-review-exercise ${item.supersetGroup?"is-superset":""}"><div><strong>${escapeHtml(def?.name||item.name||item.id)}</strong><small>${item.sets} × ${escapeHtml(item.reps)} · ${escapeHtml(def?.muscleGroup||"")}</small>${ss}</div><div class="smart-review-controls"><button type="button" data-adjust-set="-1" data-day-index="${di}" data-exercise-index="${ei}" aria-label="Remove set">−</button><button type="button" data-adjust-set="1" data-day-index="${di}" data-exercise-index="${ei}" aria-label="Add set">+</button><button type="button" data-replace-exercise data-day-index="${di}" data-exercise-index="${ei}">Replace</button></div></div>`;}
 function questionCard(n,t,c,b,back=true,next="Continue"){return `<div class="smart-question-card"><div class="smart-question-number">${n}</div><h4>${t}</h4><p>${c}</p><div class="smart-question-body">${b}</div><div class="smart-question-actions">${back?'<button class="secondary-btn" type="button" data-smart-back>Back</button>':'<span></span>'}<button class="primary-btn" type="button" data-smart-next>${next}</button></div></div>`;}
@@ -86,8 +86,8 @@ function chooseExercise(id,mode){if(mode==="prefer"){state.excludedIds=state.exc
 function renderExerciseResults(root,q,mode){const host=root.querySelector(mode==="prefer"?"[data-preferred-results]":"[data-avoid-results]");if(!host)return;const term=String(q||"").trim().toLowerCase();const results=getAllExercises().filter(e=>e.trackingType!=="notes").filter(e=>!term||[e.name,e.muscleGroup,e.equipment].some(v=>String(v||"").toLowerCase().includes(term))).sort((a,b)=>String(a.muscleGroup).localeCompare(String(b.muscleGroup))||String(a.name).localeCompare(String(b.name))).slice(0,40);host.innerHTML=results.length?results.map(e=>`<div class="smart-search-row"><div><strong>${escapeHtml(e.name)}</strong><small>${escapeHtml(e.muscleGroup)} · ${escapeHtml(e.equipment)}</small></div><button type="button" ${mode==="prefer"?`data-prefer-id="${escapeHtml(e.id)}"`:`data-exclude-id="${escapeHtml(e.id)}"`}>${mode==="prefer"?"Prefer":"Avoid"}</button></div>`).join(""):`<p class="smart-helper">No matching exercises.</p>`;}
 function renderSelectedExercises(ids,type){const map=exerciseMap();return ids.length?ids.map(id=>`<button type="button" class="smart-selected-chip" data-remove-${type}="${escapeHtml(id)}">${escapeHtml(map.get(id)?.name||id)} ×</button>`).join(""):`<small>None selected</small>`;}
 function getVolumeTargets(){const exp={beginner:0,intermediate:1,advanced:2}[state.experience]??1,base={muscle:[8,10,12],strength:[5,6,7],hybrid:[7,9,10],maintain:[4,5,6]}[state.goal][exp],boost={muscle:[3,4,4],strength:[2,2,3],hybrid:[3,3,4],maintain:[1,1,2]}[state.goal][exp];return Object.fromEntries(MUSCLES.map(m=>[m,Math.min(18,base+(state.priorities.includes(m)?boost:0))]));}
-function sessionExerciseRange(){if(state.duration<=30)return{min:3,max:5};if(state.duration<=45)return{min:4,max:6};if(state.duration<=60)return{min:5,max:7};return{min:6,max:8};}
-function sessionHardCap(){return Math.min(10,sessionExerciseRange().max+1);}
+function sessionExerciseRange(){if(state.duration<=30)return{min:4,target:5,max:5};if(state.duration<=45)return{min:4,target:5,max:6};if(state.duration<=60)return{min:4,target:6,max:7};return{min:4,target:7,max:8};}
+function sessionHardCap(){return 8;}
 function maxDirectSetsPerMuscleSession(){return 8;}
 
 function generateProgram(){
@@ -101,10 +101,15 @@ function generateProgram(){
       const dayIndex=ranked[cursor%ranked.length],day=days[dayIndex],muscleSets=dayMuscleSets(day,muscle);
       if(muscleSets>=maxDirectSetsPerMuscleSession()){cursor+=1;if(eligible.every(i=>dayMuscleSets(days[i],muscle)>=maxDirectSetsPerMuscleSession()))break;continue;}
       const existingForMuscle=day.exercises.filter(x=>x.muscleGroup===muscle).sort((a,b)=>a.sets-b.sets)[0];
-      if(existingForMuscle&&existingForMuscle.sets<4){const add=Math.min(4-existingForMuscle.sets,maxDirectSetsPerMuscleSession()-muscleSets,remaining);existingForMuscle.sets+=add;remaining-=add;cursor+=1;continue;}
-      const normalCap=sessionExerciseRange().max,hardCap=sessionHardCap();
-      const canAdd=day.exercises.length<normalCap||(state.priorities.includes(muscle)&&day.exercises.length<hardCap);
-      if(!canAdd){cursor+=1;if(eligible.every(i=>days[i].exercises.length>=normalCap))break;continue;}
+      const setCeiling=day.exercises.length<sessionExerciseRange().target?3:4;
+      if(existingForMuscle&&existingForMuscle.sets<setCeiling){const add=Math.min(setCeiling-existingForMuscle.sets,maxDirectSetsPerMuscleSession()-muscleSets,remaining);existingForMuscle.sets+=add;remaining-=add;cursor+=1;continue;}
+      const normalCap=sessionExerciseRange().max;
+      const canAdd=day.exercises.length<normalCap;
+      if(!canAdd){
+        const receiver=day.exercises.filter(x=>x.muscleGroup===muscle&&x.sets<6).sort((a,b)=>a.sets-b.sets)[0];
+        if(receiver){const add=Math.min(6-receiver.sets,maxDirectSetsPerMuscleSession()-muscleSets,remaining);if(add>0){receiver.sets+=add;remaining-=add;cursor+=1;continue;}}
+        cursor+=1;if(eligible.every(i=>days[i].exercises.length>=normalCap))break;continue;
+      }
       const def=chooseExerciseForMuscle(muscle,usedByMuscle.get(muscle),preferred,dayIndex,day.exercises.map(x=>x.id));if(!def)break;
       const room=maxDirectSetsPerMuscleSession()-muscleSets;
       const chunk=Math.min(3,remaining,room);
@@ -116,12 +121,58 @@ function generateProgram(){
       day.exercises.push({id:def.id,name:def.name,sets:chunk,reps:repRangeFor(def),muscleGroup:muscle});usedByMuscle.get(muscle).push(def.id);remaining-=chunk;cursor+=1;
     }
   });
-  days.forEach(day=>{consolidateSession(day);day.exercises=sortExercises(day.exercises);fitSessionTime(day);});
+  days.forEach(day=>{consolidateSession(day);day.exercises=sortExercises(day.exercises);});
   validateGeneratedProgram(days,preferred);
-  days.forEach(day=>{day.exercises=sortExercises(day.exercises);if(state.supersets)assignSupersets(day);});
+  ensureSessionVariety(days,preferred);
+  days.forEach(day=>{consolidateSession(day);day.exercises=sortExercises(day.exercises);fitSessionTime(day);day.exercises=sortExercises(day.exercises);if(state.supersets)assignSupersets(day);});
   return{days,summary:buildSummary(days)};
 }
 function dayMuscleSets(day,muscle){return day.exercises.filter(x=>x.muscleGroup===muscle).reduce((s,x)=>s+(Number(x.sets)||0),0);}
+function ensureSessionVariety(days,preferred){
+  const range=sessionExerciseRange();
+  days.forEach((day,dayIndex)=>{
+    while(day.exercises.length<range.target&&day.exercises.length<range.max){
+      if(!redistributeSetsForVariety(days,day,preferred,dayIndex))break;
+    }
+    while(day.exercises.length<range.min&&day.exercises.length<sessionHardCap()){
+      if(redistributeSetsForVariety(days,day,preferred,dayIndex))continue;
+      if(!addMinimumVarietyExercise(days,day,preferred,dayIndex))break;
+    }
+  });
+}
+function redistributeSetsForVariety(days,day,preferred,dayIndex){
+  if(day.exercises.length>=sessionHardCap())return false;
+  const usedIds=day.exercises.map(x=>x.id);
+  const muscles=[...day.muscles].sort((a,b)=>day.exercises.filter(x=>x.muscleGroup===a).length-day.exercises.filter(x=>x.muscleGroup===b).length||Number(state.priorities.includes(b))-Number(state.priorities.includes(a))||transferableSets(days,b)-transferableSets(days,a));
+  for(const muscle of muscles){
+    if(dayMuscleSets(day,muscle)+2>maxDirectSetsPerMuscleSession())continue;
+    const def=chooseVarietyExerciseForMuscle(muscle,preferred,dayIndex,usedIds);if(!def)continue;
+    const donors=[];
+    days.forEach(source=>source.exercises.forEach(item=>{if(item.muscleGroup===muscle&&item.sets>2)donors.push({source,item,available:item.sets-2});}));
+    donors.sort((a,b)=>Number(b.source===day)-Number(a.source===day)||Number(belongsToProtectedCompound(exerciseMap().get(a.item.id)))-Number(belongsToProtectedCompound(exerciseMap().get(b.item.id))||b.available-a.available));
+    if(donors.reduce((sum,donor)=>sum+donor.available,0)<2)continue;
+    let need=2;
+    for(const donor of donors){const take=Math.min(need,donor.available);donor.item.sets-=take;need-=take;if(!need)break;}
+    day.exercises.push({id:def.id,name:def.name,sets:2,reps:repRangeFor(def),muscleGroup:muscle});
+    return true;
+  }
+  return false;
+}
+function transferableSets(days,muscle){return days.reduce((sum,source)=>sum+source.exercises.filter(x=>x.muscleGroup===muscle).reduce((s,x)=>s+Math.max(0,(Number(x.sets)||0)-2),0),0);}
+function addMinimumVarietyExercise(days,day,preferred,dayIndex){
+  const targets=getVolumeTargets(),totals=Object.fromEntries(MUSCLES.map(m=>[m,0]));
+  days.forEach(source=>source.exercises.forEach(item=>{if(totals[item.muscleGroup]!==undefined)totals[item.muscleGroup]+=Number(item.sets)||0;}));
+  const usedIds=day.exercises.map(x=>x.id);
+  const choices=day.muscles.map(muscle=>{
+    if(dayMuscleSets(day,muscle)+2>maxDirectSetsPerMuscleSession())return null;
+    const def=chooseVarietyExerciseForMuscle(muscle,preferred,dayIndex,usedIds);if(!def)return null;
+    return{muscle,def,movementCount:day.exercises.filter(x=>x.muscleGroup===muscle).length,over:(totals[muscle]||0)-(targets[muscle]||0)};
+  }).filter(Boolean).sort((a,b)=>a.movementCount-b.movementCount||a.over-b.over||Number(state.priorities.includes(a.muscle))-Number(state.priorities.includes(b.muscle))||deterministicNoise(a.def.id,dayIndex)-deterministicNoise(b.def.id,dayIndex));
+  const choice=choices[0];if(!choice)return false;
+  day.exercises.push({id:choice.def.id,name:choice.def.name,sets:2,reps:repRangeFor(choice.def),muscleGroup:choice.muscle});
+  return true;
+}
+function chooseVarietyExerciseForMuscle(muscle,preferred,dayIndex,forbidden=[]){const blocked=new Set(forbidden);const pool=availableExercises().filter(e=>e.muscleGroup===muscle&&!blocked.has(e.id));if(!pool.length)return null;return pool.map(e=>{let score=0;if(preferred.has(e.id))score+=100;if(e.type==="isolation")score+=16;if(!belongsToProtectedCompound(e))score+=8;score+=deterministicNoise(e.id,dayIndex+state.variation);return{e,score};}).sort((a,b)=>b.score-a.score)[0]?.e||null;}
 function consolidateSession(day){
   const max=sessionExerciseRange().max;
   while(day.exercises.length>max){
@@ -172,7 +223,7 @@ function replaceExercise(di,ei){const day=state.generated?.days?.[di],item=day?.
 function adjustSets(di,ei,delta){const item=state.generated?.days?.[di]?.exercises?.[ei];if(!item)return;item.sets=Math.max(2,Math.min(6,item.sets+delta));}
 function calculateWeeklySets(program){const totals=Object.fromEntries(MUSCLES.map(m=>[m,0]));program.days.forEach(d=>d.exercises.forEach(x=>{if(totals[x.muscleGroup]!==undefined)totals[x.muscleGroup]+=Number(x.sets)||0;}));return totals;}
 function buildSummary(days){const totalSets=days.reduce((sum,d)=>sum+d.exercises.reduce((s,e)=>s+e.sets,0),0),counts=days.map(d=>d.exercises.length),priority=state.priorities.length?` Priority: ${state.priorities.join(", ")}.`:"",ss=state.supersets?" Accessory supersets are used only when pairings are low-interference.":"";return`${totalSets} working sets across ${days.length} days; ${Math.min(...counts)}–${Math.max(...counts)} exercises per session.${priority}${ss}`;}
-function saveGeneratedPlan(root){if(!state.generated)return;const plans=readPlans(),plan={id:`smart-${Date.now()}`,name:`Smart Build — ${GOALS[state.goal].label}`,days:state.generated.days.map(d=>({name:d.name,exercises:d.exercises.map(item=>{const out={id:item.id,sets:item.sets,reps:item.reps};if(item.supersetGroup)out.supersetGroup=item.supersetGroup;return out;})})),smartBuild:{version:7,goal:state.goal,days:state.days,duration:state.duration,priorities:[...state.priorities],experience:state.experience,equipment:[...state.equipment],supersets:state.supersets,createdAt:new Date().toISOString()}};plans.push(plan);localStorage.setItem(PLAN_STORAGE_KEY,JSON.stringify(plans));const button=root.querySelector("[data-smart-save]");if(button){button.disabled=true;button.textContent="Saved ✓";}window.setTimeout(()=>document.querySelector('.nav-btn[data-page="workout"]')?.click(),150);}
+function saveGeneratedPlan(root){if(!state.generated)return;const plans=readPlans(),plan={id:`smart-${Date.now()}`,name:`Smart Build — ${GOALS[state.goal].label}`,days:state.generated.days.map(d=>({name:d.name,exercises:d.exercises.map(item=>{const out={id:item.id,sets:item.sets,reps:item.reps};if(item.supersetGroup)out.supersetGroup=item.supersetGroup;return out;})})),smartBuild:{version:8,goal:state.goal,days:state.days,duration:state.duration,priorities:[...state.priorities],experience:state.experience,equipment:[...state.equipment],supersets:state.supersets,createdAt:new Date().toISOString()}};plans.push(plan);localStorage.setItem(PLAN_STORAGE_KEY,JSON.stringify(plans));const button=root.querySelector("[data-smart-save]");if(button){button.disabled=true;button.textContent="Saved ✓";}window.setTimeout(()=>document.querySelector('.nav-btn[data-page="workout"]')?.click(),150);}
 function readPlans(){try{const v=JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY)||"[]");return Array.isArray(v)?v:[];}catch{return[];}}
 function exerciseMap(){return new Map(getAllExercises().map(e=>[e.id,e]));}
 function deterministicNoise(text,seed){let h=2166136261^Number(seed||0);for(const ch of String(text||"")){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return Math.abs(h%17);}
