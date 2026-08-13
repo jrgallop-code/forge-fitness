@@ -157,8 +157,8 @@ window.setTimeout(refreshLiveDisplay, 0);
 if (!document.querySelector('link[data-workout-complete-recap-style]')) {
     const recapStyle = document.createElement("link");
     recapStyle.rel = "stylesheet";
-    recapStyle.href = "css/workout-complete-recap.css?v=workout-complete-recap-1";
+    recapStyle.href = "css/workout-complete-recap.css?v=workout-complete-recap-2";
     recapStyle.dataset.workoutCompleteRecapStyle = "true";
     document.head.appendChild(recapStyle);
 }
-import("./workout-complete-recap.js?v=workout-complete-recap-1");
+import("./workout-complete-recap.js?v=workout-complete-recap-2");
