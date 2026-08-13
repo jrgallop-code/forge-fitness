@@ -105,7 +105,7 @@ function generateProgram(){
       const normalCap=sessionExerciseRange().max,hardCap=sessionHardCap();
       const canAdd=day.exercises.length<normalCap||(state.priorities.includes(muscle)&&day.exercises.length<hardCap);
       if(!canAdd){cursor+=1;if(eligible.every(i=>days[i].exercises.length>=normalCap))break;continue;}
-      const def=chooseExerciseForMuscle(muscle,usedByMuscle.get(muscle),preferred,dayIndex);if(!def)break;
+      const def=chooseExerciseForMuscle(muscle,usedByMuscle.get(muscle),preferred,dayIndex,day.exercises.map(x=>x.id));if(!def)break;
       const room=maxDirectSetsPerMuscleSession()-muscleSets;
       const chunk=Math.min(3,remaining,room);
       if(chunk<2){
@@ -149,7 +149,8 @@ function validateGeneratedProgram(days,preferred){
 }
 function ensureDayCategory(day,muscles,preferred,dayIndex){
   if(day.exercises.some(x=>muscles.includes(x.muscleGroup)))return;
-  const candidates=muscles.map(m=>chooseExerciseForMuscle(m,day.exercises.map(x=>x.id),preferred,dayIndex)).filter(Boolean);
+  const dayExerciseIds=day.exercises.map(x=>x.id);
+  const candidates=muscles.map(m=>chooseExerciseForMuscle(m,[],preferred,dayIndex,dayExerciseIds)).filter(Boolean);
   const def=candidates[0];if(!def)return;
   const newItem={id:def.id,name:def.name,sets:def.type==="compound"?3:2,reps:repRangeFor(def),muscleGroup:def.muscleGroup};
   if(day.exercises.length<sessionHardCap()){day.exercises.push(newItem);return;}
@@ -157,7 +158,7 @@ function ensureDayCategory(day,muscles,preferred,dayIndex){
   const replaceIndex=day.exercises.findIndex(x=>!state.priorities.includes(x.muscleGroup)&&(counts[x.muscleGroup]||0)>1&&!belongsToProtectedCompound(exerciseMap().get(x.id)));
   if(replaceIndex>=0)day.exercises.splice(replaceIndex,1,newItem);
 }
-function chooseExerciseForMuscle(muscle,used,preferred,dayIndex){const pool=availableExercises().filter(e=>e.muscleGroup===muscle);if(!pool.length)return null;return pool.map(e=>{let score=0;if(preferred.has(e.id))score+=100;if(!used.includes(e.id))score+=20;if(state.goal==="strength"&&e.type==="compound")score+=12;if(state.goal==="muscle"&&e.type==="isolation")score+=2;score+=deterministicNoise(e.id,dayIndex+state.variation);return{e,score};}).sort((a,b)=>b.score-a.score)[0]?.e||null;}
+function chooseExerciseForMuscle(muscle,used,preferred,dayIndex,forbidden=[]){const blocked=new Set(forbidden);const pool=availableExercises().filter(e=>e.muscleGroup===muscle&&!blocked.has(e.id));if(!pool.length)return null;return pool.map(e=>{let score=0;if(preferred.has(e.id))score+=100;if(!used.includes(e.id))score+=20;if(state.goal==="strength"&&e.type==="compound")score+=12;if(state.goal==="muscle"&&e.type==="isolation")score+=2;score+=deterministicNoise(e.id,dayIndex+state.variation);return{e,score};}).sort((a,b)=>b.score-a.score)[0]?.e||null;}
 function availableExercises(){const excluded=new Set(state.excludedIds);return getAllExercises().filter(e=>e.trackingType!=="notes"&&MUSCLES.includes(e.muscleGroup)&&!excluded.has(e.id)&&equipmentAllowed(e));}
 function equipmentAllowed(exercise){if(state.equipment.includes("Full Gym"))return true;const eq=String(exercise.equipment||"").toLowerCase(),selected=state.equipment.map(x=>x.toLowerCase());return selected.some(x=>{if(x==="dumbbells")return eq.includes("dumbbell");if(x==="machines & cables")return eq.includes("machine")||eq.includes("cable");if(x==="bodyweight")return eq.includes("bodyweight")||eq.includes("body weight");return eq===x||eq.includes(x.replace(/s$/,""));});}
 function repRangeFor(def){if(state.goal==="strength"&&def.type==="compound")return"4-8";if(state.goal==="hybrid"&&def.type==="compound")return"5-10";return def.recommendedReps||(def.type==="compound"?"6-12":"10-15");}
@@ -167,7 +168,7 @@ function estimateMinutes(items,withSupersets){let total=5;items.forEach(item=>{c
 function assignSupersets(day){let n=1;day.exercises.forEach(x=>delete x.supersetGroup);for(let i=0;i<day.exercises.length-1;i++){const a=day.exercises[i],b=day.exercises[i+1];if(a.supersetGroup||b.supersetGroup)continue;const ad=exerciseMap().get(a.id),bd=exerciseMap().get(b.id);if(!canSuperset(ad,bd))continue;const g=`S${n++}`;a.supersetGroup=g;b.supersetGroup=g;i+=1;}}
 function canSuperset(a,b){if(!a||!b||belongsToProtectedCompound(a)||belongsToProtectedCompound(b)||a.muscleGroup===b.muscleGroup||INTERFERENCE.has(`${a.muscleGroup}|${b.muscleGroup}`))return false;return a.type==="isolation"||b.type==="isolation";}
 function belongsToProtectedCompound(def){if(!def)return false;const lowerBody=["Quads","Hamstrings","Glutes"].includes(def.muscleGroup)&&def.type==="compound";return lowerBody||NEVER_SUPERSET.some(p=>p.test(def.name||""));}
-function replaceExercise(di,ei){const item=state.generated?.days?.[di]?.exercises?.[ei];if(!item)return;const pool=availableExercises().filter(e=>e.muscleGroup===item.muscleGroup&&e.id!==item.id);if(!pool.length)return;const next=pool[(state.variation+ei+di+1)%pool.length];item.id=next.id;item.name=next.name;item.reps=repRangeFor(next);if(state.supersets)assignSupersets(state.generated.days[di]);}
+function replaceExercise(di,ei){const day=state.generated?.days?.[di],item=day?.exercises?.[ei];if(!item)return;const usedInDay=new Set(day.exercises.map((x,index)=>index===ei?null:x.id).filter(Boolean));const pool=availableExercises().filter(e=>e.muscleGroup===item.muscleGroup&&e.id!==item.id&&!usedInDay.has(e.id));if(!pool.length)return;const next=pool[(state.variation+ei+di+1)%pool.length];item.id=next.id;item.name=next.name;item.reps=repRangeFor(next);if(state.supersets)assignSupersets(day);}
 function adjustSets(di,ei,delta){const item=state.generated?.days?.[di]?.exercises?.[ei];if(!item)return;item.sets=Math.max(2,Math.min(6,item.sets+delta));}
 function calculateWeeklySets(program){const totals=Object.fromEntries(MUSCLES.map(m=>[m,0]));program.days.forEach(d=>d.exercises.forEach(x=>{if(totals[x.muscleGroup]!==undefined)totals[x.muscleGroup]+=Number(x.sets)||0;}));return totals;}
 function buildSummary(days){const totalSets=days.reduce((sum,d)=>sum+d.exercises.reduce((s,e)=>s+e.sets,0),0),counts=days.map(d=>d.exercises.length),priority=state.priorities.length?` Priority: ${state.priorities.join(", ")}.`:"",ss=state.supersets?" Accessory supersets are used only when pairings are low-interference.":"";return`${totalSets} working sets across ${days.length} days; ${Math.min(...counts)}–${Math.max(...counts)} exercises per session.${priority}${ss}`;}
