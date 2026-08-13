@@ -1,13 +1,13 @@
 import { initializeUnifiedGoalsCalories } from "./unified-goals-calories.js?v=nutrition-phase-1";
-import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=phase-calorie-suggestions-1";
+import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=phase-calorie-gap-1";
 import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-goal-controls-1";
 import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=phase-tolerance-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
 import "./phase-rate-display.js?v=phase-goal-rate-1";
 import "./phase-test-data.js?v=phase-test-scenarios-1";
 
-const MIN_ADJUSTMENT_KCAL = 100;
-const MAX_ADJUSTMENT_KCAL = 200;
+const FULL_GAP_INCREMENT = 50;
+const FIRST_STEP_INCREMENT = 25;
 let refreshScheduled = false;
 let draftGoalId = null;
 let draftStartDate = null;
@@ -31,17 +31,18 @@ function ensurePhaseStyles() {
         #nutrition-current-phase .nutrition-current-phase-grid>div{padding:6px 7px;gap:2px}
         #nutrition-current-phase .nutrition-current-phase-grid span{font-size:9px}
         #nutrition-current-phase .nutrition-current-phase-grid strong{font-size:12px;line-height:1.2}
-        #nutrition-current-phase .nutrition-current-phase-grid small{color:var(--muted,#a1a1aa);font-size:9px;line-height:1.2}
+        #nutrition-current-phase .nutrition-current-phase-grid small{color:var(--muted,#a1a1aa);font-size:9px;line-height:1.25}
         #nutrition-current-phase .nutrition-current-phase-head strong{font-size:13px}
         #nutrition-current-phase .nutrition-current-phase-head b{font-size:9px;padding:4px 6px}
+        #nutrition-current-phase .phase-calorie-suggestion-card{grid-column:1/-1}
         #weight-progress .weight-summary{gap:7px}
         #weight-progress .weight-summary .metric-card{min-height:76px;padding:10px}
         #weight-progress .weight-summary .metric-card h3{font-size:10px;line-height:1.2}
         #weight-progress .weight-summary .metric-card p{font-size:16px;line-height:1.12;margin-top:5px}
         #weight-progress #weight-current-phase{font-size:13px;line-height:1.18}
         #weight-progress .weight-calorie-suggestion-card{grid-column:1/-1;min-height:68px}
-        #weight-progress .weight-calorie-suggestion-card small{display:block;margin-top:3px;color:var(--muted,#a1a1aa);font-size:10px;line-height:1.2}
-        #weight-progress .weight-calorie-suggestion-card p{font-size:14px}
+        #weight-progress .weight-calorie-suggestion-card small{display:block;margin-top:3px;color:var(--muted,#a1a1aa);font-size:10px;line-height:1.25}
+        #weight-progress .weight-calorie-suggestion-card p{font-size:16px}
         @media(max-width:390px){
             #nutrition-current-phase .nutrition-current-phase-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
             #nutrition-current-phase .nutrition-current-phase-grid strong{font-size:11px}
@@ -82,21 +83,29 @@ function getCalorieSuggestion() {
     const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
     const metrics = getActivePhaseMetrics(phase);
     if (!Number.isFinite(currentCalories)) return { primary: "No calorie target", secondary: "" };
-    if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) return { primary: "Keep current", secondary: `${Math.round(currentCalories)} kcal/day` };
-    if (metrics.status === "NEED MORE PHASE DATA") return { primary: "Need more phase data", secondary: `Current ${Math.round(currentCalories)} kcal/day` };
-    if (metrics.status === "PRELIMINARY" || !metrics.recommendationReady) return { primary: "Wait for 21-day trend", secondary: `Current ${Math.round(currentCalories)} kcal/day` };
+    if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "On track · keep current" };
+    if (metrics.status === "NEED MORE PHASE DATA") return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Need more phase data before adjusting" };
+    if (metrics.status === "PRELIMINARY" || !metrics.recommendationReady) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Wait for the full 21-day trend" };
 
     const actual = Number(metrics.actualRateLbPerWeek);
     const target = Number(metrics.targetRateLbPerWeek);
-    if (!Number.isFinite(actual) || !Number.isFinite(target)) return { primary: "Need more phase data", secondary: `Current ${Math.round(currentCalories)} kcal/day` };
-    const difference = actual - target;
-    const direction = difference > 0 ? -1 : 1;
-    const implied = Math.abs(difference) * 3500 / 7;
-    const rounded = Math.round(implied / 50) * 50;
-    const adjustment = Math.min(MAX_ADJUSTMENT_KCAL, Math.max(MIN_ADJUSTMENT_KCAL, rounded || MIN_ADJUSTMENT_KCAL));
-    const delta = direction * adjustment;
-    const suggestedCalories = Math.max(1, Math.round(currentCalories + delta));
-    return { primary: `${delta > 0 ? "Increase" : "Decrease"} ${adjustment} kcal/day`, secondary: `${suggestedCalories} kcal/day total` };
+    if (!Number.isFinite(actual) || !Number.isFinite(target)) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Need more phase data before adjusting" };
+
+    const rawGap = (target - actual) * 500;
+    let fullGap = Math.round(rawGap / FULL_GAP_INCREMENT) * FULL_GAP_INCREMENT;
+    if (fullGap === 0 && Math.abs(rawGap) > 0.001) fullGap = Math.sign(rawGap) * FULL_GAP_INCREMENT;
+    const estimatedTarget = Math.max(1, Math.round(currentCalories + fullGap));
+    let firstStep = Math.round((fullGap * 0.5) / FIRST_STEP_INCREMENT) * FIRST_STEP_INCREMENT;
+    if (firstStep === 0 && fullGap !== 0) firstStep = Math.sign(fullGap) * FIRST_STEP_INCREMENT;
+    const firstStepTarget = Math.max(1, Math.round(currentCalories + firstStep));
+    return { primary: `${estimatedTarget} kcal/day`, secondary: `Estimated gap ${formatSignedCalories(fullGap)} · First step ${formatSignedCalories(firstStep)} → ${firstStepTarget} kcal/day` };
+}
+
+function formatSignedCalories(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return "--";
+    if (Math.abs(number) < 0.5) return "0";
+    return `${number > 0 ? "+" : "−"}${Math.abs(Math.round(number))}`;
 }
 
 function setNodeText(node, value) {
@@ -115,8 +124,8 @@ function refreshCalorieSuggestionCards() {
             card.innerHTML = "<span>Suggested Calories</span><strong></strong><small></small>";
             phaseGrid.appendChild(card);
         }
-        const goalWeight = phaseGrid.querySelector("[data-phase-goal-weight]");
-        if (goalWeight && goalWeight.nextElementSibling !== card) goalWeight.insertAdjacentElement("afterend", card);
+        const currentCaloriesCell = [...phaseGrid.children].find(cell => cell.querySelector("span")?.textContent?.trim() === "Current Calories");
+        if (currentCaloriesCell && currentCaloriesCell.nextElementSibling !== card) currentCaloriesCell.insertAdjacentElement("afterend", card);
         setNodeText(card.querySelector("strong"), suggestion.primary);
         setNodeText(card.querySelector("small"), suggestion.secondary);
     }
