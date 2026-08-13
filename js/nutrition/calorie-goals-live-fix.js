@@ -1,5 +1,6 @@
 import { initializeUnifiedGoalsCalories } from "./unified-goals-calories.js?v=nutrition-phase-1";
 import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=nutrition-phase-1";
+import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-goal-controls-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
 
 function ensurePhaseStyles() {
@@ -25,10 +26,16 @@ function ensureWeightOnlyUi() {
     initializeWeightProgressCompact();
 }
 
+function refreshAllPhaseUi() {
+    ensureNutritionPhaseUi();
+    ensureWeightOnlyUi();
+    initializePhaseGoalControls();
+}
+
 function scheduleRefresh() {
     ensurePhaseStyles();
-    window.setTimeout(() => { ensureNutritionPhaseUi(); ensureWeightOnlyUi(); }, 0);
-    window.setTimeout(() => { ensureNutritionPhaseUi(); ensureWeightOnlyUi(); }, 120);
+    window.setTimeout(refreshAllPhaseUi, 0);
+    window.setTimeout(refreshAllPhaseUi, 120);
 }
 
 document.addEventListener("click", event => {
@@ -36,7 +43,7 @@ document.addEventListener("click", event => {
     if (legacyWeightRedirect) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        ensureNutritionPhaseUi();
+        refreshAllPhaseUi();
         return;
     }
     scheduleRefresh();
