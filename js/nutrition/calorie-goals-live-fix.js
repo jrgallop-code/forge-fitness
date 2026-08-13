@@ -4,15 +4,38 @@ import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-go
 import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=phase-tolerance-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
 import "./phase-rate-display.js?v=phase-goal-rate-1";
-import "./phase-test-data.js?v=phase-test-scenarios-1";
 
 const FULL_GAP_INCREMENT = 50;
 const FIRST_STEP_INCREMENT = 25;
+const RETIRED_TEST_KEYS = { backupWeights: "level_up_test_backup_weights", backupPhases: "level_up_test_backup_phases", active: "level_up_phase_test_active", mode: "level_up_phase_test_mode" };
+const WEIGHT_KEY = "forge_weight_entries";
+const PHASES_KEY = "level_up_nutrition_phases";
 let refreshScheduled = false;
 let draftGoalId = null;
 let draftStartDate = null;
 let draftGoalWeight = null;
 let saveRequested = false;
+
+function parseArrayText(value) {
+    if (value === null) return null;
+    try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : null; }
+    catch { return null; }
+}
+
+function cleanupRetiredPhaseTestData() {
+    const backupWeights = parseArrayText(localStorage.getItem(RETIRED_TEST_KEYS.backupWeights));
+    const backupPhases = parseArrayText(localStorage.getItem(RETIRED_TEST_KEYS.backupPhases));
+    const currentWeights = parseArrayText(localStorage.getItem(WEIGHT_KEY)) || [];
+    const testWasActive = localStorage.getItem(RETIRED_TEST_KEYS.active) === "1";
+    const hasSyntheticWeights = currentWeights.some(entry => String(entry?.source || "").startsWith("phase-test-data"));
+    const shouldRestore = testWasActive || hasSyntheticWeights;
+    if (shouldRestore && backupWeights) localStorage.setItem(WEIGHT_KEY, JSON.stringify(backupWeights));
+    else if (hasSyntheticWeights) localStorage.setItem(WEIGHT_KEY, JSON.stringify(currentWeights.filter(entry => !String(entry?.source || "").startsWith("phase-test-data"))));
+    if (shouldRestore && backupPhases) localStorage.setItem(PHASES_KEY, JSON.stringify(backupPhases));
+    Object.values(RETIRED_TEST_KEYS).forEach(key => localStorage.removeItem(key));
+    document.getElementById("phase-test-data-box")?.remove();
+}
+cleanupRetiredPhaseTestData();
 
 function ensurePhaseStyles() {
     if (!document.querySelector('link[data-nutrition-phase-styles]')) {
@@ -62,12 +85,7 @@ function ensureNutritionPhaseUi() {
     initializeNutritionPlanUI();
     view.dataset.nutritionPhaseFix = "1";
 }
-
-function ensureWeightOnlyUi() {
-    if (!document.getElementById("weight-progress")) return;
-    initializeWeightProgressCompact();
-}
-
+function ensureWeightOnlyUi() { if (document.getElementById("weight-progress")) initializeWeightProgressCompact(); }
 function applyPhaseDraft() {
     const selected = document.getElementById("unified-goal-select")?.value;
     if (!selected || selected !== draftGoalId) return;
@@ -76,7 +94,6 @@ function applyPhaseDraft() {
     if (startInput && draftStartDate) startInput.value = draftStartDate;
     if (goalWeightInput && draftGoalWeight !== null) goalWeightInput.value = draftGoalWeight;
 }
-
 function getCalorieSuggestion() {
     const phase = getActiveNutritionPhase();
     if (!phase) return { primary: "No active phase", secondary: "" };
@@ -86,11 +103,9 @@ function getCalorieSuggestion() {
     if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "On track · keep current" };
     if (metrics.status === "NEED MORE PHASE DATA") return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Need more phase data before adjusting" };
     if (metrics.status === "PRELIMINARY" || !metrics.recommendationReady) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Wait for the full 21-day trend" };
-
     const actual = Number(metrics.actualRateLbPerWeek);
     const target = Number(metrics.targetRateLbPerWeek);
     if (!Number.isFinite(actual) || !Number.isFinite(target)) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Need more phase data before adjusting" };
-
     const rawGap = (target - actual) * 500;
     let fullGap = Math.round(rawGap / FULL_GAP_INCREMENT) * FULL_GAP_INCREMENT;
     if (fullGap === 0 && Math.abs(rawGap) > 0.001) fullGap = Math.sign(rawGap) * FULL_GAP_INCREMENT;
@@ -100,18 +115,13 @@ function getCalorieSuggestion() {
     const firstStepTarget = Math.max(1, Math.round(currentCalories + firstStep));
     return { primary: `${estimatedTarget} kcal/day`, secondary: `Estimated gap ${formatSignedCalories(fullGap)} · First step ${formatSignedCalories(firstStep)} → ${firstStepTarget} kcal/day` };
 }
-
 function formatSignedCalories(value) {
     const number = Number(value);
     if (!Number.isFinite(number)) return "--";
     if (Math.abs(number) < 0.5) return "0";
     return `${number > 0 ? "+" : "−"}${Math.abs(Math.round(number))}`;
 }
-
-function setNodeText(node, value) {
-    if (node && node.textContent !== value) node.textContent = value;
-}
-
+function setNodeText(node, value) { if (node && node.textContent !== value) node.textContent = value; }
 function refreshCalorieSuggestionCards() {
     const suggestion = getCalorieSuggestion();
     const phaseGrid = document.querySelector("#nutrition-current-phase .nutrition-current-phase-grid");
@@ -129,7 +139,6 @@ function refreshCalorieSuggestionCards() {
         setNodeText(card.querySelector("strong"), suggestion.primary);
         setNodeText(card.querySelector("small"), suggestion.secondary);
     }
-
     const summary = document.querySelector("#weight-progress .weight-summary");
     if (summary) {
         let card = document.getElementById("weight-calorie-suggestion-card");
@@ -144,7 +153,6 @@ function refreshCalorieSuggestionCards() {
         setNodeText(document.getElementById("weight-calorie-suggestion-total"), suggestion.secondary);
     }
 }
-
 function refreshAllPhaseUi() {
     ensureNutritionPhaseUi();
     ensureWeightOnlyUi();
@@ -152,18 +160,13 @@ function refreshAllPhaseUi() {
     applyPhaseDraft();
     refreshCalorieSuggestionCards();
 }
-
 function scheduleRefresh() {
     if (refreshScheduled) return;
     refreshScheduled = true;
     ensurePhaseStyles();
     window.setTimeout(refreshAllPhaseUi, 0);
-    window.setTimeout(() => {
-        refreshAllPhaseUi();
-        window.setTimeout(() => { refreshScheduled = false; }, 40);
-    }, 120);
+    window.setTimeout(() => { refreshAllPhaseUi(); window.setTimeout(() => { refreshScheduled = false; }, 40); }, 120);
 }
-
 document.addEventListener("change", event => {
     if (event.target?.id === "unified-goal-select") {
         const active = getActiveNutritionPhase();
@@ -175,7 +178,6 @@ document.addEventListener("change", event => {
         draftStartDate = event.target.value;
     }
 }, true);
-
 document.addEventListener("input", event => {
     if (event.target?.id === "nutrition-phase-start-date") {
         draftGoalId = document.getElementById("unified-goal-select")?.value || draftGoalId;
@@ -185,7 +187,6 @@ document.addEventListener("input", event => {
         draftGoalWeight = event.target.value;
     }
 }, true);
-
 document.addEventListener("click", event => {
     const legacyWeightRedirect = event.target.closest("#unified-open-weight-goal");
     if (legacyWeightRedirect) {
@@ -197,7 +198,6 @@ document.addEventListener("click", event => {
     if (event.target.closest("#unified-save-plan")) saveRequested = true;
     scheduleRefresh();
 }, true);
-
 const content = document.getElementById("content");
 if (content) new MutationObserver(scheduleRefresh).observe(content, { childList: true, subtree: true });
 window.addEventListener("levelup:nutrition-updated", scheduleRefresh);
@@ -212,7 +212,6 @@ window.addEventListener("levelup:nutrition-phase-updated", () => {
 });
 window.addEventListener("load", scheduleRefresh);
 scheduleRefresh();
-
 function today() {
     const date = new Date();
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
