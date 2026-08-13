@@ -1,0 +1,1 @@
+This placeholder will be replaced by the generated transparent bicep+dumbbell asset in the same feature branch.
