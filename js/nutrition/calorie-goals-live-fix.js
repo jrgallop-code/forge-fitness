@@ -3,6 +3,8 @@ import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=nutrition
 import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-goal-controls-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
 
+let refreshScheduled = false;
+
 function ensurePhaseStyles() {
     if (document.querySelector('link[data-nutrition-phase-styles]')) return;
     const link = document.createElement("link");
@@ -33,9 +35,14 @@ function refreshAllPhaseUi() {
 }
 
 function scheduleRefresh() {
+    if (refreshScheduled) return;
+    refreshScheduled = true;
     ensurePhaseStyles();
     window.setTimeout(refreshAllPhaseUi, 0);
-    window.setTimeout(refreshAllPhaseUi, 120);
+    window.setTimeout(() => {
+        refreshAllPhaseUi();
+        window.setTimeout(() => { refreshScheduled = false; }, 40);
+    }, 120);
 }
 
 document.addEventListener("click", event => {
