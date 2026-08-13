@@ -65,7 +65,7 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase()) {
     if (!phase) return { status: "NO ACTIVE PHASE", trend: null, actualRateLbPerWeek: null, targetRateLbPerWeek: null };
     const entries = readWeights().filter(e => e.date >= phase.startDate && (!phase.endDate || e.date <= phase.endDate));
     const trend = calculateWeightTrend(entries);
-    const actual = Number(trend.weeklyChange);
+    const actual = trend?.weeklyChange == null ? null : Number(trend.weeklyChange);
     const target = Number(phase.targetWeeklyRate);
     let status = "CALIBRATING";
     if (trend.status === "actual" && Number.isFinite(actual) && Number.isFinite(target)) {
