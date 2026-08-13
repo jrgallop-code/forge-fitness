@@ -1,141 +1,17 @@
 import { getActiveNutritionPhase } from "./nutrition-phase.js?v=phase-tolerance-1";
-
-const WEIGHT_KEY = "forge_weight_entries";
-const PHASES_KEY = "level_up_nutrition_phases";
-const BACKUP_WEIGHTS = "level_up_test_backup_weights";
-const BACKUP_PHASES = "level_up_test_backup_phases";
-const TEST_FLAG = "level_up_phase_test_active";
-
-let renderQueued = false;
-
-function active() {
-    return localStorage.getItem(TEST_FLAG) === "1";
-}
-
-function parse(key) {
-    try {
-        const value = JSON.parse(localStorage.getItem(key) || "[]");
-        return Array.isArray(value) ? value : [];
-    } catch {
-        return [];
-    }
-}
-
-function day(offset) {
-    const date = new Date();
-    date.setHours(12, 0, 0, 0);
-    date.setDate(date.getDate() + offset);
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
-function baseline(phase, entries) {
-    const latest = [...entries].reverse().find(entry => Number(entry?.weight) > 0);
-    return Number(latest?.weight || phase?.startingTrendWeight || localStorage.getItem("level_up_goal_weight") || 180);
-}
-
-function addTestData() {
-    const phase = getActiveNutritionPhase();
-    if (!phase) return;
-
-    const weights = parse(WEIGHT_KEY);
-    const phases = parse(PHASES_KEY);
-    localStorage.setItem(BACKUP_WEIGHTS, JSON.stringify(weights));
-    localStorage.setItem(BACKUP_PHASES, JSON.stringify(phases));
-
-    const endWeight = baseline(phase, weights);
-    const rate = Number(phase.targetWeeklyRate) || 0;
-    const start = day(-20);
-    const testEntries = [];
-
-    for (let i = 0; i < 21; i += 1) {
-        const daysFromEnd = 20 - i;
-        const noise = [0.04, -0.05, 0.02, 0.06, -0.04, 0.01, -0.03][i % 7];
-        testEntries.push({
-            date: day(i - 20),
-            weight: Math.round((endWeight - (rate * daysFromEnd / 7) + noise) * 10) / 10,
-            source: "phase-test-data"
-        });
-    }
-
-    const index = phases.findIndex(item => item?.id === phase.id);
-    if (index >= 0 && (!phases[index].startDate || phases[index].startDate > start)) {
-        phases[index] = { ...phases[index], startDate: start, startingTrendWeight: testEntries[0].weight };
-    }
-
-    localStorage.setItem(WEIGHT_KEY, JSON.stringify(testEntries));
-    localStorage.setItem(PHASES_KEY, JSON.stringify(phases));
-    localStorage.setItem(TEST_FLAG, "1");
-    notify();
-}
-
-function removeTestData() {
-    const weights = localStorage.getItem(BACKUP_WEIGHTS);
-    const phases = localStorage.getItem(BACKUP_PHASES);
-    if (weights !== null) localStorage.setItem(WEIGHT_KEY, weights);
-    if (phases !== null) localStorage.setItem(PHASES_KEY, phases);
-    localStorage.removeItem(BACKUP_WEIGHTS);
-    localStorage.removeItem(BACKUP_PHASES);
-    localStorage.removeItem(TEST_FLAG);
-    notify();
-}
-
-function notify() {
-    window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated"));
-    window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
-    scheduleRender();
-}
-
-function setText(node, value) {
-    if (node && node.textContent !== value) node.textContent = value;
-}
-
-function render() {
-    const summary = document.querySelector("#weight-progress .weight-summary");
-    if (!summary) return;
-
-    let box = document.getElementById("phase-test-data-box");
-    if (!box) {
-        box = document.createElement("div");
-        box.id = "phase-test-data-box";
-        box.style.cssText = "margin:10px 0;padding:10px;border:1px dashed rgba(255,255,255,.18);border-radius:10px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap";
-        box.innerHTML = `<small id="phase-test-data-note">TEST: create 21 days of phase-matched weigh-ins.</small><button id="phase-test-data-btn" class="secondary-btn" type="button"></button>`;
-        summary.insertAdjacentElement("afterend", box);
-        document.getElementById("phase-test-data-btn")?.addEventListener("click", () => active() ? removeTestData() : addTestData());
-    }
-
-    const button = document.getElementById("phase-test-data-btn");
-    const note = document.getElementById("phase-test-data-note");
-    const phase = getActiveNutritionPhase();
-    const isActive = active();
-
-    if (button) {
-        const shouldDisable = !isActive && !phase;
-        if (button.disabled !== shouldDisable) button.disabled = shouldDisable;
-        setText(button, isActive ? "Restore Real Data" : "Add 21 Days Test Data");
-    }
-
-    setText(
-        note,
-        isActive
-            ? "TEST DATA ACTIVE — restore your saved weight/phase data when finished."
-            : phase
-                ? "TEST: creates enough on-target phase data to evaluate established behavior."
-                : "Start a phase first to generate test data."
-    );
-}
-
-function scheduleRender() {
-    if (renderQueued) return;
-    renderQueued = true;
-    window.requestAnimationFrame(() => {
-        renderQueued = false;
-        render();
-    });
-}
-
-const content = document.getElementById("content");
-if (content) new MutationObserver(scheduleRender).observe(content, { childList: true, subtree: true });
-window.addEventListener("levelup:nutrition-updated", scheduleRender);
-window.addEventListener("levelup:nutrition-phase-updated", scheduleRender);
-window.addEventListener("load", scheduleRender);
-scheduleRender();
+const WEIGHT_KEY="forge_weight_entries",PHASES_KEY="level_up_nutrition_phases",BACKUP_WEIGHTS="level_up_test_backup_weights",BACKUP_PHASES="level_up_test_backup_phases",TEST_FLAG="level_up_phase_test_active",TEST_MODE="level_up_phase_test_mode";
+let renderQueued=false;
+function active(){return localStorage.getItem(TEST_FLAG)==="1"}
+function currentMode(){return localStorage.getItem(TEST_MODE)||"on-track"}
+function parse(key){try{const value=JSON.parse(localStorage.getItem(key)||"[]");return Array.isArray(value)?value:[]}catch{return[]}}
+function day(offset){const date=new Date();date.setHours(12,0,0,0);date.setDate(date.getDate()+offset);return`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`}
+function baseline(phase,entries){const latest=[...entries].reverse().find(entry=>Number(entry?.weight)>0);return Number(latest?.weight||phase?.startingTrendWeight||localStorage.getItem("level_up_goal_weight")||180)}
+function scenarioRate(phase,mode){const target=Number(phase?.targetWeeklyRate)||0;if(mode==="on-track")return target;if(Math.abs(target)<.005)return .75;return target>0?-.75:.75}
+function applyTestData(mode){const activePhase=getActiveNutritionPhase();if(!activePhase)return;const wasActive=active();const weights=wasActive?parse(BACKUP_WEIGHTS):parse(WEIGHT_KEY);const phases=wasActive?parse(BACKUP_PHASES):parse(PHASES_KEY);if(!wasActive){localStorage.setItem(BACKUP_WEIGHTS,JSON.stringify(weights));localStorage.setItem(BACKUP_PHASES,JSON.stringify(phases))}const phase=phases.find(item=>item?.id===activePhase.id)||activePhase;const endWeight=baseline(phase,weights),rate=scenarioRate(phase,mode),start=day(-20),testEntries=[];for(let i=0;i<21;i+=1){const daysFromEnd=20-i,noise=[.04,-.05,.02,.06,-.04,.01,-.03][i%7];testEntries.push({date:day(i-20),weight:Math.round((endWeight-(rate*daysFromEnd/7)+noise)*10)/10,source:`phase-test-data-${mode}`})}const index=phases.findIndex(item=>item?.id===phase.id);if(index>=0&&(!phases[index].startDate||phases[index].startDate>start))phases[index]={...phases[index],startDate:start,startingTrendWeight:testEntries[0].weight};localStorage.setItem(WEIGHT_KEY,JSON.stringify(testEntries));localStorage.setItem(PHASES_KEY,JSON.stringify(phases));localStorage.setItem(TEST_FLAG,"1");localStorage.setItem(TEST_MODE,mode);notify()}
+function removeTestData(){const weights=localStorage.getItem(BACKUP_WEIGHTS),phases=localStorage.getItem(BACKUP_PHASES);if(weights!==null)localStorage.setItem(WEIGHT_KEY,weights);if(phases!==null)localStorage.setItem(PHASES_KEY,phases);localStorage.removeItem(BACKUP_WEIGHTS);localStorage.removeItem(BACKUP_PHASES);localStorage.removeItem(TEST_FLAG);localStorage.removeItem(TEST_MODE);notify()}
+function notify(){window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated"));window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));scheduleRender()}
+function setText(node,value){if(node&&node.textContent!==value)node.textContent=value}
+function setHidden(node,value){if(node&&node.hidden!==value)node.hidden=value}
+function render(){const summary=document.querySelector("#weight-progress .weight-summary");if(!summary)return;let box=document.getElementById("phase-test-data-box");if(!box){box=document.createElement("div");box.id="phase-test-data-box";box.innerHTML=`<small id="phase-test-data-note">TEST: create phase-matched weigh-ins.</small><div class="phase-test-data-actions"><button id="phase-test-on-track" class="secondary-btn" type="button">Test On Track</button><button id="phase-test-off-track" class="secondary-btn" type="button">Test Off Track</button><button id="phase-test-restore" class="secondary-btn" type="button" hidden>Restore Real Data</button></div>`;summary.insertAdjacentElement("afterend",box);document.getElementById("phase-test-on-track")?.addEventListener("click",()=>applyTestData("on-track"));document.getElementById("phase-test-off-track")?.addEventListener("click",()=>applyTestData("off-track"));document.getElementById("phase-test-restore")?.addEventListener("click",removeTestData)}const onTrack=document.getElementById("phase-test-on-track"),offTrack=document.getElementById("phase-test-off-track"),restore=document.getElementById("phase-test-restore"),note=document.getElementById("phase-test-data-note"),phase=getActiveNutritionPhase(),isActive=active(),mode=currentMode();if(onTrack)onTrack.disabled=!phase||(isActive&&mode==="on-track");if(offTrack)offTrack.disabled=!phase||(isActive&&mode==="off-track");setHidden(restore,!isActive);setText(note,isActive?`TEST DATA ACTIVE — ${mode==="off-track"?"OFF TRACK":"ON TRACK"} scenario. Restore real data when finished.`:phase?"TEST: compare established on-track and clearly off-track phase behavior.":"Start a phase first to generate test data.")}
+function scheduleRender(){if(renderQueued)return;renderQueued=true;window.requestAnimationFrame(()=>{renderQueued=false;render()})}
+const content=document.getElementById("content");if(content)new MutationObserver(scheduleRender).observe(content,{childList:true,subtree:true});window.addEventListener("levelup:nutrition-updated",scheduleRender);window.addEventListener("levelup:nutrition-phase-updated",scheduleRender);window.addEventListener("load",scheduleRender);scheduleRender();

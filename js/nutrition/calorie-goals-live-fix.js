@@ -3,8 +3,8 @@ import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=phase-tol
 import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-goal-controls-1";
 import { getActiveNutritionPhase } from "./nutrition-phase.js?v=phase-tolerance-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
-import "./phase-rate-display.js?v=phase-tolerance-1";
-import "./phase-test-data.js?v=phase-test-data-2";
+import "./phase-rate-display.js?v=phase-goal-rate-1";
+import "./phase-test-data.js?v=phase-test-scenarios-1";
 
 let refreshScheduled = false;
 let draftGoalId = null;

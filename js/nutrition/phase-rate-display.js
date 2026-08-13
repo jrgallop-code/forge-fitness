@@ -23,18 +23,10 @@ function formatRate(value) {
 function getDisplay() {
     const phase = getActiveNutritionPhase();
     if (!phase) return { text: "No active phase", rateText: "No active phase", statusText: "NO ACTIVE PHASE" };
-
     const metrics = getActivePhaseMetrics(phase);
     const rate = formatRate(metrics.actualRateLbPerWeek);
-
-    if (metrics.status === "NEED MORE PHASE DATA" || !rate) {
-        return { text: "Need more phase data", rateText: "Need more phase data", statusText: "NEED MORE PHASE DATA" };
-    }
-
-    if (metrics.status === "PRELIMINARY") {
-        return { text: `Preliminary · ${rate}`, rateText: rate, statusText: "PRELIMINARY" };
-    }
-
+    if (metrics.status === "NEED MORE PHASE DATA" || !rate) return { text: "Need more phase data", rateText: "Need more phase data", statusText: "NEED MORE PHASE DATA" };
+    if (metrics.status === "PRELIMINARY") return { text: `Preliminary · ${rate}`, rateText: rate, statusText: "PRELIMINARY" };
     const label = STATUS_LABELS[metrics.status] || metrics.status;
     return { text: `${label} · ${rate}`, rateText: rate, statusText: metrics.status };
 }
@@ -44,14 +36,14 @@ function setText(node, value) {
 }
 
 function refresh() {
+    const phase = getActiveNutritionPhase();
     const display = getDisplay();
+    const targetRate = formatRate(phase?.targetWeeklyRate);
+    setText(document.getElementById("weight-current-phase"), phase ? `${phase.label || "Current Phase"}${targetRate ? ` (${targetRate})` : ""}` : "No active phase");
     setText(document.getElementById("weight-phase-rate-heading"), "Phase Weekly Rate");
     setText(document.getElementById("weight-phase-rate"), display.text);
-
     const phaseCard = document.getElementById("nutrition-current-phase");
-    const statusBadge = phaseCard?.querySelector(".nutrition-current-phase-head b");
-    setText(statusBadge, display.statusText);
-
+    setText(phaseCard?.querySelector(".nutrition-current-phase-head b"), display.statusText);
     const grid = phaseCard?.querySelector(".nutrition-current-phase-grid");
     if (grid) {
         const actualCell = [...grid.children].find(cell => cell.querySelector("span")?.textContent?.trim() === "Actual Since Start");
@@ -62,10 +54,7 @@ function refresh() {
 function scheduleRefresh() {
     if (refreshQueued) return;
     refreshQueued = true;
-    window.requestAnimationFrame(() => {
-        refreshQueued = false;
-        refresh();
-    });
+    window.requestAnimationFrame(() => { refreshQueued = false; refresh(); });
 }
 
 const content = document.getElementById("content");
