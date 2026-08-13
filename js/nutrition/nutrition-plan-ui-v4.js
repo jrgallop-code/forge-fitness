@@ -5,6 +5,7 @@ import { getActiveNutritionPhase, getActivePhaseMetrics, saveNutritionPhase } fr
 const FULL_GAP_INCREMENT = 50;
 const FIRST_STEP_FRACTION = 0.5;
 const FIRST_STEP_INCREMENT = 25;
+const REASSESSMENT_DAYS = 21;
 
 export function initializeNutritionPlanUI() {
     removeLegacyPlanUI();
@@ -110,6 +111,13 @@ function refreshGoalCheckIn() {
         setText("goal-check-in-suggested", ""); hideApply(); return;
     }
 
+    const reassessment = getReassessmentWait(phase);
+    if (reassessment) {
+        setText("goal-check-in-message", `Calories changed ${reassessment.daysElapsed === 0 ? "today" : `${reassessment.daysElapsed} day${reassessment.daysElapsed === 1 ? "" : "s"} ago`}. Hold the current target long enough to measure the response before making another change.`);
+        setText("goal-check-in-suggested", `Current target: ${currentCalories} kcal/day · Reassess in ${reassessment.daysRemaining} day${reassessment.daysRemaining === 1 ? "" : "s"}.`);
+        hideApply(); return;
+    }
+
     if (!metrics.recommendationReady) {
         setText("goal-check-in-message", `Actual: ${formatRate(actual)} · Target: ${formatRate(target)}. The trend is ${statusPhrase(metrics.status)}, but Level Up waits for a full 21-day phase window before suggesting a calorie change.`);
         setText("goal-check-in-suggested", ""); hideApply(); return;
@@ -128,8 +136,8 @@ function refreshGoalCheckIn() {
         apply.onclick = () => {
             saveNutritionPhase({ goalId: phase.goalId, maintenanceCalories: phase.maintenanceCalories, targetCalories: recommendation.firstStepCalories });
             setCurrentCalories(recommendation.firstStepCalories, "50% phase calorie-gap adjustment");
-            setText("goal-check-in-message", `Applied the 50% first step (${formatSignedCalories(recommendation.firstStepDelta)} kcal/day). New target: ${recommendation.firstStepCalories} kcal/day. The ${phase.label || "current"} phase start date and target rate are unchanged; reassess after more phase data accumulates.`);
-            setText("goal-check-in-suggested", `Estimated target remains ${recommendation.estimatedTargetCalories} kcal/day until the next trend reassessment.`); hideApply();
+            setText("goal-check-in-message", `Applied the 50% first step (${formatSignedCalories(recommendation.firstStepDelta)} kcal/day). New target: ${recommendation.firstStepCalories} kcal/day. The ${phase.label || "current"} phase start date and target rate are unchanged.`);
+            setText("goal-check-in-suggested", `Estimated target before reassessment: ${recommendation.estimatedTargetCalories} kcal/day. Hold ${recommendation.firstStepCalories} kcal/day for the next 21-day assessment window.`); hideApply();
         };
     }
 }
@@ -143,6 +151,17 @@ function buildCalorieRecommendation({ actual, target, currentCalories }) {
     if (firstStepDelta === 0 && fullGapCalories !== 0) firstStepDelta = Math.sign(fullGapCalories) * FIRST_STEP_INCREMENT;
     const firstStepCalories = Math.max(1, Math.round(Number(currentCalories) + firstStepDelta));
     return { fullGapCalories, estimatedTargetCalories, firstStepDelta, firstStepCalories };
+}
+
+function getReassessmentWait(phase) {
+    const adjustments = Array.isArray(phase?.adjustments) ? phase.adjustments : [];
+    const latest = [...adjustments].reverse().find(item => item?.date && Number(item?.newCalories) > 0);
+    if (!latest) return null;
+    const time = new Date(latest.date).getTime();
+    if (!Number.isFinite(time)) return null;
+    const daysElapsed = Math.max(0, Math.floor((Date.now() - time) / 86400000));
+    if (daysElapsed >= REASSESSMENT_DAYS) return null;
+    return { daysElapsed, daysRemaining: REASSESSMENT_DAYS - daysElapsed };
 }
 
 function formatSignedCalories(value) {
