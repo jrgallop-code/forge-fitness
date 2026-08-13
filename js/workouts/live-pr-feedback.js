@@ -32,20 +32,15 @@ function getStatus() {
 }
 
 function refreshLiveDisplay() {
-    if (document.querySelector(".history-session-card, .history-workout-card")) {
-        initializeWorkoutPrBadges();
-    }
-
+    if (document.querySelector(".history-session-card, .history-workout-card")) initializeWorkoutPrBadges();
     const logger = document.getElementById("workout-session-logger");
     if (!logger || logger.dataset.editingSessionId) {
         document.querySelector(".live-pr-toast")?.remove();
         return;
     }
-
     const { status } = getStatus();
     logger.querySelectorAll(".live-pr-exercise-badge").forEach(element => element.remove());
     logger.querySelectorAll(".session-set-row.live-pr-set").forEach(row => row.classList.remove("live-pr-set"));
-
     let counter = logger.querySelector(".live-pr-workout-count");
     if (status.count > 0) {
         if (!counter) {
@@ -54,18 +49,11 @@ function refreshLiveDisplay() {
             logger.querySelector(".builder-heading > div")?.appendChild(counter);
         }
         if (counter) counter.innerHTML = `${trophyIcon()}<span>PR · ${status.count}</span>`;
-    } else {
-        counter?.remove();
-    }
-
+    } else counter?.remove();
     status.details.forEach(detail => {
-        const card = [...logger.querySelectorAll(".session-exercise-card")]
-            .find(element => String(element.dataset.exerciseId || "") === String(detail.exerciseId));
+        const card = [...logger.querySelectorAll(".session-exercise-card")].find(element => String(element.dataset.exerciseId || "") === String(detail.exerciseId));
         if (!card) return;
-
-        const row = card.querySelector(`.session-set-row[data-set-index="${detail.bestSetIndex}"]`);
-        row?.classList.add("live-pr-set");
-
+        card.querySelector(`.session-set-row[data-set-index="${detail.bestSetIndex}"]`)?.classList.add("live-pr-set");
         const badge = document.createElement("div");
         badge.className = "live-pr-exercise-badge";
         badge.innerHTML = `${trophyIcon()}<span>PR achieved</span>`;
@@ -76,17 +64,14 @@ function refreshLiveDisplay() {
 function handleCompletedSet(button, beforeStatus) {
     const logger = button.closest("#workout-session-logger");
     if (!logger || logger.dataset.editingSessionId) return;
-
     const row = button.closest(".session-set-row");
     const card = button.closest(".session-exercise-card");
     const exerciseId = card?.dataset.exerciseId;
     const after = getStatus().status;
     refreshLiveDisplay();
-
     if (!row?.classList.contains("completed") || !exerciseId) return;
     const afterDetail = after.details.get(exerciseId);
     if (!afterDetail) return;
-
     const beforeDetail = beforeStatus?.details?.get(exerciseId);
     const newlyEstablished = !beforeDetail;
     const improvedAgain = beforeDetail && afterDetail.score > beforeDetail.score + SCORE_EPSILON;
@@ -97,7 +82,6 @@ function handleCompletedSet(button, beforeStatus) {
 function showPrToast(exerciseId, detail) {
     document.querySelector(".live-pr-toast")?.remove();
     if (toastTimer) window.clearTimeout(toastTimer);
-
     const exerciseName = getExerciseById(exerciseId)?.name || "Exercise";
     const toast = document.createElement("div");
     toast.className = "live-pr-toast";
@@ -106,7 +90,6 @@ function showPrToast(exerciseId, detail) {
     toast.innerHTML = `<div class="live-pr-toast-icon">${trophyIcon()}</div><div><span>CONGRATS! NEW PR!</span><strong>${escapeHtml(exerciseName)}</strong><small>${escapeHtml(formatPrDetail(detail))} · Awesome work!</small></div>`;
     document.body.appendChild(toast);
     requestAnimationFrame(() => toast.classList.add("show"));
-
     toastTimer = window.setTimeout(() => {
         toast.classList.remove("show");
         window.setTimeout(() => toast.remove(), 220);
@@ -115,11 +98,7 @@ function showPrToast(exerciseId, detail) {
 
 function formatPrDetail(detail) {
     const set = detail?.bestSet || {};
-    if (detail?.mode === "weighted") {
-        const weight = Number(set.weight);
-        const reps = Number(set.reps);
-        return `${weight} lb × ${reps} · est. 1RM ${Math.round(detail.score)} lb`;
-    }
+    if (detail?.mode === "weighted") return `${Number(set.weight)} lb × ${Number(set.reps)} · est. 1RM ${Math.round(detail.score)} lb`;
     return `${Number(set.reps) || 0} reps`;
 }
 
@@ -128,12 +107,7 @@ function trophyIcon() {
 }
 
 function escapeHtml(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;");
 }
 
 document.addEventListener("click", event => {
@@ -149,7 +123,6 @@ document.addEventListener("click", event => {
 document.addEventListener("change", event => {
     if (event.target?.id === "progress-range") window.setTimeout(refreshLiveDisplay, 0);
 });
-
 window.addEventListener("focus", refreshLiveDisplay);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshLiveDisplay(); });
 window.setTimeout(refreshLiveDisplay, 0);
@@ -157,8 +130,8 @@ window.setTimeout(refreshLiveDisplay, 0);
 if (!document.querySelector('link[data-workout-complete-recap-style]')) {
     const recapStyle = document.createElement("link");
     recapStyle.rel = "stylesheet";
-    recapStyle.href = "css/workout-complete-recap.css?v=workout-complete-recap-1";
+    recapStyle.href = "css/workout-complete-recap.css?v=workout-complete-recap-2";
     recapStyle.dataset.workoutCompleteRecapStyle = "true";
     document.head.appendChild(recapStyle);
 }
-import("./workout-complete-recap.js?v=workout-complete-recap-1");
+import("./workout-complete-recap.js?v=workout-complete-recap-2");
