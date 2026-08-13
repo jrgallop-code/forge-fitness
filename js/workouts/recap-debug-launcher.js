@@ -1,3 +1,5 @@
+import("./recap-detailed-recovery-bridge.js?v=recap-detailed-recovery-1");
+
 const TEST_SESSION_ID = "level-up-recap-debug-session";
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 
