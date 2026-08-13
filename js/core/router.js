@@ -2,7 +2,7 @@ import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=plan-builder-l
 import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=builder-library-refresh-1";
 import { initializeOneOffWorkout } from "../workouts/one-off-workout.js?v=one-off-workout-1";
 import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=workout-catalogue-form-coach-removed-1";
-import { initializeSmartBuild } from "../workouts/smart-build.js?v=smart-build-exercise-range-1";
+import { initializeSmartBuild } from "../workouts/smart-build.js?v=first-run-onboarding-1";
 import { initializeSmartBuildSupersetGuard } from "../workouts/smart-build-superset-guard.js?v=superset-clean-1";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
@@ -23,7 +23,7 @@ import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energ
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-goal-presets-2";
-import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=more-bmi-2";
+import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=first-run-onboarding-1";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=workout-history-preview-2";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-2";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-3";
