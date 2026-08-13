@@ -1,6 +1,6 @@
-import { calculateMacroTargets, poundsToKg } from "./tdee-calculator.js?v=nutrition-phase-1";
-import { getNutritionProfile, getNutritionMacroPreference, getNutritionPlan, setCurrentCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
-import { getActiveNutritionPhase, getActivePhaseMetrics, saveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-1";
+import { calculateMacroTargets, poundsToKg } from "./tdee-calculator.js?v=phase-tolerance-1";
+import { getNutritionProfile, getNutritionMacroPreference, getNutritionPlan, setCurrentCalories } from "./nutrition-storage.js?v=phase-tolerance-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics, saveNutritionPhase } from "./nutrition-phase.js?v=phase-tolerance-1";
 
 const MIN_ADJUSTMENT_KCAL = 100;
 const MAX_ADJUSTMENT_KCAL = 200;
@@ -26,7 +26,7 @@ function ensureGoalCheckInUI() {
     goalsView.insertAdjacentHTML("beforeend", `
         <article id="goal-check-in-card" class="goal-box nutrition-goal-card goal-check-in-card">
             <span class="eyebrow">PHASE CHECK-IN</span>
-            <div class="goal-check-in-heading"><h3 id="goal-check-in-status">CALIBRATING</h3><small id="goal-check-in-confidence"></small></div>
+            <div class="goal-check-in-heading"><h3 id="goal-check-in-status">NEED MORE PHASE DATA</h3><small id="goal-check-in-confidence"></small></div>
             <p id="goal-check-in-message" class="nutrition-message">Start a nutrition phase and log weight consistently to begin.</p>
             <strong id="goal-check-in-suggested"></strong>
             <div class="nutrition-target-actions">
@@ -66,33 +66,56 @@ function refreshGoalCheckIn(plan) {
         setText("goal-check-in-message", "Start a phase above. Trend analysis will begin from that phase's start date.");
         setText("goal-check-in-suggested", ""); hideApply(); return;
     }
-    const metrics = getActivePhaseMetrics(phase); const trend = metrics.trend;
+
+    const metrics = getActivePhaseMetrics(phase);
+    const trend = metrics.trend;
     setText("goal-check-in-status", metrics.status);
-    const confidence = trend?.status === "actual" ? `Established · ${trend.windowEntries} weigh-ins / ${trend.windowDays} days` : trend?.status === "preliminary" ? `Preliminary · ${trend.windowEntries} weigh-ins / ${trend.windowDays} days` : "Collecting phase data";
+
+    const confidence = trend?.status === "actual"
+        ? `Established · ${trend.windowEntries} weigh-ins / ${trend.windowDays} days`
+        : trend?.status === "preliminary"
+            ? `Preliminary · ${trend.windowEntries} weigh-ins / ${trend.windowDays} days`
+            : `Need more phase data · ${trend?.windowEntries || 0} weigh-ins / ${trend?.windowDays || 0} days`;
     setText("goal-check-in-confidence", confidence);
 
-    if (trend?.status !== "actual" || !Number.isFinite(metrics.actualRateLbPerWeek)) {
-        const preliminary = Number.isFinite(metrics.actualRateLbPerWeek) ? ` Preliminary rate: ${formatRate(metrics.actualRateLbPerWeek)}.` : "";
-        setText("goal-check-in-message", `Level Up waits for an established trend from this phase before suggesting a calorie change.${preliminary}`);
+    if (metrics.status === "NEED MORE PHASE DATA" || !Number.isFinite(metrics.actualRateLbPerWeek)) {
+        setText("goal-check-in-message", "There is not enough weight data from this phase yet to estimate a reliable weekly rate.");
         setText("goal-check-in-suggested", ""); hideApply(); return;
     }
 
-    const actual = Number(metrics.actualRateLbPerWeek); const target = Number(metrics.targetRateLbPerWeek); const currentCalories = Number(plan.currentCalories);
-    if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) {
-        setText("goal-check-in-message", `This phase is tracking at ${formatRate(actual)} against ${formatRate(target)}. ${Number.isFinite(currentCalories) ? `Keep calories at ${currentCalories} kcal/day.` : "Save a calorie target when you're ready."}`);
+    const actual = Number(metrics.actualRateLbPerWeek);
+    const target = Number(metrics.targetRateLbPerWeek);
+    const currentCalories = Number(plan.currentCalories);
+
+    if (metrics.status === "PRELIMINARY") {
+        setText("goal-check-in-message", `Preliminary phase rate: ${formatRate(actual)}. Level Up waits for at least 14 days and enough weigh-ins before judging the phase.`);
         setText("goal-check-in-suggested", ""); hideApply(); return;
     }
+
+    if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) {
+        const statusCopy = metrics.status === "MAINTAINING" ? "Your trend is within the maintenance range." : "Your trend is within the phase target range.";
+        setText("goal-check-in-message", `${statusCopy} Actual: ${formatRate(actual)} · Target: ${formatRate(target)}. ${Number.isFinite(currentCalories) ? `Keep calories at ${currentCalories} kcal/day.` : "Save a calorie target when you're ready."}`);
+        setText("goal-check-in-suggested", ""); hideApply(); return;
+    }
+
+    if (!metrics.recommendationReady) {
+        setText("goal-check-in-message", `Actual: ${formatRate(actual)} · Target: ${formatRate(target)}. The trend is ${statusPhrase(metrics.status)}, but Level Up waits for a full 21-day phase window before suggesting a calorie change.`);
+        setText("goal-check-in-suggested", ""); hideApply(); return;
+    }
+
     if (!Number.isFinite(currentCalories) || !Number.isFinite(target)) { hideApply(); return; }
 
     const difference = actual - target;
     const direction = difference > 0 ? -1 : 1;
     const adjustment = calculateSuggestedAdjustment(difference);
     const suggested = Math.max(1, Math.round(currentCalories + direction * adjustment));
-    setText("goal-check-in-message", `Actual rate is ${formatRate(actual)} versus the phase target of ${formatRate(target)}. This suggestion changes calories without starting a new phase.`);
+    setText("goal-check-in-message", `Actual: ${formatRate(actual)} · Target: ${formatRate(target)}. The phase is ${statusPhrase(metrics.status)} across the established 21-day window.`);
     setText("goal-check-in-suggested", `Suggested calorie target: ${suggested} kcal/day`);
+
     const apply = document.getElementById("goal-check-in-apply");
     if (apply) {
-        apply.hidden = false; apply.textContent = `Apply ${suggested}`;
+        apply.hidden = false;
+        apply.textContent = `Apply ${suggested}`;
         apply.onclick = () => {
             saveNutritionPhase({ goalId: phase.goalId, maintenanceCalories: phase.maintenanceCalories, targetCalories: suggested });
             setCurrentCalories(suggested, "Nutrition phase check-in recommendation");
@@ -107,7 +130,24 @@ function calculateSuggestedAdjustment(diffLbPerWeek) {
     const rounded = Math.round(implied / 50) * 50;
     return Math.min(MAX_ADJUSTMENT_KCAL, Math.max(MIN_ADJUSTMENT_KCAL, rounded || MIN_ADJUSTMENT_KCAL));
 }
-function formatRate(v){const n=Number(v);if(!Number.isFinite(n))return"--";if(Math.abs(n)<.005)return"Maintain";return`${n>0?"+":"−"}${Math.abs(n).toFixed(2).replace(/0$/,"")} lb/week`}
+
+function statusPhrase(status) {
+    if (status === "SLIGHTLY SLOWER") return "slightly slower than target";
+    if (status === "SLIGHTLY FASTER") return "slightly faster than target";
+    if (status === "TRENDING UP") return "trending up outside the maintenance range";
+    if (status === "TRENDING DOWN") return "trending down outside the maintenance range";
+    if (status === "NEEDS ATTENTION") return "outside the target range";
+    return "outside the target range";
+}
+
+function formatRate(value) {
+    if (value === null || value === undefined || value === "") return "--";
+    const number = Number(value);
+    if (!Number.isFinite(number)) return "--";
+    const sign = number > 0 ? "+" : number < 0 ? "−" : "";
+    return `${sign}${Math.abs(number).toFixed(2)} lb/week`;
+}
+
 function hideApply(){const b=document.getElementById("goal-check-in-apply");if(b){b.hidden=true;b.onclick=null}}
 function isAdultProfile(p){return Boolean(p&&Number.isFinite(Number(p.age))&&Number(p.age)>=18)}
 function setText(id,value){const node=document.getElementById(id);if(node)node.textContent=value}

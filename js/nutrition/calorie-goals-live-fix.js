@@ -1,8 +1,9 @@
 import { initializeUnifiedGoalsCalories } from "./unified-goals-calories.js?v=nutrition-phase-1";
-import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=nutrition-phase-1";
+import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=phase-tolerance-1";
 import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-goal-controls-1";
-import { getActiveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-1";
+import { getActiveNutritionPhase } from "./nutrition-phase.js?v=phase-tolerance-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
+import "./phase-rate-display.js?v=phase-tolerance-1";
 
 let refreshScheduled = false;
 let draftGoalId = null;
