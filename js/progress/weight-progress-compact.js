@@ -6,8 +6,19 @@ const DAY_MS = 86400000;
 export function initializeWeightProgressCompact() {
     const section = document.getElementById("weight-progress");
     if (!section) return;
+    removeGoalUi(section);
     compactWeightProgress(section);
     refreshWeightSummary();
+}
+
+function removeGoalUi(section) {
+    section.querySelector(".weight-goal-settings")?.remove();
+    section.querySelector("#current-goal-host")?.remove();
+    section.querySelector("#current-goal-wizard")?.remove();
+
+    [...section.querySelectorAll(".weight-summary .metric-card")].forEach(card => {
+        if (card.querySelector("h3")?.textContent?.trim() === "Goal") card.remove();
+    });
 }
 
 function compactWeightProgress(section) {
@@ -21,9 +32,8 @@ function compactWeightProgress(section) {
     if (!header || !weightEntry || !summary) return;
 
     legacyGoalEntry?.remove();
-    section.querySelector(".weight-goal-settings")?.remove();
-    section.querySelector("#current-goal-host")?.remove();
-    section.querySelector("#current-goal-wizard")?.remove();
+    removeGoalUi(section);
+    header.querySelectorAll(".weight-add-toggle").forEach(button => button.remove());
 
     const dateLabel = weightEntry.querySelector('label[for="weight-date"]');
     const dateInput = weightEntry.querySelector("#weight-date");
@@ -81,15 +91,19 @@ function compactWeightProgress(section) {
         if (Boolean(dateInput.value) && Number(weightInput.value) > 0) {
             window.setTimeout(() => {
                 setOpen(false);
+                removeGoalUi(section);
                 refreshWeightSummary();
-            }, 30);
+            }, 40);
         }
     }, true);
 
     section.addEventListener("click", event => {
         if (event.target.closest(".edit-weight-entry")) setOpen(true);
         if (event.target.closest(".remove-weight-entry")) {
-            window.setTimeout(refreshWeightSummary, 30);
+            window.setTimeout(() => {
+                removeGoalUi(section);
+                refreshWeightSummary();
+            }, 40);
         }
     });
 
