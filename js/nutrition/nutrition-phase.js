@@ -1,8 +1,11 @@
-import { GOAL_PRESETS } from "./tdee-calculator.js?v=nutrition-phase-1";
-import { calculateWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-phase-1";
+import { GOAL_PRESETS } from "./tdee-calculator.js?v=phase-tolerance-1";
+import { calculateWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=phase-tolerance-1";
 
 const PHASES_KEY = "level_up_nutrition_phases";
 const WEIGHT_KEY = "forge_weight_entries";
+const BODYWEIGHT_TOLERANCE_PCT = 0.001;
+const TARGET_TOLERANCE_FRACTION = 0.25;
+const DEFAULT_TOLERANCE_LB = 0.1;
 
 export function getActiveNutritionPhase() {
     return [...readPhases()].reverse().find(p => p && !p.endDate && GOAL_PRESETS[p.goalId]) || null;
@@ -62,20 +65,60 @@ export function saveNutritionPhase({ goalId, maintenanceCalories, targetCalories
 }
 
 export function getActivePhaseMetrics(phase = getActiveNutritionPhase()) {
-    if (!phase) return { status: "NO ACTIVE PHASE", trend: null, actualRateLbPerWeek: null, targetRateLbPerWeek: null };
-    const entries = readWeights().filter(e => e.date >= phase.startDate && (!phase.endDate || e.date <= phase.endDate));
-    const trend = calculateWeightTrend(entries);
-    const actual = trend?.weeklyChange == null ? null : Number(trend.weeklyChange);
-    const target = Number(phase.targetWeeklyRate);
-    let status = "CALIBRATING";
-    if (trend.status === "actual" && Number.isFinite(actual) && Number.isFinite(target)) {
-        const tolerance = Math.max(0.1, Math.abs(target) * 0.25);
-        const diff = actual - target;
-        if (Math.abs(diff) <= tolerance) status = Math.abs(target) < 0.01 ? "MAINTAINING" : "ON TRACK";
-        else if (Math.abs(target) < 0.01) status = actual > 0 ? "TRENDING ABOVE TARGET" : "TRENDING BELOW TARGET";
-        else status = Math.abs(diff) <= tolerance * 2 ? ((target < 0 ? diff > 0 : diff < 0) ? "SLIGHTLY SLOWER THAN TARGET" : "SLIGHTLY FASTER THAN TARGET") : "TREND NEEDS ATTENTION";
+    if (!phase) {
+        return {
+            status: "NO ACTIVE PHASE",
+            trend: null,
+            actualRateLbPerWeek: null,
+            targetRateLbPerWeek: null,
+            toleranceLbPerWeek: null,
+            referenceWeight: null,
+            recommendationReady: false
+        };
     }
-    return { status, trend, actualRateLbPerWeek: Number.isFinite(actual) ? actual : null, targetRateLbPerWeek: Number.isFinite(target) ? target : null };
+
+    const entries = readWeights().filter(e => e.date >= phase.startDate && (!phase.endDate || e.date <= phase.endDate));
+    const trend = calculateWeightTrend(entries, { maxWindowDays: 21 });
+    const actual = finiteNumber(trend?.weeklyChange);
+    const target = finiteNumber(phase.targetWeeklyRate);
+    const referenceWeight = trendWeight(entries) ?? finiteNumber(phase.startingTrendWeight);
+    const bodyweightTolerance = Number.isFinite(referenceWeight)
+        ? referenceWeight * BODYWEIGHT_TOLERANCE_PCT
+        : DEFAULT_TOLERANCE_LB;
+    const targetTolerance = Number.isFinite(target) ? Math.abs(target) * TARGET_TOLERANCE_FRACTION : 0;
+    const tolerance = Math.max(DEFAULT_TOLERANCE_LB, bodyweightTolerance, targetTolerance);
+
+    if (trend.status === "insufficient" || !Number.isFinite(actual)) {
+        return buildMetrics("NEED MORE PHASE DATA", trend, actual, target, tolerance, referenceWeight, false);
+    }
+
+    if (trend.status === "preliminary") {
+        return buildMetrics("PRELIMINARY", trend, actual, target, tolerance, referenceWeight, false);
+    }
+
+    if (!Number.isFinite(target)) {
+        return buildMetrics("NEED MORE PHASE DATA", trend, actual, null, tolerance, referenceWeight, false);
+    }
+
+    let status;
+    if (Math.abs(target) < 0.005) {
+        if (Math.abs(actual) <= tolerance) status = "MAINTAINING";
+        else status = actual > 0 ? "TRENDING UP" : "TRENDING DOWN";
+    } else {
+        const difference = actual - target;
+        const absoluteDifference = Math.abs(difference);
+        if (absoluteDifference <= tolerance) {
+            status = "ON TRACK";
+        } else if (absoluteDifference <= tolerance * 2) {
+            const paceDifference = difference * Math.sign(target);
+            status = paceDifference > 0 ? "SLIGHTLY FASTER" : "SLIGHTLY SLOWER";
+        } else {
+            status = "NEEDS ATTENTION";
+        }
+    }
+
+    const recommendationReady = trend.windowDays >= 21 && trend.windowEntries >= 7;
+    return buildMetrics(status, trend, actual, target, tolerance, referenceWeight, recommendationReady);
 }
 
 export function getPhaseDayNumber(phase = getActiveNutritionPhase()) {
@@ -83,11 +126,24 @@ export function getPhaseDayNumber(phase = getActiveNutritionPhase()) {
     return Math.max(1, Math.floor((dateMs(phase.endDate || localDate()) - dateMs(phase.startDate)) / 86400000) + 1);
 }
 
+function buildMetrics(status, trend, actual, target, tolerance, referenceWeight, recommendationReady) {
+    return {
+        status,
+        trend,
+        actualRateLbPerWeek: Number.isFinite(actual) ? actual : null,
+        targetRateLbPerWeek: Number.isFinite(target) ? target : null,
+        toleranceLbPerWeek: Number.isFinite(tolerance) ? tolerance : null,
+        referenceWeight: Number.isFinite(referenceWeight) ? referenceWeight : null,
+        recommendationReady: Boolean(recommendationReady)
+    };
+}
+
 function readPhases(){try{const v=JSON.parse(localStorage.getItem(PHASES_KEY)||"[]");return Array.isArray(v)?v:[]}catch{return[]}}
 function writePhases(v){localStorage.setItem(PHASES_KEY,JSON.stringify(v))}
 function activeIndex(v){for(let i=v.length-1;i>=0;i-=1)if(v[i]&&!v[i].endDate&&GOAL_PRESETS[v[i].goalId])return i;return-1}
 function readWeights(){try{return normalizeWeightEntries(JSON.parse(localStorage.getItem(WEIGHT_KEY)||"[]"))}catch{return[]}}
 function trendWeight(entries){if(!entries.length)return null;const latest=entries.at(-1),cut=dateMs(latest.date)-6*86400000,recent=entries.filter(e=>dateMs(e.date)>=cut);const n=recent.length?recent.reduce((s,e)=>s+e.weight,0)/recent.length:latest.weight;return Math.round(n*100)/100}
+function finiteNumber(value){if(value===null||value===undefined||value==="")return null;const n=Number(value);return Number.isFinite(n)?n:null}
 function positive(v){const n=Math.round(Number(v));return Number.isFinite(n)&&n>0?n:null}
 function notify(){window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated"))}
 function localDate(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
