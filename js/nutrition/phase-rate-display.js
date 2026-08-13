@@ -1,8 +1,19 @@
-import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=phase-rate-display-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=phase-tolerance-1";
 
 let refreshQueued = false;
 
+const STATUS_LABELS = {
+    "MAINTAINING": "Maintaining",
+    "ON TRACK": "On Track",
+    "SLIGHTLY FASTER": "Slightly Faster",
+    "SLIGHTLY SLOWER": "Slightly Slower",
+    "NEEDS ATTENTION": "Needs Attention",
+    "TRENDING UP": "Trending Up",
+    "TRENDING DOWN": "Trending Down"
+};
+
 function formatRate(value) {
+    if (value === null || value === undefined || value === "") return null;
     const number = Number(value);
     if (!Number.isFinite(number)) return null;
     const sign = number > 0 ? "+" : number < 0 ? "−" : "";
@@ -11,19 +22,21 @@ function formatRate(value) {
 
 function getDisplay() {
     const phase = getActiveNutritionPhase();
-    if (!phase) return { text: "No active phase", nutritionText: "No active phase" };
+    if (!phase) return { text: "No active phase", rateText: "No active phase", statusText: "NO ACTIVE PHASE" };
 
     const metrics = getActivePhaseMetrics(phase);
-    if (metrics?.trend?.status !== "actual" || !Number.isFinite(Number(metrics.actualRateLbPerWeek))) {
-        return { text: "Need more phase data", nutritionText: "Need more phase data" };
+    const rate = formatRate(metrics.actualRateLbPerWeek);
+
+    if (metrics.status === "NEED MORE PHASE DATA" || !rate) {
+        return { text: "Need more phase data", rateText: "Need more phase data", statusText: "NEED MORE PHASE DATA" };
     }
 
-    const rate = formatRate(metrics.actualRateLbPerWeek);
-    const status = metrics.status === "MAINTAINING" ? "Maintaining" : null;
-    return {
-        text: status ? `${status} · ${rate}` : rate,
-        nutritionText: status ? `${status} · ${rate}` : rate
-    };
+    if (metrics.status === "PRELIMINARY") {
+        return { text: `Preliminary · ${rate}`, rateText: rate, statusText: "PRELIMINARY" };
+    }
+
+    const label = STATUS_LABELS[metrics.status] || metrics.status;
+    return { text: `${label} · ${rate}`, rateText: rate, statusText: metrics.status };
 }
 
 function setText(node, value) {
@@ -35,10 +48,14 @@ function refresh() {
     setText(document.getElementById("weight-phase-rate-heading"), "Phase Weekly Rate");
     setText(document.getElementById("weight-phase-rate"), display.text);
 
-    const grid = document.querySelector("#nutrition-current-phase .nutrition-current-phase-grid");
+    const phaseCard = document.getElementById("nutrition-current-phase");
+    const statusBadge = phaseCard?.querySelector(".nutrition-current-phase-head b");
+    setText(statusBadge, display.statusText);
+
+    const grid = phaseCard?.querySelector(".nutrition-current-phase-grid");
     if (grid) {
         const actualCell = [...grid.children].find(cell => cell.querySelector("span")?.textContent?.trim() === "Actual Since Start");
-        setText(actualCell?.querySelector("strong"), display.nutritionText);
+        setText(actualCell?.querySelector("strong"), display.rateText);
     }
 }
 
