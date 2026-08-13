@@ -3,6 +3,7 @@ import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=first-r
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-session-7-cardio-fields";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";
+import "./workouts/exercise-guide-resolution-fix.js?v=1";
 
 const FILLED_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
 const STROKE_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${paths}</svg>`;
