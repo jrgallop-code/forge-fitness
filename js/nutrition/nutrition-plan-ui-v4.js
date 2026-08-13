@@ -1,229 +1,70 @@
-import {
-    GOAL_PRESETS,
-    calculateTdee,
-    calculateMacroTargets,
-    poundsToKg
-}
-from "./tdee-calculator.js?v=manual-goals-1";
+import { calculateMacroTargets, poundsToKg } from "./tdee-calculator.js?v=current-goal-1";
+import { getNutritionProfile, getNutritionMacroPreference, getNutritionPlan, setCurrentCalories } from "./nutrition-storage.js?v=current-goal-1";
+import { getCurrentGoal, getCurrentGoalMetrics } from "../core/current-goal.js?v=current-goal-1";
 
-import {
-    getNutritionProfile,
-    getNutritionGoal,
-    getNutritionMacroPreference,
-    getNutritionPlan,
-    syncCalculatedCalories,
-    setCurrentCalories
-}
-from "./nutrition-storage.js?v=manual-goals-1";
-
-const WEIGHT_STORAGE_KEY = "forge_weight_entries";
-const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
-const CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
+const MIN_ADJUSTMENT_KCAL = 100;
+const MAX_ADJUSTMENT_KCAL = 200;
 
 export function initializeNutritionPlanUI() {
-    syncPlanFromRecommendation(getNutritionProfile(), getNutritionGoal());
-    ensureGoalTargetUI();
-    ensureAdaptiveCoachUI();
+    removeLegacyPlanUI();
+    ensureGoalCheckInUI();
     refreshNutritionPlanUI();
 
-    window.addEventListener("levelup:nutrition-updated", () => {
-        syncPlanFromRecommendation(getNutritionProfile(), getNutritionGoal());
-        refreshNutritionPlanUI();
+    window.addEventListener("levelup:nutrition-updated", refreshNutritionPlanUI);
+    window.addEventListener("levelup:current-goal-updated", refreshNutritionPlanUI);
+    document.getElementById("save-nutrition-profile-btn")?.addEventListener("click", () => window.setTimeout(refreshNutritionPlanUI, 30));
+}
+
+function removeLegacyPlanUI() {
+    document.getElementById("active-calorie-target-card")?.remove();
+    document.querySelector('[data-nutrition-view="coach"]')?.remove();
+    document.querySelector('[data-planner-view="coach"]')?.remove();
+}
+
+function ensureGoalCheckInUI() {
+    const goalsView = document.querySelector('[data-planner-view="goals"]');
+    if (!goalsView || document.getElementById("goal-check-in-card")) return;
+    goalsView.insertAdjacentHTML("beforeend", `
+        <article id="goal-check-in-card" class="goal-box nutrition-goal-card goal-check-in-card">
+            <span class="eyebrow">GOAL CHECK-IN</span>
+            <div class="goal-check-in-heading">
+                <h3 id="goal-check-in-status">CALIBRATING</h3>
+                <small id="goal-check-in-confidence"></small>
+            </div>
+            <p id="goal-check-in-message" class="nutrition-message">Set a Current Goal and log weight consistently to begin.</p>
+            <strong id="goal-check-in-suggested"></strong>
+            <div class="nutrition-target-actions">
+                <button id="goal-check-in-apply" class="primary-btn" type="button" hidden>Apply Suggested Target</button>
+                <button id="goal-check-in-keep" class="secondary-btn" type="button">Keep Current Target</button>
+            </div>
+        </article>
+    `);
+    document.getElementById("goal-check-in-keep")?.addEventListener("click", () => {
+        const plan = getNutritionPlan();
+        setText("goal-check-in-message", Number.isFinite(plan.currentCalories) ? `Keep calories at ${plan.currentCalories} kcal/day.` : "No calorie target is saved yet.");
+        hideApply();
     });
 }
 
-function syncPlanFromRecommendation(profile, goal) {
-    if (!isAdultProfile(profile) || !goal?.goalId || !GOAL_PRESETS[goal.goalId]) return;
-
-    const estimatedTdee = calculateTdee(profile).tdee;
-    const maintenance = getWorkingMaintenance(estimatedTdee);
-    const weeklyRate = getEffectiveWeeklyRate(goal.goalId);
-
-    if (!Number.isFinite(maintenance) || !Number.isFinite(weeklyRate)) return;
-
-    syncCalculatedCalories(
-        Math.round(maintenance + ((weeklyRate * 3500) / 7))
-    );
-}
-
-function ensureGoalTargetUI() {
-    const goalsView = document.querySelector('[data-planner-view="goals"]');
-    if (!goalsView || document.getElementById("active-calorie-target-card")) return;
-
-    goalsView.insertAdjacentHTML("beforeend", `
-        <div id="active-calorie-target-card" class="goal-box nutrition-goal-card nutrition-current-target-card">
-            <span class="eyebrow">PLAN SETTINGS</span>
-            <h3>Set Your Calorie Plan</h3>
-            <p class="nutrition-message">
-                Adjust the two inputs below. Level Up then calculates your calorie plan and shows the result underneath.
-            </p>
-
-            <div class="nutrition-manual-settings">
-                <span class="eyebrow">STEP 1</span>
-                <h3>Maintenance Calories</h3>
-                <p class="nutrition-message">
-                    Use your estimated TDEE, or enter your known real-world maintenance calories if you already know them.
-                </p>
-                <label for="manual-maintenance-calories">Known Maintenance Calories</label>
-                <input id="manual-maintenance-calories" type="number" min="1" step="10" placeholder="Example: 2450">
-                <div class="nutrition-target-actions">
-                    <button id="save-manual-maintenance" class="primary-btn" type="button">Use My Maintenance</button>
-                    <button id="reset-manual-maintenance" class="secondary-btn" type="button">Use Estimated TDEE</button>
-                </div>
-                <p id="maintenance-override-message" class="nutrition-status-message" aria-live="polite"></p>
-            </div>
-
-            <div class="nutrition-manual-settings">
-                <span class="eyebrow">STEP 2</span>
-                <h3>Weekly Weight-Change Target</h3>
-                <p class="nutrition-message">
-                    Keep the rate from your selected goal, or enter a custom signed rate. Negative means weight loss; positive means weight gain.
-                </p>
-                <label for="custom-weekly-rate">Custom Weekly Change (lb/week)</label>
-                <input id="custom-weekly-rate" type="number" step="0.05" placeholder="Example: -0.7">
-                <div class="nutrition-target-actions">
-                    <button id="save-custom-weekly-rate" class="primary-btn" type="button">Use Custom Rate</button>
-                    <button id="reset-custom-weekly-rate" class="secondary-btn" type="button">Use Goal Preset</button>
-                </div>
-                <p id="weekly-rate-override-message" class="nutrition-status-message" aria-live="polite"></p>
-            </div>
-
-            <hr class="nutrition-divider">
-
-            <span class="eyebrow">YOUR OUTPUT</span>
-            <h3>Calorie Plan Summary</h3>
-            <p class="nutrition-message">
-                These values update from the settings above. The Current Daily Target is the active number used by the Dashboard, macros, projections and Adaptive Coach.
-            </p>
-
-            <div class="weight-summary nutrition-energy-summary">
-                <div class="metric-card"><div><h3>Estimated TDEE</h3><p id="override-estimated-tdee">--</p></div></div>
-                <div class="metric-card"><div><h3>Working Maintenance</h3><p id="override-working-maintenance">--</p></div></div>
-                <div class="metric-card"><div><h3>Weekly Target</h3><p id="override-effective-rate">--</p></div></div>
-                <div class="metric-card"><div><h3>Calculated Calories</h3><p id="calculated-calorie-target">--</p></div></div>
-                <div class="metric-card"><div><h3>Current Daily Target</h3><p id="current-calorie-target">--</p></div></div>
-            </div>
-
-            <div class="nutrition-adjustment-history">
-                <h3>Adjustment History</h3>
-                <div id="calorie-adjustment-history"></div>
-            </div>
-        </div>
-    `);
-
-    document.getElementById("save-manual-maintenance")?.addEventListener("click", saveManualMaintenance);
-    document.getElementById("reset-manual-maintenance")?.addEventListener("click", resetManualMaintenance);
-    document.getElementById("save-custom-weekly-rate")?.addEventListener("click", saveCustomWeeklyRate);
-    document.getElementById("reset-custom-weekly-rate")?.addEventListener("click", resetCustomWeeklyRate);
-}
-
-function saveManualMaintenance() {
-    if (!isAdultProfile(getNutritionProfile())) return setText("maintenance-override-message", "Adult profile required.");
-    const value = Number(document.getElementById("manual-maintenance-calories")?.value);
-    if (!Number.isFinite(value) || value <= 0) return setText("maintenance-override-message", "Enter a valid maintenance calorie value.");
-    localStorage.setItem(MANUAL_MAINTENANCE_KEY, String(Math.round(value)));
-    setText("maintenance-override-message", "Using your known maintenance calories.");
-    notifyNutritionUpdated();
-}
-
-function resetManualMaintenance() {
-    localStorage.removeItem(MANUAL_MAINTENANCE_KEY);
-    const input = document.getElementById("manual-maintenance-calories");
-    if (input) input.value = "";
-    setText("maintenance-override-message", "Using estimated TDEE for maintenance.");
-    notifyNutritionUpdated();
-}
-
-function saveCustomWeeklyRate() {
-    if (!isAdultProfile(getNutritionProfile())) return setText("weekly-rate-override-message", "Adult profile required.");
-    const value = Number(document.getElementById("custom-weekly-rate")?.value);
-    if (!Number.isFinite(value)) return setText("weekly-rate-override-message", "Enter a valid weekly change, such as -0.7 or +0.25.");
-    localStorage.setItem(CUSTOM_WEEKLY_RATE_KEY, String(value));
-    setText("weekly-rate-override-message", "Using your custom weekly target.");
-    notifyNutritionUpdated();
-}
-
-function resetCustomWeeklyRate() {
-    localStorage.removeItem(CUSTOM_WEEKLY_RATE_KEY);
-    const input = document.getElementById("custom-weekly-rate");
-    if (input) input.value = "";
-    setText("weekly-rate-override-message", "Using the selected goal preset.");
-    notifyNutritionUpdated();
-}
-
-function ensureAdaptiveCoachUI() {
-    const grid = document.querySelector(".nutrition-planner-grid");
-    if (grid && !grid.querySelector('[data-nutrition-view="coach"]')) {
-        grid.insertAdjacentHTML("beforeend", `<button class="nutrition-planner-card" type="button" data-nutrition-view="coach"><span class="nutrition-planner-icon">📊</span><strong>Adaptive Coach</strong><small>Compare your goal with your real trend</small></button>`);
-    }
-
-    const shell = document.querySelector(".nutrition-planner-shell");
-    if (shell && !document.querySelector('[data-planner-view="coach"]')) {
-        shell.insertAdjacentHTML("afterend", `
-            <section class="section-card nutrition-planner-view" data-planner-view="coach" hidden>
-                <button class="nutrition-planner-back" type="button" data-adaptive-back>← Nutrition Planner</button>
-                <span class="eyebrow">ADAPTIVE COACH</span><h2>Weekly Progress Review</h2>
-                <p class="section-description">Level Up compares your active weekly target with your recent weight trend. It never changes calories automatically.</p>
-                <div class="weight-summary nutrition-energy-summary">
-                    <div class="metric-card"><div><h3>Current Calories</h3><p id="coach-current-calories">--</p></div></div>
-                    <div class="metric-card"><div><h3>Goal Weekly Change</h3><p id="coach-goal-rate">--</p></div></div>
-                    <div class="metric-card"><div><h3>Actual Weekly Change</h3><p id="coach-actual-rate">--</p></div></div>
-                    <div class="metric-card"><div><h3>Confidence</h3><p id="coach-confidence">--</p></div></div>
-                </div>
-                <div class="goal-box nutrition-goal-card"><h3>Recommendation</h3><p id="coach-recommendation" class="nutrition-message">Log more weight data to begin.</p><strong id="coach-suggested-calories"></strong><div class="nutrition-target-actions"><button id="apply-coach-recommendation" class="primary-btn" type="button" hidden>Apply Recommendation</button><button id="keep-current-calories" class="secondary-btn" type="button">Keep Current Target</button></div></div>
-            </section>
-        `);
-    }
-
-    document.querySelector('[data-nutrition-view="coach"]')?.addEventListener("click", showCoachView);
-    document.querySelector("[data-adaptive-back]")?.addEventListener("click", showPlannerDashboard);
-    document.getElementById("keep-current-calories")?.addEventListener("click", () => setText("coach-recommendation", "Current calorie target kept unchanged."));
-}
-
-function showCoachView() {
-    const dashboard = document.getElementById("nutrition-planner-dashboard");
-    if (dashboard) dashboard.hidden = true;
-    document.querySelectorAll("[data-planner-view]").forEach(section => { section.hidden = section.dataset.plannerView !== "coach"; });
-    refreshAdaptiveCoach();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-function showPlannerDashboard() {
-    document.querySelectorAll("[data-planner-view]").forEach(section => { section.hidden = true; });
-    const dashboard = document.getElementById("nutrition-planner-dashboard");
-    if (dashboard) dashboard.hidden = false;
-    window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
 function refreshNutritionPlanUI() {
+    removeLegacyPlanUI();
+    ensureGoalCheckInUI();
     const profile = getNutritionProfile();
-    const goal = getNutritionGoal();
-    syncPlanFromRecommendation(profile, goal);
     const plan = getNutritionPlan();
-    const estimatedTdee = isAdultProfile(profile) ? calculateTdee(profile).tdee : null;
-    const workingMaintenance = Number.isFinite(estimatedTdee) ? getWorkingMaintenance(estimatedTdee) : null;
-    const effectiveRate = goal?.goalId ? getEffectiveWeeklyRate(goal.goalId) : null;
-
-    setText("override-estimated-tdee", Number.isFinite(estimatedTdee) ? `${estimatedTdee} kcal/day` : "--");
-    setText("override-working-maintenance", Number.isFinite(workingMaintenance) ? `${workingMaintenance} kcal/day${getManualMaintenance() !== null ? " · manual" : ""}` : "--");
-    setText("override-effective-rate", Number.isFinite(effectiveRate) ? `${formatRate(effectiveRate)}${getCustomWeeklyRate() !== null ? " · custom" : ""}` : "--");
-    setText("calculated-calorie-target", Number.isFinite(plan.calculatedCalories) ? `${plan.calculatedCalories} kcal/day` : "--");
-    setText("current-calorie-target", Number.isFinite(plan.currentCalories) ? `${plan.currentCalories} kcal/day` : "--");
-
-    const maintenanceInput = document.getElementById("manual-maintenance-calories");
-    if (maintenanceInput && getManualMaintenance() !== null) maintenanceInput.value = getManualMaintenance();
-    const rateInput = document.getElementById("custom-weekly-rate");
-    if (rateInput && getCustomWeeklyRate() !== null) rateInput.value = getCustomWeeklyRate();
-
-    renderAdjustmentHistory(plan.adjustmentHistory || []);
-    refreshMacrosFromCurrentTarget(profile, goal, plan);
-    refreshAdaptiveCoach();
+    refreshMacrosFromCurrentTarget(profile, plan);
+    refreshGoalCheckIn(plan);
 }
 
-function refreshMacrosFromCurrentTarget(profile, goal, plan) {
-    if (!isAdultProfile(profile) || !goal?.goalId || !Number.isFinite(plan.currentCalories)) return;
+function refreshMacrosFromCurrentTarget(profile, plan) {
+    if (!isAdultProfile(profile) || !Number.isFinite(plan.currentCalories)) return;
     const macroPreference = getNutritionMacroPreference()?.macroPreset || "balanced";
-    const macros = calculateMacroTargets({ calories: plan.currentCalories, weightKg: poundsToKg(Number(profile.weightLb)), macroPreset: macroPreference });
+    const weightLb = Number(profile.weightLb);
+    if (!Number.isFinite(weightLb) || weightLb <= 0) return;
+    const macros = calculateMacroTargets({
+        calories: plan.currentCalories,
+        weightKg: poundsToKg(weightLb),
+        macroPreset: macroPreference
+    });
     if (!macros) return;
     setText("nutrition-protein-target", `${macros.protein} g/day`);
     setText("nutrition-carb-target", `${macros.carbs} g/day`);
@@ -233,111 +74,128 @@ function refreshMacrosFromCurrentTarget(profile, goal, plan) {
     setText("planner-summary-protein", `${macros.protein} g`);
 }
 
-function renderAdjustmentHistory(history) {
-    const container = document.getElementById("calorie-adjustment-history");
-    if (!container) return;
-    if (!history.length) { container.innerHTML = '<p class="empty-state">No Adaptive Coach adjustments yet.</p>'; return; }
-    container.innerHTML = [...history].reverse().slice(0, 8).map(item => `<div class="nutrition-adjustment-row"><strong>${formatDate(item.date)}</strong><span>${item.previousCalories ?? "--"} → ${item.newCalories} kcal</span><small>${escapeHtml(item.reason || "Adjustment")}</small></div>`).join("");
-}
-
-function refreshAdaptiveCoach() {
-    const profile = getNutritionProfile();
-    const goal = getNutritionGoal();
-    const plan = getNutritionPlan();
-    const preset = goal?.goalId ? GOAL_PRESETS[goal.goalId] : null;
-    setText("coach-current-calories", Number.isFinite(plan.currentCalories) ? `${plan.currentCalories} kcal/day` : "--");
-    if (!isAdultProfile(profile) || !preset) {
-        setText("coach-goal-rate", "--"); setText("coach-actual-rate", "--"); setText("coach-confidence", "--"); setText("coach-recommendation", "Save an adult Body Profile and Nutrition Goal first."); hideCoachApply(); return;
+function refreshGoalCheckIn(plan) {
+    const goal = getCurrentGoal();
+    if (!goal) {
+        setText("goal-check-in-status", "NO CURRENT GOAL");
+        setText("goal-check-in-confidence", "");
+        setText("goal-check-in-message", "Set your bodyweight goal in Progress → Weight first.");
+        setText("goal-check-in-suggested", "");
+        hideApply();
+        return;
     }
 
-    const entries = getWeightEntries();
-    const actualRate = calculateActualWeeklyChange(entries);
-    const goalRate = getEffectiveWeeklyRate(goal.goalId);
-    const confidence = getConfidence(entries.length);
-    setText("coach-goal-rate", formatRate(goalRate));
-    setText("coach-actual-rate", actualRate === null ? "--" : formatRate(actualRate));
-    setText("coach-confidence", `${confidence.label} · ${entries.length} weigh-ins`);
+    const metrics = getCurrentGoalMetrics(goal);
+    const trend = metrics.phaseTrend;
+    setText("goal-check-in-status", metrics.status);
 
-    if (entries.length < 14 || actualRate === null) {
-        setText("coach-recommendation", "Keep collecting consistent weight data. Level Up waits for at least 14 weigh-ins before suggesting a calorie change."); setText("coach-suggested-calories", ""); hideCoachApply(); return;
+    const confidence = trend?.status === "actual"
+        ? `Established · ${trend.windowEntries} weigh-ins / ${trend.windowDays} days`
+        : trend?.status === "preliminary"
+            ? `Preliminary · ${trend.windowEntries} weigh-ins / ${trend.windowDays} days`
+            : "Collecting current-goal data";
+    setText("goal-check-in-confidence", confidence);
+
+    if (metrics.goalReached) {
+        setText("goal-check-in-message", "Goal reached. Start a new goal or maintain this weight from Progress → Weight.");
+        setText("goal-check-in-suggested", "");
+        hideApply();
+        return;
     }
 
-    const difference = actualRate - goalRate;
-    if (Math.abs(difference) <= 0.2) {
-        setText("coach-recommendation", `On target. Your recent trend is ${formatRate(actualRate)} versus a goal of ${formatRate(goalRate)}. The difference is within the ±0.20 lb/week tolerance, so no calorie adjustment is suggested.`); setText("coach-suggested-calories", ""); hideCoachApply(); return;
+    if (trend?.status !== "actual" || !Number.isFinite(metrics.actualRatePctPerWeek)) {
+        const preliminary = Number.isFinite(metrics.actualRatePctPerWeek)
+            ? ` Your preliminary trend is ${formatPct(metrics.actualRatePctPerWeek)}.`
+            : "";
+        setText("goal-check-in-message", `Level Up waits for an established current-goal trend before suggesting a calorie change.${preliminary}`);
+        setText("goal-check-in-suggested", "");
+        hideApply();
+        return;
     }
 
-    if (!Number.isFinite(plan.currentCalories)) { hideCoachApply(); return; }
+    const targetPct = Number(metrics.targetRatePctPerWeek);
+    const actualPct = Number(metrics.actualRatePctPerWeek);
+    const currentCalories = Number(plan.currentCalories);
+    const targetLabel = goal.type === "maintenance" ? "a stable target" : formatPct(targetPct);
+
+    if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) {
+        setText("goal-check-in-message", `Your weight trend is ${formatPct(actualPct)} against ${targetLabel}. ${Number.isFinite(currentCalories) ? `Keep calories at ${currentCalories} kcal/day.` : "Save a calorie target when you're ready."}`);
+        setText("goal-check-in-suggested", "");
+        hideApply();
+        return;
+    }
+
+    if (!Number.isFinite(currentCalories)) {
+        setText("goal-check-in-message", `Your weight trend is ${formatPct(actualPct)} against ${targetLabel}. Save a calorie target first so Level Up can suggest a measured adjustment if needed.`);
+        setText("goal-check-in-suggested", "");
+        hideApply();
+        return;
+    }
+
+    const actualLb = Number(metrics.actualRateLbPerWeek);
+    const targetLb = Number(metrics.targetRateLbPerWeek);
+    if (!Number.isFinite(actualLb) || !Number.isFinite(targetLb)) {
+        hideApply();
+        return;
+    }
+
+    const difference = actualLb - targetLb;
     const direction = difference > 0 ? -1 : 1;
-    const adjustment = Math.abs(difference) >= 0.4 ? 150 : 100;
-    const suggested = Math.round(plan.currentCalories + direction * adjustment);
-    const actionText = direction < 0 ? `reduce the current target by about ${adjustment} kcal/day` : `increase the current target by about ${adjustment} kcal/day`;
-    setText("coach-recommendation", `Your recent trend is ${Math.abs(difference).toFixed(2)} lb/week away from your active target. Consider whether you want to ${actionText}. This is an adult-use coaching suggestion, not an automatic change.`);
-    setText("coach-suggested-calories", `Suggested target: ${suggested} kcal/day`);
+    const adjustment = calculateSuggestedAdjustment(difference);
+    const suggested = Math.max(1, Math.round(currentCalories + (direction * adjustment)));
+    const paceWord = describePace(metrics.status);
 
-    const applyButton = document.getElementById("apply-coach-recommendation");
-    if (applyButton) {
-        applyButton.hidden = false;
-        applyButton.onclick = () => { setCurrentCalories(suggested, "Adaptive Coach recommendation"); refreshNutritionPlanUI(); setText("coach-recommendation", "Recommendation applied. Your current calorie target has been updated."); hideCoachApply(); };
+    setText("goal-check-in-message", `Your weight trend is ${formatPct(actualPct)} against ${targetLabel}${paceWord ? ` and is ${paceWord}` : ""}. Level Up does not react to individual weigh-ins and does not use catch-up logic.`);
+    setText("goal-check-in-suggested", `Suggested calorie target: ${suggested} kcal/day`);
+
+    const apply = document.getElementById("goal-check-in-apply");
+    if (apply) {
+        apply.hidden = false;
+        apply.textContent = `Apply ${suggested}`;
+        apply.onclick = () => {
+            setCurrentCalories(suggested, "Current Goal check-in recommendation");
+            setText("goal-check-in-message", `Applied. Your calorie target is now ${suggested} kcal/day.`);
+            setText("goal-check-in-suggested", "");
+            hideApply();
+        };
     }
 }
 
-function getManualMaintenance() {
-    const value = Number(localStorage.getItem(MANUAL_MAINTENANCE_KEY));
-    return Number.isFinite(value) && value > 0 ? value : null;
+function calculateSuggestedAdjustment(diffLbPerWeek) {
+    const implied = Math.abs(Number(diffLbPerWeek)) * 3500 / 7;
+    const rounded = Math.round(implied / 50) * 50;
+    return Math.min(MAX_ADJUSTMENT_KCAL, Math.max(MIN_ADJUSTMENT_KCAL, rounded || MIN_ADJUSTMENT_KCAL));
 }
 
-function getCustomWeeklyRate() {
-    const stored = localStorage.getItem(CUSTOM_WEEKLY_RATE_KEY);
-    if (stored === null || stored === "") return null;
-    const value = Number(stored);
-    return Number.isFinite(value) ? value : null;
+function describePace(status) {
+    if (status === "SLIGHTLY SLOWER THAN TARGET") return "slightly slower than planned";
+    if (status === "SLIGHTLY FASTER THAN TARGET") return "slightly faster than planned";
+    if (status === "TRENDING ABOVE TARGET") return "above the maintenance target";
+    if (status === "TRENDING BELOW TARGET") return "below the maintenance target";
+    if (status === "TREND NEEDS ATTENTION") return "far enough from target to review";
+    return "";
 }
 
-function getWorkingMaintenance(estimatedTdee) { return getManualMaintenance() ?? estimatedTdee; }
-
-function getEffectiveWeeklyRate(goalId) {
-    const custom = getCustomWeeklyRate();
-    if (custom !== null) return custom;
-    const preset = GOAL_PRESETS[goalId];
-    if (!preset) return NaN;
-    const direct = Number(preset.weeklyWeightChangeLb ?? preset.weeklyChangeLb);
-    if (Number.isFinite(direct)) return direct;
-    const adjustment = Number(preset.dailyCalorieAdjustment);
-    return Number.isFinite(adjustment) ? (adjustment * 7) / 3500 : NaN;
+function formatPct(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return "--";
+    if (Math.abs(number) < 0.005) return "0.00% / week";
+    return `${number > 0 ? "+" : "−"}${Math.abs(number).toFixed(2)}% / week`;
 }
 
-function getWeightEntries() {
-    try {
-        const parsed = JSON.parse(localStorage.getItem(WEIGHT_STORAGE_KEY) || "[]");
-        if (!Array.isArray(parsed)) return [];
-        return parsed.map(entry => ({ date: String(entry?.date || ""), weight: Number(entry?.weight) })).filter(entry => /^\d{4}-\d{2}-\d{2}$/.test(entry.date) && Number.isFinite(entry.weight) && entry.weight > 0).sort((a, b) => a.date.localeCompare(b.date));
-    } catch { return []; }
-}
-
-function calculateActualWeeklyChange(entries) {
-    if (entries.length < 2) return null;
-    const moving = entries.map(entry => {
-        const date = new Date(`${entry.date}T00:00:00`);
-        const start = new Date(date); start.setDate(start.getDate() - 6);
-        const windowEntries = entries.filter(item => { const itemDate = new Date(`${item.date}T00:00:00`); return itemDate >= start && itemDate <= date; });
-        return { date: entry.date, weight: windowEntries.reduce((sum, item) => sum + item.weight, 0) / windowEntries.length };
-    });
-    const latest = moving[moving.length - 1];
-    const latestDate = new Date(`${latest.date}T00:00:00`);
-    for (let index = moving.length - 2; index >= 0; index--) {
-        const candidate = moving[index];
-        const days = (latestDate - new Date(`${candidate.date}T00:00:00`)) / 86400000;
-        if (days >= 7) return ((latest.weight - candidate.weight) / days) * 7;
+function hideApply() {
+    const button = document.getElementById("goal-check-in-apply");
+    if (button) {
+        button.hidden = true;
+        button.onclick = null;
     }
-    return null;
 }
 
-function getConfidence(count) { if (count < 7) return { label: "Very Low" }; if (count < 14) return { label: "Low" }; if (count < 21) return { label: "Medium" }; if (count < 28) return { label: "High" }; return { label: "Very High" }; }
-function isAdultProfile(profile) { return Boolean(profile && Number.isFinite(Number(profile.age)) && Number(profile.age) >= 18); }
-function formatRate(value) { const number = Number(value); return Number.isFinite(number) ? `${number > 0 ? "+" : ""}${number.toFixed(2)} lb/wk` : "--"; }
-function hideCoachApply() { const button = document.getElementById("apply-coach-recommendation"); if (button) { button.hidden = true; button.onclick = null; } }
-function setText(id, value) { const element = document.getElementById(id); if (element) element.textContent = value; }
-function formatDate(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); }
-function escapeHtml(value) { return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;"); }
-function notifyNutritionUpdated() { window.dispatchEvent(new CustomEvent("levelup:nutrition-updated")); }
+function isAdultProfile(profile) {
+    return Boolean(profile && Number.isFinite(Number(profile.age)) && Number(profile.age) >= 18);
+}
+
+function setText(id, value) {
+    const node = document.getElementById(id);
+    if (node) node.textContent = value;
+}

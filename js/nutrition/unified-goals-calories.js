@@ -1,53 +1,53 @@
-import { GOAL_PRESETS, calculateTdee } from "./tdee-calculator.js?v=unified-goals-2";
-import { getNutritionProfile, getNutritionGoal, saveNutritionGoal, getNutritionPlan, syncCalculatedCalories } from "./nutrition-storage.js?v=unified-goals-2";
+import { calculateTdee } from "./tdee-calculator.js?v=current-goal-1";
+import { getNutritionProfile, getNutritionPlan, syncCalculatedCalories } from "./nutrition-storage.js?v=current-goal-1";
+import { CURRENT_GOAL_TYPES, getCurrentGoal, getCurrentGoalMetrics, getRecommendedCalories } from "../core/current-goal.js?v=current-goal-1";
 
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
-const LEGACY_CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
 
 export function initializeUnifiedGoalsCalories() {
     const view = document.querySelector('[data-planner-view="goals"]');
     if (!view) return;
 
-    localStorage.removeItem(LEGACY_CUSTOM_WEEKLY_RATE_KEY);
-
-    document.getElementById("active-calorie-target-card")?.remove();
+    retireDuplicateGoalInterfaces(view);
     const oldCard = view.querySelector(".goal-box.nutrition-goal-card");
     if (!oldCard) return;
 
     oldCard.id = "unified-goals-calories-card";
     oldCard.innerHTML = renderUnifiedCard();
-
-    const savedGoal = getNutritionGoal();
-    if (savedGoal?.goalId && GOAL_PRESETS[savedGoal.goalId]) {
-        setValue("unified-goal-select", savedGoal.goalId);
-    }
-
     hydrateMaintenance();
-    refreshPreview();
+    refreshAll();
 
-    document.getElementById("unified-goal-select")?.addEventListener("change", refreshPreview);
     document.getElementById("unified-maintenance")?.addEventListener("input", refreshPreview);
     document.getElementById("unified-use-estimate")?.addEventListener("click", useEstimatedMaintenance);
     document.getElementById("unified-save-plan")?.addEventListener("click", saveUnifiedPlan);
+    document.getElementById("unified-open-weight-goal")?.addEventListener("click", openWeightGoal);
+    document.getElementById("save-nutrition-profile-btn")?.addEventListener("click", () => window.setTimeout(refreshAll, 30));
 
-    window.addEventListener("levelup:nutrition-updated", () => {
-        hydrateMaintenance(false);
-        refreshPreview();
-    });
+    window.addEventListener("levelup:nutrition-updated", refreshAll);
+    window.addEventListener("levelup:current-goal-updated", refreshAll);
+}
+
+function retireDuplicateGoalInterfaces(view) {
+    document.querySelector('[data-nutrition-view="projection"]')?.remove();
+    document.querySelector('[data-planner-view="projection"]')?.remove();
+    document.querySelector('[data-nutrition-view="phases"]')?.remove();
+    document.querySelector('[data-planner-view="phases"]')?.remove();
+    document.querySelector('[data-nutrition-view="coach"]')?.remove();
+    document.querySelector('[data-planner-view="coach"]')?.remove();
+
+    const eyebrow = view.querySelector(":scope > .eyebrow");
+    const heading = view.querySelector(":scope > h2");
+    const description = view.querySelector(":scope > .section-description");
+    if (eyebrow) eyebrow.textContent = "CALORIE TARGET";
+    if (heading) heading.textContent = "Calories for Your Current Goal";
+    if (description) description.textContent = "Level Up reads the bodyweight goal from Progress → Weight and uses it to estimate an appropriate starting calorie target.";
 }
 
 function renderUnifiedCard() {
     return `
-        <span class="eyebrow">CALORIE CALCULATOR</span>
-        <h3>Set Your Calorie Target</h3>
-        <p class="nutrition-message unified-calorie-intro">Choose your goal, then use Level Up's maintenance estimate or edit the maintenance value if you know your real-world number.</p>
-
-        <label for="unified-goal-select">Goal</label>
-        <select id="unified-goal-select">
-            <option value="">Choose a goal</option>
-            ${Object.entries(GOAL_PRESETS).map(([id, goal]) => `<option value="${id}">${goal.label}</option>`).join("")}
-        </select>
-        <p id="unified-goal-description" class="nutrition-message unified-goal-description"></p>
+        <span class="eyebrow">CALORIE TARGET</span>
+        <h3>Current Goal → Calories</h3>
+        <div id="unified-current-goal-summary" class="unified-current-goal-summary"></div>
 
         <div class="unified-maintenance-block">
             <div class="unified-maintenance-heading">
@@ -59,18 +59,21 @@ function renderUnifiedCard() {
                 <input id="unified-maintenance" type="number" inputmode="numeric" min="1" step="10" placeholder="Save Body Profile first">
                 <button id="unified-use-estimate" class="secondary-btn" type="button">Use Estimate</button>
             </div>
-            <small class="unified-help">This editable number is the maintenance value used to calculate your calorie target.</small>
+            <small class="unified-help">If you know your real-world maintenance, you can use it here. This does not create a second weight goal.</small>
         </div>
 
         <div class="unified-calorie-summary">
-            <div><span>Daily Adjustment</span><strong id="unified-daily-adjustment">--</strong></div>
-            <div><span>Programmed Weekly Target</span><strong id="unified-weekly-target">--</strong></div>
-            <div class="unified-active-target"><span>Active Daily Target</span><strong id="unified-active-target">--</strong><small>This is the calorie value used throughout Level Up.</small></div>
+            <div><span>Target Pace</span><strong id="unified-weekly-target">--</strong></div>
+            <div><span>Recommended Starting Target</span><strong id="unified-recommended-target">--</strong></div>
+            <div class="unified-active-target"><span>Current Calorie Target</span><strong id="unified-active-target">--</strong></div>
         </div>
 
-        <button id="unified-save-plan" class="primary-btn" type="button">Save Calorie Plan</button>
+        <div class="nutrition-target-actions">
+            <button id="unified-save-plan" class="primary-btn" type="button">Save Target</button>
+            <button id="unified-open-weight-goal" class="secondary-btn" type="button">Edit Weight Goal</button>
+        </div>
         <p id="unified-calorie-message" class="nutrition-message" aria-live="polite"></p>
-        <small class="unified-adult-note">Adult-use estimate only. Use real-world weight trends and recovery to refine your maintenance estimate over time.</small>
+        <small class="unified-adult-note">Adult-use estimate only. Level Up uses smoothed weight trends before suggesting later adjustments.</small>
     `;
 }
 
@@ -93,10 +96,8 @@ function getStoredManualMaintenance() {
 function hydrateMaintenance(force = true) {
     const estimated = getEstimatedMaintenance();
     setText("unified-estimated-maintenance", Number.isFinite(estimated) ? `${estimated} kcal/day` : "Save Body Profile first");
-
     const input = document.getElementById("unified-maintenance");
-    if (!input) return;
-    if (!force && document.activeElement === input) return;
+    if (!input || (!force && document.activeElement === input)) return;
     const manual = getStoredManualMaintenance();
     input.value = Number.isFinite(manual) ? String(manual) : Number.isFinite(estimated) ? String(estimated) : "";
 }
@@ -104,7 +105,7 @@ function hydrateMaintenance(force = true) {
 function useEstimatedMaintenance() {
     const estimated = getEstimatedMaintenance();
     if (!Number.isFinite(estimated)) {
-        setText("unified-calorie-message", "Save your Body Profile first so Level Up can estimate maintenance.");
+        setText("unified-calorie-message", "Save your adult Body Profile first so Level Up can estimate maintenance.");
         return;
     }
     const input = document.getElementById("unified-maintenance");
@@ -113,41 +114,44 @@ function useEstimatedMaintenance() {
 }
 
 function calculatePreview() {
-    const goalId = document.getElementById("unified-goal-select")?.value;
-    const goal = GOAL_PRESETS[goalId];
+    const goal = getCurrentGoal();
     const maintenance = Number(document.getElementById("unified-maintenance")?.value);
-    const rate = goal?.weeklyWeightChangeLb;
-    if (!goal || !Number.isFinite(maintenance) || maintenance <= 0 || !Number.isFinite(rate)) return null;
+    if (!goal || !Number.isFinite(maintenance) || maintenance <= 0) return null;
+    const target = getRecommendedCalories(maintenance, goal);
+    if (!Number.isFinite(target) || target <= 0) return null;
+    return { goal, maintenance: Math.round(maintenance), target, metrics: getCurrentGoalMetrics(goal) };
+}
 
-    return {
-        goalId,
-        goal,
-        maintenance: Math.round(maintenance),
-        rate,
-        dailyAdjustment: goal.dailyCalorieAdjustment,
-        target: Math.round(maintenance + goal.dailyCalorieAdjustment)
-    };
+function refreshAll() {
+    hydrateMaintenance(false);
+    refreshPreview();
+    refreshPlannerSummary();
 }
 
 function refreshPreview() {
-    const goalId = document.getElementById("unified-goal-select")?.value;
-    const goal = GOAL_PRESETS[goalId];
-    setText("unified-goal-description", goal?.description || "Choose the goal that matches your current phase.");
+    const goal = getCurrentGoal();
+    const summary = document.getElementById("unified-current-goal-summary");
+    const plan = getNutritionPlan();
 
-    const preview = calculatePreview();
-    if (!preview) {
-        setText("unified-daily-adjustment", "--");
+    if (!goal) {
+        if (summary) summary.innerHTML = '<strong>No Current Goal</strong><small>Set your bodyweight goal in Progress → Weight first.</small>';
         setText("unified-weekly-target", "--");
-        const plan = getNutritionPlan();
-        setText("unified-active-target", Number.isFinite(plan.calculatedCalories) ? `${plan.calculatedCalories} kcal/day` : "--");
+        setText("unified-recommended-target", "--");
+        setText("unified-active-target", Number.isFinite(plan.currentCalories) ? `${plan.currentCalories} kcal/day` : "--");
+        document.getElementById("unified-save-plan")?.toggleAttribute("disabled", true);
         return;
     }
 
-    const sign = preview.dailyAdjustment > 0 ? "+" : "";
-    const rateSign = preview.rate > 0 ? "+" : "";
-    setText("unified-daily-adjustment", `${sign}${preview.dailyAdjustment} kcal/day`);
-    setText("unified-weekly-target", `${rateSign}${preview.rate.toFixed(2).replace(/\.00$/, "")} lb/week`);
-    setText("unified-active-target", `${preview.target} kcal/day`);
+    const metrics = getCurrentGoalMetrics(goal);
+    if (summary) {
+        summary.innerHTML = `<strong>${escapeHtml(CURRENT_GOAL_TYPES[goal.type] || "Current Goal")}</strong><small>${Number(goal.targetWeight).toFixed(1)} lb target</small>`;
+    }
+    setText("unified-weekly-target", goal.type === "maintenance" ? "Maintain" : `${formatPct(goal.targetRatePctPerWeek)} · ≈ ${formatLbRate(metrics.targetRateLbPerWeek)}`);
+
+    const preview = calculatePreview();
+    setText("unified-recommended-target", preview ? `${preview.target} kcal/day` : "Enter maintenance");
+    setText("unified-active-target", Number.isFinite(plan.currentCalories) ? `${plan.currentCalories} kcal/day` : "Not saved");
+    document.getElementById("unified-save-plan")?.toggleAttribute("disabled", !preview);
 }
 
 function saveUnifiedPlan() {
@@ -156,26 +160,50 @@ function saveUnifiedPlan() {
         setText("unified-calorie-message", "Save an adult Body Profile first.");
         return;
     }
-
     const preview = calculatePreview();
     if (!preview) {
-        setText("unified-calorie-message", "Choose a goal and enter a valid maintenance calorie value.");
+        setText("unified-calorie-message", getCurrentGoal() ? "Enter a valid maintenance calorie value." : "Set a Current Goal in Progress → Weight first.");
         return;
     }
 
     const estimated = getEstimatedMaintenance();
-    if (Number.isFinite(estimated) && preview.maintenance === estimated) {
-        localStorage.removeItem(MANUAL_MAINTENANCE_KEY);
-    } else {
-        localStorage.setItem(MANUAL_MAINTENANCE_KEY, String(preview.maintenance));
-    }
+    if (Number.isFinite(estimated) && preview.maintenance === estimated) localStorage.removeItem(MANUAL_MAINTENANCE_KEY);
+    else localStorage.setItem(MANUAL_MAINTENANCE_KEY, String(preview.maintenance));
 
-    localStorage.removeItem(LEGACY_CUSTOM_WEEKLY_RATE_KEY);
-    saveNutritionGoal({ goalId: preview.goalId, updatedAt: new Date().toISOString() });
     syncCalculatedCalories(preview.target);
     window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
-    setText("unified-calorie-message", `Saved. ${preview.target} kcal/day is now the active target used throughout Level Up.`);
-    refreshPreview();
+    setText("unified-calorie-message", `Saved. ${preview.target} kcal/day is now the target used throughout Level Up.`);
+    refreshAll();
+}
+
+function refreshPlannerSummary() {
+    const goal = getCurrentGoal();
+    const plan = getNutritionPlan();
+    setText("planner-summary-goal", goal ? (CURRENT_GOAL_TYPES[goal.type] || "Current Goal") : "Not set");
+    setText("planner-summary-goal-weight", goal && Number.isFinite(Number(goal.targetWeight)) ? `${Number(goal.targetWeight).toFixed(1)} lb` : "--");
+    setText("planner-summary-calories", Number.isFinite(plan.currentCalories) ? `${plan.currentCalories} kcal` : "--");
+}
+
+function openWeightGoal() {
+    document.querySelector('.nav-btn[data-page="progress"]')?.click();
+    window.setTimeout(() => {
+        const host = document.getElementById("current-goal-host");
+        host?.scrollIntoView({ behavior: "smooth", block: "start" });
+        host?.querySelector("[data-open-goal-wizard]")?.click();
+    }, 140);
+}
+
+function formatPct(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return "--";
+    if (Math.abs(number) < 0.005) return "Maintain";
+    return `${number > 0 ? "+" : "−"}${Math.abs(number).toFixed(2)}% / week`;
+}
+
+function formatLbRate(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return "--";
+    return `${number > 0 ? "+" : number < 0 ? "−" : ""}${Math.abs(number).toFixed(2)} lb/wk`;
 }
 
 function setText(id, value) {
@@ -183,7 +211,6 @@ function setText(id, value) {
     if (node) node.textContent = value;
 }
 
-function setValue(id, value) {
-    const node = document.getElementById(id);
-    if (node) node.value = value ?? "";
+function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
 }

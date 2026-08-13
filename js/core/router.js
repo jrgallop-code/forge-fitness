@@ -10,7 +10,7 @@ import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from 
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=workout-schedule-3";
 import { renderProgress } from "../progress/progress-ui.js?v=progress-photo-tab-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-tracker-photo-tab-1";
-import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-progress-immediate-1";
+import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=current-goal-1";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
 import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=overall-strength-index-2";
 import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.js?v=training-analytics-5";
@@ -21,14 +21,16 @@ import { initializeMeasurementHistoryDetail } from "../progress/measurements-his
 import { renderNutrition, renderWater, initializeNutrition, showNutritionView } from "../nutrition/nutrition-ui.js?v=water-only-1";
 import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energy-profile.js?v=calorie-planner-2";
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
-import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=goals-flow-3";
-import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=unified-goals-2";
-import { renderGoalProjection, initializeGoalProjection } from "../nutrition/goal-projection.js?v=selected-target-projection-4";
+import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1";
+import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=current-goal-1";
 import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=more-bmi-2";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=workout-history-preview-2";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-2";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-3";
 import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-drive-backup-1";
+import { getCurrentGoal } from "./current-goal.js?v=current-goal-1";
+
+getCurrentGoal();
 
 export function navigate(page) {
     const content = document.getElementById("content");
@@ -56,7 +58,7 @@ export function navigate(page) {
             case "water":
                 content.innerHTML = renderWater(); safeInitialize("Water log", initializeNutrition); break;
             case "energy":
-                content.innerHTML = renderEnergyProfile() + `<div class="nutrition-planner-view nutrition-projection-view" data-planner-view="projection" hidden><button class="nutrition-planner-back" type="button" data-nutrition-back>← Calorie Planner</button>${renderGoalProjection()}</div>`; safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Goal projection", initializeGoalProjection); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); break;
+                content.innerHTML = renderEnergyProfile(); safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); break;
             case "more": content.innerHTML = renderMore(); safeInitialize("More", initializeMore); break;
             case "history": content.innerHTML = renderWorkoutHistory(); safeInitialize("Workout history", initializeWorkoutHistory); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
             default:
