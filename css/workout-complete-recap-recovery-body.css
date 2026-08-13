@@ -1,0 +1,5 @@
+.workout-complete-recap__anatomy{display:block!important;width:min(100%,286px)!important;height:auto!important;margin:0 auto!important;overflow:visible!important;filter:drop-shadow(0 14px 28px rgba(0,0,0,.5))!important}
+.workout-complete-recap__body-base{fill:#3d3f49!important;stroke:#9295a1!important;stroke-width:2.4!important;stroke-linejoin:round!important;stroke-linecap:round!important}
+.workout-complete-recap__muscle{fill:#2f7df6!important;fill-opacity:.035!important;stroke:#aeb1bc!important;stroke-width:1.35!important;stroke-opacity:.72!important;stroke-linejoin:round!important;stroke-linecap:round!important;vector-effect:non-scaling-stroke!important}
+.workout-complete-recap__muscle.is-trained{fill:#2f7df6!important;fill-opacity:1!important;stroke:#aeb1bc!important;stroke-opacity:.9!important;filter:drop-shadow(0 0 5px rgba(47,125,246,.6))!important}
+@media(max-width:420px){.workout-complete-recap__anatomy{width:min(100%,270px)!important}}
