@@ -6,6 +6,8 @@ const BACKUP_WEIGHTS = "level_up_test_backup_weights";
 const BACKUP_PHASES = "level_up_test_backup_phases";
 const TEST_FLAG = "level_up_phase_test_active";
 
+let renderQueued = false;
+
 function active() {
     return localStorage.getItem(TEST_FLAG) === "1";
 }
@@ -80,7 +82,11 @@ function removeTestData() {
 function notify() {
     window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated"));
     window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
-    setTimeout(render, 50);
+    scheduleRender();
+}
+
+function setText(node, value) {
+    if (node && node.textContent !== value) node.textContent = value;
 }
 
 function render() {
@@ -100,18 +106,36 @@ function render() {
     const button = document.getElementById("phase-test-data-btn");
     const note = document.getElementById("phase-test-data-note");
     const phase = getActiveNutritionPhase();
+    const isActive = active();
+
     if (button) {
-        button.disabled = !active() && !phase;
-        button.textContent = active() ? "Restore Real Data" : "Add 21 Days Test Data";
+        const shouldDisable = !isActive && !phase;
+        if (button.disabled !== shouldDisable) button.disabled = shouldDisable;
+        setText(button, isActive ? "Restore Real Data" : "Add 21 Days Test Data");
     }
-    if (note) note.textContent = active()
-        ? "TEST DATA ACTIVE — restore your saved weight/phase data when finished."
-        : phase ? "TEST: creates enough on-target phase data to evaluate established behavior." : "Start a phase first to generate test data.";
+
+    setText(
+        note,
+        isActive
+            ? "TEST DATA ACTIVE — restore your saved weight/phase data when finished."
+            : phase
+                ? "TEST: creates enough on-target phase data to evaluate established behavior."
+                : "Start a phase first to generate test data."
+    );
+}
+
+function scheduleRender() {
+    if (renderQueued) return;
+    renderQueued = true;
+    window.requestAnimationFrame(() => {
+        renderQueued = false;
+        render();
+    });
 }
 
 const content = document.getElementById("content");
-if (content) new MutationObserver(render).observe(content, { childList: true, subtree: true });
-window.addEventListener("levelup:nutrition-updated", render);
-window.addEventListener("levelup:nutrition-phase-updated", render);
-window.addEventListener("load", render);
-render();
+if (content) new MutationObserver(scheduleRender).observe(content, { childList: true, subtree: true });
+window.addEventListener("levelup:nutrition-updated", scheduleRender);
+window.addEventListener("levelup:nutrition-phase-updated", scheduleRender);
+window.addEventListener("load", scheduleRender);
+scheduleRender();
