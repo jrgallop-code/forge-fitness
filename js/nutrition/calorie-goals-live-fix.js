@@ -4,7 +4,7 @@ import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-go
 import { getActiveNutritionPhase } from "./nutrition-phase.js?v=phase-tolerance-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
 import "./phase-rate-display.js?v=phase-tolerance-1";
-import "./phase-test-data.js?v=phase-test-data-1";
+import "./phase-test-data.js?v=phase-test-data-2";
 
 let refreshScheduled = false;
 let draftGoalId = null;
