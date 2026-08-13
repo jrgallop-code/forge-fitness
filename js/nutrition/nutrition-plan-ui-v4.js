@@ -105,24 +105,36 @@ function refreshGoalCheckIn(plan) {
 
     if (!Number.isFinite(currentCalories) || !Number.isFinite(target)) { hideApply(); return; }
 
-    const difference = actual - target;
-    const direction = difference > 0 ? -1 : 1;
-    const adjustment = calculateSuggestedAdjustment(difference);
-    const suggested = Math.max(1, Math.round(currentCalories + direction * adjustment));
+    const recommendation = buildCalorieRecommendation({ actual, target, currentCalories });
     setText("goal-check-in-message", `Actual: ${formatRate(actual)} · Target: ${formatRate(target)}. The phase is ${statusPhrase(metrics.status)} across the established 21-day window.`);
-    setText("goal-check-in-suggested", `Suggested calorie target: ${suggested} kcal/day`);
+    setText("goal-check-in-suggested", `${recommendation.verb} calories by ${recommendation.adjustment} kcal/day → ${recommendation.suggestedCalories} kcal/day. This keeps the same phase and target rate.`);
 
     const apply = document.getElementById("goal-check-in-apply");
     if (apply) {
         apply.hidden = false;
-        apply.textContent = `Apply ${suggested}`;
+        apply.textContent = `${recommendation.verb} ${recommendation.adjustment} kcal/day`;
         apply.onclick = () => {
-            saveNutritionPhase({ goalId: phase.goalId, maintenanceCalories: phase.maintenanceCalories, targetCalories: suggested });
-            setCurrentCalories(suggested, "Nutrition phase check-in recommendation");
-            setText("goal-check-in-message", `Applied. Calories are now ${suggested} kcal/day and the ${phase.label || "current"} phase start date is unchanged.`);
+            saveNutritionPhase({ goalId: phase.goalId, maintenanceCalories: phase.maintenanceCalories, targetCalories: recommendation.suggestedCalories });
+            setCurrentCalories(recommendation.suggestedCalories, "Nutrition phase check-in recommendation");
+            setText("goal-check-in-message", `Applied ${recommendation.signedAdjustment} kcal/day. New target: ${recommendation.suggestedCalories} kcal/day. The ${phase.label || "current"} phase start date and target rate are unchanged; reassess after more phase data accumulates.`);
             setText("goal-check-in-suggested", ""); hideApply();
         };
     }
+}
+
+function buildCalorieRecommendation({ actual, target, currentCalories }) {
+    const difference = Number(actual) - Number(target);
+    const direction = difference > 0 ? -1 : 1;
+    const adjustment = calculateSuggestedAdjustment(difference);
+    const delta = direction * adjustment;
+    const suggestedCalories = Math.max(1, Math.round(Number(currentCalories) + delta));
+    return {
+        adjustment,
+        delta,
+        suggestedCalories,
+        verb: delta > 0 ? "Increase" : "Decrease",
+        signedAdjustment: `${delta > 0 ? "+" : "−"}${Math.abs(delta)}`
+    };
 }
 
 function calculateSuggestedAdjustment(diffLbPerWeek) {
