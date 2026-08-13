@@ -6,6 +6,7 @@ const FULL_GAP_INCREMENT = 50;
 const FIRST_STEP_FRACTION = 0.5;
 const FIRST_STEP_INCREMENT = 25;
 const REASSESSMENT_DAYS = 21;
+const REASSESSMENT_HOLD_KEY = "level_up_phase_reassessment_hold";
 
 export function initializeNutritionPlanUI() {
     removeLegacyPlanUI();
@@ -111,9 +112,9 @@ function refreshGoalCheckIn() {
         setText("goal-check-in-suggested", ""); hideApply(); return;
     }
 
-    const reassessment = getReassessmentWait(phase);
+    const reassessment = getReassessmentWait(phase, currentCalories);
     if (reassessment) {
-        setText("goal-check-in-message", `Calories changed ${reassessment.daysElapsed === 0 ? "today" : `${reassessment.daysElapsed} day${reassessment.daysElapsed === 1 ? "" : "s"} ago`}. Hold the current target long enough to measure the response before making another change.`);
+        setText("goal-check-in-message", "The 50% first adjustment is active. Hold the current target long enough to measure the response before making another change.");
         setText("goal-check-in-suggested", `Current target: ${currentCalories} kcal/day · Reassess in ${reassessment.daysRemaining} day${reassessment.daysRemaining === 1 ? "" : "s"}.`);
         hideApply(); return;
     }
@@ -136,6 +137,7 @@ function refreshGoalCheckIn() {
         apply.onclick = () => {
             saveNutritionPhase({ goalId: phase.goalId, maintenanceCalories: phase.maintenanceCalories, targetCalories: recommendation.firstStepCalories });
             setCurrentCalories(recommendation.firstStepCalories, "50% phase calorie-gap adjustment");
+            saveReassessmentHold({ phaseId: phase.id, calories: recommendation.firstStepCalories, estimatedTargetCalories: recommendation.estimatedTargetCalories });
             setText("goal-check-in-message", `Applied the 50% first step (${formatSignedCalories(recommendation.firstStepDelta)} kcal/day). New target: ${recommendation.firstStepCalories} kcal/day. The ${phase.label || "current"} phase start date and target rate are unchanged.`);
             setText("goal-check-in-suggested", `Estimated target before reassessment: ${recommendation.estimatedTargetCalories} kcal/day. Hold ${recommendation.firstStepCalories} kcal/day for the next 21-day assessment window.`); hideApply();
         };
@@ -153,15 +155,30 @@ function buildCalorieRecommendation({ actual, target, currentCalories }) {
     return { fullGapCalories, estimatedTargetCalories, firstStepDelta, firstStepCalories };
 }
 
-function getReassessmentWait(phase) {
-    const adjustments = Array.isArray(phase?.adjustments) ? phase.adjustments : [];
-    const latest = [...adjustments].reverse().find(item => item?.date && Number(item?.newCalories) > 0);
-    if (!latest) return null;
-    const time = new Date(latest.date).getTime();
-    if (!Number.isFinite(time)) return null;
+function saveReassessmentHold({ phaseId, calories, estimatedTargetCalories }) {
+    localStorage.setItem(REASSESSMENT_HOLD_KEY, JSON.stringify({ phaseId, calories, estimatedTargetCalories, appliedAt: new Date().toISOString() }));
+}
+
+function getReassessmentWait(phase, currentCalories) {
+    let hold;
+    try { hold = JSON.parse(localStorage.getItem(REASSESSMENT_HOLD_KEY) || "null"); }
+    catch { hold = null; }
+    if (!hold || hold.phaseId !== phase?.id) return null;
+    if (Math.round(Number(hold.calories)) !== Math.round(Number(currentCalories))) {
+        localStorage.removeItem(REASSESSMENT_HOLD_KEY);
+        return null;
+    }
+    const time = new Date(hold.appliedAt).getTime();
+    if (!Number.isFinite(time)) {
+        localStorage.removeItem(REASSESSMENT_HOLD_KEY);
+        return null;
+    }
     const daysElapsed = Math.max(0, Math.floor((Date.now() - time) / 86400000));
-    if (daysElapsed >= REASSESSMENT_DAYS) return null;
-    return { daysElapsed, daysRemaining: REASSESSMENT_DAYS - daysElapsed };
+    if (daysElapsed >= REASSESSMENT_DAYS) {
+        localStorage.removeItem(REASSESSMENT_HOLD_KEY);
+        return null;
+    }
+    return { daysElapsed, daysRemaining: REASSESSMENT_DAYS - daysElapsed, estimatedTargetCalories: Number(hold.estimatedTargetCalories) || null };
 }
 
 function formatSignedCalories(value) {
