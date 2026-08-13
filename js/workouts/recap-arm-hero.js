@@ -24,7 +24,7 @@ function installStyles() {
       top:50%;
       transform:translate(-50%,-48%);
       border-radius:50%;
-      background:radial-gradient(circle,rgba(47,125,246,.26) 0%,rgba(47,125,246,.09) 40%,transparent 72%);
+      background:radial-gradient(circle,rgba(225,6,0,.26) 0%,rgba(225,6,0,.09) 40%,transparent 72%);
       filter:blur(10px);
       z-index:-1;
     }
@@ -41,7 +41,7 @@ function installStyles() {
       max-width:520px;
       height:auto;
       object-fit:contain;
-      filter:drop-shadow(0 16px 20px rgba(0,0,0,.6)) drop-shadow(0 0 13px rgba(47,125,246,.22));
+      filter:drop-shadow(0 16px 20px rgba(0,0,0,.6)) drop-shadow(0 0 13px rgba(225,6,0,.22));
       transform:translateZ(0);
     }
     @media(max-width:520px){
