@@ -1,21 +1,4 @@
-const HERO_DATA_URL = "assets/workout-complete-arm.webp?v=1";
-let heroDataPromise = null;
-
-function loadHeroData() {
-  if (!heroDataPromise) {
-    heroDataPromise = fetch(HERO_DATA_URL, { cache: "force-cache" })
-      .then(response => {
-        if (!response.ok) throw new Error(`Hero asset failed: ${response.status}`);
-        return response.text();
-      })
-      .then(base64 => `data:image/webp;base64,${base64.trim()}`)
-      .catch(error => {
-        console.warn("Workout complete hero failed to load", error);
-        return "";
-      });
-  }
-  return heroDataPromise;
-}
+const HERO_URL = "assets/workout-complete-arm.webp?v=2";
 
 function installStyles() {
   if (document.querySelector("style[data-recap-arm-hero-style]")) return;
@@ -72,18 +55,26 @@ function installStyles() {
   document.head.appendChild(style);
 }
 
-async function replaceHero(root) {
-  if (!root || root.dataset.armHeroInstalled === "true") return;
-  root.dataset.armHeroInstalled = "true";
-  const src = await loadHeroData();
-  if (!src || !root.isConnected) {
-    delete root.dataset.armHeroInstalled;
-    return;
-  }
-  root.classList.add("is-arm-hero");
-  root.innerHTML = `<img class="workout-complete-recap__arm-hero" alt="Muscular arm holding a dumbbell" decoding="async">`;
-  const image = root.querySelector(".workout-complete-recap__arm-hero");
-  image.src = src;
+function replaceHero(root) {
+  if (!root || root.dataset.armHeroInstalled === "true" || root.dataset.armHeroLoading === "true") return;
+  root.dataset.armHeroLoading = "true";
+
+  const image = new Image();
+  image.className = "workout-complete-recap__arm-hero";
+  image.alt = "Muscular arm holding a dumbbell";
+  image.decoding = "async";
+  image.onload = () => {
+    if (!root.isConnected) return;
+    root.classList.add("is-arm-hero");
+    root.replaceChildren(image);
+    root.dataset.armHeroInstalled = "true";
+    delete root.dataset.armHeroLoading;
+  };
+  image.onerror = () => {
+    console.warn("Workout complete hero failed to load");
+    delete root.dataset.armHeroLoading;
+  };
+  image.src = HERO_URL;
 }
 
 function installArmHero() {
