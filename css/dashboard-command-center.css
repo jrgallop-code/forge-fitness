@@ -1,0 +1,312 @@
+#content.dashboard-command-center {
+    padding-bottom: 18px;
+}
+
+.dashboard-command-header {
+    display: block;
+    padding: 22px 20px 8px;
+}
+
+.dashboard-command-header > div {
+    max-width: 780px;
+}
+
+.dashboard-command-date {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--muted, #a0a0a0);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.dashboard-command-header h2 {
+    margin: 0;
+    font-size: clamp(2rem, 8vw, 3rem);
+    line-height: 0.95;
+    letter-spacing: 0.015em;
+}
+
+.dashboard-command-header p {
+    margin: 10px 0 0;
+    color: var(--muted, #a0a0a0);
+    font-size: 0.82rem;
+}
+
+.dashboard-command-center .schedule-dashboard-card,
+.dashboard-command-today-empty {
+    margin: 12px 20px 14px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-top: 3px solid var(--red, #e10600);
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(225, 6, 0, 0.08), rgba(255, 255, 255, 0.025));
+}
+
+.dashboard-command-center .schedule-dashboard-card .schedule-heading h2,
+.dashboard-command-today-empty h2 {
+    margin-top: 4px;
+    font-size: 1.15rem;
+}
+
+.dashboard-command-center .schedule-dashboard-card > p,
+.dashboard-command-today-empty p {
+    margin: 7px 0 13px;
+    color: var(--muted, #a0a0a0);
+    font-size: 0.76rem;
+}
+
+.dashboard-command-today-empty {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.dashboard-command-today-empty .primary-btn {
+    flex: 0 0 auto;
+    min-height: 40px;
+}
+
+.dashboard-command-weekly {
+    margin: 0 20px 18px;
+    padding: 17px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.dashboard-command-weekly-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.dashboard-command-weekly-head h2 {
+    margin: 4px 0 0;
+    font-size: 1.2rem;
+}
+
+.dashboard-weekly-toggle {
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.dashboard-weekly-toggle button {
+    min-height: 30px;
+    padding: 5px 10px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted, #a0a0a0);
+    font-size: 0.64rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.dashboard-weekly-toggle button.active {
+    background: #fff;
+    color: #0b0b0c;
+}
+
+.dashboard-weekly-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.dashboard-weekly-metric {
+    min-width: 0;
+    padding: 13px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 15px;
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.dashboard-weekly-metric > span {
+    display: block;
+    overflow: hidden;
+    color: var(--muted, #a0a0a0);
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dashboard-weekly-metric strong {
+    display: block;
+    margin-top: 6px;
+    font-size: 1.45rem;
+    line-height: 1;
+}
+
+.dashboard-weekly-metric strong small {
+    color: var(--muted, #a0a0a0);
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.dashboard-weekly-metric em {
+    display: block;
+    margin-top: 5px;
+    color: var(--muted, #a0a0a0);
+    font-size: 0.62rem;
+    font-style: normal;
+}
+
+.dashboard-weekly-bar {
+    height: 4px;
+    margin-top: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.dashboard-weekly-bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--red, #e10600);
+}
+
+.dashboard-command-insights-heading {
+    margin: 0 20px 2px;
+}
+
+.dashboard-command-insights-heading h2 {
+    margin: 4px 0 0;
+    font-size: 1.35rem;
+}
+
+.dashboard.dashboard-command-insights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 12px 20px 6px;
+}
+
+.dashboard.dashboard-command-insights .metric-card {
+    min-height: 104px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 17px;
+    background: rgba(255, 255, 255, 0.025);
+    box-shadow: none;
+}
+
+.dashboard.dashboard-command-insights .metric-icon {
+    display: none;
+}
+
+.dashboard.dashboard-command-insights .metric-card h3 {
+    color: #fff;
+    font-size: 0.76rem;
+    line-height: 1.25;
+}
+
+.dashboard.dashboard-command-insights .metric-card p {
+    margin-top: 14px;
+    font-size: 1.28rem;
+    font-weight: 800;
+}
+
+.dashboard.dashboard-command-insights .metric-card small {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted, #a0a0a0);
+    font-size: 0.58rem;
+}
+
+.dashboard-command-performance {
+    margin: 16px 20px 0;
+    border-radius: 18px;
+}
+
+/* The detailed history and duplicated nutrition/latest-workout blocks remain available in their dedicated pages. */
+#content.dashboard-command-center > .dashboard-detail-grid,
+#content.dashboard-command-center > .dashboard-history {
+    display: none;
+}
+
+@media (max-width: 520px) {
+    .dashboard-command-header {
+        padding: 19px 16px 6px;
+    }
+
+    .dashboard-command-center .schedule-dashboard-card,
+    .dashboard-command-today-empty,
+    .dashboard-command-weekly,
+    .dashboard-command-performance {
+        margin-left: 16px;
+        margin-right: 16px;
+    }
+
+    .dashboard-command-insights-heading {
+        margin-left: 16px;
+        margin-right: 16px;
+    }
+
+    .dashboard.dashboard-command-insights {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .dashboard-command-weekly-head {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .dashboard-weekly-toggle {
+        align-self: flex-start;
+    }
+
+    .dashboard-weekly-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+    }
+
+    .dashboard-weekly-metric {
+        padding: 11px 9px;
+    }
+
+    .dashboard-weekly-metric > span {
+        font-size: 0.58rem;
+    }
+
+    .dashboard-weekly-metric strong {
+        font-size: 1.28rem;
+    }
+
+    .dashboard-command-today-empty {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .dashboard-command-today-empty .primary-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 360px) {
+    .dashboard-weekly-grid {
+        gap: 5px;
+    }
+
+    .dashboard-weekly-metric {
+        padding: 10px 7px;
+    }
+
+    .dashboard-weekly-metric strong {
+        font-size: 1.12rem;
+    }
+
+    .dashboard.dashboard-command-insights {
+        gap: 8px;
+    }
+}
