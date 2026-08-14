@@ -4,11 +4,11 @@ import { navigate } from "../core/router.js?v=first-run-onboarding-1";
 export function renderNavbar() {
     return `
         <nav class="bottom-nav" aria-label="Primary navigation">
-            <button class="nav-btn active" data-page="home" aria-label="Home" type="button">
+            <button class="nav-btn active" data-page="home" aria-label="Dashboard" type="button">
                 <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M3 10.8 12 3l9 7.8v9.7a.5.5 0 0 1-.5.5H15v-6.5H9V21H3.5a.5.5 0 0 1-.5-.5v-9.7Z"/>
+                    <path d="M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h6v6h-6v-6Z"/>
                 </svg>
-                <span>Home</span>
+                <span>Dashboard</span>
             </button>
 
             <button class="nav-btn" data-page="workout" aria-label="Workout" type="button">
