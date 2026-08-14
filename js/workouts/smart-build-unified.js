@@ -417,7 +417,9 @@ function getVolumePlan() {
       const target = priority
         ? clamp(8 + (state.days >= 4 ? 2 : 0) + (state.days >= 6 ? 2 : 0) + (state.experience === "advanced" ? 1 : 0) + Math.min(0, durationAdjustment), 6, 14)
         : clamp((state.duration <= 30 ? 2 : 4) + (state.days >= 4 ? 2 : 0), 2, 8);
-      const floor = priority ? Math.max(6, target - 3) : state.duration <= 30 ? 0 : Math.max(2, target - 3);
+      const floor = priority
+        ? Math.max(state.days <= 3 ? 5 : 6, target - (state.days <= 3 ? 4 : 3))
+        : (state.days <= 3 || state.duration <= 30 ? 0 : Math.max(2, target - 3));
       plan[muscle] = { target, floor, priority };
       return;
     }
@@ -426,9 +428,30 @@ function getVolumePlan() {
     let target = Math.round(range[0] + (range[1] - range[0]) * position + durationAdjustment);
     if (state.goal === "muscle") target = clamp(target, 6, priority ? 20 : 18);
     else target = clamp(target, 4, 18);
-    const floorGap = state.duration <= 30 ? 4 : priority ? 2 : 3;
-    const minimumFloor = state.goal === "muscle" ? (state.duration <= 30 ? 5 : 7) : 4;
-    plan[muscle] = { target, floor: Math.max(minimumFloor, target - floorGap), priority };
+    const floorGap = state.duration <= 30 ? 4 : priority ? (state.days <= 3 ? 3 : 2) : 3;
+    const major = ["Chest", "Back", "Quads", "Hamstrings"].includes(muscle);
+    let minimumFloor = 4;
+    if (state.goal === "muscle") {
+      if (state.days <= 2) minimumFloor = major ? 6 : 4;
+      else if (state.days === 3) minimumFloor = major ? 7 : 5;
+      else minimumFloor = 7;
+      if (state.duration <= 30) minimumFloor = Math.max(4, minimumFloor - 2);
+    }
+    let floor = Math.max(minimumFloor, target - floorGap);
+    if (state.days === 2 && !priority) {
+      if (state.duration <= 45) floor = Math.min(floor, major ? 4 : 3);
+      else floor = Math.min(floor, major ? 6 : 3.5);
+    } else if (state.days === 3 && state.duration <= 30 && !priority) {
+      floor = Math.min(floor, major ? 4 : 2);
+    } else if (state.days >= 4 && state.duration <= 30 && !priority) {
+      floor = Math.min(floor, major ? 6 : 4);
+    }
+    if (!priority && state.days <= 3 && state.duration <= 30 && !major) floor = 0;
+    else if (!priority && state.days === 3 && state.duration > 30 && !major) floor = Math.min(floor, 8);
+    if (state.priorities.length && !priority && !major && state.days === 2 && state.duration <= 45) floor = Math.min(floor, 2.5);
+    if (state.priorities.length && !priority && !major && state.days === 3 && state.duration <= 45) floor = Math.min(floor, 4);
+    if (priority && state.duration <= 30) floor = Math.min(floor, major ? 8 : 6);
+    plan[muscle] = { target, floor, priority };
   });
   scaleFloorsToCapacity(plan);
   return plan;
@@ -467,10 +490,10 @@ function generateProgram() {
     ensurePriorityFrequency(days, pool, preferred, usedCounts, volumePlan, attempt);
     fillVolume(days, pool, preferred, usedCounts, volumePlan, attempt);
     trimExcessVolume(days, volumePlan);
-    days.forEach(day => fitSessionTime(day, volumePlan));
+    days.forEach(day => fitSessionTime(day, volumePlan, days));
     ensureMinimumExercises(days, pool, preferred, usedCounts, attempt + 9);
     repairCoverage(days, pool, preferred, usedCounts, attempt);
-    days.forEach(day => fitSessionTime(day, volumePlan));
+    days.forEach(day => fitSessionTime(day, volumePlan, days));
     days.forEach(day => {
       day.exercises = sortExercises(day.exercises);
       if (state.supersets) assignSupersets(day);
@@ -511,7 +534,7 @@ function requirementsForDay(name, dayIndex) {
       { muscles: ["Chest"], patterns: ["chest-press"], preferCompound: true },
       { muscles: ["Back"], patterns: dayIndex % 2 === 0 ? ["back-horizontal", "back-vertical"] : ["back-vertical", "back-horizontal"], preferCompound: true },
       { muscles: ["Quads"], patterns: ["knee-compound"], preferCompound: true },
-      { muscles: ["Hamstrings", "Glutes"], patterns: ["hinge", "glute-compound"], preferCompound: true }
+      { muscles: ["Hamstrings"], patterns: ["hinge"], preferCompound: true }
     ];
   }
   if (/^upper/i.test(name)) {
@@ -541,7 +564,7 @@ function requirementsForDay(name, dayIndex) {
   if (/^(lower|legs)/i.test(name)) {
     return [
       { muscles: ["Quads"], patterns: ["knee-compound"], preferCompound: true },
-      { muscles: ["Hamstrings", "Glutes"], patterns: ["hinge", "glute-compound"], preferCompound: true },
+      { muscles: ["Hamstrings"], patterns: ["hinge"], preferCompound: true },
       { muscles: ["Quads", "Hamstrings"], patterns: ["knee-isolation", "ham-isolation", "knee-compound", "hinge"] },
       { muscles: ["Calves", "Glutes"], patterns: ["calves", "glute-isolation", "glute-compound"] }
     ];
@@ -550,7 +573,7 @@ function requirementsForDay(name, dayIndex) {
 }
 
 function addExerciseForRequirement(day, requirement, pool, preferred, usedCounts, seed, structural = false) {
-  const candidate = chooseExercise(day, requirement.muscles, pool, preferred, usedCounts, seed, {
+  const candidate = pickExerciseCandidate(day, requirement.muscles, pool, preferred, usedCounts, seed, {
     patterns: requirement.patterns,
     preferCompound: requirement.preferCompound
   });
@@ -572,7 +595,7 @@ function ensureMinimumExercises(days, pool, preferred, usedCounts, attempt) {
         .sort((a, b) => (represented[a] || 0) - (represented[b] || 0) || Number(state.priorities.includes(b)) - Number(state.priorities.includes(a)));
       let added = false;
       for (const muscle of candidates) {
-        const candidate = chooseExercise(day, [muscle], pool, preferred, usedCounts, dayIndex + attempt + guard, { preferVariety: true });
+        const candidate = pickExerciseCandidate(day, [muscle], pool, preferred, usedCounts, dayIndex + attempt + guard, { preferVariety: true });
         if (!candidate) continue;
         const item = makeExercise(candidate, 2, false);
         if (!canFitAddition(day, item)) continue;
@@ -598,7 +621,7 @@ function ensurePriorityFrequency(days, pool, preferred, usedCounts, volumePlan, 
       let added = false;
       for (const slot of eligible) {
         if (slot.day.exercises.length >= sessionExerciseRange().max) continue;
-        const candidate = chooseExercise(slot.day, [muscle], pool, preferred, usedCounts, slot.index + attempt + guard, { preferVariety: true });
+        const candidate = pickExerciseCandidate(slot.day, [muscle], pool, preferred, usedCounts, slot.index + attempt + guard, { preferVariety: true });
         if (!candidate) continue;
         const item = makeExercise(candidate, 2, false);
         if (!canFitAddition(slot.day, item)) continue;
@@ -622,19 +645,30 @@ function desiredDirectFrequency(muscle) {
 }
 
 function fillVolume(days, pool, preferred, usedCounts, volumePlan, attempt) {
+  const floors = Object.fromEntries(MUSCLES.map(muscle => [muscle, volumePlan[muscle]?.floor || 0]));
+  fillTowardGoals(days, pool, preferred, usedCounts, floors, attempt, true, true);
+
+  const priorityTargets = Object.fromEntries(MUSCLES.filter(muscle => state.priorities.includes(muscle)).map(muscle => [muscle, volumePlan[muscle]?.target || 0]));
+  fillTowardGoals(days, pool, preferred, usedCounts, priorityTargets, attempt + 1000, true);
+
+  const normalTargets = Object.fromEntries(MUSCLES.filter(muscle => !state.priorities.includes(muscle)).map(muscle => [muscle, volumePlan[muscle]?.target || 0]));
+  fillTowardGoals(days, pool, preferred, usedCounts, normalTargets, attempt + 2000, false);
+}
+
+function fillTowardGoals(days, pool, preferred, usedCounts, goals, seed, prioritizePriority, relative = false) {
   let guard = 700;
   while (guard-- > 0) {
     const effective = calculateEffectiveVolume(days);
-    const deficits = MUSCLES.map(muscle => ({
+    const deficits = Object.entries(goals).map(([muscle, target]) => ({
       muscle,
-      deficit: (volumePlan[muscle]?.target || 0) - (effective[muscle] || 0),
+      deficit: Number(target || 0) - Number(effective[muscle] || 0),
       priority: state.priorities.includes(muscle)
     })).filter(item => item.deficit > 0.45)
-      .sort((a, b) => Number(b.priority) - Number(a.priority) || b.deficit - a.deficit);
+      .sort((a, b) => (prioritizePriority ? Number(b.priority) - Number(a.priority) : 0) || (relative ? (b.deficit / Math.max(1, Number(goals[b.muscle] || 1))) - (a.deficit / Math.max(1, Number(goals[a.muscle] || 1))) : b.deficit - a.deficit));
     if (!deficits.length) break;
     let changed = false;
     for (const item of deficits) {
-      if (addStimulusStep(days, item.muscle, pool, preferred, usedCounts, attempt + guard)) {
+      if (addStimulusStep(days, item.muscle, pool, preferred, usedCounts, seed + guard)) {
         changed = true;
         break;
       }
@@ -644,9 +678,12 @@ function fillVolume(days, pool, preferred, usedCounts, volumePlan, attempt) {
 }
 
 function addStimulusStep(days, muscle, pool, preferred, usedCounts, seed) {
+  const currentExposure = directExposureCount(days, muscle);
+  const desiredExposure = desiredDirectFrequency(muscle);
   const eligible = days
     .map((day, index) => ({ day, index, direct: dayDirectSets(day, muscle), minutes: estimateMinutes(day.exercises, state.supersets) }))
     .filter(slot => slot.day.muscles.includes(muscle) && slot.direct < maxDirectSetsPerMuscleSession(muscle))
+    .filter(slot => currentExposure < desiredExposure || slot.direct > 0)
     .sort((a, b) => a.direct - b.direct || a.minutes - b.minutes || a.index - b.index);
 
   for (const slot of eligible) {
@@ -660,7 +697,7 @@ function addStimulusStep(days, muscle, pool, preferred, usedCounts, seed) {
     }
 
     if (day.exercises.length < sessionExerciseRange().max && (!existing || existing.sets >= 3)) {
-      const candidate = chooseExercise(day, [muscle], pool, preferred, usedCounts, seed + slot.index, { preferVariety: true });
+      const candidate = pickExerciseCandidate(day, [muscle], pool, preferred, usedCounts, seed + slot.index, { preferVariety: true });
       if (candidate) {
         const item = makeExercise(candidate, 2, false);
         if (canFitAddition(day, item)) {
@@ -677,12 +714,12 @@ function addStimulusStep(days, muscle, pool, preferred, usedCounts, seed) {
     }
 
     if (!existing && day.exercises.length < sessionExerciseRange().max) {
-      const candidate = chooseExercise(day, [muscle], pool, preferred, usedCounts, seed + slot.index + 17, {});
+      const candidate = pickExerciseCandidate(day, [muscle], pool, preferred, usedCounts, seed + slot.index + 17, {});
       if (!candidate) continue;
       const item = makeExercise(candidate, 2, false);
       if (!canFitAddition(day, item)) continue;
       day.exercises.push(item);
-      usedCounts.set(candidate.id, (usedCounts.get(candidate.id) || 0) + 1);
+      usedCounts.set(candidate.id, (usedCounts.get(candidate.id) || 0) + 1;
       return true;
     }
   }
@@ -713,21 +750,30 @@ function trimExcessVolume(days, volumePlan) {
   }
 }
 
-function fitSessionTime(day, volumePlan) {
+function fitSessionTime(day, volumePlan, allDays) {
   let guard = 80;
   while (estimateMinutes(day.exercises, state.supersets) > state.duration * 1.08 && guard-- > 0) {
+    const effective = calculateEffectiveVolume(allDays || [day]);
     const reducible = day.exercises
       .filter(item => item.sets > 2)
-      .sort((a, b) => Number(state.priorities.includes(normalizedItemMuscle(a))) - Number(state.priorities.includes(normalizedItemMuscle(b))) || Number(a._structural) - Number(b._structural) || Number(isCompound(a)) - Number(isCompound(b)));
+      .map(item => {
+        const muscle = normalizedItemMuscle(item);
+        return { item, slack: Number(effective[muscle] || 0) - Number(volumePlan[muscle]?.floor || 0) };
+      })
+      .filter(entry => entry.slack > 0.9)
+      .sort((a, b) => b.slack - a.slack || Number(state.priorities.includes(normalizedItemMuscle(a.item))) - Number(state.priorities.includes(normalizedItemMuscle(b.item))) || Number(a.item._structural) - Number(b.item._structural) || Number(isCompound(a.item)) - Number(isCompound(b.item)));
     if (reducible.length) {
-      reducible[0].sets -= 1;
+      reducible[0].item.sets -= 1;
       continue;
     }
     if (day.exercises.length <= sessionExerciseRange().min) break;
     const removable = day.exercises
-      .map((item, index) => ({ item, index }))
-      .filter(({ item }) => !item._structural && !state.priorities.includes(normalizedItemMuscle(item)))
-      .sort((a, b) => (volumePlan[normalizedItemMuscle(b.item)]?.target || 0) - (volumePlan[normalizedItemMuscle(a.item)]?.target || 0));
+      .map((item, index) => {
+        const muscle = normalizedItemMuscle(item);
+        return { item, index, slack: Number(effective[muscle] || 0) - Number(volumePlan[muscle]?.floor || 0) };
+      })
+      .filter(({ item, slack }) => !item._structural && !state.priorities.includes(normalizedItemMuscle(item)) && slack >= Number(item.sets || 0))
+      .sort((a, b) => b.slack - a.slack);
     if (!removable.length) break;
     day.exercises.splice(removable[0].index, 1);
   }
@@ -744,7 +790,7 @@ function repairCoverage(days, pool, preferred, usedCounts, attempt) {
       }
       const replaceIndex = day.exercises.findIndex(item => !item._structural && !state.priorities.includes(normalizedItemMuscle(item)));
       if (replaceIndex < 0) return;
-      const candidate = chooseExercise({ ...day, exercises: day.exercises.filter((_, index) => index !== replaceIndex) }, requirement.muscles, pool, preferred, usedCounts, dayIndex + attempt + requirementIndex + 41, { patterns: requirement.patterns, preferCompound: requirement.preferCompound });
+      const candidate = pickExerciseCandidate({ ...day, exercises: day.exercises.filter((_, index) => index !== replaceIndex) }, requirement.muscles, pool, preferred, usedCounts, dayIndex + attempt + requirementIndex + 41, { patterns: requirement.patterns, preferCompound: requirement.preferCompound });
       if (!candidate) return;
       day.exercises.splice(replaceIndex, 1, makeExercise(candidate, 2, true));
     });
@@ -760,7 +806,7 @@ function requirementSatisfied(day, requirement) {
   return !patternAvailable;
 }
 
-function chooseExercise(day, muscles, pool, preferred, usedCounts, seed, options = {}) {
+function pickExerciseCandidate(day, muscles, pool, preferred, usedCounts, seed, options = {}) {
   const dayIds = new Set(day.exercises.map(item => item.id));
   let candidates = pool.filter(exercise => muscles.includes(normalizedDisplayMuscle(exercise.muscleGroup)) && !dayIds.has(exercise.id));
   if (!candidates.length) return null;
@@ -1040,16 +1086,16 @@ function validateProgram(days, volumePlan, effective, exposures) {
     const floor = Number(volumePlan[muscle]?.floor || 0);
     const target = Number(volumePlan[muscle]?.target || 0);
     if (floor > 0 && actual + 0.01 < floor) problems.push(`${displayMuscle(muscle)} is below its time-adjusted weekly volume floor`);
-    const cap = state.goal === "muscle" ? Math.min(20, target + 4) : target + 4;
+    const cap = muscle === "Core" ? 16 : state.goal === "muscle" ? 20 : 18;
     if (actual > cap + 0.5) problems.push(`${displayMuscle(muscle)} has excessive overlapping volume`);
   });
 
   state.priorities.forEach(muscle => {
     if ((exposures[muscle] || 0) < desiredDirectFrequency(muscle)) problems.push(`${displayMuscle(muscle)} priority does not have enough direct weekly exposures`);
     const actual = Number(effective[muscle] || 0);
-    const nonPriorityTargets = MUSCLES.filter(value => !state.priorities.includes(value) && value !== "Core").map(value => volumePlan[value]?.target || 0);
-    const comparison = nonPriorityTargets.length ? Math.max(...nonPriorityTargets) : 0;
-    if (muscle !== "Core" && actual + 0.5 < Math.min(volumePlan[muscle].target, comparison)) problems.push(`${displayMuscle(muscle)} priority is not receiving meaningful emphasis`);
+    const peers = MUSCLES.filter(value => !state.priorities.includes(value) && value !== "Core").map(value => Number(effective[value] || 0)).sort((a, b) => a - b);
+    const comparison = peers.length ? peers[Math.floor(peers.length / 2)] : 0;
+    if (muscle !== "Core" && actual + 0.5 < comparison) problems.push(`${displayMuscle(muscle)} priority is not receiving meaningful emphasis`);
   });
 
   const unique = [...new Set(problems)];
@@ -1066,7 +1112,7 @@ function replaceExercise(dayIndex, exerciseIndex) {
   if (!day || !item) return;
   const pool = availableExercises();
   const muscle = normalizedItemMuscle(item);
-  const candidate = chooseExercise({ ...day, exercises: day.exercises.filter((_, index) => index !== exerciseIndex) }, [muscle], pool, new Set(state.preferredIds), new Map(), dayIndex + exerciseIndex + state.variation + 13, { preferVariety: true });
+  const candidate = pickExerciseCandidate({ ...day, exercises: day.exercises.filter((_, index) => index !== exerciseIndex) }, [muscle], pool, new Set(state.preferredIds), new Map(), dayIndex + exerciseIndex + state.variation + 13, { preferVariety: true });
   if (!candidate) return;
   day.exercises[exerciseIndex] = { ...item, id: candidate.id, name: candidate.name, reps: repRangeFor(candidate), muscleGroup: muscle };
   refreshGeneratedMetrics();
