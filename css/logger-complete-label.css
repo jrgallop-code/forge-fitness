@@ -1,46 +1,42 @@
-/* Keep the completion control fully contained in the final set-grid column. */
-.workout-session-logger .complete-set-btn {
-  position: relative !important;
-  display: grid !important;
-  place-items: center !important;
-  width: 35px !important;
-  height: 35px !important;
-  min-width: 35px !important;
-  min-height: 35px !important;
-  padding: 0 !important;
-  font-size: 0 !important;
-  overflow: hidden !important;
+/* Keep the completion checkbox visually attached to the Reps field. */
+.workout-session-logger .session-set-header,
+.workout-session-logger .session-set-row,
+.workout-session-logger .session-warmup-row {
+  grid-template-columns: 34px minmax(56px,1fr) minmax(70px,82px) minmax(54px,66px) 34px;
 }
 
-.workout-session-logger .complete-set-btn::before {
-  content: "";
-  display: grid;
-  place-items: center;
-  width: 14px;
-  height: 14px;
-  border: 1.5px solid #fff;
-  border-radius: 3px;
-  box-sizing: border-box;
+.workout-session-logger .complete-set-btn,
+.workout-session-logger .complete-warmup-btn {
+  width: 32px !important;
+  height: 38px !important;
+  min-width: 32px !important;
+  min-height: 38px !important;
+  justify-self: start;
+  transform: translateX(-4px);
 }
 
-/* The column header already identifies this control as Complete, so do not
-   position an extra label outside the grid column. */
-.workout-session-logger .complete-set-btn::after {
-  content: none !important;
-  display: none !important;
-}
-
-.workout-session-logger .session-set-row.completed .complete-set-btn::before {
-  content: "✓";
-  font-size: 10px;
-  line-height: 1;
+.workout-session-logger .session-set-header > span:nth-child(5) {
+  justify-self: start;
+  transform: translateX(-4px);
 }
 
 @media (max-width: 380px) {
-  .workout-session-logger .complete-set-btn {
-    width: 34px !important;
-    height: 34px !important;
-    min-width: 34px !important;
-    min-height: 34px !important;
+  .workout-session-logger .session-set-header,
+  .workout-session-logger .session-set-row,
+  .workout-session-logger .session-warmup-row {
+    grid-template-columns: 32px minmax(48px,1fr) minmax(64px,74px) minmax(50px,60px) 32px;
+  }
+
+  .workout-session-logger .complete-set-btn,
+  .workout-session-logger .complete-warmup-btn {
+    width: 30px !important;
+    height: 36px !important;
+    min-width: 30px !important;
+    min-height: 36px !important;
+    transform: translateX(-3px);
+  }
+
+  .workout-session-logger .session-set-header > span:nth-child(5) {
+    transform: translateX(-3px);
   }
 }
