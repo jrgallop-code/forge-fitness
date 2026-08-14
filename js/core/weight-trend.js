@@ -1,36 +1,117 @@
 const DAY_MS = 86400000;
-const DEFAULT_WINDOW_DAYS = 21;
+const MOVING_AVERAGE_DAYS = 7;
+const MIN_WINDOW_ENTRIES = 4;
+const FIRST_PHASE_CHECK_DAY = 14;
+const PHASE_CHECK_CADENCE_DAYS = 7;
 
 export function calculateWeightTrend(entries, options = {}) {
-    const maxWindowDays = Number(options.maxWindowDays) > 0
-        ? Math.round(Number(options.maxWindowDays))
-        : DEFAULT_WINDOW_DAYS;
-
     const normalized = normalizeWeightEntries(entries);
-    if (normalized.length < 2) {
-        return buildResult("insufficient", null, normalized, normalized, 0);
+    const minEntriesPerWindow = positiveInteger(options.minEntriesPerWindow, MIN_WINDOW_ENTRIES);
+    const endDate = validDate(options.endDate)
+        ? String(options.endDate)
+        : normalized.at(-1)?.date || null;
+
+    if (!endDate) {
+        return buildMovingAverageResult({ status: "insufficient", allEntries: normalized, minEntriesPerWindow });
     }
 
-    const firstTime = dateMs(normalized[0].date);
-    const lastTime = dateMs(normalized.at(-1).date);
-    const totalDays = Math.floor((lastTime - firstTime) / DAY_MS) + 1;
-    const cutoffTime = lastTime - ((maxWindowDays - 1) * DAY_MS);
-    const windowEntries = normalized.filter(entry => dateMs(entry.date) >= cutoffTime);
-    const windowDays = windowEntries.length
-        ? Math.floor((dateMs(windowEntries.at(-1).date) - dateMs(windowEntries[0].date)) / DAY_MS) + 1
-        : 0;
+    const current = calculateSevenDayAverage(normalized, endDate);
+    const previousEndDate = shiftDate(endDate, -MOVING_AVERAGE_DAYS);
+    const previous = calculateSevenDayAverage(normalized, previousEndDate);
+    const enoughCurrent = current.entries >= minEntriesPerWindow;
+    const enoughPrevious = previous.entries >= minEntriesPerWindow;
 
-    if (totalDays < 7 || windowEntries.length < 4 || windowDays < 7) {
-        return buildResult("insufficient", null, normalized, windowEntries, windowDays);
+    if (!enoughCurrent || !enoughPrevious || !Number.isFinite(current.average) || !Number.isFinite(previous.average)) {
+        return buildMovingAverageResult({
+            status: "insufficient",
+            allEntries: normalized,
+            current,
+            previous,
+            endDate,
+            minEntriesPerWindow
+        });
     }
 
-    const weeklyChange = calculateRegressionWeeklyChange(windowEntries);
-    if (!Number.isFinite(weeklyChange)) {
-        return buildResult("insufficient", null, normalized, windowEntries, windowDays);
+    const weeklyChange = current.average - previous.average;
+    return buildMovingAverageResult({
+        status: "actual",
+        weeklyChange,
+        allEntries: normalized,
+        current,
+        previous,
+        endDate,
+        minEntriesPerWindow
+    });
+}
+
+export function calculatePhaseMovingAverageTrend(entries, options = {}) {
+    const phaseStartDate = validDate(options.phaseStartDate) ? String(options.phaseStartDate) : null;
+    const asOfDate = validDate(options.asOfDate)
+        ? String(options.asOfDate)
+        : localDate();
+    const minEntriesPerWindow = positiveInteger(options.minEntriesPerWindow, MIN_WINDOW_ENTRIES);
+    const normalized = normalizeWeightEntries(entries).filter(entry => !phaseStartDate || entry.date >= phaseStartDate);
+
+    if (!phaseStartDate) {
+        return {
+            ...calculateWeightTrend([], { minEntriesPerWindow }),
+            reason: "missing-phase-start",
+            phaseDay: null,
+            checkDay: null,
+            checkDate: null,
+            nextCheckDay: FIRST_PHASE_CHECK_DAY,
+            nextCheckDate: null,
+            daysUntilCheck: null
+        };
     }
 
-    const established = totalDays >= 14 && windowDays >= 14 && windowEntries.length >= 7;
-    return buildResult(established ? "actual" : "preliminary", weeklyChange, normalized, windowEntries, windowDays);
+    const phaseDay = Math.max(1, Math.floor((dateMs(asOfDate) - dateMs(phaseStartDate)) / DAY_MS) + 1);
+    if (phaseDay < FIRST_PHASE_CHECK_DAY) {
+        return {
+            ...calculateWeightTrend([], { minEntriesPerWindow }),
+            reason: "before-first-check",
+            phaseDay,
+            checkDay: null,
+            checkDate: null,
+            nextCheckDay: FIRST_PHASE_CHECK_DAY,
+            nextCheckDate: shiftDate(phaseStartDate, FIRST_PHASE_CHECK_DAY - 1),
+            daysUntilCheck: FIRST_PHASE_CHECK_DAY - phaseDay,
+            totalEntries: normalized.length
+        };
+    }
+
+    const checkDay = FIRST_PHASE_CHECK_DAY
+        + (Math.floor((phaseDay - FIRST_PHASE_CHECK_DAY) / PHASE_CHECK_CADENCE_DAYS) * PHASE_CHECK_CADENCE_DAYS);
+    const checkDate = shiftDate(phaseStartDate, checkDay - 1);
+    const result = calculateWeightTrend(normalized, { endDate: checkDate, minEntriesPerWindow });
+
+    return {
+        ...result,
+        reason: result.status === "actual" ? null : "insufficient-window-data",
+        phaseDay,
+        checkDay,
+        checkDate,
+        nextCheckDay: checkDay + PHASE_CHECK_CADENCE_DAYS,
+        nextCheckDate: shiftDate(phaseStartDate, checkDay + PHASE_CHECK_CADENCE_DAYS - 1),
+        daysUntilCheck: Math.max(0, (checkDay + PHASE_CHECK_CADENCE_DAYS) - phaseDay)
+    };
+}
+
+export function calculateSevenDayAverage(entries, endDate) {
+    const normalized = normalizeWeightEntries(entries);
+    if (!validDate(endDate)) return emptyWindow(null, null);
+    const end = String(endDate);
+    const start = shiftDate(end, -(MOVING_AVERAGE_DAYS - 1));
+    const rows = normalized.filter(entry => entry.date >= start && entry.date <= end);
+    const average = rows.length
+        ? rows.reduce((sum, entry) => sum + entry.weight, 0) / rows.length
+        : null;
+    return {
+        average: Number.isFinite(average) ? average : null,
+        entries: rows.length,
+        startDate: start,
+        endDate: end
+    };
 }
 
 export function calculateRegressionWeeklyChange(entries) {
@@ -53,15 +134,62 @@ export function normalizeWeightEntries(entries) {
     entries.forEach(entry => {
         const date = String(entry?.date || "");
         const weight = Number(entry?.weight);
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(weight) || weight <= 0) return;
+        if (!validDate(date) || !Number.isFinite(weight) || weight <= 0) return;
         byDate.set(date, { date, weight });
     });
     return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-function buildResult(status, weeklyChange, allEntries, windowEntries, windowDays) {
-    const label = status === "actual" ? "Actual Weekly Change" : status === "preliminary" ? "Preliminary Weekly Trend" : "Weekly Trend";
-    return { status, label, weeklyChange, totalEntries: allEntries.length, windowEntries: windowEntries.length, windowDays, windowStart: windowEntries[0]?.date || null, windowEnd: windowEntries.at(-1)?.date || null, minimumActualDays: 14, maximumWindowDays: DEFAULT_WINDOW_DAYS };
+function buildMovingAverageResult({ status, weeklyChange = null, allEntries = [], current = emptyWindow(null, null), previous = emptyWindow(null, null), endDate = null, minEntriesPerWindow = MIN_WINDOW_ENTRIES }) {
+    const windowEntries = Number(current.entries || 0) + Number(previous.entries || 0);
+    return {
+        status,
+        label: status === "actual" ? "Weekly Trend" : "Weekly Trend",
+        weeklyChange: Number.isFinite(weeklyChange) ? weeklyChange : null,
+        previousAverage: Number.isFinite(previous.average) ? previous.average : null,
+        currentAverage: Number.isFinite(current.average) ? current.average : null,
+        previousEntries: Number(previous.entries || 0),
+        currentEntries: Number(current.entries || 0),
+        previousWindowStart: previous.startDate || null,
+        previousWindowEnd: previous.endDate || null,
+        currentWindowStart: current.startDate || null,
+        currentWindowEnd: current.endDate || endDate || null,
+        totalEntries: allEntries.length,
+        windowEntries,
+        windowDays: MOVING_AVERAGE_DAYS * 2,
+        windowStart: previous.startDate || null,
+        windowEnd: current.endDate || endDate || null,
+        minimumActualDays: MOVING_AVERAGE_DAYS * 2,
+        maximumWindowDays: MOVING_AVERAGE_DAYS * 2,
+        movingAverageDays: MOVING_AVERAGE_DAYS,
+        minEntriesPerWindow
+    };
 }
 
-function dateMs(date) { return new Date(`${date}T12:00:00`).getTime(); }
+function emptyWindow(startDate, endDate) {
+    return { average: null, entries: 0, startDate, endDate };
+}
+
+function positiveInteger(value, fallback) {
+    const number = Math.round(Number(value));
+    return Number.isFinite(number) && number > 0 ? number : fallback;
+}
+
+function validDate(value) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) && Number.isFinite(dateMs(String(value)));
+}
+
+function shiftDate(value, days) {
+    if (!validDate(value)) return null;
+    const date = new Date(`${value}T12:00:00`);
+    date.setDate(date.getDate() + Number(days || 0));
+    return localDate(date);
+}
+
+function localDate(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function dateMs(date) {
+    return new Date(`${date}T12:00:00`).getTime();
+}
