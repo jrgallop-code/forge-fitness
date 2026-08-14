@@ -156,13 +156,15 @@ function renderDisplayCells(phase) {
     const startedStrong = started?.querySelector("strong");
     if (startedStrong) {
         const day = phaseDay(phase.startDate);
-        startedStrong.textContent = `${formatDate(phase.startDate)}${day ? ` · Day ${day}` : ""}`;
+        const value = `${formatDate(phase.startDate)}${day ? ` · Day ${day}` : ""}`;
+        if (startedStrong.textContent !== value) startedStrong.textContent = value;
     }
 
     const goalCell = findMetricCell(grid, "Goal Weight");
     const goalStrong = goalCell?.querySelector("strong");
     const goal = readGoalWeight(phase);
-    if (goalStrong) goalStrong.textContent = Number.isFinite(goal) ? `${goal.toFixed(1)} lb` : "Not set";
+    const goalValue = Number.isFinite(goal) ? `${goal.toFixed(1)} lb` : "Not set";
+    if (goalStrong && goalStrong.textContent !== goalValue) goalStrong.textContent = goalValue;
 }
 
 function renderViewMode(host, phase) {
@@ -262,6 +264,7 @@ function beginEdit() {
     const currentGoal = readGoalWeight(state.phase);
     draftGoalWeight = Number.isFinite(currentGoal) ? String(currentGoal) : "";
     ensureInlineEditor();
+    scheduleRefresh(180);
 }
 
 function cancelEdit() {
@@ -347,12 +350,13 @@ function saveChanges() {
     const setupGoal = document.getElementById("nutrition-phase-goal-weight");
     if (setupGoal && Number.isFinite(newGoal)) setupGoal.value = String(newGoal);
 
-    renderViewMode(document.getElementById("nutrition-current-phase"), saved);
+    const host = document.getElementById("nutrition-current-phase");
+    if (host) renderViewMode(host, saved);
     window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated", { detail: { phaseId: savedPhaseId, source: "phase-inline-editor" } }));
     window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { phaseId: savedPhaseId, source: "phase-inline-editor" } }));
 
     scheduleRefresh(0);
-    scheduleRefresh(180);
+    window.setTimeout(ensureInlineEditor, 180);
 }
 
 function scheduleRefresh(delay = 40) {
