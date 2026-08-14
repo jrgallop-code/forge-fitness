@@ -1,3 +1,54 @@
+const COMING_SOON_ID = 'recovery-back-coming-soon-message';
+
+function isBackRecoveryControl(target) {
+  const control = target?.closest?.('[data-recovery-facing]');
+  if (!control) return null;
+  const value = String(control.dataset.recoveryFacing || '').trim().toLowerCase();
+  const text = String(control.textContent || '').trim().toLowerCase();
+  const label = String(control.getAttribute('aria-label') || '').trim().toLowerCase();
+  return value === 'back' || text === 'back' || label.includes('back') ? control : null;
+}
+
+function ensureBackComingSoonMessage() {
+  let message = document.getElementById(COMING_SOON_ID);
+  if (message) return message;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    #${COMING_SOON_ID}{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:9999;width:min(calc(100vw - 32px),420px);transform:translate(-50%,18px);opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+    #${COMING_SOON_ID}.is-visible{opacity:1;transform:translate(-50%,0)}
+    #${COMING_SOON_ID} .recovery-coming-soon-card{display:flex;flex-direction:column;gap:5px;padding:14px 16px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:rgba(18,18,22,.97);box-shadow:0 14px 40px rgba(0,0,0,.42);color:#f7f7f8;text-align:center;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+    #${COMING_SOON_ID} strong{font-size:15px;line-height:1.25;font-weight:800}
+    #${COMING_SOON_ID} span{font-size:13px;line-height:1.4;color:#b8b8c1}
+  `;
+  document.head.appendChild(style);
+
+  message = document.createElement('div');
+  message.id = COMING_SOON_ID;
+  message.setAttribute('role', 'status');
+  message.setAttribute('aria-live', 'polite');
+  message.innerHTML = `<div class="recovery-coming-soon-card"><strong>Back View — Coming Soon</strong><span>We’re refining the back recovery map. Please use the Front view for now.</span></div>`;
+  document.body.appendChild(message);
+  return message;
+}
+
+let comingSoonTimer = 0;
+function showBackComingSoon() {
+  const message = ensureBackComingSoonMessage();
+  clearTimeout(comingSoonTimer);
+  message.classList.remove('is-visible');
+  requestAnimationFrame(() => message.classList.add('is-visible'));
+  comingSoonTimer = window.setTimeout(() => message.classList.remove('is-visible'), 2800);
+}
+
+document.addEventListener('click', event => {
+  if (!isBackRecoveryControl(event.target)) return;
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation?.();
+  showBackComingSoon();
+}, true);
+
 const CLEAN_BACK_ASSET = 'assets/recovery/back-user-source.svg?v=back-source-3';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const BACK_OUTLINE_FILTER_ID = 'recovery-back-outline-alpha';
