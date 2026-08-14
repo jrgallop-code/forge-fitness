@@ -227,6 +227,17 @@
     border-radius: 18px;
 }
 
+.dashboard-command-header,
+.dashboard-command-center .schedule-dashboard-card,
+.dashboard-command-today-empty,
+.dashboard-command-weekly,
+.dashboard-command-insights-heading,
+.dashboard.dashboard-command-insights,
+.dashboard-command-performance {
+    min-width: 0;
+    max-width: 100%;
+}
+
 /* The detailed history and duplicated nutrition/latest-workout blocks remain available in their dedicated pages. */
 #content.dashboard-command-center > .dashboard-detail-grid,
 #content.dashboard-command-center > .dashboard-history {
@@ -234,26 +245,34 @@
 }
 
 @media (max-width: 520px) {
+    #content.dashboard-command-center {
+        overflow-x: clip;
+    }
+
     .dashboard-command-header {
-        padding: 19px 16px 6px;
+        padding: 19px 0 6px;
     }
 
     .dashboard-command-center .schedule-dashboard-card,
     .dashboard-command-today-empty,
     .dashboard-command-weekly,
     .dashboard-command-performance {
-        margin-left: 16px;
-        margin-right: 16px;
+        margin-left: 0;
+        margin-right: 0;
     }
 
     .dashboard-command-insights-heading {
-        margin-left: 16px;
-        margin-right: 16px;
+        margin-left: 0;
+        margin-right: 0;
     }
 
     .dashboard.dashboard-command-insights {
-        padding-left: 16px;
-        padding-right: 16px;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .dashboard-command-weekly {
+        padding: 15px;
     }
 
     .dashboard-command-weekly-head {
@@ -268,19 +287,19 @@
 
     .dashboard-weekly-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 7px;
+        gap: 6px;
     }
 
     .dashboard-weekly-metric {
-        padding: 11px 9px;
+        padding: 10px 7px;
     }
 
     .dashboard-weekly-metric > span {
-        font-size: 0.58rem;
+        font-size: 0.56rem;
     }
 
     .dashboard-weekly-metric strong {
-        font-size: 1.28rem;
+        font-size: 1.24rem;
     }
 
     .dashboard-command-today-empty {
@@ -295,15 +314,15 @@
 
 @media (max-width: 360px) {
     .dashboard-weekly-grid {
-        gap: 5px;
+        gap: 4px;
     }
 
     .dashboard-weekly-metric {
-        padding: 10px 7px;
+        padding: 9px 6px;
     }
 
     .dashboard-weekly-metric strong {
-        font-size: 1.12rem;
+        font-size: 1.08rem;
     }
 
     .dashboard.dashboard-command-insights {
