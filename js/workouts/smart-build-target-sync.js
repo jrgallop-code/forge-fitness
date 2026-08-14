@@ -67,6 +67,10 @@ function displayMuscle(muscle) {
   return DISPLAY_NAME[muscle] || muscle;
 }
 
+function setText(node, value) {
+  if (node && node.textContent !== value) node.textContent = value;
+}
+
 function togglePriority(muscle) {
   if (!MUSCLES.includes(muscle)) return;
   if (state.priorities.includes(muscle)) {
@@ -137,8 +141,7 @@ function syncProgrammingPreview() {
   if (helper?.classList.contains("smart-helper")) {
     const duration = state.duration === 90 ? "90+" : state.duration;
     const targetExercises = state.duration <= 30 ? 4 : state.duration <= 45 ? 5 : state.duration <= 60 ? 6 : 7;
-    const copy = `For ${duration}-minute sessions, Smart Build targets about ${targetExercises} exercises with a 4-exercise floor. Values above are weekly effective-set targets, so compound exercises can contribute partial credit to secondary muscles and direct-set totals may be lower.`;
-    if (helper.textContent !== copy) helper.textContent = copy;
+    setText(helper, `For ${duration}-minute sessions, Smart Build targets about ${targetExercises} exercises with a 4-exercise floor. Values above are weekly effective-set targets, so compound exercises can contribute partial credit to secondary muscles and direct-set totals may be lower.`);
   }
 }
 
@@ -183,7 +186,6 @@ function syncGeneratedValidation() {
   }
   const baseValid = review.dataset.targetSyncBaseValid === "true";
   const underTarget = getUnderTargetRows(review);
-  const signature = underTarget.map(item => `${item.muscle}:${item.effective}/${item.target}`).join("|");
 
   let note = review.querySelector("[data-smart-target-validation-note]");
   if (underTarget.length) {
@@ -195,51 +197,41 @@ function syncGeneratedValidation() {
       note.dataset.smartTargetValidationNote = "true";
       statusGrid.insertAdjacentElement("afterend", note);
     }
-    if (note.textContent !== noteText) note.textContent = noteText;
+    setText(note, noteText);
 
     const firstCard = statusGrid.children[0];
     const secondCard = statusGrid.children[1];
     if (firstCard) {
-      const label = firstCard.querySelector("span");
-      const value = firstCard.querySelector("strong");
-      if (label) label.textContent = "Program validation";
-      if (value) value.textContent = "Needs adjustment";
+      setText(firstCard.querySelector("span"), "Program validation");
+      setText(firstCard.querySelector("strong"), "Needs adjustment");
     }
     if (secondCard) {
-      const label = secondCard.querySelector("span");
-      const value = secondCard.querySelector("strong");
-      if (label) label.textContent = "Volume alignment";
-      if (value) value.textContent = "Below target";
+      setText(secondCard.querySelector("span"), "Volume alignment");
+      setText(secondCard.querySelector("strong"), "Below target");
     }
 
     saveButton.disabled = true;
     saveButton.dataset.targetSyncBlocked = "true";
-    saveButton.textContent = "Adjust Settings";
-    review.dataset.targetSyncSignature = signature;
+    setText(saveButton, "Adjust Settings");
     return;
   }
 
   note?.remove();
   delete saveButton.dataset.targetSyncBlocked;
-  review.dataset.targetSyncSignature = "pass";
 
   if (baseValid) {
     const firstCard = statusGrid.children[0];
     const secondCard = statusGrid.children[1];
     if (firstCard) {
-      const label = firstCard.querySelector("span");
-      const value = firstCard.querySelector("strong");
-      if (label) label.textContent = "Program validation";
-      if (value) value.textContent = "Passed ✓";
+      setText(firstCard.querySelector("span"), "Program validation");
+      setText(firstCard.querySelector("strong"), "Passed ✓");
     }
     if (secondCard) {
-      const label = secondCard.querySelector("span");
-      const value = secondCard.querySelector("strong");
-      if (label) label.textContent = "Session structure";
-      if (value) value.textContent = "4+ exercises protected";
+      setText(secondCard.querySelector("span"), "Session structure");
+      setText(secondCard.querySelector("strong"), "4+ exercises protected");
     }
     saveButton.disabled = false;
-    saveButton.textContent = "Save Plan";
+    setText(saveButton, "Save Plan");
   }
 }
 
