@@ -1,4 +1,4 @@
-import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=phase-tolerance-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=weekly-ma-coach-1";
 
 let refreshQueued = false;
 
@@ -26,7 +26,6 @@ function getDisplay() {
     const metrics = getActivePhaseMetrics(phase);
     const rate = formatRate(metrics.actualRateLbPerWeek);
     if (metrics.status === "NEED MORE PHASE DATA" || !rate) return { text: "Need more phase data", rateText: "Need more phase data", statusText: "NEED MORE PHASE DATA" };
-    if (metrics.status === "PRELIMINARY") return { text: `Preliminary · ${rate}`, rateText: rate, statusText: "PRELIMINARY" };
     const label = STATUS_LABELS[metrics.status] || metrics.status;
     return { text: `${label} · ${rate}`, rateText: rate, statusText: metrics.status };
 }
