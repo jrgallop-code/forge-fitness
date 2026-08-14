@@ -138,7 +138,12 @@ function getCalorieSuggestion() {
     if (hold) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: `Weekly adjustment applied · reassess in ${hold.daysRemaining} day${hold.daysRemaining === 1 ? "" : "s"}` };
 
     if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: `On track · next check Day ${metrics.trend?.nextCheckDay || "--"}` };
-    if (metrics.status === "NEED MORE PHASE DATA") return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: metrics.trend?.reason === "before-first-check" ? `First calorie check on Day 14` : "Need 4 weigh-ins in each 7-day block" };
+    if (["BUILDING TREND", "NEED MORE DATA", "NEED MORE PHASE DATA"].includes(metrics.status)) {
+        return {
+            primary: `${Math.round(currentCalories)} kcal/day`,
+            secondary: metrics.status === "BUILDING TREND" ? "First calorie check on Day 14" : "Need 4 weigh-ins in each 7-day block"
+        };
+    }
     if (!metrics.recommendationReady) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Weekly check is not ready yet" };
 
     const checkDay = Number(metrics.trend?.checkDay);
