@@ -3,6 +3,9 @@ const GOAL_WEIGHT_STORAGE_KEY = "level_up_goal_weight";
 const NUTRITION_PHASES_STORAGE_KEY = "level_up_nutrition_phases";
 const DAY_MS = 86400000;
 const TREND_GREEN = "#4ade80";
+const DAILY_WEIGHT_LINE = "rgba(190, 190, 200, 0.35)";
+const DAILY_WEIGHT_POINT = "rgba(255, 255, 255, 0.88)";
+const DAILY_WEIGHT_POINT_RADIUS = 2.5;
 
 let queued = false;
 
@@ -78,7 +81,7 @@ function enhanceWeightChart() {
         canvas.id = "weight-trend-chart";
         canvas.className = legacyCanvas.className;
         canvas.setAttribute("role", "img");
-        canvas.setAttribute("aria-label", "Weight entries with a 7-day trend line");
+        canvas.setAttribute("aria-label", "Daily weight entries connected by a line with a 7-day trend line");
         legacyCanvas.insertAdjacentElement("afterend", canvas);
     }
 
@@ -110,7 +113,7 @@ function drawWeightTrendChart(canvas, entries, goalWeight) {
 
     const movingAverage = calculateMovingAverage(entries);
     const legend = [
-        { type: "point", color: "#ffffff", label: "Daily Weight" },
+        { type: "linepoint", color: DAILY_WEIGHT_LINE, pointColor: DAILY_WEIGHT_POINT, label: "Daily Weight" },
         { type: "dash", color: TREND_GREEN, label: "Trend Line" },
         ...(goalWeight === null
             ? []
@@ -170,6 +173,21 @@ function drawWeightTrendChart(canvas, entries, goalWeight) {
     context.fillText(formatDate(entries.at(-1).date), width - padding.right, height - 16);
 
     context.save();
+    context.strokeStyle = DAILY_WEIGHT_LINE;
+    context.lineWidth = 1.25;
+    context.lineJoin = "round";
+    context.lineCap = "round";
+    context.beginPath();
+    entries.forEach((entry, index) => {
+        const x = xPosition(entry.date);
+        const y = yPosition(entry.weight);
+        if (index === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+    });
+    context.stroke();
+    context.restore();
+
+    context.save();
     context.strokeStyle = TREND_GREEN;
     context.lineWidth = 1.5;
     context.lineJoin = "round";
@@ -185,10 +203,10 @@ function drawWeightTrendChart(canvas, entries, goalWeight) {
     context.stroke();
     context.restore();
 
-    context.fillStyle = "#ffffff";
+    context.fillStyle = DAILY_WEIGHT_POINT;
     entries.forEach(entry => {
         context.beginPath();
-        context.arc(xPosition(entry.date), yPosition(entry.weight), 4, 0, Math.PI * 2);
+        context.arc(xPosition(entry.date), yPosition(entry.weight), DAILY_WEIGHT_POINT_RADIUS, 0, Math.PI * 2);
         context.fill();
     });
 
@@ -239,14 +257,25 @@ function drawLegend(context, items) {
         context.save();
         context.strokeStyle = item.color;
         context.fillStyle = item.color;
-        context.lineWidth = 2;
 
         if (item.type === "point") {
             context.beginPath();
-            context.arc(item.x + 5, item.y, 3.5, 0, Math.PI * 2);
+            context.arc(item.x + 5, item.y, 3, 0, Math.PI * 2);
+            context.fill();
+        }
+        else if (item.type === "linepoint") {
+            context.lineWidth = 1.25;
+            context.beginPath();
+            context.moveTo(item.x, item.y);
+            context.lineTo(item.x + item.markerWidth, item.y);
+            context.stroke();
+            context.fillStyle = item.pointColor || item.color;
+            context.beginPath();
+            context.arc(item.x + item.markerWidth / 2, item.y, 2.5, 0, Math.PI * 2);
             context.fill();
         }
         else {
+            context.lineWidth = 2;
             if (item.type === "dash") context.setLineDash([5, 4]);
             context.beginPath();
             context.moveTo(item.x, item.y);
