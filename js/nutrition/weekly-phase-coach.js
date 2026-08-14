@@ -372,12 +372,13 @@ function syncCurrentPhaseSummary(phase, metrics) {
     const host = document.getElementById("nutrition-current-phase");
     if (!host || !phase || !metrics) return;
     const badge = host.querySelector(".nutrition-current-phase-head b");
-    if (badge) badge.textContent = metrics.status;
+    if (badge && badge.textContent !== metrics.status) badge.textContent = metrics.status;
     const grid = host.querySelector(".nutrition-current-phase-grid");
     if (!grid) return;
     const actualCell = [...grid.children].find(cell => cell.querySelector("span")?.textContent?.trim() === "Actual Since Start");
     const strong = actualCell?.querySelector("strong");
-    if (strong) strong.textContent = Number.isFinite(metrics.actual) ? formatRate(metrics.actual) : "Calibrating";
+    const actualText = Number.isFinite(metrics.actual) ? formatRate(metrics.actual) : "Calibrating";
+    if (strong && strong.textContent !== actualText) strong.textContent = actualText;
 }
 
 function scheduleRefresh() {
