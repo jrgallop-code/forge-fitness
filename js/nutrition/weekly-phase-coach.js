@@ -1,13 +1,13 @@
-import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=weekly-ma-coach-1";
-import { saveNutritionPhase } from "./nutrition-phase.js?v=weekly-ma-coach-1";
+import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=weekly-ma-coach-2";
+import { saveNutritionPhase } from "./nutrition-phase.js?v=weekly-ma-coach-2";
 import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 
 const PHASES_KEY = "level_up_nutrition_phases";
 const WEIGHT_KEY = "forge_weight_entries";
 const HOLD_KEY = "level_up_phase_reassessment_hold";
 const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";
+const FIRST_TREND_DAY = 7;
 const FIRST_CHECK_DAY = 14;
-const CHECK_CADENCE_DAYS = 7;
 const MIN_ENTRIES_PER_WINDOW = 4;
 const HOLD_DAYS = 7;
 const FULL_GAP_INCREMENT = 50;
@@ -17,6 +17,7 @@ const MAX_FIRST_STEP = 150;
 const BODYWEIGHT_TOLERANCE_PCT = 0.001;
 const TARGET_TOLERANCE_FRACTION = 0.25;
 const DEFAULT_TOLERANCE_LB = 0.1;
+const DAY_MS = 86400000;
 
 let refreshQueued = false;
 
@@ -41,8 +42,24 @@ function readWeights() {
     }
 }
 
+function getStartingTrendWeight(phase, weights) {
+    const saved = Number(phase?.startingTrendWeight);
+    if (Number.isFinite(saved) && saved > 0) return saved;
+    const eligible = normalizeWeightEntries(weights).filter(entry => entry.date <= phase?.startDate);
+    if (!eligible.length) return null;
+    const latest = eligible.at(-1);
+    const cutoff = dateMs(latest.date) - (6 * DAY_MS);
+    const recent = eligible.filter(entry => dateMs(entry.date) >= cutoff);
+    if (!recent.length) return latest.weight;
+    return recent.reduce((sum, entry) => sum + entry.weight, 0) / recent.length;
+}
+
 function localDate(date = new Date()) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function dateMs(value) {
+    return new Date(`${value}T12:00:00`).getTime();
 }
 
 function phaseKey(phase) {
@@ -89,7 +106,7 @@ function getHold(phase, currentCalories) {
         localStorage.removeItem(HOLD_KEY);
         return null;
     }
-    const daysElapsed = Math.max(0, Math.floor((Date.now() - appliedTime) / 86400000));
+    const daysElapsed = Math.max(0, Math.floor((Date.now() - appliedTime) / DAY_MS));
     if (daysElapsed >= HOLD_DAYS) {
         localStorage.removeItem(HOLD_KEY);
         return null;
@@ -192,7 +209,7 @@ function ensureCoachCard() {
         <div class="goal-check-in-heading"><h3 id="weekly-coach-status">BUILDING TREND</h3><small id="weekly-coach-confidence"></small></div>
         <p id="weekly-coach-message" class="nutrition-message"></p>
         <div class="weekly-coach-grid">
-            <div class="weekly-coach-metric"><span>Previous 7-Day Avg</span><strong id="weekly-coach-previous">--</strong></div>
+            <div class="weekly-coach-metric"><span id="weekly-coach-previous-label">Previous 7-Day Avg</span><strong id="weekly-coach-previous">--</strong></div>
             <div class="weekly-coach-metric"><span>Current 7-Day Avg</span><strong id="weekly-coach-current">--</strong></div>
             <div class="weekly-coach-metric"><span>Weekly Change</span><strong id="weekly-coach-actual">--</strong></div>
             <div class="weekly-coach-metric"><span>Target</span><strong id="weekly-coach-target">--</strong></div>
@@ -202,7 +219,7 @@ function ensureCoachCard() {
             <button id="weekly-coach-apply" class="primary-btn" type="button" hidden></button>
             <button id="weekly-coach-keep" class="secondary-btn" type="button" hidden>Keep Current Target</button>
         </div>
-        <p class="weekly-coach-method">Weekly change = current 7-day average minus the previous 7-day average. First calorie check is Day 14, then every 7 days. Each 7-day block needs at least 4 weigh-ins.</p>
+        <p class="weekly-coach-method">A preliminary trend appears on Day 7 from the first 7-day moving average versus the phase starting trend. Calorie decisions begin on Day 14 using two complete 7-day phase blocks, then repeat every 7 days. Each 7-day block needs at least 4 weigh-ins.</p>
         <details class="weekly-coach-test" id="weekly-coach-test-lab">
             <summary>Coach Test Scenarios</summary>
             <small class="weekly-test-note">Simulation only — these examples do not change your saved phase or weigh-ins.</small>
@@ -230,17 +247,20 @@ function refreshCoach() {
     if (!phase) {
         setText("weekly-coach-status", "NO ACTIVE PHASE");
         setText("weekly-coach-confidence", "");
-        setText("weekly-coach-message", "Start a nutrition phase and log weight to begin weekly check-ins.");
+        setText("weekly-coach-message", "Start a nutrition phase and log weight to begin trend tracking.");
+        setText("weekly-coach-previous-label", "Previous 7-Day Avg");
         clearMetrics();
         hideActions();
-        syncCurrentPhaseSummary(null, null);
         return;
     }
 
-    const entries = readWeights().filter(entry => entry.date >= phase.startDate);
+    const allWeights = readWeights();
+    const entries = allWeights.filter(entry => entry.date >= phase.startDate);
+    const startingTrendWeight = getStartingTrendWeight(phase, allWeights);
     const trend = calculatePhaseMovingAverageTrend(entries, {
         phaseStartDate: phase.startDate,
         asOfDate: localDate(),
+        startingTrendWeight,
         minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW
     });
     const target = Number(phase.targetWeeklyRate);
@@ -251,21 +271,41 @@ function refreshCoach() {
     setText("weekly-coach-actual", Number.isFinite(trend.weeklyChange) ? formatRate(trend.weeklyChange) : "--");
     setText("weekly-coach-target", Number.isFinite(target) ? formatRate(target) : "--");
 
-    if (trend.reason === "before-first-check") {
+    if (trend.reason === "before-first-trend") {
+        setText("weekly-coach-previous-label", "Starting Trend");
         setText("weekly-coach-status", "BUILDING TREND");
-        setText("weekly-coach-confidence", `Day ${trend.phaseDay} · first check Day ${FIRST_CHECK_DAY}`);
-        setText("weekly-coach-message", `Keep logging weight. Level Up will make its first calorie assessment on Day ${FIRST_CHECK_DAY}, using the first two 7-day averages.`);
-        setText("weekly-coach-suggestion", `First check in ${trend.daysUntilCheck} day${trend.daysUntilCheck === 1 ? "" : "s"}.`);
+        setText("weekly-coach-confidence", `Day ${trend.phaseDay} · preliminary trend Day ${FIRST_TREND_DAY}`);
+        setText("weekly-coach-message", `Keep logging weight. A preliminary 7-day trend will appear on Day ${FIRST_TREND_DAY}. Calorie recommendations still wait until Day ${FIRST_CHECK_DAY}.`);
+        setText("weekly-coach-suggestion", `Preliminary trend in ${trend.daysUntilTrend} day${trend.daysUntilTrend === 1 ? "" : "s"}.`);
         hideActions();
         syncCurrentPhaseSummary(phase, { status: "BUILDING TREND", actual: null });
         return;
     }
 
+    if (trend.status === "preliminary" && Number.isFinite(trend.weeklyChange)) {
+        setText("weekly-coach-previous-label", "Starting Trend");
+        setText("weekly-coach-status", "PRELIMINARY TREND");
+        setText("weekly-coach-confidence", `Day ${trend.phaseDay} · ${trend.currentEntries} weigh-ins in first 7-day block`);
+        setText("weekly-coach-message", `Preliminary weekly trend: ${formatRate(trend.weeklyChange)}. This compares the first 7-day moving average with your phase starting trend.`);
+        setText("weekly-coach-suggestion", `Informational only. First calorie decision is Day ${FIRST_CHECK_DAY}${trend.daysUntilCheck > 0 ? ` · in ${trend.daysUntilCheck} day${trend.daysUntilCheck === 1 ? "" : "s"}` : ""}.`);
+        hideActions();
+        syncCurrentPhaseSummary(phase, { status: "PRELIMINARY TREND", actual: trend.weeklyChange });
+        return;
+    }
+
+    setText("weekly-coach-previous-label", "Previous 7-Day Avg");
+
     if (trend.status !== "actual" || !Number.isFinite(trend.weeklyChange)) {
         setText("weekly-coach-status", "NEED MORE DATA");
-        setText("weekly-coach-confidence", `Day ${trend.checkDay} check · ${trend.previousEntries}/${MIN_ENTRIES_PER_WINDOW} + ${trend.currentEntries}/${MIN_ENTRIES_PER_WINDOW} weigh-ins`);
-        setText("weekly-coach-message", `The Day ${trend.checkDay} check needs at least ${MIN_ENTRIES_PER_WINDOW} weigh-ins in each 7-day block. Keep logging weight; the next scheduled check is Day ${trend.nextCheckDay}.`);
-        setText("weekly-coach-suggestion", "No calorie change is recommended from sparse data.");
+        if (Number.isFinite(trend.checkDay)) {
+            setText("weekly-coach-confidence", `Day ${trend.checkDay} check · ${trend.previousEntries}/${MIN_ENTRIES_PER_WINDOW} + ${trend.currentEntries}/${MIN_ENTRIES_PER_WINDOW} weigh-ins`);
+            setText("weekly-coach-message", `The Day ${trend.checkDay} check needs at least ${MIN_ENTRIES_PER_WINDOW} weigh-ins in each 7-day block. Keep logging weight.`);
+            setText("weekly-coach-suggestion", `No calorie change from sparse data. Next scheduled check: Day ${trend.nextCheckDay}.`);
+        } else {
+            setText("weekly-coach-confidence", `Day ${trend.phaseDay}`);
+            setText("weekly-coach-message", `At least ${MIN_ENTRIES_PER_WINDOW} weigh-ins are needed in the first 7-day block to show a preliminary trend.`);
+            setText("weekly-coach-suggestion", `Keep logging weight. First calorie decision remains Day ${FIRST_CHECK_DAY}.`);
+        }
         hideActions();
         syncCurrentPhaseSummary(phase, { status: "NEED MORE DATA", actual: null });
         return;
@@ -286,7 +326,7 @@ function refreshCoach() {
 
     const hold = getHold(phase, currentCalories);
     if (hold) {
-        setText("weekly-coach-message", `The last calorie adjustment is still being measured. Hold the current target for a full 7 days before another modification.`);
+        setText("weekly-coach-message", "The last calorie adjustment is still being measured. Hold the current target for a full 7 days before another modification.");
         setText("weekly-coach-suggestion", `Current target: ${Math.round(currentCalories)} kcal/day · reassess in ${hold.daysRemaining} day${hold.daysRemaining === 1 ? "" : "s"}.`);
         hideActions();
         return;
@@ -334,7 +374,7 @@ function applyRecommendation() {
     const firstStepCalories = Number(card.dataset.firstStepCalories);
     const firstStepDelta = Number(card.dataset.firstStepDelta);
     const estimatedTargetCalories = Number(card.dataset.estimatedTargetCalories);
-    if (!Number.isFinite(checkDay) || !Number.isFinite(firstStepCalories) || !Number.isFinite(firstStepDelta)) return;
+    if (!Number.isFinite(checkDay) || checkDay < FIRST_CHECK_DAY || !Number.isFinite(firstStepCalories) || !Number.isFinite(firstStepDelta)) return;
 
     saveNutritionPhase({
         goalId: phase.goalId,
@@ -352,7 +392,7 @@ function keepCurrentTarget() {
     const phase = getActivePhase();
     const card = document.getElementById("goal-check-in-card");
     const checkDay = Number(card?.dataset.checkDay);
-    if (!phase || !Number.isFinite(checkDay)) return;
+    if (!phase || !Number.isFinite(checkDay) || checkDay < FIRST_CHECK_DAY) return;
     markCheckHandled(phase, checkDay, "kept");
     scheduleRefresh();
 }
@@ -360,7 +400,10 @@ function keepCurrentTarget() {
 function hideActions() {
     const apply = document.getElementById("weekly-coach-apply");
     const keep = document.getElementById("weekly-coach-keep");
-    if (apply) apply.hidden = true;
+    if (apply) {
+        apply.hidden = true;
+        apply.onclick = null;
+    }
     if (keep) keep.hidden = true;
 }
 
@@ -377,7 +420,9 @@ function syncCurrentPhaseSummary(phase, metrics) {
     if (!grid) return;
     const actualCell = [...grid.children].find(cell => cell.querySelector("span")?.textContent?.trim() === "Actual Since Start");
     const strong = actualCell?.querySelector("strong");
-    const actualText = Number.isFinite(metrics.actual) ? formatRate(metrics.actual) : "Calibrating";
+    const actualText = Number.isFinite(metrics.actual)
+        ? `${metrics.status === "PRELIMINARY TREND" ? "Preliminary · " : ""}${formatRate(metrics.actual)}`
+        : "Calibrating";
     if (strong && strong.textContent !== actualText) strong.textContent = actualText;
 }
 
@@ -416,7 +461,9 @@ function addDays(value, days) {
 }
 
 const TEST_SCENARIOS = [
-    { id: "day10", label: "Day 10 · Too early", day: 10, target: 0.25, actual: 0.25, currentCalories: 2400, phaseLabel: "Lean Bulk" },
+    { id: "day5", label: "Day 5 · Building trend", day: 5, target: 0.25, actual: 0.25, currentCalories: 2400, phaseLabel: "Lean Bulk" },
+    { id: "day7", label: "Day 7 · Preliminary trend", day: 7, target: 0.25, actual: 0.25, currentCalories: 2400, phaseLabel: "Lean Bulk" },
+    { id: "day10", label: "Day 10 · Preliminary trend", day: 10, target: 0.25, actual: 0.25, currentCalories: 2400, phaseLabel: "Lean Bulk" },
     { id: "bulk-on", label: "Day 14 · Lean bulk on target", day: 14, target: 0.25, actual: 0.28, currentCalories: 2400, phaseLabel: "Lean Bulk" },
     { id: "bulk-slow", label: "Day 14 · Lean bulk too slow", day: 14, target: 0.25, actual: -0.15, currentCalories: 2400, phaseLabel: "Lean Bulk" },
     { id: "bulk-fast", label: "Day 14 · Lean bulk too fast", day: 14, target: 0.25, actual: 0.75, currentCalories: 2400, phaseLabel: "Lean Bulk" },
@@ -440,7 +487,7 @@ function buildScenarioEntries(scenario) {
             weight: 165 + (((day - 1) / 7) * Number(scenario.actual))
         });
     }
-    return { startDate, rows };
+    return { startDate, rows, startingTrendWeight: 165 };
 }
 
 function renderSelectedTestScenario() {
@@ -453,16 +500,22 @@ function renderSelectedTestScenario() {
     const trend = calculatePhaseMovingAverageTrend(generated.rows, {
         phaseStartDate: generated.startDate,
         asOfDate,
+        startingTrendWeight: generated.startingTrendWeight,
         minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW
     });
 
-    if (trend.reason === "before-first-check") {
-        host.innerHTML = `<strong>BUILDING TREND</strong><br>Phase day ${trend.phaseDay}. First calorie check is Day ${FIRST_CHECK_DAY}. No adjustment yet.`;
+    if (trend.reason === "before-first-trend") {
+        host.innerHTML = `<strong>BUILDING TREND</strong><br>Phase day ${trend.phaseDay}. Preliminary trend appears on Day ${FIRST_TREND_DAY}; first calorie decision is Day ${FIRST_CHECK_DAY}.`;
+        return;
+    }
+
+    if (trend.status === "preliminary") {
+        host.innerHTML = `<strong>PRELIMINARY TREND</strong><br>Phase day ${trend.phaseDay} · starting trend ${trend.previousAverage.toFixed(2)} lb · first 7-day average ${trend.currentAverage.toFixed(2)} lb<br>Preliminary change ${formatRate(trend.weeklyChange)}. No calorie adjustment before Day ${FIRST_CHECK_DAY}.`;
         return;
     }
 
     if (trend.status !== "actual") {
-        host.innerHTML = `<strong>NEED MORE DATA</strong><br>Day ${trend.checkDay}: previous block ${trend.previousEntries}/${MIN_ENTRIES_PER_WINDOW} weigh-ins, current block ${trend.currentEntries}/${MIN_ENTRIES_PER_WINDOW}. No calorie change.`;
+        host.innerHTML = `<strong>NEED MORE DATA</strong><br>Day ${trend.checkDay || trend.phaseDay}: previous block ${trend.previousEntries}/${MIN_ENTRIES_PER_WINDOW} weigh-ins, current block ${trend.currentEntries}/${MIN_ENTRIES_PER_WINDOW}. No calorie change.`;
         return;
     }
 

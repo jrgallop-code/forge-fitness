@@ -1,9 +1,9 @@
 import { initializeUnifiedGoalsCalories } from "./unified-goals-calories.js?v=nutrition-phase-1";
 import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=phase-calorie-gap-1";
 import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-goal-controls-1";
-import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=weekly-ma-coach-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=weekly-ma-coach-2";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
-import "./phase-rate-display.js?v=weekly-ma-coach-1";
+import "./phase-rate-display.js?v=weekly-ma-coach-2";
 
 const FULL_GAP_INCREMENT = 50;
 const FIRST_STEP_INCREMENT = 25;
@@ -138,10 +138,13 @@ function getCalorieSuggestion() {
     if (hold) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: `Weekly adjustment applied · reassess in ${hold.daysRemaining} day${hold.daysRemaining === 1 ? "" : "s"}` };
 
     if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: `On track · next check Day ${metrics.trend?.nextCheckDay || "--"}` };
+    if (metrics.status === "PRELIMINARY TREND") {
+        return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Preliminary 7-day trend · first calorie decision on Day 14" };
+    }
     if (["BUILDING TREND", "NEED MORE DATA", "NEED MORE PHASE DATA"].includes(metrics.status)) {
         return {
             primary: `${Math.round(currentCalories)} kcal/day`,
-            secondary: metrics.status === "BUILDING TREND" ? "First calorie check on Day 14" : "Need 4 weigh-ins in each 7-day block"
+            secondary: metrics.status === "BUILDING TREND" ? "Preliminary trend begins on Day 7" : "Need 4 weigh-ins in each 7-day block"
         };
     }
     if (!metrics.recommendationReady) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Weekly check is not ready yet" };
@@ -263,5 +266,5 @@ window.addEventListener("load", scheduleRefresh);
 scheduleRefresh();
 function today() {
     const date = new Date();
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
 }
