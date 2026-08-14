@@ -1,0 +1,159 @@
+/* Compact active-workout header. Keeps the existing timer controls/logic, but removes the bulky form-card presentation once a session is running. */
+.workout-session-logger.logger-compact-session-header {
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.workout-session-logger.logger-compact-session-header > .builder-heading,
+.workout-session-logger.logger-compact-session-header > .workout-session-status {
+    display: none !important;
+}
+
+.workout-session-logger.logger-compact-session-header > .workout-start-fields {
+    display: none !important;
+}
+
+.workout-session-logger.logger-compact-session-header.logger-details-open > .workout-start-fields {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin: 6px 0 10px;
+    padding: 10px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 11px;
+    background: rgba(255,255,255,.018);
+}
+
+.workout-session-logger.logger-compact-session-header.logger-details-open > .workout-start-fields label {
+    margin: 0;
+    color: #8f8f98;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+}
+
+.workout-session-logger.logger-compact-session-header.logger-details-open > .workout-start-fields select,
+.workout-session-logger.logger-compact-session-header.logger-details-open > .workout-start-fields input {
+    min-height: 40px;
+    margin-top: 5px;
+    padding: 7px 10px;
+    border-radius: 9px;
+    font-size: 13px;
+}
+
+.logger-compact-workout-header {
+    display: grid;
+    gap: 6px;
+    margin: 0 0 5px;
+    padding: 0 1px 7px;
+    border-bottom: 1px solid rgba(255,255,255,.055);
+}
+
+.logger-compact-time-row,
+.logger-compact-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.logger-compact-time-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.logger-compact-time-group #workout-duration-display {
+    display: inline-block;
+    margin: 0;
+    color: #f7f7f9;
+    font-size: 27px;
+    font-weight: 750;
+    line-height: 1;
+    letter-spacing: -.035em;
+    font-variant-numeric: tabular-nums;
+}
+
+.logger-compact-time-group .workout-timer-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+}
+
+.logger-compact-time-group .workout-timer-actions button {
+    display: grid;
+    place-items: center;
+    width: 33px;
+    height: 33px;
+    min-width: 33px;
+    min-height: 33px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 9px;
+    background: #17171c;
+    color: #d7d7dc;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.logger-compact-time-group .workout-timer-actions button:hover,
+.logger-compact-time-group .workout-timer-actions button:focus-visible {
+    border-color: rgba(255,255,255,.17);
+}
+
+.logger-compact-day-date {
+    min-width: 0;
+    overflow: hidden;
+    color: #9a9aa3;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.logger-compact-edit-details {
+    flex: 0 0 auto;
+    min-height: 27px;
+    padding: 4px 7px;
+    border: 0;
+    background: transparent;
+    color: #7f7f88;
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.logger-compact-edit-details:focus-visible {
+    outline: 1px solid rgba(239,24,33,.65);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.workout-session-logger.logger-compact-session-header .logger-exercise-strip {
+    margin-top: 2px;
+}
+
+@media (max-width: 380px) {
+    .logger-compact-time-group #workout-duration-display {
+        font-size: 24px;
+    }
+
+    .logger-compact-time-group .workout-timer-actions button {
+        width: 31px;
+        height: 31px;
+        min-width: 31px;
+        min-height: 31px;
+    }
+
+    .logger-compact-day-date {
+        font-size: 10px;
+    }
+}
