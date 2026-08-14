@@ -4,9 +4,10 @@ const GOAL_WEIGHT_KEY = "level_up_goal_weight";
 const DAY_MS = 86400000;
 
 let editMode = false;
-let editingPhaseId = null;
 let draftStartDate = "";
 let draftGoalWeight = "";
+let editingPhaseId = null;
+let editingGoalId = null;
 let refreshTimer = null;
 
 function readPhases() {
@@ -30,10 +31,6 @@ function getActiveState() {
         }
     }
     return null;
-}
-
-function findPhaseIndexById(phases, phaseId) {
-    return phases.findIndex(phase => String(phase?.id || "") === String(phaseId || ""));
 }
 
 function previousPhaseIndex(phases, index) {
@@ -122,6 +119,7 @@ function ensureStyles() {
         #nutrition-current-phase .phase-inline-actions button{flex:1;min-height:44px}
         #nutrition-current-phase .phase-inline-note{margin:8px 2px 0;color:var(--muted,#a1a1aa);font-size:10px;line-height:1.35}
         #nutrition-current-phase .phase-inline-status{min-height:16px;margin:7px 2px 0;color:var(--muted,#a1a1aa);font-size:10px;line-height:1.35}
+        #nutrition-current-phase .phase-inline-saved{margin:7px 2px 0;color:#4ade80;font-size:10px;font-weight:700}
         #nutrition-phase-start-date[data-current-phase-locked="1"]{opacity:.62}
         @media(max-width:390px){
             #nutrition-current-phase .phase-inline-actions{gap:6px}
@@ -167,11 +165,13 @@ function renderDisplayCells(phase) {
     if (goalStrong && goalStrong.textContent !== goalValue) goalStrong.textContent = goalValue;
 }
 
-function renderViewMode(host, phase) {
+function renderViewMode(host, phase, savedMessage = "") {
+    if (!host || !phase) return;
     host.classList.remove("phase-inline-editing");
     host.querySelector(".phase-inline-actions")?.remove();
     host.querySelector(".phase-inline-note")?.remove();
     host.querySelector(".phase-inline-status")?.remove();
+    host.querySelector(".phase-inline-saved")?.remove();
 
     renderDisplayCells(phase);
 
@@ -184,11 +184,21 @@ function renderViewMode(host, phase) {
         button.textContent = "Edit Phase Details";
         host.appendChild(button);
     }
+
+    if (savedMessage) {
+        const message = document.createElement("p");
+        message.className = "phase-inline-saved";
+        message.textContent = savedMessage;
+        button.insertAdjacentElement("afterend", message);
+        window.setTimeout(() => message.remove(), 2200);
+    }
 }
 
 function renderEditMode(host, phase) {
+    if (!host || !phase) return;
     host.classList.add("phase-inline-editing");
     host.querySelector("#edit-current-phase-details")?.remove();
+    host.querySelector(".phase-inline-saved")?.remove();
 
     const grid = host.querySelector(".nutrition-current-phase-grid");
     if (!grid) return;
@@ -214,7 +224,7 @@ function renderEditMode(host, phase) {
     if (!note) {
         note = document.createElement("p");
         note.className = "phase-inline-note";
-        note.textContent = "Editing this card changes the existing phase only. It does not create or restart a phase.";
+        note.textContent = "Editing this card changes this existing phase only. It does not create or restart a phase.";
         grid.insertAdjacentElement("afterend", note);
     }
 
@@ -244,14 +254,8 @@ function ensureInlineEditor() {
     if (!host || !state) return;
 
     lockSetupStartDate(state.phase);
-
-    if (editMode && String(editingPhaseId) === String(state.phase.id || "")) {
-        renderEditMode(host, state.phase);
-    } else {
-        editMode = false;
-        editingPhaseId = null;
-        renderViewMode(host, state.phase);
-    }
+    if (editMode) renderEditMode(host, state.phase);
+    else renderViewMode(host, state.phase);
 }
 
 function beginEdit() {
@@ -259,17 +263,20 @@ function beginEdit() {
     if (!state) return;
 
     editMode = true;
-    editingPhaseId = String(state.phase.id || "");
+    window.__levelUpPhaseInlineEditing = true;
+    editingPhaseId = state.phase.id ?? null;
+    editingGoalId = state.phase.goalId;
     draftStartDate = state.phase.startDate || today();
     const currentGoal = readGoalWeight(state.phase);
     draftGoalWeight = Number.isFinite(currentGoal) ? String(currentGoal) : "";
     ensureInlineEditor();
-    scheduleRefresh(180);
 }
 
 function cancelEdit() {
     editMode = false;
+    window.__levelUpPhaseInlineEditing = false;
     editingPhaseId = null;
+    editingGoalId = null;
     draftStartDate = "";
     draftGoalWeight = "";
     ensureInlineEditor();
@@ -280,11 +287,20 @@ function setStatus(message) {
     if (status) status.textContent = message;
 }
 
+function sameEditingPhase(phase) {
+    if (!phase) return false;
+    if (editingPhaseId != null && phase.id != null) return String(phase.id) === String(editingPhaseId);
+    return phase.goalId === editingGoalId;
+}
+
 function saveChanges() {
     const startDate = String(document.getElementById("phase-inline-start-date")?.value || draftStartDate || "");
     const rawGoal = String(document.getElementById("phase-inline-goal-weight")?.value ?? draftGoalWeight ?? "").trim();
     const parsedGoal = rawGoal === "" ? null : Number(rawGoal);
     const newGoal = Number.isFinite(parsedGoal) && parsedGoal > 0 ? Math.round(parsedGoal * 10) / 10 : null;
+
+    draftStartDate = startDate;
+    draftGoalWeight = rawGoal;
 
     if (!validDate(startDate)) {
         setStatus("Choose a valid start date that is not in the future.");
@@ -295,14 +311,13 @@ function saveChanges() {
         return;
     }
 
-    const phases = readPhases();
-    const index = findPhaseIndexById(phases, editingPhaseId);
-    if (index < 0 || phases[index]?.endDate) {
-        setStatus("The active phase could not be found. Reopen Edit Phase Details and try again.");
+    const state = getActiveState();
+    if (!state || !sameEditingPhase(state.phase)) {
+        setStatus("The active phase changed while editing. Cancel and reopen Edit Phase Details.");
         return;
     }
 
-    const active = phases[index];
+    const { phases, index, phase: active } = state;
     const previousIndex = previousPhaseIndex(phases, index);
     const previous = previousIndex >= 0 ? phases[previousIndex] : null;
     if (previous?.startDate && startDate <= previous.startDate) {
@@ -322,26 +337,28 @@ function saveChanges() {
         };
     }
 
-    phases[index] = {
+    const updatedPhase = {
         ...active,
         startDate,
         startingTrendWeight: trendAsOf(startDate),
         ...(Number.isFinite(newGoal) ? { goalWeight: newGoal } : {}),
         updatedAt: now
     };
-
+    phases[index] = updatedPhase;
     writePhases(phases);
     if (Number.isFinite(newGoal)) localStorage.setItem(GOAL_WEIGHT_KEY, String(newGoal));
 
-    const saved = readPhases().find(phase => String(phase?.id || "") === String(editingPhaseId || ""));
-    if (!saved || saved.startDate !== startDate) {
+    const verified = getActiveState();
+    if (!verified || verified.phase.startDate !== startDate || !sameEditingPhase(verified.phase)) {
         setStatus("The phase date did not save. Please try again.");
         return;
     }
 
-    const savedPhaseId = editingPhaseId;
+    const host = document.getElementById("nutrition-current-phase");
     editMode = false;
+    window.__levelUpPhaseInlineEditing = false;
     editingPhaseId = null;
+    editingGoalId = null;
     draftStartDate = "";
     draftGoalWeight = "";
 
@@ -350,13 +367,13 @@ function saveChanges() {
     const setupGoal = document.getElementById("nutrition-phase-goal-weight");
     if (setupGoal && Number.isFinite(newGoal)) setupGoal.value = String(newGoal);
 
-    const host = document.getElementById("nutrition-current-phase");
-    if (host) renderViewMode(host, saved);
-    window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated", { detail: { phaseId: savedPhaseId, source: "phase-inline-editor" } }));
-    window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { phaseId: savedPhaseId, source: "phase-inline-editor" } }));
+    if (host) renderViewMode(host, verified.phase, `Saved · phase now starts ${formatDate(startDate)}`);
 
-    scheduleRefresh(0);
-    window.setTimeout(ensureInlineEditor, 180);
+    window.setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated", { detail: { source: "phase-inline-editor" } }));
+        window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: "phase-inline-editor" } }));
+        scheduleRefresh(140);
+    }, 0);
 }
 
 function scheduleRefresh(delay = 40) {
@@ -372,29 +389,37 @@ document.addEventListener("input", event => {
 document.addEventListener("change", event => {
     if (event.target?.id === "phase-inline-start-date") draftStartDate = event.target.value;
     if (event.target?.id === "phase-inline-goal-weight") draftGoalWeight = event.target.value;
-    if (event.target?.id === "unified-goal-select") scheduleRefresh(30);
+    if (event.target?.id === "unified-goal-select" && !editMode) scheduleRefresh(30);
 }, true);
 
 document.addEventListener("click", event => {
-    if (event.target?.closest("#edit-current-phase-details")) {
-        beginEdit();
-        return;
-    }
-    if (event.target?.closest("#cancel-phase-details-edit")) {
-        cancelEdit();
-        return;
-    }
-    if (event.target?.closest("#save-phase-details-edit")) {
-        saveChanges();
-    }
-}, false);
+    const editButton = event.target?.closest?.("#edit-current-phase-details");
+    const cancelButton = event.target?.closest?.("#cancel-phase-details-edit");
+    const saveButton = event.target?.closest?.("#save-phase-details-edit");
+    if (!editButton && !cancelButton && !saveButton) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (editButton) beginEdit();
+    else if (cancelButton) cancelEdit();
+    else if (saveButton) saveChanges();
+}, true);
 
 const content = document.getElementById("content");
 if (content) {
-    new MutationObserver(() => scheduleRefresh(30)).observe(content, { childList: true, subtree: true });
+    new MutationObserver(() => {
+        if (!editMode) scheduleRefresh(40);
+        else window.setTimeout(ensureInlineEditor, 20);
+    }).observe(content, { childList: true, subtree: true });
 }
 
-window.addEventListener("levelup:nutrition-phase-updated", () => scheduleRefresh(30));
-window.addEventListener("levelup:nutrition-updated", () => scheduleRefresh(30));
+window.addEventListener("levelup:nutrition-phase-updated", () => {
+    if (!editMode) scheduleRefresh(50);
+});
+window.addEventListener("levelup:nutrition-updated", () => {
+    if (!editMode) scheduleRefresh(50);
+});
 window.addEventListener("load", () => scheduleRefresh(20));
+window.__levelUpPhaseInlineEditing = false;
 scheduleRefresh(0);
