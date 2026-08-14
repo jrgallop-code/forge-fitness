@@ -1,3 +1,5 @@
+import "../more/install-level-up.js?v=more-install-level-up-1";
+
 const STYLE_ID = "levelup-onboarding-install-help-styles";
 let selectedPlatform = detectPlatform();
 let dismissed = false;
