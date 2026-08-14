@@ -161,6 +161,7 @@ function refreshAllPhaseUi() {
     refreshCalorieSuggestionCards();
 }
 function scheduleRefresh() {
+    if (window.__levelUpPhaseInlineEditing === true) return;
     if (refreshScheduled) return;
     refreshScheduled = true;
     ensurePhaseStyles();
@@ -188,6 +189,7 @@ document.addEventListener("input", event => {
     }
 }, true);
 document.addEventListener("click", event => {
+    if (event.target?.closest?.("#edit-current-phase-details, #cancel-phase-details-edit, #save-phase-details-edit, #phase-inline-start-date, #phase-inline-goal-weight")) return;
     const legacyWeightRedirect = event.target.closest("#unified-open-weight-goal");
     if (legacyWeightRedirect) {
         event.preventDefault();
