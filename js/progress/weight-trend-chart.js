@@ -65,7 +65,7 @@ function enhanceWeightChart() {
         canvas.id = "weight-trend-chart";
         canvas.className = legacyCanvas.className;
         canvas.setAttribute("role", "img");
-        canvas.setAttribute("aria-label", "Weight entries with a 7-day moving average trend line");
+        canvas.setAttribute("aria-label", "Weight entries with a 7-day trend line");
         legacyCanvas.insertAdjacentElement("afterend", canvas);
     }
 
@@ -98,7 +98,7 @@ function drawWeightTrendChart(canvas, entries, goalWeight) {
     const movingAverage = calculateMovingAverage(entries);
     const legend = [
         { type: "point", color: "#ffffff", label: "Daily Weight" },
-        { type: "line", color: TREND_GREEN, label: "7-Day Moving Average" },
+        { type: "dash", color: TREND_GREEN, label: "Trend Line" },
         ...(goalWeight === null
             ? []
             : [{ type: "dash", color: "#facc15", label: `Goal ${goalWeight.toFixed(1)} lb` }])
@@ -158,9 +158,10 @@ function drawWeightTrendChart(canvas, entries, goalWeight) {
 
     context.save();
     context.strokeStyle = TREND_GREEN;
-    context.lineWidth = 2.75;
+    context.lineWidth = 1.5;
     context.lineJoin = "round";
     context.lineCap = "round";
+    context.setLineDash([6, 5]);
     context.beginPath();
     movingAverage.forEach((entry, index) => {
         const x = xPosition(entry.date);
