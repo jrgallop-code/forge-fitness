@@ -1,5 +1,5 @@
 import { GOAL_PRESETS } from "./tdee-calculator.js?v=phase-tolerance-1";
-import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=weekly-ma-coach-1";
+import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=weekly-ma-coach-2";
 
 const PHASES_KEY = "level_up_nutrition_phases";
 const WEIGHT_KEY = "forge_weight_entries";
@@ -77,15 +77,18 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase()) {
         };
     }
 
-    const entries = readWeights().filter(e => e.date >= phase.startDate && (!phase.endDate || e.date <= phase.endDate));
+    const allWeights = readWeights();
+    const entries = allWeights.filter(e => e.date >= phase.startDate && (!phase.endDate || e.date <= phase.endDate));
+    const startingTrendWeight = finiteNumber(phase.startingTrendWeight) ?? trendWeight(allWeights.filter(e => e.date <= phase.startDate));
     const trend = calculatePhaseMovingAverageTrend(entries, {
         phaseStartDate: phase.startDate,
         asOfDate: phase.endDate || localDate(),
+        startingTrendWeight,
         minEntriesPerWindow: 4
     });
     const actual = finiteNumber(trend?.weeklyChange);
     const target = finiteNumber(phase.targetWeeklyRate);
-    const referenceWeight = finiteNumber(trend?.currentAverage) ?? trendWeight(entries) ?? finiteNumber(phase.startingTrendWeight);
+    const referenceWeight = finiteNumber(trend?.currentAverage) ?? trendWeight(entries) ?? startingTrendWeight;
     const bodyweightTolerance = Number.isFinite(referenceWeight)
         ? referenceWeight * BODYWEIGHT_TOLERANCE_PCT
         : DEFAULT_TOLERANCE_LB;
@@ -93,8 +96,12 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase()) {
     const tolerance = Math.max(bodyweightTolerance, targetTolerance);
 
     if (trend.status === "insufficient" || !Number.isFinite(actual)) {
-        const waitingStatus = trend.reason === "before-first-check" ? "BUILDING TREND" : "NEED MORE DATA";
+        const waitingStatus = trend.reason === "before-first-trend" ? "BUILDING TREND" : "NEED MORE DATA";
         return buildMetrics(waitingStatus, trend, actual, target, tolerance, referenceWeight, false);
+    }
+
+    if (trend.status === "preliminary") {
+        return buildMetrics("PRELIMINARY TREND", trend, actual, target, tolerance, referenceWeight, false);
     }
 
     if (!Number.isFinite(target)) {
