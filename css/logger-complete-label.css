@@ -7,11 +7,14 @@
 
 .workout-session-logger .complete-set-btn,
 .workout-session-logger .complete-warmup-btn {
+  grid-column: 5 !important;
+  grid-row: 1 !important;
   width: 32px !important;
   height: 38px !important;
   min-width: 32px !important;
   min-height: 38px !important;
   justify-self: start;
+  align-self: center;
   transform: translateX(-4px);
 }
 
@@ -29,6 +32,8 @@
 
   .workout-session-logger .complete-set-btn,
   .workout-session-logger .complete-warmup-btn {
+    grid-column: 5 !important;
+    grid-row: 1 !important;
     width: 30px !important;
     height: 36px !important;
     min-width: 30px !important;
