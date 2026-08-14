@@ -1,7 +1,7 @@
 function addGrayBases(root) {
   if (!root || root.dataset.grayRecoveryBase === 'true') return;
 
-  const svg = root.querySelector('.recovery-user-front-svg');
+  const svg = root.querySelector('.recovery-user-front-svg, .recovery-user-back-svg');
   if (!svg) return;
 
   const muscles = [...svg.querySelectorAll('.recovery-user-muscle')];
@@ -21,7 +21,7 @@ function addGrayBases(root) {
 }
 
 function installGrayRecoveryBases() {
-  document.querySelectorAll('[data-recovery-body-front]').forEach(addGrayBases);
+  document.querySelectorAll('[data-recovery-body-front], [data-recovery-body-back]').forEach(addGrayBases);
 }
 
 document.addEventListener('click', event => {
