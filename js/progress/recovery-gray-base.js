@@ -1,5 +1,20 @@
+const CLEAN_BACK_ASSET = 'assets/recovery/back-user-source.svg?v=back-source-2';
+
+function replaceBackArtwork(root) {
+  if (!root?.matches?.('[data-recovery-body-back]')) return;
+  const image = root.querySelector('.recovery-user-back-svg image');
+  if (!image) return;
+  if (image.getAttribute('href') !== CLEAN_BACK_ASSET) {
+    image.setAttribute('href', CLEAN_BACK_ASSET);
+    image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', CLEAN_BACK_ASSET);
+  }
+  image.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+}
+
 function addGrayBases(root) {
-  if (!root || root.dataset.grayRecoveryBase === 'true') return;
+  if (!root) return;
+  replaceBackArtwork(root);
+  if (root.dataset.grayRecoveryBase === 'true') return;
 
   const svg = root.querySelector('.recovery-user-front-svg, .recovery-user-back-svg');
   if (!svg) return;
