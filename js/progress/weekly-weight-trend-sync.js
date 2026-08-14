@@ -16,14 +16,15 @@ function refresh() {
     if (!value) return;
 
     const trend = calculateWeightTrend(readWeights(), { minEntriesPerWindow: 4 });
-    value.textContent = Number.isFinite(trend.weeklyChange)
+    const nextValue = Number.isFinite(trend.weeklyChange)
         ? formatRate(trend.weeklyChange)
         : "Need more data";
+    if (value.textContent !== nextValue) value.textContent = nextValue;
     value.title = "Current 7-day average minus the previous 7-day average";
 
     const card = value.closest(".metric-card");
     const heading = card?.querySelector("h3");
-    if (heading) heading.textContent = "Weekly Trend";
+    if (heading && heading.textContent !== "Weekly Trend") heading.textContent = "Weekly Trend";
     if (card) card.title = "Weekly change uses two consecutive 7-day moving-average windows, with at least 4 weigh-ins per window.";
 }
 
