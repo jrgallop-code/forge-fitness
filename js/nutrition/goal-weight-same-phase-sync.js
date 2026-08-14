@@ -1,3 +1,5 @@
+import "./phase-date-correction-save.js?v=phase-date-correction-1";
+
 const PHASES_KEY = "level_up_nutrition_phases";
 const GOAL_WEIGHT_KEY = "level_up_goal_weight";
 
