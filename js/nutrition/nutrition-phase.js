@@ -93,11 +93,12 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase()) {
     const tolerance = Math.max(bodyweightTolerance, targetTolerance);
 
     if (trend.status === "insufficient" || !Number.isFinite(actual)) {
-        return buildMetrics("NEED MORE PHASE DATA", trend, actual, target, tolerance, referenceWeight, false);
+        const waitingStatus = trend.reason === "before-first-check" ? "BUILDING TREND" : "NEED MORE DATA";
+        return buildMetrics(waitingStatus, trend, actual, target, tolerance, referenceWeight, false);
     }
 
     if (!Number.isFinite(target)) {
-        return buildMetrics("NEED MORE PHASE DATA", trend, actual, null, tolerance, referenceWeight, false);
+        return buildMetrics("NEED MORE DATA", trend, actual, null, tolerance, referenceWeight, false);
     }
 
     let status;
