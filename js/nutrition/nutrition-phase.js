@@ -1,5 +1,5 @@
 import { GOAL_PRESETS } from "./tdee-calculator.js?v=phase-tolerance-1";
-import { calculateWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=phase-tolerance-1";
+import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=weekly-ma-coach-1";
 
 const PHASES_KEY = "level_up_nutrition_phases";
 const WEIGHT_KEY = "forge_weight_entries";
@@ -78,10 +78,14 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase()) {
     }
 
     const entries = readWeights().filter(e => e.date >= phase.startDate && (!phase.endDate || e.date <= phase.endDate));
-    const trend = calculateWeightTrend(entries, { maxWindowDays: 21 });
+    const trend = calculatePhaseMovingAverageTrend(entries, {
+        phaseStartDate: phase.startDate,
+        asOfDate: phase.endDate || localDate(),
+        minEntriesPerWindow: 4
+    });
     const actual = finiteNumber(trend?.weeklyChange);
     const target = finiteNumber(phase.targetWeeklyRate);
-    const referenceWeight = trendWeight(entries) ?? finiteNumber(phase.startingTrendWeight);
+    const referenceWeight = finiteNumber(trend?.currentAverage) ?? trendWeight(entries) ?? finiteNumber(phase.startingTrendWeight);
     const bodyweightTolerance = Number.isFinite(referenceWeight)
         ? referenceWeight * BODYWEIGHT_TOLERANCE_PCT
         : DEFAULT_TOLERANCE_LB;
@@ -90,10 +94,6 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase()) {
 
     if (trend.status === "insufficient" || !Number.isFinite(actual)) {
         return buildMetrics("NEED MORE PHASE DATA", trend, actual, target, tolerance, referenceWeight, false);
-    }
-
-    if (trend.status === "preliminary") {
-        return buildMetrics("PRELIMINARY", trend, actual, target, tolerance, referenceWeight, false);
     }
 
     if (!Number.isFinite(target)) {
@@ -117,7 +117,7 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase()) {
         }
     }
 
-    const recommendationReady = trend.windowDays >= 21 && trend.windowEntries >= 7;
+    const recommendationReady = trend.status === "actual" && Number.isFinite(trend.checkDay) && trend.checkDay >= 14;
     return buildMetrics(status, trend, actual, target, tolerance, referenceWeight, recommendationReady);
 }
 
