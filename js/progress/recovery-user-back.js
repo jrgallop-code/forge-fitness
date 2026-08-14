@@ -1,9 +1,4 @@
-import BACK_BASE_A from "./recovery-user-back-base-a.js?v=back-user-1";
-import BACK_BASE_B from "./recovery-user-back-base-b.js?v=back-user-1";
-import BACK_BASE_C from "./recovery-user-back-base-c.js?v=back-user-1";
-import BACK_BASE_D from "./recovery-user-back-base-d.js?v=back-user-1";
-
-const BACK_BASE = `data:image/webp;base64,${BACK_BASE_A}${BACK_BASE_B}${BACK_BASE_C}${BACK_BASE_D}`;
+const BACK_ASSET = 'assets/recovery/back-user-map.svg?v=back-user-map-2';
 const BACK_PATHS = [
   ["Calves", "M325.5 1146.5L349 1119.5H353L379.5 1114.5L389.5 1132L402 1170L413.5 1242.5V1275.5L402 1306L398 1333.5L383.5 1414.5L371 1461.5V1399L383.5 1333.5V1314L371 1306L357.5 1275.5L349 1296L331 1314L337 1353L349 1456.5L343.5 1481.5L331 1474L325.5 1434L314.5 1333.5L307.5 1296L298 1257.5L307.5 1192L325.5 1146.5Z", true],
   ["Calves", "M620 1146L596.5 1119H592.5L566 1114L556 1131.5L543.5 1169.5L532 1242V1275L543.5 1305.5L547.5 1333L562 1414L574.5 1461V1398.5L562 1333V1313.5L574.5 1305.5L588 1275L596.5 1295.5L614.5 1313.5L608.5 1352.5L596.5 1456L602 1481L614.5 1473.5L620 1433.5L631 1333L638 1295.5L647.5 1257L638 1191.5L620 1146Z", true],
@@ -56,10 +51,12 @@ function backMarkup() {
   const paths = BACK_PATHS.map(([muscle,d,filled]) =>
     `<path d="${d}" data-recovery-muscle="${muscle}" class="recovery-user-muscle ${filled ? 'recovery-user-fill' : 'recovery-user-stroke'}"/>`
   ).join('');
-  return `<svg class="recovery-user-back-svg" viewBox="0 0 941 1672" role="img" aria-label="Back muscle recovery map">
-    <image href="${BACK_BASE}" x="0" y="0" width="941" height="1672" preserveAspectRatio="none"/>
-    ${paths}
-  </svg>`;
+  return `<div class="recovery-user-back-stage">
+    <img class="recovery-user-back-base" src="${BACK_ASSET}" alt="" aria-hidden="true" draggable="false"/>
+    <svg class="recovery-user-back-svg" viewBox="0 0 941 1672" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Back muscle recovery map">
+      ${paths}
+    </svg>
+  </div>`;
 }
 
 function installUserBack() {
