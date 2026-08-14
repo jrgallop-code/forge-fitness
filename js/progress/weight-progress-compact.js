@@ -9,6 +9,7 @@ export function initializeWeightProgressCompact() {
     removeGoalUi(section);
     compactWeightProgress(section);
     refreshWeightSummary();
+    initializeSummaryCarousel(section);
 }
 
 function removeGoalUi(section) {
@@ -76,6 +77,7 @@ function compactWeightProgress(section) {
         <div class="metric-card"><div><h3>Trend Weight</h3><p id="latest-weight">--</p></div></div>
         <div class="metric-card"><div><h3>Weekly Trend</h3><p id="actual-weekly-weight-change">--</p></div></div>
     `;
+    summary.scrollLeft = 0;
 
     const setOpen = open => {
         weightEntry.hidden = !open;
@@ -108,6 +110,43 @@ function compactWeightProgress(section) {
     });
 
     section.dataset.compactLayout = "weight-only-1";
+}
+
+function initializeSummaryCarousel(section) {
+    const summary = section.querySelector(".weight-summary");
+    if (!summary || summary.dataset.carouselReady === "1") return;
+
+    summary.dataset.carouselReady = "1";
+    let userInteracted = false;
+    const timers = [];
+
+    const markInteracted = () => {
+        userInteracted = true;
+        timers.splice(0).forEach(timer => window.clearTimeout(timer));
+    };
+
+    summary.addEventListener("touchstart", markInteracted, { passive: true });
+    summary.addEventListener("pointerdown", markInteracted, { passive: true });
+    summary.addEventListener("wheel", markInteracted, { passive: true });
+
+    const resetIfUntouched = () => {
+        if (!summary.isConnected || userInteracted) return;
+        summary.scrollLeft = 0;
+    };
+
+    resetIfUntouched();
+    window.requestAnimationFrame(() => {
+        resetIfUntouched();
+        window.requestAnimationFrame(resetIfUntouched);
+    });
+    [80, 220, 500].forEach(delay => timers.push(window.setTimeout(resetIfUntouched, delay)));
+
+    const weightTab = document.getElementById("weight-tab");
+    weightTab?.addEventListener("click", () => {
+        window.setTimeout(() => {
+            if (summary.isConnected) summary.scrollLeft = 0;
+        }, 0);
+    });
 }
 
 function makeField(forId, labelText, input) {
