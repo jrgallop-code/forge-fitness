@@ -1,3 +1,5 @@
+import "./weekly-set-summary-cardio-filter.js?v=weekly-set-summary-no-cardio-1";
+
 const TRAINING_VIEW_SELECTOR = '.training-progress-view[data-view="training"]';
 const EXCLUDED_CARD_IDS = new Set(["muscle-frequency-card"]);
 let initialized = false;
