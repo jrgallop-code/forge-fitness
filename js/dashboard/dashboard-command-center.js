@@ -52,8 +52,8 @@ function countWorkingSets(session) {
         const sets = Array.isArray(exercise?.sets) ? exercise.sets : [];
         return total + sets.filter(set =>
             set?.completed === true ||
-            set?.weight !== null && set?.weight !== undefined ||
-            set?.reps !== null && set?.reps !== undefined
+            (set?.weight !== null && set?.weight !== undefined) ||
+            (set?.reps !== null && set?.reps !== undefined)
         ).length;
     }, 0);
 }
@@ -63,8 +63,8 @@ function countRecordedExercises(session) {
         const sets = Array.isArray(exercise?.sets) ? exercise.sets : [];
         const hasWorkingSet = sets.some(set =>
             set?.completed === true ||
-            set?.weight !== null && set?.weight !== undefined ||
-            set?.reps !== null && set?.reps !== undefined
+            (set?.weight !== null && set?.weight !== undefined) ||
+            (set?.reps !== null && set?.reps !== undefined)
         );
         return hasWorkingSet || Boolean(String(exercise?.notes || "").trim());
     }).length;
@@ -193,13 +193,26 @@ function renderWeeklySection(stats) {
 }
 
 function ensureWeeklySection(content, dashboard) {
+    const stats = getWeeklyStats();
+    const signature = JSON.stringify({
+        mode: weeklyMode,
+        all: stats.all,
+        program: stats.program,
+        planId: stats.programContext?.plan?.id || null,
+        targets: stats.programContext?.targets || null
+    });
+
     let section = content.querySelector(".dashboard-command-weekly");
     if (!section) {
         section = document.createElement("section");
         section.className = "section-card dashboard-command-weekly";
         dashboard.insertAdjacentElement("beforebegin", section);
     }
-    section.innerHTML = renderWeeklySection(getWeeklyStats());
+
+    if (section.dataset.signature !== signature) {
+        section.dataset.signature = signature;
+        section.innerHTML = renderWeeklySection(stats);
+    }
 }
 
 function ensureTodayFallback(content, welcome) {
