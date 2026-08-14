@@ -2,71 +2,399 @@ const PHASES_KEY = "level_up_nutrition_phases";
 const WEIGHT_KEY = "forge_weight_entries";
 const GOAL_WEIGHT_KEY = "level_up_goal_weight";
 const DAY_MS = 86400000;
-let renderTimer = null;
 
-function readPhases(){try{const v=JSON.parse(localStorage.getItem(PHASES_KEY)||"[]");return Array.isArray(v)?v:[]}catch{return[]}}
-function writePhases(v){localStorage.setItem(PHASES_KEY,JSON.stringify(v))}
-function activeIndex(v){for(let i=v.length-1;i>=0;i-=1)if(v[i]&&!v[i].endDate&&v[i].goalId)return i;return-1}
-function previousIndex(v,index){for(let i=index-1;i>=0;i-=1)if(v[i]?.startDate)return i;return-1}
-function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
-function dateMs(v){return new Date(`${v}T12:00:00`).getTime()}
-function validDate(v){return /^\d{4}-\d{2}-\d{2}$/.test(String(v))&&Number.isFinite(dateMs(v))&&v<=today()}
-function previousDay(v){const d=new Date(`${v}T12:00:00`);d.setDate(d.getDate()-1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
-function formatDate(v){const d=new Date(`${v}T12:00:00`);return Number.isNaN(d.getTime())?(v||"--"):d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}
-function formatRate(v){const n=Number(v);if(!Number.isFinite(n))return"--";if(Math.abs(n)<.005)return"Maintain";return `${n>0?"+":"−"}${Math.abs(n).toFixed(2).replace(/0$/,"")} lb/week`}
-function phaseDay(v){return validDate(v)?Math.max(1,Math.floor((dateMs(today())-dateMs(v))/DAY_MS)+1):null}
-function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+let editMode = false;
+let editingPhaseId = null;
+let draftStartDate = "";
+let draftGoalWeight = "";
+let refreshTimer = null;
 
-function readWeights(){try{const v=JSON.parse(localStorage.getItem(WEIGHT_KEY)||"[]");return Array.isArray(v)?v.map(r=>({date:String(r?.date||""),weight:Number(r?.weight)})).filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.date)&&Number.isFinite(r.weight)&&r.weight>0).sort((a,b)=>a.date.localeCompare(b.date)):[]}catch{return[]}}
-function trendAsOf(date){const eligible=readWeights().filter(e=>e.date<=date);if(!eligible.length)return null;const latest=eligible.at(-1);const cutoff=dateMs(latest.date)-6*DAY_MS;const recent=eligible.filter(e=>dateMs(e.date)>=cutoff);const value=(recent.length?recent: [latest]).reduce((s,e)=>s+e.weight,0)/(recent.length||1);return Math.round(value*100)/100}
-function goalWeight(phase){const n=Number(phase?.goalWeight??phase?.targetWeight);if(Number.isFinite(n)&&n>0)return n;const legacy=Number(localStorage.getItem(GOAL_WEIGHT_KEY));return Number.isFinite(legacy)&&legacy>0?legacy:null}
-function activeState(){const phases=readPhases();const index=activeIndex(phases);return index>=0?{phases,index,phase:phases[index]}:null}
+function readPhases() {
+    try {
+        const value = JSON.parse(localStorage.getItem(PHASES_KEY) || "[]");
+        return Array.isArray(value) ? value : [];
+    } catch {
+        return [];
+    }
+}
 
-function ensureStyles(){if(document.getElementById("phase-details-editor-v2-styles"))return;const style=document.createElement("style");style.id="phase-details-editor-v2-styles";style.textContent=`
-#phase-details-editor-wrap{margin-top:10px}#edit-current-phase-details{width:100%}
-#phase-details-editor{margin-top:10px;padding:14px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.025)}
-#phase-details-editor[hidden]{display:none!important}#phase-details-editor h4{margin:4px 0 6px;font-size:16px;color:#fff}
-#phase-details-editor .phase-details-note{margin:0 0 12px;color:var(--muted,#a1a1aa);font-size:12px;line-height:1.45}
-#phase-details-editor .phase-details-grid,#phase-details-editor .phase-details-readonly{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-#phase-details-editor label{display:flex;flex-direction:column;gap:6px;color:#f4f4f5;font-size:12px;font-weight:700}#phase-details-editor input{width:100%;box-sizing:border-box}
-#phase-details-editor .phase-details-readonly{margin-top:10px;gap:8px}#phase-details-editor .phase-details-readonly>div{padding:9px;border-radius:10px;background:rgba(255,255,255,.035)}
-#phase-details-editor .phase-details-readonly span{display:block;color:var(--muted,#a1a1aa);font-size:9px;text-transform:uppercase;letter-spacing:.08em}
-#phase-details-editor .phase-details-readonly strong{display:block;margin-top:3px;color:#fff;font-size:12px}#phase-details-editor .phase-details-actions{display:flex;gap:8px;margin-top:12px}#phase-details-editor .phase-details-actions button{flex:1}
-#phase-details-editor-status{min-height:18px;margin:8px 0 0;color:var(--muted,#a1a1aa);font-size:11px;line-height:1.35}
-#nutrition-phase-start-date[data-current-phase-locked="1"]{opacity:.65}
-@media(max-width:390px){#phase-details-editor .phase-details-grid,#phase-details-editor .phase-details-readonly{grid-template-columns:1fr}}
-`;document.head.appendChild(style)}
+function writePhases(phases) {
+    localStorage.setItem(PHASES_KEY, JSON.stringify(phases));
+}
 
-function lockCurrentPhaseDateField(){const state=activeState();const input=document.getElementById("nutrition-phase-start-date");const select=document.getElementById("unified-goal-select");if(!state||!input||!select)return;const same=select.value===state.phase.goalId;if(same){input.value=state.phase.startDate||today();input.disabled=true;input.dataset.currentPhaseLocked="1";input.title="Use Edit Phase Details above to change this existing phase."}else{input.disabled=false;delete input.dataset.currentPhaseLocked;input.title="Start date for the new phase."}}
+function getActiveState() {
+    const phases = readPhases();
+    for (let index = phases.length - 1; index >= 0; index -= 1) {
+        if (phases[index] && !phases[index].endDate && phases[index].goalId) {
+            return { phases, index, phase: phases[index] };
+        }
+    }
+    return null;
+}
 
-function buildEditor(wrap,phase){const gw=goalWeight(phase);const calories=Number(phase.currentCalories??phase.startCalories);wrap.dataset.phaseId=String(phase.id||"");wrap.innerHTML=`
-<button id="edit-current-phase-details" class="secondary-btn" type="button">Edit Phase Details</button>
-<div id="phase-details-editor" hidden>
-<span class="eyebrow">EDIT CURRENT PHASE</span><h4>${escapeHtml(phase.label||"Current Phase")}</h4>
-<p class="phase-details-note">Save changes to this existing phase. This does not start a new phase or change its ID, calories, or target rate.</p>
-<div class="phase-details-grid">
-<label>Phase Start Date<input id="phase-details-start-date" type="date" max="${today()}" value="${escapeHtml(phase.startDate||today())}"></label>
-<label>Goal Weight (lb)<input id="phase-details-goal-weight" type="number" min="1" step="0.1" inputmode="decimal" value="${Number.isFinite(gw)?gw:""}" placeholder="Optional"></label>
-</div>
-<div class="phase-details-readonly"><div><span>Target Rate</span><strong>${formatRate(phase.targetWeeklyRate)}</strong></div><div><span>Current Calories</span><strong>${Number.isFinite(calories)?`${Math.round(calories)} kcal/day`:"--"}</strong></div></div>
-<div class="phase-details-actions"><button id="cancel-phase-details-edit" class="secondary-btn" type="button">Cancel</button><button id="save-phase-details-edit" class="primary-btn" type="button">Save Changes</button></div>
-<p id="phase-details-editor-status" aria-live="polite"></p></div>`;
-document.getElementById("edit-current-phase-details")?.addEventListener("click",()=>{const editor=document.getElementById("phase-details-editor");if(editor)editor.hidden=!editor.hidden});
-document.getElementById("cancel-phase-details-edit")?.addEventListener("click",()=>{const editor=document.getElementById("phase-details-editor");if(editor)editor.hidden=true});
-document.getElementById("save-phase-details-edit")?.addEventListener("click",saveChanges)}
+function findPhaseIndexById(phases, phaseId) {
+    return phases.findIndex(phase => String(phase?.id || "") === String(phaseId || ""));
+}
 
-function ensureEditor(){ensureStyles();const host=document.getElementById("nutrition-current-phase");const state=activeState();if(!host||!state){document.getElementById("phase-details-editor-wrap")?.remove();return}let wrap=document.getElementById("phase-details-editor-wrap");if(!wrap){wrap=document.createElement("div");wrap.id="phase-details-editor-wrap";host.appendChild(wrap)}if(wrap.dataset.phaseId!==String(state.phase.id||""))buildEditor(wrap,state.phase);lockCurrentPhaseDateField()}
+function previousPhaseIndex(phases, index) {
+    for (let i = index - 1; i >= 0; i -= 1) {
+        if (phases[i]?.startDate) return i;
+    }
+    return -1;
+}
 
-function saveChanges(){const startDate=String(document.getElementById("phase-details-start-date")?.value||"");const rawGoal=Number(document.getElementById("phase-details-goal-weight")?.value);const newGoal=Number.isFinite(rawGoal)&&rawGoal>0?Math.round(rawGoal*10)/10:null;const status=document.getElementById("phase-details-editor-status");if(!validDate(startDate)){if(status)status.textContent="Choose a valid start date that is not in the future.";return}
-const phases=readPhases();const index=activeIndex(phases);if(index<0){if(status)status.textContent="No active phase was found.";return}const active=phases[index];const prevIndex=previousIndex(phases,index);const prev=prevIndex>=0?phases[prevIndex]:null;if(prev?.startDate&&startDate<=prev.startDate){if(status)status.textContent=`The current phase must start after the previous phase began (${formatDate(prev.startDate)}).`;return}
-const now=new Date().toISOString();if(prevIndex>=0){const endDate=previousDay(startDate);phases[prevIndex]={...prev,endDate,endTrendWeight:trendAsOf(endDate),status:"completed",updatedAt:now}}
-phases[index]={...active,startDate,startingTrendWeight:trendAsOf(startDate),...(Number.isFinite(newGoal)?{goalWeight:newGoal}:{}),updatedAt:now};writePhases(phases);if(Number.isFinite(newGoal))localStorage.setItem(GOAL_WEIGHT_KEY,String(newGoal));
-syncVisible(phases[index]);const setupDate=document.getElementById("nutrition-phase-start-date");if(setupDate)setupDate.value=startDate;const setupGoal=document.getElementById("nutrition-phase-goal-weight");if(setupGoal&&Number.isFinite(newGoal))setupGoal.value=String(newGoal);
-window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated"));window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));if(status)status.textContent=`Saved. This same phase now starts ${formatDate(startDate)}.`;window.setTimeout(()=>{syncVisible(phases[index]);lockCurrentPhaseDateField()},150)}
+function today() {
+    const date = new Date();
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
 
-function syncVisible(phase){const grid=document.querySelector("#nutrition-current-phase .nutrition-current-phase-grid");if(!grid||!phase)return;const started=[...grid.children].find(cell=>cell.querySelector("span")?.textContent?.trim()==="Started");const strong=started?.querySelector("strong");const day=phaseDay(phase.startDate);if(strong)strong.textContent=`${formatDate(phase.startDate)}${day?` · Day ${day}`:""}`;const cell=grid.querySelector("[data-phase-goal-weight]");const gw=goalWeight(phase);const goalStrong=cell?.querySelector("strong");if(goalStrong)goalStrong.textContent=Number.isFinite(gw)?`${gw.toFixed(1)} lb`:"Not set"}
+function dateMs(value) {
+    return new Date(`${value}T12:00:00`).getTime();
+}
 
-function schedule(){clearTimeout(renderTimer);renderTimer=window.setTimeout(ensureEditor,50)}
-document.addEventListener("change",e=>{if(e.target?.id==="unified-goal-select")window.setTimeout(lockCurrentPhaseDateField,20)},true);
-document.addEventListener("click",e=>{if(e.target?.closest?.('.nav-btn[data-page="calories"], [data-nutrition-view="goals"], [data-planner-view="goals"]')){window.setTimeout(schedule,20);window.setTimeout(schedule,160)}},true);
-window.addEventListener("levelup:nutrition-phase-updated",schedule);window.addEventListener("levelup:nutrition-updated",schedule);window.addEventListener("load",schedule);schedule();
+function validDate(value) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(value))
+        && Number.isFinite(dateMs(value))
+        && value <= today();
+}
+
+function previousDay(value) {
+    const date = new Date(`${value}T12:00:00`);
+    date.setDate(date.getDate() - 1);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function formatDate(value) {
+    const date = new Date(`${value}T12:00:00`);
+    if (Number.isNaN(date.getTime())) return value || "--";
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function phaseDay(startDate) {
+    if (!validDate(startDate)) return null;
+    return Math.max(1, Math.floor((dateMs(today()) - dateMs(startDate)) / DAY_MS) + 1);
+}
+
+function readWeights() {
+    try {
+        const rows = JSON.parse(localStorage.getItem(WEIGHT_KEY) || "[]");
+        if (!Array.isArray(rows)) return [];
+        return rows
+            .map(row => ({ date: String(row?.date || ""), weight: Number(row?.weight) }))
+            .filter(row => /^\d{4}-\d{2}-\d{2}$/.test(row.date) && Number.isFinite(row.weight) && row.weight > 0)
+            .sort((a, b) => a.date.localeCompare(b.date));
+    } catch {
+        return [];
+    }
+}
+
+function trendAsOf(date) {
+    const eligible = readWeights().filter(entry => entry.date <= date);
+    if (!eligible.length) return null;
+    const latest = eligible.at(-1);
+    const cutoff = dateMs(latest.date) - (6 * DAY_MS);
+    const recent = eligible.filter(entry => dateMs(entry.date) >= cutoff);
+    const sample = recent.length ? recent : [latest];
+    const value = sample.reduce((sum, entry) => sum + entry.weight, 0) / sample.length;
+    return Math.round(value * 100) / 100;
+}
+
+function readGoalWeight(phase) {
+    const phaseValue = Number(phase?.goalWeight ?? phase?.targetWeight);
+    if (Number.isFinite(phaseValue) && phaseValue > 0) return phaseValue;
+    const legacy = Number(localStorage.getItem(GOAL_WEIGHT_KEY));
+    return Number.isFinite(legacy) && legacy > 0 ? legacy : null;
+}
+
+function findMetricCell(grid, label) {
+    return [...(grid?.children || [])].find(cell => cell.querySelector("span")?.textContent?.trim() === label) || null;
+}
+
+function ensureStyles() {
+    if (document.getElementById("phase-inline-editor-styles")) return;
+    const style = document.createElement("style");
+    style.id = "phase-inline-editor-styles";
+    style.textContent = `
+        #nutrition-current-phase .phase-inline-edit-button{width:100%;margin-top:8px}
+        #nutrition-current-phase.phase-inline-editing{outline:1px solid rgba(255,59,66,.35);outline-offset:2px}
+        #nutrition-current-phase .phase-inline-input{width:100%;min-width:0;box-sizing:border-box;margin:0;padding:8px 9px;border:1px solid rgba(255,255,255,.20);border-radius:9px;background:#f4f4f5;color:#111;font:inherit;font-weight:700}
+        #nutrition-current-phase .phase-inline-actions{display:flex;gap:8px;margin-top:8px}
+        #nutrition-current-phase .phase-inline-actions button{flex:1;min-height:44px}
+        #nutrition-current-phase .phase-inline-note{margin:8px 2px 0;color:var(--muted,#a1a1aa);font-size:10px;line-height:1.35}
+        #nutrition-current-phase .phase-inline-status{min-height:16px;margin:7px 2px 0;color:var(--muted,#a1a1aa);font-size:10px;line-height:1.35}
+        #nutrition-phase-start-date[data-current-phase-locked="1"]{opacity:.62}
+        @media(max-width:390px){
+            #nutrition-current-phase .phase-inline-actions{gap:6px}
+            #nutrition-current-phase .phase-inline-input{padding:7px 8px;font-size:12px}
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+function lockSetupStartDate(phase) {
+    const input = document.getElementById("nutrition-phase-start-date");
+    const select = document.getElementById("unified-goal-select");
+    if (!input || !select || !phase) return;
+
+    if (select.value === phase.goalId) {
+        input.value = phase.startDate || today();
+        input.disabled = true;
+        input.dataset.currentPhaseLocked = "1";
+        input.title = "Use Edit Phase Details in the Current Phase card to correct this phase's start date.";
+    } else {
+        input.disabled = false;
+        delete input.dataset.currentPhaseLocked;
+        input.title = "Start date for the new phase.";
+    }
+}
+
+function renderDisplayCells(phase) {
+    const grid = document.querySelector("#nutrition-current-phase .nutrition-current-phase-grid");
+    if (!grid || !phase) return;
+
+    const started = findMetricCell(grid, "Started");
+    const startedStrong = started?.querySelector("strong");
+    if (startedStrong) {
+        const day = phaseDay(phase.startDate);
+        const value = `${formatDate(phase.startDate)}${day ? ` · Day ${day}` : ""}`;
+        if (startedStrong.textContent !== value) startedStrong.textContent = value;
+    }
+
+    const goalCell = findMetricCell(grid, "Goal Weight");
+    const goalStrong = goalCell?.querySelector("strong");
+    const goal = readGoalWeight(phase);
+    const goalValue = Number.isFinite(goal) ? `${goal.toFixed(1)} lb` : "Not set";
+    if (goalStrong && goalStrong.textContent !== goalValue) goalStrong.textContent = goalValue;
+}
+
+function renderViewMode(host, phase) {
+    host.classList.remove("phase-inline-editing");
+    host.querySelector(".phase-inline-actions")?.remove();
+    host.querySelector(".phase-inline-note")?.remove();
+    host.querySelector(".phase-inline-status")?.remove();
+
+    renderDisplayCells(phase);
+
+    let button = host.querySelector("#edit-current-phase-details");
+    if (!button) {
+        button = document.createElement("button");
+        button.id = "edit-current-phase-details";
+        button.type = "button";
+        button.className = "secondary-btn phase-inline-edit-button";
+        button.textContent = "Edit Phase Details";
+        host.appendChild(button);
+    }
+}
+
+function renderEditMode(host, phase) {
+    host.classList.add("phase-inline-editing");
+    host.querySelector("#edit-current-phase-details")?.remove();
+
+    const grid = host.querySelector(".nutrition-current-phase-grid");
+    if (!grid) return;
+
+    const started = findMetricCell(grid, "Started");
+    const startedStrong = started?.querySelector("strong");
+    if (startedStrong && !startedStrong.querySelector("#phase-inline-start-date")) {
+        startedStrong.innerHTML = `<input id="phase-inline-start-date" class="phase-inline-input" type="date" max="${today()}" value="${draftStartDate || phase.startDate || today()}">`;
+    }
+
+    let goalCell = findMetricCell(grid, "Goal Weight");
+    if (!goalCell) {
+        goalCell = document.createElement("div");
+        goalCell.innerHTML = "<span>Goal Weight</span><strong></strong>";
+        grid.appendChild(goalCell);
+    }
+    const goalStrong = goalCell.querySelector("strong");
+    if (goalStrong && !goalStrong.querySelector("#phase-inline-goal-weight")) {
+        goalStrong.innerHTML = `<input id="phase-inline-goal-weight" class="phase-inline-input" type="number" min="1" step="0.1" inputmode="decimal" value="${draftGoalWeight}" placeholder="Optional">`;
+    }
+
+    let note = host.querySelector(".phase-inline-note");
+    if (!note) {
+        note = document.createElement("p");
+        note.className = "phase-inline-note";
+        note.textContent = "Editing this card changes the existing phase only. It does not create or restart a phase.";
+        grid.insertAdjacentElement("afterend", note);
+    }
+
+    let actions = host.querySelector(".phase-inline-actions");
+    if (!actions) {
+        actions = document.createElement("div");
+        actions.className = "phase-inline-actions";
+        actions.innerHTML = `<button id="cancel-phase-details-edit" class="secondary-btn" type="button">Cancel</button><button id="save-phase-details-edit" class="primary-btn" type="button">Save Changes</button>`;
+        note.insertAdjacentElement("afterend", actions);
+    }
+
+    if (!host.querySelector(".phase-inline-status")) {
+        const status = document.createElement("p");
+        status.className = "phase-inline-status";
+        status.id = "phase-inline-status";
+        status.setAttribute("aria-live", "polite");
+        actions.insertAdjacentElement("afterend", status);
+    }
+}
+
+function ensureInlineEditor() {
+    ensureStyles();
+    document.getElementById("phase-details-editor-wrap")?.remove();
+
+    const host = document.getElementById("nutrition-current-phase");
+    const state = getActiveState();
+    if (!host || !state) return;
+
+    lockSetupStartDate(state.phase);
+
+    if (editMode && String(editingPhaseId) === String(state.phase.id || "")) {
+        renderEditMode(host, state.phase);
+    } else {
+        editMode = false;
+        editingPhaseId = null;
+        renderViewMode(host, state.phase);
+    }
+}
+
+function beginEdit() {
+    const state = getActiveState();
+    if (!state) return;
+
+    editMode = true;
+    editingPhaseId = String(state.phase.id || "");
+    draftStartDate = state.phase.startDate || today();
+    const currentGoal = readGoalWeight(state.phase);
+    draftGoalWeight = Number.isFinite(currentGoal) ? String(currentGoal) : "";
+    ensureInlineEditor();
+    scheduleRefresh(180);
+}
+
+function cancelEdit() {
+    editMode = false;
+    editingPhaseId = null;
+    draftStartDate = "";
+    draftGoalWeight = "";
+    ensureInlineEditor();
+}
+
+function setStatus(message) {
+    const status = document.getElementById("phase-inline-status");
+    if (status) status.textContent = message;
+}
+
+function saveChanges() {
+    const startDate = String(document.getElementById("phase-inline-start-date")?.value || draftStartDate || "");
+    const rawGoal = String(document.getElementById("phase-inline-goal-weight")?.value ?? draftGoalWeight ?? "").trim();
+    const parsedGoal = rawGoal === "" ? null : Number(rawGoal);
+    const newGoal = Number.isFinite(parsedGoal) && parsedGoal > 0 ? Math.round(parsedGoal * 10) / 10 : null;
+
+    if (!validDate(startDate)) {
+        setStatus("Choose a valid start date that is not in the future.");
+        return;
+    }
+    if (rawGoal !== "" && !Number.isFinite(newGoal)) {
+        setStatus("Enter a valid goal weight or leave it blank.");
+        return;
+    }
+
+    const phases = readPhases();
+    const index = findPhaseIndexById(phases, editingPhaseId);
+    if (index < 0 || phases[index]?.endDate) {
+        setStatus("The active phase could not be found. Reopen Edit Phase Details and try again.");
+        return;
+    }
+
+    const active = phases[index];
+    const previousIndex = previousPhaseIndex(phases, index);
+    const previous = previousIndex >= 0 ? phases[previousIndex] : null;
+    if (previous?.startDate && startDate <= previous.startDate) {
+        setStatus(`This phase must start after the previous phase began (${formatDate(previous.startDate)}).`);
+        return;
+    }
+
+    const now = new Date().toISOString();
+    if (previousIndex >= 0) {
+        const endDate = previousDay(startDate);
+        phases[previousIndex] = {
+            ...previous,
+            endDate,
+            endTrendWeight: trendAsOf(endDate),
+            status: "completed",
+            updatedAt: now
+        };
+    }
+
+    phases[index] = {
+        ...active,
+        startDate,
+        startingTrendWeight: trendAsOf(startDate),
+        ...(Number.isFinite(newGoal) ? { goalWeight: newGoal } : {}),
+        updatedAt: now
+    };
+
+    writePhases(phases);
+    if (Number.isFinite(newGoal)) localStorage.setItem(GOAL_WEIGHT_KEY, String(newGoal));
+
+    const saved = readPhases().find(phase => String(phase?.id || "") === String(editingPhaseId || ""));
+    if (!saved || saved.startDate !== startDate) {
+        setStatus("The phase date did not save. Please try again.");
+        return;
+    }
+
+    const savedPhaseId = editingPhaseId;
+    editMode = false;
+    editingPhaseId = null;
+    draftStartDate = "";
+    draftGoalWeight = "";
+
+    const setupDate = document.getElementById("nutrition-phase-start-date");
+    if (setupDate) setupDate.value = startDate;
+    const setupGoal = document.getElementById("nutrition-phase-goal-weight");
+    if (setupGoal && Number.isFinite(newGoal)) setupGoal.value = String(newGoal);
+
+    const host = document.getElementById("nutrition-current-phase");
+    if (host) renderViewMode(host, saved);
+    window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated", { detail: { phaseId: savedPhaseId, source: "phase-inline-editor" } }));
+    window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { phaseId: savedPhaseId, source: "phase-inline-editor" } }));
+
+    scheduleRefresh(0);
+    window.setTimeout(ensureInlineEditor, 180);
+}
+
+function scheduleRefresh(delay = 40) {
+    clearTimeout(refreshTimer);
+    refreshTimer = window.setTimeout(ensureInlineEditor, delay);
+}
+
+document.addEventListener("input", event => {
+    if (event.target?.id === "phase-inline-start-date") draftStartDate = event.target.value;
+    if (event.target?.id === "phase-inline-goal-weight") draftGoalWeight = event.target.value;
+}, true);
+
+document.addEventListener("change", event => {
+    if (event.target?.id === "phase-inline-start-date") draftStartDate = event.target.value;
+    if (event.target?.id === "phase-inline-goal-weight") draftGoalWeight = event.target.value;
+    if (event.target?.id === "unified-goal-select") scheduleRefresh(30);
+}, true);
+
+document.addEventListener("click", event => {
+    if (event.target?.closest("#edit-current-phase-details")) {
+        beginEdit();
+        return;
+    }
+    if (event.target?.closest("#cancel-phase-details-edit")) {
+        cancelEdit();
+        return;
+    }
+    if (event.target?.closest("#save-phase-details-edit")) {
+        saveChanges();
+    }
+}, false);
+
+const content = document.getElementById("content");
+if (content) {
+    new MutationObserver(() => scheduleRefresh(30)).observe(content, { childList: true, subtree: true });
+}
+
+window.addEventListener("levelup:nutrition-phase-updated", () => scheduleRefresh(30));
+window.addEventListener("levelup:nutrition-updated", () => scheduleRefresh(30));
+window.addEventListener("load", () => scheduleRefresh(20));
+scheduleRefresh(0);
