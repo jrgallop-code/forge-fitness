@@ -1,1 +1,209 @@
-#weight-progress .weight-section-header{display:flex;align-items:center;justify-content:space-between;gap:10px}#weight-progress .weight-add-toggle{min-height:34px;padding:6px 10px;margin:0;font-size:12px}#weight-progress .weight-entry-card-compact{padding:12px;margin-top:10px;gap:9px}#weight-progress .weight-compact-fields{display:grid;grid-template-columns:1fr 1fr;gap:9px}#weight-progress .weight-compact-field{display:grid;gap:5px;margin:0;color:var(--muted);font-size:12px;font-weight:700}#weight-progress .weight-compact-field>span{display:block}#weight-progress .weight-compact-field input{min-width:0;height:44px;padding:9px 10px;font-size:15px}#weight-progress .weight-compact-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}#weight-progress .weight-compact-actions .primary-btn,#weight-progress .weight-compact-actions .secondary-btn{width:100%;min-height:40px;padding:8px 7px;margin:0;font-size:12px}#weight-progress .weight-goal-settings{margin-top:8px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.025)}#weight-progress .weight-goal-settings summary{padding:10px 12px;cursor:pointer;color:var(--muted);font-size:12px;font-weight:800;list-style:none}#weight-progress .weight-goal-settings summary::-webkit-details-marker{display:none}#weight-progress .weight-goal-settings-body{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:9px;padding:0 12px 12px}#weight-progress .weight-goal-settings-body .secondary-btn{min-height:40px;margin:0;font-size:12px;padding:8px 10px}#weight-progress .weight-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}#weight-progress .weight-summary .metric-card{min-width:0;min-height:92px;padding:13px}#weight-progress .weight-summary .metric-card h3{font-size:11px;line-height:1.25;margin:0}#weight-progress .weight-summary .metric-card p{font-size:19px;line-height:1.1;margin-top:7px}#weight-progress .weight-chart-card{margin-top:12px;padding:14px}#weight-progress .weight-history{margin-top:16px}#weight-progress .weight-entry-actions button{min-height:30px;padding:5px 8px;font-size:11px}@media(max-width:380px){#weight-progress .weight-compact-fields{gap:7px}#weight-progress .weight-compact-field input{font-size:13px;padding:8px}#weight-progress .weight-compact-actions{gap:7px}#weight-progress .weight-summary{gap:7px}#weight-progress .weight-summary .metric-card{padding:11px}#weight-progress .weight-summary .metric-card p{font-size:17px}#weight-progress .weight-goal-settings-body{grid-template-columns:1fr}}#weight-progress #weight-entry-panel[hidden]{display:none!important}#weight-progress #weight-entry-panel:not([hidden]){display:grid}#weight-progress .weight-compact-field{min-width:0}#weight-progress .weight-compact-field input{display:block;width:100%;max-width:100%;box-sizing:border-box}@media(max-width:520px){#weight-progress .weight-compact-fields{grid-template-columns:1fr}#weight-progress .weight-goal-settings-body{grid-template-columns:1fr}}
+#weight-progress .weight-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+#weight-progress .weight-add-toggle {
+    min-height: 34px;
+    padding: 6px 10px;
+    margin: 0;
+    font-size: 12px;
+}
+
+#weight-progress .weight-entry-card-compact {
+    padding: 12px;
+    margin-top: 10px;
+    gap: 9px;
+}
+
+#weight-progress .weight-compact-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+}
+
+#weight-progress .weight-compact-field {
+    display: grid;
+    gap: 5px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 0;
+}
+
+#weight-progress .weight-compact-field > span {
+    display: block;
+}
+
+#weight-progress .weight-compact-field input {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+    height: 44px;
+    padding: 9px 10px;
+    font-size: 15px;
+}
+
+#weight-progress .weight-compact-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+#weight-progress .weight-compact-actions .primary-btn,
+#weight-progress .weight-compact-actions .secondary-btn {
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 7px;
+    margin: 0;
+    font-size: 12px;
+}
+
+#weight-progress .weight-goal-settings {
+    margin-top: 8px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .025);
+}
+
+#weight-progress .weight-goal-settings summary {
+    padding: 10px 12px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    list-style: none;
+}
+
+#weight-progress .weight-goal-settings summary::-webkit-details-marker {
+    display: none;
+}
+
+#weight-progress .weight-goal-settings-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 9px;
+    padding: 0 12px 12px;
+}
+
+#weight-progress .weight-goal-settings-body .secondary-btn {
+    min-height: 40px;
+    margin: 0;
+    font-size: 12px;
+    padding: 8px 10px;
+}
+
+#weight-progress .weight-summary {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 9px;
+    margin-top: 10px;
+    padding: 1px 2px 6px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 2px;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+#weight-progress .weight-summary::-webkit-scrollbar {
+    display: none;
+}
+
+#weight-progress .weight-summary .metric-card {
+    flex: 0 0 220px;
+    width: 220px;
+    min-width: 0;
+    min-height: 92px;
+    padding: 13px;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+}
+
+#weight-progress .weight-summary .metric-card h3 {
+    font-size: 11px;
+    line-height: 1.25;
+    margin: 0;
+}
+
+#weight-progress .weight-summary .metric-card p {
+    font-size: 19px;
+    line-height: 1.1;
+    margin-top: 7px;
+}
+
+#weight-progress .weight-chart-card {
+    margin-top: 12px;
+    padding: 14px;
+}
+
+#weight-progress .weight-history {
+    margin-top: 16px;
+}
+
+#weight-progress .weight-entry-actions button {
+    min-height: 30px;
+    padding: 5px 8px;
+    font-size: 11px;
+}
+
+#weight-progress #weight-entry-panel[hidden] {
+    display: none !important;
+}
+
+#weight-progress #weight-entry-panel:not([hidden]) {
+    display: grid;
+}
+
+@media (max-width: 520px) {
+    #weight-progress .weight-compact-fields {
+        grid-template-columns: 1fr;
+    }
+
+    #weight-progress .weight-goal-settings-body {
+        grid-template-columns: 1fr;
+    }
+
+    #weight-progress .weight-summary .metric-card {
+        flex-basis: min(76vw, 240px);
+        width: min(76vw, 240px);
+    }
+}
+
+@media (max-width: 380px) {
+    #weight-progress .weight-compact-fields {
+        gap: 7px;
+    }
+
+    #weight-progress .weight-compact-field input {
+        font-size: 13px;
+        padding: 8px;
+    }
+
+    #weight-progress .weight-compact-actions {
+        gap: 7px;
+    }
+
+    #weight-progress .weight-summary {
+        gap: 7px;
+    }
+
+    #weight-progress .weight-summary .metric-card {
+        padding: 11px;
+    }
+
+    #weight-progress .weight-summary .metric-card p {
+        font-size: 17px;
+    }
+
+    #weight-progress .weight-goal-settings-body {
+        grid-template-columns: 1fr;
+    }
+}
