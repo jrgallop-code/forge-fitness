@@ -50,6 +50,7 @@ function ensureMenuShell(card, logger) {
 
   let button = header.querySelector('.exercise-more-btn');
   let menu = header.querySelector('.exercise-options-popover');
+  const existingShell = Boolean(button && menu);
 
   if (!button) {
     button = document.createElement('button');
@@ -67,7 +68,10 @@ function ensureMenuShell(card, logger) {
     header.appendChild(menu);
   }
 
-  if (button.dataset.menuToggleBound !== 'true') {
+  // workout-logger-compact owns the click handler when it already created
+  // both controls. Binding a second handler here toggles the popover open and
+  // immediately closed on the same tap, which makes the alarm button appear dead.
+  if (!existingShell && button.dataset.menuToggleBound !== 'true') {
     button.dataset.menuToggleBound = 'true';
     button.addEventListener('click', event => {
       event.stopPropagation();
