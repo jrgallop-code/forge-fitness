@@ -1,0 +1,6 @@
+/* Beta build: hide internal nutrition coach test controls from users. */
+#weekly-coach-test-lab,
+#coach-target-sample-lab,
+#coach-mock-data-button {
+    display: none !important;
+}
