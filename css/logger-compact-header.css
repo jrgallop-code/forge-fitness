@@ -1,4 +1,10 @@
 /* Compact active-workout header. Keeps the existing timer controls/logic, but removes the bulky form-card presentation once a session is running. */
+.workout-session-logger.logger-compact-session-header {
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
 .workout-session-logger.logger-compact-session-header > .builder-heading,
 .workout-session-logger.logger-compact-session-header > .workout-session-status {
     display: none !important;
