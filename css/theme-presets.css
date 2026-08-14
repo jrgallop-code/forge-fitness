@@ -1,0 +1,271 @@
+/* Three curated Level Up appearance presets. */
+html[data-levelup-theme="level-up"] {
+    --theme-accent:#e10600;
+    --theme-accent-dark:#8b0000;
+    --theme-accent-rgb:225,6,0;
+    --theme-hero-dark:#8b0000;
+    --theme-hero-light:#e10600;
+}
+
+html[data-levelup-theme="midnight-blue"] {
+    --bg:#07101c;
+    --surface:#101a29;
+    --card:#182539;
+    --red:#3b82f6;
+    --red-dark:#1d4ed8;
+    --theme-accent:#3b82f6;
+    --theme-accent-dark:#1d4ed8;
+    --theme-accent-rgb:59,130,246;
+    --theme-hero-dark:#102a56;
+    --theme-hero-light:#2563eb;
+}
+
+html[data-levelup-theme="monochrome"] {
+    --bg:#08090b;
+    --surface:#141518;
+    --card:#202226;
+    --red:#e5e7eb;
+    --red-dark:#8b9098;
+    --theme-accent:#e5e7eb;
+    --theme-accent-dark:#8b9098;
+    --theme-accent-rgb:229,231,235;
+    --theme-hero-dark:#2e3136;
+    --theme-hero-light:#777d86;
+}
+
+html[data-levelup-theme] .hero {
+    background:linear-gradient(135deg,var(--theme-hero-dark),var(--theme-hero-light)) !important;
+}
+
+html[data-levelup-theme="midnight-blue"] body,
+html[data-levelup-theme="monochrome"] body {
+    background:var(--bg);
+}
+
+html[data-levelup-theme="midnight-blue"] .section-card,
+html[data-levelup-theme="midnight-blue"] .dashboard-card,
+html[data-levelup-theme="midnight-blue"] .more-menu-card,
+html[data-levelup-theme="midnight-blue"] .plan-builder,
+html[data-levelup-theme="midnight-blue"] .smart-question-card,
+html[data-levelup-theme="midnight-blue"] .smart-build-choice,
+html[data-levelup-theme="midnight-blue"] .logger-exercise-strip button {
+    border-color:rgba(255,255,255,.09);
+}
+
+html[data-levelup-theme="monochrome"] .primary-btn,
+html[data-levelup-theme="monochrome"] .smart-chip.selected,
+html[data-levelup-theme="monochrome"] .smart-option.selected,
+html[data-levelup-theme="monochrome"] .logger-exercise-strip button.active>span {
+    color:#0b0c0e !important;
+}
+
+html[data-levelup-theme="midnight-blue"] .logger-exercise-strip button.active,
+html[data-levelup-theme="monochrome"] .logger-exercise-strip button.active,
+html[data-levelup-theme="midnight-blue"] .exercise-warmup-btn[aria-expanded="true"],
+html[data-levelup-theme="monochrome"] .exercise-warmup-btn[aria-expanded="true"] {
+    border-color:rgba(var(--theme-accent-rgb),.62) !important;
+    background:rgba(var(--theme-accent-rgb),.10) !important;
+}
+
+html[data-levelup-theme="midnight-blue"] .session-set-row input:focus,
+html[data-levelup-theme="midnight-blue"] .session-warmup-row input:focus,
+html[data-levelup-theme="monochrome"] .session-set-row input:focus,
+html[data-levelup-theme="monochrome"] .session-warmup-row input:focus {
+    border-color:rgba(var(--theme-accent-rgb),.72) !important;
+    box-shadow:0 0 0 2px rgba(var(--theme-accent-rgb),.12) !important;
+}
+
+/* Keep semantic completion / coaching colors meaningful across all themes. */
+html[data-levelup-theme] .session-set-row.completed .complete-set-btn,
+html[data-levelup-theme] .session-warmup-row.completed .complete-warmup-btn {
+    border-color:rgba(46,204,113,.45) !important;
+    background:rgba(46,204,113,.12) !important;
+}
+html[data-levelup-theme] .session-set-row.completed .complete-set-btn::before,
+html[data-levelup-theme] .session-warmup-row.completed .complete-warmup-btn::before {
+    border-color:#69d98f !important;
+    color:#69d98f !important;
+}
+html[data-levelup-theme] .progression-prompt strong,
+html[data-levelup-theme] .progression-arrow {
+    color:#69d98f;
+}
+
+.levelup-theme-heading {
+    margin-bottom:12px;
+}
+
+.levelup-theme-presets {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:12px;
+}
+
+.levelup-theme-preset {
+    display:grid;
+    gap:10px;
+    min-width:0;
+    padding:12px;
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:15px;
+    background:var(--surface,#151515);
+    color:var(--text,#fff);
+    text-align:left;
+    cursor:pointer;
+}
+
+.levelup-theme-preset.selected {
+    border-color:rgba(var(--theme-accent-rgb,225,6,0),.72);
+    box-shadow:0 0 0 2px rgba(var(--theme-accent-rgb,225,6,0),.10);
+}
+
+.theme-preset-preview {
+    height:116px;
+    padding:11px;
+    border-radius:12px;
+    overflow:hidden;
+}
+
+.theme-preset-preview-level-up {
+    background:#080808;
+    --preview-accent:#e10600;
+    --preview-surface:#202020;
+}
+.theme-preset-preview-midnight-blue {
+    background:#07101c;
+    --preview-accent:#3b82f6;
+    --preview-surface:#182539;
+}
+.theme-preset-preview-monochrome {
+    background:#08090b;
+    --preview-accent:#e5e7eb;
+    --preview-surface:#202226;
+}
+
+.theme-preview-top,
+.theme-preview-row {
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+.theme-preview-top {
+    justify-content:space-between;
+    margin-bottom:9px;
+}
+.theme-preview-top span:first-child {
+    width:42%;
+    height:7px;
+    border-radius:999px;
+    background:var(--preview-accent);
+}
+.theme-preview-top span:last-child {
+    width:24px;
+    height:7px;
+    border-radius:999px;
+    background:rgba(255,255,255,.22);
+}
+.theme-preview-card {
+    display:grid;
+    grid-template-columns:9px 1fr;
+    gap:7px;
+    align-items:center;
+    min-height:52px;
+    margin-bottom:9px;
+    padding:9px;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:9px;
+    background:var(--preview-surface);
+}
+.theme-preview-card i {
+    grid-row:1/3;
+    width:9px;
+    height:32px;
+    border-radius:5px;
+    background:var(--preview-accent);
+}
+.theme-preview-card b {
+    display:block;
+    height:6px;
+    border-radius:999px;
+    background:rgba(255,255,255,.28);
+}
+.theme-preview-card b:last-child {
+    width:64%;
+    background:rgba(255,255,255,.13);
+}
+.theme-preview-row span {
+    flex:1;
+    height:17px;
+    border-radius:6px;
+    background:rgba(255,255,255,.08);
+}
+.theme-preview-row span:first-child {
+    background:var(--preview-accent);
+}
+
+.theme-preset-copy {
+    display:grid;
+    gap:4px;
+}
+.theme-preset-copy>small {
+    color:var(--muted,#a0a0a0);
+    font-size:11px;
+    line-height:1.35;
+}
+.theme-preset-title-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+}
+.theme-preset-title-row strong {
+    font-size:14px;
+}
+.theme-current-badge {
+    min-width:48px;
+    color:var(--red,#e10600);
+    font-size:9px;
+    font-weight:900;
+    letter-spacing:.04em;
+    text-align:right;
+    text-transform:uppercase;
+}
+html[data-levelup-theme="monochrome"] .theme-current-badge {
+    color:#e5e7eb;
+}
+
+.levelup-theme-note {
+    margin:12px 1px 0;
+    color:var(--muted,#a0a0a0);
+    font-size:10px;
+    line-height:1.45;
+}
+
+@media(max-width:720px) {
+    .levelup-theme-presets {
+        grid-template-columns:1fr;
+    }
+    .levelup-theme-preset {
+        grid-template-columns:118px minmax(0,1fr);
+        align-items:center;
+    }
+    .theme-preset-preview {
+        height:94px;
+        padding:8px;
+    }
+    .theme-preview-card {
+        min-height:39px;
+        margin-bottom:6px;
+        padding:6px;
+    }
+    .theme-preview-card i {
+        height:25px;
+    }
+}
+
+@media(max-width:390px) {
+    .levelup-theme-preset {
+        grid-template-columns:102px minmax(0,1fr);
+        padding:10px;
+    }
+}
