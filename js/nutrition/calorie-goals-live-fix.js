@@ -1,12 +1,16 @@
 import { initializeUnifiedGoalsCalories } from "./unified-goals-calories.js?v=nutrition-phase-1";
 import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=phase-calorie-gap-1";
 import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-goal-controls-1";
-import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=phase-tolerance-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=weekly-ma-coach-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
-import "./phase-rate-display.js?v=phase-goal-rate-1";
+import "./phase-rate-display.js?v=weekly-ma-coach-1";
 
 const FULL_GAP_INCREMENT = 50;
 const FIRST_STEP_INCREMENT = 25;
+const MAX_FIRST_STEP = 150;
+const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";
+const REASSESSMENT_HOLD_KEY = "level_up_phase_reassessment_hold";
+const REASSESSMENT_DAYS = 7;
 const RETIRED_TEST_KEYS = { backupWeights: "level_up_test_backup_weights", backupPhases: "level_up_test_backup_phases", active: "level_up_phase_test_active", mode: "level_up_phase_test_mode" };
 const WEIGHT_KEY = "forge_weight_entries";
 const PHASES_KEY = "level_up_nutrition_phases";
@@ -94,15 +98,52 @@ function applyPhaseDraft() {
     if (startInput && draftStartDate) startInput.value = draftStartDate;
     if (goalWeightInput && draftGoalWeight !== null) goalWeightInput.value = draftGoalWeight;
 }
+
+function phaseKey(phase) {
+    return String(phase?.id || `${phase?.goalId || "phase"}|${phase?.startDate || ""}`);
+}
+
+function getHandledCheck(phase, checkDay) {
+    if (!phase || !Number.isFinite(Number(checkDay))) return null;
+    try {
+        const state = JSON.parse(localStorage.getItem(CHECK_STATE_KEY) || "{}");
+        const record = state?.[phaseKey(phase)];
+        return Number(record?.lastHandledCheckDay) === Number(checkDay) ? record : null;
+    } catch {
+        return null;
+    }
+}
+
+function getReassessmentHold(phase, currentCalories) {
+    let hold;
+    try { hold = JSON.parse(localStorage.getItem(REASSESSMENT_HOLD_KEY) || "null"); }
+    catch { hold = null; }
+    if (!hold || hold.phaseId !== phase?.id) return null;
+    if (Math.round(Number(hold.calories)) !== Math.round(Number(currentCalories))) return null;
+    const applied = new Date(hold.appliedAt).getTime();
+    if (!Number.isFinite(applied)) return null;
+    const daysElapsed = Math.max(0, Math.floor((Date.now() - applied) / 86400000));
+    if (daysElapsed >= REASSESSMENT_DAYS) return null;
+    return { daysRemaining: REASSESSMENT_DAYS - daysElapsed };
+}
+
 function getCalorieSuggestion() {
     const phase = getActiveNutritionPhase();
     if (!phase) return { primary: "No active phase", secondary: "" };
     const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
     const metrics = getActivePhaseMetrics(phase);
     if (!Number.isFinite(currentCalories)) return { primary: "No calorie target", secondary: "" };
-    if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "On track · keep current" };
-    if (metrics.status === "NEED MORE PHASE DATA") return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Need more phase data before adjusting" };
-    if (metrics.status === "PRELIMINARY" || !metrics.recommendationReady) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Wait for the full 21-day trend" };
+
+    const hold = getReassessmentHold(phase, currentCalories);
+    if (hold) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: `Weekly adjustment applied · reassess in ${hold.daysRemaining} day${hold.daysRemaining === 1 ? "" : "s"}` };
+
+    if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: `On track · next check Day ${metrics.trend?.nextCheckDay || "--"}` };
+    if (metrics.status === "NEED MORE PHASE DATA") return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: metrics.trend?.reason === "before-first-check" ? `First calorie check on Day 14` : "Need 4 weigh-ins in each 7-day block" };
+    if (!metrics.recommendationReady) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Weekly check is not ready yet" };
+
+    const checkDay = Number(metrics.trend?.checkDay);
+    if (getHandledCheck(phase, checkDay)) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: `Day ${checkDay} check handled · next check Day ${metrics.trend?.nextCheckDay || checkDay + 7}` };
+
     const actual = Number(metrics.actualRateLbPerWeek);
     const target = Number(metrics.targetRateLbPerWeek);
     if (!Number.isFinite(actual) || !Number.isFinite(target)) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Need more phase data before adjusting" };
@@ -112,8 +153,9 @@ function getCalorieSuggestion() {
     const estimatedTarget = Math.max(1, Math.round(currentCalories + fullGap));
     let firstStep = Math.round((fullGap * 0.5) / FIRST_STEP_INCREMENT) * FIRST_STEP_INCREMENT;
     if (firstStep === 0 && fullGap !== 0) firstStep = Math.sign(fullGap) * FIRST_STEP_INCREMENT;
+    firstStep = Math.max(-MAX_FIRST_STEP, Math.min(MAX_FIRST_STEP, firstStep));
     const firstStepTarget = Math.max(1, Math.round(currentCalories + firstStep));
-    return { primary: `${estimatedTarget} kcal/day`, secondary: `Estimated gap ${formatSignedCalories(fullGap)} · First step ${formatSignedCalories(firstStep)} → ${firstStepTarget} kcal/day` };
+    return { primary: `${estimatedTarget} kcal/day`, secondary: `Weekly gap ${formatSignedCalories(fullGap)} · First step ${formatSignedCalories(firstStep)} → ${firstStepTarget} kcal/day` };
 }
 function formatSignedCalories(value) {
     const number = Number(value);
