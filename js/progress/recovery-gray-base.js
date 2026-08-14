@@ -1,14 +1,53 @@
-const CLEAN_BACK_ASSET = 'assets/recovery/back-user-source.svg?v=back-source-2';
+const CLEAN_BACK_ASSET = 'assets/recovery/back-user-source.svg?v=back-source-3';
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const BACK_OUTLINE_FILTER_ID = 'recovery-back-outline-alpha';
+
+function ensureBackOutlineFilter(svg) {
+  if (!svg || svg.querySelector(`#${BACK_OUTLINE_FILTER_ID}`)) return;
+
+  let defs = svg.querySelector('defs[data-recovery-back-outline-defs]');
+  if (!defs) {
+    defs = document.createElementNS(SVG_NS, 'defs');
+    defs.dataset.recoveryBackOutlineDefs = 'true';
+    svg.insertBefore(defs, svg.firstChild);
+  }
+
+  const filter = document.createElementNS(SVG_NS, 'filter');
+  filter.id = BACK_OUTLINE_FILTER_ID;
+  filter.setAttribute('x', '-2%');
+  filter.setAttribute('y', '-2%');
+  filter.setAttribute('width', '104%');
+  filter.setAttribute('height', '104%');
+  filter.setAttribute('color-interpolation-filters', 'sRGB');
+
+  const matrix = document.createElementNS(SVG_NS, 'feColorMatrix');
+  matrix.setAttribute('type', 'matrix');
+  matrix.setAttribute('values', [
+    '0 0 0 0 1',
+    '0 0 0 0 1',
+    '0 0 0 0 1',
+    '0.2126 0.7152 0.0722 0 0'
+  ].join(' '));
+
+  filter.appendChild(matrix);
+  defs.appendChild(filter);
+}
 
 function replaceBackArtwork(root) {
   if (!root?.matches?.('[data-recovery-body-back]')) return;
-  const image = root.querySelector('.recovery-user-back-svg image');
-  if (!image) return;
+  const svg = root.querySelector('.recovery-user-back-svg');
+  const image = svg?.querySelector('image');
+  if (!svg || !image) return;
+
+  ensureBackOutlineFilter(svg);
+
   if (image.getAttribute('href') !== CLEAN_BACK_ASSET) {
     image.setAttribute('href', CLEAN_BACK_ASSET);
     image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', CLEAN_BACK_ASSET);
   }
+
   image.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  image.setAttribute('filter', `url(#${BACK_OUTLINE_FILTER_ID})`);
 }
 
 function addGrayBases(root) {
