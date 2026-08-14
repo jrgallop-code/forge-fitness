@@ -1,6 +1,6 @@
-import { getActiveNutritionPhase } from "./nutrition-phase.js?v=phase-tolerance-1";
+import { getActiveNutritionPhase } from "./nutrition-phase.js?v=weekly-ma-coach-1";
 
-const REASSESSMENT_DAYS = 21;
+const REASSESSMENT_DAYS = 7;
 const REASSESSMENT_HOLD_KEY = "level_up_phase_reassessment_hold";
 let refreshQueued = false;
 
@@ -41,9 +41,9 @@ function getHold() {
 function refresh() {
     const hold = getHold();
     if (!hold) return;
-    const copy = `First step applied · reassess in ${hold.daysRemaining} day${hold.daysRemaining === 1 ? "" : "s"}`;
+    const copy = `Weekly adjustment applied · reassess in ${hold.daysRemaining} day${hold.daysRemaining === 1 ? "" : "s"}`;
     const targetCopy = Number.isFinite(hold.estimatedTargetCalories)
-        ? `Estimated target before reassessment: ${Math.round(hold.estimatedTargetCalories)} kcal/day`
+        ? `Estimated full target: ${Math.round(hold.estimatedTargetCalories)} kcal/day`
         : copy;
 
     const nutritionCard = document.querySelector("[data-phase-calorie-suggestion]");
@@ -54,8 +54,8 @@ function refresh() {
     setText(document.getElementById("weight-calorie-suggestion-total"), `${copy}${Number.isFinite(hold.estimatedTargetCalories) ? ` · ${targetCopy}` : ""}`);
 
     const checkIn = document.getElementById("goal-check-in-card");
-    if (checkIn) {
-        setText(document.getElementById("goal-check-in-message"), "Hold the current calorie target long enough to measure the response before making another adjustment.");
+    if (checkIn && checkIn.dataset.weeklyCoach !== "1") {
+        setText(document.getElementById("goal-check-in-message"), "Hold the current calorie target for 7 days before another adjustment.");
         setText(document.getElementById("goal-check-in-suggested"), `Current target: ${hold.calories} kcal/day · ${copy}.${Number.isFinite(hold.estimatedTargetCalories) ? ` ${targetCopy}.` : ""}`);
         const apply = document.getElementById("goal-check-in-apply");
         if (apply && !apply.hidden) apply.hidden = true;
