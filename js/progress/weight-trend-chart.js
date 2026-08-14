@@ -1,5 +1,6 @@
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 const GOAL_WEIGHT_STORAGE_KEY = "level_up_goal_weight";
+const NUTRITION_PHASES_STORAGE_KEY = "level_up_nutrition_phases";
 const DAY_MS = 86400000;
 const TREND_GREEN = "#4ade80";
 
@@ -20,6 +21,18 @@ function readWeightEntries() {
 }
 
 function readGoalWeight() {
+    try {
+        const phases = JSON.parse(localStorage.getItem(NUTRITION_PHASES_STORAGE_KEY) || "[]");
+        if (Array.isArray(phases)) {
+            const activePhase = [...phases].reverse().find(phase => phase && !phase.endDate);
+            const phaseValue = Number(activePhase?.goalWeight ?? activePhase?.targetWeight);
+            if (Number.isFinite(phaseValue) && phaseValue > 0) return phaseValue;
+        }
+    }
+    catch {
+        // Fall through to the legacy standalone goal for older saved data.
+    }
+
     const value = Number(localStorage.getItem(GOAL_WEIGHT_STORAGE_KEY));
     return Number.isFinite(value) && value > 0 ? value : null;
 }
@@ -258,5 +271,7 @@ document.addEventListener("click", event => {
     }
 });
 
+window.addEventListener("levelup:nutrition-updated", scheduleEnhance);
+window.addEventListener("levelup:nutrition-phase-updated", scheduleEnhance);
 window.addEventListener("resize", scheduleEnhance);
 scheduleEnhance();
