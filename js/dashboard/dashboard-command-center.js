@@ -1,3 +1,5 @@
+import "./dashboard-recovery-card.js?v=dashboard-recovery-preview-1";
+
 const SESSION_KEY = "forge_workout_sessions";
 const PLAN_KEY = "forge_workout_plans";
 const SCHEDULE_KEY = "level_up_workout_schedule_v1";
