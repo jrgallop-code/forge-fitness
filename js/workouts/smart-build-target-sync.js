@@ -1,6 +1,7 @@
 import { getTrainingPreferences } from "../core/training-preferences.js?v=onboarding-1";
 
 const MUSCLES = ["Chest", "Back", "Shoulders", "Biceps", "Triceps", "Quads", "Hamstrings", "Glutes", "Calves", "Core"];
+const MAJOR_MUSCLES = new Set(["Chest", "Back", "Quads", "Hamstrings"]);
 const DISPLAY_NAME = { Core: "Abs / Core" };
 const PRIORITY_LIMIT = 3;
 
@@ -141,7 +142,7 @@ function syncProgrammingPreview() {
   if (helper?.classList.contains("smart-helper")) {
     const duration = state.duration === 90 ? "90+" : state.duration;
     const targetExercises = state.duration <= 30 ? 4 : state.duration <= 45 ? 5 : state.duration <= 60 ? 6 : 7;
-    setText(helper, `For ${duration}-minute sessions, Smart Build targets about ${targetExercises} exercises with a 4-exercise floor. Values above are weekly effective-set targets, so compound exercises can contribute partial credit to secondary muscles and direct-set totals may be lower.`);
+    setText(helper, `For ${duration}-minute sessions, Smart Build targets about ${targetExercises} exercises with a 4-exercise floor. Values above are weekly effective-set targets rather than mandatory minimums; compound exercises can contribute partial credit and lower-priority muscles may finish modestly below target when time is better spent on priorities and balanced session structure.`);
   }
 }
 
@@ -159,18 +160,25 @@ function parseVolumeRow(row) {
   };
 }
 
+function minimumAcceptableVolume(item) {
+  if (item.priority) {
+    return Math.max(0, item.target - 2);
+  }
+
+  if (MAJOR_MUSCLES.has(item.muscle)) {
+    return Math.max(6, item.target - 3, item.target * 0.7);
+  }
+
+  return Math.min(item.target, Math.max(4, item.target * 0.5));
+}
+
 function getUnderTargetRows(review) {
   const grid = review.querySelector(".smart-volume-grid.effective");
   if (!grid) return [];
   return [...grid.children]
     .map(parseVolumeRow)
     .filter(Boolean)
-    .filter(item => {
-      const minimum = item.priority
-        ? Math.max(0, item.target - 1)
-        : Math.max(item.target * 0.8, item.target - 2);
-      return item.effective + 0.01 < minimum;
-    });
+    .filter(item => item.effective + 0.01 < minimumAcceptableVolume(item));
 }
 
 function syncGeneratedValidation() {
@@ -190,7 +198,7 @@ function syncGeneratedValidation() {
   let note = review.querySelector("[data-smart-target-validation-note]");
   if (underTarget.length) {
     const names = underTarget.map(item => `${displayMuscle(item.muscle)} ${item.effective}/${item.target}`).join(", ");
-    const noteText = `Volume check: ${names} effective sets are materially below the selected weekly target. Regenerate or adjust session time/equipment before saving.`;
+    const noteText = `Volume check: ${names} effective sets are substantially below the minimum practical stimulus for this program. Regenerate or adjust session time/equipment before saving.`;
     if (!note) {
       note = document.createElement("p");
       note.className = "smart-helper";
@@ -207,7 +215,7 @@ function syncGeneratedValidation() {
     }
     if (secondCard) {
       setText(secondCard.querySelector("span"), "Volume alignment");
-      setText(secondCard.querySelector("strong"), "Below target");
+      setText(secondCard.querySelector("strong"), "Substantially low");
     }
 
     saveButton.disabled = true;
@@ -227,8 +235,8 @@ function syncGeneratedValidation() {
       setText(firstCard.querySelector("strong"), "Passed ✓");
     }
     if (secondCard) {
-      setText(secondCard.querySelector("span"), "Session structure");
-      setText(secondCard.querySelector("strong"), "4+ exercises protected");
+      setText(secondCard.querySelector("span"), "Volume alignment");
+      setText(secondCard.querySelector("strong"), "Within practical range");
     }
     saveButton.disabled = false;
     setText(saveButton, "Save Plan");
