@@ -107,7 +107,7 @@ document.addEventListener("click", event => {
   }
 }, true);
 
-document.addEventListener("levelup:training-preferences-updated", event => {
+window.addEventListener("levelup:training-preferences-updated", event => {
   const value = event.detail?.splitPreference;
   if (ALLOWED.has(value)) {
     selected = value;
