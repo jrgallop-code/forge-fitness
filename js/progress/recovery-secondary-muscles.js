@@ -5,7 +5,7 @@ const SESSION_KEY = 'forge_workout_sessions';
 const FULL_RECOVERY_HOURS = 72;
 const SECONDARY_IMPACT = 0.5;
 const SET_EQUIVALENTS_FOR_FULL_FATIGUE = 3;
-const DETAIL_GROUPS = [
+export const RECOVERY_DETAIL_GROUPS = [
   ['Chest','Chest'],['Back','Back'],['Shoulders','Shoulders'],['Rear Delts','Rear Delts'],
   ['Biceps','Biceps'],['Triceps','Triceps'],['Forearms','Forearms'],['Abs','Core'],
   ['Quads','Quads'],['Hamstrings','Hamstrings'],['Glutes','Glutes'],['Calves','Calves']
@@ -100,7 +100,7 @@ function exerciseImpacts(definition, exercise) {
   return impacts;
 }
 
-function buildStates() {
+export function getRecoveryStates() {
   const exposures = new Map();
   getSessions().forEach(session => {
     const time = sessionTrainingTime(session);
@@ -150,6 +150,10 @@ function buildStates() {
   return states;
 }
 
+export function getReadyRecoveryCount(states = getRecoveryStates()) {
+  return RECOVERY_DETAIL_GROUPS.filter(([,group]) => states.get(group)?.percent >= 100).length;
+}
+
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 }
@@ -168,7 +172,7 @@ function colorForPercent(percent) {
 
 function applySecondaryRecovery() {
   if (!recoveryUiPresent()) return;
-  const states = buildStates();
+  const states = getRecoveryStates();
   document.querySelectorAll('[data-recovery-muscle]').forEach(node => {
     const state = states.get(node.dataset.recoveryMuscle);
     node.classList.toggle('no-data', !state);
@@ -177,14 +181,14 @@ function applySecondaryRecovery() {
     node.dataset.recoveryPercent = String(state?.percent ?? 100);
   });
   document.querySelectorAll('[data-recovery-detail-list]').forEach(list => {
-    list.innerHTML = DETAIL_GROUPS.map(([label,group]) => {
+    list.innerHTML = RECOVERY_DETAIL_GROUPS.map(([label,group]) => {
       const state = states.get(group);
       if (!state) return `<article class="recovery-detail-row no-data"><div class="recovery-mini"></div><div><strong>${escapeHtml(label)}</strong><span>No recent exercises</span></div><b>—</b></article>`;
       return `<article class="recovery-detail-row" style="--recovery-percent:${state.percent}%"><div class="recovery-mini" style="--recovery-fill:${colorForPercent(state.percent)}"></div><div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(state.details.join(' • '))}</span><small>${state.status}</small><div class="recovery-row-progress"><span></span></div></div><b>${state.percent}%</b></article>`;
     }).join('');
   });
   document.querySelectorAll('#recovery-fresh-count').forEach(node => {
-    node.textContent = String(DETAIL_GROUPS.filter(([,group]) => states.get(group)?.percent >= 100).length);
+    node.textContent = String(getReadyRecoveryCount(states));
   });
 }
 
