@@ -95,7 +95,8 @@ function patch() {
       const exercise = getExerciseById(row.querySelector(".exercise-select")?.value);
       if (!exercise) return;
 
-      row.classList.add("session-exercise-card");
+      row.classList.add("manual-setup-card");
+      row.classList.remove("session-exercise-card", "active-exercise-card");
       row.classList.toggle("manual-setup-current", ei === index);
       if (row.dataset.setupDay !== String(di)) row.dataset.setupDay = String(di);
       if (row.dataset.setupIndex !== String(ei)) row.dataset.setupIndex = String(ei);
@@ -103,7 +104,7 @@ function patch() {
       let head = row.querySelector(":scope>.manual-setup-head");
       if (!head) {
         head = document.createElement("div");
-        head.className = "manual-setup-head compact-exercise-header";
+        head.className = "manual-setup-head";
         head.innerHTML = '<div class="manual-setup-copy"><h4></h4><small></small></div><button class="secondary-btn" type="button" data-manual-replace>Swap</button>';
         row.insertAdjacentElement("afterbegin", head);
       }
@@ -117,7 +118,7 @@ function patch() {
       let target = row.querySelector(":scope>.manual-setup-target");
       if (!target) {
         target = document.createElement("p");
-        target.className = "manual-setup-target session-target compact-target";
+        target.className = "manual-setup-target";
         head.insertAdjacentElement("afterend", target);
       }
 
@@ -134,7 +135,7 @@ function patch() {
         let stepper = row.querySelector(":scope>.manual-setup-sets");
         if (!stepper) {
           stepper = document.createElement("div");
-          stepper.className = "manual-setup-sets routine-set-editor";
+          stepper.className = "manual-setup-sets";
           stepper.innerHTML = '<button class="secondary-btn" type="button" data-setup-minus>− Set</button><strong class="manual-setup-set-count"></strong><button class="primary-btn" type="button" data-setup-plus>+ Set</button>';
           target.insertAdjacentElement("afterend", stepper);
         }
@@ -187,18 +188,13 @@ document.addEventListener("click", event => {
     const ei = Number(row?.dataset.setupIndex);
     if (Number.isFinite(di)) currentByDay.set(di, Math.max(0, ei - 1));
     queueMicrotask(queue);
+  } else if (button.matches(".add-exercise-btn,#add-day-btn")) {
+    queueMicrotask(queue);
   }
 });
 
 document.addEventListener("change", event => {
-  if (event.target.matches?.(".exercise-reps,.exercise-sets,.exercise-select")) queue();
+  if (event.target.matches?.(".exercise-reps,.exercise-sets,.exercise-select,input[type='checkbox']")) queue();
 });
-
-const content = document.getElementById("content");
-if (content) {
-  new MutationObserver(mutations => {
-    if (mutations.some(m => m.addedNodes.length || m.removedNodes.length)) queue();
-  }).observe(content, { childList: true, subtree: true });
-}
 
 queue();
