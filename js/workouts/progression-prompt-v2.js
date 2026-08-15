@@ -242,9 +242,9 @@ function renderCard(card) {
   }
 
   const allAtTop = completedSets.every(set => Number(set.reps) >= repRange.upper);
-  const anyExceeded = completedSets.some(set => Number(set.reps) > repRange.upper);
+  const canIncrease = completedSets.length >= 2 && allAtTop;
 
-  if (!allAtTop && !anyExceeded) {
+  if (!canIncrease) {
     const belowTarget = completedSets.filter(set => Number(set.reps) < repRange.lower);
     const majorityBelow = belowTarget.length > completedSets.length / 2;
     if (!majorityBelow) {
@@ -291,11 +291,8 @@ function renderCard(card) {
     return;
   }
   const plannedCount = Array.isArray(state.sets) ? state.sets.length : completedSets.length;
-  const partial = completedSets.length < plannedCount ? ` with ${completedSets.length} of ${plannedCount} sets completed` : '';
-  const maxReps = Math.max(...completedSets.map(set => Number(set.reps) || 0));
-  const repText = anyExceeded
-    ? `you exceeded the ${repRange.upper}-rep target and reached ${maxReps} reps`
-    : `all completed sets reached at least ${repRange.upper} reps`;
+  const partial = completedSets.length < plannedCount ? ` with ${completedSets.length} of ${plannedCount} planned sets completed` : '';
+  const repText = `all ${completedSets.length} completed sets reached at least ${repRange.upper} reps`;
   const increaseRange = range.minimumIncrease === range.maximumIncrease
     ? `${formatLoad(range.minimumIncrease)} lb`
     : `${formatLoad(range.minimumIncrease)}–${formatLoad(range.maximumIncrease)} lb`;
@@ -309,7 +306,7 @@ function renderCard(card) {
     <div>
       <strong>Increase weight this session</strong>
       <p>Last workout ${repText} at ${formatLoad(currentWeight)} lb${partial}. Recommended increase: <b>${increaseRange}</b>. Suggested load: <b>${loadRange}</b>.</p>
-      <small>Start at the lower end of the range to see how it feels. The upper end is the largest practical equipment increment within 11%.</small>
+      <small>Blank planned sets do not block progression. Level Up requires at least two completed working sets, and every completed set must reach the top of the programmed rep range before recommending an increase.</small>
     </div>
   `;
   prompt.hidden = false;
