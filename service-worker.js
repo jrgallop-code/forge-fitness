@@ -4,14 +4,21 @@ self.addEventListener("notificationclick", event => {
         clients.matchAll({
             type: "window",
             includeUncontrolled: true
-        }).then(windows => {
+        }).then(async windows => {
             const existing =
                 windows.find(client =>
                     "focus" in client
                 );
-            return existing
-                ? existing.focus()
-                : clients.openWindow("./");
+
+            if (existing) {
+                await existing.focus();
+                existing.postMessage({
+                    type: "levelup:open-active-workout"
+                });
+                return existing;
+            }
+
+            return clients.openWindow("./?resumeWorkout=1");
         })
     );
 });
