@@ -5,7 +5,7 @@ import {
 
 const FIRST_CHECK_DAY = 14;
 let refreshScheduled = false;
-let refreshGeneration = 0;
+let refreshAgain = false;
 
 function formatRate(value) {
     const number = Number(value);
@@ -87,33 +87,28 @@ function refresh() {
     syncPreliminaryCheckIn(metrics);
 }
 
-function runStabilizedRefresh(generation) {
-    if (generation !== refreshGeneration) return;
+function runStabilizedRefresh() {
     refresh();
-
+    window.setTimeout(refresh, 40);
+    window.setTimeout(refresh, 120);
     window.setTimeout(() => {
-        if (generation !== refreshGeneration) return;
-        refresh();
-    }, 40);
-
-    window.setTimeout(() => {
-        if (generation !== refreshGeneration) return;
-        refresh();
-    }, 120);
-
-    window.setTimeout(() => {
-        if (generation !== refreshGeneration) return;
         refresh();
         refreshScheduled = false;
+        if (refreshAgain) {
+            refreshAgain = false;
+            scheduleRefresh();
+        }
     }, 260);
 }
 
 function scheduleRefresh() {
-    refreshGeneration += 1;
-    const generation = refreshGeneration;
-    if (refreshScheduled) return;
+    if (refreshScheduled) {
+        refreshAgain = true;
+        return;
+    }
     refreshScheduled = true;
-    window.requestAnimationFrame(() => runStabilizedRefresh(generation));
+    refreshAgain = false;
+    window.requestAnimationFrame(runStabilizedRefresh);
 }
 
 const content = document.getElementById("content");
