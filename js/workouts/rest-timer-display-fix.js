@@ -1,4 +1,5 @@
 import "./rest-alarm-phase1.js?v=rest-alarm-phase1-1";
+import { openActiveWorkout } from "./workout-session.js?v=workout-session-6";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = 'level_up_active_workout';
 
@@ -81,5 +82,10 @@ document.addEventListener('click', event => {
 window.addEventListener('focus', syncVisibleTimer);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) syncVisibleTimer();
+});
+navigator.serviceWorker?.addEventListener('message', event => {
+  if (event.data?.type !== 'levelup:open-active-workout') return;
+  openActiveWorkout();
+  setTimeout(syncVisibleTimer, 60);
 });
 syncVisibleTimer();
