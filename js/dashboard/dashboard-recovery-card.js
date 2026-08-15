@@ -4,6 +4,7 @@ const SESSION_KEY = "forge_workout_sessions";
 const FULL_RECOVERY_HOURS = 72;
 const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-2";
 const BACK_ASSET = "assets/recovery/back-view.svg?v=recovery-back-vector-1";
+const STYLESHEET = "css/dashboard-recovery-card.css?v=dashboard-recovery-preview-1";
 
 const FRONT_REGIONS = {
     Shoulders: ["muscle_front_009", "muscle_front_010"],
@@ -64,6 +65,15 @@ const BACK_REGIONS = {
 };
 
 let queued = false;
+
+function installStyles() {
+    if (document.querySelector('link[data-dashboard-recovery-card-style]')) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = STYLESHEET;
+    link.dataset.dashboardRecoveryCardStyle = "true";
+    document.head.appendChild(link);
+}
 
 function readSessions() {
     try {
@@ -285,4 +295,5 @@ window.addEventListener("storage", event => {
     if (event.key === SESSION_KEY) queueEnsureRecoveryCard();
 });
 
+installStyles();
 queueEnsureRecoveryCard();
