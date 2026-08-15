@@ -28,105 +28,177 @@ const css = `
 @media(max-width:520px){#plan-builder.manual-catalogue .workout-day-card{padding:9px}#plan-builder.manual-catalogue .exercise-builder-row.manual-setup-current{padding:11px 8px}#plan-builder.manual-catalogue .exercise-prescription:not(.cardio-prescription)>label:last-child{grid-template-columns:1fr;gap:5px}}
 `;
 
-if(!document.getElementById("manual-plan-setup-style")){
-  const style=document.createElement("style");style.id="manual-plan-setup-style";style.textContent=css;document.head.appendChild(style);
+if (!document.getElementById("manual-plan-setup-style")) {
+  const style = document.createElement("style");
+  style.id = "manual-plan-setup-style";
+  style.textContent = css;
+  document.head.appendChild(style);
 }
 
-const builder=()=>document.getElementById("plan-builder");
-const days=()=>[...document.querySelectorAll("#workout-days>.workout-day-card")];
-const day=i=>days()[i]||null;
-const rows=i=>[...day(i)?.querySelectorAll(".exercise-builder-row")||[]];
-const timeTarget=value=>/\b(sec|secs|second|seconds|min|mins|minute|minutes)\b/i.test(String(value||""));
+const builder = () => document.getElementById("plan-builder");
+const days = () => [...document.querySelectorAll("#workout-days>.workout-day-card")];
+const day = i => days()[i] || null;
+const rows = i => [...day(i)?.querySelectorAll(".exercise-builder-row") || []];
+const timeTarget = value => /\b(sec|secs|second|seconds|min|mins|minute|minutes)\b/i.test(String(value || ""));
+const setText = (el, value) => {
+  const next = String(value ?? "");
+  if (el && el.textContent !== next) el.textContent = next;
+};
 
-function queue(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;patch()})}
+function queue() {
+  if (queued) return;
+  queued = true;
+  requestAnimationFrame(() => {
+    queued = false;
+    patch();
+  });
+}
 
-function patch(){
-  const root=builder();
-  if(!root?.classList.contains("manual-catalogue")||root.hidden||document.getElementById("workout-days")?.hidden)return;
-  const heading=root.querySelector(".builder-heading h3");
-  const copy=root.querySelector(".builder-heading p");
-  if(heading)heading.textContent="Set Up Your Workout Plan";
-  if(copy)copy.textContent="Adjust each exercise using the same compact layout as your workout logger.";
+function patch() {
+  const root = builder();
+  const workoutDays = document.getElementById("workout-days");
+  if (!root?.classList.contains("manual-catalogue") || root.hidden || workoutDays?.hidden) return;
 
-  days().forEach((card,di)=>{
-    const list=card.querySelector(".exercise-builder-list");
-    const all=rows(di);
-    const previous=countByDay.get(di);
-    if(previous!==undefined&&all.length>previous)currentByDay.set(di,Math.min(previous,all.length-1));
-    countByDay.set(di,all.length);
-    if(!all.length){card.querySelector(".manual-setup-carousel")?.remove();return}
+  setText(root.querySelector(".builder-heading h3"), "Set Up Your Workout Plan");
+  setText(root.querySelector(".builder-heading p"), "Adjust each exercise using the same compact layout as your workout logger.");
 
-    let index=Number(currentByDay.get(di));
-    if(!Number.isFinite(index))index=0;
-    index=Math.max(0,Math.min(index,all.length-1));
-    currentByDay.set(di,index);
+  days().forEach((card, di) => {
+    const list = card.querySelector(".exercise-builder-list");
+    const all = rows(di);
+    const previous = countByDay.get(di);
+    if (previous !== undefined && all.length > previous) currentByDay.set(di, Math.min(previous, all.length - 1));
+    countByDay.set(di, all.length);
 
-    let nav=card.querySelector(".manual-setup-carousel");
-    if(!nav){
-      nav=document.createElement("div");
-      nav.className="exercise-carousel-controls manual-setup-carousel";
-      nav.innerHTML='<button class="secondary-btn" type="button" data-setup-prev>← Previous</button><span class="exercise-carousel-position"><strong data-setup-position></strong><small data-setup-name></small></span><button class="secondary-btn" type="button" data-setup-next>Next →</button>';
-      list?.insertAdjacentElement("beforebegin",nav);
+    if (!all.length) {
+      card.querySelector(".manual-setup-carousel")?.remove();
+      return;
     }
-    nav.dataset.day=String(di);
-    nav.querySelector("[data-setup-position]").textContent=`${index+1} of ${all.length}`;
-    nav.querySelector("[data-setup-prev]").disabled=index===0;
-    nav.querySelector("[data-setup-next]").disabled=index===all.length-1;
 
-    all.forEach((row,ei)=>{
-      const exercise=getExerciseById(row.querySelector(".exercise-select")?.value);
-      if(!exercise)return;
+    let index = Number(currentByDay.get(di));
+    if (!Number.isFinite(index)) index = 0;
+    index = Math.max(0, Math.min(index, all.length - 1));
+    currentByDay.set(di, index);
+
+    let nav = card.querySelector(".manual-setup-carousel");
+    if (!nav) {
+      nav = document.createElement("div");
+      nav.className = "exercise-carousel-controls manual-setup-carousel";
+      nav.innerHTML = '<button class="secondary-btn" type="button" data-setup-prev>← Previous</button><span class="exercise-carousel-position"><strong data-setup-position></strong><small data-setup-name></small></span><button class="secondary-btn" type="button" data-setup-next>Next →</button>';
+      list?.insertAdjacentElement("beforebegin", nav);
+    }
+    if (nav.dataset.day !== String(di)) nav.dataset.day = String(di);
+    setText(nav.querySelector("[data-setup-position]"), `${index + 1} of ${all.length}`);
+    nav.querySelector("[data-setup-prev]").disabled = index === 0;
+    nav.querySelector("[data-setup-next]").disabled = index === all.length - 1;
+
+    all.forEach((row, ei) => {
+      const exercise = getExerciseById(row.querySelector(".exercise-select")?.value);
+      if (!exercise) return;
+
       row.classList.add("session-exercise-card");
-      row.classList.toggle("manual-setup-current",ei===index);
-      row.dataset.setupDay=String(di);row.dataset.setupIndex=String(ei);
+      row.classList.toggle("manual-setup-current", ei === index);
+      if (row.dataset.setupDay !== String(di)) row.dataset.setupDay = String(di);
+      if (row.dataset.setupIndex !== String(ei)) row.dataset.setupIndex = String(ei);
 
-      let head=row.querySelector(":scope>.manual-setup-head");
-      if(!head){
-        head=document.createElement("div");head.className="manual-setup-head compact-exercise-header";
-        head.innerHTML='<div class="manual-setup-copy"><h4></h4><small></small></div><button class="secondary-btn" type="button" data-manual-replace>Swap</button>';
-        row.insertAdjacentElement("afterbegin",head);
+      let head = row.querySelector(":scope>.manual-setup-head");
+      if (!head) {
+        head = document.createElement("div");
+        head.className = "manual-setup-head compact-exercise-header";
+        head.innerHTML = '<div class="manual-setup-copy"><h4></h4><small></small></div><button class="secondary-btn" type="button" data-manual-replace>Swap</button>';
+        row.insertAdjacentElement("afterbegin", head);
       }
-      head.querySelector("h4").textContent=exercise.name;
-      head.querySelector("small").textContent=`${exercise.muscleGroup||"Other"} · ${exercise.equipment||"Equipment not specified"}`;
-      const swap=head.querySelector("[data-manual-replace]");swap.dataset.day=String(di);swap.dataset.index=String(ei);
-      if(ei===index)nav.querySelector("[data-setup-name]").textContent=exercise.name;
+      setText(head.querySelector("h4"), exercise.name);
+      setText(head.querySelector("small"), `${exercise.muscleGroup || "Other"} · ${exercise.equipment || "Equipment not specified"}`);
+      const swap = head.querySelector("[data-manual-replace]");
+      if (swap.dataset.day !== String(di)) swap.dataset.day = String(di);
+      if (swap.dataset.index !== String(ei)) swap.dataset.index = String(ei);
+      if (ei === index) setText(nav.querySelector("[data-setup-name]"), exercise.name);
 
-      let target=row.querySelector(":scope>.manual-setup-target");
-      if(!target){target=document.createElement("p");target.className="manual-setup-target session-target compact-target";head.insertAdjacentElement("afterend",target)}
-      const setInput=row.querySelector(".exercise-sets");
-      const repInput=row.querySelector(".exercise-reps");
-      if(exercise.trackingType==="notes"){
-        target.textContent="Cardio session";row.querySelector(":scope>.manual-setup-sets")?.remove();
-      }else{
-        const setCount=Math.max(1,Number(setInput?.value)||Number(exercise.defaultSets)||3);
-        const rep=repInput?.value||exercise.recommendedReps||"8-12";
-        target.textContent=`${setCount} ${setCount===1?"set":"sets"} × ${timeTarget(rep)?rep:`${rep} reps`}`;
-        let stepper=row.querySelector(":scope>.manual-setup-sets");
-        if(!stepper){stepper=document.createElement("div");stepper.className="manual-setup-sets routine-set-editor";stepper.innerHTML='<button class="secondary-btn" type="button" data-setup-minus>− Set</button><strong class="manual-setup-set-count"></strong><button class="primary-btn" type="button" data-setup-plus>+ Set</button>';target.insertAdjacentElement("afterend",stepper)}
-        stepper.querySelector(".manual-setup-set-count").textContent=`${setCount} ${setCount===1?"set":"sets"}`;
-        stepper.querySelector("[data-setup-minus]").disabled=setCount<=1;
+      let target = row.querySelector(":scope>.manual-setup-target");
+      if (!target) {
+        target = document.createElement("p");
+        target.className = "manual-setup-target session-target compact-target";
+        head.insertAdjacentElement("afterend", target);
       }
-      const guide=row.querySelector(":scope>.builder-exercise-guide");if(guide)guide.textContent="View Form Guide";
-      const remove=row.querySelector(":scope>.remove-exercise-btn");if(remove)remove.textContent="Remove Exercise";
+
+      const setInput = row.querySelector(".exercise-sets");
+      const repInput = row.querySelector(".exercise-reps");
+      if (exercise.trackingType === "notes") {
+        setText(target, "Cardio session");
+        row.querySelector(":scope>.manual-setup-sets")?.remove();
+      } else {
+        const setCount = Math.max(1, Number(setInput?.value) || Number(exercise.defaultSets) || 3);
+        const rep = repInput?.value || exercise.recommendedReps || "8-12";
+        setText(target, `${setCount} ${setCount === 1 ? "set" : "sets"} × ${timeTarget(rep) ? rep : `${rep} reps`}`);
+
+        let stepper = row.querySelector(":scope>.manual-setup-sets");
+        if (!stepper) {
+          stepper = document.createElement("div");
+          stepper.className = "manual-setup-sets routine-set-editor";
+          stepper.innerHTML = '<button class="secondary-btn" type="button" data-setup-minus>− Set</button><strong class="manual-setup-set-count"></strong><button class="primary-btn" type="button" data-setup-plus>+ Set</button>';
+          target.insertAdjacentElement("afterend", stepper);
+        }
+        setText(stepper.querySelector(".manual-setup-set-count"), `${setCount} ${setCount === 1 ? "set" : "sets"}`);
+        stepper.querySelector("[data-setup-minus]").disabled = setCount <= 1;
+      }
+
+      setText(row.querySelector(":scope>.builder-exercise-guide"), "View Form Guide");
+      setText(row.querySelector(":scope>.remove-exercise-btn"), "Remove Exercise");
     });
   });
 }
 
-function move(button,delta){const di=Number(button.closest(".manual-setup-carousel")?.dataset.day);const all=rows(di);if(!all.length)return;let index=Number(currentByDay.get(di))||0;currentByDay.set(di,Math.max(0,Math.min(index+delta,all.length-1)));queue()}
-function sets(button,delta){const input=button.closest(".exercise-builder-row")?.querySelector(".exercise-sets");if(!input)return;input.value=String(Math.max(1,Math.min(10,(Number(input.value)||1)+delta)));input.dispatchEvent(new Event("change",{bubbles:true}));queue()}
+function move(button, delta) {
+  const di = Number(button.closest(".manual-setup-carousel")?.dataset.day);
+  const all = rows(di);
+  if (!all.length) return;
+  const index = Number(currentByDay.get(di)) || 0;
+  currentByDay.set(di, Math.max(0, Math.min(index + delta, all.length - 1)));
+  queue();
+}
 
-document.addEventListener("click",event=>{
-  const button=event.target.closest("button");if(!button)return;
-  if(button.matches("[data-setup-prev]")){event.preventDefault();move(button,-1)}
-  else if(button.matches("[data-setup-next]")){event.preventDefault();move(button,1)}
-  else if(button.matches("[data-setup-minus]")){event.preventDefault();sets(button,-1)}
-  else if(button.matches("[data-setup-plus]")){event.preventDefault();sets(button,1)}
-  else if(button.matches(".remove-exercise-btn")){
-    const row=button.closest(".exercise-builder-row");const di=Number(row?.dataset.setupDay);const ei=Number(row?.dataset.setupIndex);
-    if(Number.isFinite(di))currentByDay.set(di,Math.max(0,ei-1));queueMicrotask(queue);
+function changeSets(button, delta) {
+  const input = button.closest(".exercise-builder-row")?.querySelector(".exercise-sets");
+  if (!input) return;
+  input.value = String(Math.max(1, Math.min(10, (Number(input.value) || 1) + delta)));
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+  queue();
+}
+
+document.addEventListener("click", event => {
+  const button = event.target.closest("button");
+  if (!button) return;
+
+  if (button.matches("[data-setup-prev]")) {
+    event.preventDefault();
+    move(button, -1);
+  } else if (button.matches("[data-setup-next]")) {
+    event.preventDefault();
+    move(button, 1);
+  } else if (button.matches("[data-setup-minus]")) {
+    event.preventDefault();
+    changeSets(button, -1);
+  } else if (button.matches("[data-setup-plus]")) {
+    event.preventDefault();
+    changeSets(button, 1);
+  } else if (button.matches(".remove-exercise-btn")) {
+    const row = button.closest(".exercise-builder-row");
+    const di = Number(row?.dataset.setupDay);
+    const ei = Number(row?.dataset.setupIndex);
+    if (Number.isFinite(di)) currentByDay.set(di, Math.max(0, ei - 1));
+    queueMicrotask(queue);
   }
 });
 
-document.addEventListener("change",event=>{if(event.target.matches?.(".exercise-reps,.exercise-sets,.exercise-select"))queue()});
-const content=document.getElementById("content");if(content)new MutationObserver(queue).observe(content,{childList:true,subtree:true});
+document.addEventListener("change", event => {
+  if (event.target.matches?.(".exercise-reps,.exercise-sets,.exercise-select")) queue();
+});
+
+const content = document.getElementById("content");
+if (content) {
+  new MutationObserver(mutations => {
+    if (mutations.some(m => m.addedNodes.length || m.removedNodes.length)) queue();
+  }).observe(content, { childList: true, subtree: true });
+}
+
 queue();
