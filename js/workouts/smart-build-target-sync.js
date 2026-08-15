@@ -2,6 +2,7 @@ import { getTrainingPreferences } from "../core/training-preferences.js?v=onboar
 
 const MUSCLES = ["Chest", "Back", "Shoulders", "Biceps", "Triceps", "Quads", "Hamstrings", "Glutes", "Calves", "Core"];
 const MAJOR_MUSCLES = new Set(["Chest", "Back", "Quads", "Hamstrings"]);
+const OPTIONAL_WHEN_NOT_PRIORITY = new Set(["Calves", "Core"]);
 const DISPLAY_NAME = { Core: "Abs / Core" };
 const PRIORITY_LIMIT = 3;
 
@@ -142,7 +143,7 @@ function syncProgrammingPreview() {
   if (helper?.classList.contains("smart-helper")) {
     const duration = state.duration === 90 ? "90+" : state.duration;
     const targetExercises = state.duration <= 30 ? 4 : state.duration <= 45 ? 5 : state.duration <= 60 ? 6 : 7;
-    setText(helper, `For ${duration}-minute sessions, Smart Build targets about ${targetExercises} exercises with a 4-exercise floor. Values above are weekly effective-set targets rather than mandatory minimums; compound exercises can contribute partial credit and lower-priority muscles may finish modestly below target when time is better spent on priorities and balanced session structure.`);
+    setText(helper, `For ${duration}-minute sessions, Smart Build targets about ${targetExercises} exercises with a 4-exercise floor. Values above are weekly effective-set targets rather than mandatory minimums; compound exercises can contribute partial credit and lower-priority muscles may finish modestly below target. Non-priority Calves and Abs / Core are optional for pass/fail validation; if either is prioritized, its full target must be reached.`);
   }
 }
 
@@ -161,6 +162,10 @@ function parseVolumeRow(row) {
 }
 
 function minimumAcceptableVolume(item) {
+  if (OPTIONAL_WHEN_NOT_PRIORITY.has(item.muscle)) {
+    return item.priority ? item.target : 0;
+  }
+
   if (item.priority) {
     return Math.max(0, item.target - 2);
   }
@@ -198,7 +203,7 @@ function syncGeneratedValidation() {
   let note = review.querySelector("[data-smart-target-validation-note]");
   if (underTarget.length) {
     const names = underTarget.map(item => `${displayMuscle(item.muscle)} ${item.effective}/${item.target}`).join(", ");
-    const noteText = `Volume check: ${names} effective sets are substantially below the minimum practical stimulus for this program. Regenerate or adjust session time/equipment before saving.`;
+    const noteText = `Volume check: ${names} effective sets are below the required level for this program. Priority Calves and Abs / Core must reach their full selected target; other muscles use practical minimums. Regenerate or adjust session time/equipment before saving.`;
     if (!note) {
       note = document.createElement("p");
       note.className = "smart-helper";
@@ -215,7 +220,7 @@ function syncGeneratedValidation() {
     }
     if (secondCard) {
       setText(secondCard.querySelector("span"), "Volume alignment");
-      setText(secondCard.querySelector("strong"), "Substantially low");
+      setText(secondCard.querySelector("strong"), "Below required minimum");
     }
 
     saveButton.disabled = true;
