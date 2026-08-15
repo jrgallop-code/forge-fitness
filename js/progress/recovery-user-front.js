@@ -1,4 +1,4 @@
-const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-1";
+const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-2";
 
 const FRONT_REGIONS = {
   Shoulders: ["muscle_front_009", "muscle_front_010"],
