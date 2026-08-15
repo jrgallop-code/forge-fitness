@@ -1,15 +1,15 @@
-const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-3";
+const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-2";
 
 const FRONT_REGIONS = {
   Shoulders: ["muscle_front_009", "muscle_front_010"],
   Chest: ["muscle_front_011", "muscle_front_012"],
   Biceps: ["muscle_front_015", "muscle_front_016"],
-  Triceps: ["muscle_front_091", "muscle_front_092"],
+  Triceps: ["muscle_front_013", "muscle_front_014"],
   Forearms: [
     "muscle_front_033", "muscle_front_034", "muscle_front_037",
     "muscle_front_038", "muscle_front_041", "muscle_front_042"
   ],
-  Back: ["muscle_front_089", "muscle_front_090"],
+  Back: ["muscle_front_007", "muscle_front_008"],
   Core: [
     "muscle_front_017", "muscle_front_018", "muscle_front_019", "muscle_front_020",
     "muscle_front_021", "muscle_front_022", "muscle_front_023", "muscle_front_024",
@@ -18,8 +18,8 @@ const FRONT_REGIONS = {
     "muscle_front_035", "muscle_front_036", "muscle_front_039", "muscle_front_040",
     "muscle_front_043", "muscle_front_044", "muscle_front_045", "muscle_front_046"
   ],
-  Glutes: ["muscle_front_093", "muscle_front_094"],
-  Adductors: ["muscle_front_095", "muscle_front_096"],
+  Glutes: ["muscle_front_047", "muscle_front_048"],
+  Adductors: ["muscle_front_049", "muscle_front_050"],
   Quads: [
     "muscle_front_051", "muscle_front_052", "muscle_front_067",
     "muscle_front_068", "muscle_front_069", "muscle_front_070"
