@@ -71,6 +71,14 @@ function syncVisibleTimer() {
   line.textContent = formatSeconds(ms / 1000);
 }
 
+function resumeActiveWorkoutFromAlert() {
+  document.querySelector('.nav-btn[data-page="workout"]')?.click();
+  setTimeout(() => {
+    openActiveWorkout();
+    syncVisibleTimer();
+  }, 90);
+}
+
 // The core timer remains the source of truth. This small display sync only
 // ensures the countdown is visible even if a logger enhancement rendered late.
 setInterval(syncVisibleTimer, 250);
@@ -85,7 +93,14 @@ document.addEventListener('visibilitychange', () => {
 });
 navigator.serviceWorker?.addEventListener('message', event => {
   if (event.data?.type !== 'levelup:open-active-workout') return;
-  openActiveWorkout();
-  setTimeout(syncVisibleTimer, 60);
+  resumeActiveWorkoutFromAlert();
 });
+
+const resumeFromLaunch = new URLSearchParams(window.location.search).get('resumeWorkout') === '1';
+if (resumeFromLaunch) {
+  const cleanUrl = `${window.location.pathname}${window.location.hash || ''}`;
+  window.history.replaceState({}, '', cleanUrl);
+  setTimeout(resumeActiveWorkoutFromAlert, 180);
+}
+
 syncVisibleTimer();
