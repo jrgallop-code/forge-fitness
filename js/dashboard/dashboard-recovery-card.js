@@ -147,7 +147,7 @@ function ensureRecoveryCard() {
 
     const recoveryStates = getRecoveryStates();
     const signature = JSON.stringify([...recoveryStates.entries()]
-        .map(([muscle, state]) => [muscle, state.percent, state.opacity])
+        .map(([muscle, state]) => [muscle, state.percent])
         .sort((a, b) => String(a[0]).localeCompare(String(b[0]))));
 
     let card = content.querySelector(".dashboard-recovery-card");
