@@ -150,21 +150,32 @@ function findWins(session, history, stats) {
   const bestPrior=priorVolumes.length?Math.max(...priorVolumes):0;
   if (stats.volume>bestPrior && bestPrior>0) wins.unshift({type:"VOLUME PR",icon:"🏆",title:"Total Workout Volume",value:`${formatNumber(stats.volume)} lb`,detail:"NEW RECORD!",isNew:true});
 
-  const weekCount=countWorkoutsThisWeek(session,history);
-  if (weekCount>=2) wins.push({type:"CONSISTENCY",icon:"🔥",title:`${weekCount} workouts this week`,value:weekCount>=4?"STRONG WEEK":"KEEP ROLLING",detail:"Momentum matters."});
+  const sevenDayCount=countWorkoutsLast7Days(session,history);
+  if (sevenDayCount>=2) wins.push({type:"CONSISTENCY",icon:"🔥",title:`${sevenDayCount} workouts in the last 7 days`,value:sevenDayCount>=4?"STRONG RUN":"KEEP ROLLING",detail:"Momentum matters."});
 
   const unique=wins.filter((win,index,array)=>array.findIndex(x=>`${x.type}|${x.title}`===`${win.type}|${win.title}`)===index).slice(0,5);
   if (unique.length) return unique;
   return [{type:"SESSION WIN",icon:"⚡",title:"Workout completed",value:`${stats.workingSets} SETS`,detail:"YOU SHOWED UP."}];
 }
 
-function countWorkoutsThisWeek(session, history) {
-  const anchor=new Date(session.completedAt || session.date || Date.now());
-  const start=new Date(anchor); start.setHours(0,0,0,0); start.setDate(start.getDate()-((start.getDay()+6)%7));
-  const end=new Date(start); end.setDate(end.getDate()+7);
+function countWorkoutsLast7Days(session, history) {
+  const anchorValue = session?.date
+    ? `${String(session.date).slice(0,10)}T12:00:00`
+    : (session?.completedAt || Date.now());
+  const anchor = new Date(anchorValue);
+  if (!Number.isFinite(anchor.getTime())) return 1;
+  const start = new Date(anchor);
+  start.setHours(0,0,0,0);
+  start.setDate(start.getDate()-6);
+  const end = new Date(anchor);
+  end.setHours(0,0,0,0);
+  end.setDate(end.getDate()+1);
   return [session,...history].filter(s => {
-    const d=new Date(s.completedAt || s.date || 0);
-    return d>=start && d<end;
+    const value = s?.date
+      ? `${String(s.date).slice(0,10)}T12:00:00`
+      : (s?.completedAt || 0);
+    const d = new Date(value);
+    return Number.isFinite(d.getTime()) && d>=start && d<end;
   }).length;
 }
 

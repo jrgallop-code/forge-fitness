@@ -30,13 +30,11 @@ function localDate(date = new Date()) {
     return copy.toISOString().slice(0, 10);
 }
 
-function currentWeekDates() {
+function lastSevenDates() {
     const today = new Date(`${localDate()}T12:00:00`);
-    const sunday = new Date(today);
-    sunday.setDate(today.getDate() - today.getDay());
     return Array.from({ length: 7 }, (_, index) => {
-        const date = new Date(sunday);
-        date.setDate(sunday.getDate() + index);
+        const date = new Date(today);
+        date.setDate(today.getDate() - (6 - index));
         return localDate(date);
     });
 }
@@ -109,7 +107,7 @@ function getProgramContext() {
 }
 
 function getWeeklyStats() {
-    const dates = new Set(currentWeekDates());
+    const dates = new Set(lastSevenDates());
     const sessions = readArray(SESSION_KEY).filter(session => dates.has(sessionDate(session)));
     const program = getProgramContext();
     const programSessions = program
@@ -127,6 +125,21 @@ function getWeeklyStats() {
         program: summarize(programSessions),
         programContext: program
     };
+}
+
+function getDailySetSeries() {
+    const sessions = readArray(SESSION_KEY);
+    return lastSevenDates().map(date => ({
+        date,
+        sets: sessions
+            .filter(session => sessionDate(session) === date)
+            .reduce((total, session) => total + countWorkingSets(session), 0)
+    }));
+}
+
+function formatDayNarrow(date) {
+    return new Intl.DateTimeFormat(undefined, { weekday: "narrow" })
+        .format(new Date(`${date}T12:00:00`));
 }
 
 function formatHeaderDate() {
@@ -158,7 +171,7 @@ function renderMetric(label, value, target) {
         <div class="dashboard-weekly-metric ${hasTarget ? "" : "is-unbounded"}">
             <span>${label}</span>
             <strong>${value}${hasTarget ? `<small> / ${target}</small>` : ""}</strong>
-            <em>${hasTarget ? (remaining ? `${remaining} left` : "Target reached") : "this week"}</em>
+            <em>${hasTarget ? (remaining ? `${remaining} left` : "Target reached") : "last 7 days"}</em>
             ${hasTarget ? `<div class="dashboard-weekly-bar" aria-hidden="true"><span style="width:${percent}%"></span></div>` : ""}
         </div>
     `;
@@ -174,12 +187,12 @@ function renderWeeklySection(stats) {
     return `
         <div class="dashboard-command-weekly-head">
             <div>
-                <span class="eyebrow">THIS WEEK</span>
-                <h2>Weekly Training</h2>
+                <span class="eyebrow">LAST 7 DAYS</span>
+                <h2>Training Summary</h2>
             </div>
             ${hasProgram ? `
-                <div class="dashboard-weekly-toggle" role="group" aria-label="Weekly training view">
-                    <button type="button" data-dashboard-weekly-mode="program" class="${usingProgram ? "active" : ""}">Program Week</button>
+                <div class="dashboard-weekly-toggle" role="group" aria-label="Last 7 days training view">
+                    <button type="button" data-dashboard-weekly-mode="program" class="${usingProgram ? "active" : ""}">Active Program</button>
                     <button type="button" data-dashboard-weekly-mode="all" class="${!usingProgram ? "active" : ""}">All Training</button>
                 </div>
             ` : ""}
@@ -242,23 +255,64 @@ function cardTitle(card) {
     return String(card.querySelector("h3")?.textContent || "").trim();
 }
 
+function renderSevenDaySetsCard(card) {
+    const series = getDailySetSeries();
+    const total = series.reduce((sum, item) => sum + item.sets, 0);
+    const maxSets = Math.max(1, ...series.map(item => item.sets));
+    const signature = JSON.stringify(series.map(item => [item.date, item.sets]));
+    if (card.dataset.sevenDaySetsSignature === signature) return;
+
+    card.dataset.sevenDaySetsSignature = signature;
+    card.classList.add("dashboard-seven-day-sets-card");
+    card.innerHTML = `
+        <div class="dashboard-seven-day-sets-content">
+            <div class="dashboard-seven-day-sets-heading">
+                <h3>Working Sets</h3>
+                <small>Last 7 Days</small>
+            </div>
+            <div class="dashboard-seven-day-bars" aria-label="Working sets completed per day over the last 7 days">
+                ${series.map(item => {
+                    const height = item.sets > 0
+                        ? Math.max(12, Math.round((item.sets / maxSets) * 100))
+                        : 4;
+                    return `
+                        <span class="dashboard-seven-day-bar" title="${item.sets} working sets">
+                            <i class="${item.sets > 0 ? "has-sets" : ""}" style="height:${height}%"></i>
+                            <small>${formatDayNarrow(item.date)}</small>
+                        </span>
+                    `;
+                }).join("")}
+            </div>
+            <div class="dashboard-seven-day-sets-value">
+                <strong>${total}</strong>
+                <small>sets logged</small>
+            </div>
+        </div>
+    `;
+}
+
 function prepareInsights(content, dashboard) {
     const removeTitles = new Set([
         "Workouts — Last 7 Days",
-        "Completed Sets — Last 7 Days",
         "Exercises — Last 7 Days",
-        "Saved Workout Plans"
+        "Saved Workout Plans",
+        "Water Recorded Today",
+        "Latest Sleep Duration",
+        "Water Today",
+        "Last Sleep"
     ]);
     const rename = new Map([
         ["Latest Recorded Weight", "Latest Weight"],
-        ["Water Recorded Today", "Water Today"],
-        ["Latest Sleep Duration", "Last Sleep"],
         ["Daily Calorie Target", "Calories"],
         ["Daily Protein Target", "Protein"]
     ]);
 
     dashboard.querySelectorAll(".metric-card").forEach(card => {
         const title = cardTitle(card);
+        if (title === "Completed Sets — Last 7 Days" || card.classList.contains("dashboard-seven-day-sets-card")) {
+            renderSevenDaySetsCard(card);
+            return;
+        }
         if (removeTitles.has(title)) {
             card.remove();
             return;
@@ -327,4 +381,7 @@ if (content) {
 
 window.addEventListener("levelup:nutrition-updated", queueEnhance);
 window.addEventListener("levelup:nutrition-phase-updated", queueEnhance);
+window.addEventListener("storage", event => {
+    if (event.key === SESSION_KEY) queueEnhance();
+});
 queueEnhance();
