@@ -1,4 +1,8 @@
 import { getAllExercises, getExerciseById } from "./exercise-library.js?v=exercise-library-guides-1";
+import {
+    getFormGuideMuscleVisual,
+    renderFormGuideMuscleSvg
+} from "./form-guide-anatomy.js?v=form-guide-anatomy-1";
 
 const GUIDE_IMAGE_PATHS = {
     "barbell-bench-press": "assets/exercise-guides/performance/barbell-bench-press-guide.webp?v=1",
@@ -9,27 +13,6 @@ const GUIDE_IMAGE_PATHS = {
     "cable-fly": "assets/exercise-guides/performance/cable-fly.webp?v=1",
     "pec-deck": "assets/exercise-guides/performance/pec-deck.webp?v=1",
     "push-up": "assets/exercise-guides/performance/push-up.webp?v=1"
-};
-
-const MUSCLE_IMAGE_PATHS = {
-    "Chest": "assets/exercise-guides/chest.webp?v=1",
-    "Triceps": "assets/exercise-guides/triceps.webp?v=1",
-    "Front Delts": "assets/exercise-guides/front-delts.webp?v=1",
-    "Quads": "assets/exercise-guides/quads.webp?v=1",
-    "Glutes": "assets/exercise-guides/glutes.webp?v=1",
-    "Adductors": "assets/exercise-guides/adductors.webp?v=1",
-    "Spinal Erectors": "assets/exercise-guides/spinal-erectors.webp?v=1",
-    "Lats": "assets/exercise-guides/lats.webp?v=1",
-    "Upper Back": "assets/exercise-guides/upper-back.webp?v=1",
-    "Rear Delts": "assets/exercise-guides/rear-delts.webp?v=1",
-    "Biceps": "assets/exercise-guides/biceps.webp?v=1",
-    "Forearms": "assets/exercise-guides/forearms.webp?v=1",
-    "Hamstrings": "assets/exercise-guides/hamstrings.webp?v=1",
-    "Rectus Abdominis": "assets/exercise-guides/rectus-abdominis.webp?v=1",
-    "Obliques": "assets/exercise-guides/obliques.webp?v=1",
-    "Deep Core": "assets/exercise-guides/deep-core.webp?v=1",
-    "Side Delts": "assets/exercise-guides/side-delts.webp?v=1",
-    "Calves": "assets/exercise-guides/calves.webp?v=1"
 };
 
 const GROUP_MUSCLES = {
@@ -104,12 +87,10 @@ function ensureStyles() {
             background: #0b0b0d;
             scroll-snap-align: start;
         }
-        .exercise-guide-anatomy-tile img {
+        .exercise-guide-anatomy-tile .form-guide-muscle-svg {
             display: block;
             width: 100%;
             aspect-ratio: 4 / 5;
-            object-fit: cover;
-            object-position: center;
             border-radius: 8px;
             background: #000;
         }
@@ -131,6 +112,21 @@ function ensureStyles() {
         }
         .exercise-guide-anatomy-tile small.primary { color: #ff4d55; }
         .exercise-guide-anatomy-tile small.secondary { color: #ffad5c; }
+        .exercise-muscle-image-frame .form-guide-muscle-svg {
+            position: absolute;
+            inset: 0;
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .form-guide-anatomy-base {
+            opacity: .74;
+        }
+        .form-guide-muscle-highlight {
+            fill: #ff315f;
+            opacity: .98;
+            filter: drop-shadow(0 0 8px rgba(255,49,95,.32));
+        }
         .exercise-guide-fallback-note {
             margin-top: 8px;
             color: #a0a0a0;
@@ -183,6 +179,25 @@ function addPerformanceImage(exerciseId, screen) {
     return true;
 }
 
+function upgradeMuscleCards(screen) {
+    if (!screen) return;
+    ensureStyles();
+
+    screen.querySelectorAll(".exercise-muscle-card").forEach(card => {
+        const muscle = card.querySelector("strong")?.textContent?.trim();
+        const frame = card.querySelector(".exercise-muscle-image-frame");
+        const config = getFormGuideMuscleVisual(muscle);
+        if (!frame || !config || frame.dataset.formGuideAnatomy === muscle) return;
+
+        const visual = renderFormGuideMuscleSvg(config);
+        if (!visual) return;
+
+        frame.innerHTML = visual;
+        frame.dataset.formGuideAnatomy = muscle;
+        frame.classList.add("form-guide-anatomy-frame");
+    });
+}
+
 function addAnatomyOverview(screen) {
     const header = screen?.querySelector(".exercise-guide-header");
     if (!screen || !header || screen.querySelector(".exercise-guide-hero-figure")) return;
@@ -190,10 +205,9 @@ function addAnatomyOverview(screen) {
     const cards = [...screen.querySelectorAll(".exercise-muscle-card")]
         .map(card => ({
             name: card.querySelector("strong")?.textContent?.trim(),
-            image: card.querySelector("img")?.getAttribute("src"),
             role: card.querySelector("span.primary") ? "primary" : "secondary"
         }))
-        .filter(item => item.name && item.image);
+        .filter(item => item.name && getFormGuideMuscleVisual(item.name));
 
     if (!cards.length) return;
     ensureStyles();
@@ -205,7 +219,7 @@ function addAnatomyOverview(screen) {
         <div class="exercise-guide-anatomy-strip">
             ${cards.map(item => `
                 <div class="exercise-guide-anatomy-tile">
-                    <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)} highlighted" loading="eager" decoding="async">
+                    ${renderFormGuideMuscleSvg(getFormGuideMuscleVisual(item.name))}
                     <strong>${escapeHtml(item.name)}</strong>
                     <small class="${item.role}">${item.role}</small>
                 </div>
@@ -218,6 +232,7 @@ function addAnatomyOverview(screen) {
 function addGuideVisual(exerciseId, screen = null) {
     const target = screen || findRenderedGuide(exerciseId);
     if (!target) return;
+    upgradeMuscleCards(target);
     if (!addPerformanceImage(exerciseId, target)) addAnatomyOverview(target);
 }
 
@@ -258,7 +273,7 @@ function renderFallbackMuscles(guide) {
     const items = [
         ...guide.primary.map(muscle => ({ muscle, role: "primary" })),
         ...guide.secondary.map(muscle => ({ muscle, role: "secondary" }))
-    ].filter(item => MUSCLE_IMAGE_PATHS[item.muscle]);
+    ].filter(item => getFormGuideMuscleVisual(item.muscle));
 
     if (!items.length) {
         return `<p class="exercise-guide-fallback-note">No anatomy diagram is available for this custom muscle category yet.</p>`;
@@ -266,8 +281,8 @@ function renderFallbackMuscles(guide) {
 
     return `<div class="exercise-muscle-grid">${items.map(item => `
         <article class="exercise-muscle-card">
-            <div class="exercise-muscle-image-frame">
-                <img class="exercise-muscle-figure" src="${escapeHtml(MUSCLE_IMAGE_PATHS[item.muscle])}" alt="${escapeHtml(item.muscle)} highlighted" loading="lazy">
+            <div class="exercise-muscle-image-frame form-guide-anatomy-frame" data-form-guide-anatomy="${escapeHtml(item.muscle)}">
+                ${renderFormGuideMuscleSvg(getFormGuideMuscleVisual(item.muscle))}
             </div>
             <strong>${escapeHtml(item.muscle)}</strong>
             <span class="${item.role}">${item.role}</span>
