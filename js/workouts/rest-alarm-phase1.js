@@ -312,6 +312,10 @@ function notificationStatusMarkup() {
   return `<div class="rest-alarm-alert-row"><span>Want a notification banner when Level Up is in the background?</span><button type="button" data-rest-action="alerts">Enable Alerts</button></div>`;
 }
 
+function getNotificationPermission() {
+  return "Notification" in window ? Notification.permission : "unsupported";
+}
+
 function syncBanner(force = false) {
   const banner = ensureBanner();
   const logger = document.getElementById("workout-session-logger");
@@ -328,7 +332,7 @@ function syncBanner(force = false) {
   const complete = timer.status === "finished" || (timer.status !== "paused" && ms <= 0);
   const paused = timer.status === "paused";
   const context = getNextSetContext(active);
-  const signature = [timer.status, Math.ceil(ms / 1000), active.currentExerciseIndex, active.currentSetIndex, context.title, Notification?.permission || "na"].join("|");
+  const signature = [timer.status, Math.ceil(ms / 1000), active.currentExerciseIndex, active.currentSetIndex, context.title, getNotificationPermission()].join("|");
   if (!force && signature === lastTimerSignature) return;
   lastTimerSignature = signature;
 
