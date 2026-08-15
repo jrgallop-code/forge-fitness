@@ -18,12 +18,7 @@ self.addEventListener("notificationclick", event => {
                 return existing;
             }
 
-            const opened =
-                await clients.openWindow("./");
-            opened?.postMessage?.({
-                type: "levelup:open-active-workout"
-            });
-            return opened;
+            return clients.openWindow("./?resumeWorkout=1");
         })
     );
 });
