@@ -1,5 +1,6 @@
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 const DAY_MS = 86400000;
+const MIN_TREND_DAYS = 7;
 const TREND_GREEN = "#4ade80";
 
 let queued = false;
@@ -31,6 +32,10 @@ function calculateMovingAverage(entries) {
     });
 }
 
+function countLoggedDays(entries) {
+    return new Set(entries.map(entry => entry.date)).size;
+}
+
 function buildSparklinePath(points) {
     if (!points.length) return "";
 
@@ -45,11 +50,6 @@ function buildSparklinePath(points) {
     const firstTime = new Date(`${points[0].date}T12:00:00`).getTime();
     const lastTime = new Date(`${points.at(-1).date}T12:00:00`).getTime();
     const elapsed = Math.max(1, lastTime - firstTime);
-
-    if (points.length === 1) {
-        const y = height / 2;
-        return `M ${xPad} ${y} L ${width - xPad} ${y}`;
-    }
 
     return points.map((point, index) => {
         const time = new Date(`${point.date}T12:00:00`).getTime();
@@ -77,17 +77,22 @@ function renderWeightTrendCard() {
     if (!card) return;
 
     const entries = readWeightEntries();
-    const trend = calculateMovingAverage(entries);
+    const loggedDays = countLoggedDays(entries);
+    const hasEnoughData = loggedDays >= MIN_TREND_DAYS;
+    const trend = hasEnoughData ? calculateMovingAverage(entries) : [];
     const recent = trend.slice(-7);
     const latest = trend.at(-1)?.weight ?? null;
-    const signature = JSON.stringify(recent.map(point => [point.date, Math.round(point.weight * 1000) / 1000]));
+    const signature = JSON.stringify({
+        loggedDays,
+        recent: recent.map(point => [point.date, Math.round(point.weight * 1000) / 1000])
+    });
 
     if (card.dataset.weightTrendSignature === signature) return;
 
     card.dataset.weightTrendSignature = signature;
     card.classList.add("dashboard-weight-trend-card");
 
-    const path = buildSparklinePath(recent);
+    const path = hasEnoughData ? buildSparklinePath(recent) : "";
     const value = latest === null ? "--" : latest.toFixed(1);
 
     card.innerHTML = `
@@ -99,13 +104,14 @@ function renderWeightTrendCard() {
                 </span>
             </span>
             <span class="dashboard-weight-trend-chart" aria-hidden="true">
-                ${path
+                ${hasEnoughData && path
                     ? `<svg viewBox="0 0 100 42" preserveAspectRatio="none"><path d="${path}" fill="none" stroke="${TREND_GREEN}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path></svg>`
-                    : `<span class="dashboard-weight-trend-empty">Add weigh-ins to see your trend</span>`}
+                    : `<span class="dashboard-weight-trend-empty">Not enough data</span>`}
             </span>
             <span class="dashboard-weight-trend-value">
-                <strong>${value}${latest === null ? "" : " lb"}</strong>
-                <small>trend weight</small>
+                ${hasEnoughData
+                    ? `<strong>${value} lb</strong><small>trend weight</small>`
+                    : `<strong>${loggedDays} / ${MIN_TREND_DAYS} days</strong><small>logged to unlock trend</small>`}
             </span>
         </button>
     `;
