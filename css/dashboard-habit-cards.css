@@ -1,0 +1,164 @@
+.dashboard-habit-section {
+    margin: 14px 20px 8px;
+}
+
+.dashboard-habit-section-heading {
+    margin-bottom: 10px;
+}
+
+.dashboard-habit-section-heading h2 {
+    margin: 4px 0 0;
+    font-size: 1.35rem;
+}
+
+.dashboard-habit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.dashboard-habit-card {
+    display: flex;
+    min-width: 0;
+    min-height: 186px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.025);
+    color: #fff;
+    text-align: left;
+    cursor: pointer;
+    flex-direction: column;
+}
+
+.dashboard-habit-card-heading {
+    display: block;
+}
+
+.dashboard-habit-card-heading strong {
+    display: block;
+    font-size: 1rem;
+    line-height: 1.15;
+}
+
+.dashboard-habit-card-heading small {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted, #a0a0a0);
+    font-size: 0.6rem;
+    font-weight: 600;
+}
+
+.dashboard-habit-heatmap {
+    display: grid;
+    width: 100%;
+    margin: 13px 0 12px;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.dashboard-habit-cell {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    min-width: 0;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.075);
+}
+
+.dashboard-habit-heatmap--weight .dashboard-habit-cell.is-active {
+    background: #4ade80;
+    box-shadow: 0 0 7px rgba(74, 222, 128, 0.12);
+}
+
+.dashboard-habit-heatmap--workouts .dashboard-habit-cell.is-active {
+    background: var(--red, #e10600);
+    box-shadow: 0 0 7px rgba(225, 6, 0, 0.13);
+}
+
+.dashboard-habit-divider {
+    display: block;
+    height: 1px;
+    margin-top: auto;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-habit-summary {
+    display: flex;
+    min-width: 0;
+    padding-top: 11px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 9px;
+}
+
+.dashboard-habit-summary > span {
+    display: flex;
+    min-width: 0;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.dashboard-habit-summary b {
+    flex: 0 0 auto;
+    color: #fff;
+    font-size: 1.18rem;
+    line-height: 1;
+}
+
+.dashboard-habit-summary small {
+    overflow: hidden;
+    color: var(--muted, #a0a0a0);
+    font-size: 0.52rem;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+}
+
+.dashboard-habit-chevron {
+    display: block;
+    width: 9px;
+    height: 9px;
+    flex: 0 0 auto;
+    border-top: 2px solid rgba(255, 255, 255, 0.48);
+    border-right: 2px solid rgba(255, 255, 255, 0.48);
+    transform: rotate(45deg);
+}
+
+.dashboard-habit-card:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.72);
+    outline-offset: 2px;
+}
+
+.dashboard-habit-card:active {
+    transform: translateY(1px);
+}
+
+@media (max-width: 520px) {
+    .dashboard-habit-section {
+        margin-left: 0;
+        margin-right: 0;
+    }
+}
+
+@media (max-width: 360px) {
+    .dashboard-habit-grid {
+        gap: 8px;
+    }
+
+    .dashboard-habit-card {
+        min-height: 176px;
+        padding: 12px;
+    }
+
+    .dashboard-habit-heatmap {
+        gap: 3px;
+    }
+
+    .dashboard-habit-summary b {
+        font-size: 1.08rem;
+    }
+
+    .dashboard-habit-summary small {
+        font-size: 0.48rem;
+    }
+}
