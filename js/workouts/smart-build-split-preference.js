@@ -15,11 +15,16 @@ function readPreference() {
   return ALLOWED.has(value) ? value : "auto";
 }
 
-function savePreference(value) {
+function persistPreference(value = selected) {
   if (!ALLOWED.has(value)) return;
-  selected = value;
   try { saveTrainingPreferences({ splitPreference: value }); }
   catch (error) { console.warn("Could not save split preference", error); }
+}
+
+function selectPreference(value, { persist = true } = {}) {
+  if (!ALLOWED.has(value)) return;
+  selected = value;
+  if (persist) persistPreference(value);
   updateSelectedButtons(document);
 }
 
@@ -64,7 +69,7 @@ function enhanceOnboarding(root = document) {
     block.dataset.splitPreferenceBlock = "onboarding";
     block.innerHTML = `
       <h3>Preferred workout split</h3>
-      <p class="onboarding-helper">This becomes the default for Smart Build. You can change it whenever you build a program.</p>
+      <p class="onboarding-helper">This becomes the default for Smart Build when you finish setup. You can change it whenever you build a program.</p>
       <div class="onboarding-option-stack">${splitOptions("onboarding-option")}</div>
     `;
     availability.appendChild(block);
@@ -96,12 +101,28 @@ function enhanceAll(root = document) {
 }
 
 document.addEventListener("click", event => {
-  const button = event.target.closest?.("[data-split]");
-  if (button) {
-    savePreference(button.dataset.split);
+  const button = event.target.closest?.("button");
+  if (!button) return;
+
+  if (button.dataset.split) {
+    selectPreference(button.dataset.split, { persist: !button.closest(".levelup-onboarding") });
     return;
   }
-  if (event.target.closest?.("[data-smart-build]")) {
+
+  if (button.matches("[data-onboarding-next]") && button.closest(".levelup-onboarding")?.querySelector('[data-choice-group="limitations"]')) {
+    persistPreference();
+    return;
+  }
+
+  if (button.matches("[data-onboarding-skip]")) {
+    requestAnimationFrame(() => {
+      selected = readPreference();
+      updateSelectedButtons(document);
+    });
+    return;
+  }
+
+  if (button.matches("[data-smart-build]")) {
     selected = readPreference();
     requestAnimationFrame(() => enhanceAll(document));
   }
