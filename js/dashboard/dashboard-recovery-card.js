@@ -1,7 +1,9 @@
-import { getExerciseById } from "../workouts/exercise-library.js?v=dashboard-recovery-preview-1";
+import {
+    getRecoveryStates,
+    getReadyRecoveryCount
+} from "../progress/recovery-secondary-muscles.js?v=recovery-secondary-7";
 
 const SESSION_KEY = "forge_workout_sessions";
-const FULL_RECOVERY_HOURS = 72;
 const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-2";
 const BACK_ASSET = "assets/recovery/back-view.svg?v=recovery-back-vector-1";
 const STYLESHEET = "css/dashboard-recovery-card.css?v=dashboard-recovery-preview-1";
@@ -37,7 +39,7 @@ const FRONT_REGIONS = {
 };
 
 const BACK_REGIONS = {
-    Shoulders: ["muscle_back_016", "muscle_back_017"],
+    "Rear Delts": ["muscle_back_016", "muscle_back_017"],
     Back: [
         "muscle_back_012", "muscle_back_013", "muscle_back_020", "muscle_back_021",
         "muscle_back_022", "muscle_back_023", "muscle_back_028", "muscle_back_029",
@@ -75,133 +77,45 @@ function installStyles() {
     document.head.appendChild(link);
 }
 
-function readSessions() {
-    try {
-        const sessions = JSON.parse(localStorage.getItem(SESSION_KEY) || "[]");
-        return Array.isArray(sessions) ? sessions : [];
-    }
-    catch {
-        return [];
-    }
-}
-
-function getSessionTime(session) {
-    const raw = session?.completedAt || session?.endTime || session?.date;
-    if (!raw) return 0;
-    const time = new Date(raw).getTime();
-    return Number.isFinite(time) ? time : 0;
-}
-
-function hasPerformedSet(exercise) {
-    return (exercise?.sets || []).some(set =>
-        set?.completed === true ||
-        Number(set?.reps) > 0 ||
-        Number(set?.weight) > 0 ||
-        Number(set?.duration) > 0 ||
-        Number(set?.durationMinutes) > 0
-    );
-}
-
-function normalizeMuscle(value) {
-    const text = String(value || "").trim();
-    if (!text || /cardio|other/i.test(text)) return "";
-
-    const aliases = {
-        Quadriceps: "Quads",
-        Hamstring: "Hamstrings",
-        Shoulder: "Shoulders",
-        "Rear Delts": "Shoulders",
-        Glute: "Glutes",
-        Calf: "Calves",
-        Abs: "Core",
-        Abdominals: "Core"
-    };
-
-    return aliases[text] || text;
-}
-
-function getRecovery() {
-    const latest = new Map();
-
-    readSessions().forEach(session => {
-        const time = getSessionTime(session);
-        if (!time) return;
-
-        (session.exercises || []).forEach(exercise => {
-            if (!hasPerformedSet(exercise)) return;
-            const definition = getExerciseById(exercise.exerciseId);
-            const muscle = normalizeMuscle(definition?.muscleGroup || exercise.muscleGroup);
-            if (!muscle) return;
-            if (time > (latest.get(muscle) || 0)) latest.set(muscle, time);
-        });
-    });
-
-    return [...latest.entries()].map(([muscle, time]) => {
-        const hours = Math.max(0, (Date.now() - time) / 3600000);
-        return {
-            muscle,
-            hours,
-            percent: Math.min(100, Math.round((hours / FULL_RECOVERY_HOURS) * 100))
-        };
-    });
-}
-
-function recoveryOpacity(percent) {
-    const normalized = Math.max(0, Math.min(100, Number(percent) || 0));
-    return Math.max(0, 0.92 * (1 - normalized / 100)).toFixed(3);
-}
-
-function colorForPercent(percent) {
-    const normalized = Math.max(0, Math.min(100, Number(percent) || 0)) / 100;
-    const fatigued = [255, 49, 95];
-    const recovered = [118, 119, 132];
-    const rgb = fatigued.map((start, index) =>
-        Math.round(start + (recovered[index] - start) * normalized)
-    );
-    return `rgb(${rgb.join(",")})`;
-}
-
-function renderOverlayUses(regions, recoveryByMuscle, asset) {
+function renderOverlayUses(regions, recoveryStates, asset) {
     return Object.entries(regions).flatMap(([muscle, ids]) => {
-        const item = recoveryByMuscle.get(muscle);
-        if (!item) return [];
-        const fill = colorForPercent(item.percent);
-        const opacity = recoveryOpacity(item.percent);
+        const state = recoveryStates.get(muscle);
+        if (!state) return [];
+        const opacity = String(state.opacity ?? 0.04);
         return ids.map(id => {
             const href = `${asset}#${id}`;
-            return `<use href="${href}" xlink:href="${href}" class="dashboard-recovery-muscle" style="--dashboard-recovery-fill:${fill};--dashboard-recovery-opacity:${opacity}"/>`;
+            return `<use href="${href}" xlink:href="${href}" class="dashboard-recovery-muscle" style="--dashboard-recovery-fill:#ff315f;--dashboard-recovery-opacity:${opacity}"/>`;
         });
     }).join("");
 }
 
-function renderFront(recoveryByMuscle) {
+function renderFront(recoveryStates) {
     return `
         <svg class="dashboard-recovery-figure dashboard-recovery-front" viewBox="0 0 960 1920" role="img" aria-label="Front muscle recovery preview" xmlns:xlink="http://www.w3.org/1999/xlink">
             <image href="${FRONT_ASSET}" xlink:href="${FRONT_ASSET}" x="0" y="0" width="960" height="1920" preserveAspectRatio="xMidYMid meet"/>
-            ${renderOverlayUses(FRONT_REGIONS, recoveryByMuscle, FRONT_ASSET)}
+            ${renderOverlayUses(FRONT_REGIONS, recoveryStates, FRONT_ASSET)}
         </svg>
     `;
 }
 
-function renderBack(recoveryByMuscle) {
+function renderBack(recoveryStates) {
     return `
         <svg class="dashboard-recovery-figure dashboard-recovery-back" viewBox="960 0 960 1920" role="img" aria-label="Back muscle recovery preview" xmlns:xlink="http://www.w3.org/1999/xlink">
             <image href="${BACK_ASSET}" xlink:href="${BACK_ASSET}" x="960" y="0" width="960" height="1920" preserveAspectRatio="xMidYMid meet"/>
-            ${renderOverlayUses(BACK_REGIONS, recoveryByMuscle, BACK_ASSET)}
+            ${renderOverlayUses(BACK_REGIONS, recoveryStates, BACK_ASSET)}
         </svg>
     `;
 }
 
-function formatStatus(recovery) {
-    if (!recovery.length) return "No recovery data";
-    const ready = recovery.filter(item => item.percent >= 100).length;
-    return `${ready}/${recovery.length} ready`;
+function formatStatus(recoveryStates) {
+    if (!recoveryStates.size) return "No recovery data";
+    const ready = getReadyRecoveryCount(recoveryStates);
+    return `${ready} muscle ${ready === 1 ? "group" : "groups"} ready`;
 }
 
-function renderCard(recovery) {
-    const recoveryByMuscle = new Map(recovery.map(item => [item.muscle, item]));
-    const helper = recovery.length
-        ? "Based on your most recent completed workouts"
+function renderCard(recoveryStates) {
+    const helper = recoveryStates.size
+        ? "Uses the same recovery model as your full Recovery page"
         : "Complete a workout to start tracking recovery";
 
     return `
@@ -209,14 +123,14 @@ function renderCard(recovery) {
             <span class="dashboard-recovery-copy">
                 <span class="eyebrow">RECOVERY</span>
                 <strong>Muscle Recovery</strong>
-                <span class="dashboard-recovery-status">${formatStatus(recovery)}</span>
+                <span class="dashboard-recovery-status">${formatStatus(recoveryStates)}</span>
                 <small>${helper}</small>
                 <span class="dashboard-recovery-link">View recovery <b aria-hidden="true">›</b></span>
             </span>
             <span class="dashboard-recovery-visual" aria-hidden="true">
                 <span class="dashboard-recovery-figure-stage">
-                    ${renderFront(recoveryByMuscle)}
-                    ${renderBack(recoveryByMuscle)}
+                    ${renderFront(recoveryStates)}
+                    ${renderBack(recoveryStates)}
                 </span>
                 <span class="dashboard-recovery-facing-label">FRONT ↔ BACK</span>
             </span>
@@ -231,18 +145,18 @@ function ensureRecoveryCard() {
     const weekly = content.querySelector(".dashboard-command-weekly");
     if (!weekly) return;
 
-    const recovery = getRecovery();
-    const signature = JSON.stringify(recovery
-        .map(item => [item.muscle, item.percent])
+    const recoveryStates = getRecoveryStates();
+    const signature = JSON.stringify([...recoveryStates.entries()]
+        .map(([muscle, state]) => [muscle, state.percent, state.opacity])
         .sort((a, b) => String(a[0]).localeCompare(String(b[0]))));
 
     let card = content.querySelector(".dashboard-recovery-card");
     if (!card) {
-        weekly.insertAdjacentHTML("afterend", renderCard(recovery));
+        weekly.insertAdjacentHTML("afterend", renderCard(recoveryStates));
         card = content.querySelector(".dashboard-recovery-card");
     }
     else if (card.dataset.signature !== signature) {
-        card.outerHTML = renderCard(recovery);
+        card.outerHTML = renderCard(recoveryStates);
         card = content.querySelector(".dashboard-recovery-card");
     }
 
@@ -294,6 +208,8 @@ if (content) {
 window.addEventListener("storage", event => {
     if (event.key === SESSION_KEY) queueEnsureRecoveryCard();
 });
+
+window.addEventListener("focus", queueEnsureRecoveryCard);
 
 installStyles();
 queueEnsureRecoveryCard();
