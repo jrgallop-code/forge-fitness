@@ -334,6 +334,16 @@ function prepareInsights(content, dashboard) {
         dashboard.insertAdjacentElement("beforebegin", heading);
     }
 
+    const recoveryCard = content.querySelector(".dashboard-recovery-card");
+    if (recoveryCard) {
+        recoveryCard.style.gridColumn = "1 / -1";
+        recoveryCard.style.width = "100%";
+        recoveryCard.style.margin = "0";
+        if (recoveryCard.parentElement !== dashboard || recoveryCard !== dashboard.lastElementChild) {
+            dashboard.appendChild(recoveryCard);
+        }
+    }
+
     content.querySelector(".performance-dashboard-card")?.classList.add("dashboard-command-performance");
 }
 
