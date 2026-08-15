@@ -1,4 +1,4 @@
-import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=weekly-ma-coach-2";
+import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=rolling-source-1";
 import { saveNutritionPhase } from "./nutrition-phase.js?v=weekly-ma-coach-2";
 import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 
@@ -219,7 +219,7 @@ function ensureCoachCard() {
             <button id="weekly-coach-apply" class="primary-btn" type="button" hidden></button>
             <button id="weekly-coach-keep" class="secondary-btn" type="button" hidden>Keep Current Target</button>
         </div>
-        <p class="weekly-coach-method">A preliminary trend appears on Day 7 from the first 7-day moving average versus the phase starting trend. Calorie decisions begin on Day 14 using two complete 7-day phase blocks, then repeat every 7 days. Each 7-day block needs at least 4 weigh-ins.</p>
+        <p class="weekly-coach-method">The weight trend starts on Day 7, then the 7-day moving average rolls forward with each new weigh-in. Calorie decisions begin on Day 14 using scheduled 7-day check-ins, then repeat every 7 days. Each decision window needs at least 4 weigh-ins.</p>
         <details class="weekly-coach-test" id="weekly-coach-test-lab">
             <summary>Coach Test Scenarios</summary>
             <small class="weekly-test-note">Simulation only — these examples do not change your saved phase or weigh-ins.</small>
@@ -257,11 +257,14 @@ function refreshCoach() {
     const allWeights = readWeights();
     const entries = allWeights.filter(entry => entry.date >= phase.startDate);
     const startingTrendWeight = getStartingTrendWeight(phase, allWeights);
+    const asOfDate = localDate();
+    const phaseDay = Math.max(1, Math.floor((dateMs(asOfDate) - dateMs(phase.startDate)) / DAY_MS) + 1);
     const trend = calculatePhaseMovingAverageTrend(entries, {
         phaseStartDate: phase.startDate,
-        asOfDate: localDate(),
+        asOfDate,
         startingTrendWeight,
-        minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW
+        minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW,
+        rolling: phaseDay < FIRST_CHECK_DAY
     });
     const target = Number(phase.targetWeeklyRate);
     const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
@@ -278,18 +281,18 @@ function refreshCoach() {
         setText("weekly-coach-message", `Keep logging weight. A preliminary 7-day trend will appear on Day ${FIRST_TREND_DAY}. Calorie recommendations still wait until Day ${FIRST_CHECK_DAY}.`);
         setText("weekly-coach-suggestion", `Preliminary trend in ${trend.daysUntilTrend} day${trend.daysUntilTrend === 1 ? "" : "s"}.`);
         hideActions();
-        syncCurrentPhaseSummary(phase, { status: "BUILDING TREND", actual: null });
+        syncCurrentPhaseSummary(phase);
         return;
     }
 
     if (trend.status === "preliminary" && Number.isFinite(trend.weeklyChange)) {
         setText("weekly-coach-previous-label", "Starting Trend");
         setText("weekly-coach-status", "PRELIMINARY TREND");
-        setText("weekly-coach-confidence", `Day ${trend.phaseDay} · ${trend.currentEntries} weigh-ins in first 7-day block`);
-        setText("weekly-coach-message", `Preliminary weekly trend: ${formatRate(trend.weeklyChange)}. This compares the first 7-day moving average with your phase starting trend.`);
+        setText("weekly-coach-confidence", `Day ${trend.phaseDay} · ${trend.currentEntries} weigh-ins in current 7-day window`);
+        setText("weekly-coach-message", `Preliminary rolling trend: ${formatRate(trend.weeklyChange)}. This compares your latest 7-day moving average with your phase starting trend.`);
         setText("weekly-coach-suggestion", `Informational only. First calorie decision is Day ${FIRST_CHECK_DAY}${trend.daysUntilCheck > 0 ? ` · in ${trend.daysUntilCheck} day${trend.daysUntilCheck === 1 ? "" : "s"}` : ""}.`);
         hideActions();
-        syncCurrentPhaseSummary(phase, { status: "PRELIMINARY TREND", actual: trend.weeklyChange });
+        syncCurrentPhaseSummary(phase);
         return;
     }
 
@@ -303,18 +306,18 @@ function refreshCoach() {
             setText("weekly-coach-suggestion", `No calorie change from sparse data. Next scheduled check: Day ${trend.nextCheckDay}.`);
         } else {
             setText("weekly-coach-confidence", `Day ${trend.phaseDay}`);
-            setText("weekly-coach-message", `At least ${MIN_ENTRIES_PER_WINDOW} weigh-ins are needed in the first 7-day block to show a preliminary trend.`);
+            setText("weekly-coach-message", `At least ${MIN_ENTRIES_PER_WINDOW} weigh-ins are needed in the current 7-day window to show a preliminary trend.`);
             setText("weekly-coach-suggestion", `Keep logging weight. First calorie decision remains Day ${FIRST_CHECK_DAY}.`);
         }
         hideActions();
-        syncCurrentPhaseSummary(phase, { status: "NEED MORE DATA", actual: null });
+        syncCurrentPhaseSummary(phase);
         return;
     }
 
     const evaluation = evaluateRate(trend.weeklyChange, target, trend.currentAverage);
     setText("weekly-coach-status", evaluation.status);
     setText("weekly-coach-confidence", `Day ${trend.checkDay} check · ${trend.previousEntries} + ${trend.currentEntries} weigh-ins`);
-    syncCurrentPhaseSummary(phase, { status: evaluation.status, actual: trend.weeklyChange });
+    syncCurrentPhaseSummary(phase);
 
     const onTarget = ["ON TRACK", "MAINTAINING"].includes(evaluation.status);
     if (onTarget) {
@@ -411,18 +414,40 @@ function clearMetrics() {
     ["weekly-coach-previous", "weekly-coach-current", "weekly-coach-actual", "weekly-coach-target", "weekly-coach-suggestion"].forEach(id => setText(id, "--"));
 }
 
-function syncCurrentPhaseSummary(phase, metrics) {
+function syncCurrentPhaseSummary(phase) {
     const host = document.getElementById("nutrition-current-phase");
-    if (!host || !phase || !metrics) return;
+    if (!host || !phase) return;
+
+    const allWeights = readWeights();
+    const entries = allWeights.filter(entry => entry.date >= phase.startDate);
+    const startingTrendWeight = getStartingTrendWeight(phase, allWeights);
+    const liveTrend = calculatePhaseMovingAverageTrend(entries, {
+        phaseStartDate: phase.startDate,
+        asOfDate: localDate(),
+        startingTrendWeight,
+        minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW,
+        rolling: true
+    });
+    const target = Number(phase.targetWeeklyRate);
+
+    let status = "NEED MORE DATA";
+    if (liveTrend.reason === "before-first-trend") {
+        status = "BUILDING TREND";
+    } else if (liveTrend.status === "preliminary" && Number.isFinite(liveTrend.weeklyChange)) {
+        status = "PRELIMINARY TREND";
+    } else if (liveTrend.status === "actual" && Number.isFinite(liveTrend.weeklyChange)) {
+        status = evaluateRate(liveTrend.weeklyChange, target, liveTrend.currentAverage).status;
+    }
+
     const badge = host.querySelector(".nutrition-current-phase-head b");
-    if (badge && badge.textContent !== metrics.status) badge.textContent = metrics.status;
+    if (badge && badge.textContent !== status) badge.textContent = status;
     const grid = host.querySelector(".nutrition-current-phase-grid");
     if (!grid) return;
     const actualCell = [...grid.children].find(cell => cell.querySelector("span")?.textContent?.trim() === "Actual Since Start");
     const strong = actualCell?.querySelector("strong");
-    const actualText = Number.isFinite(metrics.actual)
-        ? `${metrics.status === "PRELIMINARY TREND" ? "Preliminary · " : ""}${formatRate(metrics.actual)}`
-        : "Calibrating";
+    const actualText = Number.isFinite(liveTrend.weeklyChange)
+        ? `${status === "PRELIMINARY TREND" ? "Preliminary · " : ""}${formatRate(liveTrend.weeklyChange)}`
+        : status === "BUILDING TREND" ? "Calibrating" : "Need more data";
     if (strong && strong.textContent !== actualText) strong.textContent = actualText;
 }
 
@@ -501,7 +526,8 @@ function renderSelectedTestScenario() {
         phaseStartDate: generated.startDate,
         asOfDate,
         startingTrendWeight: generated.startingTrendWeight,
-        minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW
+        minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW,
+        rolling: scenario.day < FIRST_CHECK_DAY
     });
 
     if (trend.reason === "before-first-trend") {
@@ -510,7 +536,7 @@ function renderSelectedTestScenario() {
     }
 
     if (trend.status === "preliminary") {
-        host.innerHTML = `<strong>PRELIMINARY TREND</strong><br>Phase day ${trend.phaseDay} · starting trend ${trend.previousAverage.toFixed(2)} lb · first 7-day average ${trend.currentAverage.toFixed(2)} lb<br>Preliminary change ${formatRate(trend.weeklyChange)}. No calorie adjustment before Day ${FIRST_CHECK_DAY}.`;
+        host.innerHTML = `<strong>PRELIMINARY TREND</strong><br>Phase day ${trend.phaseDay} · starting trend ${trend.previousAverage.toFixed(2)} lb · current 7-day average ${trend.currentAverage.toFixed(2)} lb<br>Preliminary change ${formatRate(trend.weeklyChange)}. No calorie adjustment before Day ${FIRST_CHECK_DAY}.`;
         return;
     }
 
