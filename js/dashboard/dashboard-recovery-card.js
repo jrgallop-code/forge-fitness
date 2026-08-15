@@ -1,7 +1,7 @@
 import {
     getRecoveryStates,
     getReadyRecoveryCount
-} from "../progress/recovery-secondary-muscles.js?v=recovery-secondary-6";
+} from "../progress/recovery-secondary-muscles.js?v=recovery-secondary-7";
 
 const SESSION_KEY = "forge_workout_sessions";
 const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-2";
