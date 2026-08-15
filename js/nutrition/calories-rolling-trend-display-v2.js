@@ -16,6 +16,10 @@ function formatRate(value) {
 
 function setText(node, value) {
     if (!node || node.textContent === value) return false;
+    if (node.childNodes.length === 1 && node.firstChild?.nodeType === Node.TEXT_NODE) {
+        node.firstChild.nodeValue = value;
+        return true;
+    }
     node.textContent = value;
     return true;
 }
