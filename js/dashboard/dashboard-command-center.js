@@ -1,4 +1,4 @@
-import "./dashboard-recovery-card.js?v=dashboard-recovery-preview-1";
+import "./dashboard-recovery-card.js?v=dashboard-recovery-summary-3";
 
 const SESSION_KEY = "forge_workout_sessions";
 const PLAN_KEY = "forge_workout_plans";
