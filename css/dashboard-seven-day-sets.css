@@ -1,0 +1,100 @@
+.dashboard.dashboard-command-insights .metric-card.dashboard-seven-day-sets-card {
+    min-height: 132px;
+    padding: 14px 15px 13px;
+}
+
+.dashboard-seven-day-sets-content {
+    display: flex;
+    min-height: 104px;
+    flex-direction: column;
+}
+
+.dashboard-seven-day-sets-heading h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 0.76rem;
+    line-height: 1.2;
+}
+
+.dashboard-seven-day-sets-heading small {
+    display: block;
+    margin-top: 3px;
+    color: var(--muted, #a0a0a0);
+    font-size: 0.56rem;
+    line-height: 1.2;
+}
+
+.dashboard-seven-day-bars {
+    display: grid;
+    height: 48px;
+    margin: 6px 0 2px;
+    align-items: end;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-seven-day-bar {
+    display: grid;
+    height: 100%;
+    min-width: 0;
+    align-items: end;
+    justify-items: center;
+    grid-template-rows: 1fr 11px;
+}
+
+.dashboard-seven-day-bar i {
+    display: block;
+    width: min(100%, 11px);
+    min-height: 2px;
+    border-radius: 3px 3px 1px 1px;
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.dashboard-seven-day-bar i.has-sets {
+    background: var(--red, #e10600);
+}
+
+.dashboard-seven-day-bar small {
+    margin: 2px 0 0 !important;
+    color: var(--muted, #a0a0a0) !important;
+    font-size: 0.48rem !important;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.dashboard-seven-day-sets-value {
+    display: flex;
+    margin-top: auto;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.dashboard-seven-day-sets-value strong {
+    color: #fff;
+    font-size: 1.18rem;
+    line-height: 1;
+}
+
+.dashboard-seven-day-sets-value small {
+    margin: 0 !important;
+    color: var(--muted, #a0a0a0) !important;
+    font-size: 0.54rem !important;
+    white-space: nowrap;
+}
+
+@media (max-width: 360px) {
+    .dashboard.dashboard-command-insights .metric-card.dashboard-seven-day-sets-card {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .dashboard-seven-day-bars {
+        gap: 3px;
+    }
+
+    .dashboard-seven-day-sets-value strong {
+        font-size: 1.08rem;
+    }
+}
