@@ -2,9 +2,14 @@ import { getTrainingPreferences, saveTrainingPreferences } from "../core/trainin
 
 const ALLOWED = new Set(["auto", "full-body", "upper-lower"]);
 const LABELS = {
-  auto: "Choose for me",
+  auto: "Auto",
   "full-body": "Full Body",
   "upper-lower": "Upper / Lower"
+};
+const DETAILS = {
+  auto: "Level Up chooses the split from your weekly frequency while keeping the same programming rules.",
+  "full-body": "Train upper and lower body in every session.",
+  "upper-lower": "Alternate upper- and lower-body emphasis; odd weekly frequencies use one Full Body bridge day."
 };
 
 let selected = readPreference();
@@ -29,21 +34,23 @@ function selectPreference(value, { persist = true } = {}) {
 }
 
 function splitOptions(buttonClass) {
-  const options = [
-    ["auto", "Choose for me", "Level Up selects Full Body or Upper / Lower from your weekly frequency while keeping the same volume and coverage rules."],
-    ["full-body", "Full Body", "Train upper and lower body in every session. Smart Build still protects weekly volume, exercise coverage and recovery."],
-    ["upper-lower", "Upper / Lower", "Alternate upper- and lower-body emphasis. Odd weekly frequencies use one Full Body bridge day so coverage stays balanced."]
-  ];
-  return options.map(([value, label, detail]) => `
-    <button class="${buttonClass} ${selected === value ? "selected" : ""}" type="button" data-split="${value}">
-      <strong>${label}</strong><small>${detail}</small>
+  return Object.entries(LABELS).map(([value, label]) => `
+    <button class="${buttonClass} compact-split-option ${selected === value ? "selected" : ""}" type="button" data-split="${value}">
+      <strong>${label}</strong>
     </button>`).join("");
+}
+
+function splitDetailMarkup(helperClass) {
+  return `<p class="${helperClass} split-selected-copy" data-split-copy><strong>${LABELS[selected]}:</strong> ${DETAILS[selected]}</p>`;
 }
 
 function enhanceSmartBuilder(root = document) {
   const host = root.querySelector?.("[data-smart-step]") || (root.matches?.("[data-smart-step]") ? root : null);
-  if (!host || host.querySelector("[data-split-preference-block]")) return;
-  if (!host.querySelector("[data-days]") || !host.querySelector("[data-duration]")) return;
+  if (!host) return;
+
+  const isSchedule = Boolean(host.querySelector("[data-days]") && host.querySelector("[data-duration]"));
+  host.classList.toggle("smart-schedule-compact", isSchedule);
+  if (!isSchedule || host.querySelector("[data-split-preference-block]")) return;
 
   const actions = host.querySelector(".smart-question-actions");
   if (!actions) return;
@@ -52,8 +59,8 @@ function enhanceSmartBuilder(root = document) {
   block.dataset.splitPreferenceBlock = "smart";
   block.innerHTML = `
     <strong class="smart-field-label">Preferred workout split</strong>
-    <p class="smart-helper">Choose the weekly structure. All existing Smart Build volume, priority, exercise-count, duration, equipment, avoidance and superset rules still apply.</p>
-    <div class="smart-option-stack">${splitOptions("smart-option")}</div>
+    <div class="compact-split-row">${splitOptions("smart-option")}</div>
+    ${splitDetailMarkup("smart-helper")}
   `;
   actions.insertAdjacentElement("beforebegin", block);
 }
@@ -63,16 +70,19 @@ function enhanceOnboarding(root = document) {
   if (!overlay) return;
 
   const availability = overlay.querySelector("[data-days]")?.closest(".onboarding-screen");
-  if (availability && availability.querySelector("[data-duration]") && !availability.querySelector("[data-split-preference-block]")) {
-    const block = document.createElement("div");
-    block.className = "onboarding-split-preference";
-    block.dataset.splitPreferenceBlock = "onboarding";
-    block.innerHTML = `
-      <h3>Preferred workout split</h3>
-      <p class="onboarding-helper">This becomes the default for Smart Build when you finish setup. You can change it whenever you build a program.</p>
-      <div class="onboarding-option-stack">${splitOptions("onboarding-option")}</div>
-    `;
-    availability.appendChild(block);
+  if (availability && availability.querySelector("[data-duration]")) {
+    availability.classList.add("onboarding-schedule-compact");
+    if (!availability.querySelector("[data-split-preference-block]")) {
+      const block = document.createElement("div");
+      block.className = "onboarding-split-preference";
+      block.dataset.splitPreferenceBlock = "onboarding";
+      block.innerHTML = `
+        <h3>Preferred workout split</h3>
+        <div class="compact-split-row">${splitOptions("onboarding-option")}</div>
+        ${splitDetailMarkup("onboarding-helper")}
+      `;
+      availability.appendChild(block);
+    }
   }
 
   const summary = overlay.querySelector(".onboarding-completion .onboarding-summary");
@@ -90,6 +100,9 @@ function updateSelectedButtons(root = document) {
   root.querySelectorAll?.("[data-split]").forEach(button => {
     button.classList.toggle("selected", button.dataset.split === selected);
     button.setAttribute("aria-pressed", button.dataset.split === selected ? "true" : "false");
+  });
+  root.querySelectorAll?.("[data-split-copy]").forEach(node => {
+    node.innerHTML = `<strong>${LABELS[selected]}:</strong> ${DETAILS[selected]}`;
   });
   root.querySelectorAll?.("[data-split-summary] strong").forEach(node => { node.textContent = LABELS[selected]; });
 }
@@ -138,10 +151,73 @@ window.addEventListener("levelup:training-preferences-updated", event => {
 
 const style = document.createElement("style");
 style.textContent = `
-  .smart-split-preference { margin-top: 18px; }
-  .smart-split-preference .smart-option-stack { margin-top: 8px; }
-  .onboarding-split-preference { margin-top: 22px; }
-  .onboarding-split-preference .onboarding-option-stack { margin-top: 10px; }
+  .smart-schedule-compact .smart-question-card { padding: 14px; }
+  .smart-schedule-compact .smart-question-card > p { margin-bottom: 10px; }
+  .smart-schedule-compact .smart-question-body { gap: 5px; }
+  .smart-schedule-compact .smart-field-label { margin-top: 2px; }
+  .smart-schedule-compact .smart-question-body .smart-chip-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 5px;
+    width: 100%;
+  }
+  .smart-schedule-compact .smart-question-body .smart-chip {
+    min-width: 0;
+    padding: 9px 3px;
+    font-size: .78rem;
+    white-space: nowrap;
+  }
+  .smart-split-preference { margin-top: 10px; }
+  .compact-split-row {
+    display: grid;
+    grid-template-columns: .78fr 1fr 1.18fr;
+    gap: 6px;
+    margin-top: 7px;
+  }
+  .compact-split-option {
+    min-width: 0;
+    min-height: 44px;
+    padding: 9px 6px !important;
+    display: grid !important;
+    place-items: center;
+    text-align: center !important;
+  }
+  .compact-split-option strong {
+    font-size: .78rem;
+    line-height: 1.15;
+    white-space: normal;
+  }
+  .split-selected-copy {
+    margin: 7px 2px 0 !important;
+    line-height: 1.35;
+  }
+  .split-selected-copy strong { color: #d7d7dc; }
+  .smart-schedule-compact .smart-question-actions { margin-top: 12px; }
+
+  .onboarding-split-preference { margin-top: 15px; }
+  .onboarding-split-preference h3 { margin-bottom: 6px; }
+  .onboarding-schedule-compact .onboarding-number-row,
+  .onboarding-schedule-compact .onboarding-duration-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .onboarding-schedule-compact .onboarding-number-row .onboarding-chip,
+  .onboarding-schedule-compact .onboarding-duration-grid .onboarding-chip {
+    min-width: 0;
+    padding-left: 4px;
+    padding-right: 4px;
+    font-size: .78rem;
+    white-space: nowrap;
+  }
+  .onboarding-split-preference .compact-split-row { margin-top: 6px; }
+
+  @media (max-width: 360px) {
+    .smart-schedule-compact .smart-question-body .smart-chip,
+    .onboarding-schedule-compact .onboarding-number-row .onboarding-chip,
+    .onboarding-schedule-compact .onboarding-duration-grid .onboarding-chip { font-size: .72rem; }
+    .compact-split-option strong { font-size: .72rem; }
+  }
 `;
 document.head.appendChild(style);
 
