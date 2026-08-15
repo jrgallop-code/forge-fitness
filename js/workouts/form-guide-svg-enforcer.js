@@ -11,19 +11,62 @@ function ensureStyles() {
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
-        .exercise-guide-screen .exercise-muscle-image-frame > img[src*="assets/exercise-guides/"] ,
+        .exercise-guide-screen .exercise-muscle-image-frame > img[src*="assets/exercise-guides/"],
         .exercise-guide-screen .exercise-guide-anatomy-tile > img[src*="assets/exercise-guides/"] {
             display: none !important;
         }
-        .exercise-guide-screen .exercise-muscle-image-frame .form-guide-muscle-svg,
-        .exercise-guide-screen .exercise-guide-anatomy-tile .form-guide-muscle-svg {
+
+        .exercise-guide-screen .exercise-muscle-image-frame .form-guide-muscle-svg {
             display: block;
             width: 100%;
             height: 100%;
         }
+
+        .exercise-guide-screen .exercise-guide-anatomy-strip {
+            align-items: flex-start;
+            padding-bottom: 6px;
+        }
+
+        .exercise-guide-screen .exercise-guide-anatomy-tile {
+            align-self: flex-start;
+            box-sizing: border-box;
+            height: auto;
+            min-height: 0;
+            overflow: visible;
+        }
+
+        .exercise-guide-screen .exercise-guide-anatomy-tile .form-guide-muscle-svg {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 4 / 5;
+            border-radius: 8px;
+            background: #000;
+        }
+
+        .exercise-guide-screen .exercise-guide-anatomy-tile strong,
+        .exercise-guide-screen .exercise-guide-anatomy-tile small {
+            position: relative;
+            display: block;
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .exercise-guide-screen .exercise-guide-anatomy-tile strong {
+            margin-top: 7px;
+            min-height: 1.2em;
+        }
+
+        .exercise-guide-screen .exercise-guide-anatomy-tile small {
+            margin-top: 3px;
+            padding-bottom: 2px;
+            min-height: 1.1em;
+        }
+
         .exercise-guide-screen .form-guide-anatomy-base {
             opacity: .74;
         }
+
         .exercise-guide-screen .form-guide-muscle-highlight {
             fill: #ff315f;
             opacity: .98;
