@@ -1,5 +1,5 @@
 import { GOAL_PRESETS } from "./tdee-calculator.js?v=phase-tolerance-1";
-import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=weekly-ma-coach-2";
+import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=rolling-phase-trend-1";
 
 const PHASES_KEY = "level_up_nutrition_phases";
 const WEIGHT_KEY = "forge_weight_entries";
@@ -64,7 +64,7 @@ export function saveNutritionPhase({ goalId, maintenanceCalories, targetCalories
     return { action: "started", phase };
 }
 
-export function getActivePhaseMetrics(phase = getActiveNutritionPhase()) {
+export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options = {}) {
     if (!phase) {
         return {
             status: "NO ACTIVE PHASE",
@@ -84,7 +84,8 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase()) {
         phaseStartDate: phase.startDate,
         asOfDate: phase.endDate || localDate(),
         startingTrendWeight,
-        minEntriesPerWindow: 4
+        minEntriesPerWindow: 4,
+        rolling: options.rolling === true
     });
     const actual = finiteNumber(trend?.weeklyChange);
     const target = finiteNumber(phase.targetWeeklyRate);

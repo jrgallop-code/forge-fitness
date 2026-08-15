@@ -1,4 +1,4 @@
-import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=weekly-ma-coach-2";
+import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=rolling-phase-trend-1";
 
 let refreshQueued = false;
 
@@ -23,7 +23,7 @@ function formatRate(value) {
 function getDisplay() {
     const phase = getActiveNutritionPhase();
     if (!phase) return { text: "No active phase", rateText: "No active phase", statusText: "NO ACTIVE PHASE" };
-    const metrics = getActivePhaseMetrics(phase);
+    const metrics = getActivePhaseMetrics(phase, { rolling: true });
     const rate = formatRate(metrics.actualRateLbPerWeek);
     if (metrics.status === "BUILDING TREND") {
         return { text: "Building trend · preliminary Day 7", rateText: "Calibrating", statusText: "BUILDING TREND" };
@@ -69,5 +69,11 @@ if (content) new MutationObserver(scheduleRefresh).observe(content, { childList:
 window.addEventListener("levelup:nutrition-phase-updated", scheduleRefresh);
 window.addEventListener("levelup:nutrition-updated", scheduleRefresh);
 window.addEventListener("load", scheduleRefresh);
-document.addEventListener("click", scheduleRefresh, true);
+document.addEventListener("click", event => {
+    if (event.target.closest?.("#save-weight-btn, .remove-weight-entry")) {
+        window.setTimeout(scheduleRefresh, 0);
+        return;
+    }
+    scheduleRefresh();
+}, true);
 scheduleRefresh();

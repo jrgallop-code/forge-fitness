@@ -52,7 +52,9 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
         : localDate();
     const minEntriesPerWindow = positiveInteger(options.minEntriesPerWindow, MIN_WINDOW_ENTRIES);
     const startingTrendWeight = finiteNumber(options.startingTrendWeight);
-    const normalized = normalizeWeightEntries(entries).filter(entry => !phaseStartDate || entry.date >= phaseStartDate);
+    const rolling = options.rolling === true;
+    const normalized = normalizeWeightEntries(entries)
+        .filter(entry => (!phaseStartDate || entry.date >= phaseStartDate) && entry.date <= asOfDate);
 
     if (!phaseStartDate) {
         return {
@@ -71,6 +73,10 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
     }
 
     const phaseDay = Math.max(1, Math.floor((dateMs(asOfDate) - dateMs(phaseStartDate)) / DAY_MS) + 1);
+    const firstTrendDate = shiftDate(phaseStartDate, FIRST_PHASE_TREND_DAY - 1);
+    const rollingEndDate = rolling
+        ? getRollingPhaseEndDate(normalized, firstTrendDate, asOfDate)
+        : null;
 
     if (phaseDay < FIRST_PHASE_TREND_DAY) {
         return {
@@ -80,7 +86,7 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
             checkDay: null,
             checkDate: null,
             nextTrendDay: FIRST_PHASE_TREND_DAY,
-            nextTrendDate: shiftDate(phaseStartDate, FIRST_PHASE_TREND_DAY - 1),
+            nextTrendDate: firstTrendDate,
             nextCheckDay: FIRST_PHASE_CHECK_DAY,
             nextCheckDate: shiftDate(phaseStartDate, FIRST_PHASE_CHECK_DAY - 1),
             daysUntilTrend: FIRST_PHASE_TREND_DAY - phaseDay,
@@ -90,7 +96,7 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
     }
 
     if (phaseDay < FIRST_PHASE_CHECK_DAY) {
-        const trendDate = shiftDate(phaseStartDate, FIRST_PHASE_TREND_DAY - 1);
+        const trendDate = rolling ? rollingEndDate : firstTrendDate;
         const current = calculateSevenDayAverage(normalized, trendDate);
         const enoughCurrent = current.entries >= minEntriesPerWindow;
 
@@ -154,7 +160,8 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
     const checkDay = FIRST_PHASE_CHECK_DAY
         + (Math.floor((phaseDay - FIRST_PHASE_CHECK_DAY) / PHASE_CHECK_CADENCE_DAYS) * PHASE_CHECK_CADENCE_DAYS);
     const checkDate = shiftDate(phaseStartDate, checkDay - 1);
-    const result = calculateWeightTrend(normalized, { endDate: checkDate, minEntriesPerWindow });
+    const trendDate = rolling ? rollingEndDate : checkDate;
+    const result = calculateWeightTrend(normalized, { endDate: trendDate, minEntriesPerWindow });
 
     return {
         ...result,
@@ -212,6 +219,13 @@ export function normalizeWeightEntries(entries) {
         byDate.set(date, { date, weight });
     });
     return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function getRollingPhaseEndDate(entries, firstTrendDate, asOfDate) {
+    const latestDate = entries.at(-1)?.date || null;
+    if (!validDate(firstTrendDate)) return latestDate;
+    if (!validDate(latestDate) || latestDate < firstTrendDate) return firstTrendDate;
+    return latestDate > asOfDate ? asOfDate : latestDate;
 }
 
 function buildMovingAverageResult({ status, weeklyChange = null, allEntries = [], current = emptyWindow(null, null), previous = emptyWindow(null, null), endDate = null, minEntriesPerWindow = MIN_WINDOW_ENTRIES }) {

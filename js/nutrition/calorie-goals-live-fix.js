@@ -3,7 +3,7 @@ import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=phase-cal
 import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-goal-controls-1";
 import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=weekly-ma-coach-2";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
-import "./phase-rate-display.js?v=weekly-ma-coach-2";
+import "./phase-rate-display.js?v=rolling-phase-trend-1";
 
 const FULL_GAP_INCREMENT = 50;
 const FIRST_STEP_INCREMENT = 25;
