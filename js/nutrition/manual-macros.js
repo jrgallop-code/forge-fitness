@@ -1,5 +1,6 @@
 const MACRO_STORAGE_KEY = "level_up_nutrition_macro";
 const MANUAL_VALUE = "manual";
+let manualDraft = null;
 
 function readSavedMacro() {
     try {
@@ -129,6 +130,7 @@ function editableMarkup(key, value, percent) {
 function updateManualOutputPreview() {
     const macros = readManualInputs();
     if (!validMacros(macros)) return;
+    manualDraft = { ...macros };
 
     const pct = percentages(macros);
     ["protein", "carbs", "fat"].forEach(key => {
@@ -159,12 +161,18 @@ function updateManualOutputPreview() {
 
 function renderManualMode(macros) {
     if (!validMacros(macros)) return;
-    const els = getOutputElements();
-    const pct = percentages(macros);
+    manualDraft = {
+        protein: Number(macros.protein),
+        carbs: Number(macros.carbs),
+        fat: Number(macros.fat)
+    };
 
-    if (els.protein) els.protein.innerHTML = editableMarkup("protein", macros.protein, pct.protein);
-    if (els.carbs) els.carbs.innerHTML = editableMarkup("carbs", macros.carbs, pct.carbs);
-    if (els.fat) els.fat.innerHTML = editableMarkup("fat", macros.fat, pct.fat);
+    const els = getOutputElements();
+    const pct = percentages(manualDraft);
+
+    if (els.protein) els.protein.innerHTML = editableMarkup("protein", manualDraft.protein, pct.protein);
+    if (els.carbs) els.carbs.innerHTML = editableMarkup("carbs", manualDraft.carbs, pct.carbs);
+    if (els.fat) els.fat.innerHTML = editableMarkup("fat", manualDraft.fat, pct.fat);
 
     document.querySelectorAll("[data-manual-macro]").forEach(input => {
         input.addEventListener("input", updateManualOutputPreview);
@@ -178,11 +186,13 @@ function renderManualMode(macros) {
 function enterManualMode() {
     const saved = readSavedMacro();
     const displayed = getDisplayedMacros();
-    const macros = validMacros(saved?.manualMacros)
-        ? saved.manualMacros
-        : validMacros(displayed)
-            ? displayed
-            : { protein: 160, carbs: 200, fat: 60 };
+    const macros = validMacros(manualDraft)
+        ? manualDraft
+        : validMacros(saved?.manualMacros)
+            ? saved.manualMacros
+            : validMacros(displayed)
+                ? displayed
+                : { protein: 160, carbs: 200, fat: 60 };
 
     renderManualMode(macros);
 
@@ -193,6 +203,7 @@ function enterManualMode() {
 }
 
 function leaveManualMode() {
+    manualDraft = null;
     const saved = readSavedMacro();
     const baseline = saved?.autoBaseline;
     if (validMacros(baseline)) {
@@ -225,6 +236,7 @@ function saveManualMacros(event) {
 
     const macros = readManualInputs();
     if (!validMacros(macros)) return;
+    manualDraft = { ...macros };
 
     const previous = readSavedMacro() || {};
     writeSavedMacro({
@@ -242,9 +254,26 @@ function saveManualMacros(event) {
     if (summary) summary.textContent = `${Math.round(macros.protein)} g`;
 }
 
+function repairManualEditor() {
+    const select = document.getElementById("nutrition-macro-select");
+    if (select?.value !== MANUAL_VALUE) return;
+    if (document.querySelector('[data-manual-macro="protein"]')) return;
+    enterManualMode();
+}
+
+function queueManualEditorRepair() {
+    window.setTimeout(repairManualEditor, 0);
+    window.setTimeout(repairManualEditor, 80);
+}
+
 function initializeManualMacroUI() {
     const select = ensureManualOption();
-    if (!select || select.dataset.manualMacroReady === "true") return;
+    if (!select) return;
+
+    if (select.dataset.manualMacroReady === "true") {
+        repairManualEditor();
+        return;
+    }
     select.dataset.manualMacroReady = "true";
 
     // Remove the old standalone manual section if a cached version is present.
@@ -296,4 +325,6 @@ function enhanceIfPresent() {
 // Keep this lightweight: no global MutationObserver, so navigation remains responsive.
 const presenceTimer = window.setInterval(enhanceIfPresent, 1200);
 window.addEventListener("pagehide", () => window.clearInterval(presenceTimer), { once: true });
+window.addEventListener("levelup:nutrition-updated", queueManualEditorRepair);
+window.addEventListener("levelup:nutrition-phase-updated", queueManualEditorRepair);
 enhanceIfPresent();
