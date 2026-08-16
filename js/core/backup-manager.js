@@ -6,6 +6,7 @@ from "./backup-providers.js?v=backup-provider-1";
 const MAX_BACKUP_SIZE = 100 * 1024 * 1024;
 const INVALID_STORAGE_KEYS = new Set(["setItem"]);
 const BACKUP_FORMAT_VERSION = 5;
+const LEVEL_UP_INDEXED_DB_PREFIX = "level_up_";
 
 export function initializeBackupManager() {
     cleanupInvalidStorageKeys();
@@ -110,13 +111,59 @@ function renderBackupSummary() {
     });
 
     const summary = getBackupSummary(data);
-    element.textContent = `${formatSummary(summary)} · all current app storage included automatically`;
+    element.textContent = `${formatSummary(summary)} · complete registered app storage is included automatically`;
 }
 
 function countProviderItems(value) {
     if (Array.isArray(value)) return value.length;
     if (value && typeof value === "object") return Object.keys(value).length;
     return value === null || value === undefined ? 0 : 1;
+}
+
+async function auditIndexedDbCoverage() {
+    const registeredNames = new Set(
+        getBackupProviders()
+            .flatMap(provider => Array.isArray(provider.indexedDbNames) ? provider.indexedDbNames : [])
+            .filter(Boolean)
+    );
+
+    if (typeof indexedDB === "undefined" || typeof indexedDB.databases !== "function") {
+        return {
+            supported: false,
+            registered: [...registeredNames].sort(),
+            discovered: []
+        };
+    }
+
+    try {
+        const databases = await indexedDB.databases();
+        const discovered = databases
+            .map(database => database?.name)
+            .filter(name => typeof name === "string" && name.startsWith(LEVEL_UP_INDEXED_DB_PREFIX))
+            .sort();
+        const unregistered = discovered.filter(name => !registeredNames.has(name));
+
+        if (unregistered.length) {
+            throw new Error(
+                `Complete backup stopped because new Level Up storage is not registered: ${unregistered.join(", ")}.`
+            );
+        }
+
+        return {
+            supported: true,
+            registered: [...registeredNames].sort(),
+            discovered
+        };
+    }
+    catch (error) {
+        if (String(error?.message || "").startsWith("Complete backup stopped because")) throw error;
+        console.warn("IndexedDB backup coverage audit was unavailable:", error);
+        return {
+            supported: false,
+            registered: [...registeredNames].sort(),
+            discovered: []
+        };
+    }
 }
 
 async function exportProviderData() {
@@ -151,6 +198,7 @@ async function createBackupSnapshot() {
         data[key] = readStorageValue(key);
     });
 
+    const indexedDbAudit = await auditIndexedDbCoverage();
     const providerExport = await exportProviderData();
 
     return {
@@ -165,7 +213,8 @@ async function createBackupSnapshot() {
                 keyCount: keys.length,
                 keys
             },
-            providers: providerExport.coverage
+            providers: providerExport.coverage,
+            indexedDbAudit
         },
         summary: getBackupSummary(data),
         data,
@@ -180,10 +229,12 @@ function verifyBackupSnapshot(backup) {
 
     const dataKeys = Object.keys(backup.data).filter(key => !INVALID_STORAGE_KEYS.has(key)).sort();
     const localCoverage = backup.coverage?.localStorage;
+    const coveredKeys = Array.isArray(localCoverage?.keys) ? [...localCoverage.keys].sort() : [];
     if (
         localCoverage?.mode !== "all-current-keys" ||
         localCoverage?.keyCount !== dataKeys.length ||
-        backup.storageKeyCount !== dataKeys.length
+        backup.storageKeyCount !== dataKeys.length ||
+        JSON.stringify(coveredKeys) !== JSON.stringify(dataKeys)
     ) {
         throw new Error("Backup verification failed: local app data coverage is incomplete.");
     }
