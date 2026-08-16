@@ -123,6 +123,13 @@ function bindListeners() {
     window.addEventListener("levelup:nutrition-updated", scheduleRefresh);
 }
 
+function readDirectCalorieTarget() {
+    const input = document.getElementById("unified-direct-calorie-target");
+    if (!input) return null;
+    const value = Math.round(Number(input.value));
+    return Number.isFinite(value) && value > 0 ? value : null;
+}
+
 function savePhaseFromNutrition() {
     const profile = getNutritionProfile();
     if (!profile || !Number.isFinite(Number(profile.age)) || Number(profile.age) < 18) {
@@ -133,16 +140,17 @@ function savePhaseFromNutrition() {
     const goalId = document.getElementById("unified-goal-select")?.value;
     const preset = GOAL_PRESETS[goalId];
     const maintenance = Math.round(Number(document.getElementById("unified-maintenance")?.value));
+    const directTarget = readDirectCalorieTarget();
+    const targetCalories = directTarget ?? Math.round(maintenance + Number(preset?.dailyCalorieAdjustment || 0));
     const startDate = document.getElementById("nutrition-phase-start-date")?.value || today();
     const goalWeightRaw = Number(document.getElementById("nutrition-phase-goal-weight")?.value);
     const goalWeight = Number.isFinite(goalWeightRaw) && goalWeightRaw > 0 ? Math.round(goalWeightRaw * 10) / 10 : null;
-    if (!preset || !Number.isFinite(maintenance) || maintenance <= 0 || !validStartDate(startDate)) {
-        setText("unified-calorie-message", "Choose a phase, maintenance calories, and a valid phase start date.");
+    if (!preset || !Number.isFinite(maintenance) || maintenance <= 0 || !Number.isFinite(targetCalories) || targetCalories <= 0 || !validStartDate(startDate)) {
+        setText("unified-calorie-message", "Choose a phase, maintenance calories, a planned daily target, and a valid phase start date.");
         return;
     }
 
-    const targetCalories = Math.round(maintenance + preset.dailyCalorieAdjustment);
-    const result = savePhaseRecord({ goalId, preset, maintenance, targetCalories, startDate, goalWeight });
+    const result = savePhaseRecord({ goalId, preset, maintenance, targetCalories, startDate, goalWeight, directTargetUsed: Number.isFinite(directTarget) });
     if (result.action === "invalid") {
         const message = result.reason === "start_before_active_phase"
             ? "A new phase cannot start before the current phase began. Adjust the current phase start first, or choose a later date."
@@ -163,15 +171,15 @@ function savePhaseFromNutrition() {
     const message = result.action === "started"
         ? `Started ${preset.label} on ${formatDate(startDate)} at ${targetCalories} kcal/day.`
         : result.action === "adjusted"
-            ? `Updated ${preset.label}. Calories are ${targetCalories} kcal/day and the phase still starts ${formatDate(startDate)}.`
+            ? `Updated ${preset.label}. Calories are ${targetCalories} kcal/day and the phase still starts ${formatDate(result.phase.startDate)}.`
             : result.action === "updated"
-                ? `Updated ${preset.label} phase details. Trend analysis now starts ${formatDate(startDate)}.`
+                ? `Updated ${preset.label} phase details. The calorie target is ${targetCalories} kcal/day and trend analysis still starts ${formatDate(result.phase.startDate)}.`
                 : `${preset.label} remains active at ${targetCalories} kcal/day.`;
     setText("unified-calorie-message", message);
     scheduleRefresh();
 }
 
-function savePhaseRecord({ goalId, preset, maintenance, targetCalories, startDate, goalWeight }) {
+function savePhaseRecord({ goalId, preset, maintenance, targetCalories, startDate, goalWeight, directTargetUsed = false }) {
     const phases = readPhases();
     const index = activePhaseIndex(phases);
     const active = index >= 0 ? phases[index] : null;
@@ -187,7 +195,8 @@ function savePhaseRecord({ goalId, preset, maintenance, targetCalories, startDat
         const priorGoalWeight = readGoalWeight(active);
         const nextGoalWeight = goalWeight ?? priorGoalWeight;
         const startChanged = startDate !== active.startDate;
-        const caloriesChanged = previousCalories !== targetCalories || previousMaintenance !== maintenance;
+        const targetChanged = previousCalories !== targetCalories;
+        const maintenanceChanged = previousMaintenance !== maintenance;
         const goalChanged = !sameNumber(priorGoalWeight, nextGoalWeight);
 
         if (startChanged && previousIndex >= 0) {
@@ -202,15 +211,30 @@ function savePhaseRecord({ goalId, preset, maintenance, targetCalories, startDat
             startingTrendWeight: startChanged ? trendWeightAsOf(startDate) : active.startingTrendWeight,
             goalWeight: nextGoalWeight,
             targetWeeklyRate: preset.weeklyWeightChangeLb,
-            dailyCalorieAdjustment: preset.dailyCalorieAdjustment,
+            dailyCalorieAdjustment: targetCalories - maintenance,
+            recommendedDailyCalorieAdjustment: preset.dailyCalorieAdjustment,
             maintenanceCalories: maintenance,
             currentCalories: targetCalories,
             updatedAt: now
         };
-        if (caloriesChanged) next.adjustments = [...(Array.isArray(active.adjustments) ? active.adjustments : []), { date: now, previousCalories, newCalories: targetCalories, maintenanceCalories: maintenance }];
+        if (targetChanged) {
+            next.adjustments = [
+                ...(Array.isArray(active.adjustments) ? active.adjustments : []),
+                {
+                    date: now,
+                    previousCalories,
+                    newCalories: targetCalories,
+                    maintenanceCalories: maintenance,
+                    source: directTargetUsed ? "manual" : "planned"
+                }
+            ];
+        }
         phases[index] = next;
         writePhases(phases);
-        return { action: caloriesChanged ? "adjusted" : startChanged || goalChanged ? "updated" : "unchanged", phase: next };
+        return {
+            action: targetChanged ? "adjusted" : startChanged || goalChanged || maintenanceChanged ? "updated" : "unchanged",
+            phase: next
+        };
     }
 
     if (active?.startDate && startDate < active.startDate) return { action: "invalid", reason: "start_before_active_phase" };
@@ -229,7 +253,8 @@ function savePhaseRecord({ goalId, preset, maintenance, targetCalories, startDat
         startingTrendWeight: trendWeightAsOf(startDate),
         goalWeight: goalWeight ?? readGoalWeight(active),
         targetWeeklyRate: preset.weeklyWeightChangeLb,
-        dailyCalorieAdjustment: preset.dailyCalorieAdjustment,
+        dailyCalorieAdjustment: targetCalories - maintenance,
+        recommendedDailyCalorieAdjustment: preset.dailyCalorieAdjustment,
         maintenanceCalories: maintenance,
         startCalories: targetCalories,
         currentCalories: targetCalories,
