@@ -26,7 +26,7 @@ import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calor
 import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=first-run-onboarding-1";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=workout-history-preview-2";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-2";
-import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-3";
+import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-4";
 import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-drive-backup-1";
 import { getCurrentGoal } from "./current-goal.js?v=current-goal-1";
 

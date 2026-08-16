@@ -1,4 +1,4 @@
-import { navigate } from "./core/router.js?v=first-run-onboarding-1";
+import { navigate } from "./core/router.js?v=backup-coverage-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=dashboard-grid-nav-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-session-7-cardio-fields";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
