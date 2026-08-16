@@ -1,11 +1,11 @@
 import {
-    exportPhotoRecords,
-    importPhotoRecords
+    getBackupProviders
 }
-from "../progress/photo-journal.js";
+from "./backup-providers.js?v=backup-provider-1";
 
 const MAX_BACKUP_SIZE = 100 * 1024 * 1024;
 const INVALID_STORAGE_KEYS = new Set(["setItem"]);
+const BACKUP_FORMAT_VERSION = 5;
 
 export function initializeBackupManager() {
     cleanupInvalidStorageKeys();
@@ -110,7 +110,38 @@ function renderBackupSummary() {
     });
 
     const summary = getBackupSummary(data);
-    element.textContent = formatSummary(summary);
+    element.textContent = `${formatSummary(summary)} · all current app storage included automatically`;
+}
+
+function countProviderItems(value) {
+    if (Array.isArray(value)) return value.length;
+    if (value && typeof value === "object") return Object.keys(value).length;
+    return value === null || value === undefined ? 0 : 1;
+}
+
+async function exportProviderData() {
+    const externalData = {};
+    const coverage = [];
+
+    for (const provider of getBackupProviders()) {
+        try {
+            const value = await provider.exportData();
+            externalData[provider.id] = value;
+            coverage.push({
+                id: provider.id,
+                label: provider.label,
+                storage: provider.storage,
+                included: true,
+                itemCount: countProviderItems(value)
+            });
+        }
+        catch (error) {
+            console.error(`Backup provider ${provider.id} failed:`, error);
+            throw new Error(`Complete backup stopped because ${provider.label} could not be exported.`);
+        }
+    }
+
+    return { externalData, coverage };
 }
 
 async function createBackupSnapshot() {
@@ -120,28 +151,61 @@ async function createBackupSnapshot() {
         data[key] = readStorageValue(key);
     });
 
+    const providerExport = await exportProviderData();
+
     return {
         app: "level-up",
-        formatVersion: 4,
+        formatVersion: BACKUP_FORMAT_VERSION,
         exportedAt: new Date().toISOString(),
-        storageMode: "complete-local-storage",
+        storageMode: "complete-local-storage-plus-providers",
         storageKeyCount: keys.length,
+        coverage: {
+            localStorage: {
+                mode: "all-current-keys",
+                keyCount: keys.length,
+                keys
+            },
+            providers: providerExport.coverage
+        },
         summary: getBackupSummary(data),
         data,
-        photos: await exportPhotoRecords()
+        externalData: providerExport.externalData
     };
+}
+
+function verifyBackupSnapshot(backup) {
+    if (backup?.app !== "level-up" || !backup?.data || typeof backup.data !== "object" || Array.isArray(backup.data)) {
+        throw new Error("Backup verification failed.");
+    }
+
+    const dataKeys = Object.keys(backup.data).filter(key => !INVALID_STORAGE_KEYS.has(key)).sort();
+    const localCoverage = backup.coverage?.localStorage;
+    if (
+        localCoverage?.mode !== "all-current-keys" ||
+        localCoverage?.keyCount !== dataKeys.length ||
+        backup.storageKeyCount !== dataKeys.length
+    ) {
+        throw new Error("Backup verification failed: local app data coverage is incomplete.");
+    }
+
+    const externalData = backup.externalData || {};
+    const providerCoverage = Array.isArray(backup.coverage?.providers) ? backup.coverage.providers : [];
+    getBackupProviders().forEach(provider => {
+        const coverage = providerCoverage.find(item => item?.id === provider.id);
+        if (!coverage?.included || !Object.prototype.hasOwnProperty.call(externalData, provider.id)) {
+            throw new Error(`Backup verification failed: ${provider.label} is missing.`);
+        }
+    });
 }
 
 async function exportBackup() {
     try {
-        setBackupMessage("Preparing complete backup…");
+        setBackupMessage("Preparing and verifying complete backup…");
         const backup = await createBackupSnapshot();
-        const json = JSON.stringify(backup, null, 2);
-        const verification = JSON.parse(json);
+        verifyBackupSnapshot(backup);
 
-        if (verification?.app !== "level-up" || !verification?.data || typeof verification.data !== "object") {
-            throw new Error("Backup verification failed.");
-        }
+        const json = JSON.stringify(backup, null, 2);
+        JSON.parse(json);
 
         const blob = new Blob([json], { type: "application/json" });
         const filename = `level-up-backup-${getLocalDateValue()}.json`;
@@ -152,13 +216,13 @@ async function exportBackup() {
         if (file && navigator.share && navigator.canShare?.({ files: [file] })) {
             try {
                 await navigator.share({ files: [file], title: "Level Up Backup" });
-                setBackupMessage(`Backup ready: ${formatSummary(backup.summary)}.`, "success");
+                setBackupMessage(`Complete backup verified: ${formatSummary(backup.summary)}.`, "success");
                 renderBackupSummary();
                 return;
             }
             catch (error) {
                 if (error?.name === "AbortError") {
-                    setBackupMessage("Backup prepared. Export cancelled before saving.");
+                    setBackupMessage("Backup prepared and verified. Export cancelled before saving.");
                     return;
                 }
             }
@@ -173,12 +237,50 @@ async function exportBackup() {
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-        setBackupMessage(`Backup exported: ${formatSummary(backup.summary)}.`, "success");
+        setBackupMessage(`Complete backup verified and exported: ${formatSummary(backup.summary)}.`, "success");
         renderBackupSummary();
     }
     catch (error) {
         console.error("Backup export failed:", error);
         setBackupMessage(error?.message || "The backup could not be exported.", "error");
+    }
+}
+
+function getProviderPayload(backup, provider) {
+    if (
+        backup?.externalData &&
+        typeof backup.externalData === "object" &&
+        Object.prototype.hasOwnProperty.call(backup.externalData, provider.id)
+    ) {
+        return { found: true, value: backup.externalData[provider.id] };
+    }
+
+    if (
+        provider.legacyRootKey &&
+        Object.prototype.hasOwnProperty.call(backup || {}, provider.legacyRootKey)
+    ) {
+        return { found: true, value: backup[provider.legacyRootKey] };
+    }
+
+    return { found: false, value: undefined };
+}
+
+function hasAnyProviderPayload(backup) {
+    return getBackupProviders().some(provider => getProviderPayload(backup, provider).found);
+}
+
+async function importProviderData(backup) {
+    for (const provider of getBackupProviders()) {
+        const payload = getProviderPayload(backup, provider);
+        if (!payload.found) continue;
+
+        try {
+            await provider.importData(payload.value);
+        }
+        catch (error) {
+            console.error(`Backup provider ${provider.id} restore failed:`, error);
+            throw new Error(`${provider.label} could not be restored from this backup.`);
+        }
     }
 }
 
@@ -194,7 +296,7 @@ async function importBackup(file, fileInput) {
         }
 
         const incomingKeys = Object.keys(backup.data).filter(key => !INVALID_STORAGE_KEYS.has(key));
-        if (!incomingKeys.length && !Array.isArray(backup.photos)) {
+        if (!incomingKeys.length && !hasAnyProviderPayload(backup)) {
             throw new Error("This backup does not contain Level Up data.");
         }
 
@@ -218,8 +320,7 @@ async function importBackup(file, fileInput) {
         });
 
         cleanupInvalidStorageKeys();
-
-        if (Array.isArray(backup.photos)) await importPhotoRecords(backup.photos);
+        await importProviderData(backup);
 
         window.alert("Backup imported successfully. Level Up will reload now.");
         window.location.reload();
