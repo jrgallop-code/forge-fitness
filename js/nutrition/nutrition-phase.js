@@ -73,16 +73,28 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
             targetRateLbPerWeek: null,
             toleranceLbPerWeek: null,
             referenceWeight: null,
-            recommendationReady: false
+            recommendationReady: false,
+            asOfDate: null,
+            isFutureTest: false
         };
     }
 
     const allWeights = readWeights();
-    const entries = allWeights.filter(e => e.date >= phase.startDate && (!phase.endDate || e.date <= phase.endDate));
+    const asOfDate = resolveMetricsAsOfDate(phase, allWeights, options.asOfDate);
+    const today = localDate();
+    const metadata = {
+        asOfDate,
+        isFutureTest: !phase.endDate && asOfDate > today
+    };
+    const entries = allWeights.filter(e =>
+        e.date >= phase.startDate &&
+        e.date <= asOfDate &&
+        (!phase.endDate || e.date <= phase.endDate)
+    );
     const startingTrendWeight = finiteNumber(phase.startingTrendWeight) ?? trendWeight(allWeights.filter(e => e.date <= phase.startDate));
     const trend = calculatePhaseMovingAverageTrend(entries, {
         phaseStartDate: phase.startDate,
-        asOfDate: phase.endDate || localDate(),
+        asOfDate,
         startingTrendWeight,
         minEntriesPerWindow: 4,
         rolling: options.rolling === true
@@ -98,15 +110,15 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
 
     if (trend.status === "insufficient" || !Number.isFinite(actual)) {
         const waitingStatus = trend.reason === "before-first-trend" ? "BUILDING TREND" : "NEED MORE DATA";
-        return buildMetrics(waitingStatus, trend, actual, target, tolerance, referenceWeight, false);
+        return buildMetrics(waitingStatus, trend, actual, target, tolerance, referenceWeight, false, metadata);
     }
 
     if (trend.status === "preliminary") {
-        return buildMetrics("PRELIMINARY TREND", trend, actual, target, tolerance, referenceWeight, false);
+        return buildMetrics("PRELIMINARY TREND", trend, actual, target, tolerance, referenceWeight, false, metadata);
     }
 
     if (!Number.isFinite(target)) {
-        return buildMetrics("NEED MORE DATA", trend, actual, null, tolerance, referenceWeight, false);
+        return buildMetrics("NEED MORE DATA", trend, actual, null, tolerance, referenceWeight, false, metadata);
     }
 
     let status;
@@ -127,15 +139,28 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
     }
 
     const recommendationReady = trend.status === "actual" && Number.isFinite(trend.checkDay) && trend.checkDay >= 14;
-    return buildMetrics(status, trend, actual, target, tolerance, referenceWeight, recommendationReady);
+    return buildMetrics(status, trend, actual, target, tolerance, referenceWeight, recommendationReady, metadata);
 }
 
-export function getPhaseDayNumber(phase = getActiveNutritionPhase()) {
+export function getPhaseDayNumber(phase = getActiveNutritionPhase(), options = {}) {
     if (!phase?.startDate) return null;
-    return Math.max(1, Math.floor((dateMs(phase.endDate || localDate()) - dateMs(phase.startDate)) / 86400000) + 1);
+    const weights = readWeights();
+    const asOfDate = resolveMetricsAsOfDate(phase, weights, options.asOfDate);
+    return Math.max(1, Math.floor((dateMs(asOfDate) - dateMs(phase.startDate)) / 86400000) + 1);
 }
 
-function buildMetrics(status, trend, actual, target, tolerance, referenceWeight, recommendationReady) {
+function resolveMetricsAsOfDate(phase, weights, requestedDate) {
+    if (validDate(requestedDate)) return String(requestedDate);
+    if (validDate(phase?.endDate)) return String(phase.endDate);
+
+    const today = localDate();
+    const latestWeightDate = Array.isArray(weights) ? weights.at(-1)?.date : null;
+    return validDate(latestWeightDate) && latestWeightDate > today
+        ? String(latestWeightDate)
+        : today;
+}
+
+function buildMetrics(status, trend, actual, target, tolerance, referenceWeight, recommendationReady, metadata = {}) {
     return {
         status,
         trend,
@@ -143,7 +168,9 @@ function buildMetrics(status, trend, actual, target, tolerance, referenceWeight,
         targetRateLbPerWeek: Number.isFinite(target) ? target : null,
         toleranceLbPerWeek: Number.isFinite(tolerance) ? tolerance : null,
         referenceWeight: Number.isFinite(referenceWeight) ? referenceWeight : null,
-        recommendationReady: Boolean(recommendationReady)
+        recommendationReady: Boolean(recommendationReady),
+        asOfDate: metadata.asOfDate || null,
+        isFutureTest: metadata.isFutureTest === true
     };
 }
 
@@ -156,4 +183,5 @@ function finiteNumber(value){if(value===null||value===undefined||value==="")retu
 function positive(v){const n=Math.round(Number(v));return Number.isFinite(n)&&n>0?n:null}
 function notify(){window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated"))}
 function localDate(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function validDate(v){return /^\d{4}-\d{2}-\d{2}$/.test(String(v||""))&&Number.isFinite(dateMs(String(v)))}
 function dateMs(v){return new Date(`${v}T12:00:00`).getTime()}
