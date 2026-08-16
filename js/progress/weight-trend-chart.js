@@ -134,9 +134,9 @@ function getChartWindow(range, entries, activePhase) {
     };
 }
 
-function filterEntriesToWindow(entries, window) {
-    if (!window?.startDate || !window?.endDate) return entries;
-    return entries.filter(entry => entry.date >= window.startDate && entry.date <= window.endDate);
+function filterEntriesToWindow(entries, chartWindow) {
+    if (!chartWindow?.startDate || !chartWindow?.endDate) return entries;
+    return entries.filter(entry => entry.date >= chartWindow.startDate && entry.date <= chartWindow.endDate);
 }
 
 function ensureRangeStyles() {
@@ -239,10 +239,10 @@ function enhanceWeightChart() {
     const allEntries = readWeightEntries();
     const activePhase = readActiveNutritionPhase();
     const selectedRange = readSelectedRange(activePhase);
-    const window = getChartWindow(selectedRange, allEntries, activePhase);
+    const chartWindow = getChartWindow(selectedRange, allEntries, activePhase);
     const fullMovingAverage = calculateMovingAverage(allEntries);
-    const visibleEntries = filterEntriesToWindow(allEntries, window);
-    const visibleMovingAverage = filterEntriesToWindow(fullMovingAverage, window);
+    const visibleEntries = filterEntriesToWindow(allEntries, chartWindow);
+    const visibleMovingAverage = filterEntriesToWindow(fullMovingAverage, chartWindow);
 
     ensureRangeControls(legacyCanvas, selectedRange, activePhase);
 
@@ -257,7 +257,7 @@ function enhanceWeightChart() {
 
     canvas.setAttribute(
         "aria-label",
-        `Weight chart for ${window.label}, showing daily entries and a 7-day trend line`
+        `Weight chart for ${chartWindow.label}, showing daily entries and a 7-day trend line`
     );
 
     drawWeightTrendChart(
@@ -265,19 +265,19 @@ function enhanceWeightChart() {
         visibleEntries,
         visibleMovingAverage,
         readGoalWeight(),
-        window,
+        chartWindow,
         selectedRange,
         allEntries.length
     );
 }
 
-function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, window, selectedRange, totalEntryCount) {
+function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, chartWindow, selectedRange, totalEntryCount) {
     const context = canvas.getContext("2d");
     if (!context) return;
 
     const width = canvas.clientWidth || canvas.parentElement?.clientWidth || 800;
     const height = 400;
-    const scale = window.devicePixelRatio || 1;
+    const scale = globalThis.devicePixelRatio || 1;
 
     canvas.width = width * scale;
     canvas.height = height * scale;
@@ -340,8 +340,8 @@ function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, window
 
     const chartWidth = Math.max(1, width - padding.left - padding.right);
     const chartHeight = Math.max(1, height - padding.top - padding.bottom);
-    const firstTime = dateMs(window.startDate || entries[0].date);
-    const lastTime = dateMs(window.endDate || entries.at(-1).date);
+    const firstTime = dateMs(chartWindow.startDate || entries[0].date);
+    const lastTime = dateMs(chartWindow.endDate || entries.at(-1).date);
     const hasTimeSpan = lastTime > firstTime;
     const elapsed = Math.max(1, lastTime - firstTime);
 
@@ -371,9 +371,9 @@ function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, window
     context.fillStyle = "#a0a0a8";
     context.font = "11px Arial";
     context.textAlign = "left";
-    context.fillText(formatDate(window.startDate, includeYear), padding.left, height - 16);
+    context.fillText(formatDate(chartWindow.startDate, includeYear), padding.left, height - 16);
     context.textAlign = "right";
-    context.fillText(formatDate(window.endDate, includeYear), width - padding.right, height - 16);
+    context.fillText(formatDate(chartWindow.endDate, includeYear), width - padding.right, height - 16);
 
     context.save();
     context.strokeStyle = DAILY_WEIGHT_LINE;
