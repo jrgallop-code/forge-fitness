@@ -1,3 +1,5 @@
+import "../workouts/back-upper-trap-target-sync.js?v=upper-traps-back-1";
+
 const BACK_ASSET = "assets/recovery/back-view.svg?v=recovery-back-vector-2";
 
 const BACK_REGIONS = {
