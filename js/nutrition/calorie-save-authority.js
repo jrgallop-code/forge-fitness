@@ -48,12 +48,6 @@
         };
     }
 
-    function sameSelectedPhase() {
-        const { phase } = activePhaseState();
-        const goalId = selectedGoalId();
-        return Boolean(phase && goalId && phase.goalId === goalId);
-    }
-
     function setText(node, value) {
         if (node && node.textContent !== value) node.textContent = value;
     }
@@ -105,10 +99,8 @@
         const samePhase = Boolean(phase && selectedGoalId() && phase.goalId === selectedGoalId());
 
         if (!samePhase) {
-            if (input.dataset.calorieEntryMode === "increase") {
-                input.dataset.calorieEntryMode = "target";
-                input.dataset.dirty = "0";
-            }
+            input.dataset.calorieEntryMode = "target";
+            delete input.dataset.clearForPhaseChange;
             setText(label, "Starting Daily Target");
             input.min = "1";
             input.step = "10";
@@ -121,10 +113,11 @@
             return;
         }
 
-        if (input.dataset.calorieEntryMode !== "increase") {
+        if (input.dataset.calorieEntryMode !== "increase" || input.dataset.clearForPhaseChange === "1") {
             input.dataset.calorieEntryMode = "increase";
             input.dataset.dirty = "0";
             input.value = "";
+            delete input.dataset.clearForPhaseChange;
         }
 
         const currentCalories = positive(phase.currentCalories ?? phase.startCalories);
@@ -258,7 +251,11 @@
 
     document.addEventListener("change", event => {
         if (event.target?.id === "unified-goal-select") {
-            queueInputUiRefresh(0);
+            const input = document.getElementById("unified-direct-calorie-target") || document.getElementById("unified-target-calories");
+            if (input) input.dataset.clearForPhaseChange = "1";
+            // Let the existing goal-change handler seed a new-phase target first,
+            // then convert back to an empty increase field if the selected goal
+            // is the existing active phase.
             queueInputUiRefresh(40);
         }
     }, true);
