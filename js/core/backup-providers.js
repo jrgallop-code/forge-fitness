@@ -14,6 +14,7 @@ const BACKUP_PROVIDERS = [
         id: "photos",
         label: "Photo Journal",
         storage: "IndexedDB",
+        indexedDbNames: ["level_up_media"],
         legacyRootKey: "photos",
         exportData: exportPhotoRecords,
         importData: importPhotoRecords
