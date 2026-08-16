@@ -36,6 +36,13 @@
     function ensureReadonlyValue(container) {
         let value = container.querySelector(".levelup-readonly-calorie-target");
         if (value) return value;
+
+        const existing = container.querySelector("strong#unified-active-target");
+        if (existing) {
+            existing.classList.add("levelup-readonly-calorie-target");
+            return existing;
+        }
+
         value = document.createElement("strong");
         value.className = "levelup-readonly-calorie-target";
         const row = container.querySelector(".unified-direct-calorie-row");
@@ -59,7 +66,8 @@
         if (!samePhase) {
             if (row) row.hidden = false;
             if (input) input.disabled = false;
-            if (readonlyValue) readonlyValue.remove();
+            if (readonlyValue && readonlyValue.id !== "unified-active-target") readonlyValue.remove();
+            if (readonlyValue?.id === "unified-active-target") readonlyValue.classList.remove("levelup-readonly-calorie-target");
             if (button) button.hidden = false;
             return;
         }
