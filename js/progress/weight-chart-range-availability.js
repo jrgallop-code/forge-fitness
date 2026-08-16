@@ -2,7 +2,18 @@ const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 const NUTRITION_PHASES_STORAGE_KEY = "level_up_nutrition_phases";
 const RANGE_STORAGE_KEY = "level_up_weight_chart_range";
 const DEFAULT_MIGRATION_KEY = "level_up_weight_chart_default_week_v1";
+const RANGE_POLISH_STYLE_ID = "level-up-weight-range-polish-v2";
 const DAY_MS = 86400000;
+
+const FIXED_RANGE_ORDER = ["1w", "1m", "3m", "6m"];
+const RANGE_LABELS = {
+    "1w": "1W",
+    "1m": "1M",
+    "3m": "3M",
+    "6m": "6M",
+    "phase": "PHASE",
+    "all": "ALL"
+};
 
 const RANGE_RULES = {
     "1w": { available: true },
@@ -75,6 +86,29 @@ function getAvailability(range, entries, activePhase) {
     };
 }
 
+function getLargestSupportedFixedRange(entries, activePhase, maxRange = "6m") {
+    const maxIndex = Math.max(0, FIXED_RANGE_ORDER.indexOf(maxRange));
+    for (let index = maxIndex; index >= 0; index -= 1) {
+        const range = FIXED_RANGE_ORDER[index];
+        if (getAvailability(range, entries, activePhase).available) return range;
+    }
+    return "1w";
+}
+
+function resolveDisplayRange(requestedRange, entries, activePhase) {
+    if (getAvailability(requestedRange, entries, activePhase).available) return requestedRange;
+
+    if (FIXED_RANGE_ORDER.includes(requestedRange)) {
+        return getLargestSupportedFixedRange(entries, activePhase, requestedRange);
+    }
+
+    if (requestedRange === "phase") {
+        return getLargestSupportedFixedRange(entries, activePhase);
+    }
+
+    return "1w";
+}
+
 function migrateDefaultToWeek() {
     if (localStorage.getItem(DEFAULT_MIGRATION_KEY) === "1") return false;
     localStorage.setItem(RANGE_STORAGE_KEY, "1w");
@@ -82,32 +116,55 @@ function migrateDefaultToWeek() {
     return true;
 }
 
+function ensureRangePolishStyles() {
+    if (document.getElementById(RANGE_POLISH_STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = RANGE_POLISH_STYLE_ID;
+    style.textContent = `
+        #weight-progress .weight-chart-range-control button {
+            font-size: 11px !important;
+        }
+        @media (max-width: 380px) {
+            #weight-progress .weight-chart-range-control button {
+                font-size: 10px !important;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 function requestChartRefresh() {
     window.dispatchEvent(new Event("resize"));
 }
 
 function applyAvailability() {
+    ensureRangePolishStyles();
+
     const controls = document.querySelector(".weight-chart-range-control");
     if (!controls) return;
 
     const entries = readWeightEntries();
     const activePhase = readActivePhase();
     const selected = String(localStorage.getItem(RANGE_STORAGE_KEY) || "1w").toLowerCase();
-    const selectedAvailability = getAvailability(selected, entries, activePhase);
+    const resolvedSelected = resolveDisplayRange(selected, entries, activePhase);
 
-    if (!selectedAvailability.available) {
-        localStorage.setItem(RANGE_STORAGE_KEY, "1w");
-        const weekButton = controls.querySelector('button[data-weight-chart-range="1w"]');
-        weekButton?.click();
+    if (resolvedSelected !== selected) {
+        localStorage.setItem(RANGE_STORAGE_KEY, resolvedSelected);
+        requestAnimationFrame(requestChartRefresh);
         return;
     }
 
     controls.querySelectorAll("button[data-weight-chart-range]").forEach(button => {
         const range = button.dataset.weightChartRange;
         const availability = getAvailability(range, entries, activePhase);
-        button.disabled = !availability.available;
-        button.setAttribute("aria-disabled", String(!availability.available));
-        button.title = availability.reason;
+        const fallback = resolveDisplayRange(range, entries, activePhase);
+
+        button.disabled = false;
+        button.setAttribute("aria-disabled", "false");
+        button.dataset.rangeLimited = String(!availability.available);
+        button.title = availability.available
+            ? ""
+            : `${availability.reason} Tapping will show ${RANGE_LABELS[fallback] || fallback}.`;
     });
 }
 
@@ -121,21 +178,23 @@ function queueApply() {
 }
 
 const migrated = migrateDefaultToWeek();
+ensureRangePolishStyles();
 if (migrated) requestAnimationFrame(requestChartRefresh);
 
 document.addEventListener("click", event => {
     const button = event.target.closest?.("button[data-weight-chart-range]");
     if (!button) return;
 
-    const availability = getAvailability(
-        button.dataset.weightChartRange,
-        readWeightEntries(),
-        readActivePhase()
-    );
+    const requestedRange = button.dataset.weightChartRange;
+    const entries = readWeightEntries();
+    const activePhase = readActivePhase();
+    const displayRange = resolveDisplayRange(requestedRange, entries, activePhase);
 
-    if (!availability.available) {
+    if (displayRange !== requestedRange) {
         event.preventDefault();
         event.stopImmediatePropagation();
+        localStorage.setItem(RANGE_STORAGE_KEY, displayRange);
+        requestChartRefresh();
         queueApply();
     }
 }, true);
