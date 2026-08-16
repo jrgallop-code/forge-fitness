@@ -19,7 +19,7 @@ const FRONT_REGIONS = {
     "muscle_front_043", "muscle_front_044", "muscle_front_045", "muscle_front_046"
   ],
   Glutes: ["muscle_front_047", "muscle_front_048"],
-  Adductors: ["muscle_front_049", "muscle_front_050"],
+  Adductors: ["muscle_front_049", "muscle_front_050", "muscle_front_065", "muscle_front_066"],
   Quads: [
     "muscle_front_051", "muscle_front_052", "muscle_front_067",
     "muscle_front_068", "muscle_front_069", "muscle_front_070"
