@@ -149,7 +149,7 @@ function refresh() {
     const phaseRate = buildPhaseRate(metrics);
     const caloriePreview = buildCaloriePreview(metrics, phase);
     const testDate = formatShortDate(metrics.asOfDate);
-    const signature = JSON.stringify({
+    lastSignature = JSON.stringify({
         asOfDate: metrics.asOfDate,
         status: metrics.status,
         actual: metrics.actualRateLbPerWeek,
@@ -159,9 +159,6 @@ function refresh() {
         phaseRate,
         caloriePreview
     });
-
-    if (signature === lastSignature && rateNode?.dataset.futurePhaseSync === "1") return;
-    lastSignature = signature;
 
     setText(rateHeading, testDate ? `Phase Weekly Rate · Test ${testDate}` : "Phase Weekly Rate");
     setText(rateNode, phaseRate);
