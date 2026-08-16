@@ -1,27 +1,27 @@
 (() => {
     const PHASES_KEY = "level_up_nutrition_phases";
-    const PLAN_KEY = "level_up_nutrition_plan";
-    let uiRefreshQueued = false;
-
-    function readJson(key, fallback) {
-        try {
-            const value = JSON.parse(localStorage.getItem(key) || "null");
-            return value ?? fallback;
-        } catch {
-            return fallback;
-        }
-    }
+    let refreshQueued = false;
 
     function readPhases() {
-        const value = readJson(PHASES_KEY, []);
-        return Array.isArray(value) ? value : [];
+        try {
+            const value = JSON.parse(localStorage.getItem(PHASES_KEY) || "[]");
+            return Array.isArray(value) ? value : [];
+        } catch {
+            return [];
+        }
     }
 
-    function activePhaseIndex(phases) {
+    function activePhase() {
+        const phases = readPhases();
         for (let index = phases.length - 1; index >= 0; index -= 1) {
-            if (phases[index] && !phases[index].endDate && phases[index].goalId) return index;
+            const phase = phases[index];
+            if (phase && !phase.endDate && phase.goalId) return phase;
         }
-        return -1;
+        return null;
+    }
+
+    function selectedGoalId() {
+        return document.getElementById("unified-goal-select")?.value || "";
     }
 
     function positive(value) {
@@ -29,243 +29,112 @@
         return Number.isFinite(number) && number > 0 ? number : null;
     }
 
-    function calorieIncrease(value) {
-        const number = Math.round(Number(value));
-        return Number.isFinite(number) && number > 0 ? number : null;
-    }
-
-    function selectedGoalId() {
-        return document.getElementById("unified-goal-select")?.value || "";
-    }
-
-    function activePhaseState() {
-        const phases = readPhases();
-        const index = activePhaseIndex(phases);
-        return {
-            phases,
-            index,
-            phase: index >= 0 ? phases[index] : null
-        };
-    }
-
     function setText(node, value) {
-        if (!node || node.textContent === value) return;
-        if (node.childNodes.length === 1 && node.firstChild?.nodeType === Node.TEXT_NODE) {
-            node.firstChild.nodeValue = value;
-        } else {
-            node.textContent = value;
+        if (node && node.textContent !== value) node.textContent = value;
+    }
+
+    function ensureReadonlyValue(container) {
+        let value = container.querySelector(".levelup-readonly-calorie-target");
+        if (value) return value;
+
+        const existing = container.querySelector("strong#unified-active-target");
+        if (existing) {
+            existing.classList.add("levelup-readonly-calorie-target");
+            return existing;
         }
+
+        value = document.createElement("strong");
+        value.className = "levelup-readonly-calorie-target";
+        const row = container.querySelector(".unified-direct-calorie-row");
+        if (row) row.insertAdjacentElement("beforebegin", value);
+        else container.appendChild(value);
+        return value;
     }
 
-    function setMessage(message) {
-        setText(document.getElementById("unified-calorie-message"), message);
-    }
-
-    function formatNumber(value) {
-        return Number(value).toLocaleString();
-    }
-
-    function formatDate(value) {
-        if (!value) return "its existing date";
-        const date = new Date(`${value}T12:00:00`);
-        if (Number.isNaN(date.getTime())) return value;
-        return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-    }
-
-    function syncPlanCalories(calories) {
-        const existing = readJson(PLAN_KEY, {});
-        const plan = existing && typeof existing === "object" && !Array.isArray(existing) ? existing : {};
-        localStorage.setItem(PLAN_KEY, JSON.stringify({
-            ...plan,
-            calculatedCalories: calories,
-            currentCalories: calories,
-            adjustmentHistory: Array.isArray(plan.adjustmentHistory) ? plan.adjustmentHistory : []
-        }));
-    }
-
-    function verifySavedCalories(phaseId, goalId, calories) {
-        const phases = readPhases();
-        const phase = [...phases].reverse().find(item => item && !item.endDate && item.goalId === goalId && (phaseId == null || String(item.id) === String(phaseId)));
-        const savedPhaseCalories = positive(phase?.currentCalories ?? phase?.startCalories);
-        const plan = readJson(PLAN_KEY, {});
-        const savedPlanCalories = positive(plan?.calculatedCalories ?? plan?.currentCalories);
-        return savedPhaseCalories === calories && savedPlanCalories === calories;
-    }
-
-    function applyActivePhaseInputUi() {
+    function applyState() {
         const container = document.querySelector(".unified-active-target");
-        const input = document.getElementById("unified-direct-calorie-target") || document.getElementById("unified-target-calories");
-        if (!container || !input) return;
+        const button = document.getElementById("unified-save-plan");
+        if (!container) return;
 
-        const label = container.querySelector(":scope > span");
-        const unit = container.querySelector(".unified-direct-calorie-unit");
-        const note = document.getElementById("unified-direct-calorie-note");
-        const { phase } = activePhaseState();
+        const phase = activePhase();
         const samePhase = Boolean(phase && selectedGoalId() && phase.goalId === selectedGoalId());
+        const input = document.getElementById("unified-direct-calorie-target") || document.getElementById("unified-target-calories");
+        const row = container.querySelector(".unified-direct-calorie-row");
+        const note = document.getElementById("unified-direct-calorie-note") || container.querySelector("small");
+        const readonlyValue = container.querySelector(".levelup-readonly-calorie-target");
 
         if (!samePhase) {
-            input.dataset.calorieEntryMode = "target";
-            delete input.dataset.clearForPhaseChange;
-            setText(label, "Starting Daily Target");
-            input.min = "1";
-            input.step = "10";
-            input.removeAttribute("placeholder");
-            input.setAttribute("aria-label", "Starting daily calorie target");
-            setText(unit, "kcal/day");
-            if (note) {
-                setText(note, "This is the daily calorie target that will be used when the new phase starts.");
-            }
+            if (row) row.hidden = false;
+            if (input) input.disabled = false;
+            if (readonlyValue && readonlyValue.id !== "unified-active-target") readonlyValue.remove();
+            if (readonlyValue?.id === "unified-active-target") readonlyValue.classList.remove("levelup-readonly-calorie-target");
+            if (button) button.hidden = false;
             return;
         }
 
-        if (input.dataset.calorieEntryMode !== "increase" || input.dataset.clearForPhaseChange === "1") {
-            input.dataset.calorieEntryMode = "increase";
-            input.dataset.dirty = "0";
-            input.value = "";
-            delete input.dataset.clearForPhaseChange;
-        }
-
-        const currentCalories = positive(phase.currentCalories ?? phase.startCalories);
-        const increase = calorieIncrease(input.value);
-        const newTarget = Number.isFinite(currentCalories) && Number.isFinite(increase)
-            ? currentCalories + increase
-            : null;
-
-        setText(label, "Calorie Increase");
-        input.min = "0";
-        input.step = "10";
-        input.placeholder = "e.g. 100";
-        input.setAttribute("aria-label", "Calories to add to current daily target");
-        setText(unit, "kcal to add");
-
-        if (note && Number.isFinite(currentCalories)) {
-            const explanation = Number.isFinite(newTarget)
-                ? `Current target: ${formatNumber(currentCalories)} kcal/day. Add ${formatNumber(increase)} → new target: ${formatNumber(newTarget)} kcal/day. Saving keeps this phase and its original start date.`
-                : `Current target: ${formatNumber(currentCalories)} kcal/day. Enter the calories you want to add. Example: enter 100 to increase the target by 100 kcal/day. Saving keeps this phase and its original start date.`;
-            setText(note, explanation);
-        }
-
+        const calories = positive(phase.currentCalories ?? phase.startCalories);
         const maintenance = positive(phase.maintenanceCalories ?? document.getElementById("unified-maintenance")?.value);
+        const label = container.querySelector(":scope > span");
+        const value = ensureReadonlyValue(container);
+
+        setText(label, "Current Daily Target");
+        setText(value, calories ? `${calories} kcal/day` : "--");
+        setText(
+            note,
+            "Calorie adjustments are temporarily unavailable. Your current phase and original start date are unchanged."
+        );
+
+        if (row) row.hidden = true;
+        if (input) {
+            input.disabled = true;
+            input.value = "";
+            input.dataset.dirty = "0";
+        }
+        if (button) button.hidden = true;
+
         const adjustmentNode = document.getElementById("unified-daily-adjustment");
-        const projectedCalories = newTarget ?? currentCalories;
-        if (adjustmentNode && Number.isFinite(projectedCalories) && Number.isFinite(maintenance)) {
-            const adjustment = projectedCalories - maintenance;
+        if (adjustmentNode && calories && maintenance) {
+            const adjustment = calories - maintenance;
             setText(adjustmentNode, `${adjustment > 0 ? "+" : ""}${adjustment} kcal/day`);
         }
     }
 
-    function queueInputUiRefresh(delay = 0) {
-        if (uiRefreshQueued && delay === 0) return;
+    function queueState(delay = 0) {
         if (delay > 0) {
-            window.setTimeout(applyActivePhaseInputUi, delay);
+            window.setTimeout(applyState, delay);
             return;
         }
-        uiRefreshQueued = true;
+        if (refreshQueued) return;
+        refreshQueued = true;
         requestAnimationFrame(() => {
-            uiRefreshQueued = false;
-            applyActivePhaseInputUi();
+            refreshQueued = false;
+            applyState();
         });
     }
 
-    function handleSamePhaseCalorieSave(event) {
+    document.addEventListener("click", event => {
         const button = event.target?.closest?.("#unified-save-plan");
         if (!button) return;
-
-        const input = document.getElementById("unified-direct-calorie-target") || document.getElementById("unified-target-calories");
-        if (!input) return;
-
-        const goalId = selectedGoalId();
-        const { phases, index, phase: active } = activePhaseState();
-
-        if (!active || !goalId || active.goalId !== goalId) return;
-
-        event.preventDefault();
-        event.stopImmediatePropagation();
-
-        const previousCalories = positive(active.currentCalories ?? active.startCalories);
-        const increase = calorieIncrease(input.value);
-        if (!previousCalories) {
-            setMessage("The current phase does not have a valid calorie target yet.");
-            return;
-        }
-        if (!increase) {
-            setMessage("Enter the calories you want to add, for example 100.");
-            return;
-        }
-
-        const calories = previousCalories + increase;
-        const maintenance = positive(active.maintenanceCalories ?? document.getElementById("unified-maintenance")?.value);
-        const now = new Date().toISOString();
-
-        const next = {
-            ...active,
-            currentCalories: calories,
-            updatedAt: now,
-            adjustments: [
-                ...(Array.isArray(active.adjustments) ? active.adjustments : []),
-                {
-                    date: now,
-                    previousCalories,
-                    newCalories: calories,
-                    calorieIncrease: increase,
-                    ...(maintenance ? { maintenanceCalories: maintenance } : {}),
-                    source: "manual-increase"
-                }
-            ]
-        };
-
-        if (maintenance) {
-            next.maintenanceCalories = maintenance;
-            next.dailyCalorieAdjustment = calories - maintenance;
-        }
-
-        phases[index] = next;
-        localStorage.setItem(PHASES_KEY, JSON.stringify(phases));
-        syncPlanCalories(calories);
-
-        if (!verifySavedCalories(active.id, goalId, calories)) {
-            setMessage("The calorie increase did not save correctly. Please try again.");
-            return;
-        }
-
-        input.value = "";
-        input.dataset.dirty = "0";
-        input.dataset.calorieEntryMode = "increase";
-
-        setMessage(`Added ${formatNumber(increase)} kcal/day: ${formatNumber(previousCalories)} → ${formatNumber(calories)} kcal/day. The current phase still starts ${formatDate(active.startDate)}.`);
-
-        window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated", { detail: { source: "same-phase-calorie-increase", calories, increase } }));
-        window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: "same-phase-calorie-increase", calories, increase } }));
-        queueInputUiRefresh(0);
-    }
-
-    document.addEventListener("click", handleSamePhaseCalorieSave, true);
-
-    document.addEventListener("input", event => {
-        if (event.target?.id !== "unified-direct-calorie-target" && event.target?.id !== "unified-target-calories") return;
-        const { phase } = activePhaseState();
+        const phase = activePhase();
         if (phase && phase.goalId === selectedGoalId()) {
+            event.preventDefault();
             event.stopImmediatePropagation();
         }
-        queueInputUiRefresh(0);
-        queueInputUiRefresh(20);
     }, true);
 
     document.addEventListener("change", event => {
-        if (event.target?.id === "unified-goal-select") {
-            const input = document.getElementById("unified-direct-calorie-target") || document.getElementById("unified-target-calories");
-            if (input) input.dataset.clearForPhaseChange = "1";
-            queueInputUiRefresh(40);
-        }
+        if (event.target?.id === "unified-goal-select") queueState(40);
+    }, true);
+
+    document.addEventListener("input", event => {
+        if (event.target?.id === "unified-maintenance") queueState(30);
     }, true);
 
     const content = document.getElementById("content");
-    if (content) {
-        new MutationObserver(() => queueInputUiRefresh(0)).observe(content, { childList: true, subtree: true });
-    }
+    if (content) new MutationObserver(() => queueState()).observe(content, { childList: true, subtree: true });
 
-    window.addEventListener("levelup:nutrition-updated", () => queueInputUiRefresh(20));
-    window.addEventListener("levelup:nutrition-phase-updated", () => queueInputUiRefresh(20));
-    window.addEventListener("load", () => queueInputUiRefresh(20));
-    queueInputUiRefresh(0);
+    window.addEventListener("levelup:nutrition-updated", () => queueState(20));
+    window.addEventListener("levelup:nutrition-phase-updated", () => queueState(20));
+    window.addEventListener("load", () => queueState(20));
+    queueState();
 })();
