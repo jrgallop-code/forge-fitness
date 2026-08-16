@@ -46,8 +46,54 @@ function currentPhaseCaloriesForGoal(goalId = selectedGoalId()) {
     return Number.isFinite(value) && value > 0 ? value : null;
 }
 
+function isSamePhase(goalId = selectedGoalId()) {
+    const phase = getActiveNutritionPhase();
+    return Boolean(phase && goalId && phase.goalId === goalId);
+}
+
 function seedTargetValue(goalId = selectedGoalId()) {
-    return currentPhaseCaloriesForGoal(goalId) ?? recommendedTarget(goalId) ?? null;
+    return isSamePhase(goalId) ? null : recommendedTarget(goalId) ?? null;
+}
+
+function rawInputValue() {
+    const value = Math.round(Number(document.getElementById("unified-direct-calorie-target")?.value));
+    return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function configureInput(input, goalId, force = false) {
+    if (!input) return;
+    const samePhase = isSamePhase(goalId);
+    const mode = samePhase ? "increase" : "target";
+    const modeChanged = input.dataset.calorieEntryMode !== mode;
+    const goalChanged = input.dataset.goalId !== goalId;
+
+    if (force || modeChanged || goalChanged) {
+        input.dataset.goalId = goalId;
+        input.dataset.calorieEntryMode = mode;
+        input.dataset.dirty = "0";
+        const seeded = seedTargetValue(goalId);
+        input.value = Number.isFinite(seeded) ? String(seeded) : "";
+    }
+
+    const container = input.closest(".unified-active-target");
+    const label = container?.querySelector(":scope > span");
+    const unit = container?.querySelector(".unified-direct-calorie-unit");
+
+    if (samePhase) {
+        if (label) label.textContent = "Calorie Increase";
+        input.min = "0";
+        input.step = "10";
+        input.placeholder = "e.g. 100";
+        input.setAttribute("aria-label", "Calories to add to current daily target");
+        if (unit) unit.textContent = "kcal to add";
+    } else {
+        if (label) label.textContent = "Starting Daily Target";
+        input.min = "1";
+        input.step = "10";
+        input.removeAttribute("placeholder");
+        input.setAttribute("aria-label", "Starting daily calorie target");
+        if (unit) unit.textContent = "kcal/day";
+    }
 }
 
 function ensureDirectTargetUi() {
@@ -57,68 +103,69 @@ function ensureDirectTargetUi() {
 
     let input = document.getElementById("unified-direct-calorie-target");
     if (!input) {
-        const existingText = document.getElementById("unified-active-target")?.textContent || "";
-        const existingValue = Math.round(Number(existingText.replace(/[^0-9.]/g, "")));
         container.innerHTML = `
-            <span>Planned Daily Target</span>
+            <span>Starting Daily Target</span>
             <div class="unified-direct-calorie-row">
-                <input id="unified-direct-calorie-target" type="number" inputmode="numeric" min="1" step="10" aria-label="Planned daily calorie target">
+                <input id="unified-direct-calorie-target" type="number" inputmode="numeric" min="1" step="10">
                 <span class="unified-direct-calorie-unit">kcal/day</span>
             </div>
             <small id="unified-direct-calorie-note"></small>
         `;
         input = document.getElementById("unified-direct-calorie-target");
-        const goalId = selectedGoalId();
-        const seeded = seedTargetValue(goalId) ?? (Number.isFinite(existingValue) && existingValue > 0 ? existingValue : null);
-        if (input && Number.isFinite(seeded)) input.value = String(seeded);
-        if (input) {
-            input.dataset.goalId = goalId;
-            input.dataset.dirty = "0";
-        }
-    }
-
-    const goalId = selectedGoalId();
-    if (input && input.dataset.goalId !== goalId) {
-        input.dataset.goalId = goalId;
-        input.dataset.dirty = "0";
-        const seeded = seedTargetValue(goalId);
-        input.value = Number.isFinite(seeded) ? String(seeded) : "";
+        configureInput(input, selectedGoalId(), true);
+    } else {
+        configureInput(input, selectedGoalId());
     }
 
     updateTargetContext();
 }
 
 function directTargetValue() {
-    const value = Math.round(Number(document.getElementById("unified-direct-calorie-target")?.value));
-    return Number.isFinite(value) && value > 0 ? value : null;
+    const goalId = selectedGoalId();
+    const entered = rawInputValue();
+    if (isSamePhase(goalId)) {
+        const current = currentPhaseCaloriesForGoal(goalId);
+        return Number.isFinite(current) && Number.isFinite(entered) ? current + entered : null;
+    }
+    return entered;
 }
 
 function updateTargetContext() {
     const input = document.getElementById("unified-direct-calorie-target");
     if (!input) return;
-    const goalId = selectedGoalId();
-    const maintenance = readMaintenance();
-    const target = directTargetValue();
-    const suggested = recommendedTarget(goalId, maintenance);
-    const active = getActiveNutritionPhase();
-    const samePhase = Boolean(active && active.goalId === goalId);
 
-    const adjustment = Number.isFinite(target) && Number.isFinite(maintenance) ? target - maintenance : null;
+    const goalId = selectedGoalId();
+    configureInput(input, goalId);
+
+    const maintenance = readMaintenance();
+    const suggested = recommendedTarget(goalId, maintenance);
+    const samePhase = isSamePhase(goalId);
+    const entered = rawInputValue();
+    const current = currentPhaseCaloriesForGoal(goalId);
+    const target = samePhase
+        ? (Number.isFinite(current) && Number.isFinite(entered) ? current + entered : current)
+        : entered;
+
     const adjustmentNode = document.getElementById("unified-daily-adjustment");
-    if (adjustmentNode && Number.isFinite(adjustment)) {
-        const text = `${adjustment > 0 ? "+" : ""}${adjustment} kcal/day`;
-        if (adjustmentNode.textContent !== text) adjustmentNode.textContent = text;
+    if (adjustmentNode) {
+        const adjustment = Number.isFinite(target) && Number.isFinite(maintenance) ? target - maintenance : null;
+        adjustmentNode.textContent = Number.isFinite(adjustment)
+            ? `${adjustment > 0 ? "+" : ""}${adjustment} kcal/day`
+            : "--";
     }
 
     const note = document.getElementById("unified-direct-calorie-note");
-    if (note) {
-        const suggestion = Number.isFinite(suggested) ? `Phase-based suggestion: ${suggested} kcal/day.` : "";
-        const phaseText = samePhase
-            ? " Saving a calorie change keeps the current phase and its original start date."
-            : " Saving with a different phase selection starts a new phase.";
-        const next = `${suggestion}${phaseText}`.trim();
-        if (note.textContent !== next) note.textContent = next;
+    if (!note) return;
+
+    if (samePhase && Number.isFinite(current)) {
+        note.textContent = Number.isFinite(entered)
+            ? `Current target: ${current} kcal/day. Add ${entered} → new target: ${current + entered} kcal/day. Saving keeps the current phase and its original start date.`
+            : `Current target: ${current} kcal/day. Enter the calories you want to add, for example 100. Saving keeps the current phase and its original start date.`;
+        return;
     }
+
+    const suggestion = Number.isFinite(suggested) ? `Phase-based suggestion: ${suggested} kcal/day.` : "";
+    note.textContent = `${suggestion} Enter the full starting calorie target for this new phase.`.trim();
 }
 
 function queueRefresh() {
@@ -140,13 +187,17 @@ function saveDirectTarget() {
     const goalId = selectedGoalId();
     const preset = GOAL_PRESETS[goalId];
     const maintenance = readMaintenance();
+    const samePhase = isSamePhase(goalId);
+    const entered = rawInputValue();
     const targetCalories = directTargetValue();
     const startDate = document.getElementById("nutrition-phase-start-date")?.value || today();
     const goalWeightRaw = Number(document.getElementById("nutrition-phase-goal-weight")?.value);
     const goalWeight = Number.isFinite(goalWeightRaw) && goalWeightRaw > 0 ? Math.round(goalWeightRaw * 10) / 10 : null;
 
     if (!preset || !Number.isFinite(maintenance) || !Number.isFinite(targetCalories) || !validStartDate(startDate)) {
-        setMessage("Choose a phase, maintenance calories, a planned daily target, and a valid phase start date.");
+        setMessage(samePhase
+            ? "Enter the calories you want to add, for example 100."
+            : "Choose a phase, maintenance calories, a starting daily target, and a valid phase start date.");
         return;
     }
 
@@ -167,7 +218,10 @@ function saveDirectTarget() {
     syncCalculatedCalories(targetCalories);
 
     const input = document.getElementById("unified-direct-calorie-target");
-    if (input) input.dataset.dirty = "0";
+    if (input) {
+        input.dataset.dirty = "0";
+        if (samePhase) input.value = "";
+    }
 
     window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated"));
     window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
@@ -176,8 +230,8 @@ function saveDirectTarget() {
         setMessage(`Started ${preset.label} on ${formatDate(startDate)} at ${targetCalories} kcal/day.`);
     } else if (result.action === "adjusted") {
         const from = Number(result.previousCalories);
-        const prefix = Number.isFinite(from) && from > 0 ? `Updated calories from ${from} to ${targetCalories} kcal/day` : `Updated calories to ${targetCalories} kcal/day`;
-        setMessage(`${prefix} inside the current ${preset.label} phase. The phase still starts ${formatDate(result.phase.startDate)}.`);
+        const amount = Number.isFinite(entered) ? entered : targetCalories - from;
+        setMessage(`Added ${amount} kcal/day: ${from} → ${targetCalories} kcal/day inside the current ${preset.label} phase. The phase still starts ${formatDate(result.phase.startDate)}.`);
     } else if (result.action === "updated") {
         setMessage(`Updated ${preset.label} phase details. The calorie target is ${targetCalories} kcal/day.`);
     } else {
@@ -376,12 +430,7 @@ document.addEventListener("change", event => {
     if (event.target?.id === "unified-goal-select") {
         window.setTimeout(() => {
             const input = document.getElementById("unified-direct-calorie-target");
-            if (input) {
-                input.dataset.goalId = event.target.value;
-                input.dataset.dirty = "0";
-                const seeded = seedTargetValue(event.target.value);
-                input.value = Number.isFinite(seeded) ? String(seeded) : "";
-            }
+            if (input) configureInput(input, event.target.value, true);
             updateTargetContext();
         }, 0);
     }
