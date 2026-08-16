@@ -1,8 +1,9 @@
-const BACK_ASSET = "assets/recovery/back-view.svg?v=recovery-back-vector-1";
+const BACK_ASSET = "assets/recovery/back-view.svg?v=recovery-back-vector-2";
 
 const BACK_REGIONS = {
   "Rear Delts": ["muscle_back_016", "muscle_back_017"],
   Back: [
+    "muscle_back_003", "muscle_back_004",
     "muscle_back_012", "muscle_back_013", "muscle_back_020", "muscle_back_021",
     "muscle_back_022", "muscle_back_023", "muscle_back_028", "muscle_back_029",
     "muscle_back_050", "muscle_back_051", "muscle_back_074", "muscle_back_075"
