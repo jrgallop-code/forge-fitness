@@ -63,45 +63,55 @@ function getStartingTrendWeight(phase, weights) {
 
 function getCarouselTrend(weights) {
     const testDate = getFutureTestDate(weights);
-    if (!testDate) {
-        return {
-            testDate: null,
-            trend: calculateWeightTrend(weights, { minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW }),
-            trendWeight: null
-        };
-    }
-
     const activePhase = getActivePhase();
-    const trendWeight = calculateSevenDayAverage(weights, testDate).average;
 
-    if (!activePhase?.startDate) {
+    if (activePhase?.startDate) {
+        const asOfDate = testDate || localDate();
+        const phaseDay = Math.max(
+            1,
+            Math.floor((dateMs(asOfDate) - dateMs(activePhase.startDate)) / DAY_MS) + 1
+        );
+        const phaseEntries = weights.filter(entry =>
+            entry.date >= activePhase.startDate && entry.date <= asOfDate
+        );
+        const startingTrendWeight = getStartingTrendWeight(activePhase, weights);
+        const trend = calculatePhaseMovingAverageTrend(phaseEntries, {
+            phaseStartDate: activePhase.startDate,
+            asOfDate,
+            startingTrendWeight,
+            minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW,
+            rolling: phaseDay < FIRST_CHECK_DAY
+        });
+        const trendWeight = testDate
+            ? calculateSevenDayAverage(weights.filter(entry => entry.date <= testDate), testDate).average
+            : null;
+
         return {
             testDate,
-            trend: calculateWeightTrend(weights, {
-                endDate: testDate,
-                minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW
-            }),
+            phaseAware: true,
+            trend,
             trendWeight
         };
     }
 
-    const phaseDay = Math.max(
-        1,
-        Math.floor((dateMs(testDate) - dateMs(activePhase.startDate)) / DAY_MS) + 1
-    );
-    const phaseEntries = weights.filter(entry =>
-        entry.date >= activePhase.startDate && entry.date <= testDate
-    );
-    const startingTrendWeight = getStartingTrendWeight(activePhase, weights);
-    const trend = calculatePhaseMovingAverageTrend(phaseEntries, {
-        phaseStartDate: activePhase.startDate,
-        asOfDate: testDate,
-        startingTrendWeight,
-        minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW,
-        rolling: phaseDay < FIRST_CHECK_DAY
-    });
+    if (testDate) {
+        return {
+            testDate,
+            phaseAware: false,
+            trend: calculateWeightTrend(weights, {
+                endDate: testDate,
+                minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW
+            }),
+            trendWeight: calculateSevenDayAverage(weights, testDate).average
+        };
+    }
 
-    return { testDate, trend, trendWeight };
+    return {
+        testDate: null,
+        phaseAware: false,
+        trend: calculateWeightTrend(weights, { minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW }),
+        trendWeight: null
+    };
 }
 
 function refresh() {
@@ -109,7 +119,7 @@ function refresh() {
     if (!value) return;
 
     const weights = readWeights();
-    const { testDate, trend, trendWeight } = getCarouselTrend(weights);
+    const { testDate, phaseAware, trend, trendWeight } = getCarouselTrend(weights);
     const nextValue = Number.isFinite(trend.weeklyChange)
         ? formatRate(trend.weeklyChange)
         : "Need more data";
@@ -133,6 +143,16 @@ function refresh() {
             card.title = trend.status === "preliminary"
                 ? `Preliminary phase trend through future test date ${testDate}. At least ${MIN_ENTRIES_PER_WINDOW} weigh-ins are required in the current 7-day window.`
                 : `Phase trend through future test date ${testDate}. Scheduled checks use at least ${MIN_ENTRIES_PER_WINDOW} weigh-ins in each 7-day block.`;
+        }
+        return;
+    }
+
+    if (phaseAware) {
+        value.title = "Uses the same active-phase trend and scheduled check-in calculation as the calorie coach.";
+        if (card) {
+            card.title = trend.status === "preliminary"
+                ? `Preliminary phase trend. At least ${MIN_ENTRIES_PER_WINDOW} weigh-ins are required in the current 7-day window.`
+                : `Active-phase trend. Scheduled checks use at least ${MIN_ENTRIES_PER_WINDOW} weigh-ins in each 7-day block.`;
         }
         return;
     }
