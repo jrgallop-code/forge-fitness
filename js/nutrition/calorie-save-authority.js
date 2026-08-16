@@ -49,7 +49,12 @@
     }
 
     function setText(node, value) {
-        if (node && node.textContent !== value) node.textContent = value;
+        if (!node || node.textContent === value) return;
+        if (node.childNodes.length === 1 && node.firstChild?.nodeType === Node.TEXT_NODE) {
+            node.firstChild.nodeValue = value;
+        } else {
+            node.textContent = value;
+        }
     }
 
     function setMessage(message) {
@@ -172,8 +177,6 @@
         const goalId = selectedGoalId();
         const { phases, index, phase: active } = activePhaseState();
 
-        // Only own calorie increases inside the existing selected phase.
-        // Starting a different phase continues through the existing phase flow.
         if (!active || !goalId || active.goalId !== goalId) return;
 
         event.preventDefault();
@@ -236,26 +239,22 @@
         queueInputUiRefresh(0);
     }
 
-    // Loaded before the app module scripts so this remains the first save authority.
     document.addEventListener("click", handleSamePhaseCalorieSave, true);
 
-    // The existing nutrition module still renders the shared field. These early
-    // listeners run first, then refresh after its handlers so the field presents
-    // the active-phase increase workflow instead of a final-target workflow.
     document.addEventListener("input", event => {
-        if (event.target?.id === "unified-direct-calorie-target" || event.target?.id === "unified-target-calories") {
-            queueInputUiRefresh(0);
-            queueInputUiRefresh(20);
+        if (event.target?.id !== "unified-direct-calorie-target" && event.target?.id !== "unified-target-calories") return;
+        const { phase } = activePhaseState();
+        if (phase && phase.goalId === selectedGoalId()) {
+            event.stopImmediatePropagation();
         }
+        queueInputUiRefresh(0);
+        queueInputUiRefresh(20);
     }, true);
 
     document.addEventListener("change", event => {
         if (event.target?.id === "unified-goal-select") {
             const input = document.getElementById("unified-direct-calorie-target") || document.getElementById("unified-target-calories");
             if (input) input.dataset.clearForPhaseChange = "1";
-            // Let the existing goal-change handler seed a new-phase target first,
-            // then convert back to an empty increase field if the selected goal
-            // is the existing active phase.
             queueInputUiRefresh(40);
         }
     }, true);
