@@ -204,7 +204,7 @@ function anatomyMarkup(side) {
     const overlays = Object.entries(regions).flatMap(([muscle, ids]) =>
         ids.map(id => {
             const href = `${asset}#${id}`;
-            return `<use href="${href}" xlink:href="${href}" data-recovery-muscle="${escapeHtml(muscle)}" class="recovery-user-muscle recovery-user-fill plan-target-muscle"/>`;
+            return `<use href="${href}" xlink:href="${href}" data-plan-target-muscle="${escapeHtml(muscle)}" class="plan-target-muscle"/>`;
         })
     ).join("");
 
@@ -238,8 +238,8 @@ function renderTargetMapSlide(side) {
 }
 
 function applyPlanVolume(screen, volume) {
-    screen.querySelectorAll(".plan-target-map-slide [data-recovery-muscle]").forEach(node => {
-        const sets = volume.get(node.dataset.recoveryMuscle) || 0;
+    screen.querySelectorAll(".plan-target-map-slide [data-plan-target-muscle]").forEach(node => {
+        const sets = volume.get(node.dataset.planTargetMuscle) || 0;
         const intensity = Math.max(0, Math.min(1, sets / NORMALIZATION_SETS));
         node.style.setProperty("--plan-target-fill", TARGET_GREEN);
         node.style.setProperty("--plan-target-intensity", String(intensity));
