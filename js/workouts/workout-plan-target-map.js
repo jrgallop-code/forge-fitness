@@ -228,10 +228,10 @@ function renderTargetMapSlide(side) {
             <div class="plan-target-map-body">
                 ${anatomyMarkup(side)}
             </div>
-            <div class="plan-target-map-legend" aria-label="Planned set volume from low to high">
-                <span>Low</span>
+            <div class="plan-target-map-legend" aria-label="Planned set volume from lower to higher">
+                <span>Lower</span>
                 <i aria-hidden="true"></i>
-                <span>High</span>
+                <span>Higher</span>
             </div>
         </section>
     `;
