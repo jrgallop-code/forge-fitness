@@ -1,0 +1,51 @@
+#lifting-progress .training-analytics-range-control {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+    margin: 10px 0 14px;
+    padding: 3px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 11px;
+    background: rgba(255,255,255,.025);
+}
+
+#lifting-progress .training-analytics-range-control button {
+    min-width: 0;
+    min-height: 32px;
+    margin: 0;
+    padding: 5px 3px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: #8f8f98;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .02em;
+    line-height: 1;
+    touch-action: manipulation;
+}
+
+#lifting-progress .training-analytics-range-control button[aria-pressed="true"] {
+    border-color: rgba(255,49,95,.5);
+    background: rgba(255,49,95,.18);
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(255,49,95,.08);
+}
+
+#lifting-progress .training-analytics-range-control button:focus-visible {
+    outline: 2px solid rgba(255,49,95,.65);
+    outline-offset: 1px;
+}
+
+@media (max-width: 380px) {
+    #lifting-progress .training-analytics-range-control {
+        gap: 3px;
+        padding: 3px;
+    }
+
+    #lifting-progress .training-analytics-range-control button {
+        min-height: 30px;
+        padding-inline: 2px;
+        font-size: 9px;
+    }
+}
