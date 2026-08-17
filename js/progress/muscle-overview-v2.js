@@ -433,7 +433,9 @@ document.addEventListener("click", event => {
 
 const contentRoot = document.getElementById("content");
 if (contentRoot) {
-    new MutationObserver(queueEnhancement).observe(contentRoot, { childList: true, subtree: true });
+    // Progress routing replaces #content's direct child. Observe only that level so
+    // the muscle map's own DOM updates cannot retrigger setup in a loop.
+    new MutationObserver(queueEnhancement).observe(contentRoot, { childList: true });
 }
 
 window.addEventListener("storage", event => {
