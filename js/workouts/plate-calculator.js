@@ -7,19 +7,28 @@ const OPTIONAL_PLATES = [45, 35, 25, 10, 5, 2.5, 1.25];
 const PLATE_MACHINE_IDS = new Set([
     "leg-press",
     "hack-squat",
-    "leg-press-calf-raise"
+    "leg-press-calf-raise",
+    "machine-hip-thrust"
 ]);
 
 let sheetContext = null;
 let enhanceQueued = false;
 
 function ensureStylesheet() {
-    if (document.querySelector('link[data-plate-calculator-style="true"]')) return;
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = STYLESHEET_HREF;
-    link.dataset.plateCalculatorStyle = "true";
-    document.head.appendChild(link);
+    if (!document.querySelector('link[data-plate-calculator-style="true"]')) {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = STYLESHEET_HREF;
+        link.dataset.plateCalculatorStyle = "true";
+        document.head.appendChild(link);
+    }
+
+    if (!document.querySelector('style[data-plate-calculator-label-fix="true"]')) {
+        const style = document.createElement("style");
+        style.dataset.plateCalculatorLabelFix = "true";
+        style.textContent = '.plate-calculator-visual::after{content:""!important;}';
+        document.head.appendChild(style);
+    }
 }
 
 function readSettings() {
@@ -61,7 +70,7 @@ function loadingProfile(exerciseId) {
             baseLabel: "Machine base",
             settingsLabel: "Machine base weight",
             toggleLabel: "Include machine base",
-            toggleHelp: "Turn this on only if you want the machine or sled weight included."
+            toggleHelp: "Adds the machine or sled weight on top of the plates you log."
         };
     }
 
@@ -103,6 +112,21 @@ function saveExerciseSettings(exerciseId, settings) {
 
 function effectiveBaseWeight(settings) {
     return settings?.includeBase ? Math.max(0, Number(settings.baseWeight) || 0) : 0;
+}
+
+function calculationTotalForProfile(inputWeight, profile, settings) {
+    const entered = Number(inputWeight);
+    if (!Number.isFinite(entered)) return entered;
+    return profile?.kind === "plate-machine"
+        ? entered + effectiveBaseWeight(settings)
+        : entered;
+}
+
+function closestEnteredLoad(solution, profile, baseWeight) {
+    if (!solution) return null;
+    return profile?.kind === "plate-machine"
+        ? solution.closestTotal - baseWeight
+        : solution.closestTotal;
 }
 
 function formatWeight(value) {
@@ -248,12 +272,15 @@ function updateTrigger(card, row, profile) {
     trigger.dataset.setIndex = row.dataset.setIndex || "0";
 
     const settings = getExerciseSettings(exerciseId, profile);
-    const solution = calculatePlateSolution(input.value, effectiveBaseWeight(settings), settings.plates);
+    const baseWeight = effectiveBaseWeight(settings);
+    const calculationTotal = calculationTotalForProfile(input.value, profile, settings);
+    const solution = calculatePlateSolution(calculationTotal, baseWeight, settings.plates);
     const summary = plateSummary(solution);
+    const closestLoad = closestEnteredLoad(solution, profile, baseWeight);
     const detail = trigger.querySelector(".plate-calculator-trigger-copy span");
     if (detail) {
         detail.textContent = solution && !solution.exact && !solution.belowBase
-            ? `${summary} · ${formatWeight(solution.closestTotal)} lb`
+            ? `${summary} · ${formatWeight(closestLoad)} lb`
             : summary;
     }
     trigger.setAttribute("aria-label", `Open plate calculator. Per side: ${summary}`);
@@ -342,19 +369,27 @@ function renderSheet() {
     if (!sheetContext) return;
     const { card, row, profile, exerciseId } = sheetContext;
     const input = row?.querySelector(".session-weight");
-    const total = Number(input?.value);
+    const enteredLoad = Number(input?.value);
     const settings = getExerciseSettings(exerciseId, profile);
     const baseWeight = effectiveBaseWeight(settings);
-    const solution = calculatePlateSolution(total, baseWeight, settings.plates);
+    const calculationTotal = calculationTotalForProfile(enteredLoad, profile, settings);
+    const solution = calculatePlateSolution(calculationTotal, baseWeight, settings.plates);
     const overlay = createSheet();
     const body = overlay.querySelector(".plate-calculator-body");
     if (!body) return;
 
+    const closestLoad = closestEnteredLoad(solution, profile, baseWeight);
+    const nearestTitle = profile.kind === "plate-machine" ? "Closest plate load" : "Closest available";
     const exactNote = solution && !solution.belowBase && !solution.exact
-        ? `<div class="plate-calculator-nearest"><strong>Closest available: ${formatWeight(solution.closestTotal)} lb</strong><span>${solution.difference > 0 ? "+" : ""}${formatWeight(solution.difference)} lb from entered load</span></div>`
+        ? `<div class="plate-calculator-nearest"><strong>${nearestTitle}: ${formatWeight(closestLoad)} lb</strong><span>${solution.difference > 0 ? "+" : ""}${formatWeight(solution.difference)} lb from entered load</span></div>`
         : "";
     const baseDisplay = settings.includeBase ? `${formatWeight(settings.baseWeight)} lb` : "None";
     const settingsSummary = settings.includeBase ? `${formatWeight(settings.baseWeight)} lb` : "Off";
+    const displayedTotal = Number.isFinite(enteredLoad) && enteredLoad > 0
+        ? profile.kind === "plate-machine"
+            ? enteredLoad + baseWeight
+            : enteredLoad
+        : null;
 
     body.innerHTML = `
         <div class="plate-calculator-card">
@@ -362,7 +397,7 @@ function renderSheet() {
             <div class="plate-calculator-summary">
                 <div><span>Per side</span><strong>${solution ? plateSummary(solution) : "Enter a load"}</strong></div>
                 <div><span>${profile.baseLabel}</span><strong>${baseDisplay}</strong></div>
-                <div><span>Total</span><strong>${Number.isFinite(total) && total > 0 ? `${formatWeight(total)} lb` : "—"}</strong></div>
+                <div><span>Total</span><strong>${Number.isFinite(displayedTotal) ? `${formatWeight(displayedTotal)} lb` : "—"}</strong></div>
             </div>
             ${exactNote}
         </div>
