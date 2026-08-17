@@ -350,11 +350,8 @@ function enhanceMuscleOverview() {
 
     trainingTab.textContent = "Muscles";
 
-    const existingShell = trainingView.querySelector(".muscle-overview-shell");
-    if (existingShell) {
-        renderSevenDayVolume();
-        return;
-    }
+    // Once built, leave the DOM alone. Explicit data/navigation events refresh the map.
+    if (trainingView.querySelector(".muscle-overview-shell")) return;
 
     // Wait until the existing Recovery module has finished creating its full view.
     // Moving that view intact preserves all custom SVG renderers and recovery controls.
