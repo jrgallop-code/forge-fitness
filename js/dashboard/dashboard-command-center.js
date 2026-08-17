@@ -1,4 +1,4 @@
-import "./dashboard-recovery-card.js?v=dashboard-muscle-snapshot-1";
+import "./dashboard-recovery-card.js?v=dashboard-muscle-snapshot-2";
 
 const SESSION_KEY = "forge_workout_sessions";
 const PLAN_KEY = "forge_workout_plans";
@@ -334,13 +334,13 @@ function prepareInsights(content, dashboard) {
         dashboard.insertAdjacentElement("beforebegin", heading);
     }
 
-    const recoveryCard = content.querySelector(".dashboard-recovery-card");
-    if (recoveryCard) {
-        recoveryCard.style.gridColumn = "1 / -1";
-        recoveryCard.style.width = "100%";
-        recoveryCard.style.margin = "0";
-        if (recoveryCard.parentElement !== dashboard || recoveryCard !== dashboard.lastElementChild) {
-            dashboard.appendChild(recoveryCard);
+    const muscleSnapshot = content.querySelector("[data-dashboard-muscle-snapshot]");
+    if (muscleSnapshot) {
+        muscleSnapshot.style.gridColumn = "1 / -1";
+        muscleSnapshot.style.width = "100%";
+        muscleSnapshot.style.margin = "0";
+        if (muscleSnapshot.parentElement !== dashboard || muscleSnapshot !== dashboard.lastElementChild) {
+            dashboard.appendChild(muscleSnapshot);
         }
     }
 
