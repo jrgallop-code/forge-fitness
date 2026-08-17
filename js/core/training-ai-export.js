@@ -222,7 +222,7 @@ function getRir(set) {
 function formatWorkingSet(set) {
     const parts = [];
     if (set.reps !== null) parts.push(`${formatNumber(set.reps)} reps`);
-    if (set.load !== null) parts.push(`${formatNumber(set.load)} lb`);
+    if (set.load !== null && set.load > 0) parts.push(`${formatNumber(set.load)} lb`);
     if (!parts.length) parts.push("completed working set");
     const base = parts.join(" @ ");
     return set.rir === null ? base : `${base} @ ${formatNumber(set.rir)} RIR`;
@@ -274,7 +274,7 @@ function buildExerciseTrend(records) {
 }
 
 function getSessionPerformance(record) {
-    const loads = record.sets.map(set => set.load).filter(value => value !== null);
+    const loads = record.sets.map(set => set.load).filter(value => value !== null && value > 0);
     const weighted = record.sets.filter(set => set.load !== null && set.load > 0 && set.reps !== null && set.reps > 0);
     const totalRepsValues = record.sets.map(set => set.reps).filter(value => value !== null);
 
