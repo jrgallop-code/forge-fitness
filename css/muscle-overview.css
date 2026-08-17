@@ -1,0 +1,336 @@
+/* Unified Progress > Lifting > Muscles experience. */
+
+.muscle-overview-shell {
+    display:grid;
+    gap:16px;
+}
+
+.muscle-overview-intro {
+    padding:4px 2px 0;
+}
+
+.muscle-overview-intro .eyebrow,
+.muscle-overview-more-heading .eyebrow,
+.seven-day-volume-heading .eyebrow {
+    display:block;
+    color:#ff496d;
+    font-size:11px;
+    font-weight:900;
+    letter-spacing:.13em;
+    text-transform:uppercase;
+}
+
+.muscle-overview-intro h4,
+.muscle-overview-more-heading h4,
+.seven-day-volume-heading h4,
+.seven-day-volume-breakdown-heading h4 {
+    margin:5px 0 0;
+    color:#fff;
+}
+
+.muscle-overview-intro h4 {
+    font-size:24px;
+    line-height:1.1;
+}
+
+.muscle-overview-intro p,
+.seven-day-volume-heading p {
+    margin:8px 0 0;
+    color:#aaaab4;
+    line-height:1.45;
+}
+
+.muscle-overview-toggle {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:4px;
+    padding:4px;
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:999px;
+    background:#0d0d10;
+}
+
+.muscle-overview-toggle button {
+    min-height:44px;
+    border:0;
+    border-radius:999px;
+    background:transparent;
+    color:#b7b7c0;
+    font:inherit;
+    font-weight:850;
+    cursor:pointer;
+}
+
+.muscle-overview-shell[data-muscle-mode="volume"] .muscle-overview-toggle [data-muscle-overview-mode="volume"].active {
+    background:#45cb75;
+    color:#07140c;
+    box-shadow:0 0 22px rgba(69,203,117,.2);
+}
+
+.muscle-overview-shell[data-muscle-mode="recovery"] .muscle-overview-toggle [data-muscle-overview-mode="recovery"].active {
+    background:#ff315f;
+    color:#fff;
+    box-shadow:0 0 22px rgba(255,49,95,.2);
+}
+
+[data-muscle-overview-panel][hidden] {
+    display:none !important;
+}
+
+.seven-day-volume-heading {
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:14px;
+    margin-bottom:12px;
+}
+
+.seven-day-volume-heading h4 {
+    font-size:21px;
+}
+
+.seven-day-volume-heading p {
+    font-size:14px;
+}
+
+.seven-day-volume-window {
+    flex:0 0 auto;
+    margin-top:4px;
+    padding:7px 9px;
+    border:1px solid rgba(69,203,117,.25);
+    border-radius:999px;
+    background:rgba(69,203,117,.09);
+    color:#7be29e;
+    font-size:11px;
+    letter-spacing:.02em;
+    white-space:nowrap;
+}
+
+.seven-day-volume-map-card,
+.seven-day-volume-breakdown {
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:22px;
+    background:linear-gradient(180deg,rgba(24,24,29,.96),rgba(13,13,16,.98));
+    box-shadow:0 16px 34px rgba(0,0,0,.18);
+}
+
+.seven-day-volume-map-card {
+    padding:16px 14px 14px;
+}
+
+.seven-day-volume-bodies {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    align-items:end;
+    gap:10px;
+    min-height:300px;
+}
+
+.seven-day-volume-figure {
+    display:grid;
+    justify-items:center;
+    align-items:end;
+    gap:6px;
+    margin:0;
+    min-width:0;
+}
+
+.seven-day-volume-anatomy {
+    display:block;
+    width:min(100%,165px);
+    height:auto;
+    overflow:visible;
+    shape-rendering:geometricPrecision;
+}
+
+.seven-day-volume-anatomy image {
+    transform:none !important;
+    transform-origin:0 0 !important;
+}
+
+.seven-day-volume-muscle {
+    fill:var(--seven-day-volume-fill,#45cb75);
+    fill-opacity:var(--seven-day-volume-intensity,0) !important;
+    stroke:rgba(245,245,248,.72);
+    stroke-opacity:var(--seven-day-volume-intensity,0) !important;
+    stroke-width:1;
+    stroke-linejoin:round;
+}
+
+.seven-day-volume-figure figcaption {
+    color:#b7b7c0;
+    font-size:11px;
+    font-weight:800;
+}
+
+.seven-day-volume-legend {
+    display:grid;
+    grid-template-columns:auto minmax(120px,190px) auto;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    margin-top:8px;
+    color:#92929b;
+    font-size:9px;
+    font-weight:850;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+}
+
+.seven-day-volume-legend i {
+    display:block;
+    height:7px;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:999px;
+    background:linear-gradient(90deg,#858793 0%,rgba(69,203,117,.42) 52%,#45cb75 100%);
+}
+
+.seven-day-volume-note {
+    max-width:520px;
+    margin:11px auto 0;
+    color:#8f8f98;
+    font-size:11px;
+    line-height:1.45;
+    text-align:center;
+}
+
+.seven-day-volume-breakdown {
+    margin-top:14px;
+    padding:16px;
+}
+
+.seven-day-volume-breakdown-heading {
+    display:flex;
+    align-items:end;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:14px;
+}
+
+.seven-day-volume-breakdown-heading h4 {
+    font-size:18px;
+}
+
+.seven-day-volume-breakdown-heading span {
+    color:#8f8f98;
+    font-size:10px;
+    font-weight:750;
+    white-space:nowrap;
+}
+
+.seven-day-volume-row + .seven-day-volume-row {
+    margin-top:13px;
+}
+
+.seven-day-volume-row-top {
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:6px;
+}
+
+.seven-day-volume-row-top strong {
+    color:#f6f6f8;
+    font-size:14px;
+}
+
+.seven-day-volume-row-top span {
+    color:#b7b7c0;
+    font-size:12px;
+    font-weight:800;
+}
+
+.seven-day-volume-track {
+    height:7px;
+    overflow:hidden;
+    border-radius:999px;
+    background:#2b2b31;
+}
+
+.seven-day-volume-fill {
+    height:100%;
+    min-width:2px;
+    border-radius:inherit;
+    background:#45cb75;
+    box-shadow:0 0 12px rgba(69,203,117,.22);
+}
+
+.muscle-overview-more-heading {
+    margin:24px 2px 12px;
+}
+
+.muscle-overview-more-heading h4 {
+    font-size:20px;
+}
+
+[data-muscle-volume-analytics] {
+    display:grid;
+    gap:14px;
+}
+
+[data-muscle-volume-analytics] > .analytics-card {
+    margin:0;
+}
+
+.muscle-overview-recovery-panel .muscle-recovery-map-view {
+    display:block;
+    margin:0;
+}
+
+.muscle-overview-recovery-panel .recovery-map-shell {
+    margin:0;
+}
+
+@media (max-width:420px) {
+    .muscle-overview-shell {
+        gap:14px;
+    }
+
+    .muscle-overview-intro h4 {
+        font-size:21px;
+    }
+
+    .seven-day-volume-heading {
+        align-items:flex-start;
+    }
+
+    .seven-day-volume-map-card {
+        padding:14px 10px 12px;
+    }
+
+    .seven-day-volume-bodies {
+        gap:4px;
+        min-height:270px;
+    }
+
+    .seven-day-volume-anatomy {
+        width:min(100%,150px);
+    }
+
+    .seven-day-volume-breakdown {
+        padding:14px;
+    }
+}
+
+@media (max-width:360px) {
+    .seven-day-volume-heading {
+        display:grid;
+    }
+
+    .seven-day-volume-window {
+        width:max-content;
+    }
+
+    .seven-day-volume-bodies {
+        min-height:245px;
+    }
+
+    .seven-day-volume-anatomy {
+        width:min(100%,136px);
+    }
+
+    .seven-day-volume-breakdown-heading {
+        display:grid;
+        align-items:start;
+    }
+}
