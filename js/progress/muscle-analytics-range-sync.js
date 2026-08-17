@@ -5,6 +5,7 @@ const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 const SCHEDULE_STORAGE_KEY = "level_up_workout_schedule_v1";
 const RANGE_STORAGE_KEY = "level_up_training_analytics_range";
+const DEMO_VOLUME_PROFILE_VERSION = 1;
 const SECONDARY_SET_CREDIT = 0.5;
 const HEATMAP_NORMALIZATION_SETS = 12;
 const DAY_MS = 86400000;
@@ -27,18 +28,72 @@ function readRange() {
     return RANGE_OPTIONS[saved] ? saved : "3m";
 }
 
-function readSessions() {
+function readRawSessions() {
     try {
         const sessions = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || "[]");
-        return Array.isArray(sessions)
-            ? sessions
-                .filter(session => session && /^\d{4}-\d{2}-\d{2}$/.test(String(session.date || "")))
-                .sort((a, b) => String(a.date).localeCompare(String(b.date)))
-            : [];
+        return Array.isArray(sessions) ? sessions : [];
     }
     catch {
         return [];
     }
+}
+
+function ensureDemoVolumeVariation() {
+    const sessions = readRawSessions();
+    let changed = false;
+
+    const next = sessions.map(session => {
+        if (!session?.isDemo || session.demoVolumeProfileVersion === DEMO_VOLUME_PROFILE_VERSION) {
+            return session;
+        }
+
+        const match = String(session.id || "").match(/^demo-session-(\d+)-/);
+        if (!match) return session;
+
+        const week = Number(match[1]);
+        const setOffset = week < 4 ? -1 : week < 8 ? 0 : 1;
+
+        const exercises = (session.exercises || []).map(exercise => {
+            const sets = Array.isArray(exercise?.sets)
+                ? exercise.sets.map(set => ({ ...set }))
+                : [];
+
+            if (!sets.length || setOffset === 0) return { ...exercise, sets };
+
+            if (setOffset < 0) {
+                return {
+                    ...exercise,
+                    sets: sets.length > 1 ? sets.slice(0, -1) : sets
+                };
+            }
+
+            const last = sets[sets.length - 1];
+            const extraReps = Math.max(5, Number(last?.reps || 6) - 1);
+            return {
+                ...exercise,
+                sets: [...sets, { ...last, reps: extraReps }]
+            };
+        });
+
+        changed = true;
+        return {
+            ...session,
+            demoVolumeProfileVersion: DEMO_VOLUME_PROFILE_VERSION,
+            exercises
+        };
+    });
+
+    if (changed) {
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(next));
+    }
+
+    return next;
+}
+
+function readSessions() {
+    return ensureDemoVolumeVariation()
+        .filter(session => session && /^\d{4}-\d{2}-\d{2}$/.test(String(session.date || "")))
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)));
 }
 
 function getRangeWindow(range, sessions) {
@@ -103,12 +158,26 @@ function renderMuscleRangeAnalytics() {
     const muscleData = buildMuscleData(sessions, weeks);
     const weekEquivalent = selectedWeekEquivalent(window);
     const selectedSummary = buildSelectedSummary(muscleData, weekEquivalent);
+    const periodTotal = [...selectedSummary.values()].reduce((sum, item) => sum + item.total, 0);
+    const periodAverage = periodTotal / weekEquivalent;
     const baseline = buildRecentBaseline(allSessions);
     const plan = getPreferredPlan(allSessions);
     const planned = plan ? getWeeklyPlanVolume(plan) : new Map();
 
     renderWeeklyHeatmap(weeklyContainer, muscleData, weeks, window);
-    renderSelectedVolumeTrends(trendsContainer, selectedSummary, baseline, planned, plan, window);
+    renderSelectedVolumeTrends(
+        trendsContainer,
+        selectedSummary,
+        baseline,
+        planned,
+        plan,
+        window,
+        {
+            workoutCount: sessions.length,
+            periodTotal,
+            periodAverage
+        }
+    );
     if (frequencyContainer) renderSelectedFrequency(frequencyContainer, muscleData, weekEquivalent, window);
     renderSelectedOverallSets(overallContainer, sessions, weeks, window);
 }
@@ -206,7 +275,8 @@ function renderWeeklyHeatmap(container, muscleData, weeks, window) {
 
     container.innerHTML = `
         <p class="weekly-volume-note">
-            <strong>${escapeHtml(window.label)} selected.</strong> Weekly muscle-set credits are grouped Monday–Sunday across the selected timeframe. Primary muscles receive 1.0 credit per completed set and secondary muscles receive 0.5.
+            <strong>${escapeHtml(window.label)} selected · ${escapeHtml(formatDateRange(window))}.</strong>
+            Weekly muscle-set credits are grouped Monday–Sunday across the selected timeframe. Primary muscles receive 1.0 credit per completed set and secondary muscles receive 0.5.
         </p>
         <div class="volume-heatmap-wrap">
             <div class="volume-heatmap" style="--week-count:${weeks.length}">
@@ -239,7 +309,7 @@ function renderHeatmapCell(muscle, week, value) {
     return `<div class="volume-cell" style="background:rgba(69,203,117,${backgroundAlpha.toFixed(3)});border-color:rgba(69,203,117,${borderAlpha.toFixed(3)});color:${color}" title="${escapeHtml(muscle)} · ${escapeHtml(formatWeekLabel(week))}: ${formatNumber(value)} set credits">${formatNumber(value)}</div>`;
 }
 
-function renderSelectedVolumeTrends(container, selectedSummary, baseline, planned, plan, window) {
+function renderSelectedVolumeTrends(container, selectedSummary, baseline, planned, plan, window, period) {
     const muscles = new Set([
         ...selectedSummary.keys(),
         ...(baseline.ready ? baseline.volume.keys() : []),
@@ -259,7 +329,7 @@ function renderSelectedVolumeTrends(container, selectedSummary, baseline, planne
             };
         })
         .filter(item => item.total > 0 || item.recentAverage > 0 || item.planned > 0)
-        .sort((a, b) => b.average - a.average || b.total - a.total || a.muscle.localeCompare(b.muscle));
+        .sort((a, b) => b.total - a.total || b.average - a.average || a.muscle.localeCompare(b.muscle));
 
     if (!entries.length) {
         container.innerHTML = `<p class="empty-state">No muscle volume in the selected ${escapeHtml(window.label)} timeframe.</p>`;
@@ -275,10 +345,11 @@ function renderSelectedVolumeTrends(container, selectedSummary, baseline, planne
 
     container.innerHTML = `
         <p class="weekly-volume-note volume-trends-note">
-            <strong>${escapeHtml(window.label)} selected.</strong> Avg/Wk normalizes the selected period so different timeframes can be compared. Total is all muscle-set credits in the selected period. ${baselineText} ${planText}
+            <strong>${escapeHtml(window.label)} · ${period.workoutCount} workout${period.workoutCount === 1 ? "" : "s"} · ${formatNumber(period.periodTotal)} total muscle-set credits · ${formatNumber(period.periodAverage)}/wk.</strong>
+            Total is the selected-period volume; Avg/Wk normalizes it for comparison across timeframes. ${baselineText} ${planText}
         </p>
         <div class="volume-trends-header" aria-hidden="true">
-            <span>Muscle</span><span>Avg/Wk</span><span>Total</span><span>Planned</span>
+            <span>Muscle</span><span>Total</span><span>Avg/Wk</span><span>Planned</span>
         </div>
         <div class="volume-trends-list">
             ${entries.map(renderTrendRow).join("")}
@@ -295,8 +366,8 @@ function renderTrendRow(item) {
                 <strong>${escapeHtml(item.muscle)}</strong>
                 <small>${escapeHtml(insight.label)}</small>
             </div>
-            <div class="volume-trend-metric primary"><span>Avg/Wk</span><strong>${formatNumber(item.average)}</strong></div>
-            <div class="volume-trend-metric"><span>Total</span><strong>${formatNumber(item.total)}</strong></div>
+            <div class="volume-trend-metric primary"><span>Total</span><strong>${formatNumber(item.total)}</strong></div>
+            <div class="volume-trend-metric"><span>Avg/Wk</span><strong>${formatNumber(item.average)}</strong></div>
             <div class="volume-trend-metric"><span>Planned</span><strong>${item.planned === null ? "—" : formatNumber(item.planned)}</strong></div>
         </article>
     `;
@@ -477,6 +548,7 @@ function getWeeklyPlanVolume(plan) {
             });
         });
     });
+
     return volume;
 }
 
@@ -487,10 +559,10 @@ function getPlannedSetCount(exercise) {
 }
 
 function getPreferredPlan(sessions) {
-    const plans = readPlans();
+    const plans = getPlans();
     if (!plans.length) return null;
 
-    const schedule = readSchedule();
+    const schedule = getSchedule();
     if (schedule?.planId) {
         const scheduled = plans.find(plan => plan?.id === schedule.planId);
         if (scheduled) return scheduled;
@@ -500,20 +572,20 @@ function getPreferredPlan(sessions) {
     return recentPlanId ? plans.find(plan => plan?.id === recentPlanId) || null : null;
 }
 
-function readPlans() {
+function getPlans() {
     try {
-        const plans = JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY) || "[]");
-        return Array.isArray(plans) ? plans : [];
+        const parsed = JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY) || "[]");
+        return Array.isArray(parsed) ? parsed : [];
     }
     catch {
         return [];
     }
 }
 
-function readSchedule() {
+function getSchedule() {
     try {
-        const schedule = JSON.parse(localStorage.getItem(SCHEDULE_STORAGE_KEY) || "null");
-        return schedule && typeof schedule === "object" ? schedule : null;
+        const parsed = JSON.parse(localStorage.getItem(SCHEDULE_STORAGE_KEY) || "null");
+        return parsed && typeof parsed === "object" ? parsed : null;
     }
     catch {
         return null;
@@ -542,6 +614,11 @@ function shiftDate(dateValue, days) {
 function formatWeekLabel(value) {
     return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" })
         .format(new Date(`${value}T12:00:00`));
+}
+
+function formatDateRange(window) {
+    const format = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+    return `${format.format(new Date(`${window.startDate}T12:00:00`))}–${format.format(new Date(`${window.endDate}T12:00:00`))}`;
 }
 
 function formatNumber(value) {
@@ -575,21 +652,21 @@ document.addEventListener("click", event => {
         event.target.closest("#load-training-demo") ||
         event.target.closest("#remove-training-demo")
     ) {
-        scheduleRender(110);
+        scheduleRender(140);
     }
 }, true);
 
 document.addEventListener("change", event => {
-    if (event.target?.id === "progress-range") scheduleRender(80);
+    if (event.target?.id === "progress-range") scheduleRender(90);
 });
 
 window.addEventListener("storage", event => {
-    if (event.key === RANGE_STORAGE_KEY || event.key === SESSION_STORAGE_KEY) scheduleRender(80);
+    if (event.key === RANGE_STORAGE_KEY || event.key === SESSION_STORAGE_KEY) scheduleRender(90);
 });
 
 const content = document.getElementById("content");
 if (content) {
-    new MutationObserver(() => scheduleRender(90)).observe(content, { childList: true });
+    new MutationObserver(() => scheduleRender(110)).observe(content, { childList: true });
 }
 
-scheduleRender(100);
+scheduleRender(120);
