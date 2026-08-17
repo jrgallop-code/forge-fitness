@@ -1,0 +1,18 @@
+/* Correct real-world plate loading order on the one-side sleeve diagram.
+   Bar/inside is on the left; the sleeve tip is on the right.
+   The existing renderer outputs lighter-to-heavier plus the collar last,
+   so row-reverse displays collar -> heavy -> light toward the tip. */
+.plate-calculator-visual .plate-calculator-plates{
+    flex-direction:row-reverse!important;
+    justify-content:flex-start!important;
+}
+
+.plate-calculator-visual::before{
+    content:"Bar"!important;
+    left:9%!important;
+}
+
+.plate-calculator-visual::after{
+    content:"Tip"!important;
+    right:9%!important;
+}
