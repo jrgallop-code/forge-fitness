@@ -15,6 +15,8 @@ import {
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 const SCHEDULE_STORAGE_KEY = "level_up_workout_schedule_v1";
+const PLATEAU_EXPOSURES = 4;
+const PLATEAU_MIN_SPAN_DAYS = 10;
 
 function getPlans() {
     const plans = readJson(PLAN_STORAGE_KEY, []);
@@ -165,6 +167,53 @@ function summarizeRecentPerformance(recentSessions, allSessions) {
     };
 }
 
+function detectPossiblePlateaus(allSessions) {
+    const histories = new Map();
+
+    allSessions.forEach(session => {
+        const timestamp = getSessionTimestamp(session);
+        if (!timestamp) return;
+        (session?.exercises || []).forEach(exercise => {
+            const exerciseId = exercise?.exerciseId || exercise?.id;
+            if (!exerciseId) return;
+            const metric = exerciseMetric(exercise);
+            if (!metric) return;
+            if (!histories.has(exerciseId)) histories.set(exerciseId, []);
+            histories.get(exerciseId).push({ timestamp, metric });
+        });
+    });
+
+    const candidates = [];
+    histories.forEach((history, exerciseId) => {
+        const exposures = history
+            .sort((a, b) => a.timestamp - b.timestamp)
+            .slice(-PLATEAU_EXPOSURES);
+        if (exposures.length < PLATEAU_EXPOSURES) return;
+
+        const spanDays = (exposures.at(-1).timestamp - exposures[0].timestamp) / 86400000;
+        if (spanDays < PLATEAU_MIN_SPAN_DAYS) return;
+
+        const earlyAverage = (exposures[0].metric.score + exposures[1].metric.score) / 2;
+        const lateAverage = (exposures[2].metric.score + exposures[3].metric.score) / 2;
+        if (!(earlyAverage > 0)) return;
+
+        const change = (lateAverage - earlyAverage) / earlyAverage;
+        if (change > 0.015 || change < -0.03) return;
+
+        candidates.push({
+            exerciseId,
+            name: getExerciseById(exerciseId)?.name || "Exercise",
+            change,
+            exposures: PLATEAU_EXPOSURES,
+            spanDays: Math.round(spanDays)
+        });
+    });
+
+    return candidates
+        .sort((a, b) => a.change - b.change || b.spanDays - a.spanDays)
+        .slice(0, 3);
+}
+
 function buildMuscleComparisons(actual, planned) {
     const muscles = new Set([...actual.keys(), ...planned.keys()]);
     return [...muscles]
@@ -210,6 +259,7 @@ export function buildTrainingDecisionSnapshot() {
         all: allSummary,
         program: programSummary,
         performance,
+        plateaus: detectPossiblePlateaus(allSessions),
         plannedMuscleVolume: planned,
         muscleComparisons: buildMuscleComparisons(allSummary.muscleVolume, planned),
         adherenceRatio: targetWorkouts > 0 ? programSummary.workouts / targetWorkouts : null,
