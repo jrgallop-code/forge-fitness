@@ -1,0 +1,158 @@
+/* Decision-focused muscle volume analytics. */
+
+.volume-trends-note strong {
+    color:#f5f5f7;
+}
+
+.volume-trends-header {
+    display:grid;
+    grid-template-columns:minmax(120px,1.5fr) repeat(3,minmax(72px,.7fr));
+    gap:10px;
+    align-items:end;
+    padding:0 12px 8px;
+    color:#8f8f98;
+    font-size:10px;
+    font-weight:850;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+}
+
+.volume-trends-header span:not(:first-child) {
+    text-align:center;
+}
+
+.volume-trends-list {
+    display:grid;
+    gap:10px;
+}
+
+.volume-trend-row {
+    display:grid;
+    grid-template-columns:minmax(120px,1.5fr) repeat(3,minmax(72px,.7fr));
+    gap:10px;
+    align-items:center;
+    padding:14px 12px;
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:15px;
+    background:#101014;
+}
+
+.volume-trend-muscle {
+    display:grid;
+    gap:4px;
+    min-width:0;
+}
+
+.volume-trend-muscle strong {
+    color:#f7f7f9;
+    font-size:15px;
+}
+
+.volume-trend-muscle small {
+    color:#a8a8b0;
+    font-size:10px;
+    font-weight:750;
+    line-height:1.35;
+}
+
+.volume-trend-metric {
+    display:grid;
+    justify-items:center;
+    gap:2px;
+    min-width:0;
+}
+
+.volume-trend-metric span {
+    display:none;
+    color:#888892;
+    font-size:9px;
+    font-weight:800;
+    text-transform:uppercase;
+}
+
+.volume-trend-metric strong {
+    color:#d2d2d8;
+    font-size:16px;
+    font-variant-numeric:tabular-nums;
+}
+
+.volume-trend-metric.primary strong {
+    color:#fff;
+    font-size:20px;
+}
+
+.volume-trend-row.is-on-plan {
+    border-color:rgba(69,203,117,.24);
+    background:linear-gradient(90deg,rgba(69,203,117,.055),#101014 42%);
+}
+
+.volume-trend-row.is-on-plan .volume-trend-muscle small {
+    color:#7be29e;
+}
+
+.volume-trend-row.is-above-plan .volume-trend-muscle small {
+    color:#e2bd7b;
+}
+
+.volume-trend-row.is-below-plan .volume-trend-muscle small,
+.volume-trend-row.is-building .volume-trend-muscle small {
+    color:#b8b8c0;
+}
+
+.volume-intensity-legend .legend-none {
+    background:#303138;
+}
+
+.volume-intensity-legend .legend-some {
+    background:rgba(69,203,117,.28);
+}
+
+.volume-intensity-legend .legend-more {
+    background:#45cb75;
+}
+
+@media(max-width:560px) {
+    .volume-trends-header {
+        display:none;
+    }
+
+    .volume-trend-row {
+        grid-template-columns:1fr repeat(3,minmax(58px,.62fr));
+        gap:7px;
+        padding:13px 10px;
+    }
+
+    .volume-trend-muscle strong {
+        font-size:14px;
+    }
+
+    .volume-trend-muscle small {
+        font-size:9px;
+    }
+
+    .volume-trend-metric span {
+        display:block;
+        font-size:7px;
+        text-align:center;
+        white-space:nowrap;
+    }
+
+    .volume-trend-metric strong {
+        font-size:14px;
+    }
+
+    .volume-trend-metric.primary strong {
+        font-size:17px;
+    }
+}
+
+@media(max-width:390px) {
+    .volume-trend-row {
+        grid-template-columns:1fr repeat(3,52px);
+        gap:5px;
+    }
+
+    .volume-trend-metric span {
+        font-size:6.5px;
+    }
+}
