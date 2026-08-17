@@ -8,7 +8,7 @@ import { createGeneratedExerciseGuide } from "../workouts/exercise-guide-generat
 const SESSION_KEY = "forge_workout_sessions";
 const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-2";
 const BACK_ASSET = "assets/recovery/back-view.svg?v=recovery-back-vector-1";
-const STYLESHEET = "css/dashboard-recovery-card.css?v=dashboard-muscle-snapshot-1";
+const STYLESHEET = "css/dashboard-recovery-card.css?v=dashboard-muscle-snapshot-2";
 const TARGET_GREEN = "#45cb75";
 const SECONDARY_SET_CREDIT = 0.5;
 const NORMALIZATION_SETS = 12;
@@ -278,8 +278,8 @@ function ensureMuscleSnapshot() {
     const content = document.getElementById("content");
     if (!content?.classList.contains("dashboard-command-center")) return;
 
-    const weekly = content.querySelector(".dashboard-command-weekly");
-    if (!weekly) return;
+    const dashboard = content.querySelector(":scope > .dashboard");
+    if (!dashboard) return;
 
     const recoveryStates = getRecoveryStates();
     const volume = getLastSevenDayVolume();
@@ -295,7 +295,7 @@ function ensureMuscleSnapshot() {
 
     let grid = content.querySelector("[data-dashboard-muscle-snapshot]");
     if (!grid) {
-        weekly.insertAdjacentHTML("afterend", renderGrid(recoveryStates, volume));
+        dashboard.insertAdjacentHTML("beforeend", renderGrid(recoveryStates, volume));
         grid = content.querySelector("[data-dashboard-muscle-snapshot]");
     }
     else if (grid.dataset.signature !== signature) {
@@ -305,7 +305,12 @@ function ensureMuscleSnapshot() {
 
     if (grid) {
         grid.dataset.signature = signature;
-        if (grid.previousElementSibling !== weekly) weekly.insertAdjacentElement("afterend", grid);
+        grid.style.gridColumn = "1 / -1";
+        grid.style.width = "100%";
+        grid.style.margin = "0";
+        if (grid.parentElement !== dashboard || grid !== dashboard.lastElementChild) {
+            dashboard.appendChild(grid);
+        }
     }
 }
 
