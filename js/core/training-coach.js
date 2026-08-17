@@ -27,6 +27,7 @@ function chooseDecision(snapshot, recovery) {
     const adherence = snapshot.adherenceRatio;
     const volume = snapshot.volumeRatio;
     const performance = snapshot.performance;
+    const plateau = snapshot.plateaus?.[0] || null;
     const enoughPerformance = performance.comparable >= 3;
     const declineRate = enoughPerformance ? performance.declined / performance.comparable : 0;
     const performanceConcern = enoughPerformance && performance.declined >= 2 && declineRate >= 0.4;
@@ -79,6 +80,16 @@ function chooseDecision(snapshot, recovery) {
             message: recoveryConcern || performanceConcern
                 ? "Completed muscle volume is well above planned volume and another signal is also under pressure. Pull back optional extra work before adding anything else."
                 : "Completed muscle volume is well above the plan, but current performance and recovery do not show a clear problem. There is no reason to add more volume right now."
+        };
+    }
+
+    if (plateau && !recoveryConcern && !performanceConcern) {
+        return {
+            code: "possible-plateau",
+            tone: "attention",
+            label: "POSSIBLE PLATEAU",
+            title: `${plateau.name} may be stalling`,
+            message: `Estimated performance has stayed essentially flat across the last ${plateau.exposures} exposures over about ${plateau.spanDays} days. Keep volume unchanged for now and use your programmed rep-range progression before considering extra sets.`
         };
     }
 
@@ -141,6 +152,7 @@ export function getTrainingReview() {
             ratio: snapshot.volumeRatio
         },
         performance: snapshot.performance,
+        plateau: snapshot.plateaus?.[0] || null,
         recovery,
         muscleSignals: topMuscleSignals(snapshot)
     };
