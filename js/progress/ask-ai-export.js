@@ -26,7 +26,7 @@ function ensureAskAICard() {
         renderCard(card, exportData);
     }
 
-    if (card.dataset.analyticsViewed !== "true") {
+    if (!lifting.hidden && card.dataset.analyticsViewed !== "true") {
         card.dataset.analyticsViewed = "true";
         trackAIExportEvent("ai_export_card_viewed");
     }
