@@ -111,6 +111,9 @@ function ensureCard() {
     const signature = JSON.stringify({
         code: review.code,
         label: review.label,
+        title: review.title,
+        message: review.message,
+        plateau: review.plateau,
         workouts: review.workouts,
         volume: review.volume,
         performance: {
