@@ -3,7 +3,17 @@ import { getTrainingReview } from "../core/training-coach.js?v=training-coach-1"
 const SESSION_KEY = "forge_workout_sessions";
 const PLAN_KEY = "forge_workout_plans";
 const SCHEDULE_KEY = "level_up_workout_schedule_v1";
+const STYLESHEET = "css/training-review-card.css?v=training-review-card-1";
 let queued = false;
+
+function installStyles() {
+    if (document.querySelector('link[data-training-review-style]')) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = STYLESHEET;
+    link.dataset.trainingReviewStyle = "true";
+    document.head.appendChild(link);
+}
 
 function formatSets(value) {
     if (!Number.isFinite(Number(value))) return "—";
@@ -168,6 +178,7 @@ window.addEventListener("storage", event => {
     if ([SESSION_KEY, PLAN_KEY, SCHEDULE_KEY].includes(event.key)) queueEnsureCard();
 });
 
+installStyles();
 queueEnsureCard();
 
 function escapeHtml(value) {
