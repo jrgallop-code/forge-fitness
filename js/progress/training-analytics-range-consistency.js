@@ -66,6 +66,7 @@ const CORE_STRENGTH_CATEGORIES = [
 ];
 
 let refreshTimer = null;
+let observedStrengthCanvas = null;
 
 function readSessions() {
     try {
@@ -410,7 +411,15 @@ window.addEventListener("storage", event => {
 const content = document.getElementById("content");
 if (content) {
     new MutationObserver(() => {
-        if (document.getElementById("overall-strength-index-chart")) scheduleRefresh(25);
+        const canvas = document.getElementById("overall-strength-index-chart");
+        if (!canvas) {
+            observedStrengthCanvas = null;
+            return;
+        }
+        if (canvas !== observedStrengthCanvas) {
+            observedStrengthCanvas = canvas;
+            scheduleRefresh(25);
+        }
     }).observe(content, { childList: true, subtree: true });
 }
 
