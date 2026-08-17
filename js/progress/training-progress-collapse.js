@@ -1,13 +1,3 @@
-import "./muscle-overview.js?v=muscle-overview-1";
-
-if (!document.querySelector('link[data-muscle-overview-styles]')) {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "css/muscle-overview.css?v=muscle-overview-1";
-    link.dataset.muscleOverviewStyles = "true";
-    document.head.appendChild(link);
-}
-
 function unwrapLegacyDisclosure(liftingProgress) {
     const existing = liftingProgress.querySelector(":scope > .training-progress-disclosure");
     if (!existing) return false;
