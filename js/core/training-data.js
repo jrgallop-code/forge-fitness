@@ -53,7 +53,7 @@ export function getSessionTimestamp(session) {
 export function isPerformedWorkingSet(set) {
     if (!set) return false;
     const reps = Number(set.reps);
-    return Number.isFinite(reps) && reps > 0;
+    return set.completed === true || (Number.isFinite(reps) && reps > 0);
 }
 
 export function getPerformedWorkingSets(exercise, definition = null) {
