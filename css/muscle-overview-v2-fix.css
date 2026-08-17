@@ -1,0 +1,14 @@
+/* Stability layer for the non-reparenting Muscles integration. */
+.muscle-overview-shell[hidden] {
+    display:none !important;
+}
+
+.muscle-overview-volume-content {
+    display:grid;
+    gap:0;
+    margin-bottom:2px;
+}
+
+.training-progress-view[data-view="training"] > .muscle-overview-volume-content {
+    order:-10;
+}
