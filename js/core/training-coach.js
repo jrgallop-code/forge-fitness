@@ -124,6 +124,7 @@ export function getTrainingReview() {
     const snapshot = buildTrainingDecisionSnapshot();
     const recovery = summarizeRecovery(snapshot);
     const decision = chooseDecision(snapshot, recovery);
+    const hasPlannedVolume = snapshot.plannedCredits > 0;
 
     return {
         ...decision,
@@ -135,8 +136,8 @@ export function getTrainingReview() {
             target: snapshot.activeProgram?.targets?.workouts || null
         },
         volume: {
-            actual: snapshot.actualComparableCredits,
-            planned: snapshot.plannedCredits || null,
+            actual: hasPlannedVolume ? snapshot.actualComparableCredits : snapshot.all.totalMuscleCredits,
+            planned: hasPlannedVolume ? snapshot.plannedCredits : null,
             ratio: snapshot.volumeRatio
         },
         performance: snapshot.performance,
