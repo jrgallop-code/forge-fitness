@@ -36,6 +36,29 @@ export function initializeDashboardNutritionTargets() {
     window.addEventListener("levelup:nutrition-phase-updated", renderDashboardNutritionTargets);
 }
 
+function validManualMacros(preference) {
+    const macros = preference?.manualMacros;
+    return preference?.useManual === true &&
+        [macros?.protein, macros?.carbs, macros?.fat]
+            .every(value => Number.isFinite(Number(value)) && Number(value) >= 0);
+}
+
+function getDashboardMacros({ calories, profile, preference }) {
+    if (validManualMacros(preference)) {
+        return {
+            protein: Math.round(Number(preference.manualMacros.protein)),
+            carbs: Math.round(Number(preference.manualMacros.carbs)),
+            fat: Math.round(Number(preference.manualMacros.fat))
+        };
+    }
+
+    return calculateMacroTargets({
+        calories,
+        weightKg: poundsToKg(Number(profile.weightLb)),
+        macroPreset: preference?.macroPreset || "balanced"
+    });
+}
+
 function renderDashboardNutritionTargets() {
     const dashboard = document.querySelector(".dashboard");
     if (!dashboard) return;
@@ -54,12 +77,8 @@ function renderDashboardNutritionTargets() {
     const calories = Number.isFinite(phaseCalories) && phaseCalories > 0 ? phaseCalories : savedCalories;
     if (!Number.isFinite(calories) || calories <= 0) return;
 
-    const macroPreset = getNutritionMacroPreference()?.macroPreset || "balanced";
-    const macros = calculateMacroTargets({
-        calories,
-        weightKg: poundsToKg(Number(profile.weightLb)),
-        macroPreset
-    });
+    const macroPreference = getNutritionMacroPreference();
+    const macros = getDashboardMacros({ calories, profile, preference: macroPreference });
 
     const calorieCard = `
         <div class="metric-card dashboard-nutrition-target-card">
