@@ -148,23 +148,30 @@ function renderWeightTrendCard() {
     card.dataset.weightTrendSignature = signature;
     card.classList.add("dashboard-weight-trend-card");
 
+    const hasAnyWeightData = readiness.eligibleEntries.length > 0;
     const path = readiness.hasEnoughData ? buildSparklinePath(recent) : "";
     const value = latest === null ? "--" : latest.toFixed(1);
     const daysReady = readiness.elapsedDays >= MIN_TREND_DAYS;
     const weighInsReady = readiness.weighIns >= MIN_TREND_WEIGH_INS;
     const dayProgress = Math.min(readiness.elapsedDays, MIN_TREND_DAYS);
     const weighInProgress = Math.min(readiness.weighIns, MIN_TREND_WEIGH_INS);
-    const emptyMessage = !daysReady
-        ? "Building 7-day trend"
-        : !weighInsReady
-            ? "Need more weigh-ins"
-            : "Not enough data";
-    const readinessPrimary = daysReady
-        ? `${weighInProgress} / ${MIN_TREND_WEIGH_INS} weigh-ins`
-        : `Day ${dayProgress} / ${MIN_TREND_DAYS}`;
-    const readinessSecondary = daysReady
-        ? "needed to unlock trend"
-        : `${weighInProgress} / ${MIN_TREND_WEIGH_INS} weigh-ins logged`;
+    const emptyMessage = !hasAnyWeightData
+        ? "No data yet"
+        : !daysReady
+            ? "Building 7-day trend"
+            : !weighInsReady
+                ? "Need more weigh-ins"
+                : "Not enough data";
+    const readinessPrimary = !hasAnyWeightData
+        ? "No data yet"
+        : daysReady
+            ? `${weighInProgress} / ${MIN_TREND_WEIGH_INS} weigh-ins`
+            : `Day ${dayProgress} / ${MIN_TREND_DAYS}`;
+    const readinessSecondary = !hasAnyWeightData
+        ? "Add your first weigh-in"
+        : daysReady
+            ? "needed to unlock trend"
+            : `${weighInProgress} / ${MIN_TREND_WEIGH_INS} weigh-ins logged`;
 
     card.innerHTML = `
         <button type="button" class="dashboard-weight-trend-button" data-dashboard-weight-trend-open aria-label="Open Weight Progress">
