@@ -18,6 +18,12 @@ function setText(id, value) {
     if (el && el.textContent !== value) el.textContent = value;
 }
 
+function isManualMacroEditorActive() {
+    const select = document.getElementById("nutrition-macro-select");
+    return select?.value === "manual"
+        || Boolean(document.querySelector("[data-manual-macro]"));
+}
+
 function syncActivePlanDisplays() {
     const profile = getNutritionProfile();
     const goal = getNutritionGoal();
@@ -31,7 +37,9 @@ function syncActivePlanDisplays() {
         return;
     }
 
-    const macroPreset = getNutritionMacroPreference()?.macroPreset || "balanced";
+    const macroPreference = getNutritionMacroPreference();
+    const macroPreset = macroPreference?.macroPreset || "balanced";
+    const manualMacroEditorActive = isManualMacroEditorActive();
     const macros = calculateMacroTargets({
         calories,
         weightKg: poundsToKg(Number(profile.weightLb)),
@@ -39,9 +47,15 @@ function syncActivePlanDisplays() {
     });
 
     setText("planner-summary-calories", `${Math.round(calories).toLocaleString()} kcal`);
-    setText("nutrition-macro-calories", `${Math.round(calories).toLocaleString()} kcal/day`);
     setText("calculated-calorie-target", `${Math.round(calories).toLocaleString()} kcal/day`);
     setText("coach-current-calories", `${Math.round(calories).toLocaleString()} kcal/day`);
+
+    // The manual macro UI mounts number inputs inside these output elements.
+    // Replacing their text while the editor is active destroys the focused input
+    // (especially noticeable on iPhone) and makes the editor appear to freeze.
+    if (manualMacroEditorActive) return;
+
+    setText("nutrition-macro-calories", `${Math.round(calories).toLocaleString()} kcal/day`);
 
     if (macros) {
         setText("planner-summary-protein", `${macros.protein} g`);
