@@ -12,6 +12,13 @@ function findTargetCard(title) {
         .find(node => node.querySelector("h3")?.textContent?.trim() === title);
 }
 
+function validManualMacros(preference) {
+    const macros = preference?.manualMacros;
+    return preference?.useManual === true &&
+        [macros?.protein, macros?.carbs, macros?.fat]
+            .every(value => Number.isFinite(Number(value)) && Number(value) >= 0);
+}
+
 function refreshDashboardTargets() {
     const phase = getActiveNutritionPhase();
     const calories = Number(phase?.currentCalories ?? phase?.startCalories);
@@ -25,14 +32,11 @@ function refreshDashboardTargets() {
     }
 
     const preference = getNutritionMacroPreference();
-    const manualProtein = Number(preference?.manualMacros?.protein);
-    if (preference?.useManual !== true || !Number.isFinite(manualProtein) || manualProtein < 0) {
-        return;
-    }
+    if (!validManualMacros(preference)) return;
 
     const proteinCard = findTargetCard("Daily Protein Target");
     if (proteinCard) {
-        setText(proteinCard.querySelector("p"), `${Math.round(manualProtein)} g`);
+        setText(proteinCard.querySelector("p"), `${Math.round(Number(preference.manualMacros.protein))} g`);
     }
 }
 
