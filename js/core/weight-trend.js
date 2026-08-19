@@ -61,6 +61,9 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
             ...calculateWeightTrend([], { minEntriesPerWindow }),
             reason: "missing-phase-start",
             phaseDay: null,
+            dataPhaseDay: null,
+            latestEntryDate: null,
+            measurementDate: null,
             checkDay: null,
             checkDate: null,
             nextTrendDay: FIRST_PHASE_TREND_DAY,
@@ -74,15 +77,20 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
 
     const phaseDay = Math.max(1, Math.floor((dateMs(asOfDate) - dateMs(phaseStartDate)) / DAY_MS) + 1);
     const firstTrendDate = shiftDate(phaseStartDate, FIRST_PHASE_TREND_DAY - 1);
-    const rollingEndDate = rolling
-        ? getRollingPhaseEndDate(normalized, firstTrendDate, asOfDate)
-        : null;
+    const latestEntryDate = normalized.at(-1)?.date || null;
+    const dataPhaseDay = validDate(latestEntryDate)
+        ? Math.max(1, Math.floor((dateMs(latestEntryDate) - dateMs(phaseStartDate)) / DAY_MS) + 1)
+        : 0;
+    const rollingEndDate = getRollingPhaseEndDate(normalized, firstTrendDate, asOfDate);
 
     if (phaseDay < FIRST_PHASE_TREND_DAY) {
         return {
             ...calculateWeightTrend([], { minEntriesPerWindow }),
             reason: "before-first-trend",
             phaseDay,
+            dataPhaseDay,
+            latestEntryDate,
+            measurementDate: null,
             checkDay: null,
             checkDate: null,
             nextTrendDay: FIRST_PHASE_TREND_DAY,
@@ -117,6 +125,9 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
                 }),
                 reason: "insufficient-preliminary-data",
                 phaseDay,
+                dataPhaseDay,
+                latestEntryDate,
+                measurementDate: trendDate,
                 checkDay: null,
                 checkDate: null,
                 nextTrendDay: FIRST_PHASE_TREND_DAY,
@@ -146,6 +157,9 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
             }),
             reason: null,
             phaseDay,
+            dataPhaseDay,
+            latestEntryDate,
+            measurementDate: trendDate,
             checkDay: null,
             checkDate: null,
             nextTrendDay: FIRST_PHASE_TREND_DAY,
@@ -157,24 +171,36 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
         };
     }
 
-    const checkDay = FIRST_PHASE_CHECK_DAY
-        + (Math.floor((phaseDay - FIRST_PHASE_CHECK_DAY) / PHASE_CHECK_CADENCE_DAYS) * PHASE_CHECK_CADENCE_DAYS);
+    // Phase age continues to advance with the calendar, but the measured trend and
+    // check identity advance only when a new weigh-in reaches the next check period.
+    // This prevents missing weigh-in days from changing the displayed weekly rate.
+    const dataCheckDay = dataPhaseDay >= FIRST_PHASE_CHECK_DAY
+        ? FIRST_PHASE_CHECK_DAY
+            + (Math.floor((dataPhaseDay - FIRST_PHASE_CHECK_DAY) / PHASE_CHECK_CADENCE_DAYS) * PHASE_CHECK_CADENCE_DAYS)
+        : FIRST_PHASE_CHECK_DAY;
+    const checkDay = dataCheckDay;
     const checkDate = shiftDate(phaseStartDate, checkDay - 1);
-    const trendDate = rolling ? rollingEndDate : checkDate;
+    const trendDate = rollingEndDate;
     const result = calculateWeightTrend(normalized, { endDate: trendDate, minEntriesPerWindow });
+    const nextCheckDay = checkDay + PHASE_CHECK_CADENCE_DAYS;
+    const nextCheckDate = shiftDate(phaseStartDate, nextCheckDay - 1);
 
     return {
         ...result,
         reason: result.status === "actual" ? null : "insufficient-window-data",
         phaseDay,
+        dataPhaseDay,
+        latestEntryDate,
+        measurementDate: trendDate,
         checkDay,
         checkDate,
         nextTrendDay: null,
         nextTrendDate: null,
-        nextCheckDay: checkDay + PHASE_CHECK_CADENCE_DAYS,
-        nextCheckDate: shiftDate(phaseStartDate, checkDay + PHASE_CHECK_CADENCE_DAYS - 1),
+        nextCheckDay,
+        nextCheckDate,
         daysUntilTrend: 0,
-        daysUntilCheck: Math.max(0, (checkDay + PHASE_CHECK_CADENCE_DAYS) - phaseDay)
+        daysUntilCheck: Math.max(0, nextCheckDay - phaseDay),
+        awaitingNewWeighIn: phaseDay >= nextCheckDay && dataPhaseDay < nextCheckDay
     };
 }
 
