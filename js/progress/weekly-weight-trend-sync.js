@@ -3,7 +3,7 @@ import {
     calculateSevenDayAverage,
     calculateWeightTrend,
     normalizeWeightEntries
-} from "../core/weight-trend.js?v=future-weight-carousel-sync-1";
+} from "../core/weight-trend.js?v=phase-weighin-anchor-1";
 
 const WEIGHT_KEY = "forge_weight_entries";
 const PHASES_KEY = "level_up_nutrition_phases";
@@ -148,11 +148,15 @@ function refresh() {
     }
 
     if (phaseAware) {
-        value.title = "Uses the same active-phase trend and scheduled check-in calculation as the calorie coach.";
+        value.title = "Active-phase weekly change is anchored to the latest weigh-in, so missing days do not move the result.";
         if (card) {
-            card.title = trend.status === "preliminary"
-                ? `Preliminary phase trend. At least ${MIN_ENTRIES_PER_WINDOW} weigh-ins are required in the current 7-day window.`
-                : `Active-phase trend. Scheduled checks use at least ${MIN_ENTRIES_PER_WINDOW} weigh-ins in each 7-day block.`;
+            if (trend.awaitingNewWeighIn) {
+                card.title = `The measured trend is frozen through ${trend.latestEntryDate || "the latest weigh-in"}. Add a new weigh-in to advance the next phase assessment.`;
+            } else {
+                card.title = trend.status === "preliminary"
+                    ? `Preliminary phase trend. At least ${MIN_ENTRIES_PER_WINDOW} weigh-ins are required in the current 7-day window.`
+                    : `Active-phase trend. The 7-day comparison advances with new weigh-ins and needs at least ${MIN_ENTRIES_PER_WINDOW} weigh-ins in each window.`;
+            }
         }
         return;
     }
