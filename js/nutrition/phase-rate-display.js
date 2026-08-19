@@ -1,4 +1,4 @@
-import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-live-weighin-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-phase-full-window-1";
 
 let refreshQueued = false;
 
@@ -54,7 +54,11 @@ function refresh() {
     setText(phaseCard?.querySelector(".nutrition-current-phase-head b"), display.statusText);
     const grid = phaseCard?.querySelector(".nutrition-current-phase-grid");
     if (grid) {
-        const actualCell = [...grid.children].find(cell => cell.querySelector("span")?.textContent?.trim() === "Actual Since Start");
+        const actualCell = [...grid.children].find(cell => {
+            const label = cell.querySelector("span")?.textContent?.trim();
+            return label === "Actual Since Start" || label === "Current Weekly Trend";
+        });
+        setText(actualCell?.querySelector("span"), "Current Weekly Trend");
         setText(actualCell?.querySelector("strong"), display.rateText);
     }
 }

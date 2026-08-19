@@ -4,6 +4,7 @@ const MIN_WINDOW_ENTRIES = 4;
 const FIRST_PHASE_TREND_DAY = 7;
 const FIRST_PHASE_CHECK_DAY = 14;
 const PHASE_CHECK_CADENCE_DAYS = 7;
+const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 
 export function calculateWeightTrend(entries, options = {}) {
     const normalized = normalizeWeightEntries(entries);
@@ -53,8 +54,9 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
     const minEntriesPerWindow = positiveInteger(options.minEntriesPerWindow, MIN_WINDOW_ENTRIES);
     const startingTrendWeight = finiteNumber(options.startingTrendWeight);
     const rolling = options.rolling === true;
-    const normalized = normalizeWeightEntries(entries)
-        .filter(entry => (!phaseStartDate || entry.date >= phaseStartDate) && entry.date <= asOfDate);
+    const provided = normalizeWeightEntries(entries).filter(entry => entry.date <= asOfDate);
+    const normalized = provided.filter(entry => !phaseStartDate || entry.date >= phaseStartDate);
+    const rollingContext = rolling ? getRollingContextEntries(provided, asOfDate) : normalized;
 
     if (!phaseStartDate) {
         return {
@@ -171,9 +173,10 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
         };
     }
 
-    // Phase age continues to advance with the calendar, but the scheduled check
-    // advances only when a new weigh-in reaches that next check period. Missing
-    // weigh-in days therefore cannot shift the comparison windows by themselves.
+    // Phase age and check eligibility use in-phase weigh-ins only. The measured
+    // rolling rate, however, needs complete 7-day comparison windows. When the
+    // previous rolling window reaches before the phase start, include available
+    // pre-phase weigh-ins as context instead of silently shortening that window.
     const dataCheckDay = dataPhaseDay >= FIRST_PHASE_CHECK_DAY
         ? FIRST_PHASE_CHECK_DAY
             + (Math.floor((dataPhaseDay - FIRST_PHASE_CHECK_DAY) / PHASE_CHECK_CADENCE_DAYS) * PHASE_CHECK_CADENCE_DAYS)
@@ -181,7 +184,7 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
     const checkDay = dataCheckDay;
     const checkDate = shiftDate(phaseStartDate, checkDay - 1);
     const trendDate = rolling ? rollingEndDate : checkDate;
-    const result = calculateWeightTrend(normalized, { endDate: trendDate, minEntriesPerWindow });
+    const result = calculateWeightTrend(rolling ? rollingContext : normalized, { endDate: trendDate, minEntriesPerWindow });
     const nextCheckDay = checkDay + PHASE_CHECK_CADENCE_DAYS;
     const nextCheckDate = shiftDate(phaseStartDate, nextCheckDay - 1);
 
@@ -245,6 +248,20 @@ export function normalizeWeightEntries(entries) {
         byDate.set(date, { date, weight });
     });
     return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function getRollingContextEntries(provided, asOfDate) {
+    let stored = [];
+    try {
+        if (typeof globalThis?.localStorage !== "undefined") {
+            stored = normalizeWeightEntries(JSON.parse(globalThis.localStorage.getItem(WEIGHT_STORAGE_KEY) || "[]"))
+                .filter(entry => entry.date <= asOfDate);
+        }
+    } catch {
+        stored = [];
+    }
+    if (!stored.length) return provided;
+    return normalizeWeightEntries([...stored, ...provided]).filter(entry => entry.date <= asOfDate);
 }
 
 function getRollingPhaseEndDate(entries, firstTrendDate, asOfDate) {
