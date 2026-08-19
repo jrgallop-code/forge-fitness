@@ -1,7 +1,7 @@
 import {
     getActiveNutritionPhase,
     getActivePhaseMetrics
-} from "./nutrition-phase.js?v=rolling-phase-trend-1";
+} from "./nutrition-phase.js?v=nutrition-live-weighin-1";
 
 const FIRST_CHECK_DAY = 14;
 let refreshScheduled = false;
@@ -41,7 +41,9 @@ function syncCurrentPhaseCard(metrics) {
         ? `${metrics.status === "PRELIMINARY TREND" ? "Preliminary · " : ""}${formatRate(actual)}`
         : metrics.status === "BUILDING TREND"
             ? "Calibrating"
-            : "Need more data";
+            : metrics.status === "AWAITING WEIGH-IN"
+                ? "Awaiting weigh-in"
+                : "Need more data";
 
     setText(actualCell?.querySelector("strong"), actualText);
 }
@@ -78,7 +80,7 @@ function syncPreliminaryCheckIn(metrics) {
     );
     setText(
         document.querySelector("#goal-check-in-card[data-weekly-coach='1'] .weekly-coach-method"),
-        `The weight trend starts on Day 7, then the 7-day moving average rolls forward with each new weigh-in. Calorie decisions begin on Day ${FIRST_CHECK_DAY} using scheduled 7-day check-ins, then repeat every 7 days. Each decision window needs at least 4 weigh-ins.`
+        `The weight trend starts on Day 7, then the 7-day moving average rolls forward with each new weigh-in. Calorie decisions begin on Day ${FIRST_CHECK_DAY} and repeat every 7 days; the measured rate still stays anchored to the latest weigh-in. Each decision window needs at least 4 weigh-ins.`
     );
 }
 
