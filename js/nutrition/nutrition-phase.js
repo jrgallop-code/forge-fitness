@@ -1,5 +1,5 @@
 import { GOAL_PRESETS } from "./tdee-calculator.js?v=phase-tolerance-1";
-import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=rolling-phase-trend-1";
+import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=phase-weighin-anchor-1";
 
 const PHASES_KEY = "level_up_nutrition_phases";
 const WEIGHT_KEY = "forge_weight_entries";
@@ -117,6 +117,10 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
         return buildMetrics("PRELIMINARY TREND", trend, actual, target, tolerance, referenceWeight, false, metadata);
     }
 
+    if (trend.awaitingNewWeighIn) {
+        return buildMetrics("AWAITING WEIGH-IN", trend, actual, target, tolerance, referenceWeight, false, metadata);
+    }
+
     if (!Number.isFinite(target)) {
         return buildMetrics("NEED MORE DATA", trend, actual, null, tolerance, referenceWeight, false, metadata);
     }
@@ -138,7 +142,7 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
         }
     }
 
-    const recommendationReady = trend.status === "actual" && Number.isFinite(trend.checkDay) && trend.checkDay >= 14;
+    const recommendationReady = trend.status === "actual" && !trend.awaitingNewWeighIn && Number.isFinite(trend.checkDay) && trend.checkDay >= 14;
     return buildMetrics(status, trend, actual, target, tolerance, referenceWeight, recommendationReady, metadata);
 }
 
