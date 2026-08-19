@@ -1,11 +1,12 @@
 import { GOAL_PRESETS } from "./tdee-calculator.js?v=phase-tolerance-1";
-import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=phase-weighin-anchor-1";
+import { calculatePhaseMovingAverageTrend, calculateWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-phase-full-window-1";
 
 const PHASES_KEY = "level_up_nutrition_phases";
 const WEIGHT_KEY = "forge_weight_entries";
 const BODYWEIGHT_TOLERANCE_PCT = 0.001;
 const TARGET_TOLERANCE_FRACTION = 0.25;
 const DEFAULT_TOLERANCE_LB = 0.1;
+const FIRST_PHASE_CHECK_DAY = 14;
 
 export function getActiveNutritionPhase() {
     return [...readPhases()].reverse().find(p => p && !p.endDate && GOAL_PRESETS[p.goalId]) || null;
@@ -86,22 +87,53 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
         asOfDate,
         isFutureTest: !phase.endDate && asOfDate > today
     };
-    const entries = allWeights.filter(e =>
+    const phaseEntries = allWeights.filter(e =>
         e.date >= phase.startDate &&
         e.date <= asOfDate &&
         (!phase.endDate || e.date <= phase.endDate)
     );
     const startingTrendWeight = finiteNumber(phase.startingTrendWeight) ?? trendWeight(allWeights.filter(e => e.date <= phase.startDate));
-    const trend = calculatePhaseMovingAverageTrend(entries, {
+    const phaseTrend = calculatePhaseMovingAverageTrend(phaseEntries, {
         phaseStartDate: phase.startDate,
         asOfDate,
         startingTrendWeight,
         minEntriesPerWindow: 4,
         rolling: options.rolling !== false
     });
+
+    // Once a phase reaches the first scheduled check, the measured rate should use
+    // the same complete rolling 7-day windows as Progress. The phase start still
+    // controls phase age and calorie-decision gates, but it must not truncate the
+    // previous comparison window. For example, an Aug 6 phase with an Aug 17
+    // weigh-in needs Aug 4-10 as the previous window, including any Aug 4/5 data.
+    const latestMeasurementDate = allWeights.filter(e => e.date <= asOfDate).at(-1)?.date || null;
+    const liveTrend = Number(phaseTrend.phaseDay) >= FIRST_PHASE_CHECK_DAY && latestMeasurementDate
+        ? calculateWeightTrend(allWeights, { endDate: latestMeasurementDate, minEntriesPerWindow: 4 })
+        : null;
+    const useLiveTrend = liveTrend?.status === "actual";
+    const trend = useLiveTrend
+        ? {
+            ...liveTrend,
+            reason: null,
+            phaseDay: phaseTrend.phaseDay,
+            dataPhaseDay: phaseTrend.dataPhaseDay,
+            latestEntryDate: phaseTrend.latestEntryDate,
+            measurementDate: latestMeasurementDate,
+            checkDay: phaseTrend.checkDay,
+            checkDate: phaseTrend.checkDate,
+            nextTrendDay: phaseTrend.nextTrendDay,
+            nextTrendDate: phaseTrend.nextTrendDate,
+            nextCheckDay: phaseTrend.nextCheckDay,
+            nextCheckDate: phaseTrend.nextCheckDate,
+            daysUntilTrend: phaseTrend.daysUntilTrend,
+            daysUntilCheck: phaseTrend.daysUntilCheck,
+            awaitingNewWeighIn: phaseTrend.awaitingNewWeighIn === true
+        }
+        : phaseTrend;
+
     const actual = finiteNumber(trend?.weeklyChange);
     const target = finiteNumber(phase.targetWeeklyRate);
-    const referenceWeight = finiteNumber(trend?.currentAverage) ?? trendWeight(entries) ?? startingTrendWeight;
+    const referenceWeight = finiteNumber(trend?.currentAverage) ?? trendWeight(phaseEntries) ?? startingTrendWeight;
     const bodyweightTolerance = Number.isFinite(referenceWeight)
         ? referenceWeight * BODYWEIGHT_TOLERANCE_PCT
         : DEFAULT_TOLERANCE_LB;
@@ -117,14 +149,14 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
         return buildMetrics("PRELIMINARY TREND", trend, actual, target, tolerance, referenceWeight, false, metadata);
     }
 
-    const checkDay = Number(trend.checkDay);
-    const dataPhaseDay = Number(trend.dataPhaseDay);
+    const checkDay = Number(phaseTrend.checkDay);
+    const dataPhaseDay = Number(phaseTrend.dataPhaseDay);
     const waitingForScheduledWeighIn = Number.isFinite(checkDay)
         && Number.isFinite(dataPhaseDay)
-        && Number(trend.phaseDay) >= checkDay
+        && Number(phaseTrend.phaseDay) >= checkDay
         && dataPhaseDay < checkDay;
 
-    if (trend.awaitingNewWeighIn || waitingForScheduledWeighIn) {
+    if (phaseTrend.awaitingNewWeighIn || waitingForScheduledWeighIn) {
         return buildMetrics("AWAITING WEIGH-IN", trend, actual, target, tolerance, referenceWeight, false, metadata);
     }
 
@@ -153,9 +185,9 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
         && Number.isFinite(dataPhaseDay)
         && dataPhaseDay >= checkDay;
     const recommendationReady = trend.status === "actual"
-        && !trend.awaitingNewWeighIn
+        && !phaseTrend.awaitingNewWeighIn
         && checkReachedByWeighIn
-        && checkDay >= 14;
+        && checkDay >= FIRST_PHASE_CHECK_DAY;
     return buildMetrics(status, trend, actual, target, tolerance, referenceWeight, recommendationReady, metadata);
 }
 
