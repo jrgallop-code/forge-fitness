@@ -171,16 +171,16 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
         };
     }
 
-    // Phase age continues to advance with the calendar, but the measured trend and
-    // check identity advance only when a new weigh-in reaches the next check period.
-    // This prevents missing weigh-in days from changing the displayed weekly rate.
+    // Phase age continues to advance with the calendar, but the scheduled check
+    // advances only when a new weigh-in reaches that next check period. Missing
+    // weigh-in days therefore cannot shift the comparison windows by themselves.
     const dataCheckDay = dataPhaseDay >= FIRST_PHASE_CHECK_DAY
         ? FIRST_PHASE_CHECK_DAY
             + (Math.floor((dataPhaseDay - FIRST_PHASE_CHECK_DAY) / PHASE_CHECK_CADENCE_DAYS) * PHASE_CHECK_CADENCE_DAYS)
         : FIRST_PHASE_CHECK_DAY;
     const checkDay = dataCheckDay;
     const checkDate = shiftDate(phaseStartDate, checkDay - 1);
-    const trendDate = rollingEndDate;
+    const trendDate = rolling ? rollingEndDate : checkDate;
     const result = calculateWeightTrend(normalized, { endDate: trendDate, minEntriesPerWindow });
     const nextCheckDay = checkDay + PHASE_CHECK_CADENCE_DAYS;
     const nextCheckDate = shiftDate(phaseStartDate, nextCheckDay - 1);
