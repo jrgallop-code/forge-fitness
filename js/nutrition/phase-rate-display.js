@@ -1,4 +1,4 @@
-import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=rolling-phase-trend-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-live-weighin-1";
 
 let refreshQueued = false;
 
@@ -9,7 +9,8 @@ const STATUS_LABELS = {
     "SLIGHTLY SLOWER": "Slightly Slower",
     "NEEDS ATTENTION": "Needs Attention",
     "TRENDING UP": "Trending Up",
-    "TRENDING DOWN": "Trending Down"
+    "TRENDING DOWN": "Trending Down",
+    "AWAITING WEIGH-IN": "Awaiting Weigh-In"
 };
 
 function formatRate(value) {

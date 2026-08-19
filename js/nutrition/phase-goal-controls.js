@@ -1,6 +1,6 @@
 import { GOAL_PRESETS } from "./tdee-calculator.js?v=phase-goal-controls-1";
 import { getNutritionProfile, saveNutritionGoal, syncCalculatedCalories } from "./nutrition-storage.js?v=phase-goal-controls-1";
-import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-phase-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-live-weighin-1";
 import { normalizeWeightEntries } from "../core/weight-trend.js?v=phase-goal-controls-1";
 
 const PHASES_KEY = "level_up_nutrition_phases";
@@ -86,7 +86,7 @@ function enhanceWeightProgress() {
     const entries = readWeights();
     const trendWeight = currentTrendWeight(entries);
     const phase = getActiveNutritionPhase();
-    const metrics = getActivePhaseMetrics(phase);
+    const metrics = getActivePhaseMetrics(phase, { rolling: true });
     const goalWeight = readGoalWeight(phase);
 
     setText("latest-weight", Number.isFinite(trendWeight) ? `${trendWeight.toFixed(1)} lb` : "--");

@@ -1,5 +1,5 @@
-import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=phase-weighin-anchor-1";
-import { saveNutritionPhase } from "./nutrition-phase.js?v=phase-weighin-anchor-1";
+import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-live-weighin-1";
+import { saveNutritionPhase } from "./nutrition-phase.js?v=nutrition-live-weighin-1";
 import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 
 const PHASES_KEY = "level_up_nutrition_phases";
@@ -264,10 +264,14 @@ function refreshCoach() {
         asOfDate,
         startingTrendWeight,
         minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW,
-        rolling: phaseDay < FIRST_CHECK_DAY
+        rolling: true
     });
     const target = Number(phase.targetWeeklyRate);
     const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
+    const waitingForScheduledWeighIn = Number.isFinite(Number(trend.checkDay))
+        && Number.isFinite(Number(trend.dataPhaseDay))
+        && phaseDay >= Number(trend.checkDay)
+        && Number(trend.dataPhaseDay) < Number(trend.checkDay);
 
     setText("weekly-coach-previous", Number.isFinite(trend.previousAverage) ? `${trend.previousAverage.toFixed(1)} lb` : "--");
     setText("weekly-coach-current", Number.isFinite(trend.currentAverage) ? `${trend.currentAverage.toFixed(1)} lb` : "--");
@@ -298,13 +302,14 @@ function refreshCoach() {
 
     setText("weekly-coach-previous-label", "Previous 7-Day Avg");
 
-    if (trend.awaitingNewWeighIn) {
+    if (trend.awaitingNewWeighIn || waitingForScheduledWeighIn) {
+        const waitingCheckDay = waitingForScheduledWeighIn ? trend.checkDay : trend.nextCheckDay;
         setText("weekly-coach-status", "AWAITING WEIGH-IN");
         setText("weekly-coach-confidence", `Day ${trend.phaseDay} · last weigh-in ${trend.latestEntryDate || "--"}`);
         setText("weekly-coach-message", Number.isFinite(trend.weeklyChange)
             ? `Your measured weekly change remains ${formatRate(trend.weeklyChange)}. It will not change just because more calendar days pass.`
             : "The next phase assessment is due, but there is not enough new weight data to advance the trend.");
-        setText("weekly-coach-suggestion", `Log a new weigh-in to advance the trend and unlock the Day ${trend.nextCheckDay} assessment.`);
+        setText("weekly-coach-suggestion", `Log a new weigh-in to advance the trend and unlock the Day ${waitingCheckDay} assessment.`);
         hideActions();
         syncCurrentPhaseSummary(phase);
         return;
@@ -328,12 +333,12 @@ function refreshCoach() {
 
     const evaluation = evaluateRate(trend.weeklyChange, target, trend.currentAverage);
     setText("weekly-coach-status", evaluation.status);
-    setText("weekly-coach-confidence", `Day ${trend.checkDay} check · ${trend.previousEntries} + ${trend.currentEntries} weigh-ins`);
+    setText("weekly-coach-confidence", `Day ${trend.checkDay} check · ${trend.previousEntries} + ${trend.currentEntries} weigh-ins · through ${trend.measurementDate || trend.latestEntryDate || "latest weigh-in"}`);
     syncCurrentPhaseSummary(phase);
 
     const onTarget = ["ON TRACK", "MAINTAINING"].includes(evaluation.status);
     if (onTarget) {
-        setText("weekly-coach-message", `Your 7-day average changed ${formatRate(trend.weeklyChange)} versus a target of ${formatRate(target)}. This is inside the current tolerance range.`);
+        setText("weekly-coach-message", `Your latest 7-day average changed ${formatRate(trend.weeklyChange)} versus a target of ${formatRate(target)}. This is inside the current tolerance range.`);
         setText("weekly-coach-suggestion", Number.isFinite(currentCalories) ? `Keep calories at ${Math.round(currentCalories)} kcal/day. Next scheduled check: Day ${trend.nextCheckDay}.` : `Next scheduled check: Day ${trend.nextCheckDay}.`);
         hideActions();
         return;
@@ -368,7 +373,7 @@ function refreshCoach() {
     card.dataset.firstStepDelta = String(recommendation.firstStepDelta);
     card.dataset.estimatedTargetCalories = String(recommendation.estimatedTargetCalories);
 
-    setText("weekly-coach-message", `Actual: ${formatRate(trend.weeklyChange)} · Target: ${formatRate(target)}. The coach estimates the calorie gap, applies 50% first, caps a single weekly step at ±${MAX_FIRST_STEP} kcal/day, then checks again after 7 days.`);
+    setText("weekly-coach-message", `Actual: ${formatRate(trend.weeklyChange)} · Target: ${formatRate(target)}. The coach uses the latest weigh-in trend, estimates the calorie gap, applies 50% first, caps a single weekly step at ±${MAX_FIRST_STEP} kcal/day, then checks again after 7 days.`);
     setText("weekly-coach-suggestion", `Estimated target: ${recommendation.estimatedTargetCalories} kcal/day · full gap ${formatSignedCalories(recommendation.fullGapCalories)} kcal/day · suggested step ${formatSignedCalories(recommendation.firstStepDelta)} kcal/day → ${recommendation.firstStepCalories} kcal/day.`);
 
     const apply = document.getElementById("weekly-coach-apply");
@@ -541,7 +546,7 @@ function renderSelectedTestScenario() {
         asOfDate,
         startingTrendWeight: generated.startingTrendWeight,
         minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW,
-        rolling: scenario.day < FIRST_CHECK_DAY
+        rolling: true
     });
 
     if (trend.reason === "before-first-trend") {
