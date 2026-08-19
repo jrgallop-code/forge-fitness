@@ -5,6 +5,8 @@ import {
 
 const WEIGHT_KEY = "forge_weight_entries";
 const MIN_ENTRIES_PER_WINDOW = 4;
+const LIVE_RATE_ID = "weight-current-weekly-trend";
+const LIVE_HEADING_ID = "weight-current-weekly-trend-heading";
 let queued = false;
 
 function readWeights() {
@@ -31,13 +33,36 @@ function setText(node, value) {
     if (node && node.textContent !== value) node.textContent = value;
 }
 
+function restoreFutureTestIds() {
+    const rate = document.getElementById(LIVE_RATE_ID);
+    const heading = document.getElementById(LIVE_HEADING_ID);
+    if (rate) rate.id = "weight-phase-rate";
+    if (heading) heading.id = "weight-phase-rate-heading";
+}
+
+function detachLiveCardFromPhaseRenderer() {
+    const rate = document.getElementById(LIVE_RATE_ID) || document.getElementById("weight-phase-rate");
+    const heading = document.getElementById(LIVE_HEADING_ID) || document.getElementById("weight-phase-rate-heading");
+
+    // The nutrition phase renderer also writes to weight-phase-rate. Rename the
+    // Progress-only nodes so scheduled phase checkpoints cannot overwrite the
+    // measurement-driven weekly trend shown here.
+    if (rate?.id === "weight-phase-rate") rate.id = LIVE_RATE_ID;
+    if (heading?.id === "weight-phase-rate-heading") heading.id = LIVE_HEADING_ID;
+
+    return { rate, heading };
+}
+
 function refresh() {
     const weights = readWeights();
     const latestEntryDate = weights.at(-1)?.date || null;
 
-    // Future-weight testing intentionally owns the carousel while synthetic
-    // future dates are active. Leave that test UI alone.
-    if (latestEntryDate && latestEntryDate > today()) return;
+    // Future-weight testing intentionally owns the phase carousel while synthetic
+    // future dates are active. Restore the legacy IDs so that feature can render.
+    if (latestEntryDate && latestEntryDate > today()) {
+        restoreFutureTestIds();
+        return;
+    }
 
     const trend = calculateWeightTrend(weights, {
         endDate: latestEntryDate,
@@ -47,19 +72,15 @@ function refresh() {
         ? formatRate(trend.weeklyChange)
         : "Need more data";
 
-    // phase-goal-controls replaces the original compact Weekly Trend card with
-    // weight-phase-rate. Make the visible card use the latest actual weigh-in,
-    // rather than a scheduled nutrition checkpoint.
-    const visibleRate = document.getElementById("weight-phase-rate");
-    const visibleHeading = document.getElementById("weight-phase-rate-heading");
-    setText(visibleHeading, "Weekly Trend");
-    setText(visibleRate, rateText);
+    const visible = detachLiveCardFromPhaseRenderer();
+    setText(visible.heading, "Weekly Trend");
+    setText(visible.rate, rateText);
 
-    if (visibleRate) {
-        visibleRate.title = latestEntryDate
+    if (visible.rate) {
+        visible.rate.title = latestEntryDate
             ? `Weekly change through latest weigh-in ${latestEntryDate}. Missing days do not move the result.`
             : "Add weigh-ins to calculate your weekly trend.";
-        const card = visibleRate.closest(".metric-card");
+        const card = visible.rate.closest(".metric-card");
         if (card) {
             card.title = "Weekly Trend compares the 7-day average ending on your latest weigh-in with the previous 7-day average. It updates only when weight data changes.";
         }
