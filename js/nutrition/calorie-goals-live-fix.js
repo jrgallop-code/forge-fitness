@@ -1,9 +1,9 @@
 import { initializeUnifiedGoalsCalories } from "./unified-goals-calories.js?v=nutrition-phase-1";
 import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=phase-calorie-gap-1";
-import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-goal-controls-1";
-import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=weekly-ma-coach-2";
+import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-goal-controls-live-weighin-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-live-weighin-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
-import "./phase-rate-display.js?v=rolling-phase-trend-1";
+import "./phase-rate-display.js?v=nutrition-live-weighin-1";
 
 const FULL_GAP_INCREMENT = 50;
 const FIRST_STEP_INCREMENT = 25;
@@ -131,7 +131,7 @@ function getCalorieSuggestion() {
     const phase = getActiveNutritionPhase();
     if (!phase) return { primary: "No active phase", secondary: "" };
     const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
-    const metrics = getActivePhaseMetrics(phase);
+    const metrics = getActivePhaseMetrics(phase, { rolling: true });
     if (!Number.isFinite(currentCalories)) return { primary: "No calorie target", secondary: "" };
 
     const hold = getReassessmentHold(phase, currentCalories);
@@ -146,6 +146,9 @@ function getCalorieSuggestion() {
             primary: `${Math.round(currentCalories)} kcal/day`,
             secondary: metrics.status === "BUILDING TREND" ? "Preliminary trend begins on Day 7" : "Need 4 weigh-ins in each 7-day block"
         };
+    }
+    if (metrics.status === "AWAITING WEIGH-IN") {
+        return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: `Awaiting a new weigh-in before the Day ${metrics.trend?.nextCheckDay || metrics.trend?.checkDay || "--"} assessment` };
     }
     if (!metrics.recommendationReady) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Weekly check is not ready yet" };
 
