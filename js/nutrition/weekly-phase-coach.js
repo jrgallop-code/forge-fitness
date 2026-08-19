@@ -1,5 +1,5 @@
-import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=rolling-source-1";
-import { saveNutritionPhase } from "./nutrition-phase.js?v=weekly-ma-coach-2";
+import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=phase-weighin-anchor-1";
+import { saveNutritionPhase } from "./nutrition-phase.js?v=phase-weighin-anchor-1";
 import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 
 const PHASES_KEY = "level_up_nutrition_phases";
@@ -219,7 +219,7 @@ function ensureCoachCard() {
             <button id="weekly-coach-apply" class="primary-btn" type="button" hidden></button>
             <button id="weekly-coach-keep" class="secondary-btn" type="button" hidden>Keep Current Target</button>
         </div>
-        <p class="weekly-coach-method">The weight trend starts on Day 7, then the 7-day moving average rolls forward with each new weigh-in. Calorie decisions begin on Day 14 using scheduled 7-day check-ins, then repeat every 7 days. Each decision window needs at least 4 weigh-ins.</p>
+        <p class="weekly-coach-method">The weight trend starts on Day 7 and moves forward only when you log a new weigh-in. Calorie decisions begin on Day 14 and repeat on the weekly schedule, but a new assessment will wait for new weight data. Each 7-day comparison window still needs at least 4 weigh-ins.</p>
         <details class="weekly-coach-test" id="weekly-coach-test-lab">
             <summary>Coach Test Scenarios</summary>
             <small class="weekly-test-note">Simulation only — these examples do not change your saved phase or weigh-ins.</small>
@@ -297,6 +297,18 @@ function refreshCoach() {
     }
 
     setText("weekly-coach-previous-label", "Previous 7-Day Avg");
+
+    if (trend.awaitingNewWeighIn) {
+        setText("weekly-coach-status", "AWAITING WEIGH-IN");
+        setText("weekly-coach-confidence", `Day ${trend.phaseDay} · last weigh-in ${trend.latestEntryDate || "--"}`);
+        setText("weekly-coach-message", Number.isFinite(trend.weeklyChange)
+            ? `Your measured weekly change remains ${formatRate(trend.weeklyChange)}. It will not change just because more calendar days pass.`
+            : "The next phase assessment is due, but there is not enough new weight data to advance the trend.");
+        setText("weekly-coach-suggestion", `Log a new weigh-in to advance the trend and unlock the Day ${trend.nextCheckDay} assessment.`);
+        hideActions();
+        syncCurrentPhaseSummary(phase);
+        return;
+    }
 
     if (trend.status !== "actual" || !Number.isFinite(trend.weeklyChange)) {
         setText("weekly-coach-status", "NEED MORE DATA");
@@ -435,6 +447,8 @@ function syncCurrentPhaseSummary(phase) {
         status = "BUILDING TREND";
     } else if (liveTrend.status === "preliminary" && Number.isFinite(liveTrend.weeklyChange)) {
         status = "PRELIMINARY TREND";
+    } else if (liveTrend.awaitingNewWeighIn) {
+        status = "AWAITING WEIGH-IN";
     } else if (liveTrend.status === "actual" && Number.isFinite(liveTrend.weeklyChange)) {
         status = evaluateRate(liveTrend.weeklyChange, target, liveTrend.currentAverage).status;
     }
