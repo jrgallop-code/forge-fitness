@@ -148,7 +148,12 @@ function getCalorieSuggestion() {
         };
     }
     if (metrics.status === "AWAITING WEIGH-IN") {
-        return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: `Awaiting a new weigh-in before the Day ${metrics.trend?.nextCheckDay || metrics.trend?.checkDay || "--"} assessment` };
+        const checkDay = Number(metrics.trend?.checkDay);
+        const hasCheckDay = Number.isFinite(checkDay) && checkDay > 0;
+        const pendingCheckDay = hasCheckDay && getHandledCheck(phase, checkDay)
+            ? (metrics.trend?.nextCheckDay || checkDay + 7)
+            : (metrics.trend?.checkDay || metrics.trend?.nextCheckDay || "--");
+        return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: `Awaiting a new weigh-in for the Day ${pendingCheckDay} assessment` };
     }
     if (!metrics.recommendationReady) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Weekly check is not ready yet" };
 
