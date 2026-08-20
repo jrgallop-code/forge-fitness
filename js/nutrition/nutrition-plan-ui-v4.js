@@ -5,7 +5,7 @@ import { getActiveNutritionPhase, getActivePhaseMetrics, saveNutritionPhase } fr
 const FULL_GAP_INCREMENT = 50;
 const FIRST_STEP_FRACTION = 0.5;
 const FIRST_STEP_INCREMENT = 25;
-const REASSESSMENT_DAYS = 21;
+const REASSESSMENT_DAYS = 7;
 const REASSESSMENT_HOLD_KEY = "level_up_phase_reassessment_hold";
 
 export function initializeNutritionPlanUI() {
@@ -101,8 +101,8 @@ function refreshGoalCheckIn() {
     const target = Number(metrics.targetRateLbPerWeek);
     const currentCalories = getActiveCalories();
 
-    if (metrics.status === "PRELIMINARY") {
-        setText("goal-check-in-message", `Preliminary phase rate: ${formatRate(actual)}. Level Up waits for at least 14 days and enough weigh-ins before judging the phase.`);
+    if (metrics.status === "PRELIMINARY" || metrics.status === "PRELIMINARY TREND") {
+        setText("goal-check-in-message", `Preliminary phase rate: ${formatRate(actual)}. Level Up makes the first calorie decision on Day 14 when enough weigh-in data is available.`);
         setText("goal-check-in-suggested", ""); hideApply(); return;
     }
 
@@ -120,7 +120,7 @@ function refreshGoalCheckIn() {
     }
 
     if (!metrics.recommendationReady) {
-        setText("goal-check-in-message", `Actual: ${formatRate(actual)} · Target: ${formatRate(target)}. The trend is ${statusPhrase(metrics.status)}, but Level Up waits for a full 21-day phase window before suggesting a calorie change.`);
+        setText("goal-check-in-message", `Actual: ${formatRate(actual)} · Target: ${formatRate(target)}. The trend is ${statusPhrase(metrics.status)}. Level Up makes the first calorie decision on Day 14, then reassesses every 7 days when enough new weigh-in data is available.`);
         setText("goal-check-in-suggested", ""); hideApply(); return;
     }
 
@@ -139,7 +139,7 @@ function refreshGoalCheckIn() {
             setCurrentCalories(recommendation.firstStepCalories, "50% phase calorie-gap adjustment");
             saveReassessmentHold({ phaseId: phase.id, calories: recommendation.firstStepCalories, estimatedTargetCalories: recommendation.estimatedTargetCalories });
             setText("goal-check-in-message", `Applied the 50% first step (${formatSignedCalories(recommendation.firstStepDelta)} kcal/day). New target: ${recommendation.firstStepCalories} kcal/day. The ${phase.label || "current"} phase start date and target rate are unchanged.`);
-            setText("goal-check-in-suggested", `Estimated target before reassessment: ${recommendation.estimatedTargetCalories} kcal/day. Hold ${recommendation.firstStepCalories} kcal/day for the next 21-day assessment window.`); hideApply();
+            setText("goal-check-in-suggested", `Estimated target before reassessment: ${recommendation.estimatedTargetCalories} kcal/day. Hold ${recommendation.firstStepCalories} kcal/day for the next 7-day reassessment window.`); hideApply();
         };
     }
 }
