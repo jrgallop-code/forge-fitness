@@ -74,6 +74,7 @@ function refreshMacrosFromCurrentTarget(profile, calories) {
 }
 
 function refreshGoalCheckIn() {
+    if (window.__levelUpFullAdjustmentAuthority === true) return;
     const phase = getActiveNutritionPhase();
     if (!phase) {
         setText("goal-check-in-status", "NO ACTIVE PHASE"); setText("goal-check-in-confidence", "");
