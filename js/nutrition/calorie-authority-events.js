@@ -17,7 +17,7 @@ function readCheckState() {
 }
 
 function keepCurrentTarget(event) {
-    const button = event.target.closest?.("#goal-check-in-keep");
+    const button = event.target.closest?.("#goal-check-in-keep, #weekly-coach-keep");
     if (!button) return;
 
     event.preventDefault();
