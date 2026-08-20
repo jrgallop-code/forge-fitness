@@ -182,6 +182,7 @@ function formatSignedCalories(value) {
 function setNodeText(node, value) { if (node && node.textContent !== value) node.textContent = value; }
 function refreshCalorieSuggestionCards() {
     const suggestion = getCalorieSuggestion();
+    const authorityOwnsCopy = window.__levelUpFullAdjustmentAuthority === true;
     const phaseGrid = document.querySelector("#nutrition-current-phase .nutrition-current-phase-grid");
     if (phaseGrid) {
         let card = phaseGrid.querySelector("[data-phase-calorie-suggestion]");
@@ -194,8 +195,10 @@ function refreshCalorieSuggestionCards() {
         }
         const currentCaloriesCell = [...phaseGrid.children].find(cell => cell.querySelector("span")?.textContent?.trim() === "Current Calories");
         if (currentCaloriesCell && currentCaloriesCell.nextElementSibling !== card) currentCaloriesCell.insertAdjacentElement("afterend", card);
-        setNodeText(card.querySelector("strong"), suggestion.primary);
-        setNodeText(card.querySelector("small"), suggestion.secondary);
+        if (!authorityOwnsCopy) {
+            setNodeText(card.querySelector("strong"), suggestion.primary);
+            setNodeText(card.querySelector("small"), suggestion.secondary);
+        }
     }
     const summary = document.querySelector("#weight-progress .weight-summary");
     if (summary) {
@@ -207,8 +210,10 @@ function refreshCalorieSuggestionCards() {
             card.innerHTML = `<div><h3>Suggested Calories</h3><p id="weight-calorie-suggestion"></p><small id="weight-calorie-suggestion-total"></small></div>`;
             summary.appendChild(card);
         }
-        setNodeText(document.getElementById("weight-calorie-suggestion"), suggestion.primary);
-        setNodeText(document.getElementById("weight-calorie-suggestion-total"), suggestion.secondary);
+        if (!authorityOwnsCopy) {
+            setNodeText(document.getElementById("weight-calorie-suggestion"), suggestion.primary);
+            setNodeText(document.getElementById("weight-calorie-suggestion-total"), suggestion.secondary);
+        }
     }
 }
 function refreshAllPhaseUi() {
