@@ -191,7 +191,7 @@ async function exportProviderData() {
     return { externalData, coverage };
 }
 
-async function createBackupSnapshot() {
+export async function createBackupSnapshot() {
     const keys = getBackupKeys();
     const data = {};
     keys.forEach(key => {
@@ -222,7 +222,7 @@ async function createBackupSnapshot() {
     };
 }
 
-function verifyBackupSnapshot(backup) {
+export function verifyBackupSnapshot(backup) {
     if (backup?.app !== "level-up" || !backup?.data || typeof backup.data !== "object" || Array.isArray(backup.data)) {
         throw new Error("Backup verification failed.");
     }
@@ -335,6 +335,26 @@ async function importProviderData(backup) {
     }
 }
 
+export async function restoreBackupSnapshot(backup, { removeNullValues = false } = {}) {
+    if (backup?.app !== "level-up" || !backup?.data || typeof backup.data !== "object" || Array.isArray(backup.data)) {
+        throw new Error("This is not a valid Level Up backup.");
+    }
+
+    Object.keys(backup.data)
+        .filter(key => !INVALID_STORAGE_KEYS.has(key))
+        .forEach(key => {
+            const value = backup.data[key];
+            if (value === null || value === undefined) {
+                if (removeNullValues) localStorage.removeItem(key);
+                return;
+            }
+            localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+        });
+
+    cleanupInvalidStorageKeys();
+    await importProviderData(backup);
+}
+
 async function importBackup(file, fileInput) {
     try {
         if (!file) return;
@@ -345,6 +365,7 @@ async function importBackup(file, fileInput) {
         if (backup?.app !== "level-up" || !backup?.data || typeof backup.data !== "object" || Array.isArray(backup.data)) {
             throw new Error("This is not a valid Level Up backup.");
         }
+        if (Number(backup.formatVersion) >= BACKUP_FORMAT_VERSION) verifyBackupSnapshot(backup);
 
         const incomingKeys = Object.keys(backup.data).filter(key => !INVALID_STORAGE_KEYS.has(key));
         if (!incomingKeys.length && !hasAnyProviderPayload(backup)) {
@@ -360,18 +381,7 @@ async function importBackup(file, fileInput) {
             return;
         }
 
-        incomingKeys.forEach(key => {
-            const value = backup.data[key];
-            if (value === null || value === undefined) {
-                localStorage.removeItem(key);
-            }
-            else {
-                localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
-            }
-        });
-
-        cleanupInvalidStorageKeys();
-        await importProviderData(backup);
+        await restoreBackupSnapshot(backup, { removeNullValues: true });
 
         window.alert("Backup imported successfully. Level Up will reload now.");
         window.location.reload();

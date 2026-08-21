@@ -1,8 +1,9 @@
 import {
-    exportPhotoRecords,
-    importPhotoRecords
+    createBackupSnapshot,
+    restoreBackupSnapshot,
+    verifyBackupSnapshot
 }
-from "../progress/photo-journal.js";
+from "./backup-manager.js?v=backup-complete-4";
 
 
 const CLIENT_ID =
@@ -17,17 +18,6 @@ const DRIVE_FILE_NAME =
 
 const LAST_SYNC_KEY =
     "level_up_drive_last_sync";
-
-const INVALID_STORAGE_KEYS = new Set(["setItem"]);
-
-function getBackupKeys() {
-    const keys = [];
-    for (let index = 0; index < localStorage.length; index += 1) {
-        const key = localStorage.key(index);
-        if (key && !INVALID_STORAGE_KEYS.has(key)) keys.push(key);
-    }
-    return keys.sort();
-}
 
 let tokenClient = null;
 let accessToken = null;
@@ -179,7 +169,11 @@ async function uploadToDrive() {
             "Preparing your complete Level Up backup for upload…"
         );
 
-        const backup = await createBackupSnapshot();
+        const backup = {
+            ...(await createBackupSnapshot()),
+            source: "google-drive-visible"
+        };
+        verifyBackupSnapshot(backup);
 
         remoteFile = await saveDriveFile(
             backup,
@@ -243,6 +237,7 @@ async function downloadFromDrive() {
         );
 
         const backup = await response.json();
+        if (Number(backup?.formatVersion) >= 5) verifyBackupSnapshot(backup);
         await restoreBackupSnapshot(backup);
 
         localStorage.setItem(
@@ -386,91 +381,6 @@ async function driveFetch(url, options = {}) {
     }
 
     return response;
-}
-
-
-async function createBackupSnapshot() {
-    const data = {};
-
-    const keys = getBackupKeys();
-
-    keys.forEach(key => {
-        const stored =
-            localStorage.getItem(key);
-
-        if (stored === null) {
-            data[key] = null;
-            return;
-        }
-
-        try {
-            data[key] = JSON.parse(stored);
-        }
-        catch {
-            data[key] = stored;
-        }
-    });
-
-    return {
-        app: "level-up",
-        formatVersion: 3,
-        storageMode: "complete-local-storage",
-        storageKeyCount: keys.length,
-        exportedAt: new Date().toISOString(),
-        source: "google-drive-visible",
-        data,
-        photos: await exportPhotoRecords()
-    };
-}
-
-
-async function restoreBackupSnapshot(backup) {
-    validateBackup(backup);
-
-    Object.keys(backup.data)
-        .filter(key => !INVALID_STORAGE_KEYS.has(key))
-        .forEach(key => {
-        const value = backup.data[key];
-
-        if (
-            value === null ||
-            value === undefined
-        ) {
-            // Older backups did not contain every newer Level Up key.
-            // Do not erase newer local data simply because the old backup lacks it.
-            return;
-        }
-
-        localStorage.setItem(
-            key,
-            typeof value === "string"
-                ? value
-                : JSON.stringify(value)
-        );
-    });
-
-    await importPhotoRecords(
-        Array.isArray(backup.photos)
-            ? backup.photos
-            : []
-    );
-}
-
-
-function validateBackup(backup) {
-    if (
-        !backup ||
-        typeof backup !== "object" ||
-        backup.app !== "level-up" ||
-        ![1, 2, 3, 4].includes(backup.formatVersion) ||
-        !backup.data ||
-        typeof backup.data !== "object" ||
-        Array.isArray(backup.data)
-    ) {
-        throw new Error(
-            "The Google Drive file is not a valid Level Up backup."
-        );
-    }
 }
 
 
