@@ -1,5 +1,14 @@
 const ACTIVE_WORKOUT_STORAGE_KEY = 'level_up_active_workout';
 
+function ensureWorkoutModeStyles() {
+  if (document.querySelector('link[data-workout-mode-styles]')) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'css/workout-mode.css?v=standalone-workout-mode-1';
+  link.dataset.workoutModeStyles = 'true';
+  document.head.appendChild(link);
+}
+
 function hasActiveWorkout() {
   try {
     const active = JSON.parse(localStorage.getItem(ACTIVE_WORKOUT_STORAGE_KEY) || 'null');
@@ -10,6 +19,7 @@ function hasActiveWorkout() {
 }
 
 function ensureWorkoutMode() {
+  ensureWorkoutModeStyles();
   let mode = document.getElementById('levelup-workout-mode');
   if (mode) return mode;
 
@@ -82,4 +92,5 @@ document.addEventListener('keydown', event => {
   }
 });
 
+ensureWorkoutModeStyles();
 syncWorkoutMode();
