@@ -1,4 +1,4 @@
-import './workout-mode.js?v=standalone-workout-mode-1';
+import './workout-mode.js?v=standalone-workout-mode-2-form-guide';
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 
