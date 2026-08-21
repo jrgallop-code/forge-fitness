@@ -1,3 +1,5 @@
+import './workout-mode.js?v=standalone-workout-mode-1';
+
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 
 let durationObserver = null;
