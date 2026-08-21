@@ -3,6 +3,15 @@ import { navigate } from "../core/router.js?v=backup-coverage-1";
 const SUPPORT_EMAIL = "jrgallop@gmail.com";
 const SUPPORT_ICON = '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H9l-5 4V4Zm2 2v9.2l2.3-1.2H18V6H6Zm5 2h2v4h-2V8Zm0 5h2v2h-2v-2Z"/></svg>';
 
+function ensureSupportStyles() {
+    if (document.querySelector('link[data-contact-support-styles]')) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "css/more-support.css?v=contact-support-1";
+    link.dataset.contactSupportStyles = "";
+    document.head.appendChild(link);
+}
+
 function supportCardMarkup() {
     return `<button class="more-menu-card" type="button" data-contact-support-card><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Contact Support</strong><small>Report a glitch, data issue or anything that is not working as expected.</small></span></button>`;
 }
@@ -59,6 +68,7 @@ function enhanceMorePage() {
     grid.querySelector("[data-contact-support-card]")?.addEventListener("click", openSupport);
 }
 
+ensureSupportStyles();
 const content = document.getElementById("content");
 if (content) {
     enhanceMorePage();
