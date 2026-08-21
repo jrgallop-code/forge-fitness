@@ -1,8 +1,8 @@
 import "./contact-support.js?v=contact-support-2";
 import { navigate } from "../core/router.js?v=router-water-only-2";
 import { renderExportBackup } from "./export-backup-ui.js?v=exports-backup-2";
-import { initializeBackupManager } from "../core/backup-manager.js?v=backup-complete-3";
-import { initializeGoogleDriveSync } from "../core/google-drive-sync-v2.js?v=visible-drive-backup-1";
+import { initializeBackupManager } from "../core/backup-manager.js?v=backup-complete-4";
+import { initializeGoogleDriveSync } from "../core/google-drive-sync-v2.js?v=visible-drive-backup-2";
 import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-card-1";
 
 const ICONS = {
