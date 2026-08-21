@@ -182,14 +182,14 @@ function renderLiveBelowTargetPrompt(card, prompt, repRange, exerciseId) {
   const reduction = getRecommendedReducedLoad(currentWeight, exerciseId);
   if (!reduction) return false;
 
-  const repsText = completedSets.map(set => set.reps).join(', ');
   prompt.classList.add('progression-prompt-down');
   prompt.innerHTML = `
     <span class="progression-arrow">↓</span>
     <div>
       <strong>Consider a lighter load</strong>
-      <p>So far, ${belowTarget.length} of ${completedSets.length} completed sets are below your ${repRange.lower}–${repRange.upper} rep target (${repsText} reps). Consider trying about <b>${formatLoad(reduction.suggestedLoad)} lb</b> for your remaining sets or next workout.</p>
-      <small>Level Up waits for at least two completed sets and only suggests a reduction when most completed sets fall below the programmed rep range.</small>
+      <p>Most completed sets are below your ${repRange.lower}–${repRange.upper} rep target.</p>
+      <p><b>Try about ${formatLoad(reduction.suggestedLoad)} lb</b> for your remaining sets.</p>
+      <small>Use the lighter load if it helps you get back into range.</small>
     </div>
   `;
   prompt.hidden = false;
@@ -262,14 +262,14 @@ function renderCard(card) {
       return;
     }
 
-    const repsText = completedSets.map(set => Number(set.reps)).join(', ');
     prompt.classList.add('progression-prompt-down');
     prompt.innerHTML = `
       <span class="progression-arrow">↓</span>
       <div>
-        <strong>Consider a lighter load next time</strong>
-        <p>Last workout, ${belowTarget.length} of ${completedSets.length} completed sets were below your ${repRange.lower}–${repRange.upper} rep target (${repsText} reps). Consider reducing from <b>${formatLoad(commonWeight)} lb</b> to about <b>${formatLoad(reduction.suggestedLoad)} lb</b>.</p>
-        <small>One low set can happen from normal fatigue, so Level Up only suggests a reduction when most completed sets fall below the target range.</small>
+        <strong>Use a lighter load this session</strong>
+        <p>Most completed sets were below your ${repRange.lower}–${repRange.upper} rep target last workout.</p>
+        <p><b>Try about ${formatLoad(reduction.suggestedLoad)} lb today.</b></p>
+        <small>A slightly lighter load can help you get back into range.</small>
       </div>
     `;
     prompt.hidden = false;
@@ -290,12 +290,6 @@ function renderCard(card) {
     hidePrompt(prompt);
     return;
   }
-  const plannedCount = Array.isArray(state.sets) ? state.sets.length : completedSets.length;
-  const partial = completedSets.length < plannedCount ? ` with ${completedSets.length} of ${plannedCount} planned sets completed` : '';
-  const repText = `all ${completedSets.length} completed sets reached at least ${repRange.upper} reps`;
-  const increaseRange = range.minimumIncrease === range.maximumIncrease
-    ? `${formatLoad(range.minimumIncrease)} lb`
-    : `${formatLoad(range.minimumIncrease)}–${formatLoad(range.maximumIncrease)} lb`;
   const loadRange = range.minimumLoad === range.maximumLoad
     ? `${formatLoad(range.minimumLoad)} lb`
     : `${formatLoad(range.minimumLoad)}–${formatLoad(range.maximumLoad)} lb`;
@@ -305,8 +299,9 @@ function renderCard(card) {
     <span class="progression-arrow">↑</span>
     <div>
       <strong>Increase weight this session</strong>
-      <p>Last workout ${repText} at ${formatLoad(currentWeight)} lb${partial}. Recommended increase: <b>${increaseRange}</b>. Suggested load: <b>${loadRange}</b>.</p>
-      <small>Blank planned sets do not block progression. Level Up requires at least two completed working sets, and every completed set must reach the top of the programmed rep range before recommending an increase.</small>
+      <p>You reached the top of your rep range on all completed sets last workout at <b>${formatLoad(currentWeight)} lb</b>.</p>
+      <p><b>Try ${loadRange} today.</b></p>
+      <small>Start at the lower end if needed.</small>
     </div>
   `;
   prompt.hidden = false;
