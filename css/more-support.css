@@ -32,7 +32,8 @@
 }
 
 .support-field select,
-.support-field textarea {
+.support-field textarea,
+.support-field input {
     width: 100%;
     border: 1px solid rgba(255,255,255,.16);
     border-radius: 14px;
@@ -45,7 +46,8 @@
     transition: border-color .18s ease, box-shadow .18s ease;
 }
 
-.support-field select {
+.support-field select,
+.support-field input {
     min-height: 52px;
     padding: 0 14px;
 }
@@ -61,7 +63,8 @@
 }
 
 .support-field select:focus,
-.support-field textarea:focus {
+.support-field textarea:focus,
+.support-field input:focus {
     border-color: rgba(255,45,55,.78);
     box-shadow: 0 0 0 3px rgba(255,45,55,.10);
 }
@@ -84,34 +87,41 @@
     font-weight: 900;
     cursor: pointer;
     box-shadow: 0 14px 32px rgba(255,32,43,.18);
+    transition: opacity .18s ease, transform .18s ease, background .18s ease;
 }
 
-.support-send-btn:active {
+.support-send-btn:active:not(:disabled) {
     transform: translateY(1px);
 }
 
-.support-email-fallback {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 7px;
-    color: #8d8c92;
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-.support-email-fallback a {
-    color: #fff;
-    font-weight: 800;
-    text-decoration: none;
+.support-send-btn:disabled {
+    cursor: default;
+    opacity: .72;
 }
 
 .support-status {
     min-height: 18px;
     margin: -4px 0 0;
-    color: #67d993;
+    color: #8d8c92;
     font-size: 12px;
     font-weight: 750;
+    line-height: 1.45;
+}
+
+.support-status[data-state="success"] {
+    color: #67d993;
+}
+
+.support-status[data-state="error"] {
+    color: #ff6b73;
+}
+
+.support-honey {
+    position: absolute !important;
+    left: -9999px !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
 }
 
 @media (max-width: 600px) {
