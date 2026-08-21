@@ -34,7 +34,7 @@ function ensureWorkoutMode() {
       </button>
       <div class="levelup-workout-mode-title">Workout Mode</div>
     </div>
-    <div id="levelup-workout-mode-content"></div>
+    <div id="levelup-workout-mode-content" class="workout-page levelup-workout-mode-page"></div>
   `;
 
   mode.querySelector('.levelup-workout-mode-back')?.addEventListener('click', closeWorkoutMode);
@@ -58,13 +58,14 @@ function closeWorkoutMode() {
   const mode = document.getElementById('levelup-workout-mode');
   if (!mode) return;
 
+  mode.querySelector('.exercise-guide-screen')?.remove();
   mode.querySelector('#workout-session-logger')?.remove();
   mode.hidden = true;
   document.body.classList.remove('levelup-workout-mode-active');
 
   const destination = hasActiveWorkout()
     ? document.querySelector('.active-workout-banner, [data-active-workout-banner]')
-    : document.querySelector('[data-workout-home], .workout-page');
+    : document.querySelector('[data-workout-home], .workout-page:not(.levelup-workout-mode-page)');
   destination?.scrollIntoView({ block: 'start' });
 }
 
