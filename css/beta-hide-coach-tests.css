@@ -4,3 +4,8 @@
 #coach-mock-data-button {
     display: none !important;
 }
+
+/* The phase summary already shows the live trend and calorie recommendation. */
+[data-planner-view="goals"] #goal-check-in-card {
+    display: none !important;
+}
