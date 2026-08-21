@@ -18,6 +18,19 @@ function hasActiveWorkout() {
   }
 }
 
+function handleWorkoutModeBack() {
+  const mode = document.getElementById('levelup-workout-mode');
+  if (!mode) return;
+
+  const guideBack = mode.querySelector('.exercise-guide-screen .exercise-guide-back');
+  if (guideBack) {
+    guideBack.click();
+    return;
+  }
+
+  closeWorkoutMode();
+}
+
 function ensureWorkoutMode() {
   ensureWorkoutModeStyles();
   let mode = document.getElementById('levelup-workout-mode');
@@ -37,7 +50,7 @@ function ensureWorkoutMode() {
     <div id="levelup-workout-mode-content" class="workout-page levelup-workout-mode-page"></div>
   `;
 
-  mode.querySelector('.levelup-workout-mode-back')?.addEventListener('click', closeWorkoutMode);
+  mode.querySelector('.levelup-workout-mode-back')?.addEventListener('click', handleWorkoutModeBack);
   document.body.appendChild(mode);
   return mode;
 }
@@ -89,7 +102,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !document.getElementById('levelup-workout-mode')?.hidden) {
-    closeWorkoutMode();
+    handleWorkoutModeBack();
   }
 });
 
