@@ -1,5 +1,3 @@
-import { navigate } from "../core/router.js?v=backup-coverage-1";
-
 const SUPPORT_EMAIL = "jrgallop@gmail.com";
 const SUPPORT_ICON = '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H9l-5 4V4Zm2 2v9.2l2.3-1.2H18V6H6Zm5 2h2v4h-2V8Zm0 5h2v2h-2v-2Z"/></svg>';
 
@@ -32,13 +30,22 @@ function renderContactSupport() {
     </section>`;
 }
 
+function returnToMore() {
+    const moreButton = document.querySelector('.bottom-nav .nav-btn[data-page="more"]');
+    if (moreButton) {
+        moreButton.click();
+        return;
+    }
+    window.location.reload();
+}
+
 function openSupport() {
     const content = document.getElementById("content");
     if (!content) return;
     content.innerHTML = renderContactSupport();
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    content.querySelector("#support-back-more")?.addEventListener("click", () => navigate("more"));
+    content.querySelector("#support-back-more")?.addEventListener("click", returnToMore);
     const form = content.querySelector("#support-report-form");
     form?.addEventListener("submit", event => {
         event.preventDefault();
