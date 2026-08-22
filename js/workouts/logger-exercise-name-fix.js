@@ -1,4 +1,4 @@
-import "./plate-calculator.js?v=plate-calculator-3-machine-base-additive";
+import "./plate-calculator.js?v=unit-system-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 
