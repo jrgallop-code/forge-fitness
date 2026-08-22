@@ -9,7 +9,7 @@ import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-targ
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=workout-schedule-3";
 import { renderProgress } from "../progress/progress-ui.js?v=progress-photo-tab-1";
-import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-tracker-photo-tab-1";
+import { initializeWeightTracker } from "../progress/weight-tracker.js?v=unit-system-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=current-goal-1";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
 import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=overall-strength-index-2";
