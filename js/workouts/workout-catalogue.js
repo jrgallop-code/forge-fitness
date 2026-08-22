@@ -1,10 +1,16 @@
 import { presetPlans } from "./workout-plans.js?v=workout-plans-2";
+import { presetPlans as detailPresetPlans } from "./workout-plans.js";
 import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-plans-1";
 
-const existingPlanIds = new Set(presetPlans.map(plan => plan.id));
-celebrityWorkoutPlans.forEach(plan => {
-    if (!existingPlanIds.has(plan.id)) presetPlans.push(plan);
-});
+function addCelebrityPlans(plans) {
+    const existingPlanIds = new Set(plans.map(plan => plan.id));
+    celebrityWorkoutPlans.forEach(plan => {
+        if (!existingPlanIds.has(plan.id)) plans.push(plan);
+    });
+}
+
+addCelebrityPlans(presetPlans);
+addCelebrityPlans(detailPresetPlans);
 
 export function initializeWorkoutCatalogue(root = document) {
     const page = root.querySelector?.(".workout-page") || document.querySelector(".workout-page");
