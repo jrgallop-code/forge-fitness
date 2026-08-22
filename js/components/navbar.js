@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=first-run-onboarding-1";
+import { navigate } from "../core/router.js?v=beta-account-3";
 
 
 export function renderNavbar() {
