@@ -8,6 +8,8 @@ import {
 }
 from "../nutrition/tdee-calculator.js?v=weight-goals-1";
 
+import { displayMass, massUnit } from "../core/unit-system.js?v=unit-system-1";
+
 const WEIGHT_STORAGE_KEY =
     "forge_weight_entries";
 
@@ -950,7 +952,7 @@ function drawWeightChart(
         context.textAlign =
             "right";
         context.fillText(
-            value.toFixed(1),
+            displayMass(value, 1).toFixed(1),
             padding.left - 8,
             y + 4
         );
@@ -1080,7 +1082,7 @@ function drawWeightChart(
             ? []
             : [{
                 color: "#facc15",
-                label: `Goal ${goalWeight.toFixed(1)} lb`,
+                label: `Goal ${displayMass(goalWeight, 1).toFixed(1)} ${massUnit()}`,
                 dashed: true
             }])
     ];

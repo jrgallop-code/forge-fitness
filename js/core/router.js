@@ -9,7 +9,7 @@ import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-targ
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=workout-schedule-3";
 import { renderProgress } from "../progress/progress-ui.js?v=progress-photo-tab-1";
-import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-tracker-photo-tab-1";
+import { initializeWeightTracker } from "../progress/weight-tracker.js?v=unit-system-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=current-goal-1";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
 import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=overall-strength-index-2";
@@ -19,11 +19,11 @@ import { renderSleepTracker, initializeSleepTracker } from "../progress/sleep-tr
 import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../progress/measurements-tracker.js?v=measurements-image-1";
 import { initializeMeasurementHistoryDetail } from "../progress/measurements-history-detail.js?v=measurement-history-1";
 import { renderNutrition, renderWater, initializeNutrition, showNutritionView } from "../nutrition/nutrition-ui.js?v=water-only-1";
-import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energy-profile.js?v=calorie-planner-2";
+import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energy-profile.js?v=unit-system-1";
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-goal-presets-2";
-import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=privacy-account-1";
+import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=unit-system-1";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=workout-history-preview-2";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-2";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-6";
