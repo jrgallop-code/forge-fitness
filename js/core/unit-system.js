@@ -86,6 +86,7 @@ export function initializeUnitSystem() {
             });
         });
         observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+        document.addEventListener("input", handleLiveInput, true);
         document.addEventListener("change", handleCanonicalEvent, true);
         document.addEventListener("submit", handleCanonicalEvent, true);
         document.addEventListener("click", handleActionClick, true);
@@ -178,6 +179,14 @@ function renderInputForPreference(input) {
     input.dataset.levelUpRenderedUnit = desired;
     if (desired === METRIC) input.step = kind === "distance" ? "0.01" : "0.1";
     else input.step = input.dataset.levelUpCanonicalStep || input.step;
+}
+
+function handleLiveInput(event) {
+    const input = event.target;
+    if (!input?.matches?.("input[data-level-up-unit-kind]")) return;
+    if (!input.matches(".session-weight,.plate-calculator-base-input,[data-measurement-field]")) return;
+    const changed = toCanonicalInput(input);
+    if (changed) queueMicrotask(() => renderInputForPreference(input));
 }
 
 function handleCanonicalEvent(event) {
