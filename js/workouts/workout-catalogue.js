@@ -1,6 +1,6 @@
 import { presetPlans } from "./workout-plans.js?v=workout-plans-2";
 import { presetPlans as detailPresetPlans } from "./workout-plans.js";
-import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-plans-1";
+import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-plans-2-women-heroes";
 
 function addCelebrityPlans(plans) {
     const existingPlanIds = new Set(plans.map(plan => plan.id));
