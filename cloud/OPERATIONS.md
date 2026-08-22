@@ -27,3 +27,36 @@ FROM users;
 Signed-in clients check for changed app data after user interactions and at least every two minutes while open. Uploads retain the existing optimistic version check. If the cloud version is newer than the version known by the device, the automatic upload pauses rather than overwriting the newer backup.
 
 The manual **Back Up Now** and **Download to This Device** controls remain available under **More → Account & Cloud**.
+
+## Acquisition and onboarding funnel
+
+Acquisition stores first-touch campaign/referrer data separately from the optional self-reported onboarding answer. Referrers contain only the hostname; landing URLs contain only the path.
+
+Source mix:
+
+```sql
+SELECT
+    COALESCE(reported_source, utm_source, referrer, 'unknown') AS source,
+    COUNT(*) AS users
+FROM user_acquisition
+GROUP BY source
+ORDER BY users DESC;
+```
+
+Core funnel by source:
+
+```sql
+WITH acquired AS (
+    SELECT user_id, COALESCE(reported_source, utm_source, referrer, 'unknown') AS source
+    FROM user_acquisition
+)
+SELECT
+    source,
+    COUNT(*) AS acquired_users,
+    SUM(EXISTS(SELECT 1 FROM product_events e WHERE e.user_id = acquired.user_id AND e.event_name = 'onboarding_completed')) AS onboarded_users,
+    SUM(EXISTS(SELECT 1 FROM product_events e WHERE e.user_id = acquired.user_id AND e.event_name = 'workout_completed')) AS workout_users,
+    ROUND(100.0 * SUM(EXISTS(SELECT 1 FROM product_events e WHERE e.user_id = acquired.user_id AND e.event_name = 'workout_completed')) / NULLIF(COUNT(*), 0), 1) AS workout_conversion_pct
+FROM acquired
+GROUP BY source
+ORDER BY acquired_users DESC;
+```

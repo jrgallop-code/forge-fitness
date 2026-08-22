@@ -5,6 +5,8 @@ const PASSWORD_MIN_LENGTH = 10;
 const PASSWORD_MAX_LENGTH = 128;
 const AUTH_RATE_WINDOW_MS = 15 * 60 * 1000;
 const AUTH_RATE_MAX_FAILURES = 10;
+const ACQUISITION_SOURCES = new Set(["instagram", "tiktok", "reddit", "youtube", "google_search", "friend_family", "app_recommendation", "other", "prefer_not_to_say"]);
+const CLIENT_EVENT_NAMES = new Set(["onboarding_completed", "workout_completed"]);
 
 export default {
     async fetch(request, env) {
@@ -48,6 +50,14 @@ async function handleRequest(request, env) {
     }
     if (url.pathname === "/v1/activity" && request.method === "POST") {
         return recordActivity(user.id, request, env);
+    }
+    if (url.pathname === "/v1/acquisition" && request.method === "PUT") {
+        const body = await readJson(request, 8 * 1024);
+        return putAcquisition(user.id, body, request, env);
+    }
+    if (url.pathname === "/v1/events" && request.method === "POST") {
+        const body = await readJson(request, 8 * 1024);
+        return recordProductEvent(user.id, body, request, env);
     }
     if (url.pathname === "/v1/session" && request.method === "DELETE") {
         await deleteSession(request, env);
@@ -94,6 +104,7 @@ async function createGoogleSession(body, request, env) {
             avatar_url = excluded.avatar_url,
             updated_at = excluded.updated_at
     `).bind(userId, email, profile.name || null, profile.picture || null, now, now).run();
+    if (!existing) await insertProductEvent(env, userId, "account_created", "account", now, { method: "google" });
 
     return issueSession(
         userId,
@@ -147,6 +158,7 @@ async function createEmailAccount(body, request, env) {
                 VALUES (?, ?, ?, ?, ?, ?)
             `).bind(userId, bytesToBase64(passwordHash), bytesToBase64(salt), PASSWORD_ITERATIONS, now, now)
         ]);
+        await insertProductEvent(env, userId, "account_created", "account", now, { method: "email" });
     }
     catch (error) {
         console.error(JSON.stringify({ event: "email_signup_failed", message: String(error?.message || error) }));
@@ -316,6 +328,68 @@ async function requireUser(request, env) {
         WHERE sessions.token_hash = ? AND sessions.expires_at > ? AND users.beta_status = 'active'
     `).bind(tokenHash, new Date().toISOString()).first();
     return row || null;
+}
+
+async function putAcquisition(userId, body, request, env) {
+    const reportedSource = nullableChoice(body?.reportedSource, ACQUISITION_SOURCES);
+    if (body?.reportedSource && !reportedSource) return json({ error: "Acquisition source is not valid." }, 400, request, env);
+    const now = new Date().toISOString();
+    const firstSeenAt = validIso(body?.firstSeenAt) || now;
+    const answeredAt = reportedSource ? (validIso(body?.answeredAt) || now) : null;
+    await env.DB.prepare(`
+        INSERT INTO user_acquisition
+            (user_id, reported_source, other_text, utm_source, utm_medium, utm_campaign, utm_content,
+             referrer, first_landing_path, first_seen_at, answered_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+            reported_source = COALESCE(excluded.reported_source, user_acquisition.reported_source),
+            other_text = CASE WHEN excluded.reported_source IS NOT NULL THEN excluded.other_text ELSE user_acquisition.other_text END,
+            answered_at = COALESCE(excluded.answered_at, user_acquisition.answered_at),
+            updated_at = excluded.updated_at
+    `).bind(
+        userId, reportedSource, reportedSource === "other" ? limitedText(body?.otherText, 80) : null,
+        limitedText(body?.utmSource, 120), limitedText(body?.utmMedium, 120),
+        limitedText(body?.utmCampaign, 120), limitedText(body?.utmContent, 120),
+        limitedText(body?.referrer, 200), limitedText(body?.firstLandingPath, 200),
+        firstSeenAt, answeredAt, now
+    ).run();
+    return json({ ok: true }, 200, request, env);
+}
+
+async function recordProductEvent(userId, body, request, env) {
+    const eventName = typeof body?.eventName === "string" ? body.eventName : "";
+    if (!CLIENT_EVENT_NAMES.has(eventName)) return json({ error: "Event name is not valid." }, 400, request, env);
+    const eventKey = limitedText(body?.eventKey, 128);
+    if (!eventKey) return json({ error: "Event key is required." }, 400, request, env);
+    const metadata = body?.metadata && typeof body.metadata === "object" && !Array.isArray(body.metadata) ? body.metadata : {};
+    const metadataJson = JSON.stringify(metadata);
+    if (metadataJson.length > 2048) return json({ error: "Event metadata is too large." }, 400, request, env);
+    await insertProductEvent(env, userId, eventName, eventKey, validIso(body?.occurredAt) || new Date().toISOString(), metadata);
+    return json({ ok: true }, 200, request, env);
+}
+
+async function insertProductEvent(env, userId, eventName, eventKey, occurredAt, metadata) {
+    const now = new Date().toISOString();
+    await env.DB.prepare(`
+        INSERT INTO product_events (id, user_id, event_name, event_key, occurred_at, metadata_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(user_id, event_name, event_key) DO NOTHING
+    `).bind(crypto.randomUUID(), userId, eventName, eventKey, occurredAt, JSON.stringify(metadata || {}), now).run();
+}
+
+function limitedText(value, maxLength) {
+    if (typeof value !== "string") return null;
+    const result = value.trim().slice(0, maxLength);
+    return result || null;
+}
+
+function nullableChoice(value, choices) {
+    return typeof value === "string" && choices.has(value) ? value : null;
+}
+
+function validIso(value) {
+    if (typeof value !== "string" || value.length > 40 || !Number.isFinite(Date.parse(value))) return null;
+    return new Date(value).toISOString();
 }
 
 async function recordActivity(userId, request, env) {
