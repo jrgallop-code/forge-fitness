@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=privacy-account-1";
+import { navigate } from "../core/router.js?v=unit-system-1";
 
 
 export function renderNavbar() {
