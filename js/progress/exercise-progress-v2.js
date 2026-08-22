@@ -4,7 +4,6 @@ import { getExerciseById } from "../workouts/exercise-library.js";
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 let unitListenerBound = false;
 let selectedMetric = "volume";
-let selectedRange = "all";
 
 export function initializeExerciseProgressV2() {
     const oldCanvas = document.getElementById("exercise-strength-chart");
@@ -45,12 +44,9 @@ function addAllHistoryExercises() {
 function bindControls() {
     bindOnce(document.getElementById("exercise-progress-select"), "change", renderExerciseProgressV2);
     bindOnce(document.getElementById("lifting-tab"), "click", () => requestAnimationFrame(renderExerciseProgressV2));
+    bindOnce(document.getElementById("progress-range"), "change", renderExerciseProgressV2);
     document.querySelectorAll("[data-exercise-metric]").forEach(button => bindOnce(button, "click", () => {
         selectedMetric = button.dataset.exerciseMetric;
-        renderExerciseProgressV2();
-    }));
-    document.querySelectorAll("[data-exercise-range]").forEach(button => bindOnce(button, "click", () => {
-        selectedRange = button.dataset.exerciseRange;
         renderExerciseProgressV2();
     }));
 }
@@ -115,12 +111,12 @@ function getSessions() {
 function compareRecords(a, b) { return `${a.date || ""}|${a.completedAt || ""}`.localeCompare(`${b.date || ""}|${b.completedAt || ""}`); }
 
 function filterRange(records) {
-    const days = Number(selectedRange);
+    const days = Number(document.getElementById("progress-range")?.value || 0);
     if (!Number.isFinite(days) || !records.length) return records;
-    const latest = parseDate(records.at(-1).date);
-    if (!latest) return records;
-    const cutoff = new Date(latest);
-    cutoff.setDate(cutoff.getDate() - days + 1);
+    if (days <= 0) return records;
+    const cutoff = new Date();
+    cutoff.setHours(0, 0, 0, 0);
+    cutoff.setDate(cutoff.getDate() - days);
     return records.filter(record => {
         const date = parseDate(record.date);
         return date && date >= cutoff;
@@ -129,35 +125,39 @@ function filterRange(records) {
 
 function updateControls() {
     document.querySelectorAll("[data-exercise-metric]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.exerciseMetric === selectedMetric)));
-    document.querySelectorAll("[data-exercise-range]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.exerciseRange === selectedRange)));
     const note = document.getElementById("exercise-progress-note");
     if (note) note.textContent = selectedMetric === "volume"
-        ? "Completed working-set load for each logged session: weight × reps, summed across sets."
-        : "Epley estimated 1RM from the best completed set. This is an estimate, not a tested maximum.";
+        ? "Working-set load: weight × reps."
+        : "Best-set Epley estimate—not a tested maximum.";
 }
 
 function renderComparison(records) {
     const container = document.getElementById("exercise-volume-comparison");
     if (!container) return;
-    if (selectedMetric !== "volume") {
-        container.hidden = true;
-        container.innerHTML = "";
-        return;
-    }
     container.hidden = false;
     if (!records.length) {
-        container.innerHTML = '<p class="empty-state">Log this exercise to establish your first session volume.</p>';
+        container.innerHTML = `<p class="empty-state">Log this exercise to establish your first ${selectedMetric === "volume" ? "session volume" : "estimated 1RM"}.</p>`;
         return;
     }
     const latest = records.at(-1);
     const previous = records.at(-2);
-    const change = previous ? latest.sessionVolume - previous.sessionVolume : null;
-    const percent = previous?.sessionVolume > 0 ? change / previous.sessionVolume * 100 : null;
+    const isVolume = selectedMetric === "volume";
+    const latestValue = isVolume ? latest.sessionVolume : latest.estimatedOneRepMax;
+    const previousValue = previous ? (isVolume ? previous.sessionVolume : previous.estimatedOneRepMax) : null;
+    const change = previous ? latestValue - previousValue : null;
+    const percent = previousValue > 0 ? change / previousValue * 100 : null;
+    const valueLabel = value => isVolume ? formatVolume(value) : formatMass(value, 1);
+    const changeLabel = value => isVolume ? signedVolume(value) : signedMass(value, 1);
     container.innerHTML = `
-        <div class="exercise-volume-stat"><span>Latest</span><strong>${formatVolume(latest.sessionVolume)}</strong></div>
-        <div class="exercise-volume-stat"><span>Previous</span><strong>${previous ? formatVolume(previous.sessionVolume) : "—"}</strong></div>
-        <div class="exercise-volume-stat"><span>Change</span><strong class="${change > 0 ? "is-positive" : change < 0 ? "is-negative" : ""}">${change === null ? "First session" : `${signedVolume(change)} (${signedPercent(percent)})`}</strong></div>
-        <p class="exercise-volume-detail">${buildChangeDetail(latest, previous)}</p>`;
+        <div class="exercise-volume-stat"><span>Latest</span><strong>${valueLabel(latestValue)}</strong></div>
+        <div class="exercise-volume-stat"><span>Previous</span><strong>${previous ? valueLabel(previousValue) : "—"}</strong></div>
+        <div class="exercise-volume-stat"><span>Change</span><strong class="${change > 0 ? "is-positive" : change < 0 ? "is-negative" : ""}">${change === null ? "First session" : `${changeLabel(change)} · ${signedPercent(percent)}`}</strong></div>
+        <p class="exercise-volume-detail">${isVolume ? buildChangeDetail(latest, previous) : buildStrengthDetail(latest, previous)}</p>`;
+}
+
+function buildStrengthDetail(latest, previous) {
+    if (!previous) return `Best set ${formatSet(latest.bestSet)} establishes your baseline`;
+    return `Best set ${formatSet(latest.bestSet)} · previously ${formatSet(previous.bestSet)}`;
 }
 
 function buildChangeDetail(latest, previous) {
@@ -227,7 +227,7 @@ function displayVolume(value) { return displayMass(value, 0); }
 function formatVolume(value) { return `${Number(displayVolume(value)).toLocaleString()} ${massUnit()}`; }
 function formatMass(value, digits = 0) { const shown = displayMass(value, digits); return `${Number(shown).toLocaleString(undefined, { maximumFractionDigits: digits })} ${massUnit()}`; }
 function signedVolume(value) { return `${value > 0 ? "+" : ""}${Number(displayVolume(value)).toLocaleString()} ${massUnit()}`; }
-function signedMass(value) { return `${value > 0 ? "+" : ""}${formatMass(value)}`; }
+function signedMass(value, digits = 0) { return `${value > 0 ? "+" : ""}${formatMass(value, digits)}`; }
 function signedNumber(value) { return `${value > 0 ? "+" : ""}${value}`; }
 function signedPercent(value) { return Number.isFinite(value) ? `${value > 0 ? "+" : ""}${value.toFixed(1)}%` : "—"; }
 function formatSet(set) { return `${formatMass(Number(set.weight))} × ${Number(set.reps)}`; }

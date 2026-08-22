@@ -370,16 +370,9 @@ export function renderProgress() {
 
                         <div class="exercise-volume-comparison" id="exercise-volume-comparison" aria-live="polite"></div>
 
-                        <p class="analytics-note" id="exercise-progress-note">
-                            Completed working-set load for each logged session: weight × reps, summed across sets.
+                        <p class="analytics-note exercise-chart-note" id="exercise-progress-note">
+                            Working-set load: weight × reps.
                         </p>
-
-                        <div class="exercise-history-range" aria-label="Exercise history timeframe">
-                            <button type="button" data-exercise-range="30">1M</button>
-                            <button type="button" data-exercise-range="90">3M</button>
-                            <button type="button" data-exercise-range="180">6M</button>
-                            <button type="button" data-exercise-range="all" aria-pressed="true">All</button>
-                        </div>
 
                         <canvas
                             id="exercise-strength-chart"
