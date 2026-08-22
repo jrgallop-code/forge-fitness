@@ -1,3 +1,11 @@
+import { presetPlans } from "./workout-plans.js?v=workout-plans-2";
+import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-plans-1";
+
+const existingPlanIds = new Set(presetPlans.map(plan => plan.id));
+celebrityWorkoutPlans.forEach(plan => {
+    if (!existingPlanIds.has(plan.id)) presetPlans.push(plan);
+});
+
 export function initializeWorkoutCatalogue(root = document) {
     const page = root.querySelector?.(".workout-page") || document.querySelector(".workout-page");
     if (!page) return;
@@ -7,6 +15,19 @@ export function initializeWorkoutCatalogue(root = document) {
     const builder = page.querySelector("#plan-builder");
     const list = page.querySelector("#saved-plan-list");
     const viewAll = page.querySelector("[data-workout-view-all]");
+
+    const typeFilter = page.querySelector("[data-catalogue-type]");
+    if (typeFilter && !typeFilter.querySelector('option[value="movie"]')) {
+        typeFilter.insertAdjacentHTML("beforeend", '<option value="movie">Movie & Celebrity Inspired</option>');
+    }
+
+    celebrityWorkoutPlans.forEach(plan => {
+        const card = page.querySelector(`.catalogue-plan-card[data-plan-id="${plan.id}"]`);
+        if (!card) return;
+        card.dataset.type = `${card.dataset.type || ""} movie`.trim();
+        const label = card.querySelector(".plan-type-label");
+        if (label) label.textContent = plan.sourceLabel;
+    });
 
     const showHome = () => {
         if (home) home.hidden = false;
