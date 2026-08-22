@@ -1,5 +1,6 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { getTrainingPreferences } from "../core/training-preferences.js?v=onboarding-1";
+import { renderMusclePriorityChoice } from "./muscle-priority-visual.js?v=muscle-priority-cards-1";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 const MUSCLES = ["Chest", "Back", "Shoulders", "Biceps", "Triceps", "Quads", "Hamstrings", "Glutes", "Calves", "Core"];
@@ -815,14 +816,9 @@ function escapeHtml(value) {
 function enhanceWizard() {
   const host = document.querySelector("[data-smart-step]");
   if (!host) return;
-  const priorityGrid = host.querySelector("[data-priority]")?.closest(".smart-chip-grid");
+  const priorityGrid = host.querySelector("[data-priority]")?.closest(".muscle-priority-grid");
   if (priorityGrid && !priorityGrid.querySelector('[data-priority="Core"]')) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `smart-chip ${state.priorities.includes("Core") ? "selected" : ""}`;
-    button.dataset.priority = "Core";
-    button.textContent = "Abs / Core";
-    priorityGrid.appendChild(button);
+    priorityGrid.insertAdjacentHTML("beforeend", renderMusclePriorityChoice("Core", state.priorities.includes("Core")));
     const helper = priorityGrid.parentElement?.querySelector(".smart-helper");
     if (helper && /selected/.test(helper.textContent || "")) helper.textContent = `${state.priorities.length}/${PRIORITY_LIMIT} selected`;
   }
