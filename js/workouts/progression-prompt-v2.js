@@ -50,6 +50,16 @@ function getRecommendedLoadRange(currentWeight, exerciseId) {
   };
 }
 
+function getSuggestedProgressionLoad(range, exerciseId) {
+  if (!range) return null;
+  const minimumLoad = Number(range.minimumLoad);
+  const maximumLoad = Number(range.maximumLoad);
+  if (!Number.isFinite(minimumLoad) || !Number.isFinite(maximumLoad)) return null;
+  const increment = getPracticalIncrement(exerciseId);
+  const midpoint = minimumLoad + ((maximumLoad - minimumLoad) * 0.5);
+  return Number((Math.round(midpoint / increment) * increment).toFixed(1));
+}
+
 function getRecommendedReducedLoad(currentWeight, exerciseId) {
   const current = Number(currentWeight);
   if (!Number.isFinite(current) || current <= 0) return null;
@@ -139,6 +149,16 @@ function syncPreviousDisplay(card, source) {
     const reps = row.querySelector('.session-reps');
     if (weight) weight.placeholder = previousSet?.weight ?? 'Weight';
     if (reps) reps.placeholder = previousSet?.reps ?? 'Reps';
+  });
+}
+
+function applyProgressionPlaceholders(card, suggestedLoad, minimumReps) {
+  if (!Number.isFinite(suggestedLoad) || !Number.isFinite(minimumReps)) return;
+  card.querySelectorAll('.session-set-row').forEach(row => {
+    const weight = row.querySelector('.session-weight');
+    const reps = row.querySelector('.session-reps');
+    if (weight && !weight.value) weight.placeholder = formatLoad(suggestedLoad);
+    if (reps && !reps.value) reps.placeholder = formatLoad(minimumReps);
   });
 }
 
@@ -293,6 +313,9 @@ function renderCard(card) {
   const loadRange = range.minimumLoad === range.maximumLoad
     ? `${formatLoad(range.minimumLoad)} lb`
     : `${formatLoad(range.minimumLoad)}–${formatLoad(range.maximumLoad)} lb`;
+  const suggestedLoad = getSuggestedProgressionLoad(range, exerciseId);
+
+  applyProgressionPlaceholders(card, suggestedLoad, repRange.lower);
 
   prompt.classList.remove('progression-prompt-down');
   prompt.innerHTML = `
@@ -301,7 +324,7 @@ function renderCard(card) {
       <strong>Increase weight this session</strong>
       <p>You reached the top of your rep range on all completed sets last workout at <b>${formatLoad(currentWeight)} lb</b>.</p>
       <p><b>Try ${loadRange} today.</b></p>
-      <small>Start at the lower end if needed.</small>
+      <small>Suggested start: ${formatLoad(suggestedLoad)} lb × ${formatLoad(repRange.lower)} reps.</small>
     </div>
   `;
   prompt.hidden = false;
