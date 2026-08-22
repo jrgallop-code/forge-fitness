@@ -13,4 +13,29 @@ html.level-up-login-required, html.level-up-login-required body { overflow: hidd
 .level-up-login-message[data-status="success"] { color: #6ee7a8; }
 .level-up-login-message[data-status="error"] { color: #ff6676; }
 .level-up-login-legal { max-width: 360px; margin: 8px 0 0; color: #77777d; font-size: 11px; line-height: 1.45; }
-\n.level-up-login-legal a { color: #b8b8bd; text-decoration: underline; text-decoration-color: rgba(255,67,87,.8); text-underline-offset: 3px; }\n
+
+.level-up-login-legal a { color: #b8b8bd; text-decoration: underline; text-decoration-color: rgba(255,67,87,.8); text-underline-offset: 3px; }
+
+.level-up-login-email-open { color: #fff; cursor: pointer; }
+.level-up-login-email-open small { color: #ff6676; }
+.level-up-email-auth[hidden] { display: none !important; }
+.level-up-email-auth { width: min(100%, 340px); display: grid; gap: 13px; margin-top: 4px; }
+.level-up-email-auth-header { display: grid; grid-template-columns: 38px 1fr 38px; align-items: center; min-height: 40px; }
+.level-up-email-auth-header strong { grid-column: 2; font-size: 17px; }
+.level-up-email-back { grid-column: 1; width: 38px; height: 38px; border: 1px solid rgba(255,255,255,.14); border-radius: 50%; background: rgba(255,255,255,.05); color: #fff; font-size: 20px; cursor: pointer; }
+.level-up-email-auth label { display: grid; gap: 7px; text-align: left; color: #d4d4d8; font-size: 12px; font-weight: 800; letter-spacing: .02em; }
+.level-up-email-auth input { width: 100%; min-height: 50px; box-sizing: border-box; padding: 0 16px; border: 1px solid rgba(255,255,255,.16); border-radius: 14px; outline: none; background: #121216; color: #fff; font: inherit; font-size: 16px; }
+.level-up-email-auth input:focus { border-color: #ff4357; box-shadow: 0 0 0 3px rgba(255,67,87,.14); }
+.level-up-email-submit { min-height: 50px; border: 0; border-radius: 999px; background: #ef3348; color: #fff; font: inherit; font-weight: 900; cursor: pointer; }
+.level-up-email-submit:disabled { opacity: .55; cursor: wait; }
+.level-up-email-mode { border: 0; background: transparent; color: #e4e4e7; font: inherit; font-size: 13px; font-weight: 800; text-decoration: underline; text-decoration-color: rgba(255,67,87,.8); text-underline-offset: 4px; cursor: pointer; }
+.level-up-email-help { margin: -2px 0 0; color: #85858b; font-size: 11px; line-height: 1.4; }
+.level-up-email-help a { color: #b8b8bd; }
+.level-up-login-panel.email-auth-open .level-up-login-google,
+.level-up-login-panel.email-auth-open > .level-up-login-provider { display: none; }
+.level-up-login-message:empty { min-height: 0; margin-top: 0; }
+@media (max-height: 760px) {
+    .level-up-login-panel { justify-content: flex-start; }
+    .level-up-login-logo { width: 92px; height: 92px; margin-bottom: 12px; }
+    .level-up-login-panel h1 { font-size: 38px; }
+}

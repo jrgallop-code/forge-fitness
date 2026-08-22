@@ -1,5 +1,10 @@
 const MAX_BACKUP_BYTES = 8 * 1024 * 1024;
 const SESSION_DAYS = 30;
+const PASSWORD_ITERATIONS = 310000;
+const PASSWORD_MIN_LENGTH = 10;
+const PASSWORD_MAX_LENGTH = 128;
+const AUTH_RATE_WINDOW_MS = 15 * 60 * 1000;
+const AUTH_RATE_MAX_FAILURES = 10;
 
 export default {
     async fetch(request, env) {
@@ -25,6 +30,14 @@ async function handleRequest(request, env) {
     if (url.pathname === "/v1/session/google" && request.method === "POST") {
         const body = await readJson(request, 64 * 1024);
         return createGoogleSession(body, request, env);
+    }
+    if (url.pathname === "/v1/account/email" && request.method === "POST") {
+        const body = await readJson(request, 16 * 1024);
+        return createEmailAccount(body, request, env);
+    }
+    if (url.pathname === "/v1/session/email" && request.method === "POST") {
+        const body = await readJson(request, 16 * 1024);
+        return createEmailSession(body, request, env);
     }
 
     const user = await requireUser(request, env);
@@ -65,6 +78,9 @@ async function createGoogleSession(body, request, env) {
         return json({ error: "Google sign-in is not valid for Level Up." }, 401, request, env);
     }
 
+    const email = normalizeEmail(profile.email);
+    const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first();
+    const userId = existing?.id || profile.sub;
     const now = new Date().toISOString();
     await env.DB.prepare(`
         INSERT INTO users (id, email, display_name, avatar_url, created_at, updated_at)
@@ -74,22 +90,214 @@ async function createGoogleSession(body, request, env) {
             display_name = excluded.display_name,
             avatar_url = excluded.avatar_url,
             updated_at = excluded.updated_at
-    `).bind(profile.sub, String(profile.email).toLowerCase(), profile.name || null, profile.picture || null, now, now).run();
+    `).bind(userId, email, profile.name || null, profile.picture || null, now, now).run();
 
+    return issueSession(
+        userId,
+        { id: userId, email, display_name: profile.name, avatar_url: profile.picture, beta_status: "active" },
+        request,
+        env
+    );
+}
+
+async function createEmailAccount(body, request, env) {
+    const email = normalizeEmail(body?.email);
+    const password = typeof body?.password === "string" ? body.password : "";
+    if (!email) return json({ error: "Enter a valid email address." }, 400, request, env);
+    const passwordError = validatePassword(password);
+    if (passwordError) return json({ error: passwordError }, 400, request, env);
+
+    const rateKey = await authRateKey("signup", email, request);
+    if (await isRateLimited(rateKey, request, env)) {
+        return json({ error: "Too many attempts. Wait 15 minutes and try again." }, 429, request, env);
+    }
+
+    const existing = await env.DB.prepare(`
+        SELECT users.id, password_credentials.user_id AS password_user_id
+        FROM users
+        LEFT JOIN password_credentials ON password_credentials.user_id = users.id
+        WHERE users.email = ?
+    `).bind(email).first();
+    if (existing) {
+        await recordRateFailure(rateKey, env);
+        const message = existing.password_user_id
+            ? "An account already exists for this email. Sign in instead."
+            : "This email already uses Google sign-in. Continue with Google.";
+        return json({ error: message }, 409, request, env);
+    }
+
+    const userId = `email:${crypto.randomUUID()}`;
+    const salt = new Uint8Array(16);
+    crypto.getRandomValues(salt);
+    const passwordHash = await derivePasswordHash(password, salt, PASSWORD_ITERATIONS);
+    const now = new Date().toISOString();
+
+    try {
+        await env.DB.batch([
+            env.DB.prepare(`
+                INSERT INTO users (id, email, display_name, avatar_url, created_at, updated_at)
+                VALUES (?, ?, NULL, NULL, ?, ?)
+            `).bind(userId, email, now, now),
+            env.DB.prepare(`
+                INSERT INTO password_credentials
+                    (user_id, password_hash, password_salt, iterations, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `).bind(userId, bytesToBase64(passwordHash), bytesToBase64(salt), PASSWORD_ITERATIONS, now, now)
+        ]);
+    }
+    catch (error) {
+        console.error(JSON.stringify({ event: "email_signup_failed", message: String(error?.message || error) }));
+        await recordRateFailure(rateKey, env);
+        return json({ error: "This email could not be registered. Try signing in instead." }, 409, request, env);
+    }
+
+    await clearRateLimit(rateKey, env);
+    return issueSession(
+        userId,
+        { id: userId, email, display_name: null, avatar_url: null, beta_status: "active" },
+        request,
+        env
+    );
+}
+
+async function createEmailSession(body, request, env) {
+    const email = normalizeEmail(body?.email);
+    const password = typeof body?.password === "string" ? body.password : "";
+    if (!email || !password || password.length > PASSWORD_MAX_LENGTH) {
+        return json({ error: "Email or password is incorrect." }, 401, request, env);
+    }
+
+    const rateKey = await authRateKey("login", email, request);
+    if (await isRateLimited(rateKey, request, env)) {
+        return json({ error: "Too many attempts. Wait 15 minutes and try again." }, 429, request, env);
+    }
+
+    const account = await env.DB.prepare(`
+        SELECT users.id, users.email, users.display_name, users.avatar_url, users.beta_status,
+               password_credentials.password_hash, password_credentials.password_salt,
+               password_credentials.iterations
+        FROM users
+        JOIN password_credentials ON password_credentials.user_id = users.id
+        WHERE users.email = ? AND users.beta_status = 'active'
+    `).bind(email).first();
+
+    let valid = false;
+    if (account?.password_hash && account?.password_salt) {
+        const salt = base64ToBytes(account.password_salt);
+        const candidate = await derivePasswordHash(password, salt, Number(account.iterations));
+        valid = constantTimeEqual(candidate, base64ToBytes(account.password_hash));
+    }
+
+    if (!valid) {
+        await recordRateFailure(rateKey, env);
+        return json({ error: "Email or password is incorrect." }, 401, request, env);
+    }
+
+    await clearRateLimit(rateKey, env);
+    return issueSession(account.id, account, request, env);
+}
+
+async function issueSession(userId, user, request, env) {
+    const now = new Date().toISOString();
     const token = createToken();
     const tokenHash = await sha256(token);
     const expiresAt = new Date(Date.now() + SESSION_DAYS * 86400000).toISOString();
     await env.DB.batch([
         env.DB.prepare("DELETE FROM sessions WHERE expires_at <= ?").bind(now),
         env.DB.prepare("INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)")
-            .bind(tokenHash, profile.sub, expiresAt, now)
+            .bind(tokenHash, userId, expiresAt, now)
     ]);
+    return json({ token, expiresAt, user: publicUser(user) }, 201, request, env);
+}
 
-    return json({
-        token,
-        expiresAt,
-        user: publicUser({ id: profile.sub, email: profile.email, display_name: profile.name, avatar_url: profile.picture, beta_status: "active" })
-    }, 201, request, env);
+function normalizeEmail(value) {
+    if (typeof value !== "string") return "";
+    const email = value.trim().toLowerCase();
+    if (email.length < 3 || email.length > 254) return "";
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : "";
+}
+
+function validatePassword(password) {
+    if (password.length < PASSWORD_MIN_LENGTH) return `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`;
+    if (password.length > PASSWORD_MAX_LENGTH) return `Password must be no more than ${PASSWORD_MAX_LENGTH} characters.`;
+    return "";
+}
+
+async function derivePasswordHash(password, salt, iterations) {
+    const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(password),
+        "PBKDF2",
+        false,
+        ["deriveBits"]
+    );
+    const bits = await crypto.subtle.deriveBits(
+        { name: "PBKDF2", hash: "SHA-256", salt, iterations },
+        key,
+        256
+    );
+    return new Uint8Array(bits);
+}
+
+function constantTimeEqual(left, right) {
+    const length = Math.max(left.length, right.length);
+    let difference = left.length ^ right.length;
+    for (let index = 0; index < length; index += 1) {
+        difference |= (left[index] || 0) ^ (right[index] || 0);
+    }
+    return difference === 0;
+}
+
+function bytesToBase64(bytes) {
+    return btoa(String.fromCharCode(...bytes));
+}
+
+function base64ToBytes(value) {
+    return Uint8Array.from(atob(value), character => character.charCodeAt(0));
+}
+
+async function authRateKey(purpose, email, request) {
+    const address = request.headers.get("CF-Connecting-IP") || "unknown";
+    return sha256(`${purpose}|${email}|${address}`);
+}
+
+async function isRateLimited(rateKey, request, env) {
+    const row = await env.DB.prepare(
+        "SELECT attempts, window_started_at FROM auth_rate_limits WHERE rate_key = ?"
+    ).bind(rateKey).first();
+    if (!row) return false;
+    const windowAge = Date.now() - Date.parse(row.window_started_at);
+    if (!Number.isFinite(windowAge) || windowAge >= AUTH_RATE_WINDOW_MS) {
+        await clearRateLimit(rateKey, env);
+        return false;
+    }
+    return Number(row.attempts) >= AUTH_RATE_MAX_FAILURES;
+}
+
+async function recordRateFailure(rateKey, env) {
+    const now = new Date().toISOString();
+    const row = await env.DB.prepare(
+        "SELECT attempts, window_started_at FROM auth_rate_limits WHERE rate_key = ?"
+    ).bind(rateKey).first();
+    const expired = !row || Date.now() - Date.parse(row.window_started_at) >= AUTH_RATE_WINDOW_MS;
+    if (expired) {
+        await env.DB.prepare(`
+            INSERT INTO auth_rate_limits (rate_key, attempts, window_started_at, updated_at)
+            VALUES (?, 1, ?, ?)
+            ON CONFLICT(rate_key) DO UPDATE SET
+                attempts = 1,
+                window_started_at = excluded.window_started_at,
+                updated_at = excluded.updated_at
+        `).bind(rateKey, now, now).run();
+        return;
+    }
+    await env.DB.prepare(
+        "UPDATE auth_rate_limits SET attempts = attempts + 1, updated_at = ? WHERE rate_key = ?"
+    ).bind(now, rateKey).run();
+}
+
+async function clearRateLimit(rateKey, env) {
+    await env.DB.prepare("DELETE FROM auth_rate_limits WHERE rate_key = ?").bind(rateKey).run();
 }
 
 async function requireUser(request, env) {
