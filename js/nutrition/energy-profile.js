@@ -20,6 +20,16 @@ import {
 }
 from "./nutrition-storage.js?v=nutrition-dashboard-1";
 
+import {
+    isMetric,
+    kilogramsToPounds,
+    poundsToKilograms,
+    centimetersToInches,
+    inchesToCentimeters,
+    massUnit
+}
+from "../core/unit-system.js?v=unit-system-1";
+
 
 const GOAL_WEIGHT_STORAGE_KEY =
     "level_up_goal_weight";
@@ -104,12 +114,14 @@ export function renderEnergyProfile() {
                     </select>
 
                     <label>Height</label>
-                    <div class="nutrition-height-grid">
-                        <input id="nutrition-height-feet" type="number" min="3" max="8" step="1" placeholder="Feet">
-                        <input id="nutrition-height-inches" type="number" min="0" max="11" step="1" placeholder="Inches">
-                    </div>
+                    ${isMetric()
+                        ? `<input id="nutrition-height-cm" type="number" min="90" max="250" step="0.1" placeholder="Centimetres">`
+                        : `<div class="nutrition-height-grid">
+                            <input id="nutrition-height-feet" type="number" min="3" max="8" step="1" placeholder="Feet">
+                            <input id="nutrition-height-inches" type="number" min="0" max="11" step="1" placeholder="Inches">
+                        </div>`}
 
-                    <label for="nutrition-weight">Current Weight (lb)</label>
+                    <label for="nutrition-weight">Current Weight (${massUnit()})</label>
                     <input id="nutrition-weight" type="number" min="1" step="0.1" placeholder="Weight">
 
                     <label for="nutrition-activity">Activity Level</label>
@@ -551,44 +563,67 @@ function saveMacroFromForm() {
 function readProfileFromForm() {
     const age = Number(document.getElementById("nutrition-age")?.value);
     const sex = document.getElementById("nutrition-sex")?.value;
-    const heightFeet = Number(document.getElementById("nutrition-height-feet")?.value);
-    const heightInches = Number(document.getElementById("nutrition-height-inches")?.value);
-    const weightLb = Number(document.getElementById("nutrition-weight")?.value);
     const activity = document.getElementById("nutrition-activity")?.value;
+    const enteredWeight = Number(document.getElementById("nutrition-weight")?.value);
+
+    let heightFeet;
+    let heightInches;
+    let heightCm;
+    let weightLb;
+    let weightKg;
+
+    if (isMetric()) {
+        heightCm = Number(document.getElementById("nutrition-height-cm")?.value);
+        weightKg = enteredWeight;
+        weightLb = kilogramsToPounds(weightKg);
+        const totalInches = centimetersToInches(heightCm);
+        heightFeet = Math.floor(totalInches / 12);
+        heightInches = Number((totalInches - heightFeet * 12).toFixed(2));
+    }
+    else {
+        heightFeet = Number(document.getElementById("nutrition-height-feet")?.value);
+        heightInches = Number(document.getElementById("nutrition-height-inches")?.value);
+        weightLb = enteredWeight;
+        heightCm = inchesToCentimeters(heightFeet * 12 + heightInches);
+        weightKg = poundsToKilograms(weightLb);
+    }
 
     if (
         !Number.isFinite(age) || age < 18 ||
         !["male", "female"].includes(sex) ||
-        !Number.isFinite(heightFeet) || heightFeet <= 0 ||
-        !Number.isFinite(heightInches) || heightInches < 0 || heightInches > 11 ||
+        !Number.isFinite(heightCm) || heightCm < 90 || heightCm > 250 ||
         !Number.isFinite(weightLb) || weightLb <= 0 ||
         !ACTIVITY_LEVELS[activity]
     ) {
         return null;
     }
 
-    return {
-        age,
-        sex,
-        heightFeet,
-        heightInches,
-        weightLb,
-        activity,
-        heightCm: feetAndInchesToCm(heightFeet, heightInches),
-        weightKg: poundsToKg(weightLb)
-    };
+    return { age, sex, heightFeet, heightInches, weightLb, activity, heightCm, weightKg };
 }
 
 
 function populateProfile(profile) {
+    const heightCm = Number(profile.heightCm) || feetAndInchesToCm(profile.heightFeet, profile.heightInches);
+    const weightLb = Number(profile.weightLb) || kilogramsToPounds(profile.weightKg);
+
     setValue("nutrition-age", profile.age);
     setValue("nutrition-sex", profile.sex);
-    setValue("nutrition-height-feet", profile.heightFeet);
-    setValue("nutrition-height-inches", profile.heightInches);
-    setValue("nutrition-weight", profile.weightLb);
+
+    if (isMetric()) {
+        setValue("nutrition-height-cm", Number(heightCm.toFixed(1)));
+        setValue("nutrition-weight", Number(poundsToKilograms(weightLb).toFixed(1)));
+    }
+    else {
+        const totalInches = centimetersToInches(heightCm);
+        const feet = Number.isFinite(Number(profile.heightFeet)) ? Number(profile.heightFeet) : Math.floor(totalInches / 12);
+        const inches = Number.isFinite(Number(profile.heightInches)) ? Number(profile.heightInches) : Number((totalInches - feet * 12).toFixed(1));
+        setValue("nutrition-height-feet", feet);
+        setValue("nutrition-height-inches", inches);
+        setValue("nutrition-weight", Number(weightLb.toFixed(1)));
+    }
+
     setValue("nutrition-activity", profile.activity);
 }
-
 
 function setValue(id, value) {
     const element = document.getElementById(id);
