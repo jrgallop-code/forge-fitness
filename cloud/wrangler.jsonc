@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "level-up-cloud-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-21",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "GOOGLE_CLIENT_ID": "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com",
+    "ALLOWED_ORIGINS": "https://app.leveluphypertrophy.com,https://jrgallop-code.github.io"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "level-up-beta",
+      "database_id": "f3a70957-c09d-4397-a65e-3c22e9578d7b",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
