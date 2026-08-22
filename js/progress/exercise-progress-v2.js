@@ -1,46 +1,58 @@
-const SESSION_STORAGE_KEY = "forge_workout_sessions";
+import { displayMass, massUnit } from "../core/unit-system.js";
+import { getExerciseById } from "../workouts/exercise-library.js";
 
-let observerStarted = false;
+const SESSION_STORAGE_KEY = "forge_workout_sessions";
+let unitListenerBound = false;
+let selectedMetric = "volume";
+let selectedRange = "all";
 
 export function initializeExerciseProgressV2() {
-    if (observerStarted) return;
-    observerStarted = true;
+    const oldCanvas = document.getElementById("exercise-strength-chart");
+    const existingHost = document.getElementById("exercise-strength-chart-v2");
+    if (oldCanvas && !existingHost) {
+        const host = document.createElement("div");
+        host.id = "exercise-strength-chart-v2";
+        host.className = oldCanvas.className || "training-chart";
+        host.setAttribute("aria-label", "Exercise session volume chart");
+        oldCanvas.replaceWith(host);
+    }
+    if (!document.getElementById("exercise-strength-chart-v2")) return;
+    addAllHistoryExercises();
+    bindControls();
+    renderExerciseProgressV2();
+    if (!unitListenerBound) {
+        unitListenerBound = true;
+        window.addEventListener("levelup:units-changed", renderExerciseProgressV2);
+    }
+}
 
-    const content = document.getElementById("content");
-    if (!content) return;
-
-    const initializeIfPresent = () => {
-        const oldCanvas = document.getElementById("exercise-strength-chart");
-        const existingHost = document.getElementById("exercise-strength-chart-v2");
-
-        if (oldCanvas && !existingHost) {
-            const host = document.createElement("div");
-            host.id = "exercise-strength-chart-v2";
-            host.className = oldCanvas.className || "";
-            host.style.width = "100%";
-            host.style.minHeight = "300px";
-            host.setAttribute("aria-label", "Exercise estimated 1RM chart");
-
-            oldCanvas.replaceWith(host);
-            bindControls();
-            renderExerciseProgressV2();
-        }
-        else if (existingHost) {
-            bindControls();
-            renderExerciseProgressV2();
-        }
-    };
-
-    initializeIfPresent();
-
-    const observer = new MutationObserver(initializeIfPresent);
-    observer.observe(content, { childList: true, subtree: true });
+function addAllHistoryExercises() {
+    const select = document.getElementById("exercise-progress-select");
+    if (!select) return;
+    const existing = new Set([...select.options].map(option => option.value));
+    const ids = getSessions().flatMap(session => session.exercises || [])
+        .filter(exercise => exercise?.exerciseId && exercise?.trackingType !== "notes")
+        .map(exercise => exercise.exerciseId);
+    [...new Set(ids)].forEach(id => {
+        if (existing.has(id)) return;
+        const option = document.createElement("option");
+        option.value = id;
+        option.textContent = getExerciseById(id)?.name || id;
+        select.appendChild(option);
+    });
 }
 
 function bindControls() {
     bindOnce(document.getElementById("exercise-progress-select"), "change", renderExerciseProgressV2);
-    bindOnce(document.getElementById("progress-range"), "change", renderExerciseProgressV2);
     bindOnce(document.getElementById("lifting-tab"), "click", () => requestAnimationFrame(renderExerciseProgressV2));
+    document.querySelectorAll("[data-exercise-metric]").forEach(button => bindOnce(button, "click", () => {
+        selectedMetric = button.dataset.exerciseMetric;
+        renderExerciseProgressV2();
+    }));
+    document.querySelectorAll("[data-exercise-range]").forEach(button => bindOnce(button, "click", () => {
+        selectedRange = button.dataset.exerciseRange;
+        renderExerciseProgressV2();
+    }));
 }
 
 function bindOnce(element, eventName, handler) {
@@ -55,199 +67,172 @@ function renderExerciseProgressV2() {
     const host = document.getElementById("exercise-strength-chart-v2");
     const select = document.getElementById("exercise-progress-select");
     const history = document.getElementById("exercise-history-body");
-
     if (!host || !select || !history) return;
-
-    const exerciseId = select.value;
-    const records = getValidRecords(exerciseId);
-
+    const allRecords = getExerciseRecords(select.value);
+    const records = filterRange(allRecords);
+    updateControls();
+    renderComparison(allRecords);
     renderSvgChart(host, records);
     renderHistory(history, records);
 }
 
-function getValidRecords(exerciseId) {
+function getExerciseRecords(exerciseId) {
     if (!exerciseId) return [];
-
-    return getFilteredSessions()
-        .map(session => {
-            const matchingExercises = Array.isArray(session.exercises)
-                ? session.exercises.filter(exercise => exercise?.exerciseId === exerciseId)
-                : [];
-
-            const performedSets = matchingExercises
-                .flatMap(exercise => Array.isArray(exercise.sets) ? exercise.sets : [])
-                .filter(isPerformedSet);
-
-            if (!performedSets.length) return null;
-
-            const ranked = performedSets
-                .map(set => ({ set, oneRepMax: estimateOneRepMax(set) }))
-                .filter(item => Number.isFinite(item.oneRepMax) && item.oneRepMax > 0)
-                .sort((a, b) => b.oneRepMax - a.oneRepMax);
-
-            if (!ranked.length) return null;
-
-            return {
-                date: session.date,
-                bestSet: ranked[0].set,
-                estimatedOneRepMax: ranked[0].oneRepMax,
-                completedSets: performedSets.length
-            };
-        })
-        .filter(record =>
-            record &&
-            Number.isFinite(record.estimatedOneRepMax) &&
-            record.estimatedOneRepMax > 0
-        );
+    return getSessions().map(session => {
+        const sets = (session.exercises || [])
+            .filter(exercise => exercise?.exerciseId === exerciseId && exercise?.trackingType !== "notes")
+            .flatMap(exercise => Array.isArray(exercise.sets) ? exercise.sets : [])
+            .filter(isWorkingSet);
+        if (!sets.length) return null;
+        const ranked = sets.map(set => ({ set, oneRepMax: estimateOneRepMax(set) })).sort((a, b) => b.oneRepMax - a.oneRepMax);
+        return {
+            date: session.date,
+            completedAt: session.completedAt || session.updatedAt || "",
+            bestSet: ranked[0].set,
+            estimatedOneRepMax: ranked[0].oneRepMax,
+            completedSets: sets.length,
+            totalReps: sets.reduce((sum, set) => sum + Number(set.reps), 0),
+            sessionVolume: sets.reduce((sum, set) => sum + Number(set.weight) * Number(set.reps), 0),
+            heaviestWeight: Math.max(...sets.map(set => Number(set.weight)))
+        };
+    }).filter(Boolean).sort(compareRecords);
 }
 
-function isPerformedSet(set) {
-    if (!set) return false;
-
+function isWorkingSet(set) {
+    if (!set || set.isWarmup || set.warmup || set.type === "warmup" || set.setType === "warmup") return false;
     const reps = Number(set.reps);
     const weight = Number(set.weight);
-
-    // Business rule: zero reps means the set did not happen.
-    if (!Number.isFinite(reps) || reps <= 0) return false;
-
-    // Estimated 1RM requires a positive external load.
-    if (!Number.isFinite(weight) || weight <= 0) return false;
-
-    return true;
+    return Number.isFinite(reps) && reps > 0 && Number.isFinite(weight) && weight > 0;
 }
 
-function estimateOneRepMax(set) {
-    const weight = Number(set.weight);
-    const reps = Number(set.reps);
-    return weight * (1 + reps / 30);
-}
-
-function getFilteredSessions() {
-    let sessions = [];
-
+function estimateOneRepMax(set) { return Number(set.weight) * (1 + Number(set.reps) / 30); }
+function getSessions() {
     try {
         const parsed = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || "[]");
-        sessions = Array.isArray(parsed) ? parsed : [];
-    }
-    catch {
-        sessions = [];
-    }
+        return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
+}
+function compareRecords(a, b) { return `${a.date || ""}|${a.completedAt || ""}`.localeCompare(`${b.date || ""}|${b.completedAt || ""}`); }
 
-    const days = Number(document.getElementById("progress-range")?.value || 0);
+function filterRange(records) {
+    const days = Number(selectedRange);
+    if (!Number.isFinite(days) || !records.length) return records;
+    const latest = parseDate(records.at(-1).date);
+    if (!latest) return records;
+    const cutoff = new Date(latest);
+    cutoff.setDate(cutoff.getDate() - days + 1);
+    return records.filter(record => {
+        const date = parseDate(record.date);
+        return date && date >= cutoff;
+    });
+}
 
-    if (days > 0) {
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - days);
-        sessions = sessions.filter(session => {
-            if (!session?.date) return false;
-            const date = new Date(`${session.date}T23:59:59`);
-            return Number.isFinite(date.getTime()) && date >= cutoff;
-        });
+function updateControls() {
+    document.querySelectorAll("[data-exercise-metric]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.exerciseMetric === selectedMetric)));
+    document.querySelectorAll("[data-exercise-range]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.exerciseRange === selectedRange)));
+    const note = document.getElementById("exercise-progress-note");
+    if (note) note.textContent = selectedMetric === "volume"
+        ? "Completed working-set load for each logged session: weight × reps, summed across sets."
+        : "Epley estimated 1RM from the best completed set. This is an estimate, not a tested maximum.";
+}
+
+function renderComparison(records) {
+    const container = document.getElementById("exercise-volume-comparison");
+    if (!container) return;
+    if (selectedMetric !== "volume") {
+        container.hidden = true;
+        container.innerHTML = "";
+        return;
     }
+    container.hidden = false;
+    if (!records.length) {
+        container.innerHTML = '<p class="empty-state">Log this exercise to establish your first session volume.</p>';
+        return;
+    }
+    const latest = records.at(-1);
+    const previous = records.at(-2);
+    const change = previous ? latest.sessionVolume - previous.sessionVolume : null;
+    const percent = previous?.sessionVolume > 0 ? change / previous.sessionVolume * 100 : null;
+    container.innerHTML = `
+        <div class="exercise-volume-stat"><span>Latest</span><strong>${formatVolume(latest.sessionVolume)}</strong></div>
+        <div class="exercise-volume-stat"><span>Previous</span><strong>${previous ? formatVolume(previous.sessionVolume) : "—"}</strong></div>
+        <div class="exercise-volume-stat"><span>Change</span><strong class="${change > 0 ? "is-positive" : change < 0 ? "is-negative" : ""}">${change === null ? "First session" : `${signedVolume(change)} (${signedPercent(percent)})`}</strong></div>
+        <p class="exercise-volume-detail">${buildChangeDetail(latest, previous)}</p>`;
+}
 
-    return sessions.sort((a, b) => String(a?.date || "").localeCompare(String(b?.date || "")));
+function buildChangeDetail(latest, previous) {
+    if (!previous) return `${latest.completedSets} working sets · ${latest.totalReps} total reps`;
+    const weightChange = latest.heaviestWeight - previous.heaviestWeight;
+    const repChange = latest.totalReps - previous.totalReps;
+    const setChange = latest.completedSets - previous.completedSets;
+    const parts = [weightChange === 0 ? "Same top weight" : `${signedMass(weightChange)} top weight`, repChange === 0 ? "same total reps" : `${signedNumber(repChange)} total reps`];
+    if (setChange !== 0) parts.push(`${signedNumber(setChange)} working sets`);
+    return parts.join(" · ");
 }
 
 function renderHistory(container, records) {
+    const header = container.previousElementSibling;
+    if (header?.classList.contains("exercise-history-header")) header.innerHTML = selectedMetric === "volume"
+        ? "<span>Date</span><span>Volume</span><span>Change</span><span>Sets</span>"
+        : "<span>Date</span><span>Best Set</span><span>Est. 1RM</span><span>Sets</span>";
     if (!records.length) {
-        container.innerHTML = '<p class="empty-state">No performed sets with reps above 0 for this exercise.</p>';
+        container.innerHTML = '<p class="empty-state">No completed weighted working sets in this timeframe.</p>';
         return;
     }
-
-    container.innerHTML = [...records]
-        .reverse()
-        .map(record => `
-            <div class="exercise-history-row">
-                <span>${formatDate(record.date)}</span>
-                <strong>${formatSet(record.bestSet)}</strong>
-                <span>${record.estimatedOneRepMax.toFixed(1)}</span>
-                <span>${record.completedSets}</span>
-            </div>
-        `)
-        .join("");
+    container.innerHTML = [...records].reverse().map((record, reverseIndex) => {
+        const originalIndex = records.length - 1 - reverseIndex;
+        const previous = originalIndex > 0 ? records[originalIndex - 1] : null;
+        return selectedMetric === "volume" ? `
+            <div class="exercise-history-row"><span>${formatDate(record.date)}</span><strong>${formatVolume(record.sessionVolume)}</strong>
+            <span>${previous ? signedPercent((record.sessionVolume - previous.sessionVolume) / previous.sessionVolume * 100) : "Baseline"}</span><span>${record.completedSets}</span></div>` : `
+            <div class="exercise-history-row"><span>${formatDate(record.date)}</span><strong>${formatSet(record.bestSet)}</strong>
+            <span>${formatMass(record.estimatedOneRepMax, 1)}</span><span>${record.completedSets}</span></div>`;
+    }).join("");
 }
 
 function renderSvgChart(host, records) {
+    const isVolume = selectedMetric === "volume";
+    const valueFor = record => isVolume ? displayVolume(record.sessionVolume) : displayMass(record.estimatedOneRepMax, 1);
+    const values = records.map(valueFor).filter(Number.isFinite);
     const width = Math.max(320, Math.round(host.clientWidth || 700));
     const height = 300;
-    const padding = { top: 34, right: 18, bottom: 46, left: 56 };
-
-    if (!records.length) {
-        host.innerHTML = `
-            <svg viewBox="0 0 ${width} ${height}" width="100%" height="300" role="img" aria-label="No exercise progress data">
-                <text x="${padding.left}" y="18" fill="#a0a0a0" font-size="12">Epley Estimated 1RM (lb)</text>
-                <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="#333" />
-                <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="#333" />
-                <text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="#a0a0a0" font-size="12">No performed sets to plot</text>
-            </svg>
-        `;
+    const padding = { top: 34, right: 18, bottom: 46, left: 62 };
+    const axisLabel = isVolume ? `Session Volume (${massUnit()})` : `Estimated 1RM (${massUnit()})`;
+    host.setAttribute("aria-label", `${axisLabel} across logged sessions`);
+    if (!values.length) {
+        host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="300" role="img" aria-label="No exercise progress data"><text x="${padding.left}" y="18" fill="#a0a0a0" font-size="12">${axisLabel}</text><line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="#333"/><line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="#333"/><text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="#a0a0a0" font-size="12">No completed weighted sets to plot</text></svg>`;
         return;
     }
-
-    const values = records.map(record => record.estimatedOneRepMax);
     const minValue = Math.min(...values);
     const maxValue = Math.max(...values);
-    const spread = Math.max(5, maxValue - minValue);
-
-    // Deliberately never use 0 as the graph minimum. This chart is only for performed data.
-    let axisMin = Math.floor((minValue - spread * 0.15) / 5) * 5;
-    axisMin = Math.max(1, axisMin);
-    let axisMax = Math.ceil((maxValue + spread * 0.15) / 5) * 5;
-    if (axisMax <= axisMin) axisMax = axisMin + 10;
-
+    const spread = Math.max(isVolume ? 100 : 5, maxValue - minValue);
+    const step = isVolume ? niceStep(spread / 4) : 5;
+    let axisMin = Math.max(0, Math.floor((minValue - spread * .12) / step) * step);
+    let axisMax = Math.ceil((maxValue + spread * .12) / step) * step;
+    if (axisMax <= axisMin) axisMax = axisMin + step * 2;
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
-
     const coords = records.map((record, index) => {
-        const x = records.length === 1
-            ? padding.left + chartWidth / 2
-            : padding.left + (index / (records.length - 1)) * chartWidth;
-        const y = padding.top + (axisMax - record.estimatedOneRepMax) / (axisMax - axisMin) * chartHeight;
-        return { ...record, x, y };
+        const value = valueFor(record);
+        return { ...record, value, x: records.length === 1 ? padding.left + chartWidth / 2 : padding.left + index / (records.length - 1) * chartWidth, y: padding.top + (axisMax - value) / (axisMax - axisMin) * chartHeight };
     });
-
-    const ticks = Array.from({ length: 5 }, (_, i) => axisMin + (axisMax - axisMin) * i / 4);
-    const polyline = coords.map(point => `${point.x},${point.y}`).join(" ");
-
-    host.innerHTML = `
-        <svg viewBox="0 0 ${width} ${height}" width="100%" height="300" role="img" aria-label="Estimated one rep max progress">
-            <text x="${padding.left}" y="18" fill="#a0a0a0" font-size="12">Epley Estimated 1RM (lb)</text>
-            ${ticks.map(tick => {
-                const y = padding.top + (axisMax - tick) / (axisMax - axisMin) * chartHeight;
-                return `
-                    <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="#2f2f2f" />
-                    <text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" fill="#a0a0a0" font-size="11">${Math.round(tick)}</text>
-                `;
-            }).join("")}
-            <polyline points="${polyline}" fill="none" stroke="#e10600" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
-            ${coords.map((point, index) => {
-                const showLabel = coords.length <= 8 || index === 0 || index === coords.length - 1 || index % Math.ceil(coords.length / 6) === 0;
-                return `
-                    <circle cx="${point.x}" cy="${point.y}" r="4" fill="#ffffff" />
-                    ${showLabel ? `<text x="${point.x}" y="${height - 18}" text-anchor="middle" fill="#a0a0a0" font-size="11">${formatShortDate(point.date)}</text>` : ""}
-                `;
-            }).join("")}
-        </svg>
-    `;
+    const ticks = Array.from({ length: 5 }, (_, index) => axisMin + (axisMax - axisMin) * index / 4);
+    host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="300" role="img" aria-label="${axisLabel} progress"><text x="${padding.left}" y="18" fill="#a0a0a0" font-size="12">${axisLabel}</text>
+        ${ticks.map(tick => { const y = padding.top + (axisMax - tick) / (axisMax - axisMin) * chartHeight; return `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="#2f2f2f"/><text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" fill="#a0a0a0" font-size="11">${formatAxis(tick)}</text>`; }).join("")}
+        <polyline points="${coords.map(point => `${point.x},${point.y}`).join(" ")}" fill="none" stroke="#ef1b24" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+        ${coords.map((point, index) => { const show = coords.length <= 8 || index === 0 || index === coords.length - 1 || index % Math.ceil(coords.length / 6) === 0; return `<circle cx="${point.x}" cy="${point.y}" r="4" fill="#fff"><title>${formatDate(point.date)}: ${isVolume ? formatVolume(point.sessionVolume) : formatMass(point.estimatedOneRepMax, 1)}</title></circle>${show ? `<text x="${point.x}" y="${height - 18}" text-anchor="middle" fill="#a0a0a0" font-size="11">${formatShortDate(point.date)}</text>` : ""}`; }).join("")}</svg>`;
 }
 
-function formatSet(set) {
-    return `${Number(set.weight)} × ${Number(set.reps)}`;
-}
-
-function formatDate(value) {
-    if (!value) return "Unknown";
-    return new Intl.DateTimeFormat(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric"
-    }).format(new Date(`${value}T00:00:00`));
-}
-
-function formatShortDate(value) {
-    if (!value) return "";
-    return new Intl.DateTimeFormat(undefined, {
-        month: "short",
-        day: "numeric"
-    }).format(new Date(`${value}T00:00:00`));
-}
+function displayVolume(value) { return displayMass(value, 0); }
+function formatVolume(value) { return `${Number(displayVolume(value)).toLocaleString()} ${massUnit()}`; }
+function formatMass(value, digits = 0) { const shown = displayMass(value, digits); return `${Number(shown).toLocaleString(undefined, { maximumFractionDigits: digits })} ${massUnit()}`; }
+function signedVolume(value) { return `${value > 0 ? "+" : ""}${Number(displayVolume(value)).toLocaleString()} ${massUnit()}`; }
+function signedMass(value) { return `${value > 0 ? "+" : ""}${formatMass(value)}`; }
+function signedNumber(value) { return `${value > 0 ? "+" : ""}${value}`; }
+function signedPercent(value) { return Number.isFinite(value) ? `${value > 0 ? "+" : ""}${value.toFixed(1)}%` : "—"; }
+function formatSet(set) { return `${formatMass(Number(set.weight))} × ${Number(set.reps)}`; }
+function formatAxis(value) { return Math.abs(value) >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k` : Math.round(value); }
+function niceStep(value) { const power = 10 ** Math.floor(Math.log10(Math.max(1, value))); const normalized = value / power; return (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * power; }
+function parseDate(value) { if (!value) return null; const date = new Date(`${String(value).slice(0, 10)}T12:00:00`); return Number.isFinite(date.getTime()) ? date : null; }
+function formatDate(value) { const date = parseDate(value); return date ? new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" }).format(date) : "Unknown"; }
+function formatShortDate(value) { const date = parseDate(value); return date ? new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date) : ""; }

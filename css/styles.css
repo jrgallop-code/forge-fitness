@@ -1860,6 +1860,102 @@ font-size:16px;
     max-width:420px;
 }
 
+.exercise-metric-controls,
+.exercise-history-range {
+    display:flex;
+    gap:8px;
+    margin-top:14px;
+}
+
+.exercise-metric-controls button,
+.exercise-history-range button {
+    min-height:40px;
+    padding:9px 12px;
+    color:var(--muted);
+    background:#18181c;
+    border:1px solid #38383f;
+    border-radius:10px;
+    font-weight:800;
+}
+
+.exercise-metric-controls button {
+    flex:1;
+}
+
+.exercise-history-range {
+    justify-content:flex-end;
+}
+
+.exercise-history-range button {
+    min-width:48px;
+}
+
+.exercise-metric-controls button[aria-pressed="true"],
+.exercise-history-range button[aria-pressed="true"] {
+    color:#fff;
+    background:#4a1217;
+    border-color:var(--red);
+}
+
+.exercise-volume-comparison {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px;
+    margin-top:14px;
+}
+
+.exercise-volume-comparison[hidden] {
+    display:none;
+}
+
+.exercise-volume-stat {
+    min-width:0;
+    padding:12px 10px;
+    background:#17171b;
+    border:1px solid #303037;
+    border-radius:12px;
+}
+
+.exercise-volume-stat span {
+    display:block;
+    color:var(--muted);
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+}
+
+.exercise-volume-stat strong {
+    display:block;
+    margin-top:6px;
+    color:#fff;
+    font-size:16px;
+    line-height:1.2;
+}
+
+.exercise-volume-stat strong.is-positive {
+    color:#4bd180;
+}
+
+.exercise-volume-stat strong.is-negative {
+    color:#f0b24a;
+}
+
+.exercise-volume-detail {
+    grid-column:1/-1;
+    margin:0;
+    padding:10px 12px;
+    color:#d5d5da;
+    background:#111114;
+    border-radius:10px;
+    font-size:13px;
+}
+
+#exercise-strength-chart-v2 {
+    height:auto;
+    min-height:300px;
+}
+
 .exercise-history-header,
 .exercise-history-row {
     display:grid;
@@ -1957,6 +2053,33 @@ font-size:16px;
 
     .training-chart {
         height:240px;
+    }
+
+    #exercise-strength-chart-v2 {
+        height:auto;
+        min-height:260px;
+        overflow:hidden;
+    }
+
+    .exercise-volume-comparison {
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .exercise-volume-stat:last-of-type {
+        grid-column:1/-1;
+    }
+
+    .exercise-volume-stat strong {
+        font-size:14px;
+    }
+
+    .exercise-history-range {
+        justify-content:stretch;
+    }
+
+    .exercise-history-range button {
+        flex:1;
+        min-width:0;
     }
 
     .muscle-bar-row {

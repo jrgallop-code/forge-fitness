@@ -363,11 +363,23 @@ export function renderProgress() {
                             Exercise Progress
                         </h4>
 
-                        <p class="analytics-note">
-                            Y-axis: Epley estimated one-rep maximum in pounds.
-                            Formula: weight × (1 + reps ÷ 30), using the best
-                            completed set. It is an estimate, not a tested maximum.
+                        <div class="exercise-metric-controls" aria-label="Exercise progress metric">
+                            <button type="button" data-exercise-metric="volume" aria-pressed="true">Session Volume</button>
+                            <button type="button" data-exercise-metric="strength" aria-pressed="false">Estimated 1RM</button>
+                        </div>
+
+                        <div class="exercise-volume-comparison" id="exercise-volume-comparison" aria-live="polite"></div>
+
+                        <p class="analytics-note" id="exercise-progress-note">
+                            Completed working-set load for each logged session: weight × reps, summed across sets.
                         </p>
+
+                        <div class="exercise-history-range" aria-label="Exercise history timeframe">
+                            <button type="button" data-exercise-range="30">1M</button>
+                            <button type="button" data-exercise-range="90">3M</button>
+                            <button type="button" data-exercise-range="180">6M</button>
+                            <button type="button" data-exercise-range="all" aria-pressed="true">All</button>
+                        </div>
 
                         <canvas
                             id="exercise-strength-chart"
@@ -381,8 +393,8 @@ export function renderProgress() {
 
                         <div class="exercise-history-header">
                             <span>Date</span>
-                            <span>Best Set</span>
-                            <span>Est. 1RM</span>
+                            <span>Volume</span>
+                            <span>Change</span>
                             <span>Sets</span>
                         </div>
 
