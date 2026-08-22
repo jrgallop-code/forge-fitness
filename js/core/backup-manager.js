@@ -4,7 +4,10 @@ import {
 from "./backup-providers.js?v=backup-provider-1";
 
 const MAX_BACKUP_SIZE = 100 * 1024 * 1024;
-const INVALID_STORAGE_KEYS = new Set(["setItem"]);
+const INVALID_STORAGE_KEYS = new Set([
+    "setItem",
+    "level_up_cloud_session"
+]);
 const BACKUP_FORMAT_VERSION = 5;
 const LEVEL_UP_INDEXED_DB_PREFIX = "level_up_";
 
