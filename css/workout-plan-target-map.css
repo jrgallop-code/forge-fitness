@@ -2,8 +2,9 @@
 
 .plan-target-map-slide {
     display:grid;
-    grid-template-rows:auto 1fr auto;
+    grid-template-rows:auto auto auto;
     align-items:start;
+    align-content:start;
     min-height:470px;
     padding:14px 14px 12px;
 }
