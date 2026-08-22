@@ -30,7 +30,7 @@ function renderGate() {
             <button class="level-up-login-provider" type="button" disabled><span>Email</span><small>Coming soon</small></button>
             <button class="level-up-login-provider" type="button" disabled><span>Apple</span><small>Coming soon</small></button>
             <p class="level-up-login-message" id="level-up-login-message" aria-live="polite">Your workout data stays on this device until cloud backup is enabled.</p>
-            <p class="level-up-login-legal">By continuing, you agree to use Level Up as a beta service. You can export your data or delete your cloud account at any time.</p>
+            <p class="level-up-login-legal">Level Up is for adults 18+. Read our <a href="https://leveluphypertrophy.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> or contact <a href="mailto:support@leveluphypertrophy.com">Support</a>.</p>
         </main>
     </div>`;
 }
@@ -107,7 +107,7 @@ function ensureStyles() {
     if (document.querySelector('link[data-level-up-login]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/first-launch-login.css?v=first-login-1";
+    link.href = "css/first-launch-login.css?v=privacy-login-1";
     link.dataset.levelUpLogin = "true";
     document.head.appendChild(link);
 }
