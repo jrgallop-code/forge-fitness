@@ -32,7 +32,7 @@ export function renderAccountCloud() {
     </section>
     <section class="section-card account-cloud-safety">
         <span class="eyebrow">BETA SAFETY</span><h3>Manual sync stays in your control</h3>
-        <p>Uploading replaces the cloud copy only after a version check. Downloading asks before replacing data on this device. Continue making occasional JSON exports during beta.</p>
+        <p>Uploading replaces the cloud copy only after a version check. Downloading asks before replacing data on this device. Continue making occasional JSON exports during beta.</p>\n        <div class="account-cloud-links"><a href="https://leveluphypertrophy.com/privacy.html" target="_blank" rel="noopener">Privacy Policy ↗</a><a href="mailto:support@leveluphypertrophy.com">Contact Support</a></div>
     </section>
     <section class="section-card account-cloud-delete" id="account-cloud-delete-section" hidden>
         <span class="eyebrow">ACCOUNT CONTROL</span><h3>Delete cloud account</h3>
@@ -267,7 +267,7 @@ function ensureAccountCloudStyles() {
     if (document.querySelector('link[data-level-up-account-cloud]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/account-cloud.css?v=beta-account-1";
+    link.href = "css/account-cloud.css?v=privacy-account-1";
     link.dataset.levelUpAccountCloud = "true";
     document.head.appendChild(link);
 }
