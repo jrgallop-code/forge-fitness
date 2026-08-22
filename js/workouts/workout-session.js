@@ -1184,6 +1184,8 @@ function saveCompletedSession({
 
     if (!editingSessionId) {
         clearActiveWorkout();
+        const workingSets = completed.exercises.reduce((total, exercise) => total + (exercise.sets || []).filter(set => Number(set.reps) > 0).length, 0);
+        window.dispatchEvent(new CustomEvent("levelup:workout-completed", { detail: { sessionId: completed.id, planId: completed.planId, workingSets, durationMinutes: completed.durationMinutes } }));
     }
 
     const message =
