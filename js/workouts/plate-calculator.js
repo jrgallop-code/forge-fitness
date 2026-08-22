@@ -235,7 +235,7 @@ function plateSummary(solution) {
     const entries = [...solution.counts.entries()].sort((a, b) => b[0] - a[0]);
     if (!entries.length) return "No plates";
     return entries
-        .map(([plate, count]) => count > 1 ? `${formatWeight(plate)} × ${count}` : formatWeight(plate))
+        .map(([plate, count]) => count > 1 ? `${formatWeight(plate)} lb × ${count}` : `${formatWeight(plate)} lb`)
         .join(" · ");
 }
 
@@ -356,7 +356,7 @@ function renderPlateVisual(solution) {
                 ${extra ? `<span class="plate-calculator-more">+${extra}</span>` : ""}
                 ${shown.map((plate, index) => `
                     <span class="plate-calculator-plate" style="--plate-scale:${Math.max(.46, Math.min(1, plate / 45)).toFixed(2)};--plate-order:${index}" title="${formatWeight(plate)} lb">
-                        <b>${formatWeight(plate)}</b>
+                        <b>${formatWeight(plate)} lb</b>
                     </span>
                 `).join("")}
                 <span class="plate-calculator-stop" aria-hidden="true"></span>
@@ -423,7 +423,7 @@ function renderSheet() {
                 <span>Available plates</span>
                 <div class="plate-calculator-plate-options">
                     ${OPTIONAL_PLATES.map(plate => `
-                        <button type="button" data-plate-option="${plate}" aria-pressed="${settings.plates.includes(plate)}">${formatWeight(plate)}</button>
+                        <button type="button" data-plate-option="${plate}" aria-pressed="${settings.plates.includes(plate)}">${formatWeight(plate)} lb</button>
                     `).join("")}
                 </div>
             </div>
