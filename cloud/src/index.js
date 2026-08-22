@@ -46,6 +46,9 @@ async function handleRequest(request, env) {
     if (url.pathname === "/v1/me" && request.method === "GET") {
         return json({ user: publicUser(user) }, 200, request, env);
     }
+    if (url.pathname === "/v1/activity" && request.method === "POST") {
+        return recordActivity(user.id, request, env);
+    }
     if (url.pathname === "/v1/session" && request.method === "DELETE") {
         await deleteSession(request, env);
         return json({ ok: true }, 200, request, env);
@@ -204,6 +207,7 @@ async function issueSession(userId, user, request, env) {
     const expiresAt = new Date(Date.now() + SESSION_DAYS * 86400000).toISOString();
     await env.DB.batch([
         env.DB.prepare("DELETE FROM sessions WHERE expires_at <= ?").bind(now),
+        env.DB.prepare("UPDATE users SET last_active_at = ? WHERE id = ?").bind(now, userId),
         env.DB.prepare("INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)")
             .bind(tokenHash, userId, expiresAt, now)
     ]);
@@ -305,12 +309,20 @@ async function requireUser(request, env) {
     if (!token) return null;
     const tokenHash = await sha256(token);
     const row = await env.DB.prepare(`
-        SELECT users.id, users.email, users.display_name, users.avatar_url, users.beta_status
+        SELECT users.id, users.email, users.display_name, users.avatar_url, users.beta_status,
+               users.last_active_at
         FROM sessions
         JOIN users ON users.id = sessions.user_id
         WHERE sessions.token_hash = ? AND sessions.expires_at > ? AND users.beta_status = 'active'
     `).bind(tokenHash, new Date().toISOString()).first();
     return row || null;
+}
+
+async function recordActivity(userId, request, env) {
+    const now = new Date().toISOString();
+    await env.DB.prepare("UPDATE users SET last_active_at = ? WHERE id = ?")
+        .bind(now, userId).run();
+    return json({ ok: true, lastActiveAt: now }, 200, request, env);
 }
 
 async function deleteSession(request, env) {
@@ -380,7 +392,8 @@ function publicUser(user) {
         email: user.email,
         name: user.display_name || null,
         avatarUrl: user.avatar_url || null,
-        betaStatus: user.beta_status || "active"
+        betaStatus: user.beta_status || "active",
+        lastActiveAt: user.last_active_at || null
     };
 }
 

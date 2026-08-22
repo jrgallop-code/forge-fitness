@@ -9,11 +9,12 @@ const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.goo
 const SESSION_KEY = "level_up_cloud_session";
 const ACCOUNT_KEY = "level_up_cloud_account";
 const LAST_SYNC_KEY = "level_up_cloud_last_sync";
+const AUTO_STATE_KEY = "level_up_cloud_auto_backup_state";
 
 ensureAccountCloudStyles();
 
 export function renderAccountCloud() {
-    return `<section class="dashboard-welcome account-cloud-heading"><div><button class="nutrition-planner-back" id="account-cloud-back" type="button">← More</button><span class="eyebrow">BETA ACCOUNT</span><h2>Account & Cloud</h2><p>Keep a private Level Up backup available across your devices.</p></div></section>
+    return `<section class="dashboard-welcome account-cloud-heading"><div><button class="nutrition-planner-back" id="account-cloud-back" type="button">← More</button><span class="eyebrow">BETA ACCOUNT</span><h2>Account & Cloud</h2><p>Keep a private automatic Level Up backup available across your devices.</p></div></section>
     <section class="section-card account-cloud-card">
         <div class="account-cloud-profile" id="account-cloud-profile">
             <div><span class="eyebrow">ACCOUNT</span><h3 id="account-cloud-name">Not signed in</h3><p id="account-cloud-email">Sign in with Google to activate beta cloud storage.</p></div>
@@ -21,7 +22,7 @@ export function renderAccountCloud() {
         </div>
         <div id="account-google-button" class="account-google-button"></div>
         <div class="account-cloud-actions" id="account-cloud-actions" hidden>
-            <button class="primary-btn" id="account-cloud-upload" type="button">↑ Upload This Device</button>
+            <button class="primary-btn" id="account-cloud-upload" type="button">↑ Back Up Now</button>
             <button class="secondary-btn" id="account-cloud-download" type="button">↓ Download to This Device</button>
             <button class="text-btn" id="account-cloud-signout" type="button">Sign Out</button>
         </div>
@@ -31,8 +32,8 @@ export function renderAccountCloud() {
         </div>
     </section>
     <section class="section-card account-cloud-safety">
-        <span class="eyebrow">BETA SAFETY</span><h3>Manual sync stays in your control</h3>
-        <p>Uploading replaces the cloud copy only after a version check. Downloading asks before replacing data on this device. Continue making occasional JSON exports during beta.</p>\n        <div class="account-cloud-links"><a href="https://leveluphypertrophy.com/privacy.html" target="_blank" rel="noopener">Privacy Policy ↗</a><a href="mailto:support@leveluphypertrophy.com">Contact Support</a></div>
+        <span class="eyebrow">BETA SAFETY</span><h3>Automatic backup with version protection</h3>
+        <p>Level Up backs up signed-in app data after changes. If another device has a newer cloud version, automatic upload pauses instead of overwriting it. You can still back up or restore manually here.</p>\n        <div class="account-cloud-links"><a href="https://leveluphypertrophy.com/privacy.html" target="_blank" rel="noopener">Privacy Policy ↗</a><a href="mailto:support@leveluphypertrophy.com">Contact Support</a></div>
     </section>
     <section class="section-card account-cloud-delete" id="account-cloud-delete-section" hidden>
         <span class="eyebrow">ACCOUNT CONTROL</span><h3>Delete cloud account</h3>
@@ -86,9 +87,10 @@ async function handleGoogleCredential(response) {
         });
         localStorage.setItem(SESSION_KEY, JSON.stringify({ token: session.token, expiresAt: session.expiresAt }));
         localStorage.setItem(ACCOUNT_KEY, JSON.stringify(session.user));
+        window.dispatchEvent(new CustomEvent("levelup:cloud-session-started"));
         renderSession();
         await refreshAccount();
-        setMessage("Signed in. Your device data has not been uploaded yet.", "success");
+        setMessage("Signed in. Automatic backup is preparing your device data.", "success");
     }
     catch (error) {
         setMessage(error.message, "error");
@@ -179,16 +181,24 @@ function renderSession() {
     if (googleButton) googleButton.hidden = signedIn;
     setText("account-cloud-name", signedIn ? account.name || "Level Up Beta Member" : "Not signed in");
     setText("account-cloud-email", signedIn ? account.email : "Sign in with Google to activate beta cloud storage.");
-    setText("account-cloud-badge", signedIn ? "BETA ACTIVE" : "LOCAL ONLY");
+    const autoState = readJson(AUTO_STATE_KEY);
+    const needsAttention = autoState?.status === "newer-cloud-backup";
+    setText("account-cloud-badge", signedIn ? needsAttention ? "ACTION NEEDED" : "AUTO BACKUP" : "LOCAL ONLY");
 }
 
 function renderRemoteMeta(remote) {
     if (!remote) {
-        setMessage("Signed in. No cloud backup has been uploaded yet.");
-        setText("account-cloud-updated", "Upload this device when you are ready.");
+        setMessage("Signed in. Your first automatic backup is being prepared.");
+        setText("account-cloud-updated", "You can also use Back Up Now at any time.");
         return;
     }
-    setText("account-cloud-state", `Cloud backup version ${remote.version} is available.`);
+    const autoState = readJson(AUTO_STATE_KEY);
+    if (autoState?.status === "newer-cloud-backup") {
+        setMessage("A newer cloud backup is available. Automatic upload is paused.");
+        setText("account-cloud-updated", "Download the newer copy, or use Back Up Now after confirming this device should replace it.");
+        return;
+    }
+    setText("account-cloud-state", `Automatic cloud backup version ${remote.version} is available.`);
     setText("account-cloud-updated", `Updated ${formatDate(remote.updated_at)} · ${formatBytes(remote.byte_size)}`);
 }
 
@@ -224,7 +234,18 @@ function clearSession() {
 }
 
 function saveLastSync(direction, updatedAt, version) {
-    localStorage.setItem(LAST_SYNC_KEY, JSON.stringify({ direction, updatedAt, version, completedAt: new Date().toISOString() }));
+    const completedAt = new Date().toISOString();
+    localStorage.setItem(LAST_SYNC_KEY, JSON.stringify({ direction, updatedAt, version, completedAt }));
+    localStorage.setItem(AUTO_STATE_KEY, JSON.stringify({
+        ...readJson(AUTO_STATE_KEY),
+        version: Number(version),
+        updatedAt,
+        completedAt,
+        status: "synced"
+    }));
+    window.dispatchEvent(new CustomEvent("levelup:cloud-sync-complete", {
+        detail: { direction, updatedAt, version, completedAt }
+    }));
 }
 
 function readJson(key) {
