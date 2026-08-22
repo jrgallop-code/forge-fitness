@@ -1,4 +1,4 @@
-import { renderFormGuideMuscleSvg } from "./form-guide-anatomy.js?v=muscle-priority-cards-1";
+import { renderFormGuideMuscleSvg } from "./form-guide-anatomy.js?v=muscle-priority-cards-2";
 
 const VISUAL_MUSCLE = { Abs: "Core", "Abs / Core": "Core" };
 
@@ -14,10 +14,10 @@ export function renderMusclePriorityChoice(muscle, selected) {
 }
 
 function ensureMusclePriorityStyles() {
-  if (document.querySelector('link[data-muscle-priority-styles]')) return;
+  if (document.querySelector('link[data-muscle-priority-styles], link[href*="muscle-priority-cards.css"]')) return;
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "css/muscle-priority-cards.css?v=muscle-priority-cards-1";
+  link.href = "css/muscle-priority-cards.css?v=muscle-priority-cards-2";
   link.dataset.musclePriorityStyles = "true";
   document.head.appendChild(link);
 }
