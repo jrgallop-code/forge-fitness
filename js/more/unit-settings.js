@@ -1,6 +1,7 @@
 import { getUnitSystem, setUnitSystem } from "../core/unit-system.js?v=unit-system-1";
 
 export function renderUnitSettings() {
+    ensureUnitSettingsStyles();
     const current = getUnitSystem();
     return `<section class="dashboard-welcome"><div><button class="nutrition-planner-back" id="unit-settings-back" type="button">← More</button><span class="eyebrow">PREFERENCES</span><h2>Units</h2><p>Choose how Level Up displays and accepts measurements.</p></div></section>
         <section class="section-card unit-settings-card">
@@ -26,4 +27,13 @@ export function initializeUnitSettings({ onBack } = {}) {
             setUnitSystem(next, { reload: true });
         });
     });
+}
+
+function ensureUnitSettingsStyles() {
+    if (document.querySelector('link[data-unit-settings-styles]')) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "css/unit-settings.css?v=unit-system-1";
+    link.dataset.unitSettingsStyles = "1";
+    document.head.appendChild(link);
 }
