@@ -25,11 +25,11 @@ function renderGate() {
             <img class="level-up-login-logo" src="assets/level-up-logo.svg" alt="Level Up">
             <span class="level-up-login-kicker">LEVEL UP BETA</span>
             <h1 id="level-up-login-title">Your training.<br><span>Your progress.</span></h1>
-            <p class="level-up-login-intro">Sign in to protect your Level Up data, restore it on another device, and keep your beta account connected.</p>
+            <p class="level-up-login-intro">Sign in to start using Level Up and begin tracking your training.</p>
             <div class="level-up-login-google" id="level-up-login-google"></div>
             <button class="level-up-login-provider" type="button" disabled><span>Email</span><small>Coming soon</small></button>
             <button class="level-up-login-provider" type="button" disabled><span>Apple</span><small>Coming soon</small></button>
-            <p class="level-up-login-message" id="level-up-login-message" aria-live="polite">Your workout data stays on this device until cloud backup is enabled.</p>
+            <p class="level-up-login-message" id="level-up-login-message" aria-live="polite"></p>
             <p class="level-up-login-legal">Level Up is for adults 18+. Read our <a href="https://leveluphypertrophy.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> or contact <a href="mailto:support@leveluphypertrophy.com">Support</a>.</p>
         </main>
     </div>`;
