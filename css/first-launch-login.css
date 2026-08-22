@@ -13,3 +13,4 @@ html.level-up-login-required, html.level-up-login-required body { overflow: hidd
 .level-up-login-message[data-status="success"] { color: #6ee7a8; }
 .level-up-login-message[data-status="error"] { color: #ff6676; }
 .level-up-login-legal { max-width: 360px; margin: 8px 0 0; color: #77777d; font-size: 11px; line-height: 1.45; }
+\n.level-up-login-legal a { color: #b8b8bd; text-decoration: underline; text-decoration-color: rgba(255,67,87,.8); text-underline-offset: 3px; }\n
