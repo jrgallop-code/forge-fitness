@@ -8,10 +8,11 @@ import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workou
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=workout-schedule-3";
-import { renderProgress } from "../progress/progress-ui.js?v=progress-photo-tab-1";
+import { renderProgress } from "../progress/progress-ui.js?v=exercise-session-volume-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=unit-system-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=current-goal-1";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
+import { initializeExerciseProgressV2 } from "../progress/exercise-progress-v2.js?v=session-volume-1";
 import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=overall-strength-index-2";
 import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.js?v=training-analytics-5";
 import { initializeMuscleRecoveryMap } from "../progress/muscle-recovery-map.js?v=recovery-traced-1";
@@ -48,7 +49,7 @@ export function navigate(page) {
             case "workout":
                 content.innerHTML = renderWorkoutBuilder(); decorateWorkoutTitle(content); safeInitialize("Workout builder", initializeWorkoutBuilder); safeInitialize("Smart Build", () => initializeSmartBuild(content)); safeInitialize("Smart Build superset guard", () => initializeSmartBuildSupersetGuard(content)); safeInitialize("One-off workout", initializeOneOffWorkout); bindManualBuildLauncher(content); safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content)); safeInitialize("Workout catalogue", () => initializeWorkoutCatalogue(content)); break;
             case "progress":
-                content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
+                content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
             case "sleep":
                 content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>Track sleep duration, quality and recovery notes.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
             case "measurements":
