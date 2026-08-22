@@ -15,3 +15,4 @@
 .account-cloud-status span { color: var(--muted, #a5a5aa); font-size: 13px; }
 .danger-text-btn { color: #ff6676; margin-top: 10px; }
 @media (min-width: 640px) { .account-cloud-actions { grid-template-columns: 1fr 1fr; } .account-cloud-actions .text-btn { grid-column: 1 / -1; } }
+\n.account-cloud-links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; }\n.account-cloud-links a { color: #fff; font-size: 13px; font-weight: 800; text-decoration: underline; text-decoration-color: rgba(255,67,87,.8); text-underline-offset: 4px; }\n
