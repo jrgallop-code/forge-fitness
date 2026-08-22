@@ -105,7 +105,7 @@ function renderCards() {
             <h2>Consistency</h2>
         </div>
         <div class="dashboard-habit-grid">
-            <button type="button" class="dashboard-habit-card dashboard-habit-card--weigh-in" data-dashboard-habit="weight" aria-label="Open Weight Progress. ${recentWeighInDays} of the last 7 days have a weigh-in.">
+            <button type="button" class="dashboard-habit-card dashboard-habit-card--weigh-in" data-dashboard-habit="weight" aria-label="Open Activity Calendar. Weigh-ins: ${recentWeighInDays} of the last 7 days have a weigh-in.">
                 <span class="dashboard-habit-card-heading">
                     <strong>Weigh-In</strong>
                     <small>Last 30 Days</small>
@@ -118,7 +118,7 @@ function renderCards() {
                 </span>
             </button>
 
-            <button type="button" class="dashboard-habit-card dashboard-habit-card--workouts" data-dashboard-habit="workouts" aria-label="Open Workout History. ${recentWorkoutCount} workouts completed in the last 7 days.">
+            <button type="button" class="dashboard-habit-card dashboard-habit-card--workouts" data-dashboard-habit="workouts" aria-label="Open Activity Calendar. Workouts: ${recentWorkoutCount} workouts completed in the last 7 days.">
                 <span class="dashboard-habit-card-heading">
                     <strong>Workouts</strong>
                     <small>Last 30 Days</small>
@@ -134,23 +134,10 @@ function renderCards() {
     `;
 }
 
-function openWeightProgress() {
-    const progressButton = document.querySelector('.nav-btn[data-page="progress"]');
-    if (!progressButton) return;
-    progressButton.click();
-    window.setTimeout(() => {
-        document.getElementById("weight-tab")?.click();
-        document.getElementById("weight-progress")?.scrollIntoView({ block: "start" });
-    }, 0);
-}
-
-function openWorkoutHistory() {
-    document.querySelector('.nav-btn[data-page="workout"]')?.click();
-    window.setTimeout(() => {
-        import("../core/router.js?v=first-run-onboarding-1")
-            .then(({ navigate }) => navigate("history"))
-            .catch(error => console.warn("Workout history could not open", error));
-    }, 0);
+function openActivityCalendar() {
+    import("./activity-calendar.js?v=activity-calendar-1")
+        .then(module => module.openActivityCalendar())
+        .catch(error => console.warn("Activity Calendar could not open", error));
 }
 
 function queueRender() {
@@ -165,8 +152,7 @@ function queueRender() {
 document.addEventListener("click", event => {
     const card = event.target.closest?.("[data-dashboard-habit]");
     if (!card) return;
-    if (card.dataset.dashboardHabit === "weight") openWeightProgress();
-    if (card.dataset.dashboardHabit === "workouts") openWorkoutHistory();
+    openActivityCalendar();
 });
 
 const content = document.getElementById("content");
