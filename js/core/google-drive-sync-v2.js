@@ -3,7 +3,7 @@ import {
     restoreBackupSnapshot,
     verifyBackupSnapshot
 }
-from "./backup-manager.js?v=backup-complete-4";
+from "./backup-manager.js?v=backup-complete-5";
 
 
 const CLIENT_ID =
