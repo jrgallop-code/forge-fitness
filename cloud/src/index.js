@@ -78,6 +78,9 @@ async function createGoogleSession(body, request, env) {
         return json({ error: "Google sign-in is not valid for Level Up." }, 401, request, env);
     }
 
+    const email = normalizeEmail(profile.email);
+    const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first();
+    const userId = existing?.id || profile.sub;
     const now = new Date().toISOString();
     await env.DB.prepare(`
         INSERT INTO users (id, email, display_name, avatar_url, created_at, updated_at)
@@ -87,11 +90,11 @@ async function createGoogleSession(body, request, env) {
             display_name = excluded.display_name,
             avatar_url = excluded.avatar_url,
             updated_at = excluded.updated_at
-    `).bind(profile.sub, String(profile.email).toLowerCase(), profile.name || null, profile.picture || null, now, now).run();
+    `).bind(userId, email, profile.name || null, profile.picture || null, now, now).run();
 
     return issueSession(
-        profile.sub,
-        { id: profile.sub, email: profile.email, display_name: profile.name, avatar_url: profile.picture, beta_status: "active" },
+        userId,
+        { id: userId, email, display_name: profile.name, avatar_url: profile.picture, beta_status: "active" },
         request,
         env
     );
