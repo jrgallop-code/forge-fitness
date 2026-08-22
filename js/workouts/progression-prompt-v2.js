@@ -162,6 +162,28 @@ function applyProgressionPlaceholders(card, suggestedLoad, minimumReps) {
   });
 }
 
+function getPerSetRepGoals(card, completedSets, repRange) {
+  const rowCount = card.querySelectorAll('.session-set-row').length;
+  return Array.from({ length: rowCount }, (_, index) => {
+    const previousReps = Number(completedSets[index]?.reps);
+    if (!Number.isFinite(previousReps) || previousReps <= 0) return repRange.lower;
+    return Math.min(repRange.upper, Math.max(repRange.lower, previousReps + 1));
+  });
+}
+
+function applyRepGoalPlaceholders(card, goals, suggestedWeight = null) {
+  card.querySelectorAll('.session-set-row').forEach((row, index) => {
+    const weight = row.querySelector('.session-weight');
+    const reps = row.querySelector('.session-reps');
+    if (weight && !weight.value && Number.isFinite(suggestedWeight)) {
+      weight.placeholder = formatLoad(suggestedWeight);
+    }
+    if (reps && !reps.value && Number.isFinite(goals[index])) {
+      reps.placeholder = formatLoad(goals[index]);
+    }
+  });
+}
+
 function ensurePrompt(card) {
   let prompt = card.querySelector('.progression-prompt');
   if (prompt) return prompt;
@@ -268,7 +290,23 @@ function renderCard(card) {
     const belowTarget = completedSets.filter(set => Number(set.reps) < repRange.lower);
     const majorityBelow = belowTarget.length > completedSets.length / 2;
     if (!majorityBelow) {
-      hidePrompt(prompt);
+      const goals = getPerSetRepGoals(card, completedSets, repRange);
+      const priorWeights = completedSets.map(set => Number(set.weight)).filter(weight => weight > 0);
+      const sameWeight = priorWeights.length === completedSets.length && new Set(priorWeights).size === 1
+        ? priorWeights[0]
+        : null;
+
+      applyRepGoalPlaceholders(card, goals, sameWeight);
+      prompt.classList.remove('progression-prompt-down');
+      prompt.innerHTML = `
+        <span class="progression-arrow">↑</span>
+        <div>
+          <strong>Build reps this session</strong>
+          <p>${sameWeight ? `Keep <b>${formatLoad(sameWeight)} lb</b> and ` : ''}aim for <b>${goals.map(formatLoad).join(' / ')} reps</b>.</p>
+          <small>Add one rep to each set, capped at ${formatLoad(repRange.upper)}. Gray field values show each set goal.</small>
+        </div>
+      `;
+      prompt.hidden = false;
       return;
     }
 
