@@ -3,6 +3,31 @@ const day = (name, exercises) => ({ name, exercises });
 
 export const celebrityWorkoutPlans = [
     {
+        id: "amazon-hero-athletic-strength", name: "Amazon Hero Athletic Strength", daysPerWeek: 5,
+        estimatedMinutes: "45-60", level: "Intermediate", trainingType: "Hybrid",
+        catalogueCategory: "movie", sourceLabel: "Movie Inspired",
+        description: "A full-body strength, mobility and athletic-conditioning plan inspired by Gal Gadot and Magnus Lygdback's documented Wonder Woman preparation.",
+        days: [
+            day("Day 1 - Legs and Core", [exercise("front-squat",4,"6-10"),exercise("bulgarian-split-squat",3,"8-12 each leg"),exercise("romanian-deadlift",3,"8-12"),exercise("standing-calf-raise",3,"12-20"),exercise("pallof-press",3,"10-15 each side")]),
+            day("Day 2 - Chest and Back", [exercise("dumbbell-bench-press",4,"8-12"),exercise("pull-up",4,"6-12"),exercise("incline-dumbbell-press",3,"8-12"),exercise("single-arm-dumbbell-row",3,"8-12 each side"),exercise("face-pull",3,"12-20")]),
+            day("Day 3 - Shoulders and Arms", [exercise("dumbbell-shoulder-press",4,"8-12"),exercise("lateral-raise",3,"12-20"),exercise("rear-delt-fly",3,"12-20"),exercise("dumbbell-curl",3,"10-15"),exercise("tricep-pushdown",3,"10-15"),exercise("hanging-knee-raise",3,"10-15")]),
+            day("Day 4 - Lower Athletic Strength", [exercise("trap-bar-deadlift",4,"5-8"),exercise("step-up",3,"10 each leg"),exercise("hip-thrust",3,"8-12"),exercise("lunge",3,"10 each leg"),exercise("side-plank",3,"30-45 sec each")]),
+            day("Day 5 - Upper Athletic Conditioning", [exercise("push-up",4,"10-20"),exercise("chin-up",4,"6-12"),exercise("dumbbell-shoulder-press",3,"10"),exercise("seated-cable-row",3,"10-15"),exercise("indoor-rower",1,"12-15 min intervals")])
+        ]
+    },
+    {
+        id: "cosmic-hero-foundation", name: "Cosmic Hero Strength Foundation", daysPerWeek: 4,
+        estimatedMinutes: "45-60", level: "Beginner / Intermediate", trainingType: "Hybrid",
+        catalogueCategory: "movie", sourceLabel: "Movie Inspired",
+        description: "Progressive full-body strength and calisthenics inspired by Brie Larson and Jason Walsh's documented Captain Marvel training foundation.",
+        days: [
+            day("Day 1 - Lower-Body Foundation", [exercise("goblet-squat",4,"8-12"),exercise("romanian-deadlift",3,"8-12"),exercise("reverse-lunge",3,"8-12 each leg"),exercise("hip-thrust",3,"8-12"),exercise("plank",3,"30-60 sec")]),
+            day("Day 2 - Upper-Body Foundation", [exercise("dumbbell-bench-press",4,"8-12"),exercise("lat-pulldown",4,"8-12"),exercise("dumbbell-shoulder-press",3,"8-12"),exercise("seated-cable-row",3,"8-12"),exercise("pallof-press",3,"10-15 each side")]),
+            day("Day 3 - Unilateral Strength", [exercise("bulgarian-split-squat",3,"8-12 each leg"),exercise("single-leg-romanian-deadlift",3,"8-12 each leg"),exercise("step-up",3,"10 each leg"),exercise("single-arm-dumbbell-row",3,"8-12 each side"),exercise("side-plank",3,"30-45 sec each")]),
+            day("Day 4 - Hero Calisthenics", [exercise("lat-pulldown",4,"8-12"),exercise("push-up",4,"8-20"),exercise("goblet-squat",3,"12-15"),exercise("dumbbell-shoulder-press",3,"10-15"),exercise("hanging-knee-raise",3,"8-15"),exercise("indoor-rower",1,"10-15 min intervals")])
+        ]
+    },
+    {
         id: "god-of-thunder-mass", name: "God of Thunder Mass", daysPerWeek: 5,
         estimatedMinutes: "55-70", level: "Intermediate / Advanced", trainingType: "Hypertrophy",
         catalogueCategory: "movie", sourceLabel: "Movie Inspired",
