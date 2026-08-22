@@ -92,10 +92,104 @@
     background:linear-gradient(90deg,#858793 0%,rgba(69,203,117,.42) 52%,#45cb75 100%);
 }
 
+.plan-muscle-breakdown-slide {
+    display:grid;
+    align-content:start;
+    gap:16px;
+    min-height:470px;
+    padding:20px 16px 18px;
+}
+
+.plan-muscle-breakdown-heading {
+    display:grid;
+    gap:4px;
+}
+
+.plan-muscle-breakdown-heading .eyebrow {
+    color:#45cb75;
+    font-size:9px;
+    font-weight:850;
+    letter-spacing:.12em;
+}
+
+.plan-muscle-breakdown-heading h3 {
+    margin:0;
+    color:#fff;
+    font-size:22px;
+    line-height:1.15;
+}
+
+.plan-muscle-breakdown-heading p,
+.plan-muscle-breakdown-note {
+    margin:0;
+    color:#92929b;
+    font-size:10px;
+    font-weight:700;
+}
+
+.plan-muscle-breakdown-list {
+    display:grid;
+    gap:14px;
+}
+
+.plan-muscle-breakdown-row {
+    display:grid;
+    gap:7px;
+}
+
+.plan-muscle-breakdown-row > div {
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+}
+
+.plan-muscle-breakdown-row strong {
+    color:#f5f5f7;
+    font-size:14px;
+}
+
+.plan-muscle-breakdown-row span {
+    color:#b0b0b8;
+    font-size:12px;
+    font-weight:800;
+    white-space:nowrap;
+}
+
+.plan-muscle-breakdown-row > i {
+    display:block;
+    height:7px;
+    overflow:hidden;
+    border-radius:999px;
+    background:#2c2c32;
+}
+
+.plan-muscle-breakdown-row > i > b {
+    display:block;
+    height:100%;
+    border-radius:inherit;
+    background:#45cb75;
+}
+
+.plan-muscle-breakdown-empty {
+    margin:0;
+    color:#92929b;
+    font-size:12px;
+}
+
+.plan-muscle-breakdown-note {
+    line-height:1.4;
+}
+
 @media (max-width:420px) {
     .plan-target-map-slide {
         min-height:452px;
         padding:13px 12px 11px;
+    }
+
+    .plan-muscle-breakdown-slide {
+        min-height:452px;
+        padding:18px 14px 16px;
     }
 
     .plan-target-map-body {

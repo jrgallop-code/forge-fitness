@@ -238,6 +238,39 @@ function renderTargetMapSlide(side) {
     `;
 }
 
+function formatSetCredits(value) {
+    const sets = Math.round(Number(value) * 10) / 10;
+    return `${sets} ${sets === 1 ? "set" : "sets"}`;
+}
+
+function renderMuscleBreakdownSlide(volume) {
+    const rows = [...volume.entries()]
+        .filter(([, sets]) => Number(sets) > 0)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+    return `
+        <section class="plan-detail-day plan-muscle-breakdown-slide" data-plan-muscle-breakdown aria-label="Plan muscle breakdown">
+            <div class="plan-muscle-breakdown-heading">
+                <span class="eyebrow">PLAN SET DISTRIBUTION</span>
+                <h3>Muscle Breakdown</h3>
+                <p>Primary 1.0 · Secondary 0.5</p>
+            </div>
+            <div class="plan-muscle-breakdown-list">
+                ${rows.length ? rows.map(([muscle, sets]) => {
+                    const width = Math.max(0, Math.min(100, (sets / NORMALIZATION_SETS) * 100));
+                    return `
+                        <div class="plan-muscle-breakdown-row">
+                            <div><strong>${escapeHtml(muscle)}</strong><span>${formatSetCredits(sets)}</span></div>
+                            <i aria-hidden="true"><b style="width:${width}%"></b></i>
+                        </div>
+                    `;
+                }).join("") : '<p class="plan-muscle-breakdown-empty">No weighted muscle sets were found in this plan.</p>'}
+            </div>
+            <p class="plan-muscle-breakdown-note">Bars use the same 12-set scale as the Front and Back target maps.</p>
+        </section>
+    `;
+}
+
 function applyPlanVolume(screen, volume) {
     screen.querySelectorAll(".plan-target-map-slide [data-plan-target-muscle]").forEach(node => {
         const sets = volume.get(node.dataset.planTargetMuscle) || 0;
@@ -251,7 +284,8 @@ function applyPlanVolume(screen, volume) {
 function pageLabel(index, dayCount) {
     if (index === 0) return "Front · Plan Target Map";
     if (index === 1) return "Back · Plan Target Map";
-    return `Day ${index - 1} of ${dayCount}`;
+    if (index === 2) return "Muscle Breakdown · Exact Sets";
+    return `Day ${index - 2} of ${dayCount}`;
 }
 
 function initializePlanTargetCarousel(screen, dayCount) {
@@ -259,7 +293,7 @@ function initializePlanTargetCarousel(screen, dayCount) {
     const guide = screen.querySelector(".plan-day-swipe-guide");
     if (!scroller || !guide) return;
 
-    const totalPages = dayCount + 2;
+    const totalPages = dayCount + 3;
     guide.innerHTML = `
         <div class="plan-day-dots" aria-label="Workout plan page navigation">
             ${Array.from({ length: totalPages }, (_, index) => {
@@ -267,12 +301,14 @@ function initializePlanTargetCarousel(screen, dayCount) {
                     ? "Show front plan target map"
                     : index === 1
                         ? "Show back plan target map"
-                        : `Show day ${index - 1}`;
+                        : index === 2
+                            ? "Show exact plan muscle set breakdown"
+                            : `Show day ${index - 2}`;
                 return `<button type="button" data-plan-target-dot="${index}" aria-label="${aria}" class="${index === 0 ? "active" : ""}"></button>`;
             }).join("")}
         </div>
         <span data-plan-target-counter>${pageLabel(0, dayCount)}</span>
-        <strong>Swipe left or right to view target maps and workout days</strong>
+        <strong>Swipe left or right to view target maps, exact sets and workout days</strong>
     `;
 
     const dots = [...guide.querySelectorAll("[data-plan-target-dot]")];
@@ -324,7 +360,8 @@ function enhancePlanDetails(screen) {
     // original day-only scroll listener. Form Guide clicks remain delegated by the screen.
     const scroller = originalScroller.cloneNode(true);
     scroller.setAttribute("aria-label", "Plan target maps and workout days");
-    scroller.insertAdjacentHTML("afterbegin", `${renderTargetMapSlide("front")}${renderTargetMapSlide("back")}`);
+    const volume = getWeeklyPlanVolume(plan);
+    scroller.insertAdjacentHTML("afterbegin", `${renderTargetMapSlide("front")}${renderTargetMapSlide("back")}${renderMuscleBreakdownSlide(volume)}`);
     originalScroller.replaceWith(scroller);
 
     if (!guide) {
@@ -335,7 +372,7 @@ function enhancePlanDetails(screen) {
 
     screen.dataset.planTargetMapReady = "true";
     const days = Array.isArray(plan?.days) ? plan.days : [];
-    applyPlanVolume(screen, getWeeklyPlanVolume(plan));
+    applyPlanVolume(screen, volume);
     initializePlanTargetCarousel(screen, days.length);
     scroller.scrollLeft = 0;
 }
