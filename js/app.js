@@ -1,5 +1,5 @@
 import { navigate } from "./core/router.js?v=beta-account-3";
-import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=dashboard-grid-nav-1";
+import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=beta-account-4";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-session-7-cardio-fields";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";
