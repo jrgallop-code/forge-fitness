@@ -170,7 +170,11 @@ document.addEventListener("click", event => {
   const button = event.target.closest("button");
   if (!button) return;
 
-  if (button.matches("[data-setup-prev]")) {
+  if (button.matches("[data-custom-plan-id] button") && /edit plan/i.test(button.textContent || "")) {
+    currentByDay.clear();
+    countByDay.clear();
+    queueMicrotask(queue);
+  } else if (button.matches("[data-setup-prev]")) {
     event.preventDefault();
     move(button, -1);
   } else if (button.matches("[data-setup-next]")) {
