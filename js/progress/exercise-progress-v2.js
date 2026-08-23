@@ -87,8 +87,8 @@ function getExerciseRecords(exerciseId) {
             bestSet: ranked[0].set,
             estimatedOneRepMax: ranked[0].oneRepMax,
             completedSets: sets.length,
-            totalReps: sets.reduce((sum, set) => sum + Number(set.reps), 0),
-            sessionVolume: sets.reduce((sum, set) => sum + Number(set.weight) * Number(set.reps), 0),
+            totalReps: sets.reduce((sum, set) => sum + Number(set.reps) + dropReps(set), 0),
+            sessionVolume: sets.reduce((sum, set) => sum + setVolume(set), 0),
             heaviestWeight: Math.max(...sets.map(set => Number(set.weight)))
         };
     }).filter(Boolean).sort(compareRecords);
@@ -100,6 +100,12 @@ function isWorkingSet(set) {
     const weight = Number(set.weight);
     return Number.isFinite(reps) && reps > 0 && Number.isFinite(weight) && weight > 0;
 }
+
+function validDrops(set) {
+    return (Array.isArray(set?.dropSets) ? set.dropSets : []).filter(drop => Number(drop?.weight) > 0 && Number(drop?.reps) > 0);
+}
+function dropReps(set) { return validDrops(set).reduce((sum, drop) => sum + Number(drop.reps), 0); }
+function setVolume(set) { return Number(set.weight) * Number(set.reps) + validDrops(set).reduce((sum, drop) => sum + Number(drop.weight) * Number(drop.reps), 0); }
 
 function estimateOneRepMax(set) { return Number(set.weight) * (1 + Number(set.reps) / 30); }
 function getSessions() {
