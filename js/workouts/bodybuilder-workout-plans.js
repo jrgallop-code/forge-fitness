@@ -1,4 +1,4 @@
-const exercise = (id, sets, reps, finisher = "") => ({ id, sets, reps, ...(finisher ? { finisher } : {}) });
+const exercise = (id, sets, reps) => ({ id, sets, reps });
 const day = (name, exercises) => ({ name, exercises });
 
 export const bodybuilderWorkoutPlans = [
