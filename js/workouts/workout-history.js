@@ -100,12 +100,20 @@ function trophyIcon() {
 }
 
 function renderHistoryCard(session) {
+    const dropSetCount = countRecordedDropSets(session);
     return `<article class="history-workout-card history-workout-card-clickable" data-session-id="${escapeHtml(session.id)}" tabindex="0" role="button" aria-label="View ${escapeHtml(session.planName || "workout")} summary">
         <div class="history-workout-card-top"><span class="history-status completed">${isOneOff(session) ? "One-Off Workout" : "Completed"}</span><time datetime="${escapeHtml(session.date || "")}">${formatDate(session.date)}</time></div>
         <h3>${escapeHtml(session.planName || "Workout")}</h3><p>${escapeHtml(session.trainingDayName || "Training day")}</p>
-        <div class="history-workout-metrics"><span>${formatProgress(session)}</span><span>${formatSavedDuration(session)}</span></div>
+        <div class="history-workout-metrics"><span>${formatProgress(session)}</span><span>${formatSavedDuration(session)}</span>${dropSetCount ? `<span>${dropSetCount} drop ${dropSetCount === 1 ? "set" : "sets"}</span>` : ""}</div>
         <div class="history-card-actions"><span class="history-view-summary">View Summary ›</span><button class="delete-history-workout secondary-btn" type="button" data-session-id="${escapeHtml(session.id)}">Delete</button></div>
     </article>`;
+}
+
+function countRecordedDropSets(session) {
+    return (session.exercises || []).flatMap(exercise => exercise.sets || []).reduce((count, set) =>
+        count + (Array.isArray(set.dropSets) ? set.dropSets : []).filter(drop =>
+            drop.completed || drop.weight !== null || drop.reps !== null
+        ).length, 0);
 }
 
 function hasRecordedExerciseData(exercise) {
