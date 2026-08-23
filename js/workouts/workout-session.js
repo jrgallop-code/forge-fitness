@@ -589,9 +589,8 @@ function renderSessionExercises({
 
             return `
                 <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-tracking-type="reps">
-                    <h4>${escapeHtml(exercise?.name || "Exercise")}${plannedExercise.finisher ? '<span class="session-finisher-badge">Finisher</span>' : ""}</h4>
+                    <h4>${escapeHtml(exercise?.name || "Exercise")}</h4>
                     <p class="session-target">Target: ${state.sets.length} sets × ${escapeHtml(plannedExercise.reps || "—")} reps</p>
-                    ${plannedExercise.finisher ? `<p class="session-finisher-note">${escapeHtml(plannedExercise.finisher)}</p>` : ""}
                     ${editingSessionId ? `
                         <div class="routine-set-editor">
                             <strong>${state.sets.length} ${state.sets.length === 1 ? "set" : "sets"}</strong>

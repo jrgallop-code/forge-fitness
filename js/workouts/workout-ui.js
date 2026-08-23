@@ -88,7 +88,7 @@ export function renderWorkoutBuilder() {
                         <span class="plan-type-label">NEW LIBRARY</span>
                         <span class="template-frequency">5 plans</span>
                     </div>
-                    <h4>Bodybuilder Routines &amp; Finishers</h4>
+                    <h4>Bodybuilder Routines</h4>
                     <p>Browse documented and inspired routines based on famous bodybuilding training styles.</p>
                     <div class="template-action">View Bodybuilder Plans →</div>
                 </button>

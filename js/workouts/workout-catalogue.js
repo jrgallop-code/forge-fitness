@@ -1,7 +1,7 @@
 import { presetPlans } from "./workout-plans.js?v=workout-plans-2";
 import { presetPlans as detailPresetPlans } from "./workout-plans.js";
 import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-plans-2-women-heroes";
-import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybuilder-library-1";
+import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybuilder-library-3";
 
 function addCelebrityPlans(plans) {
     const existingPlanIds = new Set(plans.map(plan => plan.id));
@@ -23,7 +23,6 @@ function addBodybuilderPlans(plans) {
 }
 
 export function initializeWorkoutCatalogue(root = document) {
-    ensureBodybuilderStyles();
     const page = root.querySelector?.(".workout-page") || document.querySelector(".workout-page");
     if (!page) return;
 
@@ -133,13 +132,4 @@ export function initializeWorkoutCatalogue(root = document) {
     }
 
     applyFilters();
-}
-
-function ensureBodybuilderStyles() {
-    if (document.querySelector('link[data-bodybuilder-finisher-styles]')) return;
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "css/bodybuilder-finishers.css?v=bodybuilder-library-1";
-    link.dataset.bodybuilderFinisherStyles = "1";
-    document.head.appendChild(link);
 }
