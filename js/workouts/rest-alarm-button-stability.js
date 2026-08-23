@@ -1,5 +1,5 @@
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
-import { openActiveWorkout } from "./workout-session.js?v=workout-session-6";
+import { openActiveWorkout } from "./workout-session.js?v=drop-sets-6";
 
 const BANNER_ID = "level-up-rest-alarm-banner";
 const FIX_MARKER = "buttonStabilityFixed";
