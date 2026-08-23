@@ -352,6 +352,14 @@ function renderCard(card) {
     ? `${formatLoad(range.minimumLoad)} lb`
     : `${formatLoad(range.minimumLoad)}–${formatLoad(range.maximumLoad)} lb`;
   const suggestedLoad = getSuggestedProgressionLoad(range, exerciseId);
+  const plannedSetCount = Array.isArray(state?.sets) ? state.sets.length : completedSets.length;
+  const skippedSetCount = Math.max(0, plannedSetCount - completedSets.length);
+  const completionSummary = skippedSetCount > 0
+    ? `<b>${completedSets.length} of ${plannedSetCount}</b> working sets hit ${formatLoad(repRange.upper)} reps at <b>${formatLoad(currentWeight)} lb</b>.`
+    : `All ${completedSets.length} working sets hit ${formatLoad(repRange.upper)} reps at <b>${formatLoad(currentWeight)} lb</b>.`;
+  const skippedSetNote = skippedSetCount > 0
+    ? `${skippedSetCount === 1 ? 'Remaining set counted' : 'Remaining sets counted'} as skipped. `
+    : '';
 
   applyProgressionPlaceholders(card, suggestedLoad, repRange.lower);
 
@@ -360,9 +368,9 @@ function renderCard(card) {
     <span class="progression-arrow">↑</span>
     <div>
       <strong>Increase weight this session</strong>
-      <p>You reached the top of your rep range on all completed sets last workout at <b>${formatLoad(currentWeight)} lb</b>.</p>
+      <p>${completionSummary}</p>
       <p><b>Try ${loadRange} today.</b></p>
-      <small>Suggested start: ${formatLoad(suggestedLoad)} lb × ${formatLoad(repRange.lower)} reps.</small>
+      <small>${skippedSetNote}Suggested start: ${formatLoad(suggestedLoad)} lb × ${formatLoad(repRange.lower)} reps.</small>
     </div>
   `;
   prompt.hidden = false;
