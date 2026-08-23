@@ -275,9 +275,8 @@ function renderCard(card) {
   }
 
   const state = source.performance;
-  const completedSets = Array.isArray(state?.sets)
-    ? state.sets.filter(set => set?.completed && Number(set.reps) > 0)
-    : [];
+  const completedSets = getPreferredRecordedSets(state)
+    .filter(set => Number(set.reps) > 0 && Number(set.weight) > 0);
   if (!completedSets.length) {
     hidePrompt(prompt);
     return;
