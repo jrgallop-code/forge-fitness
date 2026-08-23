@@ -84,6 +84,7 @@ function enhanceRow(row) {
 
     const menu = document.createElement("div");
     menu.className = "drop-set-menu";
+    menu.dataset.parentSet = row.dataset.setIndex;
     menu.hidden = true;
     menu.innerHTML = '<button type="button" data-add-drop-set>Add Drop Set</button>';
     row.insertAdjacentElement("afterend", menu);
@@ -99,6 +100,18 @@ function enhanceRow(row) {
     renderBlock(row);
 }
 
+function rowForDropControl(control) {
+    const card = control?.closest(".session-exercise-card");
+    const setIndex = control?.dataset.parentSet;
+    if (!card || setIndex == null) return null;
+    return Array.from(card.querySelectorAll(".session-set-row")).find(row => row.dataset.setIndex === setIndex) || null;
+}
+
+function menuForRow(row) {
+    const card = row?.closest(".session-exercise-card");
+    return card?.querySelector(`.drop-set-menu[data-parent-set="${row.dataset.setIndex}"]`) || null;
+}
+
 function enhance() {
     document.querySelectorAll("#workout-session-logger .session-set-row").forEach(enhanceRow);
 }
@@ -107,7 +120,7 @@ document.addEventListener("click", event => {
     const trigger = event.target.closest(".drop-set-menu-trigger");
     if (trigger) {
         const row = trigger.closest(".session-set-row");
-        const menu = row?.nextElementSibling?.matches(".drop-set-menu") ? row.nextElementSibling : null;
+        const menu = menuForRow(row);
         if (!menu) return;
         const opening = menu.hidden;
         closeMenus(menu);
@@ -118,7 +131,7 @@ document.addEventListener("click", event => {
     const add = event.target.closest("[data-add-drop-set]");
     if (add) {
         const menu = add.closest(".drop-set-menu");
-        const row = menu?.previousElementSibling;
+        const row = rowForDropControl(menu);
         if (row?.matches(".session-set-row")) addDrop(row);
         menu.hidden = true;
         return;
@@ -126,8 +139,7 @@ document.addEventListener("click", event => {
 
     const block = event.target.closest(".drop-set-block");
     if (block) {
-        const menu = block.previousElementSibling;
-        const row = menu?.previousElementSibling;
+        const row = rowForDropControl(block);
         if (!row?.matches(".session-set-row")) return;
         const { active, set } = getContext(row);
         if (!active || !set) return;
@@ -154,7 +166,7 @@ document.addEventListener("input", event => {
     if (!input) return;
     const dropRow = input.closest(".drop-set-row");
     const block = input.closest(".drop-set-block");
-    const row = block?.previousElementSibling?.previousElementSibling;
+    const row = rowForDropControl(block);
     if (!row?.matches(".session-set-row")) return;
     const { active, set } = getContext(row);
     const drop = ensureDropSets(set)[Number(dropRow.dataset.dropIndex)];
