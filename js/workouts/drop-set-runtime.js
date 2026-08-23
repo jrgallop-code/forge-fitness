@@ -90,16 +90,41 @@ function renderBlock(row) {
     protectDropInputs(block);
 }
 
+function appendDropRow(row, drop, index, total) {
+    const block = row.parentElement?.querySelector(`.drop-set-block[data-parent-set="${row.dataset.setIndex}"]`);
+    if (!block) return;
+    const markup = `
+        <div class="drop-set-row ${drop.completed ? "completed" : ""}" data-drop-index="${index}">
+            <span class="drop-set-label">↳ Drop ${index + 1}</span>
+            <input class="drop-set-weight" type="number" inputmode="decimal" min="0" step="0.5" value="${drop.weight ?? ""}" placeholder="${drop.suggestedWeight ?? "Weight"}" aria-label="Drop ${index + 1} weight">
+            <input class="drop-set-reps" type="number" inputmode="numeric" min="0" step="1" value="${drop.reps ?? ""}" placeholder="Reps" aria-label="Drop ${index + 1} reps">
+            <button class="drop-set-complete" type="button" aria-label="Complete drop ${index + 1}">${drop.completed ? "✓" : ""}</button>
+            <button class="drop-set-remove" type="button" aria-label="Remove drop ${index + 1}">×</button>
+        </div>`;
+    const addAnother = block.querySelector(".drop-set-add-another");
+    if (addAnother) addAnother.insertAdjacentHTML("beforebegin", markup);
+    else block.insertAdjacentHTML("beforeend", markup);
+    block.hidden = false;
+    if (total >= MAX_DROPS) block.querySelector(".drop-set-add-another")?.remove();
+    else if (!block.querySelector(".drop-set-add-another")) block.insertAdjacentHTML("beforeend", '<button class="drop-set-add-another" type="button">+ Another drop</button>');
+    protectDropInputs(block.querySelector(`.drop-set-row[data-drop-index="${index}"]`));
+}
+
 function addDrop(row) {
     const { active, set } = getContext(row);
     if (!active || !set) return;
     const drops = ensureDropSets(set);
     if (drops.length >= MAX_DROPS) return;
     const prior = drops.at(-1) || set;
-    drops.push({ weight: null, suggestedWeight: suggestedWeight(prior), reps: null, completed: false });
+    const drop = { weight: null, suggestedWeight: suggestedWeight(prior), reps: null, completed: false };
+    drops.push(drop);
     persistDropSets(row, active, set);
-    renderBlock(row);
+    const scrollTop = window.scrollY;
+    appendDropRow(row, drop, drops.length - 1, drops.length);
     row.classList.add("has-drop-set");
+    requestAnimationFrame(() => {
+        if (Math.abs(window.scrollY - scrollTop) > .5) window.scrollTo(0, scrollTop);
+    });
 }
 
 function enhanceRow(row) {
@@ -153,8 +178,7 @@ document.addEventListener("click", event => {
     if (trigger) {
         const row = trigger.closest(".session-set-row");
         const { set } = getContext(row);
-        if (!Array.isArray(set?.dropSets) || !set.dropSets.length) addDrop(row);
-        else row.parentElement?.querySelector(`.drop-set-block[data-parent-set="${row.dataset.setIndex}"]`)?.querySelector("input")?.focus({ preventScroll: true });
+        if ((Array.isArray(set?.dropSets) ? set.dropSets.length : 0) < MAX_DROPS) addDrop(row);
         return;
     }
 
