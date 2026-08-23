@@ -369,7 +369,7 @@ function renderCard(card) {
       <strong>Increase weight this session</strong>
       <p>${completionSummary}</p>
       <p><b>Try ${loadRange} today.</b></p>
-      <small>${skippedSetNote}Suggested start: ${formatLoad(suggestedLoad)} lb × ${formatLoad(repRange.lower)} reps.</small>
+      <small>${skippedSetNote}Suggested load: ${formatLoad(suggestedLoad)} lb. Minimum target: ${formatLoad(repRange.lower)} reps per set · Goal: build toward ${formatLoad(repRange.upper)} reps.</small>
     </div>
   `;
   prompt.hidden = false;
