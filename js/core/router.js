@@ -1,7 +1,7 @@
-import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=bodybuilder-library-3";
+import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=celebrity-expansion-1";
 import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=builder-library-refresh-1";
 import { initializeOneOffWorkout } from "../workouts/one-off-workout.js?v=one-off-workout-1";
-import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=bodybuilder-library-3";
+import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=celebrity-expansion-1";
 import { initializeSmartBuild } from "../workouts/smart-build.js?v=muscle-priority-cards-2";
 import { initializeSmartBuildSupersetGuard } from "../workouts/smart-build-superset-guard.js?v=superset-clean-1";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
