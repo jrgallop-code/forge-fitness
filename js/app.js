@@ -1,4 +1,4 @@
-import { navigate } from "./core/router.js?v=celebrity-expansion-2";
+import { navigate } from "./core/router.js?v=drop-sets-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=beta-account-4";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=bodybuilder-library-3";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
