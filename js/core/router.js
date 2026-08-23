@@ -1,4 +1,4 @@
-import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=celebrity-expansion-2";
+import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=progression-skipped-sets-1";
 import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=drop-sets-6";
 import { initializeOneOffWorkout } from "../workouts/one-off-workout.js?v=one-off-workout-1";
 import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=celebrity-expansion-2";
