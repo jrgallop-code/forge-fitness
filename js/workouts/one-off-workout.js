@@ -1,5 +1,5 @@
 import { getAllExercises, getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-1";
-import { openWorkoutLogger } from "./workout-session.js?v=workout-session-7-cardio-fields";
+import { openWorkoutLogger } from "./workout-session.js?v=drop-sets-6";
 
 let rows = [];
 

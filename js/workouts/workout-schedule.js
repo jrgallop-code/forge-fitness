@@ -1,4 +1,4 @@
-import { openWorkoutLogger } from "../workouts/workout-session.js?v=workout-session-4";
+import { openWorkoutLogger } from "../workouts/workout-session.js?v=drop-sets-6";
 
 const PLAN_KEY = "forge_workout_plans";
 const SESSION_KEY = "forge_workout_sessions";

@@ -1,6 +1,6 @@
 import "./rest-alarm-phase1.js?v=rest-alarm-phase1-1";
 import "./rest-alarm-button-stability.js?v=rest-alarm-global-top-2";
-import { openActiveWorkout } from "./workout-session.js?v=workout-session-6";
+import { openActiveWorkout } from "./workout-session.js?v=drop-sets-6";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = 'level_up_active_workout';
 
