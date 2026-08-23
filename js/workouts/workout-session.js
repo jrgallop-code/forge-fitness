@@ -917,6 +917,17 @@ function bindSessionInputs({
         }
     };
 
+    logger.addEventListener("levelup:drop-sets-changed", event => {
+        const exerciseIndex = Number(event.detail?.exerciseIndex);
+        const setIndex = Number(event.detail?.setIndex);
+        const set = session.exercises?.[exerciseIndex]?.sets?.[setIndex];
+        if (!set || !Array.isArray(event.detail?.dropSets)) return;
+        set.dropSets = event.detail.dropSets.map(drop => ({ ...drop }));
+        session.currentExerciseIndex = exerciseIndex;
+        session.currentSetIndex = setIndex;
+        persist();
+    });
+
 
     logger
         .querySelectorAll(".session-exercise-card")
