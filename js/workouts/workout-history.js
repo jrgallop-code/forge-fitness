@@ -39,9 +39,13 @@ function openWorkoutPreview(sessionId) {
     if (!session) return;
     const prCount = calculatePrCounts(allSessions).get(session.id) || 0;
     document.getElementById("workout-history-preview")?.remove();
+    document.body.classList.add("workout-history-preview-open");
     document.body.insertAdjacentHTML("beforeend", renderWorkoutPreview(session, prCount));
     const modal = document.getElementById("workout-history-preview");
-    const close = () => modal?.remove();
+    const close = () => {
+        modal?.remove();
+        document.body.classList.remove("workout-history-preview-open");
+    };
     modal?.querySelector("[data-preview-close]")?.addEventListener("click", close);
     modal?.addEventListener("click", event => { if (event.target === modal) close(); });
     modal?.querySelector("[data-preview-edit]")?.addEventListener("click", () => { close(); navigate("workout"); openCompletedWorkoutForEdit(session.id); });
