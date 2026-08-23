@@ -1,5 +1,6 @@
 const ACTIVE_KEY = "level_up_active_workout";
 const MAX_DROPS = 3;
+const syncTimers = new Map();
 
 function readActive() {
     try {
@@ -15,15 +16,26 @@ function saveActive(active) {
     localStorage.setItem(ACTIVE_KEY, JSON.stringify(active));
 }
 
-function persistDropSets(row, active, set) {
-    saveActive(active);
+function dispatchDropSync(row, set) {
+    const exerciseIndex = Number(row.closest(".session-exercise-card")?.dataset.exerciseIndex);
+    const setIndex = Number(row.dataset.setIndex);
+    const key = `${exerciseIndex}:${setIndex}`;
+    clearTimeout(syncTimers.get(key));
+    syncTimers.delete(key);
     row.closest("#workout-session-logger")?.dispatchEvent(new CustomEvent("levelup:drop-sets-changed", {
-        detail: {
-            exerciseIndex: Number(row.closest(".session-exercise-card")?.dataset.exerciseIndex),
-            setIndex: Number(row.dataset.setIndex),
-            dropSets: ensureDropSets(set).map(drop => ({ ...drop }))
-        }
+        detail: { exerciseIndex, setIndex, dropSets: ensureDropSets(set).map(drop => ({ ...drop })) }
     }));
+}
+
+function persistDropSets(row, active, set, { deferSessionSync = false } = {}) {
+    saveActive(active);
+    if (!deferSessionSync) {
+        dispatchDropSync(row, set);
+        return;
+    }
+    const key = `${row.closest(".session-exercise-card")?.dataset.exerciseIndex}:${row.dataset.setIndex}`;
+    clearTimeout(syncTimers.get(key));
+    syncTimers.set(key, setTimeout(() => dispatchDropSync(row, set), 180));
 }
 
 function getContext(row) {
@@ -60,20 +72,6 @@ function closeMenus(except = null) {
     });
 }
 
-function keepViewportStable(anchor, mutate) {
-    const beforeTop = anchor?.getBoundingClientRect().top;
-    mutate();
-    if (!anchor || !Number.isFinite(beforeTop)) return;
-    const correctPosition = () => {
-        const delta = anchor.getBoundingClientRect().top - beforeTop;
-        if (Math.abs(delta) > .5) window.scrollBy(0, delta);
-    };
-    requestAnimationFrame(() => {
-        correctPosition();
-        requestAnimationFrame(correctPosition);
-    });
-}
-
 function renderBlock(row) {
     const { set } = getContext(row);
     const block = row.parentElement?.querySelector(`.drop-set-block[data-parent-set="${row.dataset.setIndex}"]`);
@@ -92,7 +90,7 @@ function renderBlock(row) {
     protectDropInputs(block);
 }
 
-function addDrop(row, menuToClose = null) {
+function addDrop(row) {
     const { active, set } = getContext(row);
     if (!active || !set) return;
     const drops = ensureDropSets(set);
@@ -100,11 +98,8 @@ function addDrop(row, menuToClose = null) {
     const prior = drops.at(-1) || set;
     drops.push({ weight: null, suggestedWeight: suggestedWeight(prior), reps: null, completed: false });
     persistDropSets(row, active, set);
-    keepViewportStable(row, () => {
-        if (menuToClose) menuToClose.hidden = true;
-        renderBlock(row);
-        row.classList.add("has-drop-set");
-    });
+    renderBlock(row);
+    row.classList.add("has-drop-set");
 }
 
 function enhanceRow(row) {
@@ -157,13 +152,9 @@ document.addEventListener("click", event => {
     const trigger = event.target.closest(".drop-set-menu-trigger");
     if (trigger) {
         const row = trigger.closest(".session-set-row");
-        const menu = menuForRow(row);
-        if (!menu) return;
-        const opening = menu.hidden;
-        keepViewportStable(row, () => {
-            closeMenus(menu);
-            menu.hidden = !opening;
-        });
+        const { set } = getContext(row);
+        if (!Array.isArray(set?.dropSets) || !set.dropSets.length) addDrop(row);
+        else row.parentElement?.querySelector(`.drop-set-block[data-parent-set="${row.dataset.setIndex}"]`)?.querySelector("input")?.focus({ preventScroll: true });
         return;
     }
 
@@ -171,7 +162,8 @@ document.addEventListener("click", event => {
     if (add) {
         const menu = add.closest(".drop-set-menu");
         const row = rowForDropControl(menu);
-        if (row?.matches(".session-set-row")) addDrop(row, menu);
+        if (row?.matches(".session-set-row")) addDrop(row);
+        menu.hidden = true;
         return;
     }
 
@@ -200,10 +192,8 @@ document.addEventListener("click", event => {
         }
         if (remove && Number.isInteger(dropIndex)) drops.splice(dropIndex, 1);
         persistDropSets(row, active, set);
-        keepViewportStable(row, () => {
-            row.classList.toggle("has-drop-set", drops.length > 0);
-            renderBlock(row);
-        });
+        row.classList.toggle("has-drop-set", drops.length > 0);
+        renderBlock(row);
         return;
     }
 
@@ -222,7 +212,7 @@ document.addEventListener("input", event => {
     const drop = ensureDropSets(set)[Number(dropRow.dataset.dropIndex)];
     if (!drop) return;
     drop[input.matches(".drop-set-weight") ? "weight" : "reps"] = input.value === "" ? null : Number(input.value);
-    persistDropSets(row, active, set);
+    persistDropSets(row, active, set, { deferSessionSync: true });
 });
 
 new MutationObserver(enhance).observe(document.body, { childList: true, subtree: true });
