@@ -110,7 +110,12 @@ function summarizeSession(session) {
     const sets=(item.sets||[]).filter(set => set.completed || (Number(set.reps)>0 && set.weight !== null));
     if (sets.length) exerciseCount += 1;
     workingSets += sets.length;
-    sets.forEach(set => { volume += (Number(set.weight)||0)*(Number(set.reps)||0); });
+    sets.forEach(set => {
+      volume += (Number(set.weight)||0)*(Number(set.reps)||0);
+      (Array.isArray(set.dropSets) ? set.dropSets : []).forEach(drop => {
+        volume += (Number(drop.weight)||0)*(Number(drop.reps)||0);
+      });
+    });
   });
   return {workingSets,volume,exerciseCount};
 }
