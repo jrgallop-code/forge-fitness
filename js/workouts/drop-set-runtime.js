@@ -60,6 +60,20 @@ function closeMenus(except = null) {
     });
 }
 
+function keepViewportStable(anchor, mutate) {
+    const beforeTop = anchor?.getBoundingClientRect().top;
+    mutate();
+    if (!anchor || !Number.isFinite(beforeTop)) return;
+    const correctPosition = () => {
+        const delta = anchor.getBoundingClientRect().top - beforeTop;
+        if (Math.abs(delta) > .5) window.scrollBy(0, delta);
+    };
+    requestAnimationFrame(() => {
+        correctPosition();
+        requestAnimationFrame(correctPosition);
+    });
+}
+
 function renderBlock(row) {
     const { set } = getContext(row);
     const block = row.parentElement?.querySelector(`.drop-set-block[data-parent-set="${row.dataset.setIndex}"]`);
@@ -78,7 +92,7 @@ function renderBlock(row) {
     protectDropInputs(block);
 }
 
-function addDrop(row) {
+function addDrop(row, menuToClose = null) {
     const { active, set } = getContext(row);
     if (!active || !set) return;
     const drops = ensureDropSets(set);
@@ -86,8 +100,11 @@ function addDrop(row) {
     const prior = drops.at(-1) || set;
     drops.push({ weight: null, suggestedWeight: suggestedWeight(prior), reps: null, completed: false });
     persistDropSets(row, active, set);
-    renderBlock(row);
-    row.classList.add("has-drop-set");
+    keepViewportStable(row, () => {
+        if (menuToClose) menuToClose.hidden = true;
+        renderBlock(row);
+        row.classList.add("has-drop-set");
+    });
 }
 
 function enhanceRow(row) {
@@ -143,8 +160,10 @@ document.addEventListener("click", event => {
         const menu = menuForRow(row);
         if (!menu) return;
         const opening = menu.hidden;
-        closeMenus(menu);
-        menu.hidden = !opening;
+        keepViewportStable(row, () => {
+            closeMenus(menu);
+            menu.hidden = !opening;
+        });
         return;
     }
 
@@ -152,8 +171,7 @@ document.addEventListener("click", event => {
     if (add) {
         const menu = add.closest(".drop-set-menu");
         const row = rowForDropControl(menu);
-        if (row?.matches(".session-set-row")) addDrop(row);
-        menu.hidden = true;
+        if (row?.matches(".session-set-row")) addDrop(row, menu);
         return;
     }
 
@@ -173,11 +191,19 @@ document.addEventListener("click", event => {
             return;
         }
         if (!remove && !complete) return;
+        if (complete && Number.isInteger(dropIndex)) {
+            drops[dropIndex].completed = !drops[dropIndex].completed;
+            persistDropSets(row, active, set);
+            dropRow.classList.toggle("completed", drops[dropIndex].completed);
+            complete.textContent = drops[dropIndex].completed ? "✓" : "";
+            return;
+        }
         if (remove && Number.isInteger(dropIndex)) drops.splice(dropIndex, 1);
-        if (complete && Number.isInteger(dropIndex)) drops[dropIndex].completed = !drops[dropIndex].completed;
         persistDropSets(row, active, set);
-        row.classList.toggle("has-drop-set", drops.length > 0);
-        renderBlock(row);
+        keepViewportStable(row, () => {
+            row.classList.toggle("has-drop-set", drops.length > 0);
+            renderBlock(row);
+        });
         return;
     }
 
