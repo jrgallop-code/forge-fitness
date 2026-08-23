@@ -15,6 +15,17 @@ function saveActive(active) {
     localStorage.setItem(ACTIVE_KEY, JSON.stringify(active));
 }
 
+function persistDropSets(row, active, set) {
+    saveActive(active);
+    row.closest("#workout-session-logger")?.dispatchEvent(new CustomEvent("levelup:drop-sets-changed", {
+        detail: {
+            exerciseIndex: Number(row.closest(".session-exercise-card")?.dataset.exerciseIndex),
+            setIndex: Number(row.dataset.setIndex),
+            dropSets: ensureDropSets(set).map(drop => ({ ...drop }))
+        }
+    }));
+}
+
 function getContext(row) {
     const card = row.closest(".session-exercise-card");
     const exerciseIndex = Number(card?.dataset.exerciseIndex);
@@ -74,7 +85,7 @@ function addDrop(row) {
     if (drops.length >= MAX_DROPS) return;
     const prior = drops.at(-1) || set;
     drops.push({ weight: null, suggestedWeight: suggestedWeight(prior), reps: null, completed: false });
-    saveActive(active);
+    persistDropSets(row, active, set);
     renderBlock(row);
     row.classList.add("has-drop-set");
 }
@@ -164,7 +175,7 @@ document.addEventListener("click", event => {
         if (!remove && !complete) return;
         if (remove && Number.isInteger(dropIndex)) drops.splice(dropIndex, 1);
         if (complete && Number.isInteger(dropIndex)) drops[dropIndex].completed = !drops[dropIndex].completed;
-        saveActive(active);
+        persistDropSets(row, active, set);
         row.classList.toggle("has-drop-set", drops.length > 0);
         renderBlock(row);
         return;
@@ -185,7 +196,7 @@ document.addEventListener("input", event => {
     const drop = ensureDropSets(set)[Number(dropRow.dataset.dropIndex)];
     if (!drop) return;
     drop[input.matches(".drop-set-weight") ? "weight" : "reps"] = input.value === "" ? null : Number(input.value);
-    saveActive(active);
+    persistDropSets(row, active, set);
 });
 
 new MutationObserver(enhance).observe(document.body, { childList: true, subtree: true });
