@@ -2,6 +2,7 @@ import { presetPlans } from "./workout-plans.js?v=workout-plans-2";
 import { presetPlans as detailPresetPlans } from "./workout-plans.js";
 import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-plans-2-women-heroes";
 import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybuilder-library-3";
+import { celebrityExpansionPlans } from "./celebrity-expansion-plans.js?v=celebrity-expansion-1";
 
 function addCelebrityPlans(plans) {
     const existingPlanIds = new Set(plans.map(plan => plan.id));
@@ -14,10 +15,19 @@ addCelebrityPlans(presetPlans);
 addCelebrityPlans(detailPresetPlans);
 addBodybuilderPlans(presetPlans);
 addBodybuilderPlans(detailPresetPlans);
+addExpansionPlans(presetPlans);
+addExpansionPlans(detailPresetPlans);
 
 function addBodybuilderPlans(plans) {
     const existingPlanIds = new Set(plans.map(plan => plan.id));
     bodybuilderWorkoutPlans.forEach(plan => {
+        if (!existingPlanIds.has(plan.id)) plans.push(plan);
+    });
+}
+
+function addExpansionPlans(plans) {
+    const existingPlanIds = new Set(plans.map(plan => plan.id));
+    celebrityExpansionPlans.forEach(plan => {
         if (!existingPlanIds.has(plan.id)) plans.push(plan);
     });
 }
@@ -48,6 +58,14 @@ export function initializeWorkoutCatalogue(root = document) {
         catalogue?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
 
+    page.querySelector("[data-celebrity-catalogue-open]")?.addEventListener("click", () => {
+        const details = page.querySelector(".workout-catalogue-details");
+        if (details) details.open = true;
+        if (typeFilter) typeFilter.value = "movie";
+        applyFilters();
+        catalogue?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
     celebrityWorkoutPlans.forEach(plan => {
         const card = page.querySelector(`.catalogue-plan-card[data-plan-id="${plan.id}"]`);
         if (!card) return;
@@ -59,6 +77,13 @@ export function initializeWorkoutCatalogue(root = document) {
         const card = page.querySelector(`.catalogue-plan-card[data-plan-id="${plan.id}"]`);
         if (!card) return;
         card.dataset.type = `${card.dataset.type || ""} bodybuilding`.trim();
+        const label = card.querySelector(".plan-type-label");
+        if (label) label.textContent = plan.sourceLabel;
+    });
+    celebrityExpansionPlans.forEach(plan => {
+        const card = page.querySelector(`.catalogue-plan-card[data-plan-id="${plan.id}"]`);
+        if (!card) return;
+        card.dataset.type = `${card.dataset.type || ""} ${plan.catalogueCategory}`.trim();
         const label = card.querySelector(".plan-type-label");
         if (label) label.textContent = plan.sourceLabel;
     });
