@@ -28,6 +28,7 @@
 .drop-set-menu { margin: -2px 42px 5px 34px; padding: 5px; border: 1px solid #383840; border-radius: 9px; background: #111115; box-shadow: 0 10px 25px rgba(0,0,0,.4); }
 .drop-set-menu[hidden] { display: none; }
 .drop-set-menu button { width: 100%; padding: 8px; border: 0; border-radius: 7px; background: #24242b; color: #f4f4f5; font-size: 12px; font-weight: 800; }
+.drop-set-menu,.drop-set-block { overflow-anchor: none; }
 .drop-set-block { margin: 0 0 6px 34px; padding: 5px 6px 7px; border-left: 2px solid rgba(239,24,33,.58); background: rgba(239,24,33,.035); }
 .drop-set-block[hidden] { display: none; }
 .drop-set-row { display: grid; grid-template-columns: minmax(58px,1fr) minmax(64px,82px) minmax(52px,66px) 34px 25px; gap: 5px; align-items: center; padding: 4px 0; }
