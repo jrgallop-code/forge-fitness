@@ -1,6 +1,7 @@
 import { presetPlans } from "./workout-plans.js?v=workout-plans-2";
 import { presetPlans as detailPresetPlans } from "./workout-plans.js";
 import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-plans-2-women-heroes";
+import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybuilder-library-1";
 
 function addCelebrityPlans(plans) {
     const existingPlanIds = new Set(plans.map(plan => plan.id));
@@ -11,8 +12,18 @@ function addCelebrityPlans(plans) {
 
 addCelebrityPlans(presetPlans);
 addCelebrityPlans(detailPresetPlans);
+addBodybuilderPlans(presetPlans);
+addBodybuilderPlans(detailPresetPlans);
+
+function addBodybuilderPlans(plans) {
+    const existingPlanIds = new Set(plans.map(plan => plan.id));
+    bodybuilderWorkoutPlans.forEach(plan => {
+        if (!existingPlanIds.has(plan.id)) plans.push(plan);
+    });
+}
 
 export function initializeWorkoutCatalogue(root = document) {
+    ensureBodybuilderStyles();
     const page = root.querySelector?.(".workout-page") || document.querySelector(".workout-page");
     if (!page) return;
 
@@ -26,11 +37,21 @@ export function initializeWorkoutCatalogue(root = document) {
     if (typeFilter && !typeFilter.querySelector('option[value="movie"]')) {
         typeFilter.insertAdjacentHTML("beforeend", '<option value="movie">Movie & Celebrity Inspired</option>');
     }
+    if (typeFilter && !typeFilter.querySelector('option[value="bodybuilding"]')) {
+        typeFilter.insertAdjacentHTML("beforeend", '<option value="bodybuilding">Bodybuilder Routines</option>');
+    }
 
     celebrityWorkoutPlans.forEach(plan => {
         const card = page.querySelector(`.catalogue-plan-card[data-plan-id="${plan.id}"]`);
         if (!card) return;
         card.dataset.type = `${card.dataset.type || ""} movie`.trim();
+        const label = card.querySelector(".plan-type-label");
+        if (label) label.textContent = plan.sourceLabel;
+    });
+    bodybuilderWorkoutPlans.forEach(plan => {
+        const card = page.querySelector(`.catalogue-plan-card[data-plan-id="${plan.id}"]`);
+        if (!card) return;
+        card.dataset.type = `${card.dataset.type || ""} bodybuilding`.trim();
         const label = card.querySelector(".plan-type-label");
         if (label) label.textContent = plan.sourceLabel;
     });
@@ -104,4 +125,13 @@ export function initializeWorkoutCatalogue(root = document) {
     }
 
     applyFilters();
+}
+
+function ensureBodybuilderStyles() {
+    if (document.querySelector('link[data-bodybuilder-finisher-styles]')) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "css/bodybuilder-finishers.css?v=bodybuilder-library-1";
+    link.dataset.bodybuilderFinisherStyles = "1";
+    document.head.appendChild(link);
 }
