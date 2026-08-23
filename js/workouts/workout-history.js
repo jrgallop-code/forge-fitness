@@ -110,7 +110,12 @@ function hasRecordedExerciseData(exercise) {
 function calculateVolume(session) {
     return (session.exercises || []).flatMap(exercise => exercise.sets || []).reduce((sum, set) => {
         const weight = Number(set.weight); const reps = Number(set.reps);
-        return Number.isFinite(weight) && weight > 0 && Number.isFinite(reps) && reps > 0 ? sum + weight * reps : sum;
+        const workingVolume = Number.isFinite(weight) && weight > 0 && Number.isFinite(reps) && reps > 0 ? weight * reps : 0;
+        const dropVolume = (Array.isArray(set.dropSets) ? set.dropSets : []).reduce((dropSum, drop) => {
+            const dropWeight = Number(drop.weight), dropReps = Number(drop.reps);
+            return Number.isFinite(dropWeight) && dropWeight > 0 && Number.isFinite(dropReps) && dropReps > 0 ? dropSum + dropWeight * dropReps : dropSum;
+        }, 0);
+        return sum + workingVolume + dropVolume;
     }, 0);
 }
 
