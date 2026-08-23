@@ -100,7 +100,7 @@ function ensureGlobalStyle() {
     #${BANNER_ID} {
       top: calc(env(safe-area-inset-top) + 8px) !important;
       bottom: auto !important;
-      z-index: 5000 !important;
+      z-index: 9500 !important;
       touch-action: manipulation;
     }
     @media (max-width: 390px) {
