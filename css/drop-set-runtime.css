@@ -1,0 +1,29 @@
+.drop-set-menu-trigger {
+    display: grid;
+    place-items: center;
+    width: 29px;
+    height: 29px;
+    margin: 0 auto;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 50%;
+    background: #17171c;
+    color: #f1f1f3;
+    font-size: 11px;
+    font-weight: 900;
+}
+.session-set-row.has-drop-set .drop-set-menu-trigger { border-color: rgba(239,24,33,.65); }
+.drop-set-menu { margin: -2px 42px 5px 34px; padding: 5px; border: 1px solid #383840; border-radius: 9px; background: #111115; box-shadow: 0 10px 25px rgba(0,0,0,.4); }
+.drop-set-menu[hidden] { display: none; }
+.drop-set-menu button { width: 100%; padding: 8px; border: 0; border-radius: 7px; background: #24242b; color: #f4f4f5; font-size: 12px; font-weight: 800; }
+.drop-set-block { margin: 0 0 6px 34px; padding: 5px 6px 7px; border-left: 2px solid rgba(239,24,33,.58); background: rgba(239,24,33,.035); }
+.drop-set-block[hidden] { display: none; }
+.drop-set-row { display: grid; grid-template-columns: minmax(58px,1fr) minmax(64px,82px) minmax(52px,66px) 34px 25px; gap: 5px; align-items: center; padding: 4px 0; }
+.drop-set-label { color: #c8c8ce; font-size: 10px; font-weight: 800; white-space: nowrap; }
+.drop-set-row input { width: 100%; min-width: 0; height: 35px; box-sizing: border-box; padding: 4px; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; background: #1b1b21; color: #fff; text-align: center; font-size: 13px; }
+.drop-set-complete,.drop-set-remove { display: grid; place-items: center; height: 34px; padding: 0; border-radius: 8px; background: #17171c; color: #ddd; }
+.drop-set-complete { border: 1px solid rgba(255,255,255,.13); }
+.drop-set-row.completed .drop-set-complete { border-color: rgba(46,204,113,.5); background: rgba(46,204,113,.12); color: #69d98f; }
+.drop-set-remove { border: 0; background: transparent; color: #999; font-size: 18px; }
+.drop-set-add-another { width: 100%; margin-top: 3px; padding: 6px; border: 0; background: transparent; color: #c8c8ce; font-size: 11px; font-weight: 800; }
+@media(max-width:380px){.drop-set-block{margin-left:32px}.drop-set-row{grid-template-columns:minmax(52px,1fr) minmax(58px,72px) minmax(48px,58px) 32px 23px;gap:4px}.drop-set-label{font-size:9px}}
