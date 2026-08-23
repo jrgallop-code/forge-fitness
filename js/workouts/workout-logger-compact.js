@@ -108,89 +108,8 @@ function applyExerciseTimerToCore(logger, exerciseId) {
   return setting;
 }
 
-function getRepRangeUpperBound(repTarget) {
-  const values = String(repTarget || '')
-    .match(/\d+(?:\.\d+)?/g)
-    ?.map(Number)
-    .filter(Number.isFinite) || [];
-  return values.length ? Math.max(...values) : null;
-}
-
-function getRecommendedLoadRange(weight, exerciseId) {
-  const current = Number(weight);
-  if (!Number.isFinite(current) || current <= 0) return null;
-
-  const equipment = String(getExerciseById(exerciseId)?.equipment || '').toLowerCase();
-  const minimumIncrease = equipment.includes('cable') ? 2.5 : 5;
-  const thresholdIncrease = Math.floor((current * 0.11 + 1e-9) / minimumIncrease) * minimumIncrease;
-  const maximumIncrease = Math.max(minimumIncrease, thresholdIncrease);
-
-  return {
-    minimumIncrease,
-    maximumIncrease,
-    minimumLoad: Number((current + minimumIncrease).toFixed(1)),
-    maximumLoad: Number((current + maximumIncrease).toFixed(1))
-  };
-}
-
 function formatLoad(value) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
-
-function updateProgressionPrompt(card, exerciseIndex) {
-  const prompt = card.querySelector('.progression-prompt');
-  if (!prompt) return;
-
-  const active = getActive();
-  const planned = active?.planSnapshot?.days?.[active.trainingDayIndex]?.exercises?.[exerciseIndex];
-  const state = active?.exercises?.[exerciseIndex];
-  const upperBound = getRepRangeUpperBound(planned?.reps);
-
-  if (!active || !state || !upperBound || !Array.isArray(state.sets)) {
-    prompt.hidden = true;
-    return;
-  }
-
-  const qualifyingSets = state.sets.filter(set =>
-    set?.completed &&
-    Number(set.reps) >= upperBound &&
-    Number(set.weight) > 0
-  );
-
-  if (!qualifyingSets.length) {
-    prompt.hidden = true;
-    return;
-  }
-
-  const qualifying = qualifyingSets.reduce((best, set) =>
-    Number(set.weight) > Number(best.weight) ? set : best
-  );
-  const currentWeight = Number(qualifying.weight);
-  const range = getRecommendedLoadRange(currentWeight, planned?.id);
-
-  if (!range) {
-    prompt.hidden = true;
-    return;
-  }
-
-  const completedCount = state.sets.filter(set => set?.completed).length;
-  const plannedCount = state.sets.length;
-  const increaseRange = range.minimumIncrease === range.maximumIncrease
-    ? `${formatLoad(range.minimumIncrease)} lb`
-    : `${formatLoad(range.minimumIncrease)}–${formatLoad(range.maximumIncrease)} lb`;
-  const loadRange = range.minimumLoad === range.maximumLoad
-    ? `${formatLoad(range.minimumLoad)} lb`
-    : `${formatLoad(range.minimumLoad)}–${formatLoad(range.maximumLoad)} lb`;
-
-  prompt.innerHTML = `
-    <span class="progression-arrow">↑</span>
-    <div>
-      <strong>Increase weight next session</strong>
-      <p>You reached ${upperBound} reps at ${formatLoad(currentWeight)} lb${completedCount < plannedCount ? ` with ${completedCount} of ${plannedCount} sets completed` : ''}. Recommended increase: <b>${increaseRange}</b>. Suggested load: <b>${loadRange}</b>.</p>
-      <small>Start at the lower end of the range to see how it feels. The upper end is the largest practical equipment increment within 11%.</small>
-    </div>
-  `;
-  prompt.hidden = false;
 }
 
 function getSavedWorkoutSessions() {
@@ -677,11 +596,13 @@ function enhanceLogger(logger) {
     target?.classList.add('compact-target');
     card.querySelector('.previous-performance')?.remove();
 
-    const progressionPrompt = document.createElement('div');
+    const progressionPrompt = card.querySelector('.progression-prompt') || document.createElement('div');
     progressionPrompt.className = 'progression-prompt';
-    progressionPrompt.hidden = true;
-    if (target) target.insertAdjacentElement('afterend', progressionPrompt);
-    else header.insertAdjacentElement('afterend', progressionPrompt);
+    if (!progressionPrompt.isConnected) {
+      progressionPrompt.hidden = true;
+      if (target) target.insertAdjacentElement('afterend', progressionPrompt);
+      else header.insertAdjacentElement('afterend', progressionPrompt);
+    }
 
     const setHeader = card.querySelector('.session-set-header');
     if (setHeader) {
@@ -712,7 +633,6 @@ function enhanceLogger(logger) {
               saveActive(active);
             }
             updateInlineTimers();
-            updateProgressionPrompt(card, exerciseIndex);
           }, 0);
         });
       }
@@ -742,8 +662,6 @@ function enhanceLogger(logger) {
         openActiveWorkout();
       });
     }
-
-    updateProgressionPrompt(card, exerciseIndex);
   });
 
   if (initialEnhancement) {
