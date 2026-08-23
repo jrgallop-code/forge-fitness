@@ -1,7 +1,7 @@
 import { navigate } from "../core/router.js?v=router-workout-flow-5";
 import { exercises } from "./exercise-library.js?v=exercise-library-cardio-3";
 import { calculatePrCounts } from "./workout-pr-badges.js?v=workout-pr-badges-2";
-import { deleteCompletedWorkout, discardActiveWorkout, getActiveWorkout, getWorkoutSessions, openActiveWorkout, openCompletedWorkoutForEdit } from "./workout-session.js?v=drop-sets-6";
+import { deleteCompletedWorkout, discardActiveWorkout, getActiveWorkout, getWorkoutSessions, openActiveWorkout, openCompletedWorkoutForEdit } from "./workout-session.js?v=drop-sets-8";
 
 export function renderWorkoutHistory() {
     const active = getActiveWorkout();
