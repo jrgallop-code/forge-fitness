@@ -70,9 +70,13 @@ document.addEventListener("click", event => {
         return;
     }
     if (event.target.closest?.("[data-install-reminder-save]")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
         hiddenForSession = true;
         removeBanner();
-        window.dispatchEvent(new CustomEvent("levelup:open-install-guide"));
+        window.setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("levelup:open-install-guide"));
+        }, 0);
     }
 });
 
