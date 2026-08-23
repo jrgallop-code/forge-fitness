@@ -93,6 +93,8 @@ function openInstallGuide() {
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+window.addEventListener("levelup:open-install-guide", openInstallGuide);
+
 function enhanceMoreMenu() {
     ensureStyles();
     const grid = document.querySelector("#content .more-menu-grid");
