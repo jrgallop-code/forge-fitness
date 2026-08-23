@@ -379,11 +379,12 @@ function renderDay(day, index) {
                             ${exerciseThumbnail(exercise?.id)}
                         </span>
                         <span class="plan-detail-exercise-copy">
-                            <span class="plan-detail-exercise-name">${escapeHtml(exerciseName(exercise?.id))}${hasGuide ? '<span class="exercise-guide-label">Form guide</span>' : ""}</span>
+                            <span class="plan-detail-exercise-name">${escapeHtml(exerciseName(exercise?.id))}${hasGuide ? '<span class="exercise-guide-label">Form guide</span>' : ""}${exercise?.finisher ? '<span class="plan-finisher-badge">Finisher</span>' : ""}</span>
                             <span class="plan-detail-exercise-target">
                                 ${Number(exercise?.sets) || 0} sets
                                 ${exercise?.reps ? ` × ${escapeHtml(exercise.reps)} reps` : ""}
                             </span>
+                            ${exercise?.finisher ? `<small class="plan-finisher-note">${escapeHtml(exercise.finisher)}</small>` : ""}
                         </span>
                     </${tag}>
                 `;
@@ -437,6 +438,7 @@ function showPlanDetails({ plan, type, card }) {
             <span class="eyebrow">${type === "template" ? "LEVEL UP TEMPLATE" : "WORKOUT PLAN"}</span>
             <h2>${escapeHtml(plan?.name || "Workout Plan")}</h2>
             ${plan?.description ? `<p>${escapeHtml(plan.description)}</p>` : ""}
+            ${plan?.sourceUrl ? `<a class="plan-source-link" href="${escapeHtml(plan.sourceUrl)}" target="_blank" rel="noopener noreferrer">View documented training source ↗</a>` : ""}
         </div>
 
         <div class="plan-detail-stats">
