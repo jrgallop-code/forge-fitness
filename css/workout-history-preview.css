@@ -12,3 +12,21 @@
 .workout-preview-drop-list small { color: #aaaab2; font-size: 10px; font-weight: 750; }
 .workout-preview-drop-list b { color: #dedee3; font-size: 11px; font-weight: 800; }
 .previous-drop-values { display: block; margin-top: 2px; color: #8f8f98; font-size: 8px; line-height: 1.25; white-space: normal; }
+
+body.workout-history-preview-open { overflow: hidden !important; touch-action: none; }
+.workout-history-preview-backdrop {
+    z-index: 22000;
+    box-sizing: border-box;
+    padding: max(10px, env(safe-area-inset-top)) 14px max(10px, env(safe-area-inset-bottom));
+    overflow: hidden;
+}
+.workout-history-preview-sheet {
+    max-height: calc(100dvh - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom)));
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    padding-bottom: calc(28px + env(safe-area-inset-bottom));
+}
