@@ -35,6 +35,14 @@ function ensureDropSets(set) {
     return set.dropSets;
 }
 
+function protectDropInputs(block) {
+    block.querySelectorAll(".drop-set-weight, .drop-set-reps").forEach(input => {
+        ["pointerdown", "pointerup", "touchstart", "touchend", "click"].forEach(type => {
+            input.addEventListener(type, event => event.stopPropagation());
+        });
+    });
+}
+
 function closeMenus(except = null) {
     document.querySelectorAll(".drop-set-menu").forEach(menu => {
         if (menu !== except) menu.hidden = true;
@@ -56,6 +64,7 @@ function renderBlock(row) {
             <button class="drop-set-remove" type="button" aria-label="Remove drop ${index + 1}">×</button>
         </div>
     `).join("") + (drops.length < MAX_DROPS ? '<button class="drop-set-add-another" type="button">+ Another drop</button>' : "");
+    protectDropInputs(block);
 }
 
 function addDrop(row) {
