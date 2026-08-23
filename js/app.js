@@ -1,4 +1,4 @@
-import { navigate } from "./core/router.js?v=bodybuilder-library-1";
+import { navigate } from "./core/router.js?v=bodybuilder-library-2";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=beta-account-4";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=bodybuilder-library-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";

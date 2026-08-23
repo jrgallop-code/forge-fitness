@@ -41,6 +41,14 @@ export function initializeWorkoutCatalogue(root = document) {
         typeFilter.insertAdjacentHTML("beforeend", '<option value="bodybuilding">Bodybuilder Routines</option>');
     }
 
+    page.querySelector("[data-bodybuilder-catalogue-open]")?.addEventListener("click", () => {
+        const details = page.querySelector(".workout-catalogue-details");
+        if (details) details.open = true;
+        if (typeFilter) typeFilter.value = "bodybuilding";
+        applyFilters();
+        catalogue?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
     celebrityWorkoutPlans.forEach(plan => {
         const card = page.querySelector(`.catalogue-plan-card[data-plan-id="${plan.id}"]`);
         if (!card) return;
