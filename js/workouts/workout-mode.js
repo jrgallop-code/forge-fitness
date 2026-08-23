@@ -41,16 +41,8 @@ function ensureWorkoutMode() {
   mode.hidden = true;
   mode.setAttribute('aria-label', 'Workout logger');
   mode.innerHTML = `
-    <div class="levelup-workout-mode-bar">
-      <button class="levelup-workout-mode-back" type="button" aria-label="Back to Workout tab">
-        <span aria-hidden="true">‹</span> Workout
-      </button>
-      <div class="levelup-workout-mode-title">Workout Mode</div>
-    </div>
     <div id="levelup-workout-mode-content" class="workout-page levelup-workout-mode-page"></div>
   `;
-
-  mode.querySelector('.levelup-workout-mode-back')?.addEventListener('click', handleWorkoutModeBack);
   document.body.appendChild(mode);
   return mode;
 }
@@ -105,6 +97,13 @@ document.addEventListener('keydown', event => {
     handleWorkoutModeBack();
   }
 });
+
+document.addEventListener('click', event => {
+  const navButton = event.target.closest?.('.bottom-nav .nav-btn');
+  if (!navButton || navButton.dataset.page === 'workout') return;
+  const mode = document.getElementById('levelup-workout-mode');
+  if (mode && !mode.hidden) closeWorkoutMode();
+}, true);
 
 ensureWorkoutModeStyles();
 syncWorkoutMode();
