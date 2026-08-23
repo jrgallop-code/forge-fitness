@@ -86,10 +86,6 @@ export function renderWorkoutBuilder() {
 
                     </div>
 
-                    <button class="workout-text-action" type="button" data-workout-view-all hidden>
-                        View All Workouts
-                    </button>
-
                 </section>
 
                 <!-- NATIVE EXPANDABLE CATALOGUE -->
