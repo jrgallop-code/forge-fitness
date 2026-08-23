@@ -611,6 +611,7 @@ function renderSessionExercises({
                                 <input class="session-reps" type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ""}" placeholder="${previousSet?.reps ?? "Reps"}" aria-label="Set ${setIndex + 1} reps">
                                 <button class="complete-set-btn secondary-btn" type="button">${set.completed ? "✓ Completed" : "Complete Set"}</button>
                             </div>
+                            ${editingSessionId ? `<div class="drop-set-block history-edit-drop-block" data-parent-set="${setIndex}"></div>` : ""}
                         `;
                     }).join("")}
                     ${editingSessionId ? `
@@ -1040,6 +1041,47 @@ function bindSessionInputs({
                                 }
                             }
                         );
+
+                    if (editingSessionId) {
+                        const dropBlock = card.querySelector(`.history-edit-drop-block[data-parent-set="${setIndex}"]`);
+                        const renderEditDrops = () => {
+                            if (!dropBlock) return;
+                            if (!Array.isArray(set.dropSets)) set.dropSets = [];
+                            dropBlock.innerHTML = set.dropSets.map((drop, dropIndex) => `
+                                <div class="drop-set-row ${drop.completed ? "completed" : ""}" data-drop-index="${dropIndex}">
+                                    <span class="drop-set-label">↳ Drop ${dropIndex + 1}</span>
+                                    <input class="history-drop-weight" type="number" inputmode="decimal" min="0" step="0.5" value="${drop.weight ?? ""}" placeholder="Weight" aria-label="Drop ${dropIndex + 1} weight">
+                                    <input class="history-drop-reps" type="number" inputmode="numeric" min="0" step="1" value="${drop.reps ?? ""}" placeholder="Reps" aria-label="Drop ${dropIndex + 1} reps">
+                                    <button class="drop-set-complete" type="button" aria-label="Complete drop ${dropIndex + 1}">${drop.completed ? "✓" : ""}</button>
+                                    <button class="drop-set-remove" type="button" aria-label="Remove drop ${dropIndex + 1}">×</button>
+                                </div>
+                            `).join("") + (set.dropSets.length < 3 ? '<button class="drop-set-add-another" type="button">+ Add Drop Set</button>' : "");
+
+                            dropBlock.querySelectorAll(".drop-set-row").forEach(dropRow => {
+                                const dropIndex = Number(dropRow.dataset.dropIndex);
+                                const drop = set.dropSets[dropIndex];
+                                dropRow.querySelector(".history-drop-weight")?.addEventListener("input", event => {
+                                    drop.weight = event.target.value === "" ? null : Number(event.target.value);
+                                });
+                                dropRow.querySelector(".history-drop-reps")?.addEventListener("input", event => {
+                                    drop.reps = event.target.value === "" ? null : Number(event.target.value);
+                                });
+                                dropRow.querySelector(".drop-set-complete")?.addEventListener("click", () => {
+                                    drop.completed = !drop.completed;
+                                    renderEditDrops();
+                                });
+                                dropRow.querySelector(".drop-set-remove")?.addEventListener("click", () => {
+                                    set.dropSets.splice(dropIndex, 1);
+                                    renderEditDrops();
+                                });
+                            });
+                            dropBlock.querySelector(".drop-set-add-another")?.addEventListener("click", () => {
+                                set.dropSets.push({ weight: null, reps: null, completed: false });
+                                renderEditDrops();
+                            });
+                        };
+                        renderEditDrops();
+                    }
                 });
         });
 
