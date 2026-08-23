@@ -146,12 +146,15 @@ document.addEventListener("click", event => {
         const drops = ensureDropSets(set);
         const dropRow = event.target.closest(".drop-set-row");
         const dropIndex = Number(dropRow?.dataset.dropIndex);
-        if (event.target.closest(".drop-set-remove") && Number.isInteger(dropIndex)) drops.splice(dropIndex, 1);
-        if (event.target.closest(".drop-set-complete") && Number.isInteger(dropIndex)) drops[dropIndex].completed = !drops[dropIndex].completed;
+        const remove = event.target.closest(".drop-set-remove");
+        const complete = event.target.closest(".drop-set-complete");
         if (event.target.closest(".drop-set-add-another")) {
             addDrop(row);
             return;
         }
+        if (!remove && !complete) return;
+        if (remove && Number.isInteger(dropIndex)) drops.splice(dropIndex, 1);
+        if (complete && Number.isInteger(dropIndex)) drops[dropIndex].completed = !drops[dropIndex].completed;
         saveActive(active);
         row.classList.toggle("has-drop-set", drops.length > 0);
         renderBlock(row);
@@ -169,8 +172,9 @@ document.addEventListener("input", event => {
     const row = rowForDropControl(block);
     if (!row?.matches(".session-set-row")) return;
     const { active, set } = getContext(row);
+    if (!active || !set || !dropRow) return;
     const drop = ensureDropSets(set)[Number(dropRow.dataset.dropIndex)];
-    if (!active || !drop) return;
+    if (!drop) return;
     drop[input.matches(".drop-set-weight") ? "weight" : "reps"] = input.value === "" ? null : Number(input.value);
     saveActive(active);
 });
