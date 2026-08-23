@@ -1,5 +1,5 @@
 const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-2";
-const BACK_ASSET = "assets/recovery/back-view.svg?v=recovery-back-vector-1";
+const BACK_ASSET = "assets/recovery/back-view.svg?v=recovery-back-vector-2";
 const TARGET_FILL = "#ff315f";
 
 const CORE_ALL = [
@@ -12,6 +12,7 @@ const CORE_ALL = [
 ];
 
 const BACK_ALL = [
+    "muscle_back_003", "muscle_back_004",
     "muscle_back_012", "muscle_back_013", "muscle_back_020", "muscle_back_021",
     "muscle_back_022", "muscle_back_023", "muscle_back_028", "muscle_back_029",
     "muscle_back_050", "muscle_back_051", "muscle_back_074", "muscle_back_075"
@@ -22,7 +23,7 @@ const CROP_VIEWBOXES = {
     "front-arms": "180 500 600 750",
     "front-torso": "320 500 320 400",
     "front-thighs": "305 850 350 438",
-    "back-upper": "1200 330 480 600",
+    "back-upper": "1200 280 480 650",
     "back-mid": "1236 430 400 500",
     "back-hips": "1256 760 360 450",
     "back-thighs": "1260 930 350 438",
@@ -84,6 +85,7 @@ const FORM_GUIDE_MUSCLES = {
     "Upper Back": {
         view: "back",
         ids: [
+            "muscle_back_003", "muscle_back_004",
             "muscle_back_012", "muscle_back_013", "muscle_back_020",
             "muscle_back_021", "muscle_back_022", "muscle_back_023"
         ],

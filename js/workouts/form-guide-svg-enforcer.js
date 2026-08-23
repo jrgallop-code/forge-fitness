@@ -1,7 +1,7 @@
 import {
     getFormGuideMuscleVisual,
     renderFormGuideMuscleSvg
-} from "./form-guide-anatomy.js?v=form-guide-anatomy-2";
+} from "./form-guide-anatomy.js?v=form-guide-anatomy-3";
 
 const STYLE_ID = "form-guide-direct-recovery-svg-styles";
 
