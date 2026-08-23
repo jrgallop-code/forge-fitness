@@ -86,11 +86,21 @@ export function renderWorkoutBuilder() {
                 <button class="preset-plan-card bodybuilder-library-launcher" type="button" data-bodybuilder-catalogue-open>
                     <div class="template-card-top">
                         <span class="plan-type-label">NEW LIBRARY</span>
-                        <span class="template-frequency">5 plans</span>
+                        <span class="template-frequency">25 plans</span>
                     </div>
                     <h4>Bodybuilder Routines</h4>
                     <p>Browse documented and inspired routines based on famous bodybuilding training styles.</p>
                     <div class="template-action">View Bodybuilder Plans →</div>
+                </button>
+
+                <button class="preset-plan-card bodybuilder-library-launcher" type="button" data-celebrity-catalogue-open>
+                    <div class="template-card-top">
+                        <span class="plan-type-label">EXPANDED LIBRARY</span>
+                        <span class="template-frequency">30 new plans</span>
+                    </div>
+                    <h4>Movie &amp; Celebrity Workouts</h4>
+                    <p>Explore practical programs based on memorable movie transformations and documented celebrity training.</p>
+                    <div class="template-action">View Celebrity Plans →</div>
                 </button>
 
                 <details class="workout-home-section workout-catalogue-details">
