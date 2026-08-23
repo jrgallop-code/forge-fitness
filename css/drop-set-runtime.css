@@ -32,7 +32,8 @@
 .drop-set-block[hidden] { display: none; }
 .drop-set-row { display: grid; grid-template-columns: minmax(58px,1fr) minmax(64px,82px) minmax(52px,66px) 34px 25px; gap: 5px; align-items: center; padding: 4px 0; }
 .drop-set-label { color: #c8c8ce; font-size: 10px; font-weight: 800; white-space: nowrap; }
-.drop-set-row input { width: 100%; min-width: 0; height: 35px; box-sizing: border-box; padding: 4px; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; background: #1b1b21; color: #fff; text-align: center; font-size: 13px; }
+.drop-set-row input { position: relative; z-index: 2; width: 100%; min-width: 0; height: 35px; box-sizing: border-box; padding: 4px; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; background: #1b1b21; color: #fff; text-align: center; font-size: 13px; pointer-events: auto; touch-action: manipulation; }
+.drop-set-row input:focus { outline: none; border-color: rgba(239,24,33,.72); box-shadow: 0 0 0 2px rgba(239,24,33,.12); }
 .drop-set-complete,.drop-set-remove { display: grid; place-items: center; height: 34px; padding: 0; border-radius: 8px; background: #17171c; color: #ddd; }
 .drop-set-complete { border: 1px solid rgba(255,255,255,.13); }
 .drop-set-row.completed .drop-set-complete { border-color: rgba(46,204,113,.5); background: rgba(46,204,113,.12); color: #69d98f; }
