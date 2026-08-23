@@ -66,7 +66,13 @@ function renderPreviewExercise(exercise) {
         return `<section class="workout-preview-exercise"><div class="workout-preview-exercise-heading"><div><h3>${escapeHtml(details.name)}</h3><p class="workout-preview-exercise-meta">${escapeHtml(formatExerciseMeta(details, true))}</p></div><span class="workout-preview-type-pill">Cardio</span></div><p class="workout-preview-cardio">${cardioDetails.map(escapeHtml).join(" • ") || "Recorded"}</p></section>`;
     }
     const sets = (exercise.sets || []).filter(set => set.completed || set.weight !== null || set.reps !== null).filter(set => Number.isFinite(Number(set.weight)) || Number.isFinite(Number(set.reps)));
-    return `<section class="workout-preview-exercise"><div class="workout-preview-exercise-heading"><div><h3>${escapeHtml(details.name)}</h3><p class="workout-preview-exercise-meta">${escapeHtml(formatExerciseMeta(details, false))}</p></div><span class="workout-preview-type-pill">${escapeHtml(capitalize(details.type || "Resistance"))}</span></div><div class="workout-preview-set-list">${sets.map((set, index) => `<div><span>${index + 1}</span><strong>${formatSet(set)}</strong></div>`).join("") || `<p>No completed sets</p>`}</div></section>`;
+    return `<section class="workout-preview-exercise"><div class="workout-preview-exercise-heading"><div><h3>${escapeHtml(details.name)}</h3><p class="workout-preview-exercise-meta">${escapeHtml(formatExerciseMeta(details, false))}</p></div><span class="workout-preview-type-pill">${escapeHtml(capitalize(details.type || "Resistance"))}</span></div><div class="workout-preview-set-list">${sets.map((set, index) => renderPreviewSet(set, index)).join("") || `<p>No completed sets</p>`}</div></section>`;
+}
+
+function renderPreviewSet(set, index) {
+    const drops = (Array.isArray(set.dropSets) ? set.dropSets : [])
+        .filter(drop => drop.weight !== null || drop.reps !== null);
+    return `<div class="workout-preview-parent-set"><span>${index + 1}</span><strong>${formatSet(set)}</strong>${drops.length ? `<div class="workout-preview-drop-list">${drops.map((drop, dropIndex) => `<small>↳ Drop ${dropIndex + 1}</small><b>${formatSet(drop)}</b>`).join("")}</div>` : ""}</div>`;
 }
 
 function resolveExerciseDetails(exercise) {
@@ -110,7 +116,12 @@ function hasRecordedExerciseData(exercise) {
 function calculateVolume(session) {
     return (session.exercises || []).flatMap(exercise => exercise.sets || []).reduce((sum, set) => {
         const weight = Number(set.weight); const reps = Number(set.reps);
-        return Number.isFinite(weight) && weight > 0 && Number.isFinite(reps) && reps > 0 ? sum + weight * reps : sum;
+        const workingVolume = Number.isFinite(weight) && weight > 0 && Number.isFinite(reps) && reps > 0 ? weight * reps : 0;
+        const dropVolume = (Array.isArray(set.dropSets) ? set.dropSets : []).reduce((dropSum, drop) => {
+            const dropWeight = Number(drop.weight), dropReps = Number(drop.reps);
+            return Number.isFinite(dropWeight) && dropWeight > 0 && Number.isFinite(dropReps) && dropReps > 0 ? dropSum + dropWeight * dropReps : dropSum;
+        }, 0);
+        return sum + workingVolume + dropVolume;
     }, 0);
 }
 

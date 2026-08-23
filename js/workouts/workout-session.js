@@ -606,7 +606,7 @@ function renderSessionExercises({
                         return `
                             <div class="session-set-row ${set.completed ? "completed" : ""}" data-set-index="${setIndex}">
                                 <strong>${setIndex + 1}</strong>
-                                <span class="previous-set-value">${previousSet ? `${previousSet.weight ?? "—"} × ${previousSet.reps ?? "—"}` : "Hasn't started"}</span>
+                                <span class="previous-set-value">${previousSet ? formatPreviousSet(previousSet) : "Hasn't started"}</span>
                                 <input class="session-weight" type="number" inputmode="decimal" min="0" step="0.5" value="${set.weight ?? ""}" placeholder="${previousSet?.weight ?? "Weight"}" aria-label="Set ${setIndex + 1} weight">
                                 <input class="session-reps" type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ""}" placeholder="${previousSet?.reps ?? "Reps"}" aria-label="Set ${setIndex + 1} reps">
                                 <button class="complete-set-btn secondary-btn" type="button">${set.completed ? "✓ Completed" : "Complete Set"}</button>
@@ -1762,6 +1762,14 @@ function formatPrevious(previous) {
     return sets.length
         ? sets.join(" • ")
         : "No previous performance recorded.";
+}
+
+function formatPreviousSet(set) {
+    const main = `${set.weight ?? "—"} × ${set.reps ?? "—"}`;
+    const drops = (Array.isArray(set.dropSets) ? set.dropSets : [])
+        .filter(drop => drop.weight !== null || drop.reps !== null)
+        .map((drop, index) => `Drop ${index + 1}: ${drop.weight ?? "—"} × ${drop.reps ?? "—"}`);
+    return drops.length ? `${main}<small class="previous-drop-values">↳ ${drops.join(" · ")}</small>` : main;
 }
 
 

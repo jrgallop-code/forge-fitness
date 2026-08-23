@@ -1,4 +1,4 @@
-import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=workout-session-6';
+import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=drop-sets-2';
 import { getExerciseById } from './exercise-library.js?v=exercise-library-3';
 
 const TIMER_SETTINGS_KEY = 'level_up_exercise_rest_settings';
