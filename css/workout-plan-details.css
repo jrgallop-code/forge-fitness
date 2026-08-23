@@ -347,3 +347,26 @@
 .builder-exercise-guide:active {
     background:rgba(239,68,68,.16);
 }
+.plan-source-link,
+.plan-source-link:visited {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 10px;
+    color: #e4e4e7;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.4;
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 255, 255, .45);
+    text-underline-offset: 3px;
+}
+
+.plan-source-link:hover,
+.plan-source-link:focus-visible {
+    color: #fff;
+    text-decoration-color: #fff;
+}
+
+.plan-source-link:active {
+    color: #c7c7ce;
+}
