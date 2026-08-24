@@ -1,4 +1,4 @@
-import { renderFormGuideMuscleSvg } from "./form-guide-anatomy.js?v=muscle-priority-cards-2";
+import { renderFormGuideMuscleSvg } from "./form-guide-anatomy.js?v=female-anatomy-1";
 
 const VISUAL_MUSCLE = { Abs: "Core", "Abs / Core": "Core" };
 

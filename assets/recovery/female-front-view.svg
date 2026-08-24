@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 1920"><g fill="#555" stroke="#bbb" stroke-width="9" stroke-linejoin="round">
+<ellipse cx="480" cy="180" rx="105" ry="120"/><path fill="#444" d="M366 180Q350 40 480 38T594 180l-35-82q-70 45-166 16z"/><path d="M430 280h100l18 100 132 75 70 360-60 20-105-286 18 360-70 205H427l-70-205 18-360-105 286-60-20 70-360 132-75z"/>
+<path d="M427 1080l-72 360 42 390h70l13-390 13 390h70l42-390-72-360z"/>
+<path id="female_front_shoulders_l" d="M412 380l-105 58 20 105 83-52z"/><path id="female_front_shoulders_r" d="M548 380l105 58-20 105-83-52z"/>
+<path id="female_front_chest_l" d="M418 420h55v190l-102-50 15-105z"/><path id="female_front_chest_r" d="M542 420h-55v190l102-50-15-105z"/>
+<path id="female_front_biceps_l" d="M300 545l70 10-35 180-75-10z"/><path id="female_front_biceps_r" d="M660 545l-70 10 35 180 75-10z"/><path id="female_front_triceps_l" d="M270 520l35 15-48 185-38-10z"/><path id="female_front_triceps_r" d="M690 520l-35 15 48 185 38-10z"/>
+<path id="female_front_forearms_l" d="M255 735l78 15-70 210-55-22z"/><path id="female_front_forearms_r" d="M705 735l-78 15 70 210 55-22z"/><path id="female_front_back_l" d="M405 610l65 20-35 250-72-35z"/><path id="female_front_back_r" d="M555 610l-65 20 35 250 72-35z"/>
+<path id="female_front_core" d="M435 620h90l22 300-67 95-67-95z"/><path id="female_front_obliques_l" d="M405 620l30 5-22 295-50-75z"/><path id="female_front_obliques_r" d="M555 620l-30 5 22 295 50-75z"/>
+<path id="female_front_adductors_l" d="M415 1065l58 20-25 290-70-230z"/><path id="female_front_adductors_r" d="M545 1065l-58 20 25 290 70-230z"/><path id="female_front_quads_l" d="M370 1060l52 20 22 310-80 25-20-230z"/><path id="female_front_quads_r" d="M590 1060l-52 20-22 310 80 25 20-230z"/><path id="female_front_calves_l" d="M365 1435l78-15 10 310-58 60z"/><path id="female_front_calves_r" d="M595 1435l-78-15-10 310 58 60z"/></g></svg>

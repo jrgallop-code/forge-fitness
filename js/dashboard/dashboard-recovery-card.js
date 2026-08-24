@@ -4,6 +4,7 @@ import {
 } from "../progress/recovery-secondary-muscles.js?v=recovery-secondary-7";
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { createGeneratedExerciseGuide } from "../workouts/exercise-guide-generator.js?v=full-library-guides-1";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-1";
 
 const SESSION_KEY = "forge_workout_sessions";
 const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-2";
@@ -205,10 +206,7 @@ function renderOverlayUses(regions, values, asset, mode) {
 
 function renderFigure(side, values, mode) {
     const front = side === "front";
-    const asset = front ? FRONT_ASSET : BACK_ASSET;
-    const regions = front ? FRONT_REGIONS : BACK_REGIONS;
-    const viewBox = front ? "0 0 960 1920" : "960 0 960 1920";
-    const imageX = front ? 0 : 960;
+    const { asset, regions, viewBox, imageX } = getAnatomyConfig(side);
     const label = `${front ? "Front" : "Back"} ${mode === "recovery" ? "muscle recovery" : "seven-day muscle volume"} preview`;
 
     return `

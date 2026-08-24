@@ -6,6 +6,7 @@ import { initializeGoogleDriveSync } from "../core/google-drive-sync-v2.js?v=vis
 import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-card-1";
 import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.js?v=privacy-account-1";
 import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=unit-system-1";
+import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-appearance-1";
 
 const ICONS = {
     profile: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c4.4 0 8 2.3 8 5.2V21H4v-2.8C4 15.3 7.6 13 12 13Zm-5.9 6h11.8v-.8c0-1.3-2.4-3.2-5.9-3.2s-5.9 1.9-5.9 3.2v.8Z"/></svg>',
@@ -25,7 +26,7 @@ export function renderMore() {
     <section class="more-menu-grid" aria-label="More tools">
     <button class="more-menu-card" type="button" data-more-page="account-cloud"><span class="more-menu-icon">${ICONS.account}</span><span><strong>Account & Cloud</strong><small>Sign in for private beta cloud backup and device transfer.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Switch between imperial and metric measurements throughout Level Up.</small></span></button>
-    <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Update Goals & Profile</strong><small>Review your goal, profile, training availability, priorities and exercise preferences.</small></span></button>
+    <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Profile & Appearance</strong><small>Update your personal details, training experience and anatomy appearance.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="history"><span class="more-menu-icon">${ICONS.history}</span><span><strong>Workout History</strong><small>Review completed workouts, summaries and training details.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="bmi"><span class="more-menu-icon">${ICONS.bmi}</span><span><strong>BMI</strong><small>View BMI calculated from your Body Profile height and weight.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="sleep"><span class="more-menu-icon">${ICONS.sleep}</span><span><strong>Sleep</strong><small>Track sleep duration, quality and recovery notes.</small></span></button>
@@ -40,7 +41,11 @@ export function initializeMore() {
     document.querySelectorAll("[data-more-page]").forEach(button => button.addEventListener("click", () => {
         const page = button.dataset.morePage;
         if (page === "profile-setup") {
-            document.dispatchEvent(new CustomEvent("levelup:open-profile-setup"));
+            const content = document.getElementById("content");
+            if (!content) return;
+            if (!document.querySelector('link[href*="profile-appearance.css"]')) { const link=document.createElement("link");link.rel="stylesheet";link.href="css/profile-appearance.css?v=profile-appearance-1";document.head.appendChild(link); }
+            const showMore=()=>{content.innerHTML=renderMore();initializeMore();window.scrollTo({top:0,behavior:"smooth"});};
+            content.innerHTML=renderProfileAppearance();initializeProfileAppearance({onBack:showMore});window.scrollTo({top:0,behavior:"smooth"});
             return;
         }
         if (page === "bmi") {

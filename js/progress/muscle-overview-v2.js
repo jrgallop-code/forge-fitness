@@ -1,5 +1,6 @@
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { createGeneratedExerciseGuide } from "../workouts/exercise-guide-generator.js?v=full-library-guides-1";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const TARGET_GREEN = "#45cb75";
@@ -175,10 +176,7 @@ function getLastSevenDayVolume() {
 
 function anatomyMarkup(side) {
     const front = side === "front";
-    const asset = front ? FRONT_ASSET : BACK_ASSET;
-    const regions = front ? FRONT_REGIONS : BACK_REGIONS;
-    const viewBox = front ? "0 0 960 1920" : "960 0 960 1920";
-    const imageX = front ? 0 : 960;
+    const { asset, regions, viewBox, imageX } = getAnatomyConfig(side);
 
     const overlays = Object.entries(regions).flatMap(([muscle, ids]) =>
         ids.map(id => {
