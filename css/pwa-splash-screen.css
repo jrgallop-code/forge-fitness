@@ -15,7 +15,7 @@
         z-index: 2147483646;
         background-color: #000;
         background-image:
-            url("../assets/level-up-splash.png"),
+            url("../assets/level-up-splash.webp"),
             linear-gradient(rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.13));
         background-repeat: no-repeat, no-repeat;
         background-position:
