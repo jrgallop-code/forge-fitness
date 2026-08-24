@@ -16,11 +16,6 @@ function readWeights() {
     }
 }
 
-function today() {
-    const date = new Date();
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
 function formatRate(value) {
     const number = Number(value);
     if (!Number.isFinite(number)) return "Need more data";
@@ -30,13 +25,6 @@ function formatRate(value) {
 
 function setText(node, value) {
     if (node && node.textContent !== value) node.textContent = value;
-}
-
-function restoreFutureTestIds() {
-    const rate = document.getElementById(LIVE_RATE_ID);
-    const heading = document.getElementById(LIVE_HEADING_ID);
-    if (rate) rate.id = "weight-phase-rate";
-    if (heading) heading.id = "weight-phase-rate-heading";
 }
 
 function detachLiveCardFromPhaseRenderer() {
@@ -56,13 +44,9 @@ function refresh() {
     const weights = readWeights();
     const latestEntryDate = weights.at(-1)?.date || null;
 
-    // Future-weight testing intentionally owns the phase carousel while synthetic
-    // future dates are active. Restore the legacy IDs so that feature can render.
-    if (latestEntryDate && latestEntryDate > today()) {
-        restoreFutureTestIds();
-        return;
-    }
-
+    // Keep the visible Progress trend measurement-driven even when a user enters
+    // a future-dated test weigh-in. Nutrition decisions still use the separate,
+    // stricter phase calculation and are not relaxed by this display.
     const trend = calculateDisplayWeightTrend(weights, { endDate: latestEntryDate });
     const rateText = Number.isFinite(trend.weeklyChange)
         ? formatRate(trend.weeklyChange)
