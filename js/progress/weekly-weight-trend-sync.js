@@ -1,11 +1,10 @@
 import {
     calculateSevenDayAverage,
-    calculateWeightTrend,
+    calculateDisplayWeightTrend,
     normalizeWeightEntries
-} from "../core/weight-trend.js?v=progress-latest-weighin-1";
+} from "../core/weight-trend.js?v=progress-regression-trend-1";
 
 const WEIGHT_KEY = "forge_weight_entries";
-const MIN_ENTRIES_PER_WINDOW = 4;
 let queued = false;
 
 function readWeights() {
@@ -22,10 +21,7 @@ function refresh() {
 
     const weights = readWeights();
     const latestEntryDate = weights.at(-1)?.date || null;
-    const trend = calculateWeightTrend(weights, {
-        endDate: latestEntryDate,
-        minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW
-    });
+    const trend = calculateDisplayWeightTrend(weights, { endDate: latestEntryDate });
     const trendWeight = latestEntryDate
         ? calculateSevenDayAverage(weights, latestEntryDate).average
         : null;
@@ -48,13 +44,13 @@ function refresh() {
 
     const card = value.closest(".metric-card");
     const heading = card?.querySelector("h3");
-    if (heading && heading.textContent !== "Weekly Trend") heading.textContent = "Weekly Trend";
+    if (heading && heading.textContent !== trend.label) heading.textContent = trend.label;
 
     value.title = latestEntryDate
         ? `Weekly change through latest weigh-in ${latestEntryDate}. Missing days do not move the result.`
         : "Add weigh-ins to calculate your weekly trend.";
     if (card) {
-        card.title = "Weekly Trend compares the 7-day average ending on your latest weigh-in with the previous 7-day average. It updates only when weight data changes.";
+        card.title = "Weekly Trend estimates your rate of change from recent weigh-ins using a 21-day linear regression. The nutrition coach keeps stricter data requirements.";
     }
 }
 
