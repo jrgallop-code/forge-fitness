@@ -27,6 +27,10 @@
     text-decoration-color: #d71920;
 }
 
+body.starting-weight-calibration-open {
+    overflow: hidden;
+}
+
 .starting-weight-calibration-backdrop {
     position: fixed;
     inset: 0;
@@ -37,6 +41,10 @@
     padding: 16px;
     background: rgba(0, 0, 0, 0.72);
     backdrop-filter: blur(4px);
+}
+
+.starting-weight-calibration-backdrop[hidden] {
+    display: none;
 }
 
 .starting-weight-calibration-sheet {
