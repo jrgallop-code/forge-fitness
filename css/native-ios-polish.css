@@ -1,0 +1,632 @@
+/*
+ * Level Up native iOS polish layer.
+ * Visual overrides only: no layout structure, navigation, brand artwork,
+ * splash behavior, or application logic is changed here.
+ */
+
+:root {
+    color-scheme: dark;
+    --bg: #000;
+    --surface: #1c1c1e;
+    --surface-raised: #242426;
+    --card: #1c1c1e;
+    --red: #f21f2c;
+    --red-dark: #b90f19;
+    --red-glow: rgba(242, 31, 44, .18);
+    --text: #fff;
+    --muted: rgba(235, 235, 245, .6);
+    --line: rgba(84, 84, 88, .68);
+    --shadow: 0 14px 40px rgba(0, 0, 0, .28);
+    --ios-surface-1: #1c1c1e;
+    --ios-surface-2: #242426;
+    --ios-surface-3: #2c2c2e;
+    --ios-fill: rgba(118, 118, 128, .24);
+    --ios-fill-light: rgba(118, 118, 128, .16);
+    --ios-separator: rgba(84, 84, 88, .72);
+    --ios-card-radius: 20px;
+    --ios-control-radius: 12px;
+}
+
+html {
+    background: #000;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    background:
+        radial-gradient(ellipse at 50% -12%, rgba(242, 31, 44, .085), transparent 30rem),
+        #000;
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+}
+
+button,
+[role="button"],
+summary,
+a {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+    outline: 2px solid rgba(242, 31, 44, .82);
+    outline-offset: 2px;
+}
+
+::selection {
+    background: rgba(242, 31, 44, .42);
+    color: #fff;
+}
+
+h1,
+h2,
+h3,
+h4,
+strong,
+.metric-card p,
+.dashboard-weekly-metric strong {
+    font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    letter-spacing: -.025em;
+}
+
+.hero {
+    background:
+        linear-gradient(180deg, rgba(28, 28, 30, .84), rgba(10, 10, 11, .92)),
+        #000;
+    border-bottom-color: rgba(84, 84, 88, .48);
+    box-shadow: 0 .5px 0 rgba(255, 255, 255, .035);
+}
+
+.hero::after {
+    opacity: .55;
+}
+
+.hero h1,
+.hero p,
+.hero-kicker {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+}
+
+.hero h1 {
+    font-weight: 800;
+}
+
+.hero-kicker,
+.eyebrow,
+.plan-type-label,
+.session-smart-kicker,
+.session-manual-label {
+    color: #ff4b55;
+    font-weight: 750;
+    letter-spacing: .12em;
+}
+
+/* Native dark-mode surfaces */
+.section-card,
+.metric-card,
+.goal-box,
+.plan-builder,
+.preset-plan-card,
+.workout-day-card,
+.session-exercise-card,
+.training-summary-card,
+.analytics-card,
+.weight-chart-card,
+.history-workout-card,
+.history-active-workout,
+.more-menu-card,
+.nutrition-planner-card,
+.dashboard-habit-card,
+.dashboard-weight-trend-card,
+.dashboard-seven-day-sets-card,
+.dashboard-muscle-card,
+.dashboard-nutrition-target-card,
+.measurement-guide-card,
+.measurement-entry-card,
+.measurement-progress-card,
+.exercise-guide-section,
+.nutrition-guide-card,
+.nutrition-guide-hero,
+.nutrition-principles,
+.satiety-card,
+.plate-calculator-card,
+.current-goal-card,
+.current-goal-wizard-card,
+.phase-current-card,
+.phase-start-card,
+.phase-sample-card,
+.profile-appearance-card,
+.unit-settings-card,
+.support-report-card,
+.account-cloud-card {
+    background: var(--ios-surface-1);
+    border-color: var(--ios-separator);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .035),
+        0 12px 34px rgba(0, 0, 0, .24);
+}
+
+.section-card,
+.plan-builder,
+.analytics-card,
+.weight-chart-card,
+.measurement-guide-card,
+.measurement-entry-card,
+.measurement-progress-card,
+.nutrition-guide-hero,
+.nutrition-principles,
+.satiety-card {
+    border-radius: var(--ios-card-radius);
+}
+
+.metric-card,
+.preset-plan-card,
+.workout-day-card,
+.session-exercise-card,
+.training-summary-card,
+.history-workout-card,
+.history-active-workout,
+.more-menu-card,
+.nutrition-planner-card,
+.dashboard-habit-card,
+.exercise-guide-section,
+.nutrition-guide-card {
+    border-radius: 16px;
+}
+
+.metric-card::before {
+    display: none;
+}
+
+.dashboard .metric-card,
+.plan-builder,
+.goal-box,
+.workout-day-card,
+.session-exercise-card,
+.weight-chart-card {
+    border-top-color: var(--ios-separator);
+    border-left-color: var(--ios-separator);
+}
+
+.dashboard .metric-card {
+    border-top-width: 1px;
+}
+
+.plan-builder,
+.weight-chart-card {
+    border-top-width: 1px;
+}
+
+.goal-box,
+.workout-day-card,
+.session-exercise-card {
+    border-left-width: 1px;
+}
+
+.metric-icon,
+.more-menu-icon,
+.nutrition-guide-icon,
+.satiety-mark,
+.photo-log-placeholder-icon,
+.performance-score {
+    background: rgba(242, 31, 44, .11);
+    border-color: rgba(242, 31, 44, .24);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .045);
+}
+
+.metric-card h3,
+.metric-card small,
+.section-card p,
+.more-menu-card small,
+.dashboard-command-date,
+.dashboard-command-header p {
+    color: var(--muted);
+}
+
+/* Controls */
+.primary-btn,
+.secondary-btn,
+.progress-tab,
+.training-progress-tab,
+.measurement-view-tab,
+.performance-toggle,
+.recovery-details-toggle {
+    min-height: 44px;
+    border-radius: var(--ios-control-radius);
+    font-weight: 650;
+    letter-spacing: -.01em;
+    transition:
+        transform 160ms cubic-bezier(.2, .8, .2, 1),
+        background-color 160ms ease,
+        border-color 160ms ease,
+        opacity 160ms ease;
+}
+
+.primary-btn {
+    background: #f21f2c;
+    border: 1px solid rgba(255, 255, 255, .08);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .16),
+        0 7px 18px rgba(242, 31, 44, .16);
+}
+
+.secondary-btn,
+.performance-toggle,
+.recovery-details-toggle {
+    background: var(--ios-fill);
+    border: 1px solid rgba(255, 255, 255, .07);
+    color: #f5f5f7;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .025);
+}
+
+.primary-btn:active,
+.secondary-btn:active,
+.progress-tab:active,
+.training-progress-tab:active,
+.measurement-view-tab:active,
+.more-menu-card:active,
+.preset-plan-card:active,
+.nutrition-planner-card:active {
+    transform: scale(.975);
+    opacity: .88;
+}
+
+.primary-btn:disabled,
+.secondary-btn:disabled,
+button:disabled {
+    opacity: .42;
+    box-shadow: none;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+    color: #fff;
+    background: var(--ios-fill-light);
+    border-color: rgba(84, 84, 88, .78);
+    border-radius: var(--ios-control-radius);
+    caret-color: #ff4b55;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .16);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: rgba(235, 235, 245, .32);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+select:focus,
+textarea:focus {
+    border-color: rgba(242, 31, 44, .78) !important;
+    box-shadow:
+        0 0 0 3px rgba(242, 31, 44, .13),
+        inset 0 1px 1px rgba(0, 0, 0, .14);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: #f21f2c;
+}
+
+/* Segmented controls */
+.progress-tabs,
+.training-progress-tabs,
+.measurement-view-tabs,
+.dashboard-weekly-toggle,
+.muscle-overview-toggle,
+.recovery-facing-toggle {
+    gap: 3px;
+    padding: 3px;
+    overflow: hidden;
+    background: rgba(118, 118, 128, .18);
+    border: 1px solid rgba(84, 84, 88, .58);
+    border-radius: 12px;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .16);
+}
+
+.progress-tab,
+.training-progress-tab,
+.measurement-view-tab,
+.dashboard-weekly-toggle button,
+.muscle-overview-toggle button,
+.recovery-facing-toggle button {
+    min-height: 36px;
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--muted);
+    box-shadow: none;
+}
+
+.progress-tab.active,
+.training-progress-tab.active,
+.measurement-view-tab.active,
+.dashboard-weekly-toggle button.active,
+.muscle-overview-toggle button.active,
+.recovery-facing-toggle button.active {
+    background: #545458;
+    color: #fff;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, .45),
+        inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+
+/* Native-style tab bar, preserving existing destinations and markup */
+.bottom-nav {
+    background: rgba(22, 22, 24, .82);
+    border: 1px solid rgba(84, 84, 88, .62);
+    border-radius: 24px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .045),
+        0 12px 40px rgba(0, 0, 0, .52);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    backdrop-filter: saturate(180%) blur(24px);
+}
+
+.bottom-nav .nav-btn {
+    min-height: 52px;
+    border-radius: 17px;
+    color: rgba(235, 235, 245, .54);
+    transition:
+        color 160ms ease,
+        background-color 160ms ease,
+        transform 160ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.bottom-nav .nav-btn:not(.active) .nav-icon {
+    color: rgba(235, 235, 245, .58);
+}
+
+.bottom-nav .nav-btn.active,
+.bottom-nav .nav-btn.active .nav-icon {
+    color: #ff4b55;
+}
+
+.bottom-nav .nav-btn.active {
+    background: rgba(242, 31, 44, .085);
+}
+
+.bottom-nav button.active::after {
+    display: none;
+}
+
+.bottom-nav button span {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+}
+
+@keyframes navTapPulse {
+    0% { transform: scale(1); }
+    45% { transform: scale(.94); }
+    75% { transform: scale(1.025); }
+    100% { transform: scale(1); }
+}
+
+/* Dashboard groups and data presentation */
+.dashboard-command-center .schedule-dashboard-card,
+.dashboard-command-today-empty,
+.dashboard-command-weekly,
+.dashboard.dashboard-command-insights .metric-card,
+.dashboard-weekly-metric {
+    background: var(--ios-surface-1);
+    border-color: var(--ios-separator);
+    border-top-color: var(--ios-separator);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
+}
+
+.dashboard-command-center .schedule-dashboard-card,
+.dashboard-command-today-empty {
+    border-top-width: 1px;
+}
+
+.dashboard-weekly-metric {
+    background: var(--ios-fill-light);
+}
+
+.dashboard-weekly-bar,
+.progress-bar,
+.volume-bar {
+    background: rgba(118, 118, 128, .28);
+}
+
+.dashboard-weekly-bar span,
+.progress-bar span,
+.volume-bar span {
+    background: #f21f2c;
+}
+
+/* Lists and tables use subtle grouped separators */
+.weight-table,
+.measurement-history-table,
+.measurement-progress-table,
+.previous-performance,
+.workout-preview-stats > div,
+.workout-preview-exercise,
+.activity-calendar-event {
+    background: var(--ios-surface-1);
+    border-color: rgba(84, 84, 88, .58);
+}
+
+.weight-table-header,
+.measurement-progress-header {
+    background: var(--ios-surface-2);
+    border-bottom: 1px solid var(--ios-separator);
+    color: var(--muted);
+}
+
+.weight-table-row,
+.measurement-progress-row,
+.measurement-history-row,
+.performance-row,
+.nutrition-principle-list > div {
+    border-bottom-color: rgba(84, 84, 88, .48);
+}
+
+/* Bottom sheets and dialogs */
+.session-exercise-swap-sheet,
+.workout-history-preview-backdrop,
+.plate-calculator-overlay,
+.starting-weight-calibration-backdrop {
+    background: rgba(0, 0, 0, .66);
+    -webkit-backdrop-filter: saturate(140%) blur(16px);
+    backdrop-filter: saturate(140%) blur(16px);
+}
+
+.session-exercise-swap-panel,
+.workout-history-preview-sheet,
+.plate-calculator-sheet,
+.starting-weight-calibration-sheet,
+.level-up-login-panel,
+.levelup-onboarding-shell {
+    background: rgba(28, 28, 30, .97);
+    border-color: rgba(84, 84, 88, .78);
+    border-radius: 26px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .055),
+        0 24px 70px rgba(0, 0, 0, .56);
+    -webkit-backdrop-filter: saturate(150%) blur(24px);
+    backdrop-filter: saturate(150%) blur(24px);
+}
+
+.exercise-options-popover,
+.exercise-warmup-panel,
+.session-smart-swap,
+.smart-picker-panel,
+.effort-guide-panel,
+.training-progress-disclosure-panel {
+    background: var(--ios-surface-2);
+    border-color: var(--ios-separator);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .035),
+        0 18px 46px rgba(0, 0, 0, .42);
+}
+
+.compact-switch span {
+    background: #39393d;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .035);
+}
+
+.compact-switch span::after {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, .42);
+}
+
+.compact-switch input:checked + span {
+    background: #f21f2c;
+}
+
+/* Full-screen calendar keeps the same structure with native surfaces */
+.activity-calendar-page {
+    background:
+        radial-gradient(ellipse at 50% -10%, rgba(242, 31, 44, .08), transparent 26rem),
+        #000;
+}
+
+.activity-calendar-card,
+.activity-calendar-details,
+.activity-calendar-month-controls label,
+.activity-calendar-back,
+.activity-calendar-month-controls > button {
+    background: var(--ios-surface-1);
+    border-color: var(--ios-separator);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
+}
+
+.activity-calendar-day.is-selected {
+    border-color: rgba(242, 31, 44, .84);
+    background: rgba(242, 31, 44, .2);
+}
+
+/* Pointer hover is deliberately separate from touch feedback */
+@media (hover: hover) and (pointer: fine) {
+    .primary-btn:hover {
+        background: #ff3541;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, .18),
+            0 8px 20px rgba(242, 31, 44, .2);
+        transform: translateY(-1px);
+    }
+
+    .secondary-btn:hover,
+    .performance-toggle:hover,
+    .recovery-details-toggle:hover {
+        background: rgba(118, 118, 128, .32);
+        border-color: rgba(255, 255, 255, .11);
+    }
+
+    .more-menu-card:hover,
+    .preset-plan-card:hover,
+    .nutrition-planner-card:hover {
+        border-color: rgba(142, 142, 147, .82);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, .045),
+            0 15px 38px rgba(0, 0, 0, .3);
+        transform: translateY(-1px);
+    }
+}
+
+@media (max-width: 700px) {
+    #content {
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+    }
+
+    .section-card {
+        padding: 17px 16px;
+        border-radius: 18px;
+    }
+
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+        font-size: 16px;
+    }
+
+    .bottom-nav {
+        border-radius: 22px;
+    }
+
+    .session-exercise-swap-panel,
+    .workout-history-preview-sheet,
+    .plate-calculator-sheet,
+    .starting-weight-calibration-sheet {
+        border-radius: 26px 26px 20px 20px;
+    }
+
+    /* Preserve the established edge-to-edge onboarding presentation. */
+    .levelup-onboarding-shell {
+        border-radius: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* Scope this to the app so the separately managed PWA splash is untouched. */
+    #app *,
+    #app *::before,
+    #app *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
