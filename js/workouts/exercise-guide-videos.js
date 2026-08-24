@@ -2,6 +2,7 @@ import { getAllExercises } from "./exercise-library.js?v=exercise-library-guides
 import { getFormGuideVideo } from "./exercise-guide-video-manifest.js?v=form-videos-1";
 
 const STYLE_ID = "level-up-form-guide-video-styles";
+const failedVideos = new Set();
 
 function ensureStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -93,6 +94,7 @@ function createVideoCard(exerciseId, config) {
     }, { once: true });
 
     video.addEventListener("error", () => {
+        failedVideos.add(exerciseId);
         figure.remove();
     }, { once: true });
 
@@ -107,7 +109,7 @@ function enhanceGuide(screen) {
     const config = getFormGuideVideo(exerciseId);
     const existing = screen.querySelector(".exercise-guide-video-card");
 
-    if (!config) {
+    if (!config || failedVideos.has(exerciseId)) {
         existing?.remove();
         return;
     }
