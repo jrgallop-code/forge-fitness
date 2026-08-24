@@ -121,47 +121,102 @@
     font-weight: 750;
 }
 
+.activity-calendar-day > span {
+    position: relative;
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 50%;
+    transition:
+        background-color 160ms ease,
+        box-shadow 160ms ease,
+        transform 160ms ease;
+}
+
+.activity-calendar-day.has-workout > span::before,
+.activity-calendar-day.has-weight > span::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--activity-calendar-ring);
+    pointer-events: none;
+    -webkit-mask: radial-gradient(
+        farthest-side,
+        transparent calc(100% - 2px),
+        #000 calc(100% - 1.75px)
+    );
+    mask: radial-gradient(
+        farthest-side,
+        transparent calc(100% - 2px),
+        #000 calc(100% - 1.75px)
+    );
+}
+
+.activity-calendar-day.has-workout:not(.has-weight) {
+    --activity-calendar-ring: #ff2636;
+}
+
+.activity-calendar-day.has-weight:not(.has-workout) {
+    --activity-calendar-ring: #45d486;
+}
+
+.activity-calendar-day.has-workout.has-weight {
+    --activity-calendar-ring: conic-gradient(
+        from -90deg,
+        #ff2636 0 50%,
+        #45d486 50% 100%
+    );
+}
+
 .activity-calendar-day:not(.is-empty):active {
     transform: scale(0.96);
 }
 
 .activity-calendar-day.is-today {
-    border-color: rgba(255, 255, 255, 0.55);
+    border-color: transparent;
 }
 
-.activity-calendar-day.is-selected {
-    border-color: #ff2636;
-    background: rgba(225, 6, 0, 0.18);
+.activity-calendar-day.is-today:not(.is-selected) > span {
+    background: rgba(255, 255, 255, 0.075);
     color: #fff;
 }
 
+.activity-calendar-grid .activity-calendar-day.is-selected {
+    border-color: transparent;
+    background: transparent;
+    color: #fff;
+}
+
+.activity-calendar-day.is-selected > span {
+    background: rgba(118, 118, 128, 0.28);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+        0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
 .activity-calendar-day > i {
-    position: absolute;
-    bottom: 5px;
-    display: flex;
-    gap: 3px;
-    height: 4px;
+    display: none;
 }
 
-.workout-dot,
-.weight-dot {
+.activity-calendar-legend .workout-dot,
+.activity-calendar-legend .weight-dot {
     display: inline-block;
-    width: 6px;
-    height: 6px;
-    border-radius: 999px;
+    width: 12px;
+    height: 12px;
+    box-sizing: border-box;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    background: transparent;
 }
 
-.workout-dot {
-    background: #ff2636;
+.activity-calendar-legend .workout-dot {
+    color: #ff2636;
 }
 
-.weight-dot {
-    background: #45d486;
-}
-
-.activity-calendar-day > i b {
-    width: 4px;
-    height: 4px;
+.activity-calendar-legend .weight-dot {
+    color: #45d486;
 }
 
 .activity-calendar-legend {
@@ -286,5 +341,10 @@
     .activity-calendar-day {
         border-radius: 11px;
         font-size: 0.76rem;
+    }
+
+    .activity-calendar-day > span {
+        width: 32px;
+        height: 32px;
     }
 }
