@@ -43,17 +43,16 @@ const entries = {
     "tricep-pushdown": ["tricep-pushdown.mp4", "Cable Triceps Pushdown.mp4"],
     "overhead-tricep-extension": ["overhead-tricep-extension.mp4", "Cable Overhead Triceps Extension (rope attachment).mp4"],
     "close-grip-bench-press": ["close-grip-bench-press.mp4", "Barbell Close Grip Bench Press.mp4"],
-    "dip": ["dip.mp4", "Lever Seated Dips.mp4"],
 
     // Lower body
     "back-squat": ["back-squat.mp4", "Classic Barbell Squat.mp4"],
-    "front-squat": ["front-squat.mp4", "Dumbbell Front Squat.mp4"],
-    "leg-press": ["leg-press.mp4", "Close Feet Leg Press.mp4"],
+    "leg-press": ["leg-press.mp4", "Lever Horizontal Leg Press.mp4"],
+    "hack-squat": ["hack-squat.mp4", "Sled Hack Squat.mp4"],
     "lunge": ["lunge.mp4", "Dumbbell Lunge.mp4"],
-    "leg-extension": ["leg-extension.mp4", "Band Seated Leg Extension.mp4"],
+    "leg-extension": ["leg-extension.mp4", "Lever Leg Extension.mp4"],
     "goblet-squat": ["goblet-squat.mp4", "Dumbbell Goblet Squat.mp4"],
-    "bodyweight-squat": ["bodyweight-squat.mp4", "Dumbbell Squat.mp4"],
-    "leg-curl": ["leg-curl.mp4", "Band Leg Curl.mp4"],
+    "leg-curl": ["leg-curl.mp4", "Lever Lying Leg Curl.mp4"],
+    "seated-leg-curl": ["seated-leg-curl.mp4", "Lever Seated Leg Curl.mp4"],
 
     // Calves
     "standing-calf-raise": ["standing-calf-raise.mp4", "Lever Standing Calf Raise.mp4"],
@@ -63,7 +62,6 @@ const entries = {
 
     // Core
     "side-plank": ["side-plank.mp4", "Side Bridge - Side Plank.mp4"],
-    "cable-crunch": ["cable-crunch.mp4", "Cable Standing Crunch.mp4"],
 
     // Cardio
     "stationary-bike": ["stationary-bike.mp4", "Stationary Bike.mp4"],
