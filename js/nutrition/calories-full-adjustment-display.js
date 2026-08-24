@@ -4,12 +4,14 @@ import {
     saveNutritionPhase
 } from "./nutrition-phase.js?v=nutrition-phase-full-window-1";
 import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
+import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";
 
 const FIRST_CHECK_DAY = 14;
 const FULL_GAP_INCREMENT = 50;
 const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";
 const HOLD_KEY = "level_up_phase_reassessment_hold";
 const HOLD_DAYS = 7;
+const WEIGHT_KEY = "forge_weight_entries";
 let refreshScheduled = false;
 let refreshAgain = false;
 
@@ -31,6 +33,17 @@ function setText(node, value) {
     if (!node || node.textContent === value) return false;
     node.textContent = value;
     return true;
+}
+
+function getVisibleTrend(metrics) {
+    if (metrics?.isFutureTest) return null;
+    try {
+        const entries = normalizeWeightEntries(JSON.parse(localStorage.getItem(WEIGHT_KEY) || "[]"));
+        const latestDate = entries.at(-1)?.date || null;
+        return calculateDisplayWeightTrend(entries, { endDate: latestDate });
+    } catch {
+        return null;
+    }
 }
 
 function phaseKey(phase) {
@@ -117,9 +130,16 @@ function syncCurrentPhaseCard(metrics) {
     });
     setText(actualCell?.querySelector("span"), "Current Weekly Trend");
 
-    const actual = Number(metrics.actualRateLbPerWeek);
+    const visibleTrend = getVisibleTrend(metrics);
+    const visibleRate = visibleTrend?.weeklyChange === null || visibleTrend?.weeklyChange === undefined
+        ? NaN
+        : Number(visibleTrend.weeklyChange);
+    const actual = Number.isFinite(visibleRate) ? visibleRate : Number(metrics.actualRateLbPerWeek);
+    const isPreliminary = Number.isFinite(visibleRate)
+        ? visibleTrend.status === "preliminary"
+        : metrics.status === "PRELIMINARY TREND";
     const actualText = Number.isFinite(actual)
-        ? `${metrics.status === "PRELIMINARY TREND" ? "Preliminary · " : ""}${formatRate(actual)}`
+        ? `${isPreliminary ? "Preliminary · " : ""}${formatRate(actual)}`
         : metrics.status === "BUILDING TREND"
             ? "Calibrating"
             : "Need more data";
@@ -314,7 +334,7 @@ function refresh() {
     if (!metrics.isFutureTest) {
         setText(
             document.querySelector("#goal-check-in-card[data-weekly-coach='1'] .weekly-coach-method"),
-            "The displayed weekly trend compares the two complete 7-day windows ending on your latest weigh-in. Calorie decisions begin on Day 14. When an adjustment is needed, Level Up applies the full estimated correction and reassesses after 7 days."
+            "The displayed weekly trend uses the same recent regression as Weight Progress. Calorie decisions still require the stricter phase check beginning on Day 14. When an adjustment is needed, Level Up applies the full estimated correction and reassesses after 7 days."
         );
     }
 }
