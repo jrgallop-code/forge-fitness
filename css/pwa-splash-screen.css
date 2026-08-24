@@ -1,0 +1,105 @@
+/* Level Up in-app splash for installed PWA launches.
+   The browser/OS-native splash itself cannot animate, so this layer appears
+   immediately after the document opens and gives the launch a branded finish. */
+
+@media (display-mode: standalone) {
+    body::before,
+    body::after {
+        content: "";
+        position: fixed;
+        pointer-events: auto;
+    }
+
+    body::before {
+        inset: 0;
+        z-index: 2147483646;
+        background-color: #000;
+        background-image:
+            url("../assets/level-up-splash.webp"),
+            linear-gradient(rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.13));
+        background-repeat: no-repeat, no-repeat;
+        background-position:
+            center center,
+            center calc(100% - 12vh);
+        background-size:
+            auto min(82vh, 760px),
+            min(230px, 58vw) 3px;
+        animation: level-up-splash-out 2.15s ease forwards;
+    }
+
+    body::after {
+        left: 50%;
+        bottom: 12vh;
+        z-index: 2147483647;
+        width: min(230px, 58vw);
+        height: 3px;
+        border-radius: 999px;
+        background: #f01f2b;
+        box-shadow: 0 0 10px rgba(240, 31, 43, 0.32);
+        transform: translateX(-50%) scaleX(0.03);
+        transform-origin: left center;
+        animation:
+            level-up-fake-load 1.72s cubic-bezier(0.22, 0.61, 0.36, 1) forwards,
+            level-up-splash-bar-out 0.32s ease 1.78s forwards;
+    }
+}
+
+@keyframes level-up-fake-load {
+    0%   { transform: translateX(-50%) scaleX(0.03); }
+    24%  { transform: translateX(-50%) scaleX(0.27); }
+    48%  { transform: translateX(-50%) scaleX(0.48); }
+    66%  { transform: translateX(-50%) scaleX(0.63); }
+    79%  { transform: translateX(-50%) scaleX(0.73); }
+    90%  { transform: translateX(-50%) scaleX(0.90); }
+    100% { transform: translateX(-50%) scaleX(1); }
+}
+
+@keyframes level-up-splash-out {
+    0%, 82% {
+        opacity: 1;
+        visibility: visible;
+    }
+    100% {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+@keyframes level-up-splash-bar-out {
+    from {
+        opacity: 1;
+        visibility: visible;
+    }
+    to {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+@media (display-mode: standalone) and (max-height: 700px) {
+    body::before {
+        background-position:
+            center center,
+            center calc(100% - 10vh);
+        background-size:
+            auto min(78vh, 620px),
+            min(220px, 58vw) 3px;
+    }
+
+    body::after {
+        bottom: 10vh;
+        width: min(220px, 58vw);
+    }
+}
+
+@media (display-mode: standalone) and (prefers-reduced-motion: reduce) {
+    body::before {
+        animation-duration: 0.8s;
+    }
+
+    body::after {
+        animation:
+            level-up-fake-load 0.45s linear forwards,
+            level-up-splash-bar-out 0.2s ease 0.55s forwards;
+    }
+}
