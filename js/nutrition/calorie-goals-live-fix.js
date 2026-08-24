@@ -3,7 +3,7 @@ import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=single-ca
 import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-goal-controls-live-weighin-1";
 import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-live-weighin-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
-import "./phase-rate-display.js?v=nutrition-live-weighin-1";
+import "./phase-rate-display.js?v=nutrition-display-regression-1";
 
 const FULL_GAP_INCREMENT = 50;
 const FIRST_STEP_INCREMENT = 25;
