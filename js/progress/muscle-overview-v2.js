@@ -1,6 +1,6 @@
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { createGeneratedExerciseGuide } from "../workouts/exercise-guide-generator.js?v=full-library-guides-1";
-import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-1";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-2";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const TARGET_GREEN = "#45cb75";
