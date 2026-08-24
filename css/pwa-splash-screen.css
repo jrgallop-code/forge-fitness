@@ -1,47 +1,46 @@
 /* Level Up in-app splash for installed PWA launches.
-   The browser/OS-native splash itself cannot animate, so this layer appears
-   immediately after the document opens and gives the launch a branded finish. */
+   iOS does not consistently expose display-mode: standalone to CSS, so
+   index.html marks the root element when either display-mode or
+   navigator.standalone reports an installed launch. */
 
-@media (display-mode: standalone) {
-    body::before,
-    body::after {
-        content: "";
-        position: fixed;
-        pointer-events: auto;
-    }
+html.level-up-installed-pwa body::before,
+html.level-up-installed-pwa body::after {
+    content: "";
+    position: fixed;
+    pointer-events: auto;
+}
 
-    body::before {
-        inset: 0;
-        z-index: 2147483646;
-        background-color: #000;
-        background-image:
-            url("../assets/level-up-splash.webp"),
-            linear-gradient(rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.13));
-        background-repeat: no-repeat, no-repeat;
-        background-position:
-            center center,
-            center calc(100% - 12vh);
-        background-size:
-            auto min(82vh, 760px),
-            min(230px, 58vw) 3px;
-        animation: level-up-splash-out 2.15s ease forwards;
-    }
+html.level-up-installed-pwa body::before {
+    inset: 0;
+    z-index: 2147483646;
+    background-color: #000;
+    background-image:
+        url("../assets/level-up-splash.webp?v=2"),
+        linear-gradient(rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.13));
+    background-repeat: no-repeat, no-repeat;
+    background-position:
+        center center,
+        center calc(100% - 12vh);
+    background-size:
+        auto min(82vh, 760px),
+        min(230px, 58vw) 3px;
+    animation: level-up-splash-out 2.15s ease forwards;
+}
 
-    body::after {
-        left: 50%;
-        bottom: 12vh;
-        z-index: 2147483647;
-        width: min(230px, 58vw);
-        height: 3px;
-        border-radius: 999px;
-        background: #f01f2b;
-        box-shadow: 0 0 10px rgba(240, 31, 43, 0.32);
-        transform: translateX(-50%) scaleX(0.03);
-        transform-origin: left center;
-        animation:
-            level-up-fake-load 1.72s cubic-bezier(0.22, 0.61, 0.36, 1) forwards,
-            level-up-splash-bar-out 0.32s ease 1.78s forwards;
-    }
+html.level-up-installed-pwa body::after {
+    left: 50%;
+    bottom: 12vh;
+    z-index: 2147483647;
+    width: min(230px, 58vw);
+    height: 3px;
+    border-radius: 999px;
+    background: #f01f2b;
+    box-shadow: 0 0 10px rgba(240, 31, 43, 0.32);
+    transform: translateX(-50%) scaleX(0.03);
+    transform-origin: left center;
+    animation:
+        level-up-fake-load 1.72s cubic-bezier(0.22, 0.61, 0.36, 1) forwards,
+        level-up-splash-bar-out 0.32s ease 1.78s forwards;
 }
 
 @keyframes level-up-fake-load {
@@ -76,8 +75,8 @@
     }
 }
 
-@media (display-mode: standalone) and (max-height: 700px) {
-    body::before {
+@media (max-height: 700px) {
+    html.level-up-installed-pwa body::before {
         background-position:
             center center,
             center calc(100% - 10vh);
@@ -86,18 +85,18 @@
             min(220px, 58vw) 3px;
     }
 
-    body::after {
+    html.level-up-installed-pwa body::after {
         bottom: 10vh;
         width: min(220px, 58vw);
     }
 }
 
-@media (display-mode: standalone) and (prefers-reduced-motion: reduce) {
-    body::before {
+@media (prefers-reduced-motion: reduce) {
+    html.level-up-installed-pwa body::before {
         animation-duration: 0.8s;
     }
 
-    body::after {
+    html.level-up-installed-pwa body::after {
         animation:
             level-up-fake-load 0.45s linear forwards,
             level-up-splash-bar-out 0.2s ease 0.55s forwards;
