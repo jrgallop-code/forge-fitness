@@ -1,5 +1,3 @@
-@import url("./pwa-splash-screen.css?v=1");
-
 /* Correct real-world plate loading order on the one-side sleeve diagram.
    Bar/inside is on the left; the sleeve tip is on the right.
    The existing renderer outputs lighter-to-heavier plus the collar last,
