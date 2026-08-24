@@ -1,0 +1,218 @@
+.starting-weight-helper {
+    margin: 6px 0 2px;
+}
+
+.starting-weight-helper[hidden] {
+    display: none;
+}
+
+.starting-weight-helper-btn {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.62);
+    padding: 2px 0;
+    font: inherit;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 255, 255, 0.24);
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.starting-weight-helper-btn:hover,
+.starting-weight-helper-btn:focus-visible {
+    color: #fff;
+    text-decoration-color: #d71920;
+}
+
+body.starting-weight-calibration-open {
+    overflow: hidden;
+}
+
+.starting-weight-calibration-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10040;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(4px);
+}
+
+.starting-weight-calibration-backdrop[hidden] {
+    display: none;
+}
+
+.starting-weight-calibration-sheet {
+    width: min(100%, 430px);
+    max-height: min(82vh, 620px);
+    overflow: auto;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    background: #101012;
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.58);
+    padding: 18px;
+    color: #fff;
+}
+
+.starting-weight-calibration-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.starting-weight-calibration-head .eyebrow {
+    color: #d71920;
+}
+
+.starting-weight-calibration-head h3 {
+    margin: 3px 0 0;
+    font-size: 1.2rem;
+}
+
+.starting-weight-calibration-close {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 50%;
+    background: transparent;
+    color: #fff;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.starting-weight-calibration-copy {
+    margin: 0 0 14px;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.starting-weight-calibration-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.starting-weight-calibration-fields label {
+    display: grid;
+    gap: 6px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.starting-weight-calibration-fields input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.starting-weight-calibration-question {
+    margin: 0 0 8px;
+    font-size: 0.83rem;
+    font-weight: 800;
+}
+
+.starting-weight-difficulty {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.starting-weight-difficulty button {
+    min-height: 54px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    background: #18181b;
+    color: #fff;
+    padding: 8px 5px;
+    font: inherit;
+    font-size: 0.77rem;
+    font-weight: 800;
+}
+
+.starting-weight-difficulty button small {
+    display: block;
+    margin-top: 3px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.63rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.starting-weight-difficulty button.selected {
+    border-color: #d71920;
+    background: rgba(215, 25, 32, 0.12);
+}
+
+.starting-weight-calibration-message {
+    min-height: 18px;
+    margin: 10px 0 0;
+    color: #ff8d91;
+    font-size: 0.76rem;
+}
+
+.starting-weight-calibration-result {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid rgba(215, 25, 32, 0.45);
+    border-radius: 13px;
+    background: rgba(215, 25, 32, 0.08);
+}
+
+.starting-weight-calibration-result[hidden] {
+    display: none;
+}
+
+.starting-weight-calibration-result span {
+    display: block;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.starting-weight-calibration-result strong {
+    display: block;
+    margin-top: 2px;
+    font-size: 1.35rem;
+}
+
+.starting-weight-calibration-actions {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.starting-weight-calibration-actions .primary-btn {
+    width: 100%;
+}
+
+@media (min-width: 700px) {
+    .starting-weight-calibration-backdrop {
+        align-items: center;
+    }
+}
+
+@media (max-width: 380px) {
+    .starting-weight-difficulty {
+        grid-template-columns: 1fr;
+    }
+
+    .starting-weight-difficulty button {
+        min-height: 44px;
+        text-align: left;
+        padding-inline: 10px;
+    }
+}
