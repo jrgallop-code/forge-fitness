@@ -5,6 +5,10 @@ const FIRST_PHASE_TREND_DAY = 7;
 const FIRST_PHASE_CHECK_DAY = 14;
 const PHASE_CHECK_CADENCE_DAYS = 7;
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
+const DISPLAY_TREND_DAYS = 21;
+const DISPLAY_TREND_MIN_ENTRIES = 6;
+const DISPLAY_TREND_MIN_SPAN_DAYS = 14;
+const DISPLAY_TREND_FULL_ENTRIES = 10;
 
 export function calculateWeightTrend(entries, options = {}) {
     const normalized = normalizeWeightEntries(entries);
@@ -236,6 +240,62 @@ export function calculateRegressionWeeklyChange(entries) {
     if (!Number.isFinite(denominator) || denominator <= 0) return null;
     const dailySlope = numerator / denominator;
     return Number.isFinite(dailySlope) ? dailySlope * 7 : null;
+}
+
+// User-facing rate of change. This is intentionally separate from
+// calculateWeightTrend(), whose stricter two-window result is used by nutrition
+// decisions. Regression makes the Progress summary useful when weigh-ins are
+// irregular without weakening calorie-adjustment safeguards.
+export function calculateDisplayWeightTrend(entries, options = {}) {
+    const normalized = normalizeWeightEntries(entries);
+    const endDate = validDate(options.endDate)
+        ? String(options.endDate)
+        : normalized.at(-1)?.date || null;
+    const windowDays = positiveInteger(options.windowDays, DISPLAY_TREND_DAYS);
+    const minEntries = positiveInteger(options.minEntries, DISPLAY_TREND_MIN_ENTRIES);
+    const minSpanDays = positiveInteger(options.minSpanDays, DISPLAY_TREND_MIN_SPAN_DAYS);
+    const fullEntries = positiveInteger(options.fullEntries, DISPLAY_TREND_FULL_ENTRIES);
+
+    if (!endDate) {
+        return { status: "insufficient", label: "Weekly Trend", weeklyChange: null, entries: 0, spanDays: 0, windowDays };
+    }
+
+    const startDate = shiftDate(endDate, -(windowDays - 1));
+    const windowEntries = normalized.filter(entry => entry.date >= startDate && entry.date <= endDate);
+    const firstDate = windowEntries[0]?.date || null;
+    const lastDate = windowEntries.at(-1)?.date || null;
+    const spanDays = firstDate && lastDate
+        ? Math.floor((dateMs(lastDate) - dateMs(firstDate)) / DAY_MS) + 1
+        : 0;
+    const weeklyChange = calculateRegressionWeeklyChange(windowEntries);
+    const ready = windowEntries.length >= minEntries
+        && spanDays >= minSpanDays
+        && Number.isFinite(weeklyChange);
+
+    if (!ready) {
+        return {
+            status: "insufficient",
+            label: "Weekly Trend",
+            weeklyChange: null,
+            entries: windowEntries.length,
+            spanDays,
+            windowDays,
+            windowStart: startDate,
+            windowEnd: endDate
+        };
+    }
+
+    const status = windowEntries.length >= fullEntries ? "actual" : "preliminary";
+    return {
+        status,
+        label: status === "preliminary" ? "Preliminary Trend" : "Weekly Trend",
+        weeklyChange,
+        entries: windowEntries.length,
+        spanDays,
+        windowDays,
+        windowStart: firstDate,
+        windowEnd: lastDate
+    };
 }
 
 export function normalizeWeightEntries(entries) {
