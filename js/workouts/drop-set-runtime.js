@@ -1,5 +1,9 @@
+import { getExerciseById } from "./exercise-library.js?v=exercise-library-cardio-3";
+
 const ACTIVE_KEY = "level_up_active_workout";
+const SESSION_KEY = "forge_workout_sessions";
 const MAX_DROPS = 3;
+const DROP_LOAD_FACTOR = 0.8;
 const syncTimers = new Map();
 
 function readActive() {
@@ -42,20 +46,140 @@ function getContext(row) {
     const card = row.closest(".session-exercise-card");
     const exerciseIndex = Number(card?.dataset.exerciseIndex);
     const setIndex = Number(row.dataset.setIndex);
+    const exerciseId = card?.dataset.exerciseId || "";
     const active = readActive();
     const set = active?.exercises?.[exerciseIndex]?.sets?.[setIndex];
-    return { active, card, exerciseIndex, setIndex, set };
+    return { active, card, exerciseIndex, setIndex, exerciseId, set };
 }
 
-function suggestedWeight(set) {
-    const weight = Number(set?.weight ?? set?.suggestedWeight);
-    if (!Number.isFinite(weight) || weight <= 0) return null;
-    return Math.round(weight * .8 * 2) / 2;
+function getPracticalIncrement(exerciseId) {
+    const exercise = getExerciseById(exerciseId);
+    const equipment = String(exercise?.equipment || "").toLowerCase();
+    if (equipment.includes("cable")) return 2.5;
+    if (equipment.includes("dumbbell")) return 5;
+    if (equipment.includes("barbell")) return 5;
+    if (equipment.includes("machine")) return 5;
+    if (equipment.includes("plate")) return 5;
+    return 5;
+}
+
+function getSourceWeight(set) {
+    const weight = Number(set?.weight ?? set?.draftWeight ?? set?.suggestedWeight);
+    return Number.isFinite(weight) && weight > 0 ? weight : null;
+}
+
+function suggestedWeight(set, exerciseId) {
+    const weight = getSourceWeight(set);
+    if (!weight) return null;
+
+    const increment = getPracticalIncrement(exerciseId);
+    const rawTarget = weight * DROP_LOAD_FACTOR;
+    let practicalTarget = Math.round(rawTarget / increment) * increment;
+
+    if (practicalTarget >= weight) {
+        practicalTarget = weight - increment;
+    }
+
+    if (!Number.isFinite(practicalTarget) || practicalTarget <= 0) {
+        return null;
+    }
+
+    return Number(practicalTarget.toFixed(1));
 }
 
 function ensureDropSets(set) {
     if (!Array.isArray(set.dropSets)) set.dropSets = [];
     return set.dropSets;
+}
+
+function moveIncompleteDropToDraft(drop) {
+    if (!drop || drop.completed !== false) return false;
+    let changed = false;
+
+    if (drop.weight !== null && drop.weight !== undefined && drop.draftWeight == null) {
+        drop.draftWeight = drop.weight;
+        changed = true;
+    }
+    if (drop.reps !== null && drop.reps !== undefined && drop.draftReps == null) {
+        drop.draftReps = drop.reps;
+        changed = true;
+    }
+    if (drop.weight !== null && drop.weight !== undefined) {
+        drop.weight = null;
+        changed = true;
+    }
+    if (drop.reps !== null && drop.reps !== undefined) {
+        drop.reps = null;
+        changed = true;
+    }
+
+    return changed;
+}
+
+function normalizeActiveDropDrafts() {
+    const active = readActive();
+    if (!active) return;
+    let changed = false;
+
+    (active.exercises || []).forEach(exercise => {
+        (exercise?.sets || []).forEach(set => {
+            (Array.isArray(set?.dropSets) ? set.dropSets : []).forEach(drop => {
+                if (moveIncompleteDropToDraft(drop)) changed = true;
+            });
+        });
+    });
+
+    if (changed) saveActive(active);
+}
+
+function normalizeStoredSessionDropDrafts() {
+    try {
+        const sessions = JSON.parse(localStorage.getItem(SESSION_KEY) || "[]");
+        if (!Array.isArray(sessions)) return;
+        let changed = false;
+
+        sessions.forEach(session => {
+            (session?.exercises || []).forEach(exercise => {
+                (exercise?.sets || []).forEach(set => {
+                    (Array.isArray(set?.dropSets) ? set.dropSets : []).forEach(drop => {
+                        if (moveIncompleteDropToDraft(drop)) changed = true;
+                    });
+                });
+            });
+        });
+
+        if (changed) localStorage.setItem(SESSION_KEY, JSON.stringify(sessions));
+    }
+    catch {
+        // Leave malformed or unavailable history untouched.
+    }
+}
+
+function getDropDisplayValue(drop, field) {
+    if (drop?.completed) return drop?.[field] ?? "";
+    const draftKey = field === "weight" ? "draftWeight" : "draftReps";
+    return drop?.[draftKey] ?? drop?.[field] ?? "";
+}
+
+function refreshSuggestedWeights(set, exerciseId) {
+    const drops = ensureDropSets(set);
+    let prior = set;
+    drops.forEach(drop => {
+        drop.suggestedWeight = suggestedWeight(prior, exerciseId);
+        prior = drop;
+    });
+}
+
+function updateSuggestedPlaceholders(block, set, exerciseId) {
+    if (!block || !set) return;
+    refreshSuggestedWeights(set, exerciseId);
+    const drops = ensureDropSets(set);
+    block.querySelectorAll(".drop-set-row").forEach(row => {
+        const index = Number(row.dataset.dropIndex);
+        const input = row.querySelector(".drop-set-weight");
+        const suggestion = drops[index]?.suggestedWeight;
+        if (input) input.placeholder = suggestion ?? "Weight";
+    });
 }
 
 function protectDropInputs(block) {
@@ -73,16 +197,17 @@ function closeMenus(except = null) {
 }
 
 function renderBlock(row) {
-    const { set } = getContext(row);
+    const { set, exerciseId } = getContext(row);
     const block = row.parentElement?.querySelector(`.drop-set-block[data-parent-set="${row.dataset.setIndex}"]`);
     if (!block || !set) return;
+    refreshSuggestedWeights(set, exerciseId);
     const drops = ensureDropSets(set);
     block.hidden = drops.length === 0;
     block.innerHTML = drops.map((drop, index) => `
         <div class="drop-set-row ${drop.completed ? "completed" : ""}" data-drop-index="${index}">
             <span class="drop-set-label">↳ Drop ${index + 1}</span>
-            <input class="drop-set-weight" type="number" inputmode="decimal" min="0" step="0.5" value="${drop.weight ?? ""}" placeholder="${drop.suggestedWeight ?? suggestedWeight(index ? drops[index - 1] : set) ?? "Weight"}" aria-label="Drop ${index + 1} weight">
-            <input class="drop-set-reps" type="number" inputmode="numeric" min="0" step="1" value="${drop.reps ?? ""}" placeholder="Reps" aria-label="Drop ${index + 1} reps">
+            <input class="drop-set-weight" type="number" inputmode="decimal" min="0" step="${getPracticalIncrement(exerciseId)}" value="${getDropDisplayValue(drop, "weight")}" placeholder="${drop.suggestedWeight ?? "Weight"}" aria-label="Drop ${index + 1} weight">
+            <input class="drop-set-reps" type="number" inputmode="numeric" min="0" step="1" value="${getDropDisplayValue(drop, "reps")}" placeholder="Reps" aria-label="Drop ${index + 1} reps">
             <button class="drop-set-complete" type="button" aria-label="Complete drop ${index + 1}">${drop.completed ? "✓" : ""}</button>
             <button class="drop-set-remove" type="button" aria-label="Remove drop ${index + 1}">×</button>
         </div>
@@ -90,14 +215,14 @@ function renderBlock(row) {
     protectDropInputs(block);
 }
 
-function appendDropRow(row, drop, index, total) {
+function appendDropRow(row, drop, index, total, exerciseId) {
     const block = row.parentElement?.querySelector(`.drop-set-block[data-parent-set="${row.dataset.setIndex}"]`);
     if (!block) return;
     const markup = `
         <div class="drop-set-row ${drop.completed ? "completed" : ""}" data-drop-index="${index}">
             <span class="drop-set-label">↳ Drop ${index + 1}</span>
-            <input class="drop-set-weight" type="number" inputmode="decimal" min="0" step="0.5" value="${drop.weight ?? ""}" placeholder="${drop.suggestedWeight ?? "Weight"}" aria-label="Drop ${index + 1} weight">
-            <input class="drop-set-reps" type="number" inputmode="numeric" min="0" step="1" value="${drop.reps ?? ""}" placeholder="Reps" aria-label="Drop ${index + 1} reps">
+            <input class="drop-set-weight" type="number" inputmode="decimal" min="0" step="${getPracticalIncrement(exerciseId)}" value="${getDropDisplayValue(drop, "weight")}" placeholder="${drop.suggestedWeight ?? "Weight"}" aria-label="Drop ${index + 1} weight">
+            <input class="drop-set-reps" type="number" inputmode="numeric" min="0" step="1" value="${getDropDisplayValue(drop, "reps")}" placeholder="Reps" aria-label="Drop ${index + 1} reps">
             <button class="drop-set-complete" type="button" aria-label="Complete drop ${index + 1}">${drop.completed ? "✓" : ""}</button>
             <button class="drop-set-remove" type="button" aria-label="Remove drop ${index + 1}">×</button>
         </div>`;
@@ -111,16 +236,24 @@ function appendDropRow(row, drop, index, total) {
 }
 
 function addDrop(row) {
-    const { active, set } = getContext(row);
+    const { active, set, exerciseId } = getContext(row);
     if (!active || !set) return;
     const drops = ensureDropSets(set);
     if (drops.length >= MAX_DROPS) return;
+    refreshSuggestedWeights(set, exerciseId);
     const prior = drops.at(-1) || set;
-    const drop = { weight: null, suggestedWeight: suggestedWeight(prior), reps: null, completed: false };
+    const drop = {
+        weight: null,
+        draftWeight: null,
+        suggestedWeight: suggestedWeight(prior, exerciseId),
+        reps: null,
+        draftReps: null,
+        completed: false
+    };
     drops.push(drop);
     persistDropSets(row, active, set);
     const scrollTop = window.scrollY;
-    appendDropRow(row, drop, drops.length - 1, drops.length);
+    appendDropRow(row, drop, drops.length - 1, drops.length, exerciseId);
     row.classList.add("has-drop-set");
     requestAnimationFrame(() => {
         if (Math.abs(window.scrollY - scrollTop) > .5) window.scrollTo(0, scrollTop);
@@ -153,7 +286,10 @@ function enhanceRow(row) {
     menu.insertAdjacentElement("afterend", block);
 
     const { set } = getContext(row);
-    if (Array.isArray(set?.dropSets) && set.dropSets.length) row.classList.add("has-drop-set");
+    if (Array.isArray(set?.dropSets) && set.dropSets.length) {
+        row.classList.add("has-drop-set");
+        dispatchDropSync(row, set);
+    }
     renderBlock(row);
 }
 
@@ -162,11 +298,6 @@ function rowForDropControl(control) {
     const setIndex = control?.dataset.parentSet;
     if (!card || setIndex == null) return null;
     return Array.from(card.querySelectorAll(".session-set-row")).find(row => row.dataset.setIndex === setIndex) || null;
-}
-
-function menuForRow(row) {
-    const card = row?.closest(".session-exercise-card");
-    return card?.querySelector(`.drop-set-menu[data-parent-set="${row.dataset.setIndex}"]`) || null;
 }
 
 function enhance() {
@@ -195,7 +326,7 @@ document.addEventListener("click", event => {
     if (block) {
         const row = rowForDropControl(block);
         if (!row?.matches(".session-set-row")) return;
-        const { active, set } = getContext(row);
+        const { active, set, exerciseId } = getContext(row);
         if (!active || !set) return;
         const drops = ensureDropSets(set);
         const dropRow = event.target.closest(".drop-set-row");
@@ -208,13 +339,33 @@ document.addEventListener("click", event => {
         }
         if (!remove && !complete) return;
         if (complete && Number.isInteger(dropIndex)) {
-            drops[dropIndex].completed = !drops[dropIndex].completed;
+            const drop = drops[dropIndex];
+            const completing = !drop.completed;
+
+            if (completing) {
+                drop.completed = true;
+                drop.weight = drop.draftWeight ?? drop.weight ?? null;
+                drop.reps = drop.draftReps ?? drop.reps ?? null;
+                drop.draftWeight = null;
+                drop.draftReps = null;
+            }
+            else {
+                drop.completed = false;
+                drop.draftWeight = drop.weight ?? drop.draftWeight ?? null;
+                drop.draftReps = drop.reps ?? drop.draftReps ?? null;
+                drop.weight = null;
+                drop.reps = null;
+            }
+
+            refreshSuggestedWeights(set, exerciseId);
             persistDropSets(row, active, set);
-            dropRow.classList.toggle("completed", drops[dropIndex].completed);
-            complete.textContent = drops[dropIndex].completed ? "✓" : "";
+            dropRow.classList.toggle("completed", drop.completed);
+            complete.textContent = drop.completed ? "✓" : "";
+            updateSuggestedPlaceholders(block, set, exerciseId);
             return;
         }
         if (remove && Number.isInteger(dropIndex)) drops.splice(dropIndex, 1);
+        refreshSuggestedWeights(set, exerciseId);
         persistDropSets(row, active, set);
         row.classList.toggle("has-drop-set", drops.length > 0);
         renderBlock(row);
@@ -231,13 +382,30 @@ document.addEventListener("input", event => {
     const block = input.closest(".drop-set-block");
     const row = rowForDropControl(block);
     if (!row?.matches(".session-set-row")) return;
-    const { active, set } = getContext(row);
+    const { active, set, exerciseId } = getContext(row);
     if (!active || !set || !dropRow) return;
     const drop = ensureDropSets(set)[Number(dropRow.dataset.dropIndex)];
     if (!drop) return;
-    drop[input.matches(".drop-set-weight") ? "weight" : "reps"] = input.value === "" ? null : Number(input.value);
+
+    const field = input.matches(".drop-set-weight") ? "weight" : "reps";
+    const value = input.value === "" ? null : Number(input.value);
+    if (drop.completed) {
+        drop[field] = value;
+    }
+    else {
+        const draftKey = field === "weight" ? "draftWeight" : "draftReps";
+        drop[draftKey] = value;
+        drop[field] = null;
+    }
+
+    if (field === "weight") {
+        refreshSuggestedWeights(set, exerciseId);
+        updateSuggestedPlaceholders(block, set, exerciseId);
+    }
     persistDropSets(row, active, set, { deferSessionSync: true });
 });
 
+normalizeActiveDropDrafts();
+normalizeStoredSessionDropDrafts();
 new MutationObserver(enhance).observe(document.body, { childList: true, subtree: true });
 enhance();
