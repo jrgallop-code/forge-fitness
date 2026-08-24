@@ -1,4 +1,4 @@
-const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-2";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-1";
 
 const FRONT_REGIONS = {
   Shoulders: ["muscle_front_009", "muscle_front_010"],
@@ -57,15 +57,16 @@ function applyStyles(root, styles) {
 }
 
 function frontMarkup() {
-  const paths = Object.entries(FRONT_REGIONS).flatMap(([muscle, ids]) =>
+  const { asset, regions, viewBox, imageX } = getAnatomyConfig("front");
+  const paths = Object.entries(regions).flatMap(([muscle, ids]) =>
     ids.map(id => {
-      const href = `${FRONT_ASSET}#${id}`;
+      const href = `${asset}#${id}`;
       return `<use href="${href}" xlink:href="${href}" data-recovery-muscle="${muscle}" class="recovery-user-muscle recovery-user-fill"/>`;
     })
   ).join("");
 
-  return `<svg class="recovery-user-front-svg" viewBox="0 0 960 1920" role="img" aria-label="Front muscle recovery map" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <image href="${FRONT_ASSET}" xlink:href="${FRONT_ASSET}" x="0" y="0" width="960" height="1920" preserveAspectRatio="xMidYMid meet"/>
+  return `<svg class="recovery-user-front-svg" viewBox="${viewBox}" role="img" aria-label="Front muscle recovery map" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <image href="${asset}" xlink:href="${asset}" x="${imageX}" y="0" width="960" height="1920" preserveAspectRatio="xMidYMid meet"/>
     ${paths}
   </svg>`;
 }
@@ -73,10 +74,12 @@ function frontMarkup() {
 function installUserFront() {
   document.querySelectorAll(".muscle-recovery-map-view").forEach(view => {
     const root = view.querySelector("[data-recovery-body-front]");
-    if (!root || root.dataset.userFrontSvg === "true") return;
+    const sex = getAnatomyConfig("front").sex;
+    if (!root || (root.dataset.userFrontSvg === "true" && root.dataset.anatomySex === sex)) return;
     const styles = copyStyles(root);
     root.innerHTML = frontMarkup();
     root.dataset.userFrontSvg = "true";
+    root.dataset.anatomySex = sex;
     root.dataset.designedRecoveryAsset = "true";
     root.classList.add("recovery-user-front-wrap");
     applyStyles(root, styles);
@@ -95,3 +98,4 @@ if (content) {
 }
 
 window.setTimeout(installUserFront, 0);
+window.addEventListener("levelup:profile-updated", installUserFront);

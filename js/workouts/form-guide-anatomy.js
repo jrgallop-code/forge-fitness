@@ -1,6 +1,7 @@
 const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-2";
 const BACK_ASSET = "assets/recovery/back-view.svg?v=recovery-back-vector-1";
 const TARGET_FILL = "#ff315f";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-1";
 
 const CORE_ALL = [
     "muscle_front_017", "muscle_front_018", "muscle_front_019", "muscle_front_020",
@@ -170,6 +171,12 @@ export function getFormGuideMuscleVisual(muscleName) {
     const source = FORM_GUIDE_MUSCLES[name];
     if (!source) return null;
 
+    const anatomy = getAnatomyConfig(source.view);
+    if (anatomy.sex === "female") {
+        const aliases = {"Front Delts":"Shoulders","Side Delts":"Shoulders","Rear Delts":"Rear Delts","Lats":"Back","Upper Back":"Back","Spinal Erectors":"Back","Rectus Abdominis":"Core","Obliques":"Core","Deep Core":"Core"};
+        const region = aliases[name] || name;
+        return { muscle:name, view:source.view, ids:[...(anatomy.regions[region]||[])], crop:source.crop, anatomy };
+    }
     return {
         muscle: name,
         view: source.view,
@@ -185,10 +192,12 @@ export function renderFormGuideMuscleSvg(configOrMuscleName) {
 
     if (!config?.view || !Array.isArray(config.ids) || !config.ids.length) return "";
 
-    const asset = config.view === "back" ? BACK_ASSET : FRONT_ASSET;
-    const assetX = config.view === "back" ? 960 : 0;
+    const anatomy = config.anatomy || getAnatomyConfig(config.view);
+    const asset = anatomy.asset;
+    const assetX = anatomy.imageX;
     const cropKey = `${config.view}-${config.crop}`;
-    const viewBox = CROP_VIEWBOXES[cropKey] || (config.view === "back" ? "960 0 960 1920" : "0 0 960 1920");
+    const femaleCrops={"front-upper":"180 300 600 680","front-arms":"120 420 720 650","front-torso":"300 470 360 540","front-thighs":"290 900 380 570","back-upper":"180 300 600 680","back-mid":"270 420 420 600","back-hips":"280 780 400 520","back-thighs":"290 950 380 520","back-calves":"290 1250 380 620"};
+    const viewBox = anatomy.sex === "female" ? (femaleCrops[cropKey]||anatomy.viewBox) : (CROP_VIEWBOXES[cropKey] || anatomy.viewBox);
     const orientation = config.view === "back" ? "back" : "front";
     const muscle = escapeXml(config.muscle || "Target muscle");
     const overlays = config.ids.map(id => {

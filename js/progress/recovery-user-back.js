@@ -1,4 +1,4 @@
-const BACK_ASSET = "assets/recovery/back-view.svg?v=recovery-back-vector-1";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-1";
 
 const BACK_REGIONS = {
   "Rear Delts": ["muscle_back_016", "muscle_back_017"],
@@ -54,15 +54,16 @@ function applyStyles(root, styles) {
 }
 
 function backMarkup() {
-  const paths = Object.entries(BACK_REGIONS).flatMap(([muscle, ids]) =>
+  const { asset, regions, viewBox, imageX } = getAnatomyConfig("back");
+  const paths = Object.entries(regions).flatMap(([muscle, ids]) =>
     ids.map(id => {
-      const href = `${BACK_ASSET}#${id}`;
+      const href = `${asset}#${id}`;
       return `<use href="${href}" xlink:href="${href}" data-recovery-muscle="${muscle}" class="recovery-user-muscle recovery-user-fill"/>`;
     })
   ).join("");
 
-  return `<svg class="recovery-user-back-svg" viewBox="960 0 960 1920" role="img" aria-label="Back muscle recovery map" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <image href="${BACK_ASSET}" xlink:href="${BACK_ASSET}" x="960" y="0" width="960" height="1920" preserveAspectRatio="xMidYMid meet"/>
+  return `<svg class="recovery-user-back-svg" viewBox="${viewBox}" role="img" aria-label="Back muscle recovery map" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <image href="${asset}" xlink:href="${asset}" x="${imageX}" y="0" width="960" height="1920" preserveAspectRatio="xMidYMid meet"/>
     ${paths}
   </svg>`;
 }
@@ -70,10 +71,12 @@ function backMarkup() {
 function installUserBack() {
   document.querySelectorAll(".muscle-recovery-map-view").forEach(view => {
     const root = view.querySelector("[data-recovery-body-back]");
-    if (!root || root.dataset.userBackSvg === "true") return;
+    const sex = getAnatomyConfig("back").sex;
+    if (!root || (root.dataset.userBackSvg === "true" && root.dataset.anatomySex === sex)) return;
     const styles = copyStyles(root);
     root.innerHTML = backMarkup();
     root.dataset.userBackSvg = "true";
+    root.dataset.anatomySex = sex;
     root.dataset.designedRecoveryAsset = "true";
     root.classList.add("recovery-user-back-wrap");
     applyStyles(root, styles);
@@ -92,3 +95,4 @@ if (content) {
 }
 
 window.setTimeout(installUserBack, 0);
+window.addEventListener("levelup:profile-updated", installUserBack);
