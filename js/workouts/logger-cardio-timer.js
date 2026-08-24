@@ -1,6 +1,20 @@
+import { openActiveWorkout } from "./workout-session.js?v=drop-sets-6";
+
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const CARDIO_TIMER_STORAGE_KEY = "level_up_cardio_timer_state";
+const CUSTOM_EXERCISE_STORAGE_KEY = "forge_custom_exercises";
+const BUILT_IN_CARDIO_IDS = new Set([
+    "indoor-rower",
+    "ski-erg",
+    "stationary-bike",
+    "running",
+    "assault-bike",
+    "air-bike",
+    "fan-bike"
+]);
+const CARDIO_NAME_PATTERN = /\b(?:assault|air|fan|stationary|exercise)\s*bike\b|\bindoor\s*rower\b|\bski\s*erg\b|\btreadmill\b|\brunning\b/i;
 let intervalId = null;
+let trackingRepairInFlight = false;
 
 const ALARM_CLOCK_SVG = `
     <svg class="exercise-alarm-clock-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -17,6 +31,120 @@ function getActiveWorkout() {
     catch {
         return null;
     }
+}
+
+function readCustomExercises() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(CUSTOM_EXERCISE_STORAGE_KEY) || "[]");
+        return Array.isArray(parsed) ? parsed : [];
+    }
+    catch {
+        return [];
+    }
+}
+
+function isCardioExercise(exercise) {
+    if (!exercise || typeof exercise !== "object") return false;
+    const type = String(exercise.type || "").trim().toLowerCase();
+    const muscleGroup = String(exercise.muscleGroup || "").trim().toLowerCase();
+    const name = String(exercise.name || "").trim();
+    return exercise.trackingType === "notes" ||
+        type === "cardio" ||
+        muscleGroup === "cardio" ||
+        CARDIO_NAME_PATTERN.test(name);
+}
+
+function looksLikeCardioId(value) {
+    const id = String(value || "").trim().toLowerCase();
+    if (BUILT_IN_CARDIO_IDS.has(id)) return true;
+    return /^(?:custom-)?(?:assault|air|fan|stationary|exercise)-bike(?:-|$)/.test(id) ||
+        /^(?:custom-)?indoor-rower(?:-|$)/.test(id) ||
+        /^(?:custom-)?ski-erg(?:-|$)/.test(id);
+}
+
+function normalizeCustomCardioExercises() {
+    const customExercises = readCustomExercises();
+    if (!customExercises.length) return new Set(BUILT_IN_CARDIO_IDS);
+
+    let changed = false;
+    const normalized = customExercises.map(exercise => {
+        if (!isCardioExercise(exercise)) return exercise;
+
+        const needsUpdate = exercise.trackingType !== "notes" ||
+            String(exercise.type || "").toLowerCase() !== "cardio" ||
+            String(exercise.muscleGroup || "").toLowerCase() !== "cardio" ||
+            Number(exercise.defaultSets) !== 1 ||
+            String(exercise.recommendedReps || "") !== "";
+
+        if (!needsUpdate) return exercise;
+        changed = true;
+        return {
+            ...exercise,
+            muscleGroup: "Cardio",
+            type: "cardio",
+            recommendedReps: "",
+            defaultSets: 1,
+            trackingType: "notes"
+        };
+    });
+
+    if (changed) {
+        localStorage.setItem(CUSTOM_EXERCISE_STORAGE_KEY, JSON.stringify(normalized));
+    }
+
+    const cardioIds = new Set(BUILT_IN_CARDIO_IDS);
+    normalized.forEach(exercise => {
+        if (isCardioExercise(exercise) && exercise.id) cardioIds.add(String(exercise.id));
+    });
+    return cardioIds;
+}
+
+function normalizeActiveCardioState(cardioIds) {
+    const active = getActiveWorkout();
+    if (!active || !Array.isArray(active.exercises)) return false;
+
+    const dayIndex = Number(active.trainingDayIndex) || 0;
+    const planned = active.planSnapshot?.days?.[dayIndex]?.exercises || [];
+    let changed = false;
+
+    active.exercises = active.exercises.map((state, index) => {
+        const exerciseId = String(state?.exerciseId || planned[index]?.id || "");
+        const isCardio = cardioIds.has(exerciseId) || looksLikeCardioId(exerciseId);
+        if (!isCardio || state?.trackingType === "notes") return state;
+
+        changed = true;
+        if (planned[index]) planned[index].sets = 1;
+
+        return {
+            ...state,
+            exerciseId,
+            trackingType: "notes",
+            durationMinutes: state?.durationMinutes ?? null,
+            distance: typeof state?.distance === "string" ? state.distance : "",
+            notes: typeof state?.notes === "string" ? state.notes : "",
+            sets: []
+        };
+    });
+
+    if (changed) {
+        active.updatedAt = new Date().toISOString();
+        localStorage.setItem(ACTIVE_WORKOUT_STORAGE_KEY, JSON.stringify(active));
+    }
+    return changed;
+}
+
+function repairCardioTracking({ rerender = false } = {}) {
+    const cardioIds = normalizeCustomCardioExercises();
+    const changed = normalizeActiveCardioState(cardioIds);
+
+    if (changed && rerender && !trackingRepairInFlight) {
+        trackingRepairInFlight = true;
+        requestAnimationFrame(() => {
+            openActiveWorkout();
+            trackingRepairInFlight = false;
+        });
+    }
+    return changed;
 }
 
 function getTimerStore() {
@@ -166,6 +294,7 @@ function updateCardioTimerCard(card) {
 }
 
 function scanLogger() {
+    if (repairCardioTracking({ rerender: true })) return;
     const logger = document.getElementById("workout-session-logger");
     if (!logger) return;
     decorateAlarmClockButtons(logger);
@@ -185,6 +314,12 @@ function cleanupStaleTimerState() {
     const cleaned = Object.fromEntries(Object.entries(store).filter(([key]) => key.startsWith(prefix)));
     if (Object.keys(cleaned).length !== Object.keys(store).length) saveTimerStore(cleaned);
 }
+
+document.addEventListener("click", event => {
+    if (event.target.closest?.("#begin-session-btn, #history-add-exercise-btn")) {
+        normalizeCustomCardioExercises();
+    }
+}, true);
 
 const observer = new MutationObserver(mutations => {
     const relevant = mutations.some(mutation =>
@@ -209,5 +344,6 @@ document.addEventListener("visibilitychange", () => {
     if (!document.hidden) scanLogger();
 });
 
+repairCardioTracking();
 cleanupStaleTimerState();
 scanLogger();
