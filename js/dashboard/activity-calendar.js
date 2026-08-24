@@ -75,6 +75,116 @@ function workoutName(session) {
     ).trim();
 }
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function hasRecordedValue(value) {
+    if (value === null || value === undefined || String(value).trim() === "") return false;
+    const number = Number(value);
+    return Number.isFinite(number) ? number > 0 : true;
+}
+
+function isRecordedSet(set) {
+    return Boolean(
+        set?.completed ||
+        hasRecordedValue(set?.weight) ||
+        hasRecordedValue(set?.reps) ||
+        hasRecordedValue(set?.duration) ||
+        hasRecordedValue(set?.durationMinutes)
+    );
+}
+
+function recordedExercises(session) {
+    return (session?.exercises || []).filter(exercise => {
+        if (exercise?.trackingType === "notes") {
+            return Number(exercise?.durationMinutes) > 0 ||
+                String(exercise?.distance || "").trim() ||
+                String(exercise?.notes || "").trim();
+        }
+        return (exercise?.sets || []).some(isRecordedSet);
+    });
+}
+
+function recordedSetCount(session) {
+    return (session?.exercises || [])
+        .flatMap(exercise => exercise?.sets || [])
+        .filter(isRecordedSet)
+        .length;
+}
+
+function workoutVolume(session) {
+    return (session?.exercises || [])
+        .flatMap(exercise => exercise?.sets || [])
+        .reduce((total, set) => {
+            const weight = Number(set?.weight);
+            const reps = Number(set?.reps);
+            const workingVolume = weight > 0 && reps > 0 ? weight * reps : 0;
+            const dropSets = Array.isArray(set?.dropSets) ? set.dropSets : [];
+            const dropVolume = dropSets.reduce((dropTotal, drop) => {
+                const dropWeight = Number(drop?.weight);
+                const dropReps = Number(drop?.reps);
+                return dropWeight > 0 && dropReps > 0
+                    ? dropTotal + dropWeight * dropReps
+                    : dropTotal;
+            }, 0);
+            return total + workingVolume + dropVolume;
+        }, 0);
+}
+
+function formatDuration(session) {
+    const milliseconds = Number(session?.durationMs) || Number(session?.durationMinutes) * 60000;
+    if (!(milliseconds > 0)) return "";
+    const totalMinutes = Math.max(1, Math.round(milliseconds / 60000));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (!hours) return `${minutes} min`;
+    return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
+}
+
+function workoutSummary(session) {
+    const parts = [];
+    const name = workoutName(session);
+    const trainingDay = String(session?.trainingDayName || session?.dayName || "").trim();
+    const duration = formatDuration(session);
+    const exercises = recordedExercises(session).length;
+    const sets = recordedSetCount(session);
+    const volume = workoutVolume(session);
+
+    if (trainingDay && trainingDay !== "Workout" && trainingDay !== name) parts.push(trainingDay);
+    if (duration) parts.push(duration);
+    if (exercises) parts.push(`${exercises} ${exercises === 1 ? "exercise" : "exercises"}`);
+    if (sets) parts.push(`${sets} ${sets === 1 ? "set" : "sets"}`);
+    if (volume > 0) parts.push(`${Math.round(volume).toLocaleString()} lb volume`);
+    return parts.join(" · ");
+}
+
+function formatWeight(value) {
+    return `${Number(value).toLocaleString(undefined, {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+    })} lb`;
+}
+
+function weighInChange(entry, weights) {
+    const date = normalizeDate(entry?.date);
+    const previous = weights
+        .filter(candidate => normalizeDate(candidate?.date) < date)
+        .sort((a, b) => normalizeDate(b?.date).localeCompare(normalizeDate(a?.date)))[0];
+    if (!previous) return "First recorded weigh-in";
+
+    const difference = Number(entry?.weight) - Number(previous?.weight);
+    if (!Number.isFinite(difference)) return "";
+    if (Math.abs(difference) < 0.05) return "No change from previous weigh-in";
+    const sign = difference > 0 ? "+" : "−";
+    return `${sign}${Math.abs(difference).toFixed(1)} lb from previous weigh-in`;
+}
+
 function calendarDays(date) {
     const first = new Date(date.getFullYear(), date.getMonth(), 1, 12);
     const last = new Date(date.getFullYear(), date.getMonth() + 1, 0, 12);
@@ -114,16 +224,27 @@ function renderDetails(dateKey, sessions, weights) {
     return `
         <div class="activity-calendar-detail-head"><span>${fullDateLabel(dateKey)}</span></div>
         <div class="activity-calendar-events">
-            ${daySessions.map(session => `
+            ${daySessions.map(session => {
+                const summary = workoutSummary(session);
+                return `
                 <div class="activity-calendar-event activity-calendar-event--workout">
                     <i aria-hidden="true"></i>
-                    <span><small>WORKOUT</small><strong>${workoutName(session)}</strong></span>
+                    <span>
+                        <small>WORKOUT</small>
+                        <strong>${escapeHtml(workoutName(session))}</strong>
+                        ${summary ? `<p class="activity-calendar-event-meta">${escapeHtml(summary)}</p>` : ""}
+                    </span>
                 </div>
-            `).join("")}
-            ${dayWeights.map(() => `
+            `;
+            }).join("")}
+            ${dayWeights.map(entry => `
                 <div class="activity-calendar-event activity-calendar-event--weight">
                     <i aria-hidden="true"></i>
-                    <span><small>WEIGH-IN</small><strong>Weight logged</strong></span>
+                    <span>
+                        <small>WEIGH-IN</small>
+                        <strong>${formatWeight(entry?.weight)}</strong>
+                        <p class="activity-calendar-event-meta">${weighInChange(entry, weights)}</p>
+                    </span>
                 </div>
             `).join("")}
         </div>

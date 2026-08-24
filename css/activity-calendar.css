@@ -269,8 +269,9 @@
 
 .activity-calendar-event > i {
     flex: 0 0 auto;
+    align-self: stretch;
     width: 9px;
-    height: 34px;
+    min-height: 44px;
     border-radius: 999px;
 }
 
@@ -304,6 +305,14 @@
     font-size: 0.9rem;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.activity-calendar-event-meta {
+    margin: 5px 0 0;
+    color: #a5a5ad;
+    font-size: 0.69rem;
+    font-weight: 650;
+    line-height: 1.4;
 }
 
 .activity-calendar-empty {
