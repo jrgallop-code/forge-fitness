@@ -1,104 +1,128 @@
-/* Level Up in-app splash for installed PWA launches.
-   iOS does not consistently expose display-mode: standalone to CSS, so
-   index.html marks the root element when either display-mode or
-   navigator.standalone reports an installed launch. */
+/* Level Up installed-PWA splash.
+   Rebuilds the approved black/white/red splash with the app's real brand asset
+   so the design stays crisp and cannot be replaced by a stale raster. */
 
 html.level-up-installed-pwa body::before,
-html.level-up-installed-pwa body::after {
-    content: "";
+html.level-up-installed-pwa body::after,
+html.level-up-installed-pwa #app::before,
+html.level-up-installed-pwa #app::after {
     position: fixed;
     pointer-events: auto;
 }
 
+/* Full black splash + real Level Up logo */
 html.level-up-installed-pwa body::before {
+    content: "";
     inset: 0;
-    z-index: 2147483646;
-    background-color: #000;
-    background-image:
-        url("../assets/level-up-splash.webp?v=2"),
-        linear-gradient(rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.13));
-    background-repeat: no-repeat, no-repeat;
-    background-position:
-        center center,
-        center calc(100% - 12vh);
-    background-size:
-        auto min(82vh, 760px),
-        min(230px, 58vw) 3px;
-    animation: level-up-splash-out 2.15s ease forwards;
+    z-index: 2147483644;
+    background: #000 url("../assets/level-up-logo.svg?v=splash-3") no-repeat center calc(50% - 150px);
+    background-size: min(46vw, 230px) auto;
+    animation: level-up-splash-out 2.2s ease forwards;
 }
 
+/* LEVEL UP wordmark */
 html.level-up-installed-pwa body::after {
+    content: "LEVEL UP";
+    left: 0;
+    right: 0;
+    top: calc(50% + 2px);
+    z-index: 2147483645;
+    color: #fff;
+    text-align: center;
+    font-family: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+    font-size: clamp(3.45rem, 16vw, 5.2rem);
+    font-weight: 900;
+    font-style: italic;
+    font-stretch: condensed;
+    line-height: .88;
+    letter-spacing: -0.055em;
+    text-shadow: 0 2px 7px rgba(255,255,255,.06);
+    transform: skewX(-2deg);
+    animation: level-up-splash-out 2.2s ease forwards;
+}
+
+/* Red underline + subtitle */
+html.level-up-installed-pwa #app::before {
+    content: "HYPERTROPHY TRAINING APP";
     left: 50%;
-    bottom: 12vh;
+    top: calc(50% + 102px);
+    z-index: 2147483646;
+    width: min(82vw, 430px);
+    padding-top: 28px;
+    color: #f21f2c;
+    background: linear-gradient(#f21f2c, #f21f2c) no-repeat center top / min(52vw, 220px) 4px;
+    text-align: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size: clamp(.78rem, 3.6vw, 1.04rem);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: .22em;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    animation: level-up-splash-out 2.2s ease forwards;
+}
+
+/* Fake loading bar, deliberately separate from the brand underline */
+html.level-up-installed-pwa #app::after {
+    content: "";
+    left: 50%;
+    bottom: max(10vh, calc(env(safe-area-inset-bottom) + 42px));
     z-index: 2147483647;
-    width: min(230px, 58vw);
+    width: min(220px, 56vw);
     height: 3px;
     border-radius: 999px;
-    background: #f01f2b;
-    box-shadow: 0 0 10px rgba(240, 31, 43, 0.32);
-    transform: translateX(-50%) scaleX(0.03);
-    transform-origin: left center;
+    background:
+        linear-gradient(#f21f2c, #f21f2c) no-repeat left center / 3% 100%,
+        rgba(255,255,255,.14);
+    box-shadow: 0 0 10px rgba(242,31,44,.24);
+    transform: translateX(-50%);
     animation:
-        level-up-fake-load 1.72s cubic-bezier(0.22, 0.61, 0.36, 1) forwards,
-        level-up-splash-bar-out 0.32s ease 1.78s forwards;
+        level-up-fake-load 1.74s cubic-bezier(.22,.61,.36,1) forwards,
+        level-up-splash-bar-out .3s ease 1.83s forwards;
 }
 
 @keyframes level-up-fake-load {
-    0%   { transform: translateX(-50%) scaleX(0.03); }
-    24%  { transform: translateX(-50%) scaleX(0.27); }
-    48%  { transform: translateX(-50%) scaleX(0.48); }
-    66%  { transform: translateX(-50%) scaleX(0.63); }
-    79%  { transform: translateX(-50%) scaleX(0.73); }
-    90%  { transform: translateX(-50%) scaleX(0.90); }
-    100% { transform: translateX(-50%) scaleX(1); }
+    0%   { background-size: 3% 100%, 100% 100%; }
+    22%  { background-size: 25% 100%, 100% 100%; }
+    47%  { background-size: 48% 100%, 100% 100%; }
+    66%  { background-size: 63% 100%, 100% 100%; }
+    79%  { background-size: 73% 100%, 100% 100%; }
+    90%  { background-size: 90% 100%, 100% 100%; }
+    100% { background-size: 100% 100%, 100% 100%; }
 }
 
 @keyframes level-up-splash-out {
-    0%, 82% {
-        opacity: 1;
-        visibility: visible;
-    }
-    100% {
-        opacity: 0;
-        visibility: hidden;
-    }
+    0%, 82% { opacity: 1; visibility: visible; }
+    100% { opacity: 0; visibility: hidden; }
 }
 
 @keyframes level-up-splash-bar-out {
-    from {
-        opacity: 1;
-        visibility: visible;
-    }
-    to {
-        opacity: 0;
-        visibility: hidden;
-    }
+    from { opacity: 1; visibility: visible; }
+    to { opacity: 0; visibility: hidden; }
 }
 
-@media (max-height: 700px) {
+@media (max-height: 720px) {
     html.level-up-installed-pwa body::before {
-        background-position:
-            center center,
-            center calc(100% - 10vh);
-        background-size:
-            auto min(78vh, 620px),
-            min(220px, 58vw) 3px;
+        background-position: center calc(50% - 120px);
+        background-size: min(40vw, 190px) auto;
     }
-
     html.level-up-installed-pwa body::after {
-        bottom: 10vh;
-        width: min(220px, 58vw);
+        top: calc(50% + 4px);
+        font-size: clamp(3rem, 14vw, 4.4rem);
+    }
+    html.level-up-installed-pwa #app::before {
+        top: calc(50% + 84px);
+        padding-top: 23px;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    html.level-up-installed-pwa body::before {
-        animation-duration: 0.8s;
-    }
-
-    html.level-up-installed-pwa body::after {
+    html.level-up-installed-pwa body::before,
+    html.level-up-installed-pwa body::after,
+    html.level-up-installed-pwa #app::before { animation-duration: .85s; }
+    html.level-up-installed-pwa #app::after {
         animation:
-            level-up-fake-load 0.45s linear forwards,
-            level-up-splash-bar-out 0.2s ease 0.55s forwards;
+            level-up-fake-load .45s linear forwards,
+            level-up-splash-bar-out .2s ease .55s forwards;
     }
 }
