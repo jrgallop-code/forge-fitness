@@ -344,6 +344,5 @@ document.addEventListener("visibilitychange", () => {
     if (!document.hidden) scanLogger();
 });
 
-repairCardioTracking();
 cleanupStaleTimerState();
 scanLogger();
