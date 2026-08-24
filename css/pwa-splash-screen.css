@@ -15,7 +15,7 @@ html.level-up-installed-pwa body::before {
     content: "";
     inset: 0;
     z-index: 2147483644;
-    background: #000 url("../assets/level-up-logo.svg?v=splash-3") no-repeat center calc(50% - 150px);
+    background: #000 url("../assets/level-up-logo.svg?v=splash-4") no-repeat center calc(50% - 150px);
     background-size: min(46vw, 230px) auto;
     animation: level-up-splash-out 2.2s ease forwards;
 }
