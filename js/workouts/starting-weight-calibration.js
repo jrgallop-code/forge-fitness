@@ -57,6 +57,15 @@ function isBodyweightOnly(exercise) {
   return String(exercise?.equipment || '').trim().toLowerCase() === 'bodyweight';
 }
 
+function isCardioExercise(exercise) {
+  const type = String(exercise?.type || '').toLowerCase();
+  const muscleGroup = String(exercise?.muscleGroup || '').toLowerCase();
+  const name = String(exercise?.name || '').toLowerCase();
+  return type === 'cardio' ||
+    muscleGroup === 'cardio' ||
+    /\b(?:assault|air|fan|stationary)\s*bike\b|\brower\b|\browing\b|\brunning\b|\bski\s*erg\b|\belliptical\b|\bstair\s*(?:climber|mill)\b/.test(name);
+}
+
 function cardIsEligible(card) {
   if (!card?.matches?.('.session-exercise-card[data-tracking-type="reps"]')) return false;
   const logger = card.closest('#workout-session-logger');
@@ -64,7 +73,7 @@ function cardIsEligible(card) {
 
   const exerciseId = card.dataset.exerciseId;
   const exercise = getExerciseById(exerciseId);
-  if (!exercise || exercise.trackingType !== 'reps' || isBodyweightOnly(exercise)) return false;
+  if (!exercise || exercise.trackingType !== 'reps' || isBodyweightOnly(exercise) || isCardioExercise(exercise)) return false;
   return !hasPriorWeightedHistory(exerciseId);
 }
 
@@ -114,15 +123,11 @@ function decorateLogger() {
 function getPracticalIncrement(exerciseId) {
   const exercise = getExerciseById(exerciseId);
   const equipment = String(exercise?.equipment || '').toLowerCase();
-  if (equipment.includes('cable')) return 2.5;
   if (equipment.includes('dumbbell')) return 5;
   if (equipment.includes('barbell')) return 5;
+  if (equipment.includes('cable')) return 2.5;
   if (equipment.includes('machine')) return 5;
   return 5;
-}
-
-function roundToIncrement(value, increment) {
-  return Number((Math.round(Number(value) / increment) * increment).toFixed(1));
 }
 
 function calculateSuggestion(testWeight, difficulty, exerciseId) {
@@ -130,29 +135,23 @@ function calculateSuggestion(testWeight, difficulty, exerciseId) {
   if (!Number.isFinite(current) || current <= 0) return null;
 
   const increment = getPracticalIncrement(exerciseId);
-  const multiplier = difficulty === 'too-light'
-    ? 1.10
-    : difficulty === 'too-heavy'
-      ? 0.90
-      : 1;
+  let suggested;
 
-  let suggested = roundToIncrement(current * multiplier, increment);
-
-  if (difficulty === 'too-light' && suggested <= current) {
-    suggested = Number((suggested + increment).toFixed(1));
+  if (difficulty === 'too-light') {
+    const raw = current * 1.10;
+    suggested = Math.ceil((raw - 1e-9) / increment) * increment;
+    if (suggested <= current) suggested += increment;
+  } else if (difficulty === 'too-heavy') {
+    const raw = current * 0.90;
+    suggested = Math.floor((raw + 1e-9) / increment) * increment;
+    if (suggested >= current) suggested -= increment;
+    suggested = Math.max(increment, suggested);
+  } else {
+    suggested = Math.round(current / increment) * increment;
+    suggested = Math.max(increment, suggested);
   }
 
-  if (difficulty === 'too-heavy' && suggested >= current) {
-    suggested = Number((suggested - increment).toFixed(1));
-  }
-
-  if (difficulty === 'too-heavy') suggested = Math.max(increment, suggested);
-  else suggested = Math.max(increment, suggested);
-
-  return {
-    suggested,
-    increment
-  };
+  return Number(suggested.toFixed(1));
 }
 
 function formatLoad(value) {
@@ -177,13 +176,10 @@ function ensureModal() {
         </div>
         <button class="starting-weight-calibration-close" type="button" aria-label="Close">×</button>
       </div>
-      <p class="starting-weight-calibration-copy">Use one light test set. Enter what you actually did, then tell Level Up how it felt.</p>
+      <p class="starting-weight-calibration-copy">Do about 8 controlled reps with a light load. Enter the weight, then tell Level Up how the set felt.</p>
       <div class="starting-weight-calibration-fields">
         <label>Test weight (<span data-starting-weight-unit>${massUnit()}</span>)
           <input class="starting-weight-test-load" type="number" inputmode="decimal" min="0" step="0.5" placeholder="Weight">
-        </label>
-        <label>Test reps
-          <input class="starting-weight-test-reps" type="number" inputmode="numeric" min="1" step="1" placeholder="Reps">
         </label>
       </div>
       <p class="starting-weight-calibration-question">How did that set feel?</p>
@@ -209,7 +205,6 @@ function ensureModal() {
 
 function resetModal(modal) {
   modal.querySelector('.starting-weight-test-load').value = '';
-  modal.querySelector('.starting-weight-test-reps').value = '';
   modal.querySelectorAll('[data-starting-weight-difficulty]').forEach(button => button.classList.remove('selected'));
   modal.querySelector('.starting-weight-calibration-message').textContent = '';
   modal.querySelector('.starting-weight-calibration-result').hidden = true;
@@ -247,24 +242,23 @@ function chooseDifficulty(button) {
   if (!modal || !activeCard) return;
 
   const testWeight = Number(modal.querySelector('.starting-weight-test-load')?.value);
-  const testReps = Number(modal.querySelector('.starting-weight-test-reps')?.value);
   const message = modal.querySelector('.starting-weight-calibration-message');
   const result = modal.querySelector('.starting-weight-calibration-result');
 
-  if (!Number.isFinite(testWeight) || testWeight <= 0 || !Number.isFinite(testReps) || testReps <= 0) {
-    message.textContent = 'Enter the test weight and reps first.';
+  if (!Number.isFinite(testWeight) || testWeight <= 0) {
+    message.textContent = 'Enter the test weight first.';
     result.hidden = true;
     return;
   }
 
-  const calculation = calculateSuggestion(testWeight, button.dataset.startingWeightDifficulty, activeCard.dataset.exerciseId);
-  if (!calculation) return;
+  const suggested = calculateSuggestion(testWeight, button.dataset.startingWeightDifficulty, activeCard.dataset.exerciseId);
+  if (!Number.isFinite(suggested)) return;
 
   modal.querySelectorAll('[data-starting-weight-difficulty]').forEach(item => item.classList.toggle('selected', item === button));
   message.textContent = '';
-  modal.dataset.suggestedLoad = String(calculation.suggested);
-  modal.querySelector('[data-starting-weight-result]').textContent = `${formatLoad(calculation.suggested)} lb`;
-  modal.querySelector('[data-use-starting-weight]').textContent = `Use ${formatLoad(calculation.suggested)} lb`;
+  modal.dataset.suggestedLoad = String(suggested);
+  modal.querySelector('[data-starting-weight-result]').textContent = `${formatLoad(suggested)} lb`;
+  modal.querySelector('[data-use-starting-weight]').textContent = `Use ${formatLoad(suggested)} lb`;
   result.hidden = false;
 }
 
