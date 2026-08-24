@@ -1,7 +1,7 @@
 const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-2";
 const BACK_ASSET = "assets/recovery/back-view.svg?v=recovery-back-vector-1";
 const TARGET_FILL = "#ff315f";
-import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-1";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-2";
 
 const CORE_ALL = [
     "muscle_front_017", "muscle_front_018", "muscle_front_019", "muscle_front_020",

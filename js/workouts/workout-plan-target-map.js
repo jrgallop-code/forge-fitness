@@ -1,7 +1,7 @@
 import { getPresetPlan } from "./workout-plans.js";
 import { getExerciseById } from "./exercise-library.js";
 import { createGeneratedExerciseGuide } from "./exercise-guide-generator.js?v=full-library-guides-1";
-import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-1";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-2";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 const TARGET_GREEN = "#45cb75";

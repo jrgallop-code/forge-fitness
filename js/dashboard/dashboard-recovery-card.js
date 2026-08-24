@@ -4,7 +4,7 @@ import {
 } from "../progress/recovery-secondary-muscles.js?v=recovery-secondary-7";
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { createGeneratedExerciseGuide } from "../workouts/exercise-guide-generator.js?v=full-library-guides-1";
-import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-1";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-2";
 
 const SESSION_KEY = "forge_workout_sessions";
 const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-2";
