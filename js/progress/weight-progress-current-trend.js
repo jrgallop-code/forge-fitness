@@ -1,10 +1,9 @@
 import {
-    calculateWeightTrend,
+    calculateDisplayWeightTrend,
     normalizeWeightEntries
-} from "../core/weight-trend.js?v=progress-visible-current-trend-1";
+} from "../core/weight-trend.js?v=progress-regression-trend-1";
 
 const WEIGHT_KEY = "forge_weight_entries";
-const MIN_ENTRIES_PER_WINDOW = 4;
 const LIVE_RATE_ID = "weight-current-weekly-trend";
 const LIVE_HEADING_ID = "weight-current-weekly-trend-heading";
 let queued = false;
@@ -64,16 +63,13 @@ function refresh() {
         return;
     }
 
-    const trend = calculateWeightTrend(weights, {
-        endDate: latestEntryDate,
-        minEntriesPerWindow: MIN_ENTRIES_PER_WINDOW
-    });
+    const trend = calculateDisplayWeightTrend(weights, { endDate: latestEntryDate });
     const rateText = Number.isFinite(trend.weeklyChange)
         ? formatRate(trend.weeklyChange)
         : "Need more data";
 
     const visible = detachLiveCardFromPhaseRenderer();
-    setText(visible.heading, "Weekly Trend");
+    setText(visible.heading, trend.label);
     setText(visible.rate, rateText);
 
     if (visible.rate) {
@@ -82,7 +78,7 @@ function refresh() {
             : "Add weigh-ins to calculate your weekly trend.";
         const card = visible.rate.closest(".metric-card");
         if (card) {
-            card.title = "Weekly Trend compares the 7-day average ending on your latest weigh-in with the previous 7-day average. It updates only when weight data changes.";
+            card.title = "Weekly Trend estimates your rate of change from recent weigh-ins using a 21-day linear regression. The nutrition coach keeps stricter data requirements.";
         }
     }
 
@@ -91,7 +87,7 @@ function refresh() {
     const compactRate = document.getElementById("actual-weekly-weight-change");
     setText(compactRate, rateText);
     const compactHeading = compactRate?.closest(".metric-card")?.querySelector("h3");
-    setText(compactHeading, "Weekly Trend");
+    setText(compactHeading, trend.label);
 }
 
 function schedule() {

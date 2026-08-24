@@ -1,4 +1,4 @@
-import { calculateWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=weight-only-1";
+import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=progress-regression-trend-1";
 
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 const DAY_MS = 86400000;
@@ -161,7 +161,7 @@ function makeField(forId, labelText, input) {
 function refreshWeightSummary() {
     const entries = readWeightEntries();
     const trendWeight = getTrendWeight(entries);
-    const trend = calculateWeightTrend(entries);
+    const trend = calculateDisplayWeightTrend(entries);
 
     setText("latest-weight", Number.isFinite(trendWeight) ? `${trendWeight.toFixed(1)} lb` : "--");
     setText("actual-weekly-weight-change", Number.isFinite(trend.weeklyChange) ? formatLbRate(trend.weeklyChange) : "Need more data");
