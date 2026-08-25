@@ -19,11 +19,12 @@ const css = `
 .manual-picker-search,.manual-picker select{width:100%;min-height:44px;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:#111114;color:#f4f4f6;padding:0 12px}
 .manual-picker-search{min-height:48px;font-size:16px}.manual-picker-filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.manual-picker-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#8f8f98;font-size:.8rem}
 .manual-picker-list{display:grid;gap:8px;padding-bottom:92px}
-.manual-pick{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 13px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#101012;color:#f5f5f7;text-align:left}
-.manual-pick-copy{display:grid;gap:2px;min-width:0}.manual-pick-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.manual-pick-copy small{color:#8d8d97;font-size:.74rem}
-.manual-pick-mark{display:grid;place-items:center;min-width:32px;height:32px;padding:0 7px;border:1px solid rgba(255,255,255,.17);border-radius:9px;font-weight:800}
+.manual-pick{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px;padding:12px 13px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#101012;color:#f5f5f7;text-align:left}
+.manual-pick-copy{display:grid;gap:2px;min-width:0;padding:0;border:0;background:transparent;color:inherit;text-align:left}.manual-pick-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.manual-pick-copy small{overflow:hidden;color:#8d8d97;font-size:.74rem;text-overflow:ellipsis;white-space:nowrap}
+.manual-pick-guide{min-height:32px;padding:6px 8px;border:1px solid rgba(255,255,255,.15);border-radius:9px;background:rgba(255,255,255,.045);color:#d7d7dc;font:inherit;font-size:.64rem;font-weight:850;letter-spacing:.025em}.manual-pick-guide:active{border-color:rgba(255,49,95,.55);background:rgba(255,49,95,.12);color:#fff}
+.manual-pick-mark{display:grid;place-items:center;min-width:32px;height:32px;padding:0 7px;border:1px solid rgba(255,255,255,.17);border-radius:9px;background:transparent;color:inherit;font:inherit;font-weight:800}
 .manual-pick.selected{border-color:rgba(255,49,95,.75);background:rgba(255,49,95,.08)}.manual-pick.selected .manual-pick-mark{background:#ff315f;border-color:#ff315f}
-.manual-pick.added{opacity:.45}.manual-pick.added .manual-pick-mark{font-size:.7rem}
+.manual-pick.added .manual-pick-copy,.manual-pick.added .manual-pick-mark{opacity:.45}.manual-pick.added .manual-pick-mark{font-size:.7rem}
 .manual-picker-footer{position:sticky;bottom:calc(86px + env(safe-area-inset-bottom));z-index:8;display:grid;grid-template-columns:auto 1fr;gap:8px;padding:9px;border:1px solid rgba(255,255,255,.13);border-radius:15px;background:rgba(15,15,18,.96);backdrop-filter:blur(14px)}
 .manual-picker-footer .primary-btn{width:100%}.manual-picker-empty{padding:24px;color:#8f8f98;text-align:center}
 @media(max-width:520px){.manual-picker-filters{grid-template-columns:1fr}.manual-picker-tools{align-items:flex-start}.manual-picker-footer{bottom:calc(90px + env(safe-area-inset-bottom))}}
@@ -186,16 +187,29 @@ function renderList() {
     ? matches.map(x => {
         const added = used.has(x.id);
         const selected = state.selected.has(x.id);
-        return `<button class="manual-pick ${selected ? "selected" : ""} ${added ? "added" : ""}" type="button" data-id="${esc(x.id)}" ${added ? "disabled" : ""}><span class="manual-pick-copy"><strong>${esc(x.name)}</strong><small>${esc(x.muscleGroup || "Other")} · ${esc(x.equipment || "Equipment not specified")}</small></span><span class="manual-pick-mark">${added ? "Added" : selected ? "✓" : "+"}</span></button>`;
+        return `<div class="manual-pick ${selected ? "selected" : ""} ${added ? "added" : ""}"><button class="manual-pick-copy" type="button" data-manual-select data-id="${esc(x.id)}" ${added ? "disabled" : ""}><strong>${esc(x.name)}</strong><small>${esc(x.muscleGroup || "Other")} · ${esc(x.equipment || "Equipment not specified")}</small></button><button class="manual-pick-guide" type="button" data-manual-guide data-exercise-id="${esc(x.id)}" aria-label="Open form guide for ${esc(x.name)}">Form Guide</button><button class="manual-pick-mark" type="button" data-manual-select data-id="${esc(x.id)}" aria-label="${added ? `${esc(x.name)} already added` : `Select ${esc(x.name)}`}" ${added ? "disabled" : ""}>${added ? "Added" : selected ? "✓" : "+"}</button></div>`;
       }).join("")
     : '<div class="manual-picker-empty">No exercises match those filters.</div>';
 
-  list.querySelectorAll("[data-id]").forEach(btn => {
+  list.querySelectorAll("[data-manual-select]").forEach(btn => {
     btn.onclick = () => {
       const id = btn.dataset.id;
       if (state.mode === "replace") state.selected = new Set([id]);
       else state.selected.has(id) ? state.selected.delete(id) : state.selected.add(id);
       renderList();
+    };
+  });
+
+  list.querySelectorAll("[data-manual-guide]").forEach(button => {
+    button.onclick = () => {
+      document.dispatchEvent(new CustomEvent("levelup:open-exercise-guide", {
+        detail: {
+          exerciseId: button.dataset.exerciseId,
+          sourceSelector: "#plan-builder",
+          backLabel: "← Exercise Catalogue",
+          focusGuideStart: true
+        }
+      }));
     };
   });
 
