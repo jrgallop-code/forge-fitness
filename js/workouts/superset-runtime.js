@@ -36,6 +36,16 @@ function getGroupMembers(active, group) {
         .filter(item => item.exercise?.supersetGroup === group);
 }
 
+function getGroupLetter(active, group) {
+    const groups = [];
+    (getDay(active)?.exercises || []).forEach(exercise => {
+        const value = exercise?.supersetGroup;
+        if (value && !groups.includes(value)) groups.push(value);
+    });
+    const index = Math.max(0, groups.indexOf(group));
+    return index < 26 ? String.fromCharCode(65 + index) : `S${index + 1}`;
+}
+
 function getExerciseName(id) {
     return getExerciseById(id)?.name || "Exercise";
 }
@@ -238,15 +248,25 @@ function annotateLogger(logger = document.getElementById("workout-session-logger
         if (members.length < 2) return;
         card.dataset.supersetGroup = group;
 
-        if (card.querySelector(".superset-runtime-banner")) return;
         const position = members.findIndex(member => member.index === index);
         const partner = members.find(member => member.index !== index);
+        const groupLetter = getGroupLetter(active, group);
+        const exerciseCode = `${groupLetter}${position + 1}`;
+        const partnerPosition = members.findIndex(member => member.index === partner?.index);
+        const partnerCode = `${groupLetter}${partnerPosition + 1}`;
+        const tab = logger.querySelector(`.logger-exercise-strip [data-exercise-tab-index="${index}"]`);
+        const tabMarker = tab?.querySelector("span");
+        if (tab) tab.classList.add("is-superset");
+        if (tabMarker) tabMarker.textContent = exerciseCode;
+
+        if (card.querySelector(".superset-runtime-banner")) return;
         const banner = document.createElement("div");
         banner.className = "superset-runtime-banner";
         banner.innerHTML = `
-            <span class="superset-runtime-label">SUPERSET ${escapeHtml(group)}</span>
-            <strong>${position + 1} of ${members.length}</strong>
-            <small>${position === 0 ? "Then" : "Paired with"} ${escapeHtml(getExerciseName(partner?.exercise?.id))}${position === 0 ? " — no rest between exercises" : " — rest after the pair"}</small>
+            <span class="superset-runtime-label">${escapeHtml(exerciseCode)}</span>
+            <strong>Superset</strong>
+            <small>${position === 0 ? `Then ${escapeHtml(partnerCode)}` : `Paired with ${escapeHtml(partnerCode)}`} · ${escapeHtml(getExerciseName(partner?.exercise?.id))}${position === 0 ? " — no rest" : " — rest after this exercise"}</small>
+            <button type="button" data-superset-go-index="${partner?.index}" aria-label="Go to ${escapeHtml(getExerciseName(partner?.exercise?.id))}">Go to ${escapeHtml(partnerCode)}</button>
         `;
 
         const anchor = card.querySelector(".compact-exercise-header") || card.querySelector("h4");
@@ -255,6 +275,17 @@ function annotateLogger(logger = document.getElementById("workout-session-logger
 }
 
 function handleClick(event) {
+    const quickSwitch = event.target.closest?.("[data-superset-go-index]");
+    if (quickSwitch) {
+        const logger = quickSwitch.closest("#workout-session-logger");
+        const targetIndex = Number(quickSwitch.dataset.supersetGoIndex);
+        if (logger && Number.isInteger(targetIndex)) {
+            event.preventDefault();
+            goToExercise(logger, targetIndex);
+        }
+        return;
+    }
+
     const saveButton = event.target.closest?.("#save-session-btn");
     if (saveButton) {
         const logger = saveButton.closest("#workout-session-logger");
@@ -307,7 +338,7 @@ function handleClick(event) {
 
     if (!completing) {
         saveActive(active);
-        showCue(logger, `<strong>Superset ${escapeHtml(group)}</strong><span>Set marked incomplete.</span>`, "neutral");
+        showCue(logger, `<strong>Superset ${escapeHtml(getGroupLetter(active, group))}</strong><span>Set marked incomplete.</span>`, "neutral");
         return;
     }
 
@@ -318,13 +349,15 @@ function handleClick(event) {
     });
 
     if (partnerForRound) {
+        const groupLetter = getGroupLetter(active, group);
+        const partnerPosition = members.findIndex(member => member.index === partnerForRound.index);
         active.restTimer = null;
         active.currentExerciseIndex = partnerForRound.index;
         active.currentSetIndex = setIndex;
         saveActive(active);
         showCue(
             logger,
-            `<span class="superset-cue-kicker">SUPERSET ${escapeHtml(group)}</span><strong>Go directly to ${escapeHtml(getExerciseName(partnerForRound.exercise.id))}</strong><span>Set ${setIndex + 1} • no rest yet</span>`,
+            `<span class="superset-cue-kicker">SUPERSET ${escapeHtml(groupLetter)}</span><strong>Go directly to ${escapeHtml(groupLetter)}${partnerPosition + 1} · ${escapeHtml(getExerciseName(partnerForRound.exercise.id))}</strong><span>Set ${setIndex + 1} • no rest yet</span>`,
             "next"
         );
         setTimeout(() => goToExercise(logger, partnerForRound.index), 0);
@@ -332,6 +365,7 @@ function handleClick(event) {
     }
 
     const restSeconds = getSupersetRestSeconds(members);
+    const groupLetter = getGroupLetter(active, group);
     const next = getNextRoundTarget(active, members, setIndex);
     startSupersetRest(active, restSeconds);
     if (next) {
@@ -343,7 +377,7 @@ function handleClick(event) {
     const nextName = next ? getExerciseName(day.exercises?.[next.exerciseIndex]?.id) : "finish the remaining workout";
     showCue(
         logger,
-        `<span class="superset-cue-kicker">SUPERSET ${escapeHtml(group)} ROUND COMPLETE</span><strong>Rest ${formatSeconds(restSeconds)}</strong><span>${next ? `Next: ${escapeHtml(nextName)} • Set ${next.setIndex + 1}` : "Superset complete"}</span>`,
+        `<span class="superset-cue-kicker">SUPERSET ${escapeHtml(groupLetter)} ROUND COMPLETE</span><strong>Rest ${formatSeconds(restSeconds)}</strong><span>${next ? `Next: ${escapeHtml(nextName)} • Set ${next.setIndex + 1}` : "Superset complete"}</span>`,
         "rest"
     );
     if (next) setTimeout(() => goToExercise(logger, next.exerciseIndex), 0);

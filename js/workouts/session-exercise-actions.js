@@ -384,6 +384,164 @@ function removeExerciseForToday(source) {
   openActiveWorkout();
 }
 
+function getSessionDay(active) {
+  return active?.planSnapshot?.days?.[Number(active.trainingDayIndex) || 0] || null;
+}
+
+function clearSupersetGroup(day, group) {
+  if (!day || !group) return;
+  (day.exercises || []).forEach(exercise => {
+    if (exercise?.supersetGroup === group) delete exercise.supersetGroup;
+  });
+}
+
+function nextSessionSupersetGroup(day) {
+  const used = new Set((day?.exercises || []).map(exercise => exercise?.supersetGroup).filter(Boolean));
+  let number = 1;
+  while (used.has(`SESSION-${number}`)) number += 1;
+  return `SESSION-${number}`;
+}
+
+function sessionSupersetCandidates(active, exerciseIndex) {
+  const day = getSessionDay(active);
+  const current = day?.exercises?.[exerciseIndex];
+  const currentGroup = current?.supersetGroup || '';
+  if (!day || !current || active?.exercises?.[exerciseIndex]?.trackingType === 'notes') return [];
+
+  return (day.exercises || [])
+    .map((exercise, index) => ({ exercise, index, state: active.exercises?.[index] }))
+    .filter(item => item.index !== exerciseIndex)
+    .filter(item => item.state?.trackingType !== 'notes')
+    .filter(item => !item.exercise?.supersetGroup || item.exercise.supersetGroup === currentGroup);
+}
+
+function renderSessionSupersetCandidates(active, exerciseIndex) {
+  const currentGroup = getSessionDay(active)?.exercises?.[exerciseIndex]?.supersetGroup || '';
+  const candidates = sessionSupersetCandidates(active, exerciseIndex);
+  if (!candidates.length) {
+    return '<p class="session-superset-empty">Every compatible exercise is already paired. End another superset first to make it available.</p>';
+  }
+
+  return candidates.map(({ exercise, index }) => {
+    const definition = getExerciseById(exercise?.id);
+    const paired = Boolean(currentGroup && exercise?.supersetGroup === currentGroup);
+    return `
+      <button class="session-superset-option ${paired ? 'selected' : ''}" type="button" data-session-superset-partner-index="${index}">
+        <span class="session-superset-option-marker">${paired ? '✓' : '+'}</span>
+        <span>
+          <strong>${escapeHtml(definition?.name || 'Exercise')}</strong>
+          <small>${escapeHtml([definition?.muscleGroup, definition?.equipment].filter(Boolean).join(' · '))}</small>
+        </span>
+        <em>${paired ? 'Paired' : 'Pair'}</em>
+      </button>`;
+  }).join('');
+}
+
+function closeSupersetSheet(sheet) {
+  if (!sheet) return;
+  sheet.hidden = true;
+  sheet.dataset.exerciseIndex = '';
+}
+
+function ensureSupersetSheet(logger) {
+  let sheet = logger.querySelector('#session-superset-sheet');
+  if (sheet) return sheet;
+
+  sheet = document.createElement('div');
+  sheet.id = 'session-superset-sheet';
+  sheet.className = 'session-exercise-swap-sheet session-superset-sheet';
+  sheet.hidden = true;
+  sheet.innerHTML = `
+    <div class="session-exercise-swap-panel session-superset-panel" role="dialog" aria-modal="true" aria-labelledby="session-superset-title">
+      <div class="session-swap-heading">
+        <div>
+          <span class="eyebrow">TODAY ONLY</span>
+          <h4 id="session-superset-title">Build Superset</h4>
+        </div>
+        <button class="session-swap-close session-superset-close" type="button" aria-label="Close superset options">×</button>
+      </div>
+      <p class="session-swap-note session-superset-note">Pair this movement with another exercise in today’s workout. You’ll move directly from A1 to A2, then rest after the pair.</p>
+      <div class="session-superset-current"></div>
+      <span class="session-manual-label">PAIR WITH</span>
+      <div class="session-superset-options"></div>
+      <button class="secondary-btn session-superset-remove" type="button" hidden>End This Superset</button>
+      <button class="session-swap-cancel session-superset-cancel" type="button">Cancel</button>
+    </div>`;
+  logger.appendChild(sheet);
+
+  const close = () => closeSupersetSheet(sheet);
+  sheet.querySelector('.session-superset-close')?.addEventListener('click', close);
+  sheet.querySelector('.session-superset-cancel')?.addEventListener('click', close);
+  sheet.addEventListener('click', event => { if (event.target === sheet) close(); });
+  sheet.querySelector('.session-superset-options')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-session-superset-partner-index]');
+    if (!button) return;
+    applySessionSuperset(sheet, Number(button.dataset.sessionSupersetPartnerIndex));
+  });
+  sheet.querySelector('.session-superset-remove')?.addEventListener('click', () => removeSessionSuperset(sheet));
+  return sheet;
+}
+
+function openSupersetSheet(card, logger) {
+  const active = readActiveWorkout();
+  const exerciseIndex = Number(card?.dataset?.exerciseIndex);
+  const day = getSessionDay(active);
+  const planned = day?.exercises?.[exerciseIndex];
+  if (!active || !planned || !Number.isInteger(exerciseIndex)) return;
+
+  const sheet = ensureSupersetSheet(logger);
+  const definition = getExerciseById(planned.id);
+  const group = planned.supersetGroup || '';
+  const members = group
+    ? day.exercises.map((exercise, index) => ({ exercise, index })).filter(item => item.exercise?.supersetGroup === group)
+    : [];
+  const partner = members.find(item => item.index !== exerciseIndex);
+  const partnerName = getExerciseById(partner?.exercise?.id)?.name;
+  sheet.dataset.exerciseIndex = String(exerciseIndex);
+  sheet.querySelector('#session-superset-title').textContent = group ? `Edit ${definition?.name || 'Superset'}` : `Superset ${definition?.name || 'Exercise'}`;
+  sheet.querySelector('.session-superset-current').innerHTML = group
+    ? `<span>Currently paired with</span><strong>${escapeHtml(partnerName || 'another exercise')}</strong>`
+    : '<span>Not currently paired</span><strong>Choose an exercise below</strong>';
+  sheet.querySelector('.session-superset-options').innerHTML = renderSessionSupersetCandidates(active, exerciseIndex);
+  sheet.querySelector('.session-superset-remove').hidden = !group;
+  sheet.hidden = false;
+}
+
+function applySessionSuperset(sheet, partnerIndex) {
+  const active = readActiveWorkout();
+  const exerciseIndex = Number(sheet?.dataset?.exerciseIndex);
+  const day = getSessionDay(active);
+  const current = day?.exercises?.[exerciseIndex];
+  const partner = day?.exercises?.[partnerIndex];
+  if (!active || !current || !partner || !Number.isInteger(partnerIndex) || partnerIndex === exerciseIndex) return;
+  if (active.exercises?.[exerciseIndex]?.trackingType === 'notes' || active.exercises?.[partnerIndex]?.trackingType === 'notes') return;
+  if (partner.supersetGroup && partner.supersetGroup !== current.supersetGroup) return;
+
+  const priorGroup = current.supersetGroup;
+  if (priorGroup) clearSupersetGroup(day, priorGroup);
+  const group = nextSessionSupersetGroup(day);
+  current.supersetGroup = group;
+  partner.supersetGroup = group;
+  active.currentExerciseIndex = exerciseIndex;
+  saveActiveWorkout(active);
+  closeSupersetSheet(sheet);
+  openActiveWorkout();
+}
+
+function removeSessionSuperset(sheet) {
+  const active = readActiveWorkout();
+  const exerciseIndex = Number(sheet?.dataset?.exerciseIndex);
+  const day = getSessionDay(active);
+  const group = day?.exercises?.[exerciseIndex]?.supersetGroup;
+  if (!active || !group) return;
+
+  clearSupersetGroup(day, group);
+  active.currentExerciseIndex = exerciseIndex;
+  saveActiveWorkout(active);
+  closeSupersetSheet(sheet);
+  openActiveWorkout();
+}
+
 function createSwapButton(card, logger, heading) {
   const button = document.createElement('button');
   button.type = 'button';
@@ -397,16 +555,48 @@ function createSwapButton(card, logger, heading) {
   return button;
 }
 
-function ensureInlineSwap(card, logger) {
-  if (card.querySelector('.session-inline-swap')) return;
+function createSupersetButton(card, logger, heading) {
+  const active = readActiveWorkout();
+  const group = getSessionDay(active)?.exercises?.[Number(card?.dataset?.exerciseIndex)]?.supersetGroup;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'session-inline-superset';
+  button.textContent = group ? 'Edit Superset' : 'Superset';
+  button.setAttribute('aria-label', `Create or edit a superset for ${heading?.textContent?.trim() || 'this exercise'}`);
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    openSupersetSheet(card, logger);
+  });
+  return button;
+}
 
+function ensureInlineActions(card, logger) {
   const liftingActions = card.querySelector('.compact-exercise-actions');
   const liftingHeading = card.querySelector('.compact-exercise-header h4');
   if (liftingActions && liftingHeading) {
-    const button = createSwapButton(card, logger, liftingHeading);
-    const timerButton = liftingActions.querySelector('.exercise-more-btn');
-    if (timerButton) liftingActions.insertBefore(button, timerButton);
-    else liftingActions.appendChild(button);
+    const active = readActiveWorkout();
+    const group = getSessionDay(active)?.exercises?.[Number(card.dataset.exerciseIndex)]?.supersetGroup;
+    if (group) card.dataset.supersetGroup = group;
+    else delete card.dataset.supersetGroup;
+
+    if (!card.querySelector('.session-inline-swap')) {
+      const button = createSwapButton(card, logger, liftingHeading);
+      const timerButton = liftingActions.querySelector('.exercise-more-btn');
+      if (timerButton) liftingActions.insertBefore(button, timerButton);
+      else liftingActions.appendChild(button);
+    }
+
+    if (!card.querySelector('.session-inline-superset')) {
+      let tools = card.querySelector('.logger-exercise-tools');
+      if (!tools) {
+        tools = document.createElement('div');
+        tools.className = 'logger-exercise-tools';
+        card.querySelector('.compact-exercise-header')?.insertAdjacentElement('afterend', tools);
+      }
+      tools.appendChild(createSupersetButton(card, logger, liftingHeading));
+    }
+    const supersetButton = card.querySelector('.session-inline-superset');
+    if (supersetButton) supersetButton.textContent = group ? 'Edit Superset' : 'Superset';
     return;
   }
 
@@ -427,7 +617,7 @@ function ensureInlineSwap(card, logger) {
 function enhanceActiveLogger() {
   const logger = document.getElementById('workout-session-logger');
   if (!logger || logger.dataset.editingSessionId) return;
-  logger.querySelectorAll('.session-exercise-card').forEach(card => ensureInlineSwap(card, logger));
+  logger.querySelectorAll('.session-exercise-card').forEach(card => ensureInlineActions(card, logger));
 }
 
 const observer = new MutationObserver(() => requestAnimationFrame(enhanceActiveLogger));
