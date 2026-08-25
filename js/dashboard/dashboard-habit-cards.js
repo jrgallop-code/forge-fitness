@@ -135,7 +135,7 @@ function renderCards() {
 }
 
 function openActivityCalendar() {
-    import("./activity-calendar.js?v=activity-summary-1")
+    import("./activity-calendar.js?v=two-dumbbells-1")
         .then(module => module.openActivityCalendar())
         .catch(error => console.warn("Activity Calendar could not open", error));
 }

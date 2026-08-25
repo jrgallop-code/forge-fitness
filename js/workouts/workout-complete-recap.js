@@ -1,4 +1,5 @@
 import { getExerciseById } from "./exercise-library.js";
+import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const FRONT_ASSET = "assets/recovery/front-body-map.svg";
@@ -104,20 +105,14 @@ function renderFrontBody(trainedMuscles) {
 }
 
 function summarizeSession(session) {
-  let workingSets=0, volume=0, exerciseCount=0;
+  let workingSets=0, exerciseCount=0;
   (session.exercises || []).forEach(item => {
     if (item.trackingType === "notes") { if (Number(item.durationMinutes)>0) exerciseCount += 1; return; }
     const sets=(item.sets||[]).filter(set => set.completed || (Number(set.reps)>0 && set.weight !== null));
     if (sets.length) exerciseCount += 1;
     workingSets += sets.length;
-    sets.forEach(set => {
-      volume += (Number(set.weight)||0)*(Number(set.reps)||0);
-      (Array.isArray(set.dropSets) ? set.dropSets : []).forEach(drop => {
-        volume += (Number(drop.weight)||0)*(Number(drop.reps)||0);
-      });
-    });
   });
-  return {workingSets,volume,exerciseCount};
+  return {workingSets,volume:calculateWorkoutVolume(session),exerciseCount};
 }
 
 function getTrainedMuscles(session) {
