@@ -12,7 +12,6 @@ function decoratePrBadges() {
     if (!sessions.length) return;
     const prCounts = calculatePrCounts(sessions);
     decorateWorkoutHistoryCards(prCounts);
-    decorateTrainingHistoryCards(sessions, prCounts);
 }
 
 function wireRefreshTriggers() {
@@ -42,23 +41,6 @@ function decorateWorkoutHistoryCards(prCounts) {
         const sessionId = card.dataset.sessionId || card.querySelector(".edit-history-workout")?.dataset.sessionId;
         const count = sessionId ? (prCounts.get(String(sessionId)) || 0) : 0;
         updateBadge(card.querySelector(".history-workout-metrics"), count);
-    });
-}
-
-function decorateTrainingHistoryCards(allSessions, prCounts) {
-    const cards = [...document.querySelectorAll(".history-session-card")];
-    if (!cards.length) return;
-
-    const visibleSessions = getFilteredSessions(allSessions)
-        .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")))
-        .reverse();
-
-    cards.forEach((card, index) => {
-        const session = visibleSessions[index];
-        const sessionId = session?.id ? String(session.id) : "";
-        if (sessionId) card.dataset.sessionId = sessionId;
-        const count = sessionId ? (prCounts.get(sessionId) || 0) : 0;
-        updateBadge(card.firstElementChild || card, count);
     });
 }
 
@@ -219,14 +201,6 @@ function getSessionTime(session) {
     if (Number.isFinite(completedAt)) return completedAt;
     const date = Date.parse(`${session?.date || "1970-01-01"}T12:00:00`);
     return Number.isFinite(date) ? date : 0;
-}
-
-function getFilteredSessions(sessions) {
-    const days = Number(document.getElementById("progress-range")?.value || 0);
-    if (!days) return [...sessions];
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
-    return sessions.filter(session => new Date(`${session.date}T23:59:59`) >= cutoff);
 }
 
 function getSessions() {

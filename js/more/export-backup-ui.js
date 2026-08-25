@@ -8,6 +8,7 @@ export function renderExportBackup() {
             </div>
         </section>
 
+        <div class="exports-backup-page">
         <section class="section-card dashboard-backup">
             <div class="backup-icon">↓</div>
             <div class="backup-copy">
@@ -32,6 +33,25 @@ export function renderExportBackup() {
             </div>
         </section>
 
+        <section class="section-card dashboard-backup">
+            <div class="backup-icon">▦</div>
+            <div class="backup-copy">
+                <span class="eyebrow">READABLE DATA EXPORT</span>
+                <h2>Export All Recorded Data</h2>
+                <p>Download your workouts, calories, weight, measurements, sleep, water, nutrition records, plans and settings in organized files.</p>
+                <div class="backup-details">
+                    <span>✓ Spreadsheet with a separate tab for each category</span>
+                    <span>✓ CSV bundle with one file for each category</span>
+                    <span>✓ Includes a complete raw recorded-data listing</span>
+                </div>
+            </div>
+            <div class="backup-actions">
+                <button id="export-data-workbook" class="primary-btn" type="button">↓ Export Spreadsheet</button>
+                <button id="export-data-csv-bundle" class="secondary-btn" type="button">↓ Export CSV Files</button>
+                <span id="data-export-message" class="backup-message" aria-live="polite"></span>
+            </div>
+        </section>
+
         <section class="section-card dashboard-drive">
             <div class="backup-icon drive-icon">G</div>
             <div class="backup-copy">
@@ -52,5 +72,6 @@ export function renderExportBackup() {
                 <span id="google-drive-message" class="backup-message" aria-live="polite"></span>
             </div>
         </section>
+        </div>
     `;
 }

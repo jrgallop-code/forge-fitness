@@ -1,8 +1,9 @@
 import "./contact-support.js?v=contact-support-2";
 import { navigate } from "../core/router.js?v=router-water-only-2";
-import { renderExportBackup } from "./export-backup-ui.js?v=exports-backup-2";
+import { renderExportBackup } from "./export-backup-ui.js?v=full-data-export-1";
 import { initializeBackupManager } from "../core/backup-manager.js?v=backup-complete-6";
 import { initializeGoogleDriveSync } from "../core/google-drive-sync-v2.js?v=visible-drive-backup-3";
+import { initializeDataSpreadsheetExport } from "../core/data-spreadsheet-export.js?v=full-data-export-1";
 import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-card-1";
 import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.js?v=privacy-account-1";
 import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=unit-system-1";
@@ -62,6 +63,7 @@ export function initializeMore() {
             if (!content) return;
             content.innerHTML = renderExportBackup();
             initializeBackupManager();
+            initializeDataSpreadsheetExport();
             initializeGoogleDriveSync();
             window.scrollTo({ top: 0, behavior: "smooth" });
             return;
