@@ -355,7 +355,7 @@ function renderPlateVisual(solution) {
             <div class="plate-calculator-plates">
                 ${extra ? `<span class="plate-calculator-more">+${extra}</span>` : ""}
                 ${shown.map((plate, index) => `
-                    <span class="plate-calculator-plate" style="--plate-scale:${Math.max(.46, Math.min(1, plate / 45)).toFixed(2)};--plate-order:${index}" title="${formatWeight(plate)} lb">
+                    <span class="plate-calculator-plate" style="--plate-scale:${plateVisualScale(plate)};--plate-order:${index}" title="${formatWeight(plate)} lb">
                         <b>${formatWeight(plate)} lb</b>
                     </span>
                 `).join("")}
@@ -363,6 +363,11 @@ function renderPlateVisual(solution) {
             </div>
         </div>
     `;
+}
+
+function plateVisualScale(plate) {
+    const relativeWeight = Math.max(0, Number(plate) || 0) / 45;
+    return Math.max(.16, Math.min(1, Math.sqrt(relativeWeight))).toFixed(2);
 }
 
 function renderSheet() {
