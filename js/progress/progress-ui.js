@@ -296,14 +296,6 @@ export function renderProgress() {
                         Training
                     </button>
 
-                    <button
-                        class="training-progress-tab"
-                        data-view="history"
-                        type="button"
-                    >
-                        History & Data
-                    </button>
-
                 </div>
 
 
@@ -426,36 +418,6 @@ export function renderProgress() {
 
                 </section>
 
-
-                <section
-                    class="training-progress-view"
-                    data-view="history"
-                    hidden
-                >
-
-                    <div class="history-export-actions">
-
-                        <button
-                            id="export-workouts-csv"
-                            class="secondary-btn"
-                            type="button"
-                        >
-                            Export CSV
-                        </button>
-
-                        <button
-                            id="export-workouts-json"
-                            class="secondary-btn"
-                            type="button"
-                        >
-                            Export JSON
-                        </button>
-
-                    </div>
-
-                    <div id="workout-history-list"></div>
-
-                </section>
 
             </div>
 

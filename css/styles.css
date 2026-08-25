@@ -1984,8 +1984,7 @@ font-size:16px;
     border-bottom:1px solid #292929;
 }
 
-.improvement-row,
-.history-session-card {
+.improvement-row {
     display:flex;
     justify-content:space-between;
     gap:15px;
@@ -1993,16 +1992,11 @@ font-size:16px;
     border-bottom:1px solid #292929;
 }
 
-.improvement-row span,
-.history-session-card span {
+.improvement-row span {
     display:block;
     margin-top:4px;
     color:var(--muted);
     font-size:13px;
-}
-
-.history-session-card > div:last-child {
-    text-align:right;
 }
 
 .muscle-bar-row {
@@ -2024,13 +2018,6 @@ font-size:16px;
     height:100%;
     background:var(--red);
     border-radius:999px;
-}
-
-.history-export-actions {
-    display:flex;
-    gap:10px;
-    justify-content:flex-end;
-    flex-wrap:wrap;
 }
 
 @media(max-width:750px) {

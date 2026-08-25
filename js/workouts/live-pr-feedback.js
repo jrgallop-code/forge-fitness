@@ -32,7 +32,7 @@ function getStatus() {
 }
 
 function refreshLiveDisplay() {
-    if (document.querySelector(".history-session-card, .history-workout-card")) {
+    if (document.querySelector(".history-workout-card")) {
         initializeWorkoutPrBadges();
     }
 
