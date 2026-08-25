@@ -1,0 +1,30 @@
+/* Keep the Lifting sub-navigation swipeable after the native segmented-control polish. */
+.training-progress-tabs {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-padding-inline: 3px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+
+.training-progress-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.training-progress-tabs .training-progress-tab {
+    flex: 0 0 auto;
+    min-width: max-content;
+    white-space: nowrap;
+    scroll-snap-align: center;
+}
+
+@media (min-width: 700px) {
+    .training-progress-tabs .training-progress-tab {
+        flex: 1 1 0;
+    }
+}
