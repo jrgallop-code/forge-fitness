@@ -1,5 +1,6 @@
 import { displayMass, massUnit } from "../core/unit-system.js";
 import { getExerciseById } from "../workouts/exercise-library.js";
+import { calculateSetVolume } from "../workouts/volume-calculator.js?v=two-dumbbells-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 let unitListenerBound = false;
@@ -88,7 +89,7 @@ function getExerciseRecords(exerciseId) {
             estimatedOneRepMax: ranked[0].oneRepMax,
             completedSets: sets.length,
             totalReps: sets.reduce((sum, set) => sum + Number(set.reps) + dropReps(set), 0),
-            sessionVolume: sets.reduce((sum, set) => sum + setVolume(set), 0),
+            sessionVolume: sets.reduce((sum, set) => sum + calculateSetVolume(set, exerciseId), 0),
             heaviestWeight: Math.max(...sets.map(set => Number(set.weight)))
         };
     }).filter(Boolean).sort(compareRecords);
@@ -105,8 +106,6 @@ function validDrops(set) {
     return (Array.isArray(set?.dropSets) ? set.dropSets : []).filter(drop => Number(drop?.weight) > 0 && Number(drop?.reps) > 0);
 }
 function dropReps(set) { return validDrops(set).reduce((sum, drop) => sum + Number(drop.reps), 0); }
-function setVolume(set) { return Number(set.weight) * Number(set.reps) + validDrops(set).reduce((sum, drop) => sum + Number(drop.weight) * Number(drop.reps), 0); }
-
 function estimateOneRepMax(set) { return Number(set.weight) * (1 + Number(set.reps) / 30); }
 function getSessions() {
     try {
@@ -133,7 +132,7 @@ function updateControls() {
     document.querySelectorAll("[data-exercise-metric]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.exerciseMetric === selectedMetric)));
     const note = document.getElementById("exercise-progress-note");
     if (note) note.textContent = selectedMetric === "volume"
-        ? "Working-set load: weight × reps."
+        ? "Two-dumbbell exercises count both dumbbells; other loads use weight × reps."
         : "Best-set Epley estimate—not a tested maximum.";
 }
 

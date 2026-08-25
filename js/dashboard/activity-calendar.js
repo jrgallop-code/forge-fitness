@@ -1,3 +1,5 @@
+import { calculateWorkoutVolume } from "../workouts/volume-calculator.js?v=two-dumbbells-1";
+
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 
@@ -118,25 +120,6 @@ function recordedSetCount(session) {
         .length;
 }
 
-function workoutVolume(session) {
-    return (session?.exercises || [])
-        .flatMap(exercise => exercise?.sets || [])
-        .reduce((total, set) => {
-            const weight = Number(set?.weight);
-            const reps = Number(set?.reps);
-            const workingVolume = weight > 0 && reps > 0 ? weight * reps : 0;
-            const dropSets = Array.isArray(set?.dropSets) ? set.dropSets : [];
-            const dropVolume = dropSets.reduce((dropTotal, drop) => {
-                const dropWeight = Number(drop?.weight);
-                const dropReps = Number(drop?.reps);
-                return dropWeight > 0 && dropReps > 0
-                    ? dropTotal + dropWeight * dropReps
-                    : dropTotal;
-            }, 0);
-            return total + workingVolume + dropVolume;
-        }, 0);
-}
-
 function formatDuration(session) {
     const milliseconds = Number(session?.durationMs) || Number(session?.durationMinutes) * 60000;
     if (!(milliseconds > 0)) return "";
@@ -154,7 +137,7 @@ function workoutSummary(session) {
     const duration = formatDuration(session);
     const exercises = recordedExercises(session).length;
     const sets = recordedSetCount(session);
-    const volume = workoutVolume(session);
+    const volume = calculateWorkoutVolume(session);
 
     if (trainingDay && trainingDay !== "Workout" && trainingDay !== name) parts.push(trainingDay);
     if (duration) parts.push(duration);

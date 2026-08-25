@@ -2,6 +2,7 @@ import { navigate } from "../core/router.js?v=router-workout-flow-5";
 import { exercises } from "./exercise-library.js?v=exercise-library-cardio-3";
 import { calculatePrCounts } from "./workout-pr-badges.js?v=workout-pr-badges-2";
 import { deleteCompletedWorkout, discardActiveWorkout, getActiveWorkout, getWorkoutSessions, openActiveWorkout, openCompletedWorkoutForEdit } from "./workout-session.js?v=drop-sets-8";
+import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
 
 export function renderWorkoutHistory() {
     const active = getActiveWorkout();
@@ -53,7 +54,7 @@ function openWorkoutPreview(sessionId) {
 
 function renderWorkoutPreview(session, prCount) {
     const recordedExercises = (session.exercises || []).filter(hasRecordedExerciseData);
-    const volume = calculateVolume(session);
+    const volume = calculateWorkoutVolume(session);
     return `<div class="workout-history-preview-backdrop" id="workout-history-preview" role="dialog" aria-modal="true" aria-labelledby="workout-preview-title">
         <section class="workout-history-preview-sheet">
             <div class="workout-preview-header"><button class="workout-preview-close" data-preview-close type="button" aria-label="Close">×</button><div><span class="eyebrow">${isOneOff(session) ? "ONE-OFF WORKOUT" : "WORKOUT SUMMARY"}</span><h2 id="workout-preview-title">${escapeHtml(session.planName || "Workout")}</h2><p>${escapeHtml(session.trainingDayName || "Training day")} • ${formatDate(session.date)}</p></div><button class="workout-preview-edit" data-preview-edit type="button">Edit</button></div>
@@ -123,18 +124,6 @@ function countRecordedDropSets(session) {
 function hasRecordedExerciseData(exercise) {
     if (exercise?.trackingType === "notes") return Number(exercise.durationMinutes) > 0 || String(exercise.distance || "").trim() || String(exercise.notes || "").trim();
     return (exercise?.sets || []).some(set => set.completed || set.weight !== null || set.reps !== null);
-}
-
-function calculateVolume(session) {
-    return (session.exercises || []).flatMap(exercise => exercise.sets || []).reduce((sum, set) => {
-        const weight = Number(set.weight); const reps = Number(set.reps);
-        const workingVolume = Number.isFinite(weight) && weight > 0 && Number.isFinite(reps) && reps > 0 ? weight * reps : 0;
-        const dropVolume = (Array.isArray(set.dropSets) ? set.dropSets : []).reduce((dropSum, drop) => {
-            const dropWeight = Number(drop.weight), dropReps = Number(drop.reps);
-            return Number.isFinite(dropWeight) && dropWeight > 0 && Number.isFinite(dropReps) && dropReps > 0 ? dropSum + dropWeight * dropReps : dropSum;
-        }, 0);
-        return sum + workingVolume + dropVolume;
-    }, 0);
 }
 
 function formatSet(set) {
