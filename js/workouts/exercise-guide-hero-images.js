@@ -2,7 +2,7 @@ import { getAllExercises, getExerciseById } from "./exercise-library.js?v=exerci
 import {
     getFormGuideMuscleVisual,
     renderFormGuideMuscleSvg
-} from "./form-guide-anatomy.js?v=female-anatomy-1";
+} from "./form-guide-anatomy.js?v=female-crops-1";
 
 const GUIDE_IMAGE_PATHS = {
     "barbell-bench-press": "assets/exercise-guides/performance/barbell-bench-press-guide.webp?v=1",

@@ -1,6 +1,6 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { getTrainingPreferences } from "../core/training-preferences.js?v=onboarding-1";
-import { renderMusclePriorityChoice } from "./muscle-priority-visual.js?v=muscle-priority-cards-2";
+import { renderMusclePriorityChoice } from "./muscle-priority-visual.js?v=female-crops-1";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 const MUSCLES = ["Chest","Back","Shoulders","Biceps","Triceps","Quads","Hamstrings","Glutes","Calves"];
