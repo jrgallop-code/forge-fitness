@@ -257,7 +257,7 @@ function annotateLogger(logger = document.getElementById("workout-session-logger
         const tab = logger.querySelector(`.logger-exercise-strip [data-exercise-tab-index="${index}"]`);
         const tabMarker = tab?.querySelector("span");
         if (tab) tab.classList.add("is-superset");
-        if (tabMarker) tabMarker.textContent = exerciseCode;
+        if (tabMarker && tabMarker.textContent !== exerciseCode) tabMarker.textContent = exerciseCode;
 
         if (card.querySelector(".superset-runtime-banner")) return;
         const banner = document.createElement("div");

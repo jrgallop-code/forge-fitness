@@ -596,11 +596,15 @@ function ensureInlineActions(card, logger) {
       tools.appendChild(createSupersetButton(card, logger, liftingHeading));
     }
     const supersetButton = card.querySelector('.session-inline-superset');
-    if (supersetButton) supersetButton.textContent = group ? 'Edit Superset' : 'Superset';
+    const supersetLabel = group ? 'Edit Superset' : 'Superset';
+    if (supersetButton && supersetButton.textContent !== supersetLabel) {
+      supersetButton.textContent = supersetLabel;
+    }
     return;
   }
 
   if (card.classList.contains('cardio-session-card')) {
+    if (card.querySelector('.session-inline-swap')) return;
     const heading = card.querySelector('h4');
     if (!heading) return;
     let header = card.querySelector('.cardio-session-action-header');
@@ -620,7 +624,14 @@ function enhanceActiveLogger() {
   logger.querySelectorAll('.session-exercise-card').forEach(card => ensureInlineActions(card, logger));
 }
 
-const observer = new MutationObserver(() => requestAnimationFrame(enhanceActiveLogger));
+let enhanceFrame = 0;
+const observer = new MutationObserver(() => {
+  if (enhanceFrame) return;
+  enhanceFrame = requestAnimationFrame(() => {
+    enhanceFrame = 0;
+    enhanceActiveLogger();
+  });
+});
 observer.observe(document.body, { childList: true, subtree: true });
 
 document.addEventListener('click', event => {
