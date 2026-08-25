@@ -1,7 +1,7 @@
 const FRONT_ASSET = "assets/recovery/front-view.svg?v=recovery-front-vector-2";
 const BACK_ASSET = "assets/recovery/back-view.svg?v=recovery-back-vector-1";
 const TARGET_FILL = "#ff315f";
-import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-2";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-back-regions-1";
 
 const CORE_ALL = [
     "muscle_front_017", "muscle_front_018", "muscle_front_019", "muscle_front_020",
@@ -200,7 +200,7 @@ export function getFormGuideMuscleVisual(muscleName) {
 
     const anatomy = getAnatomyConfig(source.view);
     if (anatomy.sex === "female") {
-        const aliases = {"Front Delts":"Shoulders","Side Delts":"Shoulders","Rear Delts":"Rear Delts","Lats":"Back","Upper Back":"Back","Spinal Erectors":"Back","Rectus Abdominis":"Core","Obliques":"Core","Deep Core":"Core"};
+        const aliases = {"Front Delts":"Shoulders","Side Delts":"Shoulders","Rectus Abdominis":"Core","Obliques":"Core","Deep Core":"Core"};
         const region = aliases[name] || name;
         return { muscle:name, view:source.view, ids:[...(anatomy.regions[region]||[])], crop:source.crop, anatomy };
     }

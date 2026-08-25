@@ -8,7 +8,18 @@ const MALE_FRONT = {
 };
 const MALE_BACK = {"Rear Delts":["muscle_back_016","muscle_back_017"],Back:["muscle_back_012","muscle_back_013","muscle_back_020","muscle_back_021","muscle_back_022","muscle_back_023","muscle_back_028","muscle_back_029","muscle_back_050","muscle_back_051","muscle_back_074","muscle_back_075"],Triceps:["muscle_back_024","muscle_back_025","muscle_back_034","muscle_back_035","muscle_back_040","muscle_back_041"],Forearms:["muscle_back_056","muscle_back_057","muscle_back_064","muscle_back_065","muscle_back_068","muscle_back_069","muscle_back_070","muscle_back_071"],Glutes:["muscle_back_078","muscle_back_079","muscle_back_080","muscle_back_081"],Hamstrings:["muscle_back_096","muscle_back_097","muscle_back_113","muscle_back_114","muscle_back_118","muscle_back_119","muscle_back_120","muscle_back_121","muscle_back_126","muscle_back_127"],Calves:["muscle_back_134","muscle_back_135","muscle_back_136","muscle_back_137","muscle_back_140","muscle_back_141","muscle_back_142","muscle_back_143","muscle_back_148","muscle_back_149"]};
 const FEMALE_FRONT={Shoulders:["female_front_shoulders_l","female_front_shoulders_r"],Chest:["female_front_chest_l","female_front_chest_r"],Biceps:["female_front_biceps_l","female_front_biceps_r"],Triceps:["female_front_triceps_l","female_front_triceps_r"],Forearms:["female_front_forearms_l","female_front_forearms_r"],Back:["female_front_shoulders_l","female_front_shoulders_r"],Core:["female_front_core"],Adductors:["female_front_adductors_l","female_front_adductors_r"],Quads:["female_front_quads_l","female_front_quads_r"],Calves:["female_front_calves_l","female_front_calves_r"]};
-const FEMALE_BACK={"Rear Delts":["female_back_delts_l","female_back_delts_r"],Back:["female_back_back"],Triceps:["female_back_triceps_l","female_back_triceps_r"],Forearms:["female_back_forearms_l","female_back_forearms_r"],Glutes:["female_back_glutes_l","female_back_glutes_r"],Hamstrings:["female_back_hamstrings_l","female_back_hamstrings_r"],Calves:["female_back_calves_l","female_back_calves_r"]};
+const FEMALE_BACK={
+  "Rear Delts":["female_back_delts_l","female_back_delts_r"],
+  Back:["female_back_back"],
+  Lats:["muscle_female_back_012","muscle_female_back_013"],
+  "Upper Back":["muscle_female_back_004","muscle_female_back_005"],
+  "Spinal Erectors":["muscle_female_back_020","muscle_female_back_021","muscle_female_back_039","muscle_female_back_040"],
+  Triceps:["female_back_triceps_l","female_back_triceps_r"],
+  Forearms:["female_back_forearms_l","female_back_forearms_r"],
+  Glutes:["female_back_glutes_l","female_back_glutes_r"],
+  Hamstrings:["female_back_hamstrings_l","female_back_hamstrings_r"],
+  Calves:["female_back_calves_l","female_back_calves_r"]
+};
 
 export function getAnatomySex(){
   const preview=globalThis.window?.__levelUpAnatomySexPreview;
