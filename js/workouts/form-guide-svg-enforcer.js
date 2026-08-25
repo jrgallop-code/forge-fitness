@@ -2,7 +2,7 @@ import "./exercise-guide-videos.js?v=form-videos-1";
 import {
     getFormGuideMuscleVisual,
     renderFormGuideMuscleSvg
-} from "./form-guide-anatomy.js?v=female-anatomy-1";
+} from "./form-guide-anatomy.js?v=female-crops-1";
 
 const STYLE_ID = "form-guide-direct-recovery-svg-styles";
 

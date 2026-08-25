@@ -3,7 +3,7 @@ import { feetAndInchesToCm, poundsToKg } from "../nutrition/tdee-calculator.js?v
 import { getAllExercises } from "../workouts/exercise-library.js?v=onboarding-1";
 import { getTrainingPreferences, saveTrainingPreferences, markOnboardingComplete, markOnboardingSkipped, onboardingIsHandled } from "../core/training-preferences.js?v=onboarding-1";
 import { getUnitSystem, setUnitSystem, poundsToKilograms, kilogramsToPounds, inchesToCentimeters, centimetersToInches } from "../core/unit-system.js?v=unit-system-1";
-import { renderMusclePriorityChoice } from "../workouts/muscle-priority-visual.js?v=muscle-priority-cards-2";
+import { renderMusclePriorityChoice } from "../workouts/muscle-priority-visual.js?v=female-crops-1";
 import { initializeAcquisitionTracking, saveReportedSource, trackProductEvent } from "../analytics/acquisition.js?v=acquisition-funnel-1";
 
 const WEIGHT_KEY = "forge_weight_entries";
