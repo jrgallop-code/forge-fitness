@@ -544,7 +544,7 @@ function refreshCoachSummary(button) {
     renderCoachSummary(recap);
 }
 
-document.addEventListener("click", event => {
+window.addEventListener("click", event => {
     const completeButton = event.target.closest?.("#save-session-btn");
     if (!completeButton) return;
     if (completeButton.dataset.adaptiveCompletionConfirmed === "true") {
