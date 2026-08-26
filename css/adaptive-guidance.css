@@ -1,6 +1,4 @@
 .adaptive-settings-card,
-.adaptive-recovery-check,
-.adaptive-post-check,
 .adaptive-deload-banner,
 .adaptive-coach-summary {
     border: 1px solid rgba(255,255,255,.1);
@@ -90,28 +88,99 @@
 .adaptive-settings-details ul { margin: 0; padding-left: 20px; }
 .adaptive-settings-message { min-height: 20px; margin: 13px 0 0; color: #69d98f; font-size: .78rem; }
 
-.adaptive-recovery-check,
-.adaptive-post-check,
+.adaptive-flow-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    overflow-y: auto;
+    padding: max(22px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));
+    background:
+        radial-gradient(circle at 50% 0,rgba(239,24,33,.13),transparent 38%),
+        #09090b;
+}
+
+.adaptive-flow-screen {
+    width: min(100%,560px);
+    min-height: calc(100dvh - 46px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.adaptive-flow-kicker {
+    margin-top: auto;
+    color: var(--red,#ef1821);
+    font-size: .67rem;
+    font-weight: 900;
+    letter-spacing: .13em;
+}
+
+.adaptive-flow-screen h2 {
+    margin: 7px 0 0;
+    color: #fff;
+    font-size: clamp(1.65rem,8vw,2.15rem);
+    line-height: 1.05;
+}
+
+.adaptive-flow-intro {
+    margin: 10px 0 16px;
+    color: #c5c5cb;
+    font-size: .83rem;
+    line-height: 1.5;
+}
+
+.adaptive-recovery-legend {
+    display: grid;
+    gap: 7px;
+    margin-bottom: 18px;
+}
+
+.adaptive-recovery-legend div {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 10px;
+    padding: 10px 11px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    background: #151519;
+}
+
+.adaptive-recovery-legend strong { color: #fff; font-size: .72rem; }
+.adaptive-recovery-legend span { color: #a9a9b1; font-size: .7rem; line-height: 1.35; }
+.adaptive-muscle-questions { margin-bottom: 18px; }
+.adaptive-question-label { margin: 0 0 8px; color: #fff; font-size: .78rem; font-weight: 850; }
+
+.adaptive-flow-actions {
+    display: grid;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 14px;
+}
+
+.adaptive-flow-actions .primary-btn { width: 100%; min-height: 48px; }
+.adaptive-text-button {
+    min-height: 38px;
+    border: 0;
+    background: transparent;
+    color: #aaaab2;
+    font-size: .73rem;
+    font-weight: 800;
+}
+.adaptive-return-button { color: #777780; }
+
+.adaptive-post-flow .adaptive-post-options {
+    padding: 14px;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 13px;
+    background: #141418;
+}
+
 .adaptive-deload-banner {
     margin: 8px 0 12px;
     padding: 12px;
     border-radius: 13px;
 }
 
-.adaptive-check-heading {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 9px;
-}
-
-.adaptive-check-heading strong,
-.adaptive-check-heading small { display: block; }
-.adaptive-check-heading strong { font-size: .85rem; }
-.adaptive-check-heading small { margin-top: 2px; color: var(--muted,#a1a1aa); font-size: .66rem; }
-
-.adaptive-skip,
 .adaptive-info-button {
     min-height: 30px;
     padding: 5px 9px;

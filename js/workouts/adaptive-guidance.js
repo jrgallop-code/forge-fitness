@@ -95,32 +95,43 @@ function getTodayMuscles(active) {
 }
 
 function renderRecoveryCheck(logger, active) {
-    const container = logger.querySelector("#session-exercises");
-    if (!container || container.querySelector(".adaptive-recovery-check")) return;
+    if (active?.adaptiveGuidance?.recoveryCompleted || active?.adaptiveGuidance?.isDeload) return;
+    if (document.querySelector(".adaptive-recovery-flow")) return;
     const muscles = getTodayMuscles(active);
     if (!muscles.length) return;
     const recorded = active?.adaptiveGuidance?.recovery || {};
-    const panel = document.createElement("section");
-    panel.className = "adaptive-recovery-check";
-    panel.innerHTML = `
-        <div class="adaptive-check-heading">
-            <div><strong>Recovery check</strong><small>Optional · from your previous workout</small></div>
-            <button class="adaptive-skip" type="button" data-adaptive-skip="recovery">Skip</button>
-        </div>
-        <div class="adaptive-muscle-rows">
-            ${muscles.map(muscle => `
-                <div class="adaptive-muscle-row" data-adaptive-muscle="${escapeHtml(muscle)}">
-                    <strong>${escapeHtml(muscle)}</strong>
-                    ${["fatigued", "ready", "fresh"].map(status => `
-                        <button class="adaptive-choice ${recorded?.[muscle]?.status === status ? "selected" : ""}" type="button" data-recovery-status="${status}">${capitalize(status)}</button>
+    const overlay = document.createElement("div");
+    overlay.className = "adaptive-flow-overlay adaptive-recovery-flow";
+    overlay.innerHTML = `
+        <section class="adaptive-flow-screen" role="dialog" aria-modal="true" aria-labelledby="adaptive-recovery-title">
+            <div class="adaptive-flow-kicker">BEFORE YOUR WORKOUT</div>
+            <h2 id="adaptive-recovery-title">Recovery Check</h2>
+            <p class="adaptive-flow-intro">Think about how each muscle feels now compared with the last time you trained it. Answer any or all, or skip. This helps guide future volume—it will not change today's workout.</p>
+            <div class="adaptive-recovery-legend" aria-label="Recovery rating guide">
+                <div><strong>Fatigued</strong><span>Still sore, weak or heavy from your last workout.</span></div>
+                <div><strong>Ready</strong><span>Recovered enough to repeat your normal workout.</span></div>
+                <div><strong>Fresh</strong><span>Completely recovered with no lingering soreness or heaviness.</span></div>
+            </div>
+            <div class="adaptive-muscle-questions">
+                <p class="adaptive-question-label">How does each muscle feel?</p>
+                <div class="adaptive-muscle-rows">
+                    ${muscles.map(muscle => `
+                        <div class="adaptive-muscle-row" data-adaptive-muscle="${escapeHtml(muscle)}">
+                            <strong>${escapeHtml(muscle)}</strong>
+                            ${["fatigued", "ready", "fresh"].map(status => `
+                                <button class="adaptive-choice ${recorded?.[muscle]?.status === status ? "selected" : ""}" type="button" data-recovery-status="${status}">${capitalize(status)}</button>
+                            `).join("")}
+                        </div>
                     `).join("")}
                 </div>
-            `).join("")}
-        </div>
+            </div>
+            <div class="adaptive-flow-actions">
+                <button class="primary-btn" type="button" data-adaptive-start-workout>Start workout</button>
+                <button class="adaptive-text-button" type="button" data-adaptive-skip="recovery">Skip for now</button>
+            </div>
+        </section>
     `;
-    const strip = container.querySelector(".logger-exercise-strip");
-    if (strip) strip.insertAdjacentElement("afterend", panel);
-    else container.prepend(panel);
+    document.body.appendChild(overlay);
 }
 
 function renderRirTracker(card, active) {
@@ -177,21 +188,20 @@ function updateRirToggle(control, sets) {
 }
 
 function renderPostCheck(logger, active) {
-    const actions = logger.querySelector(".session-completion-actions");
-    if (!actions || logger.querySelector(".adaptive-post-check")) return;
+    if (document.querySelector(".adaptive-post-flow")) return;
     const guidance = active?.adaptiveGuidance || {};
     const exerciseOptions = (active?.exercises || []).map((item, index) => {
         const exercise = getExerciseById(item.exerciseId);
         return exercise ? `<option value="${escapeHtml(item.exerciseId)}" ${guidance.discomfortExerciseId === item.exerciseId ? "selected" : ""}>${escapeHtml(exercise.name)}</option>` : "";
     }).join("");
-    const panel = document.createElement("section");
-    panel.className = "adaptive-post-check";
-    panel.innerHTML = `
-        <div class="adaptive-check-heading">
-            <div><strong>Workout check-in</strong><small>Optional</small></div>
-            <button class="adaptive-skip" type="button" data-adaptive-skip="post">Skip</button>
-        </div>
-        <div class="adaptive-post-options">
+    const overlay = document.createElement("div");
+    overlay.className = "adaptive-flow-overlay adaptive-post-flow";
+    overlay.innerHTML = `
+        <section class="adaptive-flow-screen" role="dialog" aria-modal="true" aria-labelledby="adaptive-post-title">
+            <div class="adaptive-flow-kicker">WORKOUT COMPLETE</div>
+            <h2 id="adaptive-post-title">How did it feel?</h2>
+            <p class="adaptive-flow-intro">Optional. Your answers add context to your performance and help make future suggestions more useful.</p>
+            <div class="adaptive-post-options">
             <div class="adaptive-post-question">
                 <strong>Workout difficulty</strong>
                 <div class="adaptive-option-row">
@@ -210,16 +220,23 @@ function renderPostCheck(logger, active) {
                     </select>
                 </label>
             </div>
-        </div>
+            </div>
+            <div class="adaptive-flow-actions">
+                <button class="primary-btn" type="button" data-adaptive-finish-workout>Finish workout</button>
+                <button class="adaptive-text-button" type="button" data-adaptive-skip="post">Skip and finish</button>
+                <button class="adaptive-text-button adaptive-return-button" type="button" data-adaptive-return-workout>Return to workout</button>
+            </div>
+        </section>
     `;
-    actions.insertAdjacentElement("beforebegin", panel);
+    document.body.appendChild(overlay);
 }
 
 function enhanceLogger(logger) {
     if (!logger || logger.dataset.editingSessionId) return;
     if (!guidanceEnabled()) {
         logger.classList.remove("adaptive-guidance-on", "adaptive-deload-active");
-        logger.querySelectorAll(".adaptive-recovery-check,.adaptive-post-check,.adaptive-rir-control,.adaptive-deload-banner").forEach(node => node.remove());
+        logger.querySelectorAll(".adaptive-rir-control,.adaptive-deload-banner").forEach(node => node.remove());
+        document.querySelectorAll(".adaptive-recovery-flow,.adaptive-post-flow").forEach(node => node.remove());
         return;
     }
     const active = readActive();
@@ -229,7 +246,6 @@ function enhanceLogger(logger) {
     applyDeloadMode(logger, active);
     renderRecoveryCheck(logger, readActive() || active);
     logger.querySelectorAll(".session-exercise-card").forEach(card => renderRirTracker(card, readActive() || active));
-    renderPostCheck(logger, readActive() || active);
 }
 
 function applyDeloadMode(logger, active) {
@@ -298,7 +314,7 @@ function getPracticalIncrement(exerciseId) {
 }
 
 function setRecoveryChoice(button) {
-    const logger = button.closest("#workout-session-logger");
+    const logger = button.closest("#workout-session-logger") || document.getElementById("workout-session-logger");
     const row = button.closest("[data-adaptive-muscle]");
     const active = readActive();
     if (!logger || !row || !active) return;
@@ -312,15 +328,31 @@ function setRecoveryChoice(button) {
 }
 
 function setPostChoice(button, key, value) {
-    const logger = button.closest("#workout-session-logger");
+    const logger = button.closest("#workout-session-logger") || document.getElementById("workout-session-logger");
     if (!logger) return;
     dispatchSessionGuidance(logger, { [key]: value, postSkipped: false });
     button.parentElement?.querySelectorAll(".adaptive-choice").forEach(option => option.classList.toggle("selected", option === button));
     if (key === "discomfort") {
-        const select = logger.querySelector(".adaptive-discomfort-exercise");
+        const select = document.querySelector(".adaptive-post-flow .adaptive-discomfort-exercise");
         if (select) select.hidden = value === "none";
         if (value === "none") dispatchSessionGuidance(logger, { discomfortExerciseId: null });
     }
+}
+
+function startWorkoutFromRecovery({ skipped = false } = {}) {
+    const logger = document.getElementById("workout-session-logger");
+    if (logger) dispatchSessionGuidance(logger, { recoveryCompleted: true, recoverySkipped: skipped });
+    document.querySelector(".adaptive-recovery-flow")?.remove();
+}
+
+function finishWorkoutFromCheckIn({ skipped = false } = {}) {
+    const logger = document.getElementById("workout-session-logger");
+    const completeButton = logger?.querySelector("#save-session-btn");
+    if (!logger || !completeButton) return;
+    dispatchSessionGuidance(logger, { postCompleted: true, postSkipped: skipped });
+    document.querySelector(".adaptive-post-flow")?.remove();
+    completeButton.dataset.adaptiveCompletionConfirmed = "true";
+    completeButton.click();
 }
 
 function handleRirChoice(button) {
@@ -513,6 +545,21 @@ function refreshCoachSummary(button) {
 }
 
 document.addEventListener("click", event => {
+    const completeButton = event.target.closest?.("#save-session-btn");
+    if (!completeButton) return;
+    if (completeButton.dataset.adaptiveCompletionConfirmed === "true") {
+        delete completeButton.dataset.adaptiveCompletionConfirmed;
+        return;
+    }
+    const logger = completeButton.closest("#workout-session-logger");
+    const active = readActive();
+    if (!logger || logger.dataset.editingSessionId || !guidanceEnabled() || !active) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    renderPostCheck(logger, active);
+}, true);
+
+document.addEventListener("click", event => {
     const recovery = event.target.closest?.("[data-recovery-status]");
     if (recovery) return setRecoveryChoice(recovery);
 
@@ -541,16 +588,25 @@ document.addEventListener("click", event => {
         return;
     }
 
+    if (event.target.closest?.("[data-adaptive-start-workout]")) {
+        startWorkoutFromRecovery();
+        return;
+    }
+
+    if (event.target.closest?.("[data-adaptive-finish-workout]")) {
+        finishWorkoutFromCheckIn();
+        return;
+    }
+
+    if (event.target.closest?.("[data-adaptive-return-workout]")) {
+        document.querySelector(".adaptive-post-flow")?.remove();
+        return;
+    }
+
     const skip = event.target.closest?.("[data-adaptive-skip]");
     if (skip) {
-        const logger = skip.closest("#workout-session-logger");
-        const section = skip.closest(".adaptive-recovery-check,.adaptive-post-check");
-        if (logger) dispatchSessionGuidance(logger, skip.dataset.adaptiveSkip === "recovery" ? { recoverySkipped: true } : { postSkipped: true });
-        if (section) {
-            section.querySelector(".adaptive-muscle-rows,.adaptive-post-options")?.setAttribute("hidden", "");
-            skip.textContent = "Skipped";
-            skip.disabled = true;
-        }
+        if (skip.dataset.adaptiveSkip === "recovery") startWorkoutFromRecovery({ skipped: true });
+        else finishWorkoutFromCheckIn({ skipped: true });
         return;
     }
 
@@ -579,7 +635,7 @@ document.addEventListener("click", event => {
 document.addEventListener("change", event => {
     const select = event.target.closest?.("[data-adaptive-discomfort-exercise]");
     if (!select) return;
-    const logger = select.closest("#workout-session-logger");
+    const logger = select.closest("#workout-session-logger") || document.getElementById("workout-session-logger");
     if (logger) dispatchSessionGuidance(logger, { discomfortExerciseId: select.value || null });
 });
 
