@@ -1,5 +1,5 @@
 import "./contact-support.js?v=contact-support-2";
-import { navigate } from "../core/router.js?v=deload-preview-beta-1";
+import { navigate } from "../core/router.js?v=deload-workout-preview-1";
 import { renderExportBackup } from "./export-backup-ui.js?v=full-data-export-1";
 import { initializeBackupManager } from "../core/backup-manager.js?v=backup-complete-6";
 import { initializeGoogleDriveSync } from "../core/google-drive-sync-v2.js?v=visible-drive-backup-3";
@@ -8,7 +8,7 @@ import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-card-1";
 import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.js?v=privacy-account-1";
 import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=unit-system-1";
 import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-appearance-1";
-import { renderAdaptiveGuidanceSettings, initializeAdaptiveGuidanceSettings } from "./adaptive-guidance-settings.js?v=deload-preview-beta-1";
+import { renderAdaptiveGuidanceSettings, initializeAdaptiveGuidanceSettings } from "./adaptive-guidance-settings.js?v=deload-workout-preview-1";
 
 const ICONS = {
     profile: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c4.4 0 8 2.3 8 5.2V21H4v-2.8C4 15.3 7.6 13 12 13Zm-5.9 6h11.8v-.8c0-1.3-2.4-3.2-5.9-3.2s-5.9 1.9-5.9 3.2v.8Z"/></svg>',
@@ -93,7 +93,10 @@ export function initializeMore() {
                 window.scrollTo({ top: 0, behavior: "smooth" });
             };
             content.innerHTML = renderAdaptiveGuidanceSettings();
-            initializeAdaptiveGuidanceSettings({ onBack: showMore });
+            initializeAdaptiveGuidanceSettings({
+                onBack: showMore,
+                onPreviewWorkout: () => document.querySelector('.nav-btn[data-page="workout"]')?.click()
+            });
             window.scrollTo({ top: 0, behavior: "smooth" });
             return;
         }

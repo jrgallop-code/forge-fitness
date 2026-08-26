@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=deload-preview-beta-1";
+import { navigate } from "../core/router.js?v=deload-workout-preview-1";
 
 
 export function renderNavbar() {
