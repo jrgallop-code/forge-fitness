@@ -149,6 +149,30 @@ test("does not imply feedback was analyzed when all guidance was skipped", () =>
     assert.deepEqual(recommendations.map(item => item.title), ["No guidance this time"]);
 });
 
+test("turns minor discomfort into a concise hold-progression caution", () => {
+    const current = {
+        id: "current-discomfort",
+        planId: "plan-1",
+        trainingDayIndex: 0,
+        adaptiveGuidance: {
+            discomfort: "minor",
+            discomfortExerciseId: "bench"
+        },
+        exercises: [exercise("bench", 100, 10, 2)]
+    };
+    const recommendations = buildAdaptiveRecommendations({
+        session: current,
+        sessions: [current],
+        plan,
+        getExercise,
+        accumulationWeeks: 1
+    });
+    const hold = recommendations.find(item => item.type === "hold");
+    assert.equal(hold?.title, "Hold progression");
+    assert.equal(hold?.exerciseId, "bench");
+    assert.match(hold?.reason || "", /same load and sets next time/i);
+});
+
 test("offers a fixed deload after eight accumulation weeks", () => {
     const prior = priorSession("ready");
     const current = {

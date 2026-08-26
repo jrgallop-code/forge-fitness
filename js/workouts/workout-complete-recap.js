@@ -123,7 +123,8 @@ function renderCoachSummary(session) {
 
 function renderCoachRecommendation(recommendation) {
   if (recommendation.status) {
-    return `<article class="adaptive-recommendation"><strong>${escapeHtml(recommendation.title)}</strong><p class="adaptive-recommendation-status">${escapeHtml(recommendation.status === "applied" ? "Applied" : "Kept current")}</p></article>`;
+    const status = recommendation.status === "applied" ? "Applied" : recommendation.type === "hold" ? "Acknowledged" : "Kept current";
+    return `<article class="adaptive-recommendation"><strong>${escapeHtml(recommendation.title)}</strong><p class="adaptive-recommendation-status">${escapeHtml(status)}</p></article>`;
   }
   if (recommendation.type === "status") {
     return `<article class="adaptive-recommendation"><strong>${escapeHtml(recommendation.title)}</strong><p>${escapeHtml(recommendation.reason)}</p></article>`;
@@ -139,7 +140,7 @@ function renderCoachRecommendation(recommendation) {
       <p>${escapeHtml(recommendation.reason)}</p>
       <div class="adaptive-recommendation-actions">
         ${primaryAction}
-        <button class="secondary-btn" type="button" data-adaptive-action="dismiss" data-recommendation-id="${escapeHtml(recommendation.id)}">Keep current</button>
+        <button class="secondary-btn" type="button" data-adaptive-action="dismiss" data-recommendation-id="${escapeHtml(recommendation.id)}">${recommendation.type === "hold" ? "Got it" : "Keep current"}</button>
       </div>
     </article>`;
 }

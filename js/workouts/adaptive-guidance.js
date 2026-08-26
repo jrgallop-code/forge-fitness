@@ -6,7 +6,7 @@ import {
     completedSets,
     countAccumulationWeeks,
     getTrainedMuscles
-} from "./adaptive-guidance-engine.js?v=adaptive-survey-confirmation-1";
+} from "./adaptive-guidance-engine.js?v=discomfort-caution-1";
 
 const ACTIVE_WORKOUT_KEY = "level_up_active_workout";
 const SESSION_KEY = "forge_workout_sessions";
@@ -478,7 +478,8 @@ function renderCoachSummary(recap, sessionId = recap?.dataset.recapSessionId) {
 
 function renderRecommendation(recommendation) {
     if (recommendation.status) {
-        return `<article class="adaptive-recommendation"><strong>${escapeHtml(recommendation.title)}</strong><p class="adaptive-recommendation-status">${escapeHtml(recommendation.status === "applied" ? "Applied" : "Kept current")}</p></article>`;
+        const status = recommendation.status === "applied" ? "Applied" : recommendation.type === "hold" ? "Acknowledged" : "Kept current";
+        return `<article class="adaptive-recommendation"><strong>${escapeHtml(recommendation.title)}</strong><p class="adaptive-recommendation-status">${escapeHtml(status)}</p></article>`;
     }
     const primaryAction = recommendation.type === "volume"
         ? `<button class="primary-btn" type="button" data-adaptive-action="apply-volume" data-recommendation-id="${escapeHtml(recommendation.id)}">Apply</button>`
@@ -494,7 +495,7 @@ function renderRecommendation(recommendation) {
             <p>${escapeHtml(recommendation.reason)}</p>
             <div class="adaptive-recommendation-actions">
                 ${primaryAction}
-                <button class="secondary-btn" type="button" data-adaptive-action="dismiss" data-recommendation-id="${escapeHtml(recommendation.id)}">Keep current</button>
+                <button class="secondary-btn" type="button" data-adaptive-action="dismiss" data-recommendation-id="${escapeHtml(recommendation.id)}">${recommendation.type === "hold" ? "Got it" : "Keep current"}</button>
             </div>
         </article>
     `;

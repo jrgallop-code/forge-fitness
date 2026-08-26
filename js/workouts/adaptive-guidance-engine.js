@@ -176,8 +176,10 @@ export function buildAdaptiveRecommendations({
             id: recommendationId(session.id, exerciseId || "workout", "discomfort"),
             type: "hold",
             exerciseId,
-            title: exercise ? `Hold ${exercise.name}` : "Hold progression",
-            reason: discomfort === "significant" ? "Significant discomfort reported." : "Minor discomfort reported."
+            title: "Hold progression",
+            reason: discomfort === "significant"
+                ? "Consider reducing the load or changing the exercise. Reassess before progressing."
+                : `Keep ${exercise ? `${exercise.name} at` : "the"} same load and sets next time. Reassess if discomfort continues.`
         });
     }
 

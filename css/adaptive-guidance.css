@@ -314,6 +314,21 @@
 .adaptive-recommendation-actions button:only-child { grid-column: 1 / -1; }
 .adaptive-recommendation-status { color: #69d98f!important; margin-bottom: 0!important; }
 
+.progression-discomfort-caution {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px;
+    align-items: start;
+    margin-top: 7px;
+    padding-top: 7px;
+    border-top: 1px solid rgba(255,183,77,.24);
+    color: #ffd19a;
+    font-size: 10px;
+    line-height: 1.35;
+}
+.progression-discomfort-caution strong { color: #ffb74d; font-size: 10px; }
+
 @media (max-width: 430px) {
     .adaptive-muscle-row { grid-template-columns: minmax(62px,1fr) repeat(3,minmax(54px,auto)); gap: 4px; }
     .adaptive-choice { padding-inline: 4px; font-size: .59rem; }
