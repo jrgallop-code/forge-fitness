@@ -1,4 +1,4 @@
-import { navigate } from "./core/router.js?v=reddit-import-2";
+import { navigate } from "./core/router.js?v=paste-import-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=deload-workout-preview-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=expanded-exercise-lookup-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
