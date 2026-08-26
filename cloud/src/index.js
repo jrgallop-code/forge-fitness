@@ -48,6 +48,9 @@ async function handleRequest(request, env) {
     if (url.pathname === "/v1/me" && request.method === "GET") {
         return json({ user: publicUser(user) }, 200, request, env);
     }
+    if (url.pathname === "/v1/admin/analytics" && request.method === "GET") {
+        return getAdminAnalytics(user, url, request, env);
+    }
     if (url.pathname === "/v1/activity" && request.method === "POST") {
         return recordActivity(user.id, request, env);
     }
@@ -397,6 +400,33 @@ async function recordActivity(userId, request, env) {
     await env.DB.prepare("UPDATE users SET last_active_at = ? WHERE id = ?")
         .bind(now, userId).run();
     return json({ ok: true, lastActiveAt: now }, 200, request, env);
+}
+
+async function getAdminAnalytics(user, url, request, env) {
+    const admins = String(env.ADMIN_EMAILS || "").split(",").map(value => value.trim().toLowerCase()).filter(Boolean);
+    if (!admins.includes(String(user.email || "").toLowerCase())) return json({ error: "Admin access required." }, 403, request, env);
+    const requestedDays = Number(url.searchParams.get("days") || 30);
+    const days = Number.isFinite(requestedDays) ? Math.min(365, Math.max(7, Math.round(requestedDays))) : 30;
+    const since = new Date(Date.now() - days * 86400000).toISOString();
+    const activeSince = new Date(Date.now() - 7 * 86400000).toISOString();
+    const [totals, daily, acquisition] = await Promise.all([
+        env.DB.prepare(`SELECT
+            (SELECT COUNT(*) FROM users) AS total_users,
+            (SELECT COUNT(*) FROM users WHERE created_at >= ?) AS new_users,
+            (SELECT COUNT(*) FROM users WHERE last_active_at >= ?) AS active_users,
+            (SELECT COUNT(*) FROM product_events WHERE event_name = 'workout_completed' AND occurred_at >= ?) AS workouts,
+            (SELECT COUNT(DISTINCT user_id) FROM product_events WHERE event_name = 'workout_completed' AND occurred_at >= ?) AS workout_users,
+            (SELECT COUNT(*) FROM product_events WHERE event_name = 'onboarding_completed' AND occurred_at >= ?) AS onboarding_completions`)
+            .bind(since, activeSince, since, since, since).first(),
+        env.DB.prepare(`SELECT substr(occurred_at, 1, 10) AS day, COUNT(*) AS workouts,
+            COUNT(DISTINCT user_id) AS users
+            FROM product_events
+            WHERE event_name = 'workout_completed' AND occurred_at >= ?
+            GROUP BY day ORDER BY day`).bind(since).all(),
+        env.DB.prepare(`SELECT COALESCE(NULLIF(reported_source, ''), 'Not answered') AS source, COUNT(*) AS users
+            FROM user_acquisition GROUP BY source ORDER BY users DESC`).all()
+    ]);
+    return json({ days, since, totals: totals || {}, daily: daily?.results || [], acquisition: acquisition?.results || [] }, 200, request, env);
 }
 
 async function deleteSession(request, env) {
