@@ -654,18 +654,23 @@ function renderSessionExercises({
         bindRestTimerControls(logger);
     }
 
+    let completionRequested = false;
+    const completeWorkout = () => {
+        if (completionRequested) return;
+        completionRequested = true;
+        saveCompletedSession({
+            plan,
+            logger,
+            session,
+            editingSessionId
+        });
+    };
+
     logger
         .querySelector("#save-session-btn")
-        ?.addEventListener(
-            "click",
-            () =>
-                saveCompletedSession({
-                    plan,
-                    logger,
-                    session,
-                    editingSessionId
-                })
-        );
+        ?.addEventListener("click", completeWorkout);
+
+    logger.addEventListener("levelup:complete-workout-requested", completeWorkout);
 
     logger
         .querySelector("#discard-session-btn")
@@ -940,7 +945,8 @@ function bindSessionInputs({
             const setIndex = Number(detail.setIndex);
             const set = session.exercises?.[exerciseIndex]?.sets?.[setIndex];
             if (!set) return;
-            const value = Number(detail.value);
+            const hasValue = detail.value !== null && detail.value !== "" && detail.value !== undefined;
+            const value = hasValue ? Number(detail.value) : null;
             set.rir = Number.isFinite(value) ? Math.min(4, Math.max(0, value)) : null;
             session.currentExerciseIndex = exerciseIndex;
             session.currentSetIndex = setIndex;

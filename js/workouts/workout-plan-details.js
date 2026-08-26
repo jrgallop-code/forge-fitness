@@ -1,6 +1,6 @@
 import { getPresetPlan } from "./workout-plans.js";
 import { getExerciseById } from "./exercise-library.js";
-import { openWorkoutLogger } from "./workout-session.js?v=adaptive-guidance-1";
+import { openWorkoutLogger } from "./workout-session.js?v=adaptive-completion-1";
 import { createGeneratedExerciseGuide } from "./exercise-guide-generator.js?v=full-library-guides-1";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";

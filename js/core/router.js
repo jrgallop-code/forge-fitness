@@ -1,13 +1,13 @@
 import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=progression-skipped-sets-1";
-import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=drop-sets-6";
-import { initializeOneOffWorkout } from "../workouts/one-off-workout.js?v=one-off-workout-1";
+import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=adaptive-completion-1";
+import { initializeOneOffWorkout } from "../workouts/one-off-workout.js?v=adaptive-completion-1";
 import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=celebrity-expansion-2";
 import { initializeSmartBuild } from "../workouts/smart-build.js?v=female-back-regions-1";
 import { initializeSmartBuildSupersetGuard } from "../workouts/smart-build-superset-guard.js?v=superset-clean-1";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
-import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=workout-schedule-3";
+import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=adaptive-completion-1";
 import { renderProgress } from "../progress/progress-ui.js?v=full-data-export-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=unit-system-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=current-goal-1";
@@ -25,7 +25,7 @@ import { initializeProteinTargetExplanation } from "../nutrition/protein-target-
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-goal-presets-2";
 import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=adaptive-guidance-1";
-import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=two-dumbbells-1";
+import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=adaptive-completion-1";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-2";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-6";
 import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-drive-backup-3";

@@ -90,7 +90,9 @@ function findPreviousMuscleSession(active, muscle) {
 function getTodayMuscles(active) {
     const day = active?.planSnapshot?.days?.[active?.trainingDayIndex];
     return [...new Set((day?.exercises || [])
-        .map(item => getExerciseById(item.id)?.muscleGroup)
+        .map(item => getExerciseById(item.id))
+        .filter(exercise => exercise && exercise.trackingType !== "notes" && exercise.muscleGroup !== "Cardio")
+        .map(exercise => exercise.muscleGroup)
         .filter(Boolean))];
 }
 
@@ -182,9 +184,10 @@ function renderRirTracker(card, active) {
 function updateRirToggle(control, sets) {
     const count = (sets || []).filter(set => set.rir !== null && set.rir !== "" && set.rir !== undefined).length;
     const toggle = control.querySelector(".adaptive-rir-toggle");
-    if (toggle) toggle.innerHTML = count
-        ? `RIR <span>${count} ${count === 1 ? "set" : "sets"} logged</span>`
-        : "RIR <span>Optional</span>";
+    if (!toggle) return;
+    const detail = toggle.querySelector("span");
+    const label = count ? `${count} ${count === 1 ? "set" : "sets"} logged` : "Optional";
+    if (detail?.firstChild) detail.firstChild.nodeValue = label;
 }
 
 function renderPostCheck(logger, active) {
@@ -347,12 +350,10 @@ function startWorkoutFromRecovery({ skipped = false } = {}) {
 
 function finishWorkoutFromCheckIn({ skipped = false } = {}) {
     const logger = document.getElementById("workout-session-logger");
-    const completeButton = logger?.querySelector("#save-session-btn");
-    if (!logger || !completeButton) return;
+    if (!logger) return;
     dispatchSessionGuidance(logger, { postCompleted: true, postSkipped: skipped });
     document.querySelector(".adaptive-post-flow")?.remove();
-    completeButton.dataset.adaptiveCompletionConfirmed = "true";
-    completeButton.click();
+    logger.dispatchEvent(new CustomEvent("levelup:complete-workout-requested"));
 }
 
 function handleRirChoice(button) {
@@ -362,9 +363,13 @@ function handleRirChoice(button) {
     if (!logger || !card || !row) return;
     const exerciseIndex = Number(card.dataset.exerciseIndex);
     const setIndex = Number(row.dataset.rirSetIndex);
-    const value = Number(button.dataset.rirValue);
+    const selectedValue = Number(button.dataset.rirValue);
+    const currentValue = readActive()?.exercises?.[exerciseIndex]?.sets?.[setIndex]?.rir;
+    const value = currentValue !== null && currentValue !== "" && currentValue !== undefined && Number(currentValue) === selectedValue
+        ? null
+        : selectedValue;
     dispatchRir(logger, exerciseIndex, setIndex, value);
-    row.querySelectorAll(".adaptive-rir-choice").forEach(option => option.classList.toggle("selected", option === button));
+    row.querySelectorAll(".adaptive-rir-choice").forEach(option => option.classList.toggle("selected", value !== null && option === button));
     updateRirToggle(card.querySelector(".adaptive-rir-control"), readActive()?.exercises?.[exerciseIndex]?.sets || []);
 }
 
@@ -547,10 +552,6 @@ function refreshCoachSummary(button) {
 window.addEventListener("click", event => {
     const completeButton = event.target.closest?.("#save-session-btn");
     if (!completeButton) return;
-    if (completeButton.dataset.adaptiveCompletionConfirmed === "true") {
-        delete completeButton.dataset.adaptiveCompletionConfirmed;
-        return;
-    }
     const logger = completeButton.closest("#workout-session-logger");
     const active = readActive();
     if (!logger || logger.dataset.editingSessionId || !guidanceEnabled() || !active) return;

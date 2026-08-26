@@ -1,4 +1,4 @@
-import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=adaptive-guidance-1';
+import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=adaptive-completion-1';
 import { getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { createGeneratedExerciseGuide } from './exercise-guide-generator.js?v=full-library-guides-1';
 

@@ -30,6 +30,13 @@ document.addEventListener("click", event => {
   window.setTimeout(showLatestCompletedWorkout, 160);
 }, true);
 
+window.addEventListener("levelup:workout-completed", event => {
+  const sessions = readSessions();
+  const completed = sessions.find(session => session.id === event.detail?.sessionId);
+  if (!completed) return;
+  renderRecap(completed, sessions.filter(session => session.id !== completed.id));
+});
+
 function showLatestCompletedWorkout() {
   const sessions = readSessions();
   const latest = [...sessions].filter(s => s?.completedAt).sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt))[0];
@@ -40,7 +47,9 @@ function showLatestCompletedWorkout() {
 }
 
 function renderRecap(session, history) {
-  document.querySelector("[data-workout-complete-recap]")?.remove();
+  const existing = document.querySelector("[data-workout-complete-recap]");
+  if (existing?.dataset.recapSessionId === session.id) return;
+  existing?.remove();
   const stats = summarizeSession(session);
   const wins = findWins(session, history, stats);
   const trained = getTrainedMuscles(session);
@@ -48,6 +57,7 @@ function renderRecap(session, history) {
   const overlay = document.createElement("section");
   overlay.className = "workout-complete-recap";
   overlay.dataset.workoutCompleteRecap = "true";
+  overlay.dataset.recapSessionId = session.id;
   overlay.innerHTML = `
     <div class="workout-complete-recap__confetti" aria-hidden="true">${renderConfetti()}</div>
     <div class="workout-complete-recap__sheet" role="dialog" aria-modal="true" aria-label="Workout complete celebration">
