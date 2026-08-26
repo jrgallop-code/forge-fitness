@@ -1,12 +1,15 @@
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
+const ACTIVE_WORKOUT_KEY = "level_up_active_workout";
 const FIRST_TOUCH_KEY = "level_up_acquisition_first_touch";
 const REPORTED_KEY = "level_up_acquisition_reported";
 const SUBMITTED_KEY = "level_up_acquisition_submitted";
 const EVENT_QUEUE_KEY = "level_up_product_event_queue";
+const FUNNEL_SENT_KEY = "level_up_workout_funnel_sent";
 const SOURCES = new Set(["instagram","tiktok","reddit","youtube","google_search","friend_family","app_recommendation","other","prefer_not_to_say"]);
 
 let initialized = false;
+let funnelObserver = null;
 
 export function initializeAcquisitionTracking(){
     ensureStyles();
@@ -16,14 +19,102 @@ export function initializeAcquisitionTracking(){
     void submitAcquisition();
     void flushEventQueue();
     window.addEventListener("online",()=>{void submitAcquisition();void flushEventQueue();});
-    window.addEventListener("levelup:cloud-session-started",()=>{void submitAcquisition();void flushEventQueue();});
+    window.addEventListener("levelup:cloud-session-started",()=>{void submitAcquisition();void flushEventQueue();syncWorkoutFunnelFromDom();});
     window.addEventListener("levelup:workout-completed",event=>{
         const detail=event.detail||{};
-        void trackProductEvent("workout_completed",{
-            eventKey:String(detail.sessionId||crypto.randomUUID()),
-            metadata:{planId:detail.planId||null,workingSets:Number(detail.workingSets)||0,durationMinutes:Number(detail.durationMinutes)||0}
+        trackOnce("workout_completed",String(detail.sessionId||crypto.randomUUID()),{
+            planId:detail.planId||null,
+            workingSets:Number(detail.workingSets)||0,
+            durationMinutes:Number(detail.durationMinutes)||0
         });
     });
+    document.addEventListener("click",handleWorkoutFunnelClick,true);
+    funnelObserver=new MutationObserver(()=>syncWorkoutFunnelFromDom());
+    funnelObserver.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["hidden","class"]});
+    requestAnimationFrame(syncWorkoutFunnelFromDom);
+}
+
+function handleWorkoutFunnelClick(event){
+    if(event.target.closest?.('.nav-btn[data-page="workout"]'))trackWorkoutViewed();
+    if(event.target.closest?.("#begin-session-btn,.complete-set-btn"))setTimeout(syncWorkoutFunnelFromDom,0);
+}
+
+function syncWorkoutFunnelFromDom(){
+    const workoutPage=document.querySelector(".workout-page");
+    if(workoutPage&&isVisible(workoutPage))trackWorkoutViewed();
+
+    const logger=document.querySelector("#workout-session-logger");
+    if(!logger||logger.dataset.editingSessionId)return;
+
+    const planName=clean(logger.querySelector(".builder-heading h3")?.textContent,120)||null;
+    const beginButton=logger.querySelector("#begin-session-btn");
+    if(beginButton){
+        trackWorkoutViewed();
+        if(!logger.dataset.funnelPlanSelectionKey)logger.dataset.funnelPlanSelectionKey=crypto.randomUUID();
+        trackOnce("plan_selected",logger.dataset.funnelPlanSelectionKey,{planName});
+        return;
+    }
+
+    const active=activeWorkout();
+    if(!active||active.status!=="in_progress")return;
+    trackWorkoutViewed();
+    trackOnce("workout_started",String(active.id),{
+        planId:active.planId||null,
+        planName:active.planName||planName,
+        trainingDayName:active.trainingDayName||null
+    });
+
+    const firstCompleted=findFirstCompletedSet(active);
+    if(firstCompleted){
+        trackOnce("first_set_logged",String(active.id),{
+            planId:active.planId||null,
+            exerciseId:firstCompleted.exerciseId||null,
+            setIndex:firstCompleted.setIndex
+        });
+    }
+}
+
+function trackWorkoutViewed(){
+    trackOnce("workout_viewed",`day:${localDateKey()}`,{});
+}
+
+function findFirstCompletedSet(active){
+    for(const exercise of active?.exercises||[]){
+        const sets=Array.isArray(exercise?.sets)?exercise.sets:[];
+        const setIndex=sets.findIndex(set=>set?.completed===true);
+        if(setIndex>=0)return{exerciseId:exercise.exerciseId||null,setIndex};
+    }
+    return null;
+}
+
+function trackOnce(eventName,eventKey,metadata={}){
+    const marker=`${eventName}:${eventKey}`;
+    const stored=safeRead(FUNNEL_SENT_KEY);
+    const sent=Array.isArray(stored)?stored:[];
+    if(sent.includes(marker))return false;
+    sent.push(marker);
+    safeSet(FUNNEL_SENT_KEY,sent.slice(-200));
+    void trackProductEvent(eventName,{eventKey,metadata});
+    return true;
+}
+
+function isVisible(element){
+    if(!element||element.hidden)return false;
+    const style=window.getComputedStyle(element);
+    return style.display!=="none"&&style.visibility!=="hidden";
+}
+
+function activeWorkout(){
+    const value=safeRead(ACTIVE_WORKOUT_KEY);
+    return value&&typeof value==="object"?value:null;
+}
+
+function localDateKey(){
+    const now=new Date();
+    const year=now.getFullYear();
+    const month=String(now.getMonth()+1).padStart(2,"0");
+    const day=String(now.getDate()).padStart(2,"0");
+    return `${year}-${month}-${day}`;
 }
 
 function ensureStyles(){
@@ -72,7 +163,7 @@ function queueEvent(event){
     const queue=safeRead(EVENT_QUEUE_KEY);
     const next=Array.isArray(queue)?queue:[];
     if(!next.some(item=>item.eventName===event.eventName&&item.eventKey===event.eventKey))next.push(event);
-    safeSet(EVENT_QUEUE_KEY,next.slice(-50));
+    safeSet(EVENT_QUEUE_KEY,next.slice(-100));
 }
 
 function captureFirstTouch(){

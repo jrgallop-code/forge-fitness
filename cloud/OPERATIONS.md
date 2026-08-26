@@ -60,3 +60,50 @@ FROM acquired
 GROUP BY source
 ORDER BY acquired_users DESC;
 ```
+
+## Workout funnel
+
+Workout funnel tracking begins when the funnel analytics release is deployed. The stages are:
+
+`workout_viewed` → `plan_selected` → `workout_started` → `first_set_logged` → `workout_completed`
+
+Unique users reaching each stage:
+
+```sql
+SELECT
+    COUNT(DISTINCT CASE WHEN event_name = 'workout_viewed' THEN user_id END) AS viewed_workouts,
+    COUNT(DISTINCT CASE WHEN event_name = 'plan_selected' THEN user_id END) AS selected_plan,
+    COUNT(DISTINCT CASE WHEN event_name = 'workout_started' THEN user_id END) AS started_workout,
+    COUNT(DISTINCT CASE WHEN event_name = 'first_set_logged' THEN user_id END) AS logged_first_set,
+    COUNT(DISTINCT CASE WHEN event_name = 'workout_completed' THEN user_id END) AS completed_workout
+FROM product_events;
+```
+
+The same funnel limited to the last 24 hours:
+
+```sql
+SELECT
+    COUNT(DISTINCT CASE WHEN event_name = 'workout_viewed' THEN user_id END) AS viewed_workouts,
+    COUNT(DISTINCT CASE WHEN event_name = 'plan_selected' THEN user_id END) AS selected_plan,
+    COUNT(DISTINCT CASE WHEN event_name = 'workout_started' THEN user_id END) AS started_workout,
+    COUNT(DISTINCT CASE WHEN event_name = 'first_set_logged' THEN user_id END) AS logged_first_set,
+    COUNT(DISTINCT CASE WHEN event_name = 'workout_completed' THEN user_id END) AS completed_workout
+FROM product_events
+WHERE datetime(occurred_at) >= datetime('now', '-24 hours');
+```
+
+See which users reached each workout stage:
+
+```sql
+SELECT
+    u.email,
+    MAX(CASE WHEN e.event_name = 'workout_viewed' THEN e.occurred_at END) AS viewed_at,
+    MAX(CASE WHEN e.event_name = 'plan_selected' THEN e.occurred_at END) AS plan_selected_at,
+    MAX(CASE WHEN e.event_name = 'workout_started' THEN e.occurred_at END) AS started_at,
+    MAX(CASE WHEN e.event_name = 'first_set_logged' THEN e.occurred_at END) AS first_set_at,
+    MAX(CASE WHEN e.event_name = 'workout_completed' THEN e.occurred_at END) AS completed_at
+FROM users u
+LEFT JOIN product_events e ON e.user_id = u.id
+GROUP BY u.id, u.email
+ORDER BY COALESCE(completed_at, first_set_at, started_at, plan_selected_at, viewed_at) DESC;
+```
