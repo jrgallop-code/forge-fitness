@@ -51,6 +51,10 @@ async function handleRequest(request, env) {
     if (url.pathname === "/v1/admin/analytics" && request.method === "GET") {
         return getAdminAnalytics(user, url, request, env);
     }
+    if (url.pathname === "/v1/import/reddit" && request.method === "POST") {
+        const body = await readJson(request, 8 * 1024);
+        return importRedditSource(body, request, env);
+    }
     if (url.pathname === "/v1/activity" && request.method === "POST") {
         return recordActivity(user.id, request, env);
     }
@@ -426,6 +430,42 @@ async function getAdminAnalytics(user, url, request, env) {
             FROM user_acquisition GROUP BY source ORDER BY users DESC`).all()
     ]);
     return json({ days, since, totals: totals || {}, daily: daily?.results || [], acquisition: acquisition?.results || [] }, 200, request, env);
+}
+
+async function importRedditSource(body, request, env) {
+    const sourceUrl = typeof body?.url === "string" ? body.url.trim() : "";
+    let parsed;
+    try { parsed = new URL(sourceUrl); }
+    catch { return json({ error: "Enter a valid Reddit link." }, 400, request, env); }
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    if (parsed.protocol !== "https:" || !["reddit.com", "old.reddit.com", "redd.it"].includes(host)) {
+        return json({ error: "This beta currently supports Reddit links only." }, 400, request, env);
+    }
+    const match = host === "redd.it" ? parsed.pathname.match(/^\/([a-z0-9]+)/i) : parsed.pathname.match(/\/comments\/([a-z0-9]+)/i);
+    if (!match) return json({ error: "This does not look like a Reddit post link." }, 400, request, env);
+    const response = await fetch(`https://www.reddit.com/comments/${match[1]}.json?raw_json=1&limit=50&depth=3`, {
+        headers: { "User-Agent": "LevelUpRoutineImporter/1.0" }
+    });
+    if (!response.ok) return json({ error: "Reddit did not make this post available. Copy and paste the routine instead." }, 422, request, env);
+    const listing = await response.json();
+    const post = listing?.[0]?.data?.children?.[0]?.data || {};
+    const candidates = [];
+    if (typeof post.selftext === "string" && post.selftext.trim()) candidates.push({ kind: "post", author: post.author || null, text: post.selftext.slice(0, 20000) });
+    collectRedditComments(listing?.[1]?.data?.children || [], candidates);
+    return json({ title: post.title || "Reddit routine", sourceUrl: `https://www.reddit.com/comments/${match[1]}/`, candidates: candidates.slice(0, 50) }, 200, request, env);
+}
+
+function collectRedditComments(children, output) {
+    for (const child of Array.isArray(children) ? children : []) {
+        const data = child?.data;
+        if (!data) continue;
+        if (typeof data.body === "string" && data.body.length >= 20 && !["[deleted]", "[removed]"].includes(data.body)) {
+            output.push({ kind: "comment", author: data.author || null, text: data.body.slice(0, 20000) });
+        }
+        if (output.length >= 50) return;
+        collectRedditComments(data.replies?.data?.children || [], output);
+        if (output.length >= 50) return;
+    }
 }
 
 function isAdminUser(user, env) {

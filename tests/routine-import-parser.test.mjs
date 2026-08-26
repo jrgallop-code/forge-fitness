@@ -33,3 +33,11 @@ test("matches common abbreviations and misspellings to Level Up exercises", () =
   assert.equal(matchExerciseName("BB bench press").exerciseId, "barbell-bench-press");
   assert.equal(matchExerciseName("RDL").exerciseId, "romanian-deadlift");
 });
+
+test("parses compact slash-separated routines commonly found in Reddit comments", () => {
+  const result = parseRoutineText(`## Upper
+Incline Bench Press / 2x8-10 Pec Deck / 2x10-12 Lat Pulldown / 3x8-12`);
+  assert.equal(result.days.length, 1);
+  assert.equal(result.days[0].name, "Upper");
+  assert.deepEqual(result.days[0].exercises.map(item => item.sets), [2, 2, 3]);
+});

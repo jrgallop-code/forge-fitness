@@ -5,7 +5,7 @@ const DAY_PATTERN = /^(?:(?:day|workout|session)\s*\d+\s*[:\-–—]?\s*)?(push|
 const NUMBERED_DAY_PATTERN = /^(?:day|workout|session)\s*(\d+)\s*[:\-–—]\s*(.+)$/i;
 
 export function parseRoutineText(text) {
-  const lines = String(text || "").split(/\r?\n/).map(cleanLine).filter(Boolean);
+  const lines = String(text || "").split(/\r?\n/).flatMap(expandLine).map(cleanLine).filter(Boolean);
   const days = [];
   let current = null;
   const skipped = [];
@@ -96,7 +96,17 @@ function parseDayHeading(line) {
 }
 
 function cleanLine(line) {
-  return String(line || "").trim().replace(/^(?:[-*•·]|\d+[.)])\s+/, "").trim();
+  return String(line || "").trim().replace(/^#{1,6}\s*/, "").replace(/^(?:[-*•·]|\d+[.)])\s+/, "").trim();
+}
+
+function expandLine(line) {
+  const value = String(line || "").trim();
+  if (!value.includes("/")) return [value];
+  const exercises = [];
+  const pattern = /(?:^|\s)([^/]+?)\s*\/\s*(\d+)\s*[x×]\s*(\d+(?:\s*[-–—]\s*\d+)?(?:\+)?)/gi;
+  let match;
+  while ((match = pattern.exec(value))) exercises.push(`${match[1].trim()} - ${match[2]}x${match[3]}`);
+  return exercises.length >= 2 ? exercises : [value];
 }
 
 function normalizeReps(value) {
