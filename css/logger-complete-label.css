@@ -45,3 +45,55 @@
     transform: translateX(-3px);
   }
 }
+
+/* Keep set removal visible without crowding the weight and reps fields. */
+.workout-session-logger .session-set-header,
+.workout-session-logger .session-set-row {
+  grid-template-columns: 32px minmax(44px, 1fr) minmax(62px, 76px) minmax(48px, 60px) 32px 32px !important;
+  gap: 5px !important;
+}
+
+.workout-session-logger .complete-set-btn,
+.workout-session-logger .session-set-header > span:nth-child(5) {
+  transform: none !important;
+}
+
+.workout-session-logger .logger-remove-set-btn {
+  grid-column: 6;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 38px;
+  min-width: 32px;
+  min-height: 38px;
+  padding: 0;
+  border: 1px solid rgba(239, 24, 33, .34);
+  border-radius: 9px;
+  background: rgba(239, 24, 33, .07);
+  color: #ff6970;
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.workout-session-logger .logger-remove-set-btn:disabled {
+  border-color: rgba(255, 255, 255, .07);
+  background: transparent;
+  color: #55555d;
+  opacity: .55;
+}
+
+@media (max-width: 380px) {
+  .workout-session-logger .session-set-header,
+  .workout-session-logger .session-set-row {
+    grid-template-columns: 30px minmax(40px, 1fr) minmax(56px, 68px) minmax(46px, 56px) 30px 30px !important;
+    gap: 4px !important;
+  }
+
+  .workout-session-logger .logger-remove-set-btn {
+    width: 30px;
+    height: 36px;
+    min-width: 30px;
+    min-height: 36px;
+  }
+}

@@ -1,5 +1,6 @@
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=adaptive-completion-1';
 import { getExerciseById } from './exercise-library.js?v=exercise-library-3';
+import { removeWorkoutSet, setHasRecordedData } from './logger-set-removal.js?v=logger-set-removal-1';
 
 const TIMER_SETTINGS_KEY = 'level_up_exercise_rest_settings';
 let inlineTimerInterval = null;
@@ -606,7 +607,7 @@ function enhanceLogger(logger) {
 
     const setHeader = card.querySelector('.session-set-header');
     if (setHeader) {
-      setHeader.innerHTML = '<span>Set</span><span>Previous</span><span>lbs</span><span>Reps</span><span>✓</span>';
+      setHeader.innerHTML = '<span>Set</span><span>Previous</span><span>lbs</span><span>Reps</span><span>✓</span><span aria-label="Remove set">−</span>';
     }
 
     [...card.querySelectorAll('.session-set-row')].forEach(row => {
@@ -635,6 +636,25 @@ function enhanceLogger(logger) {
             updateInlineTimers();
           }, 0);
         });
+      }
+
+      if (!logger.dataset.editingSessionId) {
+        const removeSet = document.createElement('button');
+        removeSet.type = 'button';
+        removeSet.className = 'logger-remove-set-btn';
+        removeSet.textContent = '−';
+        removeSet.disabled = card.querySelectorAll('.session-set-row').length <= 1;
+        removeSet.setAttribute('aria-label', `Remove set ${setIndex + 1}`);
+        removeSet.addEventListener('click', () => {
+          const active = getActive();
+          const set = active?.exercises?.[exerciseIndex]?.sets?.[setIndex];
+          if (!active || !set) return;
+          if (setHasRecordedData(set) && !window.confirm(`Remove set ${setIndex + 1} and its recorded data?`)) return;
+          if (!removeWorkoutSet(active, exerciseIndex, setIndex)) return;
+          saveActive(active);
+          openActiveWorkout();
+        });
+        row.appendChild(removeSet);
       }
 
       const timerLine = document.createElement('div');
