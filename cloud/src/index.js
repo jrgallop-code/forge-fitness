@@ -443,25 +443,63 @@ async function importRedditSource(body, request, env) {
     }
     const match = host === "redd.it" ? parsed.pathname.match(/^\/([a-z0-9]+)/i) : parsed.pathname.match(/\/comments\/([a-z0-9]+)/i);
     if (!match) return json({ error: "This does not look like a Reddit post link." }, 400, request, env);
-    const response = await fetch(`https://www.reddit.com/comments/${match[1]}.json?raw_json=1&limit=50&depth=3`, {
-        headers: { "User-Agent": "LevelUpRoutineImporter/1.0" }
-    });
-    if (!response.ok) return json({ error: "Reddit did not make this post available. Copy and paste the routine instead." }, 422, request, env);
-    const listing = await response.json();
-    const post = listing?.[0]?.data?.children?.[0]?.data || {};
-    const candidates = [];
-    if (typeof post.selftext === "string" && post.selftext.trim()) candidates.push({ kind: "post", author: post.author || null, text: post.selftext.slice(0, 20000) });
-    collectRedditComments(listing?.[1]?.data?.children || [], candidates);
-    return json({ title: post.title || "Reddit routine", sourceUrl: `https://www.reddit.com/comments/${match[1]}/`, candidates: candidates.slice(0, 50) }, 200, request, env);
+    const postId = match[1].toLowerCase();
+    let result = await fetchRedditListing(postId);
+    if (!result) result = await fetchArchivedRedditListing(postId);
+    if (!result) return json({ error: "Reddit did not make this post available. Copy and paste the routine instead." }, 422, request, env);
+    return json({ ...result, sourceUrl: `https://www.reddit.com/comments/${postId}/`, candidates: result.candidates.slice(0, 50) }, 200, request, env);
+}
+
+async function fetchRedditListing(postId) {
+    try {
+        const response = await fetch(`https://www.reddit.com/comments/${postId}.json?raw_json=1&limit=50&depth=3`, {
+            headers: { "User-Agent": "LevelUpRoutineImporter/1.1 (https://leveluphypertrophy.com)" }
+        });
+        if (!response.ok || !String(response.headers.get("Content-Type") || "").includes("application/json")) return null;
+        const listing = await response.json();
+        const post = listing?.[0]?.data?.children?.[0]?.data || {};
+        const candidates = [];
+        addRedditCandidate(candidates, "post", post.author, post.selftext);
+        collectRedditComments(listing?.[1]?.data?.children || [], candidates);
+        return { title: post.title || "Reddit routine", candidates };
+    } catch {
+        return null;
+    }
+}
+
+async function fetchArchivedRedditListing(postId) {
+    try {
+        const [postResponse, commentsResponse] = await Promise.all([
+            fetch(`https://api.pullpush.io/reddit/search/submission/?ids=${encodeURIComponent(postId)}`),
+            fetch(`https://api.pullpush.io/reddit/search/comment/?link_id=${encodeURIComponent(postId)}&size=100`)
+        ]);
+        if (!postResponse.ok || !commentsResponse.ok) return null;
+        const [postPayload, commentsPayload] = await Promise.all([postResponse.json(), commentsResponse.json()]);
+        const post = Array.isArray(postPayload?.data) ? postPayload.data[0] || {} : {};
+        const candidates = [];
+        addRedditCandidate(candidates, "post", post.author, post.selftext);
+        for (const comment of Array.isArray(commentsPayload?.data) ? commentsPayload.data : []) {
+            addRedditCandidate(candidates, "comment", comment.author, comment.body);
+        }
+        if (!candidates.length) return null;
+        return { title: post.title || "Reddit routine", candidates };
+    } catch {
+        return null;
+    }
+}
+
+function addRedditCandidate(output, kind, author, text) {
+    if (typeof text !== "string") return;
+    const trimmed = text.trim();
+    if (trimmed.length < 20 || ["[deleted]", "[removed]"].includes(trimmed)) return;
+    output.push({ kind, author: author || null, text: trimmed.slice(0, 20000) });
 }
 
 function collectRedditComments(children, output) {
     for (const child of Array.isArray(children) ? children : []) {
         const data = child?.data;
         if (!data) continue;
-        if (typeof data.body === "string" && data.body.length >= 20 && !["[deleted]", "[removed]"].includes(data.body)) {
-            output.push({ kind: "comment", author: data.author || null, text: data.body.slice(0, 20000) });
-        }
+        addRedditCandidate(output, "comment", data.author, data.body);
         if (output.length >= 50) return;
         collectRedditComments(data.replies?.data?.children || [], output);
         if (output.length >= 50) return;
