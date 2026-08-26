@@ -157,7 +157,7 @@ async function importRedditLink(page, button) {
     if (message) message.textContent = `Found ${best.score} exercises in a Reddit ${best.kind}. Building your review…`;
     window.setTimeout(() => buildReview(page), 250);
   } catch (error) {
-    if (message) message.textContent = error.message;
+    if (message) message.textContent = `${error.message} You can still paste the routine text above.`;
   } finally {
     button.disabled = false;
     button.textContent = "Import from Reddit";
