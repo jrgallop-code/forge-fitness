@@ -518,10 +518,13 @@ function renderCoachSummary(recap, sessionId = recap?.dataset.recapSessionId) {
     const hasPlanChange = recommendations.some(item => item.type === "volume" || item.type === "deload");
     const section = document.createElement("section");
     section.className = "adaptive-coach-summary";
-    section.dataset.adaptiveSessionId = latest.id;
+    section.dataset.adaptiveSessionId = completed.id;
     section.innerHTML = `
-        <h3>Coach Summary</h3>
-        <p>${hasPlanChange ? "Suggestions only—nothing changes unless you apply it." : "Based on this workout and your feedback."}</p>
+        <div class="adaptive-coach-heading">
+            <span class="adaptive-coach-kicker">ADAPTIVE COACH <em>BETA</em></span>
+            <h3>Coach Summary</h3>
+            <p>${hasPlanChange ? "Suggestions only—nothing changes unless you apply it." : "Based on this workout and your feedback."}</p>
+        </div>
         <div class="adaptive-recommendation-list">
             ${recommendations.map(recommendation => renderRecommendation(recommendation)).join("")}
         </div>
@@ -533,9 +536,10 @@ function renderCoachSummary(recap, sessionId = recap?.dataset.recapSessionId) {
 }
 
 function renderRecommendation(recommendation) {
+    const presentation = coachRecommendationPresentation(recommendation);
     if (recommendation.status) {
         const status = recommendation.status === "applied" ? "Applied" : recommendation.type === "hold" ? "Acknowledged" : "Kept current";
-        return `<article class="adaptive-recommendation"><strong>${escapeHtml(recommendation.title)}</strong><p class="adaptive-recommendation-status">${escapeHtml(status)}</p></article>`;
+        return `<article class="adaptive-recommendation adaptive-recommendation--${presentation.tone}"><span class="adaptive-recommendation-kicker">${presentation.label}</span><strong>${escapeHtml(recommendation.title)}</strong><p class="adaptive-recommendation-status">${escapeHtml(status)}</p></article>`;
     }
     const primaryAction = recommendation.type === "volume"
         ? `<button class="primary-btn" type="button" data-adaptive-action="apply-volume" data-recommendation-id="${escapeHtml(recommendation.id)}">Apply</button>`
@@ -543,10 +547,11 @@ function renderRecommendation(recommendation) {
             ? `<button class="primary-btn" type="button" data-adaptive-action="start-deload" data-recommendation-id="${escapeHtml(recommendation.id)}">Start deload</button>`
             : "";
     if (recommendation.type === "status") {
-        return `<article class="adaptive-recommendation"><strong>${escapeHtml(recommendation.title)}</strong><p>${escapeHtml(recommendation.reason)}</p></article>`;
+        return `<article class="adaptive-recommendation adaptive-recommendation--${presentation.tone}"><span class="adaptive-recommendation-kicker">${presentation.label}</span><strong>${escapeHtml(recommendation.title)}</strong><p>${escapeHtml(recommendation.reason)}</p></article>`;
     }
     return `
-        <article class="adaptive-recommendation">
+        <article class="adaptive-recommendation adaptive-recommendation--${presentation.tone}">
+            <span class="adaptive-recommendation-kicker">${presentation.label}</span>
             <strong>${escapeHtml(recommendation.title)}</strong>
             <p>${escapeHtml(recommendation.reason)}</p>
             <div class="adaptive-recommendation-actions">
@@ -555,6 +560,14 @@ function renderRecommendation(recommendation) {
             </div>
         </article>
     `;
+}
+
+function coachRecommendationPresentation(recommendation) {
+    if (recommendation?.type === "deload") return { tone: "recovery", label: "RECOVERY RECOMMENDATION" };
+    if (recommendation?.type === "hold") return { tone: "caution", label: "TRAINING CAUTION" };
+    if (recommendation?.type === "volume" && Number(recommendation.delta) > 0) return { tone: "progress", label: "PROGRESS OPTION" };
+    if (recommendation?.type === "volume") return { tone: "caution", label: "RECOVERY OPTION" };
+    return { tone: "steady", label: "NEXT WORKOUT" };
 }
 
 function findRecommendation(sessionId, recommendationId) {
