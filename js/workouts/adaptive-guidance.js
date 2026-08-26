@@ -423,6 +423,7 @@ function handleWorkoutCompleted(event) {
             analyzedAt: new Date().toISOString()
         };
         writeJson(SESSION_KEY, sessions);
+        showCoachSummaryForSession(session.id);
         return;
     }
 
@@ -442,14 +443,21 @@ function handleWorkoutCompleted(event) {
         analyzedAt: new Date().toISOString()
     };
     writeJson(SESSION_KEY, sessions);
+    showCoachSummaryForSession(session.id);
 }
 
-function renderCoachSummary(recap) {
-    if (!guidanceEnabled() || recap.querySelector(".adaptive-coach-summary")) return;
-    const latest = [...readSessions()]
-        .filter(item => item?.completedAt)
-        .sort((a,b) => String(b.completedAt).localeCompare(String(a.completedAt)))[0];
-    const recommendations = latest?.adaptiveGuidance?.recommendations || [];
+function showCoachSummaryForSession(sessionId) {
+    window.setTimeout(() => {
+        const recap = [...document.querySelectorAll(".workout-complete-recap")]
+            .find(item => item.dataset.recapSessionId === sessionId);
+        if (recap) renderCoachSummary(recap, sessionId);
+    }, 0);
+}
+
+function renderCoachSummary(recap, sessionId = recap?.dataset.recapSessionId) {
+    if (!recap || !guidanceEnabled() || recap.querySelector(".adaptive-coach-summary")) return;
+    const completed = readSessions().find(item => item.id === sessionId);
+    const recommendations = completed?.adaptiveGuidance?.recommendations || [];
     if (!recommendations.length) return;
     const hasPlanChange = recommendations.some(item => item.type === "volume" || item.type === "deload");
     const section = document.createElement("section");
@@ -462,7 +470,10 @@ function renderCoachSummary(recap) {
             ${recommendations.map(recommendation => renderRecommendation(recommendation)).join("")}
         </div>
     `;
-    recap.querySelector(".workout-complete-recap__insight")?.insertAdjacentElement("beforebegin", section);
+    const header = recap.querySelector(".workout-complete-recap__header");
+    const insight = recap.querySelector(".workout-complete-recap__insight");
+    if (header) header.insertAdjacentElement("afterend", section);
+    else if (insight) insight.insertAdjacentElement("beforebegin", section);
 }
 
 function renderRecommendation(recommendation) {
