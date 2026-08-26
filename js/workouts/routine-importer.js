@@ -1,5 +1,5 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
-import { parseRoutineText } from "./routine-import-parser.js?v=routine-import-1";
+import { parseRoutineText } from "./routine-import-parser.js?v=reddit-import-1";
 
 const PLAN_KEY = "forge_workout_plans";
 const EXAMPLE = `Push Day
@@ -30,7 +30,7 @@ export function initializeRoutineImporter(root = document) {
 
 function ensureStyles() {
   if (document.querySelector('link[href*="routine-importer.css"]')) return;
-  ["css/routine-importer.css?v=routine-import-1", "css/routine-importer-summary.css?v=routine-import-1"].forEach(href => {
+  ["css/routine-importer.css?v=routine-import-1", "css/routine-importer-summary.css?v=routine-import-1", "css/routine-importer-source.css?v=reddit-import-1"].forEach(href => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = href;
@@ -46,7 +46,7 @@ function renderShell() {
 }
 
 function renderPasteStage() {
-  return `<div class="routine-import-paste-card"><label for="routine-import-text">Routine text</label><textarea id="routine-import-text" maxlength="20000" placeholder="Push Day&#10;Bench Press - 3x6-8&#10;Cable Fly - 3x12-15"></textarea><div class="routine-import-tools"><button class="secondary-btn" type="button" data-routine-paste>Paste from Clipboard</button><button class="routine-import-text-action" type="button" data-routine-example>Use example</button><button class="routine-import-text-action" type="button" data-routine-clear>Clear</button><small data-routine-count>0 / 20,000</small></div><label for="routine-import-source">Source link <span>optional</span></label><input id="routine-import-source" type="url" inputmode="url" placeholder="https://reddit.com/…"><p class="routine-import-message" data-routine-message aria-live="polite"></p><button class="primary-btn routine-import-build" type="button" data-routine-build>Build Routine</button></div>`;
+  return `<div class="routine-import-paste-card"><label for="routine-import-text">Routine text</label><textarea id="routine-import-text" maxlength="20000" placeholder="Push Day&#10;Bench Press - 3x6-8&#10;Cable Fly - 3x12-15"></textarea><div class="routine-import-tools"><button class="secondary-btn" type="button" data-routine-paste>Paste from Clipboard</button><button class="routine-import-text-action" type="button" data-routine-example>Use example</button><button class="routine-import-text-action" type="button" data-routine-clear>Clear</button><small data-routine-count>0 / 20,000</small></div><div class="routine-import-source-row"><label for="routine-import-source">Reddit source link <span>optional</span></label><div><input id="routine-import-source" type="url" inputmode="url" placeholder="https://reddit.com/r/…"><button class="secondary-btn" type="button" data-routine-source-import>Import from Reddit</button></div></div><p class="routine-import-message" data-routine-message aria-live="polite"></p><button class="primary-btn routine-import-build" type="button" data-routine-build>Build Pasted Routine</button></div>`;
 }
 
 function handleClick(event, page) {
@@ -57,6 +57,7 @@ function handleClick(event, page) {
   if (button.matches("[data-routine-example]")) return setPasteText(page, EXAMPLE);
   if (button.matches("[data-routine-clear]")) return setPasteText(page, "");
   if (button.matches("[data-routine-paste]")) return pasteClipboard(page);
+  if (button.matches("[data-routine-source-import]")) return importRedditLink(page, button);
   if (button.matches("[data-routine-build]")) return buildReview(page);
   if (button.matches("[data-routine-back]")) return showPaste(page);
   if (button.matches("[data-routine-confirm]")) return confirmMatch(button, page);
@@ -130,6 +131,36 @@ async function pasteClipboard(page) {
     if (message) message.textContent = value ? "Pasted from your clipboard." : "Your clipboard is empty.";
   } catch {
     if (message) message.textContent = "Press and hold inside the box, then choose Paste.";
+  }
+}
+
+async function importRedditLink(page, button) {
+  const source = page.querySelector("#routine-import-source")?.value.trim() || "";
+  const message = page.querySelector("[data-routine-message]");
+  let token = "";
+  try { token = JSON.parse(localStorage.getItem("level_up_cloud_session") || "null")?.token || ""; } catch { /* handled below */ }
+  if (!source) { if (message) message.textContent = "Paste a Reddit post link first."; return; }
+  if (!token) { if (message) message.textContent = "Sign in to import directly from Reddit."; return; }
+  button.disabled = true;
+  button.textContent = "Reading Reddit…";
+  try {
+    const response = await fetch("https://api.leveluphypertrophy.com/v1/import/reddit", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ url: source }) });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "The Reddit post could not be imported.");
+    const ranked = (payload.candidates || []).map(candidate => {
+      const parsed = parseRoutineText(candidate.text);
+      return { ...candidate, parsed, score: parsed.days.reduce((sum, day) => sum + day.exercises.length, 0) };
+    }).sort((left, right) => right.score - left.score);
+    const best = ranked[0];
+    if (!best?.score) throw new Error("No routine was found in the post or its available comments. Copy and paste the routine instead.");
+    setPasteText(page, best.text);
+    if (message) message.textContent = `Found ${best.score} exercises in a Reddit ${best.kind}. Building your review…`;
+    window.setTimeout(() => buildReview(page), 250);
+  } catch (error) {
+    if (message) message.textContent = error.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = "Import from Reddit";
   }
 }
 
