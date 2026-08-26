@@ -168,4 +168,4 @@ if (!document.querySelector('link[data-workout-complete-recap-recovery-style]'))
     anatomyStyle.dataset.workoutCompleteRecapRecoveryStyle = "true";
     document.head.appendChild(anatomyStyle);
 }
-import("./workout-complete-recap.js?v=native-coach-summary-1");
+import("./workout-complete-recap.js?v=discomfort-caution-1");

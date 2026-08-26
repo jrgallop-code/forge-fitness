@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=adaptive-guidance-1";
+import { navigate } from "../core/router.js?v=deload-preview-beta-1";
 
 
 export function renderNavbar() {

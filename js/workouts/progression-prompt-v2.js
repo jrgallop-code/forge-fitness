@@ -113,6 +113,18 @@ function findPreviousPerformance(exerciseId, excludedSessionId = null) {
   return null;
 }
 
+function getDiscomfortCaution(source, exerciseId) {
+  const guidance = source?.session?.adaptiveGuidance || {};
+  if (guidance.discomfortExerciseId !== exerciseId) return null;
+  if (guidance.discomfort === 'minor') {
+    return 'Consider holding the current load—you reported minor discomfort last time.';
+  }
+  if (guidance.discomfort === 'significant') {
+    return 'Consider reducing the load or changing the exercise—you reported significant discomfort last time.';
+  }
+  return null;
+}
+
 function formatPreviousSet(set) {
   if (!set) return "Hasn't started";
   return `${set.weight ?? '—'} × ${set.reps ?? '—'}`;
@@ -202,6 +214,19 @@ function hidePrompt(prompt) {
   prompt.innerHTML = '';
 }
 
+function showPrompt(prompt, source, exerciseId) {
+  const caution = getDiscomfortCaution(source, exerciseId);
+  if (caution) {
+    prompt.insertAdjacentHTML('beforeend', `
+      <div class="progression-discomfort-caution" role="note">
+        <strong>Caution</strong>
+        <span>${caution}</span>
+      </div>
+    `);
+  }
+  prompt.hidden = false;
+}
+
 function getLiveCompletedSets(card) {
   return [...card.querySelectorAll('.session-set-row')]
     .filter(row => row.classList.contains('completed'))
@@ -212,7 +237,7 @@ function getLiveCompletedSets(card) {
     .filter(set => Number.isFinite(set.reps) && set.reps > 0);
 }
 
-function renderLiveBelowTargetPrompt(card, prompt, repRange, exerciseId) {
+function renderLiveBelowTargetPrompt(card, prompt, repRange, exerciseId, source) {
   const completedSets = getLiveCompletedSets(card);
   if (completedSets.length < 2) return false;
 
@@ -234,7 +259,7 @@ function renderLiveBelowTargetPrompt(card, prompt, repRange, exerciseId) {
       <small>Use the lighter load if it helps you get back into range.</small>
     </div>
   `;
-  prompt.hidden = false;
+  showPrompt(prompt, source, exerciseId);
   return true;
 }
 
@@ -271,7 +296,7 @@ function renderCard(card) {
     return;
   }
 
-  if (renderLiveBelowTargetPrompt(card, prompt, repRange, exerciseId)) return;
+  if (renderLiveBelowTargetPrompt(card, prompt, repRange, exerciseId, source)) return;
 
   if (!source) {
     hidePrompt(prompt);
@@ -309,7 +334,7 @@ function renderCard(card) {
           <small>Add one rep to each set, capped at ${formatLoad(repRange.upper)}. Gray field values show each set goal.</small>
         </div>
       `;
-      prompt.hidden = false;
+      showPrompt(prompt, source, exerciseId);
       return;
     }
 
@@ -333,7 +358,7 @@ function renderCard(card) {
         <small>A slightly lighter load can help you get back into range.</small>
       </div>
     `;
-    prompt.hidden = false;
+    showPrompt(prompt, source, exerciseId);
     return;
   }
 
@@ -373,7 +398,7 @@ function renderCard(card) {
         <small>Aim to keep 1–3 good reps in reserve.</small>
       </div>
     `;
-    prompt.hidden = false;
+    showPrompt(prompt, source, exerciseId);
     return;
   }
   const plannedSetCount = Array.isArray(state?.sets) ? state.sets.length : completedSets.length;
@@ -398,7 +423,7 @@ function renderCard(card) {
       <small>${skippedSetNote}Suggested load: ${formatLoad(suggestedLoad)} lb. Minimum target: ${formatLoad(repRange.lower)} reps per set · Goal: build toward ${formatLoad(repRange.upper)} reps.</small>
     </div>
   `;
-  prompt.hidden = false;
+  showPrompt(prompt, source, exerciseId);
 }
 
 function refreshLogger(logger) {
