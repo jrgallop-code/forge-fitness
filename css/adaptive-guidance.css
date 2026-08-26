@@ -130,6 +130,13 @@
 .adaptive-deload-preview-rules li { padding: 9px 10px; border-radius: 9px; background: #1b1b20; color: #d7d7dc; font-size: .73rem; line-height: 1.4; }
 .adaptive-deload-preview-rules b { color: #fff; }
 .adaptive-preview-note { color: #96969f!important; font-size: .68rem!important; }
+.adaptive-deload-preview-navigation {
+    margin: 10px 0 16px;
+    border: 1px solid rgba(239,24,33,.35);
+    background: linear-gradient(135deg,rgba(239,24,33,.12),rgba(46,204,113,.06));
+}
+.adaptive-deload-preview-active .workout-start-fields,
+.adaptive-deload-preview-active .workout-session-status { opacity: .72; }
 
 .adaptive-flow-overlay {
     position: fixed;

@@ -1,5 +1,9 @@
 import { getExerciseById } from "./exercise-library.js";
-import { getAdaptiveGuidanceSettings } from "../more/adaptive-guidance-settings.js?v=adaptive-guidance-1";
+import {
+    endDeloadWorkoutPreview,
+    getAdaptiveGuidanceSettings,
+    getDeloadPreviewRequest
+} from "../more/adaptive-guidance-settings.js?v=deload-workout-preview-1";
 import {
     buildAdaptiveRecommendations,
     calculateDeloadTarget,
@@ -236,44 +240,57 @@ function renderPostCheck(logger, active) {
 
 function enhanceLogger(logger) {
     if (!logger || logger.dataset.editingSessionId) return;
-    if (!guidanceEnabled()) {
+    const preview = getDeloadPreviewRequest();
+    renderPreviewNavigationNotice();
+    if (!guidanceEnabled() && !preview) {
         logger.classList.remove("adaptive-guidance-on", "adaptive-deload-active");
         logger.querySelectorAll(".adaptive-rir-control,.adaptive-deload-banner").forEach(node => node.remove());
         document.querySelectorAll(".adaptive-recovery-flow,.adaptive-post-flow").forEach(node => node.remove());
         return;
     }
     const active = readActive();
-    if (!active) return;
-    ensureCycle(active);
+    if (!active) {
+        if (preview) renderPreviewWaitingBanner(logger);
+        return;
+    }
+    if (!preview) ensureCycle(active);
     logger.classList.add("adaptive-guidance-on");
-    applyDeloadMode(logger, active);
-    renderRecoveryCheck(logger, readActive() || active);
+    applyDeloadMode(logger, active, preview);
+    if (!preview) renderRecoveryCheck(logger, readActive() || active);
+    else document.querySelector(".adaptive-recovery-flow")?.remove();
     logger.querySelectorAll(".session-exercise-card").forEach(card => renderRirTracker(card, readActive() || active));
 }
 
-function applyDeloadMode(logger, active) {
+function applyDeloadMode(logger, active, preview = getDeloadPreviewRequest()) {
     const state = readState();
-    const pending = state.pendingDeload;
+    const pending = preview
+        ? { planId: active.planId, startedAt: preview.requestedAt, dayCount: active?.planSnapshot?.days?.length || 1 }
+        : state.pendingDeload;
     if (!pending || pending.planId !== active.planId) return;
     logger.classList.add("adaptive-deload-active");
+    logger.classList.toggle("adaptive-deload-preview-active", Boolean(preview));
+    logger.dataset.adaptiveDeloadPreview = preview ? "true" : "";
     const dayCount = Math.max(1, active?.planSnapshot?.days?.length || pending.dayCount || 1);
     const earlyWeek = Number(active.trainingDayIndex) < Math.ceil(dayCount / 2);
     const weightRatio = earlyWeek ? 0.85 : 0.67;
     const setRatio = 0.67;
     const repRatio = 0.67;
-    dispatchSessionGuidance(logger, {
-        isDeload: true,
-        deload: { weightRatio, setRatio, repRatio, startedAt: pending.startedAt }
-    });
+    if (!preview) {
+        dispatchSessionGuidance(logger, {
+            isDeload: true,
+            deload: { weightRatio, setRatio, repRatio, startedAt: pending.startedAt }
+        });
+    }
 
     let banner = logger.querySelector(".adaptive-deload-banner");
     if (!banner) {
         banner = document.createElement("section");
         banner.className = "adaptive-deload-banner";
         banner.innerHTML = `
-            <strong>Recovery week</strong>
-            <p>Reduced sets, reps and load · keep at least 5 RIR.</p>
-            <button class="secondary-btn" type="button" data-adaptive-end-deload>End recovery week</button>
+            ${preview ? '<span class="adaptive-preview-label">PREVIEW · NOT SAVED</span>' : ""}
+            <strong>${preview ? "Recovery week preview" : "Recovery week"}</strong>
+            <p>Reduced sets, reps and load · keep at least 5 RIR. Normal progression prompts are paused.</p>
+            <button class="secondary-btn" type="button" ${preview ? "data-adaptive-exit-deload-preview" : "data-adaptive-end-deload"}>${preview ? "Exit preview" : "End recovery week"}</button>
         `;
         logger.querySelector("#session-exercises")?.prepend(banner);
     }
@@ -298,8 +315,47 @@ function applyDeloadMode(logger, active) {
             if (reps && !reps.value && Number.isFinite(target.reps)) reps.placeholder = String(target.reps);
         });
         const target = card.querySelector(".session-target,.compact-target");
-        if (target) target.textContent = `Deload: ${keepCount} ${keepCount === 1 ? "set" : "sets"} · 5+ RIR`;
+        if (target) target.textContent = `Recovery target: ${keepCount} ${keepCount === 1 ? "set" : "sets"} · ~${Math.round(weightRatio * 100)}% load · ~⅔ reps · 5+ RIR`;
     });
+
+    if (preview) {
+        const complete = logger.querySelector("#save-session-btn");
+        if (complete) {
+            complete.textContent = "Exit Preview";
+            complete.dataset.adaptiveExitDeloadPreview = "";
+        }
+    }
+}
+
+function renderPreviewWaitingBanner(logger) {
+    if (logger.querySelector(".adaptive-deload-preview-waiting")) return;
+    const banner = document.createElement("section");
+    banner.className = "adaptive-deload-banner adaptive-deload-preview-waiting";
+    banner.innerHTML = `
+        <span class="adaptive-preview-label">PREVIEW · NOT SAVED</span>
+        <strong>Recovery-week preview ready</strong>
+        <p>Choose a training day and begin. The adjustments will appear in their real workout positions.</p>
+        <button class="secondary-btn" type="button" data-adaptive-exit-deload-preview>Exit preview</button>`;
+    logger.querySelector("#session-exercises")?.prepend(banner);
+}
+
+function renderPreviewNavigationNotice() {
+    const page = document.querySelector(".workout-page");
+    if (!page || !getDeloadPreviewRequest() || page.querySelector(".adaptive-deload-preview-navigation")) return;
+    const notice = document.createElement("section");
+    notice.className = "adaptive-deload-banner adaptive-deload-preview-navigation";
+    notice.innerHTML = `
+        <span class="adaptive-preview-label">PREVIEW · NOT SAVED</span>
+        <strong>Recovery-week preview ready</strong>
+        <p>Open any weightlifting plan and start a workout to see the reduced targets in place.</p>
+        <button class="secondary-btn" type="button" data-adaptive-exit-deload-preview>Exit preview</button>`;
+    page.querySelector(".workout-page-title")?.insertAdjacentElement("afterend", notice);
+}
+
+function exitDeloadPreview() {
+    endDeloadWorkoutPreview({ restoreWorkout: true });
+    document.querySelectorAll(".adaptive-deload-preview-navigation,.adaptive-recovery-flow,.adaptive-post-flow").forEach(node => node.remove());
+    document.querySelector('.nav-btn[data-page="workout"]')?.click();
 }
 
 function findPreviousExercisePerformance(planId, exerciseId) {
@@ -566,6 +622,12 @@ window.addEventListener("click", event => {
     const completeButton = event.target.closest?.("#save-session-btn");
     if (!completeButton) return;
     const logger = completeButton.closest("#workout-session-logger");
+    if (logger?.dataset.adaptiveDeloadPreview === "true") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        exitDeloadPreview();
+        return;
+    }
     const active = readActive();
     if (!logger || logger.dataset.editingSessionId || !guidanceEnabled() || !active) return;
     event.preventDefault();
@@ -574,6 +636,10 @@ window.addEventListener("click", event => {
 }, true);
 
 document.addEventListener("click", event => {
+    if (event.target.closest?.("[data-adaptive-exit-deload-preview]")) {
+        exitDeloadPreview();
+        return;
+    }
     const recovery = event.target.closest?.("[data-recovery-status]");
     if (recovery) return setRecoveryChoice(recovery);
 
@@ -655,6 +721,10 @@ document.addEventListener("change", event => {
 
 window.addEventListener("levelup:workout-completed", handleWorkoutCompleted);
 window.addEventListener("levelup:adaptive-settings-changed", () => enhanceLogger(document.getElementById("workout-session-logger")));
+window.addEventListener("levelup:deload-preview-requested", () => window.setTimeout(() => {
+    renderPreviewNavigationNotice();
+    enhanceLogger(document.getElementById("workout-session-logger"));
+}, 0));
 
 const observer = new MutationObserver(mutations => {
     let loggerChanged = false;
@@ -666,6 +736,7 @@ const observer = new MutationObserver(mutations => {
         else recap ||= node.querySelector?.(".workout-complete-recap");
     }));
     if (loggerChanged) window.setTimeout(() => enhanceLogger(document.getElementById("workout-session-logger")), 30);
+    if (getDeloadPreviewRequest()) window.setTimeout(renderPreviewNavigationNotice, 30);
     if (recap) window.setTimeout(() => renderCoachSummary(recap), 20);
 });
 

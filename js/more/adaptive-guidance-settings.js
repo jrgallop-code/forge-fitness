@@ -1,4 +1,46 @@
 export const ADAPTIVE_GUIDANCE_SETTINGS_KEY = "level_up_adaptive_guidance_settings";
+export const DELOAD_PREVIEW_KEY = "level_up_deload_workout_preview";
+const ACTIVE_WORKOUT_KEY = "level_up_active_workout";
+
+export function getDeloadPreviewRequest() {
+    try {
+        return JSON.parse(globalThis.sessionStorage?.getItem(DELOAD_PREVIEW_KEY) || "null");
+    }
+    catch {
+        return null;
+    }
+}
+
+export function beginDeloadWorkoutPreview() {
+    try {
+        const originalActiveSerialized = globalThis.localStorage?.getItem(ACTIVE_WORKOUT_KEY) ?? null;
+        globalThis.sessionStorage?.setItem(DELOAD_PREVIEW_KEY, JSON.stringify({
+            requestedAt: new Date().toISOString(),
+            originalActiveSerialized
+        }));
+        globalThis.window?.dispatchEvent(new CustomEvent("levelup:deload-preview-requested"));
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+
+export function endDeloadWorkoutPreview({ restoreWorkout = true } = {}) {
+    const request = getDeloadPreviewRequest();
+    try {
+        if (restoreWorkout && request) {
+            if (request.originalActiveSerialized === null) globalThis.localStorage?.removeItem(ACTIVE_WORKOUT_KEY);
+            else globalThis.localStorage?.setItem(ACTIVE_WORKOUT_KEY, request.originalActiveSerialized);
+        }
+        globalThis.sessionStorage?.removeItem(DELOAD_PREVIEW_KEY);
+        globalThis.window?.dispatchEvent(new CustomEvent("levelup:deload-preview-ended"));
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
 
 export function getAdaptiveGuidanceSettings() {
     try {
@@ -55,9 +97,9 @@ export function renderAdaptiveGuidanceSettings() {
     `;
 }
 
-export function initializeAdaptiveGuidanceSettings({ onBack } = {}) {
+export function initializeAdaptiveGuidanceSettings({ onBack, onPreviewWorkout } = {}) {
     document.getElementById("adaptive-guidance-back")?.addEventListener("click", () => onBack?.());
-    document.getElementById("adaptive-deload-preview-open")?.addEventListener("click", showDeloadPreview);
+    document.getElementById("adaptive-deload-preview-open")?.addEventListener("click", () => showDeloadPreview(onPreviewWorkout));
     document.getElementById("adaptive-guidance-toggle")?.addEventListener("change", event => {
         const enabled = event.target.checked === true;
         localStorage.setItem(ADAPTIVE_GUIDANCE_SETTINGS_KEY, JSON.stringify({ enabled }));
@@ -69,40 +111,23 @@ export function initializeAdaptiveGuidanceSettings({ onBack } = {}) {
     });
 }
 
-function showDeloadPreview() {
+function showDeloadPreview(onPreviewWorkout) {
     document.querySelector(".adaptive-deload-preview-overlay")?.remove();
     const overlay = document.createElement("div");
     overlay.className = "adaptive-info-overlay adaptive-deload-preview-overlay";
     document.body.appendChild(overlay);
-    renderDeloadPreviewStage(overlay, "recommendation");
+    renderDeloadPreviewStage(overlay);
     overlay.addEventListener("click", event => {
         if (event.target === overlay || event.target.closest?.("[data-deload-preview-close]")) overlay.remove();
-        if (event.target.closest?.("[data-deload-preview-start]")) renderDeloadPreviewStage(overlay, "recovery-week");
+        if (event.target.closest?.("[data-deload-preview-start]")) {
+            if (!beginDeloadWorkoutPreview()) return;
+            overlay.remove();
+            onPreviewWorkout?.();
+        }
     });
 }
 
-function renderDeloadPreviewStage(overlay, stage) {
-    if (stage === "recovery-week") {
-        overlay.innerHTML = `
-            <section class="adaptive-info-sheet adaptive-deload-preview-sheet" role="dialog" aria-modal="true" aria-labelledby="adaptive-deload-preview-title">
-                <span class="adaptive-preview-label">PREVIEW · NO DATA CHANGES</span>
-                <h3 id="adaptive-deload-preview-title">Recovery week</h3>
-                <div class="adaptive-deload-banner adaptive-deload-preview-banner">
-                    <strong>Recovery week active</strong>
-                    <p>Progression prompts pause while training targets are reduced.</p>
-                </div>
-                <ul class="adaptive-deload-preview-rules">
-                    <li><b>Early week:</b> about 85% of your usual load</li>
-                    <li><b>Later week:</b> about 67% of your usual load</li>
-                    <li><b>Sets and reps:</b> reduced to about two-thirds</li>
-                    <li><b>Effort:</b> keep at least 5 RIR</li>
-                </ul>
-                <p class="adaptive-preview-note">This preview has not started a deload or changed your plan.</p>
-                <button class="primary-btn" type="button" data-deload-preview-close>Done</button>
-            </section>`;
-        return;
-    }
-
+function renderDeloadPreviewStage(overlay) {
     overlay.innerHTML = `
         <section class="adaptive-info-sheet adaptive-deload-preview-sheet" role="dialog" aria-modal="true" aria-labelledby="adaptive-deload-preview-title">
             <span class="adaptive-preview-label">PREVIEW · NO DATA CHANGES</span>
@@ -112,7 +137,7 @@ function renderDeloadPreviewStage(overlay, stage) {
                 <strong>Recovery week recommended</strong>
                 <p>Recovery and performance are declining.</p>
                 <div class="adaptive-recommendation-actions">
-                    <button class="primary-btn" type="button" data-deload-preview-start>Start deload</button>
+                    <button class="primary-btn" type="button" data-deload-preview-start>Preview in workout</button>
                     <button class="secondary-btn" type="button" data-deload-preview-close>Keep current</button>
                 </div>
             </article>
