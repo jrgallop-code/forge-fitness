@@ -1,5 +1,5 @@
-import { navigate } from "./core/router.js?v=adaptive-completion-1";
-import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=beta-account-4";
+import { navigate } from "./core/router.js?v=deload-preview-beta-1";
+import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=deload-preview-beta-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=adaptive-completion-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";
