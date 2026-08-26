@@ -2,22 +2,7 @@ import { getExerciseById } from "./exercise-library.js";
 import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
-const FRONT_ASSET = "assets/recovery/front-body-map.svg";
-
-const FRONT_PARTS = [
-  ["front-shoulder-left","Shoulders"],["front-shoulder-right","Shoulders"],
-  ["front-chest-left","Chest"],["front-chest-right","Chest"],
-  ["front-biceps-left","Biceps"],["front-biceps-right","Biceps"],
-  ["front-forearm-left-outer","Forearms"],["front-forearm-left-inner","Forearms"],
-  ["front-forearm-right-outer","Forearms"],["front-forearm-right-inner","Forearms"],
-  ["front-abs-upper-left","Core"],["front-abs-upper-right","Core"],
-  ["front-abs-mid-left","Core"],["front-abs-mid-right","Core"],
-  ["front-abs-lower-left","Core"],["front-abs-lower-right","Core"],
-  ["front-oblique-left","Core"],["front-oblique-right","Core"],
-  ["front-quad-left-outer","Quads"],["front-quad-left-inner","Quads"],
-  ["front-quad-right-inner","Quads"],["front-quad-right-outer","Quads"],
-  ["front-calf-left","Calves"],["front-calf-right","Calves"]
-];
+const ARM_HERO_URL = "assets/workout-complete-arm.webp?v=2";
 
 let completionClickAt = 0;
 
@@ -77,7 +62,9 @@ function renderRecap(session, history) {
 
       <section class="workout-complete-recap__hero">
         <div class="workout-complete-recap__crushing"><small>YOU ARE</small><strong>CRUSHING IT</strong><small>TODAY!</small></div>
-        <div class="workout-complete-recap__body-glow">${renderFrontBody(trained)}</div>
+        <div class="workout-complete-recap__body-glow is-arm-hero" data-arm-hero-installed="true">
+          <img class="workout-complete-recap__arm-hero" src="${ARM_HERO_URL}" alt="Muscular arm holding a dumbbell" decoding="sync" fetchpriority="high">
+        </div>
       </section>
 
       <section class="workout-complete-recap__levelup">
@@ -113,8 +100,11 @@ function renderCoachSummary(session) {
   const hasPlanChange = recommendations.some(item => item.type === "volume" || item.type === "deload");
   return `
     <section class="adaptive-coach-summary" data-adaptive-session-id="${escapeHtml(session.id)}">
-      <h3>Coach Summary</h3>
-      <p>${hasPlanChange ? "Suggestions only—nothing changes unless you apply it." : "Based on this workout and your feedback."}</p>
+      <div class="adaptive-coach-heading">
+        <span class="adaptive-coach-kicker">ADAPTIVE COACH <em>BETA</em></span>
+        <h3>Coach Summary</h3>
+        <p>${hasPlanChange ? "Suggestions only—nothing changes unless you apply it." : "Based on this workout and your feedback."}</p>
+      </div>
       <div class="adaptive-recommendation-list">
         ${recommendations.map(renderCoachRecommendation).join("")}
       </div>
@@ -122,12 +112,13 @@ function renderCoachSummary(session) {
 }
 
 function renderCoachRecommendation(recommendation) {
+  const presentation = coachRecommendationPresentation(recommendation);
   if (recommendation.status) {
     const status = recommendation.status === "applied" ? "Applied" : recommendation.type === "hold" ? "Acknowledged" : "Kept current";
-    return `<article class="adaptive-recommendation"><strong>${escapeHtml(recommendation.title)}</strong><p class="adaptive-recommendation-status">${escapeHtml(status)}</p></article>`;
+    return `<article class="adaptive-recommendation adaptive-recommendation--${presentation.tone}"><span class="adaptive-recommendation-kicker">${presentation.label}</span><strong>${escapeHtml(recommendation.title)}</strong><p class="adaptive-recommendation-status">${escapeHtml(status)}</p></article>`;
   }
   if (recommendation.type === "status") {
-    return `<article class="adaptive-recommendation"><strong>${escapeHtml(recommendation.title)}</strong><p>${escapeHtml(recommendation.reason)}</p></article>`;
+    return `<article class="adaptive-recommendation adaptive-recommendation--${presentation.tone}"><span class="adaptive-recommendation-kicker">${presentation.label}</span><strong>${escapeHtml(recommendation.title)}</strong><p>${escapeHtml(recommendation.reason)}</p></article>`;
   }
   const primaryAction = recommendation.type === "volume"
     ? `<button class="primary-btn" type="button" data-adaptive-action="apply-volume" data-recommendation-id="${escapeHtml(recommendation.id)}">Apply</button>`
@@ -135,7 +126,8 @@ function renderCoachRecommendation(recommendation) {
       ? `<button class="primary-btn" type="button" data-adaptive-action="start-deload" data-recommendation-id="${escapeHtml(recommendation.id)}">Start deload</button>`
       : "";
   return `
-    <article class="adaptive-recommendation">
+    <article class="adaptive-recommendation adaptive-recommendation--${presentation.tone}">
+      <span class="adaptive-recommendation-kicker">${presentation.label}</span>
       <strong>${escapeHtml(recommendation.title)}</strong>
       <p>${escapeHtml(recommendation.reason)}</p>
       <div class="adaptive-recommendation-actions">
@@ -145,16 +137,16 @@ function renderCoachRecommendation(recommendation) {
     </article>`;
 }
 
-function renderConfetti() {
-  return Array.from({length:18}, (_,i) => `<i style="--i:${i};--x:${(i*37)%96}%;--d:${(i%7)*.12}s"></i>`).join("");
+function coachRecommendationPresentation(recommendation) {
+  if (recommendation?.type === "deload") return { tone: "recovery", label: "RECOVERY RECOMMENDATION" };
+  if (recommendation?.type === "hold") return { tone: "caution", label: "TRAINING CAUTION" };
+  if (recommendation?.type === "volume" && Number(recommendation.delta) > 0) return { tone: "progress", label: "PROGRESS OPTION" };
+  if (recommendation?.type === "volume") return { tone: "caution", label: "RECOVERY OPTION" };
+  return { tone: "steady", label: "NEXT WORKOUT" };
 }
 
-function renderFrontBody(trainedMuscles) {
-  const trained = new Set(trainedMuscles);
-  return `<svg class="workout-complete-recap__anatomy" viewBox="0 0 500 900" role="img" aria-label="Front view of muscles trained">
-    <use href="${FRONT_ASSET}#front-base" class="workout-complete-recap__body-base"/>
-    ${FRONT_PARTS.map(([id,muscle]) => `<use href="${FRONT_ASSET}#${id}" class="workout-complete-recap__muscle ${trained.has(muscle) ? "is-trained" : ""}"/>`).join("")}
-  </svg>`;
+function renderConfetti() {
+  return Array.from({length:18}, (_,i) => `<i style="--i:${i};--x:${(i*37)%96}%;--d:${(i%7)*.12}s"></i>`).join("");
 }
 
 function summarizeSession(session) {

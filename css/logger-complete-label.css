@@ -67,13 +67,19 @@
   min-width: 32px;
   min-height: 38px;
   padding: 0;
-  border: 1px solid rgba(239, 24, 33, .34);
+  border: 1px solid rgba(255, 255, 255, .11);
   border-radius: 9px;
-  background: rgba(239, 24, 33, .07);
-  color: #ff6970;
+  background: #17171c;
+  color: #a9a9b1;
   font-size: 21px;
   font-weight: 500;
   line-height: 1;
+}
+
+.workout-session-logger .logger-remove-set-btn:active {
+  border-color: rgba(255, 255, 255, .2);
+  background: #222228;
+  color: #fff;
 }
 
 .workout-session-logger .logger-remove-set-btn:disabled {
