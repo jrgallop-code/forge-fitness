@@ -31,7 +31,7 @@ export function renderMore() {
     <button class="more-menu-card" type="button" data-more-page="account-cloud"><span class="more-menu-icon">${ICONS.account}</span><span><strong>Account & Cloud</strong><small>Sign in for private beta cloud backup and device transfer.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Switch between imperial and metric measurements throughout Level Up.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="adaptive-guidance"><span class="more-menu-icon">${ICONS.guidance}</span><span><strong class="adaptive-title-with-badge">Adaptive Guidance <span class="adaptive-beta-badge">BETA</span></strong><small>Optional recovery, effort, volume and deload suggestions.</small></span></button>
-    <button class="more-menu-card owner-analytics-launch" type="button" data-more-page="admin-analytics"><span class="more-menu-icon">${ICONS.analytics}</span><span><strong>Stats & Analytics</strong><small>Owner-only charts for growth, activity and training engagement.</small></span></button>
+    <button class="more-menu-card owner-analytics-launch" id="owner-analytics-menu" type="button" data-more-page="admin-analytics" hidden><span class="more-menu-icon">${ICONS.analytics}</span><span><strong>Stats & Analytics</strong><small>Owner-only charts for growth, activity and training engagement.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Profile & Appearance</strong><small>Update your personal details, training experience and anatomy appearance.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="history"><span class="more-menu-icon">${ICONS.history}</span><span><strong>Workout History</strong><small>Review completed workouts, summaries and training details.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="bmi"><span class="more-menu-icon">${ICONS.bmi}</span><span><strong>BMI</strong><small>View BMI calculated from your Body Profile height and weight.</small></span></button>
@@ -44,6 +44,7 @@ export function renderMore() {
 }
 
 export function initializeMore() {
+    revealOwnerAnalyticsMenu();
     document.querySelectorAll("[data-more-page]").forEach(button => button.addEventListener("click", () => {
         const page = button.dataset.morePage;
         if (page === "profile-setup") {
@@ -117,4 +118,16 @@ export function initializeMore() {
         }
         navigate(page);
     }));
+}
+
+async function revealOwnerAnalyticsMenu() {
+    const button = document.getElementById("owner-analytics-menu");
+    if (!button) return;
+    try {
+        const token = JSON.parse(localStorage.getItem("level_up_cloud_session") || "null")?.token;
+        if (!token) return;
+        const response = await fetch("https://api.leveluphypertrophy.com/v1/me", { headers: { Authorization: `Bearer ${token}` } });
+        const payload = await response.json();
+        if (response.ok && payload.user?.isAdmin) button.hidden = false;
+    } catch { /* Keep owner tools hidden when the account check is unavailable. */ }
 }
