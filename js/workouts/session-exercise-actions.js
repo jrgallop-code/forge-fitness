@@ -1,6 +1,8 @@
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=adaptive-completion-1';
+import './exercise-library-expansion.js?v=exercise-library-expansion-1';
 import { getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { createGeneratedExerciseGuide } from './exercise-guide-generator.js?v=full-library-guides-1';
+import { movementForExercise, prioritizeMovementMatches } from './smart-swap-priority.js?v=smart-swap-movement-priority-1';
 
 const SPECIAL_MUSCLE_PROFILES = {
   'barbell-bench-press': { primary: ['Chest'], secondary: ['Triceps', 'Front Delts'] },
@@ -17,34 +19,6 @@ const SPECIAL_MUSCLE_PROFILES = {
   'hanging-knee-raise': { primary: ['Rectus Abdominis'], secondary: ['Obliques'] },
   'ab-wheel-rollout': { primary: ['Rectus Abdominis'], secondary: ['Deep Core', 'Obliques'] }
 };
-
-const MOVEMENT_GROUPS = [
-  ['horizontal-press', ['barbell-bench-press', 'dumbbell-bench-press', 'incline-barbell-press', 'incline-dumbbell-press', 'machine-chest-press', 'push-up']],
-  ['chest-fly', ['cable-fly', 'pec-deck']],
-  ['vertical-pull', ['pull-up', 'weighted-pull-up', 'chin-up', 'lat-pulldown']],
-  ['row', ['barbell-row', 'single-arm-dumbbell-row', 'chest-supported-row', 'seated-cable-row', 'machine-row']],
-  ['lat-isolation', ['straight-arm-pulldown', 'cable-lat-pullover']],
-  ['back-extension', ['back-extension']],
-  ['shoulder-press', ['overhead-press', 'dumbbell-shoulder-press', 'machine-shoulder-press', 'pike-push-up']],
-  ['lateral-raise', ['lateral-raise', 'cable-lateral-raise', 'upright-row']],
-  ['rear-delt', ['reverse-pec-deck', 'face-pull', 'rear-delt-fly']],
-  ['biceps-curl', ['barbell-curl', 'dumbbell-curl', 'hammer-curl', 'incline-dumbbell-curl', 'preacher-curl', 'cable-curl']],
-  ['triceps-extension', ['tricep-pushdown', 'overhead-tricep-extension', 'skull-crusher', 'dumbbell-overhead-extension']],
-  ['triceps-press', ['close-grip-bench-press', 'dip']],
-  ['squat-bilateral', ['back-squat', 'front-squat', 'leg-press', 'hack-squat', 'goblet-squat', 'bodyweight-squat']],
-  ['squat-unilateral', ['bulgarian-split-squat', 'lunge', 'step-up']],
-  ['leg-extension', ['leg-extension']],
-  ['deadlift', ['conventional-deadlift', 'trap-bar-deadlift']],
-  ['hinge', ['romanian-deadlift', 'good-morning', 'single-leg-romanian-deadlift']],
-  ['leg-curl', ['leg-curl', 'seated-leg-curl']],
-  ['hip-extension', ['hip-thrust', 'glute-bridge', 'cable-pull-through']],
-  ['calf-raise', ['standing-calf-raise', 'seated-calf-raise', 'leg-press-calf-raise', 'single-leg-calf-raise']],
-  ['anti-extension-core', ['plank', 'dead-bug', 'ab-wheel-rollout']],
-  ['anti-lateral-core', ['side-plank']],
-  ['anti-rotation-core', ['pallof-press', 'bird-dog']],
-  ['trunk-flexion-core', ['cable-crunch', 'hanging-knee-raise']],
-  ['cardio', ['indoor-rower', 'ski-erg', 'stationary-bike', 'running']]
-];
 
 function readActiveWorkout() {
   try {
@@ -116,11 +90,6 @@ function buildSwapOptions(currentExercise) {
 
   if (!choices.length) return '<option value="">No compatible exercises available</option>';
   return `${sameGroup.length ? `<optgroup label="${escapeHtml(currentExercise?.muscleGroup || 'Similar')} options">${renderOptions(sameGroup)}</optgroup>` : ''}${others.length ? `<optgroup label="${currentExercise?.trackingType === 'notes' ? 'Other cardio exercises' : 'Other exercises'}">${renderOptions(others)}</optgroup>` : ''}`;
-}
-
-function movementForExercise(exercise) {
-  const id = exercise?.id;
-  return MOVEMENT_GROUPS.find(([, ids]) => ids.includes(id))?.[0] || (exercise?.muscleGroup === 'Cardio' ? 'cardio' : '');
 }
 
 function getMuscleProfile(exercise) {
@@ -218,11 +187,12 @@ function getSmartRecommendations(currentExercise, active, exerciseIndex) {
     .map((item, index) => index === exerciseIndex ? null : item?.id)
     .filter(Boolean));
 
-  const ranked = getEligibleExercises(currentExercise)
+  const scored = getEligibleExercises(currentExercise)
     .filter(candidate => !otherPlannedIds.has(candidate.id))
     .map(candidate => ({ candidate, ...scoreSmartSwap(currentExercise, candidate) }))
-    .filter(item => item.score >= 45)
-    .sort((a, b) => b.score - a.score || String(a.candidate.name).localeCompare(String(b.candidate.name)));
+    .filter(item => item.score >= 45);
+
+  const ranked = prioritizeMovementMatches(currentExercise, scored);
 
   return ranked.slice(0, 3);
 }
