@@ -46,7 +46,7 @@ async function handleRequest(request, env) {
     if (!user) return json({ error: "Sign in required." }, 401, request, env);
 
     if (url.pathname === "/v1/me" && request.method === "GET") {
-        return json({ user: publicUser(user) }, 200, request, env);
+        return json({ user: { ...publicUser(user), isAdmin: isAdminUser(user, env) } }, 200, request, env);
     }
     if (url.pathname === "/v1/admin/analytics" && request.method === "GET") {
         return getAdminAnalytics(user, url, request, env);
@@ -403,8 +403,7 @@ async function recordActivity(userId, request, env) {
 }
 
 async function getAdminAnalytics(user, url, request, env) {
-    const admins = String(env.ADMIN_EMAILS || "").split(",").map(value => value.trim().toLowerCase()).filter(Boolean);
-    if (!admins.includes(String(user.email || "").toLowerCase())) return json({ error: "Admin access required." }, 403, request, env);
+    if (!isAdminUser(user, env)) return json({ error: "Admin access required." }, 403, request, env);
     const requestedDays = Number(url.searchParams.get("days") || 30);
     const days = Number.isFinite(requestedDays) ? Math.min(365, Math.max(7, Math.round(requestedDays))) : 30;
     const since = new Date(Date.now() - days * 86400000).toISOString();
@@ -427,6 +426,10 @@ async function getAdminAnalytics(user, url, request, env) {
             FROM user_acquisition GROUP BY source ORDER BY users DESC`).all()
     ]);
     return json({ days, since, totals: totals || {}, daily: daily?.results || [], acquisition: acquisition?.results || [] }, 200, request, env);
+}
+
+function isAdminUser(user, env) {
+    return String(env.ADMIN_EMAILS || "").split(",").map(value => value.trim().toLowerCase()).filter(Boolean).includes(String(user.email || "").toLowerCase());
 }
 
 async function deleteSession(request, env) {
