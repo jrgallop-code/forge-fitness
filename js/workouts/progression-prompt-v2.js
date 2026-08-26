@@ -106,7 +106,7 @@ function findExercisePerformance(session, exerciseId) {
 function findPreviousPerformance(exerciseId, excludedSessionId = null) {
   const sessions = readJson(SESSION_STORAGE_KEY, []);
   if (!Array.isArray(sessions)) return null;
-  for (const session of [...sessions].filter(item => item?.id !== excludedSessionId).sort(compareSessionsNewest)) {
+  for (const session of [...sessions].filter(item => item?.id !== excludedSessionId && item?.adaptiveGuidance?.isDeload !== true).sort(compareSessionsNewest)) {
     const performance = findExercisePerformance(session, exerciseId);
     if (hasValidPerformance(performance)) return { session, performance };
   }
@@ -259,6 +259,10 @@ function renderCard(card) {
     hidePrompt(prompt);
     return;
   }
+  if (active?.adaptiveGuidance?.isDeload) {
+    hidePrompt(prompt);
+    return;
+  }
   const exerciseIndex = Number(card.dataset.exerciseIndex);
   const planned = active?.planSnapshot?.days?.[active.trainingDayIndex]?.exercises?.[exerciseIndex];
   const repRange = getRepRange(planned?.reps);
@@ -351,6 +355,27 @@ function renderCard(card) {
     ? `${formatLoad(range.minimumLoad)} lb`
     : `${formatLoad(range.minimumLoad)}–${formatLoad(range.maximumLoad)} lb`;
   const suggestedLoad = getSuggestedProgressionLoad(range, exerciseId);
+  const recordedRir = completedSets
+    .map((set, index) => ({ raw: set.rir, value: Number(set.rir), index }))
+    .filter(item => item.raw !== null && item.raw !== '' && item.raw !== undefined && Number.isFinite(item.value) && item.value >= 0);
+  const zeroRirSets = recordedRir.filter(item => item.value === 0);
+  const multipleFailureSets = zeroRirSets.length > 1;
+  const finalSetAtFailure = zeroRirSets.length === 1 && zeroRirSets[0].index === completedSets.length - 1;
+
+  if (multipleFailureSets) {
+    applyRepGoalPlaceholders(card, completedSets.map(set => Number(set.reps)), currentWeight);
+    prompt.classList.add('progression-prompt-down');
+    prompt.innerHTML = `
+      <span class="progression-arrow">↺</span>
+      <div>
+        <strong>Repeat this weight</strong>
+        <p>Multiple sets reached <b>0 RIR</b>.</p>
+        <small>Aim to keep 1–3 good reps in reserve.</small>
+      </div>
+    `;
+    prompt.hidden = false;
+    return;
+  }
   const plannedSetCount = Array.isArray(state?.sets) ? state.sets.length : completedSets.length;
   const skippedSetCount = Math.max(0, plannedSetCount - completedSets.length);
   const completionSummary = skippedSetCount > 0
@@ -366,7 +391,8 @@ function renderCard(card) {
   prompt.innerHTML = `
     <span class="progression-arrow">↑</span>
     <div>
-      <strong>Increase weight this session</strong>
+      <strong>${finalSetAtFailure ? 'Progress available' : 'Increase weight this session'}</strong>
+      ${finalSetAtFailure ? '<p>Final set reached <b>0 RIR</b>.</p>' : ''}
       <p>${completionSummary}</p>
       <p><b>Try ${loadRange} today.</b></p>
       <small>${skippedSetNote}Suggested load: ${formatLoad(suggestedLoad)} lb. Minimum target: ${formatLoad(repRange.lower)} reps per set · Goal: build toward ${formatLoad(repRange.upper)} reps.</small>

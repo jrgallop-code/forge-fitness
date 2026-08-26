@@ -1,4 +1,4 @@
-import { openActiveWorkout } from "./workout-session.js?v=drop-sets-6";
+import { openActiveWorkout } from "./workout-session.js?v=adaptive-guidance-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const CARDIO_TIMER_STORAGE_KEY = "level_up_cardio_timer_state";

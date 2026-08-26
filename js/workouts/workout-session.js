@@ -466,6 +466,8 @@ function createActiveSession(plan, logger) {
             0,
         currentSetIndex:
             0,
+        adaptiveGuidance:
+            null,
         restTimer:
             null
     };
@@ -513,6 +515,7 @@ function createExerciseState(day) {
                         () => ({
                             weight: null,
                             reps: null,
+                            rir: null,
                             completed: false
                         })
                     )
@@ -929,6 +932,31 @@ function bindSessionInputs({
         persist();
     });
 
+    logger.addEventListener("levelup:adaptive-guidance-changed", event => {
+        const detail = event.detail || {};
+
+        if (detail.kind === "set-rir") {
+            const exerciseIndex = Number(detail.exerciseIndex);
+            const setIndex = Number(detail.setIndex);
+            const set = session.exercises?.[exerciseIndex]?.sets?.[setIndex];
+            if (!set) return;
+            const value = Number(detail.value);
+            set.rir = Number.isFinite(value) ? Math.min(4, Math.max(0, value)) : null;
+            session.currentExerciseIndex = exerciseIndex;
+            session.currentSetIndex = setIndex;
+            persist();
+            return;
+        }
+
+        if (detail.kind === "session-guidance") {
+            session.adaptiveGuidance = {
+                ...(session.adaptiveGuidance || {}),
+                ...(detail.value || {})
+            };
+            persist();
+        }
+    });
+
 
     logger
         .querySelectorAll(".session-exercise-card")
@@ -1212,6 +1240,8 @@ function saveCompletedSession({
         durationMs,
         durationMinutes:
             Math.round(durationMs / 60000),
+        adaptiveGuidance:
+            clone(session.adaptiveGuidance || null),
         exercises:
             clone(session.exercises || [])
     };
@@ -1636,6 +1666,7 @@ function getPreviousPerformance(
             .filter(session =>
                 session.id !== excludedSessionId &&
                 session.planId === planId &&
+                session.adaptiveGuidance?.isDeload !== true &&
                 Number(session.trainingDayIndex) === Number(dayIndex)
             )
             .sort(compareSessionsNewest);
