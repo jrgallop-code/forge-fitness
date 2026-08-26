@@ -21,7 +21,7 @@ export function initializeRoutineImporter(root = document) {
   const launcher = workoutPage.querySelector("[data-smart-build-launcher]");
   if (!launcher) { window.setTimeout(() => initializeRoutineImporter(root), 80); return; }
   workoutPage.dataset.routineImporterBound = "true";
-  launcher.querySelector(".smart-build-choice-grid")?.insertAdjacentHTML("beforeend", `<button class="smart-build-choice routine-import-launch" type="button" data-routine-import-open><span class="smart-build-badge">BETA</span><span class="smart-build-choice-title">Import Routine</span><small>Paste from Reddit, Notes, or another source</small></button>`);
+  launcher.querySelector(".smart-build-choice-grid")?.insertAdjacentHTML("beforeend", `<button class="smart-build-choice routine-import-launch" type="button" data-routine-import-open><span class="smart-build-badge">BETA</span><span class="smart-build-choice-title">Import Routine</span><small>Paste from ChatGPT, Reddit, Notes, or anywhere else</small></button>`);
   workoutPage.insertAdjacentHTML("beforeend", renderShell());
   workoutPage.addEventListener("click", event => handleClick(event, workoutPage));
   workoutPage.addEventListener("change", event => handleChange(event, workoutPage));
@@ -30,7 +30,7 @@ export function initializeRoutineImporter(root = document) {
 
 function ensureStyles() {
   if (document.querySelector('link[href*="routine-importer.css"]')) return;
-  ["css/routine-importer.css?v=routine-import-1", "css/routine-importer-summary.css?v=routine-import-1", "css/routine-importer-source.css?v=reddit-import-1"].forEach(href => {
+  ["css/routine-importer.css?v=routine-import-1", "css/routine-importer-summary.css?v=routine-import-1"].forEach(href => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = href;
@@ -40,13 +40,13 @@ function ensureStyles() {
 
 function renderShell() {
   return `<section class="routine-import-wizard" data-routine-import-wizard hidden>
-    <div class="routine-import-topbar"><div><span class="eyebrow">IMPORT ROUTINE <span class="routine-import-beta">BETA</span></span><h3>Paste your routine</h3><p>Copy a routine from Reddit, Notes, a website, or a message. You will review everything before it is saved.</p></div><button class="secondary-btn" type="button" data-routine-import-close>Close</button></div>
+    <div class="routine-import-topbar"><div><span class="eyebrow">IMPORT ROUTINE <span class="routine-import-beta">BETA</span></span><h3>Paste your routine</h3><p>Copy and paste a routine from ChatGPT, Reddit, Notes, a website, or a message. You will review everything before it is saved.</p></div><button class="secondary-btn" type="button" data-routine-import-close>Close</button></div>
     <div data-routine-import-stage>${renderPasteStage()}</div>
   </section>`;
 }
 
 function renderPasteStage() {
-  return `<div class="routine-import-paste-card"><label for="routine-import-text">Routine text</label><textarea id="routine-import-text" maxlength="20000" placeholder="Push Day&#10;Bench Press - 3x6-8&#10;Cable Fly - 3x12-15"></textarea><div class="routine-import-tools"><button class="secondary-btn" type="button" data-routine-paste>Paste from Clipboard</button><button class="routine-import-text-action" type="button" data-routine-example>Use example</button><button class="routine-import-text-action" type="button" data-routine-clear>Clear</button><small data-routine-count>0 / 20,000</small></div><div class="routine-import-source-row"><label for="routine-import-source">Reddit source link <span>optional</span></label><div><input id="routine-import-source" type="url" inputmode="url" placeholder="https://reddit.com/r/…"><button class="secondary-btn" type="button" data-routine-source-import>Import from Reddit</button></div></div><p class="routine-import-message" data-routine-message aria-live="polite"></p><button class="primary-btn routine-import-build" type="button" data-routine-build>Build Pasted Routine</button></div>`;
+  return `<div class="routine-import-paste-card"><label for="routine-import-text">Routine text</label><textarea id="routine-import-text" maxlength="20000" placeholder="Paste a routine from ChatGPT or another source…&#10;&#10;Push Day&#10;Bench Press - 3x6-8&#10;Cable Fly - 3x12-15"></textarea><div class="routine-import-tools"><button class="secondary-btn" type="button" data-routine-paste>Paste from Clipboard</button><button class="routine-import-text-action" type="button" data-routine-example>Use example</button><button class="routine-import-text-action" type="button" data-routine-clear>Clear</button><small data-routine-count>0 / 20,000</small></div><p class="routine-import-message" data-routine-message aria-live="polite"></p><button class="primary-btn routine-import-build" type="button" data-routine-build>Build Pasted Routine</button></div>`;
 }
 
 function handleClick(event, page) {
@@ -57,7 +57,6 @@ function handleClick(event, page) {
   if (button.matches("[data-routine-example]")) return setPasteText(page, EXAMPLE);
   if (button.matches("[data-routine-clear]")) return setPasteText(page, "");
   if (button.matches("[data-routine-paste]")) return pasteClipboard(page);
-  if (button.matches("[data-routine-source-import]")) return importRedditLink(page, button);
   if (button.matches("[data-routine-build]")) return buildReview(page);
   if (button.matches("[data-routine-back]")) return showPaste(page);
   if (button.matches("[data-routine-confirm]")) return confirmMatch(button, page);
@@ -110,9 +109,7 @@ function showPaste(page) {
   page.querySelector("[data-routine-import-stage]").innerHTML = renderPasteStage();
   if (importState) {
     const textarea = page.querySelector("#routine-import-text");
-    const source = page.querySelector("#routine-import-source");
     if (textarea) textarea.value = importState.rawText || "";
-    if (source) source.value = importState.source || "";
   }
   updateCounter(page);
 }
@@ -134,89 +131,13 @@ async function pasteClipboard(page) {
   }
 }
 
-async function importRedditLink(page, button) {
-  const source = page.querySelector("#routine-import-source")?.value.trim() || "";
-  const message = page.querySelector("[data-routine-message]");
-  let token = "";
-  try { token = JSON.parse(localStorage.getItem("level_up_cloud_session") || "null")?.token || ""; } catch { /* handled below */ }
-  if (!source) { if (message) message.textContent = "Paste a Reddit post link first."; return; }
-  const postId = redditPostId(source);
-  if (!postId) { if (message) message.textContent = "Enter a valid Reddit post link."; return; }
-  button.disabled = true;
-  button.textContent = "Reading Reddit…";
-  try {
-    let payload = token ? await importFromLevelUpApi(source, token) : null;
-    if (!payload) payload = await importFromRedditArchive(postId);
-    const ranked = (payload.candidates || []).map(candidate => {
-      const parsed = parseRoutineText(candidate.text);
-      return { ...candidate, parsed, score: parsed.days.reduce((sum, day) => sum + day.exercises.length, 0) };
-    }).sort((left, right) => right.score - left.score);
-    const best = ranked[0];
-    if (!best?.score) throw new Error("No routine was found in the post or its available comments. Copy and paste the routine instead.");
-    setPasteText(page, best.text);
-    if (message) message.textContent = `Found ${best.score} exercises in a Reddit ${best.kind}. Building your review…`;
-    window.setTimeout(() => buildReview(page), 250);
-  } catch (error) {
-    if (message) message.textContent = `${error.message} You can still paste the routine text above.`;
-  } finally {
-    button.disabled = false;
-    button.textContent = "Import from Reddit";
-  }
-}
-
-async function importFromLevelUpApi(source, token) {
-  try {
-    const response = await fetch("https://api.leveluphypertrophy.com/v1/import/reddit", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ url: source }) });
-    if (!response.ok) return null;
-    return await response.json();
-  } catch {
-    return null;
-  }
-}
-
-export async function importFromRedditArchive(postId) {
-  const [postResponse, commentsResponse] = await Promise.all([
-    fetch(`https://api.pullpush.io/reddit/search/submission/?ids=${encodeURIComponent(postId)}`),
-    fetch(`https://api.pullpush.io/reddit/search/comment/?link_id=${encodeURIComponent(postId)}&size=100`)
-  ]);
-  if (!postResponse.ok || !commentsResponse.ok) throw new Error("The Reddit post could not be imported.");
-  const [postPayload, commentsPayload] = await Promise.all([postResponse.json(), commentsResponse.json()]);
-  const post = Array.isArray(postPayload?.data) ? postPayload.data[0] || {} : {};
-  const candidates = [];
-  addArchiveCandidate(candidates, "post", post.author, post.selftext);
-  for (const comment of Array.isArray(commentsPayload?.data) ? commentsPayload.data : []) {
-    addArchiveCandidate(candidates, "comment", comment.author, comment.body);
-  }
-  if (!candidates.length) throw new Error("The Reddit post could not be imported.");
-  return { candidates };
-}
-
-export function redditPostId(source) {
-  try {
-    const url = new URL(source);
-    const host = url.hostname.toLowerCase().replace(/^www\./, "");
-    if (url.protocol !== "https:" || !["reddit.com", "old.reddit.com", "redd.it"].includes(host)) return null;
-    return (host === "redd.it" ? url.pathname.match(/^\/([a-z0-9]+)/i) : url.pathname.match(/\/comments\/([a-z0-9]+)/i))?.[1]?.toLowerCase() || null;
-  } catch {
-    return null;
-  }
-}
-
-function addArchiveCandidate(output, kind, author, text) {
-  if (typeof text !== "string") return;
-  const trimmed = text.trim();
-  if (trimmed.length < 20 || ["[deleted]", "[removed]"].includes(trimmed)) return;
-  output.push({ kind, author: author || null, text: trimmed.slice(0, 20000) });
-}
-
 function buildReview(page) {
   const text = page.querySelector("#routine-import-text")?.value.trim() || "";
-  const source = page.querySelector("#routine-import-source")?.value.trim() || "";
   const message = page.querySelector("[data-routine-message]");
   if (!text) { if (message) message.textContent = "Paste a routine first."; return; }
   const parsed = parseRoutineText(text);
   if (!parsed.days.length) { if (message) message.textContent = "No exercises were recognized. Try lines such as Bench Press - 3x8-12."; return; }
-  importState = { name: suggestedName(parsed.days), source, rawText: text, days: parsed.days, skipped: parsed.skipped };
+  importState = { name: suggestedName(parsed.days), rawText: text, days: parsed.days, skipped: parsed.skipped };
   renderReview(page);
 }
 
@@ -280,7 +201,7 @@ function moveExercise(button, page) {
 
 function saveRoutine(button, page) {
   const name = String(importState.name || "Imported Routine").trim() || "Imported Routine";
-  const plan = { id: `import-${Date.now()}`, name, days: importState.days.map(day => ({ name: day.name, exercises: day.exercises.map(item => ({ id: item.match.exerciseId, sets: item.sets, reps: item.reps })) })), importedRoutine: { version: 1, sourceUrl: importState.source || null, originalText: importState.rawText, importedAt: new Date().toISOString() } };
+  const plan = { id: `import-${Date.now()}`, name, days: importState.days.map(day => ({ name: day.name, exercises: day.exercises.map(item => ({ id: item.match.exerciseId, sets: item.sets, reps: item.reps })) })), importedRoutine: { version: 1, sourceUrl: null, originalText: importState.rawText, importedAt: new Date().toISOString() } };
   const plans = readPlans();
   plans.push(plan);
   localStorage.setItem(PLAN_KEY, JSON.stringify(plans));
