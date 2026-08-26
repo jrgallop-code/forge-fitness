@@ -60,3 +60,10 @@ FROM acquired
 GROUP BY source
 ORDER BY acquired_users DESC;
 ```
+# Owner analytics
+
+The website includes an owner-only Stats & Analytics screen under More. The Worker protects its aggregate endpoint with the `ADMIN_EMAILS` environment variable (a comma-separated list of normalized account email addresses). Configure it as a production secret before deploying the Worker:
+
+`wrangler secret put ADMIN_EMAILS`
+
+The endpoint returns aggregate counts only (users, activity, workouts, onboarding and acquisition sources); it does not expose backup payloads or individual workout records.
