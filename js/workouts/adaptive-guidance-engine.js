@@ -197,6 +197,25 @@ export function buildAdaptiveRecommendations({
         });
     }
 
+    if (!recommendations.length) {
+        const recoveryRecorded = Object.values(recovery).some(entry => entry?.status && entry.status !== "skipped");
+        const postWorkoutRecorded = ["easy", "right", "too-hard"].includes(guidance.difficulty)
+            || ["none", "minor", "significant"].includes(guidance.discomfort);
+        const rirRecorded = (session?.exercises || []).some(item => completedSets(item).some(set =>
+            set.rir !== null && set.rir !== "" && set.rir !== undefined && Number.isFinite(Number(set.rir))
+        ));
+        const feedbackRecorded = recoveryRecorded || postWorkoutRecorded || rirRecorded;
+
+        recommendations.push({
+            id: recommendationId(session.id, "plan", feedbackRecorded ? "keep" : "no-feedback"),
+            type: "status",
+            title: feedbackRecorded ? "Keep your plan unchanged" : "No guidance this time",
+            reason: feedbackRecorded
+                ? "No clear adjustment yet. Your feedback was recorded."
+                : "No feedback was recorded."
+        });
+    }
+
     return recommendations;
 }
 

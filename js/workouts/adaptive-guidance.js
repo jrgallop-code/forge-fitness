@@ -6,7 +6,7 @@ import {
     completedSets,
     countAccumulationWeeks,
     getTrainedMuscles
-} from "./adaptive-guidance-engine.js?v=adaptive-guidance-1";
+} from "./adaptive-guidance-engine.js?v=adaptive-survey-confirmation-1";
 
 const ACTIVE_WORKOUT_KEY = "level_up_active_workout";
 const SESSION_KEY = "forge_workout_sessions";
@@ -451,12 +451,13 @@ function renderCoachSummary(recap) {
         .sort((a,b) => String(b.completedAt).localeCompare(String(a.completedAt)))[0];
     const recommendations = latest?.adaptiveGuidance?.recommendations || [];
     if (!recommendations.length) return;
+    const hasPlanChange = recommendations.some(item => item.type === "volume" || item.type === "deload");
     const section = document.createElement("section");
     section.className = "adaptive-coach-summary";
     section.dataset.adaptiveSessionId = latest.id;
     section.innerHTML = `
         <h3>Coach Summary</h3>
-        <p>Suggestions only—your plan changes only when you apply one.</p>
+        <p>${hasPlanChange ? "Suggestions only—nothing changes unless you apply it." : "Based on this workout and your feedback."}</p>
         <div class="adaptive-recommendation-list">
             ${recommendations.map(recommendation => renderRecommendation(recommendation)).join("")}
         </div>

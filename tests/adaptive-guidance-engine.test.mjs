@@ -108,6 +108,47 @@ test("requires RIR before recommending an added set", () => {
     assert.equal(withRirRecommendations.some(item => item.delta === 1), true);
 });
 
+test("confirms recorded feedback when no plan change is justified", () => {
+    const current = {
+        id: "current",
+        planId: "plan-1",
+        trainingDayIndex: 0,
+        adaptiveGuidance: {
+            recovery: { Chest: { status: "ready" } },
+            difficulty: "right",
+            discomfort: "none"
+        },
+        exercises: [exercise("bench", 100, 10, 2)]
+    };
+    const recommendations = buildAdaptiveRecommendations({
+        session: current,
+        sessions: [current],
+        plan,
+        getExercise,
+        accumulationWeeks: 1
+    });
+    assert.deepEqual(recommendations.map(item => item.title), ["Keep your plan unchanged"]);
+    assert.match(recommendations[0].reason, /feedback was recorded/i);
+});
+
+test("does not imply feedback was analyzed when all guidance was skipped", () => {
+    const current = {
+        id: "current-skipped",
+        planId: "plan-1",
+        trainingDayIndex: 0,
+        adaptiveGuidance: { recoverySkipped: true, postSkipped: true },
+        exercises: [exercise("bench", 100, 10)]
+    };
+    const recommendations = buildAdaptiveRecommendations({
+        session: current,
+        sessions: [current],
+        plan,
+        getExercise,
+        accumulationWeeks: 1
+    });
+    assert.deepEqual(recommendations.map(item => item.title), ["No guidance this time"]);
+});
+
 test("offers a fixed deload after eight accumulation weeks", () => {
     const prior = priorSession("ready");
     const current = {
