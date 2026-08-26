@@ -140,13 +140,13 @@ async function importRedditLink(page, button) {
   let token = "";
   try { token = JSON.parse(localStorage.getItem("level_up_cloud_session") || "null")?.token || ""; } catch { /* handled below */ }
   if (!source) { if (message) message.textContent = "Paste a Reddit post link first."; return; }
-  if (!token) { if (message) message.textContent = "Sign in to import directly from Reddit."; return; }
+  const postId = redditPostId(source);
+  if (!postId) { if (message) message.textContent = "Enter a valid Reddit post link."; return; }
   button.disabled = true;
   button.textContent = "Reading Reddit…";
   try {
-    const response = await fetch("https://api.leveluphypertrophy.com/v1/import/reddit", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ url: source }) });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "The Reddit post could not be imported.");
+    let payload = token ? await importFromLevelUpApi(source, token) : null;
+    if (!payload) payload = await importFromRedditArchive(postId);
     const ranked = (payload.candidates || []).map(candidate => {
       const parsed = parseRoutineText(candidate.text);
       return { ...candidate, parsed, score: parsed.days.reduce((sum, day) => sum + day.exercises.length, 0) };
@@ -162,6 +162,51 @@ async function importRedditLink(page, button) {
     button.disabled = false;
     button.textContent = "Import from Reddit";
   }
+}
+
+async function importFromLevelUpApi(source, token) {
+  try {
+    const response = await fetch("https://api.leveluphypertrophy.com/v1/import/reddit", { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ url: source }) });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function importFromRedditArchive(postId) {
+  const [postResponse, commentsResponse] = await Promise.all([
+    fetch(`https://api.pullpush.io/reddit/search/submission/?ids=${encodeURIComponent(postId)}`),
+    fetch(`https://api.pullpush.io/reddit/search/comment/?link_id=${encodeURIComponent(postId)}&size=100`)
+  ]);
+  if (!postResponse.ok || !commentsResponse.ok) throw new Error("The Reddit post could not be imported.");
+  const [postPayload, commentsPayload] = await Promise.all([postResponse.json(), commentsResponse.json()]);
+  const post = Array.isArray(postPayload?.data) ? postPayload.data[0] || {} : {};
+  const candidates = [];
+  addArchiveCandidate(candidates, "post", post.author, post.selftext);
+  for (const comment of Array.isArray(commentsPayload?.data) ? commentsPayload.data : []) {
+    addArchiveCandidate(candidates, "comment", comment.author, comment.body);
+  }
+  if (!candidates.length) throw new Error("The Reddit post could not be imported.");
+  return { candidates };
+}
+
+export function redditPostId(source) {
+  try {
+    const url = new URL(source);
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    if (url.protocol !== "https:" || !["reddit.com", "old.reddit.com", "redd.it"].includes(host)) return null;
+    return (host === "redd.it" ? url.pathname.match(/^\/([a-z0-9]+)/i) : url.pathname.match(/\/comments\/([a-z0-9]+)/i))?.[1]?.toLowerCase() || null;
+  } catch {
+    return null;
+  }
+}
+
+function addArchiveCandidate(output, kind, author, text) {
+  if (typeof text !== "string") return;
+  const trimmed = text.trim();
+  if (trimmed.length < 20 || ["[deleted]", "[removed]"].includes(trimmed)) return;
+  output.push({ kind, author: author || null, text: trimmed.slice(0, 20000) });
 }
 
 function buildReview(page) {
