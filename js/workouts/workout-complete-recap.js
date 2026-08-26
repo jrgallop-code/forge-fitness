@@ -31,10 +31,13 @@ document.addEventListener("click", event => {
 }, true);
 
 window.addEventListener("levelup:workout-completed", event => {
-  const sessions = readSessions();
-  const completed = sessions.find(session => session.id === event.detail?.sessionId);
-  if (!completed) return;
-  renderRecap(completed, sessions.filter(session => session.id !== completed.id));
+  const sessionId = event.detail?.sessionId;
+  window.setTimeout(() => {
+    const sessions = readSessions();
+    const completed = sessions.find(session => session.id === sessionId);
+    if (!completed) return;
+    renderRecap(completed, sessions.filter(session => session.id !== completed.id));
+  }, 0);
 });
 
 function showLatestCompletedWorkout() {
@@ -70,6 +73,8 @@ function renderRecap(session, history) {
         </div>
       </header>
 
+      ${renderCoachSummary(session)}
+
       <section class="workout-complete-recap__hero">
         <div class="workout-complete-recap__crushing"><small>YOU ARE</small><strong>CRUSHING IT</strong><small>TODAY!</small></div>
         <div class="workout-complete-recap__body-glow">${renderFrontBody(trained)}</div>
@@ -100,6 +105,43 @@ function renderRecap(session, history) {
   document.body.appendChild(overlay);
   document.body.classList.add("workout-recap-open");
   overlay.querySelectorAll("[data-recap-done]").forEach(button => button.addEventListener("click", closeRecap));
+}
+
+function renderCoachSummary(session) {
+  const recommendations = session?.adaptiveGuidance?.recommendations || [];
+  if (!recommendations.length) return "";
+  const hasPlanChange = recommendations.some(item => item.type === "volume" || item.type === "deload");
+  return `
+    <section class="adaptive-coach-summary" data-adaptive-session-id="${escapeHtml(session.id)}">
+      <h3>Coach Summary</h3>
+      <p>${hasPlanChange ? "Suggestions only—nothing changes unless you apply it." : "Based on this workout and your feedback."}</p>
+      <div class="adaptive-recommendation-list">
+        ${recommendations.map(renderCoachRecommendation).join("")}
+      </div>
+    </section>`;
+}
+
+function renderCoachRecommendation(recommendation) {
+  if (recommendation.status) {
+    return `<article class="adaptive-recommendation"><strong>${escapeHtml(recommendation.title)}</strong><p class="adaptive-recommendation-status">${escapeHtml(recommendation.status === "applied" ? "Applied" : "Kept current")}</p></article>`;
+  }
+  if (recommendation.type === "status") {
+    return `<article class="adaptive-recommendation"><strong>${escapeHtml(recommendation.title)}</strong><p>${escapeHtml(recommendation.reason)}</p></article>`;
+  }
+  const primaryAction = recommendation.type === "volume"
+    ? `<button class="primary-btn" type="button" data-adaptive-action="apply-volume" data-recommendation-id="${escapeHtml(recommendation.id)}">Apply</button>`
+    : recommendation.type === "deload"
+      ? `<button class="primary-btn" type="button" data-adaptive-action="start-deload" data-recommendation-id="${escapeHtml(recommendation.id)}">Start deload</button>`
+      : "";
+  return `
+    <article class="adaptive-recommendation">
+      <strong>${escapeHtml(recommendation.title)}</strong>
+      <p>${escapeHtml(recommendation.reason)}</p>
+      <div class="adaptive-recommendation-actions">
+        ${primaryAction}
+        <button class="secondary-btn" type="button" data-adaptive-action="dismiss" data-recommendation-id="${escapeHtml(recommendation.id)}">Keep current</button>
+      </div>
+    </article>`;
 }
 
 function renderConfetti() {
