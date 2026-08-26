@@ -1,5 +1,6 @@
-import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=adaptive-completion-1';
-import { getExerciseById } from './exercise-library.js?v=exercise-library-3';
+import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=expanded-exercise-lookup-1';
+import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
+import { getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { removeWorkoutSet, setHasRecordedData } from './logger-set-removal.js?v=logger-set-removal-1';
 
 const TIMER_SETTINGS_KEY = 'level_up_exercise_rest_settings';

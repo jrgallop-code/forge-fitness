@@ -1,4 +1,5 @@
-import { getExerciseById } from "./exercise-library.js";
+import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
+import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import {
     endDeloadWorkoutPreview,
     getAdaptiveGuidanceSettings,

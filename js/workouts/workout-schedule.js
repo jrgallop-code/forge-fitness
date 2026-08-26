@@ -1,4 +1,4 @@
-import { openWorkoutLogger } from "../workouts/workout-session.js?v=adaptive-completion-1";
+import { openWorkoutLogger } from "../workouts/workout-session.js?v=expanded-exercise-lookup-1";
 
 const PLAN_KEY = "forge_workout_plans";
 const SESSION_KEY = "forge_workout_sessions";

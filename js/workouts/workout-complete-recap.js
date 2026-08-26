@@ -1,4 +1,5 @@
-import { getExerciseById } from "./exercise-library.js";
+import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
+import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
