@@ -1,7 +1,9 @@
+import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
+
 import {
     getExerciseById
 }
-from "./exercise-library.js";
+from "./exercise-library.js?v=exercise-library-catalogue-2";
 
 import {
     getExerciseOptions

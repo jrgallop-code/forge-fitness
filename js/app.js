@@ -1,6 +1,6 @@
 import { navigate } from "./core/router.js?v=deload-workout-preview-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=deload-workout-preview-1";
-import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=adaptive-completion-1";
+import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=expanded-exercise-lookup-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";
 import "./workouts/exercise-guide-resolution-fix.js?v=1";
