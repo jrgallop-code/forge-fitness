@@ -133,11 +133,23 @@ export function renderProgress() {
 
                         <div>
 
+                            <span class="weight-chart-kicker">
+                                7-DAY ROLLING AVERAGE
+                            </span>
+
                             <h3>Weight Trend</h3>
 
                             <p>
-                                Daily measurements
+                                Daily measurements · smoothed trend
                             </p>
+
+                        </div>
+
+                        <div class="weight-chart-latest" aria-live="polite">
+
+                            <strong data-weight-chart-latest>—</strong>
+
+                            <small>Latest average</small>
 
                         </div>
 
