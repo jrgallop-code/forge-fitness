@@ -52,6 +52,16 @@ test("logged meal items open an editor for serving, meal, quantity, or removal",
     assert.match(styles, /\.food-entry-edit/);
 });
 
+test("food diary uses a restrained native typography hierarchy", async () => {
+    const styles = await read("../css/food-log.css");
+    assert.match(styles, /Refined native typography/);
+    assert.match(styles, /"SF Pro Text"/);
+    assert.match(styles, /\.food-log-heading h2\{[^}]*font-size:28px[^}]*font-weight:700/);
+    assert.match(styles, /\.food-calorie-total strong\{[^}]*font-size:27px[^}]*font-weight:700/);
+    assert.match(styles, /\.food-meal summary strong\{[^}]*font-size:15\.5px[^}]*font-weight:650/);
+    assert.match(styles, /\.food-entry-edit strong\{[^}]*font-size:14px[^}]*font-weight:600/);
+});
+
 test("custom foods collect MyFitnessPal-style serving details", async () => {
     const module = await read("../js/nutrition/food-log.js");
     assert.match(module, /Brand name/);
