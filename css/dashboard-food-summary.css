@@ -1,0 +1,185 @@
+.dashboard.dashboard-command-insights .dashboard-food-summary-card {
+    grid-column: 1 / -1;
+    overflow: hidden;
+    padding: 17px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 21px;
+    background:
+        radial-gradient(circle at 50% 5%, rgba(255, 36, 52, .09), transparent 45%),
+        #1b1b1e;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035), 0 14px 34px rgba(0, 0, 0, .2);
+}
+
+.dashboard-food-summary-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.dashboard-food-summary-heading h3 {
+    margin: 4px 0 0;
+    color: #fff;
+    font-size: 1.2rem;
+    letter-spacing: -.02em;
+}
+
+.dashboard-food-summary-heading > button {
+    min-height: 34px;
+    padding: 5px 9px;
+    border: 0;
+    background: transparent;
+    color: #ff4654;
+    font-family: inherit;
+    font-size: .72rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.dashboard-food-summary-heading > button span {
+    margin-left: 2px;
+    font-size: 1.1rem;
+    vertical-align: -.08em;
+}
+
+.dashboard-calorie-summary {
+    position: relative;
+    display: grid;
+    width: min(100%, 340px);
+    min-height: 150px;
+    margin: 2px auto 12px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #fff;
+}
+
+.dashboard-calorie-summary svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.dashboard-calorie-summary path {
+    fill: none;
+    stroke-linecap: round;
+    stroke-width: 16;
+}
+
+.dashboard-calorie-arc-track {
+    stroke: rgba(255, 255, 255, .095);
+}
+
+.dashboard-calorie-arc-value {
+    stroke: #ff2638;
+    filter: drop-shadow(0 0 8px rgba(255, 38, 56, .2));
+}
+
+.dashboard-calorie-copy {
+    position: absolute;
+    inset: 53px 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.dashboard-calorie-copy strong {
+    font-size: clamp(2rem, 9vw, 2.7rem);
+    line-height: 1;
+    letter-spacing: -.045em;
+}
+
+.dashboard-calorie-copy strong small {
+    color: #fff;
+    font-size: .46em;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.dashboard-calorie-copy > span {
+    margin-top: 8px;
+    color: #a5a5ad;
+    font-size: .76rem;
+}
+
+.dashboard-calorie-toggle-icon {
+    position: absolute;
+    z-index: 1;
+    top: 8px;
+    right: 3px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .06);
+    color: #bdbdc4;
+    font-size: 1rem;
+}
+
+.dashboard-macro-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, .07);
+}
+
+.dashboard-macro-progress {
+    min-width: 0;
+}
+
+.dashboard-macro-progress > span {
+    display: block;
+    color: #d7d7dc;
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.dashboard-macro-progress strong {
+    display: block;
+    margin-top: 4px;
+    overflow: hidden;
+    color: #fff;
+    font-size: .78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dashboard-macro-progress strong small {
+    color: #8f8f98;
+    font-size: .72rem;
+    font-weight: 600;
+}
+
+.dashboard-macro-progress > i {
+    display: block;
+    height: 5px;
+    margin-top: 9px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .09);
+}
+
+.dashboard-macro-progress > i > b {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #4bd184;
+    box-shadow: 0 0 8px rgba(75, 209, 132, .18);
+}
+
+@media (max-width: 380px) {
+    .dashboard.dashboard-command-insights .dashboard-food-summary-card {
+        padding: 15px;
+    }
+
+    .dashboard-macro-summary {
+        gap: 8px;
+    }
+
+    .dashboard-macro-progress strong,
+    .dashboard-macro-progress strong small {
+        font-size: .67rem;
+    }
+}

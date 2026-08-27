@@ -13,6 +13,7 @@ import {
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
+const CALORIES_TAB_KEY = "level_up_calories_tab_v1";
 let selectedDate = localDateKey();
 let selectedFood = null;
 
@@ -21,7 +22,7 @@ export function renderCaloriesHub(planMarkup) {
         <section class="calories-hub" data-calories-hub>
             <div class="calories-tabs" role="tablist" aria-label="Calories sections">
                 <button type="button" class="active" role="tab" aria-selected="true" data-calories-tab="log">Food Log</button>
-                <button type="button" role="tab" aria-selected="false" data-calories-tab="plan">Targets &amp; Plan</button>
+                <button type="button" role="tab" aria-selected="false" data-calories-tab="plan">Goals &amp; Plan</button>
             </div>
             <div data-calories-panel="log">${renderFoodLogShell()}</div>
             <div data-calories-panel="plan" hidden>${planMarkup}</div>
@@ -34,7 +35,7 @@ function renderFoodLogShell() {
     return `
         <section class="food-log-page" data-food-log>
             <header class="food-log-heading">
-                <div><span class="eyebrow">DAILY NUTRITION</span><h2>Food Log</h2></div>
+                <div><span class="eyebrow">DAILY NUTRITION</span><h2>Food Log</h2><button class="food-log-plan-link" type="button" data-food-open-plan>Calorie goals, lean bulk &amp; planning →</button></div>
                 <button class="food-log-add primary-btn" type="button" data-food-add>+ Log Food</button>
             </header>
             <div class="food-log-date-nav">
@@ -109,15 +110,23 @@ export function initializeFoodLog() {
 }
 
 function bindHubTabs(hub) {
-    hub.querySelectorAll("[data-calories-tab]").forEach(button => button.addEventListener("click", () => {
-        const tab = button.dataset.caloriesTab;
+    const showTab = tab => {
+        const safeTab = tab === "plan" ? "plan" : "log";
         hub.querySelectorAll("[data-calories-tab]").forEach(item => {
-            const active = item.dataset.caloriesTab === tab;
+            const active = item.dataset.caloriesTab === safeTab;
             item.classList.toggle("active", active);
             item.setAttribute("aria-selected", String(active));
         });
-        hub.querySelectorAll("[data-calories-panel]").forEach(panel => { panel.hidden = panel.dataset.caloriesPanel !== tab; });
-    }));
+        hub.querySelectorAll("[data-calories-panel]").forEach(panel => { panel.hidden = panel.dataset.caloriesPanel !== safeTab; });
+        localStorage.setItem(CALORIES_TAB_KEY, safeTab);
+        if (safeTab === "plan") {
+            window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: "calories-plan-opened" } }));
+        }
+    };
+
+    hub.querySelectorAll("[data-calories-tab]").forEach(button => button.addEventListener("click", () => showTab(button.dataset.caloriesTab)));
+    hub.querySelector("[data-food-open-plan]")?.addEventListener("click", () => showTab("plan"));
+    showTab(localStorage.getItem(CALORIES_TAB_KEY));
 }
 
 function shiftDate(days) {
