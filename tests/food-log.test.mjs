@@ -12,7 +12,7 @@ globalThis.window = { dispatchEvent() {} };
 globalThis.CustomEvent = class CustomEvent { constructor(type, options) { this.type = type; this.detail = options?.detail; } };
 
 const data = await import("../js/nutrition/food-log-data.js");
-const { dedupeUsdaFoods, mergeFoodResults, normalizeUsdaFood, normalizeVerifiedFood } = await import("../cloud/src/index.js");
+const { dedupeUsdaFoods, mergeFoodResults, normalizeUsdaFood, normalizeVerifiedFood, searchBundledVerifiedFoods } = await import("../cloud/src/index.js");
 
 test("food log scales a serving and totals its macros", () => {
     storage.clear();
@@ -148,6 +148,14 @@ test("logged Level Up foods preserve their catalogue identity", () => {
     const entry = data.createLogEntry({ meal: "Lunch", food, portion: food.portions[0], quantity: 1 });
     assert.equal(entry.catalogueId, "mcd-ca-cheeseburger");
     assert.equal(entry.nutrition.calories, 290);
+});
+
+test("bundled verified foods keep the catalogue working before D1 migration", () => {
+    const burgers = searchBundledVerifiedFoods("McDonald's cheeseburger");
+    const bars = searchBundledVerifiedFoods("Grenade cookie dough");
+    assert.equal(burgers[0].catalogueId, "mcd-ca-cheeseburger");
+    assert.equal(burgers[0].portions[0].label, "1 burger (113 g)");
+    assert.equal(bars[0].portions[0].nutrition.calories, 208);
 });
 
 test("USDA nutrients are converted from 100 g to the labelled gram serving", () => {
