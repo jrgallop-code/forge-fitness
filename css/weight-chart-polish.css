@@ -1,0 +1,96 @@
+#weight-progress .weight-chart-card {
+    position: relative;
+    overflow: hidden;
+    padding: 17px 15px 13px;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 20px;
+    background: linear-gradient(155deg, #151518 0%, #101113 72%, #0f1512 100%);
+    box-shadow: 0 18px 44px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+#weight-progress .weight-chart-card::after {
+    content: "";
+    position: absolute;
+    inset: auto 12% -46px;
+    height: 90px;
+    border-radius: 50%;
+    background: rgba(69,203,117,.07);
+    filter: blur(34px);
+    pointer-events: none;
+}
+
+#weight-progress .weight-chart-card .chart-header {
+    position: relative;
+    z-index: 1;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 14px;
+}
+
+#weight-progress .weight-chart-kicker {
+    display: block;
+    margin-bottom: 6px;
+    color: #45cb75;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .18em;
+}
+
+#weight-progress .chart-header h3 {
+    margin: 0;
+    font-size: 21px;
+    letter-spacing: -.025em;
+}
+
+#weight-progress .chart-header p {
+    margin-top: 4px;
+    color: #85858e;
+    font-size: 10px;
+}
+
+#weight-progress .weight-chart-latest {
+    display: grid;
+    flex: 0 0 auto;
+    gap: 2px;
+    margin-left: auto;
+    text-align: right;
+}
+
+#weight-progress .weight-chart-latest strong {
+    color: #74dc98;
+    font-size: 19px;
+    letter-spacing: -.025em;
+}
+
+#weight-progress .weight-chart-latest small {
+    color: #73737d;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+#weight-progress .weight-chart-range-control {
+    position: relative;
+    z-index: 1;
+    margin-top: 13px;
+}
+
+#weight-progress #weight-trend-chart {
+    position: relative;
+    z-index: 1;
+    display: block;
+    margin-top: 3px;
+}
+
+@media (max-width: 380px) {
+    #weight-progress .weight-chart-card {
+        padding-inline: 12px;
+    }
+
+    #weight-progress .weight-chart-latest strong {
+        font-size: 17px;
+    }
+
+    #weight-progress .chart-header p {
+        max-width: 160px;
+    }
+}
