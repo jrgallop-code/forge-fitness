@@ -135,6 +135,27 @@ export function drawStrengthIndexChart(canvas, points) {
     context.fillText(formatShortDate(points.at(-1).date), width - padding.right, height - 14);
 }
 
+export function renderStrengthIndexSummary(target, latest, timeframeLabel = "") {
+    if (!target || !latest) return;
+    const change = Number(latest.value) - 100;
+    const sign = change > 0 ? "+" : "";
+    const changeClass = change > 0 ? "is-positive" : change < 0 ? "is-negative" : "is-neutral";
+    const context = timeframeLabel ? `${timeframeLabel} view · ` : "";
+
+    target.className = "strength-index-summary";
+    target.innerHTML = `
+        <span class="strength-index-summary__kicker">Current index</span>
+        <span class="strength-index-summary__metrics">
+            <strong>${Number(latest.value).toFixed(1)}</strong>
+            <span class="strength-index-summary__change ${changeClass}">
+                <b>${sign}${change.toFixed(1)}%</b>
+                <small>vs baseline</small>
+            </span>
+        </span>
+        <small class="strength-index-summary__context">${context}${latest.exerciseCount} of 6 movement categories</small>
+    `;
+}
+
 function formatShortDate(value) {
     return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" })
         .format(new Date(`${value}T12:00:00`));
