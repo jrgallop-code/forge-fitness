@@ -19,3 +19,27 @@
 .food-portion-loading{display:grid;justify-items:center;gap:7px;padding:36px 18px;border:1px solid #36363d;border-radius:15px;background:#202024;text-align:center}.food-portion-loading strong{color:#fff;font-size:17px}.food-portion-loading span,.food-portion-warning{color:#9999a3;font-size:12px;line-height:1.45}.food-portion-loading:before{content:"";width:28px;height:28px;border:3px solid #3a3a40;border-top-color:#ff4050;border-radius:50%;animation:food-serving-spin .75s linear infinite}@keyframes food-serving-spin{to{transform:rotate(360deg)}}.food-portion-warning{margin:0;padding:10px 12px;border:1px solid rgba(255,190,67,.28);border-radius:11px;background:rgba(255,190,67,.08);color:#e9c777}
 .custom-food-form{padding:2px 0 18px}.custom-food-form input,.custom-food-form select{min-width:0;width:100%;min-height:48px;border:1px solid #43434b;border-radius:13px;background:#222226;color:#f7f7f8;padding:0 13px;font:inherit}.custom-food-intro,.custom-nutrition-heading{display:grid;gap:4px;padding:2px 1px}.custom-food-intro strong,.custom-nutrition-heading strong{color:#f7f7f8;font-size:18px}.custom-food-intro small,.custom-nutrition-heading small{color:#8f8f99;font-size:12px;line-height:1.45}.custom-serving-fields{min-width:0;margin:0;padding:12px;border:1px solid #393940;border-radius:15px;background:#1d1d21}.custom-serving-fields legend{padding:0 7px;color:#aaaab3;font-size:12px;font-weight:800}.custom-serving-fields>div{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:10px}.custom-serving-fields label{display:grid;gap:6px}.custom-serving-fields label>span{color:#85858e;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}.custom-nutrition-heading{margin-top:4px;padding-top:14px;border-top:1px solid #34343a}.custom-food-form .primary-btn{min-height:50px;margin-top:4px}
 .food-portion-preview{display:grid;gap:5px}.food-portion-preview strong{color:#fff;font-size:15px}.food-portion-preview span{color:#b7b7bf;font-size:12px}
+
+/* Refined native typography */
+.food-log-page,.food-sheet-card{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;font-feature-settings:"tnum" 1,"kern" 1;-webkit-font-smoothing:antialiased}
+.food-log-heading h2{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;font-size:28px;font-weight:700;letter-spacing:-.025em;line-height:1.08}
+.food-log-page .eyebrow,.food-sheet-card .eyebrow{font-size:10px;font-weight:700;letter-spacing:.11em}
+.food-log-plan-link{font-size:11.5px;font-weight:650}
+.food-log-add{font-size:13px;font-weight:700}
+.food-log-date-nav strong{font-size:14px;font-weight:650}.food-log-date-nav small{font-size:11.5px;font-weight:450}
+.food-calorie-total span,.food-macro-total span{font-size:10.5px;font-weight:650;letter-spacing:.075em}
+.food-calorie-total strong{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;font-size:27px;font-weight:700;letter-spacing:-.025em}
+.food-calorie-total small{font-size:11.5px;font-weight:500}
+.food-macro-total strong{font-size:14px;font-weight:650;letter-spacing:-.01em}
+.food-meal summary strong{font-size:15.5px;font-weight:650;letter-spacing:-.01em}.food-meal summary small{font-size:11.5px;font-weight:450}.food-meal summary b{font-size:13px;font-weight:600}
+.food-entry-edit strong{font-size:14px;font-weight:600;letter-spacing:-.005em}.food-entry-edit small{font-size:11.5px;font-weight:450}.food-entry-edit>b{font-size:12px;font-weight:600}
+.food-add-meal{font-size:13px;font-weight:700}.food-save-diary-meal{font-size:11.5px;font-weight:600}
+.calories-tabs button,.food-sheet-tabs button{font-weight:650}
+.food-sheet-card h2{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;font-size:23px;font-weight:700;letter-spacing:-.02em}
+.food-meal-picker>span{font-size:10px;font-weight:700}.food-meal-picker button{font-size:10.5px;font-weight:650}
+.food-result strong,.food-saved-meal strong{font-size:14px;font-weight:600}.food-result>b{font-size:13px;font-weight:600}
+.food-portion-heading h3{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;font-size:18px;font-weight:650;letter-spacing:-.015em}
+.custom-food-form label,.food-portion-panel>label,.food-meal-builder>label{font-size:11.5px;font-weight:650}
+.food-portion-preview{font-weight:600}.food-portion-preview strong{font-size:14px;font-weight:650}.food-portion-preview span{font-size:11.5px;font-weight:450}
+.food-edit-remove{font-size:13px;font-weight:650}
+@media(max-width:520px){.food-log-heading h2{font-size:27px}.food-calorie-total strong{font-size:26px}.food-macro-total strong{font-size:13.5px}}
