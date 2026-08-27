@@ -57,6 +57,21 @@ test("food log scales a serving and totals its macros", () => {
     assert.equal(totals.fat, 1.5);
 });
 
+test("food log preserves gram amounts above 100 from barcode portions", () => {
+    storage.clear();
+    const food = {
+        source: "openfoodfacts",
+        barcode: "12345670",
+        name: "Red potatoes",
+        portions: [{ label: "1 g", grams: 1, nutrition: { calories: .8, protein: .02, carbs: .18, fat: 0 } }]
+    };
+    const entry = data.createLogEntry({ meal: "Dinner", food, portion: food.portions[0], quantity: 250 });
+    assert.equal(entry.quantity, 250);
+    assert.equal(entry.servingLabel, "1 g");
+    assert.equal(entry.nutrition.calories, 200);
+    assert.equal(entry.nutrition.carbs, 45);
+});
+
 test("food log keeps days and meals separate and removes exact entries", () => {
     storage.clear();
     const food = { source: "custom", name: "Oats", nutrition: { calories: 150, protein: 5, carbs: 27, fat: 3 }, portions: [] };
