@@ -1,4 +1,4 @@
-import { ACTIVE_WORKOUT_STORAGE_KEY } from "./workout-session.js?v=swap-history-metadata-1";
+import { ACTIVE_WORKOUT_STORAGE_KEY } from "./workout-session.js?v=repair-generic-exercise-1";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
 
 const TIMER_SETTINGS_KEY = "level_up_exercise_rest_settings";

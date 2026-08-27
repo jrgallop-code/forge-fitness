@@ -1,6 +1,7 @@
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
+import { repairWorkoutSessionList, resolveSessionExerciseIdentity } from "./session-exercise-identity.js?v=repair-generic-exercise-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const ARM_HERO_URL = "assets/workout-complete-arm.webp?v=2";
@@ -187,7 +188,7 @@ function findWins(session, history, stats) {
     if (!current.length || !prior.length) return;
     const currentWeight=Math.max(...current.map(s=>Number(s.weight)||0));
     const priorWeight=Math.max(...prior.map(s=>Number(s.weight)||0));
-    const exerciseName=item.name||item.exerciseName||exercise?.name||"Exercise";
+    const exerciseName=resolveSessionExerciseIdentity(item).name;
     if (currentWeight>priorWeight) wins.push({type:"WEIGHT PR",icon:"🏆",title:exerciseName,value:`${formatNumber(currentWeight)} lb`,detail:"NEW RECORD!",isNew:true});
     const currentReps=Math.max(...current.map(s=>Number(s.reps)||0));
     const priorReps=Math.max(...prior.map(s=>Number(s.reps)||0));
@@ -251,7 +252,7 @@ function closeRecap() {
   document.querySelector('.nav-btn[data-page="workout"]')?.click();
 }
 
-function readSessions(){try{const parsed=JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY)||"[]");return Array.isArray(parsed)?parsed:[];}catch{return[];}}
+function readSessions(){try{const parsed=JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY)||"[]");if(!Array.isArray(parsed))return[];const repaired=repairWorkoutSessionList(parsed);if(repaired.changed)localStorage.setItem(SESSION_STORAGE_KEY,JSON.stringify(repaired.sessions));return repaired.sessions;}catch{return[];}}
 function formatDuration(ms){const total=Math.max(0,Math.round((Number(ms)||0)/1000));const h=Math.floor(total/3600),m=Math.floor((total%3600)/60),s=total%60;return h?`${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`:`${m}:${String(s).padStart(2,"0")}`;}
 function formatDurationShort(ms){const total=Math.max(0,Math.round((Number(ms)||0)/60000));return `${total} min`;}
 function formatNumber(value){return Math.round(Number(value)||0).toLocaleString();}

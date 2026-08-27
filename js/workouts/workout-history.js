@@ -1,9 +1,9 @@
 import { navigate } from "../core/router.js?v=adaptive-guidance-1";
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
-import { exercises } from "./exercise-library.js?v=exercise-library-cardio-3";
 import { calculatePrCounts } from "./workout-pr-badges.js?v=workout-pr-badges-2";
-import { deleteCompletedWorkout, discardActiveWorkout, getActiveWorkout, getWorkoutSessions, openActiveWorkout, openCompletedWorkoutForEdit } from "./workout-session.js?v=swap-history-metadata-1";
+import { deleteCompletedWorkout, discardActiveWorkout, getActiveWorkout, getWorkoutSessions, openActiveWorkout, openCompletedWorkoutForEdit } from "./workout-session.js?v=repair-generic-exercise-1";
 import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
+import { resolveSessionExerciseIdentity } from "./session-exercise-identity.js?v=repair-generic-exercise-1";
 
 export function renderWorkoutHistory() {
     const active = getActiveWorkout();
@@ -82,15 +82,10 @@ function renderPreviewSet(set, index) {
 }
 
 function resolveExerciseDetails(exercise) {
-    const id = exercise?.exerciseId || exercise?.id;
-    const libraryExercise = id ? exercises.find(item => String(item.id) === String(id)) : null;
-    return {
-        name: exercise?.name || exercise?.exerciseName || libraryExercise?.name || (exercise?.trackingType === "notes" ? "Cardio" : "Exercise"),
-        muscleGroup: exercise?.muscleGroup || libraryExercise?.muscleGroup || "",
-        type: exercise?.type || libraryExercise?.type || (exercise?.trackingType === "notes" ? "cardio" : "resistance"),
-        equipment: exercise?.equipment || libraryExercise?.equipment || "",
-        trackingType: exercise?.trackingType || libraryExercise?.trackingType || "reps"
-    };
+    const resolved = resolveSessionExerciseIdentity(exercise);
+    return resolved.trackingType === "notes" && resolved.name === "Exercise"
+        ? { ...resolved, name: "Cardio", type: resolved.type || "cardio" }
+        : resolved;
 }
 
 function formatExerciseMeta(details, cardio) {

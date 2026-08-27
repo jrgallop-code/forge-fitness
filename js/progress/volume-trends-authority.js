@@ -1,4 +1,4 @@
-import { initializeWeeklyMuscleVolume } from "./weekly-muscle-volume.js?v=volume-trends-1";
+import { initializeWeeklyMuscleVolume } from "./weekly-muscle-volume.js?v=repair-generic-exercise-1";
 
 function ensureStyles() {
     if (document.querySelector('link[data-volume-trends-style="true"]')) return;

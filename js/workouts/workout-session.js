@@ -10,6 +10,12 @@ import {
 }
 from "./workout-ui.js";
 
+import {
+    repairWorkoutSessionList,
+    resolveSessionExerciseIdentity
+}
+from "./session-exercise-identity.js?v=repair-generic-exercise-1";
+
 
 const SESSION_STORAGE_KEY =
     "forge_workout_sessions";
@@ -540,18 +546,10 @@ function exerciseStateMetadata(definition, plannedExercise = {}) {
 }
 
 function enrichCompletedExercise(exercise, plannedExercise = {}) {
-    const exerciseId = exercise?.exerciseId || plannedExercise?.id || "";
-    const definition = getExerciseById(exerciseId);
+    const identity = resolveSessionExerciseIdentity(exercise, plannedExercise);
     return {
         ...exercise,
-        exerciseId,
-        ...exerciseStateMetadata(definition, {
-            ...plannedExercise,
-            name: exercise?.name || exercise?.exerciseName || plannedExercise?.name,
-            muscleGroup: exercise?.muscleGroup || plannedExercise?.muscleGroup,
-            type: exercise?.type || plannedExercise?.type,
-            equipment: exercise?.equipment || plannedExercise?.equipment
-        })
+        ...identity
     };
 }
 
@@ -1735,9 +1733,12 @@ function getSavedSessions() {
                 ) ||
                 "[]"
             );
-        return Array.isArray(parsed)
-            ? parsed
-            : [];
+        if (!Array.isArray(parsed)) return [];
+        const repaired = repairWorkoutSessionList(parsed);
+        if (repaired.changed) {
+            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(repaired.sessions));
+        }
+        return repaired.sessions;
     }
     catch {
         return [];

@@ -1,6 +1,7 @@
 import "../workouts/exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { createGeneratedExerciseGuide } from "../workouts/exercise-guide-generator.js?v=full-library-guides-1";
+import { repairWorkoutSessionList } from "../workouts/session-exercise-identity.js?v=repair-generic-exercise-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const PLAN_STORAGE_KEY = "forge_workout_plans";
@@ -561,7 +562,9 @@ function getSessions() {
     try {
         const parsed = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || "[]");
         if (!Array.isArray(parsed)) return [];
-        return parsed
+        const repaired = repairWorkoutSessionList(parsed);
+        if (repaired.changed) localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(repaired.sessions));
+        return repaired.sessions
             .filter(session => session && isValidDateValue(session.date))
             .sort(sortByDate);
     }
