@@ -41,3 +41,20 @@ Incline Bench Press / 2x8-10 Pec Deck / 2x10-12 Lat Pulldown / 3x8-12`);
   assert.equal(result.days[0].name, "Upper");
   assert.deepEqual(result.days[0].exercises.map(item => item.sets), [2, 2, 3]);
 });
+
+test("splits exercise rows collapsed by ChatGPT or iPhone paste", () => {
+  const result = parseRoutineText(`Day 1\nBench Press – 4x6-10 Incline Dumbbell Press – 4x8-12 Overhead Press – 3x6-10 Lateral Raises – 3x15-20 Triceps Pushdowns – 3x12-15\n\u2028Day 2 — Pull (Back, Biceps, Rear Delts)\u2028Pull-Ups or Lat Pulldowns – 4x8-12 Barbell Rows – 3x6-10 Dumbbell Curls – 3x10-15 Hammer Curls – 3x10-15 Face Pulls – 3x15-20`);
+
+  assert.equal(result.days.length, 2);
+  assert.equal(result.days[0].name, "Day 1");
+  assert.equal(result.days[0].exercises.length, 5);
+  assert.equal(result.days[1].exercises.length, 5);
+  assert.deepEqual(result.days[1].exercises.map(item => item.name), [
+    "Pull-Ups or Lat Pulldowns",
+    "Barbell Rows",
+    "Dumbbell Curls",
+    "Hammer Curls",
+    "Face Pulls"
+  ]);
+  assert.deepEqual(result.skipped, []);
+});

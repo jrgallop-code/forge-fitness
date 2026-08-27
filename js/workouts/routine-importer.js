@@ -1,5 +1,5 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
-import { parseRoutineText } from "./routine-import-parser.js?v=reddit-import-1";
+import { parseRoutineText } from "./routine-import-parser.js?v=collapsed-lines-1";
 
 const PLAN_KEY = "forge_workout_plans";
 const EXAMPLE = `Push Day
