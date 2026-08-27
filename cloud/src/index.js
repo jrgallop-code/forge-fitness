@@ -51,6 +51,9 @@ async function handleRequest(request, env) {
     if (url.pathname === "/v1/admin/analytics" && request.method === "GET") {
         return getAdminAnalytics(user, url, request, env);
     }
+    if (url.pathname === "/v1/foods/search" && request.method === "GET") {
+        return searchUsdaFoods(url, request, env);
+    }
     if (url.pathname === "/v1/import/reddit" && request.method === "POST") {
         const body = await readJson(request, 8 * 1024);
         return importRedditSource(body, request, env);
@@ -335,6 +338,110 @@ async function requireUser(request, env) {
         WHERE sessions.token_hash = ? AND sessions.expires_at > ? AND users.beta_status = 'active'
     `).bind(tokenHash, new Date().toISOString()).first();
     return row || null;
+}
+
+async function searchUsdaFoods(url, request, env) {
+    const query = String(url.searchParams.get("q") || "").trim().replace(/\s+/g, " ");
+    if (query.length < 2) return json({ error: "Enter at least 2 characters." }, 400, request, env);
+    if (query.length > 80) return json({ error: "Food search is too long." }, 400, request, env);
+    if (!env.USDA_FDC_API_KEY) {
+        return json({ error: "USDA food search is not configured yet." }, 503, request, env);
+    }
+
+    const upstreamUrl = new URL("https://api.nal.usda.gov/fdc/v1/foods/search");
+    upstreamUrl.searchParams.set("api_key", env.USDA_FDC_API_KEY);
+    upstreamUrl.searchParams.set("query", query);
+    upstreamUrl.searchParams.set("pageSize", "15");
+    upstreamUrl.searchParams.set("pageNumber", "1");
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    let response;
+    try {
+        response = await fetch(upstreamUrl, {
+            headers: { "Accept": "application/json" },
+            signal: controller.signal
+        });
+    }
+    catch (error) {
+        console.error(JSON.stringify({ event: "usda_food_search_failed", reason: error?.name === "AbortError" ? "timeout" : "network" }));
+        return json({ error: "USDA food search is temporarily unavailable." }, 502, request, env);
+    }
+    finally {
+        clearTimeout(timeout);
+    }
+
+    if (!response.ok) {
+        console.error(JSON.stringify({ event: "usda_food_search_failed", status: response.status }));
+        const status = response.status === 429 ? 429 : 502;
+        const message = response.status === 429
+            ? "USDA search is busy. Wait a moment and try again."
+            : "USDA food search is temporarily unavailable.";
+        return json({ error: message }, status, request, env);
+    }
+
+    const payload = await response.json();
+    const foods = Array.isArray(payload?.foods)
+        ? payload.foods.map(normalizeUsdaFood).filter(Boolean)
+        : [];
+    return json({ foods, source: "USDA FoodData Central" }, 200, request, env);
+}
+
+export function normalizeUsdaFood(food) {
+    const fdcId = Number(food?.fdcId);
+    const name = limitedText(food?.description, 180);
+    if (!Number.isFinite(fdcId) || !name) return null;
+
+    const per100 = {
+        calories: usdaNutrient(food, ["208", "1008"], ["energy"], "KCAL"),
+        protein: usdaNutrient(food, ["203", "1003"], ["protein"]),
+        carbs: usdaNutrient(food, ["205", "1005"], ["carbohydrate, by difference", "carbohydrate"]),
+        fat: usdaNutrient(food, ["204", "1004"], ["total lipid (fat)", "total fat"]),
+        fiber: usdaNutrient(food, ["291", "1079"], ["fiber, total dietary", "dietary fiber"])
+    };
+    const portions = [];
+    const servingSize = Number(food?.servingSize);
+    const servingUnit = String(food?.servingSizeUnit || "").trim().toLowerCase();
+    if (Number.isFinite(servingSize) && servingSize > 0 && ["g", "gram", "grams"].includes(servingUnit)) {
+        const multiplier = servingSize / 100;
+        portions.push({
+            label: limitedText(food?.householdServingFullText, 80) || `${formatFoodNumber(servingSize)} g`,
+            grams: servingSize,
+            nutrition: scaleUsdaNutrition(per100, multiplier)
+        });
+    }
+    portions.push({ label: "100 g", grams: 100, nutrition: per100 });
+
+    return {
+        source: "usda",
+        fdcId,
+        name,
+        brand: limitedText(food?.brandOwner || food?.brandName, 120),
+        dataType: limitedText(food?.dataType, 60),
+        category: limitedText(food?.foodCategory, 100),
+        portions
+    };
+}
+
+function usdaNutrient(food, numbers, names, requiredUnit = "") {
+    const nutrients = Array.isArray(food?.foodNutrients) ? food.foodNutrients : [];
+    const match = nutrients.find(item => {
+        const number = String(item?.nutrientNumber || item?.number || item?.nutrientId || "");
+        const name = String(item?.nutrientName || item?.name || "").trim().toLowerCase();
+        const unit = String(item?.unitName || item?.unit || "").trim().toUpperCase();
+        const identityMatches = numbers.includes(number) || names.includes(name);
+        return identityMatches && (!requiredUnit || unit === requiredUnit);
+    });
+    const value = Number(match?.value ?? match?.amount);
+    return Number.isFinite(value) && value >= 0 ? value : 0;
+}
+
+function scaleUsdaNutrition(nutrition, multiplier) {
+    return Object.fromEntries(Object.entries(nutrition).map(([key, value]) => [key, Number((value * multiplier).toFixed(3))]));
+}
+
+function formatFoodNumber(value) {
+    return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(1)));
 }
 
 async function putAcquisition(userId, body, request, env) {
