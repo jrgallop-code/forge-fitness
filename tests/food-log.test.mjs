@@ -71,6 +71,21 @@ test("food log keeps days and meals separate and removes exact entries", () => {
     assert.equal(data.entriesForDate("2026-08-28").length, 1);
 });
 
+test("logged foods can be edited without changing their identity or position", () => {
+    storage.clear();
+    const food = { source: "custom", name: "Oats", portions: [{ label: "1 bowl", nutrition: { calories: 150, protein: 5, carbs: 27, fat: 3 } }] };
+    const first = data.createLogEntry({ meal: "Breakfast", food, portion: food.portions[0], quantity: 1 });
+    const second = data.createLogEntry({ meal: "Breakfast", food: { ...food, name: "Banana" }, portion: food.portions[0], quantity: 1 });
+    data.saveEntries("2026-08-27", [first, second]);
+    const replacement = data.createLogEntry({ meal: "Lunch", food, portion: food.portions[0], quantity: 2 });
+    const updated = data.updateEntry("2026-08-27", first.id, replacement);
+    const entries = data.entriesForDate("2026-08-27");
+    assert.equal(updated.id, first.id);
+    assert.equal(entries[0].meal, "Lunch");
+    assert.equal(entries[0].nutrition.calories, 300);
+    assert.equal(entries[1].name, "Banana");
+});
+
 test("yesterday's meal is cloned in full without changing its source entries", () => {
     storage.clear();
     const food = { source: "custom", name: "Potatoes", nutrition: { calories: 180, protein: 4, carbs: 40, fat: 0 }, portions: [] };
@@ -112,7 +127,7 @@ test("USDA search stays behind the Worker and the browser receives normalized fo
     assert.match(worker, /url\.pathname === "\/v1\/foods\/search"/);
     assert.doesNotMatch(browser, /api\.nal\.usda\.gov/);
     assert.match(browser, /\/v1\/foods\/search\?q=/);
-    assert.match(html, /css\/food-log\.css\?v=food-serving-units-1/);
+    assert.match(html, /css\/food-log\.css\?v=food-log-edit-1/);
 });
 
 test("Level Up verified foods use the official item serving before a 100 g option", () => {
