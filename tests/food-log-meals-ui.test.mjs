@@ -47,6 +47,8 @@ test("logged meal items open an editor for serving, meal, quantity, or removal",
     assert.match(module, /Save Changes/);
     assert.match(module, /data-food-edit-remove/);
     assert.match(module, /updateEntry\(selectedDate, editingEntryId, entry\)/);
+    assert.match(module, /if \(addContext === "edit"\) \{\s*closeFoodSheet\(\);\s*return;/);
+    assert.match(module, /Close food editor/);
     assert.match(styles, /\.food-entry-edit/);
 });
 
