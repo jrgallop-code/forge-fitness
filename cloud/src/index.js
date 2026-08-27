@@ -352,13 +352,17 @@ async function searchUsdaFoods(url, request, env) {
     const query = String(url.searchParams.get("q") || "").trim().replace(/\s+/g, " ");
     if (query.length < 2) return json({ error: "Enter at least 2 characters." }, 400, request, env);
     if (query.length > 80) return json({ error: "Food search is too long." }, 400, request, env);
-    const verifiedFoods = await searchVerifiedFoods(query, env);
+    const [verifiedFoods, externalFoods] = await Promise.all([
+        searchVerifiedFoods(query, env),
+        searchExternalFoodCache(query, env)
+    ]);
+    const availableFoods = mergeFoodResults(verifiedFoods, externalFoods).slice(0, 16);
     if (!env.USDA_FDC_API_KEY) {
-        if (verifiedFoods.length) {
+        if (availableFoods.length) {
             return json({
-                foods: verifiedFoods,
-                source: "Level Up Verified",
-                warning: "USDA search is not configured; showing Level Up verified foods only."
+                foods: availableFoods,
+                source: foodSearchSource(verifiedFoods, [], externalFoods),
+                warning: "USDA search is not configured; showing available catalogue foods."
             }, 200, request, env);
         }
         return json({ error: "USDA food search is not configured yet." }, 503, request, env);
@@ -392,11 +396,11 @@ async function searchUsdaFoods(url, request, env) {
     }
     catch (error) {
         console.error(JSON.stringify({ event: "usda_food_search_failed", reason: error?.name === "AbortError" ? "timeout" : "network" }));
-        if (verifiedFoods.length) {
+        if (availableFoods.length) {
             return json({
-                foods: verifiedFoods,
-                source: "Level Up Verified",
-                warning: "USDA is temporarily unavailable; showing Level Up verified foods only."
+                foods: availableFoods,
+                source: foodSearchSource(verifiedFoods, [], externalFoods),
+                warning: "USDA is temporarily unavailable; showing available catalogue foods."
             }, 200, request, env);
         }
         return json({ error: "USDA food search is temporarily unavailable." }, 502, request, env);
@@ -408,11 +412,11 @@ async function searchUsdaFoods(url, request, env) {
 
     if (!response.ok) {
         console.error(JSON.stringify({ event: "usda_food_search_failed", status: response.status }));
-        if (verifiedFoods.length) {
+        if (availableFoods.length) {
             return json({
-                foods: verifiedFoods,
-                source: "Level Up Verified",
-                warning: "USDA is temporarily unavailable; showing Level Up verified foods only."
+                foods: availableFoods,
+                source: foodSearchSource(verifiedFoods, [], externalFoods),
+                warning: "USDA is temporarily unavailable; showing available catalogue foods."
             }, 200, request, env);
         }
         const status = response.status === 429 ? 429 : 502;
@@ -433,11 +437,19 @@ async function searchUsdaFoods(url, request, env) {
         console.error(JSON.stringify({ event: "usda_brand_search_failed", brand: brandSearch?.name, status: brandResponse.status }));
     }
     const usdaFoods = dedupeUsdaFoods([...brandFoods, ...searchFoods].map(normalizeUsdaFood).filter(Boolean));
-    const foods = mergeFoodResults(verifiedFoods, usdaFoods).slice(0, 16);
+    const foods = mergeFoodResults(verifiedFoods, usdaFoods, externalFoods).slice(0, 16);
     return json({
         foods,
-        source: verifiedFoods.length ? "Level Up Verified + USDA FoodData Central" : "USDA FoodData Central"
+        source: foodSearchSource(verifiedFoods, usdaFoods, externalFoods)
     }, 200, request, env);
+}
+
+function foodSearchSource(verifiedFoods, usdaFoods, externalFoods) {
+    const sources = [];
+    if (verifiedFoods.length) sources.push("Level Up Verified");
+    if (usdaFoods.length) sources.push("USDA FoodData Central");
+    if (externalFoods.length) sources.push("Open Food Facts");
+    return sources.join(" + ");
 }
 
 async function getFoodByBarcode(value, request, env, ctx) {
@@ -655,6 +667,48 @@ async function readExternalFoodCache(barcode, env) {
         console.info(JSON.stringify({ event: "external_food_cache_read_unavailable", reason: String(error?.message || error) }));
         return null;
     }
+}
+
+async function searchExternalFoodCache(query, env) {
+    if (!env?.DB) return [];
+    try {
+        const result = await env.DB.prepare(`
+            SELECT food_json
+            FROM external_food_barcode_cache
+            WHERE expires_at > ?
+            ORDER BY updated_at DESC
+            LIMIT 200
+        `).bind(new Date().toISOString()).all();
+        return searchCachedExternalFoods(result?.results, query).slice(0, 8);
+    }
+    catch (error) {
+        console.info(JSON.stringify({ event: "external_food_cache_search_unavailable", reason: String(error?.message || error) }));
+        return [];
+    }
+}
+
+export function searchCachedExternalFoods(rows, query) {
+    const tokens = foodIdentity(query).split(" ").filter(token => token.length > 1);
+    if (!tokens.length) return [];
+    const foods = (Array.isArray(rows) ? rows : []).map(row => {
+        try {
+            return typeof row?.food_json === "string" ? JSON.parse(row.food_json) : row?.food_json;
+        }
+        catch {
+            return null;
+        }
+    }).filter(food => {
+        if (!food?.name || !food?.barcode || !Array.isArray(food?.portions)) return false;
+        const searchable = foodIdentity(`${food.name} ${food.brand || ""}`);
+        return tokens.every(token => searchable.includes(token));
+    }).map(food => {
+        const portions = food.portions.map(portion => ({
+            ...portion,
+            label: foodServingLabel(portion?.label, portion?.grams)
+        }));
+        return { ...food, portions: addUsefulGramPortions(portions) };
+    });
+    return mergeFoodResults(foods);
 }
 
 async function writeExternalFoodCache(barcode, food, env) {
@@ -899,10 +953,10 @@ export function normalizeVerifiedFood(row) {
     };
 }
 
-export function mergeFoodResults(verifiedFoods, usdaFoods) {
+export function mergeFoodResults(...foodGroups) {
     const merged = [];
     const identities = new Set();
-    [...(Array.isArray(verifiedFoods) ? verifiedFoods : []), ...(Array.isArray(usdaFoods) ? usdaFoods : [])].forEach(food => {
+    foodGroups.flatMap(group => Array.isArray(group) ? group : []).forEach(food => {
         if (!food) return;
         const identity = `${foodIdentity(food.name)}|${foodIdentity(food.brand)}`;
         if (identities.has(identity)) return;
@@ -1016,6 +1070,8 @@ export function dedupeUsdaFoods(foods) {
 function foodIdentity(value) {
     return String(value || "")
         .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .replace(/[®™]/g, "")
         .replace(/[^a-z0-9]+/g, " ")
         .trim();
