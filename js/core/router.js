@@ -15,7 +15,7 @@ import { initializeWeightProgressCompact } from "../progress/weight-progress-com
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=analytics-bar-polish-1";
 import { initializeExerciseProgressV2 } from "../progress/exercise-progress-v2.js?v=red-chart-polish-1";
 import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=analytics-summary-polish-1";
-import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.js?v=swap-history-metadata-1";
+import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.js?v=repair-generic-exercise-1";
 import { initializeMuscleRecoveryMap } from "../progress/muscle-recovery-map.js?v=recovery-traced-1";
 import { renderSleepTracker, initializeSleepTracker } from "../progress/sleep-tracker.js?v=sleep-tracker-2";
 import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../progress/measurements-tracker.js?v=measurements-image-1";
@@ -27,7 +27,7 @@ import { initializeProteinTargetExplanation } from "../nutrition/protein-target-
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-goal-presets-2";
 import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=deload-workout-preview-1";
-import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=swap-history-metadata-1";
+import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=repair-generic-exercise-1";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-2";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-6";
 import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-drive-backup-3";
