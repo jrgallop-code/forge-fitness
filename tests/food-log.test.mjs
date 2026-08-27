@@ -12,7 +12,7 @@ globalThis.window = { dispatchEvent() {} };
 globalThis.CustomEvent = class CustomEvent { constructor(type, options) { this.type = type; this.detail = options?.detail; } };
 
 const data = await import("../js/nutrition/food-log-data.js");
-const { dedupeUsdaFoods, normalizeUsdaFood } = await import("../cloud/src/index.js");
+const { dedupeUsdaFoods, mergeFoodResults, normalizeUsdaFood, normalizeVerifiedFood } = await import("../cloud/src/index.js");
 
 test("food log scales a serving and totals its macros", () => {
     storage.clear();
@@ -88,6 +88,66 @@ test("USDA search stays behind the Worker and the browser receives normalized fo
     assert.doesNotMatch(browser, /api\.nal\.usda\.gov/);
     assert.match(browser, /\/v1\/foods\/search\?q=/);
     assert.match(html, /css\/food-log\.css\?v=food-search-lazy-1/);
+});
+
+test("Level Up verified foods use the official item serving before a 100 g option", () => {
+    const food = normalizeVerifiedFood({
+        id: "grenade-cookie-dough-60g",
+        name: "Chocolate Chip Cookie Dough Protein Bar",
+        brand: "Grenade",
+        category: "Protein bar",
+        country_code: "CA",
+        serving_label: "1 bar (60 g)",
+        serving_grams: 60,
+        calories: 208,
+        protein_g: 21,
+        carbs_g: 18,
+        fat_g: 7.8,
+        fiber_g: 2.7,
+        source_name: "Grenade",
+        source_url: "https://www.grenade.com/products/protein-bar-cookie-dough",
+        verified_at: "2026-08-27"
+    });
+    assert.equal(food.source, "levelup");
+    assert.equal(food.detailsLoaded, true);
+    assert.equal(food.portions[0].label, "1 bar (60 g)");
+    assert.equal(food.portions[0].nutrition.calories, 208);
+    assert.equal(food.portions[1].label, "100 g");
+    assert.equal(Math.round(food.portions[1].nutrition.calories), 347);
+    assert.equal(food.provenance.sourceName, "Grenade");
+});
+
+test("Level Up verified matches rank before USDA and replace exact duplicates", () => {
+    const verified = [{ source: "levelup", name: "Hamburger", brand: "McDonald's" }];
+    const usda = [
+        { source: "usda", name: "HAMBURGER", brand: "McDonald's" },
+        { source: "usda", name: "Hamburger, plain", brand: "USDA" }
+    ];
+    const merged = mergeFoodResults(verified, usda);
+    assert.equal(merged.length, 2);
+    assert.equal(merged[0].source, "levelup");
+    assert.equal(merged[1].name, "Hamburger, plain");
+});
+
+test("verified food catalogue stores provenance and item-sized restaurant servings", async () => {
+    const migration = await readFile(new URL("../cloud/migrations/0005_verified_food_catalogue.sql", import.meta.url), "utf8");
+    assert.match(migration, /CREATE TABLE IF NOT EXISTS verified_foods/);
+    assert.match(migration, /source_url TEXT NOT NULL/);
+    assert.match(migration, /'1 burger \(113 g\)'/);
+    assert.match(migration, /'1 bar \(60 g\)'/);
+    assert.match(migration, /McDonald''s Canada/);
+});
+
+test("logged Level Up foods preserve their catalogue identity", () => {
+    const food = {
+        source: "levelup",
+        catalogueId: "mcd-ca-cheeseburger",
+        name: "Cheeseburger",
+        portions: [{ label: "1 burger (113 g)", nutrition: { calories: 290, protein: 14, carbs: 32, fat: 12 } }]
+    };
+    const entry = data.createLogEntry({ meal: "Lunch", food, portion: food.portions[0], quantity: 1 });
+    assert.equal(entry.catalogueId, "mcd-ca-cheeseburger");
+    assert.equal(entry.nutrition.calories, 290);
 });
 
 test("USDA nutrients are converted from 100 g to the labelled gram serving", () => {
