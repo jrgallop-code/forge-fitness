@@ -12,7 +12,24 @@ globalThis.window = { dispatchEvent() {} };
 globalThis.CustomEvent = class CustomEvent { constructor(type, options) { this.type = type; this.detail = options?.detail; } };
 
 const data = await import("../js/nutrition/food-log-data.js");
-const { dedupeUsdaFoods, detectUsdaBrandSearch, mergeFoodResults, normalizeUsdaFood, normalizeVerifiedFood, rankUsdaBrandFoods, searchBundledVerifiedFoods } = await import("../cloud/src/index.js");
+const { barcodeVariants, dedupeUsdaFoods, detectUsdaBrandSearch, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeUsdaFood, normalizeVerifiedFood, rankUsdaBrandFoods, searchBundledVerifiedFoods, selectExactUsdaBarcodeFood } = await import("../cloud/src/index.js");
+
+test("barcode lookup validates GTIN check digits and normalizes formatting", () => {
+    assert.equal(normalizeBarcode("0 36000-29145 2"), "036000291452");
+    assert.equal(isValidBarcode("036000291452"), true);
+    assert.equal(isValidBarcode("4006381333931"), true);
+    assert.equal(isValidBarcode("036000291453"), false);
+    assert.equal(isValidBarcode("123456789"), false);
+});
+
+test("barcode matching treats UPC-A and zero-padded EAN/GTIN as the same product", () => {
+    assert.deepEqual(barcodeVariants("036000291452"), ["036000291452", "0036000291452", "00036000291452"]);
+    const selected = selectExactUsdaBarcodeFood([
+        { fdcId: 1, gtinUpc: "111111111111", description: "Wrong food" },
+        { fdcId: 2, gtinUpc: "0036000291452", description: "Right food", servingSize: 30, labelNutrients: { calories: { value: 120 } } }
+    ], "036000291452");
+    assert.equal(selected.fdcId, 2);
+});
 
 test("food log scales a serving and totals its macros", () => {
     storage.clear();
@@ -177,6 +194,7 @@ test("brand-aware USDA results reject unrelated grenades and rank matching prote
 test("USDA normalization shows the consumer brand instead of a distributor owner", () => {
     const food = normalizeUsdaFood({
         fdcId: 2170186,
+        gtinUpc: "4006381333931",
         description: "CHOCOLATE CHIP COOKIE DOUGH HIGH PROTEIN BARS",
         dataType: "Branded",
         brandName: "GRENADE",
@@ -184,6 +202,7 @@ test("USDA normalization shows the consumer brand instead of a distributor owner
         foodNutrients: []
     });
     assert.equal(food.brand, "GRENADE");
+    assert.equal(food.barcode, "4006381333931");
 });
 
 test("USDA nutrients are converted from 100 g to the labelled gram serving", () => {

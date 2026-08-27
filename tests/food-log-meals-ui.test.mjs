@@ -39,3 +39,20 @@ test("users can build, save, and quickly log reusable meals", async () => {
     assert.match(module, /saveSavedMeal/);
     assert.match(module, /logSavedMeal\(selectedDate, meal, selectedMeal\)/);
 });
+
+test("food picker includes a compact barcode scanner with manual and custom fallbacks", async () => {
+    const [module, styles, worker] = await Promise.all([
+        read("../js/nutrition/food-log.js"),
+        read("../css/food-barcode-scanner.css"),
+        read("../cloud/src/index.js")
+    ]);
+    assert.match(module, /data-barcode-open/);
+    assert.match(module, /facingMode: \{ ideal: "environment" \}/);
+    assert.match(module, /Only the barcode number is sent for lookup/);
+    assert.match(module, /\/v1\/foods\/barcode\//);
+    assert.match(module, /Create a custom food with this barcode/);
+    assert.match(module, /barcodeScannerControls\?\.stop/);
+    assert.match(styles, /food-barcode-frame/);
+    assert.match(worker, /selectExactUsdaBarcodeFood/);
+    assert.match(worker, /usdaFoodSearchUrl\(env\.USDA_FDC_API_KEY, barcode, 50, "Branded"\)/);
+});

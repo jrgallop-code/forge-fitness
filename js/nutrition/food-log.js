@@ -22,6 +22,8 @@ import {
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
 const CALORIES_TAB_KEY = "level_up_calories_tab_v1";
+const ZXING_BROWSER_URL = "https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/zxing-browser.min.js";
+const ZXING_BROWSER_INTEGRITY = "sha384-HRtzk9lZgkbSgvUyQrnfC/GxiXZgwaNyD7hC9wcXlsBpDhkS80ISl73juef2FRuf";
 let selectedDate = localDateKey();
 let selectedFood = null;
 let selectedMeal = "Breakfast";
@@ -30,7 +32,12 @@ let mealDraft = null;
 let foodSearchController = null;
 let foodDetailController = null;
 let foodSelectionRequest = 0;
+let barcodeScannerControls = null;
+let barcodeLookupActive = false;
+let barcodeLookupController = null;
+let zxingLoadPromise = null;
 const foodDetailCache = new Map();
+const barcodeFoodCache = new Map();
 
 export function renderCaloriesHub(planMarkup) {
     return `
@@ -77,7 +84,7 @@ function renderFoodSheet() {
                     <div role="radiogroup">${MEALS.map(meal => `<button type="button" role="radio" aria-checked="false" data-food-target-meal="${meal}">${meal}</button>`).join("")}</div>
                 </div>
                 <form class="food-search" data-food-search-form>
-                    <input type="search" name="query" minlength="2" maxlength="80" autocomplete="off" placeholder="Search foods" aria-label="Search foods">
+                    <div class="food-search-field"><input type="search" name="query" minlength="2" maxlength="80" autocomplete="off" placeholder="Search foods" aria-label="Search foods"><button type="button" class="food-barcode-open" data-barcode-open aria-label="Scan a food barcode" title="Scan barcode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7 5v14M10 5v14M14 5v14M17 5v14M20 5v14M2.5 5h2M19.5 5h2M2.5 19h2M19.5 19h2"/></svg></button></div>
                     <button type="submit" class="primary-btn">Search</button>
                 </form>
                 <div class="food-sheet-tabs">
@@ -96,6 +103,7 @@ function renderFoodSheet() {
                 </div>
                 <div class="food-portion-panel" data-food-portion hidden></div>
                 <div class="food-meal-builder" data-meal-builder hidden></div>
+                ${renderBarcodeScanner()}
             </section>
         </div>
         <div class="food-toast" data-food-toast role="status" aria-live="polite" hidden></div>
@@ -107,6 +115,7 @@ function renderCustomFoodForm() {
         <form class="custom-food-form" data-custom-food-form>
             <label>Food name<input name="name" required maxlength="180" placeholder="Homemade turkey chili"></label>
             <label>Serving name<input name="serving" required maxlength="80" placeholder="1 bowl"></label>
+            <label>Barcode <span>(optional)</span><input name="barcode" inputmode="numeric" pattern="[0-9]*" maxlength="14" autocomplete="off" placeholder="Scan or enter 8–14 digits"></label>
             <div class="custom-food-grid">
                 <label>Calories<input name="calories" required type="number" min="0" max="10000" step="1"></label>
                 <label>Protein (g)<input name="protein" required type="number" min="0" max="1000" step="0.1"></label>
@@ -118,9 +127,25 @@ function renderCustomFoodForm() {
     `;
 }
 
+function renderBarcodeScanner() {
+    return `
+        <section class="food-barcode-panel" data-barcode-panel hidden aria-labelledby="food-barcode-title">
+            <header class="food-barcode-heading"><div><span class="eyebrow">QUICK ADD</span><h3 id="food-barcode-title">Scan Barcode</h3></div><button type="button" data-barcode-close aria-label="Close barcode scanner">×</button></header>
+            <div class="food-barcode-camera"><video data-barcode-video playsinline muted></video><div class="food-barcode-frame" aria-hidden="true"></div></div>
+            <p class="food-barcode-status" data-barcode-status role="status" aria-live="polite">Starting camera…</p>
+            <form class="food-barcode-manual" data-barcode-form>
+                <label>Enter barcode manually<input name="barcode" inputmode="numeric" pattern="[0-9]*" minlength="8" maxlength="14" autocomplete="off" placeholder="UPC, EAN, or GTIN"></label>
+                <button type="submit" class="primary-btn">Look Up</button>
+            </form>
+            <button type="button" class="food-barcode-custom" data-barcode-custom hidden>Create a custom food with this barcode</button>
+            <small class="food-barcode-privacy">Only the barcode number is sent for lookup. Camera images stay on your device.</small>
+        </section>`;
+}
+
 export function initializeFoodLog() {
     const hub = document.querySelector("[data-calories-hub]");
     if (!hub) return;
+    ensureBarcodeStyles();
     bindHubTabs(hub);
     hub.querySelector("[data-food-add]")?.addEventListener("click", openFoodSheet);
     hub.querySelectorAll("[data-food-date-shift]").forEach(button => button.addEventListener("click", () => shiftDate(Number(button.dataset.foodDateShift))));
@@ -129,6 +154,10 @@ export function initializeFoodLog() {
     document.querySelectorAll("[data-food-mode]").forEach(button => button.addEventListener("click", () => showFoodMode(button.dataset.foodMode)));
     document.querySelectorAll("[data-food-target-meal]").forEach(button => button.addEventListener("click", () => selectTargetMeal(button.dataset.foodTargetMeal)));
     document.querySelector("[data-food-search-form]")?.addEventListener("submit", searchFoods);
+    document.querySelector("[data-barcode-open]")?.addEventListener("click", openBarcodeScanner);
+    document.querySelector("[data-barcode-close]")?.addEventListener("click", closeBarcodeScanner);
+    document.querySelector("[data-barcode-form]")?.addEventListener("submit", submitManualBarcode);
+    document.querySelector("[data-barcode-custom]")?.addEventListener("click", openCustomFoodForBarcode);
     document.querySelector("[data-custom-food-form]")?.addEventListener("submit", createCustomFood);
     document.querySelector("[data-create-food]")?.addEventListener("click", () => {
         const editor = document.querySelector("[data-custom-food-editor]");
@@ -137,6 +166,15 @@ export function initializeFoodLog() {
     document.querySelector("[data-create-meal]")?.addEventListener("click", () => openMealBuilder());
     window.addEventListener("levelup:food-log-updated", renderDay);
     renderDay();
+}
+
+function ensureBarcodeStyles() {
+    if (document.querySelector("link[data-food-barcode-styles]")) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "css/food-barcode-scanner.css?v=barcode-scanner-1";
+    link.dataset.foodBarcodeStyles = "";
+    document.head.append(link);
 }
 
 function bindHubTabs(hub) {
@@ -232,6 +270,7 @@ function openFoodSheet(meal) {
     selectedFood = null;
     document.querySelector("[data-food-portion]")?.setAttribute("hidden", "");
     document.querySelector("[data-meal-builder]")?.setAttribute("hidden", "");
+    document.querySelector("[data-barcode-panel]")?.setAttribute("hidden", "");
     renderRecents();
     renderSavedMeals();
     renderCustomFoods();
@@ -245,9 +284,182 @@ function closeFoodSheet() {
     foodSelectionRequest += 1;
     foodSearchController?.abort();
     foodDetailController?.abort();
+    closeBarcodeScanner();
     document.body.classList.remove("food-sheet-open");
     addContext = "log";
     mealDraft = null;
+}
+
+async function openBarcodeScanner() {
+    const panel = document.querySelector("[data-barcode-panel]");
+    if (!panel) return;
+    document.querySelector("[data-food-portion]")?.setAttribute("hidden", "");
+    document.querySelector("[data-meal-builder]")?.setAttribute("hidden", "");
+    panel.hidden = false;
+    barcodeLookupActive = false;
+    const customButton = panel.querySelector("[data-barcode-custom]");
+    if (customButton) customButton.hidden = true;
+    setBarcodeStatus("Starting rear camera…");
+
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+        setBarcodeStatus("Camera scanning is not available here. Enter the barcode below instead.");
+        return;
+    }
+    try {
+        await loadZxingBrowser();
+        if (panel.hidden) return;
+        const video = panel.querySelector("[data-barcode-video]");
+        const reader = new window.ZXingBrowser.BrowserMultiFormatReader();
+        barcodeScannerControls = await reader.decodeFromConstraints(
+            { audio: false, video: { facingMode: { ideal: "environment" } } },
+            video,
+            (result, error, controls) => {
+                if (!result || barcodeLookupActive) return;
+                const barcode = normalizeClientBarcode(result.getText?.() || result.text);
+                if (!isSupportedClientBarcode(barcode)) return;
+                barcodeScannerControls = controls || barcodeScannerControls;
+                lookupBarcode(barcode);
+            }
+        );
+        if (!barcodeLookupActive) setBarcodeStatus("Place the product barcode inside the frame.");
+    }
+    catch (error) {
+        stopBarcodeScanner();
+        const denied = error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError";
+        setBarcodeStatus(denied ? "Camera access was not allowed. Enter the barcode below instead." : "The camera could not start. Enter the barcode below instead.");
+    }
+}
+
+function closeBarcodeScanner() {
+    stopBarcodeScanner();
+    document.querySelector("[data-barcode-panel]")?.setAttribute("hidden", "");
+}
+
+function stopBarcodeScanner() {
+    try { barcodeScannerControls?.stop?.(); } catch {}
+    barcodeScannerControls = null;
+    const video = document.querySelector("[data-barcode-video]");
+    const stream = video?.srcObject;
+    stream?.getTracks?.().forEach(track => track.stop());
+    if (video) video.srcObject = null;
+    barcodeLookupController?.abort();
+    barcodeLookupController = null;
+    barcodeLookupActive = false;
+}
+
+function loadZxingBrowser() {
+    if (window.ZXingBrowser?.BrowserMultiFormatReader) return Promise.resolve(window.ZXingBrowser);
+    if (zxingLoadPromise) return zxingLoadPromise;
+    zxingLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = ZXING_BROWSER_URL;
+        script.integrity = ZXING_BROWSER_INTEGRITY;
+        script.crossOrigin = "anonymous";
+        script.async = true;
+        script.addEventListener("load", () => window.ZXingBrowser?.BrowserMultiFormatReader ? resolve(window.ZXingBrowser) : reject(new Error("Scanner did not load.")), { once: true });
+        script.addEventListener("error", () => reject(new Error("Scanner could not load.")), { once: true });
+        document.head.append(script);
+    }).catch(error => {
+        zxingLoadPromise = null;
+        throw error;
+    });
+    return zxingLoadPromise;
+}
+
+function submitManualBarcode(event) {
+    event.preventDefault();
+    const barcode = normalizeClientBarcode(new FormData(event.currentTarget).get("barcode"));
+    lookupBarcode(barcode);
+}
+
+async function lookupBarcode(value) {
+    const barcode = normalizeClientBarcode(value);
+    if (!isSupportedClientBarcode(barcode)) {
+        setBarcodeStatus("Enter a valid 8, 12, 13, or 14 digit barcode.");
+        return;
+    }
+    if (barcodeFoodCache.has(barcode)) {
+        closeBarcodeScanner();
+        chooseFood(barcodeFoodCache.get(barcode));
+        return;
+    }
+    const token = sessionToken();
+    if (!token) {
+        stopBarcodeScanner();
+        setBarcodeStatus("Sign in to look up a barcode, or create a custom food.");
+        showBarcodeCustomFallback(barcode);
+        return;
+    }
+    barcodeLookupActive = true;
+    stopBarcodeScanner();
+    barcodeLookupActive = true;
+    barcodeLookupController = new AbortController();
+    const input = document.querySelector("[data-barcode-form] input");
+    if (input) input.value = barcode;
+    setBarcodeStatus("Looking up product…");
+    const customButton = document.querySelector("[data-barcode-custom]");
+    if (customButton) customButton.hidden = true;
+    try {
+        const response = await fetch(`${API_URL}/v1/foods/barcode/${encodeURIComponent(barcode)}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: barcodeLookupController.signal
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (response.status === 404) {
+            const customFood = readCustomFoods().find(food => normalizeClientBarcode(food?.barcode) === barcode);
+            if (customFood) {
+                barcodeFoodCache.set(barcode, customFood);
+                closeBarcodeScanner();
+                chooseFood(customFood);
+                return;
+            }
+            setBarcodeStatus("Product not found. Create it once and keep this barcode attached for next time.");
+            showBarcodeCustomFallback(barcode);
+            return;
+        }
+        if (!response.ok || !payload.food) throw new Error(payload.error || "Barcode lookup could not be loaded.");
+        barcodeFoodCache.set(barcode, payload.food);
+        closeBarcodeScanner();
+        chooseFood(payload.food);
+    }
+    catch (error) {
+        if (error?.name === "AbortError") return;
+        barcodeLookupActive = false;
+        setBarcodeStatus(error.message || "Barcode lookup could not be loaded.");
+    }
+}
+
+function showBarcodeCustomFallback(barcode) {
+    const button = document.querySelector("[data-barcode-custom]");
+    if (!button) return;
+    button.dataset.barcodeCustom = barcode;
+    button.hidden = false;
+    barcodeLookupActive = false;
+}
+
+function openCustomFoodForBarcode() {
+    const barcode = normalizeClientBarcode(document.querySelector("[data-barcode-custom]")?.dataset.barcodeCustom);
+    closeBarcodeScanner();
+    showFoodMode("custom");
+    const editor = document.querySelector("[data-custom-food-editor]");
+    if (editor) editor.hidden = false;
+    const form = document.querySelector("[data-custom-food-form]");
+    form?.reset();
+    const barcodeInput = form?.elements?.barcode;
+    if (barcodeInput) barcodeInput.value = barcode;
+    window.setTimeout(() => form?.elements?.name?.focus(), 30);
+}
+
+function setBarcodeStatus(message) {
+    setText("[data-barcode-status]", message);
+}
+
+function normalizeClientBarcode(value) {
+    return String(value || "").replace(/\D/g, "");
+}
+
+function isSupportedClientBarcode(value) {
+    return [8, 12, 13, 14].includes(String(value || "").length) && !/^0+$/.test(String(value || ""));
 }
 
 function showFoodMode(mode) {
@@ -407,7 +619,8 @@ function createCustomFood(event) {
     const data = new FormData(event.currentTarget);
     const nutrition = Object.fromEntries(["calories", "protein", "carbs", "fat"].map(key => [key, Math.max(0, Number(data.get(key)) || 0)]));
     nutrition.fiber = 0;
-    const food = saveCustomFood({ id: crypto.randomUUID(), source: "custom", name: String(data.get("name") || "Custom food"), brand: "Custom food", servingLabel: String(data.get("serving") || "1 serving"), nutrition, portions: [{ label: String(data.get("serving") || "1 serving"), nutrition }] });
+    const barcode = normalizeClientBarcode(data.get("barcode"));
+    const food = saveCustomFood({ id: crypto.randomUUID(), source: "custom", name: String(data.get("name") || "Custom food"), brand: "Custom food", barcode: isSupportedClientBarcode(barcode) ? barcode : "", servingLabel: String(data.get("serving") || "1 serving"), nutrition, portions: [{ label: String(data.get("serving") || "1 serving"), nutrition }] });
     event.currentTarget.reset();
     document.querySelector("[data-custom-food-editor]")?.setAttribute("hidden", "");
     renderCustomFoods();

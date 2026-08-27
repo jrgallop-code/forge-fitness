@@ -54,6 +54,10 @@ async function handleRequest(request, env) {
     if (url.pathname === "/v1/foods/search" && request.method === "GET") {
         return searchUsdaFoods(url, request, env);
     }
+    const foodBarcodeMatch = url.pathname.match(/^\/v1\/foods\/barcode\/(\d+)$/);
+    if (foodBarcodeMatch && request.method === "GET") {
+        return getFoodByBarcode(foodBarcodeMatch[1], request, env);
+    }
     const foodDetailMatch = url.pathname.match(/^\/v1\/foods\/(\d+)$/);
     if (foodDetailMatch && request.method === "GET") {
         return getUsdaFoodDetails(Number(foodDetailMatch[1]), request, env);
@@ -436,6 +440,116 @@ async function searchUsdaFoods(url, request, env) {
     }, 200, request, env);
 }
 
+async function getFoodByBarcode(value, request, env) {
+    const barcode = normalizeBarcode(value);
+    if (!isValidBarcode(barcode)) {
+        return json({ error: "Enter a valid 8, 12, 13, or 14 digit barcode." }, 400, request, env);
+    }
+
+    const verifiedFood = await findVerifiedFoodByBarcode(barcode, env);
+    if (verifiedFood) {
+        return json({ food: verifiedFood, source: "Level Up Verified", barcode }, 200, request, env);
+    }
+    if (!env.USDA_FDC_API_KEY) {
+        return json({ error: "Product not found.", barcode }, 404, request, env);
+    }
+
+    const upstreamUrl = usdaFoodSearchUrl(env.USDA_FDC_API_KEY, barcode, 50, "Branded");
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+        const response = await fetch(upstreamUrl, {
+            headers: { "Accept": "application/json" },
+            signal: controller.signal
+        });
+        if (!response.ok) {
+            console.error(JSON.stringify({ event: "usda_barcode_lookup_failed", status: response.status }));
+            return json({ error: response.status === 429 ? "USDA lookup is busy. Wait a moment and try again." : "Barcode lookup is temporarily unavailable." }, response.status === 429 ? 429 : 502, request, env);
+        }
+        const payload = await response.json();
+        const rawFood = selectExactUsdaBarcodeFood(payload?.foods, barcode);
+        const normalizedFood = rawFood ? normalizeUsdaFood(rawFood) : null;
+        const food = normalizedFood ? { ...normalizedFood, detailsLoaded: true } : null;
+        if (!food) return json({ error: "Product not found.", barcode }, 404, request, env);
+        return json({ food, source: "USDA FoodData Central", barcode }, 200, request, env);
+    }
+    catch (error) {
+        console.error(JSON.stringify({ event: "usda_barcode_lookup_failed", reason: error?.name === "AbortError" ? "timeout" : "network" }));
+        return json({ error: "Barcode lookup is temporarily unavailable." }, 502, request, env);
+    }
+    finally {
+        clearTimeout(timeout);
+    }
+}
+
+async function findVerifiedFoodByBarcode(barcode, env) {
+    const candidates = barcodeVariants(barcode);
+    if (!candidates.length || !env?.DB) return null;
+    try {
+        const placeholders = candidates.map(() => "?").join(",");
+        const row = await env.DB.prepare(`
+            SELECT id, name, brand, category, country_code, barcode, serving_label,
+                   serving_grams, calories, protein_g, carbs_g, fat_g, fiber_g,
+                   source_name, source_url, verified_at
+            FROM verified_foods
+            WHERE status = 'active' AND barcode IN (${placeholders})
+            LIMIT 1
+        `).bind(...candidates).first();
+        if (row) return normalizeVerifiedFood(row);
+    }
+    catch (error) {
+        console.error(JSON.stringify({ event: "verified_food_barcode_failed", reason: String(error?.message || error) }));
+    }
+    return BUNDLED_VERIFIED_FOODS.find(food => barcodeVariants(food.barcode).some(candidate => candidates.includes(candidate))) || null;
+}
+
+export function normalizeBarcode(value) {
+    return String(value || "").replace(/\D/g, "");
+}
+
+export function isValidBarcode(value) {
+    const barcode = normalizeBarcode(value);
+    if (![8, 12, 13, 14].includes(barcode.length) || /^0+$/.test(barcode)) return false;
+    const digits = [...barcode].map(Number);
+    const checkDigit = digits.pop();
+    const sum = digits.reverse().reduce((total, digit, index) => total + digit * (index % 2 === 0 ? 3 : 1), 0);
+    return (10 - (sum % 10)) % 10 === checkDigit;
+}
+
+export function barcodeVariants(value) {
+    const barcode = normalizeBarcode(value);
+    if (![8, 12, 13, 14].includes(barcode.length)) return [];
+    const variants = new Set([barcode]);
+    if (barcode.length === 12) {
+        variants.add(`0${barcode}`);
+        variants.add(`00${barcode}`);
+    }
+    if (barcode.length === 13) {
+        variants.add(`0${barcode}`);
+        if (barcode.startsWith("0")) variants.add(barcode.slice(1));
+    }
+    if (barcode.length === 14 && barcode.startsWith("0")) {
+        variants.add(barcode.slice(1));
+        if (barcode.startsWith("00")) variants.add(barcode.slice(2));
+    }
+    return [...variants];
+}
+
+export function selectExactUsdaBarcodeFood(foods, barcode) {
+    const variants = new Set(barcodeVariants(barcode));
+    return (Array.isArray(foods) ? foods : [])
+        .filter(food => barcodeVariants(food?.gtinUpc).some(candidate => variants.has(candidate)))
+        .sort((a, b) => usdaBarcodeFoodQuality(b) - usdaBarcodeFoodQuality(a))[0] || null;
+}
+
+function usdaBarcodeFoodQuality(food) {
+    const serving = Number(food?.servingSize) > 0 ? 20 : 0;
+    const labelled = food?.labelNutrients ? 15 : 0;
+    const branded = food?.brandName ? 5 : 0;
+    const published = Date.parse(food?.publicationDate || food?.availableDate || "") || 0;
+    return serving + labelled + branded + published / 1e13;
+}
+
 function usdaFoodSearchUrl(apiKey, query, pageSize, dataType = "") {
     const url = new URL("https://api.nal.usda.gov/fdc/v1/foods/search");
     url.searchParams.set("api_key", apiKey);
@@ -700,6 +814,7 @@ export function normalizeUsdaFood(food) {
     return {
         source: "usda",
         fdcId,
+        barcode: limitedText(food?.gtinUpc, 40),
         name,
         brand: limitedText(food?.brandName || food?.brandOwner, 120),
         dataType: limitedText(food?.dataType, 60),
