@@ -3,10 +3,11 @@ const GOAL_WEIGHT_STORAGE_KEY = "level_up_goal_weight";
 const NUTRITION_PHASES_STORAGE_KEY = "level_up_nutrition_phases";
 const RANGE_STORAGE_KEY = "level_up_weight_chart_range";
 const DAY_MS = 86400000;
-const TREND_GREEN = "#4ade80";
-const DAILY_WEIGHT_LINE = "rgba(190, 190, 200, 0.35)";
-const DAILY_WEIGHT_POINT = "rgba(255, 255, 255, 0.88)";
-const DAILY_WEIGHT_POINT_RADIUS = 2.5;
+const TREND_GREEN = "#45cb75";
+const TREND_GREEN_GLOW = "rgba(69, 203, 117, 0.32)";
+const DAILY_WEIGHT_LINE = "rgba(112, 181, 137, 0.34)";
+const DAILY_WEIGHT_POINT = "rgba(126, 194, 151, 0.82)";
+const DAILY_WEIGHT_POINT_RADIUS = 2.6;
 const RANGE_STYLE_ID = "level-up-weight-chart-range-styles";
 const RANGE_OPTIONS = [
     { id: "1w", label: "1W", days: 7 },
@@ -170,10 +171,10 @@ function ensureRangeStyles() {
             touch-action: manipulation;
         }
         #weight-progress .weight-chart-range-control button[aria-pressed="true"] {
-            border-color: rgba(255,49,95,.5);
-            background: rgba(255,49,95,.18);
+            border-color: rgba(69,203,117,.45);
+            background: rgba(31,92,55,.52);
             color: #fff;
-            box-shadow: inset 0 0 0 1px rgba(255,49,95,.08);
+            box-shadow: inset 0 0 0 1px rgba(69,203,117,.08);
         }
         #weight-progress .weight-chart-range-control button:disabled {
             opacity: .32;
@@ -260,6 +261,10 @@ function enhanceWeightChart() {
         `Weight chart for ${chartWindow.label}, showing daily entries and a 7-day trend line`
     );
 
+    const latestAverage = visibleMovingAverage.at(-1)?.weight;
+    const latestNode = legacyCanvas.closest(".weight-chart-card")?.querySelector("[data-weight-chart-latest]");
+    if (latestNode) latestNode.textContent = Number.isFinite(latestAverage) ? `${latestAverage.toFixed(1)} lb` : "—";
+
     drawWeightTrendChart(
         canvas,
         visibleEntries,
@@ -276,7 +281,7 @@ function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, chartW
     if (!context) return;
 
     const width = canvas.clientWidth || canvas.parentElement?.clientWidth || 800;
-    const height = 400;
+    const height = width <= 520 ? 330 : 380;
     const scale = globalThis.devicePixelRatio || 1;
 
     canvas.width = width * scale;
@@ -321,21 +326,11 @@ function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, chartW
     }
 
     const range = Math.max(1, maximum - minimum);
-    const legend = [
-        { type: "linepoint", color: DAILY_WEIGHT_LINE, pointColor: DAILY_WEIGHT_POINT, label: "Daily Weight" },
-        { type: "dash", color: TREND_GREEN, label: "Trend Line" },
-        ...(showGoal
-            ? [{ type: "dash", color: "#facc15", label: `Goal ${goalWeight.toFixed(1)} lb` }]
-            : [])
-    ];
-
-    context.font = "10px Arial";
-    const legendLayout = layoutLegend(context, legend, width, 58, 22);
     const padding = {
-        left: 58,
-        right: 22,
-        top: Math.max(48, legendLayout.bottom + 14),
-        bottom: 48
+        left: 48,
+        right: 18,
+        top: 20,
+        bottom: 40
     };
 
     const chartWidth = Math.max(1, width - padding.left - padding.right);
@@ -351,25 +346,25 @@ function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, chartW
     };
     const yPosition = weight => padding.top + ((maximum - weight) / range) * chartHeight;
 
-    context.strokeStyle = "#303037";
+    context.strokeStyle = "rgba(255, 255, 255, 0.055)";
     context.lineWidth = 1;
-    for (let index = 0; index <= 4; index++) {
-        const y = padding.top + (chartHeight * index / 4);
+    for (let index = 0; index <= 2; index++) {
+        const y = padding.top + (chartHeight * index / 2);
         context.beginPath();
         context.moveTo(padding.left, y);
         context.lineTo(width - padding.right, y);
         context.stroke();
 
-        const value = maximum - (range * index / 4);
-        context.fillStyle = "#a0a0a8";
-        context.font = "11px Arial";
+        const value = maximum - (range * index / 2);
+        context.fillStyle = "rgba(185, 185, 193, 0.72)";
+        context.font = "500 10px Arial";
         context.textAlign = "right";
         context.fillText(value.toFixed(1), padding.left - 8, y + 4);
     }
 
     const includeYear = (lastTime - firstTime) >= 300 * DAY_MS;
-    context.fillStyle = "#a0a0a8";
-    context.font = "11px Arial";
+    context.fillStyle = "rgba(185, 185, 193, 0.72)";
+    context.font = "500 10px Arial";
     context.textAlign = "left";
     context.fillText(formatDate(chartWindow.startDate, includeYear), padding.left, height - 16);
     context.textAlign = "right";
@@ -391,19 +386,52 @@ function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, chartW
     context.restore();
 
     if (movingAverage.length) {
+        const trendPoints = movingAverage.map(entry => ({
+            x: xPosition(entry.date),
+            y: yPosition(entry.weight)
+        }));
+
+        if (trendPoints.length > 1) {
+            const gradient = context.createLinearGradient(0, padding.top, 0, padding.top + chartHeight);
+            gradient.addColorStop(0, "rgba(69, 203, 117, 0.25)");
+            gradient.addColorStop(0.56, "rgba(36, 112, 66, 0.12)");
+            gradient.addColorStop(1, "rgba(18, 63, 39, 0)");
+
+            context.save();
+            context.beginPath();
+            traceSmoothLine(context, trendPoints);
+            context.lineTo(trendPoints.at(-1).x, padding.top + chartHeight);
+            context.lineTo(trendPoints[0].x, padding.top + chartHeight);
+            context.closePath();
+            context.fillStyle = gradient;
+            context.fill();
+            context.restore();
+        }
+
         context.save();
         context.strokeStyle = TREND_GREEN;
-        context.lineWidth = 1.5;
+        context.shadowColor = TREND_GREEN_GLOW;
+        context.shadowBlur = 8;
+        context.lineWidth = 3;
         context.lineJoin = "round";
         context.lineCap = "round";
-        context.setLineDash([6, 5]);
         context.beginPath();
-        movingAverage.forEach((entry, index) => {
-            const x = xPosition(entry.date);
-            const y = yPosition(entry.weight);
-            if (index === 0) context.moveTo(x, y);
-            else context.lineTo(x, y);
-        });
+        traceSmoothLine(context, trendPoints);
+        context.stroke();
+        context.restore();
+
+        const latest = trendPoints.at(-1);
+        context.save();
+        context.fillStyle = "rgba(69, 203, 117, 0.18)";
+        context.beginPath();
+        context.arc(latest.x, latest.y, 7, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = TREND_GREEN;
+        context.strokeStyle = "#111614";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.arc(latest.x, latest.y, 3.5, 0, Math.PI * 2);
+        context.fill();
         context.stroke();
         context.restore();
     }
@@ -417,81 +445,39 @@ function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, chartW
 
     if (showGoal) {
         context.save();
-        context.strokeStyle = "#facc15";
-        context.lineWidth = 2;
-        context.setLineDash([4, 4]);
+        context.strokeStyle = "rgba(255, 255, 255, 0.28)";
+        context.lineWidth = 1.25;
+        context.setLineDash([5, 5]);
         context.beginPath();
         context.moveTo(padding.left, yPosition(goalWeight));
         context.lineTo(width - padding.right, yPosition(goalWeight));
         context.stroke();
+        const goalLabel = `Goal ${goalWeight.toFixed(1)} lb`;
+        context.font = "700 10px Arial";
+        const labelWidth = context.measureText(goalLabel).width + 12;
+        const labelX = width - padding.right - labelWidth;
+        const labelY = Math.max(padding.top + 2, yPosition(goalWeight) - 18);
+        context.fillStyle = "rgba(26, 26, 30, 0.9)";
+        context.fillRect(labelX, labelY, labelWidth, 16);
+        context.fillStyle = "rgba(225, 225, 230, 0.82)";
+        context.textAlign = "center";
+        context.fillText(goalLabel, labelX + labelWidth / 2, labelY + 11);
         context.restore();
     }
-
-    drawLegend(context, legendLayout.items);
 }
 
-function layoutLegend(context, legend, width, startX, rightPadding) {
-    const items = [];
-    let x = startX;
-    let y = 18;
-    const rowHeight = 18;
-    const maxX = width - rightPadding;
-
-    legend.forEach(item => {
-        const markerWidth = item.type === "point" ? 12 : 18;
-        const labelWidth = context.measureText(item.label).width;
-        const itemWidth = markerWidth + 7 + labelWidth + 18;
-
-        if (x !== startX && x + itemWidth > maxX) {
-            x = startX;
-            y += rowHeight;
-        }
-
-        items.push({ ...item, x, y, markerWidth });
-        x += itemWidth;
-    });
-
-    return { items, bottom: y + 4 };
-}
-
-function drawLegend(context, items) {
-    context.font = "10px Arial";
-    context.textAlign = "left";
-
-    items.forEach(item => {
-        context.save();
-        context.strokeStyle = item.color;
-        context.fillStyle = item.color;
-
-        if (item.type === "point") {
-            context.beginPath();
-            context.arc(item.x + 5, item.y, 3, 0, Math.PI * 2);
-            context.fill();
-        }
-        else if (item.type === "linepoint") {
-            context.lineWidth = 1.25;
-            context.beginPath();
-            context.moveTo(item.x, item.y);
-            context.lineTo(item.x + item.markerWidth, item.y);
-            context.stroke();
-            context.fillStyle = item.pointColor || item.color;
-            context.beginPath();
-            context.arc(item.x + item.markerWidth / 2, item.y, 2.5, 0, Math.PI * 2);
-            context.fill();
-        }
-        else {
-            context.lineWidth = 2;
-            if (item.type === "dash") context.setLineDash([5, 4]);
-            context.beginPath();
-            context.moveTo(item.x, item.y);
-            context.lineTo(item.x + item.markerWidth, item.y);
-            context.stroke();
-        }
-        context.restore();
-
-        context.fillStyle = "#b9b9c1";
-        context.fillText(item.label, item.x + item.markerWidth + 7, item.y + 3);
-    });
+function traceSmoothLine(context, points) {
+    if (!points.length) return;
+    context.moveTo(points[0].x, points[0].y);
+    if (points.length === 1) return;
+    for (let index = 1; index < points.length - 1; index++) {
+        const current = points[index];
+        const next = points[index + 1];
+        const midpointX = (current.x + next.x) / 2;
+        const midpointY = (current.y + next.y) / 2;
+        context.quadraticCurveTo(current.x, current.y, midpointX, midpointY);
+    }
+    context.lineTo(points.at(-1).x, points.at(-1).y);
 }
 
 const content = document.getElementById("content");
