@@ -1,5 +1,5 @@
 import { getAllExercises, getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-1";
-import { openWorkoutLogger } from "./workout-session.js?v=swap-history-metadata-1";
+import { openWorkoutLogger } from "./workout-session.js?v=repair-generic-exercise-1";
 
 let rows = [];
 
