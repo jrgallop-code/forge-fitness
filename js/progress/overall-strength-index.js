@@ -1,4 +1,4 @@
-import { drawStrengthIndexChart } from "./strength-index-chart-renderer.js?v=red-index-polish-1";
+import { drawStrengthIndexChart, renderStrengthIndexSummary } from "./strength-index-chart-renderer.js?v=analytics-summary-polish-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 
@@ -153,17 +153,13 @@ function renderOverallStrengthIndex() {
     updateMethodText(method, result.selectedCategories);
 
     if (!result.points.length) {
+        summary.className = "analytics-note";
         summary.textContent = "Log at least two valid performances in at least two core movement categories to establish an overall strength trend. 100 represents baseline strength.";
         return;
     }
 
     const latest = result.points[result.points.length - 1];
-    const change = latest.value - 100;
-    const direction = change > 0 ? "above" : change < 0 ? "below" : "at";
-    const magnitude = Math.abs(change).toFixed(1);
-    const comparison = direction === "at" ? "at baseline" : `${magnitude}% ${direction} baseline`;
-
-    summary.textContent = `Current index: ${latest.value.toFixed(1)} — about ${comparison}. Based on ${latest.exerciseCount} of 6 core movement categories.`;
+    renderStrengthIndexSummary(summary, latest);
 }
 
 function updateMethodText(target, selectedCategories) {

@@ -1,4 +1,5 @@
-import "./training-analytics-range-consistency.js?v=red-index-polish-1";
+import "./training-analytics-range-consistency.js?v=analytics-summary-polish-1";
+import { drawTrainingBarChart } from "./training-bar-chart-renderer.js?v=analytics-bar-polish-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const RANGE_STORAGE_KEY = "level_up_training_analytics_range";
@@ -214,122 +215,20 @@ function drawRangeCharts() {
     const setsCanvas = document.getElementById("weekly-sets-chart");
 
     if (workoutCanvas && !workoutCanvas.closest("[hidden]")) {
-        drawBarChart(
+        drawTrainingBarChart(
             workoutCanvas,
             buildChartPoints(sessions, rangeWindow, () => 1),
-            "Workouts",
-            rangeWindow
+            { axisLabel: "Workouts", rangeLabel: rangeWindow.option.label === "ALL" ? "all recorded training" : rangeWindow.option.label }
         );
     }
 
     if (setsCanvas && !setsCanvas.closest("[hidden]")) {
-        drawBarChart(
+        drawTrainingBarChart(
             setsCanvas,
             buildChartPoints(sessions, rangeWindow, countWorkingSets),
-            "Working sets",
-            rangeWindow
+            { axisLabel: "Working sets", rangeLabel: rangeWindow.option.label === "ALL" ? "all recorded training" : rangeWindow.option.label }
         );
     }
-}
-
-function drawBarChart(canvas, points, axisLabel, rangeWindow) {
-    const context = canvas.getContext("2d");
-    if (!context) return;
-
-    const ratio = window.devicePixelRatio || 1;
-    const width = canvas.clientWidth || canvas.parentElement?.clientWidth || 700;
-    const height = canvas.clientHeight || 300;
-    canvas.width = width * ratio;
-    canvas.height = height * ratio;
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    context.clearRect(0, 0, width, height);
-
-    canvas.setAttribute(
-        "aria-label",
-        `${axisLabel} for ${rangeWindow.option.label === "ALL" ? "all recorded training" : rangeWindow.option.label}`
-    );
-
-    const padding = { top: 30, right: 16, bottom: 48, left: 52 };
-    const plotWidth = Math.max(1, width - padding.left - padding.right);
-    const plotHeight = Math.max(1, height - padding.top - padding.bottom);
-    const maximumValue = Math.max(0, ...points.map(point => Number(point.value) || 0));
-    const maximum = niceMaximum(maximumValue);
-
-    context.strokeStyle = "#303037";
-    context.lineWidth = 1;
-    for (let index = 0; index <= 4; index++) {
-        const y = padding.top + plotHeight * index / 4;
-        context.beginPath();
-        context.moveTo(padding.left, y);
-        context.lineTo(width - padding.right, y);
-        context.stroke();
-
-        context.fillStyle = "#a0a0a8";
-        context.font = "10px Arial";
-        context.textAlign = "right";
-        const value = maximum - maximum * index / 4;
-        context.fillText(formatAxisValue(value), padding.left - 7, y + 3);
-    }
-
-    context.save();
-    context.fillStyle = "#a0a0a8";
-    context.font = "11px Arial";
-    context.textAlign = "center";
-    context.translate(15, padding.top + plotHeight / 2);
-    context.rotate(-Math.PI / 2);
-    context.fillText(axisLabel, 0, 0);
-    context.restore();
-
-    if (!points.length) {
-        context.fillStyle = "#a0a0a8";
-        context.font = "12px Arial";
-        context.textAlign = "center";
-        context.fillText("No workout history yet", padding.left + plotWidth / 2, padding.top + plotHeight / 2);
-        return;
-    }
-
-    const slot = plotWidth / points.length;
-    const barWidth = Math.max(2, Math.min(slot * 0.62, 34));
-    const labelEvery = Math.max(1, Math.ceil(points.length / 6));
-
-    points.forEach((point, index) => {
-        const value = Number(point.value) || 0;
-        const barHeight = maximum > 0 ? value / maximum * plotHeight : 0;
-        const x = padding.left + index * slot + (slot - barWidth) / 2;
-        const y = padding.top + plotHeight - barHeight;
-
-        if (barHeight > 0) {
-            context.fillStyle = "#e10600";
-            context.fillRect(x, y, barWidth, barHeight);
-        }
-
-        if (points.length <= 8 || index % labelEvery === 0 || index === points.length - 1) {
-            context.fillStyle = "#a0a0a8";
-            context.font = "9px Arial";
-            context.textAlign = "center";
-            context.fillText(point.label, x + barWidth / 2, height - 18);
-        }
-
-        if (value > 0 && points.length <= 14) {
-            context.fillStyle = "#ffffff";
-            context.font = "9px Arial";
-            context.textAlign = "center";
-            context.fillText(formatAxisValue(value), x + barWidth / 2, Math.max(12, y - 5));
-        }
-    });
-}
-
-function niceMaximum(value) {
-    if (!Number.isFinite(value) || value <= 0) return 4;
-    const magnitude = 10 ** Math.floor(Math.log10(value));
-    const normalized = value / magnitude;
-    const nice = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
-    return Math.max(4, nice * magnitude);
-}
-
-function formatAxisValue(value) {
-    const rounded = Math.round(value * 10) / 10;
-    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
 function isDateValue(value) {

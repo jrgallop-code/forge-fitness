@@ -88,7 +88,8 @@ function ensureAnalyticsCards(trendsCard) {
 
     if (!document.getElementById("overall-weekly-sets-card")) {
         frequencyCard?.insertAdjacentHTML("afterend", `
-            <div class="analytics-card" id="overall-weekly-sets-card">
+            <div class="analytics-card training-bar-card" id="overall-weekly-sets-card">
+                <span class="training-chart-kicker">Training volume</span>
                 <h4>Overall Weekly Working Sets</h4>
                 <div id="overall-weekly-sets"></div>
             </div>
@@ -313,8 +314,8 @@ function renderOverallWeeklySets(sessions, weeks) {
     container.innerHTML = `
         <p class="weekly-volume-note">Raw completed working sets across all exercises each Monday–Sunday week. This chart is not fractional muscle credit.</p>
         <div class="overall-week-chart">
-            ${weeks.map(week => `
-                <div class="overall-week-column">
+            ${weeks.map((week, index) => `
+                <div class="overall-week-column${index === weeks.length - 1 ? " is-latest" : ""}">
                     <span class="overall-week-value">${formatSets(totals[week])}</span>
                     <div class="overall-week-bar-wrap"><div class="overall-week-bar" style="height:${totals[week] / maximum * 100}%"></div></div>
                     <small>${escapeHtml(formatWeekLabel(week))}</small>

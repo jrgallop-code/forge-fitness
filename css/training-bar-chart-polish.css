@@ -1,0 +1,72 @@
+.training-progress-view .analytics-card:has(#weekly-workouts-chart),
+.training-progress-view .analytics-card:has(#weekly-workouts-seven-week-chart),
+.training-progress-view .analytics-card:has(#weekly-sets-chart),
+#overall-weekly-sets-card {
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.075);
+    background:linear-gradient(150deg, #181719 0%, #121214 70%, #191113 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.025), 0 14px 34px rgba(0,0,0,.2);
+}
+
+.training-chart-kicker {
+    display:block;
+    margin-bottom:8px;
+    color:#ff5059;
+    font-size:10px;
+    font-weight:850;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+}
+
+.training-chart-kicker + h4 {
+    margin-top:0;
+    font-size:22px;
+    letter-spacing:-.02em;
+}
+
+#weekly-workouts-chart,
+#weekly-workouts-seven-week-chart,
+#weekly-sets-chart {
+    height:260px;
+    padding:6px;
+    border:1px solid rgba(255,255,255,.065);
+    border-radius:16px;
+    background:linear-gradient(155deg, #161417 0%, #111113 70%, #181012 100%);
+}
+
+#overall-weekly-sets-card .overall-week-chart {
+    gap:11px;
+    min-height:225px;
+    padding-top:22px;
+}
+
+#overall-weekly-sets-card .overall-week-bar-wrap {
+    width:64%;
+    border-color:rgba(255,255,255,.055);
+    background:rgba(7,7,9,.56);
+    box-shadow:inset 0 1px 8px rgba(0,0,0,.32);
+}
+
+#overall-weekly-sets-card .overall-week-bar {
+    background:linear-gradient(180deg, rgba(211,55,66,.82), rgba(87,22,31,.68));
+    box-shadow:none;
+}
+
+#overall-weekly-sets-card .overall-week-column.is-latest .overall-week-bar {
+    background:linear-gradient(180deg, #ff3139, rgba(111,22,32,.78));
+    box-shadow:0 0 13px rgba(255,49,57,.3);
+}
+
+#overall-weekly-sets-card .overall-week-column.is-latest .overall-week-value,
+#overall-weekly-sets-card .overall-week-column.is-latest small {
+    color:#fff;
+}
+
+@media (max-width:520px) {
+    #weekly-workouts-chart,
+    #weekly-workouts-seven-week-chart,
+    #weekly-sets-chart {
+        height:245px;
+        border-radius:14px;
+    }
+}

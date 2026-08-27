@@ -3,6 +3,7 @@ import {
     getExerciseById
 }
 from "../workouts/exercise-library.js";
+import { drawTrainingBarChart } from "./training-bar-chart-renderer.js?v=analytics-bar-polish-1";
 
 
 const SESSION_STORAGE_KEY =
@@ -903,146 +904,10 @@ function drawWeeklyChart(
     }
 
 
-    const context =
-        prepareCanvas(
-            canvas
-        );
-
-
-    if (!context) {
-        return;
-    }
-
-
-    drawEmptyOrAxes(
-        context,
-        canvas,
-        points,
-        label
-    );
-
-
-    if (!points.length) {
-        return;
-    }
-
-
-    const width =
-        canvas.clientWidth;
-
-
-    const height =
-        canvas.clientHeight;
-
-
-    const padding = {
-        top: 25,
-        right: 15,
-        bottom: 45,
-        left: 40
-    };
-
-
-    const maximum =
-        Math.max(
-            1,
-            ...points.map(
-                point =>
-                    point.value
-            )
-        );
-
-
-    const space =
-        (
-            width -
-            padding.left -
-            padding.right
-        ) /
-        points.length;
-
-
-    points.forEach(
-        (point, index) => {
-
-            const barHeight =
-                point.value /
-                maximum *
-                (
-                    height -
-                    padding.top -
-                    padding.bottom
-                );
-
-
-            const x =
-                padding.left +
-                index *
-                space +
-                space *
-                .18;
-
-
-            const y =
-                height -
-                padding.bottom -
-                barHeight;
-
-
-            context.fillStyle =
-                "#e10600";
-
-
-            context.fillRect(
-                x,
-                y,
-                space * .64,
-                barHeight
-            );
-
-
-            context.fillStyle =
-                "#a0a0a0";
-
-
-            context.font =
-                "11px Arial";
-
-
-            context.textAlign =
-                "center";
-
-
-            context.fillText(
-                point.label,
-                x +
-                space *
-                .32,
-                height -
-                18
-            );
-
-
-            context.fillStyle =
-                "#ffffff";
-
-
-            context.fillText(
-                String(
-                    point.value
-                ),
-                x +
-                space *
-                .32,
-                Math.max(
-                    15,
-                    y -
-                    6
-                )
-            );
-
-        }
-    );
+    drawTrainingBarChart(canvas, points, {
+        axisLabel: label,
+        rangeLabel: "recent training"
+    });
 
 }
 

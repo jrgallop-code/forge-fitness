@@ -318,6 +318,7 @@ export function renderProgress() {
 
                     <div class="analytics-card">
 
+                        <span class="training-chart-kicker">Training frequency</span>
                         <h4>Weekly Workouts</h4>
 
                         <canvas
@@ -410,6 +411,7 @@ export function renderProgress() {
 
                     <div class="analytics-card">
 
+                        <span class="training-chart-kicker">Training volume</span>
                         <h4>Weekly Working Sets</h4>
 
                         <canvas

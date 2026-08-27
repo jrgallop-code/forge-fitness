@@ -1,4 +1,4 @@
-import { drawStrengthIndexChart } from "./strength-index-chart-renderer.js?v=red-index-polish-1";
+import { drawStrengthIndexChart, renderStrengthIndexSummary } from "./strength-index-chart-renderer.js?v=analytics-summary-polish-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const RANGE_STORAGE_KEY = "level_up_training_analytics_range";
@@ -246,22 +246,19 @@ function renderOverallStrengthIndexForRange() {
     drawStrengthIndexChart(canvas, points);
 
     if (!allPoints.length) {
+        summary.className = "analytics-note";
         summary.textContent = "Log at least two valid performances in at least two core movement categories to establish an overall strength trend. 100 represents baseline strength.";
         return;
     }
 
     if (!points.length) {
+        summary.className = "analytics-note";
         summary.textContent = `No Overall Strength Index points fall within the selected ${rangeWindow.label} timeframe.`;
         return;
     }
 
     const latest = points[points.length - 1];
-    const change = latest.value - 100;
-    const direction = change > 0 ? "above" : change < 0 ? "below" : "at";
-    const magnitude = Math.abs(change).toFixed(1);
-    const comparison = direction === "at" ? "at baseline" : `${magnitude}% ${direction} baseline`;
-
-    summary.textContent = `Current index: ${latest.value.toFixed(1)} — about ${comparison}. ${rangeWindow.label} view · based on ${latest.exerciseCount} of 6 core movement categories.`;
+    renderStrengthIndexSummary(summary, latest, rangeWindow.label);
 
     const method = document.getElementById("overall-strength-index-method");
     if (method && !method.querySelector("[data-strength-range-note]")) {
