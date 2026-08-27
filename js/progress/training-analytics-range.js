@@ -1,4 +1,4 @@
-import "./training-analytics-range-consistency.js?v=training-analytics-range-consistency-1";
+import "./training-analytics-range-consistency.js?v=red-index-polish-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const RANGE_STORAGE_KEY = "level_up_training_analytics_range";
