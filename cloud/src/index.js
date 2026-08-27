@@ -52,7 +52,7 @@ async function handleRequest(request, env, ctx) {
         return getAdminAnalytics(user, url, request, env);
     }
     if (url.pathname === "/v1/foods/search" && request.method === "GET") {
-        return searchUsdaFoods(url, request, env);
+        return searchUsdaFoods(url, request, env, ctx);
     }
     const foodBarcodeMatch = url.pathname.match(/^\/v1\/foods\/barcode\/(\d+)$/);
     if (foodBarcodeMatch && request.method === "GET") {
@@ -348,14 +348,21 @@ async function requireUser(request, env) {
     return row || null;
 }
 
-async function searchUsdaFoods(url, request, env) {
+async function searchUsdaFoods(url, request, env, ctx) {
     const query = String(url.searchParams.get("q") || "").trim().replace(/\s+/g, " ");
     if (query.length < 2) return json({ error: "Enter at least 2 characters." }, 400, request, env);
     if (query.length > 80) return json({ error: "Food search is too long." }, 400, request, env);
-    const [verifiedFoods, externalFoods] = await Promise.all([
+    const [verifiedFoods, cachedExternalFoods, liveExternalResult] = await Promise.all([
         searchVerifiedFoods(query, env),
-        searchExternalFoodCache(query, env)
+        searchExternalFoodCache(query, env),
+        fetchOpenFoodFactsSearch(query)
     ]);
+    const externalFoods = mergeFoodResults(cachedExternalFoods, liveExternalResult.foods).slice(0, 8);
+    if (liveExternalResult.foods.length) {
+        const cacheWrites = Promise.all(liveExternalResult.foods.map(food => writeExternalFoodCache(food.barcode, food, env)));
+        if (ctx?.waitUntil) ctx.waitUntil(cacheWrites);
+        else await cacheWrites;
+    }
     const availableFoods = mergeFoodResults(verifiedFoods, externalFoods).slice(0, 16);
     if (!env.USDA_FDC_API_KEY) {
         if (availableFoods.length) {
@@ -540,6 +547,47 @@ async function fetchOpenFoodFactsBarcode(barcode) {
     finally {
         clearTimeout(timeout);
     }
+}
+
+async function fetchOpenFoodFactsSearch(query) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const url = new URL("https://world.openfoodfacts.org/cgi/search.pl");
+    url.searchParams.set("search_terms", query);
+    url.searchParams.set("search_simple", "1");
+    url.searchParams.set("action", "process");
+    url.searchParams.set("json", "1");
+    url.searchParams.set("page_size", "10");
+    url.searchParams.set("fields", [
+        "code", "product_name", "product_name_en", "generic_name", "generic_name_en",
+        "brands", "categories", "countries_tags", "quantity", "serving_size",
+        "serving_quantity", "nutrition_data_per", "nutriments"
+    ].join(","));
+    try {
+        const response = await fetch(url, {
+            headers: { "Accept": "application/json", "User-Agent": OPEN_FOOD_FACTS_USER_AGENT },
+            signal: controller.signal
+        });
+        if (!response.ok) {
+            console.info(JSON.stringify({ event: "open_food_facts_search_unavailable", status: response.status }));
+            return { ok: false, foods: [], status: response.status };
+        }
+        const payload = await response.json();
+        return { ok: true, foods: normalizeOpenFoodFactsSearchProducts(payload), status: response.status };
+    }
+    catch (error) {
+        console.info(JSON.stringify({ event: "open_food_facts_search_unavailable", reason: error?.name === "AbortError" ? "timeout" : "network" }));
+        return { ok: false, foods: [], status: 0 };
+    }
+    finally {
+        clearTimeout(timeout);
+    }
+}
+
+export function normalizeOpenFoodFactsSearchProducts(payload) {
+    return mergeFoodResults((Array.isArray(payload?.products) ? payload.products : [])
+        .map(product => normalizeOpenFoodFactsProduct(product, product?.code))
+        .filter(Boolean));
 }
 
 export function normalizeOpenFoodFactsProduct(product, barcode) {
