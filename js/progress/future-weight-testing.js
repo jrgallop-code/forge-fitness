@@ -407,7 +407,7 @@ function renderFutureDashboard(weights, phase, testDate) {
     const weighIns = new Set(phaseEntries.map(entry => entry.date)).size;
     const ready = elapsedDays >= MIN_TREND_DAY && weighIns >= MIN_ENTRIES_PER_WINDOW;
     const trend = ready ? calculateMovingAverage(weights.filter(entry => entry.date <= testDate)) : [];
-    const recent = trend.slice(-14);
+    const recent = trend.filter(point => dateMs(point.date) >= dateMs(testDate) - 6 * DAY_MS);
     const latest = recent.at(-1)?.weight ?? null;
     const signature = JSON.stringify({ testDate, elapsedDays, weighIns, recent });
     if (signature === lastDashboardSignature && card.classList.contains("future-dashboard-weight-trend-card")) return;
@@ -415,7 +415,7 @@ function renderFutureDashboard(weights, phase, testDate) {
 
     card.classList.remove("dashboard-weight-trend-card");
     card.classList.add("future-dashboard-weight-trend-card");
-    const chart = buildDashboardWeightTrendSvg(weights.filter(entry => entry.date <= testDate), trend);
+    const chart = buildDashboardWeightTrendSvg(trend);
     card.innerHTML = `
         <button type="button" class="dashboard-weight-trend-button" data-dashboard-weight-trend-open aria-label="Open Weight Progress">
             <span class="dashboard-weight-trend-heading"><span><h3>Weight Trend</h3><small>Test through ${formatShortDate(testDate)}</small></span></span>

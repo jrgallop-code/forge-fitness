@@ -112,7 +112,7 @@ function renderWeightTrendCard() {
     const entries = readWeightEntries();
     const readiness = getTrendReadiness(entries);
     const trend = readiness.hasEnoughData ? calculateMovingAverage(readiness.eligibleEntries) : [];
-    const recent = trend.slice(-14);
+    const recent = trend.filter(point => dateMs(point.date) >= dateMs(trend.at(-1)?.date) - 6 * DAY_MS);
     const latest = trend.at(-1)?.weight ?? null;
     const signature = JSON.stringify({
         elapsedDays: readiness.elapsedDays,
@@ -128,7 +128,7 @@ function renderWeightTrendCard() {
 
     const hasAnyWeightData = readiness.eligibleEntries.length > 0;
     const chart = readiness.hasEnoughData
-        ? buildDashboardWeightTrendSvg(readiness.eligibleEntries, trend)
+        ? buildDashboardWeightTrendSvg(trend)
         : "";
     const value = latest === null ? "--" : latest.toFixed(1);
     const daysReady = readiness.elapsedDays >= MIN_TREND_DAYS;

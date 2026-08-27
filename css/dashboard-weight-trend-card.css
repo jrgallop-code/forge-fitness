@@ -53,23 +53,6 @@
     overflow: visible;
 }
 
-.dashboard-weight-trend-daily-line {
-    fill:none;
-    stroke:rgba(112,181,137,.34);
-    stroke-width:1.1;
-    stroke-linecap:round;
-    stroke-linejoin:round;
-    vector-effect:non-scaling-stroke;
-}
-
-.dashboard-weight-trend-daily-point {
-    fill:rgba(126,194,151,.82);
-}
-
-.dashboard-weight-trend-area {
-    fill:url(#dashboard-weight-trend-fill);
-}
-
 .dashboard-weight-trend-average {
     fill:none;
     stroke:#45cb75;
@@ -78,17 +61,6 @@
     stroke-linejoin:round;
     vector-effect:non-scaling-stroke;
     filter:drop-shadow(0 0 2.5px rgba(69,203,117,.3));
-}
-
-.dashboard-weight-trend-latest-halo {
-    fill:rgba(69,203,117,.18);
-}
-
-.dashboard-weight-trend-latest {
-    fill:#45cb75;
-    stroke:#111614;
-    stroke-width:.8;
-    vector-effect:non-scaling-stroke;
 }
 
 .dashboard-weight-trend-empty {
