@@ -12,7 +12,7 @@ globalThis.window = { dispatchEvent() {} };
 globalThis.CustomEvent = class CustomEvent { constructor(type, options) { this.type = type; this.detail = options?.detail; } };
 
 const data = await import("../js/nutrition/food-log-data.js");
-const { barcodeVariants, dedupeUsdaFoods, detectUsdaBrandSearch, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeUsdaFood, normalizeVerifiedFood, rankUsdaBrandFoods, searchBundledVerifiedFoods, selectExactUsdaBarcodeFood } = await import("../cloud/src/index.js");
+const { barcodeVariants, dedupeUsdaFoods, detectUsdaBrandSearch, findBundledVerifiedFoodByBarcode, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeOpenFoodFactsProduct, normalizeUsdaFood, normalizeVerifiedFood, rankUsdaBrandFoods, searchBundledVerifiedFoods, selectExactUsdaBarcodeFood } = await import("../cloud/src/index.js");
 
 test("barcode lookup validates GTIN check digits and normalizes formatting", () => {
     assert.equal(normalizeBarcode("0 36000-29145 2"), "036000291452");
@@ -181,6 +181,79 @@ test("bundled verified foods keep the catalogue working before D1 migration", ()
     assert.equal(burgers[0].catalogueId, "mcd-ca-cheeseburger");
     assert.equal(burgers[0].portions[0].label, "1 burger (113 g)");
     assert.equal(bars[0].portions[0].nutrition.calories, 208);
+});
+
+test("Canadian and US Grenade barcodes resolve to regional variants of one product family", () => {
+    const canadian = findBundledVerifiedFoodByBarcode("847534004261");
+    const us = findBundledVerifiedFoodByBarcode("847534004063");
+    assert.equal(canadian.catalogueId, "grenade-salted-caramel-ca-60g");
+    assert.equal(us.catalogueId, "grenade-salted-caramel-us-60g");
+    assert.equal(us.productFamilyId, canadian.productFamilyId);
+    assert.equal(canadian.barcode, "847534004261");
+    assert.deepEqual(canadian.portions[0].nutrition, { calories: 240, protein: 21, carbs: 22, fat: 9, fiber: 2 });
+    assert.deepEqual(us.portions[0].nutrition, { calories: 230, protein: 20, carbs: 23, fat: 10, fiber: 3 });
+});
+
+test("verified barcode migration stores regional UPC aliases", async () => {
+    const migration = await readFile(new URL("../cloud/migrations/0006_verified_food_barcode_aliases.sql", import.meta.url), "utf8");
+    assert.match(migration, /CREATE TABLE IF NOT EXISTS verified_food_barcodes/);
+    assert.match(migration, /'847534004261', 'CA', 1/);
+    assert.match(migration, /'847534004063', 'US', 1/);
+    assert.match(migration, /product_family_id = 'grenade-salted-caramel-60g'/);
+});
+
+test("Open Food Facts products normalize labelled servings and Canadian identity", () => {
+    const food = normalizeOpenFoodFactsProduct({
+        code: "847534004261",
+        product_name: "Canadian Protein Bar",
+        brands: "Example Canada, Example Foods",
+        categories: "Protein bars, Snacks",
+        countries_tags: ["en:canada"],
+        serving_size: "1 bar (60 g)",
+        serving_quantity: 60,
+        nutrition: {
+            input_sets: [{
+                source: "packaging",
+                preparation: "as_sold",
+                per: "serving",
+                per_quantity: 60,
+                per_unit: "g",
+                nutrients: {
+                    "energy-kcal": { value: 230, unit: "kcal" },
+                    proteins: { value: 20, unit: "g" },
+                    carbohydrates: { value: 23, unit: "g" },
+                    fat: { value: 10, unit: "g" },
+                    fiber: { value: 3, unit: "g" }
+                }
+            }]
+        }
+    }, "847534004261");
+    assert.equal(food.source, "openfoodfacts");
+    assert.equal(food.countryCode, "CA");
+    assert.equal(food.brand, "Example Canada");
+    assert.equal(food.portions[0].label, "1 bar (60 g)");
+    assert.equal(food.portions[0].nutrition.calories, 230);
+    assert.equal(food.portions[0].nutrition.protein, 20);
+    assert.equal(food.portions[1].label, "100 g");
+    assert.equal(Math.round(food.portions[1].nutrition.calories), 383);
+});
+
+test("barcode lookup uses verified, cached, Open Food Facts, then USDA sources", async () => {
+    const worker = await readFile(new URL("../cloud/src/index.js", import.meta.url), "utf8");
+    const verifiedAt = worker.indexOf("await findVerifiedFoodByBarcode(barcode, env)");
+    const cacheAt = worker.indexOf("await readExternalFoodCache(barcode, env)");
+    const openAt = worker.indexOf("await fetchOpenFoodFactsBarcode(barcode)");
+    const usdaAt = worker.indexOf("await fetchUsdaBarcodeVariant(env.USDA_FDC_API_KEY");
+    assert.ok(verifiedAt > -1 && verifiedAt < cacheAt && cacheAt < openAt && openAt < usdaAt);
+    assert.match(worker, /api\/v3\.6\/product\/\$\{encodeURIComponent\(barcode\)\}\.json/);
+    assert.match(worker, /LevelUpHypertrophy\/1\.0 \(support@leveluphypertrophy\.com\)/);
+});
+
+test("Open Food Facts barcode responses use a persistent D1 cache", async () => {
+    const migration = await readFile(new URL("../cloud/migrations/0007_external_food_barcode_cache.sql", import.meta.url), "utf8");
+    assert.match(migration, /CREATE TABLE IF NOT EXISTS external_food_barcode_cache/);
+    assert.match(migration, /barcode TEXT PRIMARY KEY/);
+    assert.match(migration, /expires_at TEXT NOT NULL/);
 });
 
 test("known branded searches detect Grenade names and Carb Killa aliases", () => {

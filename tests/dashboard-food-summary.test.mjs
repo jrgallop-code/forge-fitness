@@ -47,7 +47,7 @@ test("Food Log keeps the complete Goals and Plan experience discoverable", async
     assert.match(foodLog, /level_up_calories_tab_v1/);
     assert.match(router, /renderCaloriesHub\(renderEnergyProfile\(\)\)/);
     assert.match(html, /dashboard-command-center\.css\?v=food-log-meals-v2/);
-    assert.match(html, /js\/app\.js\?v=barcode-scanner-3/);
+    assert.match(html, /js\/app\.js\?v=open-food-facts-1/);
 });
 
 test("dashboard nutrition card uses the compact summary geometry", async () => {

@@ -68,7 +68,7 @@ function renderFoodLogShell() {
             </div>
             <article class="food-daily-summary" data-food-summary></article>
             <div class="food-meals" data-food-meals></div>
-            <p class="food-data-credit">Food data from Level Up verified sources and USDA FoodData Central. Nutrition values may vary by product and serving.</p>
+            <p class="food-data-credit">Food data from Level Up verified sources, USDA FoodData Central, and Open Food Facts (ODbL). Nutrition values may vary by product and serving.</p>
         </section>
     `;
 }

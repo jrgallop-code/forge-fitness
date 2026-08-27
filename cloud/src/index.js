@@ -9,9 +9,9 @@ const ACQUISITION_SOURCES = new Set(["instagram", "tiktok", "reddit", "youtube",
 const CLIENT_EVENT_NAMES = new Set(["onboarding_completed", "workout_completed"]);
 
 export default {
-    async fetch(request, env) {
+    async fetch(request, env, ctx) {
         try {
-            return await handleRequest(request, env);
+            return await handleRequest(request, env, ctx);
         }
         catch (error) {
             console.error(JSON.stringify({ event: "unhandled_request_error", message: String(error?.message || error) }));
@@ -22,7 +22,7 @@ export default {
     }
 };
 
-async function handleRequest(request, env) {
+async function handleRequest(request, env, ctx) {
     const url = new URL(request.url);
     const origin = request.headers.get("Origin");
     if (request.method === "OPTIONS") return preflight(request, env);
@@ -56,7 +56,7 @@ async function handleRequest(request, env) {
     }
     const foodBarcodeMatch = url.pathname.match(/^\/v1\/foods\/barcode\/(\d+)$/);
     if (foodBarcodeMatch && request.method === "GET") {
-        return getFoodByBarcode(foodBarcodeMatch[1], request, env);
+        return getFoodByBarcode(foodBarcodeMatch[1], request, env, ctx);
     }
     const foodDetailMatch = url.pathname.match(/^\/v1\/foods\/(\d+)$/);
     if (foodDetailMatch && request.method === "GET") {
@@ -440,7 +440,7 @@ async function searchUsdaFoods(url, request, env) {
     }, 200, request, env);
 }
 
-async function getFoodByBarcode(value, request, env) {
+async function getFoodByBarcode(value, request, env, ctx) {
     const barcode = normalizeBarcode(value);
     if (!isValidBarcode(barcode)) {
         return json({ error: "Enter a valid 8, 12, 13, or 14 digit barcode." }, 400, request, env);
@@ -450,7 +450,21 @@ async function getFoodByBarcode(value, request, env) {
     if (verifiedFood) {
         return json({ food: verifiedFood, source: "Level Up Verified", barcode }, 200, request, env);
     }
+
+    const cachedFood = await readExternalFoodCache(barcode, env);
+    if (cachedFood) {
+        return json({ food: cachedFood, source: cachedFood.provenance?.sourceName || "External food catalogue", barcode, cached: true }, 200, request, env);
+    }
+
+    const openFoodFactsResult = await fetchOpenFoodFactsBarcode(barcode);
+    if (openFoodFactsResult.food) {
+        const cacheWrite = writeExternalFoodCache(barcode, openFoodFactsResult.food, env);
+        if (ctx?.waitUntil) ctx.waitUntil(cacheWrite);
+        else await cacheWrite;
+        return json({ food: openFoodFactsResult.food, source: "Open Food Facts", barcode }, 200, request, env);
+    }
     if (!env.USDA_FDC_API_KEY) {
+        if (!openFoodFactsResult.ok) return json({ error: "Barcode lookup is temporarily unavailable.", barcode }, 502, request, env);
         return json({ error: "Product not found.", barcode }, 404, request, env);
     }
 
@@ -482,6 +496,182 @@ async function getFoodByBarcode(value, request, env) {
     }
 }
 
+const OPEN_FOOD_FACTS_CACHE_DAYS = 30;
+const OPEN_FOOD_FACTS_USER_AGENT = "LevelUpHypertrophy/1.0 (support@leveluphypertrophy.com)";
+
+async function fetchOpenFoodFactsBarcode(barcode) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4500);
+    const url = new URL(`https://world.openfoodfacts.org/api/v3.6/product/${encodeURIComponent(barcode)}.json`);
+    url.searchParams.set("fields", [
+        "code", "product_name", "product_name_en", "generic_name", "generic_name_en",
+        "brands", "categories", "countries_tags", "quantity", "serving_size",
+        "serving_quantity", "nutrition_data_per", "nutrition", "nutriments"
+    ].join(","));
+    try {
+        const response = await fetch(url, {
+            headers: { "Accept": "application/json", "User-Agent": OPEN_FOOD_FACTS_USER_AGENT },
+            signal: controller.signal
+        });
+        if (response.status === 404) return { ok: true, food: null, status: response.status };
+        if (!response.ok) {
+            console.info(JSON.stringify({ event: "open_food_facts_barcode_unavailable", status: response.status, barcodeLength: barcode.length }));
+            return { ok: false, food: null, status: response.status };
+        }
+        const payload = await response.json();
+        return { ok: true, food: normalizeOpenFoodFactsProduct(payload?.product, barcode), status: response.status };
+    }
+    catch (error) {
+        console.info(JSON.stringify({ event: "open_food_facts_barcode_unavailable", reason: error?.name === "AbortError" ? "timeout" : "network", barcodeLength: barcode.length }));
+        return { ok: false, food: null, status: 0 };
+    }
+    finally {
+        clearTimeout(timeout);
+    }
+}
+
+export function normalizeOpenFoodFactsProduct(product, barcode) {
+    const normalizedBarcode = normalizeBarcode(product?.code || barcode);
+    const name = limitedText(product?.product_name_en || product?.product_name || product?.generic_name_en || product?.generic_name, 180);
+    if (!isValidBarcode(normalizedBarcode) || !name) return null;
+
+    const inputSets = Array.isArray(product?.nutrition?.input_sets) ? product.nutrition.input_sets : [];
+    const packagingSets = inputSets.filter(set => set?.source === "packaging" && (!set?.preparation || set.preparation === "as_sold"));
+    const servingSet = packagingSets.find(set => set?.per === "serving" && openFoodFactsSetNutrition(set).calories > 0);
+    const hundredGramSet = packagingSets.find(set => set?.per === "100g" && openFoodFactsSetNutrition(set).calories > 0);
+    const legacyNutriments = product?.nutriments && typeof product.nutriments === "object" ? product.nutriments : {};
+    const legacyPer100 = {
+        calories: openFoodFactsNutrient(legacyNutriments, "energy-kcal_100g"),
+        protein: openFoodFactsNutrient(legacyNutriments, "proteins_100g"),
+        carbs: openFoodFactsNutrient(legacyNutriments, "carbohydrates_100g"),
+        fat: openFoodFactsNutrient(legacyNutriments, "fat_100g"),
+        fiber: openFoodFactsNutrient(legacyNutriments, "fiber_100g")
+    };
+    const legacyPerServing = {
+        calories: openFoodFactsNutrient(legacyNutriments, "energy-kcal_serving"),
+        protein: openFoodFactsNutrient(legacyNutriments, "proteins_serving"),
+        carbs: openFoodFactsNutrient(legacyNutriments, "carbohydrates_serving"),
+        fat: openFoodFactsNutrient(legacyNutriments, "fat_serving"),
+        fiber: openFoodFactsNutrient(legacyNutriments, "fiber_serving")
+    };
+    const explicitPer100 = hundredGramSet ? openFoodFactsSetNutrition(hundredGramSet) : legacyPer100;
+    const perServing = servingSet ? openFoodFactsSetNutrition(servingSet) : legacyPerServing;
+    const servingSize = limitedText(product?.serving_size, 80);
+    const servingGrams = openFoodFactsServingGrams(product?.serving_quantity || servingSet?.per_quantity, servingSize);
+    const per100 = explicitPer100.calories > 0
+        ? explicitPer100
+        : servingGrams > 0 && perServing.calories > 0
+            ? scaleUsdaNutrition(perServing, 100 / servingGrams)
+            : legacyPer100;
+    if (!(per100.calories > 0) && !(perServing.calories > 0)) return null;
+    const portions = [];
+    if (servingGrams > 0 && per100.calories > 0) {
+        portions.push({
+            label: servingSize || `1 serving (${formatFoodNumber(servingGrams)} g)`,
+            grams: servingGrams,
+            nutrition: perServing.calories > 0 ? perServing : scaleUsdaNutrition(per100, servingGrams / 100)
+        });
+    }
+    else if (perServing.calories > 0) {
+        portions.push({ label: servingSize || "1 serving", nutrition: perServing });
+    }
+    if (per100.calories > 0 && Math.abs(servingGrams - 100) > .01) {
+        portions.push({ label: "100 g", grams: 100, nutrition: per100 });
+    }
+    if (!portions.length) return null;
+
+    const countries = Array.isArray(product?.countries_tags) ? product.countries_tags : [];
+    const countryCode = countries.includes("en:canada") ? "CA" : countries.includes("en:united-states") ? "US" : "";
+    return {
+        source: "openfoodfacts",
+        barcode: normalizedBarcode,
+        name,
+        brand: limitedText(String(product?.brands || "").split(",")[0], 120),
+        dataType: "Open Food Facts (community)",
+        category: limitedText(String(product?.categories || "").split(",")[0], 100),
+        countryCode,
+        provenance: {
+            sourceName: "Open Food Facts",
+            sourceUrl: `https://world.openfoodfacts.org/product/${normalizedBarcode}`,
+            verifiedAt: ""
+        },
+        detailsLoaded: true,
+        portions
+    };
+}
+
+function openFoodFactsNutrient(nutriments, key) {
+    const value = Number(nutriments?.[key]);
+    return Number.isFinite(value) && value >= 0 ? Number(value.toFixed(3)) : 0;
+}
+
+function openFoodFactsSetNutrition(set) {
+    const nutrients = set?.nutrients && typeof set.nutrients === "object" ? set.nutrients : {};
+    const read = key => {
+        const nutrient = nutrients?.[key];
+        const value = Number(nutrient?.value);
+        const unit = String(nutrient?.unit || "").toLowerCase();
+        if (!Number.isFinite(value) || value < 0) return 0;
+        if (key === "energy-kcal") return unit === "kj" ? Number((value / 4.184).toFixed(3)) : Number(value.toFixed(3));
+        if (unit === "mg") return Number((value / 1000).toFixed(3));
+        return Number(value.toFixed(3));
+    };
+    return {
+        calories: read("energy-kcal"),
+        protein: read("proteins"),
+        carbs: read("carbohydrates"),
+        fat: read("fat"),
+        fiber: read("fiber")
+    };
+}
+
+function openFoodFactsServingGrams(value, label) {
+    const quantity = Number(value);
+    if (Number.isFinite(quantity) && quantity > 0) return quantity;
+    const match = String(label || "").match(/(?:^|\s|\()([\d.]+)\s*g(?:\s|\)|$)/i);
+    const parsed = Number(match?.[1]);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+async function readExternalFoodCache(barcode, env) {
+    if (!env?.DB) return null;
+    try {
+        const row = await env.DB.prepare(`
+            SELECT food_json
+            FROM external_food_barcode_cache
+            WHERE barcode = ? AND expires_at > ?
+            LIMIT 1
+        `).bind(barcode, new Date().toISOString()).first();
+        if (!row?.food_json) return null;
+        const food = JSON.parse(row.food_json);
+        return food?.barcode && Array.isArray(food?.portions) ? food : null;
+    }
+    catch (error) {
+        console.info(JSON.stringify({ event: "external_food_cache_read_unavailable", reason: String(error?.message || error) }));
+        return null;
+    }
+}
+
+async function writeExternalFoodCache(barcode, food, env) {
+    if (!env?.DB || !food) return;
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + OPEN_FOOD_FACTS_CACHE_DAYS * 86400000).toISOString();
+    try {
+        await env.DB.prepare(`
+            INSERT INTO external_food_barcode_cache (barcode, source, food_json, expires_at, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(barcode) DO UPDATE SET
+                source = excluded.source,
+                food_json = excluded.food_json,
+                expires_at = excluded.expires_at,
+                updated_at = excluded.updated_at
+        `).bind(barcode, "openfoodfacts", JSON.stringify(food), expiresAt, now.toISOString(), now.toISOString()).run();
+    }
+    catch (error) {
+        console.info(JSON.stringify({ event: "external_food_cache_write_unavailable", reason: String(error?.message || error) }));
+    }
+}
+
 async function fetchUsdaBarcodeVariant(apiKey, query) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6500);
@@ -504,23 +694,42 @@ async function fetchUsdaBarcodeVariant(apiKey, query) {
 
 async function findVerifiedFoodByBarcode(barcode, env) {
     const candidates = barcodeVariants(barcode);
-    if (!candidates.length || !env?.DB) return null;
-    try {
+    if (!candidates.length) return null;
+    if (env?.DB) {
         const placeholders = candidates.map(() => "?").join(",");
-        const row = await env.DB.prepare(`
-            SELECT id, name, brand, category, country_code, barcode, serving_label,
-                   serving_grams, calories, protein_g, carbs_g, fat_g, fiber_g,
-                   source_name, source_url, verified_at
-            FROM verified_foods
-            WHERE status = 'active' AND barcode IN (${placeholders})
-            LIMIT 1
-        `).bind(...candidates).first();
-        if (row) return normalizeVerifiedFood(row);
+        try {
+            const row = await env.DB.prepare(`
+                SELECT id, name, brand, category, country_code, barcode, product_family_id, serving_label,
+                       serving_grams, calories, protein_g, carbs_g, fat_g, fiber_g,
+                       source_name, source_url, verified_at
+                FROM verified_foods
+                WHERE status = 'active' AND barcode IN (${placeholders})
+                LIMIT 1
+            `).bind(...candidates).first();
+            if (row) return normalizeVerifiedFood(row);
+        }
+        catch (error) {
+            console.error(JSON.stringify({ event: "verified_food_barcode_failed", reason: String(error?.message || error) }));
+        }
+        try {
+            const row = await env.DB.prepare(`
+                SELECT vf.id, vf.name, vf.brand, vf.category, vf.country_code,
+                       COALESCE(vf.barcode, vfb.barcode) AS barcode, vf.product_family_id, vf.serving_label,
+                       vf.serving_grams, vf.calories, vf.protein_g, vf.carbs_g,
+                       vf.fat_g, vf.fiber_g, vf.source_name, vf.source_url, vf.verified_at
+                FROM verified_food_barcodes vfb
+                JOIN verified_foods vf ON vf.id = vfb.food_id
+                WHERE vf.status = 'active' AND vfb.barcode IN (${placeholders})
+                ORDER BY vfb.is_primary DESC
+                LIMIT 1
+            `).bind(...candidates).first();
+            if (row) return normalizeVerifiedFood(row);
+        }
+        catch (error) {
+            console.info(JSON.stringify({ event: "verified_food_barcode_alias_unavailable", reason: String(error?.message || error) }));
+        }
     }
-    catch (error) {
-        console.error(JSON.stringify({ event: "verified_food_barcode_failed", reason: String(error?.message || error) }));
-    }
-    return BUNDLED_VERIFIED_FOODS.find(food => barcodeVariants(food.barcode).some(candidate => candidates.includes(candidate))) || null;
+    return findBundledVerifiedFoodByBarcode(barcode);
 }
 
 export function normalizeBarcode(value) {
@@ -625,7 +834,7 @@ async function searchVerifiedFoods(query, env) {
     let storedFoods = [];
     try {
         const result = await env.DB.prepare(`
-            SELECT id, name, brand, category, country_code, barcode, serving_label,
+            SELECT id, name, brand, category, country_code, barcode, product_family_id, serving_label,
                    serving_grams, calories, protein_g, carbs_g, fat_g, fiber_g,
                    source_name, source_url, verified_at
             FROM verified_foods
@@ -668,6 +877,7 @@ export function normalizeVerifiedFood(row) {
     return {
         source: "levelup",
         catalogueId: id,
+        productFamilyId: limitedText(row?.product_family_id, 100),
         name,
         brand: limitedText(row?.brand, 120),
         dataType: "Level Up Verified",
@@ -708,7 +918,17 @@ export function searchBundledVerifiedFoods(query) {
     return BUNDLED_VERIFIED_FOODS.filter(food => {
         const searchable = foodIdentity(`${food.name} ${food.brand} ${food.aliases || ""}`);
         return tokens.every(token => searchable.includes(token));
-    }).map(({ aliases, ...food }) => food);
+    }).map(({ aliases, barcodeAliases, ...food }) => food);
+}
+
+export function findBundledVerifiedFoodByBarcode(barcode) {
+    const candidates = new Set(barcodeVariants(barcode));
+    if (!candidates.size) return null;
+    const food = BUNDLED_VERIFIED_FOODS.find(item => [item.barcode, ...(item.barcodeAliases || [])]
+        .some(storedBarcode => barcodeVariants(storedBarcode).some(candidate => candidates.has(candidate))));
+    if (!food) return null;
+    const { aliases, barcodeAliases, ...publicFood } = food;
+    return publicFood;
 }
 
 const BUNDLED_VERIFIED_FOODS = [
@@ -719,10 +939,12 @@ const BUNDLED_VERIFIED_FOODS = [
     bundledVerifiedFood({ id: "mcd-ca-double-quarter-cheese", name: "Double Quarter Pounder with Cheese", brand: "McDonald's", aliases: "mcdonald burger", label: "1 burger", calories: 750, protein: 47, carbs: 47, fat: 44, sourceUrl: "https://www.mcdonalds.com/ca/en-ca/product/double-quarter-pounder-with-cheese.html" }),
     bundledVerifiedFood({ id: "mcd-ca-hash-brown", name: "Hash Brown", brand: "McDonald's", aliases: "hashbrown mcdonald breakfast", label: "1 hash brown (55 g)", grams: 55, calories: 160, protein: 1, carbs: 16, fat: 10, sourceUrl: "https://www.mcdonalds.com/ca/en-ca/product/hash-browns.html" }),
     bundledVerifiedFood({ id: "grenade-cookie-dough-60g", name: "Chocolate Chip Cookie Dough Protein Bar", brand: "Grenade", aliases: "carb killa", label: "1 bar (60 g)", grams: 60, calories: 208, protein: 21, carbs: 18, fat: 7.8, fiber: 2.7, sourceUrl: "https://www.grenade.com/products/protein-bar-cookie-dough" }),
-    bundledVerifiedFood({ id: "grenade-peanut-nutter-60g", name: "Peanut Nutter Protein Bar", brand: "Grenade", aliases: "carb killa peanut butter", label: "1 bar (60 g)", grams: 60, calories: 214, protein: 20, carbs: 18, fat: 9.1, fiber: 5.6, sourceUrl: "https://www.grenade.com/products/protein-bar-peanut-nutter" })
+    bundledVerifiedFood({ id: "grenade-peanut-nutter-60g", name: "Peanut Nutter Protein Bar", brand: "Grenade", aliases: "carb killa peanut butter", label: "1 bar (60 g)", grams: 60, calories: 214, protein: 20, carbs: 18, fat: 9.1, fiber: 5.6, sourceUrl: "https://www.grenade.com/products/protein-bar-peanut-nutter" }),
+    bundledVerifiedFood({ id: "grenade-salted-caramel-ca-60g", productFamilyId: "grenade-salted-caramel-60g", name: "Chocolate Chip Salted Caramel Protein Bar", brand: "Grenade", aliases: "carb killa salted caramel chocolate chip", barcode: "847534004261", label: "1 bar (60 g)", grams: 60, calories: 240, protein: 21, carbs: 22, fat: 9, fiber: 2, sourceName: "Canadian package label via Open Food Facts", sourceUrl: "https://world.openfoodfacts.org/product/0847534004261" }),
+    bundledVerifiedFood({ id: "grenade-salted-caramel-us-60g", productFamilyId: "grenade-salted-caramel-60g", name: "Chocolate Chip Salted Caramel Protein Bar", brand: "Grenade", aliases: "carb killa salted caramel chocolate chip", barcode: "847534004063", label: "1 bar (60 g)", grams: 60, calories: 230, protein: 20, carbs: 23, fat: 10, fiber: 3, sourceName: "USDA FoodData Central", sourceUrl: "https://fdc.nal.usda.gov/food-details/2387796/nutrients" })
 ];
 
-function bundledVerifiedFood({ id, name, brand, aliases, label, grams, calories, protein, carbs, fat, fiber = 0, sourceUrl }) {
+function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, barcode = "", barcodeAliases = [], label, grams, calories, protein, carbs, fat, fiber = 0, sourceName = "", sourceUrl }) {
     const nutrition = { calories, protein, carbs, fat, fiber };
     const portions = [{ label, ...(grams ? { grams } : {}), nutrition }];
     if (grams && Math.abs(grams - 100) > .01) {
@@ -731,13 +953,16 @@ function bundledVerifiedFood({ id, name, brand, aliases, label, grams, calories,
     return {
         source: "levelup",
         catalogueId: id,
+        productFamilyId,
         name,
         brand,
         aliases,
+        barcode: normalizeBarcode(barcode),
+        barcodeAliases: barcodeAliases.map(normalizeBarcode).filter(Boolean),
         dataType: "Level Up Verified",
         category: brand === "Grenade" ? "Protein bar" : "Restaurant food",
         countryCode: "CA",
-        provenance: { sourceName: brand === "Grenade" ? "Grenade" : "McDonald's Canada", sourceUrl, verifiedAt: "2026-08-27" },
+        provenance: { sourceName: sourceName || (brand === "Grenade" ? "Grenade" : "McDonald's Canada"), sourceUrl, verifiedAt: "2026-08-27" },
         detailsLoaded: true,
         portions
     };
