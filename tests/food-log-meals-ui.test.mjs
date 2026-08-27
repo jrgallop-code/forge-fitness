@@ -65,10 +65,11 @@ test("food diary uses a restrained native typography hierarchy", async () => {
 test("daily calories place the target directly below actual intake", async () => {
     const [module, styles] = await Promise.all([read("../js/nutrition/food-log.js"), read("../css/food-log.css")]);
     assert.match(module, /class="food-calorie-value"/);
+    assert.match(module, /class="food-calorie-target"/);
     assert.match(module, /cal target/);
     assert.match(styles, /Actual calories with target directly beneath/);
     assert.match(styles, /\.food-calorie-value\{[^}]*display:grid[^}]*justify-items:end/);
-    assert.match(styles, /\.food-calorie-value small\{/);
+    assert.match(styles, /\.food-calorie-target\{/);
 });
 
 test("custom foods collect MyFitnessPal-style serving details", async () => {
