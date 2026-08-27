@@ -5,6 +5,12 @@ const NUTRITION_PHASES_STORAGE_KEY = "level_up_nutrition_phases";
 const DAY_MS = 86400000;
 const MIN_TREND_DAYS = 7;
 const MIN_TREND_WEIGH_INS = 4;
+const PHASE_LABELS = {
+    fat_loss: "Fat Loss",
+    maintenance: "Maintenance",
+    lean_bulk: "Lean Bulk",
+    custom: "Custom"
+};
 
 let queued = false;
 
@@ -31,6 +37,11 @@ function readActiveNutritionPhase() {
     catch {
         return null;
     }
+}
+
+function activePhaseLabel(phase) {
+    if (!phase) return "";
+    return PHASE_LABELS[phase.type] || String(phase.name || "Custom").trim().slice(0, 18);
 }
 
 function calculateMovingAverage(entries) {
@@ -111,6 +122,7 @@ function renderWeightTrendCard() {
 
     const entries = readWeightEntries();
     const readiness = getTrendReadiness(entries);
+    const phaseLabel = activePhaseLabel(readActiveNutritionPhase());
     const trend = readiness.hasEnoughData ? calculateMovingAverage(readiness.eligibleEntries) : [];
     const recent = trend.filter(point => dateMs(point.date) >= dateMs(trend.at(-1)?.date) - 6 * DAY_MS);
     const latest = trend.at(-1)?.weight ?? null;
@@ -118,6 +130,7 @@ function renderWeightTrendCard() {
         elapsedDays: readiness.elapsedDays,
         weighIns: readiness.weighIns,
         phaseBased: readiness.phaseBased,
+        phaseLabel,
         recent: recent.map(point => [point.date, Math.round(point.weight * 1000) / 1000])
     });
 
@@ -160,6 +173,7 @@ function renderWeightTrendCard() {
                     <h3>Weight Trend</h3>
                     <small>7-Day Moving Average</small>
                 </span>
+                ${phaseLabel ? `<span class="dashboard-weight-phase-badge">${phaseLabel}</span>` : ""}
             </span>
             <span class="dashboard-weight-trend-chart" aria-hidden="true">
                 ${readiness.hasEnoughData && chart
