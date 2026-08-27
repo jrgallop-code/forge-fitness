@@ -24,11 +24,19 @@ test("barcode lookup validates GTIN check digits and normalizes formatting", () 
 
 test("barcode matching treats UPC-A and zero-padded EAN/GTIN as the same product", () => {
     assert.deepEqual(barcodeVariants("036000291452"), ["036000291452", "0036000291452", "00036000291452"]);
+    assert.deepEqual(barcodeVariants("0036000291452"), ["0036000291452", "00036000291452", "036000291452"]);
     const selected = selectExactUsdaBarcodeFood([
         { fdcId: 1, gtinUpc: "111111111111", description: "Wrong food" },
         { fdcId: 2, gtinUpc: "0036000291452", description: "Right food", servingSize: 30, labelNutrients: { calories: { value: 120 } } }
     ], "036000291452");
     assert.equal(selected.fdcId, 2);
+});
+
+test("barcode endpoint retries equivalent USDA barcode forms before reporting not found", async () => {
+    const worker = await readFile(new URL("../cloud/src/index.js", import.meta.url), "utf8");
+    assert.match(worker, /const queries = barcodeVariants\(barcode\)/);
+    assert.match(worker, /queries\.slice\(1\)\.map\(query => fetchUsdaBarcodeVariant/);
+    assert.match(worker, /selectExactUsdaBarcodeFood\(results\.flatMap/);
 });
 
 test("food log scales a serving and totals its macros", () => {

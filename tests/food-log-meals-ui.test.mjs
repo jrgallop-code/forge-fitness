@@ -47,12 +47,22 @@ test("food picker includes a compact barcode scanner with manual and custom fall
         read("../cloud/src/index.js")
     ]);
     assert.match(module, /data-barcode-open/);
+    assert.match(module, /class="food-search-entry"/);
+    assert.doesNotMatch(module, /class="food-search-field"><input[^>]+><button[^>]+class="food-barcode-open"/);
     assert.match(module, /facingMode: \{ ideal: "environment" \}/);
+    assert.match(module, /width: \{ ideal: 1920 \}/);
+    assert.match(module, /Hold the barcode inside the box/);
+    assert.match(module, /getCapabilities/);
+    assert.match(module, /applyConstraints\(\{ advanced: \[\{ zoom \}\] \}\)/);
+    assert.match(module, /data-barcode-zoom-range/);
     assert.match(module, /Only the barcode number is sent for lookup/);
     assert.match(module, /\/v1\/foods\/barcode\//);
     assert.match(module, /Create a custom food with this barcode/);
     assert.match(module, /barcodeScannerControls\?\.stop/);
     assert.match(styles, /food-barcode-frame/);
+    assert.match(styles, /food-barcode-frame i:nth-child/);
+    assert.doesNotMatch(styles, /food-barcode-frame:before/);
     assert.match(worker, /selectExactUsdaBarcodeFood/);
-    assert.match(worker, /usdaFoodSearchUrl\(env\.USDA_FDC_API_KEY, barcode, 50, "Branded"\)/);
+    assert.match(worker, /fetchUsdaBarcodeVariant/);
+    assert.match(worker, /const queries = barcodeVariants\(barcode\)/);
 });

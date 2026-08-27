@@ -454,28 +454,48 @@ async function getFoodByBarcode(value, request, env) {
         return json({ error: "Product not found.", barcode }, 404, request, env);
     }
 
-    const upstreamUrl = usdaFoodSearchUrl(env.USDA_FDC_API_KEY, barcode, 50, "Branded");
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const queries = barcodeVariants(barcode);
     try {
-        const response = await fetch(upstreamUrl, {
-            headers: { "Accept": "application/json" },
-            signal: controller.signal
-        });
-        if (!response.ok) {
-            console.error(JSON.stringify({ event: "usda_barcode_lookup_failed", status: response.status }));
-            return json({ error: response.status === 429 ? "USDA lookup is busy. Wait a moment and try again." : "Barcode lookup is temporarily unavailable." }, response.status === 429 ? 429 : 502, request, env);
-        }
-        const payload = await response.json();
-        const rawFood = selectExactUsdaBarcodeFood(payload?.foods, barcode);
+        const firstResult = await fetchUsdaBarcodeVariant(env.USDA_FDC_API_KEY, queries[0]);
+        const firstFood = firstResult.ok ? selectExactUsdaBarcodeFood(firstResult.foods, barcode) : null;
+        const remainingResults = firstFood || queries.length === 1
+            ? []
+            : await Promise.all(queries.slice(1).map(query => fetchUsdaBarcodeVariant(env.USDA_FDC_API_KEY, query)));
+        const results = [firstResult, ...remainingResults];
+        const rawFood = firstFood || selectExactUsdaBarcodeFood(results.flatMap(result => result.ok ? result.foods : []), barcode);
         const normalizedFood = rawFood ? normalizeUsdaFood(rawFood) : null;
         const food = normalizedFood ? { ...normalizedFood, detailsLoaded: true } : null;
-        if (!food) return json({ error: "Product not found.", barcode }, 404, request, env);
+        if (!food) {
+            const failures = results.filter(result => !result.ok);
+            if (failures.length) {
+                const busy = failures.some(result => result.status === 429);
+                console.error(JSON.stringify({ event: "usda_barcode_lookup_incomplete", barcodeLength: barcode.length, queries: queries.length, failures: failures.map(result => result.status || result.reason) }));
+                return json({ error: busy ? "USDA lookup is busy. Wait a moment and try again." : "Barcode lookup is temporarily unavailable." }, busy ? 429 : 502, request, env);
+            }
+            return json({ error: "Product not found.", barcode }, 404, request, env);
+        }
         return json({ food, source: "USDA FoodData Central", barcode }, 200, request, env);
     }
     catch (error) {
-        console.error(JSON.stringify({ event: "usda_barcode_lookup_failed", reason: error?.name === "AbortError" ? "timeout" : "network" }));
+        console.error(JSON.stringify({ event: "usda_barcode_lookup_failed", reason: error?.name === "AbortError" ? "timeout" : "network", barcodeLength: barcode.length }));
         return json({ error: "Barcode lookup is temporarily unavailable." }, 502, request, env);
+    }
+}
+
+async function fetchUsdaBarcodeVariant(apiKey, query) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6500);
+    try {
+        const response = await fetch(usdaFoodSearchUrl(apiKey, query, 50, "Branded"), {
+            headers: { "Accept": "application/json" },
+            signal: controller.signal
+        });
+        if (!response.ok) return { ok: false, status: response.status, foods: [] };
+        const payload = await response.json();
+        return { ok: true, status: response.status, foods: Array.isArray(payload?.foods) ? payload.foods : [] };
+    }
+    catch (error) {
+        return { ok: false, status: 0, reason: error?.name === "AbortError" ? "timeout" : "network", foods: [] };
     }
     finally {
         clearTimeout(timeout);
