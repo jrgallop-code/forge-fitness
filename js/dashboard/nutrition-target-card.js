@@ -11,7 +11,7 @@ import {
     localDateKey,
     summarizeEntries
 }
-from "../nutrition/food-log-data.js?v=dashboard-food-summary-1";
+from "../nutrition/food-log-data.js?v=food-log-meals-v2";
 import {
     calculateMacroTargets,
     poundsToKg
@@ -134,9 +134,9 @@ function renderDashboardNutritionSummary() {
         </div>
         <button class="dashboard-calorie-summary" type="button" data-dashboard-calorie-toggle aria-label="Show ${mode === "consumed" ? "calories remaining" : "calories consumed"}">
             <span class="dashboard-calorie-toggle-icon" aria-hidden="true">⇄</span>
-            <svg viewBox="0 0 240 120" role="img" aria-label="${Math.round(progress)} percent of calorie target consumed">
-                <path class="dashboard-calorie-arc-track" pathLength="100" d="M20 108 A100 100 0 0 1 220 108"></path>
-                <path class="dashboard-calorie-arc-value" pathLength="100" stroke-dasharray="${progress} 100" d="M20 108 A100 100 0 0 1 220 108"></path>
+            <svg viewBox="0 0 240 100" role="img" aria-label="${Math.round(progress)} percent of calorie target consumed">
+                <path class="dashboard-calorie-arc-track" pathLength="100" d="M38 92 A82 82 0 0 1 202 92"></path>
+                <path class="dashboard-calorie-arc-value" pathLength="100" stroke-dasharray="${progress} 100" d="M38 92 A82 82 0 0 1 202 92"></path>
             </svg>
             <span class="dashboard-calorie-copy">
                 <strong>${Math.round(calorie.value).toLocaleString()} <small>cal</small></strong>

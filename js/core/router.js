@@ -6,7 +6,7 @@ import { initializeSmartBuild } from "../workouts/smart-build.js?v=female-back-r
 import { initializeSmartBuildSupersetGuard } from "../workouts/smart-build-superset-guard.js?v=superset-clean-1";
 import { initializeRoutineImporter } from "../workouts/routine-importer.js?v=import-volume-summary-1";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
-import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=dashboard-food-summary-1";
+import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=food-log-meals-v2";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=adaptive-completion-1";
 import { renderProgress } from "../progress/progress-ui.js?v=analytics-bar-polish-1";
@@ -22,7 +22,7 @@ import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../pro
 import { initializeMeasurementHistoryDetail } from "../progress/measurements-history-detail.js?v=measurement-history-1";
 import { renderNutrition, renderWater, initializeNutrition, showNutritionView } from "../nutrition/nutrition-ui.js?v=water-only-1";
 import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energy-profile.js?v=unit-system-1";
-import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v=goals-and-food-log-1";
+import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v=food-log-meals-v2";
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-goal-presets-2";

@@ -381,10 +381,53 @@ async function searchUsdaFoods(url, request, env) {
     }
 
     const payload = await response.json();
-    const foods = Array.isArray(payload?.foods)
-        ? payload.foods.map(normalizeUsdaFood).filter(Boolean)
-        : [];
+    const searchFoods = Array.isArray(payload?.foods) ? payload.foods : [];
+    const detailFoods = await fetchUsdaFoodDetails(searchFoods, env);
+    const foods = searchFoods
+        .map(food => normalizeUsdaFood(mergeUsdaFoodDetail(food, detailFoods.get(Number(food?.fdcId)))))
+        .filter(Boolean);
     return json({ foods, source: "USDA FoodData Central" }, 200, request, env);
+}
+
+async function fetchUsdaFoodDetails(searchFoods, env) {
+    const ids = [...new Set(searchFoods.map(food => Number(food?.fdcId)).filter(Number.isFinite))].slice(0, 20);
+    if (!ids.length) return new Map();
+    const detailsUrl = new URL("https://api.nal.usda.gov/fdc/v1/foods");
+    detailsUrl.searchParams.set("api_key", env.USDA_FDC_API_KEY);
+    detailsUrl.searchParams.set("fdcIds", ids.join(","));
+    detailsUrl.searchParams.set("format", "full");
+    detailsUrl.searchParams.set("nutrients", "203,204,205,208,291,1003,1004,1005,1008,1079");
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+        const response = await fetch(detailsUrl, { headers: { "Accept": "application/json" }, signal: controller.signal });
+        if (!response.ok) {
+            console.error(JSON.stringify({ event: "usda_food_details_failed", status: response.status }));
+            return new Map();
+        }
+        const foods = await response.json();
+        return new Map((Array.isArray(foods) ? foods : []).map(food => [Number(food?.fdcId), food]));
+    }
+    catch (error) {
+        console.error(JSON.stringify({ event: "usda_food_details_failed", reason: error?.name === "AbortError" ? "timeout" : "network" }));
+        return new Map();
+    }
+    finally {
+        clearTimeout(timeout);
+    }
+}
+
+function mergeUsdaFoodDetail(searchFood, detailFood) {
+    if (!detailFood) return searchFood;
+    return {
+        ...searchFood,
+        ...detailFood,
+        dataType: detailFood.dataType || detailFood.datatype || searchFood.dataType,
+        brandOwner: detailFood.brandOwner || detailFood.brandName || searchFood.brandOwner || searchFood.brandName,
+        foodNutrients: Array.isArray(detailFood.foodNutrients) && detailFood.foodNutrients.length
+            ? detailFood.foodNutrients
+            : searchFood.foodNutrients
+    };
 }
 
 export function normalizeUsdaFood(food) {
@@ -407,9 +450,17 @@ export function normalizeUsdaFood(food) {
         portions.push({
             label: limitedText(food?.householdServingFullText, 80) || `${formatFoodNumber(servingSize)} g`,
             grams: servingSize,
-            nutrition: scaleUsdaNutrition(per100, multiplier)
+            nutrition: usdaLabelNutrition(food) || scaleUsdaNutrition(per100, multiplier)
         });
     }
+    const detailedPortions = [...(Array.isArray(food?.foodPortions) ? food.foodPortions : []), ...(Array.isArray(food?.foodMeasures) ? food.foodMeasures : [])]
+        .map(portion => normalizeUsdaPortion(portion, per100))
+        .filter(Boolean)
+        .sort((a, b) => portionPriority(b.label) - portionPriority(a.label));
+    detailedPortions.forEach(portion => {
+        const duplicate = portions.some(existing => existing.label.toLowerCase() === portion.label.toLowerCase() || Math.abs(existing.grams - portion.grams) < .01);
+        if (!duplicate) portions.push(portion);
+    });
     portions.push({ label: "100 g", grams: 100, nutrition: per100 });
 
     return {
@@ -418,17 +469,58 @@ export function normalizeUsdaFood(food) {
         name,
         brand: limitedText(food?.brandOwner || food?.brandName, 120),
         dataType: limitedText(food?.dataType, 60),
-        category: limitedText(food?.foodCategory, 100),
+        category: limitedText(food?.foodCategory?.description || food?.wweiaFoodCategory?.wweiaFoodCategoryDescription || food?.foodCategory, 100),
         portions
     };
+}
+
+function normalizeUsdaPortion(portion, per100) {
+    const grams = Number(portion?.gramWeight);
+    if (!Number.isFinite(grams) || grams <= 0) return null;
+    const label = usdaPortionLabel(portion);
+    if (!label) return null;
+    return { label, grams, nutrition: scaleUsdaNutrition(per100, grams / 100) };
+}
+
+function usdaPortionLabel(portion) {
+    const description = limitedText(portion?.portionDescription || portion?.disseminationText, 80);
+    if (description) return description;
+    const amount = Number(portion?.amount);
+    const unit = limitedText(portion?.measureUnit?.name || portion?.measureUnit?.abbreviation || portion?.unit, 50);
+    const modifier = limitedText(portion?.modifier, 50);
+    const usefulModifier = modifier && !/^\d+$/.test(modifier) ? modifier : "";
+    if (Number.isFinite(amount) && amount > 0 && (unit || usefulModifier)) {
+        return `${formatFoodNumber(amount)} ${usefulModifier || unit}`.trim();
+    }
+    return usefulModifier;
+}
+
+function portionPriority(label) {
+    const normalized = String(label || "").toLowerCase();
+    if (/\b(burger|sandwich|item|piece|patty|wrap|burrito|taco)\b/.test(normalized)) return 4;
+    if (/\b(serving|order|package|container)\b/.test(normalized)) return 3;
+    if (/quantity not specified|undetermined/.test(normalized)) return 0;
+    return 2;
+}
+
+function usdaLabelNutrition(food) {
+    const labels = food?.labelNutrients;
+    if (!labels || typeof labels !== "object") return null;
+    const read = key => {
+        const value = Number(labels?.[key]?.value);
+        return Number.isFinite(value) && value >= 0 ? value : 0;
+    };
+    const calories = read("calories");
+    if (!(calories > 0)) return null;
+    return { calories, protein: read("protein"), carbs: read("carbohydrates"), fat: read("fat"), fiber: read("fiber") };
 }
 
 function usdaNutrient(food, numbers, names, requiredUnit = "") {
     const nutrients = Array.isArray(food?.foodNutrients) ? food.foodNutrients : [];
     const match = nutrients.find(item => {
-        const number = String(item?.nutrientNumber || item?.number || item?.nutrientId || "");
-        const name = String(item?.nutrientName || item?.name || "").trim().toLowerCase();
-        const unit = String(item?.unitName || item?.unit || "").trim().toUpperCase();
+        const number = String(item?.nutrientNumber || item?.number || item?.nutrientId || item?.nutrient?.number || item?.nutrient?.id || "");
+        const name = String(item?.nutrientName || item?.name || item?.nutrient?.name || "").trim().toLowerCase();
+        const unit = String(item?.unitName || item?.unit || item?.nutrient?.unitName || "").trim().toUpperCase();
         const identityMatches = numbers.includes(number) || names.includes(name);
         return identityMatches && (!requiredUnit || unit === requiredUnit);
     });
