@@ -14,13 +14,10 @@ test("dashboard and future-preview cards share one weight trend renderer", () =>
     assert.doesNotMatch(future, /function buildSparklinePath/);
 });
 
-test("compact renderer mirrors the Weight tab visual layers", () => {
-    assert.match(renderer, /dashboard-weight-trend-daily-line/);
-    assert.match(renderer, /dashboard-weight-trend-daily-point/);
-    assert.match(renderer, /dashboard-weight-trend-area/);
+test("compact renderer shows only the smoothed seven-day trend", () => {
+    assert.match(renderer, /6 \* DAY_MS/);
     assert.match(renderer, /dashboard-weight-trend-average/);
-    assert.match(renderer, /dashboard-weight-trend-latest-halo/);
     assert.match(renderer, /traceSmoothPath/);
     assert.match(styles, /stroke:#45cb75/);
-    assert.match(styles, /fill:url\(#dashboard-weight-trend-fill\)/);
+    assert.doesNotMatch(renderer, /daily-line|daily-point|trend-area|latest-halo|<circle/);
 });

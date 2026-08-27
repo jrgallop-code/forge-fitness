@@ -2,16 +2,18 @@ const WIDTH = 160;
 const HEIGHT = 44;
 const X_PADDING = 4;
 const Y_PADDING = 5;
-const MAX_TREND_POINTS = 14;
+const DAY_MS = 86400000;
 
-export function buildDashboardWeightTrendSvg(entries, movingAverage) {
-    const trend = movingAverage.slice(-MAX_TREND_POINTS);
+export function buildDashboardWeightTrendSvg(movingAverage) {
+    const latestDate = movingAverage.at(-1)?.date;
+    if (!latestDate) return "";
+    const sevenDayStart = dateMs(latestDate) - 6 * DAY_MS;
+    const trend = movingAverage.filter(point => dateMs(point.date) >= sevenDayStart);
     if (!trend.length) return "";
 
     const startDate = trend[0].date;
     const endDate = trend.at(-1).date;
-    const visibleEntries = entries.filter(entry => entry.date >= startDate && entry.date <= endDate);
-    const values = [...visibleEntries, ...trend]
+    const values = trend
         .map(point => Number(point.weight))
         .filter(Number.isFinite);
     if (!values.length) return "";
@@ -29,38 +31,14 @@ export function buildDashboardWeightTrendSvg(entries, movingAverage) {
         y: yFor(Number(point.weight))
     }));
 
-    const dailyPoints = coordinates(visibleEntries);
     const trendPoints = coordinates(trend);
-    const dailyPath = traceStraightPath(dailyPoints);
     const trendPath = traceSmoothPath(trendPoints);
-    const latest = trendPoints.at(-1);
-    const fillPath = trendPoints.length > 1
-        ? `${trendPath} L ${latest.x.toFixed(2)} ${HEIGHT - Y_PADDING} L ${trendPoints[0].x.toFixed(2)} ${HEIGHT - Y_PADDING} Z`
-        : "";
 
     return `
         <svg class="dashboard-weight-trend-svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" preserveAspectRatio="none">
-            <defs>
-                <linearGradient id="dashboard-weight-trend-fill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#45cb75" stop-opacity=".25"></stop>
-                    <stop offset="56%" stop-color="#247042" stop-opacity=".12"></stop>
-                    <stop offset="100%" stop-color="#123f27" stop-opacity="0"></stop>
-                </linearGradient>
-            </defs>
-            ${dailyPath ? `<path class="dashboard-weight-trend-daily-line" d="${dailyPath}"></path>` : ""}
-            ${dailyPoints.map(point => `<circle class="dashboard-weight-trend-daily-point" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="1.05"></circle>`).join("")}
-            ${fillPath ? `<path class="dashboard-weight-trend-area" d="${fillPath}"></path>` : ""}
             <path class="dashboard-weight-trend-average" d="${trendPath}"></path>
-            <circle class="dashboard-weight-trend-latest-halo" cx="${latest.x.toFixed(2)}" cy="${latest.y.toFixed(2)}" r="3.3"></circle>
-            <circle class="dashboard-weight-trend-latest" cx="${latest.x.toFixed(2)}" cy="${latest.y.toFixed(2)}" r="1.65"></circle>
         </svg>
     `;
-}
-
-function traceStraightPath(points) {
-    return points.map((point, index) =>
-        `${index ? "L" : "M"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`
-    ).join(" ");
 }
 
 function traceSmoothPath(points) {
