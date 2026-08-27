@@ -22,6 +22,7 @@ import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../pro
 import { initializeMeasurementHistoryDetail } from "../progress/measurements-history-detail.js?v=measurement-history-1";
 import { renderNutrition, renderWater, initializeNutrition, showNutritionView } from "../nutrition/nutrition-ui.js?v=water-only-1";
 import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energy-profile.js?v=unit-system-1";
+import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v=usda-food-log-1";
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-goal-presets-2";
@@ -61,7 +62,7 @@ export function navigate(page) {
             case "water":
                 content.innerHTML = renderWater(); safeInitialize("Water log", initializeNutrition); break;
             case "energy":
-                content.innerHTML = renderEnergyProfile(); safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); break;
+                content.innerHTML = renderCaloriesHub(renderEnergyProfile()); safeInitialize("Food log", initializeFoodLog); safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); break;
             case "more": content.innerHTML = renderMore(); safeInitialize("More", initializeMore); break;
             case "admin-analytics": content.innerHTML = renderAdminAnalytics(); safeInitialize("Owner analytics", initializeAdminAnalytics); break;
             case "history": content.innerHTML = renderWorkoutHistory(); safeInitialize("Workout history", initializeWorkoutHistory); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
