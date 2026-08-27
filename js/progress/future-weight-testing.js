@@ -1,4 +1,5 @@
 import { calculatePhaseMovingAverageTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=future-weight-test-1";
+import { buildDashboardWeightTrendSvg } from "../dashboard/dashboard-weight-trend-svg.js?v=dashboard-weight-style-sync-1";
 
 const WEIGHT_KEY = "forge_weight_entries";
 const PHASES_KEY = "level_up_nutrition_phases";
@@ -8,7 +9,6 @@ const DAY_MS = 86400000;
 const MIN_TREND_DAY = 7;
 const FIRST_CHECK_DAY = 14;
 const MIN_ENTRIES_PER_WINDOW = 4;
-const TREND_GREEN = "#4ade80";
 const DAILY_WEIGHT_LINE = "rgba(190, 190, 200, 0.35)";
 const DAILY_WEIGHT_POINT = "rgba(255, 255, 255, 0.88)";
 const RANGE_DAYS = { "1w": 7, "1m": 30, "3m": 90, "6m": 180 };
@@ -407,7 +407,7 @@ function renderFutureDashboard(weights, phase, testDate) {
     const weighIns = new Set(phaseEntries.map(entry => entry.date)).size;
     const ready = elapsedDays >= MIN_TREND_DAY && weighIns >= MIN_ENTRIES_PER_WINDOW;
     const trend = ready ? calculateMovingAverage(weights.filter(entry => entry.date <= testDate)) : [];
-    const recent = trend.slice(-7);
+    const recent = trend.slice(-14);
     const latest = recent.at(-1)?.weight ?? null;
     const signature = JSON.stringify({ testDate, elapsedDays, weighIns, recent });
     if (signature === lastDashboardSignature && card.classList.contains("future-dashboard-weight-trend-card")) return;
@@ -415,38 +415,18 @@ function renderFutureDashboard(weights, phase, testDate) {
 
     card.classList.remove("dashboard-weight-trend-card");
     card.classList.add("future-dashboard-weight-trend-card");
-    const path = buildSparklinePath(recent);
+    const chart = buildDashboardWeightTrendSvg(weights.filter(entry => entry.date <= testDate), trend);
     card.innerHTML = `
         <button type="button" class="dashboard-weight-trend-button" data-dashboard-weight-trend-open aria-label="Open Weight Progress">
             <span class="dashboard-weight-trend-heading"><span><h3>Weight Trend</h3><small>Test through ${formatShortDate(testDate)}</small></span></span>
             <span class="dashboard-weight-trend-chart" aria-hidden="true">
-                ${ready && path ? `<svg viewBox="0 0 100 42" preserveAspectRatio="none"><path d="${path}" fill="none" stroke="${TREND_GREEN}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path></svg>` : `<span class="dashboard-weight-trend-empty">Future test data</span>`}
+                ${ready && chart ? chart : `<span class="dashboard-weight-trend-empty">Future test data</span>`}
             </span>
             <span class="dashboard-weight-trend-value">
                 ${ready && Number.isFinite(latest) ? `<strong>${latest.toFixed(1)} lb</strong><small>mock trend weight</small>` : `<strong>Day ${Math.min(elapsedDays, MIN_TREND_DAY)} / ${MIN_TREND_DAY}</strong><small>${Math.min(weighIns, MIN_ENTRIES_PER_WINDOW)} / ${MIN_ENTRIES_PER_WINDOW} weigh-ins</small>`}
             </span>
         </button>
     `;
-}
-
-function buildSparklinePath(points) {
-    if (!points.length) return "";
-    const width = 100;
-    const height = 42;
-    const xPad = 4;
-    const yPad = 5;
-    const values = points.map(point => point.weight);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const range = Math.max(0.1, max - min);
-    const firstTime = dateMs(points[0].date);
-    const lastTime = dateMs(points.at(-1).date);
-    const elapsed = Math.max(1, lastTime - firstTime);
-    return points.map((point, index) => {
-        const x = xPad + ((dateMs(point.date) - firstTime) / elapsed) * (width - xPad * 2);
-        const y = yPad + ((max - point.weight) / range) * (height - yPad * 2);
-        return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
-    }).join(" ");
 }
 
 function cleanupFutureMode() {
