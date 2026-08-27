@@ -39,6 +39,24 @@
     line-height: 1.2;
 }
 
+.dashboard-weight-phase-badge {
+    flex: 0 0 auto;
+    max-width: 86px;
+    padding: 4px 7px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 71, 84, 0.28);
+    border-radius: 999px;
+    background: rgba(255, 48, 65, 0.1);
+    color: #ff5966;
+    font-size: 0.43rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
 .dashboard-weight-trend-chart {
     display: flex;
     min-height: 44px;
