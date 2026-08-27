@@ -423,6 +423,7 @@ async function searchVerifiedFoods(query, env) {
     const searchTokens = normalizedQuery.split(" ").filter(token => token.length > 1).slice(0, 6);
     const tokens = searchTokens.length ? searchTokens : [normalizedQuery];
     const tokenFilters = tokens.map(() => "instr(search_text, ?) > 0").join(" AND ");
+    let storedFoods = [];
     try {
         const result = await env.DB.prepare(`
             SELECT id, name, brand, category, country_code, barcode, serving_label,
@@ -437,12 +438,12 @@ async function searchVerifiedFoods(query, env) {
             END, brand, name
             LIMIT 8
         `).bind(...tokens, query.toLowerCase(), `${normalizedQuery}%`).all();
-        return (Array.isArray(result?.results) ? result.results : []).map(normalizeVerifiedFood).filter(Boolean);
+        storedFoods = (Array.isArray(result?.results) ? result.results : []).map(normalizeVerifiedFood).filter(Boolean);
     }
     catch (error) {
         console.error(JSON.stringify({ event: "verified_food_search_failed", reason: String(error?.message || error) }));
-        return [];
     }
+    return mergeFoodResults(storedFoods, searchBundledVerifiedFoods(query)).slice(0, 8);
 }
 
 export function normalizeVerifiedFood(row) {
@@ -500,6 +501,47 @@ export function mergeFoodResults(verifiedFoods, usdaFoods) {
 function safeFoodNumber(value) {
     const number = Number(value);
     return Number.isFinite(number) && number > 0 ? number : 0;
+}
+
+export function searchBundledVerifiedFoods(query) {
+    const tokens = foodIdentity(query).split(" ").filter(token => token.length > 1);
+    if (!tokens.length) return [];
+    return BUNDLED_VERIFIED_FOODS.filter(food => {
+        const searchable = foodIdentity(`${food.name} ${food.brand} ${food.aliases || ""}`);
+        return tokens.every(token => searchable.includes(token));
+    }).map(({ aliases, ...food }) => food);
+}
+
+const BUNDLED_VERIFIED_FOODS = [
+    bundledVerifiedFood({ id: "mcd-ca-hamburger", name: "Hamburger", brand: "McDonald's", aliases: "mcdonald burger", label: "1 burger (100 g)", grams: 100, calories: 240, protein: 12, carbs: 32, fat: 8, fiber: 2, sourceUrl: "https://www.mcdonalds.com/ca/en-ca/product/hamburger.html" }),
+    bundledVerifiedFood({ id: "mcd-ca-cheeseburger", name: "Cheeseburger", brand: "McDonald's", aliases: "mcdonald burger cheese", label: "1 burger (113 g)", grams: 113, calories: 290, protein: 14, carbs: 32, fat: 12, fiber: 2, sourceUrl: "https://www.mcdonalds.com/ca/en-ca/product/cheeseburger.html" }),
+    bundledVerifiedFood({ id: "mcd-ca-big-mac", name: "Big Mac", brand: "McDonald's", aliases: "mcdonald burger", label: "1 burger (216 g)", grams: 216, calories: 570, protein: 24, carbs: 46, fat: 32, sourceUrl: "https://www.mcdonalds.com/ca/en-ca/product/big-mac-sandwich.html" }),
+    bundledVerifiedFood({ id: "mcd-ca-quarter-pounder-no-cheese", name: "Quarter Pounder without Cheese", brand: "McDonald's", aliases: "mcdonald burger", label: "1 burger", calories: 430, protein: 24, carbs: 40, fat: 20, sourceUrl: "https://www.mcdonalds.com/ca/en-ca/product/quarter-pounder-without-cheese.html" }),
+    bundledVerifiedFood({ id: "mcd-ca-double-quarter-cheese", name: "Double Quarter Pounder with Cheese", brand: "McDonald's", aliases: "mcdonald burger", label: "1 burger", calories: 750, protein: 47, carbs: 47, fat: 44, sourceUrl: "https://www.mcdonalds.com/ca/en-ca/product/double-quarter-pounder-with-cheese.html" }),
+    bundledVerifiedFood({ id: "mcd-ca-hash-brown", name: "Hash Brown", brand: "McDonald's", aliases: "hashbrown mcdonald breakfast", label: "1 hash brown (55 g)", grams: 55, calories: 160, protein: 1, carbs: 16, fat: 10, sourceUrl: "https://www.mcdonalds.com/ca/en-ca/product/hash-browns.html" }),
+    bundledVerifiedFood({ id: "grenade-cookie-dough-60g", name: "Chocolate Chip Cookie Dough Protein Bar", brand: "Grenade", aliases: "carb killa", label: "1 bar (60 g)", grams: 60, calories: 208, protein: 21, carbs: 18, fat: 7.8, fiber: 2.7, sourceUrl: "https://www.grenade.com/products/protein-bar-cookie-dough" }),
+    bundledVerifiedFood({ id: "grenade-peanut-nutter-60g", name: "Peanut Nutter Protein Bar", brand: "Grenade", aliases: "carb killa peanut butter", label: "1 bar (60 g)", grams: 60, calories: 214, protein: 20, carbs: 18, fat: 9.1, fiber: 5.6, sourceUrl: "https://www.grenade.com/products/protein-bar-peanut-nutter" })
+];
+
+function bundledVerifiedFood({ id, name, brand, aliases, label, grams, calories, protein, carbs, fat, fiber = 0, sourceUrl }) {
+    const nutrition = { calories, protein, carbs, fat, fiber };
+    const portions = [{ label, ...(grams ? { grams } : {}), nutrition }];
+    if (grams && Math.abs(grams - 100) > .01) {
+        portions.push({ label: "100 g", grams: 100, nutrition: scaleUsdaNutrition(nutrition, 100 / grams) });
+    }
+    return {
+        source: "levelup",
+        catalogueId: id,
+        name,
+        brand,
+        aliases,
+        dataType: "Level Up Verified",
+        category: brand === "Grenade" ? "Protein bar" : "Restaurant food",
+        countryCode: "CA",
+        provenance: { sourceName: brand === "Grenade" ? "Grenade" : "McDonald's Canada", sourceUrl, verifiedAt: "2026-08-27" },
+        detailsLoaded: true,
+        portions
+    };
 }
 
 async function getUsdaFoodDetails(fdcId, request, env) {
