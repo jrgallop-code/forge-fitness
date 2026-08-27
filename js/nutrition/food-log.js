@@ -259,7 +259,7 @@ function summaryMarkup(totals, target) {
     const remaining = calorieTarget ? Math.round(calorieTarget - totals.calories) : null;
     const percent = calorieTarget ? Math.min(100, Math.max(0, (totals.calories / calorieTarget) * 100)) : 0;
     return `
-        <div class="food-calorie-total"><span>Calories</span><strong>${Math.round(totals.calories).toLocaleString()}</strong><small>${remaining === null ? "No target set" : `${Math.abs(remaining).toLocaleString()} ${remaining >= 0 ? "remaining" : "over"}`}</small><i style="--food-progress:${percent}%"></i></div>
+        <div class="food-calorie-total"><span>Calories</span><div class="food-calorie-value"><strong>${Math.round(totals.calories).toLocaleString()}</strong><small>${calorieTarget ? `${Math.round(calorieTarget).toLocaleString()} cal target` : "No calorie target"}</small></div><em>${remaining === null ? "Set a goal in Goals & Plan" : `${Math.abs(remaining).toLocaleString()} ${remaining >= 0 ? "remaining" : "over"}`}</em><i style="--food-progress:${percent}%"></i></div>
         ${macroTile("Protein", totals.protein, target.protein)}
         ${macroTile("Carbs", totals.carbs, target.carbs)}
         ${macroTile("Fat", totals.fat, target.fat)}
@@ -640,6 +640,10 @@ function renderFoodLoading(food) {
 }
 
 function closeFoodPortionPanel() {
+    if (addContext === "edit") {
+        closeFoodSheet();
+        return;
+    }
     foodSelectionRequest += 1;
     foodDetailController?.abort();
     document.querySelector("[data-food-portion]")?.setAttribute("hidden", "");
@@ -652,7 +656,7 @@ function renderFoodPortionPanel(food, warning = "") {
     if (!panel) return;
     panel.hidden = false;
     panel.innerHTML = `
-        <div class="food-portion-heading"><div><span class="eyebrow">ADD FOOD</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="Back to results">×</button></div>
+        <div class="food-portion-heading"><div><span class="eyebrow">${addContext === "edit" ? "EDIT LOGGED FOOD" : "ADD FOOD"}</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="${addContext === "edit" ? "Close food editor" : "Back to results"}">×</button></div>
         ${addContext === "meal-builder" ? '<div class="food-builder-destination">Adding to your saved meal</div>' : `<label>Meal<select data-food-meal>${MEALS.map(meal => `<option${meal === selectedMeal ? " selected" : ""}>${meal}</option>`).join("")}</select></label>`}
         ${warning ? `<p class="food-portion-warning">${escapeHtml(warning)}</p>` : ""}
         <label>Serving size<select data-food-serving>${(food.portions || []).map((portion, index) => `<option value="${index}">${escapeHtml(portion.label)}</option>`).join("")}</select></label>

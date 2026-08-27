@@ -47,7 +47,28 @@ test("logged meal items open an editor for serving, meal, quantity, or removal",
     assert.match(module, /Save Changes/);
     assert.match(module, /data-food-edit-remove/);
     assert.match(module, /updateEntry\(selectedDate, editingEntryId, entry\)/);
+    assert.match(module, /if \(addContext === "edit"\) \{\s*closeFoodSheet\(\);\s*return;/);
+    assert.match(module, /Close food editor/);
     assert.match(styles, /\.food-entry-edit/);
+});
+
+test("food diary uses a restrained native typography hierarchy", async () => {
+    const styles = await read("../css/food-log.css");
+    assert.match(styles, /Refined native typography/);
+    assert.match(styles, /"SF Pro Text"/);
+    assert.match(styles, /\.food-log-heading h2\{[^}]*font-size:28px[^}]*font-weight:700/);
+    assert.match(styles, /\.food-calorie-total strong\{[^}]*font-size:27px[^}]*font-weight:700/);
+    assert.match(styles, /\.food-meal summary strong\{[^}]*font-size:15\.5px[^}]*font-weight:650/);
+    assert.match(styles, /\.food-entry-edit strong\{[^}]*font-size:14px[^}]*font-weight:600/);
+});
+
+test("daily calories place the target directly below actual intake", async () => {
+    const [module, styles] = await Promise.all([read("../js/nutrition/food-log.js"), read("../css/food-log.css")]);
+    assert.match(module, /class="food-calorie-value"/);
+    assert.match(module, /cal target/);
+    assert.match(styles, /Actual calories with target directly beneath/);
+    assert.match(styles, /\.food-calorie-value\{[^}]*display:grid[^}]*justify-items:end/);
+    assert.match(styles, /\.food-calorie-value small\{/);
 });
 
 test("custom foods collect MyFitnessPal-style serving details", async () => {
