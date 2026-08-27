@@ -1,3 +1,4 @@
+import "../workouts/exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { createGeneratedExerciseGuide } from "../workouts/exercise-guide-generator.js?v=full-library-guides-1";
 
