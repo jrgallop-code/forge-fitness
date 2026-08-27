@@ -34,6 +34,13 @@ test("matches common abbreviations and misspellings to Level Up exercises", () =
   assert.equal(matchExerciseName("RDL").exerciseId, "romanian-deadlift");
 });
 
+test("maps generic squats to Back Squat and never suggests a zero-score exercise", () => {
+  assert.equal(matchExerciseName("Squats").exerciseId, "back-squat");
+  assert.equal(matchExerciseName("Squats").confirmed, true);
+  assert.equal(matchExerciseName("Zorbulator").exerciseId, null);
+  assert.equal(matchExerciseName("Zorbulator").confirmed, false);
+});
+
 test("parses compact slash-separated routines commonly found in Reddit comments", () => {
   const result = parseRoutineText(`## Upper
 Incline Bench Press / 2x8-10 Pec Deck / 2x10-12 Lat Pulldown / 3x8-12`);
