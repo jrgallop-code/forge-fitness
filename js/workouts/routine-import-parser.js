@@ -4,6 +4,12 @@ import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalo
 const DAY_PATTERN = /^(?:(?:day|workout|session)\s*\d+\s*[:\-–—]?\s*)?(push|pull|legs?|upper|lower|chest|back|shoulders?|arms?|full\s*body|rest)(?:\s*(?:day|workout))?\s*[:\-–—]?$/i;
 const NUMBERED_DAY_PATTERN = /^(?:day|workout|session)\s*(\d+)\s*[:\-–—]\s*(.+)$/i;
 const BARE_NUMBERED_DAY_PATTERN = /^(?:day|workout|session)\s*(\d+)\s*[:\-–—]?$/i;
+const EXERCISE_ALIASES = new Map([
+  ["squat", "back-squat"],
+  ["barbell squat", "back-squat"],
+  ["deadlift", "conventional-deadlift"]
+]);
+const MIN_SUGGESTION_SCORE = 0.2;
 
 export function parseRoutineText(text) {
   const lines = String(text || "").split(/(?:\r\n|[\n\r\u2028\u2029])/).flatMap(expandLine).map(cleanLine).filter(Boolean);
@@ -54,14 +60,26 @@ export function parseExerciseLine(line) {
 
 export function matchExerciseName(input, catalogue = getAllExercises()) {
   const normalizedInput = normalizeExerciseName(input);
+  const aliasId = EXERCISE_ALIASES.get(normalizedInput);
+  const alias = aliasId ? catalogue.find(exercise => exercise.id === aliasId) : null;
+  if (alias) {
+    return {
+      exerciseId: alias.id,
+      exerciseName: alias.name,
+      confidence: 1,
+      confirmed: true,
+      alternatives: [{ id: alias.id, name: alias.name, score: 1 }]
+    };
+  }
   const scored = catalogue.map(exercise => ({ exercise, score: similarity(normalizedInput, normalizeExerciseName(exercise.name)) }))
     .sort((left, right) => right.score - left.score || left.exercise.name.localeCompare(right.exercise.name));
   const best = scored[0] || null;
+  const suggested = best && best.score >= MIN_SUGGESTION_SCORE ? best : null;
   return {
-    exerciseId: best?.exercise.id || null,
-    exerciseName: best?.exercise.name || input,
+    exerciseId: suggested?.exercise.id || null,
+    exerciseName: suggested?.exercise.name || input,
     confidence: best?.score || 0,
-    confirmed: Boolean(best && best.score >= 0.84),
+    confirmed: Boolean(suggested && suggested.score >= 0.84),
     alternatives: scored.slice(0, 5).map(item => ({ id: item.exercise.id, name: item.exercise.name, score: item.score }))
   };
 }
@@ -73,6 +91,9 @@ export function normalizeExerciseName(value) {
     .replace(/pulldowns?/g, "pulldown").replace(/pushdowns?/g, "pushdown")
     .replace(/flyes|flys/g, "fly").replace(/curls/g, "curl").replace(/raises/g, "raise")
     .replace(/presses/g, "press").replace(/rows/g, "row").replace(/extensions/g, "extension")
+    .replace(/\bsquats\b/g, "squat").replace(/\bdeadlifts\b/g, "deadlift")
+    .replace(/\blunges\b/g, "lunge").replace(/\bdips\b/g, "dip")
+    .replace(/\bcalves\b/g, "calf").replace(/\bups\b/g, "up")
     .replace(/[^a-z0-9]+/g, " ").trim();
 }
 
