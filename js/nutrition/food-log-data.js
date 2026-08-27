@@ -204,7 +204,7 @@ export function summarizeEntries(entries) {
 
 export function createLogEntry({ meal, food, portion, quantity }) {
     const safeMeal = MEALS.includes(meal) ? meal : "Snacks";
-    const safeQuantity = Math.max(0.01, Math.min(100, Number(quantity) || 1));
+    const safeQuantity = Math.max(0.01, Math.min(10000, Number(quantity) || 1));
     return {
         id: crypto.randomUUID(),
         meal: safeMeal,
