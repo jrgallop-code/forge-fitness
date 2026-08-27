@@ -259,7 +259,7 @@ function summaryMarkup(totals, target) {
     const remaining = calorieTarget ? Math.round(calorieTarget - totals.calories) : null;
     const percent = calorieTarget ? Math.min(100, Math.max(0, (totals.calories / calorieTarget) * 100)) : 0;
     return `
-        <div class="food-calorie-total"><span>Calories</span><strong>${Math.round(totals.calories).toLocaleString()}</strong><small>${remaining === null ? "No target set" : `${Math.abs(remaining).toLocaleString()} ${remaining >= 0 ? "remaining" : "over"}`}</small><i style="--food-progress:${percent}%"></i></div>
+        <div class="food-calorie-total"><span>Calories</span><div class="food-calorie-value"><strong>${Math.round(totals.calories).toLocaleString()}</strong><small>${calorieTarget ? `${Math.round(calorieTarget).toLocaleString()} cal target` : "No calorie target"}</small></div><em>${remaining === null ? "Set a goal in Goals & Plan" : `${Math.abs(remaining).toLocaleString()} ${remaining >= 0 ? "remaining" : "over"}`}</em><i style="--food-progress:${percent}%"></i></div>
         ${macroTile("Protein", totals.protein, target.protein)}
         ${macroTile("Carbs", totals.carbs, target.carbs)}
         ${macroTile("Fat", totals.fat, target.fat)}
