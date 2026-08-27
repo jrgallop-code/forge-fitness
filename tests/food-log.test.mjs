@@ -46,6 +46,36 @@ test("food log keeps days and meals separate and removes exact entries", () => {
     assert.equal(data.entriesForDate("2026-08-28").length, 1);
 });
 
+test("yesterday's meal is cloned in full without changing its source entries", () => {
+    storage.clear();
+    const food = { source: "custom", name: "Potatoes", nutrition: { calories: 180, protein: 4, carbs: 40, fat: 0 }, portions: [] };
+    const source = [
+        data.createLogEntry({ meal: "Dinner", food, portion: { label: "1 plate", nutrition: food.nutrition }, quantity: 1 }),
+        data.createLogEntry({ meal: "Dinner", food: { ...food, name: "Chicken" }, portion: { label: "1 serving", nutrition: { calories: 220, protein: 40, carbs: 0, fat: 6 } }, quantity: 1 })
+    ];
+    data.saveEntries("2026-08-26", source);
+    const clones = data.cloneEntriesForMeal(source, "Lunch");
+    data.saveEntries("2026-08-27", clones);
+    assert.equal(data.previousDateKey("2026-08-27"), "2026-08-26");
+    assert.equal(data.mealPreview(source), "Potatoes and 1 more");
+    assert.deepEqual(data.entriesForDate("2026-08-27").map(entry => entry.meal), ["Lunch", "Lunch"]);
+    assert.notEqual(clones[0].id, source[0].id);
+    assert.equal(data.entriesForDate("2026-08-26")[0].meal, "Dinner");
+});
+
+test("saved meals remain reusable and log their foods to the chosen meal", () => {
+    storage.clear();
+    const food = { source: "custom", name: "Greek Yogurt", nutrition: { calories: 130, protein: 20, carbs: 8, fat: 1 }, portions: [] };
+    const entry = data.createLogEntry({ meal: "Breakfast", food, portion: { label: "1 cup", nutrition: food.nutrition }, quantity: 1 });
+    const saved = data.saveSavedMeal({ name: "Quick Breakfast", items: [entry] });
+    const logged = data.logSavedMeal("2026-08-27", saved, "Snacks");
+    assert.equal(data.readSavedMeals()[0].name, "Quick Breakfast");
+    assert.equal(logged[0].meal, "Snacks");
+    assert.equal(data.entriesForDate("2026-08-27")[0].name, "Greek Yogurt");
+    data.removeSavedMeal(saved.id);
+    assert.deepEqual(data.readSavedMeals(), []);
+});
+
 test("USDA search stays behind the Worker and the browser receives normalized foods", async () => {
     const [worker, browser, html] = await Promise.all([
         readFile(new URL("../cloud/src/index.js", import.meta.url), "utf8"),
@@ -57,7 +87,7 @@ test("USDA search stays behind the Worker and the browser receives normalized fo
     assert.match(worker, /url\.pathname === "\/v1\/foods\/search"/);
     assert.doesNotMatch(browser, /api\.nal\.usda\.gov/);
     assert.match(browser, /\/v1\/foods\/search\?q=/);
-    assert.match(html, /css\/food-log\.css\?v=goals-and-food-log-1/);
+    assert.match(html, /css\/food-log\.css\?v=food-log-meals-v2/);
 });
 
 test("USDA nutrients are converted from 100 g to the labelled gram serving", () => {
@@ -80,4 +110,55 @@ test("USDA nutrients are converted from 100 g to the labelled gram serving", () 
     assert.equal(food.portions[0].nutrition.calories, 120);
     assert.equal(food.portions[0].nutrition.protein, 3);
     assert.equal(food.portions[1].nutrition.calories, 400);
+});
+
+test("USDA restaurant foods default to one burger instead of 100 g", () => {
+    const food = normalizeUsdaFood({
+        fdcId: 789,
+        description: "McDONALD'S, HAMBURGER",
+        dataType: "Survey (FNDDS)",
+        foodNutrients: [
+            { nutrient: { number: "208", name: "Energy", unitName: "KCAL" }, amount: 250 },
+            { nutrient: { number: "203", name: "Protein", unitName: "G" }, amount: 13 },
+            { nutrient: { number: "205", name: "Carbohydrate, by difference", unitName: "G" }, amount: 30 },
+            { nutrient: { number: "204", name: "Total lipid (fat)", unitName: "G" }, amount: 9 }
+        ],
+        foodPortions: [
+            { amount: 1, gramWeight: 108, portionDescription: "1 sandwich" },
+            { amount: 1, gramWeight: 42, portionDescription: "1 small patty" }
+        ]
+    });
+    assert.equal(food.portions[0].label, "1 sandwich");
+    assert.equal(food.portions[0].grams, 108);
+    assert.equal(food.portions[0].nutrition.calories, 270);
+    assert.equal(food.portions.at(-1).label, "100 g");
+});
+
+test("USDA branded foods prefer exact label nutrients for one item", () => {
+    const food = normalizeUsdaFood({
+        fdcId: 790,
+        description: "CHEESEBURGER",
+        dataType: "Branded",
+        servingSize: 112,
+        servingSizeUnit: "g",
+        householdServingFullText: "1 burger",
+        labelNutrients: {
+            calories: { value: 330 }, protein: { value: 17 }, carbohydrates: { value: 31 }, fat: { value: 15 }
+        },
+        foodNutrients: [
+            { nutrientNumber: "208", nutrientName: "Energy", unitName: "KCAL", value: 294.64 },
+            { nutrientNumber: "203", nutrientName: "Protein", unitName: "G", value: 15.18 }
+        ]
+    });
+    assert.equal(food.portions[0].label, "1 burger");
+    assert.equal(food.portions[0].nutrition.calories, 330);
+    assert.equal(food.portions[0].nutrition.protein, 17);
+});
+
+test("USDA search enriches results with one batched full-detail request and keeps fallback normalization", async () => {
+    const worker = await readFile(new URL("../cloud/src/index.js", import.meta.url), "utf8");
+    assert.match(worker, /new URL\("https:\/\/api\.nal\.usda\.gov\/fdc\/v1\/foods"\)/);
+    assert.match(worker, /detailsUrl\.searchParams\.set\("fdcIds", ids\.join\(","\)\)/);
+    assert.match(worker, /if \(!detailFood\) return searchFood/);
+    assert.match(worker, /foodPortions/);
 });

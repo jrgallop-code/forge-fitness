@@ -1,7 +1,7 @@
 .dashboard.dashboard-command-insights .dashboard-food-summary-card {
     grid-column: 1 / -1;
     overflow: hidden;
-    padding: 17px;
+    padding: 13px 15px;
     border: 1px solid rgba(255, 255, 255, .1);
     border-radius: 21px;
     background:
@@ -20,7 +20,7 @@
 .dashboard-food-summary-heading h3 {
     margin: 4px 0 0;
     color: #fff;
-    font-size: 1.2rem;
+    font-size: 1.05rem;
     letter-spacing: -.02em;
 }
 
@@ -45,9 +45,9 @@
 .dashboard-calorie-summary {
     position: relative;
     display: grid;
-    width: min(100%, 340px);
-    min-height: 150px;
-    margin: 2px auto 12px;
+    width: min(100%, 276px);
+    min-height: 116px;
+    margin: 0 auto 7px;
     padding: 0;
     border: 0;
     background: transparent;
@@ -63,7 +63,7 @@
 .dashboard-calorie-summary path {
     fill: none;
     stroke-linecap: round;
-    stroke-width: 16;
+    stroke-width: 14;
 }
 
 .dashboard-calorie-arc-track {
@@ -77,14 +77,14 @@
 
 .dashboard-calorie-copy {
     position: absolute;
-    inset: 53px 0 auto;
+    inset: 42px 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
 .dashboard-calorie-copy strong {
-    font-size: clamp(2rem, 9vw, 2.7rem);
+    font-size: clamp(1.72rem, 7.5vw, 2.15rem);
     line-height: 1;
     letter-spacing: -.045em;
 }
@@ -97,7 +97,7 @@
 }
 
 .dashboard-calorie-copy > span {
-    margin-top: 8px;
+    margin-top: 5px;
     color: #a5a5ad;
     font-size: .76rem;
 }
@@ -120,8 +120,8 @@
 .dashboard-macro-summary {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
-    padding-top: 14px;
+    gap: 10px;
+    padding-top: 10px;
     border-top: 1px solid rgba(255, 255, 255, .07);
 }
 
@@ -155,7 +155,7 @@
 .dashboard-macro-progress > i {
     display: block;
     height: 5px;
-    margin-top: 9px;
+    margin-top: 7px;
     overflow: hidden;
     border-radius: 999px;
     background: rgba(255, 255, 255, .09);
