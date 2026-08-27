@@ -12,7 +12,7 @@ globalThis.window = { dispatchEvent() {} };
 globalThis.CustomEvent = class CustomEvent { constructor(type, options) { this.type = type; this.detail = options?.detail; } };
 
 const data = await import("../js/nutrition/food-log-data.js");
-const { barcodeVariants, dedupeUsdaFoods, detectUsdaBrandSearch, findBundledVerifiedFoodByBarcode, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeOpenFoodFactsProduct, normalizeUsdaFood, normalizeVerifiedFood, rankUsdaBrandFoods, searchBundledVerifiedFoods, selectExactUsdaBarcodeFood } = await import("../cloud/src/index.js");
+const { barcodeVariants, dedupeUsdaFoods, detectUsdaBrandSearch, findBundledVerifiedFoodByBarcode, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeOpenFoodFactsProduct, normalizeUsdaFood, normalizeVerifiedFood, rankUsdaBrandFoods, searchBundledVerifiedFoods, searchCachedExternalFoods, selectExactUsdaBarcodeFood } = await import("../cloud/src/index.js");
 
 test("barcode lookup validates GTIN check digits and normalizes formatting", () => {
     assert.equal(normalizeBarcode("0 36000-29145 2"), "036000291452");
@@ -154,6 +154,27 @@ test("Level Up verified matches rank before USDA and replace exact duplicates", 
     assert.equal(merged.length, 2);
     assert.equal(merged[0].source, "levelup");
     assert.equal(merged[1].name, "Hamburger, plain");
+});
+
+test("manual search finds products previously discovered by barcode", () => {
+    const cached = {
+        source: "openfoodfacts",
+        barcode: "12345670",
+        name: "Pomme de terre rouge",
+        brand: "Ferme Exemple",
+        portions: [{ label: "100 g", grams: 100, nutrition: { calories: 89, protein: 2, carbs: 20, fat: 0 } }]
+    };
+    const byName = searchCachedExternalFoods([{ food_json: JSON.stringify(cached) }], "pomme terre rouge");
+    const byBrand = searchCachedExternalFoods([{ food_json: JSON.stringify(cached) }], "Ferme Exemple");
+    assert.equal(byName[0].barcode, "12345670");
+    assert.equal(byBrand[0].name, "Pomme de terre rouge");
+});
+
+test("cached external foods rank after verified and USDA results", () => {
+    const verified = [{ source: "levelup", name: "Red Potato", brand: "Level Up" }];
+    const usda = [{ source: "usda", name: "Potatoes, red", brand: "USDA" }];
+    const external = [{ source: "openfoodfacts", name: "Pomme de terre rouge", brand: "Example" }];
+    assert.deepEqual(mergeFoodResults(verified, usda, external).map(food => food.source), ["levelup", "usda", "openfoodfacts"]);
 });
 
 test("verified food catalogue stores provenance and item-sized restaurant servings", async () => {
