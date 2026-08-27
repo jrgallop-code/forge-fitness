@@ -33,6 +33,7 @@ let foodSearchController = null;
 let foodDetailController = null;
 let foodSelectionRequest = 0;
 let barcodeScannerControls = null;
+let barcodeVideoTrack = null;
 let barcodeLookupActive = false;
 let barcodeLookupController = null;
 let zxingLoadPromise = null;
@@ -84,7 +85,7 @@ function renderFoodSheet() {
                     <div role="radiogroup">${MEALS.map(meal => `<button type="button" role="radio" aria-checked="false" data-food-target-meal="${meal}">${meal}</button>`).join("")}</div>
                 </div>
                 <form class="food-search" data-food-search-form>
-                    <div class="food-search-field"><input type="search" name="query" minlength="2" maxlength="80" autocomplete="off" placeholder="Search foods" aria-label="Search foods"><button type="button" class="food-barcode-open" data-barcode-open aria-label="Scan a food barcode" title="Scan barcode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7 5v14M10 5v14M14 5v14M17 5v14M20 5v14M2.5 5h2M19.5 5h2M2.5 19h2M19.5 19h2"/></svg></button></div>
+                    <div class="food-search-entry"><div class="food-search-field"><input type="search" name="query" minlength="2" maxlength="80" autocomplete="off" placeholder="Search foods" aria-label="Search foods"></div><button type="button" class="food-barcode-open" data-barcode-open aria-label="Scan a food barcode" title="Scan barcode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7 5v14M10 5v14M14 5v14M17 5v14M20 5v14M2.5 5h2M19.5 5h2M2.5 19h2M19.5 19h2"/></svg></button></div>
                     <button type="submit" class="primary-btn">Search</button>
                 </form>
                 <div class="food-sheet-tabs">
@@ -131,7 +132,12 @@ function renderBarcodeScanner() {
     return `
         <section class="food-barcode-panel" data-barcode-panel hidden aria-labelledby="food-barcode-title">
             <header class="food-barcode-heading"><div><span class="eyebrow">QUICK ADD</span><h3 id="food-barcode-title">Scan Barcode</h3></div><button type="button" data-barcode-close aria-label="Close barcode scanner">×</button></header>
-            <div class="food-barcode-camera"><video data-barcode-video playsinline muted></video><div class="food-barcode-frame" aria-hidden="true"></div></div>
+            <div class="food-barcode-camera"><video data-barcode-video playsinline muted></video><div class="food-barcode-frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="food-barcode-camera-copy"><strong>Hold the barcode inside the box</strong><span>Keep the bars flat and move closer until they look sharp.</span></div></div>
+            <div class="food-barcode-zoom" data-barcode-zoom hidden>
+                <button type="button" data-barcode-zoom-out aria-label="Zoom out">−</button>
+                <label><span>Camera zoom</span><input type="range" data-barcode-zoom-range aria-label="Camera zoom"><b data-barcode-zoom-value>1×</b></label>
+                <button type="button" data-barcode-zoom-in aria-label="Zoom in">+</button>
+            </div>
             <p class="food-barcode-status" data-barcode-status role="status" aria-live="polite">Starting camera…</p>
             <form class="food-barcode-manual" data-barcode-form>
                 <label>Enter barcode manually<input name="barcode" inputmode="numeric" pattern="[0-9]*" minlength="8" maxlength="14" autocomplete="off" placeholder="UPC, EAN, or GTIN"></label>
@@ -157,6 +163,9 @@ export function initializeFoodLog() {
     document.querySelector("[data-barcode-open]")?.addEventListener("click", openBarcodeScanner);
     document.querySelector("[data-barcode-close]")?.addEventListener("click", closeBarcodeScanner);
     document.querySelector("[data-barcode-form]")?.addEventListener("submit", submitManualBarcode);
+    document.querySelector("[data-barcode-zoom-range]")?.addEventListener("input", event => { void setBarcodeZoom(Number(event.currentTarget.value)); });
+    document.querySelector("[data-barcode-zoom-out]")?.addEventListener("click", () => nudgeBarcodeZoom(-1));
+    document.querySelector("[data-barcode-zoom-in]")?.addEventListener("click", () => nudgeBarcodeZoom(1));
     document.querySelector("[data-barcode-custom]")?.addEventListener("click", openCustomFoodForBarcode);
     document.querySelector("[data-custom-food-form]")?.addEventListener("submit", createCustomFood);
     document.querySelector("[data-create-food]")?.addEventListener("click", () => {
@@ -172,7 +181,7 @@ function ensureBarcodeStyles() {
     if (document.querySelector("link[data-food-barcode-styles]")) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/food-barcode-scanner.css?v=barcode-scanner-1";
+    link.href = "css/food-barcode-scanner.css?v=barcode-scanner-3";
     link.dataset.foodBarcodeStyles = "";
     document.head.append(link);
 }
@@ -311,7 +320,7 @@ async function openBarcodeScanner() {
         const video = panel.querySelector("[data-barcode-video]");
         const reader = new window.ZXingBrowser.BrowserMultiFormatReader();
         barcodeScannerControls = await reader.decodeFromConstraints(
-            { audio: false, video: { facingMode: { ideal: "environment" } } },
+            { audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
             video,
             (result, error, controls) => {
                 if (!result || barcodeLookupActive) return;
@@ -321,7 +330,8 @@ async function openBarcodeScanner() {
                 lookupBarcode(barcode);
             }
         );
-        if (!barcodeLookupActive) setBarcodeStatus("Place the product barcode inside the frame.");
+        await configureBarcodeZoom(video);
+        if (!barcodeLookupActive) setBarcodeStatus("Scanning automatically — hold steady when the bars are sharp.");
     }
     catch (error) {
         stopBarcodeScanner();
@@ -338,6 +348,9 @@ function closeBarcodeScanner() {
 function stopBarcodeScanner() {
     try { barcodeScannerControls?.stop?.(); } catch {}
     barcodeScannerControls = null;
+    barcodeVideoTrack = null;
+    const zoom = document.querySelector("[data-barcode-zoom]");
+    if (zoom) zoom.hidden = true;
     const video = document.querySelector("[data-barcode-video]");
     const stream = video?.srcObject;
     stream?.getTracks?.().forEach(track => track.stop());
@@ -345,6 +358,51 @@ function stopBarcodeScanner() {
     barcodeLookupController?.abort();
     barcodeLookupController = null;
     barcodeLookupActive = false;
+}
+
+async function configureBarcodeZoom(video) {
+    barcodeVideoTrack = video?.srcObject?.getVideoTracks?.()[0] || null;
+    const capabilities = barcodeVideoTrack?.getCapabilities?.();
+    const zoomCapability = capabilities?.zoom;
+    const zoomPanel = document.querySelector("[data-barcode-zoom]");
+    const range = document.querySelector("[data-barcode-zoom-range]");
+    if (!zoomPanel || !range || !barcodeVideoTrack || !zoomCapability || !Number.isFinite(zoomCapability.min) || !Number.isFinite(zoomCapability.max) || zoomCapability.max <= zoomCapability.min) {
+        if (zoomPanel) zoomPanel.hidden = true;
+        return;
+    }
+    const step = Number(zoomCapability.step) > 0 ? Number(zoomCapability.step) : 0.1;
+    const settingsZoom = Number(barcodeVideoTrack.getSettings?.().zoom);
+    const helpfulZoom = zoomCapability.min + (zoomCapability.max - zoomCapability.min) * 0.3;
+    const preferredZoom = Number.isFinite(settingsZoom) ? Math.max(settingsZoom, helpfulZoom) : helpfulZoom;
+    range.min = String(zoomCapability.min);
+    range.max = String(zoomCapability.max);
+    range.step = String(step);
+    range.value = String(Math.min(zoomCapability.max, Math.max(zoomCapability.min, preferredZoom)));
+    zoomPanel.hidden = false;
+    await setBarcodeZoom(Number(range.value));
+}
+
+async function setBarcodeZoom(value) {
+    const range = document.querySelector("[data-barcode-zoom-range]");
+    const label = document.querySelector("[data-barcode-zoom-value]");
+    if (!range || !barcodeVideoTrack || !Number.isFinite(value)) return;
+    const zoom = Math.min(Number(range.max), Math.max(Number(range.min), value));
+    try {
+        await barcodeVideoTrack.applyConstraints({ advanced: [{ zoom }] });
+        range.value = String(zoom);
+        if (label) label.textContent = `${Number(zoom.toFixed(1))}×`;
+    }
+    catch {
+        const panel = document.querySelector("[data-barcode-zoom]");
+        if (panel) panel.hidden = true;
+    }
+}
+
+function nudgeBarcodeZoom(direction) {
+    const range = document.querySelector("[data-barcode-zoom-range]");
+    if (!range) return;
+    const step = Number(range.step) || 0.1;
+    void setBarcodeZoom(Number(range.value) + step * direction);
 }
 
 function loadZxingBrowser() {
