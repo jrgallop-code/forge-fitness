@@ -12,7 +12,7 @@ globalThis.window = { dispatchEvent() {} };
 globalThis.CustomEvent = class CustomEvent { constructor(type, options) { this.type = type; this.detail = options?.detail; } };
 
 const data = await import("../js/nutrition/food-log-data.js");
-const { barcodeVariants, dedupeUsdaFoods, detectUsdaBrandSearch, findBundledVerifiedFoodByBarcode, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeOpenFoodFactsProduct, normalizeUsdaFood, normalizeVerifiedFood, rankUsdaBrandFoods, searchBundledVerifiedFoods, searchCachedExternalFoods, selectExactUsdaBarcodeFood } = await import("../cloud/src/index.js");
+const { barcodeVariants, dedupeUsdaFoods, detectUsdaBrandSearch, findBundledVerifiedFoodByBarcode, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeOpenFoodFactsProduct, normalizeOpenFoodFactsSearchProducts, normalizeUsdaFood, normalizeVerifiedFood, rankUsdaBrandFoods, searchBundledVerifiedFoods, searchCachedExternalFoods, selectExactUsdaBarcodeFood } = await import("../cloud/src/index.js");
 
 test("barcode lookup validates GTIN check digits and normalizes formatting", () => {
     assert.equal(normalizeBarcode("0 36000-29145 2"), "036000291452");
@@ -168,6 +168,32 @@ test("manual search finds products previously discovered by barcode", () => {
     const byBrand = searchCachedExternalFoods([{ food_json: JSON.stringify(cached) }], "Ferme Exemple");
     assert.equal(byName[0].barcode, "12345670");
     assert.equal(byBrand[0].name, "Pomme de terre rouge");
+});
+
+test("manual search normalizes live Open Food Facts text results", () => {
+    const foods = normalizeOpenFoodFactsSearchProducts({ products: [{
+        code: "12345670",
+        product_name: "Pomme de terre rouge",
+        brands: "Ferme Exemple",
+        serving_size: "100 g",
+        serving_quantity: 100,
+        nutriments: {
+            "energy-kcal_100g": 89,
+            "proteins_100g": 2,
+            "carbohydrates_100g": 20,
+            "fat_100g": 0
+        }
+    }] });
+    assert.equal(foods[0].name, "Pomme de terre rouge");
+    assert.equal(foods[0].source, "openfoodfacts");
+    assert.equal(foods[0].portions[0].nutrition.calories, 89);
+});
+
+test("manual search queries the Open Food Facts text catalogue", async () => {
+    const worker = await readFile(new URL("../cloud/src/index.js", import.meta.url), "utf8");
+    assert.match(worker, /world\.openfoodfacts\.org\/cgi\/search\.pl/);
+    assert.match(worker, /url\.searchParams\.set\("search_terms", query\)/);
+    assert.match(worker, /fetchOpenFoodFactsSearch\(query\)/);
 });
 
 test("cached external foods rank after verified and USDA results", () => {
