@@ -1,4 +1,4 @@
-import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=swap-history-metadata-1';
+import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=repair-generic-exercise-1';
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { removeWorkoutSet, setHasRecordedData } from './logger-set-removal.js?v=logger-set-removal-1';
