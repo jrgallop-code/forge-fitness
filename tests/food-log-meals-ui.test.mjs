@@ -40,6 +40,16 @@ test("users can build, save, and quickly log reusable meals", async () => {
     assert.match(module, /logSavedMeal\(selectedDate, meal, selectedMeal\)/);
 });
 
+test("logged meal items open an editor for serving, meal, quantity, or removal", async () => {
+    const [module, styles] = await Promise.all([read("../js/nutrition/food-log.js"), read("../css/food-log.css")]);
+    assert.match(module, /data-food-edit=/);
+    assert.match(module, /openLoggedFoodEditor/);
+    assert.match(module, /Save Changes/);
+    assert.match(module, /data-food-edit-remove/);
+    assert.match(module, /updateEntry\(selectedDate, editingEntryId, entry\)/);
+    assert.match(styles, /\.food-entry-edit/);
+});
+
 test("custom foods collect MyFitnessPal-style serving details", async () => {
     const module = await read("../js/nutrition/food-log.js");
     assert.match(module, /Brand name/);
