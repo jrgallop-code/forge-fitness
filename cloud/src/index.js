@@ -54,6 +54,10 @@ async function handleRequest(request, env) {
     if (url.pathname === "/v1/foods/search" && request.method === "GET") {
         return searchUsdaFoods(url, request, env);
     }
+    const foodDetailMatch = url.pathname.match(/^\/v1\/foods\/(\d+)$/);
+    if (foodDetailMatch && request.method === "GET") {
+        return getUsdaFoodDetails(Number(foodDetailMatch[1]), request, env);
+    }
     if (url.pathname === "/v1/import/reddit" && request.method === "POST") {
         const body = await readJson(request, 8 * 1024);
         return importRedditSource(body, request, env);
@@ -382,19 +386,16 @@ async function searchUsdaFoods(url, request, env) {
 
     const payload = await response.json();
     const searchFoods = Array.isArray(payload?.foods) ? payload.foods : [];
-    const detailFoods = await fetchUsdaFoodDetails(searchFoods, env);
-    const foods = searchFoods
-        .map(food => normalizeUsdaFood(mergeUsdaFoodDetail(food, detailFoods.get(Number(food?.fdcId)))))
-        .filter(Boolean);
+    const foods = dedupeUsdaFoods(searchFoods.map(normalizeUsdaFood).filter(Boolean)).slice(0, 12);
     return json({ foods, source: "USDA FoodData Central" }, 200, request, env);
 }
 
-async function fetchUsdaFoodDetails(searchFoods, env) {
-    const ids = [...new Set(searchFoods.map(food => Number(food?.fdcId)).filter(Number.isFinite))].slice(0, 20);
-    if (!ids.length) return new Map();
-    const detailsUrl = new URL("https://api.nal.usda.gov/fdc/v1/foods");
+async function getUsdaFoodDetails(fdcId, request, env) {
+    if (!Number.isInteger(fdcId) || fdcId <= 0) return json({ error: "Invalid USDA food ID." }, 400, request, env);
+    if (!env.USDA_FDC_API_KEY) return json({ error: "USDA food search is not configured yet." }, 503, request, env);
+
+    const detailsUrl = new URL(`https://api.nal.usda.gov/fdc/v1/food/${fdcId}`);
     detailsUrl.searchParams.set("api_key", env.USDA_FDC_API_KEY);
-    detailsUrl.searchParams.set("fdcIds", ids.join(","));
     detailsUrl.searchParams.set("format", "full");
     detailsUrl.searchParams.set("nutrients", "203,204,205,208,291,1003,1004,1005,1008,1079");
     const controller = new AbortController();
@@ -403,31 +404,45 @@ async function fetchUsdaFoodDetails(searchFoods, env) {
         const response = await fetch(detailsUrl, { headers: { "Accept": "application/json" }, signal: controller.signal });
         if (!response.ok) {
             console.error(JSON.stringify({ event: "usda_food_details_failed", status: response.status }));
-            return new Map();
+            return json({ error: "USDA serving details are temporarily unavailable." }, 502, request, env);
         }
-        const foods = await response.json();
-        return new Map((Array.isArray(foods) ? foods : []).map(food => [Number(food?.fdcId), food]));
+        const food = normalizeUsdaFood(await response.json());
+        if (!food) return json({ error: "USDA serving details could not be read." }, 502, request, env);
+        return json({ food: { ...food, detailsLoaded: true }, source: "USDA FoodData Central" }, 200, request, env);
     }
     catch (error) {
         console.error(JSON.stringify({ event: "usda_food_details_failed", reason: error?.name === "AbortError" ? "timeout" : "network" }));
-        return new Map();
+        return json({ error: "USDA serving details are temporarily unavailable." }, 502, request, env);
     }
     finally {
         clearTimeout(timeout);
     }
 }
 
-function mergeUsdaFoodDetail(searchFood, detailFood) {
-    if (!detailFood) return searchFood;
-    return {
-        ...searchFood,
-        ...detailFood,
-        dataType: detailFood.dataType || detailFood.datatype || searchFood.dataType,
-        brandOwner: detailFood.brandOwner || detailFood.brandName || searchFood.brandOwner || searchFood.brandName,
-        foodNutrients: Array.isArray(detailFood.foodNutrients) && detailFood.foodNutrients.length
-            ? detailFood.foodNutrients
-            : searchFood.foodNutrients
-    };
+export function dedupeUsdaFoods(foods) {
+    const unique = new Map();
+    (Array.isArray(foods) ? foods : []).forEach(food => {
+        if (!food) return;
+        const key = `${foodIdentity(food.name)}|${foodIdentity(food.brand)}`;
+        const current = unique.get(key);
+        if (!current || foodResultQuality(food) > foodResultQuality(current)) unique.set(key, food);
+    });
+    return [...unique.values()];
+}
+
+function foodIdentity(value) {
+    return String(value || "")
+        .toLowerCase()
+        .replace(/[®™]/g, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+}
+
+function foodResultQuality(food) {
+    const labels = (food?.portions || []).map(portion => String(portion?.label || "").toLowerCase());
+    const wholeItem = labels.some(label => /\b(burger|sandwich|item|piece|patty|wrap|burrito|taco|serving|order)\b/.test(label));
+    const calories = Number(food?.portions?.[0]?.nutrition?.calories) || 0;
+    return (wholeItem ? 20 : 0) + (food?.brand ? 5 : 0) + (calories > 0 ? 2 : 0);
 }
 
 export function normalizeUsdaFood(food) {
