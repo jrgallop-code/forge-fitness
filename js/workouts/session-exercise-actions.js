@@ -1,4 +1,4 @@
-import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=expanded-exercise-lookup-1';
+import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=swap-history-metadata-1';
 import './exercise-library-expansion.js?v=exercise-library-expansion-1';
 import { getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { createGeneratedExerciseGuide } from './exercise-guide-generator.js?v=full-library-guides-1';
@@ -57,12 +57,23 @@ function hasEnteredData(state) {
 }
 
 function createReplacementState(exercise, priorState) {
+  const profile = getMuscleProfile(exercise);
+  const metadata = {
+    name: exercise.name,
+    exerciseName: exercise.name,
+    muscleGroup: exercise.muscleGroup || '',
+    type: exercise.type || '',
+    equipment: exercise.equipment || '',
+    primaryMuscles: [...profile.primary],
+    secondaryMuscles: [...profile.secondary]
+  };
   if (exercise?.trackingType === 'notes') {
-    return { exerciseId: exercise.id, trackingType: 'notes', durationMinutes: null, distance: '', notes: '', sets: [] };
+    return { exerciseId: exercise.id, ...metadata, trackingType: 'notes', durationMinutes: null, distance: '', notes: '', sets: [] };
   }
   const setCount = Math.max(1, Number(priorState?.sets?.length) || 1);
   return {
     exerciseId: exercise.id,
+    ...metadata,
     trackingType: 'reps',
     sets: Array.from({ length: setCount }, () => ({ weight: null, reps: null, completed: false }))
   };
@@ -316,7 +327,15 @@ function applyReplacement(sheet, replacementId) {
 
   if (hasEnteredData(priorState) && !window.confirm('Swapping this exercise will clear the data already entered for it today. Continue?')) return;
 
-  plannedExercise.id = replacement.id;
+  Object.assign(plannedExercise, {
+    id: replacement.id,
+    name: replacement.name,
+    exerciseName: replacement.name,
+    muscleGroup: replacement.muscleGroup || '',
+    type: replacement.type || '',
+    equipment: replacement.equipment || '',
+    trackingType: replacement.trackingType || 'reps'
+  });
   active.exercises[exerciseIndex] = createReplacementState(replacement, priorState);
   active.currentExerciseIndex = exerciseIndex;
   active.currentSetIndex = 0;
