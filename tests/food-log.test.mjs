@@ -57,7 +57,7 @@ test("USDA search stays behind the Worker and the browser receives normalized fo
     assert.match(worker, /url\.pathname === "\/v1\/foods\/search"/);
     assert.doesNotMatch(browser, /api\.nal\.usda\.gov/);
     assert.match(browser, /\/v1\/foods\/search\?q=/);
-    assert.match(html, /css\/food-log\.css\?v=usda-food-log-1/);
+    assert.match(html, /css\/food-log\.css\?v=goals-and-food-log-1/);
 });
 
 test("USDA nutrients are converted from 100 g to the labelled gram serving", () => {
