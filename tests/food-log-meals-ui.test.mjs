@@ -40,6 +40,18 @@ test("users can build, save, and quickly log reusable meals", async () => {
     assert.match(module, /logSavedMeal\(selectedDate, meal, selectedMeal\)/);
 });
 
+test("custom foods collect MyFitnessPal-style serving details", async () => {
+    const module = await read("../js/nutrition/food-log.js");
+    assert.match(module, /Brand name/);
+    assert.match(module, /Description/);
+    assert.match(module, /name="servingAmount"/);
+    assert.match(module, /name="servingUnit"/);
+    assert.match(module, /Servings per container/);
+    assert.match(module, /Nutrition per serving/);
+    assert.match(module, /buildCustomFoodPortions/);
+    assert.match(module, /Number of servings/);
+});
+
 test("food picker includes a compact barcode scanner with manual and custom fallbacks", async () => {
     const [module, styles, worker] = await Promise.all([
         read("../js/nutrition/food-log.js"),
