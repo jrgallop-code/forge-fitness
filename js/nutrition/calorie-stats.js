@@ -161,9 +161,6 @@ function renderStats(panel) {
                     ${macroRow("Fat", "fat", days, targets.fat)}
                 </div>
             </article>
-            <article class="calorie-stat-card calorie-weight-card">
-                <div><small>CALORIES &amp; WEIGHT</small><strong>${rate === null ? "More weigh-ins needed" : `${rate > 0 ? "+" : ""}${rate.toFixed(2)} lb/week`}</strong><p>${logged.length ? `${formatNumber(avgCalories)} average calories across ${logged.length} logged days.` : "Log food to compare intake with your weight trend."}</p></div>
-            </article>
             <article class="calorie-stat-card calorie-phase-insight"><small>LEVEL UP INSIGHT</small><strong>${insight[0]}</strong><p>${insight[1]}</p></article>
         </section>`;
 
