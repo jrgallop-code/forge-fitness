@@ -516,6 +516,7 @@ async function getFoodByBarcode(value, request, env, ctx) {
 }
 
 const OPEN_FOOD_FACTS_CACHE_DAYS = 30;
+const OPEN_FOOD_FACTS_CACHE_SCHEMA = 2;
 const OPEN_FOOD_FACTS_USER_AGENT = "LevelUpHypertrophy/1.0 (support@leveluphypertrophy.com)";
 
 async function fetchOpenFoodFactsBarcode(barcode) {
@@ -686,11 +687,12 @@ function openFoodFactsSetNutrition(set) {
 }
 
 function openFoodFactsServingGrams(value, label) {
+    const labelMatch = String(label || "").match(/(?:^|\s|\()([\d.]+)\s*g(?:\s|\)|$)/i);
+    const labelGrams = Number(labelMatch?.[1]);
+    if (Number.isFinite(labelGrams) && labelGrams > 0) return labelGrams;
     const quantity = Number(value);
     if (Number.isFinite(quantity) && quantity > 0) return quantity;
-    const match = String(label || "").match(/(?:^|\s|\()([\d.]+)\s*g(?:\s|\)|$)/i);
-    const parsed = Number(match?.[1]);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    return 0;
 }
 
 async function readExternalFoodCache(barcode, env) {
@@ -704,12 +706,13 @@ async function readExternalFoodCache(barcode, env) {
         `).bind(barcode, new Date().toISOString()).first();
         if (!row?.food_json) return null;
         const food = JSON.parse(row.food_json);
-        if (!food?.barcode || !Array.isArray(food?.portions)) return null;
+        if (food?.cacheSchema !== OPEN_FOOD_FACTS_CACHE_SCHEMA || !food?.barcode || !Array.isArray(food?.portions)) return null;
         const portions = food.portions.map(portion => ({
             ...portion,
             label: foodServingLabel(portion?.label, portion?.grams)
         }));
-        return { ...food, portions: addUsefulGramPortions(portions) };
+        const { cacheSchema, ...publicFood } = food;
+        return { ...publicFood, portions: addUsefulGramPortions(portions) };
     }
     catch (error) {
         console.info(JSON.stringify({ event: "external_food_cache_read_unavailable", reason: String(error?.message || error) }));
@@ -746,7 +749,7 @@ export function searchCachedExternalFoods(rows, query) {
             return null;
         }
     }).filter(food => {
-        if (!food?.name || !food?.barcode || !Array.isArray(food?.portions)) return false;
+        if (food?.cacheSchema !== OPEN_FOOD_FACTS_CACHE_SCHEMA || !food?.name || !food?.barcode || !Array.isArray(food?.portions)) return false;
         const searchable = foodIdentity(`${food.name} ${food.brand || ""}`);
         return tokens.every(token => searchable.includes(token));
     }).map(food => {
@@ -754,7 +757,8 @@ export function searchCachedExternalFoods(rows, query) {
             ...portion,
             label: foodServingLabel(portion?.label, portion?.grams)
         }));
-        return { ...food, portions: addUsefulGramPortions(portions) };
+        const { cacheSchema, ...publicFood } = food;
+        return { ...publicFood, portions: addUsefulGramPortions(portions) };
     });
     return mergeFoodResults(foods);
 }
@@ -772,7 +776,7 @@ async function writeExternalFoodCache(barcode, food, env) {
                 food_json = excluded.food_json,
                 expires_at = excluded.expires_at,
                 updated_at = excluded.updated_at
-        `).bind(barcode, "openfoodfacts", JSON.stringify(food), expiresAt, now.toISOString(), now.toISOString()).run();
+        `).bind(barcode, "openfoodfacts", JSON.stringify({ ...food, cacheSchema: OPEN_FOOD_FACTS_CACHE_SCHEMA }), expiresAt, now.toISOString(), now.toISOString()).run();
     }
     catch (error) {
         console.info(JSON.stringify({ event: "external_food_cache_write_unavailable", reason: String(error?.message || error) }));

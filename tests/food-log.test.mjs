@@ -57,6 +57,21 @@ test("food log scales a serving and totals its macros", () => {
     assert.equal(totals.fat, 1.5);
 });
 
+test("food log preserves gram amounts above 100 from barcode portions", () => {
+    storage.clear();
+    const food = {
+        source: "openfoodfacts",
+        barcode: "12345670",
+        name: "Red potatoes",
+        portions: [{ label: "1 g", grams: 1, nutrition: { calories: .8, protein: .02, carbs: .18, fat: 0 } }]
+    };
+    const entry = data.createLogEntry({ meal: "Dinner", food, portion: food.portions[0], quantity: 250 });
+    assert.equal(entry.quantity, 250);
+    assert.equal(entry.servingLabel, "1 g");
+    assert.equal(entry.nutrition.calories, 200);
+    assert.equal(entry.nutrition.carbs, 45);
+});
+
 test("food log keeps days and meals separate and removes exact entries", () => {
     storage.clear();
     const food = { source: "custom", name: "Oats", nutrition: { calories: 150, protein: 5, carbs: 27, fat: 3 }, portions: [] };
@@ -69,6 +84,21 @@ test("food log keeps days and meals separate and removes exact entries", () => {
     data.removeEntry("2026-08-27", first.id);
     assert.deepEqual(data.entriesForDate("2026-08-27"), []);
     assert.equal(data.entriesForDate("2026-08-28").length, 1);
+});
+
+test("logged foods can be edited without changing their identity or position", () => {
+    storage.clear();
+    const food = { source: "custom", name: "Oats", portions: [{ label: "1 bowl", nutrition: { calories: 150, protein: 5, carbs: 27, fat: 3 } }] };
+    const first = data.createLogEntry({ meal: "Breakfast", food, portion: food.portions[0], quantity: 1 });
+    const second = data.createLogEntry({ meal: "Breakfast", food: { ...food, name: "Banana" }, portion: food.portions[0], quantity: 1 });
+    data.saveEntries("2026-08-27", [first, second]);
+    const replacement = data.createLogEntry({ meal: "Lunch", food, portion: food.portions[0], quantity: 2 });
+    const updated = data.updateEntry("2026-08-27", first.id, replacement);
+    const entries = data.entriesForDate("2026-08-27");
+    assert.equal(updated.id, first.id);
+    assert.equal(entries[0].meal, "Lunch");
+    assert.equal(entries[0].nutrition.calories, 300);
+    assert.equal(entries[1].name, "Banana");
 });
 
 test("yesterday's meal is cloned in full without changing its source entries", () => {
@@ -112,7 +142,7 @@ test("USDA search stays behind the Worker and the browser receives normalized fo
     assert.match(worker, /url\.pathname === "\/v1\/foods\/search"/);
     assert.doesNotMatch(browser, /api\.nal\.usda\.gov/);
     assert.match(browser, /\/v1\/foods\/search\?q=/);
-    assert.match(html, /css\/food-log\.css\?v=food-serving-units-1/);
+    assert.match(html, /css\/food-log\.css\?v=food-log-edit-1/);
 });
 
 test("Level Up verified foods use the official item serving before a 100 g option", () => {
@@ -158,6 +188,7 @@ test("Level Up verified matches rank before USDA and replace exact duplicates", 
 
 test("manual search finds products previously discovered by barcode", () => {
     const cached = {
+        cacheSchema: 2,
         source: "openfoodfacts",
         barcode: "12345670",
         name: "Pomme de terre rouge",
@@ -299,6 +330,24 @@ test("Open Food Facts products normalize labelled servings and Canadian identity
     assert.equal(Math.round(food.portions[1].nutrition.calories), 383);
 });
 
+test("Open Food Facts prefers grams printed in the serving label when metadata conflicts", () => {
+    const food = normalizeOpenFoodFactsProduct({
+        code: "12345670",
+        product_name: "Red potatoes",
+        serving_size: "1 potato (150 g)",
+        serving_quantity: 1,
+        nutriments: {
+            "energy-kcal_100g": 80,
+            "proteins_100g": 2,
+            "carbohydrates_100g": 18,
+            "fat_100g": 0
+        }
+    }, "12345670");
+    assert.equal(food.portions[0].grams, 150);
+    assert.equal(food.portions[0].label, "1 potato (150 g)");
+    assert.equal(food.portions[0].nutrition.calories, 120);
+});
+
 test("barcode lookup uses verified, cached, Open Food Facts, then USDA sources", async () => {
     const worker = await readFile(new URL("../cloud/src/index.js", import.meta.url), "utf8");
     const verifiedAt = worker.indexOf("await findVerifiedFoodByBarcode(barcode, env)");
@@ -318,7 +367,7 @@ test("Open Food Facts barcode responses use a persistent D1 cache", async () => 
     assert.match(migration, /CREATE TABLE IF NOT EXISTS external_food_barcode_cache/);
     assert.match(migration, /barcode TEXT PRIMARY KEY/);
     assert.match(migration, /expires_at TEXT NOT NULL/);
-    assert.match(worker, /return \{ \.\.\.food, portions: addUsefulGramPortions\(portions\) \}/);
+    assert.match(worker, /cacheSchema: OPEN_FOOD_FACTS_CACHE_SCHEMA/);
 });
 
 test("known branded searches detect Grenade names and Carb Killa aliases", () => {

@@ -60,6 +60,24 @@ export function removeEntry(dateKey, entryId) {
     window.dispatchEvent(new CustomEvent("levelup:food-log-updated", { detail: { dateKey } }));
 }
 
+export function updateEntry(dateKey, entryId, replacement) {
+    const log = readFoodLog();
+    const entries = Array.isArray(log[dateKey]) ? log[dateKey] : [];
+    const index = entries.findIndex(entry => entry?.id === entryId);
+    if (index < 0 || !replacement) return null;
+    const updated = {
+        ...replacement,
+        id: entryId,
+        createdAt: entries[index]?.createdAt || replacement.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+    entries[index] = updated;
+    log[dateKey] = entries;
+    localStorage.setItem(FOOD_LOG_KEY, JSON.stringify(log));
+    window.dispatchEvent(new CustomEvent("levelup:food-log-updated", { detail: { dateKey } }));
+    return updated;
+}
+
 export function readCustomFoods() {
     const value = readJson(CUSTOM_FOODS_KEY, []);
     return Array.isArray(value) ? value : [];
@@ -186,7 +204,7 @@ export function summarizeEntries(entries) {
 
 export function createLogEntry({ meal, food, portion, quantity }) {
     const safeMeal = MEALS.includes(meal) ? meal : "Snacks";
-    const safeQuantity = Math.max(0.01, Math.min(100, Number(quantity) || 1));
+    const safeQuantity = Math.max(0.01, Math.min(10000, Number(quantity) || 1));
     return {
         id: crypto.randomUUID(),
         meal: safeMeal,
