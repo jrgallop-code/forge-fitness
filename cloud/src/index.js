@@ -360,20 +360,31 @@ async function searchUsdaFoods(url, request, env) {
         return json({ error: "USDA food search is not configured yet." }, 503, request, env);
     }
 
-    const upstreamUrl = new URL("https://api.nal.usda.gov/fdc/v1/foods/search");
-    upstreamUrl.searchParams.set("api_key", env.USDA_FDC_API_KEY);
-    upstreamUrl.searchParams.set("query", query);
-    upstreamUrl.searchParams.set("pageSize", "15");
-    upstreamUrl.searchParams.set("pageNumber", "1");
+    const upstreamUrl = usdaFoodSearchUrl(env.USDA_FDC_API_KEY, query, 15);
+    const brandSearch = detectUsdaBrandSearch(query);
+    const brandUrl = brandSearch
+        ? usdaFoodSearchUrl(env.USDA_FDC_API_KEY, brandSearch.usdaQuery, 50, "Branded")
+        : null;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
+    const brandController = brandUrl ? new AbortController() : null;
+    const brandTimeout = brandController ? setTimeout(() => brandController.abort(), 4000) : null;
     let response;
+    let brandResponse = null;
     try {
-        response = await fetch(upstreamUrl, {
+        const generalRequest = fetch(upstreamUrl, {
             headers: { "Accept": "application/json" },
             signal: controller.signal
         });
+        const brandRequest = brandUrl
+            ? fetch(brandUrl, { headers: { "Accept": "application/json" }, signal: brandController.signal })
+                .catch(error => {
+                    console.error(JSON.stringify({ event: "usda_brand_search_failed", brand: brandSearch.name, reason: error?.name === "AbortError" ? "timeout" : "network" }));
+                    return null;
+                })
+            : Promise.resolve(null);
+        [response, brandResponse] = await Promise.all([generalRequest, brandRequest]);
     }
     catch (error) {
         console.error(JSON.stringify({ event: "usda_food_search_failed", reason: error?.name === "AbortError" ? "timeout" : "network" }));
@@ -388,6 +399,7 @@ async function searchUsdaFoods(url, request, env) {
     }
     finally {
         clearTimeout(timeout);
+        if (brandTimeout) clearTimeout(brandTimeout);
     }
 
     if (!response.ok) {
@@ -408,12 +420,65 @@ async function searchUsdaFoods(url, request, env) {
 
     const payload = await response.json();
     const searchFoods = Array.isArray(payload?.foods) ? payload.foods : [];
-    const usdaFoods = dedupeUsdaFoods(searchFoods.map(normalizeUsdaFood).filter(Boolean));
+    let brandFoods = [];
+    if (brandResponse?.ok && brandSearch) {
+        const brandPayload = await brandResponse.json().catch(() => ({}));
+        brandFoods = rankUsdaBrandFoods(brandPayload?.foods, query, brandSearch);
+    }
+    else if (brandResponse && !brandResponse.ok) {
+        console.error(JSON.stringify({ event: "usda_brand_search_failed", brand: brandSearch?.name, status: brandResponse.status }));
+    }
+    const usdaFoods = dedupeUsdaFoods([...brandFoods, ...searchFoods].map(normalizeUsdaFood).filter(Boolean));
     const foods = mergeFoodResults(verifiedFoods, usdaFoods).slice(0, 16);
     return json({
         foods,
         source: verifiedFoods.length ? "Level Up Verified + USDA FoodData Central" : "USDA FoodData Central"
     }, 200, request, env);
+}
+
+function usdaFoodSearchUrl(apiKey, query, pageSize, dataType = "") {
+    const url = new URL("https://api.nal.usda.gov/fdc/v1/foods/search");
+    url.searchParams.set("api_key", apiKey);
+    url.searchParams.set("query", query);
+    url.searchParams.set("pageSize", String(pageSize));
+    url.searchParams.set("pageNumber", "1");
+    if (dataType) url.searchParams.set("dataType", dataType);
+    return url;
+}
+
+const USDA_BRAND_SEARCHES = [
+    { name: "Grenade", usdaQuery: "Grenade", aliases: ["grenade", "carb killa"] },
+    { name: "Kirkland Signature", usdaQuery: "Kirkland Signature", aliases: ["kirkland", "kirkland signature"] },
+    { name: "McDonald's", usdaQuery: "McDonald's", aliases: ["mcdonald", "mcdonalds", "mcdonald's"] },
+    { name: "Built", usdaQuery: "Built Bar", aliases: ["built bar", "built puff"] }
+];
+
+export function detectUsdaBrandSearch(query) {
+    const identity = foodIdentity(query);
+    return USDA_BRAND_SEARCHES.find(brand => brand.aliases.some(alias => identity.includes(foodIdentity(alias)))) || null;
+}
+
+export function rankUsdaBrandFoods(foods, query, brandSearch) {
+    if (!brandSearch) return [];
+    const brandIdentity = foodIdentity(brandSearch.name);
+    const brandTokens = new Set(brandSearch.aliases.flatMap(alias => foodIdentity(alias).split(" ")));
+    const queryTokens = foodIdentity(query).split(" ").filter(token => token.length > 1 && !brandTokens.has(token));
+    return (Array.isArray(foods) ? foods : [])
+        .map((food, index) => ({ food, index, score: usdaBrandFoodScore(food, brandIdentity, queryTokens) }))
+        .filter(item => Number.isFinite(item.score))
+        .sort((a, b) => b.score - a.score || a.index - b.index)
+        .map(item => item.food);
+}
+
+function usdaBrandFoodScore(food, brandIdentity, queryTokens) {
+    const brandValues = [food?.brandName, food?.brandOwner].map(foodIdentity).filter(Boolean);
+    const brandMatches = brandValues.some(value => value === brandIdentity || value.startsWith(`${brandIdentity} `));
+    if (!brandMatches) return Number.NEGATIVE_INFINITY;
+    const description = foodIdentity(`${food?.description || ""} ${food?.subbrandName || ""} ${food?.foodCategory || ""}`);
+    const tokenMatches = queryTokens.reduce((score, token) => score + (description.includes(token) ? 8 : 0), 0);
+    const allTokensMatch = queryTokens.length && queryTokens.every(token => description.includes(token));
+    const brandedBar = /snack|energy|granola|protein bar/.test(description);
+    return 20 + tokenMatches + (allTokensMatch ? 15 : 0) + (brandedBar ? 5 : 0);
 }
 
 async function searchVerifiedFoods(query, env) {
@@ -636,7 +701,7 @@ export function normalizeUsdaFood(food) {
         source: "usda",
         fdcId,
         name,
-        brand: limitedText(food?.brandOwner || food?.brandName, 120),
+        brand: limitedText(food?.brandName || food?.brandOwner, 120),
         dataType: limitedText(food?.dataType, 60),
         category: limitedText(food?.foodCategory?.description || food?.wweiaFoodCategory?.wweiaFoodCategoryDescription || food?.foodCategory, 100),
         portions
