@@ -1,5 +1,6 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { parseRoutineText } from "./routine-import-parser.js?v=exercise-match-1";
+import { formatSetCredits, getWeeklyPlanVolume } from "./plan-muscle-volume.js?v=plan-volume-shared-1";
 
 const PLAN_KEY = "forge_workout_plans";
 const EXAMPLE = `Push Day
@@ -149,18 +150,20 @@ function renderReview(page) {
 }
 
 function renderImportSummary() {
-  const map = new Map(getAllExercises().map(exercise => [exercise.id, exercise]));
-  const totals = {};
   let workingSets = 0;
   importState.days.forEach(day => day.exercises.forEach(item => {
     const sets = Number(item.sets || 0);
-    const muscle = map.get(item.match.exerciseId)?.muscleGroup || "Other";
-    totals[muscle] = (totals[muscle] || 0) + sets;
     workingSets += sets;
   }));
-  const rows = Object.entries(totals).sort((a, b) => b[1] - a[1]).map(([muscle, sets]) => `<div class="${sets > 20 ? "is-high" : ""}"><span>${escapeHtml(muscle)}</span><strong>${sets} sets</strong></div>`).join("");
+  const plan = { days: importState.days.map(day => ({ exercises: day.exercises.map(item => ({ id: item.match.exerciseId, sets: item.sets })) })) };
+  const totals = getWeeklyPlanVolume(plan);
+  const rows = [...totals.entries()]
+    .filter(([, sets]) => Number(sets) > 0)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([muscle, sets]) => `<div class="${sets > 20 ? "is-high" : ""}"><span>${escapeHtml(muscle)}</span><strong>${formatSetCredits(sets)}</strong></div>`)
+    .join("");
   const longest = Math.max(0, ...importState.days.map(day => day.exercises.reduce((sum, item) => sum + Number(item.sets || 0), 0)));
-  return `<section class="routine-import-summary"><div><span class="eyebrow">QUICK CHECK</span><h4>Imported structure</h4><p>${workingSets} weekly working sets · longest session about ${Math.round(longest * 3)}–${Math.round(longest * 4)} min</p></div><div class="routine-import-volume">${rows}</div>${Object.values(totals).some(sets => sets > 20) ? `<p class="routine-import-volume-note">High weekly volume detected. You can still save, but consider reviewing the highlighted muscle groups.</p>` : ""}</section>`;
+  return `<section class="routine-import-summary"><div><span class="eyebrow">QUICK CHECK</span><h4>Imported structure</h4><p>${workingSets} weekly working sets · longest session about ${Math.round(longest * 3)}–${Math.round(longest * 4)} min</p><small>Muscle breakdown: Primary 1.0 · Secondary 0.5</small></div><div class="routine-import-volume">${rows}</div>${[...totals.values()].some(sets => sets > 20) ? `<p class="routine-import-volume-note">High weekly volume detected. You can still save, but consider reviewing the highlighted muscle groups.</p>` : ""}</section>`;
 }
 
 function renderDay(day, dayIndex) {
