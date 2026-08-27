@@ -60,7 +60,7 @@ function renderFoodLogShell() {
             </div>
             <article class="food-daily-summary" data-food-summary></article>
             <div class="food-meals" data-food-meals></div>
-            <p class="food-data-credit">Food data from USDA FoodData Central. Nutrition values may vary by product and serving.</p>
+            <p class="food-data-credit">Food data from Level Up verified sources and USDA FoodData Central. Nutrition values may vary by product and serving.</p>
         </section>
     `;
 }
@@ -265,8 +265,8 @@ async function searchFoods(event) {
     showFoodMode("search");
     if (query.length < 2) return setText("[data-food-search-status]", "Enter at least 2 characters.");
     const token = sessionToken();
-    if (!token) return setText("[data-food-search-status]", "Sign in to search USDA foods. Custom foods still work offline.");
-    setText("[data-food-search-status]", "Searching USDA FoodData Central…");
+    if (!token) return setText("[data-food-search-status]", "Sign in to search foods. Custom foods still work offline.");
+    setText("[data-food-search-status]", "Searching Level Up and USDA foods…");
     const results = document.querySelector("[data-food-results]");
     if (results) results.innerHTML = "";
     foodSearchController?.abort();
@@ -279,7 +279,9 @@ async function searchFoods(event) {
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(payload.error || "Food search could not be loaded.");
         renderFoodResults(results, payload.foods || []);
-        setText("[data-food-search-status]", payload.foods?.length ? `${payload.foods.length} matches` : "No matches. Try a simpler name or create a custom food.");
+        const verifiedCount = (payload.foods || []).filter(food => food?.source === "levelup").length;
+        const countLabel = `${payload.foods?.length || 0} matches${verifiedCount ? ` · ${verifiedCount} Level Up verified` : ""}`;
+        setText("[data-food-search-status]", payload.foods?.length ? countLabel : "No matches. Try a simpler name or create a custom food.");
     }
     catch (error) {
         if (error?.name === "AbortError") return;
@@ -295,7 +297,10 @@ function renderFoodResults(container, foods) {
 
 function foodResultMarkup(food, index) {
     const portion = food.portions?.[0];
-    return `<button class="food-result" type="button" data-food-result="${index}"><span><strong>${escapeHtml(food.name)}</strong><small>${escapeHtml(food.brand || food.dataType || "USDA food")}</small></span><b>${Math.round(portion?.nutrition?.calories || 0)} kcal<small>${escapeHtml(portion?.label || "per 100 g")}</small></b></button>`;
+    const sourceLabel = food.source === "levelup"
+        ? `${food.brand || "Level Up"} · Verified`
+        : (food.brand || food.dataType || "USDA food");
+    return `<button class="food-result" type="button" data-food-result="${index}"><span><strong>${escapeHtml(food.name)}</strong><small>${escapeHtml(sourceLabel)}</small></span><b>${Math.round(portion?.nutrition?.calories || 0)} kcal<small>${escapeHtml(portion?.label || "per 100 g")}</small></b></button>`;
 }
 
 async function chooseFood(food) {

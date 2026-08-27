@@ -122,6 +122,7 @@ function mealItemSnapshot(entry) {
     if (!entry || typeof entry !== "object") return null;
     return {
         source: entry.source || entry.food?.source || "custom",
+        catalogueId: entry.catalogueId || entry.food?.catalogueId || null,
         fdcId: entry.fdcId || entry.food?.fdcId || null,
         name: String(entry.name || entry.food?.name || "Food").slice(0, 180),
         brand: String(entry.brand || entry.food?.brand || "").slice(0, 120),
@@ -136,7 +137,7 @@ export function recentFoods(limit = 8) {
     const all = Object.values(readFoodLog()).flatMap(entries => Array.isArray(entries) ? entries : []);
     const unique = new Map();
     [...all].reverse().forEach(entry => {
-        const key = `${entry?.source || "custom"}:${entry?.fdcId || entry?.name || ""}`;
+        const key = `${entry?.source || "custom"}:${entry?.catalogueId || entry?.fdcId || entry?.name || ""}`;
         if (!unique.has(key) && entry?.food) unique.set(key, entry.food);
     });
     return [...unique.values()].slice(0, limit);
@@ -167,6 +168,7 @@ export function createLogEntry({ meal, food, portion, quantity }) {
         id: crypto.randomUUID(),
         meal: safeMeal,
         source: food.source || "custom",
+        catalogueId: food.catalogueId || null,
         fdcId: food.fdcId || null,
         name: String(food.name || "Food").slice(0, 180),
         brand: String(food.brand || "").slice(0, 120),
