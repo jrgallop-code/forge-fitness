@@ -200,12 +200,12 @@ function renderSvgChart(host, records) {
     const valueFor = record => isVolume ? displayVolume(record.sessionVolume) : displayMass(record.estimatedOneRepMax, 1);
     const values = records.map(valueFor).filter(Number.isFinite);
     const width = Math.max(320, Math.round(host.clientWidth || 700));
-    const height = 300;
-    const padding = { top: 34, right: 18, bottom: 46, left: 62 };
+    const height = width <= 520 ? 280 : 310;
+    const padding = { top: 38, right: 18, bottom: 42, left: 56 };
     const axisLabel = isVolume ? `Session Volume (${massUnit()})` : `Estimated 1RM (${massUnit()})`;
     host.setAttribute("aria-label", `${axisLabel} across logged sessions`);
     if (!values.length) {
-        host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="300" role="img" aria-label="No exercise progress data"><text x="${padding.left}" y="18" fill="#a0a0a0" font-size="12">${axisLabel}</text><line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="#333"/><line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="#333"/><text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="#a0a0a0" font-size="12">No completed weighted sets to plot</text></svg>`;
+        host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="No exercise progress data"><text x="${padding.left}" y="20" fill="#ff5b63" font-size="10" font-weight="800" letter-spacing="1.2">${axisLabel.toUpperCase()}</text><line x1="${padding.left}" y1="${padding.top}" x2="${width - padding.right}" y2="${padding.top}" stroke="rgba(255,255,255,.055)"/><line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="rgba(255,255,255,.055)"/><text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="#888892" font-size="12">No completed weighted sets to plot</text></svg>`;
         return;
     }
     const minValue = Math.min(...values);
@@ -221,11 +221,25 @@ function renderSvgChart(host, records) {
         const value = valueFor(record);
         return { ...record, value, x: records.length === 1 ? padding.left + chartWidth / 2 : padding.left + index / (records.length - 1) * chartWidth, y: padding.top + (axisMax - value) / (axisMax - axisMin) * chartHeight };
     });
-    const ticks = Array.from({ length: 5 }, (_, index) => axisMin + (axisMax - axisMin) * index / 4);
-    host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="300" role="img" aria-label="${axisLabel} progress"><text x="${padding.left}" y="18" fill="#a0a0a0" font-size="12">${axisLabel}</text>
-        ${ticks.map(tick => { const y = padding.top + (axisMax - tick) / (axisMax - axisMin) * chartHeight; return `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="#2f2f2f"/><text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" fill="#a0a0a0" font-size="11">${formatAxis(tick)}</text>`; }).join("")}
-        <polyline points="${coords.map(point => `${point.x},${point.y}`).join(" ")}" fill="none" stroke="#ef1b24" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
-        ${coords.map((point, index) => { const show = coords.length <= 8 || index === 0 || index === coords.length - 1 || index % Math.ceil(coords.length / 6) === 0; return `<circle cx="${point.x}" cy="${point.y}" r="4" fill="#fff"><title>${formatDate(point.date)}: ${isVolume ? formatVolume(point.sessionVolume) : formatMass(point.estimatedOneRepMax, 1)}</title></circle>${show ? `<text x="${point.x}" y="${height - 18}" text-anchor="middle" fill="#a0a0a0" font-size="11">${formatShortDate(point.date)}</text>` : ""}`; }).join("")}</svg>`;
+    const ticks = Array.from({ length: 3 }, (_, index) => axisMin + (axisMax - axisMin) * index / 2);
+    const linePoints = coords.map(point => `${point.x},${point.y}`).join(" ");
+    const areaPoints = `${coords[0].x},${height - padding.bottom} ${linePoints} ${coords.at(-1).x},${height - padding.bottom}`;
+    host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="${axisLabel} progress">
+        <defs>
+            <linearGradient id="exercise-progress-red-fill" x1="0" y1="${padding.top}" x2="0" y2="${height - padding.bottom}" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#ff3139" stop-opacity=".28"/>
+                <stop offset="56%" stop-color="#9d1f2b" stop-opacity=".13"/>
+                <stop offset="100%" stop-color="#431018" stop-opacity="0"/>
+            </linearGradient>
+            <filter id="exercise-progress-red-glow" x="-20%" y="-35%" width="140%" height="170%">
+                <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#ff3139" flood-opacity=".3"/>
+            </filter>
+        </defs>
+        <text x="${padding.left}" y="20" fill="#ff5b63" font-size="10" font-weight="800" letter-spacing="1.2">${axisLabel.toUpperCase()}</text>
+        ${ticks.map(tick => { const y = padding.top + (axisMax - tick) / (axisMax - axisMin) * chartHeight; return `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="rgba(255,255,255,.055)"/><text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" fill="rgba(185,185,193,.72)" font-size="10">${formatAxis(tick)}</text>`; }).join("")}
+        ${coords.length > 1 ? `<polygon points="${areaPoints}" fill="url(#exercise-progress-red-fill)"/>` : ""}
+        <polyline points="${linePoints}" fill="none" stroke="#ff3139" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" filter="url(#exercise-progress-red-glow)"/>
+        ${coords.map((point, index) => { const show = coords.length <= 8 || index === 0 || index === coords.length - 1 || index % Math.ceil(coords.length / 6) === 0; const latest = index === coords.length - 1; return `${latest ? `<circle cx="${point.x}" cy="${point.y}" r="8" fill="#ff3139" fill-opacity=".18"/>` : ""}<circle cx="${point.x}" cy="${point.y}" r="${latest ? 4 : 3}" fill="${latest ? "#ff3139" : "#c94c55"}" stroke="#151114" stroke-width="2"><title>${formatDate(point.date)}: ${isVolume ? formatVolume(point.sessionVolume) : formatMass(point.estimatedOneRepMax, 1)}</title></circle>${show ? `<text x="${point.x}" y="${height - 16}" text-anchor="middle" fill="rgba(185,185,193,.72)" font-size="10">${formatShortDate(point.date)}</text>` : ""}`; }).join("")}</svg>`;
 }
 
 function displayVolume(value) { return displayMass(value, 0); }
