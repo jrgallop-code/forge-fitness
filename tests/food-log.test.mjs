@@ -12,7 +12,7 @@ globalThis.window = { dispatchEvent() {} };
 globalThis.CustomEvent = class CustomEvent { constructor(type, options) { this.type = type; this.detail = options?.detail; } };
 
 const data = await import("../js/nutrition/food-log-data.js");
-const { dedupeUsdaFoods, mergeFoodResults, normalizeUsdaFood, normalizeVerifiedFood, searchBundledVerifiedFoods } = await import("../cloud/src/index.js");
+const { dedupeUsdaFoods, detectUsdaBrandSearch, mergeFoodResults, normalizeUsdaFood, normalizeVerifiedFood, rankUsdaBrandFoods, searchBundledVerifiedFoods } = await import("../cloud/src/index.js");
 
 test("food log scales a serving and totals its macros", () => {
     storage.clear();
@@ -156,6 +156,34 @@ test("bundled verified foods keep the catalogue working before D1 migration", ()
     assert.equal(burgers[0].catalogueId, "mcd-ca-cheeseburger");
     assert.equal(burgers[0].portions[0].label, "1 burger (113 g)");
     assert.equal(bars[0].portions[0].nutrition.calories, 208);
+});
+
+test("known branded searches detect Grenade names and Carb Killa aliases", () => {
+    assert.equal(detectUsdaBrandSearch("Grenade protein bar").name, "Grenade");
+    assert.equal(detectUsdaBrandSearch("Carb Killa salted caramel").name, "Grenade");
+    assert.equal(detectUsdaBrandSearch("chicken breast"), null);
+});
+
+test("brand-aware USDA results reject unrelated grenades and rank matching protein bars", () => {
+    const brand = detectUsdaBrandSearch("Grenade protein bar");
+    const foods = rankUsdaBrandFoods([
+        { fdcId: 1, description: "GRENADES, GRAPE BOMB", brandName: "GRENADES", foodCategory: "Chewing Gum & Mints" },
+        { fdcId: 2, description: "CHOCOLATE CHIP COOKIE DOUGH HIGH PROTEIN BARS", brandName: "GRENADE", foodCategory: "Snack, Energy & Granola Bars" },
+        { fdcId: 3, description: "PROTEIN BAR", brandName: "MET-RX", foodCategory: "Snack, Energy & Granola Bars" }
+    ], "Grenade protein bar", brand);
+    assert.deepEqual(foods.map(food => food.fdcId), [2]);
+});
+
+test("USDA normalization shows the consumer brand instead of a distributor owner", () => {
+    const food = normalizeUsdaFood({
+        fdcId: 2170186,
+        description: "CHOCOLATE CHIP COOKIE DOUGH HIGH PROTEIN BARS",
+        dataType: "Branded",
+        brandName: "GRENADE",
+        brandOwner: "Bill Blass Fashions, LLC.",
+        foodNutrients: []
+    });
+    assert.equal(food.brand, "GRENADE");
 });
 
 test("USDA nutrients are converted from 100 g to the labelled gram serving", () => {
