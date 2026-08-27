@@ -1,4 +1,4 @@
-import { openWorkoutLogger } from "../workouts/workout-session.js?v=expanded-exercise-lookup-1";
+import { openWorkoutLogger } from "../workouts/workout-session.js?v=swap-history-metadata-1";
 
 const PLAN_KEY = "forge_workout_plans";
 const SESSION_KEY = "forge_workout_sessions";

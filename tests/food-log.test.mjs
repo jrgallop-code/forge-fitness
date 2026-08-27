@@ -12,7 +12,7 @@ globalThis.window = { dispatchEvent() {} };
 globalThis.CustomEvent = class CustomEvent { constructor(type, options) { this.type = type; this.detail = options?.detail; } };
 
 const data = await import("../js/nutrition/food-log-data.js");
-const { normalizeUsdaFood } = await import("../cloud/src/index.js");
+const { dedupeUsdaFoods, normalizeUsdaFood } = await import("../cloud/src/index.js");
 
 test("food log scales a serving and totals its macros", () => {
     storage.clear();
@@ -87,7 +87,7 @@ test("USDA search stays behind the Worker and the browser receives normalized fo
     assert.match(worker, /url\.pathname === "\/v1\/foods\/search"/);
     assert.doesNotMatch(browser, /api\.nal\.usda\.gov/);
     assert.match(browser, /\/v1\/foods\/search\?q=/);
-    assert.match(html, /css\/food-log\.css\?v=food-log-meals-v2/);
+    assert.match(html, /css\/food-log\.css\?v=food-search-lazy-1/);
 });
 
 test("USDA nutrients are converted from 100 g to the labelled gram serving", () => {
@@ -155,10 +155,23 @@ test("USDA branded foods prefer exact label nutrients for one item", () => {
     assert.equal(food.portions[0].nutrition.protein, 17);
 });
 
-test("USDA search enriches results with one batched full-detail request and keeps fallback normalization", async () => {
-    const worker = await readFile(new URL("../cloud/src/index.js", import.meta.url), "utf8");
-    assert.match(worker, /new URL\("https:\/\/api\.nal\.usda\.gov\/fdc\/v1\/foods"\)/);
-    assert.match(worker, /detailsUrl\.searchParams\.set\("fdcIds", ids\.join\(","\)\)/);
-    assert.match(worker, /if \(!detailFood\) return searchFood/);
-    assert.match(worker, /foodPortions/);
+test("USDA search returns immediately and full serving details load only after selection", async () => {
+    const [worker, browser] = await Promise.all([
+        readFile(new URL("../cloud/src/index.js", import.meta.url), "utf8"),
+        readFile(new URL("../js/nutrition/food-log.js", import.meta.url), "utf8")
+    ]);
+    assert.match(worker, /url\.pathname\.match\(\/\^\\\/v1\\\/foods\\\/\(\\d\+\)\$\//);
+    assert.match(worker, /new URL\(`https:\/\/api\.nal\.usda\.gov\/fdc\/v1\/food\/\$\{fdcId\}`\)/);
+    assert.doesNotMatch(worker, /fdcIds/);
+    assert.match(browser, /foodDetailCache/);
+    assert.match(browser, /foodSearchController\?\.abort\(\)/);
+    assert.match(browser, /Loading servings/);
+    assert.match(browser, /\/v1\/foods\/\$\{encodeURIComponent\(cacheKey\)\}/);
+});
+
+test("USDA duplicate records collapse to the strongest same-name result", () => {
+    const weak = { source: "usda", fdcId: 1, name: "McDonald's Hamburger", brand: "", portions: [{ label: "100 g", nutrition: { calories: 250 } }] };
+    const useful = { source: "usda", fdcId: 2, name: "McDonald's Hamburger", brand: "", portions: [{ label: "1 sandwich", nutrition: { calories: 270 } }] };
+    const other = { source: "usda", fdcId: 3, name: "McDonald's Cheeseburger", brand: "", portions: [{ label: "1 sandwich", nutrition: { calories: 300 } }] };
+    assert.deepEqual(dedupeUsdaFoods([weak, useful, other]).map(food => food.fdcId), [2, 3]);
 });

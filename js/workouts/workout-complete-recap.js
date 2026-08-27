@@ -166,7 +166,7 @@ function getTrainedMuscles(session) {
   (session.exercises||[]).forEach(item => {
     const active=item.trackingType === "notes" ? Number(item.durationMinutes)>0 : (item.sets||[]).some(set => set.completed || Number(set.reps)>0);
     if (!active) return;
-    const muscle=getExerciseById(item.exerciseId)?.muscleGroup;
+    const muscle=item.muscleGroup||getExerciseById(item.exerciseId)?.muscleGroup;
     if (muscle) muscles.add(muscle);
   });
   return [...muscles];
@@ -187,10 +187,11 @@ function findWins(session, history, stats) {
     if (!current.length || !prior.length) return;
     const currentWeight=Math.max(...current.map(s=>Number(s.weight)||0));
     const priorWeight=Math.max(...prior.map(s=>Number(s.weight)||0));
-    if (currentWeight>priorWeight) wins.push({type:"WEIGHT PR",icon:"🏆",title:exercise?.name||"Exercise",value:`${formatNumber(currentWeight)} lb`,detail:"NEW RECORD!",isNew:true});
+    const exerciseName=item.name||item.exerciseName||exercise?.name||"Exercise";
+    if (currentWeight>priorWeight) wins.push({type:"WEIGHT PR",icon:"🏆",title:exerciseName,value:`${formatNumber(currentWeight)} lb`,detail:"NEW RECORD!",isNew:true});
     const currentReps=Math.max(...current.map(s=>Number(s.reps)||0));
     const priorReps=Math.max(...prior.map(s=>Number(s.reps)||0));
-    if (currentReps>priorReps) wins.push({type:"REPS PR",icon:"★",title:exercise?.name||"Exercise",value:`${currentReps} REPS`,detail:"NEW RECORD!",isNew:true});
+    if (currentReps>priorReps) wins.push({type:"REPS PR",icon:"★",title:exerciseName,value:`${currentReps} REPS`,detail:"NEW RECORD!",isNew:true});
   });
   const priorVolumes=history.map(s=>summarizeSession(s).volume).filter(v=>v>0);
   const bestPrior=priorVolumes.length?Math.max(...priorVolumes):0;

@@ -494,6 +494,7 @@ function createExerciseState(day) {
             if (exercise?.trackingType === "notes") {
                 return {
                     exerciseId: plannedExercise.id,
+                    ...exerciseStateMetadata(exercise, plannedExercise),
                     trackingType: "notes",
                     durationMinutes: null,
                     distance: "",
@@ -510,6 +511,7 @@ function createExerciseState(day) {
 
             return {
                 exerciseId: plannedExercise.id,
+                ...exerciseStateMetadata(exercise, plannedExercise),
                 trackingType: "reps",
                 sets:
                     Array.from(
@@ -524,6 +526,33 @@ function createExerciseState(day) {
             };
         });
 
+}
+
+function exerciseStateMetadata(definition, plannedExercise = {}) {
+    const name = definition?.name || plannedExercise?.name || plannedExercise?.exerciseName || "";
+    return {
+        name,
+        exerciseName: name,
+        muscleGroup: definition?.muscleGroup || plannedExercise?.muscleGroup || "",
+        type: definition?.type || plannedExercise?.type || "",
+        equipment: definition?.equipment || plannedExercise?.equipment || ""
+    };
+}
+
+function enrichCompletedExercise(exercise, plannedExercise = {}) {
+    const exerciseId = exercise?.exerciseId || plannedExercise?.id || "";
+    const definition = getExerciseById(exerciseId);
+    return {
+        ...exercise,
+        exerciseId,
+        ...exerciseStateMetadata(definition, {
+            ...plannedExercise,
+            name: exercise?.name || exercise?.exerciseName || plannedExercise?.name,
+            muscleGroup: exercise?.muscleGroup || plannedExercise?.muscleGroup,
+            type: exercise?.type || plannedExercise?.type,
+            equipment: exercise?.equipment || plannedExercise?.equipment
+        })
+    };
 }
 
 
@@ -1222,6 +1251,7 @@ function saveCompletedSession({
             ? Number(session.durationMs) || 0
             : getWorkoutElapsedMs(session);
 
+    const completedDay = plan.days?.[Number(session.trainingDayIndex) || 0];
     const completed = {
         id:
             editingSessionId ||
@@ -1251,7 +1281,9 @@ function saveCompletedSession({
         adaptiveGuidance:
             clone(session.adaptiveGuidance || null),
         exercises:
-            clone(session.exercises || [])
+            clone((session.exercises || []).map((exercise, index) =>
+                enrichCompletedExercise(exercise, completedDay?.exercises?.[index])
+            ))
     };
 
     const sessions =

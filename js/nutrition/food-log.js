@@ -27,6 +27,10 @@ let selectedFood = null;
 let selectedMeal = "Breakfast";
 let addContext = "log";
 let mealDraft = null;
+let foodSearchController = null;
+let foodDetailController = null;
+let foodSelectionRequest = 0;
+const foodDetailCache = new Map();
 
 export function renderCaloriesHub(planMarkup) {
     return `
@@ -238,6 +242,9 @@ function openFoodSheet(meal) {
 function closeFoodSheet() {
     const sheet = document.querySelector("[data-food-sheet]");
     if (sheet) sheet.hidden = true;
+    foodSelectionRequest += 1;
+    foodSearchController?.abort();
+    foodDetailController?.abort();
     document.body.classList.remove("food-sheet-open");
     addContext = "log";
     mealDraft = null;
@@ -262,14 +269,20 @@ async function searchFoods(event) {
     setText("[data-food-search-status]", "Searching USDA FoodData Central…");
     const results = document.querySelector("[data-food-results]");
     if (results) results.innerHTML = "";
+    foodSearchController?.abort();
+    foodSearchController = new AbortController();
     try {
-        const response = await fetch(`${API_URL}/v1/foods/search?q=${encodeURIComponent(query)}`, { headers: { Authorization: `Bearer ${token}` } });
+        const response = await fetch(`${API_URL}/v1/foods/search?q=${encodeURIComponent(query)}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: foodSearchController.signal
+        });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(payload.error || "Food search could not be loaded.");
         renderFoodResults(results, payload.foods || []);
         setText("[data-food-search-status]", payload.foods?.length ? `${payload.foods.length} matches` : "No matches. Try a simpler name or create a custom food.");
     }
     catch (error) {
+        if (error?.name === "AbortError") return;
         setText("[data-food-search-status]", error.message || "Food search could not be loaded.");
     }
 }
@@ -285,7 +298,60 @@ function foodResultMarkup(food, index) {
     return `<button class="food-result" type="button" data-food-result="${index}"><span><strong>${escapeHtml(food.name)}</strong><small>${escapeHtml(food.brand || food.dataType || "USDA food")}</small></span><b>${Math.round(portion?.nutrition?.calories || 0)} kcal<small>${escapeHtml(portion?.label || "per 100 g")}</small></b></button>`;
 }
 
-function chooseFood(food) {
+async function chooseFood(food) {
+    const requestId = ++foodSelectionRequest;
+    foodDetailController?.abort();
+    if (food?.source === "usda" && food?.fdcId && !food.detailsLoaded) {
+        renderFoodLoading(food);
+        try {
+            const detailed = await loadFoodDetails(food);
+            if (requestId !== foodSelectionRequest) return;
+            renderFoodPortionPanel(detailed);
+        }
+        catch (error) {
+            if (error?.name === "AbortError" || requestId !== foodSelectionRequest) return;
+            renderFoodPortionPanel(food, "Full serving choices could not load. Showing the available USDA value.");
+        }
+        return;
+    }
+    renderFoodPortionPanel(food);
+}
+
+async function loadFoodDetails(food) {
+    const cacheKey = String(food.fdcId);
+    if (foodDetailCache.has(cacheKey)) return foodDetailCache.get(cacheKey);
+    const token = sessionToken();
+    if (!token) throw new Error("Sign in to load USDA serving details.");
+    foodDetailController = new AbortController();
+    const response = await fetch(`${API_URL}/v1/foods/${encodeURIComponent(cacheKey)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: foodDetailController.signal
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.food) throw new Error(payload.error || "Serving details could not be loaded.");
+    foodDetailCache.set(cacheKey, payload.food);
+    return payload.food;
+}
+
+function renderFoodLoading(food) {
+    selectedFood = food;
+    const panel = document.querySelector("[data-food-portion]");
+    if (!panel) return;
+    panel.hidden = false;
+    panel.innerHTML = `
+        <div class="food-portion-heading"><div><span class="eyebrow">ADD FOOD</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="Back to results">×</button></div>
+        <div class="food-portion-loading" role="status"><strong>Loading servings…</strong><span>Getting the per-item options from USDA.</span></div>`;
+    panel.querySelector("[data-food-portion-close]")?.addEventListener("click", closeFoodPortionPanel);
+}
+
+function closeFoodPortionPanel() {
+    foodSelectionRequest += 1;
+    foodDetailController?.abort();
+    document.querySelector("[data-food-portion]")?.setAttribute("hidden", "");
+    if (addContext === "meal-builder" && mealDraft) renderMealBuilder();
+}
+
+function renderFoodPortionPanel(food, warning = "") {
     selectedFood = food;
     const panel = document.querySelector("[data-food-portion]");
     if (!panel) return;
@@ -293,15 +359,13 @@ function chooseFood(food) {
     panel.innerHTML = `
         <div class="food-portion-heading"><div><span class="eyebrow">ADD FOOD</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="Back to results">×</button></div>
         ${addContext === "meal-builder" ? '<div class="food-builder-destination">Adding to your saved meal</div>' : `<label>Meal<select data-food-meal>${MEALS.map(meal => `<option${meal === selectedMeal ? " selected" : ""}>${meal}</option>`).join("")}</select></label>`}
+        ${warning ? `<p class="food-portion-warning">${escapeHtml(warning)}</p>` : ""}
         <label>Serving<select data-food-serving>${(food.portions || []).map((portion, index) => `<option value="${index}">${escapeHtml(portion.label)}</option>`).join("")}</select></label>
         <label>Quantity<input data-food-quantity type="number" inputmode="decimal" min="0.01" max="100" step="0.25" value="1"></label>
         <div class="food-portion-preview" data-food-preview></div>
         <button type="button" class="primary-btn" data-food-confirm>${addContext === "meal-builder" ? "Add to Meal" : "Add to Food Log"}</button>
     `;
-    panel.querySelector("[data-food-portion-close]")?.addEventListener("click", () => {
-        panel.hidden = true;
-        if (addContext === "meal-builder" && mealDraft) renderMealBuilder();
-    });
+    panel.querySelector("[data-food-portion-close]")?.addEventListener("click", closeFoodPortionPanel);
     panel.querySelectorAll("select,input").forEach(input => input.addEventListener("input", updatePortionPreview));
     panel.querySelector("[data-food-confirm]")?.addEventListener("click", addSelectedFood);
     updatePortionPreview();
