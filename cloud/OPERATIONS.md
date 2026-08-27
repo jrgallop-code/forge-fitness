@@ -67,3 +67,11 @@ The website includes an owner-only Stats & Analytics screen under More. The Work
 `wrangler secret put ADMIN_EMAILS`
 
 The endpoint returns aggregate counts only (users, activity, workouts, onboarding and acquisition sources); it does not expose backup payloads or individual workout records.
+
+## USDA FoodData Central
+
+The Calories food log searches FoodData Central through the Worker so the API key is never included in website code. Create a free FoodData Central API key, then configure it as a production secret before deploying:
+
+`wrangler secret put USDA_FDC_API_KEY`
+
+The app sends only a food search phrase to USDA. User identity, diary entries, meal names and daily totals remain in Level Up and are not sent to USDA.
