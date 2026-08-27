@@ -1,3 +1,5 @@
+import { drawStrengthIndexChart } from "./strength-index-chart-renderer.js?v=red-index-polish-1";
+
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const RANGE_STORAGE_KEY = "level_up_training_analytics_range";
 const DAY_MS = 86400000;
@@ -268,104 +270,6 @@ function renderOverallStrengthIndexForRange() {
             '<p data-strength-range-note><strong>Timeframe:</strong> the selector changes which part of the strength history is displayed. The 100 baseline remains the first valid recorded performance so ranges stay comparable.</p>'
         );
     }
-}
-
-function drawStrengthIndexChart(canvas, points) {
-    const context = canvas.getContext("2d");
-    if (!context) return;
-
-    const ratio = window.devicePixelRatio || 1;
-    const width = canvas.clientWidth || canvas.parentElement?.clientWidth || 700;
-    const height = canvas.clientHeight || 300;
-    canvas.width = width * ratio;
-    canvas.height = height * ratio;
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    context.clearRect(0, 0, width, height);
-
-    const padding = { top: 28, right: 18, bottom: 44, left: 48 };
-    const plotWidth = Math.max(1, width - padding.left - padding.right);
-    const plotHeight = Math.max(1, height - padding.top - padding.bottom);
-
-    context.strokeStyle = "#333";
-    context.lineWidth = 1;
-    context.beginPath();
-    context.moveTo(padding.left, padding.top);
-    context.lineTo(padding.left, height - padding.bottom);
-    context.lineTo(width - padding.right, height - padding.bottom);
-    context.stroke();
-
-    if (!points.length) {
-        context.fillStyle = "#a0a0a0";
-        context.font = "12px Arial";
-        context.textAlign = "center";
-        context.fillText("No strength-index data in this timeframe", width / 2, height / 2);
-        return;
-    }
-
-    const values = points.map(point => point.value);
-    const rawMinimum = Math.min(100, ...values);
-    const rawMaximum = Math.max(100, ...values);
-    const range = Math.max(4, rawMaximum - rawMinimum);
-    const margin = Math.max(2, range * 0.2);
-    const axisMinimum = Math.floor((rawMinimum - margin) / 2) * 2;
-    const axisMaximum = Math.ceil((rawMaximum + margin) / 2) * 2;
-    const axisRange = Math.max(4, axisMaximum - axisMinimum);
-    const yFor = value => height - padding.bottom - ((value - axisMinimum) / axisRange) * plotHeight;
-
-    for (let tick = 0; tick <= 4; tick++) {
-        const value = axisMinimum + axisRange * tick / 4;
-        const y = yFor(value);
-        context.strokeStyle = "#2f2f2f";
-        context.beginPath();
-        context.moveTo(padding.left, y);
-        context.lineTo(width - padding.right, y);
-        context.stroke();
-        context.fillStyle = "#a0a0a0";
-        context.font = "11px Arial";
-        context.textAlign = "right";
-        context.fillText(value.toFixed(0), padding.left - 7, y + 4);
-    }
-
-    const baselineY = yFor(100);
-    context.save();
-    context.strokeStyle = "rgba(255,255,255,.24)";
-    context.setLineDash([5, 5]);
-    context.beginPath();
-    context.moveTo(padding.left, baselineY);
-    context.lineTo(width - padding.right, baselineY);
-    context.stroke();
-    context.restore();
-
-    const xFor = index => points.length === 1
-        ? padding.left + plotWidth / 2
-        : padding.left + index / (points.length - 1) * plotWidth;
-
-    context.strokeStyle = "#e10600";
-    context.lineWidth = 2;
-    context.lineJoin = "round";
-    context.lineCap = "round";
-    context.beginPath();
-    points.forEach((point, index) => {
-        const x = xFor(index);
-        const y = yFor(point.value);
-        if (index === 0) context.moveTo(x, y);
-        else context.lineTo(x, y);
-    });
-    context.stroke();
-
-    context.fillStyle = "#fff";
-    points.forEach((point, index) => {
-        context.beginPath();
-        context.arc(xFor(index), yFor(point.value), 2.5, 0, Math.PI * 2);
-        context.fill();
-    });
-
-    context.fillStyle = "#a0a0a0";
-    context.font = "10px Arial";
-    context.textAlign = "left";
-    context.fillText(formatShortDate(points[0].date), padding.left, height - 16);
-    context.textAlign = "right";
-    context.fillText(formatShortDate(points[points.length - 1].date), width - padding.right, height - 16);
 }
 
 function refreshExerciseTrendSummary() {
