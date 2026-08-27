@@ -22,7 +22,7 @@ import {
     initializeActiveWorkoutUI,
     openWorkoutLogger
 }
-from "./workout-session.js?v=swap-history-metadata-1";
+from "./workout-session.js?v=repair-generic-exercise-1";
 
 
 const PLAN_STORAGE_KEY =
