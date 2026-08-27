@@ -3,9 +3,10 @@ import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalo
 
 const DAY_PATTERN = /^(?:(?:day|workout|session)\s*\d+\s*[:\-–—]?\s*)?(push|pull|legs?|upper|lower|chest|back|shoulders?|arms?|full\s*body|rest)(?:\s*(?:day|workout))?\s*[:\-–—]?$/i;
 const NUMBERED_DAY_PATTERN = /^(?:day|workout|session)\s*(\d+)\s*[:\-–—]\s*(.+)$/i;
+const BARE_NUMBERED_DAY_PATTERN = /^(?:day|workout|session)\s*(\d+)\s*[:\-–—]?$/i;
 
 export function parseRoutineText(text) {
-  const lines = String(text || "").split(/\r?\n/).flatMap(expandLine).map(cleanLine).filter(Boolean);
+  const lines = String(text || "").split(/(?:\r\n|[\n\r\u2028\u2029])/).flatMap(expandLine).map(cleanLine).filter(Boolean);
   const days = [];
   let current = null;
   const skipped = [];
@@ -91,6 +92,8 @@ function similarity(left, right) {
 function parseDayHeading(line) {
   const numbered = line.match(NUMBERED_DAY_PATTERN);
   if (numbered && !/\d+\s*[x×]/i.test(line)) return `Day ${numbered[1]} — ${titleCase(numbered[2])}`;
+  const bareNumbered = line.match(BARE_NUMBERED_DAY_PATTERN);
+  if (bareNumbered) return `Day ${bareNumbered[1]}`;
   const simple = line.match(DAY_PATTERN);
   return simple ? titleCase(simple[1]) : null;
 }
@@ -101,12 +104,27 @@ function cleanLine(line) {
 
 function expandLine(line) {
   const value = String(line || "").trim();
-  if (!value.includes("/")) return [value];
-  const exercises = [];
-  const pattern = /(?:^|\s)([^/]+?)\s*\/\s*(\d+)\s*[x×]\s*(\d+(?:\s*[-–—]\s*\d+)?(?:\+)?)/gi;
+  if (!value) return [];
+  const slashExercises = [];
+  const slashPattern = /(?:^|\s)([^/]+?)\s*\/\s*(\d+)\s*[x×]\s*(\d+(?:\s*[-–—]\s*\d+)?(?:\+)?)/gi;
   let match;
-  while ((match = pattern.exec(value))) exercises.push(`${match[1].trim()} - ${match[2]}x${match[3]}`);
-  return exercises.length >= 2 ? exercises : [value];
+  while ((match = slashPattern.exec(value))) slashExercises.push(`${match[1].trim()} - ${match[2]}x${match[3]}`);
+  if (slashExercises.length >= 2) return slashExercises;
+
+  const inlineExercises = [];
+  const inlinePattern = /(.*?)\s+(?:[-–—:|]\s*)?(\d+)\s*[x×]\s*(\d+(?:\s*[-–—]\s*\d+)?(?:\+)?)(?:\s*reps?)?/gi;
+  while ((match = inlinePattern.exec(value))) {
+    const name = cleanInlineExerciseName(match[1]);
+    if (name) inlineExercises.push(`${name} - ${match[2]}x${match[3]}`);
+  }
+  return inlineExercises.length >= 2 ? inlineExercises : [value];
+}
+
+function cleanInlineExerciseName(value) {
+  return String(value || "").trim()
+    .replace(/^[,;|\-–—]+\s*/, "")
+    .replace(/^\d+(?:\.\d+)?\s*(?:RIR|RPE)\b\s*[,;|\-–—]*\s*/i, "")
+    .trim();
 }
 
 function normalizeReps(value) {
