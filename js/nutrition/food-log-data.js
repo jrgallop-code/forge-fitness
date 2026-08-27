@@ -151,6 +151,29 @@ export function scaledNutrition(nutrition, quantity = 1) {
     }, {});
 }
 
+const CUSTOM_SERVING_UNITS = new Set(["g", "oz", "ml", "cup", "tbsp", "tsp", "serving", "item", "piece", "slice", "bar", "burger", "scoop"]);
+
+export function buildCustomFoodPortions({ amount, unit, nutrition }) {
+    const safeAmount = Math.max(0.01, Number(amount) || 1);
+    const safeUnit = CUSTOM_SERVING_UNITS.has(String(unit || "").toLowerCase()) ? String(unit).toLowerCase() : "serving";
+    const grams = safeUnit === "g" ? safeAmount : safeUnit === "oz" ? safeAmount * 28.3495 : 0;
+    const label = customServingLabel(safeAmount, safeUnit, grams);
+    const portions = [{ label, ...(grams > 0 ? { grams } : {}), nutrition: { ...nutrition } }];
+    if (grams > 0) {
+        const perGram = scaledNutrition(nutrition, 1 / grams);
+        if (Math.abs(grams - 100) > .01) portions.push({ label: "100 g", grams: 100, nutrition: scaledNutrition(perGram, 100) });
+        if (Math.abs(grams - 1) > .01) portions.push({ label: "1 g", grams: 1, nutrition: perGram });
+    }
+    return portions;
+}
+
+function customServingLabel(amount, unit, grams) {
+    const amountText = Number.isInteger(amount) ? String(amount) : String(Number(amount.toFixed(2)));
+    if (unit === "oz") return `${amountText} oz (${Number(grams.toFixed(1))} g)`;
+    const plural = amount === 1 || ["g", "oz", "ml", "tbsp", "tsp"].includes(unit) ? unit : `${unit}s`;
+    return `${amountText} ${plural}`;
+}
+
 export function summarizeEntries(entries) {
     return (Array.isArray(entries) ? entries : []).reduce((totals, entry) => {
         const nutrition = entry?.nutrition || {};

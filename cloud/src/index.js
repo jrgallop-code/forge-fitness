@@ -567,7 +567,7 @@ export function normalizeOpenFoodFactsProduct(product, barcode) {
     const portions = [];
     if (servingGrams > 0 && per100.calories > 0) {
         portions.push({
-            label: servingSize || `1 serving (${formatFoodNumber(servingGrams)} g)`,
+            label: foodServingLabel(servingSize || "1 serving", servingGrams),
             grams: servingGrams,
             nutrition: perServing.calories > 0 ? perServing : scaleUsdaNutrition(per100, servingGrams / 100)
         });
@@ -596,7 +596,7 @@ export function normalizeOpenFoodFactsProduct(product, barcode) {
             verifiedAt: ""
         },
         detailsLoaded: true,
-        portions
+        portions: addUsefulGramPortions(portions)
     };
 }
 
@@ -644,7 +644,12 @@ async function readExternalFoodCache(barcode, env) {
         `).bind(barcode, new Date().toISOString()).first();
         if (!row?.food_json) return null;
         const food = JSON.parse(row.food_json);
-        return food?.barcode && Array.isArray(food?.portions) ? food : null;
+        if (!food?.barcode || !Array.isArray(food?.portions)) return null;
+        const portions = food.portions.map(portion => ({
+            ...portion,
+            label: foodServingLabel(portion?.label, portion?.grams)
+        }));
+        return { ...food, portions: addUsefulGramPortions(portions) };
     }
     catch (error) {
         console.info(JSON.stringify({ event: "external_food_cache_read_unavailable", reason: String(error?.message || error) }));
@@ -867,7 +872,7 @@ export function normalizeVerifiedFood(row) {
     };
     const servingGrams = Number(row?.serving_grams);
     const portions = [{
-        label: limitedText(row?.serving_label, 80) || "1 serving",
+        label: foodServingLabel(limitedText(row?.serving_label, 80) || "1 serving", servingGrams),
         ...(Number.isFinite(servingGrams) && servingGrams > 0 ? { grams: servingGrams } : {}),
         nutrition
     }];
@@ -890,7 +895,7 @@ export function normalizeVerifiedFood(row) {
             verifiedAt: limitedText(row?.verified_at, 32)
         },
         detailsLoaded: true,
-        portions
+        portions: addUsefulGramPortions(portions)
     };
 }
 
@@ -946,7 +951,7 @@ const BUNDLED_VERIFIED_FOODS = [
 
 function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, barcode = "", barcodeAliases = [], label, grams, calories, protein, carbs, fat, fiber = 0, sourceName = "", sourceUrl }) {
     const nutrition = { calories, protein, carbs, fat, fiber };
-    const portions = [{ label, ...(grams ? { grams } : {}), nutrition }];
+    const portions = [{ label: foodServingLabel(label, grams), ...(grams ? { grams } : {}), nutrition }];
     if (grams && Math.abs(grams - 100) > .01) {
         portions.push({ label: "100 g", grams: 100, nutrition: scaleUsdaNutrition(nutrition, 100 / grams) });
     }
@@ -964,7 +969,7 @@ function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, b
         countryCode: "CA",
         provenance: { sourceName: sourceName || (brand === "Grenade" ? "Grenade" : "McDonald's Canada"), sourceUrl, verifiedAt: "2026-08-27" },
         detailsLoaded: true,
-        portions
+        portions: addUsefulGramPortions(portions)
     };
 }
 
@@ -1038,10 +1043,10 @@ export function normalizeUsdaFood(food) {
     const portions = [];
     const servingSize = Number(food?.servingSize);
     const servingUnit = String(food?.servingSizeUnit || "").trim().toLowerCase();
-    if (Number.isFinite(servingSize) && servingSize > 0 && ["g", "gram", "grams"].includes(servingUnit)) {
+    if (Number.isFinite(servingSize) && servingSize > 0 && ["g", "gram", "grams", "grm"].includes(servingUnit)) {
         const multiplier = servingSize / 100;
         portions.push({
-            label: limitedText(food?.householdServingFullText, 80) || `${formatFoodNumber(servingSize)} g`,
+            label: foodServingLabel(limitedText(food?.householdServingFullText, 80) || `${formatFoodNumber(servingSize)} g`, servingSize),
             grams: servingSize,
             nutrition: usdaLabelNutrition(food) || scaleUsdaNutrition(per100, multiplier)
         });
@@ -1064,14 +1069,14 @@ export function normalizeUsdaFood(food) {
         brand: limitedText(food?.brandName || food?.brandOwner, 120),
         dataType: limitedText(food?.dataType, 60),
         category: limitedText(food?.foodCategory?.description || food?.wweiaFoodCategory?.wweiaFoodCategoryDescription || food?.foodCategory, 100),
-        portions
+        portions: addUsefulGramPortions(portions)
     };
 }
 
 function normalizeUsdaPortion(portion, per100) {
     const grams = Number(portion?.gramWeight);
     if (!Number.isFinite(grams) || grams <= 0) return null;
-    const label = usdaPortionLabel(portion);
+    const label = foodServingLabel(usdaPortionLabel(portion), grams);
     if (!label) return null;
     return { label, grams, nutrition: scaleUsdaNutrition(per100, grams / 100) };
 }
@@ -1128,6 +1133,28 @@ function scaleUsdaNutrition(nutrition, multiplier) {
 
 function formatFoodNumber(value) {
     return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(1)));
+}
+
+function foodServingLabel(label, grams) {
+    const safeLabel = limitedText(label, 80) || "1 serving";
+    const safeGrams = Number(grams);
+    if (!Number.isFinite(safeGrams) || safeGrams <= 0 || /(?:^|[\s(])\d+(?:\.\d+)?\s*g(?:\s|\)|$)/i.test(safeLabel)) return safeLabel;
+    return limitedText(`${safeLabel} (${formatFoodNumber(safeGrams)} g)`, 80);
+}
+
+function addUsefulGramPortions(portions) {
+    const useful = (Array.isArray(portions) ? portions : []).filter(portion => portion?.label && portion?.nutrition);
+    const basis = useful.find(portion => Number(portion?.grams) > 0 && Number(portion?.nutrition?.calories) > 0);
+    if (!basis) return useful;
+    const basisGrams = Number(basis.grams);
+    const perGram = scaleUsdaNutrition(basis.nutrition, 1 / basisGrams);
+    if (!useful.some(portion => Math.abs(Number(portion?.grams) - 100) < .01)) {
+        useful.push({ label: "100 g", grams: 100, nutrition: scaleUsdaNutrition(perGram, 100) });
+    }
+    if (!useful.some(portion => Math.abs(Number(portion?.grams) - 1) < .01)) {
+        useful.push({ label: "1 g", grams: 1, nutrition: perGram });
+    }
+    return useful;
 }
 
 async function putAcquisition(userId, body, request, env) {

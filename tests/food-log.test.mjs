@@ -112,7 +112,7 @@ test("USDA search stays behind the Worker and the browser receives normalized fo
     assert.match(worker, /url\.pathname === "\/v1\/foods\/search"/);
     assert.doesNotMatch(browser, /api\.nal\.usda\.gov/);
     assert.match(browser, /\/v1\/foods\/search\?q=/);
-    assert.match(html, /css\/food-log\.css\?v=food-search-lazy-1/);
+    assert.match(html, /css\/food-log\.css\?v=food-serving-units-1/);
 });
 
 test("Level Up verified foods use the official item serving before a 100 g option", () => {
@@ -139,6 +139,8 @@ test("Level Up verified foods use the official item serving before a 100 g optio
     assert.equal(food.portions[0].nutrition.calories, 208);
     assert.equal(food.portions[1].label, "100 g");
     assert.equal(Math.round(food.portions[1].nutrition.calories), 347);
+    assert.equal(food.portions[2].label, "1 g");
+    assert.equal(Math.round(food.portions[2].nutrition.calories * 100), 347);
     assert.equal(food.provenance.sourceName, "Grenade");
 });
 
@@ -173,6 +175,18 @@ test("logged Level Up foods preserve their catalogue identity", () => {
     const entry = data.createLogEntry({ meal: "Lunch", food, portion: food.portions[0], quantity: 1 });
     assert.equal(entry.catalogueId, "mcd-ca-cheeseburger");
     assert.equal(entry.nutrition.calories, 290);
+});
+
+test("custom foods use a structured serving and calculate gram logging options", () => {
+    const nutrition = { calories: 100, protein: 16, carbs: 3, fat: 2.5, fiber: 0 };
+    const portions = data.buildCustomFoodPortions({ amount: 85, unit: "g", nutrition });
+    assert.deepEqual(portions.map(portion => portion.label), ["85 g", "100 g", "1 g"]);
+    assert.equal(portions[0].nutrition.calories, 100);
+    assert.equal(Math.round(portions[1].nutrition.calories), 118);
+    assert.equal(Number(portions[2].nutrition.protein.toFixed(3)), .188);
+
+    const burger = data.buildCustomFoodPortions({ amount: 1, unit: "burger", nutrition });
+    assert.deepEqual(burger.map(portion => portion.label), ["1 burger"]);
 });
 
 test("bundled verified foods keep the catalogue working before D1 migration", () => {
@@ -250,10 +264,14 @@ test("barcode lookup uses verified, cached, Open Food Facts, then USDA sources",
 });
 
 test("Open Food Facts barcode responses use a persistent D1 cache", async () => {
-    const migration = await readFile(new URL("../cloud/migrations/0007_external_food_barcode_cache.sql", import.meta.url), "utf8");
+    const [migration, worker] = await Promise.all([
+        readFile(new URL("../cloud/migrations/0007_external_food_barcode_cache.sql", import.meta.url), "utf8"),
+        readFile(new URL("../cloud/src/index.js", import.meta.url), "utf8")
+    ]);
     assert.match(migration, /CREATE TABLE IF NOT EXISTS external_food_barcode_cache/);
     assert.match(migration, /barcode TEXT PRIMARY KEY/);
     assert.match(migration, /expires_at TEXT NOT NULL/);
+    assert.match(worker, /return \{ \.\.\.food, portions: addUsefulGramPortions\(portions\) \}/);
 });
 
 test("known branded searches detect Grenade names and Carb Killa aliases", () => {
@@ -302,10 +320,34 @@ test("USDA nutrients are converted from 100 g to the labelled gram serving", () 
             { nutrientNumber: "204", nutrientName: "Total lipid (fat)", unitName: "G", value: 5 }
         ]
     });
-    assert.equal(food.portions[0].label, "1 cup");
+    assert.equal(food.portions[0].label, "1 cup (30 g)");
     assert.equal(food.portions[0].nutrition.calories, 120);
     assert.equal(food.portions[0].nutrition.protein, 3);
     assert.equal(food.portions[1].nutrition.calories, 400);
+    assert.equal(food.portions[2].label, "1 g");
+});
+
+test("USDA GRM servings show the labelled amount and usable gram units", () => {
+    const food = normalizeUsdaFood({
+        fdcId: 457,
+        description: "FLAME SEARED CHARGRILLED CHIPOTLE CHICKEN",
+        brandName: "KIRKLAND SIGNATURE",
+        servingSize: 85,
+        servingSizeUnit: "GRM",
+        householdServingFullText: "1 serving",
+        labelNutrients: {
+            calories: { value: 100 }, protein: { value: 16 }, carbohydrates: { value: 3 }, fat: { value: 2.5 }
+        },
+        foodNutrients: [
+            { nutrientNumber: "208", nutrientName: "Energy", unitName: "KCAL", value: 117.647 },
+            { nutrientNumber: "203", nutrientName: "Protein", unitName: "G", value: 18.824 },
+            { nutrientNumber: "205", nutrientName: "Carbohydrate, by difference", unitName: "G", value: 3.529 },
+            { nutrientNumber: "204", nutrientName: "Total lipid (fat)", unitName: "G", value: 2.941 }
+        ]
+    });
+    assert.deepEqual(food.portions.map(portion => portion.label), ["1 serving (85 g)", "100 g", "1 g"]);
+    assert.equal(food.portions[0].nutrition.calories, 100);
+    assert.equal(Math.round(food.portions[1].nutrition.calories), 118);
 });
 
 test("USDA restaurant foods default to one burger instead of 100 g", () => {
@@ -324,10 +366,11 @@ test("USDA restaurant foods default to one burger instead of 100 g", () => {
             { amount: 1, gramWeight: 42, portionDescription: "1 small patty" }
         ]
     });
-    assert.equal(food.portions[0].label, "1 sandwich");
+    assert.equal(food.portions[0].label, "1 sandwich (108 g)");
     assert.equal(food.portions[0].grams, 108);
     assert.equal(food.portions[0].nutrition.calories, 270);
-    assert.equal(food.portions.at(-1).label, "100 g");
+    assert.equal(food.portions.at(-2).label, "100 g");
+    assert.equal(food.portions.at(-1).label, "1 g");
 });
 
 test("USDA branded foods prefer exact label nutrients for one item", () => {
@@ -346,7 +389,7 @@ test("USDA branded foods prefer exact label nutrients for one item", () => {
             { nutrientNumber: "203", nutrientName: "Protein", unitName: "G", value: 15.18 }
         ]
     });
-    assert.equal(food.portions[0].label, "1 burger");
+    assert.equal(food.portions[0].label, "1 burger (112 g)");
     assert.equal(food.portions[0].nutrition.calories, 330);
     assert.equal(food.portions[0].nutrition.protein, 17);
 });

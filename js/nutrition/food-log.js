@@ -1,5 +1,6 @@
 import {
     MEALS,
+    buildCustomFoodPortions,
     createLogEntry,
     cloneEntriesForMeal,
     entriesForDate,
@@ -17,7 +18,7 @@ import {
     saveEntries,
     saveSavedMeal,
     summarizeEntries
-} from "./food-log-data.js?v=food-log-meals-v2";
+} from "./food-log-data.js?v=food-serving-units-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -114,14 +115,27 @@ function renderFoodSheet() {
 function renderCustomFoodForm() {
     return `
         <form class="custom-food-form" data-custom-food-form>
-            <label>Food name<input name="name" required maxlength="180" placeholder="Homemade turkey chili"></label>
-            <label>Serving name<input name="serving" required maxlength="80" placeholder="1 bowl"></label>
+            <div class="custom-food-intro"><span class="eyebrow">CREATE FOOD</span><strong>Food details</strong><small>Enter nutrition for one serving. Level Up will calculate other usable units when possible.</small></div>
+            <label>Brand name <span>(optional)</span><input name="brand" maxlength="120" placeholder="Kirkland Signature"></label>
+            <label>Description<input name="name" required maxlength="180" placeholder="Chipotle grilled chicken"></label>
+            <fieldset class="custom-serving-fields"><legend>Serving size</legend><div>
+                <label><span>Amount</span><input name="servingAmount" required type="number" inputmode="decimal" min="0.01" max="10000" step="0.01" value="1"></label>
+                <label><span>Unit</span><select name="servingUnit" required>
+                    <option value="g">g</option><option value="oz">oz</option><option value="ml">ml</option><option value="cup">cup</option>
+                    <option value="tbsp">tbsp</option><option value="tsp">tsp</option><option value="serving" selected>serving</option>
+                    <option value="item">item</option><option value="piece">piece</option><option value="slice">slice</option>
+                    <option value="bar">bar</option><option value="burger">burger</option><option value="scoop">scoop</option>
+                </select></label>
+            </div></fieldset>
+            <label>Servings per container <span>(optional)</span><input name="servingsPerContainer" type="number" inputmode="decimal" min="0.01" max="10000" step="0.01" placeholder="Example: 10"></label>
             <label>Barcode <span>(optional)</span><input name="barcode" inputmode="numeric" pattern="[0-9]*" maxlength="14" autocomplete="off" placeholder="Scan or enter 8–14 digits"></label>
+            <div class="custom-nutrition-heading"><strong>Nutrition per serving</strong><small>Use the values shown on the package label.</small></div>
             <div class="custom-food-grid">
                 <label>Calories<input name="calories" required type="number" min="0" max="10000" step="1"></label>
                 <label>Protein (g)<input name="protein" required type="number" min="0" max="1000" step="0.1"></label>
                 <label>Carbs (g)<input name="carbs" required type="number" min="0" max="1000" step="0.1"></label>
                 <label>Fat (g)<input name="fat" required type="number" min="0" max="1000" step="0.1"></label>
+                <label>Fiber (g) <span>(optional)</span><input name="fiber" type="number" min="0" max="1000" step="0.1"></label>
             </div>
             <button type="submit" class="primary-btn">Save &amp; Add</button>
         </form>
@@ -635,8 +649,8 @@ function renderFoodPortionPanel(food, warning = "") {
         <div class="food-portion-heading"><div><span class="eyebrow">ADD FOOD</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="Back to results">×</button></div>
         ${addContext === "meal-builder" ? '<div class="food-builder-destination">Adding to your saved meal</div>' : `<label>Meal<select data-food-meal>${MEALS.map(meal => `<option${meal === selectedMeal ? " selected" : ""}>${meal}</option>`).join("")}</select></label>`}
         ${warning ? `<p class="food-portion-warning">${escapeHtml(warning)}</p>` : ""}
-        <label>Serving<select data-food-serving>${(food.portions || []).map((portion, index) => `<option value="${index}">${escapeHtml(portion.label)}</option>`).join("")}</select></label>
-        <label>Quantity<input data-food-quantity type="number" inputmode="decimal" min="0.01" max="100" step="0.25" value="1"></label>
+        <label>Serving size<select data-food-serving>${(food.portions || []).map((portion, index) => `<option value="${index}">${escapeHtml(portion.label)}</option>`).join("")}</select></label>
+        <label>Number of servings<input data-food-quantity type="number" inputmode="decimal" min="0.01" max="10000" step="0.01" value="1"></label>
         <div class="food-portion-preview" data-food-preview></div>
         <button type="button" class="primary-btn" data-food-confirm>${addContext === "meal-builder" ? "Add to Meal" : "Add to Food Log"}</button>
     `;
@@ -652,7 +666,7 @@ function updatePortionPreview() {
     const quantity = Math.max(0, Number(document.querySelector("[data-food-quantity]")?.value) || 0);
     const n = portion?.nutrition || {};
     const preview = document.querySelector("[data-food-preview]");
-    if (preview) preview.textContent = `${Math.round((n.calories || 0) * quantity)} kcal · P ${roundOne((n.protein || 0) * quantity)} g · C ${roundOne((n.carbs || 0) * quantity)} g · F ${roundOne((n.fat || 0) * quantity)} g`;
+    if (preview) preview.innerHTML = `<strong>${roundOne(quantity)} × ${escapeHtml(portion?.label || "1 serving")}</strong><span>${Math.round((n.calories || 0) * quantity)} kcal · P ${roundOne((n.protein || 0) * quantity)} g · C ${roundOne((n.carbs || 0) * quantity)} g · F ${roundOne((n.fat || 0) * quantity)} g</span>`;
 }
 
 function addSelectedFood() {
@@ -676,9 +690,25 @@ function createCustomFood(event) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const nutrition = Object.fromEntries(["calories", "protein", "carbs", "fat"].map(key => [key, Math.max(0, Number(data.get(key)) || 0)]));
-    nutrition.fiber = 0;
+    nutrition.fiber = Math.max(0, Number(data.get("fiber")) || 0);
     const barcode = normalizeClientBarcode(data.get("barcode"));
-    const food = saveCustomFood({ id: crypto.randomUUID(), source: "custom", name: String(data.get("name") || "Custom food"), brand: "Custom food", barcode: isSupportedClientBarcode(barcode) ? barcode : "", servingLabel: String(data.get("serving") || "1 serving"), nutrition, portions: [{ label: String(data.get("serving") || "1 serving"), nutrition }] });
+    const servingAmount = Math.max(.01, Number(data.get("servingAmount")) || 1);
+    const servingUnit = String(data.get("servingUnit") || "serving").toLowerCase();
+    const servingsPerContainer = Math.max(0, Number(data.get("servingsPerContainer")) || 0);
+    const portions = buildCustomFoodPortions({ amount: servingAmount, unit: servingUnit, nutrition });
+    const food = saveCustomFood({
+        id: crypto.randomUUID(),
+        source: "custom",
+        name: String(data.get("name") || "Custom food"),
+        brand: String(data.get("brand") || "").trim(),
+        barcode: isSupportedClientBarcode(barcode) ? barcode : "",
+        servingLabel: portions[0].label,
+        servingAmount,
+        servingUnit,
+        servingsPerContainer: servingsPerContainer || null,
+        nutrition,
+        portions
+    });
     event.currentTarget.reset();
     document.querySelector("[data-custom-food-editor]")?.setAttribute("hidden", "");
     renderCustomFoods();
