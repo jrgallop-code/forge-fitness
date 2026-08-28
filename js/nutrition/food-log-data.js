@@ -373,6 +373,65 @@ function customServingLabel(amount, unit, grams) {
     return `${amountText} ${plural}`;
 }
 
+
+export function totalServingLabel(quantity, servingLabel) {
+    const safeQuantity = Math.max(0, Number(quantity) || 0);
+    const label = String(servingLabel || "1 serving").trim();
+    const leading = label.match(/^(\d+(?:\.\d+)?|¼|½|¾)\s*(.*)$/);
+    if (!leading || !(safeQuantity > 0)) return `${formatServingNumber(safeQuantity)} × ${label}`;
+
+    const baseAmount = servingFractionNumber(leading[1]);
+    const remainder = String(leading[2] || "").trim();
+    const unitMatch = remainder.match(/^(g|gram|grams|ml|milliliter|milliliters|millilitre|millilitres|oz|ounce|ounces)\b/i);
+    if (unitMatch) {
+        return `${formatServingNumber(safeQuantity * baseAmount)} ${normalizedServingUnit(unitMatch[1])}`;
+    }
+
+    const countMatch = remainder.match(/^(serving|item|piece|slice|bar|burger|scoop|cup|tbsp|tablespoon|tsp|teaspoon|sandwich|patty|package|container|bottle|can|packet|bowl)s?\b(.*)$/i);
+    if (!countMatch) return `${formatServingNumber(safeQuantity)} × ${label}`;
+
+    const totalAmount = safeQuantity * baseAmount;
+    const unit = normalizedServingUnit(countMatch[1]);
+    const suffix = totalServingSuffix(countMatch[2], safeQuantity);
+    return `${formatServingNumber(totalAmount)} ${pluralServingUnit(unit, totalAmount)}${suffix}`;
+}
+
+function totalServingSuffix(value, quantity) {
+    const suffix = String(value || "");
+    const measure = suffix.match(/\(\s*(\d+(?:\.\d+)?)\s*(g|grams?|ml|millilit(?:er|re)s?|oz|ounces?)\s*\)/i);
+    if (!measure) return suffix;
+    const total = Number(measure[1]) * quantity;
+    return suffix.replace(measure[0], `(${formatServingNumber(total)} ${normalizedServingUnit(measure[2])})`);
+}
+
+function servingFractionNumber(value) {
+    if (value === "¼") return .25;
+    if (value === "½") return .5;
+    if (value === "¾") return .75;
+    return Number(value) || 0;
+}
+
+function normalizedServingUnit(unit) {
+    const value = String(unit || "").toLowerCase();
+    if (value === "g" || value.startsWith("gram")) return "g";
+    if (value === "ml" || value.startsWith("millilit")) return "mL";
+    if (value === "oz" || value.startsWith("ounce")) return "oz";
+    if (value === "tablespoon") return "tbsp";
+    if (value === "teaspoon") return "tsp";
+    return value;
+}
+
+function pluralServingUnit(unit, amount) {
+    if (["g", "mL", "oz", "tbsp", "tsp"].includes(unit) || Math.abs(amount - 1) < .0001) return unit;
+    if (unit.endsWith("y")) return `${unit.slice(0, -1)}ies`;
+    return `${unit}s`;
+}
+
+function formatServingNumber(value) {
+    const rounded = Math.round((Number(value) || 0) * 100) / 100;
+    return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+}
+
 export function summarizeEntries(entries) {
     return (Array.isArray(entries) ? entries : []).reduce((totals, entry) => {
         const nutrition = entry?.nutrition || {};
