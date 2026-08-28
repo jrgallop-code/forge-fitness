@@ -144,3 +144,34 @@ test("saved meal cards place a larger thumbnail on the left", async () => {
     assert.match(styles, /grid-template-columns:58px minmax\(0,1fr\) 42px 24px/);
     assert.match(styles, /\.food-saved-meal-photo\{[^}]*width:58px;height:58px/);
 });
+
+
+test("saved meals reopen as editable drafts with a whole-meal macro breakdown", async () => {
+    const [module, styles] = await Promise.all([
+        read("../js/nutrition/food-log.js"),
+        read("../css/food-log.css")
+    ]);
+    assert.match(module, /data-edit-saved-meal/);
+    assert.match(module, /openMealBuilder\(meal\.items, meal\.name, meal\)/);
+    assert.match(module, /id: savedMeal\?\.id \|\| null/);
+    assert.match(module, /photoDataUrl: savedMeal\?\.photoDataUrl \|\| ""/);
+    assert.match(module, /macroBreakdownMarkup\(totals/);
+    assert.match(module, /Whole meal/);
+    assert.match(module, /data-edit-meal-item/);
+    assert.match(module, /editingMealItemIndex !== null/);
+    assert.match(styles, /\.food-builder-macros/);
+    assert.match(styles, /\.food-builder-item-edit/);
+});
+
+test("custom foods can be edited and saved over their existing record", async () => {
+    const [module, styles] = await Promise.all([
+        read("../js/nutrition/food-log.js"),
+        read("../css/food-log.css")
+    ]);
+    assert.match(module, /data-edit-custom-food/);
+    assert.match(module, /function beginCustomFoodEdit/);
+    assert.match(module, /editingCustomFoodId \|\| crypto\.randomUUID\(\)/);
+    assert.match(module, /Food updated\./);
+    assert.match(styles, /\.food-custom-edit/);
+    assert.match(styles, /\.custom-food-actions/);
+});
