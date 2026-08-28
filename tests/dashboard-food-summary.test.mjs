@@ -20,6 +20,15 @@ test("dashboard combines today's calorie and macro progress into one full-width 
     assert.match(styles, /dashboard-calorie-arc-value/);
     assert.match(styles, /#ff2638/);
     assert.match(styles, /#4bd184/);
+    assert.match(module, /dashboard-macro-progress--/);
+    assert.match(module, /label\.toLowerCase\(\)/);
+    assert.match(styles, /--macro-color:\s*#34c7bd/);
+    assert.match(styles, /--macro-color:\s*#a855f7/);
+    assert.match(styles, /--macro-color:\s*#ffb547/);
+    assert.match(module, /dashboard-calorie-overflow-hatch/);
+    assert.match(module, /dashboard-calorie-arc-overflow/);
+    assert.match(module, /overTarget \/ calories/);
+    assert.match(styles, /dashboard-calorie-arc-overflow/);
 });
 
 test("calorie summary toggles between consumed and remaining and links to Food Log", async () => {

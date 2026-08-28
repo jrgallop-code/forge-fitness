@@ -75,7 +75,7 @@ function macroMarkup(label, value, target) {
     const safeTarget = Math.max(0, Math.round(Number(target) || 0));
     const progress = clampProgress(value, safeTarget);
     return `
-        <div class="dashboard-macro-progress">
+        <div class="dashboard-macro-progress dashboard-macro-progress--${label.toLowerCase()}">
             <span>${label}</span>
             <strong>${roundMacro(value)} g <small>/ ${safeTarget} g</small></strong>
             <i aria-hidden="true"><b style="width:${progress}%"></b></i>
@@ -125,6 +125,11 @@ function renderDashboardNutritionSummary() {
     const mode = getDisplayMode();
     const calorie = calorieCopy({ mode, consumed: totals.calories, target: calories });
     const progress = clampProgress(totals.calories, calories);
+    const overTarget = Math.max(0, Number(totals.calories) - calories);
+    const overProgress = calories > 0
+        ? Math.min(100, (overTarget / calories) * 100)
+        : 0;
+    const overDashOffset = 100 - overProgress;
     const card = document.createElement("article");
     card.className = "dashboard-food-summary-card";
     card.innerHTML = `
@@ -134,9 +139,21 @@ function renderDashboardNutritionSummary() {
         </div>
         <button class="dashboard-calorie-summary" type="button" data-dashboard-calorie-toggle aria-label="Show ${mode === "consumed" ? "calories remaining" : "calories consumed"}">
             <span class="dashboard-calorie-toggle-icon" aria-hidden="true">⇄</span>
-            <svg viewBox="0 0 240 100" role="img" aria-label="${Math.round(progress)} percent of calorie target consumed">
+            <svg viewBox="0 0 240 100" role="img" aria-label="${Math.round(progress)} percent of calorie target consumed${overTarget > 0 ? `, ${Math.round(overTarget)} calories over target` : ""}">
+                <defs>
+                    <pattern id="dashboard-calorie-overflow-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                        <rect width="6" height="6" fill="#ff2638"></rect>
+                        <line x1="0" y1="0" x2="0" y2="6" stroke="#80131d" stroke-width="2"></line>
+                    </pattern>
+                </defs>
                 <path class="dashboard-calorie-arc-track" pathLength="100" d="M38 92 A82 82 0 0 1 202 92"></path>
                 <path class="dashboard-calorie-arc-value" pathLength="100" stroke-dasharray="${progress} 100" d="M38 92 A82 82 0 0 1 202 92"></path>
+                ${overProgress > 0 ? `
+                    <path class="dashboard-calorie-arc-overflow" pathLength="100"
+                        stroke-dasharray="${overProgress} ${100 - overProgress}"
+                        stroke-dashoffset="${overDashOffset}"
+                        d="M38 92 A82 82 0 0 1 202 92"></path>
+                ` : ""}
             </svg>
             <span class="dashboard-calorie-copy">
                 <strong>${Math.round(calorie.value).toLocaleString()} <small>cal</small></strong>
