@@ -147,10 +147,25 @@ function selectBaseTemplate(){
   const fallback={id:`smart-fallback-${state.days}`,name:`${state.days}-Day Balanced Split`,daysPerWeek:state.days,estimatedMinutes:String(state.duration),level:state.experience,trainingType:GOALS[state.goal].label,days:SPLITS[state.days].map(day=>({name:day.name,exercises:[]}))};
   return{plan:fallback,score:0,substitutions:0};
 }
+const DAY_ROLE_MUSCLES={
+  push:["Chest","Shoulders","Triceps"],
+  pull:["Back","Biceps"],
+  upper:["Chest","Back","Shoulders","Biceps","Triceps"],
+  lower:["Quads","Hamstrings","Glutes","Calves"]
+};
+function musclesForTemplateDay(sourceDay,exercises,dayIndex){
+  const name=String(sourceDay.name||"").toLowerCase(),derived=[...new Set(exercises.map(item=>item.muscleGroup).filter(muscle=>MUSCLES.includes(muscle)))];
+  if(/full[\s-]*body/.test(name))return[...MUSCLES];
+  if(/(^|[\s—-])push\b/.test(name))return[...DAY_ROLE_MUSCLES.push];
+  if(/(^|[\s—-])pull\b/.test(name))return[...DAY_ROLE_MUSCLES.pull];
+  if(/(^|[\s—-])(legs?|lower)\b/.test(name))return[...DAY_ROLE_MUSCLES.lower];
+  if(/(^|[\s—-])upper\b/.test(name))return[...DAY_ROLE_MUSCLES.upper];
+  return derived.length?derived:[...(SPLITS[state.days]?.[dayIndex]?.muscles||[])];
+}
 function seedTemplateDays(match,preferred){
   const map=exerciseMap(),available=new Set(availableExercises().map(e=>e.id));
   return match.plan.days.map((sourceDay,dayIndex)=>{
-    const fallbackMuscles=SPLITS[state.days]?.[dayIndex]?.muscles||[],used=[];
+    const used=[];
     const exercises=(sourceDay.exercises||[]).map(item=>{
       const original=map.get(item.id);if(!original||!MUSCLES.includes(original.muscleGroup))return null;
       let def=available.has(item.id)?original:chooseExerciseForMuscle(original.muscleGroup,used,preferred,dayIndex,used);
@@ -159,8 +174,7 @@ function seedTemplateDays(match,preferred){
       used.push(def.id);
       return{id:def.id,name:def.name,sets:Math.max(2,Math.min(5,Number(item.sets)||3)),reps:def.id===item.id?String(item.reps||repRangeFor(def)):repRangeFor(def),muscleGroup:def.muscleGroup};
     }).filter(Boolean);
-    const muscles=[...new Set([...fallbackMuscles,...exercises.map(item=>item.muscleGroup)])];
-    return{name:sourceDay.name,muscles,exercises};
+    return{name:sourceDay.name,muscles:musclesForTemplateDay(sourceDay,exercises,dayIndex),exercises};
   });
 }
 function trimTemplateVolume(days,targets){
