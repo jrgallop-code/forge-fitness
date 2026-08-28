@@ -68,3 +68,20 @@ test("dashboard nutrition card uses the compact summary geometry", async () => {
     assert.match(styles, /width:\s*min\(100%, 276px\)/);
     assert.match(styles, /min-height:\s*116px/);
 });
+
+
+test("Food Log summary uses the subtle macro palette and progress bars", async () => {
+    const [foodLog, styles] = await Promise.all([
+        read("../js/nutrition/food-log.js"),
+        read("../css/food-log.css")
+    ]);
+
+    assert.match(foodLog, /food-macro-total--\$\{label\.toLowerCase\(\)\}/);
+    assert.match(foodLog, /style="width:\$\{progress\}%"/);
+    assert.match(styles, /food-macro-total--carbs/);
+    assert.match(styles, /#4fa8ff/);
+    assert.match(styles, /food-macro-total--fat/);
+    assert.match(styles, /#8b7cf6/);
+    assert.match(styles, /food-macro-total--protein/);
+    assert.match(styles, /#39d7ae/);
+});
