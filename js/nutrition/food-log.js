@@ -276,8 +276,12 @@ function summaryMarkup(totals, target) {
 }
 
 function macroTile(label, value, target) {
-    const targetText = Number(target) > 0 ? ` / ${Math.round(target)} g` : " g";
-    return `<div class="food-macro-total"><span>${label}</span><strong>${roundOne(value)}${escapeHtml(targetText)}</strong></div>`;
+    const safeTarget = Math.max(0, Number(target) || 0);
+    const targetText = safeTarget > 0 ? ` / ${Math.round(safeTarget)} g` : " g";
+    const progress = safeTarget > 0
+        ? Math.min(100, Math.max(0, (Number(value) / safeTarget) * 100))
+        : 0;
+    return `<div class="food-macro-total food-macro-total--${label.toLowerCase()}"><span>${label}</span><strong>${roundOne(value)}${escapeHtml(targetText)}</strong><i aria-hidden="true"><b style="width:${progress}%"></b></i></div>`;
 }
 
 function mealMarkup(meal, entries, yesterdayEntries) {
