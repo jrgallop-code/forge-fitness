@@ -56,7 +56,7 @@
 /* Saved meal photos and logged-food macro detail */
 .food-saved-meal{grid-template-columns:minmax(0,1fr) 48px 42px 24px;gap:7px}
 .food-saved-meal-photo{display:grid;place-items:center;width:48px;height:48px;padding:0;overflow:hidden;border:1px solid #414148;border-radius:12px;background:#28282d;color:#8e8e98}
-.food-saved-meal-photo img{width:100%;height:100%;object-fit:cover}
+.food-saved-meal-photo img,.food-saved-meal-thumbnail{display:block;width:100%;height:100%;max-width:none;object-fit:cover;opacity:1}
 .food-saved-meal-photo svg{width:23px;fill:none;stroke:currentColor;stroke-width:1.7}
 .food-saved-meal-delete{width:24px}
 .food-builder-photo{display:flex;align-items:center;gap:9px}

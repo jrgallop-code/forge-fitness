@@ -25,7 +25,7 @@ import {
     totalServingLabel,
     updateEntry,
     withUsefulLiquidPortions
-} from "./food-log-data.js?v=yesterday-copy-banner-1";
+} from "./food-log-data.js?v=saved-meal-photo-card-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -917,7 +917,7 @@ function compressMealPhoto(file) {
             const image = new Image();
             image.onerror = () => reject(new Error("That photo format is not supported."));
             image.onload = () => {
-                const size = 180;
+                const size = 160;
                 const scale = Math.max(size / image.naturalWidth, size / image.naturalHeight);
                 const width = image.naturalWidth * scale;
                 const height = image.naturalHeight * scale;
@@ -986,7 +986,7 @@ function renderSavedMeals() {
     if (!meals.length) { container.innerHTML = '<p class="empty-state">Build a meal once, then log it here in one tap.</p>'; return; }
     container.innerHTML = meals.map((meal, index) => {
         const totals = summarizeEntries(meal.items);
-        const photo = meal.photoDataUrl ? `<img src="${escapeHtml(meal.photoDataUrl)}" alt="">` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+        const photo = meal.photoDataUrl ? `<img class="food-saved-meal-thumbnail" src="${escapeHtml(meal.photoDataUrl)}" alt="${escapeHtml(meal.name)} meal photo">` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
         return `<article class="food-saved-meal"><div><strong>${escapeHtml(meal.name)}</strong><small>${escapeHtml(mealPreview(meal.items))}</small><span>${Math.round(totals.calories)} kcal · ${meal.items.length} items</span></div><button type="button" class="food-saved-meal-photo" data-saved-meal-photo="${index}" aria-label="${meal.photoDataUrl ? "Change" : "Add"} photo for ${escapeHtml(meal.name)}">${photo}</button><button type="button" class="food-saved-meal-add" data-log-saved-meal="${index}" aria-label="Log ${escapeHtml(meal.name)} to ${selectedMeal}">+</button><button type="button" class="food-saved-meal-delete" data-delete-saved-meal="${escapeHtml(meal.id)}" aria-label="Delete ${escapeHtml(meal.name)}">×</button></article>`;
     }).join("");
     container.querySelectorAll("[data-log-saved-meal]").forEach(button => button.addEventListener("click", () => {
@@ -1000,16 +1000,23 @@ function renderSavedMeals() {
         const input = document.createElement("input");
         input.type = "file";
         input.accept = "image/*";
+        input.hidden = true;
+        input.setAttribute("aria-hidden", "true");
+        document.body.append(input);
+        const cleanup = () => input.remove();
+        input.addEventListener("cancel", cleanup, { once: true });
         input.addEventListener("change", async () => {
-            if (!input.files?.[0]) return;
             try {
+                if (!input.files?.[0]) return;
                 const photoDataUrl = await compressMealPhoto(input.files[0]);
-                saveSavedMeal({ ...meal, photoDataUrl });
+                const saved = saveSavedMeal({ ...meal, photoDataUrl });
+                if (!saved.photoDataUrl) throw new Error("The compressed photo could not be stored.");
                 renderSavedMeals();
                 showFoodToast("Meal photo saved.");
             }
             catch (error) { showFoodToast(error?.message || "The photo could not be added."); }
-        });
+            finally { cleanup(); }
+        }, { once: true });
         input.click();
     }));
     container.querySelectorAll("[data-delete-saved-meal]").forEach(button => button.addEventListener("click", () => {
