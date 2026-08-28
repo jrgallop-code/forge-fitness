@@ -1,8 +1,15 @@
-.smart-build-choice-primary,
-.routine-import-launch {
-    grid-column: auto;
+.smart-build-choice-grid > .smart-build-choice-primary,
+.smart-build-choice-grid > .routine-import-launch {
+    grid-column: auto !important;
+    width: auto;
     min-width: 0;
     min-height: 74px;
+    height: 100%;
+}
+
+/* Older app sessions may still render the retired badge. */
+.smart-build-choice-grid > [data-routine-import-open] > .smart-build-badge {
+    display: none !important;
 }
 
 .routine-import-launch .smart-build-choice-title,
@@ -13,8 +20,8 @@
 }
 
 @media (max-width: 390px) {
-    .smart-build-choice-primary,
-    .routine-import-launch {
+    .smart-build-choice-grid > .smart-build-choice-primary,
+    .smart-build-choice-grid > .routine-import-launch {
         min-height: 70px;
     }
 }
