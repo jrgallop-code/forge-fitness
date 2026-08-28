@@ -58,12 +58,14 @@ function enhanceLauncher(root = document) {
 function enhanceCatalogue(root = document) {
   const page = root.querySelector?.(".workout-page") || document.querySelector(".workout-page");
   if (!page) return;
+  let changed = false;
   const panel = page.querySelector("[data-catalogue-more-panel]");
   if (panel && !panel.querySelector("[data-catalogue-coach]")) {
     panel.insertAdjacentHTML("beforeend", `<select data-catalogue-coach aria-label="Filter by virtual coach">
       <option value="">Any coach</option>
       ${COACHES.map(coach => `<option value="${coach.id}">Coach ${escapeHtml(coach.name)} · ${escapeHtml(coach.specialty)}</option>`).join("")}
     </select>`);
+    changed = true;
   }
   page.querySelectorAll(".catalogue-plan-card").forEach(card => {
     if (card.dataset.coachEnhanced === "true") return;
@@ -72,14 +74,39 @@ function enhanceCatalogue(root = document) {
     card.dataset.coachEnhanced = "true";
     card.insertAdjacentHTML("afterbegin", `<span class="catalogue-coach-avatar" aria-hidden="true"><img src="${coach.image}" alt=""></span>`);
     card.querySelector("h4")?.insertAdjacentHTML("afterend", `<span class="catalogue-coach-line">Coach ${escapeHtml(coach.name)} · ${escapeHtml(coach.specialty)}</span>`);
+    changed = true;
   });
+  if (changed) queueMicrotask(() => applyCatalogueFilters(page));
 }
 
-function applyCoachFilter(page) {
+function applyCatalogueFilters(page) {
+  const type = page.querySelector("[data-catalogue-type]")?.value || "";
+  const days = page.querySelector("[data-catalogue-days]")?.value || "";
+  const equipment = page.querySelector("[data-catalogue-equipment]")?.value || "";
+  const duration = page.querySelector("[data-catalogue-duration]")?.value || "";
+  const level = page.querySelector("[data-catalogue-level]")?.value || "";
   const coach = page.querySelector("[data-catalogue-coach]")?.value || "";
   const cards = [...page.querySelectorAll(".catalogue-plan-card")];
-  if (coach) cards.forEach(card => { if (!card.hidden && card.dataset.coach !== coach) card.hidden = true; });
-  const visible = cards.filter(card => !card.hidden).length;
+  let visible = 0;
+
+  cards.forEach(card => {
+    const durationValues = (card.dataset.duration || "").match(/\d+/g)?.map(Number) || [];
+    const minimum = durationValues[0] || 0;
+    const maximum = durationValues.at(-1) || minimum;
+    const durationMatch = !duration
+      || (duration === "45" && maximum <= 45)
+      || (duration === "60" && minimum <= 60 && maximum > 45)
+      || (duration === "61" && maximum > 60);
+    const matches = (!type || (card.dataset.type || "").includes(type))
+      && (!days || card.dataset.days === days)
+      && (!equipment || (card.dataset.equipment || "").includes(equipment))
+      && (!level || (card.dataset.level || "").includes(level))
+      && (!coach || card.dataset.coach === coach)
+      && durationMatch;
+    card.hidden = !matches;
+    if (matches) visible += 1;
+  });
+
   const count = page.querySelector("[data-catalogue-count]");
   if (count) count.textContent = `${visible} template${visible === 1 ? "" : "s"}`;
   const empty = page.querySelector("[data-catalogue-empty]");
@@ -117,12 +144,8 @@ document.addEventListener("click", event => {
 document.addEventListener("change", event => {
   const page = event.target.closest?.(".workout-page");
   if (!page) return;
-  if (event.target.matches("[data-catalogue-coach]")) {
-    page.querySelector("[data-catalogue-type]")?.dispatchEvent(new Event("change", { bubbles: true }));
-    return;
-  }
-  if (event.target.matches("[data-catalogue-type], [data-catalogue-days], [data-catalogue-equipment], [data-catalogue-duration], [data-catalogue-level]")) {
-    queueMicrotask(() => applyCoachFilter(page));
+  if (event.target.matches("[data-catalogue-type], [data-catalogue-days], [data-catalogue-equipment], [data-catalogue-duration], [data-catalogue-level], [data-catalogue-coach]")) {
+    queueMicrotask(() => applyCatalogueFilters(page));
   }
 });
 
