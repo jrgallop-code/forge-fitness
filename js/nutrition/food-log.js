@@ -662,7 +662,7 @@ function renderFoodLoading(food) {
     if (!panel) return;
     panel.hidden = false;
     panel.innerHTML = `
-        <div class="food-portion-heading"><div><span class="eyebrow">${addContext === "edit" ? "EDIT LOGGED FOOD" : "ADD FOOD"}</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="${addContext === "edit" ? "Cancel editing" : "Back to results"}">×</button></div>
+        <div class="food-portion-heading"><div><span class="eyebrow">${addContext === "edit" ? "EDIT LOGGED FOOD" : editingMealItemIndex !== null ? "EDIT MEAL ITEM" : "ADD FOOD"}</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="${addContext === "edit" ? "Cancel editing" : "Back to results"}">×</button></div>
         <div class="food-portion-loading" role="status"><strong>Loading servings…</strong><span>Getting the per-item options from USDA.</span></div>`;
     panel.querySelector("[data-food-portion-close]")?.addEventListener("click", closeFoodPortionPanel);
 }
@@ -688,7 +688,7 @@ function renderFoodPortionPanel(food, warning = "") {
     if (!panel) return;
     panel.hidden = false;
     panel.innerHTML = `
-        <div class="food-portion-heading"><div><span class="eyebrow">${addContext === "edit" ? "EDIT LOGGED FOOD" : "ADD FOOD"}</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="${addContext === "edit" ? "Close food editor" : "Back to results"}">×</button></div>
+        <div class="food-portion-heading"><div><span class="eyebrow">${addContext === "edit" ? "EDIT LOGGED FOOD" : editingMealItemIndex !== null ? "EDIT MEAL ITEM" : "ADD FOOD"}</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="${addContext === "edit" ? "Close food editor" : "Back to results"}">×</button></div>
         ${addContext === "meal-builder" ? `<div class="food-builder-destination">${editingMealItemIndex !== null ? "Updating an item in your saved meal" : "Adding to your saved meal"}</div>` : `<label>Meal<select data-food-meal>${MEALS.map(meal => `<option${meal === selectedMeal ? " selected" : ""}>${meal}</option>`).join("")}</select></label>`}
         ${warning ? `<p class="food-portion-warning">${escapeHtml(warning)}</p>` : ""}
         <label>Serving size<select data-food-serving>${(food.portions || []).map((portion, index) => `<option value="${index}">${escapeHtml(portion.label)}</option>`).join("")}</select></label>
@@ -753,6 +753,7 @@ function openMealItemEditor(index) {
     };
     editingMealItemIndex = index;
     addContext = "meal-builder";
+    document.querySelector("[data-meal-builder]")?.setAttribute("hidden", "");
     renderFoodPortionPanel(food);
     const servingIndex = Math.max(0, (food.portions || []).findIndex(portion => portion?.label === entry.servingLabel));
     const serving = document.querySelector("[data-food-serving]");
