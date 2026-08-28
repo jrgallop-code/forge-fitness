@@ -27,7 +27,10 @@ test("dashboard combines today's calorie and macro progress into one full-width 
     assert.match(styles, /--macro-color:\s*#39d7ae/);
     assert.match(module, /dashboard-calorie-overflow-hatch/);
     assert.match(module, /dashboard-calorie-arc-overflow/);
-    assert.match(module, /stroke-dasharray="0 \$\{100 - overProgress\} \$\{overProgress\} 0"/);
+    assert.match(module, /const overflowArc =/);
+    assert.match(module, /overflowStartX\.toFixed\(3\)/);
+    assert.match(module, /overflowStartY\.toFixed\(3\)/);
+    assert.doesNotMatch(module, /stroke-dasharray="0 \$\{100 - overProgress/);
     assert.doesNotMatch(module, /overDashOffset/);
     assert.match(module, /overTarget \/ calories/);
     assert.match(styles, /dashboard-calorie-arc-overflow/);
