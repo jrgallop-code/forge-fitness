@@ -237,25 +237,139 @@ export function scaledNutrition(nutrition, quantity = 1) {
 }
 
 const CUSTOM_SERVING_UNITS = new Set(["g", "oz", "ml", "cup", "tbsp", "tsp", "serving", "item", "piece", "slice", "bar", "burger", "scoop"]);
+const VOLUME_UNIT_ML = Object.freeze({ ml: 1, tsp: 5, tbsp: 15, cup: 250 });
+const SMALL_LIQUID_MEASURES = Object.freeze([
+    { label: "1 tbsp (15 mL)", milliliters: 15 },
+    { label: "1 tsp (5 mL)", milliliters: 5 },
+    { label: "1 mL", milliliters: 1 },
+    { label: "¼ cup (62.5 mL)", milliliters: 62.5 },
+    { label: "1 cup (250 mL)", milliliters: 250 }
+]);
+const LARGE_LIQUID_MEASURES = Object.freeze([
+    { label: "1 cup (250 mL)", milliliters: 250 },
+    { label: "½ cup (125 mL)", milliliters: 125 },
+    { label: "100 mL", milliliters: 100 },
+    { label: "1 tbsp (15 mL)", milliliters: 15 },
+    { label: "1 mL", milliliters: 1 }
+]);
 
 export function buildCustomFoodPortions({ amount, unit, nutrition }) {
     const safeAmount = Math.max(0.01, Number(amount) || 1);
     const safeUnit = CUSTOM_SERVING_UNITS.has(String(unit || "").toLowerCase()) ? String(unit).toLowerCase() : "serving";
     const grams = safeUnit === "g" ? safeAmount : safeUnit === "oz" ? safeAmount * 28.3495 : 0;
+    const milliliters = VOLUME_UNIT_ML[safeUnit] ? safeAmount * VOLUME_UNIT_ML[safeUnit] : 0;
     const label = customServingLabel(safeAmount, safeUnit, grams);
-    const portions = [{ label, ...(grams > 0 ? { grams } : {}), nutrition: { ...nutrition } }];
+    const portions = [{
+        label,
+        ...(grams > 0 ? { grams } : {}),
+        ...(milliliters > 0 ? { milliliters } : {}),
+        nutrition: { ...nutrition }
+    }];
     if (grams > 0) {
         const perGram = scaledNutrition(nutrition, 1 / grams);
         if (Math.abs(grams - 100) > .01) portions.push({ label: "100 g", grams: 100, nutrition: scaledNutrition(perGram, 100) });
         if (Math.abs(grams - 1) > .01) portions.push({ label: "1 g", grams: 1, nutrition: perGram });
     }
+    if (milliliters > 0) {
+        const perMilliliter = scaledNutrition(nutrition, 1 / milliliters);
+        const measures = milliliters <= 30 ? SMALL_LIQUID_MEASURES : LARGE_LIQUID_MEASURES;
+        measures.forEach(measure => {
+            if (portions.some(portion => portion.label.toLowerCase() === measure.label.toLowerCase())) return;
+            portions.push({
+                label: measure.label,
+                milliliters: measure.milliliters,
+                nutrition: scaledNutrition(perMilliliter, measure.milliliters)
+            });
+        });
+    }
     return portions;
+}
+
+export function withUsefulLiquidPortions(food) {
+    const original = Array.isArray(food?.portions) ? food.portions.filter(portion => portion?.label && portion?.nutrition) : [];
+    if (!original.length) return food;
+
+    const volumeBasis = original.find(portion => Number(portion?.grams) > 0 && portionVolumeMilliliters(portion) > 0);
+    const inferred = inferredLiquidMeasure(food);
+    const measuredDensity = volumeBasis ? Number(volumeBasis.grams) / portionVolumeMilliliters(volumeBasis) : 0;
+    const density = measuredDensity >= .7 && measuredDensity <= 1.6 ? measuredDensity : inferred?.density;
+    if (!(density > 0)) return food;
+
+    const gramBasis = volumeBasis || original.find(portion => Number(portion?.grams) > 0);
+    if (!gramBasis) return reorderExistingVolumePortions(food, original);
+    const perGram = scaledNutrition(gramBasis.nutrition, 1 / Number(gramBasis.grams));
+    const useSmallMeasures = inferred?.small ?? /\b(?:tbsp|tablespoon|tsp|teaspoon)\b/i.test(String(volumeBasis?.label || ""));
+    const measures = useSmallMeasures ? SMALL_LIQUID_MEASURES : LARGE_LIQUID_MEASURES;
+    const volumePortions = [];
+    const usedOriginal = new Set();
+
+    measures.forEach(measure => {
+        const existingIndex = original.findIndex((portion, index) =>
+            !usedOriginal.has(index) && Math.abs(portionVolumeMilliliters(portion) - measure.milliliters) < .01
+        );
+        if (existingIndex >= 0) {
+            usedOriginal.add(existingIndex);
+            volumePortions.push(original[existingIndex]);
+            return;
+        }
+        const grams = measure.milliliters * density;
+        volumePortions.push({
+            label: measure.label,
+            milliliters: measure.milliliters,
+            grams: Number(grams.toFixed(3)),
+            estimatedVolume: !volumeBasis,
+            nutrition: scaledNutrition(perGram, grams)
+        });
+    });
+
+    original.forEach((portion, index) => {
+        if (portionVolumeMilliliters(portion) > 0 && !usedOriginal.has(index)) {
+            usedOriginal.add(index);
+            volumePortions.push(portion);
+        }
+    });
+    const gramAndItemPortions = original.filter((portion, index) => !usedOriginal.has(index));
+    return { ...food, portions: [...volumePortions, ...gramAndItemPortions] };
+}
+
+function reorderExistingVolumePortions(food, portions) {
+    const volume = portions.filter(portion => portionVolumeMilliliters(portion) > 0);
+    if (!volume.length) return food;
+    return { ...food, portions: [...volume, ...portions.filter(portion => portionVolumeMilliliters(portion) <= 0)] };
+}
+
+function portionVolumeMilliliters(portion) {
+    const stored = Number(portion?.milliliters);
+    if (Number.isFinite(stored) && stored > 0) return stored;
+    const label = String(portion?.label || "").toLowerCase();
+    const explicitMl = label.match(/(\d+(?:\.\d+)?)\s*m(?:l|illilit(?:er|re)s?)\b/i);
+    if (explicitMl) return Number(explicitMl[1]);
+    const amount = label.startsWith("¼") ? .25 : label.startsWith("½") ? .5 : Number(label.match(/^(\d+(?:\.\d+)?)/)?.[1]);
+    if (!(amount > 0)) return 0;
+    if (/\b(?:tbsp|tablespoons?)\b/.test(label)) return amount * 15;
+    if (/\b(?:tsp|teaspoons?)\b/.test(label)) return amount * 5;
+    if (/\bcups?\b/.test(label)) return amount * 250;
+    return 0;
+}
+
+function inferredLiquidMeasure(food) {
+    const text = `${food?.name || ""} ${food?.category || ""}`.toLowerCase();
+    if (/\b(?:powder|dry mix|drink mix|coffee beans?|ground coffee|tea bags?|cheese|yogurt|ice cream|butter|margarine)\b/.test(text)) return null;
+    if (/\bhoney\b/.test(text)) return { density: 1.42, small: true };
+    if (/\b(?:maple syrup|corn syrup|molasses|syrup)\b/.test(text)) return { density: 1.33, small: true };
+    if (/\b(?:oil|cooking oil)\b/.test(text)) return { density: .92, small: true };
+    if (/\b(?:vinegar)\b/.test(text)) return { density: 1.01, small: true };
+    if (/\b(?:cream|half[ -]?and[ -]?half|liquid coffee whitener)\b/.test(text)) return { density: 1, small: true };
+    if (/\b(?:milk|kefir|liquid egg)\b/.test(text)) return { density: 1.03, small: false };
+    if (/\b(?:juice|water|beverage|soft drink|soda|coffee|tea|broth|stock|beer|wine)\b/.test(text)) return { density: 1, small: false };
+    return null;
 }
 
 function customServingLabel(amount, unit, grams) {
     const amountText = Number.isInteger(amount) ? String(amount) : String(Number(amount.toFixed(2)));
     if (unit === "oz") return `${amountText} oz (${Number(grams.toFixed(1))} g)`;
-    const plural = amount === 1 || ["g", "oz", "ml", "tbsp", "tsp"].includes(unit) ? unit : `${unit}s`;
+    if (unit === "ml") return `${amountText} mL`;
+    const plural = amount === 1 || ["g", "oz", "tbsp", "tsp"].includes(unit) ? unit : `${unit}s`;
     return `${amountText} ${plural}`;
 }
 
