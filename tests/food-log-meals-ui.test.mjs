@@ -133,3 +133,14 @@ test("saved meal photo picker stays attached through iOS selection and renders t
     assert.doesNotMatch(data, /photoDataUrl\)\.slice\(0, 180000\)/);
     assert.match(styles, /\.food-saved-meal-thumbnail/);
 });
+
+
+test("saved meal cards place a larger thumbnail on the left", async () => {
+    const [module, styles] = await Promise.all([
+        read("../js/nutrition/food-log.js"),
+        read("../css/food-log.css")
+    ]);
+    assert.match(module, /<article class="food-saved-meal"><button type="button" class="food-saved-meal-photo"/);
+    assert.match(styles, /grid-template-columns:58px minmax\(0,1fr\) 42px 24px/);
+    assert.match(styles, /\.food-saved-meal-photo\{[^}]*width:58px;height:58px/);
+});
