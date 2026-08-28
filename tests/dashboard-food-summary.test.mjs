@@ -22,11 +22,13 @@ test("dashboard combines today's calorie and macro progress into one full-width 
     assert.match(styles, /#4bd184/);
     assert.match(module, /dashboard-macro-progress--/);
     assert.match(module, /label\.toLowerCase\(\)/);
-    assert.match(styles, /--macro-color:\s*#34c7bd/);
-    assert.match(styles, /--macro-color:\s*#a855f7/);
-    assert.match(styles, /--macro-color:\s*#ffb547/);
+    assert.match(styles, /--macro-color:\s*#4fa8ff/);
+    assert.match(styles, /--macro-color:\s*#8b7cf6/);
+    assert.match(styles, /--macro-color:\s*#39d7ae/);
     assert.match(module, /dashboard-calorie-overflow-hatch/);
     assert.match(module, /dashboard-calorie-arc-overflow/);
+    assert.match(module, /stroke-dasharray="0 \$\{100 - overProgress\} \$\{overProgress\} 0"/);
+    assert.doesNotMatch(module, /overDashOffset/);
     assert.match(module, /overTarget \/ calories/);
     assert.match(styles, /dashboard-calorie-arc-overflow/);
 });
@@ -67,4 +69,21 @@ test("dashboard nutrition card uses the compact summary geometry", async () => {
     assert.match(module, /viewBox="0 0 240 100"/);
     assert.match(styles, /width:\s*min\(100%, 276px\)/);
     assert.match(styles, /min-height:\s*116px/);
+});
+
+
+test("Food Log summary uses the subtle macro palette and progress bars", async () => {
+    const [foodLog, styles] = await Promise.all([
+        read("../js/nutrition/food-log.js"),
+        read("../css/food-log.css")
+    ]);
+
+    assert.match(foodLog, /food-macro-total--\$\{label\.toLowerCase\(\)\}/);
+    assert.match(foodLog, /style="width:\$\{progress\}%"/);
+    assert.match(styles, /food-macro-total--carbs/);
+    assert.match(styles, /#4fa8ff/);
+    assert.match(styles, /food-macro-total--fat/);
+    assert.match(styles, /#8b7cf6/);
+    assert.match(styles, /food-macro-total--protein/);
+    assert.match(styles, /#39d7ae/);
 });
