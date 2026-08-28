@@ -52,3 +52,27 @@
 .food-calorie-total>em{grid-column:1;grid-row:2;align-self:end;color:#a5a5ae;font-size:11.5px;font-weight:500;font-style:normal;line-height:1.2}
 .food-calorie-total>i{grid-row:3}
 @media(max-width:520px){.food-calorie-value strong{font-size:26px}}
+
+/* Saved meal photos and logged-food macro detail */
+.food-saved-meal{grid-template-columns:minmax(0,1fr) 48px 42px 24px;gap:7px}
+.food-saved-meal-photo{display:grid;place-items:center;width:48px;height:48px;padding:0;overflow:hidden;border:1px solid #414148;border-radius:12px;background:#28282d;color:#8e8e98}
+.food-saved-meal-photo img{width:100%;height:100%;object-fit:cover}
+.food-saved-meal-photo svg{width:23px;fill:none;stroke:currentColor;stroke-width:1.7}
+.food-saved-meal-delete{width:24px}
+.food-builder-photo{display:flex;align-items:center;gap:9px}
+.food-builder-photo>[data-meal-photo-pick]{display:flex;align-items:center;gap:10px;min-height:56px;padding:6px 12px;border:1px dashed #494950;border-radius:13px;background:#202024;color:#ff5360;font:800 12px/1 inherit}
+.food-builder-photo img{width:43px;height:43px;border-radius:9px;object-fit:cover}
+.food-builder-photo svg{width:25px;fill:none;stroke:currentColor;stroke-width:1.7}
+.food-builder-photo>[data-meal-photo-remove]{border:0;background:transparent;color:#92929b;font:700 11px/1 inherit}
+.food-portion-preview--macros{padding:14px;background:#1d1d21;text-align:left}
+.food-edit-serving{margin-bottom:12px;color:#9898a2;font-size:11px;text-align:center}
+.food-edit-macro-breakdown{display:grid;grid-template-columns:82px repeat(3,minmax(0,1fr));align-items:center;gap:8px}
+.food-edit-calorie-ring{position:relative;display:grid;place-items:center;width:76px;height:76px;border-radius:50%;background:conic-gradient(#4fa8ff 0 var(--carb-end),#8b7cf6 var(--carb-end) var(--fat-end),#39d7ae var(--fat-end) 100%)}
+.food-edit-calorie-ring:before{content:"";position:absolute;inset:9px;border-radius:50%;background:#1d1d21}
+.food-edit-calorie-ring span{position:relative;display:grid;text-align:center}
+.food-edit-calorie-ring strong{font-size:19px;line-height:1}
+.food-edit-calorie-ring small{margin-top:2px;color:#9999a2;font-size:9px}
+.food-edit-macro{display:grid;gap:4px;text-align:center}
+.food-edit-macro em{font-size:11px;font-style:normal}.food-edit-macro strong{font-size:14px}.food-edit-macro small{color:#9999a2;font-size:9px}
+.food-edit-macro--carbs em{color:#4fa8ff}.food-edit-macro--fat em{color:#8b7cf6}.food-edit-macro--protein em{color:#39d7ae}
+@media(max-width:380px){.food-saved-meal{grid-template-columns:minmax(0,1fr) 44px 38px 20px;gap:5px;padding:11px}.food-saved-meal-photo{width:44px;height:44px}.food-saved-meal-add{width:38px;height:38px}.food-edit-macro-breakdown{grid-template-columns:72px repeat(3,minmax(0,1fr));gap:5px}.food-edit-calorie-ring{width:68px;height:68px}}
