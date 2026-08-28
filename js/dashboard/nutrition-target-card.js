@@ -129,6 +129,10 @@ function renderDashboardNutritionSummary() {
     const overProgress = calories > 0
         ? Math.min(100, (overTarget / calories) * 100)
         : 0;
+    const overflowAngle = Math.PI * (overProgress / 100);
+    const overflowStartX = 120 + 82 * Math.cos(overflowAngle);
+    const overflowStartY = 92 - 82 * Math.sin(overflowAngle);
+    const overflowArc = `M${overflowStartX.toFixed(3)} ${overflowStartY.toFixed(3)} A82 82 0 0 1 202 92`;
     const card = document.createElement("article");
     card.className = "dashboard-food-summary-card";
     card.innerHTML = `
@@ -148,9 +152,7 @@ function renderDashboardNutritionSummary() {
                 <path class="dashboard-calorie-arc-track" pathLength="100" d="M38 92 A82 82 0 0 1 202 92"></path>
                 <path class="dashboard-calorie-arc-value" pathLength="100" stroke-dasharray="${progress} 100" d="M38 92 A82 82 0 0 1 202 92"></path>
                 ${overProgress > 0 ? `
-                    <path class="dashboard-calorie-arc-overflow" pathLength="100"
-                        stroke-dasharray="0 ${100 - overProgress} ${overProgress} 0"
-                        d="M38 92 A82 82 0 0 1 202 92"></path>
+                    <path class="dashboard-calorie-arc-overflow" d="${overflowArc}"></path>
                 ` : ""}
             </svg>
             <span class="dashboard-calorie-copy">
