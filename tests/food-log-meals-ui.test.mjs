@@ -183,3 +183,10 @@ test("meal ingredient rows keep full-width touch targets and contain their text"
     assert.match(styles, /\.food-builder-item-edit strong,\.food-builder-item-edit small\{[^}]*text-overflow:ellipsis;white-space:nowrap/);
     assert.match(styles, /\[data-remove-meal-item\]\{width:42px;height:42px/);
 });
+
+
+test("editing a meal ingredient hides the builder before showing the portion editor", async () => {
+    const module = await read("../js/nutrition/food-log.js");
+    assert.match(module, /editingMealItemIndex = index;\s*addContext = "meal-builder";\s*document\.querySelector\("\[data-meal-builder\]"\)\?\.setAttribute\("hidden", ""\);\s*renderFoodPortionPanel\(food\);/);
+    assert.match(module, /editingMealItemIndex !== null \? "EDIT MEAL ITEM"/);
+});
