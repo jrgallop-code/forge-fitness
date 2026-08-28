@@ -48,6 +48,21 @@ test("users can build, save, and quickly log reusable meals", async () => {
     assert.match(module, /logSavedMeal\(selectedDate, meal, selectedMeal\)/);
 });
 
+test("My Meals can build a reusable meal from pasted ingredients", async () => {
+    const [module, parser, styles] = await Promise.all([
+        read("../js/nutrition/food-log.js"),
+        read("../js/nutrition/ingredient-paste-parser.js"),
+        read("../css/food-log.css")
+    ]);
+    assert.match(module, /data-paste-meal/);
+    assert.match(module, /Paste Ingredients/);
+    assert.match(module, /parseIngredientText/);
+    assert.match(module, /Analyze Ingredients/);
+    assert.match(module, /Review the foods and weights below before saving/);
+    assert.match(parser, /ingredientPortionSelection/);
+    assert.match(styles, /\.food-builder-paste/);
+});
+
 test("logged meal items open an editor for serving, meal, quantity, or removal", async () => {
     const [module, styles] = await Promise.all([read("../js/nutrition/food-log.js"), read("../css/food-log.css")]);
     assert.match(module, /data-food-edit=/);
@@ -157,7 +172,7 @@ test("saved meals reopen as editable drafts with a whole-meal macro breakdown", 
     assert.match(module, /photoDataUrl: savedMeal\?\.photoDataUrl \|\| ""/);
     assert.match(module, /macroBreakdownMarkup\(totals/);
     assert.match(module, /Whole meal/);
-    assert.match(module, /data-edit-meal-item/);
+    assert.match(module, /data-meal-item-details/);
     assert.match(module, /editingMealItemIndex !== null/);
     assert.match(styles, /\.food-builder-macros/);
     assert.match(styles, /\.food-builder-item-edit/);
@@ -196,7 +211,8 @@ test("saved meal ingredients use native expandable editing controls", async () =
     assert.match(module, /data-meal-item-quantity/);
     assert.match(module, /data-meal-item-save/);
     assert.match(module, /data-meal-item-remove/);
-    assert.match(module, /mealDraft\.items\.splice\(index, 1, createLogEntry/);
+    assert.match(module, /const updated = createLogEntry/);
+    assert.match(module, /mealDraft\.items\.splice\(index, 1, updated\)/);
     assert.doesNotMatch(module, /function openMealItemEditor/);
     assert.match(styles, /\.food-builder-item-details>summary/);
     assert.match(styles, /\.food-builder-item-details\[open\]>summary/);
