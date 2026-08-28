@@ -142,7 +142,8 @@ function openSupport() {
 function enhanceMorePage() {
     const grid = document.querySelector("#content .more-menu-grid");
     if (!grid || grid.querySelector("[data-contact-support-card]")) return;
-    grid.insertAdjacentHTML("beforeend", supportCardMarkup());
+    const group = grid.querySelector('[data-more-group="app-data"]') || grid;
+    group.insertAdjacentHTML("beforeend", supportCardMarkup());
     grid.querySelector("[data-contact-support-card]")?.addEventListener("click", openSupport);
 }
 
