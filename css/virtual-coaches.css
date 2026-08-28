@@ -226,3 +226,12 @@
   border-color:rgba(255,55,67,.23);
   text-overflow:ellipsis;
 }
+
+
+/* Keep catalogue text stable during SPA tab re-entry before coach markup is restored. */
+.catalogue-plan-card:not(:has(> .catalogue-coach-avatar)) {
+  grid-template-columns:minmax(0,1fr)!important;
+}
+.catalogue-plan-card:not(:has(> .catalogue-coach-avatar)) > * {
+  grid-column:1;
+}
