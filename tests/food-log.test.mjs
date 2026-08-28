@@ -584,3 +584,13 @@ test("custom liquid foods generate equivalent mL and household measures", () => 
     assert.equal(portions.find(portion => portion.label === "1 tsp (5 mL)").nutrition.calories, 10);
     assert.equal(portions.find(portion => portion.label === "1 cup (250 mL)").nutrition.calories, 500);
 });
+
+
+test("food log rows display total amounts instead of serving multiplication", () => {
+    assert.equal(data.totalServingLabel(1.2, "100 g"), "120 g");
+    assert.equal(data.totalServingLabel(3.5, "100 g"), "350 g");
+    assert.equal(data.totalServingLabel(24, "1 g"), "24 g");
+    assert.equal(data.totalServingLabel(1.5, "1 tbsp (15 mL)"), "1.5 tbsp (22.5 mL)");
+    assert.equal(data.totalServingLabel(2, "1 serving (85 g)"), "2 servings (170 g)");
+    assert.equal(data.totalServingLabel(2, "large handful"), "2 × large handful");
+});
