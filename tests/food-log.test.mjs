@@ -539,3 +539,48 @@ test("USDA duplicate records collapse to the strongest same-name result", () => 
     const other = { source: "usda", fdcId: 3, name: "McDonald's Cheeseburger", brand: "", portions: [{ label: "1 sandwich", nutrition: { calories: 300 } }] };
     assert.deepEqual(dedupeUsdaFoods([weak, useful, other]).map(food => food.fdcId), [2, 3]);
 });
+
+
+test("liquid foods promote practical volume measures without changing nutrition", () => {
+    const cream = data.withUsefulLiquidPortions({
+        source: "usda",
+        name: "Coffee Cream 18%",
+        category: "Cream",
+        portions: [{ label: "1 g", grams: 1, nutrition: { calories: 2, protein: .02, carbs: .067, fat: .167, fiber: 0 } }]
+    });
+    assert.equal(cream.portions[0].label, "1 tbsp (15 mL)");
+    assert.equal(Math.round(cream.portions[0].nutrition.calories), 30);
+    assert.equal(cream.portions.find(portion => portion.label === "1 tsp (5 mL)").nutrition.calories, 10);
+    assert.ok(cream.portions.some(portion => portion.label === "1 g"));
+});
+
+test("liquid conversions use food-specific density instead of treating every mL as one gram", () => {
+    const oil = data.withUsefulLiquidPortions({
+        source: "usda",
+        name: "Extra virgin olive oil",
+        category: "Oil",
+        portions: [{ label: "100 g", grams: 100, nutrition: { calories: 884, protein: 0, carbs: 0, fat: 100, fiber: 0 } }]
+    });
+    const tablespoon = oil.portions.find(portion => portion.label === "1 tbsp (15 mL)");
+    assert.equal(Number(tablespoon.grams.toFixed(1)), 13.8);
+    assert.equal(Math.round(tablespoon.nutrition.calories), 122);
+
+    const oats = data.withUsefulLiquidPortions({
+        name: "Rolled oats",
+        category: "Cereal",
+        portions: [{ label: "100 g", grams: 100, nutrition: { calories: 380, protein: 13, carbs: 68, fat: 7 } }]
+    });
+    assert.deepEqual(oats.portions.map(portion => portion.label), ["100 g"]);
+});
+
+test("custom liquid foods generate equivalent mL and household measures", () => {
+    const portions = data.buildCustomFoodPortions({
+        amount: 15,
+        unit: "ml",
+        nutrition: { calories: 30, protein: 0, carbs: 1, fat: 3, fiber: 0 }
+    });
+    assert.equal(portions[0].label, "15 mL");
+    assert.equal(portions.find(portion => portion.label === "1 tbsp (15 mL)").nutrition.calories, 30);
+    assert.equal(portions.find(portion => portion.label === "1 tsp (5 mL)").nutrition.calories, 10);
+    assert.equal(portions.find(portion => portion.label === "1 cup (250 mL)").nutrition.calories, 500);
+});
