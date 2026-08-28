@@ -75,7 +75,7 @@ function macroMarkup(label, value, target) {
     const safeTarget = Math.max(0, Math.round(Number(target) || 0));
     const progress = clampProgress(value, safeTarget);
     return `
-        <div class="dashboard-macro-progress">
+        <div class="dashboard-macro-progress dashboard-macro-progress--${label.toLowerCase()}">
             <span>${label}</span>
             <strong>${roundMacro(value)} g <small>/ ${safeTarget} g</small></strong>
             <i aria-hidden="true"><b style="width:${progress}%"></b></i>
