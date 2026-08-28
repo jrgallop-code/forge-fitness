@@ -10,6 +10,13 @@ const PRIORITY_LIMIT = 3;
 const SECONDARY_CREDIT = 0.5;
 const MAX_EFFECTIVE = 20;
 const SPLIT_PREFERENCES = new Set(["auto", "full-body", "upper-lower"]);
+const COACH_STORAGE_KEY = "level_up_selected_coach";
+const VIRTUAL_COACHES = {
+  maya: { name: "Maya", specialty: "Muscle Growth" },
+  marcus: { name: "Marcus", specialty: "Strength" },
+  elena: { name: "Elena", specialty: "Beginner & Technique" },
+  owen: { name: "Owen", specialty: "Home & Time-Efficient" }
+};
 const SUPPLEMENTAL_PROVEN_TEMPLATES = [
   {
     id: "stronglifts-lite-two-day-adapted",
@@ -137,8 +144,23 @@ function freshState() {
     preferredIds: [],
     excludedIds: Array.isArray(prefs.excludedIds) ? [...prefs.excludedIds] : [],
     supersets: true,
-    variation: 0
+    variation: 0,
+    coachId: readCoachId()
   };
+}
+
+function readCoachId() {
+  try {
+    const id = localStorage.getItem(COACH_STORAGE_KEY);
+    return VIRTUAL_COACHES[id] ? id : "maya";
+  } catch {
+    return "maya";
+  }
+}
+
+function saveCoachId(id) {
+  if (!VIRTUAL_COACHES[id]) return;
+  try { localStorage.setItem(COACH_STORAGE_KEY, id); } catch {}
 }
 
 function updateState(button) {
@@ -193,7 +215,9 @@ document.addEventListener("click", event => {
   updateState(button);
 
   if (button.matches("[data-smart-build]")) {
-    Object.assign(state, freshState());
+    const coachId = VIRTUAL_COACHES[button.dataset.coachId] ? button.dataset.coachId : readCoachId();
+    Object.assign(state, freshState(), { coachId });
+    saveCoachId(coachId);
     generated = null;
     return;
   }
@@ -385,6 +409,8 @@ function generateProgram() {
       splitLabel: split.label,
       priorities: [...state.priorities],
       equipment: [...state.equipment],
+      coachId: state.coachId,
+      coach: VIRTUAL_COACHES[state.coachId] || VIRTUAL_COACHES.maya,
       supersetsAllowed: state.supersets,
       unifiedEngine: true,
       templateFirst: true,
@@ -432,16 +458,25 @@ function selectBaseTemplate(exerciseMap, pool) {
       const experienceMatch = level.includes(state.experience) || (state.experience === "beginner" && level.includes("beginner"));
       const estimated = String(plan.estimatedMinutes || "").match(/\d+/g)?.map(Number) || [60];
       const durationDistance = Math.min(...estimated.map(value => Math.abs(value - state.duration)));
-      const sourceBonus = plan.sourceUrl ? 36 : 0;
-      return { plan, score: allowedRatio * 40 + Number(goalMatch) * 25 + Number(experienceMatch) * 12 + sourceBonus - durationDistance * 0.35 };
+      const sourceBonus = plan.sourceUrl ? 15 : 0;
+      const coachBonus = scoreCoachTemplate(state.coachId, type, level, estimated);
+      return { plan, score: allowedRatio * 40 + Number(goalMatch) * 25 + Number(experienceMatch) * 12 + sourceBonus + coachBonus - durationDistance * 0.35 };
     })
     .filter(Boolean)
     .sort((a, b) => b.score - a.score || a.plan.name.localeCompare(b.plan.name));
   if (!candidates.length) return null;
-  const sourced = candidates.filter(candidate => candidate.plan.sourceUrl);
-  const ranked = sourced.length ? sourced : candidates;
-  const shortlist = ranked.slice(0, Math.min(3, ranked.length));
+  const shortlist = candidates.slice(0, Math.min(3, candidates.length));
   return shortlist[state.variation % shortlist.length].plan;
+}
+
+function scoreCoachTemplate(coachId, type, level, estimated) {
+  if (coachId === "marcus") return /strength|hybrid/.test(type) ? 20 : 0;
+  if (coachId === "elena") return level.includes("beginner") ? 20 : (level.includes("intermediate") ? 6 : 0);
+  if (coachId === "owen") {
+    const shortest = Math.min(...estimated);
+    return Math.max(0, 18 - Math.abs(shortest - 45) * 0.45);
+  }
+  return /hypertrophy|hybrid/.test(type) ? 20 : 0;
 }
 
 function templateSplit(plan, exerciseMap) {
@@ -931,7 +966,7 @@ function renderReview() {
     ? `<div class="smart-volume-grid"><div class="priority"><span>Program validation</span><strong>${generated.validation.warnings.length ? "Passed with notes" : "Passed ✓"}</strong></div><div><span>Session structure</span><strong>4+ exercises protected</strong></div></div>${generated.validation.warnings.length ? `<p class="smart-helper">${escapeHtml(generated.validation.warnings.join("; "))}.</p>` : ""}`
     : `<div class="smart-volume-grid"><div><span>Program validation</span><strong>Needs adjustment</strong></div></div><p class="smart-helper">${escapeHtml(generated.validation.issues.join("; "))}. Try a longer session, broader equipment selection, or fewer avoided exercises.</p>`;
 
-  host.innerHTML = `<div class="smart-review"><span class="eyebrow">YOUR PROGRAM</span><h3>${escapeHtml(generated.name)}</h3><div class="smart-review-meta"><span>${state.days} days/week</span><span>${escapeHtml(generated.split.label)}</span><span>~${state.duration} min/session</span><span>${capitalize(state.experience)}</span><span>${escapeHtml(GOAL_LABELS[state.goal])}</span></div><h4>Program guardrails</h4><p class="smart-helper">Your selected split is respected first. Smart Build then establishes balanced workout structure, allocates weekly effective volume, protects priority muscles, honors equipment and exercise restrictions, and keeps the existing 4-exercise minimum / 8-exercise cap and duration checks. Compound sets contribute 0.5 effective-set credit to commonly involved secondary muscles.</p>${status}<h4>Weekly muscle stimulus</h4><div class="smart-volume-grid effective">${volumeRows}</div><h4>Workout days</h4><div class="smart-review-days">${dayRows}</div><p class="smart-review-note">Volume targets are evidence-informed starting ranges rather than rigid prescriptions. Experience, training frequency, session time, muscle priority and indirect compound work all influence the final allocation. Five- and six-day plans can move toward the higher end of the target ranges when recovery and session time allow; they do not automatically force 20 sets.</p><div class="smart-review-actions"><button class="secondary-btn" type="button" data-smart-edit>Edit Answers</button><button class="secondary-btn" type="button" data-smart-regenerate-exercises>New Exercises</button><button class="secondary-btn" type="button" data-smart-regenerate-program>New Program</button><button class="primary-btn" type="button" data-smart-save ${valid ? "" : "disabled"}>${valid ? "Save Plan" : "Adjust Settings"}</button></div></div>`;
+  host.innerHTML = `<div class="smart-review"><span class="eyebrow">YOUR PROGRAM</span><h3>${escapeHtml(generated.name)}</h3><div class="smart-review-meta"><span>Coach ${escapeHtml((VIRTUAL_COACHES[state.coachId] || VIRTUAL_COACHES.maya).name)}</span><span>${state.days} days/week</span><span>${escapeHtml(generated.split.label)}</span><span>~${state.duration} min/session</span><span>${capitalize(state.experience)}</span><span>${escapeHtml(GOAL_LABELS[state.goal])}</span></div><h4>Program guardrails</h4><p class="smart-helper">Your selected split is respected first. Smart Build then establishes balanced workout structure, allocates weekly effective volume, protects priority muscles, honors equipment and exercise restrictions, and keeps the existing 4-exercise minimum / 8-exercise cap and duration checks. Compound sets contribute 0.5 effective-set credit to commonly involved secondary muscles.</p>${status}<h4>Weekly muscle stimulus</h4><div class="smart-volume-grid effective">${volumeRows}</div><h4>Workout days</h4><div class="smart-review-days">${dayRows}</div><p class="smart-review-note">Volume targets are evidence-informed starting ranges rather than rigid prescriptions. Experience, training frequency, session time, muscle priority and indirect compound work all influence the final allocation. Five- and six-day plans can move toward the higher end of the target ranges when recovery and session time allow; they do not automatically force 20 sets.</p><div class="smart-review-actions"><button class="secondary-btn" type="button" data-smart-edit>Edit Answers</button><button class="secondary-btn" type="button" data-smart-regenerate-exercises>New Exercises</button><button class="secondary-btn" type="button" data-smart-regenerate-program>New Program</button><button class="primary-btn" type="button" data-smart-save ${valid ? "" : "disabled"}>${valid ? "Save Plan" : "Adjust Settings"}</button></div></div>`;
 }
 
 function savePlan(button) {
