@@ -124,14 +124,23 @@ export function mealPreview(entries) {
     return items.length === 1 ? first : `${first} and ${items.length - 1} more`;
 }
 
-export function cloneEntriesForMeal(entries, meal) {
+export function cloneEntriesForMeal(entries, meal, copiedFrom = null) {
     const safeMeal = MEALS.includes(meal) ? meal : "Snacks";
+    const copiedFromDate = /^\d{4}-\d{2}-\d{2}$/.test(String(copiedFrom?.dateKey || "")) ? String(copiedFrom.dateKey) : "";
+    const copiedFromMeal = MEALS.includes(copiedFrom?.meal) ? copiedFrom.meal : safeMeal;
     return (Array.isArray(entries) ? entries : []).map(entry => ({
         ...mealItemSnapshot(entry),
         id: crypto.randomUUID(),
         meal: safeMeal,
+        ...(copiedFromDate ? { copiedFromDate, copiedFromMeal } : {}),
         createdAt: new Date().toISOString()
     }));
+}
+
+export function hasCopiedMeal(entries, sourceDate, meal) {
+    return (Array.isArray(entries) ? entries : []).some(entry =>
+        entry?.copiedFromDate === sourceDate && entry?.copiedFromMeal === meal
+    );
 }
 
 export function logSavedMeal(dateKey, savedMeal, meal) {
