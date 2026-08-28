@@ -22,7 +22,7 @@ import {
     scaledNutrition,
     summarizeEntries,
     updateEntry
-} from "./food-log-data.js?v=food-history-priority-1";
+} from "./food-log-data.js?v=meal-photos-macro-detail-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -699,7 +699,29 @@ function updatePortionPreview() {
     const quantity = Math.max(0, Number(document.querySelector("[data-food-quantity]")?.value) || 0);
     const n = portion?.nutrition || {};
     const preview = document.querySelector("[data-food-preview]");
-    if (preview) preview.innerHTML = `<strong>${roundOne(quantity)} × ${escapeHtml(portion?.label || "1 serving")}</strong><span>${Math.round((n.calories || 0) * quantity)} kcal · P ${roundOne((n.protein || 0) * quantity)} g · C ${roundOne((n.carbs || 0) * quantity)} g · F ${roundOne((n.fat || 0) * quantity)} g</span>`;
+    if (!preview) return;
+    if (addContext === "edit") {
+        preview.innerHTML = foodMacroBreakdown(n, quantity, portion?.label);
+        preview.classList.add("food-portion-preview--macros");
+    }
+    else {
+        preview.classList.remove("food-portion-preview--macros");
+        preview.innerHTML = `<strong>${roundOne(quantity)} × ${escapeHtml(portion?.label || "1 serving")}</strong><span>${Math.round((n.calories || 0) * quantity)} kcal · P ${roundOne((n.protein || 0) * quantity)} g · C ${roundOne((n.carbs || 0) * quantity)} g · F ${roundOne((n.fat || 0) * quantity)} g</span>`;
+    }
+}
+
+function foodMacroBreakdown(nutrition, quantity, servingLabel) {
+    const values = {
+        carbs: Math.max(0, Number(nutrition?.carbs) || 0) * quantity,
+        fat: Math.max(0, Number(nutrition?.fat) || 0) * quantity,
+        protein: Math.max(0, Number(nutrition?.protein) || 0) * quantity
+    };
+    const calories = Math.max(0, Number(nutrition?.calories) || 0) * quantity;
+    const macroCalories = values.carbs * 4 + values.fat * 9 + values.protein * 4;
+    const percentages = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, macroCalories ? Math.round(value * (key === "fat" ? 9 : 4) / macroCalories * 100) : 0]));
+    const carbEnd = percentages.carbs;
+    const fatEnd = Math.min(100, carbEnd + percentages.fat);
+    return `<div class="food-edit-serving">${roundOne(quantity)} × ${escapeHtml(servingLabel || "1 serving")}</div><div class="food-edit-macro-breakdown"><div class="food-edit-calorie-ring" style="--carb-end:${carbEnd}%;--fat-end:${fatEnd}%"><span><strong>${Math.round(calories)}</strong><small>cal</small></span></div><div class="food-edit-macro food-edit-macro--carbs"><em>${percentages.carbs}%</em><strong>${roundOne(values.carbs)} g</strong><small>Carbs</small></div><div class="food-edit-macro food-edit-macro--fat"><em>${percentages.fat}%</em><strong>${roundOne(values.fat)} g</strong><small>Fat</small></div><div class="food-edit-macro food-edit-macro--protein"><em>${percentages.protein}%</em><strong>${roundOne(values.protein)} g</strong><small>Protein</small></div></div>`;
 }
 
 function addSelectedFood() {
@@ -874,8 +896,43 @@ function showFoodToast(message) {
 
 function openMealBuilder(entries = [], name = "") {
     addContext = "meal-builder";
-    mealDraft = { id: null, name, items: entries.map(entry => ({ ...entry })) };
+    mealDraft = { id: null, name, photoDataUrl: "", items: entries.map(entry => ({ ...entry })) };
     renderMealBuilder();
+}
+
+function compressMealPhoto(file) {
+    return new Promise((resolve, reject) => {
+        if (!file?.type?.startsWith("image/")) { reject(new Error("Choose an image file.")); return; }
+        if (file.size > 15 * 1024 * 1024) { reject(new Error("Choose a photo smaller than 15 MB.")); return; }
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("The photo could not be read."));
+        reader.onload = () => {
+            const image = new Image();
+            image.onerror = () => reject(new Error("That photo format is not supported."));
+            image.onload = () => {
+                const size = 180;
+                const scale = Math.max(size / image.naturalWidth, size / image.naturalHeight);
+                const width = image.naturalWidth * scale;
+                const height = image.naturalHeight * scale;
+                const canvas = document.createElement("canvas");
+                canvas.width = size;
+                canvas.height = size;
+                const context = canvas.getContext("2d");
+                context.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
+                resolve(canvas.toDataURL("image/jpeg", .68));
+            };
+            image.src = String(reader.result || "");
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+async function setMealDraftPhoto(file) {
+    try {
+        mealDraft.photoDataUrl = await compressMealPhoto(file);
+        renderMealBuilder();
+    }
+    catch (error) { showFoodToast(error?.message || "The photo could not be added."); }
 }
 
 function renderMealBuilder() {
@@ -886,11 +943,15 @@ function renderMealBuilder() {
     panel.innerHTML = `
         <header class="food-builder-heading"><div><span class="eyebrow">MY MEALS</span><h3>Build a Meal</h3></div><button type="button" data-meal-builder-close aria-label="Close meal builder">×</button></header>
         <label>Meal name<input type="text" maxlength="100" value="${escapeHtml(mealDraft.name)}" placeholder="Post-workout lunch" data-meal-name></label>
+        <div class="food-builder-photo"><button type="button" data-meal-photo-pick>${mealDraft.photoDataUrl ? `<img src="${escapeHtml(mealDraft.photoDataUrl)}" alt="Meal thumbnail"><span>Change photo</span>` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>'}</button>${mealDraft.photoDataUrl ? '<button type="button" data-meal-photo-remove>Remove</button>' : ""}<input type="file" accept="image/*" data-meal-photo-input hidden></div>
         <div class="food-builder-summary"><strong>${mealDraft.items.length} item${mealDraft.items.length === 1 ? "" : "s"}</strong><span>${Math.round(totals.calories)} kcal · P ${roundOne(totals.protein)} g · C ${roundOne(totals.carbs)} g · F ${roundOne(totals.fat)} g</span></div>
         <div class="food-builder-items">${mealDraft.items.map((entry, index) => `<div><span><strong>${escapeHtml(entry.name)}</strong><small>${roundOne(entry.quantity)} × ${escapeHtml(entry.servingLabel)}</small></span><b>${Math.round(entry.nutrition?.calories || 0)} kcal</b><button type="button" data-remove-meal-item="${index}" aria-label="Remove ${escapeHtml(entry.name)}">×</button></div>`).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
         <button type="button" class="food-builder-add" data-meal-builder-add>+ Add Food</button>
         <button type="button" class="primary-btn" data-meal-builder-save ${mealDraft.items.length ? "" : "disabled"}>Save to My Meals</button>`;
     panel.querySelector("[data-meal-name]")?.addEventListener("input", event => { mealDraft.name = event.currentTarget.value; });
+    panel.querySelector("[data-meal-photo-pick]")?.addEventListener("click", () => panel.querySelector("[data-meal-photo-input]")?.click());
+    panel.querySelector("[data-meal-photo-input]")?.addEventListener("change", event => { if (event.currentTarget.files?.[0]) void setMealDraftPhoto(event.currentTarget.files[0]); });
+    panel.querySelector("[data-meal-photo-remove]")?.addEventListener("click", () => { mealDraft.photoDataUrl = ""; renderMealBuilder(); });
     panel.querySelector("[data-meal-builder-close]")?.addEventListener("click", () => { panel.hidden = true; addContext = "log"; showFoodMode("meals"); });
     panel.querySelector("[data-meal-builder-add]")?.addEventListener("click", () => { panel.hidden = true; addContext = "meal-builder"; showFoodMode("recent"); });
     panel.querySelectorAll("[data-remove-meal-item]").forEach(button => button.addEventListener("click", () => { mealDraft.items.splice(Number(button.dataset.removeMealItem), 1); renderMealBuilder(); }));
@@ -918,13 +979,31 @@ function renderSavedMeals() {
     if (!meals.length) { container.innerHTML = '<p class="empty-state">Build a meal once, then log it here in one tap.</p>'; return; }
     container.innerHTML = meals.map((meal, index) => {
         const totals = summarizeEntries(meal.items);
-        return `<article class="food-saved-meal"><div><strong>${escapeHtml(meal.name)}</strong><small>${escapeHtml(mealPreview(meal.items))}</small><span>${Math.round(totals.calories)} kcal · ${meal.items.length} items</span></div><button type="button" class="food-saved-meal-add" data-log-saved-meal="${index}" aria-label="Log ${escapeHtml(meal.name)} to ${selectedMeal}">+</button><button type="button" class="food-saved-meal-delete" data-delete-saved-meal="${escapeHtml(meal.id)}" aria-label="Delete ${escapeHtml(meal.name)}">×</button></article>`;
+        const photo = meal.photoDataUrl ? `<img src="${escapeHtml(meal.photoDataUrl)}" alt="">` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+        return `<article class="food-saved-meal"><div><strong>${escapeHtml(meal.name)}</strong><small>${escapeHtml(mealPreview(meal.items))}</small><span>${Math.round(totals.calories)} kcal · ${meal.items.length} items</span></div><button type="button" class="food-saved-meal-photo" data-saved-meal-photo="${index}" aria-label="${meal.photoDataUrl ? "Change" : "Add"} photo for ${escapeHtml(meal.name)}">${photo}</button><button type="button" class="food-saved-meal-add" data-log-saved-meal="${index}" aria-label="Log ${escapeHtml(meal.name)} to ${selectedMeal}">+</button><button type="button" class="food-saved-meal-delete" data-delete-saved-meal="${escapeHtml(meal.id)}" aria-label="Delete ${escapeHtml(meal.name)}">×</button></article>`;
     }).join("");
     container.querySelectorAll("[data-log-saved-meal]").forEach(button => button.addEventListener("click", () => {
         const meal = meals[Number(button.dataset.logSavedMeal)];
         logSavedMeal(selectedDate, meal, selectedMeal);
         closeFoodSheet();
         showFoodToast(`${meal.name} added to ${selectedMeal}.`);
+    }));
+    container.querySelectorAll("[data-saved-meal-photo]").forEach(button => button.addEventListener("click", () => {
+        const meal = meals[Number(button.dataset.savedMealPhoto)];
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+        input.addEventListener("change", async () => {
+            if (!input.files?.[0]) return;
+            try {
+                const photoDataUrl = await compressMealPhoto(input.files[0]);
+                saveSavedMeal({ ...meal, photoDataUrl });
+                renderSavedMeals();
+                showFoodToast("Meal photo saved.");
+            }
+            catch (error) { showFoodToast(error?.message || "The photo could not be added."); }
+        });
+        input.click();
     }));
     container.querySelectorAll("[data-delete-saved-meal]").forEach(button => button.addEventListener("click", () => {
         if (!window.confirm("Delete this saved meal?")) return;
