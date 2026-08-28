@@ -235,3 +235,9 @@
 .catalogue-plan-card:not(:has(> .catalogue-coach-avatar)) > * {
   grid-column:1;
 }
+
+
+/* Filtering must win over the full-width grid display rule. */
+.catalogue-plan-card[hidden] {
+  display:none!important;
+}
