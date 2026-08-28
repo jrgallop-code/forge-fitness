@@ -458,16 +458,14 @@ function selectBaseTemplate(exerciseMap, pool) {
       const experienceMatch = level.includes(state.experience) || (state.experience === "beginner" && level.includes("beginner"));
       const estimated = String(plan.estimatedMinutes || "").match(/\d+/g)?.map(Number) || [60];
       const durationDistance = Math.min(...estimated.map(value => Math.abs(value - state.duration)));
-      const sourceBonus = plan.sourceUrl ? 36 : 0;
+      const sourceBonus = plan.sourceUrl ? 15 : 0;
       const coachBonus = scoreCoachTemplate(state.coachId, type, level, estimated);
       return { plan, score: allowedRatio * 40 + Number(goalMatch) * 25 + Number(experienceMatch) * 12 + sourceBonus + coachBonus - durationDistance * 0.35 };
     })
     .filter(Boolean)
     .sort((a, b) => b.score - a.score || a.plan.name.localeCompare(b.plan.name));
   if (!candidates.length) return null;
-  const sourced = candidates.filter(candidate => candidate.plan.sourceUrl);
-  const ranked = sourced.length ? sourced : candidates;
-  const shortlist = ranked.slice(0, Math.min(3, ranked.length));
+  const shortlist = candidates.slice(0, Math.min(3, candidates.length));
   return shortlist[state.variation % shortlist.length].plan;
 }
 
