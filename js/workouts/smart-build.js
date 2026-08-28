@@ -1,6 +1,7 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { getTrainingPreferences } from "../core/training-preferences.js?v=onboarding-1";
 import { renderMusclePriorityChoice } from "./muscle-priority-visual.js?v=female-back-regions-1";
+import { presetPlans } from "./workout-plans.js?v=proven-template-builder-1";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 const MUSCLES = ["Chest","Back","Shoulders","Biceps","Triceps","Quads","Hamstrings","Glutes","Calves"];
@@ -74,7 +75,7 @@ function handleInput(root,event){
   if(event.target.matches?.("[data-preferred-search]"))renderExerciseResults(root,event.target.value,"prefer");
   if(event.target.matches?.("[data-avoid-search]"))renderExerciseResults(root,event.target.value,"avoid");
 }
-function renderLauncher(){return `<section class="smart-build-launcher" data-smart-build-launcher><div class="smart-build-launcher-head"><span class="eyebrow">BUILD A PROGRAM</span><p>Choose how you want to create your training plan.</p></div><div class="smart-build-choice-grid"><button class="smart-build-choice" type="button" data-manual-build><span class="smart-build-choice-title">Manual Build</span><small>Build it yourself</small></button><button class="smart-build-choice" type="button" data-template-build><span class="smart-build-choice-title">Templates</span><small>Start from a proven split</small></button><button class="smart-build-choice smart-build-choice-primary" type="button" data-smart-build><span class="smart-build-badge">GUIDED</span><span class="smart-build-choice-title">Smart Build</span><small>Goal-driven personalized programming</small></button></div></section>`;}
+function renderLauncher(){return `<section class="smart-build-launcher" data-smart-build-launcher><div class="smart-build-launcher-head"><span class="eyebrow">BUILD A PROGRAM</span><p>Choose how you want to create your training plan.</p></div><div class="smart-build-choice-grid"><button class="smart-build-choice" type="button" data-manual-build><span class="smart-build-choice-title">Manual Build</span><small>Build it yourself</small></button><button class="smart-build-choice" type="button" data-template-build><span class="smart-build-choice-title">Templates</span><small>Start from a proven split</small></button><button class="smart-build-choice smart-build-choice-primary" type="button" data-smart-build><span class="smart-build-badge">GUIDED</span><span class="smart-build-choice-title">Personalized Plan</span><small>Built from a proven template, then adjusted to you</small></button></div></section>`;}
 function renderWizardShell(){return `<section class="smart-build-wizard" data-smart-build-wizard hidden><div class="smart-build-topbar"><div><span class="eyebrow">SMART BUILD</span><h3 data-smart-heading>Program Builder</h3></div><button class="secondary-btn smart-build-close" type="button" data-smart-close>Close</button></div><div class="smart-build-progress"><span data-smart-progress></span></div><div data-smart-step></div></section>`;}
 function openWizard(root){root.querySelector("[data-workout-home]")?.setAttribute("hidden","");const w=root.querySelector("[data-smart-build-wizard]");if(!w)return;w.hidden=false;renderStep(root);w.scrollIntoView({behavior:"smooth",block:"start"});}
 function closeWizard(root){const w=root.querySelector("[data-smart-build-wizard]"),h=root.querySelector("[data-workout-home]");if(w)w.hidden=true;if(h)h.hidden=false;}
@@ -86,8 +87,8 @@ function renderEquipmentStep(){
   const presets=["Full Gym","Barbell","Dumbbells","Machines & Cables","Bodyweight"];
   return questionCard("4","Choose your equipment","Select everything you have access to. Full Gym includes all equipment types.",`<strong class="smart-field-label">Available equipment</strong><div class="smart-chip-grid">${presets.map(x=>`<button type="button" class="smart-chip ${state.equipment.includes(x)?"selected":""}" data-equipment="${escapeHtml(x)}">${escapeHtml(x)}</button>`).join("")}</div><p class="smart-helper">Selected: ${state.equipment.join(", ")}</p><div class="smart-picker-block"><button class="smart-picker-toggle" type="button" data-preferred-toggle>Preferred exercises ▾</button><div class="smart-picker-panel" data-preferred-panel hidden><input type="search" data-preferred-search placeholder="Search exercises to prefer"><div class="smart-search-results" data-preferred-results></div></div></div><div class="smart-selected-list">${renderSelectedExercises(state.preferredIds,"preferred")}</div><div class="smart-picker-block"><button class="smart-picker-toggle" type="button" data-avoid-toggle>Avoid / discomfort ▾</button><div class="smart-picker-panel" data-avoid-panel hidden><input type="search" data-avoid-search placeholder="Search exercises to avoid"><div class="smart-search-results" data-avoid-results></div></div></div><div class="smart-selected-list">${renderSelectedExercises(state.excludedIds,"excluded")}</div>`);
 }
-function renderProgrammingStep(){const t=getVolumeTargets(),range=sessionExerciseRange();return questionCard("5","Programming approach","Weekly volume is the priority. Smart Build distributes it across your available days while keeping sessions practical.",`<div class="smart-volume-summary">${MUSCLES.map(m=>`<div><span>${m}${state.priorities.includes(m)?" ★":""}</span><strong>${t[m]} sets/wk</strong></div>`).join("")}</div><p class="smart-helper">For ${state.duration===90?"90+":state.duration}-minute sessions, Smart Build targets about ${range.target} exercises, with a 4-exercise floor and an 8-exercise hard cap. Weekly volume is redistributed across movements first so variety improves without padding the session.</p><label class="smart-superset-toggle"><input type="checkbox" data-supersets ${state.supersets?"checked":""}><span><strong>Allow time-saving supersets</strong><small>Accessory-focused. High-fatigue compounds stay standalone.</small></span></label><p class="smart-helper">Most sessions should land around 5–7 exercises when time and weekly volume allow; shorter or lower-volume days can settle at 4.</p>`,true,"Build Program");}
-function renderResultStep(){if(!state.generated)return `<p class="smart-helper">Program could not be generated.</p>`;const t=getVolumeTargets(),a=calculateWeeklySets(state.generated);return `<div class="smart-question-card"><div class="smart-question-number">✓</div><h4>${escapeHtml(GOALS[state.goal].label)} — ${state.days} days</h4><p>${escapeHtml(state.generated.summary)}</p><div class="smart-volume-summary">${MUSCLES.map(m=>`<div><span>${m}${state.priorities.includes(m)?" ★":""}</span><strong>${a[m]||0}/${t[m]} sets</strong></div>`).join("")}</div><div class="smart-review-grid">${state.generated.days.map((d,di)=>`<article class="smart-review-day"><h5>${escapeHtml(d.name)}</h5>${d.exercises.map((x,ei)=>renderExerciseRow(x,di,ei)).join("")}</article>`).join("")}</div><div class="smart-question-actions smart-result-actions"><button class="secondary-btn" type="button" data-smart-edit>Edit Inputs</button><button class="secondary-btn" type="button" data-smart-regenerate>Regenerate</button><button class="primary-btn" type="button" data-smart-save>Save Plan</button></div></div>`;}
+function renderProgrammingStep(){const t=getVolumeTargets(),range=sessionExerciseRange();return questionCard("5","Programming approach","Level Up will choose the best-fitting template backbone first, then adjust it to your goals and constraints.",`<div class="smart-volume-summary">${MUSCLES.map(m=>`<div><span>${m}${state.priorities.includes(m)?" ★":""}</span><strong>${t[m]} sets/wk</strong></div>`).join("")}</div><p class="smart-helper">The match considers your goal, experience, available equipment, exercise preferences, training days, and ${state.duration===90?"90+":state.duration}-minute session limit. The template's split and main movement pattern stay recognizable while direct volume and accessories adapt.</p><label class="smart-superset-toggle"><input type="checkbox" data-supersets ${state.supersets?"checked":""}><span><strong>Allow time-saving supersets</strong><small>Accessory-focused. High-fatigue compounds stay standalone.</small></span></label><p class="smart-helper">Most sessions target about ${range.target} exercises, with a 4-exercise floor and an 8-exercise hard cap.</p>`,true,"Build My Plan");}
+function renderResultStep(){if(!state.generated)return `<p class="smart-helper">Program could not be generated.</p>`;const t=getVolumeTargets(),a=calculateWeeklySets(state.generated),base=state.generated.baseTemplate||{},source=base.sourceUrl?`<a href="${escapeHtml(base.sourceUrl)}" target="_blank" rel="noopener">View original program structure ↗</a>`:"";return `<div class="smart-question-card"><div class="smart-question-number">✓</div><h4>${escapeHtml(GOALS[state.goal].label)} — ${state.days} days</h4><p>${escapeHtml(state.generated.summary)}</p><aside class="smart-template-match"><span>BASE TEMPLATE</span><strong>${escapeHtml(base.name||"Balanced training split")}</strong><p>${escapeHtml(base.adjustments||base.description||"Adjusted to your inputs.")}</p>${source}</aside><div class="smart-volume-summary">${MUSCLES.map(m=>`<div><span>${m}${state.priorities.includes(m)?" ★":""}</span><strong>${a[m]||0}/${t[m]} sets</strong></div>`).join("")}</div><div class="smart-review-grid">${state.generated.days.map((d,di)=>`<article class="smart-review-day"><h5>${escapeHtml(d.name)}</h5>${d.exercises.map((x,ei)=>renderExerciseRow(x,di,ei)).join("")}</article>`).join("")}</div><div class="smart-question-actions smart-result-actions"><button class="secondary-btn" type="button" data-smart-edit>Edit Inputs</button><button class="secondary-btn" type="button" data-smart-regenerate>Try Another Template</button><button class="primary-btn" type="button" data-smart-save>Save Plan</button></div></div>`;}
 function renderExerciseRow(item,di,ei){const def=exerciseMap().get(item.id),ss=item.supersetGroup?`<em>Superset ${item.supersetGroup}</em>`:"";return `<div class="smart-review-exercise ${item.supersetGroup?"is-superset":""}"><div><strong>${escapeHtml(def?.name||item.name||item.id)}</strong><small>${item.sets} × ${escapeHtml(item.reps)} · ${escapeHtml(def?.muscleGroup||"")}</small>${ss}</div><div class="smart-review-controls"><button type="button" data-adjust-set="-1" data-day-index="${di}" data-exercise-index="${ei}" aria-label="Remove set">−</button><button type="button" data-adjust-set="1" data-day-index="${di}" data-exercise-index="${ei}" aria-label="Add set">+</button><button type="button" data-replace-exercise data-day-index="${di}" data-exercise-index="${ei}">Replace</button></div></div>`;}
 function questionCard(n,t,c,b,back=true,next="Continue"){return `<div class="smart-question-card"><div class="smart-question-number">${n}</div><h4>${t}</h4><p>${c}</p><div class="smart-question-body">${b}</div><div class="smart-question-actions">${back?'<button class="secondary-btn" type="button" data-smart-back>Back</button>':'<span></span>'}<button class="primary-btn" type="button" data-smart-next>${next}</button></div></div>`;}
 function chipRow(values,selected,key,labeler=String){return `<div class="smart-chip-grid">${values.map(v=>`<button type="button" class="smart-chip ${selected===v?"selected":""}" data-${key}="${v}">${labeler(v)}</button>`).join("")}</div>`;}
@@ -101,12 +102,90 @@ function sessionExerciseRange(){if(state.duration<=30)return{min:4,target:4,max:
 function sessionHardCap(){return 8;}
 function maxDirectSetsPerMuscleSession(){return 8;}
 
+function planMinutes(plan){
+  const values=String(plan.estimatedMinutes||state.duration).match(/\d+/g)?.map(Number)||[state.duration];
+  return{min:Math.min(...values),max:Math.max(...values)};
+}
+function planLevelMatches(plan){
+  const level=String(plan.level||"").toLowerCase();
+  if(state.experience==="beginner")return level.includes("beginner");
+  if(state.experience==="advanced")return level.includes("advanced")||level.includes("intermediate");
+  return level.includes("intermediate")||level.includes("beginner");
+}
+function planGoalScore(plan){
+  const type=String(plan.trainingType||"").toLowerCase();
+  if(state.goal==="muscle")return type==="hypertrophy"?28:type==="hybrid"?12:0;
+  if(state.goal==="strength")return type==="strength"?28:type==="hybrid"?18:type==="hypertrophy"?6:0;
+  if(state.goal==="hybrid")return type==="hybrid"?28:type==="strength"||type==="hypertrophy"?14:0;
+  return type==="cardio"?0:12;
+}
+function templateCoverage(plan){
+  const map=exerciseMap(),available=new Set(availableExercises().map(e=>e.id));
+  const items=plan.days.flatMap(day=>day.exercises||[]).filter(item=>map.has(item.id));
+  if(!items.length)return 0;
+  return items.filter(item=>available.has(item.id)).length/items.length;
+}
+function priorityCoverage(plan){
+  if(!state.priorities.length)return 0;
+  const map=exerciseMap(),covered=new Set();
+  plan.days.flatMap(day=>day.exercises||[]).forEach(item=>{const muscle=map.get(item.id)?.muscleGroup;if(state.priorities.includes(muscle))covered.add(muscle);});
+  return covered.size/state.priorities.length;
+}
+function hasResistanceBackbone(plan){
+  const map=exerciseMap();
+  return plan.days.every(day=>(day.exercises||[]).filter(item=>MUSCLES.includes(map.get(item.id)?.muscleGroup)).length>=2);
+}
+function scoreTemplate(plan){
+  if(Number(plan.daysPerWeek)!==state.days||String(plan.trainingType||"").toLowerCase()==="cardio"||!hasResistanceBackbone(plan))return-Infinity;
+  const minutes=planMinutes(plan),timeDistance=state.duration<minutes.min?minutes.min-state.duration:state.duration>minutes.max?state.duration-minutes.max:0;
+  return planGoalScore(plan)+(planLevelMatches(plan)?16:0)+Math.max(0,16-timeDistance/2)+Math.round(templateCoverage(plan)*22)+Math.round(priorityCoverage(plan)*10)+(plan.sourceName?5:0)+deterministicNoise(plan.id,state.variation)/100;
+}
+function selectBaseTemplate(){
+  const ranked=presetPlans.map(plan=>({plan,score:scoreTemplate(plan)})).filter(item=>Number.isFinite(item.score)).sort((a,b)=>b.score-a.score||a.plan.name.localeCompare(b.plan.name));
+  const pool=ranked.slice(0,Math.min(3,ranked.length)),chosen=pool[state.variation%Math.max(1,pool.length)]||ranked[0];
+  if(chosen)return{...chosen,substitutions:0};
+  const fallback={id:`smart-fallback-${state.days}`,name:`${state.days}-Day Balanced Split`,daysPerWeek:state.days,estimatedMinutes:String(state.duration),level:state.experience,trainingType:GOALS[state.goal].label,days:SPLITS[state.days].map(day=>({name:day.name,exercises:[]}))};
+  return{plan:fallback,score:0,substitutions:0};
+}
+function seedTemplateDays(match,preferred){
+  const map=exerciseMap(),available=new Set(availableExercises().map(e=>e.id));
+  return match.plan.days.map((sourceDay,dayIndex)=>{
+    const fallbackMuscles=SPLITS[state.days]?.[dayIndex]?.muscles||[],used=[];
+    const exercises=(sourceDay.exercises||[]).map(item=>{
+      const original=map.get(item.id);if(!original||!MUSCLES.includes(original.muscleGroup))return null;
+      let def=available.has(item.id)?original:chooseExerciseForMuscle(original.muscleGroup,used,preferred,dayIndex,used);
+      if(!def)return null;
+      if(def.id!==item.id)match.substitutions+=1;
+      used.push(def.id);
+      return{id:def.id,name:def.name,sets:Math.max(2,Math.min(5,Number(item.sets)||3)),reps:def.id===item.id?String(item.reps||repRangeFor(def)):repRangeFor(def),muscleGroup:def.muscleGroup};
+    }).filter(Boolean);
+    const muscles=[...new Set([...fallbackMuscles,...exercises.map(item=>item.muscleGroup)])];
+    return{name:sourceDay.name,muscles,exercises};
+  });
+}
+function trimTemplateVolume(days,targets){
+  MUSCLES.forEach(muscle=>{
+    let excess=days.reduce((sum,day)=>sum+dayMuscleSets(day,muscle),0)-targets[muscle];
+    if(excess<=0)return;
+    const candidates=days.flatMap(day=>day.exercises.filter(item=>item.muscleGroup===muscle)).sort((a,b)=>Number(exerciseMap().get(a.id)?.type==="compound")-Number(exerciseMap().get(b.id)?.type==="compound")||b.sets-a.sets);
+    for(const item of candidates){if(excess<=0)break;const remove=Math.min(excess,Math.max(0,item.sets-2));item.sets-=remove;excess-=remove;}
+  });
+}
+function templateAdjustmentSummary(match){
+  const changes=["weekly sets matched to your goal and experience","session length fitted to your time"];
+  if(match.substitutions)changes.push(`${match.substitutions} exercise ${match.substitutions===1?"substitution":"substitutions"} for equipment or preferences`);
+  if(state.priorities.length)changes.push(`extra emphasis on ${state.priorities.join(", ")}`);
+  return changes.join(" · ");
+}
+
 function generateProgram(){
-  const targets=getVolumeTargets(),days=SPLITS[state.days].map(d=>({name:d.name,muscles:[...d.muscles],exercises:[]})),preferred=new Set(state.preferredIds),usedByMuscle=new Map(MUSCLES.map(m=>[m,[]]));
+  const targets=getVolumeTargets(),preferred=new Set(state.preferredIds),match=selectBaseTemplate(),days=seedTemplateDays(match,preferred),usedByMuscle=new Map(MUSCLES.map(m=>[m,days.flatMap(day=>day.exercises.filter(item=>item.muscleGroup===m).map(item=>item.id))]));
+  trimTemplateVolume(days,targets);
   const order=[...MUSCLES].sort((a,b)=>Number(state.priorities.includes(b))-Number(state.priorities.includes(a))||targets[b]-targets[a]);
   order.forEach(muscle=>{
     const eligible=days.map((d,i)=>d.muscles.includes(muscle)?i:-1).filter(i=>i>=0);if(!eligible.length)return;
-    let remaining=targets[muscle],cursor=state.variation%eligible.length,safety=0;
+    const current=days.reduce((sum,day)=>sum+dayMuscleSets(day,muscle),0);
+    let remaining=Math.max(0,targets[muscle]-current),cursor=state.variation%eligible.length,safety=0;
     while(remaining>0&&safety++<30){
       const ranked=[...eligible].sort((a,b)=>dayMuscleSets(days[a],muscle)-dayMuscleSets(days[b],muscle)||days[a].exercises.length-days[b].exercises.length);
       const dayIndex=ranked[cursor%ranked.length],day=days[dayIndex],muscleSets=dayMuscleSets(day,muscle);
@@ -115,20 +194,14 @@ function generateProgram(){
       const setCeiling=day.exercises.length<sessionExerciseRange().target?3:4;
       if(existingForMuscle&&existingForMuscle.sets<setCeiling){const add=Math.min(setCeiling-existingForMuscle.sets,maxDirectSetsPerMuscleSession()-muscleSets,remaining);existingForMuscle.sets+=add;remaining-=add;cursor+=1;continue;}
       const normalCap=sessionExerciseRange().max;
-      const canAdd=day.exercises.length<normalCap;
-      if(!canAdd){
+      if(day.exercises.length>=normalCap){
         const receiver=day.exercises.filter(x=>x.muscleGroup===muscle&&x.sets<6).sort((a,b)=>a.sets-b.sets)[0];
         if(receiver){const add=Math.min(6-receiver.sets,maxDirectSetsPerMuscleSession()-muscleSets,remaining);if(add>0){receiver.sets+=add;remaining-=add;cursor+=1;continue;}}
         cursor+=1;if(eligible.every(i=>days[i].exercises.length>=normalCap))break;continue;
       }
       const def=chooseExerciseForMuscle(muscle,usedByMuscle.get(muscle),preferred,dayIndex,day.exercises.map(x=>x.id));if(!def)break;
-      const room=maxDirectSetsPerMuscleSession()-muscleSets;
-      const chunk=Math.min(3,remaining,room);
-      if(chunk<2){
-        const receiver=day.exercises.find(x=>x.muscleGroup===muscle&&x.sets<6);
-        if(receiver){receiver.sets=Math.min(6,receiver.sets+chunk);remaining-=chunk;}
-        break;
-      }
+      const room=maxDirectSetsPerMuscleSession()-muscleSets,chunk=Math.min(3,remaining,room);
+      if(chunk<2){const receiver=day.exercises.find(x=>x.muscleGroup===muscle&&x.sets<6);if(receiver){receiver.sets=Math.min(6,receiver.sets+chunk);remaining-=chunk;}break;}
       day.exercises.push({id:def.id,name:def.name,sets:chunk,reps:repRangeFor(def),muscleGroup:muscle});usedByMuscle.get(muscle).push(def.id);remaining-=chunk;cursor+=1;
     }
   });
@@ -136,7 +209,7 @@ function generateProgram(){
   validateGeneratedProgram(days,preferred);
   ensureSessionVariety(days,preferred);
   days.forEach(day=>{consolidateSession(day);day.exercises=sortExercises(day.exercises);fitSessionTime(day);day.exercises=sortExercises(day.exercises);if(state.supersets)assignSupersets(day);});
-  return{days,summary:buildSummary(days)};
+  return{days,summary:buildSummary(days),baseTemplate:{id:match.plan.id,name:match.plan.name,sourceName:match.plan.sourceName||"",sourceUrl:match.plan.sourceUrl||"",description:match.plan.description||"",adjustments:templateAdjustmentSummary(match),matchScore:Math.round(match.score)}};
 }
 function dayMuscleSets(day,muscle){return day.exercises.filter(x=>x.muscleGroup===muscle).reduce((s,x)=>s+(Number(x.sets)||0),0);}
 function ensureSessionVariety(days,preferred){
@@ -234,7 +307,7 @@ function replaceExercise(di,ei){const day=state.generated?.days?.[di],item=day?.
 function adjustSets(di,ei,delta){const item=state.generated?.days?.[di]?.exercises?.[ei];if(!item)return;item.sets=Math.max(2,Math.min(6,item.sets+delta));}
 function calculateWeeklySets(program){const totals=Object.fromEntries(MUSCLES.map(m=>[m,0]));program.days.forEach(d=>d.exercises.forEach(x=>{if(totals[x.muscleGroup]!==undefined)totals[x.muscleGroup]+=Number(x.sets)||0;}));return totals;}
 function buildSummary(days){const totalSets=days.reduce((sum,d)=>sum+d.exercises.reduce((s,e)=>s+e.sets,0),0),counts=days.map(d=>d.exercises.length),priority=state.priorities.length?` Priority: ${state.priorities.join(", ")}.`:"",ss=state.supersets?" Accessory supersets are used only when pairings are low-interference.":"";return`${totalSets} working sets across ${days.length} days; ${Math.min(...counts)}–${Math.max(...counts)} exercises per session.${priority}${ss}`;}
-function saveGeneratedPlan(root){if(!state.generated)return;const plans=readPlans(),plan={id:`smart-${Date.now()}`,name:`Smart Build — ${GOALS[state.goal].label}`,days:state.generated.days.map(d=>({name:d.name,exercises:d.exercises.map(item=>{const out={id:item.id,sets:item.sets,reps:item.reps};if(item.supersetGroup)out.supersetGroup=item.supersetGroup;return out;})})),smartBuild:{version:8,goal:state.goal,days:state.days,duration:state.duration,priorities:[...state.priorities],experience:state.experience,equipment:[...state.equipment],supersets:state.supersets,createdAt:new Date().toISOString()}};plans.push(plan);localStorage.setItem(PLAN_STORAGE_KEY,JSON.stringify(plans));const button=root.querySelector("[data-smart-save]");if(button){button.disabled=true;button.textContent="Saved ✓";}window.setTimeout(()=>document.querySelector('.nav-btn[data-page="workout"]')?.click(),150);}
+function saveGeneratedPlan(root){if(!state.generated)return;const plans=readPlans(),base=state.generated.baseTemplate||{},plan={id:`smart-${Date.now()}`,name:`Personalized — ${GOALS[state.goal].label}`,days:state.generated.days.map(d=>({name:d.name,exercises:d.exercises.map(item=>{const out={id:item.id,sets:item.sets,reps:item.reps};if(item.supersetGroup)out.supersetGroup=item.supersetGroup;return out;})})),smartBuild:{version:9,goal:state.goal,days:state.days,duration:state.duration,priorities:[...state.priorities],experience:state.experience,equipment:[...state.equipment],supersets:state.supersets,templateId:base.id||"",templateName:base.name||"",templateSourceUrl:base.sourceUrl||"",createdAt:new Date().toISOString()}};plans.push(plan);localStorage.setItem(PLAN_STORAGE_KEY,JSON.stringify(plans));const button=root.querySelector("[data-smart-save]");if(button){button.disabled=true;button.textContent="Saved ✓";}window.setTimeout(()=>document.querySelector('.nav-btn[data-page="workout"]')?.click(),150);}
 function readPlans(){try{const v=JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY)||"[]");return Array.isArray(v)?v:[];}catch{return[];}}
 function exerciseMap(){return new Map(getAllExercises().map(e=>[e.id,e]));}
 function deterministicNoise(text,seed){let h=2166136261^Number(seed||0);for(const ch of String(text||"")){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return Math.abs(h%17);}
