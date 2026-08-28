@@ -97,10 +97,14 @@ export function readSavedMeals() {
 
 export function saveSavedMeal(meal) {
     const meals = readSavedMeals();
+    const photoDataUrl = /^data:image\/(?:jpeg|png|webp);base64,/i.test(String(meal?.photoDataUrl || ""))
+        ? String(meal.photoDataUrl).slice(0, 180000)
+        : "";
     const safeMeal = {
         id: meal?.id || crypto.randomUUID(),
         name: String(meal?.name || "My Meal").trim().slice(0, 100),
         items: (Array.isArray(meal?.items) ? meal.items : []).map(item => mealItemSnapshot(item)).filter(Boolean).slice(0, 50),
+        photoDataUrl,
         updatedAt: new Date().toISOString()
     };
     const next = [safeMeal, ...meals.filter(item => item?.id !== safeMeal.id)].slice(0, 100);
