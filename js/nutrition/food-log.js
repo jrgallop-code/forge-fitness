@@ -25,7 +25,7 @@ import {
     totalServingLabel,
     updateEntry,
     withUsefulLiquidPortions
-} from "./food-log-data.js?v=saved-meal-photo-card-1";
+} from "./food-log-data.js?v=saved-meal-photo-left-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -987,7 +987,7 @@ function renderSavedMeals() {
     container.innerHTML = meals.map((meal, index) => {
         const totals = summarizeEntries(meal.items);
         const photo = meal.photoDataUrl ? `<img class="food-saved-meal-thumbnail" src="${escapeHtml(meal.photoDataUrl)}" alt="${escapeHtml(meal.name)} meal photo">` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
-        return `<article class="food-saved-meal"><div><strong>${escapeHtml(meal.name)}</strong><small>${escapeHtml(mealPreview(meal.items))}</small><span>${Math.round(totals.calories)} kcal · ${meal.items.length} items</span></div><button type="button" class="food-saved-meal-photo" data-saved-meal-photo="${index}" aria-label="${meal.photoDataUrl ? "Change" : "Add"} photo for ${escapeHtml(meal.name)}">${photo}</button><button type="button" class="food-saved-meal-add" data-log-saved-meal="${index}" aria-label="Log ${escapeHtml(meal.name)} to ${selectedMeal}">+</button><button type="button" class="food-saved-meal-delete" data-delete-saved-meal="${escapeHtml(meal.id)}" aria-label="Delete ${escapeHtml(meal.name)}">×</button></article>`;
+        return `<article class="food-saved-meal"><button type="button" class="food-saved-meal-photo" data-saved-meal-photo="${index}" aria-label="${meal.photoDataUrl ? "Change" : "Add"} photo for ${escapeHtml(meal.name)}">${photo}</button><div><strong>${escapeHtml(meal.name)}</strong><small>${escapeHtml(mealPreview(meal.items))}</small><span>${Math.round(totals.calories)} kcal · ${meal.items.length} items</span></div><button type="button" class="food-saved-meal-add" data-log-saved-meal="${index}" aria-label="Log ${escapeHtml(meal.name)} to ${selectedMeal}">+</button><button type="button" class="food-saved-meal-delete" data-delete-saved-meal="${escapeHtml(meal.id)}" aria-label="Delete ${escapeHtml(meal.name)}">×</button></article>`;
     }).join("");
     container.querySelectorAll("[data-log-saved-meal]").forEach(button => button.addEventListener("click", () => {
         const meal = meals[Number(button.dataset.logSavedMeal)];
