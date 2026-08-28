@@ -1,4 +1,4 @@
-import { navigate } from "./core/router.js?v=launcher-grid-hotfix-1";
+import { navigate } from "./core/router.js?v=liquid-serving-units-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=deload-workout-preview-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=repair-generic-exercise-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
