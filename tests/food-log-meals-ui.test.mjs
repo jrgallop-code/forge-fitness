@@ -185,8 +185,18 @@ test("meal ingredient rows keep full-width touch targets and contain their text"
 });
 
 
-test("editing a meal ingredient hides the builder before showing the portion editor", async () => {
-    const module = await read("../js/nutrition/food-log.js");
-    assert.match(module, /editingMealItemIndex = index;\s*addContext = "meal-builder";\s*document\.querySelector\("\[data-meal-builder\]"\)\?\.setAttribute\("hidden", ""\);\s*renderFoodPortionPanel\(food\);/);
-    assert.match(module, /editingMealItemIndex !== null \? "EDIT MEAL ITEM"/);
+test("saved meal ingredients expand into a direct inline editor", async () => {
+    const [module, styles] = await Promise.all([
+        read("../js/nutrition/food-log.js"),
+        read("../css/food-log.css")
+    ]);
+    assert.match(module, /function inlineMealItemEditorMarkup/);
+    assert.match(module, /data-meal-item-serving/);
+    assert.match(module, /data-meal-item-quantity/);
+    assert.match(module, /data-meal-item-save/);
+    assert.match(module, /mealDraft\.items\.splice\(index, 1, createLogEntry/);
+    assert.match(module, /editingMealItemIndex = index;\s*renderMealBuilder\(\);/);
+    assert.doesNotMatch(module, /document\.querySelector\("\[data-meal-builder\]"\)\?\.setAttribute\("hidden", ""\);\s*renderFoodPortionPanel\(food\);/);
+    assert.match(styles, /\.food-builder-items>\.food-builder-item-editor/);
+    assert.match(styles, /\.food-builder-item-actions/);
 });
