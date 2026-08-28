@@ -185,18 +185,19 @@ test("meal ingredient rows keep full-width touch targets and contain their text"
 });
 
 
-test("saved meal ingredients expand into a direct inline editor", async () => {
+test("saved meal ingredients use native expandable editing controls", async () => {
     const [module, styles] = await Promise.all([
         read("../js/nutrition/food-log.js"),
         read("../css/food-log.css")
     ]);
-    assert.match(module, /function inlineMealItemEditorMarkup/);
+    assert.match(module, /<details class="food-builder-item-details"/);
+    assert.match(module, /<summary>/);
     assert.match(module, /data-meal-item-serving/);
     assert.match(module, /data-meal-item-quantity/);
     assert.match(module, /data-meal-item-save/);
+    assert.match(module, /data-meal-item-remove/);
     assert.match(module, /mealDraft\.items\.splice\(index, 1, createLogEntry/);
-    assert.match(module, /editingMealItemIndex = index;\s*renderMealBuilder\(\);/);
-    assert.doesNotMatch(module, /document\.querySelector\("\[data-meal-builder\]"\)\?\.setAttribute\("hidden", ""\);\s*renderFoodPortionPanel\(food\);/);
-    assert.match(styles, /\.food-builder-items>\.food-builder-item-editor/);
-    assert.match(styles, /\.food-builder-item-actions/);
+    assert.doesNotMatch(module, /function openMealItemEditor/);
+    assert.match(styles, /\.food-builder-item-details>summary/);
+    assert.match(styles, /\.food-builder-item-details\[open\]>summary/);
 });
