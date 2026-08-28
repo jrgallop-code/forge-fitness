@@ -26,6 +26,11 @@ import {
     updateEntry,
     withUsefulLiquidPortions
 } from "./food-log-data.js?v=meal-food-editing-1";
+import {
+    chooseIngredientFood,
+    ingredientPortionSelection,
+    parseIngredientText
+} from "./ingredient-paste-parser.js?v=paste-ingredients-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -49,6 +54,7 @@ let barcodeVideoTrack = null;
 let barcodeLookupActive = false;
 let barcodeLookupController = null;
 let zxingLoadPromise = null;
+let mealImportController = null;
 const foodDetailCache = new Map();
 const barcodeFoodCache = new Map();
 
@@ -111,7 +117,7 @@ function renderFoodSheet() {
                     <div class="food-results" data-food-results></div>
                 </div>
                 <div data-food-mode-panel="recent" hidden><div class="food-results" data-food-recents></div></div>
-                <div data-food-mode-panel="meals" hidden><button type="button" class="food-create-meal" data-create-meal>+ Create a Meal</button><div class="food-results" data-saved-meals></div></div>
+                <div data-food-mode-panel="meals" hidden><div class="food-meal-create-actions"><button type="button" class="food-create-meal" data-create-meal>+ Create a Meal</button><button type="button" class="food-create-meal food-paste-meal" data-paste-meal>Paste Ingredients</button></div><div class="food-results" data-saved-meals></div></div>
                 <div data-food-mode-panel="custom" hidden><button type="button" class="food-create-meal" data-create-food>+ Create a Food</button><div data-custom-food-editor hidden>${renderCustomFoodForm()}</div><div class="food-results" data-custom-foods></div></div>
                 </div>
                 <div class="food-portion-panel" data-food-portion hidden></div>
@@ -202,6 +208,7 @@ export function initializeFoodLog() {
     document.querySelector("[data-create-food]")?.addEventListener("click", beginCustomFoodCreation);
     document.querySelector("[data-custom-food-cancel]")?.addEventListener("click", resetCustomFoodEditor);
     document.querySelector("[data-create-meal]")?.addEventListener("click", () => openMealBuilder());
+    document.querySelector("[data-paste-meal]")?.addEventListener("click", () => openMealBuilder([], "", null, { pasteOpen: true }));
     window.addEventListener("levelup:food-log-updated", renderDay);
     renderDay();
 }
@@ -795,7 +802,9 @@ function bindMealItemDetails(panel) {
             const portion = food.portions?.[Number(serving?.value)] || food.portions?.[0];
             if (!portion) return;
             const amount = Math.max(.01, Number(quantity?.value) || 1);
-            mealDraft.items.splice(index, 1, createLogEntry({ meal: selectedMeal, food, portion, quantity: amount }));
+            const updated = createLogEntry({ meal: selectedMeal, food, portion, quantity: amount });
+            if (entry.pasteImported) updated.pasteImported = true;
+            mealDraft.items.splice(index, 1, updated);
             renderMealBuilder();
         });
         details.querySelector("[data-meal-item-remove]")?.addEventListener("click", () => {
@@ -1037,16 +1046,100 @@ function showFoodToast(message) {
     showFoodToast.timer = window.setTimeout(() => { toast.hidden = true; }, 2200);
 }
 
-function openMealBuilder(entries = [], name = "", savedMeal = null) {
+function openMealBuilder(entries = [], name = "", savedMeal = null, options = {}) {
     addContext = "meal-builder";
     editingMealItemIndex = null;
     mealDraft = {
         id: savedMeal?.id || null,
         name: savedMeal?.name ?? name,
         photoDataUrl: savedMeal?.photoDataUrl || "",
-        items: (savedMeal?.items || entries).map(entry => ({ ...entry }))
+        items: (savedMeal?.items || entries).map(entry => ({ ...entry })),
+        pasteOpen: Boolean(options.pasteOpen),
+        pasteText: "",
+        importStatus: "",
+        importUnresolved: [],
+        importing: false
     };
     renderMealBuilder();
+}
+
+function pastedIngredientsMarkup() {
+    const unresolved = Array.isArray(mealDraft?.importUnresolved) ? mealDraft.importUnresolved : [];
+    return `<details class="food-builder-paste" data-meal-paste${mealDraft?.pasteOpen ? " open" : ""}>
+        <summary><span><strong>Paste Ingredients</strong><small>One ingredient per line with its amount</small></span><i aria-hidden="true">›</i></summary>
+        <div class="food-builder-paste-body">
+            <p>Paste a recipe or ingredient list. Level Up will match each food, calculate the quantities, and show the whole-meal macros for review.</p>
+            <textarea data-meal-paste-input rows="6" maxlength="2000" placeholder="400 g potatoes&#10;330 g chicken breast&#10;225 g mixed vegetables&#10;100 g corn&#10;1 tbsp olive oil">${escapeHtml(mealDraft?.pasteText || "")}</textarea>
+            <button type="button" class="primary-btn" data-meal-paste-analyze${mealDraft?.importing ? " disabled" : ""}>${mealDraft?.importing ? "Matching ingredients…" : "Analyze Ingredients"}</button>
+            ${mealDraft?.importStatus ? `<p class="food-builder-import-status" data-meal-import-status aria-live="polite">${escapeHtml(mealDraft.importStatus)}</p>` : '<p class="food-builder-import-status" data-meal-import-status aria-live="polite"></p>'}
+            ${unresolved.length ? `<div class="food-builder-unresolved"><strong>Needs review</strong>${unresolved.map(item => `<span>${escapeHtml(item)}</span>`).join("")}<small>Use “Add Food” below to add or replace anything that did not match.</small></div>` : ""}
+        </div>
+    </details>`;
+}
+
+async function importPastedIngredients() {
+    if (!mealDraft || mealDraft.importing) return;
+    const draft = mealDraft;
+    const input = document.querySelector("[data-meal-paste-input]");
+    mealDraft.pasteText = String(input?.value || mealDraft.pasteText || "").trim();
+    const ingredients = parseIngredientText(mealDraft.pasteText);
+    if (!ingredients.length) {
+        mealDraft.importStatus = "Add at least one ingredient. Put each ingredient on its own line.";
+        renderMealBuilder();
+        return;
+    }
+
+    mealImportController?.abort();
+    mealImportController = new AbortController();
+    mealDraft.importing = true;
+    mealDraft.importStatus = `Matching ${ingredients.length} ingredient${ingredients.length === 1 ? "" : "s"}…`;
+    mealDraft.importUnresolved = [];
+    renderMealBuilder();
+
+    const token = sessionToken();
+    const imported = [];
+    const unresolved = [];
+    try {
+        for (const ingredient of ingredients) {
+            const historyFoods = matchingLoggedFoods(ingredient.name, 8);
+            let foods = historyFoods;
+            if (token) {
+                const response = await fetch(`${API_URL}/v1/foods/search?q=${encodeURIComponent(ingredient.name)}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    signal: mealImportController.signal
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (response.ok) foods = prioritizeLoggedFoodMatches(ingredient.name, payload.foods || [], 20);
+            }
+            const matched = chooseIngredientFood(ingredient, foods);
+            const food = matched ? withUsefulLiquidPortions(matched) : null;
+            const selection = ingredientPortionSelection(ingredient, food);
+            if (!food || !selection?.portion) {
+                unresolved.push(ingredient.original);
+                continue;
+            }
+            const entry = createLogEntry({ meal: selectedMeal, food, portion: selection.portion, quantity: selection.quantity });
+            entry.pasteImported = true;
+            imported.push(entry);
+        }
+    }
+    catch (error) {
+        if (error?.name === "AbortError") return;
+        unresolved.push(...ingredients.slice(imported.length).map(item => item.original));
+    }
+    finally {
+        if (!mealDraft || mealDraft !== draft) return;
+        mealDraft.items = [...mealDraft.items.filter(item => !item?.pasteImported), ...imported];
+        mealDraft.importing = false;
+        mealDraft.importUnresolved = [...new Set(unresolved)];
+        mealDraft.importStatus = imported.length
+            ? `Matched ${imported.length} of ${ingredients.length}. Review the foods and weights below before saving.`
+            : token
+                ? "No ingredients could be matched. Try simpler names or add the foods manually."
+                : "Sign in to match new foods, or use foods you have logged before.";
+        mealDraft.pasteOpen = true;
+        renderMealBuilder();
+    }
 }
 
 function compressMealPhoto(file) {
@@ -1094,6 +1187,7 @@ function renderMealBuilder() {
         <header class="food-builder-heading"><div><span class="eyebrow">MY MEALS</span><h3>${editingMeal ? "Edit Meal" : "Build a Meal"}</h3></div><button type="button" data-meal-builder-close aria-label="Close meal builder">×</button></header>
         <label>Meal name<input type="text" maxlength="100" value="${escapeHtml(mealDraft.name)}" placeholder="Post-workout lunch" data-meal-name></label>
         <div class="food-builder-photo"><button type="button" data-meal-photo-pick>${mealDraft.photoDataUrl ? `<img src="${escapeHtml(mealDraft.photoDataUrl)}" alt="Meal thumbnail"><span>Change photo</span>` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>'}</button>${mealDraft.photoDataUrl ? '<button type="button" data-meal-photo-remove>Remove</button>' : ""}<input type="file" accept="image/*" data-meal-photo-input hidden></div>
+        ${pastedIngredientsMarkup()}
         <div class="food-builder-macros food-portion-preview food-portion-preview--macros">${macroBreakdownMarkup(totals, `Whole meal · ${mealDraft.items.length} item${mealDraft.items.length === 1 ? "" : "s"}`)}</div>
         <div class="food-builder-items">${mealDraft.items.map((entry, index) => mealItemDetailsMarkup(entry, index)).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
         <button type="button" class="food-builder-add" data-meal-builder-add>+ Add Food</button>
@@ -1102,6 +1196,9 @@ function renderMealBuilder() {
     panel.querySelector("[data-meal-photo-pick]")?.addEventListener("click", () => panel.querySelector("[data-meal-photo-input]")?.click());
     panel.querySelector("[data-meal-photo-input]")?.addEventListener("change", event => { if (event.currentTarget.files?.[0]) void setMealDraftPhoto(event.currentTarget.files[0]); });
     panel.querySelector("[data-meal-photo-remove]")?.addEventListener("click", () => { mealDraft.photoDataUrl = ""; renderMealBuilder(); });
+    panel.querySelector("[data-meal-paste]")?.addEventListener("toggle", event => { mealDraft.pasteOpen = event.currentTarget.open; });
+    panel.querySelector("[data-meal-paste-input]")?.addEventListener("input", event => { mealDraft.pasteText = event.currentTarget.value; });
+    panel.querySelector("[data-meal-paste-analyze]")?.addEventListener("click", () => { void importPastedIngredients(); });
     panel.querySelector("[data-meal-builder-close]")?.addEventListener("click", () => { panel.hidden = true; addContext = "log"; editingMealItemIndex = null; showFoodMode("meals"); });
     panel.querySelector("[data-meal-builder-add]")?.addEventListener("click", () => { panel.hidden = true; addContext = "meal-builder"; editingMealItemIndex = null; showFoodMode("recent"); });
     bindMealItemDetails(panel);
