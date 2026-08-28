@@ -1,22 +1,22 @@
 .level-up-coach-launcher {
-  display: grid;
-  gap: 16px;
-  padding: 18px;
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 22px;
-  background: linear-gradient(155deg, rgba(31,31,35,.98), rgba(13,13,15,.98));
-  overflow: hidden;
+  display:grid;
+  gap:12px;
+  padding:14px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  background:linear-gradient(155deg,rgba(31,31,35,.98),rgba(13,13,15,.98));
+  overflow:hidden;
 }
-.level-up-coach-heading { display:grid; gap:5px; }
-.level-up-coach-heading h3 { margin:0; font-size:22px; letter-spacing:-.025em; }
-.level-up-coach-heading p { margin:0; color:#a1a1aa; font-size:13px; line-height:1.45; }
+.level-up-coach-heading { display:grid; gap:4px; }
+.level-up-coach-heading h3 { margin:0; font-size:20px; letter-spacing:-.025em; }
+.level-up-coach-heading p { margin:0; color:#a1a1aa; font-size:12px; line-height:1.4; }
 .level-up-coach-scroll {
   display:grid;
   grid-auto-flow:column;
-  grid-auto-columns:minmax(248px, 78vw);
-  gap:12px;
+  grid-auto-columns:minmax(216px,70vw);
+  gap:9px;
   overflow-x:auto;
-  padding:2px 1px 8px;
+  padding:1px 1px 5px;
   scroll-snap-type:x mandatory;
   scrollbar-width:none;
 }
@@ -24,64 +24,163 @@
 .level-up-coach-card {
   position:relative;
   display:grid;
-  grid-template-columns:72px 1fr;
-  gap:12px;
-  min-height:170px;
-  padding:14px;
+  grid-template-columns:54px minmax(0,1fr);
+  align-content:start;
+  gap:8px 10px;
+  min-height:122px;
+  padding:11px;
   border:1px solid #34343b;
-  border-radius:18px;
+  border-radius:15px;
   background:#19191d;
   color:#f4f4f5;
   text-align:left;
   scroll-snap-align:start;
   overflow:hidden;
 }
-.level-up-coach-card.is-selected { border-color:rgba(255,55,67,.72); box-shadow:0 0 0 1px rgba(255,55,67,.18); }
-.level-up-coach-card img { width:72px; height:72px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,55,67,.55); }
-.level-up-coach-card-copy { display:grid; align-content:start; gap:2px; min-width:0; }
-.level-up-coach-card-copy small { color:#ff4b57; font-size:9px; font-weight:800; letter-spacing:.13em; }
-.level-up-coach-card-copy strong { font-size:18px; line-height:1.15; }
-.level-up-coach-card-copy em { color:#d4d4d8; font-size:12px; font-style:normal; font-weight:700; }
-.level-up-coach-card-copy > span { grid-column:1/-1; margin-top:7px; color:#a1a1aa; font-size:12px; line-height:1.4; }
-.level-up-coach-card > b {
-  grid-column:1/-1;
-  display:flex;
-  justify-content:center;
-  padding:10px 12px;
-  border-radius:12px;
-  background:rgba(255,55,67,.12);
-  color:#ff5964;
-  font-size:12px;
+.level-up-coach-card.is-selected {
+  border-color:rgba(255,55,67,.72);
+  box-shadow:0 0 0 1px rgba(255,55,67,.16);
 }
-.level-up-workout-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.level-up-workout-actions button { display:grid; justify-items:start; gap:2px; min-height:68px; padding:12px; text-align:left; }
-.level-up-workout-actions strong { color:#f4f4f5; font-size:13px; }
-.level-up-workout-actions small { color:#8f8f98; font-size:10px; line-height:1.25; }
+.level-up-coach-card img {
+  width:54px;
+  height:54px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid rgba(255,55,67,.55);
+}
+.level-up-coach-card-copy { display:grid; align-content:start; gap:1px; min-width:0; }
+.level-up-coach-card-copy small { color:#ff4b57; font-size:8px; font-weight:800; letter-spacing:.12em; }
+.level-up-coach-card-copy strong { font-size:15px; line-height:1.15; }
+.level-up-coach-card-copy em { color:#d4d4d8; font-size:10px; font-style:normal; font-weight:700; }
+.level-up-coach-card-copy > span {
+  grid-column:1/-1;
+  display:-webkit-box;
+  overflow:hidden;
+  margin-top:4px;
+  color:#a1a1aa;
+  font-size:10px;
+  line-height:1.35;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+}
+.level-up-coach-card > b {
+  grid-column:2;
+  display:flex;
+  justify-content:flex-start;
+  padding:0;
+  background:transparent;
+  color:#ff5964;
+  font-size:10px;
+}
+.level-up-workout-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.level-up-workout-actions button { display:grid; justify-items:start; gap:1px; min-height:58px; padding:10px; text-align:left; }
+.level-up-workout-actions strong { color:#f4f4f5; font-size:12px; }
+.level-up-workout-actions small { color:#8f8f98; font-size:9px; line-height:1.2; }
+
 .smart-coach-context {
   display:flex;
   align-items:center;
-  gap:10px;
-  margin:0 0 14px;
-  padding:10px 12px;
+  gap:9px;
+  margin:0 0 12px;
+  padding:9px 10px;
   border:1px solid rgba(255,55,67,.25);
-  border-radius:15px;
+  border-radius:13px;
   background:rgba(255,55,67,.07);
 }
-.smart-coach-context img { width:44px; height:44px; object-fit:cover; border-radius:50%; }
-.smart-coach-context span { display:grid; gap:2px; }
-.smart-coach-context small { color:#ff5964; font-size:9px; font-weight:800; letter-spacing:.12em; }
-.smart-coach-context strong { color:#f4f4f5; font-size:12px; }
-.catalogue-coach-match { display:flex; align-items:center; gap:9px; margin:10px 0 5px; }
-.catalogue-coach-match img { width:38px; height:38px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,55,67,.55); }
-.catalogue-coach-match > span { display:grid; gap:1px; text-align:left; }
-.catalogue-coach-match small { color:#ff5964; font-size:8px; font-weight:800; letter-spacing:.12em; }
-.catalogue-coach-match strong { color:#e4e4e7; font-size:11px; }
+.smart-coach-context img { width:40px; height:40px; object-fit:cover; border-radius:50%; }
+.smart-coach-context span { display:grid; gap:1px; }
+.smart-coach-context small { color:#ff5964; font-size:8px; font-weight:800; letter-spacing:.11em; }
+.smart-coach-context strong { color:#f4f4f5; font-size:11px; }
+
+/* Browse Library: one compact, full-width plan per row. */
+.catalogue-grid {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:10px!important;
+}
+.catalogue-plan-card {
+  width:100%;
+  min-width:0;
+  display:grid!important;
+  grid-template-columns:52px minmax(0,1fr)!important;
+  grid-auto-flow:row;
+  column-gap:12px;
+  row-gap:5px;
+  padding:14px!important;
+  border-radius:16px!important;
+  text-align:left!important;
+}
+.catalogue-plan-card > * { grid-column:2; min-width:0; }
+.catalogue-plan-card > .catalogue-coach-avatar {
+  grid-column:1;
+  grid-row:1 / span 7;
+  align-self:start;
+  display:block;
+}
+.catalogue-coach-avatar img {
+  display:block;
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid rgba(255,55,67,.62);
+}
+.catalogue-plan-card .template-card-top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.catalogue-plan-card h4 {
+  margin:0!important;
+  font-size:16px;
+  line-height:1.2;
+  letter-spacing:-.015em;
+}
+.catalogue-coach-line {
+  color:#ff5964;
+  font-size:10px;
+  font-weight:700;
+}
+.catalogue-plan-card p {
+  display:-webkit-box;
+  overflow:hidden;
+  margin:1px 0 0;
+  color:#a1a1aa;
+  font-size:11px;
+  line-height:1.35;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+}
+.catalogue-plan-card .template-details {
+  display:flex;
+  flex-direction:row!important;
+  flex-wrap:wrap;
+  gap:5px!important;
+  margin-top:2px;
+  font-size:9px;
+}
+.catalogue-plan-card .catalogue-equipment {
+  margin-top:1px;
+  font-size:9px;
+}
+.catalogue-plan-card .template-action {
+  margin-top:2px;
+  font-size:10px;
+}
 .catalogue-more-filters [data-catalogue-coach] { width:100%; }
+
 @media (min-width:700px) {
-  .level-up-coach-scroll { grid-auto-columns:minmax(250px, 1fr); grid-template-columns:repeat(4,1fr); grid-auto-flow:row; overflow:visible; }
-  .level-up-coach-card { grid-template-columns:64px 1fr; }
+  .level-up-coach-scroll {
+    grid-auto-columns:minmax(218px,1fr);
+    grid-template-columns:repeat(4,1fr);
+    grid-auto-flow:row;
+    overflow:visible;
+  }
 }
 @media (max-width:420px) {
-  .level-up-workout-actions { grid-template-columns:1fr 1fr; }
-  .level-up-coach-launcher { padding:15px; }
+  .level-up-coach-launcher { padding:12px; }
+  .level-up-coach-scroll { grid-auto-columns:minmax(208px,72vw); }
+  .catalogue-plan-card { grid-template-columns:46px minmax(0,1fr)!important; padding:12px!important; }
+  .catalogue-coach-avatar img { width:46px; height:46px; }
 }
