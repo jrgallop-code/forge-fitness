@@ -184,3 +184,45 @@
   .catalogue-plan-card { grid-template-columns:46px minmax(0,1fr)!important; padding:12px!important; }
   .catalogue-coach-avatar img { width:46px; height:46px; }
 }
+
+
+/* Macro-inspired catalogue criteria badges: carbs blue, fat purple, protein green, Level Up red. */
+.catalogue-plan-card .template-details span,
+.catalogue-plan-card .catalogue-equipment {
+  display:inline-flex;
+  align-items:center;
+  width:auto;
+  min-height:25px;
+  padding:5px 8px;
+  border:1px solid transparent;
+  border-radius:8px;
+  font-size:9px;
+  font-weight:800;
+  line-height:1.15;
+  white-space:nowrap;
+}
+.catalogue-plan-card .template-details span:nth-child(1) {
+  color:#55b1ff;
+  background:rgba(67,164,255,.13);
+  border-color:rgba(67,164,255,.24);
+}
+.catalogue-plan-card .template-details span:nth-child(2) {
+  color:#9b8cff;
+  background:rgba(126,107,255,.13);
+  border-color:rgba(126,107,255,.24);
+}
+.catalogue-plan-card .template-details span:nth-child(3) {
+  color:#43d8b2;
+  background:rgba(46,207,166,.13);
+  border-color:rgba(46,207,166,.24);
+}
+.catalogue-plan-card .catalogue-equipment {
+  justify-self:start;
+  overflow:hidden;
+  max-width:100%;
+  margin-top:1px;
+  color:#ff6570;
+  background:rgba(255,55,67,.12);
+  border-color:rgba(255,55,67,.23);
+  text-overflow:ellipsis;
+}
