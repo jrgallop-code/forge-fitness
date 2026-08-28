@@ -1,0 +1,87 @@
+.level-up-coach-launcher {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 22px;
+  background: linear-gradient(155deg, rgba(31,31,35,.98), rgba(13,13,15,.98));
+  overflow: hidden;
+}
+.level-up-coach-heading { display:grid; gap:5px; }
+.level-up-coach-heading h3 { margin:0; font-size:22px; letter-spacing:-.025em; }
+.level-up-coach-heading p { margin:0; color:#a1a1aa; font-size:13px; line-height:1.45; }
+.level-up-coach-scroll {
+  display:grid;
+  grid-auto-flow:column;
+  grid-auto-columns:minmax(248px, 78vw);
+  gap:12px;
+  overflow-x:auto;
+  padding:2px 1px 8px;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:none;
+}
+.level-up-coach-scroll::-webkit-scrollbar { display:none; }
+.level-up-coach-card {
+  position:relative;
+  display:grid;
+  grid-template-columns:72px 1fr;
+  gap:12px;
+  min-height:170px;
+  padding:14px;
+  border:1px solid #34343b;
+  border-radius:18px;
+  background:#19191d;
+  color:#f4f4f5;
+  text-align:left;
+  scroll-snap-align:start;
+  overflow:hidden;
+}
+.level-up-coach-card.is-selected { border-color:rgba(255,55,67,.72); box-shadow:0 0 0 1px rgba(255,55,67,.18); }
+.level-up-coach-card img { width:72px; height:72px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,55,67,.55); }
+.level-up-coach-card-copy { display:grid; align-content:start; gap:2px; min-width:0; }
+.level-up-coach-card-copy small { color:#ff4b57; font-size:9px; font-weight:800; letter-spacing:.13em; }
+.level-up-coach-card-copy strong { font-size:18px; line-height:1.15; }
+.level-up-coach-card-copy em { color:#d4d4d8; font-size:12px; font-style:normal; font-weight:700; }
+.level-up-coach-card-copy > span { grid-column:1/-1; margin-top:7px; color:#a1a1aa; font-size:12px; line-height:1.4; }
+.level-up-coach-card > b {
+  grid-column:1/-1;
+  display:flex;
+  justify-content:center;
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(255,55,67,.12);
+  color:#ff5964;
+  font-size:12px;
+}
+.level-up-workout-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.level-up-workout-actions button { display:grid; justify-items:start; gap:2px; min-height:68px; padding:12px; text-align:left; }
+.level-up-workout-actions strong { color:#f4f4f5; font-size:13px; }
+.level-up-workout-actions small { color:#8f8f98; font-size:10px; line-height:1.25; }
+.smart-coach-context {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:0 0 14px;
+  padding:10px 12px;
+  border:1px solid rgba(255,55,67,.25);
+  border-radius:15px;
+  background:rgba(255,55,67,.07);
+}
+.smart-coach-context img { width:44px; height:44px; object-fit:cover; border-radius:50%; }
+.smart-coach-context span { display:grid; gap:2px; }
+.smart-coach-context small { color:#ff5964; font-size:9px; font-weight:800; letter-spacing:.12em; }
+.smart-coach-context strong { color:#f4f4f5; font-size:12px; }
+.catalogue-coach-match { display:flex; align-items:center; gap:9px; margin:10px 0 5px; }
+.catalogue-coach-match img { width:38px; height:38px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,55,67,.55); }
+.catalogue-coach-match > span { display:grid; gap:1px; text-align:left; }
+.catalogue-coach-match small { color:#ff5964; font-size:8px; font-weight:800; letter-spacing:.12em; }
+.catalogue-coach-match strong { color:#e4e4e7; font-size:11px; }
+.catalogue-more-filters [data-catalogue-coach] { width:100%; }
+@media (min-width:700px) {
+  .level-up-coach-scroll { grid-auto-columns:minmax(250px, 1fr); grid-template-columns:repeat(4,1fr); grid-auto-flow:row; overflow:visible; }
+  .level-up-coach-card { grid-template-columns:64px 1fr; }
+}
+@media (max-width:420px) {
+  .level-up-workout-actions { grid-template-columns:1fr 1fr; }
+  .level-up-coach-launcher { padding:15px; }
+}
