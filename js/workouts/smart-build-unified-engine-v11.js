@@ -12,10 +12,10 @@ const MAX_EFFECTIVE = 20;
 const SPLIT_PREFERENCES = new Set(["auto", "full-body", "upper-lower"]);
 const COACH_STORAGE_KEY = "level_up_selected_coach";
 const VIRTUAL_COACHES = {
-  maya: { name: "Maya", specialty: "Muscle Growth" },
-  marcus: { name: "Marcus", specialty: "Strength" },
+  maya: { name: "Maya", specialty: "Home & Time-Efficient" },
+  marcus: { name: "Marcus", specialty: "Strength & Muscle" },
   elena: { name: "Elena", specialty: "Beginner & Technique" },
-  owen: { name: "Owen", specialty: "Home & Time-Efficient" }
+  owen: { name: "Owen", specialty: "Muscle Growth" }
 };
 const SUPPLEMENTAL_PROVEN_TEMPLATES = [
   {
@@ -470,13 +470,17 @@ function selectBaseTemplate(exerciseMap, pool) {
 }
 
 function scoreCoachTemplate(coachId, type, level, estimated) {
-  if (coachId === "marcus") return /strength|hybrid/.test(type) ? 20 : 0;
+  if (coachId === "marcus") {
+    if (/strength/.test(type)) return 22;
+    if (/hybrid/.test(type)) return 18;
+    return /hypertrophy|bodybuilding/.test(type) ? 12 : 0;
+  }
   if (coachId === "elena") return level.includes("beginner") ? 20 : (level.includes("intermediate") ? 6 : 0);
-  if (coachId === "owen") {
+  if (coachId === "maya") {
     const shortest = Math.min(...estimated);
     return Math.max(0, 18 - Math.abs(shortest - 45) * 0.45);
   }
-  return /hypertrophy|hybrid/.test(type) ? 20 : 0;
+  return /hypertrophy|hybrid|bodybuilding/.test(type) ? 22 : 0;
 }
 
 function templateSplit(plan, exerciseMap) {
