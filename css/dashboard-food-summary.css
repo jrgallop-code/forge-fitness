@@ -170,8 +170,20 @@
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: #4bd184;
-    box-shadow: 0 0 8px rgba(75, 209, 132, .18);
+    background: var(--macro-color, #4bd184);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--macro-color, #4bd184) 30%, transparent);
+}
+
+.dashboard-macro-progress--carbs {
+    --macro-color: #34c7bd;
+}
+
+.dashboard-macro-progress--fat {
+    --macro-color: #a855f7;
+}
+
+.dashboard-macro-progress--protein {
+    --macro-color: #ffb547;
 }
 
 @media (max-width: 380px) {
