@@ -102,3 +102,17 @@
 .custom-food-actions>[data-custom-food-cancel][hidden]{display:none}
 .custom-food-actions>[data-custom-food-cancel][hidden]+button{grid-column:1/-1}
 @media(max-width:380px){.food-custom-row{grid-template-columns:minmax(0,1fr) 48px}.food-custom-edit{font-size:10px}}
+
+
+/* Direct saved-meal ingredient editor */
+.food-builder-items>.food-builder-item-editor{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-height:0;padding:14px;overflow:visible;border-color:#4a2b2f;background:#1d1d21}
+.food-builder-item-editor>header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.food-builder-item-editor>header>div{display:grid;gap:3px;min-width:0}
+.food-builder-item-editor>header strong{overflow:hidden;color:#f7f7f8;font-size:16px;text-overflow:ellipsis;white-space:nowrap}
+.food-builder-item-editor>header button{width:34px;height:34px;border:1px solid #414148;border-radius:50%;background:#242429;color:#aaaab3;font-size:20px}
+.food-builder-item-editor>label{display:grid;gap:6px;color:#aaaab3;font-size:11.5px;font-weight:650}
+.food-builder-item-editor select,.food-builder-item-editor input{width:100%;min-height:48px;padding:0 13px;border:1px solid #43434b;border-radius:13px;background:#222226;color:#f7f7f8;font:inherit}
+.food-builder-item-editor .food-portion-preview{margin:0}
+.food-builder-item-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:8px}
+.food-builder-item-editor .food-builder-item-actions button{width:100%;height:46px;min-height:46px;border:1px solid #414148;border-radius:13px;background:transparent;color:#aaaab3;font:700 12px/1 inherit}
+.food-builder-item-editor .food-builder-item-actions .primary-btn{border-color:#ff3444;background:#ff2434;color:#fff}
