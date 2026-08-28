@@ -11,7 +11,7 @@ import {
     localDateKey,
     summarizeEntries
 }
-from "../nutrition/food-log-data.js?v=food-log-meals-v2";
+from "../nutrition/food-log-data.js?v=liquid-serving-units-1";
 import {
     calculateMacroTargets,
     poundsToKg
