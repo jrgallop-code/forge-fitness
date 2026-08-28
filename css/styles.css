@@ -2260,7 +2260,7 @@ a {
 #content {
     width:min(1180px, 100%);
     margin:0 auto;
-    padding:30px 22px 10px;
+    padding:calc(env(safe-area-inset-top) + 22px) 22px 10px;
 }
 
 .hero {
@@ -2609,7 +2609,7 @@ textarea:focus {
     }
 
     #content {
-        padding:20px 15px 6px;
+        padding:calc(env(safe-area-inset-top) + 16px) 15px 6px;
     }
 
     .hero {
