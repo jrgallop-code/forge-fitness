@@ -63,6 +63,14 @@ test("My Meals can build a reusable meal from pasted ingredients", async () => {
     assert.match(styles, /\.food-builder-paste/);
 });
 
+test("the pasted ingredient field does not collapse behind meal cards when the iOS keyboard opens", async () => {
+    const styles = await read("../css/food-log.css");
+    assert.match(styles, /\.food-meal-builder:not\(\[hidden\]\)>\*\{flex:0 0 auto\}/);
+    assert.match(styles, /\.food-builder-paste\{flex:0 0 auto;min-height:62px\}/);
+    assert.match(styles, /\.food-builder-paste textarea\{[^}]*height:150px;min-height:150px/);
+    assert.match(styles, /scroll-padding-bottom:max\(260px,42dvh\)/);
+});
+
 test("logged meal items open an editor for serving, meal, quantity, or removal", async () => {
     const [module, styles] = await Promise.all([read("../js/nutrition/food-log.js"), read("../css/food-log.css")]);
     assert.match(module, /data-food-edit=/);
