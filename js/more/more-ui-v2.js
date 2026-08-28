@@ -1,4 +1,4 @@
-import "./contact-support.js?v=contact-support-2";
+import "./contact-support.js?v=compact-more-groups-1";
 import { navigate } from "../core/router.js?v=deload-workout-preview-1";
 import { renderExportBackup } from "./export-backup-ui.js?v=full-data-export-1";
 import { initializeBackupManager } from "../core/backup-manager.js?v=backup-complete-6";
@@ -26,20 +26,26 @@ const ICONS = {
 };
 
 export function renderMore() {
-    return `<section class="dashboard-welcome"><div><span class="eyebrow">TOOLS & TRACKERS</span><h2>More</h2><p>Open a focused tool without scrolling through a long page.</p></div></section>
+    return `<section class="more-compact-header"><span class="eyebrow">SETTINGS & TOOLS</span><h2>More</h2></section>
     <section class="more-menu-grid" aria-label="More tools">
+    <div class="more-menu-group" data-more-group="account"><h3>Account &amp; app</h3>
     <button class="more-menu-card" type="button" data-more-page="account-cloud"><span class="more-menu-icon">${ICONS.account}</span><span><strong>Account & Cloud</strong><small>Sign in for private beta cloud backup and device transfer.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Switch between imperial and metric measurements throughout Level Up.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="adaptive-guidance"><span class="more-menu-icon">${ICONS.guidance}</span><span><strong class="adaptive-title-with-badge">Adaptive Guidance <span class="adaptive-beta-badge">BETA</span></strong><small>Optional recovery, effort, volume and deload suggestions.</small></span></button>
     <button class="more-menu-card owner-analytics-launch" id="owner-analytics-menu" type="button" data-more-page="admin-analytics" hidden><span class="more-menu-icon">${ICONS.analytics}</span><span><strong>Stats & Analytics</strong><small>Owner-only charts for growth, activity and training engagement.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Profile & Appearance</strong><small>Update your personal details, training experience and anatomy appearance.</small></span></button>
+    </div>
+    <div class="more-menu-group" data-more-group="health"><h3>Health &amp; records</h3>
     <button class="more-menu-card" type="button" data-more-page="history"><span class="more-menu-icon">${ICONS.history}</span><span><strong>Workout History</strong><small>Review completed workouts, summaries and training details.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="bmi"><span class="more-menu-icon">${ICONS.bmi}</span><span><strong>BMI</strong><small>View BMI calculated from your Body Profile height and weight.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="sleep"><span class="more-menu-icon">${ICONS.sleep}</span><span><strong>Sleep</strong><small>Track sleep duration, quality and recovery notes.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="measurements"><span class="more-menu-icon">${ICONS.measurements}</span><span><strong>Measurements</strong><small>Track body measurements and directional changes over time.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="water"><span class="more-menu-icon">${ICONS.water}</span><span><strong>Water Log</strong><small>Record daily water and review recent entries.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="nutrition"><span class="more-menu-icon">${ICONS.nutrition}</span><span><strong>Nutrition</strong><small>Open nutrition guidance and related tools.</small></span></button>
+    </div>
+    <div class="more-menu-group" data-more-group="app-data"><h3>Support &amp; data</h3>
     <button class="more-menu-card" type="button" data-more-page="exports-backup"><span class="more-menu-icon">${ICONS.backup}</span><span><strong>Exports & Backup</strong><small>Export, restore and transfer your Level Up data with Google Drive.</small></span></button>
+    </div>
     </section>`;
 }
 
