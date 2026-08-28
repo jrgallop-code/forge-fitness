@@ -31,7 +31,7 @@ export function initializeRoutineImporter(root = document) {
 
 function ensureStyles() {
   if (document.querySelector('link[href*="routine-importer.css"]')) return;
-  ["css/routine-importer.css?v=equal-launch-cards-1", "css/routine-importer-summary.css?v=routine-import-1"].forEach(href => {
+  ["css/routine-importer.css?v=launcher-grid-hotfix-1", "css/routine-importer-summary.css?v=routine-import-1"].forEach(href => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = href;
