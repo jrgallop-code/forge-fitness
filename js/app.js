@@ -1,4 +1,4 @@
-import { navigate } from "./core/router.js?v=native-meal-item-details-1";
+import { navigate } from "./core/router.js?v=proven-template-builder-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=deload-workout-preview-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=repair-generic-exercise-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";

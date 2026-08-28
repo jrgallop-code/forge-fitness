@@ -7,7 +7,7 @@ from "./exercise-library.js?v=exercise-library-catalogue-2";
 import {
     presetPlans
 }
-from "./workout-plans.js?v=workout-plans-2";
+from "./workout-plans.js?v=proven-template-builder-1";
 
 import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-plans-2-women-heroes";
 import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybuilder-library-3";

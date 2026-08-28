@@ -1,5 +1,5 @@
-import { presetPlans } from "./workout-plans.js?v=workout-plans-2";
-import { presetPlans as detailPresetPlans } from "./workout-plans.js";
+import { presetPlans } from "./workout-plans.js?v=proven-template-builder-1";
+import { presetPlans as detailPresetPlans } from "./workout-plans.js?v=proven-template-builder-1";
 import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-plans-2-women-heroes";
 import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybuilder-library-3";
 import { celebrityExpansionPlans } from "./celebrity-expansion-plans.js?v=celebrity-expansion-1";
