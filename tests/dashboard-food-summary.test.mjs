@@ -31,6 +31,7 @@ test("dashboard combines today's calorie and macro progress into one full-width 
     assert.doesNotMatch(module, /overDashOffset/);
     assert.match(module, /overTarget \/ calories/);
     assert.match(styles, /dashboard-calorie-arc-overflow/);
+    assert.match(styles, /dashboard-calorie-arc-overflow[\\s\\S]*stroke-linecap:\\s*butt/);
 });
 
 test("calorie summary toggles between consumed and remaining and links to Food Log", async () => {
