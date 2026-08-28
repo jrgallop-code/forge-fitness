@@ -7,7 +7,9 @@ import {
     logSavedMeal,
     localDateKey,
     mealPreview,
+    matchingLoggedFoods,
     previousDateKey,
+    prioritizeLoggedFoodMatches,
     readCustomFoods,
     readSavedMeals,
     recentFoods,
@@ -20,7 +22,7 @@ import {
     scaledNutrition,
     summarizeEntries,
     updateEntry
-} from "./food-log-data.js?v=food-log-edit-1";
+} from "./food-log-data.js?v=food-history-priority-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -34,6 +36,7 @@ let addContext = "log";
 let mealDraft = null;
 let editingEntryId = null;
 let foodSearchController = null;
+let foodSearchTimer = null;
 let foodDetailController = null;
 let foodSelectionRequest = 0;
 let barcodeScannerControls = null;
@@ -176,7 +179,13 @@ export function initializeFoodLog() {
     document.querySelectorAll("[data-food-close]").forEach(button => button.addEventListener("click", closeFoodSheet));
     document.querySelectorAll("[data-food-mode]").forEach(button => button.addEventListener("click", () => showFoodMode(button.dataset.foodMode)));
     document.querySelectorAll("[data-food-target-meal]").forEach(button => button.addEventListener("click", () => selectTargetMeal(button.dataset.foodTargetMeal)));
-    document.querySelector("[data-food-search-form]")?.addEventListener("submit", searchFoods);
+    const foodSearchForm = document.querySelector("[data-food-search-form]");
+    foodSearchForm?.addEventListener("submit", searchFoods);
+    foodSearchForm?.querySelector('input[name="query"]')?.addEventListener("input", event => {
+        window.clearTimeout(foodSearchTimer);
+        if (String(event.currentTarget.value || "").trim().length < 2) return;
+        foodSearchTimer = window.setTimeout(() => foodSearchForm.requestSubmit(), 300);
+    });
     document.querySelector("[data-barcode-open]")?.addEventListener("click", openBarcodeScanner);
     document.querySelector("[data-barcode-close]")?.addEventListener("click", closeBarcodeScanner);
     document.querySelector("[data-barcode-form]")?.addEventListener("submit", submitManualBarcode);
@@ -555,7 +564,11 @@ async function searchFoods(event) {
     showFoodMode("search");
     if (query.length < 2) return setText("[data-food-search-status]", "Enter at least 2 characters.");
     const token = sessionToken();
-    if (!token) return setText("[data-food-search-status]", "Sign in to search foods. Custom foods still work offline.");
+    const historyFoods = matchingLoggedFoods(query, 20);
+    if (!token) {
+        renderFoodResults(document.querySelector("[data-food-results]"), historyFoods);
+        return setText("[data-food-search-status]", historyFoods.length ? `${historyFoods.length} previously logged matches` : "Sign in to search foods. Custom foods still work offline.");
+    }
     setText("[data-food-search-status]", "Searching Level Up and USDA foods…");
     const results = document.querySelector("[data-food-results]");
     if (results) results.innerHTML = "";
@@ -568,10 +581,12 @@ async function searchFoods(event) {
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(payload.error || "Food search could not be loaded.");
-        renderFoodResults(results, payload.foods || []);
-        const verifiedCount = (payload.foods || []).filter(food => food?.source === "levelup").length;
-        const countLabel = `${payload.foods?.length || 0} matches${verifiedCount ? ` · ${verifiedCount} Level Up verified` : ""}`;
-        setText("[data-food-search-status]", payload.foods?.length ? countLabel : "No matches. Try a simpler name or create a custom food.");
+        const foods = prioritizeLoggedFoodMatches(query, payload.foods || []);
+        renderFoodResults(results, foods);
+        const verifiedCount = foods.filter(food => food?.source === "levelup").length;
+        const historyCount = foods.filter(food => food?.previouslyLogged).length;
+        const countLabel = `${foods.length} matches${historyCount ? ` · ${historyCount} previously logged` : ""}${verifiedCount ? ` · ${verifiedCount} Level Up verified` : ""}`;
+        setText("[data-food-search-status]", foods.length ? countLabel : "No matches. Try a simpler name or create a custom food.");
     }
     catch (error) {
         if (error?.name === "AbortError") return;
@@ -587,7 +602,9 @@ function renderFoodResults(container, foods) {
 
 function foodResultMarkup(food, index) {
     const portion = food.portions?.[0];
-    const sourceLabel = food.source === "levelup"
+    const sourceLabel = food.previouslyLogged
+        ? `${food.brand || "Your history"} · Previously logged`
+        : food.source === "levelup"
         ? `${food.brand || "Level Up"} · Verified`
         : (food.brand || food.dataType || "USDA food");
     return `<button class="food-result" type="button" data-food-result="${index}"><span><strong>${escapeHtml(food.name)}</strong><small>${escapeHtml(sourceLabel)}</small></span><b>${Math.round(portion?.nutrition?.calories || 0)} kcal<small>${escapeHtml(portion?.label || "per 100 g")}</small></b></button>`;
