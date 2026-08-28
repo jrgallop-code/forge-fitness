@@ -175,3 +175,11 @@ test("custom foods can be edited and saved over their existing record", async ()
     assert.match(styles, /\.food-custom-edit/);
     assert.match(styles, /\.custom-food-actions/);
 });
+
+
+test("meal ingredient rows keep full-width touch targets and contain their text", async () => {
+    const styles = await read("../css/food-log.css");
+    assert.match(styles, /\.food-builder-items \.food-builder-item-edit\{[^}]*width:100%;height:auto;[^}]*min-height:62px;[^}]*overflow:hidden/);
+    assert.match(styles, /\.food-builder-item-edit strong,\.food-builder-item-edit small\{[^}]*text-overflow:ellipsis;white-space:nowrap/);
+    assert.match(styles, /\[data-remove-meal-item\]\{width:42px;height:42px/);
+});

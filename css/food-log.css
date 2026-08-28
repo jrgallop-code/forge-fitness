@@ -85,11 +85,16 @@
 .food-saved-meal-edit small{color:#a4a4ad}
 .food-saved-meal-edit span{color:#777781;font-size:11px;font-weight:700}
 .food-builder-macros{margin:0}
-.food-builder-items>div{grid-template-columns:minmax(0,1fr) 32px;padding:0 4px 0 0}
-.food-builder-item-edit{display:grid;grid-template-columns:minmax(0,1fr) auto 12px;align-items:center;gap:8px;width:100%;min-width:0;padding:11px;border:0;background:transparent;color:#f5f5f6;font:inherit;text-align:left}
-.food-builder-item-edit span{display:grid;gap:3px;min-width:0}
+.food-builder-items>div{grid-template-columns:minmax(0,1fr) 42px;min-height:64px;padding:0}
+.food-builder-items .food-builder-item-edit{display:grid;grid-template-columns:minmax(0,1fr) auto 12px;align-items:center;gap:8px;width:100%;height:auto;min-width:0;min-height:62px;padding:11px;overflow:hidden;border:0;background:transparent;color:#f5f5f6;font:inherit;text-align:left}
+.food-builder-items .food-builder-item-edit:active{background:#25252a}
+.food-builder-item-edit span{display:grid;gap:3px;min-width:0;overflow:hidden}
+.food-builder-item-edit strong,.food-builder-item-edit small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.food-builder-item-edit strong{font-size:14px;line-height:1.25}
+.food-builder-item-edit small{font-size:11px;line-height:1.25}
 .food-builder-item-edit b{font-size:12px;white-space:nowrap}
 .food-builder-item-edit i{color:#777780;font-size:21px;font-style:normal}
+.food-builder-items>div>[data-remove-meal-item]{width:42px;height:42px;border-radius:10px}
 .food-custom-row{display:grid;grid-template-columns:minmax(0,1fr) 52px;align-items:stretch;gap:7px}
 .food-custom-edit{border:1px solid #393940;border-radius:14px;background:#242429;color:#ff5360;font:700 11px/1 inherit}
 .custom-food-actions{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px}
