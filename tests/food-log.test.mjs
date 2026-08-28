@@ -72,6 +72,35 @@ test("food log preserves gram amounts above 100 from barcode portions", () => {
     assert.equal(entry.nutrition.carbs, 45);
 });
 
+test("matching logged foods rank prefix matches by frequency and recency", () => {
+    storage.clear();
+    const chunky = { source: "openfoodfacts", barcode: "11111111", name: "Chunky Guacamole", brand: "Example", portions: [{ label: "30 g", nutrition: { calories: 50 } }] };
+    const chicken = { source: "usda", fdcId: 22, name: "Chunky Chicken Soup", brand: "Example", portions: [{ label: "1 cup", nutrition: { calories: 120 } }] };
+    const unrelated = { source: "usda", fdcId: 33, name: "Greek Yogurt", brand: "Example", portions: [{ label: "1 cup", nutrition: { calories: 100 } }] };
+    data.saveEntries("2026-08-25", [
+        data.createLogEntry({ meal: "Snacks", food: chunky, portion: chunky.portions[0], quantity: 1 }),
+        data.createLogEntry({ meal: "Lunch", food: chicken, portion: chicken.portions[0], quantity: 1 })
+    ]);
+    data.saveEntries("2026-08-27", [
+        data.createLogEntry({ meal: "Snacks", food: chunky, portion: chunky.portions[0], quantity: 1 }),
+        data.createLogEntry({ meal: "Breakfast", food: unrelated, portion: unrelated.portions[0], quantity: 1 })
+    ]);
+    const matches = data.matchingLoggedFoods("chun");
+    assert.deepEqual(matches.map(food => food.name), ["Chunky Guacamole", "Chunky Chicken Soup"]);
+    assert.equal(matches[0].previouslyLogged, true);
+});
+
+test("previously logged matches stay above database foods without duplicates", () => {
+    const results = data.prioritizeLoggedFoodMatches("chun", [
+        { source: "openfoodfacts", name: "Chunky Guacamole", brand: "Example" },
+        { source: "usda", name: "Chunk Roast", brand: "Other" }
+    ]);
+    assert.equal(results[0].name, "Chunky Guacamole");
+    assert.equal(results[0].previouslyLogged, true);
+    assert.equal(results.filter(food => food.name === "Chunky Guacamole").length, 1);
+    assert.equal(results.at(-1).name, "Chunk Roast");
+});
+
 test("food log keeps days and meals separate and removes exact entries", () => {
     storage.clear();
     const food = { source: "custom", name: "Oats", nutrition: { calories: 150, protein: 5, carbs: 27, fat: 3 }, portions: [] };
@@ -142,7 +171,7 @@ test("USDA search stays behind the Worker and the browser receives normalized fo
     assert.match(worker, /url\.pathname === "\/v1\/foods\/search"/);
     assert.doesNotMatch(browser, /api\.nal\.usda\.gov/);
     assert.match(browser, /\/v1\/foods\/search\?q=/);
-    assert.match(html, /css\/food-log\.css\?v=food-log-target-inline-1/);
+    assert.match(html, /css\/food-log\.css\?v=food-history-priority-1/);
 });
 
 test("Level Up verified foods use the official item serving before a 100 g option", () => {
