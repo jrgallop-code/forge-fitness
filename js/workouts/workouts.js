@@ -8,7 +8,7 @@ from "./exercise-library.js?v=exercise-library-catalogue-2";
 import {
     getPresetPlan
 }
-from "./workout-plans.js?v=workout-plans-2";
+from "./workout-plans.js?v=proven-template-builder-1";
 
 
 import {
