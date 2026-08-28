@@ -2314,6 +2314,146 @@ export const presetPlans = [
         }
     ]
 }
+,
+{
+  id: "stronglifts-5x5-adapted",
+  name: "StrongLifts 5×5 — Level Up Adaptation",
+  daysPerWeek: 3,
+  estimatedMinutes: "45-75",
+  level: "Beginner",
+  trainingType: "Strength",
+  description: "A Level Up adaptation of the alternating three-day full-body strength structure.",
+  templateFamily: "Full Body A/B",
+  sourceName: "StrongLifts 5×5",
+  sourceUrl: "https://stronglifts.com/stronglifts-5x5/",
+  adaptationNote: "Level Up may add accessories, substitute equipment, and adjust weekly volume while preserving the alternating full-body backbone.",
+  days: [
+    { name: "Full Body A", exercises: [
+      { id: "back-squat", sets: 5, reps: "5" },
+      { id: "barbell-bench-press", sets: 5, reps: "5" },
+      { id: "barbell-row", sets: 5, reps: "5" }
+    ]},
+    { name: "Full Body B", exercises: [
+      { id: "back-squat", sets: 5, reps: "5" },
+      { id: "overhead-press", sets: 5, reps: "5" },
+      { id: "conventional-deadlift", sets: 2, reps: "5" }
+    ]},
+    { name: "Full Body A — Repeat", exercises: [
+      { id: "back-squat", sets: 5, reps: "5" },
+      { id: "barbell-bench-press", sets: 5, reps: "5" },
+      { id: "barbell-row", sets: 5, reps: "5" }
+    ]}
+  ]
+},
+{
+  id: "phul-adapted",
+  name: "PHUL — Level Up Adaptation",
+  daysPerWeek: 4,
+  estimatedMinutes: "60-75",
+  level: "Intermediate",
+  trainingType: "Hybrid",
+  description: "A four-day upper/lower backbone pairing power-focused and hypertrophy-focused sessions.",
+  templateFamily: "Power Hypertrophy Upper Lower",
+  sourceName: "PHUL",
+  sourceUrl: "https://www.muscleandstrength.com/workouts/phul-workout",
+  adaptationNote: "Level Up preserves the power/hypertrophy upper-lower rhythm while adjusting exercise choice and direct volume.",
+  days: [
+    { name: "Upper Power", exercises: [
+      { id: "barbell-bench-press", sets: 4, reps: "3-5" },
+      { id: "barbell-row", sets: 4, reps: "3-5" },
+      { id: "overhead-press", sets: 3, reps: "6-10" },
+      { id: "lat-pulldown", sets: 3, reps: "6-10" },
+      { id: "dumbbell-curl", sets: 3, reps: "6-10" },
+      { id: "tricep-pushdown", sets: 3, reps: "6-10" }
+    ]},
+    { name: "Lower Power", exercises: [
+      { id: "back-squat", sets: 4, reps: "3-5" },
+      { id: "romanian-deadlift", sets: 4, reps: "5-8" },
+      { id: "leg-press", sets: 3, reps: "6-10" },
+      { id: "leg-curl", sets: 3, reps: "6-10" },
+      { id: "standing-calf-raise", sets: 4, reps: "6-10" }
+    ]},
+    { name: "Upper Hypertrophy", exercises: [
+      { id: "incline-dumbbell-press", sets: 3, reps: "8-12" },
+      { id: "seated-cable-row", sets: 3, reps: "8-12" },
+      { id: "dumbbell-shoulder-press", sets: 3, reps: "8-12" },
+      { id: "lat-pulldown", sets: 3, reps: "10-15" },
+      { id: "lateral-raise", sets: 3, reps: "12-15" },
+      { id: "hammer-curl", sets: 3, reps: "10-15" },
+      { id: "overhead-tricep-extension", sets: 3, reps: "10-15" }
+    ]},
+    { name: "Lower Hypertrophy", exercises: [
+      { id: "hack-squat", sets: 3, reps: "8-12" },
+      { id: "romanian-deadlift", sets: 3, reps: "8-12" },
+      { id: "bulgarian-split-squat", sets: 3, reps: "10-15" },
+      { id: "leg-curl", sets: 3, reps: "10-15" },
+      { id: "hip-thrust", sets: 3, reps: "8-12" },
+      { id: "seated-calf-raise", sets: 4, reps: "10-15" }
+    ]}
+  ]
+},
+{
+  id: "metallicadpa-ppl-adapted",
+  name: "Linear PPL — Level Up Adaptation",
+  daysPerWeek: 6,
+  estimatedMinutes: "60-75",
+  level: "Beginner / Intermediate",
+  trainingType: "Hypertrophy",
+  description: "A six-day push/pull/legs rotation with compound anchors and accessory volume.",
+  templateFamily: "Push Pull Legs ×2",
+  sourceName: "Metallicadpa Linear PPL",
+  sourceUrl: "https://www.reddit.com/r/Fitness/comments/37ylk5/a_linear_progression_based_ppl_program_for/",
+  adaptationNote: "Level Up preserves the repeated push/pull/legs structure while adapting volume, equipment, and exercise preferences.",
+  days: [
+    { name: "Pull A", exercises: [
+      { id: "conventional-deadlift", sets: 3, reps: "5" },
+      { id: "barbell-row", sets: 3, reps: "8-12" },
+      { id: "lat-pulldown", sets: 3, reps: "8-12" },
+      { id: "face-pull", sets: 3, reps: "12-15" },
+      { id: "dumbbell-curl", sets: 3, reps: "8-12" },
+      { id: "hammer-curl", sets: 3, reps: "8-12" }
+    ]},
+    { name: "Push A", exercises: [
+      { id: "barbell-bench-press", sets: 4, reps: "5" },
+      { id: "overhead-press", sets: 3, reps: "8-12" },
+      { id: "incline-dumbbell-press", sets: 3, reps: "8-12" },
+      { id: "lateral-raise", sets: 3, reps: "12-15" },
+      { id: "tricep-pushdown", sets: 3, reps: "8-12" },
+      { id: "overhead-tricep-extension", sets: 3, reps: "8-12" }
+    ]},
+    { name: "Legs A", exercises: [
+      { id: "back-squat", sets: 4, reps: "5" },
+      { id: "romanian-deadlift", sets: 3, reps: "8-12" },
+      { id: "leg-press", sets: 3, reps: "8-12" },
+      { id: "leg-curl", sets: 3, reps: "8-12" },
+      { id: "standing-calf-raise", sets: 4, reps: "8-12" }
+    ]},
+    { name: "Pull B", exercises: [
+      { id: "barbell-row", sets: 4, reps: "5" },
+      { id: "pull-up", sets: 3, reps: "6-10" },
+      { id: "chest-supported-row", sets: 3, reps: "8-12" },
+      { id: "face-pull", sets: 3, reps: "12-15" },
+      { id: "hammer-curl", sets: 3, reps: "8-12" },
+      { id: "dumbbell-curl", sets: 3, reps: "8-12" }
+    ]},
+    { name: "Push B", exercises: [
+      { id: "overhead-press", sets: 4, reps: "5" },
+      { id: "dumbbell-bench-press", sets: 3, reps: "8-12" },
+      { id: "incline-dumbbell-press", sets: 3, reps: "8-12" },
+      { id: "cable-lateral-raise", sets: 3, reps: "12-15" },
+      { id: "tricep-pushdown", sets: 3, reps: "8-12" },
+      { id: "overhead-tricep-extension", sets: 3, reps: "8-12" }
+    ]},
+    { name: "Legs B", exercises: [
+      { id: "back-squat", sets: 3, reps: "8-12" },
+      { id: "hip-thrust", sets: 3, reps: "8-12" },
+      { id: "bulgarian-split-squat", sets: 3, reps: "8-12" },
+      { id: "leg-curl", sets: 3, reps: "8-12" },
+      { id: "seated-calf-raise", sets: 4, reps: "10-15" }
+    ]}
+  ]
+}
+
 ];
 
 
