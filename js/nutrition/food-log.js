@@ -25,7 +25,7 @@ import {
     totalServingLabel,
     updateEntry,
     withUsefulLiquidPortions
-} from "./food-log-data.js?v=saved-meal-photo-left-1";
+} from "./food-log-data.js?v=meal-food-editing-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -38,6 +38,8 @@ let selectedMeal = "Breakfast";
 let addContext = "log";
 let mealDraft = null;
 let editingEntryId = null;
+let editingMealItemIndex = null;
+let editingCustomFoodId = null;
 let foodSearchController = null;
 let foodSearchTimer = null;
 let foodDetailController = null;
@@ -124,7 +126,7 @@ function renderFoodSheet() {
 function renderCustomFoodForm() {
     return `
         <form class="custom-food-form" data-custom-food-form>
-            <div class="custom-food-intro"><span class="eyebrow">CREATE FOOD</span><strong>Food details</strong><small>Enter nutrition for one serving. Level Up will calculate other usable units when possible.</small></div>
+            <div class="custom-food-intro"><span class="eyebrow" data-custom-food-eyebrow>CREATE FOOD</span><strong data-custom-food-title>Food details</strong><small data-custom-food-copy>Enter nutrition for one serving. Level Up will calculate other usable units when possible.</small></div>
             <label>Brand name <span>(optional)</span><input name="brand" maxlength="120" placeholder="Kirkland Signature"></label>
             <label>Description<input name="name" required maxlength="180" placeholder="Chipotle grilled chicken"></label>
             <fieldset class="custom-serving-fields"><legend>Serving size</legend><div>
@@ -146,7 +148,7 @@ function renderCustomFoodForm() {
                 <label>Fat (g)<input name="fat" required type="number" min="0" max="1000" step="0.1"></label>
                 <label>Fiber (g) <span>(optional)</span><input name="fiber" type="number" min="0" max="1000" step="0.1"></label>
             </div>
-            <button type="submit" class="primary-btn">Save &amp; Add</button>
+            <div class="custom-food-actions"><button type="button" data-custom-food-cancel hidden>Cancel</button><button type="submit" class="primary-btn" data-custom-food-submit>Save &amp; Add</button></div>
         </form>
     `;
 }
@@ -197,10 +199,8 @@ export function initializeFoodLog() {
     document.querySelector("[data-barcode-zoom-in]")?.addEventListener("click", () => nudgeBarcodeZoom(1));
     document.querySelector("[data-barcode-custom]")?.addEventListener("click", openCustomFoodForBarcode);
     document.querySelector("[data-custom-food-form]")?.addEventListener("submit", createCustomFood);
-    document.querySelector("[data-create-food]")?.addEventListener("click", () => {
-        const editor = document.querySelector("[data-custom-food-editor]");
-        if (editor) editor.hidden = !editor.hidden;
-    });
+    document.querySelector("[data-create-food]")?.addEventListener("click", beginCustomFoodCreation);
+    document.querySelector("[data-custom-food-cancel]")?.addEventListener("click", resetCustomFoodEditor);
     document.querySelector("[data-create-meal]")?.addEventListener("click", () => openMealBuilder());
     window.addEventListener("levelup:food-log-updated", renderDay);
     renderDay();
@@ -334,6 +334,8 @@ function closeFoodSheet() {
     document.body.classList.remove("food-sheet-open");
     addContext = "log";
     editingEntryId = null;
+    editingMealItemIndex = null;
+    editingCustomFoodId = null;
     mealDraft = null;
 }
 
@@ -673,7 +675,10 @@ function closeFoodPortionPanel() {
     foodSelectionRequest += 1;
     foodDetailController?.abort();
     document.querySelector("[data-food-portion]")?.setAttribute("hidden", "");
-    if (addContext === "meal-builder" && mealDraft) renderMealBuilder();
+    if (addContext === "meal-builder" && mealDraft) {
+        editingMealItemIndex = null;
+        renderMealBuilder();
+    }
 }
 
 function renderFoodPortionPanel(food, warning = "") {
@@ -684,12 +689,12 @@ function renderFoodPortionPanel(food, warning = "") {
     panel.hidden = false;
     panel.innerHTML = `
         <div class="food-portion-heading"><div><span class="eyebrow">${addContext === "edit" ? "EDIT LOGGED FOOD" : "ADD FOOD"}</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="${addContext === "edit" ? "Close food editor" : "Back to results"}">×</button></div>
-        ${addContext === "meal-builder" ? '<div class="food-builder-destination">Adding to your saved meal</div>' : `<label>Meal<select data-food-meal>${MEALS.map(meal => `<option${meal === selectedMeal ? " selected" : ""}>${meal}</option>`).join("")}</select></label>`}
+        ${addContext === "meal-builder" ? `<div class="food-builder-destination">${editingMealItemIndex !== null ? "Updating an item in your saved meal" : "Adding to your saved meal"}</div>` : `<label>Meal<select data-food-meal>${MEALS.map(meal => `<option${meal === selectedMeal ? " selected" : ""}>${meal}</option>`).join("")}</select></label>`}
         ${warning ? `<p class="food-portion-warning">${escapeHtml(warning)}</p>` : ""}
         <label>Serving size<select data-food-serving>${(food.portions || []).map((portion, index) => `<option value="${index}">${escapeHtml(portion.label)}</option>`).join("")}</select></label>
         <label>Number of servings<input data-food-quantity type="number" inputmode="decimal" min="0.01" max="10000" step="0.01" value="1"></label>
         <div class="food-portion-preview" data-food-preview></div>
-        <button type="button" class="primary-btn" data-food-confirm>${addContext === "meal-builder" ? "Add to Meal" : addContext === "edit" ? "Save Changes" : "Add to Food Log"}</button>
+        <button type="button" class="primary-btn" data-food-confirm>${addContext === "meal-builder" ? (editingMealItemIndex !== null ? "Update Item" : "Add to Meal") : addContext === "edit" ? "Save Changes" : "Add to Food Log"}</button>
         ${addContext === "edit" ? '<button type="button" class="food-edit-remove" data-food-edit-remove>Remove Food</button>' : ""}
     `;
     panel.querySelector("[data-food-portion-close]")?.addEventListener("click", closeFoodPortionPanel);
@@ -716,18 +721,45 @@ function updatePortionPreview() {
     }
 }
 
-function foodMacroBreakdown(nutrition, quantity, servingLabel) {
+function macroBreakdownMarkup(nutrition, heading) {
     const values = {
-        carbs: Math.max(0, Number(nutrition?.carbs) || 0) * quantity,
-        fat: Math.max(0, Number(nutrition?.fat) || 0) * quantity,
-        protein: Math.max(0, Number(nutrition?.protein) || 0) * quantity
+        carbs: Math.max(0, Number(nutrition?.carbs) || 0),
+        fat: Math.max(0, Number(nutrition?.fat) || 0),
+        protein: Math.max(0, Number(nutrition?.protein) || 0)
     };
-    const calories = Math.max(0, Number(nutrition?.calories) || 0) * quantity;
+    const calories = Math.max(0, Number(nutrition?.calories) || 0);
     const macroCalories = values.carbs * 4 + values.fat * 9 + values.protein * 4;
     const percentages = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, macroCalories ? Math.round(value * (key === "fat" ? 9 : 4) / macroCalories * 100) : 0]));
     const carbEnd = percentages.carbs;
     const fatEnd = Math.min(100, carbEnd + percentages.fat);
-    return `<div class="food-edit-serving">${roundOne(quantity)} × ${escapeHtml(servingLabel || "1 serving")}</div><div class="food-edit-macro-breakdown"><div class="food-edit-calorie-ring" style="--carb-end:${carbEnd}%;--fat-end:${fatEnd}%"><span><strong>${Math.round(calories)}</strong><small>cal</small></span></div><div class="food-edit-macro food-edit-macro--carbs"><em>${percentages.carbs}%</em><strong>${roundOne(values.carbs)} g</strong><small>Carbs</small></div><div class="food-edit-macro food-edit-macro--fat"><em>${percentages.fat}%</em><strong>${roundOne(values.fat)} g</strong><small>Fat</small></div><div class="food-edit-macro food-edit-macro--protein"><em>${percentages.protein}%</em><strong>${roundOne(values.protein)} g</strong><small>Protein</small></div></div>`;
+    return `<div class="food-edit-serving">${escapeHtml(heading)}</div><div class="food-edit-macro-breakdown"><div class="food-edit-calorie-ring" style="--carb-end:${carbEnd}%;--fat-end:${fatEnd}%"><span><strong>${Math.round(calories)}</strong><small>cal</small></span></div><div class="food-edit-macro food-edit-macro--carbs"><em>${percentages.carbs}%</em><strong>${roundOne(values.carbs)} g</strong><small>Carbs</small></div><div class="food-edit-macro food-edit-macro--fat"><em>${percentages.fat}%</em><strong>${roundOne(values.fat)} g</strong><small>Fat</small></div><div class="food-edit-macro food-edit-macro--protein"><em>${percentages.protein}%</em><strong>${roundOne(values.protein)} g</strong><small>Protein</small></div></div>`;
+}
+
+function foodMacroBreakdown(nutrition, quantity, servingLabel) {
+    return macroBreakdownMarkup(scaledNutrition(nutrition, quantity), `${roundOne(quantity)} × ${servingLabel || "1 serving"}`);
+}
+
+function openMealItemEditor(index) {
+    const entry = mealDraft?.items?.[index];
+    if (!entry) return;
+    const quantity = Math.max(.01, Number(entry.quantity) || 1);
+    const food = entry.food?.portions?.length ? entry.food : {
+        source: entry.source || "custom",
+        catalogueId: entry.catalogueId || null,
+        fdcId: entry.fdcId || null,
+        name: entry.name || "Food",
+        brand: entry.brand || "",
+        portions: [{ label: entry.servingLabel || "1 serving", nutrition: scaledNutrition(entry.nutrition, 1 / quantity) }]
+    };
+    editingMealItemIndex = index;
+    addContext = "meal-builder";
+    renderFoodPortionPanel(food);
+    const servingIndex = Math.max(0, (food.portions || []).findIndex(portion => portion?.label === entry.servingLabel));
+    const serving = document.querySelector("[data-food-serving]");
+    const quantityInput = document.querySelector("[data-food-quantity]");
+    if (serving) serving.value = String(servingIndex);
+    if (quantityInput) quantityInput.value = String(quantity);
+    updatePortionPreview();
 }
 
 function addSelectedFood() {
@@ -742,7 +774,9 @@ function addSelectedFood() {
         return;
     }
     if (addContext === "meal-builder") {
-        mealDraft.items.push(entry);
+        if (editingMealItemIndex !== null) mealDraft.items.splice(editingMealItemIndex, 1, entry);
+        else mealDraft.items.push(entry);
+        editingMealItemIndex = null;
         document.querySelector("[data-food-portion]")?.setAttribute("hidden", "");
         renderMealBuilder();
         return;
@@ -784,6 +818,62 @@ function removeEditedFood() {
     closeFoodSheet();
 }
 
+function setCustomFoodField(form, name, value) {
+    const field = form?.elements?.namedItem(name);
+    if (field) field.value = value == null ? "" : String(value);
+}
+
+function beginCustomFoodCreation() {
+    const editor = document.querySelector("[data-custom-food-editor]");
+    const form = document.querySelector("[data-custom-food-form]");
+    if (!editor || !form) return;
+    if (!editor.hidden && editingCustomFoodId === null) {
+        resetCustomFoodEditor();
+        return;
+    }
+    editingCustomFoodId = null;
+    form.reset();
+    setCustomFoodField(form, "servingAmount", 1);
+    setCustomFoodField(form, "servingUnit", "serving");
+    editor.hidden = false;
+    setText("[data-custom-food-eyebrow]", "CREATE FOOD");
+    setText("[data-custom-food-title]", "Food details");
+    setText("[data-custom-food-copy]", "Enter nutrition for one serving. Level Up will calculate other usable units when possible.");
+    setText("[data-custom-food-submit]", "Save & Add");
+    const cancel = form.querySelector("[data-custom-food-cancel]");
+    if (cancel) cancel.hidden = true;
+    form.elements.namedItem("name")?.focus();
+}
+
+function beginCustomFoodEdit(food) {
+    const editor = document.querySelector("[data-custom-food-editor]");
+    const form = document.querySelector("[data-custom-food-form]");
+    if (!editor || !form || !food) return;
+    editingCustomFoodId = food.id;
+    setCustomFoodField(form, "brand", food.brand);
+    setCustomFoodField(form, "name", food.name);
+    setCustomFoodField(form, "servingAmount", food.servingAmount || 1);
+    setCustomFoodField(form, "servingUnit", food.servingUnit || "serving");
+    setCustomFoodField(form, "servingsPerContainer", food.servingsPerContainer);
+    setCustomFoodField(form, "barcode", food.barcode);
+    ["calories", "protein", "carbs", "fat", "fiber"].forEach(key => setCustomFoodField(form, key, food.nutrition?.[key] ?? ""));
+    editor.hidden = false;
+    setText("[data-custom-food-eyebrow]", "EDIT FOOD");
+    setText("[data-custom-food-title]", food.name || "Food details");
+    setText("[data-custom-food-copy]", "Update the serving details or nutrition. Changes apply the next time you log this food.");
+    setText("[data-custom-food-submit]", "Save Changes");
+    const cancel = form.querySelector("[data-custom-food-cancel]");
+    if (cancel) cancel.hidden = false;
+    editor.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function resetCustomFoodEditor() {
+    editingCustomFoodId = null;
+    const form = document.querySelector("[data-custom-food-form]");
+    form?.reset();
+    document.querySelector("[data-custom-food-editor]")?.setAttribute("hidden", "");
+}
+
 function createCustomFood(event) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -794,8 +884,9 @@ function createCustomFood(event) {
     const servingUnit = String(data.get("servingUnit") || "serving").toLowerCase();
     const servingsPerContainer = Math.max(0, Number(data.get("servingsPerContainer")) || 0);
     const portions = buildCustomFoodPortions({ amount: servingAmount, unit: servingUnit, nutrition });
+    const wasEditing = Boolean(editingCustomFoodId);
     const food = saveCustomFood({
-        id: crypto.randomUUID(),
+        id: editingCustomFoodId || crypto.randomUUID(),
         source: "custom",
         name: String(data.get("name") || "Custom food"),
         brand: String(data.get("brand") || "").trim(),
@@ -807,10 +898,10 @@ function createCustomFood(event) {
         nutrition,
         portions
     });
-    event.currentTarget.reset();
-    document.querySelector("[data-custom-food-editor]")?.setAttribute("hidden", "");
+    resetCustomFoodEditor();
     renderCustomFoods();
-    chooseFood(food);
+    if (wasEditing) showFoodToast("Food updated.");
+    else chooseFood(food);
 }
 
 function renderRecents() {
@@ -826,7 +917,9 @@ function renderCustomFoods() {
     const container = document.querySelector("[data-custom-foods]");
     if (!container) return;
     if (!foods.length) { container.innerHTML = '<p class="empty-state">Foods you create will be saved here.</p>'; return; }
-    renderFoodResults(container, foods);
+    container.innerHTML = foods.map((food, index) => `<div class="food-custom-row">${foodResultMarkup(food, index).replace("data-food-result", "data-log-custom-food")}<button type="button" class="food-custom-edit" data-edit-custom-food="${index}" aria-label="Edit ${escapeHtml(food.name)}">Edit</button></div>`).join("");
+    container.querySelectorAll("[data-log-custom-food]").forEach(button => button.addEventListener("click", () => chooseFood(foods[Number(button.dataset.logCustomFood)])));
+    container.querySelectorAll("[data-edit-custom-food]").forEach(button => button.addEventListener("click", () => beginCustomFoodEdit(foods[Number(button.dataset.editCustomFood)])));
 }
 
 function selectTargetMeal(meal) {
@@ -901,9 +994,15 @@ function showFoodToast(message) {
     showFoodToast.timer = window.setTimeout(() => { toast.hidden = true; }, 2200);
 }
 
-function openMealBuilder(entries = [], name = "") {
+function openMealBuilder(entries = [], name = "", savedMeal = null) {
     addContext = "meal-builder";
-    mealDraft = { id: null, name, photoDataUrl: "", items: entries.map(entry => ({ ...entry })) };
+    editingMealItemIndex = null;
+    mealDraft = {
+        id: savedMeal?.id || null,
+        name: savedMeal?.name ?? name,
+        photoDataUrl: savedMeal?.photoDataUrl || "",
+        items: (savedMeal?.items || entries).map(entry => ({ ...entry }))
+    };
     renderMealBuilder();
 }
 
@@ -947,20 +1046,22 @@ function renderMealBuilder() {
     if (!panel || !mealDraft) return;
     panel.hidden = false;
     const totals = summarizeEntries(mealDraft.items);
+    const editingMeal = Boolean(mealDraft.id);
     panel.innerHTML = `
-        <header class="food-builder-heading"><div><span class="eyebrow">MY MEALS</span><h3>Build a Meal</h3></div><button type="button" data-meal-builder-close aria-label="Close meal builder">×</button></header>
+        <header class="food-builder-heading"><div><span class="eyebrow">MY MEALS</span><h3>${editingMeal ? "Edit Meal" : "Build a Meal"}</h3></div><button type="button" data-meal-builder-close aria-label="Close meal builder">×</button></header>
         <label>Meal name<input type="text" maxlength="100" value="${escapeHtml(mealDraft.name)}" placeholder="Post-workout lunch" data-meal-name></label>
         <div class="food-builder-photo"><button type="button" data-meal-photo-pick>${mealDraft.photoDataUrl ? `<img src="${escapeHtml(mealDraft.photoDataUrl)}" alt="Meal thumbnail"><span>Change photo</span>` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>'}</button>${mealDraft.photoDataUrl ? '<button type="button" data-meal-photo-remove>Remove</button>' : ""}<input type="file" accept="image/*" data-meal-photo-input hidden></div>
-        <div class="food-builder-summary"><strong>${mealDraft.items.length} item${mealDraft.items.length === 1 ? "" : "s"}</strong><span>${Math.round(totals.calories)} kcal · P ${roundOne(totals.protein)} g · C ${roundOne(totals.carbs)} g · F ${roundOne(totals.fat)} g</span></div>
-        <div class="food-builder-items">${mealDraft.items.map((entry, index) => `<div><span><strong>${escapeHtml(entry.name)}</strong><small>${roundOne(entry.quantity)} × ${escapeHtml(entry.servingLabel)}</small></span><b>${Math.round(entry.nutrition?.calories || 0)} kcal</b><button type="button" data-remove-meal-item="${index}" aria-label="Remove ${escapeHtml(entry.name)}">×</button></div>`).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
+        <div class="food-builder-macros food-portion-preview food-portion-preview--macros">${macroBreakdownMarkup(totals, `Whole meal · ${mealDraft.items.length} item${mealDraft.items.length === 1 ? "" : "s"}`)}</div>
+        <div class="food-builder-items">${mealDraft.items.map((entry, index) => `<div><button type="button" class="food-builder-item-edit" data-edit-meal-item="${index}" aria-label="Edit ${escapeHtml(entry.name)}"><span><strong>${escapeHtml(entry.name)}</strong><small>${escapeHtml(totalServingLabel(entry.quantity, entry.servingLabel))}</small></span><b>${Math.round(entry.nutrition?.calories || 0)} kcal</b><i aria-hidden="true">›</i></button><button type="button" data-remove-meal-item="${index}" aria-label="Remove ${escapeHtml(entry.name)}">×</button></div>`).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
         <button type="button" class="food-builder-add" data-meal-builder-add>+ Add Food</button>
-        <button type="button" class="primary-btn" data-meal-builder-save ${mealDraft.items.length ? "" : "disabled"}>Save to My Meals</button>`;
+        <button type="button" class="primary-btn" data-meal-builder-save ${mealDraft.items.length ? "" : "disabled"}>${editingMeal ? "Save Changes" : "Save to My Meals"}</button>`;
     panel.querySelector("[data-meal-name]")?.addEventListener("input", event => { mealDraft.name = event.currentTarget.value; });
     panel.querySelector("[data-meal-photo-pick]")?.addEventListener("click", () => panel.querySelector("[data-meal-photo-input]")?.click());
     panel.querySelector("[data-meal-photo-input]")?.addEventListener("change", event => { if (event.currentTarget.files?.[0]) void setMealDraftPhoto(event.currentTarget.files[0]); });
     panel.querySelector("[data-meal-photo-remove]")?.addEventListener("click", () => { mealDraft.photoDataUrl = ""; renderMealBuilder(); });
-    panel.querySelector("[data-meal-builder-close]")?.addEventListener("click", () => { panel.hidden = true; addContext = "log"; showFoodMode("meals"); });
-    panel.querySelector("[data-meal-builder-add]")?.addEventListener("click", () => { panel.hidden = true; addContext = "meal-builder"; showFoodMode("recent"); });
+    panel.querySelector("[data-meal-builder-close]")?.addEventListener("click", () => { panel.hidden = true; addContext = "log"; editingMealItemIndex = null; showFoodMode("meals"); });
+    panel.querySelector("[data-meal-builder-add]")?.addEventListener("click", () => { panel.hidden = true; addContext = "meal-builder"; editingMealItemIndex = null; showFoodMode("recent"); });
+    panel.querySelectorAll("[data-edit-meal-item]").forEach(button => button.addEventListener("click", () => openMealItemEditor(Number(button.dataset.editMealItem))));
     panel.querySelectorAll("[data-remove-meal-item]").forEach(button => button.addEventListener("click", () => { mealDraft.items.splice(Number(button.dataset.removeMealItem), 1); renderMealBuilder(); }));
     panel.querySelector("[data-meal-builder-save]")?.addEventListener("click", saveMealDraft);
 }
@@ -971,12 +1072,14 @@ function saveMealDraft() {
         document.querySelector("[data-meal-name]")?.focus();
         return;
     }
+    const wasEditing = Boolean(mealDraft.id);
     saveSavedMeal({ ...mealDraft, name });
     mealDraft = null;
+    editingMealItemIndex = null;
     addContext = "log";
     document.querySelector("[data-meal-builder]")?.setAttribute("hidden", "");
     showFoodMode("meals");
-    showFoodToast("Meal saved to My Meals.");
+    showFoodToast(wasEditing ? "Meal updated." : "Meal saved to My Meals.");
 }
 
 function renderSavedMeals() {
@@ -987,8 +1090,12 @@ function renderSavedMeals() {
     container.innerHTML = meals.map((meal, index) => {
         const totals = summarizeEntries(meal.items);
         const photo = meal.photoDataUrl ? `<img class="food-saved-meal-thumbnail" src="${escapeHtml(meal.photoDataUrl)}" alt="${escapeHtml(meal.name)} meal photo">` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
-        return `<article class="food-saved-meal"><button type="button" class="food-saved-meal-photo" data-saved-meal-photo="${index}" aria-label="${meal.photoDataUrl ? "Change" : "Add"} photo for ${escapeHtml(meal.name)}">${photo}</button><div><strong>${escapeHtml(meal.name)}</strong><small>${escapeHtml(mealPreview(meal.items))}</small><span>${Math.round(totals.calories)} kcal · ${meal.items.length} items</span></div><button type="button" class="food-saved-meal-add" data-log-saved-meal="${index}" aria-label="Log ${escapeHtml(meal.name)} to ${selectedMeal}">+</button><button type="button" class="food-saved-meal-delete" data-delete-saved-meal="${escapeHtml(meal.id)}" aria-label="Delete ${escapeHtml(meal.name)}">×</button></article>`;
+        return `<article class="food-saved-meal"><button type="button" class="food-saved-meal-photo" data-saved-meal-photo="${index}" aria-label="${meal.photoDataUrl ? "Change" : "Add"} photo for ${escapeHtml(meal.name)}">${photo}</button><button type="button" class="food-saved-meal-edit" data-edit-saved-meal="${index}" aria-label="Edit ${escapeHtml(meal.name)}"><strong>${escapeHtml(meal.name)}</strong><small>${escapeHtml(mealPreview(meal.items))}</small><span>${Math.round(totals.calories)} kcal · ${meal.items.length} items</span></button><button type="button" class="food-saved-meal-add" data-log-saved-meal="${index}" aria-label="Log ${escapeHtml(meal.name)} to ${selectedMeal}">+</button><button type="button" class="food-saved-meal-delete" data-delete-saved-meal="${escapeHtml(meal.id)}" aria-label="Delete ${escapeHtml(meal.name)}">×</button></article>`;
     }).join("");
+    container.querySelectorAll("[data-edit-saved-meal]").forEach(button => button.addEventListener("click", () => {
+        const meal = meals[Number(button.dataset.editSavedMeal)];
+        openMealBuilder(meal.items, meal.name, meal);
+    }));
     container.querySelectorAll("[data-log-saved-meal]").forEach(button => button.addEventListener("click", () => {
         const meal = meals[Number(button.dataset.logSavedMeal)];
         logSavedMeal(selectedDate, meal, selectedMeal);
