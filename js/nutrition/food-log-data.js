@@ -161,6 +161,69 @@ export function recentFoods(limit = 8) {
     return [...unique.values()].slice(0, limit);
 }
 
+function normalizedFoodText(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+}
+
+function searchableFoodKey(food) {
+    return `${normalizedFoodText(food?.name)}|${normalizedFoodText(food?.brand)}`;
+}
+
+function historyMatchScore(food, query) {
+    const name = normalizedFoodText(food?.name);
+    const brand = normalizedFoodText(food?.brand);
+    const needle = normalizedFoodText(query);
+    if (!needle) return 0;
+    if (name === needle) return 4;
+    if (name.startsWith(needle)) return 3;
+    if (name.split(" ").some(word => word.startsWith(needle))) return 2;
+    if (name.includes(needle) || brand.includes(needle)) return 1;
+    return 0;
+}
+
+export function matchingLoggedFoods(query, limit = 12) {
+    const ranked = new Map();
+    let fallbackOrder = 0;
+    Object.entries(readFoodLog()).forEach(([dateKey, entries]) => {
+        if (!Array.isArray(entries)) return;
+        entries.forEach(entry => {
+            const food = entry?.food;
+            const match = historyMatchScore(food, query);
+            if (!food || !match) return;
+            const key = searchableFoodKey(food);
+            const usedAt = Date.parse(entry.updatedAt || entry.createdAt || `${dateKey}T12:00:00`) || ++fallbackOrder;
+            const current = ranked.get(key);
+            if (current) {
+                current.uses += 1;
+                current.lastUsed = Math.max(current.lastUsed, usedAt);
+                current.match = Math.max(current.match, match);
+            }
+            else ranked.set(key, { food, uses: 1, lastUsed: usedAt, match });
+        });
+    });
+    return [...ranked.values()]
+        .sort((a, b) => b.match - a.match || b.uses - a.uses || b.lastUsed - a.lastUsed)
+        .slice(0, limit)
+        .map(item => ({ ...item.food, previouslyLogged: true }));
+}
+
+export function prioritizeLoggedFoodMatches(query, databaseFoods = [], limit = 50) {
+    const history = matchingLoggedFoods(query, limit);
+    const seen = new Set(history.map(searchableFoodKey));
+    const remaining = (Array.isArray(databaseFoods) ? databaseFoods : []).filter(food => {
+        const key = searchableFoodKey(food);
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+    return [...history, ...remaining].slice(0, limit);
+}
+
 export function scaledNutrition(nutrition, quantity = 1) {
     const multiplier = Math.max(0, Number(quantity) || 0);
     return ["calories", "protein", "carbs", "fat", "fiber"].reduce((totals, key) => {

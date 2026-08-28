@@ -14,6 +14,14 @@ test("food picker is meal-first and includes Recent, My Meals, and My Foods", as
     assert.match(module, /defaultMealForTime/);
 });
 
+test("food search prioritizes matching logged history as the user types", async () => {
+    const module = await read("../js/nutrition/food-log.js");
+    assert.match(module, /prioritizeLoggedFoodMatches\(query, payload\.foods \|\| \[\]\)/);
+    assert.match(module, /Previously logged/);
+    assert.match(module, /foodSearchForm\.requestSubmit\(\)/);
+    assert.match(module, /setTimeout\(\(\) => foodSearchForm\.requestSubmit\(\), 300\)/);
+});
+
 test("food picker clears the bottom navigation and keeps content scrollable", async () => {
     const styles = await read("../css/food-log.css");
     assert.match(styles, /z-index:12000/);
