@@ -739,28 +739,68 @@ function foodMacroBreakdown(nutrition, quantity, servingLabel) {
     return macroBreakdownMarkup(scaledNutrition(nutrition, quantity), `${roundOne(quantity)} × ${servingLabel || "1 serving"}`);
 }
 
-function openMealItemEditor(index) {
+function mealFoodForEntry(entry) {
+    const quantity = Math.max(.01, Number(entry?.quantity) || 1);
+    return entry?.food?.portions?.length ? entry.food : {
+        source: entry?.source || "custom",
+        catalogueId: entry?.catalogueId || null,
+        fdcId: entry?.fdcId || null,
+        name: entry?.name || "Food",
+        brand: entry?.brand || "",
+        portions: [{ label: entry?.servingLabel || "1 serving", nutrition: scaledNutrition(entry?.nutrition, 1 / quantity) }]
+    };
+}
+
+function inlineMealItemEditorMarkup(entry, index) {
+    const food = withUsefulLiquidPortions(mealFoodForEntry(entry));
+    const quantity = Math.max(.01, Number(entry?.quantity) || 1);
+    const portions = food.portions || [];
+    const servingIndex = Math.max(0, portions.findIndex(portion => portion?.label === entry?.servingLabel));
+    const portion = portions[servingIndex] || portions[0] || {};
+    return `<div class="food-builder-item-editor" data-meal-item-editor="${index}">
+        <header><div><span class="eyebrow">EDIT ITEM</span><strong>${escapeHtml(entry?.name || "Food")}</strong></div><button type="button" data-meal-item-cancel aria-label="Cancel editing">×</button></header>
+        <label>Serving size<select data-meal-item-serving>${portions.map((item, portionIndex) => `<option value="${portionIndex}"${portionIndex === servingIndex ? " selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label>
+        <label>Quantity<input data-meal-item-quantity type="number" inputmode="decimal" min="0.01" max="10000" step="0.01" value="${quantity}"></label>
+        <div class="food-portion-preview food-portion-preview--macros" data-meal-item-preview>${foodMacroBreakdown(portion.nutrition || {}, quantity, portion.label)}</div>
+        <div class="food-builder-item-actions"><button type="button" data-meal-item-cancel>Cancel</button><button type="button" class="primary-btn" data-meal-item-save>Update Item</button></div>
+    </div>`;
+}
+
+function bindInlineMealItemEditor(panel) {
+    const editor = panel.querySelector("[data-meal-item-editor]");
+    if (!editor) return;
+    const index = Number(editor.dataset.mealItemEditor);
     const entry = mealDraft?.items?.[index];
     if (!entry) return;
-    const quantity = Math.max(.01, Number(entry.quantity) || 1);
-    const food = entry.food?.portions?.length ? entry.food : {
-        source: entry.source || "custom",
-        catalogueId: entry.catalogueId || null,
-        fdcId: entry.fdcId || null,
-        name: entry.name || "Food",
-        brand: entry.brand || "",
-        portions: [{ label: entry.servingLabel || "1 serving", nutrition: scaledNutrition(entry.nutrition, 1 / quantity) }]
+    const food = withUsefulLiquidPortions(mealFoodForEntry(entry));
+    const serving = editor.querySelector("[data-meal-item-serving]");
+    const quantity = editor.querySelector("[data-meal-item-quantity]");
+    const preview = editor.querySelector("[data-meal-item-preview]");
+    const updatePreview = () => {
+        const portion = food.portions?.[Number(serving?.value)] || food.portions?.[0] || {};
+        const amount = Math.max(.01, Number(quantity?.value) || 1);
+        if (preview) preview.innerHTML = foodMacroBreakdown(portion.nutrition || {}, amount, portion.label);
     };
+    serving?.addEventListener("input", updatePreview);
+    quantity?.addEventListener("input", updatePreview);
+    editor.querySelectorAll("[data-meal-item-cancel]").forEach(button => button.addEventListener("click", () => {
+        editingMealItemIndex = null;
+        renderMealBuilder();
+    }));
+    editor.querySelector("[data-meal-item-save]")?.addEventListener("click", () => {
+        const portion = food.portions?.[Number(serving?.value)] || food.portions?.[0];
+        if (!portion) return;
+        const amount = Math.max(.01, Number(quantity?.value) || 1);
+        mealDraft.items.splice(index, 1, createLogEntry({ meal: selectedMeal, food, portion, quantity: amount }));
+        editingMealItemIndex = null;
+        renderMealBuilder();
+    });
+}
+
+function openMealItemEditor(index) {
+    if (!mealDraft?.items?.[index]) return;
     editingMealItemIndex = index;
-    addContext = "meal-builder";
-    document.querySelector("[data-meal-builder]")?.setAttribute("hidden", "");
-    renderFoodPortionPanel(food);
-    const servingIndex = Math.max(0, (food.portions || []).findIndex(portion => portion?.label === entry.servingLabel));
-    const serving = document.querySelector("[data-food-serving]");
-    const quantityInput = document.querySelector("[data-food-quantity]");
-    if (serving) serving.value = String(servingIndex);
-    if (quantityInput) quantityInput.value = String(quantity);
-    updatePortionPreview();
+    renderMealBuilder();
 }
 
 function addSelectedFood() {
@@ -1053,7 +1093,7 @@ function renderMealBuilder() {
         <label>Meal name<input type="text" maxlength="100" value="${escapeHtml(mealDraft.name)}" placeholder="Post-workout lunch" data-meal-name></label>
         <div class="food-builder-photo"><button type="button" data-meal-photo-pick>${mealDraft.photoDataUrl ? `<img src="${escapeHtml(mealDraft.photoDataUrl)}" alt="Meal thumbnail"><span>Change photo</span>` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>'}</button>${mealDraft.photoDataUrl ? '<button type="button" data-meal-photo-remove>Remove</button>' : ""}<input type="file" accept="image/*" data-meal-photo-input hidden></div>
         <div class="food-builder-macros food-portion-preview food-portion-preview--macros">${macroBreakdownMarkup(totals, `Whole meal · ${mealDraft.items.length} item${mealDraft.items.length === 1 ? "" : "s"}`)}</div>
-        <div class="food-builder-items">${mealDraft.items.map((entry, index) => `<div><button type="button" class="food-builder-item-edit" data-edit-meal-item="${index}" aria-label="Edit ${escapeHtml(entry.name)}"><span><strong>${escapeHtml(entry.name)}</strong><small>${escapeHtml(totalServingLabel(entry.quantity, entry.servingLabel))}</small></span><b>${Math.round(entry.nutrition?.calories || 0)} kcal</b><i aria-hidden="true">›</i></button><button type="button" data-remove-meal-item="${index}" aria-label="Remove ${escapeHtml(entry.name)}">×</button></div>`).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
+        <div class="food-builder-items">${mealDraft.items.map((entry, index) => editingMealItemIndex === index ? inlineMealItemEditorMarkup(entry, index) : `<div><button type="button" class="food-builder-item-edit" data-edit-meal-item="${index}" aria-label="Edit ${escapeHtml(entry.name)}"><span><strong>${escapeHtml(entry.name)}</strong><small>${escapeHtml(totalServingLabel(entry.quantity, entry.servingLabel))}</small></span><b>${Math.round(entry.nutrition?.calories || 0)} kcal</b><i aria-hidden="true">›</i></button><button type="button" data-remove-meal-item="${index}" aria-label="Remove ${escapeHtml(entry.name)}">×</button></div>`).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
         <button type="button" class="food-builder-add" data-meal-builder-add>+ Add Food</button>
         <button type="button" class="primary-btn" data-meal-builder-save ${mealDraft.items.length ? "" : "disabled"}>${editingMeal ? "Save Changes" : "Save to My Meals"}</button>`;
     panel.querySelector("[data-meal-name]")?.addEventListener("input", event => { mealDraft.name = event.currentTarget.value; });
@@ -1063,6 +1103,7 @@ function renderMealBuilder() {
     panel.querySelector("[data-meal-builder-close]")?.addEventListener("click", () => { panel.hidden = true; addContext = "log"; editingMealItemIndex = null; showFoodMode("meals"); });
     panel.querySelector("[data-meal-builder-add]")?.addEventListener("click", () => { panel.hidden = true; addContext = "meal-builder"; editingMealItemIndex = null; showFoodMode("recent"); });
     panel.querySelectorAll("[data-edit-meal-item]").forEach(button => button.addEventListener("click", () => openMealItemEditor(Number(button.dataset.editMealItem))));
+    bindInlineMealItemEditor(panel);
     panel.querySelectorAll("[data-remove-meal-item]").forEach(button => button.addEventListener("click", () => { mealDraft.items.splice(Number(button.dataset.removeMealItem), 1); renderMealBuilder(); }));
     panel.querySelector("[data-meal-builder-save]")?.addEventListener("click", saveMealDraft);
 }
