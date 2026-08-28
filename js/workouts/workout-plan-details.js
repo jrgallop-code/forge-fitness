@@ -429,6 +429,12 @@ function showPlanDetails({ plan, type, card }) {
     const screen = document.createElement("section");
     screen.id = "workout-plan-detail-screen";
     screen.className = "workout-plan-detail-screen";
+    const adaptedFrom = plan?.adaptedFrom || (plan?.smartBuild?.templateName ? {
+        name: plan.smartBuild.templateSourceName || plan.smartBuild.templateName,
+        templateName: plan.smartBuild.templateName,
+        url: plan.smartBuild.templateSourceUrl || "",
+        note: ""
+    } : null);
 
     screen.innerHTML = `
         <button class="plan-detail-back" type="button" aria-label="Back to workout plans">← Workout Plans</button>
@@ -437,7 +443,7 @@ function showPlanDetails({ plan, type, card }) {
             <span class="eyebrow">${type === "template" ? "LEVEL UP TEMPLATE" : "WORKOUT PLAN"}</span>
             <h2>${escapeHtml(plan?.name || "Workout Plan")}</h2>
             ${plan?.description ? `<p>${escapeHtml(plan.description)}</p>` : ""}
-            ${plan?.sourceUrl ? `<a class="plan-source-link" href="${escapeHtml(plan.sourceUrl)}" target="_blank" rel="noopener noreferrer">View documented training source ↗</a>` : ""}
+            ${adaptedFrom ? `<div class="plan-adapted-source"><span>ADAPTED FROM</span><strong>${escapeHtml(adaptedFrom.name || adaptedFrom.templateName || "Level Up template")}</strong>${adaptedFrom.note ? `<p>${escapeHtml(adaptedFrom.note)}</p>` : ""}${adaptedFrom.url ? `<a class="plan-source-link" href="${escapeHtml(adaptedFrom.url)}" target="_blank" rel="noopener noreferrer">View original program ↗</a>` : ""}</div>` : plan?.sourceUrl ? `<a class="plan-source-link" href="${escapeHtml(plan.sourceUrl)}" target="_blank" rel="noopener noreferrer">View documented training source ↗</a>` : ""}
         </div>
 
         <div class="plan-detail-stats">
