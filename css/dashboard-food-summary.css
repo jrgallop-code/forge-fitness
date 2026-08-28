@@ -175,15 +175,15 @@
 }
 
 .dashboard-macro-progress--carbs {
-    --macro-color: #34c7bd;
+    --macro-color: #4fa8ff;
 }
 
 .dashboard-macro-progress--fat {
-    --macro-color: #a855f7;
+    --macro-color: #8b7cf6;
 }
 
 .dashboard-macro-progress--protein {
-    --macro-color: #ffb547;
+    --macro-color: #39d7ae;
 }
 
 @media (max-width: 380px) {
