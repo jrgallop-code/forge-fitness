@@ -118,3 +118,18 @@ test("food picker includes a compact barcode scanner with manual and custom fall
     assert.match(worker, /fetchUsdaBarcodeVariant/);
     assert.match(worker, /const queries = barcodeVariants\(barcode\)/);
 });
+
+
+test("saved meal photo picker stays attached through iOS selection and renders the stored thumbnail", async () => {
+    const [module, data, styles] = await Promise.all([
+        read("../js/nutrition/food-log.js"),
+        read("../js/nutrition/food-log-data.js"),
+        read("../css/food-log.css")
+    ]);
+    assert.match(module, /document\.body\.append\(input\)/);
+    assert.match(module, /class="food-saved-meal-thumbnail"/);
+    assert.match(module, /if \(!saved\.photoDataUrl\)/);
+    assert.match(data, /rawPhotoDataUrl\.length <= 240000/);
+    assert.doesNotMatch(data, /photoDataUrl\)\.slice\(0, 180000\)/);
+    assert.match(styles, /\.food-saved-meal-thumbnail/);
+});
