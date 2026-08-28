@@ -59,7 +59,12 @@ function daysForRange(count) {
     return Array.from({ length: count }, (_, index) => {
         const date = dateKeyOffset(index - count + 1);
         const entries = Array.isArray(log?.[date]) ? log[date] : [];
-        return { date, logged: entries.length > 0, ...summarize(entries) };
+        const mealCalories = entries.reduce((totals, entry) => {
+            const meal = String(entry?.meal || "Other");
+            totals[meal] = (totals[meal] || 0) + Math.max(0, Number(entry?.nutrition?.calories) || 0);
+            return totals;
+        }, {});
+        return { date, logged: entries.length > 0, mealCalories, ...summarize(entries) };
     });
 }
 
@@ -97,10 +102,35 @@ function bars(days, target) {
     }).join("");
 }
 
+function macroTrend(days, key, target) {
+    const recent = days.slice(-7);
+    const maximum = Math.max(Number(target) || 0, ...recent.map(day => day[key]), 1);
+    return recent.map(day => {
+        const height = day.logged ? Math.max(8, Math.min(100, day[key] / maximum * 100)) : 0;
+        const label = new Date(`${day.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "narrow" });
+        return `<span title="${day.logged ? `${formatNumber(day[key])} g` : "Not logged"}"><i style="height:${height}%"></i><small>${label}</small></span>`;
+    }).join("");
+}
+
 function macroRow(label, key, days, target) {
     const value = average(days, key);
     const percent = target ? Math.round(value / target * 100) : null;
-    return `<div class="calorie-stat-macro"><span><strong>${label}</strong><small>${target ? `${formatNumber(target)} g goal` : "No goal set"}</small></span><b>${formatNumber(value)} g</b><em>${percent === null ? "—" : `${percent}%`}</em></div>`;
+    return `<div class="calorie-stat-macro calorie-stat-macro--${key}"><div class="calorie-stat-macro-copy"><span><strong>${label}</strong><small>${target ? `${formatNumber(target)} g goal` : "No goal set"}</small></span><b>${formatNumber(value)} g <small>avg</small></b><em>${percent === null ? "—" : `${percent}%`}</em></div><div class="calorie-stat-macro-trend" aria-label="Recent ${label.toLowerCase()} trend">${macroTrend(days, key, target)}</div></div>`;
+}
+
+function mealBreakdown(days) {
+    const colors = { Breakfast: "#4fa8ff", Lunch: "#8b7cf6", Dinner: "#39d7ae", Snacks: "#ff9f43", Other: "#8f8f99" };
+    const totals = days.reduce((result, day) => {
+        Object.entries(day.mealCalories || {}).forEach(([meal, calories]) => { result[meal] = (result[meal] || 0) + calories; });
+        return result;
+    }, {});
+    const grandTotal = Object.values(totals).reduce((sum, value) => sum + value, 0);
+    const ordered = [...Object.keys(colors), ...Object.keys(totals).filter(meal => !colors[meal])]
+        .filter((meal, index, meals) => meals.indexOf(meal) === index && totals[meal] > 0);
+    if (!grandTotal) return '<p class="calorie-stat-empty">Log food to see where your calories are coming from.</p>';
+    const segments = ordered.map(meal => `<i style="width:${totals[meal] / grandTotal * 100}%;--meal-color:${colors[meal] || colors.Other}" title="${meal}: ${formatNumber(totals[meal])} calories"></i>`).join("");
+    const legend = ordered.map(meal => `<span style="--meal-color:${colors[meal] || colors.Other}"><i></i><b>${meal}</b><small>${Math.round(totals[meal] / grandTotal * 100)}% · ${formatNumber(totals[meal])} cal</small></span>`).join("");
+    return `<div class="calorie-stat-meal-bar">${segments}</div><div class="calorie-stat-meal-legend">${legend}</div>`;
 }
 
 function phaseInsight(targets, rate, loggedCount) {
@@ -140,7 +170,7 @@ function renderStats(panel) {
             </div>
             <article class="calorie-stat-card calorie-stat-week">
                 <div class="calorie-stat-title"><span><small>AVERAGE CALORIES</small><strong>${logged.length ? formatNumber(avgCalories) : "—"}</strong></span><b>${logged.length} of ${count} days logged</b></div>
-                <div class="calorie-stat-bars">${bars(displayDays, targets.calories)}</div>
+                <div class="calorie-stat-bars ${displayDays.length === 7 ? "is-seven" : ""}">${bars(displayDays, targets.calories)}</div>
                 <div class="calorie-stat-goal">
                     <span><i class="target"></i>In target</span><span><i class="outside"></i>Outside target</span><b>${difference === null || !logged.length ? "Set a calorie goal" : `${difference > 0 ? "+" : ""}${formatNumber(difference)} average vs goal`}</b>
                 </div>
@@ -152,6 +182,10 @@ function renderStats(panel) {
             <article class="calorie-stat-card">
                 <div class="calorie-stat-section-title"><span><small>CONSISTENCY</small><strong>${inTarget} days in target</strong></span><b>${logged.length ? Math.round(inTarget / logged.length * 100) : 0}%</b></div>
                 <div class="calorie-stat-consistency"><span><strong>${logged.length}</strong><small>Days logged</small></span><span><strong>${inTarget}</strong><small>Calories in target</small></span><span><strong>${proteinDays}</strong><small>Protein goal hit</small></span></div>
+            </article>
+            <article class="calorie-stat-card">
+                <div class="calorie-stat-section-title"><span><small>CALORIES BY MEAL</small><strong>Meal breakdown</strong></span><b>${logged.length} logged days</b></div>
+                ${mealBreakdown(days)}
             </article>
             <article class="calorie-stat-card">
                 <div class="calorie-stat-section-title"><span><small>MACRO AVERAGES</small><strong>Logged days</strong></span></div>
