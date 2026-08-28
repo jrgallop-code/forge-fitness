@@ -22,7 +22,7 @@ export function initializeRoutineImporter(root = document) {
   const launcher = workoutPage.querySelector("[data-smart-build-launcher]");
   if (!launcher) { window.setTimeout(() => initializeRoutineImporter(root), 80); return; }
   workoutPage.dataset.routineImporterBound = "true";
-  launcher.querySelector(".smart-build-choice-grid")?.insertAdjacentHTML("beforeend", `<button class="smart-build-choice routine-import-launch" type="button" data-routine-import-open><span class="smart-build-badge">BETA</span><span class="smart-build-choice-title">Import Routine</span><small>Paste from ChatGPT, Reddit, Notes, or anywhere else</small></button>`);
+  launcher.querySelector(".smart-build-choice-grid")?.insertAdjacentHTML("beforeend", `<button class="smart-build-choice routine-import-launch" type="button" data-routine-import-open><span class="smart-build-choice-title">Import Routine</span><small>Paste from ChatGPT, Reddit, Notes, or anywhere else</small></button>`);
   workoutPage.insertAdjacentHTML("beforeend", renderShell());
   workoutPage.addEventListener("click", event => handleClick(event, workoutPage));
   workoutPage.addEventListener("change", event => handleChange(event, workoutPage));
@@ -31,7 +31,7 @@ export function initializeRoutineImporter(root = document) {
 
 function ensureStyles() {
   if (document.querySelector('link[href*="routine-importer.css"]')) return;
-  ["css/routine-importer.css?v=routine-import-1", "css/routine-importer-summary.css?v=routine-import-1"].forEach(href => {
+  ["css/routine-importer.css?v=equal-launch-cards-1", "css/routine-importer-summary.css?v=routine-import-1"].forEach(href => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = href;
@@ -41,7 +41,7 @@ function ensureStyles() {
 
 function renderShell() {
   return `<section class="routine-import-wizard" data-routine-import-wizard hidden>
-    <div class="routine-import-topbar"><div><span class="eyebrow">IMPORT ROUTINE <span class="routine-import-beta">BETA</span></span><h3>Paste your routine</h3><p>Copy and paste a routine from ChatGPT, Reddit, Notes, a website, or a message. You will review everything before it is saved.</p></div><button class="secondary-btn" type="button" data-routine-import-close>Close</button></div>
+    <div class="routine-import-topbar"><div><span class="eyebrow">IMPORT ROUTINE</span><h3>Paste your routine</h3><p>Copy and paste a routine from ChatGPT, Reddit, Notes, a website, or a message. You will review everything before it is saved.</p></div><button class="secondary-btn" type="button" data-routine-import-close>Close</button></div>
     <div data-routine-import-stage>${renderPasteStage()}</div>
   </section>`;
 }

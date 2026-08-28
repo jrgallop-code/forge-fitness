@@ -1,0 +1,20 @@
+.smart-build-choice-primary,
+.routine-import-launch {
+    grid-column: auto;
+    min-width: 0;
+    min-height: 74px;
+}
+
+.routine-import-launch .smart-build-choice-title,
+.smart-build-choice-primary .smart-build-choice-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 390px) {
+    .smart-build-choice-primary,
+    .routine-import-launch {
+        min-height: 70px;
+    }
+}
