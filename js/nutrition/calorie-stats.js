@@ -138,20 +138,24 @@ function mealWeekView(days, target) {
     const logged = recent.filter(day => day.logged);
     const averageCalories = logged.length ? average(recent, "calories") : 0;
     const maximum = Math.max(Number(target) || 0, averageCalories, ...recent.map(day => day.calories), 1);
+    const axisMaximum = Math.max(500, Math.ceil(maximum / 500) * 500);
+    const axisTicks = [1, .75, .5, .25, 0]
+        .map(position => `<span>${formatNumber(axisMaximum * position)}</span>`)
+        .join("");
     const knownMeals = [...Object.keys(MEAL_COLORS), ...recent.flatMap(day => Object.keys(day.mealCalories || {}))]
         .filter((meal, index, meals) => meals.indexOf(meal) === index);
     const dayBars = recent.map(day => {
         const segments = knownMeals.map(meal => {
             const value = Number(day.mealCalories?.[meal]) || 0;
-            return value ? `<i style="height:${value / maximum * 100}%;--meal-color:${MEAL_COLORS[meal] || MEAL_COLORS.Other}"></i>` : "";
+            return value ? `<i style="height:${value / axisMaximum * 100}%;--meal-color:${MEAL_COLORS[meal] || MEAL_COLORS.Other}"></i>` : "";
         }).join("");
         const date = new Date(`${day.date}T12:00:00`);
         return `<div class="calorie-meal-week-column" title="${day.logged ? `${formatNumber(day.calories)} calories` : "Not logged"}"><span>${segments}</span><small>${date.toLocaleDateString(undefined, { weekday: "narrow" })}<b>${date.getDate()}</b></small></div>`;
     }).join("");
-    const averageBar = `<div class="calorie-meal-week-column is-average" title="${formatNumber(averageCalories)} average calories"><span><i style="height:${averageCalories / maximum * 100}%"></i></span><small>Avg</small></div>`;
+    const averageBar = `<div class="calorie-meal-week-column is-average" title="${formatNumber(averageCalories)} average calories"><span><i style="height:${averageCalories / axisMaximum * 100}%"></i></span><small>Avg</small></div>`;
     const weeklyDifference = target > 0 && logged.length === 7 ? recent.reduce((sum, day) => sum + day.calories, 0) - target * 7 : null;
     const differenceLabel = weeklyDifference === null ? "Weekly goal difference" : `Calories ${weeklyDifference > 0 ? "over" : "under"} weekly goal`;
-    return `<div class="calorie-meal-week-chart" aria-label="Calories by meal for the last seven days">${dayBars}${averageBar}</div><div class="calorie-meal-week-metrics"><span><small>${differenceLabel}</small><strong>${weeklyDifference === null ? "—" : formatNumber(Math.abs(weeklyDifference))}</strong></span><span><small>Daily average</small><strong>${logged.length ? formatNumber(averageCalories) : "—"}</strong></span><span><small>Daily goal</small><strong>${target > 0 ? formatNumber(target) : "—"}</strong></span></div>${logged.length < 7 ? '<p class="calorie-stat-note">Log all 7 days to compare the full week with your goal.</p>' : ""}`;
+    return `<div class="calorie-meal-week-chart" aria-label="Calories by meal for the last seven days"><div class="calorie-meal-week-axis" aria-hidden="true"><small>cal</small>${axisTicks}</div><div class="calorie-meal-week-plot">${dayBars}${averageBar}</div></div><div class="calorie-meal-week-metrics"><span><small>${differenceLabel}</small><strong>${weeklyDifference === null ? "—" : formatNumber(Math.abs(weeklyDifference))}</strong></span><span><small>Daily average</small><strong>${logged.length ? formatNumber(averageCalories) : "—"}</strong></span><span><small>Daily goal</small><strong>${target > 0 ? formatNumber(target) : "—"}</strong></span></div>${logged.length < 7 ? '<p class="calorie-stat-note">Log all 7 days to compare the full week with your goal.</p>' : ""}`;
 }
 
 function phaseInsight(targets, rate, loggedCount) {
