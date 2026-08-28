@@ -21,8 +21,9 @@ import {
     saveSavedMeal,
     scaledNutrition,
     summarizeEntries,
-    updateEntry
-} from "./food-log-data.js?v=meal-photos-macro-detail-1";
+    updateEntry,
+    withUsefulLiquidPortions
+} from "./food-log-data.js?v=liquid-serving-units-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -605,7 +606,7 @@ function renderFoodResults(container, foods) {
 }
 
 function foodResultMarkup(food, index) {
-    const portion = food.portions?.[0];
+    const portion = withUsefulLiquidPortions(food).portions?.[0];
     const sourceLabel = food.previouslyLogged
         ? `${food.brand || "Your history"} · Previously logged`
         : food.source === "levelup"
@@ -672,6 +673,7 @@ function closeFoodPortionPanel() {
 }
 
 function renderFoodPortionPanel(food, warning = "") {
+    food = withUsefulLiquidPortions(food);
     selectedFood = food;
     const panel = document.querySelector("[data-food-portion]");
     if (!panel) return;
