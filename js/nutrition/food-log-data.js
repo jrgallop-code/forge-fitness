@@ -97,8 +97,9 @@ export function readSavedMeals() {
 
 export function saveSavedMeal(meal) {
     const meals = readSavedMeals();
-    const photoDataUrl = /^data:image\/(?:jpeg|png|webp);base64,/i.test(String(meal?.photoDataUrl || ""))
-        ? String(meal.photoDataUrl).slice(0, 180000)
+    const rawPhotoDataUrl = String(meal?.photoDataUrl || "");
+    const photoDataUrl = /^data:image\/(?:jpeg|png|webp);base64,/i.test(rawPhotoDataUrl) && rawPhotoDataUrl.length <= 240000
+        ? rawPhotoDataUrl
         : "";
     const safeMeal = {
         id: meal?.id || crypto.randomUUID(),
