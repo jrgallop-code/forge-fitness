@@ -22,9 +22,9 @@ test("dashboard combines today's calorie and macro progress into one full-width 
     assert.match(styles, /#4bd184/);
     assert.match(module, /dashboard-macro-progress--/);
     assert.match(module, /label\.toLowerCase\(\)/);
-    assert.match(styles, /--macro-color:\s*#34c7bd/);
-    assert.match(styles, /--macro-color:\s*#a855f7/);
-    assert.match(styles, /--macro-color:\s*#ffb547/);
+    assert.match(styles, /--macro-color:\s*#4fa8ff/);
+    assert.match(styles, /--macro-color:\s*#8b7cf6/);
+    assert.match(styles, /--macro-color:\s*#39d7ae/);
     assert.match(module, /dashboard-calorie-overflow-hatch/);
     assert.match(module, /dashboard-calorie-arc-overflow/);
     assert.match(module, /overTarget \/ calories/);
