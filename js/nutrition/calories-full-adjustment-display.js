@@ -5,6 +5,7 @@ import {
 } from "./nutrition-phase.js?v=nutrition-phase-full-window-1";
 import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";
+import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
 
 const FIRST_CHECK_DAY = 14;
 const FULL_GAP_INCREMENT = 50;
@@ -110,6 +111,36 @@ function buildRecommendation(actual, target, currentCalories) {
     };
 }
 
+function getAdaptiveCalorieBaseline(metrics, currentCalories) {
+    const trend = metrics?.trend;
+    let startDate = trend?.currentWindowStart;
+    let endDate = trend?.currentWindowEnd || trend?.measurementDate;
+    if (startDate && endDate === localDateKey()) {
+        startDate = previousDateKey(startDate);
+        endDate = previousDateKey(endDate);
+    }
+    const intake = getLoggedCalorieWindow({
+        startDate,
+        endDate,
+        minLoggedDays: 4
+    });
+    const useLoggedAverage = intake.sufficient && Number.isFinite(Number(intake.averageCalories));
+    return {
+        calories: useLoggedAverage ? Number(intake.averageCalories) : Number(currentCalories),
+        intake,
+        useLoggedAverage
+    };
+}
+
+function calorieBaselineCopy(baseline) {
+    const intake = baseline?.intake;
+    if (!intake?.totalDays) return "using current target";
+    if (!baseline.useLoggedAverage) {
+        return `current target (${intake.loggedDays}/${intake.totalDays} days logged)`;
+    }
+    return `logged average (${intake.loggedDays}/${intake.totalDays} days)`;
+}
+
 function hideCoachActions() {
     const apply = document.getElementById("weekly-coach-apply") || document.getElementById("goal-check-in-apply");
     const keep = document.getElementById("weekly-coach-keep");
@@ -154,6 +185,7 @@ function syncCoach(metrics, phase) {
     const actual = Number(metrics.actualRateLbPerWeek);
     const target = Number(metrics.targetRateLbPerWeek);
     const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
+    const baseline = getAdaptiveCalorieBaseline(metrics, currentCalories);
     const checkDay = Number(trend.checkDay);
     const weeklyCoach = card.dataset.weeklyCoach === "1";
 
@@ -204,7 +236,11 @@ function syncCoach(metrics, phase) {
 
     if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) {
         setText(messageNode, `Your current 7-day trend is ${formatRate(actual)} versus a target of ${formatRate(target)}.`);
-        setText(suggestionNode, Number.isFinite(currentCalories) ? `Keep calories at ${Math.round(currentCalories)} kcal/day.` : "Keep the current plan.");
+        setText(suggestionNode, baseline.useLoggedAverage
+            ? `Your logged average of ${Math.round(baseline.calories)} kcal/day (${baseline.intake.loggedDays}/${baseline.intake.totalDays} days) is producing an on-track trend. Current target: ${Math.round(currentCalories)} kcal/day.`
+            : Number.isFinite(currentCalories)
+                ? `Keep calories at ${Math.round(currentCalories)} kcal/day. Log at least 4 days in the current 7-day window to personalize the next check.`
+                : "Keep the current plan.");
         hideCoachActions();
         return;
     }
@@ -231,13 +267,13 @@ function syncCoach(metrics, phase) {
         return;
     }
 
-    const recommendation = buildRecommendation(actual, target, currentCalories);
+    const recommendation = buildRecommendation(actual, target, baseline.calories);
     card.dataset.fullAdjustmentCalories = String(recommendation.targetCalories);
     card.dataset.fullAdjustmentDelta = String(recommendation.adjustment);
     card.dataset.fullAdjustmentCheckDay = String(checkDay);
 
-    setText(messageNode, `Current weekly trend: ${formatRate(actual)} · Target: ${formatRate(target)}. Level Up recommends the full estimated calorie correction, then reassesses after 7 days.`);
-    setText(suggestionNode, `Recommended adjustment: ${formatSignedCalories(recommendation.adjustment)} kcal/day → ${recommendation.targetCalories} kcal/day.`);
+    setText(messageNode, `Current weekly trend: ${formatRate(actual)} · Target: ${formatRate(target)}. Level Up bases this check on ${calorieBaselineCopy(baseline)}, then reassesses after 7 days.`);
+    setText(suggestionNode, `Baseline: ${Math.round(baseline.calories)} kcal/day · Adjustment: ${formatSignedCalories(recommendation.adjustment)} kcal/day → ${recommendation.targetCalories} kcal/day.`);
 
     const apply = document.getElementById(weeklyCoach ? "weekly-coach-apply" : "goal-check-in-apply");
     if (apply) {
@@ -253,8 +289,9 @@ function syncSuggestedCalories(metrics, phase) {
 
     const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
     if (!Number.isFinite(currentCalories)) return;
+    const baseline = getAdaptiveCalorieBaseline(metrics, currentCalories);
 
-    let primary = `${Math.round(currentCalories)} kcal/day`;
+    let primary = `${Math.round(baseline.calories)} kcal/day`;
     let secondary = "";
     const trend = metrics.trend;
     const checkDay = Number(trend?.checkDay);
@@ -263,21 +300,22 @@ function syncSuggestedCalories(metrics, phase) {
     const hold = getHold(phase, currentCalories);
 
     if (hold) {
+        primary = `${Math.round(currentCalories)} kcal/day`;
         secondary = `Adjustment applied · reassess in ${hold.daysRemaining} day${hold.daysRemaining === 1 ? "" : "s"}`;
     } else if (metrics.status === "AWAITING WEIGH-IN") {
         secondary = `Awaiting a new weigh-in for the Day ${Number.isFinite(checkDay) ? checkDay : FIRST_CHECK_DAY} assessment`;
     } else if (metrics.status === "PRELIMINARY TREND") {
-        secondary = `Preliminary 7-day trend · first calorie decision on Day ${FIRST_CHECK_DAY}`;
+        secondary = `${calorieBaselineCopy(baseline)} · first calorie decision on Day ${FIRST_CHECK_DAY}`;
     } else if (metrics.status === "BUILDING TREND") {
-        secondary = "Preliminary trend begins on Day 7";
+        secondary = `${calorieBaselineCopy(baseline)} · preliminary trend begins on Day 7`;
     } else if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) {
-        secondary = `On track · next check Day ${trend?.nextCheckDay || "--"}`;
+        secondary = `${calorieBaselineCopy(baseline)} · on track · next check Day ${trend?.nextCheckDay || "--"}`;
     } else if (getHandledCheck(phase, checkDay)) {
         secondary = `Day ${checkDay} check handled · next check Day ${trend?.nextCheckDay || checkDay + 7}`;
     } else if (metrics.recommendationReady && Number.isFinite(actual) && Number.isFinite(target)) {
-        const recommendation = buildRecommendation(actual, target, currentCalories);
+        const recommendation = buildRecommendation(actual, target, baseline.calories);
         primary = `${recommendation.targetCalories} kcal/day`;
-        secondary = `Recommended adjustment ${formatSignedCalories(recommendation.adjustment)} kcal/day → ${recommendation.targetCalories} kcal/day`;
+        secondary = `Based on ${Math.round(baseline.calories)} kcal ${calorieBaselineCopy(baseline)} · ${formatSignedCalories(recommendation.adjustment)} kcal/day`;
     } else {
         secondary = "Weekly check is not ready yet";
     }
@@ -301,11 +339,12 @@ function applyFullAdjustment(event) {
     const actual = Number(metrics.actualRateLbPerWeek);
     const target = Number(metrics.targetRateLbPerWeek);
     const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
+    const baseline = getAdaptiveCalorieBaseline(metrics, currentCalories);
     const checkDay = Number(metrics.trend?.checkDay);
     if (!Number.isFinite(actual) || !Number.isFinite(target) || !Number.isFinite(currentCalories) || !Number.isFinite(checkDay) || checkDay < FIRST_CHECK_DAY) return;
     if (["ON TRACK", "MAINTAINING"].includes(metrics.status) || getHandledCheck(phase, checkDay) || getHold(phase, currentCalories)) return;
 
-    const recommendation = buildRecommendation(actual, target, currentCalories);
+    const recommendation = buildRecommendation(actual, target, baseline.calories);
     event.preventDefault();
     event.stopImmediatePropagation();
 
@@ -334,7 +373,7 @@ function refresh() {
     if (!metrics.isFutureTest) {
         setText(
             document.querySelector("#goal-check-in-card[data-weekly-coach='1'] .weekly-coach-method"),
-            "The displayed weekly trend uses the same recent regression as Weight Progress. Calorie decisions still require the stricter phase check beginning on Day 14. When an adjustment is needed, Level Up applies the full estimated correction and reassesses after 7 days."
+            "The displayed weekly trend uses the same recent regression as Weight Progress. Calorie decisions begin on Day 14 and use the logged calorie average from the aligned 7-day intake window when at least 4 days are logged. Otherwise, Level Up falls back to the current target."
         );
     }
 }
@@ -380,6 +419,7 @@ document.addEventListener("click", event => {
 }, true);
 window.addEventListener("levelup:nutrition-updated", scheduleRefresh);
 window.addEventListener("levelup:nutrition-phase-updated", scheduleRefresh);
+window.addEventListener("levelup:food-log-updated", scheduleRefresh);
 window.addEventListener("pageshow", scheduleRefresh);
 window.addEventListener("focus", scheduleRefresh);
 document.addEventListener("visibilitychange", () => {
