@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { calculateMaintenanceEstimate } from "../js/nutrition/calculated-maintenance.js";
+import { calculateDisplayWeightTrend } from "../js/core/weight-trend.js";
 
 function key(offset) {
     const date = new Date("2026-08-08T12:00:00");
@@ -79,11 +80,35 @@ test("ignores logged days that were not marked complete once completion tracking
     assert.equal(result.status, "learning");
 });
 
+test("uses the same canonical weekly rate as Weight Progress", () => {
+    const weights = weightHistory(21, 180, .35);
+    weights.push({ ...weights[8], weight: weights[8].weight + .2 });
+    const endDate = new Date("2026-08-29T12:00:00");
+    const result = calculateMaintenanceEstimate({
+        foodLog: foodHistory(21, 2500),
+        weights,
+        endDate
+    });
+    const shared = calculateDisplayWeightTrend(weights, {
+        endDate: "2026-08-28",
+        windowDays: 21,
+        minEntries: 3,
+        minSpanDays: 5,
+        fullEntries: 9
+    });
+    assert.equal(result.weightRateLbPerWeek, shared.weeklyChange);
+});
+
 test("Goals and Plan distinguishes formula TDEE from the Level Up trend calculation", async () => {
     const source = await readFile(new URL("../js/nutrition/unified-goals-calories.js", import.meta.url), "utf8");
     assert.match(source, /Body Profile TDEE Formula/);
     assert.match(source, /Level Up Calculated TDEE/);
     assert.match(source, /Use Level Up TDEE/);
-    assert.match(source, /input\.dispatchEvent\(new Event\("input", \{ bubbles: true \}\)\)/);
+    assert.match(source, /maintenanceDraft = String\(estimate\.maintenanceCalories\)/);
+    assert.match(source, /input\.dispatchEvent\(new Event\("change", \{ bubbles: true \}\)\)/);
+    assert.match(source, /input\.value = maintenanceDraft/);
     assert.match(source, /Copied to your planning field/);
+    assert.match(source, /Ask before adjusting — Recommended/);
+    assert.match(source, /Adjust automatically/);
+    assert.match(source, /Track only/);
 });

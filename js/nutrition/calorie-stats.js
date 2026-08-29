@@ -1,11 +1,10 @@
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=maintenance-clarity-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-shared-trend-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
+import { getMaintenanceCheckIn, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, queueMaintenanceReview } from "./maintenance-check-in.js?v=maintenance-modes-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
-const WEIGHT_KEY = "forge_weight_entries";
 const RANGE_KEY = "level_up_calorie_stats_range_v1";
-const DAY = 86400000;
 const ranges = { "7": 7, "28": 28, "84": 84 };
 const MEAL_COLORS = { Breakfast: "#4fa8ff", Lunch: "#8b7cf6", Dinner: "#39d7ae", Snacks: "#ff9f43", Other: "#8f8f99" };
 
@@ -77,20 +76,6 @@ function average(days, key) {
     return logged.length ? logged.reduce((sum, day) => sum + day[key], 0) / logged.length : 0;
 }
 
-function weightRate(count) {
-    const cutoff = new Date(`${dateKeyOffset(-count + 1)}T00:00:00`).getTime();
-    const today = new Date(`${localDateKey()}T23:59:59`).getTime();
-    const points = (Array.isArray(readJson(WEIGHT_KEY, [])) ? readJson(WEIGHT_KEY, []) : [])
-        .map(entry => ({ x: new Date(`${entry.date}T12:00:00`).getTime() / DAY, y: Number(entry.weight) }))
-        .filter(point => Number.isFinite(point.x) && Number.isFinite(point.y) && point.x * DAY >= cutoff && point.x * DAY <= today);
-    if (points.length < 2) return null;
-    const meanX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
-    const meanY = points.reduce((sum, point) => sum + point.y, 0) / points.length;
-    const denominator = points.reduce((sum, point) => sum + (point.x - meanX) ** 2, 0);
-    if (!denominator) return null;
-    return points.reduce((sum, point) => sum + (point.x - meanX) * (point.y - meanY), 0) / denominator * 7;
-}
-
 function formatNumber(value) {
     return Math.round(value).toLocaleString();
 }
@@ -102,7 +87,7 @@ function profileMaintenance() {
     catch { return null; }
 }
 
-function maintenanceCard(estimate) {
+function maintenanceCard(estimate, checkIn) {
     const result = estimate.maintenanceCalories;
     const display = Number.isFinite(result) ? formatNumber(result) : Number.isFinite(estimate.profileEstimate) ? formatNumber(estimate.profileEstimate) : "—";
     const source = Number.isFinite(result) ? "Personalized from your logged results" : Number.isFinite(estimate.profileEstimate) ? "Showing the generic Body Profile formula while Level Up gathers results" : "Add your Body Profile while Level Up gathers results";
@@ -115,12 +100,34 @@ function maintenanceCard(estimate) {
         ${estimate.status === "learning" || estimate.status === "early" || estimate.status === "preliminary" ? `<div class="calculated-maintenance-progress"><i><b style="width:${progress}%"></b></i><span>Confidence improves with complete logs · ${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</span></div>` : ""}
         <details><summary>How this was calculated <span>›</span></summary><div class="calculated-maintenance-breakdown">
             <div><span>Average intake</span><strong>${Number.isFinite(estimate.averageIntake) ? `${formatNumber(estimate.averageIntake)} cal/day` : "—"}</strong></div>
-            <div><span>Weight trend</span><strong>${signedRate}</strong></div>
-            <div><span>Energy-balance adjustment</span><strong>${correction}</strong></div>
+            <div><span>${estimate.weightTrendLabel || "Weekly Trend"} used</span><strong>${signedRate}</strong></div>
+            <div><span>TDEE correction from weight change</span><strong>${correction}</strong></div>
             <div><span>Usable data</span><strong>${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</strong></div>
-            <small>21-day window ending yesterday. Level Up rounds to the nearest 25 calories. This estimate never changes your active target automatically.</small>
+            <small>The 21-day food and weight window ends yesterday. This correction is part of the TDEE calculation—not a recommendation to change your calorie target by that amount. It uses the same weight-trend engine as Weight Progress. Level Up rounds TDEE to the nearest 25 calories.</small>
         </div></details>
+        ${maintenanceCheckInMarkup(checkIn)}
     </article>`;
+}
+
+function maintenanceCheckInMarkup(checkIn) {
+    if (!checkIn?.ready || checkIn.mode === "track") return "";
+    const maintenanceChange = `${checkIn.change > 0 ? "+" : "−"}${formatNumber(Math.abs(checkIn.change))}`;
+    const targetChange = checkIn.currentTarget !== null && checkIn.proposedTarget !== null
+        ? checkIn.proposedTarget - checkIn.currentTarget
+        : null;
+    return `<section class="maintenance-check-in-alert">
+        <span class="eyebrow">WEEKLY CHECK-IN READY</span>
+        <h3>Your maintenance estimate changed</h3>
+        <p>${checkIn.mode === "automatic" ? "Automatic updates begin once this estimate reaches high confidence. You can review this early estimate manually now." : "Level Up recalculates daily, but only offers target updates once a week. Nothing changes until you approve it."}</p>
+        <div class="maintenance-check-in-comparison">
+            <span><small>Current maintenance</small><strong>${formatNumber(checkIn.currentMaintenance)} cal</strong></span>
+            <i>→</i>
+            <span><small>New estimate</small><strong>${formatNumber(checkIn.proposedMaintenance)} cal</strong></span>
+        </div>
+        <div class="maintenance-check-in-impact"><span>Maintenance change</span><strong>${maintenanceChange} cal/day</strong></div>
+        ${targetChange === null ? "" : `<div class="maintenance-check-in-impact"><span>Planned daily target</span><strong>${formatNumber(checkIn.currentTarget)} → ${formatNumber(checkIn.proposedTarget)} cal</strong></div>`}
+        <div class="maintenance-check-in-actions"><button class="primary-btn" type="button" data-maintenance-review>Review &amp; use</button><button class="secondary-btn" type="button" data-maintenance-keep>Keep current</button></div>
+    </section>`;
 }
 
 function bars(days, target) {
@@ -214,10 +221,16 @@ function renderStats(panel) {
     const tolerance = targets.calories ? calorieTargetTolerance(targets.calories) : 0;
     const lower = targets.calories - tolerance;
     const upper = targets.calories + tolerance;
-    const rate = weightRate(count);
-    const insight = phaseInsight(targets, rate, logged.length);
     const displayDays = count === 7 ? days : days.slice(-14);
     const maintenance = getCalculatedMaintenanceEstimate(profileMaintenance());
+    const rate = Number.isFinite(maintenance.weightRateLbPerWeek) ? maintenance.weightRateLbPerWeek : null;
+    const insight = phaseInsight(targets, rate, logged.length);
+    const checkIn = getMaintenanceCheckIn({
+        estimate: maintenance,
+        currentMaintenance: targets.phase?.maintenanceCalories,
+        currentTarget: targets.calories
+    });
+    checkIn.mode = getMaintenanceUpdateMode();
 
     panel.innerHTML = `
         <section class="calorie-stats-page">
@@ -225,7 +238,7 @@ function renderStats(panel) {
             <div class="calorie-stats-ranges" aria-label="Stats date range">
                 ${Object.entries({7:"7D",28:"4W",84:"12W"}).map(([value,label]) => `<button type="button" class="${count === Number(value) ? "active" : ""}" data-calorie-stats-range="${value}">${label}</button>`).join("")}
             </div>
-            ${maintenanceCard(maintenance)}
+            ${maintenanceCard(maintenance, checkIn)}
             <article class="calorie-stat-card calorie-stat-week">
                 <div class="calorie-stat-title"><span><small>AVERAGE CALORIES</small><strong>${logged.length ? formatNumber(avgCalories) : "—"}</strong></span><b>${logged.length} of ${count} days logged</b></div>
                 <div class="calorie-stat-bars ${displayDays.length === 7 ? "is-seven" : ""}">${bars(displayDays, targets.calories)}</div>
@@ -264,6 +277,18 @@ function renderStats(panel) {
         localStorage.setItem(RANGE_KEY, button.dataset.calorieStatsRange);
         renderStats(panel);
     }));
+    panel.querySelector("[data-maintenance-review]")?.addEventListener("click", () => openMaintenanceReview(checkIn));
+    panel.querySelector("[data-maintenance-keep]")?.addEventListener("click", () => {
+        markMaintenanceCheckInReviewed(checkIn, "kept");
+        renderStats(panel);
+    });
+}
+
+function openMaintenanceReview(checkIn) {
+    if (!queueMaintenanceReview(checkIn)) return;
+    document.querySelector('.nav-btn[data-page="energy"]')?.click();
+    window.setTimeout(() => document.querySelector('[data-calories-tab="plan"]')?.click(), 60);
+    window.setTimeout(() => document.querySelector('[data-nutrition-view="goals"]')?.click(), 120);
 }
 
 export function renderCalorieStats() {

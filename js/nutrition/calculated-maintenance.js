@@ -1,7 +1,8 @@
+import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=tdee-shared-trend-1";
+
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
 const WEIGHT_KEY = "forge_weight_entries";
-const DAY = 86400000;
 
 function readJson(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key) || "null") ?? fallback; }
@@ -16,21 +17,20 @@ function caloriesFor(entries) {
     return (Array.isArray(entries) ? entries : []).reduce((sum, entry) => sum + Math.max(0, Number(entry?.nutrition?.calories) || 0), 0);
 }
 
-function regressionRate(weights, startKey, endKey) {
-    const start = new Date(`${startKey}T00:00:00`).getTime();
-    const end = new Date(`${endKey}T23:59:59`).getTime();
-    const points = (Array.isArray(weights) ? weights : [])
-        .map(entry => ({ x: new Date(`${entry?.date}T12:00:00`).getTime() / DAY, y: Number(entry?.weight) }))
-        .filter(point => Number.isFinite(point.x) && Number.isFinite(point.y) && point.x * DAY >= start && point.x * DAY <= end);
-    if (points.length < 2) return { rate: null, count: points.length, spanDays: 0 };
-    const meanX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
-    const meanY = points.reduce((sum, point) => sum + point.y, 0) / points.length;
-    const denominator = points.reduce((sum, point) => sum + (point.x - meanX) ** 2, 0);
-    const rate = denominator ? points.reduce((sum, point) => sum + (point.x - meanX) * (point.y - meanY), 0) / denominator * 7 : null;
+function sharedWeightTrend(weights, endKey) {
+    const normalized = normalizeWeightEntries(weights).filter(entry => entry.date <= endKey);
+    const result = calculateDisplayWeightTrend(normalized, {
+        endDate: endKey,
+        windowDays: 21,
+        minEntries: 3,
+        minSpanDays: 5,
+        fullEntries: 9
+    });
     return {
-        rate: Number.isFinite(rate) ? rate : null,
-        count: points.length,
-        spanDays: Math.round(Math.max(...points.map(point => point.x)) - Math.min(...points.map(point => point.x)))
+        rate: Number.isFinite(result.weeklyChange) ? result.weeklyChange : null,
+        count: result.entries || 0,
+        spanDays: result.spanDays ? Math.max(0, result.spanDays - 1) : 0,
+        label: result.label
     };
 }
 
@@ -48,7 +48,9 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], compl
     const usableDates = hasCompletionHistory ? loggedDates.filter(key => completedDays?.[key] === true) : loggedDates;
     const intakeValues = usableDates.map(key => caloriesFor(foodLog[key])).filter(value => value > 0);
     const averageIntake = intakeValues.length ? intakeValues.reduce((sum, value) => sum + value, 0) / intakeValues.length : null;
-    const trend = regressionRate(weights, dates[0], dates[dates.length - 1]);
+    // Use the same canonical 21-day regression as Weight Progress. Keeping this
+    // in one shared engine prevents the TDEE card from showing a different rate.
+    const trend = sharedWeightTrend(weights, dates[dates.length - 1]);
     const enoughEarly = intakeValues.length >= 2 && trend.count >= 3 && trend.spanDays >= 5;
     const enoughPreliminary = intakeValues.length >= 7 && trend.count >= 6 && trend.spanDays >= 10;
     const enoughEstablished = hasCompletionHistory && intakeValues.length >= 15 && trend.count >= 9 && trend.spanDays >= 17;
@@ -59,6 +61,9 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], compl
         : null;
     const status = enoughEstablished ? "established" : enoughPreliminary ? "preliminary" : enoughEarly ? "early" : "learning";
     const label = status === "established" ? "High confidence" : status === "preliminary" ? "Building confidence" : status === "early" ? "Early estimate" : "Not enough data";
+    const recentDates = dates.slice(-7);
+    const recentFoodDays = recentDates.filter(key => usableDates.includes(key)).length;
+    const recentWeighIns = normalizeWeightEntries(weights).filter(entry => recentDates.includes(entry.date)).length;
     return {
         maintenanceCalories,
         profileEstimate: Number.isFinite(Number(profileEstimate)) ? Math.round(Number(profileEstimate)) : null,
@@ -68,6 +73,9 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], compl
         foodDays: intakeValues.length,
         weighIns: trend.count,
         weightSpanDays: trend.spanDays,
+        weightTrendLabel: trend.label || "Weekly Trend",
+        recentFoodDays,
+        recentWeighIns,
         hasCompletionHistory,
         status,
         label,

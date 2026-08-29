@@ -1,10 +1,12 @@
 import { GOAL_PRESETS, calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile, getNutritionGoal, saveNutritionGoal, getNutritionPlan, syncCalculatedCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getActiveNutritionPhase, getNutritionPhaseHistory, getActivePhaseMetrics, getPhaseDayNumber, saveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-1";
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=maintenance-clarity-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-shared-trend-1";
+import { clearPendingMaintenanceReview, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, readPendingMaintenanceReview, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=maintenance-modes-1";
 
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const LEGACY_CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
+let maintenanceDraft = null;
 
 export function initializeUnifiedGoalsCalories() {
     const view = document.querySelector('[data-planner-view="goals"]');
@@ -23,13 +25,22 @@ export function initializeUnifiedGoalsCalories() {
     hydrateMaintenance();
     refreshAll();
     document.getElementById("unified-goal-select")?.addEventListener("change", refreshAll);
-    document.getElementById("unified-maintenance")?.addEventListener("input", refreshAll);
+    document.getElementById("unified-maintenance")?.addEventListener("input", event => {
+        maintenanceDraft = event.currentTarget.value;
+        refreshAll();
+    });
     document.getElementById("unified-use-estimate")?.addEventListener("click", useEstimatedMaintenance);
     document.getElementById("unified-use-calculated")?.addEventListener("click", useCalculatedMaintenance);
+    document.getElementById("unified-maintenance-mode")?.addEventListener("change", event => {
+        setMaintenanceUpdateMode(event.currentTarget.value);
+        refreshMaintenanceMode();
+    });
     document.getElementById("unified-save-plan")?.addEventListener("click", saveUnifiedPlan);
     document.getElementById("save-nutrition-profile-btn")?.addEventListener("click", () => window.setTimeout(refreshAll, 30));
     window.addEventListener("levelup:nutrition-updated", refreshAll);
     window.addEventListener("levelup:nutrition-phase-updated", refreshAll);
+    hydratePendingMaintenanceReview();
+    refreshMaintenanceMode();
 }
 
 function retireDuplicateGoalInterfaces(view) {
@@ -69,6 +80,15 @@ function renderUnifiedCard() {
                 <button id="unified-use-calculated" class="secondary-btn" type="button" disabled>Use Level Up TDEE</button>
             </div>
             <p class="unified-maintenance-choice-note"><strong>Which number should I use?</strong> The formula is a starting point. The Level Up estimate becomes more personalized as you log food and weight.</p>
+            <div class="unified-maintenance-mode">
+                <label for="unified-maintenance-mode">Maintenance update preference</label>
+                <select id="unified-maintenance-mode">
+                    <option value="review">Ask before adjusting — Recommended</option>
+                    <option value="automatic">Adjust automatically</option>
+                    <option value="track">Track only</option>
+                </select>
+                <small id="unified-maintenance-mode-help"></small>
+            </div>
             <label for="unified-maintenance">Maintenance Used for Your Plan</label>
             <div class="unified-maintenance-input-row">
                 <input id="unified-maintenance" type="number" inputmode="numeric" min="1" step="10" placeholder="Save Body Profile first">
@@ -107,19 +127,43 @@ function hydrateMaintenance(force = true) {
     if (!input || (!force && document.activeElement === input)) return;
     const active = getActiveNutritionPhase();
     const manual = getStoredManualMaintenance();
-    input.value = Number.isFinite(Number(active?.maintenanceCalories)) ? String(active.maintenanceCalories) : Number.isFinite(manual) ? String(manual) : Number.isFinite(estimated) ? String(estimated) : "";
+    input.value = maintenanceDraft !== null ? String(maintenanceDraft) : Number.isFinite(Number(active?.maintenanceCalories)) ? String(active.maintenanceCalories) : Number.isFinite(manual) ? String(manual) : Number.isFinite(estimated) ? String(estimated) : "";
 }
 
 function useEstimatedMaintenance() {
     const estimated = getEstimatedMaintenance();
     if (!Number.isFinite(estimated)) { setText("unified-calorie-message", "Save your Body Profile first so Level Up can estimate maintenance."); return; }
     const input = document.getElementById("unified-maintenance");
-    if (input) input.value = String(estimated);
+    maintenanceDraft = String(estimated);
+    if (input) input.value = maintenanceDraft;
     refreshAll();
 }
 
 function calculatedMaintenance() {
     return getCalculatedMaintenanceEstimate(getEstimatedMaintenance());
+}
+
+function hydratePendingMaintenanceReview() {
+    const pending = readPendingMaintenanceReview();
+    const value = Number(pending?.maintenanceCalories);
+    if (!Number.isFinite(value) || value <= 0) return;
+    maintenanceDraft = String(Math.round(value));
+    const input = document.getElementById("unified-maintenance");
+    if (input) input.value = maintenanceDraft;
+    refreshPreview();
+    setText("unified-calculated-action-status", "Weekly recommendation added below for review.");
+    setText("unified-calorie-message", "Review the updated daily target, then press Save to apply it.");
+}
+
+function refreshMaintenanceMode() {
+    const mode = getMaintenanceUpdateMode();
+    setValue("unified-maintenance-mode", mode);
+    const messages = {
+        review: "Level Up checks weekly and asks before changing your target.",
+        automatic: "High-confidence weekly updates apply automatically, capped at 150 calories, with an Undo option. Early estimates still require review.",
+        track: "Calculated TDEE remains visible, but Level Up will not alert you or adjust your target."
+    };
+    setText("unified-maintenance-mode-help", messages[mode] || messages.review);
 }
 
 function refreshCalculatedMaintenance() {
@@ -140,9 +184,11 @@ function useCalculatedMaintenance() {
         return;
     }
     const input = document.getElementById("unified-maintenance");
+    maintenanceDraft = String(estimate.maintenanceCalories);
     if (input) {
-        input.value = String(estimate.maintenanceCalories);
-        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.value = maintenanceDraft;
+        refreshPreview();
+        input.dispatchEvent(new Event("change", { bubbles: true }));
         input.classList.add("is-level-up-estimate");
         window.setTimeout(() => input.classList.remove("is-level-up-estimate"), 1400);
     }
@@ -222,6 +268,11 @@ function saveUnifiedPlan() {
     const result = saveNutritionPhase({ goalId: preview.goalId, maintenanceCalories: preview.maintenance, targetCalories: preview.target });
     saveNutritionGoal({ goalId: preview.goalId, updatedAt: new Date().toISOString(), source: "nutrition-phase" });
     syncCalculatedCalories(preview.target);
+    maintenanceDraft = null;
+    const estimate = calculatedMaintenance();
+    const usedCalculated = Number.isFinite(estimate.maintenanceCalories) && preview.maintenance === estimate.maintenanceCalories;
+    markMaintenanceCheckInReviewed({ proposedMaintenance: estimate.maintenanceCalories }, usedCalculated ? "applied" : "kept");
+    clearPendingMaintenanceReview();
     window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
     const message = result.action === "started" ? `Started ${preview.goal.label} today at ${preview.target} kcal/day.` : result.action === "adjusted" ? `Updated calories to ${preview.target} kcal/day inside the current ${preview.goal.label} phase. The phase start date did not change.` : `${preview.goal.label} remains active at ${preview.target} kcal/day.`;
     setText("unified-calorie-message", message);
