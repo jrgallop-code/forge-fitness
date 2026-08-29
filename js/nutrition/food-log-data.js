@@ -47,7 +47,12 @@ export function saveEntries(dateKey, newEntries) {
     const safeEntries = Array.isArray(newEntries) ? newEntries.filter(Boolean) : [];
     log[dateKey] = [...entries, ...safeEntries];
     localStorage.setItem(FOOD_LOG_KEY, JSON.stringify(log));
-    window.dispatchEvent(new CustomEvent("levelup:food-log-updated", { detail: { dateKey } }));
+    window.dispatchEvent(new CustomEvent("levelup:food-log-updated", { detail: {
+        dateKey,
+        action: "foods_added",
+        entryIds: safeEntries.map(entry => entry?.id).filter(Boolean),
+        count: safeEntries.length
+    } }));
     return safeEntries;
 }
 
