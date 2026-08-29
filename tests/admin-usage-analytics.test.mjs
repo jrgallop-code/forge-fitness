@@ -26,6 +26,9 @@ test("food additions create deduplicated analytics events", async () => {
     assert.match(data, /entryIds: safeEntries\.map/);
     assert.match(tracking, /detail\.action!=="foods_added"/);
     assert.match(tracking, /trackProductEvent\("food_logged"/);
+    assert.match(tracking, /reconcileRecentFoodLogEvents/);
+    assert.match(tracking, /level_up_food_usage_reconciled_v1/);
+    assert.match(tracking, /entry\.createdAt\|\|`\$\{dateKey\}T12:00:00\.000Z`/);
     assert.match(worker, /USAGE_EVENT_NAMES = new Set\(\["food_logged"\]\)/);
 });
 
@@ -45,4 +48,9 @@ test("owner analytics reports current, returning, food, and workout usage", asyn
     assert.match(styles, /admin-analytics-series--users/);
     assert.match(styles, /admin-analytics-series--foods/);
     assert.match(styles, /admin-analytics-series--workouts/);
+    assert.match(worker, /people: people\?\.results/);
+    assert.match(worker, /u\.display_name/);
+    assert.match(admin, /Who is using the app/);
+    assert.match(admin, /person\.display_name/);
+    assert.match(styles, /admin-analytics-person-usage/);
 });

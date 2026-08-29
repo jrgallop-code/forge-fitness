@@ -56,6 +56,71 @@
     background: #39d7ae;
 }
 
+.admin-analytics-people {
+    display: grid;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.admin-analytics-person {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border: 1px solid #303036;
+    border-radius: 15px;
+    background: #18181c;
+}
+
+.admin-analytics-person-identity {
+    display: grid;
+    min-width: 0;
+}
+
+.admin-analytics-person-identity strong {
+    overflow: hidden;
+    color: #f7f7f8;
+    font-size: .95rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-analytics-person-identity small,
+.admin-analytics-person-identity span {
+    overflow: hidden;
+    color: #92929b;
+    font-size: .69rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-analytics-person-usage {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.admin-analytics-person-usage span {
+    padding: 6px 9px;
+    border-radius: 999px;
+    color: #b8d9ff;
+    background: #17283a;
+    font-size: .67rem;
+    white-space: nowrap;
+}
+
+.admin-analytics-person-usage .is-foods {
+    color: #7be5ca;
+    background: #14332d;
+}
+
+.admin-analytics-person-usage .is-workouts {
+    color: #ff939a;
+    background: #38191c;
+}
+
 @media (max-width: 700px) {
     .admin-analytics-card-head {
         align-items: stretch;
@@ -63,6 +128,15 @@
     }
 
     .admin-analytics-legend {
+        justify-content: flex-start;
+    }
+
+    .admin-analytics-person {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-analytics-person-usage {
         justify-content: flex-start;
     }
 }

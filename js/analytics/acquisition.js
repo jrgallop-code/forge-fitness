@@ -4,6 +4,8 @@ const FIRST_TOUCH_KEY = "level_up_acquisition_first_touch";
 const REPORTED_KEY = "level_up_acquisition_reported";
 const SUBMITTED_KEY = "level_up_acquisition_submitted";
 const EVENT_QUEUE_KEY = "level_up_product_event_queue";
+const FOOD_LOG_KEY = "level_up_food_log_v1";
+const FOOD_RECONCILE_KEY = "level_up_food_usage_reconciled_v1";
 const SOURCES = new Set(["instagram","tiktok","reddit","youtube","google_search","friend_family","app_recommendation","other","prefer_not_to_say"]);
 
 let initialized = false;
@@ -33,6 +35,7 @@ export function initializeAcquisitionTracking(){
             metadata:{dateKey:detail.dateKey||null}
         });});
     });
+    void reconcileRecentFoodLogEvents();
 }
 
 function ensureStyles(){
@@ -53,15 +56,34 @@ export function saveReportedSource(source,otherText=""){
     return submitAcquisition();
 }
 
-export async function trackProductEvent(eventName,{eventKey,metadata={}}={}){
+export async function trackProductEvent(eventName,{eventKey,metadata={},occurredAt}={}){
     const token=sessionToken();
-    const event={eventName,eventKey:String(eventKey||crypto.randomUUID()),occurredAt:new Date().toISOString(),metadata};
+    const event={eventName,eventKey:String(eventKey||crypto.randomUUID()),occurredAt:validOccurredAt(occurredAt),metadata};
     if(!token||!navigator.onLine){queueEvent(event);return false;}
     try{
         const response=await fetch(`${API_URL}/v1/events`,{method:"POST",headers:authHeaders(token),body:JSON.stringify(event)});
         if(!response.ok)queueEvent(event);
         return response.ok;
     }catch{queueEvent(event);return false;}
+}
+
+async function reconcileRecentFoodLogEvents(){
+    if(localStorage.getItem(FOOD_RECONCILE_KEY)==="complete")return;
+    const log=safeRead(FOOD_LOG_KEY);
+    if(!log||typeof log!=="object"||Array.isArray(log)){localStorage.setItem(FOOD_RECONCILE_KEY,"complete");return;}
+    const cutoff=new Date(Date.now()-31*86400000).toISOString().slice(0,10);
+    const entries=Object.entries(log)
+        .filter(([dateKey,items])=>dateKey>=cutoff&&Array.isArray(items))
+        .flatMap(([dateKey,items])=>items.map(entry=>({dateKey,entry})))
+        .filter(item=>item.entry?.id)
+        .sort((a,b)=>String(b.entry.createdAt||b.dateKey).localeCompare(String(a.entry.createdAt||a.dateKey)))
+        .slice(0,50);
+    await Promise.all(entries.map(({dateKey,entry})=>trackProductEvent("food_logged",{
+        eventKey:String(entry.id),
+        occurredAt:entry.createdAt||`${dateKey}T12:00:00.000Z`,
+        metadata:{dateKey,reconciled:true}
+    })));
+    localStorage.setItem(FOOD_RECONCILE_KEY,"complete");
 }
 
 async function flushEventQueue(){
@@ -108,4 +130,5 @@ function authHeaders(token){return{"Content-Type":"application/json","Authorizat
 function safeRead(key){try{return JSON.parse(localStorage.getItem(key)||"null");}catch{return null;}}
 function safeSet(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch{}}
 function clean(value,max){return typeof value==="string"?value.trim().slice(0,max):"";}
+function validOccurredAt(value){return typeof value==="string"&&Number.isFinite(Date.parse(value))?new Date(value).toISOString():new Date().toISOString();}
 function referrerHost(value){if(!value)return"";try{return clean(new URL(value).hostname,200);}catch{return"";}}

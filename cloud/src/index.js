@@ -1360,7 +1360,7 @@ async function getAdminAnalytics(user, url, request, env) {
     const since = new Date(Date.now() - days * 86400000).toISOString();
     const activeSince = new Date(Date.now() - 7 * 86400000).toISOString();
     const today = new Date().toISOString().slice(0, 10);
-    const [totals, daily, acquisition] = await Promise.all([
+    const [totals, daily, acquisition, people] = await Promise.all([
         env.DB.prepare(`SELECT
             (SELECT COUNT(*) FROM users) AS total_users,
             (SELECT COUNT(*) FROM users WHERE created_at >= ?) AS new_users,
@@ -1392,9 +1392,28 @@ async function getAdminAnalytics(user, url, request, env) {
                 FROM product_events WHERE event_name = 'workout_completed' AND occurred_at >= ?
             ) GROUP BY day ORDER BY day`).bind(since, since).all(),
         env.DB.prepare(`SELECT COALESCE(NULLIF(reported_source, ''), 'Not answered') AS source, COUNT(*) AS users
-            FROM user_acquisition GROUP BY source ORDER BY users DESC`).all()
+            FROM user_acquisition GROUP BY source ORDER BY users DESC`).all(),
+        env.DB.prepare(`SELECT
+                u.id,
+                u.display_name,
+                u.email,
+                u.avatar_url,
+                u.created_at,
+                u.last_active_at,
+                (SELECT COUNT(DISTINCT substr(ue.occurred_at, 1, 10)) FROM usage_events ue
+                    WHERE ue.user_id = u.id AND ue.event_name = 'app_active' AND ue.occurred_at >= ?) AS active_days,
+                (SELECT COUNT(*) FROM usage_events ue
+                    WHERE ue.user_id = u.id AND ue.event_name = 'food_logged' AND ue.occurred_at >= ?) AS foods_logged,
+                (SELECT COUNT(*) FROM product_events pe
+                    WHERE pe.user_id = u.id AND pe.event_name = 'workout_completed' AND pe.occurred_at >= ?) AS workouts_logged
+            FROM users u
+            WHERE u.last_active_at >= ?
+                OR EXISTS (SELECT 1 FROM usage_events ue WHERE ue.user_id = u.id AND ue.occurred_at >= ?)
+                OR EXISTS (SELECT 1 FROM product_events pe WHERE pe.user_id = u.id AND pe.occurred_at >= ?)
+            ORDER BY u.last_active_at DESC, u.created_at DESC
+            LIMIT 100`).bind(since, since, since, since, since, since).all()
     ]);
-    return json({ days, since, totals: totals || {}, daily: daily?.results || [], acquisition: acquisition?.results || [] }, 200, request, env);
+    return json({ days, since, totals: totals || {}, daily: daily?.results || [], acquisition: acquisition?.results || [], people: people?.results || [] }, 200, request, env);
 }
 
 async function importRedditSource(body, request, env) {
