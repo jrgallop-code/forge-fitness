@@ -1,6 +1,7 @@
 import { GOAL_PRESETS, calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile, getNutritionGoal, saveNutritionGoal, getNutritionPlan, syncCalculatedCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getActiveNutritionPhase, getNutritionPhaseHistory, getActivePhaseMetrics, getPhaseDayNumber, saveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=calculated-maintenance-1";
 
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const LEGACY_CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
@@ -24,6 +25,7 @@ export function initializeUnifiedGoalsCalories() {
     document.getElementById("unified-goal-select")?.addEventListener("change", refreshAll);
     document.getElementById("unified-maintenance")?.addEventListener("input", refreshAll);
     document.getElementById("unified-use-estimate")?.addEventListener("click", useEstimatedMaintenance);
+    document.getElementById("unified-use-calculated")?.addEventListener("click", useCalculatedMaintenance);
     document.getElementById("unified-save-plan")?.addEventListener("click", saveUnifiedPlan);
     document.getElementById("save-nutrition-profile-btn")?.addEventListener("click", () => window.setTimeout(refreshAll, 30));
     window.addEventListener("levelup:nutrition-updated", refreshAll);
@@ -61,6 +63,10 @@ function renderUnifiedCard() {
             <div class="unified-maintenance-heading">
                 <div><span>Estimated Maintenance</span><strong id="unified-estimated-maintenance">--</strong></div>
                 <small>Calculated from your Body Profile</small>
+            </div>
+            <div class="unified-calculated-maintenance">
+                <div><span>Level Up Calculated</span><strong id="unified-calculated-maintenance">Learning</strong><small id="unified-calculated-maintenance-meta">Needs consistent food logs and weigh-ins</small></div>
+                <button id="unified-use-calculated" class="secondary-btn" type="button" disabled>Use Calculated</button>
             </div>
             <label for="unified-maintenance">Maintenance Used for Planning</label>
             <div class="unified-maintenance-input-row">
@@ -111,6 +117,31 @@ function useEstimatedMaintenance() {
     refreshAll();
 }
 
+function calculatedMaintenance() {
+    return getCalculatedMaintenanceEstimate(getEstimatedMaintenance());
+}
+
+function refreshCalculatedMaintenance() {
+    const estimate = calculatedMaintenance();
+    setText("unified-calculated-maintenance", Number.isFinite(estimate.maintenanceCalories) ? `${estimate.maintenanceCalories} kcal/day` : estimate.label);
+    setText("unified-calculated-maintenance-meta", Number.isFinite(estimate.maintenanceCalories)
+        ? `${estimate.label} · ${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins`
+        : `${estimate.foodDays}/10 food days · ${estimate.weighIns}/6 weigh-ins`);
+    document.getElementById("unified-use-calculated")?.toggleAttribute("disabled", !Number.isFinite(estimate.maintenanceCalories));
+}
+
+function useCalculatedMaintenance() {
+    const estimate = calculatedMaintenance();
+    if (!Number.isFinite(estimate.maintenanceCalories)) {
+        setText("unified-calorie-message", "Level Up needs at least 10 usable food days and 6 weigh-ins across about two weeks.");
+        return;
+    }
+    const input = document.getElementById("unified-maintenance");
+    if (input) input.value = String(estimate.maintenanceCalories);
+    setText("unified-calorie-message", "Calculated maintenance added for preview. Save below to update your plan.");
+    refreshPreview();
+}
+
 function calculatePreview() {
     const goalId = document.getElementById("unified-goal-select")?.value;
     const goal = GOAL_PRESETS[goalId];
@@ -121,6 +152,7 @@ function calculatePreview() {
 
 function refreshAll() {
     hydrateMaintenance(false);
+    refreshCalculatedMaintenance();
     refreshCurrentPhase();
     refreshPreview();
     refreshPlannerSummary();

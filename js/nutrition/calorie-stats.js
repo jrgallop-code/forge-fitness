@@ -1,3 +1,7 @@
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=calculated-maintenance-1";
+import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
+import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
+
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const WEIGHT_KEY = "forge_weight_entries";
 const RANGE_KEY = "level_up_calorie_stats_range_v1";
@@ -89,6 +93,34 @@ function weightRate(count) {
 
 function formatNumber(value) {
     return Math.round(value).toLocaleString();
+}
+
+function profileMaintenance() {
+    const profile = getNutritionProfile();
+    if (!profile || Number(profile.age) < 18) return null;
+    try { return Math.round(Number(calculateTdee(profile).tdee)) || null; }
+    catch { return null; }
+}
+
+function maintenanceCard(estimate) {
+    const result = estimate.maintenanceCalories;
+    const display = Number.isFinite(result) ? formatNumber(result) : Number.isFinite(estimate.profileEstimate) ? formatNumber(estimate.profileEstimate) : "—";
+    const source = Number.isFinite(result) ? "Level Up calculated" : Number.isFinite(estimate.profileEstimate) ? "Profile estimate while Level Up learns" : "Add your Body Profile while Level Up learns";
+    const signedRate = Number.isFinite(estimate.weightRateLbPerWeek) ? `${estimate.weightRateLbPerWeek > 0 ? "+" : ""}${estimate.weightRateLbPerWeek.toFixed(2)} lb/week` : "Need more weigh-ins";
+    const correction = Number.isFinite(estimate.energyCorrection) ? `${estimate.energyCorrection > 0 ? "+" : ""}${formatNumber(estimate.energyCorrection)} cal/day` : "—";
+    const progress = Math.min(100, Math.round(Math.min(1, estimate.foodDays / 10) * .55 * 100 + Math.min(1, estimate.weighIns / 6) * .45 * 100));
+    return `<article class="calorie-stat-card calculated-maintenance-card is-${estimate.status}">
+        <div class="calculated-maintenance-head"><span><small>LEVEL UP CALCULATED MAINTENANCE</small><strong>${display} <em>cal/day</em></strong></span><b>${estimate.label}</b></div>
+        <p>${source}. ${estimate.message}</p>
+        ${estimate.status === "learning" ? `<div class="calculated-maintenance-progress"><i><b style="width:${progress}%"></b></i><span>${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</span></div>` : ""}
+        <details><summary>How this was calculated <span>›</span></summary><div class="calculated-maintenance-breakdown">
+            <div><span>Average intake</span><strong>${Number.isFinite(estimate.averageIntake) ? `${formatNumber(estimate.averageIntake)} cal/day` : "—"}</strong></div>
+            <div><span>Weight trend</span><strong>${signedRate}</strong></div>
+            <div><span>Energy-balance adjustment</span><strong>${correction}</strong></div>
+            <div><span>Usable data</span><strong>${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</strong></div>
+            <small>21-day window ending yesterday. Level Up rounds to the nearest 25 calories. This estimate never changes your active target automatically.</small>
+        </div></details>
+    </article>`;
 }
 
 function bars(days, target) {
@@ -185,6 +217,7 @@ function renderStats(panel) {
     const rate = weightRate(count);
     const insight = phaseInsight(targets, rate, logged.length);
     const displayDays = count === 7 ? days : days.slice(-14);
+    const maintenance = getCalculatedMaintenanceEstimate(profileMaintenance());
 
     panel.innerHTML = `
         <section class="calorie-stats-page">
@@ -192,6 +225,7 @@ function renderStats(panel) {
             <div class="calorie-stats-ranges" aria-label="Stats date range">
                 ${Object.entries({7:"7D",28:"4W",84:"12W"}).map(([value,label]) => `<button type="button" class="${count === Number(value) ? "active" : ""}" data-calorie-stats-range="${value}">${label}</button>`).join("")}
             </div>
+            ${maintenanceCard(maintenance)}
             <article class="calorie-stat-card calorie-stat-week">
                 <div class="calorie-stat-title"><span><small>AVERAGE CALORIES</small><strong>${logged.length ? formatNumber(avgCalories) : "—"}</strong></span><b>${logged.length} of ${count} days logged</b></div>
                 <div class="calorie-stat-bars ${displayDays.length === 7 ? "is-seven" : ""}">${bars(displayDays, targets.calories)}</div>
@@ -246,6 +280,10 @@ window.addEventListener("levelup:food-log-updated", () => {
     if (panel) renderStats(panel);
 });
 window.addEventListener("levelup:nutrition-updated", () => {
+    const panel = document.querySelector("#calorie-progress:not([hidden]) [data-progress-calorie-stats]");
+    if (panel) renderStats(panel);
+});
+window.addEventListener("levelup:weight-updated", () => {
     const panel = document.querySelector("#calorie-progress:not([hidden]) [data-progress-calorie-stats]");
     if (panel) renderStats(panel);
 });

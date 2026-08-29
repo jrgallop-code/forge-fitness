@@ -1,4 +1,5 @@
 export const FOOD_LOG_KEY = "level_up_food_log_v1";
+export const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
 export const CUSTOM_FOODS_KEY = "level_up_custom_foods_v1";
 export const SAVED_MEALS_KEY = "level_up_saved_meals_v1";
 export const MEALS = ["Breakfast", "Lunch", "Dinner", "Snacks"];
@@ -30,6 +31,30 @@ export function entriesForDate(dateKey) {
     return Array.isArray(entries) ? entries : [];
 }
 
+export function readCompletedFoodDays() {
+    const value = readJson(FOOD_COMPLETE_KEY, {});
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+export function isFoodDayComplete(dateKey) {
+    return readCompletedFoodDays()[dateKey] === true;
+}
+
+export function setFoodDayComplete(dateKey, complete) {
+    const days = readCompletedFoodDays();
+    if (complete) days[dateKey] = true;
+    else delete days[dateKey];
+    localStorage.setItem(FOOD_COMPLETE_KEY, JSON.stringify(days));
+    window.dispatchEvent(new CustomEvent("levelup:food-log-updated", { detail: { dateKey, action: complete ? "day_completed" : "day_reopened" } }));
+}
+
+function reopenFoodDay(dateKey) {
+    if (!isFoodDayComplete(dateKey)) return;
+    const days = readCompletedFoodDays();
+    delete days[dateKey];
+    localStorage.setItem(FOOD_COMPLETE_KEY, JSON.stringify(days));
+}
+
 export function previousDateKey(dateKey) {
     const date = new Date(`${dateKey}T12:00:00`);
     date.setDate(date.getDate() - 1);
@@ -42,6 +67,7 @@ export function saveEntry(dateKey, entry) {
 }
 
 export function saveEntries(dateKey, newEntries) {
+    reopenFoodDay(dateKey);
     const log = readFoodLog();
     const entries = Array.isArray(log[dateKey]) ? log[dateKey] : [];
     const safeEntries = Array.isArray(newEntries) ? newEntries.filter(Boolean) : [];
@@ -57,6 +83,7 @@ export function saveEntries(dateKey, newEntries) {
 }
 
 export function removeEntry(dateKey, entryId) {
+    reopenFoodDay(dateKey);
     const log = readFoodLog();
     const entries = Array.isArray(log[dateKey]) ? log[dateKey] : [];
     log[dateKey] = entries.filter(entry => entry?.id !== entryId);
@@ -66,6 +93,7 @@ export function removeEntry(dateKey, entryId) {
 }
 
 export function updateEntry(dateKey, entryId, replacement) {
+    reopenFoodDay(dateKey);
     const log = readFoodLog();
     const entries = Array.isArray(log[dateKey]) ? log[dateKey] : [];
     const index = entries.findIndex(entry => entry?.id === entryId);

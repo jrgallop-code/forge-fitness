@@ -5,6 +5,7 @@ import {
     cloneEntriesForMeal,
     entriesForDate,
     hasCopiedMeal,
+    isFoodDayComplete,
     logSavedMeal,
     localDateKey,
     mealPreview,
@@ -20,12 +21,13 @@ import {
     saveEntry,
     saveEntries,
     saveSavedMeal,
+    setFoodDayComplete,
     scaledNutrition,
     summarizeEntries,
     totalServingLabel,
     updateEntry,
     withUsefulLiquidPortions
-} from "./food-log-data.js?v=meal-food-editing-1";
+} from "./food-log-data.js?v=calculated-maintenance-1";
 import {
     chooseIngredientFood,
     ingredientPortionSelection,
@@ -85,6 +87,7 @@ function renderFoodLogShell() {
                 <button type="button" data-food-date-shift="1" aria-label="Next day">→</button>
             </div>
             <article class="food-daily-summary" data-food-summary></article>
+            <div class="food-day-complete" data-food-day-complete></div>
             <div class="food-meals" data-food-meals></div>
             <p class="food-data-credit">Food data from Level Up verified sources, USDA FoodData Central, and Open Food Facts (ODbL). Nutrition values may vary by product and serving.</p>
         </section>
@@ -260,6 +263,13 @@ function renderDay() {
     setText("[data-food-date-value]", date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }));
     const summary = document.querySelector("[data-food-summary]");
     if (summary) summary.innerHTML = summaryMarkup(totals, target);
+    const completion = document.querySelector("[data-food-day-complete]");
+    if (completion) {
+        const complete = isFoodDayComplete(selectedDate);
+        const future = selectedDate > localDateKey();
+        completion.innerHTML = `<div><strong>${complete ? "Day marked complete" : "Finished logging?"}</strong><small>${complete ? "This day can be used for calculated maintenance." : "Confirm everything you ate is logged before Level Up uses this day."}</small></div><button type="button" ${!entries.length || future ? "disabled" : ""}>${complete ? "Reopen day" : "Mark day complete"}</button>`;
+        completion.querySelector("button")?.addEventListener("click", () => setFoodDayComplete(selectedDate, !complete));
+    }
     const meals = document.querySelector("[data-food-meals]");
     if (meals) meals.innerHTML = MEALS.map(meal => mealMarkup(meal, entries.filter(entry => entry.meal === meal), yesterdayEntries.filter(entry => entry.meal === meal))).join("");
     meals?.querySelectorAll(".food-meal > summary").forEach(summary => {
