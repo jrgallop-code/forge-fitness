@@ -1,4 +1,4 @@
-import { openActiveWorkout } from "./workout-session.js?v=repair-generic-exercise-1";
+import { openActiveWorkout } from "./workout-session.js?v=cardio-rpe-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const CARDIO_TIMER_STORAGE_KEY = "level_up_cardio_timer_state";
@@ -121,6 +121,7 @@ function normalizeActiveCardioState(cardioIds) {
             trackingType: "notes",
             durationMinutes: state?.durationMinutes ?? null,
             distance: typeof state?.distance === "string" ? state.distance : "",
+            rpe: Number(state?.rpe) >= 1 && Number(state?.rpe) <= 10 ? Number(state.rpe) : null,
             notes: typeof state?.notes === "string" ? state.notes : "",
             sets: []
         };

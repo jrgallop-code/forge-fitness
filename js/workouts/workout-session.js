@@ -504,6 +504,7 @@ function createExerciseState(day) {
                     trackingType: "notes",
                     durationMinutes: null,
                     distance: "",
+                    rpe: null,
                     notes: "",
                     sets: []
                 };
@@ -601,14 +602,17 @@ function renderSessionExercises({
                 return `
                     <article class="session-exercise-card cardio-session-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-tracking-type="notes">
                         <h4>${escapeHtml(exercise?.name || "Cardio")}</h4>
-                        <p class="session-target">Record your cardio time, with optional distance and notes.</p>
+                        <p class="session-target">Record your cardio time, with optional distance, effort and notes.</p>
                         <div class="previous-performance"><strong>Previous workout</strong><span>${escapeHtml(formatCardioPrevious(previous))}</span></div>
-                        <div class="cardio-metrics-grid">
+                        <div class="cardio-metrics-grid cardio-metrics-grid-with-rpe">
                             <label>Time (minutes)
                                 <input class="session-cardio-duration" type="number" inputmode="decimal" min="0" step="0.1" value="${state.durationMinutes ?? ""}" placeholder="20">
                             </label>
                             <label>Distance (optional)
                                 <input class="session-cardio-distance" type="text" maxlength="40" value="${escapeHtml(state.distance || "")}" placeholder="4 km or 2.5 mi">
+                            </label>
+                            <label>Effort (RPE)
+                                <input class="session-cardio-rpe" type="number" inputmode="decimal" min="1" max="10" step="0.5" value="${state.rpe ?? ""}" placeholder="1–10">
                             </label>
                         </div>
                         <label class="cardio-notes-label">Notes (optional)
@@ -1036,6 +1040,21 @@ function bindSessionInputs({
                             event.target.value;
                         session.currentExerciseIndex =
                             exerciseIndex;
+                        persist();
+                    }
+                );
+
+            card
+                .querySelector(".session-cardio-rpe")
+                ?.addEventListener(
+                    "input",
+                    event => {
+                        const value = Number(event.target.value);
+                        session.exercises[exerciseIndex].rpe =
+                            event.target.value === "" || value < 1 || value > 10
+                                ? null
+                                : value;
+                        session.currentExerciseIndex = exerciseIndex;
                         persist();
                     }
                 );
@@ -1863,6 +1882,10 @@ function formatCardioPrevious(previous) {
 
     if (String(previous.distance || "").trim()) {
         details.push(String(previous.distance).trim());
+    }
+
+    if (Number(previous.rpe) >= 1 && Number(previous.rpe) <= 10) {
+        details.push(`RPE ${previous.rpe}`);
     }
 
     if (String(previous.notes || "").trim()) {

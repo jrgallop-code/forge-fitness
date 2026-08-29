@@ -1,4 +1,4 @@
-import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=progress-calories-1";
+import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=progress-cardio-1";
 
 export function renderProgress() {
 
@@ -9,7 +9,7 @@ export function renderProgress() {
             <h2>📈 Progress</h2>
 
             <p class="section-description">
-                Track body-weight, lifting, calorie trends and progress photos over time.
+                Track body weight, lifting, nutrition, cardio and progress photos over time.
             </p>
 
 
@@ -33,10 +33,18 @@ export function renderProgress() {
 
                 <button
                     class="progress-tab"
-                    id="calories-progress-tab"
+                    id="nutrition-progress-tab"
                     type="button"
                 >
-                    Calories
+                    Nutrition
+                </button>
+
+                <button
+                    class="progress-tab"
+                    id="cardio-progress-tab"
+                    type="button"
+                >
+                    Cardio
                 </button>
 
                 <button
@@ -447,6 +455,62 @@ export function renderProgress() {
 
             <div id="calorie-progress" hidden>
                 ${renderCalorieStats()}
+            </div>
+
+            <div id="cardio-progress" hidden>
+                <section class="cardio-progress-shell">
+                    <header class="cardio-progress-header">
+                        <div>
+                            <span class="eyebrow">CARDIO</span>
+                            <h3>Cardio Progress</h3>
+                            <p>See how your endurance work, speed and effort change over time.</p>
+                        </div>
+                        <div class="cardio-range-tabs" aria-label="Cardio date range">
+                            <button type="button" data-cardio-range="7" aria-pressed="false">7D</button>
+                            <button type="button" data-cardio-range="28" class="active" aria-pressed="true">4W</button>
+                            <button type="button" data-cardio-range="84" aria-pressed="false">12W</button>
+                            <button type="button" data-cardio-range="0" aria-pressed="false">All</button>
+                        </div>
+                    </header>
+
+                    <div class="cardio-summary-grid">
+                        <article class="cardio-summary-card"><span>Duration</span><strong data-cardio-duration>0 min</strong><small>Total cardio time</small></article>
+                        <article class="cardio-summary-card"><span>Sessions</span><strong data-cardio-sessions>0</strong><small>Completed entries</small></article>
+                        <article class="cardio-summary-card"><span>Distance</span><strong data-cardio-distance>0 mi</strong><small>Recorded distance</small></article>
+                        <article class="cardio-summary-card"><span>Avg speed</span><strong data-cardio-speed>—</strong><small>Distance ÷ time</small></article>
+                        <article class="cardio-summary-card"><span>Cardio load</span><strong data-cardio-load>—</strong><small data-cardio-load-note>Minutes × RPE</small></article>
+                    </div>
+
+                    <p class="cardio-empty-note" data-cardio-empty>Complete a cardio workout to populate these analytics. Your existing lifting history is unchanged.</p>
+
+                    <div class="cardio-chart-grid">
+                        <article class="cardio-analytics-card">
+                            <span class="training-chart-kicker">Training frequency</span>
+                            <h4>Weekly Cardio Minutes</h4>
+                            <p>Duration completed each week.</p>
+                            <div class="cardio-weekly-chart" data-cardio-weekly></div>
+                        </article>
+                        <article class="cardio-analytics-card">
+                            <span class="training-chart-kicker">Performance trend</span>
+                            <h4>Average Speed</h4>
+                            <p>Sessions with both time and distance.</p>
+                            <div class="cardio-trend-chart" data-cardio-trend></div>
+                        </article>
+                    </div>
+
+                    <article class="cardio-analytics-card">
+                        <span class="training-chart-kicker">Activity mix</span>
+                        <h4>Minutes by Activity</h4>
+                        <p>See where your cardio time is going.</p>
+                        <div class="cardio-activity-list" data-cardio-activities></div>
+                    </article>
+
+                    <article class="cardio-analytics-card">
+                        <span class="training-chart-kicker">Workout history</span>
+                        <h4>Recent Cardio</h4>
+                        <div class="cardio-recent-list" data-cardio-recent></div>
+                    </article>
+                </section>
             </div>
 
             <div id="photo-log-progress" hidden>

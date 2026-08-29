@@ -1,4 +1,4 @@
-import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=repair-generic-exercise-1';
+import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=cardio-rpe-1';
 import './exercise-library-expansion.js?v=exercise-library-expansion-1';
 import { getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { createGeneratedExerciseGuide } from './exercise-guide-generator.js?v=full-library-guides-1';
@@ -68,7 +68,7 @@ function createReplacementState(exercise, priorState) {
     secondaryMuscles: [...profile.secondary]
   };
   if (exercise?.trackingType === 'notes') {
-    return { exerciseId: exercise.id, ...metadata, trackingType: 'notes', durationMinutes: null, distance: '', notes: '', sets: [] };
+    return { exerciseId: exercise.id, ...metadata, trackingType: 'notes', durationMinutes: null, distance: '', rpe: null, notes: '', sets: [] };
   }
   const setCount = Math.max(1, Number(priorState?.sets?.length) || 1);
   return {
