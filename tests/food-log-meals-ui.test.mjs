@@ -186,6 +186,20 @@ test("saved meals reopen as editable drafts with a whole-meal macro breakdown", 
     assert.match(styles, /\.food-builder-item-edit/);
 });
 
+test("expanded diary meals show their own calorie and macro breakdown", async () => {
+    const [module, styles] = await Promise.all([
+        read("../js/nutrition/food-log.js"),
+        read("../css/food-log.css")
+    ]);
+    assert.match(module, /entries\.length \? `<div class="food-meal-macros">/);
+    assert.match(module, /macroBreakdownMarkup\(totals, `\$\{meal\} total/);
+    assert.match(module, /class="food-edit-calorie-ring"/);
+    assert.match(module, /food-edit-macro--carbs/);
+    assert.match(module, /food-edit-macro--fat/);
+    assert.match(module, /food-edit-macro--protein/);
+    assert.match(styles, /\.food-meal-macros\{/);
+});
+
 test("custom foods can be edited and saved over their existing record", async () => {
     const [module, styles] = await Promise.all([
         read("../js/nutrition/food-log.js"),
