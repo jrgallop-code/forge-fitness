@@ -452,6 +452,47 @@ export function summarizeEntries(entries) {
     }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
 }
 
+export function getLoggedCalorieWindow({ startDate, endDate, minLoggedDays = 4 } = {}) {
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+    if (!datePattern.test(String(startDate || "")) || !datePattern.test(String(endDate || "")) || startDate > endDate) {
+        return {
+            startDate: null,
+            endDate: null,
+            totalDays: 0,
+            loggedDays: 0,
+            averageCalories: null,
+            sufficient: false
+        };
+    }
+
+    const log = readFoodLog();
+    const start = new Date(`${startDate}T12:00:00`);
+    const end = new Date(`${endDate}T12:00:00`);
+    const loggedCalories = [];
+    let totalDays = 0;
+
+    for (const date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        totalDays += 1;
+        const entries = log[localDateKey(date)];
+        if (!Array.isArray(entries) || !entries.length) continue;
+        loggedCalories.push(summarizeEntries(entries).calories);
+    }
+
+    const averageCalories = loggedCalories.length
+        ? loggedCalories.reduce((sum, calories) => sum + calories, 0) / loggedCalories.length
+        : null;
+    const requiredDays = Math.max(1, Math.floor(Number(minLoggedDays) || 4));
+
+    return {
+        startDate,
+        endDate,
+        totalDays,
+        loggedDays: loggedCalories.length,
+        averageCalories: Number.isFinite(averageCalories) ? averageCalories : null,
+        sufficient: loggedCalories.length >= requiredDays && Number.isFinite(averageCalories)
+    };
+}
+
 export function createLogEntry({ meal, food, portion, quantity }) {
     const safeMeal = MEALS.includes(meal) ? meal : "Snacks";
     const safeQuantity = Math.max(0.01, Math.min(10000, Number(quantity) || 1));
