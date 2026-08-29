@@ -49,15 +49,16 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], compl
     const intakeValues = usableDates.map(key => caloriesFor(foodLog[key])).filter(value => value > 0);
     const averageIntake = intakeValues.length ? intakeValues.reduce((sum, value) => sum + value, 0) / intakeValues.length : null;
     const trend = regressionRate(weights, dates[0], dates[dates.length - 1]);
-    const enoughPreliminary = intakeValues.length >= 10 && trend.count >= 6 && trend.spanDays >= 12;
+    const enoughEarly = intakeValues.length >= 2 && trend.count >= 3 && trend.spanDays >= 5;
+    const enoughPreliminary = intakeValues.length >= 7 && trend.count >= 6 && trend.spanDays >= 10;
     const enoughEstablished = hasCompletionHistory && intakeValues.length >= 15 && trend.count >= 9 && trend.spanDays >= 17;
     const correction = Number.isFinite(trend.rate) ? trend.rate * 500 : null;
     const raw = Number.isFinite(averageIntake) && Number.isFinite(correction) ? averageIntake - correction : null;
-    const maintenanceCalories = enoughPreliminary && Number.isFinite(raw)
+    const maintenanceCalories = enoughEarly && Number.isFinite(raw)
         ? Math.round(Math.min(6000, Math.max(800, raw)) / 25) * 25
         : null;
-    const status = enoughEstablished ? "established" : enoughPreliminary ? "preliminary" : "learning";
-    const label = status === "established" ? "High confidence" : status === "preliminary" ? "Preliminary" : "Learning";
+    const status = enoughEstablished ? "established" : enoughPreliminary ? "preliminary" : enoughEarly ? "early" : "learning";
+    const label = status === "established" ? "High confidence" : status === "preliminary" ? "Building confidence" : status === "early" ? "Early estimate" : "Not enough data";
     return {
         maintenanceCalories,
         profileEstimate: Number.isFinite(Number(profileEstimate)) ? Math.round(Number(profileEstimate)) : null,
@@ -73,11 +74,13 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], compl
         windowDays: 21,
         startDate: dates[0],
         endDate: dates[dates.length - 1],
-        foodDaysNeeded: Math.max(0, 10 - intakeValues.length),
-        weighInsNeeded: Math.max(0, 6 - trend.count),
+        foodDaysNeeded: Math.max(0, 2 - intakeValues.length),
+        weighInsNeeded: Math.max(0, 3 - trend.count),
         message: status === "learning"
-            ? "Keep logging complete food days and regular weigh-ins so Level Up can separate intake from weight change."
-            : "Calculated from your average logged intake and regression weight trend."
+            ? "Log at least two complete food days and enough weigh-ins to establish a weight trend."
+            : status === "early"
+                ? "This is a real trend-based estimate, but it can move noticeably while Level Up gathers more complete food days."
+                : "Calculated from your average logged intake and regression weight trend."
     };
 }
 
@@ -89,4 +92,3 @@ export function getCalculatedMaintenanceEstimate(profileEstimate = null) {
         profileEstimate
     });
 }
-

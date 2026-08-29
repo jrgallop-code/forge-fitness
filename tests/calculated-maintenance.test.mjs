@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 import { calculateMaintenanceEstimate } from "../js/nutrition/calculated-maintenance.js";
 
 function key(offset) {
@@ -44,8 +45,8 @@ test("subtracts a gaining trend from average intake", () => {
 
 test("stays in learning until food and weight minimums are met", () => {
     const result = calculateMaintenanceEstimate({
-        foodLog: foodHistory(7, 2400),
-        weights: weightHistory(4, 180, 0),
+        foodLog: foodHistory(1, 2400),
+        weights: weightHistory(2, 180, 0),
         endDate: new Date("2026-08-29T12:00:00"),
         profileEstimate: 2450
     });
@@ -54,15 +55,35 @@ test("stays in learning until food and weight minimums are met", () => {
     assert.equal(result.profileEstimate, 2450);
 });
 
+test("shows a usable early estimate from two food days and an established weight trend", () => {
+    const result = calculateMaintenanceEstimate({
+        foodLog: foodHistory(2, 2300),
+        weights: weightHistory(10, 190, -.5),
+        endDate: new Date("2026-08-29T12:00:00")
+    });
+    assert.equal(result.status, "early");
+    assert.equal(result.label, "Early estimate");
+    assert.equal(result.maintenanceCalories, 2550);
+});
+
 test("ignores logged days that were not marked complete once completion tracking is used", () => {
     const foodLog = foodHistory(21, 2400);
-    const completedDays = Object.fromEntries(Object.keys(foodLog).slice(0, 8).map(date => [date, true]));
+    const completedDays = Object.fromEntries(Object.keys(foodLog).slice(0, 1).map(date => [date, true]));
     const result = calculateMaintenanceEstimate({
         foodLog,
         completedDays,
         weights: weightHistory(21, 180, 0),
         endDate: new Date("2026-08-29T12:00:00")
     });
-    assert.equal(result.foodDays, 8);
+    assert.equal(result.foodDays, 1);
     assert.equal(result.status, "learning");
+});
+
+test("Goals and Plan distinguishes formula TDEE from the Level Up trend calculation", async () => {
+    const source = await readFile(new URL("../js/nutrition/unified-goals-calories.js", import.meta.url), "utf8");
+    assert.match(source, /Body Profile TDEE Formula/);
+    assert.match(source, /Level Up Calculated TDEE/);
+    assert.match(source, /Use Level Up TDEE/);
+    assert.match(source, /input\.dispatchEvent\(new Event\("input", \{ bubbles: true \}\)\)/);
+    assert.match(source, /Copied to your planning field/);
 });

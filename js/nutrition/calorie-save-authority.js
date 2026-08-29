@@ -53,6 +53,7 @@
     function applyGuidance() {
         const maintenance = document.getElementById("unified-maintenance");
         const useEstimate = document.getElementById("unified-use-estimate");
+        const useCalculated = document.getElementById("unified-use-calculated");
         const help = maintenance?.closest(".unified-maintenance-block")?.querySelector(".unified-help");
         const target = document.querySelector(".unified-active-target");
         const targetNote = target?.querySelector("small");
@@ -60,14 +61,19 @@
         if (help) {
             setText(
                 help,
-                "Enter the maintenance value Level Up should plan from. Planned Daily Target updates below; press Save Calorie Adjustment to apply it. Use TDEE Estimate copies the maintenance estimate calculated from your Body Profile."
+                "Choose a maintenance baseline above or enter your own. Your planned target previews below and does not become active until you press Save."
             );
         }
 
         if (useEstimate) {
-            setText(useEstimate, "Use TDEE Estimate");
-            useEstimate.title = "Copy the TDEE maintenance estimate from your Body Profile into the planning field";
-            useEstimate.setAttribute("aria-label", "Use TDEE maintenance estimate for planning");
+            setText(useEstimate, "Use Formula Estimate");
+            useEstimate.title = "Use the generic maintenance formula based on your Body Profile";
+            useEstimate.setAttribute("aria-label", "Use Body Profile formula estimate for planning");
+        }
+
+        if (useCalculated) {
+            useCalculated.title = "Use Level Up's calculated TDEE from your food logs and weight trend";
+            useCalculated.setAttribute("aria-label", "Use Level Up calculated TDEE for planning");
         }
 
         if (targetNote) {
