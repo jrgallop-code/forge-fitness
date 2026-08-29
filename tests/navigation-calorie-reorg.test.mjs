@@ -53,7 +53,7 @@ test("published entry points carry the Progress Cardio cache keys", async () => 
   const styles = await read("css/cardio-analytics.css");
 
   assert.match(html, /css\/progress-volume\.css\?v=progress-cardio-1/);
-  assert.match(html, /css\/cardio-analytics\.css\?v=progress-cardio-1/);
+  assert.match(html, /css\/cardio-analytics\.css\?v=cardio-mobile-layout-1/);
   assert.match(html, /js\/app\.js\?v=progress-cardio-1/);
   assert.doesNotMatch(html, /js\/nutrition\/calorie-stats\.js/);
   assert.match(styles, /overflow-x:auto/);
