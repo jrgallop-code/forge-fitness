@@ -121,6 +121,112 @@
     background: #38191c;
 }
 
+.admin-analytics-stat-groups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.admin-analytics-stat-group {
+    overflow: hidden;
+    border: 1px solid #29435f;
+    border-radius: 16px;
+    background: #151b23;
+}
+
+.admin-analytics-stat-group.is-foods {
+    border-color: #246b59;
+    background: #13231f;
+}
+
+.admin-analytics-stat-group.is-workouts {
+    border-color: #743037;
+    background: #241416;
+}
+
+.admin-analytics-stat-group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
+.admin-analytics-stat-group-head h4 {
+    margin: 0;
+    color: #f6f6f8;
+    font-size: .88rem;
+}
+
+.admin-analytics-stat-group-head > strong {
+    min-width: 30px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    color: #b8d9ff;
+    background: #213952;
+    text-align: center;
+    font-size: .72rem;
+}
+
+.admin-analytics-stat-group.is-foods .admin-analytics-stat-group-head > strong {
+    color: #7be5ca;
+    background: #1a493d;
+}
+
+.admin-analytics-stat-group.is-workouts .admin-analytics-stat-group-head > strong {
+    color: #ff939a;
+    background: #532127;
+}
+
+.admin-analytics-stat-list {
+    display: grid;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.admin-analytics-stat-person {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+}
+
+.admin-analytics-stat-person:last-child {
+    border-bottom: 0;
+}
+
+.admin-analytics-stat-person > span {
+    display: grid;
+    min-width: 0;
+}
+
+.admin-analytics-stat-person strong,
+.admin-analytics-stat-person small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-analytics-stat-person strong {
+    color: #f2f2f4;
+    font-size: .78rem;
+}
+
+.admin-analytics-stat-person small {
+    color: #85858e;
+    font-size: .62rem;
+}
+
+.admin-analytics-stat-person > b {
+    flex: 0 0 auto;
+    color: #aeb0b9;
+    font-size: .65rem;
+}
+
 @media (max-width: 700px) {
     .admin-analytics-card-head {
         align-items: stretch;
@@ -138,5 +244,9 @@
 
     .admin-analytics-person-usage {
         justify-content: flex-start;
+    }
+
+    .admin-analytics-stat-groups {
+        grid-template-columns: 1fr;
     }
 }
