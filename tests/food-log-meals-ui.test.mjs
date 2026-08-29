@@ -198,6 +198,10 @@ test("expanded diary meals show their own calorie and macro breakdown", async ()
     assert.match(module, /food-edit-macro--fat/);
     assert.match(module, /food-edit-macro--protein/);
     assert.match(styles, /\.food-meal-macros\{/);
+    assert.match(module, /\.food-meal > summary/);
+    assert.match(module, /event\.preventDefault\(\);/);
+    assert.match(module, /details\.open = !details\.open/);
+    assert.match(module, /aria-expanded/);
 });
 
 test("custom foods can be edited and saved over their existing record", async () => {

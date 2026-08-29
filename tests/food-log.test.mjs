@@ -171,7 +171,7 @@ test("USDA search stays behind the Worker and the browser receives normalized fo
     assert.match(worker, /url\.pathname === "\/v1\/foods\/search"/);
     assert.doesNotMatch(browser, /api\.nal\.usda\.gov/);
     assert.match(browser, /\/v1\/foods\/search\?q=/);
-    assert.match(html, /css\/food-log\.css\?v=paste-keyboard-1/);
+    assert.match(html, /css\/food-log\.css\?v=meal-macros-2/);
 });
 
 test("Level Up verified foods use the official item serving before a 100 g option", () => {

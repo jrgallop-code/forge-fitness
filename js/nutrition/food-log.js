@@ -262,6 +262,16 @@ function renderDay() {
     if (summary) summary.innerHTML = summaryMarkup(totals, target);
     const meals = document.querySelector("[data-food-meals]");
     if (meals) meals.innerHTML = MEALS.map(meal => mealMarkup(meal, entries.filter(entry => entry.meal === meal), yesterdayEntries.filter(entry => entry.meal === meal))).join("");
+    meals?.querySelectorAll(".food-meal > summary").forEach(summary => {
+        const details = summary.parentElement;
+        summary.setAttribute("aria-expanded", String(Boolean(details?.open)));
+        summary.addEventListener("click", event => {
+            event.preventDefault();
+            if (!details) return;
+            details.open = !details.open;
+            summary.setAttribute("aria-expanded", String(details.open));
+        });
+    });
     meals?.querySelectorAll("[data-food-remove]").forEach(button => button.addEventListener("click", () => removeEntry(selectedDate, button.dataset.foodRemove)));
     meals?.querySelectorAll("[data-food-edit]").forEach(button => button.addEventListener("click", () => openLoggedFoodEditor(button.dataset.foodEdit)));
     meals?.querySelectorAll("[data-food-add-meal]").forEach(button => button.addEventListener("click", () => openFoodSheet(button.dataset.foodAddMeal)));
