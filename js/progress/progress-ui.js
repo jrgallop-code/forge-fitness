@@ -1,3 +1,5 @@
+import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=progress-calories-1";
+
 export function renderProgress() {
 
     return `
@@ -7,7 +9,7 @@ export function renderProgress() {
             <h2>📈 Progress</h2>
 
             <p class="section-description">
-                Track body-weight trends and lifting performance over time.
+                Track body-weight, lifting, calorie trends and progress photos over time.
             </p>
 
 
@@ -27,6 +29,14 @@ export function renderProgress() {
                     type="button"
                 >
                     🏋️ Lifting
+                </button>
+
+                <button
+                    class="progress-tab"
+                    id="calories-progress-tab"
+                    type="button"
+                >
+                    Calories
                 </button>
 
                 <button
@@ -433,6 +443,10 @@ export function renderProgress() {
                 </section>
 
 
+            </div>
+
+            <div id="calorie-progress" hidden>
+                ${renderCalorieStats()}
             </div>
 
             <div id="photo-log-progress" hidden>

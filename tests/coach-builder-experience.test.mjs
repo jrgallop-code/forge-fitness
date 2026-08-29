@@ -24,14 +24,14 @@ test("coach builder generates only after the new six-question flow", async () =>
   assert.match(source, /questionCard\("6","Programming approach"/);
 });
 
-test("production module cache keys include the restored experience step", async () => {
+test("production module cache keys retain the restored experience step", async () => {
   const [index, app, router] = await Promise.all([
     read("index.html"),
     read("js/app.js"),
     read("js/core/router.js")
   ]);
 
-  assert.match(index, /js\/app\.js\?v=coach-experience-step-1/);
-  assert.match(app, /\.\/core\/router\.js\?v=coach-experience-step-1/);
+  assert.match(index, /js\/app\.js\?v=progress-calories-1/);
+  assert.match(app, /\.\/core\/router\.js\?v=progress-calories-1/);
   assert.match(router, /\.\.\/workouts\/smart-build\.js\?v=coach-experience-step-1/);
 });
