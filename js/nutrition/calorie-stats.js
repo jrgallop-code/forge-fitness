@@ -1,4 +1,4 @@
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=calculated-maintenance-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=maintenance-clarity-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
 
@@ -105,14 +105,14 @@ function profileMaintenance() {
 function maintenanceCard(estimate) {
     const result = estimate.maintenanceCalories;
     const display = Number.isFinite(result) ? formatNumber(result) : Number.isFinite(estimate.profileEstimate) ? formatNumber(estimate.profileEstimate) : "—";
-    const source = Number.isFinite(result) ? "Level Up calculated" : Number.isFinite(estimate.profileEstimate) ? "Profile estimate while Level Up learns" : "Add your Body Profile while Level Up learns";
+    const source = Number.isFinite(result) ? "Personalized from your logged results" : Number.isFinite(estimate.profileEstimate) ? "Showing the generic Body Profile formula while Level Up gathers results" : "Add your Body Profile while Level Up gathers results";
     const signedRate = Number.isFinite(estimate.weightRateLbPerWeek) ? `${estimate.weightRateLbPerWeek > 0 ? "+" : ""}${estimate.weightRateLbPerWeek.toFixed(2)} lb/week` : "Need more weigh-ins";
     const correction = Number.isFinite(estimate.energyCorrection) ? `${estimate.energyCorrection > 0 ? "+" : ""}${formatNumber(estimate.energyCorrection)} cal/day` : "—";
-    const progress = Math.min(100, Math.round(Math.min(1, estimate.foodDays / 10) * .55 * 100 + Math.min(1, estimate.weighIns / 6) * .45 * 100));
+    const progress = Math.min(100, Math.round(Math.min(1, estimate.foodDays / 15) * .55 * 100 + Math.min(1, estimate.weighIns / 9) * .45 * 100));
     return `<article class="calorie-stat-card calculated-maintenance-card is-${estimate.status}">
-        <div class="calculated-maintenance-head"><span><small>LEVEL UP CALCULATED MAINTENANCE</small><strong>${display} <em>cal/day</em></strong></span><b>${estimate.label}</b></div>
+        <div class="calculated-maintenance-head"><span><small>LEVEL UP CALCULATED TDEE</small><strong>${display} <em>cal/day</em></strong></span><b>${estimate.label}</b></div>
         <p>${source}. ${estimate.message}</p>
-        ${estimate.status === "learning" ? `<div class="calculated-maintenance-progress"><i><b style="width:${progress}%"></b></i><span>${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</span></div>` : ""}
+        ${estimate.status === "learning" || estimate.status === "early" || estimate.status === "preliminary" ? `<div class="calculated-maintenance-progress"><i><b style="width:${progress}%"></b></i><span>Confidence improves with complete logs · ${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</span></div>` : ""}
         <details><summary>How this was calculated <span>›</span></summary><div class="calculated-maintenance-breakdown">
             <div><span>Average intake</span><strong>${Number.isFinite(estimate.averageIntake) ? `${formatNumber(estimate.averageIntake)} cal/day` : "—"}</strong></div>
             <div><span>Weight trend</span><strong>${signedRate}</strong></div>

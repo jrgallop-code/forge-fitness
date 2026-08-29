@@ -1,7 +1,7 @@
 import { GOAL_PRESETS, calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile, getNutritionGoal, saveNutritionGoal, getNutritionPlan, syncCalculatedCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getActiveNutritionPhase, getNutritionPhaseHistory, getActivePhaseMetrics, getPhaseDayNumber, saveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-1";
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=calculated-maintenance-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=maintenance-clarity-1";
 
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const LEGACY_CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
@@ -61,17 +61,18 @@ function renderUnifiedCard() {
         <p id="unified-goal-description" class="nutrition-message unified-goal-description"></p>
         <div class="unified-maintenance-block">
             <div class="unified-maintenance-heading">
-                <div><span>Estimated Maintenance</span><strong id="unified-estimated-maintenance">--</strong></div>
-                <small>Calculated from your Body Profile</small>
+                <div><span>Body Profile TDEE Formula</span><strong id="unified-estimated-maintenance">--</strong></div>
+                <small>Generic starting estimate from your age, body size and activity—not your logged results.</small>
             </div>
             <div class="unified-calculated-maintenance">
-                <div><span>Level Up Calculated</span><strong id="unified-calculated-maintenance">Learning</strong><small id="unified-calculated-maintenance-meta">Needs consistent food logs and weigh-ins</small></div>
-                <button id="unified-use-calculated" class="secondary-btn" type="button" disabled>Use Calculated</button>
+                <div><span>Level Up Calculated TDEE</span><strong id="unified-calculated-maintenance">Not enough data</strong><small id="unified-calculated-maintenance-meta">Uses your actual food logs and weight trend</small><em id="unified-calculated-action-status" aria-live="polite"></em></div>
+                <button id="unified-use-calculated" class="secondary-btn" type="button" disabled>Use Level Up TDEE</button>
             </div>
-            <label for="unified-maintenance">Maintenance Used for Planning</label>
+            <p class="unified-maintenance-choice-note"><strong>Which number should I use?</strong> The formula is a starting point. The Level Up estimate becomes more personalized as you log food and weight.</p>
+            <label for="unified-maintenance">Maintenance Used for Your Plan</label>
             <div class="unified-maintenance-input-row">
                 <input id="unified-maintenance" type="number" inputmode="numeric" min="1" step="10" placeholder="Save Body Profile first">
-                <button id="unified-use-estimate" class="secondary-btn" type="button">Use Estimate</button>
+                <button id="unified-use-estimate" class="secondary-btn" type="button">Use Formula Estimate</button>
             </div>
             <small class="unified-help">Changing this calorie baseline does not start a new phase unless you also change the phase/rate.</small>
         </div>
@@ -125,21 +126,30 @@ function refreshCalculatedMaintenance() {
     const estimate = calculatedMaintenance();
     setText("unified-calculated-maintenance", Number.isFinite(estimate.maintenanceCalories) ? `${estimate.maintenanceCalories} kcal/day` : estimate.label);
     setText("unified-calculated-maintenance-meta", Number.isFinite(estimate.maintenanceCalories)
-        ? `${estimate.label} · ${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins`
-        : `${estimate.foodDays}/10 food days · ${estimate.weighIns}/6 weigh-ins`);
-    document.getElementById("unified-use-calculated")?.toggleAttribute("disabled", !Number.isFinite(estimate.maintenanceCalories));
+        ? `${estimate.label} · based on ${estimate.foodDays} food days and ${estimate.weighIns} weigh-ins`
+        : `${estimate.foodDays}/2 food days · ${estimate.weighIns}/3 weigh-ins · a multi-day weight span is required`);
+    const button = document.getElementById("unified-use-calculated");
+    button?.toggleAttribute("disabled", !Number.isFinite(estimate.maintenanceCalories));
+    if (button && button.textContent !== "Added below ✓") button.textContent = "Use Level Up TDEE";
 }
 
 function useCalculatedMaintenance() {
     const estimate = calculatedMaintenance();
     if (!Number.isFinite(estimate.maintenanceCalories)) {
-        setText("unified-calorie-message", "Level Up needs at least 10 usable food days and 6 weigh-ins across about two weeks.");
+        setText("unified-calculated-action-status", "Add at least two complete food days and a multi-day weight trend first.");
         return;
     }
     const input = document.getElementById("unified-maintenance");
-    if (input) input.value = String(estimate.maintenanceCalories);
-    setText("unified-calorie-message", "Calculated maintenance added for preview. Save below to update your plan.");
-    refreshPreview();
+    if (input) {
+        input.value = String(estimate.maintenanceCalories);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.classList.add("is-level-up-estimate");
+        window.setTimeout(() => input.classList.remove("is-level-up-estimate"), 1400);
+    }
+    const button = document.getElementById("unified-use-calculated");
+    if (button) button.textContent = "Added below ✓";
+    setText("unified-calculated-action-status", "Copied to your planning field. Review the new target, then press Save.");
+    setText("unified-calorie-message", "Level Up calculated TDEE added for preview. It has not changed your active target yet.");
 }
 
 function calculatePreview() {
