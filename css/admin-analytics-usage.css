@@ -1,0 +1,68 @@
+.admin-analytics-bar > div {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+    width: 100%;
+    height: 100%;
+}
+
+.admin-analytics-bar > span {
+    display: none;
+}
+
+.admin-analytics-series {
+    display: block;
+    width: min(7px, 30%);
+    border-radius: 4px 4px 0 0;
+}
+
+.admin-analytics-series--users {
+    background: linear-gradient(#4fa8ff, #2469ad);
+}
+
+.admin-analytics-series--foods {
+    background: linear-gradient(#39d7ae, #16836a);
+}
+
+.admin-analytics-series--workouts {
+    background: linear-gradient(#ff525c, #a71922);
+}
+
+.admin-analytics-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px 12px;
+    color: #aaaab1;
+    font-size: .66rem;
+}
+
+.admin-analytics-legend span::before {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 5px;
+    border-radius: 2px;
+    background: #ff525c;
+}
+
+.admin-analytics-legend .is-users::before {
+    background: #4fa8ff;
+}
+
+.admin-analytics-legend .is-foods::before {
+    background: #39d7ae;
+}
+
+@media (max-width: 700px) {
+    .admin-analytics-card-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-analytics-legend {
+        justify-content: flex-start;
+    }
+}

@@ -24,6 +24,15 @@ export function initializeAcquisitionTracking(){
             metadata:{planId:detail.planId||null,workingSets:Number(detail.workingSets)||0,durationMinutes:Number(detail.durationMinutes)||0}
         });
     });
+    window.addEventListener("levelup:food-log-updated",event=>{
+        const detail=event.detail||{};
+        if(detail.action!=="foods_added")return;
+        const ids=Array.isArray(detail.entryIds)?detail.entryIds:[];
+        ids.forEach(entryId=>{void trackProductEvent("food_logged",{
+            eventKey:String(entryId),
+            metadata:{dateKey:detail.dateKey||null}
+        });});
+    });
 }
 
 function ensureStyles(){

@@ -7,6 +7,7 @@ const AUTH_RATE_WINDOW_MS = 15 * 60 * 1000;
 const AUTH_RATE_MAX_FAILURES = 10;
 const ACQUISITION_SOURCES = new Set(["instagram", "tiktok", "reddit", "youtube", "google_search", "friend_family", "app_recommendation", "other", "prefer_not_to_say"]);
 const CLIENT_EVENT_NAMES = new Set(["onboarding_completed", "workout_completed"]);
+const USAGE_EVENT_NAMES = new Set(["food_logged"]);
 
 export default {
     async fetch(request, env, ctx) {
@@ -1293,13 +1294,15 @@ async function putAcquisition(userId, body, request, env) {
 
 async function recordProductEvent(userId, body, request, env) {
     const eventName = typeof body?.eventName === "string" ? body.eventName : "";
-    if (!CLIENT_EVENT_NAMES.has(eventName)) return json({ error: "Event name is not valid." }, 400, request, env);
+    if (!CLIENT_EVENT_NAMES.has(eventName) && !USAGE_EVENT_NAMES.has(eventName)) return json({ error: "Event name is not valid." }, 400, request, env);
     const eventKey = limitedText(body?.eventKey, 128);
     if (!eventKey) return json({ error: "Event key is required." }, 400, request, env);
     const metadata = body?.metadata && typeof body.metadata === "object" && !Array.isArray(body.metadata) ? body.metadata : {};
     const metadataJson = JSON.stringify(metadata);
     if (metadataJson.length > 2048) return json({ error: "Event metadata is too large." }, 400, request, env);
-    await insertProductEvent(env, userId, eventName, eventKey, validIso(body?.occurredAt) || new Date().toISOString(), metadata);
+    const occurredAt = validIso(body?.occurredAt) || new Date().toISOString();
+    if (USAGE_EVENT_NAMES.has(eventName)) await insertUsageEvent(env, userId, eventName, eventKey, occurredAt, metadata);
+    else await insertProductEvent(env, userId, eventName, eventKey, occurredAt, metadata);
     return json({ ok: true }, 200, request, env);
 }
 
@@ -1307,6 +1310,15 @@ async function insertProductEvent(env, userId, eventName, eventKey, occurredAt, 
     const now = new Date().toISOString();
     await env.DB.prepare(`
         INSERT INTO product_events (id, user_id, event_name, event_key, occurred_at, metadata_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(user_id, event_name, event_key) DO NOTHING
+    `).bind(crypto.randomUUID(), userId, eventName, eventKey, occurredAt, JSON.stringify(metadata || {}), now).run();
+}
+
+async function insertUsageEvent(env, userId, eventName, eventKey, occurredAt, metadata) {
+    const now = new Date().toISOString();
+    await env.DB.prepare(`
+        INSERT INTO usage_events (id, user_id, event_name, event_key, occurred_at, metadata_json, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(user_id, event_name, event_key) DO NOTHING
     `).bind(crypto.randomUUID(), userId, eventName, eventKey, occurredAt, JSON.stringify(metadata || {}), now).run();
@@ -1329,8 +1341,15 @@ function validIso(value) {
 
 async function recordActivity(userId, request, env) {
     const now = new Date().toISOString();
-    await env.DB.prepare("UPDATE users SET last_active_at = ? WHERE id = ?")
-        .bind(now, userId).run();
+    const day = now.slice(0, 10);
+    await env.DB.batch([
+        env.DB.prepare("UPDATE users SET last_active_at = ? WHERE id = ?").bind(now, userId),
+        env.DB.prepare(`
+            INSERT INTO usage_events (id, user_id, event_name, event_key, occurred_at, metadata_json, created_at)
+            VALUES (?, ?, 'app_active', ?, ?, '{}', ?)
+            ON CONFLICT(user_id, event_name, event_key) DO NOTHING
+        `).bind(crypto.randomUUID(), userId, day, now, now)
+    ]);
     return json({ ok: true, lastActiveAt: now }, 200, request, env);
 }
 
@@ -1340,20 +1359,38 @@ async function getAdminAnalytics(user, url, request, env) {
     const days = Number.isFinite(requestedDays) ? Math.min(365, Math.max(7, Math.round(requestedDays))) : 30;
     const since = new Date(Date.now() - days * 86400000).toISOString();
     const activeSince = new Date(Date.now() - 7 * 86400000).toISOString();
+    const today = new Date().toISOString().slice(0, 10);
     const [totals, daily, acquisition] = await Promise.all([
         env.DB.prepare(`SELECT
             (SELECT COUNT(*) FROM users) AS total_users,
             (SELECT COUNT(*) FROM users WHERE created_at >= ?) AS new_users,
             (SELECT COUNT(*) FROM users WHERE last_active_at >= ?) AS active_users,
+            (SELECT COUNT(*) FROM users WHERE last_active_at >= ?) AS users_today,
+            (SELECT COUNT(*) FROM (
+                SELECT user_id FROM usage_events
+                WHERE event_name = 'app_active' AND occurred_at >= ?
+                GROUP BY user_id HAVING COUNT(DISTINCT substr(occurred_at, 1, 10)) >= 2
+            )) AS repeat_users,
+            (SELECT COUNT(*) FROM usage_events WHERE event_name = 'food_logged' AND occurred_at >= ?) AS foods_logged,
+            (SELECT COUNT(DISTINCT user_id) FROM usage_events WHERE event_name = 'food_logged' AND occurred_at >= ?) AS food_log_users,
             (SELECT COUNT(*) FROM product_events WHERE event_name = 'workout_completed' AND occurred_at >= ?) AS workouts,
             (SELECT COUNT(DISTINCT user_id) FROM product_events WHERE event_name = 'workout_completed' AND occurred_at >= ?) AS workout_users,
             (SELECT COUNT(*) FROM product_events WHERE event_name = 'onboarding_completed' AND occurred_at >= ?) AS onboarding_completions`)
-            .bind(since, activeSince, since, since, since).first(),
-        env.DB.prepare(`SELECT substr(occurred_at, 1, 10) AS day, COUNT(*) AS workouts,
-            COUNT(DISTINCT user_id) AS users
-            FROM product_events
-            WHERE event_name = 'workout_completed' AND occurred_at >= ?
-            GROUP BY day ORDER BY day`).bind(since).all(),
+            .bind(since, activeSince, today, since, since, since, since, since, since).first(),
+        env.DB.prepare(`SELECT day,
+            SUM(active_users) AS active_users,
+            SUM(foods) AS foods,
+            SUM(workouts) AS workouts
+            FROM (
+                SELECT substr(occurred_at, 1, 10) AS day,
+                    CASE WHEN event_name = 'app_active' THEN 1 ELSE 0 END AS active_users,
+                    CASE WHEN event_name = 'food_logged' THEN 1 ELSE 0 END AS foods,
+                    0 AS workouts
+                FROM usage_events WHERE occurred_at >= ?
+                UNION ALL
+                SELECT substr(occurred_at, 1, 10) AS day, 0 AS active_users, 0 AS foods, 1 AS workouts
+                FROM product_events WHERE event_name = 'workout_completed' AND occurred_at >= ?
+            ) GROUP BY day ORDER BY day`).bind(since, since).all(),
         env.DB.prepare(`SELECT COALESCE(NULLIF(reported_source, ''), 'Not answered') AS source, COUNT(*) AS users
             FROM user_acquisition GROUP BY source ORDER BY users DESC`).all()
     ]);

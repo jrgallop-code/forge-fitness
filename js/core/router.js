@@ -34,7 +34,7 @@ import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=wo
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-6";
 import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-drive-backup-3";
 import { getCurrentGoal } from "./current-goal.js?v=current-goal-1";
-import { renderAdminAnalytics, initializeAdminAnalytics } from "../analytics/admin-analytics.js?v=owner-dashboard-1";
+import { renderAdminAnalytics, initializeAdminAnalytics } from "../analytics/admin-analytics.js?v=usage-metrics-1";
 
 getCurrentGoal();
 
