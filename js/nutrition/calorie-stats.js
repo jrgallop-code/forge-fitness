@@ -1,7 +1,9 @@
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-shared-trend-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
-import { getMaintenanceCheckIn, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, queueMaintenanceReview } from "./maintenance-check-in.js?v=maintenance-modes-1";
+import { getMaintenanceCheckIn, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, queueMaintenanceReview } from "./maintenance-check-in.js?v=coordinated-weekly-calories-1";
+import { getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-phase-1";
+import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const RANGE_KEY = "level_up_calorie_stats_range_v1";
@@ -111,10 +113,12 @@ function maintenanceCard(estimate, checkIn) {
 
 function maintenanceCheckInMarkup(checkIn) {
     if (!checkIn?.ready || checkIn.mode === "track") return "";
-    const maintenanceChange = `${checkIn.change > 0 ? "+" : "−"}${formatNumber(Math.abs(checkIn.change))}`;
+    const estimateChange = `${checkIn.change > 0 ? "+" : "−"}${formatNumber(Math.abs(checkIn.change))}`;
+    const maintenanceStep = Number(checkIn.coordinatedUpdate?.maintenanceChange);
     const targetChange = checkIn.currentTarget !== null && checkIn.proposedTarget !== null
         ? checkIn.proposedTarget - checkIn.currentTarget
         : null;
+    const paceCorrection = Number(checkIn.coordinatedUpdate?.paceCorrection) || 0;
     return `<section class="maintenance-check-in-alert">
         <span class="eyebrow">WEEKLY CHECK-IN READY</span>
         <h3>Your maintenance estimate changed</h3>
@@ -124,7 +128,9 @@ function maintenanceCheckInMarkup(checkIn) {
             <i>→</i>
             <span><small>New estimate</small><strong>${formatNumber(checkIn.proposedMaintenance)} cal</strong></span>
         </div>
-        <div class="maintenance-check-in-impact"><span>Maintenance change</span><strong>${maintenanceChange} cal/day</strong></div>
+        <div class="maintenance-check-in-impact"><span>Calculated TDEE difference</span><strong>${estimateChange} cal/day</strong></div>
+        ${Number.isFinite(maintenanceStep) ? `<div class="maintenance-check-in-impact"><span>This week's maintenance step</span><strong>${maintenanceStep > 0 ? "+" : maintenanceStep < 0 ? "−" : ""}${formatNumber(Math.abs(maintenanceStep))} cal/day</strong></div>` : ""}
+        ${paceCorrection ? `<div class="maintenance-check-in-impact"><span>Adaptive Coach correction</span><strong>${paceCorrection > 0 ? "+" : "−"}${formatNumber(Math.abs(paceCorrection))} cal/day</strong></div>` : `<div class="maintenance-check-in-impact"><span>Adaptive Coach</span><strong>Pace on target or not yet ready</strong></div>`}
         ${targetChange === null ? "" : `<div class="maintenance-check-in-impact"><span>Planned daily target</span><strong>${formatNumber(checkIn.currentTarget)} → ${formatNumber(checkIn.proposedTarget)} cal</strong></div>`}
         <div class="maintenance-check-in-actions"><button class="primary-btn" type="button" data-maintenance-review>Review &amp; use</button><button class="secondary-btn" type="button" data-maintenance-keep>Keep current</button></div>
     </section>`;
@@ -228,7 +234,9 @@ function renderStats(panel) {
     const checkIn = getMaintenanceCheckIn({
         estimate: maintenance,
         currentMaintenance: targets.phase?.maintenanceCalories,
-        currentTarget: targets.calories
+        currentTarget: targets.calories,
+        adaptiveMetrics: targets.phase ? getActivePhaseMetrics(targets.phase, { rolling: true }) : null,
+        adjustmentHold: readAdjustmentHold({ phase: targets.phase, currentCalories: targets.calories })
     });
     checkIn.mode = getMaintenanceUpdateMode();
 

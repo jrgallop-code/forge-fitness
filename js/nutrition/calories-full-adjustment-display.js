@@ -6,12 +6,10 @@ import {
 import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";
 import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
+import { markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
 
 const FIRST_CHECK_DAY = 14;
 const FULL_GAP_INCREMENT = 50;
-const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";
-const HOLD_KEY = "level_up_phase_reassessment_hold";
-const HOLD_DAYS = 7;
 const WEIGHT_KEY = "forge_weight_entries";
 let refreshScheduled = false;
 let refreshAgain = false;
@@ -47,13 +45,9 @@ function getVisibleTrend(metrics) {
     }
 }
 
-function phaseKey(phase) {
-    return String(phase?.id || `${phase?.goalId || "phase"}|${phase?.startDate || ""}`);
-}
-
 function readCheckState() {
     try {
-        const state = JSON.parse(localStorage.getItem(CHECK_STATE_KEY) || "{}");
+        const state = JSON.parse(localStorage.getItem("level_up_weekly_phase_checkin_state") || "{}");
         return state && typeof state === "object" && !Array.isArray(state) ? state : {};
     } catch {
         return {};
@@ -62,53 +56,33 @@ function readCheckState() {
 
 function getHandledCheck(phase, checkDay) {
     if (!phase || !Number.isFinite(Number(checkDay))) return null;
-    const record = readCheckState()?.[phaseKey(phase)];
+    const key = String(phase?.id || `${phase?.goalId || "phase"}|${phase?.startDate || ""}`);
+    const record = readCheckState()?.[key];
     return Number(record?.lastHandledCheckDay) === Number(checkDay) ? record : null;
 }
 
 function markCheckHandled(phase, checkDay, action) {
-    if (!phase || !Number.isFinite(Number(checkDay))) return;
-    const state = readCheckState();
-    state[phaseKey(phase)] = {
-        lastHandledCheckDay: Number(checkDay),
-        action: String(action || "adjusted"),
-        handledAt: new Date().toISOString()
-    };
-    localStorage.setItem(CHECK_STATE_KEY, JSON.stringify(state));
+    markPhaseCheckHandled(phase, checkDay, action);
 }
 
 function getHold(phase, currentCalories) {
-    let hold;
-    try { hold = JSON.parse(localStorage.getItem(HOLD_KEY) || "null"); }
-    catch { hold = null; }
-    if (!hold || hold.phaseId !== phase?.id) return null;
-    if (Math.round(Number(hold.calories)) !== Math.round(Number(currentCalories))) return null;
-    const applied = new Date(hold.appliedAt).getTime();
-    if (!Number.isFinite(applied)) return null;
-    const daysElapsed = Math.max(0, Math.floor((Date.now() - applied) / 86400000));
-    if (daysElapsed >= HOLD_DAYS) return null;
-    return { daysRemaining: HOLD_DAYS - daysElapsed };
+    return readAdjustmentHold({ phase, currentCalories });
 }
 
 function saveHold(phase, calories) {
-    localStorage.setItem(HOLD_KEY, JSON.stringify({
-        phaseId: phase.id,
-        calories: Math.round(calories),
-        estimatedTargetCalories: Math.round(calories),
-        appliedAt: new Date().toISOString()
-    }));
+    startAdjustmentHold({ phase, calories, maintenanceCalories: phase.maintenanceCalories, source: "adaptive-phase-coach" });
 }
 
-function buildRecommendation(actual, target, currentCalories) {
+function buildRecommendation(actual, target, calorieBaseline, activeTarget = calorieBaseline) {
     const rawGap = (Number(target) - Number(actual)) * 500;
-    let adjustment = Math.round(rawGap / FULL_GAP_INCREMENT) * FULL_GAP_INCREMENT;
-    if (adjustment === 0 && Math.abs(rawGap) > 0.001) {
-        adjustment = Math.sign(rawGap) * FULL_GAP_INCREMENT;
+    let paceCorrection = Math.round(rawGap / FULL_GAP_INCREMENT) * FULL_GAP_INCREMENT;
+    if (paceCorrection === 0 && Math.abs(rawGap) > 0.001) {
+        paceCorrection = Math.sign(rawGap) * FULL_GAP_INCREMENT;
     }
-    return {
-        adjustment,
-        targetCalories: Math.max(1, Math.round(Number(currentCalories) + adjustment))
-    };
+    const desiredTarget = Math.max(1, Math.round(Number(calorieBaseline) + paceCorrection));
+    const requestedChange = desiredTarget - Number(activeTarget);
+    const adjustment = Math.max(-WEEKLY_ADJUSTMENT_CAP, Math.min(WEEKLY_ADJUSTMENT_CAP, requestedChange));
+    return { adjustment, paceCorrection, desiredTarget, targetCalories: Math.max(1, Math.round(Number(activeTarget) + adjustment)) };
 }
 
 function getAdaptiveCalorieBaseline(metrics, currentCalories) {
@@ -267,7 +241,7 @@ function syncCoach(metrics, phase) {
         return;
     }
 
-    const recommendation = buildRecommendation(actual, target, baseline.calories);
+    const recommendation = buildRecommendation(actual, target, baseline.calories, currentCalories);
     card.dataset.fullAdjustmentCalories = String(recommendation.targetCalories);
     card.dataset.fullAdjustmentDelta = String(recommendation.adjustment);
     card.dataset.fullAdjustmentCheckDay = String(checkDay);
@@ -313,7 +287,7 @@ function syncSuggestedCalories(metrics, phase) {
     } else if (getHandledCheck(phase, checkDay)) {
         secondary = `Day ${checkDay} check handled · next check Day ${trend?.nextCheckDay || checkDay + 7}`;
     } else if (metrics.recommendationReady && Number.isFinite(actual) && Number.isFinite(target)) {
-        const recommendation = buildRecommendation(actual, target, baseline.calories);
+        const recommendation = buildRecommendation(actual, target, baseline.calories, currentCalories);
         primary = `${recommendation.targetCalories} kcal/day`;
         secondary = `Based on ${Math.round(baseline.calories)} kcal ${calorieBaselineCopy(baseline)} · ${formatSignedCalories(recommendation.adjustment)} kcal/day`;
     } else {
@@ -344,7 +318,7 @@ function applyFullAdjustment(event) {
     if (!Number.isFinite(actual) || !Number.isFinite(target) || !Number.isFinite(currentCalories) || !Number.isFinite(checkDay) || checkDay < FIRST_CHECK_DAY) return;
     if (["ON TRACK", "MAINTAINING"].includes(metrics.status) || getHandledCheck(phase, checkDay) || getHold(phase, currentCalories)) return;
 
-    const recommendation = buildRecommendation(actual, target, baseline.calories);
+    const recommendation = buildRecommendation(actual, target, baseline.calories, currentCalories);
     event.preventDefault();
     event.stopImmediatePropagation();
 

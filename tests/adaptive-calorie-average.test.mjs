@@ -67,7 +67,8 @@ test("adaptive calories fall back when fewer than four days are logged", () => {
 test("the adaptive coach uses the logged average for recommendations and refreshes after food logging", async () => {
     const source = await readFile(new URL("../js/nutrition/calories-full-adjustment-display.js", import.meta.url), "utf8");
     assert.match(source, /getLoggedCalorieWindow/);
-    assert.match(source, /buildRecommendation\(actual, target, baseline\.calories\)/);
+    assert.match(source, /buildRecommendation\(actual, target, baseline\.calories, currentCalories\)/);
+    assert.match(source, /WEEKLY_ADJUSTMENT_CAP/);
     assert.match(source, /levelup:food-log-updated/);
     assert.match(source, /aligned 7-day intake window/);
     assert.match(source, /falls back to the current target/);
