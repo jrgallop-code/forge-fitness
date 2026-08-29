@@ -9,7 +9,7 @@ import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.j
 import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=unit-system-1";
 import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-appearance-1";
 import { renderAdaptiveGuidanceSettings, initializeAdaptiveGuidanceSettings } from "./adaptive-guidance-settings.js?v=deload-workout-preview-1";
-import { openLessonLibrary } from "./learn-level-up.js?v=learn-level-up-1";
+import { openLessonLibrary } from "./learn-level-up.js?v=learn-level-up-2";
 
 const ICONS = {
     profile: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c4.4 0 8 2.3 8 5.2V21H4v-2.8C4 15.3 7.6 13 12 13Zm-5.9 6h11.8v-.8c0-1.3-2.4-3.2-5.9-3.2s-5.9 1.9-5.9 3.2v.8Z"/></svg>',

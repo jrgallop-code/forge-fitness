@@ -6,7 +6,7 @@ function ensureStyles() {
     if (document.querySelector('link[data-learn-level-up-styles]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/learn-level-up.css?v=learn-level-up-1";
+    link.href = "css/learn-level-up.css?v=learn-level-up-2";
     link.dataset.learnLevelUpStyles = "";
     document.head.appendChild(link);
 }
@@ -25,80 +25,92 @@ const ICONS = {
 const LESSONS = [
     {
         id: "getting-started", icon: "start", title: "Getting Started", duration: "1 min", page: "home", action: "Open Dashboard",
-        summary: "Learn where your daily plan, targets and recent progress live.",
+        summary: "Learn exactly where your daily plan, targets and recent progress live.",
         steps: [
-            ["Start on Dashboard", "Your schedule, next workout and today’s nutrition are collected here."],
-            ["Use the bottom navigation", "Workout is for planning and logging, Progress is for trends, and Nutrition is for food and goals."],
-            ["Look for red actions", "Red buttons are the main next step on each screen. Your entries save on this device and sync when cloud backup is enabled."]
+            ["Start on Dashboard", "This is the app’s daily overview. Scroll here to see today’s schedule, your next workout, nutrition progress and recent trends.", "Bottom bar → Dashboard (far-left button)"],
+            ["Open the main areas", "The five buttons stay at the bottom of every main screen: Dashboard, Workout, Progress, Nutrition and More.", "Bottom bar → choose a labelled icon"],
+            ["Use the primary action", "Bright red buttons are the main next step on a screen, such as starting a workout, logging food or saving changes.", "Inside a screen or card → bright red button"],
+            ["Find help again", "Return here whenever you need a refresher. Opening a guide never changes your saved workout or nutrition data.", "Bottom bar → More (far right) → Learn Level Up"]
         ]
     },
     {
         id: "build-plan", icon: "plan", title: "Build Your First Workout Plan", duration: "2 min", page: "workout", action: "Open Workout Builder",
         summary: "Choose a coach or template, then tailor the plan to your schedule.",
         steps: [
-            ["Choose how to build", "Pick a coach-guided plan, browse the template library, or create one manually."],
-            ["Answer the builder questions", "Your goal, experience, schedule, equipment and muscle priorities shape the result."],
-            ["Review before saving", "Check every workout day, exercise, sets and rep ranges. You can still customize the plan."],
-            ["Save the plan", "The finished plan appears in My Workouts and can be placed on your schedule."]
+            ["Open the plan builder", "Scroll to Build With a Coach. Tap a coach’s card to use that coaching style, or use one of the two buttons immediately below the coach cards.", "Bottom bar → Workout → Build With a Coach"],
+            ["Choose a starting route", "Browse Library opens ready-made plans. Create Manually starts from scratch. A coach card opens the guided builder.", "Below the coach cards → Browse Library or Create Manually"],
+            ["Answer the builder questions", "Move through goal, experience, training days, session length, equipment and muscle priorities. Use the red Continue button at the bottom of each question.", "Coach builder → answer card → Continue (bottom)"],
+            ["Review the generated plan", "Check each workout day and its exercises, sets and rep ranges. Use Edit Answers to change requirements, or New Exercises to swap the exercise selection.", "Program result → Workout days → Edit Answers / New Exercises"],
+            ["Save the plan", "Scroll to the bottom of the program result and tap Save Plan. The saved plan then appears under My Workouts on the Workout screen.", "Program result → bottom → Save Plan"]
         ]
     },
     {
         id: "log-workout", icon: "workout", title: "Log a Workout", duration: "2 min", page: "workout", action: "Open My Workouts",
         summary: "Record each working set and finish the session cleanly.",
         steps: [
-            ["Start from My Workouts", "Open a saved plan and choose the workout day you are completing."],
-            ["Log every working set", "Enter weight and reps after the set. Add RPE when you want effort-based guidance."],
-            ["Use the live tools", "Rest timer, warm-ups, exercise swaps, supersets and drop sets are available during the session."],
-            ["Complete the workout", "Finishing saves the session to history and updates lifting progress, muscle maps and recommendations."]
+            ["Open a saved plan", "Scroll to My Workouts and tap the plan you want. Use Log a Workout on its card to choose a workout day.", "Bottom bar → Workout → My Workouts → Log a Workout"],
+            ["Start the correct day", "Choose the workout day you are completing, review its exercise list, then tap the red Start Workout button.", "Plan details → select workout day → Start Workout"],
+            ["Log every working set", "Inside each exercise card, enter the weight and reps in that set’s row after you perform it. Add RPE when you want effort-based guidance.", "Workout logger → exercise card → set row → Weight / Reps / RPE"],
+            ["Use the exercise tools", "Open the controls on an exercise card when you need a warm-up, exercise swap, superset or drop set. The rest timer appears during the active session.", "Workout logger → exercise card → exercise controls"],
+            ["Complete the workout", "After the final set, scroll to the bottom and finish the session. This saves it to history and updates lifting progress and muscle stimulus.", "Workout logger → bottom of session → Complete Workout"]
         ]
     },
     {
         id: "progressive-overload", icon: "overload", title: "Use Progressive Overload", duration: "2 min", page: "progress", tab: "lifting-tab", action: "View Lifting Progress",
         summary: "Understand when to add reps, weight or keep the load steady.",
         steps: [
-            ["Log consistently", "Level Up needs completed sets with weight and reps to compare performance."],
-            ["Work inside the target range", "Add reps until you reach the top of the prescribed range with sound technique."],
-            ["Follow the next-session prompt", "When performance supports it, Level Up suggests a modest load increase. Otherwise, repeat or adjust."],
-            ["Review the trend", "Use Lifting Progress to separate a single good day from a durable strength trend."]
+            ["Start a saved workout", "Progressive overload guidance is based on completed set history, so start the workout from a saved plan rather than recording it only in notes.", "Bottom bar → Workout → My Workouts → Log a Workout"],
+            ["Record complete set data", "Enter both weight and reps for every working set. Add RPE when available so the app can distinguish a comfortable set from a limit set.", "Workout logger → exercise card → each set row"],
+            ["Work inside the rep range", "Keep the same load while adding clean reps toward the top of the prescribed range. Increase weight only when the prompt supports it and technique remains sound.", "Workout logger → beneath exercise name → prescribed rep range"],
+            ["Follow the next-session prompt", "On your next occurrence of that exercise, compare the suggested weight and rep target with the prior result before starting the set.", "Next workout → exercise card → suggestion above the set rows"],
+            ["Review the longer trend", "Use the exercise chart to check whether estimated strength and session volume are improving across multiple workouts.", "Bottom bar → Progress → Lifting → Exercises"]
         ]
     },
     {
         id: "log-food", icon: "food", title: "Log Food & Create Meals", duration: "2 min", page: "energy", action: "Open Food Log",
         summary: "Search, scan or paste ingredients, then reuse meals you eat often.",
         steps: [
-            ["Choose a meal", "Open Breakfast, Lunch, Dinner or Snacks and tap Add."],
-            ["Find the food", "Search the database, scan a barcode, create a food, or paste an ingredient list."],
-            ["Set the real amount", "Choose the serving unit and enter the total amount you ate. Review calories and macros before adding."],
-            ["Save repeat meals", "Combine frequently used foods under My Meals so you can log them again in a few taps."]
+            ["Open the Food Log", "Nutrition opens on the Food Log. To add from anywhere on this screen, use + Log Food in the upper-right; to preselect a meal, tap + Add to Breakfast, Lunch, Dinner or Snacks.", "Bottom bar → Nutrition → Food Log → + Log Food (top right)"],
+            ["Choose the meal", "At the top of the Log Food sheet, tap the Breakfast, Lunch, Dinner or Snacks chip under Log to.", "Log Food sheet → top → Log to meal chips"],
+            ["Search or scan", "Type a food in Search foods and tap Search. For packaged food, tap the barcode icon immediately to the right of the search box.", "Log Food sheet → Search foods → barcode button on the right"],
+            ["Set the amount", "Tap a search result, select the serving unit, and enter the total quantity you ate. Review the calorie and macro preview before adding it to the log.", "Search result → portion panel → Serving size and Number of servings"],
+            ["Create reusable meals", "Open My Meals to build a meal food-by-food, or paste one ingredient per line and let the app match the list before you review and save it.", "Log Food sheet → My Meals → + Create a Meal or Paste Ingredients"],
+            ["Paste an ingredient list", "Tap Paste Ingredients, enter one ingredient and amount per line, then tap Analyze Ingredients. Review every match and quantity before saving the meal.", "My Meals → Paste Ingredients → Analyze Ingredients"]
         ]
     },
     {
         id: "nutrition-goals", icon: "target", title: "Set Calorie & Macro Goals", duration: "2 min", page: "energy", tab: "[data-calories-tab='plan']", action: "Open Goals & Plan",
         summary: "Set a target and understand how adaptive nutrition responds to your trend.",
         steps: [
-            ["Open Goals & Plan", "Enter your profile, activity and goal to calculate a starting calorie target, or set one manually."],
-            ["Set macros", "Protein is anchored to your goal and profile; carbs and fat divide the remaining calories."],
-            ["Log food and weigh-ins", "Consistent intake and body-weight data let Level Up compare the expected trend with the observed trend."],
-            ["Review adaptive guidance", "The app uses your rolling intake and weight trend to suggest measured changes rather than reacting to one day."]
+            ["Open Goals & Plan", "Use the tab beside Food Log at the top of Nutrition. This screen contains the profile, calorie target, macros and active phase settings.", "Bottom bar → Nutrition → Goals & Plan (top tab)"],
+            ["Calculate energy needs", "Open Body Profile, enter age, sex, height, weight and activity level, then tap Save Profile & Calculate at the bottom of that form.", "Goals & Plan → Body Profile → Save Profile & Calculate"],
+            ["Choose the calorie goal", "Open Goals & Calories, select your goal, review the recommended calories and tap Save Nutrition Goal.", "Goals & Plan → Goals & Calories → Save Nutrition Goal"],
+            ["Choose macro targets", "Open Protein & Macros, pick a macro style, review the gram targets and tap Save Macro Preference.", "Goals & Plan → Protein & Macros → Save Macro Preference"],
+            ["Start a nutrition phase", "Use Set Your Phase to define the current goal period. Logging food and weigh-ins during the phase gives adaptive guidance enough data to compare intake with the weight trend.", "Goals & Plan → Set Your Phase → Start Phase"],
+            ["Review adaptive guidance", "Scroll below the active plan to the adaptive check-in. Treat suggestions as trend-based adjustments, not reactions to one isolated day.", "Goals & Plan → active phase → adaptive check-in below"]
         ]
     },
     {
         id: "read-progress", icon: "progress", title: "Read Your Progress", duration: "2 min", page: "progress", action: "Open Progress",
         summary: "Use trends, muscle maps and history without overreacting to daily noise.",
         steps: [
-            ["Use Weight for the trend", "Daily scale changes are noisy. The rolling average shows the direction more clearly."],
-            ["Use Lifting for performance", "Review strength, set volume, exercise trends and weekly muscle stimulus."],
-            ["Use Nutrition for adherence", "Compare intake with your current target and see meal patterns over time."],
-            ["Use muscle maps for coverage", "Maps summarize logged set stimulus. They support programming decisions; they do not diagnose recovery or injury."]
+            ["Read the weight trend", "Weight is the first tab. Tap + Add Weight to enter a new measurement, then use Weight Trend below to focus on direction rather than one-day changes.", "Bottom bar → Progress → Weight → + Add Weight"],
+            ["Review overall training", "Open Lifting, then Overview to see workout frequency, recent sessions and estimated strength improvements.", "Progress → Lifting → Overview"],
+            ["Inspect one exercise", "Open Exercises, choose an exercise from the selector, then switch between Session Volume and Estimated 1RM above the chart.", "Progress → Lifting → Exercises → Exercise selector"],
+            ["Check muscle coverage", "Open Muscles to view weekly set stimulus and the muscle map. These views summarize logged training; they do not diagnose recovery or injury.", "Progress → Lifting → Muscles"],
+            ["Review nutrition adherence", "Open Nutrition to compare logged calories with the active target and review meal patterns across the selected period.", "Progress → Nutrition"],
+            ["Change the time window", "Use the range controls at the top of a progress view before interpreting a chart so the date window matches the question you are asking.", "Progress tab → range buttons above the charts"]
         ]
     },
     {
         id: "cardio", icon: "cardio", title: "Track Cardio", duration: "1 min", page: "progress", tab: "cardio-progress-tab", action: "Open Cardio Progress",
         summary: "Log duration, distance and effort, then compare weekly trends.",
         steps: [
-            ["Add cardio to a workout", "Log the activity with duration and, when relevant, distance."],
-            ["Add RPE for load", "Effort makes two sessions of the same length meaningfully different in Cardio Load."],
-            ["Review the Cardio tab", "Track weekly minutes, session count, distance, speed and load over the selected date range."]
+            ["Add or open a cardio exercise", "Start a scheduled workout containing cardio, or use the workout editor to add a cardio activity to the appropriate day.", "Bottom bar → Workout → saved plan → workout day"],
+            ["Enter the cardio result", "In the cardio exercise card, record duration and, when relevant, distance. Use the same units consistently so speed comparisons remain meaningful.", "Workout logger → cardio exercise card → Duration / Distance"],
+            ["Add RPE for cardio load", "Record effort after the session. Cardio Load uses duration and RPE, so two equally long sessions can receive different loads.", "Cardio exercise card → RPE field"],
+            ["Open Cardio Progress", "The Cardio tab is in the top row of Progress, between Nutrition and Photo Log.", "Bottom bar → Progress → Cardio (top tab)"],
+            ["Choose the date range", "Use 7D, 4W, 12W or All above the summary cards, then review weekly minutes, sessions, distance, speed and cardio load.", "Cardio Progress → 7D / 4W / 12W / All"]
         ]
     }
 ];
@@ -134,7 +146,7 @@ export function renderLessonLibrary() {
     const done = LESSONS.filter(lesson => completed.has(lesson.id)).length;
     const percent = Math.round((done / total) * 100);
     return `<section class="learn-shell">
-        <header class="learn-header"><button class="nutrition-planner-back" type="button" data-learn-back>← More</button><span class="eyebrow">LEARN LEVEL UP</span><h2>Quick walkthroughs</h2><p>Short, practical guides that take you straight to the real feature when you are ready.</p></header>
+        <header class="learn-header"><button class="nutrition-planner-back" type="button" data-learn-back>← More</button><span class="eyebrow">LEARN LEVEL UP</span><h2>Step-by-step walkthroughs</h2><p>Each guide names the exact tab, button and screen location, then takes you straight to the feature when you are ready.</p></header>
         <section class="learn-progress-card" aria-label="Lesson progress"><div><strong>${done} of ${total} complete</strong><span>${done === total ? "You know your way around Level Up." : "Choose only the guide you need."}</span></div><b>${percent}%</b><div class="learn-progress-track"><i style="width:${percent}%"></i></div></section>
         <section class="learn-lesson-list" aria-label="Level Up lessons">${LESSONS.map(lesson => lessonCard(lesson, completed)).join("")}</section>
     </section>`;
@@ -150,6 +162,7 @@ function renderLessonDetail(lesson, stepIndex = 0) {
             <span class="learn-step-number">STEP ${stepIndex + 1} OF ${lesson.steps.length}</span>
             <div class="learn-step-visual">${ICONS[lesson.icon]}</div>
             <h3>${escapeHtml(step[0])}</h3>
+            <div class="learn-step-location"><span>WHERE TO FIND IT</span><strong>${escapeHtml(step[2])}</strong></div>
             <p>${escapeHtml(step[1])}</p>
         </article>
         <div class="learn-step-actions">

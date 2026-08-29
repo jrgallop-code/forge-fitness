@@ -19,6 +19,10 @@ test("walkthrough library covers the primary app workflows", async () => {
     assert.match(source, /level_up_completed_lessons_v1/);
     assert.match(source, /data-open-lesson-feature/);
     assert.match(source, /nav-btn\[data-page=/);
+    assert.match(source, /WHERE TO FIND IT/);
+    assert.match(source, /Bottom bar → Nutrition → Food Log/);
+    assert.match(source, /Bottom bar → Progress → Lifting → Exercises/);
+    assert.match(source, /Program result → bottom → Save Plan/);
 });
 
 test("walkthrough styling stays isolated from the rest of the app", async () => {
@@ -27,8 +31,9 @@ test("walkthrough styling stays isolated from the rest of the app", async () => 
         read("css/learn-level-up.css")
     ]);
     assert.match(source, /data-learn-level-up-styles/);
-    assert.match(source, /css\/learn-level-up\.css\?v=learn-level-up-1/);
+    assert.match(source, /css\/learn-level-up\.css\?v=learn-level-up-2/);
     assert.match(styles, /\.learn-lesson-list/);
     assert.match(styles, /\.learn-step-card/);
+    assert.match(styles, /\.learn-step-location/);
     assert.match(styles, /padding-bottom:112px/);
 });
