@@ -204,6 +204,13 @@ test("expanded diary meals show their own calorie and macro breakdown", async ()
     assert.match(module, /aria-expanded/);
 });
 
+test("diary meals start collapsed and reveal macros only after the header is tapped", async () => {
+    const module = await read("../js/nutrition/food-log.js");
+    assert.match(module, /<details class="food-meal">/);
+    assert.doesNotMatch(module, /<details class="food-meal"[^>]*\$\{entries\.length/);
+    assert.match(module, /details\.open = !details\.open/);
+});
+
 test("custom foods can be edited and saved over their existing record", async () => {
     const [module, styles] = await Promise.all([
         read("../js/nutrition/food-log.js"),
