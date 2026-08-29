@@ -1,6 +1,7 @@
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-shared-trend-1";
-import { getActiveNutritionPhase, saveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics, saveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-1";
 import { setCurrentCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
+import { buildCoordinatedWeeklyUpdate, clearAdjustmentHold, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
 
 const STATE_KEY = "level_up_maintenance_check_in_v1";
 const PENDING_KEY = "level_up_pending_maintenance_review_v1";
@@ -43,7 +44,7 @@ export function setMaintenanceUpdateMode(mode) {
     return next;
 }
 
-export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTarget, state = readMaintenanceCheckInState(), today = new Date() } = {}) {
+export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTarget, adaptiveMetrics = null, adjustmentHold = null, state = readMaintenanceCheckInState(), today = new Date() } = {}) {
     const proposedMaintenance = positive(estimate?.maintenanceCalories);
     const baseline = positive(currentMaintenance);
     const target = positive(currentTarget);
@@ -53,15 +54,22 @@ export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTar
     const change = proposedMaintenance !== null && baseline !== null
         ? Math.round(proposedMaintenance - baseline)
         : null;
-    const goalAdjustment = target !== null && baseline !== null ? target - baseline : 0;
-    const proposedTarget = proposedMaintenance !== null ? Math.round(proposedMaintenance + goalAdjustment) : null;
+    const coordinatedUpdate = buildCoordinatedWeeklyUpdate({
+        currentMaintenance: baseline,
+        proposedMaintenance,
+        currentTarget: target,
+        actualRate: adaptiveMetrics?.actualRateLbPerWeek,
+        targetRate: adaptiveMetrics?.targetRateLbPerWeek,
+        adaptiveReady: Boolean(adaptiveMetrics?.recommendationReady)
+    });
+    const proposedTarget = coordinatedUpdate?.targetCalories ?? null;
     const reviewed = parseDate(state?.reviewedAt);
     const now = new Date(today); now.setHours(12, 0, 0, 0);
     const daysSinceReview = reviewed === null ? Infinity : Math.floor((now.getTime() - reviewed) / DAY);
     const due = daysSinceReview >= CHECK_IN_DAYS;
     const meaningful = Number.isFinite(change) && Math.abs(change) >= MINIMUM_CHANGE;
     return {
-        ready: enoughWeeklyData && due && meaningful,
+        ready: enoughWeeklyData && due && meaningful && Boolean(coordinatedUpdate) && !adjustmentHold,
         enoughWeeklyData,
         due,
         meaningful,
@@ -72,7 +80,10 @@ export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTar
         change,
         recentFoodDays,
         recentWeighIns,
-        nextCheckInDays: due ? 0 : Math.max(0, CHECK_IN_DAYS - daysSinceReview)
+        nextCheckInDays: adjustmentHold?.daysRemaining ?? (due ? 0 : Math.max(0, CHECK_IN_DAYS - daysSinceReview)),
+        adjustmentHold,
+        adaptiveMetrics,
+        coordinatedUpdate
     };
 }
 
@@ -81,6 +92,8 @@ export function queueMaintenanceReview(checkIn) {
     localStorage.setItem(PENDING_KEY, JSON.stringify({
         maintenanceCalories: checkIn.proposedMaintenance,
         proposedTarget: checkIn.proposedTarget,
+        coordinatedUpdate: checkIn.coordinatedUpdate,
+        adaptiveCheckDay: checkIn.adaptiveMetrics?.trend?.checkDay ?? null,
         createdAt: new Date().toISOString()
     }));
     return true;
@@ -106,18 +119,21 @@ export function markMaintenanceCheckInReviewed(checkIn, action = "kept") {
 }
 
 export function buildAutomaticMaintenanceUpdate(checkIn, maximumChange = MAXIMUM_AUTOMATIC_CHANGE) {
-    const change = Number(checkIn?.change);
-    const maintenance = positive(checkIn?.currentMaintenance);
-    const target = positive(checkIn?.currentTarget);
-    const cap = Math.max(25, Math.round(Number(maximumChange) || MAXIMUM_AUTOMATIC_CHANGE));
-    if (!checkIn?.ready || !Number.isFinite(change) || maintenance === null || target === null) return null;
-    const appliedChange = Math.max(-cap, Math.min(cap, change));
+    if (!checkIn?.ready) return null;
+    const fallbackProposed = Number(checkIn?.currentMaintenance) + Number(checkIn?.change);
+    const update = buildCoordinatedWeeklyUpdate({
+        currentMaintenance: checkIn.currentMaintenance,
+        proposedMaintenance: Number.isFinite(Number(checkIn.proposedMaintenance)) ? checkIn.proposedMaintenance : fallbackProposed,
+        currentTarget: checkIn.currentTarget,
+        actualRate: checkIn.adaptiveMetrics?.actualRateLbPerWeek,
+        targetRate: checkIn.adaptiveMetrics?.targetRateLbPerWeek,
+        adaptiveReady: Boolean(checkIn.adaptiveMetrics?.recommendationReady),
+        maximumChange
+    });
+    if (!update) return null;
     return {
-        previousMaintenance: Math.round(maintenance),
-        previousTarget: Math.round(target),
-        maintenanceCalories: Math.round(maintenance + appliedChange),
-        targetCalories: Math.round(target + appliedChange),
-        appliedChange
+        ...update,
+        appliedChange: update.targetChange
     };
 }
 
@@ -132,6 +148,16 @@ function applyAutomaticMaintenanceUpdate(checkIn, phase) {
         targetCalories: update.targetCalories
     });
     setCurrentCalories(update.targetCalories, "Automatic weekly Level Up TDEE update");
+    startAdjustmentHold({
+        phase,
+        calories: update.targetCalories,
+        maintenanceCalories: update.maintenanceCalories,
+        estimatedTargetCalories: update.targetCalories,
+        previousTarget: update.previousTarget,
+        previousMaintenance: update.previousMaintenance,
+        source: "coordinated-tdee-and-adaptive-update"
+    });
+    markPhaseCheckHandled(phase, checkIn.adaptiveMetrics?.trend?.checkDay, "coordinated-maintenance-update");
     showAutomaticUpdateToast(update, phase);
     return true;
 }
@@ -141,7 +167,10 @@ function showAutomaticUpdateToast(update, phase) {
     const toast = document.createElement("aside");
     toast.className = "maintenance-auto-toast";
     toast.setAttribute("role", "status");
-    toast.innerHTML = `<div><span>WEEKLY MAINTENANCE UPDATE</span><strong>Target updated to ${update.targetCalories.toLocaleString()} cal/day</strong><small>${update.appliedChange > 0 ? "+" : "−"}${Math.abs(update.appliedChange)} cal/day · capped at ${MAXIMUM_AUTOMATIC_CHANGE} per week</small></div><button type="button">Undo</button>`;
+    const paceCopy = update.paceCorrection
+        ? ` · coach ${update.paceCorrection > 0 ? "+" : "−"}${Math.abs(update.paceCorrection)}`
+        : " · pace on target";
+    toast.innerHTML = `<div><span>WEEKLY CALORIE UPDATE</span><strong>Target updated to ${update.targetCalories.toLocaleString()} cal/day</strong><small>Maintenance ${update.maintenanceChange > 0 ? "+" : "−"}${Math.abs(update.maintenanceChange)}${paceCopy} · combined change capped at ${MAXIMUM_AUTOMATIC_CHANGE}</small></div><button type="button">Undo</button>`;
     toast.querySelector("button")?.addEventListener("click", () => {
         markMaintenanceCheckInReviewed({ proposedMaintenance: update.previousMaintenance }, "automatic-undone");
         localStorage.setItem(MANUAL_MAINTENANCE_KEY, String(update.previousMaintenance));
@@ -151,6 +180,7 @@ function showAutomaticUpdateToast(update, phase) {
             targetCalories: update.previousTarget
         });
         setCurrentCalories(update.previousTarget, "Undo automatic Level Up TDEE update");
+        clearAdjustmentHold();
         toast.remove();
     });
     document.body.appendChild(toast);
@@ -165,10 +195,14 @@ export function initializeMaintenanceCheckInAlert() {
         const currentMaintenance = Number(phase?.maintenanceCalories);
         const currentTarget = Number(phase?.currentCalories ?? phase?.startCalories);
         const estimate = getCalculatedMaintenanceEstimate();
+        const adaptiveMetrics = phase ? getActivePhaseMetrics(phase, { rolling: true }) : null;
+        const adjustmentHold = readAdjustmentHold({ phase, currentCalories: currentTarget });
         const checkIn = getMaintenanceCheckIn({
             estimate,
             currentMaintenance,
-            currentTarget
+            currentTarget,
+            adaptiveMetrics,
+            adjustmentHold
         });
         const mode = getMaintenanceUpdateMode();
         if (mode === "automatic" && checkIn.ready && estimate.status === "established") {
@@ -205,7 +239,10 @@ function renderNutritionHubAlert(checkIn, mode) {
     if (!hub) return;
     const alert = document.createElement("section");
     alert.className = "maintenance-hub-alert";
-    alert.innerHTML = `<div><span>WEEKLY TDEE UPDATE</span><strong>New maintenance estimate available</strong><small>Review ${checkIn.currentMaintenance.toLocaleString()} → ${checkIn.proposedMaintenance.toLocaleString()} cal/day</small></div><button type="button">Review</button>`;
+    const targetCopy = Number.isFinite(checkIn.currentTarget) && Number.isFinite(checkIn.proposedTarget)
+        ? ` · target ${checkIn.currentTarget.toLocaleString()} → ${checkIn.proposedTarget.toLocaleString()}`
+        : "";
+    alert.innerHTML = `<div><span>WEEKLY CALORIE REVIEW</span><strong>One coordinated update is ready</strong><small>Maintenance ${checkIn.currentMaintenance.toLocaleString()} → ${checkIn.proposedMaintenance.toLocaleString()}${targetCopy}</small></div><button type="button">Review</button>`;
     alert.querySelector("button")?.addEventListener("click", () => {
         if (!queueMaintenanceReview(checkIn)) return;
         document.querySelector('[data-calories-tab="plan"]')?.click();

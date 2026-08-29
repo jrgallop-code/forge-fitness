@@ -18,7 +18,7 @@ import { initializeExerciseProgressV2 } from "../progress/exercise-progress-v2.j
 import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=analytics-summary-polish-1";
 import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.js?v=repair-generic-exercise-1";
 import { initializeMuscleRecoveryMap } from "../progress/muscle-recovery-map.js?v=recovery-traced-1";
-import { initializeCalorieStats } from "../nutrition/calorie-stats.js?v=maintenance-modes-1";
+import { initializeCalorieStats } from "../nutrition/calorie-stats.js?v=coordinated-weekly-calories-1";
 import { renderSleepTracker, initializeSleepTracker } from "../progress/sleep-tracker.js?v=sleep-tracker-2";
 import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../progress/measurements-tracker.js?v=measurements-image-1";
 import { initializeMeasurementHistoryDetail } from "../progress/measurements-history-detail.js?v=measurement-history-1";
@@ -27,7 +27,7 @@ import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energ
 import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v=calculated-maintenance-1";
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1";
-import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=maintenance-modes-1";
+import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=coordinated-weekly-calories-1";
 import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=nutrition-nav-1";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=cardio-rpe-1";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-2";

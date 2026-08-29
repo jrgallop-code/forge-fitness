@@ -76,13 +76,11 @@ test("automatic updates preserve the goal adjustment and cap weekly movement", (
         currentMaintenance: 2275,
         currentTarget: 2400
     });
-    assert.deepEqual(update, {
-        previousMaintenance: 2275,
-        previousTarget: 2400,
-        maintenanceCalories: 2425,
-        targetCalories: 2550,
-        appliedChange: 150
-    });
+    assert.equal(update.previousMaintenance, 2275);
+    assert.equal(update.previousTarget, 2400);
+    assert.equal(update.maintenanceCalories, 2425);
+    assert.equal(update.targetCalories, 2550);
+    assert.equal(update.appliedChange, 150);
 });
 
 test("automatic updates support a capped maintenance decrease", () => {
@@ -95,4 +93,38 @@ test("automatic updates support a capped maintenance decrease", () => {
     assert.equal(update.maintenanceCalories, 2350);
     assert.equal(update.targetCalories, 1850);
     assert.equal(update.appliedChange, -150);
+});
+
+test("a shared adjustment hold suppresses a second maintenance decision", () => {
+    const result = getMaintenanceCheckIn({
+        estimate,
+        currentMaintenance: 2275,
+        currentTarget: 2400,
+        adjustmentHold: { daysRemaining: 5 },
+        state: {},
+        today: new Date("2026-08-29T12:00:00")
+    });
+    assert.equal(result.ready, false);
+    assert.equal(result.nextCheckInDays, 5);
+});
+
+test("automatic maintenance and adaptive pace corrections become one capped target change", () => {
+    const result = getMaintenanceCheckIn({
+        estimate,
+        currentMaintenance: 2275,
+        currentTarget: 2400,
+        adaptiveMetrics: {
+            recommendationReady: true,
+            actualRateLbPerWeek: 0.75,
+            targetRateLbPerWeek: 0.25,
+            trend: { checkDay: 21 }
+        },
+        state: {},
+        today: new Date("2026-08-29T12:00:00")
+    });
+    const update = buildAutomaticMaintenanceUpdate(result);
+    assert.equal(update.maintenanceChange, 100);
+    assert.equal(update.requestedPaceCorrection, -250);
+    assert.equal(update.targetChange, -150);
+    assert.equal(update.targetCalories, 2250);
 });

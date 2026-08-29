@@ -2,11 +2,14 @@ import { GOAL_PRESETS, calculateTdee } from "./tdee-calculator.js?v=nutrition-ph
 import { getNutritionProfile, getNutritionGoal, saveNutritionGoal, getNutritionPlan, syncCalculatedCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getActiveNutritionPhase, getNutritionPhaseHistory, getActivePhaseMetrics, getPhaseDayNumber, saveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-1";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-shared-trend-1";
-import { clearPendingMaintenanceReview, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, readPendingMaintenanceReview, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=maintenance-modes-1";
+import { clearPendingMaintenanceReview, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, readPendingMaintenanceReview, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=coordinated-weekly-calories-1";
+import { buildCoordinatedWeeklyUpdate, markPhaseCheckHandled, startAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
 
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const LEGACY_CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
 let maintenanceDraft = null;
+let targetDraft = null;
+let pendingAdaptiveCheckDay = null;
 
 export function initializeUnifiedGoalsCalories() {
     const view = document.querySelector('[data-planner-view="goals"]');
@@ -24,9 +27,15 @@ export function initializeUnifiedGoalsCalories() {
 
     hydrateMaintenance();
     refreshAll();
-    document.getElementById("unified-goal-select")?.addEventListener("change", refreshAll);
+    document.getElementById("unified-goal-select")?.addEventListener("change", () => {
+        targetDraft = null;
+        pendingAdaptiveCheckDay = null;
+        refreshAll();
+    });
     document.getElementById("unified-maintenance")?.addEventListener("input", event => {
         maintenanceDraft = event.currentTarget.value;
+        targetDraft = null;
+        pendingAdaptiveCheckDay = null;
         refreshAll();
     });
     document.getElementById("unified-use-estimate")?.addEventListener("click", useEstimatedMaintenance);
@@ -135,6 +144,8 @@ function useEstimatedMaintenance() {
     if (!Number.isFinite(estimated)) { setText("unified-calorie-message", "Save your Body Profile first so Level Up can estimate maintenance."); return; }
     const input = document.getElementById("unified-maintenance");
     maintenanceDraft = String(estimated);
+    targetDraft = null;
+    pendingAdaptiveCheckDay = null;
     if (input) input.value = maintenanceDraft;
     refreshAll();
 }
@@ -145,9 +156,12 @@ function calculatedMaintenance() {
 
 function hydratePendingMaintenanceReview() {
     const pending = readPendingMaintenanceReview();
-    const value = Number(pending?.maintenanceCalories);
+    const value = Number(pending?.coordinatedUpdate?.maintenanceCalories ?? pending?.maintenanceCalories);
     if (!Number.isFinite(value) || value <= 0) return;
     maintenanceDraft = String(Math.round(value));
+    const pendingTarget = Number(pending?.coordinatedUpdate?.targetCalories ?? pending?.proposedTarget);
+    targetDraft = Number.isFinite(pendingTarget) && pendingTarget > 0 ? Math.round(pendingTarget) : null;
+    pendingAdaptiveCheckDay = Number.isFinite(Number(pending?.adaptiveCheckDay)) ? Number(pending.adaptiveCheckDay) : null;
     const input = document.getElementById("unified-maintenance");
     if (input) input.value = maintenanceDraft;
     refreshPreview();
@@ -159,8 +173,8 @@ function refreshMaintenanceMode() {
     const mode = getMaintenanceUpdateMode();
     setValue("unified-maintenance-mode", mode);
     const messages = {
-        review: "Level Up checks weekly and asks before changing your target.",
-        automatic: "High-confidence weekly updates apply automatically, capped at 150 calories, with an Undo option. Early estimates still require review.",
+        review: "Level Up combines the new maintenance estimate with your Adaptive Coach pace check, then asks before making one weekly change.",
+        automatic: "High-confidence maintenance and coach updates are combined into one weekly change, capped at 150 calories, with Undo. Early estimates still require review.",
         track: "Calculated TDEE remains visible, but Level Up will not alert you or adjust your target."
     };
     setText("unified-maintenance-mode-help", messages[mode] || messages.review);
@@ -184,7 +198,20 @@ function useCalculatedMaintenance() {
         return;
     }
     const input = document.getElementById("unified-maintenance");
-    maintenanceDraft = String(estimate.maintenanceCalories);
+    const active = getActiveNutritionPhase();
+    const currentTarget = Number(active?.currentCalories ?? active?.startCalories);
+    const metrics = active ? getActivePhaseMetrics(active, { rolling: true }) : null;
+    const coordinated = active ? buildCoordinatedWeeklyUpdate({
+        currentMaintenance: active.maintenanceCalories,
+        proposedMaintenance: estimate.maintenanceCalories,
+        currentTarget,
+        actualRate: metrics?.actualRateLbPerWeek,
+        targetRate: metrics?.targetRateLbPerWeek,
+        adaptiveReady: Boolean(metrics?.recommendationReady)
+    }) : null;
+    maintenanceDraft = String(coordinated?.maintenanceCalories ?? estimate.maintenanceCalories);
+    targetDraft = coordinated?.targetCalories ?? null;
+    pendingAdaptiveCheckDay = Number.isFinite(Number(metrics?.trend?.checkDay)) ? Number(metrics.trend.checkDay) : null;
     if (input) {
         input.value = maintenanceDraft;
         refreshPreview();
@@ -194,8 +221,8 @@ function useCalculatedMaintenance() {
     }
     const button = document.getElementById("unified-use-calculated");
     if (button) button.textContent = "Added below ✓";
-    setText("unified-calculated-action-status", "Copied to your planning field. Review the new target, then press Save.");
-    setText("unified-calorie-message", "Level Up calculated TDEE added for preview. It has not changed your active target yet.");
+    setText("unified-calculated-action-status", "Added to the shared weekly review. Maintenance is updated first, then the coach correction is applied within the 150-calorie cap.");
+    setText("unified-calorie-message", "Review the coordinated target below, then press Save. It has not changed your active target yet.");
 }
 
 function calculatePreview() {
@@ -203,7 +230,10 @@ function calculatePreview() {
     const goal = GOAL_PRESETS[goalId];
     const maintenance = Number(document.getElementById("unified-maintenance")?.value);
     if (!goal || !Number.isFinite(maintenance) || maintenance <= 0) return null;
-    return { goalId, goal, maintenance: Math.round(maintenance), rate: goal.weeklyWeightChangeLb, dailyAdjustment: goal.dailyCalorieAdjustment, target: Math.round(maintenance + goal.dailyCalorieAdjustment) };
+    const active = getActiveNutritionPhase();
+    const useCoordinatedTarget = targetDraft !== null && active?.goalId === goalId;
+    const target = useCoordinatedTarget ? Math.round(targetDraft) : Math.round(maintenance + goal.dailyCalorieAdjustment);
+    return { goalId, goal, maintenance: Math.round(maintenance), rate: goal.weeklyWeightChangeLb, dailyAdjustment: target - Math.round(maintenance), target };
 }
 
 function refreshAll() {
@@ -265,13 +295,32 @@ function saveUnifiedPlan() {
     const estimated = getEstimatedMaintenance();
     if (Number.isFinite(estimated) && preview.maintenance === estimated) localStorage.removeItem(MANUAL_MAINTENANCE_KEY); else localStorage.setItem(MANUAL_MAINTENANCE_KEY, String(preview.maintenance));
     localStorage.removeItem(LEGACY_CUSTOM_WEEKLY_RATE_KEY);
+    const activeBefore = getActiveNutritionPhase();
+    const previousTarget = Number(activeBefore?.currentCalories ?? activeBefore?.startCalories);
+    const previousMaintenance = Number(activeBefore?.maintenanceCalories);
     const result = saveNutritionPhase({ goalId: preview.goalId, maintenanceCalories: preview.maintenance, targetCalories: preview.target });
     saveNutritionGoal({ goalId: preview.goalId, updatedAt: new Date().toISOString(), source: "nutrition-phase" });
     syncCalculatedCalories(preview.target);
-    maintenanceDraft = null;
     const estimate = calculatedMaintenance();
     const usedCalculated = Number.isFinite(estimate.maintenanceCalories) && preview.maintenance === estimate.maintenanceCalories;
-    markMaintenanceCheckInReviewed({ proposedMaintenance: estimate.maintenanceCalories }, usedCalculated ? "applied" : "kept");
+    const coordinatedCalculated = targetDraft !== null && activeBefore?.goalId === preview.goalId;
+    if (result.action === "adjusted" && activeBefore?.id) {
+        const updatedPhase = getActiveNutritionPhase() || activeBefore;
+        startAdjustmentHold({
+            phase: updatedPhase,
+            calories: preview.target,
+            maintenanceCalories: preview.maintenance,
+            estimatedTargetCalories: preview.target,
+            previousTarget,
+            previousMaintenance,
+            source: coordinatedCalculated ? "coordinated-tdee-and-adaptive-review" : "manual-calorie-adjustment"
+        });
+        markPhaseCheckHandled(updatedPhase, pendingAdaptiveCheckDay, coordinatedCalculated ? "coordinated-maintenance-review" : "manual-adjustment");
+    }
+    maintenanceDraft = null;
+    targetDraft = null;
+    pendingAdaptiveCheckDay = null;
+    markMaintenanceCheckInReviewed({ proposedMaintenance: estimate.maintenanceCalories }, usedCalculated || coordinatedCalculated ? "applied" : "kept");
     clearPendingMaintenanceReview();
     window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
     const message = result.action === "started" ? `Started ${preview.goal.label} today at ${preview.target} kcal/day.` : result.action === "adjusted" ? `Updated calories to ${preview.target} kcal/day inside the current ${preview.goal.label} phase. The phase start date did not change.` : `${preview.goal.label} remains active at ${preview.target} kcal/day.`;
