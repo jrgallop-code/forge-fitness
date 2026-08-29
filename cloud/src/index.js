@@ -1,3 +1,5 @@
+import { SWISS_CHALET_FOODS } from "./data/swiss-chalet-foods.js";
+
 const MAX_BACKUP_BYTES = 8 * 1024 * 1024;
 const SESSION_DAYS = 30;
 const PASSWORD_ITERATIONS = 100000;
@@ -1053,10 +1055,20 @@ const BUNDLED_VERIFIED_FOODS = [
     bundledVerifiedFood({ id: "grenade-cookie-dough-60g", name: "Chocolate Chip Cookie Dough Protein Bar", brand: "Grenade", aliases: "carb killa", label: "1 bar (60 g)", grams: 60, calories: 208, protein: 21, carbs: 18, fat: 7.8, fiber: 2.7, sourceUrl: "https://www.grenade.com/products/protein-bar-cookie-dough" }),
     bundledVerifiedFood({ id: "grenade-peanut-nutter-60g", name: "Peanut Nutter Protein Bar", brand: "Grenade", aliases: "carb killa peanut butter", label: "1 bar (60 g)", grams: 60, calories: 214, protein: 20, carbs: 18, fat: 9.1, fiber: 5.6, sourceUrl: "https://www.grenade.com/products/protein-bar-peanut-nutter" }),
     bundledVerifiedFood({ id: "grenade-salted-caramel-ca-60g", productFamilyId: "grenade-salted-caramel-60g", name: "Chocolate Chip Salted Caramel Protein Bar", brand: "Grenade", aliases: "carb killa salted caramel chocolate chip", barcode: "847534004261", label: "1 bar (60 g)", grams: 60, calories: 240, protein: 21, carbs: 22, fat: 9, fiber: 2, sourceName: "Canadian package label via Open Food Facts", sourceUrl: "https://world.openfoodfacts.org/product/0847534004261" }),
-    bundledVerifiedFood({ id: "grenade-salted-caramel-us-60g", productFamilyId: "grenade-salted-caramel-60g", name: "Chocolate Chip Salted Caramel Protein Bar", brand: "Grenade", aliases: "carb killa salted caramel chocolate chip", barcode: "847534004063", label: "1 bar (60 g)", grams: 60, calories: 230, protein: 20, carbs: 23, fat: 10, fiber: 3, sourceName: "USDA FoodData Central", sourceUrl: "https://fdc.nal.usda.gov/food-details/2387796/nutrients" })
+    bundledVerifiedFood({ id: "grenade-salted-caramel-us-60g", productFamilyId: "grenade-salted-caramel-60g", name: "Chocolate Chip Salted Caramel Protein Bar", brand: "Grenade", aliases: "carb killa salted caramel chocolate chip", barcode: "847534004063", label: "1 bar (60 g)", grams: 60, calories: 230, protein: 20, carbs: 23, fat: 10, fiber: 3, sourceName: "USDA FoodData Central", sourceUrl: "https://fdc.nal.usda.gov/food-details/2387796/nutrients" }),
+    ...SWISS_CHALET_FOODS.map(food => bundledVerifiedFood({
+        ...food,
+        brand: "Swiss Chalet",
+        aliases: "swiss chalet swisschalet restaurant canada",
+        label: `1 serving (${food.grams} g)`,
+        category: "Restaurant food",
+        sourceName: "Swiss Chalet Canada",
+        sourceUrl: "https://www.swisschalet.com/en/nutritional.html",
+        verifiedAt: "2026-08-29"
+    }))
 ];
 
-function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, barcode = "", barcodeAliases = [], label, grams, calories, protein, carbs, fat, fiber = 0, sourceName = "", sourceUrl }) {
+function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, barcode = "", barcodeAliases = [], label, grams, calories, protein, carbs, fat, fiber = 0, category = "", sourceName = "", sourceUrl, verifiedAt = "2026-08-27" }) {
     const nutrition = { calories, protein, carbs, fat, fiber };
     const portions = [{ label: foodServingLabel(label, grams), ...(grams ? { grams } : {}), nutrition }];
     if (grams && Math.abs(grams - 100) > .01) {
@@ -1072,9 +1084,9 @@ function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, b
         barcode: normalizeBarcode(barcode),
         barcodeAliases: barcodeAliases.map(normalizeBarcode).filter(Boolean),
         dataType: "Level Up Verified",
-        category: brand === "Grenade" ? "Protein bar" : "Restaurant food",
+        category: category || (brand === "Grenade" ? "Protein bar" : "Restaurant food"),
         countryCode: "CA",
-        provenance: { sourceName: sourceName || (brand === "Grenade" ? "Grenade" : "McDonald's Canada"), sourceUrl, verifiedAt: "2026-08-27" },
+        provenance: { sourceName: sourceName || (brand === "Grenade" ? "Grenade" : "McDonald's Canada"), sourceUrl, verifiedAt },
         detailsLoaded: true,
         portions: addUsefulGramPortions(portions)
     };
