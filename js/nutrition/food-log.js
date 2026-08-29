@@ -309,7 +309,7 @@ function mealMarkup(meal, entries, yesterdayEntries) {
     const yesterdayCopied = hasCopiedMeal(entries, previousDateKey(selectedDate), meal);
     const showYesterday = yesterdayEntries.length > 0 && !yesterdayCopied;
     return `
-        <details class="food-meal" ${entries.length || yesterdayEntries.length ? "open" : ""}>
+        <details class="food-meal">
             <summary><span><strong>${meal}</strong><small>${entries.length ? `${entries.length} item${entries.length === 1 ? "" : "s"}` : "Nothing logged"}</small></span><b>${Math.round(totals.calories)} kcal</b></summary>
             <div class="food-meal-body">
                 ${entries.length ? `<div class="food-meal-macros">${macroBreakdownMarkup(totals, `${meal} total · ${entries.length} item${entries.length === 1 ? "" : "s"}`)}</div>` : ""}
