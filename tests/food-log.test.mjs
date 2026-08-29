@@ -304,6 +304,31 @@ test("bundled verified foods keep the catalogue working before D1 migration", ()
     assert.equal(bars[0].portions[0].nutrition.calories, 208);
 });
 
+test("Swiss Chalet's official catalogue is bundled with the Fiesta Salad variants", () => {
+    const allSwissChalet = searchBundledVerifiedFoods("Swiss Chalet");
+    const rotisserie = searchBundledVerifiedFoods("Swiss Chalet fiesta rotisserie")[0];
+    const crispy = searchBundledVerifiedFoods("Swiss Chalet fiesta crispy")[0];
+    const salads = searchBundledVerifiedFoods("Swiss Chalet fiesta salad");
+
+    assert.ok(allSwissChalet.length >= 250);
+    assert.equal(rotisserie.name, "Fiesta Salad - Rotisserie Chicken");
+    assert.equal(rotisserie.portions[0].label, "1 serving (728 g)");
+    assert.deepEqual(rotisserie.portions[0].nutrition, { calories: 1090, protein: 79, carbs: 42, fat: 70, fiber: 12 });
+    assert.equal(crispy.portions[0].nutrition.calories, 1120);
+    assert.equal(salads.length, 3);
+    assert.equal(rotisserie.provenance.sourceName, "Swiss Chalet Canada");
+    assert.equal(rotisserie.provenance.sourceUrl, "https://www.swisschalet.com/en/nutritional.html");
+    assert.equal(rotisserie.provenance.verifiedAt, "2026-08-29");
+});
+
+test("Swiss Chalet migration contains the official Fiesta Salad nutrition", async () => {
+    const migration = await readFile(new URL("../cloud/migrations/0009_swiss_chalet_foods.sql", import.meta.url), "utf8");
+    assert.match(migration, /Fiesta Salad - Rotisserie Chicken/);
+    assert.match(migration, /'1 serving \(728 g\)', 728, 1090, 79, 42, 70, 12/);
+    assert.match(migration, /https:\/\/www\.swisschalet\.com\/en\/nutritional\.html/);
+    assert.match(migration, /2026-08-29/);
+});
+
 test("Canadian and US Grenade barcodes resolve to regional variants of one product family", () => {
     const canadian = findBundledVerifiedFoodByBarcode("847534004261");
     const us = findBundledVerifiedFoodByBarcode("847534004063");
