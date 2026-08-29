@@ -1,5 +1,5 @@
-import { navigate } from "./core/router.js?v=coach-experience-step-1";
-import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=deload-workout-preview-1";
+import { navigate } from "./core/router.js?v=progress-calories-1";
+import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=nutrition-nav-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=repair-generic-exercise-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";

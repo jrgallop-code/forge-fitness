@@ -1,5 +1,4 @@
 const FOOD_LOG_KEY = "level_up_food_log_v1";
-const CALORIES_TAB_KEY = "level_up_calories_tab_v1";
 const WEIGHT_KEY = "forge_weight_entries";
 const RANGE_KEY = "level_up_calorie_stats_range_v1";
 const DAY = 86400000;
@@ -189,7 +188,7 @@ function renderStats(panel) {
 
     panel.innerHTML = `
         <section class="calorie-stats-page">
-            <header><span class="eyebrow">NUTRITION TRENDS</span><h2>Stats</h2><p>See whether your intake is supporting your current goal.</p></header>
+            <header><span class="eyebrow">CALORIE TRENDS</span><h2>Calorie Stats</h2><p>See whether your intake is supporting your current goal.</p></header>
             <div class="calorie-stats-ranges" aria-label="Stats date range">
                 ${Object.entries({7:"7D",28:"4W",84:"12W"}).map(([value,label]) => `<button type="button" class="${count === Number(value) ? "active" : ""}" data-calorie-stats-range="${value}">${label}</button>`).join("")}
             </div>
@@ -233,45 +232,20 @@ function renderStats(panel) {
     }));
 }
 
-function showStats(hub) {
-    hub.querySelectorAll("[data-calories-tab]").forEach(button => {
-        const active = button.dataset.caloriesTab === "stats";
-        button.classList.toggle("active", active);
-        button.setAttribute("aria-selected", String(active));
-    });
-    hub.querySelectorAll("[data-calories-panel]").forEach(panel => { panel.hidden = panel.dataset.caloriesPanel !== "stats"; });
-    localStorage.setItem(CALORIES_TAB_KEY, "stats");
-    const panel = hub.querySelector('[data-calories-panel="stats"]');
+export function renderCalorieStats() {
+    return '<div data-progress-calorie-stats></div>';
+}
+
+export function initializeCalorieStats(root = document) {
+    const panel = root.querySelector?.("[data-progress-calorie-stats]");
     if (panel) renderStats(panel);
 }
 
-function enhanceHub(hub) {
-    if (hub.dataset.calorieStatsReady) return;
-    hub.dataset.calorieStatsReady = "true";
-    const tabs = hub.querySelector(".calories-tabs");
-    if (!tabs) return;
-    tabs.insertAdjacentHTML("beforeend", '<button type="button" role="tab" aria-selected="false" data-calories-tab="stats">Stats</button>');
-    hub.insertAdjacentHTML("beforeend", '<div data-calories-panel="stats" hidden></div>');
-    const statsButton = hub.querySelector('[data-calories-tab="stats"]');
-    statsButton?.addEventListener("click", event => {
-        event.stopImmediatePropagation();
-        showStats(hub);
-    }, true);
-    if (localStorage.getItem(CALORIES_TAB_KEY) === "stats") showStats(hub);
-}
-
-function findHub() {
-    const hub = document.querySelector("[data-calories-hub]");
-    if (hub) enhanceHub(hub);
-}
-
-new MutationObserver(findHub).observe(document.documentElement, { childList: true, subtree: true });
 window.addEventListener("levelup:food-log-updated", () => {
-    const panel = document.querySelector('[data-calories-panel="stats"]:not([hidden])');
+    const panel = document.querySelector("#calorie-progress:not([hidden]) [data-progress-calorie-stats]");
     if (panel) renderStats(panel);
 });
 window.addEventListener("levelup:nutrition-updated", () => {
-    const panel = document.querySelector('[data-calories-panel="stats"]:not([hidden])');
+    const panel = document.querySelector("#calorie-progress:not([hidden]) [data-progress-calorie-stats]");
     if (panel) renderStats(panel);
 });
-findHub();

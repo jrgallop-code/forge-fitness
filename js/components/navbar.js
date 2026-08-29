@@ -27,11 +27,12 @@ export function renderNavbar() {
                 <span>Progress</span>
             </button>
 
-            <button class="nav-btn" data-page="energy" aria-label="Calorie Planner" type="button">
-                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M13.6 2.4c.3 2.4-.5 4.1-2 5.6-1.3 1.2-2.2 2.4-2.1 4.1 0 .9.4 1.6 1 2.2-.1-2.1 1.1-3.4 2.6-4.6.3 1.7 1.4 2.7 2.3 3.8.8 1 1.2 2 1.1 3.3-.1 2.7-2.1 4.8-4.9 4.8-3.3 0-5.7-2.4-5.7-5.8 0-3.4 1.9-5.5 4-7.6 1.9-1.8 3.2-3.3 3.7-5.8Z"/>
+            <button class="nav-btn" data-page="energy" aria-label="Nutrition" type="button">
+                <svg class="nav-icon nav-icon-stroke" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 3v5M8 3v5M11 3v5M5 8c0 1.7 1.3 3 3 3s3-1.3 3-3M8 11v10"/>
+                    <path d="M18 3v18M18 3c-2.3 2.4-3.5 5-3.5 8H18"/>
                 </svg>
-                <span>Calories</span>
+                <span>Nutrition</span>
             </button>
 
             <button class="nav-btn" data-page="more" aria-label="More" type="button">

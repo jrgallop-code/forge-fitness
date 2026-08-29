@@ -754,11 +754,13 @@ function initializeProgressTabs() {
     const buttons = {
         weight: document.getElementById("weight-tab"),
         lifting: document.getElementById("lifting-tab"),
+        calories: document.getElementById("calories-progress-tab"),
         photo: document.getElementById("photo-log-tab")
     };
     const sections = {
         weight: document.getElementById("weight-progress"),
         lifting: document.getElementById("lifting-progress"),
+        calories: document.getElementById("calorie-progress"),
         photo: document.getElementById("photo-log-progress")
     };
     if (Object.values(buttons).some(button => !button) || Object.values(sections).some(section => !section)) return;
@@ -768,10 +770,12 @@ function initializeProgressTabs() {
         Object.entries(buttons).forEach(([key, button]) => button.classList.toggle("active", key === name));
         if (name === "weight") requestAnimationFrame(updateWeightDisplay);
         if (name === "lifting") window.dispatchEvent(new Event("resize"));
+        if (name === "calories") window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: "progress-calories-opened" } }));
     };
 
     buttons.weight.addEventListener("click", () => show("weight"));
     buttons.lifting.addEventListener("click", () => show("lifting"));
+    buttons.calories.addEventListener("click", () => show("calories"));
     buttons.photo.addEventListener("click", () => show("photo"));
 }
 
