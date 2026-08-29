@@ -12,7 +12,7 @@ globalThis.window = { dispatchEvent() {} };
 globalThis.CustomEvent = class CustomEvent { constructor(type, options) { this.type = type; this.detail = options?.detail; } };
 
 const data = await import("../js/nutrition/food-log-data.js");
-const { barcodeVariants, dedupeUsdaFoods, detectUsdaBrandSearch, findBundledVerifiedFoodByBarcode, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeOpenFoodFactsProduct, normalizeOpenFoodFactsSearchProducts, normalizeUsdaFood, normalizeVerifiedFood, rankFoodNameMatches, rankUsdaBrandFoods, searchBundledVerifiedFoods, searchCachedExternalFoods, selectExactUsdaBarcodeFood } = await import("../cloud/src/index.js");
+const { barcodeVariants, consumerUsdaProductName, dedupeUsdaFoods, detectUsdaBrandSearch, findBundledVerifiedFoodByBarcode, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeOpenFoodFactsProduct, normalizeOpenFoodFactsSearchProducts, normalizeUsdaFood, normalizeVerifiedFood, rankFoodNameMatches, rankUsdaBrandFoods, searchBundledVerifiedFoods, searchCachedExternalFoods, selectExactUsdaBarcodeFood } = await import("../cloud/src/index.js");
 
 test("barcode lookup validates GTIN check digits and normalizes formatting", () => {
     assert.equal(normalizeBarcode("0 36000-29145 2"), "036000291452");
@@ -270,6 +270,24 @@ test("manual search matches product names instead of manufacturer names", () => 
     ], "Mars bar");
 
     assert.deepEqual(results.map(food => food.name), ["Mars Bar", "Mars Protein Bar"]);
+});
+
+test("USDA legacy descriptions remove embedded manufacturers before matching", () => {
+    const snickers = normalizeUsdaFood({
+        fdcId: 170000,
+        description: "Candies, MARS SNACKFOOD US, SNICKERS Bar",
+        dataType: "SR Legacy"
+    });
+    const unrelated = normalizeUsdaFood({
+        fdcId: 170001,
+        description: "Candies, MARS SNACKFOOD US, M&M's Milk Chocolate Candies",
+        dataType: "SR Legacy"
+    });
+
+    assert.equal(snickers.name, "SNICKERS Bar");
+    assert.equal(unrelated.name, "M&M's Milk Chocolate Candies");
+    assert.deepEqual(rankFoodNameMatches([unrelated, snickers], "Snickers bar").map(food => food.name), ["SNICKERS Bar"]);
+    assert.equal(consumerUsdaProductName("Chicken, broilers or fryers, breast, meat only, cooked"), "Chicken, broilers or fryers, breast, meat only, cooked");
 });
 
 test("manual search still permits explicit supported-brand plus product searches", () => {
