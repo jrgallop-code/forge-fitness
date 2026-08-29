@@ -52,3 +52,15 @@ test("cardio UI uses lifting-style red trend and bar treatments", async () => {
   assert.match(logger, /class="session-cardio-rpe"/);
   assert.match(logger, /session\.exercises\[exerciseIndex\]\.rpe/);
 });
+
+test("mobile Cardio layout overrides desktop grids after the base rules", async () => {
+  const styles = await read("css/cardio-analytics.css");
+  const desktopGrid = styles.lastIndexOf(".cardio-summary-grid{display:grid;grid-template-columns:repeat(5");
+  const mobileGrid = styles.lastIndexOf("@media(max-width:760px)");
+
+  assert.ok(desktopGrid >= 0);
+  assert.ok(mobileGrid > desktopGrid);
+  assert.match(styles.slice(mobileGrid), /cardio-summary-grid\{grid-template-columns:repeat\(2/);
+  assert.match(styles.slice(mobileGrid), /cardio-chart-grid\{grid-template-columns:1fr\}/);
+  assert.match(styles.slice(mobileGrid), /white-space:normal/);
+});
