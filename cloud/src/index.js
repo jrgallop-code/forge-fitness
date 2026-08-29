@@ -1190,7 +1190,7 @@ function foodResultQuality(food) {
 
 export function normalizeUsdaFood(food) {
     const fdcId = Number(food?.fdcId);
-    const name = limitedText(food?.description, 180);
+    const name = consumerUsdaProductName(food?.description);
     if (!Number.isFinite(fdcId) || !name) return null;
 
     const per100 = {
@@ -1231,6 +1231,21 @@ export function normalizeUsdaFood(food) {
         category: limitedText(food?.foodCategory?.description || food?.wweiaFoodCategory?.wweiaFoodCategoryDescription || food?.foodCategory, 100),
         portions: addUsefulGramPortions(portions)
     };
+}
+
+export function consumerUsdaProductName(value) {
+    const original = limitedText(value, 180);
+    if (!original) return "";
+    const parts = original.split(",").map(part => part.trim()).filter(Boolean);
+    if (parts.length < 3) return original;
+    const manufacturerIndex = parts.findIndex((part, index) => index > 0 && index < parts.length - 1 && usdaManufacturerSegment(part));
+    if (manufacturerIndex < 0) return original;
+    return limitedText(parts.slice(manufacturerIndex + 1).join(", "), 180) || original;
+}
+
+function usdaManufacturerSegment(value) {
+    const segment = foodIdentity(value);
+    return /\b(inc|incorporated|llc|ltd|limited|corp|corporation|company|snackfood|north america|usa|us)\b/.test(segment);
 }
 
 function normalizeUsdaPortion(portion, per100) {
