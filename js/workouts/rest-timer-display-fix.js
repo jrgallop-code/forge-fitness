@@ -1,6 +1,6 @@
-import "./rest-alarm-phase1.js?v=adaptive-completion-1";
-import "./rest-alarm-button-stability.js?v=adaptive-completion-1";
-import { openActiveWorkout } from "./workout-session.js?v=repair-generic-exercise-1";
+import "./rest-alarm-phase1.js?v=cardio-rpe-1";
+import "./rest-alarm-button-stability.js?v=cardio-rpe-1";
+import { openActiveWorkout } from "./workout-session.js?v=cardio-rpe-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = 'level_up_active_workout';
 

@@ -754,13 +754,15 @@ function initializeProgressTabs() {
     const buttons = {
         weight: document.getElementById("weight-tab"),
         lifting: document.getElementById("lifting-tab"),
-        calories: document.getElementById("calories-progress-tab"),
+        nutrition: document.getElementById("nutrition-progress-tab"),
+        cardio: document.getElementById("cardio-progress-tab"),
         photo: document.getElementById("photo-log-tab")
     };
     const sections = {
         weight: document.getElementById("weight-progress"),
         lifting: document.getElementById("lifting-progress"),
-        calories: document.getElementById("calorie-progress"),
+        nutrition: document.getElementById("calorie-progress"),
+        cardio: document.getElementById("cardio-progress"),
         photo: document.getElementById("photo-log-progress")
     };
     if (Object.values(buttons).some(button => !button) || Object.values(sections).some(section => !section)) return;
@@ -768,14 +770,16 @@ function initializeProgressTabs() {
     const show = name => {
         Object.entries(sections).forEach(([key, section]) => { section.hidden = key !== name; });
         Object.entries(buttons).forEach(([key, button]) => button.classList.toggle("active", key === name));
+        buttons[name]?.scrollIntoView?.({ behavior: "smooth", block: "nearest", inline: "center" });
         if (name === "weight") requestAnimationFrame(updateWeightDisplay);
         if (name === "lifting") window.dispatchEvent(new Event("resize"));
-        if (name === "calories") window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: "progress-calories-opened" } }));
+        if (name === "nutrition") window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: "progress-nutrition-opened" } }));
     };
 
     buttons.weight.addEventListener("click", () => show("weight"));
     buttons.lifting.addEventListener("click", () => show("lifting"));
-    buttons.calories.addEventListener("click", () => show("calories"));
+    buttons.nutrition.addEventListener("click", () => show("nutrition"));
+    buttons.cardio.addEventListener("click", () => show("cardio"));
     buttons.photo.addEventListener("click", () => show("photo"));
 }
 

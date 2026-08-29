@@ -31,7 +31,7 @@ test("production module cache keys retain the restored experience step", async (
     read("js/core/router.js")
   ]);
 
-  assert.match(index, /js\/app\.js\?v=progress-calories-1/);
-  assert.match(app, /\.\/core\/router\.js\?v=progress-calories-1/);
+  assert.match(index, /js\/app\.js\?v=progress-cardio-1/);
+  assert.match(app, /\.\/core\/router\.js\?v=progress-cardio-1/);
   assert.match(router, /\.\.\/workouts\/smart-build\.js\?v=coach-experience-step-1/);
 });

@@ -20,19 +20,23 @@ test("More no longer duplicates the Nutrition destination", async () => {
   assert.doesNotMatch(source, /ICONS\.nutrition/);
 });
 
-test("Progress owns a dedicated Calories panel", async () => {
+test("Progress owns dedicated Nutrition and Cardio panels", async () => {
   const [view, controls, router] = await Promise.all([
     read("js/progress/progress-ui.js"),
     read("js/progress/weight-tracker.js"),
     read("js/core/router.js")
   ]);
 
-  assert.match(view, /id="calories-progress-tab"/);
+  assert.match(view, /id="nutrition-progress-tab"/);
+  assert.match(view, /id="cardio-progress-tab"/);
   assert.match(view, /id="calorie-progress" hidden/);
+  assert.match(view, /id="cardio-progress" hidden/);
   assert.match(view, /\$\{renderCalorieStats\(\)\}/);
-  assert.match(controls, /calories: document\.getElementById\("calories-progress-tab"\)/);
-  assert.match(controls, /calories: document\.getElementById\("calorie-progress"\)/);
+  assert.match(controls, /nutrition: document\.getElementById\("nutrition-progress-tab"\)/);
+  assert.match(controls, /cardio: document\.getElementById\("cardio-progress-tab"\)/);
+  assert.match(controls, /nutrition: document\.getElementById\("calorie-progress"\)/);
   assert.match(router, /initializeCalorieStats\(content\)/);
+  assert.match(router, /initializeCardioAnalytics\(content\)/);
 });
 
 test("calorie stats renders into Progress instead of adding a food-log tab", async () => {
@@ -44,12 +48,14 @@ test("calorie stats renders into Progress instead of adding a food-log tab", asy
   assert.doesNotMatch(source, /MutationObserver/);
 });
 
-test("published entry points carry the calorie navigation cache keys", async () => {
+test("published entry points carry the Progress Cardio cache keys", async () => {
   const html = await read("index.html");
-  const styles = await read("css/progress-volume.css");
+  const styles = await read("css/cardio-analytics.css");
 
-  assert.match(html, /css\/progress-volume\.css\?v=progress-calories-1/);
-  assert.match(html, /js\/app\.js\?v=progress-calories-1/);
+  assert.match(html, /css\/progress-volume\.css\?v=progress-cardio-1/);
+  assert.match(html, /css\/cardio-analytics\.css\?v=progress-cardio-1/);
+  assert.match(html, /js\/app\.js\?v=progress-cardio-1/);
   assert.doesNotMatch(html, /js\/nutrition\/calorie-stats\.js/);
-  assert.match(styles, /grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(styles, /overflow-x:auto/);
+  assert.match(styles, /font-size:\.82rem/);
 });
