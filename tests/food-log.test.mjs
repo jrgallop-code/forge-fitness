@@ -12,7 +12,7 @@ globalThis.window = { dispatchEvent() {} };
 globalThis.CustomEvent = class CustomEvent { constructor(type, options) { this.type = type; this.detail = options?.detail; } };
 
 const data = await import("../js/nutrition/food-log-data.js");
-const { barcodeVariants, dedupeUsdaFoods, detectUsdaBrandSearch, findBundledVerifiedFoodByBarcode, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeOpenFoodFactsProduct, normalizeOpenFoodFactsSearchProducts, normalizeUsdaFood, normalizeVerifiedFood, rankUsdaBrandFoods, searchBundledVerifiedFoods, searchCachedExternalFoods, selectExactUsdaBarcodeFood } = await import("../cloud/src/index.js");
+const { barcodeVariants, dedupeUsdaFoods, detectUsdaBrandSearch, findBundledVerifiedFoodByBarcode, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeOpenFoodFactsProduct, normalizeOpenFoodFactsSearchProducts, normalizeUsdaFood, normalizeVerifiedFood, rankFoodNameMatches, rankUsdaBrandFoods, searchBundledVerifiedFoods, searchCachedExternalFoods, selectExactUsdaBarcodeFood } = await import("../cloud/src/index.js");
 
 test("barcode lookup validates GTIN check digits and normalizes formatting", () => {
     assert.equal(normalizeBarcode("0 36000-29145 2"), "036000291452");
@@ -99,6 +99,18 @@ test("previously logged matches stay above database foods without duplicates", (
     assert.equal(results[0].previouslyLogged, true);
     assert.equal(results.filter(food => food.name === "Chunky Guacamole").length, 1);
     assert.equal(results.at(-1).name, "Chunk Roast");
+});
+
+test("previously logged food search does not match manufacturer name alone", () => {
+    storage.clear();
+    const unrelated = { source: "openfoodfacts", barcode: "11111111", name: "M&M's Milk Chocolate Candies", brand: "Mars Incorporated", portions: [{ label: "1 bag", nutrition: { calories: 200 } }] };
+    const marsBar = { source: "openfoodfacts", barcode: "22222222", name: "Mars Bar", brand: "Mars Incorporated", portions: [{ label: "1 bar", nutrition: { calories: 230 } }] };
+    data.saveEntries("2026-08-29", [
+        data.createLogEntry({ meal: "Snacks", food: unrelated, portion: unrelated.portions[0], quantity: 1 }),
+        data.createLogEntry({ meal: "Snacks", food: marsBar, portion: marsBar.portions[0], quantity: 1 })
+    ]);
+
+    assert.deepEqual(data.matchingLoggedFoods("Mars").map(food => food.name), ["Mars Bar"]);
 });
 
 test("food log keeps days and meals separate and removes exact entries", () => {
@@ -247,6 +259,28 @@ test("manual search normalizes live Open Food Facts text results", () => {
     assert.equal(foods[0].name, "Pomme de terre rouge");
     assert.equal(foods[0].source, "openfoodfacts");
     assert.equal(foods[0].portions[0].nutrition.calories, 89);
+});
+
+test("manual search matches product names instead of manufacturer names", () => {
+    const results = rankFoodNameMatches([
+        { name: "Mars Bar", brand: "Mars Incorporated" },
+        { name: "M&M's Milk Chocolate Candies", brand: "Mars Incorporated" },
+        { name: "Chocolate Candy", brand: "Mars Incorporated" },
+        { name: "Mars Protein Bar", brand: "Example Foods" }
+    ], "Mars bar");
+
+    assert.deepEqual(results.map(food => food.name), ["Mars Bar", "Mars Protein Bar"]);
+});
+
+test("manual search still permits explicit supported-brand plus product searches", () => {
+    const results = rankFoodNameMatches([
+        { name: "Chipotle Grilled Chicken", brand: "Kirkland Signature" },
+        { name: "Chicken Breast", brand: "Another Brand" },
+        { name: "Chocolate Almonds", brand: "Kirkland Signature" }
+    ], "Kirkland chipotle chicken");
+
+    assert.deepEqual(results.map(food => food.name), ["Chipotle Grilled Chicken"]);
+    assert.equal(rankFoodNameMatches([{ name: "Fiesta Salad", brand: "Swiss Chalet" }], "Swiss Chalet fiesta salad").length, 1);
 });
 
 test("manual search queries the Open Food Facts text catalogue", async () => {

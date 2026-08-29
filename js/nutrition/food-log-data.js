@@ -195,13 +195,12 @@ function searchableFoodKey(food) {
 
 function historyMatchScore(food, query) {
     const name = normalizedFoodText(food?.name);
-    const brand = normalizedFoodText(food?.brand);
     const needle = normalizedFoodText(query);
     if (!needle) return 0;
     if (name === needle) return 4;
     if (name.startsWith(needle)) return 3;
     if (name.split(" ").some(word => word.startsWith(needle))) return 2;
-    if (name.includes(needle) || brand.includes(needle)) return 1;
+    if (name.includes(needle)) return 1;
     return 0;
 }
 
