@@ -598,7 +598,7 @@ async function searchFoods(event) {
         renderFoodResults(document.querySelector("[data-food-results]"), historyFoods);
         return setText("[data-food-search-status]", historyFoods.length ? `${historyFoods.length} previously logged matches` : "Sign in to search foods. Custom foods still work offline.");
     }
-    setText("[data-food-search-status]", "Searching Level Up and USDA foods…");
+    setText("[data-food-search-status]", "Searching Level Up, USDA and Open Food Facts…");
     const results = document.querySelector("[data-food-results]");
     if (results) results.innerHTML = "";
     foodSearchController?.abort();

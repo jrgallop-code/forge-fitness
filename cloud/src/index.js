@@ -355,12 +355,17 @@ async function searchUsdaFoods(url, request, env, ctx) {
     const query = String(url.searchParams.get("q") || "").trim().replace(/\s+/g, " ");
     if (query.length < 2) return json({ error: "Enter at least 2 characters." }, 400, request, env);
     if (query.length > 80) return json({ error: "Food search is too long." }, 400, request, env);
+    const brandSearch = detectUsdaBrandSearch(query);
     const [verifiedFoods, cachedExternalFoods, liveExternalResult] = await Promise.all([
         searchVerifiedFoods(query, env),
         searchExternalFoodCache(query, env),
         fetchOpenFoodFactsSearch(query)
     ]);
-    const externalFoods = mergeFoodResults(cachedExternalFoods, liveExternalResult.foods).slice(0, 8);
+    const externalFoods = rankFoodNameMatches(
+        mergeFoodResults(cachedExternalFoods, liveExternalResult.foods),
+        query,
+        brandSearch
+    ).slice(0, 8);
     if (liveExternalResult.foods.length) {
         const cacheWrites = Promise.all(liveExternalResult.foods.map(food => writeExternalFoodCache(food.barcode, food, env)));
         if (ctx?.waitUntil) ctx.waitUntil(cacheWrites);
@@ -379,7 +384,6 @@ async function searchUsdaFoods(url, request, env, ctx) {
     }
 
     const upstreamUrl = usdaFoodSearchUrl(env.USDA_FDC_API_KEY, query, 15);
-    const brandSearch = detectUsdaBrandSearch(query);
     const brandUrl = brandSearch
         ? usdaFoodSearchUrl(env.USDA_FDC_API_KEY, brandSearch.usdaQuery, 50, "Branded")
         : null;
@@ -446,7 +450,11 @@ async function searchUsdaFoods(url, request, env, ctx) {
     else if (brandResponse && !brandResponse.ok) {
         console.error(JSON.stringify({ event: "usda_brand_search_failed", brand: brandSearch?.name, status: brandResponse.status }));
     }
-    const usdaFoods = dedupeUsdaFoods([...brandFoods, ...searchFoods].map(normalizeUsdaFood).filter(Boolean));
+    const usdaFoods = rankFoodNameMatches(
+        dedupeUsdaFoods([...brandFoods, ...searchFoods].map(normalizeUsdaFood).filter(Boolean)),
+        query,
+        brandSearch
+    );
     const foods = mergeFoodResults(verifiedFoods, usdaFoods, externalFoods).slice(0, 16);
     return json({
         foods,
@@ -907,6 +915,7 @@ const USDA_BRAND_SEARCHES = [
     { name: "Grenade", usdaQuery: "Grenade", aliases: ["grenade", "carb killa"] },
     { name: "Kirkland Signature", usdaQuery: "Kirkland Signature", aliases: ["kirkland", "kirkland signature"] },
     { name: "McDonald's", usdaQuery: "McDonald's", aliases: ["mcdonald", "mcdonalds", "mcdonald's"] },
+    { name: "Swiss Chalet", usdaQuery: "Swiss Chalet", aliases: ["swiss chalet", "swisschalet"] },
     { name: "Built", usdaQuery: "Built Bar", aliases: ["built bar", "built puff"] }
 ];
 
@@ -923,6 +932,36 @@ export function rankUsdaBrandFoods(foods, query, brandSearch) {
     return (Array.isArray(foods) ? foods : [])
         .map((food, index) => ({ food, index, score: usdaBrandFoodScore(food, brandIdentity, queryTokens) }))
         .filter(item => Number.isFinite(item.score))
+        .sort((a, b) => b.score - a.score || a.index - b.index)
+        .map(item => item.food);
+}
+
+export function rankFoodNameMatches(foods, query, brandSearch = detectUsdaBrandSearch(query)) {
+    const queryIdentity = foodIdentity(query);
+    const queryTokens = queryIdentity.split(" ").filter(token => token.length > 1);
+    if (!queryTokens.length) return [];
+    const brandTokens = new Set(brandSearch
+        ? brandSearch.aliases.flatMap(alias => foodIdentity(alias).split(" ")).filter(token => token.length > 1)
+        : []);
+    const productTokens = brandSearch ? queryTokens.filter(token => !brandTokens.has(token)) : queryTokens;
+    const expectedBrand = foodIdentity(brandSearch?.name);
+
+    return (Array.isArray(foods) ? foods : [])
+        .map((food, index) => {
+            const name = foodIdentity(food?.name);
+            const brand = foodIdentity(food?.brand);
+            const brandMatches = !brandSearch || brand === expectedBrand || brand.startsWith(`${expectedBrand} `) || expectedBrand.startsWith(`${brand} `);
+            const nameMatches = productTokens.length
+                ? productTokens.every(token => name.includes(token))
+                : Boolean(brandSearch && brandMatches);
+            if (!name || !nameMatches || !brandMatches) return null;
+            const exact = name === queryIdentity ? 100 : 0;
+            const prefix = name.startsWith(`${queryIdentity} `) || queryIdentity.startsWith(`${name} `) ? 60 : 0;
+            const phrase = name.includes(queryIdentity) ? 40 : 0;
+            const tokenStart = productTokens.reduce((score, token) => score + (name.startsWith(token) ? 4 : 0), 0);
+            return { food, index, score: exact + prefix + phrase + tokenStart };
+        })
+        .filter(Boolean)
         .sort((a, b) => b.score - a.score || a.index - b.index)
         .map(item => item.food);
 }
@@ -965,7 +1004,7 @@ async function searchVerifiedFoods(query, env) {
     catch (error) {
         console.error(JSON.stringify({ event: "verified_food_search_failed", reason: String(error?.message || error) }));
     }
-    return mergeFoodResults(storedFoods, searchBundledVerifiedFoods(query)).slice(0, 8);
+    return rankFoodNameMatches(mergeFoodResults(storedFoods, searchBundledVerifiedFoods(query)), query).slice(0, 8);
 }
 
 export function normalizeVerifiedFood(row) {
