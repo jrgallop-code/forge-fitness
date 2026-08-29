@@ -50,10 +50,13 @@ test("owner analytics reports current, returning, food, and workout usage", asyn
     assert.match(styles, /admin-analytics-series--workouts/);
     assert.match(worker, /people: people\?\.results/);
     assert.match(worker, /u\.display_name/);
-    assert.match(admin, /Who is behind each number/);
+    assert.match(admin, /Who logged activity/);
     assert.match(admin, /person\.display_name/);
     assert.match(admin, /statPeople\("Food loggers"/);
     assert.match(admin, /statPeople\("Workout users"/);
+    assert.doesNotMatch(admin, /statPeople\("Users today"/);
+    assert.doesNotMatch(admin, /statPeople\("Active users"/);
+    assert.doesNotMatch(admin, /statPeople\("Returning users"/);
     assert.match(styles, /admin-analytics-stat-groups/);
     assert.match(styles, /admin-analytics-stat-person/);
 });

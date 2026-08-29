@@ -12,12 +12,6 @@ function escapeHtml(value) {
 
 function number(value) { return Number(value || 0).toLocaleString(); }
 function personName(person) { return person.display_name || String(person.email || "User").split("@")[0] || "User"; }
-function lastSeen(value) {
-    if (!value || !Number.isFinite(Date.parse(value))) return "No recent activity";
-    return `Last active ${new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value))}`;
-}
-function dayKey(value = new Date()) { const date = new Date(value); return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 10) : ""; }
-function withinDays(value, days) { return Boolean(value && Number.isFinite(Date.parse(value)) && Date.parse(value) >= Date.now() - days * 86400000); }
 function statPeople(label, people, metric, tone = "users") {
     const rows = people.length ? people.map(person => `<div class="admin-analytics-stat-person"><span><strong>${escapeHtml(personName(person))}</strong><small>${escapeHtml(person.email || "")}</small></span><b>${escapeHtml(metric(person))}</b></div>`).join("") : `<p class="admin-analytics-empty">No matching users in this period.</p>`;
     return `<section class="admin-analytics-stat-group is-${tone}"><div class="admin-analytics-stat-group-head"><h4>${escapeHtml(label)}</h4><strong>${number(people.length)}</strong></div><div class="admin-analytics-stat-list">${rows}</div></section>`;
@@ -64,18 +58,14 @@ function renderAnalytics(data) {
     const max = Math.max(1, ...daily.flatMap(item => [Number(item.active_users || 0), Number(item.foods || 0), Number(item.workouts || 0)]));
     const sourceRows = (data.acquisition || []).slice(0, 6).map(item => `<div class="admin-analytics-source"><span>${escapeHtml(item.source)}</span><strong>${number(item.users)}</strong></div>`).join("");
     const people = data.people || [];
-    const today = dayKey();
     const namedStats = [
-        statPeople("Users today", people.filter(person => dayKey(person.last_active_at) === today), person => lastSeen(person.last_active_at)),
-        statPeople("Active users", people.filter(person => withinDays(person.last_active_at, 7)), person => lastSeen(person.last_active_at)),
-        statPeople("Returning users", people.filter(person => Number(person.active_days) >= 2), person => `${number(person.active_days)} active days`),
         statPeople("Food loggers", people.filter(person => Number(person.foods_logged) > 0), person => `${number(person.foods_logged)} foods`, "foods"),
         statPeople("Workout users", people.filter(person => Number(person.workouts_logged) > 0), person => `${number(person.workouts_logged)} workouts`, "workouts")
     ].join("");
     const chart = daily.length ? daily.map(item => `<div class="admin-analytics-bar" title="${escapeHtml(item.day)} · ${number(item.active_users)} users · ${number(item.foods)} foods · ${number(item.workouts)} workouts"><div><i class="admin-analytics-series admin-analytics-series--users" style="height:${barHeight(item.active_users, max)}%"></i><i class="admin-analytics-series admin-analytics-series--foods" style="height:${barHeight(item.foods, max)}%"></i><i class="admin-analytics-series admin-analytics-series--workouts" style="height:${barHeight(item.workouts, max)}%"></i></div><small>${escapeHtml(item.day.slice(5))}</small></div>`).join("") : `<p class="admin-analytics-empty">Usage will appear here as people open the app, log food, and train.</p>`;
     return `<div class="admin-analytics-kpis">
         ${kpi("Total users", totals.total_users, "all time")}${kpi("New users", totals.new_users, `in ${data.days} days`)}${kpi("Users today", totals.users_today, "opened the app")}${kpi("Active users", totals.active_users, "last 7 days")}${kpi("Returning users", totals.repeat_users, `2+ days in ${data.days} days`)}${kpi("Food loggers", totals.food_log_users, `in ${data.days} days`)}${kpi("Workout users", totals.workout_users, `in ${data.days} days`)}${kpi("Workouts logged", totals.workouts, `in ${data.days} days`)}
-    </div><div class="admin-analytics-grid"><section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACTIVITY</span><h3>Daily app usage</h3></div><div class="admin-analytics-legend"><span class="is-users">Users</span><span class="is-foods">Foods</span><span class="is-workouts">Workouts</span></div></div><div class="admin-analytics-chart">${chart}</div></section><section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGEMENT</span><h3>What people use</h3></div></div><div class="admin-analytics-funnel"><div><span>Returning users</span><strong>${number(totals.repeat_users)}</strong></div><div><span>People logging food</span><strong>${number(totals.food_log_users)}</strong></div><div><span>Food entries logged</span><strong>${number(totals.foods_logged)}</strong></div><div><span>People completing workouts</span><strong>${number(totals.workout_users)}</strong></div><div><span>Onboarding completed</span><strong>${number(totals.onboarding_completions)}</strong></div></div></section><section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACQUISITION</span><h3>Where people came from</h3></div></div><div class="admin-analytics-sources">${sourceRows || `<p class="admin-analytics-empty">No acquisition responses yet.</p>`}</div></section><section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">PEOPLE BY STAT</span><h3>Who is behind each number</h3><p>Names are grouped by their activity within the selected date range.</p></div></div><div class="admin-analytics-stat-groups">${namedStats}</div></section></div>`;
+    </div><div class="admin-analytics-grid"><section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACTIVITY</span><h3>Daily app usage</h3></div><div class="admin-analytics-legend"><span class="is-users">Users</span><span class="is-foods">Foods</span><span class="is-workouts">Workouts</span></div></div><div class="admin-analytics-chart">${chart}</div></section><section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGEMENT</span><h3>What people use</h3></div></div><div class="admin-analytics-funnel"><div><span>Returning users</span><strong>${number(totals.repeat_users)}</strong></div><div><span>People logging food</span><strong>${number(totals.food_log_users)}</strong></div><div><span>Food entries logged</span><strong>${number(totals.foods_logged)}</strong></div><div><span>People completing workouts</span><strong>${number(totals.workout_users)}</strong></div><div><span>Onboarding completed</span><strong>${number(totals.onboarding_completions)}</strong></div></div></section><section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACQUISITION</span><h3>Where people came from</h3></div></div><div class="admin-analytics-sources">${sourceRows || `<p class="admin-analytics-empty">No acquisition responses yet.</p>`}</div></section><section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGED USERS</span><h3>Who logged activity</h3><p>Only people who logged food or completed a workout appear below.</p></div></div><div class="admin-analytics-stat-groups">${namedStats}</div></section></div>`;
 }
 
 function kpi(label, value, detail) { return `<div class="admin-analytics-kpi"><span>${label}</span><strong>${number(value)}</strong><small>${detail}</small></div>`; }
@@ -85,7 +75,7 @@ function ensureUsageStyles() {
     if (document.querySelector("link[data-admin-usage-styles]")) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/admin-analytics-usage.css?v=usage-names-1";
+    link.href = "css/admin-analytics-usage.css?v=engaged-users-1";
     link.dataset.adminUsageStyles = "";
     document.head.append(link);
 }
