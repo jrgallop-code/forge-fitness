@@ -956,21 +956,22 @@ function renderReview() {
   const map = new Map(getAllExercises().map(exercise => [exercise.id, exercise]));
   const valid = generated.validation.passed;
 
-  const volumeRows = MUSCLES.map(muscle => {
-    const priority = state.priorities.includes(muscle);
-    return `<div class="${priority ? "priority" : ""}"><span>${escapeHtml(displayMuscle(muscle))}${priority ? " · priority" : ""}</span><strong>${formatNumber(generated.effective[muscle])} effective · ${generated.direct[muscle] || 0} direct · target ~${generated.targets[muscle]}</strong></div>`;
-  }).join("");
-
   const dayRows = generated.days.map(day => {
     const minutes = estimateMinutes(day.exercises, map, state.supersets);
     return `<details class="smart-review-day" open><summary><strong>${escapeHtml(day.name)}</strong><span>${day.exercises.length} exercises · ${totalDaySets(day)} sets · ~${Math.round(minutes)} min</span></summary><div>${day.exercises.map(item => `<p class="${item.supersetGroup ? "is-superset" : ""}"><strong>${item.supersetGroup ? `<em>${item.supersetGroup}</em> ` : ""}${escapeHtml(map.get(item.id)?.name || item.id)}</strong><span>${item.sets} × ${escapeHtml(item.reps)} · ${escapeHtml(displayMuscle(item.primaryMuscle))}</span></p>`).join("")}</div></details>`;
   }).join("");
 
-  const status = valid
-    ? `<div class="smart-volume-grid"><div class="priority"><span>Program validation</span><strong>${generated.validation.warnings.length ? "Passed with notes" : "Passed ✓"}</strong></div><div><span>Session structure</span><strong>4+ exercises protected</strong></div></div>${generated.validation.warnings.length ? `<p class="smart-helper">${escapeHtml(generated.validation.warnings.join("; "))}.</p>` : ""}`
-    : `<div class="smart-volume-grid"><div><span>Program validation</span><strong>Needs adjustment</strong></div></div><p class="smart-helper">${escapeHtml(generated.validation.issues.join("; "))}. Try a longer session, broader equipment selection, or fewer avoided exercises.</p>`;
+  host.innerHTML = `<div class="smart-review"><span class="eyebrow">YOUR PROGRAM</span><h3>${escapeHtml(generated.name)}</h3><div class="smart-review-meta"><span>Coach ${escapeHtml((VIRTUAL_COACHES[state.coachId] || VIRTUAL_COACHES.maya).name)}</span><span>${state.days} days/week</span><span>${escapeHtml(generated.split.label)}</span><span>~${state.duration} min/session</span><span>${capitalize(state.experience)}</span><span>${escapeHtml(GOAL_LABELS[state.goal])}</span></div><h4>Workout days</h4><div class="smart-review-days">${dayRows}</div>${renderMuscleSetBreakdown(generated.effective)}<div class="smart-review-actions"><button class="secondary-btn" type="button" data-smart-edit>Edit Answers</button><button class="secondary-btn" type="button" data-smart-regenerate-exercises>New Exercises</button><button class="secondary-btn" type="button" data-smart-regenerate-program>New Program</button><button class="primary-btn" type="button" data-smart-save ${valid ? "" : "disabled"}>${valid ? "Save Plan" : "Adjust Settings"}</button></div></div>`;
+}
 
-  host.innerHTML = `<div class="smart-review"><span class="eyebrow">YOUR PROGRAM</span><h3>${escapeHtml(generated.name)}</h3><div class="smart-review-meta"><span>Coach ${escapeHtml((VIRTUAL_COACHES[state.coachId] || VIRTUAL_COACHES.maya).name)}</span><span>${state.days} days/week</span><span>${escapeHtml(generated.split.label)}</span><span>~${state.duration} min/session</span><span>${capitalize(state.experience)}</span><span>${escapeHtml(GOAL_LABELS[state.goal])}</span></div><h4>Program guardrails</h4><p class="smart-helper">Your selected split is respected first. Smart Build then establishes balanced workout structure, allocates weekly effective volume, protects priority muscles, honors equipment and exercise restrictions, and keeps the existing 4-exercise minimum / 8-exercise cap and duration checks. Compound sets contribute 0.5 effective-set credit to commonly involved secondary muscles.</p>${status}<h4>Weekly muscle stimulus</h4><div class="smart-volume-grid effective">${volumeRows}</div><h4>Workout days</h4><div class="smart-review-days">${dayRows}</div><p class="smart-review-note">Volume targets are evidence-informed starting ranges rather than rigid prescriptions. Experience, training frequency, session time, muscle priority and indirect compound work all influence the final allocation. Five- and six-day plans can move toward the higher end of the target ranges when recovery and session time allow; they do not automatically force 20 sets.</p><div class="smart-review-actions"><button class="secondary-btn" type="button" data-smart-edit>Edit Answers</button><button class="secondary-btn" type="button" data-smart-regenerate-exercises>New Exercises</button><button class="secondary-btn" type="button" data-smart-regenerate-program>New Program</button><button class="primary-btn" type="button" data-smart-save ${valid ? "" : "disabled"}>${valid ? "Save Plan" : "Adjust Settings"}</button></div></div>`;
+function renderMuscleSetBreakdown(effective = {}) {
+  const rows = MUSCLES
+    .map(muscle => [muscle, Number(effective[muscle]) || 0])
+    .filter(([, sets]) => sets > 0)
+    .sort((a, b) => b[1] - a[1] || displayMuscle(a[0]).localeCompare(displayMuscle(b[0])));
+  const maximum = Math.max(1, ...rows.map(([, sets]) => sets));
+
+  return `<section class="smart-set-breakdown" aria-label="Weekly muscle set breakdown"><div class="smart-set-breakdown-heading"><span class="eyebrow">WEEKLY SET DISTRIBUTION</span><h4>Muscle Breakdown</h4><p>Primary 1.0 · Secondary 0.5</p></div><div class="smart-set-breakdown-list">${rows.map(([muscle, sets]) => `<div class="smart-set-breakdown-row"><div><strong>${escapeHtml(displayMuscle(muscle))}</strong><span>${formatNumber(sets)} sets</span></div><i aria-hidden="true"><b style="width:${(sets / maximum * 100).toFixed(1)}%"></b></i></div>`).join("")}</div></section>`;
 }
 
 function savePlan(button) {
