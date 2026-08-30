@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildPendingCalorieCheckMessage } from "../js/nutrition/calorie-check-feedback.js";
 
-test("explains the exact two-window weigh-in requirement while preserving visible target feedback", () => {
+test("labels a blocked check as provisional rather than recommending the current target", () => {
     const message = buildPendingCalorieCheckMessage({
         metrics: {
             status: "NEED MORE DATA",
@@ -12,7 +12,7 @@ test("explains the exact two-window weigh-in requirement while preserving visibl
         },
         visibleRate: 0.37
     });
-    assert.equal(message, "Trend appears on target: +0.37 vs +0.25 lb/week · Calorie check needs 4 weigh-ins in each 7-day block (3/4 previous · 4/4 current)");
+    assert.equal(message, "No calorie recommendation yet · Add 1 more weigh-in in the previous 7-day block (3/4 previous · 4/4 current) · Provisional pace: +0.37 vs +0.25 lb/week");
 });
 
 test("states the phase day before the first calorie decision", () => {
@@ -41,5 +41,17 @@ test("does not invent a zero trend when visible feedback is unavailable", () => 
         metrics: { trend: { phaseDay: 18, previousEntries: 2, currentEntries: 4 } },
         visibleRate: null
     });
-    assert.equal(message, "Calorie check needs 4 weigh-ins in each 7-day block (2/4 previous · 4/4 current)");
+    assert.equal(message, "No calorie recommendation yet · Add 2 more weigh-ins in the previous 7-day block (2/4 previous · 4/4 current)");
+});
+
+test("caps completed-window progress instead of showing counts such as 7/4", () => {
+    const message = buildPendingCalorieCheckMessage({
+        metrics: {
+            targetRateLbPerWeek: 0.25,
+            toleranceLbPerWeek: 0.16,
+            trend: { phaseDay: 24, previousEntries: 1, currentEntries: 7, minEntriesPerWindow: 4 }
+        },
+        visibleRate: 0.37
+    });
+    assert.equal(message, "No calorie recommendation yet · Add 3 more weigh-ins in the previous 7-day block (1/4 previous · 4/4 current) · Provisional pace: +0.37 vs +0.25 lb/week");
 });
