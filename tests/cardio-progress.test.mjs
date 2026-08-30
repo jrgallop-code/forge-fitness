@@ -15,7 +15,19 @@ test("cardio distance parser normalizes common units to kilometres", () => {
   assert.equal(analytics.parseCardioDistance("5 km"), 5);
   assert.equal(Number(analytics.parseCardioDistance("3.1 mi").toFixed(3)), 4.989);
   assert.equal(analytics.parseCardioDistance("1500 m"), 1.5);
+  assert.equal(analytics.parseCardioDistance("700"), 0.7);
   assert.equal(analytics.parseCardioDistance("no distance"), null);
+});
+
+test("average speed uses only sessions that include both time and distance", () => {
+  const summary = analytics.summarizeCardio([
+    { sessionId: "a", duration: 30, distanceKm: 5, load: null },
+    { sessionId: "b", duration: 60, distanceKm: null, load: null }
+  ]);
+
+  assert.equal(summary.duration, 90);
+  assert.equal(summary.distanceKm, 5);
+  assert.equal(summary.averageSpeedKmh, 10);
 });
 
 test("cardio entries preserve old notes-based RPE and structured RPE", () => {
