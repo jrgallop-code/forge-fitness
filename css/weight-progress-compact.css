@@ -163,14 +163,14 @@
 
 #weight-progress .weight-table-header,
 #weight-progress .weight-table-row {
-    grid-template-columns: 120px 120px 180px 160px 150px;
-    min-width: 770px;
+    grid-template-columns: 96px 96px 132px 142px 132px;
+    min-width: 638px;
     font-size: 13px;
 }
 
 #weight-progress .weight-history-trend {
     justify-self: start;
-    min-width: 118px;
+    min-width: 108px;
     padding: 7px 9px;
     border-radius: 9px;
     font-weight: 850;
