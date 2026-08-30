@@ -66,7 +66,7 @@ The website includes an owner-only Stats & Analytics screen under More. The Work
 
 `wrangler secret put ADMIN_EMAILS`
 
-The endpoint returns aggregate counts only: total and new users, users active today and over seven days, returning users active on multiple days, food loggers and entries, workout users and completions, onboarding, and acquisition sources. It does not expose backup payloads, food names, meal contents, or individual workout records. Daily activity and food-use metrics begin accumulating after migration `0008_usage_analytics.sql` is deployed.
+The endpoint returns aggregate counts only: total and new users, signed-in and engaged users today, users active over seven days, returning users active on multiple days, food loggers and entries, workout users and completions, onboarding, and acquisition sources. "Today" and the daily chart use `ANALYTICS_TIME_ZONE` (`America/Halifax` in production) with explicit local-midnight boundaries. It does not expose backup payloads, food names, meal contents, or individual workout records. Daily activity and food-use metrics begin accumulating after migration `0008_usage_analytics.sql` is deployed.
 
 ## USDA FoodData Central
 
