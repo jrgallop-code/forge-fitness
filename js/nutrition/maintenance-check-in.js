@@ -1,4 +1,4 @@
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-latest-weighin-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-food-window-1";
 import { getActiveNutritionPhase, getActivePhaseMetrics, saveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-1";
 import { setCurrentCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { buildCoordinatedWeeklyUpdate, clearAdjustmentHold, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";

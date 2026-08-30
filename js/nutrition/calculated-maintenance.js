@@ -45,9 +45,13 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], compl
         day.setDate(end.getDate() - (20 - index));
         return dateKey(day);
     });
-    const hasCompletionHistory = Object.values(completedDays || {}).some(Boolean);
     const loggedDates = dates.filter(key => Array.isArray(foodLog?.[key]) && foodLog[key].length > 0);
-    const usableDates = hasCompletionHistory ? loggedDates.filter(key => completedDays?.[key] === true) : loggedDates;
+    const completedLoggedDates = loggedDates.filter(key => completedDays?.[key] === true);
+    // Old completion flags can outlive the corresponding food entries after a
+    // restore or cloud merge. Only enable strict completion filtering when a
+    // completion flag actually matches food in the active 21-day window.
+    const hasCompletionHistory = completedLoggedDates.length > 0;
+    const usableDates = hasCompletionHistory ? completedLoggedDates : loggedDates;
     const intakeValues = usableDates.map(key => caloriesFor(foodLog[key])).filter(value => value > 0);
     const averageIntake = intakeValues.length ? intakeValues.reduce((sum, value) => sum + value, 0) / intakeValues.length : null;
     // Food stops at yesterday so an unfinished current day cannot depress intake.

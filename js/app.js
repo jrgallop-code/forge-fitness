@@ -1,11 +1,11 @@
-import { navigate } from "./core/router.js?v=tdee-latest-weighin-1";
+import { navigate } from "./core/router.js?v=tdee-food-window-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=nutrition-nav-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=cardio-rpe-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";
 import "./workouts/exercise-guide-resolution-fix.js?v=1";
 import "./workouts/exercise-guide-comprehensive.js?v=comprehensive-form-guides-1";
-import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check-in.js?v=tdee-latest-weighin-1";
+import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check-in.js?v=tdee-food-window-1";
 
 const FILLED_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
 const STROKE_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${paths}</svg>`;
@@ -17,4 +17,4 @@ function createIconElement(svgMarkup){const template=document.createElement("tem
 function replaceColoredEmojis(root){if(!root)return;const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){const parent=node.parentElement;if(!parent||parent.closest("script, style, textarea, input, option"))return NodeFilter.FILTER_REJECT;return ICON_TOKENS.some(token=>node.nodeValue?.includes(token))?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});const matches=[];let node;while((node=walker.nextNode()))matches.push(node);matches.forEach(textNode=>{const parts=textNode.nodeValue.split(ICON_REGEX),fragment=document.createDocumentFragment();parts.forEach(part=>{if(!part)return;fragment.append(ICONS[part]?createIconElement(ICONS[part]):document.createTextNode(part));});textNode.replaceWith(fragment);});}
 function addExerciseButtonIcons(root){root.querySelectorAll?.("button").forEach(button=>{if(button.matches(".more-menu-card")||!/\bexercises?\b/i.test(button.textContent||"")||button.querySelector(".app-exercise-person-icon"))return;button.insertBefore(createIconElement(EXERCISE_LIFTER_SVG),button.firstChild);});}
 function decorateAppIcons(root=document){replaceColoredEmojis(root);addExerciseButtonIcons(root);}
-initializeWorkoutRuntime();const content=document.getElementById("content");if(content)new MutationObserver(()=>scheduleIconDecoration(()=>decorateAppIcons(content))).observe(content,{childList:true,subtree:true});navigate("home");decorateAppIcons(content||document);if("serviceWorker" in navigator)navigator.serviceWorker.register("./service-worker.js").catch(error=>console.warn("Service worker registration failed:",error));document.body.insertAdjacentHTML("beforeend",renderNavbar());initializeNavbar();initializeMaintenanceCheckInAlert();decorateAppIcons(document);
+initializeWorkoutRuntime();const content=document.getElementById("content");if(content)new MutationObserver(()=>scheduleIconDecoration(()=>decorateAppIcons(content))).observe(content,{childList:true,subtree:true});navigate("home");decorateAppIcons(content||document);if("serviceWorker" in navigator)navigator.serviceWorker.register("./service-worker.js",{updateViaCache:"none"}).then(registration=>registration.update()).catch(error=>console.warn("Service worker registration failed:",error));document.body.insertAdjacentHTML("beforeend",renderNavbar());initializeNavbar();initializeMaintenanceCheckInAlert();decorateAppIcons(document);

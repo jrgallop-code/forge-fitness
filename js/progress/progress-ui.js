@@ -1,4 +1,4 @@
-import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=tdee-latest-weighin-1";
+import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=tdee-food-window-1";
 
 export function renderProgress() {
 

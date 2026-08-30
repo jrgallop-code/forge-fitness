@@ -80,6 +80,19 @@ test("ignores logged days that were not marked complete once completion tracking
     assert.equal(result.status, "learning");
 });
 
+test("stale completion metadata does not hide current logged food days", () => {
+    const result = calculateMaintenanceEstimate({
+        foodLog: foodHistory(2, 2400),
+        completedDays: { "2026-07-01": true },
+        weights: weightHistory(10, 180, 0),
+        endDate: new Date("2026-08-29T12:00:00")
+    });
+    assert.equal(result.foodDays, 2);
+    assert.equal(result.averageIntake, 2400);
+    assert.equal(result.maintenanceCalories, 2400);
+    assert.equal(result.status, "early");
+});
+
 test("uses the same canonical weekly rate as Weight Progress", () => {
     const weights = weightHistory(21, 180, .35);
     weights.push({ ...weights[8], weight: weights[8].weight + .2 });
