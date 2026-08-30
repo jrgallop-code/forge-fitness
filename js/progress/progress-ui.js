@@ -205,6 +205,8 @@ export function renderProgress() {
 
                             <span>7-Day Moving Average</span>
 
+                            <span>Weekly Trend</span>
+
                             <span>Actions</span>
 
                         </div>
