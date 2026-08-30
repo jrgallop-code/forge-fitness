@@ -56,6 +56,15 @@ async function handleRequest(request, env, ctx) {
     if (url.pathname === "/v1/admin/analytics" && request.method === "GET") {
         return getAdminAnalytics(user, url, request, env);
     }
+    if (url.pathname === "/v1/admin/restaurants/staging" && request.method === "POST") {
+        const body = await readJson(request, 32 * 1024);
+        return stageRestaurantFood(user, body, request, env);
+    }
+    const restaurantReviewMatch = url.pathname.match(/^\/v1\/admin\/restaurants\/staging\/([^/]+)\/review$/);
+    if (restaurantReviewMatch && request.method === "POST") {
+        const body = await readJson(request, 8 * 1024);
+        return reviewRestaurantFood(user, restaurantReviewMatch[1], body, request, env);
+    }
     if (url.pathname === "/v1/feedback/status" && request.method === "GET") {
         return getSatisfactionFeedbackStatus(user.id, request, env);
     }
@@ -64,7 +73,7 @@ async function handleRequest(request, env, ctx) {
         return recordSatisfactionFeedback(user.id, body, request, env);
     }
     if (url.pathname === "/v1/foods/search" && request.method === "GET") {
-        return searchUsdaFoods(url, request, env, ctx);
+        return searchUsdaFoods(user.id, url, request, env, ctx);
     }
     const foodBarcodeMatch = url.pathname.match(/^\/v1\/foods\/barcode\/(\d+)$/);
     if (foodBarcodeMatch && request.method === "GET") {
@@ -360,13 +369,14 @@ async function requireUser(request, env) {
     return row || null;
 }
 
-async function searchUsdaFoods(url, request, env, ctx) {
+async function searchUsdaFoods(userId, url, request, env, ctx) {
     const query = String(url.searchParams.get("q") || "").trim().replace(/\s+/g, " ");
+    const countryCode = normalizeRestaurantCountry(url.searchParams.get("country"));
     if (query.length < 2) return json({ error: "Enter at least 2 characters." }, 400, request, env);
     if (query.length > 80) return json({ error: "Food search is too long." }, 400, request, env);
     const brandSearch = detectUsdaBrandSearch(query);
     const [verifiedFoods, cachedExternalFoods, liveExternalResult] = await Promise.all([
-        searchVerifiedFoods(query, env),
+        searchVerifiedFoods(query, env, countryCode),
         searchExternalFoodCache(query, env),
         fetchOpenFoodFactsSearch(query)
     ]);
@@ -380,7 +390,7 @@ async function searchUsdaFoods(url, request, env, ctx) {
         if (ctx?.waitUntil) ctx.waitUntil(cacheWrites);
         else await cacheWrites;
     }
-    const availableFoods = mergeFoodResults(verifiedFoods, externalFoods).slice(0, 16);
+    const availableFoods = rankRestaurantFoods(mergeFoodResults(verifiedFoods, externalFoods), query, countryCode).slice(0, 16);
     if (!env.USDA_FDC_API_KEY) {
         if (availableFoods.length) {
             return json({
@@ -464,7 +474,10 @@ async function searchUsdaFoods(url, request, env, ctx) {
         query,
         brandSearch
     );
-    const foods = mergeFoodResults(verifiedFoods, usdaFoods, externalFoods).slice(0, 16);
+    const foods = rankRestaurantFoods(mergeFoodResults(verifiedFoods, usdaFoods, externalFoods), query, countryCode).slice(0, 16);
+    const missWrite = recordFoodSearchCoverage(userId, query, countryCode, foods.length, verifiedFoods.length, env);
+    if (ctx?.waitUntil) ctx.waitUntil(missWrite);
+    else await missWrite;
     return json({
         foods,
         source: foodSearchSource(verifiedFoods, usdaFoods, externalFoods)
@@ -993,7 +1006,7 @@ function usdaBrandFoodScore(food, brandIdentity, queryTokens) {
     return 20 + tokenMatches + (allTokensMatch ? 15 : 0) + (brandedBar ? 5 : 0);
 }
 
-async function searchVerifiedFoods(query, env) {
+async function searchVerifiedFoods(query, env, countryCode = "CA") {
     if (!env?.DB) return [];
     const normalizedQuery = foodIdentity(query);
     if (!normalizedQuery) return [];
@@ -1005,22 +1018,26 @@ async function searchVerifiedFoods(query, env) {
         const result = await env.DB.prepare(`
             SELECT id, name, brand, category, country_code, barcode, product_family_id, serving_label,
                    serving_grams, calories, protein_g, carbs_g, fat_g, fiber_g,
-                   source_name, source_url, verified_at
+                   source_name, source_url, verified_at, source_type, verification_status,
+                   nutrition_scope, serving_type, popularity_score, last_checked_at, next_review_at
             FROM verified_foods
-            WHERE status = 'active' AND ${tokenFilters}
+            WHERE status = 'active' AND verification_status = 'verified' AND ${tokenFilters}
             ORDER BY CASE
+                WHEN country_code = ? THEN 0
+                ELSE 1
+            END, CASE
                 WHEN lower(name) = ? THEN 0
                 WHEN search_text LIKE ? THEN 1
                 ELSE 2
-            END, brand, name
-            LIMIT 8
-        `).bind(...tokens, query.toLowerCase(), `${normalizedQuery}%`).all();
+            END, popularity_score DESC, brand, name
+            LIMIT 12
+        `).bind(...tokens, countryCode, query.toLowerCase(), `${normalizedQuery}%`).all();
         storedFoods = (Array.isArray(result?.results) ? result.results : []).map(normalizeVerifiedFood).filter(Boolean);
     }
     catch (error) {
         console.error(JSON.stringify({ event: "verified_food_search_failed", reason: String(error?.message || error) }));
     }
-    return rankFoodNameMatches(mergeFoodResults(storedFoods, searchBundledVerifiedFoods(query)), query).slice(0, 8);
+    return rankRestaurantFoods(rankFoodNameMatches(mergeFoodResults(storedFoods, searchBundledVerifiedFoods(query)), query), query, countryCode).slice(0, 8);
 }
 
 export function normalizeVerifiedFood(row) {
@@ -1049,15 +1066,21 @@ export function normalizeVerifiedFood(row) {
         productFamilyId: limitedText(row?.product_family_id, 100),
         name,
         brand: limitedText(row?.brand, 120),
-        dataType: "Level Up Verified",
+        dataType: String(limitedText(row?.category, 100) || "").toLowerCase() === "restaurant food" ? "Verified restaurant item" : "Level Up Verified",
         category: limitedText(row?.category, 100),
         countryCode: limitedText(row?.country_code, 8),
         barcode: limitedText(row?.barcode, 40),
         provenance: {
             sourceName: limitedText(row?.source_name, 120),
             sourceUrl: limitedText(row?.source_url, 500),
-            verifiedAt: limitedText(row?.verified_at, 32)
+            verifiedAt: limitedText(row?.verified_at, 32),
+            sourceType: limitedText(row?.source_type, 40) || "official_restaurant",
+            verificationStatus: limitedText(row?.verification_status, 40) || "verified",
+            nutritionScope: limitedText(row?.nutrition_scope, 40) || (nutrition.protein || nutrition.carbs || nutrition.fat ? "full" : "calories_only"),
+            lastCheckedAt: limitedText(row?.last_checked_at, 32) || limitedText(row?.verified_at, 32),
+            nextReviewAt: limitedText(row?.next_review_at, 32)
         },
+        popularityScore: safeFoodNumber(row?.popularity_score),
         detailsLoaded: true,
         portions: addUsefulGramPortions(portions)
     };
@@ -1066,14 +1089,36 @@ export function normalizeVerifiedFood(row) {
 export function mergeFoodResults(...foodGroups) {
     const merged = [];
     const identities = new Set();
+    const verifiedBaseIdentities = new Set();
     foodGroups.flatMap(group => Array.isArray(group) ? group : []).forEach(food => {
         if (!food) return;
-        const identity = `${foodIdentity(food.name)}|${foodIdentity(food.brand)}`;
+        const baseIdentity = `${foodIdentity(food.name)}|${foodIdentity(food.brand)}`;
+        if (food?.source !== "levelup" && verifiedBaseIdentities.has(baseIdentity)) return;
+        const region = food?.source === "levelup" ? foodIdentity(food.countryCode || "global") : "external";
+        const serving = food?.source === "levelup" ? foodIdentity(food.portions?.[0]?.label || "serving") : "";
+        const identity = `${baseIdentity}|${region}|${serving}`;
         if (identities.has(identity)) return;
         identities.add(identity);
+        if (food?.source === "levelup") verifiedBaseIdentities.add(baseIdentity);
         merged.push(food);
     });
     return merged;
+}
+
+export function rankRestaurantFoods(foods, query, countryCode = "CA") {
+    const queryIdentity = foodIdentity(query);
+    return (Array.isArray(foods) ? foods : []).map((food, index) => {
+        const name = foodIdentity(food?.name);
+        const brand = foodIdentity(food?.brand);
+        let score = Math.max(0, 200 - index);
+        if (name === queryIdentity || `${brand} ${name}` === queryIdentity) score += 120;
+        else if (name.startsWith(queryIdentity) || brand.startsWith(queryIdentity)) score += 60;
+        if (food?.source === "levelup") score += 40;
+        if (food?.countryCode === countryCode) score += 35;
+        if (food?.provenance?.verificationStatus === "verified") score += 20;
+        score += Math.min(30, Number(food?.popularityScore) || 0);
+        return { food, index, score };
+    }).sort((a, b) => b.score - a.score || a.index - b.index).map(item => item.food);
 }
 
 function safeFoodNumber(value) {
@@ -1156,7 +1201,7 @@ function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, b
         dataType: "Level Up Verified",
         category: category || (brand === "Grenade" ? "Protein bar" : "Restaurant food"),
         countryCode,
-        provenance: { sourceName: sourceName || (brand === "Grenade" ? "Grenade" : "McDonald's Canada"), sourceUrl, verifiedAt },
+        provenance: { sourceName: sourceName || (brand === "Grenade" ? "Grenade" : "McDonald's Canada"), sourceUrl, verifiedAt, sourceType: "official_restaurant", verificationStatus: "verified", nutritionScope: protein || carbs || fat ? "full" : "calories_only", lastCheckedAt: verifiedAt },
         detailsLoaded: true,
         portions: addUsefulGramPortions(portions)
     };
@@ -1533,6 +1578,142 @@ function localDayBounds(value, timeZone) {
     };
 }
 
+function normalizeRestaurantCountry(value) {
+    const country = String(value || "CA").trim().toUpperCase();
+    return ["CA", "US"].includes(country) ? country : "CA";
+}
+
+async function recordFoodSearchCoverage(userId, query, countryCode, resultCount, verifiedResultCount, env) {
+    if (!env?.DB || verifiedResultCount > 0) return;
+    try {
+        await env.DB.prepare(`INSERT INTO food_search_misses
+            (user_id, query_normalized, country_code, result_count, verified_result_count, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)`)
+            .bind(userId, foodIdentity(query).slice(0, 80), countryCode, resultCount, verifiedResultCount, new Date().toISOString()).run();
+    }
+    catch (error) {
+        console.error(JSON.stringify({ event: "food_search_coverage_write_failed", reason: String(error?.message || error) }));
+    }
+}
+
+export function validateRestaurantFoodCandidate(body) {
+    const value = body || {};
+    const errors = [];
+    const required = ["name", "brand", "servingLabel", "sourceName", "sourceUrl", "verifiedAt"];
+    required.forEach(field => { if (!String(value[field] || "").trim()) errors.push(`${field} is required`); });
+    const countryCode = normalizeRestaurantCountry(value.countryCode);
+    const calories = Number(value.calories);
+    if (!Number.isFinite(calories) || calories <= 0) errors.push("calories must be an exact positive number");
+    let sourceUrl;
+    try { sourceUrl = new URL(String(value.sourceUrl || "")); }
+    catch { errors.push("sourceUrl must be a valid URL"); }
+    if (sourceUrl && sourceUrl.protocol !== "https:") errors.push("sourceUrl must use HTTPS");
+    const sourceType = String(value.sourceType || "official_restaurant");
+    if (!["official_restaurant", "official_menu", "official_label", "usda"].includes(sourceType)) errors.push("sourceType is not accepted");
+    if (!/^\d{4}-\d{2}-\d{2}/.test(String(value.verifiedAt || ""))) errors.push("verifiedAt must be an ISO date");
+    const macros = ["protein", "carbs", "fat"].map(field => Math.max(0, Number(value[field]) || 0));
+    const nutritionScope = macros.some(Boolean) ? "full" : "calories_only";
+    if (nutritionScope === "full" && Number.isFinite(calories)) {
+        const expected = macros[0] * 4 + macros[1] * 4 + macros[2] * 9;
+        if (Math.abs(expected - calories) > Math.max(80, calories * .35)) errors.push("macro calories differ too much from stated calories");
+    }
+    const brand = limitedText(value.brand, 120);
+    const name = limitedText(value.name, 180);
+    const restaurantSlug = foodIdentity(value.restaurantSlug || brand).replace(/ /g, "-");
+    return {
+        valid: errors.length === 0,
+        errors,
+        food: {
+            id: limitedText(value.id, 100) || `${restaurantSlug}-${countryCode.toLowerCase()}-${foodIdentity(name).replace(/ /g, "-")}`.slice(0, 100),
+            name, brand, restaurantSlug, countryCode,
+            regionCode: limitedText(value.regionCode, 24) || countryCode,
+            menuCategory: limitedText(value.menuCategory, 100),
+            searchText: foodIdentity(`${name} ${brand} ${value.aliases || ""}`),
+            servingLabel: limitedText(value.servingLabel, 80),
+            servingGrams: Number(value.servingGrams) > 0 ? Number(value.servingGrams) : null,
+            calories, protein: macros[0], carbs: macros[1], fat: macros[2], fiber: Math.max(0, Number(value.fiber) || 0),
+            sourceName: limitedText(value.sourceName, 120), sourceUrl: limitedText(value.sourceUrl, 500), sourceType,
+            verifiedAt: limitedText(value.verifiedAt, 32), nutritionScope,
+            servingType: limitedText(value.servingType, 40) || "item",
+            popularityScore: Math.max(0, Math.min(100, Math.round(Number(value.popularityScore) || 0)))
+        }
+    };
+}
+
+async function stageRestaurantFood(user, body, request, env) {
+    if (!isAdminUser(user, env)) return json({ error: "Admin access required." }, 403, request, env);
+    const validation = validateRestaurantFoodCandidate(body);
+    const food = validation.food;
+    if (!food.name || !food.brand) return json({ error: "Name and restaurant are required.", validation }, 400, request, env);
+    const now = new Date().toISOString();
+    await env.DB.prepare(`INSERT OR REPLACE INTO restaurant_food_staging
+        (id, name, brand, restaurant_slug, country_code, region_code, menu_category, search_text,
+         serving_label, serving_grams, calories, protein_g, carbs_g, fat_g, fiber_g, source_name,
+         source_url, source_type, verified_at, nutrition_scope, serving_type, popularity_score,
+         validation_status, validation_errors, submitted_by, submitted_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`)
+        .bind(food.id, food.name, food.brand, food.restaurantSlug, food.countryCode, food.regionCode, food.menuCategory,
+            food.searchText, food.servingLabel, food.servingGrams, food.calories, food.protein, food.carbs, food.fat,
+            food.fiber, food.sourceName, food.sourceUrl, food.sourceType, food.verifiedAt, food.nutritionScope,
+            food.servingType, food.popularityScore, JSON.stringify(validation.errors), user.id, now).run();
+    return json({ ok: true, id: food.id, validation }, 201, request, env);
+}
+
+async function reviewRestaurantFood(user, id, body, request, env) {
+    if (!isAdminUser(user, env)) return json({ error: "Admin access required." }, 403, request, env);
+    const action = body?.action === "approve" ? "approved" : body?.action === "reject" ? "rejected" : "";
+    if (!action) return json({ error: "Choose approve or reject." }, 400, request, env);
+    const row = await env.DB.prepare("SELECT * FROM restaurant_food_staging WHERE id = ?").bind(id).first();
+    if (!row) return json({ error: "Staged food not found." }, 404, request, env);
+    const validationErrors = JSON.parse(row.validation_errors || "[]");
+    if (action === "approved" && validationErrors.length) return json({ error: "Resolve validation errors before approval.", validationErrors }, 409, request, env);
+    const now = new Date().toISOString();
+    if (action === "approved") {
+        await env.DB.prepare(`INSERT INTO verified_foods
+            (id, name, brand, category, country_code, search_text, serving_label, serving_grams, calories,
+             protein_g, carbs_g, fat_g, fiber_g, source_name, source_url, verified_at, status, created_at, updated_at,
+             restaurant_slug, region_code, source_type, verification_status, nutrition_scope, serving_type,
+             popularity_score, last_checked_at, next_review_at)
+            VALUES (?, ?, ?, 'Restaurant food', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, 'verified', ?, ?, ?, ?, datetime(?, '+90 days'))
+            ON CONFLICT(id) DO UPDATE SET name=excluded.name, brand=excluded.brand, country_code=excluded.country_code,
+             search_text=excluded.search_text, serving_label=excluded.serving_label, serving_grams=excluded.serving_grams,
+             calories=excluded.calories, protein_g=excluded.protein_g, carbs_g=excluded.carbs_g, fat_g=excluded.fat_g,
+             fiber_g=excluded.fiber_g, source_name=excluded.source_name, source_url=excluded.source_url,
+             verified_at=excluded.verified_at, updated_at=excluded.updated_at, verification_status='verified',
+             nutrition_scope=excluded.nutrition_scope, popularity_score=excluded.popularity_score,
+             last_checked_at=excluded.last_checked_at, next_review_at=excluded.next_review_at, status='active'`)
+            .bind(row.id, row.name, row.brand, row.country_code, row.search_text, row.serving_label, row.serving_grams,
+                row.calories, row.protein_g || 0, row.carbs_g || 0, row.fat_g || 0, row.fiber_g || 0,
+                row.source_name, row.source_url, row.verified_at, now, now, row.restaurant_slug, row.region_code,
+                row.source_type, row.nutrition_scope, row.serving_type, row.popularity_score, now, now).run();
+    }
+    await env.DB.prepare(`UPDATE restaurant_food_staging SET validation_status = ?, reviewed_by = ?, reviewed_at = ?, review_note = ? WHERE id = ?`)
+        .bind(action, user.id, now, limitedText(body?.note, 500), id).run();
+    return json({ ok: true, status: action }, 200, request, env);
+}
+
+async function getRestaurantCatalogueAdminData(env) {
+    try {
+        const [audit, misses, dueReviews, staging] = await Promise.all([
+            env.DB.prepare("SELECT * FROM restaurant_catalogue_audit ORDER BY country_code, item_count DESC, brand").all(),
+            env.DB.prepare(`SELECT query_normalized, country_code, COUNT(*) AS searches, MAX(created_at) AS last_searched_at
+                FROM food_search_misses WHERE created_at >= datetime('now', '-30 days')
+                GROUP BY query_normalized, country_code ORDER BY searches DESC, last_searched_at DESC LIMIT 20`).all(),
+            env.DB.prepare(`SELECT id, name, brand, country_code, source_url, next_review_at
+                FROM verified_foods WHERE status='active' AND next_review_at <= datetime('now')
+                ORDER BY next_review_at LIMIT 30`).all(),
+            env.DB.prepare(`SELECT id, name, brand, country_code, serving_label, calories, source_url,
+                nutrition_scope, validation_errors, submitted_at FROM restaurant_food_staging
+                WHERE validation_status='pending' ORDER BY submitted_at LIMIT 30`).all()
+        ]);
+        return { audit: audit.results || [], misses: misses.results || [], dueReviews: dueReviews.results || [], staging: staging.results || [] };
+    }
+    catch (error) {
+        console.error(JSON.stringify({ event: "restaurant_catalogue_admin_failed", reason: String(error?.message || error) }));
+        return { audit: [], misses: [], dueReviews: [], staging: [], migrationPending: true };
+    }
+}
+
 async function getLocalUsageSummary(env, since, timeZone) {
     const [usage, workouts] = await Promise.all([
         env.DB.prepare(`SELECT user_id, event_name, occurred_at
@@ -1579,7 +1760,7 @@ async function getAdminAnalytics(user, url, request, env) {
     const activeSince = new Date(Date.now() - 7 * 86400000).toISOString();
     const timeZone = analyticsTimeZone(env);
     const today = localDayBounds(Date.now(), timeZone);
-    const [totals, usageSummary, acquisition, people, feedbackSummary, feedback] = await Promise.all([
+    const [totals, usageSummary, acquisition, people, feedbackSummary, feedback, restaurantCatalogue] = await Promise.all([
         env.DB.prepare(`SELECT
             (SELECT COUNT(*) FROM users) AS total_users,
             (SELECT COUNT(*) FROM users WHERE created_at >= ?) AS new_users,
@@ -1633,7 +1814,8 @@ async function getAdminAnalytics(user, url, request, env) {
         env.DB.prepare(`SELECT sf.id, sf.rating, sf.comment, sf.trigger_name, sf.app_version, sf.created_at,
                 u.display_name, u.email
             FROM satisfaction_feedback sf JOIN users u ON u.id = sf.user_id
-            WHERE sf.created_at >= ? ORDER BY sf.created_at DESC LIMIT 100`).bind(since).all()
+            WHERE sf.created_at >= ? ORDER BY sf.created_at DESC LIMIT 100`).bind(since).all(),
+        getRestaurantCatalogueAdminData(env)
     ]);
     const localTotals = { ...(totals || {}), repeat_users: usageSummary.repeatUsers };
     return json({
@@ -1647,7 +1829,8 @@ async function getAdminAnalytics(user, url, request, env) {
         acquisition: acquisition?.results || [],
         people: people?.results || [],
         feedbackSummary: feedbackSummary || {},
-        feedback: feedback?.results || []
+        feedback: feedback?.results || [],
+        restaurantCatalogue
     }, 200, request, env);
 }
 
