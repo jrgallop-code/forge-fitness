@@ -381,6 +381,26 @@ test("Swiss Chalet migration contains the official Fiesta Salad nutrition", asyn
     assert.match(migration, /2026-08-29/);
 });
 
+test("Pür & Simple's official avocado toast catalogue includes Avocado Lox", () => {
+    const lox = searchBundledVerifiedFoods("Pür & Simple avocado lox")[0];
+    const plainAscii = rankFoodNameMatches(searchBundledVerifiedFoods("pur simple avocado lox"), "pur simple avocado lox")[0];
+
+    assert.equal(lox.catalogueId, "pur-simple-ca-avocado-lox");
+    assert.equal(lox.portions[0].label, "1 order");
+    assert.deepEqual(lox.portions[0].nutrition, { calories: 1013, protein: 43.7, carbs: 95.96, fat: 45.87, fiber: 15.2 });
+    assert.equal(plainAscii.catalogueId, lox.catalogueId);
+    assert.equal(lox.provenance.sourceName, "Pür & Simple Canada");
+    assert.equal(lox.provenance.sourceUrl, "https://pursimple.com/wp-content/uploads/2026/02/PS-Nutrition-Guide-English-2026-1.pdf");
+    assert.equal(lox.provenance.verifiedAt, "2026-08-30");
+});
+
+test("Pür & Simple migration stores only the official Avocado Lox calories", async () => {
+    const migration = await readFile(new URL("../cloud/migrations/0010_pur_simple_foods.sql", import.meta.url), "utf8");
+    assert.match(migration, /'Avocado Lox'.*'1 order', NULL, 1013, 43\.7, 95\.96, 45\.87, 15\.2/);
+    assert.doesNotMatch(migration, /'Avocado Lox'.*\b970\b/);
+    assert.match(migration, /PS-Nutrition-Guide-English-2026-1\.pdf/);
+});
+
 test("Canadian and US Grenade barcodes resolve to regional variants of one product family", () => {
     const canadian = findBundledVerifiedFoodByBarcode("847534004261");
     const us = findBundledVerifiedFoodByBarcode("847534004063");
