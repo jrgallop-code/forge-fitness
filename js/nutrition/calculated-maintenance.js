@@ -35,8 +35,10 @@ function sharedWeightTrend(weights, endKey) {
 }
 
 export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], completedDays = {}, endDate = new Date(), profileEstimate = null } = {}) {
-    const end = new Date(endDate);
-    end.setHours(12, 0, 0, 0);
+    const asOf = new Date(endDate);
+    asOf.setHours(12, 0, 0, 0);
+    const asOfKey = dateKey(asOf);
+    const end = new Date(asOf);
     end.setDate(end.getDate() - 1);
     const dates = Array.from({ length: 21 }, (_, index) => {
         const day = new Date(end);
@@ -48,9 +50,11 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], compl
     const usableDates = hasCompletionHistory ? loggedDates.filter(key => completedDays?.[key] === true) : loggedDates;
     const intakeValues = usableDates.map(key => caloriesFor(foodLog[key])).filter(value => value > 0);
     const averageIntake = intakeValues.length ? intakeValues.reduce((sum, value) => sum + value, 0) / intakeValues.length : null;
-    // Use the same canonical 21-day regression as Weight Progress. Keeping this
-    // in one shared engine prevents the TDEE card from showing a different rate.
-    const trend = sharedWeightTrend(weights, dates[dates.length - 1]);
+    // Food stops at yesterday so an unfinished current day cannot depress intake.
+    // Weight uses the latest non-future weigh-in, matching Weight Progress exactly.
+    const eligibleWeights = normalizeWeightEntries(weights).filter(entry => entry.date <= asOfKey);
+    const weightTrendEndDate = eligibleWeights.at(-1)?.date || dates[dates.length - 1];
+    const trend = sharedWeightTrend(eligibleWeights, weightTrendEndDate);
     const enoughEarly = intakeValues.length >= 2 && trend.count >= 3 && trend.spanDays >= 5;
     const enoughPreliminary = intakeValues.length >= 7 && trend.count >= 6 && trend.spanDays >= 10;
     const enoughEstablished = hasCompletionHistory && intakeValues.length >= 15 && trend.count >= 9 && trend.spanDays >= 17;
@@ -74,6 +78,7 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], compl
         weighIns: trend.count,
         weightSpanDays: trend.spanDays,
         weightTrendLabel: trend.label || "Weekly Trend",
+        weightTrendEndDate,
         recentFoodDays,
         recentWeighIns,
         hasCompletionHistory,

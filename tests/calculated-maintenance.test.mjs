@@ -99,6 +99,26 @@ test("uses the same canonical weekly rate as Weight Progress", () => {
     assert.equal(result.weightRateLbPerWeek, shared.weeklyChange);
 });
 
+test("includes today's latest weigh-in so TDEE matches the current Weight Progress rate", () => {
+    const weights = weightHistory(21, 180, .35);
+    weights.push({ date: "2026-08-29", weight: 182.1 });
+    const result = calculateMaintenanceEstimate({
+        foodLog: foodHistory(21, 2500),
+        weights,
+        endDate: new Date("2026-08-29T12:00:00")
+    });
+    const shared = calculateDisplayWeightTrend(weights, {
+        endDate: "2026-08-29",
+        windowDays: 21,
+        minEntries: 3,
+        minSpanDays: 5,
+        fullEntries: 9
+    });
+    assert.equal(result.weightRateLbPerWeek, shared.weeklyChange);
+    assert.equal(result.weightTrendEndDate, "2026-08-29");
+    assert.equal(result.endDate, "2026-08-28");
+});
+
 test("Goals and Plan distinguishes formula TDEE from the Level Up trend calculation", async () => {
     const source = await readFile(new URL("../js/nutrition/unified-goals-calories.js", import.meta.url), "utf8");
     assert.match(source, /Body Profile TDEE Formula/);
