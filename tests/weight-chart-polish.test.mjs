@@ -17,11 +17,12 @@ test("weight chart uses the Level Up emerald trend and faded area", () => {
 });
 
 test("weight history shows the shared weekly trend without shrinking columns", () => {
+    assert.match(progressMarkup, /<span>Moving Average<\/span>/);
     assert.match(progressMarkup, /<span>Weekly Trend<\/span>/);
     assert.match(weightTracker, /calculateDisplayWeightTrend/);
     assert.match(weightTracker, /formatHistoryTrend/);
     assert.match(compactStyles, /overflow-x: auto/);
-    assert.match(compactStyles, /min-width: 770px/);
+    assert.match(compactStyles, /min-width: 638px/);
     assert.match(compactStyles, /weight-history-trend\.is-down/);
 });
 

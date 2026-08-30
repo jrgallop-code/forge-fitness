@@ -203,7 +203,7 @@ export function renderProgress() {
 
                             <span>Weight</span>
 
-                            <span>7-Day Moving Average</span>
+                            <span>Moving Average</span>
 
                             <span>Weekly Trend</span>
 

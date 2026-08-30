@@ -10,7 +10,7 @@ import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-targ
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=cardio-rpe-1";
 import { renderProgress } from "../progress/progress-ui.js?v=tdee-food-window-1";
-import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-1";
+import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-2";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=cardio-distance-fix-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=current-goal-1";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=analytics-bar-polish-1";
