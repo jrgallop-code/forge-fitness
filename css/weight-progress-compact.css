@@ -156,6 +156,43 @@
     margin-top: 16px;
 }
 
+#weight-progress .weight-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#weight-progress .weight-table-header,
+#weight-progress .weight-table-row {
+    grid-template-columns: 120px 120px 180px 160px 150px;
+    min-width: 770px;
+    font-size: 13px;
+}
+
+#weight-progress .weight-history-trend {
+    justify-self: start;
+    min-width: 118px;
+    padding: 7px 9px;
+    border-radius: 9px;
+    font-weight: 850;
+    text-align: center;
+    white-space: nowrap;
+}
+
+#weight-progress .weight-history-trend.is-up {
+    color: #ff6871;
+    background: rgba(255, 59, 68, .14);
+}
+
+#weight-progress .weight-history-trend.is-down {
+    color: #53d990;
+    background: rgba(53, 199, 122, .14);
+}
+
+#weight-progress .weight-history-trend.is-flat {
+    color: var(--muted);
+    background: rgba(118, 118, 128, .16);
+}
+
 #weight-progress .weight-entry-actions button {
     min-height: 30px;
     padding: 5px 8px;

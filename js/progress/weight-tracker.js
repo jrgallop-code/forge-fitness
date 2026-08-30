@@ -9,6 +9,7 @@ import {
 from "../nutrition/tdee-calculator.js?v=weight-goals-1";
 
 import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
+import { calculateDisplayWeightTrend } from "../core/weight-trend.js?v=progress-regression-trend-1";
 
 const WEIGHT_STORAGE_KEY =
     "forge_weight_entries";
@@ -671,7 +672,12 @@ function updateHistory(
                     index > 0
                         ? entry.weight -
                             entries[index - 1].weight
-                        : null
+                        : null,
+                weeklyTrend:
+                    calculateDisplayWeightTrend(
+                        entries,
+                        { endDate: entry.date }
+                    ).weeklyChange
             })
         );
 
@@ -696,6 +702,10 @@ function updateHistory(
                             ${row.average === null
                                 ? "--"
                                 : `${row.average.toFixed(1)} lb`}
+                        </span>
+
+                        <span class="weight-history-trend ${trendDirectionClass(row.weeklyTrend)}">
+                            ${formatHistoryTrend(row.weeklyTrend)}
                         </span>
 
                         <div class="weight-entry-actions">
@@ -1255,6 +1265,18 @@ function removeWeightEntry(date) {
     updateWeightDisplay();
 }
 
+
+function formatHistoryTrend(value) {
+    if (!Number.isFinite(value)) return "--";
+    const display = displayMass(Math.abs(value), 2);
+    const sign = value > 0 ? "+" : value < 0 ? "−" : "";
+    return `${sign}${display.toFixed(2)} ${massUnit()}/wk`;
+}
+
+function trendDirectionClass(value) {
+    if (!Number.isFinite(value) || Math.abs(value) < 0.005) return "is-flat";
+    return value > 0 ? "is-up" : "is-down";
+}
 
 function formatDirectionalWeight(
     value,
