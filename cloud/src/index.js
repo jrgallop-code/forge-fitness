@@ -1,4 +1,5 @@
 import { SWISS_CHALET_FOODS } from "./data/swiss-chalet-foods.js";
+import { PUR_SIMPLE_FOODS } from "./data/pur-simple-foods.js";
 
 const MAX_BACKUP_BYTES = 8 * 1024 * 1024;
 const SESSION_DAYS = 30;
@@ -916,6 +917,7 @@ const USDA_BRAND_SEARCHES = [
     { name: "Kirkland Signature", usdaQuery: "Kirkland Signature", aliases: ["kirkland", "kirkland signature"] },
     { name: "McDonald's", usdaQuery: "McDonald's", aliases: ["mcdonald", "mcdonalds", "mcdonald's"] },
     { name: "Swiss Chalet", usdaQuery: "Swiss Chalet", aliases: ["swiss chalet", "swisschalet"] },
+    { name: "Pür & Simple", usdaQuery: "Pür & Simple", aliases: ["pür & simple", "pur & simple", "pür simple", "pur simple", "pursimple"] },
     { name: "Built", usdaQuery: "Built Bar", aliases: ["built bar", "built puff"] }
 ];
 
@@ -1104,6 +1106,16 @@ const BUNDLED_VERIFIED_FOODS = [
         sourceName: "Swiss Chalet Canada",
         sourceUrl: "https://www.swisschalet.com/en/nutritional.html",
         verifiedAt: "2026-08-29"
+    })),
+    ...PUR_SIMPLE_FOODS.map(food => bundledVerifiedFood({
+        ...food,
+        brand: "Pür & Simple",
+        aliases: "pür simple pur simple pursimple restaurant canada breakfast brunch avocado toast",
+        label: "1 order",
+        category: "Restaurant food",
+        sourceName: "Pür & Simple Canada",
+        sourceUrl: "https://pursimple.com/wp-content/uploads/2026/02/PS-Nutrition-Guide-English-2026-1.pdf",
+        verifiedAt: "2026-08-30"
     }))
 ];
 
