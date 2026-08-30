@@ -7,7 +7,7 @@ import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";
 import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
 import { markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
-import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=calorie-check-feedback-1";
+import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=pending-calorie-target-1";
 
 const FIRST_CHECK_DAY = 14;
 const FULL_GAP_INCREMENT = 50;
@@ -33,6 +33,11 @@ function setText(node, value) {
     if (!node || node.textContent === value) return false;
     node.textContent = value;
     return true;
+}
+
+function setSuggestionHeading(value) {
+    setText(document.querySelector("#nutrition-current-phase [data-phase-calorie-suggestion] > span"), value);
+    setText(document.querySelector("#weight-calorie-suggestion-card h3"), value);
 }
 
 function getVisibleTrend(metrics) {
@@ -114,6 +119,12 @@ function calorieBaselineCopy(baseline) {
         return `current target (${intake.loggedDays}/${intake.totalDays} days logged)`;
     }
     return `logged average (${intake.loggedDays}/${intake.totalDays} days)`;
+}
+
+function pendingFoodLogCopy(baseline) {
+    const logged = Math.max(0, Math.round(Number(baseline?.intake?.loggedDays) || 0));
+    const needed = Math.max(0, 4 - logged);
+    return `No calorie recommendation yet · Log ${needed} more complete food day${needed === 1 ? "" : "s"} in the current 7-day window (${logged}/4)`;
 }
 
 function hideCoachActions() {
@@ -209,13 +220,16 @@ function syncCoach(metrics, phase) {
         return;
     }
 
+    if (metrics.recommendationReady && !baseline.useLoggedAverage) {
+        setText(messageNode, `Your current 7-day trend is ${formatRate(actual)} versus a target of ${formatRate(target)}.`);
+        setText(suggestionNode, `${pendingFoodLogCopy(baseline)}. Your pace is informational until then.`);
+        hideCoachActions();
+        return;
+    }
+
     if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) {
         setText(messageNode, `Your current 7-day trend is ${formatRate(actual)} versus a target of ${formatRate(target)}.`);
-        setText(suggestionNode, baseline.useLoggedAverage
-            ? `Your logged average of ${Math.round(baseline.calories)} kcal/day (${baseline.intake.loggedDays}/${baseline.intake.totalDays} days) is producing an on-track trend. Current target: ${Math.round(currentCalories)} kcal/day.`
-            : Number.isFinite(currentCalories)
-                ? `Keep calories at ${Math.round(currentCalories)} kcal/day. Log at least 4 days in the current 7-day window to personalize the next check.`
-                : "Keep the current plan.");
+        setText(suggestionNode, `Your logged average of ${Math.round(baseline.calories)} kcal/day (${baseline.intake.loggedDays}/${baseline.intake.totalDays} days) is producing an on-track trend. Current target: ${Math.round(currentCalories)} kcal/day.`);
         hideCoachActions();
         return;
     }
@@ -266,8 +280,9 @@ function syncSuggestedCalories(metrics, phase) {
     if (!Number.isFinite(currentCalories)) return;
     const baseline = getAdaptiveCalorieBaseline(metrics, currentCalories);
 
-    let primary = `${Math.round(baseline.calories)} kcal/day`;
+    let primary = `${Math.round(currentCalories)} kcal/day`;
     let secondary = "";
+    let heading = "Current Calorie Target";
     const trend = metrics.trend;
     const checkDay = Number(trend?.checkDay);
     const target = Number(metrics.targetRateLbPerWeek);
@@ -284,11 +299,15 @@ function syncSuggestedCalories(metrics, phase) {
         secondary = `${calorieBaselineCopy(baseline)} · first calorie decision on Day ${FIRST_CHECK_DAY}`;
     } else if (metrics.status === "BUILDING TREND") {
         secondary = `${calorieBaselineCopy(baseline)} · preliminary trend begins on Day 7`;
-    } else if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) {
+    } else if (metrics.recommendationReady && !baseline.useLoggedAverage) {
+        secondary = pendingFoodLogCopy(baseline);
+    } else if (metrics.recommendationReady && ["ON TRACK", "MAINTAINING"].includes(metrics.status)) {
+        heading = "Suggested Calories";
         secondary = `${calorieBaselineCopy(baseline)} · on track · next check Day ${trend?.nextCheckDay || "--"}`;
     } else if (getHandledCheck(phase, checkDay)) {
         secondary = `Day ${checkDay} check handled · next check Day ${trend?.nextCheckDay || checkDay + 7}`;
     } else if (metrics.recommendationReady && Number.isFinite(actual) && Number.isFinite(target)) {
+        heading = "Suggested Calories";
         const recommendation = buildRecommendation(actual, target, baseline.calories, currentCalories);
         primary = `${recommendation.targetCalories} kcal/day`;
         secondary = `Based on ${Math.round(baseline.calories)} kcal ${calorieBaselineCopy(baseline)} · ${formatSignedCalories(recommendation.adjustment)} kcal/day`;
@@ -297,6 +316,7 @@ function syncSuggestedCalories(metrics, phase) {
     }
 
     const nutritionCard = document.querySelector("#nutrition-current-phase [data-phase-calorie-suggestion]");
+    setSuggestionHeading(heading);
     setText(nutritionCard?.querySelector("strong"), primary);
     setText(nutritionCard?.querySelector("small"), secondary);
     setText(document.getElementById("weight-calorie-suggestion"), primary);

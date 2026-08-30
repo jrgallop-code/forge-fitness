@@ -11,13 +11,14 @@ function formatRate(value) {
     return `${sign}${Math.abs(number).toFixed(2)}`;
 }
 
-function visibleAssessment(visibleRate, targetRate, tolerance) {
+function visibleAssessment(visibleRate, targetRate, tolerance, { provisional = false } = {}) {
     const actual = finite(visibleRate);
     const target = finite(targetRate);
     const range = finite(tolerance);
     if (actual === null || target === null || range === null) return "";
     const onTarget = Math.abs(actual - target) <= range;
-    return `${onTarget ? "Trend appears on target" : "Current trend"}: ${formatRate(actual)} vs ${formatRate(target)} lb/week`;
+    const label = provisional ? "Provisional pace" : onTarget ? "On-target pace" : "Current pace";
+    return `${label}: ${formatRate(actual)} vs ${formatRate(target)} lb/week`;
 }
 
 export function buildPendingCalorieCheckMessage({ metrics, visibleRate = null } = {}) {
@@ -27,7 +28,7 @@ export function buildPendingCalorieCheckMessage({ metrics, visibleRate = null } 
     const nextCheckDay = finite(trend.nextCheckDay);
     const target = finite(metrics?.targetRateLbPerWeek);
     const tolerance = finite(metrics?.toleranceLbPerWeek);
-    const assessment = visibleAssessment(visibleRate, target, tolerance);
+    const assessment = visibleAssessment(visibleRate, target, tolerance, { provisional: true });
 
     if (phaseDay !== null && phaseDay < 14) {
         return `${assessment ? `${assessment} · ` : ""}First calorie check on Day 14 · currently Day ${Math.round(phaseDay)}`;
@@ -37,7 +38,11 @@ export function buildPendingCalorieCheckMessage({ metrics, visibleRate = null } 
     const previous = Math.max(0, Math.round(finite(trend.previousEntries) || 0));
     const current = Math.max(0, Math.round(finite(trend.currentEntries) || 0));
     if (previous < minimum || current < minimum) {
-        return `${assessment ? `${assessment} · ` : ""}Calorie check needs ${minimum} weigh-ins in each 7-day block (${previous}/${minimum} previous · ${current}/${minimum} current)`;
+        const missing = [];
+        if (previous < minimum) missing.push(`${minimum - previous} more weigh-in${minimum - previous === 1 ? "" : "s"} in the previous 7-day block`);
+        if (current < minimum) missing.push(`${minimum - current} more weigh-in${minimum - current === 1 ? "" : "s"} in the current 7-day block`);
+        const progress = `${Math.min(previous, minimum)}/${minimum} previous · ${Math.min(current, minimum)}/${minimum} current`;
+        return `No calorie recommendation yet · Add ${missing.join(" and ")} (${progress})${assessment ? ` · ${assessment}` : ""}`;
     }
 
     if (metrics?.status === "AWAITING WEIGH-IN") {
@@ -50,5 +55,5 @@ export function buildPendingCalorieCheckMessage({ metrics, visibleRate = null } 
         return `${assessment ? `${assessment} · ` : ""}Next scheduled calorie check: Day ${Math.round(scheduledDay)}`;
     }
 
-    return assessment || "Keep logging weight to unlock the next calorie check";
+    return assessment ? `No calorie recommendation yet · ${assessment}` : "No calorie recommendation yet · Keep logging weight to unlock the next check";
 }
