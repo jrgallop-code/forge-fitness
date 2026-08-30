@@ -12,7 +12,35 @@ globalThis.window = { dispatchEvent() {} };
 globalThis.CustomEvent = class CustomEvent { constructor(type, options) { this.type = type; this.detail = options?.detail; } };
 
 const data = await import("../js/nutrition/food-log-data.js");
-const { barcodeVariants, consumerUsdaProductName, dedupeUsdaFoods, detectUsdaBrandSearch, findBundledVerifiedFoodByBarcode, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeOpenFoodFactsProduct, normalizeOpenFoodFactsSearchProducts, normalizeUsdaFood, normalizeVerifiedFood, rankFoodNameMatches, rankUsdaBrandFoods, searchBundledVerifiedFoods, searchCachedExternalFoods, selectExactUsdaBarcodeFood } = await import("../cloud/src/index.js");
+const { barcodeVariants, consumerUsdaProductName, dedupeUsdaFoods, detectUsdaBrandSearch, findBundledVerifiedFoodByBarcode, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeOpenFoodFactsProduct, normalizeOpenFoodFactsSearchProducts, normalizeUsdaFood, normalizeVerifiedFood, rankFoodNameMatches, rankRestaurantFoods, rankUsdaBrandFoods, searchBundledVerifiedFoods, searchCachedExternalFoods, selectExactUsdaBarcodeFood, validateRestaurantFoodCandidate } = await import("../cloud/src/index.js");
+
+test("restaurant staging accepts exact official nutrition and marks calories-only records", () => {
+    const validation = validateRestaurantFoodCandidate({
+        name: "Avocado Lox", brand: "Pür & Simple", countryCode: "CA", servingLabel: "1 order",
+        calories: 720, sourceName: "Pür & Simple Canada", sourceUrl: "https://pursimple.com/nutrition.pdf",
+        sourceType: "official_restaurant", verifiedAt: "2026-08-30"
+    });
+    assert.equal(validation.valid, true);
+    assert.equal(validation.food.nutritionScope, "calories_only");
+});
+
+test("restaurant staging rejects ranges and non-official URLs", () => {
+    const validation = validateRestaurantFoodCandidate({
+        name: "Burger", brand: "Example", countryCode: "US", servingLabel: "1 burger",
+        calories: "500-600", sourceName: "Blog", sourceUrl: "http://example.com/post", verifiedAt: "today"
+    });
+    assert.equal(validation.valid, false);
+    assert.ok(validation.errors.some(error => error.includes("calories")));
+    assert.ok(validation.errors.some(error => error.includes("HTTPS")));
+});
+
+test("restaurant ranking prefers the user's country while keeping regional variants", () => {
+    const ca = normalizeVerifiedFood({ id: "ca", name: "Burger", brand: "Chain", country_code: "CA", serving_label: "1 burger", calories: 500, protein_g: 20, carbs_g: 40, fat_g: 25, verification_status: "verified" });
+    const us = normalizeVerifiedFood({ id: "us", name: "Burger", brand: "Chain", country_code: "US", serving_label: "1 burger", calories: 530, protein_g: 22, carbs_g: 41, fat_g: 27, verification_status: "verified" });
+    const merged = mergeFoodResults([us], [ca]);
+    assert.equal(merged.length, 2);
+    assert.equal(rankRestaurantFoods(merged, "burger", "CA")[0].countryCode, "CA");
+});
 
 test("barcode lookup validates GTIN check digits and normalizes formatting", () => {
     assert.equal(normalizeBarcode("0 36000-29145 2"), "036000291452");

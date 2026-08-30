@@ -614,7 +614,8 @@ async function searchFoods(event) {
     foodSearchController?.abort();
     foodSearchController = new AbortController();
     try {
-        const response = await fetch(`${API_URL}/v1/foods/search?q=${encodeURIComponent(query)}`, {
+        const country = String(navigator.language || "en-CA").toUpperCase().endsWith("-US") ? "US" : "CA";
+        const response = await fetch(`${API_URL}/v1/foods/search?q=${encodeURIComponent(query)}&country=${country}`, {
             headers: { Authorization: `Bearer ${token}` },
             signal: foodSearchController.signal
         });
@@ -641,10 +642,13 @@ function renderFoodResults(container, foods) {
 
 function foodResultMarkup(food, index) {
     const portion = withUsefulLiquidPortions(food).portions?.[0];
+    const verification = food?.provenance?.verificationStatus === "verified"
+        ? `${food.countryCode || ""} official source${food?.provenance?.nutritionScope === "calories_only" ? " · Calories only" : ""}`.trim()
+        : "";
     const sourceLabel = food.previouslyLogged
         ? `${food.brand || "Your history"} · Previously logged`
         : food.source === "levelup"
-        ? `${food.brand || "Level Up"} · Verified`
+        ? `${food.brand || "Level Up"} · Verified${verification ? ` · ${verification}` : ""}`
         : (food.brand || food.dataType || "USDA food");
     return `<button class="food-result" type="button" data-food-result="${index}"><span><strong>${escapeHtml(food.name)}</strong><small>${escapeHtml(sourceLabel)}</small></span><b>${Math.round(portion?.nutrition?.calories || 0)} kcal<small>${escapeHtml(portion?.label || "per 100 g")}</small></b></button>`;
 }
