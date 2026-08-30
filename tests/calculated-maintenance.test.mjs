@@ -67,7 +67,7 @@ test("shows a usable early estimate from two food days and an established weight
     assert.equal(result.maintenanceCalories, 2550);
 });
 
-test("ignores logged days that were not marked complete once completion tracking is used", () => {
+test("counts all logged days through yesterday even when legacy completion flags are partial", () => {
     const foodLog = foodHistory(21, 2400);
     const completedDays = Object.fromEntries(Object.keys(foodLog).slice(0, 1).map(date => [date, true]));
     const result = calculateMaintenanceEstimate({
@@ -76,8 +76,9 @@ test("ignores logged days that were not marked complete once completion tracking
         weights: weightHistory(21, 180, 0),
         endDate: new Date("2026-08-29T12:00:00")
     });
-    assert.equal(result.foodDays, 1);
-    assert.equal(result.status, "learning");
+    assert.equal(result.foodDays, 21);
+    assert.equal(result.averageIntake, 2400);
+    assert.equal(result.status, "established");
 });
 
 test("stale completion metadata does not hide current logged food days", () => {
