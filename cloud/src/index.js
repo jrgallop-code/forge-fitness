@@ -1407,7 +1407,7 @@ function validIso(value) {
 
 async function recordActivity(userId, request, env) {
     const now = new Date().toISOString();
-    const day = now.slice(0, 10);
+    const day = localDateKey(now, analyticsTimeZone(env));
     await env.DB.batch([
         env.DB.prepare("UPDATE users SET last_active_at = ? WHERE id = ?").bind(now, userId),
         env.DB.prepare(`
@@ -1419,44 +1419,117 @@ async function recordActivity(userId, request, env) {
     return json({ ok: true, lastActiveAt: now }, 200, request, env);
 }
 
+function analyticsTimeZone(env) {
+    return String(env?.ANALYTICS_TIME_ZONE || "America/Halifax").trim() || "America/Halifax";
+}
+
+function localDateKey(value, timeZone) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    }).formatToParts(new Date(value));
+    const part = type => parts.find(item => item.type === type)?.value;
+    return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function nextDateKey(dateKey) {
+    const date = new Date(`${dateKey}T12:00:00.000Z`);
+    date.setUTCDate(date.getUTCDate() + 1);
+    return date.toISOString().slice(0, 10);
+}
+
+function firstInstantForLocalDate(dateKey, timeZone) {
+    const approximateMidnight = Date.parse(`${dateKey}T00:00:00.000Z`);
+    let low = approximateMidnight - 36 * 60 * 60 * 1000;
+    let high = approximateMidnight + 36 * 60 * 60 * 1000;
+    while (low < high) {
+        const middle = Math.floor((low + high) / 2);
+        if (localDateKey(middle, timeZone) < dateKey) low = middle + 1;
+        else high = middle;
+    }
+    return new Date(low).toISOString();
+}
+
+function localDayBounds(value, timeZone) {
+    const date = localDateKey(value, timeZone);
+    return {
+        date,
+        start: firstInstantForLocalDate(date, timeZone),
+        end: firstInstantForLocalDate(nextDateKey(date), timeZone)
+    };
+}
+
+async function getLocalUsageSummary(env, since, timeZone) {
+    const [usage, workouts] = await Promise.all([
+        env.DB.prepare(`SELECT user_id, event_name, occurred_at
+            FROM usage_events
+            WHERE occurred_at >= ? AND event_name IN ('app_active', 'food_logged')`).bind(since).all(),
+        env.DB.prepare(`SELECT user_id, occurred_at
+            FROM product_events
+            WHERE occurred_at >= ? AND event_name = 'workout_completed'`).bind(since).all()
+    ]);
+    const days = new Map();
+    const activeDaysByUser = new Map();
+    const dayFor = occurredAt => {
+        const key = localDateKey(occurredAt, timeZone);
+        if (!days.has(key)) days.set(key, { day: key, activeUsers: new Set(), foods: 0, workouts: 0 });
+        return days.get(key);
+    };
+    for (const event of usage?.results || []) {
+        const day = dayFor(event.occurred_at);
+        if (event.event_name === "food_logged") {
+            day.foods += 1;
+            continue;
+        }
+        day.activeUsers.add(event.user_id);
+        if (!activeDaysByUser.has(event.user_id)) activeDaysByUser.set(event.user_id, new Set());
+        activeDaysByUser.get(event.user_id).add(day.day);
+    }
+    for (const event of workouts?.results || []) dayFor(event.occurred_at).workouts += 1;
+    return {
+        daily: [...days.values()].sort((a, b) => a.day.localeCompare(b.day)).map(day => ({
+            day: day.day,
+            active_users: day.activeUsers.size,
+            foods: day.foods,
+            workouts: day.workouts
+        })),
+        repeatUsers: [...activeDaysByUser.values()].filter(activeDays => activeDays.size >= 2).length
+    };
+}
+
 async function getAdminAnalytics(user, url, request, env) {
     if (!isAdminUser(user, env)) return json({ error: "Admin access required." }, 403, request, env);
     const requestedDays = Number(url.searchParams.get("days") || 30);
     const days = Number.isFinite(requestedDays) ? Math.min(365, Math.max(7, Math.round(requestedDays))) : 30;
     const since = new Date(Date.now() - days * 86400000).toISOString();
     const activeSince = new Date(Date.now() - 7 * 86400000).toISOString();
-    const today = new Date().toISOString().slice(0, 10);
-    const [totals, daily, acquisition, people] = await Promise.all([
+    const timeZone = analyticsTimeZone(env);
+    const today = localDayBounds(Date.now(), timeZone);
+    const [totals, usageSummary, acquisition, people] = await Promise.all([
         env.DB.prepare(`SELECT
             (SELECT COUNT(*) FROM users) AS total_users,
             (SELECT COUNT(*) FROM users WHERE created_at >= ?) AS new_users,
+            (SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ?) AS new_users_today,
             (SELECT COUNT(*) FROM users WHERE last_active_at >= ?) AS active_users,
-            (SELECT COUNT(*) FROM users WHERE last_active_at >= ?) AS users_today,
+            (SELECT COUNT(*) FROM users WHERE last_active_at >= ? AND last_active_at < ?) AS users_today,
             (SELECT COUNT(*) FROM (
                 SELECT user_id FROM usage_events
-                WHERE event_name = 'app_active' AND occurred_at >= ?
-                GROUP BY user_id HAVING COUNT(DISTINCT substr(occurred_at, 1, 10)) >= 2
-            )) AS repeat_users,
+                WHERE event_name = 'food_logged' AND occurred_at >= ? AND occurred_at < ?
+                UNION
+                SELECT user_id FROM product_events
+                WHERE event_name = 'workout_completed' AND occurred_at >= ? AND occurred_at < ?
+            )) AS engaged_users_today,
             (SELECT COUNT(*) FROM usage_events WHERE event_name = 'food_logged' AND occurred_at >= ?) AS foods_logged,
             (SELECT COUNT(DISTINCT user_id) FROM usage_events WHERE event_name = 'food_logged' AND occurred_at >= ?) AS food_log_users,
             (SELECT COUNT(*) FROM product_events WHERE event_name = 'workout_completed' AND occurred_at >= ?) AS workouts,
             (SELECT COUNT(DISTINCT user_id) FROM product_events WHERE event_name = 'workout_completed' AND occurred_at >= ?) AS workout_users,
             (SELECT COUNT(*) FROM product_events WHERE event_name = 'onboarding_completed' AND occurred_at >= ?) AS onboarding_completions`)
-            .bind(since, activeSince, today, since, since, since, since, since, since).first(),
-        env.DB.prepare(`SELECT day,
-            SUM(active_users) AS active_users,
-            SUM(foods) AS foods,
-            SUM(workouts) AS workouts
-            FROM (
-                SELECT substr(occurred_at, 1, 10) AS day,
-                    CASE WHEN event_name = 'app_active' THEN 1 ELSE 0 END AS active_users,
-                    CASE WHEN event_name = 'food_logged' THEN 1 ELSE 0 END AS foods,
-                    0 AS workouts
-                FROM usage_events WHERE occurred_at >= ?
-                UNION ALL
-                SELECT substr(occurred_at, 1, 10) AS day, 0 AS active_users, 0 AS foods, 1 AS workouts
-                FROM product_events WHERE event_name = 'workout_completed' AND occurred_at >= ?
-            ) GROUP BY day ORDER BY day`).bind(since, since).all(),
+            .bind(since, today.start, today.end, activeSince, today.start, today.end,
+                today.start, today.end, today.start, today.end,
+                since, since, since, since, since).first(),
+        getLocalUsageSummary(env, since, timeZone),
         env.DB.prepare(`SELECT COALESCE(NULLIF(reported_source, ''), 'Not answered') AS source, COUNT(*) AS users
             FROM user_acquisition GROUP BY source ORDER BY users DESC`).all(),
         env.DB.prepare(`SELECT
@@ -1479,7 +1552,18 @@ async function getAdminAnalytics(user, url, request, env) {
             ORDER BY u.last_active_at DESC, u.created_at DESC
             LIMIT 100`).bind(since, since, since, since, since, since).all()
     ]);
-    return json({ days, since, totals: totals || {}, daily: daily?.results || [], acquisition: acquisition?.results || [], people: people?.results || [] }, 200, request, env);
+    const localTotals = { ...(totals || {}), repeat_users: usageSummary.repeatUsers };
+    return json({
+        days,
+        since,
+        timeZone,
+        today: today.date,
+        updatedAt: new Date().toISOString(),
+        totals: localTotals,
+        daily: usageSummary.daily,
+        acquisition: acquisition?.results || [],
+        people: people?.results || []
+    }, 200, request, env);
 }
 
 async function importRedditSource(body, request, env) {
