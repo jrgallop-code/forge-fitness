@@ -1,4 +1,4 @@
-import { displayMass, massUnit } from "../core/unit-system.js";
+import { UNIT_KINDS, displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { calculateSetVolume } from "../workouts/volume-calculator.js?v=two-dumbbells-1";
 
@@ -197,12 +197,12 @@ function renderHistory(container, records) {
 
 function renderSvgChart(host, records) {
     const isVolume = selectedMetric === "volume";
-    const valueFor = record => isVolume ? displayVolume(record.sessionVolume) : displayMass(record.estimatedOneRepMax, 1);
+    const valueFor = record => isVolume ? displayVolume(record.sessionVolume) : displayMass(record.estimatedOneRepMax, 1, UNIT_KINDS.LIFTING_WEIGHT);
     const values = records.map(valueFor).filter(Number.isFinite);
     const width = Math.max(320, Math.round(host.clientWidth || 700));
     const height = width <= 520 ? 280 : 310;
     const padding = { top: 38, right: 18, bottom: 42, left: 56 };
-    const axisLabel = isVolume ? `Session Volume (${massUnit()})` : `Estimated 1RM (${massUnit()})`;
+    const axisLabel = isVolume ? `Session Volume (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})` : `Estimated 1RM (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})`;
     host.setAttribute("aria-label", `${axisLabel} across logged sessions`);
     if (!values.length) {
         host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="No exercise progress data"><text x="${padding.left}" y="20" fill="#ff5b63" font-size="10" font-weight="800" letter-spacing="1.2">${axisLabel.toUpperCase()}</text><line x1="${padding.left}" y1="${padding.top}" x2="${width - padding.right}" y2="${padding.top}" stroke="rgba(255,255,255,.055)"/><line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="rgba(255,255,255,.055)"/><text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="#888892" font-size="12">No completed weighted sets to plot</text></svg>`;
@@ -242,10 +242,10 @@ function renderSvgChart(host, records) {
         ${coords.map((point, index) => { const show = coords.length <= 8 || index === 0 || index === coords.length - 1 || index % Math.ceil(coords.length / 6) === 0; const latest = index === coords.length - 1; return `${latest ? `<circle cx="${point.x}" cy="${point.y}" r="8" fill="#ff3139" fill-opacity=".18"/>` : ""}<circle cx="${point.x}" cy="${point.y}" r="${latest ? 4 : 3}" fill="${latest ? "#ff3139" : "#c94c55"}" stroke="#151114" stroke-width="2"><title>${formatDate(point.date)}: ${isVolume ? formatVolume(point.sessionVolume) : formatMass(point.estimatedOneRepMax, 1)}</title></circle>${show ? `<text x="${point.x}" y="${height - 16}" text-anchor="middle" fill="rgba(185,185,193,.72)" font-size="10">${formatShortDate(point.date)}</text>` : ""}`; }).join("")}</svg>`;
 }
 
-function displayVolume(value) { return displayMass(value, 0); }
-function formatVolume(value) { return `${Number(displayVolume(value)).toLocaleString()} ${massUnit()}`; }
-function formatMass(value, digits = 0) { const shown = displayMass(value, digits); return `${Number(shown).toLocaleString(undefined, { maximumFractionDigits: digits })} ${massUnit()}`; }
-function signedVolume(value) { return `${value > 0 ? "+" : ""}${Number(displayVolume(value)).toLocaleString()} ${massUnit()}`; }
+function displayVolume(value) { return displayMass(value, 0, UNIT_KINDS.LIFTING_WEIGHT); }
+function formatVolume(value) { return `${Number(displayVolume(value)).toLocaleString()} ${massUnit(UNIT_KINDS.LIFTING_WEIGHT)}`; }
+function formatMass(value, digits = 0) { const shown = displayMass(value, digits, UNIT_KINDS.LIFTING_WEIGHT); return `${Number(shown).toLocaleString(undefined, { maximumFractionDigits: digits })} ${massUnit(UNIT_KINDS.LIFTING_WEIGHT)}`; }
+function signedVolume(value) { return `${value > 0 ? "+" : ""}${Number(displayVolume(value)).toLocaleString()} ${massUnit(UNIT_KINDS.LIFTING_WEIGHT)}`; }
 function signedMass(value, digits = 0) { return `${value > 0 ? "+" : ""}${formatMass(value, digits)}`; }
 function signedNumber(value) { return `${value > 0 ? "+" : ""}${value}`; }
 function signedPercent(value) { return Number.isFinite(value) ? `${value > 0 ? "+" : ""}${value.toFixed(1)}%` : "—"; }

@@ -1,5 +1,5 @@
 import { getExerciseById } from './exercise-library.js?v=exercise-library-3';
-import { massUnit } from '../core/unit-system.js?v=unit-system-1';
+import { UNIT_KINDS, massUnit } from '../core/unit-system.js?v=granular-units-1';
 
 const SESSION_STORAGE_KEY = 'forge_workout_sessions';
 const STYLE_HREF = 'css/starting-weight-calibration.css?v=starting-weight-1';
@@ -178,7 +178,7 @@ function ensureModal() {
       </div>
       <p class="starting-weight-calibration-copy">Do about 8 controlled reps with a light load. Enter the weight, then tell Level Up how the set felt.</p>
       <div class="starting-weight-calibration-fields">
-        <label>Test weight (<span data-starting-weight-unit>${massUnit()}</span>)
+        <label>Test weight (<span data-starting-weight-unit>${massUnit(UNIT_KINDS.LIFTING_WEIGHT)}</span>)
           <input class="starting-weight-test-load" type="number" inputmode="decimal" min="0" step="0.5" placeholder="Weight">
         </label>
       </div>
@@ -222,7 +222,7 @@ function openCalibration(card) {
   activeTargetInput = targetInput;
   const modal = ensureModal();
   resetModal(modal);
-  modal.querySelector('[data-starting-weight-unit]').textContent = massUnit();
+  modal.querySelector('[data-starting-weight-unit]').textContent = massUnit(UNIT_KINDS.LIFTING_WEIGHT);
   modal.querySelector('#starting-weight-calibration-title').textContent = `Find a starting weight · ${exercise.name}`;
   modal.hidden = false;
   document.body.classList.add('starting-weight-calibration-open');

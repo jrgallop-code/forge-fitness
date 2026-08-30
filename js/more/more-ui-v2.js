@@ -6,8 +6,8 @@ import { initializeGoogleDriveSync } from "../core/google-drive-sync-v2.js?v=vis
 import { initializeDataSpreadsheetExport } from "../core/data-spreadsheet-export.js?v=full-data-export-1";
 import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-card-1";
 import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.js?v=privacy-account-1";
-import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=unit-system-1";
-import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-appearance-1";
+import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=granular-units-1";
+import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=granular-units-1";
 import { renderAdaptiveGuidanceSettings, initializeAdaptiveGuidanceSettings } from "./adaptive-guidance-settings.js?v=deload-workout-preview-1";
 import { openLessonLibrary } from "./learn-level-up.js?v=learn-level-up-2";
 
@@ -31,7 +31,7 @@ export function renderMore() {
     <section class="more-menu-grid" aria-label="More tools">
     <div class="more-menu-group" data-more-group="account"><h3>Account &amp; app</h3>
     <button class="more-menu-card" type="button" data-more-page="account-cloud"><span class="more-menu-icon">${ICONS.account}</span><span><strong>Account & Cloud</strong><small>Sign in for private beta cloud backup and device transfer.</small></span></button>
-    <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Switch between imperial and metric measurements throughout Level Up.</small></span></button>
+    <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Choose body weight, workout weight, distance and measurement units separately.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="adaptive-guidance"><span class="more-menu-icon">${ICONS.guidance}</span><span><strong class="adaptive-title-with-badge">Adaptive Guidance <span class="adaptive-beta-badge">BETA</span></strong><small>Optional recovery, effort, volume and deload suggestions.</small></span></button>
     <button class="more-menu-card owner-analytics-launch" id="owner-analytics-menu" type="button" data-more-page="admin-analytics" hidden><span class="more-menu-icon">${ICONS.analytics}</span><span><strong>Stats & Analytics</strong><small>Owner-only charts for growth, activity and training engagement.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Profile & Appearance</strong><small>Update your personal details, training experience and anatomy appearance.</small></span></button>

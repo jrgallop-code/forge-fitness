@@ -8,7 +8,7 @@ import {
 }
 from "../nutrition/tdee-calculator.js?v=weight-goals-1";
 
-import { displayMass, massUnit } from "../core/unit-system.js?v=unit-system-1";
+import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
 
 const WEIGHT_STORAGE_KEY =
     "forge_weight_entries";
