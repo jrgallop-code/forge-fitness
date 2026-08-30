@@ -12,7 +12,7 @@ test("labels a blocked check as provisional rather than recommending the current
         },
         visibleRate: 0.37
     });
-    assert.equal(message, "No calorie recommendation yet · Add 1 more weigh-in in the previous 7-day block (3/4 previous · 4/4 current) · Provisional pace: +0.37 vs +0.25 lb/week");
+    assert.equal(message, "No calorie recommendation yet · Add 1 more weigh-in in the previous 7-day block (3/4 previous weigh-ins · 4/4 current weigh-ins) · Provisional pace: +0.37 vs +0.25 lb/week");
 });
 
 test("states the phase day before the first calorie decision", () => {
@@ -41,7 +41,7 @@ test("does not invent a zero trend when visible feedback is unavailable", () => 
         metrics: { trend: { phaseDay: 18, previousEntries: 2, currentEntries: 4 } },
         visibleRate: null
     });
-    assert.equal(message, "No calorie recommendation yet · Add 2 more weigh-ins in the previous 7-day block (2/4 previous · 4/4 current)");
+    assert.equal(message, "No calorie recommendation yet · Add 2 more weigh-ins in the previous 7-day block (2/4 previous weigh-ins · 4/4 current weigh-ins)");
 });
 
 test("caps completed-window progress instead of showing counts such as 7/4", () => {
@@ -53,5 +53,31 @@ test("caps completed-window progress instead of showing counts such as 7/4", () 
         },
         visibleRate: 0.37
     });
-    assert.equal(message, "No calorie recommendation yet · Add 3 more weigh-ins in the previous 7-day block (1/4 previous · 4/4 current) · Provisional pace: +0.37 vs +0.25 lb/week");
+    assert.equal(message, "No calorie recommendation yet · Add 3 more weigh-ins in the previous 7-day block (1/4 previous weigh-ins · 4/4 current weigh-ins) · Provisional pace: +0.37 vs +0.25 lb/week");
+});
+
+test("shows missing weigh-ins and food days at the same time", () => {
+    const message = buildPendingCalorieCheckMessage({
+        metrics: {
+            targetRateLbPerWeek: 0.25,
+            toleranceLbPerWeek: 0.16,
+            trend: { phaseDay: 24, previousEntries: 1, currentEntries: 7, minEntriesPerWindow: 4 }
+        },
+        visibleRate: 0.37,
+        foodLoggedDays: 2
+    });
+    assert.equal(message, "No calorie recommendation yet · Add 3 more weigh-ins in the previous 7-day block and 2 more complete food days in the current 7-day window (1/4 previous weigh-ins · 4/4 current weigh-ins · 2/4 food days) · Provisional pace: +0.37 vs +0.25 lb/week");
+});
+
+test("continues showing the food requirement after weight coverage is complete", () => {
+    const message = buildPendingCalorieCheckMessage({
+        metrics: {
+            targetRateLbPerWeek: 0.25,
+            toleranceLbPerWeek: 0.16,
+            trend: { phaseDay: 24, previousEntries: 4, currentEntries: 4, minEntriesPerWindow: 4 }
+        },
+        visibleRate: 0.37,
+        foodLoggedDays: 3
+    });
+    assert.equal(message, "No calorie recommendation yet · Add 1 more complete food day in the current 7-day window (3/4 food days) · Provisional pace: +0.37 vs +0.25 lb/week");
 });

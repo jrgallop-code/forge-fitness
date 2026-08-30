@@ -21,7 +21,7 @@ function visibleAssessment(visibleRate, targetRate, tolerance, { provisional = f
     return `${label}: ${formatRate(actual)} vs ${formatRate(target)} lb/week`;
 }
 
-export function buildPendingCalorieCheckMessage({ metrics, visibleRate = null } = {}) {
+export function buildPendingCalorieCheckMessage({ metrics, visibleRate = null, foodLoggedDays = null } = {}) {
     const trend = metrics?.trend || {};
     const phaseDay = finite(trend.phaseDay);
     const checkDay = finite(trend.checkDay);
@@ -29,6 +29,10 @@ export function buildPendingCalorieCheckMessage({ metrics, visibleRate = null } 
     const target = finite(metrics?.targetRateLbPerWeek);
     const tolerance = finite(metrics?.toleranceLbPerWeek);
     const assessment = visibleAssessment(visibleRate, target, tolerance, { provisional: true });
+    const foodDays = finite(foodLoggedDays);
+    const foodMinimum = 4;
+    const completedFoodDays = foodDays === null ? null : Math.max(0, Math.round(foodDays));
+    const missingFoodDays = completedFoodDays === null ? 0 : Math.max(0, foodMinimum - completedFoodDays);
 
     if (phaseDay !== null && phaseDay < 14) {
         return `${assessment ? `${assessment} · ` : ""}First calorie check on Day 14 · currently Day ${Math.round(phaseDay)}`;
@@ -41,8 +45,14 @@ export function buildPendingCalorieCheckMessage({ metrics, visibleRate = null } 
         const missing = [];
         if (previous < minimum) missing.push(`${minimum - previous} more weigh-in${minimum - previous === 1 ? "" : "s"} in the previous 7-day block`);
         if (current < minimum) missing.push(`${minimum - current} more weigh-in${minimum - current === 1 ? "" : "s"} in the current 7-day block`);
-        const progress = `${Math.min(previous, minimum)}/${minimum} previous · ${Math.min(current, minimum)}/${minimum} current`;
+        if (missingFoodDays) missing.push(`${missingFoodDays} more complete food day${missingFoodDays === 1 ? "" : "s"} in the current 7-day window`);
+        const foodProgress = completedFoodDays === null ? "" : ` · ${Math.min(completedFoodDays, foodMinimum)}/${foodMinimum} food days`;
+        const progress = `${Math.min(previous, minimum)}/${minimum} previous weigh-ins · ${Math.min(current, minimum)}/${minimum} current weigh-ins${foodProgress}`;
         return `No calorie recommendation yet · Add ${missing.join(" and ")} (${progress})${assessment ? ` · ${assessment}` : ""}`;
+    }
+
+    if (missingFoodDays) {
+        return `No calorie recommendation yet · Add ${missingFoodDays} more complete food day${missingFoodDays === 1 ? "" : "s"} in the current 7-day window (${Math.min(completedFoodDays, foodMinimum)}/${foodMinimum} food days)${assessment ? ` · ${assessment}` : ""}`;
     }
 
     if (metrics?.status === "AWAITING WEIGH-IN") {
