@@ -1,4 +1,4 @@
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=weekly-stable-tdee-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=shared-live-trend-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getMaintenanceCheckIn, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, queueMaintenanceReview } from "./maintenance-check-in.js?v=weekly-stable-tdee-1";
@@ -108,11 +108,11 @@ function maintenanceCard(estimate, checkIn) {
         ${estimate.status === "learning" || estimate.status === "early" || estimate.status === "preliminary" ? `<div class="calculated-maintenance-progress"><i><b style="width:${progress}%"></b></i><span>Confidence improves with complete logs · ${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</span></div>` : ""}
         <details><summary>How this was calculated <span>›</span></summary><div class="calculated-maintenance-breakdown">
             <div><span>Average intake</span><strong>${Number.isFinite(estimate.averageIntake) ? `${formatNumber(estimate.averageIntake)} cal/day` : "—"}</strong></div>
-            <div><span>${estimate.weightTrendLabel || "Weekly Trend"} used</span><strong>${signedRate}</strong></div>
+            <div><span>Current ${estimate.weightTrendLabel || "Weekly Trend"}</span><strong>${signedRate}</strong></div>
             <div><span>TDEE correction from weight change</span><strong>${correction}</strong></div>
             <div><span>Usable data</span><strong>${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</strong></div>
             ${Number.isFinite(uncapped) && uncapped !== result ? `<div><span>Weekly stability limit</span><strong>${formatNumber(uncapped)} → ${formatNumber(result)} cal/day</strong></div>` : ""}
-            <small>Food intake uses completed days through yesterday. Weight trend uses your latest non-future weigh-in and matches Weight Progress. Level Up reviews the displayed TDEE once every seven days, requires 7 food days and a 14-day weight span, and limits each update to 50 calories while confidence is building or 100 calories at high confidence.</small>
+            <small>Food intake uses completed days through yesterday. The current weight trend uses your latest non-future weigh-in and matches Weight Progress exactly. Level Up holds the displayed TDEE between seven-day reviews, requires 7 food days and a 14-day weight span, and limits each update to 50 calories while confidence is building or 100 calories at high confidence.</small>
         </div></details>
         ${maintenanceCheckInMarkup(checkIn)}
     </article>`;
