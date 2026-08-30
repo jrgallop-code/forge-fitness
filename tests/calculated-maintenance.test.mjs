@@ -134,14 +134,16 @@ test("includes today's latest weigh-in so TDEE matches the current Weight Progre
 });
 
 test("holds the displayed TDEE for seven days even when the live estimate changes", () => {
-    const snapshot = { reviewedAt: "2026-08-29", estimate: { maintenanceCalories: 2400, status: "preliminary" } };
+    const snapshot = { reviewedAt: "2026-08-29", estimate: { maintenanceCalories: 2400, status: "preliminary", weightRateLbPerWeek: 0.37 } };
     const result = stabilizeMaintenanceEstimate({
-        liveEstimate: { maintenanceCalories: 2475, status: "preliminary", foodDays: 8, weighIns: 10, weightSpanDays: 18 },
+        liveEstimate: { maintenanceCalories: 2475, status: "preliminary", foodDays: 8, weighIns: 10, weightSpanDays: 18, weightRateLbPerWeek: 0.21, energyCorrection: -105 },
         snapshot,
         today: new Date("2026-08-30T12:00:00")
     });
     assert.equal(result.estimate.maintenanceCalories, 2400);
     assert.equal(result.estimate.liveMaintenanceCalories, 2475);
+    assert.equal(result.estimate.weightRateLbPerWeek, 0.21);
+    assert.equal(result.estimate.energyCorrection, -105);
     assert.equal(result.estimate.daysUntilReview, 6);
 });
 

@@ -169,6 +169,18 @@ function decorateStableEstimate(snapshot, live, now, reviewDue) {
     const estimate = snapshot.estimate || live;
     return {
         ...estimate,
+        // The weekly snapshot stabilizes the reviewed calorie value only.
+        // Evidence stays live so all cards use the same shared weight trend.
+        averageIntake: live.averageIntake,
+        weightRateLbPerWeek: live.weightRateLbPerWeek,
+        energyCorrection: live.energyCorrection,
+        foodDays: live.foodDays,
+        weighIns: live.weighIns,
+        weightSpanDays: live.weightSpanDays,
+        weightTrendLabel: live.weightTrendLabel,
+        weightTrendEndDate: live.weightTrendEndDate,
+        status: live.status,
+        label: live.label,
         profileEstimate: live.profileEstimate,
         recentFoodDays: live.recentFoodDays,
         recentWeighIns: live.recentWeighIns,
