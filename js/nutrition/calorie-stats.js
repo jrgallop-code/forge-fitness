@@ -1,4 +1,4 @@
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-latest-weighin-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-food-window-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getMaintenanceCheckIn, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, queueMaintenanceReview } from "./maintenance-check-in.js?v=coordinated-weekly-calories-1";

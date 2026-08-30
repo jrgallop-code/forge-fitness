@@ -1,7 +1,7 @@
 import { GOAL_PRESETS, calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile, getNutritionGoal, saveNutritionGoal, getNutritionPlan, syncCalculatedCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getActiveNutritionPhase, getNutritionPhaseHistory, getActivePhaseMetrics, getPhaseDayNumber, saveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-1";
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-latest-weighin-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-food-window-1";
 import { clearPendingMaintenanceReview, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, readPendingMaintenanceReview, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=coordinated-weekly-calories-1";
 import { buildCoordinatedWeeklyUpdate, markPhaseCheckHandled, startAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
 
