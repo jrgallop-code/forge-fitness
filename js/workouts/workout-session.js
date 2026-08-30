@@ -609,7 +609,7 @@ function renderSessionExercises({
                                 <input class="session-cardio-duration" type="number" inputmode="decimal" min="0" step="0.1" value="${state.durationMinutes ?? ""}" placeholder="20">
                             </label>
                             <label>Distance (optional)
-                                <input class="session-cardio-distance" type="text" maxlength="40" value="${escapeHtml(state.distance || "")}" placeholder="4 km or 2.5 mi">
+                                <input class="session-cardio-distance" type="text" maxlength="40" value="${escapeHtml(state.distance || "")}" placeholder="5 km, 3 mi or 1500 m">
                             </label>
                             <label>Effort (RPE)
                                 <input class="session-cardio-rpe" type="number" inputmode="decimal" min="1" max="10" step="0.5" value="${state.rpe ?? ""}" placeholder="1–10">
