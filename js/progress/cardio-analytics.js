@@ -11,7 +11,10 @@ export function parseCardioDistance(value) {
     if (!match) return null;
     const amount = Number(match[1]);
     if (!Number.isFinite(amount) || amount <= 0) return null;
-    const unit = match[2] || distanceUnit();
+    const explicitUnit = match[2];
+    // Cardio machines commonly display whole-number metres. Treat large bare
+    // values as metres so an entry such as "700" cannot become 700 km.
+    const unit = explicitUnit || (amount >= 100 ? "m" : distanceUnit());
     if (/^(mi|mile)/.test(unit)) return amount * 1.609344;
     if (/^(m|meter|metre)/.test(unit) && !/^mi/.test(unit)) return amount / 1000;
     return amount;
@@ -53,14 +56,17 @@ export function collectCardioEntries(sessions, now = new Date(), rangeDays = sel
 export function summarizeCardio(entries) {
     const sessions = new Set(entries.map(entry => entry.sessionId)).size;
     const duration = entries.reduce((total, entry) => total + (entry.duration || 0), 0);
+    const distanceEntries = entries.filter(entry => entry.duration > 0 && entry.distanceKm > 0);
     const distanceKm = entries.reduce((total, entry) => total + (entry.distanceKm || 0), 0);
+    const speedDistanceKm = distanceEntries.reduce((total, entry) => total + entry.distanceKm, 0);
+    const distanceDuration = distanceEntries.reduce((total, entry) => total + entry.duration, 0);
     const loadEntries = entries.filter(entry => Number.isFinite(entry.load));
     const load = loadEntries.reduce((total, entry) => total + entry.load, 0);
     return {
         sessions,
         duration,
         distanceKm,
-        averageSpeedKmh: duration > 0 && distanceKm > 0 ? distanceKm / (duration / 60) : null,
+        averageSpeedKmh: distanceDuration > 0 && speedDistanceKm > 0 ? speedDistanceKm / (distanceDuration / 60) : null,
         load: loadEntries.length ? load : null,
         loadCoverage: loadEntries.length
     };

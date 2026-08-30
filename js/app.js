@@ -1,4 +1,4 @@
-import { navigate } from "./core/router.js?v=tdee-food-window-1";
+import { navigate } from "./core/router.js?v=cardio-distance-fix-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=nutrition-nav-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=cardio-rpe-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
