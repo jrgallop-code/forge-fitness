@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
-import { calculateMaintenanceEstimate } from "../js/nutrition/calculated-maintenance.js";
+import { calculateMaintenanceEstimate, stabilizeMaintenanceEstimate } from "../js/nutrition/calculated-maintenance.js";
 import { calculateDisplayWeightTrend } from "../js/core/weight-trend.js";
 
 function key(offset) {
@@ -131,6 +131,62 @@ test("includes today's latest weigh-in so TDEE matches the current Weight Progre
     assert.equal(result.weightRateLbPerWeek, shared.weeklyChange);
     assert.equal(result.weightTrendEndDate, "2026-08-29");
     assert.equal(result.endDate, "2026-08-28");
+});
+
+test("holds the displayed TDEE for seven days even when the live estimate changes", () => {
+    const snapshot = { reviewedAt: "2026-08-29", estimate: { maintenanceCalories: 2400, status: "preliminary" } };
+    const result = stabilizeMaintenanceEstimate({
+        liveEstimate: { maintenanceCalories: 2475, status: "preliminary", foodDays: 8, weighIns: 10, weightSpanDays: 18 },
+        snapshot,
+        today: new Date("2026-08-30T12:00:00")
+    });
+    assert.equal(result.estimate.maintenanceCalories, 2400);
+    assert.equal(result.estimate.liveMaintenanceCalories, 2475);
+    assert.equal(result.estimate.daysUntilReview, 6);
+});
+
+test("first weekly snapshot preserves the previous day's estimate", () => {
+    const result = stabilizeMaintenanceEstimate({
+        liveEstimate: { maintenanceCalories: 2475, status: "early", foodDays: 3, weighIns: 10, weightSpanDays: 18 },
+        previousEstimate: { maintenanceCalories: 2400, status: "early", foodDays: 3, weighIns: 9, weightSpanDays: 17 },
+        snapshot: null,
+        today: new Date("2026-08-30T12:00:00")
+    });
+    assert.equal(result.estimate.maintenanceCalories, 2400);
+    assert.equal(result.estimate.liveMaintenanceCalories, 2475);
+});
+
+test("limits a building-confidence weekly TDEE update to 50 calories", () => {
+    const snapshot = { reviewedAt: "2026-08-22", estimate: { maintenanceCalories: 2400, status: "preliminary" } };
+    const result = stabilizeMaintenanceEstimate({
+        liveEstimate: { maintenanceCalories: 2525, status: "preliminary", foodDays: 8, weighIns: 10, weightSpanDays: 18 },
+        snapshot,
+        today: new Date("2026-08-30T12:00:00")
+    });
+    assert.equal(result.estimate.maintenanceCalories, 2450);
+    assert.equal(result.snapshot.reviewedAt, "2026-08-30");
+});
+
+test("limits a high-confidence weekly TDEE update to 100 calories", () => {
+    const snapshot = { reviewedAt: "2026-08-22", estimate: { maintenanceCalories: 2400, status: "established" } };
+    const result = stabilizeMaintenanceEstimate({
+        liveEstimate: { maintenanceCalories: 2575, status: "established", foodDays: 18, weighIns: 15, weightSpanDays: 20 },
+        snapshot,
+        today: new Date("2026-08-30T12:00:00")
+    });
+    assert.equal(result.estimate.maintenanceCalories, 2500);
+});
+
+test("waits for seven food days and a fourteen-day weight span before a weekly update", () => {
+    const snapshot = { reviewedAt: "2026-08-20", estimate: { maintenanceCalories: 2400, status: "early" } };
+    const result = stabilizeMaintenanceEstimate({
+        liveEstimate: { maintenanceCalories: 2525, status: "preliminary", foodDays: 6, weighIns: 10, weightSpanDays: 18 },
+        snapshot,
+        today: new Date("2026-08-30T12:00:00")
+    });
+    assert.equal(result.estimate.maintenanceCalories, 2400);
+    assert.equal(result.estimate.weeklyReviewDue, true);
+    assert.equal(result.estimate.weeklyDataReady, false);
 });
 
 test("Goals and Plan distinguishes formula TDEE from the Level Up trend calculation", async () => {

@@ -1,7 +1,7 @@
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-food-days-2";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=weekly-stable-tdee-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
-import { getMaintenanceCheckIn, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, queueMaintenanceReview } from "./maintenance-check-in.js?v=coordinated-weekly-calories-1";
+import { getMaintenanceCheckIn, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, queueMaintenanceReview } from "./maintenance-check-in.js?v=weekly-stable-tdee-1";
 import { getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-phase-1";
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
 
@@ -96,16 +96,23 @@ function maintenanceCard(estimate, checkIn) {
     const signedRate = Number.isFinite(estimate.weightRateLbPerWeek) ? `${estimate.weightRateLbPerWeek > 0 ? "+" : ""}${estimate.weightRateLbPerWeek.toFixed(2)} lb/week` : "Need more weigh-ins";
     const correction = Number.isFinite(estimate.energyCorrection) ? `${estimate.energyCorrection > 0 ? "+" : ""}${formatNumber(estimate.energyCorrection)} cal/day` : "—";
     const progress = Math.min(100, Math.round(Math.min(1, estimate.foodDays / 15) * .55 * 100 + Math.min(1, estimate.weighIns / 9) * .45 * 100));
+    const weeklyStatus = Number.isFinite(result) && estimate.weeklyStable
+        ? estimate.weeklyReviewDue && !estimate.weeklyDataReady
+            ? "Weekly review is due once you have 7 food days and a 14-day weight span."
+            : `Held steady between weekly reviews · next review in ${estimate.daysUntilReview} day${estimate.daysUntilReview === 1 ? "" : "s"}.`
+        : "";
+    const uncapped = Number(estimate.uncappedMaintenanceCalories);
     return `<article class="calorie-stat-card calculated-maintenance-card is-${estimate.status}">
         <div class="calculated-maintenance-head"><span><small>LEVEL UP CALCULATED TDEE</small><strong>${display} <em>cal/day</em></strong></span><b>${estimate.label}</b></div>
-        <p>${source}. ${estimate.message}</p>
+        <p>${source}. ${estimate.message} ${weeklyStatus}</p>
         ${estimate.status === "learning" || estimate.status === "early" || estimate.status === "preliminary" ? `<div class="calculated-maintenance-progress"><i><b style="width:${progress}%"></b></i><span>Confidence improves with complete logs · ${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</span></div>` : ""}
         <details><summary>How this was calculated <span>›</span></summary><div class="calculated-maintenance-breakdown">
             <div><span>Average intake</span><strong>${Number.isFinite(estimate.averageIntake) ? `${formatNumber(estimate.averageIntake)} cal/day` : "—"}</strong></div>
             <div><span>${estimate.weightTrendLabel || "Weekly Trend"} used</span><strong>${signedRate}</strong></div>
             <div><span>TDEE correction from weight change</span><strong>${correction}</strong></div>
             <div><span>Usable data</span><strong>${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</strong></div>
-            <small>Food intake uses completed days through yesterday. Weight trend uses your latest non-future weigh-in and now matches Weight Progress exactly. This correction is part of the TDEE calculation—not a recommendation to change your calorie target by that amount. Level Up rounds TDEE to the nearest 25 calories.</small>
+            ${Number.isFinite(uncapped) && uncapped !== result ? `<div><span>Weekly stability limit</span><strong>${formatNumber(uncapped)} → ${formatNumber(result)} cal/day</strong></div>` : ""}
+            <small>Food intake uses completed days through yesterday. Weight trend uses your latest non-future weigh-in and matches Weight Progress. Level Up reviews the displayed TDEE once every seven days, requires 7 food days and a 14-day weight span, and limits each update to 50 calories while confidence is building or 100 calories at high confidence.</small>
         </div></details>
         ${maintenanceCheckInMarkup(checkIn)}
     </article>`;
@@ -122,7 +129,7 @@ function maintenanceCheckInMarkup(checkIn) {
     return `<section class="maintenance-check-in-alert">
         <span class="eyebrow">WEEKLY CHECK-IN READY</span>
         <h3>Your maintenance estimate changed</h3>
-        <p>${checkIn.mode === "automatic" ? "Automatic updates begin once this estimate reaches high confidence. You can review this early estimate manually now." : "Level Up recalculates daily, but only offers target updates once a week. Nothing changes until you approve it."}</p>
+        <p>${checkIn.mode === "automatic" ? "Automatic updates begin once this estimate reaches high confidence. You can review this early estimate manually now." : "Level Up reviews the displayed estimate once a week. Nothing changes until you approve it."}</p>
         <div class="maintenance-check-in-comparison">
             <span><small>Current maintenance</small><strong>${formatNumber(checkIn.currentMaintenance)} cal</strong></span>
             <i>→</i>

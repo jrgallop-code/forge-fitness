@@ -9,7 +9,7 @@ import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workou
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=right-overflow-arc-1";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=cardio-rpe-1";
-import { renderProgress } from "../progress/progress-ui.js?v=tdee-food-window-1";
+import { renderProgress } from "../progress/progress-ui.js?v=weekly-stable-tdee-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-2";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=cardio-distance-fix-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=current-goal-1";
@@ -18,7 +18,7 @@ import { initializeExerciseProgressV2 } from "../progress/exercise-progress-v2.j
 import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=analytics-summary-polish-1";
 import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.js?v=repair-generic-exercise-1";
 import { initializeMuscleRecoveryMap } from "../progress/muscle-recovery-map.js?v=recovery-traced-1";
-import { initializeCalorieStats } from "../nutrition/calorie-stats.js?v=tdee-food-window-1";
+import { initializeCalorieStats } from "../nutrition/calorie-stats.js?v=weekly-stable-tdee-1";
 import { renderSleepTracker, initializeSleepTracker } from "../progress/sleep-tracker.js?v=sleep-tracker-2";
 import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../progress/measurements-tracker.js?v=measurements-image-1";
 import { initializeMeasurementHistoryDetail } from "../progress/measurements-history-detail.js?v=measurement-history-1";
@@ -27,7 +27,7 @@ import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energ
 import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v=calculated-maintenance-1";
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1";
-import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=tdee-food-window-1";
+import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=weekly-stable-tdee-1";
 import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=granular-units-1";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=cardio-rpe-1";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-2";

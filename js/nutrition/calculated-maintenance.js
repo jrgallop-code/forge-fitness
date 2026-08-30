@@ -2,6 +2,11 @@ import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/wei
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const WEIGHT_KEY = "forge_weight_entries";
+const WEEKLY_ESTIMATE_KEY = "level_up_weekly_tdee_estimate_v1";
+const DAY_MS = 86400000;
+const WEEKLY_REVIEW_DAYS = 7;
+const BUILDING_CONFIDENCE_CAP = 50;
+const HIGH_CONFIDENCE_CAP = 100;
 
 function readJson(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key) || "null") ?? fallback; }
@@ -98,9 +103,81 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], endDa
 }
 
 export function getCalculatedMaintenanceEstimate(profileEstimate = null) {
-    return calculateMaintenanceEstimate({
-        foodLog: readJson(FOOD_LOG_KEY, {}),
-        weights: readJson(WEIGHT_KEY, []),
-        profileEstimate
-    });
+    const foodLog = readJson(FOOD_LOG_KEY, {});
+    const weights = readJson(WEIGHT_KEY, []);
+    const today = new Date();
+    const liveEstimate = calculateMaintenanceEstimate({ foodLog, weights, endDate: today, profileEstimate });
+    const previousDay = new Date(today);
+    previousDay.setDate(previousDay.getDate() - 1);
+    const previousEstimate = calculateMaintenanceEstimate({ foodLog, weights, endDate: previousDay, profileEstimate });
+    const stored = readJson(WEEKLY_ESTIMATE_KEY, null);
+    const stabilized = stabilizeMaintenanceEstimate({ liveEstimate, previousEstimate, snapshot: stored, today });
+    if (stabilized.snapshot) localStorage.setItem(WEEKLY_ESTIMATE_KEY, JSON.stringify(stabilized.snapshot));
+    return stabilized.estimate;
+}
+
+export function stabilizeMaintenanceEstimate({ liveEstimate, previousEstimate = null, snapshot = null, today = new Date() } = {}) {
+    const live = liveEstimate || {};
+    if (!Number.isFinite(Number(live.maintenanceCalories))) {
+        return { estimate: live, snapshot };
+    }
+
+    const now = new Date(today);
+    now.setHours(12, 0, 0, 0);
+    const todayKey = dateKey(now);
+    const validStored = snapshot
+        && Number.isFinite(Number(snapshot?.estimate?.maintenanceCalories))
+        && /^\d{4}-\d{2}-\d{2}$/.test(String(snapshot.reviewedAt || ""));
+
+    if (!validStored) {
+        const seed = Number.isFinite(Number(previousEstimate?.maintenanceCalories)) ? previousEstimate : live;
+        const nextSnapshot = { reviewedAt: todayKey, estimate: { ...seed } };
+        return { estimate: decorateStableEstimate(nextSnapshot, live, now, false), snapshot: nextSnapshot };
+    }
+
+    const reviewedTime = new Date(`${snapshot.reviewedAt}T12:00:00`).getTime();
+    const daysSinceReview = Number.isFinite(reviewedTime) ? Math.floor((now.getTime() - reviewedTime) / DAY_MS) : WEEKLY_REVIEW_DAYS;
+    const due = daysSinceReview >= WEEKLY_REVIEW_DAYS;
+    const enoughWeeklyData = Number(live.foodDays) >= 7
+        && Number(live.weighIns) >= 7
+        && Number(live.weightSpanDays) >= 14;
+
+    if (!due || !enoughWeeklyData) {
+        return { estimate: decorateStableEstimate(snapshot, live, now, due), snapshot };
+    }
+
+    const previousCalories = Number(snapshot.estimate.maintenanceCalories);
+    const liveCalories = Number(live.maintenanceCalories);
+    const maximumStep = live.status === "established" ? HIGH_CONFIDENCE_CAP : BUILDING_CONFIDENCE_CAP;
+    const change = Math.max(-maximumStep, Math.min(maximumStep, liveCalories - previousCalories));
+    const nextCalories = Math.round((previousCalories + change) / 25) * 25;
+    const nextSnapshot = {
+        reviewedAt: todayKey,
+        estimate: {
+            ...live,
+            maintenanceCalories: nextCalories,
+            uncappedMaintenanceCalories: liveCalories
+        }
+    };
+    return { estimate: decorateStableEstimate(nextSnapshot, live, now, false), snapshot: nextSnapshot };
+}
+
+function decorateStableEstimate(snapshot, live, now, reviewDue) {
+    const reviewed = new Date(`${snapshot.reviewedAt}T12:00:00`);
+    const nextReview = new Date(reviewed);
+    nextReview.setDate(nextReview.getDate() + WEEKLY_REVIEW_DAYS);
+    const estimate = snapshot.estimate || live;
+    return {
+        ...estimate,
+        profileEstimate: live.profileEstimate,
+        recentFoodDays: live.recentFoodDays,
+        recentWeighIns: live.recentWeighIns,
+        liveMaintenanceCalories: Number(live.maintenanceCalories),
+        weeklyStable: true,
+        weeklyReviewDue: Boolean(reviewDue),
+        weeklyDataReady: Number(live.foodDays) >= 7 && Number(live.weighIns) >= 7 && Number(live.weightSpanDays) >= 14,
+        lastReviewedAt: snapshot.reviewedAt,
+        nextReviewDate: dateKey(nextReview),
+        daysUntilReview: Math.max(0, Math.ceil((nextReview.getTime() - now.getTime()) / DAY_MS))
+    };
 }

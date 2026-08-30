@@ -1,11 +1,11 @@
-import { navigate } from "./core/router.js?v=weight-history-trend-2";
+import { navigate } from "./core/router.js?v=weekly-stable-tdee-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=nutrition-nav-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=cardio-rpe-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";
 import "./workouts/exercise-guide-resolution-fix.js?v=1";
 import "./workouts/exercise-guide-comprehensive.js?v=comprehensive-form-guides-1";
-import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check-in.js?v=tdee-food-window-1";
+import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check-in.js?v=weekly-stable-tdee-1";
 
 const FILLED_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
 const STROKE_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${paths}</svg>`;
