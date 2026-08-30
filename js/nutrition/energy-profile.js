@@ -21,6 +21,7 @@ import {
 from "./nutrition-storage.js?v=nutrition-dashboard-1";
 
 import {
+    UNIT_KINDS,
     isMetric,
     kilogramsToPounds,
     poundsToKilograms,
@@ -28,7 +29,7 @@ import {
     inchesToCentimeters,
     massUnit
 }
-from "../core/unit-system.js?v=unit-system-1";
+from "../core/unit-system.js?v=granular-units-1";
 
 
 const GOAL_WEIGHT_STORAGE_KEY =
@@ -114,15 +115,15 @@ export function renderEnergyProfile() {
                     </select>
 
                     <label>Height</label>
-                    ${isMetric()
-                        ? `<input id="nutrition-height-cm" type="number" min="90" max="250" step="0.1" placeholder="Centimetres">`
+                    ${isMetric(UNIT_KINDS.LENGTH)
+                        ? `<input id="nutrition-height-cm" data-unit-input-ignore type="number" min="90" max="250" step="0.1" placeholder="Centimetres">`
                         : `<div class="nutrition-height-grid">
-                            <input id="nutrition-height-feet" type="number" min="3" max="8" step="1" placeholder="Feet">
-                            <input id="nutrition-height-inches" type="number" min="0" max="11" step="1" placeholder="Inches">
+                            <input id="nutrition-height-feet" data-unit-input-ignore type="number" min="3" max="8" step="1" placeholder="Feet">
+                            <input id="nutrition-height-inches" data-unit-input-ignore type="number" min="0" max="11" step="1" placeholder="Inches">
                         </div>`}
 
-                    <label for="nutrition-weight">Current Weight (${massUnit()})</label>
-                    <input id="nutrition-weight" type="number" min="1" step="0.1" placeholder="Weight">
+                    <label for="nutrition-weight">Current Weight (${massUnit(UNIT_KINDS.BODY_WEIGHT)})</label>
+                    <input id="nutrition-weight" data-unit-input-ignore type="number" min="1" step="0.1" placeholder="Weight">
 
                     <label for="nutrition-activity">Activity Level</label>
                     <select id="nutrition-activity">
@@ -572,10 +573,8 @@ function readProfileFromForm() {
     let weightLb;
     let weightKg;
 
-    if (isMetric()) {
+    if (isMetric(UNIT_KINDS.LENGTH)) {
         heightCm = Number(document.getElementById("nutrition-height-cm")?.value);
-        weightKg = enteredWeight;
-        weightLb = kilogramsToPounds(weightKg);
         const totalInches = centimetersToInches(heightCm);
         heightFeet = Math.floor(totalInches / 12);
         heightInches = Number((totalInches - heightFeet * 12).toFixed(2));
@@ -583,8 +582,13 @@ function readProfileFromForm() {
     else {
         heightFeet = Number(document.getElementById("nutrition-height-feet")?.value);
         heightInches = Number(document.getElementById("nutrition-height-inches")?.value);
-        weightLb = enteredWeight;
         heightCm = inchesToCentimeters(heightFeet * 12 + heightInches);
+    }
+    if (isMetric(UNIT_KINDS.BODY_WEIGHT)) {
+        weightKg = enteredWeight;
+        weightLb = kilogramsToPounds(weightKg);
+    } else {
+        weightLb = enteredWeight;
         weightKg = poundsToKilograms(weightLb);
     }
 
@@ -609,9 +613,8 @@ function populateProfile(profile) {
     setValue("nutrition-age", profile.age);
     setValue("nutrition-sex", profile.sex);
 
-    if (isMetric()) {
+    if (isMetric(UNIT_KINDS.LENGTH)) {
         setValue("nutrition-height-cm", Number(heightCm.toFixed(1)));
-        setValue("nutrition-weight", Number(poundsToKilograms(weightLb).toFixed(1)));
     }
     else {
         const totalInches = centimetersToInches(heightCm);
@@ -619,8 +622,10 @@ function populateProfile(profile) {
         const inches = Number.isFinite(Number(profile.heightInches)) ? Number(profile.heightInches) : Number((totalInches - feet * 12).toFixed(1));
         setValue("nutrition-height-feet", feet);
         setValue("nutrition-height-inches", inches);
-        setValue("nutrition-weight", Number(weightLb.toFixed(1)));
     }
+    setValue("nutrition-weight", isMetric(UNIT_KINDS.BODY_WEIGHT)
+        ? Number(poundsToKilograms(weightLb).toFixed(1))
+        : Number(weightLb.toFixed(1)));
 
     setValue("nutrition-activity", profile.activity);
 }

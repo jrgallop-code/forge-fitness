@@ -1,4 +1,4 @@
-import { distanceUnit, isMetric } from "../core/unit-system.js?v=unit-system-1";
+import { UNIT_KINDS, distanceUnit, isMetric } from "../core/unit-system.js?v=granular-units-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const DAY_MS = 86400000;
@@ -179,8 +179,8 @@ function startOfWeek(value) { const date = new Date(value); date.setHours(0, 0, 
 function dateKey(date) { return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`; }
 function titleFromId(id) { return String(id || "").split("-").filter(Boolean).map(word => word[0]?.toUpperCase() + word.slice(1)).join(" "); }
 function formatMinutes(value) { const rounded = Math.round(Number(value) || 0); if (rounded < 60) return `${rounded} min`; const hours = Math.floor(rounded / 60); const minutes = rounded % 60; return minutes ? `${hours}h ${minutes}m` : `${hours}h`; }
-function displayKm(value) { return isMetric() ? value : value / 1.609344; }
+function displayKm(value) { return isMetric(UNIT_KINDS.DISTANCE) ? value : value / 1.609344; }
 function formatDistance(value) { return `${displayKm(Number(value) || 0).toFixed(value >= 10 ? 1 : 2)} ${distanceUnit()}`; }
-function formatSpeed(value) { if (!Number.isFinite(value)) return "—"; const display = isMetric() ? value : value / 1.609344; return `${display.toFixed(1)} ${distanceUnit()}/h`; }
+function formatSpeed(value) { if (!Number.isFinite(value)) return "—"; const display = isMetric(UNIT_KINDS.DISTANCE) ? value : value / 1.609344; return `${display.toFixed(1)} ${distanceUnit()}/h`; }
 function setText(root, selector, value) { const element = root.querySelector(selector); if (element) element.textContent = value; }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character])); }
