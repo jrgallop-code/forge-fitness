@@ -1,5 +1,6 @@
 import { SWISS_CHALET_FOODS } from "./data/swiss-chalet-foods.js";
 import { PUR_SIMPLE_FOODS } from "./data/pur-simple-foods.js";
+import { NORTH_AMERICAN_CHAIN_FOODS } from "./data/north-american-chain-foods.js";
 
 const MAX_BACKUP_BYTES = 8 * 1024 * 1024;
 const SESSION_DAYS = 30;
@@ -918,6 +919,12 @@ const USDA_BRAND_SEARCHES = [
     { name: "McDonald's", usdaQuery: "McDonald's", aliases: ["mcdonald", "mcdonalds", "mcdonald's"] },
     { name: "Swiss Chalet", usdaQuery: "Swiss Chalet", aliases: ["swiss chalet", "swisschalet"] },
     { name: "Pür & Simple", usdaQuery: "Pür & Simple", aliases: ["pür & simple", "pur & simple", "pür simple", "pur simple", "pursimple"] },
+    ...NORTH_AMERICAN_CHAIN_FOODS.reduce((brands, food) => {
+        if (brands.some(brand => brand.name === food.brand)) return brands;
+        const normalized = food.brand.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+        brands.push({ name: food.brand, usdaQuery: food.brand, aliases: [normalized, normalized.replace(/ /g, "")] });
+        return brands;
+    }, []),
     { name: "Built", usdaQuery: "Built Bar", aliases: ["built bar", "built puff"] }
 ];
 
@@ -1116,10 +1123,15 @@ const BUNDLED_VERIFIED_FOODS = [
         sourceName: "Pür & Simple Canada",
         sourceUrl: "https://pursimple.com/wp-content/uploads/2026/02/PS-Nutrition-Guide-English-2026-1.pdf",
         verifiedAt: "2026-08-30"
+    })),
+    ...NORTH_AMERICAN_CHAIN_FOODS.map(food => bundledVerifiedFood({
+        ...food,
+        category: "Restaurant food",
+        verifiedAt: "2026-08-30"
     }))
 ];
 
-function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, barcode = "", barcodeAliases = [], label, grams, calories, protein, carbs, fat, fiber = 0, category = "", sourceName = "", sourceUrl, verifiedAt = "2026-08-27" }) {
+function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, barcode = "", barcodeAliases = [], label, grams, calories, protein, carbs, fat, fiber = 0, category = "", countryCode = "CA", sourceName = "", sourceUrl, verifiedAt = "2026-08-27" }) {
     const nutrition = { calories, protein, carbs, fat, fiber };
     const portions = [{ label: foodServingLabel(label, grams), ...(grams ? { grams } : {}), nutrition }];
     if (grams && Math.abs(grams - 100) > .01) {
@@ -1136,7 +1148,7 @@ function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, b
         barcodeAliases: barcodeAliases.map(normalizeBarcode).filter(Boolean),
         dataType: "Level Up Verified",
         category: category || (brand === "Grenade" ? "Protein bar" : "Restaurant food"),
-        countryCode: "CA",
+        countryCode,
         provenance: { sourceName: sourceName || (brand === "Grenade" ? "Grenade" : "McDonald's Canada"), sourceUrl, verifiedAt },
         detailsLoaded: true,
         portions: addUsefulGramPortions(portions)

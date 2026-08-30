@@ -401,6 +401,36 @@ test("Pür & Simple migration stores only the official Avocado Lox calories", as
     assert.match(migration, /PS-Nutrition-Guide-English-2026-1\.pdf/);
 });
 
+test("top North American restaurant catalogue uses official sources and skips existing McDonald's duplicates", () => {
+    const starbucks = searchBundledVerifiedFoods("Starbucks caramel macchiato")[0];
+    const subway = searchBundledVerifiedFoods("Subway 6 inch meatball marinara")[0];
+    const panda = searchBundledVerifiedFoods("Panda Express orange chicken")[0];
+    const dairyQueen = searchBundledVerifiedFoods("Dairy Queen chicken strip basket")[0];
+
+    assert.deepEqual(starbucks.portions[0].nutrition, { calories: 250, protein: 10, carbs: 35, fat: 7, fiber: 0 });
+    assert.deepEqual(subway.portions[0].nutrition, { calories: 570, protein: 27, carbs: 53, fat: 28, fiber: 4 });
+    assert.deepEqual(panda.portions[0].nutrition, { calories: 510, protein: 16, carbs: 53, fat: 24, fiber: 2 });
+    assert.deepEqual(dairyQueen.portions[0].nutrition, { calories: 1020, protein: 35, carbs: 111, fat: 48, fiber: 6 });
+    assert.equal(starbucks.countryCode, "US");
+    assert.match(starbucks.provenance.sourceName, /official nutrition/);
+    assert.match(starbucks.provenance.sourceUrl, /^https:\/\//);
+    assert.equal(starbucks.provenance.verifiedAt, "2026-08-30");
+    assert.equal(searchBundledVerifiedFoods("McDonald's Big Mac").length, 1);
+});
+
+test("all 20 ranked chains have verified catalogue coverage without calorie ranges", () => {
+    const expectedBrands = [
+        "McDonald's", "Starbucks", "Chick-fil-A", "Taco Bell", "Dunkin'", "Wendy's", "Chipotle",
+        "Burger King", "Domino's", "Subway", "Panda Express", "Panera Bread", "Texas Roadhouse",
+        "Popeyes", "Chili's", "Raising Cane's", "Olive Garden", "SONIC", "Pizza Hut", "Dairy Queen"
+    ];
+    expectedBrands.forEach(brand => {
+        const foods = searchBundledVerifiedFoods(brand);
+        assert.ok(foods.length >= 1, `${brand} should have verified catalogue coverage`);
+        foods.forEach(food => assert.ok(Number.isFinite(food.portions[0].nutrition.calories)));
+    });
+});
+
 test("Canadian and US Grenade barcodes resolve to regional variants of one product family", () => {
     const canadian = findBundledVerifiedFoodByBarcode("847534004261");
     const us = findBundledVerifiedFoodByBarcode("847534004063");
