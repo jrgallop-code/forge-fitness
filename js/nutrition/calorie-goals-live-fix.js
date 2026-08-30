@@ -5,7 +5,7 @@ import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phas
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
 import "./phase-rate-display.js?v=nutrition-display-regression-1";
 import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";
-import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=calorie-check-feedback-1";
+import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=pending-calorie-target-1";
 
 const FULL_GAP_INCREMENT = 50;
 const FIRST_STEP_INCREMENT = 25;
@@ -192,7 +192,7 @@ function refreshCalorieSuggestionCards() {
             card = document.createElement("div");
             card.dataset.phaseCalorieSuggestion = "1";
             card.className = "phase-calorie-suggestion-card";
-            card.innerHTML = "<span>Suggested Calories</span><strong></strong><small></small>";
+            card.innerHTML = "<span>Current Calorie Target</span><strong></strong><small></small>";
             phaseGrid.appendChild(card);
         }
         const currentCaloriesCell = [...phaseGrid.children].find(cell => cell.querySelector("span")?.textContent?.trim() === "Current Calories");
@@ -209,7 +209,7 @@ function refreshCalorieSuggestionCards() {
             card = document.createElement("div");
             card.id = "weight-calorie-suggestion-card";
             card.className = "metric-card weight-calorie-suggestion-card";
-            card.innerHTML = `<div><h3>Suggested Calories</h3><p id="weight-calorie-suggestion"></p><small id="weight-calorie-suggestion-total"></small></div>`;
+            card.innerHTML = `<div><h3>Current Calorie Target</h3><p id="weight-calorie-suggestion"></p><small id="weight-calorie-suggestion-total"></small></div>`;
             summary.appendChild(card);
         }
         if (!authorityOwnsCopy) {
