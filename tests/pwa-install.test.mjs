@@ -34,6 +34,13 @@ test("service worker registers offline lifecycle and notification handlers", () 
     assert.match(source, /url\.origin !== self\.location\.origin/);
 });
 
+test("an installed app reloads once when a new service worker takes control", () => {
+    const app = readFileSync("js/app.js", "utf8");
+    assert.match(app, /navigator\.serviceWorker\.controller/);
+    assert.match(app, /controllerchange/);
+    assert.match(app, /window\.location\.reload\(\)/);
+});
+
 test("manifest supplies installable, maskable, and Apple icon assets", () => {
     const requiredIcons = [
         ["assets/icons/icon-192.png", 192, "any"],
