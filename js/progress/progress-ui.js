@@ -1,4 +1,4 @@
-import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=progress-cardio-1";
+import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=tdee-latest-weighin-1";
 
 export function renderProgress() {
 

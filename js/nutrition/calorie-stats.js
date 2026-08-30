@@ -1,4 +1,4 @@
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-shared-trend-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=tdee-latest-weighin-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getMaintenanceCheckIn, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, queueMaintenanceReview } from "./maintenance-check-in.js?v=coordinated-weekly-calories-1";
@@ -105,7 +105,7 @@ function maintenanceCard(estimate, checkIn) {
             <div><span>${estimate.weightTrendLabel || "Weekly Trend"} used</span><strong>${signedRate}</strong></div>
             <div><span>TDEE correction from weight change</span><strong>${correction}</strong></div>
             <div><span>Usable data</span><strong>${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</strong></div>
-            <small>The 21-day food and weight window ends yesterday. This correction is part of the TDEE calculation—not a recommendation to change your calorie target by that amount. It uses the same weight-trend engine as Weight Progress. Level Up rounds TDEE to the nearest 25 calories.</small>
+            <small>Food intake uses completed days through yesterday. Weight trend uses your latest non-future weigh-in and now matches Weight Progress exactly. This correction is part of the TDEE calculation—not a recommendation to change your calorie target by that amount. Level Up rounds TDEE to the nearest 25 calories.</small>
         </div></details>
         ${maintenanceCheckInMarkup(checkIn)}
     </article>`;
