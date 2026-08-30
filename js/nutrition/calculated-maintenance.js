@@ -1,7 +1,6 @@
 import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=tdee-shared-trend-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
-const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
 const WEIGHT_KEY = "forge_weight_entries";
 
 function readJson(key, fallback) {
@@ -34,7 +33,7 @@ function sharedWeightTrend(weights, endKey) {
     };
 }
 
-export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], completedDays = {}, endDate = new Date(), profileEstimate = null } = {}) {
+export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], endDate = new Date(), profileEstimate = null } = {}) {
     const asOf = new Date(endDate);
     asOf.setHours(12, 0, 0, 0);
     const asOfKey = dateKey(asOf);
@@ -46,12 +45,10 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], compl
         return dateKey(day);
     });
     const loggedDates = dates.filter(key => Array.isArray(foodLog?.[key]) && foodLog[key].length > 0);
-    const completedLoggedDates = loggedDates.filter(key => completedDays?.[key] === true);
-    // Old completion flags can outlive the corresponding food entries after a
-    // restore or cloud merge. Only enable strict completion filtering when a
-    // completion flag actually matches food in the active 21-day window.
-    const hasCompletionHistory = completedLoggedDates.length > 0;
-    const usableDates = hasCompletionHistory ? completedLoggedDates : loggedDates;
+    // Every non-empty log through yesterday is a completed intake day for this
+    // estimate. Legacy completion flags are intentionally ignored because they
+    // are not written consistently across food-log entry points and cloud restores.
+    const usableDates = loggedDates;
     const intakeValues = usableDates.map(key => caloriesFor(foodLog[key])).filter(value => value > 0);
     const averageIntake = intakeValues.length ? intakeValues.reduce((sum, value) => sum + value, 0) / intakeValues.length : null;
     // Food stops at yesterday so an unfinished current day cannot depress intake.
@@ -61,7 +58,7 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], compl
     const trend = sharedWeightTrend(eligibleWeights, weightTrendEndDate);
     const enoughEarly = intakeValues.length >= 2 && trend.count >= 3 && trend.spanDays >= 5;
     const enoughPreliminary = intakeValues.length >= 7 && trend.count >= 6 && trend.spanDays >= 10;
-    const enoughEstablished = hasCompletionHistory && intakeValues.length >= 15 && trend.count >= 9 && trend.spanDays >= 17;
+    const enoughEstablished = intakeValues.length >= 15 && trend.count >= 9 && trend.spanDays >= 17;
     const correction = Number.isFinite(trend.rate) ? trend.rate * 500 : null;
     const raw = Number.isFinite(averageIntake) && Number.isFinite(correction) ? averageIntake - correction : null;
     const maintenanceCalories = enoughEarly && Number.isFinite(raw)
@@ -85,7 +82,6 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], compl
         weightTrendEndDate,
         recentFoodDays,
         recentWeighIns,
-        hasCompletionHistory,
         status,
         label,
         windowDays: 21,
@@ -105,7 +101,6 @@ export function getCalculatedMaintenanceEstimate(profileEstimate = null) {
     return calculateMaintenanceEstimate({
         foodLog: readJson(FOOD_LOG_KEY, {}),
         weights: readJson(WEIGHT_KEY, []),
-        completedDays: readJson(FOOD_COMPLETE_KEY, {}),
         profileEstimate
     });
 }
