@@ -35,6 +35,7 @@ import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-6
 import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-drive-backup-3";
 import { getCurrentGoal } from "./current-goal.js?v=current-goal-1";
 import { renderAdminAnalytics, initializeAdminAnalytics } from "../analytics/admin-analytics.js?v=halifax-local-day-1";
+import { showSatisfactionSurveyIfEligible } from "../feedback/satisfaction-survey.js?v=satisfaction-survey-1";
 
 getCurrentGoal();
 
@@ -50,6 +51,7 @@ export function navigate(page) {
                 safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
                 safeInitialize("Backup manager", initializeBackupManager);
                 safeInitialize("Google Drive sync", initializeGoogleDriveSync);
+                safeInitialize("Satisfaction survey", () => showSatisfactionSurveyIfEligible(content));
                 break;
             case "workout":
                 content.innerHTML = renderWorkoutBuilder(); decorateWorkoutTitle(content); safeInitialize("Workout builder", initializeWorkoutBuilder); safeInitialize("Smart Build", () => initializeSmartBuild(content)); safeInitialize("Routine importer", () => initializeRoutineImporter(content)); safeInitialize("Smart Build superset guard", () => initializeSmartBuildSupersetGuard(content)); safeInitialize("One-off workout", initializeOneOffWorkout); bindManualBuildLauncher(content); safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content)); safeInitialize("Workout catalogue", () => initializeWorkoutCatalogue(content)); break;
@@ -71,6 +73,7 @@ export function navigate(page) {
             default:
                 content.innerHTML = renderDashboardWithPerformance(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Workout performance", initializeWorkoutPerformance);
                 safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
+                safeInitialize("Satisfaction survey", () => showSatisfactionSurveyIfEligible(content));
         }
     } catch (error) {
         console.error(`Route ${page} failed while rendering:`, error);

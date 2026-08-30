@@ -56,6 +56,13 @@ async function handleRequest(request, env, ctx) {
     if (url.pathname === "/v1/admin/analytics" && request.method === "GET") {
         return getAdminAnalytics(user, url, request, env);
     }
+    if (url.pathname === "/v1/feedback/status" && request.method === "GET") {
+        return getSatisfactionFeedbackStatus(user.id, request, env);
+    }
+    if (url.pathname === "/v1/feedback" && request.method === "POST") {
+        const body = await readJson(request, 8 * 1024);
+        return recordSatisfactionFeedback(user.id, body, request, env);
+    }
     if (url.pathname === "/v1/foods/search" && request.method === "GET") {
         return searchUsdaFoods(url, request, env, ctx);
     }
@@ -1429,6 +1436,47 @@ function validIso(value) {
     return new Date(value).toISOString();
 }
 
+async function getSatisfactionFeedbackStatus(userId, request, env) {
+    const yearAgo = new Date(Date.now() - 365 * 86400000).toISOString();
+    const status = await env.DB.prepare(`SELECT
+        MAX(created_at) AS last_submitted_at,
+        SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS submissions_last_year
+        FROM satisfaction_feedback WHERE user_id = ?`).bind(yearAgo, userId).first();
+    return json({
+        lastSubmittedAt: status?.last_submitted_at || null,
+        submissionsLastYear: Number(status?.submissions_last_year || 0)
+    }, 200, request, env);
+}
+
+async function recordSatisfactionFeedback(userId, body, request, env) {
+    const rating = Number(body?.rating);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        return json({ error: "Choose a rating from 1 to 5." }, 400, request, env);
+    }
+    const triggers = new Set(["workout_milestone", "food_log_milestone", "active_day_milestone"]);
+    const triggerName = triggers.has(body?.trigger) ? body.trigger : null;
+    if (!triggerName) return json({ error: "Survey trigger is not valid." }, 400, request, env);
+    const comment = limitedText(body?.comment, 1000);
+    const appVersion = limitedText(body?.appVersion, 80);
+    const now = new Date().toISOString();
+    const yearAgo = new Date(Date.now() - 365 * 86400000).toISOString();
+    const prior = await env.DB.prepare(`SELECT
+        MAX(created_at) AS last_submitted_at,
+        SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS submissions_last_year
+        FROM satisfaction_feedback WHERE user_id = ?`).bind(yearAgo, userId).first();
+    if (Number(prior?.submissions_last_year || 0) >= 3) {
+        return json({ error: "Thank you. You have already shared enough feedback this year." }, 429, request, env);
+    }
+    if (prior?.last_submitted_at && Date.now() - Date.parse(prior.last_submitted_at) < 30 * 86400000) {
+        return json({ error: "Your recent feedback has already been received." }, 429, request, env);
+    }
+    await env.DB.prepare(`INSERT INTO satisfaction_feedback
+        (id, user_id, rating, comment, trigger_name, app_version, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`)
+        .bind(crypto.randomUUID(), userId, rating, comment, triggerName, appVersion, now).run();
+    return json({ ok: true, submittedAt: now }, 201, request, env);
+}
+
 async function recordActivity(userId, request, env) {
     const now = new Date().toISOString();
     const day = localDateKey(now, analyticsTimeZone(env));
@@ -1531,7 +1579,7 @@ async function getAdminAnalytics(user, url, request, env) {
     const activeSince = new Date(Date.now() - 7 * 86400000).toISOString();
     const timeZone = analyticsTimeZone(env);
     const today = localDayBounds(Date.now(), timeZone);
-    const [totals, usageSummary, acquisition, people] = await Promise.all([
+    const [totals, usageSummary, acquisition, people, feedbackSummary, feedback] = await Promise.all([
         env.DB.prepare(`SELECT
             (SELECT COUNT(*) FROM users) AS total_users,
             (SELECT COUNT(*) FROM users WHERE created_at >= ?) AS new_users,
@@ -1574,7 +1622,18 @@ async function getAdminAnalytics(user, url, request, env) {
                 OR EXISTS (SELECT 1 FROM usage_events ue WHERE ue.user_id = u.id AND ue.occurred_at >= ?)
                 OR EXISTS (SELECT 1 FROM product_events pe WHERE pe.user_id = u.id AND pe.occurred_at >= ?)
             ORDER BY u.last_active_at DESC, u.created_at DESC
-            LIMIT 100`).bind(since, since, since, since, since, since).all()
+            LIMIT 100`).bind(since, since, since, since, since, since).all(),
+        env.DB.prepare(`SELECT COUNT(*) AS responses, ROUND(AVG(rating), 2) AS average_rating,
+            SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) AS rating_1,
+            SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) AS rating_2,
+            SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) AS rating_3,
+            SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) AS rating_4,
+            SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) AS rating_5
+            FROM satisfaction_feedback WHERE created_at >= ?`).bind(since).first(),
+        env.DB.prepare(`SELECT sf.id, sf.rating, sf.comment, sf.trigger_name, sf.app_version, sf.created_at,
+                u.display_name, u.email
+            FROM satisfaction_feedback sf JOIN users u ON u.id = sf.user_id
+            WHERE sf.created_at >= ? ORDER BY sf.created_at DESC LIMIT 100`).bind(since).all()
     ]);
     const localTotals = { ...(totals || {}), repeat_users: usageSummary.repeatUsers };
     return json({
@@ -1586,7 +1645,9 @@ async function getAdminAnalytics(user, url, request, env) {
         totals: localTotals,
         daily: usageSummary.daily,
         acquisition: acquisition?.results || [],
-        people: people?.results || []
+        people: people?.results || [],
+        feedbackSummary: feedbackSummary || {},
+        feedback: feedback?.results || []
     }, 200, request, env);
 }
 
