@@ -7,6 +7,7 @@ import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";
 import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
 import { markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
+import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=calorie-check-feedback-1";
 
 const FIRST_CHECK_DAY = 14;
 const FULL_GAP_INCREMENT = 50;
@@ -272,12 +273,13 @@ function syncSuggestedCalories(metrics, phase) {
     const target = Number(metrics.targetRateLbPerWeek);
     const actual = Number(metrics.actualRateLbPerWeek);
     const hold = getHold(phase, currentCalories);
+    const visibleRate = getVisibleTrend(metrics)?.weeklyChange;
 
     if (hold) {
         primary = `${Math.round(currentCalories)} kcal/day`;
         secondary = `Adjustment applied · reassess in ${hold.daysRemaining} day${hold.daysRemaining === 1 ? "" : "s"}`;
     } else if (metrics.status === "AWAITING WEIGH-IN") {
-        secondary = `Awaiting a new weigh-in for the Day ${Number.isFinite(checkDay) ? checkDay : FIRST_CHECK_DAY} assessment`;
+        secondary = buildPendingCalorieCheckMessage({ metrics, visibleRate });
     } else if (metrics.status === "PRELIMINARY TREND") {
         secondary = `${calorieBaselineCopy(baseline)} · first calorie decision on Day ${FIRST_CHECK_DAY}`;
     } else if (metrics.status === "BUILDING TREND") {
@@ -291,7 +293,7 @@ function syncSuggestedCalories(metrics, phase) {
         primary = `${recommendation.targetCalories} kcal/day`;
         secondary = `Based on ${Math.round(baseline.calories)} kcal ${calorieBaselineCopy(baseline)} · ${formatSignedCalories(recommendation.adjustment)} kcal/day`;
     } else {
-        secondary = "Weekly check is not ready yet";
+        secondary = buildPendingCalorieCheckMessage({ metrics, visibleRate });
     }
 
     const nutritionCard = document.querySelector("#nutrition-current-phase [data-phase-calorie-suggestion]");

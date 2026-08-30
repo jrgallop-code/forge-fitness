@@ -4,6 +4,8 @@ import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-go
 import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-live-weighin-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
 import "./phase-rate-display.js?v=nutrition-display-regression-1";
+import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";
+import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=calorie-check-feedback-1";
 
 const FULL_GAP_INCREMENT = 50;
 const FIRST_STEP_INCREMENT = 25;
@@ -132,6 +134,11 @@ function getCalorieSuggestion() {
     if (!phase) return { primary: "No active phase", secondary: "" };
     const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
     const metrics = getActivePhaseMetrics(phase, { rolling: true });
+    let visibleRate = null;
+    try {
+        const weights = normalizeWeightEntries(JSON.parse(localStorage.getItem(WEIGHT_KEY) || "[]"));
+        visibleRate = calculateDisplayWeightTrend(weights, { endDate: weights.at(-1)?.date || null }).weeklyChange;
+    } catch {}
     if (!Number.isFinite(currentCalories)) return { primary: "No calorie target", secondary: "" };
 
     const hold = getReassessmentHold(phase, currentCalories);
@@ -148,14 +155,9 @@ function getCalorieSuggestion() {
         };
     }
     if (metrics.status === "AWAITING WEIGH-IN") {
-        const checkDay = Number(metrics.trend?.checkDay);
-        const hasCheckDay = Number.isFinite(checkDay) && checkDay > 0;
-        const pendingCheckDay = hasCheckDay && getHandledCheck(phase, checkDay)
-            ? (metrics.trend?.nextCheckDay || checkDay + 7)
-            : (metrics.trend?.checkDay || metrics.trend?.nextCheckDay || "--");
-        return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: `Awaiting a new weigh-in for the Day ${pendingCheckDay} assessment` };
+        return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: buildPendingCalorieCheckMessage({ metrics, visibleRate }) };
     }
-    if (!metrics.recommendationReady) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Weekly check is not ready yet" };
+    if (!metrics.recommendationReady) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: buildPendingCalorieCheckMessage({ metrics, visibleRate }) };
 
     const checkDay = Number(metrics.trend?.checkDay);
     if (getHandledCheck(phase, checkDay)) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: `Day ${checkDay} check handled · next check Day ${metrics.trend?.nextCheckDay || checkDay + 7}` };
