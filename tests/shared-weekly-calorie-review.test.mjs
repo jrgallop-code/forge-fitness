@@ -82,4 +82,7 @@ test("the latest applied review can be safely replayed without changing logs", (
     assert.match(goals, /clearAdjustmentHold\(\)/);
     assert.match(goals, /clearHandledReviewForPhase\(phase\)/);
     assert.match(goals, /Restored \$\{previousTarget\} kcal\/day and reopened the weekly review/);
+    assert.match(goals, /getReplaySnapshot\(phase\)/);
+    assert.match(goals, /latest saved adjustment/);
+    assert.match(goals, /item\.newCalories/);
 });
