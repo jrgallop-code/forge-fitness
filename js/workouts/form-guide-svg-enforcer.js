@@ -1,4 +1,4 @@
-import "./exercise-guide-videos.js?v=form-videos-1";
+import "./exercise-guide-videos.js?v=form-videos-2";
 import {
     getFormGuideMuscleVisual,
     renderFormGuideMuscleSvg
