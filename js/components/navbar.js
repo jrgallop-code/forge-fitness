@@ -1,5 +1,5 @@
 import { navigate } from "../core/router.js?v=progress-nav-stability-2";
-import { renderStableProgressRoute } from "../core/progress-route-stable.js?v=progress-route-stable-1";
+import { renderStableProgressRoute } from "../core/progress-route-stable.js?v=progress-route-stable-2";
 
 export function renderNavbar() {
     return `
@@ -83,8 +83,6 @@ export function initializeNavbar() {
         return true;
     };
 
-    // Touch/pen fallback only. Mouse/desktop activation stays on the standard
-    // click path so pointerup cannot pre-empt a normal click.
     nav.addEventListener("pointerup", event => {
         if (event.pointerType === "mouse") return;
         const button = event.target.closest?.('.nav-btn[data-page="progress"]');
@@ -103,7 +101,6 @@ export function initializeNavbar() {
         if (!page) return;
 
         event.preventDefault();
-
         if (page === "progress" && performance.now() - progressPointerHandledAt < 700) return;
         activateAndNavigate(button);
     });
