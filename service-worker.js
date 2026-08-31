@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-08-31-45";
+const CACHE_VERSION = "2026-08-31-46";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -120,6 +120,28 @@ self.addEventListener("activate", event => {
                 .map(name => caches.delete(name))
         );
         await self.clients.claim();
+
+        // Installed PWAs can stay alive in the app switcher without performing
+        // a new navigation. Refresh a visible client once when a new worker
+        // takes control so it cannot keep rendering the previous app bundle.
+        const windows = await self.clients.matchAll({
+            type: "window",
+            includeUncontrolled: true
+        });
+        await Promise.all(windows.map(async client => {
+            client.postMessage({
+                type: "levelup:build-activated",
+                version: CACHE_VERSION
+            });
+
+            if (client.visibilityState !== "visible" || typeof client.navigate !== "function") return;
+            try {
+                await client.navigate(client.url);
+            }
+            catch (_) {
+                // app.js handles controller and message based refresh fallback.
+            }
+        }));
     })());
 });
 
