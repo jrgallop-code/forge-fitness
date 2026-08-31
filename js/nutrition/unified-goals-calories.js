@@ -275,10 +275,31 @@ function refreshReplayControl() {
     const button = document.getElementById("unified-replay-review");
     if (!button) return;
     const phase = getActiveNutritionPhase();
-    const currentCalories = Number(phase?.currentCalories ?? phase?.startCalories);
+    button.hidden = !getReplaySnapshot(phase);
+}
+
+function getReplaySnapshot(phase) {
+    if (!phase) return null;
+    const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
     const hold = readAdjustmentHold({ phase, currentCalories });
-    button.hidden = !(Number.isFinite(Number(hold?.previousTarget))
-        && Number.isFinite(Number(hold?.previousMaintenance)));
+    const holdTarget = Number(hold?.previousTarget);
+    const holdMaintenance = Number(hold?.previousMaintenance);
+    if (Number.isFinite(holdTarget) && Number.isFinite(holdMaintenance)) {
+        return { previousTarget: holdTarget, previousMaintenance: holdMaintenance };
+    }
+
+    // Cloud restore or an interrupted refresh can lose the temporary hold while
+    // the durable phase adjustment remains. Recover the replay point from the
+    // latest saved adjustment so the test control does not disappear.
+    const adjustments = Array.isArray(phase.adjustments) ? [...phase.adjustments].reverse() : [];
+    const latest = adjustments.find(item => Number.isFinite(Number(item?.previousCalories))
+        && Number.isFinite(Number(item?.newCalories))
+        && Math.round(Number(item.newCalories)) === Math.round(currentCalories));
+    const previousTarget = Number(latest?.previousCalories);
+    const previousMaintenance = Number(latest?.previousMaintenance ?? phase.maintenanceCalories);
+    return Number.isFinite(previousTarget) && Number.isFinite(previousMaintenance)
+        ? { previousTarget, previousMaintenance }
+        : null;
 }
 
 function clearHandledReviewForPhase(phase) {
@@ -295,10 +316,9 @@ function clearHandledReviewForPhase(phase) {
 
 function replayLastWeeklyReview() {
     const phase = getActiveNutritionPhase();
-    const currentCalories = Number(phase?.currentCalories ?? phase?.startCalories);
-    const hold = readAdjustmentHold({ phase, currentCalories });
-    const previousTarget = Number(hold?.previousTarget);
-    const previousMaintenance = Number(hold?.previousMaintenance);
+    const snapshot = getReplaySnapshot(phase);
+    const previousTarget = Number(snapshot?.previousTarget);
+    const previousMaintenance = Number(snapshot?.previousMaintenance);
     if (!phase || !Number.isFinite(previousTarget) || !Number.isFinite(previousMaintenance)) return;
     if (!window.confirm("Undo the last calorie update and reopen the same weekly review? Your food logs and weigh-ins will not be changed.")) return;
 
