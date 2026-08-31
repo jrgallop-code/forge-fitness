@@ -24,10 +24,13 @@ test("the only active-phase action is the compact Weight Progress review", () =>
     assert.match(display, /#weekly-modal-review-apply/);
     assert.match(display, /role="dialog" aria-modal="true"/);
     assert.match(display, /Logged weekly average/);
-    assert.match(display, /Uncapped calculation/);
+    assert.match(display, /Current weight trend/);
+    assert.match(display, /Goal weight trend/);
+    assert.match(display, /Calories needed for goal pace/);
+    assert.match(display, /Calculated target/);
     assert.match(display, /Recommended target now/);
     assert.match(display, /weeklyAverageCalories: baseline\.useLoggedAverage/);
-    assert.match(display, /requestedMaintenanceChange \+ update\.requestedPaceCorrection/);
+    assert.match(display, /update\.fullRequestedTarget/);
     assert.match(display, /The saved target changes by/);
     assert.match(display, /Level Up will reassess next week/);
     assert.match(stats, /Review one recommended daily target/);
