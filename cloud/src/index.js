@@ -1,6 +1,7 @@
 import { SWISS_CHALET_FOODS } from "./data/swiss-chalet-foods.js";
 import { PUR_SIMPLE_FOODS } from "./data/pur-simple-foods.js";
 import { NORTH_AMERICAN_CHAIN_FOODS } from "./data/north-american-chain-foods.js";
+import { CANADIAN_CHAIN_EXPANSION } from "./data/canadian-chain-expansion.js";
 
 const MAX_BACKUP_BYTES = 8 * 1024 * 1024;
 const SESSION_DAYS = 30;
@@ -1010,8 +1011,9 @@ async function searchVerifiedFoods(query, env, countryCode = "CA") {
     if (!env?.DB) return [];
     const normalizedQuery = foodIdentity(query);
     if (!normalizedQuery) return [];
-    const searchTokens = normalizedQuery.split(" ").filter(token => token.length > 1).slice(0, 6);
-    const tokens = searchTokens.length ? searchTokens : [normalizedQuery];
+    const allTokens = normalizedQuery.split(" ").filter(Boolean).slice(0, 6);
+    const searchTokens = allTokens.filter(token => token.length > 1);
+    const tokens = searchTokens.length ? searchTokens : allTokens;
     const tokenFilters = tokens.map(() => "instr(search_text, ?) > 0").join(" AND ");
     let storedFoods = [];
     try {
@@ -1127,7 +1129,9 @@ function safeFoodNumber(value) {
 }
 
 export function searchBundledVerifiedFoods(query) {
-    const tokens = foodIdentity(query).split(" ").filter(token => token.length > 1);
+    const allTokens = foodIdentity(query).split(" ").filter(Boolean);
+    const significantTokens = allTokens.filter(token => token.length > 1);
+    const tokens = significantTokens.length ? significantTokens : allTokens;
     if (!tokens.length) return [];
     return BUNDLED_VERIFIED_FOODS.filter(food => {
         const searchable = foodIdentity(`${food.name} ${food.brand} ${food.aliases || ""}`);
@@ -1180,6 +1184,11 @@ const BUNDLED_VERIFIED_FOODS = [
         ...food,
         category: "Restaurant food",
         verifiedAt: "2026-08-30"
+    })),
+    ...CANADIAN_CHAIN_EXPANSION.map(food => bundledVerifiedFood({
+        ...food,
+        category: "Restaurant food",
+        verifiedAt: "2026-08-31"
     }))
 ];
 

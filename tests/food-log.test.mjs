@@ -459,6 +459,38 @@ test("all 20 ranked chains have verified catalogue coverage without calorie rang
     });
 });
 
+test("Canadian chain expansion adds popular A&W and Harvey's foods from official sources", async () => {
+    const { CANADIAN_CHAIN_EXPANSION } = await import("../cloud/src/data/canadian-chain-expansion.js");
+    assert.equal(CANADIAN_CHAIN_EXPANSION.length, 41);
+    assert.equal(CANADIAN_CHAIN_EXPANSION.filter(food => food.brand === "A&W Canada").length, 15);
+    assert.equal(CANADIAN_CHAIN_EXPANSION.filter(food => food.brand === "Harvey's").length, 26);
+    assert.ok(CANADIAN_CHAIN_EXPANSION.every(food => food.countryCode === "CA"));
+    assert.ok(CANADIAN_CHAIN_EXPANSION.every(food => food.calories > 0 && food.sourceUrl.startsWith("https://")));
+    assert.ok(CANADIAN_CHAIN_EXPANSION.every(food => !String(food.calories).includes("-")));
+});
+
+test("A&W records stay calories-only while Harvey's records include verified macros", async () => {
+    const { CANADIAN_CHAIN_EXPANSION } = await import("../cloud/src/data/canadian-chain-expansion.js");
+    const teenBurger = CANADIAN_CHAIN_EXPANSION.find(food => food.id === "aw-ca-teen-burger");
+    const originalBurger = CANADIAN_CHAIN_EXPANSION.find(food => food.id === "harveys-ca-original-burger");
+    assert.deepEqual([teenBurger.calories, teenBurger.protein, teenBurger.carbs, teenBurger.fat], [500, 0, 0, 0]);
+    assert.deepEqual([originalBurger.calories, originalBurger.protein, originalBurger.carbs, originalBurger.fat], [380, 17, 33, 20]);
+});
+
+test("A&W can be found by its short chain name", () => {
+    const matches = searchBundledVerifiedFoods("A&W");
+    assert.ok(matches.some(food => food.catalogueId === "aw-ca-teen-burger"));
+});
+
+test("Canadian expansion migration preserves source, region, and nutrition scope", async () => {
+    const migration = await readFile(new URL("../cloud/migrations/0014_canadian_chain_expansion.sql", import.meta.url), "utf8");
+    assert.match(migration, /aw-ca-teen-burger/);
+    assert.match(migration, /harveys-ca-original-burger/);
+    assert.match(migration, /'calories_only'/);
+    assert.match(migration, /'full'/);
+    assert.match(migration, /official_restaurant/);
+});
+
 test("Canadian and US Grenade barcodes resolve to regional variants of one product family", () => {
     const canadian = findBundledVerifiedFoodByBarcode("847534004261");
     const us = findBundledVerifiedFoodByBarcode("847534004063");
