@@ -7,6 +7,8 @@ const actions = fs.readFileSync('js/workouts/session-exercise-actions.js', 'utf8
 const manual = fs.readFileSync('js/workouts/manual-builder-catalogue.js', 'utf8');
 const browser = fs.readFileSync('js/workouts/exercise-browser.js', 'utf8');
 const index = fs.readFileSync('index.html', 'utf8');
+const generatedMaleChest = fs.readFileSync('assets/exercise-anatomy/male-chest.svg', 'utf8');
+const generatedFemaleShoulders = fs.readFileSync('assets/exercise-anatomy/female-shoulders.svg', 'utf8');
 
 test('rep exercises own persistent optional notes', () => {
   assert.match(session, /trackingType:\s*"reps",\s*notes:\s*""/s);
@@ -38,10 +40,12 @@ test('shared visual browser defaults to All and combines muscle with search', ()
   assert.match(browser, /\{ id: "", label: "All"/);
   assert.match(browser, /exercise-muscle-carousel/);
   assert.match(browser, /getAnatomyConfig\(item\.facing\)/);
-  assert.match(browser, /config\.regions\[figure\.dataset\.anatomyMuscle\]/);
-  assert.match(browser, /hydrateExerciseAnatomy/);
-  assert.match(browser, /new DOMParser\(\).*parseFromString/);
-  assert.match(browser, /region\?\.classList\.add\("exercise-muscle-highlight"\)/);
+  assert.match(browser, /assets\/exercise-anatomy\/\$\{config\.sex\}-\$\{slug\}\.svg\?v=static-anatomy-assets-1/);
+  assert.doesNotMatch(browser, /hydrateExerciseAnatomy|DOMParser/);
+  assert.match(generatedMaleChest, /#muscle_front_011/);
+  assert.match(generatedMaleChest, /#ff315f/);
+  assert.match(generatedFemaleShoulders, /#female_front_shoulders_l/);
+  assert.match(generatedFemaleShoulders, /#ff315f/);
   assert.match(browser, /config\.sex/);
   assert.match(browser, /\(!muscle \|\| exercise\?\.muscleGroup === muscle\)/);
   assert.match(browser, /\(!term \|\| \[exercise\?\.name/);
@@ -54,9 +58,9 @@ test('shared visual browser defaults to All and combines muscle with search', ()
   assert.match(manual, /querySelector\("\[data-exercise-browser-custom\]"\).*startCustom/);
   assert.match(actions, /addCustomExercise\(\{ name, muscleGroup:/);
   assert.match(actions, /appendExerciseToActiveWorkout\(exercise\.id\)/);
-  assert.match(manual, /hydrateExerciseAnatomy\(section\)/);
-  assert.match(actions, /hydrateExerciseAnatomy\(sheet\)/);
-  assert.match(index, /manual-builder-catalogue\.js\?v=inline-anatomy-carousel-2/);
-  assert.match(index, /session-exercise-actions\.js\?v=inline-anatomy-carousel-2/);
-  assert.match(browser, /exercise-browser\.css\?v=inline-anatomy-carousel-2/);
+  assert.doesNotMatch(manual, /hydrateExerciseAnatomy/);
+  assert.doesNotMatch(actions, /hydrateExerciseAnatomy/);
+  assert.match(index, /manual-builder-catalogue\.js\?v=static-anatomy-assets-1/);
+  assert.match(index, /session-exercise-actions\.js\?v=static-anatomy-assets-1/);
+  assert.match(browser, /exercise-browser\.css\?v=static-anatomy-assets-1/);
 });
