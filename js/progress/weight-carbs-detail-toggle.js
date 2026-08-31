@@ -1,34 +1,44 @@
 const TOGGLE_STYLE_ID = "level-up-weight-carbs-detail-toggle-styles";
-let bound = false;
+const boundCards = new WeakSet();
 let observer = null;
 
 export function initializeWeightCarbsDetailToggle(root = document) {
     ensureStyles();
-    decorate(root);
-
-    if (!bound) {
-        bound = true;
-        document.addEventListener("pointerdown", event => {
-            const card = document.querySelector("#weight-progress .weight-chart-card");
-            const tooltip = card?.querySelector("[data-weight-carbs-tooltip-v2]");
-            if (!card || !tooltip || tooltip.hidden) return;
-
-            const shell = card.querySelector(".weight-carbs-chart-shell-v2");
-            const tappedTooltip = tooltip.contains(event.target);
-            const tappedGraph = shell?.contains(event.target);
-            if (!tappedTooltip && !tappedGraph) return;
-
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            clearViaExistingRangeControl(card);
-        }, true);
-    }
+    bindCard(root);
 
     if (!observer) {
-        observer = new MutationObserver(() => decorate(document));
         const target = root.querySelector?.("#weight-progress") || document.querySelector("#weight-progress");
-        if (target) observer.observe(target, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden"] });
+        if (target) {
+            observer = new MutationObserver(() => bindCard(document));
+            observer.observe(target, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ["hidden"]
+            });
+        }
     }
+}
+
+function bindCard(root) {
+    const card = root.querySelector?.("#weight-progress .weight-chart-card")
+        || document.querySelector("#weight-progress .weight-chart-card");
+    if (!card) return;
+
+    decorate(card);
+    if (boundCards.has(card)) return;
+    boundCards.add(card);
+
+    // Keep this listener scoped to the Weight + Carbs card. A document-level
+    // capture listener can suppress primary navigation before the navbar sees it.
+    card.addEventListener("pointerdown", event => {
+        const tooltip = card.querySelector("[data-weight-carbs-tooltip-v2]");
+        if (!tooltip || tooltip.hidden || !tooltip.contains(event.target)) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        clearViaExistingRangeControl(card);
+    }, true);
 }
 
 function clearViaExistingRangeControl(card) {
@@ -44,15 +54,15 @@ function clearViaExistingRangeControl(card) {
     window.dispatchEvent(new Event("resize"));
 }
 
-function decorate(root) {
-    const tooltip = root.querySelector?.("[data-weight-carbs-tooltip-v2]") || document.querySelector("[data-weight-carbs-tooltip-v2]");
+function decorate(card) {
+    const tooltip = card.querySelector("[data-weight-carbs-tooltip-v2]");
     if (tooltip) {
         tooltip.setAttribute("role", "button");
         tooltip.setAttribute("aria-label", "Close selected day details");
         tooltip.setAttribute("title", "Tap to close details");
     }
 
-    const note = root.querySelector?.(".weight-carbs-interaction-note-v2") || document.querySelector(".weight-carbs-interaction-note-v2");
+    const note = card.querySelector(".weight-carbs-interaction-note-v2");
     if (note) note.textContent = "Tap or drag for day details. Tap the summary or graph again to close details.";
 }
 
