@@ -1,5 +1,5 @@
 import { getAllExercises, getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
-import { hydrateExerciseAnatomy, matchesExerciseBrowser, renderMuscleCarousel } from "./exercise-browser.js?v=inline-anatomy-carousel-1";
+import { hydrateExerciseAnatomy, matchesExerciseBrowser, renderMuscleCarousel } from "./exercise-browser.js?v=inline-anatomy-carousel-2";
 
 let active = false;
 let picker = null;

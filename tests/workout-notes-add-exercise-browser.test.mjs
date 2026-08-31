@@ -6,6 +6,7 @@ const session = fs.readFileSync('js/workouts/workout-session.js', 'utf8');
 const actions = fs.readFileSync('js/workouts/session-exercise-actions.js', 'utf8');
 const manual = fs.readFileSync('js/workouts/manual-builder-catalogue.js', 'utf8');
 const browser = fs.readFileSync('js/workouts/exercise-browser.js', 'utf8');
+const index = fs.readFileSync('index.html', 'utf8');
 
 test('rep exercises own persistent optional notes', () => {
   assert.match(session, /trackingType:\s*"reps",\s*notes:\s*""/s);
@@ -55,4 +56,7 @@ test('shared visual browser defaults to All and combines muscle with search', ()
   assert.match(actions, /appendExerciseToActiveWorkout\(exercise\.id\)/);
   assert.match(manual, /hydrateExerciseAnatomy\(section\)/);
   assert.match(actions, /hydrateExerciseAnatomy\(sheet\)/);
+  assert.match(index, /manual-builder-catalogue\.js\?v=inline-anatomy-carousel-2/);
+  assert.match(index, /session-exercise-actions\.js\?v=inline-anatomy-carousel-2/);
+  assert.match(browser, /exercise-browser\.css\?v=inline-anatomy-carousel-2/);
 });

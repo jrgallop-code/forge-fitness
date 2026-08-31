@@ -3,7 +3,7 @@ import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-2"
 if (typeof document !== "undefined" && !document.querySelector('link[data-exercise-browser-styles]')) {
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "css/exercise-browser.css?v=visual-muscle-browser-1";
+  link.href = "css/exercise-browser.css?v=inline-anatomy-carousel-2";
   link.dataset.exerciseBrowserStyles = "";
   document.head.appendChild(link);
 }
