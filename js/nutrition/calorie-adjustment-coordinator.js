@@ -34,6 +34,7 @@ export function buildCoordinatedWeeklyUpdate({
     actualRate = null,
     targetRate = null,
     adaptiveReady = false,
+    actualIntakeCalories = null,
     maximumChange = WEEKLY_ADJUSTMENT_CAP
 } = {}) {
     const maintenance = finite(currentMaintenance);
@@ -46,21 +47,44 @@ export function buildCoordinatedWeeklyUpdate({
     const requestedPaceCorrection = adaptiveReady
         ? buildAdaptivePaceCorrection({ actualRate, targetRate })
         : 0;
-    const targetChange = clamp(maintenanceChange + requestedPaceCorrection, maximumChange);
+    const observedIntake = actualIntakeCalories === null || actualIntakeCalories === undefined || actualIntakeCalories === ""
+        ? null
+        : finite(actualIntakeCalories);
+    const fullRequestedTarget = Math.round(target + requestedMaintenanceChange + requestedPaceCorrection);
+    const direction = Math.sign(fullRequestedTarget - target);
+    const adjustmentBaseline = observedIntake === null
+        ? target
+        : direction > 0
+            ? Math.max(target, observedIntake)
+            : direction < 0
+                ? Math.min(target, observedIntake)
+                : observedIntake;
+    const behavioralChange = clamp(fullRequestedTarget - adjustmentBaseline, maximumChange);
+    const nextTarget = observedIntake === null
+        ? target + clamp(maintenanceChange + requestedPaceCorrection, maximumChange)
+        : adjustmentBaseline + behavioralChange;
+    const targetChange = Math.round(nextTarget - target);
     const paceCorrection = targetChange - maintenanceChange;
 
-    return {
+    const result = {
         previousMaintenance: Math.round(maintenance),
         previousTarget: Math.round(target),
         maintenanceCalories: Math.round(maintenance + maintenanceChange),
-        targetCalories: Math.round(target + targetChange),
+        targetCalories: Math.round(nextTarget),
         maintenanceChange,
         paceCorrection,
         targetChange,
         requestedMaintenanceChange,
         requestedPaceCorrection,
-        capped: maintenanceChange !== requestedMaintenanceChange || targetChange !== maintenanceChange + requestedPaceCorrection
+        capped: maintenanceChange !== requestedMaintenanceChange || Math.abs(fullRequestedTarget - adjustmentBaseline) > Math.max(25, Math.round(Number(maximumChange) || WEEKLY_ADJUSTMENT_CAP))
     };
+    if (observedIntake !== null) {
+        result.actualIntakeCalories = Math.round(observedIntake);
+        result.adjustmentBaseline = Math.round(adjustmentBaseline);
+        result.behavioralChange = Math.round(behavioralChange);
+        result.fullRequestedTarget = fullRequestedTarget;
+    }
+    return result;
 }
 
 export function readAdjustmentHold({ phase, currentCalories, now = new Date() } = {}) {

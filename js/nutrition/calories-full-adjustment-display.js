@@ -6,7 +6,7 @@ import {
 import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";
 import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
-import { buildCoordinatedWeeklyUpdate, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
+import { buildCoordinatedWeeklyUpdate, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=actual-intake-baseline-1";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=weekly-stable-tdee-1";
 import { markMaintenanceCheckInReviewed } from "./maintenance-check-in.js?v=shared-weekly-review-1";
 import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=all-calorie-requirements-1";
@@ -108,7 +108,7 @@ function openWeeklyReviewModal() {
                 <div><span>Uncapped calculation</span><strong>${recommendation.fullTargetCalories} kcal/day</strong></div>
                 <div class="weekly-calorie-modal-result"><span>Recommended target now</span><strong>${recommendation.targetCalories} kcal/day</strong></div>
             </div>
-            ${recommendation.capped ? `<small class="weekly-calorie-modal-cap">Limited to ${formatSignedCalories(recommendation.targetChange)} calories this review. Level Up will reassess the remaining difference next week.</small>` : ""}
+            ${recommendation.capped ? `<small class="weekly-calorie-modal-cap">Limited to ${formatSignedCalories(recommendation.behavioralChange ?? recommendation.targetChange)} calories from ${Number.isFinite(recommendation.actualIntakeCalories) ? `your ${recommendation.actualIntakeCalories} weekly average` : "your current target"}. The saved target changes by ${formatSignedCalories(recommendation.targetChange)}. Level Up will reassess next week.</small>` : ""}
             <div class="weekly-calorie-modal-actions">
                 <button id="weekly-modal-review-apply" class="primary-btn" type="button">Update to ${recommendation.targetCalories}</button>
                 <button id="weekly-modal-review-keep" class="secondary-btn" type="button">Keep ${recommendation.previousTarget}</button>
@@ -163,6 +163,7 @@ function buildSharedRecommendation(metrics, phase) {
     const proposedMaintenance = Number.isFinite(Number(estimate?.maintenanceCalories))
         ? Number(estimate.maintenanceCalories)
         : currentMaintenance;
+    const baseline = getAdaptiveCalorieBaseline(metrics, currentTarget);
     const update = buildCoordinatedWeeklyUpdate({
         currentMaintenance,
         proposedMaintenance,
@@ -170,6 +171,7 @@ function buildSharedRecommendation(metrics, phase) {
         actualRate: metrics?.actualRateLbPerWeek,
         targetRate: metrics?.targetRateLbPerWeek,
         adaptiveReady: metrics?.recommendationReady === true && !["ON TRACK", "MAINTAINING"].includes(metrics?.status),
+        actualIntakeCalories: baseline.useLoggedAverage ? baseline.calories : null,
         maximumChange: WEEKLY_ADJUSTMENT_CAP
     });
     if (!update) return null;
@@ -177,7 +179,6 @@ function buildSharedRecommendation(metrics, phase) {
     const fullTargetCalories = Math.round(
         update.previousTarget + update.requestedMaintenanceChange + update.requestedPaceCorrection
     );
-    const baseline = getAdaptiveCalorieBaseline(metrics, currentTarget);
     return {
         ...update,
         estimate,
