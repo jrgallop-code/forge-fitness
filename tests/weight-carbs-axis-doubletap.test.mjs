@@ -8,6 +8,7 @@ const enhancement = readFileSync("js/progress/weight-carbs-interaction-enhanceme
 test("Weight and Carbs loads only the authoritative renderer plus local enhancements", () => {
     assert.match(entry, /initializeWeightCarbsChartV2/);
     assert.match(entry, /initializeWeightCarbsInteractionEnhancements/);
+    assert.match(entry, /weight-carbs-interaction-enhancements\.js\?v=weight-carbs-interaction-2/);
     assert.doesNotMatch(enhancement, /document\.addEventListener\(\"pointer/);
 });
 
