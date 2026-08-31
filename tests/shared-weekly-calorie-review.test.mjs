@@ -22,6 +22,10 @@ test("the only active-phase action is the compact Weight Progress review", () =>
     assert.match(display, /#weight-weekly-review-apply/);
     assert.match(display, /levelup:open-weekly-calorie-review/);
     assert.match(display, /#weekly-modal-review-apply/);
+    assert.match(display, /applyFullAdjustment\(event, \{ phase, metrics, recommendation \}\)/);
+    assert.match(display, /const saved = saveNutritionPhase/);
+    assert.match(display, /The target did not save\. Please try again\./);
+    assert.match(display, /apply\.textContent = "Updating…"/);
     assert.match(display, /role="dialog" aria-modal="true"/);
     assert.match(display, /Logged weekly average/);
     assert.match(display, /Current weight trend/);

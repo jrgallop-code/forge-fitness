@@ -113,11 +113,15 @@ function openWeeklyReviewModal() {
                 <button id="weekly-modal-review-apply" class="primary-btn" type="button">Update to ${recommendation.targetCalories}</button>
                 <button id="weekly-modal-review-keep" class="secondary-btn" type="button">Keep ${recommendation.previousTarget}</button>
             </div>
+            <small data-weekly-modal-status aria-live="polite"></small>
         </section>`;
     modal.addEventListener("click", event => {
         if (event.target === modal || event.target.closest?.("[data-weekly-modal-close]")) closeWeeklyReviewModal();
     });
     document.body.appendChild(modal);
+    modal.querySelector("#weekly-modal-review-apply")?.addEventListener("click", event => {
+        applyFullAdjustment(event, { phase, metrics, recommendation });
+    });
     modal.querySelector("[data-weekly-modal-close]")?.focus();
 }
 
@@ -432,32 +436,46 @@ function syncSuggestedCalories(metrics, phase) {
     setText(document.getElementById("weight-calorie-suggestion-total"), secondary);
 }
 
-function applyFullAdjustment(event) {
+function applyFullAdjustment(event, context = {}) {
     const apply = event.target.closest?.("#weekly-coach-apply, #goal-check-in-apply, #weight-weekly-review-apply, #weekly-modal-review-apply");
     if (!apply) return;
 
-    const phase = getActiveNutritionPhase();
+    const phase = context.phase || getActiveNutritionPhase();
     if (!phase) return;
-    const metrics = getActivePhaseMetrics(phase, { rolling: true });
+    const metrics = context.metrics || getActivePhaseMetrics(phase, { rolling: true });
     if (metrics.isFutureTest || !metrics.recommendationReady) return;
 
     const actual = Number(metrics.actualRateLbPerWeek);
     const target = Number(metrics.targetRateLbPerWeek);
     const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
-    const checkDay = Number(metrics.trend?.checkDay);
-    if (!Number.isFinite(actual) || !Number.isFinite(target) || !Number.isFinite(currentCalories) || !Number.isFinite(checkDay) || checkDay < FIRST_CHECK_DAY) return;
-    if (getHandledCheck(phase, checkDay) || getHold(phase, currentCalories)) return;
+    const reportedCheckDay = Number(metrics.trend?.checkDay);
+    const phaseDay = Number(metrics.trend?.phaseDay);
+    const checkDay = Number.isFinite(reportedCheckDay) && reportedCheckDay >= FIRST_CHECK_DAY
+        ? reportedCheckDay
+        : Number.isFinite(phaseDay) && phaseDay >= FIRST_CHECK_DAY
+            ? phaseDay
+            : FIRST_CHECK_DAY;
+    if (!Number.isFinite(actual) || !Number.isFinite(target) || !Number.isFinite(currentCalories)) return;
+    if ((!context.recommendation && getHandledCheck(phase, checkDay)) || getHold(phase, currentCalories)) return;
 
-    const recommendation = buildSharedRecommendation(metrics, phase);
+    const recommendation = context.recommendation || buildSharedRecommendation(metrics, phase);
     if (!recommendation) return;
     event.preventDefault();
     event.stopImmediatePropagation();
+    apply.disabled = true;
+    apply.textContent = "Updating…";
 
-    saveNutritionPhase({
+    const saved = saveNutritionPhase({
         goalId: phase.goalId,
         maintenanceCalories: recommendation.maintenanceCalories,
         targetCalories: recommendation.targetCalories
     });
+    if (!saved?.phase || Number(saved.phase.currentCalories ?? saved.phase.startCalories) !== Number(recommendation.targetCalories)) {
+        apply.disabled = false;
+        apply.textContent = `Update to ${recommendation.targetCalories}`;
+        setText(document.querySelector("[data-weekly-modal-status]"), "The target did not save. Please try again.");
+        return;
+    }
     localStorage.setItem("level_up_manual_maintenance_calories", String(recommendation.maintenanceCalories));
     setCurrentCalories(recommendation.targetCalories, "shared weekly TDEE and phase-pace adjustment");
     markCheckHandled(phase, checkDay, "coordinated-weekly-review");
@@ -526,7 +544,7 @@ if (content) {
     });
 }
 
-document.addEventListener("click", applyFullAdjustment, true);
+document.addEventListener("click", applyFullAdjustment);
 window.addEventListener("levelup:open-weekly-calorie-review", openWeeklyReviewModal);
 window.addEventListener("levelup:nutrition-updated", event => {
     if (event?.detail?.source === "calorie-authority-keep") closeWeeklyReviewModal();
