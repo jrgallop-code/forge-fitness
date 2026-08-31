@@ -22,7 +22,7 @@ test("the only active-phase action is the compact Weight Progress review", () =>
     assert.match(display, /#weight-weekly-review-apply/);
     assert.match(display, /levelup:open-weekly-calorie-review/);
     assert.match(display, /#weekly-modal-review-apply/);
-    assert.match(display, /applyFullAdjustment\(event, \{ phase, metrics, recommendation \}\)/);
+    assert.match(display, /applyFullAdjustment\(applyEvent, \{ phase, metrics, recommendation \}\)/);
     assert.match(display, /saved = saveNutritionPhase/);
     assert.match(display, /The target did not save\. Please try again\./);
     assert.match(display, /apply\.textContent = "Updating…"/);
@@ -85,4 +85,19 @@ test("the latest applied review can be safely replayed without changing logs", (
     assert.match(goals, /getReplaySnapshot\(phase\)/);
     assert.match(goals, /latest saved adjustment/);
     assert.match(goals, /item\.newCalories/);
+});
+
+test("Goals and Plan can launch a non-destructive weekly review preview", () => {
+    const goals = readFileSync("js/nutrition/unified-goals-calories.js", "utf8");
+    const alert = readFileSync("js/nutrition/maintenance-check-in.js", "utf8");
+    const modal = readFileSync("js/nutrition/calories-full-adjustment-display.js", "utf8");
+    assert.match(goals, /Preview Weekly Calorie Review/);
+    assert.match(goals, /sessionStorage\.setItem\(WEEKLY_REVIEW_PREVIEW_KEY, "1"\)/);
+    assert.match(goals, /data-calories-tab="log"/);
+    assert.match(alert, /TEST · WEEKLY CALORIE REVIEW/);
+    assert.match(alert, /Review test/);
+    assert.match(modal, /TEST PREVIEW ·/);
+    assert.match(modal, /Nothing in this preview will be saved/);
+    assert.match(modal, /Test update to/);
+    assert.match(modal, /sessionStorage\.removeItem\(WEEKLY_REVIEW_PREVIEW_KEY\)/);
 });

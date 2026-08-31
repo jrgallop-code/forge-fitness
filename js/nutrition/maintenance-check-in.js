@@ -7,6 +7,7 @@ const STATE_KEY = "level_up_maintenance_check_in_v1";
 const PENDING_KEY = "level_up_pending_maintenance_review_v1";
 const MODE_KEY = "level_up_maintenance_update_mode_v1";
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
+const WEEKLY_REVIEW_PREVIEW_KEY = "level_up_weekly_review_preview";
 const DAY = 86400000;
 const MINIMUM_CHANGE = 50;
 const CHECK_IN_DAYS = 7;
@@ -240,14 +241,17 @@ export function initializeMaintenanceCheckInAlert() {
 
 function renderNutritionHubAlert(checkIn, mode) {
     document.querySelector(".maintenance-hub-alert")?.remove();
-    if (mode === "track" || !checkIn?.ready) return;
+    const preview = sessionStorage.getItem(WEEKLY_REVIEW_PREVIEW_KEY) === "1";
+    if (!preview && (mode === "track" || !checkIn?.ready)) return;
     const hub = document.querySelector("[data-calories-hub]");
     if (!hub) return;
     const alert = document.createElement("section");
     alert.className = "maintenance-hub-alert";
-    alert.innerHTML = `<div><span>WEEKLY CALORIE REVIEW</span><strong>Your calorie update is ready</strong><small>Review one recommended daily target.</small></div><button type="button">Review</button>`;
+    alert.innerHTML = preview
+        ? `<div><span>TEST · WEEKLY CALORIE REVIEW</span><strong>Preview your review flow</strong><small>Uses your current data without changing your target.</small></div><button type="button">Review test</button>`
+        : `<div><span>WEEKLY CALORIE REVIEW</span><strong>Your calorie update is ready</strong><small>Review one recommended daily target.</small></div><button type="button">Review</button>`;
     alert.querySelector("button")?.addEventListener("click", () => {
-        window.dispatchEvent(new CustomEvent("levelup:open-weekly-calorie-review"));
+        window.dispatchEvent(new CustomEvent("levelup:open-weekly-calorie-review", { detail: { preview } }));
     });
     hub.insertBefore(alert, hub.querySelector('[data-calories-panel="log"]'));
 }
