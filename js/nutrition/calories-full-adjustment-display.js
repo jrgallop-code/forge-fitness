@@ -98,14 +98,15 @@ function openWeeklyReviewModal() {
     modal.innerHTML = `
         <section class="weekly-calorie-modal-card" role="dialog" aria-modal="true" aria-labelledby="weekly-calorie-modal-title">
             <header><div><span>WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">Your recommended target</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
-            <p>Your full calculation and this week's safe step.</p>
+            <p>Your logged week, full calculation and recommended change now.</p>
             <div class="weekly-calorie-modal-breakdown">
-                <div><span>Current target</span><strong>${recommendation.previousTarget} kcal/day</strong></div>
+                <div><span>Current saved target</span><strong>${recommendation.previousTarget} kcal/day</strong></div>
+                <div><span>Logged weekly average${recommendation.weeklyAverageLoggedDays ? ` (${recommendation.weeklyAverageLoggedDays}/${recommendation.weeklyAverageTotalDays || 7} days)` : ""}</span><strong>${Number.isFinite(recommendation.weeklyAverageCalories) ? `${recommendation.weeklyAverageCalories} kcal/day` : "Not enough logged days"}</strong></div>
                 <div><span>Calculated maintenance</span><strong>${recommendation.fullMaintenanceCalories} kcal/day</strong></div>
                 <div><span>Phase goal adjustment</span><strong>${formatSignedCalories(recommendation.phaseGoalAdjustment)} cal/day</strong></div>
                 <div><span>Progress correction</span><strong>${formatSignedCalories(recommendation.requestedPaceCorrection)} cal/day</strong></div>
-                <div><span>Full calculated target</span><strong>${recommendation.fullTargetCalories} kcal/day</strong></div>
-                <div class="weekly-calorie-modal-result"><span>This week's target</span><strong>${recommendation.targetCalories} kcal/day</strong></div>
+                <div><span>Uncapped calculation</span><strong>${recommendation.fullTargetCalories} kcal/day</strong></div>
+                <div class="weekly-calorie-modal-result"><span>Recommended target now</span><strong>${recommendation.targetCalories} kcal/day</strong></div>
             </div>
             ${recommendation.capped ? `<small class="weekly-calorie-modal-cap">Limited to ${formatSignedCalories(recommendation.targetChange)} calories this review. Level Up will reassess the remaining difference next week.</small>` : ""}
             <div class="weekly-calorie-modal-actions">
@@ -176,12 +177,16 @@ function buildSharedRecommendation(metrics, phase) {
     const fullTargetCalories = Math.round(
         update.previousTarget + update.requestedMaintenanceChange + update.requestedPaceCorrection
     );
+    const baseline = getAdaptiveCalorieBaseline(metrics, currentTarget);
     return {
         ...update,
         estimate,
         phaseGoalAdjustment,
         fullMaintenanceCalories: Math.round(proposedMaintenance),
-        fullTargetCalories
+        fullTargetCalories,
+        weeklyAverageCalories: baseline.useLoggedAverage ? Math.round(baseline.calories) : null,
+        weeklyAverageLoggedDays: baseline.intake?.loggedDays ?? 0,
+        weeklyAverageTotalDays: baseline.intake?.totalDays ?? 7
     };
 }
 
