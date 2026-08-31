@@ -6,11 +6,12 @@ import {
 import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";
 import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
-import { markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
+import { buildCoordinatedWeeklyUpdate, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=weekly-stable-tdee-1";
+import { markMaintenanceCheckInReviewed } from "./maintenance-check-in.js?v=shared-weekly-review-1";
 import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=all-calorie-requirements-1";
 
 const FIRST_CHECK_DAY = 14;
-const FULL_GAP_INCREMENT = 50;
 const WEIGHT_KEY = "forge_weight_entries";
 let refreshScheduled = false;
 let refreshAgain = false;
@@ -75,20 +76,23 @@ function getHold(phase, currentCalories) {
     return readAdjustmentHold({ phase, currentCalories });
 }
 
-function saveHold(phase, calories) {
-    startAdjustmentHold({ phase, calories, maintenanceCalories: phase.maintenanceCalories, source: "adaptive-phase-coach" });
-}
-
-function buildRecommendation(actual, target, calorieBaseline, activeTarget = calorieBaseline) {
-    const rawGap = (Number(target) - Number(actual)) * 500;
-    let paceCorrection = Math.round(rawGap / FULL_GAP_INCREMENT) * FULL_GAP_INCREMENT;
-    if (paceCorrection === 0 && Math.abs(rawGap) > 0.001) {
-        paceCorrection = Math.sign(rawGap) * FULL_GAP_INCREMENT;
-    }
-    const desiredTarget = Math.max(1, Math.round(Number(calorieBaseline) + paceCorrection));
-    const requestedChange = desiredTarget - Number(activeTarget);
-    const adjustment = Math.max(-WEEKLY_ADJUSTMENT_CAP, Math.min(WEEKLY_ADJUSTMENT_CAP, requestedChange));
-    return { adjustment, paceCorrection, desiredTarget, targetCalories: Math.max(1, Math.round(Number(activeTarget) + adjustment)) };
+function buildSharedRecommendation(metrics, phase) {
+    const currentMaintenance = Number(phase?.maintenanceCalories);
+    const currentTarget = Number(phase?.currentCalories ?? phase?.startCalories);
+    const estimate = getCalculatedMaintenanceEstimate();
+    const proposedMaintenance = Number.isFinite(Number(estimate?.maintenanceCalories))
+        ? Number(estimate.maintenanceCalories)
+        : currentMaintenance;
+    const update = buildCoordinatedWeeklyUpdate({
+        currentMaintenance,
+        proposedMaintenance,
+        currentTarget,
+        actualRate: metrics?.actualRateLbPerWeek,
+        targetRate: metrics?.targetRateLbPerWeek,
+        adaptiveReady: metrics?.recommendationReady === true && !["ON TRACK", "MAINTAINING"].includes(metrics?.status),
+        maximumChange: WEEKLY_ADJUSTMENT_CAP
+    });
+    return update ? { ...update, estimate } : null;
 }
 
 function getAdaptiveCalorieBaseline(metrics, currentCalories) {
@@ -227,13 +231,6 @@ function syncCoach(metrics, phase) {
         return;
     }
 
-    if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) {
-        setText(messageNode, `Your current 7-day trend is ${formatRate(actual)} versus a target of ${formatRate(target)}.`);
-        setText(suggestionNode, `Your logged average of ${Math.round(baseline.calories)} kcal/day (${baseline.intake.loggedDays}/${baseline.intake.totalDays} days) is producing an on-track trend. Current target: ${Math.round(currentCalories)} kcal/day.`);
-        hideCoachActions();
-        return;
-    }
-
     const hold = getHold(phase, currentCalories);
     if (hold) {
         setText(messageNode, "The calorie adjustment is being measured. Hold the current target for 7 days before another change.");
@@ -256,18 +253,29 @@ function syncCoach(metrics, phase) {
         return;
     }
 
-    const recommendation = buildRecommendation(actual, target, baseline.calories, currentCalories);
+    const recommendation = buildSharedRecommendation(metrics, phase);
+    if (!recommendation) {
+        setText(suggestionNode, "The shared weekly calorie review could not calculate a safe update yet.");
+        hideCoachActions();
+        return;
+    }
+    if (recommendation.targetChange === 0) {
+        setText(messageNode, `Your current 7-day trend is ${formatRate(actual)} versus a target of ${formatRate(target)}.`);
+        setText(suggestionNode, `The combined TDEE and goal-pace review supports keeping calories at ${Math.round(currentCalories)} kcal/day.`);
+        hideCoachActions();
+        return;
+    }
     card.dataset.fullAdjustmentCalories = String(recommendation.targetCalories);
-    card.dataset.fullAdjustmentDelta = String(recommendation.adjustment);
+    card.dataset.fullAdjustmentDelta = String(recommendation.targetChange);
     card.dataset.fullAdjustmentCheckDay = String(checkDay);
 
-    setText(messageNode, `Current weekly trend: ${formatRate(actual)} · Target: ${formatRate(target)}. Level Up bases this check on ${calorieBaselineCopy(baseline)}, then reassesses after 7 days.`);
-    setText(suggestionNode, `Baseline: ${Math.round(baseline.calories)} kcal/day · Adjustment: ${formatSignedCalories(recommendation.adjustment)} kcal/day → ${recommendation.targetCalories} kcal/day.`);
+    setText(messageNode, `Current weekly trend: ${formatRate(actual)} · Target: ${formatRate(target)}. This single review combines the latest Level Up TDEE with the goal-pace correction, then waits 7 days.`);
+    setText(suggestionNode, `TDEE ${formatSignedCalories(recommendation.maintenanceChange)} · pace ${formatSignedCalories(recommendation.paceCorrection)} · one capped change ${formatSignedCalories(recommendation.targetChange)} → ${recommendation.targetCalories} kcal/day.`);
 
     const apply = document.getElementById(weeklyCoach ? "weekly-coach-apply" : "goal-check-in-apply");
     if (apply) {
         apply.hidden = false;
-        apply.textContent = `Apply ${formatSignedCalories(recommendation.adjustment)} kcal/day`;
+        apply.textContent = `Apply ${formatSignedCalories(recommendation.targetChange)} kcal/day`;
     }
     const keep = document.getElementById("weekly-coach-keep");
     if (keep) keep.hidden = false;
@@ -308,9 +316,10 @@ function syncSuggestedCalories(metrics, phase) {
         secondary = `Day ${checkDay} check handled · next check Day ${trend?.nextCheckDay || checkDay + 7}`;
     } else if (metrics.recommendationReady && Number.isFinite(actual) && Number.isFinite(target)) {
         heading = "Suggested Calories";
-        const recommendation = buildRecommendation(actual, target, baseline.calories, currentCalories);
+        const recommendation = buildSharedRecommendation(metrics, phase);
+        if (!recommendation) return;
         primary = `${recommendation.targetCalories} kcal/day`;
-        secondary = `Based on ${Math.round(baseline.calories)} kcal ${calorieBaselineCopy(baseline)} · ${formatSignedCalories(recommendation.adjustment)} kcal/day`;
+        secondary = `Shared weekly review · TDEE ${formatSignedCalories(recommendation.maintenanceChange)} · pace ${formatSignedCalories(recommendation.paceCorrection)} · net ${formatSignedCalories(recommendation.targetChange)}`;
     } else {
         secondary = buildPendingCalorieCheckMessage({ metrics, visibleRate, foodLoggedDays: baseline?.intake?.loggedDays });
     }
@@ -335,23 +344,33 @@ function applyFullAdjustment(event) {
     const actual = Number(metrics.actualRateLbPerWeek);
     const target = Number(metrics.targetRateLbPerWeek);
     const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
-    const baseline = getAdaptiveCalorieBaseline(metrics, currentCalories);
     const checkDay = Number(metrics.trend?.checkDay);
     if (!Number.isFinite(actual) || !Number.isFinite(target) || !Number.isFinite(currentCalories) || !Number.isFinite(checkDay) || checkDay < FIRST_CHECK_DAY) return;
-    if (["ON TRACK", "MAINTAINING"].includes(metrics.status) || getHandledCheck(phase, checkDay) || getHold(phase, currentCalories)) return;
+    if (getHandledCheck(phase, checkDay) || getHold(phase, currentCalories)) return;
 
-    const recommendation = buildRecommendation(actual, target, baseline.calories, currentCalories);
+    const recommendation = buildSharedRecommendation(metrics, phase);
+    if (!recommendation) return;
     event.preventDefault();
     event.stopImmediatePropagation();
 
     saveNutritionPhase({
         goalId: phase.goalId,
-        maintenanceCalories: phase.maintenanceCalories,
+        maintenanceCalories: recommendation.maintenanceCalories,
         targetCalories: recommendation.targetCalories
     });
-    setCurrentCalories(recommendation.targetCalories, "full weekly phase calorie-gap adjustment");
-    markCheckHandled(phase, checkDay, "adjusted-full");
-    saveHold(phase, recommendation.targetCalories);
+    localStorage.setItem("level_up_manual_maintenance_calories", String(recommendation.maintenanceCalories));
+    setCurrentCalories(recommendation.targetCalories, "shared weekly TDEE and phase-pace adjustment");
+    markCheckHandled(phase, checkDay, "coordinated-weekly-review");
+    markMaintenanceCheckInReviewed({ proposedMaintenance: recommendation.maintenanceCalories }, "coordinated-weekly-review");
+    startAdjustmentHold({
+        phase,
+        calories: recommendation.targetCalories,
+        maintenanceCalories: recommendation.maintenanceCalories,
+        estimatedTargetCalories: recommendation.targetCalories,
+        previousTarget: recommendation.previousTarget,
+        previousMaintenance: recommendation.previousMaintenance,
+        source: "coordinated-tdee-and-adaptive-update"
+    });
     window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", {
         detail: { source: "full-calorie-adjustment" }
     }));

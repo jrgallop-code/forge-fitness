@@ -182,13 +182,19 @@ function refreshMaintenanceMode() {
 
 function refreshCalculatedMaintenance() {
     const estimate = calculatedMaintenance();
+    const active = getActiveNutritionPhase();
+    const metrics = active ? getActivePhaseMetrics(active, { rolling: true }) : null;
+    const waitingForSharedReview = Boolean(active && !metrics?.recommendationReady);
     setText("unified-calculated-maintenance", Number.isFinite(estimate.maintenanceCalories) ? `${estimate.maintenanceCalories} kcal/day` : estimate.label);
     setText("unified-calculated-maintenance-meta", Number.isFinite(estimate.maintenanceCalories)
-        ? `${estimate.label} · based on ${estimate.foodDays} food days and ${estimate.weighIns} weigh-ins`
+        ? `${estimate.label} · based on ${estimate.foodDays} food days and ${estimate.weighIns} weigh-ins${waitingForSharedReview ? " · tracking only until the weekly calorie review" : ""}`
         : `${estimate.foodDays}/2 food days · ${estimate.weighIns}/3 weigh-ins · a multi-day weight span is required`);
     const button = document.getElementById("unified-use-calculated");
-    button?.toggleAttribute("disabled", !Number.isFinite(estimate.maintenanceCalories));
+    button?.toggleAttribute("disabled", !Number.isFinite(estimate.maintenanceCalories) || waitingForSharedReview);
     if (button && button.textContent !== "Added below ✓") button.textContent = "Use Level Up TDEE";
+    if (waitingForSharedReview) {
+        setText("unified-calculated-action-status", "Your TDEE is updating, but an active phase changes calories only during the shared weekly review.");
+    }
 }
 
 function useCalculatedMaintenance() {
@@ -201,13 +207,17 @@ function useCalculatedMaintenance() {
     const active = getActiveNutritionPhase();
     const currentTarget = Number(active?.currentCalories ?? active?.startCalories);
     const metrics = active ? getActivePhaseMetrics(active, { rolling: true }) : null;
+    if (active && !metrics?.recommendationReady) {
+        setText("unified-calculated-action-status", "TDEE is informational until the next qualifying weekly phase review. No separate calorie change will be created.");
+        return;
+    }
     const coordinated = active ? buildCoordinatedWeeklyUpdate({
         currentMaintenance: active.maintenanceCalories,
         proposedMaintenance: estimate.maintenanceCalories,
         currentTarget,
         actualRate: metrics?.actualRateLbPerWeek,
         targetRate: metrics?.targetRateLbPerWeek,
-        adaptiveReady: Boolean(metrics?.recommendationReady)
+        adaptiveReady: Boolean(metrics?.recommendationReady) && !["ON TRACK", "MAINTAINING"].includes(metrics?.status)
     }) : null;
     maintenanceDraft = String(coordinated?.maintenanceCalories ?? estimate.maintenanceCalories);
     targetDraft = coordinated?.targetCalories ?? null;

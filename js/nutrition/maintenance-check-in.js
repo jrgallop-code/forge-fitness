@@ -51,6 +51,7 @@ export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTar
     const recentFoodDays = Number(estimate?.recentFoodDays || 0);
     const recentWeighIns = Number(estimate?.recentWeighIns || 0);
     const enoughWeeklyData = recentFoodDays >= 4 && recentWeighIns >= 1;
+    const adaptiveGateReady = adaptiveMetrics === null || adaptiveMetrics?.recommendationReady === true;
     const change = proposedMaintenance !== null && baseline !== null
         ? Math.round(proposedMaintenance - baseline)
         : null;
@@ -60,7 +61,7 @@ export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTar
         currentTarget: target,
         actualRate: adaptiveMetrics?.actualRateLbPerWeek,
         targetRate: adaptiveMetrics?.targetRateLbPerWeek,
-        adaptiveReady: Boolean(adaptiveMetrics?.recommendationReady)
+        adaptiveReady: Boolean(adaptiveMetrics?.recommendationReady) && !["ON TRACK", "MAINTAINING"].includes(adaptiveMetrics?.status)
     });
     const proposedTarget = coordinatedUpdate?.targetCalories ?? null;
     const reviewed = parseDate(state?.reviewedAt);
@@ -69,8 +70,9 @@ export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTar
     const due = daysSinceReview >= CHECK_IN_DAYS;
     const meaningful = Number.isFinite(change) && Math.abs(change) >= MINIMUM_CHANGE;
     return {
-        ready: enoughWeeklyData && due && meaningful && Boolean(coordinatedUpdate) && !adjustmentHold,
+        ready: enoughWeeklyData && adaptiveGateReady && due && meaningful && Boolean(coordinatedUpdate) && !adjustmentHold,
         enoughWeeklyData,
+        adaptiveGateReady,
         due,
         meaningful,
         currentMaintenance: baseline !== null ? Math.round(baseline) : null,
@@ -127,7 +129,7 @@ export function buildAutomaticMaintenanceUpdate(checkIn, maximumChange = MAXIMUM
         currentTarget: checkIn.currentTarget,
         actualRate: checkIn.adaptiveMetrics?.actualRateLbPerWeek,
         targetRate: checkIn.adaptiveMetrics?.targetRateLbPerWeek,
-        adaptiveReady: Boolean(checkIn.adaptiveMetrics?.recommendationReady),
+        adaptiveReady: Boolean(checkIn.adaptiveMetrics?.recommendationReady) && !["ON TRACK", "MAINTAINING"].includes(checkIn.adaptiveMetrics?.status),
         maximumChange
     });
     if (!update) return null;
