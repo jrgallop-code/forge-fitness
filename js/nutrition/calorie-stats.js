@@ -6,6 +6,7 @@ import { getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
+const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
 const RANGE_KEY = "level_up_calorie_stats_range_v1";
 const ranges = { "7": 7, "28": 28, "84": 84 };
 const MEAL_COLORS = { Breakfast: "#4fa8ff", Lunch: "#8b7cf6", Dinner: "#39d7ae", Snacks: "#ff9f43", Other: "#8f8f99" };
@@ -61,6 +62,7 @@ export function isCaloriesInTarget(calories, target) {
 
 function daysForRange(count) {
     const log = readJson(FOOD_LOG_KEY, {});
+    const completedDays = readJson(FOOD_COMPLETE_KEY, {});
     return Array.from({ length: count }, (_, index) => {
         const date = dateKeyOffset(index - count + 1);
         const entries = Array.isArray(log?.[date]) ? log[date] : [];
@@ -69,13 +71,22 @@ function daysForRange(count) {
             totals[meal] = (totals[meal] || 0) + Math.max(0, Number(entry?.nutrition?.calories) || 0);
             return totals;
         }, {});
-        return { date, logged: entries.length > 0, mealCalories, ...summarize(entries) };
+        return { date, logged: entries.length > 0, complete: completedDays?.[date] === true, mealCalories, ...summarize(entries) };
     });
 }
 
 function average(days, key) {
     const logged = days.filter(day => day.logged);
     return logged.length ? logged.reduce((sum, day) => sum + day[key], 0) / logged.length : 0;
+}
+
+function calorieAverage(days) {
+    const today = localDateKey();
+    const included = days.filter(day => day.logged && (day.date !== today || day.complete));
+    return {
+        included,
+        value: included.length ? included.reduce((sum, day) => sum + day.calories, 0) / included.length : 0
+    };
 }
 
 function formatNumber(value) {
@@ -172,7 +183,9 @@ function mealBreakdown(days) {
 function mealWeekView(days, target) {
     const recent = days.slice(-7);
     const logged = recent.filter(day => day.logged);
-    const averageCalories = logged.length ? average(recent, "calories") : 0;
+    const calorieAverageState = calorieAverage(recent);
+    const averageCalories = calorieAverageState.value;
+    const included = calorieAverageState.included;
     const maximum = Math.max(Number(target) || 0, averageCalories, ...recent.map(day => day.calories), 1);
     const axisMaximum = Math.max(500, Math.ceil(maximum / 500) * 500);
     const axisTicks = [1, .75, .5, .25, 0]
@@ -189,9 +202,9 @@ function mealWeekView(days, target) {
         return `<div class="calorie-meal-week-column" title="${day.logged ? `${formatNumber(day.calories)} calories` : "Not logged"}"><span>${segments}</span><small>${date.toLocaleDateString(undefined, { weekday: "narrow" })}<b>${date.getDate()}</b></small></div>`;
     }).join("");
     const averageBar = `<div class="calorie-meal-week-column is-average" title="${formatNumber(averageCalories)} average calories"><span><i style="height:${averageCalories / axisMaximum * 100}%"></i></span><small>Avg</small></div>`;
-    const weeklyDifference = target > 0 && logged.length === 7 ? recent.reduce((sum, day) => sum + day.calories, 0) - target * 7 : null;
+    const weeklyDifference = target > 0 && included.length === 7 ? included.reduce((sum, day) => sum + day.calories, 0) - target * 7 : null;
     const differenceLabel = weeklyDifference === null ? "Weekly goal difference" : `Calories ${weeklyDifference > 0 ? "over" : "under"} weekly goal`;
-    return `<div class="calorie-meal-week-chart" aria-label="Calories by meal for the last seven days"><div class="calorie-meal-week-axis" aria-hidden="true"><small>cal</small>${axisTicks}</div><div class="calorie-meal-week-plot">${dayBars}${averageBar}</div></div><div class="calorie-meal-week-metrics"><span><small>${differenceLabel}</small><strong>${weeklyDifference === null ? "—" : formatNumber(Math.abs(weeklyDifference))}</strong></span><span><small>Daily average</small><strong>${logged.length ? formatNumber(averageCalories) : "—"}</strong></span><span><small>Daily goal</small><strong>${target > 0 ? formatNumber(target) : "—"}</strong></span></div>${logged.length < 7 ? '<p class="calorie-stat-note">Log all 7 days to compare the full week with your goal.</p>' : ""}`;
+    return `<div class="calorie-meal-week-chart" aria-label="Calories by meal for the last seven days"><div class="calorie-meal-week-axis" aria-hidden="true"><small>cal</small>${axisTicks}</div><div class="calorie-meal-week-plot">${dayBars}${averageBar}</div></div><div class="calorie-meal-week-metrics"><span><small>${differenceLabel}</small><strong>${weeklyDifference === null ? "—" : formatNumber(Math.abs(weeklyDifference))}</strong></span><span><small>Daily average</small><strong>${included.length ? formatNumber(averageCalories) : "—"}</strong></span><span><small>Daily goal</small><strong>${target > 0 ? formatNumber(target) : "—"}</strong></span></div>${included.length < 7 ? '<p class="calorie-stat-note">Today joins the average after calorie tracking is marked complete.</p>' : ""}`;
 }
 
 function phaseInsight(targets, rate, loggedCount) {
@@ -214,8 +227,10 @@ function renderStats(panel) {
     const logged = days.filter(day => day.logged);
     const inTarget = logged.filter(day => isCaloriesInTarget(day.calories, targets.calories)).length;
     const proteinDays = logged.filter(day => targets.protein > 0 && day.protein >= targets.protein).length;
-    const avgCalories = average(days, "calories");
-    const difference = targets.calories ? avgCalories - targets.calories : null;
+    const calorieAverageState = calorieAverage(days);
+    const avgCalories = calorieAverageState.value;
+    const averageDayCount = calorieAverageState.included.length;
+    const difference = targets.calories && averageDayCount ? avgCalories - targets.calories : null;
     const tolerance = targets.calories ? calorieTargetTolerance(targets.calories) : 0;
     const lower = targets.calories - tolerance;
     const upper = targets.calories + tolerance;
@@ -240,10 +255,10 @@ function renderStats(panel) {
             </div>
             ${maintenanceCard(maintenance, checkIn)}
             <article class="calorie-stat-card calorie-stat-week">
-                <div class="calorie-stat-title"><span><small>AVERAGE CALORIES</small><strong>${logged.length ? formatNumber(avgCalories) : "—"}</strong></span><b>${logged.length} of ${count} days logged</b></div>
+                <div class="calorie-stat-title"><span><small>AVERAGE CALORIES</small><strong>${averageDayCount ? formatNumber(avgCalories) : "—"}</strong></span><b>${averageDayCount} of ${count} days in average</b></div>
                 <div class="calorie-stat-bars ${displayDays.length === 7 ? "is-seven" : ""}">${bars(displayDays, targets.calories)}</div>
                 <div class="calorie-stat-goal">
-                    <span><i class="target"></i>In target</span><span><i class="outside"></i>Outside target</span><b>${difference === null || !logged.length ? "Set a calorie goal" : `${difference > 0 ? "+" : ""}${formatNumber(difference)} average vs goal`}</b>
+                    <span><i class="target"></i>In target</span><span><i class="outside"></i>Outside target</span><b>${difference === null ? "Set a calorie goal" : `${difference > 0 ? "+" : ""}${formatNumber(difference)} average vs goal`}</b>
                 </div>
             </article>
             <article class="calorie-stat-card calorie-target-rule">
