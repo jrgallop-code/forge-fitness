@@ -1,6 +1,6 @@
-import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-live-weighin-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=weekly-stable-tdee-1";
-import { markMaintenanceCheckInReviewed } from "./maintenance-check-in.js?v=shared-weekly-review-1";
+import { markMaintenanceCheckInReviewed } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
 
 const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";
 const FIRST_CHECK_DAY = 14;
