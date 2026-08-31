@@ -1,9 +1,9 @@
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=workout-source-stats-1';
 import './exercise-library-expansion.js?v=exercise-library-expansion-1';
-import { getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
+import { addCustomExercise, getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { createGeneratedExerciseGuide } from './exercise-guide-generator.js?v=full-library-guides-1';
 import { movementForExercise, prioritizeMovementMatches } from './smart-swap-priority.js?v=smart-swap-movement-priority-1';
-import { matchesExerciseBrowser, renderMuscleCarousel } from './exercise-browser.js?v=visual-muscle-browser-1';
+import { matchesExerciseBrowser, renderCustomExerciseFields, renderMuscleCarousel } from './exercise-browser.js?v=profile-anatomy-carousel-2';
 
 const SPECIAL_MUSCLE_PROFILES = {
   'barbell-bench-press': { primary: ['Chest'], secondary: ['Triceps', 'Front Delts'] },
@@ -411,6 +411,7 @@ function ensureAddExerciseSheet(logger) {
     <div class="session-swap-heading"><div><span class="eyebrow">ACTIVE WORKOUT</span><h4 id="session-add-title">Add Exercise</h4></div><button class="session-swap-close" type="button" aria-label="Close exercise library">×</button></div>
     <input class="session-add-search" type="search" placeholder="Search exercises" aria-label="Search exercises">
     ${renderMuscleCarousel('', 'data-session-muscle')}
+    <section class="exercise-browser-custom-form" data-session-custom-form hidden><h5>Add Custom Exercise</h5>${renderCustomExerciseFields()}<p class="exercise-browser-custom-message" aria-live="polite"></p><div class="exercise-browser-custom-actions"><button class="secondary-btn" type="button" data-session-custom-cancel>Cancel</button><button class="primary-btn" type="button" data-session-custom-save>Save & Add</button></div></section>
     <div class="session-add-results" data-session-add-results></div>
   </div>`;
   logger.appendChild(sheet);
@@ -424,6 +425,31 @@ function ensureAddExerciseSheet(logger) {
   };
   sheet.querySelector('.session-swap-close')?.addEventListener('click', close);
   sheet.querySelector('.session-add-search')?.addEventListener('input', render);
+  const customForm = sheet.querySelector('[data-session-custom-form]');
+  sheet.querySelector('[data-exercise-browser-custom]')?.addEventListener('click', () => {
+    customForm.hidden = false;
+    sheet.querySelector('[data-session-add-results]').hidden = true;
+    sheet.querySelector('.session-add-search').hidden = true;
+    sheet.querySelector('.exercise-muscle-carousel').hidden = true;
+    setTimeout(() => customForm.querySelector('[name="custom-name"]')?.focus(), 50);
+  });
+  const closeCustom = () => {
+    customForm.hidden = true;
+    sheet.querySelector('[data-session-add-results]').hidden = false;
+    sheet.querySelector('.session-add-search').hidden = false;
+    sheet.querySelector('.exercise-muscle-carousel').hidden = false;
+  };
+  sheet.querySelector('[data-session-custom-cancel]')?.addEventListener('click', closeCustom);
+  sheet.querySelector('[data-session-custom-save]')?.addEventListener('click', () => {
+    const value = name => customForm.querySelector(`[name="${name}"]`)?.value;
+    const name = String(value('custom-name') || '').trim();
+    const message = customForm.querySelector('.exercise-browser-custom-message');
+    if (!name) { message.textContent = 'Enter an exercise name.'; return; }
+    const exercise = addCustomExercise({ name, muscleGroup: value('custom-muscle'), equipment: value('custom-equipment'), type: value('custom-type'), recommendedReps: value('custom-reps'), defaultSets: value('custom-sets') });
+    if (!exercise || !appendExerciseToActiveWorkout(exercise.id)) { message.textContent = 'Custom exercise could not be added.'; return; }
+    close();
+    openActiveWorkout();
+  });
   sheet.querySelectorAll('[data-session-muscle]').forEach(button => button.addEventListener('click', () => {
     sheet.dataset.muscle = button.dataset.sessionMuscle || '';
     sheet.querySelectorAll('[data-session-muscle]').forEach(item => {

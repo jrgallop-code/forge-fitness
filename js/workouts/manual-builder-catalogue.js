@@ -1,5 +1,5 @@
 import { getAllExercises, getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
-import { matchesExerciseBrowser, renderMuscleCarousel } from "./exercise-browser.js?v=visual-muscle-browser-1";
+import { matchesExerciseBrowser, renderMuscleCarousel } from "./exercise-browser.js?v=profile-anatomy-carousel-2";
 
 let active = false;
 let picker = null;
@@ -155,7 +155,7 @@ function renderPicker() {
     <div class="manual-picker-filters">
       <select data-manual-equipment><option value="">All equipment</option>${equipment.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("")}</select>
     </div>
-    <div class="manual-picker-tools"><span>Tap exercises to ${replace ? "choose a replacement" : "build your day"}.</span><button class="secondary-btn" type="button" data-manual-custom>+ Custom Exercise</button></div>
+    <div class="manual-picker-tools"><span>Tap exercises to ${replace ? "choose a replacement" : "build your day"}.</span></div>
     <div class="manual-picker-list" data-manual-list></div>
     <div class="manual-picker-footer"><button class="secondary-btn" type="button" data-manual-back>Back</button><button class="primary-btn" type="button" data-manual-confirm disabled>${replace ? "Replace Exercise" : "Add Exercises"}</button></div>
   `;
@@ -174,7 +174,7 @@ function renderPicker() {
   section.querySelector("[data-manual-equipment]").onchange = ev => { state.equipment = ev.target.value; renderList(); };
   section.querySelector("[data-manual-back]").onclick = () => closePicker();
   section.querySelector("[data-manual-confirm]").onclick = () => closePicker(true);
-  section.querySelector("[data-manual-custom]").onclick = () => startCustom(state.di);
+  section.querySelector("[data-exercise-browser-custom]").onclick = () => startCustom(state.di);
   renderList();
 }
 
