@@ -18,8 +18,8 @@ test("Weight and Carbs renders inside Weight Progress", () => {
 test("Weight graph is a two-page swipe carousel", () => {
     assert.match(source, /weight-graph-carousel-track/);
     assert.match(source, /scroll-snap-type:x mandatory/);
-    assert.match(source, /data-weight-graph-slide = "trend"/);
-    assert.match(source, /data-weight-graph-slide = "carbs"/);
+    assert.match(source, /dataset\.weightGraphSlide = "trend"/);
+    assert.match(source, /dataset\.weightGraphSlide = "carbs"/);
     assert.match(source, /Weight \+ Carbs/);
 });
 
