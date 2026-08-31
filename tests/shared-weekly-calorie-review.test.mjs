@@ -44,6 +44,9 @@ test("the actionable coach review combines TDEE and pace into one capped update"
     assert.match(source, /markMaintenanceCheckInReviewed/);
     assert.match(source, /markCheckHandled\(phase, checkDay, "coordinated-weekly-review"\)/);
     assert.match(source, /startAdjustmentHold\(/);
+    assert.match(source, /const endDate = previousDateKey\(localDateKey\(\)\)/);
+    assert.match(source, /for \(let day = 1; day < 7; day \+= 1\)/);
+    assert.doesNotMatch(source, /endDate === localDateKey\(\)/);
 });
 
 test("declining the shared review marks both recommendation systems handled", () => {

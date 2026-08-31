@@ -192,13 +192,9 @@ function buildSharedRecommendation(metrics, phase) {
 }
 
 function getAdaptiveCalorieBaseline(metrics, currentCalories) {
-    const trend = metrics?.trend;
-    let startDate = trend?.currentWindowStart;
-    let endDate = trend?.currentWindowEnd || trend?.measurementDate;
-    if (startDate && endDate === localDateKey()) {
-        startDate = previousDateKey(startDate);
-        endDate = previousDateKey(endDate);
-    }
+    const endDate = previousDateKey(localDateKey());
+    let startDate = endDate;
+    for (let day = 1; day < 7; day += 1) startDate = previousDateKey(startDate);
     const intake = getLoggedCalorieWindow({
         startDate,
         endDate,
