@@ -1,5 +1,5 @@
 import { getAllExercises, getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
-import { matchesExerciseBrowser, renderMuscleCarousel } from "./exercise-browser.js?v=profile-anatomy-carousel-2";
+import { hydrateExerciseAnatomy, matchesExerciseBrowser, renderMuscleCarousel } from "./exercise-browser.js?v=inline-anatomy-carousel-1";
 
 let active = false;
 let picker = null;
@@ -161,6 +161,7 @@ function renderPicker() {
   `;
 
   e.insertAdjacentElement("beforebegin", section);
+  void hydrateExerciseAnatomy(section);
   section.querySelector("[data-manual-search]").oninput = ev => { state.q = ev.target.value; renderList(); };
   section.querySelectorAll("[data-manual-muscle]").forEach(button => button.onclick = () => {
     state.muscle = button.dataset.manualMuscle || "";
