@@ -18,6 +18,10 @@ function clamp(value, limit = WEEKLY_ADJUSTMENT_CAP) {
     return Math.max(-cap, Math.min(cap, value));
 }
 
+function roundTo25(value) {
+    return Math.round(Number(value) / 25) * 25;
+}
+
 export function buildAdaptivePaceCorrection({ actualRate, targetRate } = {}) {
     const actual = finite(actualRate);
     const target = finite(targetRate);
@@ -50,7 +54,14 @@ export function buildCoordinatedWeeklyUpdate({
     const observedIntake = actualIntakeCalories === null || actualIntakeCalories === undefined || actualIntakeCalories === ""
         ? null
         : finite(actualIntakeCalories);
-    const fullRequestedTarget = Math.round(target + requestedMaintenanceChange + requestedPaceCorrection);
+    // When completed food logs and a usable weight trend are available, the
+    // logged intake already contains the user's real maintenance, activity and
+    // phase surplus/deficit. Apply the rate-gap correction to that one baseline
+    // instead of adding maintenance and phase adjustments a second time.
+    const useObservedPaceBaseline = observedIntake !== null && adaptiveReady;
+    const fullRequestedTarget = Math.round(useObservedPaceBaseline
+        ? observedIntake + requestedPaceCorrection
+        : target + requestedMaintenanceChange + requestedPaceCorrection);
     const direction = Math.sign(fullRequestedTarget - target);
     const adjustmentBaseline = observedIntake === null
         ? target
@@ -59,12 +70,18 @@ export function buildCoordinatedWeeklyUpdate({
             : direction < 0
                 ? Math.min(target, observedIntake)
                 : observedIntake;
-    const behavioralChange = clamp(fullRequestedTarget - adjustmentBaseline, maximumChange);
-    const nextTarget = observedIntake === null
+    const behavioralChange = useObservedPaceBaseline
+        ? requestedPaceCorrection
+        : clamp(fullRequestedTarget - adjustmentBaseline, maximumChange);
+    const nextTarget = useObservedPaceBaseline
+        ? roundTo25(fullRequestedTarget)
+        : observedIntake === null
         ? target + clamp(maintenanceChange + requestedPaceCorrection, maximumChange)
         : adjustmentBaseline + behavioralChange;
     const targetChange = Math.round(nextTarget - target);
-    const paceCorrection = targetChange - maintenanceChange;
+    const paceCorrection = useObservedPaceBaseline
+        ? requestedPaceCorrection
+        : targetChange - maintenanceChange;
 
     const result = {
         previousMaintenance: Math.round(maintenance),
@@ -76,13 +93,14 @@ export function buildCoordinatedWeeklyUpdate({
         targetChange,
         requestedMaintenanceChange,
         requestedPaceCorrection,
-        capped: maintenanceChange !== requestedMaintenanceChange || Math.abs(fullRequestedTarget - adjustmentBaseline) > Math.max(25, Math.round(Number(maximumChange) || WEEKLY_ADJUSTMENT_CAP))
+        capped: !useObservedPaceBaseline && (maintenanceChange !== requestedMaintenanceChange || Math.abs(fullRequestedTarget - adjustmentBaseline) > Math.max(25, Math.round(Number(maximumChange) || WEEKLY_ADJUSTMENT_CAP)))
     };
     if (observedIntake !== null) {
         result.actualIntakeCalories = Math.round(observedIntake);
         result.adjustmentBaseline = Math.round(adjustmentBaseline);
         result.behavioralChange = Math.round(behavioralChange);
         result.fullRequestedTarget = fullRequestedTarget;
+        result.usedObservedPaceBaseline = useObservedPaceBaseline;
     }
     return result;
 }

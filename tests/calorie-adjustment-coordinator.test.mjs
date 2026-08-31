@@ -44,7 +44,7 @@ test("an on-target phase preserves the adaptive offset when maintenance changes"
     assert.equal(update.paceCorrection, 0);
 });
 
-test("a weekly recommendation caps the behavioral change from actual intake", () => {
+test("a weekly recommendation applies the rate gap once to actual intake", () => {
     const update = buildCoordinatedWeeklyUpdate({
         currentMaintenance: 2275,
         proposedMaintenance: 2400,
@@ -55,10 +55,30 @@ test("a weekly recommendation caps the behavioral change from actual intake", ()
         adaptiveReady: true
     });
     assert.equal(update.requestedPaceCorrection, 225);
-    assert.equal(update.fullRequestedTarget, 2750);
+    assert.equal(update.fullRequestedTarget, 2725);
     assert.equal(update.adjustmentBaseline, 2500);
-    assert.equal(update.behavioralChange, 150);
-    assert.equal(update.targetCalories, 2650);
-    assert.equal(update.targetChange, 250);
-    assert.equal(update.capped, true);
+    assert.equal(update.behavioralChange, 225);
+    assert.equal(update.targetCalories, 2725);
+    assert.equal(update.targetChange, 325);
+    assert.equal(update.paceCorrection, 225);
+    assert.equal(update.capped, false);
+    assert.equal(update.usedObservedPaceBaseline, true);
+});
+
+test("2620 calories at minus 0.20 lb per week targets plus 0.25 without double counting", () => {
+    const update = buildCoordinatedWeeklyUpdate({
+        currentMaintenance: 2400,
+        proposedMaintenance: 2400,
+        currentTarget: 2400,
+        actualIntakeCalories: 2620,
+        actualRate: -0.2,
+        targetRate: 0.25,
+        adaptiveReady: true
+    });
+    assert.equal(update.requestedPaceCorrection, 225);
+    assert.equal(update.fullRequestedTarget, 2845);
+    assert.equal(update.targetCalories, 2850);
+    assert.equal(update.targetChange, 450);
+    assert.equal(update.paceCorrection, 225);
+    assert.equal(update.capped, false);
 });
