@@ -700,8 +700,7 @@ function enhanceLogger(logger) {
 function updateAddSetLabel(card, exerciseId) {
   const button = card.querySelector('.compact-add-set-btn');
   if (!button) return;
-  const setting = getTimerSettings()[exerciseId] || { enabled: false, seconds: 120 };
-  button.textContent = setting.enabled ? `+ Add Set (${formatSeconds(setting.seconds)})` : '+ Add Set';
+  button.textContent = '+ Add Set';
 }
 
 function updateInlineTimers() {
