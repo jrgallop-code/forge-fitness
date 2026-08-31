@@ -84,7 +84,7 @@ async function cacheAssetTree(seedUrls, cache) {
         for (const result of discoveries) {
             if (result.status !== "fulfilled") continue;
             for (const url of result.value) {
-                if (!visited.has(url) && !queued.includes(url)) queued.push(url.href || url);
+                if (!visited.has(url) && !queued.includes(url)) queued.push(url);
             }
         }
     }
