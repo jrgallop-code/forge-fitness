@@ -1,5 +1,5 @@
-import { navigate } from "./core/router.js?v=weekly-review-modal-1";
-import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=nutrition-nav-1";
+import { navigate } from "./core/router.js?v=progress-nav-stability-1";
+import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=progress-nav-stability-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-source-stats-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";
@@ -15,9 +15,29 @@ const STROKE_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" a
 const DUMBBELL_SVG = FILLED_ICON(`<path d="M2.7 10.2h2v3.6h-2v-3.6Zm3-2h2.1v7.6H5.7V8.2Zm2.9 2.8h6.8v2H8.6v-2Zm7.6-2.8h2.1v7.6h-2.1V8.2Zm3.1 2h2v3.6h-2v-3.6Z"/>`);
 const EXERCISE_LIFTER_SVG = `<svg class="app-inline-icon app-exercise-person-icon" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M3 3.4h18"/><path d="M3 1.9v3M5 1.3v4.2M19 1.3v4.2M21 1.9v3"/><circle cx="12" cy="7.2" r="1.7"/><path d="M10 10.2 7 4.2M14 10.2l3-6"/><path d="M10 10.2h4l.8 5.1M10 10.2l-.8 5.1"/><path d="M9.2 15.3 7 21M14.8 15.3 17 21M9.2 15.3h5.6"/></svg>`;
 const ICONS={"💪":DUMBBELL_SVG,"🏋️‍♂️":EXERCISE_LIFTER_SVG,"🏋️‍♀️":EXERCISE_LIFTER_SVG,"🏋️":EXERCISE_LIFTER_SVG,"🏋":EXERCISE_LIFTER_SVG,"👤":STROKE_ICON(`<circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.5-4.2 3-6.4 6.5-6.4s6 2.2 6.5 6.4"/>`),"🎯":STROKE_ICON(`<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.8"/>`),"📈":STROKE_ICON(`<path d="M4 19V5M4 19h16M7 15l4-4 3 2 5-6"/>`),"📉":STROKE_ICON(`<path d="M4 5v14h16M7 9l4 4 3-2 5 6"/>`),"📊":STROKE_ICON(`<path d="M4 20V4M4 20h16M7 17v-5h3v5M12 17V8h3v9M17 17V5h3v12"/>`),"⚖️":STROKE_ICON(`<path d="M12 4v15M7 5h10M4.5 8 2.5 13h4L4.5 8Zm15 0-2 5h4l-2-5ZM7.5 20h9"/>`),"⚖":STROKE_ICON(`<path d="M12 4v15M7 5h10M4.5 8 2.5 13h4L4.5 8Zm15 0-2 5h4l-2-5ZM7.5 20h9"/>`),"🌙":FILLED_ICON(`<path d="M20.4 15.2A8.6 8.6 0 0 1 9 3.6 9 9 0 1 0 20.4 15.2Z"/>`),"💧":FILLED_ICON(`<path d="M12 2.4S5.8 9.4 5.8 14a6.2 6.2 0 0 0 12.4 0C18.2 9.4 12 2.4 12 2.4Z"/>`),"🔥":FILLED_ICON(`<path d="M13.6 2.4c.3 2.4-.5 4.1-2 5.6-1.3 1.2-2.2 2.4-2.1 4.1 0 .9.4 1.6 1 2.2-.1-2.1 1.1-3.4 2.6-4.6.3 1.7 1.4 2.7 2.3 3.8.8 1 1.2 2 1.1 3.3-.1 2.7-2.1 4.8-4.9 4.8-3.3 0-5.7-2.4-5.7-5.8 0-3.4 1.9-5.5 4-7.6 1.9-1.8 3.2-3.3 3.7-5.8Z"/>`),"⚡":FILLED_ICON(`<path d="M13.5 2 5.8 13h5.1L9.8 22l8.4-12h-5.4L13.5 2Z"/>`),"📋":STROKE_ICON(`<path d="M8 5.5H5.8A1.8 1.8 0 0 0 4 7.3v12.9h16V7.3a1.8 1.8 0 0 0-1.8-1.8H16M8 4.2h2a2 2 0 0 1 4 0h2v3H8v-3Z"/>`),"🥩":STROKE_ICON(`<path d="M5.1 16.9c-2.1-1.7-2.2-4.9-.2-6.8 1.8-1.7 4.4-2.2 6.2-3.9 1.3-1.2 3.2-1.7 4.9-1.1 2.7.9 4.2 3.8 3.3 6.5-.7 2.1-2.3 3.7-4.3 4.7l-4.5 2.2c-1.8.9-3.9.7-5.4-1.6Z"/><circle cx="15.2" cy="9.7" r="2.1"/>`),"☁️":FILLED_ICON(`<path d="M7.2 18.5h10.5a4.3 4.3 0 0 0 .4-8.6A6.4 6.4 0 0 0 6 8.2a5.2 5.2 0 0 0 1.2 10.3Z"/>`)};
-const ICON_TOKENS=Object.keys(ICONS).sort((a,b)=>b.length-a.length);const ICON_REGEX=new RegExp(`(${ICON_TOKENS.map(token=>token.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")})`,"g");
+const ICON_TOKENS=Object.keys(ICONS).sort((a,b)=>b.length-a.length);
+const ICON_REGEX=new RegExp(`(${ICON_TOKENS.map(token=>token.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")})`,"g");
 function createIconElement(svgMarkup){const template=document.createElement("template");template.innerHTML=svgMarkup.trim();return template.content.firstElementChild;}
 function replaceColoredEmojis(root){if(!root)return;const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){const parent=node.parentElement;if(!parent||parent.closest("script, style, textarea, input, option"))return NodeFilter.FILTER_REJECT;return ICON_TOKENS.some(token=>node.nodeValue?.includes(token))?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});const matches=[];let node;while((node=walker.nextNode()))matches.push(node);matches.forEach(textNode=>{const parts=textNode.nodeValue.split(ICON_REGEX),fragment=document.createDocumentFragment();parts.forEach(part=>{if(!part)return;fragment.append(ICONS[part]?createIconElement(ICONS[part]):document.createTextNode(part));});textNode.replaceWith(fragment);});}
 function addExerciseButtonIcons(root){root.querySelectorAll?.("button").forEach(button=>{if(button.matches(".more-menu-card, .level-up-coach-card")||!/\bexercises?\b/i.test(button.textContent||"")||button.querySelector(".app-exercise-person-icon"))return;button.insertBefore(createIconElement(EXERCISE_LIFTER_SVG),button.firstChild);});}
 function decorateAppIcons(root=document){replaceColoredEmojis(root);addExerciseButtonIcons(root);}
-initializeWorkoutRuntime();const content=document.getElementById("content");if(content)new MutationObserver(()=>scheduleIconDecoration(()=>decorateAppIcons(content))).observe(content,{childList:true,subtree:true});navigate("home");decorateAppIcons(content||document);if("serviceWorker" in navigator){const hadServiceWorkerController=Boolean(navigator.serviceWorker.controller);let reloadingForServiceWorker=false;navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!hadServiceWorkerController||reloadingForServiceWorker)return;reloadingForServiceWorker=true;window.location.reload();});navigator.serviceWorker.register("./service-worker.js",{updateViaCache:"none"}).then(registration=>registration.update()).catch(error=>console.warn("Service worker registration failed:",error));}document.body.insertAdjacentHTML("beforeend",renderNavbar());initializeNavbar();initializeMaintenanceCheckInAlert();decorateAppIcons(document);
+
+initializeWorkoutRuntime();
+const content=document.getElementById("content");
+if(content)new MutationObserver(()=>scheduleIconDecoration(()=>decorateAppIcons(content))).observe(content,{childList:true,subtree:true});
+navigate("home");
+decorateAppIcons(content||document);
+
+if("serviceWorker" in navigator){
+    // Update the service worker in the background, but do not reload the open
+    // app when a new worker takes control. In-app navigation should never show
+    // the startup splash because an update arrived while the user was logging.
+    navigator.serviceWorker.register("./service-worker.js",{updateViaCache:"none"})
+        .then(registration=>registration.update())
+        .catch(error=>console.warn("Service worker registration failed:",error));
+}
+
+document.body.insertAdjacentHTML("beforeend",renderNavbar());
+initializeNavbar();
+initializeMaintenanceCheckInAlert();
+decorateAppIcons(document);

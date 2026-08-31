@@ -1,5 +1,4 @@
-import { navigate } from "../core/router.js?v=deload-workout-preview-1";
-
+import { navigate } from "../core/router.js?v=progress-nav-stability-1";
 
 export function renderNavbar() {
     return `
@@ -47,62 +46,59 @@ export function renderNavbar() {
     `;
 }
 
-
 export function initializeNavbar() {
-    const nav =
-        document.querySelector(".bottom-nav");
-
-    if (!nav || nav.dataset.bound === "true") {
-        return;
-    }
+    const nav = document.querySelector(".bottom-nav");
+    if (!nav || nav.dataset.bound === "true") return;
 
     nav.dataset.bound = "true";
+    let progressPointerHandledAt = -Infinity;
 
-    nav.addEventListener(
-        "click",
-        event => {
-            const button =
-                event.target.closest(".nav-btn");
+    const activateAndNavigate = button => {
+        const page = button?.dataset?.page;
+        if (!page) return;
 
-            if (!button || !nav.contains(button)) {
-                return;
-            }
+        button.classList.remove("nav-pulse");
+        void button.offsetWidth;
+        button.classList.add("nav-pulse");
+        button.addEventListener("animationend", () => button.classList.remove("nav-pulse"), { once: true });
 
-            const page =
-                button.dataset.page;
+        nav.querySelectorAll(".nav-btn").forEach(item => {
+            item.classList.toggle("active", item === button);
+        });
 
-            if (!page) {
-                return;
-            }
-
-            event.preventDefault();
-
-            button.classList.remove("nav-pulse");
-            void button.offsetWidth;
-            button.classList.add("nav-pulse");
-            button.addEventListener(
-                "animationend",
-                () => button.classList.remove("nav-pulse"),
-                { once: true }
-            );
-
-            nav.querySelectorAll(".nav-btn")
-                .forEach(item =>
-                    item.classList.toggle(
-                        "active",
-                        item === button
-                    )
-                );
-
-            try {
-                navigate(page);
-            }
-            catch (error) {
-                console.error(
-                    `Navigation to ${page} failed:`,
-                    error
-                );
-            }
+        try {
+            navigate(page);
         }
-    );
+        catch (error) {
+            console.error(`Navigation to ${page} failed:`, error);
+        }
+    };
+
+    // Mobile browsers can occasionally suppress the synthesized click after a
+    // pointer interaction. Give Progress a direct pointer-up path while keeping
+    // the normal click handler for mouse and keyboard activation.
+    nav.addEventListener("pointerup", event => {
+        const button = event.target.closest?.('.nav-btn[data-page="progress"]');
+        if (!button || !nav.contains(button)) return;
+
+        progressPointerHandledAt = performance.now();
+        event.preventDefault();
+        activateAndNavigate(button);
+    });
+
+    nav.addEventListener("click", event => {
+        const button = event.target.closest?.(".nav-btn");
+        if (!button || !nav.contains(button)) return;
+
+        const page = button.dataset.page;
+        if (!page) return;
+
+        event.preventDefault();
+
+        // Avoid navigating twice when a touch/pen pointer-up already handled
+        // the Progress button immediately before this synthetic click.
+        if (page === "progress" && performance.now() - progressPointerHandledAt < 700) return;
+
+        activateAndNavigate(button);
+    });
 }
