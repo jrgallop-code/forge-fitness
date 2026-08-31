@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-08-31-69";
+const CACHE_VERSION = "2026-08-31-62";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -117,9 +117,7 @@ self.addEventListener("activate", event => {
                 .filter(name => name.startsWith(CACHE_PREFIX) && ![SHELL_CACHE, RUNTIME_CACHE].includes(name))
                 .map(name => caches.delete(name))
         );
-        // Do not claim an already-open app session. The new worker will control
-        // the next normal app launch/navigation, avoiding mid-session behavior
-        // changes or splash-screen flashes while the user is logging data.
+        await self.clients.claim();
     })());
 });
 
