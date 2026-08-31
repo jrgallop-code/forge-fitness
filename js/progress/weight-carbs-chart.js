@@ -45,11 +45,20 @@ function bindGlobalRefreshes(panel) {
             }
             return;
         }
+
         if (event.target.closest?.("[data-calorie-stats-range]")) {
             window.setTimeout(() => {
                 ensureChartCard(panel);
                 scheduleRefresh(panel);
             }, 20);
+            return;
+        }
+
+        // A selected day is intentionally temporary. Tapping anywhere outside
+        // the actual graph clears the tooltip/crosshair so the chart can be
+        // viewed without an overlay obscuring the data.
+        if (selectedDate && !event.target.closest?.(".weight-carbs-chart-shell")) {
+            clearSelection(panel);
         }
     });
 
@@ -80,6 +89,7 @@ function ensureChartCard(panel) {
     if (panel.querySelector("[data-weight-carbs-card]")) return;
     const page = panel.querySelector(".calorie-stats-page");
     if (!page) return;
+
     const card = document.createElement("article");
     card.className = "calorie-stat-card weight-carbs-card";
     card.dataset.weightCarbsCard = "1";
@@ -111,12 +121,14 @@ function ensureChartCard(panel) {
             <span><i class="is-trend"></i>7-day trend</span>
             <span><i class="is-carbs"></i>Carbs</span>
         </div>
+        <p class="weight-carbs-interaction-note">Tap or drag on the graph for day details. Tap outside the graph to clear them.</p>
         <div class="weight-carbs-empty" data-weight-carbs-empty hidden>
             <strong>More data needed</strong>
             <p>Log your nutrition and body weight consistently to see how carbohydrate intake lines up with scale fluctuations.</p>
         </div>
         <aside class="weight-carbs-insight" data-weight-carbs-insight hidden></aside>
     `;
+
     const rangeControls = page.querySelector(".calorie-stats-ranges");
     if (rangeControls) rangeControls.insertAdjacentElement("afterend", card);
     else page.prepend(card);
@@ -146,7 +158,7 @@ function refreshChart(panel) {
         if (empty) empty.hidden = false;
         if (chartShell) chartShell.hidden = true;
         if (legend) legend.hidden = true;
-        card.querySelector("[data-weight-carbs-insight]")?.setAttribute("hidden", "");
+        updateAnalysis(card, foodLog, series);
         return;
     }
 
@@ -154,11 +166,11 @@ function refreshChart(panel) {
     if (chartShell) chartShell.hidden = false;
     if (legend) legend.hidden = false;
 
-    if (!selectedDate || !available.some(day => day.date === selectedDate)) selectedDate = available.at(-1)?.date || null;
+    if (selectedDate && !available.some(day => day.date === selectedDate)) selectedDate = null;
     drawChart(canvas, series, selectedDate);
     bindCanvasInteraction(canvas, series, panel);
     updateTooltip(card, series, selectedDate);
-    updateInsight(card, foodLog, series);
+    updateAnalysis(card, foodLog, series);
 }
 
 function buildSeries({ startDate, endDate, allWeights, foodLog }) {
@@ -184,6 +196,7 @@ function bindCanvasInteraction(canvas, series, panel) {
         canvas.__weightCarbsSeries = series;
         return;
     }
+
     canvas.dataset.weightCarbsInteraction = "1";
     canvas.__weightCarbsSeries = series;
     let dragging = false;
@@ -192,6 +205,7 @@ function bindCanvasInteraction(canvas, series, panel) {
         const currentSeries = canvas.__weightCarbsSeries || [];
         const available = currentSeries.filter(day => Number.isFinite(day.weight) || Number.isFinite(day.carbs));
         if (!available.length) return;
+
         const rect = canvas.getBoundingClientRect();
         const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
         const paddingLeft = 48;
@@ -199,6 +213,7 @@ function bindCanvasInteraction(canvas, series, panel) {
         const chartWidth = Math.max(1, rect.width - paddingLeft - paddingRight);
         const ratio = Math.max(0, Math.min(1, (x - paddingLeft) / chartWidth));
         const targetIndex = Math.round(ratio * Math.max(0, currentSeries.length - 1));
+
         let nearest = available[0];
         let nearestDistance = Infinity;
         available.forEach(day => {
@@ -209,6 +224,7 @@ function bindCanvasInteraction(canvas, series, panel) {
                 nearestDistance = distance;
             }
         });
+
         selectedDate = nearest.date;
         drawChart(canvas, currentSeries, selectedDate);
         updateTooltip(panel.querySelector("[data-weight-carbs-card]"), currentSeries, selectedDate);
@@ -224,6 +240,7 @@ function bindCanvasInteraction(canvas, series, panel) {
         event.preventDefault();
         selectFromPointer(event);
     });
+
     const stop = event => {
         dragging = false;
         canvas.releasePointerCapture?.(event.pointerId);
@@ -232,9 +249,20 @@ function bindCanvasInteraction(canvas, series, panel) {
     canvas.addEventListener("pointercancel", stop);
 }
 
+function clearSelection(panel) {
+    selectedDate = null;
+    const card = panel.querySelector("[data-weight-carbs-card]");
+    const canvas = card?.querySelector("[data-weight-carbs-canvas]");
+    const series = canvas?.__weightCarbsSeries || [];
+    if (canvas && series.length) drawChart(canvas, series, null);
+    const tooltip = card?.querySelector("[data-weight-carbs-tooltip]");
+    if (tooltip) tooltip.hidden = true;
+}
+
 function drawChart(canvas, series, activeDate) {
     const context = canvas.getContext("2d");
     if (!context) return;
+
     const width = canvas.clientWidth || canvas.parentElement?.clientWidth || 640;
     const height = width <= 430 ? 286 : 310;
     const scale = globalThis.devicePixelRatio || 1;
@@ -278,6 +306,7 @@ function drawChart(canvas, series, activeDate) {
         context.moveTo(padding.left, y);
         context.lineTo(width - padding.right, y);
         context.stroke();
+
         const weightLabel = weightMax - ((weightMax - weightMin) * row / 3);
         const carbLabel = carbMax - (carbMax * row / 3);
         context.textAlign = "right";
@@ -285,6 +314,7 @@ function drawChart(canvas, series, activeDate) {
         context.textAlign = "left";
         context.fillText(`${Math.round(carbLabel)}`, width - padding.right + 7, y);
     }
+
     context.textBaseline = "alphabetic";
     context.textAlign = "left";
     context.fillText(unit, 5, 12);
@@ -297,7 +327,7 @@ function drawChart(canvas, series, activeDate) {
         if (!Number.isFinite(day.carbs)) return;
         const x = xForIndex(index);
         const y = yCarbs(day.carbs);
-        const selected = day.date === activeDate;
+        const selected = Boolean(activeDate) && day.date === activeDate;
         context.globalAlpha = selected ? .92 : .34;
         context.fillStyle = CARB_COLOR;
         roundRect(context, x - barWidth / 2, y, barWidth, padding.top + chartHeight - y, Math.min(4, barWidth / 2));
@@ -310,20 +340,21 @@ function drawChart(canvas, series, activeDate) {
 
     series.forEach((day, index) => {
         if (!Number.isFinite(day.weight)) return;
+        const selected = Boolean(activeDate) && day.date === activeDate;
         const x = xForIndex(index);
         const y = yWeight(day.weight);
         context.beginPath();
-        context.arc(x, y, day.date === activeDate ? 5 : 2.8, 0, Math.PI * 2);
-        context.fillStyle = day.date === activeDate ? "#fff" : DAILY_WEIGHT_POINT;
+        context.arc(x, y, selected ? 5 : 2.8, 0, Math.PI * 2);
+        context.fillStyle = selected ? "#fff" : DAILY_WEIGHT_POINT;
         context.fill();
-        if (day.date === activeDate) {
+        if (selected) {
             context.strokeStyle = TREND_COLOR;
             context.lineWidth = 2;
             context.stroke();
         }
     });
 
-    const selectedIndex = series.findIndex(day => day.date === activeDate);
+    const selectedIndex = activeDate ? series.findIndex(day => day.date === activeDate) : -1;
     if (selectedIndex >= 0) {
         const x = xForIndex(selectedIndex);
         context.strokeStyle = "rgba(255,255,255,.5)";
@@ -346,6 +377,7 @@ function drawLine(context, series, key, xForIndex, yForWeight, color, lineWidth,
     context.lineCap = "round";
     let previousIndex = null;
     context.beginPath();
+
     series.forEach((day, index) => {
         const value = day[key];
         if (!Number.isFinite(value)) {
@@ -367,6 +399,7 @@ function drawDateLabels(context, series, xForIndex, y) {
     context.fillStyle = "#777780";
     context.font = "800 8px Arial";
     context.textAlign = "center";
+
     series.forEach((day, index) => {
         if (index !== 0 && index !== count - 1 && index % step !== 0) return;
         const date = new Date(`${day.date}T12:00:00`);
@@ -376,15 +409,25 @@ function drawDateLabels(context, series, xForIndex, y) {
 
 function updateTooltip(card, series, date) {
     const tooltip = card?.querySelector("[data-weight-carbs-tooltip]");
-    if (!tooltip || !date) return;
+    if (!tooltip) return;
+    if (!date) {
+        tooltip.hidden = true;
+        return;
+    }
+
     const day = series.find(item => item.date === date);
-    if (!day) { tooltip.hidden = true; return; }
+    if (!day) {
+        tooltip.hidden = true;
+        return;
+    }
+
     const unit = massUnit();
     const weight = Number.isFinite(day.weight) ? displayMass(day.weight) : null;
     const trend = Number.isFinite(day.trend) ? displayMass(day.trend) : null;
     const difference = Number.isFinite(weight) && Number.isFinite(trend) ? weight - trend : null;
     const recentAverage = recentCarbAverage(series, date);
     const carbDifference = Number.isFinite(day.carbs) && Number.isFinite(recentAverage) ? day.carbs - recentAverage : null;
+
     tooltip.innerHTML = `
         <strong>${formatLongDate(day.date)}</strong>
         <span>${Number.isFinite(weight) ? `${weight.toFixed(1)} ${unit}` : "No weight logged"}</span>
@@ -410,34 +453,87 @@ function positionTooltip(card, series, date, tooltip) {
     tooltip.style.left = `${left}px`;
 }
 
-function updateInsight(card, foodLog, visibleSeries) {
+function updateAnalysis(card, foodLog, visibleSeries) {
     const insight = card.querySelector("[data-weight-carbs-insight]");
     if (!insight) return;
-    const candidate = [...visibleSeries].reverse().find(day => Number.isFinite(day.weight) && Number.isFinite(day.trend) && Number.isFinite(day.carbs));
-    if (!candidate) { insight.hidden = true; return; }
+
+    const candidate = [...visibleSeries].reverse().find(day =>
+        Number.isFinite(day.weight) && Number.isFinite(day.trend) && Number.isFinite(day.carbs)
+    );
+
+    if (!candidate) {
+        insight.innerHTML = `
+            <span>WEIGHT &amp; CARB ANALYSIS</span>
+            <strong>More paired data needed</strong>
+            <p>Level Up needs a day with both body weight and carbohydrate intake before it can compare scale fluctuations with carbs.</p>
+        `;
+        insight.hidden = false;
+        return;
+    }
 
     const recentDates = [candidate.date, shiftDate(candidate.date, -1), shiftDate(candidate.date, -2)];
     const recentCarbs = recentDates.map(date => totalCarbs(foodLog, date)).filter(Number.isFinite);
     const baselineDates = [];
     for (let offset = 3; offset <= 10; offset += 1) baselineDates.push(shiftDate(candidate.date, -offset));
     const baselineCarbs = baselineDates.map(date => totalCarbs(foodLog, date)).filter(Number.isFinite);
-    if (recentCarbs.length < 2 || baselineCarbs.length < 3) { insight.hidden = true; return; }
+
+    const unit = massUnit();
+    const weightAboveTrend = candidate.weight - candidate.trend;
+    const displayDelta = displayMass(weightAboveTrend);
+    const weightDirection = weightAboveTrend > .1
+        ? `${formatSigned(displayDelta, 1)} ${unit} above`
+        : weightAboveTrend < -.1
+            ? `${formatSigned(displayDelta, 1)} ${unit} below`
+            : "very close to";
+
+    if (recentCarbs.length < 2 || baselineCarbs.length < 3) {
+        insight.innerHTML = `
+            <span>WEIGHT &amp; CARB ANALYSIS</span>
+            <strong>Building a clearer pattern</strong>
+            <p>Your latest paired reading has scale weight ${weightDirection} its 7-day trend. More consistently logged carb days are needed before Level Up can judge whether carbohydrate changes line up with that fluctuation.</p>
+            <small>${recentCarbs.length}/2 recent carb days and ${baselineCarbs.length}/3 baseline carb days available.</small>
+        `;
+        insight.hidden = false;
+        return;
+    }
 
     const recentAverage = mean(recentCarbs);
     const baselineAverage = mean(baselineCarbs);
-    const carbIncrease = recentAverage - baselineAverage;
-    const weightAboveTrend = candidate.weight - candidate.trend;
-    const carbsHigh = carbIncrease >= Math.max(35, baselineAverage * .15);
-    const weightElevated = weightAboveTrend >= Math.max(.5, candidate.trend * .003);
-    if (!carbsHigh || !weightElevated) { insight.hidden = true; return; }
+    const carbChange = recentAverage - baselineAverage;
+    const highThreshold = Math.max(35, baselineAverage * .15);
+    const lowThreshold = -highThreshold;
+    const weightThreshold = Math.max(.5, candidate.trend * .003);
+    const carbsHigh = carbChange >= highThreshold;
+    const carbsLow = carbChange <= lowThreshold;
+    const weightElevated = weightAboveTrend >= weightThreshold;
+    const weightDepressed = weightAboveTrend <= -weightThreshold;
+    const carbCopy = `${Math.abs(Math.round(carbChange))} g/day ${carbChange >= 0 ? "above" : "below"} your recent baseline`;
 
-    const unit = massUnit();
-    const displayDelta = displayMass(weightAboveTrend);
+    let title = "No strong carb-related fluctuation";
+    let body = `Recent carbohydrate intake is ${carbCopy}, while scale weight is ${weightDirection} its 7-day trend. There is not a strong pattern here suggesting that carbs are driving the current scale movement.`;
+
+    if (carbsHigh && weightElevated) {
+        title = "Possible water retention";
+        body = `Recent carbohydrate intake is ${carbCopy}, and scale weight is ${weightDirection} its 7-day trend. This pattern is consistent with a temporary scale fluctuation that may reflect glycogen and associated water rather than an equivalent change in body tissue.`;
+    } else if (carbsHigh && !weightElevated) {
+        title = "Higher carbs, weight near trend";
+        body = `Recent carbohydrate intake is ${carbCopy}, but scale weight is ${weightDirection} its 7-day trend. Higher carbs have not coincided with a clear upward scale deviation in the current data.`;
+    } else if (!carbsHigh && weightElevated) {
+        title = "Weight elevated without a clear carb signal";
+        body = `Scale weight is ${weightDirection} its 7-day trend, but carbohydrate intake is not meaningfully above its recent baseline. The fluctuation could reflect sodium, hydration, food volume, training-related inflammation or normal day-to-day variation rather than carbs alone.`;
+    } else if (carbsLow && weightDepressed) {
+        title = "Lower carbs and lower scale weight";
+        body = `Recent carbohydrate intake is ${carbCopy}, while scale weight is ${weightDirection} its 7-day trend. Lower glycogen and associated water could be one contributor, but this cannot identify a specific amount of water weight.`;
+    } else if (carbsLow) {
+        title = "Carbs below recent baseline";
+        body = `Recent carbohydrate intake is ${carbCopy}, while scale weight is ${weightDirection} its 7-day trend. There is no clear short-term weight response that can confidently be linked to the lower carbohydrate intake.`;
+    }
+
     insight.innerHTML = `
-        <span>CONTEXTUAL INSIGHT</span>
-        <strong>Possible water retention</strong>
-        <p>Your carbohydrate intake has been above your recent average, while scale weight is ${Number.isFinite(displayDelta) ? `${displayDelta.toFixed(1)} ${unit}` : "temporarily"} above its 7-day trend. Some of this increase may reflect glycogen and associated water rather than an equivalent change in body tissue.</p>
-        <small>Carbohydrates are about ${Math.round(carbIncrease)} g/day above the recent baseline. Sodium, hydration, food volume and training can also contribute to short-term scale fluctuations.</small>
+        <span>WEIGHT &amp; CARB ANALYSIS · ${formatLongDate(candidate.date).toUpperCase()}</span>
+        <strong>${title}</strong>
+        <p>${body}</p>
+        <small>Recent carbs: ${Math.round(recentAverage)} g/day · Prior baseline: ${Math.round(baselineAverage)} g/day. This is context, not a diagnosis; sodium, hydration, food volume, bowel contents and training can also affect scale weight.</small>
     `;
     insight.hidden = false;
 }
@@ -529,6 +625,7 @@ function ensureStyles() {
         .weight-carbs-chart-shell{position:relative;min-height:286px;border-top:1px solid #303036;border-bottom:1px solid #303036}.weight-carbs-chart-shell canvas{display:block;width:100%;height:286px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
         .weight-carbs-tooltip{position:absolute;z-index:4;top:12px;display:grid;gap:3px;padding:9px 10px;border:1px solid rgba(255,255,255,.14);border-radius:11px;background:rgba(24,24,28,.94);box-shadow:0 10px 28px rgba(0,0,0,.4);pointer-events:none}.weight-carbs-tooltip strong{font-size:11px}.weight-carbs-tooltip span{color:#d2d2d7;font-size:10px}.weight-carbs-tooltip small{color:#8f8f99;font-size:8px;letter-spacing:0}
         .weight-carbs-legend{display:flex;flex-wrap:wrap;gap:8px 13px;color:#92929c;font-size:9px;font-weight:800}.weight-carbs-legend span{display:flex;align-items:center;gap:5px}.weight-carbs-legend i{display:block;width:13px;height:3px;border-radius:999px}.weight-carbs-legend .is-weight{background:${DAILY_WEIGHT_POINT}}.weight-carbs-legend .is-trend{background:${TREND_COLOR}}.weight-carbs-legend .is-carbs{height:8px;border-radius:3px;background:${CARB_COLOR}}
+        .weight-carbs-interaction-note{margin:-5px 0 0;color:#777780;font-size:8.5px;line-height:1.35}
         .weight-carbs-empty{padding:15px;border:1px dashed #3a3a42;border-radius:14px;background:#1b1b1f}.weight-carbs-empty strong{font-size:14px}.weight-carbs-empty p{margin:5px 0 0;color:#9696a0;font-size:11px;line-height:1.45}
         .weight-carbs-insight{display:grid;gap:5px;padding:13px 14px;border:1px solid rgba(79,168,255,.22);border-radius:15px;background:rgba(79,168,255,.055)}.weight-carbs-insight>span{color:${CARB_COLOR};font-size:8px;font-weight:900;letter-spacing:.1em}.weight-carbs-insight strong{font-size:15px}.weight-carbs-insight p{margin:0;color:#b2b2ba;font-size:10.5px;line-height:1.5}.weight-carbs-insight small{color:#85858e;font-size:9px;line-height:1.45;letter-spacing:0}
         @media(max-width:390px){.weight-carbs-card{padding:14px}.weight-carbs-head h3{font-size:18px}.weight-carbs-chart-shell,.weight-carbs-chart-shell canvas{min-height:272px;height:272px}.weight-carbs-tooltip{top:8px}.weight-carbs-ranges button{min-height:34px;font-size:10px}}
