@@ -101,3 +101,18 @@ test("Goals and Plan can launch a non-destructive weekly review preview", () => 
     assert.match(modal, /Test update to/);
     assert.match(modal, /sessionStorage\.removeItem\(WEEKLY_REVIEW_PREVIEW_KEY\)/);
 });
+
+
+test("a ready review is shared by Nutrition and Progress and applied targets refresh immediately", () => {
+    const alert = readFileSync("js/nutrition/maintenance-check-in.js", "utf8");
+    const display = readFileSync("js/nutrition/calories-full-adjustment-display.js", "utf8");
+    assert.match(alert, /maintenance-nav-badge/);
+    assert.match(alert, /background: #35d3b4/);
+    assert.match(alert, /renderProgressReviewAlert\(checkIn, mode\)/);
+    assert.match(alert, /progress-weekly-review-alert/);
+    assert.match(alert, /Review target/);
+    assert.match(alert, /levelup:open-weekly-calorie-review/);
+    assert.match(display, /syncAppliedTargetAcrossSurfaces\(recommendation\.targetCalories\)/);
+    assert.match(display, /levelup:calorie-target-applied/);
+    assert.match(display, /Adjustment applied · reassess in 7 days/);
+});
