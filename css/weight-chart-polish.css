@@ -48,24 +48,38 @@
     font-size: 10px;
 }
 
-#weight-progress .weight-chart-latest {
+#weight-progress .weight-chart-period-summary {
+    position: relative;
+    z-index: 1;
     display: grid;
-    flex: 0 0 auto;
-    gap: 2px;
-    margin-left: auto;
-    text-align: right;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 20px;
+    margin-top: 14px;
 }
 
-#weight-progress .weight-chart-latest strong {
-    color: #74dc98;
-    font-size: 19px;
-    letter-spacing: -.025em;
+#weight-progress .weight-chart-period-stat {
+    display: grid;
+    gap: 3px;
 }
 
-#weight-progress .weight-chart-latest small {
-    color: #73737d;
-    font-size: 9px;
+#weight-progress .weight-chart-period-stat small {
+    color: #85858e;
+    font-size: 10px;
     font-weight: 700;
+}
+
+#weight-progress .weight-chart-period-stat strong {
+    color: #74dc98;
+    font-size: 22px;
+    letter-spacing: -.025em;
+    line-height: 1.1;
+}
+
+#weight-progress .weight-chart-period-dates {
+    grid-column: 1 / -1;
+    color: #b4b4bc;
+    font-size: 11px;
+    font-weight: 650;
 }
 
 #weight-progress .weight-chart-range-control {
@@ -86,8 +100,8 @@
         padding-inline: 12px;
     }
 
-    #weight-progress .weight-chart-latest strong {
-        font-size: 17px;
+    #weight-progress .weight-chart-period-stat strong {
+        font-size: 20px;
     }
 
     #weight-progress .chart-header p {

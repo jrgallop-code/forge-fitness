@@ -26,10 +26,14 @@ test("weight history shows the shared weekly trend without shrinking columns", (
     assert.match(compactStyles, /weight-history-trend\.is-down/);
 });
 
-test("weight chart polish keeps the card compact and the latest average prominent", () => {
-    assert.match(chartStyles, /\.weight-chart-latest strong/);
+test("weight chart polish keeps the card compact and summarizes the selected period", () => {
+    assert.match(chartStyles, /\.weight-chart-period-stat strong/);
     assert.match(chartStyles, /color: #74dc98/);
     assert.match(chartStyles, /border-radius: 20px/);
     assert.match(progressMarkup, /7-DAY ROLLING AVERAGE/);
-    assert.match(progressMarkup, /data-weight-chart-latest/);
+    assert.match(progressMarkup, /data-weight-chart-average/);
+    assert.match(progressMarkup, /data-weight-chart-change/);
+    assert.match(progressMarkup, /data-weight-chart-period/);
+    assert.match(chartSource, /updatePeriodSummary\(legacyCanvas\.closest/);
+    assert.match(chartSource, /movingAverage\.at\(-1\)\.date/);
 });
