@@ -45,6 +45,43 @@ test("requires four recent food days and one recent weigh-in", () => {
     assert.equal(result.enoughWeeklyData, false);
 });
 
+test("an active phase waits for its qualifying pace review before TDEE becomes actionable", () => {
+    const result = getMaintenanceCheckIn({
+        estimate,
+        currentMaintenance: 2275,
+        currentTarget: 2400,
+        adaptiveMetrics: {
+            recommendationReady: false,
+            status: "AWAITING WEIGH-IN",
+            actualRateLbPerWeek: 0.2,
+            targetRateLbPerWeek: 0.25
+        },
+        state: {},
+        today: new Date("2026-08-29T12:00:00")
+    });
+    assert.equal(result.adaptiveGateReady, false);
+    assert.equal(result.ready, false);
+});
+
+test("the same TDEE change unlocks once the shared pace review is ready", () => {
+    const result = getMaintenanceCheckIn({
+        estimate,
+        currentMaintenance: 2275,
+        currentTarget: 2400,
+        adaptiveMetrics: {
+            recommendationReady: true,
+            status: "NEEDS ATTENTION",
+            actualRateLbPerWeek: 0.1,
+            targetRateLbPerWeek: 0.25,
+            trend: { checkDay: 14 }
+        },
+        state: {},
+        today: new Date("2026-08-29T12:00:00")
+    });
+    assert.equal(result.adaptiveGateReady, true);
+    assert.equal(result.ready, true);
+});
+
 test("waits seven days after the previous decision", () => {
     const result = getMaintenanceCheckIn({
         estimate,
