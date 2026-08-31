@@ -47,4 +47,8 @@ test('shared visual browser defaults to All and combines muscle with search', ()
   assert.doesNotMatch(manual, /<select data-manual-muscle>/);
   assert.match(actions, /renderMuscleCarousel\('', 'data-session-muscle'\)/);
   assert.match(actions, /matchesExerciseBrowser\(item, \{ muscle: sheet\.dataset\.muscle, query \}\)/);
+  assert.match(browser, /data-exercise-browser-custom/);
+  assert.match(manual, /querySelector\("\[data-exercise-browser-custom\]"\).*startCustom/);
+  assert.match(actions, /addCustomExercise\(\{ name, muscleGroup:/);
+  assert.match(actions, /appendExerciseToActiveWorkout\(exercise\.id\)/);
 });
