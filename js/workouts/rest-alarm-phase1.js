@@ -1,4 +1,4 @@
-import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from "./workout-session.js?v=cardio-rpe-1";
+import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from "./workout-session.js?v=workout-source-stats-1";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
 
 const EXERCISE_TIMER_SETTINGS_KEY = "level_up_exercise_rest_settings";

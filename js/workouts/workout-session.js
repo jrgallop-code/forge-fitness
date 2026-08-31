@@ -4,6 +4,7 @@ import {
     getExerciseById
 }
 from "./exercise-library.js?v=exercise-library-catalogue-2";
+import { classifyWorkoutSource } from "./workout-source.js?v=workout-source-stats-1";
 
 import {
     getExerciseOptions
@@ -1280,6 +1281,8 @@ function saveCompletedSession({
             session.planName || plan.name,
         planSnapshot:
             clone(plan),
+        workoutSource:
+            classifyWorkoutSource(plan),
         trainingDayIndex:
             Number(session.trainingDayIndex) || 0,
         trainingDayName:
@@ -1325,7 +1328,7 @@ function saveCompletedSession({
     if (!editingSessionId) {
         clearActiveWorkout();
         const workingSets = completed.exercises.reduce((total, exercise) => total + (exercise.sets || []).filter(set => Number(set.reps) > 0).length, 0);
-        window.dispatchEvent(new CustomEvent("levelup:workout-completed", { detail: { sessionId: completed.id, planId: completed.planId, workingSets, durationMinutes: completed.durationMinutes } }));
+        window.dispatchEvent(new CustomEvent("levelup:workout-completed", { detail: { sessionId: completed.id, planId: completed.planId, workoutSource: completed.workoutSource, workingSets, durationMinutes: completed.durationMinutes } }));
     }
 
     const message =

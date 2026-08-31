@@ -52,8 +52,8 @@ test("owner analytics reports current, returning, food, and workout usage", asyn
     assert.match(admin, /Signed-in users today/);
     assert.match(admin, /Engaged users today/);
     assert.match(admin, /Halifax local dates/);
-    assert.match(admin, /admin-analytics-usage\.css\?v=halifax-local-day-1/);
-    assert.match(router, /admin-analytics\.js\?v=halifax-local-day-1/);
+    assert.match(admin, /admin-analytics-usage\.css\?v=workout-source-stats-1/);
+    assert.match(router, /admin-analytics\.js\?v=workout-source-stats-1/);
     assert.match(workerConfig, /"ANALYTICS_TIME_ZONE": "America\/Halifax"/);
     assert.match(admin, /Users<\/span><span class="is-foods">Foods/);
     assert.match(styles, /admin-analytics-series--users/);
@@ -70,4 +70,36 @@ test("owner analytics reports current, returning, food, and workout usage", asyn
     assert.doesNotMatch(admin, /statPeople\("Returning users"/);
     assert.match(styles, /admin-analytics-stat-groups/);
     assert.match(styles, /admin-analytics-stat-person/);
+});
+
+test("completed workouts report and summarize how they were created", async () => {
+    const [source, session, tracking, worker, admin, styles] = await Promise.all([
+        read("js/workouts/workout-source.js"),
+        read("js/workouts/workout-session.js"),
+        read("js/analytics/acquisition.js"),
+        read("cloud/src/index.js"),
+        read("js/analytics/admin-analytics.js"),
+        read("css/admin-analytics-usage.css")
+    ]);
+    for (const value of ["coach_builder", "manual_builder", "template_library", "imported_routine", "one_off"]) {
+        assert.match(source, new RegExp(value));
+        assert.match(worker, new RegExp(value));
+    }
+    assert.match(session, /classifyWorkoutSource\(plan\)/);
+    assert.match(session, /workoutSource: completed\.workoutSource/);
+    assert.match(tracking, /workoutSource:detail\.workoutSource/);
+    assert.match(worker, /workoutSources: workoutSources\?\.results/);
+    assert.match(worker, /legacy_unknown/);
+    assert.match(admin, /How workouts were created/);
+    assert.match(admin, /Older workouts were recorded before workout type tracking was added/);
+    assert.match(styles, /admin-workout-source/);
+});
+
+test("workout source classifier distinguishes every creation path", async () => {
+    const { classifyWorkoutSource } = await import("../js/workouts/workout-source.js");
+    assert.equal(classifyWorkoutSource({ id: "smart-1", smartBuild: {} }), "coach_builder");
+    assert.equal(classifyWorkoutSource({ id: "plan-1", name: "Mine", days: [] }), "manual_builder");
+    assert.equal(classifyWorkoutSource({ id: "full-body", daysPerWeek: 3 }), "template_library");
+    assert.equal(classifyWorkoutSource({ id: "import-1", importedRoutine: {} }), "imported_routine");
+    assert.equal(classifyWorkoutSource({ id: "one-off-1", isOneOff: true }), "one_off");
 });

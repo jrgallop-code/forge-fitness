@@ -1769,7 +1769,7 @@ async function getAdminAnalytics(user, url, request, env) {
     const activeSince = new Date(Date.now() - 7 * 86400000).toISOString();
     const timeZone = analyticsTimeZone(env);
     const today = localDayBounds(Date.now(), timeZone);
-    const [totals, usageSummary, acquisition, people, feedbackSummary, feedback, restaurantCatalogue] = await Promise.all([
+    const [totals, usageSummary, acquisition, people, feedbackSummary, feedback, restaurantCatalogue, workoutSources] = await Promise.all([
         env.DB.prepare(`SELECT
             (SELECT COUNT(*) FROM users) AS total_users,
             (SELECT COUNT(*) FROM users WHERE created_at >= ?) AS new_users,
@@ -1824,7 +1824,23 @@ async function getAdminAnalytics(user, url, request, env) {
                 u.display_name, u.email
             FROM satisfaction_feedback sf JOIN users u ON u.id = sf.user_id
             WHERE sf.created_at >= ? ORDER BY sf.created_at DESC LIMIT 100`).bind(since).all(),
-        getRestaurantCatalogueAdminData(env)
+        getRestaurantCatalogueAdminData(env),
+        env.DB.prepare(`SELECT workout_source, COUNT(*) AS workouts, COUNT(DISTINCT user_id) AS users
+            FROM (
+                SELECT user_id,
+                    CASE
+                        WHEN json_extract(metadata_json, '$.workoutSource') IN ('coach_builder', 'manual_builder', 'template_library', 'imported_routine', 'one_off')
+                            THEN json_extract(metadata_json, '$.workoutSource')
+                        WHEN json_extract(metadata_json, '$.planId') LIKE 'smart-%' THEN 'coach_builder'
+                        WHEN json_extract(metadata_json, '$.planId') LIKE 'import-%' THEN 'imported_routine'
+                        WHEN json_extract(metadata_json, '$.planId') LIKE 'one-off-%' THEN 'one_off'
+                        ELSE 'legacy_unknown'
+                    END AS workout_source
+                FROM product_events
+                WHERE event_name = 'workout_completed' AND occurred_at >= ?
+            )
+            GROUP BY workout_source
+            ORDER BY workouts DESC`).bind(since).all()
     ]);
     const localTotals = { ...(totals || {}), repeat_users: usageSummary.repeatUsers };
     return json({
@@ -1839,7 +1855,8 @@ async function getAdminAnalytics(user, url, request, env) {
         people: people?.results || [],
         feedbackSummary: feedbackSummary || {},
         feedback: feedback?.results || [],
-        restaurantCatalogue
+        restaurantCatalogue,
+        workoutSources: workoutSources?.results || []
     }, 200, request, env);
 }
 

@@ -1,7 +1,7 @@
 import { navigate } from "../core/router.js?v=adaptive-guidance-1";
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { calculatePrCounts } from "./workout-pr-badges.js?v=workout-pr-badges-2";
-import { deleteCompletedWorkout, discardActiveWorkout, getActiveWorkout, getWorkoutSessions, openActiveWorkout, openCompletedWorkoutForEdit } from "./workout-session.js?v=cardio-rpe-1";
+import { deleteCompletedWorkout, discardActiveWorkout, getActiveWorkout, getWorkoutSessions, openActiveWorkout, openCompletedWorkoutForEdit } from "./workout-session.js?v=workout-source-stats-1";
 import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
 import { resolveSessionExerciseIdentity } from "./session-exercise-identity.js?v=repair-generic-exercise-1";
 
