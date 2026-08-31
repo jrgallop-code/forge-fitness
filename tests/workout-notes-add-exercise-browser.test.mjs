@@ -37,8 +37,10 @@ test('shared visual browser defaults to All and combines muscle with search', ()
   assert.match(browser, /\{ id: "", label: "All"/);
   assert.match(browser, /exercise-muscle-carousel/);
   assert.match(browser, /getAnatomyConfig\(item\.facing\)/);
-  assert.match(browser, /config\.regions\[item\.id\]/);
-  assert.match(browser, /class="exercise-muscle-highlight"/);
+  assert.match(browser, /config\.regions\[figure\.dataset\.anatomyMuscle\]/);
+  assert.match(browser, /hydrateExerciseAnatomy/);
+  assert.match(browser, /new DOMParser\(\).*parseFromString/);
+  assert.match(browser, /region\?\.classList\.add\("exercise-muscle-highlight"\)/);
   assert.match(browser, /config\.sex/);
   assert.match(browser, /\(!muscle \|\| exercise\?\.muscleGroup === muscle\)/);
   assert.match(browser, /\(!term \|\| \[exercise\?\.name/);
@@ -51,4 +53,6 @@ test('shared visual browser defaults to All and combines muscle with search', ()
   assert.match(manual, /querySelector\("\[data-exercise-browser-custom\]"\).*startCustom/);
   assert.match(actions, /addCustomExercise\(\{ name, muscleGroup:/);
   assert.match(actions, /appendExerciseToActiveWorkout\(exercise\.id\)/);
+  assert.match(manual, /hydrateExerciseAnatomy\(section\)/);
+  assert.match(actions, /hydrateExerciseAnatomy\(sheet\)/);
 });
