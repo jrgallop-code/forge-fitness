@@ -42,6 +42,21 @@ function setSuggestionHeading(value) {
     setText(document.querySelector("#weight-calorie-suggestion-card h3"), value);
 }
 
+function syncAppliedTargetAcrossSurfaces(targetCalories) {
+    const target = Math.round(Number(targetCalories));
+    if (!Number.isFinite(target)) return;
+    const primary = `${target} kcal/day`;
+    const secondary = "Adjustment applied · reassess in 7 days";
+    setSuggestionHeading("Current Calorie Target");
+    setText(document.getElementById("weight-calorie-suggestion"), primary);
+    setText(document.getElementById("weight-calorie-suggestion-total"), secondary);
+    const nutritionCard = document.querySelector("#nutrition-current-phase [data-phase-calorie-suggestion]");
+    setText(nutritionCard?.querySelector("strong"), primary);
+    setText(nutritionCard?.querySelector("small"), secondary);
+    hideWeightReview();
+    document.querySelector(".progress-weekly-review-alert")?.remove();
+}
+
 function ensureWeightReview() {
     const card = document.getElementById("weight-calorie-suggestion-card");
     if (!card) return null;
@@ -527,8 +542,12 @@ function applyFullAdjustment(event, context = {}) {
         previousMaintenance: recommendation.previousMaintenance,
         source: "coordinated-tdee-and-adaptive-update"
     });
+    syncAppliedTargetAcrossSurfaces(recommendation.targetCalories);
+    window.dispatchEvent(new CustomEvent("levelup:calorie-target-applied", {
+        detail: { calories: recommendation.targetCalories, source: "weekly-calorie-review" }
+    }));
     window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", {
-        detail: { source: "full-calorie-adjustment" }
+        detail: { source: "full-calorie-adjustment", calories: recommendation.targetCalories }
     }));
     closeWeeklyReviewModal();
     scheduleRefresh();
@@ -595,6 +614,10 @@ document.addEventListener("click", event => {
 }, true);
 window.addEventListener("levelup:nutrition-updated", scheduleRefresh);
 window.addEventListener("levelup:nutrition-phase-updated", scheduleRefresh);
+window.addEventListener("levelup:calorie-target-applied", event => {
+    syncAppliedTargetAcrossSurfaces(event?.detail?.calories);
+    scheduleRefresh();
+});
 window.addEventListener("levelup:food-log-updated", scheduleRefresh);
 window.addEventListener("pageshow", scheduleRefresh);
 window.addEventListener("focus", scheduleRefresh);

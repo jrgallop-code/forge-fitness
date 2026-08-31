@@ -194,7 +194,75 @@ function showAutomaticUpdateToast(update, phase) {
     window.setTimeout(() => toast.remove(), 9000);
 }
 
+function ensureWeeklyReviewSurfaceStyles() {
+    if (document.getElementById("weekly-review-surface-styles")) return;
+    const style = document.createElement("style");
+    style.id = "weekly-review-surface-styles";
+    style.textContent = `
+        .nav-btn[data-page="energy"] { position: relative; }
+        .nav-btn[data-page="energy"] .maintenance-nav-badge {
+            position: absolute;
+            top: 9px;
+            left: calc(50% + 10px);
+            width: 10px;
+            height: 10px;
+            padding: 0;
+            border: 2px solid #17171a;
+            border-radius: 999px;
+            background: #35d3b4;
+            box-shadow: 0 0 0 4px rgba(53, 211, 180, .16), 0 0 12px rgba(53, 211, 180, .72);
+            pointer-events: none;
+            z-index: 3;
+        }
+        .progress-weekly-review-alert {
+            display: grid;
+            gap: 12px;
+            margin-top: 14px;
+            padding: 16px;
+            border: 1px solid rgba(53, 211, 180, .45);
+            border-radius: 18px;
+            background: rgba(53, 211, 180, .08);
+        }
+        .progress-weekly-review-alert span {
+            color: #35d3b4;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .12em;
+        }
+        .progress-weekly-review-alert strong { color: #fff; font-size: 17px; }
+        .progress-weekly-review-alert small { color: #aaa8b0; line-height: 1.35; }
+        .progress-weekly-review-alert button {
+            min-height: 46px;
+            border: 0;
+            border-radius: 14px;
+            background: #35d3b4;
+            color: #0e1615;
+            font: inherit;
+            font-weight: 800;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+function renderProgressReviewAlert(checkIn, mode) {
+    document.querySelector(".progress-weekly-review-alert")?.remove();
+    const preview = sessionStorage.getItem(WEEKLY_REVIEW_PREVIEW_KEY) === "1";
+    if (!preview && (mode === "track" || !checkIn?.ready)) return;
+    const card = document.getElementById("weight-calorie-suggestion-card");
+    if (!card) return;
+    const alert = document.createElement("section");
+    alert.className = "progress-weekly-review-alert";
+    alert.innerHTML = preview
+        ? `<span>TEST · WEEKLY CALORIE REVIEW</span><strong>Preview your review flow</strong><small>No target or log data will change.</small><button type="button">Review test</button>`
+        : `<span>WEEKLY CALORIE REVIEW</span><strong>Your calorie update is ready</strong><small>Review and apply the same target shown in Nutrition.</small><button type="button">Review target</button>`;
+    alert.querySelector("button")?.addEventListener("click", () => {
+        window.dispatchEvent(new CustomEvent("levelup:open-weekly-calorie-review", { detail: { preview } }));
+    });
+    card.appendChild(alert);
+}
+
 export function initializeMaintenanceCheckInAlert() {
+    ensureWeeklyReviewSurfaceStyles();
     const refresh = () => {
         const nav = document.querySelector('.nav-btn[data-page="energy"]');
         if (!nav) return;
@@ -227,14 +295,18 @@ export function initializeMaintenanceCheckInAlert() {
         } else if (!shouldAlert) {
             badge?.remove();
         }
-        nav.setAttribute("aria-label", shouldAlert ? "Nutrition — weekly maintenance check-in ready" : "Nutrition");
+        nav.setAttribute("aria-label", shouldAlert ? "Nutrition — weekly calorie review ready" : "Nutrition");
         renderNutritionHubAlert(checkIn, mode);
+        renderProgressReviewAlert(checkIn, mode);
     };
     ["levelup:food-log-updated", "levelup:weight-updated", "levelup:nutrition-updated", "levelup:nutrition-phase-updated", "levelup:maintenance-check-in-updated", "levelup:maintenance-mode-updated"]
         .forEach(name => window.addEventListener(name, refresh));
     window.addEventListener("pageshow", refresh);
     document.addEventListener("click", event => {
-        if (event.target.closest?.('.nav-btn[data-page="energy"]')) window.setTimeout(refresh, 80);
+        if (event.target.closest?.('.nav-btn[data-page="energy"], .nav-btn[data-page="progress"], [data-page="progress"], #weight-tab')) {
+            window.setTimeout(refresh, 80);
+            window.setTimeout(refresh, 260);
+        }
     });
     refresh();
 }
