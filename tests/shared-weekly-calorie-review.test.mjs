@@ -65,3 +65,21 @@ test("declining the shared review marks both recommendation systems handled", ()
     assert.match(source, /markMaintenanceCheckInReviewed/);
     assert.match(source, /kept-shared-weekly-review/);
 });
+
+test("live calorie logic excludes future weigh-ins and Goals & Plan shows the saved target", () => {
+    const phase = readFileSync("js/nutrition/nutrition-phase.js", "utf8");
+    const goals = readFileSync("js/nutrition/unified-goals-calories.js", "utf8");
+    assert.match(phase, /Live coaching and calorie decisions always stop at today/);
+    assert.match(phase, /return localDate\(\);/);
+    assert.match(goals, /useSavedActiveTarget/);
+    assert.match(goals, /active\.currentCalories \?\? active\.startCalories/);
+});
+
+test("the latest applied review can be safely replayed without changing logs", () => {
+    const goals = readFileSync("js/nutrition/unified-goals-calories.js", "utf8");
+    assert.match(goals, /Undo last update and replay review/);
+    assert.match(goals, /Your food logs and weigh-ins will not be changed/);
+    assert.match(goals, /clearAdjustmentHold\(\)/);
+    assert.match(goals, /clearHandledReviewForPhase\(phase\)/);
+    assert.match(goals, /Restored \$\{previousTarget\} kcal\/day and reopened the weekly review/);
+});

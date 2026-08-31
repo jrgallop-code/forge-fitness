@@ -202,11 +202,10 @@ function resolveMetricsAsOfDate(phase, weights, requestedDate) {
     if (validDate(requestedDate)) return String(requestedDate);
     if (validDate(phase?.endDate)) return String(phase.endDate);
 
-    const today = localDate();
-    const latestWeightDate = Array.isArray(weights) ? weights.at(-1)?.date : null;
-    return validDate(latestWeightDate) && latestWeightDate > today
-        ? String(latestWeightDate)
-        : today;
+    // Live coaching and calorie decisions always stop at today. Future-dated
+    // weigh-ins belong to the isolated test preview and must never change the
+    // saved target, review banner, or live phase metrics.
+    return localDate();
 }
 
 function buildMetrics(status, trend, actual, target, tolerance, referenceWeight, recommendationReady, metadata = {}) {

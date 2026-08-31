@@ -1,5 +1,5 @@
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=weekly-stable-tdee-1";
-import { getActiveNutritionPhase, getActivePhaseMetrics, saveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics, saveNutritionPhase } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { setCurrentCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { buildCoordinatedWeeklyUpdate, clearAdjustmentHold, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
 
@@ -68,7 +68,11 @@ export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTar
     const now = new Date(today); now.setHours(12, 0, 0, 0);
     const daysSinceReview = reviewed === null ? Infinity : Math.floor((now.getTime() - reviewed) / DAY);
     const due = daysSinceReview >= CHECK_IN_DAYS;
-    const meaningful = Number.isFinite(change) && Math.abs(change) >= MINIMUM_CHANGE;
+    const coordinatedTargetChange = Number(coordinatedUpdate?.targetCalories) - Number(target);
+    // A review is meaningful when either maintenance moved or measured pace
+    // calls for a target change. Requiring a TDEE change hid valid reviews.
+    const meaningful = (Number.isFinite(change) && Math.abs(change) >= MINIMUM_CHANGE)
+        || (Number.isFinite(coordinatedTargetChange) && Math.abs(coordinatedTargetChange) >= MINIMUM_CHANGE);
     return {
         ready: enoughWeeklyData && adaptiveGateReady && due && meaningful && Boolean(coordinatedUpdate) && !adjustmentHold,
         enoughWeeklyData,

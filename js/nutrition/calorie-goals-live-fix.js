@@ -1,7 +1,7 @@
-import { initializeUnifiedGoalsCalories } from "./unified-goals-calories.js?v=weekly-review-modal-1";
+import { initializeUnifiedGoalsCalories } from "./unified-goals-calories.js?v=calorie-authority-recovery-1";
 import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=single-calorie-authority-1";
 import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-goal-controls-live-weighin-1";
-import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-live-weighin-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
 import "./phase-rate-display.js?v=nutrition-display-regression-1";
 import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";

@@ -1,9 +1,9 @@
 import { GOAL_PRESETS, calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
-import { getNutritionProfile, getNutritionGoal, saveNutritionGoal, getNutritionPlan, syncCalculatedCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
-import { getActiveNutritionPhase, getNutritionPhaseHistory, getActivePhaseMetrics, getPhaseDayNumber, saveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-1";
+import { getNutritionProfile, getNutritionGoal, saveNutritionGoal, getNutritionPlan, setCurrentCalories, syncCalculatedCalories } from "./nutrition-storage.js?v=calorie-authority-recovery-1";
+import { getActiveNutritionPhase, getNutritionPhaseHistory, getActivePhaseMetrics, getPhaseDayNumber, saveNutritionPhase } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=weekly-stable-tdee-1";
-import { clearPendingMaintenanceReview, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, readPendingMaintenanceReview, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=weekly-review-modal-1";
-import { buildCoordinatedWeeklyUpdate, markPhaseCheckHandled, startAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
+import { clearPendingMaintenanceReview, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, readPendingMaintenanceReview, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
+import { buildCoordinatedWeeklyUpdate, clearAdjustmentHold, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=calorie-authority-recovery-1";
 
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const LEGACY_CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
@@ -45,6 +45,7 @@ export function initializeUnifiedGoalsCalories() {
         refreshMaintenanceMode();
     });
     document.getElementById("unified-save-plan")?.addEventListener("click", saveUnifiedPlan);
+    document.getElementById("unified-replay-review")?.addEventListener("click", replayLastWeeklyReview);
     document.getElementById("save-nutrition-profile-btn")?.addEventListener("click", () => window.setTimeout(refreshAll, 30));
     window.addEventListener("levelup:nutrition-updated", refreshAll);
     window.addEventListener("levelup:nutrition-phase-updated", refreshAll);
@@ -111,6 +112,7 @@ function renderUnifiedCard() {
             <div class="unified-active-target"><span>Planned Daily Target</span><strong id="unified-active-target">--</strong><small>This becomes the active Level Up calorie target when saved.</small></div>
         </div>
         <button id="unified-save-plan" class="primary-btn" type="button">Save</button>
+        <button id="unified-replay-review" class="secondary-btn" type="button" hidden>Undo last update and replay review</button>
         <p id="unified-calorie-message" class="nutrition-message" aria-live="polite"></p>
         <div id="nutrition-phase-history"></div>
         <small class="unified-adult-note">Weight trend checks use only weigh-ins from the start of the active phase.</small>
@@ -247,7 +249,15 @@ function calculatePreview() {
     if (!goal || !Number.isFinite(maintenance) || maintenance <= 0) return null;
     const active = getActiveNutritionPhase();
     const useCoordinatedTarget = targetDraft !== null && active?.goalId === goalId;
-    const target = useCoordinatedTarget ? Math.round(targetDraft) : Math.round(maintenance + goal.dailyCalorieAdjustment);
+    const useSavedActiveTarget = targetDraft === null
+        && maintenanceDraft === null
+        && active?.goalId === goalId
+        && Number.isFinite(Number(active?.currentCalories ?? active?.startCalories));
+    const target = useCoordinatedTarget
+        ? Math.round(targetDraft)
+        : useSavedActiveTarget
+            ? Math.round(Number(active.currentCalories ?? active.startCalories))
+            : Math.round(maintenance + goal.dailyCalorieAdjustment);
     return { goalId, goal, maintenance: Math.round(maintenance), rate: goal.weeklyWeightChangeLb, dailyAdjustment: target - Math.round(maintenance), target };
 }
 
@@ -258,6 +268,58 @@ function refreshAll() {
     refreshPreview();
     refreshPlannerSummary();
     renderPhaseHistory();
+    refreshReplayControl();
+}
+
+function refreshReplayControl() {
+    const button = document.getElementById("unified-replay-review");
+    if (!button) return;
+    const phase = getActiveNutritionPhase();
+    const currentCalories = Number(phase?.currentCalories ?? phase?.startCalories);
+    const hold = readAdjustmentHold({ phase, currentCalories });
+    button.hidden = !(Number.isFinite(Number(hold?.previousTarget))
+        && Number.isFinite(Number(hold?.previousMaintenance)));
+}
+
+function clearHandledReviewForPhase(phase) {
+    if (!phase) return;
+    const key = String(phase?.id || `${phase?.goalId || "phase"}|${phase?.startDate || ""}`);
+    let state;
+    try { state = JSON.parse(localStorage.getItem("level_up_weekly_phase_checkin_state") || "{}"); }
+    catch { state = {}; }
+    if (state && typeof state === "object" && !Array.isArray(state)) {
+        delete state[key];
+        localStorage.setItem("level_up_weekly_phase_checkin_state", JSON.stringify(state));
+    }
+}
+
+function replayLastWeeklyReview() {
+    const phase = getActiveNutritionPhase();
+    const currentCalories = Number(phase?.currentCalories ?? phase?.startCalories);
+    const hold = readAdjustmentHold({ phase, currentCalories });
+    const previousTarget = Number(hold?.previousTarget);
+    const previousMaintenance = Number(hold?.previousMaintenance);
+    if (!phase || !Number.isFinite(previousTarget) || !Number.isFinite(previousMaintenance)) return;
+    if (!window.confirm("Undo the last calorie update and reopen the same weekly review? Your food logs and weigh-ins will not be changed.")) return;
+
+    saveNutritionPhase({
+        goalId: phase.goalId,
+        maintenanceCalories: previousMaintenance,
+        targetCalories: previousTarget
+    });
+    setCurrentCalories(previousTarget, "Replay weekly calorie review");
+    localStorage.setItem(MANUAL_MAINTENANCE_KEY, String(previousMaintenance));
+    clearAdjustmentHold();
+    clearHandledReviewForPhase(phase);
+    localStorage.removeItem("level_up_maintenance_check_in_v1");
+    clearPendingMaintenanceReview();
+    maintenanceDraft = null;
+    targetDraft = null;
+    pendingAdaptiveCheckDay = null;
+    window.dispatchEvent(new CustomEvent("levelup:maintenance-check-in-updated", { detail: { action: "replay" } }));
+    window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: "weekly-review-replay" } }));
+    setText("unified-calorie-message", `Restored ${previousTarget} kcal/day and reopened the weekly review. Return to Food Log to test the Review button.`);
+    refreshAll();
 }
 
 function refreshCurrentPhase() {
