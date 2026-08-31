@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=progress-route-canonical-1";
+import { navigate } from "../core/router.js?v=progress-nav-stability-1";
 
 export function renderNavbar() {
     return `
