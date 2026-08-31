@@ -1,5 +1,5 @@
 import { getAllExercises, getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
-import { matchesExerciseBrowser, renderMuscleCarousel } from "./exercise-browser.js?v=static-anatomy-assets-1";
+import { matchesExerciseBrowser, renderMuscleCarousel } from "./exercise-browser.js?v=form-guide-carousel-1";
 
 let active = false;
 let picker = null;
