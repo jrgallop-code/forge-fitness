@@ -5,7 +5,8 @@ import {
     chooseIngredientFood,
     ingredientPortionSelection,
     parseIngredientLine,
-    parseIngredientText
+    parseIngredientText,
+    parseSpokenIngredientText
 } from "../js/nutrition/ingredient-paste-parser.js";
 
 test("pasted ingredient lines recognize weights, volumes, fractions, and counts", () => {
@@ -21,6 +22,17 @@ test("pasted ingredient lines recognize weights, volumes, fractions, and counts"
     assert.deepEqual(parseIngredientLine("2 chicken breasts"), {
         original: "2 chicken breasts", name: "chicken breasts", amount: 2, unit: "item", assumed: true
     });
+});
+
+test("spoken ingredient lists split amounts without breaking food names", () => {
+    const parsed = parseSpokenIngredientText("two eggs, one tablespoon olive oil, 100 grams avocado and two slices sourdough bread");
+    assert.deepEqual(parsed.map(item => [item.name, item.amount, item.unit]), [
+        ["eggs", 2, "item"],
+        ["olive oil", 1, "tbsp"],
+        ["avocado", 100, "g"],
+        ["sourdough bread", 2, "slice"]
+    ]);
+    assert.equal(parseSpokenIngredientText("one serving macaroni and cheese")[0].name, "macaroni and cheese");
 });
 
 test("ingredient paste accepts bullets and semicolon-separated recipes", () => {

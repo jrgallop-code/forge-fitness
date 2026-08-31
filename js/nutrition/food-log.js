@@ -31,8 +31,9 @@ import {
 import {
     chooseIngredientFood,
     ingredientPortionSelection,
-    parseIngredientText
-} from "./ingredient-paste-parser.js?v=paste-ingredients-1";
+    parseIngredientText,
+    parseSpokenIngredientText
+} from "./ingredient-paste-parser.js?v=voice-food-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -57,6 +58,8 @@ let barcodeLookupActive = false;
 let barcodeLookupController = null;
 let zxingLoadPromise = null;
 let mealImportController = null;
+let foodVoiceRecognition = null;
+let foodVoiceTranscript = "";
 const foodDetailCache = new Map();
 const barcodeFoodCache = new Map();
 
@@ -106,7 +109,7 @@ function renderFoodSheet() {
                     <div role="radiogroup">${MEALS.map(meal => `<button type="button" role="radio" aria-checked="false" data-food-target-meal="${meal}">${meal}</button>`).join("")}</div>
                 </div>
                 <form class="food-search" data-food-search-form>
-                    <div class="food-search-entry"><div class="food-search-field"><input type="search" name="query" minlength="2" maxlength="80" autocomplete="off" placeholder="Search foods" aria-label="Search foods"></div><button type="button" class="food-barcode-open" data-barcode-open aria-label="Scan a food barcode" title="Scan barcode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7 5v14M10 5v14M14 5v14M17 5v14M20 5v14M2.5 5h2M19.5 5h2M2.5 19h2M19.5 19h2"/></svg></button></div>
+                    <div class="food-search-entry"><div class="food-search-field"><input type="search" name="query" minlength="2" maxlength="80" autocomplete="off" placeholder="Search foods" aria-label="Search foods"></div><button type="button" class="food-voice-open" data-food-voice aria-label="Log ingredients by voice" title="Log ingredients by voice" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="12" rx="4"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"/></svg></button><button type="button" class="food-barcode-open" data-barcode-open aria-label="Scan a food barcode" title="Scan barcode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7 5v14M10 5v14M14 5v14M17 5v14M20 5v14M2.5 5h2M19.5 5h2M2.5 19h2M19.5 19h2"/></svg></button></div>
                     <button type="submit" class="primary-btn">Search</button>
                 </form>
                 <div class="food-sheet-tabs">
@@ -200,6 +203,7 @@ export function initializeFoodLog() {
         if (String(event.currentTarget.value || "").trim().length < 2) return;
         foodSearchTimer = window.setTimeout(() => foodSearchForm.requestSubmit(), 300);
     });
+    initializeFoodVoiceInput();
     document.querySelector("[data-barcode-open]")?.addEventListener("click", openBarcodeScanner);
     document.querySelector("[data-barcode-close]")?.addEventListener("click", closeBarcodeScanner);
     document.querySelector("[data-barcode-form]")?.addEventListener("submit", submitManualBarcode);
@@ -358,6 +362,12 @@ function closeFoodSheet() {
     foodSelectionRequest += 1;
     foodSearchController?.abort();
     foodDetailController?.abort();
+    if (foodVoiceRecognition) {
+        foodVoiceTranscript = "";
+        try { foodVoiceRecognition.abort(); } catch {}
+        foodVoiceRecognition = null;
+        setFoodVoiceState(false);
+    }
     closeBarcodeScanner();
     document.body.classList.remove("food-sheet-open");
     addContext = "log";
@@ -595,6 +605,83 @@ function showFoodMode(mode) {
     if (mode === "recent") renderRecents();
     if (mode === "meals") renderSavedMeals();
     if (mode === "custom") renderCustomFoods();
+}
+
+function speechRecognitionConstructor() {
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+function initializeFoodVoiceInput() {
+    const button = document.querySelector("[data-food-voice]");
+    if (!button) return;
+    const Recognition = speechRecognitionConstructor();
+    button.hidden = !Recognition;
+    if (Recognition) button.addEventListener("click", toggleFoodVoiceInput);
+}
+
+function toggleFoodVoiceInput() {
+    if (foodVoiceRecognition) {
+        foodVoiceRecognition.stop();
+        return;
+    }
+    const Recognition = speechRecognitionConstructor();
+    if (!Recognition) return;
+    const recognition = new Recognition();
+    foodVoiceRecognition = recognition;
+    foodVoiceTranscript = "";
+    recognition.lang = navigator.language || "en-CA";
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => setFoodVoiceState(true, "Listening… Say each ingredient and its amount.");
+    recognition.onresult = event => {
+        let transcript = "";
+        for (let index = 0; index < event.results.length; index += 1) transcript += `${event.results[index][0]?.transcript || ""} `;
+        foodVoiceTranscript = transcript.trim();
+        setText("[data-food-search-status]", foodVoiceTranscript || "Listening…");
+    };
+    recognition.onerror = event => {
+        const messages = {
+            "not-allowed": "Microphone access was not allowed. You can still type or paste ingredients.",
+            "audio-capture": "No microphone was available.",
+            "no-speech": "No ingredients were heard. Tap the microphone and try again."
+        };
+        setText("[data-food-search-status]", messages[event.error] || "Voice input stopped. Please try again.");
+    };
+    recognition.onend = () => {
+        const transcript = foodVoiceTranscript.trim();
+        foodVoiceRecognition = null;
+        setFoodVoiceState(false);
+        if (transcript) openVoiceIngredientReview(transcript);
+    };
+    showFoodMode("search");
+    try { recognition.start(); }
+    catch {
+        foodVoiceRecognition = null;
+        setFoodVoiceState(false, "Voice input could not start. Please try again.");
+    }
+}
+
+function setFoodVoiceState(listening, message = "") {
+    const button = document.querySelector("[data-food-voice]");
+    button?.classList.toggle("is-listening", listening);
+    button?.setAttribute("aria-pressed", String(listening));
+    if (button) button.setAttribute("aria-label", listening ? "Stop listening" : "Log ingredients by voice");
+    if (message) setText("[data-food-search-status]", message);
+}
+
+function openVoiceIngredientReview(transcript) {
+    const ingredients = parseSpokenIngredientText(transcript);
+    if (!ingredients.length) {
+        setText("[data-food-search-status]", "No ingredients could be understood. Try saying an amount before each food.");
+        return;
+    }
+    openMealBuilder([], "", null, {
+        pasteOpen: true,
+        pasteText: ingredients.map(item => item.original).join("\n"),
+        voiceMode: true
+    });
+    void importPastedIngredients();
 }
 
 async function searchFoods(event) {
@@ -1080,7 +1167,8 @@ function openMealBuilder(entries = [], name = "", savedMeal = null, options = {}
         photoDataUrl: savedMeal?.photoDataUrl || "",
         items: (savedMeal?.items || entries).map(entry => ({ ...entry })),
         pasteOpen: Boolean(options.pasteOpen),
-        pasteText: "",
+        pasteText: String(options.pasteText || ""),
+        voiceMode: Boolean(options.voiceMode),
         importStatus: "",
         importUnresolved: [],
         importing: false
@@ -1208,15 +1296,15 @@ function renderMealBuilder() {
     panel.hidden = false;
     const totals = summarizeEntries(mealDraft.items);
     const editingMeal = Boolean(mealDraft.id);
+    const voiceMode = Boolean(mealDraft.voiceMode);
     panel.innerHTML = `
-        <header class="food-builder-heading"><div><span class="eyebrow">MY MEALS</span><h3>${editingMeal ? "Edit Meal" : "Build a Meal"}</h3></div><button type="button" data-meal-builder-close aria-label="Close meal builder">×</button></header>
-        <label>Meal name<input type="text" maxlength="100" value="${escapeHtml(mealDraft.name)}" placeholder="Post-workout lunch" data-meal-name></label>
-        <div class="food-builder-photo"><button type="button" data-meal-photo-pick>${mealDraft.photoDataUrl ? `<img src="${escapeHtml(mealDraft.photoDataUrl)}" alt="Meal thumbnail"><span>Change photo</span>` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>'}</button>${mealDraft.photoDataUrl ? '<button type="button" data-meal-photo-remove>Remove</button>' : ""}<input type="file" accept="image/*" data-meal-photo-input hidden></div>
+        <header class="food-builder-heading"><div><span class="eyebrow">${voiceMode ? "VOICE LOG" : "MY MEALS"}</span><h3>${voiceMode ? "Review Ingredients" : editingMeal ? "Edit Meal" : "Build a Meal"}</h3></div><button type="button" data-meal-builder-close aria-label="Close meal builder">×</button></header>
+        ${voiceMode ? '<p class="food-voice-review-copy">Check every food and amount before logging. Level Up uses matched database foods for macros and never invents nutrition values.</p>' : `<label>Meal name<input type="text" maxlength="100" value="${escapeHtml(mealDraft.name)}" placeholder="Post-workout lunch" data-meal-name></label><div class="food-builder-photo"><button type="button" data-meal-photo-pick>${mealDraft.photoDataUrl ? `<img src="${escapeHtml(mealDraft.photoDataUrl)}" alt="Meal thumbnail"><span>Change photo</span>` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>'}</button>${mealDraft.photoDataUrl ? '<button type="button" data-meal-photo-remove>Remove</button>' : ""}<input type="file" accept="image/*" data-meal-photo-input hidden></div>`}
         ${pastedIngredientsMarkup()}
         <div class="food-builder-macros food-portion-preview food-portion-preview--macros">${macroBreakdownMarkup(totals, `Whole meal · ${mealDraft.items.length} item${mealDraft.items.length === 1 ? "" : "s"}`)}</div>
         <div class="food-builder-items">${mealDraft.items.map((entry, index) => mealItemDetailsMarkup(entry, index)).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
         <button type="button" class="food-builder-add" data-meal-builder-add>+ Add Food</button>
-        <button type="button" class="primary-btn" data-meal-builder-save ${mealDraft.items.length ? "" : "disabled"}>${editingMeal ? "Save Changes" : "Save to My Meals"}</button>`;
+        <button type="button" class="primary-btn" data-meal-builder-save ${mealDraft.items.length ? "" : "disabled"}>${voiceMode ? `Log to ${escapeHtml(selectedMeal)}` : editingMeal ? "Save Changes" : "Save to My Meals"}</button>`;
     panel.querySelector("[data-meal-name]")?.addEventListener("input", event => { mealDraft.name = event.currentTarget.value; });
     panel.querySelector("[data-meal-photo-pick]")?.addEventListener("click", () => panel.querySelector("[data-meal-photo-input]")?.click());
     panel.querySelector("[data-meal-photo-input]")?.addEventListener("change", event => { if (event.currentTarget.files?.[0]) void setMealDraftPhoto(event.currentTarget.files[0]); });
@@ -1231,6 +1319,14 @@ function renderMealBuilder() {
 }
 
 function saveMealDraft() {
+    if (mealDraft?.voiceMode) {
+        const items = mealDraft.items.map(entry => ({ ...entry, meal: selectedMeal }));
+        saveEntries(selectedDate, [...entriesForDate(selectedDate), ...items]);
+        const count = items.length;
+        closeFoodSheet();
+        showFoodToast(`${count} ingredient${count === 1 ? "" : "s"} added to ${selectedMeal}.`);
+        return;
+    }
     const name = String(document.querySelector("[data-meal-name]")?.value || "").trim();
     if (!name) {
         document.querySelector("[data-meal-name]")?.focus();
