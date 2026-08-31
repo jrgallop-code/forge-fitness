@@ -6,7 +6,7 @@ import {
 import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";
 import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
-import { buildCoordinatedWeeklyUpdate, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=actual-intake-baseline-1";
+import { buildCoordinatedWeeklyUpdate, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=observed-pace-target-1";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=weekly-stable-tdee-1";
 import { markMaintenanceCheckInReviewed } from "./maintenance-check-in.js?v=shared-weekly-review-1";
 import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=all-calorie-requirements-1";
@@ -102,10 +102,10 @@ function openWeeklyReviewModal() {
             <div class="weekly-calorie-modal-breakdown">
                 <div><span>Current saved target</span><strong>${recommendation.previousTarget} kcal/day</strong></div>
                 <div><span>Logged weekly average${recommendation.weeklyAverageLoggedDays ? ` (${recommendation.weeklyAverageLoggedDays}/${recommendation.weeklyAverageTotalDays || 7} days)` : ""}</span><strong>${Number.isFinite(recommendation.weeklyAverageCalories) ? `${recommendation.weeklyAverageCalories} kcal/day` : "Not enough logged days"}</strong></div>
-                <div><span>Calculated maintenance</span><strong>${recommendation.fullMaintenanceCalories} kcal/day</strong></div>
-                <div><span>Phase goal adjustment</span><strong>${formatSignedCalories(recommendation.phaseGoalAdjustment)} cal/day</strong></div>
-                <div><span>Progress correction</span><strong>${formatSignedCalories(recommendation.requestedPaceCorrection)} cal/day</strong></div>
-                <div><span>Uncapped calculation</span><strong>${recommendation.fullTargetCalories} kcal/day</strong></div>
+                <div><span>Current weight trend</span><strong>${formatRate(recommendation.actualRate)}</strong></div>
+                <div><span>Goal weight trend</span><strong>${formatRate(recommendation.targetRate)}</strong></div>
+                <div><span>Calories needed for goal pace</span><strong>${formatSignedCalories(recommendation.requestedPaceCorrection)} cal/day</strong></div>
+                <div><span>Calculated target</span><strong>${recommendation.fullTargetCalories} kcal/day</strong></div>
                 <div class="weekly-calorie-modal-result"><span>Recommended target now</span><strong>${recommendation.targetCalories} kcal/day</strong></div>
             </div>
             ${recommendation.capped ? `<small class="weekly-calorie-modal-cap">Limited to ${formatSignedCalories(recommendation.behavioralChange ?? recommendation.targetChange)} calories from ${Number.isFinite(recommendation.actualIntakeCalories) ? `your ${recommendation.actualIntakeCalories} weekly average` : "your current target"}. The saved target changes by ${formatSignedCalories(recommendation.targetChange)}. Level Up will reassess next week.</small>` : ""}
@@ -175,16 +175,16 @@ function buildSharedRecommendation(metrics, phase) {
         maximumChange: WEEKLY_ADJUSTMENT_CAP
     });
     if (!update) return null;
-    const phaseGoalAdjustment = Math.round(currentTarget - currentMaintenance);
-    const fullTargetCalories = Math.round(
-        update.previousTarget + update.requestedMaintenanceChange + update.requestedPaceCorrection
-    );
+    const fullTargetCalories = Number.isFinite(Number(update.fullRequestedTarget))
+        ? Math.round(Number(update.fullRequestedTarget) / 25) * 25
+        : update.targetCalories;
     return {
         ...update,
         estimate,
-        phaseGoalAdjustment,
         fullMaintenanceCalories: Math.round(proposedMaintenance),
         fullTargetCalories,
+        actualRate: Number(metrics?.actualRateLbPerWeek),
+        targetRate: Number(metrics?.targetRateLbPerWeek),
         weeklyAverageCalories: baseline.useLoggedAverage ? Math.round(baseline.calories) : null,
         weeklyAverageLoggedDays: baseline.intake?.loggedDays ?? 0,
         weeklyAverageTotalDays: baseline.intake?.totalDays ?? 7
@@ -361,8 +361,8 @@ function syncCoach(metrics, phase) {
     card.dataset.fullAdjustmentDelta = String(recommendation.targetChange);
     card.dataset.fullAdjustmentCheckDay = String(checkDay);
 
-    setText(messageNode, `Current weekly trend: ${formatRate(actual)} · Target: ${formatRate(target)}. This single review combines the latest Level Up TDEE with the goal-pace correction, then waits 7 days.`);
-    setText(suggestionNode, `TDEE ${formatSignedCalories(recommendation.maintenanceChange)} · pace ${formatSignedCalories(recommendation.paceCorrection)} · one capped change ${formatSignedCalories(recommendation.targetChange)} → ${recommendation.targetCalories} kcal/day.`);
+    setText(messageNode, `Current weekly trend: ${formatRate(actual)} · Target: ${formatRate(target)}. This review applies the trend gap once to your completed-day calorie average, then waits 7 days.`);
+    setText(suggestionNode, `Logged average ${recommendation.weeklyAverageCalories} · pace correction ${formatSignedCalories(recommendation.requestedPaceCorrection)} → ${recommendation.targetCalories} kcal/day.`);
 
     const apply = document.getElementById(weeklyCoach ? "weekly-coach-apply" : "goal-check-in-apply");
     if (apply) {
