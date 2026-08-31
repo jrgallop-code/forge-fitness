@@ -36,9 +36,16 @@ test("service worker registers offline lifecycle and notification handlers", () 
 
 test("an installed app reloads once when a new service worker takes control", () => {
     const app = readFileSync("js/app.js", "utf8");
-    assert.match(app, /navigator\.serviceWorker\.controller/);
     assert.match(app, /controllerchange/);
+    assert.match(app, /levelup:build-activated/);
+    assert.match(app, /visibilitychange/);
+    assert.match(app, /service-worker\.js\?v=/);
+    assert.match(app, /sessionStorage\.getItem\(reloadKey\)/);
     assert.match(app, /window\.location\.reload\(\)/);
+
+    const worker = readFileSync("service-worker.js", "utf8");
+    assert.match(worker, /client\.visibilityState !== "visible"/);
+    assert.match(worker, /client\.navigate\(client\.url\)/);
 });
 
 test("installed launches have a hard splash timeout and a cache-safe recovery screen", () => {
