@@ -13,6 +13,7 @@ import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=a
 
 const FIRST_CHECK_DAY = 14;
 const WEIGHT_KEY = "forge_weight_entries";
+const WEEKLY_REVIEW_PREVIEW_KEY = "level_up_weekly_review_preview";
 let refreshScheduled = false;
 let refreshAgain = false;
 
@@ -84,12 +85,24 @@ function closeWeeklyReviewModal() {
     document.querySelector("[data-weekly-calorie-modal]")?.remove();
 }
 
-function openWeeklyReviewModal() {
+function openWeeklyReviewModal(event = {}) {
     const phase = getActiveNutritionPhase();
     if (!phase) return;
-    const metrics = getActivePhaseMetrics(phase, { rolling: true });
-    const recommendation = buildSharedRecommendation(metrics, phase);
-    if (!metrics?.recommendationReady || !recommendation || recommendation.targetChange === 0) return;
+    const liveMetrics = getActivePhaseMetrics(phase, { rolling: true });
+    const preview = event?.detail?.preview === true || sessionStorage.getItem(WEEKLY_REVIEW_PREVIEW_KEY) === "1";
+    const visibleTrend = getVisibleTrend(liveMetrics);
+    const targetRate = Number(liveMetrics?.targetRateLbPerWeek ?? phase?.targetWeeklyRate);
+    const fallbackActual = Number.isFinite(targetRate) ? targetRate - 0.25 : 0;
+    const previewActual = Number.isFinite(Number(visibleTrend?.weeklyChange))
+        ? Number(visibleTrend.weeklyChange)
+        : Number.isFinite(Number(liveMetrics?.actualRateLbPerWeek))
+            ? Number(liveMetrics.actualRateLbPerWeek)
+            : fallbackActual;
+    const metrics = preview
+        ? { ...liveMetrics, recommendationReady: true, status: "NEEDS ATTENTION", actualRateLbPerWeek: previewActual, targetRateLbPerWeek: targetRate }
+        : liveMetrics;
+    const recommendation = buildSharedRecommendation(metrics, phase, { preview });
+    if ((!preview && !metrics?.recommendationReady) || !recommendation || (!preview && recommendation.targetChange === 0)) return;
 
     closeWeeklyReviewModal();
     const modal = document.createElement("div");
@@ -97,8 +110,8 @@ function openWeeklyReviewModal() {
     modal.dataset.weeklyCalorieModal = "1";
     modal.innerHTML = `
         <section class="weekly-calorie-modal-card" role="dialog" aria-modal="true" aria-labelledby="weekly-calorie-modal-title">
-            <header><div><span>WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">Your recommended target</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
-            <p>Your logged week, full calculation and recommended change now.</p>
+            <header><div><span>${preview ? "TEST PREVIEW · " : ""}WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">Your recommended target</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
+            <p>${preview ? "This demonstrates what the review would show using your current data. Nothing in this preview will be saved." : "Your logged week, full calculation and recommended change now."}</p>
             <div class="weekly-calorie-modal-breakdown">
                 <div><span>Current saved target</span><strong>${recommendation.previousTarget} kcal/day</strong></div>
                 <div><span>Logged weekly average${recommendation.weeklyAverageLoggedDays ? ` (${recommendation.weeklyAverageLoggedDays}/${recommendation.weeklyAverageTotalDays || 7} days)` : ""}</span><strong>${Number.isFinite(recommendation.weeklyAverageCalories) ? `${recommendation.weeklyAverageCalories} kcal/day` : "Not enough logged days"}</strong></div>
@@ -110,8 +123,8 @@ function openWeeklyReviewModal() {
             </div>
             ${recommendation.capped ? `<small class="weekly-calorie-modal-cap">Limited to ${formatSignedCalories(recommendation.behavioralChange ?? recommendation.targetChange)} calories from ${Number.isFinite(recommendation.actualIntakeCalories) ? `your ${recommendation.actualIntakeCalories} weekly average` : "your current target"}. The saved target changes by ${formatSignedCalories(recommendation.targetChange)}. Level Up will reassess next week.</small>` : ""}
             <div class="weekly-calorie-modal-actions">
-                <button id="weekly-modal-review-apply" class="primary-btn" type="button">Update to ${recommendation.targetCalories}</button>
-                <button id="weekly-modal-review-keep" class="secondary-btn" type="button">Keep ${recommendation.previousTarget}</button>
+                <button id="weekly-modal-review-apply" class="primary-btn" type="button">${preview ? `Test update to ${recommendation.targetCalories}` : `Update to ${recommendation.targetCalories}`}</button>
+                <button id="weekly-modal-review-keep" class="secondary-btn" type="button">${preview ? "Close preview" : `Keep ${recommendation.previousTarget}`}</button>
             </div>
             <small data-weekly-modal-status aria-live="polite"></small>
         </section>`;
@@ -119,9 +132,19 @@ function openWeeklyReviewModal() {
         if (event.target === modal || event.target.closest?.("[data-weekly-modal-close]")) closeWeeklyReviewModal();
     });
     document.body.appendChild(modal);
-    modal.querySelector("#weekly-modal-review-apply")?.addEventListener("click", event => {
-        applyFullAdjustment(event, { phase, metrics, recommendation });
-    });
+    if (preview) {
+        const finishPreview = () => {
+            sessionStorage.removeItem(WEEKLY_REVIEW_PREVIEW_KEY);
+            closeWeeklyReviewModal();
+            window.dispatchEvent(new CustomEvent("levelup:maintenance-check-in-updated", { detail: { action: "preview-finished" } }));
+        };
+        modal.querySelector("#weekly-modal-review-apply")?.addEventListener("click", finishPreview);
+        modal.querySelector("#weekly-modal-review-keep")?.addEventListener("click", finishPreview);
+    } else {
+        modal.querySelector("#weekly-modal-review-apply")?.addEventListener("click", applyEvent => {
+            applyFullAdjustment(applyEvent, { phase, metrics, recommendation });
+        });
+    }
     modal.querySelector("[data-weekly-modal-close]")?.focus();
 }
 
@@ -160,14 +183,22 @@ function getHold(phase, currentCalories) {
     return readAdjustmentHold({ phase, currentCalories });
 }
 
-function buildSharedRecommendation(metrics, phase) {
+function buildSharedRecommendation(metrics, phase, { preview = false } = {}) {
     const currentMaintenance = Number(phase?.maintenanceCalories);
     const currentTarget = Number(phase?.currentCalories ?? phase?.startCalories);
     const estimate = getCalculatedMaintenanceEstimate();
     const proposedMaintenance = Number.isFinite(Number(estimate?.maintenanceCalories))
         ? Number(estimate.maintenanceCalories)
         : currentMaintenance;
-    const baseline = getAdaptiveCalorieBaseline(metrics, currentTarget);
+    const liveBaseline = getAdaptiveCalorieBaseline(metrics, currentTarget);
+    const baseline = preview && !liveBaseline.useLoggedAverage
+        ? {
+            ...liveBaseline,
+            calories: currentTarget,
+            useLoggedAverage: true,
+            intake: { ...(liveBaseline.intake || {}), loggedDays: 7, totalDays: 7, averageCalories: currentTarget }
+        }
+        : liveBaseline;
     const update = buildCoordinatedWeeklyUpdate({
         currentMaintenance,
         proposedMaintenance,
