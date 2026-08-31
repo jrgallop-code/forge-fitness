@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-08-31-56";
+const CACHE_VERSION = "2026-08-31-57";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -84,7 +84,7 @@ async function cacheAssetTree(seedUrls, cache) {
         for (const result of discoveries) {
             if (result.status !== "fulfilled") continue;
             for (const url of result.value) {
-                if (!visited.has(url) && !queued.includes(url)) queued.push(url);
+                if (!visited.has(url) && !queued.includes(url)) queued.push(url.href || url);
             }
         }
     }
