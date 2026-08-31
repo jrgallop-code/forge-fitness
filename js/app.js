@@ -5,7 +5,7 @@ import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=ic
 import "./workouts/exercise-search.js?v=exercise-search-4";
 import "./workouts/exercise-guide-resolution-fix.js?v=1";
 import "./workouts/exercise-guide-comprehensive.js?v=comprehensive-form-guides-1";
-import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check-in.js?v=calorie-authority-recovery-1";
+import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check-in.js?v=weekly-review-ready-indicator-1";
 import { initializeSatisfactionSurvey } from "./feedback/satisfaction-survey.js?v=satisfaction-survey-1";
 
 initializeSatisfactionSurvey();
