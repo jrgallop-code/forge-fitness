@@ -116,3 +116,15 @@ test("a ready review is shared by Nutrition and Progress and applied targets ref
     assert.match(display, /levelup:calorie-target-applied/);
     assert.match(display, /Adjustment applied · reassess in 7 days/);
 });
+
+
+test("the Nutrition dot uses the exact actionable review state", () => {
+    const alert = readFileSync("js/nutrition/maintenance-check-in.js", "utf8");
+    const display = readFileSync("js/nutrition/calories-full-adjustment-display.js", "utf8");
+    assert.match(display, /setWeeklyReviewReadyState\(reviewReady\)/);
+    assert.match(display, /levelup:weekly-calorie-review-readiness/);
+    assert.match(display, /setWeeklyReviewReadyState\(false\)/);
+    assert.match(alert, /weeklyCalorieReviewReady === "true"/);
+    assert.match(alert, /checkIn\.ready \|\| sharedReady/);
+    assert.match(alert, /levelup:weekly-calorie-review-readiness/);
+});

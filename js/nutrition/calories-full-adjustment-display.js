@@ -16,6 +16,7 @@ const WEIGHT_KEY = "forge_weight_entries";
 const WEEKLY_REVIEW_PREVIEW_KEY = "level_up_weekly_review_preview";
 let refreshScheduled = false;
 let refreshAgain = false;
+let weeklyReviewReadyState = null;
 
 function formatRate(value) {
     const number = Number(value);
@@ -42,6 +43,16 @@ function setSuggestionHeading(value) {
     setText(document.querySelector("#weight-calorie-suggestion-card h3"), value);
 }
 
+function setWeeklyReviewReadyState(ready) {
+    const next = Boolean(ready);
+    document.documentElement.dataset.weeklyCalorieReviewReady = String(next);
+    if (weeklyReviewReadyState === next) return;
+    weeklyReviewReadyState = next;
+    window.dispatchEvent(new CustomEvent("levelup:weekly-calorie-review-readiness", {
+        detail: { ready: next }
+    }));
+}
+
 function syncAppliedTargetAcrossSurfaces(targetCalories) {
     const target = Math.round(Number(targetCalories));
     if (!Number.isFinite(target)) return;
@@ -54,6 +65,7 @@ function syncAppliedTargetAcrossSurfaces(targetCalories) {
     setText(nutritionCard?.querySelector("strong"), primary);
     setText(nutritionCard?.querySelector("small"), secondary);
     hideWeightReview();
+    setWeeklyReviewReadyState(false);
     document.querySelector(".progress-weekly-review-alert")?.remove();
 }
 
@@ -424,10 +436,16 @@ function syncCoach(metrics, phase) {
 }
 
 function syncSuggestedCalories(metrics, phase) {
-    if (metrics.isFutureTest) return;
+    if (metrics.isFutureTest) {
+        setWeeklyReviewReadyState(false);
+        return;
+    }
 
     const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
-    if (!Number.isFinite(currentCalories)) return;
+    if (!Number.isFinite(currentCalories)) {
+        setWeeklyReviewReadyState(false);
+        return;
+    }
     const baseline = getAdaptiveCalorieBaseline(metrics, currentCalories);
 
     let primary = `${Math.round(currentCalories)} kcal/day`;
@@ -439,6 +457,17 @@ function syncSuggestedCalories(metrics, phase) {
     const actual = Number(metrics.actualRateLbPerWeek);
     const hold = getHold(phase, currentCalories);
     const visibleRate = getVisibleTrend(metrics)?.weeklyChange;
+    const handled = getHandledCheck(phase, checkDay);
+    const sharedRecommendation = metrics.recommendationReady && baseline.useLoggedAverage && !hold && !handled
+        ? buildSharedRecommendation(metrics, phase)
+        : null;
+    const reviewReady = Boolean(
+        sharedRecommendation
+        && sharedRecommendation.targetChange !== 0
+        && Number.isFinite(actual)
+        && Number.isFinite(target)
+    );
+    setWeeklyReviewReadyState(reviewReady);
 
     if (hold) {
         primary = `${Math.round(currentCalories)} kcal/day`;
@@ -454,11 +483,11 @@ function syncSuggestedCalories(metrics, phase) {
     } else if (metrics.recommendationReady && ["ON TRACK", "MAINTAINING"].includes(metrics.status)) {
         heading = "Suggested Calories";
         secondary = `${calorieBaselineCopy(baseline)} · on track · next check Day ${trend?.nextCheckDay || "--"}`;
-    } else if (getHandledCheck(phase, checkDay)) {
+    } else if (handled) {
         secondary = `Day ${checkDay} check handled · next check Day ${trend?.nextCheckDay || checkDay + 7}`;
     } else if (metrics.recommendationReady && Number.isFinite(actual) && Number.isFinite(target)) {
         heading = "Weekly Calorie Review";
-        const recommendation = buildSharedRecommendation(metrics, phase);
+        const recommendation = sharedRecommendation || buildSharedRecommendation(metrics, phase);
         if (!recommendation) return;
         primary = `${recommendation.targetCalories} kcal/day`;
         secondary = recommendation.targetChange === 0
@@ -470,7 +499,7 @@ function syncSuggestedCalories(metrics, phase) {
         secondary = buildPendingCalorieCheckMessage({ metrics, visibleRate, foodLoggedDays: baseline?.intake?.loggedDays });
     }
 
-    if (!(metrics.recommendationReady && Number.isFinite(actual) && Number.isFinite(target)) || hold || getHandledCheck(phase, checkDay)) {
+    if (!reviewReady) {
         hideWeightReview();
     }
 
