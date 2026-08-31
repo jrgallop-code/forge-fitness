@@ -285,7 +285,8 @@ export function initializeMaintenanceCheckInAlert() {
             return;
         }
         const sharedReady = document.documentElement.dataset.weeklyCalorieReviewReady === "true";
-        const shouldAlert = mode !== "track" && (checkIn.ready || sharedReady);
+        const previewReady = sessionStorage.getItem(WEEKLY_REVIEW_PREVIEW_KEY) === "1";
+        const shouldAlert = mode !== "track" && (checkIn.ready || sharedReady || previewReady);
         const displayedCheckIn = shouldAlert === checkIn.ready ? checkIn : { ...checkIn, ready: shouldAlert };
         nav.classList.toggle("has-maintenance-check-in", shouldAlert);
         let badge = nav.querySelector(".maintenance-nav-badge");

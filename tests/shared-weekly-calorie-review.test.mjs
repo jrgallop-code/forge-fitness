@@ -128,3 +128,10 @@ test("the Nutrition dot uses the exact actionable review state", () => {
     assert.match(alert, /checkIn\.ready \|\| sharedReady/);
     assert.match(alert, /levelup:weekly-calorie-review-readiness/);
 });
+
+
+test("the review preview also demonstrates the Nutrition notification dot", () => {
+    const alert = readFileSync("js/nutrition/maintenance-check-in.js", "utf8");
+    assert.match(alert, /previewReady = sessionStorage\.getItem\(WEEKLY_REVIEW_PREVIEW_KEY\) === "1"/);
+    assert.match(alert, /checkIn\.ready \|\| sharedReady \|\| previewReady/);
+});
