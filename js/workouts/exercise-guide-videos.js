@@ -49,6 +49,15 @@ function ensureStyles() {
             background: #000;
         }
 
+        .exercise-guide-video-card video::-webkit-media-controls,
+        .exercise-guide-video-card video::-webkit-media-controls-enclosure,
+        .exercise-guide-video-card video::-webkit-media-controls-panel,
+        .exercise-guide-video-card video::-webkit-media-controls-play-button,
+        .exercise-guide-video-card video::-webkit-media-controls-start-playback-button {
+            display: none !important;
+            -webkit-appearance: none;
+        }
+
         @media (max-width: 430px) {
             .exercise-guide-video-card video {
                 max-height: 230px;
@@ -82,16 +91,24 @@ function createVideoCard(exerciseId, config) {
     video.loop = true;
     video.autoplay = true;
     video.playsInline = true;
-    video.preload = "metadata";
-    video.controls = true;
+    video.preload = "auto";
+    video.controls = false;
     video.setAttribute("muted", "");
+    video.setAttribute("autoplay", "");
+    video.setAttribute("loop", "");
     video.setAttribute("playsinline", "");
     video.setAttribute("webkit-playsinline", "");
+    video.setAttribute("disablepictureinpicture", "");
+    video.removeAttribute("controls");
     video.setAttribute("aria-label", `${exerciseId.replaceAll("-", " ")} form demonstration`);
 
-    video.addEventListener("loadeddata", () => {
+    const resumePlayback = () => {
+        if (!video.isConnected) return;
         void video.play().catch(() => {});
-    }, { once: true });
+    };
+
+    video.addEventListener("loadeddata", resumePlayback, { once: true });
+    video.addEventListener("canplay", resumePlayback);
 
     video.addEventListener("error", () => {
         failedVideos.add(exerciseId);
@@ -130,6 +147,9 @@ function enhanceGuide(screen) {
     if (header.nextElementSibling !== card) {
         header.insertAdjacentElement("afterend", card);
     }
+
+    const video = card.querySelector("video");
+    if (video?.paused) void video.play().catch(() => {});
 }
 
 function enhanceGuides(root = document) {
@@ -165,3 +185,6 @@ observer.observe(document.documentElement, {
 });
 
 document.addEventListener("levelup:open-exercise-guide", queueGuideRefresh);
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) queueGuideRefresh();
+});
