@@ -212,6 +212,15 @@ export function getFormGuideMuscleVisual(muscleName) {
     };
 }
 
+export function getFormGuideMuscleViewBox(config) {
+    if (!config) return "0 0 960 1920";
+    const anatomy = config.anatomy || getAnatomyConfig(config.view);
+    const cropKey = `${config.view}-${config.crop}`;
+    return anatomy.sex === "female"
+        ? (FEMALE_MUSCLE_VIEWBOXES[config.muscle] || anatomy.viewBox)
+        : (CROP_VIEWBOXES[cropKey] || anatomy.viewBox);
+}
+
 export function renderFormGuideMuscleSvg(configOrMuscleName) {
     const config = typeof configOrMuscleName === "string"
         ? getFormGuideMuscleVisual(configOrMuscleName)
@@ -222,10 +231,7 @@ export function renderFormGuideMuscleSvg(configOrMuscleName) {
     const anatomy = config.anatomy || getAnatomyConfig(config.view);
     const asset = anatomy.asset;
     const assetX = anatomy.imageX;
-    const cropKey = `${config.view}-${config.crop}`;
-    const viewBox = anatomy.sex === "female"
-        ? (FEMALE_MUSCLE_VIEWBOXES[config.muscle] || anatomy.viewBox)
-        : (CROP_VIEWBOXES[cropKey] || anatomy.viewBox);
+    const viewBox = getFormGuideMuscleViewBox(config);
     const orientation = config.view === "back" ? "back" : "front";
     const muscle = escapeXml(config.muscle || "Target muscle");
     const overlays = config.ids.map(id => {

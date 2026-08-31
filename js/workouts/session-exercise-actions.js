@@ -3,7 +3,7 @@ import './exercise-library-expansion.js?v=exercise-library-expansion-1';
 import { addCustomExercise, getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { createGeneratedExerciseGuide } from './exercise-guide-generator.js?v=full-library-guides-1';
 import { movementForExercise, prioritizeMovementMatches } from './smart-swap-priority.js?v=smart-swap-movement-priority-1';
-import { matchesExerciseBrowser, renderCustomExerciseFields, renderMuscleCarousel } from './exercise-browser.js?v=form-guide-carousel-1';
+import { matchesExerciseBrowser, renderCustomExerciseFields, renderMuscleCarousel } from './exercise-browser.js?v=inline-carousel-1';
 
 const SPECIAL_MUSCLE_PROFILES = {
   'barbell-bench-press': { primary: ['Chest'], secondary: ['Triceps', 'Front Delts'] },
