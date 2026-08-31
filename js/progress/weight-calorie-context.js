@@ -2,6 +2,7 @@ import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1
 
 const WEIGHT_KEY = "forge_weight_entries";
 const FOOD_LOG_KEY = "level_up_food_log_v1";
+const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
 const PHASES_KEY = "level_up_nutrition_phases";
 const GOAL_KEY = "level_up_goal_weight";
 const RANGE_KEY = "level_up_weight_chart_range";
@@ -296,7 +297,7 @@ function renderCalorieSlide() {
             <span><i class="is-trend"></i>7-day trend</span>
             <span><i class="is-calories"></i>Calories</span>
         </div>
-        <p class="weight-calories-note">Tap a day for weight, trend and calorie values. Tap the selected day again to clear.</p>
+        <p class="weight-calories-note">Tap a day for weight, trend and calorie values. Today appears after calorie tracking is marked complete.</p>
         <div class="weight-calories-empty" data-weight-calories-empty hidden>
             <strong>More calorie data needed</strong>
             <p>Log food to compare daily calorie intake with your weight trend.</p>
@@ -389,11 +390,14 @@ function buildWeightState() {
 function buildCalorieState() {
     const weightState = buildWeightState();
     const foodLog = readJson(FOOD_LOG_KEY, {});
+    const completedDays = readJson(FOOD_COMPLETE_KEY, {});
+    const today = localDate();
     const weightByDate = new Map(weightState.entries.map(item => [item.date, item.weight]));
     const dates = datesBetween(weightState.window.startDate, weightState.window.endDate);
     const series = dates.map(date => {
         const entries = Array.isArray(foodLog?.[date]) ? foodLog[date] : [];
-        const calories = entries.length
+        const includeCalories = date !== today || completedDays?.[date] === true;
+        const calories = includeCalories && entries.length
             ? entries.reduce((sum, entry) => sum + Math.max(0, Number(entry?.nutrition?.calories) || 0), 0)
             : null;
         return {
