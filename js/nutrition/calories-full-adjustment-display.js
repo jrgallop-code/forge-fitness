@@ -41,6 +41,45 @@ function setSuggestionHeading(value) {
     setText(document.querySelector("#weight-calorie-suggestion-card h3"), value);
 }
 
+function ensureWeightReview() {
+    const card = document.getElementById("weight-calorie-suggestion-card");
+    if (!card) return null;
+    let review = card.querySelector("[data-weekly-calorie-review]");
+    if (review) return review;
+    review = document.createElement("div");
+    review.className = "weekly-calorie-review";
+    review.dataset.weeklyCalorieReview = "1";
+    review.hidden = true;
+    review.innerHTML = `
+        <div class="weekly-calorie-review-row"><span>Current target</span><strong data-review-current>--</strong></div>
+        <div class="weekly-calorie-review-row"><span>Maintenance update</span><strong data-review-maintenance>--</strong></div>
+        <div class="weekly-calorie-review-row"><span>Goal progress</span><strong data-review-pace>--</strong></div>
+        <div class="weekly-calorie-review-result"><span>New daily target</span><strong data-review-target>--</strong></div>
+        <div class="weekly-calorie-review-actions">
+            <button id="weight-weekly-review-apply" class="primary-btn" type="button">Update target</button>
+            <button id="weight-weekly-review-keep" class="secondary-btn" type="button">Keep current</button>
+        </div>`;
+    card.appendChild(review);
+    return review;
+}
+
+function hideWeightReview() {
+    const review = document.querySelector("[data-weekly-calorie-review]");
+    if (review) review.hidden = true;
+}
+
+function showWeightReview(recommendation) {
+    const review = ensureWeightReview();
+    if (!review || !recommendation) return;
+    review.hidden = false;
+    setText(review.querySelector("[data-review-current]"), `${recommendation.previousTarget} kcal/day`);
+    setText(review.querySelector("[data-review-maintenance]"), `${formatSignedCalories(recommendation.maintenanceChange)} cal/day`);
+    setText(review.querySelector("[data-review-pace]"), `${formatSignedCalories(recommendation.paceCorrection)} cal/day`);
+    setText(review.querySelector("[data-review-target]"), `${recommendation.targetCalories} kcal/day`);
+    const apply = review.querySelector("#weight-weekly-review-apply");
+    if (apply) apply.textContent = `Update to ${recommendation.targetCalories}`;
+}
+
 function getVisibleTrend(metrics) {
     if (metrics?.isFutureTest) return null;
     try {
@@ -315,13 +354,21 @@ function syncSuggestedCalories(metrics, phase) {
     } else if (getHandledCheck(phase, checkDay)) {
         secondary = `Day ${checkDay} check handled · next check Day ${trend?.nextCheckDay || checkDay + 7}`;
     } else if (metrics.recommendationReady && Number.isFinite(actual) && Number.isFinite(target)) {
-        heading = "Suggested Calories";
+        heading = "Weekly Calorie Review";
         const recommendation = buildSharedRecommendation(metrics, phase);
         if (!recommendation) return;
         primary = `${recommendation.targetCalories} kcal/day`;
-        secondary = `Shared weekly review · TDEE ${formatSignedCalories(recommendation.maintenanceChange)} · pace ${formatSignedCalories(recommendation.paceCorrection)} · net ${formatSignedCalories(recommendation.targetChange)}`;
+        secondary = recommendation.targetChange === 0
+            ? "Your current target still fits your progress."
+            : "One recommended update based on your latest progress.";
+        if (recommendation.targetChange !== 0) showWeightReview(recommendation);
+        else hideWeightReview();
     } else {
         secondary = buildPendingCalorieCheckMessage({ metrics, visibleRate, foodLoggedDays: baseline?.intake?.loggedDays });
+    }
+
+    if (!(metrics.recommendationReady && Number.isFinite(actual) && Number.isFinite(target)) || hold || getHandledCheck(phase, checkDay)) {
+        hideWeightReview();
     }
 
     const nutritionCard = document.querySelector("#nutrition-current-phase [data-phase-calorie-suggestion]");
@@ -333,7 +380,7 @@ function syncSuggestedCalories(metrics, phase) {
 }
 
 function applyFullAdjustment(event) {
-    const apply = event.target.closest?.("#weekly-coach-apply, #goal-check-in-apply");
+    const apply = event.target.closest?.("#weekly-coach-apply, #goal-check-in-apply, #weight-weekly-review-apply");
     if (!apply) return;
 
     const phase = getActiveNutritionPhase();
