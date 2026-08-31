@@ -30,17 +30,35 @@ test("Weight and Carbs supports the four requested ranges and mobile scrubbing",
     assert.match(source, /setLineDash\(\[4, 4\]\)/);
 });
 
+test("day details appear only after interaction and can be cleared outside the graph", () => {
+    assert.match(source, /let selectedDate = null/);
+    assert.doesNotMatch(source, /selectedDate = available\.at\(-1\)/);
+    assert.match(source, /function clearSelection\(panel\)/);
+    assert.match(source, /!event\.target\.closest\?\.\("\.weight-carbs-chart-shell"\)/);
+    assert.match(source, /tooltip\.hidden = true/);
+    assert.match(source, /drawChart\(canvas, series, null\)/);
+    assert.match(source, /Tap or drag on the graph for day details/);
+});
+
 test("selected day shows weight, carbs, trend difference, and recent carb comparison", () => {
     assert.match(source, /g carbs/);
     assert.match(source, /vs trend/);
     assert.match(source, /g vs recent average/);
-    assert.match(source, /selectedDate = available\.at\(-1\)/);
+});
+
+test("Weight and Carbs always provides analysis when enough context exists", () => {
+    assert.match(source, /WEIGHT &amp; CARB ANALYSIS/);
+    assert.match(source, /Building a clearer pattern/);
+    assert.match(source, /No strong carb-related fluctuation/);
+    assert.match(source, /Higher carbs, weight near trend/);
+    assert.match(source, /Weight elevated without a clear carb signal/);
+    assert.match(source, /Lower carbs and lower scale weight/);
 });
 
 test("water-retention insight remains cautious and cannot alter calorie targets", () => {
     assert.match(source, /Possible water retention/);
     assert.match(source, /may reflect glycogen and associated water/);
-    assert.match(source, /Sodium, hydration, food volume and training/);
+    assert.match(source, /consistent with a temporary scale fluctuation/);
     assert.doesNotMatch(source, /definitely water/i);
     assert.doesNotMatch(source, /You gained .* water/i);
     assert.doesNotMatch(source, /setCurrentCalories|saveNutritionPhase|targetCalories/);
@@ -48,6 +66,7 @@ test("water-retention insight remains cautious and cannot alter calorie targets"
 
 test("missing-data and education states are present", () => {
     assert.match(source, /More data needed/);
+    assert.match(source, /More paired data needed/);
     assert.match(source, /No weight logged/);
     assert.match(source, /No carbs logged/);
     assert.match(source, /Why carbohydrates can affect scale weight/);
