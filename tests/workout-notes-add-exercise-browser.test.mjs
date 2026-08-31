@@ -36,8 +36,10 @@ test('Add Exercise is inserted directly after Add Set and remains distinct from 
 test('shared visual browser defaults to All and combines muscle with search', () => {
   assert.match(browser, /\{ id: "", label: "All"/);
   assert.match(browser, /exercise-muscle-carousel/);
-  assert.match(browser, /measurement-body-front-v1\.svg/);
-  assert.match(browser, /measurement-body-back-v1\.svg/);
+  assert.match(browser, /getAnatomyConfig\(item\.facing\)/);
+  assert.match(browser, /config\.regions\[item\.id\]/);
+  assert.match(browser, /class="exercise-muscle-highlight"/);
+  assert.match(browser, /config\.sex/);
   assert.match(browser, /\(!muscle \|\| exercise\?\.muscleGroup === muscle\)/);
   assert.match(browser, /\(!term \|\| \[exercise\?\.name/);
   assert.match(manual, /renderMuscleCarousel\(state\.muscle/);

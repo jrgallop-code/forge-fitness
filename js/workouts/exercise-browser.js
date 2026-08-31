@@ -29,9 +29,19 @@ const escapeHtml = value => String(value ?? "")
 export function renderMuscleCarousel(selected = "", attribute = "data-muscle-filter") {
   return `<div class="exercise-muscle-carousel" role="listbox" aria-label="Filter exercises by muscle">${MUSCLE_FILTERS.map(item => {
     const active = item.id === selected;
-    const asset = item.facing === "back" ? "assets/measurement-body-back-v1.svg" : "assets/measurement-body-front-v1.svg";
-    return `<button class="exercise-muscle-card${active ? " selected" : ""}" type="button" role="option" aria-selected="${active}" ${attribute}="${escapeHtml(item.id)}"><span class="exercise-muscle-figure muscle-${escapeHtml(item.id || "all").toLowerCase().replaceAll(" ", "-")}"><img src="${asset}" alt=""><i aria-hidden="true"></i></span><span>${escapeHtml(item.label)}</span></button>`;
+    return `<button class="exercise-muscle-card${active ? " selected" : ""}" type="button" role="option" aria-selected="${active}" ${attribute}="${escapeHtml(item.id)}">${renderMuscleFigure(item)}<span>${escapeHtml(item.label)}</span></button>`;
   }).join("")}</div>`;
+}
+
+function renderMuscleFigure(item) {
+  const config = getAnatomyConfig(item.facing);
+  const regionIds = item.id ? (config.regions[item.id] || []) : [];
+  const uses = regionIds.map(id => {
+    const href = `${config.asset}#${id}`;
+    return `<use href="${href}" xlink:href="${href}" class="exercise-muscle-highlight"/>`;
+  }).join("");
+  const label = item.id ? `${item.label} highlighted on ${config.sex} anatomy` : `${config.sex} anatomy`;
+  return `<svg class="exercise-muscle-figure" viewBox="${config.viewBox}" role="img" aria-label="${escapeHtml(label)}" xmlns:xlink="http://www.w3.org/1999/xlink"><image href="${config.asset}" xlink:href="${config.asset}" x="${config.imageX}" y="0" width="960" height="1920" preserveAspectRatio="xMidYMid meet"/>${uses}</svg>`;
 }
 
 export function matchesExerciseBrowser(exercise, { muscle = "", query = "", equipment = "" } = {}) {
@@ -41,3 +51,4 @@ export function matchesExerciseBrowser(exercise, { muscle = "", query = "", equi
     (!term || [exercise?.name, exercise?.muscleGroup, exercise?.equipment]
       .filter(Boolean).some(value => String(value).toLowerCase().includes(term)));
 }
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-2";
