@@ -1,4 +1,5 @@
-import { navigate } from "../core/router.js?v=progress-nav-stability-1";
+import { navigate } from "../core/router.js?v=progress-nav-stability-2";
+import { renderStableProgressRoute } from "../core/progress-route-stable.js?v=progress-route-stable-1";
 
 export function renderNavbar() {
     return `
@@ -55,29 +56,37 @@ export function initializeNavbar() {
 
     const activateAndNavigate = button => {
         const page = button?.dataset?.page;
-        if (!page) return;
+        if (!page) return false;
 
-        button.classList.remove("nav-pulse");
-        void button.offsetWidth;
-        button.classList.add("nav-pulse");
-        button.addEventListener("animationend", () => button.classList.remove("nav-pulse"), { once: true });
+        let routed = true;
+        try {
+            routed = page === "progress"
+                ? renderStableProgressRoute(document.getElementById("content"))
+                : navigate(page) !== false;
+        }
+        catch (error) {
+            routed = false;
+            console.error(`Navigation to ${page} failed:`, error);
+        }
+
+        if (!routed) return false;
 
         nav.querySelectorAll(".nav-btn").forEach(item => {
             item.classList.toggle("active", item === button);
         });
 
-        try {
-            navigate(page);
-        }
-        catch (error) {
-            console.error(`Navigation to ${page} failed:`, error);
-        }
+        button.classList.remove("nav-pulse");
+        void button.offsetWidth;
+        button.classList.add("nav-pulse");
+        button.addEventListener("animationend", () => button.classList.remove("nav-pulse"), { once: true });
+        window.setTimeout(() => button.classList.remove("nav-pulse"), 400);
+        return true;
     };
 
-    // Mobile browsers can occasionally suppress the synthesized click after a
-    // pointer interaction. Give Progress a direct pointer-up path while keeping
-    // the normal click handler for mouse and keyboard activation.
+    // Touch/pen fallback only. Mouse/desktop activation stays on the standard
+    // click path so pointerup cannot pre-empt a normal click.
     nav.addEventListener("pointerup", event => {
+        if (event.pointerType === "mouse") return;
         const button = event.target.closest?.('.nav-btn[data-page="progress"]');
         if (!button || !nav.contains(button)) return;
 
@@ -95,10 +104,7 @@ export function initializeNavbar() {
 
         event.preventDefault();
 
-        // Avoid navigating twice when a touch/pen pointer-up already handled
-        // the Progress button immediately before this synthetic click.
         if (page === "progress" && performance.now() - progressPointerHandledAt < 700) return;
-
         activateAndNavigate(button);
     });
 }
