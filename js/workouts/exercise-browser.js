@@ -1,10 +1,11 @@
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-2";
-import { renderFormGuideMuscleSvg } from "./form-guide-anatomy.js?v=female-back-regions-1";
+import { getFormGuideMuscleViewBox, getFormGuideMuscleVisual } from "./form-guide-anatomy.js?v=inline-carousel-1";
+import { getInlineAnatomyBody } from "./exercise-anatomy-inline.js?v=inline-carousel-1";
 
 if (typeof document !== "undefined" && !document.querySelector('link[data-exercise-browser-styles]')) {
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "css/exercise-browser.css?v=form-guide-carousel-1";
+  link.href = "css/exercise-browser.css?v=inline-carousel-1";
   link.dataset.exerciseBrowserStyles = "";
   document.head.appendChild(link);
 }
@@ -50,7 +51,12 @@ export function renderCustomExerciseFields() {
 function renderMuscleFigure(item) {
   const config = getAnatomyConfig(item.facing);
   const label = item.id ? `${item.label} highlighted on ${config.sex} anatomy` : `${config.sex} anatomy`;
-  const figure = item.id ? renderFormGuideMuscleSvg(item.id) : `<svg class="form-guide-muscle-svg" viewBox="${config.viewBox}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escapeHtml(label)}" focusable="false" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><image class="form-guide-anatomy-base" href="${config.asset}" xlink:href="${config.asset}" x="${config.imageX}" y="0" width="960" height="1920" preserveAspectRatio="xMidYMid meet"/></svg>`;
+  const visual = item.id ? getFormGuideMuscleVisual(item.id) : null;
+  const viewBox = visual ? getFormGuideMuscleViewBox(visual) : config.viewBox;
+  const selectors = (visual?.ids || []).flatMap(id => [`#${id}`, `#${id} *`]).join(",");
+  const highlightStyle = selectors ? `<style>${selectors}{fill:#ff315f!important;stroke:#ff315f!important;opacity:1!important}</style>` : "";
+  const anatomyBody = getInlineAnatomyBody(config.sex, config.side);
+  const figure = `<svg class="form-guide-muscle-svg" viewBox="${viewBox}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escapeHtml(label)}" focusable="false" xmlns="http://www.w3.org/2000/svg">${highlightStyle}${anatomyBody}</svg>`;
   return `<span class="exercise-muscle-figure" role="img" aria-label="${escapeHtml(label)}">${figure}</span>`;
 }
 

@@ -7,6 +7,7 @@ const actions = fs.readFileSync('js/workouts/session-exercise-actions.js', 'utf8
 const manual = fs.readFileSync('js/workouts/manual-builder-catalogue.js', 'utf8');
 const browser = fs.readFileSync('js/workouts/exercise-browser.js', 'utf8');
 const index = fs.readFileSync('index.html', 'utf8');
+const inlineAnatomy = fs.readFileSync('js/workouts/exercise-anatomy-inline.js', 'utf8');
 const generatedMaleChest = fs.readFileSync('assets/exercise-anatomy/male-chest.svg', 'utf8');
 const generatedFemaleShoulders = fs.readFileSync('assets/exercise-anatomy/female-shoulders.svg', 'utf8');
 
@@ -40,10 +41,12 @@ test('shared visual browser defaults to All and combines muscle with search', ()
   assert.match(browser, /\{ id: "", label: "All"/);
   assert.match(browser, /exercise-muscle-carousel/);
   assert.match(browser, /getAnatomyConfig\(item\.facing\)/);
-  assert.match(browser, /renderFormGuideMuscleSvg\(item\.id\)/);
+  assert.match(browser, /getInlineAnatomyBody\(config\.sex, config\.side\)/);
+  assert.match(browser, /getFormGuideMuscleViewBox\(visual\)/);
   assert.match(browser, /class=\"form-guide-muscle-svg\"/);
-  assert.match(browser, /class=\"form-guide-anatomy-base\"/);
-  assert.match(browser, /href=\"\$\{config\.asset\}\"/);
+  assert.doesNotMatch(browser, /<image|config\.asset|xlink:href/);
+  assert.match(inlineAnatomy, /muscle_front_011/);
+  assert.match(inlineAnatomy, /female_front_shoulders_l/);
   assert.doesNotMatch(browser, /hydrateExerciseAnatomy|DOMParser/);
   assert.match(generatedMaleChest, /#muscle_front_011/);
   assert.match(generatedMaleChest, /#ff315f/);
@@ -63,7 +66,7 @@ test('shared visual browser defaults to All and combines muscle with search', ()
   assert.match(actions, /appendExerciseToActiveWorkout\(exercise\.id\)/);
   assert.doesNotMatch(manual, /hydrateExerciseAnatomy/);
   assert.doesNotMatch(actions, /hydrateExerciseAnatomy/);
-  assert.match(index, /manual-builder-catalogue\.js\?v=form-guide-carousel-1/);
-  assert.match(index, /session-exercise-actions\.js\?v=form-guide-carousel-1/);
-  assert.match(browser, /exercise-browser\.css\?v=form-guide-carousel-1/);
+  assert.match(index, /manual-builder-catalogue\.js\?v=inline-carousel-1/);
+  assert.match(index, /session-exercise-actions\.js\?v=inline-carousel-1/);
+  assert.match(browser, /exercise-browser\.css\?v=inline-carousel-1/);
 });
