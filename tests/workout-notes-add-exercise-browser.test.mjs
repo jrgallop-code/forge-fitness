@@ -4,6 +4,8 @@ import fs from 'node:fs';
 
 const session = fs.readFileSync('js/workouts/workout-session.js', 'utf8');
 const actions = fs.readFileSync('js/workouts/session-exercise-actions.js', 'utf8');
+const compactLogger = fs.readFileSync('js/workouts/workout-logger-compact.js', 'utf8');
+const actionStyles = fs.readFileSync('css/session-exercise-actions.css', 'utf8');
 const manual = fs.readFileSync('js/workouts/manual-builder-catalogue.js', 'utf8');
 const browser = fs.readFileSync('js/workouts/exercise-browser.js', 'utf8');
 const browserStyles = fs.readFileSync('css/exercise-browser.css', 'utf8');
@@ -32,8 +34,12 @@ test('active workout add exercise preserves canonical identity and plan snapshot
 });
 
 test('Add Exercise is inserted directly after Add Set and remains distinct from Smart Swap', () => {
-  assert.match(actions, /addSet\.insertAdjacentElement\('afterend', button\)/);
+  assert.match(actions, /actions\.className = 'session-exercise-add-actions'/);
+  assert.match(actions, /actions\.append\(addSet, button\)/);
   assert.match(actions, /button\.textContent = '\+ Add Exercise'/);
+  assert.match(compactLogger, /button\.textContent = '\+ Add Set'/);
+  assert.doesNotMatch(compactLogger, /`\+ Add Set \(\$\{formatSeconds/);
+  assert.match(actionStyles, /\.session-exercise-add-actions\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/);
   assert.match(actions, /function openSwapSheet/);
   assert.match(actions, /function openAddExerciseSheet/);
 });
@@ -70,6 +76,8 @@ test('shared visual browser defaults to All and combines muscle with search', ()
   assert.doesNotMatch(manual, /hydrateExerciseAnatomy/);
   assert.doesNotMatch(actions, /hydrateExerciseAnatomy/);
   assert.match(index, /manual-builder-catalogue\.js\?v=isolated-carousel-1/);
-  assert.match(index, /session-exercise-actions\.js\?v=isolated-carousel-1/);
+  assert.match(index, /session-exercise-actions\.js\?v=compact-add-actions-1/);
+  assert.match(index, /workout-logger-compact\.js\?v=compact-add-actions-1/);
+  assert.match(index, /session-exercise-actions\.css\?v=compact-add-actions-1/);
   assert.match(browser, /exercise-browser\.css\?v=isolated-carousel-1/);
 });

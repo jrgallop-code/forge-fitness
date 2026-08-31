@@ -720,7 +720,10 @@ function enhanceActiveLogger() {
     button.className = 'session-add-exercise-btn';
     button.textContent = '+ Add Exercise';
     button.addEventListener('click', () => openAddExerciseSheet(logger));
-    addSet.insertAdjacentElement('afterend', button);
+    const actions = document.createElement('div');
+    actions.className = 'session-exercise-add-actions';
+    addSet.parentNode.insertBefore(actions, addSet);
+    actions.append(addSet, button);
   });
 }
 
