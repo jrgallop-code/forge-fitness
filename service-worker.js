@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-08-31-61";
+const CACHE_VERSION = "2026-08-31-62";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -101,8 +101,6 @@ async function cacheFreshAppShell() {
     await cache.put(indexUrl, response.clone());
     await cache.put(new URL("./", self.registration.scope), response.clone());
 
-    // Cache the entry files plus their local JS/CSS dependency tree. One missing
-    // optional asset must not prevent the service worker from installing.
     const seedUrls = assetUrlsFromHtml(html).filter(url => url !== indexUrl.href);
     await cacheAssetTree(seedUrls, cache);
 }
