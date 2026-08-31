@@ -195,7 +195,8 @@ test("Goals and Plan distinguishes formula TDEE from the Level Up trend calculat
     const source = await readFile(new URL("../js/nutrition/unified-goals-calories.js", import.meta.url), "utf8");
     assert.match(source, /Body Profile TDEE Formula/);
     assert.match(source, /Level Up Calculated TDEE/);
-    assert.match(source, /Use Level Up TDEE/);
+    assert.match(source, /Use for initial plan/);
+    assert.match(source, /button\.hidden = Boolean\(active\)/);
     assert.match(source, /maintenanceDraft = String\(coordinated\?\.maintenanceCalories \?\? estimate\.maintenanceCalories\)/);
     assert.match(source, /input\.dispatchEvent\(new Event\("change", \{ bubbles: true \}\)\)/);
     assert.match(source, /input\.value = maintenanceDraft/);

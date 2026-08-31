@@ -1,4 +1,4 @@
-import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=shared-live-trend-1";
+import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=weekly-review-ui-1";
 
 export function renderProgress() {
 

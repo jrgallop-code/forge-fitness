@@ -241,14 +241,13 @@ function renderNutritionHubAlert(checkIn, mode) {
     if (!hub) return;
     const alert = document.createElement("section");
     alert.className = "maintenance-hub-alert";
-    const targetCopy = Number.isFinite(checkIn.currentTarget) && Number.isFinite(checkIn.proposedTarget)
-        ? ` · target ${checkIn.currentTarget.toLocaleString()} → ${checkIn.proposedTarget.toLocaleString()}`
-        : "";
-    alert.innerHTML = `<div><span>WEEKLY CALORIE REVIEW</span><strong>One coordinated update is ready</strong><small>Maintenance ${checkIn.currentMaintenance.toLocaleString()} → ${checkIn.proposedMaintenance.toLocaleString()}${targetCopy}</small></div><button type="button">Review</button>`;
+    alert.innerHTML = `<div><span>WEEKLY CALORIE REVIEW</span><strong>Your calorie update is ready</strong><small>Review one recommended daily target.</small></div><button type="button">Review</button>`;
     alert.querySelector("button")?.addEventListener("click", () => {
-        if (!queueMaintenanceReview(checkIn)) return;
-        document.querySelector('[data-calories-tab="plan"]')?.click();
-        window.setTimeout(() => document.querySelector('[data-nutrition-view="goals"]')?.click(), 60);
+        document.querySelector('.nav-btn[data-page="progress"]')?.click();
+        window.setTimeout(() => {
+            document.getElementById("weight-tab")?.click();
+            document.getElementById("weight-calorie-suggestion-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 120);
     });
     hub.insertBefore(alert, hub.querySelector('[data-calories-panel="log"]'));
 }

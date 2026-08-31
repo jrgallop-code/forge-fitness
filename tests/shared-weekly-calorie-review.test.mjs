@@ -5,9 +5,23 @@ import { readFileSync } from "node:fs";
 test("active phases cannot apply calculated TDEE before the shared weekly review", () => {
     const source = readFileSync("js/nutrition/unified-goals-calories.js", "utf8");
     assert.match(source, /waitingForSharedReview = Boolean\(active && !metrics\?\.recommendationReady\)/);
-    assert.match(source, /estimate\.maintenanceCalories\) \|\| waitingForSharedReview/);
+    assert.match(source, /button\.hidden = Boolean\(active\)/);
     assert.match(source, /active && !metrics\?\.recommendationReady/);
     assert.match(source, /No separate calorie change will be created/);
+});
+
+test("the only active-phase action is the compact Weight Progress review", () => {
+    const goals = readFileSync("js/nutrition/unified-goals-calories.js", "utf8");
+    const display = readFileSync("js/nutrition/calories-full-adjustment-display.js", "utf8");
+    const stats = readFileSync("js/nutrition/calorie-stats.js", "utf8");
+    assert.match(goals, /Included automatically in your Weekly Calorie Review/);
+    assert.match(display, /data-weekly-calorie-review/);
+    assert.match(display, /Maintenance update/);
+    assert.match(display, /Goal progress/);
+    assert.match(display, /New daily target/);
+    assert.match(display, /#weight-weekly-review-apply/);
+    assert.match(stats, /Review one recommended daily target in Weight Progress/);
+    assert.doesNotMatch(stats, /data-maintenance-keep/);
 });
 
 test("the actionable coach review combines TDEE and pace into one capped update", () => {

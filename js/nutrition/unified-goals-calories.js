@@ -2,7 +2,7 @@ import { GOAL_PRESETS, calculateTdee } from "./tdee-calculator.js?v=nutrition-ph
 import { getNutritionProfile, getNutritionGoal, saveNutritionGoal, getNutritionPlan, syncCalculatedCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getActiveNutritionPhase, getNutritionPhaseHistory, getActivePhaseMetrics, getPhaseDayNumber, saveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-1";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=weekly-stable-tdee-1";
-import { clearPendingMaintenanceReview, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, readPendingMaintenanceReview, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=weekly-stable-tdee-1";
+import { clearPendingMaintenanceReview, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, readPendingMaintenanceReview, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=weekly-review-ui-1";
 import { buildCoordinatedWeeklyUpdate, markPhaseCheckHandled, startAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
 
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
@@ -86,9 +86,9 @@ function renderUnifiedCard() {
             </div>
             <div class="unified-calculated-maintenance">
                 <div><span>Level Up Calculated TDEE</span><strong id="unified-calculated-maintenance">Not enough data</strong><small id="unified-calculated-maintenance-meta">Uses your actual food logs and weight trend</small><em id="unified-calculated-action-status" aria-live="polite"></em></div>
-                <button id="unified-use-calculated" class="secondary-btn" type="button" disabled>Use Level Up TDEE</button>
+                <button id="unified-use-calculated" class="secondary-btn" type="button" disabled>Use for initial plan</button>
             </div>
-            <p class="unified-maintenance-choice-note"><strong>Which number should I use?</strong> The formula is a starting point. The Level Up estimate becomes more personalized as you log food and weight.</p>
+            <p class="unified-maintenance-choice-note"><strong>Your personalized estimate</strong> Once a phase is active, Level Up includes this automatically in your Weekly Calorie Review.</p>
             <div class="unified-maintenance-mode">
                 <label for="unified-maintenance-mode">Maintenance update preference</label>
                 <select id="unified-maintenance-mode">
@@ -190,10 +190,15 @@ function refreshCalculatedMaintenance() {
         ? `${estimate.label} · based on ${estimate.foodDays} food days and ${estimate.weighIns} weigh-ins${waitingForSharedReview ? " · tracking only until the weekly calorie review" : ""}`
         : `${estimate.foodDays}/2 food days · ${estimate.weighIns}/3 weigh-ins · a multi-day weight span is required`);
     const button = document.getElementById("unified-use-calculated");
-    button?.toggleAttribute("disabled", !Number.isFinite(estimate.maintenanceCalories) || waitingForSharedReview);
-    if (button && button.textContent !== "Added below ✓") button.textContent = "Use Level Up TDEE";
+    button?.toggleAttribute("disabled", !Number.isFinite(estimate.maintenanceCalories));
+    if (button) {
+        button.hidden = Boolean(active);
+        if (!active && button.textContent !== "Added below ✓") button.textContent = "Use for initial plan";
+    }
     if (waitingForSharedReview) {
-        setText("unified-calculated-action-status", "Your TDEE is updating, but an active phase changes calories only during the shared weekly review.");
+        setText("unified-calculated-action-status", "Included automatically in your next Weekly Calorie Review.");
+    } else if (active) {
+        setText("unified-calculated-action-status", "Included automatically in your Weekly Calorie Review.");
     }
 }
 

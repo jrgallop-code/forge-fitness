@@ -1,7 +1,7 @@
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=shared-live-trend-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
-import { getMaintenanceCheckIn, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, queueMaintenanceReview } from "./maintenance-check-in.js?v=weekly-stable-tdee-1";
+import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=weekly-review-ui-1";
 import { getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-phase-1";
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
 
@@ -120,26 +120,11 @@ function maintenanceCard(estimate, checkIn) {
 
 function maintenanceCheckInMarkup(checkIn) {
     if (!checkIn?.ready || checkIn.mode === "track") return "";
-    const estimateChange = `${checkIn.change > 0 ? "+" : "−"}${formatNumber(Math.abs(checkIn.change))}`;
-    const maintenanceStep = Number(checkIn.coordinatedUpdate?.maintenanceChange);
-    const targetChange = checkIn.currentTarget !== null && checkIn.proposedTarget !== null
-        ? checkIn.proposedTarget - checkIn.currentTarget
-        : null;
-    const paceCorrection = Number(checkIn.coordinatedUpdate?.paceCorrection) || 0;
     return `<section class="maintenance-check-in-alert">
-        <span class="eyebrow">WEEKLY CHECK-IN READY</span>
-        <h3>Your maintenance estimate changed</h3>
-        <p>${checkIn.mode === "automatic" ? "Automatic updates begin once this estimate reaches high confidence. You can review this early estimate manually now." : "Level Up reviews the displayed estimate once a week. Nothing changes until you approve it."}</p>
-        <div class="maintenance-check-in-comparison">
-            <span><small>Current maintenance</small><strong>${formatNumber(checkIn.currentMaintenance)} cal</strong></span>
-            <i>→</i>
-            <span><small>New estimate</small><strong>${formatNumber(checkIn.proposedMaintenance)} cal</strong></span>
-        </div>
-        <div class="maintenance-check-in-impact"><span>Calculated TDEE difference</span><strong>${estimateChange} cal/day</strong></div>
-        ${Number.isFinite(maintenanceStep) ? `<div class="maintenance-check-in-impact"><span>This week's maintenance step</span><strong>${maintenanceStep > 0 ? "+" : maintenanceStep < 0 ? "−" : ""}${formatNumber(Math.abs(maintenanceStep))} cal/day</strong></div>` : ""}
-        ${paceCorrection ? `<div class="maintenance-check-in-impact"><span>Adaptive Coach correction</span><strong>${paceCorrection > 0 ? "+" : "−"}${formatNumber(Math.abs(paceCorrection))} cal/day</strong></div>` : `<div class="maintenance-check-in-impact"><span>Adaptive Coach</span><strong>Pace on target or not yet ready</strong></div>`}
-        ${targetChange === null ? "" : `<div class="maintenance-check-in-impact"><span>Planned daily target</span><strong>${formatNumber(checkIn.currentTarget)} → ${formatNumber(checkIn.proposedTarget)} cal</strong></div>`}
-        <div class="maintenance-check-in-actions"><button class="primary-btn" type="button" data-maintenance-review>Review &amp; use</button><button class="secondary-btn" type="button" data-maintenance-keep>Keep current</button></div>
+        <span class="eyebrow">WEEKLY CALORIE REVIEW</span>
+        <h3>Your calorie update is ready</h3>
+        <p>Review one recommended daily target in Weight Progress.</p>
+        <div class="maintenance-check-in-actions"><button class="primary-btn" type="button" data-maintenance-review>Review update</button></div>
     </section>`;
 }
 
@@ -293,17 +278,14 @@ function renderStats(panel) {
         renderStats(panel);
     }));
     panel.querySelector("[data-maintenance-review]")?.addEventListener("click", () => openMaintenanceReview(checkIn));
-    panel.querySelector("[data-maintenance-keep]")?.addEventListener("click", () => {
-        markMaintenanceCheckInReviewed(checkIn, "kept");
-        renderStats(panel);
-    });
 }
 
-function openMaintenanceReview(checkIn) {
-    if (!queueMaintenanceReview(checkIn)) return;
-    document.querySelector('.nav-btn[data-page="energy"]')?.click();
-    window.setTimeout(() => document.querySelector('[data-calories-tab="plan"]')?.click(), 60);
-    window.setTimeout(() => document.querySelector('[data-nutrition-view="goals"]')?.click(), 120);
+function openMaintenanceReview() {
+    document.querySelector('.nav-btn[data-page="progress"]')?.click();
+    window.setTimeout(() => {
+        document.getElementById("weight-tab")?.click();
+        document.getElementById("weight-calorie-suggestion-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 120);
 }
 
 export function renderCalorieStats() {
