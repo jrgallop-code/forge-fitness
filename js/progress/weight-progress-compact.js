@@ -10,7 +10,7 @@ export function initializeWeightProgressCompact() {
     compactWeightProgress(section);
     refreshWeightSummary();
     initializeSummaryCarousel(section);
-    relocateCalorieSummaryToNutritionProgress(section);
+    relocateWeeklyReviewAlertToNutritionProgress(section);
 }
 
 function removeGoalUi(section) {
@@ -150,66 +150,33 @@ function initializeSummaryCarousel(section) {
     });
 }
 
-function relocateCalorieSummaryToNutritionProgress(section) {
+function relocateWeeklyReviewAlertToNutritionProgress(section) {
     const summary = section.querySelector(".weight-summary");
     const nutritionProgress = document.getElementById("calorie-progress");
     if (!summary || !nutritionProgress) return;
 
-    ensureNutritionCalorieSummaryStyles();
+    const moveAlert = () => {
+        const alert = document.querySelector(".progress-weekly-review-alert");
+        if (!alert) return;
 
-    const moveCard = () => {
-        const card = document.getElementById("weight-calorie-suggestion-card");
-        if (!card) return;
-
-        card.classList.add("nutrition-progress-calorie-summary-card");
+        alert.style.marginTop = "0";
+        alert.style.marginBottom = "14px";
         const statsPanel = nutritionProgress.querySelector("[data-progress-calorie-stats]");
-        if (card.parentElement !== nutritionProgress || (statsPanel && card.nextElementSibling !== statsPanel)) {
-            nutritionProgress.insertBefore(card, statsPanel || nutritionProgress.firstChild);
+        if (alert.parentElement !== nutritionProgress || (statsPanel && alert.nextElementSibling !== statsPanel)) {
+            nutritionProgress.insertBefore(alert, statsPanel || nutritionProgress.firstChild);
         }
     };
 
-    moveCard();
-    if (summary.dataset.calorieSummaryRelocator === "1") return;
+    moveAlert();
+    if (summary.dataset.weeklyReviewAlertRelocator === "1") return;
 
-    const observer = new MutationObserver(moveCard);
-    observer.observe(summary, { childList: true });
-    summary.dataset.calorieSummaryRelocator = "1";
-}
+    const observer = new MutationObserver(moveAlert);
+    observer.observe(summary, { childList: true, subtree: true });
+    summary.dataset.weeklyReviewAlertRelocator = "1";
 
-function ensureNutritionCalorieSummaryStyles() {
-    if (document.getElementById("nutrition-progress-calorie-summary-styles")) return;
-
-    const style = document.createElement("style");
-    style.id = "nutrition-progress-calorie-summary-styles";
-    style.textContent = `
-        #calorie-progress > .nutrition-progress-calorie-summary-card{
-            margin:0 0 12px;
-            min-height:0;
-            padding:14px 16px;
-        }
-        #calorie-progress > .nutrition-progress-calorie-summary-card h3{
-            margin:0;
-            color:var(--muted,#a1a1aa);
-            font-size:10px;
-            line-height:1.2;
-            letter-spacing:.08em;
-            text-transform:uppercase;
-        }
-        #calorie-progress > .nutrition-progress-calorie-summary-card p{
-            margin:6px 0 0;
-            font-size:20px;
-            line-height:1.1;
-            font-weight:700;
-        }
-        #calorie-progress > .nutrition-progress-calorie-summary-card small{
-            display:block;
-            margin-top:5px;
-            color:var(--muted,#a1a1aa);
-            font-size:11px;
-            line-height:1.35;
-        }
-    `;
-    document.head.appendChild(style);
+    document.getElementById("nutrition-progress-tab")?.addEventListener("click", () => {
+        window.setTimeout(moveAlert, 0);
+    });
 }
 
 function makeField(forId, labelText, input) {
