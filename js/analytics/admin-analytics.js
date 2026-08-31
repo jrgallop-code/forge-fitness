@@ -70,9 +70,30 @@ function renderAnalytics(data) {
     ].join("");
     const chart = daily.length ? daily.map(item => `<div class="admin-analytics-bar" title="${escapeHtml(item.day)} · ${number(item.active_users)} users · ${number(item.foods)} foods · ${number(item.workouts)} workouts"><div><i class="admin-analytics-series admin-analytics-series--users" style="height:${barHeight(item.active_users, max)}%"></i><i class="admin-analytics-series admin-analytics-series--foods" style="height:${barHeight(item.foods, max)}%"></i><i class="admin-analytics-series admin-analytics-series--workouts" style="height:${barHeight(item.workouts, max)}%"></i></div><small>${escapeHtml(item.day.slice(5))}</small></div>`).join("") : `<p class="admin-analytics-empty">Usage will appear here as people open the app, log food, and train.</p>`;
     const restaurantCatalogue = renderRestaurantCatalogue(data.restaurantCatalogue || {});
+    const workoutSourceBreakdown = renderWorkoutSourceBreakdown(data.workoutSources || []);
     return `<div class="admin-analytics-kpis">
         ${kpi("Total users", totals.total_users, "all time")}${kpi("New users today", totals.new_users_today, todayLabel)}${kpi("Signed-in users today", totals.users_today, `opened the app · ${todayLabel}`)}${kpi("Engaged users today", totals.engaged_users_today, "logged food or a workout")}${kpi("Active users", totals.active_users, "last 7 days")}${kpi("Returning users", totals.repeat_users, `2+ local days in ${data.days} days`)}${kpi("Food loggers", totals.food_log_users, `in ${data.days} days`)}${kpi("Workout users", totals.workout_users, `in ${data.days} days`)}${kpi("Workouts logged", totals.workouts, `in ${data.days} days`)}
-    </div><div class="admin-analytics-grid"><section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACTIVITY</span><h3>Daily app usage</h3><p>Halifax local dates · updated ${escapeHtml(updatedLabel)}</p></div><div class="admin-analytics-legend"><span class="is-users">Users</span><span class="is-foods">Foods</span><span class="is-workouts">Workouts</span></div></div><div class="admin-analytics-chart">${chart}</div></section><section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGEMENT</span><h3>What people use</h3></div></div><div class="admin-analytics-funnel"><div><span>Returning users</span><strong>${number(totals.repeat_users)}</strong></div><div><span>People logging food</span><strong>${number(totals.food_log_users)}</strong></div><div><span>Food entries logged</span><strong>${number(totals.foods_logged)}</strong></div><div><span>People completing workouts</span><strong>${number(totals.workout_users)}</strong></div><div><span>Onboarding completed</span><strong>${number(totals.onboarding_completions)}</strong></div></div></section><section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACQUISITION</span><h3>Where people came from</h3></div></div><div class="admin-analytics-sources">${sourceRows || `<p class="admin-analytics-empty">No acquisition responses yet.</p>`}</div></section>${restaurantCatalogue}<section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGED USERS</span><h3>Who logged activity</h3><p>Only people who logged food or completed a workout appear below.</p></div></div><div class="admin-analytics-stat-groups">${namedStats}</div></section></div>`;
+    </div><div class="admin-analytics-grid"><section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACTIVITY</span><h3>Daily app usage</h3><p>Halifax local dates · updated ${escapeHtml(updatedLabel)}</p></div><div class="admin-analytics-legend"><span class="is-users">Users</span><span class="is-foods">Foods</span><span class="is-workouts">Workouts</span></div></div><div class="admin-analytics-chart">${chart}</div></section><section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGEMENT</span><h3>What people use</h3></div></div><div class="admin-analytics-funnel"><div><span>Returning users</span><strong>${number(totals.repeat_users)}</strong></div><div><span>People logging food</span><strong>${number(totals.food_log_users)}</strong></div><div><span>Food entries logged</span><strong>${number(totals.foods_logged)}</strong></div><div><span>People completing workouts</span><strong>${number(totals.workout_users)}</strong></div><div><span>Onboarding completed</span><strong>${number(totals.onboarding_completions)}</strong></div></div></section>${workoutSourceBreakdown}<section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACQUISITION</span><h3>Where people came from</h3></div></div><div class="admin-analytics-sources">${sourceRows || `<p class="admin-analytics-empty">No acquisition responses yet.</p>`}</div></section>${restaurantCatalogue}<section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGED USERS</span><h3>Who logged activity</h3><p>Only people who logged food or completed a workout appear below.</p></div></div><div class="admin-analytics-stat-groups">${namedStats}</div></section></div>`;
+}
+
+function renderWorkoutSourceBreakdown(rows) {
+    const labels = {
+        coach_builder: "Coach Builder",
+        manual_builder: "Manual Builder",
+        template_library: "Template Library",
+        imported_routine: "Imported Routine",
+        one_off: "One-Off Workout",
+        legacy_unknown: "Older data"
+    };
+    const order = ["coach_builder", "manual_builder", "template_library", "imported_routine", "one_off", "legacy_unknown"];
+    const values = new Map(rows.map(row => [row.workout_source, row]));
+    const total = rows.reduce((sum, row) => sum + Number(row.workouts || 0), 0);
+    const sourceRows = order.filter(source => values.has(source)).map(source => {
+        const row = values.get(source);
+        const percent = total ? Math.round(Number(row.workouts || 0) / total * 100) : 0;
+        return `<div class="admin-workout-source${source === "legacy_unknown" ? " is-legacy" : ""}"><div><span>${escapeHtml(labels[source])}</span><small>${number(row.users)} user${Number(row.users) === 1 ? "" : "s"}</small></div><strong>${number(row.workouts)} <small>${percent}%</small></strong></div>`;
+    }).join("");
+    return `<section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">WORKOUT TYPES</span><h3>How workouts were created</h3><p>Completed workouts in this date range.</p></div></div><div class="admin-workout-sources">${sourceRows || `<p class="admin-analytics-empty">Workout types will appear after a workout is completed.</p>`}</div>${values.has("legacy_unknown") ? `<p class="admin-analytics-caption">Older workouts were recorded before workout type tracking was added.</p>` : ""}</section>`;
 }
 
 function renderRestaurantCatalogue(data) {
@@ -122,7 +143,7 @@ function ensureUsageStyles() {
     if (document.querySelector("link[data-admin-usage-styles]")) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/admin-analytics-usage.css?v=halifax-local-day-1";
+    link.href = "css/admin-analytics-usage.css?v=workout-source-stats-1";
     link.dataset.adminUsageStyles = "";
     document.head.append(link);
 }

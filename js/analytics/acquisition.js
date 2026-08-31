@@ -23,7 +23,7 @@ export function initializeAcquisitionTracking(){
         const detail=event.detail||{};
         void trackProductEvent("workout_completed",{
             eventKey:String(detail.sessionId||crypto.randomUUID()),
-            metadata:{planId:detail.planId||null,workingSets:Number(detail.workingSets)||0,durationMinutes:Number(detail.durationMinutes)||0}
+            metadata:{planId:detail.planId||null,workoutSource:detail.workoutSource||null,workingSets:Number(detail.workingSets)||0,durationMinutes:Number(detail.durationMinutes)||0}
         });
     });
     window.addEventListener("levelup:food-log-updated",event=>{

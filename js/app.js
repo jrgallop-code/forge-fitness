@@ -1,6 +1,6 @@
-import { navigate } from "./core/router.js?v=weight-period-summary-2";
+import { navigate } from "./core/router.js?v=workout-source-stats-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=nutrition-nav-1";
-import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=cardio-rpe-1";
+import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-source-stats-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";
 import "./workouts/exercise-guide-resolution-fix.js?v=1";
