@@ -7,6 +7,7 @@ import { buildCoordinatedWeeklyUpdate, clearAdjustmentHold, markPhaseCheckHandle
 
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const LEGACY_CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
+const WEEKLY_REVIEW_PREVIEW_KEY = "level_up_weekly_review_preview";
 let maintenanceDraft = null;
 let targetDraft = null;
 let pendingAdaptiveCheckDay = null;
@@ -46,6 +47,7 @@ export function initializeUnifiedGoalsCalories() {
     });
     document.getElementById("unified-save-plan")?.addEventListener("click", saveUnifiedPlan);
     document.getElementById("unified-replay-review")?.addEventListener("click", replayLastWeeklyReview);
+    document.getElementById("unified-preview-review")?.addEventListener("click", startWeeklyReviewPreview);
     document.getElementById("save-nutrition-profile-btn")?.addEventListener("click", () => window.setTimeout(refreshAll, 30));
     window.addEventListener("levelup:nutrition-updated", refreshAll);
     window.addEventListener("levelup:nutrition-phase-updated", refreshAll);
@@ -112,6 +114,7 @@ function renderUnifiedCard() {
             <div class="unified-active-target"><span>Planned Daily Target</span><strong id="unified-active-target">--</strong><small>This becomes the active Level Up calorie target when saved.</small></div>
         </div>
         <button id="unified-save-plan" class="primary-btn" type="button">Save</button>
+        <button id="unified-preview-review" class="secondary-btn" type="button">Preview Weekly Calorie Review</button>
         <button id="unified-replay-review" class="secondary-btn" type="button" hidden>Undo last update and replay review</button>
         <p id="unified-calorie-message" class="nutrition-message" aria-live="polite"></p>
         <div id="nutrition-phase-history"></div>
@@ -340,6 +343,17 @@ function replayLastWeeklyReview() {
     window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: "weekly-review-replay" } }));
     setText("unified-calorie-message", `Restored ${previousTarget} kcal/day and reopened the weekly review. Return to Food Log to test the Review button.`);
     refreshAll();
+}
+
+function startWeeklyReviewPreview() {
+    const phase = getActiveNutritionPhase();
+    if (!phase) {
+        setText("unified-calorie-message", "Start a nutrition phase before previewing its weekly calorie review.");
+        return;
+    }
+    sessionStorage.setItem(WEEKLY_REVIEW_PREVIEW_KEY, "1");
+    document.querySelector('[data-calories-tab="log"]')?.click();
+    window.dispatchEvent(new CustomEvent("levelup:maintenance-check-in-updated", { detail: { action: "preview" } }));
 }
 
 function refreshCurrentPhase() {
