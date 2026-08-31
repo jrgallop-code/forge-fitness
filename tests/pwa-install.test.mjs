@@ -41,6 +41,30 @@ test("an installed app reloads once when a new service worker takes control", ()
     assert.match(app, /window\.location\.reload\(\)/);
 });
 
+test("installed launches have a hard splash timeout and a cache-safe recovery screen", () => {
+    const html = readFileSync("index.html", "utf8");
+    const safeguard = readFileSync("js/core/pwa-startup-safeguard.js", "utf8");
+    const styles = readFileSync("css/pwa-splash-screen.css", "utf8");
+    assert.match(html, /js\/core\/pwa-startup-safeguard\.js\?v=pwa-splash-safety-1/);
+    assert.ok(html.indexOf("pwa-startup-safeguard.js") < html.indexOf("js/app.js"));
+    assert.match(safeguard, /setTimeout\(dismissSplash, 3200\)/);
+    assert.match(safeguard, /setTimeout\(showRecovery, 7000\)/);
+    assert.match(safeguard, /data-pwa-reload/);
+    assert.match(safeguard, /data-pwa-refresh-cache/);
+    assert.match(safeguard, /startsWith\("level-up-"\)/);
+    assert.doesNotMatch(safeguard, /localStorage\.clear/);
+    assert.match(styles, /\.pwa-startup-recovery/);
+});
+
+test("iPhone install guidance treats Open as Web App as optional", () => {
+    const onboarding = readFileSync("js/onboarding/onboarding-install-help.js", "utf8");
+    const more = readFileSync("js/more/install-level-up.js", "utf8");
+    for (const source of [onboarding, more]) {
+        assert.match(source, /If <strong>Open as Web App<\/strong> appears/);
+        assert.match(source, /You can still tap Add/);
+    }
+});
+
 test("manifest supplies installable, maskable, and Apple icon assets", () => {
     const requiredIcons = [
         ["assets/icons/icon-192.png", 192, "any"],

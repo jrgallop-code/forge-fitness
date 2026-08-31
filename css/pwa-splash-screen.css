@@ -82,3 +82,7 @@ html.level-up-installed-pwa .pwa-splash-loader-fill {
         animation-duration: .6s;
     }
 }
+
+.pwa-startup-recovery{box-sizing:border-box;display:grid;justify-items:center;gap:12px;width:min(100%,520px);min-height:100dvh;margin:0 auto;padding:max(72px,calc(env(safe-area-inset-top) + 40px)) 22px max(36px,env(safe-area-inset-bottom));align-content:center;color:#f7f7f8;text-align:center;background:#09090b}
+.pwa-startup-recovery-mark{display:grid;place-items:center;width:58px;height:58px;border:2px solid #f21f2c;border-radius:50%;color:#fff;font-size:26px;font-weight:950;box-shadow:0 0 32px rgba(242,31,44,.2)}
+.pwa-startup-recovery>span{color:#f34a55;font-size:11px;font-weight:900;letter-spacing:.18em}.pwa-startup-recovery h1{margin:5px 0 0;font-size:25px;line-height:1.15}.pwa-startup-recovery p{max-width:410px;margin:0 0 6px;color:#aaaab3;font-size:13px;line-height:1.55}.pwa-startup-recovery button{width:min(100%,340px);min-height:48px}.pwa-startup-recovery>[data-pwa-refresh-cache]{border:1px solid #414148;border-radius:13px;background:#202024;color:#f4f4f5;font-weight:800}.pwa-startup-recovery small{min-height:16px;color:#9999a2;font-size:11px}
