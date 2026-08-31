@@ -521,6 +521,7 @@ function createExerciseState(day) {
                 exerciseId: plannedExercise.id,
                 ...exerciseStateMetadata(exercise, plannedExercise),
                 trackingType: "reps",
+                notes: "",
                 sets:
                     Array.from(
                         { length: setCount },
@@ -651,6 +652,10 @@ function renderSessionExercises({
                             ${editingSessionId ? `<div class="drop-set-block history-edit-drop-block" data-parent-set="${setIndex}"></div>` : ""}
                         `;
                     }).join("")}
+                    <details class="session-lifting-notes" ${state.notes ? "open" : ""}>
+                        <summary><span>Notes${state.notes ? "" : " (optional)"}</span><em>${state.notes ? "Added" : "›"}</em></summary>
+                        <textarea class="session-rep-notes" maxlength="500" placeholder="Technique, setup, machine setting, pain, cues…">${escapeHtml(state.notes || "")}</textarea>
+                    </details>
                     ${editingSessionId ? `
                         <div class="edit-session-exercise-actions">
                             <button class="remove-session-exercise secondary-btn" type="button">Remove Exercise</button>
@@ -1003,6 +1008,17 @@ function bindSessionInputs({
         .forEach(card => {
             const exerciseIndex =
                 Number(card.dataset.exerciseIndex);
+
+            card
+                .querySelector(".session-rep-notes")
+                ?.addEventListener(
+                    "input",
+                    event => {
+                        session.exercises[exerciseIndex].notes = event.target.value;
+                        session.currentExerciseIndex = exerciseIndex;
+                        persist();
+                    }
+                );
 
             card
                 .querySelector(".session-cardio-duration")

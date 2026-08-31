@@ -3,6 +3,7 @@ import './exercise-library-expansion.js?v=exercise-library-expansion-1';
 import { getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { createGeneratedExerciseGuide } from './exercise-guide-generator.js?v=full-library-guides-1';
 import { movementForExercise, prioritizeMovementMatches } from './smart-swap-priority.js?v=smart-swap-movement-priority-1';
+import { matchesExerciseBrowser, renderMuscleCarousel } from './exercise-browser.js?v=visual-muscle-browser-1';
 
 const SPECIAL_MUSCLE_PROFILES = {
   'barbell-bench-press': { primary: ['Chest'], secondary: ['Triceps', 'Front Delts'] },
@@ -75,6 +76,7 @@ function createReplacementState(exercise, priorState) {
     exerciseId: exercise.id,
     ...metadata,
     trackingType: 'reps',
+    notes: '',
     sets: Array.from({ length: setCount }, () => ({ weight: null, reps: null, completed: false }))
   };
 }
@@ -377,6 +379,78 @@ function getSessionDay(active) {
   return active?.planSnapshot?.days?.[Number(active.trainingDayIndex) || 0] || null;
 }
 
+function appendExerciseToActiveWorkout(exerciseId) {
+  const active = readActiveWorkout();
+  const exercise = getExerciseById(exerciseId);
+  const day = getSessionDay(active);
+  if (!active || !exercise || !day) return false;
+  const plannedExercise = {
+    id: exercise.id, name: exercise.name, exerciseName: exercise.name,
+    muscleGroup: exercise.muscleGroup || '', type: exercise.type || '',
+    equipment: exercise.equipment || '', trackingType: exercise.trackingType || 'reps',
+    sets: exercise.trackingType === 'notes' ? 1 : 3,
+    reps: exercise.recommendedReps || '8-12'
+  };
+  day.exercises.push(plannedExercise);
+  active.exercises.push(createReplacementState(exercise, { sets: Array.from({ length: plannedExercise.sets }) }));
+  active.currentExerciseIndex = active.exercises.length - 1;
+  active.currentSetIndex = 0;
+  saveActiveWorkout(active);
+  return true;
+}
+
+function ensureAddExerciseSheet(logger) {
+  let sheet = logger.querySelector('#session-add-exercise-sheet');
+  if (sheet) return sheet;
+  sheet = document.createElement('div');
+  sheet.id = 'session-add-exercise-sheet';
+  sheet.className = 'session-exercise-swap-sheet session-add-exercise-sheet';
+  sheet.hidden = true;
+  sheet.dataset.muscle = '';
+  sheet.innerHTML = `<div class="session-exercise-swap-panel session-add-exercise-panel" role="dialog" aria-modal="true" aria-labelledby="session-add-title">
+    <div class="session-swap-heading"><div><span class="eyebrow">ACTIVE WORKOUT</span><h4 id="session-add-title">Add Exercise</h4></div><button class="session-swap-close" type="button" aria-label="Close exercise library">×</button></div>
+    <input class="session-add-search" type="search" placeholder="Search exercises" aria-label="Search exercises">
+    ${renderMuscleCarousel('', 'data-session-muscle')}
+    <div class="session-add-results" data-session-add-results></div>
+  </div>`;
+  logger.appendChild(sheet);
+  const close = () => { sheet.hidden = true; };
+  const render = () => {
+    const query = sheet.querySelector('.session-add-search')?.value || '';
+    const results = getAllExercises().filter(item => item?.id && item?.name)
+      .filter(item => matchesExerciseBrowser(item, { muscle: sheet.dataset.muscle, query }))
+      .sort((a, b) => String(a.muscleGroup).localeCompare(String(b.muscleGroup)) || String(a.name).localeCompare(String(b.name)));
+    sheet.querySelector('[data-session-add-results]').innerHTML = results.length ? results.map(item => `<button type="button" data-session-add-id="${escapeHtml(item.id)}"><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml([item.muscleGroup, item.equipment].filter(Boolean).join(' · '))}</small></span><b>+</b></button>`).join('') : '<p>No matching exercises.</p>';
+  };
+  sheet.querySelector('.session-swap-close')?.addEventListener('click', close);
+  sheet.querySelector('.session-add-search')?.addEventListener('input', render);
+  sheet.querySelectorAll('[data-session-muscle]').forEach(button => button.addEventListener('click', () => {
+    sheet.dataset.muscle = button.dataset.sessionMuscle || '';
+    sheet.querySelectorAll('[data-session-muscle]').forEach(item => {
+      const selected = item === button;
+      item.classList.toggle('selected', selected);
+      item.setAttribute('aria-selected', String(selected));
+    });
+    render();
+  }));
+  sheet.querySelector('[data-session-add-results]')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-session-add-id]');
+    if (!button || !appendExerciseToActiveWorkout(button.dataset.sessionAddId)) return;
+    close();
+    openActiveWorkout();
+  });
+  sheet.addEventListener('click', event => { if (event.target === sheet) close(); });
+  sheet.renderExerciseResults = render;
+  return sheet;
+}
+
+function openAddExerciseSheet(logger) {
+  const sheet = ensureAddExerciseSheet(logger);
+  sheet.hidden = false;
+  sheet.renderExerciseResults?.();
+  setTimeout(() => sheet.querySelector('.session-add-search')?.focus(), 50);
+}
+
 function clearSupersetGroup(day, group) {
   if (!day || !group) return;
   (day.exercises || []).forEach(exercise => {
@@ -611,6 +685,17 @@ function enhanceActiveLogger() {
   const logger = document.getElementById('workout-session-logger');
   if (!logger || logger.dataset.editingSessionId) return;
   logger.querySelectorAll('.session-exercise-card').forEach(card => ensureInlineActions(card, logger));
+  logger.querySelectorAll('.session-exercise-card[data-tracking-type="reps"]').forEach(card => {
+    if (card.querySelector('.session-add-exercise-btn')) return;
+    const addSet = card.querySelector('.compact-add-set-btn');
+    if (!addSet) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'session-add-exercise-btn';
+    button.textContent = '+ Add Exercise';
+    button.addEventListener('click', () => openAddExerciseSheet(logger));
+    addSet.insertAdjacentElement('afterend', button);
+  });
 }
 
 let enhanceFrame = 0;

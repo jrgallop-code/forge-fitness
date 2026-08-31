@@ -1,4 +1,5 @@
 import { getAllExercises, getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
+import { matchesExerciseBrowser, renderMuscleCarousel } from "./exercise-browser.js?v=visual-muscle-browser-1";
 
 let active = false;
 let picker = null;
@@ -137,7 +138,6 @@ function renderPicker() {
   if (!e || !state) return;
 
   const all = exercises();
-  const muscles = [...new Set(all.map(x => x.muscleGroup).filter(Boolean))].sort();
   const equipment = [...new Set(all.map(x => x.equipment).filter(Boolean))].sort();
   const replace = state.mode === "replace";
   const section = document.createElement("section");
@@ -151,8 +151,8 @@ function renderPicker() {
       <span class="manual-picker-count" data-manual-count>0</span>
     </div>
     <input class="manual-picker-search" type="search" placeholder="Search exercises" data-manual-search>
+    ${renderMuscleCarousel(state.muscle, "data-manual-muscle")}
     <div class="manual-picker-filters">
-      <select data-manual-muscle><option value="">All muscle groups</option>${muscles.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("")}</select>
       <select data-manual-equipment><option value="">All equipment</option>${equipment.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("")}</select>
     </div>
     <div class="manual-picker-tools"><span>Tap exercises to ${replace ? "choose a replacement" : "build your day"}.</span><button class="secondary-btn" type="button" data-manual-custom>+ Custom Exercise</button></div>
@@ -162,7 +162,15 @@ function renderPicker() {
 
   e.insertAdjacentElement("beforebegin", section);
   section.querySelector("[data-manual-search]").oninput = ev => { state.q = ev.target.value; renderList(); };
-  section.querySelector("[data-manual-muscle]").onchange = ev => { state.muscle = ev.target.value; renderList(); };
+  section.querySelectorAll("[data-manual-muscle]").forEach(button => button.onclick = () => {
+    state.muscle = button.dataset.manualMuscle || "";
+    section.querySelectorAll("[data-manual-muscle]").forEach(item => {
+      const selected = item === button;
+      item.classList.toggle("selected", selected);
+      item.setAttribute("aria-selected", String(selected));
+    });
+    renderList();
+  });
   section.querySelector("[data-manual-equipment]").onchange = ev => { state.equipment = ev.target.value; renderList(); };
   section.querySelector("[data-manual-back]").onclick = () => closePicker();
   section.querySelector("[data-manual-confirm]").onclick = () => closePicker(true);
@@ -177,11 +185,11 @@ function renderList() {
 
   const used = existingIds(state.di, state.mode === "replace" ? state.ei : null);
   const q = state.q.trim().toLowerCase();
-  const matches = exercises().filter(x =>
-    (!state.muscle || x.muscleGroup === state.muscle) &&
-    (!state.equipment || x.equipment === state.equipment) &&
-    (!q || [x.name, x.muscleGroup, x.equipment].filter(Boolean).some(v => String(v).toLowerCase().includes(q)))
-  );
+  const matches = exercises().filter(x => matchesExerciseBrowser(x, {
+    muscle: state.muscle,
+    equipment: state.equipment,
+    query: q
+  }));
 
   list.innerHTML = matches.length
     ? matches.map(x => {
