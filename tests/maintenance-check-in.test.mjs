@@ -82,6 +82,26 @@ test("the same TDEE change unlocks once the shared pace review is ready", () => 
     assert.equal(result.ready, true);
 });
 
+test("pace alone unlocks the weekly review when calculated maintenance is unchanged", () => {
+    const result = getMaintenanceCheckIn({
+        estimate: { ...estimate, maintenanceCalories: 2400 },
+        currentMaintenance: 2400,
+        currentTarget: 2400,
+        adaptiveMetrics: {
+            recommendationReady: true,
+            status: "NEEDS ATTENTION",
+            actualRateLbPerWeek: -0.18,
+            targetRateLbPerWeek: 0.25,
+            trend: { checkDay: 14 }
+        },
+        state: {},
+        today: new Date("2026-08-31T12:00:00")
+    });
+    assert.equal(result.change, 0);
+    assert.equal(result.meaningful, true);
+    assert.equal(result.ready, true);
+});
+
 test("waits seven days after the previous decision", () => {
     const result = getMaintenanceCheckIn({
         estimate,
