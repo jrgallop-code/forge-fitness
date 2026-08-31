@@ -1,3 +1,5 @@
+import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
+
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 const GOAL_WEIGHT_STORAGE_KEY = "level_up_goal_weight";
 const NUTRITION_PHASES_STORAGE_KEY = "level_up_nutrition_phases";
@@ -105,6 +107,54 @@ function formatDate(date, includeYear = false) {
         day: "numeric",
         ...(includeYear ? { year: "2-digit" } : {})
     });
+}
+
+function formatPeriodDateRange(startDate, endDate) {
+    if (!startDate || !endDate) return "—";
+
+    const start = new Date(`${startDate}T12:00:00`);
+    const end = new Date(`${endDate}T12:00:00`);
+    const sameYear = start.getFullYear() === end.getFullYear();
+    const sameMonth = sameYear && start.getMonth() === end.getMonth();
+    const startLabel = start.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        ...(!sameYear ? { year: "numeric" } : {})
+    });
+    const endLabel = end.toLocaleDateString(undefined, {
+        ...(sameMonth ? {} : { month: "short" }),
+        day: "numeric",
+        year: "numeric"
+    });
+    return `${startLabel} – ${endLabel}`;
+}
+
+function updatePeriodSummary(card, movingAverage) {
+    if (!card) return;
+
+    const averageNode = card.querySelector("[data-weight-chart-average]");
+    const changeNode = card.querySelector("[data-weight-chart-change]");
+    const periodNode = card.querySelector("[data-weight-chart-period]");
+    const values = movingAverage.map(item => item.weight).filter(Number.isFinite);
+    const average = values.length
+        ? values.reduce((sum, value) => sum + value, 0) / values.length
+        : null;
+    const change = values.length >= 2 ? values.at(-1) - values[0] : null;
+    const unit = massUnit();
+    const displayAverage = Number.isFinite(average) ? displayMass(average) : null;
+    const displayChange = Number.isFinite(change) ? displayMass(change) : null;
+
+    if (averageNode) averageNode.textContent = Number.isFinite(displayAverage) ? `${displayAverage.toFixed(1)} ${unit}` : "—";
+    if (changeNode) {
+        changeNode.textContent = Number.isFinite(displayChange)
+            ? `${displayChange > 0 ? "+" : displayChange < 0 ? "−" : ""}${Math.abs(displayChange).toFixed(1)} ${unit}`
+            : "—";
+    }
+    if (periodNode) {
+        periodNode.textContent = movingAverage.length
+            ? formatPeriodDateRange(movingAverage[0].date, movingAverage.at(-1).date)
+            : "No trend data in this period";
+    }
 }
 
 function getChartWindow(range, entries, activePhase) {
@@ -261,9 +311,7 @@ function enhanceWeightChart() {
         `Weight chart for ${chartWindow.label}, showing daily entries and a 7-day trend line`
     );
 
-    const latestAverage = visibleMovingAverage.at(-1)?.weight;
-    const latestNode = legacyCanvas.closest(".weight-chart-card")?.querySelector("[data-weight-chart-latest]");
-    if (latestNode) latestNode.textContent = Number.isFinite(latestAverage) ? `${latestAverage.toFixed(1)} lb` : "—";
+    updatePeriodSummary(legacyCanvas.closest(".weight-chart-card"), visibleMovingAverage);
 
     drawWeightTrendChart(
         canvas,

@@ -163,13 +163,21 @@ export function renderProgress() {
 
                         </div>
 
-                        <div class="weight-chart-latest" aria-live="polite">
+                    </div>
 
-                            <strong data-weight-chart-latest>—</strong>
+                    <div class="weight-chart-period-summary" aria-live="polite">
 
-                            <small>Latest average</small>
-
+                        <div class="weight-chart-period-stat">
+                            <small>Average</small>
+                            <strong data-weight-chart-average>—</strong>
                         </div>
+
+                        <div class="weight-chart-period-stat">
+                            <small>Change</small>
+                            <strong data-weight-chart-change>—</strong>
+                        </div>
+
+                        <div class="weight-chart-period-dates" data-weight-chart-period>—</div>
 
                     </div>
 
