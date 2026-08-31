@@ -46,8 +46,6 @@ export function initializeUnifiedGoalsCalories() {
         refreshMaintenanceMode();
     });
     document.getElementById("unified-save-plan")?.addEventListener("click", saveUnifiedPlan);
-    document.getElementById("unified-replay-review")?.addEventListener("click", replayLastWeeklyReview);
-    document.getElementById("unified-preview-review")?.addEventListener("click", startWeeklyReviewPreview);
     document.getElementById("save-nutrition-profile-btn")?.addEventListener("click", () => window.setTimeout(refreshAll, 30));
     window.addEventListener("levelup:nutrition-updated", refreshAll);
     window.addEventListener("levelup:nutrition-phase-updated", refreshAll);
@@ -114,8 +112,6 @@ function renderUnifiedCard() {
             <div class="unified-active-target"><span>Planned Daily Target</span><strong id="unified-active-target">--</strong><small>This becomes the active Level Up calorie target when saved.</small></div>
         </div>
         <button id="unified-save-plan" class="primary-btn" type="button">Save</button>
-        <button id="unified-preview-review" class="secondary-btn" type="button">Preview Weekly Calorie Review</button>
-        <button id="unified-replay-review" class="secondary-btn" type="button" hidden>Undo last update and replay review</button>
         <p id="unified-calorie-message" class="nutrition-message" aria-live="polite"></p>
         <div id="nutrition-phase-history"></div>
         <small class="unified-adult-note">Weight trend checks use only weigh-ins from the start of the active phase.</small>
