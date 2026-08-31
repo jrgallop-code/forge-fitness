@@ -3,7 +3,7 @@ import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-2"
 if (typeof document !== "undefined" && !document.querySelector('link[data-exercise-browser-styles]')) {
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "css/exercise-browser.css?v=inline-anatomy-carousel-2";
+  link.href = "css/exercise-browser.css?v=static-anatomy-assets-1";
   link.dataset.exerciseBrowserStyles = "";
   document.head.appendChild(link);
 }
@@ -35,39 +35,6 @@ export function renderMuscleCarousel(selected = "", attribute = "data-muscle-fil
   }).join("")}<button class="exercise-muscle-card exercise-custom-card" type="button" data-exercise-browser-custom><span class="exercise-custom-icon" aria-hidden="true">+</span><span>Custom</span></button></div>`;
 }
 
-const anatomyMarkupCache = new Map();
-
-async function loadAnatomyMarkup(asset) {
-  if (!anatomyMarkupCache.has(asset)) {
-    anatomyMarkupCache.set(asset, fetch(asset, { cache: "force-cache" }).then(response => {
-      if (!response.ok) throw new Error(`Unable to load anatomy SVG: ${response.status}`);
-      return response.text();
-    }));
-  }
-  return anatomyMarkupCache.get(asset);
-}
-
-export async function hydrateExerciseAnatomy(root = document) {
-  const figures = [...root.querySelectorAll('.exercise-muscle-figure[data-anatomy-facing]:not([data-anatomy-ready])')];
-  await Promise.all(figures.map(async figure => {
-    const config = getAnatomyConfig(figure.dataset.anatomyFacing);
-    try {
-      const markup = await loadAnatomyMarkup(config.asset);
-      const parsed = new DOMParser().parseFromString(markup, "image/svg+xml").documentElement;
-      figure.innerHTML = parsed.innerHTML;
-      figure.setAttribute("viewBox", config.viewBox);
-      (config.regions[figure.dataset.anatomyMuscle] || []).forEach(id => {
-        const region = figure.querySelector(`[id="${id}"]`);
-        region?.classList.add("exercise-muscle-highlight");
-      });
-      figure.dataset.anatomyReady = "true";
-    } catch (error) {
-      figure.dataset.anatomyError = "true";
-      console.warn("Level Up exercise anatomy could not render", error);
-    }
-  }));
-}
-
 export function renderCustomExerciseFields() {
   return `<div class="exercise-browser-custom-fields">
     <label>Exercise Name<input name="custom-name" type="text" maxlength="80" placeholder="Example: Landmine Row"></label>
@@ -82,7 +49,8 @@ export function renderCustomExerciseFields() {
 function renderMuscleFigure(item) {
   const config = getAnatomyConfig(item.facing);
   const label = item.id ? `${item.label} highlighted on ${config.sex} anatomy` : `${config.sex} anatomy`;
-  return `<svg class="exercise-muscle-figure" viewBox="${config.viewBox}" role="img" aria-label="${escapeHtml(label)}" data-anatomy-facing="${item.facing}" data-anatomy-muscle="${escapeHtml(item.id)}"><rect class="exercise-muscle-loading" x="40%" y="8%" width="20%" height="84%" rx="80"/></svg>`;
+  const slug = (item.id || "All").toLowerCase().replaceAll(" ", "-");
+  return `<img class="exercise-muscle-figure" src="assets/exercise-anatomy/${config.sex}-${slug}.svg?v=static-anatomy-assets-1" alt="${escapeHtml(label)}" width="38" height="58">`;
 }
 
 export function matchesExerciseBrowser(exercise, { muscle = "", query = "", equipment = "" } = {}) {
