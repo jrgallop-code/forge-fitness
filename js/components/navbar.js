@@ -1,4 +1,5 @@
-import { navigate } from "../core/router.js?v=progress-nav-stability-1";
+import { navigate } from "../core/router.js?v=progress-640-restore-1";
+
 
 export function renderNavbar() {
     return `
@@ -46,8 +47,10 @@ export function renderNavbar() {
     `;
 }
 
+
 export function initializeNavbar() {
-    const nav = document.querySelector(".bottom-nav");
+    const nav =
+        document.querySelector(".bottom-nav");
 
     if (!nav || nav.dataset.bound === "true") {
         return;
@@ -55,35 +58,51 @@ export function initializeNavbar() {
 
     nav.dataset.bound = "true";
 
-    nav.addEventListener("click", event => {
-        const button = event.target.closest(".nav-btn");
+    nav.addEventListener(
+        "click",
+        event => {
+            const button =
+                event.target.closest(".nav-btn");
 
-        if (!button || !nav.contains(button)) {
-            return;
+            if (!button || !nav.contains(button)) {
+                return;
+            }
+
+            const page =
+                button.dataset.page;
+
+            if (!page) {
+                return;
+            }
+
+            event.preventDefault();
+
+            button.classList.remove("nav-pulse");
+            void button.offsetWidth;
+            button.classList.add("nav-pulse");
+            button.addEventListener(
+                "animationend",
+                () => button.classList.remove("nav-pulse"),
+                { once: true }
+            );
+
+            nav.querySelectorAll(".nav-btn")
+                .forEach(item =>
+                    item.classList.toggle(
+                        "active",
+                        item === button
+                    )
+                );
+
+            try {
+                navigate(page);
+            }
+            catch (error) {
+                console.error(
+                    `Navigation to ${page} failed:`,
+                    error
+                );
+            }
         }
-
-        const page = button.dataset.page;
-
-        if (!page) {
-            return;
-        }
-
-        event.preventDefault();
-
-        button.classList.remove("nav-pulse");
-        void button.offsetWidth;
-        button.classList.add("nav-pulse");
-        button.addEventListener("animationend", () => button.classList.remove("nav-pulse"), { once: true });
-
-        nav.querySelectorAll(".nav-btn").forEach(item => {
-            item.classList.toggle("active", item === button);
-        });
-
-        try {
-            navigate(page);
-        }
-        catch (error) {
-            console.error(`Navigation to ${page} failed:`, error);
-        }
-    });
+    );
 }
