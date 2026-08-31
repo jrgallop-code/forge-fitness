@@ -26,3 +26,9 @@ test("double tap or double click clears selected day details locally", () => {
     assert.doesNotMatch(enhancement, /preventDefault\(\)/);
     assert.doesNotMatch(enhancement, /stopImmediatePropagation\(\)/);
 });
+
+test("a cleared selection cannot leave the data card visible", () => {
+    assert.match(enhancement, /tooltip\.hidden = true/);
+    assert.match(enhancement, /weight-carbs-tooltip-v2\[hidden\]/);
+    assert.match(enhancement, /display:\s*none\s*!important/);
+});
