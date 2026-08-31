@@ -19,6 +19,11 @@ const TRAILING_AMOUNT = new RegExp(`^(.+?)\\s*(?:[-–—,:]\\s*)?(${NUMBER_PATT
 const LEADING_COUNT = new RegExp(`^(${NUMBER_PATTERN})\\s+(.+)$`, "i");
 
 const FRACTIONS = Object.freeze({ "¼": .25, "½": .5, "¾": .75, "⅓": 1 / 3, "⅔": 2 / 3, "⅛": .125, "⅜": .375, "⅝": .625, "⅞": .875 });
+const SPOKEN_NUMBERS = Object.freeze({
+    a: "1", an: "1", one: "1", two: "2", three: "3", four: "4", five: "5",
+    six: "6", seven: "7", eight: "8", nine: "9", ten: "10",
+    half: "0.5", quarter: "0.25"
+});
 
 export function parseIngredientText(value, limit = 20) {
     return String(value || "")
@@ -28,6 +33,25 @@ export function parseIngredientText(value, limit = 20) {
         .slice(0, limit)
         .map(parseIngredientLine)
         .filter(Boolean);
+}
+
+export function parseSpokenIngredientText(value, limit = 20) {
+    const normalized = normalizeSpokenNumbers(String(value || ""));
+    const amountAhead = `(?=(?:${NUMBER_PATTERN})\\s*(?:${UNIT_PATTERN})?\\b)`;
+    return normalized
+        .replace(/[.!?]+/g, ";")
+        .replace(/\s*,\s*/g, ";")
+        .replace(new RegExp(`\\s+and\\s+${amountAhead}`, "gi"), ";")
+        .split(/\n|;/)
+        .map(part => part.trim())
+        .filter(Boolean)
+        .slice(0, limit)
+        .map(parseIngredientLine)
+        .filter(Boolean);
+}
+
+function normalizeSpokenNumbers(value) {
+    return value.replace(/\b(a|an|one|two|three|four|five|six|seven|eight|nine|ten|half|quarter)\b/gi, word => SPOKEN_NUMBERS[word.toLowerCase()] || word);
 }
 
 export function parseIngredientLine(value) {
