@@ -22,6 +22,9 @@ function bindEnhancements(root) {
     }
 
     updateAxisUnit(shell);
+    const note = shell.parentElement?.querySelector?.(".weight-carbs-interaction-note-v2");
+    if (note) note.textContent = "Tap or drag for day details. Double tap the graph to clear details.";
+
     if (boundCanvases.has(canvas)) return;
     boundCanvases.add(canvas);
 
@@ -70,6 +73,9 @@ function updateAxisUnit(shell) {
 }
 
 function clearSelectedDay(shell) {
+    const tooltip = shell.querySelector("[data-weight-carbs-tooltip-v2]");
+    if (!tooltip || tooltip.hidden) return;
+
     const card = shell.closest(".weight-chart-card");
     const selectedRange = card?.querySelector('button[data-weight-chart-range][aria-pressed="true"]')
         || card?.querySelector("button[data-weight-chart-range]");
@@ -79,8 +85,7 @@ function clearSelectedDay(shell) {
         return;
     }
 
-    const tooltip = shell.querySelector("[data-weight-carbs-tooltip-v2]");
-    if (tooltip) tooltip.hidden = true;
+    tooltip.hidden = true;
 }
 
 function ensureStyles() {
