@@ -1,7 +1,7 @@
 import {
     getActiveNutritionPhase,
     getActivePhaseMetrics
-} from "../nutrition/nutrition-phase.js?v=future-weight-shared-date-1";
+} from "../nutrition/nutrition-phase.js?v=calorie-authority-recovery-1";
 
 const FIRST_CHECK_DAY = 14;
 const FULL_GAP_INCREMENT = 50;
