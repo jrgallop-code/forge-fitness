@@ -5,15 +5,14 @@ const FOOD_LOG_KEY = "level_up_food_log_v1";
 const PHASES_KEY = "level_up_nutrition_phases";
 const GOAL_KEY = "level_up_goal_weight";
 const RANGE_KEY = "level_up_weight_chart_range";
-const STYLE_ID = "level-up-weight-secondary-context-styles";
+const STYLE_ID = "level-up-weight-calorie-context-styles";
 const DAY_MS = 86400000;
 const TREND_GREEN = "#45cb75";
 const TREND_GLOW = "rgba(69,203,117,.32)";
 const DAILY_WEIGHT = "rgba(126,194,151,.82)";
 const DAILY_WEIGHT_LINE = "rgba(112,181,137,.34)";
-const SODIUM_COLOR = "#e8a24d";
-const SODIUM_FADE = "rgba(232,162,77,.28)";
-const SODIUM_TO_SALT_RATIO = 0.3934;
+const CALORIE_COLOR = "#ff5a5f";
+const CALORIE_FADE = "rgba(255,90,95,.28)";
 const RANGE_OPTIONS = {
     "1w": { days: 7 },
     "1m": { days: 30 },
@@ -25,12 +24,12 @@ const RANGE_OPTIONS = {
 
 let observer = null;
 let refreshQueued = false;
-let selectedSodiumDate = null;
+let selectedCalorieDate = null;
 const boundWeightCanvases = new WeakSet();
-const boundSodiumCanvases = new WeakSet();
+const boundCalorieCanvases = new WeakSet();
 const boundPagers = new WeakSet();
 
-export function initializeWeightSecondaryContext(root = document) {
+export function initializeWeightCalorieContext(root = document) {
     ensureStyles();
     ensureEnhancements(root);
 
@@ -42,8 +41,8 @@ export function initializeWeightSecondaryContext(root = document) {
         }
     }
 
-    if (document.documentElement.dataset.weightSecondaryContextEvents !== "1") {
-        document.documentElement.dataset.weightSecondaryContextEvents = "1";
+    if (document.documentElement.dataset.weightCalorieContextEvents !== "1") {
+        document.documentElement.dataset.weightCalorieContextEvents = "1";
         [
             "levelup:food-log-updated",
             "levelup:weight-updated",
@@ -55,7 +54,7 @@ export function initializeWeightSecondaryContext(root = document) {
         document.addEventListener("click", event => {
             if (event.target.closest?.("button[data-weight-chart-range]")) {
                 hideWeightSnapshot(document);
-                selectedSodiumDate = null;
+                selectedCalorieDate = null;
                 setTimeout(() => scheduleRefresh(document), 0);
             }
         });
@@ -78,8 +77,8 @@ function ensureEnhancements(root) {
     if (!card) return;
 
     bindWeightSnapshot(card);
-    ensureSodiumSlide(card);
-    refreshSodiumSlide(card);
+    ensureCalorieSlide(card);
+    refreshCalorieSlide(card);
 }
 
 function bindWeightSnapshot(card) {
@@ -234,28 +233,31 @@ function weightGeometry(canvas, state) {
     };
 }
 
-function ensureSodiumSlide(card) {
+function ensureCalorieSlide(card) {
     const track = card.querySelector("[data-weight-graph-carousel-track-v2]");
     const pager = card.querySelector(".weight-graph-carousel-pager-v2");
     if (!track || !pager) return;
 
-    let slide = track.querySelector('[data-weight-graph-slide-v2="sodium"]');
+    track.querySelector('[data-weight-graph-slide-v2="sodium"]')?.remove();
+
+    let slide = track.querySelector('[data-weight-graph-slide-v2="calories"]');
     if (!slide) {
         slide = document.createElement("section");
-        slide.className = "weight-graph-carousel-slide-v2 is-sodium";
-        slide.dataset.weightGraphSlideV2 = "sodium";
-        slide.innerHTML = renderSodiumSlide();
+        slide.className = "weight-graph-carousel-slide-v2 is-calories";
+        slide.dataset.weightGraphSlideV2 = "calories";
+        slide.innerHTML = renderCalorieSlide();
         track.appendChild(slide);
     }
 
-    if (!pager.querySelector('[data-weight-graph-page-v2="2"]')) {
-        const button = document.createElement("button");
+    let button = pager.querySelector('[data-weight-graph-page-v2="2"]');
+    if (!button) {
+        button = document.createElement("button");
         button.type = "button";
         button.dataset.weightGraphPageV2 = "2";
         button.setAttribute("aria-pressed", "false");
-        button.textContent = "Weight + Sodium";
         pager.appendChild(button);
     }
+    button.textContent = "Weight + Calories";
 
     pager.classList.add("has-three-weight-pages");
     if (!boundPagers.has(pager)) {
@@ -264,40 +266,40 @@ function ensureSodiumSlide(card) {
     }
     syncThreePagePager(card);
 
-    const canvas = slide.querySelector("[data-weight-sodium-canvas]");
-    if (canvas && !boundSodiumCanvases.has(canvas)) bindSodiumInteraction(canvas, card);
+    const canvas = slide.querySelector("[data-weight-calories-canvas]");
+    if (canvas && !boundCalorieCanvases.has(canvas)) bindCalorieInteraction(canvas, card);
 }
 
-function renderSodiumSlide() {
+function renderCalorieSlide() {
     return `
-        <div class="weight-sodium-head">
+        <div class="weight-calories-head">
             <div>
                 <span class="weight-chart-kicker">WEIGHT CONTEXT</span>
-                <h3>Weight &amp; Sodium</h3>
-                <p>Same 7-day weight trend · daily sodium intake</p>
+                <h3>Weight &amp; Calories</h3>
+                <p>Same 7-day weight trend · daily calorie intake</p>
             </div>
-            <details class="weight-sodium-info">
-                <summary aria-label="Why sodium can affect scale weight">i</summary>
+            <details class="weight-calories-info">
+                <summary aria-label="How calorie intake relates to weight trend">i</summary>
                 <div>
-                    <strong>Why sodium can affect scale weight</strong>
-                    <p>Higher sodium intake can temporarily increase water retention and scale weight. The longer-term weight trend remains the better guide to tissue change.</p>
-                    <small>Hydration, carbohydrate intake, food volume and training-related inflammation can also affect short-term scale weight.</small>
+                    <strong>How calories relate to weight trend</strong>
+                    <p>Daily calories can fluctuate, so the most useful signal is how intake lines up with your longer-term weight trend across days and weeks.</p>
+                    <small>Short-term scale changes can still reflect water, glycogen, food volume and training-related inflammation.</small>
                 </div>
             </details>
         </div>
-        <div class="weight-sodium-chart-shell">
-            <canvas data-weight-sodium-canvas role="img" aria-label="Body weight, seven-day weight trend, and daily sodium intake"></canvas>
-            <div class="weight-sodium-tooltip" data-weight-sodium-tooltip hidden></div>
+        <div class="weight-calories-chart-shell">
+            <canvas data-weight-calories-canvas role="img" aria-label="Body weight, seven-day weight trend, and daily calorie intake"></canvas>
+            <div class="weight-calories-tooltip" data-weight-calories-tooltip hidden></div>
         </div>
-        <div class="weight-sodium-legend" aria-hidden="true">
+        <div class="weight-calories-legend" aria-hidden="true">
             <span><i class="is-weight"></i>Daily weight</span>
             <span><i class="is-trend"></i>7-day trend</span>
-            <span><i class="is-sodium"></i>Sodium</span>
+            <span><i class="is-calories"></i>Calories</span>
         </div>
-        <p class="weight-sodium-note">Tap a day for weight, trend and sodium values. Tap the selected day again to clear.</p>
-        <div class="weight-sodium-empty" data-weight-sodium-empty hidden>
-            <strong>More sodium data needed</strong>
-            <p>Only days where all logged foods include a sodium value are plotted. Older food entries may not contain sodium data.</p>
+        <p class="weight-calories-note">Tap a day for weight, trend and calorie values. Tap the selected day again to clear.</p>
+        <div class="weight-calories-empty" data-weight-calories-empty hidden>
+            <strong>More calorie data needed</strong>
+            <p>Log food to compare daily calorie intake with your weight trend.</p>
         </div>
     `;
 }
@@ -309,26 +311,26 @@ function syncThreePagePager(card) {
     card.querySelectorAll("[data-weight-graph-page-v2]").forEach(button => {
         button.setAttribute("aria-pressed", String(Number(button.dataset.weightGraphPageV2) === index));
     });
-    if (index === 2) refreshSodiumSlide(card);
+    if (index === 2) refreshCalorieSlide(card);
 }
 
-function refreshSodiumSlide(card) {
-    const slide = card.querySelector('[data-weight-graph-slide-v2="sodium"]');
-    const canvas = slide?.querySelector("[data-weight-sodium-canvas]");
+function refreshCalorieSlide(card) {
+    const slide = card.querySelector('[data-weight-graph-slide-v2="calories"]');
+    const canvas = slide?.querySelector("[data-weight-calories-canvas]");
     if (!slide || !canvas) return;
-    const state = buildSodiumState();
-    canvas.__weightSodiumState = state;
-    const empty = slide.querySelector("[data-weight-sodium-empty]");
-    const sodiumDays = state.series.filter(day => Number.isFinite(day.sodiumMg));
-    if (empty) empty.hidden = sodiumDays.length >= 2;
-    if (selectedSodiumDate && !state.series.some(day => day.date === selectedSodiumDate)) selectedSodiumDate = null;
-    drawSodiumChart(canvas, state, selectedSodiumDate);
-    updateSodiumTooltip(card, state, selectedSodiumDate);
-    if (!boundSodiumCanvases.has(canvas)) bindSodiumInteraction(canvas, card);
+    const state = buildCalorieState();
+    canvas.__weightCalorieState = state;
+    const empty = slide.querySelector("[data-weight-calories-empty]");
+    const calorieDays = state.series.filter(day => Number.isFinite(day.calories));
+    if (empty) empty.hidden = calorieDays.length > 0;
+    if (selectedCalorieDate && !state.series.some(day => day.date === selectedCalorieDate)) selectedCalorieDate = null;
+    drawCalorieChart(canvas, state, selectedCalorieDate);
+    updateCalorieTooltip(card, state, selectedCalorieDate);
+    if (!boundCalorieCanvases.has(canvas)) bindCalorieInteraction(canvas, card);
 }
 
-function bindSodiumInteraction(canvas, card) {
-    boundSodiumCanvases.add(canvas);
+function bindCalorieInteraction(canvas, card) {
+    boundCalorieCanvases.add(canvas);
     let startX = 0;
     let startY = 0;
     let moved = false;
@@ -342,8 +344,8 @@ function bindSodiumInteraction(canvas, card) {
     }, { passive: true });
     canvas.addEventListener("pointerup", event => {
         if (moved) return;
-        const state = canvas.__weightSodiumState || buildSodiumState();
-        const candidates = state.series.filter(day => Number.isFinite(day.weight) || Number.isFinite(day.sodiumMg));
+        const state = canvas.__weightCalorieState || buildCalorieState();
+        const candidates = state.series.filter(day => Number.isFinite(day.weight) || Number.isFinite(day.calories));
         if (!candidates.length) return;
         const rect = canvas.getBoundingClientRect();
         const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
@@ -361,9 +363,9 @@ function bindSodiumInteraction(canvas, card) {
                 nearest = day;
             }
         });
-        selectedSodiumDate = selectedSodiumDate === nearest.date ? null : nearest.date;
-        drawSodiumChart(canvas, state, selectedSodiumDate);
-        updateSodiumTooltip(card, state, selectedSodiumDate);
+        selectedCalorieDate = selectedCalorieDate === nearest.date ? null : nearest.date;
+        drawCalorieChart(canvas, state, selectedCalorieDate);
+        updateCalorieTooltip(card, state, selectedCalorieDate);
     }, { passive: true });
 }
 
@@ -384,82 +386,27 @@ function buildWeightState() {
     };
 }
 
-function buildSodiumState() {
+function buildCalorieState() {
     const weightState = buildWeightState();
     const foodLog = readJson(FOOD_LOG_KEY, {});
     const weightByDate = new Map(weightState.entries.map(item => [item.date, item.weight]));
     const dates = datesBetween(weightState.window.startDate, weightState.window.endDate);
     const series = dates.map(date => {
-        const sodium = sodiumForDay(Array.isArray(foodLog?.[date]) ? foodLog[date] : []);
+        const entries = Array.isArray(foodLog?.[date]) ? foodLog[date] : [];
+        const calories = entries.length
+            ? entries.reduce((sum, entry) => sum + Math.max(0, Number(entry?.nutrition?.calories) || 0), 0)
+            : null;
         return {
             date,
             weight: weightByDate.get(date) ?? null,
             trend: weightState.trendByDate.get(date) ?? null,
-            sodiumMg: sodium.complete ? sodium.totalMg : null,
-            sodiumLoggedFoods: sodium.known,
-            sodiumMissingFoods: sodium.missing
+            calories: Number.isFinite(calories) ? calories : null
         };
     });
     return { ...weightState, series };
 }
 
-function sodiumForDay(entries) {
-    if (!entries.length) return { totalMg: null, complete: false, known: 0, missing: 0 };
-    let totalMg = 0;
-    let known = 0;
-    let missing = 0;
-    entries.forEach(entry => {
-        const value = sodiumForEntry(entry);
-        if (Number.isFinite(value)) {
-            totalMg += Math.max(0, value);
-            known += 1;
-        }
-        else missing += 1;
-    });
-    return {
-        totalMg: known ? totalMg : null,
-        complete: known > 0 && missing === 0,
-        known,
-        missing
-    };
-}
-
-function sodiumForEntry(entry) {
-    const direct = sodiumMgFromNutrition(entry?.nutrition);
-    if (Number.isFinite(direct)) return direct;
-
-    const food = entry?.food;
-    const quantity = Math.max(.01, Number(entry?.quantity) || 1);
-    const portions = Array.isArray(food?.portions) ? food.portions : [];
-    const serving = normalizeLabel(entry?.servingLabel);
-    const portion = portions.find(item => normalizeLabel(item?.label) === serving)
-        || portions.find(item => normalizeLabel(item?.label).includes(serving) || serving.includes(normalizeLabel(item?.label)));
-    const portionValue = sodiumMgFromNutrition(portion?.nutrition);
-    if (Number.isFinite(portionValue)) return portionValue * quantity;
-
-    const foodValue = sodiumMgFromNutrition(food?.nutrition);
-    return Number.isFinite(foodValue) ? foodValue * quantity : null;
-}
-
-function sodiumMgFromNutrition(nutrition) {
-    if (!nutrition || typeof nutrition !== "object") return null;
-    const explicitMg = [nutrition.sodiumMg, nutrition.sodium_mg, nutrition.sodiumMilligrams, nutrition.sodium_milligrams]
-        .map(Number)
-        .find(Number.isFinite);
-    if (Number.isFinite(explicitMg)) return Math.max(0, explicitMg);
-
-    const sodium = Number(nutrition.sodium);
-    if (Number.isFinite(sodium)) {
-        const unit = String(nutrition.sodiumUnit || nutrition.sodium_unit || "mg").toLowerCase();
-        return Math.max(0, unit === "g" ? sodium * 1000 : sodium);
-    }
-
-    const saltGrams = Number(nutrition.saltG ?? nutrition.salt_g ?? nutrition.salt);
-    if (Number.isFinite(saltGrams)) return Math.max(0, saltGrams * 1000 * SODIUM_TO_SALT_RATIO);
-    return null;
-}
-
-function drawSodiumChart(canvas, state, activeDate) {
+function drawCalorieChart(canvas, state, activeDate) {
     const context = canvas.getContext("2d");
     if (!context) return;
     const width = canvas.clientWidth || canvas.parentElement?.clientWidth || 800;
@@ -477,8 +424,8 @@ function drawSodiumChart(canvas, state, activeDate) {
     const unit = massUnit();
     const weightValues = [...state.series.map(day => day.weight), ...state.movingAverage.map(day => day.weight)]
         .filter(Number.isFinite).map(value => displayMass(value));
-    const sodiumValues = state.series.map(day => day.sodiumMg).filter(Number.isFinite);
-    if (!weightValues.length && !sodiumValues.length) return;
+    const calorieValues = state.series.map(day => day.calories).filter(Number.isFinite);
+    if (!weightValues.length && !calorieValues.length) return;
 
     const weightMin = weightValues.length ? Math.min(...weightValues) : 0;
     const weightMax = weightValues.length ? Math.max(...weightValues) : 1;
@@ -486,13 +433,13 @@ function drawSodiumChart(canvas, state, activeDate) {
     const weightPad = Math.max(unit === "kg" ? .35 : .75, weightSpan * .18);
     const minimum = weightMin - weightPad;
     const maximum = weightMax + weightPad;
-    const sodiumMax = Math.max(500, Math.ceil(Math.max(1, ...sodiumValues) / 500) * 500);
+    const calorieMax = Math.max(500, Math.ceil(Math.max(1, ...calorieValues) / 500) * 500);
     const firstTime = dateMs(state.window.startDate);
     const lastTime = dateMs(state.window.endDate);
     const elapsed = Math.max(1, lastTime - firstTime);
     const xPosition = date => padding.left + ((dateMs(date) - firstTime) / elapsed) * chartWidth;
     const yWeight = weight => padding.top + ((maximum - displayMass(weight)) / Math.max(.001, maximum - minimum)) * chartHeight;
-    const ySodium = mg => padding.top + chartHeight - (mg / sodiumMax) * chartHeight;
+    const yCalories = calories => padding.top + chartHeight - (calories / calorieMax) * chartHeight;
 
     context.strokeStyle = "rgba(255,255,255,.055)";
     context.lineWidth = 1;
@@ -508,21 +455,21 @@ function drawSodiumChart(canvas, state, activeDate) {
         context.textAlign = "right";
         context.fillText((maximum - (maximum - minimum) * row / 2).toFixed(1), padding.left - 7, y);
         context.textAlign = "left";
-        context.fillText(String(Math.round(sodiumMax - sodiumMax * row / 2)), width - padding.right + 7, y);
+        context.fillText(String(Math.round(calorieMax - calorieMax * row / 2)), width - padding.right + 7, y);
     }
     context.textBaseline = "alphabetic";
     context.textAlign = "left";
     context.fillText(unit, 5, 12);
     context.textAlign = "right";
-    context.fillText("mg", width - 5, 12);
+    context.fillText("kcal", width - 5, 12);
 
     const barWidth = Math.max(2, Math.min(14, chartWidth / Math.max(1, state.series.length) * .52));
     state.series.forEach(day => {
-        if (!Number.isFinite(day.sodiumMg)) return;
+        if (!Number.isFinite(day.calories)) return;
         const x = xPosition(day.date);
-        const y = ySodium(day.sodiumMg);
-        context.globalAlpha = activeDate === day.date ? .94 : .36;
-        context.fillStyle = activeDate === day.date ? SODIUM_COLOR : SODIUM_FADE;
+        const y = yCalories(day.calories);
+        context.globalAlpha = activeDate === day.date ? .94 : .38;
+        context.fillStyle = activeDate === day.date ? CALORIE_COLOR : CALORIE_FADE;
         roundRect(context, x - barWidth / 2, y, barWidth, padding.top + chartHeight - y, Math.min(4, barWidth / 2));
         context.fill();
     });
@@ -585,8 +532,8 @@ function drawSodiumChart(canvas, state, activeDate) {
     drawDateLabels(context, state.series, xPosition, padding.top + chartHeight + 20, state.range);
 }
 
-function updateSodiumTooltip(card, state, date) {
-    const tooltip = card.querySelector("[data-weight-sodium-tooltip]");
+function updateCalorieTooltip(card, state, date) {
+    const tooltip = card.querySelector("[data-weight-calories-tooltip]");
     if (!tooltip) return;
     if (!date) {
         tooltip.hidden = true;
@@ -604,10 +551,10 @@ function updateSodiumTooltip(card, state, date) {
         <strong>${formatDate(date)}</strong>
         <span>${Number.isFinite(weight) ? `${weight.toFixed(1)} ${unit}` : "No weight logged"}</span>
         <span>${Number.isFinite(trend) ? `${trend.toFixed(1)} ${unit} trend` : "Trend unavailable"}</span>
-        <span class="is-sodium-value">${Number.isFinite(day.sodiumMg) ? `${Math.round(day.sodiumMg).toLocaleString()} mg sodium` : "Sodium unavailable"}</span>
+        <span class="is-calorie-value">${Number.isFinite(day.calories) ? `${Math.round(day.calories).toLocaleString()} kcal` : "Calories unavailable"}</span>
     `;
     tooltip.hidden = false;
-    const shell = card.querySelector(".weight-sodium-chart-shell");
+    const shell = card.querySelector(".weight-calories-chart-shell");
     if (!shell) return;
     const first = dateMs(state.window.startDate);
     const elapsed = Math.max(1, dateMs(state.window.endDate) - first);
@@ -713,10 +660,6 @@ function roundRect(context, x, y, width, height, radius) {
     context.closePath();
 }
 
-function normalizeLabel(value) {
-    return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
-}
-
 function formatDate(value) {
     return new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
@@ -760,34 +703,34 @@ function ensureStyles() {
         #weight-progress .weight-point-marker[hidden]{display:none!important}
         #weight-progress .weight-graph-carousel-pager-v2.has-three-weight-pages{grid-template-columns:repeat(3,minmax(0,1fr))}
         #weight-progress .weight-graph-carousel-pager-v2.has-three-weight-pages button{padding-inline:2px;font-size:8.5px}
-        #weight-progress .weight-graph-carousel-slide-v2.is-sodium{padding:0 1px}
-        #weight-progress .weight-sodium-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-        #weight-progress .weight-sodium-head h3{margin:3px 0;font-size:18px}
-        #weight-progress .weight-sodium-head p{margin:0;color:#9898a3;font-size:10px}
-        #weight-progress .weight-sodium-info{position:relative}
-        #weight-progress .weight-sodium-info summary{display:grid;place-items:center;width:30px;height:30px;border:1px solid #3b3b42;border-radius:50%;background:#242429;color:#c6c6cd;font-weight:900;list-style:none}
-        #weight-progress .weight-sodium-info summary::-webkit-details-marker{display:none}
-        #weight-progress .weight-sodium-info>div{position:absolute;z-index:14;top:36px;right:0;width:min(300px,calc(100vw - 52px));padding:12px;border:1px solid #3a3a41;border-radius:14px;background:#202024;box-shadow:0 14px 36px rgba(0,0,0,.5)}
-        #weight-progress .weight-sodium-info p{margin:6px 0;color:#a1a1aa;font-size:10px;line-height:1.45}
-        #weight-progress .weight-sodium-info small{color:#85858e;font-size:9px;line-height:1.4}
-        #weight-progress .weight-sodium-chart-shell{position:relative;min-height:330px;border-top:1px solid #303036;border-bottom:1px solid #303036}
-        #weight-progress .weight-sodium-chart-shell canvas{display:block;width:100%;height:330px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
-        #weight-progress .weight-sodium-tooltip{position:absolute;z-index:5;top:12px;display:grid;gap:3px;padding:9px 10px;border:1px solid rgba(255,255,255,.14);border-radius:11px;background:rgba(24,24,28,.97);box-shadow:0 10px 28px rgba(0,0,0,.4);pointer-events:none}
-        #weight-progress .weight-sodium-tooltip[hidden]{display:none!important}
-        #weight-progress .weight-sodium-tooltip strong{font-size:11px}
-        #weight-progress .weight-sodium-tooltip span{color:#d2d2d7;font-size:10px}
-        #weight-progress .weight-sodium-tooltip .is-sodium-value{color:${SODIUM_COLOR}}
-        #weight-progress .weight-sodium-legend{display:flex;flex-wrap:wrap;gap:8px 13px;margin-top:9px;color:#92929c;font-size:9px;font-weight:800}
-        #weight-progress .weight-sodium-legend span{display:flex;align-items:center;gap:5px}
-        #weight-progress .weight-sodium-legend i{display:block;width:13px;height:3px;border-radius:999px}
-        #weight-progress .weight-sodium-legend .is-weight{background:${DAILY_WEIGHT}}
-        #weight-progress .weight-sodium-legend .is-trend{background:${TREND_GREEN}}
-        #weight-progress .weight-sodium-legend .is-sodium{height:8px;border-radius:3px;background:${SODIUM_COLOR}}
-        #weight-progress .weight-sodium-note{margin:0;color:#777780;font-size:8.5px}
-        #weight-progress .weight-sodium-empty{margin-top:8px;padding:12px 13px;border:1px dashed rgba(232,162,77,.28);border-radius:13px;background:rgba(232,162,77,.045)}
-        #weight-progress .weight-sodium-empty strong{font-size:12px}
-        #weight-progress .weight-sodium-empty p{margin:4px 0 0;color:#9696a0;font-size:9.5px;line-height:1.45}
-        @media(max-width:520px){#weight-progress .weight-sodium-chart-shell,#weight-progress .weight-sodium-chart-shell canvas{min-height:330px;height:330px}}
+        #weight-progress .weight-graph-carousel-slide-v2.is-calories{padding:0 1px}
+        #weight-progress .weight-calories-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+        #weight-progress .weight-calories-head h3{margin:3px 0;font-size:18px}
+        #weight-progress .weight-calories-head p{margin:0;color:#9898a3;font-size:10px}
+        #weight-progress .weight-calories-info{position:relative}
+        #weight-progress .weight-calories-info summary{display:grid;place-items:center;width:30px;height:30px;border:1px solid #3b3b42;border-radius:50%;background:#242429;color:#c6c6cd;font-weight:900;list-style:none}
+        #weight-progress .weight-calories-info summary::-webkit-details-marker{display:none}
+        #weight-progress .weight-calories-info>div{position:absolute;z-index:14;top:36px;right:0;width:min(300px,calc(100vw - 52px));padding:12px;border:1px solid #3a3a41;border-radius:14px;background:#202024;box-shadow:0 14px 36px rgba(0,0,0,.5)}
+        #weight-progress .weight-calories-info p{margin:6px 0;color:#a1a1aa;font-size:10px;line-height:1.45}
+        #weight-progress .weight-calories-info small{color:#85858e;font-size:9px;line-height:1.4}
+        #weight-progress .weight-calories-chart-shell{position:relative;min-height:330px;border-top:1px solid #303036;border-bottom:1px solid #303036}
+        #weight-progress .weight-calories-chart-shell canvas{display:block;width:100%;height:330px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+        #weight-progress .weight-calories-tooltip{position:absolute;z-index:5;top:12px;display:grid;gap:3px;padding:9px 10px;border:1px solid rgba(255,255,255,.14);border-radius:11px;background:rgba(24,24,28,.97);box-shadow:0 10px 28px rgba(0,0,0,.4);pointer-events:none}
+        #weight-progress .weight-calories-tooltip[hidden]{display:none!important}
+        #weight-progress .weight-calories-tooltip strong{font-size:11px}
+        #weight-progress .weight-calories-tooltip span{color:#d2d2d7;font-size:10px}
+        #weight-progress .weight-calories-tooltip .is-calorie-value{color:${CALORIE_COLOR}}
+        #weight-progress .weight-calories-legend{display:flex;flex-wrap:wrap;gap:8px 13px;margin-top:9px;color:#92929c;font-size:9px;font-weight:800}
+        #weight-progress .weight-calories-legend span{display:flex;align-items:center;gap:5px}
+        #weight-progress .weight-calories-legend i{display:block;width:13px;height:3px;border-radius:999px}
+        #weight-progress .weight-calories-legend .is-weight{background:${DAILY_WEIGHT}}
+        #weight-progress .weight-calories-legend .is-trend{background:${TREND_GREEN}}
+        #weight-progress .weight-calories-legend .is-calories{height:8px;border-radius:3px;background:${CALORIE_COLOR}}
+        #weight-progress .weight-calories-note{margin:0;color:#777780;font-size:8.5px}
+        #weight-progress .weight-calories-empty{margin-top:8px;padding:12px 13px;border:1px dashed rgba(255,90,95,.28);border-radius:13px;background:rgba(255,90,95,.045)}
+        #weight-progress .weight-calories-empty strong{font-size:12px}
+        #weight-progress .weight-calories-empty p{margin:4px 0 0;color:#9696a0;font-size:9.5px;line-height:1.45}
+        @media(max-width:520px){#weight-progress .weight-calories-chart-shell,#weight-progress .weight-calories-chart-shell canvas{min-height:330px;height:330px}}
     `;
     document.head.appendChild(style);
 }

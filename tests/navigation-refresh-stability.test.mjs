@@ -41,8 +41,8 @@ test("service worker updates do not force an in-session reload", () => {
     assert.doesNotMatch(serviceWorker, /clients\.claim\(\)/);
 });
 
-test("PWA shell generation advances for Weight context release", () => {
-    assert.match(serviceWorker, /CACHE_VERSION = "2026-08-31-70"/);
+test("PWA shell generation advances for Weight and Calories release", () => {
+    assert.match(serviceWorker, /CACHE_VERSION = "2026-08-31-71"/);
     assert.match(serviceWorker, /fetch\(url, \{ cache: "reload" \}\)/);
     assert.match(serviceWorker, /referencedAssetUrls/);
 });
