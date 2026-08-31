@@ -1,8 +1,8 @@
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=shared-live-trend-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
-import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=weekly-review-modal-1";
-import { getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-phase-1";
+import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
+import { getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
