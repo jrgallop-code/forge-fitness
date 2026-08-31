@@ -2,13 +2,13 @@ import {
     getActiveNutritionPhase,
     getActivePhaseMetrics,
     saveNutritionPhase
-} from "./nutrition-phase.js?v=nutrition-phase-full-window-1";
+} from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";
 import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
 import { buildCoordinatedWeeklyUpdate, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=observed-pace-target-1";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=weekly-stable-tdee-1";
-import { markMaintenanceCheckInReviewed } from "./maintenance-check-in.js?v=shared-weekly-review-1";
+import { markMaintenanceCheckInReviewed } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
 import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=all-calorie-requirements-1";
 
 const FIRST_CHECK_DAY = 14;
