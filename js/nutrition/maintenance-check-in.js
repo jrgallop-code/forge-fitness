@@ -243,11 +243,7 @@ function renderNutritionHubAlert(checkIn, mode) {
     alert.className = "maintenance-hub-alert";
     alert.innerHTML = `<div><span>WEEKLY CALORIE REVIEW</span><strong>Your calorie update is ready</strong><small>Review one recommended daily target.</small></div><button type="button">Review</button>`;
     alert.querySelector("button")?.addEventListener("click", () => {
-        document.querySelector('.nav-btn[data-page="progress"]')?.click();
-        window.setTimeout(() => {
-            document.getElementById("weight-tab")?.click();
-            document.getElementById("weight-calorie-suggestion-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 120);
+        window.dispatchEvent(new CustomEvent("levelup:open-weekly-calorie-review"));
     });
     hub.insertBefore(alert, hub.querySelector('[data-calories-panel="log"]'));
 }

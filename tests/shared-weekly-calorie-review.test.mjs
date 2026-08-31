@@ -20,7 +20,11 @@ test("the only active-phase action is the compact Weight Progress review", () =>
     assert.match(display, /Goal progress/);
     assert.match(display, /New daily target/);
     assert.match(display, /#weight-weekly-review-apply/);
-    assert.match(stats, /Review one recommended daily target in Weight Progress/);
+    assert.match(display, /levelup:open-weekly-calorie-review/);
+    assert.match(display, /#weekly-modal-review-apply/);
+    assert.match(display, /role="dialog" aria-modal="true"/);
+    assert.match(stats, /Review one recommended daily target/);
+    assert.match(stats, /levelup:open-weekly-calorie-review/);
     assert.doesNotMatch(stats, /data-maintenance-keep/);
 });
 

@@ -1,11 +1,11 @@
-import { navigate } from "./core/router.js?v=weekly-review-ui-1";
+import { navigate } from "./core/router.js?v=weekly-review-modal-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=nutrition-nav-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-source-stats-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";
 import "./workouts/exercise-guide-resolution-fix.js?v=1";
 import "./workouts/exercise-guide-comprehensive.js?v=comprehensive-form-guides-1";
-import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check-in.js?v=weekly-review-ui-1";
+import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check-in.js?v=weekly-review-modal-1";
 import { initializeSatisfactionSurvey } from "./feedback/satisfaction-survey.js?v=satisfaction-survey-1";
 
 initializeSatisfactionSurvey();
