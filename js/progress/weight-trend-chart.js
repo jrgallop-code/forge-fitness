@@ -115,18 +115,13 @@ function formatPeriodDateRange(startDate, endDate) {
     const start = new Date(`${startDate}T12:00:00`);
     const end = new Date(`${endDate}T12:00:00`);
     const sameYear = start.getFullYear() === end.getFullYear();
-    const sameMonth = sameYear && start.getMonth() === end.getMonth();
-    const startLabel = start.toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        ...(!sameYear ? { year: "numeric" } : {})
-    });
-    const endLabel = end.toLocaleDateString(undefined, {
-        ...(sameMonth ? {} : { month: "short" }),
-        day: "numeric",
-        year: "numeric"
-    });
-    return `${startLabel} – ${endLabel}`;
+    const monthName = date => date.toLocaleDateString("en-US", { month: "long" });
+    const startLabel = `${monthName(start)} ${start.getDate()}`;
+    const endLabel = `${monthName(end)} ${end.getDate()}, ${end.getFullYear()}`;
+
+    return sameYear
+        ? `${startLabel} – ${endLabel}`
+        : `${startLabel}, ${start.getFullYear()} – ${endLabel}`;
 }
 
 function updatePeriodSummary(card, movingAverage) {

@@ -40,11 +40,14 @@ test("weight chart polish keeps the card compact and summarizes the selected per
     assert.match(progressMarkup, /data-weight-chart-period/);
     assert.match(chartSource, /updatePeriodSummary\(legacyCanvas\.closest/);
     assert.match(chartSource, /movingAverage\.at\(-1\)\.date/);
+    assert.match(chartSource, /month: "long"/);
+    assert.match(chartSource, /startLabel} – \$\{endLabel/);
 });
 
 test("published app refreshes the full weight period summary module chain", () => {
     assert.match(publishedEntry, /js\/app\.js\?v=weight-period-summary-2/);
     assert.match(appEntry, /core\/router\.js\?v=weight-period-summary-2/);
     assert.match(routerSource, /progress\/progress-ui\.js\?v=weight-period-summary-2/);
-    assert.match(serviceWorker, /CACHE_VERSION = "2026-08-31-32"/);
+    assert.match(publishedEntry, /weight-trend-chart\.js\?v=period-date-format-1/);
+    assert.match(serviceWorker, /CACHE_VERSION = "2026-08-31-33"/);
 });
