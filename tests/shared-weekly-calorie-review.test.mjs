@@ -75,33 +75,13 @@ test("live calorie logic excludes future weigh-ins and Goals & Plan shows the sa
     assert.match(goals, /active\.currentCalories \?\? active\.startCalories/);
 });
 
-test("the latest applied review can be safely replayed without changing logs", () => {
+test("Goals & Calories no longer exposes weekly review testing controls", () => {
     const goals = readFileSync("js/nutrition/unified-goals-calories.js", "utf8");
-    assert.match(goals, /Undo last update and replay review/);
-    assert.match(goals, /Your food logs and weigh-ins will not be changed/);
-    assert.match(goals, /clearAdjustmentHold\(\)/);
-    assert.match(goals, /clearHandledReviewForPhase\(phase\)/);
-    assert.match(goals, /Restored \$\{previousTarget\} kcal\/day and reopened the weekly review/);
-    assert.match(goals, /getReplaySnapshot\(phase\)/);
-    assert.match(goals, /latest saved adjustment/);
-    assert.match(goals, /item\.newCalories/);
+    assert.doesNotMatch(goals, /id="unified-preview-review"/);
+    assert.doesNotMatch(goals, /id="unified-replay-review"/);
+    assert.doesNotMatch(goals, />Preview Weekly Calorie Review</);
+    assert.doesNotMatch(goals, />Undo last update and replay review</);
 });
-
-test("Goals and Plan can launch a non-destructive weekly review preview", () => {
-    const goals = readFileSync("js/nutrition/unified-goals-calories.js", "utf8");
-    const alert = readFileSync("js/nutrition/maintenance-check-in.js", "utf8");
-    const modal = readFileSync("js/nutrition/calories-full-adjustment-display.js", "utf8");
-    assert.match(goals, /Preview Weekly Calorie Review/);
-    assert.match(goals, /sessionStorage\.setItem\(WEEKLY_REVIEW_PREVIEW_KEY, "1"\)/);
-    assert.match(goals, /data-calories-tab="log"/);
-    assert.match(alert, /TEST · WEEKLY CALORIE REVIEW/);
-    assert.match(alert, /Review test/);
-    assert.match(modal, /TEST PREVIEW ·/);
-    assert.match(modal, /Nothing in this preview will be saved/);
-    assert.match(modal, /Test update to/);
-    assert.match(modal, /sessionStorage\.removeItem\(WEEKLY_REVIEW_PREVIEW_KEY\)/);
-});
-
 
 test("a ready review is shared by Nutrition and Progress and applied targets refresh immediately", () => {
     const alert = readFileSync("js/nutrition/maintenance-check-in.js", "utf8");
@@ -117,7 +97,6 @@ test("a ready review is shared by Nutrition and Progress and applied targets ref
     assert.match(display, /Adjustment applied · reassess in 7 days/);
 });
 
-
 test("the Nutrition dot uses the exact actionable review state", () => {
     const alert = readFileSync("js/nutrition/maintenance-check-in.js", "utf8");
     const display = readFileSync("js/nutrition/calories-full-adjustment-display.js", "utf8");
@@ -129,8 +108,7 @@ test("the Nutrition dot uses the exact actionable review state", () => {
     assert.match(alert, /levelup:weekly-calorie-review-readiness/);
 });
 
-
-test("the review preview also demonstrates the Nutrition notification dot", () => {
+test("the internal review preview state still drives the Nutrition notification surface", () => {
     const alert = readFileSync("js/nutrition/maintenance-check-in.js", "utf8");
     assert.match(alert, /previewReady = sessionStorage\.getItem\(WEEKLY_REVIEW_PREVIEW_KEY\) === "1"/);
     assert.match(alert, /checkIn\.ready \|\| sharedReady \|\| previewReady/);
