@@ -284,7 +284,9 @@ export function initializeMaintenanceCheckInAlert() {
             applyAutomaticMaintenanceUpdate(checkIn, phase);
             return;
         }
-        const shouldAlert = mode !== "track" && checkIn.ready;
+        const sharedReady = document.documentElement.dataset.weeklyCalorieReviewReady === "true";
+        const shouldAlert = mode !== "track" && (checkIn.ready || sharedReady);
+        const displayedCheckIn = shouldAlert === checkIn.ready ? checkIn : { ...checkIn, ready: shouldAlert };
         nav.classList.toggle("has-maintenance-check-in", shouldAlert);
         let badge = nav.querySelector(".maintenance-nav-badge");
         if (shouldAlert && !badge) {
@@ -296,10 +298,10 @@ export function initializeMaintenanceCheckInAlert() {
             badge?.remove();
         }
         nav.setAttribute("aria-label", shouldAlert ? "Nutrition — weekly calorie review ready" : "Nutrition");
-        renderNutritionHubAlert(checkIn, mode);
-        renderProgressReviewAlert(checkIn, mode);
+        renderNutritionHubAlert(displayedCheckIn, mode);
+        renderProgressReviewAlert(displayedCheckIn, mode);
     };
-    ["levelup:food-log-updated", "levelup:weight-updated", "levelup:nutrition-updated", "levelup:nutrition-phase-updated", "levelup:maintenance-check-in-updated", "levelup:maintenance-mode-updated"]
+    ["levelup:food-log-updated", "levelup:weight-updated", "levelup:nutrition-updated", "levelup:nutrition-phase-updated", "levelup:maintenance-check-in-updated", "levelup:maintenance-mode-updated", "levelup:weekly-calorie-review-readiness"]
         .forEach(name => window.addEventListener(name, refresh));
     window.addEventListener("pageshow", refresh);
     document.addEventListener("click", event => {
