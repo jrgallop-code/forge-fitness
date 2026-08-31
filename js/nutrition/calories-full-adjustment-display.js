@@ -443,7 +443,8 @@ function applyFullAdjustment(event, context = {}) {
     const phase = context.phase || getActiveNutritionPhase();
     if (!phase) return;
     const metrics = context.metrics || getActivePhaseMetrics(phase, { rolling: true });
-    if (metrics.isFutureTest || !metrics.recommendationReady) return;
+    const isExplicitModalRecommendation = Boolean(context.recommendation);
+    if (!isExplicitModalRecommendation && (metrics.isFutureTest || !metrics.recommendationReady)) return;
 
     const actual = Number(metrics.actualRateLbPerWeek);
     const target = Number(metrics.targetRateLbPerWeek);
@@ -455,8 +456,9 @@ function applyFullAdjustment(event, context = {}) {
         : Number.isFinite(phaseDay) && phaseDay >= FIRST_CHECK_DAY
             ? phaseDay
             : FIRST_CHECK_DAY;
-    if (!Number.isFinite(actual) || !Number.isFinite(target) || !Number.isFinite(currentCalories)) return;
-    if ((!context.recommendation && getHandledCheck(phase, checkDay)) || getHold(phase, currentCalories)) return;
+    if (!Number.isFinite(currentCalories)) return;
+    if (!isExplicitModalRecommendation && (!Number.isFinite(actual) || !Number.isFinite(target))) return;
+    if (!isExplicitModalRecommendation && (getHandledCheck(phase, checkDay) || getHold(phase, currentCalories))) return;
 
     const recommendation = context.recommendation || buildSharedRecommendation(metrics, phase);
     if (!recommendation) return;
@@ -465,11 +467,16 @@ function applyFullAdjustment(event, context = {}) {
     apply.disabled = true;
     apply.textContent = "Updating…";
 
-    const saved = saveNutritionPhase({
-        goalId: phase.goalId,
-        maintenanceCalories: recommendation.maintenanceCalories,
-        targetCalories: recommendation.targetCalories
-    });
+    let saved;
+    try {
+        saved = saveNutritionPhase({
+            goalId: phase.goalId,
+            maintenanceCalories: recommendation.maintenanceCalories,
+            targetCalories: recommendation.targetCalories
+        });
+    } catch (error) {
+        console.error("Weekly calorie target save failed:", error);
+    }
     if (!saved?.phase || Number(saved.phase.currentCalories ?? saved.phase.startCalories) !== Number(recommendation.targetCalories)) {
         apply.disabled = false;
         apply.textContent = `Update to ${recommendation.targetCalories}`;
