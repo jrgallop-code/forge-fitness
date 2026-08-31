@@ -10,6 +10,7 @@ import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v
 import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=granular-units-1";
 import { renderAdaptiveGuidanceSettings, initializeAdaptiveGuidanceSettings } from "./adaptive-guidance-settings.js?v=deload-workout-preview-1";
 import { openLessonLibrary } from "./learn-level-up.js?v=learn-level-up-2";
+import { openExploreResearch } from "./explore-research.js?v=explore-research-1";
 
 const ICONS = {
     profile: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c4.4 0 8 2.3 8 5.2V21H4v-2.8C4 15.3 7.6 13 12 13Zm-5.9 6h11.8v-.8c0-1.3-2.4-3.2-5.9-3.2s-5.9 1.9-5.9 3.2v.8Z"/></svg>',
@@ -23,12 +24,16 @@ const ICONS = {
     units: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4V5Zm2 2v10h12V7H6Zm2 2h2v3H8V9Zm3 0h2v5h-2V9Zm3 0h2v3h-2V9Z"/></svg>',
     guidance: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 1 4 12.7V18h-2v-4.4l.5-.3A5 5 0 1 0 7 9c0 1.8.9 3.4 2.5 4.3l.5.3V18H8v-3.3A7 7 0 0 1 12 2Zm-2 18h4v2h-4v-2Zm1-13h2v4h-2V7Zm0 5h2v2h-2v-2Z"/></svg>',
     analytics: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5h2v12h14v2H4Zm3-3v-5h2v5H7Zm4 0V7h2v9h-2Zm4 0v-8h2v8h-2Z"/></svg>',
-    learn: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7c1.1 0 2 .9 2 2v14c-.6-.6-1.4-1-2.4-1H4V4Zm2 2v11h4.6c.1 0 .3 0 .4.1V6H6Zm7 0c0-1.1.9-2 2-2h5v15h-4.6c-1 0-1.8.4-2.4 1V6Zm2 0v11.1c.1-.1.3-.1.4-.1H18V6h-3Z"/></svg>'
+    learn: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7c1.1 0 2 .9 2 2v14c-.6-.6-1.4-1-2.4-1H4V4Zm2 2v11h4.6c.1 0 .3 0 .4.1V6H6Zm7 0c0-1.1.9-2 2-2h5v15h-4.6c-1 0-1.8.4-2.4 1V6Zm2 0v11.1c.1-.1.3-.1.4-.1H18V6h-3Z"/></svg>',
+    research: '<svg class="app-silhouette-icon more-research-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="5"/><path d="m14 14 5 5M10 7v6M7 10h6"/></svg>'
 };
 
 export function renderMore() {
     return `<section class="more-compact-header"><span class="eyebrow">SETTINGS & TOOLS</span><h2>More</h2></section>
     <section class="more-menu-grid" aria-label="More tools">
+    <div class="more-menu-group" data-more-group="explore"><h3>Science &amp; learning</h3>
+    <button class="more-menu-card" type="button" data-more-page="explore"><span class="more-menu-icon">${ICONS.research}</span><span><strong>Explore Research</strong><small>New muscle-growth and nutrition science, summarized with context and direct study links.</small></span></button>
+    </div>
     <div class="more-menu-group" data-more-group="account"><h3>Account &amp; app</h3>
     <button class="more-menu-card" type="button" data-more-page="account-cloud"><span class="more-menu-icon">${ICONS.account}</span><span><strong>Account & Cloud</strong><small>Sign in for private beta cloud backup and device transfer.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Choose body weight, workout weight, distance and measurement units separately.</small></span></button>
@@ -54,6 +59,10 @@ export function initializeMore() {
     revealOwnerAnalyticsMenu();
     document.querySelectorAll("[data-more-page]").forEach(button => button.addEventListener("click", () => {
         const page = button.dataset.morePage;
+        if (page === "explore") {
+            openExploreResearch();
+            return;
+        }
         if (page === "learn") {
             openLessonLibrary();
             return;
