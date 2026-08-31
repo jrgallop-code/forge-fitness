@@ -19,7 +19,7 @@ function readCheckState() {
 }
 
 function keepCurrentTarget(event) {
-    const button = event.target.closest?.("#goal-check-in-keep, #weekly-coach-keep, #weight-weekly-review-keep");
+    const button = event.target.closest?.("#goal-check-in-keep, #weekly-coach-keep, #weight-weekly-review-keep, #weekly-modal-review-keep");
     if (!button) return;
 
     event.preventDefault();

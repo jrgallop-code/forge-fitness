@@ -80,6 +80,43 @@ function showWeightReview(recommendation) {
     if (apply) apply.textContent = `Update to ${recommendation.targetCalories}`;
 }
 
+function closeWeeklyReviewModal() {
+    document.querySelector("[data-weekly-calorie-modal]")?.remove();
+}
+
+function openWeeklyReviewModal() {
+    const phase = getActiveNutritionPhase();
+    if (!phase) return;
+    const metrics = getActivePhaseMetrics(phase, { rolling: true });
+    const recommendation = buildSharedRecommendation(metrics, phase);
+    if (!metrics?.recommendationReady || !recommendation || recommendation.targetChange === 0) return;
+
+    closeWeeklyReviewModal();
+    const modal = document.createElement("div");
+    modal.className = "weekly-calorie-modal";
+    modal.dataset.weeklyCalorieModal = "1";
+    modal.innerHTML = `
+        <section class="weekly-calorie-modal-card" role="dialog" aria-modal="true" aria-labelledby="weekly-calorie-modal-title">
+            <header><div><span>WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">Your recommended target</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
+            <p>One update based on your latest progress.</p>
+            <div class="weekly-calorie-modal-breakdown">
+                <div><span>Current target</span><strong>${recommendation.previousTarget} kcal/day</strong></div>
+                <div><span>Maintenance update</span><strong>${formatSignedCalories(recommendation.maintenanceChange)} cal/day</strong></div>
+                <div><span>Goal progress</span><strong>${formatSignedCalories(recommendation.paceCorrection)} cal/day</strong></div>
+                <div class="weekly-calorie-modal-result"><span>New daily target</span><strong>${recommendation.targetCalories} kcal/day</strong></div>
+            </div>
+            <div class="weekly-calorie-modal-actions">
+                <button id="weekly-modal-review-apply" class="primary-btn" type="button">Update to ${recommendation.targetCalories}</button>
+                <button id="weekly-modal-review-keep" class="secondary-btn" type="button">Keep ${recommendation.previousTarget}</button>
+            </div>
+        </section>`;
+    modal.addEventListener("click", event => {
+        if (event.target === modal || event.target.closest?.("[data-weekly-modal-close]")) closeWeeklyReviewModal();
+    });
+    document.body.appendChild(modal);
+    modal.querySelector("[data-weekly-modal-close]")?.focus();
+}
+
 function getVisibleTrend(metrics) {
     if (metrics?.isFutureTest) return null;
     try {
@@ -380,7 +417,7 @@ function syncSuggestedCalories(metrics, phase) {
 }
 
 function applyFullAdjustment(event) {
-    const apply = event.target.closest?.("#weekly-coach-apply, #goal-check-in-apply, #weight-weekly-review-apply");
+    const apply = event.target.closest?.("#weekly-coach-apply, #goal-check-in-apply, #weight-weekly-review-apply, #weekly-modal-review-apply");
     if (!apply) return;
 
     const phase = getActiveNutritionPhase();
@@ -421,6 +458,7 @@ function applyFullAdjustment(event) {
     window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", {
         detail: { source: "full-calorie-adjustment" }
     }));
+    closeWeeklyReviewModal();
     scheduleRefresh();
 }
 
@@ -473,6 +511,10 @@ if (content) {
 }
 
 document.addEventListener("click", applyFullAdjustment, true);
+window.addEventListener("levelup:open-weekly-calorie-review", openWeeklyReviewModal);
+window.addEventListener("levelup:nutrition-updated", event => {
+    if (event?.detail?.source === "calorie-authority-keep") closeWeeklyReviewModal();
+});
 document.addEventListener("click", event => {
     if (event.target.closest?.("#save-weight-btn, .remove-weight-entry, [data-page='energy'], [data-nav='energy'], [data-page='progress'], #weight-tab")) {
         scheduleRefresh();

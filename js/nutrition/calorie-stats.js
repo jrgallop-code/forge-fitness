@@ -1,7 +1,7 @@
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=shared-live-trend-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
-import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=weekly-review-ui-1";
+import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=weekly-review-modal-1";
 import { getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-phase-1";
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=coordinated-weekly-calories-1";
 
@@ -123,7 +123,7 @@ function maintenanceCheckInMarkup(checkIn) {
     return `<section class="maintenance-check-in-alert">
         <span class="eyebrow">WEEKLY CALORIE REVIEW</span>
         <h3>Your calorie update is ready</h3>
-        <p>Review one recommended daily target in Weight Progress.</p>
+        <p>Review one recommended daily target.</p>
         <div class="maintenance-check-in-actions"><button class="primary-btn" type="button" data-maintenance-review>Review update</button></div>
     </section>`;
 }
@@ -281,11 +281,7 @@ function renderStats(panel) {
 }
 
 function openMaintenanceReview() {
-    document.querySelector('.nav-btn[data-page="progress"]')?.click();
-    window.setTimeout(() => {
-        document.getElementById("weight-tab")?.click();
-        document.getElementById("weight-calorie-suggestion-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 120);
+    window.dispatchEvent(new CustomEvent("levelup:open-weekly-calorie-review"));
 }
 
 export function renderCalorieStats() {
