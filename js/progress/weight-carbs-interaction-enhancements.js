@@ -76,16 +76,16 @@ function clearSelectedDay(shell) {
     const tooltip = shell.querySelector("[data-weight-carbs-tooltip-v2]");
     if (!tooltip || tooltip.hidden) return;
 
+    // Hide the card immediately. The authoritative renderer then clears its
+    // internal selectedDate through the existing range-control refresh path.
+    // This avoids a stale visible tooltip after the point/bar highlight is gone.
+    tooltip.hidden = true;
+
     const card = shell.closest(".weight-chart-card");
     const selectedRange = card?.querySelector('button[data-weight-chart-range][aria-pressed="true"]')
         || card?.querySelector("button[data-weight-chart-range]");
 
-    if (selectedRange) {
-        selectedRange.click();
-        return;
-    }
-
-    tooltip.hidden = true;
+    if (selectedRange) selectedRange.click();
 }
 
 function ensureStyles() {
@@ -106,6 +106,12 @@ function ensureStyles() {
             font: 800 10px/1 Arial, sans-serif;
             text-align: left;
             pointer-events: none;
+        }
+
+        /* The renderer gives the tooltip display:grid. Explicitly honor the
+           hidden attribute so cleared selections cannot leave a stale card. */
+        #weight-progress .weight-carbs-tooltip-v2[hidden] {
+            display: none !important;
         }
     `;
     document.head.appendChild(style);
