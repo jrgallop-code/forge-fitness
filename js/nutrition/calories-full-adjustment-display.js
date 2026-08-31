@@ -98,13 +98,16 @@ function openWeeklyReviewModal() {
     modal.innerHTML = `
         <section class="weekly-calorie-modal-card" role="dialog" aria-modal="true" aria-labelledby="weekly-calorie-modal-title">
             <header><div><span>WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">Your recommended target</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
-            <p>One update based on your latest progress.</p>
+            <p>Your full calculation and this week's safe step.</p>
             <div class="weekly-calorie-modal-breakdown">
                 <div><span>Current target</span><strong>${recommendation.previousTarget} kcal/day</strong></div>
-                <div><span>Maintenance update</span><strong>${formatSignedCalories(recommendation.maintenanceChange)} cal/day</strong></div>
-                <div><span>Goal progress</span><strong>${formatSignedCalories(recommendation.paceCorrection)} cal/day</strong></div>
-                <div class="weekly-calorie-modal-result"><span>New daily target</span><strong>${recommendation.targetCalories} kcal/day</strong></div>
+                <div><span>Calculated maintenance</span><strong>${recommendation.fullMaintenanceCalories} kcal/day</strong></div>
+                <div><span>Phase goal adjustment</span><strong>${formatSignedCalories(recommendation.phaseGoalAdjustment)} cal/day</strong></div>
+                <div><span>Progress correction</span><strong>${formatSignedCalories(recommendation.requestedPaceCorrection)} cal/day</strong></div>
+                <div><span>Full calculated target</span><strong>${recommendation.fullTargetCalories} kcal/day</strong></div>
+                <div class="weekly-calorie-modal-result"><span>This week's target</span><strong>${recommendation.targetCalories} kcal/day</strong></div>
             </div>
+            ${recommendation.capped ? `<small class="weekly-calorie-modal-cap">Limited to ${formatSignedCalories(recommendation.targetChange)} calories this review. Level Up will reassess the remaining difference next week.</small>` : ""}
             <div class="weekly-calorie-modal-actions">
                 <button id="weekly-modal-review-apply" class="primary-btn" type="button">Update to ${recommendation.targetCalories}</button>
                 <button id="weekly-modal-review-keep" class="secondary-btn" type="button">Keep ${recommendation.previousTarget}</button>
@@ -168,7 +171,18 @@ function buildSharedRecommendation(metrics, phase) {
         adaptiveReady: metrics?.recommendationReady === true && !["ON TRACK", "MAINTAINING"].includes(metrics?.status),
         maximumChange: WEEKLY_ADJUSTMENT_CAP
     });
-    return update ? { ...update, estimate } : null;
+    if (!update) return null;
+    const phaseGoalAdjustment = Math.round(currentTarget - currentMaintenance);
+    const fullTargetCalories = Math.round(
+        update.previousTarget + update.requestedMaintenanceChange + update.requestedPaceCorrection
+    );
+    return {
+        ...update,
+        estimate,
+        phaseGoalAdjustment,
+        fullMaintenanceCalories: Math.round(proposedMaintenance),
+        fullTargetCalories
+    };
 }
 
 function getAdaptiveCalorieBaseline(metrics, currentCalories) {
