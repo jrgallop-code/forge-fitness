@@ -1,4 +1,4 @@
-import "../more/install-level-up.js?v=more-install-level-up-1";
+import "../more/install-level-up.js?v=pwa-splash-safety-1";
 
 const STYLE_ID = "levelup-onboarding-install-help-styles";
 let selectedPlatform = detectPlatform();
@@ -57,9 +57,9 @@ function renderSteps(platform) {
         <ol class="onboarding-install-steps">
             <li><span class="onboarding-install-step-number">1</span><span>Open Level Up in <strong>Safari</strong>.</span></li>
             <li><span class="onboarding-install-step-number">2</span><span>Tap <strong>Share</strong>, then choose <strong>Add to Home Screen</strong>.</span></li>
-            <li><span class="onboarding-install-step-number">3</span><span>Turn on <strong>Open as Web App</strong>, then tap <strong>Add</strong>.</span></li>
+            <li><span class="onboarding-install-step-number">3</span><span>If <strong>Open as Web App</strong> appears, turn it on. Then tap <strong>Add</strong>.</span></li>
         </ol>
-        <p class="onboarding-install-note">Afterward, launch Level Up from the Home Screen like a regular app.</p>
+        <p class="onboarding-install-note">The switch is not shown on every iOS version. You can still tap Add.</p>
     `;
 }
 
