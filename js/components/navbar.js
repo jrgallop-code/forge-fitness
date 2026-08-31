@@ -1,5 +1,4 @@
-import { navigate } from "../core/router.js?v=progress-nav-stability-2";
-import { renderStableProgressRoute } from "../core/progress-route-stable.js?v=progress-route-stable-2";
+import { navigate } from "../core/router.js?v=progress-nav-stability-1";
 
 export function renderNavbar() {
     return `
@@ -49,59 +48,42 @@ export function renderNavbar() {
 
 export function initializeNavbar() {
     const nav = document.querySelector(".bottom-nav");
-    if (!nav || nav.dataset.bound === "true") return;
+
+    if (!nav || nav.dataset.bound === "true") {
+        return;
+    }
 
     nav.dataset.bound = "true";
-    let progressPointerHandledAt = -Infinity;
 
-    const activateAndNavigate = button => {
-        const page = button?.dataset?.page;
-        if (!page) return false;
+    nav.addEventListener("click", event => {
+        const button = event.target.closest(".nav-btn");
 
-        let routed = true;
-        try {
-            routed = page === "progress"
-                ? renderStableProgressRoute(document.getElementById("content"))
-                : navigate(page) !== false;
-        }
-        catch (error) {
-            routed = false;
-            console.error(`Navigation to ${page} failed:`, error);
+        if (!button || !nav.contains(button)) {
+            return;
         }
 
-        if (!routed) return false;
+        const page = button.dataset.page;
 
-        nav.querySelectorAll(".nav-btn").forEach(item => {
-            item.classList.toggle("active", item === button);
-        });
+        if (!page) {
+            return;
+        }
+
+        event.preventDefault();
 
         button.classList.remove("nav-pulse");
         void button.offsetWidth;
         button.classList.add("nav-pulse");
         button.addEventListener("animationend", () => button.classList.remove("nav-pulse"), { once: true });
-        window.setTimeout(() => button.classList.remove("nav-pulse"), 400);
-        return true;
-    };
 
-    nav.addEventListener("pointerup", event => {
-        if (event.pointerType === "mouse") return;
-        const button = event.target.closest?.('.nav-btn[data-page="progress"]');
-        if (!button || !nav.contains(button)) return;
+        nav.querySelectorAll(".nav-btn").forEach(item => {
+            item.classList.toggle("active", item === button);
+        });
 
-        progressPointerHandledAt = performance.now();
-        event.preventDefault();
-        activateAndNavigate(button);
-    });
-
-    nav.addEventListener("click", event => {
-        const button = event.target.closest?.(".nav-btn");
-        if (!button || !nav.contains(button)) return;
-
-        const page = button.dataset.page;
-        if (!page) return;
-
-        event.preventDefault();
-        if (page === "progress" && performance.now() - progressPointerHandledAt < 700) return;
-        activateAndNavigate(button);
+        try {
+            navigate(page);
+        }
+        catch (error) {
+            console.error(`Navigation to ${page} failed:`, error);
+        }
     });
 }

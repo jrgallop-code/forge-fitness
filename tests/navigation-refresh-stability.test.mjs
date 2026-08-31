@@ -4,34 +4,36 @@ import { readFileSync } from "node:fs";
 
 const app = readFileSync("js/app.js", "utf8");
 const navbar = readFileSync("js/components/navbar.js", "utf8");
+const router = readFileSync("js/core/router.js", "utf8");
 const serviceWorker = readFileSync("service-worker.js", "utf8");
 
-test("Progress bottom navigation has a direct pointer-up fallback", () => {
-    assert.match(navbar, /data-page=\"progress\"/);
-    assert.match(navbar, /addEventListener\(\"pointerup\"/);
-    assert.match(navbar, /nav-btn\[data-page=\"progress\"\]/);
-    assert.match(navbar, /activateAndNavigate\(button\)/);
+test("Progress uses the canonical bottom-nav click route", () => {
+    assert.match(navbar, /data-page="progress"/);
+    assert.match(navbar, /nav\.addEventListener\("click"/);
     assert.match(navbar, /navigate\(page\)/);
+    assert.doesNotMatch(navbar, /renderStableProgressRoute/);
+    assert.doesNotMatch(navbar, /addEventListener\("pointerup"/);
 });
 
-test("Progress pointer fallback avoids duplicate click navigation", () => {
-    assert.match(navbar, /progressPointerHandledAt/);
-    assert.match(navbar, /performance\.now\(\) - progressPointerHandledAt < 700/);
+test("canonical Progress route initializes the complete page", () => {
+    assert.match(router, /case "progress":/);
+    assert.match(router, /content\.innerHTML = renderProgress\(\)/);
+    assert.match(router, /initializeWeightTracker/);
+    assert.match(router, /initializeWeightProgressCompact/);
+    assert.match(router, /initializeCalorieStats\(content\)/);
+    assert.match(router, /initializeWeightCarbsChart\(content\)/);
+    assert.match(router, /initializeTrainingProgress/);
+    assert.match(router, /initializeCardioAnalytics\(content\)/);
 });
 
-test("service worker updates no longer force an in-session app reload", () => {
+test("service worker updates do not force an in-session reload", () => {
     assert.doesNotMatch(app, /controllerchange/);
     assert.doesNotMatch(app, /window\.location\.reload\(\)/);
     assert.match(app, /serviceWorker\.register/);
     assert.match(app, /registration\.update\(\)/);
+    assert.doesNotMatch(serviceWorker, /clients\.claim\(\)/);
 });
 
-test("fresh navigation modules are requested", () => {
-    assert.match(app, /router\.js\?v=progress-nav-stability-1/);
-    assert.match(app, /navbar\.js\?v=progress-nav-stability-1/);
-    assert.match(navbar, /router\.js\?v=progress-nav-stability-1/);
-});
-
-test("PWA shell generation is advanced for the stability release", () => {
-    assert.match(serviceWorker, /CACHE_VERSION = \"2026-08-31-65\"/);
+test("PWA shell generation advances for canonical Progress rollback", () => {
+    assert.match(serviceWorker, /CACHE_VERSION = "2026-08-31-68"/);
 });
