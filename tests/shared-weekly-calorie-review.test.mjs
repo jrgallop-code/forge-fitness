@@ -28,7 +28,8 @@ test("the only active-phase action is the compact Weight Progress review", () =>
     assert.match(display, /Recommended target now/);
     assert.match(display, /weeklyAverageCalories: baseline\.useLoggedAverage/);
     assert.match(display, /requestedMaintenanceChange \+ update\.requestedPaceCorrection/);
-    assert.match(display, /Level Up will reassess the remaining difference next week/);
+    assert.match(display, /The saved target changes by/);
+    assert.match(display, /Level Up will reassess next week/);
     assert.match(stats, /Review one recommended daily target/);
     assert.match(stats, /levelup:open-weekly-calorie-review/);
     assert.doesNotMatch(stats, /data-maintenance-keep/);
