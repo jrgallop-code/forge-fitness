@@ -40,7 +40,10 @@ test('shared visual browser defaults to All and combines muscle with search', ()
   assert.match(browser, /\{ id: "", label: "All"/);
   assert.match(browser, /exercise-muscle-carousel/);
   assert.match(browser, /getAnatomyConfig\(item\.facing\)/);
-  assert.match(browser, /assets\/exercise-anatomy\/\$\{config\.sex\}-\$\{slug\}\.svg\?v=static-anatomy-assets-1/);
+  assert.match(browser, /renderFormGuideMuscleSvg\(item\.id\)/);
+  assert.match(browser, /class=\"form-guide-muscle-svg\"/);
+  assert.match(browser, /class=\"form-guide-anatomy-base\"/);
+  assert.match(browser, /href=\"\$\{config\.asset\}\"/);
   assert.doesNotMatch(browser, /hydrateExerciseAnatomy|DOMParser/);
   assert.match(generatedMaleChest, /#muscle_front_011/);
   assert.match(generatedMaleChest, /#ff315f/);
@@ -60,7 +63,7 @@ test('shared visual browser defaults to All and combines muscle with search', ()
   assert.match(actions, /appendExerciseToActiveWorkout\(exercise\.id\)/);
   assert.doesNotMatch(manual, /hydrateExerciseAnatomy/);
   assert.doesNotMatch(actions, /hydrateExerciseAnatomy/);
-  assert.match(index, /manual-builder-catalogue\.js\?v=static-anatomy-assets-1/);
-  assert.match(index, /session-exercise-actions\.js\?v=static-anatomy-assets-1/);
-  assert.match(browser, /exercise-browser\.css\?v=static-anatomy-assets-1/);
+  assert.match(index, /manual-builder-catalogue\.js\?v=form-guide-carousel-1/);
+  assert.match(index, /session-exercise-actions\.js\?v=form-guide-carousel-1/);
+  assert.match(browser, /exercise-browser\.css\?v=form-guide-carousel-1/);
 });

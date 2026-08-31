@@ -1,9 +1,10 @@
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-2";
+import { renderFormGuideMuscleSvg } from "./form-guide-anatomy.js?v=female-back-regions-1";
 
 if (typeof document !== "undefined" && !document.querySelector('link[data-exercise-browser-styles]')) {
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "css/exercise-browser.css?v=static-anatomy-assets-1";
+  link.href = "css/exercise-browser.css?v=form-guide-carousel-1";
   link.dataset.exerciseBrowserStyles = "";
   document.head.appendChild(link);
 }
@@ -49,8 +50,8 @@ export function renderCustomExerciseFields() {
 function renderMuscleFigure(item) {
   const config = getAnatomyConfig(item.facing);
   const label = item.id ? `${item.label} highlighted on ${config.sex} anatomy` : `${config.sex} anatomy`;
-  const slug = (item.id || "All").toLowerCase().replaceAll(" ", "-");
-  return `<img class="exercise-muscle-figure" src="assets/exercise-anatomy/${config.sex}-${slug}.svg?v=static-anatomy-assets-1" alt="${escapeHtml(label)}" width="38" height="58">`;
+  const figure = item.id ? renderFormGuideMuscleSvg(item.id) : `<svg class="form-guide-muscle-svg" viewBox="${config.viewBox}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escapeHtml(label)}" focusable="false" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><image class="form-guide-anatomy-base" href="${config.asset}" xlink:href="${config.asset}" x="${config.imageX}" y="0" width="960" height="1920" preserveAspectRatio="xMidYMid meet"/></svg>`;
+  return `<span class="exercise-muscle-figure" role="img" aria-label="${escapeHtml(label)}">${figure}</span>`;
 }
 
 export function matchesExerciseBrowser(exercise, { muscle = "", query = "", equipment = "" } = {}) {
