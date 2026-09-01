@@ -21,6 +21,18 @@ npm run cap:sync:ios
 
 This recreates `www/`, copies it into the native app, and updates native dependencies. The GitHub Pages PWA continues to publish directly from the repository root.
 
+## Free cloud build
+
+The `iOS Capacitor Build` GitHub Actions workflow runs on a standard `macos-26` runner. It installs the pinned dependencies, syncs the PWA into Capacitor, runs the native packaging checks, resolves Swift packages, and compiles an unsigned iOS Simulator build.
+
+The workflow runs when relevant files change on this branch, on relevant pull requests to `main`, after relevant changes reach `main`, or when started manually from the repository's Actions page. It uses read-only repository permissions and does not receive Apple credentials.
+
+The current public repository can use GitHub's standard macOS runner without a cloud-compute charge. Do not switch this workflow to a GitHub larger runner unless paid compute is intentionally required.
+
+## App Store signing stage
+
+The unsigned cloud build verifies that the generated Xcode project compiles, but Apple signing and App Store upload require an active Apple Developer membership. When that account is ready, create a protected GitHub environment named `app-store` and store the Apple Team ID, App Store Connect API key ID, issuer ID, and private `.p8` key as encrypted environment secrets. Add the release workflow only after those values exist; never commit them to the repository.
+
 ## Build and submit on macOS
 
 1. Install Xcode 26 or newer and its command-line tools.
