@@ -152,6 +152,30 @@ function formatHeaderDate() {
     }).format(new Date()).toUpperCase();
 }
 
+function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    }[character]));
+}
+
+function dashboardHeading() {
+    const profile = readObject("level_up_nutrition_profile");
+    const name = String(profile?.displayName || "").trim().replace(/\s+/g, " ").slice(0, 40);
+    if (!name) return "DASHBOARD";
+
+    const hour = new Date().getHours();
+    const greeting = hour < 12
+        ? "Good morning"
+        : hour < 18
+            ? "Good afternoon"
+            : "Good evening";
+    return `${greeting}, ${escapeHtml(name)}`;
+}
+
 function enhanceHeader(welcome) {
     if (welcome.dataset.commandCenterHeader === "true") return;
     welcome.dataset.commandCenterHeader = "true";
@@ -159,7 +183,7 @@ function enhanceHeader(welcome) {
     welcome.innerHTML = `
         <div>
             <span class="dashboard-command-date">${formatHeaderDate()}</span>
-            <h2>DASHBOARD</h2>
+            <h2>${dashboardHeading()}</h2>
             <p>Training, recovery, and progress at a glance.</p>
         </div>
     `;
