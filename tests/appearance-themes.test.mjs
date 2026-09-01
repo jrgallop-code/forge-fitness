@@ -40,6 +40,7 @@ test("theme stylesheet separates accents from semantic status colours", async ()
     assert.match(styles, new RegExp(`html\\[data-theme="${theme}"\\]`));
   }
   assert.match(styles, /--accent:/);
+  assert.match(styles, /--text-secondary:/);
   assert.match(styles, /--success:#22c55e/);
   assert.match(styles, /--warning:#f59e0b/);
   assert.match(styles, /--danger:#ef4444/);
@@ -111,12 +112,12 @@ test("builder, priority, and training analytics surfaces use live theme tokens",
 
 test("theme text tokens meet WCAG AA contrast on cards", () => {
   const palettes = [
-    ["Level Up", "#1c1c22", "#f7f7f8", "#9b9ba5", "#ff6670", "#df141e", "#ffffff"],
-    ["Arctic", "#ffffff", "#10203a", "#647188", "#0e4fb3", "#1769e0", "#ffffff"],
-    ["Pure", "#ffffff", "#202022", "#747478", "#171719", "#171719", "#ffffff"],
-    ["Ocean", "#ffffff", "#123252", "#61798f", "#0676ad", "#0798d9", "#07233f"],
-    ["Midnight", "#132238", "#f5f8ff", "#92a3bd", "#7eb0ff", "#3478f6", "#050b17"],
-    ["Slate", "#1d2630", "#eef3f7", "#9aa8b4", "#a9c8e4", "#7396b8", "#071018"]
+    ["Level Up", "#1c1c22", "#18181d", "#f7f7f8", "#c4c4ca", "#9b9ba5", "#ff6670", "#df141e", "#ffffff"],
+    ["Arctic", "#ffffff", "#edf3fb", "#10203a", "#34445f", "#526079", "#0e4fb3", "#1769e0", "#ffffff"],
+    ["Pure", "#ffffff", "#ededeb", "#202022", "#454549", "#626267", "#171719", "#171719", "#ffffff"],
+    ["Ocean", "#ffffff", "#e3f4ff", "#123252", "#344f68", "#506b82", "#0676ad", "#0798d9", "#07233f"],
+    ["Midnight", "#132238", "#101d31", "#f5f8ff", "#bac7da", "#92a3bd", "#7eb0ff", "#3478f6", "#050b17"],
+    ["Slate", "#1d2630", "#1a222c", "#eef3f7", "#bec9d2", "#9aa8b4", "#a9c8e4", "#7396b8", "#071018"]
   ];
   const luminance = hex => {
     const channels = [1, 3, 5].map(index => Number.parseInt(hex.slice(index, index + 2), 16) / 255);
@@ -127,12 +128,35 @@ test("theme text tokens meet WCAG AA contrast on cards", () => {
     const values = [luminance(first), luminance(second)].sort((a, b) => b - a);
     return (values[0] + .05) / (values[1] + .05);
   };
-  for (const [name, card, text, muted, accentText, accent, accentContrast] of palettes) {
+  for (const [name, card, raised, text, secondary, muted, accentText, accent, accentContrast] of palettes) {
     assert.ok(ratio(card, text) >= 4.5, `${name} primary text contrast`);
-    assert.ok(ratio(card, muted) >= 4.5, `${name} secondary text contrast`);
+    assert.ok(ratio(card, secondary) >= 4.5, `${name} secondary text contrast`);
+    assert.ok(ratio(raised, secondary) >= 4.5, `${name} secondary text on raised surfaces`);
+    assert.ok(ratio(card, muted) >= 4.5, `${name} muted text contrast`);
+    assert.ok(ratio(raised, muted) >= 4.5, `${name} muted text on raised surfaces`);
     assert.ok(ratio(card, accentText) >= 4.5, `${name} accent text contrast`);
     assert.ok(ratio(accent, accentContrast) >= 4.5, `${name} filled control contrast`);
   }
+});
+
+test("saved plans and generated workout rows never use fixed light text", async () => {
+  const [styles, planRows, planDetails] = await Promise.all([
+    read("css/appearance-themes.css"),
+    read("css/workout-plan-rows.css"),
+    read("css/workout-plan-details.css")
+  ]);
+  for (const selector of [
+    "#saved-plan-list .preset-plan-card h4",
+    ".plan-detail-exercise-name",
+    ".smart-review-day summary>strong",
+    ".smart-review-day p>span"
+  ]) {
+    assert.ok(styles.includes(selector), `${selector} should use theme typography`);
+  }
+  assert.match(planRows, /color:var\(--heading/);
+  assert.match(planRows, /color:var\(--text-secondary/);
+  assert.match(planDetails, /color:var\(--heading/);
+  assert.match(planDetails, /color:var\(--text-secondary/);
 });
 
 test("production entry points load the theme before paint and bust caches", async () => {
@@ -141,11 +165,11 @@ test("production entry points load the theme before paint and bust caches", asyn
   ]);
   assert.match(html, /level_up_appearance_settings/);
   assert.ok(html.indexOf("level_up_appearance_settings") < html.indexOf("css/styles.css"));
-  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-4/);
+  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-5/);
   assert.match(html, /js\/app\.js\?v=appearance-themes-2/);
   assert.match(html, /getHours\(\)/);
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-2/);
   assert.match(app, /router\.js\?v=appearance-themes-2/);
   assert.match(router, /more-ui-v2\.js\?v=appearance-themes-2/);
-  assert.match(worker, /2026-09-01-91/);
+  assert.match(worker, /2026-09-01-92/);
 });
