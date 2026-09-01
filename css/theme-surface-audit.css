@@ -646,3 +646,254 @@ html[data-theme] .cardio-notes-toggle {
     color: var(--text) !important;
     -webkit-text-fill-color: var(--text) !important;
 }
+
+/*
+ * Onboarding is theme-live: choosing an appearance updates the open flow before
+ * the user continues. Keep this final layer authoritative over the older native,
+ * granular-unit, muscle-card, and late-injected install/split styles.
+ */
+html[data-theme] .levelup-onboarding {
+    background: color-mix(in srgb, var(--bg) 96%, transparent) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] .levelup-onboarding-shell {
+    border-color: var(--line) !important;
+    background: var(--bg) !important;
+    color: var(--text) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+html[data-theme] .levelup-onboarding :is(
+    .onboarding-screen h1,
+    .onboarding-screen h2,
+    .onboarding-screen h3,
+    .onboarding-option strong,
+    .onboarding-unit-row > strong,
+    .onboarding-exercise-row strong,
+    .onboarding-summary strong,
+    .onboarding-nutrition-preview strong,
+    .onboarding-install-copy h3,
+    .split-selected-copy strong
+) {
+    color: var(--heading) !important;
+    -webkit-text-fill-color: var(--heading) !important;
+    text-shadow: none !important;
+}
+
+html[data-theme] .levelup-onboarding :is(
+    .levelup-onboarding-topbar strong,
+    .levelup-onboarding-skip,
+    .onboarding-screen > p,
+    .onboarding-option small,
+    .onboarding-helper,
+    .onboarding-profile-grid label,
+    .onboarding-exercise-row small,
+    .onboarding-summary span,
+    .onboarding-nutrition-preview span,
+    .onboarding-acquisition-other,
+    .onboarding-install-copy p,
+    .onboarding-install-note,
+    .onboarding-install-dismiss
+) {
+    color: var(--muted) !important;
+    -webkit-text-fill-color: var(--muted) !important;
+    text-shadow: none !important;
+}
+
+html[data-theme] .levelup-onboarding .eyebrow {
+    color: var(--accent-text) !important;
+    -webkit-text-fill-color: var(--accent-text) !important;
+}
+
+html[data-theme] .levelup-onboarding-progress {
+    background: var(--line) !important;
+}
+
+html[data-theme] .levelup-onboarding-progress span {
+    background: var(--accent) !important;
+}
+
+html[data-theme] .levelup-onboarding :is(
+    .onboarding-option,
+    .onboarding-chip,
+    .onboarding-no-priority,
+    .onboarding-unit-row,
+    .onboarding-exercise-row,
+    .onboarding-summary > div,
+    .onboarding-nutrition-preview > div,
+    .onboarding-theme-card,
+    .onboarding-install-card
+) {
+    border-color: var(--card-border) !important;
+    background: var(--card) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    text-shadow: none !important;
+}
+
+html[data-theme] .levelup-onboarding :is(
+    .onboarding-unit-row button,
+    .onboarding-unit-choice button,
+    .onboarding-install-tab,
+    .onboarding-install-steps li
+) {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    text-shadow: none !important;
+}
+
+html[data-theme] .levelup-onboarding :is(
+    .onboarding-option.selected,
+    .onboarding-chip.selected,
+    .onboarding-no-priority.selected,
+    .onboarding-unit-row button.selected,
+    .onboarding-unit-choice button.selected,
+    .onboarding-install-tab.selected
+) {
+    border-color: var(--accent) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+    -webkit-text-fill-color: var(--accent-text) !important;
+    box-shadow: inset 0 0 0 1px var(--accent-glow) !important;
+}
+
+html[data-theme] .levelup-onboarding .onboarding-theme-card.selected {
+    border-color: var(--accent) !important;
+    background: var(--card) !important;
+    box-shadow: 0 0 0 2px var(--accent-soft), var(--shadow) !important;
+}
+
+html[data-theme] .levelup-onboarding .onboarding-theme-check {
+    background: var(--accent) !important;
+    color: var(--accent-contrast) !important;
+    -webkit-text-fill-color: var(--accent-contrast) !important;
+}
+
+html[data-theme] .levelup-onboarding :is(
+    .onboarding-profile-grid input,
+    .onboarding-profile-grid select,
+    .onboarding-exercise-picker input,
+    .onboarding-acquisition-other input
+) {
+    border-color: var(--line) !important;
+    background: var(--input-bg) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    box-shadow: none !important;
+}
+
+html[data-theme] .levelup-onboarding :is(input, textarea)::placeholder {
+    color: var(--muted) !important;
+    -webkit-text-fill-color: var(--muted) !important;
+    opacity: 1 !important;
+}
+
+html[data-theme] .levelup-onboarding select option {
+    background: var(--input-bg) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] .levelup-onboarding :is(.onboarding-selected-exercise, .onboarding-exercise-row b) {
+    border-color: color-mix(in srgb, var(--accent) 36%, var(--line)) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+    -webkit-text-fill-color: var(--accent-text) !important;
+}
+
+html[data-theme] .levelup-onboarding-footer {
+    border-color: var(--nav-border) !important;
+    background: var(--nav-bg) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] .levelup-onboarding :is(.primary-btn, [data-onboarding-next]) {
+    border-color: var(--accent) !important;
+    background: var(--accent) !important;
+    color: var(--accent-contrast) !important;
+    -webkit-text-fill-color: var(--accent-contrast) !important;
+    box-shadow: 0 8px 24px var(--accent-glow) !important;
+}
+
+html[data-theme] .levelup-onboarding :is(.secondary-btn, [data-onboarding-back]) {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    box-shadow: none !important;
+}
+
+html[data-theme] .levelup-onboarding button:disabled {
+    opacity: .42 !important;
+    cursor: not-allowed !important;
+}
+
+/* Muscle-priority cards are an onboarding-owned visualization and control. */
+html[data-theme] .levelup-onboarding .muscle-priority-card {
+    border-color: var(--card-border) !important;
+    background: var(--card) !important;
+    color: var(--text) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+html[data-theme] .levelup-onboarding .muscle-priority-card.selected {
+    border-color: var(--accent) !important;
+    background: linear-gradient(180deg, var(--accent-soft), var(--card)) !important;
+    box-shadow: inset 0 0 0 1px var(--accent-glow), var(--shadow) !important;
+}
+
+html[data-theme] .levelup-onboarding .muscle-priority-visual .form-guide-muscle-highlight {
+    fill: var(--accent) !important;
+    filter: drop-shadow(0 0 5px var(--accent-glow)) !important;
+}
+
+html[data-theme] .levelup-onboarding .muscle-priority-label {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    text-shadow: none !important;
+}
+
+html[data-theme] .levelup-onboarding .muscle-priority-card.selected .muscle-priority-label {
+    border-color: color-mix(in srgb, var(--accent) 56%, var(--line)) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+    -webkit-text-fill-color: var(--accent-text) !important;
+}
+
+html[data-theme] .levelup-onboarding .muscle-priority-check {
+    background: var(--accent) !important;
+    color: var(--accent-contrast) !important;
+    -webkit-text-fill-color: var(--accent-contrast) !important;
+}
+
+html[data-theme] .levelup-onboarding .muscle-priority-card:focus-visible {
+    outline-color: var(--accent) !important;
+}
+
+/* Completion install help is injected after page CSS, so keep specificity high. */
+html[data-theme] .levelup-onboarding .onboarding-install-card {
+    background: linear-gradient(180deg, var(--accent-soft), var(--card)) !important;
+}
+
+html[data-theme] .levelup-onboarding .onboarding-install-icon,
+html[data-theme] .levelup-onboarding .onboarding-install-step-number {
+    border-color: color-mix(in srgb, var(--accent) 36%, var(--line)) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+    -webkit-text-fill-color: var(--accent-text) !important;
+}
+
+html[data-theme] .levelup-onboarding .onboarding-install-installed {
+    border-color: color-mix(in srgb, var(--success) 36%, var(--line)) !important;
+    background: color-mix(in srgb, var(--success) 9%, var(--card)) !important;
+    color: var(--success-text) !important;
+    -webkit-text-fill-color: var(--success-text) !important;
+}
+
+html[data-theme] .levelup-onboarding .onboarding-install-installed-dot {
+    background: var(--success) !important;
+}

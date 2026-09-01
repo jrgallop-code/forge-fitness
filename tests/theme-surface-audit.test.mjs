@@ -15,7 +15,7 @@ const worker = fs.readFileSync('service-worker.js', 'utf8');
 
 test('theme surface audit loads after the appearance stylesheet', () => {
   const appearance = html.indexOf('css/appearance-themes.css');
-  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-8');
+  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-9');
   assert.ok(appearance >= 0);
   assert.ok(audit > appearance);
 });
@@ -142,5 +142,5 @@ test('dashboard workout breakdown action stays legible in every appearance', () 
 });
 
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-119/);
+  assert.match(worker, /2026-09-01-120/);
 });
