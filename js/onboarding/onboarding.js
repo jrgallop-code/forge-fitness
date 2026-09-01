@@ -4,7 +4,7 @@ import { getAllExercises } from "../workouts/exercise-library.js?v=onboarding-1"
 import { getTrainingPreferences, saveTrainingPreferences, markOnboardingComplete, markOnboardingSkipped, onboardingIsHandled } from "../core/training-preferences.js?v=onboarding-1";
 import { getUnitPreferences, setUnitPreferences, poundsToKilograms, kilogramsToPounds, inchesToCentimeters, centimetersToInches } from "../core/unit-system.js?v=granular-units-1";
 import { renderMusclePriorityChoice } from "../workouts/muscle-priority-visual.js?v=female-back-regions-1";
-import { initializeAcquisitionTracking, saveReportedSource, trackProductEvent } from "../analytics/acquisition.js?v=workout-source-stats-1";
+import { initializeAcquisitionTracking, saveReportedSource, trackProductEvent } from "../analytics/acquisition.js?v=workout-analytics-reconcile-1";
 
 const WEIGHT_KEY = "forge_weight_entries";
 const ONBOARDING_TOTAL = 7;

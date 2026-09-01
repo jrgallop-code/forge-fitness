@@ -61,6 +61,9 @@ test("owner analytics reports current, returning, food, and workout usage", asyn
     assert.match(styles, /admin-analytics-series--workouts/);
     assert.match(worker, /people: people\?\.results/);
     assert.match(worker, /u\.display_name/);
+    assert.match(worker, /AS latest_activity_at/);
+    assert.match(worker, /ORDER BY latest_activity_at DESC/);
+    assert.match(worker, /LIMIT 500/);
     assert.match(admin, /Who logged activity/);
     assert.match(admin, /person\.display_name/);
     assert.match(admin, /statPeople\("Food loggers"/);
@@ -88,6 +91,11 @@ test("completed workouts report and summarize how they were created", async () =
     assert.match(session, /classifyWorkoutSource\(plan\)/);
     assert.match(session, /workoutSource: completed\.workoutSource/);
     assert.match(tracking, /workoutSource:detail\.workoutSource/);
+    assert.match(tracking, /forge_workout_sessions/);
+    assert.match(tracking, /reconcileRecentWorkoutEvents/);
+    assert.match(tracking, /level_up_workout_usage_reconciled_v1/);
+    assert.match(tracking, /reconciled:true/);
+    assert.match(tracking, /countWorkingSets\(session\)/);
     assert.match(worker, /workoutSources: workoutSources\?\.results/);
     assert.match(worker, /legacy_unknown/);
     assert.match(admin, /How workouts were created/);
