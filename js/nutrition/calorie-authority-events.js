@@ -1,5 +1,5 @@
 import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=review-synced-tdee-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=independent-tdee-staged-target-1";
 import { markMaintenanceCheckInReviewed } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
 
 const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";

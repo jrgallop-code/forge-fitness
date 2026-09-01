@@ -1,9 +1,9 @@
 import { GOAL_PRESETS, calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile, getNutritionGoal, saveNutritionGoal, getNutritionPlan, setCurrentCalories, syncCalculatedCalories } from "./nutrition-storage.js?v=calorie-authority-recovery-1";
 import { getActiveNutritionPhase, getNutritionPhaseHistory, getActivePhaseMetrics, getPhaseDayNumber, saveNutritionPhase } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=review-synced-tdee-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=independent-tdee-staged-target-1";
 import { clearPendingMaintenanceReview, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, readPendingMaintenanceReview, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
-import { buildCoordinatedWeeklyUpdate, clearAdjustmentHold, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=review-synced-tdee-1";
+import { buildCoordinatedWeeklyUpdate, clearAdjustmentHold, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=independent-tdee-staged-target-1";
 
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const LEGACY_CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";

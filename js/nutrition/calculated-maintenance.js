@@ -116,39 +116,6 @@ export function getCalculatedMaintenanceEstimate(profileEstimate = null) {
     return stabilized.estimate;
 }
 
-export function buildReviewedMaintenanceSnapshot({ maintenanceCalories, targetCalories = null, targetRateLbPerWeek = null, evidence = {}, source = "weekly-calorie-review", today = new Date() } = {}) {
-    const maintenance = Number(maintenanceCalories);
-    if (!Number.isFinite(maintenance) || maintenance <= 0) return null;
-    const now = new Date(today);
-    now.setHours(12, 0, 0, 0);
-    const roundedMaintenance = Math.round(maintenance / 25) * 25;
-    const target = targetCalories === null || targetCalories === undefined || targetCalories === ""
-        ? NaN
-        : Number(targetCalories);
-    const targetRate = targetRateLbPerWeek === null || targetRateLbPerWeek === undefined || targetRateLbPerWeek === ""
-        ? NaN
-        : Number(targetRateLbPerWeek);
-    return {
-        reviewedAt: dateKey(now),
-        estimate: {
-            ...(evidence && typeof evidence === "object" ? evidence : {}),
-            maintenanceCalories: roundedMaintenance,
-            uncappedMaintenanceCalories: roundedMaintenance,
-            reviewSynchronized: true,
-            reviewSource: source,
-            reviewTargetCalories: Number.isFinite(target) && target > 0 ? Math.round(target) : null,
-            reviewTargetRateLbPerWeek: Number.isFinite(targetRate) ? targetRate : null
-        }
-    };
-}
-
-export function commitReviewedMaintenanceEstimate(options = {}) {
-    const snapshot = buildReviewedMaintenanceSnapshot(options);
-    if (!snapshot) return null;
-    localStorage.setItem(WEEKLY_ESTIMATE_KEY, JSON.stringify(snapshot));
-    return snapshot;
-}
-
 export function stabilizeMaintenanceEstimate({ liveEstimate, previousEstimate = null, snapshot = null, today = new Date() } = {}) {
     const live = liveEstimate || {};
     if (!Number.isFinite(Number(live.maintenanceCalories))) {
@@ -158,6 +125,21 @@ export function stabilizeMaintenanceEstimate({ liveEstimate, previousEstimate = 
     const now = new Date(today);
     now.setHours(12, 0, 0, 0);
     const todayKey = dateKey(now);
+    // A short-lived release incorrectly back-solved TDEE from an accepted
+    // calorie target. TDEE must remain an independent intake-and-weight
+    // estimate, so replace that snapshot immediately while leaving the user's
+    // accepted target untouched.
+    if (snapshot?.estimate?.reviewSynchronized === true) {
+        const nextSnapshot = {
+            reviewedAt: todayKey,
+            estimate: {
+                ...live,
+                uncappedMaintenanceCalories: Number(live.maintenanceCalories),
+                independentTdeeRestored: true
+            }
+        };
+        return { estimate: decorateStableEstimate(nextSnapshot, live, now, false), snapshot: nextSnapshot };
+    }
     const validStored = snapshot
         && Number.isFinite(Number(snapshot?.estimate?.maintenanceCalories))
         && /^\d{4}-\d{2}-\d{2}$/.test(String(snapshot.reviewedAt || ""));

@@ -1,9 +1,9 @@
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=review-synced-tdee-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=independent-tdee-staged-target-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
 import { getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
-import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=review-synced-tdee-1";
+import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=independent-tdee-staged-target-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
@@ -100,16 +100,14 @@ function profileMaintenance() {
     catch { return null; }
 }
 
-function maintenanceCard(estimate, checkIn) {
+function maintenanceCard(estimate, checkIn, targets) {
     const result = estimate.maintenanceCalories;
     const display = Number.isFinite(result) ? formatNumber(result) : Number.isFinite(estimate.profileEstimate) ? formatNumber(estimate.profileEstimate) : "—";
-    const source = estimate.reviewSynchronized
-        ? "Synchronized with your last accepted Weekly Calorie Review"
-        : Number.isFinite(result)
-            ? "Personalized from your logged results"
-            : Number.isFinite(estimate.profileEstimate)
-                ? "Showing the generic Body Profile formula while Level Up gathers results"
-                : "Add your Body Profile while Level Up gathers results";
+    const source = Number.isFinite(result)
+        ? "Calculated independently from your logged intake and weight trend"
+        : Number.isFinite(estimate.profileEstimate)
+            ? "Showing the generic Body Profile formula while Level Up gathers results"
+            : "Add your Body Profile while Level Up gathers results";
     const signedRate = Number.isFinite(estimate.weightRateLbPerWeek) ? `${estimate.weightRateLbPerWeek > 0 ? "+" : ""}${estimate.weightRateLbPerWeek.toFixed(2)} lb/week` : "Need more weigh-ins";
     const correction = Number.isFinite(estimate.energyCorrection) ? `${estimate.energyCorrection > 0 ? "+" : ""}${formatNumber(estimate.energyCorrection)} cal/day` : "—";
     const progress = Math.min(100, Math.round(Math.min(1, estimate.foodDays / 15) * .55 * 100 + Math.min(1, estimate.weighIns / 9) * .45 * 100));
@@ -119,9 +117,27 @@ function maintenanceCard(estimate, checkIn) {
             : `Held steady between weekly reviews · next review in ${estimate.daysUntilReview} day${estimate.daysUntilReview === 1 ? "" : "s"}.`
         : "";
     const uncapped = Number(estimate.uncappedMaintenanceCalories);
+    const currentTarget = Number(targets?.calories);
+    const rawGoalRate = targets?.phase?.targetWeeklyRate;
+    const goalRate = rawGoalRate === null || rawGoalRate === undefined || rawGoalRate === ""
+        ? null
+        : Number(rawGoalRate);
+    const goalDailyAdjustment = Number.isFinite(goalRate) ? Math.round(goalRate * 500 / 25) * 25 : null;
+    const fullGoalTarget = Number.isFinite(result) && Number.isFinite(goalDailyAdjustment)
+        ? Math.round((Number(result) + goalDailyAdjustment) / 25) * 25
+        : null;
+    const staged = Number.isFinite(currentTarget) && Number.isFinite(fullGoalTarget) && Math.round(currentTarget) !== fullGoalTarget;
+    const targetContext = Number.isFinite(currentTarget) && Number.isFinite(fullGoalTarget)
+        ? `<div class="calculated-maintenance-target-context">
+            <span><small>${staged ? "CURRENT STAGED TARGET" : "CURRENT TARGET"}</small><strong>${formatNumber(currentTarget)} cal/day</strong></span>
+            <span><small>FULL GOAL-PACING ESTIMATE</small><strong>${formatNumber(fullGoalTarget)} cal/day</strong></span>
+            ${staged ? `<p>Your ${formatNumber(currentTarget)} target is being held as a staged step. It does not change the independently calculated TDEE above.</p>` : ""}
+        </div>`
+        : "";
     return `<article class="calorie-stat-card calculated-maintenance-card is-${estimate.status}">
         <div class="calculated-maintenance-head"><span><small>LEVEL UP CALCULATED TDEE</small><strong>${display} <em>cal/day</em></strong></span><b>${estimate.label}</b></div>
         <p>${source}. ${estimate.message} ${weeklyStatus}</p>
+        ${targetContext}
         ${estimate.status === "learning" || estimate.status === "early" || estimate.status === "preliminary" ? `<div class="calculated-maintenance-progress"><i><b style="width:${progress}%"></b></i><span>Confidence improves with complete logs · ${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</span></div>` : ""}
         <details><summary>How this was calculated <span>›</span></summary><div class="calculated-maintenance-breakdown">
             <div><span>Average intake</span><strong>${Number.isFinite(estimate.averageIntake) ? `${formatNumber(estimate.averageIntake)} cal/day` : "—"}</strong></div>
@@ -259,7 +275,7 @@ function renderStats(panel) {
             <div class="calorie-stats-ranges" aria-label="Stats date range">
                 ${Object.entries({7:"7D",28:"4W",84:"12W"}).map(([value,label]) => `<button type="button" class="${count === Number(value) ? "active" : ""}" data-calorie-stats-range="${value}">${label}</button>`).join("")}
             </div>
-            ${maintenanceCard(maintenance, checkIn)}
+            ${maintenanceCard(maintenance, checkIn, targets)}
             <article class="calorie-stat-card calorie-stat-week">
                 <div class="calorie-stat-title"><span><small>AVERAGE CALORIES</small><strong>${averageDayCount ? formatNumber(avgCalories) : "—"}</strong></span><b>${averageDayCount} of ${count} days in average</b></div>
                 <div class="calorie-stat-bars ${displayDays.length === 7 ? "is-seven" : ""}">${bars(displayDays, targets.calories)}</div>
