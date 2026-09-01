@@ -11,7 +11,7 @@ import { renderProfileAppearance, initializeProfileAppearance } from "./profile-
 import { renderAdaptiveGuidanceSettings, initializeAdaptiveGuidanceSettings } from "./adaptive-guidance-settings.js?v=deload-workout-preview-1";
 import { openLessonLibrary } from "./learn-level-up.js?v=learn-level-up-2";
 import { openExploreResearch } from "./explore-research.js?v=explore-research-2";
-import { appearanceMenuIcon, renderAppearanceSettings, initializeAppearanceSettings } from "./appearance-settings.js?v=appearance-themes-2";
+import { appearanceMenuIcon, renderAppearanceSettings, initializeAppearanceSettings } from "./appearance-settings.js?v=more-menu-icons-1";
 
 const ICONS = {
     appearance: appearanceMenuIcon(),

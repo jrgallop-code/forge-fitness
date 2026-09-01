@@ -8,7 +8,7 @@ const worker = fs.readFileSync('service-worker.js', 'utf8');
 
 test('theme surface audit loads after the appearance stylesheet', () => {
   const appearance = html.indexOf('css/appearance-themes.css');
-  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-2');
+  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-3');
   assert.ok(appearance >= 0);
   assert.ok(audit > appearance);
 });
@@ -59,6 +59,14 @@ test('rest alarm follows selected theme instead of fixed black and red styling',
   assert.match(styles, /color:\s*var\(--success-text\)\s*!important/);
 });
 
+test('More SVGs match main navigation contrast and Appearance uses a clear palette', () => {
+  assert.match(styles, /\.more-menu-group \.more-menu-icon/);
+  assert.match(styles, /color:\s*var\(--theme-icon-muted\)\s*!important/);
+  assert.match(styles, /\.more-appearance-icon/);
+  assert.match(styles, /stroke:\s*currentColor\s*!important/);
+  assert.match(styles, /\.more-appearance-icon circle/);
+});
+
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-103/);
+  assert.match(worker, /2026-09-01-104/);
 });

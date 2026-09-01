@@ -32,6 +32,8 @@ test("More opens a dedicated live Appearance selector", async () => {
   assert.match(settings, /active \? " is-selected"/);
   assert.match(settings, /applyAppearanceTheme\(theme\)/);
   assert.match(settings, /Training colours stay meaningful/);
+  assert.match(settings, /more-appearance-icon/);
+  assert.match(settings, /<circle cx="7\.2" cy="11\.8" r="1"\/>/);
 });
 
 test("theme stylesheet separates accents from semantic status colours", async () => {
@@ -250,6 +252,6 @@ test("production entry points load the theme before paint and bust caches", asyn
   assert.match(html, /getHours\(\)/);
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-2/);
   assert.match(app, /router\.js\?v=whats-new-1/);
-  assert.match(router, /more-ui-v2\.js\?v=appearance-themes-2/);
-  assert.match(worker, /2026-09-01-103/);
+  assert.match(router, /more-ui-v2\.js\?v=more-menu-icons-1/);
+  assert.match(worker, /2026-09-01-104/);
 });

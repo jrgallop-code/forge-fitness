@@ -1,6 +1,6 @@
 import { APPEARANCE_THEMES, applyAppearanceTheme, getAppearanceTheme, resolveAppearanceTheme } from "../core/appearance-theme.js?v=appearance-themes-2";
 
-const PALETTE_ICON = `<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0 0 18h1.5a2.5 2.5 0 0 0 0-5H12a2 2 0 0 1 0-4h3.2A5.8 5.8 0 0 0 21 6.2C18.8 4.2 15.8 3 12 3Zm-4.5 7A1.5 1.5 0 1 1 9 8.5 1.5 1.5 0 0 1 7.5 10Zm3-3A1.5 1.5 0 1 1 12 5.5 1.5 1.5 0 0 1-1.5 1.5Zm5 1A1.5 1.5 0 1 1 17 6.5 1.5 1.5 0 0 1-1.5 1.5Z"/></svg>`;
+const PALETTE_ICON = `<svg class="app-silhouette-icon more-appearance-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1.3a2.3 2.3 0 0 0 0-4.6H12a1.8 1.8 0 0 1 0-3.6h3.1A5.9 5.9 0 0 0 21 6.9C18.9 4.4 15.8 3 12 3Z"/><circle cx="7.2" cy="11.8" r="1"/><circle cx="8.7" cy="7.7" r="1"/><circle cx="13" cy="6.2" r="1"/><circle cx="16.8" cy="8.4" r="1"/></svg>`;
 
 export function appearanceMenuIcon() {
     return PALETTE_ICON;
