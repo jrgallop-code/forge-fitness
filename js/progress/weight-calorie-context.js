@@ -14,6 +14,11 @@ const DAILY_WEIGHT = "rgba(126,194,151,.82)";
 const DAILY_WEIGHT_LINE = "rgba(112,181,137,.34)";
 const CALORIE_COLOR = "#ff5a5f";
 const CALORIE_FADE = "rgba(255,90,95,.28)";
+
+function themeColor(token, fallback) {
+    return getComputedStyle(document.documentElement).getPropertyValue(token).trim() || fallback;
+}
+
 const RANGE_OPTIONS = {
     "1w": { days: 7 },
     "1m": { days: 30 },
@@ -445,9 +450,9 @@ function drawCalorieChart(canvas, state, activeDate) {
     const yWeight = weight => padding.top + ((maximum - displayMass(weight)) / Math.max(.001, maximum - minimum)) * chartHeight;
     const yCalories = calories => padding.top + chartHeight - (calories / calorieMax) * chartHeight;
 
-    context.strokeStyle = "rgba(255,255,255,.055)";
+    context.strokeStyle = themeColor("--line", "rgba(255,255,255,.055)");
     context.lineWidth = 1;
-    context.fillStyle = "#777780";
+    context.fillStyle = themeColor("--muted", "#777780");
     context.font = "800 9px Arial";
     context.textBaseline = "middle";
     for (let row = 0; row <= 2; row += 1) {
@@ -524,7 +529,7 @@ function drawCalorieChart(canvas, state, activeDate) {
 
     if (activeDate) {
         const x = xPosition(activeDate);
-        context.strokeStyle = "rgba(255,255,255,.5)";
+        context.strokeStyle = themeColor("--muted", "rgba(255,255,255,.5)");
         context.setLineDash([4, 4]);
         context.beginPath();
         context.moveTo(x, padding.top);
@@ -632,7 +637,7 @@ function datesBetween(startDate, endDate) {
 function drawDateLabels(context, series, xPosition, y, range) {
     const desired = range === "1w" ? 7 : 6;
     const step = Math.max(1, Math.ceil(series.length / desired));
-    context.fillStyle = "#777780";
+    context.fillStyle = themeColor("--muted", "#777780");
     context.font = "800 8px Arial";
     context.textAlign = "center";
     series.forEach((day, index) => {

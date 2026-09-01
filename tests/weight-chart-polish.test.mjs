@@ -48,6 +48,6 @@ test("published app refreshes the full weight period summary module chain", () =
     assert.match(publishedEntry, /js\/app\.js\?v=weight-period-summary-2/);
     assert.match(appEntry, /core\/router\.js\?v=weight-period-summary-2/);
     assert.match(routerSource, /progress\/progress-ui\.js\?v=weight-period-summary-2/);
-    assert.match(publishedEntry, /weight-trend-chart\.js\?v=period-date-format-1/);
+    assert.match(publishedEntry, /weight-trend-chart\.js\?v=period-date-format-2/);
     assert.match(serviceWorker, /CACHE_VERSION = "2026-08-31-33"/);
 });

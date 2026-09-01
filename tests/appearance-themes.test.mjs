@@ -194,17 +194,38 @@ test("form-guide SVGs and full-screen shells use theme-safe surfaces", async () 
   assert.match(styles, /html\[data-theme-mode="light"\] \.activity-calendar-page\{background:var\(--bg\)!important/);
 });
 
+test("Arctic overlays, form-guide copy, and canvas labels retain contrast", async () => {
+  const [styles, trend, calories, carbs] = await Promise.all([
+    read("css/appearance-themes.css"),
+    read("js/progress/weight-trend-chart.js"),
+    read("js/progress/weight-calorie-context.js"),
+    read("js/progress/weight-chart-carousel-v2.js")
+  ]);
+  for (const selector of [
+    ".weight-point-tooltip",
+    ".weight-calories-tooltip",
+    ".weight-calories-info>div",
+    "html[data-theme-mode=\"light\"] .exercise-guide-screen"
+  ]) assert.ok(styles.includes(selector), `${selector} should be contrast-safe`);
+  assert.match(styles, /\.weight-calories-tooltip \.is-calorie-value\{color:var\(--danger-text\)!important/);
+  assert.match(styles, /\.exercise-guide-screen :where\(p,li\)\{color:var\(--text-secondary\)!important/);
+  for (const source of [trend, calories, carbs]) {
+    assert.match(source, /themeColor\("--muted"/);
+    assert.match(source, /themeColor\("--line"/);
+  }
+});
+
 test("production entry points load the theme before paint and bust caches", async () => {
   const [html, app, router, worker] = await Promise.all([
     read("index.html"), read("js/app.js"), read("js/core/router.js"), read("service-worker.js")
   ]);
   assert.match(html, /level_up_appearance_settings/);
   assert.ok(html.indexOf("level_up_appearance_settings") < html.indexOf("css/styles.css"));
-  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-7/);
-  assert.match(html, /js\/app\.js\?v=appearance-themes-2/);
+  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-8/);
+  assert.match(html, /js\/app\.js\?v=appearance-themes-3/);
   assert.match(html, /getHours\(\)/);
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-2/);
-  assert.match(app, /router\.js\?v=appearance-themes-2/);
+  assert.match(app, /router\.js\?v=appearance-themes-3/);
   assert.match(router, /more-ui-v2\.js\?v=appearance-themes-2/);
-  assert.match(worker, /2026-09-01-94/);
+  assert.match(worker, /2026-09-01-95/);
 });

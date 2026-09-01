@@ -11,6 +11,11 @@ const DAILY_WEIGHT_LINE = "rgba(112, 181, 137, 0.34)";
 const DAILY_WEIGHT_POINT = "rgba(126, 194, 151, 0.82)";
 const DAILY_WEIGHT_POINT_RADIUS = 2.6;
 const RANGE_STYLE_ID = "level-up-weight-chart-range-styles";
+
+function themeColor(token, fallback) {
+    return getComputedStyle(document.documentElement).getPropertyValue(token).trim() || fallback;
+}
+
 const RANGE_OPTIONS = [
     { id: "1w", label: "1W", days: 7 },
     { id: "1m", label: "1M", days: 30 },
@@ -335,12 +340,12 @@ function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, chartW
     context.clearRect(0, 0, width, height);
 
     if (!entries.length) {
-        context.fillStyle = "#d6d6db";
+        context.fillStyle = themeColor("--text", "#d6d6db");
         context.font = "600 14px Arial";
         context.textAlign = "left";
         context.fillText(totalEntryCount ? "No weight entries in this range." : "Add a weight entry to display the graph.", 20, 50);
         if (totalEntryCount) {
-            context.fillStyle = "#8f8f98";
+            context.fillStyle = themeColor("--muted", "#8f8f98");
             context.font = "12px Arial";
             context.fillText("Choose a longer timeframe or add a new weigh-in.", 20, 72);
         }
@@ -389,7 +394,7 @@ function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, chartW
     };
     const yPosition = weight => padding.top + ((maximum - weight) / range) * chartHeight;
 
-    context.strokeStyle = "rgba(255, 255, 255, 0.055)";
+    context.strokeStyle = themeColor("--line", "rgba(255, 255, 255, 0.055)");
     context.lineWidth = 1;
     for (let index = 0; index <= 2; index++) {
         const y = padding.top + (chartHeight * index / 2);
@@ -399,14 +404,14 @@ function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, chartW
         context.stroke();
 
         const value = maximum - (range * index / 2);
-        context.fillStyle = "rgba(185, 185, 193, 0.72)";
+        context.fillStyle = themeColor("--muted", "rgba(185, 185, 193, 0.72)");
         context.font = "500 10px Arial";
         context.textAlign = "right";
         context.fillText(value.toFixed(1), padding.left - 8, y + 4);
     }
 
     const includeYear = (lastTime - firstTime) >= 300 * DAY_MS;
-    context.fillStyle = "rgba(185, 185, 193, 0.72)";
+    context.fillStyle = themeColor("--muted", "rgba(185, 185, 193, 0.72)");
     context.font = "500 10px Arial";
     context.textAlign = "left";
     context.fillText(formatDate(chartWindow.startDate, includeYear), padding.left, height - 16);
@@ -488,7 +493,7 @@ function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, chartW
 
     if (showGoal) {
         context.save();
-        context.strokeStyle = "rgba(255, 255, 255, 0.28)";
+        context.strokeStyle = themeColor("--line", "rgba(255, 255, 255, 0.28)");
         context.lineWidth = 1.25;
         context.setLineDash([5, 5]);
         context.beginPath();
@@ -500,9 +505,9 @@ function drawWeightTrendChart(canvas, entries, movingAverage, goalWeight, chartW
         const labelWidth = context.measureText(goalLabel).width + 12;
         const labelX = width - padding.right - labelWidth;
         const labelY = Math.max(padding.top + 2, yPosition(goalWeight) - 18);
-        context.fillStyle = "rgba(26, 26, 30, 0.9)";
+        context.fillStyle = themeColor("--surface-raised", "rgba(26, 26, 30, 0.9)");
         context.fillRect(labelX, labelY, labelWidth, 16);
-        context.fillStyle = "rgba(225, 225, 230, 0.82)";
+        context.fillStyle = themeColor("--heading", "rgba(225, 225, 230, 0.82)");
         context.textAlign = "center";
         context.fillText(goalLabel, labelX + labelWidth / 2, labelY + 11);
         context.restore();
