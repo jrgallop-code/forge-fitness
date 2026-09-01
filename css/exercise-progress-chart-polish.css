@@ -16,7 +16,7 @@
     inset: auto 12% -48px;
     height: 86px;
     border-radius: 50%;
-    background: rgba(255,49,57,.075);
+    background: var(--accent-glow, rgba(255,49,57,.075));
     filter: blur(34px);
     pointer-events: none;
 }
