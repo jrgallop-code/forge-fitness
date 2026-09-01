@@ -576,6 +576,15 @@ html[data-theme] .calculated-maintenance-progress>i>b {
     background: linear-gradient(90deg, var(--accent), var(--success)) !important;
 }
 
+/* Dashboard workout breakdown is a secondary action, not a disabled control. */
+html[data-theme] .performance-dashboard-card .performance-toggle {
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--line)) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+    -webkit-text-fill-color: var(--accent-text) !important;
+    text-shadow: none !important;
+}
+
 /* Install guidance and reminders are also late-injected app surfaces. */
 html[data-theme] :is(.more-install-page, .levelup-install-reminder) {
     border-color: var(--card-border) !important;
