@@ -170,5 +170,5 @@ test("known fixed-color source files are all represented in the final audit", ()
 });
 
 test("the onboarding theme correction advances the offline cache", () => {
-  assert.match(worker, /2026-09-01-121/);
+  assert.match(worker, /2026-09-01-122/);
 });
