@@ -15,7 +15,7 @@ const worker = fs.readFileSync('service-worker.js', 'utf8');
 
 test('theme surface audit loads after the appearance stylesheet', () => {
   const appearance = html.indexOf('css/appearance-themes.css');
-  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-10');
+  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-11');
   assert.ok(appearance >= 0);
   assert.ok(audit > appearance);
 });
@@ -151,6 +151,11 @@ test('smart-plan muscle bars and exercise icons use the selected appearance', ()
   assert.match(styles, /color:\s*inherit\s*!important/);
 });
 
+test('Level Up black restores the original green muscle-volume bars only for that appearance', () => {
+  assert.match(styles, /html\[data-theme="level-up"\] :is\(\.smart-set-breakdown-row > i > b, \.plan-muscle-breakdown-row > i > b\)\s*\{[^}]*background: #45cb75 !important/);
+  assert.doesNotMatch(styles, /html\[data-theme="(?:arctic|pure|ocean|midnight|slate|pulse)"\][^{]*\.plan-muscle-breakdown-row > i > b[^}]*#45cb75/);
+});
+
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-122/);
+  assert.match(worker, /2026-09-01-123/);
 });
