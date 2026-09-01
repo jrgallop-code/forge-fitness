@@ -135,5 +135,5 @@ test('cardio timer and previous-workout text follow every appearance theme', () 
 });
 
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-116/);
+  assert.match(worker, /2026-09-01-117/);
 });
