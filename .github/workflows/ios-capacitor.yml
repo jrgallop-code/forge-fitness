@@ -8,6 +8,7 @@ on:
       - ios/capacitor-foundation
     paths:
       - .github/workflows/ios-capacitor.yml
+      - .github/workflows/ios-app-store.yml
       - assets/**
       - capacitor.config.json
       - css/**
@@ -16,12 +17,16 @@ on:
       - js/**
       - package.json
       - package-lock.json
+      - tests/capacitor-ios-packaging.test.mjs
+      - tests/ios-cloud-build.test.mjs
+      - tests/native-app-shell.test.mjs
       - tools/build-native.mjs
   pull_request:
     branches:
       - main
     paths:
       - .github/workflows/ios-capacitor.yml
+      - .github/workflows/ios-app-store.yml
       - assets/**
       - capacitor.config.json
       - css/**
@@ -30,6 +35,9 @@ on:
       - js/**
       - package.json
       - package-lock.json
+      - tests/capacitor-ios-packaging.test.mjs
+      - tests/ios-cloud-build.test.mjs
+      - tests/native-app-shell.test.mjs
       - tools/build-native.mjs
 
 permissions:

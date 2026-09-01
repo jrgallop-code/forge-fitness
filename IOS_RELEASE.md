@@ -31,7 +31,18 @@ The current public repository can use GitHub's standard macOS runner without a c
 
 ## App Store signing stage
 
-The unsigned cloud build verifies that the generated Xcode project compiles, but Apple signing and App Store upload require an active Apple Developer membership. When that account is ready, create a protected GitHub environment named `app-store` and store the Apple Team ID, App Store Connect API key ID, issuer ID, and private `.p8` key as encrypted environment secrets. Add the release workflow only after those values exist; never commit them to the repository.
+The unsigned cloud build verifies that the generated Xcode project compiles, but Apple signing and App Store upload require an active Apple Developer membership. The manual `iOS App Store Release` workflow is prepared for this stage and uses a protected GitHub environment named `app-store`.
+
+Create these four encrypted secrets in the `app-store` environment:
+
+- `APPLE_TEAM_ID`: the 10-character Membership/Team ID from the Apple Developer membership page.
+- `APP_STORE_CONNECT_KEY_ID`: the Key ID shown for the App Store Connect team API key.
+- `APP_STORE_CONNECT_ISSUER_ID`: the Issuer ID shown on App Store Connect's Integrations page.
+- `APP_STORE_CONNECT_PRIVATE_KEY`: the complete contents of the downloaded `AuthKey_*.p8` file, including its BEGIN and END lines.
+
+The private key can be downloaded only once. Store it securely, add it directly to the encrypted GitHub environment secret, and never paste it into chat or commit it to the repository. The release workflow writes it to a temporary credential file, signs and exports the app with automatic signing, uploads the IPA to App Store Connect, and deletes the temporary key even if the workflow fails.
+
+Before the first release run, register `com.leveluphypertrophy.app` as the app's Bundle ID and create the matching Level Up app record in App Store Connect. Each release uses the GitHub Actions run number as an increasing iOS build number.
 
 ## Build and submit on macOS
 
