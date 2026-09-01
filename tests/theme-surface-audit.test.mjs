@@ -152,5 +152,5 @@ test('smart-plan muscle bars and exercise icons use the selected appearance', ()
 });
 
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-121/);
+  assert.match(worker, /2026-09-01-122/);
 });

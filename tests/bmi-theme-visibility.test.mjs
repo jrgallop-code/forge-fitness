@@ -26,5 +26,5 @@ test("BMI pointer remains visible in every appearance", () => {
 test("BMI visibility release is cache-busted", () => {
     assert.match(html, /bmi-card\.css\?v=bmi-theme-visibility-1/);
     assert.match(html, /theme-surface-audit\.css\?v=theme-surface-audit-10/);
-    assert.match(worker, /2026-09-01-121/);
+    assert.match(worker, /2026-09-01-122/);
 });
