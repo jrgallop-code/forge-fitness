@@ -29,7 +29,7 @@ if(content)new MutationObserver(()=>scheduleIconDecoration(()=>decorateAppIcons(
 navigate("home");
 decorateAppIcons(content||document);
 
-if("serviceWorker" in navigator){
+if("serviceWorker" in navigator && !window.Capacitor?.isNativePlatform?.()){
     // Update the service worker in the background, but do not reload the open
     // app when a new worker takes control. In-app navigation should never show
     // the startup splash because an update arrived while the user was logging.
