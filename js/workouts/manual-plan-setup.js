@@ -8,23 +8,23 @@ const css = `
 #plan-builder.manual-catalogue .manual-ex-head{display:none!important}
 #plan-builder.manual-catalogue .exercise-builder-list{display:block}
 #plan-builder.manual-catalogue .exercise-builder-row{display:none!important}
-#plan-builder.manual-catalogue .exercise-builder-row.manual-setup-current{display:grid!important;gap:9px;padding:12px 10px;margin:0;background:linear-gradient(145deg,#18181d,#111115);border:1px solid rgba(255,255,255,.08);border-radius:14px}
+#plan-builder.manual-catalogue .exercise-builder-row.manual-setup-current{display:grid!important;gap:9px;padding:12px 10px;margin:0;background:var(--card,#18181d);border:1px solid var(--card-border,rgba(255,255,255,.08));border-radius:14px;color:var(--text,#f7f7f8)}
 #plan-builder.manual-catalogue .exercise-recommendation{display:none!important}
 #plan-builder.manual-catalogue .manual-setup-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-#plan-builder.manual-catalogue .manual-setup-copy{min-width:0}.manual-setup-copy h4{margin:0;color:#f7f7f8;font-size:1.08rem;line-height:1.18}.manual-setup-copy small{display:block;margin-top:3px;color:#92929c;font-size:.7rem}
+#plan-builder.manual-catalogue .manual-setup-copy{min-width:0}.manual-setup-copy h4{margin:0;color:var(--heading,#f7f7f8);font-size:1.08rem;line-height:1.18}.manual-setup-copy small{display:block;margin-top:3px;color:var(--muted,#92929c);font-size:.7rem}
 #plan-builder.manual-catalogue .manual-setup-head button{min-height:32px;padding:6px 9px;border-radius:9px;font-size:.72rem}
-#plan-builder.manual-catalogue .manual-setup-target{margin:0;color:#a6a6af;font-size:.72rem}
-#plan-builder.manual-catalogue .manual-setup-sets{display:grid;grid-template-columns:auto 1fr auto;gap:7px;align-items:center;padding:9px;background:#0e0e11;border:1px solid rgba(255,255,255,.07);border-radius:10px}
-#plan-builder.manual-catalogue .manual-setup-sets button{min-height:36px;padding:6px 10px;border-radius:8px;font-weight:900}.manual-setup-set-count{text-align:center;color:#fff;font-size:.82rem;font-weight:800}
+#plan-builder.manual-catalogue .manual-setup-target{margin:0;color:var(--text-secondary,#a6a6af);font-size:.72rem}
+#plan-builder.manual-catalogue .manual-setup-sets{display:grid;grid-template-columns:auto 1fr auto;gap:7px;align-items:center;padding:9px;background:var(--surface-raised,#0e0e11);border:1px solid var(--line,rgba(255,255,255,.07));border-radius:10px}
+#plan-builder.manual-catalogue .manual-setup-sets button{min-height:36px;padding:6px 10px;border-radius:8px;font-weight:900}.manual-setup-set-count{text-align:center;color:var(--heading,#fff);font-size:.82rem;font-weight:800}
 #plan-builder.manual-catalogue .exercise-prescription:not(.cardio-prescription){display:block;margin:0}
 #plan-builder.manual-catalogue .exercise-prescription:not(.cardio-prescription)>label:first-child{display:none!important}
-#plan-builder.manual-catalogue .exercise-prescription:not(.cardio-prescription)>label:last-child{display:grid;grid-template-columns:auto minmax(120px,1fr);gap:10px;align-items:center;margin:0;color:#d7d7dc;font-size:.72rem;font-weight:800}
-#plan-builder.manual-catalogue .exercise-reps{min-width:0;min-height:38px;padding:7px 9px;text-align:center;background:#202027;border:1px solid rgba(255,255,255,.09);border-radius:8px;color:#fff;font-size:.9rem}
-#plan-builder.manual-catalogue .builder-exercise-guide{width:100%;min-height:38px;margin:0;padding:7px 10px;font-size:.72rem;border-radius:9px}
-#plan-builder.manual-catalogue .remove-exercise-btn{width:100%;min-height:36px;margin:0;padding:6px 10px;color:#ff6268;background:transparent;border-color:rgba(255,98,104,.25);font-size:.72rem}
+#plan-builder.manual-catalogue .exercise-prescription:not(.cardio-prescription)>label:last-child{display:grid;grid-template-columns:auto minmax(120px,1fr);gap:10px;align-items:center;margin:0;color:var(--text-secondary,#d7d7dc);font-size:.72rem;font-weight:800}
+#plan-builder.manual-catalogue .exercise-reps{min-width:0;min-height:38px;padding:7px 9px;text-align:center;background:var(--input-bg,#202027);border:1px solid var(--line,rgba(255,255,255,.09));border-radius:8px;color:var(--text,#fff);font-size:.9rem}
+#plan-builder.manual-catalogue .builder-exercise-guide{width:100%;min-height:38px;margin:0;padding:7px 10px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:9px;background:var(--accent-soft);color:var(--accent-text);font-size:.72rem}
+#plan-builder.manual-catalogue .remove-exercise-btn{width:100%;min-height:36px;margin:0;padding:6px 10px;color:var(--danger-text,#ff6268);background:transparent;border-color:color-mix(in srgb,var(--danger) 32%,var(--line));font-size:.72rem}
 #plan-builder.manual-catalogue .manual-setup-carousel{margin:7px 0 9px}.manual-setup-carousel button{min-height:38px;padding:7px 9px;font-size:.72rem}.manual-setup-carousel .exercise-carousel-position strong{font-size:.78rem}.manual-setup-carousel .exercise-carousel-position small{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#plan-builder.manual-catalogue .workout-day-card{padding:11px;background:rgba(255,255,255,.018);border:1px solid rgba(255,255,255,.08);border-radius:16px}
-#plan-builder.manual-catalogue .day-name-input{min-height:44px;padding:8px 10px;font-size:1.02rem;font-weight:800;background:#101012;border:1px solid rgba(255,255,255,.1);border-radius:11px}
+#plan-builder.manual-catalogue .workout-day-card{padding:11px;background:var(--surface-raised,rgba(255,255,255,.018));border:1px solid var(--line,rgba(255,255,255,.08));border-radius:16px;color:var(--text)}
+#plan-builder.manual-catalogue .day-name-input{min-height:44px;padding:8px 10px;font-size:1.02rem;font-weight:800;background:var(--input-bg,#101012);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:11px;color:var(--text)}
 @media(max-width:520px){#plan-builder.manual-catalogue .workout-day-card{padding:9px}#plan-builder.manual-catalogue .exercise-builder-row.manual-setup-current{padding:11px 8px}#plan-builder.manual-catalogue .exercise-prescription:not(.cardio-prescription)>label:last-child{grid-template-columns:1fr;gap:5px}}
 `;
 

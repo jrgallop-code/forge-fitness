@@ -4,11 +4,14 @@ import fs from 'node:fs';
 
 const html = fs.readFileSync('index.html', 'utf8');
 const styles = fs.readFileSync('css/theme-surface-audit.css', 'utf8');
+const calorieStyles = fs.readFileSync('css/calorie-stats.css', 'utf8');
+const manualSetup = fs.readFileSync('js/workouts/manual-plan-setup.js', 'utf8');
+const manualCatalogue = fs.readFileSync('js/workouts/manual-builder-catalogue.js', 'utf8');
 const worker = fs.readFileSync('service-worker.js', 'utf8');
 
 test('theme surface audit loads after the appearance stylesheet', () => {
   const appearance = html.indexOf('css/appearance-themes.css');
-  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-3');
+  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-4');
   assert.ok(appearance >= 0);
   assert.ok(audit > appearance);
 });
@@ -67,6 +70,29 @@ test('More SVGs match main navigation contrast and Appearance uses a clear palet
   assert.match(styles, /\.more-appearance-icon circle/);
 });
 
+test('Nutrition Progress cards and tracks use semantic theme surfaces', () => {
+  assert.match(calorieStyles, /\.calorie-stat-bar>span,[\s\S]*background: var\(--surface-raised\) !important/);
+  assert.match(calorieStyles, /calorie-stat-bar i\.target[\s\S]*background: var\(--success\) !important/);
+  assert.match(calorieStyles, /calorie-stat-bar i\.outside[\s\S]*background: var\(--accent\) !important/);
+  assert.match(calorieStyles, /calculated-maintenance-progress>i>b[\s\S]*linear-gradient\(90deg, var\(--accent\), var\(--success\)\)/);
+  assert.match(styles, /\.calorie-stat-title, \.calorie-stat-section-title/);
+});
+
+test('late-loaded manual builder controls cannot restore black surfaces', () => {
+  assert.match(manualSetup, /\.manual-setup-sets[^\n]*background:var\(--surface-raised/);
+  assert.match(manualSetup, /\.builder-exercise-guide[^\n]*background:var\(--accent-soft\);color:var\(--accent-text\)/);
+  assert.match(manualCatalogue, /\.manual-pick[^\n]*background:var\(--surface-raised/);
+  assert.match(manualCatalogue, /\.manual-picker-footer[^\n]*background:var\(--nav-bg/);
+  assert.doesNotMatch(manualSetup, /\.manual-setup-sets[^\n]*background:#0e0e11/);
+  assert.match(styles, /#plan-builder\.manual-catalogue \.builder-exercise-guide/);
+});
+
+test('late-injected install guidance follows the selected theme', () => {
+  assert.match(styles, /\.more-install-page, \.levelup-install-reminder/);
+  assert.match(styles, /\.more-install-tab\.selected/);
+  assert.match(styles, /\.levelup-install-reminder-save/);
+});
+
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-107/);
+  assert.match(worker, /2026-09-01-108/);
 });

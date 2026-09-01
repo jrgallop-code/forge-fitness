@@ -75,7 +75,8 @@ test('shared visual browser defaults to All and combines muscle with search', ()
   assert.match(actions, /appendExerciseToActiveWorkout\(exercise\.id\)/);
   assert.doesNotMatch(manual, /hydrateExerciseAnatomy/);
   assert.doesNotMatch(actions, /hydrateExerciseAnatomy/);
-  assert.match(index, /manual-builder-catalogue\.js\?v=isolated-carousel-1/);
+  assert.match(index, /manual-builder-catalogue\.js\?v=appearance-leaks-1/);
+  assert.match(index, /manual-plan-setup\.js\?v=appearance-leaks-1/);
   assert.match(index, /session-exercise-actions\.js\?v=compact-add-actions-1/);
   assert.match(index, /workout-logger-compact\.js\?v=compact-add-actions-1/);
   assert.match(index, /session-exercise-actions\.css\?v=compact-add-actions-1/);

@@ -25,5 +25,5 @@ test("calorie y-axis aligns with the stacked chart grid", async () => {
 
 test("calorie stats stylesheet cache key includes the Progress destination update", async () => {
   const html = await read("index.html");
-  assert.match(html, /css\/calorie-stats\.css\?v=progress-calories-1/);
+  assert.match(html, /css\/calorie-stats\.css\?v=appearance-leaks-1/);
 });

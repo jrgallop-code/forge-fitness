@@ -378,3 +378,111 @@ html[data-theme] .more-appearance-icon circle {
     fill: currentColor !important;
     stroke: none !important;
 }
+
+/* Manual-plan styles are injected after page load, so enforce theme tokens here too. */
+html[data-theme] #plan-builder.manual-catalogue :is(
+    .workout-day-card,
+    .exercise-builder-row.manual-setup-current,
+    .manual-day-empty,
+    .manual-pick
+) {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue :is(
+    .manual-setup-sets,
+    .manual-setup-carousel button,
+    .manual-setup-head button,
+    .manual-pick-guide,
+    .manual-pick-mark
+) {
+    border-color: var(--line) !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue :is(.day-name-input, .exercise-reps, .manual-picker-search, .manual-picker select) {
+    border-color: var(--line) !important;
+    background: var(--input-bg) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue :is(.manual-setup-copy h4, .manual-setup-set-count) {
+    color: var(--heading) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue :is(.manual-setup-copy small, .manual-setup-target) {
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue .builder-exercise-guide {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--line)) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue :is(.manual-setup-sets .primary-btn, .manual-pick.selected .manual-pick-mark) {
+    border-color: var(--accent) !important;
+    background: var(--accent) !important;
+    color: var(--accent-contrast) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue .manual-picker-footer {
+    border-color: var(--nav-border) !important;
+    background: var(--nav-bg) !important;
+    color: var(--text) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+/* Nutrition cards use theme surfaces while outside-target follows the selected accent. */
+html[data-theme] :is(.calorie-stat-title, .calorie-stat-section-title)>b,
+html[data-theme] :is(.calorie-stat-consistency span, .calorie-stat-macro-copy em) {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] :is(.calorie-stat-bar>span, .calorie-stat-macro-trend>span::before, .calorie-stat-meal-bar) {
+    background: var(--surface-raised) !important;
+}
+
+html[data-theme] .calculated-maintenance-progress>i {
+    background: var(--surface-raised) !important;
+}
+
+html[data-theme] .calculated-maintenance-progress>i>b {
+    background: linear-gradient(90deg, var(--accent), var(--success)) !important;
+}
+
+/* Install guidance and reminders are also late-injected app surfaces. */
+html[data-theme] :is(.more-install-page, .levelup-install-reminder) {
+    border-color: var(--card-border) !important;
+    background: var(--card) !important;
+    color: var(--text) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+html[data-theme] :is(.more-install-page-icon, .levelup-install-reminder-icon, .more-install-step-number) {
+    border-color: color-mix(in srgb, var(--accent) 36%, var(--line)) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+}
+
+html[data-theme] :is(.more-install-tab, .more-install-steps li) {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] .more-install-tab.selected,
+html[data-theme] .levelup-install-reminder-save {
+    border-color: var(--accent) !important;
+    background: var(--accent) !important;
+    color: var(--accent-contrast) !important;
+}
+
+html[data-theme] :is(.more-install-page-copy h3, .levelup-install-reminder-copy strong) {
+    color: var(--heading) !important;
+}

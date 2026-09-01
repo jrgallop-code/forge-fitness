@@ -22,12 +22,12 @@
 .calorie-stat-bar>span{position:relative;display:flex;align-items:end;overflow:hidden;border-radius:999px;background:#2c2c32}
 .calorie-stat-bar i{display:block;width:100%;border-radius:999px;background:#55555d}
 .calorie-stat-bar i.target{background:#4bd184;box-shadow:0 0 13px rgba(75,209,132,.24)}
-.calorie-stat-bar i.outside{background:#ff3b4b;box-shadow:0 0 13px rgba(255,59,75,.2)}
+.calorie-stat-bar i.outside{background:var(--accent,#ff3b4b);box-shadow:0 0 13px var(--accent-glow,rgba(255,59,75,.2))}
 .calorie-stat-bar small{font-size:10px;letter-spacing:0}
 .calorie-stat-goal{display:flex;align-items:center;gap:11px;margin-top:12px;color:#92929c;font-size:10px;font-weight:800}
 .calorie-stat-goal span{display:flex;align-items:center;gap:5px}
 .calorie-stat-goal i{width:7px;height:7px;border-radius:50%}
-.calorie-stat-goal i.target{background:#4bd184}.calorie-stat-goal i.outside{background:#ff3b4b}
+.calorie-stat-goal i.target{background:#4bd184}.calorie-stat-goal i.outside{background:var(--accent,#ff3b4b)}
 .calorie-stat-goal b{margin-left:auto;color:#d0d0d5;font-size:10px}
 .calorie-target-rule{border-color:rgba(255,61,76,.28);background:linear-gradient(145deg,#27191c,#1b181a)}
 .calorie-target-rule strong,.calorie-stat-section-title strong,.calorie-phase-insight>strong{font-size:18px}
@@ -52,3 +52,153 @@
 .nav-btn.has-maintenance-check-in{position:relative}.maintenance-nav-badge{position:absolute;top:7px;right:18%;width:9px;height:9px;border:2px solid #18181b;border-radius:50%;background:#39d7ae;box-shadow:0 0 0 3px rgba(57,215,174,.13)}
 .unified-maintenance-mode{display:grid;gap:6px;padding:11px;border:1px solid rgba(255,255,255,.09);border-radius:11px;background:rgba(0,0,0,.12)}.unified-maintenance-mode label{font-size:11px;font-weight:800}.unified-maintenance-mode select{width:100%;min-height:42px}.unified-maintenance-mode small{color:#9898a2;font-size:10px;line-height:1.45}.maintenance-auto-toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));z-index:1700;display:flex;align-items:center;justify-content:space-between;gap:12px;width:min(calc(100% - 28px),430px);padding:13px 14px;transform:translateX(-50%);border:1px solid rgba(57,215,174,.4);border-radius:16px;background:rgba(18,24,23,.97);box-shadow:0 16px 40px rgba(0,0,0,.48);color:#fff}.maintenance-auto-toast>div{display:grid;gap:3px;min-width:0}.maintenance-auto-toast span{color:#39d7ae;font-size:9px;font-weight:900;letter-spacing:.08em}.maintenance-auto-toast strong{font-size:14px;line-height:1.2}.maintenance-auto-toast small{color:#aaaab3;font-size:10px}.maintenance-auto-toast button{flex:0 0 auto;padding:8px 10px;border:1px solid rgba(255,255,255,.18);border-radius:9px;background:#242428;color:#fff;font-size:11px;font-weight:800}
 .maintenance-hub-alert{display:flex;align-items:center;justify-content:space-between;gap:12px;width:min(100%,720px);margin:0 auto;padding:12px 14px;border:1px solid rgba(57,215,174,.34);border-radius:14px;background:linear-gradient(135deg,rgba(57,215,174,.11),rgba(24,28,27,.96))}.maintenance-hub-alert>div{display:grid;gap:2px;min-width:0}.maintenance-hub-alert span{color:#39d7ae;font-size:9px;font-weight:900;letter-spacing:.09em}.maintenance-hub-alert strong{font-size:14px}.maintenance-hub-alert small{color:#9d9da7;font-size:10px}.maintenance-hub-alert button{flex:0 0 auto;padding:9px 11px;border:1px solid rgba(57,215,174,.28);border-radius:9px;background:rgba(57,215,174,.12);color:#dffff5;font-size:11px;font-weight:850}
+
+/* Theme-safe Nutrition Progress surfaces. In-target stays green; outside-target follows the selected accent. */
+html[data-theme] .calorie-stats-page>header p,
+html[data-theme] .calorie-stat-card small,
+html[data-theme] .calorie-target-rule p,
+html[data-theme] .calorie-phase-insight p,
+html[data-theme] .calorie-stat-empty,
+html[data-theme] .calorie-stat-note {
+    color: var(--muted) !important;
+}
+
+html[data-theme] .calorie-stats-ranges {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+}
+
+html[data-theme] .calorie-stats-ranges button {
+    color: var(--muted) !important;
+}
+
+html[data-theme] .calorie-stats-ranges button.active {
+    border-color: var(--accent) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+}
+
+html[data-theme] .calorie-stat-card {
+    border-color: var(--card-border) !important;
+    background: var(--card) !important;
+    color: var(--text) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+html[data-theme] :is(.calorie-stat-title, .calorie-stat-section-title)>b {
+    border: 1px solid var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] :is(.calorie-stat-title, .calorie-stat-section-title) strong,
+html[data-theme] .calorie-target-rule strong,
+html[data-theme] .calorie-stat-consistency strong,
+html[data-theme] .calorie-stat-macro-copy strong,
+html[data-theme] .calorie-stat-meal-legend b {
+    color: var(--heading) !important;
+}
+
+html[data-theme] .calorie-stat-bar>span,
+html[data-theme] .calorie-stat-macro-trend>span::before,
+html[data-theme] .calorie-stat-meal-bar {
+    background: var(--surface-raised) !important;
+    box-shadow: inset 0 0 0 1px var(--line) !important;
+}
+
+html[data-theme] .calorie-stat-bar i {
+    background: color-mix(in srgb, var(--muted) 48%, var(--surface-raised)) !important;
+}
+
+html[data-theme] :is(.calorie-stat-bar i.target, .calorie-stat-goal i.target) {
+    background: var(--success) !important;
+    box-shadow: 0 0 13px color-mix(in srgb, var(--success) 24%, transparent) !important;
+}
+
+html[data-theme] :is(.calorie-stat-bar i.outside, .calorie-stat-goal i.outside) {
+    background: var(--accent) !important;
+    box-shadow: 0 0 13px var(--accent-glow) !important;
+}
+
+html[data-theme] .calorie-stat-goal {
+    color: var(--muted) !important;
+}
+
+html[data-theme] .calorie-stat-goal b {
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] :is(.calorie-target-rule, .calorie-phase-insight) {
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--card-border)) !important;
+    background: color-mix(in srgb, var(--accent) 5%, var(--card)) !important;
+}
+
+html[data-theme] .calorie-stat-consistency span,
+html[data-theme] .calorie-stat-macro-copy em {
+    border: 1px solid var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] :is(.calorie-stat-macro, .calorie-meal-week-details, .calorie-meal-week-metrics, .calorie-meal-week-metrics>span) {
+    border-color: var(--line) !important;
+}
+
+html[data-theme] .calorie-meal-week-details summary {
+    color: var(--accent-text) !important;
+}
+
+html[data-theme] .calorie-meal-week-plot {
+    border-color: var(--line) !important;
+    background: repeating-linear-gradient(to top,transparent 0,transparent 32px,color-mix(in srgb,var(--text) 7%,transparent) 33px) !important;
+}
+
+html[data-theme] :is(.calorie-meal-week-axis, .calorie-meal-week-axis small, .calorie-meal-week-column small, .calorie-meal-week-column small b) {
+    color: var(--muted) !important;
+}
+
+html[data-theme] .calculated-maintenance-card {
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--card-border)) !important;
+    background: color-mix(in srgb, var(--accent) 5%, var(--card)) !important;
+}
+
+html[data-theme] .calculated-maintenance-head small {
+    color: var(--accent-text) !important;
+}
+
+html[data-theme] .calculated-maintenance-progress>i {
+    background: var(--surface-raised) !important;
+}
+
+html[data-theme] .calculated-maintenance-progress>i>b {
+    background: linear-gradient(90deg, var(--accent), var(--success)) !important;
+}
+
+html[data-theme] :is(.calculated-maintenance-card details, .calculated-maintenance-breakdown>div, .weekly-calorie-review, .weekly-calorie-review-row, .weekly-calorie-modal-breakdown>div) {
+    border-color: var(--line) !important;
+}
+
+html[data-theme] :is(.weekly-calorie-modal-card, .maintenance-auto-toast, .maintenance-hub-alert) {
+    border-color: var(--card-border) !important;
+    background: var(--card) !important;
+    color: var(--text) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+html[data-theme] .weekly-calorie-modal-card>header button,
+html[data-theme] .maintenance-auto-toast button {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] .maintenance-check-in-comparison span,
+html[data-theme] .unified-maintenance-choice-note {
+    background: var(--surface-raised) !important;
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] .maintenance-nav-badge {
+    border-color: var(--nav-bg) !important;
+    background: var(--success) !important;
+}
