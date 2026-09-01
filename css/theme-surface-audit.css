@@ -196,3 +196,163 @@ html[data-theme] :is(
     background: var(--surface-raised) !important;
     color: var(--text) !important;
 }
+
+/* Adaptive guidance is a full-screen theme surface, not a fixed Level Up panel. */
+html[data-theme] .adaptive-flow-overlay {
+    background:
+        radial-gradient(circle at 50% 0, var(--accent-soft), transparent 38%),
+        var(--body-background) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] .adaptive-flow-screen {
+    color: var(--text) !important;
+}
+
+html[data-theme] .adaptive-flow-kicker,
+html[data-theme] .adaptive-coach-kicker {
+    color: var(--accent-text) !important;
+}
+
+html[data-theme] :is(
+    .adaptive-flow-screen h2,
+    .adaptive-question-label,
+    .adaptive-muscle-row > strong,
+    .adaptive-post-question > strong,
+    .adaptive-coach-summary h3,
+    .adaptive-recommendation strong,
+    .adaptive-deload-preview-rules b,
+    .adaptive-info-sheet h3
+) {
+    color: var(--heading) !important;
+}
+
+html[data-theme] :is(
+    .adaptive-flow-intro,
+    .adaptive-recovery-legend span,
+    .adaptive-coach-heading > p,
+    .adaptive-recommendation p,
+    .adaptive-deload-preview-card small,
+    .adaptive-deload-banner p,
+    .adaptive-info-sheet p
+) {
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] :is(
+    .adaptive-text-button,
+    .adaptive-return-button,
+    .adaptive-rir-toggle span,
+    .adaptive-rir-row > strong
+) {
+    color: var(--muted) !important;
+}
+
+html[data-theme] :is(
+    .adaptive-settings-card,
+    .adaptive-coach-summary,
+    .adaptive-recovery-legend div,
+    .adaptive-post-flow .adaptive-post-options,
+    .adaptive-info-sheet
+) {
+    border-color: var(--card-border) !important;
+    background: var(--card) !important;
+    color: var(--text) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+html[data-theme] :is(
+    .adaptive-choice,
+    .adaptive-rir-choice,
+    .adaptive-rir-toggle,
+    .adaptive-info-button,
+    .adaptive-discomfort-exercise select,
+    .adaptive-deload-preview-rules li,
+    .adaptive-info-scale div,
+    .adaptive-recommendation
+) {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] :is(.adaptive-choice, .adaptive-rir-choice).selected {
+    border-color: var(--accent) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+    box-shadow: inset 0 0 0 1px var(--accent-glow) !important;
+}
+
+html[data-theme] .adaptive-coach-kicker em {
+    border-color: var(--accent) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+}
+
+html[data-theme] .adaptive-info-overlay {
+    background: color-mix(in srgb, var(--heading) 54%, transparent) !important;
+}
+
+/* The live rest alarm follows the selected theme, including late-injected styles. */
+html[data-theme] #level-up-rest-alarm-banner {
+    border-color: var(--card-border) !important;
+    border-left-color: var(--accent) !important;
+    background: var(--card) !important;
+    color: var(--text) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+html[data-theme] #level-up-rest-alarm-banner.is-ending {
+    border-color: var(--accent) !important;
+    border-left-color: var(--accent) !important;
+}
+
+html[data-theme] #level-up-rest-alarm-banner :is(.rest-alarm-kicker, .rest-alarm-time) {
+    color: var(--accent-text) !important;
+}
+
+html[data-theme] #level-up-rest-alarm-banner .rest-alarm-next {
+    color: var(--heading) !important;
+}
+
+html[data-theme] #level-up-rest-alarm-banner :is(.rest-alarm-detail, .rest-alarm-alert-row) {
+    color: var(--muted) !important;
+}
+
+html[data-theme] #level-up-rest-alarm-banner .rest-alarm-alert-row {
+    border-top-color: var(--line) !important;
+}
+
+html[data-theme] #level-up-rest-alarm-banner :is(
+    .rest-alarm-controls button,
+    .rest-alarm-alert-row button
+) {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] #level-up-rest-alarm-banner :is(
+    .rest-alarm-controls button.rest-alarm-primary,
+    .rest-alarm-alert-row button
+) {
+    border-color: var(--accent) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+}
+
+html[data-theme] #level-up-rest-alarm-banner.is-complete {
+    border-color: color-mix(in srgb, var(--success) 45%, var(--card-border)) !important;
+    border-left-color: var(--success) !important;
+    background: color-mix(in srgb, var(--success) 7%, var(--card)) !important;
+}
+
+html[data-theme] #level-up-rest-alarm-banner.is-complete :is(.rest-alarm-kicker, .rest-alarm-time) {
+    color: var(--success-text) !important;
+}
+
+html[data-theme] #level-up-rest-alarm-banner.is-complete .rest-alarm-controls button.rest-alarm-primary {
+    border-color: var(--success) !important;
+    background: color-mix(in srgb, var(--success) 13%, var(--surface-raised)) !important;
+    color: var(--success-text) !important;
+}

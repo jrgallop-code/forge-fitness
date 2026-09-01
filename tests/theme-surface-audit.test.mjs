@@ -8,7 +8,7 @@ const worker = fs.readFileSync('service-worker.js', 'utf8');
 
 test('theme surface audit loads after the appearance stylesheet', () => {
   const appearance = html.indexOf('css/appearance-themes.css');
-  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-1');
+  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-2');
   assert.ok(appearance >= 0);
   assert.ok(audit > appearance);
 });
@@ -41,6 +41,24 @@ test('snapshot cards, selected tabs and analytics ranges are theme semantic', ()
   assert.match(styles, /background:\s*var\(--accent-soft\)\s*!important/);
 });
 
+test('adaptive guidance uses semantic full-screen and card surfaces', () => {
+  assert.match(styles, /\.adaptive-flow-overlay/);
+  assert.match(styles, /var\(--body-background\)\s*!important/);
+  assert.match(styles, /\.adaptive-recovery-legend div/);
+  assert.match(styles, /\.adaptive-post-flow \.adaptive-post-options/);
+  assert.match(styles, /\.adaptive-choice, \.adaptive-rir-choice\)\.selected/);
+  assert.match(styles, /color:\s*var\(--heading\)\s*!important/);
+});
+
+test('rest alarm follows selected theme instead of fixed black and red styling', () => {
+  assert.match(styles, /#level-up-rest-alarm-banner/);
+  assert.match(styles, /border-left-color:\s*var\(--accent\)\s*!important/);
+  assert.match(styles, /\.rest-alarm-controls button\.rest-alarm-primary/);
+  assert.match(styles, /background:\s*var\(--card\)\s*!important/);
+  assert.match(styles, /#level-up-rest-alarm-banner\.is-complete/);
+  assert.match(styles, /color:\s*var\(--success-text\)\s*!important/);
+});
+
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-102/);
+  assert.match(worker, /2026-09-01-103/);
 });
