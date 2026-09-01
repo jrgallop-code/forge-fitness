@@ -116,6 +116,19 @@ html[data-theme="slate"].level-up-installed-pwa .pwa-splash-loader-fill {
     background: #7396b8;
 }
 
+html[data-theme="pulse"].level-up-installed-pwa #pwa-splash {
+    background: #120912;
+}
+
+html[data-theme="pulse"].level-up-installed-pwa .pwa-splash-loader {
+    background: rgba(255, 45, 149, .18);
+    box-shadow: 0 0 14px rgba(255, 45, 149, .24);
+}
+
+html[data-theme="pulse"].level-up-installed-pwa .pwa-splash-loader-fill {
+    background: #ff2d95;
+}
+
 @keyframes level-up-fake-load {
     0%   { transform: scaleX(.03); }
     22%  { transform: scaleX(.25); }

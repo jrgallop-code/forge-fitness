@@ -7,7 +7,8 @@ export const APPEARANCE_THEMES = [
     { id: "pure", name: "Pure", description: "Warm white · Monochrome", mode: "light" },
     { id: "ocean", name: "Ocean", description: "Pale blue · Cyan", mode: "light" },
     { id: "midnight", name: "Midnight", description: "Ink navy · Electric blue", mode: "dark" },
-    { id: "slate", name: "Slate", description: "Graphite · Steel blue", mode: "dark" }
+    { id: "slate", name: "Slate", description: "Graphite · Steel blue", mode: "dark" },
+    { id: "pulse", name: "Pulse", description: "Deep plum · Hot pink", mode: "dark" }
 ];
 
 const THEME_IDS = new Set(APPEARANCE_THEMES.map(theme => theme.id));
@@ -17,7 +18,8 @@ const THEME_COLORS = {
     pure: "#f4f4f2",
     ocean: "#edf8ff",
     midnight: "#050b17",
-    slate: "#0d1117"
+    slate: "#0d1117",
+    pulse: "#120912"
 };
 
 export const SYSTEM_DAY_START_HOUR = 7;

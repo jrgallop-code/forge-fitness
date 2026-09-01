@@ -4,9 +4,9 @@ import { readFile } from "node:fs/promises";
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("appearance system provides system plus six curated themes", async () => {
+test("appearance system provides system plus seven curated themes", async () => {
   const source = await read("js/core/appearance-theme.js");
-  for (const theme of ["system", "level-up", "arctic", "pure", "ocean", "midnight", "slate"]) {
+  for (const theme of ["system", "level-up", "arctic", "pure", "ocean", "midnight", "slate", "pulse"]) {
     assert.match(source, new RegExp(`id: "${theme}"`));
   }
   assert.match(source, /level_up_appearance_settings/);
@@ -38,7 +38,7 @@ test("More opens a dedicated live Appearance selector", async () => {
 
 test("theme stylesheet separates accents from semantic status colours", async () => {
   const styles = await read("css/appearance-themes.css");
-  for (const theme of ["level-up", "arctic", "pure", "ocean", "midnight", "slate"]) {
+  for (const theme of ["level-up", "arctic", "pure", "ocean", "midnight", "slate", "pulse"]) {
     assert.match(styles, new RegExp(`html\\[data-theme="${theme}"\\]`));
   }
   assert.match(styles, /--accent:/);
@@ -119,7 +119,8 @@ test("theme text tokens meet WCAG AA contrast on cards", () => {
     ["Pure", "#ffffff", "#ededeb", "#202022", "#454549", "#626267", "#171719", "#171719", "#ffffff"],
     ["Ocean", "#ffffff", "#e3f4ff", "#123252", "#344f68", "#506b82", "#0676ad", "#0798d9", "#07233f"],
     ["Midnight", "#132238", "#101d31", "#f5f8ff", "#bac7da", "#92a3bd", "#7eb0ff", "#3478f6", "#050b17"],
-    ["Slate", "#1d2630", "#1a222c", "#eef3f7", "#bec9d2", "#9aa8b4", "#a9c8e4", "#7396b8", "#071018"]
+    ["Slate", "#1d2630", "#1a222c", "#eef3f7", "#bec9d2", "#9aa8b4", "#a9c8e4", "#7396b8", "#071018"],
+    ["Pulse", "#1d101c", "#291528", "#fff7fc", "#d9bfd1", "#b792aa", "#ff5cad", "#ff2d95", "#160912"]
   ];
   const luminance = hex => {
     const channels = [1, 3, 5].map(index => Number.parseInt(hex.slice(index, index + 2), 16) / 255);
@@ -247,11 +248,11 @@ test("production entry points load the theme before paint and bust caches", asyn
   ]);
   assert.match(html, /level_up_appearance_settings/);
   assert.ok(html.indexOf("level_up_appearance_settings") < html.indexOf("css/styles.css"));
-  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-11/);
+  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-12/);
   assert.match(html, /js\/app\.js\?v=whats-new-1/);
   assert.match(html, /getHours\(\)/);
-  assert.match(app, /appearance-theme\.js\?v=appearance-themes-2/);
+  assert.match(app, /appearance-theme\.js\?v=appearance-themes-3/);
   assert.match(app, /router\.js\?v=whats-new-1/);
-  assert.match(router, /more-ui-v2\.js\?v=more-menu-icons-1/);
-  assert.match(worker, /2026-09-01-105/);
+  assert.match(router, /more-ui-v2\.js\?v=pulse-theme-1/);
+  assert.match(worker, /2026-09-01-106/);
 });
