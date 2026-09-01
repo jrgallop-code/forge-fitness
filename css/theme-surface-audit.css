@@ -356,3 +356,25 @@ html[data-theme] #level-up-rest-alarm-banner.is-complete .rest-alarm-controls bu
     background: color-mix(in srgb, var(--success) 13%, var(--surface-raised)) !important;
     color: var(--success-text) !important;
 }
+
+/* More-page SVGs use the same neutral contrast as inactive main navigation. */
+html[data-theme] .more-menu-group .more-menu-icon {
+    color: var(--theme-icon-muted) !important;
+}
+
+html[data-theme] .more-menu-group .more-menu-icon .app-silhouette-icon {
+    opacity: 1 !important;
+}
+
+html[data-theme] .more-appearance-icon {
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+
+html[data-theme] .more-appearance-icon circle {
+    fill: currentColor !important;
+    stroke: none !important;
+}
