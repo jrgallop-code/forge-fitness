@@ -10,6 +10,32 @@ let lastGlobalSignature = "";
 let lastAlarmSignature = "";
 let alarmAudioContext = null;
 
+function compactAlarmMarkup(value) {
+  return `
+    <button class="rest-alarm-mini" type="button" data-rest-action="toggle-size" aria-label="Expand rest timer">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6.4 4.8 3.8 7.4M17.6 4.8l2.6 2.6M7.1 18.2 5.6 20M16.9 18.2l1.5 1.8M12 5.4a6.7 6.7 0 1 1 0 13.4 6.7 6.7 0 0 1 0-13.4Zm0 3.1v4l2.6 1.5"/>
+      </svg>
+      <span>${escapeHtml(value)}</span>
+    </button>`;
+}
+
+function collapseControlMarkup() {
+  return `
+    <button class="rest-alarm-collapse" type="button" data-rest-action="toggle-size" aria-label="Minimize rest timer">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5.5 8 4.5 4 4.5-4"/></svg>
+    </button>`;
+}
+
+function syncCompactState(banner, active, timer, complete) {
+  const identity = `${active.currentExerciseIndex}|${active.currentSetIndex}|${timer.durationSeconds || "timer"}`;
+  if (banner.dataset.restTimerIdentity !== identity) {
+    banner.dataset.restTimerIdentity = identity;
+    banner.classList.remove("is-minimized");
+  }
+  if (complete) banner.classList.remove("is-minimized");
+}
+
 function getActive() {
   try {
     const parsed = JSON.parse(localStorage.getItem(ACTIVE_WORKOUT_STORAGE_KEY) || "null");
@@ -223,6 +249,10 @@ function renderGlobalBanner() {
   const timer = active?.restTimer;
 
   if (!banner || !active || !timer) {
+    if (banner && (!active || !timer)) {
+      banner.classList.remove("is-minimized");
+      delete banner.dataset.restTimerIdentity;
+    }
     lastGlobalSignature = "";
     return;
   }
@@ -253,6 +283,7 @@ function renderGlobalBanner() {
   lastGlobalSignature = signature;
 
   banner.hidden = false;
+  syncCompactState(banner, active, timer, complete);
   banner.classList.toggle("is-complete", complete);
   banner.classList.toggle("is-ending", !complete && ms > 0 && ms <= 10000);
   banner.classList.toggle("is-final-seconds", !complete && ms > 0 && ms <= 5000);
@@ -265,7 +296,7 @@ function renderGlobalBanner() {
           <strong class="rest-alarm-next">${escapeHtml(context.title)}</strong>
           <div class="rest-alarm-detail"><span>${escapeHtml(context.detail)}</span></div>
         </div>
-        <div class="rest-alarm-time">READY</div>
+        <div class="rest-alarm-status"><div class="rest-alarm-time">READY</div>${collapseControlMarkup()}</div>
       </div>
       <div class="rest-alarm-controls">
         <button class="rest-alarm-primary" type="button" data-rest-action="next">${context.done ? "Review" : "Start Next Set"}</button>
@@ -273,6 +304,7 @@ function renderGlobalBanner() {
         <button type="button" data-rest-action="plus15">+15 sec</button>
         <button type="button" data-rest-action="skip">Dismiss</button>
       </div>
+      ${compactAlarmMarkup("READY")}
     `;
     return;
   }
@@ -284,7 +316,7 @@ function renderGlobalBanner() {
         <strong class="rest-alarm-next">Next: ${escapeHtml(context.title)}</strong>
         <div class="rest-alarm-detail"><span>${escapeHtml(context.detail)}</span></div>
       </div>
-      <div class="rest-alarm-time">${formatCountdown(ms)}</div>
+      <div class="rest-alarm-status"><div class="rest-alarm-time">${formatCountdown(ms)}</div>${collapseControlMarkup()}</div>
     </div>
     <div class="rest-alarm-controls">
       <button type="button" data-rest-action="minus15">−15 sec</button>
@@ -292,6 +324,7 @@ function renderGlobalBanner() {
       <button type="button" data-rest-action="plus15">+15 sec</button>
       <button type="button" data-rest-action="skip">Skip Rest</button>
     </div>
+    ${compactAlarmMarkup(paused ? "PAUSED" : formatCountdown(ms))}
   `;
 }
 

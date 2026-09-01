@@ -7,6 +7,9 @@ const styles = fs.readFileSync('css/theme-surface-audit.css', 'utf8');
 const calorieStyles = fs.readFileSync('css/calorie-stats.css', 'utf8');
 const manualSetup = fs.readFileSync('js/workouts/manual-plan-setup.js', 'utf8');
 const manualCatalogue = fs.readFileSync('js/workouts/manual-builder-catalogue.js', 'utf8');
+const planDetails = fs.readFileSync('css/workout-plan-details.css', 'utf8');
+const restAlarm = fs.readFileSync('js/workouts/rest-alarm-phase1.js', 'utf8');
+const globalRestAlarm = fs.readFileSync('js/workouts/rest-alarm-button-stability.js', 'utf8');
 const worker = fs.readFileSync('service-worker.js', 'utf8');
 
 test('theme surface audit loads after the appearance stylesheet', () => {
@@ -62,6 +65,17 @@ test('rest alarm follows selected theme instead of fixed black and red styling',
   assert.match(styles, /color:\s*var\(--success-text\)\s*!important/);
 });
 
+test('sticky rest alarm can collapse to a compact live countdown', () => {
+  assert.match(restAlarm, /rest-alarm-mini/);
+  assert.match(restAlarm, /data-rest-action="toggle-size"/);
+  assert.match(restAlarm, /classList\.toggle\("is-minimized"\)/);
+  assert.match(restAlarm, /if \(complete\) banner\.classList\.remove\("is-minimized"\)/);
+  assert.match(globalRestAlarm, /compactAlarmMarkup/);
+  assert.match(globalRestAlarm, /syncCompactState/);
+  assert.match(styles, /#level-up-rest-alarm-banner\.is-minimized/);
+  assert.match(styles, /\.rest-alarm-mini/);
+});
+
 test('More SVGs match main navigation contrast and Appearance uses a clear palette', () => {
   assert.match(styles, /\.more-menu-group \.more-menu-icon/);
   assert.match(styles, /color:\s*var\(--theme-icon-muted\)\s*!important/);
@@ -87,6 +101,24 @@ test('late-loaded manual builder controls cannot restore black surfaces', () => 
   assert.match(styles, /#plan-builder\.manual-catalogue \.builder-exercise-guide/);
 });
 
+test('manual program exercises use a readable tap-to-edit list without truncation', () => {
+  assert.match(manualSetup, /manual-setup-index-row/);
+  assert.match(manualSetup, /Tap one to edit/);
+  assert.match(manualSetup, /dataset\.setupSelect/);
+  assert.match(manualSetup, /white-space:normal;overflow-wrap:anywhere/);
+  assert.doesNotMatch(manualSetup, /manual-setup-index-copy strong[^\n]*text-overflow:ellipsis/);
+  assert.doesNotMatch(manualCatalogue, /manual-pick-copy strong[^\n]*text-overflow:ellipsis/);
+  assert.match(planDetails, /\.plan-detail-exercise-name\s*\{[\s\S]*white-space:\s*normal;[\s\S]*overflow-wrap:\s*anywhere;/);
+  assert.match(styles, /manual-setup-index-row\.is-active/);
+});
+
+test('light theme Form Guide actions force dark accent lettering', () => {
+  assert.match(styles, /data-theme-mode="light"\] :is\(/);
+  assert.match(styles, /\.manual-pick-guide/);
+  assert.match(styles, /\.logger-form-guide-btn/);
+  assert.match(styles, /-webkit-text-fill-color:\s*var\(--accent-text\)\s*!important/);
+});
+
 test('late-injected install guidance follows the selected theme', () => {
   assert.match(styles, /\.more-install-page, \.levelup-install-reminder/);
   assert.match(styles, /\.more-install-tab\.selected/);
@@ -94,5 +126,5 @@ test('late-injected install guidance follows the selected theme', () => {
 });
 
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-108/);
+  assert.match(worker, /2026-09-01-110/);
 });

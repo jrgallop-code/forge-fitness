@@ -10,6 +10,32 @@ let lastTimerSignature = "";
 let intervalId = null;
 let observerQueued = false;
 
+function compactAlarmMarkup(value) {
+  return `
+    <button class="rest-alarm-mini" type="button" data-rest-action="toggle-size" aria-label="Expand rest timer">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6.4 4.8 3.8 7.4M17.6 4.8l2.6 2.6M7.1 18.2 5.6 20M16.9 18.2l1.5 1.8M12 5.4a6.7 6.7 0 1 1 0 13.4 6.7 6.7 0 0 1 0-13.4Zm0 3.1v4l2.6 1.5"/>
+      </svg>
+      <span>${escapeHtml(value)}</span>
+    </button>`;
+}
+
+function collapseControlMarkup() {
+  return `
+    <button class="rest-alarm-collapse" type="button" data-rest-action="toggle-size" aria-label="Minimize rest timer">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5.5 8 4.5 4 4.5-4"/></svg>
+    </button>`;
+}
+
+function syncCompactState(banner, active, timer, complete) {
+  const identity = `${active.currentExerciseIndex}|${active.currentSetIndex}|${timer.durationSeconds || "timer"}`;
+  if (banner.dataset.restTimerIdentity !== identity) {
+    banner.dataset.restTimerIdentity = identity;
+    banner.classList.remove("is-minimized");
+  }
+  if (complete) banner.classList.remove("is-minimized");
+}
+
 function getActive() {
   try {
     const parsed = JSON.parse(localStorage.getItem(ACTIVE_WORKOUT_STORAGE_KEY) || "null");
@@ -159,12 +185,24 @@ function ensureStyles() {
       border-left-color: #4fdc80;
       background: rgba(11,22,16,.98);
     }
+    #${BANNER_ID}.is-minimized {
+      left: auto;
+      right: max(12px, env(safe-area-inset-right));
+      width: auto;
+      max-width: none;
+      padding: 0;
+      overflow: hidden;
+      border-left-width: 1px;
+      border-radius: 999px;
+    }
+    #${BANNER_ID}.is-minimized > :not(.rest-alarm-mini) { display: none !important; }
     .rest-alarm-top {
       display: grid;
       grid-template-columns: minmax(0,1fr) auto;
       gap: 12px;
       align-items: center;
     }
+    .rest-alarm-status { display: flex; align-items: center; gap: 7px; }
     .rest-alarm-copy { min-width: 0; }
     .rest-alarm-kicker {
       display: block;
@@ -206,6 +244,34 @@ function ensureStyles() {
       line-height: 1;
     }
     .is-complete .rest-alarm-time { color: #72e89a; font-size: 23px; }
+    .rest-alarm-collapse {
+      display: inline-grid;
+      place-items: center;
+      width: 29px;
+      height: 29px;
+      padding: 0;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 9px;
+      background: #202027;
+      color: #f7f7f9;
+    }
+    .rest-alarm-collapse svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .rest-alarm-mini {
+      display: none;
+      grid-template-columns: 25px auto;
+      align-items: center;
+      gap: 6px;
+      min-width: 84px;
+      min-height: 48px;
+      padding: 7px 12px 7px 10px;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+    }
+    #${BANNER_ID}.is-minimized .rest-alarm-mini { display: inline-grid; }
+    .rest-alarm-mini svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .rest-alarm-mini span { font-size: 13px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
     .rest-alarm-controls {
       display: grid;
       grid-template-columns: repeat(4, minmax(0,1fr));
@@ -289,6 +355,7 @@ function ensureBanner() {
     if (action === "plus30") restartFinishedTimer(30);
     if (action === "next") startNextSet();
     if (action === "alerts") await requestAlerts();
+    if (action === "toggle-size") banner.classList.toggle("is-minimized");
 
     syncBanner(true);
   });
@@ -324,6 +391,10 @@ function syncBanner(force = false) {
 
   if (!logger || !active || !timer) {
     banner.hidden = true;
+    if (!active || !timer) {
+      banner.classList.remove("is-minimized");
+      delete banner.dataset.restTimerIdentity;
+    }
     lastTimerSignature = "";
     return;
   }
@@ -337,6 +408,7 @@ function syncBanner(force = false) {
   lastTimerSignature = signature;
 
   banner.hidden = false;
+  syncCompactState(banner, active, timer, complete);
   banner.classList.toggle("is-complete", complete);
   banner.classList.toggle("is-ending", !complete && ms > 0 && ms <= 10000);
   banner.classList.toggle("is-final-seconds", !complete && ms > 0 && ms <= 5000);
@@ -349,7 +421,7 @@ function syncBanner(force = false) {
           <strong class="rest-alarm-next">${escapeHtml(context.title)}</strong>
           <div class="rest-alarm-detail"><span>${escapeHtml(context.detail)}</span>${context.previous ? `<span>${escapeHtml(context.previous)}</span>` : ""}</div>
         </div>
-        <div class="rest-alarm-time">READY</div>
+        <div class="rest-alarm-status"><div class="rest-alarm-time">READY</div>${collapseControlMarkup()}</div>
       </div>
       <div class="rest-alarm-controls">
         <button class="rest-alarm-primary" type="button" data-rest-action="next">${context.done ? "Review" : "Start Next Set"}</button>
@@ -358,6 +430,7 @@ function syncBanner(force = false) {
         <button type="button" data-rest-action="skip">Dismiss</button>
       </div>
       ${notificationStatusMarkup()}
+      ${compactAlarmMarkup("READY")}
     `;
     return;
   }
@@ -369,7 +442,7 @@ function syncBanner(force = false) {
         <strong class="rest-alarm-next">Next: ${escapeHtml(context.title)}</strong>
         <div class="rest-alarm-detail"><span>${escapeHtml(context.detail)}</span>${context.previous ? `<span>${escapeHtml(context.previous)}</span>` : ""}</div>
       </div>
-      <div class="rest-alarm-time">${formatCountdown(ms)}</div>
+      <div class="rest-alarm-status"><div class="rest-alarm-time">${formatCountdown(ms)}</div>${collapseControlMarkup()}</div>
     </div>
     <div class="rest-alarm-controls">
       <button type="button" data-rest-action="minus15">−15 sec</button>
@@ -378,6 +451,7 @@ function syncBanner(force = false) {
       <button type="button" data-rest-action="skip">Skip Rest</button>
     </div>
     ${notificationStatusMarkup()}
+    ${compactAlarmMarkup(paused ? "PAUSED" : formatCountdown(ms))}
   `;
 }
 
