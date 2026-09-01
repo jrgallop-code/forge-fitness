@@ -5,6 +5,7 @@ import fs from 'node:fs';
 const explore = fs.readFileSync('js/more/explore-research.js', 'utf8');
 const more = fs.readFileSync('js/more/more-ui-v2.js', 'utf8');
 const styles = fs.readFileSync('css/explore-research.css', 'utf8');
+const themeFix = fs.readFileSync('css/explore-theme-fix.css', 'utf8');
 const index = fs.readFileSync('index.html', 'utf8');
 const worker = fs.readFileSync('service-worker.js', 'utf8');
 
@@ -14,6 +15,7 @@ test('Explore remains a first-class More destination without dashboard clutter',
   assert.doesNotMatch(explore, /data-dashboard-explore-research/);
   assert.doesNotMatch(explore, /NEW IN RESEARCH/);
   assert.match(index, /explore-research\.css\?v=explore-research-2/);
+  assert.match(index, /explore-theme-fix\.css\?v=explore-theme-fix-1/);
   assert.match(index, /explore-research\.js\?v=explore-research-2/);
 });
 
@@ -45,7 +47,15 @@ test('Explore supports filters, evidence guides and a saved reading list', () =>
   assert.match(explore, /guide-rest/);
   assert.match(styles, /\.explore-tabs/);
   assert.match(styles, /@media\(max-width:520px\)/);
-  assert.match(worker, /2026-09-01-100/);
+  assert.match(worker, /2026-09-01-101/);
+});
+
+test('Explore photo headings and theme cards retain readable contrast', () => {
+  assert.match(themeFix, /\.explore-hero h1,.explore-detail-hero h1\{color:#fff!important/);
+  assert.match(themeFix, /\.explore-study-card\{border-color:var\(--card-border\);background:var\(--card\);color:var\(--text\)/);
+  assert.match(themeFix, /\.explore-study-title,.explore-study-title strong\{color:var\(--heading\)!important/);
+  assert.match(themeFix, /\.explore-tabs\{border-color:var\(--line\);background:var\(--nav-bg\)/);
+  assert.match(themeFix, /\.explore-topics button\{border-color:var\(--line\);background:var\(--surface-raised\);color:var\(--text-secondary\)/);
 });
 
 test('Explore uses diverse, topic-relevant Pexels photography', () => {

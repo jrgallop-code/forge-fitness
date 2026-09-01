@@ -246,10 +246,10 @@ test("production entry points load the theme before paint and bust caches", asyn
   assert.match(html, /level_up_appearance_settings/);
   assert.ok(html.indexOf("level_up_appearance_settings") < html.indexOf("css/styles.css"));
   assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-11/);
-  assert.match(html, /js\/app\.js\?v=appearance-themes-4/);
+  assert.match(html, /js\/app\.js\?v=whats-new-1/);
   assert.match(html, /getHours\(\)/);
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-2/);
-  assert.match(app, /router\.js\?v=appearance-themes-4/);
+  assert.match(app, /router\.js\?v=whats-new-1/);
   assert.match(router, /more-ui-v2\.js\?v=appearance-themes-2/);
-  assert.match(worker, /2026-09-01-100/);
+  assert.match(worker, /2026-09-01-101/);
 });

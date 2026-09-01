@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=progress-640-restore-1";
+import { navigate } from "../core/router.js?v=whats-new-1";
 
 
 export function renderNavbar() {
