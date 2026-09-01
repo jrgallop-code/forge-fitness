@@ -127,6 +127,7 @@ const state = freshState();
 let generated = null;
 let saveInProgress = false;
 let observerQueued = false;
+let coachBuildTimer = 0;
 
 function freshState() {
   const prefs = getTrainingPreferences?.() || {};
@@ -215,6 +216,7 @@ document.addEventListener("click", event => {
   updateState(button);
 
   if (button.matches("[data-smart-build]")) {
+    clearCoachBuildTimer();
     const coachId = VIRTUAL_COACHES[button.dataset.coachId] ? button.dataset.coachId : readCoachId();
     Object.assign(state, freshState(), { coachId });
     saveCoachId(coachId);
@@ -226,7 +228,7 @@ document.addEventListener("click", event => {
     event.preventDefault();
     event.stopImmediatePropagation();
     generated = generateProgram();
-    renderReview();
+    showCoachBuildTransition();
     return;
   }
 
@@ -257,6 +259,28 @@ document.addEventListener("click", event => {
 
 function isGenerateStep() {
   return Boolean(document.querySelector("[data-smart-step] [data-supersets]"));
+}
+
+function clearCoachBuildTimer() {
+  if (!coachBuildTimer) return;
+  window.clearTimeout(coachBuildTimer);
+  coachBuildTimer = 0;
+}
+
+function showCoachBuildTransition() {
+  const host = document.querySelector("[data-smart-step]");
+  if (!host || !generated) return;
+  clearCoachBuildTimer();
+  const coach = VIRTUAL_COACHES[state.coachId] || VIRTUAL_COACHES.maya;
+  const heading = document.querySelector("[data-smart-heading]");
+  const progress = document.querySelector("[data-smart-progress]");
+  if (heading) heading.textContent = `Coach ${coach.name} is building your program`;
+  if (progress) progress.style.width = "100%";
+  host.innerHTML = `<section class="smart-coach-build-card" role="status" aria-live="polite"><div class="smart-coach-loader" aria-hidden="true"><svg class="smart-coach-ring" viewBox="0 0 160 160"><circle class="smart-coach-ring-track" cx="80" cy="80" r="68"></circle><circle class="smart-coach-ring-progress" cx="80" cy="80" r="68" pathLength="100"></circle></svg><svg class="smart-coach-dumbbell" viewBox="0 0 128 64"><path d="M38 25h52v14H38z"></path><path d="M18 19h13v26H18zM97 19h13v26H97z"></path><path d="M8 14h10v36H8zM110 14h10v36h-10z"></path></svg></div><span class="smart-coach-kicker">PROGRAM DESIGN</span><h4>Your coach is building your program</h4><p>Matching the best template to your goals, then balancing exercise selection, weekly volume and recovery.</p><div class="smart-coach-build-status"><i></i><span>Personalizing your training week</span></div></section>`;
+  coachBuildTimer = window.setTimeout(() => {
+    coachBuildTimer = 0;
+    renderReview();
+  }, 2600);
 }
 
 function resolvedSplitPreference(days = state.days) {
