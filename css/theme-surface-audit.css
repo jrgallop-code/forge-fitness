@@ -923,3 +923,34 @@ html[data-theme] .smart-set-breakdown-heading .eyebrow {
 html[data-theme] button .app-inline-icon {
     color: inherit !important;
 }
+
+/* Saved-meal builder controls and interaction states must follow the selected appearance. */
+html[data-theme] :is(.food-builder-photo > [data-meal-photo-pick], .food-builder-add) {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--accent-text) !important;
+    box-shadow: none !important;
+}
+
+html[data-theme] :is(.food-builder-item-details[open] > summary, .food-builder-paste[open] > summary, .food-builder-items .food-builder-item-edit:active) {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] :is(.food-builder-item-editor select, .food-builder-item-editor input) {
+    border-color: var(--line) !important;
+    background: var(--input-bg) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] :is(.food-builder-photo > [data-meal-photo-remove], .food-builder-item-details > summary small, .food-builder-item-details > summary > i, .food-builder-paste > summary small, .food-builder-paste > summary > i, .food-builder-paste-body > p, .food-builder-import-status) {
+    color: var(--muted) !important;
+    -webkit-text-fill-color: var(--muted) !important;
+}
+
+html[data-theme] .food-builder-item-editor .food-builder-item-actions button:not(.primary-btn) {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+}
