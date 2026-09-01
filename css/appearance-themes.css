@@ -317,3 +317,9 @@ html[data-theme-mode="light"] .exercise-guide-screen :where(h2,h3,strong){color:
 html[data-theme-mode="light"] .exercise-guide-screen :where(p,li){color:var(--text-secondary)!important}
 html[data-theme-mode="light"] .exercise-guide-screen :where(small,.exercise-guide-step-note,.exercise-guide-fallback-note){color:var(--muted)!important}
 html[data-theme-mode="light"] .exercise-guide-screen :where(ol,ul) li::marker{color:var(--accent-text)!important}
+
+/* The logger's optional RIR controls use the active palette instead of fixed black buttons. */
+.workout-session-logger :where(.adaptive-rir-toggle,.adaptive-info-button){border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+.workout-session-logger .adaptive-rir-toggle span{color:var(--muted)!important}
+.workout-session-logger .adaptive-rir-row>strong{color:var(--text-secondary)!important}
+.workout-session-logger .adaptive-rir-choice.selected{border-color:var(--accent)!important;background:var(--accent)!important;color:var(--accent-contrast)!important}

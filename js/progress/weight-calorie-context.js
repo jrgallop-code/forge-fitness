@@ -703,42 +703,43 @@ function ensureStyles() {
     style.id = STYLE_ID;
     style.textContent = `
         #weight-progress .weight-trend-interactive-slide{position:relative}
-        #weight-progress .weight-point-tooltip{position:absolute;z-index:12;display:grid;gap:4px;padding:9px 10px;border:1px solid rgba(255,255,255,.15);border-radius:11px;background:rgba(24,24,28,.98);box-shadow:0 10px 28px rgba(0,0,0,.42);pointer-events:none}
+        #weight-progress .weight-point-tooltip{position:absolute;z-index:12;display:grid;gap:4px;padding:9px 10px;border:1px solid var(--card-border);border-radius:11px;background:var(--card);color:var(--text);box-shadow:var(--shadow);pointer-events:none}
         #weight-progress .weight-point-tooltip[hidden]{display:none!important}
-        #weight-progress .weight-point-tooltip strong{font-size:11px;color:#fff}
-        #weight-progress .weight-point-tooltip span{display:flex;justify-content:space-between;gap:12px;color:#d2d2d7;font-size:10px}
-        #weight-progress .weight-point-tooltip b{color:#8f8f98;font-size:9px}
-        #weight-progress .weight-point-marker{position:absolute;z-index:11;width:12px;height:12px;margin:-6px 0 0 -6px;border:2px solid ${TREND_GREEN};border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(69,203,117,.16);pointer-events:none}
+        #weight-progress .weight-point-tooltip strong{font-size:11px;color:var(--heading)}
+        #weight-progress .weight-point-tooltip span{display:flex;justify-content:space-between;gap:12px;color:var(--text-secondary);font-size:10px}
+        #weight-progress .weight-point-tooltip b{color:var(--muted);font-size:9px}
+        #weight-progress .weight-point-marker{position:absolute;z-index:11;width:12px;height:12px;margin:-6px 0 0 -6px;border:2px solid ${TREND_GREEN};border-radius:50%;background:var(--surface);box-shadow:0 0 0 4px rgba(69,203,117,.16);pointer-events:none}
         #weight-progress .weight-point-marker[hidden]{display:none!important}
         #weight-progress .weight-graph-carousel-pager-v2.has-three-weight-pages{grid-template-columns:repeat(3,minmax(0,1fr))}
         #weight-progress .weight-graph-carousel-pager-v2.has-three-weight-pages button{padding-inline:2px;font-size:8.5px}
         #weight-progress .weight-graph-carousel-slide-v2.is-calories{padding:0 1px}
         #weight-progress .weight-calories-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
         #weight-progress .weight-calories-head h3{margin:3px 0;font-size:18px}
-        #weight-progress .weight-calories-head p{margin:0;color:#9898a3;font-size:10px}
+        #weight-progress .weight-calories-head p{margin:0;color:var(--muted);font-size:10px}
         #weight-progress .weight-calories-info{position:relative}
-        #weight-progress .weight-calories-info summary{display:grid;place-items:center;width:30px;height:30px;border:1px solid #3b3b42;border-radius:50%;background:#242429;color:#c6c6cd;font-weight:900;list-style:none}
+        #weight-progress .weight-calories-info summary{display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--line);border-radius:50%;background:var(--surface-raised);color:var(--text);font-weight:900;list-style:none}
         #weight-progress .weight-calories-info summary::-webkit-details-marker{display:none}
-        #weight-progress .weight-calories-info>div{position:absolute;z-index:14;top:36px;right:0;width:min(300px,calc(100vw - 52px));padding:12px;border:1px solid #3a3a41;border-radius:14px;background:#202024;box-shadow:0 14px 36px rgba(0,0,0,.5)}
-        #weight-progress .weight-calories-info p{margin:6px 0;color:#a1a1aa;font-size:10px;line-height:1.45}
-        #weight-progress .weight-calories-info small{color:#85858e;font-size:9px;line-height:1.4}
-        #weight-progress .weight-calories-chart-shell{position:relative;min-height:330px;border-top:1px solid #303036;border-bottom:1px solid #303036}
+        #weight-progress .weight-calories-info>div{position:absolute;z-index:14;top:36px;right:0;width:min(300px,calc(100vw - 52px));padding:12px;border:1px solid var(--card-border);border-radius:14px;background:var(--card);color:var(--text);box-shadow:var(--shadow)}
+        #weight-progress .weight-calories-info strong{color:var(--heading)}
+        #weight-progress .weight-calories-info p{margin:6px 0;color:var(--text-secondary);font-size:10px;line-height:1.45}
+        #weight-progress .weight-calories-info small{color:var(--muted);font-size:9px;line-height:1.4}
+        #weight-progress .weight-calories-chart-shell{position:relative;min-height:330px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
         #weight-progress .weight-calories-chart-shell canvas{display:block;width:100%;height:330px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
-        #weight-progress .weight-calories-tooltip{position:absolute;z-index:5;top:12px;display:grid;gap:3px;padding:9px 10px;border:1px solid rgba(255,255,255,.14);border-radius:11px;background:rgba(24,24,28,.97);box-shadow:0 10px 28px rgba(0,0,0,.4);pointer-events:none}
+        #weight-progress .weight-calories-tooltip{position:absolute;z-index:5;top:12px;display:grid;gap:3px;padding:9px 10px;border:1px solid var(--card-border);border-radius:11px;background:var(--card);color:var(--text);box-shadow:var(--shadow);pointer-events:none}
         #weight-progress .weight-calories-tooltip[hidden]{display:none!important}
-        #weight-progress .weight-calories-tooltip strong{font-size:11px}
-        #weight-progress .weight-calories-tooltip span{color:#d2d2d7;font-size:10px}
-        #weight-progress .weight-calories-tooltip .is-calorie-value{color:${CALORIE_COLOR}}
-        #weight-progress .weight-calories-legend{display:flex;flex-wrap:wrap;gap:8px 13px;margin-top:9px;color:#92929c;font-size:9px;font-weight:800}
+        #weight-progress .weight-calories-tooltip strong{font-size:11px;color:var(--heading)}
+        #weight-progress .weight-calories-tooltip span{color:var(--text-secondary);font-size:10px}
+        #weight-progress .weight-calories-tooltip .is-calorie-value{color:var(--danger-text)}
+        #weight-progress .weight-calories-legend{display:flex;flex-wrap:wrap;gap:8px 13px;margin-top:9px;color:var(--muted);font-size:9px;font-weight:800}
         #weight-progress .weight-calories-legend span{display:flex;align-items:center;gap:5px}
         #weight-progress .weight-calories-legend i{display:block;width:13px;height:3px;border-radius:999px}
         #weight-progress .weight-calories-legend .is-weight{background:${DAILY_WEIGHT}}
         #weight-progress .weight-calories-legend .is-trend{background:${TREND_GREEN}}
         #weight-progress .weight-calories-legend .is-calories{height:8px;border-radius:3px;background:${CALORIE_COLOR}}
-        #weight-progress .weight-calories-note{margin:0;color:#777780;font-size:8.5px}
-        #weight-progress .weight-calories-empty{margin-top:8px;padding:12px 13px;border:1px dashed rgba(255,90,95,.28);border-radius:13px;background:rgba(255,90,95,.045)}
+        #weight-progress .weight-calories-note{margin:0;color:var(--muted);font-size:8.5px}
+        #weight-progress .weight-calories-empty{margin-top:8px;padding:12px 13px;border:1px dashed color-mix(in srgb,var(--danger) 28%,var(--line));border-radius:13px;background:color-mix(in srgb,var(--danger) 5%,var(--card))}
         #weight-progress .weight-calories-empty strong{font-size:12px}
-        #weight-progress .weight-calories-empty p{margin:4px 0 0;color:#9696a0;font-size:9.5px;line-height:1.45}
+        #weight-progress .weight-calories-empty p{margin:4px 0 0;color:var(--muted);font-size:9.5px;line-height:1.45}
         @media(max-width:520px){#weight-progress .weight-calories-chart-shell,#weight-progress .weight-calories-chart-shell canvas{min-height:330px;height:330px}}
     `;
     document.head.appendChild(style);

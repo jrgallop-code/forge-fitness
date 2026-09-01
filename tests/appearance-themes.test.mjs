@@ -209,6 +209,11 @@ test("Arctic overlays, form-guide copy, and canvas labels retain contrast", asyn
   ]) assert.ok(styles.includes(selector), `${selector} should be contrast-safe`);
   assert.match(styles, /\.weight-calories-tooltip \.is-calorie-value\{color:var\(--danger-text\)!important/);
   assert.match(styles, /\.exercise-guide-screen :where\(p,li\)\{color:var\(--text-secondary\)!important/);
+  assert.match(styles, /\.adaptive-rir-toggle,\.adaptive-info-button\)[^{]*\{border-color:var\(--line\)!important;background:var\(--surface-raised\)!important;color:var\(--text\)!important/);
+  assert.match(calories, /\.weight-calories-tooltip\{[^}]*background:var\(--card\);color:var\(--text\)/);
+  assert.match(calories, /\.weight-calories-info>div\{[^}]*background:var\(--card\);color:var\(--text\)/);
+  assert.doesNotMatch(calories, /\.weight-calories-tooltip\{[^}]*background:rgba\(24,24,28/);
+  assert.doesNotMatch(calories, /\.weight-calories-info>div\{[^}]*background:#202024/);
   for (const source of [trend, calories, carbs]) {
     assert.match(source, /themeColor\("--muted"/);
     assert.match(source, /themeColor\("--line"/);
@@ -221,11 +226,11 @@ test("production entry points load the theme before paint and bust caches", asyn
   ]);
   assert.match(html, /level_up_appearance_settings/);
   assert.ok(html.indexOf("level_up_appearance_settings") < html.indexOf("css/styles.css"));
-  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-8/);
-  assert.match(html, /js\/app\.js\?v=appearance-themes-3/);
+  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-9/);
+  assert.match(html, /js\/app\.js\?v=appearance-themes-4/);
   assert.match(html, /getHours\(\)/);
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-2/);
-  assert.match(app, /router\.js\?v=appearance-themes-3/);
+  assert.match(app, /router\.js\?v=appearance-themes-4/);
   assert.match(router, /more-ui-v2\.js\?v=appearance-themes-2/);
-  assert.match(worker, /2026-09-01-95/);
+  assert.match(worker, /2026-09-01-96/);
 });

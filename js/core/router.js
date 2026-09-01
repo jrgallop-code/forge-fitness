@@ -18,7 +18,7 @@ import { initializeExerciseProgressV2 } from "../progress/exercise-progress-v2.j
 import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=analytics-summary-polish-1";
 import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.js?v=repair-generic-exercise-1";
 import { initializeMuscleRecoveryMap } from "../progress/muscle-recovery-map.js?v=recovery-traced-1";
-import { initializeWeightCarbsChart } from "../progress/weight-carbs-chart.js?v=arctic-contrast-1";
+import { initializeWeightCarbsChart } from "../progress/weight-carbs-chart.js?v=arctic-surfaces-1";
 import { initializeCalorieStats } from "../nutrition/calorie-stats.js?v=weekly-review-modal-1";
 import { renderSleepTracker, initializeSleepTracker } from "../progress/sleep-tracker.js?v=sleep-tracker-2";
 import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../progress/measurements-tracker.js?v=measurements-image-1";
