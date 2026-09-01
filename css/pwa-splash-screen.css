@@ -51,17 +51,69 @@ html.level-up-installed-pwa .pwa-splash-loader-fill {
     animation: level-up-fake-load 1.76s cubic-bezier(.22, .61, .36, 1) forwards;
 }
 
-html[data-theme-preference="arctic"].level-up-installed-pwa #pwa-splash {
+html[data-theme="arctic"].level-up-installed-pwa #pwa-splash {
     background: #f3f7fc;
 }
 
-html[data-theme-preference="arctic"].level-up-installed-pwa .pwa-splash-loader {
+html[data-theme="arctic"].level-up-installed-pwa .pwa-splash-loader {
     background: rgba(23, 105, 224, .16);
     box-shadow: 0 0 12px rgba(23, 105, 224, .2);
 }
 
-html[data-theme-preference="arctic"].level-up-installed-pwa .pwa-splash-loader-fill {
+html[data-theme="arctic"].level-up-installed-pwa .pwa-splash-loader-fill {
     background: #1769e0;
+}
+
+html[data-theme="pure"].level-up-installed-pwa #pwa-splash {
+    background: #f4f4f2;
+}
+
+html[data-theme="pure"].level-up-installed-pwa .pwa-splash-loader {
+    background: rgba(23, 23, 25, .12);
+    box-shadow: 0 0 10px rgba(23, 23, 25, .12);
+}
+
+html[data-theme="pure"].level-up-installed-pwa .pwa-splash-loader-fill {
+    background: #171719;
+}
+
+html[data-theme="ocean"].level-up-installed-pwa #pwa-splash {
+    background: #edf8ff;
+}
+
+html[data-theme="ocean"].level-up-installed-pwa .pwa-splash-loader {
+    background: rgba(7, 152, 217, .14);
+    box-shadow: 0 0 12px rgba(7, 152, 217, .18);
+}
+
+html[data-theme="ocean"].level-up-installed-pwa .pwa-splash-loader-fill {
+    background: #0798d9;
+}
+
+html[data-theme="midnight"].level-up-installed-pwa #pwa-splash {
+    background: #050b17;
+}
+
+html[data-theme="midnight"].level-up-installed-pwa .pwa-splash-loader {
+    background: rgba(52, 120, 246, .18);
+    box-shadow: 0 0 12px rgba(52, 120, 246, .2);
+}
+
+html[data-theme="midnight"].level-up-installed-pwa .pwa-splash-loader-fill {
+    background: #3478f6;
+}
+
+html[data-theme="slate"].level-up-installed-pwa #pwa-splash {
+    background: #0d1117;
+}
+
+html[data-theme="slate"].level-up-installed-pwa .pwa-splash-loader {
+    background: rgba(115, 150, 184, .2);
+    box-shadow: 0 0 12px rgba(115, 150, 184, .18);
+}
+
+html[data-theme="slate"].level-up-installed-pwa .pwa-splash-loader-fill {
+    background: #7396b8;
 }
 
 @keyframes level-up-fake-load {
