@@ -33,6 +33,9 @@ test("coach builder transitions through the coach build card after question six"
   assert.match(engine, /generated = generateProgram\(\);\s*showCoachBuildTransition\(\);/);
   assert.match(engine, /function showCoachBuildTransition\(\)/);
   assert.match(engine, /Your coach is building your program/);
+  assert.match(engine, /Personalizing your training week/);
+  assert.doesNotMatch(engine, /Matching the best template/);
+  assert.doesNotMatch(source, /Matching the best template/);
   assert.match(engine, /coachBuildTimer = window\.setTimeout\(\(\) => \{\s*coachBuildTimer = 0;\s*renderReview\(\);\s*\}, 2600\)/);
 });
 
@@ -44,11 +47,11 @@ test("production module cache keys retain the restored experience step", async (
   ]);
 
   assert.match(index, /css\/smart-build-coach-loading\.css\?v=coach-build-loading-1/);
-  assert.match(index, /js\/app\.js\?v=coach-build-loading-1/);
-  assert.match(index, /smart-build-full-body-guardrails\.js\?v=coach-build-loading-2/);
-  assert.match(app, /\.\/core\/router\.js\?v=coach-build-loading-1/);
-  assert.match(router, /\.\.\/workouts\/smart-build\.js\?v=coach-build-loading-1/);
-  assert.match(await read("js/workouts/smart-build-full-body-guardrails.js"), /smart-build-unified-engine-v11\.js\?v=coach-build-loading-2/);
+  assert.match(index, /js\/app\.js\?v=coach-build-personalized-1/);
+  assert.match(index, /smart-build-full-body-guardrails\.js\?v=coach-build-personalized-1/);
+  assert.match(app, /\.\/core\/router\.js\?v=coach-build-personalized-1/);
+  assert.match(router, /\.\.\/workouts\/smart-build\.js\?v=coach-build-personalized-1/);
+  assert.match(await read("js/workouts/smart-build-full-body-guardrails.js"), /smart-build-unified-engine-v11\.js\?v=coach-build-personalized-1/);
 });
 
 test("coach build transition has a responsive animated circular loading treatment", async () => {
