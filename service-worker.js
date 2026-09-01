@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-01-97";
+const CACHE_VERSION = "2026-09-01-98";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -15,7 +15,8 @@ const CORE_ASSETS = [
     "./assets/icons/icon-maskable-512.png",
     "./assets/icons/icon-maskable-1024.png",
     "./assets/icons/apple-touch-icon-180.png",
-    "./assets/level-up-splash-exact.png"
+    "./assets/level-up-splash-exact.png",
+    "./assets/level-up-splash-arctic.png"
 ];
 
 function isLocalAsset(value) {

@@ -205,8 +205,12 @@ test("Arctic overlays, form-guide copy, and canvas labels retain contrast", asyn
     ".weight-point-tooltip",
     ".weight-calories-tooltip",
     ".weight-calories-info>div",
+    ".recovery-dual-map-card",
+    ".recovery-breakdown-card",
     "html[data-theme-mode=\"light\"] .exercise-guide-screen"
   ]) assert.ok(styles.includes(selector), `${selector} should be contrast-safe`);
+  assert.match(styles, /\.recovery-dual-layout :where\(\.recovery-dual-map-card,\.recovery-breakdown-card\)[^}]*background:var\(--card\)!important/);
+  assert.match(styles, /\.recovery-dual-layout :where\(\.recovery-breakdown-heading h4,\.recovery-scale::before\)[^}]*color:var\(--heading\)!important/);
   assert.match(styles, /\.weight-calories-tooltip \.is-calorie-value\{color:var\(--danger-text\)!important/);
   assert.match(styles, /\.exercise-guide-screen :where\(p,li\)\{color:var\(--text-secondary\)!important/);
   assert.match(styles, /\.adaptive-rir-toggle,\.adaptive-info-button\)[^{]*\{border-color:var\(--line\)!important;background:var\(--surface-raised\)!important;color:var\(--text\)!important/);
@@ -226,11 +230,11 @@ test("production entry points load the theme before paint and bust caches", asyn
   ]);
   assert.match(html, /level_up_appearance_settings/);
   assert.ok(html.indexOf("level_up_appearance_settings") < html.indexOf("css/styles.css"));
-  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-9/);
+  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-10/);
   assert.match(html, /js\/app\.js\?v=appearance-themes-4/);
   assert.match(html, /getHours\(\)/);
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-2/);
   assert.match(app, /router\.js\?v=appearance-themes-4/);
   assert.match(router, /more-ui-v2\.js\?v=appearance-themes-2/);
-  assert.match(worker, /2026-09-01-97/);
+  assert.match(worker, /2026-09-01-98/);
 });

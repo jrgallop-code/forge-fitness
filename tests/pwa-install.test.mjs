@@ -56,6 +56,26 @@ test("installed launches have a hard splash timeout and a cache-safe recovery sc
     assert.match(styles, /\.pwa-startup-recovery/);
 });
 
+test("an explicit Arctic selection uses the Arctic splash and blue loader", () => {
+    const html = readFileSync("index.html", "utf8");
+    const worker = readFileSync("service-worker.js", "utf8");
+    const styles = readFileSync("css/pwa-splash-screen.css", "utf8");
+    const arcticSplash = "assets/level-up-splash-arctic.png";
+    assert.ok(existsSync(arcticSplash));
+    assert.deepEqual(pngDimensions(arcticSplash), { width: 941, height: 1672 });
+    assert.match(html, /"arctic"===t\?"assets\/level-up-splash-arctic\.png\?v=arctic-splash-1"/);
+    assert.match(html, /window\.__levelUpSplashAsset/);
+    assert.match(worker, /\.\/assets\/level-up-splash-arctic\.png/);
+    assert.match(styles, /html\[data-theme-preference="arctic"\]\.level-up-installed-pwa #pwa-splash/);
+    assert.match(styles, /background: #1769e0/);
+});
+
+test("automatic daytime Arctic keeps the default Level Up splash", () => {
+    const html = readFileSync("index.html", "utf8");
+    assert.match(html, /window\.__levelUpSplashAsset="arctic"===t\?/);
+    assert.doesNotMatch(html, /window\.__levelUpSplashAsset="arctic"===r\?/);
+});
+
 test("iPhone install guidance treats Open as Web App as optional", () => {
     const onboarding = readFileSync("js/onboarding/onboarding-install-help.js", "utf8");
     const more = readFileSync("js/more/install-level-up.js", "utf8");
