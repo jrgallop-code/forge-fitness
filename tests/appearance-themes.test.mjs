@@ -60,16 +60,61 @@ test("feature cards inherit the selected theme instead of fixed dark colours", a
   assert.match(styles, /\.dashboard-calorie-arc-value\{stroke:var\(--accent\)!important/);
 });
 
+test("late-loading feature cards and controls retain theme contrast", async () => {
+  const styles = await read("css/appearance-themes.css");
+  for (const selector of [
+    ".weight-table",
+    ".admin-analytics-kpi",
+    ".profile-sex-options label",
+    ".history-workout-card",
+    ".muscle-overview-recovery-panel .recovery-map-shell",
+    ".level-up-coach-launcher",
+    ".food-voice-open",
+    ".food-edit-calorie-ring::before",
+    ".nutrition-planner-back"
+  ]) {
+    assert.match(styles, new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+  assert.match(styles, /\.level-up-workout-actions strong\{color:var\(--text\)!important/);
+  assert.match(styles, /\.food-entry-edit>b[^}]*color:var\(--text\)!important/);
+});
+
+test("theme text tokens meet WCAG AA contrast on cards", () => {
+  const palettes = [
+    ["Level Up", "#1c1c22", "#f7f7f8", "#9b9ba5", "#ff6670", "#df141e", "#ffffff"],
+    ["Arctic", "#ffffff", "#10203a", "#647188", "#0e4fb3", "#1769e0", "#ffffff"],
+    ["Pure", "#ffffff", "#202022", "#747478", "#171719", "#171719", "#ffffff"],
+    ["Ocean", "#ffffff", "#123252", "#61798f", "#0676ad", "#0798d9", "#07233f"],
+    ["Midnight", "#132238", "#f5f8ff", "#92a3bd", "#7eb0ff", "#3478f6", "#050b17"],
+    ["Slate", "#1d2630", "#eef3f7", "#9aa8b4", "#a9c8e4", "#7396b8", "#071018"]
+  ];
+  const luminance = hex => {
+    const channels = [1, 3, 5].map(index => Number.parseInt(hex.slice(index, index + 2), 16) / 255);
+    const linear = channels.map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4);
+    return .2126 * linear[0] + .7152 * linear[1] + .0722 * linear[2];
+  };
+  const ratio = (first, second) => {
+    const values = [luminance(first), luminance(second)].sort((a, b) => b - a);
+    return (values[0] + .05) / (values[1] + .05);
+  };
+  for (const [name, card, text, muted, accentText, accent, accentContrast] of palettes) {
+    assert.ok(ratio(card, text) >= 4.5, `${name} primary text contrast`);
+    assert.ok(ratio(card, muted) >= 4.5, `${name} secondary text contrast`);
+    assert.ok(ratio(card, accentText) >= 4.5, `${name} accent text contrast`);
+    assert.ok(ratio(accent, accentContrast) >= 4.5, `${name} filled control contrast`);
+  }
+});
+
 test("production entry points load the theme before paint and bust caches", async () => {
   const [html, app, router, worker] = await Promise.all([
     read("index.html"), read("js/app.js"), read("js/core/router.js"), read("service-worker.js")
   ]);
   assert.match(html, /level_up_appearance_settings/);
   assert.ok(html.indexOf("level_up_appearance_settings") < html.indexOf("css/styles.css"));
-  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-2/);
+  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-3/);
   assert.match(html, /js\/app\.js\?v=appearance-themes-1/);
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-1/);
   assert.match(app, /router\.js\?v=appearance-themes-1/);
   assert.match(router, /more-ui-v2\.js\?v=appearance-themes-1/);
-  assert.match(worker, /2026-09-01-89/);
+  assert.match(worker, /2026-09-01-90/);
 });

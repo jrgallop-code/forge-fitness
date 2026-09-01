@@ -1,38 +1,38 @@
 :root,
 html[data-theme="level-up"] {
-  --accent:#ef1821;--accent-dark:#a90e15;--accent-soft:rgba(239,24,33,.11);--accent-glow:rgba(239,24,33,.22);--accent-contrast:#fff;
+  --accent:#df141e;--accent-dark:#a90e15;--accent-text:#ff6670;--accent-soft:rgba(239,24,33,.11);--accent-glow:rgba(239,24,33,.22);--accent-contrast:#fff;
   --bg:#09090b;--surface:#121216;--surface-raised:#18181d;--card:#1c1c22;--text:#f7f7f8;--heading:#fff;--muted:#9b9ba5;
   --line:rgba(255,255,255,.09);--card-border:rgba(255,255,255,.1);--input-bg:#15151a;--nav-bg:rgba(22,12,14,.96);--nav-border:rgba(255,255,255,.13);
   --body-background:radial-gradient(circle at 15% -10%,rgba(239,24,33,.11),transparent 34rem),#09090b;--shadow:0 18px 50px rgba(0,0,0,.38);
-  --success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
+  --success:#22c55e;--success-text:#65df8d;--warning:#f59e0b;--warning-text:#f6bd5a;--danger:#ef4444;--danger-text:#ff737b;--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
 }
 html[data-theme="arctic"] {
-  --accent:#1769e0;--accent-dark:#0e4fb3;--accent-soft:rgba(23,105,224,.1);--accent-glow:rgba(23,105,224,.18);--accent-contrast:#fff;
+  --accent:#1769e0;--accent-dark:#0e4fb3;--accent-text:#0e4fb3;--accent-soft:rgba(23,105,224,.1);--accent-glow:rgba(23,105,224,.18);--accent-contrast:#fff;
   --bg:#f3f7fc;--surface:#fff;--surface-raised:#edf3fb;--card:#fff;--text:#10203a;--heading:#09162b;--muted:#647188;
   --line:rgba(23,48,84,.12);--card-border:rgba(23,48,84,.12);--input-bg:#f7faff;--nav-bg:rgba(255,255,255,.96);--nav-border:rgba(21,51,91,.14);
   --body-background:radial-gradient(circle at 92% -8%,rgba(50,133,255,.13),transparent 30rem),#f3f7fc;--shadow:0 14px 34px rgba(36,67,105,.1);
-  --red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
+  --success-text:#147a3c;--warning-text:#8a5300;--danger-text:#b91c1c;--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
 }
 html[data-theme="pure"] {
-  --accent:#171719;--accent-dark:#000;--accent-soft:rgba(23,23,25,.07);--accent-glow:rgba(23,23,25,.12);--accent-contrast:#fff;
+  --accent:#171719;--accent-dark:#000;--accent-text:#171719;--accent-soft:rgba(23,23,25,.07);--accent-glow:rgba(23,23,25,.12);--accent-contrast:#fff;
   --bg:#f4f4f2;--surface:#fff;--surface-raised:#ededeb;--card:#fff;--text:#202022;--heading:#0d0d0e;--muted:#747478;
   --line:rgba(20,20,22,.11);--card-border:rgba(20,20,22,.11);--input-bg:#f8f8f6;--nav-bg:rgba(255,255,255,.97);--nav-border:rgba(20,20,22,.12);
-  --body-background:#f4f4f2;--shadow:0 12px 30px rgba(20,20,20,.08);--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
+  --body-background:#f4f4f2;--shadow:0 12px 30px rgba(20,20,20,.08);--success-text:#147a3c;--warning-text:#8a5300;--danger-text:#b91c1c;--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
 }
 html[data-theme="ocean"] {
-  --accent:#0798d9;--accent-dark:#0676ad;--accent-soft:rgba(7,152,217,.1);--accent-glow:rgba(7,152,217,.18);--accent-contrast:#fff;
+  --accent:#0798d9;--accent-dark:#0676ad;--accent-text:#0676ad;--accent-soft:rgba(7,152,217,.1);--accent-glow:rgba(7,152,217,.18);--accent-contrast:#07233f;
   --bg:#edf8ff;--surface:#fff;--surface-raised:#e3f4ff;--card:#fff;--text:#123252;--heading:#07233f;--muted:#61798f;
   --line:rgba(17,81,120,.13);--card-border:rgba(17,81,120,.13);--input-bg:#f5fbff;--nav-bg:rgba(248,253,255,.97);--nav-border:rgba(17,81,120,.14);
-  --body-background:linear-gradient(155deg,rgba(46,180,240,.13),transparent 34rem),#edf8ff;--shadow:0 14px 34px rgba(17,81,120,.1);--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
+  --body-background:linear-gradient(155deg,rgba(46,180,240,.13),transparent 34rem),#edf8ff;--shadow:0 14px 34px rgba(17,81,120,.1);--success-text:#147a3c;--warning-text:#8a5300;--danger-text:#b91c1c;--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
 }
 html[data-theme="midnight"] {
-  --accent:#3478f6;--accent-dark:#195ac8;--accent-soft:rgba(52,120,246,.12);--accent-glow:rgba(52,120,246,.24);--accent-contrast:#fff;
+  --accent:#3478f6;--accent-dark:#195ac8;--accent-text:#7eb0ff;--accent-soft:rgba(52,120,246,.12);--accent-glow:rgba(52,120,246,.24);--accent-contrast:#050b17;
   --bg:#050b17;--surface:#0b1628;--surface-raised:#101d31;--card:#132238;--text:#f5f8ff;--heading:#fff;--muted:#92a3bd;
   --line:rgba(135,172,226,.13);--card-border:rgba(135,172,226,.14);--input-bg:#0d1a2c;--nav-bg:rgba(5,13,27,.96);--nav-border:rgba(135,172,226,.16);
   --body-background:radial-gradient(circle at 80% -8%,rgba(52,120,246,.18),transparent 34rem),#050b17;--shadow:0 18px 50px rgba(0,4,12,.5);--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
 }
 html[data-theme="slate"] {
-  --accent:#7396b8;--accent-dark:#557590;--accent-soft:rgba(115,150,184,.12);--accent-glow:rgba(115,150,184,.2);--accent-contrast:#071018;
+  --accent:#7396b8;--accent-dark:#557590;--accent-text:#a9c8e4;--accent-soft:rgba(115,150,184,.12);--accent-glow:rgba(115,150,184,.2);--accent-contrast:#071018;
   --bg:#0d1117;--surface:#151b22;--surface-raised:#1a222c;--card:#1d2630;--text:#eef3f7;--heading:#fff;--muted:#9aa8b4;
   --line:rgba(183,204,221,.12);--card-border:rgba(183,204,221,.13);--input-bg:#171f28;--nav-bg:rgba(13,17,23,.96);--nav-border:rgba(183,204,221,.15);
   --body-background:radial-gradient(circle at 82% -10%,rgba(115,150,184,.12),transparent 32rem),#0d1117;--shadow:0 18px 46px rgba(0,0,0,.42);--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
@@ -42,28 +42,28 @@ html,body{background:var(--bg)!important;color:var(--text)}
 body{background:var(--body-background)!important;transition:background-color .2s ease,color .2s ease}
 :where(h1,h2,h3,h4,h5,h6,strong,legend,label){color:var(--heading)}
 :where(p,.muted){color:var(--muted)}
-.eyebrow{color:var(--accent)!important}
+.eyebrow{color:var(--accent-text)!important}
 .primary-btn{border-color:var(--accent)!important;background:var(--accent)!important;color:var(--accent-contrast)!important;box-shadow:0 8px 24px var(--accent-glow)!important}
 .secondary-btn{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
 :where(input,select,textarea){border-color:var(--line)!important;background:var(--input-bg)!important;color:var(--text)!important}
 :where(input,textarea)::placeholder{color:var(--muted)!important}
 .bottom-nav{border-color:var(--nav-border)!important;background:var(--nav-bg)!important;box-shadow:0 18px 50px rgba(0,0,0,.28)!important}
 .bottom-nav button{color:var(--muted)!important}
-.bottom-nav button.active{background:var(--accent-soft)!important;color:var(--accent)!important}
-.bottom-nav button.active .nav-icon{color:var(--accent)!important;fill:var(--accent)!important}
-.bottom-nav button.active .nav-icon-stroke{fill:none!important;stroke:var(--accent)!important}
+.bottom-nav button.active{background:var(--accent-soft)!important;color:var(--accent-text)!important}
+.bottom-nav button.active .nav-icon{color:var(--accent-text)!important;fill:var(--accent-text)!important}
+.bottom-nav button.active .nav-icon-stroke{fill:none!important;stroke:var(--accent-text)!important}
 
 :where(.section-card,.metric-card,.nutrition-goal-card,.nutrition-energy-summary,.analytics-card,.weight-entry-card,.nutrition-planner-card,.calorie-stat-card,.admin-analytics-card,.training-summary-card,.smart-question-card,.smart-picker-panel,.smart-volume-summary,.session-exercise-card,.dashboard-habit-card,.cardio-summary-card,.cardio-analytics-card,.weight-chart-card,.activity-calendar-card,.account-cloud-card,.adaptive-settings-card,.unit-settings-card,.profile-appearance-card,.preset-plan-card,.catalogue-plan-card,.schedule-dashboard-card,.performance-dashboard-card,.overall-strength-index-card,.measurement-entry-card,.measurement-progress-card,.nutrition-guide-card,.nutrition-evidence-card,.nutrition-habits-card,.nutrition-hero-card,.bmi-index-card,.photo-journal-card,.plate-calculator-card,.routine-import-paste-card,.food-sheet-card,.support-report-card,.learn-step-card,.learn-progress-card,.current-phase-card,.phase-current-card,.phase-start-card,.phase-sample-card,.smart-coach-build-card){border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)}
 :where(.more-menu-group,.food-sheet,.adaptive-info-sheet,.plate-calculator-sheet,.starting-weight-calibration-sheet,.weekly-calorie-modal-card,.workout-history-preview-sheet){border-color:var(--card-border)!important;background:var(--surface)!important;color:var(--text)!important;box-shadow:var(--shadow)}
 .more-menu-group>h3{border-color:var(--line)!important;color:var(--muted)!important}
 .more-menu-group>.more-menu-card{border-color:var(--line)!important;color:var(--text)!important}
 .more-menu-group>.more-menu-card:active{background:var(--accent-soft)!important}
-.more-menu-group .more-menu-icon{border-color:color-mix(in srgb,var(--accent) 28%,transparent)!important;background:var(--accent-soft)!important;color:var(--accent)!important}
+.more-menu-group .more-menu-icon{border-color:color-mix(in srgb,var(--accent) 28%,transparent)!important;background:var(--accent-soft)!important;color:var(--accent-text)!important}
 .more-menu-group .more-menu-card:after{color:var(--muted)}
-:where(.training-progress-tab,.nutrition-tab,.lifting-tab,.filter-chip,.range-btn).active{border-color:var(--accent)!important;background:var(--accent-soft)!important;color:var(--accent)!important}
+:where(.training-progress-tab,.nutrition-tab,.lifting-tab,.filter-chip,.range-btn).active{border-color:var(--accent)!important;background:var(--accent-soft)!important;color:var(--accent-text)!important}
 :where(.progress-line,.trend-line,.chart-line,.strength-chart-line){stroke:var(--accent)!important}
 :where(.chart-bar,.training-bar,.weight-bar){fill:var(--accent)!important;background:var(--accent)!important}
-.recovery-ready,[data-status="success"]{color:var(--success)!important}.recovery-nearly-ready,[data-status="warning"]{color:var(--warning)!important}.recovery-recovering,[data-status="error"]{color:var(--danger)!important}
+.recovery-ready,[data-status="success"]{color:var(--success-text)!important}.recovery-nearly-ready,[data-status="warning"]{color:var(--warning-text)!important}.recovery-recovering,[data-status="error"]{color:var(--danger-text)!important}
 
 html[data-theme-mode="light"] :where(.dashboard-welcome,.workout-page,.progress-page,.nutrition-page,.more-compact-header){color:var(--text)}
 html[data-theme-mode="light"] :where(.session-set-row,.recovery-detail-row,.weight-history-row,.measurement-history-row,.exercise-history-row,.performance-row,.phase-history-row,.nutrition-adjustment-row,.weekly-calorie-review-row,.adaptive-option-row,.drive-state-row){border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
@@ -81,13 +81,13 @@ html[data-theme-mode="light"] .smart-coach-build-status{border-color:var(--line)
 .levelup-workout-mode-back{color:var(--text)!important}.levelup-workout-mode-title{color:var(--muted)!important}
 .logger-compact-workout-header{border-color:var(--line)!important}.logger-compact-time-group #workout-duration-display{color:var(--heading)!important}.logger-compact-day-date,.logger-compact-edit-details{color:var(--muted)!important}
 .logger-compact-time-group .workout-timer-actions button,.logger-exercise-strip button,.workout-session-logger .compact-exercise-actions .exercise-more-btn,.logger-exercise-tools .logger-form-guide-btn,.logger-exercise-tools .exercise-warmup-btn,.session-inline-swap,.session-inline-superset,.workout-session-logger .compact-add-set-btn,.session-add-exercise-btn,.session-lifting-notes,.workout-session-logger .logger-remove-set-btn{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
-.logger-exercise-strip button{color:var(--muted)!important}.logger-exercise-strip button>span{background:var(--surface)!important;color:var(--muted)!important}.logger-exercise-strip button.active{border-color:var(--accent)!important;background:var(--accent-soft)!important;color:var(--accent)!important}.logger-exercise-strip button.active>span{background:var(--accent)!important;color:var(--accent-contrast)!important}
+.logger-exercise-strip button{color:var(--muted)!important}.logger-exercise-strip button>span{background:var(--surface)!important;color:var(--muted)!important}.logger-exercise-strip button.active{border-color:var(--accent)!important;background:var(--accent-soft)!important;color:var(--accent-text)!important}.logger-exercise-strip button.active>span{background:var(--accent)!important;color:var(--accent-contrast)!important}
 .workout-session-logger .session-set-row,.workout-session-logger .session-warmup-row{border-color:var(--line)!important}.workout-session-logger .session-set-row>strong,.workout-session-logger .session-warmup-row>strong{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}.workout-session-logger .previous-set-value,.workout-session-logger .session-set-header,.logger-exercise-position{color:var(--muted)!important}.workout-session-logger .session-set-row input,.workout-session-logger .session-warmup-row input,.session-rep-notes{border-color:var(--line)!important;background:var(--input-bg)!important;color:var(--text)!important}
 .workout-session-logger .complete-set-btn,.workout-session-logger .complete-warmup-btn{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}.workout-session-logger .complete-set-btn::before,.workout-session-logger .complete-warmup-btn::before{border-color:var(--muted)!important}.session-lifting-notes summary{color:var(--text)!important}.session-lifting-notes summary em{color:var(--muted)!important}
 .workout-session-logger .progression-prompt p,.workout-session-logger .progression-prompt p b{color:var(--text)!important}.workout-session-logger .progression-prompt small{color:var(--muted)!important}
 
 .calories-tabs,.food-log-date-nav>button,.food-daily-summary,.food-meal,.food-sheet-tabs,.food-meal-picker button,.food-result,.food-saved-meal,.food-builder-summary,.food-builder-items>div,.food-portion-loading,.custom-serving-fields,.food-builder-paste,.food-builder-item-details{border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important}.food-daily-summary,.food-meal{box-shadow:var(--shadow)}
-.calories-tabs{background:var(--surface-raised)!important}.calories-tabs button{color:var(--muted)!important}.calories-tabs button.active,.food-sheet-tabs button.active,.food-meal-picker button.active{border-color:var(--accent)!important;background:var(--accent-soft)!important;color:var(--accent)!important}.food-log-plan-link,.food-add-meal,.food-create-meal,.food-builder-add{color:var(--accent)!important}.food-log-plan-link:focus-visible{outline-color:var(--accent)!important}
+.calories-tabs{background:var(--surface-raised)!important}.calories-tabs button{color:var(--muted)!important}.calories-tabs button.active,.food-sheet-tabs button.active,.food-meal-picker button.active{border-color:var(--accent)!important;background:var(--accent-soft)!important;color:var(--accent-text)!important}.food-log-plan-link,.food-add-meal,.food-create-meal,.food-builder-add{color:var(--accent-text)!important}.food-log-plan-link:focus-visible{outline-color:var(--accent)!important}
 .food-log-date-nav small,.food-calorie-total span,.food-macro-total span,.food-calorie-total small,.food-calorie-total em,.food-meal summary small,.food-data-credit{color:var(--muted)!important}.food-calorie-total,.food-meal-body,.food-entry,.food-meal-macros{border-color:var(--line)!important}.food-calorie-total i{background:linear-gradient(90deg,var(--accent) var(--food-progress),var(--line) var(--food-progress))!important}.food-macro-total>i{background:var(--line)!important}.food-calorie-target{color:var(--muted)!important}.food-meal summary b,.food-entry>span{color:var(--text)!important}
 .food-sheet-card,.food-portion-panel:not([hidden]),.food-meal-builder:not([hidden]){border-color:var(--card-border)!important;background:var(--surface)!important;color:var(--text)!important}.food-sheet-close,.food-portion-heading button,.food-builder-heading button{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}.food-sheet-handle{background:var(--line)!important}.food-search input,.custom-food-form input,.custom-food-form select,.food-portion-panel input,.food-portion-panel select,.food-meal-builder input,.food-builder-paste textarea{border-color:var(--line)!important;background:var(--input-bg)!important;color:var(--text)!important}.food-portion-preview,.food-portion-preview--macros,.food-meal-macros,.food-builder-items>.food-builder-item-editor,.food-builder-item-details>.food-builder-item-editor{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
 
@@ -96,8 +96,75 @@ html[data-theme-mode="light"] .smart-coach-build-status{border-color:var(--line)
 html[data-theme-mode="light"] .seven-day-volume-muscle{stroke:rgba(16,32,58,.62)}
 
 .dashboard-command-center .schedule-dashboard-card,.dashboard-command-today-empty,.dashboard-command-weekly,.dashboard.dashboard-command-insights .metric-card{border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)}.dashboard-weekly-toggle{border-color:var(--line)!important;background:var(--surface-raised)!important}.dashboard-weekly-toggle button{color:var(--muted)!important}.dashboard-weekly-toggle button.active{background:var(--accent)!important;color:var(--accent-contrast)!important}
-.dashboard.dashboard-command-insights .dashboard-food-summary-card{border-color:var(--card-border)!important;background:radial-gradient(circle at 50% 5%,var(--accent-soft),transparent 45%),var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)}.dashboard-food-summary-heading h3,.dashboard-calorie-summary,.dashboard-calorie-copy strong,.dashboard-calorie-copy strong small,.dashboard-macro-progress strong{color:var(--text)!important}.dashboard-food-summary-heading>button{color:var(--accent)!important}.dashboard-calorie-arc-track{stroke:var(--line)!important}.dashboard-calorie-arc-value{stroke:var(--accent)!important;filter:drop-shadow(0 0 8px var(--accent-glow))}.dashboard-calorie-summary pattern rect{fill:var(--accent)!important}.dashboard-calorie-summary pattern line{stroke:var(--accent-dark)!important}.dashboard-calorie-copy>span,.dashboard-macro-progress strong small{color:var(--muted)!important}.dashboard-calorie-toggle-icon{background:var(--surface-raised)!important;color:var(--muted)!important}.dashboard-macro-summary{border-color:var(--line)!important}.dashboard-macro-progress>span{color:var(--text)!important}.dashboard-macro-progress>i{background:var(--line)!important}
+.dashboard.dashboard-command-insights .dashboard-food-summary-card{border-color:var(--card-border)!important;background:radial-gradient(circle at 50% 5%,var(--accent-soft),transparent 45%),var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)}.dashboard-food-summary-heading h3,.dashboard-calorie-summary,.dashboard-calorie-copy strong,.dashboard-calorie-copy strong small,.dashboard-macro-progress strong{color:var(--text)!important}.dashboard-food-summary-heading>button{color:var(--accent-text)!important}.dashboard-calorie-arc-track{stroke:var(--line)!important}.dashboard-calorie-arc-value{stroke:var(--accent)!important;filter:drop-shadow(0 0 8px var(--accent-glow))}.dashboard-calorie-summary pattern rect{fill:var(--accent)!important}.dashboard-calorie-summary pattern line{stroke:var(--accent-dark)!important}.dashboard-calorie-copy>span,.dashboard-macro-progress strong small{color:var(--muted)!important}.dashboard-calorie-toggle-icon{background:var(--surface-raised)!important;color:var(--muted)!important}.dashboard-macro-summary{border-color:var(--line)!important}.dashboard-macro-progress>span{color:var(--text)!important}.dashboard-macro-progress>i{background:var(--line)!important}
 
 .appearance-page{width:min(760px,100%);margin:0 auto;padding-bottom:110px}.appearance-header{display:grid;gap:5px;margin-bottom:20px}.appearance-header h2{margin:0;font-size:clamp(2rem,8vw,2.65rem);letter-spacing:-.045em}.appearance-header p{max-width:590px;margin:3px 0 0;line-height:1.5}.appearance-back{justify-self:start;margin:0 0 12px;padding:6px 0;border:0;background:transparent;color:var(--text);font-weight:800}.appearance-theme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.appearance-theme-card{position:relative;display:grid;gap:6px;min-width:0;padding:12px;border:1px solid var(--card-border);border-radius:19px;background:var(--card);color:var(--text);text-align:left;box-shadow:var(--shadow)}.appearance-theme-card:first-child{grid-column:1/-1}.appearance-theme-card.is-selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft),var(--shadow)}.appearance-theme-card>strong{font-size:.92rem}.appearance-theme-card>small{overflow:hidden;color:var(--muted);font-size:.66rem;text-overflow:ellipsis;white-space:nowrap}.appearance-selected-mark{position:absolute;z-index:2;top:19px;right:19px;display:none;place-items:center;width:23px;height:23px;border-radius:50%;background:var(--accent);color:var(--accent-contrast);font-size:.72rem;font-weight:1000}.appearance-theme-card.is-selected .appearance-selected-mark{display:grid}.appearance-theme-preview{position:relative;display:block;height:128px;overflow:hidden;border:1px solid rgba(127,127,127,.16);border-radius:14px;background:var(--preview-bg);color:var(--preview-text)}.appearance-preview-top{position:absolute;inset:12px 12px auto;height:12px;border-radius:999px;background:var(--preview-accent)}.appearance-preview-card{position:absolute;inset:32px 12px 18px;display:block;border:1px solid var(--preview-line);border-radius:11px;background:var(--preview-card)}.appearance-preview-card b{position:absolute;top:12px;left:12px;width:44%;height:7px;border-radius:99px;background:var(--preview-text);opacity:.82}.appearance-preview-card em{position:absolute;top:28px;left:12px;width:63%;height:5px;border-radius:99px;background:var(--preview-muted);box-shadow:0 10px 0 var(--preview-muted)}.appearance-preview-card small{position:absolute;right:12px;bottom:12px;width:34px;height:24px;border-radius:7px;background:var(--preview-accent)}.appearance-preview-nav{position:absolute;inset:auto 0 0;height:10px;background:var(--preview-surface)}
 .theme-preview-level-up{--preview-bg:#09090b;--preview-surface:#121216;--preview-card:#1c1c22;--preview-text:#f7f7f8;--preview-muted:#6f6f78;--preview-line:#34343a;--preview-accent:#ef1821}.theme-preview-arctic{--preview-bg:#f3f7fc;--preview-surface:#fff;--preview-card:#fff;--preview-text:#10203a;--preview-muted:#c6cfdb;--preview-line:#dbe3ee;--preview-accent:#1769e0}.theme-preview-pure{--preview-bg:#f4f4f2;--preview-surface:#fff;--preview-card:#fff;--preview-text:#202022;--preview-muted:#d1d1ce;--preview-line:#dededb;--preview-accent:#171719}.theme-preview-ocean{--preview-bg:#edf8ff;--preview-surface:#fff;--preview-card:#fff;--preview-text:#123252;--preview-muted:#bfdcea;--preview-line:#cfe5f0;--preview-accent:#0798d9}.theme-preview-midnight{--preview-bg:#050b17;--preview-surface:#0b1628;--preview-card:#132238;--preview-text:#f5f8ff;--preview-muted:#4f6380;--preview-line:#263b57;--preview-accent:#3478f6}.theme-preview-slate{--preview-bg:#0d1117;--preview-surface:#151b22;--preview-card:#1d2630;--preview-text:#eef3f7;--preview-muted:#53616d;--preview-line:#34414d;--preview-accent:#7396b8}.theme-preview-system .appearance-theme-preview{background:linear-gradient(110deg,#f3f7fc 0 49.8%,#09090b 50.2%);--preview-surface:rgba(127,127,127,.32);--preview-card:rgba(255,255,255,.82);--preview-text:#1769e0;--preview-muted:#8ea3bb;--preview-line:rgba(127,127,127,.28);--preview-accent:linear-gradient(90deg,#1769e0 0 49%,#ef1821 51%)}
-.appearance-status{min-height:22px;margin:12px 2px 0;color:var(--accent);font-size:.78rem;font-weight:800}.appearance-semantic-note{display:grid;gap:4px;margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:15px;background:var(--surface-raised)}.appearance-semantic-note strong{font-size:.82rem}.appearance-semantic-note span{color:var(--muted);font-size:.72rem;line-height:1.45}@media(max-width:390px){.appearance-theme-grid{gap:9px}.appearance-theme-card{padding:9px;border-radius:16px}.appearance-theme-preview{height:112px}.appearance-theme-card>strong{font-size:.84rem}.appearance-theme-card>small{font-size:.6rem}}
+.appearance-status{min-height:22px;margin:12px 2px 0;color:var(--accent-text);font-size:.78rem;font-weight:800}.appearance-semantic-note{display:grid;gap:4px;margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:15px;background:var(--surface-raised)}.appearance-semantic-note strong{font-size:.82rem}.appearance-semantic-note span{color:var(--muted);font-size:.72rem;line-height:1.45}@media(max-width:390px){.appearance-theme-grid{gap:9px}.appearance-theme-card{padding:9px;border-radius:16px}.appearance-theme-preview{height:112px}.appearance-theme-card>strong{font-size:.84rem}.appearance-theme-card>small{font-size:.6rem}}
+
+/* Full theme coverage and contrast guardrails for feature-specific components. */
+.nutrition-planner-back{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+.nutrition-planner-back:hover{border-color:var(--accent)!important;color:var(--accent-text)!important}
+
+.weight-history,.weight-history h3{color:var(--text)!important}
+.weight-table{border:1px solid var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)}
+.weight-table-header{border-color:var(--accent)!important;background:var(--surface-raised)!important;color:var(--muted)!important}
+.weight-table-row{border-color:var(--line)!important;color:var(--text)!important}
+.weight-table-row>strong,.weight-table-row>span{color:var(--text)!important}
+.weight-entry-actions button{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+.weight-entry-actions .remove-weight-entry,.weight-entry-actions .remove-sleep-entry{color:var(--danger-text)!important}
+
+.admin-analytics-head p,.admin-analytics-caption,.admin-analytics-kpi span,.admin-analytics-kpi small,.admin-analytics-empty,.admin-analytics-bar small,.admin-analytics-legend{color:var(--muted)!important}
+.admin-analytics-head select,.admin-analytics-status,.admin-analytics-kpi,.admin-analytics-card{border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)}
+.admin-analytics-kpi strong,.admin-analytics-card h3,.admin-analytics-funnel strong,.admin-analytics-source strong{color:var(--heading)!important}
+.admin-analytics-kpi small,.admin-analytics-source strong{color:var(--accent-text)!important}
+.admin-analytics-chart{border-color:var(--line)!important}
+.admin-analytics-bar span{background:linear-gradient(var(--accent),var(--accent-dark))!important}
+.admin-analytics-funnel div,.admin-analytics-source,.admin-workout-source,.admin-analytics-person,.admin-analytics-stat-group,.restaurant-review-row,.restaurant-catalogue li{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+.admin-analytics-funnel span,.admin-analytics-source span,.admin-workout-source span,.admin-analytics-person-identity strong,.admin-analytics-stat-person strong,.admin-analytics-stat-person>b,.restaurant-catalogue td,.restaurant-catalogue li{color:var(--text)!important}
+.admin-analytics-person-identity small,.admin-analytics-person-identity span,.admin-workout-source small,.admin-analytics-stat-person small,.admin-analytics-feedback-row>small,.restaurant-catalogue th,.restaurant-review-row small{color:var(--muted)!important}
+.admin-analytics-stat-group-head,.admin-analytics-stat-person,.admin-analytics-rating-distribution,.admin-analytics-feedback-row,.restaurant-catalogue th,.restaurant-catalogue td{border-color:var(--line)!important}
+.admin-analytics-stat-group-head h4,.admin-analytics-feedback-row p,.restaurant-catalogue h4{color:var(--text)!important}
+.admin-analytics-stat-group-head>strong,.admin-analytics-rating-distribution span,.admin-analytics-person-usage span{background:var(--accent-soft)!important;color:var(--accent-text)!important}
+
+.profile-sex-options label{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+.profile-sex-options label:has(input:checked){border-color:var(--accent)!important;background:var(--accent-soft)!important;color:var(--accent-text)!important;box-shadow:0 0 0 1px var(--accent-glow)}
+.profile-appearance-card fieldset>small{color:var(--muted)!important}
+
+.history-workout-card,.history-active-workout{border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)}
+.history-workout-card h3,.history-view-summary{color:var(--heading)!important}
+.history-workout-card>p,.history-workout-card-top,.history-workout-metrics{color:var(--muted)!important}
+.history-workout-metrics{border-color:var(--line)!important}
+.workout-preview-close,.workout-preview-edit,.workout-preview-stats>div,.workout-preview-exercise,.workout-preview-set-list span{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+.workout-preview-header p,.workout-preview-stats span,.workout-preview-exercise-meta,.workout-preview-cardio,.workout-preview-empty{color:var(--muted)!important}
+.workout-preview-type-pill{border-color:var(--line)!important;color:var(--text)!important}
+
+.muscle-overview-recovery-panel .recovery-map-shell{padding:16px;border:1px solid var(--card-border)!important;border-radius:22px;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)}
+.recovery-mode-switch,.recovery-facing-toggle{border-color:var(--line)!important;background:var(--surface-raised)!important}
+.recovery-mode-switch button,.recovery-facing-toggle button{color:var(--muted)!important}
+.recovery-mode-switch button.active,.recovery-facing-toggle button.active{background:var(--accent)!important;color:var(--accent-contrast)!important}
+.recovery-summary-strip>div,.recovery-map-note,.recovery-detail-row{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+.recovery-summary-strip span,.recovery-map-header p,.recovery-detail-row span,.recovery-scale-points,.recovery-scale-points span,.recovery-scale-points small{color:var(--muted)!important}
+.recovery-summary-strip strong,.recovery-scale::before,.recovery-scale-points b{color:var(--text)!important}
+.recovery-row-progress{background:var(--line)!important}
+.recovery-body-wrap::after{background:radial-gradient(ellipse,var(--accent-soft),transparent 70%)!important}
+
+.schedule-banner,.level-up-coach-launcher,.level-up-coach-card{border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)}
+.schedule-banner{border-color:color-mix(in srgb,var(--accent) 38%,var(--card-border))!important;background:linear-gradient(100deg,var(--accent-soft),var(--card))!important}
+.schedule-edit-link,.level-up-coach-card-copy small,.level-up-coach-card>b{color:var(--accent-text)!important}
+.schedule-day{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+.schedule-day.is-today{border-color:var(--accent)!important;background:var(--accent-soft)!important}
+.schedule-day-label,.schedule-day strong,.level-up-coach-heading h3,.level-up-coach-card-copy strong,.level-up-workout-actions strong{color:var(--text)!important}
+.schedule-day span,.schedule-day small,.level-up-coach-heading p,.level-up-coach-card-copy em,.level-up-coach-card-copy>span,.level-up-workout-actions small{color:var(--muted)!important}
+.level-up-coach-card.is-selected{border-color:var(--accent)!important;box-shadow:0 0 0 1px var(--accent-glow),var(--shadow)}
+.level-up-coach-card>img,.catalogue-coach-avatar img{border-color:var(--accent)!important}
+.level-up-workout-actions button{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+
+.food-voice-open,.food-barcode-open,.food-create-meal,.food-saved-meal-photo,.food-saved-meal-add,.food-entry button,.food-custom-edit{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+.food-create-meal,.food-saved-meal-add,.food-custom-edit{border-color:var(--accent)!important;color:var(--accent-text)!important}
+.food-paste-meal{background:var(--accent-soft)!important}
+.food-saved-meal-edit,.food-entry-edit,.food-builder-items .food-builder-item-edit{color:var(--text)!important}
+.food-saved-meal-edit small,.food-saved-meal-edit span,.food-entry-edit small,.food-entry-edit i,.food-edit-serving,.food-edit-macro small{color:var(--muted)!important}
+.food-entry-edit>b,.food-entry-edit strong,.food-edit-calorie-ring strong,.food-edit-macro strong{color:var(--text)!important}
+.food-edit-calorie-ring::before{background:var(--surface-raised)!important}
+.food-copy-yesterday{border-color:color-mix(in srgb,var(--success) 34%,var(--line))!important;background:color-mix(in srgb,var(--success) 9%,var(--card))!important;color:var(--text)!important}
