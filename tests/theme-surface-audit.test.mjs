@@ -126,5 +126,5 @@ test('late-injected install guidance follows the selected theme', () => {
 });
 
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-110/);
+  assert.match(worker, /2026-09-01-111/);
 });
