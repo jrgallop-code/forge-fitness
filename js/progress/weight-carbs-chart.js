@@ -1,6 +1,6 @@
-import { initializeWeightCarbsChartV2 } from "./weight-chart-carousel-v2.js?v=weight-carousel-authoritative-1";
+import { initializeWeightCarbsChartV2 } from "./weight-chart-carousel-v2.js?v=arctic-contrast-1";
 import { initializeWeightCarbsInteractionEnhancements } from "./weight-carbs-interaction-enhancements.js?v=weight-carbs-interaction-2";
-import { initializeWeightCalorieContext } from "./weight-calorie-context.js?v=weight-calorie-context-1";
+import { initializeWeightCalorieContext } from "./weight-calorie-context.js?v=arctic-contrast-1";
 
 export function initializeWeightCarbsChart(root = document) {
     initializeWeightCarbsChartV2(root);

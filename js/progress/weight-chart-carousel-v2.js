@@ -12,6 +12,11 @@ const TREND_GREEN = "#45cb75";
 const TREND_GREEN_GLOW = "rgba(69, 203, 117, 0.32)";
 const DAILY_WEIGHT_LINE = "rgba(112, 181, 137, 0.34)";
 const DAILY_WEIGHT_POINT = "rgba(126, 194, 151, 0.82)";
+
+function themeColor(token, fallback) {
+    return getComputedStyle(document.documentElement).getPropertyValue(token).trim() || fallback;
+}
+
 const RANGE_OPTIONS = {
     "1w": { days: 7, label: "1W" },
     "1m": { days: 30, label: "1M" },
@@ -355,9 +360,9 @@ function drawChart(canvas, state, activeDate) {
     };
     const yCarbs = grams => padding.top + chartHeight - (grams / carbMax) * chartHeight;
 
-    context.strokeStyle = "rgba(255,255,255,.055)";
+    context.strokeStyle = themeColor("--line", "rgba(255,255,255,.055)");
     context.lineWidth = 1;
-    context.fillStyle = "#777780";
+    context.fillStyle = themeColor("--muted", "#777780");
     context.font = "800 9px Arial";
     context.textBaseline = "middle";
     for (let row = 0; row <= 2; row += 1) {
@@ -451,7 +456,7 @@ function drawChart(canvas, state, activeDate) {
 
     if (activeDate) {
         const x = xPosition(activeDate);
-        context.strokeStyle = "rgba(255,255,255,.5)";
+        context.strokeStyle = themeColor("--muted", "rgba(255,255,255,.5)");
         context.setLineDash([4, 4]);
         context.beginPath();
         context.moveTo(x, padding.top);
@@ -551,7 +556,7 @@ function renderAnalysis(node, title, subtitle, body, footnote) { node.innerHTML 
 function drawDateLabels(context, series, xPosition, y, range) {
     const desiredLabels = range === "1w" ? 7 : 6;
     const step = Math.max(1, Math.ceil(series.length / desiredLabels));
-    context.fillStyle = "#777780";
+    context.fillStyle = themeColor("--muted", "#777780");
     context.font = "800 8px Arial";
     context.textAlign = "center";
     series.forEach((day, index) => {

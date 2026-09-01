@@ -8,7 +8,7 @@ const primary = readFileSync("js/progress/weight-trend-chart.js", "utf8");
 const sw = readFileSync("service-worker.js", "utf8");
 
 test("Weight and Carbs uses only the authoritative v2 renderer", () => {
-    assert.match(entry, /weight-chart-carousel-v2\.js\?v=weight-carousel-authoritative-1/);
+    assert.match(entry, /weight-chart-carousel-v2\.js\?v=arctic-contrast-1/);
     assert.doesNotMatch(entry, /weight-chart-carousel\.js\?v=weight-carousel-1/);
     assert.doesNotMatch(entry, /weight-carbs-trend-parity-fix/);
 });

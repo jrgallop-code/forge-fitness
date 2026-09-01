@@ -297,3 +297,23 @@ html[data-theme-mode="light"] .exercise-guide-screen .form-guide-anatomy-base{op
 /* The calendar is a fixed overlay, so its shell must carry the selected mode itself. */
 html[data-theme-mode="light"] .activity-calendar-page{background:var(--bg)!important;color:var(--text)!important}
 html[data-theme-mode="dark"] .activity-calendar-page{background:var(--body-background)!important;color:var(--text)!important}
+
+/* Contrast-safe Weight Trend, Weight + Carbs, and Weight + Calories controls. */
+#weight-progress :where(.weight-point-tooltip,.weight-calories-tooltip,.weight-calories-info>div){border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)!important}
+#weight-progress :where(.weight-point-tooltip strong,.weight-calories-tooltip strong,.weight-calories-info strong){color:var(--heading)!important}
+#weight-progress :where(.weight-point-tooltip span,.weight-calories-tooltip span,.weight-calories-info p){color:var(--text-secondary)!important}
+#weight-progress :where(.weight-point-tooltip b,.weight-calories-info small){color:var(--muted)!important}
+#weight-progress .weight-calories-tooltip .is-calorie-value{color:var(--danger-text)!important}
+#weight-progress .weight-calories-info summary{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+#weight-progress :where(.weight-chart-range-control,.weight-graph-carousel-pager-v2){border-color:var(--line)!important;background:var(--surface-raised)!important}
+#weight-progress :where(.weight-chart-range-control button,.weight-graph-carousel-pager-v2 button){color:var(--muted)!important}
+#weight-progress :where(.weight-chart-range-control button[aria-pressed="true"],.weight-graph-carousel-pager-v2 button[aria-pressed="true"]){border-color:var(--accent)!important;background:var(--accent)!important;color:var(--accent-contrast)!important}
+#weight-progress :where(.weight-chart-card .chart-header p,.weight-chart-period-stat small,.weight-chart-period-dates,.weight-calories-head p,.weight-calories-legend,.weight-calories-note){color:var(--muted)!important}
+#weight-progress :where(.weight-chart-card .chart-header h3,.weight-calories-head h3){color:var(--heading)!important}
+#weight-progress .weight-calories-chart-shell{border-color:var(--line)!important}
+
+/* Explicit Form Guide typography guardrail for Arctic and the other light palettes. */
+html[data-theme-mode="light"] .exercise-guide-screen :where(h2,h3,strong){color:var(--heading)!important}
+html[data-theme-mode="light"] .exercise-guide-screen :where(p,li){color:var(--text-secondary)!important}
+html[data-theme-mode="light"] .exercise-guide-screen :where(small,.exercise-guide-step-note,.exercise-guide-fallback-note){color:var(--muted)!important}
+html[data-theme-mode="light"] .exercise-guide-screen :where(ol,ul) li::marker{color:var(--accent-text)!important}

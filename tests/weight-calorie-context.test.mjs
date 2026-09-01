@@ -9,7 +9,7 @@ test("Weight entry keeps the authoritative renderer and loads calorie context", 
     assert.match(entry, /initializeWeightCarbsChartV2\(root\)/);
     assert.match(entry, /initializeWeightCarbsInteractionEnhancements\(root\)/);
     assert.match(entry, /initializeWeightCalorieContext\(root\)/);
-    assert.match(entry, /weight-calorie-context\.js\?v=weight-calorie-context-1/);
+    assert.match(entry, /weight-calorie-context\.js\?v=arctic-contrast-1/);
     assert.doesNotMatch(entry, /weight-secondary-context/);
 });
 
