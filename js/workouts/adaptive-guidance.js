@@ -12,6 +12,7 @@ import {
     countAccumulationWeeks,
     getTrainedMuscles
 } from "./adaptive-guidance-engine.js?v=discomfort-caution-1";
+import { applyAdaptiveFeedbackEdits } from "./adaptive-guidance-feedback.js?v=adaptive-feedback-edit-1";
 
 const ACTIVE_WORKOUT_KEY = "level_up_active_workout";
 const SESSION_KEY = "forge_workout_sessions";
@@ -512,8 +513,10 @@ function showCoachSummaryForSession(sessionId) {
 }
 
 function renderCoachSummary(recap, sessionId = recap?.dataset.recapSessionId) {
-    if (!recap || !guidanceEnabled() || recap.querySelector(".adaptive-coach-summary")) return;
+    if (!recap || !guidanceEnabled()) return;
     const completed = readSessions().find(item => item.id === sessionId);
+    ensureFeedbackEditButton(recap, completed);
+    if (recap.querySelector(".adaptive-coach-summary")) return;
     const recommendations = completed?.adaptiveGuidance?.recommendations || [];
     if (!recommendations.length) return;
     const hasPlanChange = recommendations.some(item => item.type === "volume" || item.type === "deload");
@@ -534,6 +537,140 @@ function renderCoachSummary(recap, sessionId = recap?.dataset.recapSessionId) {
     const insight = recap.querySelector(".workout-complete-recap__insight");
     if (header) header.insertAdjacentElement("afterend", section);
     else if (insight) insight.insertAdjacentElement("beforebegin", section);
+}
+
+function ensureFeedbackEditButton(recap, completed) {
+    if (!completed?.adaptiveGuidance || completed.adaptiveGuidance.isDeload || recap.querySelector(".adaptive-feedback-edit-button")) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "secondary-btn adaptive-feedback-edit-button";
+    button.dataset.adaptiveEditFeedback = completed.id;
+    button.textContent = "Edit Adaptive Coach responses";
+    const insight = recap.querySelector(".workout-complete-recap__insight");
+    const done = recap.querySelector(".workout-complete-recap__done");
+    if (insight) insight.insertAdjacentElement("afterend", button);
+    else if (done) done.insertAdjacentElement("beforebegin", button);
+}
+
+function renderSubmittedSurveyEditor(sessionId) {
+    document.querySelector(".adaptive-feedback-edit-flow")?.remove();
+    const completed = readSessions().find(item => item.id === sessionId);
+    if (!completed) return;
+    const guidance = completed.adaptiveGuidance || {};
+    const recovery = guidance.recovery || {};
+    const muscles = [...new Set([
+        ...Object.keys(recovery),
+        ...getTrainedMuscles(completed, getExerciseById)
+    ])];
+    const exerciseOptions = (completed.exercises || []).map(item => {
+        const exercise = getExerciseById(item.exerciseId);
+        return exercise
+            ? `<option value="${escapeHtml(item.exerciseId)}" ${guidance.discomfortExerciseId === item.exerciseId ? "selected" : ""}>${escapeHtml(exercise.name)}</option>`
+            : "";
+    }).join("");
+    const overlay = document.createElement("div");
+    overlay.className = "adaptive-flow-overlay adaptive-post-flow adaptive-feedback-edit-flow";
+    overlay.dataset.adaptiveEditSession = completed.id;
+    overlay.innerHTML = `
+        <section class="adaptive-flow-screen" role="dialog" aria-modal="true" aria-labelledby="adaptive-feedback-edit-title">
+            <div class="adaptive-flow-kicker">ADAPTIVE COACH</div>
+            <h2 id="adaptive-feedback-edit-title">Edit your responses</h2>
+            <p class="adaptive-flow-intro">Correct your submitted check-in. Saving will refresh your Coach Summary without changing the workout you logged.</p>
+            ${muscles.length ? `
+                <div class="adaptive-feedback-edit-section">
+                    <p class="adaptive-question-label">Before-workout recovery</p>
+                    <div class="adaptive-muscle-rows">
+                        ${muscles.map(muscle => `
+                            <div class="adaptive-muscle-row" data-adaptive-edit-muscle="${escapeHtml(muscle)}">
+                                <strong>${escapeHtml(muscle)}</strong>
+                                ${["fatigued", "ready", "fresh"].map(status => `
+                                    <button class="adaptive-choice ${recovery?.[muscle]?.status === status ? "selected" : ""}" type="button" data-adaptive-edit-recovery-status="${status}">${capitalize(status)}</button>
+                                `).join("")}
+                            </div>
+                        `).join("")}
+                    </div>
+                </div>` : ""}
+            <div class="adaptive-post-options adaptive-feedback-edit-section">
+                <div class="adaptive-post-question">
+                    <strong>Workout difficulty</strong>
+                    <div class="adaptive-option-row">
+                        ${[["easy","Easy"],["right","Right"],["too-hard","Too hard"]].map(([value,label]) => `<button class="adaptive-choice ${guidance.difficulty === value ? "selected" : ""}" type="button" data-adaptive-edit-difficulty="${value}">${label}</button>`).join("")}
+                    </div>
+                </div>
+                <div class="adaptive-post-question">
+                    <strong>Any discomfort?</strong>
+                    <div class="adaptive-option-row">
+                        ${[["none","None"],["minor","Minor"],["significant","Significant"]].map(([value,label]) => `<button class="adaptive-choice ${guidance.discomfort === value ? "selected" : ""}" type="button" data-adaptive-edit-discomfort="${value}">${label}</button>`).join("")}
+                    </div>
+                    <label class="adaptive-discomfort-exercise" ${guidance.discomfort && guidance.discomfort !== "none" ? "" : "hidden"}>
+                        <select data-adaptive-edit-exercise>
+                            <option value="">Choose exercise (optional)</option>
+                            ${exerciseOptions}
+                        </select>
+                    </label>
+                </div>
+            </div>
+            <div class="adaptive-flow-actions">
+                <button class="primary-btn" type="button" data-adaptive-save-feedback>Save changes</button>
+                <button class="adaptive-text-button" type="button" data-adaptive-cancel-feedback>Cancel</button>
+            </div>
+        </section>`;
+    document.body.appendChild(overlay);
+}
+
+function saveSubmittedSurveyEditor(overlay) {
+    const sessionId = overlay?.dataset.adaptiveEditSession;
+    const sessions = readSessions();
+    const sessionIndex = sessions.findIndex(item => item.id === sessionId);
+    if (sessionIndex < 0) return;
+    const recovery = {};
+    overlay.querySelectorAll("[data-adaptive-edit-muscle]").forEach(row => {
+        const selected = row.querySelector("[data-adaptive-edit-recovery-status].selected");
+        if (selected) recovery[row.dataset.adaptiveEditMuscle] = selected.dataset.adaptiveEditRecoveryStatus;
+    });
+    const difficulty = overlay.querySelector("[data-adaptive-edit-difficulty].selected")?.dataset.adaptiveEditDifficulty || null;
+    const discomfort = overlay.querySelector("[data-adaptive-edit-discomfort].selected")?.dataset.adaptiveEditDiscomfort || null;
+    const discomfortExerciseId = overlay.querySelector("[data-adaptive-edit-exercise]")?.value || null;
+    const updated = applyAdaptiveFeedbackEdits(sessions[sessionIndex], {
+        recovery,
+        difficulty,
+        discomfort,
+        discomfortExerciseId
+    });
+    sessions[sessionIndex] = updated;
+    const plan = readPlans().find(item => item.id === updated.planId) || updated.planSnapshot;
+    const state = readState();
+    const weeks = countAccumulationWeeks(sessions, updated.planId, state.cycleStarts[updated.planId]);
+    const previousById = new Map((updated.adaptiveGuidance?.recommendations || []).map(item => [item.id, item]));
+    const recommendations = buildAdaptiveRecommendations({
+        session: updated,
+        sessions,
+        plan,
+        getExercise: getExerciseById,
+        accumulationWeeks: weeks
+    }).map(item => {
+        const previous = previousById.get(item.id);
+        if (!previous?.status) return item;
+        return {
+            ...item,
+            status: previous.status,
+            decidedAt: previous.decidedAt,
+            ...(previous.appliedSets !== undefined ? { appliedSets: previous.appliedSets } : {})
+        };
+    });
+    sessions[sessionIndex].adaptiveGuidance = {
+        ...updated.adaptiveGuidance,
+        recommendations,
+        accumulationWeeks: weeks,
+        analyzedAt: new Date().toISOString()
+    };
+    writeJson(SESSION_KEY, sessions);
+    overlay.remove();
+    const recap = [...document.querySelectorAll(".workout-complete-recap")]
+        .find(item => item.dataset.recapSessionId === sessionId);
+    recap?.querySelector(".adaptive-coach-summary")?.remove();
+    if (recap) renderCoachSummary(recap, sessionId);
+    window.dispatchEvent(new CustomEvent("levelup:adaptive-feedback-updated", { detail: { sessionId } }));
 }
 
 function renderRecommendation(recommendation) {
@@ -652,6 +789,49 @@ window.addEventListener("click", event => {
 document.addEventListener("click", event => {
     if (event.target.closest?.("[data-adaptive-exit-deload-preview]")) {
         exitDeloadPreview();
+        return;
+    }
+    const editFeedback = event.target.closest?.("[data-adaptive-edit-feedback]");
+    if (editFeedback) {
+        renderSubmittedSurveyEditor(editFeedback.dataset.adaptiveEditFeedback);
+        return;
+    }
+
+    const editRecovery = event.target.closest?.("[data-adaptive-edit-recovery-status]");
+    if (editRecovery) {
+        editRecovery.closest("[data-adaptive-edit-muscle]")?.querySelectorAll("[data-adaptive-edit-recovery-status]")
+            .forEach(option => option.classList.toggle("selected", option === editRecovery));
+        return;
+    }
+
+    const editDifficulty = event.target.closest?.("[data-adaptive-edit-difficulty]");
+    if (editDifficulty) {
+        editDifficulty.parentElement?.querySelectorAll("[data-adaptive-edit-difficulty]")
+            .forEach(option => option.classList.toggle("selected", option === editDifficulty));
+        return;
+    }
+
+    const editDiscomfort = event.target.closest?.("[data-adaptive-edit-discomfort]");
+    if (editDiscomfort) {
+        editDiscomfort.parentElement?.querySelectorAll("[data-adaptive-edit-discomfort]")
+            .forEach(option => option.classList.toggle("selected", option === editDiscomfort));
+        const field = editDiscomfort.closest(".adaptive-post-question")?.querySelector(".adaptive-discomfort-exercise");
+        if (field) field.hidden = editDiscomfort.dataset.adaptiveEditDiscomfort === "none";
+        if (field?.hidden) {
+            const select = field.querySelector("[data-adaptive-edit-exercise]");
+            if (select) select.value = "";
+        }
+        return;
+    }
+
+    const saveFeedback = event.target.closest?.("[data-adaptive-save-feedback]");
+    if (saveFeedback) {
+        saveSubmittedSurveyEditor(saveFeedback.closest(".adaptive-feedback-edit-flow"));
+        return;
+    }
+
+    if (event.target.closest?.("[data-adaptive-cancel-feedback]")) {
+        event.target.closest(".adaptive-feedback-edit-flow")?.remove();
         return;
     }
     const recovery = event.target.closest?.("[data-recovery-status]");

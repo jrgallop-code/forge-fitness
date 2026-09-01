@@ -15,7 +15,7 @@ const worker = fs.readFileSync('service-worker.js', 'utf8');
 
 test('theme surface audit loads after the appearance stylesheet', () => {
   const appearance = html.indexOf('css/appearance-themes.css');
-  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-5');
+  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-6');
   assert.ok(appearance >= 0);
   assert.ok(audit > appearance);
 });
@@ -135,5 +135,5 @@ test('cardio timer and previous-workout text follow every appearance theme', () 
 });
 
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-114/);
+  assert.match(worker, /2026-09-01-115/);
 });

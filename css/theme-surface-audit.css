@@ -293,6 +293,31 @@ html[data-theme] .adaptive-info-overlay {
     background: color-mix(in srgb, var(--heading) 54%, transparent) !important;
 }
 
+/* Recap detail cards follow the selected theme, while the celebration shell stays dark. */
+html[data-theme] .workout-complete-recap__insight p {
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+}
+
+html[data-theme] :is(
+    .workout-complete-recap__kicker,
+    .workout-complete-recap__header h2,
+    .workout-complete-recap__crushing small,
+    .workout-complete-recap__levelup-title strong,
+    .workout-complete-recap__win strong,
+    .workout-complete-recap__win b
+) {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+}
+
+html[data-theme] .adaptive-feedback-edit-button {
+    border-color: var(--accent) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+    -webkit-text-fill-color: var(--accent-text) !important;
+}
+
 /* The live rest alarm follows the selected theme, including late-injected styles. */
 html[data-theme] #level-up-rest-alarm-banner {
     border-color: var(--card-border) !important;

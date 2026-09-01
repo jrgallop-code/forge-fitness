@@ -299,6 +299,15 @@
 .adaptive-rir-choice { min-width: 0; padding-inline: 3px; }
 
 .adaptive-post-options { display: grid; gap: 10px; }
+.adaptive-feedback-edit-section { margin-top: 14px; }
+.adaptive-feedback-edit-flow .adaptive-flow-screen { padding-bottom: calc(env(safe-area-inset-bottom) + 24px); }
+.adaptive-feedback-edit-button {
+    width: 100%;
+    min-height: 46px;
+    margin: 0 0 14px;
+    font-size: .78rem;
+    font-weight: 850;
+}
 .adaptive-post-question > strong { display: block; margin-bottom: 6px; font-size: .72rem; }
 .adaptive-option-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
 .adaptive-discomfort-exercise { margin-top: 7px; }
