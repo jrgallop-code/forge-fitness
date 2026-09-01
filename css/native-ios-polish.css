@@ -483,7 +483,7 @@ input[type="radio"] {
 .dashboard-weekly-bar span,
 .progress-bar span,
 .volume-bar span {
-    background: #f21f2c;
+    background: var(--accent, #f21f2c);
 }
 
 /* Lists and tables use subtle grouped separators */
