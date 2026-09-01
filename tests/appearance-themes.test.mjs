@@ -214,6 +214,7 @@ test("Arctic overlays, form-guide copy, and canvas labels retain contrast", asyn
   assert.match(styles, /\.weight-calories-tooltip \.is-calorie-value\{color:var\(--danger-text\)!important/);
   assert.match(styles, /\.exercise-guide-screen :where\(p,li\)\{color:var\(--text-secondary\)!important/);
   assert.match(styles, /\.adaptive-rir-toggle,\.adaptive-info-button\)[^{]*\{border-color:var\(--line\)!important;background:var\(--surface-raised\)!important;color:var\(--text\)!important/);
+  assert.match(styles, /\.adaptive-info-sheet \.adaptive-info-scale>div\{border:1px solid var\(--line\)!important;background:var\(--surface-raised\)!important;color:var\(--text\)!important/);
   assert.match(calories, /\.weight-calories-tooltip\{[^}]*background:var\(--card\);color:var\(--text\)/);
   assert.match(calories, /\.weight-calories-info>div\{[^}]*background:var\(--card\);color:var\(--text\)/);
   assert.doesNotMatch(calories, /\.weight-calories-tooltip\{[^}]*background:rgba\(24,24,28/);
@@ -224,17 +225,31 @@ test("Arctic overlays, form-guide copy, and canvas labels retain contrast", asyn
   }
 });
 
+test("exercise analytics cards and lines inherit the Arctic blue palette", async () => {
+  const [styles, chart, router] = await Promise.all([
+    read("css/appearance-themes.css"),
+    read("js/progress/exercise-progress-v2.js"),
+    read("js/core/router.js")
+  ]);
+  assert.match(styles, /\.exercise-metric-controls button\[aria-pressed="true"\][^{]*\{border-color:var\(--accent\)!important;background:var\(--accent\)!important;color:var\(--accent-contrast\)!important/);
+  assert.match(styles, /\.exercise-volume-stat\{border-color:var\(--line\)!important;background:var\(--surface-raised\)!important;color:var\(--text\)!important/);
+  assert.match(styles, /\.exercise-volume-detail\{border:1px solid var\(--line\)!important;background:var\(--surface-raised\)!important;color:var\(--text-secondary\)!important/);
+  assert.match(chart, /stroke="var\(--accent\)" stroke-width="3"/);
+  assert.doesNotMatch(chart, /stroke="#ff3139"/);
+  assert.match(router, /exercise-progress-v2\.js\?v=arctic-chart-tokens-1/);
+});
+
 test("production entry points load the theme before paint and bust caches", async () => {
   const [html, app, router, worker] = await Promise.all([
     read("index.html"), read("js/app.js"), read("js/core/router.js"), read("service-worker.js")
   ]);
   assert.match(html, /level_up_appearance_settings/);
   assert.ok(html.indexOf("level_up_appearance_settings") < html.indexOf("css/styles.css"));
-  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-10/);
+  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-11/);
   assert.match(html, /js\/app\.js\?v=appearance-themes-4/);
   assert.match(html, /getHours\(\)/);
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-2/);
   assert.match(app, /router\.js\?v=appearance-themes-4/);
   assert.match(router, /more-ui-v2\.js\?v=appearance-themes-2/);
-  assert.match(worker, /2026-09-01-99/);
+  assert.match(worker, /2026-09-01-100/);
 });
