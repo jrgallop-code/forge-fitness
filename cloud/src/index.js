@@ -1801,6 +1801,12 @@ async function getAdminAnalytics(user, url, request, env) {
                 u.avatar_url,
                 u.created_at,
                 u.last_active_at,
+                MAX(
+                    COALESCE(u.last_active_at, ''),
+                    COALESCE((SELECT MAX(ue_latest.occurred_at) FROM usage_events ue_latest WHERE ue_latest.user_id = u.id), ''),
+                    COALESCE((SELECT MAX(pe_latest.occurred_at) FROM product_events pe_latest WHERE pe_latest.user_id = u.id), ''),
+                    u.created_at
+                ) AS latest_activity_at,
                 (SELECT COUNT(DISTINCT substr(ue.occurred_at, 1, 10)) FROM usage_events ue
                     WHERE ue.user_id = u.id AND ue.event_name = 'app_active' AND ue.occurred_at >= ?) AS active_days,
                 (SELECT COUNT(*) FROM usage_events ue
@@ -1811,8 +1817,8 @@ async function getAdminAnalytics(user, url, request, env) {
             WHERE u.last_active_at >= ?
                 OR EXISTS (SELECT 1 FROM usage_events ue WHERE ue.user_id = u.id AND ue.occurred_at >= ?)
                 OR EXISTS (SELECT 1 FROM product_events pe WHERE pe.user_id = u.id AND pe.occurred_at >= ?)
-            ORDER BY u.last_active_at DESC, u.created_at DESC
-            LIMIT 100`).bind(since, since, since, since, since, since).all(),
+            ORDER BY latest_activity_at DESC, u.created_at DESC
+            LIMIT 500`).bind(since, since, since, since, since, since).all(),
         env.DB.prepare(`SELECT COUNT(*) AS responses, ROUND(AVG(rating), 2) AS average_rating,
             SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) AS rating_1,
             SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) AS rating_2,

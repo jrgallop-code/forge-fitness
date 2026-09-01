@@ -232,5 +232,5 @@ test("production entry points load the theme before paint and bust caches", asyn
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-2/);
   assert.match(app, /router\.js\?v=appearance-themes-4/);
   assert.match(router, /more-ui-v2\.js\?v=appearance-themes-2/);
-  assert.match(worker, /2026-09-01-96/);
+  assert.match(worker, /2026-09-01-97/);
 });

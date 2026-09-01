@@ -6,6 +6,8 @@ const SUBMITTED_KEY = "level_up_acquisition_submitted";
 const EVENT_QUEUE_KEY = "level_up_product_event_queue";
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_RECONCILE_KEY = "level_up_food_usage_reconciled_v1";
+const WORKOUT_LOG_KEY = "forge_workout_sessions";
+const WORKOUT_RECONCILE_KEY = "level_up_workout_usage_reconciled_v1";
 const SOURCES = new Set(["instagram","tiktok","reddit","youtube","google_search","friend_family","app_recommendation","other","prefer_not_to_say"]);
 
 let initialized = false;
@@ -18,7 +20,7 @@ export function initializeAcquisitionTracking(){
     void submitAcquisition();
     void flushEventQueue();
     window.addEventListener("online",()=>{void submitAcquisition();void flushEventQueue();});
-    window.addEventListener("levelup:cloud-session-started",()=>{void submitAcquisition();void flushEventQueue();});
+    window.addEventListener("levelup:cloud-session-started",()=>{void submitAcquisition();void flushEventQueue();void reconcileRecentWorkoutEvents();});
     window.addEventListener("levelup:workout-completed",event=>{
         const detail=event.detail||{};
         void trackProductEvent("workout_completed",{
@@ -36,6 +38,7 @@ export function initializeAcquisitionTracking(){
         });});
     });
     void reconcileRecentFoodLogEvents();
+    void reconcileRecentWorkoutEvents();
 }
 
 function ensureStyles(){
@@ -84,6 +87,43 @@ async function reconcileRecentFoodLogEvents(){
         metadata:{dateKey,reconciled:true}
     })));
     localStorage.setItem(FOOD_RECONCILE_KEY,"complete");
+}
+
+async function reconcileRecentWorkoutEvents(){
+    const sessions=safeRead(WORKOUT_LOG_KEY);
+    if(!Array.isArray(sessions))return;
+    const cutoff=Date.now()-31*86400000;
+    const recent=sessions
+        .filter(session=>session?.id&&workoutOccurredAt(session)&&Date.parse(workoutOccurredAt(session))>=cutoff)
+        .sort((a,b)=>workoutOccurredAt(b).localeCompare(workoutOccurredAt(a)))
+        .slice(0,50);
+    const fingerprint=JSON.stringify([
+        sessionToken().slice(-12),
+        recent.map(session=>[String(session.id),workoutOccurredAt(session)])
+    ]);
+    if(localStorage.getItem(WORKOUT_RECONCILE_KEY)===fingerprint)return;
+    await Promise.all(recent.map(session=>trackProductEvent("workout_completed",{
+        eventKey:String(session.id),
+        occurredAt:workoutOccurredAt(session),
+        metadata:{
+            planId:session.planId||null,
+            workoutSource:session.workoutSource||null,
+            workingSets:countWorkingSets(session),
+            durationMinutes:Number(session.durationMinutes)||0,
+            reconciled:true
+        }
+    })));
+    localStorage.setItem(WORKOUT_RECONCILE_KEY,fingerprint);
+}
+
+function workoutOccurredAt(session){
+    if(typeof session?.completedAt==="string"&&Number.isFinite(Date.parse(session.completedAt)))return new Date(session.completedAt).toISOString();
+    if(typeof session?.date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(session.date))return `${session.date}T12:00:00.000Z`;
+    return "";
+}
+
+function countWorkingSets(session){
+    return (session.exercises||[]).reduce((total,exercise)=>total+(exercise.sets||[]).filter(set=>Number(set.reps)>0).length,0);
 }
 
 async function flushEventQueue(){
