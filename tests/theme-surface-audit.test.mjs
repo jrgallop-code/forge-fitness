@@ -15,7 +15,7 @@ const worker = fs.readFileSync('service-worker.js', 'utf8');
 
 test('theme surface audit loads after the appearance stylesheet', () => {
   const appearance = html.indexOf('css/appearance-themes.css');
-  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-9');
+  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-10');
   assert.ok(appearance >= 0);
   assert.ok(audit > appearance);
 });
@@ -141,6 +141,16 @@ test('dashboard workout breakdown action stays legible in every appearance', () 
   assert.match(styles, /-webkit-text-fill-color:\s*var\(--accent-text\)\s*!important/);
 });
 
+test('smart-plan muscle bars and exercise icons use the selected appearance', () => {
+  assert.match(styles, /\.smart-set-breakdown-row > i, \.plan-muscle-breakdown-row > i/);
+  assert.match(styles, /background:\s*var\(--line\)\s*!important/);
+  assert.match(styles, /\.smart-set-breakdown-row > i > b, \.plan-muscle-breakdown-row > i > b/);
+  assert.match(styles, /background:\s*var\(--accent\)\s*!important/);
+  assert.match(styles, /\.smart-set-breakdown-heading \.eyebrow/);
+  assert.match(styles, /button \.app-inline-icon/);
+  assert.match(styles, /color:\s*inherit\s*!important/);
+});
+
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-120/);
+  assert.match(worker, /2026-09-01-121/);
 });
