@@ -1,0 +1,148 @@
+.smart-coach-build-card {
+  min-height: 470px;
+  padding: 46px 24px 34px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 48, 68, .14), transparent 38%),
+    linear-gradient(180deg, #141416, #0d0d0f);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-align: center;
+  overflow: hidden;
+}
+
+.smart-coach-loader {
+  position: relative;
+  width: 178px;
+  height: 178px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 28px;
+}
+
+.smart-coach-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.smart-coach-ring circle {
+  fill: none;
+  stroke-width: 5;
+}
+
+.smart-coach-ring-track {
+  stroke: rgba(255, 255, 255, .09);
+}
+
+.smart-coach-ring-progress {
+  stroke: #ff3048;
+  stroke-linecap: round;
+  stroke-dasharray: 28 72;
+  filter: drop-shadow(0 0 7px rgba(255, 48, 72, .58));
+  transform-origin: 80px 80px;
+  animation: smart-coach-ring-orbit 1.15s linear infinite;
+}
+
+.smart-coach-dumbbell {
+  position: relative;
+  z-index: 1;
+  width: 105px;
+  height: 54px;
+  overflow: visible;
+  filter: drop-shadow(0 7px 14px rgba(0, 0, 0, .45));
+}
+
+.smart-coach-dumbbell path {
+  fill: #f7f7f8;
+}
+
+.smart-coach-kicker {
+  margin-bottom: 10px;
+  color: #ff5368;
+  font-size: .63rem;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.smart-coach-build-card h4 {
+  max-width: 380px;
+  margin: 0;
+  font-size: clamp(1.7rem, 7vw, 2.25rem);
+  line-height: 1.02;
+  letter-spacing: -.045em;
+}
+
+.smart-coach-build-card > p {
+  max-width: 410px;
+  margin: 14px 0 0;
+  color: #a7a7af;
+  font-size: .84rem;
+  line-height: 1.55;
+}
+
+.smart-coach-build-status {
+  min-height: 38px;
+  margin-top: 26px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .035);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #c8c8ce;
+  font-size: .7rem;
+  font-weight: 750;
+}
+
+.smart-coach-build-status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff3048;
+  box-shadow: 0 0 0 0 rgba(255, 48, 72, .58);
+  animation: smart-coach-status-pulse 1.25s ease-out infinite;
+}
+
+@keyframes smart-coach-ring-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes smart-coach-status-pulse {
+  70% { box-shadow: 0 0 0 8px rgba(255, 48, 72, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 48, 72, 0); }
+}
+
+@media (max-width: 390px) {
+  .smart-coach-build-card {
+    min-height: 430px;
+    padding: 38px 18px 30px;
+  }
+
+  .smart-coach-loader {
+    width: 154px;
+    height: 154px;
+    margin-bottom: 24px;
+  }
+
+  .smart-coach-build-card h4 {
+    font-size: 1.72rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smart-coach-ring-progress {
+    animation-duration: 3s;
+  }
+
+  .smart-coach-build-status i {
+    animation: none;
+  }
+}
