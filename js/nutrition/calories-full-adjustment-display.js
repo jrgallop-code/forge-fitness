@@ -6,9 +6,9 @@ import {
 import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";
 import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
-import { buildCoordinatedWeeklyUpdate, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=observed-pace-target-1";
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=weekly-stable-tdee-1";
-import { markMaintenanceCheckInReviewed } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
+import { buildCoordinatedWeeklyUpdate, buildReviewedCaloriePair, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=review-synced-tdee-1";
+import { commitReviewedMaintenanceEstimate, getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=review-synced-tdee-1";
+import { markMaintenanceCheckInReviewed, readMaintenanceCheckInState } from "./maintenance-check-in.js?v=review-synced-tdee-1";
 import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=all-calorie-requirements-1";
 
 const FIRST_CHECK_DAY = 14;
@@ -113,6 +113,8 @@ function openWeeklyReviewModal(event = {}) {
                 <div><span>Logged weekly average${recommendation.weeklyAverageLoggedDays ? ` (${recommendation.weeklyAverageLoggedDays}/${recommendation.weeklyAverageTotalDays || 7} days)` : ""}</span><strong>${Number.isFinite(recommendation.weeklyAverageCalories) ? `${recommendation.weeklyAverageCalories} kcal/day` : "Not enough logged days"}</strong></div>
                 <div><span>Current weight trend</span><strong>${formatRate(recommendation.actualRate)}</strong></div>
                 <div><span>Goal weight trend</span><strong>${formatRate(recommendation.targetRate)}</strong></div>
+                <div><span>Updated estimated maintenance</span><strong>${recommendation.reviewedMaintenanceCalories} kcal/day</strong></div>
+                <div><span>${recommendation.plannedDailyAdjustment > 0 ? "Planned surplus" : recommendation.plannedDailyAdjustment < 0 ? "Planned deficit" : "Planned maintenance adjustment"}</span><strong>${formatSignedCalories(recommendation.plannedDailyAdjustment)} cal/day</strong></div>
                 <div><span>Calories needed for goal pace</span><strong>${formatSignedCalories(recommendation.requestedPaceCorrection)} cal/day</strong></div>
                 <div><span>Calculated target</span><strong>${recommendation.fullTargetCalories} kcal/day</strong></div>
                 <div class="weekly-calorie-modal-result"><span>Recommended target now</span><strong>${recommendation.targetCalories} kcal/day</strong></div>
@@ -177,6 +179,49 @@ function markCheckHandled(phase, checkDay, action) {
 
 function getHold(phase, currentCalories) {
     return readAdjustmentHold({ phase, currentCalories });
+}
+
+function synchronizeAcceptedReviewMaintenance(metrics, phase) {
+    const currentTarget = Number(phase?.currentCalories ?? phase?.startCalories);
+    const hold = getHold(phase, currentTarget);
+    const holdSource = String(hold?.source || "");
+    const reviewState = readMaintenanceCheckInState();
+    const isAcceptedReview = holdSource === "accepted-weekly-calorie-review"
+        || (holdSource === "coordinated-tdee-and-adaptive-update" && reviewState?.action === "coordinated-weekly-review");
+    if (!hold || !isAcceptedReview) return phase;
+    const pair = buildReviewedCaloriePair({
+        targetCalories: currentTarget,
+        targetRate: metrics?.targetRateLbPerWeek ?? phase?.targetWeeklyRate
+    });
+    if (!pair) return phase;
+
+    const estimate = getCalculatedMaintenanceEstimate();
+    const phaseIsSynchronized = Math.round(Number(phase.maintenanceCalories)) === pair.maintenanceCalories;
+    const estimateIsSynchronized = Math.round(Number(estimate.maintenanceCalories)) === pair.maintenanceCalories
+        && estimate.reviewSynchronized === true;
+    if (phaseIsSynchronized && estimateIsSynchronized) return phase;
+
+    let synchronizedPhase = phase;
+    if (!phaseIsSynchronized) {
+        const saved = saveNutritionPhase({
+            goalId: phase.goalId,
+            maintenanceCalories: pair.maintenanceCalories,
+            targetCalories: pair.targetCalories
+        });
+        if (!saved?.phase) return phase;
+        synchronizedPhase = saved.phase;
+    }
+    localStorage.setItem("level_up_manual_maintenance_calories", String(pair.maintenanceCalories));
+    if (!estimateIsSynchronized) {
+        commitReviewedMaintenanceEstimate({
+            maintenanceCalories: pair.maintenanceCalories,
+            targetCalories: pair.targetCalories,
+            targetRateLbPerWeek: metrics?.targetRateLbPerWeek ?? phase?.targetWeeklyRate,
+            evidence: estimate,
+            source: "accepted-weekly-review-reconciliation"
+        });
+    }
+    return synchronizedPhase;
 }
 
 function buildSharedRecommendation(metrics, phase, { preview = false } = {}) {
@@ -507,6 +552,8 @@ function applyFullAdjustment(event, context = {}) {
 
     const recommendation = context.recommendation || buildSharedRecommendation(metrics, phase);
     if (!recommendation) return;
+    const reviewedMaintenance = Number(recommendation.reviewedMaintenanceCalories ?? recommendation.maintenanceCalories);
+    if (!Number.isFinite(reviewedMaintenance) || reviewedMaintenance <= 0) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     apply.disabled = true;
@@ -516,30 +563,39 @@ function applyFullAdjustment(event, context = {}) {
     try {
         saved = saveNutritionPhase({
             goalId: phase.goalId,
-            maintenanceCalories: recommendation.maintenanceCalories,
+            maintenanceCalories: reviewedMaintenance,
             targetCalories: recommendation.targetCalories
         });
     } catch (error) {
         console.error("Weekly calorie target save failed:", error);
     }
-    if (!saved?.phase || Number(saved.phase.currentCalories ?? saved.phase.startCalories) !== Number(recommendation.targetCalories)) {
+    if (!saved?.phase
+        || Number(saved.phase.currentCalories ?? saved.phase.startCalories) !== Number(recommendation.targetCalories)
+        || Number(saved.phase.maintenanceCalories) !== reviewedMaintenance) {
         apply.disabled = false;
         apply.textContent = `Update to ${recommendation.targetCalories}`;
-        setText(document.querySelector("[data-weekly-modal-status]"), "The target did not save. Please try again.");
+        setText(document.querySelector("[data-weekly-modal-status]"), "The target and maintenance estimate did not save together. Please try again.");
         return;
     }
-    localStorage.setItem("level_up_manual_maintenance_calories", String(recommendation.maintenanceCalories));
+    localStorage.setItem("level_up_manual_maintenance_calories", String(reviewedMaintenance));
+    commitReviewedMaintenanceEstimate({
+        maintenanceCalories: reviewedMaintenance,
+        targetCalories: recommendation.targetCalories,
+        targetRateLbPerWeek: recommendation.targetRate,
+        evidence: recommendation.estimate,
+        source: "accepted-weekly-calorie-review"
+    });
     setCurrentCalories(recommendation.targetCalories, "shared weekly TDEE and phase-pace adjustment");
     markCheckHandled(phase, checkDay, "coordinated-weekly-review");
-    markMaintenanceCheckInReviewed({ proposedMaintenance: recommendation.maintenanceCalories }, "coordinated-weekly-review");
+    markMaintenanceCheckInReviewed({ proposedMaintenance: reviewedMaintenance }, "coordinated-weekly-review");
     startAdjustmentHold({
         phase,
         calories: recommendation.targetCalories,
-        maintenanceCalories: recommendation.maintenanceCalories,
+        maintenanceCalories: reviewedMaintenance,
         estimatedTargetCalories: recommendation.targetCalories,
         previousTarget: recommendation.previousTarget,
         previousMaintenance: recommendation.previousMaintenance,
-        source: "coordinated-tdee-and-adaptive-update"
+        source: "accepted-weekly-calorie-review"
     });
     syncAppliedTargetAcrossSurfaces(recommendation.targetCalories);
     window.dispatchEvent(new CustomEvent("levelup:calorie-target-applied", {
@@ -553,9 +609,10 @@ function applyFullAdjustment(event, context = {}) {
 }
 
 function refresh() {
-    const phase = getActiveNutritionPhase();
+    let phase = getActiveNutritionPhase();
     if (!phase) return;
     const metrics = getActivePhaseMetrics(phase, { rolling: true });
+    phase = synchronizeAcceptedReviewMaintenance(metrics, phase);
     syncCurrentPhaseCard(metrics);
     syncCoach(metrics, phase);
     syncSuggestedCalories(metrics, phase);

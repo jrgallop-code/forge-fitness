@@ -32,7 +32,7 @@ export function saveNutritionPhase({ goalId, maintenanceCalories, targetCalories
         const previous = positive(active.currentCalories ?? active.startCalories);
         const changed = previous !== calories || positive(active.maintenanceCalories) !== maintenance;
         const next = { ...active, label: preset.label, currentCalories: calories, maintenanceCalories: maintenance, targetWeeklyRate: preset.weeklyWeightChangeLb, dailyCalorieAdjustment: preset.dailyCalorieAdjustment, updatedAt: now };
-        if (changed) next.adjustments = [...(Array.isArray(active.adjustments) ? active.adjustments : []), { date: now, previousCalories: previous, newCalories: calories, maintenanceCalories: maintenance }];
+        if (previous !== calories) next.adjustments = [...(Array.isArray(active.adjustments) ? active.adjustments : []), { date: now, previousCalories: previous, newCalories: calories, maintenanceCalories: maintenance }];
         phases[index] = next;
         writePhases(phases);
         notify();

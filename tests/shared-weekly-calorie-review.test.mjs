@@ -23,7 +23,7 @@ test("the actionable review stays out of Weight Progress and opens from its othe
     assert.match(display, /#weekly-modal-review-apply/);
     assert.match(display, /applyFullAdjustment\(applyEvent, \{ phase, metrics, recommendation \}\)/);
     assert.match(display, /saved = saveNutritionPhase/);
-    assert.match(display, /The target did not save\. Please try again\./);
+    assert.match(display, /The target and maintenance estimate did not save together\. Please try again\./);
     assert.match(display, /apply\.textContent = "Updating…"/);
     assert.match(display, /isExplicitModalRecommendation/);
     assert.match(display, /!isExplicitModalRecommendation && \(getHandledCheck/);
@@ -32,6 +32,8 @@ test("the actionable review stays out of Weight Progress and opens from its othe
     assert.match(display, /Logged weekly average/);
     assert.match(display, /Current weight trend/);
     assert.match(display, /Goal weight trend/);
+    assert.match(display, /Updated estimated maintenance/);
+    assert.match(display, /Planned surplus/);
     assert.match(display, /Calories needed for goal pace/);
     assert.match(display, /Calculated target/);
     assert.match(display, /Recommended target now/);
@@ -44,12 +46,19 @@ test("the actionable review stays out of Weight Progress and opens from its othe
     assert.doesNotMatch(stats, /data-maintenance-keep/);
 });
 
-test("the actionable coach review combines TDEE and pace into one capped update", () => {
+test("the actionable coach review saves a synchronized TDEE and target pair", () => {
     const source = readFileSync("js/nutrition/calories-full-adjustment-display.js", "utf8");
     assert.match(source, /buildCoordinatedWeeklyUpdate\(/);
     assert.match(source, /maximumChange: WEEKLY_ADJUSTMENT_CAP/);
-    assert.match(source, /maintenanceCalories: recommendation\.maintenanceCalories/);
+    assert.match(source, /reviewedMaintenance = Number\(recommendation\.reviewedMaintenanceCalories/);
+    assert.match(source, /maintenanceCalories: reviewedMaintenance/);
     assert.match(source, /targetCalories: recommendation\.targetCalories/);
+    assert.match(source, /commitReviewedMaintenanceEstimate\(/);
+    assert.match(source, /accepted-weekly-calorie-review/);
+    assert.match(source, /synchronizeAcceptedReviewMaintenance/);
+    assert.match(source, /readMaintenanceCheckInState/);
+    assert.match(source, /reviewState\?\.action === "coordinated-weekly-review"/);
+    assert.match(source, /accepted-weekly-review-reconciliation/);
     assert.match(source, /markMaintenanceCheckInReviewed/);
     assert.match(source, /markCheckHandled\(phase, checkDay, "coordinated-weekly-review"\)/);
     assert.match(source, /startAdjustmentHold\(/);

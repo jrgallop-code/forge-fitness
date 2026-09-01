@@ -22,6 +22,20 @@ function roundTo25(value) {
     return Math.round(Number(value) / 25) * 25;
 }
 
+export function buildReviewedCaloriePair({ targetCalories, targetRate } = {}) {
+    const target = finite(targetCalories);
+    const rate = finite(targetRate);
+    if (target === null || rate === null || target <= 0) return null;
+    const plannedDailyAdjustment = roundTo25(rate * 500);
+    const maintenanceCalories = roundTo25(target - plannedDailyAdjustment);
+    if (!Number.isFinite(maintenanceCalories) || maintenanceCalories <= 0) return null;
+    return {
+        maintenanceCalories,
+        targetCalories: Math.round(target),
+        plannedDailyAdjustment
+    };
+}
+
 export function buildAdaptivePaceCorrection({ actualRate, targetRate } = {}) {
     const actual = finite(actualRate);
     const target = finite(targetRate);
@@ -101,6 +115,13 @@ export function buildCoordinatedWeeklyUpdate({
         result.behavioralChange = Math.round(behavioralChange);
         result.fullRequestedTarget = fullRequestedTarget;
         result.usedObservedPaceBaseline = useObservedPaceBaseline;
+        const reviewedPair = useObservedPaceBaseline
+            ? buildReviewedCaloriePair({ targetCalories: nextTarget, targetRate })
+            : null;
+        if (reviewedPair) {
+            result.reviewedMaintenanceCalories = reviewedPair.maintenanceCalories;
+            result.plannedDailyAdjustment = reviewedPair.plannedDailyAdjustment;
+        }
     }
     return result;
 }

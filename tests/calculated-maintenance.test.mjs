@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
-import { calculateMaintenanceEstimate, stabilizeMaintenanceEstimate } from "../js/nutrition/calculated-maintenance.js";
+import { buildReviewedMaintenanceSnapshot, calculateMaintenanceEstimate, stabilizeMaintenanceEstimate } from "../js/nutrition/calculated-maintenance.js";
 import { calculateDisplayWeightTrend } from "../js/core/weight-trend.js";
 
 function key(offset) {
@@ -189,6 +189,22 @@ test("waits for seven food days and a fourteen-day weight span before a weekly u
     assert.equal(result.estimate.maintenanceCalories, 2400);
     assert.equal(result.estimate.weeklyReviewDue, true);
     assert.equal(result.estimate.weeklyDataReady, false);
+});
+
+test("an accepted weekly review replaces the stale TDEE snapshot with its synchronized maintenance", () => {
+    const snapshot = buildReviewedMaintenanceSnapshot({
+        maintenanceCalories: 2675,
+        targetCalories: 2800,
+        targetRateLbPerWeek: 0.25,
+        evidence: { maintenanceCalories: 2400, status: "preliminary", foodDays: 8, weighIns: 9 },
+        today: new Date("2026-09-01T12:00:00")
+    });
+    assert.equal(snapshot.reviewedAt, "2026-09-01");
+    assert.equal(snapshot.estimate.maintenanceCalories, 2675);
+    assert.equal(snapshot.estimate.uncappedMaintenanceCalories, 2675);
+    assert.equal(snapshot.estimate.reviewTargetCalories, 2800);
+    assert.equal(snapshot.estimate.reviewTargetRateLbPerWeek, 0.25);
+    assert.equal(snapshot.estimate.reviewSynchronized, true);
 });
 
 test("Goals and Plan distinguishes formula TDEE from the Level Up trend calculation", async () => {

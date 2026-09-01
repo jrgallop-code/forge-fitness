@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildAdaptivePaceCorrection, buildCoordinatedWeeklyUpdate } from "../js/nutrition/calorie-adjustment-coordinator.js";
+import { buildAdaptivePaceCorrection, buildCoordinatedWeeklyUpdate, buildReviewedCaloriePair } from "../js/nutrition/calorie-adjustment-coordinator.js";
 
 test("pace correction converts the weekly rate gap into calories", () => {
     assert.equal(buildAdaptivePaceCorrection({ actualRate: 0.75, targetRate: 0.25 }), -250);
@@ -63,6 +63,8 @@ test("a weekly recommendation applies the rate gap once to actual intake", () =>
     assert.equal(update.paceCorrection, 225);
     assert.equal(update.capped, false);
     assert.equal(update.usedObservedPaceBaseline, true);
+    assert.equal(update.reviewedMaintenanceCalories, 2600);
+    assert.equal(update.plannedDailyAdjustment, 125);
 });
 
 test("2620 calories at minus 0.20 lb per week targets plus 0.25 without double counting", () => {
@@ -81,4 +83,14 @@ test("2620 calories at minus 0.20 lb per week targets plus 0.25 without double c
     assert.equal(update.targetChange, 450);
     assert.equal(update.paceCorrection, 225);
     assert.equal(update.capped, false);
+    assert.equal(update.reviewedMaintenanceCalories, 2725);
+    assert.equal(update.plannedDailyAdjustment, 125);
+});
+
+test("an accepted 2800 target at plus 0.25 synchronizes maintenance to 2675", () => {
+    assert.deepEqual(buildReviewedCaloriePair({ targetCalories: 2800, targetRate: 0.25 }), {
+        maintenanceCalories: 2675,
+        targetCalories: 2800,
+        plannedDailyAdjustment: 125
+    });
 });
