@@ -142,5 +142,5 @@ test('dashboard workout breakdown action stays legible in every appearance', () 
 });
 
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-118/);
+  assert.match(worker, /2026-09-01-119/);
 });
