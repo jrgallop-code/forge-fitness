@@ -240,3 +240,40 @@ html[data-theme-mode="light"] .seven-day-volume-muscle{stroke:rgba(16,32,58,.62)
 
 :where(.account-cloud-status strong,.adaptive-flow-screen h2,.adaptive-recovery-legend strong,.adaptive-recommendation strong,.admin-analytics-person-identity strong,.admin-analytics-stat-group-head h4,.admin-workout-source>strong,.admin-analytics-stat-person strong,.restaurant-catalogue h4,.calorie-meal-week-details summary,.calculated-maintenance-card summary,.cardio-summary-card strong,.cardio-week-column>strong,.dashboard-habit-summary b,.dashboard-seven-day-sets-value strong,.dashboard-weight-trend-value strong,.food-portion-loading strong,.custom-food-intro strong,.custom-nutrition-heading strong,.food-portion-preview strong,.food-builder-item-editor>header strong,.food-builder-item-details>summary,.food-builder-item-edit-heading strong,.food-builder-paste>summary,.learn-step-location strong,.measurement-progress-row strong,.nutrition-principle-list strong,.nutrition-plan-summary strong,.plate-calculator-summary strong,.weekly-volume-row-top strong,.frequency-row>strong,.volume-status-card>strong,.session-superset-current strong,.training-summary-title-wrap strong,.unified-active-target strong,.performance-facts strong,.plan-target-map-heading h3,.plan-muscle-breakdown-heading h3,.plan-muscle-breakdown-row strong){color:var(--heading)!important}
 :where(.cardio-summary-card span,.cardio-summary-card small,.cardio-week-column>span,.training-summary-title-wrap small,.plan-target-map-heading p,.plan-muscle-breakdown-heading p,.smart-template-match>p,.performance-facts span,.nutrition-plan-summary span,.plate-calculator-summary span){color:var(--text-secondary)!important}
+
+/* Late-loaded Weight & Carbs overlays and insight cards. */
+:where(.weight-carbs-info>div,.weight-carbs-info-v2>div,.weight-carbs-tooltip,.weight-carbs-tooltip-v2,.weight-carbs-empty,.weight-carbs-empty-v2){border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)!important}
+:where(.weight-carbs-info summary,.weight-carbs-info-v2 summary){border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+:where(.weight-carbs-info strong,.weight-carbs-info-v2 strong,.weight-carbs-tooltip strong,.weight-carbs-tooltip-v2 strong,.weight-carbs-empty strong,.weight-carbs-empty-v2 strong,.weight-carbs-analysis strong,.weight-carbs-analysis-v2 strong){color:var(--heading)!important}
+:where(.weight-carbs-info p,.weight-carbs-info-v2 p,.weight-carbs-tooltip span,.weight-carbs-tooltip-v2 span,.weight-carbs-analysis b,.weight-carbs-analysis-v2 b,.weight-carbs-analysis p,.weight-carbs-analysis-v2 p){color:var(--text-secondary)!important}
+:where(.weight-carbs-info small,.weight-carbs-info-v2 small,.weight-carbs-tooltip small,.weight-carbs-tooltip-v2 small,.weight-carbs-empty p,.weight-carbs-empty-v2 p,.weight-carbs-analysis small,.weight-carbs-analysis-v2 small,.weight-carbs-legend,.weight-carbs-legend-v2,.weight-carbs-interaction-note,.weight-carbs-interaction-note-v2){color:var(--muted)!important}
+:where(.weight-carbs-analysis,.weight-carbs-analysis-v2){border-color:color-mix(in srgb,var(--accent) 28%,var(--line))!important;background:var(--accent-soft)!important;color:var(--text)!important}
+:where(.weight-carbs-chart-shell,.weight-carbs-chart-shell-v2){border-color:var(--line)!important}
+#weight-progress :where(.weight-carbs-chart-shell,.weight-carbs-chart-shell-v2)::before{background:var(--surface-raised)!important;color:var(--muted)!important}
+
+/* Learn Level Up is loaded on demand after the main theme stylesheet. */
+.learn-progress-card,.learn-lesson-list,.learn-step-card{border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)!important}
+.learn-lesson-row{border-color:var(--line)!important;background:transparent!important;color:var(--text)!important}
+.learn-lesson-row:active{background:var(--accent-soft)!important}
+.learn-header h2,.learn-progress-card strong,.learn-lesson-copy strong,.learn-step-card h3,.learn-step-location strong{color:var(--heading)!important}
+.learn-header p,.learn-progress-card span,.learn-lesson-copy small,.learn-step-card p{color:var(--text-secondary)!important}
+.learn-lesson-copy>span,.learn-lesson-state{color:var(--muted)!important}
+.learn-lesson-row.is-complete .learn-lesson-state{color:var(--success)!important}
+.learn-progress-track,.learn-step-dots i{background:var(--line)!important}
+.learn-progress-track i,.learn-step-dots i.active{background:linear-gradient(90deg,var(--accent),var(--accent-text))!important}
+.learn-lesson-icon,.learn-step-visual{border-color:color-mix(in srgb,var(--accent) 34%,var(--line))!important;background:var(--accent-soft)!important;color:var(--accent-text)!important}
+.learn-step-location{border-color:color-mix(in srgb,var(--success) 30%,var(--line))!important;background:color-mix(in srgb,var(--success) 8%,var(--card))!important}
+
+/* Activity Calendar shell, calendar card, and selected-day event cards. */
+.activity-calendar-page{background:var(--body-background)!important;color:var(--text)!important}
+.activity-calendar-header h1,.activity-calendar-month-controls label{color:var(--heading)!important}
+.activity-calendar-back,.activity-calendar-month-controls>button,.activity-calendar-month-controls label{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+.activity-calendar-card,.activity-calendar-details{border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)!important}
+.activity-calendar-weekdays,.activity-calendar-legend{border-color:var(--line)!important;color:var(--muted)!important}
+.activity-calendar-day{color:var(--text-secondary)!important}
+.activity-calendar-day.is-today:not(.is-selected)>span,.activity-calendar-day.is-selected>span{background:var(--surface-raised)!important;color:var(--heading)!important;box-shadow:inset 0 0 0 1px var(--line)!important}
+.activity-calendar-detail-head{color:var(--accent-text)!important}
+.activity-calendar-event{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+.activity-calendar-event strong,.activity-calendar-empty strong{color:var(--heading)!important}
+.activity-calendar-event small,.activity-calendar-empty span{color:var(--muted)!important}
+.activity-calendar-event-meta{color:var(--text-secondary)!important}

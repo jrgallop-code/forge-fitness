@@ -159,17 +159,35 @@ test("saved plans and generated workout rows never use fixed light text", async 
   assert.match(planDetails, /color:var\(--text-secondary/);
 });
 
+test("late-loaded insights, lessons, and calendar cards follow the active theme", async () => {
+  const styles = await read("css/appearance-themes.css");
+  for (const selector of [
+    ".weight-carbs-info-v2>div",
+    ".weight-carbs-tooltip-v2",
+    ".weight-carbs-analysis-v2",
+    ".learn-lesson-list",
+    ".learn-lesson-copy strong",
+    ".activity-calendar-page",
+    ".activity-calendar-event"
+  ]) {
+    assert.ok(styles.includes(selector), `${selector} should use theme surfaces and text`);
+  }
+  assert.match(styles, /\.weight-carbs-tooltip-v2[^}]*background:var\(--card\)!important/);
+  assert.match(styles, /\.learn-lesson-copy strong[^}]*color:var\(--heading\)!important/);
+  assert.match(styles, /\.activity-calendar-event\{[^}]*background:var\(--surface-raised\)!important/);
+});
+
 test("production entry points load the theme before paint and bust caches", async () => {
   const [html, app, router, worker] = await Promise.all([
     read("index.html"), read("js/app.js"), read("js/core/router.js"), read("service-worker.js")
   ]);
   assert.match(html, /level_up_appearance_settings/);
   assert.ok(html.indexOf("level_up_appearance_settings") < html.indexOf("css/styles.css"));
-  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-5/);
+  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-6/);
   assert.match(html, /js\/app\.js\?v=appearance-themes-2/);
   assert.match(html, /getHours\(\)/);
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-2/);
   assert.match(app, /router\.js\?v=appearance-themes-2/);
   assert.match(router, /more-ui-v2\.js\?v=appearance-themes-2/);
-  assert.match(worker, /2026-09-01-92/);
+  assert.match(worker, /2026-09-01-93/);
 });
