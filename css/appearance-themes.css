@@ -146,6 +146,10 @@ html[data-theme-mode="light"] .seven-day-volume-muscle{stroke:rgba(16,32,58,.62)
 .recovery-summary-strip>div,.recovery-map-note,.recovery-detail-row{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
 .recovery-summary-strip span,.recovery-map-header p,.recovery-detail-row span,.recovery-scale-points,.recovery-scale-points span,.recovery-scale-points small{color:var(--muted)!important}
 .recovery-summary-strip strong,.recovery-scale::before,.recovery-scale-points b{color:var(--text)!important}
+.recovery-dual-layout :where(.recovery-dual-map-card,.recovery-breakdown-card){border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)!important}
+.recovery-dual-layout :where(.recovery-breakdown-heading h4,.recovery-scale::before){color:var(--heading)!important}
+.recovery-dual-layout :where(.recovery-breakdown-heading p,.recovery-dual-figure figcaption){color:var(--muted)!important}
+.recovery-dual-layout .recovery-detail-row small{color:var(--success-text)!important}
 .recovery-row-progress{background:var(--line)!important}
 .recovery-body-wrap::after{background:radial-gradient(ellipse,var(--accent-soft),transparent 70%)!important}
 
