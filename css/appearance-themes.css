@@ -277,3 +277,23 @@ html[data-theme-mode="light"] .seven-day-volume-muscle{stroke:rgba(16,32,58,.62)
 .activity-calendar-event strong,.activity-calendar-empty strong{color:var(--heading)!important}
 .activity-calendar-event small,.activity-calendar-empty span{color:var(--muted)!important}
 .activity-calendar-event-meta{color:var(--text-secondary)!important}
+
+/* Form Guides can inject their anatomy, video, and instruction styles after this sheet. */
+.exercise-guide-screen{background:var(--bg)!important;color:var(--text)!important}
+.exercise-guide-header h2,.exercise-guide-section h3,.exercise-muscle-card strong,.exercise-guide-anatomy-overview figcaption strong,.exercise-guide-video-label strong{color:var(--heading)!important}
+.exercise-guide-header p,.exercise-guide-step-note,.exercise-guide-fallback-note,.exercise-guide-anatomy-overview figcaption small,.exercise-guide-video-label span{color:var(--text-secondary)!important}
+.exercise-guide-section,.exercise-guide-hero-figure,.exercise-guide-video-card{border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)!important}
+.exercise-muscle-card,.exercise-guide-anatomy-tile{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+.exercise-muscle-image-frame,.exercise-guide-anatomy-tile .form-guide-muscle-svg,.exercise-guide-anatomy-tile>img,.exercise-guide-hero-figure>img,.exercise-guide-video-card video{background:var(--surface)!important}
+.exercise-guide-section li{color:var(--text)!important}
+.exercise-guide-back{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+.exercise-cue-list span{border-color:color-mix(in srgb,var(--accent) 34%,var(--line))!important;background:var(--accent-soft)!important;color:var(--accent-text)!important}
+.exercise-muscle-card>span.primary{background:color-mix(in srgb,var(--danger) 14%,var(--surface-raised))!important;color:var(--danger-text)!important}
+.exercise-muscle-card>span.secondary{background:color-mix(in srgb,var(--warning) 14%,var(--surface-raised))!important;color:var(--warning-text)!important}
+.exercise-guide-anatomy-tile small.primary{color:var(--danger-text)!important}.exercise-guide-anatomy-tile small.secondary{color:var(--warning-text)!important}
+.exercise-guide-screen .form-guide-muscle-highlight{fill:var(--danger)!important;stroke:var(--danger)!important;filter:drop-shadow(0 0 8px color-mix(in srgb,var(--danger) 34%,transparent))!important}
+html[data-theme-mode="light"] .exercise-guide-screen .form-guide-anatomy-base{opacity:.86!important}
+
+/* The calendar is a fixed overlay, so its shell must carry the selected mode itself. */
+html[data-theme-mode="light"] .activity-calendar-page{background:var(--bg)!important;color:var(--text)!important}
+html[data-theme-mode="dark"] .activity-calendar-page{background:var(--body-background)!important;color:var(--text)!important}

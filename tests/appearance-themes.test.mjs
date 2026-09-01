@@ -177,17 +177,34 @@ test("late-loaded insights, lessons, and calendar cards follow the active theme"
   assert.match(styles, /\.activity-calendar-event\{[^}]*background:var\(--surface-raised\)!important/);
 });
 
+test("form-guide SVGs and full-screen shells use theme-safe surfaces", async () => {
+  const styles = await read("css/appearance-themes.css");
+  for (const selector of [
+    ".exercise-guide-screen",
+    ".exercise-guide-hero-figure",
+    ".exercise-guide-video-card",
+    ".exercise-guide-anatomy-tile .form-guide-muscle-svg",
+    ".exercise-guide-screen .form-guide-muscle-highlight",
+    "html[data-theme-mode=\"light\"] .activity-calendar-page"
+  ]) {
+    assert.ok(styles.includes(selector), `${selector} should follow the active theme`);
+  }
+  assert.match(styles, /\.exercise-guide-anatomy-tile \.form-guide-muscle-svg[^}]*background:var\(--surface\)!important/);
+  assert.match(styles, /\.exercise-guide-screen \.form-guide-muscle-highlight[^}]*fill:var\(--danger\)!important/);
+  assert.match(styles, /html\[data-theme-mode="light"\] \.activity-calendar-page\{background:var\(--bg\)!important/);
+});
+
 test("production entry points load the theme before paint and bust caches", async () => {
   const [html, app, router, worker] = await Promise.all([
     read("index.html"), read("js/app.js"), read("js/core/router.js"), read("service-worker.js")
   ]);
   assert.match(html, /level_up_appearance_settings/);
   assert.ok(html.indexOf("level_up_appearance_settings") < html.indexOf("css/styles.css"));
-  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-6/);
+  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-7/);
   assert.match(html, /js\/app\.js\?v=appearance-themes-2/);
   assert.match(html, /getHours\(\)/);
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-2/);
   assert.match(app, /router\.js\?v=appearance-themes-2/);
   assert.match(router, /more-ui-v2\.js\?v=appearance-themes-2/);
-  assert.match(worker, /2026-09-01-93/);
+  assert.match(worker, /2026-09-01-94/);
 });
