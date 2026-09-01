@@ -15,7 +15,7 @@ const worker = fs.readFileSync('service-worker.js', 'utf8');
 
 test('theme surface audit loads after the appearance stylesheet', () => {
   const appearance = html.indexOf('css/appearance-themes.css');
-  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-11');
+  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-12');
   assert.ok(appearance >= 0);
   assert.ok(audit > appearance);
 });
@@ -157,5 +157,5 @@ test('Level Up black restores the original green muscle-volume bars only for tha
 });
 
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-124/);
+  assert.match(worker, /2026-09-01-125/);
 });
