@@ -318,6 +318,36 @@ html[data-theme] .adaptive-feedback-edit-button {
     -webkit-text-fill-color: var(--accent-text) !important;
 }
 
+/* BMI uses semantic colors so its value, ranges and pointer never disappear. */
+html[data-theme] .bmi-index-value {
+    color: var(--heading) !important;
+    -webkit-text-fill-color: var(--heading) !important;
+}
+
+html[data-theme] .bmi-gauge-track { stroke: var(--line) !important; }
+html[data-theme] .bmi-under { stroke: color-mix(in srgb, var(--muted) 76%, var(--card)) !important; }
+html[data-theme] .bmi-healthy { stroke: var(--success) !important; }
+html[data-theme] .bmi-over { stroke: var(--warning) !important; }
+html[data-theme] .bmi-obesity { stroke: var(--danger) !important; }
+
+html[data-theme] .bmi-gauge-pointer line {
+    stroke: var(--accent-text) !important;
+    stroke-width: 4 !important;
+    opacity: 1 !important;
+}
+
+html[data-theme] .bmi-gauge-pointer circle {
+    fill: var(--card) !important;
+    stroke: var(--accent-text) !important;
+    stroke-width: 4 !important;
+    opacity: 1 !important;
+}
+
+html[data-theme] :is(.bmi-scale-labels, .bmi-index-result small, .bmi-index-note) {
+    color: var(--text-secondary) !important;
+    -webkit-text-fill-color: var(--text-secondary) !important;
+}
+
 /* The live rest alarm follows the selected theme, including late-injected styles. */
 html[data-theme] #level-up-rest-alarm-banner {
     border-color: var(--card-border) !important;

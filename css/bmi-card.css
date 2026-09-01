@@ -1,1 +1,94 @@
-.bmi-index-card{margin:12px 0 14px;padding:16px}.bmi-index-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.bmi-index-header h3{margin:3px 0 0}.bmi-index-value{font-size:30px;font-weight:900;line-height:1;color:#fff}.bmi-gauge{margin:2px auto -4px;max-width:340px}.bmi-gauge svg{display:block;width:100%;height:auto;overflow:visible}.bmi-gauge-track,.bmi-gauge-segment{fill:none;stroke-width:18;stroke-linecap:butt}.bmi-gauge-track{stroke:#232329}.bmi-under{stroke:#666}.bmi-healthy{stroke:#fff}.bmi-over{stroke:#9a9a9f}.bmi-obesity{stroke:#ef181f}.bmi-gauge-pointer{transition:transform .35s ease,opacity .2s ease}.bmi-gauge-pointer line{stroke:#fff;stroke-width:3;stroke-linecap:round}.bmi-gauge-pointer circle{fill:#09090b;stroke:#fff;stroke-width:3}.bmi-scale-labels{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:-8px;color:#9f9fa7;font-size:8px;font-weight:800;text-align:center}.bmi-index-result{display:grid;gap:3px;margin-top:10px;padding:10px 12px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.025)}.bmi-index-result strong{font-size:13px}.bmi-index-result small,.bmi-index-note{color:#a1a1aa;font-size:10px;line-height:1.4}.bmi-index-note{margin:9px 0 0}
+.bmi-index-card {
+    margin: 12px 0 14px;
+    padding: 16px;
+}
+
+.bmi-index-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.bmi-index-header h3 { margin: 3px 0 0; }
+
+.bmi-index-value {
+    color: var(--heading, #fff);
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.bmi-gauge {
+    margin: 2px auto -4px;
+    max-width: 340px;
+}
+
+.bmi-gauge svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.bmi-gauge-track,
+.bmi-gauge-segment {
+    fill: none;
+    stroke-width: 18;
+    stroke-linecap: butt;
+}
+
+.bmi-gauge-track { stroke: var(--line, #232329); }
+.bmi-under { stroke: color-mix(in srgb, var(--muted, #666) 76%, var(--card, #1c1c22)); }
+.bmi-healthy { stroke: var(--success, #22c55e); }
+.bmi-over { stroke: var(--warning, #f59e0b); }
+.bmi-obesity { stroke: var(--danger, #ef4444); }
+
+.bmi-gauge-pointer {
+    transition: transform .35s ease, opacity .2s ease;
+    filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--heading, #fff) 24%, transparent));
+}
+
+.bmi-gauge-pointer line {
+    stroke: var(--accent-text, #fff);
+    stroke-width: 4;
+    stroke-linecap: round;
+}
+
+.bmi-gauge-pointer circle {
+    fill: var(--card, #09090b);
+    stroke: var(--accent-text, #fff);
+    stroke-width: 4;
+}
+
+.bmi-scale-labels {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-top: -8px;
+    color: var(--muted, #9f9fa7);
+    font-size: 8px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.bmi-index-result {
+    display: grid;
+    gap: 3px;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--line, rgba(255,255,255,.08));
+    border-radius: 10px;
+    background: var(--surface-raised, rgba(255,255,255,.025));
+}
+
+.bmi-index-result strong { font-size: 13px; }
+
+.bmi-index-result small,
+.bmi-index-note {
+    color: var(--text-secondary, #a1a1aa);
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+.bmi-index-note { margin: 9px 0 0; }
