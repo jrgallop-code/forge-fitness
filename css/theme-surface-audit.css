@@ -897,3 +897,24 @@ html[data-theme] .levelup-onboarding .onboarding-install-installed {
 html[data-theme] .levelup-onboarding .onboarding-install-installed-dot {
     background: var(--success) !important;
 }
+
+/* Smart-plan results must not retain the original black, green, or white palette. */
+html[data-theme] :is(.smart-set-breakdown-row > i, .plan-muscle-breakdown-row > i) {
+    border-color: var(--line) !important;
+    background: var(--line) !important;
+    box-shadow: none !important;
+}
+
+html[data-theme] :is(.smart-set-breakdown-row > i > b, .plan-muscle-breakdown-row > i > b) {
+    background: var(--accent) !important;
+    box-shadow: none !important;
+}
+
+html[data-theme] .smart-set-breakdown-heading .eyebrow {
+    color: var(--accent-text) !important;
+    -webkit-text-fill-color: var(--accent-text) !important;
+}
+
+html[data-theme] button .app-inline-icon {
+    color: inherit !important;
+}
