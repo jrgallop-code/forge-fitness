@@ -1,0 +1,80 @@
+:root,
+html[data-theme="level-up"] {
+  --accent:#ef1821;--accent-dark:#a90e15;--accent-soft:rgba(239,24,33,.11);--accent-glow:rgba(239,24,33,.22);--accent-contrast:#fff;
+  --bg:#09090b;--surface:#121216;--surface-raised:#18181d;--card:#1c1c22;--text:#f7f7f8;--heading:#fff;--muted:#9b9ba5;
+  --line:rgba(255,255,255,.09);--card-border:rgba(255,255,255,.1);--input-bg:#15151a;--nav-bg:rgba(22,12,14,.96);--nav-border:rgba(255,255,255,.13);
+  --body-background:radial-gradient(circle at 15% -10%,rgba(239,24,33,.11),transparent 34rem),#09090b;--shadow:0 18px 50px rgba(0,0,0,.38);
+  --success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
+}
+html[data-theme="arctic"] {
+  --accent:#1769e0;--accent-dark:#0e4fb3;--accent-soft:rgba(23,105,224,.1);--accent-glow:rgba(23,105,224,.18);--accent-contrast:#fff;
+  --bg:#f3f7fc;--surface:#fff;--surface-raised:#edf3fb;--card:#fff;--text:#10203a;--heading:#09162b;--muted:#647188;
+  --line:rgba(23,48,84,.12);--card-border:rgba(23,48,84,.12);--input-bg:#f7faff;--nav-bg:rgba(255,255,255,.96);--nav-border:rgba(21,51,91,.14);
+  --body-background:radial-gradient(circle at 92% -8%,rgba(50,133,255,.13),transparent 30rem),#f3f7fc;--shadow:0 14px 34px rgba(36,67,105,.1);
+  --red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
+}
+html[data-theme="pure"] {
+  --accent:#171719;--accent-dark:#000;--accent-soft:rgba(23,23,25,.07);--accent-glow:rgba(23,23,25,.12);--accent-contrast:#fff;
+  --bg:#f4f4f2;--surface:#fff;--surface-raised:#ededeb;--card:#fff;--text:#202022;--heading:#0d0d0e;--muted:#747478;
+  --line:rgba(20,20,22,.11);--card-border:rgba(20,20,22,.11);--input-bg:#f8f8f6;--nav-bg:rgba(255,255,255,.97);--nav-border:rgba(20,20,22,.12);
+  --body-background:#f4f4f2;--shadow:0 12px 30px rgba(20,20,20,.08);--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
+}
+html[data-theme="ocean"] {
+  --accent:#0798d9;--accent-dark:#0676ad;--accent-soft:rgba(7,152,217,.1);--accent-glow:rgba(7,152,217,.18);--accent-contrast:#fff;
+  --bg:#edf8ff;--surface:#fff;--surface-raised:#e3f4ff;--card:#fff;--text:#123252;--heading:#07233f;--muted:#61798f;
+  --line:rgba(17,81,120,.13);--card-border:rgba(17,81,120,.13);--input-bg:#f5fbff;--nav-bg:rgba(248,253,255,.97);--nav-border:rgba(17,81,120,.14);
+  --body-background:linear-gradient(155deg,rgba(46,180,240,.13),transparent 34rem),#edf8ff;--shadow:0 14px 34px rgba(17,81,120,.1);--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
+}
+html[data-theme="midnight"] {
+  --accent:#3478f6;--accent-dark:#195ac8;--accent-soft:rgba(52,120,246,.12);--accent-glow:rgba(52,120,246,.24);--accent-contrast:#fff;
+  --bg:#050b17;--surface:#0b1628;--surface-raised:#101d31;--card:#132238;--text:#f5f8ff;--heading:#fff;--muted:#92a3bd;
+  --line:rgba(135,172,226,.13);--card-border:rgba(135,172,226,.14);--input-bg:#0d1a2c;--nav-bg:rgba(5,13,27,.96);--nav-border:rgba(135,172,226,.16);
+  --body-background:radial-gradient(circle at 80% -8%,rgba(52,120,246,.18),transparent 34rem),#050b17;--shadow:0 18px 50px rgba(0,4,12,.5);--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
+}
+html[data-theme="slate"] {
+  --accent:#7396b8;--accent-dark:#557590;--accent-soft:rgba(115,150,184,.12);--accent-glow:rgba(115,150,184,.2);--accent-contrast:#071018;
+  --bg:#0d1117;--surface:#151b22;--surface-raised:#1a222c;--card:#1d2630;--text:#eef3f7;--heading:#fff;--muted:#9aa8b4;
+  --line:rgba(183,204,221,.12);--card-border:rgba(183,204,221,.13);--input-bg:#171f28;--nav-bg:rgba(13,17,23,.96);--nav-border:rgba(183,204,221,.15);
+  --body-background:radial-gradient(circle at 82% -10%,rgba(115,150,184,.12),transparent 32rem),#0d1117;--shadow:0 18px 46px rgba(0,0,0,.42);--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
+}
+
+html,body{background:var(--bg)!important;color:var(--text)}
+body{background:var(--body-background)!important;transition:background-color .2s ease,color .2s ease}
+:where(h1,h2,h3,h4,h5,h6,strong,legend,label){color:var(--heading)}
+:where(p,.muted){color:var(--muted)}
+.eyebrow{color:var(--accent)!important}
+.primary-btn{border-color:var(--accent)!important;background:var(--accent)!important;color:var(--accent-contrast)!important;box-shadow:0 8px 24px var(--accent-glow)!important}
+.secondary-btn{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+:where(input,select,textarea){border-color:var(--line)!important;background:var(--input-bg)!important;color:var(--text)!important}
+:where(input,textarea)::placeholder{color:var(--muted)!important}
+.bottom-nav{border-color:var(--nav-border)!important;background:var(--nav-bg)!important;box-shadow:0 18px 50px rgba(0,0,0,.28)!important}
+.bottom-nav button{color:var(--muted)!important}
+.bottom-nav button.active{background:var(--accent-soft)!important;color:var(--accent)!important}
+.bottom-nav button.active .nav-icon{color:var(--accent)!important;fill:var(--accent)!important}
+.bottom-nav button.active .nav-icon-stroke{fill:none!important;stroke:var(--accent)!important}
+
+:where(.section-card,.metric-card,.nutrition-goal-card,.nutrition-energy-summary,.analytics-card,.weight-entry-card,.nutrition-planner-card,.calorie-stat-card,.admin-analytics-card,.training-summary-card,.smart-question-card,.smart-picker-panel,.smart-volume-summary,.session-exercise-card,.dashboard-habit-card,.cardio-summary-card,.cardio-analytics-card,.weight-chart-card,.activity-calendar-card,.account-cloud-card,.adaptive-settings-card,.unit-settings-card,.profile-appearance-card,.preset-plan-card,.catalogue-plan-card,.schedule-dashboard-card,.performance-dashboard-card,.overall-strength-index-card,.measurement-entry-card,.measurement-progress-card,.nutrition-guide-card,.nutrition-evidence-card,.nutrition-habits-card,.nutrition-hero-card,.bmi-index-card,.photo-journal-card,.plate-calculator-card,.routine-import-paste-card,.food-sheet-card,.support-report-card,.learn-step-card,.learn-progress-card,.current-phase-card,.phase-current-card,.phase-start-card,.phase-sample-card,.smart-coach-build-card){border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)}
+:where(.more-menu-group,.food-sheet,.adaptive-info-sheet,.plate-calculator-sheet,.starting-weight-calibration-sheet,.weekly-calorie-modal-card,.workout-history-preview-sheet){border-color:var(--card-border)!important;background:var(--surface)!important;color:var(--text)!important;box-shadow:var(--shadow)}
+.more-menu-group>h3{border-color:var(--line)!important;color:var(--muted)!important}
+.more-menu-group>.more-menu-card{border-color:var(--line)!important;color:var(--text)!important}
+.more-menu-group>.more-menu-card:active{background:var(--accent-soft)!important}
+.more-menu-group .more-menu-icon{border-color:color-mix(in srgb,var(--accent) 28%,transparent)!important;background:var(--accent-soft)!important;color:var(--accent)!important}
+.more-menu-group .more-menu-card:after{color:var(--muted)}
+:where(.training-progress-tab,.nutrition-tab,.lifting-tab,.filter-chip,.range-btn).active{border-color:var(--accent)!important;background:var(--accent-soft)!important;color:var(--accent)!important}
+:where(.progress-line,.trend-line,.chart-line,.strength-chart-line){stroke:var(--accent)!important}
+:where(.chart-bar,.training-bar,.weight-bar){fill:var(--accent)!important;background:var(--accent)!important}
+.recovery-ready,[data-status="success"]{color:var(--success)!important}.recovery-nearly-ready,[data-status="warning"]{color:var(--warning)!important}.recovery-recovering,[data-status="error"]{color:var(--danger)!important}
+
+html[data-theme-mode="light"] :where(.dashboard-welcome,.workout-page,.progress-page,.nutrition-page,.more-compact-header){color:var(--text)}
+html[data-theme-mode="light"] :where(.session-set-row,.recovery-detail-row,.weight-history-row,.measurement-history-row,.exercise-history-row,.performance-row,.phase-history-row,.nutrition-adjustment-row,.weekly-calorie-review-row,.adaptive-option-row,.drive-state-row){border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+html[data-theme-mode="light"] :where(.exercise-guide-section,.exercise-muscle-card,.recovery-map-note,.recovery-summary-strip>div,.nutrition-current-phase,.unified-maintenance-block,.unified-calorie-summary>div){border-color:var(--line)!important;background:var(--card)!important;color:var(--text)!important}
+html[data-theme-mode="light"] :where(.exercise-guide-section li,.exercise-guide-section p,.exercise-muscle-card strong,.recovery-map-note){color:var(--text)!important}
+html[data-theme-mode="light"] .recovery-body-svg{filter:drop-shadow(0 12px 24px rgba(34,65,98,.14))}
+html[data-theme-mode="light"] .smart-coach-build-card{background:radial-gradient(circle at 50% 28%,var(--accent-soft),transparent 38%),var(--card)!important}
+html[data-theme-mode="light"] .smart-coach-dumbbell path{fill:var(--text)}
+html[data-theme-mode="light"] .smart-coach-ring-track{stroke:var(--line)}
+html[data-theme-mode="light"] .smart-coach-build-status{border-color:var(--line);background:var(--surface-raised);color:var(--muted)}
+
+.appearance-page{width:min(760px,100%);margin:0 auto;padding-bottom:110px}.appearance-header{display:grid;gap:5px;margin-bottom:20px}.appearance-header h2{margin:0;font-size:clamp(2rem,8vw,2.65rem);letter-spacing:-.045em}.appearance-header p{max-width:590px;margin:3px 0 0;line-height:1.5}.appearance-back{justify-self:start;margin:0 0 12px;padding:6px 0;border:0;background:transparent;color:var(--text);font-weight:800}.appearance-theme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.appearance-theme-card{position:relative;display:grid;gap:6px;min-width:0;padding:12px;border:1px solid var(--card-border);border-radius:19px;background:var(--card);color:var(--text);text-align:left;box-shadow:var(--shadow)}.appearance-theme-card:first-child{grid-column:1/-1}.appearance-theme-card.is-selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft),var(--shadow)}.appearance-theme-card>strong{font-size:.92rem}.appearance-theme-card>small{overflow:hidden;color:var(--muted);font-size:.66rem;text-overflow:ellipsis;white-space:nowrap}.appearance-selected-mark{position:absolute;z-index:2;top:19px;right:19px;display:none;place-items:center;width:23px;height:23px;border-radius:50%;background:var(--accent);color:var(--accent-contrast);font-size:.72rem;font-weight:1000}.appearance-theme-card.is-selected .appearance-selected-mark{display:grid}.appearance-theme-preview{position:relative;display:block;height:128px;overflow:hidden;border:1px solid rgba(127,127,127,.16);border-radius:14px;background:var(--preview-bg);color:var(--preview-text)}.appearance-preview-top{position:absolute;inset:12px 12px auto;height:12px;border-radius:999px;background:var(--preview-accent)}.appearance-preview-card{position:absolute;inset:32px 12px 18px;display:block;border:1px solid var(--preview-line);border-radius:11px;background:var(--preview-card)}.appearance-preview-card b{position:absolute;top:12px;left:12px;width:44%;height:7px;border-radius:99px;background:var(--preview-text);opacity:.82}.appearance-preview-card em{position:absolute;top:28px;left:12px;width:63%;height:5px;border-radius:99px;background:var(--preview-muted);box-shadow:0 10px 0 var(--preview-muted)}.appearance-preview-card small{position:absolute;right:12px;bottom:12px;width:34px;height:24px;border-radius:7px;background:var(--preview-accent)}.appearance-preview-nav{position:absolute;inset:auto 0 0;height:10px;background:var(--preview-surface)}
+.theme-preview-level-up{--preview-bg:#09090b;--preview-surface:#121216;--preview-card:#1c1c22;--preview-text:#f7f7f8;--preview-muted:#6f6f78;--preview-line:#34343a;--preview-accent:#ef1821}.theme-preview-arctic{--preview-bg:#f3f7fc;--preview-surface:#fff;--preview-card:#fff;--preview-text:#10203a;--preview-muted:#c6cfdb;--preview-line:#dbe3ee;--preview-accent:#1769e0}.theme-preview-pure{--preview-bg:#f4f4f2;--preview-surface:#fff;--preview-card:#fff;--preview-text:#202022;--preview-muted:#d1d1ce;--preview-line:#dededb;--preview-accent:#171719}.theme-preview-ocean{--preview-bg:#edf8ff;--preview-surface:#fff;--preview-card:#fff;--preview-text:#123252;--preview-muted:#bfdcea;--preview-line:#cfe5f0;--preview-accent:#0798d9}.theme-preview-midnight{--preview-bg:#050b17;--preview-surface:#0b1628;--preview-card:#132238;--preview-text:#f5f8ff;--preview-muted:#4f6380;--preview-line:#263b57;--preview-accent:#3478f6}.theme-preview-slate{--preview-bg:#0d1117;--preview-surface:#151b22;--preview-card:#1d2630;--preview-text:#eef3f7;--preview-muted:#53616d;--preview-line:#34414d;--preview-accent:#7396b8}.theme-preview-system .appearance-theme-preview{background:linear-gradient(110deg,#f3f7fc 0 49.8%,#09090b 50.2%);--preview-surface:rgba(127,127,127,.32);--preview-card:rgba(255,255,255,.82);--preview-text:#1769e0;--preview-muted:#8ea3bb;--preview-line:rgba(127,127,127,.28);--preview-accent:linear-gradient(90deg,#1769e0 0 49%,#ef1821 51%)}
+.appearance-status{min-height:22px;margin:12px 2px 0;color:var(--accent);font-size:.78rem;font-weight:800}.appearance-semantic-note{display:grid;gap:4px;margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:15px;background:var(--surface-raised)}.appearance-semantic-note strong{font-size:.82rem}.appearance-semantic-note span{color:var(--muted);font-size:.72rem;line-height:1.45}@media(max-width:390px){.appearance-theme-grid{gap:9px}.appearance-theme-card{padding:9px;border-radius:16px}.appearance-theme-preview{height:112px}.appearance-theme-card>strong{font-size:.84rem}.appearance-theme-card>small{font-size:.6rem}}
