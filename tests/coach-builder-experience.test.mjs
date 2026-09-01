@@ -18,7 +18,10 @@ test("coach builder presents training experience as its own step", async () => {
 });
 
 test("coach builder transitions through the coach build card after question six", async () => {
-  const source = await read("js/workouts/smart-build.js");
+  const [source, engine] = await Promise.all([
+    read("js/workouts/smart-build.js"),
+    read("js/workouts/smart-build-unified-engine-v11.js")
+  ]);
 
   assert.match(source, /if\(state\.step===5\)\{state\.generated=generateProgram\(\);showCoachBuild\(root\);return;\}/);
   assert.match(source, /questionCard\("6","Programming approach"/);
@@ -27,6 +30,10 @@ test("coach builder transitions through the coach build card after question six"
   assert.match(source, /smart-coach-ring-progress/);
   assert.match(source, /smart-coach-dumbbell/);
   assert.match(source, /window\.setTimeout\(\(\)=>\{coachBuildTimer=0;if\(state\.step!==6\)return;state\.step=7;renderStep\(root\);\},2600\)/);
+  assert.match(engine, /generated = generateProgram\(\);\s*showCoachBuildTransition\(\);/);
+  assert.match(engine, /function showCoachBuildTransition\(\)/);
+  assert.match(engine, /Your coach is building your program/);
+  assert.match(engine, /coachBuildTimer = window\.setTimeout\(\(\) => \{\s*coachBuildTimer = 0;\s*renderReview\(\);\s*\}, 2600\)/);
 });
 
 test("production module cache keys retain the restored experience step", async () => {
@@ -38,8 +45,10 @@ test("production module cache keys retain the restored experience step", async (
 
   assert.match(index, /css\/smart-build-coach-loading\.css\?v=coach-build-loading-1/);
   assert.match(index, /js\/app\.js\?v=coach-build-loading-1/);
+  assert.match(index, /smart-build-full-body-guardrails\.js\?v=coach-build-loading-2/);
   assert.match(app, /\.\/core\/router\.js\?v=coach-build-loading-1/);
   assert.match(router, /\.\.\/workouts\/smart-build\.js\?v=coach-build-loading-1/);
+  assert.match(await read("js/workouts/smart-build-full-body-guardrails.js"), /smart-build-unified-engine-v11\.js\?v=coach-build-loading-2/);
 });
 
 test("coach build transition has a responsive animated circular loading treatment", async () => {
