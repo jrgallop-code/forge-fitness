@@ -76,14 +76,15 @@ test("every explicit appearance theme uses its matching optimized splash and loa
         pure: ["assets/level-up-splash-pure-v1.webp", 1672],
         ocean: ["assets/level-up-splash-ocean-v1.webp", 1672],
         midnight: ["assets/level-up-splash-midnight-v1.webp", 1672],
-        slate: ["assets/level-up-splash-slate-v1.webp", 1672]
+        slate: ["assets/level-up-splash-slate-v1.webp", 1672],
+        pulse: ["assets/level-up-splash-pulse-v1.webp", 1672]
     };
 
     for (const [theme, [splash, height]] of Object.entries(splashes)) {
         assert.ok(existsSync(splash), `${theme} splash must exist`);
         assert.deepEqual(webpDimensions(splash), { width: 941, height });
         assert.ok(readFileSync(splash).length < 100_000, `${theme} splash should remain safely below transport limits`);
-        assert.match(html, new RegExp(`${theme}:"${splash.replaceAll("/", "\\/")}\\?v=theme-splash-1"`));
+        assert.match(html, new RegExp(`${theme}:"${splash.replaceAll("/", "\\/")}\\?v=theme-splash-2"`));
         assert.match(worker, new RegExp(`\\.\\/${splash.replaceAll("/", "\\/")}`));
         assert.match(styles, new RegExp(`html\\[data-theme="${theme}"\\]\\.level-up-installed-pwa #pwa-splash`));
     }
@@ -93,6 +94,7 @@ test("every explicit appearance theme uses its matching optimized splash and loa
     assert.match(styles, /background: #0798d9/);
     assert.match(styles, /background: #3478f6/);
     assert.match(styles, /background: #7396b8/);
+    assert.match(styles, /background: #ff2d95/);
 });
 
 test("automatic theme uses the locally resolved day or night splash", () => {

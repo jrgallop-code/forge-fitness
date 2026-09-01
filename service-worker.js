@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-01-105";
+const CACHE_VERSION = "2026-09-01-106";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -20,7 +20,8 @@ const CORE_ASSETS = [
     "./assets/level-up-splash-pure-v1.webp",
     "./assets/level-up-splash-ocean-v1.webp",
     "./assets/level-up-splash-midnight-v1.webp",
-    "./assets/level-up-splash-slate-v1.webp"
+    "./assets/level-up-splash-slate-v1.webp",
+    "./assets/level-up-splash-pulse-v1.webp"
 ];
 
 function isLocalAsset(value) {

@@ -1,4 +1,4 @@
-import "./core/appearance-theme.js?v=appearance-themes-2";
+import "./core/appearance-theme.js?v=appearance-themes-3";
 import { navigate } from "./core/router.js?v=whats-new-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=whats-new-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-source-stats-1";
