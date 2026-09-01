@@ -45,7 +45,7 @@ test('Explore supports filters, evidence guides and a saved reading list', () =>
   assert.match(explore, /guide-rest/);
   assert.match(styles, /\.explore-tabs/);
   assert.match(styles, /@media\(max-width:520px\)/);
-  assert.match(worker, /2026-08-31-84/);
+  assert.match(worker, /2026-09-01-88/);
 });
 
 test('Explore uses diverse, topic-relevant Pexels photography', () => {
