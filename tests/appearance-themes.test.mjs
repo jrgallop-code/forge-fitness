@@ -52,6 +52,18 @@ test("theme stylesheet separates accents from semantic status colours", async ()
   assert.match(styles, /\.bottom-nav button\.active/);
 });
 
+test("dashboard and shared progress bars follow the selected appearance accent", async () => {
+  const styles = await read("css/native-ios-polish.css");
+  assert.match(
+    styles,
+    /\.dashboard-weekly-bar span,\s*\.progress-bar span,\s*\.volume-bar span\s*\{[^}]*background:\s*var\(--accent,\s*#f21f2c\)/
+  );
+  assert.doesNotMatch(
+    styles,
+    /\.dashboard-weekly-bar span,\s*\.progress-bar span,\s*\.volume-bar span\s*\{[^}]*background:\s*#f21f2c/
+  );
+});
+
 test("feature cards inherit the selected theme instead of fixed dark colours", async () => {
   const styles = await read("css/appearance-themes.css");
   for (const selector of [
@@ -275,5 +287,5 @@ test("production entry points load the theme before paint and bust caches", asyn
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-3/);
   assert.match(app, /router\.js\?v=theme-accent-calendar-1/);
   assert.match(router, /more-ui-v2\.js\?v=pulse-theme-1/);
-  assert.match(worker, /2026-09-01-116/);
+  assert.match(worker, /2026-09-01-117/);
 });
