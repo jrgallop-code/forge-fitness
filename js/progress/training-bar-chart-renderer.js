@@ -1,5 +1,15 @@
-const RED = "#ff3139";
-const MUTED_RED = "rgba(205, 54, 64, 0.78)";
+function themeChartColors() {
+    const styles = getComputedStyle(document.documentElement);
+    const value = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
+    return {
+        accent: value("--accent", "#df141e"),
+        accentDark: value("--accent-dark", "#a90e15"),
+        accentGlow: value("--accent-glow", "rgba(239,24,33,.22)"),
+        line: value("--line", "rgba(255,255,255,.09)"),
+        muted: value("--muted", "#9b9ba5"),
+        text: value("--text", "#f7f7f8")
+    };
+}
 
 export function drawTrainingBarChart(canvas, points, options = {}) {
     const context = canvas?.getContext?.("2d");
@@ -23,24 +33,25 @@ export function drawTrainingBarChart(canvas, points, options = {}) {
     const values = points.map(point => Number(point.value) || 0);
     const peak = Math.max(0, ...values);
     const maximum = niceMaximum(peak);
+    const colors = themeChartColors();
 
     for (let tick = 0; tick < 3; tick++) {
         const value = maximum - maximum * tick / 2;
         const y = padding.top + plotHeight * tick / 2;
-        context.strokeStyle = "rgba(255, 255, 255, 0.06)";
+        context.strokeStyle = colors.line;
         context.lineWidth = 1;
         context.beginPath();
         context.moveTo(padding.left, y);
         context.lineTo(width - padding.right, y);
         context.stroke();
-        context.fillStyle = "rgba(181, 181, 190, 0.68)";
+        context.fillStyle = colors.muted;
         context.font = "500 10px Arial";
         context.textAlign = "right";
         context.fillText(formatValue(value), padding.left - 7, y + 3.5);
     }
 
     if (!points.length) {
-        context.fillStyle = "rgba(181, 181, 190, 0.72)";
+        context.fillStyle = colors.muted;
         context.font = "600 12px Arial";
         context.textAlign = "center";
         context.fillText("No workout history yet", padding.left + plotWidth / 2, padding.top + plotHeight / 2);
@@ -62,11 +73,11 @@ export function drawTrainingBarChart(canvas, points, options = {}) {
 
         if (barHeight > 0) {
             const gradient = context.createLinearGradient(0, y, 0, padding.top + plotHeight);
-            gradient.addColorStop(0, latest ? RED : MUTED_RED);
-            gradient.addColorStop(1, latest ? "rgba(111, 22, 32, 0.78)" : "rgba(91, 24, 32, 0.6)");
+            gradient.addColorStop(0, latest ? colors.accent : colors.accentDark);
+            gradient.addColorStop(1, colors.accentDark);
             context.save();
             if (latest) {
-                context.shadowColor = "rgba(255, 49, 57, 0.34)";
+                context.shadowColor = colors.accentGlow;
                 context.shadowBlur = 11;
             }
             roundedTopBar(context, x, y, barWidth, barHeight, Math.min(7, barWidth / 2));
@@ -76,14 +87,14 @@ export function drawTrainingBarChart(canvas, points, options = {}) {
         }
 
         if (labelIndexes.has(index)) {
-            context.fillStyle = latest ? "rgba(235, 235, 240, 0.9)" : "rgba(174, 174, 183, 0.7)";
+            context.fillStyle = latest ? colors.text : colors.muted;
             context.font = latest ? "700 10px Arial" : "500 10px Arial";
             context.textAlign = "center";
             context.fillText(point.label, centerX, height - 15);
         }
 
         if (shouldShowValue(values, index, peak)) {
-            context.fillStyle = latest ? "#ffffff" : "rgba(235, 235, 239, 0.86)";
+            context.fillStyle = colors.text;
             context.font = latest ? "800 10px Arial" : "650 10px Arial";
             context.textAlign = "center";
             context.fillText(formatValue(value), centerX, Math.max(13, y - 7));

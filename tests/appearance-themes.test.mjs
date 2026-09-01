@@ -10,7 +10,11 @@ test("appearance system provides system plus six curated themes", async () => {
     assert.match(source, new RegExp(`id: "${theme}"`));
   }
   assert.match(source, /level_up_appearance_settings/);
-  assert.match(source, /prefers-color-scheme: light/);
+  assert.match(source, /SYSTEM_DAY_START_HOUR = 7/);
+  assert.match(source, /SYSTEM_NIGHT_START_HOUR = 19/);
+  assert.match(source, /resolveSystemThemeForHour/);
+  assert.match(source, /now\.getHours\(\)/);
+  assert.match(source, /visibilitychange/);
   assert.match(source, /root\.dataset\.theme/);
   assert.match(source, /meta\[name="theme-color"\]/);
 });
@@ -79,6 +83,32 @@ test("late-loading feature cards and controls retain theme contrast", async () =
   assert.match(styles, /\.food-entry-edit>b[^}]*color:var\(--text\)!important/);
 });
 
+test("builder, priority, and training analytics surfaces use live theme tokens", async () => {
+  const [styles, strengthChart, trainingChart, weeklyChart] = await Promise.all([
+    read("css/appearance-themes.css"),
+    read("js/progress/strength-index-chart-renderer.js"),
+    read("js/progress/training-bar-chart-renderer.js"),
+    read("js/progress/weekly-workouts-seven-week.js")
+  ]);
+  for (const selector of [
+    ".plan-builder",
+    ".manual-pick",
+    ".exercise-filter-card",
+    ".muscle-priority-card",
+    "#overall-strength-index-chart",
+    "#weekly-workouts-seven-week-chart",
+    ".strength-index-summary"
+  ]) {
+    assert.match(styles, new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+  for (const renderer of [strengthChart, trainingChart, weeklyChart]) {
+    assert.match(renderer, /getComputedStyle\(document\.documentElement\)/);
+    assert.match(renderer, /--accent/);
+    assert.match(renderer, /--muted/);
+    assert.match(renderer, /--line/);
+  }
+});
+
 test("theme text tokens meet WCAG AA contrast on cards", () => {
   const palettes = [
     ["Level Up", "#1c1c22", "#f7f7f8", "#9b9ba5", "#ff6670", "#df141e", "#ffffff"],
@@ -111,10 +141,11 @@ test("production entry points load the theme before paint and bust caches", asyn
   ]);
   assert.match(html, /level_up_appearance_settings/);
   assert.ok(html.indexOf("level_up_appearance_settings") < html.indexOf("css/styles.css"));
-  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-3/);
-  assert.match(html, /js\/app\.js\?v=appearance-themes-1/);
-  assert.match(app, /appearance-theme\.js\?v=appearance-themes-1/);
-  assert.match(app, /router\.js\?v=appearance-themes-1/);
-  assert.match(router, /more-ui-v2\.js\?v=appearance-themes-1/);
-  assert.match(worker, /2026-09-01-90/);
+  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-4/);
+  assert.match(html, /js\/app\.js\?v=appearance-themes-2/);
+  assert.match(html, /getHours\(\)/);
+  assert.match(app, /appearance-theme\.js\?v=appearance-themes-2/);
+  assert.match(app, /router\.js\?v=appearance-themes-2/);
+  assert.match(router, /more-ui-v2\.js\?v=appearance-themes-2/);
+  assert.match(worker, /2026-09-01-91/);
 });

@@ -1,6 +1,17 @@
-const TREND_RED = "#ff3139";
-const TREND_RED_GLOW = "rgba(255, 49, 57, 0.32)";
-const POINT_RED = "#c94c55";
+function themeChartColors() {
+    const styles = getComputedStyle(document.documentElement);
+    const value = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
+    return {
+        accent: value("--accent", "#df141e"),
+        accentDark: value("--accent-dark", "#a90e15"),
+        accentGlow: value("--accent-glow", "rgba(239,24,33,.22)"),
+        card: value("--card", "#1c1c22"),
+        line: value("--line", "rgba(255,255,255,.09)"),
+        muted: value("--muted", "#9b9ba5"),
+        surface: value("--surface-raised", "#18181d"),
+        text: value("--text", "#f7f7f8")
+    };
+}
 
 export function drawStrengthIndexChart(canvas, points) {
     const context = canvas.getContext("2d");
@@ -13,13 +24,14 @@ export function drawStrengthIndexChart(canvas, points) {
     canvas.height = height * ratio;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, width, height);
+    const colors = themeChartColors();
 
     const padding = { top: 24, right: 18, bottom: 40, left: 46 };
     const plotWidth = Math.max(1, width - padding.left - padding.right);
     const plotHeight = Math.max(1, height - padding.top - padding.bottom);
 
     if (!points.length) {
-        context.fillStyle = "#888892";
+        context.fillStyle = colors.muted;
         context.font = "600 12px Arial";
         context.textAlign = "center";
         context.fillText("No strength-index data in this timeframe", width / 2, height / 2);
@@ -42,13 +54,13 @@ export function drawStrengthIndexChart(canvas, points) {
     for (let tick = 0; tick <= 2; tick++) {
         const value = axisMinimum + axisRange * tick / 2;
         const y = yFor(value);
-        context.strokeStyle = "rgba(255, 255, 255, 0.055)";
+        context.strokeStyle = colors.line;
         context.lineWidth = 1;
         context.beginPath();
         context.moveTo(padding.left, y);
         context.lineTo(width - padding.right, y);
         context.stroke();
-        context.fillStyle = "rgba(185, 185, 193, 0.72)";
+        context.fillStyle = colors.muted;
         context.font = "500 10px Arial";
         context.textAlign = "right";
         context.fillText(value.toFixed(0), padding.left - 7, y + 4);
@@ -56,7 +68,7 @@ export function drawStrengthIndexChart(canvas, points) {
 
     const baselineY = yFor(100);
     context.save();
-    context.strokeStyle = "rgba(255, 255, 255, 0.28)";
+    context.strokeStyle = colors.muted;
     context.lineWidth = 1.25;
     context.setLineDash([5, 5]);
     context.beginPath();
@@ -70,9 +82,9 @@ export function drawStrengthIndexChart(canvas, points) {
     const baselineWidth = context.measureText(baselineLabel).width + 12;
     const baselineX = width - padding.right - baselineWidth;
     const baselineLabelY = Math.max(padding.top + 2, baselineY - 18);
-    context.fillStyle = "rgba(26, 24, 27, 0.9)";
+    context.fillStyle = colors.surface;
     context.fillRect(baselineX, baselineLabelY, baselineWidth, 15);
-    context.fillStyle = "rgba(225, 225, 230, 0.82)";
+    context.fillStyle = colors.text;
     context.textAlign = "center";
     context.fillText(baselineLabel, baselineX + baselineWidth / 2, baselineLabelY + 10.5);
 
@@ -84,9 +96,9 @@ export function drawStrengthIndexChart(canvas, points) {
 
     if (coordinates.length > 1) {
         const gradient = context.createLinearGradient(0, padding.top, 0, height - padding.bottom);
-        gradient.addColorStop(0, "rgba(255, 49, 57, 0.28)");
-        gradient.addColorStop(0.56, "rgba(157, 31, 43, 0.13)");
-        gradient.addColorStop(1, "rgba(67, 16, 24, 0)");
+        gradient.addColorStop(0, colors.accentGlow);
+        gradient.addColorStop(0.56, colors.accentGlow);
+        gradient.addColorStop(1, "rgba(0,0,0,0)");
         context.save();
         context.beginPath();
         context.moveTo(coordinates[0].x, height - padding.bottom);
@@ -99,8 +111,8 @@ export function drawStrengthIndexChart(canvas, points) {
     }
 
     context.save();
-    context.strokeStyle = TREND_RED;
-    context.shadowColor = TREND_RED_GLOW;
+    context.strokeStyle = colors.accent;
+    context.shadowColor = colors.accentGlow;
     context.shadowBlur = 8;
     context.lineWidth = 3;
     context.lineJoin = "round";
@@ -113,13 +125,13 @@ export function drawStrengthIndexChart(canvas, points) {
     coordinates.forEach((point, index) => {
         const latest = index === coordinates.length - 1;
         if (latest) {
-            context.fillStyle = "rgba(255, 49, 57, 0.18)";
+            context.fillStyle = colors.accentGlow;
             context.beginPath();
             context.arc(point.x, point.y, 8, 0, Math.PI * 2);
             context.fill();
         }
-        context.fillStyle = latest ? TREND_RED : POINT_RED;
-        context.strokeStyle = "#151114";
+        context.fillStyle = latest ? colors.accent : colors.accentDark;
+        context.strokeStyle = colors.card;
         context.lineWidth = 2;
         context.beginPath();
         context.arc(point.x, point.y, latest ? 4 : 3, 0, Math.PI * 2);
@@ -127,7 +139,7 @@ export function drawStrengthIndexChart(canvas, points) {
         context.stroke();
     });
 
-    context.fillStyle = "rgba(185, 185, 193, 0.72)";
+    context.fillStyle = colors.muted;
     context.font = "500 10px Arial";
     context.textAlign = "left";
     context.fillText(formatShortDate(points[0].date), padding.left, height - 14);

@@ -110,6 +110,15 @@ function drawSevenWeekWorkoutChart() {
     if (!prepared) return;
 
     const { context, width, height } = prepared;
+    const styles = getComputedStyle(document.documentElement);
+    const color = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
+    const colors = {
+        accent: color("--accent", "#df141e"),
+        accentDark: color("--accent-dark", "#a90e15"),
+        line: color("--line", "rgba(255,255,255,.09)"),
+        muted: color("--muted", "#9b9ba5"),
+        text: color("--text", "#f7f7f8")
+    };
     const points = buildSevenWeekPoints();
     const padding = {
         top: 25,
@@ -118,7 +127,7 @@ function drawSevenWeekWorkoutChart() {
         left: 52
     };
 
-    context.strokeStyle = "#333";
+    context.strokeStyle = colors.line;
     context.lineWidth = 1;
     context.beginPath();
     context.moveTo(padding.left, 20);
@@ -127,7 +136,7 @@ function drawSevenWeekWorkoutChart() {
     context.stroke();
 
     context.save();
-    context.fillStyle = "#a0a0a0";
+    context.fillStyle = colors.muted;
     context.font = "12px Arial";
     context.textAlign = "center";
     context.translate(15, height / 2);
@@ -136,7 +145,7 @@ function drawSevenWeekWorkoutChart() {
     context.restore();
 
     if (!points.length) {
-        context.fillStyle = "#a0a0a0";
+        context.fillStyle = colors.muted;
         context.font = "12px Arial";
         context.textAlign = "center";
         context.fillText("No workout history yet", width / 2, height / 2);
@@ -148,7 +157,7 @@ function drawSevenWeekWorkoutChart() {
 
     for (let tick = 0; tick <= maximum; tick++) {
         const y = height - padding.bottom - tick / maximum * plotHeight;
-        context.fillStyle = "#a0a0a0";
+        context.fillStyle = colors.muted;
         context.font = "10px Arial";
         context.textAlign = "right";
         context.fillText(String(tick), padding.left - 8, y + 3);
@@ -161,15 +170,18 @@ function drawSevenWeekWorkoutChart() {
         const x = padding.left + index * space + space * .18;
         const y = height - padding.bottom - barHeight;
 
-        context.fillStyle = "#e10600";
+        const gradient = context.createLinearGradient(0, y, 0, height - padding.bottom);
+        gradient.addColorStop(0, index === points.length - 1 ? colors.accent : colors.accentDark);
+        gradient.addColorStop(1, colors.accentDark);
+        context.fillStyle = gradient;
         context.fillRect(x, y, space * .64, barHeight);
 
-        context.fillStyle = "#a0a0a0";
+        context.fillStyle = colors.muted;
         context.font = "10px Arial";
         context.textAlign = "center";
         context.fillText(point.label, x + space * .32, height - 18);
 
-        context.fillStyle = "#ffffff";
+        context.fillStyle = colors.text;
         context.fillText(String(point.value), x + space * .32, Math.max(15, y - 6));
     });
 }
