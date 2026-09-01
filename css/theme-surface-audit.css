@@ -325,11 +325,24 @@ html[data-theme] #level-up-rest-alarm-banner .rest-alarm-alert-row {
 
 html[data-theme] #level-up-rest-alarm-banner :is(
     .rest-alarm-controls button,
-    .rest-alarm-alert-row button
+    .rest-alarm-alert-row button,
+    .rest-alarm-collapse
 ) {
     border-color: var(--line) !important;
     background: var(--surface-raised) !important;
     color: var(--text) !important;
+}
+
+html[data-theme] #level-up-rest-alarm-banner.is-minimized {
+    border-color: var(--accent) !important;
+    background: var(--card) !important;
+    color: var(--accent-text) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+html[data-theme] #level-up-rest-alarm-banner .rest-alarm-mini {
+    color: var(--accent-text) !important;
+    -webkit-text-fill-color: var(--accent-text) !important;
 }
 
 html[data-theme] #level-up-rest-alarm-banner :is(
@@ -421,6 +434,58 @@ html[data-theme] #plan-builder.manual-catalogue .builder-exercise-guide {
     border-color: color-mix(in srgb, var(--accent) 45%, var(--line)) !important;
     background: var(--accent-soft) !important;
     color: var(--accent-text) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue .manual-setup-index {
+    border-color: var(--line) !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue :is(.manual-setup-index-head, .manual-setup-index-row) {
+    border-color: var(--line) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue .manual-setup-index-row {
+    background: transparent !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue .manual-setup-index-row.is-active {
+    background: var(--accent-soft) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue .manual-setup-index-copy strong {
+    color: var(--heading) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue :is(.manual-setup-index-copy small, .manual-setup-index-head small) {
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue .manual-setup-index-row:not(.is-active) .manual-setup-index-number {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] #plan-builder.manual-catalogue .manual-setup-index-row.is-active .manual-setup-index-number {
+    border-color: var(--accent) !important;
+    background: var(--accent) !important;
+    color: var(--accent-contrast) !important;
+}
+
+/* Outlined Form Guide actions must retain readable lettering on every light palette. */
+html[data-theme-mode="light"] :is(
+    #plan-builder.manual-catalogue .builder-exercise-guide,
+    #plan-builder.manual-catalogue .manual-pick-guide,
+    .workout-session-logger .logger-form-guide-btn
+) {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--line)) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+    -webkit-text-fill-color: var(--accent-text) !important;
+    text-shadow: none !important;
 }
 
 html[data-theme] #plan-builder.manual-catalogue :is(.manual-setup-sets .primary-btn, .manual-pick.selected .manual-pick-mark) {
