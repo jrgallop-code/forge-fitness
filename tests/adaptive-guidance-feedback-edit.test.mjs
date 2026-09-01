@@ -55,6 +55,6 @@ test("recap contrast stays legible across appearance themes", () => {
 
 test("feedback editor assets are cache-busted", () => {
     assert.match(html, /adaptive-guidance\.css\?v=adaptive-feedback-edit-1/);
-    assert.match(html, /theme-surface-audit\.css\?v=theme-surface-audit-10/);
+    assert.match(html, /theme-surface-audit\.css\?v=theme-surface-audit-11/);
     assert.match(html, /adaptive-guidance\.js\?v=adaptive-feedback-edit-1/);
 });
