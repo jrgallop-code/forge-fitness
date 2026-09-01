@@ -11,7 +11,7 @@ import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from 
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=cardio-rpe-1";
 import { renderProgress } from "../progress/progress-ui.js?v=weight-period-summary-2";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-2";
-import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=cardio-distance-fix-1";
+import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=theme-accent-calendar-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=current-goal-1";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=analytics-bar-polish-1";
 import { initializeExerciseProgressV2 } from "../progress/exercise-progress-v2.js?v=arctic-chart-tokens-1";

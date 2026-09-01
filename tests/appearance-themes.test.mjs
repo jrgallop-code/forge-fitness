@@ -46,6 +46,8 @@ test("theme stylesheet separates accents from semantic status colours", async ()
   assert.match(styles, /--success:#22c55e/);
   assert.match(styles, /--warning:#f59e0b/);
   assert.match(styles, /--danger:#ef4444/);
+  assert.match(styles, /--activity-workout:var\(--accent\)/);
+  assert.match(styles, /--activity-weight:var\(--success\)/);
   assert.match(styles, /html\[data-theme-mode="light"\]/);
   assert.match(styles, /\.bottom-nav button\.active/);
 });
@@ -110,6 +112,9 @@ test("builder, priority, and training analytics surfaces use live theme tokens",
     assert.match(renderer, /--muted/);
     assert.match(renderer, /--line/);
   }
+  assert.match(styles, /\.smart-coach-ring-progress\{stroke:var\(--accent\)!important/);
+  assert.match(styles, /\.smart-build-progress span[^}]*background:var\(--accent\)!important/);
+  assert.match(styles, /\.adaptive-beta-badge[^}]*background:var\(--accent-soft\)!important/);
 });
 
 test("theme text tokens meet WCAG AA contrast on cards", () => {
@@ -180,6 +185,19 @@ test("late-loaded insights, lessons, and calendar cards follow the active theme"
   assert.match(styles, /\.activity-calendar-event\{[^}]*background:var\(--surface-raised\)!important/);
 });
 
+test("activity calendar uses theme accents and Arctic blue plus green", async () => {
+  const [styles, calendar] = await Promise.all([
+    read("css/appearance-themes.css"),
+    read("css/activity-calendar.css")
+  ]);
+  assert.match(styles, /html\[data-theme="arctic"\][^{]*\{[^}]*--activity-workout:#1769e0;--activity-weight:#22b86a/);
+  assert.match(calendar, /--activity-calendar-ring: var\(--activity-workout, var\(--accent/);
+  assert.match(calendar, /--activity-calendar-ring: var\(--activity-weight, var\(--success/);
+  assert.match(calendar, /activity-calendar-event--workout > i[^{]*\{[^}]*var\(--activity-workout/);
+  assert.match(calendar, /activity-calendar-event--weight > i[^{]*\{[^}]*var\(--activity-weight/);
+  assert.match(styles, /activity-calendar-day\.is-selected>span[^}]*background:var\(--accent-soft\)!important/);
+});
+
 test("form-guide SVGs and full-screen shells use theme-safe surfaces", async () => {
   const styles = await read("css/appearance-themes.css");
   for (const selector of [
@@ -248,11 +266,14 @@ test("production entry points load the theme before paint and bust caches", asyn
   ]);
   assert.match(html, /level_up_appearance_settings/);
   assert.ok(html.indexOf("level_up_appearance_settings") < html.indexOf("css/styles.css"));
-  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-12/);
-  assert.match(html, /js\/app\.js\?v=whats-new-1/);
+  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-13/);
+  assert.match(html, /css\/activity-calendar\.css\?v=theme-accent-calendar-1/);
+  assert.match(html, /css\/smart-build-coach-loading\.css\?v=theme-accent-calendar-1/);
+  assert.match(html, /css\/cardio-analytics\.css\?v=theme-accent-calendar-1/);
+  assert.match(html, /js\/app\.js\?v=theme-accent-calendar-1/);
   assert.match(html, /getHours\(\)/);
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-3/);
-  assert.match(app, /router\.js\?v=whats-new-1/);
+  assert.match(app, /router\.js\?v=theme-accent-calendar-1/);
   assert.match(router, /more-ui-v2\.js\?v=pulse-theme-1/);
-  assert.match(worker, /2026-09-01-106/);
+  assert.match(worker, /2026-09-01-107/);
 });

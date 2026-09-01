@@ -155,10 +155,10 @@ function renderTrend(panel, entries) {
         return `${x},${y}`;
     }).join(" ");
     host.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Average speed trend">
-        <defs><linearGradient id="cardioArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff3039" stop-opacity=".34"/><stop offset="1" stop-color="#ff3039" stop-opacity="0"/></linearGradient></defs>
+        <defs><linearGradient id="cardioArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".34"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
         <polygon points="6,92 ${coords} 94,92" fill="url(#cardioArea)"/>
-        <polyline points="${coords}" fill="none" stroke="#ff3039" stroke-width="2.6" vector-effect="non-scaling-stroke"/>
-        ${coords.split(" ").map(point => `<circle cx="${point.split(",")[0]}" cy="${point.split(",")[1]}" r="2" fill="#ff3039" vector-effect="non-scaling-stroke"/>`).join("")}
+        <polyline points="${coords}" fill="none" stroke="var(--accent)" stroke-width="2.6" vector-effect="non-scaling-stroke"/>
+        ${coords.split(" ").map(point => `<circle cx="${point.split(",")[0]}" cy="${point.split(",")[1]}" r="2" fill="var(--accent)" vector-effect="non-scaling-stroke"/>`).join("")}
     </svg><div class="cardio-trend-axis"><span>${formatSpeed(speeds[0])}</span><span>${formatSpeed(speeds.at(-1))}</span></div>`;
 }
 

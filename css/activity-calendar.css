@@ -155,18 +155,18 @@
 }
 
 .activity-calendar-day.has-workout:not(.has-weight) {
-    --activity-calendar-ring: #ff2636;
+    --activity-calendar-ring: var(--activity-workout, var(--accent, #ff2636));
 }
 
 .activity-calendar-day.has-weight:not(.has-workout) {
-    --activity-calendar-ring: #45d486;
+    --activity-calendar-ring: var(--activity-weight, var(--success, #45d486));
 }
 
 .activity-calendar-day.has-workout.has-weight {
     --activity-calendar-ring: conic-gradient(
         from -90deg,
-        #ff2636 0 50%,
-        #45d486 50% 100%
+        var(--activity-workout, var(--accent, #ff2636)) 0 50%,
+        var(--activity-weight, var(--success, #45d486)) 50% 100%
     );
 }
 
@@ -212,11 +212,11 @@
 }
 
 .activity-calendar-legend .workout-dot {
-    color: #ff2636;
+    color: var(--activity-workout, var(--accent, #ff2636));
 }
 
 .activity-calendar-legend .weight-dot {
-    color: #45d486;
+    color: var(--activity-weight, var(--success, #45d486));
 }
 
 .activity-calendar-legend {
@@ -245,7 +245,7 @@
 
 .activity-calendar-detail-head {
     margin-bottom: 12px;
-    color: #ff4d5d;
+    color: var(--accent-text, #ff4d5d);
     font-size: 0.7rem;
     font-weight: 850;
     letter-spacing: 0.08em;
@@ -276,11 +276,11 @@
 }
 
 .activity-calendar-event--workout > i {
-    background: #ff2636;
+    background: var(--activity-workout, var(--accent, #ff2636));
 }
 
 .activity-calendar-event--weight > i {
-    background: #45d486;
+    background: var(--activity-weight, var(--success, #45d486));
 }
 
 .activity-calendar-event span {
