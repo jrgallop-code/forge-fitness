@@ -10,16 +10,15 @@ test("active phases cannot apply calculated TDEE before the shared weekly review
     assert.match(source, /No separate calorie change will be created/);
 });
 
-test("the only active-phase action is the compact Weight Progress review", () => {
+test("the actionable review stays out of Weight Progress and opens from its other surfaces", () => {
     const goals = readFileSync("js/nutrition/unified-goals-calories.js", "utf8");
     const display = readFileSync("js/nutrition/calories-full-adjustment-display.js", "utf8");
     const stats = readFileSync("js/nutrition/calorie-stats.js", "utf8");
     assert.match(goals, /Included automatically in your Weekly Calorie Review/);
-    assert.match(display, /data-weekly-calorie-review/);
-    assert.match(display, /Maintenance update/);
-    assert.match(display, /Goal progress/);
-    assert.match(display, /New daily target/);
-    assert.match(display, /#weight-weekly-review-apply/);
+    assert.doesNotMatch(display, /review\.dataset\.weeklyCalorieReview/);
+    assert.doesNotMatch(display, /id="weight-weekly-review-apply"/);
+    assert.match(display, /#weight-calorie-suggestion-card h3/);
+    assert.match(display, /Your active nutrition target\./);
     assert.match(display, /levelup:open-weekly-calorie-review/);
     assert.match(display, /#weekly-modal-review-apply/);
     assert.match(display, /applyFullAdjustment\(applyEvent, \{ phase, metrics, recommendation \}\)/);

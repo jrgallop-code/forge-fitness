@@ -40,7 +40,6 @@ function setText(node, value) {
 
 function setSuggestionHeading(value) {
     setText(document.querySelector("#nutrition-current-phase [data-phase-calorie-suggestion] > span"), value);
-    setText(document.querySelector("#weight-calorie-suggestion-card h3"), value);
 }
 
 function setWeeklyReviewReadyState(ready) {
@@ -59,8 +58,9 @@ function syncAppliedTargetAcrossSurfaces(targetCalories) {
     const primary = `${target} kcal/day`;
     const secondary = "Adjustment applied · reassess in 7 days";
     setSuggestionHeading("Current Calorie Target");
+    setText(document.querySelector("#weight-calorie-suggestion-card h3"), "Current Calorie Target");
     setText(document.getElementById("weight-calorie-suggestion"), primary);
-    setText(document.getElementById("weight-calorie-suggestion-total"), secondary);
+    setText(document.getElementById("weight-calorie-suggestion-total"), "Your active nutrition target.");
     const nutritionCard = document.querySelector("#nutrition-current-phase [data-phase-calorie-suggestion]");
     setText(nutritionCard?.querySelector("strong"), primary);
     setText(nutritionCard?.querySelector("small"), secondary);
@@ -69,43 +69,12 @@ function syncAppliedTargetAcrossSurfaces(targetCalories) {
     document.querySelector(".progress-weekly-review-alert")?.remove();
 }
 
-function ensureWeightReview() {
-    const card = document.getElementById("weight-calorie-suggestion-card");
-    if (!card) return null;
-    let review = card.querySelector("[data-weekly-calorie-review]");
-    if (review) return review;
-    review = document.createElement("div");
-    review.className = "weekly-calorie-review";
-    review.dataset.weeklyCalorieReview = "1";
-    review.hidden = true;
-    review.innerHTML = `
-        <div class="weekly-calorie-review-row"><span>Current target</span><strong data-review-current>--</strong></div>
-        <div class="weekly-calorie-review-row"><span>Maintenance update</span><strong data-review-maintenance>--</strong></div>
-        <div class="weekly-calorie-review-row"><span>Goal progress</span><strong data-review-pace>--</strong></div>
-        <div class="weekly-calorie-review-result"><span>New daily target</span><strong data-review-target>--</strong></div>
-        <div class="weekly-calorie-review-actions">
-            <button id="weight-weekly-review-apply" class="primary-btn" type="button">Update target</button>
-            <button id="weight-weekly-review-keep" class="secondary-btn" type="button">Keep current</button>
-        </div>`;
-    card.appendChild(review);
-    return review;
-}
-
 function hideWeightReview() {
-    const review = document.querySelector("[data-weekly-calorie-review]");
-    if (review) review.hidden = true;
+    document.querySelector("#weight-calorie-suggestion-card [data-weekly-calorie-review]")?.remove();
 }
 
-function showWeightReview(recommendation) {
-    const review = ensureWeightReview();
-    if (!review || !recommendation) return;
-    review.hidden = false;
-    setText(review.querySelector("[data-review-current]"), `${recommendation.previousTarget} kcal/day`);
-    setText(review.querySelector("[data-review-maintenance]"), `${formatSignedCalories(recommendation.maintenanceChange)} cal/day`);
-    setText(review.querySelector("[data-review-pace]"), `${formatSignedCalories(recommendation.paceCorrection)} cal/day`);
-    setText(review.querySelector("[data-review-target]"), `${recommendation.targetCalories} kcal/day`);
-    const apply = review.querySelector("#weight-weekly-review-apply");
-    if (apply) apply.textContent = `Update to ${recommendation.targetCalories}`;
+function showWeightReview() {
+    hideWeightReview();
 }
 
 function closeWeeklyReviewModal() {
@@ -507,12 +476,13 @@ function syncSuggestedCalories(metrics, phase) {
     setSuggestionHeading(heading);
     setText(nutritionCard?.querySelector("strong"), primary);
     setText(nutritionCard?.querySelector("small"), secondary);
-    setText(document.getElementById("weight-calorie-suggestion"), primary);
-    setText(document.getElementById("weight-calorie-suggestion-total"), secondary);
+    setText(document.querySelector("#weight-calorie-suggestion-card h3"), "Current Calorie Target");
+    setText(document.getElementById("weight-calorie-suggestion"), `${Math.round(currentCalories)} kcal/day`);
+    setText(document.getElementById("weight-calorie-suggestion-total"), "Your active nutrition target.");
 }
 
 function applyFullAdjustment(event, context = {}) {
-    const apply = event.target.closest?.("#weekly-coach-apply, #goal-check-in-apply, #weight-weekly-review-apply, #weekly-modal-review-apply");
+    const apply = event.target.closest?.("#weekly-coach-apply, #goal-check-in-apply, #weekly-modal-review-apply");
     if (!apply) return;
 
     const phase = context.phase || getActiveNutritionPhase();
