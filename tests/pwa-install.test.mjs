@@ -14,6 +14,17 @@ function pngDimensions(path) {
     };
 }
 
+function webpDimensions(path) {
+    const data = readFileSync(path);
+    assert.equal(data.toString("ascii", 0, 4), "RIFF", `${path} must be a RIFF container`);
+    assert.equal(data.toString("ascii", 8, 12), "WEBP", `${path} must be a WebP image`);
+    assert.equal(data.toString("ascii", 12, 16), "VP8 ", `${path} must use the widely supported VP8 WebP format`);
+    return {
+        width: data.readUInt16LE(26) & 0x3fff,
+        height: data.readUInt16LE(28) & 0x3fff
+    };
+}
+
 test("service worker registers offline lifecycle and notification handlers", () => {
     const handlers = new Set();
     const source = readFileSync("service-worker.js", "utf8");
@@ -60,12 +71,13 @@ test("an explicit Arctic selection uses the Arctic splash and blue loader", () =
     const html = readFileSync("index.html", "utf8");
     const worker = readFileSync("service-worker.js", "utf8");
     const styles = readFileSync("css/pwa-splash-screen.css", "utf8");
-    const arcticSplash = "assets/level-up-splash-arctic.png";
+    const arcticSplash = "assets/level-up-splash-arctic-v2.webp";
     assert.ok(existsSync(arcticSplash));
-    assert.deepEqual(pngDimensions(arcticSplash), { width: 941, height: 1672 });
-    assert.match(html, /"arctic"===t\?"assets\/level-up-splash-arctic\.png\?v=arctic-splash-1"/);
+    assert.deepEqual(webpDimensions(arcticSplash), { width: 941, height: 1672 });
+    assert.ok(readFileSync(arcticSplash).length < 100_000, "Arctic splash should remain safely below transport limits");
+    assert.match(html, /"arctic"===t\?"assets\/level-up-splash-arctic-v2\.webp\?v=arctic-splash-2"/);
     assert.match(html, /window\.__levelUpSplashAsset/);
-    assert.match(worker, /\.\/assets\/level-up-splash-arctic\.png/);
+    assert.match(worker, /\.\/assets\/level-up-splash-arctic-v2\.webp/);
     assert.match(styles, /html\[data-theme-preference="arctic"\]\.level-up-installed-pwa #pwa-splash/);
     assert.match(styles, /background: #1769e0/);
 });
