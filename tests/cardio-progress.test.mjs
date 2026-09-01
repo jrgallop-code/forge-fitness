@@ -50,7 +50,7 @@ test("cardio entries preserve old notes-based RPE and structured RPE", () => {
   assert.equal(summary.load, 330);
 });
 
-test("cardio UI uses lifting-style red trend and bar treatments", async () => {
+test("cardio UI uses the selected appearance accent for trends and bars", async () => {
   const [view, styles, logger] = await Promise.all([
     read("js/progress/progress-ui.js"),
     read("css/cardio-analytics.css"),
@@ -59,8 +59,9 @@ test("cardio UI uses lifting-style red trend and bar treatments", async () => {
   assert.match(view, /Weekly Cardio Minutes/);
   assert.match(view, /Average Speed/);
   assert.match(view, /Minutes by Activity/);
-  assert.match(styles, /linear-gradient\(180deg,#ff3b44,#991018\)/);
-  assert.match(styles, /linear-gradient\(90deg,#8d1017,#ff3039\)/);
+  assert.match(styles, /linear-gradient\(180deg,var\(--accent,#ff3b44\),var\(--accent-dark,#991018\)\)/);
+  assert.match(styles, /linear-gradient\(90deg,var\(--accent-dark,#8d1017\),var\(--accent,#ff3039\)\)/);
+  assert.match(await read("js/progress/cardio-analytics.js"), /stroke="var\(--accent\)"/);
   assert.match(logger, /class="session-cardio-rpe"/);
   assert.match(logger, /session\.exercises\[exerciseIndex\]\.rpe/);
 });

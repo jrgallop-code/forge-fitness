@@ -46,10 +46,10 @@ test("production module cache keys retain the restored experience step", async (
     read("js/core/router.js")
   ]);
 
-  assert.match(index, /css\/smart-build-coach-loading\.css\?v=coach-build-loading-1/);
-  assert.match(index, /js\/app\.js\?v=whats-new-1/);
+  assert.match(index, /css\/smart-build-coach-loading\.css\?v=theme-accent-calendar-1/);
+  assert.match(index, /js\/app\.js\?v=theme-accent-calendar-1/);
   assert.match(index, /smart-build-full-body-guardrails\.js\?v=coach-build-personalized-1/);
-  assert.match(app, /\.\/core\/router\.js\?v=whats-new-1/);
+  assert.match(app, /\.\/core\/router\.js\?v=theme-accent-calendar-1/);
   assert.match(router, /\.\.\/workouts\/smart-build\.js\?v=coach-build-personalized-1/);
   assert.match(await read("js/workouts/smart-build-full-body-guardrails.js"), /smart-build-unified-engine-v11\.js\?v=coach-build-personalized-1/);
 });

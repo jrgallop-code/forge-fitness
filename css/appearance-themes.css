@@ -4,14 +4,14 @@ html[data-theme="level-up"] {
   --bg:#09090b;--surface:#121216;--surface-raised:#18181d;--card:#1c1c22;--text:#f7f7f8;--heading:#fff;--text-secondary:#c4c4ca;--muted:#9b9ba5;
   --line:rgba(255,255,255,.09);--card-border:rgba(255,255,255,.1);--input-bg:#15151a;--nav-bg:rgba(22,12,14,.96);--nav-border:rgba(255,255,255,.13);
   --body-background:radial-gradient(circle at 15% -10%,rgba(239,24,33,.11),transparent 34rem),#09090b;--shadow:0 18px 50px rgba(0,0,0,.38);
-  --success:#22c55e;--success-text:#65df8d;--warning:#f59e0b;--warning-text:#f6bd5a;--danger:#ef4444;--danger-text:#ff737b;--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
+  --success:#22c55e;--success-text:#65df8d;--warning:#f59e0b;--warning-text:#f6bd5a;--danger:#ef4444;--danger-text:#ff737b;--activity-workout:var(--accent);--activity-weight:var(--success);--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
 }
 html[data-theme="arctic"] {
   --accent:#1769e0;--accent-dark:#0e4fb3;--accent-text:#0e4fb3;--accent-soft:rgba(23,105,224,.1);--accent-glow:rgba(23,105,224,.18);--accent-contrast:#fff;
   --bg:#f3f7fc;--surface:#fff;--surface-raised:#edf3fb;--card:#fff;--text:#10203a;--heading:#09162b;--text-secondary:#34445f;--muted:#526079;
   --line:rgba(23,48,84,.12);--card-border:rgba(23,48,84,.12);--input-bg:#f7faff;--nav-bg:rgba(255,255,255,.96);--nav-border:rgba(21,51,91,.14);
   --body-background:radial-gradient(circle at 92% -8%,rgba(50,133,255,.13),transparent 30rem),#f3f7fc;--shadow:0 14px 34px rgba(36,67,105,.1);
-  --success-text:#147a3c;--warning-text:#8a5300;--danger-text:#b91c1c;--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
+  --success-text:#147a3c;--warning-text:#8a5300;--danger-text:#b91c1c;--activity-workout:#1769e0;--activity-weight:#22b86a;--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
 }
 html[data-theme="pure"] {
   --accent:#171719;--accent-dark:#000;--accent-text:#171719;--accent-soft:rgba(23,23,25,.07);--accent-glow:rgba(23,23,25,.12);--accent-contrast:#fff;
@@ -190,6 +190,21 @@ html[data-theme-mode="light"] .seven-day-volume-muscle{stroke:rgba(16,32,58,.62)
 .manual-pick.selected,.exercise-filter-card.selected,.smart-chip.selected,.smart-option.selected{border-color:var(--accent)!important;background:var(--accent-soft)!important;color:var(--accent-text)!important}
 .manual-pick.selected .manual-pick-mark{border-color:var(--accent)!important;background:var(--accent)!important;color:var(--accent-contrast)!important}
 
+/* Program Builder branding follows the active appearance theme. */
+.smart-build-progress{background:var(--surface-raised)!important}
+.smart-build-progress span,.smart-question-number,.smart-build-badge,.smart-review-day p em,.smart-review-exercise em{background:var(--accent)!important;color:var(--accent-contrast)!important}
+.smart-build-choice-primary,.smart-volume-grid div.priority,.smart-template-match{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))!important;background:var(--accent-soft)!important}
+.smart-coach-context{border-color:color-mix(in srgb,var(--accent) 30%,var(--line))!important;background:var(--accent-soft)!important;color:var(--text)!important}
+.smart-coach-context small,.smart-coach-kicker,.smart-template-match>span,.smart-template-match>a{color:var(--accent-text)!important}
+.smart-coach-context strong,.smart-coach-build-card h4{color:var(--heading)!important}
+.smart-coach-build-card{background:radial-gradient(circle at 50% 28%,var(--accent-soft),transparent 38%),var(--card)!important}
+.smart-coach-ring-track{stroke:var(--line)!important}
+.smart-coach-ring-progress{stroke:var(--accent)!important;filter:drop-shadow(0 0 7px var(--accent-glow))!important}
+.smart-coach-dumbbell path{fill:var(--heading)!important}
+.smart-coach-build-status{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text-secondary)!important}
+.smart-coach-build-status i{background:var(--accent)!important;box-shadow:0 0 0 0 var(--accent-glow)!important}
+.adaptive-beta-badge{border-color:color-mix(in srgb,var(--accent) 46%,var(--line))!important;background:var(--accent-soft)!important;color:var(--accent-text)!important}
+
 .exercise-filter-card{color:var(--muted)!important}
 .exercise-filter-card.selected{color:var(--accent-text)!important}
 .exercise-filter-custom-icon{color:var(--accent-text)!important}
@@ -290,12 +305,22 @@ html[data-theme-mode="light"] .seven-day-volume-muscle{stroke:rgba(16,32,58,.62)
 .activity-calendar-card,.activity-calendar-details{border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;box-shadow:var(--shadow)!important}
 .activity-calendar-weekdays,.activity-calendar-legend{border-color:var(--line)!important;color:var(--muted)!important}
 .activity-calendar-day{color:var(--text-secondary)!important}
-.activity-calendar-day.is-today:not(.is-selected)>span,.activity-calendar-day.is-selected>span{background:var(--surface-raised)!important;color:var(--heading)!important;box-shadow:inset 0 0 0 1px var(--line)!important}
+.activity-calendar-day.is-today:not(.is-selected)>span{background:var(--surface-raised)!important;color:var(--heading)!important;box-shadow:inset 0 0 0 1px var(--line)!important}
+.activity-calendar-day.is-selected>span{background:var(--accent-soft)!important;color:var(--heading)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 46%,var(--line)),0 3px 12px var(--accent-glow)!important}
 .activity-calendar-detail-head{color:var(--accent-text)!important}
 .activity-calendar-event{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
 .activity-calendar-event strong,.activity-calendar-empty strong{color:var(--heading)!important}
 .activity-calendar-event small,.activity-calendar-empty span{color:var(--muted)!important}
 .activity-calendar-event-meta{color:var(--text-secondary)!important}
+
+/* Cardio is a training metric, so its charts use the selected theme accent. */
+.cardio-range-tabs{border-color:var(--line)!important;background:var(--surface-raised)!important}
+.cardio-range-tabs button{color:var(--muted)!important}
+.cardio-range-tabs button.active{background:var(--accent)!important;color:var(--accent-contrast)!important}
+.cardio-week-track,.cardio-activity-track{border-color:var(--line)!important;background:var(--surface-raised)!important}
+.cardio-week-track i{background:linear-gradient(180deg,var(--accent),var(--accent-dark))!important;box-shadow:0 0 15px var(--accent-glow)!important}
+.cardio-activity-track i{background:linear-gradient(90deg,var(--accent-dark),var(--accent))!important}
+.cardio-trend-axis,.cardio-chart-empty,.cardio-activity-row span,.cardio-recent-row span{color:var(--muted)!important}
 
 /* Form Guides can inject their anatomy, video, and instruction styles after this sheet. */
 .exercise-guide-screen{background:var(--bg)!important;color:var(--text)!important}

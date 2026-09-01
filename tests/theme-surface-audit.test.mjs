@@ -68,5 +68,5 @@ test('More SVGs match main navigation contrast and Appearance uses a clear palet
 });
 
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-106/);
+  assert.match(worker, /2026-09-01-107/);
 });
