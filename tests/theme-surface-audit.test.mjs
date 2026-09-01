@@ -10,11 +10,12 @@ const manualCatalogue = fs.readFileSync('js/workouts/manual-builder-catalogue.js
 const planDetails = fs.readFileSync('css/workout-plan-details.css', 'utf8');
 const restAlarm = fs.readFileSync('js/workouts/rest-alarm-phase1.js', 'utf8');
 const globalRestAlarm = fs.readFileSync('js/workouts/rest-alarm-button-stability.js', 'utf8');
+const cardioTimerStyles = fs.readFileSync('css/logger-cardio-timer.css', 'utf8');
 const worker = fs.readFileSync('service-worker.js', 'utf8');
 
 test('theme surface audit loads after the appearance stylesheet', () => {
   const appearance = html.indexOf('css/appearance-themes.css');
-  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-4');
+  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-5');
   assert.ok(appearance >= 0);
   assert.ok(audit > appearance);
 });
@@ -125,6 +126,14 @@ test('late-injected install guidance follows the selected theme', () => {
   assert.match(styles, /\.levelup-install-reminder-save/);
 });
 
+test('cardio timer and previous-workout text follow every appearance theme', () => {
+  assert.match(cardioTimerStyles, /\.cardio-stopwatch-display\s*\{[\s\S]*color:var\(--text, #fff\)/);
+  assert.match(styles, /\.cardio-stopwatch-display, \.previous-performance strong/);
+  assert.match(styles, /-webkit-text-fill-color:\s*var\(--text\)\s*!important/);
+  assert.match(styles, /\.cardio-stopwatch-heading span/);
+  assert.match(styles, /\.cardio-notes-toggle/);
+});
+
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-01-113/);
+  assert.match(worker, /2026-09-01-114/);
 });

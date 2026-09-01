@@ -551,3 +551,34 @@ html[data-theme] .levelup-install-reminder-save {
 html[data-theme] :is(.more-install-page-copy h3, .levelup-install-reminder-copy strong) {
     color: var(--heading) !important;
 }
+
+/* Cardio logger text must remain readable when the workout runs on a light theme. */
+html[data-theme] .cardio-stopwatch-panel {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] :is(.cardio-stopwatch-display, .previous-performance strong) {
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    text-shadow: none !important;
+}
+
+html[data-theme] :is(
+    .cardio-stopwatch-heading span,
+    .cardio-stopwatch-panel small,
+    .previous-performance span,
+    .cardio-session-card .cardio-metrics-grid label,
+    .cardio-session-card .cardio-notes-label
+) {
+    color: var(--text-secondary) !important;
+    -webkit-text-fill-color: var(--text-secondary) !important;
+}
+
+html[data-theme] .cardio-notes-toggle {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+}
