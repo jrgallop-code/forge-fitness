@@ -13,7 +13,7 @@ export function renderUnitSettings() {
     return `<section class="dashboard-welcome"><div><button class="nutrition-planner-back" id="unit-settings-back" type="button">← More</button><span class="eyebrow">PREFERENCES</span><h2>Units</h2><p>Choose the units that fit how you actually measure things. Mix pounds with kilometres or any other combination.</p></div></section>
         <section class="section-card unit-settings-card">
             <div class="unit-settings-heading"><div><span class="eyebrow">DISPLAY & ENTRY</span><h3>Measurement Units</h3></div></div>
-            <div class="unit-settings-groups">${GROUPS.map(group => renderGroup(group, current)).join("")}</div>
+            <div class="unit-settings-groups" data-unit-text-ignore>${GROUPS.map(group => renderGroup(group, current)).join("")}</div>
             <p class="unit-settings-status" aria-live="polite"></p>
             <p class="unit-settings-note">Changing units only changes how values are entered and displayed. Your saved training, weight and measurement records remain intact.</p>
         </section>`;

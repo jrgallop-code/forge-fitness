@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
-import { calculateMaintenanceEstimate, stabilizeMaintenanceEstimate } from "../js/nutrition/calculated-maintenance.js";
+import { calculateMaintenanceEstimate, calculateMaintenanceHistory, stabilizeMaintenanceEstimate } from "../js/nutrition/calculated-maintenance.js";
 import { calculateDisplayWeightTrend } from "../js/core/weight-trend.js";
 
 function key(offset) {
@@ -188,6 +188,29 @@ test("limits a high-confidence weekly TDEE update to 100 calories", () => {
         today: new Date("2026-08-30T12:00:00")
     });
     assert.equal(result.estimate.maintenanceCalories, 2500);
+});
+
+test("historical expenditure uses the same weekly holds and stability caps", () => {
+    const foodLog = {
+        ...foodHistory(21, 2300),
+        ...Object.fromEntries(Array.from({ length: 21 }, (_, index) => [key(index + 21), [{ nutrition: { calories: 2800 } }]]))
+    };
+    const history = calculateMaintenanceHistory({
+        foodLog,
+        weights: weightHistory(42, 180, 0),
+        endDate: new Date("2026-09-18T12:00:00")
+    });
+    const available = history.filter(point => Number.isFinite(point.maintenanceCalories));
+    const changes = available
+        .map((point, index) => index && point.maintenanceCalories !== available[index - 1].maintenanceCalories ? index : null)
+        .filter(Number.isInteger);
+
+    assert.ok(available.length > 21);
+    assert.ok(changes.length > 0);
+    changes.forEach((index, changeIndex) => {
+        assert.ok(Math.abs(available[index].maintenanceCalories - available[index - 1].maintenanceCalories) <= 100);
+        if (changeIndex) assert.ok(index - changes[changeIndex - 1] >= 7);
+    });
 });
 
 test("waits for seven food days and a fourteen-day weight span before a weekly update", () => {

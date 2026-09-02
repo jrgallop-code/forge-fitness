@@ -1,4 +1,4 @@
-import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-2";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
 
 const FRONT_REGIONS = {
   Shoulders: ["muscle_front_009", "muscle_front_010"],

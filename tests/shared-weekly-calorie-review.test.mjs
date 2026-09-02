@@ -44,9 +44,10 @@ test("the actionable review stays out of Weight Progress and opens from its othe
     assert.match(display, /Level Up will reassess next week/);
     assert.match(stats, /Review one recommended daily target/);
     assert.match(stats, /levelup:open-weekly-calorie-review/);
-    assert.match(stats, /CURRENT STAGED TARGET/);
-    assert.match(stats, /FULL GOAL-PACING ESTIMATE/);
-    assert.match(stats, /does not change the independently calculated TDEE above/);
+    assert.match(stats, /Current Expenditure/);
+    assert.match(stats, /Current Strategy/);
+    assert.doesNotMatch(stats, /CURRENT STAGED TARGET/);
+    assert.doesNotMatch(stats, /FULL GOAL-PACING ESTIMATE/);
     assert.doesNotMatch(stats, /data-maintenance-keep/);
 });
 

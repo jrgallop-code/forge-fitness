@@ -1,5 +1,5 @@
 import { getPresetPlan } from "./workout-plans.js";
-import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-2";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
 import { formatSetCredits, getWeeklyPlanVolume } from "./plan-muscle-volume.js?v=plan-volume-shared-1";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";

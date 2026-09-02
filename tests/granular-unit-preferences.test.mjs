@@ -62,9 +62,11 @@ test("body, lifting, distance and length preferences remain independent", () => 
 });
 
 test("onboarding and settings expose all four choices", async () => {
-  const [onboarding, settings] = await Promise.all([
+  const [onboarding, settings, more, router] = await Promise.all([
     read("js/onboarding/onboarding.js"),
-    read("js/more/unit-settings.js")
+    read("js/more/unit-settings.js"),
+    read("js/more/more-ui-v2.js"),
+    read("js/core/router.js")
   ]);
 
   for (const kind of ["bodyWeight", "liftingWeight", "distance", "length"]) {
@@ -73,4 +75,10 @@ test("onboarding and settings expose all four choices", async () => {
   }
   assert.match(onboarding, /setUnitPreferences\(answers\.unitPreferences\)/);
   assert.match(onboarding, /pounds and kilometres are fully supported/);
+  assert.match(onboarding, /unitChoice\("distance","Cardio distance",\[\["km","Kilometres"\],\["mi","Miles"\]\]\)/);
+  assert.match(onboarding, /class="onboarding-unit-preferences" data-unit-text-ignore/);
+  assert.match(settings, /class="unit-settings-groups" data-unit-text-ignore/);
+  assert.match(settings, /\["mi", "Miles", "mi"\]/);
+  assert.match(more, /unit-settings\.js\?v=more-units-miles-1/);
+  assert.match(router, /more-ui-v2\.js\?v=more-units-miles-1/);
 });

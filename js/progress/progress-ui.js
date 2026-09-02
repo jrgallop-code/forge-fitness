@@ -1,4 +1,4 @@
-import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=independent-tdee-staged-target-1";
+import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=tdee-expenditure-chart-1";
 
 export function renderProgress() {
 

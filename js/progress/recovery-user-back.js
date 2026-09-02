@@ -1,4 +1,4 @@
-import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-anatomy-2";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
 
 const BACK_REGIONS = {
   "Rear Delts": ["muscle_back_016", "muscle_back_017"],
