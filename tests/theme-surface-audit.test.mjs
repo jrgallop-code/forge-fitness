@@ -11,11 +11,13 @@ const planDetails = fs.readFileSync('css/workout-plan-details.css', 'utf8');
 const restAlarm = fs.readFileSync('js/workouts/rest-alarm-phase1.js', 'utf8');
 const globalRestAlarm = fs.readFileSync('js/workouts/rest-alarm-button-stability.js', 'utf8');
 const cardioTimerStyles = fs.readFileSync('css/logger-cardio-timer.css', 'utf8');
+const importerStyles = fs.readFileSync('css/routine-importer.css', 'utf8');
+const importerSummaryStyles = fs.readFileSync('css/routine-importer-summary.css', 'utf8');
 const worker = fs.readFileSync('service-worker.js', 'utf8');
 
 test('theme surface audit loads after the appearance stylesheet', () => {
   const appearance = html.indexOf('css/appearance-themes.css');
-  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-12');
+  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-13');
   assert.ok(appearance >= 0);
   assert.ok(audit > appearance);
 });
@@ -156,6 +158,17 @@ test('Level Up black restores the original green muscle-volume bars only for tha
   assert.doesNotMatch(styles, /html\[data-theme="(?:arctic|pure|ocean|midnight|slate|pulse)"\][^{]*\.plan-muscle-breakdown-row > i > b[^}]*#45cb75/);
 });
 
+test('late-loaded Routine Import controls cannot leak dark surfaces into light appearances', () => {
+  assert.match(importerStyles, /\.routine-import-row-actions button/);
+  assert.match(importerSummaryStyles, /\.routine-import-volume div/);
+  assert.match(styles, /html\[data-theme\] \.routine-import-row-actions button/);
+  assert.match(styles, /background:\s*var\(--card\)\s*!important/);
+  assert.match(styles, /html\[data-theme\] \.routine-import-volume div/);
+  assert.match(styles, /background:\s*var\(--surface-raised\)\s*!important/);
+  assert.match(styles, /\.routine-import-exercise\.needs-review/);
+  assert.match(styles, /var\(--warning-text\)\s*!important/);
+});
+
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-02-140/);
+  assert.match(worker, /2026-09-02-141/);
 });
