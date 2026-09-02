@@ -227,60 +227,76 @@ export function renderEnergyProfile() {
                 ${renderBackButton()}
 
                 <span class="eyebrow">PROTEIN & MACROS</span>
-                <h2>Daily Macro Starting Point</h2>
+                <h2>Calorie & Macro Goals</h2>
                 <p class="section-description">
-                    Use your saved calorie target to create a simple protein, carbohydrate and fat starting point.
+                    Set how your saved calorie target is divided between carbohydrate, fat and protein.
                 </p>
 
-                <div class="goal-box nutrition-goal-card">
-                    <label for="nutrition-macro-select">Macro Style</label>
-                    <select id="nutrition-macro-select">
-                        ${Object.entries(MACRO_PRESETS).map(([value, preset]) => `
-                            <option value="${value}">${preset.label}</option>
-                        `).join("")}
-                    </select>
-
-                    <div id="nutrition-macro-description" class="nutrition-message"></div>
-
-                    <button id="save-nutrition-macro-btn" class="primary-btn" type="button">
-                        Save Macro Preference
-                    </button>
-
-                    <div class="weight-summary nutrition-energy-summary">
-                        <div class="metric-card">
-                            <div>
-                                <h3>Protein</h3>
-                                <p id="nutrition-protein-target">--</p>
-                            </div>
+                <div class="macro-goals-layout" data-macro-adjuster>
+                    <section class="macro-goals-overview" aria-label="Daily calorie and macro targets">
+                        <div class="macro-calorie-total">
+                            <strong id="nutrition-macro-calories">--</strong>
+                            <span>daily target</span>
                         </div>
 
-                        <div class="metric-card">
-                            <div>
-                                <h3>Carbohydrate</h3>
-                                <p id="nutrition-carb-target">--</p>
-                            </div>
+                        <div class="macro-distribution-track" data-macro-distribution role="img" aria-label="Macro calorie distribution">
+                            <span class="macro-segment macro-segment--carbs"></span>
+                            <span class="macro-segment macro-segment--fat"></span>
+                            <span class="macro-segment macro-segment--protein"></span>
                         </div>
 
-                        <div class="metric-card">
-                            <div>
-                                <h3>Fat</h3>
-                                <p id="nutrition-fat-target">--</p>
+                        <div class="macro-distribution-stats">
+                            <div class="macro-stat macro-stat--carbs">
+                                <span>Carbs <i></i></span>
+                                <p><strong data-macro-percent="carbs">--%</strong><b id="nutrition-carb-target">--</b></p>
                             </div>
+                            <div class="macro-stat macro-stat--fat">
+                                <span>Fat <i></i></span>
+                                <p><strong data-macro-percent="fat">--%</strong><b id="nutrition-fat-target">--</b></p>
+                            </div>
+                            <div class="macro-stat macro-stat--protein">
+                                <span>Protein <i></i></span>
+                                <p><strong data-macro-percent="protein">--%</strong><b id="nutrition-protein-target">--</b></p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="macro-balance-card">
+                        <div class="macro-balance-heading">
+                            <label for="nutrition-macro-select">Macro balance</label>
+                            <select id="nutrition-macro-select" aria-label="Macro balance">
+                                ${Object.entries(MACRO_PRESETS).map(([value, preset]) => `
+                                    <option value="${value}">${preset.label}</option>
+                                `).join("")}
+                            </select>
                         </div>
 
-                        <div class="metric-card">
-                            <div>
-                                <h3>Calories Used</h3>
-                                <p id="nutrition-macro-calories">--</p>
-                            </div>
+                        <div class="macro-balance-track" data-macro-balance-track aria-label="Adjust macro percentages">
+                            <span class="macro-segment macro-segment--carbs"></span>
+                            <span class="macro-segment macro-segment--fat"></span>
+                            <span class="macro-segment macro-segment--protein"></span>
+                            <button class="macro-balance-handle macro-balance-handle--first" type="button" data-macro-handle="carbs" role="slider" aria-label="Carbohydrate percentage" aria-valuemin="5" aria-valuemax="90" aria-valuenow="34"></button>
+                            <button class="macro-balance-handle macro-balance-handle--second" type="button" data-macro-handle="fat" role="slider" aria-label="Carbohydrate and fat boundary" aria-valuemin="10" aria-valuemax="95" aria-valuenow="67"></button>
                         </div>
-                    </div>
+
+                        <div class="macro-custom-fields" data-manual-macro-fields hidden>
+                            <label>Carbohydrate <span><input data-manual-macro="carbs" type="number" inputmode="numeric" min="0" step="1" aria-label="Carbohydrate grams per day"><b>g</b></span></label>
+                            <label>Fat <span><input data-manual-macro="fat" type="number" inputmode="numeric" min="0" step="1" aria-label="Fat grams per day"><b>g</b></span></label>
+                            <label>Protein <span><input data-manual-macro="protein" type="number" inputmode="numeric" min="0" step="1" aria-label="Protein grams per day"><b>g</b></span></label>
+                        </div>
+
+                        <div id="nutrition-macro-description" class="nutrition-message"></div>
+
+                        <button id="save-nutrition-macro-btn" class="primary-btn" type="button">
+                            Save Macro Preference
+                        </button>
+                    </section>
 
                     <p id="nutrition-macro-message" class="nutrition-message" aria-live="polite"></p>
-                    <small>
-                        Protein is set at about 1.6 g/kg/day for healthy adults doing resistance training.
-                        Carbohydrate and fat are flexible starting allocations, not required ratios.
-                    </small>
+                    <details class="macro-goals-info">
+                        <summary>How macro goals are calculated</summary>
+                        <p>Protein starts near 1.6 g/kg/day for healthy adults doing resistance training. Carbohydrate and fat are flexible allocations within your calorie target, and Custom lets you edit all three directly.</p>
+                    </details>
                 </div>
             </div>
 

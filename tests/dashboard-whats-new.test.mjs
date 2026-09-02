@@ -57,8 +57,8 @@ test("What's New uses theme tokens and production cache keys", () => {
   assert.match(styles, /color: var\(--heading\) !important/);
   assert.match(styles, /color: var\(--text-secondary\) !important/);
   assert.match(index, /dashboard-whats-new\.css\?v=whats-new-1/);
-  assert.match(index, /js\/app\.js\?v=research-journal-cleanup-1/);
-  assert.match(app, /router\.js\?v=research-journal-cleanup-1/);
+  assert.match(index, /js\/app\.js\?v=macro-adjuster-mfp-1/);
+  assert.match(app, /router\.js\?v=macro-adjuster-mfp-1/);
   assert.match(app, /navbar\.js\?v=first-launch-cleanup-1/);
   assert.match(navbar, /router\.js\?v=first-launch-cleanup-1/);
 });

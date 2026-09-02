@@ -1,1 +1,359 @@
-.macro-output-editor{display:flex;align-items:baseline;justify-content:center;gap:4px;flex-wrap:wrap}.macro-output-editor input{width:72px;min-width:0;padding:4px 6px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:#1b1b20;color:#fff;font:inherit;font-size:18px;font-weight:800;text-align:center}.macro-output-unit{color:#d8d8dd;font-size:12px;font-weight:700}.macro-output-percent{color:#9a9aa2;font-size:12px;font-weight:700}.nutrition-energy-summary .metric-card:has(.macro-output-editor){border-color:rgba(255,255,255,.12);background:linear-gradient(145deg,#18181d,#121216)}@media(max-width:520px){.macro-output-editor{gap:3px}.macro-output-editor input{width:64px;font-size:17px}.macro-output-unit,.macro-output-percent{font-size:11px}}
+.macro-goals-layout {
+    --macro-carbs: 34%;
+    --macro-fat: 33%;
+    --macro-protein: 33%;
+    --macro-carb-end: 34%;
+    --macro-fat-end: 67%;
+    --macro-carbs-color: #4fa8ff;
+    --macro-fat-color: #8b7cf6;
+    --macro-protein-color: #39d7ae;
+    display: grid;
+    gap: 14px;
+    margin-top: 20px;
+}
+
+.macro-goals-overview,
+.macro-balance-card {
+    border: 1px solid var(--card-border, #393940);
+    border-radius: 22px;
+    background: var(--card, #18181b);
+    color: var(--text, #f7f7f8);
+    box-shadow: var(--shadow, 0 16px 38px rgba(0, 0, 0, .22));
+}
+
+.macro-goals-overview {
+    padding: 22px 18px 20px;
+}
+
+.macro-calorie-total {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 7px;
+    margin-bottom: 17px;
+}
+
+.macro-calorie-total strong {
+    color: var(--heading, #fff);
+    font-size: clamp(28px, 7vw, 36px);
+    line-height: 1;
+    letter-spacing: -.035em;
+}
+
+.macro-calorie-total span {
+    color: var(--text-secondary, #9b9ba5);
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.macro-distribution-track,
+.macro-balance-track {
+    display: flex;
+    width: 100%;
+    height: 12px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--surface-raised, #303036);
+}
+
+.macro-segment {
+    display: block;
+    min-width: 0;
+    height: 100%;
+    transition: flex-basis .2s ease;
+}
+
+.macro-segment--carbs {
+    flex: 0 0 var(--macro-carbs);
+    background: var(--macro-carbs-color);
+}
+
+.macro-segment--fat {
+    flex: 0 0 var(--macro-fat);
+    background: var(--macro-fat-color);
+}
+
+.macro-segment--protein {
+    flex: 0 0 var(--macro-protein);
+    background: var(--macro-protein-color);
+}
+
+.macro-distribution-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 17px;
+}
+
+.macro-stat {
+    min-width: 0;
+}
+
+.macro-stat > span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary, #a1a1aa);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.macro-stat > span i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.macro-stat--carbs > span i { color: var(--macro-carbs-color); }
+.macro-stat--fat > span i { color: var(--macro-fat-color); }
+.macro-stat--protein > span i { color: var(--macro-protein-color); }
+
+.macro-stat p {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    margin: 7px 0 0;
+    white-space: nowrap;
+}
+
+.macro-stat p strong {
+    color: var(--heading, #fff);
+    font-size: 20px;
+    line-height: 1;
+}
+
+.macro-stat p b {
+    overflow: hidden;
+    color: var(--text-secondary, #aaaab2);
+    font-size: 12px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+}
+
+.macro-balance-card {
+    padding: 19px 18px 18px;
+}
+
+.macro-balance-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.macro-balance-heading label {
+    color: var(--heading, #fff);
+    font-size: 18px;
+    font-weight: 850;
+}
+
+.macro-balance-heading select {
+    width: auto;
+    max-width: 190px;
+    min-height: 40px;
+    margin: 0;
+    padding: 0 32px 0 12px;
+    border: 1px solid var(--line, #404047);
+    border-radius: 11px;
+    background-color: var(--surface-raised, #242429);
+    color: var(--accent-text, #4fa8ff);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.macro-balance-track {
+    position: relative;
+    height: 16px;
+    margin-top: 22px;
+    overflow: visible;
+}
+
+.macro-balance-track .macro-segment:first-child {
+    border-radius: 999px 0 0 999px;
+}
+
+.macro-balance-track .macro-segment:nth-child(3) {
+    border-radius: 0 999px 999px 0;
+}
+
+.macro-balance-handle {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--line, #c7ccd5);
+    border-radius: 50%;
+    background: var(--card, #fff);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .2);
+    cursor: ew-resize;
+    touch-action: none;
+    transform: translate(-50%, -50%);
+    transition: left .2s ease;
+}
+
+.macro-balance-handle:focus-visible {
+    outline: 2px solid var(--accent, #ff315f);
+    outline-offset: 2px;
+}
+
+.macro-balance-handle--first { left: var(--macro-carb-end); }
+.macro-balance-handle--second { left: var(--macro-fat-end); }
+
+.macro-custom-fields[hidden] {
+    display: none !important;
+}
+
+.macro-custom-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 23px;
+}
+
+.macro-custom-fields label {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+    color: var(--text-secondary, #a5a5ae);
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.macro-custom-fields label > span {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    border: 1px solid var(--line, #414149);
+    border-radius: 12px;
+    background: var(--surface-raised, #222226);
+}
+
+.macro-custom-fields input {
+    width: 100%;
+    min-width: 0;
+    height: 44px;
+    padding: 0 4px 0 10px;
+    border: 0;
+    background: transparent;
+    color: var(--heading, #fff);
+    font: inherit;
+    font-size: 16px;
+    font-weight: 850;
+    text-align: right;
+}
+
+.macro-custom-fields input:focus {
+    outline: 0;
+}
+
+.macro-custom-fields label > span:focus-within {
+    border-color: var(--accent, #ff315f);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #ff315f) 18%, transparent);
+}
+
+.macro-custom-fields b {
+    padding-right: 9px;
+    color: var(--text-secondary, #9d9da7);
+    font-size: 11px;
+}
+
+.macro-balance-card .nutrition-message {
+    min-height: 0;
+    margin: 19px 0 0;
+    color: var(--text-secondary, #a5a5ae);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.macro-balance-card .primary-btn {
+    width: 100%;
+    margin-top: 14px;
+}
+
+#nutrition-macro-message:empty {
+    display: none;
+}
+
+#nutrition-macro-message {
+    margin: 0 4px;
+    color: var(--accent-text, #39d7ae);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.macro-goals-info {
+    border-top: 1px solid var(--line, #34343a);
+    padding: 15px 3px 0;
+}
+
+.macro-goals-info summary {
+    color: var(--heading, #f7f7f8);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.macro-goals-info p {
+    margin: 9px 0 0;
+    color: var(--text-secondary, #92929c);
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+@media (max-width: 420px) {
+    .macro-goals-overview,
+    .macro-balance-card {
+        border-radius: 19px;
+    }
+
+    .macro-goals-overview {
+        padding: 20px 15px 18px;
+    }
+
+    .macro-distribution-stats {
+        gap: 7px;
+    }
+
+    .macro-stat > span {
+        font-size: 11px;
+    }
+
+    .macro-stat p {
+        display: grid;
+        gap: 4px;
+    }
+
+    .macro-stat p strong {
+        font-size: 18px;
+    }
+
+    .macro-stat p b {
+        font-size: 11px;
+    }
+
+    .macro-balance-heading label {
+        font-size: 17px;
+    }
+
+    .macro-balance-heading select {
+        max-width: 150px;
+        font-size: 13px;
+    }
+
+    .macro-custom-fields {
+        gap: 6px;
+    }
+
+    .macro-custom-fields label {
+        font-size: 9px;
+    }
+
+    .macro-custom-fields input {
+        padding-left: 5px;
+        font-size: 15px;
+    }
+}

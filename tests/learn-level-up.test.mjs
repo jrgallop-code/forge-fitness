@@ -35,7 +35,7 @@ test("walkthrough styling stays isolated from the rest of the app", async () => 
         read("css/learn-level-up.css")
     ]);
     assert.match(source, /data-learn-level-up-styles/);
-    assert.match(source, /css\/learn-level-up\.css\?v=research-journal-cleanup-1/);
+    assert.match(source, /css\/learn-level-up\.css\?v=macro-adjuster-mfp-1/);
     assert.match(styles, /\.learn-lesson-list/);
     assert.match(styles, /\.learn-contextual-section/);
     assert.match(styles, /\.learn-step-card/);
