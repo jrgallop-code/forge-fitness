@@ -34,7 +34,7 @@ function ensureStyles() {
         .more-install-steps li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:start;padding:11px 12px;border:1px solid rgba(255,255,255,.07);border-radius:12px;background:#15151a;color:#f4f4f5;font-size:13px;line-height:1.45}
         .more-install-step-number{width:30px;height:30px;display:grid;place-items:center;border-radius:999px;background:rgba(239,24,31,.14);color:#fff;font-size:11px;font-weight:900}
         .more-install-note{margin:0;color:var(--muted,#a1a1aa);font-size:11px;line-height:1.45}
-        .more-install-installed{display:flex;align-items:center;gap:9px;padding:12px;border:1px solid rgba(74,222,128,.28);border-radius:12px;background:rgba(74,222,128,.07);color:#e3faeb;font-size:13px;font-weight:800}
+        .more-install-installed{display:flex;align-items:center;gap:9px;padding:12px;border:1px solid color-mix(in srgb,var(--success,#4ade80) 36%,var(--line,transparent));border-radius:12px;background:color-mix(in srgb,var(--success,#4ade80) 9%,var(--card,#15151a));color:var(--success-text,#147a3c);-webkit-text-fill-color:var(--success-text,#147a3c);font-size:13px;font-weight:800}
         .more-install-installed-dot{width:9px;height:9px;border-radius:999px;background:#4ade80;flex:0 0 auto}
         .more-install-back{margin-bottom:10px}
         @media(max-width:520px){.more-install-page{padding:14px}.more-install-page-copy h3{font-size:18px}.more-install-steps li{font-size:12px}}

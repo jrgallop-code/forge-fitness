@@ -1,4 +1,4 @@
-import "../more/install-level-up.js?v=pwa-splash-safety-1";
+import "../more/install-level-up.js?v=install-success-contrast-1";
 
 const STYLE_ID = "levelup-onboarding-install-help-styles";
 let selectedPlatform = detectPlatform();
