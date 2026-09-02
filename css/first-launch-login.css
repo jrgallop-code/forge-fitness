@@ -1,12 +1,14 @@
 html.level-up-login-required, html.level-up-login-required body { overflow: hidden; }
 .level-up-login-gate { position: fixed; inset: 0; z-index: 100000; overflow-y: auto; background: radial-gradient(circle at 50% -10%, rgba(222,28,52,.25), transparent 42%), #08080a; color: #fff; padding: max(28px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom)); }
 .level-up-login-panel { width: min(100%, 440px); min-height: calc(100dvh - 56px); margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.level-up-login-logo { width: 126px; height: 126px; object-fit: contain; margin-bottom: 22px; }
+.level-up-login-logo { width: 126px; height: 126px; object-fit: contain; margin-bottom: 22px; mix-blend-mode: lighten; }
 .level-up-login-kicker { color: #ff4357; font-size: 12px; font-weight: 900; letter-spacing: .2em; }
 .level-up-login-panel h1 { margin: 10px 0 14px; font-size: clamp(38px, 10vw, 56px); line-height: .98; letter-spacing: -.045em; }
 .level-up-login-panel h1 span { color: #ff354b; }
 .level-up-login-intro { max-width: 360px; margin: 0 0 24px; color: #b8b8bd; font-size: 16px; line-height: 1.5; }
-.level-up-login-google { width: 100%; min-height: 48px; display: flex; justify-content: center; margin-bottom: 10px; }
+.level-up-login-google { width: min(100%, 340px); height: 48px; display: flex; justify-content: center; margin-bottom: 10px; overflow: hidden; border-radius: 999px; background: #202124; }
+.level-up-login-google > div,
+.level-up-login-google iframe { max-width: 100% !important; }
 .level-up-login-provider { width: min(100%, 340px); min-height: 48px; display: flex; align-items: center; justify-content: space-between; margin: 0 0 10px; padding: 0 18px; border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: rgba(255,255,255,.04); color: #9a9aa0; font: inherit; }
 .level-up-login-provider small { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .level-up-login-message { min-height: 42px; max-width: 360px; margin: 12px 0 0; color: #a8a8ae; font-size: 13px; line-height: 1.45; }

@@ -36,6 +36,14 @@ test("What's New summarizes the major user-facing improvements", () => {
   assert.match(feature, /Smart Swap/);
 });
 
+test("What's New waits until sign-in and onboarding are complete", () => {
+  assert.match(feature, /level_up_cloud_session/);
+  assert.match(feature, /level_up_training_preferences/);
+  assert.match(feature, /if \(!signedIn\) return false/);
+  assert.match(feature, /onboardingComplete \|\| preferences\?\.onboardingSkipped/);
+  assert.match(feature, /if \(!isSignedInAndOnboarded\(\)\) return false/);
+});
+
 test("What's New runs before the satisfaction survey on dashboard routes", () => {
   assert.match(router, /showWhatsNewIfEligible/);
   assert.equal((router.match(/safeInitialize\("What's New", showWhatsNewIfEligible\)/g) || []).length, 2);
@@ -49,8 +57,8 @@ test("What's New uses theme tokens and production cache keys", () => {
   assert.match(styles, /color: var\(--heading\) !important/);
   assert.match(styles, /color: var\(--text-secondary\) !important/);
   assert.match(index, /dashboard-whats-new\.css\?v=whats-new-1/);
-  assert.match(index, /js\/app\.js\?v=theme-accent-calendar-1/);
-  assert.match(app, /router\.js\?v=theme-accent-calendar-1/);
-  assert.match(app, /navbar\.js\?v=whats-new-1/);
-  assert.match(navbar, /router\.js\?v=whats-new-1/);
+  assert.match(index, /js\/app\.js\?v=first-launch-cleanup-1/);
+  assert.match(app, /router\.js\?v=first-launch-cleanup-1/);
+  assert.match(app, /navbar\.js\?v=first-launch-cleanup-1/);
+  assert.match(navbar, /router\.js\?v=first-launch-cleanup-1/);
 });

@@ -37,7 +37,7 @@ import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-d
 import { getCurrentGoal } from "./current-goal.js?v=current-goal-1";
 import { renderAdminAnalytics, initializeAdminAnalytics } from "../analytics/admin-analytics.js?v=workout-source-stats-1";
 import { showSatisfactionSurveyIfEligible } from "../feedback/satisfaction-survey.js?v=satisfaction-survey-1";
-import { showWhatsNewIfEligible } from "../dashboard/whats-new.js?v=whats-new-1";
+import { showWhatsNewIfEligible } from "../dashboard/whats-new.js?v=first-launch-cleanup-1";
 
 getCurrentGoal();
 

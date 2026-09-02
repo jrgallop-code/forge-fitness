@@ -1,4 +1,6 @@
 const VIEW_KEY = "level_up_whats_new_2026_09_views";
+const SESSION_KEY = "level_up_cloud_session";
+const TRAINING_PREFERENCES_KEY = "level_up_training_preferences";
 const MAX_VIEWS = 2;
 let memoryViews = 0;
 
@@ -49,8 +51,21 @@ function renderChangeCard([icon, title, description]) {
         </article>`;
 }
 
+function isSignedInAndOnboarded() {
+    try {
+        const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+        const signedIn = Boolean(session?.token) && (!session.expiresAt || Date.parse(session.expiresAt) > Date.now());
+        if (!signedIn) return false;
+        const preferences = JSON.parse(localStorage.getItem(TRAINING_PREFERENCES_KEY) || "null");
+        return Boolean(preferences?.onboardingComplete || preferences?.onboardingSkipped);
+    } catch {
+        return false;
+    }
+}
+
 export function showWhatsNewIfEligible() {
     if (document.querySelector(".whats-new-overlay")) return true;
+    if (!isSignedInAndOnboarded()) return false;
 
     const views = getStoredViews();
     if (views >= MAX_VIEWS) return false;

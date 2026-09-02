@@ -287,5 +287,5 @@ test("production entry points load the theme before paint and bust caches", asyn
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-3/);
   assert.match(app, /router\.js\?v=theme-accent-calendar-1/);
   assert.match(router, /more-ui-v2\.js\?v=pulse-theme-1/);
-  assert.match(worker, /2026-09-02-127/);
+  assert.match(worker, /2026-09-02-128/);
 });
