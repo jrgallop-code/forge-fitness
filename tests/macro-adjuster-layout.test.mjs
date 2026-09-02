@@ -14,10 +14,10 @@ const macroView = energy.slice(
   energy.indexOf('</section>\n    `;')
 );
 
-test('macro goals use a compact MyFitnessPal-style summary and balance control', () => {
-  assert.match(macroView, /Calorie & Macro Goals/);
+test('macro goals use a compact MyFitnessPal-style breakdown and balance control', () => {
+  assert.match(macroView, /<h2>Macro Goals<\/h2>/);
   assert.match(macroView, /macro-goals-overview/);
-  assert.match(macroView, /id="nutrition-macro-calories"/);
+  assert.match(macroView, /<output id="nutrition-macro-calories" hidden aria-hidden="true">/);
   assert.match(macroView, /macro-distribution-track/);
   assert.match(macroView, /data-macro-percent="carbs"/);
   assert.match(macroView, /data-macro-percent="fat"/);
@@ -25,6 +25,7 @@ test('macro goals use a compact MyFitnessPal-style summary and balance control',
   assert.match(macroView, /Macro balance/);
   assert.match(macroView, /data-macro-handle="carbs"/);
   assert.match(macroView, /data-macro-handle="fat"/);
+  assert.doesNotMatch(macroView, /macro-calorie-total|daily target|Calorie & Macro Goals/);
   assert.doesNotMatch(macroView, /Calories Used/);
   assert.doesNotMatch(macroView, /weight-summary nutrition-energy-summary/);
 });
@@ -39,6 +40,7 @@ test('custom macro mode keeps direct editing, persistence and live calorie math'
   assert.match(manual, /manualMacros: macros/);
   assert.match(manual, /Custom macro targets saved/);
   assert.match(manual, /updateDistribution\(percent\)/);
+  assert.doesNotMatch(manual, /Custom macros (?:match|total)/);
 });
 
 test('macro balance handles support touch, pointer and keyboard adjustment', () => {
@@ -62,8 +64,8 @@ test('macro colors and controls match the existing Level Up nutrition system', (
 });
 
 test('the redesigned adjuster ships with fresh browser and app cache keys', () => {
-  assert.match(index, /css\/manual-macros\.css\?v=macro-adjuster-mfp-1/);
-  assert.match(index, /js\/nutrition\/manual-macros\.js\?v=macro-adjuster-mfp-1/);
-  assert.match(router, /energy-profile\.js\?v=macro-adjuster-mfp-1/);
-  assert.match(worker, /2026-09-02-138/);
+  assert.match(index, /css\/manual-macros\.css\?v=macro-breakdown-only-1/);
+  assert.match(index, /js\/nutrition\/manual-macros\.js\?v=macro-breakdown-only-1/);
+  assert.match(router, /energy-profile\.js\?v=macro-breakdown-only-1/);
+  assert.match(worker, /2026-09-02-139/);
 });

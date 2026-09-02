@@ -1,5 +1,5 @@
 import { navigate } from "../core/router.js?v=deload-workout-preview-1";
-import { CONTEXTUAL_TUTORIALS, getTutorialState, restartTutorial } from "../core/tutorials.js?v=macro-adjuster-mfp-1";
+import { CONTEXTUAL_TUTORIALS, getTutorialState, restartTutorial } from "../core/tutorials.js?v=macro-breakdown-only-1";
 
 const STORAGE_KEY = "level_up_completed_lessons_v1";
 
@@ -7,7 +7,7 @@ function ensureStyles() {
     if (document.querySelector('link[data-learn-level-up-styles]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/learn-level-up.css?v=macro-adjuster-mfp-1";
+    link.href = "css/learn-level-up.css?v=macro-breakdown-only-1";
     link.dataset.learnLevelUpStyles = "";
     document.head.appendChild(link);
 }

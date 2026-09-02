@@ -162,21 +162,8 @@ function updateManualOutputPreview() {
     if (!validMacros(macros)) return;
     manualDraft = { ...macros };
     setMacroText(macros);
-
-    const plan = (() => {
-        try { return JSON.parse(localStorage.getItem("level_up_nutrition_plan") || "null"); }
-        catch { return null; }
-    })();
-    const target = Number(plan?.calculatedCalories ?? plan?.currentCalories);
-    const total = Math.round(macroTotalCalories(macros));
     const message = document.getElementById("nutrition-macro-message");
-    if (message && Number.isFinite(target) && target > 0) {
-        const difference = total - Math.round(target);
-        const absoluteDifference = Math.abs(difference);
-        message.textContent = absoluteDifference <= 5
-            ? `Custom macros match your ${Math.round(target).toLocaleString()} calorie target.`
-            : `Custom macros total ${total.toLocaleString()} calories — ${absoluteDifference.toLocaleString()} ${difference > 0 ? "above" : "below"} your target.`;
-    }
+    if (message) message.textContent = "";
 }
 
 function renderManualMode(macros) {
