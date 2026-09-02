@@ -23,8 +23,8 @@ test("calorie stats label the target and show its range in brackets", () => {
   assert.match(source, /cal\/day \(\$\{formatNumber\(lower\)\}–\$\{formatNumber\(upper\)\}\)/);
   assert.match(source, /within ±3% of your calorie goal/);
   assert.doesNotMatch(source, /minimum allowance of ±100 calories/);
-  assert.match(router, /calorie-stats\.js\?v=macro-adjuster-mfp-1/);
-  assert.match(progress, /calorie-stats\.js\?v=macro-adjuster-mfp-1/);
+  assert.match(router, /calorie-stats\.js\?v=macro-breakdown-only-1/);
+  assert.match(progress, /calorie-stats\.js\?v=macro-breakdown-only-1/);
 });
 
 test("calorie target sits directly above the TDEE graph", () => {

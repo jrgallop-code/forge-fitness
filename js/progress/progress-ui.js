@@ -1,4 +1,4 @@
-import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=macro-adjuster-mfp-1";
+import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=macro-breakdown-only-1";
 
 export function renderProgress() {
 

@@ -25,27 +25,6 @@
     padding: 22px 18px 20px;
 }
 
-.macro-calorie-total {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    gap: 7px;
-    margin-bottom: 17px;
-}
-
-.macro-calorie-total strong {
-    color: var(--heading, #fff);
-    font-size: clamp(28px, 7vw, 36px);
-    line-height: 1;
-    letter-spacing: -.035em;
-}
-
-.macro-calorie-total span {
-    color: var(--text-secondary, #9b9ba5);
-    font-size: 12px;
-    font-weight: 750;
-}
-
 .macro-distribution-track,
 .macro-balance-track {
     display: flex;

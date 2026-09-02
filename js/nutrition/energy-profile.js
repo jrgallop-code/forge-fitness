@@ -227,17 +227,14 @@ export function renderEnergyProfile() {
                 ${renderBackButton()}
 
                 <span class="eyebrow">PROTEIN & MACROS</span>
-                <h2>Calorie & Macro Goals</h2>
+                <h2>Macro Goals</h2>
                 <p class="section-description">
-                    Set how your saved calorie target is divided between carbohydrate, fat and protein.
+                    Set your daily carbohydrate, fat and protein targets.
                 </p>
 
                 <div class="macro-goals-layout" data-macro-adjuster>
-                    <section class="macro-goals-overview" aria-label="Daily calorie and macro targets">
-                        <div class="macro-calorie-total">
-                            <strong id="nutrition-macro-calories">--</strong>
-                            <span>daily target</span>
-                        </div>
+                    <output id="nutrition-macro-calories" hidden aria-hidden="true">--</output>
+                    <section class="macro-goals-overview" aria-label="Daily macro targets">
 
                         <div class="macro-distribution-track" data-macro-distribution role="img" aria-label="Macro calorie distribution">
                             <span class="macro-segment macro-segment--carbs"></span>
@@ -295,7 +292,7 @@ export function renderEnergyProfile() {
                     <p id="nutrition-macro-message" class="nutrition-message" aria-live="polite"></p>
                     <details class="macro-goals-info">
                         <summary>How macro goals are calculated</summary>
-                        <p>Protein starts near 1.6 g/kg/day for healthy adults doing resistance training. Carbohydrate and fat are flexible allocations within your calorie target, and Custom lets you edit all three directly.</p>
+                        <p>Protein starts near 1.6 g/kg/day for healthy adults doing resistance training. Carbohydrate and fat are flexible allocations, and Custom lets you edit all three directly.</p>
                     </details>
                 </div>
             </div>
