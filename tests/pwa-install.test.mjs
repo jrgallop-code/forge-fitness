@@ -111,6 +111,13 @@ test("iPhone install guidance treats Open as Web App as optional", () => {
     }
 });
 
+test("installed-app confirmation remains legible in light appearances", () => {
+    const more = readFileSync("js/more/install-level-up.js", "utf8");
+    assert.match(more, /color:var\(--success-text,#147a3c\)/);
+    assert.match(more, /-webkit-text-fill-color:var\(--success-text,#147a3c\)/);
+    assert.doesNotMatch(more, /color:#e3faeb/);
+});
+
 test("manifest supplies installable, maskable, and Apple icon assets", () => {
     const requiredIcons = [
         ["assets/icons/icon-192.png", 192, "any"],
