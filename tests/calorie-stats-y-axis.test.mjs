@@ -25,7 +25,7 @@ test("calorie y-axis aligns with the stacked chart grid", async () => {
 
 test("calorie stats stylesheet cache key includes interactive meal chart values", async () => {
   const html = await read("index.html");
-  assert.match(html, /css\/calorie-stats\.css\?v=expenditure-tutorial-1/);
+  assert.match(html, /css\/calorie-stats\.css\?v=research-journal-cleanup-1/);
 });
 
 test("seven-day meal bars reveal accessible daily and average value cards", async () => {

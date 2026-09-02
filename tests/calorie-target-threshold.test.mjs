@@ -23,6 +23,17 @@ test("calorie stats label the target and show its range in brackets", () => {
   assert.match(source, /cal\/day \(\$\{formatNumber\(lower\)\}–\$\{formatNumber\(upper\)\}\)/);
   assert.match(source, /within ±3% of your calorie goal/);
   assert.doesNotMatch(source, /minimum allowance of ±100 calories/);
-  assert.match(router, /calorie-stats\.js\?v=expenditure-tutorial-1/);
-  assert.match(progress, /calorie-stats\.js\?v=expenditure-tutorial-1/);
+  assert.match(router, /calorie-stats\.js\?v=research-journal-cleanup-1/);
+  assert.match(progress, /calorie-stats\.js\?v=research-journal-cleanup-1/);
+});
+
+test("calorie target sits directly above the TDEE graph", () => {
+  const maintenanceIndex = source.indexOf("${maintenanceCard(maintenance, checkIn)}");
+  const targetIndex = source.indexOf('<article class="calorie-stat-card calorie-target-rule">');
+  const tdeeGraphIndex = source.indexOf("${expenditureTrendCard(tdeeTrend, formulaEstimate, targets.phase)}");
+
+  assert.ok(maintenanceIndex >= 0);
+  assert.ok(targetIndex > maintenanceIndex);
+  assert.ok(tdeeGraphIndex > targetIndex);
+  assert.equal(source.slice(targetIndex + 1).indexOf('<article class="calorie-stat-card calorie-target-rule">'), -1);
 });

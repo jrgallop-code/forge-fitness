@@ -1,4 +1,4 @@
-import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=expenditure-tutorial-1";
+import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=research-journal-cleanup-1";
 
 export function renderProgress() {
 

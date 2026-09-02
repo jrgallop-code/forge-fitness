@@ -27,7 +27,7 @@ const CURATED = [
     id: "volume-frequency-2026", topic: "Training Volume", tags: ["Muscle Growth", "Training Volume"], featured: true,
     title: "More weekly sets can produce more growth—but with diminishing returns",
     paperTitle: "The Resistance Training Dose Response: Meta-Regressions Exploring the Effects of Weekly Volume and Frequency on Muscle Hypertrophy and Strength Gains",
-    authors: "Pelland et al.", date: "February 2026", journal: "Sports Medicine", studyType: "Meta-analysis", evidence: "High", tone: "high",
+    authors: "Pelland et al.", date: "February 2026", journal: "Sports Medicine", studyType: "Meta-analysis",
     sample: "67 studies · 2,058 participants", image: SITE_IMAGES.volume, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/41343037/", pmid: "41343037",
     summary: "Across 67 studies, higher weekly training volume was associated with greater hypertrophy and strength gains, although the expected benefit became smaller as volume increased.",
     bottomLine: "Volume matters, but each additional set is likely to contribute less than the one before it.",
@@ -40,7 +40,7 @@ const CURATED = [
     id: "acsm-position-2026", topic: "Muscle Growth", tags: ["Muscle Growth", "Evidence Guide"],
     title: "ACSM updates its resistance-training position stand",
     paperTitle: "American College of Sports Medicine Position Stand. Resistance Training Prescription for Muscle Function, Hypertrophy, and Physical Performance in Healthy Adults",
-    authors: "Currier et al.", date: "April 2026", journal: "Medicine & Science in Sports & Exercise", studyType: "Position stand", evidence: "High", tone: "high",
+    authors: "Currier et al.", date: "April 2026", journal: "Medicine & Science in Sports & Exercise", studyType: "Position stand",
     sample: "Overview of systematic reviews", image: SITE_IMAGES.femaleStrength, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/41843416/", pmid: "41843416",
     summary: "The new position stand synthesizes the resistance-training evidence for strength, hypertrophy and physical performance, emphasizing consistent training and goal-specific programming over rigid universal rules.",
     bottomLine: "A sound program is consistent, progressive and adjusted to the individual—not built around one supposedly mandatory method.",
@@ -53,20 +53,20 @@ const CURATED = [
     id: "carbohydrate-hypertrophy-2026", topic: "Nutrition", tags: ["Nutrition", "Carbohydrates"],
     title: "Higher carbohydrate intake may not independently increase hypertrophy",
     paperTitle: "The Effect of Carbohydrate Intake on Muscle Hypertrophy: A Systematic Review and Meta-Analysis",
-    authors: "Henselmans et al.", date: "2026", journal: "Sports Medicine", studyType: "Systematic review", evidence: "Low certainty", tone: "caution",
+    authors: "Henselmans et al.", date: "2026", journal: "Sports Medicine", studyType: "Systematic review",
     sample: "11 studies", image: SITE_IMAGES.carbs, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/41712097/", pmid: "41712097",
-    summary: "The pooled analysis did not find a significant independent hypertrophy benefit from higher carbohydrate intake, but the certainty of evidence was low.",
+    summary: "The pooled analysis did not find a significant independent hypertrophy benefit from higher carbohydrate intake, although the available trials were limited.",
     bottomLine: "Carbohydrates can support training performance, but eating more carbohydrate alone has not been shown to guarantee more muscle growth.",
     studied: "Eleven studies comparing different carbohydrate intakes were reviewed, including analyses limited to calorie-matched trials and direct muscle-size measurements.",
     found: "Higher carbohydrate intake was not associated with a statistically significant independent increase in hypertrophy across the pooled studies.",
     practical: "Set carbohydrates around calorie needs, training performance and preference. Do not interpret this as evidence that carbohydrates are unimportant for hard training.",
-    limitations: "The evidence was rated low certainty because of imprecision, moderate risk of bias and a small number of tightly controlled trials."
+    limitations: "The result was limited by imprecision, moderate risk of bias and a small number of tightly controlled trials."
   },
   {
     id: "creatine-experience-2025", topic: "Supplements", tags: ["Supplements", "Creatine"],
     title: "Creatine benefits were seen in novice and experienced lifters",
     paperTitle: "Creatine Supplementation and Resistance Training: A Comparison Between Novice and Experienced Lifters",
-    authors: "Ashtary-Larky et al.", date: "2025", journal: "Journal of the International Society of Sports Nutrition", studyType: "Systematic review", evidence: "Moderate", tone: "moderate",
+    authors: "Ashtary-Larky et al.", date: "2025", journal: "Journal of the International Society of Sports Nutrition", studyType: "Systematic review",
     sample: "61 controlled trials", image: SITE_IMAGES.creatine, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/41433021/", pmid: "41433021",
     summary: "Across 61 trials, creatine combined with resistance training increased fat-free mass compared with control conditions in both novice and experienced lifters.",
     bottomLine: "Prior training experience did not remove the potential body-composition benefit of creatine supplementation.",
@@ -79,7 +79,7 @@ const CURATED = [
     id: "superset-review-2025", topic: "Training Methods", tags: ["Training Methods", "Supersets"],
     title: "Supersets appear useful when training time is limited",
     paperTitle: "Superset Versus Traditional Resistance Training Prescriptions: A Systematic Review and Meta-Analysis",
-    authors: "Zhang et al.", date: "2025", journal: "Sports Medicine", studyType: "Systematic review", evidence: "Moderate", tone: "moderate",
+    authors: "Zhang et al.", date: "2025", journal: "Sports Medicine", studyType: "Systematic review",
     sample: "Resistance-training studies", image: SITE_IMAGES.supersets, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/39903375/", pmid: "39903375",
     summary: "Superset training reduced session duration without clearly compromising training volume or longer-term adaptations compared with traditional set structures.",
     bottomLine: "Supersets can make training more time-efficient, but exercise pairing and fatigue still matter.",
@@ -92,7 +92,7 @@ const CURATED = [
     id: "cold-water-recovery-2026", topic: "Training Methods", tags: ["Training Methods", "Recovery"],
     title: "Cold-water immersion may trade short-term recovery for some hypertrophy",
     paperTitle: "The cold-water immersion recovery-adaptation paradox: Reconciling acute parasympathetic and analgesic benefits with chronic hypertrophy attenuation",
-    authors: "Tornero-Aguilera et al.", date: "August 2026", journal: "Experimental Physiology", studyType: "Narrative review", evidence: "Emerging", tone: "caution",
+    authors: "Tornero-Aguilera et al.", date: "August 2026", journal: "Experimental Physiology", studyType: "Narrative review",
     sample: "Review of acute and long-term evidence", image: SITE_IMAGES.coldWater, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/42667675/", pmid: "42667675",
     summary: "Cold-water immersion can reduce soreness and speed perceived recovery, but repeated use immediately after resistance training may blunt some of the signalling and cellular processes involved in muscle growth.",
     bottomLine: "Ice baths can help when rapid recovery matters, but routine post-lifting use may be a poor fit when maximizing hypertrophy is the priority.",
@@ -105,7 +105,7 @@ const CURATED = [
     id: "protein-synbiotic-older-adults-2026", topic: "Nutrition", tags: ["Nutrition", "Protein"],
     title: "Protein plus resistance training improved strength in older adults with type 2 diabetes",
     paperTitle: "Synergistic effects of synbiotic, protein supplementation, and resistance training on inflammation, oxidative stress, and muscle strength in older adults with type 2 diabetes mellitus: a RCT triple-blinded study",
-    authors: "Bastos et al.", date: "August 2026", journal: "European Journal of Nutrition", studyType: "Randomized controlled trial", evidence: "Preliminary", tone: "caution",
+    authors: "Bastos et al.", date: "August 2026", journal: "European Journal of Nutrition", studyType: "Randomized controlled trial",
     sample: "51 randomized · 40 completed", image: SITE_IMAGES.olderAdult, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/42616143/", pmid: "42616143",
     summary: "Older men with type 2 diabetes improved physical performance with resistance training. The protein group showed greater strength and insulin-resistance improvements, while adding a synbiotic did not provide a clear extra benefit.",
     bottomLine: "Resistance training and adequate protein appear useful in this clinical group; this trial did not show an additional advantage from the synbiotic product.",
@@ -118,7 +118,7 @@ const CURATED = [
     id: "oral-contraceptives-hypertrophy-2026", topic: "Muscle Growth", tags: ["Muscle Growth", "Women"],
     title: "Oral contraceptives do not consistently appear to reduce muscle growth",
     paperTitle: "The Effects of Oral Contraceptives on Muscle Hypertrophy",
-    authors: "Phillips, Misra & Raiser", date: "August 2026", journal: "International Journal of Sports Medicine", studyType: "Narrative review", evidence: "Low certainty", tone: "caution",
+    authors: "Phillips, Misra & Raiser", date: "August 2026", journal: "International Journal of Sports Medicine", studyType: "Narrative review",
     sample: "Limited human evidence", image: SITE_IMAGES.womenTraining, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/42562022/", pmid: "42562022",
     summary: "Current clinical studies do not show a consistent, clinically meaningful difference in hypertrophy between oral-contraceptive users and non-users, although a small number of studies report negative effects.",
     bottomLine: "The available evidence does not support assuming that oral contraceptive use will prevent meaningful muscle growth.",
@@ -131,7 +131,7 @@ const CURATED = [
     id: "bfr-team-athletes-2026", topic: "Training Methods", tags: ["Training Methods", "Muscle Growth"],
     title: "Blood-flow restriction provided small muscle and strength benefits in team athletes",
     paperTitle: "Muscle hypertrophy and strength improvements following blood flow restriction combined with resistance training in team-athletes: a systematic review and meta-analysis",
-    authors: "Huang et al.", date: "July 2026", journal: "Frontiers in Physiology", studyType: "Systematic review", evidence: "Moderate", tone: "moderate",
+    authors: "Huang et al.", date: "July 2026", journal: "Frontiers in Physiology", studyType: "Systematic review",
     sample: "12 studies · 859 athletes", image: SITE_IMAGES.athlete, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/42549104/", pmid: "42549104",
     summary: "Adding blood-flow restriction to resistance training produced small improvements in hypertrophy and strength compared with resistance training alone, without a clear improvement in sprinting or jumping.",
     bottomLine: "BFR may be a useful load-management tool, but it is not a proven shortcut to better explosive sport performance.",
@@ -144,7 +144,7 @@ const CURATED = [
     id: "large-volume-increase-2026", topic: "Training Volume", tags: ["Training Volume", "Muscle Growth"],
     title: "A large volume increase did not outperform a modest increase in trained lifters",
     paperTitle: "Large increases in resistance training volume do not impair muscle hypertrophy or anabolic-catabolic molecular signaling in trained individuals",
-    authors: "Camargo et al.", date: "July 2026", journal: "Journal of Applied Physiology", studyType: "Randomized controlled trial", evidence: "Preliminary", tone: "moderate",
+    authors: "Camargo et al.", date: "July 2026", journal: "Journal of Applied Physiology", studyType: "Randomized controlled trial",
     sample: "25 trained adults · 8 weeks", image: SITE_IMAGES.recovery, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/42461790/", pmid: "42461790",
     summary: "Increasing weekly volume by 120% did not impair hypertrophy or molecular signalling, but it also did not produce more growth than a 20% increase over eight weeks.",
     bottomLine: "A dramatic jump in volume may be tolerable, but this study found no extra hypertrophy benefit over a modest progression.",
@@ -157,7 +157,7 @@ const CURATED = [
     id: "intra-workout-protein-carbs-2026", topic: "Nutrition", tags: ["Nutrition", "Protein", "Carbohydrates"],
     title: "Intra-workout protein added no detectable benefit in fed young men",
     paperTitle: "Effect of Intra-Workout Protein-Carbohydrate Co-Ingestion Versus Isocaloric Carbohydrate During Resistance Training on Muscle Fibre Hypertrophy and Oxidative Capacities in Young Men: A Randomized Controlled Trial",
-    authors: "Svensson et al.", date: "July 2026", journal: "Nutrients", studyType: "Randomized controlled trial", evidence: "Preliminary", tone: "caution",
+    authors: "Svensson et al.", date: "July 2026", journal: "Nutrients", studyType: "Randomized controlled trial",
     sample: "17 young men · 8 weeks", image: SITE_IMAGES.shaker, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/42514376/", pmid: "42514376",
     summary: "When training was performed in a fed state, carbohydrate plus protein during the workout did not significantly improve hypertrophy or performance compared with the same calories from carbohydrate alone.",
     bottomLine: "If you have eaten before training, adding protein during a typical lifting session may offer little extra benefit beyond meeting daily protein needs.",
@@ -170,7 +170,7 @@ const CURATED = [
     id: "omega3-hypertrophy-2026", topic: "Supplements", tags: ["Supplements", "Nutrition"],
     title: "Omega-3 supplementation did not increase hypertrophy in protein-sufficient men",
     paperTitle: "Effects of n-3 PUFA supplementation during resistance training on muscle outcomes in healthy adult men: a randomised clinical trial",
-    authors: "Santo Andre et al.", date: "July 2026", journal: "British Journal of Nutrition", studyType: "Randomized controlled trial", evidence: "Moderate", tone: "moderate",
+    authors: "Santo Andre et al.", date: "July 2026", journal: "British Journal of Nutrition", studyType: "Randomized controlled trial",
     sample: "46 trained men · 14 weeks", image: SITE_IMAGES.salmon, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/42415329/", pmid: "42415329",
     summary: "Despite substantial omega-3 incorporation into muscle tissue, supplementation did not improve hypertrophy, strength or anabolic signalling beyond supervised training in healthy men already eating at least 1.6 g/kg/day of protein.",
     bottomLine: "Omega-3s may have other health uses, but this trial did not support taking them specifically to build more muscle in protein-sufficient trained men.",
@@ -186,7 +186,7 @@ const GUIDES = [
     id: "guide-volume", topic: "Evidence Guides", tags: ["Training Volume", "Muscle Growth"], guide: true,
     title: "Weekly training volume: finding the useful dose",
     paperTitle: "The Resistance Training Dose Response: Meta-Regressions Exploring the Effects of Weekly Volume and Frequency on Muscle Hypertrophy and Strength Gains",
-    authors: "Level Up evidence guide · Pelland et al.", date: "Updated August 2026", journal: "Sports Medicine", studyType: "Evidence guide", evidence: "High", tone: "high",
+    authors: "Level Up evidence guide · Pelland et al.", date: "Updated August 2026", journal: "Sports Medicine", studyType: "Evidence guide",
     sample: "Built from 67 studies", image: SITE_IMAGES.guideVolume, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/41343037/", pmid: "41343037",
     summary: "More weekly hard sets generally support more hypertrophy, but the return from each additional set becomes smaller. The best volume is the amount that still lets you recover and progress.",
     bottomLine: "Start with a recoverable dose, measure progress, and add sets only when there is a clear reason.",
@@ -199,7 +199,7 @@ const GUIDES = [
     id: "guide-protein", topic: "Evidence Guides", tags: ["Nutrition", "Protein"], guide: true,
     title: "Protein for muscle growth: the daily target matters most",
     paperTitle: "A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults",
-    authors: "Level Up evidence guide · Morton et al.", date: "Reviewed August 2026", journal: "British Journal of Sports Medicine", studyType: "Evidence guide", evidence: "High", tone: "high",
+    authors: "Level Up evidence guide · Morton et al.", date: "Reviewed August 2026", journal: "British Journal of Sports Medicine", studyType: "Evidence guide",
     sample: "49 studies · 1,863 participants", image: SITE_IMAGES.protein, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/28698222/", pmid: "28698222",
     summary: "Protein supplementation can modestly improve muscle and strength gains when it helps someone reach an adequate daily intake. Benefits appear to level off around 1.6 g/kg/day for many healthy adults.",
     bottomLine: "Consistently reach an adequate daily protein intake before worrying about special powders or minute-by-minute timing.",
@@ -212,7 +212,7 @@ const GUIDES = [
     id: "guide-creatine", topic: "Evidence Guides", tags: ["Supplements", "Creatine"], guide: true,
     title: "Creatine monohydrate: what the evidence actually supports",
     paperTitle: "Creatine Supplementation and Resistance Training: A Comparison Between Novice and Experienced Lifters",
-    authors: "Level Up evidence guide · Ashtary-Larky et al.", date: "Updated August 2026", journal: "Journal of the International Society of Sports Nutrition", studyType: "Evidence guide", evidence: "Moderate", tone: "moderate",
+    authors: "Level Up evidence guide · Ashtary-Larky et al.", date: "Updated August 2026", journal: "Journal of the International Society of Sports Nutrition", studyType: "Evidence guide",
     sample: "61 controlled trials", image: SITE_IMAGES.gymShaker, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/41433021/", pmid: "41433021",
     summary: "Creatine combined with resistance training increases fat-free mass on average, and the available evidence does not suggest that experienced lifters stop benefiting.",
     bottomLine: "Creatine monohydrate is one of the best-supported optional supplements for suitable adults, but it does not replace training or nutrition.",
@@ -225,12 +225,12 @@ const GUIDES = [
     id: "guide-carbs", topic: "Evidence Guides", tags: ["Nutrition", "Carbohydrates"], guide: true,
     title: "Carbohydrates: fuel for training, not a direct hypertrophy switch",
     paperTitle: "The Effect of Carbohydrate Intake on Muscle Hypertrophy: A Systematic Review and Meta-Analysis",
-    authors: "Level Up evidence guide · Henselmans et al.", date: "Updated August 2026", journal: "Sports Medicine", studyType: "Evidence guide", evidence: "Low certainty", tone: "caution",
+    authors: "Level Up evidence guide · Henselmans et al.", date: "Updated August 2026", journal: "Sports Medicine", studyType: "Evidence guide",
     sample: "11 studies", image: SITE_IMAGES.mealPrep, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/41712097/", pmid: "41712097",
     summary: "Higher carbohydrate intake has not been shown to independently guarantee more hypertrophy, but carbohydrates can support training quality, glycogen availability and dietary adherence.",
     bottomLine: "Set carbohydrates around total calories, performance and preference rather than chasing one universal muscle-building number.",
     studied: "The review pooled studies comparing different carbohydrate intakes and included calorie-matched and direct muscle-size sensitivity analyses.",
-    found: "No statistically significant independent hypertrophy advantage was detected for higher carbohydrate intake. The overall certainty of evidence was low.",
+    found: "No statistically significant independent hypertrophy advantage was detected for higher carbohydrate intake. Few tightly controlled trials were available.",
     practical: "After protein and calorie needs are covered, use carbohydrates to support demanding sessions and choose an amount that keeps training performance and the diet sustainable.",
     limitations: "Few tightly controlled trials were available, diets and training programs differed, and a null independent effect does not mean carbohydrates are irrelevant to performance."
   },
@@ -238,7 +238,7 @@ const GUIDES = [
     id: "guide-rir", topic: "Evidence Guides", tags: ["Training Methods", "Muscle Growth"], guide: true,
     title: "Reps in reserve: how close to failure should sets go?",
     paperTitle: "Exploring the Dose-Response Relationship Between Estimated Resistance Training Proximity to Failure, Strength Gain, and Muscle Hypertrophy: A Series of Meta-Regressions",
-    authors: "Level Up evidence guide · Robinson et al.", date: "Reviewed August 2026", journal: "Sports Medicine", studyType: "Evidence guide", evidence: "Moderate", tone: "moderate",
+    authors: "Level Up evidence guide · Robinson et al.", date: "Reviewed August 2026", journal: "Sports Medicine", studyType: "Evidence guide",
     sample: "Series of meta-regressions", image: SITE_IMAGES.rir, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/38970765/", pmid: "38970765",
     summary: "Hypertrophy tended to improve as sets ended closer to failure, while strength gains were similar across a wider range of reps in reserve. Exact RIR prescriptions remain uncertain.",
     bottomLine: "Most hypertrophy work should be challenging, but every set does not need to reach complete failure.",
@@ -251,7 +251,7 @@ const GUIDES = [
     id: "guide-rest", topic: "Evidence Guides", tags: ["Training Methods", "Muscle Growth"], guide: true,
     title: "Rest between sets: long enough to protect performance",
     paperTitle: "Give it a rest: a systematic review with Bayesian meta-analysis on the effect of inter-set rest interval duration on muscle hypertrophy",
-    authors: "Level Up evidence guide · Singer et al.", date: "Reviewed August 2026", journal: "Frontiers in Sports and Active Living", studyType: "Evidence guide", evidence: "Moderate", tone: "moderate",
+    authors: "Level Up evidence guide · Singer et al.", date: "Reviewed August 2026", journal: "Frontiers in Sports and Active Living", studyType: "Evidence guide",
     sample: "9 studies · 19 muscle measurements", image: SITE_IMAGES.rest, sourceUrl: "https://pubmed.ncbi.nlm.nih.gov/39205815/", pmid: "39205815",
     summary: "Rest periods longer than 60 seconds may provide a small hypertrophy advantage, probably because they help preserve repetitions and training volume. Benefits beyond roughly 90 seconds were less clear in the pooled data.",
     bottomLine: "Rest long enough to perform the next set well; rushing the clock is not automatically better for growth.",
@@ -277,14 +277,10 @@ function setSaved(saved) { localStorage.setItem(SAVED_KEY, JSON.stringify([...sa
 function allArticles() { return [...CURATED, ...GUIDES]; }
 function articleById(id) { return allArticles().find(article => article.id === id); }
 
-function evidenceBadge(article) {
-  return `<span class="explore-evidence is-${escapeHtml(article.tone)}"><i></i>${escapeHtml(article.evidence)}</span>`;
-}
-
 function renderResearchCard(article, saved) {
   return `<article class="explore-study-card${article.featured ? " is-featured" : ""}" data-explore-topic-value="${escapeHtml(article.topic)}">
     <button class="explore-study-image" type="button" data-explore-open="${escapeHtml(article.id)}" style="--study-image:url('${escapeHtml(article.image)}')" aria-label="Read ${escapeHtml(article.title)}"><span>${escapeHtml(article.topic)}</span></button>
-    <div class="explore-study-body"><div class="explore-study-meta">${evidenceBadge(article)}<span>${escapeHtml(article.studyType)}</span><span>${escapeHtml(article.date)}</span></div>
+    <div class="explore-study-body"><div class="explore-study-meta"><span>${escapeHtml(article.studyType)}</span><span>${escapeHtml(article.date)}</span></div>
     <button class="explore-study-title" type="button" data-explore-open="${escapeHtml(article.id)}"><strong>${escapeHtml(article.title)}</strong></button>
     <p>${escapeHtml(article.summary)}</p><div class="explore-study-footer"><span>${escapeHtml(article.authors)}</span><button class="explore-save${saved.has(article.id) ? " is-saved" : ""}" type="button" data-explore-save="${escapeHtml(article.id)}" aria-label="${saved.has(article.id) ? "Remove from saved research" : "Save research"}">${saved.has(article.id) ? "Saved" : "Save"}</button></div></div>
   </article>`;
@@ -312,7 +308,7 @@ function renderFeed() {
 function renderExplorePage() {
   const topics = ["All", "Muscle Growth", "Training Volume", "Training Methods", "Nutrition", "Supplements"];
   return `<section class="explore-page">
-    <header class="explore-hero" style="--explore-hero:url('${SITE_IMAGES.hero}')"><div class="explore-hero-shade"></div><div class="explore-hero-content"><button class="explore-back" type="button" data-explore-back>← More</button><span class="eyebrow">LEVEL UP · RESEARCH</span><h1>Train with the evidence.</h1><p>New muscle-growth and nutrition research, translated into useful context without turning one paper into a rule.</p><div class="explore-hero-facts"><span><b>Reviewed</b> evidence labels</span><span><b>Direct</b> study links</span><span><b>Saved</b> reading list</span></div></div></header>
+    <header class="explore-hero" style="--explore-hero:url('${SITE_IMAGES.hero}')"><div class="explore-hero-shade"></div><div class="explore-hero-content"><button class="explore-back" type="button" data-explore-back>← More</button><span class="eyebrow">LEVEL UP · RESEARCH</span><h1>Train with the evidence.</h1><p>New muscle-growth and nutrition research, translated into useful context without turning one paper into a rule.</p><div class="explore-hero-facts"><span><b>Reviewed</b> summaries</span><span><b>Direct</b> study links</span><span><b>Saved</b> reading list</span></div></div></header>
     <nav class="explore-tabs" aria-label="Explore sections"><button class="active" type="button" data-explore-tab="new">New Research</button><button type="button" data-explore-tab="guides">Evidence Guides</button><button type="button" data-explore-tab="saved">Saved</button></nav>
     <section class="explore-intro"><div><span class="eyebrow">CURRENT LITERATURE</span><h2>What’s worth knowing now</h2></div><p>Prioritized toward systematic reviews, meta-analyses, position stands and controlled human research.</p></section>
     <div class="explore-topics" aria-label="Filter by topic">${topics.map(topic => `<button class="${topic === activeTopic ? "active" : ""}" type="button" data-explore-topic="${escapeHtml(topic)}">${escapeHtml(topic)}</button>`).join("")}</div>
@@ -325,7 +321,7 @@ function renderExplorePage() {
 function renderStudyDetail(article) {
   const saved = getSaved();
   const sections = [["What was studied", article.studied], ["What the researchers found", article.found], ["What it may mean in practice", article.practical], ["Important limitations", article.limitations]];
-  return `<article class="explore-detail"><header class="explore-detail-hero" style="--explore-hero:url('${escapeHtml(article.image)}')"><div class="explore-hero-shade"></div><div><button class="explore-back" type="button" data-explore-detail-back>← Explore</button><span class="eyebrow">${escapeHtml(article.topic)}</span><h1>${escapeHtml(article.title)}</h1><div class="explore-study-meta">${evidenceBadge(article)}<span>${escapeHtml(article.studyType)}</span><span>${escapeHtml(article.date)}</span></div></div></header>
+  return `<article class="explore-detail"><header class="explore-detail-hero" style="--explore-hero:url('${escapeHtml(article.image)}')"><div class="explore-hero-shade"></div><div><button class="explore-back" type="button" data-explore-detail-back>← Explore</button><span class="eyebrow">${escapeHtml(article.topic)}</span><h1>${escapeHtml(article.title)}</h1><div class="explore-study-meta"><span>${escapeHtml(article.studyType)}</span><span>${escapeHtml(article.date)}</span></div></div></header>
     <section class="explore-detail-summary"><span>THE BOTTOM LINE</span><h2>${escapeHtml(article.bottomLine)}</h2><p>${escapeHtml(article.summary)}</p></section>
     <section class="explore-detail-grid">${sections.map(([title, body], index) => `<section><b>0${index + 1}</b><div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(body)}</p></div></section>`).join("")}</section>
     <section class="explore-citation"><div><span>ORIGINAL PUBLICATION</span><strong>${escapeHtml(article.paperTitle)}</strong><small>${escapeHtml(article.authors)} · ${escapeHtml(article.journal)}${article.pmid ? ` · PMID ${escapeHtml(article.pmid)}` : ""}</small></div><div class="explore-citation-actions"><button class="explore-save${saved.has(article.id) ? " is-saved" : ""}" type="button" data-explore-save="${escapeHtml(article.id)}">${saved.has(article.id) ? "Saved" : "Save"}</button><a href="${escapeHtml(article.sourceUrl)}" target="_blank" rel="noopener noreferrer">View study ↗</a></div></section>
