@@ -9,8 +9,8 @@ import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.j
 import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=more-units-miles-1";
 import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-display-name-1";
 import { renderAdaptiveGuidanceSettings, initializeAdaptiveGuidanceSettings } from "./adaptive-guidance-settings.js?v=deload-workout-preview-1";
-import { openLessonLibrary } from "./learn-level-up.js?v=macro-breakdown-only-1";
-import { openExploreResearch } from "./explore-research.js?v=macro-breakdown-only-1";
+import { openLessonLibrary } from "./learn-level-up.js?v=food-log-macro-bars-1";
+import { openExploreResearch } from "./explore-research.js?v=food-log-macro-bars-1";
 import { appearanceMenuIcon, renderAppearanceSettings, initializeAppearanceSettings } from "./appearance-settings.js?v=pulse-theme-1";
 
 const ICONS = {
