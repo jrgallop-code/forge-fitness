@@ -160,7 +160,7 @@ test("known fixed-color source files are all represented in the final audit", ()
   assert.match(units, /background:#141419/);
   assert.match(acquisitionStyles, /background:\s*#15151a/);
   assert.match(acquisitionScript, /link\.href="css\/acquisition\.css/);
-  assert.match(flow, /background:#15151a/);
+  assert.match(flow, /background:var\(--card,#15151a\)/);
   assert.match(nativePolish, /\.levelup-onboarding-shell/);
 
   assert.ok(audit.includes(".onboarding-unit-row,"));
@@ -170,5 +170,5 @@ test("known fixed-color source files are all represented in the final audit", ()
 });
 
 test("the onboarding theme correction advances the offline cache", () => {
-  assert.match(worker, /2026-09-02-141/);
+  assert.match(worker, /2026-09-02-142/);
 });

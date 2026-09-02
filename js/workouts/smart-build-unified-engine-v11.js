@@ -134,6 +134,9 @@ function freshState() {
   const goalMap = { build_muscle: "muscle", build_strength: "strength", maintain_muscle: "maintain", lose_fat_maintain_muscle: "maintain" };
   const experienceMap = { new: "beginner", intermediate: "intermediate", experienced: "advanced", advanced: "advanced" };
   const savedPriorities = Array.isArray(prefs.priorities) ? prefs.priorities.map(normalizedDisplayMuscle).filter(m => MUSCLES.includes(m)) : [];
+  const savedEquipment = Array.isArray(prefs.equipment)
+    ? prefs.equipment.filter(item => ["Full Gym", "Dumbbells", "Barbell", "Machines & Cables", "Bodyweight"].includes(item))
+    : [];
   return {
     goal: goalMap[prefs.primaryGoal] || "muscle",
     days: [2, 3, 4, 5, 6].includes(Number(prefs.days)) ? Number(prefs.days) : 4,
@@ -141,7 +144,7 @@ function freshState() {
     splitPreference: SPLIT_PREFERENCES.has(prefs.splitPreference) ? prefs.splitPreference : "auto",
     priorities: [...new Set(savedPriorities)].slice(0, PRIORITY_LIMIT),
     experience: experienceMap[prefs.experience] || "intermediate",
-    equipment: ["Full Gym"],
+    equipment: savedEquipment.length ? [...new Set(savedEquipment)] : ["Full Gym"],
     preferredIds: [],
     excludedIds: Array.isArray(prefs.excludedIds) ? [...prefs.excludedIds] : [],
     supersets: true,
