@@ -1,9 +1,10 @@
-import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "./calculated-maintenance.js?v=tdee-history-data-2";
+import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "./calculated-maintenance.js?v=expenditure-tutorial-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
 import { getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=independent-tdee-staged-target-1";
+import { completeTutorial, dismissTutorial, getTutorial, getTutorialState, setTutorialStep, shouldShowTutorial } from "../core/tutorials.js?v=expenditure-tutorial-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
@@ -232,27 +233,81 @@ function expenditureTrendCard(state, profileEstimate, phase) {
     </article>`;
 }
 
+const EXPENDITURE_TUTORIAL_ID = "expenditure";
+const EXPENDITURE_TUTORIAL_ICONS = [
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2Zm2 11.5-.9.5V15h-2.2v-1l-.9-.5A5 5 0 1 1 14 13.5ZM9 19h6v2H9v-2Z"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18Zm0 2a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm-1 3h2v3h3v2h-5V8Z"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4V4Zm2 2v12h12V6H6Zm2 2h3v3H8V8Zm5 0h3v2h-3V8Zm0 4h3v2h-3v-2Zm-5 1h3v3H8v-3Z"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v4H5V5Zm2 2h10V7H7Zm-2 5h14v7H5v-7Zm2 2v3h10v-3H7Zm2 .5h2v2H9v-2Z"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5h2v11.2l3.7-4 3 2.2L18.5 8H15V6h7v7h-2V9.6l-7 7.8-3.1-2.3L6.3 19H4Z"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm-1 3h2v4h4v2h-6V7Z"/></svg>'
+];
+
+function expenditureTutorialStepMarkup(tutorial, stepIndex) {
+    const step = tutorial.steps[stepIndex];
+    const last = stepIndex === tutorial.steps.length - 1;
+    return `<div class="expenditure-tutorial-progress" aria-label="Step ${stepIndex + 1} of ${tutorial.steps.length}">
+            <span>${stepIndex + 1} of ${tutorial.steps.length}</span>
+            <div>${tutorial.steps.map((_, index) => `<i class="${index <= stepIndex ? "is-active" : ""}"></i>`).join("")}</div>
+        </div>
+        <div class="expenditure-tutorial-copy">
+            <span class="expenditure-tutorial-icon">${EXPENDITURE_TUTORIAL_ICONS[stepIndex] || EXPENDITURE_TUTORIAL_ICONS[0]}</span>
+            <div><small>${step.eyebrow}</small><h3>${step.title}</h3></div>
+            <p>${step.body}</p>
+        </div>
+        <div class="expenditure-tutorial-actions">
+            <button type="button" class="expenditure-tutorial-dismiss" data-tutorial-dismiss>Dismiss tutorial</button>
+            <span>
+                <button type="button" class="secondary-btn" data-tutorial-previous ${stepIndex === 0 ? "disabled" : ""}>Previous</button>
+                <button type="button" class="primary-btn" data-tutorial-next>${last ? "Finish" : "Next"}</button>
+            </span>
+        </div>`;
+}
+
+function expenditureTutorialCard() {
+    if (!shouldShowTutorial(EXPENDITURE_TUTORIAL_ID)) return "";
+    const tutorial = getTutorial(EXPENDITURE_TUTORIAL_ID);
+    if (!tutorial) return "";
+    const { step } = getTutorialState(EXPENDITURE_TUTORIAL_ID);
+    return `<aside class="expenditure-tutorial-card" data-expenditure-tutorial aria-label="Expenditure tutorial" aria-live="polite">${expenditureTutorialStepMarkup(tutorial, step)}</aside>`;
+}
+
+function initializeExpenditureTutorial(panel) {
+    const card = panel.querySelector("[data-expenditure-tutorial]");
+    const tutorial = getTutorial(EXPENDITURE_TUTORIAL_ID);
+    if (!card || !tutorial) return;
+    let stepIndex = getTutorialState(EXPENDITURE_TUTORIAL_ID).step;
+
+    card.addEventListener("click", event => {
+        if (event.target.closest("[data-tutorial-dismiss]")) {
+            dismissTutorial(EXPENDITURE_TUTORIAL_ID, stepIndex);
+            card.remove();
+            return;
+        }
+        if (event.target.closest("[data-tutorial-previous]")) {
+            stepIndex = Math.max(0, stepIndex - 1);
+            setTutorialStep(EXPENDITURE_TUTORIAL_ID, stepIndex);
+            card.innerHTML = expenditureTutorialStepMarkup(tutorial, stepIndex);
+            return;
+        }
+        if (!event.target.closest("[data-tutorial-next]")) return;
+        if (stepIndex >= tutorial.steps.length - 1) {
+            completeTutorial(EXPENDITURE_TUTORIAL_ID);
+            card.remove();
+            return;
+        }
+        stepIndex += 1;
+        setTutorialStep(EXPENDITURE_TUTORIAL_ID, stepIndex);
+        card.innerHTML = expenditureTutorialStepMarkup(tutorial, stepIndex);
+    });
+}
+
 function chartThemeColor(token, fallback) {
     return getComputedStyle(document.documentElement).getPropertyValue(token).trim() || fallback;
 }
 
 function niceCalorieStep(value) {
     return [25, 50, 100, 200, 250, 500, 1000].find(step => step >= value) || 2000;
-}
-
-function expenditureSegments(series) {
-    const segments = [];
-    let segment = [];
-    series.forEach(point => {
-        if (Number.isFinite(point.maintenanceCalories) && point.maintenanceCalories > 0) {
-            segment.push(point);
-            return;
-        }
-        if (segment.length) segments.push(segment);
-        segment = [];
-    });
-    if (segment.length) segments.push(segment);
-    return segments;
 }
 
 function renderExpenditureChart(panel, state, profileEstimate) {
@@ -268,7 +323,6 @@ function renderExpenditureChart(panel, state, profileEstimate) {
     const padding = { top: 18, right: 44, bottom: 30, left: 8 };
     const startMs = new Date(`${state.startDate}T12:00:00`).getTime();
     const endMs = new Date(`${state.endDate}T12:00:00`).getTime();
-    const segments = expenditureSegments(state.series);
     const draw = () => {
         const ratio = Math.min(2, window.devicePixelRatio || 1);
         const width = Math.max(280, Math.round(shell.clientWidth || 320));
@@ -328,26 +382,24 @@ function renderExpenditureChart(panel, state, profileEstimate) {
         context.lineWidth = 3;
         context.lineCap = "round";
         context.lineJoin = "round";
-        segments.forEach(segment => {
-            if (segment.length === 1) {
-                context.beginPath();
-                context.arc(x(segment[0]), y(segment[0].maintenanceCalories), 3, 0, Math.PI * 2);
-                context.fillStyle = chartThemeColor("--accent", "#ff3b4b");
-                context.fill();
-                return;
-            }
+        if (state.available.length === 1) {
             context.beginPath();
-            segment.forEach((point, index) => index ? context.lineTo(x(point), y(point.maintenanceCalories)) : context.moveTo(x(point), y(point.maintenanceCalories)));
-            context.lineTo(x(segment.at(-1)), padding.top + plotHeight);
-            context.lineTo(x(segment[0]), padding.top + plotHeight);
+            context.arc(x(state.available[0]), y(state.available[0].maintenanceCalories), 3, 0, Math.PI * 2);
+            context.fillStyle = chartThemeColor("--accent", "#ff3b4b");
+            context.fill();
+        } else {
+            context.beginPath();
+            state.available.forEach((point, index) => index ? context.lineTo(x(point), y(point.maintenanceCalories)) : context.moveTo(x(point), y(point.maintenanceCalories)));
+            context.lineTo(x(state.available.at(-1)), padding.top + plotHeight);
+            context.lineTo(x(state.available[0]), padding.top + plotHeight);
             context.closePath();
             context.fillStyle = area;
             context.fill();
 
             context.beginPath();
-            segment.forEach((point, index) => index ? context.lineTo(x(point), y(point.maintenanceCalories)) : context.moveTo(x(point), y(point.maintenanceCalories)));
+            state.available.forEach((point, index) => index ? context.lineTo(x(point), y(point.maintenanceCalories)) : context.moveTo(x(point), y(point.maintenanceCalories)));
             context.stroke();
-        });
+        }
 
         const labelCount = state.range === "1w" ? 7 : 5;
         context.fillStyle = chartThemeColor("--muted", "#85858f");
@@ -580,6 +632,7 @@ function renderStats(panel) {
             </div>
             ${maintenanceCard(maintenance, checkIn)}
             ${expenditureTrendCard(tdeeTrend, formulaEstimate, targets.phase)}
+            ${expenditureTutorialCard()}
             <article class="calorie-stat-card calorie-stat-week">
                 <div class="calorie-stat-title"><span><small>AVERAGE CALORIES</small><strong>${averageDayCount ? formatNumber(avgCalories) : "—"}</strong></span><b>${averageDayCount} of ${count} days in average</b></div>
                 <div class="calorie-stat-bars ${displayDays.length === 7 ? "is-seven" : ""}">${bars(displayDays, targets.calories)}</div>
@@ -639,6 +692,7 @@ function renderStats(panel) {
     }));
     panel.querySelector("[data-maintenance-review]")?.addEventListener("click", () => openMaintenanceReview(checkIn));
     renderExpenditureChart(panel, tdeeTrend, formulaEstimate);
+    initializeExpenditureTutorial(panel);
 }
 
 function openMaintenanceReview() {

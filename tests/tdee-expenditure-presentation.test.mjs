@@ -37,6 +37,8 @@ test("TDEE history chart matches the app's graph ranges and supports daily inspe
   assert.match(source, /Generic expenditure/);
   assert.doesNotMatch(source, /is-profile"><\/i>Profile estimate/);
   assert.match(source, /point\.maintenanceCalories > 0/);
+  assert.match(source, /state\.available\.forEach\(\(point, index\)/);
+  assert.doesNotMatch(source, /function expenditureSegments/);
   assert.match(source, /addEventListener\("dblclick"/);
   assert.match(source, /Double-tap to close/);
   assert.match(styles, /\.expenditure-chart-ranges/);
@@ -44,12 +46,12 @@ test("TDEE history chart matches the app's graph ranges and supports daily inspe
   assert.match(calculation, /export function calculateMaintenanceHistory/);
   assert.match(calculation, /stabilizeMaintenanceEstimate\(\{ liveEstimate, snapshot, today: cursor \}\)/);
   assert.match(calculation, /level_up_weekly_tdee_history_v1/);
-  assert.match(calculation, /phase\?\.adjustments/);
+  assert.doesNotMatch(calculation, /phase\?\.adjustments/);
   assert.match(calculation, /maintenanceCalories: positiveNumber\(estimate\.maintenanceCalories\)/);
-  assert.match(index, /css\/calorie-stats\.css\?v=tdee-history-data-2/);
-  assert.match(index, /js\/app\.js\?v=tdee-history-data-2/);
-  assert.match(app, /router\.js\?v=tdee-history-data-2/);
-  assert.match(router, /progress-ui\.js\?v=tdee-history-data-2/);
-  assert.match(router, /calorie-stats\.js\?v=tdee-history-data-2/);
-  assert.match(progress, /calorie-stats\.js\?v=tdee-history-data-2/);
+  assert.match(index, /css\/calorie-stats\.css\?v=expenditure-tutorial-1/);
+  assert.match(index, /js\/app\.js\?v=expenditure-tutorial-1/);
+  assert.match(app, /router\.js\?v=expenditure-tutorial-1/);
+  assert.match(router, /progress-ui\.js\?v=expenditure-tutorial-1/);
+  assert.match(router, /calorie-stats\.js\?v=expenditure-tutorial-1/);
+  assert.match(progress, /calorie-stats\.js\?v=expenditure-tutorial-1/);
 });
