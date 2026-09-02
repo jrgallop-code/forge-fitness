@@ -1,10 +1,10 @@
-import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "./calculated-maintenance.js?v=expenditure-tutorial-1";
+import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "./calculated-maintenance.js?v=research-journal-cleanup-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
 import { getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=independent-tdee-staged-target-1";
-import { completeTutorial, dismissTutorial, getTutorial, getTutorialState, setTutorialStep, shouldShowTutorial } from "../core/tutorials.js?v=expenditure-tutorial-1";
+import { completeTutorial, dismissTutorial, getTutorial, getTutorialState, setTutorialStep, shouldShowTutorial } from "../core/tutorials.js?v=research-journal-cleanup-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
@@ -631,6 +631,10 @@ function renderStats(panel) {
                 ${Object.entries({7:"7D",28:"4W",84:"12W"}).map(([value,label]) => `<button type="button" class="${count === Number(value) ? "active" : ""}" data-calorie-stats-range="${value}">${label}</button>`).join("")}
             </div>
             ${maintenanceCard(maintenance, checkIn)}
+            <article class="calorie-stat-card calorie-target-rule">
+                <div><small>CALORIE TARGET</small><strong>${targets.calories ? `${formatNumber(targets.calories)} cal/day (${formatNumber(lower)}–${formatNumber(upper)})` : "No calorie goal set"}</strong></div>
+                <p>A day is in target when it is within ±3% of your calorie goal.</p>
+            </article>
             ${expenditureTrendCard(tdeeTrend, formulaEstimate, targets.phase)}
             ${expenditureTutorialCard()}
             <article class="calorie-stat-card calorie-stat-week">
@@ -639,10 +643,6 @@ function renderStats(panel) {
                 <div class="calorie-stat-goal">
                     <span><i class="target"></i>In target</span><span><i class="outside"></i>Outside target</span><b>${difference === null ? "Set a calorie goal" : `${difference > 0 ? "+" : ""}${formatNumber(difference)} average vs goal`}</b>
                 </div>
-            </article>
-            <article class="calorie-stat-card calorie-target-rule">
-                <div><small>CALORIE TARGET</small><strong>${targets.calories ? `${formatNumber(targets.calories)} cal/day (${formatNumber(lower)}–${formatNumber(upper)})` : "No calorie goal set"}</strong></div>
-                <p>A day is in target when it is within ±3% of your calorie goal.</p>
             </article>
             <article class="calorie-stat-card">
                 <div class="calorie-stat-section-title"><span><small>CONSISTENCY</small><strong>${inTarget} days in target</strong></span><b>${logged.length ? Math.round(inTarget / logged.length * 100) : 0}%</b></div>

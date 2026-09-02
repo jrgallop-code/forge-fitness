@@ -21,7 +21,6 @@
 .explore-study-card.is-featured{border-color:color-mix(in srgb,var(--accent) 38%,var(--card-border))}
 .explore-study-title,.explore-study-title strong{color:var(--heading)!important}
 .explore-study-body>p{color:var(--text-secondary)!important}
-.explore-evidence{border-color:var(--line);background:var(--surface-raised);color:var(--text-secondary)}
 .explore-study-image span{background:var(--accent);color:var(--accent-contrast)}
 .explore-save{border-color:var(--line);background:var(--surface-raised);color:var(--text)}
 .explore-save.is-saved{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));background:var(--accent-soft);color:var(--accent-text)}

@@ -14,18 +14,29 @@ test('Explore remains a first-class More destination without dashboard clutter',
   assert.match(more, /openExploreResearch\(\)/);
   assert.doesNotMatch(explore, /data-dashboard-explore-research/);
   assert.doesNotMatch(explore, /NEW IN RESEARCH/);
-  assert.match(index, /explore-research\.css\?v=explore-research-2/);
-  assert.match(index, /explore-theme-fix\.css\?v=explore-theme-fix-1/);
-  assert.match(index, /explore-research\.js\?v=explore-research-2/);
+  assert.match(index, /explore-research\.css\?v=research-journal-cleanup-1/);
+  assert.match(index, /explore-theme-fix\.css\?v=research-journal-cleanup-1/);
+  assert.match(index, /explore-research\.js\?v=research-journal-cleanup-1/);
 });
 
-test('Explore uses real publication records, evidence context and source links', () => {
+test('Explore uses real publication records, study context and source links', () => {
   ['41343037', '41843416', '41712097', '41433021', '39903375', '42667675', '42616143', '42562022', '42549104', '42461790', '42514376', '42415329'].forEach(pmid => assert.match(explore, new RegExp(pmid)));
   assert.match(explore, /Meta-analysis/);
   assert.match(explore, /Systematic review/);
   assert.match(explore, /Important limitations/);
   assert.match(explore, /View study ↗/);
   assert.match(explore, /Educational information only/);
+});
+
+test('Explore omits certainty rankings while preserving research limitations', () => {
+  assert.doesNotMatch(explore, /evidenceBadge|explore-evidence|\bevidence:\s*["']/);
+  assert.doesNotMatch(explore, /(?:High|Moderate|Low certainty|Preliminary|Emerging)["']\s*,\s*tone:/);
+  assert.doesNotMatch(explore, /certainty of evidence|rated low certainty/i);
+  assert.doesNotMatch(styles, /\.explore-evidence/);
+  assert.doesNotMatch(themeFix, /\.explore-evidence/);
+  assert.match(explore, /studyType/);
+  assert.match(explore, /Important limitations/);
+  assert.match(explore, /imprecision, moderate risk of bias/);
 });
 
 test('Explore publishes only completed summaries and excludes the thyroid paper', () => {
@@ -47,7 +58,7 @@ test('Explore supports filters, evidence guides and a saved reading list', () =>
   assert.match(explore, /guide-rest/);
   assert.match(styles, /\.explore-tabs/);
   assert.match(styles, /@media\(max-width:520px\)/);
-  assert.match(worker, /2026-09-02-135/);
+  assert.match(worker, /2026-09-02-137/);
 });
 
 test('Explore photo headings and theme cards retain readable contrast', () => {

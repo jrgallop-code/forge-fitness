@@ -9,7 +9,7 @@ import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workou
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=right-overflow-arc-1";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=cardio-rpe-1";
-import { renderProgress } from "../progress/progress-ui.js?v=expenditure-tutorial-1";
+import { renderProgress } from "../progress/progress-ui.js?v=research-journal-cleanup-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-2";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=theme-accent-calendar-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=current-goal-1";
@@ -19,7 +19,7 @@ import { initializeOverallStrengthIndex } from "../progress/overall-strength-ind
 import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.js?v=repair-generic-exercise-1";
 import { initializeMuscleRecoveryMap } from "../progress/muscle-recovery-map.js?v=recovery-traced-1";
 import { initializeWeightCarbsChart } from "../progress/weight-carbs-chart.js?v=arctic-surfaces-1";
-import { initializeCalorieStats } from "../nutrition/calorie-stats.js?v=expenditure-tutorial-1";
+import { initializeCalorieStats } from "../nutrition/calorie-stats.js?v=research-journal-cleanup-1";
 import { renderSleepTracker, initializeSleepTracker } from "../progress/sleep-tracker.js?v=sleep-tracker-2";
 import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../progress/measurements-tracker.js?v=measurements-image-1";
 import { initializeMeasurementHistoryDetail } from "../progress/measurements-history-detail.js?v=measurement-history-1";
