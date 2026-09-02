@@ -48,10 +48,10 @@ test("TDEE history chart matches the app's graph ranges and supports daily inspe
   assert.match(calculation, /level_up_weekly_tdee_history_v1/);
   assert.doesNotMatch(calculation, /phase\?\.adjustments/);
   assert.match(calculation, /maintenanceCalories: positiveNumber\(estimate\.maintenanceCalories\)/);
-  assert.match(index, /css\/calorie-stats\.css\?v=research-journal-cleanup-1/);
-  assert.match(index, /js\/app\.js\?v=research-journal-cleanup-1/);
-  assert.match(app, /router\.js\?v=research-journal-cleanup-1/);
-  assert.match(router, /progress-ui\.js\?v=research-journal-cleanup-1/);
-  assert.match(router, /calorie-stats\.js\?v=research-journal-cleanup-1/);
-  assert.match(progress, /calorie-stats\.js\?v=research-journal-cleanup-1/);
+  assert.match(index, /css\/calorie-stats\.css\?v=macro-adjuster-mfp-1/);
+  assert.match(index, /js\/app\.js\?v=macro-adjuster-mfp-1/);
+  assert.match(app, /router\.js\?v=macro-adjuster-mfp-1/);
+  assert.match(router, /progress-ui\.js\?v=macro-adjuster-mfp-1/);
+  assert.match(router, /calorie-stats\.js\?v=macro-adjuster-mfp-1/);
+  assert.match(progress, /calorie-stats\.js\?v=macro-adjuster-mfp-1/);
 });
