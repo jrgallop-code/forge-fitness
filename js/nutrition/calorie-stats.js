@@ -215,18 +215,32 @@ function mealWeekView(days, target) {
         .join("");
     const knownMeals = [...Object.keys(MEAL_COLORS), ...recent.flatMap(day => Object.keys(day.mealCalories || {}))]
         .filter((meal, index, meals) => meals.indexOf(meal) === index);
-    const dayBars = recent.map(day => {
+    const valuePanels = [];
+    const mealValueCards = (mealCalories = {}) => knownMeals.map(meal => {
+        const value = Number(mealCalories[meal]) || 0;
+        return value > 0 ? `<span style="--meal-color:${MEAL_COLORS[meal] || MEAL_COLORS.Other}"><i></i><small>${meal}</small><strong>${formatNumber(value)} cal</strong></span>` : "";
+    }).join("");
+    const dayBars = recent.map((day, index) => {
         const segments = knownMeals.map(meal => {
             const value = Number(day.mealCalories?.[meal]) || 0;
             return value ? `<i style="height:${value / axisMaximum * 100}%;--meal-color:${MEAL_COLORS[meal] || MEAL_COLORS.Other}"></i>` : "";
         }).join("");
         const date = new Date(`${day.date}T12:00:00`);
-        return `<div class="calorie-meal-week-column" title="${day.logged ? `${formatNumber(day.calories)} calories` : "Not logged"}"><span>${segments}</span><small>${date.toLocaleDateString(undefined, { weekday: "narrow" })}<b>${date.getDate()}</b></small></div>`;
+        const panelId = `calorie-meal-day-values-${index}`;
+        const dateLabel = date.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+        valuePanels.push(`<section class="calorie-meal-week-values" id="${panelId}" data-calorie-meal-values hidden><header><span>${dateLabel}</span><strong>${day.logged ? `${formatNumber(day.calories)} cal` : "Not logged"}</strong></header>${day.logged ? `<div>${mealValueCards(day.mealCalories)}</div>` : '<p>No foods were logged for this day.</p>'}</section>`);
+        return `<button type="button" class="calorie-meal-week-column" title="${day.logged ? `${formatNumber(day.calories)} calories` : "Not logged"}" aria-label="${dateLabel}: ${day.logged ? `${formatNumber(day.calories)} calories` : "not logged"}. Show values" aria-controls="${panelId}" aria-expanded="false" data-calorie-meal-column><span>${segments}</span><small>${date.toLocaleDateString(undefined, { weekday: "narrow" })}<b>${date.getDate()}</b></small></button>`;
     }).join("");
-    const averageBar = `<div class="calorie-meal-week-column is-average" title="${formatNumber(averageCalories)} average calories"><span><i style="height:${averageCalories / axisMaximum * 100}%"></i></span><small>Avg</small></div>`;
+    const averageMeals = knownMeals.reduce((result, meal) => {
+        result[meal] = included.length ? included.reduce((sum, day) => sum + (Number(day.mealCalories?.[meal]) || 0), 0) / included.length : 0;
+        return result;
+    }, {});
+    const averagePanelId = "calorie-meal-average-values";
+    valuePanels.push(`<section class="calorie-meal-week-values" id="${averagePanelId}" data-calorie-meal-values hidden><header><span>Daily average</span><strong>${included.length ? `${formatNumber(averageCalories)} cal` : "No data"}</strong></header>${included.length ? `<div>${mealValueCards(averageMeals)}</div>` : '<p>Complete calorie tracking to calculate an average.</p>'}</section>`);
+    const averageBar = `<button type="button" class="calorie-meal-week-column is-average" title="${formatNumber(averageCalories)} average calories" aria-label="Daily average: ${formatNumber(averageCalories)} calories. Show values" aria-controls="${averagePanelId}" aria-expanded="false" data-calorie-meal-column><span><i style="height:${averageCalories / axisMaximum * 100}%"></i></span><small>Avg</small></button>`;
     const weeklyDifference = target > 0 && included.length === 7 ? included.reduce((sum, day) => sum + day.calories, 0) - target * 7 : null;
     const differenceLabel = weeklyDifference === null ? "Weekly goal difference" : `Calories ${weeklyDifference > 0 ? "over" : "under"} weekly goal`;
-    return `<div class="calorie-meal-week-chart" aria-label="Calories by meal for the last seven days"><div class="calorie-meal-week-axis" aria-hidden="true"><small>cal</small>${axisTicks}</div><div class="calorie-meal-week-plot">${dayBars}${averageBar}</div></div><div class="calorie-meal-week-metrics"><span><small>${differenceLabel}</small><strong>${weeklyDifference === null ? "—" : formatNumber(Math.abs(weeklyDifference))}</strong></span><span><small>Daily average</small><strong>${included.length ? formatNumber(averageCalories) : "—"}</strong></span><span><small>Daily goal</small><strong>${target > 0 ? formatNumber(target) : "—"}</strong></span></div>${included.length < 7 ? '<p class="calorie-stat-note">Today joins the average after calorie tracking is marked complete.</p>' : ""}`;
+    return `<div class="calorie-meal-week-value-region" aria-live="polite">${valuePanels.join("")}</div><div class="calorie-meal-week-chart" aria-label="Calories by meal for the last seven days"><div class="calorie-meal-week-axis" aria-hidden="true"><small>cal</small>${axisTicks}</div><div class="calorie-meal-week-plot">${dayBars}${averageBar}</div></div><p class="calorie-meal-week-hint">Tap a bar to view its values.</p><div class="calorie-meal-week-metrics"><span><small>${differenceLabel}</small><strong>${weeklyDifference === null ? "—" : formatNumber(Math.abs(weeklyDifference))}</strong></span><span><small>Daily average</small><strong>${included.length ? formatNumber(averageCalories) : "—"}</strong></span><span><small>Daily goal</small><strong>${target > 0 ? formatNumber(target) : "—"}</strong></span></div>${included.length < 7 ? '<p class="calorie-stat-note">Today joins the average after calorie tracking is marked complete.</p>' : ""}`;
 }
 
 function phaseInsight(targets, rate, loggedCount) {
@@ -313,6 +327,20 @@ function renderStats(panel) {
     panel.querySelectorAll("[data-calorie-stats-range]").forEach(button => button.addEventListener("click", () => {
         localStorage.setItem(RANGE_KEY, button.dataset.calorieStatsRange);
         renderStats(panel);
+    }));
+    panel.querySelectorAll("[data-calorie-meal-column]").forEach(button => button.addEventListener("click", () => {
+        const wasExpanded = button.getAttribute("aria-expanded") === "true";
+        panel.querySelectorAll("[data-calorie-meal-column]").forEach(column => {
+            column.setAttribute("aria-expanded", "false");
+            column.classList.remove("is-selected");
+        });
+        panel.querySelectorAll("[data-calorie-meal-values]").forEach(values => { values.hidden = true; });
+        if (wasExpanded) return;
+        const values = panel.querySelector(`#${button.getAttribute("aria-controls")}`);
+        if (!values) return;
+        button.setAttribute("aria-expanded", "true");
+        button.classList.add("is-selected");
+        values.hidden = false;
     }));
     panel.querySelector("[data-maintenance-review]")?.addEventListener("click", () => openMaintenanceReview(checkIn));
 }

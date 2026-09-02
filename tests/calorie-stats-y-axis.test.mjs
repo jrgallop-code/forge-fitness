@@ -23,7 +23,18 @@ test("calorie y-axis aligns with the stacked chart grid", async () => {
   assert.match(styles, /calorie-meal-week-plot\{[^}]*repeating-linear-gradient/);
 });
 
-test("calorie stats stylesheet cache key includes the Progress destination update", async () => {
+test("calorie stats stylesheet cache key includes interactive meal chart values", async () => {
   const html = await read("index.html");
-  assert.match(html, /css\/calorie-stats\.css\?v=appearance-leaks-1/);
+  assert.match(html, /css\/calorie-stats\.css\?v=meal-chart-values-1/);
+});
+
+test("seven-day meal bars reveal accessible daily and average value cards", async () => {
+  const [source, styles] = await Promise.all([read("js/nutrition/calorie-stats.js"), read("css/calorie-stats.css")]);
+  assert.match(source, /data-calorie-meal-column/);
+  assert.match(source, /aria-controls="\$\{panelId\}" aria-expanded="false"/);
+  assert.match(source, /data-calorie-meal-values hidden/);
+  assert.match(source, /Tap a bar to view its values\./);
+  assert.match(source, /button\.setAttribute\("aria-expanded", "true"\)/);
+  assert.match(styles, /calorie-meal-week-values\[hidden\]\{display:none\}/);
+  assert.match(styles, /calorie-meal-week-column\.is-selected/);
 });
