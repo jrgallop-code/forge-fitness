@@ -278,7 +278,7 @@ test("production entry points load the theme before paint and bust caches", asyn
   ]);
   assert.match(html, /level_up_appearance_settings/);
   assert.ok(html.indexOf("level_up_appearance_settings") < html.indexOf("css/styles.css"));
-  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-13/);
+  assert.match(html, /css\/appearance-themes\.css\?v=appearance-themes-14/);
   assert.match(html, /css\/activity-calendar\.css\?v=theme-accent-calendar-1/);
   assert.match(html, /css\/smart-build-coach-loading\.css\?v=theme-accent-calendar-1/);
   assert.match(html, /css\/cardio-analytics\.css\?v=theme-accent-calendar-1/);
@@ -287,5 +287,5 @@ test("production entry points load the theme before paint and bust caches", asyn
   assert.match(app, /appearance-theme\.js\?v=appearance-themes-3/);
   assert.match(app, /router\.js\?v=theme-accent-calendar-1/);
   assert.match(router, /more-ui-v2\.js\?v=pulse-theme-1/);
-  assert.match(worker, /2026-09-02-139/);
+  assert.match(worker, /2026-09-02-140/);
 });

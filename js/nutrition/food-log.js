@@ -34,6 +34,14 @@ import {
     parseIngredientText,
     parseSpokenIngredientText
 } from "./ingredient-paste-parser.js?v=voice-food-1";
+import {
+    getNutritionMacroPreference,
+    getNutritionProfile
+} from "./nutrition-storage.js?v=food-log-macro-bars-1";
+import {
+    calculateMacroTargets,
+    poundsToKg
+} from "./tdee-calculator.js?v=food-log-macro-bars-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -217,6 +225,8 @@ export function initializeFoodLog() {
     document.querySelector("[data-create-meal]")?.addEventListener("click", () => openMealBuilder());
     document.querySelector("[data-paste-meal]")?.addEventListener("click", () => openMealBuilder([], "", null, { pasteOpen: true }));
     window.addEventListener("levelup:food-log-updated", renderDay);
+    window.addEventListener("levelup:nutrition-updated", renderDay);
+    window.addEventListener("levelup:nutrition-phase-updated", renderDay);
     renderDay();
 }
 
@@ -311,11 +321,13 @@ function summaryMarkup(totals, target) {
 
 function macroTile(label, value, target) {
     const safeTarget = Math.max(0, Number(target) || 0);
-    const targetText = safeTarget > 0 ? ` / ${Math.round(safeTarget)} g` : " g";
     const progress = safeTarget > 0
         ? Math.min(100, Math.max(0, (Number(value) / safeTarget) * 100))
         : 0;
-    return `<div class="food-macro-total food-macro-total--${label.toLowerCase()}"><span>${label}</span><strong>${roundOne(value)}${escapeHtml(targetText)}</strong><i aria-hidden="true"><b style="width:${progress}%"></b></i></div>`;
+    const targetText = safeTarget > 0
+        ? ` <small>/ ${Math.round(safeTarget)} g</small>`
+        : "";
+    return `<div class="food-macro-total food-macro-total--${label.toLowerCase()}"><span>${label}</span><strong>${roundOne(value)} g${targetText}</strong><i role="progressbar" aria-label="${escapeHtml(label)} target progress" aria-valuemin="0" aria-valuemax="${safeTarget}" aria-valuenow="${Math.max(0, Number(value) || 0)}"><b style="width:${progress}%"></b></i></div>`;
 }
 
 function mealMarkup(meal, entries, yesterdayEntries) {
@@ -1397,14 +1409,24 @@ function activeTargets() {
     const plan = readJson("level_up_nutrition_plan", {});
     const phases = readJson("level_up_nutrition_phases", []);
     const active = Array.isArray(phases) ? [...phases].reverse().find(phase => !phase?.endDate) : null;
-    const macro = readJson("level_up_nutrition_macro", {});
-    const manual = macro?.useManual ? macro.manualMacros : null;
-    const auto = macro?.autoBaseline;
+    const calories = Number(active?.currentCalories ?? active?.startCalories ?? plan?.calculatedCalories ?? plan?.currentCalories) || null;
+    const preference = getNutritionMacroPreference();
+    const manual = preference?.manualMacros;
+    const hasManualTargets = preference?.useManual === true &&
+        [manual?.protein, manual?.carbs, manual?.fat]
+            .every(value => Number.isFinite(Number(value)) && Number(value) >= 0);
+    const calculated = hasManualTargets
+        ? manual
+        : calculateMacroTargets({
+            calories,
+            weightKg: poundsToKg(Number(getNutritionProfile()?.weightLb)),
+            macroPreset: preference?.macroPreset || "balanced"
+        });
     return {
-        calories: Number(active?.currentCalories ?? active?.startCalories ?? plan?.calculatedCalories ?? plan?.currentCalories) || null,
-        protein: Number(manual?.protein ?? auto?.protein) || null,
-        carbs: Number(manual?.carbs ?? auto?.carbs) || null,
-        fat: Number(manual?.fat ?? auto?.fat) || null
+        calories,
+        protein: Number(calculated?.protein) || null,
+        carbs: Number(calculated?.carbs) || null,
+        fat: Number(calculated?.fat) || null
     };
 }
 

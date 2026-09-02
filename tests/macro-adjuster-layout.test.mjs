@@ -64,8 +64,8 @@ test('macro colors and controls match the existing Level Up nutrition system', (
 });
 
 test('the redesigned adjuster ships with fresh browser and app cache keys', () => {
-  assert.match(index, /css\/manual-macros\.css\?v=macro-breakdown-only-1/);
-  assert.match(index, /js\/nutrition\/manual-macros\.js\?v=macro-breakdown-only-1/);
-  assert.match(router, /energy-profile\.js\?v=macro-breakdown-only-1/);
-  assert.match(worker, /2026-09-02-139/);
+  assert.match(index, /css\/manual-macros\.css\?v=food-log-macro-bars-1/);
+  assert.match(index, /js\/nutrition\/manual-macros\.js\?v=food-log-macro-bars-1/);
+  assert.match(router, /energy-profile\.js\?v=food-log-macro-bars-1/);
+  assert.match(worker, /2026-09-02-140/);
 });

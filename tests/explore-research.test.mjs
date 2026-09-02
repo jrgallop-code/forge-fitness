@@ -14,9 +14,9 @@ test('Explore remains a first-class More destination without dashboard clutter',
   assert.match(more, /openExploreResearch\(\)/);
   assert.doesNotMatch(explore, /data-dashboard-explore-research/);
   assert.doesNotMatch(explore, /NEW IN RESEARCH/);
-  assert.match(index, /explore-research\.css\?v=macro-breakdown-only-1/);
-  assert.match(index, /explore-theme-fix\.css\?v=macro-breakdown-only-1/);
-  assert.match(index, /explore-research\.js\?v=macro-breakdown-only-1/);
+  assert.match(index, /explore-research\.css\?v=food-log-macro-bars-1/);
+  assert.match(index, /explore-theme-fix\.css\?v=food-log-macro-bars-1/);
+  assert.match(index, /explore-research\.js\?v=food-log-macro-bars-1/);
 });
 
 test('Explore uses real publication records, study context and source links', () => {
@@ -58,7 +58,7 @@ test('Explore supports filters, evidence guides and a saved reading list', () =>
   assert.match(explore, /guide-rest/);
   assert.match(styles, /\.explore-tabs/);
   assert.match(styles, /@media\(max-width:520px\)/);
-  assert.match(worker, /2026-09-02-139/);
+  assert.match(worker, /2026-09-02-140/);
 });
 
 test('Explore photo headings and theme cards retain readable contrast', () => {

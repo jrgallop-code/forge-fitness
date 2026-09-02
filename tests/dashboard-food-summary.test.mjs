@@ -84,6 +84,13 @@ test("Food Log summary uses the subtle macro palette and progress bars", async (
 
     assert.match(foodLog, /food-macro-total--\$\{label\.toLowerCase\(\)\}/);
     assert.match(foodLog, /style="width:\$\{progress\}%"/);
+    assert.match(foodLog, /calculateMacroTargets\(\{/);
+    assert.match(foodLog, /getNutritionProfile\(\)\?\.weightLb/);
+    assert.match(foodLog, /getNutritionMacroPreference\(\)/);
+    assert.match(foodLog, /<small>\/ \$\{Math\.round\(safeTarget\)\} g<\/small>/);
+    assert.match(foodLog, /role="progressbar"/);
+    assert.match(foodLog, /"levelup:nutrition-updated", renderDay/);
+    assert.match(foodLog, /"levelup:nutrition-phase-updated", renderDay/);
     assert.match(styles, /food-macro-total--carbs/);
     assert.match(styles, /#4fa8ff/);
     assert.match(styles, /food-macro-total--fat/);
