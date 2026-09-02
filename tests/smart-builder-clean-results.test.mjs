@@ -34,6 +34,6 @@ test("builder result assets use fresh production cache keys", async () => {
   ]);
 
   assert.match(html, /css\/smart-build\.css\?v=clean-builder-results-1/);
-  assert.match(html, /smart-build-full-body-guardrails\.js\?v=coach-build-personalized-1/);
-  assert.match(loader, /smart-build-unified-engine-v11\.js\?v=coach-build-personalized-1/);
+  assert.match(html, /smart-build-full-body-guardrails\.js\?v=coach-build-personalized-2/);
+  assert.match(loader, /smart-build-unified-engine-v11\.js\?v=coach-build-personalized-2/);
 });
