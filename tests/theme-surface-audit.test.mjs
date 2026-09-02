@@ -157,5 +157,5 @@ test('Level Up black restores the original green muscle-volume bars only for tha
 });
 
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-02-128/);
+  assert.match(worker, /2026-09-02-129/);
 });

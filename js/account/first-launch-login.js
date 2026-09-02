@@ -223,7 +223,7 @@ function ensureStyles() {
     if (document.querySelector('link[data-level-up-login]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/first-launch-login.css?v=first-launch-cleanup-1";
+    link.href = "css/first-launch-login.css?v=google-button-crop-2";
     link.dataset.levelUpLogin = "true";
     document.head.appendChild(link);
 }

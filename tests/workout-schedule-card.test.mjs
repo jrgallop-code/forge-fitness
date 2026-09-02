@@ -14,5 +14,5 @@ test("the Workout Schedule banner uses the app card radius", () => {
 
 test("the rounded schedule card ships with a fresh browser and app cache key", () => {
   assert.match(index, /css\/workout-schedule\.css\?v=workout-schedule-card-radius-1/);
-  assert.match(worker, /2026-09-02-128/);
+  assert.match(worker, /2026-09-02-129/);
 });
