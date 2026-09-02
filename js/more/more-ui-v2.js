@@ -7,7 +7,7 @@ import { initializeDataSpreadsheetExport } from "../core/data-spreadsheet-export
 import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-card-1";
 import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.js?v=privacy-account-1";
 import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=granular-units-1";
-import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=granular-units-1";
+import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-display-name-1";
 import { renderAdaptiveGuidanceSettings, initializeAdaptiveGuidanceSettings } from "./adaptive-guidance-settings.js?v=deload-workout-preview-1";
 import { openLessonLibrary } from "./learn-level-up.js?v=learn-level-up-2";
 import { openExploreResearch } from "./explore-research.js?v=explore-research-2";
@@ -42,7 +42,7 @@ export function renderMore() {
     <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Choose body weight, workout weight, distance and measurement units separately.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="adaptive-guidance"><span class="more-menu-icon">${ICONS.guidance}</span><span><strong class="adaptive-title-with-badge">Adaptive Guidance <span class="adaptive-beta-badge">BETA</span></strong><small>Optional recovery, effort, volume and deload suggestions.</small></span></button>
     <button class="more-menu-card owner-analytics-launch" id="owner-analytics-menu" type="button" data-more-page="admin-analytics" hidden><span class="more-menu-icon">${ICONS.analytics}</span><span><strong>Stats & Analytics</strong><small>Owner-only charts for growth, activity and training engagement.</small></span></button>
-    <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Body Profile</strong><small>Update your personal details, training experience and anatomy appearance.</small></span></button>
+    <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Body Profile</strong><small>Update your name, personal details, training experience and anatomy appearance.</small></span></button>
     </div>
     <div class="more-menu-group" data-more-group="health"><h3>Health &amp; records</h3>
     <button class="more-menu-card" type="button" data-more-page="history"><span class="more-menu-icon">${ICONS.history}</span><span><strong>Workout History</strong><small>Review completed workouts, summaries and training details.</small></span></button>
@@ -82,7 +82,7 @@ export function initializeMore() {
         if (page === "profile-setup") {
             const content = document.getElementById("content");
             if (!content) return;
-            if (!document.querySelector('link[href*="profile-appearance.css"]')) { const link=document.createElement("link");link.rel="stylesheet";link.href="css/profile-appearance.css?v=profile-appearance-1";document.head.appendChild(link); }
+            if (!document.querySelector('link[href*="profile-appearance.css"]')) { const link=document.createElement("link");link.rel="stylesheet";link.href="css/profile-appearance.css?v=profile-display-name-1";document.head.appendChild(link); }
             const showMore=()=>{content.innerHTML=renderMore();initializeMore();window.scrollTo({top:0,behavior:"smooth"});};
             content.innerHTML=renderProfileAppearance();initializeProfileAppearance({onBack:showMore});window.scrollTo({top:0,behavior:"smooth"});
             return;
