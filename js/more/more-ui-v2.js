@@ -9,7 +9,7 @@ import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.j
 import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=more-units-miles-1";
 import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-display-name-1";
 import { renderAdaptiveGuidanceSettings, initializeAdaptiveGuidanceSettings } from "./adaptive-guidance-settings.js?v=deload-workout-preview-1";
-import { openLessonLibrary } from "./learn-level-up.js?v=learn-level-up-2";
+import { openLessonLibrary } from "./learn-level-up.js?v=expenditure-tutorial-1";
 import { openExploreResearch } from "./explore-research.js?v=explore-research-2";
 import { appearanceMenuIcon, renderAppearanceSettings, initializeAppearanceSettings } from "./appearance-settings.js?v=pulse-theme-1";
 
@@ -52,7 +52,7 @@ export function renderMore() {
     <button class="more-menu-card" type="button" data-more-page="water"><span class="more-menu-icon">${ICONS.water}</span><span><strong>Water Log</strong><small>Record daily water and review recent entries.</small></span></button>
     </div>
     <div class="more-menu-group" data-more-group="app-data"><h3>Support &amp; data</h3>
-    <button class="more-menu-card" type="button" data-more-page="learn"><span class="more-menu-icon">${ICONS.learn}</span><span><strong>Learn Level Up</strong><small>Short walkthroughs for workouts, nutrition and progress.</small></span></button>
+    <button class="more-menu-card" type="button" data-more-page="learn"><span class="more-menu-icon">${ICONS.learn}</span><span><strong>Tutorials</strong><small>Restart in-app tutorials and open walkthroughs for workouts, nutrition and progress.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="exports-backup"><span class="more-menu-icon">${ICONS.backup}</span><span><strong>Exports & Backup</strong><small>Export, restore and transfer your Level Up data with Google Drive.</small></span></button>
     </div>
     </section>`;

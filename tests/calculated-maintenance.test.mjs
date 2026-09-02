@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
-import { calculateMaintenanceEstimate, calculateMaintenanceHistory, getCalculatedMaintenanceHistory, stabilizeMaintenanceEstimate } from "../js/nutrition/calculated-maintenance.js";
+import { calculateMaintenanceEstimate, calculateMaintenanceHistory, stabilizeMaintenanceEstimate } from "../js/nutrition/calculated-maintenance.js";
 import { calculateDisplayWeightTrend } from "../js/core/weight-trend.js";
 
 function key(offset) {
@@ -238,30 +238,6 @@ test("saved weekly expenditure snapshots remain available as historical anchors"
         ["2026-08-19", 2400],
         ["2026-08-26", 2475]
     ]);
-});
-
-test("historical expenditure recovers saved values from prior nutrition phase adjustments", () => {
-    const originalStorage = globalThis.localStorage;
-    const values = new Map([
-        ["level_up_nutrition_phases", JSON.stringify([{ adjustments: [
-            { date: "2026-08-19T14:00:00.000Z", maintenanceCalories: 2375 },
-            { date: "2026-08-26T14:00:00.000Z", maintenanceCalories: 2450 }
-        ] }])]
-    ]);
-    globalThis.localStorage = {
-        getItem: name => values.get(name) ?? null,
-        setItem: (name, value) => values.set(name, value)
-    };
-
-    try {
-        const history = getCalculatedMaintenanceHistory(null, { startDate: "2026-08-19" });
-        assert.deepEqual(history.filter(point => point.recorded).slice(0, 2).map(point => [point.date, point.maintenanceCalories]), [
-            ["2026-08-19", 2375],
-            ["2026-08-26", 2450]
-        ]);
-    } finally {
-        globalThis.localStorage = originalStorage;
-    }
 });
 
 test("waits for seven food days and a fourteen-day weight span before a weekly update", () => {

@@ -1,4 +1,5 @@
 import { navigate } from "../core/router.js?v=deload-workout-preview-1";
+import { CONTEXTUAL_TUTORIALS, getTutorialState, restartTutorial } from "../core/tutorials.js?v=expenditure-tutorial-1";
 
 const STORAGE_KEY = "level_up_completed_lessons_v1";
 
@@ -6,7 +7,7 @@ function ensureStyles() {
     if (document.querySelector('link[data-learn-level-up-styles]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/learn-level-up.css?v=learn-level-up-2";
+    link.href = "css/learn-level-up.css?v=expenditure-tutorial-1";
     link.dataset.learnLevelUpStyles = "";
     document.head.appendChild(link);
 }
@@ -30,7 +31,7 @@ const LESSONS = [
             ["Start on Dashboard", "This is the app’s daily overview. Scroll here to see today’s schedule, your next workout, nutrition progress and recent trends.", "Bottom bar → Dashboard (far-left button)"],
             ["Open the main areas", "The five buttons stay at the bottom of every main screen: Dashboard, Workout, Progress, Nutrition and More.", "Bottom bar → choose a labelled icon"],
             ["Use the primary action", "Bright red buttons are the main next step on a screen, such as starting a workout, logging food or saving changes.", "Inside a screen or card → bright red button"],
-            ["Find help again", "Return here whenever you need a refresher. Opening a guide never changes your saved workout or nutrition data.", "Bottom bar → More (far right) → Learn Level Up"]
+            ["Find help again", "Return here whenever you need a refresher. Opening a guide never changes your saved workout or nutrition data.", "Bottom bar → More (far right) → Tutorials"]
         ]
     },
     {
@@ -140,13 +141,26 @@ function lessonCard(lesson, completed) {
     </button>`;
 }
 
+function contextualTutorialCard(tutorial) {
+    const { status } = getTutorialState(tutorial.id);
+    const label = status === "active" ? "Continue" : status === "not-started" ? "Start" : "Start again";
+    const state = status === "completed" ? "Completed" : status === "dismissed" ? "Dismissed" : status === "active" ? "In progress" : "New";
+    return `<button class="learn-contextual-row" type="button" data-contextual-tutorial="${escapeHtml(tutorial.id)}">
+        <span class="learn-lesson-icon">${ICONS.target}</span>
+        <span class="learn-lesson-copy"><strong>${escapeHtml(tutorial.title)}</strong><small>${escapeHtml(tutorial.summary)}</small><span>${escapeHtml(tutorial.duration)} · ${tutorial.steps.length} cards</span></span>
+        <span class="learn-contextual-state"><small>${state}</small><strong>${label} →</strong></span>
+    </button>`;
+}
+
 export function renderLessonLibrary() {
     const completed = readCompleted();
     const total = LESSONS.length;
     const done = LESSONS.filter(lesson => completed.has(lesson.id)).length;
     const percent = Math.round((done / total) * 100);
     return `<section class="learn-shell">
-        <header class="learn-header"><button class="nutrition-planner-back" type="button" data-learn-back>← More</button><span class="eyebrow">LEARN LEVEL UP</span><h2>Step-by-step walkthroughs</h2><p>Each guide names the exact tab, button and screen location, then takes you straight to the feature when you are ready.</p></header>
+        <header class="learn-header"><button class="nutrition-planner-back" type="button" data-learn-back>← More</button><span class="eyebrow">TUTORIALS</span><h2>Learn Level Up</h2><p>Restart in-app tutorials or use a step-by-step guide whenever you want a refresher.</p></header>
+        <section class="learn-contextual-section" aria-labelledby="contextual-tutorials-heading"><header><div><small>ON-SCREEN HELP</small><h3 id="contextual-tutorials-heading">In-app tutorials</h3></div><p>These appear beside the feature they explain and can always be reopened here.</p></header>${CONTEXTUAL_TUTORIALS.map(contextualTutorialCard).join("")}</section>
+        <div class="learn-library-heading"><small>APP GUIDES</small><h3>Step-by-step walkthroughs</h3></div>
         <section class="learn-progress-card" aria-label="Lesson progress"><div><strong>${done} of ${total} complete</strong><span>${done === total ? "You know your way around Level Up." : "Choose only the guide you need."}</span></div><b>${percent}%</b><div class="learn-progress-track"><i style="width:${percent}%"></i></div></section>
         <section class="learn-lesson-list" aria-label="Level Up lessons">${LESSONS.map(lesson => lessonCard(lesson, completed)).join("")}</section>
     </section>`;
@@ -205,10 +219,28 @@ function showLesson(content, lesson, stepIndex = 0) {
 
 function bindLibrary(content) {
     content.querySelector("[data-learn-back]")?.addEventListener("click", returnToMore);
+    content.querySelectorAll("[data-contextual-tutorial]").forEach(button => button.addEventListener("click", () => {
+        const tutorial = CONTEXTUAL_TUTORIALS.find(item => item.id === button.dataset.contextualTutorial);
+        if (tutorial) openContextualTutorial(tutorial);
+    }));
     content.querySelectorAll("[data-lesson-id]").forEach(button => button.addEventListener("click", () => {
         const lesson = LESSONS.find(item => item.id === button.dataset.lessonId);
         if (lesson) showLesson(content, lesson);
     }));
+}
+
+function openContextualTutorial(tutorial) {
+    restartTutorial(tutorial.id);
+    const navButton = document.querySelector(`.bottom-nav .nav-btn[data-page="${tutorial.page}"]`);
+    if (navButton) navButton.click();
+    else navigate(tutorial.page);
+
+    window.setTimeout(() => {
+        document.getElementById(tutorial.tab)?.click();
+        window.setTimeout(() => {
+            document.querySelector(`[data-${tutorial.id}-tutorial]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 80);
+    }, 80);
 }
 
 function openFeature(lesson) {

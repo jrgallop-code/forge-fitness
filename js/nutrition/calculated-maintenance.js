@@ -4,7 +4,6 @@ const FOOD_LOG_KEY = "level_up_food_log_v1";
 const WEIGHT_KEY = "forge_weight_entries";
 const WEEKLY_ESTIMATE_KEY = "level_up_weekly_tdee_estimate_v1";
 const WEEKLY_HISTORY_KEY = "level_up_weekly_tdee_history_v1";
-const PHASES_KEY = "level_up_nutrition_phases";
 const DAY_MS = 86400000;
 const WEEKLY_REVIEW_DAYS = 7;
 const BUILDING_CONFIDENCE_CAP = 50;
@@ -46,14 +45,6 @@ function readStoredMaintenanceHistory() {
     const entries = Array.isArray(storedHistory) ? [...storedHistory] : [];
     const currentSnapshot = readJson(WEEKLY_ESTIMATE_KEY, null);
     if (currentSnapshot) entries.push(currentSnapshot);
-
-    const phases = readJson(PHASES_KEY, []);
-    (Array.isArray(phases) ? phases : []).forEach(phase => {
-        (Array.isArray(phase?.adjustments) ? phase.adjustments : []).forEach(adjustment => {
-            entries.push({ date: adjustment?.date, maintenanceCalories: adjustment?.maintenanceCalories });
-        });
-        if (phase?.endDate) entries.push({ date: phase.endDate, maintenanceCalories: phase.maintenanceCalories });
-    });
     return normalizeMaintenanceHistory(entries);
 }
 
@@ -233,7 +224,6 @@ export function getCalculatedMaintenanceHistory(profileEstimate = null, { startD
     const weightRaw = localStorage.getItem(WEIGHT_KEY) || "";
     const historyRaw = localStorage.getItem(WEEKLY_HISTORY_KEY) || "";
     const snapshotRaw = localStorage.getItem(WEEKLY_ESTIMATE_KEY) || "";
-    const phasesRaw = localStorage.getItem(PHASES_KEY) || "";
     const cacheMatches = maintenanceHistoryCache
         && maintenanceHistoryCache.date === dateKey(today)
         && maintenanceHistoryCache.startDate === startDate
@@ -241,8 +231,7 @@ export function getCalculatedMaintenanceHistory(profileEstimate = null, { startD
         && maintenanceHistoryCache.foodRaw === foodRaw
         && maintenanceHistoryCache.weightRaw === weightRaw
         && maintenanceHistoryCache.historyRaw === historyRaw
-        && maintenanceHistoryCache.snapshotRaw === snapshotRaw
-        && maintenanceHistoryCache.phasesRaw === phasesRaw;
+        && maintenanceHistoryCache.snapshotRaw === snapshotRaw;
     if (cacheMatches) return maintenanceHistoryCache.points;
 
     let foodLog = {};
@@ -251,7 +240,7 @@ export function getCalculatedMaintenanceHistory(profileEstimate = null, { startD
     try { weights = JSON.parse(weightRaw || "[]") || []; } catch { weights = []; }
     const snapshotHistory = readStoredMaintenanceHistory();
     const points = calculateMaintenanceHistory({ foodLog, weights, snapshotHistory, startDate, endDate: today, profileEstimate });
-    maintenanceHistoryCache = { date: dateKey(today), startDate, profileEstimate, foodRaw, weightRaw, historyRaw, snapshotRaw, phasesRaw, points };
+    maintenanceHistoryCache = { date: dateKey(today), startDate, profileEstimate, foodRaw, weightRaw, historyRaw, snapshotRaw, points };
     return points;
 }
 
