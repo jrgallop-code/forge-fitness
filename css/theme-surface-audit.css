@@ -954,3 +954,60 @@ html[data-theme] .food-builder-item-editor .food-builder-item-actions button:not
     background: var(--surface-raised) !important;
     color: var(--text) !important;
 }
+
+/* Routine Import is injected after the base theme sheet; keep every nested control semantic. */
+html[data-theme] .routine-import-launch {
+    border-color: var(--card-border) !important;
+    background: var(--card) !important;
+    color: var(--text) !important;
+}
+
+html[data-theme] :is(.routine-import-day-head, .routine-import-exercise) {
+    border-color: var(--line) !important;
+}
+
+html[data-theme] :is(.routine-import-day-head h4, .routine-import-match strong, .routine-import-summary h4, .routine-import-savebar strong) {
+    color: var(--heading) !important;
+    -webkit-text-fill-color: var(--heading) !important;
+}
+
+html[data-theme] :is(.routine-import-topbar p, .routine-import-review-head p, .routine-import-match small, .routine-import-fields label, .routine-import-note, .routine-import-summary p, .routine-import-summary small, .routine-import-savebar small, .routine-import-tools small) {
+    color: var(--muted) !important;
+    -webkit-text-fill-color: var(--muted) !important;
+}
+
+html[data-theme] .routine-import-row-actions button {
+    border-color: var(--line) !important;
+    background: var(--card) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    box-shadow: none !important;
+}
+
+html[data-theme] .routine-import-row-actions button:active {
+    border-color: var(--accent) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+    -webkit-text-fill-color: var(--accent-text) !important;
+}
+
+html[data-theme] .routine-import-volume div {
+    border: 1px solid var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+}
+
+html[data-theme] .routine-import-volume div.is-high,
+html[data-theme] .routine-import-exercise.needs-review {
+    border-color: color-mix(in srgb, var(--warning) 42%, var(--line)) !important;
+    background: color-mix(in srgb, var(--warning) 10%, var(--surface-raised)) !important;
+    color: var(--warning-text) !important;
+}
+
+html[data-theme] .routine-import-match > button {
+    border-color: color-mix(in srgb, var(--warning) 42%, var(--line)) !important;
+    background: color-mix(in srgb, var(--warning) 10%, var(--surface-raised)) !important;
+    color: var(--warning-text) !important;
+    -webkit-text-fill-color: var(--warning-text) !important;
+}
