@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=whats-new-1";
+import { navigate } from "../core/router.js?v=first-launch-cleanup-1";
 
 
 export function renderNavbar() {
