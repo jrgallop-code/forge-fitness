@@ -1,4 +1,4 @@
-import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "./calculated-maintenance.js?v=tdee-history-chart-1";
+import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "./calculated-maintenance.js?v=tdee-history-data-2";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
@@ -182,8 +182,8 @@ function expenditureTrendState(history, targets, currentEstimate, range = select
         .filter(point => point.date >= startDate && point.date <= endDate)
         .map(point => ({ ...point }));
     const currentValue = Number(currentEstimate?.maintenanceCalories);
-    if (Number.isFinite(currentValue) && series.at(-1)?.date === endDate) series[series.length - 1].maintenanceCalories = currentValue;
-    const available = series.filter(point => Number.isFinite(point.maintenanceCalories));
+    if (Number.isFinite(currentValue) && currentValue > 0 && series.at(-1)?.date === endDate) series[series.length - 1].maintenanceCalories = currentValue;
+    const available = series.filter(point => Number.isFinite(point.maintenanceCalories) && point.maintenanceCalories > 0);
     const average = available.length ? available.reduce((sum, point) => sum + point.maintenanceCalories, 0) / available.length : null;
     const difference = available.length > 1 ? available.at(-1).maintenanceCalories - available[0].maintenanceCalories : null;
     return { range, startDate, endDate, series, available, average, difference };
@@ -201,6 +201,7 @@ function formatChartRange(state) {
 }
 
 function formatSignedCalories(value) {
+    if (value === null || value === undefined || value === "") return "—";
     const number = Number(value);
     if (!Number.isFinite(number)) return "—";
     const sign = number > 0 ? "+" : number < 0 ? "−" : "";
@@ -208,10 +209,10 @@ function formatSignedCalories(value) {
 }
 
 function expenditureTrendCard(state, profileEstimate, phase) {
-    const difference = Number(state.difference);
+    const difference = state.difference === null || state.difference === undefined ? null : Number(state.difference);
     const differenceLabel = formatSignedCalories(state.difference);
-    const direction = !Number.isFinite(difference) ? "Waiting" : difference > 0 ? "Increase" : difference < 0 ? "Decrease" : "No change";
-    const hasChart = state.available.length > 1;
+    const direction = difference === null || !Number.isFinite(difference) ? "Waiting" : difference > 0 ? "Increase" : difference < 0 ? "Decrease" : "No change";
+    const hasChart = state.available.length > 0;
     return `<article class="calorie-stat-card expenditure-trend-card">
         <header class="expenditure-trend-heading"><div><small>EXPENDITURE TREND</small><h3>TDEE Over Time</h3><p>${formatChartRange(state)}</p></div></header>
         <div class="expenditure-trend-metrics">
@@ -223,8 +224,8 @@ function expenditureTrendCard(state, profileEstimate, phase) {
             <div class="expenditure-chart-tooltip" data-expenditure-tooltip hidden aria-live="polite"></div>
             <div class="expenditure-chart-empty"><strong>More data needed</strong><p>Keep logging food and body weight to build your expenditure trend.</p></div>
         </div>
-        <div class="expenditure-chart-legend" aria-hidden="true"><span><i class="is-tdee"></i>TDEE</span>${Number.isFinite(profileEstimate) ? '<span><i class="is-profile"></i>Profile estimate</span>' : ""}</div>
-        <p class="expenditure-chart-hint">Tap or drag across the graph for daily details.</p>
+        <div class="expenditure-chart-legend" aria-hidden="true"><span><i class="is-tdee"></i>TDEE</span>${Number.isFinite(profileEstimate) ? '<span><i class="is-profile"></i>Generic expenditure</span>' : ""}</div>
+        <p class="expenditure-chart-hint">Tap or drag for daily details. Double-tap to close.</p>
         <div class="expenditure-chart-ranges" role="group" aria-label="TDEE chart date range">
             ${Object.entries(TDEE_RANGE_OPTIONS).map(([value, option]) => `<button type="button" data-tdee-chart-range="${value}" aria-pressed="${state.range === value}" ${value === "phase" && !phase?.startDate ? "disabled" : ""}>${option.label}</button>`).join("")}
         </div>
@@ -239,15 +240,35 @@ function niceCalorieStep(value) {
     return [25, 50, 100, 200, 250, 500, 1000].find(step => step >= value) || 2000;
 }
 
+function expenditureSegments(series) {
+    const segments = [];
+    let segment = [];
+    series.forEach(point => {
+        if (Number.isFinite(point.maintenanceCalories) && point.maintenanceCalories > 0) {
+            segment.push(point);
+            return;
+        }
+        if (segment.length) segments.push(segment);
+        segment = [];
+    });
+    if (segment.length) segments.push(segment);
+    return segments;
+}
+
 function renderExpenditureChart(panel, state, profileEstimate) {
     const canvas = panel.querySelector("[data-expenditure-chart]");
     const tooltip = panel.querySelector("[data-expenditure-tooltip]");
     const shell = canvas?.closest(".expenditure-chart-shell");
-    if (!canvas || !tooltip || !shell || state.available.length < 2) return;
+    if (!canvas || !tooltip || !shell || !state.available.length) return;
     const context = canvas.getContext("2d");
     if (!context) return;
 
     let selectedIndex = null;
+    let lastTouchTap = null;
+    const padding = { top: 18, right: 44, bottom: 30, left: 8 };
+    const startMs = new Date(`${state.startDate}T12:00:00`).getTime();
+    const endMs = new Date(`${state.endDate}T12:00:00`).getTime();
+    const segments = expenditureSegments(state.series);
     const draw = () => {
         const ratio = Math.min(2, window.devicePixelRatio || 1);
         const width = Math.max(280, Math.round(shell.clientWidth || 320));
@@ -258,7 +279,6 @@ function renderExpenditureChart(panel, state, profileEstimate) {
         context.setTransform(ratio, 0, 0, ratio, 0, 0);
         context.clearRect(0, 0, width, height);
 
-        const padding = { top: 18, right: 44, bottom: 30, left: 8 };
         const plotWidth = width - padding.left - padding.right;
         const plotHeight = height - padding.top - padding.bottom;
         const values = state.available.map(point => point.maintenanceCalories);
@@ -269,8 +289,6 @@ function renderExpenditureChart(panel, state, profileEstimate) {
         let yMin = Math.floor((minimum - step) / step) * step;
         let yMax = Math.ceil((maximum + step) / step) * step;
         if (yMax <= yMin) yMax = yMin + step * 4;
-        const startMs = new Date(`${state.available[0].date}T12:00:00`).getTime();
-        const endMs = new Date(`${state.available.at(-1).date}T12:00:00`).getTime();
         const x = point => padding.left + ((new Date(`${point.date}T12:00:00`).getTime() - startMs) / Math.max(1, endMs - startMs)) * plotWidth;
         const y = value => padding.top + (1 - (value - yMin) / (yMax - yMin)) * plotHeight;
 
@@ -305,30 +323,40 @@ function renderExpenditureChart(panel, state, profileEstimate) {
         const area = context.createLinearGradient(0, padding.top, 0, padding.top + plotHeight);
         area.addColorStop(0, chartThemeColor("--accent-glow", "rgba(255,59,75,.28)"));
         area.addColorStop(1, "rgba(255,59,75,0)");
-        context.beginPath();
-        state.available.forEach((point, index) => index ? context.lineTo(x(point), y(point.maintenanceCalories)) : context.moveTo(x(point), y(point.maintenanceCalories)));
-        context.lineTo(x(state.available.at(-1)), padding.top + plotHeight);
-        context.lineTo(x(state.available[0]), padding.top + plotHeight);
-        context.closePath();
         context.fillStyle = area;
-        context.fill();
-
-        context.beginPath();
-        state.available.forEach((point, index) => index ? context.lineTo(x(point), y(point.maintenanceCalories)) : context.moveTo(x(point), y(point.maintenanceCalories)));
         context.strokeStyle = chartThemeColor("--accent", "#ff3b4b");
         context.lineWidth = 3;
         context.lineCap = "round";
         context.lineJoin = "round";
-        context.stroke();
+        segments.forEach(segment => {
+            if (segment.length === 1) {
+                context.beginPath();
+                context.arc(x(segment[0]), y(segment[0].maintenanceCalories), 3, 0, Math.PI * 2);
+                context.fillStyle = chartThemeColor("--accent", "#ff3b4b");
+                context.fill();
+                return;
+            }
+            context.beginPath();
+            segment.forEach((point, index) => index ? context.lineTo(x(point), y(point.maintenanceCalories)) : context.moveTo(x(point), y(point.maintenanceCalories)));
+            context.lineTo(x(segment.at(-1)), padding.top + plotHeight);
+            context.lineTo(x(segment[0]), padding.top + plotHeight);
+            context.closePath();
+            context.fillStyle = area;
+            context.fill();
 
-        const labelCount = state.range === "1w" ? Math.min(7, state.available.length) : 5;
+            context.beginPath();
+            segment.forEach((point, index) => index ? context.lineTo(x(point), y(point.maintenanceCalories)) : context.moveTo(x(point), y(point.maintenanceCalories)));
+            context.stroke();
+        });
+
+        const labelCount = state.range === "1w" ? 7 : 5;
         context.fillStyle = chartThemeColor("--muted", "#85858f");
         context.font = "800 8px Arial";
         context.textAlign = "center";
         context.textBaseline = "alphabetic";
         for (let index = 0; index < labelCount; index += 1) {
-            const pointIndex = Math.round(index * (state.available.length - 1) / Math.max(1, labelCount - 1));
-            const point = state.available[pointIndex];
+            const labelDate = new Date(startMs + (endMs - startMs) * index / Math.max(1, labelCount - 1));
+            const point = { date: localDateKey(labelDate) };
             context.fillText(formatChartDate(point.date), x(point), height - 7);
         }
 
@@ -355,22 +383,48 @@ function renderExpenditureChart(panel, state, profileEstimate) {
     const selectPoint = event => {
         const bounds = canvas.getBoundingClientRect();
         const relative = Math.max(0, Math.min(bounds.width, event.clientX - bounds.left));
-        selectedIndex = Math.round(relative / Math.max(1, bounds.width) * (state.available.length - 1));
+        const plotWidth = Math.max(1, bounds.width - padding.left - padding.right);
+        const plotPosition = Math.max(0, Math.min(1, (relative - padding.left) / plotWidth));
+        const selectedTime = startMs + (endMs - startMs) * plotPosition;
+        selectedIndex = state.available.reduce((nearest, point, index) => {
+            const pointTime = new Date(`${point.date}T12:00:00`).getTime();
+            const nearestTime = new Date(`${state.available[nearest].date}T12:00:00`).getTime();
+            return Math.abs(pointTime - selectedTime) < Math.abs(nearestTime - selectedTime) ? index : nearest;
+        }, 0);
         const point = state.available[selectedIndex];
         tooltip.hidden = false;
-        tooltip.innerHTML = `<strong>${formatChartDate(point.date)}</strong><span>${formatNumber(point.maintenanceCalories)} cal/day</span>${Number.isFinite(profileEstimate) ? `<small>${formatSignedCalories(point.maintenanceCalories - profileEstimate)} vs profile estimate</small>` : ""}`;
+        tooltip.innerHTML = `<strong>${formatChartDate(point.date)}</strong><span>${formatNumber(point.maintenanceCalories)} cal/day</span>${Number.isFinite(profileEstimate) ? `<small>${formatSignedCalories(point.maintenanceCalories - profileEstimate)} vs generic expenditure</small>` : ""}`;
         const desiredLeft = relative < bounds.width / 2 ? relative + 10 : relative - 140;
         tooltip.style.left = `${Math.max(8, Math.min(bounds.width - 132, desiredLeft))}px`;
         draw();
     };
 
-    canvas.addEventListener("pointerdown", selectPoint);
-    canvas.addEventListener("pointermove", event => { if (event.pointerType === "mouse" || event.buttons) selectPoint(event); });
-    canvas.addEventListener("pointerleave", event => {
-        if (event.pointerType !== "mouse") return;
+    const clearSelection = () => {
         selectedIndex = null;
         tooltip.hidden = true;
         draw();
+    };
+    canvas.addEventListener("pointerdown", event => {
+        if (event.pointerType !== "mouse") {
+            const now = Date.now();
+            const doubleTap = lastTouchTap && now - lastTouchTap.time <= 350 && Math.abs(event.clientX - lastTouchTap.x) <= 28 && Math.abs(event.clientY - lastTouchTap.y) <= 28;
+            lastTouchTap = doubleTap ? null : { time: now, x: event.clientX, y: event.clientY };
+            if (doubleTap) {
+                event.preventDefault();
+                clearSelection();
+                return;
+            }
+        }
+        selectPoint(event);
+    });
+    canvas.addEventListener("dblclick", event => {
+        event.preventDefault();
+        clearSelection();
+    });
+    canvas.addEventListener("pointermove", event => { if (event.pointerType === "mouse" || event.buttons) selectPoint(event); });
+    canvas.addEventListener("pointerleave", event => {
+        if (event.pointerType !== "mouse") return;
+        clearSelection();
     });
     canvas.__drawExpenditureChart = draw;
     if (!tdeeResizeBound) {
