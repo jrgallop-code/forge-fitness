@@ -7,6 +7,7 @@ const DAY_MS = 86400000;
 const WEEKLY_REVIEW_DAYS = 7;
 const BUILDING_CONFIDENCE_CAP = 50;
 const HIGH_CONFIDENCE_CAP = 100;
+let maintenanceHistoryCache = null;
 
 function readJson(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key) || "null") ?? fallback; }
@@ -114,6 +115,61 @@ export function getCalculatedMaintenanceEstimate(profileEstimate = null) {
     const stabilized = stabilizeMaintenanceEstimate({ liveEstimate, previousEstimate, snapshot: stored, today });
     if (stabilized.snapshot) localStorage.setItem(WEEKLY_ESTIMATE_KEY, JSON.stringify(stabilized.snapshot));
     return stabilized.estimate;
+}
+
+export function calculateMaintenanceHistory({ foodLog = {}, weights = [], startDate = null, endDate = new Date(), profileEstimate = null } = {}) {
+    const end = new Date(endDate);
+    end.setHours(12, 0, 0, 0);
+    if (!Number.isFinite(end.getTime())) return [];
+
+    const evidenceDates = [
+        ...Object.keys(foodLog || {}).filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key) && Array.isArray(foodLog[key]) && foodLog[key].length),
+        ...normalizeWeightEntries(weights).map(entry => entry.date)
+    ].filter(key => key <= dateKey(end)).sort();
+    if (!evidenceDates.length) return [];
+
+    const requestedStart = /^\d{4}-\d{2}-\d{2}$/.test(String(startDate || "")) ? String(startDate) : evidenceDates[0];
+    const cursor = new Date(`${requestedStart > evidenceDates[0] ? requestedStart : evidenceDates[0]}T12:00:00`);
+    let snapshot = null;
+    const points = [];
+
+    while (cursor <= end) {
+        const liveEstimate = calculateMaintenanceEstimate({ foodLog, weights, endDate: cursor, profileEstimate });
+        const stabilized = stabilizeMaintenanceEstimate({ liveEstimate, snapshot, today: cursor });
+        snapshot = stabilized.snapshot;
+        const estimate = stabilized.estimate || liveEstimate;
+        points.push({
+            date: dateKey(cursor),
+            maintenanceCalories: Number.isFinite(Number(estimate.maintenanceCalories)) ? Number(estimate.maintenanceCalories) : null,
+            liveMaintenanceCalories: Number.isFinite(Number(estimate.liveMaintenanceCalories)) ? Number(estimate.liveMaintenanceCalories) : null,
+            profileEstimate: Number.isFinite(Number(estimate.profileEstimate)) ? Number(estimate.profileEstimate) : null,
+            status: estimate.status || "learning"
+        });
+        cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return points;
+}
+
+export function getCalculatedMaintenanceHistory(profileEstimate = null, { startDate = null } = {}) {
+    const today = new Date();
+    const foodRaw = localStorage.getItem(FOOD_LOG_KEY) || "";
+    const weightRaw = localStorage.getItem(WEIGHT_KEY) || "";
+    const cacheMatches = maintenanceHistoryCache
+        && maintenanceHistoryCache.date === dateKey(today)
+        && maintenanceHistoryCache.startDate === startDate
+        && maintenanceHistoryCache.profileEstimate === profileEstimate
+        && maintenanceHistoryCache.foodRaw === foodRaw
+        && maintenanceHistoryCache.weightRaw === weightRaw;
+    if (cacheMatches) return maintenanceHistoryCache.points;
+
+    let foodLog = {};
+    let weights = [];
+    try { foodLog = JSON.parse(foodRaw || "{}") || {}; } catch { foodLog = {}; }
+    try { weights = JSON.parse(weightRaw || "[]") || []; } catch { weights = []; }
+    const points = calculateMaintenanceHistory({ foodLog, weights, startDate, endDate: today, profileEstimate });
+    maintenanceHistoryCache = { date: dateKey(today), startDate, profileEstimate, foodRaw, weightRaw, points };
+    return points;
 }
 
 export function stabilizeMaintenanceEstimate({ liveEstimate, previousEstimate = null, snapshot = null, today = new Date() } = {}) {

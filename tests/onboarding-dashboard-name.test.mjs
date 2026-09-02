@@ -40,8 +40,8 @@ test("More Body Profile edits the onboarding name used by the dashboard", () => 
 });
 
 test("the personalized onboarding and dashboard release is cache-busted", () => {
-  assert.match(index, /js\/onboarding\/onboarding\.js\?v=onboarding-display-name-1/);
+  assert.match(index, /js\/onboarding\/onboarding\.js\?v=onboarding-units-miles-1/);
   assert.match(index, /js\/dashboard\/dashboard-command-center\.js\?v=dashboard-greeting-1/);
   assert.match(index, /css\/dashboard-command-center\.css\?v=dashboard-greeting-1/);
-  assert.match(worker, /2026-09-02-130/);
+  assert.match(worker, /2026-09-02-132/);
 });

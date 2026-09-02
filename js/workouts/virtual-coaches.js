@@ -69,6 +69,7 @@ function enhanceLauncher(root = document) {
     <div class="level-up-workout-actions">
       <button class="secondary-btn" type="button" data-template-build><strong>Browse Library</strong><small>Explore every workout template</small></button>
       <button class="secondary-btn" type="button" data-manual-build><strong>Create Manually</strong><small>Build your own plan from scratch</small></button>
+      <button class="secondary-btn level-up-workout-import" type="button" data-routine-import-open><strong>Import Routine</strong><small>Paste from ChatGPT, Reddit, Notes, or anywhere else</small></button>
     </div>`;
 }
 

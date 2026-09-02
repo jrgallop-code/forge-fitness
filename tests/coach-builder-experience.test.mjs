@@ -39,7 +39,7 @@ test("coach builder transitions through the coach build card after question six"
   assert.match(engine, /coachBuildTimer = window\.setTimeout\(\(\) => \{\s*coachBuildTimer = 0;\s*renderReview\(\);\s*\}, 2600\)/);
 });
 
-test("production module cache keys retain the restored experience step", async () => {
+test("production module cache keys load the current coach builder", async () => {
   const [index, app, router] = await Promise.all([
     read("index.html"),
     read("js/app.js"),
@@ -47,10 +47,10 @@ test("production module cache keys retain the restored experience step", async (
   ]);
 
   assert.match(index, /css\/smart-build-coach-loading\.css\?v=theme-accent-calendar-1/);
-  assert.match(index, /js\/app\.js\?v=theme-accent-calendar-1/);
+  assert.match(index, /js\/app\.js\?v=tdee-expenditure-chart-1/);
   assert.match(index, /smart-build-full-body-guardrails\.js\?v=coach-build-personalized-1/);
-  assert.match(app, /\.\/core\/router\.js\?v=theme-accent-calendar-1/);
-  assert.match(router, /\.\.\/workouts\/smart-build\.js\?v=coach-build-personalized-1/);
+  assert.match(app, /\.\/core\/router\.js\?v=tdee-expenditure-chart-1/);
+  assert.match(router, /\.\.\/workouts\/smart-build\.js\?v=hide-adapted-source-1/);
   assert.match(await read("js/workouts/smart-build-full-body-guardrails.js"), /smart-build-unified-engine-v11\.js\?v=coach-build-personalized-1/);
 });
 
