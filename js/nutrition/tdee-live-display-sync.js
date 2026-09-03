@@ -60,15 +60,12 @@ function syncCard(card) {
     }
 
     const reviewedDiffers = Number.isFinite(reviewed) && Number.isFinite(live) && Math.round(reviewed) !== Math.round(live);
-    if (reviewedDiffers) {
-        setText(note, `Your reviewed TDEE remains ${format(reviewed)} cal/day until the normal weekly review. The live value already reflects the current smoothed Weekly Trend.`);
-        const valueLabel = card.querySelector(".expenditure-summary-copy strong");
-        const valueDescription = card.querySelector(".expenditure-summary-copy p");
-        setText(valueLabel, "Reviewed Expenditure");
-        setText(valueDescription, `Held at your last reviewed value. Current data implies about ${format(live)} cal/day before the next scheduled review.`);
-    } else {
-        setText(note, "This is the current-data estimate before weekly review stabilization.");
-    }
+    setText(
+        note,
+        reviewedDiffers
+            ? `Your reviewed TDEE remains ${format(reviewed)} cal/day until the normal weekly review. The live value already reflects the current smoothed Weekly Trend.`
+            : "This is the current-data estimate before weekly review stabilization."
+    );
 
     const rateRow = [...breakdown.children].find(child => child.querySelector?.("span")?.textContent?.startsWith("Current "));
     if (rateRow && Number.isFinite(rate)) {
