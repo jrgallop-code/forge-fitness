@@ -1,9 +1,12 @@
 import { calculateDisplayWeightTrend, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=tdee-smoothed-weight-rate-1";
+import { estimateTissueEnergyPerLb } from "../core/body-composition.js?v=body-composition-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const WEIGHT_KEY = "forge_weight_entries";
 const WEEKLY_ESTIMATE_KEY = "level_up_weekly_tdee_estimate_v1";
 const WEEKLY_HISTORY_KEY = "level_up_weekly_tdee_history_v1";
+const BODY_FAT_RANGE_KEY = "level_up_body_fat_profile_v1";
+const BODY_FAT_ENTRIES_KEY = "level_up_body_fat_entries_v1";
 const DAY_MS = 86400000;
 const WEEKLY_REVIEW_DAYS = 7;
 const BUILDING_CONFIDENCE_CAP = 50;
@@ -66,9 +69,6 @@ function caloriesFor(entries) {
 function sharedWeightTrend(weights, endKey) {
     const normalized = normalizeWeightEntries(weights).filter(entry => entry.date <= endKey);
 
-    // Keep the existing TDEE evidence architecture exactly as-is: the 21-day
-    // raw-weight window still determines usable weigh-in count, span and the
-    // confidence/review gates. Only the rate signal changes.
     const evidence = calculateDisplayWeightTrend(normalized, {
         endDate: endKey,
         windowDays: 21,
@@ -77,9 +77,6 @@ function sharedWeightTrend(weights, endKey) {
         fullEntries: 9
     });
 
-    // TDEE now consumes the same smoothed Trend Weight rate shown in Weight
-    // Progress: interpolate only between real weigh-ins, apply the weighted
-    // smoother, then estimate weekly pace from up to the latest 20 days.
     const smoothed = calculateVisibleWeightTrend(normalized, {
         endDate: endKey,
         rateDays: 20,
@@ -109,21 +106,23 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], endDa
         return dateKey(day);
     });
     const loggedDates = dates.filter(key => Array.isArray(foodLog?.[key]) && foodLog[key].length > 0);
-    // Every non-empty log through yesterday is a completed intake day for this
-    // estimate. Legacy completion flags are intentionally ignored because they
-    // are not written consistently across food-log entry points and cloud restores.
     const usableDates = loggedDates;
     const intakeValues = usableDates.map(key => caloriesFor(foodLog[key])).filter(value => value > 0);
     const averageIntake = intakeValues.length ? intakeValues.reduce((sum, value) => sum + value, 0) / intakeValues.length : null;
-    // Food stops at yesterday so an unfinished current day cannot depress intake.
-    // Weight uses the latest non-future weigh-in, matching Weight Progress exactly.
     const eligibleWeights = normalizeWeightEntries(weights).filter(entry => entry.date <= asOfKey);
     const weightTrendEndDate = eligibleWeights.at(-1)?.date || dates[dates.length - 1];
     const trend = sharedWeightTrend(eligibleWeights, weightTrendEndDate);
     const enoughEarly = intakeValues.length >= 2 && trend.count >= 3 && trend.spanDays >= 5;
     const enoughPreliminary = intakeValues.length >= 7 && trend.count >= 6 && trend.spanDays >= 10;
     const enoughEstablished = intakeValues.length >= 15 && trend.count >= 9 && trend.spanDays >= 17;
-    const correction = Number.isFinite(trend.rate) ? trend.rate * 500 : null;
+
+    // Body fat is intentionally only a weak prior. The stored-energy model is
+    // blended 25% with a body-composition estimate and 75% with the traditional
+    // 3,500 kcal/lb assumption so noisy visual/BIA measurements cannot dominate TDEE.
+    const tissueEnergy = estimateTissueEnergyPerLb(asOfKey);
+    const correction = Number.isFinite(trend.rate)
+        ? trend.rate * (Number(tissueEnergy.kcalPerLb) / 7)
+        : null;
     const raw = Number.isFinite(averageIntake) && Number.isFinite(correction) ? averageIntake - correction : null;
     const maintenanceCalories = enoughEarly && Number.isFinite(raw)
         ? Math.round(Math.min(6000, Math.max(800, raw)) / 25) * 25
@@ -139,6 +138,9 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], endDa
         averageIntake: Number.isFinite(averageIntake) ? averageIntake : null,
         weightRateLbPerWeek: trend.rate,
         energyCorrection: Number.isFinite(correction) ? -correction : null,
+        energyDensityKcalPerLb: Number(tissueEnergy.kcalPerLb) || 3500,
+        bodyFatPriorPercent: positiveNumber(tissueEnergy.bodyFatPercent),
+        bodyFatPriorSource: tissueEnergy.source || "traditional-default",
         foodDays: intakeValues.length,
         weighIns: trend.count,
         weightSpanDays: trend.spanDays,
@@ -241,6 +243,8 @@ export function getCalculatedMaintenanceHistory(profileEstimate = null, { startD
     const weightRaw = localStorage.getItem(WEIGHT_KEY) || "";
     const historyRaw = localStorage.getItem(WEEKLY_HISTORY_KEY) || "";
     const snapshotRaw = localStorage.getItem(WEEKLY_ESTIMATE_KEY) || "";
+    const bodyFatRangeRaw = localStorage.getItem(BODY_FAT_RANGE_KEY) || "";
+    const bodyFatEntriesRaw = localStorage.getItem(BODY_FAT_ENTRIES_KEY) || "";
     const cacheMatches = maintenanceHistoryCache
         && maintenanceHistoryCache.date === dateKey(today)
         && maintenanceHistoryCache.startDate === startDate
@@ -248,7 +252,9 @@ export function getCalculatedMaintenanceHistory(profileEstimate = null, { startD
         && maintenanceHistoryCache.foodRaw === foodRaw
         && maintenanceHistoryCache.weightRaw === weightRaw
         && maintenanceHistoryCache.historyRaw === historyRaw
-        && maintenanceHistoryCache.snapshotRaw === snapshotRaw;
+        && maintenanceHistoryCache.snapshotRaw === snapshotRaw
+        && maintenanceHistoryCache.bodyFatRangeRaw === bodyFatRangeRaw
+        && maintenanceHistoryCache.bodyFatEntriesRaw === bodyFatEntriesRaw;
     if (cacheMatches) return maintenanceHistoryCache.points;
 
     let foodLog = {};
@@ -257,7 +263,18 @@ export function getCalculatedMaintenanceHistory(profileEstimate = null, { startD
     try { weights = JSON.parse(weightRaw || "[]") || []; } catch { weights = []; }
     const snapshotHistory = readStoredMaintenanceHistory();
     const points = calculateMaintenanceHistory({ foodLog, weights, snapshotHistory, startDate, endDate: today, profileEstimate });
-    maintenanceHistoryCache = { date: dateKey(today), startDate, profileEstimate, foodRaw, weightRaw, historyRaw, snapshotRaw, points };
+    maintenanceHistoryCache = {
+        date: dateKey(today),
+        startDate,
+        profileEstimate,
+        foodRaw,
+        weightRaw,
+        historyRaw,
+        snapshotRaw,
+        bodyFatRangeRaw,
+        bodyFatEntriesRaw,
+        points
+    };
     return points;
 }
 
@@ -270,10 +287,6 @@ export function stabilizeMaintenanceEstimate({ liveEstimate, previousEstimate = 
     const now = new Date(today);
     now.setHours(12, 0, 0, 0);
     const todayKey = dateKey(now);
-    // A short-lived release incorrectly back-solved TDEE from an accepted
-    // calorie target. TDEE must remain an independent intake-and-weight
-    // estimate, so replace that snapshot immediately while leaving the user's
-    // accepted target untouched.
     if (snapshot?.estimate?.reviewSynchronized === true) {
         const nextSnapshot = {
             reviewedAt: todayKey,
@@ -329,11 +342,12 @@ function decorateStableEstimate(snapshot, live, now, reviewDue) {
     const estimate = snapshot.estimate || live;
     return {
         ...estimate,
-        // The weekly snapshot stabilizes the reviewed calorie value only.
-        // Evidence stays live so all cards use the same shared weight trend.
         averageIntake: live.averageIntake,
         weightRateLbPerWeek: live.weightRateLbPerWeek,
         energyCorrection: live.energyCorrection,
+        energyDensityKcalPerLb: live.energyDensityKcalPerLb,
+        bodyFatPriorPercent: live.bodyFatPriorPercent,
+        bodyFatPriorSource: live.bodyFatPriorSource,
         foodDays: live.foodDays,
         weighIns: live.weighIns,
         weightSpanDays: live.weightSpanDays,
