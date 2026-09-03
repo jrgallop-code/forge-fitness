@@ -5,6 +5,30 @@
 
     let dismissed = false;
 
+    installCloudBackupRecovery();
+
+    function installCloudBackupRecovery() {
+        if (!document.querySelector('script[data-cloud-backup-history-ui]')) {
+            const script = document.createElement("script");
+            script.type = "module";
+            script.src = "js/account/cloud-backup-history-ui.js?v=backup-history-ui-1";
+            script.dataset.cloudBackupHistoryUi = "1";
+            document.head.appendChild(script);
+        }
+
+        const syncRestoreButton = () => {
+            const button = document.getElementById("account-cloud-download");
+            if (!button || button.dataset.backupHistoryLabel === "1") return;
+            button.textContent = "↶ Restore Backup";
+            button.dataset.backupHistoryLabel = "1";
+            button.setAttribute("aria-label", "View saved cloud backups and restore a version");
+        };
+
+        syncRestoreButton();
+        const observer = new MutationObserver(syncRestoreButton);
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+    }
+
     function dismissSplash() {
         if (dismissed) return;
         dismissed = true;
