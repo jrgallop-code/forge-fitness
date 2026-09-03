@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-03-150";
+const CACHE_VERSION = "2026-09-03-151";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -116,7 +116,11 @@ self.addEventListener("activate", event => {
 async function networkFirst(request, fallbackToShell = false) {
     const cache = await caches.open(RUNTIME_CACHE);
     try {
-        const response = await fetch(request);
+        // Navigation, JavaScript and CSS must revalidate against the network so
+        // an installed PWA cannot keep an older module graph after a release.
+        // Runtime cache remains the offline fallback if the network is unavailable.
+        const forceFresh = fallbackToShell || request.destination === "script" || request.destination === "style";
+        const response = await fetch(request, forceFresh ? { cache: "reload" } : undefined);
         if (response.ok && response.type !== "opaque") await cache.put(request, response.clone());
         return response;
     } catch (error) {
