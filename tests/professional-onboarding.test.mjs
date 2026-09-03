@@ -41,6 +41,17 @@ test("onboarding collects the inputs needed for a personalized program", () => {
   assert.match(source, /data-training-setup/);
   assert.match(source, /equipment:answers\.equipment/);
   assert.match(source, /answers\.priorities\.length<3/);
+  assert.match(source, /data-training-day/);
+  assert.match(source, /trainingDays:answers\.trainingDays/);
+  assert.match(source, /Tap the exact days you want to train/);
+});
+
+test("training location cards use descriptive SVG artwork", () => {
+  assert.match(source, /function trainingSetupIcon/);
+  assert.match(source, /full_gym:'<path/);
+  assert.match(source, /minimal:'<path/);
+  assert.match(source, /bodyweight:'<circle/);
+  assert.match(styles, /\.onboarding-setup-icon svg/);
 });
 
 test("saved onboarding equipment is respected by Smart Build", () => {
@@ -58,7 +69,7 @@ test("completion reveals the plan and keeps acquisition outside the required flo
 });
 
 test("the professional onboarding release is cache-busted", () => {
-  assert.match(html, /css\/onboarding\.css\?v=transparent-logo-1/);
-  assert.match(html, /js\/onboarding\/onboarding\.js\?v=transparent-logo-1/);
-  assert.match(worker, /CACHE_VERSION = "2026-09-03-143"/);
+  assert.match(html, /css\/onboarding\.css\?v=onboarding-training-days-1/);
+  assert.match(html, /js\/onboarding\/onboarding\.js\?v=onboarding-training-days-1/);
+  assert.match(worker, /CACHE_VERSION = "2026-09-03-144"/);
 });
