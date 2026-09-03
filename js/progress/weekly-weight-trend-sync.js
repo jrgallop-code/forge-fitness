@@ -1,8 +1,8 @@
 import {
-    calculateSevenDayAverage,
-    calculateDisplayWeightTrend,
+    calculateTrendWeight,
+    calculateVisibleWeightTrend,
     normalizeWeightEntries
-} from "../core/weight-trend.js?v=progress-regression-trend-2";
+} from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 
 const WEIGHT_KEY = "forge_weight_entries";
 let queued = false;
@@ -26,10 +26,10 @@ function refresh() {
     const today = localDateKey();
     const weights = readWeights().filter(entry => entry.date <= today);
     const latestEntryDate = weights.at(-1)?.date || null;
-    const trend = calculateDisplayWeightTrend(weights, { endDate: latestEntryDate });
-    const trendWeight = latestEntryDate
-        ? calculateSevenDayAverage(weights, latestEntryDate).average
-        : null;
+    const trend = calculateVisibleWeightTrend(weights, { endDate: latestEntryDate });
+    const trendWeight = Number.isFinite(trend.trendWeight)
+        ? trend.trendWeight
+        : calculateTrendWeight(weights, { endDate: latestEntryDate });
 
     const nextValue = Number.isFinite(trend.weeklyChange)
         ? formatRate(trend.weeklyChange)
@@ -43,8 +43,8 @@ function refresh() {
             : "--";
         if (trendWeightNode.textContent !== nextTrendWeight) trendWeightNode.textContent = nextTrendWeight;
         trendWeightNode.title = latestEntryDate
-            ? `7-day trend weight through latest weigh-in ${latestEntryDate}`
-            : "Add weigh-ins to calculate your 7-day trend weight.";
+            ? `Smoothed Trend Weight through latest weigh-in ${latestEntryDate}`
+            : "Add a weigh-in to begin building Trend Weight.";
     }
 
     const card = value.closest(".metric-card");
@@ -52,10 +52,10 @@ function refresh() {
     if (heading && heading.textContent !== trend.label) heading.textContent = trend.label;
 
     value.title = latestEntryDate
-        ? `Weekly change through latest weigh-in ${latestEntryDate}. Missing days do not move the result.`
+        ? `Weekly pace from up to 20 days of smoothed Trend Weight through ${latestEntryDate}.`
         : "Add weigh-ins to calculate your weekly trend.";
     if (card) {
-        card.title = "Weekly Trend estimates your rate of change from recent weigh-ins using a 21-day linear regression. The nutrition coach keeps stricter data requirements.";
+        card.title = "Weekly Trend uses the smoothed Trend Weight series. TDEE keeps its separate 21-day regression and review rules.";
     }
 }
 
