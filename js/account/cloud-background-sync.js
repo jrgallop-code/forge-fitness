@@ -56,7 +56,7 @@ function startCloudBackgroundSync() {
 }
 
 function scheduleBackup(delay) {
-    if (authBlocked || isRecoveryLaunch() || !getSession() || !navigator.onLine) return;
+    if (authBlocked || isRecoveryLaunch() || isLocalDataSandbox() || !getSession() || !navigator.onLine) return;
     window.clearTimeout(backupTimer);
     backupTimer = window.setTimeout(() => void runAutomaticBackup(), Math.max(0, delay));
 }
@@ -73,11 +73,13 @@ async function recordActivity() {
 }
 
 async function runAutomaticBackup() {
-    if (backupInFlight || authBlocked || isRecoveryLaunch() || !navigator.onLine || !getSession()) return;
+    if (backupInFlight || authBlocked || isRecoveryLaunch() || isLocalDataSandbox() || !navigator.onLine || !getSession()) return;
     backupInFlight = true;
 
     try {
+        if (isLocalDataSandbox()) return;
         const backup = await createBackupSnapshot();
+        if (isLocalDataSandbox()) return;
         verifyBackupSnapshot(backup);
         const fingerprint = await backupFingerprint(backup);
         const summary = backupSafetySummary(backup);
@@ -122,6 +124,7 @@ async function runAutomaticBackup() {
             return;
         }
 
+        if (isLocalDataSandbox()) return;
         const result = await api("/v1/backup", {
             method: "PUT",
             body: {
@@ -176,9 +179,10 @@ async function runAutomaticBackup() {
 }
 
 async function adoptCompletedSync(detail) {
-    if (!detail?.version || isRecoveryLaunch()) return;
+    if (!detail?.version || isRecoveryLaunch() || isLocalDataSandbox()) return;
     try {
         const backup = await createBackupSnapshot();
+        if (isLocalDataSandbox()) return;
         verifyBackupSnapshot(backup);
         saveAutoState({
             version: Number(detail.version),
@@ -336,6 +340,10 @@ function getSession() {
 
 function isRecoveryLaunch() {
     return new URLSearchParams(window.location.search).get(RECOVERY_PARAMETER) === "1";
+}
+
+function isLocalDataSandbox() {
+    return document.documentElement.dataset.localDataSandbox === "true";
 }
 
 function markAuthenticationRequired() {
