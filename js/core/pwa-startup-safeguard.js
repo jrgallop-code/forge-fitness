@@ -7,6 +7,7 @@
 
     installCloudBackupRecovery();
     installSystemRecoveryNotice();
+    installBodyComposition();
 
     function installCloudBackupRecovery() {
         if (!document.querySelector('script[data-cloud-backup-history-ui]')) {
@@ -36,6 +37,15 @@
         script.type = "module";
         script.src = "js/core/system-recovery-notice.js?v=system-recovery-notice-1";
         script.dataset.systemRecoveryNotice = "1";
+        document.head.appendChild(script);
+    }
+
+    function installBodyComposition() {
+        if (document.querySelector('script[data-body-composition-ui]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/progress/body-composition-ui.js?v=body-composition-ui-1";
+        script.dataset.bodyCompositionUi = "1";
         document.head.appendChild(script);
     }
 
