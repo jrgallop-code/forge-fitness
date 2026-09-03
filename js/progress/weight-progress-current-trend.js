@@ -1,6 +1,6 @@
-import "./weight-visible-trend-sync.js?v=smoothed-visible-trend-2";
+import "./weight-visible-trend-sync.js?v=smoothed-visible-trend-3";
 import {
-    calculateDisplayWeightTrend,
+    calculateVisibleWeightTrend,
     normalizeWeightEntries
 } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 
@@ -44,7 +44,7 @@ function refresh() {
     const today = localDateKey();
     const weights = readWeights().filter(entry => entry.date <= today);
     const latestEntryDate = weights.at(-1)?.date || null;
-    const trend = calculateDisplayWeightTrend(weights, { endDate: latestEntryDate });
+    const trend = calculateVisibleWeightTrend(weights, { endDate: latestEntryDate });
     const rateText = Number.isFinite(trend.weeklyChange) ? formatRate(trend.weeklyChange) : "Need more data";
 
     const visible = detachLiveCardFromPhaseRenderer();
@@ -53,10 +53,10 @@ function refresh() {
 
     if (visible.rate) {
         visible.rate.title = latestEntryDate
-            ? `Weekly change from recent real weigh-ins through ${latestEntryDate}.`
+            ? `Weekly change from up to 20 days of smoothed Trend Weight through ${latestEntryDate}.`
             : "Add weigh-ins to calculate your weekly trend.";
         const card = visible.rate.closest(".metric-card");
-        if (card) card.title = "Weekly Trend uses the validated 21-day regression. Trend Weight itself uses the new smoothed model.";
+        if (card) card.title = "Weekly Trend is calculated from the smoothed Trend Weight series to reduce short-term scale noise.";
     }
 
     const compactRate = document.getElementById("actual-weekly-weight-change");
