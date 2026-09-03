@@ -65,7 +65,7 @@
         if (document.querySelector('script[data-body-composition-health-records]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/more/body-composition-health-records.js?v=body-comp-health-records-1";
+        script.src = "js/more/body-composition-health-records.js?v=body-comp-health-records-2";
         script.dataset.bodyCompositionHealthRecords = "1";
         document.head.appendChild(script);
     }
