@@ -10,12 +10,18 @@ import {
 const TUTORIAL_ID = "trend-weight";
 const CARD_SELECTOR = "[data-trend-weight-tutorial-inline-v2]";
 const ICONS = [
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M6 15l3-4 3 2 5-7 2 2"/></svg>',
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="8" r="2"/><path d="M8 11.4 16 8.6" stroke-dasharray="2 2"/></svg>',
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16c3-6 5 1 8-4s5 2 10-5M3 19c4-3 7-2 10-5s5-3 8-5"/></svg>',
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V6M4 18h16M7 15l4-5 3 2 5-6"/><path d="m16 6 3 0 0 3"/></svg>',
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17V9M10 17V6M15 17v-4M20 17V4"/></svg>',
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M5 8h14M7 8c0 3-1.5 5-4 6 1 2 3 3 5 3s4-1 5-3c-2.5-1-4-3-4-6M15 8c0 3-1.5 5-4 6 1 2 3 3 5 3s4-1 5-3c-2.5-1-4-3-4-6"/></svg>'
+    // 1. Scale weight is noisy: bathroom scale + jagged daily weigh-in path.
+    '<svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><rect x="5" y="13" width="14" height="8" rx="2"/><path d="M9 17.5a3 3 0 0 1 6 0"/><path d="M3 9.5 6 7l3 1.8 3-4.3 3 2.7 3-3.2 3 1.6"/><circle cx="3" cy="9.5" r=".8" fill="currentColor" stroke="none"/><circle cx="9" cy="8.8" r=".8" fill="currentColor" stroke="none"/><circle cx="15" cy="7.2" r=".8" fill="currentColor" stroke="none"/><circle cx="21" cy="5.6" r=".8" fill="currentColor" stroke="none"/></svg>',
+    // 2. Missing days: real weigh-ins with interpolated days between them.
+    '<svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><path d="M4 5h16v15H4z"/><path d="M4 9h16M8 3v4M16 3v4"/><circle cx="7" cy="15" r="1.35" fill="currentColor"/><circle cx="17" cy="13" r="1.35" fill="currentColor"/><path d="M8.4 14.7 15.6 13.3" stroke-dasharray="1.5 2"/><circle cx="10.5" cy="14.3" r=".65" opacity=".45"/><circle cx="13.5" cy="13.7" r=".65" opacity=".45"/></svg>',
+    // 3. Smoothing: noisy raw series, smooth trend, newest point emphasized.
+    '<svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><path d="M3 15 6 8l3 5 3-7 3 6 3-4 3 3" opacity=".42"/><path d="M3 16c3-2 5-3 8-3.5 4-.7 6-1 10-4.5" stroke-width="2.1"/><circle cx="21" cy="8" r="2"/><circle cx="21" cy="8" r=".7" fill="currentColor" stroke="none"/></svg>',
+    // 4. Weekly Trend: slope/regression direction translated into a weekly rate.
+    '<svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><path d="M4 19V5M4 19h16"/><path d="m7 16 4-4 3 1.5 5-7" stroke-width="2"/><path d="m16 6.5 3-.5-.2 3"/><path d="M7 21h10"/><path d="m7 21 1-1m-1 1 1 1m9-1-1-1m1 1-1 1"/></svg>',
+    // 5. Confidence: more weigh-ins build a stronger signal.
+    '<svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><path d="M5 18v-3M10 18v-6M15 18V9M20 18V5" stroke-width="2.2"/><circle cx="4" cy="21" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="21" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="21" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="21" r="1" fill="currentColor" stroke="none"/><circle cx="20" cy="21" r="1" fill="currentColor" stroke="none"/><path d="M4 7c2-2 4-3 6-3M4 10c3-3 7-4 10-4" opacity=".45"/></svg>',
+    // 6. TDEE: intake + Trend Weight feed the expenditure calculation.
+    '<svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round"><path d="M3 4v7M5 4v7M3 8h2M4 11v4"/><path d="M7 12h3"/><path d="M9 10l2 2-2 2"/><path d="M12 15v-7h5"/><path d="m13 13 2-2 2 1 2-4"/><path d="M18 12h2"/><path d="m19 10 2 2-2 2"/><rect x="16" y="15" width="6" height="6" rx="1"/><path d="M18 17h2M18 19h.1M20 19h.1"/></svg>'
 ];
 
 function markup(tutorial, stepIndex) {
