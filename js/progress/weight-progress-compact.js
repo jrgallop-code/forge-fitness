@@ -189,7 +189,8 @@ function makeField(forId, labelText, input) {
 }
 
 function refreshWeightSummary() {
-    const entries = readWeightEntries();
+    const today = getTodayLocalDate();
+    const entries = readWeightEntries().filter(entry => entry.date <= today);
     const trendWeight = getTrendWeight(entries);
     const trend = calculateDisplayWeightTrend(entries);
 
@@ -206,6 +207,10 @@ function readWeightEntries() {
     } catch {
         return [];
     }
+}
+
+function getTodayLocalDate(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function getTrendWeight(entries) {
