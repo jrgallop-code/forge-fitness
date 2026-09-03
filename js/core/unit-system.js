@@ -89,6 +89,13 @@ export const milesToKilometers = value => Number(value) * MI_TO_KM;
 export const kilometersToMiles = value => Number(value) / MI_TO_KM;
 
 export function displayMass(value, digits = 1, kind = UNIT_KINDS.BODY_WEIGHT) {
+    // Array.map passes (value, index, array). Treat that callback signature as
+    // the normal one-decimal body-weight formatter instead of using the index as
+    // a precision value.
+    if (Array.isArray(kind)) {
+        digits = 1;
+        kind = UNIT_KINDS.BODY_WEIGHT;
+    }
     const number = Number(value);
     if (!Number.isFinite(number)) return null;
     return isMetric(kind) ? round(number * LB_TO_KG, digits) : round(number, digits);
