@@ -3,12 +3,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
-const [source, styles, engine, html, worker] = await Promise.all([
+const [source, styles, engine, html, worker, transparentMark] = await Promise.all([
   read("js/onboarding/onboarding.js"),
   read("css/onboarding.css"),
   read("js/workouts/smart-build-unified-engine-v11.js"),
   read("index.html"),
-  read("service-worker.js")
+  read("service-worker.js"),
+  read("assets/level-up-mark-transparent.svg")
 ]);
 
 test("onboarding leads with an honest animated product preview", () => {
@@ -19,6 +20,15 @@ test("onboarding leads with an honest animated product preview", () => {
   assert.match(source, /aria-label="Example Level Up progress\. Preview data only\."/);
   assert.match(styles, /@keyframes onboarding-draw/);
   assert.match(styles, /prefers-reduced-motion:reduce/);
+});
+
+test("onboarding uses the transparent standalone brand mark across appearances", () => {
+  assert.match(source, /assets\/level-up-mark-transparent\.svg\?v=1/);
+  assert.doesNotMatch(styles, /onboarding-brand-lockup img[^}]*mix-blend-mode/);
+  const payload = transparentMark.match(/data:image\/png;base64,([^\"]+)/)?.[1];
+  assert.ok(payload, "brand mark should embed a PNG with alpha support");
+  const png = Buffer.from(payload, "base64");
+  assert.equal(png[25], 6, "embedded PNG should use RGBA color type");
 });
 
 test("onboarding collects the inputs needed for a personalized program", () => {
@@ -48,7 +58,7 @@ test("completion reveals the plan and keeps acquisition outside the required flo
 });
 
 test("the professional onboarding release is cache-busted", () => {
-  assert.match(html, /css\/onboarding\.css\?v=professional-onboarding-1/);
-  assert.match(html, /js\/onboarding\/onboarding\.js\?v=professional-onboarding-1/);
-  assert.match(worker, /CACHE_VERSION = "2026-09-02-142"/);
+  assert.match(html, /css\/onboarding\.css\?v=transparent-logo-1/);
+  assert.match(html, /js\/onboarding\/onboarding\.js\?v=transparent-logo-1/);
+  assert.match(worker, /CACHE_VERSION = "2026-09-03-143"/);
 });
