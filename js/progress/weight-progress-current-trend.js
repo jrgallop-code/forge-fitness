@@ -1,6 +1,6 @@
-import "./weight-visible-trend-sync.js?v=smoothed-visible-trend-1";
+import "./weight-visible-trend-sync.js?v=smoothed-visible-trend-2";
 import {
-    calculateVisibleWeightTrend,
+    calculateDisplayWeightTrend,
     normalizeWeightEntries
 } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 
@@ -35,10 +35,8 @@ function setText(node, value) {
 function detachLiveCardFromPhaseRenderer() {
     const rate = document.getElementById(LIVE_RATE_ID) || document.getElementById("weight-phase-rate");
     const heading = document.getElementById(LIVE_HEADING_ID) || document.getElementById("weight-phase-rate-heading");
-
     if (rate?.id === "weight-phase-rate") rate.id = LIVE_RATE_ID;
     if (heading?.id === "weight-phase-rate-heading") heading.id = LIVE_HEADING_ID;
-
     return { rate, heading };
 }
 
@@ -46,10 +44,8 @@ function refresh() {
     const today = localDateKey();
     const weights = readWeights().filter(entry => entry.date <= today);
     const latestEntryDate = weights.at(-1)?.date || null;
-    const trend = calculateVisibleWeightTrend(weights, { endDate: latestEntryDate });
-    const rateText = Number.isFinite(trend.weeklyChange)
-        ? formatRate(trend.weeklyChange)
-        : "Need more data";
+    const trend = calculateDisplayWeightTrend(weights, { endDate: latestEntryDate });
+    const rateText = Number.isFinite(trend.weeklyChange) ? formatRate(trend.weeklyChange) : "Need more data";
 
     const visible = detachLiveCardFromPhaseRenderer();
     setText(visible.heading, trend.label);
@@ -57,12 +53,10 @@ function refresh() {
 
     if (visible.rate) {
         visible.rate.title = latestEntryDate
-            ? `Smoothed weekly change through latest weigh-in ${latestEntryDate}. Missing days between real weigh-ins are interpolated for the trend only.`
+            ? `Weekly change from recent real weigh-ins through ${latestEntryDate}.`
             : "Add weigh-ins to calculate your weekly trend.";
         const card = visible.rate.closest(".metric-card");
-        if (card) {
-            card.title = "Weekly Trend estimates your rate of change from up to 20 days of smoothed Trend Weight. TDEE uses its separate 21-day calculation.";
-        }
+        if (card) card.title = "Weekly Trend uses the validated 21-day regression. Trend Weight itself uses the new smoothed model.";
     }
 
     const compactRate = document.getElementById("actual-weekly-weight-change");
@@ -81,14 +75,7 @@ function schedule() {
 }
 
 const content = document.getElementById("content");
-if (content) {
-    new MutationObserver(schedule).observe(content, {
-        childList: true,
-        subtree: true,
-        characterData: true
-    });
-}
-
+if (content) new MutationObserver(schedule).observe(content, { childList: true, subtree: true, characterData: true });
 window.addEventListener("pageshow", schedule);
 window.addEventListener("focus", schedule);
 window.addEventListener("levelup:nutrition-updated", schedule);
