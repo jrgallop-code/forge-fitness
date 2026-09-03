@@ -37,21 +37,23 @@ test("tutorial registry persists dismiss, resume, restart and completion states"
     }
 });
 
-test("Nutrition Progress renders a dismissible expenditure tutorial", async () => {
-    const [source, styles, registry] = await Promise.all([
-        read("js/nutrition/calorie-stats.js"),
+test("Nutrition Progress provides a persistent clickable TDEE tutorial", async () => {
+    const [controller, styles, registry] = await Promise.all([
+        read("js/nutrition/tdee-tutorial-controller.js"),
         read("css/calorie-stats.css"),
         read("js/core/tutorials.js")
     ]);
 
-    assert.match(source, /EXPENDITURE_TUTORIAL_ID = "expenditure"/);
-    assert.match(registry, /Learning, holding or updating/);
-    assert.match(registry, /Missing data are left out rather than plotted as zero/);
-    assert.match(source, /data-tutorial-dismiss/);
-    assert.match(source, /data-tutorial-previous/);
-    assert.match(source, /data-tutorial-next/);
-    assert.match(source, /dismissTutorial\(EXPENDITURE_TUTORIAL_ID, stepIndex\)/);
-    assert.match(source, /completeTutorial\(EXPENDITURE_TUTORIAL_ID\)/);
+    assert.match(controller, /How TDEE works/);
+    assert.match(controller, /data-tdee-tutorial-launch/);
+    assert.match(controller, /data-tdee-tutorial-previous/);
+    assert.match(controller, /data-tdee-tutorial-next/);
+    assert.match(controller, /data-tdee-tutorial-close/);
+    assert.match(controller, /restartTutorial\(TUTORIAL_ID\)/);
+    assert.match(controller, /completeTutorial\(TUTORIAL_ID\)/);
+    assert.match(controller, /pointer-events: auto !important/);
+    assert.match(registry, /TDEE uses your smoothed Weekly Trend/);
+    assert.match(registry, /CONFIDENCE & STABILITY/);
     assert.match(styles, /\.expenditure-tutorial-card/);
     assert.match(styles, /\.expenditure-tutorial-progress/);
 });
