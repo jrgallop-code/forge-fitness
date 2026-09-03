@@ -23,7 +23,6 @@
             script.dataset.cloudBackupHistoryUi = "1";
             document.head.appendChild(script);
         }
-
         const syncRestoreButton = () => {
             const button = document.getElementById("account-cloud-download");
             if (!button || button.dataset.backupHistoryLabel === "1") return;
@@ -31,7 +30,6 @@
             button.dataset.backupHistoryLabel = "1";
             button.setAttribute("aria-label", "View saved cloud backups and restore a version");
         };
-
         syncRestoreButton();
         const observer = new MutationObserver(syncRestoreButton);
         observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -104,7 +102,7 @@
         if (document.querySelector('script[data-interactive-workout-tutorial]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/more/interactive-workout-tutorial-v3.js?v=interactive-workout-tutorial-6";
+        script.src = "js/more/interactive-workout-tutorial-v3.js?v=interactive-workout-tutorial-7";
         script.dataset.interactiveWorkoutTutorial = "1";
         document.head.appendChild(script);
     }
