@@ -16,6 +16,10 @@ function readWeights() {
     }
 }
 
+function setText(node, value) {
+    if (node && node.textContent !== value) node.textContent = value;
+}
+
 function formatRate(value) {
     const number = Number(value);
     if (!Number.isFinite(number)) return "--";
@@ -30,19 +34,29 @@ function directionClass(value) {
 }
 
 function syncCopy(section) {
-    const kicker = section.querySelector(".weight-chart-kicker");
-    if (kicker) kicker.textContent = "SMOOTHED TREND WEIGHT";
-
-    const chartDescription = section.querySelector(".weight-chart-card .chart-header p");
-    if (chartDescription) chartDescription.textContent = "Daily measurements · weighted smoothed trend";
-
-    const help = section.querySelector(".weight-history-help");
-    if (help) {
-        help.textContent = "Trend Weight fills gaps only between real weigh-ins, then gives recent days more influence to reduce normal scale noise.";
-    }
+    setText(section.querySelector(".weight-chart-kicker"), "SMOOTHED TREND WEIGHT");
+    setText(section.querySelector(".weight-chart-card .chart-header p"), "Daily measurements · weighted smoothed trend");
+    setText(
+        section.querySelector(".weight-history-help"),
+        "Trend Weight fills gaps only between real weigh-ins, then gives recent days more influence to reduce normal scale noise."
+    );
 
     const header = section.querySelector(".weight-table-header");
-    if (header?.children?.[2]) header.children[2].textContent = "Trend Weight";
+    setText(header?.children?.[2], "Trend Weight");
+
+    section.querySelectorAll(".weight-carbs-head-v2 p").forEach(node => setText(node, "Same smoothed Trend Weight · carbohydrate intake"));
+    section.querySelectorAll(".weight-carbs-legend-v2 .is-trend").forEach(icon => setText(icon.parentElement, "Trend Weight"));
+    section.querySelectorAll(".weight-calories-head p").forEach(node => setText(node, "Same smoothed Trend Weight · daily calorie intake"));
+    section.querySelectorAll(".weight-calories-legend .is-trend").forEach(icon => setText(icon.parentElement, "Trend Weight"));
+}
+
+function syncTdeeCopy() {
+    const note = document.querySelector("#calorie-progress .calculated-maintenance-breakdown > small");
+    if (!note) return;
+    setText(
+        note,
+        "Food intake uses logged days through yesterday. TDEE uses its own 21-day weigh-in regression and remains separate from the smoothed Trend Weight shown in Weight Progress. Level Up holds the displayed TDEE between seven-day reviews, requires 7 food days and a 14-day weight span, and limits each update to 50 calories while confidence is building or 100 calories at high confidence."
+    );
 }
 
 function syncHistory(section) {
@@ -59,8 +73,8 @@ function syncHistory(section) {
         if (cells.length < 4) return;
 
         if (entry.date > today) {
-            cells[2].textContent = "--";
-            cells[3].textContent = "--";
+            setText(cells[2], "--");
+            setText(cells[3], "--");
             return;
         }
 
@@ -68,10 +82,8 @@ function syncHistory(section) {
         const trend = calculateVisibleWeightTrend(weights, { endDate: entry.date });
         const shownWeight = Number.isFinite(trendWeight) ? displayMass(trendWeight) : null;
 
-        cells[2].textContent = Number.isFinite(shownWeight)
-            ? `${shownWeight.toFixed(1)} ${massUnit()}`
-            : "--";
-        cells[3].textContent = formatRate(trend.weeklyChange);
+        setText(cells[2], Number.isFinite(shownWeight) ? `${shownWeight.toFixed(1)} ${massUnit()}` : "--");
+        setText(cells[3], formatRate(trend.weeklyChange));
         cells[3].classList.remove("trend-up", "trend-down", "trend-neutral");
         cells[3].classList.add("weight-history-trend", directionClass(trend.weeklyChange));
     });
@@ -80,9 +92,11 @@ function syncHistory(section) {
 function refresh() {
     queued = false;
     const section = document.getElementById("weight-progress");
-    if (!section) return;
-    syncCopy(section);
-    syncHistory(section);
+    if (section) {
+        syncCopy(section);
+        syncHistory(section);
+    }
+    syncTdeeCopy();
 }
 
 function schedule() {
@@ -96,7 +110,7 @@ if (content) new MutationObserver(schedule).observe(content, { childList: true, 
 window.addEventListener("pageshow", schedule);
 window.addEventListener("levelup:nutrition-updated", schedule);
 document.addEventListener("click", event => {
-    if (event.target.closest?.("#save-weight-btn, .remove-weight-entry, #weight-tab, [data-page='progress']")) {
+    if (event.target.closest?.("#save-weight-btn, .remove-weight-entry, #weight-tab, #nutrition-progress-tab, [data-page='progress']")) {
         window.setTimeout(schedule, 50);
         window.setTimeout(schedule, 220);
     }
