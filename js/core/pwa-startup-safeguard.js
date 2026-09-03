@@ -11,6 +11,7 @@
     installBodyFatApprovedVisual();
     installBodyCompositionHealthRecords();
     installProteinMinimumConsistency();
+    installNutritionAuthoritySync();
 
     function installCloudBackupRecovery() {
         if (!document.querySelector('script[data-cloud-backup-history-ui]')) {
@@ -76,6 +77,15 @@
         script.type = "module";
         script.src = "js/nutrition/protein-minimum-consistency.js?v=protein-minimum-1";
         script.dataset.proteinMinimumConsistency = "1";
+        document.head.appendChild(script);
+    }
+
+    function installNutritionAuthoritySync() {
+        if (document.querySelector('script[data-nutrition-authority-sync]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/nutrition/nutrition-authority-sync.js?v=nutrition-authority-sync-1";
+        script.dataset.nutritionAuthoritySync = "1";
         document.head.appendChild(script);
     }
 
