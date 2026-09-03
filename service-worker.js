@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-03-165";
+const CACHE_VERSION = "2026-09-03-166";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -9,6 +9,8 @@ const CORE_ASSETS = [
     "./manifest.webmanifest",
     "./js/account/cloud-backup-history-ui.js?v=backup-history-ui-1",
     "./js/core/system-recovery-notice.js?v=system-recovery-notice-1",
+    "./js/core/body-composition.js?v=body-composition-1",
+    "./js/progress/body-composition-ui.js?v=body-composition-ui-1",
     "./js/nutrition/tdee-expenditure-swipe-card.js?v=tdee-expenditure-swipe-2",
     "./assets/level-up-home-icon.svg",
     "./assets/level-up-mark-transparent.svg",
@@ -119,9 +121,6 @@ self.addEventListener("activate", event => {
 async function networkFirst(request, fallbackToShell = false) {
     const cache = await caches.open(RUNTIME_CACHE);
     try {
-        // Navigation, JavaScript and CSS must revalidate against the network so
-        // an installed PWA cannot keep an older module graph after a release.
-        // Runtime cache remains the offline fallback if the network is unavailable.
         const forceFresh = fallbackToShell || request.destination === "script" || request.destination === "style";
         const response = await fetch(request, forceFresh ? { cache: "reload" } : undefined);
         if (response.ok && response.type !== "opaque") await cache.put(request, response.clone());
