@@ -20,7 +20,7 @@ export const CONTEXTUAL_TUTORIALS = [
     {
         id: "trend-weight",
         title: "Understand Trend Weight",
-        summary: "See how Level Up smooths scale noise while keeping the weekly rate stable and easy to interpret.",
+        summary: "See how Level Up smooths scale noise and turns your weigh-ins into a useful weekly trend.",
         duration: "2 min",
         page: "progress",
         tab: "weight-tab",
@@ -28,9 +28,9 @@ export const CONTEXTUAL_TUTORIALS = [
             { eyebrow: "THE BASICS", title: "Scale weight is noisy", body: "Your scale can move from water, sodium, carbohydrate intake, food volume and training-related inflammation. Trend Weight is designed to show the underlying direction without treating one weigh-in as a true change in body tissue." },
             { eyebrow: "MISSING DAYS", title: "Gaps are filled between weigh-ins", body: "When you miss a day, Level Up estimates the path between two real weigh-ins using linear interpolation. These in-between values are only used for the Trend Weight calculation—they are never shown as weights you actually logged, and Level Up never projects beyond your latest real weigh-in." },
             { eyebrow: "SMOOTHING", title: "Recent data matters more", body: "Level Up applies an exponentially weighted smoother to Trend Weight. Each new day contributes 25% to the updated trend while 75% comes from the previous trend. This lets persistent changes move the line while reducing the impact of a single unusually high or low scale reading." },
-            { eyebrow: "WEEKLY TREND", title: "A separate, stable rate", body: "Weekly Trend remains the validated 21-day regression of your real weigh-ins. This is intentionally separate from the smoothed Trend Weight value so changing the visual smoothing model does not suddenly reverse or distort a weekly rate that was already working well." },
+            { eyebrow: "WEEKLY TREND", title: "The rate comes from the smoothed line", body: "Weekly Trend is calculated from a regression across up to the latest 20 days of smoothed Trend Weight and expressed as a weekly rate. That means the weekly number reflects the direction of the underlying trend rather than the difference between noisy individual scale readings." },
             { eyebrow: "CONFIDENCE", title: "It gets stronger with more weigh-ins", body: "With at least 3 real weigh-ins spanning 5 days, Level Up can show a Preliminary Trend. With at least 6 weigh-ins spanning 14 days, it becomes the standard Weekly Trend. More regular weigh-ins improve confidence, but missing days do not reset your Trend Weight." },
-            { eyebrow: "TDEE", title: "Your expenditure calculation stays separate", body: "TDEE keeps its existing 21-day intake-and-weight regression logic, confidence stages and weekly review rules. The smoothed Trend Weight is for understanding your body-weight signal; changing it does not change the TDEE calculation." }
+            { eyebrow: "TDEE", title: "Weight trend can inform expenditure", body: "Your visible Trend Weight and Weekly Trend now use the same smoothed weight signal. Level Up's current TDEE engine still keeps its existing 21-day intake-and-weight regression logic, so changing the visible trend does not yet change TDEE. A future TDEE update can deliberately use the smoothed trend as its weight-change input without changing the calorie-intake side of the calculation." }
         ]
     }
 ];
