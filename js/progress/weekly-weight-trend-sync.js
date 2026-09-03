@@ -2,7 +2,7 @@ import {
     calculateSevenDayAverage,
     calculateDisplayWeightTrend,
     normalizeWeightEntries
-} from "../core/weight-trend.js?v=progress-regression-trend-1";
+} from "../core/weight-trend.js?v=progress-regression-trend-2";
 
 const WEIGHT_KEY = "forge_weight_entries";
 let queued = false;
@@ -15,11 +15,16 @@ function readWeights() {
     }
 }
 
+function localDateKey(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 function refresh() {
     const value = document.getElementById("actual-weekly-weight-change");
     if (!value) return;
 
-    const weights = readWeights();
+    const today = localDateKey();
+    const weights = readWeights().filter(entry => entry.date <= today);
     const latestEntryDate = weights.at(-1)?.date || null;
     const trend = calculateDisplayWeightTrend(weights, { endDate: latestEntryDate });
     const trendWeight = latestEntryDate
