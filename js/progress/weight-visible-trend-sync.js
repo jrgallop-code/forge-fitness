@@ -1,4 +1,4 @@
-import { calculateDisplayWeightTrend, calculateTrendWeight, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
+import { calculateTrendWeight, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
 
 const WEIGHT_KEY = "forge_weight_entries";
@@ -62,7 +62,7 @@ function ensureInteractionStyles() {
 function syncCopy(section) {
     setText(section.querySelector(".weight-chart-kicker"), "SMOOTHED TREND WEIGHT");
     setText(section.querySelector(".weight-chart-card .chart-header p"), "Daily measurements · weighted smoothed trend");
-    setText(section.querySelector(".weight-history-help"), "Trend Weight fills gaps only between real weigh-ins, then gives recent days more influence to reduce normal scale noise. Weekly Trend remains the validated 21-day rate calculation.");
+    setText(section.querySelector(".weight-history-help"), "Trend Weight fills gaps only between real weigh-ins, then gives recent days more influence to reduce normal scale noise. Weekly Trend is calculated from that same smoothed signal.");
 
     const header = section.querySelector(".weight-table-header");
     setText(header?.children?.[2], "Trend Weight");
@@ -76,7 +76,7 @@ function syncCopy(section) {
 function syncTdeeCopy() {
     const note = document.querySelector("#calorie-progress .calculated-maintenance-breakdown > small");
     if (!note) return;
-    setText(note, "Food intake uses logged days through yesterday. TDEE uses its own 21-day weigh-in regression and remains separate from the smoothed Trend Weight shown in Weight Progress. Level Up holds the displayed TDEE between seven-day reviews, requires 7 food days and a 14-day weight span, and limits each update to 50 calories while confidence is building or 100 calories at high confidence.");
+    setText(note, "Food intake uses logged days through yesterday. TDEE currently keeps its existing 21-day weigh-in regression and remains separate from the smoothed Trend Weight shown in Weight Progress. Level Up holds the displayed TDEE between seven-day reviews, requires 7 food days and a 14-day weight span, and limits each update to 50 calories while confidence is building or 100 calories at high confidence.");
 }
 
 function syncHistory(section) {
@@ -99,7 +99,7 @@ function syncHistory(section) {
         }
 
         const trendWeight = calculateTrendWeight(weights, { endDate: entry.date });
-        const trend = calculateDisplayWeightTrend(weights, { endDate: entry.date });
+        const trend = calculateVisibleWeightTrend(weights, { endDate: entry.date });
         const shownWeight = Number.isFinite(trendWeight) ? displayMass(trendWeight) : null;
 
         setText(cells[2], Number.isFinite(shownWeight) ? `${shownWeight.toFixed(1)} ${massUnit()}` : "--");
