@@ -1,4 +1,4 @@
-import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=tdee-shared-trend-1";
+import { calculateDisplayWeightTrend, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=tdee-smoothed-weight-rate-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const WEIGHT_KEY = "forge_weight_entries";
@@ -65,18 +65,35 @@ function caloriesFor(entries) {
 
 function sharedWeightTrend(weights, endKey) {
     const normalized = normalizeWeightEntries(weights).filter(entry => entry.date <= endKey);
-    const result = calculateDisplayWeightTrend(normalized, {
+
+    // Keep the existing TDEE evidence architecture exactly as-is: the 21-day
+    // raw-weight window still determines usable weigh-in count, span and the
+    // confidence/review gates. Only the rate signal changes.
+    const evidence = calculateDisplayWeightTrend(normalized, {
         endDate: endKey,
         windowDays: 21,
         minEntries: 3,
         minSpanDays: 5,
         fullEntries: 9
     });
+
+    // TDEE now consumes the same smoothed Trend Weight rate shown in Weight
+    // Progress: interpolate only between real weigh-ins, apply the weighted
+    // smoother, then estimate weekly pace from up to the latest 20 days.
+    const smoothed = calculateVisibleWeightTrend(normalized, {
+        endDate: endKey,
+        rateDays: 20,
+        minEntries: 3,
+        minSpanDays: 5,
+        fullEntries: 6,
+        fullSpanDays: 14
+    });
+
     return {
-        rate: Number.isFinite(result.weeklyChange) ? result.weeklyChange : null,
-        count: result.entries || 0,
-        spanDays: result.spanDays ? Math.max(0, result.spanDays - 1) : 0,
-        label: result.label
+        rate: Number.isFinite(smoothed.weeklyChange) ? smoothed.weeklyChange : null,
+        count: evidence.entries || 0,
+        spanDays: evidence.spanDays ? Math.max(0, evidence.spanDays - 1) : 0,
+        label: smoothed.label || evidence.label
     };
 }
 
@@ -140,7 +157,7 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], endDa
             ? "Log at least two complete food days and enough weigh-ins to establish a weight trend."
             : status === "early"
                 ? "This is a real trend-based estimate, but it can move noticeably while Level Up gathers more complete food days."
-                : "Calculated from your average logged intake and regression weight trend."
+                : "Calculated from your average logged intake and smoothed Trend Weight rate."
     };
 }
 
