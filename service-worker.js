@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-02-142";
+const CACHE_VERSION = "2026-09-03-143";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -8,6 +8,7 @@ const CORE_ASSETS = [
     "./index.html",
     "./manifest.webmanifest",
     "./assets/level-up-home-icon.svg",
+    "./assets/level-up-mark-transparent.svg",
     "./assets/icons/icon-192.png",
     "./assets/icons/icon-384.png",
     "./assets/icons/icon-512.png",
