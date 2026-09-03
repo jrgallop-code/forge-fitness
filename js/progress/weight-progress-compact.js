@@ -1,5 +1,5 @@
-import { calculateTrendWeight, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
-import { completeTutorial, dismissTutorial, getTutorial, getTutorialState, setTutorialStep, shouldShowTutorial } from "../core/tutorials.js?v=trend-weight-1";
+import { calculateDisplayWeightTrend, calculateTrendWeight, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
+import { completeTutorial, dismissTutorial, getTutorial, getTutorialState, restartTutorial, setTutorialStep } from "../core/tutorials.js?v=trend-weight-2";
 
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 const TREND_TUTORIAL_ID = "trend-weight";
@@ -27,7 +27,6 @@ function removeGoalUi(section) {
     section.querySelector(".weight-goal-settings")?.remove();
     section.querySelector("#current-goal-host")?.remove();
     section.querySelector("#current-goal-wizard")?.remove();
-
     [...section.querySelectorAll(".weight-summary .metric-card")].forEach(card => {
         if (card.querySelector("h3")?.textContent?.trim() === "Goal") card.remove();
     });
@@ -35,7 +34,6 @@ function removeGoalUi(section) {
 
 function compactWeightProgress(section) {
     if (section.dataset.compactLayout === "weight-only-1") return;
-
     const header = section.querySelector(".weight-section-header");
     const entryCards = [...section.querySelectorAll(".weight-entry-card")];
     const weightEntry = entryCards[0];
@@ -99,7 +97,6 @@ function compactWeightProgress(section) {
 
     addButton.addEventListener("click", () => setOpen(weightEntry.hidden));
     closeButton.addEventListener("click", () => setOpen(false));
-
     saveWeightButton.addEventListener("click", () => {
         if (Boolean(dateInput.value) && Number(weightInput.value) > 0) {
             window.setTimeout(() => {
@@ -126,37 +123,28 @@ function compactWeightProgress(section) {
 function initializeSummaryCarousel(section) {
     const summary = section.querySelector(".weight-summary");
     if (!summary || summary.dataset.carouselReady === "1") return;
-
     summary.dataset.carouselReady = "1";
     let userInteracted = false;
     const timers = [];
-
     const markInteracted = () => {
         userInteracted = true;
         timers.splice(0).forEach(timer => window.clearTimeout(timer));
     };
-
     summary.addEventListener("touchstart", markInteracted, { passive: true });
     summary.addEventListener("pointerdown", markInteracted, { passive: true });
     summary.addEventListener("wheel", markInteracted, { passive: true });
-
     const resetIfUntouched = () => {
         if (!summary.isConnected || userInteracted) return;
         summary.scrollLeft = 0;
     };
-
     resetIfUntouched();
     window.requestAnimationFrame(() => {
         resetIfUntouched();
         window.requestAnimationFrame(resetIfUntouched);
     });
     [80, 220, 500].forEach(delay => timers.push(window.setTimeout(resetIfUntouched, delay)));
-
-    const weightTab = document.getElementById("weight-tab");
-    weightTab?.addEventListener("click", () => {
-        window.setTimeout(() => {
-            if (summary.isConnected) summary.scrollLeft = 0;
-        }, 0);
+    document.getElementById("weight-tab")?.addEventListener("click", () => {
+        window.setTimeout(() => { if (summary.isConnected) summary.scrollLeft = 0; }, 0);
     });
 }
 
@@ -173,7 +161,7 @@ function trendTutorialStepMarkup(tutorial, stepIndex) {
             <p>${step.body}</p>
         </div>
         <div class="expenditure-tutorial-actions">
-            <button type="button" class="expenditure-tutorial-dismiss" data-trend-tutorial-dismiss>Dismiss tutorial</button>
+            <button type="button" class="expenditure-tutorial-dismiss" data-trend-tutorial-dismiss>Close</button>
             <span>
                 <button type="button" class="secondary-btn" data-trend-tutorial-previous ${stepIndex === 0 ? "disabled" : ""}>Previous</button>
                 <button type="button" class="primary-btn" data-trend-tutorial-next>${last ? "Finish" : "Next"}</button>
@@ -186,31 +174,36 @@ function initializeTrendWeightTutorial(section) {
     const summary = section.querySelector(".weight-summary");
     if (!tutorial || !summary) return;
 
-    let card = section.querySelector("[data-trend-weight-tutorial]");
-    if (!shouldShowTutorial(TREND_TUTORIAL_ID)) {
-        card?.remove();
-        return;
+    section.querySelector("[data-trend-weight-tutorial]")?.remove();
+    let launcher = section.querySelector("[data-trend-tutorial-launch]");
+    if (!launcher) {
+        launcher = document.createElement("button");
+        launcher.type = "button";
+        launcher.className = "secondary-btn weight-trend-tutorial-launch";
+        launcher.dataset.trendTutorialLaunch = "1";
+        launcher.textContent = "How Trend Weight works";
+        summary.insertAdjacentElement("afterend", launcher);
     }
+    if (launcher.dataset.bound === "1") return;
+    launcher.dataset.bound = "1";
 
-    if (!card) {
-        card = document.createElement("aside");
-        card.className = "expenditure-tutorial-card weight-trend-tutorial-card";
-        card.dataset.trendWeightTutorial = "1";
-        card.setAttribute("aria-label", "Trend Weight tutorial");
-        card.setAttribute("aria-live", "polite");
-        summary.insertAdjacentElement("afterend", card);
-    }
+    launcher.addEventListener("click", () => {
+        restartTutorial(TREND_TUTORIAL_ID);
+        let card = section.querySelector("[data-trend-weight-tutorial]");
+        if (!card) {
+            card = document.createElement("aside");
+            card.className = "expenditure-tutorial-card weight-trend-tutorial-card";
+            card.dataset.trendWeightTutorial = "1";
+            card.setAttribute("aria-label", "Trend Weight tutorial");
+            launcher.insertAdjacentElement("afterend", card);
+        }
 
-    const render = stepIndex => {
-        setTutorialStep(TREND_TUTORIAL_ID, stepIndex);
-        card.innerHTML = trendTutorialStepMarkup(tutorial, stepIndex);
-    };
+        const render = stepIndex => {
+            setTutorialStep(TREND_TUTORIAL_ID, stepIndex);
+            card.innerHTML = trendTutorialStepMarkup(tutorial, stepIndex);
+        };
+        render(0);
 
-    const { step } = getTutorialState(TREND_TUTORIAL_ID);
-    card.innerHTML = trendTutorialStepMarkup(tutorial, step);
-
-    if (card.dataset.bound !== "1") {
-        card.dataset.bound = "1";
         card.addEventListener("click", event => {
             const current = getTutorialState(TREND_TUTORIAL_ID).step;
             if (event.target.closest("[data-trend-tutorial-dismiss]")) {
@@ -231,18 +224,16 @@ function initializeTrendWeightTutorial(section) {
                 }
             }
         });
-    }
+    });
 }
 
 function relocateWeeklyReviewAlertToNutritionProgress(section) {
     const summary = section.querySelector(".weight-summary");
     const nutritionProgress = document.getElementById("calorie-progress");
     if (!summary || !nutritionProgress) return;
-
     const moveAlert = () => {
         const alert = document.querySelector(".progress-weekly-review-alert");
         if (!alert) return;
-
         alert.style.marginTop = "0";
         alert.style.marginBottom = "14px";
         const statsPanel = nutritionProgress.querySelector("[data-progress-calorie-stats]");
@@ -250,17 +241,12 @@ function relocateWeeklyReviewAlertToNutritionProgress(section) {
             nutritionProgress.insertBefore(alert, statsPanel || nutritionProgress.firstChild);
         }
     };
-
     moveAlert();
     if (summary.dataset.weeklyReviewAlertRelocator === "1") return;
-
     const observer = new MutationObserver(moveAlert);
     observer.observe(summary, { childList: true, subtree: true });
     summary.dataset.weeklyReviewAlertRelocator = "1";
-
-    document.getElementById("nutrition-progress-tab")?.addEventListener("click", () => {
-        window.setTimeout(moveAlert, 0);
-    });
+    document.getElementById("nutrition-progress-tab")?.addEventListener("click", () => window.setTimeout(moveAlert, 0));
 }
 
 function makeField(forId, labelText, input) {
@@ -275,22 +261,17 @@ function makeField(forId, labelText, input) {
 function refreshWeightSummary() {
     const today = getTodayLocalDate();
     const entries = readWeightEntries().filter(entry => entry.date <= today);
-    const trend = calculateVisibleWeightTrend(entries);
-    const trendWeight = Number.isFinite(trend.trendWeight) ? trend.trendWeight : calculateTrendWeight(entries);
-
+    const trend = calculateDisplayWeightTrend(entries);
+    const trendWeight = calculateTrendWeight(entries);
     setText("latest-weight", Number.isFinite(trendWeight) ? `${trendWeight.toFixed(1)} lb` : "--");
     setText("actual-weekly-weight-change", Number.isFinite(trend.weeklyChange) ? formatLbRate(trend.weeklyChange) : "Need more data");
-
     const heading = document.getElementById("actual-weekly-weight-change")?.closest(".metric-card")?.querySelector("h3");
     if (heading) heading.textContent = trend.status === "preliminary" ? "Preliminary Trend" : "Weekly Trend";
 }
 
 function readWeightEntries() {
-    try {
-        return normalizeWeightEntries(JSON.parse(localStorage.getItem(WEIGHT_STORAGE_KEY) || "[]"));
-    } catch {
-        return [];
-    }
+    try { return normalizeWeightEntries(JSON.parse(localStorage.getItem(WEIGHT_STORAGE_KEY) || "[]")); }
+    catch { return []; }
 }
 
 function getTodayLocalDate(date = new Date()) {
