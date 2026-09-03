@@ -206,13 +206,14 @@ function openTutorial(id) {
 }
 
 function closeTutorial({ completed = false } = {}) {
-    if (!activeId) return;
+    if (!activeId) return true;
     if (completed) completeTutorial(activeId);
     else dismissTutorial(activeId, activeStep);
     const modal = document.getElementById(MODAL_ID);
     if (modal) modal.hidden = true;
     activeId = null;
     activeStep = 0;
+    return true;
 }
 
 function launcherId(target) {
@@ -243,10 +244,10 @@ function handleModalAction(event) {
     const close = event.target.closest?.("[data-context-tutorial-close]");
     const previous = event.target.closest?.("[data-context-tutorial-prev]");
     const next = event.target.closest?.("[data-context-tutorial-next]");
-    if (!close && !previous && !next && event.target !== modal) return false;
+    if (!close && !previous && !next) return false;
     event.preventDefault();
     event.stopImmediatePropagation();
-    if (close || event.target === modal) return closeTutorial();
+    if (close) return closeTutorial();
     if (previous) {
         activeStep = Math.max(0, activeStep - 1);
         render();
@@ -265,7 +266,7 @@ function escapeHtml(value) {
 
 ensureStyles();
 ensureModal();
-document.addEventListener("pointerdown", event => {
+document.addEventListener("pointerup", event => {
     if (handleModalAction(event)) return;
     activateLauncher(event);
 }, true);
