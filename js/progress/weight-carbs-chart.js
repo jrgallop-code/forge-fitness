@@ -1,5 +1,7 @@
+import "../core/contextual-tutorial-modal.js?v=contextual-modal-1";
 import "./weight-visible-trend-sync.js?v=smoothed-visible-trend-4";
 import "../nutrition/tdee-tutorial-controller.js?v=tdee-tutorial-controller-1";
+import "../nutrition/tdee-live-display-sync.js?v=tdee-live-smoothed-1";
 import { initializeWeightCarbsChartV3 } from "./weight-chart-carousel-v3.js?v=smoothed-visible-trend-1";
 import { initializeWeightCarbsInteractionEnhancements } from "./weight-carbs-interaction-enhancements.js?v=weight-carbs-interaction-2";
 import { initializeWeightCalorieContextV2 } from "./weight-calorie-context-v2.js?v=smoothed-visible-trend-1";
