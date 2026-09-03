@@ -3,8 +3,9 @@ import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
+const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
 const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
-const STYLE_ID = "level-up-calorie-expenditure-carousel-styles";
+const STYLE_ID = "level-up-calorie-expenditure-card-styles";
 const RANGE_OPTIONS = {
     "1w": { days: 7 },
     "1m": { days: 30 },
@@ -13,10 +14,6 @@ const RANGE_OPTIONS = {
     phase: {},
     all: {}
 };
-
-// Page 1 is the existing expenditure-only graph. Page 0 sits to its left so
-// dragging/swiping right from the default view reveals Calories vs Expenditure.
-let selectedPage = 1;
 let queued = false;
 let resizeBound = false;
 
@@ -25,59 +22,37 @@ function ensureStyles() {
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
-        #calorie-progress .expenditure-visual-carousel {
-            position: relative;
+        #calorie-progress .calorie-expenditure-comparison-card {
             min-width: 0;
-            margin-top: 2px;
         }
-        #calorie-progress .expenditure-visual-track {
-            display: flex;
-            width: 100%;
-            overflow-x: auto;
-            overflow-y: hidden;
-            scroll-snap-type: x mandatory;
-            overscroll-behavior-x: contain;
-            scrollbar-width: none;
-            -webkit-overflow-scrolling: touch;
-        }
-        #calorie-progress .expenditure-visual-track::-webkit-scrollbar { display: none; }
-        #calorie-progress .expenditure-visual-page {
-            flex: 0 0 100%;
-            min-width: 100%;
-            scroll-snap-align: start;
-            scroll-snap-stop: always;
-            box-sizing: border-box;
-        }
-        #calorie-progress .expenditure-visual-page canvas {
-            touch-action: auto;
-        }
-        #calorie-progress .calorie-expenditure-page-heading {
+        #calorie-progress .calorie-expenditure-card-heading {
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
             gap: 12px;
-            margin: 4px 2px 8px;
+            margin-bottom: 8px;
         }
-        #calorie-progress .calorie-expenditure-page-heading > span {
+        #calorie-progress .calorie-expenditure-card-heading > div {
             display: grid;
             gap: 2px;
             min-width: 0;
         }
-        #calorie-progress .calorie-expenditure-page-heading small {
+        #calorie-progress .calorie-expenditure-card-heading small {
             color: var(--muted);
             font-size: 8px;
             font-weight: 900;
             letter-spacing: .09em;
             text-transform: uppercase;
         }
-        #calorie-progress .calorie-expenditure-page-heading strong {
+        #calorie-progress .calorie-expenditure-card-heading h3 {
+            margin: 0;
             color: var(--text);
-            font-size: 13px;
+            font-size: 15px;
             line-height: 1.15;
         }
-        #calorie-progress .calorie-expenditure-page-heading p {
+        #calorie-progress .calorie-expenditure-card-heading p {
             margin: 0;
-            max-width: 145px;
+            max-width: 150px;
             color: var(--text-secondary, var(--muted));
             font-size: 9px;
             font-weight: 650;
@@ -91,6 +66,7 @@ function ensureStyles() {
         #calorie-progress .calorie-expenditure-shell canvas {
             display: block;
             width: 100%;
+            touch-action: pan-y;
         }
         #calorie-progress .calorie-expenditure-tooltip {
             position: absolute;
@@ -111,8 +87,8 @@ function ensureStyles() {
             display: block;
         }
         #calorie-progress .calorie-expenditure-tooltip strong {
-            font-size: 10px;
             margin-bottom: 4px;
+            font-size: 10px;
         }
         #calorie-progress .calorie-expenditure-tooltip span {
             font-size: 9px;
@@ -162,37 +138,6 @@ function ensureStyles() {
             color: var(--muted);
             font-size: 8px;
             font-weight: 650;
-            text-align: center;
-        }
-        #calorie-progress .expenditure-carousel-pager {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            min-height: 22px;
-            margin-top: 5px;
-        }
-        #calorie-progress .expenditure-carousel-pager button {
-            width: 7px;
-            height: 7px;
-            min-width: 0;
-            padding: 0;
-            border: 0;
-            border-radius: 99px;
-            background: var(--muted);
-            opacity: .42;
-            transition: width .18s ease, opacity .18s ease, background .18s ease;
-        }
-        #calorie-progress .expenditure-carousel-pager button[aria-pressed="true"] {
-            width: 18px;
-            background: var(--accent);
-            opacity: 1;
-        }
-        #calorie-progress .expenditure-carousel-label {
-            margin: -1px 0 2px;
-            color: var(--muted);
-            font-size: 8px;
-            font-weight: 800;
             text-align: center;
         }
     `;
@@ -271,6 +216,7 @@ function buildComparisonState() {
     const current = getCalculatedMaintenanceEstimate(profileEstimate);
     const history = getCalculatedMaintenanceHistory(profileEstimate, { startDate: historyStart });
     const foodLog = readJson(FOOD_LOG_KEY, {});
+    const completedDays = readJson(FOOD_COMPLETE_KEY, {});
     const today = localDateKey();
     const currentLive = positive(current?.liveMaintenanceCalories);
     if (currentLive !== null && history.at(-1)?.date === today) history[history.length - 1].liveMaintenanceCalories = currentLive;
@@ -280,26 +226,21 @@ function buildComparisonState() {
         const live = positive(point.liveMaintenanceCalories);
         const reviewed = positive(point.maintenanceCalories);
         let expenditureCalories = null;
-        let mode = "learning";
         if (live !== null) {
             expenditureCalories = live;
             lastUsable = live;
-            mode = "updating";
         } else {
             const held = lastUsable ?? reviewed;
             if (held !== null) {
                 expenditureCalories = held;
                 lastUsable = held;
-                mode = "holding";
             }
         }
-        return {
-            ...point,
-            expenditureCalories,
-            mode,
-            intakeCalories: caloriesForDay(foodLog?.[point.date]),
-            isToday: point.date === today
-        };
+        const isToday = point.date === today;
+        const intakeCalories = isToday && completedDays?.[today] !== true
+            ? null
+            : caloriesForDay(foodLog?.[point.date]);
+        return { ...point, expenditureCalories, intakeCalories, isToday };
     });
 
     const visibleStart = requestedStart
@@ -321,40 +262,32 @@ function comparisonAxis(points) {
     return { yMin: 0, yMax: Math.max(step * 4, Math.ceil(maximum / step) * step) };
 }
 
-function updatePager(carousel, index) {
-    const safe = index === 0 ? 0 : 1;
-    selectedPage = safe;
-    carousel.querySelectorAll("[data-expenditure-carousel-page]").forEach(button => {
-        button.setAttribute("aria-pressed", String(Number(button.dataset.expenditureCarouselPage) === safe));
+function restoreLegacyCarousel(graphCard) {
+    const legacy = graphCard.querySelector("[data-expenditure-visual-carousel]");
+    if (!legacy) return;
+    const expenditurePage = legacy.querySelector('[data-expenditure-visual-page="expenditure"]');
+    [".expenditure-chart-shell", ".expenditure-chart-legend", ".expenditure-chart-hint"].forEach(selector => {
+        const node = expenditurePage?.querySelector(selector);
+        if (node) legacy.insertAdjacentElement("beforebegin", node);
     });
-    const label = carousel.querySelector("[data-expenditure-carousel-label]");
-    if (label) label.textContent = safe === 0 ? "Calories vs Expenditure" : "Expenditure Over Time";
+    legacy.remove();
 }
 
-function ensureCarousel(card) {
-    const existing = card.querySelector("[data-expenditure-visual-carousel]");
-    if (existing) return existing;
-
-    const shell = card.querySelector(".expenditure-chart-shell");
-    const legend = card.querySelector(".expenditure-chart-legend");
-    const hint = card.querySelector(".expenditure-chart-hint");
-    if (!shell || !legend || !hint) return null;
-
-    const carousel = document.createElement("div");
-    carousel.className = "expenditure-visual-carousel";
-    carousel.dataset.expenditureVisualCarousel = "1";
-    const track = document.createElement("div");
-    track.className = "expenditure-visual-track";
-    track.dataset.expenditureVisualTrack = "1";
-
-    const comparisonPage = document.createElement("section");
-    comparisonPage.className = "expenditure-visual-page expenditure-comparison-page";
-    comparisonPage.dataset.expenditureVisualPage = "comparison";
-    comparisonPage.innerHTML = `
-        <div class="calorie-expenditure-page-heading">
-            <span><small>ENERGY BALANCE</small><strong>Calories vs Expenditure</strong></span>
+function ensureComparisonCard(graphCard) {
+    restoreLegacyCarousel(graphCard);
+    let card = document.querySelector("#calorie-progress [data-calorie-expenditure-comparison-card]");
+    if (card) {
+        if (card.previousElementSibling !== graphCard) graphCard.insertAdjacentElement("afterend", card);
+        return card;
+    }
+    card = document.createElement("article");
+    card.className = "calorie-stat-card calorie-expenditure-comparison-card";
+    card.dataset.calorieExpenditureComparisonCard = "1";
+    card.innerHTML = `
+        <header class="calorie-expenditure-card-heading">
+            <div><small>ENERGY BALANCE</small><h3>Calories vs Expenditure</h3></div>
             <p>Bars show logged calories. The line shows daily expenditure.</p>
-        </div>
+        </header>
         <div class="calorie-expenditure-shell">
             <canvas data-calorie-expenditure-chart role="img" aria-label="Daily calories compared with daily expenditure"></canvas>
             <div class="calorie-expenditure-tooltip" data-calorie-expenditure-tooltip hidden aria-live="polite"></div>
@@ -363,59 +296,9 @@ function ensureCarousel(card) {
             <span><i class="is-calories"></i>Calories</span>
             <span><i class="is-expenditure"></i>Expenditure</span>
         </div>
-        <p class="calorie-expenditure-hint">Tap or drag for daily values.</p>`;
-
-    const expenditurePage = document.createElement("section");
-    expenditurePage.className = "expenditure-visual-page expenditure-only-page";
-    expenditurePage.dataset.expenditureVisualPage = "expenditure";
-
-    shell.parentNode.insertBefore(carousel, shell);
-    carousel.appendChild(track);
-    track.appendChild(comparisonPage);
-    track.appendChild(expenditurePage);
-    expenditurePage.appendChild(shell);
-    expenditurePage.appendChild(legend);
-    expenditurePage.appendChild(hint);
-
-    const label = document.createElement("p");
-    label.className = "expenditure-carousel-label";
-    label.dataset.expenditureCarouselLabel = "1";
-    carousel.appendChild(label);
-
-    const pager = document.createElement("div");
-    pager.className = "expenditure-carousel-pager";
-    pager.innerHTML = `
-        <button type="button" data-expenditure-carousel-page="0" aria-label="Show Calories vs Expenditure" aria-pressed="false"></button>
-        <button type="button" data-expenditure-carousel-page="1" aria-label="Show Expenditure Over Time" aria-pressed="true"></button>`;
-    carousel.appendChild(pager);
-
-    let scrollQueued = false;
-    track.addEventListener("scroll", () => {
-        if (scrollQueued) return;
-        scrollQueued = true;
-        window.requestAnimationFrame(() => {
-            scrollQueued = false;
-            const width = Math.max(1, track.clientWidth);
-            updatePager(carousel, Math.round(track.scrollLeft / width));
-            card.__levelUpCaloriesExpenditureDraw?.();
-            card.__levelUpLiveDailyExpenditureDraw?.();
-        });
-    }, { passive: true });
-
-    pager.addEventListener("click", event => {
-        const button = event.target.closest("[data-expenditure-carousel-page]");
-        if (!button) return;
-        const index = Number(button.dataset.expenditureCarouselPage) === 0 ? 0 : 1;
-        selectedPage = index;
-        track.scrollTo({ left: index * track.clientWidth, behavior: "smooth" });
-        updatePager(carousel, index);
-    });
-
-    updatePager(carousel, selectedPage);
-    window.requestAnimationFrame(() => {
-        track.scrollLeft = selectedPage * track.clientWidth;
-    });
-    return carousel;
+        <p class="calorie-expenditure-hint">Tap or drag for daily values. Uses the expenditure range selected above.</p>`;
+    graphCard.insertAdjacentElement("afterend", card);
+    return card;
 }
 
 function renderComparisonChart(card, state) {
@@ -479,36 +362,29 @@ function renderComparisonChart(card, state) {
             const base = y(0);
             const left = Math.max(padding.left, Math.min(width - padding.right - barWidth, pointX - barWidth / 2));
             context.save();
-            context.globalAlpha = point.isToday ? .20 : .28;
+            context.globalAlpha = .28;
             context.fillStyle = accent;
             context.fillRect(left, top, barWidth, Math.max(1, base - top));
-            context.globalAlpha = point.isToday ? .34 : .55;
+            context.globalAlpha = .55;
             context.strokeStyle = accent;
             context.lineWidth = 1;
             context.strokeRect(left + .5, top + .5, Math.max(0, barWidth - 1), Math.max(0, base - top - 1));
             context.restore();
         });
 
-        for (let index = 1; index < state.points.length; index += 1) {
-            const previous = state.points[index - 1];
-            const point = state.points[index];
+        if (state.points.length) {
             context.save();
             context.strokeStyle = text;
-            context.lineWidth = point.mode === "holding" ? 1.8 : 2.5;
-            context.globalAlpha = point.mode === "holding" ? .46 : .94;
-            context.setLineDash(point.mode === "holding" ? [5, 5] : []);
+            context.lineWidth = 2.5;
+            context.globalAlpha = .94;
+            context.setLineDash([]);
             context.beginPath();
-            context.moveTo(x(previous), y(previous.expenditureCalories));
-            context.lineTo(x(point), y(point.expenditureCalories));
+            state.points.forEach((point, index) => {
+                if (index === 0) context.moveTo(x(point), y(point.expenditureCalories));
+                else context.lineTo(x(point), y(point.expenditureCalories));
+            });
             context.stroke();
             context.restore();
-        }
-
-        if (state.points.length === 1) {
-            context.fillStyle = text;
-            context.beginPath();
-            context.arc(x(state.points[0]), y(state.points[0].expenditureCalories), 3, 0, Math.PI * 2);
-            context.fill();
         }
 
         const labelCount = state.range === "1w" ? 7 : 5;
@@ -563,7 +439,7 @@ function renderComparisonChart(card, state) {
         const expenditure = Number(point.expenditureCalories);
         const difference = Number.isFinite(intake) ? intake - expenditure : null;
         tooltip.hidden = false;
-        tooltip.innerHTML = `<strong>${formatDate(point.date)}</strong><span>Calories: ${Number.isFinite(intake) ? `${formatNumber(intake)}${point.isToday ? " so far" : ""}` : "Not logged"}</span><span>Expenditure: ${formatNumber(expenditure)}</span><small>${Number.isFinite(difference) ? `${difference >= 0 ? "+" : "−"}${formatNumber(Math.abs(difference))} cal ${difference >= 0 ? "above" : "below"} expenditure` : "Log calories to compare energy intake with expenditure."}</small>`;
+        tooltip.innerHTML = `<strong>${formatDate(point.date)}</strong><span>Calories: ${Number.isFinite(intake) ? formatNumber(intake) : point.isToday ? "Day not complete" : "Not logged"}</span><span>Expenditure: ${formatNumber(expenditure)}</span><small>${Number.isFinite(difference) ? `${difference >= 0 ? "+" : "−"}${formatNumber(Math.abs(difference))} cal ${difference >= 0 ? "above" : "below"} expenditure` : point.isToday ? "Today's calories appear after the day is marked complete." : "Log calories to compare energy intake with expenditure."}</small>`;
         const desiredLeft = relative < bounds.width / 2 ? relative + 10 : relative - 148;
         tooltip.style.left = `${Math.max(8, Math.min(bounds.width - 142, desiredLeft))}px`;
         draw();
@@ -593,13 +469,11 @@ function renderComparisonChart(card, state) {
 function refresh() {
     queued = false;
     ensureStyles();
-    const card = document.querySelector("#calorie-progress .expenditure-trend-card");
+    const graphCard = document.querySelector("#calorie-progress .expenditure-trend-card");
+    if (!graphCard) return;
+    const card = ensureComparisonCard(graphCard);
     if (!card) return;
-    const carousel = ensureCarousel(card);
-    if (!carousel) return;
-    const state = buildComparisonState();
-    renderComparisonChart(card, state);
-    updatePager(carousel, selectedPage);
+    renderComparisonChart(card, buildComparisonState());
 }
 
 function schedule() {
@@ -615,13 +489,7 @@ if (content) new MutationObserver(schedule).observe(content, { childList: true, 
 
 if (!resizeBound) {
     resizeBound = true;
-    window.addEventListener("resize", () => {
-        const card = document.querySelector("#calorie-progress .expenditure-trend-card");
-        const track = card?.querySelector("[data-expenditure-visual-track]");
-        if (track) track.scrollLeft = selectedPage * track.clientWidth;
-        card?.__levelUpCaloriesExpenditureDraw?.();
-        card?.__levelUpLiveDailyExpenditureDraw?.();
-    });
+    window.addEventListener("resize", () => document.querySelector("#calorie-progress [data-calorie-expenditure-comparison-card]")?.__levelUpCaloriesExpenditureDraw?.());
 }
 
 document.addEventListener("click", event => {
