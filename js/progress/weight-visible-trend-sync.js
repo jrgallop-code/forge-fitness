@@ -73,15 +73,36 @@ function syncCopy(section) {
     section.querySelectorAll(".weight-calories-legend .is-trend").forEach(icon => setText(icon.parentElement, "Trend Weight"));
 }
 
+function syncTopSummary(weights) {
+    const today = localDateKey();
+    const eligible = weights.filter(entry => entry.date <= today);
+    const latestDate = eligible.at(-1)?.date || null;
+    const trend = calculateVisibleWeightTrend(eligible, { endDate: latestDate });
+    const trendWeight = Number.isFinite(trend.trendWeight)
+        ? trend.trendWeight
+        : calculateTrendWeight(eligible, { endDate: latestDate });
+
+    const trendWeightNode = document.getElementById("latest-weight");
+    if (trendWeightNode) {
+        setText(trendWeightNode, Number.isFinite(trendWeight) ? `${trendWeight.toFixed(1)} lb` : "--");
+    }
+
+    const rateNode = document.getElementById("actual-weekly-weight-change");
+    if (rateNode) {
+        setText(rateNode, Number.isFinite(trend.weeklyChange) ? formatRate(trend.weeklyChange) : "Need more data");
+        const heading = rateNode.closest(".metric-card")?.querySelector("h3");
+        setText(heading, trend.label || "Weekly Trend");
+    }
+}
+
 function syncTdeeCopy() {
     const note = document.querySelector("#calorie-progress .calculated-maintenance-breakdown > small");
     if (!note) return;
-    setText(note, "Food intake uses logged days through yesterday. TDEE currently keeps its existing 21-day weigh-in regression and remains separate from the smoothed Trend Weight shown in Weight Progress. Level Up holds the displayed TDEE between seven-day reviews, requires 7 food days and a 14-day weight span, and limits each update to 50 calories while confidence is building or 100 calories at high confidence.");
+    setText(note, "Food intake uses logged days through yesterday. TDEE now uses the same smoothed weekly weight-change signal shown in Weight Progress while keeping its existing 21-day evidence window, confidence gates, seven-day review cadence, and 50-calorie building / 100-calorie high-confidence stabilization limits.");
 }
 
-function syncHistory(section) {
+function syncHistory(section, weights) {
     const today = localDateKey();
-    const weights = readWeights();
     const rows = [...section.querySelectorAll("#weight-history-list .weight-table-row")];
     if (!rows.length || !weights.length) return;
 
@@ -112,10 +133,12 @@ function syncHistory(section) {
 function refresh() {
     queued = false;
     ensureInteractionStyles();
+    const weights = readWeights();
     const section = document.getElementById("weight-progress");
     if (section) {
         syncCopy(section);
-        syncHistory(section);
+        syncTopSummary(weights);
+        syncHistory(section, weights);
     }
     syncTdeeCopy();
 }
@@ -127,9 +150,10 @@ function schedule() {
 }
 
 const content = document.getElementById("content");
-if (content) new MutationObserver(schedule).observe(content, { childList: true, subtree: true });
+if (content) new MutationObserver(schedule).observe(content, { childList: true, subtree: true, characterData: true });
 window.addEventListener("pageshow", schedule);
 window.addEventListener("levelup:nutrition-updated", schedule);
+window.addEventListener("levelup:weight-updated", schedule);
 document.addEventListener("click", event => {
     if (event.target.closest?.("#save-weight-btn, .remove-weight-entry, #weight-tab, #nutrition-progress-tab, [data-page='progress']")) {
         window.setTimeout(schedule, 50);
