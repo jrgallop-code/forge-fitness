@@ -1,4 +1,6 @@
 import { openWorkoutLogger } from "../workouts/workout-session.js?v=workout-source-stats-1";
+import { getTrainingPreferences } from "../core/training-preferences.js?v=onboarding-training-days-1";
+import { createOnboardingSchedule } from "./onboarding-schedule.js?v=onboarding-training-days-1";
 
 const PLAN_KEY = "forge_workout_plans";
 const SESSION_KEY = "forge_workout_sessions";
@@ -34,7 +36,7 @@ export function initializeWorkoutSchedule(scope = document) {
 
 function renderWorkoutSchedulePanel() {
     const plans = getPlans();
-    const schedule = getSchedule();
+    const schedule = ensureOnboardingSchedule(plans, getSchedule());
     if (!plans.length) {
         return `<section class="workout-home-section workout-schedule-shell"><div class="schedule-empty"><span class="eyebrow">WORKOUT SCHEDULE</span><h3>Create a workout plan first</h3><p>Your saved plan days will become available for weekly scheduling.</p></div></section>`;
     }
@@ -113,7 +115,7 @@ function bindWorkoutScheduleControls(page) {
     shell?.querySelector("[data-schedule-save]")?.addEventListener("click", () => {
         const weekly = {};
         shell.querySelectorAll("[data-weekday]").forEach(select => { weekly[select.dataset.weekday] = select.value === "" ? null : Number(select.value); });
-        saveSchedule({ planId: planSelect.value, weekly, exceptions: {}, updatedAt: new Date().toISOString() });
+        saveSchedule({ planId: planSelect.value, weekly, exceptions: {}, source: "manual", updatedAt: new Date().toISOString() });
         initializeWorkoutSchedule(document);
     });
     shell?.querySelector("[data-schedule-start]")?.addEventListener("click", event => startScheduledWorkout(event.currentTarget.dataset.planId));
@@ -154,8 +156,9 @@ function startScheduledWorkout(planId) {
 }
 
 function getTodayContext() {
-    const schedule = getSchedule();
-    const plan = getPlans().find(item => item.id === schedule?.planId);
+    const plans = getPlans();
+    const schedule = ensureOnboardingSchedule(plans, getSchedule());
+    const plan = plans.find(item => item.id === schedule?.planId);
     if (!schedule || !plan) return { schedule: null, plan: null, title: "No schedule", subtitle: "Set up a weekly schedule", statusLabel: "Unscheduled", dayIndex: null };
     const item = getScheduledItem(localDate(), schedule, plan);
     const completed = getSessions().some(session => session.planId === plan.id && Number(session.trainingDayIndex) === Number(item.dayIndex) && session.date === localDate());
@@ -182,6 +185,21 @@ function getPlans() { try { const value = JSON.parse(localStorage.getItem(PLAN_K
 function getSessions() { try { const value = JSON.parse(localStorage.getItem(SESSION_KEY) || "[]"); return Array.isArray(value) ? value : []; } catch { return []; } }
 function getSchedule() { try { const value = JSON.parse(localStorage.getItem(SCHEDULE_KEY) || "null"); return value && typeof value === "object" ? value : null; } catch { return null; } }
 function saveSchedule(value) { localStorage.setItem(SCHEDULE_KEY, JSON.stringify(value)); }
+function ensureOnboardingSchedule(plans, schedule) {
+    let preferences;
+    try { preferences = getTrainingPreferences(); } catch { return schedule; }
+    if (!preferences.onboardingComplete || !preferences.trainingDays.length) return schedule;
+    if (schedule && schedule.source !== "onboarding") return schedule;
+    const plan = schedule?.planId
+        ? plans.find(item => item.id === schedule.planId)
+        : [...plans].reverse().find(item => Array.isArray(item?.days) && item.days.length);
+    if (!plan) return schedule;
+    const next = createOnboardingSchedule(plan, preferences, schedule);
+    if (!next) return schedule;
+    if (schedule && JSON.stringify(schedule.weekly) === JSON.stringify(next.weekly)) return schedule;
+    saveSchedule(next);
+    return next;
+}
 function localDate() { return toDate(new Date()); }
 function toDate(date) { return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
 function addDays(value, count) { const date = new Date(value + "T12:00:00"); date.setDate(date.getDate() + count); return toDate(date); }

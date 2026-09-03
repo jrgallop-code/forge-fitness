@@ -1,3 +1,5 @@
+import { normalizeTrainingDays } from "../workouts/onboarding-schedule.js?v=onboarding-training-days-1";
+
 export const TRAINING_PREFERENCES_KEY = "level_up_training_preferences";
 export const TRAINING_PREFERENCES_SCHEMA_VERSION = 1;
 
@@ -23,6 +25,7 @@ export function getTrainingPreferences(){
         experience:EXPERIENCES.has(stored.experience)?stored.experience:null,
         priorities:normalizeStringArray(stored.priorities),
         days:ALLOWED_DAYS.has(days)?days:null,
+        trainingDays:normalizeTrainingDays(stored.trainingDays),
         duration:ALLOWED_DURATIONS.has(duration)?duration:null,
         excludedIds:normalizeStringArray(stored.excludedIds),
         onboardingComplete:stored.onboardingComplete===true,
@@ -36,6 +39,7 @@ export function saveTrainingPreferences(patch={}){
     const merged={...current,...patch,schemaVersion:TRAINING_PREFERENCES_SCHEMA_VERSION,updatedAt:new Date().toISOString()};
     if(patch.priorities!==undefined)merged.priorities=normalizeStringArray(patch.priorities);
     if(patch.excludedIds!==undefined)merged.excludedIds=normalizeStringArray(patch.excludedIds);
+    if(patch.trainingDays!==undefined)merged.trainingDays=normalizeTrainingDays(patch.trainingDays);
     localStorage.setItem(TRAINING_PREFERENCES_KEY,JSON.stringify(merged));
     window.dispatchEvent(new CustomEvent("levelup:training-preferences-updated",{detail:merged}));
     return getTrainingPreferences();

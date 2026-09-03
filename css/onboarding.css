@@ -79,16 +79,18 @@ body.levelup-onboarding-open{overflow:hidden}
 .onboarding-week-preview span{color:var(--muted);font-size:.72rem}
 .onboarding-week-preview strong{font-size:.75rem}
 .onboarding-week-dots{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
-.onboarding-week-dots span{display:grid;place-items:center;aspect-ratio:1;border-radius:10px;background:var(--surface-raised);color:var(--muted);font-size:.68rem;font-weight:900}
-.onboarding-week-dots span.active{background:var(--accent);color:var(--accent-contrast,#fff)}
+.onboarding-week-dots button{display:grid;place-items:center;min-width:0;aspect-ratio:1;border:1px solid transparent;border-radius:10px;background:var(--surface-raised);color:var(--muted);font-size:.68rem;font-weight:900;cursor:pointer}
+.onboarding-week-dots button.active{border-color:var(--accent);background:var(--accent);color:var(--accent-contrast,#fff);box-shadow:0 5px 14px color-mix(in srgb,var(--accent) 24%,transparent)}
+.onboarding-week-preview>p{color:var(--muted);font-size:.66rem;line-height:1.35}
 .onboarding-number-row,.onboarding-duration-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .onboarding-chip,.onboarding-no-priority{min-height:43px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font-size:.8rem;font-weight:900;padding:8px;cursor:pointer}
 .onboarding-duration-grid .onboarding-chip{display:grid;place-items:center;gap:0}
 .onboarding-duration-grid .onboarding-chip small{color:var(--muted);font-size:.55rem;text-transform:uppercase}
 .onboarding-chip.selected,.onboarding-no-priority.selected{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 .onboarding-setup-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-.onboarding-setup-card{min-height:95px;display:grid;align-content:start;gap:3px;padding:12px;border-radius:16px;text-align:left}
-.onboarding-setup-card>span{color:var(--accent);font-size:1.35rem;line-height:1}
+.onboarding-setup-card{min-height:118px;display:grid;align-content:start;gap:5px;padding:12px;border-radius:16px;text-align:left}
+.onboarding-setup-icon{display:grid!important;place-items:center;width:42px;height:42px;margin-bottom:3px;border-radius:13px;background:var(--accent-soft);color:var(--accent);line-height:1}
+.onboarding-setup-icon svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .onboarding-setup-card strong{font-size:.8rem}
 .onboarding-setup-card small{color:var(--muted);font-size:.65rem}
 .onboarding-profile-note,.onboarding-ready-preview{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));border-radius:15px;background:var(--accent-soft)}
