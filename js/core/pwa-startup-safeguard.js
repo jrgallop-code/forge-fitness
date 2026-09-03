@@ -112,7 +112,7 @@
         if (document.querySelector('script[data-interactive-workout-entry-fix]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/more/interactive-workout-tutorial-entry-fix.js?v=tutorial-entry-fix-1";
+        script.src = "js/more/interactive-workout-tutorial-entry-fix.js?v=tutorial-entry-fix-2";
         script.dataset.interactiveWorkoutEntryFix = "1";
         document.head.appendChild(script);
     }
