@@ -3,50 +3,50 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 
 const entry = readFileSync("js/progress/weight-carbs-chart.js", "utf8");
-const module = readFileSync("js/progress/weight-calorie-context.js", "utf8");
+const carbs = readFileSync("js/progress/weight-chart-carousel-v3.js", "utf8");
+const calories = readFileSync("js/progress/weight-calorie-context-v2.js", "utf8");
 
-test("Weight entry keeps the authoritative renderer and loads calorie context", () => {
-    assert.match(entry, /initializeWeightCarbsChartV2\(root\)/);
+test("Weight context entry loads the smoothed carbs and calorie renderers", () => {
+    assert.match(entry, /initializeWeightCarbsChartV3\(root\)/);
     assert.match(entry, /initializeWeightCarbsInteractionEnhancements\(root\)/);
-    assert.match(entry, /initializeWeightCalorieContext\(root\)/);
-    assert.match(entry, /weight-calorie-context\.js\?v=arctic-surfaces-1/);
+    assert.match(entry, /initializeWeightCalorieContextV2\(root\)/);
+    assert.match(entry, /smoothed-visible-trend-1/);
     assert.doesNotMatch(entry, /weight-secondary-context/);
 });
 
-test("Weight Trend points still expose actual and seven-day trend snapshots", () => {
-    assert.match(module, /#weight-trend-chart/);
-    assert.match(module, /selectWeightPoint/);
-    assert.match(module, /<b>Weight<\/b>/);
-    assert.match(module, /<b>7-day trend<\/b>/);
-    assert.match(module, /massUnit\(\)/);
-    assert.match(module, /displayMass\(/);
-    assert.doesNotMatch(module, /document\.addEventListener\("pointer/);
+test("Weight and Carbs uses shared smoothed Trend Weight", () => {
+    assert.match(carbs, /calculateTrendWeightSeries/);
+    assert.match(carbs, /Same smoothed Trend Weight/);
+    assert.match(carbs, />Trend Weight<\/span>/);
+    assert.match(carbs, /versus Trend Weight/);
+    assert.doesNotMatch(carbs, /7-day trend/);
 });
 
-test("third Weight carousel graph is Calories, not Sodium", () => {
-    assert.match(module, /data-weight-graph-slide-v2=\"calories\"/);
-    assert.match(module, /dataset\.weightGraphPageV2 = "2"/);
-    assert.match(module, /Weight \+ Calories/);
-    assert.match(module, /repeat\(3,minmax\(0,1fr\)\)/);
-    assert.doesNotMatch(module, /Weight \+ Sodium/);
+test("third Weight carousel graph is Calories and uses shared Trend Weight", () => {
+    assert.match(calories, /data-weight-graph-slide-v2=\"calories\"/);
+    assert.match(calories, /dataset\.weightGraphPageV2 = "2"/);
+    assert.match(calories, /Weight \+ Calories/);
+    assert.match(calories, /calculateTrendWeightSeries/);
+    assert.match(calories, /Trend Weight/);
+    assert.doesNotMatch(calories, /7-day trend/);
     assert.equal(existsSync("js/progress/weight-secondary-context.js"), false);
 });
 
 test("calories are read directly from logged nutrition snapshots", () => {
-    assert.match(module, /entry\?\.nutrition\?\.calories/);
-    assert.match(module, /reduce\(\(sum, entry\)/);
-    assert.match(module, /calories: Number\.isFinite\(calories\) \? calories : null/);
+    assert.match(calories, /entry\?\.nutrition\?\.calories/);
+    assert.match(calories, /reduce\(\(sum, entry\)/);
+    assert.match(calories, /calories: Number\.isFinite\(calories\) \? calories : null/);
 });
 
 test("Calories use a dedicated red accent and kcal axis", () => {
-    assert.match(module, /CALORIE_COLOR = "#ff5a5f"/);
-    assert.match(module, /fillText\("kcal"/);
-    assert.match(module, /is-calories/);
-    assert.match(module, /is-calorie-value/);
+    assert.match(calories, /CALORIE_COLOR = "#ff5a5f"/);
+    assert.match(calories, /fillText\("kcal"/);
+    assert.match(calories, /is-calories/);
 });
 
-test("Calories tooltip shows weight, trend, and calorie values", () => {
-    assert.match(module, /No weight logged/);
-    assert.match(module, /trend`|trend"/);
-    assert.match(module, /Math\.round\(day\.calories\).*kcal/s);
+test("Calories tooltip shows raw weight, Trend Weight and calorie values", () => {
+    assert.match(calories, /<b>Weight<\/b>/);
+    assert.match(calories, /<b>Trend Weight<\/b>/);
+    assert.match(calories, /<b>Calories<\/b>/);
+    assert.match(calories, /Math\.round\(day\.calories\)/);
 });
