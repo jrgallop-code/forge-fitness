@@ -1,3 +1,4 @@
+import "./weight-visible-trend-sync.js?v=smoothed-visible-trend-1";
 import {
     calculateVisibleWeightTrend,
     normalizeWeightEntries
