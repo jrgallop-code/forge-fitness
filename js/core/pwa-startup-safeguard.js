@@ -11,7 +11,9 @@
     installBodyFatApprovedVisual();
     installBodyCompositionHealthRecords();
     installProteinMinimumConsistency();
+    installNutritionPhaseTargetStability();
     installNutritionAuthoritySync();
+    installInteractiveWorkoutTutorial();
 
     function installCloudBackupRecovery() {
         if (!document.querySelector('script[data-cloud-backup-history-ui]')) {
@@ -80,12 +82,30 @@
         document.head.appendChild(script);
     }
 
+    function installNutritionPhaseTargetStability() {
+        if (document.querySelector('script[data-nutrition-phase-target-stability]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/nutrition/nutrition-phase-target-stability.js?v=phase-target-stability-1";
+        script.dataset.nutritionPhaseTargetStability = "1";
+        document.head.appendChild(script);
+    }
+
     function installNutritionAuthoritySync() {
         if (document.querySelector('script[data-nutrition-authority-sync]')) return;
         const script = document.createElement("script");
         script.type = "module";
         script.src = "js/nutrition/nutrition-authority-sync.js?v=nutrition-authority-sync-2";
         script.dataset.nutritionAuthoritySync = "1";
+        document.head.appendChild(script);
+    }
+
+    function installInteractiveWorkoutTutorial() {
+        if (document.querySelector('script[data-interactive-workout-tutorial]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/more/interactive-workout-tutorial.js?v=interactive-workout-tutorial-1";
+        script.dataset.interactiveWorkoutTutorial = "1";
         document.head.appendChild(script);
     }
 
