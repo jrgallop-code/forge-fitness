@@ -1,5 +1,5 @@
 import { GOAL_PRESETS } from "./tdee-calculator.js?v=phase-tolerance-1";
-import { calculatePhaseMovingAverageTrend, calculateWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-phase-full-window-1";
+import { calculatePhaseMovingAverageTrend, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-phase-authority-1";
 
 const PHASES_KEY = "level_up_nutrition_phases";
 const WEIGHT_KEY = "forge_weight_entries";
@@ -101,39 +101,37 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
         rolling: options.rolling !== false
     });
 
-    // Once a phase reaches the first scheduled check, the measured rate should use
-    // the same complete rolling 7-day windows as Progress. The phase start still
-    // controls phase age and calorie-decision gates, but it must not truncate the
-    // previous comparison window. For example, an Aug 6 phase with an Aug 17
-    // weigh-in needs Aug 4-10 as the previous window, including any Aug 4/5 data.
+    // There is only one user-facing weight-rate signal in Level Up. Progress,
+    // expenditure and phase coaching all consume the same smoothed Trend Weight
+    // model. Phase-specific logic still controls phase age, check dates and when
+    // a calorie recommendation is allowed; it no longer creates a second rate.
     const latestMeasurementDate = allWeights.filter(e => e.date <= asOfDate).at(-1)?.date || null;
-    const liveTrend = Number(phaseTrend.phaseDay) >= FIRST_PHASE_CHECK_DAY && latestMeasurementDate
-        ? calculateWeightTrend(allWeights, { endDate: latestMeasurementDate, minEntriesPerWindow: 4 })
+    const visibleTrend = latestMeasurementDate
+        ? calculateVisibleWeightTrend(allWeights, {
+            endDate: latestMeasurementDate,
+            rateDays: 20,
+            minEntries: 3,
+            minSpanDays: 5,
+            fullEntries: 6,
+            fullSpanDays: 14
+        })
         : null;
-    const useLiveTrend = liveTrend?.status === "actual";
-    const trend = useLiveTrend
+    const useVisibleTrend = Number.isFinite(Number(visibleTrend?.weeklyChange));
+    const trend = useVisibleTrend
         ? {
-            ...liveTrend,
+            ...phaseTrend,
+            status: visibleTrend.status || phaseTrend.status,
+            label: visibleTrend.label || phaseTrend.label,
+            weeklyChange: Number(visibleTrend.weeklyChange),
             reason: null,
-            phaseDay: phaseTrend.phaseDay,
-            dataPhaseDay: phaseTrend.dataPhaseDay,
-            latestEntryDate: phaseTrend.latestEntryDate,
             measurementDate: latestMeasurementDate,
-            checkDay: phaseTrend.checkDay,
-            checkDate: phaseTrend.checkDate,
-            nextTrendDay: phaseTrend.nextTrendDay,
-            nextTrendDate: phaseTrend.nextTrendDate,
-            nextCheckDay: phaseTrend.nextCheckDay,
-            nextCheckDate: phaseTrend.nextCheckDate,
-            daysUntilTrend: phaseTrend.daysUntilTrend,
-            daysUntilCheck: phaseTrend.daysUntilCheck,
-            awaitingNewWeighIn: phaseTrend.awaitingNewWeighIn === true
+            visibleTrend: true
         }
         : phaseTrend;
 
     const actual = finiteNumber(trend?.weeklyChange);
     const target = finiteNumber(phase.targetWeeklyRate);
-    const referenceWeight = finiteNumber(trend?.currentAverage) ?? trendWeight(phaseEntries) ?? startingTrendWeight;
+    const referenceWeight = finiteNumber(trend?.currentAverage) ?? trendWeight(allWeights.filter(e => e.date <= asOfDate)) ?? startingTrendWeight;
     const bodyweightTolerance = Number.isFinite(referenceWeight)
         ? referenceWeight * BODYWEIGHT_TOLERANCE_PCT
         : DEFAULT_TOLERANCE_LB;
@@ -141,7 +139,7 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
     const tolerance = Math.max(bodyweightTolerance, targetTolerance);
 
     if (trend.status === "insufficient" || !Number.isFinite(actual)) {
-        const waitingStatus = trend.reason === "before-first-trend" ? "BUILDING TREND" : "NEED MORE DATA";
+        const waitingStatus = phaseTrend.reason === "before-first-trend" ? "BUILDING TREND" : "NEED MORE DATA";
         return buildMetrics(waitingStatus, trend, actual, target, tolerance, referenceWeight, false, metadata);
     }
 
