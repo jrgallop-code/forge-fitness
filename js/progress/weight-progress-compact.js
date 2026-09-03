@@ -1,7 +1,16 @@
-import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=progress-regression-trend-1";
+import { calculateTrendWeight, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
+import { completeTutorial, dismissTutorial, getTutorial, getTutorialState, setTutorialStep, shouldShowTutorial } from "../core/tutorials.js?v=trend-weight-1";
 
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
-const DAY_MS = 86400000;
+const TREND_TUTORIAL_ID = "trend-weight";
+const TREND_TUTORIAL_ICONS = [
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M6 15l3-4 3 2 5-7 2 2"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="8" r="2"/><path d="M8 11.4 16 8.6" stroke-dasharray="2 2"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16c3-6 5 1 8-4s5 2 10-5M3 19c4-3 7-2 10-5s5-3 8-5"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V6M4 18h16M7 15l4-5 3 2 5-6"/><path d="m16 6 3 0 0 3"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17V9M10 17V6M15 17v-4M20 17V4"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M5 8h14M7 8c0 3-1.5 5-4 6 1 2 3 3 5 3s4-1 5-3c-2.5-1-4-3-4-6M15 8c0 3-1.5 5-4 6 1 2 3 3 5 3s4-1 5-3c-2.5-1-4-3-4-6"/></svg>'
+];
 
 export function initializeWeightProgressCompact() {
     const section = document.getElementById("weight-progress");
@@ -10,6 +19,7 @@ export function initializeWeightProgressCompact() {
     compactWeightProgress(section);
     refreshWeightSummary();
     initializeSummaryCarousel(section);
+    initializeTrendWeightTutorial(section);
     relocateWeeklyReviewAlertToNutritionProgress(section);
 }
 
@@ -150,6 +160,80 @@ function initializeSummaryCarousel(section) {
     });
 }
 
+function trendTutorialStepMarkup(tutorial, stepIndex) {
+    const step = tutorial.steps[stepIndex];
+    const last = stepIndex === tutorial.steps.length - 1;
+    return `<div class="expenditure-tutorial-progress" aria-label="Step ${stepIndex + 1} of ${tutorial.steps.length}">
+            <span>${stepIndex + 1} of ${tutorial.steps.length}</span>
+            <div>${tutorial.steps.map((_, index) => `<i class="${index <= stepIndex ? "is-active" : ""}"></i>`).join("")}</div>
+        </div>
+        <div class="expenditure-tutorial-copy">
+            <span class="expenditure-tutorial-icon">${TREND_TUTORIAL_ICONS[stepIndex] || TREND_TUTORIAL_ICONS[0]}</span>
+            <div><small>${step.eyebrow}</small><h3>${step.title}</h3></div>
+            <p>${step.body}</p>
+        </div>
+        <div class="expenditure-tutorial-actions">
+            <button type="button" class="expenditure-tutorial-dismiss" data-trend-tutorial-dismiss>Dismiss tutorial</button>
+            <span>
+                <button type="button" class="secondary-btn" data-trend-tutorial-previous ${stepIndex === 0 ? "disabled" : ""}>Previous</button>
+                <button type="button" class="primary-btn" data-trend-tutorial-next>${last ? "Finish" : "Next"}</button>
+            </span>
+        </div>`;
+}
+
+function initializeTrendWeightTutorial(section) {
+    const tutorial = getTutorial(TREND_TUTORIAL_ID);
+    const summary = section.querySelector(".weight-summary");
+    if (!tutorial || !summary) return;
+
+    let card = section.querySelector("[data-trend-weight-tutorial]");
+    if (!shouldShowTutorial(TREND_TUTORIAL_ID)) {
+        card?.remove();
+        return;
+    }
+
+    if (!card) {
+        card = document.createElement("aside");
+        card.className = "expenditure-tutorial-card weight-trend-tutorial-card";
+        card.dataset.trendWeightTutorial = "1";
+        card.setAttribute("aria-label", "Trend Weight tutorial");
+        card.setAttribute("aria-live", "polite");
+        summary.insertAdjacentElement("afterend", card);
+    }
+
+    const render = stepIndex => {
+        setTutorialStep(TREND_TUTORIAL_ID, stepIndex);
+        card.innerHTML = trendTutorialStepMarkup(tutorial, stepIndex);
+    };
+
+    const { step } = getTutorialState(TREND_TUTORIAL_ID);
+    card.innerHTML = trendTutorialStepMarkup(tutorial, step);
+
+    if (card.dataset.bound !== "1") {
+        card.dataset.bound = "1";
+        card.addEventListener("click", event => {
+            const current = getTutorialState(TREND_TUTORIAL_ID).step;
+            if (event.target.closest("[data-trend-tutorial-dismiss]")) {
+                dismissTutorial(TREND_TUTORIAL_ID, current);
+                card.remove();
+                return;
+            }
+            if (event.target.closest("[data-trend-tutorial-previous]")) {
+                render(Math.max(0, current - 1));
+                return;
+            }
+            if (event.target.closest("[data-trend-tutorial-next]")) {
+                if (current >= tutorial.steps.length - 1) {
+                    completeTutorial(TREND_TUTORIAL_ID);
+                    card.remove();
+                } else {
+                    render(current + 1);
+                }
+            }
+        });
+    }
+}
+
 function relocateWeeklyReviewAlertToNutritionProgress(section) {
     const summary = section.querySelector(".weight-summary");
     const nutritionProgress = document.getElementById("calorie-progress");
@@ -191,8 +275,8 @@ function makeField(forId, labelText, input) {
 function refreshWeightSummary() {
     const today = getTodayLocalDate();
     const entries = readWeightEntries().filter(entry => entry.date <= today);
-    const trendWeight = getTrendWeight(entries);
-    const trend = calculateDisplayWeightTrend(entries);
+    const trend = calculateVisibleWeightTrend(entries);
+    const trendWeight = Number.isFinite(trend.trendWeight) ? trend.trendWeight : calculateTrendWeight(entries);
 
     setText("latest-weight", Number.isFinite(trendWeight) ? `${trendWeight.toFixed(1)} lb` : "--");
     setText("actual-weekly-weight-change", Number.isFinite(trend.weeklyChange) ? formatLbRate(trend.weeklyChange) : "Need more data");
@@ -211,20 +295,6 @@ function readWeightEntries() {
 
 function getTodayLocalDate(date = new Date()) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
-function getTrendWeight(entries) {
-    const normalized = normalizeWeightEntries(entries);
-    if (!normalized.length) return null;
-    const latest = normalized.at(-1);
-    const latestTime = new Date(`${latest.date}T12:00:00`).getTime();
-    const cutoff = latestTime - (6 * DAY_MS);
-    const recent = normalized.filter(entry => {
-        const time = new Date(`${entry.date}T12:00:00`).getTime();
-        return time >= cutoff && time <= latestTime;
-    });
-    if (!recent.length) return latest.weight;
-    return recent.reduce((sum, entry) => sum + entry.weight, 0) / recent.length;
 }
 
 function formatLbRate(value) {
