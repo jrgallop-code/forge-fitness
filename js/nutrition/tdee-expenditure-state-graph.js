@@ -147,7 +147,32 @@ function signedCalories(value) {
 }
 
 function niceStep(value) {
-    return [25, 50, 100, 200, 250, 500, 1000].find(step => step >= value) || 2000;
+    return [25, 50, 75, 100, 125, 150, 200, 250, 500, 1000].find(step => step >= value) || 2000;
+}
+
+function expenditureAxis(values = []) {
+    const usable = values.map(Number).filter(Number.isFinite);
+    if (!usable.length) return { yMin: 0, yMax: 200, step: 50 };
+    const minimum = Math.min(...usable);
+    const maximum = Math.max(...usable);
+    const spread = Math.max(0, maximum - minimum);
+    // Keep the view tight enough to make real 25–100 kcal changes legible,
+    // without exaggerating tiny movement. Four equal tick intervals are used.
+    const desiredSpan = Math.max(150, spread * 1.35);
+    const step = niceStep(desiredSpan / 4);
+    const span = step * 4;
+    const midpoint = (minimum + maximum) / 2;
+    let yMin = Math.floor((midpoint - span / 2) / step) * step;
+    let yMax = yMin + span;
+    if (minimum < yMin) {
+        yMin = Math.floor(minimum / step) * step;
+        yMax = yMin + span;
+    }
+    if (maximum > yMax) {
+        yMax = Math.ceil(maximum / step) * step;
+        yMin = yMax - span;
+    }
+    return { yMin, yMax, step };
 }
 
 function decorateCard(card, state) {
@@ -204,14 +229,10 @@ function installGraph(card, state) {
 
         const plotWidth = width - padding.left - padding.right;
         const plotHeight = height - padding.top - padding.bottom;
+        // Scale from the actual Level Up expenditure series only. The generic
+        // profile reference is contextual and must not flatten the real trend.
         const values = state.points.map(point => Number(point.maintenanceCalories));
-        if (Number.isFinite(state.profileEstimate)) values.push(Number(state.profileEstimate));
-        const minimum = Math.min(...values);
-        const maximum = Math.max(...values);
-        const step = niceStep(Math.max(100, maximum - minimum) / 4);
-        let yMin = Math.floor((minimum - step) / step) * step;
-        let yMax = Math.ceil((maximum + step) / step) * step;
-        if (yMax <= yMin) yMax = yMin + step * 4;
+        const { yMin, yMax } = expenditureAxis(values);
         const x = point => padding.left + ((new Date(`${point.date}T12:00:00`).getTime() - startMs) / Math.max(1, endMs - startMs)) * plotWidth;
         const y = value => padding.top + (1 - (Number(value) - yMin) / (yMax - yMin)) * plotHeight;
         const accent = themeColor("--accent", "#ff3b4b");
@@ -236,7 +257,7 @@ function installGraph(card, state) {
             context.fillText(formatNumber(value), width - padding.right + 9, lineY);
         }
 
-        if (Number.isFinite(state.profileEstimate)) {
+        if (Number.isFinite(state.profileEstimate) && state.profileEstimate >= yMin && state.profileEstimate <= yMax) {
             context.save();
             context.setLineDash([5, 5]);
             context.strokeStyle = muted;
