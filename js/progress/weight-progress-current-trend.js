@@ -1,7 +1,7 @@
 import {
     calculateDisplayWeightTrend,
     normalizeWeightEntries
-} from "../core/weight-trend.js?v=progress-regression-trend-1";
+} from "../core/weight-trend.js?v=progress-regression-trend-2";
 
 const WEIGHT_KEY = "forge_weight_entries";
 const LIVE_RATE_ID = "weight-current-weekly-trend";
@@ -14,6 +14,10 @@ function readWeights() {
     } catch {
         return [];
     }
+}
+
+function localDateKey(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function formatRate(value) {
@@ -41,12 +45,12 @@ function detachLiveCardFromPhaseRenderer() {
 }
 
 function refresh() {
-    const weights = readWeights();
+    const today = localDateKey();
+    const weights = readWeights().filter(entry => entry.date <= today);
     const latestEntryDate = weights.at(-1)?.date || null;
 
-    // Keep the visible Progress trend measurement-driven even when a user enters
-    // a future-dated test weigh-in. Nutrition decisions still use the separate,
-    // stricter phase calculation and are not relaxed by this display.
+    // Live Progress is always anchored to the latest real weigh-in through today.
+    // Future-dated entries remain available to the isolated test preview only.
     const trend = calculateDisplayWeightTrend(weights, { endDate: latestEntryDate });
     const rateText = Number.isFinite(trend.weeklyChange)
         ? formatRate(trend.weeklyChange)
