@@ -110,7 +110,7 @@ function buildState() {
     const raw = getCalculatedMaintenanceHistory(profileEstimate, { startDate: historyStart });
 
     const today = localDateKey();
-    const currentLive = positive(current?.liveMaintenanceCalories ?? current?.maintenanceCalories);
+    const currentLive = positive(current?.liveMaintenanceCalories);
     if (currentLive !== null && raw.at(-1)?.date === today) raw[raw.length - 1].liveMaintenanceCalories = currentLive;
 
     let lastUsable = null;
