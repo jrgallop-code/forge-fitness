@@ -53,7 +53,8 @@ test("Nutrition Progress provides a persistent clickable TDEE tutorial", async (
     assert.match(controller, /completeTutorial\(TUTORIAL_ID\)/);
     assert.match(controller, /pointer-events: auto !important/);
     assert.match(registry, /TDEE uses your smoothed Weekly Trend/);
-    assert.match(registry, /CONFIDENCE & STABILITY/);
+    assert.match(registry, /TDEE can update each day/);
+    assert.match(registry, /WEEKLY CALORIE REVIEW/);
     assert.match(styles, /\.expenditure-tutorial-card/);
     assert.match(styles, /\.expenditure-tutorial-progress/);
 });
