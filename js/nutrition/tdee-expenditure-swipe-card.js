@@ -1,6 +1,5 @@
 const STYLE_ID = "level-up-tdee-expenditure-swipe-card-styles";
 const WRAPPER_ATTR = "data-tdee-expenditure-swipe-card";
-const PAGER_ATTR = "data-tdee-expenditure-swipe-pager";
 let scheduled = false;
 
 install();
@@ -55,10 +54,8 @@ function combineCards() {
         wrapper.appendChild(expenditureCard);
     }
 
-    const pager = ensurePager(wrapper);
-
     if (comparisonCard.parentElement !== wrapper || comparisonCard.previousElementSibling !== expenditureCard) {
-        wrapper.insertBefore(comparisonCard, pager);
+        wrapper.appendChild(comparisonCard);
     }
 
     expenditureCard.dataset.tdeeExpenditureSlide = "0";
@@ -66,23 +63,25 @@ function combineCards() {
     expenditureCard.setAttribute("aria-label", "Expenditure Over Time, graph 1 of 2");
     comparisonCard.setAttribute("aria-label", "Calories vs Expenditure, graph 2 of 2");
 
+    ensurePager(expenditureCard, 0);
+    ensurePager(comparisonCard, 1);
     bindSwipe(wrapper);
     updatePager(wrapper);
 }
 
-function ensurePager(wrapper) {
-    let pager = wrapper.querySelector(`:scope > [${PAGER_ATTR}]`);
+function ensurePager(card, pageIndex) {
+    let pager = card.querySelector(":scope > [data-tdee-expenditure-swipe-pager]");
     if (pager) return pager;
 
     pager = document.createElement("div");
     pager.className = "tdee-expenditure-swipe-pager";
-    pager.setAttribute(PAGER_ATTR, "1");
+    pager.dataset.tdeeExpenditureSwipePager = "1";
     pager.setAttribute("aria-label", "Energy graph pages");
     pager.innerHTML = `
-        <button type="button" data-tdee-expenditure-page="0" aria-label="Show Expenditure Over Time" aria-pressed="true"></button>
-        <button type="button" data-tdee-expenditure-page="1" aria-label="Show Calories vs Expenditure" aria-pressed="false"></button>
-        <span>Swipe for calories vs expenditure</span>`;
-    wrapper.appendChild(pager);
+        <button type="button" data-tdee-expenditure-page="0" aria-label="Show Expenditure Over Time" aria-pressed="${pageIndex === 0}"></button>
+        <button type="button" data-tdee-expenditure-page="1" aria-label="Show Calories vs Expenditure" aria-pressed="${pageIndex === 1}"></button>
+        <span>${pageIndex === 0 ? "Swipe for calories vs expenditure" : "Swipe back for expenditure over time"}</span>`;
+    card.appendChild(pager);
     return pager;
 }
 
@@ -137,8 +136,6 @@ function updatePager(wrapper) {
     wrapper.querySelectorAll("[data-tdee-expenditure-page]").forEach(button => {
         button.setAttribute("aria-pressed", String(Number(button.dataset.tdeeExpenditurePage) === index));
     });
-    const hint = wrapper.querySelector(`:scope > [${PAGER_ATTR}] span`);
-    if (hint) hint.textContent = index === 0 ? "Swipe for calories vs expenditure" : "Swipe back for expenditure over time";
 }
 
 function ensureStyles() {
@@ -147,7 +144,6 @@ function ensureStyles() {
     style.id = STYLE_ID;
     style.textContent = `
         #calorie-progress .tdee-expenditure-swipe-card {
-            position: relative;
             display: flex;
             align-items: stretch;
             gap: 0;
@@ -159,17 +155,18 @@ function ensureStyles() {
             scroll-behavior: smooth;
             scrollbar-width: none;
             overscroll-behavior-x: contain;
-            padding-bottom: 30px;
         }
         #calorie-progress .tdee-expenditure-swipe-card::-webkit-scrollbar {
             display: none;
         }
         #calorie-progress .tdee-expenditure-swipe-card > .calorie-stat-card {
+            position: relative;
             flex: 0 0 100%;
             width: 100%;
             min-width: 100%;
             max-width: 100%;
             margin: 0;
+            padding-bottom: 42px !important;
             scroll-snap-align: start;
             scroll-snap-stop: always;
             box-sizing: border-box;
@@ -178,17 +175,11 @@ function ensureStyles() {
             margin-left: 0 !important;
         }
         #calorie-progress .tdee-expenditure-swipe-pager {
-            position: sticky;
+            position: absolute;
             left: 0;
-            bottom: 0;
+            right: 0;
+            bottom: 12px;
             z-index: 5;
-            flex: 0 0 0;
-            width: 0;
-            min-width: 0;
-            height: 26px;
-            align-self: flex-end;
-            transform: translateX(-200%);
-            pointer-events: none;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -206,7 +197,6 @@ function ensureStyles() {
             border: 0;
             border-radius: 999px;
             background: color-mix(in srgb, var(--text) 24%, transparent);
-            pointer-events: auto;
             transition: width .18s ease, background .18s ease;
         }
         #calorie-progress .tdee-expenditure-swipe-pager button[aria-pressed="true"] {
