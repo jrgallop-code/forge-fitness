@@ -1,5 +1,5 @@
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=nutrition-authority-sync-1";
-import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-authority-sync-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=nutrition-authority-sync-2";
+import { getActiveNutritionPhase } from "./nutrition-phase.js?v=nutrition-authority-sync-2";
 
 const SNAPSHOT_KEY = "level_up_weekly_tdee_estimate_v1";
 const STYLE_ID = "level-up-nutrition-authority-sync-styles";
@@ -11,7 +11,12 @@ install();
 function install() {
     ensureStyles();
     schedule();
-    new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-weekly-calorie-review-ready"] });
+    new MutationObserver(schedule).observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["data-weekly-calorie-review-ready"]
+    });
     [
         "levelup:nutrition-updated",
         "levelup:nutrition-phase-updated",
@@ -31,7 +36,7 @@ function schedule() {
         const signals = getAuthoritySignals();
         patchNutritionPhase(signals);
         patchWeeklyReviewModal(signals);
-        syncWeeklyReviewBaseline(signals);
+        syncReviewCalculationToCurrentExpenditure(signals);
     });
 }
 
@@ -40,19 +45,27 @@ function positive(value) {
     return Number.isFinite(number) && number > 0 ? number : null;
 }
 
+function finite(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+}
+
 function currentExpenditure(estimate) {
-    return positive(estimate?.liveMaintenanceCalories) ?? positive(estimate?.maintenanceCalories) ?? positive(estimate?.profileEstimate);
+    return positive(estimate?.liveMaintenanceCalories)
+        ?? positive(estimate?.maintenanceCalories)
+        ?? positive(estimate?.profileEstimate);
 }
 
 function getAuthoritySignals() {
     const estimate = getCalculatedMaintenanceEstimate();
     const phase = getActiveNutritionPhase();
-    const metrics = phase ? getActivePhaseMetrics(phase, { rolling: true }) : null;
     return {
         estimate,
         phase,
-        metrics,
         expenditure: currentExpenditure(estimate),
+        // This is deliberately the exact Trend Weight rate consumed by the TDEE engine.
+        // Do not calculate a separate phase-specific user-facing rate here.
+        weightRate: finite(estimate?.weightRateLbPerWeek),
         planBaseline: positive(phase?.maintenanceCalories),
         targetCalories: positive(phase?.currentCalories ?? phase?.startCalories)
     };
@@ -74,7 +87,7 @@ function formatRate(value) {
 }
 
 function patchNutritionPhase(signals) {
-    const { estimate, phase, metrics, expenditure, planBaseline, targetCalories } = signals;
+    const { estimate, phase, expenditure, weightRate, planBaseline, targetCalories } = signals;
 
     const calculated = document.getElementById("unified-calculated-maintenance");
     if (calculated) {
@@ -85,39 +98,24 @@ function patchNutritionPhase(signals) {
             const evidence = Number.isFinite(expenditure)
                 ? `${estimate?.label || "Estimate"} · ${Number(estimate?.foodDays) || 0} food days · ${Number(estimate?.weighIns) || 0} weigh-ins`
                 : `${Number(estimate?.foodDays) || 0}/2 food days · ${Number(estimate?.weighIns) || 0}/3 weigh-ins`;
-            setText(meta, `${evidence} · same daily expenditure shown in Progress`);
+            setText(meta, `${evidence} · identical to Progress → Nutrition`);
         }
     }
 
     const baselineLabel = document.querySelector('label[for="unified-maintenance"]');
     setText(baselineLabel, "Weekly Plan Baseline");
     const help = document.querySelector("#unified-goals-calories-card .unified-help");
-    setText(help, "This is the saved expenditure baseline from your current plan or last weekly review. Current Expenditure can update daily, but your calorie target changes only during the weekly review.");
+    setText(help, "Current Expenditure is Level Up's one live TDEE estimate. The Weekly Plan Baseline is the expenditure value locked in at the last accepted review and used to hold your calorie target steady between reviews.");
     const choiceNote = document.querySelector("#unified-goals-calories-card .unified-maintenance-choice-note");
-    if (choiceNote) choiceNote.innerHTML = "<strong>One expenditure estimate</strong> Level Up uses the live Current Expenditure shown in Progress. At a weekly review, that value becomes the new plan baseline before the calorie target is calculated.";
+    if (choiceNote) choiceNote.innerHTML = "<strong>One TDEE, two jobs</strong> Current Expenditure updates from intake + Trend Weight. Your calorie target stays on the Weekly Plan Baseline until the next accepted weekly review.";
 
     const modeHelp = document.getElementById("unified-maintenance-mode-help");
-    if (modeHelp && modeHelp.textContent?.includes("maintenance estimate")) {
-        modeHelp.textContent = modeHelp.textContent.replace(/maintenance estimate/gi, "Current Expenditure estimate");
+    if (modeHelp) {
+        setText(modeHelp, "Automatic reviews use the same Current Expenditure and Trend Weight shown in Progress. The saved calorie target only changes when a weekly review is applied.");
     }
 
-    document.querySelectorAll("#nutrition-current-phase .nutrition-current-phase-grid > div").forEach(cell => {
-        const label = cell.querySelector("span")?.textContent?.trim() || "";
-        const value = cell.querySelector("strong");
-        if (!value) return;
-        if (/current weekly trend|actual since start|phase weekly rate|weight trend/i.test(label)) {
-            setText(value, formatRate(metrics?.actualRateLbPerWeek));
-            return;
-        }
-        if (/maintenance|calculated tdee|current expenditure/i.test(label)) {
-            setText(cell.querySelector("span"), "Current Expenditure");
-            setText(value, formatCalories(expenditure));
-            return;
-        }
-        if (/current calories|calorie target|daily target/i.test(label) && targetCalories !== null) {
-            setText(value, formatCalories(targetCalories));
-        }
-    });
+    patchCurrentPhaseGrid(signals);
+    ensureAuthorityStrip(signals);
 
     const input = document.getElementById("unified-maintenance");
     if (input && phase && planBaseline !== null && document.activeElement !== input) {
@@ -126,7 +124,50 @@ function patchNutritionPhase(signals) {
     }
 
     const adultNote = document.querySelector("#unified-goals-calories-card .unified-adult-note");
-    setText(adultNote, "Phase timing controls when Level Up can change calories. The displayed weight rate itself is the same smoothed Trend Weight rate used in Progress and expenditure calculations.");
+    setText(adultNote, "Weight Trend and Current Expenditure are shared with Progress. Phase timing only controls when the calorie target may be updated; it does not create a second weight trend or a second TDEE.");
+}
+
+function patchCurrentPhaseGrid(signals) {
+    const { expenditure, weightRate, targetCalories } = signals;
+    document.querySelectorAll("#nutrition-current-phase .nutrition-current-phase-grid > div").forEach(cell => {
+        const labelNode = cell.querySelector("span");
+        const label = labelNode?.textContent?.trim() || "";
+        const value = cell.querySelector("strong");
+        if (!value) return;
+        if (/current weekly trend|actual since start|phase weekly rate|weight trend/i.test(label)) {
+            setText(labelNode, "Current Weight Trend");
+            setText(value, formatRate(weightRate));
+            return;
+        }
+        if (/maintenance|calculated tdee|current expenditure/i.test(label)) {
+            setText(labelNode, "Current Expenditure");
+            setText(value, formatCalories(expenditure));
+            return;
+        }
+        if (/current calories|calorie target|daily target/i.test(label) && targetCalories !== null) {
+            setText(labelNode, "Current Calorie Target");
+            setText(value, formatCalories(targetCalories));
+        }
+    });
+}
+
+function ensureAuthorityStrip(signals) {
+    const phaseCard = document.getElementById("nutrition-current-phase");
+    if (!phaseCard) return;
+    let strip = phaseCard.querySelector("[data-nutrition-authority-strip]");
+    if (!strip) {
+        strip = document.createElement("div");
+        strip.className = "nutrition-authority-strip";
+        strip.dataset.nutritionAuthorityStrip = "1";
+        const grid = phaseCard.querySelector(".nutrition-current-phase-grid");
+        if (grid) grid.insertAdjacentElement("afterend", strip);
+        else phaseCard.appendChild(strip);
+    }
+    strip.innerHTML = `
+        <div><span>Current Weight Trend</span><strong>${formatRate(signals.weightRate)}</strong><small>Same Trend Weight rate as Progress</small></div>
+        <div><span>Current Expenditure</span><strong>${formatCalories(signals.expenditure)}</strong><small>Live TDEE · same as Progress</small></div>
+        <div><span>Weekly Plan Baseline</span><strong>${formatCalories(signals.planBaseline)}</strong><small>Held from last accepted review</small></div>
+        <div><span>Current Calorie Target</span><strong>${formatCalories(signals.targetCalories)}</strong><small>Changes only after review</small></div>`;
 }
 
 function handleInitialPlanCalculatedTdee(event) {
@@ -144,11 +185,16 @@ function handleInitialPlanCalculatedTdee(event) {
     if (!input) return;
     input.value = String(Math.round(expenditure));
     input.dispatchEvent(new Event("input", { bubbles: true }));
-    setText(document.getElementById("unified-calculated-action-status"), "Current Expenditure added as your initial plan baseline.");
+    setText(document.getElementById("unified-calculated-action-status"), "Current Expenditure added as your initial weekly plan baseline.");
     setText(button, "Added below ✓");
 }
 
-function syncWeeklyReviewBaseline(signals) {
+// The existing weekly review engine reads the weekly TDEE snapshot when it builds
+// the recommendation. At the instant a review becomes ready, mirror the current
+// live expenditure into that review snapshot so the recommendation uses the same
+// TDEE visible in Progress. This does NOT change the phase baseline or calorie
+// target; those remain unchanged until the user actually applies the review.
+function syncReviewCalculationToCurrentExpenditure(signals) {
     if (document.documentElement.dataset.weeklyCalorieReviewReady !== "true") return;
     const live = positive(signals.expenditure);
     if (live === null) return;
@@ -163,16 +209,17 @@ function syncWeeklyReviewBaseline(signals) {
     if (signature === lastReviewSync) return;
     lastReviewSync = signature;
 
-    const previous = Number(snapshot.estimate.maintenanceCalories);
-    if (Math.round(previous) === rounded && snapshot.estimate.authoritySynchronized === true) return;
+    if (Math.round(Number(snapshot.estimate.maintenanceCalories)) === rounded
+        && Math.round(Number(snapshot.estimate.liveMaintenanceCalories)) === rounded
+        && snapshot.estimate.reviewAuthoritySynchronized === true) return;
 
     snapshot.estimate = {
         ...snapshot.estimate,
         maintenanceCalories: rounded,
         liveMaintenanceCalories: rounded,
         uncappedMaintenanceCalories: rounded,
-        authoritySynchronized: true,
-        authoritySynchronizedAt: new Date().toISOString()
+        reviewAuthoritySynchronized: true,
+        reviewAuthoritySynchronizedAt: new Date().toISOString()
     };
     localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot));
 }
@@ -181,14 +228,15 @@ function patchWeeklyReviewModal(signals) {
     const modal = document.querySelector("[data-weekly-calorie-modal]");
     if (!modal) return;
     modal.querySelectorAll(".weekly-calorie-modal-breakdown > div").forEach(row => {
-        const label = row.querySelector("span")?.textContent?.trim() || "";
+        const labelNode = row.querySelector("span");
+        const label = labelNode?.textContent?.trim() || "";
         const value = row.querySelector("strong");
         if (!value) return;
         if (/current weight trend/i.test(label)) {
-            setText(value, formatRate(signals.metrics?.actualRateLbPerWeek));
+            setText(value, formatRate(signals.weightRate));
         }
         if (/independently calculated maintenance|current expenditure used for review/i.test(label)) {
-            setText(row.querySelector("span"), "Current expenditure used for review");
+            setText(labelNode, "Current Expenditure used for review");
             setText(value, formatCalories(signals.expenditure));
         }
     });
@@ -213,6 +261,21 @@ function ensureStyles() {
             font-weight:850;
             letter-spacing:.05em;
         }
+        .nutrition-authority-strip{
+            display:grid;
+            grid-template-columns:repeat(2,minmax(0,1fr));
+            gap:8px;
+            margin:12px 0;
+        }
+        .nutrition-authority-strip>div{
+            padding:11px 12px;
+            border:1px solid color-mix(in srgb,var(--text,#fff) 10%,transparent);
+            border-radius:14px;
+            background:color-mix(in srgb,var(--card,#1c1c1e) 97%,transparent);
+        }
+        .nutrition-authority-strip span,.nutrition-authority-strip small{display:block;color:var(--muted);font-size:9px}
+        .nutrition-authority-strip strong{display:block;margin:4px 0;color:var(--text);font-size:14px}
+        @media(max-width:520px){.nutrition-authority-strip{grid-template-columns:1fr 1fr}}
     `;
     document.head.appendChild(style);
 }
