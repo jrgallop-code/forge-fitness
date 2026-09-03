@@ -9,76 +9,28 @@ export const CONTEXTUAL_TUTORIALS = [
         page: "progress",
         tab: "nutrition-progress-tab",
         steps: [
-            {
-                eyebrow: "THE BASICS",
-                title: "What is expenditure?",
-                body: "Expenditure—also called TDEE—is an estimate of the total energy your body uses each day. It includes basic body functions, daily movement, training and digestion."
-            },
-            {
-                eyebrow: "YOUR STARTING POINT",
-                title: "Generic becomes personal",
-                body: "Level Up starts with the generic estimate from your Body Profile. That dashed reference uses age, sex, height, weight and activity. Your solid TDEE trend becomes personal as real food and weight data are added."
-            },
-            {
-                eyebrow: "THE CALCULATION",
-                title: "Intake meets weight trend",
-                body: "Level Up compares your average completed food logs through yesterday with a separate 21-day regression of your weigh-ins. It accounts for the energy implied by gaining or losing weight to estimate the intake that would maintain your current body weight."
-            },
-            {
-                eyebrow: "CURRENT STRATEGY",
-                title: "Learning, holding or updating",
-                body: "Learning means there is not enough usable data yet. Holding means a valid estimate is kept steady between weekly reviews—not that your body has stopped changing. Updating means a new estimate is ready for your weekly calorie review."
-            },
-            {
-                eyebrow: "THE TREND GRAPH",
-                title: "Read the line, not one day",
-                body: "The solid line connects verified TDEE estimates. Missing data are left out rather than plotted as zero. The dashed line is your generic profile estimate. Tap or drag for a date, then double-tap to close the detail card."
-            },
-            {
-                eyebrow: "YOUR CALORIE TARGET",
-                title: "How Level Up uses it",
-                body: "At each weekly review, Level Up combines your current TDEE with your phase goal to calculate an appropriate calorie target. It requires enough recent data and limits early changes, so one meal, weigh-in or unusual day cannot move your target by itself."
-            }
+            { eyebrow: "THE BASICS", title: "What is expenditure?", body: "Expenditure—also called TDEE—is an estimate of the total energy your body uses each day. It includes basic body functions, daily movement, training and digestion." },
+            { eyebrow: "YOUR STARTING POINT", title: "Generic becomes personal", body: "Level Up starts with the generic estimate from your Body Profile. That dashed reference uses age, sex, height, weight and activity. Your solid TDEE trend becomes personal as real food and weight data are added." },
+            { eyebrow: "THE CALCULATION", title: "Intake meets weight trend", body: "Level Up compares your average completed food logs through yesterday with a separate 21-day regression of your weigh-ins. It accounts for the energy implied by gaining or losing weight to estimate the intake that would maintain your current body weight." },
+            { eyebrow: "CURRENT STRATEGY", title: "Learning, holding or updating", body: "Learning means there is not enough usable data yet. Holding means a valid estimate is kept steady between weekly reviews—not that your body has stopped changing. Updating means a new estimate is ready for your weekly calorie review." },
+            { eyebrow: "THE TREND GRAPH", title: "Read the line, not one day", body: "The solid line connects verified TDEE estimates. Missing data are left out rather than plotted as zero. The dashed line is your generic profile estimate. Tap or drag for a date, then double-tap to close the detail card." },
+            { eyebrow: "YOUR CALORIE TARGET", title: "How Level Up uses it", body: "At each weekly review, Level Up combines your current TDEE with your phase goal to calculate an appropriate calorie target. It requires enough recent data and limits early changes, so one meal, weigh-in or unusual day cannot move your target by itself." }
         ]
     },
     {
         id: "trend-weight",
         title: "Understand Trend Weight",
-        summary: "See how Level Up smooths scale noise and turns your weigh-ins into a useful weekly trend.",
+        summary: "See how Level Up smooths scale noise while keeping the weekly rate stable and easy to interpret.",
         duration: "2 min",
         page: "progress",
         tab: "weight-tab",
         steps: [
-            {
-                eyebrow: "THE BASICS",
-                title: "Scale weight is noisy",
-                body: "Your scale can move from water, sodium, carbohydrate intake, food volume and training-related inflammation. Trend Weight is designed to show the underlying direction without treating one weigh-in as a true change in body tissue."
-            },
-            {
-                eyebrow: "MISSING DAYS",
-                title: "Gaps are filled between weigh-ins",
-                body: "When you miss a day, Level Up estimates the path between two real weigh-ins using linear interpolation. These in-between values are only used for the calculation—they are never shown as weights you actually logged, and Level Up never projects beyond your latest real weigh-in."
-            },
-            {
-                eyebrow: "SMOOTHING",
-                title: "Recent data matters more",
-                body: "Level Up then applies an exponentially weighted smoother. Each new day contributes 25% to the updated trend while 75% comes from the previous trend. This lets persistent changes move the line while reducing the impact of a single unusually high or low scale reading."
-            },
-            {
-                eyebrow: "WEEKLY TREND",
-                title: "The rate comes from the smoothed line",
-                body: "Weekly Trend is calculated from a regression across up to the latest 20 days of smoothed Trend Weight and expressed in pounds per week. That means the weekly rate reflects the direction of the trend—not just the difference between two scale readings."
-            },
-            {
-                eyebrow: "CONFIDENCE",
-                title: "It gets stronger with more weigh-ins",
-                body: "With at least 3 real weigh-ins spanning 5 days, Level Up can show a Preliminary Trend. With at least 6 weigh-ins spanning 14 days, it becomes the standard Weekly Trend. More regular weigh-ins make the estimate steadier, but missing days do not reset it."
-            },
-            {
-                eyebrow: "TDEE",
-                title: "Your expenditure calculation stays separate",
-                body: "Trend Weight is the user-facing smoothing model for Dashboard and Weight Progress. Your TDEE calculation keeps its existing 21-day intake-and-weight regression logic, confidence stages and weekly review rules. Changing Trend Weight does not change your TDEE calculation."
-            }
+            { eyebrow: "THE BASICS", title: "Scale weight is noisy", body: "Your scale can move from water, sodium, carbohydrate intake, food volume and training-related inflammation. Trend Weight is designed to show the underlying direction without treating one weigh-in as a true change in body tissue." },
+            { eyebrow: "MISSING DAYS", title: "Gaps are filled between weigh-ins", body: "When you miss a day, Level Up estimates the path between two real weigh-ins using linear interpolation. These in-between values are only used for the Trend Weight calculation—they are never shown as weights you actually logged, and Level Up never projects beyond your latest real weigh-in." },
+            { eyebrow: "SMOOTHING", title: "Recent data matters more", body: "Level Up applies an exponentially weighted smoother to Trend Weight. Each new day contributes 25% to the updated trend while 75% comes from the previous trend. This lets persistent changes move the line while reducing the impact of a single unusually high or low scale reading." },
+            { eyebrow: "WEEKLY TREND", title: "A separate, stable rate", body: "Weekly Trend remains the validated 21-day regression of your real weigh-ins. This is intentionally separate from the smoothed Trend Weight value so changing the visual smoothing model does not suddenly reverse or distort a weekly rate that was already working well." },
+            { eyebrow: "CONFIDENCE", title: "It gets stronger with more weigh-ins", body: "With at least 3 real weigh-ins spanning 5 days, Level Up can show a Preliminary Trend. With at least 6 weigh-ins spanning 14 days, it becomes the standard Weekly Trend. More regular weigh-ins improve confidence, but missing days do not reset your Trend Weight." },
+            { eyebrow: "TDEE", title: "Your expenditure calculation stays separate", body: "TDEE keeps its existing 21-day intake-and-weight regression logic, confidence stages and weekly review rules. The smoothed Trend Weight is for understanding your body-weight signal; changing it does not change the TDEE calculation." }
         ]
     }
 ];
