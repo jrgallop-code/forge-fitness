@@ -21,7 +21,7 @@ body.levelup-onboarding-open{overflow:hidden}
 .onboarding-helper{color:var(--muted)!important;font-size:.82rem!important;line-height:1.4!important}
 .onboarding-welcome{align-content:start;padding-bottom:4px}
 .onboarding-brand-lockup{display:flex;align-items:center;gap:9px;justify-content:center}
-.onboarding-brand-lockup img{width:34px;height:34px;object-fit:contain;mix-blend-mode:lighten}
+.onboarding-brand-lockup img{width:42px;height:35px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))}
 .onboarding-brand-lockup span{color:var(--heading);font-size:.92rem;font-weight:1000;letter-spacing:.18em}
 .onboarding-welcome .onboarding-screen-intro{text-align:center}
 .onboarding-welcome .onboarding-screen-intro p{max-width:430px;margin:auto}
