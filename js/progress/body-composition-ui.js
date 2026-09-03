@@ -25,7 +25,11 @@ function install() {
     document.addEventListener("click", handleClick, true);
     document.addEventListener("submit", handleSubmit, true);
     ["levelup:body-composition-updated", "levelup:weight-updated", "levelup:profile-updated", "levelup:appearance-changed"]
-        .forEach(name => window.addEventListener(name, schedule));
+        .forEach(name => window.addEventListener(name, () => {
+            schedule();
+            const panel = document.getElementById("body-composition-progress");
+            if (panel && !panel.hidden) renderProgressPanel(panel);
+        }));
 }
 
 function schedule() {
@@ -79,7 +83,7 @@ function enhanceProgress() {
         panel.hidden = true;
         weightPanel.insertAdjacentElement("afterend", panel);
     }
-    if (!panel.hidden || !panel.dataset.bodyCompositionRendered) renderProgressPanel(panel);
+    if (!panel.dataset.bodyCompositionRendered) renderProgressPanel(panel);
 }
 
 function visualSelector(context) {
@@ -190,6 +194,8 @@ function handleClick(event) {
         const id = String(rangeButton.dataset.bodyFatRange || "");
         saveBodyFatRange(id, { source: "visual" });
         document.querySelectorAll("[data-body-fat-visual-selector]").forEach(host => syncVisualSelection(host, id));
+        const panel = document.getElementById("body-composition-progress");
+        if (panel && !panel.hidden) renderProgressPanel(panel);
         return;
     }
 
@@ -325,8 +331,7 @@ function drawBodyFatChart(panel, days) {
     ctx.fillStyle = muted;
     ctx.textAlign = "center";
     ctx.font = "800 8px Arial";
-    const labels = [entries[0], entries.at(-1)];
-    labels.forEach(entry => ctx.fillText(formatShortDate(entry.date), x(entry), height - 8));
+    [entries[0], entries.at(-1)].forEach(entry => ctx.fillText(formatShortDate(entry.date), x(entry), height - 8));
 }
 
 function filterRange(entries, days) {
