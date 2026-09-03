@@ -1,7 +1,7 @@
 import {
-    calculateDisplayWeightTrend,
+    calculateVisibleWeightTrend,
     normalizeWeightEntries
-} from "../core/weight-trend.js?v=progress-regression-trend-2";
+} from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 
 const WEIGHT_KEY = "forge_weight_entries";
 const LIVE_RATE_ID = "weight-current-weekly-trend";
@@ -35,9 +35,6 @@ function detachLiveCardFromPhaseRenderer() {
     const rate = document.getElementById(LIVE_RATE_ID) || document.getElementById("weight-phase-rate");
     const heading = document.getElementById(LIVE_HEADING_ID) || document.getElementById("weight-phase-rate-heading");
 
-    // The nutrition phase renderer also writes to weight-phase-rate. Rename the
-    // Progress-only nodes so scheduled phase checkpoints cannot overwrite the
-    // measurement-driven weekly trend shown here.
     if (rate?.id === "weight-phase-rate") rate.id = LIVE_RATE_ID;
     if (heading?.id === "weight-phase-rate-heading") heading.id = LIVE_HEADING_ID;
 
@@ -48,10 +45,7 @@ function refresh() {
     const today = localDateKey();
     const weights = readWeights().filter(entry => entry.date <= today);
     const latestEntryDate = weights.at(-1)?.date || null;
-
-    // Live Progress is always anchored to the latest real weigh-in through today.
-    // Future-dated entries remain available to the isolated test preview only.
-    const trend = calculateDisplayWeightTrend(weights, { endDate: latestEntryDate });
+    const trend = calculateVisibleWeightTrend(weights, { endDate: latestEntryDate });
     const rateText = Number.isFinite(trend.weeklyChange)
         ? formatRate(trend.weeklyChange)
         : "Need more data";
@@ -62,16 +56,14 @@ function refresh() {
 
     if (visible.rate) {
         visible.rate.title = latestEntryDate
-            ? `Weekly change through latest weigh-in ${latestEntryDate}. Missing days do not move the result.`
+            ? `Smoothed weekly change through latest weigh-in ${latestEntryDate}. Missing days between real weigh-ins are interpolated for the trend only.`
             : "Add weigh-ins to calculate your weekly trend.";
         const card = visible.rate.closest(".metric-card");
         if (card) {
-            card.title = "Weekly Trend estimates your rate of change from recent weigh-ins using a 21-day linear regression. The nutrition coach keeps stricter data requirements.";
+            card.title = "Weekly Trend estimates your rate of change from up to 20 days of smoothed Trend Weight. TDEE uses its separate 21-day calculation.";
         }
     }
 
-    // Keep the original compact-summary target consistent if another render path
-    // uses it.
     const compactRate = document.getElementById("actual-weekly-weight-change");
     setText(compactRate, rateText);
     const compactHeading = compactRate?.closest(".metric-card")?.querySelector("h3");
