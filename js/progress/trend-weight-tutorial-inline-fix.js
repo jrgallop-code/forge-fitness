@@ -5,9 +5,10 @@ import {
     getTutorialState,
     restartTutorial,
     setTutorialStep
-} from "../core/tutorials.js?v=trend-weight-inline-fix-1";
+} from "../core/tutorials.js?v=trend-weight-inline-fix-2";
 
 const TUTORIAL_ID = "trend-weight";
+const CARD_SELECTOR = "[data-trend-weight-tutorial-inline-v2]";
 const ICONS = [
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M6 15l3-4 3 2 5-7 2 2"/></svg>',
     '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="8" r="2"/><path d="M8 11.4 16 8.6" stroke-dasharray="2 2"/></svg>',
@@ -50,11 +51,11 @@ function openTutorial(launcher) {
     if (!tutorial || !section) return;
 
     restartTutorial(TUTORIAL_ID);
-    section.querySelector("[data-trend-weight-tutorial]")?.remove();
+    section.querySelector(CARD_SELECTOR)?.remove();
 
     const card = document.createElement("aside");
     card.className = "expenditure-tutorial-card weight-trend-tutorial-card";
-    card.dataset.trendWeightTutorial = "1";
+    card.dataset.trendWeightTutorialInlineV2 = "1";
     card.setAttribute("aria-label", "Trend Weight tutorial");
     card.setAttribute("aria-live", "polite");
     launcher.insertAdjacentElement("afterend", card);
@@ -71,7 +72,7 @@ document.addEventListener("click", event => {
         return;
     }
 
-    const card = event.target.closest?.("#weight-progress [data-trend-weight-tutorial]");
+    const card = event.target.closest?.(`#weight-progress ${CARD_SELECTOR}`);
     if (!card) return;
     const tutorial = getTutorial(TUTORIAL_ID);
     if (!tutorial) return;
