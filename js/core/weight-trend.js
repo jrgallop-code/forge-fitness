@@ -6,9 +6,10 @@ const FIRST_PHASE_CHECK_DAY = 14;
 const PHASE_CHECK_CADENCE_DAYS = 7;
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 const DISPLAY_TREND_DAYS = 21;
-const DISPLAY_TREND_MIN_ENTRIES = 6;
-const DISPLAY_TREND_MIN_SPAN_DAYS = 14;
-const DISPLAY_TREND_FULL_ENTRIES = 10;
+const DISPLAY_TREND_MIN_ENTRIES = 3;
+const DISPLAY_TREND_MIN_SPAN_DAYS = 5;
+const DISPLAY_TREND_FULL_ENTRIES = 6;
+const DISPLAY_TREND_FULL_SPAN_DAYS = 14;
 
 export function calculateWeightTrend(entries, options = {}) {
     const normalized = normalizeWeightEntries(entries);
@@ -242,26 +243,32 @@ export function calculateRegressionWeeklyChange(entries) {
     return Number.isFinite(dailySlope) ? dailySlope * 7 : null;
 }
 
-// User-facing rate of change. This is intentionally separate from
-// calculateWeightTrend(), whose stricter two-window result is used by nutrition
-// decisions. Regression makes the Progress summary useful when weigh-ins are
-// irregular without weakening calorie-adjustment safeguards.
+// User-facing rate of change. This intentionally has a lower entry threshold
+// than calorie/TDEE decisions so people get useful feedback early. Live display
+// calculations also ignore future-dated test entries unless explicitly allowed.
 export function calculateDisplayWeightTrend(entries, options = {}) {
     const normalized = normalizeWeightEntries(entries);
-    const endDate = validDate(options.endDate)
-        ? String(options.endDate)
-        : normalized.at(-1)?.date || null;
+    const allowFuture = options.allowFuture === true;
+    const today = localDate();
+    const eligible = allowFuture
+        ? normalized
+        : normalized.filter(entry => entry.date <= today);
+    const requestedEndDate = validDate(options.endDate) ? String(options.endDate) : null;
+    const endDate = requestedEndDate && (allowFuture || requestedEndDate <= today)
+        ? requestedEndDate
+        : eligible.at(-1)?.date || null;
     const windowDays = positiveInteger(options.windowDays, DISPLAY_TREND_DAYS);
     const minEntries = positiveInteger(options.minEntries, DISPLAY_TREND_MIN_ENTRIES);
     const minSpanDays = positiveInteger(options.minSpanDays, DISPLAY_TREND_MIN_SPAN_DAYS);
     const fullEntries = positiveInteger(options.fullEntries, DISPLAY_TREND_FULL_ENTRIES);
+    const fullSpanDays = positiveInteger(options.fullSpanDays, DISPLAY_TREND_FULL_SPAN_DAYS);
 
     if (!endDate) {
         return { status: "insufficient", label: "Weekly Trend", weeklyChange: null, entries: 0, spanDays: 0, windowDays };
     }
 
     const startDate = shiftDate(endDate, -(windowDays - 1));
-    const windowEntries = normalized.filter(entry => entry.date >= startDate && entry.date <= endDate);
+    const windowEntries = eligible.filter(entry => entry.date >= startDate && entry.date <= endDate);
     const firstDate = windowEntries[0]?.date || null;
     const lastDate = windowEntries.at(-1)?.date || null;
     const spanDays = firstDate && lastDate
@@ -285,7 +292,9 @@ export function calculateDisplayWeightTrend(entries, options = {}) {
         };
     }
 
-    const status = windowEntries.length >= fullEntries ? "actual" : "preliminary";
+    const status = windowEntries.length >= fullEntries && spanDays >= fullSpanDays
+        ? "actual"
+        : "preliminary";
     return {
         status,
         label: status === "preliminary" ? "Preliminary Trend" : "Weekly Trend",
