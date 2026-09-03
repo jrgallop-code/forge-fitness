@@ -104,7 +104,7 @@
         if (document.querySelector('script[data-interactive-workout-tutorial]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/more/interactive-workout-tutorial.js?v=interactive-workout-tutorial-1";
+        script.src = "js/more/interactive-workout-tutorial.js?v=interactive-workout-tutorial-2";
         script.dataset.interactiveWorkoutTutorial = "1";
         document.head.appendChild(script);
     }
