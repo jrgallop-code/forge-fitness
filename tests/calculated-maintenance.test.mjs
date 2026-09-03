@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { calculateMaintenanceEstimate, calculateMaintenanceHistory, stabilizeMaintenanceEstimate } from "../js/nutrition/calculated-maintenance.js";
-import { calculateDisplayWeightTrend } from "../js/core/weight-trend.js";
+import { calculateVisibleWeightTrend } from "../js/core/weight-trend.js";
 
 function key(offset) {
     const date = new Date("2026-08-08T12:00:00");
@@ -18,7 +18,7 @@ function weightHistory(days, startWeight, weeklyRate) {
     return Array.from({ length: days }, (_, index) => ({ date: key(index), weight: startWeight + weeklyRate * index / 7 }));
 }
 
-test("infers maintenance from intake and a losing weight trend", () => {
+test("infers maintenance from intake and a losing smoothed weight trend", () => {
     const foodLog = foodHistory(21, 2300);
     const completedDays = Object.fromEntries(Object.keys(foodLog).map(date => [date, true]));
     const result = calculateMaintenanceEstimate({
@@ -28,11 +28,11 @@ test("infers maintenance from intake and a losing weight trend", () => {
         endDate: new Date("2026-08-29T12:00:00")
     });
     assert.equal(result.status, "established");
-    assert.equal(result.maintenanceCalories, 2550);
-    assert.equal(Math.round(result.energyCorrection), 250);
+    assert.equal(result.maintenanceCalories, 2525);
+    assert.equal(Math.round(result.energyCorrection), 228);
 });
 
-test("subtracts a gaining trend from average intake", () => {
+test("subtracts a gaining smoothed trend from average intake", () => {
     const foodLog = foodHistory(21, 2700);
     const completedDays = Object.fromEntries(Object.keys(foodLog).map(date => [date, true]));
     const result = calculateMaintenanceEstimate({
@@ -41,7 +41,7 @@ test("subtracts a gaining trend from average intake", () => {
         weights: weightHistory(21, 180, .4),
         endDate: new Date("2026-08-29T12:00:00")
     });
-    assert.equal(result.maintenanceCalories, 2500);
+    assert.equal(result.maintenanceCalories, 2525);
 });
 
 test("stays in learning until food and weight minimums are met", () => {
@@ -56,7 +56,7 @@ test("stays in learning until food and weight minimums are met", () => {
     assert.equal(result.profileEstimate, 2450);
 });
 
-test("shows a usable early estimate from two food days and an established weight trend", () => {
+test("shows a usable early estimate from two food days and an established weight evidence span", () => {
     const result = calculateMaintenanceEstimate({
         foodLog: foodHistory(2, 2300),
         weights: weightHistory(10, 190, -.5),
@@ -64,18 +64,18 @@ test("shows a usable early estimate from two food days and an established weight
     });
     assert.equal(result.status, "early");
     assert.equal(result.label, "Early estimate");
-    assert.equal(result.maintenanceCalories, 2550);
+    assert.equal(result.maintenanceCalories, 2475);
 });
 
-test("rounds 2,621 intake plus a 127 calorie loss correction to 2,750 TDEE", () => {
+test("uses the smoothed rate for the energy correction", () => {
     const result = calculateMaintenanceEstimate({
         foodLog: foodHistory(5, 2621),
         weights: weightHistory(12, 159, -.254),
         endDate: new Date("2026-08-29T12:00:00")
     });
     assert.equal(result.averageIntake, 2621);
-    assert.equal(Math.round(result.energyCorrection), 127);
-    assert.equal(result.maintenanceCalories, 2750);
+    assert.equal(Math.round(result.energyCorrection), 97);
+    assert.equal(result.maintenanceCalories, 2725);
 });
 
 test("counts all logged days through yesterday even when legacy completion flags are partial", () => {
@@ -105,7 +105,7 @@ test("stale completion metadata does not hide current logged food days", () => {
     assert.equal(result.status, "early");
 });
 
-test("uses the same canonical weekly rate as Weight Progress", () => {
+test("uses the same smoothed weekly rate as Weight Progress", () => {
     const weights = weightHistory(21, 180, .35);
     weights.push({ ...weights[8], weight: weights[8].weight + .2 });
     const endDate = new Date("2026-08-29T12:00:00");
@@ -114,12 +114,13 @@ test("uses the same canonical weekly rate as Weight Progress", () => {
         weights,
         endDate
     });
-    const shared = calculateDisplayWeightTrend(weights, {
+    const shared = calculateVisibleWeightTrend(weights, {
         endDate: "2026-08-28",
-        windowDays: 21,
+        rateDays: 20,
         minEntries: 3,
         minSpanDays: 5,
-        fullEntries: 9
+        fullEntries: 6,
+        fullSpanDays: 14
     });
     assert.equal(result.weightRateLbPerWeek, shared.weeklyChange);
 });
@@ -132,16 +133,28 @@ test("includes today's latest weigh-in so TDEE matches the current Weight Progre
         weights,
         endDate: new Date("2026-08-29T12:00:00")
     });
-    const shared = calculateDisplayWeightTrend(weights, {
+    const shared = calculateVisibleWeightTrend(weights, {
         endDate: "2026-08-29",
-        windowDays: 21,
+        rateDays: 20,
         minEntries: 3,
         minSpanDays: 5,
-        fullEntries: 9
+        fullEntries: 6,
+        fullSpanDays: 14
     });
     assert.equal(result.weightRateLbPerWeek, shared.weeklyChange);
     assert.equal(result.weightTrendEndDate, "2026-08-29");
     assert.equal(result.endDate, "2026-08-28");
+});
+
+test("the validated real weigh-in pattern rounds to the MacroFactor-matching +0.06 weekly rate", () => {
+    const weights = [
+        ["2026-08-05",160.1],["2026-08-06",157.4],["2026-08-07",157.4],["2026-08-08",158.0],["2026-08-09",158.4],
+        ["2026-08-13",158.0],["2026-08-22",158.2],["2026-08-23",156.6],["2026-08-24",159.8],["2026-08-25",158.8],
+        ["2026-08-26",159.2],["2026-08-27",159.8],["2026-08-28",159.6],["2026-08-29",158.2],["2026-08-30",156.8],
+        ["2026-08-31",156.8],["2026-09-01",157.2],["2026-09-02",158.2],["2026-09-03",159.4]
+    ].map(([date, weight]) => ({ date, weight }));
+    const result = calculateVisibleWeightTrend(weights, { endDate: "2026-09-03" });
+    assert.equal(result.weeklyChange.toFixed(2), "0.06");
 });
 
 test("holds the displayed TDEE for seven days even when the live estimate changes", () => {
