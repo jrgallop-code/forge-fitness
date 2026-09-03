@@ -1,6 +1,6 @@
 import {
-    calculateDisplayWeightTrend,
     calculateTrendWeight,
+    calculateVisibleWeightTrend,
     normalizeWeightEntries
 } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 
@@ -26,8 +26,10 @@ function refresh() {
     const today = localDateKey();
     const weights = readWeights().filter(entry => entry.date <= today);
     const latestEntryDate = weights.at(-1)?.date || null;
-    const trend = calculateDisplayWeightTrend(weights, { endDate: latestEntryDate });
-    const trendWeight = calculateTrendWeight(weights, { endDate: latestEntryDate });
+    const trend = calculateVisibleWeightTrend(weights, { endDate: latestEntryDate });
+    const trendWeight = Number.isFinite(trend.trendWeight)
+        ? trend.trendWeight
+        : calculateTrendWeight(weights, { endDate: latestEntryDate });
 
     const nextValue = Number.isFinite(trend.weeklyChange) ? formatRate(trend.weeklyChange) : "Need more data";
     if (value.textContent !== nextValue) value.textContent = nextValue;
@@ -46,9 +48,9 @@ function refresh() {
     if (heading && heading.textContent !== trend.label) heading.textContent = trend.label;
 
     value.title = latestEntryDate
-        ? `Weekly pace from the validated 21-day regression through ${latestEntryDate}.`
+        ? `Weekly pace from up to 20 days of smoothed Trend Weight through ${latestEntryDate}.`
         : "Add weigh-ins to calculate your weekly trend.";
-    if (card) card.title = "Trend Weight is smoothed; Weekly Trend retains the validated 21-day regression.";
+    if (card) card.title = "Trend Weight and Weekly Trend now use the same smoothed weight signal.";
 }
 
 function schedule() {
