@@ -2,6 +2,7 @@ const RANGE_KEY = "level_up_body_fat_profile_v1";
 const ENTRIES_KEY = "level_up_body_fat_entries_v1";
 
 export const BODY_FAT_RANGES = [
+    { id: "3-4", label: "3–4%", min: 3, max: 4, midpoint: 3.5 },
     { id: "5-7", label: "5–7%", min: 5, max: 7, midpoint: 6 },
     { id: "8-12", label: "8–12%", min: 8, max: 12, midpoint: 10 },
     { id: "13-17", label: "13–17%", min: 13, max: 17, midpoint: 15 },
@@ -120,7 +121,7 @@ export function estimateTissueEnergyPerLb(endDate = new Date()) {
     // Fat and lean tissue have very different stored-energy densities. Because
     // consumer body-fat estimates are noisy, Level Up deliberately uses BF only
     // as a weak prior: 25% body-composition model + 75% traditional 3,500 kcal/lb.
-    const bodyFat = clamp(Number(prior.percent), 5, 45);
+    const bodyFat = clamp(Number(prior.percent), 3, 45);
     const estimatedFatFraction = clamp(0.68 + ((bodyFat - 10) * 0.006), 0.68, 0.86);
     const fatEnergyPerLb = 9400 * 0.45359237;
     const leanEnergyPerLb = 1800 * 0.45359237;
