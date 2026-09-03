@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-03-170";
+const CACHE_VERSION = "2026-09-03-171";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -14,6 +14,7 @@ const CORE_ASSETS = [
     "./js/progress/body-fat-visual-replacement.js?v=approved-body-fat-1",
     "./js/more/body-composition-health-records.js?v=body-comp-health-records-2",
     "./js/nutrition/protein-minimum-consistency.js?v=protein-minimum-1",
+    "./js/nutrition/nutrition-authority-sync.js?v=nutrition-authority-sync-1",
     "./js/nutrition/tdee-expenditure-swipe-card.js?v=tdee-expenditure-swipe-2",
     "./assets/level-up-home-icon.svg",
     "./assets/level-up-mark-transparent.svg",
