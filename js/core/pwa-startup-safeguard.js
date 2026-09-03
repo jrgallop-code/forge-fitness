@@ -9,6 +9,8 @@
     installSystemRecoveryNotice();
     installBodyComposition();
     installBodyFatApprovedVisual();
+    installBodyCompositionHealthRecords();
+    installProteinMinimumConsistency();
 
     function installCloudBackupRecovery() {
         if (!document.querySelector('script[data-cloud-backup-history-ui]')) {
@@ -56,6 +58,24 @@
         script.type = "module";
         script.src = "js/progress/body-fat-visual-replacement.js?v=approved-body-fat-1";
         script.dataset.bodyFatApprovedVisual = "1";
+        document.head.appendChild(script);
+    }
+
+    function installBodyCompositionHealthRecords() {
+        if (document.querySelector('script[data-body-composition-health-records]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/more/body-composition-health-records.js?v=body-comp-health-records-1";
+        script.dataset.bodyCompositionHealthRecords = "1";
+        document.head.appendChild(script);
+    }
+
+    function installProteinMinimumConsistency() {
+        if (document.querySelector('script[data-protein-minimum-consistency]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/nutrition/protein-minimum-consistency.js?v=protein-minimum-1";
+        script.dataset.proteinMinimumConsistency = "1";
         document.head.appendChild(script);
     }
 
