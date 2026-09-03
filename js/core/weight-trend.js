@@ -5,11 +5,25 @@ const FIRST_PHASE_TREND_DAY = 7;
 const FIRST_PHASE_CHECK_DAY = 14;
 const PHASE_CHECK_CADENCE_DAYS = 7;
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
+
+// Raw regression used by the existing TDEE / maintenance estimator. Keep this
+// separate from the visible Trend Weight model so expenditure logic is not
+// changed when the user-facing smoothing model changes.
 const DISPLAY_TREND_DAYS = 21;
 const DISPLAY_TREND_MIN_ENTRIES = 3;
 const DISPLAY_TREND_MIN_SPAN_DAYS = 5;
 const DISPLAY_TREND_FULL_ENTRIES = 6;
 const DISPLAY_TREND_FULL_SPAN_DAYS = 14;
+
+// User-facing Trend Weight model. Missing dates between real weigh-ins are
+// linearly interpolated, then an exponentially weighted moving average gives
+// recent days more influence without allowing one scale reading to dominate.
+const VISIBLE_TREND_ALPHA = 0.25;
+const VISIBLE_RATE_DAYS = 20;
+const VISIBLE_TREND_MIN_ENTRIES = 3;
+const VISIBLE_TREND_MIN_SPAN_DAYS = 5;
+const VISIBLE_TREND_FULL_ENTRIES = 6;
+const VISIBLE_TREND_FULL_SPAN_DAYS = 14;
 
 export function calculateWeightTrend(entries, options = {}) {
     const normalized = normalizeWeightEntries(entries);
@@ -243,9 +257,8 @@ export function calculateRegressionWeeklyChange(entries) {
     return Number.isFinite(dailySlope) ? dailySlope * 7 : null;
 }
 
-// User-facing rate of change. This intentionally has a lower entry threshold
-// than calorie/TDEE decisions so people get useful feedback early. Live display
-// calculations also ignore future-dated test entries unless explicitly allowed.
+// Existing raw regression path retained for TDEE and other conservative
+// nutrition calculations. Its behavior is intentionally unchanged.
 export function calculateDisplayWeightTrend(entries, options = {}) {
     const normalized = normalizeWeightEntries(entries);
     const allowFuture = options.allowFuture === true;
@@ -304,6 +317,138 @@ export function calculateDisplayWeightTrend(entries, options = {}) {
         windowDays,
         windowStart: firstDate,
         windowEnd: lastDate
+    };
+}
+
+export function interpolateWeightEntries(entries, options = {}) {
+    const allowFuture = options.allowFuture === true;
+    const today = localDate();
+    const normalized = normalizeWeightEntries(entries).filter(entry => allowFuture || entry.date <= today);
+    const requestedEndDate = validDate(options.endDate) ? String(options.endDate) : null;
+    const endDate = requestedEndDate && (allowFuture || requestedEndDate <= today)
+        ? requestedEndDate
+        : normalized.at(-1)?.date || null;
+    const eligible = endDate ? normalized.filter(entry => entry.date <= endDate) : normalized;
+    if (!eligible.length) return [];
+    if (eligible.length === 1) return [{ ...eligible[0], actual: true }];
+
+    const series = [];
+    for (let index = 0; index < eligible.length - 1; index++) {
+        const current = eligible[index];
+        const next = eligible[index + 1];
+        const days = Math.max(1, Math.round((dateMs(next.date) - dateMs(current.date)) / DAY_MS));
+
+        if (index === 0) series.push({ ...current, actual: true });
+        for (let offset = 1; offset <= days; offset++) {
+            const fraction = offset / days;
+            series.push({
+                date: shiftDate(current.date, offset),
+                weight: current.weight + ((next.weight - current.weight) * fraction),
+                actual: offset === days
+            });
+        }
+    }
+    return series;
+}
+
+export function calculateTrendWeightSeries(entries, options = {}) {
+    const alphaOption = Number(options.alpha);
+    const alpha = Number.isFinite(alphaOption) && alphaOption > 0 && alphaOption <= 1
+        ? alphaOption
+        : VISIBLE_TREND_ALPHA;
+    const interpolated = interpolateWeightEntries(entries, options);
+    if (!interpolated.length) return [];
+
+    let trend = interpolated[0].weight;
+    return interpolated.map((entry, index) => {
+        if (index > 0) trend = (alpha * entry.weight) + ((1 - alpha) * trend);
+        return {
+            date: entry.date,
+            weight: trend,
+            observedWeight: entry.weight,
+            actual: entry.actual === true
+        };
+    });
+}
+
+export function calculateTrendWeight(entries, options = {}) {
+    const series = calculateTrendWeightSeries(entries, options);
+    const value = Number(series.at(-1)?.weight);
+    return Number.isFinite(value) ? value : null;
+}
+
+export function calculateVisibleWeightTrend(entries, options = {}) {
+    const allowFuture = options.allowFuture === true;
+    const today = localDate();
+    const normalized = normalizeWeightEntries(entries).filter(entry => allowFuture || entry.date <= today);
+    const requestedEndDate = validDate(options.endDate) ? String(options.endDate) : null;
+    const endDate = requestedEndDate && (allowFuture || requestedEndDate <= today)
+        ? requestedEndDate
+        : normalized.at(-1)?.date || null;
+    const rateDays = positiveInteger(options.rateDays, VISIBLE_RATE_DAYS);
+    const minEntries = positiveInteger(options.minEntries, VISIBLE_TREND_MIN_ENTRIES);
+    const minSpanDays = positiveInteger(options.minSpanDays, VISIBLE_TREND_MIN_SPAN_DAYS);
+    const fullEntries = positiveInteger(options.fullEntries, VISIBLE_TREND_FULL_ENTRIES);
+    const fullSpanDays = positiveInteger(options.fullSpanDays, VISIBLE_TREND_FULL_SPAN_DAYS);
+
+    if (!endDate) {
+        return {
+            status: "insufficient",
+            label: "Weekly Trend",
+            weeklyChange: null,
+            trendWeight: null,
+            entries: 0,
+            spanDays: 0,
+            rateDays,
+            series: []
+        };
+    }
+
+    const eligible = normalized.filter(entry => entry.date <= endDate);
+    const rateStart = shiftDate(endDate, -(rateDays - 1));
+    const actualWindow = eligible.filter(entry => entry.date >= rateStart && entry.date <= endDate);
+    const firstDate = actualWindow[0]?.date || null;
+    const lastDate = actualWindow.at(-1)?.date || null;
+    const spanDays = firstDate && lastDate
+        ? Math.floor((dateMs(lastDate) - dateMs(firstDate)) / DAY_MS) + 1
+        : 0;
+    const series = calculateTrendWeightSeries(eligible, { ...options, endDate, allowFuture });
+    const rateSeries = series.filter(entry => entry.date >= rateStart && entry.date <= endDate);
+    const weeklyChange = calculateRegressionWeeklyChange(rateSeries);
+    const trendWeight = Number(series.at(-1)?.weight);
+    const ready = actualWindow.length >= minEntries
+        && spanDays >= minSpanDays
+        && Number.isFinite(weeklyChange);
+
+    if (!ready) {
+        return {
+            status: "insufficient",
+            label: "Weekly Trend",
+            weeklyChange: null,
+            trendWeight: Number.isFinite(trendWeight) ? trendWeight : null,
+            entries: actualWindow.length,
+            spanDays,
+            rateDays,
+            windowStart: rateStart,
+            windowEnd: endDate,
+            series
+        };
+    }
+
+    const status = actualWindow.length >= fullEntries && spanDays >= fullSpanDays
+        ? "actual"
+        : "preliminary";
+    return {
+        status,
+        label: status === "preliminary" ? "Preliminary Trend" : "Weekly Trend",
+        weeklyChange,
+        trendWeight: Number.isFinite(trendWeight) ? trendWeight : null,
+        entries: actualWindow.length,
+        spanDays,
+        rateDays,
+        windowStart: firstDate,
+        windowEnd: lastDate,
+        series
     };
 }
 
