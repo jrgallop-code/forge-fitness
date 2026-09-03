@@ -8,6 +8,7 @@
     installCloudBackupRecovery();
     installSystemRecoveryNotice();
     installBodyComposition();
+    installBodyFatApprovedVisual();
 
     function installCloudBackupRecovery() {
         if (!document.querySelector('script[data-cloud-backup-history-ui]')) {
@@ -46,6 +47,15 @@
         script.type = "module";
         script.src = "js/progress/body-composition-ui.js?v=body-composition-ui-1";
         script.dataset.bodyCompositionUi = "1";
+        document.head.appendChild(script);
+    }
+
+    function installBodyFatApprovedVisual() {
+        if (document.querySelector('script[data-body-fat-approved-visual]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/progress/body-fat-visual-replacement.js?v=approved-body-fat-1";
+        script.dataset.bodyFatApprovedVisual = "1";
         document.head.appendChild(script);
     }
 
@@ -90,7 +100,7 @@
         try {
             if (window.caches?.keys) {
                 const cacheNames = await window.caches.keys();
-                await Promise.all(cacheNames.filter(name => name.startsWith("level-up-")).map(name => window.caches.delete(name)));
+                await Promise.all(cacheNames.filter(name => name.startsWith("level-up-")).map(name => caches.delete(name)));
             }
             if (navigator.serviceWorker?.getRegistrations) {
                 const registrations = await navigator.serviceWorker.getRegistrations();
