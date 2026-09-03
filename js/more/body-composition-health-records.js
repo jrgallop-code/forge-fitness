@@ -23,16 +23,22 @@ function schedule() {
 }
 
 function reconcile() {
-    removeProgressPlacement();
+    hideProgressPlacement();
     ensureHealthRecordsCard();
 }
 
-function removeProgressPlacement() {
+function hideProgressPlacement() {
     const tab = document.getElementById("body-composition-progress-tab");
-    if (tab && !tab.closest(`[${STAGING_ATTR}]`)) tab.remove();
+    if (tab && !tab.closest(`[${STAGING_ATTR}]`)) {
+        tab.hidden = true;
+        tab.setAttribute("aria-hidden", "true");
+        tab.tabIndex = -1;
+    }
 
     const panel = document.getElementById("body-composition-progress");
-    if (panel && !panel.closest(`[${STAGING_ATTR}]`) && !panel.closest("[data-body-composition-more-host]")) panel.remove();
+    if (panel && !panel.closest(`[${STAGING_ATTR}]`) && !panel.closest("[data-body-composition-more-host]")) {
+        panel.hidden = true;
+    }
 }
 
 function ensureHealthRecordsCard() {
@@ -99,7 +105,6 @@ function waitForBodyCompositionPanel(attempt) {
     const panel = staging?.querySelector("#body-composition-progress");
 
     if (staging && host && panel) {
-        staging.querySelector("#body-composition-progress-tab")?.remove();
         panel.hidden = false;
         host.replaceChildren(panel);
         staging.remove();
