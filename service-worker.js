@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-03-161";
+const CACHE_VERSION = "2026-09-03-162";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -7,6 +7,7 @@ const CORE_ASSETS = [
     "./",
     "./index.html",
     "./manifest.webmanifest",
+    "./js/account/cloud-backup-history-ui.js?v=backup-history-ui-1",
     "./assets/level-up-home-icon.svg",
     "./assets/level-up-mark-transparent.svg",
     "./assets/icons/icon-192.png",
