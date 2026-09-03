@@ -267,7 +267,6 @@ function escapeHtml(value) {
 ensureStyles();
 ensureModal();
 document.addEventListener("pointerup", event => {
-    if (handleModalAction(event)) return;
     activateLauncher(event);
 }, true);
 document.addEventListener("click", event => {
