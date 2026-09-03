@@ -4,7 +4,7 @@ export const CONTEXTUAL_TUTORIALS = [
     {
         id: "expenditure",
         title: "Understand Your Expenditure",
-        summary: "Learn how Level Up combines logged intake with smoothed Trend Weight to estimate TDEE and support weekly calorie reviews.",
+        summary: "Learn how Level Up combines logged intake with smoothed Trend Weight to update TDEE daily while keeping calorie-target decisions on a weekly review schedule.",
         duration: "2 min",
         page: "progress",
         tab: "nutrition-progress-tab",
@@ -12,9 +12,9 @@ export const CONTEXTUAL_TUTORIALS = [
             { eyebrow: "THE BASICS", title: "What is expenditure?", body: "Expenditure—also called TDEE—is an estimate of the total energy your body uses each day. It includes basic body functions, daily movement, training and digestion." },
             { eyebrow: "YOUR STARTING POINT", title: "Generic becomes personal", body: "Level Up starts with the generic estimate from your Body Profile. That dashed reference uses age, sex, height, weight and activity. Your calculated TDEE becomes personal as real food and weight data are added." },
             { eyebrow: "THE WEIGHT SIGNAL", title: "TDEE uses your smoothed Weekly Trend", body: "Level Up uses the same smoothed Weekly Trend shown in Weight Progress. Missing days are interpolated only between real weigh-ins, recent data receives more weight, and weekly pace is estimated from up to the latest 20 days of smoothed Trend Weight. This reduces the influence of normal day-to-day scale noise." },
-            { eyebrow: "THE CALCULATION", title: "Intake meets weight change", body: "Level Up averages your logged calorie intake through yesterday over its existing 21-day intake window, then adjusts that intake for your smoothed weekly weight-change rate. Conceptually: TDEE = average intake − (weekly weight change × 500). Gaining weight lowers the maintenance estimate relative to intake; losing weight raises it." },
-            { eyebrow: "LIVE VS REVIEWED", title: "Two TDEE values can be different", body: "The Live TDEE in the calculation breakdown responds to your current intake and smoothed Weekly Trend. The Reviewed TDEE is the stabilized value Level Up actually carries forward between scheduled reviews. If they differ, that is expected: the live value shows where the evidence points now, while the reviewed value stays held until the normal weekly review and update limits are applied." },
-            { eyebrow: "YOUR CALORIE TARGET", title: "How Level Up uses TDEE", body: "At each weekly review, Level Up combines the reviewed TDEE with your current goal and pace evidence to calculate an appropriate calorie target. The existing food-day and weigh-in confidence stages, 21-day evidence window, seven-day review cadence and adjustment caps still apply, so a single weigh-in, meal or unusual day cannot rewrite your plan by itself." }
+            { eyebrow: "THE CALCULATION", title: "Intake meets weight change", body: "Level Up averages your logged calorie intake through yesterday over its existing 21-day intake window, then adjusts that intake for your smoothed weekly weight-change rate. Conceptually: TDEE = average intake − (weekly weight change × 500). Gaining weight lowers the expenditure estimate relative to intake; losing weight raises it." },
+            { eyebrow: "DAILY EXPENDITURE", title: "TDEE can update each day", body: "When enough usable nutrition and weight evidence is available, Level Up recalculates your expenditure each day. The Current Expenditure card and Expenditure Over Time graph show this daily estimate. If a fresh estimate cannot be calculated, the last usable value is shown as Holding instead." },
+            { eyebrow: "WEEKLY CALORIE REVIEW", title: "Your calorie target changes less often", body: "Daily TDEE movement does not rewrite your calorie target every day. Level Up keeps calorie-target decisions on the existing weekly review schedule, using your goal, actual intake, Trend Weight and expenditure evidence to recommend whether calories should increase, decrease or stay the same." }
         ]
     },
     {
@@ -30,7 +30,7 @@ export const CONTEXTUAL_TUTORIALS = [
             { eyebrow: "SMOOTHING", title: "Recent data matters more", body: "Level Up applies an exponentially weighted smoother. Each new day contributes 25% to the updated trend while 75% comes from the previous trend. This lets persistent changes move the line while reducing the impact of a single unusually high or low scale reading." },
             { eyebrow: "WEEKLY TREND", title: "The rate comes from the smoothed line", body: "Weekly Trend is calculated from a regression across up to the latest 20 days of smoothed Trend Weight and expressed in pounds per week. The rate therefore reflects the direction of the smoothed trend rather than the difference between two individual scale readings." },
             { eyebrow: "CONFIDENCE", title: "It gets stronger with more weigh-ins", body: "With at least 3 real weigh-ins spanning 5 days, Level Up can show a Preliminary Trend. With at least 6 weigh-ins spanning 14 days, it becomes the standard Weekly Trend. More regular weigh-ins make the estimate steadier, but missing days do not reset it." },
-            { eyebrow: "TDEE", title: "The same rate informs expenditure", body: "TDEE uses this same smoothed weekly weight-change signal. The Live TDEE can therefore move as the trend changes, while the Reviewed TDEE remains subject to the existing 21-day evidence window, confidence stages, seven-day review cadence and stabilization limits." }
+            { eyebrow: "TDEE", title: "The same rate informs daily expenditure", body: "TDEE uses this same smoothed weekly weight-change signal. When enough evidence is available, the expenditure estimate can update daily as intake and Trend Weight evolve. Calorie-target decisions remain on the separate weekly review schedule." }
         ]
     }
 ];
