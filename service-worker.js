@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-03-163";
+const CACHE_VERSION = "2026-09-03-164";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -9,6 +9,7 @@ const CORE_ASSETS = [
     "./manifest.webmanifest",
     "./js/account/cloud-backup-history-ui.js?v=backup-history-ui-1",
     "./js/core/system-recovery-notice.js?v=system-recovery-notice-1",
+    "./js/nutrition/tdee-expenditure-swipe-card.js?v=tdee-expenditure-swipe-1",
     "./assets/level-up-home-icon.svg",
     "./assets/level-up-mark-transparent.svg",
     "./assets/icons/icon-192.png",
