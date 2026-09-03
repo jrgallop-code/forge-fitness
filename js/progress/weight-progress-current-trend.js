@@ -1,4 +1,5 @@
 import "./weight-visible-trend-sync.js?v=smoothed-visible-trend-3";
+import "../nutrition/tdee-tutorial-controller.js?v=tdee-tutorial-controller-1";
 import {
     calculateVisibleWeightTrend,
     normalizeWeightEntries
