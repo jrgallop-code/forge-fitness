@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-04-199";
+const CACHE_VERSION = "2026-09-04-200";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
