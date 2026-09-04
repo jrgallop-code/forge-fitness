@@ -23,6 +23,17 @@ function ensureStyles() {
             filter:drop-shadow(0 0 8px color-mix(in srgb,var(--muscle-recovery-accent,#ff315f) 32%,transparent))!important;
         }
 
+        /* Recovery-scale labels follow the same gradient as the bar. */
+        .recovery-scale-points span:first-child small {
+            color:var(--muscle-recovery-accent,#ff315f)!important;
+        }
+        .recovery-scale-points span:nth-child(3) small {
+            color:color-mix(in srgb,var(--muscle-recovery-accent,#ff315f) 50%,#858793)!important;
+        }
+        .recovery-scale-points span:last-child small {
+            color:#858793!important;
+        }
+
         /* The recovery renderer owns intensity via --recovery-opacity. Colour
            comes only from the selected recovery palette, so late recovery
            refreshes cannot restore the old hard-coded red/neutral fills. */
