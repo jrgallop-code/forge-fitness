@@ -13,6 +13,7 @@
     installProteinMinimumConsistency();
     installNutritionPhaseTargetStability();
     installNutritionAuthoritySync();
+    installMuscleMapColors();
     installInteractiveWorkoutTutorial();
     installInteractiveTutorialVisualFix();
 
@@ -96,6 +97,15 @@
         script.type = "module";
         script.src = "js/nutrition/nutrition-authority-sync.js?v=nutrition-authority-sync-2";
         script.dataset.nutritionAuthoritySync = "1";
+        document.head.appendChild(script);
+    }
+
+    function installMuscleMapColors() {
+        if (document.querySelector('script[data-muscle-map-colors]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/core/muscle-map-colors.js?v=muscle-map-colors-1";
+        script.dataset.muscleMapColors = "1";
         document.head.appendChild(script);
     }
 
