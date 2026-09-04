@@ -107,8 +107,8 @@ function renderWeightTrendCard() {
         : building
             ? `${weighInProgress} / ${PRELIMINARY_WEIGH_INS} weigh-ins · ${dayProgress} / ${PRELIMINARY_DAYS} days`
             : trend.status === "preliminary"
-                ? "preliminary trend weight"
-                : "trend weight";
+                ? "Preliminary trend"
+                : "Trend weight";
 
     card.innerHTML = `
         <button type="button" class="dashboard-weight-trend-button" data-dashboard-weight-trend-open aria-label="Open Weight Progress">
