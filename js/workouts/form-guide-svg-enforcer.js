@@ -1,10 +1,10 @@
-import "./form-guide-coverage-runtime.js?v=form-guide-coverage-runtime-2";
+import "./form-guide-coverage-runtime.js?v=form-guide-coverage-runtime-3";
 import "./exercise-guide-videos.js?v=form-videos-2";
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
 import {
     getFormGuideMuscleVisual,
     renderFormGuideMuscleSvg
-} from "./form-guide-anatomy.js?v=female-back-regions-1";
+} from "./form-guide-anatomy.js?v=form-guide-anatomy-2";
 
 const STYLE_ID = "form-guide-direct-recovery-svg-styles";
 
