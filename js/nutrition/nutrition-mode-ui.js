@@ -1,12 +1,14 @@
-import { getMaintenanceUpdateMode, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
+import { clearPendingMaintenanceReview, getMaintenanceUpdateMode, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
 import { getActiveNutritionPhase, saveNutritionPhase } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { getNutritionPlan, setCurrentCalories } from "./nutrition-storage.js?v=calorie-authority-recovery-1";
 
 const STYLE_ID = "nutrition-mode-ui-styles";
 const CARD_ID = "nutrition-mode-card";
 const ONBOARDING_ID = "onboarding-nutrition-mode";
+const MANUAL_TARGET_KEY = "level_up_manual_calorie_target_v1";
 let queued = false;
 let started = false;
+let enforcingManualTarget = false;
 
 function coachIcon() {
     return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V8m0 10h16M7 14l4-4 3 2 4-6"/><circle cx="18" cy="6" r="2"/></svg>`;
@@ -30,6 +32,19 @@ function activeTarget() {
     const plan = getNutritionPlan();
     const value = Number(phase?.currentCalories ?? phase?.startCalories ?? plan?.calculatedCalories ?? plan?.currentCalories);
     return Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+}
+
+function readManualTarget() {
+    const value = Math.round(Number(localStorage.getItem(MANUAL_TARGET_KEY)));
+    return Number.isFinite(value) && value >= 500 ? value : null;
+}
+
+function seedManualTarget() {
+    const existing = readManualTarget();
+    if (existing) return existing;
+    const current = activeTarget();
+    if (current) localStorage.setItem(MANUAL_TARGET_KEY, String(current));
+    return current;
 }
 
 function ensureStyles() {
@@ -70,6 +85,7 @@ function ensureStyles() {
         html[data-nutrition-mode="manual"] .maintenance-check-in-alert,
         html[data-nutrition-mode="manual"] .dashboard-habit-card--checkins,
         html[data-nutrition-mode="manual"] .activity-calendar-legend-checkin{display:none!important}
+        html[data-nutrition-mode="manual"] #unified-goals-calories-card .unified-calorie-summary{display:none!important}
         .onboarding-nutrition-mode{display:grid;gap:10px;margin-top:17px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)}
         .onboarding-nutrition-mode>div:first-child{display:grid;gap:3px}
         .onboarding-nutrition-mode>div:first-child span{color:var(--accent-text,#ff4d5d);font-size:.61rem;font-weight:900;letter-spacing:.1em}
@@ -107,15 +123,41 @@ function removeCheckInSurfaces() {
     document.querySelector('.nav-btn[data-page="energy"] .maintenance-nav-badge')?.remove();
 }
 
+function enforceManualTarget() {
+    if (enforcingManualTarget || getMaintenanceUpdateMode() !== "track") return;
+    const target = readManualTarget();
+    if (!target) return;
+    enforcingManualTarget = true;
+    try {
+        const phase = getActiveNutritionPhase();
+        const phaseTarget = Math.round(Number(phase?.currentCalories ?? phase?.startCalories));
+        const maintenance = Number(phase?.maintenanceCalories);
+        if (phase?.goalId && Number.isFinite(maintenance) && maintenance > 0 && phaseTarget !== target) {
+            saveNutritionPhase({
+                goalId: phase.goalId,
+                maintenanceCalories: maintenance,
+                targetCalories: target
+            });
+        }
+        const planTarget = Math.round(Number(getNutritionPlan()?.calculatedCalories));
+        if (planTarget !== target) setCurrentCalories(target, "Manual nutrition target");
+    } finally {
+        enforcingManualTarget = false;
+    }
+}
+
 function applyModeToDocument() {
     const state = modeState();
     document.documentElement.dataset.nutritionMode = state.mode;
-    if (state.mode === "manual") removeCheckInSurfaces();
+    if (state.mode === "manual") {
+        removeCheckInSurfaces();
+        enforceManualTarget();
+    }
     return state;
 }
 
 function modeCardMarkup(state) {
-    const target = activeTarget();
+    const target = state.mode === "manual" ? (readManualTarget() || activeTarget()) : activeTarget();
     return `
         <header class="nutrition-mode-card-header">
             <span>NUTRITION MODE</span>
@@ -146,18 +188,31 @@ function modeCardMarkup(state) {
                     <label>Calories per day<input type="number" min="500" step="25" inputmode="numeric" value="${target ?? ""}" placeholder="e.g. 2800" data-manual-calorie-target></label>
                     <button type="button" data-save-manual-calorie-target>Save target</button>
                 </div>
-                <p class="nutrition-mode-explainer">Manual mode keeps calorie and macro logging, weight trends and expenditure analytics. Weekly check-in cards, reminders and calendar check-ins are turned off.</p>
+                <p class="nutrition-mode-explainer">Manual mode keeps calorie and macro logging, weight trends and expenditure analytics. Your phase still describes the direction you want your weight to move, but it does not control calories. Weekly check-in cards, reminders and calendar check-ins are turned off.</p>
                 <small class="nutrition-manual-status" data-manual-calorie-status>${target ? `Current manual target: ${target.toLocaleString()} kcal/day.` : "Enter the calorie target you want to follow."}</small>
             </div>
         `}
     `;
 }
 
+function syncSaveButtonLabel(host, state) {
+    const button = host?.querySelector("#unified-save-plan");
+    if (!button) return;
+    if (state.mode === "manual") {
+        if (!button.dataset.coachLabel) button.dataset.coachLabel = button.textContent || "Save";
+        button.textContent = "Save Phase";
+    } else if (button.dataset.coachLabel) {
+        button.textContent = button.dataset.coachLabel;
+        delete button.dataset.coachLabel;
+    }
+}
+
 function renderGoalsModeCard() {
     const host = document.getElementById("unified-goals-calories-card");
     if (!host) return;
     const state = applyModeToDocument();
-    const signature = `${state.mode}:${state.coachApplyMode}:${activeTarget() || 0}`;
+    const targetForSignature = state.mode === "manual" ? (readManualTarget() || activeTarget() || 0) : (activeTarget() || 0);
+    const signature = `${state.mode}:${state.coachApplyMode}:${targetForSignature}`;
     let card = document.getElementById(CARD_ID);
     if (!card) {
         card = document.createElement("section");
@@ -172,6 +227,7 @@ function renderGoalsModeCard() {
         card.innerHTML = modeCardMarkup(state);
     }
     host.querySelector(".unified-maintenance-mode")?.setAttribute("hidden", "");
+    syncSaveButtonLabel(host, state);
 }
 
 function onboardingMarkup(state) {
@@ -209,6 +265,8 @@ function renderOnboardingMode() {
 function setPrimaryMode(mode) {
     const current = getMaintenanceUpdateMode();
     if (mode === "manual") {
+        seedManualTarget();
+        clearPendingMaintenanceReview();
         setMaintenanceUpdateMode("track");
     } else {
         setMaintenanceUpdateMode(current === "automatic" ? "automatic" : "review");
@@ -237,17 +295,10 @@ function saveManualTarget(button) {
         return;
     }
 
+    localStorage.setItem(MANUAL_TARGET_KEY, String(calories));
+    clearPendingMaintenanceReview();
     setMaintenanceUpdateMode("track");
-    const phase = getActiveNutritionPhase();
-    const maintenance = Number(phase?.maintenanceCalories);
-    if (phase?.goalId && Number.isFinite(maintenance) && maintenance > 0) {
-        saveNutritionPhase({
-            goalId: phase.goalId,
-            maintenanceCalories: maintenance,
-            targetCalories: calories
-        });
-    }
-    setCurrentCalories(calories, "Manual nutrition target");
+    enforceManualTarget();
     applyModeToDocument();
     if (status) status.textContent = `Manual target saved: ${calories.toLocaleString()} kcal/day. Weekly calorie check-ins are off.`;
     window.dispatchEvent(new CustomEvent("levelup:nutrition-mode-updated", { detail: { mode: "manual", calories } }));
