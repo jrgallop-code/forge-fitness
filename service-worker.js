@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-04-209";
+const CACHE_VERSION = "2026-09-04-210";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -22,6 +22,7 @@ const CORE_ASSETS = [
     "./js/nutrition/protein-minimum-consistency.js?v=protein-minimum-2",
     "./js/nutrition/nutrition-phase-target-stability.js?v=phase-target-stability-1",
     "./js/nutrition/nutrition-authority-sync.js?v=nutrition-authority-sync-2",
+    "./js/nutrition/weekly-check-in-status.js?v=weekly-checkin-status-1",
     "./js/nutrition/tdee-calorie-expenditure-carousel.js?v=tdee-calorie-card-3",
     "./js/nutrition/tdee-energy-balance-summary.js?v=energy-balance-summary-2",
     "./js/nutrition/tdee-expenditure-swipe-card.js?v=tdee-expenditure-swipe-2",
