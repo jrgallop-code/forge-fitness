@@ -568,3 +568,126 @@
         max-width:210px;
     }
 }
+
+/* Appearance parity: use the active Level Up appearance for the whole calculator. */
+.plate-calculator-overlay{
+    --plate-accent:var(--accent,#df141e);
+    --plate-accent-dark:var(--accent-dark,#a90e15);
+    --plate-accent-text:var(--accent-text,var(--plate-accent));
+    --plate-soft:var(--accent-soft,rgba(223,20,30,.11));
+    --plate-line:var(--line,rgba(255,255,255,.09));
+    --plate-surface:var(--surface,#121216);
+    --plate-raised:var(--surface-raised,#18181d);
+    --plate-card:var(--card,#1c1c22);
+    --plate-text:var(--text,#f7f7f8);
+    --plate-heading:var(--heading,#fff);
+    --plate-muted:var(--muted,#9b9ba5);
+    --plate-contrast:var(--accent-contrast,#fff);
+}
+
+.plate-calculator-sheet{
+    border-color:var(--plate-line)!important;
+    background:var(--plate-surface)!important;
+    color:var(--plate-text)!important;
+}
+
+.plate-calculator-handle{background:color-mix(in srgb,var(--plate-muted) 58%,transparent)!important}
+.plate-calculator-header h3{color:var(--plate-heading)!important}
+.plate-calculator-done{
+    border:1px solid color-mix(in srgb,var(--plate-accent) 22%,var(--plate-line))!important;
+    background:var(--plate-soft)!important;
+    color:var(--plate-accent-text)!important;
+}
+
+.plate-calculator-card,
+.plate-calculator-settings,
+.plate-calculator-settings-toggle{
+    border-color:var(--plate-line)!important;
+    background:var(--plate-card)!important;
+    color:var(--plate-text)!important;
+}
+
+.plate-calculator-trigger-icon{color:var(--plate-accent)!important}
+.plate-calculator-trigger-copy strong,
+.plate-calculator-summary strong,
+.plate-calculator-settings-toggle,
+.plate-calculator-base-row,
+.plate-calculator-base-toggle-copy strong,
+.plate-calculator-available>span{color:var(--plate-text)!important}
+.plate-calculator-trigger-copy span,
+.plate-calculator-chevron,
+.plate-calculator-visual::before,
+.plate-calculator-visual::after,
+.plate-calculator-more,
+.plate-calculator-empty-visual,
+.plate-calculator-summary span,
+.plate-calculator-settings-toggle small,
+.plate-calculator-settings-toggle>span:last-child,
+.plate-calculator-base-toggle-copy small,
+.plate-calculator-number-wrap b,
+.plate-calculator-settings p{color:var(--plate-muted)!important}
+
+.plate-calculator-sleeve,
+.plate-calculator-empty-visual span{
+    border-color:color-mix(in srgb,var(--plate-muted) 22%,transparent)!important;
+    background:color-mix(in srgb,var(--plate-text) 16%,var(--plate-surface))!important;
+}
+
+.plate-calculator-plate{
+    border-color:color-mix(in srgb,var(--plate-accent) 68%,white 18%)!important;
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--plate-accent) 76%,white 24%),
+        color-mix(in srgb,var(--plate-accent-dark) 88%,black 12%))!important;
+    color:var(--plate-contrast)!important;
+    box-shadow:0 5px 12px color-mix(in srgb,var(--plate-accent-dark) 32%,transparent)!important;
+}
+
+.plate-calculator-plate:nth-child(2n){
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--plate-accent) 64%,white 18%),
+        color-mix(in srgb,var(--plate-accent-dark) 94%,black 6%))!important;
+}
+
+.plate-calculator-stop{
+    border-color:color-mix(in srgb,var(--plate-muted) 30%,transparent)!important;
+    background:linear-gradient(180deg,
+        color-mix(in srgb,var(--plate-muted) 48%,white 20%),
+        color-mix(in srgb,var(--plate-muted) 58%,black 20%))!important;
+}
+
+.plate-calculator-nearest{
+    background:var(--plate-soft)!important;
+    color:var(--plate-accent-text)!important;
+}
+
+.plate-calculator-switch i{
+    border-color:var(--plate-line)!important;
+    background:var(--plate-raised)!important;
+}
+.plate-calculator-switch i::after{background:color-mix(in srgb,var(--plate-muted) 72%,white 18%)!important}
+.plate-calculator-switch input:checked + i{
+    border-color:color-mix(in srgb,var(--plate-accent) 55%,transparent)!important;
+    background:var(--plate-soft)!important;
+}
+.plate-calculator-switch input:checked + i::after{background:var(--plate-accent)!important}
+
+.plate-calculator-number-wrap input,
+.plate-calculator-plate-options button{
+    border-color:var(--plate-line)!important;
+    background:var(--plate-raised)!important;
+    color:var(--plate-text)!important;
+}
+.plate-calculator-plate-options button[aria-pressed="true"]{
+    border-color:color-mix(in srgb,var(--plate-accent) 58%,transparent)!important;
+    background:var(--plate-soft)!important;
+    color:var(--plate-accent-text)!important;
+}
+
+/* Explicit theme plate hues keep each appearance visually distinct. */
+html[data-theme="level-up"] .plate-calculator-overlay{--plate-accent:#df141e;--plate-accent-dark:#a90e15}
+html[data-theme="arctic"] .plate-calculator-overlay{--plate-accent:#1769e0;--plate-accent-dark:#0e4fb3}
+html[data-theme="pure"] .plate-calculator-overlay{--plate-accent:#171719;--plate-accent-dark:#000}
+html[data-theme="ocean"] .plate-calculator-overlay{--plate-accent:#0798d9;--plate-accent-dark:#0676ad}
+html[data-theme="midnight"] .plate-calculator-overlay{--plate-accent:#3478f6;--plate-accent-dark:#195ac8}
+html[data-theme="slate"] .plate-calculator-overlay{--plate-accent:#7396b8;--plate-accent-dark:#557590}
+html[data-theme="pulse"] .plate-calculator-overlay{--plate-accent:#ff2d95;--plate-accent-dark:#d91b77}
