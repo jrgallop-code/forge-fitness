@@ -1,3 +1,5 @@
+import { navigate } from "../core/router.js?v=deload-workout-preview-1";
+
 const STYLE_ID = "level-up-workout-tutorial-prompt-styles";
 const PROMPT_ID = "workout-tutorial-dashboard-prompt";
 const PROMPT_STATE_KEY = "level_up_workout_tutorial_prompt_v1";
@@ -21,10 +23,6 @@ function install() {
     }
 
     window.addEventListener("pageshow", schedule);
-    window.addEventListener("levelup:workout-tutorial-completed", () => {
-        removePrompt();
-    });
-
     document.addEventListener("click", handleClick, true);
 }
 
@@ -73,17 +71,7 @@ function handleClick(event) {
     if (start) {
         event.preventDefault();
         event.stopPropagation();
-        start.disabled = true;
-        start.textContent = "Opening…";
-        window.dispatchEvent(new CustomEvent("levelup:start-workout-tutorial", {
-            detail: { source: "dashboard-prompt" }
-        }));
-        window.setTimeout(() => {
-            if (document.body.contains(start)) {
-                start.disabled = false;
-                start.textContent = "Start tutorial";
-            }
-        }, 2500);
+        startTutorialFromPrompt(start);
         return;
     }
 
@@ -93,6 +81,42 @@ function handleClick(event) {
         event.stopPropagation();
         dismissPrompt();
     }
+}
+
+function startTutorialFromPrompt(button) {
+    button.disabled = true;
+    button.textContent = "Opening…";
+
+    // Reuse the exact tutorial launch path that is already proven on iOS:
+    // open More → Tutorials, then activate the v5 tutorial card itself.
+    // This avoids maintaining a second workout-launch implementation.
+    navigate("more");
+    waitFor('[data-more-page="learn"]', learnButton => {
+        learnButton.click();
+        waitFor("#interactive-workout-tutorial-card", tutorialButton => {
+            tutorialButton.click();
+        });
+    });
+}
+
+function waitFor(selector, callback, attempts = 0) {
+    const node = document.querySelector(selector);
+    if (node) {
+        callback(node);
+        return;
+    }
+    if (attempts >= 80) {
+        navigate("home");
+        window.setTimeout(() => {
+            const retry = document.querySelector("[data-workout-tutorial-prompt-start]");
+            if (retry) {
+                retry.disabled = false;
+                retry.textContent = "Try again";
+            }
+        }, 120);
+        return;
+    }
+    window.setTimeout(() => waitFor(selector, callback, attempts + 1), 50);
 }
 
 function dismissPrompt() {
