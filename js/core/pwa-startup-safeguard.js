@@ -91,7 +91,7 @@
         if (document.querySelector('script[data-nutrition-phase-target-stability]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/nutrition/nutrition-phase-target-stability.js?v=phase-target-stability-2";
+        script.src = "js/nutrition/nutrition-phase-target-stability.js?v=phase-target-stability-3";
         script.dataset.nutritionPhaseTargetStability = "1";
         document.head.appendChild(script);
     }
@@ -183,6 +183,15 @@
             #interactive-workout-tutorial-card>*::after{content:none!important;display:none!important;background:none!important;background-image:none!important;mask:none!important;-webkit-mask:none!important}
             .interactive-tutorial-focus{
                 box-shadow:0 4px 14px rgba(0,0,0,.24)!important;
+            }
+            /* The Nutrition Goals lesson used a concentric target/bullseye icon.
+               Remove it entirely so the Tutorials page and tutorial handoff never
+               show that bullseye, even for a single frame. */
+            .learn-lesson-row[data-lesson-id="nutrition-goals"] .learn-lesson-icon{
+                display:none!important;
+            }
+            .learn-lesson-row[data-lesson-id="nutrition-goals"]{
+                grid-template-columns:minmax(0,1fr) auto!important;
             }
         `;
         document.head.appendChild(style);
