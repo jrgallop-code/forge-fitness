@@ -7,7 +7,7 @@ import {
     hydrateFatSecretLog,
     hydrateFatSecretMeals,
     rememberFatSecretEntry,
-    sanitizeFatSecretEntry,
+    requestFatSecretEntry,
     sanitizeFatSecretLog,
     sanitizeFatSecretMeals
 } from "./fatsecret-live-cache.js?v=fatsecret-live-1";
@@ -21,8 +21,8 @@ export function readFoodLog() {
 }
 
 export function entriesForDate(dateKey) {
-    const entries = readFoodLog()[dateKey];
-    return Array.isArray(entries) ? entries : [];
+    const entries = core.readFoodLog()[dateKey];
+    return Array.isArray(entries) ? entries.map(requestFatSecretEntry) : [];
 }
 
 export function readCompletedFoodDays() {
@@ -159,7 +159,7 @@ export function logSavedMeal(dateKey, savedMeal, meal) {
 
 function mealItemSnapshot(entry) {
     if (!entry || typeof entry !== "object") return null;
-    const hydrated = hydrateFatSecretEntry(entry);
+    const hydrated = hydrateFatSecretEntry(entry, { queueMissing: true });
     return {
         source: hydrated.source || hydrated.food?.source || "custom",
         catalogueId: hydrated.catalogueId || hydrated.food?.catalogueId || null,

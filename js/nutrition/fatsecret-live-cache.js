@@ -2,12 +2,11 @@ const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const SAVED_MEALS_KEY = "level_up_saved_meals_v1";
-const MAX_SESSION_FOODS = 60;
+const MAX_STARTUP_FOODS = 30;
 const FATSECRET_ATTRIBUTION = '<a href="https://platform.fatsecret.com">Powered by fatsecret Platform API</a>';
 
 const foods = new Map();
 const pending = new Map();
-let queuedCount = 0;
 
 export function isFatSecretEntry(entry) {
     return Boolean(fatSecretFoodId(entry));
@@ -36,7 +35,7 @@ export function rememberFatSecretEntry(entry) {
     if (!foodId) return entry;
     const food = entry?.food?.source === "fatsecret" ? entry.food : entry?.source === "fatsecret" && entry?.portions ? entry : null;
     if (food) foods.set(foodId, food);
-    else queueFood(foodId);
+    else void queueFood(foodId);
     return entry;
 }
 
@@ -59,13 +58,13 @@ export function sanitizeFatSecretEntry(entry) {
     return result;
 }
 
-export function hydrateFatSecretEntry(entry) {
+export function hydrateFatSecretEntry(entry, { queueMissing = false } = {}) {
     if (!entry || typeof entry !== "object") return entry;
     const foodId = fatSecretFoodId(entry);
     if (!foodId) return entry;
     const food = foods.get(foodId);
     if (!food) {
-        queueFood(foodId);
+        if (queueMissing) void queueFood(foodId);
         return {
             ...entry,
             source: "fatsecret",
@@ -104,7 +103,7 @@ export function hydrateFatSecretLog(log) {
     if (!log || typeof log !== "object" || Array.isArray(log)) return {};
     return Object.fromEntries(Object.entries(log).map(([date, entries]) => [
         date,
-        Array.isArray(entries) ? entries.map(hydrateFatSecretEntry) : entries
+        Array.isArray(entries) ? entries.map(entry => hydrateFatSecretEntry(entry)) : entries
     ]));
 }
 
@@ -119,7 +118,7 @@ export function sanitizeFatSecretLog(log) {
 export function hydrateFatSecretMeals(meals) {
     return (Array.isArray(meals) ? meals : []).map(meal => ({
         ...meal,
-        items: (Array.isArray(meal?.items) ? meal.items : []).map(hydrateFatSecretEntry)
+        items: (Array.isArray(meal?.items) ? meal.items : []).map(entry => hydrateFatSecretEntry(entry))
     }));
 }
 
@@ -134,11 +133,16 @@ export function hasPendingFatSecretEntries(entries) {
     return (Array.isArray(entries) ? entries : []).some(entry => isFatSecretEntry(entry) && hydrateFatSecretEntry(entry)?.fatSecretPending);
 }
 
+export function requestFatSecretEntry(entry) {
+    const foodId = fatSecretFoodId(entry);
+    if (foodId) void queueFood(foodId);
+    return hydrateFatSecretEntry(entry);
+}
+
 async function queueFood(foodId) {
-    if (!foodId || foods.has(foodId) || pending.has(foodId) || queuedCount >= MAX_SESSION_FOODS) return;
+    if (!foodId || foods.has(foodId) || pending.has(foodId)) return;
     const token = sessionToken();
     if (!token) return;
-    queuedCount += 1;
     const task = fetchFood(foodId, token)
         .catch(error => console.warn("FatSecret food refresh failed:", error?.message || error))
         .finally(() => pending.delete(foodId));
@@ -184,16 +188,20 @@ function queuePersistedIds() {
     const ids = new Set();
     try {
         const log = JSON.parse(localStorage.getItem(FOOD_LOG_KEY) || "{}");
-        Object.values(log || {}).flatMap(entries => Array.isArray(entries) ? entries : []).forEach(entry => {
-            const id = fatSecretFoodId(entry); if (id) ids.add(id);
-        });
+        Object.entries(log || {})
+            .sort(([left], [right]) => String(right).localeCompare(String(left)))
+            .forEach(([, entries]) => {
+                (Array.isArray(entries) ? entries : []).forEach(entry => {
+                    const id = fatSecretFoodId(entry); if (id) ids.add(id);
+                });
+            });
         const meals = JSON.parse(localStorage.getItem(SAVED_MEALS_KEY) || "[]");
         (Array.isArray(meals) ? meals : []).flatMap(meal => Array.isArray(meal?.items) ? meal.items : []).forEach(entry => {
             const id = fatSecretFoodId(entry); if (id) ids.add(id);
         });
     }
     catch {}
-    [...ids].slice(0, MAX_SESSION_FOODS).forEach(id => void queueFood(id));
+    [...ids].slice(0, MAX_STARTUP_FOODS).forEach(id => void queueFood(id));
 }
 
 function ensureAttribution(root = globalThis.document) {
