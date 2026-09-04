@@ -28,7 +28,7 @@ test("production worker composes FatSecret with the existing food API", () => {
     assert.match(worker, /getFatSecretFood/);
     assert.match(worker, /baseWorker\.fetch/);
     assert.match(worker, /fatsecret_food_search_failed/);
-    assert.match(worker, /\/v1\/foods\/fatsecret/);
+    assert.match(worker, /getFatSecretDetailResponse/);
     assert.match(provider, /FATSECRET_CLIENT_ID/);
     assert.match(provider, /FATSECRET_CLIENT_SECRET/);
 });

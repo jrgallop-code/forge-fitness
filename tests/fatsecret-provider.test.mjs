@@ -17,7 +17,7 @@ test("FatSecret provider supports basic search, detailed foods and optional adva
     assert.match(provider, /const version = premier \? "v5" : "v1"/);
     assert.match(provider, /food\/v5/);
     assert.match(provider, /food\/barcode\/find-by-id\/v2/);
-    assert.match(provider, /scopes\.has\("barcode"\)/);
+    assert.match(provider, /fatSecretScopes\(env\)\.has\("barcode"\)/);
     assert.match(provider, /scopes\.has\("premier"\)/);
 });
 
