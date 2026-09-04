@@ -201,17 +201,19 @@ function buildState() {
         || endDate;
 
     const visible = enriched.filter(point => point.date >= visibleStart && point.date <= endDate && positive(point.expenditureCalories) !== null);
-    const matched = visible.filter(point => Number.isFinite(Number(point.intakeCalories)) && Number.isFinite(Number(point.expenditureCalories)));
+    const matched = visible.filter(point => positive(point.intakeCalories) !== null && positive(point.expenditureCalories) !== null);
 
     if (!matched.length) {
         return { startDate: visibleStart, endDate, matched, averageIntake: null, averageExpenditure: null, balance: null };
     }
 
-    const averageIntake = matched.reduce((sum, point) => sum + Number(point.intakeCalories), 0) / matched.length;
-    const averageExpenditure = matched.reduce((sum, point) => sum + Number(point.expenditureCalories), 0) / matched.length;
+    const averageIntake = matched.reduce((sum, point) => sum + positive(point.intakeCalories), 0) / matched.length;
+    const averageExpenditure = matched.reduce((sum, point) => sum + positive(point.expenditureCalories), 0) / matched.length;
     const balance = averageIntake - averageExpenditure;
+    const matchedStart = matched[0]?.date || visibleStart;
+    const matchedEnd = matched.at(-1)?.date || endDate;
 
-    return { startDate: visibleStart, endDate, matched, averageIntake, averageExpenditure, balance };
+    return { startDate: matchedStart, endDate: matchedEnd, matched, averageIntake, averageExpenditure, balance };
 }
 
 function formatNumber(value) {
