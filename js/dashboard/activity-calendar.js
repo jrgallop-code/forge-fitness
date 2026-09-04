@@ -1,7 +1,11 @@
 import { calculateWorkoutVolume } from "../workouts/volume-calculator.js?v=two-dumbbells-1";
+import { CHECK_IN_APPLE_SVG, getMonthlyCheckInEvents } from "../nutrition/check-in-calendar.js?v=checkin-calendar-1";
 
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
+const PHASE_STORAGE_KEY = "level_up_nutrition_phases";
+const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";
+const HOLD_STORAGE_KEY = "level_up_phase_reassessment_hold";
 
 let viewDate = new Date();
 let selectedDate = "";
@@ -181,25 +185,34 @@ function calendarDays(date) {
     return days;
 }
 
-function renderDetails(dateKey, sessions, weights) {
+function checkInMeta(event) {
+    if (event.state === "handled") return "Weekly calorie review completed.";
+    if (event.state === "ready") return "Your calorie review is ready to open in Nutrition → Goals & Plan.";
+    if (event.state === "waiting") return "The scheduled review is due, but Level Up still needs enough current nutrition and weight data.";
+    if (event.state === "past") return "Scheduled weekly calorie check-in.";
+    return "Scheduled weekly calorie check-in. Keep logging nutrition and weigh-ins so it is ready on time.";
+}
+
+function renderDetails(dateKey, sessions, weights, checkIns) {
     if (!dateKey) {
         return `
             <div class="activity-calendar-empty">
                 <strong>Select a highlighted day</strong>
-                <span>See the workouts and weigh-ins you recorded.</span>
+                <span>See workouts, weigh-ins and calorie check-ins.</span>
             </div>
         `;
     }
 
     const daySessions = sessions.filter(session => workoutDate(session) === dateKey);
     const dayWeights = weights.filter(entry => normalizeDate(entry?.date) === dateKey);
+    const dayCheckIns = checkIns.filter(event => event.date === dateKey);
 
-    if (!daySessions.length && !dayWeights.length) {
+    if (!daySessions.length && !dayWeights.length && !dayCheckIns.length) {
         return `
             <div class="activity-calendar-detail-head"><span>${fullDateLabel(dateKey)}</span></div>
             <div class="activity-calendar-empty">
                 <strong>No activity logged</strong>
-                <span>No workout or weigh-in was recorded on this day.</span>
+                <span>No workout, weigh-in or calorie check-in is recorded on this day.</span>
             </div>
         `;
     }
@@ -207,6 +220,16 @@ function renderDetails(dateKey, sessions, weights) {
     return `
         <div class="activity-calendar-detail-head"><span>${fullDateLabel(dateKey)}</span></div>
         <div class="activity-calendar-events">
+            ${dayCheckIns.map(event => `
+                <div class="activity-calendar-event activity-calendar-event--checkin is-${event.state}">
+                    <i class="activity-calendar-checkin-icon" aria-hidden="true">${CHECK_IN_APPLE_SVG}</i>
+                    <span>
+                        <small>CALORIE CHECK-IN</small>
+                        <strong>${escapeHtml(event.label)}</strong>
+                        <p class="activity-calendar-event-meta">${escapeHtml(checkInMeta(event))}</p>
+                    </span>
+                </div>
+            `).join("")}
             ${daySessions.map(session => {
                 const summary = workoutSummary(session);
                 return `
@@ -240,8 +263,10 @@ function renderCalendar() {
 
     const sessions = completedWorkouts();
     const weights = weighIns();
+    const checkIns = getMonthlyCheckInEvents(viewDate);
     const workoutDates = new Set(sessions.map(workoutDate));
     const weightDates = new Set(weights.map(entry => normalizeDate(entry?.date)));
+    const checkInDates = new Map(checkIns.map(event => [event.date, event]));
     const today = localDate();
 
     page.querySelector("[data-activity-calendar-month-label]").textContent = monthLabel(viewDate);
@@ -253,24 +278,27 @@ function renderCalendar() {
             const key = localDate(date);
             const hasWorkout = workoutDates.has(key);
             const hasWeight = weightDates.has(key);
+            const checkIn = checkInDates.get(key);
+            const hasCheckIn = Boolean(checkIn);
             return `
                 <button
                     type="button"
-                    class="activity-calendar-day ${hasWorkout ? "has-workout" : ""} ${hasWeight ? "has-weight" : ""} ${key === today ? "is-today" : ""} ${key === selectedDate ? "is-selected" : ""}"
+                    class="activity-calendar-day ${hasWorkout ? "has-workout" : ""} ${hasWeight ? "has-weight" : ""} ${hasCheckIn ? `has-checkin checkin-${checkIn.state}` : ""} ${key === today ? "is-today" : ""} ${key === selectedDate ? "is-selected" : ""}"
                     data-activity-calendar-date="${key}"
-                    aria-label="${fullDateLabel(key)}${hasWorkout ? ", workout logged" : ""}${hasWeight ? ", weigh-in logged" : ""}"
+                    aria-label="${fullDateLabel(key)}${hasWorkout ? ", workout logged" : ""}${hasWeight ? ", weigh-in logged" : ""}${hasCheckIn ? `, ${checkIn.label.toLowerCase()}` : ""}"
                 >
                     <span>${date.getDate()}</span>
                     <i aria-hidden="true">
                         ${hasWorkout ? '<b class="workout-dot"></b>' : ""}
                         ${hasWeight ? '<b class="weight-dot"></b>' : ""}
+                        ${hasCheckIn ? '<b class="checkin-dot"></b>' : ""}
                     </i>
                 </button>
             `;
         }).join("");
 
     page.querySelector("[data-activity-calendar-details]").innerHTML =
-        renderDetails(selectedDate, sessions, weights);
+        renderDetails(selectedDate, sessions, weights, checkIns);
 }
 
 function closeActivityCalendar() {
@@ -314,6 +342,7 @@ export function openActivityCalendar() {
                 <div class="activity-calendar-legend">
                     <span><i class="workout-dot"></i>Workout</span>
                     <span><i class="weight-dot"></i>Weigh-in</span>
+                    <span class="activity-calendar-legend-checkin">${CHECK_IN_APPLE_SVG}Check-in</span>
                 </div>
             </div>
             <div class="activity-calendar-details" data-activity-calendar-details></div>
@@ -360,6 +389,13 @@ document.addEventListener("change", event => {
     renderCalendar();
 });
 
+[
+    "levelup:nutrition-phase-updated",
+    "levelup:maintenance-check-in-updated",
+    "levelup:weekly-calorie-review-readiness",
+    "levelup:calorie-target-applied"
+].forEach(name => window.addEventListener(name, renderCalendar));
+
 window.addEventListener("storage", event => {
-    if (event.key === WEIGHT_STORAGE_KEY || event.key === SESSION_STORAGE_KEY) renderCalendar();
+    if ([WEIGHT_STORAGE_KEY, SESSION_STORAGE_KEY, PHASE_STORAGE_KEY, CHECK_STATE_KEY, HOLD_STORAGE_KEY].includes(event.key)) renderCalendar();
 });
