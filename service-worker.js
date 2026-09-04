@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-03-186";
+const CACHE_VERSION = "2026-09-03-187";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -14,8 +14,7 @@ const CORE_ASSETS = [
     "./js/progress/body-composition-ui.js?v=body-composition-ui-1",
     "./js/progress/body-fat-visual-replacement.js?v=approved-body-fat-1",
     "./js/more/body-composition-health-records.js?v=body-comp-health-records-2",
-    "./js/more/interactive-workout-tutorial-v3.js?v=interactive-workout-tutorial-8",
-    "./js/more/interactive-workout-tutorial-standalone-launcher.js?v=standalone-launcher-3",
+    "./js/more/interactive-workout-tutorial-standalone-launcher.js?v=standalone-launcher-4",
     "./js/nutrition/protein-minimum-consistency.js?v=protein-minimum-1",
     "./js/nutrition/nutrition-phase-target-stability.js?v=phase-target-stability-1",
     "./js/nutrition/nutrition-authority-sync.js?v=nutrition-authority-sync-2",
