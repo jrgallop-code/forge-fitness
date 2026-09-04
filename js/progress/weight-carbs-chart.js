@@ -6,6 +6,7 @@ import "../nutrition/tdee-tutorial-controller.js?v=tdee-tutorial-controller-2";
 import "../nutrition/tdee-breakdown-cleanup.js?v=tdee-breakdown-cleanup-1";
 import "../nutrition/tdee-live-daily-expenditure.js?v=tdee-live-daily-2";
 import "../nutrition/tdee-calorie-expenditure-carousel.js?v=tdee-calorie-card-2";
+import "../nutrition/tdee-energy-balance-summary.js?v=energy-balance-summary-1";
 import "../nutrition/tdee-expenditure-swipe-card.js?v=tdee-expenditure-swipe-2";
 import { initializeWeightCarbsChartV3 } from "./weight-chart-carousel-v3.js?v=smoothed-visible-trend-1";
 import { initializeWeightCarbsInteractionEnhancements } from "./weight-carbs-interaction-enhancements.js?v=weight-carbs-interaction-2";
