@@ -38,16 +38,36 @@ export default {
             if (!response.ok) return response;
             try {
                 const payload = await response.clone().json();
-                const weights = await env.DB.prepare(`
-                    SELECT COUNT(*) AS weight_log_users
-                    FROM backups
-                    WHERE json_valid(payload)
-                      AND COALESCE(json_array_length(json_extract(payload, '$.data.forge_weight_entries')), 0) > 0
-                `).first();
+                const [weights, repeatWeightLoggers] = await Promise.all([
+                    env.DB.prepare(`
+                        SELECT COUNT(*) AS weight_log_users
+                        FROM backups
+                        WHERE json_valid(payload)
+                          AND COALESCE(json_array_length(json_extract(payload, '$.data.forge_weight_entries')), 0) > 0
+                    `).first(),
+                    env.DB.prepare(`
+                        SELECT display_name, email, weigh_ins
+                        FROM (
+                            SELECT
+                                u.display_name,
+                                u.email,
+                                COALESCE(json_array_length(json_extract(b.payload, '$.data.forge_weight_entries')), 0) AS weigh_ins
+                            FROM backups b
+                            JOIN users u ON u.id = b.user_id
+                            WHERE json_valid(b.payload)
+                        )
+                        WHERE weigh_ins > 1
+                        ORDER BY weigh_ins DESC, lower(COALESCE(display_name, email)) ASC
+                        LIMIT 500
+                    `).all()
+                ]);
+                const repeatWeightRows = repeatWeightLoggers?.results || [];
                 payload.totals = {
                     ...(payload.totals || {}),
-                    weight_log_users: Number(weights?.weight_log_users || 0)
+                    weight_log_users: Number(weights?.weight_log_users || 0),
+                    repeat_weight_log_users: repeatWeightRows.length
                 };
+                payload.weightLoggers = repeatWeightRows;
                 return jsonResponse(payload, response.status, request, env);
             }
             catch (error) {
