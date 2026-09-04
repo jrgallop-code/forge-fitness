@@ -103,17 +103,15 @@ function startTutorialFromPrompt(button) {
     button.textContent = "Opening…";
     beginTutorialHandoff();
 
-    // Reuse the exact tutorial launch path that is already proven on iOS, but
-    // keep the intermediate Learn/Tutorials screen visually hidden. Its target
-    // icons were flashing for a fraction of a second before the logger opened.
+    // Reuse the exact tutorial launch path that is already proven on iOS. The
+    // entire content area stays hidden during the route handoff so none of the
+    // Tutorials library target/bullseye icons can paint for a single frame.
     navigate("more");
     waitFor('[data-more-page="learn"]', learnButton => {
         learnButton.click();
         waitFor("#interactive-workout-tutorial-card", tutorialButton => {
             tutorialButton.click();
-            // The tutorial click starts the logger immediately. Hold the handoff
-            // mask only long enough to bridge the route, then reveal the logger.
-            window.setTimeout(endTutorialHandoff, 500);
+            window.setTimeout(endTutorialHandoff, 520);
         });
     });
 }
@@ -177,11 +175,15 @@ function ensureStyles() {
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
-        html.${HANDOFF_CLASS} #content .learn-shell,
-        html.${HANDOFF_CLASS} #content [data-more-learn-page]{
+        html.${HANDOFF_CLASS} #content{
             opacity:0!important;
             visibility:hidden!important;
             pointer-events:none!important;
+        }
+        html.${HANDOFF_CLASS} #content *,
+        html.${HANDOFF_CLASS} #content *::before,
+        html.${HANDOFF_CLASS} #content *::after{
+            visibility:hidden!important;
         }
         .workout-tutorial-dashboard-prompt{
             display:grid;
