@@ -1,4 +1,4 @@
-import { getActiveNutritionPhase } from "./nutrition-phase.js?v=nutrition-phase-target-stability-1";
+import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-phase-target-stability-1";
 
 const STYLE_ID = "level-up-phase-target-stability-styles";
 let queued = false;
@@ -36,6 +36,8 @@ function syncSavedTarget() {
     const target = Number(phase?.currentCalories ?? phase?.startCalories);
     if (!Number.isFinite(target) || target <= 0) return;
     const display = `${Math.round(target).toLocaleString()} kcal/day`;
+    const metrics = getActivePhaseMetrics(phase, { rolling: true });
+    const futureTestActive = metrics?.isFutureTest === true;
 
     const phaseCard = document.getElementById("nutrition-current-phase");
     if (phaseCard) {
@@ -57,7 +59,12 @@ function syncSavedTarget() {
         });
     }
 
-    setText(document.getElementById("weight-calorie-suggestion"), display);
+    // Future-weight testing intentionally owns the Weight Progress calorie value
+    // so the user can preview the simulated recommendation. Do not fight that
+    // writer with the saved target, otherwise the value alternates every frame.
+    if (!futureTestActive) {
+        setText(document.getElementById("weight-calorie-suggestion"), display);
+    }
 }
 
 function setText(node, value) {
@@ -70,7 +77,8 @@ function ensureStyles() {
     style.id = STYLE_ID;
     style.textContent = `
         #nutrition-current-phase [data-phase-calorie-suggestion] strong,
-        #nutrition-current-phase .nutrition-current-phase-grid strong{
+        #nutrition-current-phase .nutrition-current-phase-grid strong,
+        #weight-calorie-suggestion{
             transition:none!important;
             animation:none!important;
         }
