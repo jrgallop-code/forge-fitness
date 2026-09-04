@@ -1,3 +1,4 @@
+import "./form-guide-coverage-runtime.js?v=form-guide-coverage-runtime-1";
 import "./exercise-guide-videos.js?v=form-videos-2";
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
 import {
