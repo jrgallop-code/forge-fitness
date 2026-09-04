@@ -137,14 +137,9 @@ function renderCards() {
         section.className = "dashboard-habit-section";
     }
 
-    // Keep Activity/Consistency below the main dashboard detail cards. This is
-    // the lower dashboard position users were accustomed to and prevents the
-    // calendar cards from breaking the flow between At a Glance and current activity.
-    const detailGrid = content.querySelector(":scope > .dashboard-detail-grid");
-    if (detailGrid) {
-        if (section.previousElementSibling !== detailGrid) detailGrid.insertAdjacentElement("afterend", section);
-    }
-    else if (!section.isConnected) {
+    // Restore the original Consistency placement: immediately after At a Glance.
+    // Keep it anchored here even if later dashboard modules rerender nearby cards.
+    if (section.previousElementSibling !== dashboard) {
         dashboard.insertAdjacentElement("afterend", section);
     }
 
