@@ -75,6 +75,19 @@ test("owner analytics reports current, returning, food, and workout usage", asyn
     assert.match(styles, /admin-analytics-stat-person/);
 });
 
+test("owner analytics counts users with at least one synced weigh-in", async () => {
+    const [wrapper, admin] = await Promise.all([
+        read("cloud/src/safe-backup-worker-v2.js"),
+        read("js/analytics/admin-analytics.js")
+    ]);
+    assert.match(wrapper, /weight_log_users/);
+    assert.match(wrapper, /forge_weight_entries/);
+    assert.match(wrapper, /json_array_length\(json_extract\(payload, '\$\.data\.forge_weight_entries'\)\)/);
+    assert.match(admin, /Weight loggers/);
+    assert.match(admin, /weight_log_users/);
+    assert.match(admin, /People with weigh-ins/);
+});
+
 test("completed workouts report and summarize how they were created", async () => {
     const [source, session, tracking, worker, admin, styles] = await Promise.all([
         read("js/workouts/workout-source.js"),
