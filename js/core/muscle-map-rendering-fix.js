@@ -15,6 +15,14 @@ function ensureStyles() {
             opacity:.88!important;
         }
 
+        /* Form Guides, Add Exercise, workout builders and exercise swap all use
+           the same anatomy renderer. Their target muscle highlight should follow
+           the selected Recovery colour instead of carrying a fixed red fill. */
+        .form-guide-muscle-highlight {
+            fill:var(--muscle-recovery-accent,#ff315f)!important;
+            filter:drop-shadow(0 0 8px color-mix(in srgb,var(--muscle-recovery-accent,#ff315f) 32%,transparent))!important;
+        }
+
         /* The recovery renderer owns intensity via --recovery-opacity. Colour
            comes only from the selected recovery palette, so late recovery
            refreshes cannot restore the old hard-coded red/neutral fills. */
