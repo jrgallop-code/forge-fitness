@@ -133,6 +133,30 @@
     transform: translateY(1px);
 }
 
+/* Arctic needs a visible day-cell grid against its light card surfaces. */
+html[data-theme="arctic"] .dashboard-habit-cell {
+    box-sizing: border-box;
+    background: #e8f0fa;
+    border: 1px solid #c4d3e6;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.48);
+}
+
+html[data-theme="arctic"] .dashboard-habit-heatmap--weight .dashboard-habit-cell.is-active {
+    background: #22b86a;
+    border-color: #16995a;
+    box-shadow: 0 0 7px rgba(34, 184, 106, 0.14);
+}
+
+html[data-theme="arctic"] .dashboard-habit-heatmap--workouts .dashboard-habit-cell.is-active {
+    background: #1769e0;
+    border-color: #0f5fcf;
+    box-shadow: 0 0 7px rgba(23, 105, 224, 0.14);
+}
+
+html[data-theme="arctic"] .dashboard-habit-divider {
+    background: #cfdae8;
+}
+
 @media (max-width: 520px) {
     .dashboard-habit-section {
         margin-left: 0;
