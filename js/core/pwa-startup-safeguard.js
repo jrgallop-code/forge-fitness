@@ -14,6 +14,7 @@
     installNutritionPhaseTargetStability();
     installNutritionAuthoritySync();
     installNutritionModeUI();
+    installNutritionModeControls();
     installWeeklyCheckInStatus();
     installMuscleMapColors();
     installMuscleMapRenderingFix();
@@ -110,6 +111,15 @@
         script.type = "module";
         script.src = "js/nutrition/nutrition-mode-ui.js?v=nutrition-mode-ui-1";
         script.dataset.nutritionModeUi = "1";
+        document.head.appendChild(script);
+    }
+
+    function installNutritionModeControls() {
+        if (document.querySelector('script[data-nutrition-mode-controls]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/nutrition/nutrition-mode-controls.js?v=nutrition-mode-controls-1";
+        script.dataset.nutritionModeControls = "1";
         document.head.appendChild(script);
     }
 
