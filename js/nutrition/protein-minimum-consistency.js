@@ -1,3 +1,6 @@
+import { calculateMacroTargets, poundsToKg } from "./tdee-calculator.js?v=dashboard-food-summary-1";
+import { getNutritionMacroPreference, getNutritionPlan, getNutritionProfile } from "./nutrition-storage.js?v=dashboard-food-summary-1";
+
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const RANGE_KEY = "level_up_calorie_stats_range_v1";
 const RANGE_DAYS = { "7": 7, "28": 28, "84": 84 };
@@ -8,7 +11,7 @@ install();
 function install() {
     schedule();
     new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
-    ["levelup:nutrition-updated", "levelup:food-log-updated", "pageshow"].forEach(name => window.addEventListener(name, schedule));
+    ["levelup:nutrition-updated", "levelup:nutrition-phase-updated", "levelup:food-log-updated", "pageshow"].forEach(name => window.addEventListener(name, schedule));
 }
 
 function schedule() {
@@ -43,11 +46,36 @@ function syncProteinMinimumConsistency() {
 }
 
 function activeProteinTarget() {
-    const macro = readJson("level_up_nutrition_macro", {});
-    const manual = macro?.useManual ? macro.manualMacros : null;
-    const auto = macro?.autoBaseline;
-    const target = Number(manual?.protein ?? auto?.protein);
-    return Number.isFinite(target) && target > 0 ? target : 0;
+    const preference = getNutritionMacroPreference() || {};
+    const manualProtein = Number(preference?.manualMacros?.protein);
+    if (preference?.useManual === true && Number.isFinite(manualProtein) && manualProtein > 0) {
+        return manualProtein;
+    }
+
+    const phases = readJson("level_up_nutrition_phases", []);
+    const active = Array.isArray(phases) ? [...phases].reverse().find(phase => !phase?.endDate) : null;
+    const plan = getNutritionPlan() || {};
+    const phaseCalories = Number(active?.currentCalories ?? active?.startCalories);
+    const savedCalories = Number(plan?.currentCalories ?? plan?.calculatedCalories);
+    const calories = Number.isFinite(phaseCalories) && phaseCalories > 0 ? phaseCalories : savedCalories;
+    const profile = getNutritionProfile();
+
+    if (profile && Number(profile.age) >= 18 && Number.isFinite(calories) && calories > 0 && Number(profile.weightLb) > 0) {
+        try {
+            const macros = calculateMacroTargets({
+                calories,
+                weightKg: poundsToKg(Number(profile.weightLb)),
+                macroPreset: preference?.macroPreset || "balanced"
+            });
+            const calculatedProtein = Number(macros?.protein);
+            if (Number.isFinite(calculatedProtein) && calculatedProtein > 0) return calculatedProtein;
+        } catch {
+            // Fall through to the saved baseline for older accounts.
+        }
+    }
+
+    const fallback = Number(preference?.autoBaseline?.protein);
+    return Number.isFinite(fallback) && fallback > 0 ? fallback : 0;
 }
 
 function proteinGoalHitDays(target) {
