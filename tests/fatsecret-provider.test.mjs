@@ -12,13 +12,20 @@ test("FatSecret provider uses OAuth 2 client credentials and server-side secrets
     assert.match(provider, /Authorization:\s*`Basic/);
 });
 
-test("FatSecret provider supports basic search, detailed foods and optional advanced scopes", () => {
-    assert.match(provider, /foods\/search\/\$\{version\}/);
-    assert.match(provider, /const version = premier \? "v5" : "v1"/);
+test("FatSecret Basic search uses the method-based foods.search API while Premier uses v5", () => {
+    assert.match(provider, /server\.api/);
+    assert.match(provider, /method:\s*"foods\.search"/);
+    assert.match(provider, /method:\s*"POST"/);
+    assert.match(provider, /application\/x-www-form-urlencoded/);
+    assert.match(provider, /foods\/search\/v5/);
+    assert.match(provider, /scopes\.has\("premier"\)/);
+    assert.doesNotMatch(provider, /foods\/search\/\$\{version\}/);
+});
+
+test("FatSecret provider supports detailed foods and optional barcode scope", () => {
     assert.match(provider, /food\/v5/);
     assert.match(provider, /food\/barcode\/find-by-id\/v2/);
     assert.match(provider, /fatSecretScopes\(env\)\.has\("barcode"\)/);
-    assert.match(provider, /scopes\.has\("premier"\)/);
 });
 
 test("FatSecret normalization carries storable food and serving identifiers", async () => {
