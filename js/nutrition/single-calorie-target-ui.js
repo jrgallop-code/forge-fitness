@@ -1,4 +1,4 @@
-import "../progress/analytics-chart-zoom.js?v=analytics-chart-zoom-2";
+import "../progress/analytics-chart-zoom.js?v=analytics-chart-zoom-3";
 import "./weekly-change-choice-fix.js?v=weekly-change-choice-fix-1";
 
 const STYLE_ID = "level-up-streamlined-goals-calories-styles";
