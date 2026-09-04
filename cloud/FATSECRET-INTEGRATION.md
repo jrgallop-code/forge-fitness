@@ -1,18 +1,10 @@
 # FatSecret integration
 
-This repository contains a server-side FatSecret provider adapter in `src/fatsecret-food-provider.js`.
+Level Up integrates FatSecret through the Cloudflare Worker. FatSecret credentials stay server-side and are never included in the PWA bundle.
 
-## Status
+## Production configuration
 
-The provider is intentionally **not connected to the production food log yet**. The existing Level Up food log persists full nutrition snapshots in local storage and cloud backups, while FatSecret's standard API terms generally allow indefinite storage only for identifiers such as `food_id` and `serving_id`. Other FatSecret content must be removed or replaced by re-requesting it within 24 hours unless a separate agreement permits different retention.
-
-Do not enable FatSecret results in the persistent food log until the storage model or contract is compatible with those terms.
-
-## Credentials
-
-FatSecret OAuth 2.0 uses the client-credentials grant and must be called from a server/proxy. Never put these values in the PWA bundle.
-
-Configure the Worker with secrets:
+Required Worker secrets:
 
 ```sh
 wrangler secret put FATSECRET_CLIENT_ID
@@ -25,38 +17,45 @@ Optional scope configuration:
 wrangler secret put FATSECRET_SCOPE
 ```
 
-The adapter defaults to `basic` when `FATSECRET_SCOPE` is absent. Examples of possible configured scopes include `basic`, or an account-approved combination such as `premier barcode localization`.
+The adapter defaults to `basic`. An account-approved combination such as `premier barcode localization` can enable additional capabilities later.
+
+## Current behavior
+
+- Existing Level Up Verified, USDA FoodData Central and Open Food Facts results continue to work normally.
+- FatSecret augments manual food search when credentials are configured.
+- Basic scope uses the standard US FatSecret catalogue; localized Canadian FatSecret results require the appropriate localization/Premier access.
+- FatSecret barcode lookup is only attempted when the token includes the `barcode` scope. With `basic`, Level Up keeps using its existing verified/Open Food Facts/USDA barcode flow.
+- If FatSecret is unavailable or rejects a request, Level Up falls back to the existing food results rather than failing the search.
+
+## Storage and rehydration
+
+FatSecret's published storage rules permit `food_id` and `serving_id` to be stored indefinitely, while other API content generally has to be removed or re-requested within 24 hours unless a separate agreement permits otherwise.
+
+Level Up therefore persists only the FatSecret food and serving identifiers plus Level Up-owned log metadata such as meal, quantity, entry ID and timestamps. FatSecret names, brands, serving labels and nutrition payloads are kept in memory only and are refreshed from the Worker when the app is opened.
+
+If a stored FatSecret item has not rehydrated yet, the corresponding day is temporarily excluded from adaptive calorie/TDEE intake windows. This prevents a zero-value placeholder from changing maintenance or calorie recommendations.
 
 ## Capabilities
 
+- OAuth 2.0 client-credentials authentication
 - Basic food search: `foods/search/v1`
-- Premier search: `foods/search/v5`, including region when allowed
+- Premier search: `foods/search/v5` when the account scope permits it
 - Food details: `food/v5`
-- Barcode lookup: `food/barcode/find-by-id/v2` when the account/token includes the `barcode` scope
-- UPC/EAN values are normalized to GTIN-13 before barcode lookup
-- OAuth access tokens are cached in the Worker isolate until shortly before expiry
+- Barcode lookup: `food/barcode/find-by-id/v2` when the account/token includes `barcode`
+- UPC/EAN normalization to GTIN-13 for FatSecret barcode lookup
+- Worker-isolate access-token caching until shortly before expiry
 
 ## Attribution
 
-FatSecret requires attribution wherever its content is displayed for editions that are not separately licensed for white-label use. Before production activation, add the official FatSecret attribution to:
+Level Up adds FatSecret attribution to food surfaces and to the public sign-in surface. App Store / Google Play listing attribution must also follow the FatSecret edition in use unless a separate agreement provides white-label rights.
 
-1. Food-search / food-detail surfaces where FatSecret content appears.
-2. At least one public surface accessible without signing in.
-3. The App Store / Google Play listing as required by the applicable FatSecret edition.
+Use FatSecret's current Attribution Policy for any public/store copy rather than inventing alternative attribution language.
 
-Use FatSecret's current Attribution Policy rather than inventing or modifying their required attribution text/markup.
+## Upgrading beyond Basic
 
-## Region / Canada
+Before enabling localized Canadian FatSecret search or FatSecret barcode lookup:
 
-FatSecret's free Basic edition is intended for evaluation and does not provide the same localized Canadian dataset capabilities as paid Premier access. Premier Free currently focuses on the US dataset; paid Premier is the route FatSecret describes for datasets outside the US. Confirm the intended Canada access level with FatSecret before relying on it for Canadian branded-food coverage.
-
-## Production activation checklist
-
-- [ ] FatSecret developer account created.
-- [ ] Client ID and Client Secret stored as Worker secrets.
-- [ ] Appropriate scope/tier confirmed for the countries Level Up serves.
-- [ ] Storage/retention approach approved or redesigned to persist only allowed identifiers.
-- [ ] Required FatSecret attribution added to app, public website/login surface, and store listing.
-- [ ] Search-result deduping/ranking tested against Level Up Verified, USDA and Open Food Facts.
-- [ ] Barcode fallback tested with the correct FatSecret access tier.
-- [ ] Food-log/TDEE calculations tested with FatSecret-sourced entries before enabling production traffic.
+1. Confirm the FatSecret account has the required Premier/localization/barcode access.
+2. Change `FATSECRET_SCOPE` to the exact approved space-delimited scopes.
+3. Test Canadian branded-food ranking against Level Up Verified, USDA and Open Food Facts.
+4. Test barcode fallbacks with representative Canadian UPC/EAN products.
