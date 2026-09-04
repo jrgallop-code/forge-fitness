@@ -93,6 +93,8 @@
 
 .dashboard-habit-card--checkins .dashboard-habit-heatmap {
     margin-top: 12px;
+    grid-template-columns: repeat(16, minmax(0, 1fr));
+    gap: 4px;
 }
 
 .dashboard-habit-cell {
@@ -275,6 +277,11 @@ html[data-theme="arctic"] .dashboard-habit-divider {
     }
 
     .dashboard-habit-heatmap {
+        gap: 3px;
+    }
+
+    .dashboard-habit-card--checkins .dashboard-habit-heatmap {
+        grid-template-columns: repeat(16, minmax(0, 1fr));
         gap: 3px;
     }
 
