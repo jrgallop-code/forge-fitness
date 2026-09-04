@@ -1,3 +1,5 @@
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
+
 const BACK_ASSET = "assets/recovery/back-view.svg?v=recovery-back-vector-1";
 const UPPER_TRAP_IDS = ["muscle_back_003", "muscle_back_004"];
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -91,15 +93,18 @@ function syncFormGuideBack() {
         UPPER_TRAP_IDS.forEach(id => {
             if (svg.querySelector(`[data-upper-trap-fragment="${id}"]`)) return;
             const use = createUse(id, {
-                class: "form-guide-muscle-highlight",
-                fill: "#ff315f"
+                class: "form-guide-muscle-highlight"
             });
+            use.style.setProperty("fill", "var(--muscle-recovery-accent,#ff315f)", "important");
             svg.appendChild(use);
         });
     });
 }
 
 function syncUpperTraps() {
+    /* Female recovery/form-guide assets already include their own back anatomy.
+       Never inject male SVG fragments into a female profile. */
+    if (getAnatomyConfig("back").sex !== "male") return;
     syncRecoveryBack();
     syncPlanTargetBack();
     syncFormGuideBack();
@@ -131,5 +136,7 @@ document.addEventListener("click", event => {
 
 window.addEventListener("pageshow", schedule);
 window.addEventListener("levelup:open-exercise-guide", schedule);
+window.addEventListener("levelup:profile-updated", schedule);
+window.addEventListener("levelup:muscle-map-colors-changed", schedule);
 
 schedule();
