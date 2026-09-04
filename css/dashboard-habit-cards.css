@@ -31,8 +31,42 @@
     flex-direction: column;
 }
 
+.dashboard-habit-card--checkins {
+    grid-column: 1 / -1;
+    min-height: 174px;
+}
+
 .dashboard-habit-card-heading {
     display: block;
+}
+
+.dashboard-habit-card-heading--icon {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.dashboard-habit-checkin-icon {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid rgba(53, 211, 180, 0.24);
+    border-radius: 9px;
+    background: rgba(53, 211, 180, 0.08);
+    color: #35d3b4;
+}
+
+.level-up-checkin-apple {
+    display: block;
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .dashboard-habit-card-heading strong {
@@ -57,6 +91,10 @@
     gap: 4px;
 }
 
+.dashboard-habit-card--checkins .dashboard-habit-heatmap {
+    margin-top: 12px;
+}
+
 .dashboard-habit-cell {
     display: block;
     width: 100%;
@@ -74,6 +112,35 @@
 .dashboard-habit-heatmap--workouts .dashboard-habit-cell.is-active {
     background: var(--red, #e10600);
     box-shadow: 0 0 7px rgba(225, 6, 0, 0.13);
+}
+
+.dashboard-habit-heatmap--checkins .dashboard-habit-cell.is-active {
+    box-sizing: border-box;
+    background: rgba(53, 211, 180, 0.34);
+    border: 1px solid rgba(53, 211, 180, 0.5);
+}
+
+.dashboard-habit-heatmap--checkins .dashboard-habit-cell.is-handled {
+    background: #35d3b4;
+    border-color: #25bca0;
+    box-shadow: 0 0 7px rgba(53, 211, 180, 0.15);
+}
+
+.dashboard-habit-heatmap--checkins .dashboard-habit-cell.is-ready {
+    background: #35d3b4;
+    border-color: #77ead4;
+    box-shadow: 0 0 0 2px rgba(53, 211, 180, 0.16), 0 0 9px rgba(53, 211, 180, 0.3);
+}
+
+.dashboard-habit-heatmap--checkins .dashboard-habit-cell.is-waiting {
+    background: #f5b942;
+    border-color: #dca22d;
+    box-shadow: 0 0 7px rgba(245, 185, 66, 0.18);
+}
+
+.dashboard-habit-heatmap--checkins .dashboard-habit-cell.is-past {
+    background: rgba(53, 211, 180, 0.16);
+    border-color: rgba(53, 211, 180, 0.3);
 }
 
 .dashboard-habit-divider {
@@ -153,6 +220,38 @@ html[data-theme="arctic"] .dashboard-habit-heatmap--workouts .dashboard-habit-ce
     box-shadow: 0 0 7px rgba(23, 105, 224, 0.14);
 }
 
+html[data-theme="arctic"] .dashboard-habit-checkin-icon {
+    border-color: #a8ded4;
+    background: #e5f7f3;
+    color: #159b87;
+}
+
+html[data-theme="arctic"] .dashboard-habit-heatmap--checkins .dashboard-habit-cell.is-active {
+    background: #d9f3ee;
+    border-color: #92d7ca;
+    box-shadow: none;
+}
+
+html[data-theme="arctic"] .dashboard-habit-heatmap--checkins .dashboard-habit-cell.is-handled,
+html[data-theme="arctic"] .dashboard-habit-heatmap--checkins .dashboard-habit-cell.is-ready {
+    background: #17bfa6;
+    border-color: #0e9b87;
+}
+
+html[data-theme="arctic"] .dashboard-habit-heatmap--checkins .dashboard-habit-cell.is-ready {
+    box-shadow: 0 0 0 2px rgba(23, 191, 166, 0.13), 0 0 8px rgba(23, 191, 166, 0.2);
+}
+
+html[data-theme="arctic"] .dashboard-habit-heatmap--checkins .dashboard-habit-cell.is-waiting {
+    background: #f0b84c;
+    border-color: #d39b32;
+}
+
+html[data-theme="arctic"] .dashboard-habit-heatmap--checkins .dashboard-habit-cell.is-past {
+    background: #e7f4f1;
+    border-color: #b9ddd6;
+}
+
 html[data-theme="arctic"] .dashboard-habit-divider {
     background: #cfdae8;
 }
@@ -172,6 +271,10 @@ html[data-theme="arctic"] .dashboard-habit-divider {
     .dashboard-habit-card {
         min-height: 176px;
         padding: 12px;
+    }
+
+    .dashboard-habit-card--checkins {
+        min-height: 166px;
     }
 
     .dashboard-habit-heatmap {
