@@ -221,6 +221,11 @@ function syncCoach(metrics, phase) {
 }
 
 function syncSuggestedCalories(metrics, phase) {
+    // The unified/full-adjustment module owns the visible calorie target in Weight Progress.
+    // This older rolling-trend helper can still update coach detail, but it must not replace
+    // the saved target with a projected recommendation or the two writers will visibly flicker.
+    if (window.__levelUpFullAdjustmentAuthority === true) return;
+
     const currentCalories = Number(phase.currentCalories ?? phase.startCalories);
     if (!Number.isFinite(currentCalories)) return;
 
