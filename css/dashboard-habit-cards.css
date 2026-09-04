@@ -32,8 +32,7 @@
 }
 
 .dashboard-habit-card--checkins {
-    grid-column: 1 / -1;
-    min-height: 174px;
+    min-height: 186px;
 }
 
 .dashboard-habit-card-heading {
@@ -268,13 +267,10 @@ html[data-theme="arctic"] .dashboard-habit-divider {
         gap: 8px;
     }
 
-    .dashboard-habit-card {
+    .dashboard-habit-card,
+    .dashboard-habit-card--checkins {
         min-height: 176px;
         padding: 12px;
-    }
-
-    .dashboard-habit-card--checkins {
-        min-height: 166px;
     }
 
     .dashboard-habit-heatmap {
