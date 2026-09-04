@@ -23,11 +23,25 @@ function ensureStyles() {
             filter:drop-shadow(0 0 8px color-mix(in srgb,var(--form-guide-recovery-highlight,var(--muscle-recovery-accent,#ff315f)) 32%,transparent))!important;
         }
 
+        /* Preserve a little more selected colour near the recovered end. The
+           final 100% stop remains true neutral grey so complete recovery stays
+           visually distinct from 90-99% recovery. */
+        .recovery-scale-bar,
+        .appearance-muscle-color-card[data-muscle-color-card="recovery"] .appearance-muscle-preview-scale {
+            background:linear-gradient(90deg,
+                var(--muscle-recovery-accent,#ff315f) 0%,
+                color-mix(in srgb,var(--muscle-recovery-accent,#ff315f) 74%,#858793) 25%,
+                color-mix(in srgb,var(--muscle-recovery-accent,#ff315f) 52%,#858793) 50%,
+                color-mix(in srgb,var(--muscle-recovery-accent,#ff315f) 30%,#858793) 75%,
+                color-mix(in srgb,var(--muscle-recovery-accent,#ff315f) 17%,#858793) 90%,
+                #858793 100%)!important;
+        }
+
         .recovery-scale-points span:first-child small {
             color:var(--muscle-recovery-accent,#ff315f)!important;
         }
         .recovery-scale-points span:nth-child(3) small {
-            color:color-mix(in srgb,var(--muscle-recovery-accent,#ff315f) 50%,#858793)!important;
+            color:color-mix(in srgb,var(--muscle-recovery-accent,#ff315f) 52%,#858793)!important;
         }
         .recovery-scale-points span:last-child small {
             color:#858793!important;
