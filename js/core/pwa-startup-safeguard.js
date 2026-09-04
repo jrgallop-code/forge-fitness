@@ -104,7 +104,7 @@
         if (document.querySelector('script[data-muscle-map-colors]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/core/muscle-map-colors.js?v=muscle-map-colors-1";
+        script.src = "js/core/muscle-map-colors.js?v=muscle-map-colors-2";
         script.dataset.muscleMapColors = "1";
         document.head.appendChild(script);
     }
