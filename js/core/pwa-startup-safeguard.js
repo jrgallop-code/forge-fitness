@@ -91,7 +91,7 @@
         if (document.querySelector('script[data-nutrition-phase-target-stability]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/nutrition/nutrition-phase-target-stability.js?v=phase-target-stability-1";
+        script.src = "js/nutrition/nutrition-phase-target-stability.js?v=phase-target-stability-2";
         script.dataset.nutritionPhaseTargetStability = "1";
         document.head.appendChild(script);
     }
@@ -163,7 +163,7 @@
         if (document.querySelector('script[data-workout-tutorial-prompt]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/dashboard/workout-tutorial-prompt.js?v=workout-tutorial-prompt-1";
+        script.src = "js/dashboard/workout-tutorial-prompt.js?v=workout-tutorial-prompt-2";
         script.dataset.workoutTutorialPrompt = "1";
         document.head.appendChild(script);
     }
@@ -181,6 +181,9 @@
             #interactive-workout-tutorial-card::after,
             #interactive-workout-tutorial-card>*::before,
             #interactive-workout-tutorial-card>*::after{content:none!important;display:none!important;background:none!important;background-image:none!important;mask:none!important;-webkit-mask:none!important}
+            .interactive-tutorial-focus{
+                box-shadow:0 4px 14px rgba(0,0,0,.24)!important;
+            }
         `;
         document.head.appendChild(style);
     }
