@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-03-192";
+const CACHE_VERSION = "2026-09-03-193";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -11,7 +11,7 @@ const CORE_ASSETS = [
     "./js/account/cloud-background-sync.js",
     "./js/core/system-recovery-notice.js?v=system-recovery-notice-1",
     "./js/core/body-composition.js?v=body-composition-1",
-    "./js/core/muscle-map-colors.js?v=muscle-map-colors-1",
+    "./js/core/muscle-map-colors.js?v=muscle-map-colors-2",
     "./js/progress/body-composition-ui.js?v=body-composition-ui-1",
     "./js/progress/body-fat-visual-replacement.js?v=approved-body-fat-1",
     "./js/more/body-composition-health-records.js?v=body-comp-health-records-2",
