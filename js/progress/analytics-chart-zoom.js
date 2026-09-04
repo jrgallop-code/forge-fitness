@@ -29,10 +29,7 @@ function ensureStyles() {
     style.textContent = `
         .analytics-inspect-host{position:relative;min-width:0}
         .analytics-inspect-stage{position:relative;overflow:hidden;border-radius:inherit;touch-action:pan-y}
-        .analytics-inspect-stage>canvas{display:block;width:100%}
-        .analytics-inspect-overlay{position:absolute;inset:0;width:100%;height:100%;z-index:3;touch-action:none}
-        .analytics-inspect-tooltip{position:absolute;z-index:5;display:grid;gap:2px;min-width:112px;max-width:170px;padding:7px 9px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:10px;background:var(--card,#17171a);box-shadow:0 8px 24px rgba(0,0,0,.2);pointer-events:none;color:var(--text,#f4f4f6);font-size:10px;line-height:1.25}
-        .analytics-inspect-tooltip strong{font-size:11px}.analytics-inspect-tooltip span,.analytics-inspect-tooltip small{color:var(--muted,#8f8f98)}
+        .analytics-inspect-stage>canvas{display:block;width:100%;opacity:1!important}
         .analytics-inspect-controls{display:flex;align-items:center;gap:6px;margin:8px 0 2px;padding:5px 6px;border:1px solid var(--line,rgba(255,255,255,.10));border-radius:12px;background:var(--surface-raised,rgba(255,255,255,.035));color:var(--text,#f4f4f6)}
         .analytics-inspect-controls button{display:grid;place-items:center;min-width:34px;height:32px;margin:0;padding:0 9px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:9px;background:var(--surface,rgba(255,255,255,.04));color:var(--text,#f4f4f6);font:inherit;font-size:15px;font-weight:850;line-height:1;touch-action:manipulation}
         .analytics-inspect-controls button:disabled{opacity:.35}
@@ -47,7 +44,6 @@ function ensureStyles() {
         .analytics-inspect-date-panel button{height:34px;padding:0 10px;border:0;border-radius:9px;background:var(--accent,#2f80ff);color:#fff;font:inherit;font-size:10px;font-weight:850;touch-action:manipulation}
         .analytics-inspect-hint{margin:5px 2px 0;color:var(--muted,#8f8f98);font-size:9px;line-height:1.35;text-align:center}
         .analytics-inspect-stage.is-inspecting{cursor:grab}.analytics-inspect-stage.is-dragging{cursor:grabbing}
-        html[data-theme-mode="light"] .analytics-inspect-tooltip{box-shadow:0 8px 22px rgba(40,67,99,.13)}
         @media(max-width:390px){.analytics-inspect-controls{gap:4px}.analytics-inspect-controls button{min-width:31px;height:30px;padding-inline:7px}.analytics-inspect-date-panel{grid-template-columns:1fr 1fr}.analytics-inspect-date-panel button{grid-column:1/-1;width:100%}}
     `;
     document.head.appendChild(style);
@@ -68,8 +64,7 @@ function shiftDate(value, days) {
 }
 
 function daysBetween(start, end) {
-    const difference = dateMs(end) - dateMs(start);
-    return Math.max(1, Math.round(difference / 86400000) + 1);
+    return Math.max(1, Math.round((dateMs(end) - dateMs(start)) / 86400000) + 1);
 }
 
 function formatDate(value, includeYear = false) {
@@ -79,6 +74,16 @@ function formatDate(value, includeYear = false) {
         day: "numeric",
         ...(includeYear ? { year: "numeric" } : {})
     });
+}
+
+function formatLongRange(start, end) {
+    if (!start || !end) return "—";
+    const startDate = new Date(`${start}T12:00:00`);
+    const endDate = new Date(`${end}T12:00:00`);
+    const sameYear = startDate.getFullYear() === endDate.getFullYear();
+    const startLabel = startDate.toLocaleDateString("en-US", { month: "long", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+    const endLabel = endDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    return `${startLabel} – ${endLabel}`;
 }
 
 function themeColor(token, fallback) {
@@ -125,8 +130,8 @@ function profileMaintenance() {
 }
 
 function expenditureHistory(startDate = null) {
-    const formula = profileMaintenance();
     try {
+        const formula = profileMaintenance();
         return getCalculatedMaintenanceHistory(formula, startDate ? { startDate } : undefined) || [];
     } catch {
         return [];
@@ -134,8 +139,7 @@ function expenditureHistory(startDate = null) {
 }
 
 function earliestExpenditureDate() {
-    const history = expenditureHistory();
-    return history.find(point => point?.date)?.date || null;
+    return expenditureHistory().find(point => point?.date)?.date || null;
 }
 
 function chartKind(canvas) {
@@ -148,13 +152,11 @@ function windowStorageKey(kind) {
 
 function selectedRange(canvas) {
     const root = canvas.closest(".weight-chart-card, .calorie-stats-page, .expenditure-trend-card") || document;
-    const selectors = chartKind(canvas) === "weight"
-        ? ["[data-weight-chart-range][aria-pressed='true']"]
-        : ["[data-tdee-chart-range][aria-pressed='true']"];
-    for (const selector of selectors) {
-        const button = root.querySelector?.(selector) || document.querySelector(selector);
-        if (button) return String(button.dataset.weightChartRange || button.dataset.tdeeChartRange || "").toLowerCase();
-    }
+    const selector = chartKind(canvas) === "weight"
+        ? "[data-weight-chart-range][aria-pressed='true']"
+        : "[data-tdee-chart-range][aria-pressed='true']";
+    const button = root.querySelector?.(selector) || document.querySelector(selector);
+    if (button) return String(button.dataset.weightChartRange || button.dataset.tdeeChartRange || "").toLowerCase();
     return chartKind(canvas) === "weight"
         ? String(localStorage.getItem("level_up_weight_chart_range") || "3m").toLowerCase()
         : String(localStorage.getItem("level_up_tdee_chart_range_v1") || "3m").toLowerCase();
@@ -201,8 +203,9 @@ function saveWindow(kind, window) {
 function effectiveWindow(instance) {
     const domain = domainForCanvas(instance.canvas);
     const stored = clampWindow(readStoredWindow(instance.kind), domain);
-    if (!stored) return { domain, window: null, start: domain.start, end: domain.end };
-    return { domain, window: stored, start: stored.start, end: stored.end };
+    return stored
+        ? { domain, window: stored, start: stored.start, end: stored.end }
+        : { domain, window: null, start: domain.start, end: domain.end };
 }
 
 function syncDateInputs(instance) {
@@ -231,19 +234,24 @@ function updateStatus(instance) {
     syncDateInputs(instance);
 }
 
-function prepareOverlay(instance) {
-    const { canvas, overlay } = instance;
+function prepareCanvas(instance, fallbackHeight) {
+    const canvas = instance.canvas;
     const width = Math.max(1, canvas.clientWidth || canvas.parentElement?.clientWidth || 320);
-    const height = Math.max(1, canvas.clientHeight || (instance.kind === "weight" ? 330 : 250));
+    const currentHeight = canvas.clientHeight;
+    const height = Math.max(1, currentHeight || fallbackHeight);
     const ratio = Math.min(2, window.devicePixelRatio || 1);
-    overlay.width = Math.round(width * ratio);
-    overlay.height = Math.round(height * ratio);
-    overlay.style.width = `${width}px`;
-    overlay.style.height = `${height}px`;
-    const context = overlay.getContext("2d");
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    canvas.style.width = "100%";
+    canvas.style.height = `${height}px`;
+    const context = canvas.getContext("2d");
     if (!context) return null;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, width, height);
+    context.setLineDash([]);
+    context.globalAlpha = 1;
+    context.shadowBlur = 0;
+    context.shadowColor = "transparent";
     return { context, width, height };
 }
 
@@ -251,10 +259,11 @@ function drawEmpty(context, message) {
     context.fillStyle = themeColor("--muted", "#85858f");
     context.font = "600 12px Arial";
     context.textAlign = "left";
+    context.textBaseline = "alphabetic";
     context.fillText(message, 20, 44);
 }
 
-function drawDateAxis(context, start, end, x, y) {
+function drawDateAxis(context, start, end, bounds, y) {
     const first = dateMs(start);
     const last = dateMs(end);
     const middle = localDateString(new Date((first + last) / 2));
@@ -262,46 +271,67 @@ function drawDateAxis(context, start, end, x, y) {
     context.font = "800 9px Arial";
     context.textBaseline = "alphabetic";
     context.textAlign = "left";
-    context.fillText(formatDate(start), x.left, y);
+    context.fillText(formatDate(start), bounds.left, y);
     if (start !== end) {
         context.textAlign = "center";
-        context.fillText(formatDate(middle), (x.left + x.right) / 2, y);
+        context.fillText(formatDate(middle), (bounds.left + bounds.right) / 2, y);
         context.textAlign = "right";
-        context.fillText(formatDate(end), x.right, y);
+        context.fillText(formatDate(end), bounds.right, y);
     }
 }
 
-function drawWeightInspect(instance, start, end) {
-    const prepared = prepareOverlay(instance);
-    if (!prepared) return [];
+function updateWeightSummary(instance, start, end, visibleEntries, visibleTrend) {
+    const card = instance.canvas.closest(".weight-chart-card");
+    if (!card) return;
+    const series = visibleTrend.length ? visibleTrend : visibleEntries;
+    const values = series.map(item => Number(item.weight)).filter(Number.isFinite);
+    const average = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+    const change = values.length >= 2 ? values.at(-1) - values[0] : null;
+    const shownAverage = Number.isFinite(average) ? displayMass(average) : null;
+    const shownChange = Number.isFinite(change) ? displayMass(change) : null;
+    const unit = massUnit();
+    const averageNode = card.querySelector("[data-weight-chart-average]");
+    const changeNode = card.querySelector("[data-weight-chart-change]");
+    const periodNode = card.querySelector("[data-weight-chart-period]");
+    if (averageNode) averageNode.textContent = Number.isFinite(shownAverage) ? `${shownAverage.toFixed(1)} ${unit}` : "—";
+    if (changeNode) changeNode.textContent = Number.isFinite(shownChange)
+        ? `${shownChange > 0 ? "+" : shownChange < 0 ? "−" : ""}${Math.abs(shownChange).toFixed(1)} ${unit}`
+        : "—";
+    if (periodNode) periodNode.textContent = formatLongRange(start, end);
+}
+
+function drawWeight(instance, start, end) {
+    const fallbackHeight = (instance.canvas.clientWidth || 320) <= 520 ? 330 : 380;
+    const prepared = prepareCanvas(instance, fallbackHeight);
+    if (!prepared) return;
     const { context, width, height } = prepared;
     const entries = readWeightEntries();
     const trend = calculateTrendWeightSeries(entries);
     const visibleEntries = entries.filter(entry => entry.date >= start && entry.date <= end);
     const visibleTrend = trend.filter(entry => entry.date >= start && entry.date <= end);
+    updateWeightSummary(instance, start, end, visibleEntries, visibleTrend);
     const values = [...visibleEntries.map(entry => entry.weight), ...visibleTrend.map(entry => entry.weight)].filter(Number.isFinite);
     if (!values.length) {
         drawEmpty(context, "No weight data in these dates.");
-        return [];
+        return;
     }
 
-    const minimumValue = Math.min(...values);
-    const maximumValue = Math.max(...values);
-    const span = Math.max(.35, maximumValue - minimumValue);
+    const rawMin = Math.min(...values);
+    const rawMax = Math.max(...values);
+    const span = Math.max(.35, rawMax - rawMin);
     const pad = Math.max(.35, span * .22);
-    const minimum = minimumValue - pad;
-    const maximum = maximumValue + pad;
+    const minimum = rawMin - pad;
+    const maximum = rawMax + pad;
     const padding = { left: 50, right: 18, top: 20, bottom: 42 };
     const plotWidth = Math.max(1, width - padding.left - padding.right);
     const plotHeight = Math.max(1, height - padding.top - padding.bottom);
     const firstTime = dateMs(start);
     const lastTime = dateMs(end);
-    const elapsed = Math.max(1, lastTime - firstTime);
+    const singleDay = firstTime === lastTime;
+    const x = date => singleDay ? padding.left + plotWidth / 2 : padding.left + ((dateMs(date) - firstTime) / (lastTime - firstTime)) * plotWidth;
     const yRange = Math.max(.1, maximum - minimum);
-    const x = date => padding.left + ((dateMs(date) - firstTime) / elapsed) * plotWidth;
     const y = weight => padding.top + ((maximum - weight) / yRange) * plotHeight;
 
-    context.lineWidth = 1;
     context.font = "10px Arial";
     context.textAlign = "right";
     for (let index = 0; index <= 3; index += 1) {
@@ -309,6 +339,7 @@ function drawWeightInspect(instance, start, end) {
         const yy = padding.top + plotHeight * fraction;
         const value = maximum - yRange * fraction;
         context.strokeStyle = themeColor("--line", "rgba(255,255,255,.07)");
+        context.lineWidth = 1;
         context.beginPath();
         context.moveTo(padding.left, yy);
         context.lineTo(width - padding.right, yy);
@@ -355,20 +386,35 @@ function drawWeightInspect(instance, start, end) {
     context.fillStyle = themeColor("--muted", "#85858f");
     context.font = "9px Arial";
     context.fillText(massUnit(), 8, 14);
-
-    return visibleEntries.map(entry => {
-        const trendPoint = visibleTrend.find(point => point.date === entry.date);
-        return { date: entry.date, value: entry.weight, trend: trendPoint?.weight ?? null, x: x(entry.date) };
-    });
 }
 
 function niceCalorieStep(value) {
     return [25, 50, 100, 200, 250, 500, 1000].find(step => step >= value) || 2000;
 }
 
-function drawExpenditureInspect(instance, start, end) {
-    const prepared = prepareOverlay(instance);
-    if (!prepared) return [];
+function updateExpenditureSummary(instance, start, end, available) {
+    const card = instance.canvas.closest(".expenditure-trend-card");
+    if (!card) return;
+    const values = available.map(point => Number(point.maintenanceCalories)).filter(Number.isFinite);
+    const average = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+    const change = values.length >= 2 ? values.at(-1) - values[0] : null;
+    const headingRange = card.querySelector(".expenditure-trend-heading p");
+    const metricSpans = card.querySelectorAll(".expenditure-trend-metrics > span");
+    const averageStrong = metricSpans[0]?.querySelector("strong");
+    const changeStrong = metricSpans[1]?.querySelector("strong");
+    const directionNode = metricSpans[1]?.querySelector("b");
+    if (headingRange) headingRange.textContent = `${formatDate(start)} – ${formatDate(end)}`;
+    if (averageStrong) averageStrong.innerHTML = `${Number.isFinite(average) ? Math.round(average).toLocaleString() : "—"} <em>cal</em>`;
+    if (changeStrong) {
+        const sign = Number.isFinite(change) ? (change > 0 ? "+" : change < 0 ? "−" : "") : "";
+        changeStrong.innerHTML = `${Number.isFinite(change) ? `${sign}${Math.abs(Math.round(change)).toLocaleString()}` : "—"} <em>cal</em>`;
+    }
+    if (directionNode) directionNode.textContent = !Number.isFinite(change) ? "Waiting" : change > 0 ? "Increase" : change < 0 ? "Decrease" : "No change";
+}
+
+function drawExpenditure(instance, start, end) {
+    const prepared = prepareCanvas(instance, 250);
+    if (!prepared) return;
     const { context, width, height } = prepared;
     const formula = profileMaintenance();
     const history = expenditureHistory(shiftDate(start, -28));
@@ -383,9 +429,10 @@ function drawExpenditureInspect(instance, start, end) {
     }
     series.sort((a, b) => String(a.date).localeCompare(String(b.date)));
     const available = series.filter(point => Number.isFinite(Number(point.maintenanceCalories)) && Number(point.maintenanceCalories) > 0);
+    updateExpenditureSummary(instance, start, end, available);
     if (!available.length) {
         drawEmpty(context, "No expenditure data in these dates.");
-        return [];
+        return;
     }
 
     const padding = { top: 18, right: 44, bottom: 30, left: 8 };
@@ -401,7 +448,8 @@ function drawExpenditureInspect(instance, start, end) {
     if (yMax <= yMin) yMax = yMin + step * 4;
     const firstTime = dateMs(start);
     const lastTime = dateMs(end);
-    const x = point => padding.left + ((dateMs(point.date) - firstTime) / Math.max(1, lastTime - firstTime)) * plotWidth;
+    const singleDay = firstTime === lastTime;
+    const x = point => singleDay ? padding.left + plotWidth / 2 : padding.left + ((dateMs(point.date) - firstTime) / (lastTime - firstTime)) * plotWidth;
     const y = value => padding.top + (1 - (value - yMin) / (yMax - yMin)) * plotHeight;
 
     context.font = "800 9px Arial";
@@ -460,30 +508,14 @@ function drawExpenditureInspect(instance, start, end) {
 
     context.textBaseline = "alphabetic";
     drawDateAxis(context, start, end, { left: padding.left, right: width - padding.right }, height - 7);
-    return available.map(point => ({ date: point.date, value: Number(point.maintenanceCalories), x: x(point) }));
 }
 
-function renderInspect(instance) {
+function renderInstance(instance) {
     if (!instance.canvas.isConnected) return;
     const state = effectiveWindow(instance);
-    if (!state.window) {
-        instance.overlay.hidden = true;
-        instance.overlay.style.pointerEvents = "none";
-        instance.canvas.style.opacity = "";
-        instance.stage.classList.remove("is-inspecting", "is-dragging");
-        instance.points = [];
-        instance.tooltip.hidden = true;
-        updateStatus(instance);
-        return;
-    }
-
-    instance.points = instance.kind === "weight"
-        ? drawWeightInspect(instance, state.start, state.end)
-        : drawExpenditureInspect(instance, state.start, state.end);
-    instance.overlay.hidden = false;
-    instance.overlay.style.pointerEvents = "auto";
-    instance.canvas.style.opacity = "0";
-    instance.stage.classList.add("is-inspecting");
+    instance.stage.classList.toggle("is-inspecting", Boolean(state.window));
+    if (instance.kind === "weight") drawWeight(instance, state.start, state.end);
+    else drawExpenditure(instance, state.start, state.end);
     updateStatus(instance);
 }
 
@@ -496,9 +528,10 @@ function applyWindow(instance, start, end) {
     if (nextStart > nextEnd) [nextStart, nextEnd] = [nextEnd, nextStart];
     const next = nextStart === domain.start && nextEnd === domain.end ? null : { start: nextStart, end: nextEnd };
     saveWindow(instance.kind, next);
-    instance.tooltip.hidden = true;
-    renderInspect(instance);
-    window.dispatchEvent(new CustomEvent("levelup:analytics-inspect-window", { detail: { chart: instance.kind, startDate: next?.start || domain.start, endDate: next?.end || domain.end, active: Boolean(next) } }));
+    renderInstance(instance);
+    window.dispatchEvent(new CustomEvent("levelup:analytics-inspect-window", {
+        detail: { chart: instance.kind, startDate: next?.start || domain.start, endDate: next?.end || domain.end, active: Boolean(next) }
+    }));
 }
 
 function zoomBy(instance, factor) {
@@ -529,22 +562,6 @@ function panWindow(instance, dayDelta) {
     applyWindow(instance, start, end);
 }
 
-function showNearestPoint(instance, clientX) {
-    if (!instance.points?.length) return;
-    const rect = instance.overlay.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const nearest = instance.points.reduce((best, point) => Math.abs(point.x - x) < Math.abs(best.x - x) ? point : best, instance.points[0]);
-    const tooltip = instance.tooltip;
-    const unit = instance.kind === "weight" ? massUnit() : "cal/day";
-    const shown = instance.kind === "weight" ? displayMass(nearest.value) : nearest.value;
-    const trendShown = instance.kind === "weight" && Number.isFinite(nearest.trend) ? displayMass(nearest.trend) : null;
-    tooltip.innerHTML = `<strong>${formatDate(nearest.date, true)}</strong><span>${instance.kind === "weight" ? "Weight" : "Expenditure"}: ${Number(shown).toLocaleString(undefined, { maximumFractionDigits: instance.kind === "weight" ? 1 : 0 })} ${unit}</span>${Number.isFinite(trendShown) ? `<small>Trend Weight: ${trendShown.toFixed(1)} ${unit}</small>` : ""}`;
-    tooltip.hidden = false;
-    const desired = nearest.x < rect.width / 2 ? nearest.x + 9 : nearest.x - 150;
-    tooltip.style.left = `${clamp(desired, 6, Math.max(6, rect.width - 166))}px`;
-    tooltip.style.top = "8px";
-}
-
 function bindGestures(instance) {
     const pointers = new Map();
     let dragStart = null;
@@ -564,11 +581,10 @@ function bindGestures(instance) {
             event.preventDefault();
             return;
         }
-        if (state.window && event.target === instance.overlay) {
+        if (state.window) {
             dragStart = { x: event.clientX, accumulated: 0 };
             instance.stage.classList.add("is-dragging");
-            instance.overlay.setPointerCapture?.(event.pointerId);
-            event.preventDefault();
+            instance.stage.setPointerCapture?.(event.pointerId);
         }
     }, { passive: false });
 
@@ -582,10 +598,7 @@ function bindGestures(instance) {
             const totalDays = daysBetween(state.domain.start, state.domain.end);
             const nextDays = clamp(Math.round(pinchStart.days / Math.max(.15, distance / pinchStart.distance)), 1, totalDays);
             const currentDays = daysBetween(state.start, state.end);
-            if (Math.abs(nextDays - currentDays) >= 1) {
-                const factor = currentDays / nextDays;
-                zoomBy(instance, factor);
-            }
+            if (Math.abs(nextDays - currentDays) >= 1) zoomBy(instance, currentDays / nextDays);
             event.preventDefault();
             event.stopPropagation();
             return;
@@ -611,10 +624,12 @@ function bindGestures(instance) {
         if (!pointers.size) {
             dragStart = null;
             instance.stage.classList.remove("is-dragging");
-            if (!wasDrag && !instance.overlay.hidden && event.target === instance.overlay) {
+            if (!wasDrag) {
                 const now = Date.now();
-                if (now - lastTap < 300) applyWindow(instance, domainForCanvas(instance.canvas).start, domainForCanvas(instance.canvas).end);
-                else showNearestPoint(instance, event.clientX);
+                if (now - lastTap < 300 && effectiveWindow(instance).window) {
+                    const domain = domainForCanvas(instance.canvas);
+                    applyWindow(instance, domain.start, domain.end);
+                }
                 lastTap = now;
             }
         }
@@ -623,8 +638,13 @@ function bindGestures(instance) {
     instance.stage.addEventListener("pointercancel", release);
 }
 
+function removeLegacyArtifacts(stage, parent) {
+    stage?.querySelectorAll?.(".analytics-zoom-overlay,.analytics-inspect-overlay,.analytics-inspect-tooltip").forEach(node => node.remove());
+    parent?.querySelectorAll?.(":scope > .analytics-zoom-controls,:scope > .analytics-zoom-hint").forEach(node => node.remove());
+}
+
 function createInstance(canvas) {
-    if (!canvas || instances.has(canvas) || canvas.dataset.analyticsInspectReady === "1") return;
+    if (!canvas || instances.has(canvas) || canvas.dataset.analyticsInspectReady === "3") return;
     ensureStyles();
     const parent = canvas.parentElement;
     if (!parent) return;
@@ -636,18 +656,11 @@ function createInstance(canvas) {
         parent.insertBefore(stage, canvas);
         stage.appendChild(canvas);
     }
-    stage.parentElement?.classList.add("analytics-inspect-host");
+    const host = stage.parentElement;
+    host?.classList.add("analytics-inspect-host");
+    removeLegacyArtifacts(stage, host);
 
-    const overlay = document.createElement("canvas");
-    overlay.className = "analytics-inspect-overlay";
-    overlay.hidden = true;
-    overlay.style.pointerEvents = "none";
-    stage.appendChild(overlay);
-
-    const tooltip = document.createElement("div");
-    tooltip.className = "analytics-inspect-tooltip";
-    tooltip.hidden = true;
-    stage.appendChild(tooltip);
+    host?.querySelectorAll?.(":scope > .analytics-inspect-controls,:scope > .analytics-inspect-date-panel,:scope > .analytics-inspect-hint").forEach(node => node.remove());
 
     const controls = document.createElement("div");
     controls.className = "analytics-inspect-controls";
@@ -674,19 +687,16 @@ function createInstance(canvas) {
 
     const hint = document.createElement("p");
     hint.className = "analytics-inspect-hint";
-    hint.textContent = "Your 1W / 1M / 3M range stays selected. Choose exact dates, pinch to zoom, or drag a zoomed view horizontally.";
+    hint.textContent = "The values above always match the dates shown in the graph. Choose exact dates, pinch to zoom, or drag a zoomed view horizontally.";
     datePanel.insertAdjacentElement("afterend", hint);
 
     const instance = {
         canvas,
         kind: chartKind(canvas),
         stage,
-        overlay,
-        tooltip,
         controls,
         datePanel,
         hint,
-        points: [],
         minus: controls.querySelector("[data-chart-inspect-out]"),
         plus: controls.querySelector("[data-chart-inspect-in]"),
         dates: controls.querySelector("[data-chart-inspect-dates]"),
@@ -698,7 +708,7 @@ function createInstance(canvas) {
         statusSmall: controls.querySelector(".analytics-inspect-status small")
     };
     instances.set(canvas, instance);
-    canvas.dataset.analyticsInspectReady = "1";
+    canvas.dataset.analyticsInspectReady = "3";
 
     instance.minus.addEventListener("click", () => zoomBy(instance, 1 / 1.6));
     instance.plus.addEventListener("click", () => zoomBy(instance, 1.6));
@@ -713,10 +723,10 @@ function createInstance(canvas) {
     });
     instance.apply.addEventListener("click", () => applyWindow(instance, instance.startInput.value, instance.endInput.value));
     bindGestures(instance);
-    renderInspect(instance);
+    renderInstance(instance);
 
     if (typeof ResizeObserver !== "undefined") {
-        const resize = new ResizeObserver(() => window.requestAnimationFrame(() => renderInspect(instance)));
+        const resize = new ResizeObserver(() => scheduleRefresh(10));
         resize.observe(canvas);
     }
 }
@@ -725,17 +735,21 @@ function refreshInstances() {
     document.querySelectorAll("#weight-trend-chart, [data-expenditure-chart]").forEach(canvas => {
         createInstance(canvas);
         const instance = instances.get(canvas);
-        if (instance) renderInspect(instance);
+        if (instance) renderInstance(instance);
     });
 }
 
 function scheduleAttach() {
     if (attachQueued) return;
     attachQueued = true;
-    window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
         attachQueued = false;
         refreshInstances();
-    });
+    }));
+}
+
+function scheduleRefresh(delay = 0) {
+    window.setTimeout(scheduleAttach, delay);
 }
 
 function resetForRangeButton(target) {
@@ -743,14 +757,15 @@ function resetForRangeButton(target) {
     if (!button) return;
     const kind = button.hasAttribute("data-weight-chart-range") ? "weight" : "expenditure";
     saveWindow(kind, null);
-    window.setTimeout(scheduleAttach, 40);
+    scheduleRefresh(60);
 }
 
 document.addEventListener("click", event => resetForRangeButton(event.target), true);
-window.addEventListener("resize", scheduleAttach);
-window.addEventListener("levelup:theme-changed", scheduleAttach);
-window.addEventListener("levelup:nutrition-updated", scheduleAttach);
-window.addEventListener("levelup:weight-updated", scheduleAttach);
-window.addEventListener("levelup:food-log-updated", scheduleAttach);
-new MutationObserver(scheduleAttach).observe(document.documentElement, { childList: true, subtree: true });
+window.addEventListener("resize", () => scheduleRefresh(30));
+window.addEventListener("levelup:theme-changed", () => scheduleRefresh(30));
+window.addEventListener("levelup:nutrition-updated", () => scheduleRefresh(40));
+window.addEventListener("levelup:weight-updated", () => scheduleRefresh(40));
+window.addEventListener("levelup:food-log-updated", () => scheduleRefresh(40));
+window.addEventListener("levelup:analytics-inspect-window", () => scheduleRefresh(0));
+new MutationObserver(() => scheduleRefresh(20)).observe(document.documentElement, { childList: true, subtree: true });
 scheduleAttach();
