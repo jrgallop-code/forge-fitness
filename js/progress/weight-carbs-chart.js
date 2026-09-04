@@ -5,6 +5,7 @@ import "./trend-weight-tutorial-inline-fix.js?v=trend-weight-inline-fix-3";
 import "../nutrition/tdee-tutorial-controller.js?v=tdee-tutorial-controller-2";
 import "../nutrition/tdee-breakdown-cleanup.js?v=tdee-breakdown-cleanup-1";
 import "../nutrition/tdee-live-daily-expenditure.js?v=tdee-live-daily-2";
+import "../nutrition/tdee-accepted-review-points.js?v=accepted-review-points-1";
 import "../nutrition/tdee-calorie-expenditure-carousel.js?v=tdee-calorie-card-3";
 import "../nutrition/tdee-energy-balance-summary.js?v=energy-balance-summary-2";
 import "../nutrition/tdee-expenditure-swipe-card.js?v=tdee-expenditure-swipe-2";
