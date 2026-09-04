@@ -19,7 +19,7 @@
     margin:12px 0 14px;
     padding:14px;
     border:1px solid var(--line, rgba(255,255,255,.1));
-    border-radius:12px;
+    border-radius:14px;
     background:var(--surface-raised, rgba(255,255,255,.025));
     color:var(--text, #fff);
 }
@@ -46,6 +46,171 @@
     letter-spacing:.04em;
 }
 
+.cardio-alarm-control {
+    display:grid;
+    gap:9px;
+    padding:11px;
+    border:1px solid var(--line,rgba(255,255,255,.09));
+    border-radius:12px;
+    background:var(--surface,rgba(0,0,0,.14));
+}
+
+.cardio-alarm-heading {
+    display:grid;
+    grid-template-columns:30px minmax(0,1fr) auto;
+    align-items:center;
+    gap:9px;
+}
+
+.cardio-alarm-icon {
+    display:grid;
+    width:30px;
+    height:30px;
+    place-items:center;
+    border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+    border-radius:9px;
+    background:var(--accent-soft);
+    color:var(--accent-text,var(--accent));
+}
+
+.cardio-alarm-icon svg {
+    width:18px;
+    height:18px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.8;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+
+.cardio-alarm-heading>span:nth-child(2) {
+    display:grid;
+    gap:2px;
+    min-width:0;
+}
+
+.cardio-alarm-heading strong {
+    color:var(--text,#fff);
+    font-size:12px;
+    line-height:1.15;
+}
+
+.cardio-alarm-heading small {
+    color:var(--muted,#999);
+    font-size:9px;
+    line-height:1.2;
+}
+
+.cardio-alarm-countdown {
+    color:var(--accent-text,var(--accent));
+    font-size:13px;
+    font-variant-numeric:tabular-nums;
+    font-weight:900;
+    white-space:nowrap;
+}
+
+.cardio-alarm-control.is-complete .cardio-alarm-countdown {
+    color:var(--success-text,#4ade80);
+}
+
+.cardio-alarm-presets {
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:6px;
+}
+
+.cardio-alarm-presets button,
+.cardio-alarm-custom-set,
+.cardio-alarm-alerts {
+    min-height:34px;
+    border:1px solid var(--line,rgba(255,255,255,.1));
+    border-radius:9px;
+    background:var(--surface-raised,rgba(255,255,255,.04));
+    color:var(--text,#fff);
+    font:inherit;
+    font-size:9px;
+    font-weight:850;
+}
+
+.cardio-alarm-presets button.is-selected {
+    border-color:color-mix(in srgb,var(--accent) 55%,transparent);
+    background:var(--accent-soft);
+    color:var(--accent-text,var(--accent));
+}
+
+.cardio-alarm-custom {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 58px;
+    gap:7px;
+}
+
+.cardio-alarm-custom label {
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    align-items:center;
+    gap:7px;
+    min-height:38px;
+    padding:0 9px;
+    border:1px solid var(--line,rgba(255,255,255,.1));
+    border-radius:9px;
+    background:var(--input-bg,var(--surface-raised));
+    color:var(--muted,#999);
+}
+
+.cardio-alarm-custom label span,
+.cardio-alarm-custom label b {
+    font-size:9px;
+    font-weight:800;
+}
+
+.cardio-alarm-custom input {
+    min-width:0;
+    width:100%;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    color:var(--text,#fff)!important;
+    font:inherit;
+    font-size:13px;
+    font-weight:850;
+    text-align:right;
+    outline:0;
+}
+
+.cardio-alarm-custom-set {
+    min-height:38px;
+}
+
+.cardio-alarm-note {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:9px;
+    padding-top:8px;
+    border-top:1px solid var(--line,rgba(255,255,255,.07));
+}
+
+.cardio-alarm-note>span {
+    min-width:0;
+    color:var(--muted,#999);
+    font-size:9px;
+    line-height:1.35;
+}
+
+.cardio-alarm-alerts {
+    flex:0 0 auto;
+    min-height:30px;
+    padding:5px 8px;
+    border-color:color-mix(in srgb,var(--accent) 32%,transparent);
+    background:var(--accent-soft);
+    color:var(--accent-text,var(--accent));
+    white-space:nowrap;
+}
+
+.cardio-alarm-alerts:disabled {
+    opacity:.8;
+}
+
 .cardio-stopwatch-actions {
     display:grid;
     grid-template-columns:repeat(2,minmax(0,1fr));
@@ -56,7 +221,7 @@
     grid-column:1 / -1;
 }
 
-.cardio-stopwatch-panel small {
+.cardio-stopwatch-panel>small {
     color:var(--muted,#a0a0a0);
     font-size:11px;
     line-height:1.4;
@@ -65,4 +230,121 @@
 .cardio-session-card .session-cardio-duration:disabled {
     opacity:.72;
     cursor:not-allowed;
+}
+
+#level-up-cardio-alarm-banner {
+    position:fixed;
+    left:max(12px,env(safe-area-inset-left));
+    right:max(12px,env(safe-area-inset-right));
+    bottom:calc(72px + env(safe-area-inset-bottom));
+    z-index:1210;
+    display:grid;
+    grid-template-columns:38px minmax(0,1fr);
+    gap:10px;
+    width:auto;
+    max-width:540px;
+    margin-inline:auto;
+    padding:11px 12px;
+    border:1px solid color-mix(in srgb,var(--success-text,#4ade80) 42%,var(--line));
+    border-left:3px solid var(--success-text,#4ade80);
+    border-radius:15px;
+    background:color-mix(in srgb,var(--surface) 96%,transparent);
+    box-shadow:0 14px 40px rgba(0,0,0,.32);
+    color:var(--text,#fff);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+}
+
+#level-up-cardio-alarm-banner[hidden] {
+    display:none!important;
+}
+
+.cardio-alarm-banner-icon {
+    display:grid;
+    width:38px;
+    height:38px;
+    place-items:center;
+    border-radius:11px;
+    background:color-mix(in srgb,var(--success-text,#4ade80) 13%,transparent);
+    color:var(--success-text,#4ade80);
+}
+
+.cardio-alarm-banner-icon svg {
+    width:23px;
+    height:23px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.9;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+
+.cardio-alarm-banner-copy {
+    display:grid;
+    gap:2px;
+    min-width:0;
+}
+
+.cardio-alarm-banner-copy small {
+    color:var(--success-text,#4ade80);
+    font-size:8px;
+    font-weight:900;
+    letter-spacing:.11em;
+}
+
+.cardio-alarm-banner-copy strong {
+    overflow:hidden;
+    color:var(--text,#fff);
+    font-size:12px;
+    line-height:1.2;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.cardio-alarm-banner-copy span {
+    color:var(--muted,#999);
+    font-size:9px;
+}
+
+.cardio-alarm-banner-actions {
+    grid-column:1 / -1;
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:6px;
+}
+
+.cardio-alarm-banner-actions button {
+    min-height:34px;
+    padding:6px 7px;
+    border:1px solid var(--line,rgba(255,255,255,.1));
+    border-radius:9px;
+    background:var(--surface-raised,rgba(255,255,255,.05));
+    color:var(--text,#fff);
+    font:inherit;
+    font-size:9px;
+    font-weight:850;
+}
+
+.cardio-alarm-banner-actions button[data-cardio-alarm-action="plus5"] {
+    border-color:color-mix(in srgb,var(--accent) 45%,transparent);
+    background:var(--accent-soft);
+    color:var(--accent-text,var(--accent));
+}
+
+@media(max-width:390px) {
+    .cardio-alarm-presets {
+        grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+    .cardio-alarm-presets .cardio-alarm-off {
+        grid-column:auto;
+    }
+    .cardio-alarm-note {
+        align-items:flex-start;
+        flex-direction:column;
+    }
+    #level-up-cardio-alarm-banner {
+        left:8px;
+        right:8px;
+        bottom:calc(68px + env(safe-area-inset-bottom));
+    }
 }
