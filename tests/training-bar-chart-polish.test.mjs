@@ -25,6 +25,14 @@ test("bar renderer uses gradient rounded bars and collision-safe labels", () => 
     assert.match(renderer, /shadowBlur = 11/);
 });
 
+test("weekly working sets stay grouped by calendar week at every timeframe", () => {
+    assert.match(range, /function buildWeeklyChartPoints\(/);
+    assert.match(range, /bucket:\s*"week"/);
+    assert.match(range, /buildWeeklyChartPoints\(sessions, rangeWindow, countWorkingSets\)/);
+    assert.match(range, /axisLabel:\s*"Weekly working sets"/);
+    assert.match(range, /weekly totals/);
+});
+
 test("strength summary is shared by initial and timeframe render paths", () => {
     assert.match(strengthRenderer, /export function renderStrengthIndexSummary/);
     assert.match(strengthPrimary, /renderStrengthIndexSummary\(summary, latest\)/);
