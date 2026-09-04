@@ -30,6 +30,11 @@ function readHandledState() {
     }
 }
 
+function handledDate(record) {
+    const date = new Date(record?.handledAt);
+    return Number.isFinite(date.getTime()) ? localDate(date) : null;
+}
+
 function monthBounds(date = new Date()) {
     const first = new Date(date.getFullYear(), date.getMonth(), 1, 12);
     const last = new Date(date.getFullYear(), date.getMonth() + 1, 0, 12);
@@ -44,7 +49,7 @@ function stateLabel(state) {
     return "Upcoming calorie check-in";
 }
 
-function eventFor({ date, checkDay, phase, state }) {
+function eventFor({ date, checkDay = null, phase, state }) {
     return {
         date,
         checkDay,
@@ -55,59 +60,105 @@ function eventFor({ date, checkDay, phase, state }) {
     };
 }
 
+function canonicalPhaseEvents(phase, bounds, handledState, today) {
+    const events = [];
+    if (!phase?.startDate) return events;
+    const phaseEnd = phase.endDate || bounds.end;
+    const lastDate = phaseEnd < bounds.end ? phaseEnd : bounds.end;
+    const handled = handledState[phaseKey(phase)];
+    const lastHandledCheckDay = Number(handled?.lastHandledCheckDay);
+    let checkDay = FIRST_CHECK_DAY;
+    let date = shiftDate(phase.startDate, FIRST_CHECK_DAY - 1);
+
+    while (date && date <= lastDate) {
+        if (date >= bounds.start) {
+            const wasHandled = Number.isFinite(lastHandledCheckDay) && checkDay <= lastHandledCheckDay;
+            events.push(eventFor({
+                date,
+                checkDay,
+                phase,
+                state: wasHandled ? "handled" : date < today ? "past" : "upcoming"
+            }));
+        }
+        checkDay += CADENCE_DAYS;
+        date = shiftDate(date, CADENCE_DAYS);
+    }
+    return events;
+}
+
+function activePhaseEvents(phase, status, bounds, handledState, today) {
+    if (!phase?.startDate || status?.mode === "track") return [];
+
+    const firstReviewDate = shiftDate(phase.startDate, FIRST_CHECK_DAY - 1);
+    let anchor = status?.reviewDate || firstReviewDate;
+    if (!anchor) return [];
+
+    // The live check-in status is authoritative. Once a review is delayed or
+    // accepted on a different day, anchor the whole visible monthly sequence to
+    // that date so the calendar can never show two competing weekly cadences.
+    while (anchor < firstReviewDate) anchor = shiftDate(anchor, CADENCE_DAYS);
+
+    let date = anchor;
+    while (shiftDate(date, -CADENCE_DAYS) >= firstReviewDate) {
+        const previous = shiftDate(date, -CADENCE_DAYS);
+        if (previous < bounds.start) break;
+        date = previous;
+    }
+    while (date < bounds.start) date = shiftDate(date, CADENCE_DAYS);
+
+    const handled = handledState[phaseKey(phase)];
+    const latestHandledDate = handledDate(handled);
+    const events = [];
+    const activeEnd = phase.endDate || bounds.end;
+    const lastDate = activeEnd < bounds.end ? activeEnd : bounds.end;
+
+    while (date && date <= lastDate) {
+        let state;
+        if (date === status?.reviewDate) {
+            state = status.state === "ready"
+                ? "ready"
+                : status.state === "waiting"
+                    ? "waiting"
+                    : "upcoming";
+        } else if (date < today) {
+            state = latestHandledDate && date <= latestHandledDate ? "handled" : "past";
+        } else {
+            state = "upcoming";
+        }
+        events.push(eventFor({ date, phase, state }));
+        date = shiftDate(date, CADENCE_DAYS);
+    }
+
+    return events;
+}
+
 export function getMonthlyCheckInEvents(viewDate = new Date()) {
-    const { start, end } = monthBounds(viewDate);
+    const bounds = monthBounds(viewDate);
     const today = localDate();
     const phases = getNutritionPhaseHistory();
     const handledState = readHandledState();
     const active = phases.find(phase => !phase?.endDate) || null;
     const status = active ? getWeeklyCheckInStatus() : null;
-    const events = new Map();
+    const events = [];
 
-    phases.forEach(phase => {
-        if (!phase?.startDate) return;
-        const phaseEnd = phase.endDate || end;
-        const lastDate = phaseEnd < end ? phaseEnd : end;
-        let checkDay = FIRST_CHECK_DAY;
-        let date = shiftDate(phase.startDate, FIRST_CHECK_DAY - 1);
-        const handled = handledState[phaseKey(phase)];
-        const lastHandledCheckDay = Number(handled?.lastHandledCheckDay);
-
-        while (date && date <= lastDate) {
-            if (date >= start) {
-                const handledCheck = Number.isFinite(lastHandledCheckDay) && checkDay <= lastHandledCheckDay;
-                const state = handledCheck ? "handled" : date < today ? "past" : "upcoming";
-                events.set(date, eventFor({ date, checkDay, phase, state }));
-            }
-            checkDay += CADENCE_DAYS;
-            date = shiftDate(date, CADENCE_DAYS);
-        }
+    phases.filter(phase => phase?.endDate).forEach(phase => {
+        events.push(...canonicalPhaseEvents(phase, bounds, handledState, today));
     });
 
-    if (active && status?.mode !== "track" && status?.reviewDate && status.reviewDate >= start && status.reviewDate <= end) {
-        const currentState = status.state === "ready"
-            ? "ready"
-            : status.state === "waiting"
-                ? "waiting"
-                : "upcoming";
-        const existing = events.get(status.reviewDate);
-        events.set(status.reviewDate, eventFor({
-            date: status.reviewDate,
-            checkDay: existing?.checkDay ?? null,
-            phase: active,
-            state: currentState
-        }));
-
-        let future = shiftDate(status.reviewDate, CADENCE_DAYS);
-        while (future && future <= end) {
-            if (future >= start && !events.has(future)) {
-                events.set(future, eventFor({ date: future, checkDay: null, phase: active, state: "upcoming" }));
-            }
-            future = shiftDate(future, CADENCE_DAYS);
-        }
+    if (active) {
+        events.push(...activePhaseEvents(active, status, bounds, handledState, today));
     }
 
-    return [...events.values()].sort((a, b) => a.date.localeCompare(b.date));
+    // One date can only represent one check-in. This also protects against a
+    // phase boundary landing on the same calendar day as another phase event.
+    const unique = new Map();
+    const priority = { ready: 5, waiting: 4, handled: 3, upcoming: 2, past: 1 };
+    events.forEach(event => {
+        const current = unique.get(event.date);
+        if (!current || (priority[event.state] || 0) > (priority[current.state] || 0)) unique.set(event.date, event);
+    });
+
+    return [...unique.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export function getCheckInEventMap(viewDate = new Date()) {
