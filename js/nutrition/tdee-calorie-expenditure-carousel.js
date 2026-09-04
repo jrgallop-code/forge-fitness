@@ -246,8 +246,15 @@ function buildComparisonState() {
     const visibleStart = requestedStart
         || enriched.find(point => positive(point.expenditureCalories) !== null)?.date
         || endDate;
-    const points = enriched.filter(point => point.date >= visibleStart && point.date <= endDate && positive(point.expenditureCalories) !== null);
-    return { range, startDate: visibleStart, endDate, points };
+    const points = enriched.filter(point =>
+        point.date >= visibleStart
+        && point.date <= endDate
+        && positive(point.expenditureCalories) !== null
+        && positive(point.intakeCalories) !== null
+    );
+    const graphStart = points[0]?.date || visibleStart;
+    const graphEnd = points.at(-1)?.date || endDate;
+    return { range, startDate: graphStart, endDate: graphEnd, points };
 }
 
 function niceAxisStep(value) {
@@ -255,7 +262,9 @@ function niceAxisStep(value) {
 }
 
 function comparisonAxis(points) {
-    const values = points.flatMap(point => [point.expenditureCalories, point.intakeCalories]).map(Number).filter(Number.isFinite);
+    const values = points
+        .flatMap(point => [positive(point.expenditureCalories), positive(point.intakeCalories)])
+        .filter(value => value !== null);
     if (!values.length) return { yMin: 0, yMax: 3000 };
     const maximum = Math.max(...values, 1000);
     const step = niceAxisStep(maximum / 4);
@@ -305,9 +314,15 @@ function renderComparisonChart(card, state) {
     const canvas = card.querySelector("[data-calorie-expenditure-chart]");
     const tooltip = card.querySelector("[data-calorie-expenditure-tooltip]");
     const shell = canvas?.closest(".calorie-expenditure-shell");
-    if (!canvas || !tooltip || !shell || !state.points.length) return;
+    if (!canvas || !tooltip || !shell) return;
     const context = canvas.getContext("2d");
     if (!context) return;
+
+    if (!state.points.length) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        tooltip.hidden = true;
+        return;
+    }
 
     let selectedIndex = null;
     let dragging = false;
@@ -356,9 +371,10 @@ function renderComparisonChart(card, state) {
         const daysInRange = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
         const barWidth = Math.max(1, Math.min(22, plotWidth / daysInRange * .62));
         state.points.forEach(point => {
-            if (!Number.isFinite(Number(point.intakeCalories))) return;
+            const intake = positive(point.intakeCalories);
+            if (intake === null) return;
             const pointX = x(point);
-            const top = y(point.intakeCalories);
+            const top = y(intake);
             const base = y(0);
             const left = Math.max(padding.left, Math.min(width - padding.right - barWidth, pointX - barWidth / 2));
             context.save();
@@ -435,11 +451,11 @@ function renderComparisonChart(card, state) {
             return Math.abs(pointTime - selectedTime) < Math.abs(nearestTime - selectedTime) ? index : nearest;
         }, 0);
         const point = state.points[selectedIndex];
-        const intake = Number(point.intakeCalories);
-        const expenditure = Number(point.expenditureCalories);
-        const difference = Number.isFinite(intake) ? intake - expenditure : null;
+        const intake = positive(point.intakeCalories);
+        const expenditure = positive(point.expenditureCalories);
+        const difference = intake !== null && expenditure !== null ? intake - expenditure : null;
         tooltip.hidden = false;
-        tooltip.innerHTML = `<strong>${formatDate(point.date)}</strong><span>Calories: ${Number.isFinite(intake) ? formatNumber(intake) : point.isToday ? "Day not complete" : "Not logged"}</span><span>Expenditure: ${formatNumber(expenditure)}</span><small>${Number.isFinite(difference) ? `${difference >= 0 ? "+" : "−"}${formatNumber(Math.abs(difference))} cal ${difference >= 0 ? "above" : "below"} expenditure` : point.isToday ? "Today's calories appear after the day is marked complete." : "Log calories to compare energy intake with expenditure."}</small>`;
+        tooltip.innerHTML = `<strong>${formatDate(point.date)}</strong><span>Calories: ${formatNumber(intake)}</span><span>Expenditure: ${formatNumber(expenditure)}</span><small>${difference !== null ? `${difference >= 0 ? "+" : "−"}${formatNumber(Math.abs(difference))} cal ${difference >= 0 ? "above" : "below"} expenditure` : "No matched data for this day."}</small>`;
         const desiredLeft = relative < bounds.width / 2 ? relative + 10 : relative - 148;
         tooltip.style.left = `${Math.max(8, Math.min(bounds.width - 142, desiredLeft))}px`;
         draw();
