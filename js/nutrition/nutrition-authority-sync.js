@@ -1,5 +1,5 @@
-import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=nutrition-authority-sync-2";
-import { getActiveNutritionPhase } from "./nutrition-phase.js?v=nutrition-authority-sync-2";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=nutrition-authority-sync-3";
+import { getActiveNutritionPhase } from "./nutrition-phase.js?v=nutrition-authority-sync-3";
 
 const SNAPSHOT_KEY = "level_up_weekly_tdee_estimate_v1";
 const STYLE_ID = "level-up-nutrition-authority-sync-styles";
@@ -63,8 +63,6 @@ function getAuthoritySignals() {
         estimate,
         phase,
         expenditure: currentExpenditure(estimate),
-        // This is deliberately the exact Trend Weight rate consumed by the TDEE engine.
-        // Do not calculate a separate phase-specific user-facing rate here.
         weightRate: finite(estimate?.weightRateLbPerWeek),
         planBaseline: positive(phase?.maintenanceCalories),
         targetCalories: positive(phase?.currentCalories ?? phase?.startCalories)
@@ -75,8 +73,9 @@ function setText(node, value) {
     if (node && node.textContent !== value) node.textContent = value;
 }
 
-function formatCalories(value) {
-    return Number.isFinite(Number(value)) ? `${Math.round(Number(value)).toLocaleString()} kcal/day` : "—";
+function formatCalories(value, fallback = "Need more data") {
+    const number = positive(value);
+    return number !== null ? `${Math.round(number).toLocaleString()} kcal/day` : fallback;
 }
 
 function formatRate(value) {
@@ -86,8 +85,31 @@ function formatRate(value) {
     return `${sign}${Math.abs(number).toFixed(2)} lb/week`;
 }
 
+function targetEquation(signals) {
+    const maintenance = positive(signals.planBaseline);
+    const target = positive(signals.targetCalories);
+    if (maintenance === null || target === null) return "Set a phase to see target math";
+    const base = Math.round(maintenance);
+    const goal = Math.round(target);
+    const adjustment = goal - base;
+    if (adjustment === 0) return `${base.toLocaleString()} maintenance = ${goal.toLocaleString()} target`;
+    const sign = adjustment > 0 ? "+" : "−";
+    return `${base.toLocaleString()} ${sign} ${Math.abs(adjustment).toLocaleString()} = ${goal.toLocaleString()} target`;
+}
+
+function targetContext(signals) {
+    const maintenance = positive(signals.planBaseline);
+    const target = positive(signals.targetCalories);
+    if (maintenance === null || target === null) return "Maintenance is the starting point; your phase determines the final calorie target.";
+    const adjustment = Math.round(target - maintenance);
+    const phaseLabel = signals.phase?.label || "Current phase";
+    if (adjustment < 0) return `${phaseLabel} · ${Math.abs(adjustment).toLocaleString()} kcal/day below plan maintenance`;
+    if (adjustment > 0) return `${phaseLabel} · ${adjustment.toLocaleString()} kcal/day above plan maintenance`;
+    return `${phaseLabel} · target is set at maintenance`;
+}
+
 function patchNutritionPhase(signals) {
-    const { estimate, phase, expenditure, weightRate, planBaseline, targetCalories } = signals;
+    const { estimate, phase, expenditure, planBaseline } = signals;
 
     const calculated = document.getElementById("unified-calculated-maintenance");
     if (calculated) {
@@ -95,7 +117,7 @@ function patchNutritionPhase(signals) {
         setText(calculated.parentElement?.querySelector(":scope > span"), "Current Expenditure");
         const meta = document.getElementById("unified-calculated-maintenance-meta");
         if (meta) {
-            const evidence = Number.isFinite(expenditure)
+            const evidence = expenditure !== null
                 ? `${estimate?.label || "Estimate"} · ${Number(estimate?.foodDays) || 0} food days · ${Number(estimate?.weighIns) || 0} weigh-ins`
                 : `${Number(estimate?.foodDays) || 0}/2 food days · ${Number(estimate?.weighIns) || 0}/3 weigh-ins`;
             setText(meta, `${evidence} · identical to Progress → Nutrition`);
@@ -103,15 +125,15 @@ function patchNutritionPhase(signals) {
     }
 
     const baselineLabel = document.querySelector('label[for="unified-maintenance"]');
-    setText(baselineLabel, "Weekly Plan Baseline");
+    setText(baselineLabel, "Maintenance Used for Plan");
     const help = document.querySelector("#unified-goals-calories-card .unified-help");
-    setText(help, "Current Expenditure is Level Up's one live TDEE estimate. The Weekly Plan Baseline is the expenditure value locked in at the last accepted review and used to hold your calorie target steady between reviews.");
+    setText(help, "This maintenance number is not your calorie goal. Level Up applies your phase adjustment to it to create the Current Calorie Target shown above.");
     const choiceNote = document.querySelector("#unified-goals-calories-card .unified-maintenance-choice-note");
-    if (choiceNote) choiceNote.innerHTML = "<strong>One TDEE, two jobs</strong> Current Expenditure updates from intake + Trend Weight. Your calorie target stays on the Weekly Plan Baseline until the next accepted weekly review.";
+    if (choiceNote) choiceNote.innerHTML = `<strong>How your target is built</strong> ${targetEquation(signals)}. Current Expenditure can move day to day; your saved target stays steady until the next accepted Coach review.`;
 
     const modeHelp = document.getElementById("unified-maintenance-mode-help");
     if (modeHelp) {
-        setText(modeHelp, "Automatic reviews use the same Current Expenditure and Trend Weight shown in Progress. The saved calorie target only changes when a weekly review is applied.");
+        setText(modeHelp, "Coach reviews use the same Current Expenditure and Trend Weight shown in Progress. The saved calorie target only changes when a weekly review is applied.");
     }
 
     patchCurrentPhaseGrid(signals);
@@ -124,7 +146,7 @@ function patchNutritionPhase(signals) {
     }
 
     const adultNote = document.querySelector("#unified-goals-calories-card .unified-adult-note");
-    setText(adultNote, "Weight Trend and Current Expenditure are shared with Progress. Phase timing only controls when the calorie target may be updated; it does not create a second weight trend or a second TDEE.");
+    setText(adultNote, "Weight Trend and Current Expenditure are shared with Progress. Your phase determines the target direction; Coach mode controls when that target may be reviewed.");
 }
 
 function patchCurrentPhaseGrid(signals) {
@@ -164,10 +186,8 @@ function ensureAuthorityStrip(signals) {
         else phaseCard.appendChild(strip);
     }
     strip.innerHTML = `
-        <div><span>Current Weight Trend</span><strong>${formatRate(signals.weightRate)}</strong><small>Same Trend Weight rate as Progress</small></div>
-        <div><span>Current Expenditure</span><strong>${formatCalories(signals.expenditure)}</strong><small>Live TDEE · same as Progress</small></div>
-        <div><span>Weekly Plan Baseline</span><strong>${formatCalories(signals.planBaseline)}</strong><small>Held from last accepted review</small></div>
-        <div><span>Current Calorie Target</span><strong>${formatCalories(signals.targetCalories)}</strong><small>Changes only after review</small></div>`;
+        <div><span>Current Expenditure</span><strong>${formatCalories(signals.expenditure)}</strong><small>${signals.expenditure === null ? "Builds from food logs + Trend Weight" : "Live TDEE · same as Progress"}</small></div>
+        <div class="nutrition-target-math-card"><span>How Your Target Is Set</span><strong>${targetEquation(signals)}</strong><small>${targetContext(signals)}</small></div>`;
 }
 
 function handleInitialPlanCalculatedTdee(event) {
@@ -185,15 +205,10 @@ function handleInitialPlanCalculatedTdee(event) {
     if (!input) return;
     input.value = String(Math.round(expenditure));
     input.dispatchEvent(new Event("input", { bubbles: true }));
-    setText(document.getElementById("unified-calculated-action-status"), "Current Expenditure added as your initial weekly plan baseline.");
+    setText(document.getElementById("unified-calculated-action-status"), "Current Expenditure added as the maintenance starting point for your plan.");
     setText(button, "Added below ✓");
 }
 
-// The existing weekly review engine reads the weekly TDEE snapshot when it builds
-// the recommendation. At the instant a review becomes ready, mirror the current
-// live expenditure into that review snapshot so the recommendation uses the same
-// TDEE visible in Progress. This does NOT change the phase baseline or calorie
-// target; those remain unchanged until the user actually applies the review.
 function syncReviewCalculationToCurrentExpenditure(signals) {
     if (document.documentElement.dataset.weeklyCalorieReviewReady !== "true") return;
     const live = positive(signals.expenditure);
@@ -255,7 +270,7 @@ function ensureStyles() {
             letter-spacing:.05em;
         }
         #unified-goals-calories-card label[for="unified-maintenance"]::after{
-            content:" · WEEKLY";
+            content:" · PLAN INPUT";
             color:var(--muted);
             font-size:9px;
             font-weight:850;
@@ -274,7 +289,8 @@ function ensureStyles() {
             background:color-mix(in srgb,var(--card,#1c1c1e) 97%,transparent);
         }
         .nutrition-authority-strip span,.nutrition-authority-strip small{display:block;color:var(--muted);font-size:9px}
-        .nutrition-authority-strip strong{display:block;margin:4px 0;color:var(--text);font-size:14px}
+        .nutrition-authority-strip strong{display:block;margin:4px 0;color:var(--text);font-size:14px;line-height:1.3}
+        .nutrition-target-math-card strong{font-size:13px}
         @media(max-width:520px){.nutrition-authority-strip{grid-template-columns:1fr 1fr}}
     `;
     document.head.appendChild(style);
