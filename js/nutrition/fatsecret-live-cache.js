@@ -4,6 +4,9 @@ const FOOD_LOG_KEY = "level_up_food_log_v1";
 const SAVED_MEALS_KEY = "level_up_saved_meals_v1";
 const MAX_STARTUP_FOODS = 30;
 const FATSECRET_ATTRIBUTION = '<a href="https://platform.fatsecret.com">Powered by fatsecret Platform API</a>';
+const FOOD_SEARCH_ENDPOINT = "/v1/foods/search";
+const OLD_SEARCHING_TEXT = "Searching Level Up, USDA and Open Food Facts…";
+const NEW_SEARCHING_TEXT = "Searching Level Up, USDA, Open Food Facts and FatSecret…";
 
 const foods = new Map();
 const pending = new Map();
@@ -231,7 +234,44 @@ function ensureAttribution(root = globalThis.document) {
     }
 }
 
+function updateFoodSearchLoadingCopy(root = globalThis.document) {
+    const status = root?.querySelector?.("[data-food-search-status]");
+    if (status?.textContent?.trim() === OLD_SEARCHING_TEXT) status.textContent = NEW_SEARCHING_TEXT;
+}
+
+function showActualFoodSearchSources(payload) {
+    if (typeof document === "undefined") return;
+    const source = String(payload?.source || "").trim();
+    if (!source) return;
+    const status = document.querySelector("[data-food-search-status]");
+    if (!status) return;
+    const current = String(status.textContent || "").replace(/\s*·\s*Sources:\s*.*$/i, "").trim();
+    status.textContent = `${current || "Search complete"} · Sources: ${source}`;
+    status.dataset.foodSearchSources = source;
+}
+
+function installFoodSearchSourceDiagnostics() {
+    if (typeof window === "undefined" || typeof window.fetch !== "function" || window.__levelUpFatSecretSearchDiagnostics) return;
+    const originalFetch = window.fetch.bind(window);
+    window.__levelUpFatSecretSearchDiagnostics = true;
+    window.fetch = async (...args) => {
+        const response = await originalFetch(...args);
+        try {
+            const input = args[0];
+            const requestUrl = typeof input === "string" ? input : String(input?.url || "");
+            if (requestUrl.includes(FOOD_SEARCH_ENDPOINT)) {
+                response.clone().json().then(payload => {
+                    window.setTimeout(() => showActualFoodSearchSources(payload), 60);
+                }).catch(() => {});
+            }
+        }
+        catch {}
+        return response;
+    };
+}
+
 if (typeof window !== "undefined") {
+    installFoodSearchSourceDiagnostics();
     queueMicrotask(queuePersistedIds);
     window.addEventListener("online", queuePersistedIds, { passive: true });
     window.addEventListener("levelup:cloud-session-started", queuePersistedIds);
@@ -239,7 +279,11 @@ if (typeof window !== "undefined") {
     if (typeof document !== "undefined") {
         const start = () => {
             ensureAttribution(document);
-            new MutationObserver(() => ensureAttribution(document)).observe(document.body, { childList: true, subtree: true });
+            updateFoodSearchLoadingCopy(document);
+            new MutationObserver(() => {
+                ensureAttribution(document);
+                updateFoodSearchLoadingCopy(document);
+            }).observe(document.body, { childList: true, subtree: true, characterData: true });
         };
         if (document.body) start(); else document.addEventListener("DOMContentLoaded", start, { once: true });
     }

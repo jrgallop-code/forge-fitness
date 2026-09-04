@@ -41,20 +41,41 @@ export async function searchFatSecretFoods(query, countryCode, env = {}, options
 
     const scopes = fatSecretScopes(env);
     const premier = scopes.has("premier");
-    const version = premier ? "v5" : "v1";
-    const url = new URL(`${FATSECRET_API_ROOT}/foods/search/${version}`);
-    url.searchParams.set("search_expression", searchExpression);
-    url.searchParams.set("page_number", "0");
-    url.searchParams.set("max_results", String(clampInteger(options.limit, 1, 20, 8)));
-    url.searchParams.set("format", "json");
-
+    const maxResults = String(clampInteger(options.limit, 1, 20, 8));
     const normalizedCountry = normalizeCountry(countryCode);
-    if (premier && normalizedCountry) {
-        url.searchParams.set("region", normalizedCountry);
-        url.searchParams.set("flag_default_serving", "true");
+    let payload;
+
+    if (premier) {
+        const url = new URL(`${FATSECRET_API_ROOT}/foods/search/v5`);
+        url.searchParams.set("search_expression", searchExpression);
+        url.searchParams.set("page_number", "0");
+        url.searchParams.set("max_results", maxResults);
+        url.searchParams.set("format", "json");
+        if (normalizedCountry) {
+            url.searchParams.set("region", normalizedCountry);
+            url.searchParams.set("flag_default_serving", "true");
+        }
+        payload = await fatSecretJson(url, env);
+    }
+    else {
+        // FatSecret's OAuth 2.0 Basic example uses the legacy method-based
+        // foods.search call. The path-based foods/search/v1 endpoint is
+        // documented with the Premier scope, so do not use it for Basic.
+        const url = new URL(`${FATSECRET_API_ROOT}/server.api`);
+        const body = new URLSearchParams({
+            method: "foods.search",
+            search_expression: searchExpression,
+            page_number: "0",
+            max_results: maxResults,
+            format: "json"
+        });
+        payload = await fatSecretJson(url, env, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body
+        });
     }
 
-    const payload = await fatSecretJson(url, env);
     const foods = asArray(payload?.foods?.food);
     const responseCountry = premier && normalizedCountry ? normalizedCountry : "US";
     return foods
@@ -184,16 +205,17 @@ export function toFatSecretGtin13(value) {
     return digits.padStart(13, "0");
 }
 
-async function fatSecretJson(url, env) {
+async function fatSecretJson(url, env, requestOptions = {}) {
     const token = await getFatSecretAccessToken(env);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
+        const headers = new Headers(requestOptions.headers || {});
+        headers.set("Authorization", `Bearer ${token}`);
+        headers.set("Accept", "application/json");
         const response = await fetch(url, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: "application/json"
-            },
+            ...requestOptions,
+            headers,
             signal: controller.signal
         });
         const payload = await response.json().catch(() => ({}));
