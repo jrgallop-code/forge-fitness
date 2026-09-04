@@ -76,7 +76,7 @@
         if (document.querySelector('script[data-protein-minimum-consistency]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/nutrition/protein-minimum-consistency.js?v=protein-minimum-1";
+        script.src = "js/nutrition/protein-minimum-consistency.js?v=protein-minimum-2";
         script.dataset.proteinMinimumConsistency = "1";
         document.head.appendChild(script);
     }
