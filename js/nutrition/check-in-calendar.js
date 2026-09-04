@@ -1,4 +1,5 @@
 import { getNutritionPhaseHistory } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
+import { getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
 import { getWeeklyCheckInStatus } from "./weekly-check-in-status.js?v=weekly-checkin-status-1";
 
 const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";
@@ -133,6 +134,11 @@ function activePhaseEvents(phase, status, bounds, handledState, today) {
 }
 
 export function getMonthlyCheckInEvents(viewDate = new Date()) {
+    // Manual nutrition mode deliberately has no calorie coaching cycle. Keep
+    // check-in cards, calendar markers and historical coaching dates out of the
+    // activity UI while the user controls their own target.
+    if (getMaintenanceUpdateMode() === "track") return [];
+
     const bounds = monthBounds(viewDate);
     const today = localDate();
     const phases = getNutritionPhaseHistory();
