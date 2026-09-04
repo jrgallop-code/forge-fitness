@@ -13,6 +13,7 @@
     installProteinMinimumConsistency();
     installNutritionPhaseTargetStability();
     installNutritionAuthoritySync();
+    installNutritionModeUI();
     installWeeklyCheckInStatus();
     installMuscleMapColors();
     installMuscleMapRenderingFix();
@@ -100,6 +101,15 @@
         script.type = "module";
         script.src = "js/nutrition/nutrition-authority-sync.js?v=nutrition-authority-sync-2";
         script.dataset.nutritionAuthoritySync = "1";
+        document.head.appendChild(script);
+    }
+
+    function installNutritionModeUI() {
+        if (document.querySelector('script[data-nutrition-mode-ui]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/nutrition/nutrition-mode-ui.js?v=nutrition-mode-ui-1";
+        script.dataset.nutritionModeUi = "1";
         document.head.appendChild(script);
     }
 
