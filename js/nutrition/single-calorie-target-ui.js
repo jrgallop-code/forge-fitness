@@ -1,4 +1,5 @@
-import "../progress/analytics-chart-zoom.js?v=analytics-chart-zoom-1";
+import "../progress/analytics-chart-zoom.js?v=analytics-chart-zoom-2";
+import "./weekly-change-choice-fix.js?v=weekly-change-choice-fix-1";
 
 const STYLE_ID = "level-up-streamlined-goals-calories-styles";
 const CHECKIN_ROUTE_KEY = "level_up_open_goals_plan_from_checkin";
