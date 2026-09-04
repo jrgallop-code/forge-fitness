@@ -3,6 +3,7 @@ import { navigate } from "../core/router.js?v=deload-workout-preview-1";
 const STYLE_ID = "level-up-workout-tutorial-prompt-styles";
 const PROMPT_ID = "workout-tutorial-dashboard-prompt";
 const PROMPT_STATE_KEY = "level_up_workout_tutorial_prompt_v1";
+const HANDOFF_CLASS = "level-up-tutorial-handoff";
 const COMPLETION_KEYS = [
     "level_up_interactive_workout_tutorial_v5",
     "level_up_interactive_workout_tutorial_v4",
@@ -10,6 +11,7 @@ const COMPLETION_KEYS = [
 ];
 
 let queued = false;
+let handoffTimer = 0;
 
 install();
 
@@ -83,18 +85,35 @@ function handleClick(event) {
     }
 }
 
+function beginTutorialHandoff() {
+    document.documentElement.classList.add(HANDOFF_CLASS);
+    if (handoffTimer) window.clearTimeout(handoffTimer);
+    // Fail-safe: never leave the app hidden if a route fails to finish.
+    handoffTimer = window.setTimeout(endTutorialHandoff, 2200);
+}
+
+function endTutorialHandoff() {
+    if (handoffTimer) window.clearTimeout(handoffTimer);
+    handoffTimer = 0;
+    document.documentElement.classList.remove(HANDOFF_CLASS);
+}
+
 function startTutorialFromPrompt(button) {
     button.disabled = true;
     button.textContent = "Opening…";
+    beginTutorialHandoff();
 
-    // Reuse the exact tutorial launch path that is already proven on iOS:
-    // open More → Tutorials, then activate the v5 tutorial card itself.
-    // This avoids maintaining a second workout-launch implementation.
+    // Reuse the exact tutorial launch path that is already proven on iOS, but
+    // keep the intermediate Learn/Tutorials screen visually hidden. Its target
+    // icons were flashing for a fraction of a second before the logger opened.
     navigate("more");
     waitFor('[data-more-page="learn"]', learnButton => {
         learnButton.click();
         waitFor("#interactive-workout-tutorial-card", tutorialButton => {
             tutorialButton.click();
+            // The tutorial click starts the logger immediately. Hold the handoff
+            // mask only long enough to bridge the route, then reveal the logger.
+            window.setTimeout(endTutorialHandoff, 500);
         });
     });
 }
@@ -106,6 +125,7 @@ function waitFor(selector, callback, attempts = 0) {
         return;
     }
     if (attempts >= 80) {
+        endTutorialHandoff();
         navigate("home");
         window.setTimeout(() => {
             const retry = document.querySelector("[data-workout-tutorial-prompt-start]");
@@ -157,6 +177,12 @@ function ensureStyles() {
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
+        html.${HANDOFF_CLASS} #content .learn-shell,
+        html.${HANDOFF_CLASS} #content [data-more-learn-page]{
+            opacity:0!important;
+            visibility:hidden!important;
+            pointer-events:none!important;
+        }
         .workout-tutorial-dashboard-prompt{
             display:grid;
             grid-template-columns:auto minmax(0,1fr) auto;
