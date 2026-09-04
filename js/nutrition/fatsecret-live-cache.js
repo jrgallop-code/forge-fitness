@@ -3,6 +3,7 @@ const SESSION_KEY = "level_up_cloud_session";
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const SAVED_MEALS_KEY = "level_up_saved_meals_v1";
 const MAX_SESSION_FOODS = 60;
+const FATSECRET_ATTRIBUTION = '<a href="https://platform.fatsecret.com">Powered by fatsecret Platform API</a>';
 
 const foods = new Map();
 const pending = new Map();
@@ -197,17 +198,19 @@ function queuePersistedIds() {
 
 function ensureAttribution(root = globalThis.document) {
     if (!root?.querySelector) return;
-    const href = "https://platform.fatsecret.com";
     const credit = root.querySelector(".food-data-credit");
     if (credit && !credit.querySelector("[data-fatsecret-attribution]")) {
-        credit.insertAdjacentHTML("beforeend", ` <a data-fatsecret-attribution href="${href}" target="_blank" rel="noopener">Powered by fatsecret Platform API</a>`);
+        const span = document.createElement("span");
+        span.dataset.fatsecretAttribution = "true";
+        span.innerHTML = ` ${FATSECRET_ATTRIBUTION}`;
+        credit.appendChild(span);
     }
     const sheet = root.querySelector(".food-sheet-card");
     if (sheet && !sheet.querySelector("[data-fatsecret-attribution]")) {
         const note = document.createElement("small");
         note.dataset.fatsecretAttribution = "true";
         note.style.cssText = "display:block;text-align:center;margin:6px 12px 10px;color:var(--muted,#8f8f98);font-size:9px";
-        note.innerHTML = `<a href="${href}" target="_blank" rel="noopener" style="color:inherit">Powered by fatsecret Platform API</a>`;
+        note.innerHTML = FATSECRET_ATTRIBUTION;
         sheet.appendChild(note);
     }
     const login = root.querySelector("#level-up-login-gate .level-up-login-panel");
@@ -215,7 +218,7 @@ function ensureAttribution(root = globalThis.document) {
         const note = document.createElement("p");
         note.dataset.fatsecretAttribution = "true";
         note.style.cssText = "margin:8px 0 0;text-align:center;opacity:.65;font-size:9px";
-        note.innerHTML = `<a href="${href}" target="_blank" rel="noopener" style="color:inherit">Powered by fatsecret Platform API</a>`;
+        note.innerHTML = FATSECRET_ATTRIBUTION;
         login.appendChild(note);
     }
 }
