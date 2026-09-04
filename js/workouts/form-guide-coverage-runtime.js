@@ -1,5 +1,5 @@
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
-import { getAllExercises, getExerciseById } from "./exercise-library.js?v=exercise-library-guides-2";
+import { getAllExercises, getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { createGeneratedExerciseGuide } from "./exercise-guide-generator.js?v=full-library-guides-2";
 
 const RUNTIME_ATTR = "data-form-guide-runtime-ready";
@@ -109,7 +109,6 @@ function ensureGuideForOpenEvent(event) {
     const exerciseId = event?.detail?.exerciseId;
     if (!exerciseId) return;
 
-    // The regular guide handler runs first. Only step in if it failed to create a guide.
     if (document.querySelector(".exercise-guide-screen")) return;
 
     const exercise = getExerciseById(exerciseId);
