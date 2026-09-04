@@ -89,19 +89,31 @@ function ensureStableTargetCards(calories) {
     }
 
     const weightPage = document.getElementById("weight-progress");
-    if (weightPage && !document.getElementById("weight-calorie-suggestion-card")) {
-        const card = document.createElement("div");
-        card.id = "weight-calorie-suggestion-card";
-        card.className = "metric-card weight-calorie-suggestion-card";
-        card.innerHTML = `
-            <div>
-                <h3>Current Calorie Target</h3>
-                <p id="weight-calorie-suggestion">${display}</p>
-                <small id="weight-calorie-suggestion-total">Active target · changes only when a weekly review is applied</small>
-            </div>
-        `;
-        const anchor = weightPage.querySelector(".weight-metrics-grid") || weightPage.querySelector(".weight-summary");
-        anchor?.insertAdjacentElement("afterend", card);
+    const summary = weightPage?.querySelector(".weight-summary");
+    if (weightPage && summary) {
+        let card = document.getElementById("weight-calorie-suggestion-card");
+        if (!card) {
+            card = document.createElement("div");
+            card.id = "weight-calorie-suggestion-card";
+            card.className = "metric-card weight-calorie-suggestion-card";
+            card.innerHTML = `
+                <div>
+                    <h3>Current Calorie Target</h3>
+                    <p id="weight-calorie-suggestion">${display}</p>
+                    <small id="weight-calorie-suggestion-total">Active target · changes only when a weekly review is applied</small>
+                </div>
+            `;
+        }
+
+        // Keep the calorie target in the same horizontal metric carousel as the
+        // weight metrics, immediately beside the Phase Weekly Rate/weight-change card.
+        const rateCard = document.getElementById("weight-phase-rate")?.closest(".metric-card");
+        if (rateCard?.parentElement === summary) {
+            if (rateCard.nextElementSibling !== card) rateCard.insertAdjacentElement("afterend", card);
+        }
+        else if (card.parentElement !== summary) {
+            summary.appendChild(card);
+        }
     }
 }
 
@@ -178,11 +190,11 @@ function ensureStyles() {
         .phase-calorie-suggestion-card span,
         .phase-calorie-suggestion-card small{display:block}
         .phase-calorie-suggestion-card strong{display:block;margin:4px 0;font-size:20px}
-        #weight-progress .weight-calorie-suggestion-card{margin-top:12px}
-        #weight-progress .weight-calorie-suggestion-card>div{padding:14px 16px}
-        #weight-progress .weight-calorie-suggestion-card h3{margin:0 0 4px;font-size:12px}
-        #weight-calorie-suggestion{margin:0;font-size:20px;font-weight:800}
-        #weight-calorie-suggestion-total{display:block;margin-top:5px;color:var(--muted);font-size:10px}
+        #weight-progress .weight-summary #weight-calorie-suggestion-card{margin-top:0!important}
+        #weight-progress .weight-summary #weight-calorie-suggestion-card>div{padding:0!important}
+        #weight-progress .weight-summary #weight-calorie-suggestion-card h3{margin:0;font-size:10px;line-height:1.2}
+        #weight-progress .weight-summary #weight-calorie-suggestion{margin-top:5px;font-size:16px;line-height:1.12;font-weight:800}
+        #weight-progress .weight-summary #weight-calorie-suggestion-total{display:block;margin-top:3px;color:var(--muted);font-size:10px;line-height:1.25}
     `;
     document.head.appendChild(style);
 }
