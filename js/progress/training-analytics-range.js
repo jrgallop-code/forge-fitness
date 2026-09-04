@@ -193,6 +193,20 @@ function buildChartPoints(sessions, rangeWindow, valueGetter) {
     }));
 }
 
+function buildWeeklyChartPoints(sessions, rangeWindow, valueGetter) {
+    return buildChartPoints(
+        sessions,
+        {
+            ...rangeWindow,
+            option: {
+                ...rangeWindow.option,
+                bucket: "week"
+            }
+        },
+        valueGetter
+    );
+}
+
 function countWorkingSets(session) {
     return (session.exercises || []).reduce((total, exercise) =>
         total + (exercise.sets || []).filter(set => set?.weight !== null || set?.reps !== null).length,
@@ -223,10 +237,13 @@ function drawRangeCharts() {
     }
 
     if (setsCanvas && !setsCanvas.closest("[hidden]")) {
+        const selectedLabel = rangeWindow.option.label === "ALL"
+            ? "all recorded training"
+            : rangeWindow.option.label;
         drawTrainingBarChart(
             setsCanvas,
-            buildChartPoints(sessions, rangeWindow, countWorkingSets),
-            { axisLabel: "Working sets", rangeLabel: rangeWindow.option.label === "ALL" ? "all recorded training" : rangeWindow.option.label }
+            buildWeeklyChartPoints(sessions, rangeWindow, countWorkingSets),
+            { axisLabel: "Weekly working sets", rangeLabel: `${selectedLabel} · weekly totals` }
         );
     }
 }
