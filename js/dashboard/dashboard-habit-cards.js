@@ -1,5 +1,10 @@
+import { CHECK_IN_APPLE_SVG, getMonthlyCheckInEvents } from "../nutrition/check-in-calendar.js?v=checkin-calendar-1";
+
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
+const PHASE_STORAGE_KEY = "level_up_nutrition_phases";
+const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";
+const HOLD_STORAGE_KEY = "level_up_phase_reassessment_hold";
 const DAY_COUNT = 30;
 const RECENT_DAY_COUNT = 7;
 
@@ -38,6 +43,12 @@ function recentDates(count) {
     });
 }
 
+function currentMonthDates() {
+    const now = new Date();
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0, 12).getDate();
+    return Array.from({ length: last }, (_, index) => localDate(new Date(now.getFullYear(), now.getMonth(), index + 1, 12)));
+}
+
 function getWeightDateSet() {
     return new Set(
         readArray(WEIGHT_STORAGE_KEY)
@@ -68,24 +79,54 @@ function renderHeatmap(dates, activeDates, kind) {
     `;
 }
 
+function renderCheckInHeatmap(dates, events) {
+    const byDate = new Map(events.map(event => [event.date, event]));
+    return `
+        <span class="dashboard-habit-heatmap dashboard-habit-heatmap--checkins" aria-hidden="true">
+            ${dates.map(date => {
+                const event = byDate.get(date);
+                const state = event ? ` is-active is-${event.state}` : "";
+                return `<i class="dashboard-habit-cell${state}" title="${event ? `${date} · ${event.label}` : date}"></i>`;
+            }).join("")}
+        </span>
+    `;
+}
+
+function checkInSummary(events) {
+    const today = localDate();
+    const next = events.find(event => event.date >= today);
+    if (next?.state === "ready") return "Review ready";
+    if (next?.state === "waiting") return "Action needed";
+    if (next) {
+        const date = new Date(`${next.date}T12:00:00`);
+        return `Next ${date.toLocaleDateString(undefined, { weekday: "short" })}`;
+    }
+    return events.length ? `${events.length} this month` : "No check-ins this month";
+}
+
 function renderCards() {
     const content = document.getElementById("content");
     const dashboard = content?.querySelector(":scope > .dashboard.dashboard-command-insights, :scope > .dashboard");
     if (!content || !dashboard || !content.classList.contains("dashboard-command-center")) return;
 
     const thirtyDates = recentDates(DAY_COUNT);
+    const monthDates = currentMonthDates();
     const sevenDates = recentDates(RECENT_DAY_COUNT);
     const sevenDateSet = new Set(sevenDates);
     const weightDates = getWeightDateSet();
     const sessions = getCompletedSessions();
     const workoutDates = new Set(sessions.map(sessionDate).filter(Boolean));
+    const checkInEvents = getMonthlyCheckInEvents(new Date());
 
     const recentWeighInDays = sevenDates.filter(date => weightDates.has(date)).length;
     const recentWorkoutCount = sessions.filter(session => sevenDateSet.has(sessionDate(session))).length;
+    const handledCheckIns = checkInEvents.filter(event => event.state === "handled").length;
+    const checkInStatus = checkInSummary(checkInEvents);
 
     const signature = JSON.stringify({
         weights: thirtyDates.map(date => weightDates.has(date) ? 1 : 0),
         workouts: thirtyDates.map(date => workoutDates.has(date) ? 1 : 0),
+        checkins: checkInEvents.map(event => `${event.date}:${event.state}`),
         recentWeighInDays,
         recentWorkoutCount
     });
@@ -130,12 +171,25 @@ function renderCards() {
                     <i class="dashboard-habit-chevron" aria-hidden="true"></i>
                 </span>
             </button>
+
+            <button type="button" class="dashboard-habit-card dashboard-habit-card--checkins" data-dashboard-habit="checkins" aria-label="Open Activity Calendar. ${checkInEvents.length} calorie check-ins scheduled this month.">
+                <span class="dashboard-habit-card-heading dashboard-habit-card-heading--icon">
+                    <span class="dashboard-habit-checkin-icon" aria-hidden="true">${CHECK_IN_APPLE_SVG}</span>
+                    <span><strong>Check-Ins</strong><small>This Month</small></span>
+                </span>
+                ${renderCheckInHeatmap(monthDates, checkInEvents)}
+                <span class="dashboard-habit-divider" aria-hidden="true"></span>
+                <span class="dashboard-habit-summary">
+                    <span><b>${handledCheckIns}/${checkInEvents.length || 0}</b><small>${checkInStatus}</small></span>
+                    <i class="dashboard-habit-chevron" aria-hidden="true"></i>
+                </span>
+            </button>
         </div>
     `;
 }
 
 function openActivityCalendar() {
-    import("./activity-calendar.js?v=two-dumbbells-1")
+    import("./activity-calendar.js?v=checkin-calendar-1")
         .then(module => module.openActivityCalendar())
         .catch(error => console.warn("Activity Calendar could not open", error));
 }
@@ -160,9 +214,16 @@ if (content) {
     new MutationObserver(queueRender).observe(content, { childList: true, subtree: true });
 }
 
+[
+    "levelup:nutrition-phase-updated",
+    "levelup:maintenance-check-in-updated",
+    "levelup:weekly-calorie-review-readiness",
+    "levelup:calorie-target-applied"
+].forEach(name => window.addEventListener(name, queueRender));
+
 window.addEventListener("focus", queueRender);
 window.addEventListener("storage", event => {
-    if (event.key === WEIGHT_STORAGE_KEY || event.key === SESSION_STORAGE_KEY) queueRender();
+    if ([WEIGHT_STORAGE_KEY, SESSION_STORAGE_KEY, PHASE_STORAGE_KEY, CHECK_STATE_KEY, HOLD_STORAGE_KEY].includes(event.key)) queueRender();
 });
 
 queueRender();
