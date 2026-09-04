@@ -171,6 +171,15 @@ function syncRenderedMaps() {
         cell.style.setProperty("background", rgba(settings.sets, backgroundAlpha), "important");
         cell.style.setProperty("border-color", rgba(settings.sets, borderAlpha), "important");
     });
+
+    document.querySelectorAll(".recovery-map-note").forEach(note => {
+        if (!/strongest red|red overlay/i.test(note.textContent || "")) return;
+        note.textContent = "0% means recently trained and shows the strongest selected highlight. As recovery rises, the chosen colour fades toward the neutral body at 100%. Recovery timing still uses Level Up's current 72-hour model.";
+    });
+    document.querySelectorAll(".seven-day-volume-note").forEach(note => {
+        if (!/green intensity/i.test(note.textContent || "")) return;
+        note.textContent = "Same scale as Plan Target Maps: 0 sets stays neutral grey; your selected set-distribution colour increases continuously to full intensity at 12+ set credits.";
+    });
 }
 
 function queueRenderedSync() {
