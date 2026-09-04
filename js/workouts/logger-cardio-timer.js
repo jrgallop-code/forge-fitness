@@ -4,6 +4,7 @@ const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const CARDIO_TIMER_STORAGE_KEY = "level_up_cardio_timer_state";
 const CUSTOM_EXERCISE_STORAGE_KEY = "forge_custom_exercises";
 const CARDIO_ALARM_BANNER_ID = "level-up-cardio-alarm-banner";
+const CARDIO_ALARM_SHEET_ID = "level-up-cardio-alarm-sheet";
 const BUILT_IN_CARDIO_IDS = new Set([
     "indoor-rower",
     "ski-erg",
@@ -128,7 +129,7 @@ function normalizeActiveCardioState(cardioIds) {
             trackingType: "notes",
             durationMinutes: state?.durationMinutes ?? null,
             distance: typeof state?.distance === "string" ? state.distance : "",
-            rpe: Number(state?.rpe) >= 1 && Number(state?.rpe) <= 10 ? Number(state.rpe) : null,
+            rpe: Number(state?.rpe) >= 1 && Number(state.rpe) <= 10 ? Number(state.rpe) : null,
             notes: typeof state?.notes === "string" ? state.notes : "",
             sets: []
         };
@@ -182,7 +183,7 @@ function saveTimerStore(store) {
 
 function getTimerKey(card) {
     const active = getActiveWorkout();
-    const exerciseIndex = Number(card.dataset.exerciseIndex);
+    const exerciseIndex = Number(card?.dataset?.exerciseIndex);
     if (!active || !Number.isInteger(exerciseIndex)) return null;
     return `${active.id || "active"}:${exerciseIndex}`;
 }
@@ -204,10 +205,11 @@ function getElapsedMs(state) {
 
 function formatTimer(milliseconds) {
     const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
-    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
-    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
-    const seconds = String(totalSeconds % 60).padStart(2, "0");
-    return `${hours}:${minutes}:${seconds}`;
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (hours > 0) return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function formatCountdown(milliseconds) {
@@ -218,7 +220,7 @@ function formatCountdown(milliseconds) {
 }
 
 function syncDurationInput(card, elapsedMs) {
-    const input = card.querySelector(".session-cardio-duration");
+    const input = card?.querySelector(".session-cardio-duration");
     if (!input) return;
     const minutes = Math.round((elapsedMs / 60000) * 10) / 10;
     const nextValue = minutes > 0 ? String(minutes) : "0";
@@ -330,6 +332,16 @@ async function showCardioNotification(card, alarmMinutes) {
     try { new Notification(title, { body, tag: "level-up-cardio-alarm" }); } catch {}
 }
 
+function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    }[character]));
+}
+
 function ensureCardioAlarmBanner() {
     let banner = document.getElementById(CARDIO_ALARM_BANNER_ID);
     if (banner) return banner;
@@ -376,35 +388,158 @@ function showCardioAlarmBanner(card, key, alarmMinutes) {
         <div class="cardio-alarm-banner-copy">
             <small>CARDIO ALARM</small>
             <strong>${escapeHtml(getCardioName(card))} · ${escapeHtml(String(alarmMinutes))} min complete</strong>
-            <span>Your cardio timer is still recording.</span>
+            <span>Timer is still recording.</span>
         </div>
         <div class="cardio-alarm-banner-actions">
             <button type="button" data-cardio-alarm-action="pause">Pause</button>
-            <button type="button" data-cardio-alarm-action="plus5">+5 min</button>
+            <button type="button" class="cardio-alarm-primary" data-cardio-alarm-action="plus5">+5 min</button>
             <button type="button" data-cardio-alarm-action="dismiss">Dismiss</button>
         </div>`;
     banner.hidden = false;
 }
 
-function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>"']/g, character => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-    }[character]));
+function ensureCardioAlarmSheet() {
+    let overlay = document.getElementById(CARDIO_ALARM_SHEET_ID);
+    if (overlay) return overlay;
+
+    overlay = document.createElement("div");
+    overlay.id = CARDIO_ALARM_SHEET_ID;
+    overlay.className = "cardio-alarm-sheet-overlay";
+    overlay.hidden = true;
+    overlay.innerHTML = `
+        <button class="cardio-alarm-sheet-backdrop" type="button" data-cardio-alarm-close aria-label="Close cardio alarm settings"></button>
+        <section class="cardio-alarm-sheet" role="dialog" aria-modal="true" aria-labelledby="cardio-alarm-sheet-title">
+            <div class="cardio-alarm-sheet-handle" aria-hidden="true"></div>
+            <header class="cardio-alarm-sheet-header">
+                <div>
+                    <small>CARDIO TIMER</small>
+                    <h3 id="cardio-alarm-sheet-title">Set alarm</h3>
+                </div>
+                <button type="button" class="cardio-alarm-sheet-done" data-cardio-alarm-close>Done</button>
+            </header>
+            <div class="cardio-alarm-sheet-current">
+                <span class="cardio-alarm-sheet-icon" aria-hidden="true">${CARDIO_ALARM_SVG}</span>
+                <div><small>ALARM</small><strong data-cardio-alarm-sheet-status>Off</strong></div>
+            </div>
+            <div class="cardio-alarm-sheet-presets" role="group" aria-label="Cardio alarm duration">
+                ${[5, 10, 15, 20].map(minutes => `<button type="button" data-cardio-alarm-minutes="${minutes}">${minutes} min</button>`).join("")}
+                <button type="button" data-cardio-alarm-off>Off</button>
+            </div>
+            <div class="cardio-alarm-sheet-custom">
+                <label><span>Custom</span><input class="cardio-alarm-custom-input" type="number" min="1" max="240" step="1" inputmode="numeric" placeholder="25"><b>min</b></label>
+                <button type="button" class="cardio-alarm-custom-set">Set</button>
+            </div>
+            <div class="cardio-alarm-sheet-alert-row">
+                <span>Sound + in-app alarm. Browser notifications are optional.</span>
+                <button type="button" class="cardio-alarm-alerts">${notificationButtonText()}</button>
+            </div>
+            <p>The alarm fires at the selected elapsed time. Your cardio timer keeps recording until you pause it.</p>
+        </section>`;
+
+    overlay.addEventListener("click", event => {
+        if (event.target.closest("[data-cardio-alarm-close]")) {
+            closeCardioAlarmSheet();
+            return;
+        }
+
+        const key = overlay.dataset.timerKey;
+        const card = getCardFromTimerKey(key);
+        if (!card) return;
+
+        const preset = event.target.closest("[data-cardio-alarm-minutes]");
+        if (preset) {
+            setAlarmForCard(card, Number(preset.dataset.cardioAlarmMinutes));
+            syncCardioAlarmSheet(card);
+            return;
+        }
+        if (event.target.closest("[data-cardio-alarm-off]")) {
+            clearAlarmForCard(card);
+            syncCardioAlarmSheet(card);
+            return;
+        }
+        if (event.target.closest(".cardio-alarm-custom-set")) {
+            const input = overlay.querySelector(".cardio-alarm-custom-input");
+            const minutes = Number(input?.value);
+            if (!Number.isFinite(minutes) || minutes < 1 || minutes > 240) {
+                input?.focus();
+                input?.setCustomValidity?.("Choose an alarm from 1 to 240 minutes.");
+                input?.reportValidity?.();
+                return;
+            }
+            input?.setCustomValidity?.("");
+            setAlarmForCard(card, minutes);
+            syncCardioAlarmSheet(card);
+            return;
+        }
+        const alerts = event.target.closest(".cardio-alarm-alerts");
+        if (alerts) void requestCardioAlerts(alerts);
+    });
+
+    overlay.querySelector(".cardio-alarm-custom-input")?.addEventListener("input", event => {
+        event.currentTarget.setCustomValidity?.("");
+    });
+
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function openCardioAlarmSheet(card) {
+    const key = getTimerKey(card);
+    if (!key) return;
+    primeAlarmAudio();
+    const overlay = ensureCardioAlarmSheet();
+    overlay.dataset.timerKey = key;
+    overlay.hidden = false;
+    document.body.classList.add("cardio-alarm-sheet-open");
+    syncCardioAlarmSheet(card);
+    requestAnimationFrame(() => overlay.classList.add("open"));
+}
+
+function closeCardioAlarmSheet() {
+    const overlay = document.getElementById(CARDIO_ALARM_SHEET_ID);
+    if (!overlay || overlay.hidden) return;
+    overlay.classList.remove("open");
+    document.body.classList.remove("cardio-alarm-sheet-open");
+    window.setTimeout(() => {
+        if (!overlay.classList.contains("open")) overlay.hidden = true;
+    }, 180);
+}
+
+function syncCardioAlarmSheet(card) {
+    const overlay = document.getElementById(CARDIO_ALARM_SHEET_ID);
+    const key = getTimerKey(card);
+    if (!overlay || overlay.hidden || overlay.dataset.timerKey !== key) return;
+    const state = normalizeTimerState(getTimerStore()[key]);
+    const status = overlay.querySelector("[data-cardio-alarm-sheet-status]");
+    if (status) status.textContent = state.alarmMinutes ? `${state.alarmMinutes} min` : "Off";
+
+    overlay.querySelectorAll("[data-cardio-alarm-minutes]").forEach(button => {
+        const selected = Number(button.dataset.cardioAlarmMinutes) === Number(state.alarmMinutes);
+        button.classList.toggle("is-selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
+    });
+    const off = overlay.querySelector("[data-cardio-alarm-off]");
+    off?.classList.toggle("is-selected", !state.alarmMinutes);
+    off?.setAttribute("aria-pressed", String(!state.alarmMinutes));
+
+    const input = overlay.querySelector(".cardio-alarm-custom-input");
+    const presetValues = new Set([5, 10, 15, 20]);
+    if (input && state.alarmMinutes && !presetValues.has(Number(state.alarmMinutes))) {
+        input.value = String(state.alarmMinutes);
+    }
+    syncCardioAlertButtons();
 }
 
 function setAlarmForCard(card, minutes) {
     const key = getTimerKey(card);
     if (!key) return;
-    const safeMinutes = Math.min(240, Math.max(1, Number(minutes) || 0));
-    if (!Number.isFinite(safeMinutes)) return;
+    const parsed = Number(minutes);
+    if (!Number.isFinite(parsed) || parsed < 1) return;
+    const safeMinutes = Math.min(240, Math.round(parsed * 10) / 10);
     primeAlarmAudio();
     const store = getTimerStore();
     const state = normalizeTimerState(store[key]);
-    state.alarmMinutes = Math.round(safeMinutes * 10) / 10;
+    state.alarmMinutes = safeMinutes;
     state.alarmFired = false;
     store[key] = state;
     saveTimerStore(store);
@@ -467,36 +602,22 @@ function createCardioTimer(card) {
     const panel = document.createElement("div");
     panel.className = "cardio-stopwatch-panel";
     panel.innerHTML = `
-        <div class="cardio-stopwatch-heading">
-            <span>Cardio timer</span>
-            <strong class="cardio-stopwatch-display">00:00:00</strong>
-        </div>
-        <div class="cardio-alarm-control">
-            <div class="cardio-alarm-heading">
-                <span class="cardio-alarm-icon" aria-hidden="true">${CARDIO_ALARM_SVG}</span>
-                <span><strong>Cardio alarm</strong><small>Optional time goal</small></span>
-                <b class="cardio-alarm-countdown">Off</b>
+        <div class="cardio-stopwatch-main">
+            <div class="cardio-stopwatch-copy">
+                <span class="cardio-stopwatch-kicker">CARDIO TIMER</span>
+                <strong class="cardio-stopwatch-display">0:00</strong>
+                <small class="cardio-alarm-inline-status"><span aria-hidden="true">${CARDIO_ALARM_SVG}</span><b>Alarm off</b></small>
             </div>
-            <div class="cardio-alarm-presets" role="group" aria-label="Cardio alarm time">
-                ${[5, 10, 15, 20].map(minutes => `<button type="button" data-cardio-alarm-minutes="${minutes}">${minutes} min</button>`).join("")}
-                <button type="button" class="cardio-alarm-off" data-cardio-alarm-off>Off</button>
-            </div>
-            <div class="cardio-alarm-custom">
-                <label><span>Custom</span><input class="cardio-alarm-custom-input" type="number" min="1" max="240" step="1" inputmode="numeric" placeholder="25"><b>min</b></label>
-                <button type="button" class="cardio-alarm-custom-set">Set</button>
-            </div>
-            <div class="cardio-alarm-note">
-                <span>Alarm sounds at the selected elapsed time. The cardio timer keeps recording until you pause it.</span>
-                <button type="button" class="cardio-alarm-alerts">${notificationButtonText()}</button>
-            </div>
+            <button type="button" class="cardio-alarm-open" aria-haspopup="dialog">
+                <span aria-hidden="true">${CARDIO_ALARM_SVG}</span>
+                <b>Alarm</b>
+            </button>
         </div>
         <div class="cardio-stopwatch-actions">
             <button class="cardio-timer-start primary-btn" type="button">Start</button>
             <button class="cardio-timer-pause secondary-btn" type="button" hidden>Pause</button>
-            <button class="cardio-timer-reset secondary-btn" type="button">Reset timer</button>
-        </div>
-        <small>Use the timer or enter minutes manually below.</small>
-    `;
+            <button class="cardio-timer-reset secondary-btn" type="button">Reset</button>
+        </div>`;
     metrics.insertAdjacentElement("beforebegin", panel);
 
     panel.querySelector(".cardio-timer-start")?.addEventListener("click", () => {
@@ -534,24 +655,7 @@ function createCardioTimer(card) {
         updateCardioTimerCard(card);
     });
 
-    panel.querySelectorAll("[data-cardio-alarm-minutes]").forEach(button => {
-        button.addEventListener("click", () => setAlarmForCard(card, Number(button.dataset.cardioAlarmMinutes)));
-    });
-    panel.querySelector("[data-cardio-alarm-off]")?.addEventListener("click", () => clearAlarmForCard(card));
-    panel.querySelector(".cardio-alarm-custom-set")?.addEventListener("click", () => {
-        const input = panel.querySelector(".cardio-alarm-custom-input");
-        const minutes = Number(input?.value);
-        if (!Number.isFinite(minutes) || minutes < 1 || minutes > 240) {
-            input?.focus();
-            input?.setCustomValidity?.("Choose an alarm from 1 to 240 minutes.");
-            input?.reportValidity?.();
-            return;
-        }
-        input?.setCustomValidity?.("");
-        setAlarmForCard(card, minutes);
-    });
-    panel.querySelector(".cardio-alarm-custom-input")?.addEventListener("input", event => event.currentTarget.setCustomValidity?.(""));
-    panel.querySelector(".cardio-alarm-alerts")?.addEventListener("click", event => void requestCardioAlerts(event.currentTarget));
+    panel.querySelector(".cardio-alarm-open")?.addEventListener("click", () => openCardioAlarmSheet(card));
 
     updateCardioTimerCard(card);
 }
@@ -568,7 +672,8 @@ function updateCardioTimerCard(card) {
     const start = panel.querySelector(".cardio-timer-start");
     const pause = panel.querySelector(".cardio-timer-pause");
     const durationInput = card.querySelector(".session-cardio-duration");
-    const countdown = panel.querySelector(".cardio-alarm-countdown");
+    const alarmStatus = panel.querySelector(".cardio-alarm-inline-status b");
+    const alarmButton = panel.querySelector(".cardio-alarm-open");
 
     if (display) display.textContent = formatTimer(elapsed);
     if (start) {
@@ -579,24 +684,28 @@ function updateCardioTimerCard(card) {
     if (durationInput) durationInput.disabled = Boolean(state.running);
     if (state.running) syncDurationInput(card, elapsed);
 
-    if (state.alarmMinutes) {
-        const alarmMs = state.alarmMinutes * 60000;
-        const remaining = Math.max(0, alarmMs - elapsed);
-        if (countdown) countdown.textContent = state.alarmFired ? "Complete" : (state.running ? `${formatCountdown(remaining)} left` : `At ${formatCountdown(alarmMs)}`);
-    } else if (countdown) {
-        countdown.textContent = "Off";
+    if (alarmStatus) {
+        if (!state.alarmMinutes) {
+            alarmStatus.textContent = "Alarm off";
+        }
+        else if (state.alarmFired) {
+            alarmStatus.textContent = `${state.alarmMinutes} min · complete`;
+        }
+        else if (state.running) {
+            const remaining = Math.max(0, state.alarmMinutes * 60000 - elapsed);
+            alarmStatus.textContent = `${state.alarmMinutes} min · ${formatCountdown(remaining)} left`;
+        }
+        else {
+            alarmStatus.textContent = `Alarm ${state.alarmMinutes} min`;
+        }
     }
 
-    panel.querySelectorAll("[data-cardio-alarm-minutes]").forEach(button => {
-        const selected = Number(button.dataset.cardioAlarmMinutes) === Number(state.alarmMinutes);
-        button.classList.toggle("is-selected", selected);
-        button.setAttribute("aria-pressed", String(selected));
-    });
-    panel.querySelector("[data-cardio-alarm-off]")?.classList.toggle("is-selected", !state.alarmMinutes);
-    panel.querySelector(".cardio-alarm-control")?.classList.toggle("is-complete", Boolean(state.alarmFired));
+    panel.classList.toggle("has-alarm", Boolean(state.alarmMinutes));
+    panel.classList.toggle("is-alarm-complete", Boolean(state.alarmFired));
+    if (alarmButton) alarmButton.setAttribute("aria-label", state.alarmMinutes ? `Change cardio alarm, currently ${state.alarmMinutes} minutes` : "Set cardio alarm");
 
     maybeFireCardioAlarm(card, key, state, elapsed);
-    syncCardioAlertButtons();
+    syncCardioAlarmSheet(card);
 }
 
 function scanLogger() {
@@ -624,6 +733,10 @@ function cleanupStaleTimerState() {
 document.addEventListener("click", event => {
     if (event.target.closest?.("#begin-session-btn, #history-add-exercise-btn")) normalizeCustomCardioExercises();
 }, true);
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !document.getElementById(CARDIO_ALARM_SHEET_ID)?.hidden) closeCardioAlarmSheet();
+});
 
 const observer = new MutationObserver(mutations => {
     const relevant = mutations.some(mutation =>
