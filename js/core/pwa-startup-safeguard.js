@@ -14,6 +14,7 @@
     installNutritionPhaseTargetStability();
     installNutritionAuthoritySync();
     installMuscleMapColors();
+    installMuscleMapRenderingFix();
     installInteractiveWorkoutTutorial();
     installInteractiveTutorialVisualFix();
 
@@ -106,6 +107,15 @@
         script.type = "module";
         script.src = "js/core/muscle-map-colors.js?v=muscle-map-colors-2";
         script.dataset.muscleMapColors = "1";
+        document.head.appendChild(script);
+    }
+
+    function installMuscleMapRenderingFix() {
+        if (document.querySelector('script[data-muscle-map-rendering-fix]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/core/muscle-map-rendering-fix.js?v=muscle-map-rendering-fix-1";
+        script.dataset.muscleMapRenderingFix = "1";
         document.head.appendChild(script);
     }
 
