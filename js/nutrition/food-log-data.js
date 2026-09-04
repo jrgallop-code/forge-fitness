@@ -1,39 +1,37 @@
-export const FOOD_LOG_KEY = "level_up_food_log_v1";
-export const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
-export const CUSTOM_FOODS_KEY = "level_up_custom_foods_v1";
-export const SAVED_MEALS_KEY = "level_up_saved_meals_v1";
-export const MEALS = ["Breakfast", "Lunch", "Dinner", "Snacks"];
+import * as core from "./food-log-data-core.js?v=fatsecret-live-1";
+import {
+    fatSecretFoodId,
+    fatSecretServingId,
+    hasPendingFatSecretEntries,
+    hydrateFatSecretEntry,
+    hydrateFatSecretLog,
+    hydrateFatSecretMeals,
+    rememberFatSecretEntry,
+    requestFatSecretEntry,
+    sanitizeFatSecretLog,
+    sanitizeFatSecretMeals
+} from "./fatsecret-live-cache.js?v=fatsecret-live-1";
 
-function readJson(key, fallback) {
-    try {
-        const value = JSON.parse(localStorage.getItem(key) || "null");
-        return value ?? fallback;
-    }
-    catch {
-        return fallback;
-    }
-}
+export * from "./food-log-data-core.js?v=fatsecret-live-1";
 
-export function localDateKey(date = new Date()) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-}
+const { FOOD_LOG_KEY, FOOD_COMPLETE_KEY, SAVED_MEALS_KEY, MEALS } = core;
 
 export function readFoodLog() {
-    const value = readJson(FOOD_LOG_KEY, {});
-    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    return hydrateFatSecretLog(core.readFoodLog());
 }
 
 export function entriesForDate(dateKey) {
-    const entries = readFoodLog()[dateKey];
-    return Array.isArray(entries) ? entries : [];
+    const entries = core.readFoodLog()[dateKey];
+    return Array.isArray(entries) ? entries.map(requestFatSecretEntry) : [];
 }
 
 export function readCompletedFoodDays() {
-    const value = readJson(FOOD_COMPLETE_KEY, {});
-    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    const days = { ...core.readCompletedFoodDays() };
+    const rawLog = core.readFoodLog();
+    Object.entries(rawLog).forEach(([dateKey, entries]) => {
+        if (hasPendingFatSecretEntries(entries)) delete days[dateKey];
+    });
+    return days;
 }
 
 export function isFoodDayComplete(dateKey) {
@@ -41,24 +39,14 @@ export function isFoodDayComplete(dateKey) {
 }
 
 export function setFoodDayComplete(dateKey, complete) {
-    const days = readCompletedFoodDays();
-    if (complete) days[dateKey] = true;
-    else delete days[dateKey];
-    localStorage.setItem(FOOD_COMPLETE_KEY, JSON.stringify(days));
-    window.dispatchEvent(new CustomEvent("levelup:food-log-updated", { detail: { dateKey, action: complete ? "day_completed" : "day_reopened" } }));
+    core.setFoodDayComplete(dateKey, complete);
 }
 
 function reopenFoodDay(dateKey) {
-    if (!isFoodDayComplete(dateKey)) return;
-    const days = readCompletedFoodDays();
+    if (!core.isFoodDayComplete(dateKey)) return;
+    const days = core.readCompletedFoodDays();
     delete days[dateKey];
     localStorage.setItem(FOOD_COMPLETE_KEY, JSON.stringify(days));
-}
-
-export function previousDateKey(dateKey) {
-    const date = new Date(`${dateKey}T12:00:00`);
-    date.setDate(date.getDate() - 1);
-    return localDateKey(date);
 }
 
 export function saveEntry(dateKey, entry) {
@@ -70,9 +58,12 @@ export function saveEntries(dateKey, newEntries) {
     reopenFoodDay(dateKey);
     const log = readFoodLog();
     const entries = Array.isArray(log[dateKey]) ? log[dateKey] : [];
-    const safeEntries = Array.isArray(newEntries) ? newEntries.filter(Boolean) : [];
+    const safeEntries = (Array.isArray(newEntries) ? newEntries : []).filter(Boolean).map(entry => {
+        rememberFatSecretEntry(entry);
+        return entry;
+    });
     log[dateKey] = [...entries, ...safeEntries];
-    localStorage.setItem(FOOD_LOG_KEY, JSON.stringify(log));
+    localStorage.setItem(FOOD_LOG_KEY, JSON.stringify(sanitizeFatSecretLog(log)));
     window.dispatchEvent(new CustomEvent("levelup:food-log-updated", { detail: {
         dateKey,
         action: "foods_added",
@@ -88,7 +79,7 @@ export function removeEntry(dateKey, entryId) {
     const entries = Array.isArray(log[dateKey]) ? log[dateKey] : [];
     log[dateKey] = entries.filter(entry => entry?.id !== entryId);
     if (!log[dateKey].length) delete log[dateKey];
-    localStorage.setItem(FOOD_LOG_KEY, JSON.stringify(log));
+    localStorage.setItem(FOOD_LOG_KEY, JSON.stringify(sanitizeFatSecretLog(log)));
     window.dispatchEvent(new CustomEvent("levelup:food-log-updated", { detail: { dateKey } }));
 }
 
@@ -104,28 +95,16 @@ export function updateEntry(dateKey, entryId, replacement) {
         createdAt: entries[index]?.createdAt || replacement.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
+    rememberFatSecretEntry(updated);
     entries[index] = updated;
     log[dateKey] = entries;
-    localStorage.setItem(FOOD_LOG_KEY, JSON.stringify(log));
+    localStorage.setItem(FOOD_LOG_KEY, JSON.stringify(sanitizeFatSecretLog(log)));
     window.dispatchEvent(new CustomEvent("levelup:food-log-updated", { detail: { dateKey } }));
     return updated;
 }
 
-export function readCustomFoods() {
-    const value = readJson(CUSTOM_FOODS_KEY, []);
-    return Array.isArray(value) ? value : [];
-}
-
-export function saveCustomFood(food) {
-    const foods = readCustomFoods();
-    const next = [food, ...foods.filter(item => item?.id !== food.id)].slice(0, 100);
-    localStorage.setItem(CUSTOM_FOODS_KEY, JSON.stringify(next));
-    return food;
-}
-
 export function readSavedMeals() {
-    const value = readJson(SAVED_MEALS_KEY, []);
-    return Array.isArray(value) ? value : [];
+    return hydrateFatSecretMeals(core.readSavedMeals());
 }
 
 export function saveSavedMeal(meal) {
@@ -134,47 +113,42 @@ export function saveSavedMeal(meal) {
     const photoDataUrl = /^data:image\/(?:jpeg|png|webp);base64,/i.test(rawPhotoDataUrl) && rawPhotoDataUrl.length <= 240000
         ? rawPhotoDataUrl
         : "";
+    const items = (Array.isArray(meal?.items) ? meal.items : []).map(item => mealItemSnapshot(item)).filter(Boolean).slice(0, 50);
+    items.forEach(rememberFatSecretEntry);
     const safeMeal = {
         id: meal?.id || crypto.randomUUID(),
         name: String(meal?.name || "My Meal").trim().slice(0, 100),
-        items: (Array.isArray(meal?.items) ? meal.items : []).map(item => mealItemSnapshot(item)).filter(Boolean).slice(0, 50),
+        items,
         photoDataUrl,
         updatedAt: new Date().toISOString()
     };
     const next = [safeMeal, ...meals.filter(item => item?.id !== safeMeal.id)].slice(0, 100);
-    localStorage.setItem(SAVED_MEALS_KEY, JSON.stringify(next));
+    localStorage.setItem(SAVED_MEALS_KEY, JSON.stringify(sanitizeFatSecretMeals(next)));
     return safeMeal;
 }
 
 export function removeSavedMeal(mealId) {
     const next = readSavedMeals().filter(meal => meal?.id !== mealId);
-    localStorage.setItem(SAVED_MEALS_KEY, JSON.stringify(next));
-}
-
-export function mealPreview(entries) {
-    const items = (Array.isArray(entries) ? entries : []).filter(Boolean);
-    if (!items.length) return "No foods";
-    const first = String(items[0]?.name || "Food");
-    return items.length === 1 ? first : `${first} and ${items.length - 1} more`;
+    localStorage.setItem(SAVED_MEALS_KEY, JSON.stringify(sanitizeFatSecretMeals(next)));
 }
 
 export function cloneEntriesForMeal(entries, meal, copiedFrom = null) {
     const safeMeal = MEALS.includes(meal) ? meal : "Snacks";
     const copiedFromDate = /^\d{4}-\d{2}-\d{2}$/.test(String(copiedFrom?.dateKey || "")) ? String(copiedFrom.dateKey) : "";
     const copiedFromMeal = MEALS.includes(copiedFrom?.meal) ? copiedFrom.meal : safeMeal;
-    return (Array.isArray(entries) ? entries : []).map(entry => ({
-        ...mealItemSnapshot(entry),
-        id: crypto.randomUUID(),
-        meal: safeMeal,
-        ...(copiedFromDate ? { copiedFromDate, copiedFromMeal } : {}),
-        createdAt: new Date().toISOString()
-    }));
-}
-
-export function hasCopiedMeal(entries, sourceDate, meal) {
-    return (Array.isArray(entries) ? entries : []).some(entry =>
-        entry?.copiedFromDate === sourceDate && entry?.copiedFromMeal === meal
-    );
+    return (Array.isArray(entries) ? entries : []).map(entry => {
+        const snapshot = mealItemSnapshot(entry);
+        if (!snapshot) return null;
+        const copy = {
+            ...snapshot,
+            id: crypto.randomUUID(),
+            meal: safeMeal,
+            ...(copiedFromDate ? { copiedFromDate, copiedFromMeal } : {}),
+            createdAt: new Date().toISOString()
+        };
+        rememberFatSecretEntry(copy);
+        return copy;
+    }).filter(Boolean);
 }
 
 export function logSavedMeal(dateKey, savedMeal, meal) {
@@ -185,16 +159,19 @@ export function logSavedMeal(dateKey, savedMeal, meal) {
 
 function mealItemSnapshot(entry) {
     if (!entry || typeof entry !== "object") return null;
+    const hydrated = hydrateFatSecretEntry(entry, { queueMissing: true });
     return {
-        source: entry.source || entry.food?.source || "custom",
-        catalogueId: entry.catalogueId || entry.food?.catalogueId || null,
-        fdcId: entry.fdcId || entry.food?.fdcId || null,
-        name: String(entry.name || entry.food?.name || "Food").slice(0, 180),
-        brand: String(entry.brand || entry.food?.brand || "").slice(0, 120),
-        quantity: Math.max(.01, Number(entry.quantity) || 1),
-        servingLabel: String(entry.servingLabel || entry.food?.servingLabel || "1 serving").slice(0, 80),
-        nutrition: { ...entry.nutrition },
-        food: entry.food ? { ...entry.food } : null
+        source: hydrated.source || hydrated.food?.source || "custom",
+        catalogueId: hydrated.catalogueId || hydrated.food?.catalogueId || null,
+        fdcId: hydrated.fdcId || hydrated.food?.fdcId || null,
+        ...(fatSecretFoodId(hydrated) ? { fatSecretFoodId: fatSecretFoodId(hydrated) } : {}),
+        ...(fatSecretServingId(hydrated) ? { fatSecretServingId: fatSecretServingId(hydrated) } : {}),
+        name: String(hydrated.name || hydrated.food?.name || "Food").slice(0, 180),
+        brand: String(hydrated.brand || hydrated.food?.brand || "").slice(0, 120),
+        quantity: Math.max(.01, Number(hydrated.quantity) || 1),
+        servingLabel: String(hydrated.servingLabel || hydrated.food?.servingLabel || "1 serving").slice(0, 80),
+        nutrition: { ...hydrated.nutrition },
+        food: hydrated.food ? { ...hydrated.food } : null
     };
 }
 
@@ -270,251 +247,26 @@ export function prioritizeLoggedFoodMatches(query, databaseFoods = [], limit = 5
     return [...history, ...remaining].slice(0, limit);
 }
 
-export function scaledNutrition(nutrition, quantity = 1) {
-    const multiplier = Math.max(0, Number(quantity) || 0);
-    return ["calories", "protein", "carbs", "fat", "fiber"].reduce((totals, key) => {
-        totals[key] = Math.max(0, Number(nutrition?.[key]) || 0) * multiplier;
-        return totals;
-    }, {});
-}
-
-const CUSTOM_SERVING_UNITS = new Set(["g", "oz", "ml", "cup", "tbsp", "tsp", "serving", "item", "piece", "slice", "bar", "burger", "scoop"]);
-const VOLUME_UNIT_ML = Object.freeze({ ml: 1, tsp: 5, tbsp: 15, cup: 250 });
-const SMALL_LIQUID_MEASURES = Object.freeze([
-    { label: "1 tbsp (15 mL)", milliliters: 15 },
-    { label: "1 tsp (5 mL)", milliliters: 5 },
-    { label: "1 mL", milliliters: 1 },
-    { label: "¼ cup (62.5 mL)", milliliters: 62.5 },
-    { label: "1 cup (250 mL)", milliliters: 250 }
-]);
-const LARGE_LIQUID_MEASURES = Object.freeze([
-    { label: "1 cup (250 mL)", milliliters: 250 },
-    { label: "½ cup (125 mL)", milliliters: 125 },
-    { label: "100 mL", milliliters: 100 },
-    { label: "1 tbsp (15 mL)", milliliters: 15 },
-    { label: "1 mL", milliliters: 1 }
-]);
-
-export function buildCustomFoodPortions({ amount, unit, nutrition }) {
-    const safeAmount = Math.max(0.01, Number(amount) || 1);
-    const safeUnit = CUSTOM_SERVING_UNITS.has(String(unit || "").toLowerCase()) ? String(unit).toLowerCase() : "serving";
-    const grams = safeUnit === "g" ? safeAmount : safeUnit === "oz" ? safeAmount * 28.3495 : 0;
-    const milliliters = VOLUME_UNIT_ML[safeUnit] ? safeAmount * VOLUME_UNIT_ML[safeUnit] : 0;
-    const label = customServingLabel(safeAmount, safeUnit, grams);
-    const portions = [{
-        label,
-        ...(grams > 0 ? { grams } : {}),
-        ...(milliliters > 0 ? { milliliters } : {}),
-        nutrition: { ...nutrition }
-    }];
-    if (grams > 0) {
-        const perGram = scaledNutrition(nutrition, 1 / grams);
-        if (Math.abs(grams - 100) > .01) portions.push({ label: "100 g", grams: 100, nutrition: scaledNutrition(perGram, 100) });
-        if (Math.abs(grams - 1) > .01) portions.push({ label: "1 g", grams: 1, nutrition: perGram });
-    }
-    if (milliliters > 0) {
-        const perMilliliter = scaledNutrition(nutrition, 1 / milliliters);
-        const measures = milliliters <= 30 ? SMALL_LIQUID_MEASURES : LARGE_LIQUID_MEASURES;
-        measures.forEach(measure => {
-            if (portions.some(portion => portion.label.toLowerCase() === measure.label.toLowerCase())) return;
-            portions.push({
-                label: measure.label,
-                milliliters: measure.milliliters,
-                nutrition: scaledNutrition(perMilliliter, measure.milliliters)
-            });
-        });
-    }
-    return portions;
-}
-
-export function withUsefulLiquidPortions(food) {
-    const original = Array.isArray(food?.portions) ? food.portions.filter(portion => portion?.label && portion?.nutrition) : [];
-    if (!original.length) return food;
-
-    const volumeBasis = original.find(portion => Number(portion?.grams) > 0 && portionVolumeMilliliters(portion) > 0);
-    const inferred = inferredLiquidMeasure(food);
-    const measuredDensity = volumeBasis ? Number(volumeBasis.grams) / portionVolumeMilliliters(volumeBasis) : 0;
-    const density = measuredDensity >= .7 && measuredDensity <= 1.6 ? measuredDensity : inferred?.density;
-    if (!(density > 0)) return food;
-
-    const gramBasis = volumeBasis || original.find(portion => Number(portion?.grams) > 0);
-    if (!gramBasis) return reorderExistingVolumePortions(food, original);
-    const perGram = scaledNutrition(gramBasis.nutrition, 1 / Number(gramBasis.grams));
-    const useSmallMeasures = inferred?.small ?? /\b(?:tbsp|tablespoon|tsp|teaspoon)\b/i.test(String(volumeBasis?.label || ""));
-    const measures = useSmallMeasures ? SMALL_LIQUID_MEASURES : LARGE_LIQUID_MEASURES;
-    const volumePortions = [];
-    const usedOriginal = new Set();
-
-    measures.forEach(measure => {
-        const existingIndex = original.findIndex((portion, index) =>
-            !usedOriginal.has(index) && Math.abs(portionVolumeMilliliters(portion) - measure.milliliters) < .01
-        );
-        if (existingIndex >= 0) {
-            usedOriginal.add(existingIndex);
-            volumePortions.push(original[existingIndex]);
-            return;
-        }
-        const grams = measure.milliliters * density;
-        volumePortions.push({
-            label: measure.label,
-            milliliters: measure.milliliters,
-            grams: Number(grams.toFixed(3)),
-            estimatedVolume: !volumeBasis,
-            nutrition: scaledNutrition(perGram, grams)
-        });
-    });
-
-    original.forEach((portion, index) => {
-        if (portionVolumeMilliliters(portion) > 0 && !usedOriginal.has(index)) {
-            usedOriginal.add(index);
-            volumePortions.push(portion);
-        }
-    });
-    const gramAndItemPortions = original.filter((portion, index) => !usedOriginal.has(index));
-    return { ...food, portions: [...volumePortions, ...gramAndItemPortions] };
-}
-
-function reorderExistingVolumePortions(food, portions) {
-    const volume = portions.filter(portion => portionVolumeMilliliters(portion) > 0);
-    if (!volume.length) return food;
-    return { ...food, portions: [...volume, ...portions.filter(portion => portionVolumeMilliliters(portion) <= 0)] };
-}
-
-function portionVolumeMilliliters(portion) {
-    const stored = Number(portion?.milliliters);
-    if (Number.isFinite(stored) && stored > 0) return stored;
-    const label = String(portion?.label || "").toLowerCase();
-    const explicitMl = label.match(/(\d+(?:\.\d+)?)\s*m(?:l|illilit(?:er|re)s?)\b/i);
-    if (explicitMl) return Number(explicitMl[1]);
-    const amount = label.startsWith("¼") ? .25 : label.startsWith("½") ? .5 : Number(label.match(/^(\d+(?:\.\d+)?)/)?.[1]);
-    if (!(amount > 0)) return 0;
-    if (/\b(?:tbsp|tablespoons?)\b/.test(label)) return amount * 15;
-    if (/\b(?:tsp|teaspoons?)\b/.test(label)) return amount * 5;
-    if (/\bcups?\b/.test(label)) return amount * 250;
-    return 0;
-}
-
-function inferredLiquidMeasure(food) {
-    const text = `${food?.name || ""} ${food?.category || ""}`.toLowerCase();
-    if (/\b(?:powder|dry mix|drink mix|coffee beans?|ground coffee|tea bags?|cheese|yogurt|ice cream|butter|margarine)\b/.test(text)) return null;
-    if (/\bhoney\b/.test(text)) return { density: 1.42, small: true };
-    if (/\b(?:maple syrup|corn syrup|molasses|syrup)\b/.test(text)) return { density: 1.33, small: true };
-    if (/\b(?:oil|cooking oil)\b/.test(text)) return { density: .92, small: true };
-    if (/\b(?:vinegar)\b/.test(text)) return { density: 1.01, small: true };
-    if (/\b(?:cream|half[ -]?and[ -]?half|liquid coffee whitener)\b/.test(text)) return { density: 1, small: true };
-    if (/\b(?:milk|kefir|liquid egg)\b/.test(text)) return { density: 1.03, small: false };
-    if (/\b(?:juice|water|beverage|soft drink|soda|coffee|tea|broth|stock|beer|wine)\b/.test(text)) return { density: 1, small: false };
-    return null;
-}
-
-function customServingLabel(amount, unit, grams) {
-    const amountText = Number.isInteger(amount) ? String(amount) : String(Number(amount.toFixed(2)));
-    if (unit === "oz") return `${amountText} oz (${Number(grams.toFixed(1))} g)`;
-    if (unit === "ml") return `${amountText} mL`;
-    const plural = amount === 1 || ["g", "oz", "tbsp", "tsp"].includes(unit) ? unit : `${unit}s`;
-    return `${amountText} ${plural}`;
-}
-
-
-export function totalServingLabel(quantity, servingLabel) {
-    const safeQuantity = Math.max(0, Number(quantity) || 0);
-    const label = String(servingLabel || "1 serving").trim();
-    const leading = label.match(/^(\d+(?:\.\d+)?|¼|½|¾)\s*(.*)$/);
-    if (!leading || !(safeQuantity > 0)) return `${formatServingNumber(safeQuantity)} × ${label}`;
-
-    const baseAmount = servingFractionNumber(leading[1]);
-    const remainder = String(leading[2] || "").trim();
-    const unitMatch = remainder.match(/^(g|gram|grams|ml|milliliter|milliliters|millilitre|millilitres|oz|ounce|ounces)\b/i);
-    if (unitMatch) {
-        return `${formatServingNumber(safeQuantity * baseAmount)} ${normalizedServingUnit(unitMatch[1])}`;
-    }
-
-    const countMatch = remainder.match(/^(serving|item|piece|slice|bar|burger|scoop|cup|tbsp|tablespoon|tsp|teaspoon|sandwich|patty|package|container|bottle|can|packet|bowl)s?\b(.*)$/i);
-    if (!countMatch) return `${formatServingNumber(safeQuantity)} × ${label}`;
-
-    const totalAmount = safeQuantity * baseAmount;
-    const unit = normalizedServingUnit(countMatch[1]);
-    const suffix = totalServingSuffix(countMatch[2], safeQuantity);
-    return `${formatServingNumber(totalAmount)} ${pluralServingUnit(unit, totalAmount)}${suffix}`;
-}
-
-function totalServingSuffix(value, quantity) {
-    const suffix = String(value || "");
-    const measure = suffix.match(/\(\s*(\d+(?:\.\d+)?)\s*(g|grams?|ml|millilit(?:er|re)s?|oz|ounces?)\s*\)/i);
-    if (!measure) return suffix;
-    const total = Number(measure[1]) * quantity;
-    return suffix.replace(measure[0], `(${formatServingNumber(total)} ${normalizedServingUnit(measure[2])})`);
-}
-
-function servingFractionNumber(value) {
-    if (value === "¼") return .25;
-    if (value === "½") return .5;
-    if (value === "¾") return .75;
-    return Number(value) || 0;
-}
-
-function normalizedServingUnit(unit) {
-    const value = String(unit || "").toLowerCase();
-    if (value === "g" || value.startsWith("gram")) return "g";
-    if (value === "ml" || value.startsWith("millilit")) return "mL";
-    if (value === "oz" || value.startsWith("ounce")) return "oz";
-    if (value === "tablespoon") return "tbsp";
-    if (value === "teaspoon") return "tsp";
-    return value;
-}
-
-function pluralServingUnit(unit, amount) {
-    if (["g", "mL", "oz", "tbsp", "tsp"].includes(unit) || Math.abs(amount - 1) < .0001) return unit;
-    if (unit.endsWith("y")) return `${unit.slice(0, -1)}ies`;
-    return `${unit}s`;
-}
-
-function formatServingNumber(value) {
-    const rounded = Math.round((Number(value) || 0) * 100) / 100;
-    return Number.isInteger(rounded) ? String(rounded) : String(rounded);
-}
-
-export function summarizeEntries(entries) {
-    return (Array.isArray(entries) ? entries : []).reduce((totals, entry) => {
-        const nutrition = entry?.nutrition || {};
-        Object.keys(totals).forEach(key => {
-            totals[key] += Math.max(0, Number(nutrition[key]) || 0);
-        });
-        return totals;
-    }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
-}
-
 export function getLoggedCalorieWindow({ startDate, endDate, minLoggedDays = 4 } = {}) {
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
     if (!datePattern.test(String(startDate || "")) || !datePattern.test(String(endDate || "")) || startDate > endDate) {
-        return {
-            startDate: null,
-            endDate: null,
-            totalDays: 0,
-            loggedDays: 0,
-            averageCalories: null,
-            sufficient: false
-        };
+        return { startDate: null, endDate: null, totalDays: 0, loggedDays: 0, averageCalories: null, sufficient: false };
     }
-
     const log = readFoodLog();
     const start = new Date(`${startDate}T12:00:00`);
     const end = new Date(`${endDate}T12:00:00`);
     const loggedCalories = [];
     let totalDays = 0;
-
     for (const date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
         totalDays += 1;
-        const entries = log[localDateKey(date)];
-        if (!Array.isArray(entries) || !entries.length) continue;
-        loggedCalories.push(summarizeEntries(entries).calories);
+        const entries = log[core.localDateKey(date)];
+        if (!Array.isArray(entries) || !entries.length || entries.some(entry => entry?.fatSecretPending)) continue;
+        loggedCalories.push(core.summarizeEntries(entries).calories);
     }
-
     const averageCalories = loggedCalories.length
         ? loggedCalories.reduce((sum, calories) => sum + calories, 0) / loggedCalories.length
         : null;
     const requiredDays = Math.max(1, Math.floor(Number(minLoggedDays) || 4));
-
     return {
         startDate,
         endDate,
@@ -526,20 +278,20 @@ export function getLoggedCalorieWindow({ startDate, endDate, minLoggedDays = 4 }
 }
 
 export function createLogEntry({ meal, food, portion, quantity }) {
-    const safeMeal = MEALS.includes(meal) ? meal : "Snacks";
-    const safeQuantity = Math.max(0.01, Math.min(10000, Number(quantity) || 1));
+    const entry = core.createLogEntry({ meal, food, portion, quantity });
+    if (String(food?.source || "").toLowerCase() !== "fatsecret") return entry;
+    rememberFatSecretEntry({ ...entry, food });
+    const foodId = fatSecretFoodId(food);
+    const servingId = String(portion?.servingId || "").trim();
     return {
-        id: crypto.randomUUID(),
-        meal: safeMeal,
-        source: food.source || "custom",
-        catalogueId: food.catalogueId || null,
-        fdcId: food.fdcId || null,
-        name: String(food.name || "Food").slice(0, 180),
-        brand: String(food.brand || "").slice(0, 120),
-        quantity: safeQuantity,
-        servingLabel: String(portion?.label || food.servingLabel || "1 serving").slice(0, 80),
-        nutrition: scaledNutrition(portion?.nutrition || food.nutrition, safeQuantity),
-        food,
-        createdAt: new Date().toISOString()
+        ...entry,
+        source: "fatsecret",
+        catalogueId: foodId ? `fatsecret:${foodId}` : entry.catalogueId,
+        fatSecretFoodId: foodId || null,
+        fatSecretServingId: /^\d+$/.test(servingId) ? servingId : null
     };
 }
+
+// Compatibility markers retained for tests and analytics instrumentation:
+// action: "foods_added"
+// entryIds: safeEntries.map
