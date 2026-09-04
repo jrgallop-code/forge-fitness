@@ -33,6 +33,29 @@ export default {
             }, 200, request, env);
         }
 
+        if (url.pathname === "/v1/admin/analytics" && request.method === "GET") {
+            const response = await safeWorker.fetch(request, env, ctx);
+            if (!response.ok) return response;
+            try {
+                const payload = await response.clone().json();
+                const weights = await env.DB.prepare(`
+                    SELECT COUNT(*) AS weight_log_users
+                    FROM backups
+                    WHERE json_valid(payload)
+                      AND COALESCE(json_array_length(json_extract(payload, '$.data.forge_weight_entries')), 0) > 0
+                `).first();
+                payload.totals = {
+                    ...(payload.totals || {}),
+                    weight_log_users: Number(weights?.weight_log_users || 0)
+                };
+                return jsonResponse(payload, response.status, request, env);
+            }
+            catch (error) {
+                console.error(JSON.stringify({ event: "admin_weight_logger_count_failed", reason: String(error?.message || error) }));
+                return response;
+            }
+        }
+
         return safeWorker.fetch(request, env, ctx);
     }
 };
