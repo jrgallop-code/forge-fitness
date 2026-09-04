@@ -100,6 +100,14 @@ function exerciseImpacts(definition, exercise) {
   return impacts;
 }
 
+function recoveryOpacityForFatigue(fatigue) {
+  const value = Math.max(0, Math.min(1, Number(fatigue) || 0));
+  // Keep fully recovered muscles neutral, but retain a subtle visible tint for
+  // every not-yet-100% state. This mainly improves contrast above ~75% recovery.
+  if (value <= 0) return .04;
+  return Math.min(.96, .08 + .88 * value);
+}
+
 export function getRecoveryStates() {
   const exposures = new Map();
   getSessions().forEach(session => {
@@ -144,7 +152,7 @@ export function getRecoveryStates() {
     states.set(group, {
       group, percent, hours, details,
       status: percent >= 100 ? 'Ready' : percent >= 67 ? 'Nearly Ready' : 'Recovering',
-      opacity: Math.max(.04, .96 * fatigue)
+      opacity: recoveryOpacityForFatigue(fatigue)
     });
   });
   return states;
