@@ -14,6 +14,7 @@
     installNutritionPhaseTargetStability();
     installNutritionAuthoritySync();
     installInteractiveWorkoutTutorial();
+    installInteractiveWorkoutStandaloneLauncher();
 
     function installCloudBackupRecovery() {
         if (!document.querySelector('script[data-cloud-backup-history-ui]')) {
@@ -104,6 +105,15 @@
         script.type = "module";
         script.src = "js/more/interactive-workout-tutorial-v3.js?v=interactive-workout-tutorial-8";
         script.dataset.interactiveWorkoutTutorial = "1";
+        document.head.appendChild(script);
+    }
+
+    function installInteractiveWorkoutStandaloneLauncher() {
+        if (document.querySelector('script[data-interactive-workout-standalone-launcher]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/more/interactive-workout-tutorial-standalone-launcher.js?v=standalone-launcher-1";
+        script.dataset.interactiveWorkoutStandaloneLauncher = "1";
         document.head.appendChild(script);
     }
 
