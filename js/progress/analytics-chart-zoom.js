@@ -5,9 +5,11 @@ import { calculateTdee } from "../nutrition/tdee-calculator.js?v=nutrition-phase
 import { getNutritionProfile } from "../nutrition/nutrition-storage.js?v=nutrition-phase-1";
 
 const STYLE_ID = "level-up-analytics-date-inspect-styles";
-const WEIGHT_WINDOW_KEY = "level_up_weight_chart_inspect_window_v2";
-const EXPENDITURE_WINDOW_KEY = "level_up_expenditure_chart_inspect_window_v2";
+const WEIGHT_WINDOW_KEY = "level_up_weight_chart_inspect_window_v3";
+const EXPENDITURE_WINDOW_KEY = "level_up_expenditure_chart_inspect_window_v3";
+const READY_VERSION = "4";
 const instances = new WeakMap();
+const liveInstances = new Set();
 let attachQueued = false;
 
 const RANGE_DAYS = {
@@ -24,12 +26,15 @@ const RANGE_DAYS = {
 
 function ensureStyles() {
     if (document.getElementById(STYLE_ID)) return;
+    document.getElementById("level-up-analytics-chart-zoom-styles")?.remove();
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
         .analytics-inspect-host{position:relative;min-width:0}
         .analytics-inspect-stage{position:relative;overflow:hidden;border-radius:inherit;touch-action:pan-y}
-        .analytics-inspect-stage>canvas{display:block;width:100%;opacity:1!important}
+        .analytics-inspect-stage>canvas{display:block;width:100%;opacity:1!important;touch-action:pan-y}
+        .analytics-inspect-tooltip{position:absolute;z-index:5;display:grid;gap:2px;min-width:112px;max-width:170px;padding:7px 9px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:10px;background:var(--card,#17171a);box-shadow:0 8px 24px rgba(0,0,0,.2);pointer-events:none;color:var(--text,#f4f4f6);font-size:10px;line-height:1.25}
+        .analytics-inspect-tooltip[hidden]{display:none!important}.analytics-inspect-tooltip strong{font-size:11px}.analytics-inspect-tooltip span,.analytics-inspect-tooltip small{color:var(--muted,#8f8f98)}
         .analytics-inspect-controls{display:flex;align-items:center;gap:6px;margin:8px 0 2px;padding:5px 6px;border:1px solid var(--line,rgba(255,255,255,.10));border-radius:12px;background:var(--surface-raised,rgba(255,255,255,.035));color:var(--text,#f4f4f6)}
         .analytics-inspect-controls button{display:grid;place-items:center;min-width:34px;height:32px;margin:0;padding:0 9px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:9px;background:var(--surface,rgba(255,255,255,.04));color:var(--text,#f4f4f6);font:inherit;font-size:15px;font-weight:850;line-height:1;touch-action:manipulation}
         .analytics-inspect-controls button:disabled{opacity:.35}
@@ -44,6 +49,7 @@ function ensureStyles() {
         .analytics-inspect-date-panel button{height:34px;padding:0 10px;border:0;border-radius:9px;background:var(--accent,#2f80ff);color:#fff;font:inherit;font-size:10px;font-weight:850;touch-action:manipulation}
         .analytics-inspect-hint{margin:5px 2px 0;color:var(--muted,#8f8f98);font-size:9px;line-height:1.35;text-align:center}
         .analytics-inspect-stage.is-inspecting{cursor:grab}.analytics-inspect-stage.is-dragging{cursor:grabbing}
+        html[data-theme-mode="light"] .analytics-inspect-tooltip{box-shadow:0 8px 22px rgba(40,67,99,.13)}
         @media(max-width:390px){.analytics-inspect-controls{gap:4px}.analytics-inspect-controls button{min-width:31px;height:30px;padding-inline:7px}.analytics-inspect-date-panel{grid-template-columns:1fr 1fr}.analytics-inspect-date-panel button{grid-column:1/-1;width:100%}}
     `;
     document.head.appendChild(style);
@@ -92,6 +98,30 @@ function themeColor(token, fallback) {
 
 function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
+}
+
+function stableText(node, value) {
+    if (!node) return;
+    const text = String(value ?? "");
+    const textNode = [...node.childNodes].find(child => child.nodeType === Node.TEXT_NODE);
+    if (textNode) {
+        if (textNode.data !== text) textNode.data = text;
+        return;
+    }
+    node.appendChild(document.createTextNode(text));
+}
+
+function stableMetric(strong, value, suffix = "cal") {
+    if (!strong) return;
+    let textNode = [...strong.childNodes].find(child => child.nodeType === Node.TEXT_NODE);
+    if (!textNode) {
+        textNode = document.createTextNode("");
+        strong.insertBefore(textNode, strong.firstChild);
+    }
+    const next = `${value} `;
+    if (textNode.data !== next) textNode.data = next;
+    const em = strong.querySelector("em");
+    if (em) stableText(em, suffix);
 }
 
 function phaseStartDate() {
@@ -223,12 +253,10 @@ function updateStatus(instance) {
     const active = Boolean(state.window);
     const visibleDays = daysBetween(state.start, state.end);
     const sameYear = state.start.slice(0, 4) === state.end.slice(0, 4);
-    instance.statusStrong.textContent = active
-        ? `${formatDate(state.start, !sameYear)} – ${formatDate(state.end, true)}`
-        : "Full selected range";
-    instance.statusSmall.textContent = active
+    stableText(instance.statusStrong, active ? `${formatDate(state.start, !sameYear)} – ${formatDate(state.end, true)}` : "Full selected range");
+    stableText(instance.statusSmall, active
         ? `${visibleDays} ${visibleDays === 1 ? "day" : "days"} · drag to move through time`
-        : "Pinch, use +, or choose exact dates";
+        : "Pinch, use +, or choose exact dates");
     instance.minus.disabled = !active;
     instance.reset.disabled = !active;
     syncDateInputs(instance);
@@ -236,14 +264,16 @@ function updateStatus(instance) {
 
 function prepareCanvas(instance, fallbackHeight) {
     const canvas = instance.canvas;
-    const width = Math.max(1, canvas.clientWidth || canvas.parentElement?.clientWidth || 320);
-    const currentHeight = canvas.clientHeight;
-    const height = Math.max(1, currentHeight || fallbackHeight);
+    const width = Math.max(1, Math.round(canvas.clientWidth || canvas.parentElement?.clientWidth || 320));
+    const height = Math.max(1, Math.round(canvas.clientHeight || fallbackHeight));
     const ratio = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = Math.round(width * ratio);
-    canvas.height = Math.round(height * ratio);
-    canvas.style.width = "100%";
-    canvas.style.height = `${height}px`;
+    const targetWidth = Math.round(width * ratio);
+    const targetHeight = Math.round(height * ratio);
+    if (canvas.width !== targetWidth) canvas.width = targetWidth;
+    if (canvas.height !== targetHeight) canvas.height = targetHeight;
+    if (canvas.style.width !== "100%") canvas.style.width = "100%";
+    const heightStyle = `${height}px`;
+    if (canvas.style.height !== heightStyle) canvas.style.height = heightStyle;
     const context = canvas.getContext("2d");
     if (!context) return null;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -290,20 +320,17 @@ function updateWeightSummary(instance, start, end, visibleEntries, visibleTrend)
     const shownAverage = Number.isFinite(average) ? displayMass(average) : null;
     const shownChange = Number.isFinite(change) ? displayMass(change) : null;
     const unit = massUnit();
-    const averageNode = card.querySelector("[data-weight-chart-average]");
-    const changeNode = card.querySelector("[data-weight-chart-change]");
-    const periodNode = card.querySelector("[data-weight-chart-period]");
-    if (averageNode) averageNode.textContent = Number.isFinite(shownAverage) ? `${shownAverage.toFixed(1)} ${unit}` : "—";
-    if (changeNode) changeNode.textContent = Number.isFinite(shownChange)
+    stableText(card.querySelector("[data-weight-chart-average]"), Number.isFinite(shownAverage) ? `${shownAverage.toFixed(1)} ${unit}` : "—");
+    stableText(card.querySelector("[data-weight-chart-change]"), Number.isFinite(shownChange)
         ? `${shownChange > 0 ? "+" : shownChange < 0 ? "−" : ""}${Math.abs(shownChange).toFixed(1)} ${unit}`
-        : "—";
-    if (periodNode) periodNode.textContent = formatLongRange(start, end);
+        : "—");
+    stableText(card.querySelector("[data-weight-chart-period]"), formatLongRange(start, end));
 }
 
 function drawWeight(instance, start, end) {
     const fallbackHeight = (instance.canvas.clientWidth || 320) <= 520 ? 330 : 380;
     const prepared = prepareCanvas(instance, fallbackHeight);
-    if (!prepared) return;
+    if (!prepared) return [];
     const { context, width, height } = prepared;
     const entries = readWeightEntries();
     const trend = calculateTrendWeightSeries(entries);
@@ -313,7 +340,7 @@ function drawWeight(instance, start, end) {
     const values = [...visibleEntries.map(entry => entry.weight), ...visibleTrend.map(entry => entry.weight)].filter(Number.isFinite);
     if (!values.length) {
         drawEmpty(context, "No weight data in these dates.");
-        return;
+        return [];
     }
 
     const rawMin = Math.min(...values);
@@ -386,6 +413,11 @@ function drawWeight(instance, start, end) {
     context.fillStyle = themeColor("--muted", "#85858f");
     context.font = "9px Arial";
     context.fillText(massUnit(), 8, 14);
+
+    return visibleEntries.map(entry => {
+        const trendPoint = visibleTrend.find(point => point.date === entry.date);
+        return { date: entry.date, value: entry.weight, trend: trendPoint?.weight ?? null, x: x(entry.date) };
+    });
 }
 
 function niceCalorieStep(value) {
@@ -398,23 +430,17 @@ function updateExpenditureSummary(instance, start, end, available) {
     const values = available.map(point => Number(point.maintenanceCalories)).filter(Number.isFinite);
     const average = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
     const change = values.length >= 2 ? values.at(-1) - values[0] : null;
-    const headingRange = card.querySelector(".expenditure-trend-heading p");
+    stableText(card.querySelector(".expenditure-trend-heading p"), `${formatDate(start)} – ${formatDate(end)}`);
     const metricSpans = card.querySelectorAll(".expenditure-trend-metrics > span");
-    const averageStrong = metricSpans[0]?.querySelector("strong");
-    const changeStrong = metricSpans[1]?.querySelector("strong");
-    const directionNode = metricSpans[1]?.querySelector("b");
-    if (headingRange) headingRange.textContent = `${formatDate(start)} – ${formatDate(end)}`;
-    if (averageStrong) averageStrong.innerHTML = `${Number.isFinite(average) ? Math.round(average).toLocaleString() : "—"} <em>cal</em>`;
-    if (changeStrong) {
-        const sign = Number.isFinite(change) ? (change > 0 ? "+" : change < 0 ? "−" : "") : "";
-        changeStrong.innerHTML = `${Number.isFinite(change) ? `${sign}${Math.abs(Math.round(change)).toLocaleString()}` : "—"} <em>cal</em>`;
-    }
-    if (directionNode) directionNode.textContent = !Number.isFinite(change) ? "Waiting" : change > 0 ? "Increase" : change < 0 ? "Decrease" : "No change";
+    stableMetric(metricSpans[0]?.querySelector("strong"), Number.isFinite(average) ? Math.round(average).toLocaleString() : "—");
+    const sign = Number.isFinite(change) ? (change > 0 ? "+" : change < 0 ? "−" : "") : "";
+    stableMetric(metricSpans[1]?.querySelector("strong"), Number.isFinite(change) ? `${sign}${Math.abs(Math.round(change)).toLocaleString()}` : "—");
+    stableText(metricSpans[1]?.querySelector("b"), !Number.isFinite(change) ? "Waiting" : change > 0 ? "Increase" : change < 0 ? "Decrease" : "No change");
 }
 
 function drawExpenditure(instance, start, end) {
     const prepared = prepareCanvas(instance, 250);
-    if (!prepared) return;
+    if (!prepared) return [];
     const { context, width, height } = prepared;
     const formula = profileMaintenance();
     const history = expenditureHistory(shiftDate(start, -28));
@@ -432,7 +458,7 @@ function drawExpenditure(instance, start, end) {
     updateExpenditureSummary(instance, start, end, available);
     if (!available.length) {
         drawEmpty(context, "No expenditure data in these dates.");
-        return;
+        return [];
     }
 
     const padding = { top: 18, right: 44, bottom: 30, left: 8 };
@@ -508,143 +534,215 @@ function drawExpenditure(instance, start, end) {
 
     context.textBaseline = "alphabetic";
     drawDateAxis(context, start, end, { left: padding.left, right: width - padding.right }, height - 7);
+    return available.map(point => ({ date: point.date, value: Number(point.maintenanceCalories), x: x(point) }));
 }
 
 function renderInstance(instance) {
-    if (!instance.canvas.isConnected) return;
-    const state = effectiveWindow(instance);
-    instance.stage.classList.toggle("is-inspecting", Boolean(state.window));
-    if (instance.kind === "weight") drawWeight(instance, state.start, state.end);
-    else drawExpenditure(instance, state.start, state.end);
-    updateStatus(instance);
+    if (!instance.canvas.isConnected || instance.rendering) return;
+    instance.rendering = true;
+    try {
+        const state = effectiveWindow(instance);
+        instance.stage.classList.toggle("is-inspecting", Boolean(state.window));
+        instance.points = instance.kind === "weight"
+            ? drawWeight(instance, state.start, state.end)
+            : drawExpenditure(instance, state.start, state.end);
+        instance.tooltip.hidden = true;
+        updateStatus(instance);
+    } finally {
+        instance.rendering = false;
+    }
 }
 
-function applyWindow(instance, start, end) {
+function normalizedWindow(instance, start, end) {
     const domain = domainForCanvas(instance.canvas);
     let nextStart = String(start || domain.start);
     let nextEnd = String(end || domain.end);
     if (nextStart < domain.start) nextStart = domain.start;
     if (nextEnd > domain.end) nextEnd = domain.end;
     if (nextStart > nextEnd) [nextStart, nextEnd] = [nextEnd, nextStart];
-    const next = nextStart === domain.start && nextEnd === domain.end ? null : { start: nextStart, end: nextEnd };
-    saveWindow(instance.kind, next);
+    return {
+        domain,
+        window: nextStart === domain.start && nextEnd === domain.end ? null : { start: nextStart, end: nextEnd },
+        start: nextStart,
+        end: nextEnd
+    };
+}
+
+function applyWindow(instance, start, end) {
+    const next = normalizedWindow(instance, start, end);
+    saveWindow(instance.kind, next.window);
     renderInstance(instance);
-    window.dispatchEvent(new CustomEvent("levelup:analytics-inspect-window", {
-        detail: { chart: instance.kind, startDate: next?.start || domain.start, endDate: next?.end || domain.end, active: Boolean(next) }
-    }));
+}
+
+function windowAroundCenter(domain, centerMs, days) {
+    const totalDays = daysBetween(domain.start, domain.end);
+    const visibleDays = clamp(Math.round(days), 1, totalDays);
+    let start = localDateString(new Date(centerMs - Math.floor((visibleDays - 1) / 2) * 86400000));
+    let end = shiftDate(start, visibleDays - 1);
+    if (start < domain.start) {
+        start = domain.start;
+        end = shiftDate(start, visibleDays - 1);
+    }
+    if (end > domain.end) {
+        end = domain.end;
+        start = shiftDate(end, -(visibleDays - 1));
+    }
+    return { start, end };
 }
 
 function zoomBy(instance, factor) {
     const state = effectiveWindow(instance);
-    const totalDays = daysBetween(state.domain.start, state.domain.end);
     const currentDays = daysBetween(state.start, state.end);
+    const totalDays = daysBetween(state.domain.start, state.domain.end);
     const nextDays = clamp(Math.round(currentDays / factor), 1, totalDays);
-    if (nextDays >= totalDays) {
-        applyWindow(instance, state.domain.start, state.domain.end);
-        return;
-    }
     const center = Math.round((dateMs(state.start) + dateMs(state.end)) / 2);
-    let start = localDateString(new Date(center - Math.floor((nextDays - 1) / 2) * 86400000));
-    let end = shiftDate(start, nextDays - 1);
-    if (start < state.domain.start) { start = state.domain.start; end = shiftDate(start, nextDays - 1); }
-    if (end > state.domain.end) { end = state.domain.end; start = shiftDate(end, -(nextDays - 1)); }
-    applyWindow(instance, start, end);
+    const next = windowAroundCenter(state.domain, center, nextDays);
+    applyWindow(instance, next.start, next.end);
 }
 
-function panWindow(instance, dayDelta) {
-    const state = effectiveWindow(instance);
-    if (!state.window || !dayDelta) return;
-    const visibleDays = daysBetween(state.start, state.end);
-    let start = shiftDate(state.start, dayDelta);
-    let end = shiftDate(state.end, dayDelta);
-    if (start < state.domain.start) { start = state.domain.start; end = shiftDate(start, visibleDays - 1); }
-    if (end > state.domain.end) { end = state.domain.end; start = shiftDate(end, -(visibleDays - 1)); }
-    applyWindow(instance, start, end);
+function shiftedWindow(domain, start, end, dayDelta) {
+    const visibleDays = daysBetween(start, end);
+    let nextStart = shiftDate(start, dayDelta);
+    let nextEnd = shiftDate(end, dayDelta);
+    if (nextStart < domain.start) {
+        nextStart = domain.start;
+        nextEnd = shiftDate(nextStart, visibleDays - 1);
+    }
+    if (nextEnd > domain.end) {
+        nextEnd = domain.end;
+        nextStart = shiftDate(nextEnd, -(visibleDays - 1));
+    }
+    return { start: nextStart, end: nextEnd };
+}
+
+function queueGestureWindow(instance, start, end) {
+    instance.pendingGestureWindow = { start, end };
+    if (instance.gestureFrame) return;
+    instance.gestureFrame = requestAnimationFrame(() => {
+        instance.gestureFrame = 0;
+        const pending = instance.pendingGestureWindow;
+        instance.pendingGestureWindow = null;
+        if (pending) applyWindow(instance, pending.start, pending.end);
+    });
+}
+
+function showNearestPoint(instance, clientX) {
+    if (!instance.points?.length) return;
+    const rect = instance.canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const nearest = instance.points.reduce((best, point) => Math.abs(point.x - x) < Math.abs(best.x - x) ? point : best, instance.points[0]);
+    const unit = instance.kind === "weight" ? massUnit() : "cal/day";
+    const shown = instance.kind === "weight" ? displayMass(nearest.value) : nearest.value;
+    const trendShown = instance.kind === "weight" && Number.isFinite(nearest.trend) ? displayMass(nearest.trend) : null;
+    stableText(instance.tooltipDate, formatDate(nearest.date, true));
+    stableText(instance.tooltipValue, `${instance.kind === "weight" ? "Weight" : "Expenditure"}: ${Number(shown).toLocaleString(undefined, { maximumFractionDigits: instance.kind === "weight" ? 1 : 0 })} ${unit}`);
+    stableText(instance.tooltipExtra, Number.isFinite(trendShown) ? `Trend Weight: ${trendShown.toFixed(1)} ${unit}` : "");
+    instance.tooltipExtra.hidden = !Number.isFinite(trendShown);
+    instance.tooltip.hidden = false;
+    const desired = nearest.x < rect.width / 2 ? nearest.x + 9 : nearest.x - 150;
+    instance.tooltip.style.left = `${clamp(desired, 6, Math.max(6, rect.width - 166))}px`;
+    instance.tooltip.style.top = "8px";
 }
 
 function bindGestures(instance) {
     const pointers = new Map();
+    let tapStart = null;
     let dragStart = null;
     let pinchStart = null;
     let lastTap = 0;
 
-    instance.stage.addEventListener("pointerdown", event => {
+    const pointerDown = event => {
         if (event.pointerType === "mouse" && event.button !== 0) return;
-        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        event.stopPropagation();
+        const point = { x: event.clientX, y: event.clientY };
+        pointers.set(event.pointerId, point);
+        instance.stage.setPointerCapture?.(event.pointerId);
         const state = effectiveWindow(instance);
         if (pointers.size === 2) {
             const values = [...pointers.values()];
             pinchStart = {
                 distance: Math.max(1, Math.hypot(values[1].x - values[0].x, values[1].y - values[0].y)),
-                days: daysBetween(state.start, state.end)
+                days: daysBetween(state.start, state.end),
+                center: Math.round((dateMs(state.start) + dateMs(state.end)) / 2),
+                domain: state.domain
             };
+            dragStart = null;
+            tapStart = null;
             event.preventDefault();
             return;
         }
+        tapStart = { x: event.clientX, y: event.clientY };
         if (state.window) {
-            dragStart = { x: event.clientX, accumulated: 0 };
+            dragStart = { x: event.clientX, start: state.start, end: state.end, domain: state.domain, moved: false };
             instance.stage.classList.add("is-dragging");
-            instance.stage.setPointerCapture?.(event.pointerId);
         }
-    }, { passive: false });
+    };
 
-    instance.stage.addEventListener("pointermove", event => {
+    const pointerMove = event => {
         if (!pointers.has(event.pointerId)) return;
+        event.stopPropagation();
         pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-        const state = effectiveWindow(instance);
         if (pointers.size >= 2 && pinchStart) {
             const values = [...pointers.values()].slice(0, 2);
             const distance = Math.max(1, Math.hypot(values[1].x - values[0].x, values[1].y - values[0].y));
-            const totalDays = daysBetween(state.domain.start, state.domain.end);
-            const nextDays = clamp(Math.round(pinchStart.days / Math.max(.15, distance / pinchStart.distance)), 1, totalDays);
-            const currentDays = daysBetween(state.start, state.end);
-            if (Math.abs(nextDays - currentDays) >= 1) zoomBy(instance, currentDays / nextDays);
+            const totalDays = daysBetween(pinchStart.domain.start, pinchStart.domain.end);
+            const nextDays = clamp(Math.round(pinchStart.days / Math.max(.2, distance / pinchStart.distance)), 1, totalDays);
+            const next = windowAroundCenter(pinchStart.domain, pinchStart.center, nextDays);
+            queueGestureWindow(instance, next.start, next.end);
             event.preventDefault();
-            event.stopPropagation();
             return;
         }
-        if (state.window && dragStart && pointers.size === 1) {
+        if (dragStart && pointers.size === 1) {
             const rect = instance.stage.getBoundingClientRect();
-            const visibleDays = daysBetween(state.start, state.end);
+            const visibleDays = daysBetween(dragStart.start, dragStart.end);
             const deltaPx = event.clientX - dragStart.x;
-            const days = Math.round((-deltaPx / Math.max(1, rect.width)) * visibleDays);
-            if (days !== dragStart.accumulated) {
-                panWindow(instance, days - dragStart.accumulated);
-                dragStart.accumulated = days;
+            const dayDelta = Math.round((-deltaPx / Math.max(1, rect.width)) * visibleDays);
+            dragStart.moved = dragStart.moved || Math.abs(deltaPx) > 7;
+            if (dragStart.moved && dayDelta !== 0) {
+                const next = shiftedWindow(dragStart.domain, dragStart.start, dragStart.end, dayDelta);
+                queueGestureWindow(instance, next.start, next.end);
+                event.preventDefault();
             }
-            event.preventDefault();
-            event.stopPropagation();
         }
-    }, { passive: false });
+    };
 
-    const release = event => {
-        const wasDrag = Boolean(dragStart && Math.abs(event.clientX - dragStart.x) > 8);
+    const pointerRelease = event => {
+        if (!pointers.has(event.pointerId)) return;
+        event.stopPropagation();
+        const hadPinch = Boolean(pinchStart);
+        const moved = Boolean(dragStart?.moved) || Boolean(tapStart && (Math.abs(event.clientX - tapStart.x) > 8 || Math.abs(event.clientY - tapStart.y) > 8));
         pointers.delete(event.pointerId);
         if (pointers.size < 2) pinchStart = null;
         if (!pointers.size) {
-            dragStart = null;
             instance.stage.classList.remove("is-dragging");
-            if (!wasDrag) {
+            if (!hadPinch && !moved) {
                 const now = Date.now();
                 if (now - lastTap < 300 && effectiveWindow(instance).window) {
                     const domain = domainForCanvas(instance.canvas);
                     applyWindow(instance, domain.start, domain.end);
+                } else {
+                    showNearestPoint(instance, event.clientX);
                 }
                 lastTap = now;
             }
+            dragStart = null;
+            tapStart = null;
         }
     };
-    instance.stage.addEventListener("pointerup", release);
-    instance.stage.addEventListener("pointercancel", release);
+
+    instance.stage.addEventListener("pointerdown", pointerDown, { capture: true, passive: false });
+    instance.stage.addEventListener("pointermove", pointerMove, { capture: true, passive: false });
+    instance.stage.addEventListener("pointerup", pointerRelease, { capture: true, passive: false });
+    instance.stage.addEventListener("pointercancel", pointerRelease, { capture: true, passive: false });
 }
 
-function removeLegacyArtifacts(stage, parent) {
+function removeLegacyArtifacts(stage, host) {
     stage?.querySelectorAll?.(".analytics-zoom-overlay,.analytics-inspect-overlay,.analytics-inspect-tooltip").forEach(node => node.remove());
-    parent?.querySelectorAll?.(":scope > .analytics-zoom-controls,:scope > .analytics-zoom-hint").forEach(node => node.remove());
+    host?.querySelectorAll?.(":scope > .analytics-zoom-controls,:scope > .analytics-zoom-hint,:scope > .analytics-inspect-controls,:scope > .analytics-inspect-date-panel,:scope > .analytics-inspect-hint").forEach(node => node.remove());
 }
 
 function createInstance(canvas) {
-    if (!canvas || instances.has(canvas) || canvas.dataset.analyticsInspectReady === "3") return;
+    if (!canvas || instances.has(canvas)) return;
     ensureStyles();
     const parent = canvas.parentElement;
     if (!parent) return;
@@ -660,7 +758,11 @@ function createInstance(canvas) {
     host?.classList.add("analytics-inspect-host");
     removeLegacyArtifacts(stage, host);
 
-    host?.querySelectorAll?.(":scope > .analytics-inspect-controls,:scope > .analytics-inspect-date-panel,:scope > .analytics-inspect-hint").forEach(node => node.remove());
+    const tooltip = document.createElement("div");
+    tooltip.className = "analytics-inspect-tooltip";
+    tooltip.hidden = true;
+    tooltip.innerHTML = "<strong></strong><span></span><small></small>";
+    stage.appendChild(tooltip);
 
     const controls = document.createElement("div");
     controls.className = "analytics-inspect-controls";
@@ -687,16 +789,24 @@ function createInstance(canvas) {
 
     const hint = document.createElement("p");
     hint.className = "analytics-inspect-hint";
-    hint.textContent = "The values above always match the dates shown in the graph. Choose exact dates, pinch to zoom, or drag a zoomed view horizontally.";
+    hint.textContent = "The values above match the dates shown. Choose exact dates, pinch to zoom, or drag a zoomed view horizontally.";
     datePanel.insertAdjacentElement("afterend", hint);
 
     const instance = {
         canvas,
         kind: chartKind(canvas),
         stage,
+        tooltip,
+        tooltipDate: tooltip.querySelector("strong"),
+        tooltipValue: tooltip.querySelector("span"),
+        tooltipExtra: tooltip.querySelector("small"),
         controls,
         datePanel,
         hint,
+        points: [],
+        rendering: false,
+        gestureFrame: 0,
+        pendingGestureWindow: null,
         minus: controls.querySelector("[data-chart-inspect-out]"),
         plus: controls.querySelector("[data-chart-inspect-in]"),
         dates: controls.querySelector("[data-chart-inspect-dates]"),
@@ -707,8 +817,10 @@ function createInstance(canvas) {
         statusStrong: controls.querySelector(".analytics-inspect-status strong"),
         statusSmall: controls.querySelector(".analytics-inspect-status small")
     };
+
     instances.set(canvas, instance);
-    canvas.dataset.analyticsInspectReady = "3";
+    liveInstances.add(instance);
+    canvas.dataset.analyticsInspectReady = READY_VERSION;
 
     instance.minus.addEventListener("click", () => zoomBy(instance, 1 / 1.6));
     instance.plus.addEventListener("click", () => zoomBy(instance, 1.6));
@@ -724,32 +836,23 @@ function createInstance(canvas) {
     instance.apply.addEventListener("click", () => applyWindow(instance, instance.startInput.value, instance.endInput.value));
     bindGestures(instance);
     renderInstance(instance);
-
-    if (typeof ResizeObserver !== "undefined") {
-        const resize = new ResizeObserver(() => scheduleRefresh(10));
-        resize.observe(canvas);
-    }
 }
 
 function refreshInstances() {
-    document.querySelectorAll("#weight-trend-chart, [data-expenditure-chart]").forEach(canvas => {
-        createInstance(canvas);
-        const instance = instances.get(canvas);
-        if (instance) renderInstance(instance);
-    });
+    for (const instance of [...liveInstances]) {
+        if (!instance.canvas.isConnected) liveInstances.delete(instance);
+    }
+    document.querySelectorAll("#weight-trend-chart, [data-expenditure-chart]").forEach(createInstance);
+    liveInstances.forEach(renderInstance);
 }
 
 function scheduleAttach() {
     if (attachQueued) return;
     attachQueued = true;
-    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
         attachQueued = false;
         refreshInstances();
-    }));
-}
-
-function scheduleRefresh(delay = 0) {
-    window.setTimeout(scheduleAttach, delay);
+    });
 }
 
 function resetForRangeButton(target) {
@@ -757,15 +860,31 @@ function resetForRangeButton(target) {
     if (!button) return;
     const kind = button.hasAttribute("data-weight-chart-range") ? "weight" : "expenditure";
     saveWindow(kind, null);
-    scheduleRefresh(60);
+    window.setTimeout(scheduleAttach, 80);
+}
+
+function addedChart(records) {
+    for (const record of records) {
+        for (const node of record.addedNodes) {
+            if (node.nodeType !== Node.ELEMENT_NODE) continue;
+            if (node.matches?.("#weight-trend-chart, [data-expenditure-chart]") || node.querySelector?.("#weight-trend-chart, [data-expenditure-chart]")) return true;
+        }
+    }
+    return false;
 }
 
 document.addEventListener("click", event => resetForRangeButton(event.target), true);
-window.addEventListener("resize", () => scheduleRefresh(30));
-window.addEventListener("levelup:theme-changed", () => scheduleRefresh(30));
-window.addEventListener("levelup:nutrition-updated", () => scheduleRefresh(40));
-window.addEventListener("levelup:weight-updated", () => scheduleRefresh(40));
-window.addEventListener("levelup:food-log-updated", () => scheduleRefresh(40));
-window.addEventListener("levelup:analytics-inspect-window", () => scheduleRefresh(0));
-new MutationObserver(() => scheduleRefresh(20)).observe(document.documentElement, { childList: true, subtree: true });
+window.addEventListener("resize", scheduleAttach, { passive: true });
+window.addEventListener("levelup:theme-changed", scheduleAttach);
+window.addEventListener("levelup:nutrition-updated", scheduleAttach);
+window.addEventListener("levelup:weight-updated", scheduleAttach);
+window.addEventListener("levelup:food-log-updated", scheduleAttach);
+
+const mutationRoot = document.getElementById("content") || document.body;
+if (mutationRoot) {
+    new MutationObserver(records => {
+        if (addedChart(records)) scheduleAttach();
+    }).observe(mutationRoot, { childList: true, subtree: true });
+}
+
 scheduleAttach();
