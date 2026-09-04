@@ -16,9 +16,13 @@ function ensureStyles() {
         }
 
         /* Form Guides, Add Exercise, workout builders and exercise swap all use
-           the same anatomy renderer. Their target muscle highlight should follow
-           the selected Recovery colour instead of carrying a fixed red fill. */
-        .form-guide-muscle-highlight {
+           the shared anatomy class. These high-specificity rules intentionally
+           beat older theme rules that still assigned a fixed semantic red. */
+        .form-guide-muscle-highlight,
+        html[data-theme] body #app #content .form-guide-muscle-highlight,
+        html[data-theme] #plan-builder .form-guide-muscle-highlight,
+        html[data-theme] .exercise-guide-screen .form-guide-muscle-highlight,
+        html[data-theme] .exercise-filter-card .form-guide-muscle-highlight {
             fill:var(--muscle-recovery-accent,#ff315f)!important;
             filter:drop-shadow(0 0 8px color-mix(in srgb,var(--muscle-recovery-accent,#ff315f) 32%,transparent))!important;
         }
@@ -61,11 +65,21 @@ function ensureStyles() {
     document.head.appendChild(style);
 }
 
+function enforceRenderedHighlights() {
+    document.querySelectorAll(".form-guide-muscle-highlight").forEach(node => {
+        node.style.setProperty("fill", "var(--muscle-recovery-accent,#ff315f)", "important");
+    });
+}
+
 function refresh() {
     ensureStyles();
+    enforceRenderedHighlights();
+    requestAnimationFrame(enforceRenderedHighlights);
 }
 
 refresh();
+const observer = new MutationObserver(refresh);
+observer.observe(document.documentElement, { childList:true, subtree:true });
 window.addEventListener("levelup:appearance-change", refresh);
 window.addEventListener("levelup:muscle-map-colors-changed", refresh);
 window.addEventListener("levelup:profile-updated", refresh);
