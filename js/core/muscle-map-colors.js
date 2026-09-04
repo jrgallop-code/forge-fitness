@@ -20,7 +20,7 @@ export const MUSCLE_COLOR_PRESETS = [
 export const THEME_MUSCLE_MAP_DEFAULTS = {
     "level-up": { recovery: "#FF315F", sets: "#45CB75" },
     arctic: { recovery: "#2F80FF", sets: "#17BFA6" },
-    pure: { recovery: "#FF3347", sets: "#34343A" },
+    pure: { recovery: "#FF3347", sets: "#2F80FF" },
     ocean: { recovery: "#00CFE8", sets: "#2F80FF" },
     midnight: { recovery: "#00CFE8", sets: "#8B5CFF" },
     slate: { recovery: "#17BFA6", sets: "#72C7FF" },
