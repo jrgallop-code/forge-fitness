@@ -13,6 +13,7 @@
     installProteinMinimumConsistency();
     installNutritionPhaseTargetStability();
     installNutritionAuthoritySync();
+    installWeeklyCheckInStatus();
     installMuscleMapColors();
     installMuscleMapRenderingFix();
     installInteractiveWorkoutTutorial();
@@ -99,6 +100,15 @@
         script.type = "module";
         script.src = "js/nutrition/nutrition-authority-sync.js?v=nutrition-authority-sync-2";
         script.dataset.nutritionAuthoritySync = "1";
+        document.head.appendChild(script);
+    }
+
+    function installWeeklyCheckInStatus() {
+        if (document.querySelector('script[data-weekly-checkin-status]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/nutrition/weekly-check-in-status.js?v=weekly-checkin-status-1";
+        script.dataset.weeklyCheckinStatus = "1";
         document.head.appendChild(script);
     }
 
