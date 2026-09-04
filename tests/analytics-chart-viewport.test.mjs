@@ -36,7 +36,17 @@ test("viewport interaction supports pinch pan exact dates and overview scrubbing
 });
 
 test("Y scale stays fixed during live gestures and settles after commit", () => {
-  assert.match(source, /renderInstance\(instance,\{freezeY:true\}\)/);
+  assert.match(source, /renderInstance\(instance,\s*\{\s*freezeY:\s*true\s*\}\s*\)/);
   assert.match(source, /animateCommittedScale/);
   assert.match(source, /interpolateScale/);
+});
+
+test("mobile date controls cannot overlap and expenditure footer sits outside chart shell", () => {
+  assert.match(source, /@media\(max-width:520px\)/);
+  assert.match(source, /analytics-viewport-date-panel\{grid-template-columns:minmax\(0,1fr\)/);
+  assert.match(source, /min-inline-size:0;max-inline-size:100%/);
+  assert.match(source, /const expenditureShell = kind === "expenditure"/);
+  assert.match(source, /const footerAnchor = expenditureShell \|\| stage/);
+  assert.match(source, /expenditure-chart-hint\{display:none!important\}/);
+  assert.match(source, /expenditure-chart-ranges\{position:relative!important/);
 });
