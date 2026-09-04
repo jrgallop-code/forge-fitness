@@ -16,6 +16,7 @@
     installMuscleMapColors();
     installMuscleMapRenderingFix();
     installInteractiveWorkoutTutorial();
+    installWorkoutTutorialPrompt();
     installInteractiveTutorialVisualFix();
 
     function installCloudBackupRecovery() {
@@ -125,6 +126,15 @@
         script.type = "module";
         script.src = "js/more/interactive-workout-tutorial-v5.js?v=interactive-workout-v5-1";
         script.dataset.interactiveWorkoutTutorial = "1";
+        document.head.appendChild(script);
+    }
+
+    function installWorkoutTutorialPrompt() {
+        if (document.querySelector('script[data-workout-tutorial-prompt]')) return;
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "js/dashboard/workout-tutorial-prompt.js?v=workout-tutorial-prompt-1";
+        script.dataset.workoutTutorialPrompt = "1";
         document.head.appendChild(script);
     }
 
