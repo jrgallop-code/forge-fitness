@@ -172,7 +172,7 @@ body.cardio-alarm-sheet-open {
 .cardio-alarm-sheet-overlay {
     position:fixed;
     inset:0;
-    z-index:1215;
+    z-index:12050;
     display:flex;
     align-items:flex-end;
     justify-content:center;
@@ -414,7 +414,7 @@ body.cardio-alarm-sheet-open {
     left:max(12px,env(safe-area-inset-left));
     right:max(12px,env(safe-area-inset-right));
     bottom:calc(72px + env(safe-area-inset-bottom));
-    z-index:1220;
+    z-index:12060;
     display:grid;
     grid-template-columns:34px minmax(0,1fr);
     gap:9px;
