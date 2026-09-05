@@ -1,5 +1,7 @@
-import "./rest-alarm-phase1.js?v=cardio-rpe-1";
-import "./rest-alarm-button-stability.js?v=cardio-rpe-1";
+import "./rest-alarm-phase1.js?v=rest-authority-1";
+import "./rest-alarm-button-stability.js?v=rest-authority-1";
+import "./rest-timer-authority.js?v=rest-timer-authority-1";
+import "../core/workout-theme-guardrail.js?v=workout-theme-guardrail-2";
 import { openActiveWorkout } from "./workout-session.js?v=workout-source-stats-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = 'level_up_active_workout';
@@ -28,48 +30,84 @@ function remainingMs(timer) {
   return Math.max(0, Number(timer.remainingMs) || 0);
 }
 
-function ensureTimerLine(logger, active) {
-  const exerciseIndex = Number(active.currentExerciseIndex);
-  const setIndex = Number(active.currentSetIndex);
+function timerLocation(active) {
+  const timer = active?.restTimer || {};
+  const exerciseIndex = Number.isFinite(Number(timer.exerciseIndex))
+    ? Number(timer.exerciseIndex)
+    : Number(active?.currentExerciseIndex) || 0;
 
-  let line = logger.querySelector(`.inline-rest-timer[data-exercise-index="${exerciseIndex}"][data-set-index="${setIndex}"]`);
+  if (timer.sourceType === 'warmup' && Number.isFinite(Number(timer.warmupIndex))) {
+    return {
+      exerciseIndex,
+      sourceType: 'warmup',
+      itemIndex: Number(timer.warmupIndex),
+      rowSelector: `.session-warmup-row[data-warmup-index="${Number(timer.warmupIndex)}"]`
+    };
+  }
+
+  const setIndex = Number.isFinite(Number(timer.setIndex))
+    ? Number(timer.setIndex)
+    : Number(active?.currentSetIndex) || 0;
+  return {
+    exerciseIndex,
+    sourceType: 'working',
+    itemIndex: setIndex,
+    rowSelector: `.session-set-row[data-set-index="${setIndex}"]`
+  };
+}
+
+function ensureTimerLine(logger, active) {
+  const location = timerLocation(active);
+  const selector = `.inline-rest-timer[data-exercise-index="${location.exerciseIndex}"][data-source-type="${location.sourceType}"][data-item-index="${location.itemIndex}"]`;
+  let line = logger.querySelector(selector);
   if (line) return line;
 
-  const card = logger.querySelector(`.session-exercise-card[data-exercise-index="${exerciseIndex}"]`);
+  const card = logger.querySelector(`.session-exercise-card[data-exercise-index="${location.exerciseIndex}"]`);
   if (!card) return null;
 
-  let row = card.querySelector(`.session-set-row[data-set-index="${setIndex}"]`);
-  if (!row) {
+  let row = card.querySelector(location.rowSelector);
+  if (!row && location.sourceType === 'working') {
     const completed = [...card.querySelectorAll('.session-set-row.completed')];
     row = completed[completed.length - 1] || card.querySelector('.session-set-row');
+  }
+  if (!row && location.sourceType === 'warmup') {
+    const completed = [...card.querySelectorAll('.session-warmup-row.completed')];
+    row = completed[completed.length - 1] || card.querySelector('.session-warmup-row');
   }
   if (!row) return null;
 
   line = document.createElement('div');
   line.className = 'inline-rest-timer';
-  line.dataset.exerciseIndex = String(exerciseIndex);
-  line.dataset.setIndex = String(setIndex);
+  line.dataset.exerciseIndex = String(location.exerciseIndex);
+  line.dataset.sourceType = location.sourceType;
+  line.dataset.itemIndex = String(location.itemIndex);
   row.insertAdjacentElement('afterend', line);
   return line;
 }
 
 function syncVisibleTimer() {
   const logger = document.getElementById('workout-session-logger');
+  const active = getActive();
+
+  // The global alarm banner is workout state, not logger DOM state. Keep it
+  // visible across logger re-renders and page changes whenever a timer exists.
+  const banner = document.getElementById('level-up-rest-alarm-banner');
+  if (active?.restTimer && banner) banner.hidden = false;
+
   if (!logger) return;
 
-  const active = getActive();
   logger.querySelectorAll('.inline-rest-timer').forEach(line => {
     line.hidden = true;
     line.textContent = '';
   });
 
   const ms = remainingMs(active?.restTimer);
-  if (!active?.restTimer || ms <= 0) return;
+  if (!active?.restTimer || active.restTimer.status === 'finished' || ms <= 0) return;
 
   const line = ensureTimerLine(logger, active);
   if (!line) return;
   line.hidden = false;
-  line.textContent = formatSeconds(ms / 1000);
+  line.textContent = `${active.restTimer.status === 'paused' ? 'Paused · ' : ''}${formatSeconds(ms / 1000)}`;
 }
 
 function resumeActiveWorkoutFromAlert() {
@@ -80,14 +118,15 @@ function resumeActiveWorkoutFromAlert() {
   }, 90);
 }
 
-// The core timer remains the source of truth. This small display sync only
-// ensures the countdown is visible even if a logger enhancement rendered late.
 setInterval(syncVisibleTimer, 250);
 document.addEventListener('click', event => {
-  if (event.target.closest('.complete-set-btn, .exercise-rest-duration, .exercise-timer-enabled')) {
+  if (event.target.closest('.complete-set-btn, .complete-warmup-btn, .exercise-rest-duration, .exercise-timer-enabled')) {
     setTimeout(syncVisibleTimer, 30);
   }
 });
+window.addEventListener('levelup:rest-timer-started', syncVisibleTimer);
+window.addEventListener('levelup:rest-timer-finished', syncVisibleTimer);
+window.addEventListener('levelup:rest-timer-dismissed', syncVisibleTimer);
 window.addEventListener('focus', syncVisibleTimer);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) syncVisibleTimer();

@@ -1,0 +1,42 @@
+name: Rest timer authority checks
+
+on:
+  pull_request:
+    paths:
+      - "js/workouts/rest-timer-authority.js"
+      - "js/workouts/rest-timer-display-fix.js"
+      - "js/workouts/warmup-session-fix.js"
+      - "js/core/workout-theme-guardrail.js"
+      - "tests/rest-timer-authority.test.mjs"
+      - ".github/workflows/test-rest-timer-authority.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "js/workouts/rest-timer-authority.js"
+      - "js/workouts/rest-timer-display-fix.js"
+      - "js/workouts/warmup-session-fix.js"
+      - "js/core/workout-theme-guardrail.js"
+      - "tests/rest-timer-authority.test.mjs"
+      - ".github/workflows/test-rest-timer-authority.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Check JavaScript syntax
+        run: |
+          node --check js/workouts/rest-timer-authority.js
+          node --check js/workouts/rest-timer-display-fix.js
+          node --check js/workouts/warmup-session-fix.js
+          node --check js/core/workout-theme-guardrail.js
+      - name: Run rest timer regressions
+        run: node --test tests/rest-timer-authority.test.mjs

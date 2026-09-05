@@ -1,3 +1,6 @@
+import { startRestForWarmupButton } from "./rest-timer-authority.js?v=rest-timer-authority-1";
+import "../core/workout-theme-guardrail.js?v=workout-theme-guardrail-2";
+
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const GUARD_FLAG = "__levelUpWarmupStorageGuardInstalled";
 
@@ -49,14 +52,12 @@ function startRestAfterCompletedWarmup(event) {
     const button = event.target?.closest?.(".complete-warmup-btn");
     if (!button) return;
 
-    // The warm-up row's own click handler runs before this document-level
-    // bubble handler, so the completed class now reflects the saved state.
+    // The warm-up row handler saves completion first. The shared timer authority
+    // then reads the same per-exercise Rest Timer toggle/duration used by working
+    // sets, so warm-ups and working sets cannot drift onto separate timer logic.
     const row = button.closest(".session-warmup-row");
     if (!row?.classList.contains("completed")) return;
-
-    const logger = button.closest("#workout-session-logger");
-    const startRest = logger?.querySelector("#start-rest-timer");
-    if (startRest && !startRest.disabled) startRest.click();
+    startRestForWarmupButton(button);
 }
 
 installWarmupStorageGuard();
