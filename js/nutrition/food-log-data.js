@@ -10,7 +10,7 @@ import {
     requestFatSecretEntry,
     sanitizeFatSecretLog,
     sanitizeFatSecretMeals
-} from "./fatsecret-live-cache.js?v=fatsecret-live-1";
+} from "./fatsecret-runtime-diagnostics.js?v=fatsecret-runtime-1";
 
 export * from "./food-log-data-core.js?v=fatsecret-live-1";
 
