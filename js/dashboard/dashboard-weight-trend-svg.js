@@ -36,7 +36,7 @@ export function buildDashboardWeightTrendSvg(movingAverage) {
 
     return `
         <svg class="dashboard-weight-trend-svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" preserveAspectRatio="none">
-            <path class="dashboard-weight-trend-average" pathLength="1" d="${trendPath}"></path>
+            <path class="dashboard-weight-trend-average" d="${trendPath}"></path>
         </svg>
     `;
 }
