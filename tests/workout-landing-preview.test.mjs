@@ -13,12 +13,10 @@ test("workout landing prototype stays isolated from production navigation", asyn
 
   assert.match(html, /noindex,nofollow,noarchive/);
   assert.match(html, /Live Workout tab is unchanged/);
-  assert.match(html, /workout-landing-preview-2/);
   assert.match(preview, /renderWorkoutBuilder/);
   assert.match(preview, /initializeWorkoutBuilder/);
   assert.match(preview, /initializeSmartBuild/);
   assert.match(preview, /initializeRoutineImporter/);
-  assert.match(preview, /initializeOneOffWorkout/);
   assert.match(preview, /initializeWorkoutSchedule/);
   assert.match(preview, /initializeWorkoutCatalogue/);
   assert.match(preview, /Recommended for You/);
@@ -28,20 +26,20 @@ test("workout landing prototype stays isolated from production navigation", asyn
   assert.doesNotMatch(router, /workout-landing-preview/);
 });
 
-test("prototype delegates every create action to existing Level Up controls", async () => {
+test("new plan sheet keeps reusable creation flows and browses routines on the landing page", async () => {
   const preview = await read("preview/workout-landing/preview.js");
-  assert.match(preview, /\[data-smart-build\]/);
-  assert.match(preview, /#new-plan-btn/);
-  assert.match(preview, /\[data-routine-import-open\]/);
-  assert.match(preview, /#one-off-workout-btn/);
-  assert.match(preview, /\[data-template-build\]/);
+  assert.match(preview, /actionRow\("smart"/);
+  assert.match(preview, /actionRow\("manual"/);
+  assert.match(preview, /actionRow\("import"/);
+  assert.match(preview, /actionRow\("all-routines", "Browse All Routines"/);
+  assert.doesNotMatch(preview, /actionRow\("one-off"/);
+  assert.match(preview, /showAllRoutinesOnLanding/);
+  assert.match(preview, /allCataloguePlans/);
+  assert.match(preview, /All Workout Routines/);
   assert.match(preview, /clickWhenReady/);
-  for (const action of ["smart", "manual", "import", "one-off", "templates"]) {
-    assert.match(preview, new RegExp(`\\b${action.replace("-", "\\-")}\\b`));
-  }
 });
 
-test("prototype uses image-led cards and commercial-use preview photography", async () => {
+test("prototype uses image-led cards with protected text contrast", async () => {
   const [preview, styles] = await Promise.all([
     read("preview/workout-landing/preview.js"),
     read("preview/workout-landing/preview.css")
@@ -50,7 +48,15 @@ test("prototype uses image-led cards and commercial-use preview photography", as
   assert.match(preview, /images\.unsplash\.com/);
   assert.match(preview, /Unsplash License/);
   assert.match(styles, /\.prototype-program-card/);
-  assert.match(styles, /\.prototype-plan-row/);
-  assert.match(styles, /\.prototype-sheet/);
-  assert.match(styles, /\.prototype-filter/);
+  assert.match(styles, /\.prototype-program-shade/);
+  assert.match(styles, /rgba\(0,0,0,\.95\)/);
+  assert.match(styles, /\.prototype-program-copy/);
+  assert.match(styles, /backdrop-filter:blur\(3px\)/);
+});
+
+test("prototype workout calendar is mounted first on the landing page", async () => {
+  const schedule = await read("preview/workout-landing/schedule-bridge.js");
+  assert.match(schedule, /This Week/);
+  assert.match(schedule, /landing\.prepend\(section\)/);
+  assert.doesNotMatch(schedule, /filters\.insertAdjacentElement\("afterend", section\)/);
 });
