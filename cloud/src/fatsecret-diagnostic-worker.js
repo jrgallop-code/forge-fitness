@@ -1,6 +1,7 @@
 import fatSecretWorker from "./fatsecret-enabled-worker.js";
 
 const FOOD_SEARCH_PATH = "/v1/foods/search";
+const FATSECRET_BINDINGS = ["FATSECRET_CLIENT_ID", "FATSECRET_CLIENT_SECRET"];
 
 export default {
     async fetch(request, env, ctx) {
@@ -12,16 +13,16 @@ export default {
         const payload = await response.clone().json().catch(() => null);
         if (!payload || typeof payload !== "object" || payload.fatSecret) return response;
 
-        const hasClientId = Boolean(String(env.FATSECRET_CLIENT_ID || "").trim());
-        const hasClientSecret = Boolean(String(env.FATSECRET_CLIENT_SECRET || "").trim());
-        const fatSecret = hasClientId && hasClientSecret
+        const missingBindings = FATSECRET_BINDINGS.filter(name => !String(env?.[name] || "").trim());
+        const fatSecret = missingBindings.length === 0
             ? {
                 configured: true,
                 available: false,
                 error: "diagnostic_missing",
                 contributed: false,
                 candidates: 0,
-                usableResults: 0
+                usableResults: 0,
+                missingBindings: []
             }
             : {
                 configured: false,
@@ -29,7 +30,8 @@ export default {
                 error: "credentials_missing",
                 contributed: false,
                 candidates: 0,
-                usableResults: 0
+                usableResults: 0,
+                missingBindings
             };
 
         return jsonFrom(response, { ...payload, fatSecret });
