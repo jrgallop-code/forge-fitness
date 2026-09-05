@@ -56,18 +56,25 @@ const ROOT_OBJECT_KEYS = [
   "hanging-knee-raise.mp4"
 ];
 
-test("51 newly uploaded Cloudflare form videos resolve from bucket root", () => {
-  const source = readFileSync("js/workouts/exercise-guide-video-manifest.js", "utf8");
+test("51 newly uploaded Cloudflare form videos prefer the bucket root", () => {
+  const source = readFileSync("js/workouts/exercise-guide-video-resolver.js", "utf8");
   assert.equal(ROOT_OBJECT_KEYS.length, 51);
   for (const key of ROOT_OBJECT_KEYS) {
     assert.ok(source.includes(`\"${key}\"`), `missing root object key ${key}`);
   }
-  assert.match(source, /ROOT_UPLOADED_OBJECT_KEYS\.has\(objectKey\)/);
-  assert.match(source, /FORM_VIDEO_ORIGIN/);
-  assert.match(source, /FORM_VIDEO_LIBRARY_BASE_URL/);
+  assert.match(source, /rootUploadedObjectKeys\.has\(config\.objectKey\)/);
+  assert.match(source, /src: preferRoot \? rootSrc : librarySrc/);
+  assert.match(source, /fallbackSrc: preferRoot \? librarySrc : rootSrc/);
 });
 
-test("legacy form videos keep their form-videos path", () => {
-  const source = readFileSync("js/workouts/exercise-guide-video-manifest.js", "utf8");
-  assert.match(source, /FORM_VIDEO_LIBRARY_BASE_URL.*form-videos/);
+test("legacy form videos keep form-videos as their preferred path", () => {
+  const source = readFileSync("js/workouts/exercise-guide-video-resolver.js", "utf8");
+  assert.match(source, /FORM_VIDEO_LIBRARY_BASE_URL = `\$\{FORM_VIDEO_ORIGIN\}\/form-videos`/);
+});
+
+test("form guide renderer retries the alternate Cloudflare path before hiding a video", () => {
+  const source = readFileSync("js/workouts/exercise-guide-videos.js", "utf8");
+  assert.match(source, /config\.fallbackSrc/);
+  assert.match(source, /formGuideFallbackTried/);
+  assert.match(source, /video\.load\(\)/);
 });
