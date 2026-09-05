@@ -18,9 +18,10 @@ test("original dashboard Trend Weight card styling remains intact", () => {
 test("See More has a dedicated gap above the analytics row without changing card dimensions", () => {
     assert.match(bridge, /dashboard-insights-analytics-v5/);
     assert.match(bridge, /dashboard-see-more-position-fix/);
+    assert.match(bridge, /dashboard-see-more-position-3/);
     assert.match(analytics, /dashboard-weight-see-more-wrap\{position:relative;display:block;min-width:0;height:148px/);
-    assert.match(positionFix, /margin-top:\s*10px\s*!important/);
-    assert.match(positionFix, /top:\s*-20px\s*!important/);
+    assert.match(positionFix, /margin-top:\s*24px\s*!important/);
+    assert.match(positionFix, /top:\s*-27px\s*!important/);
     assert.match(analytics, /dashboard-seven-day-sets-card\{height:148px!important;min-height:148px!important;max-height:148px!important;align-self:start!important/);
     assert.match(analytics, />See More</);
     assert.match(weightCard, /dashboard-insights-analytics\.js\?v=dashboard-insights-6/);
