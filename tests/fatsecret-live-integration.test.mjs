@@ -23,7 +23,7 @@ globalThis.CustomEvent = class CustomEvent {
 const data = await import("../js/nutrition/food-log-data.js");
 
 test("production worker composes FatSecret with the existing food API", () => {
-    assert.match(wrangler, /"main": "src\/fatsecret-enabled-worker\.js"/);
+    assert.match(wrangler, /"main": "src\/fatsecret-(?:enabled|diagnostic)-worker\.js"/);
     assert.match(worker, /searchFatSecretFoods/);
     assert.match(worker, /getFatSecretFood/);
     assert.match(worker, /baseWorker\.fetch/);
