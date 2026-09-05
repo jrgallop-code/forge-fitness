@@ -7,12 +7,14 @@ on:
       - "css/workout-mode.css"
       - "css/navbar-stability.css"
       - "css/dashboard-weight-trend-card.css"
+      - "css/dashboard-seven-day-sets.css"
       - "js/progress/weight-trend-canvas-smoothing.js"
       - "js/nutrition/single-calorie-target-ui.js"
       - "js/dashboard/dashboard-weight-trend-card.js"
       - "js/dashboard/dashboard-weight-trend-svg.js"
       - "js/dashboard/dashboard-insights-analytics.js"
       - "js/dashboard/dashboard-insights-analytics-v4.js"
+      - "js/dashboard/dashboard-insights-preview-fixes.js"
       - "tests/cardio-alarm-weight-trend-ui.test.mjs"
       - "tests/dashboard-weight-chart-consistency.test.mjs"
       - "tests/dashboard-insights-analytics.test.mjs"
@@ -25,12 +27,14 @@ on:
       - "css/workout-mode.css"
       - "css/navbar-stability.css"
       - "css/dashboard-weight-trend-card.css"
+      - "css/dashboard-seven-day-sets.css"
       - "js/progress/weight-trend-canvas-smoothing.js"
       - "js/nutrition/single-calorie-target-ui.js"
       - "js/dashboard/dashboard-weight-trend-card.js"
       - "js/dashboard/dashboard-weight-trend-svg.js"
       - "js/dashboard/dashboard-insights-analytics.js"
       - "js/dashboard/dashboard-insights-analytics-v4.js"
+      - "js/dashboard/dashboard-insights-preview-fixes.js"
       - "tests/cardio-alarm-weight-trend-ui.test.mjs"
       - "tests/dashboard-weight-chart-consistency.test.mjs"
       - "tests/dashboard-insights-analytics.test.mjs"
@@ -56,5 +60,6 @@ jobs:
           node --check js/dashboard/dashboard-weight-trend-svg.js
           node --check js/dashboard/dashboard-insights-analytics.js
           node --check js/dashboard/dashboard-insights-analytics-v4.js
+          node --check js/dashboard/dashboard-insights-preview-fixes.js
       - name: Run UI regressions
         run: node --test tests/cardio-alarm-weight-trend-ui.test.mjs tests/analytics-chart-viewport.test.mjs tests/dashboard-weight-chart-consistency.test.mjs tests/dashboard-insights-analytics.test.mjs
