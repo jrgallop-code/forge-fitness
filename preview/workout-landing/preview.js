@@ -7,10 +7,38 @@ import { initializeSmartBuildSupersetGuard } from "../../js/workouts/smart-build
 import { initializeRoutineImporter } from "../../js/workouts/routine-importer.js?v=launcher-grid-hotfix-1";
 import { initializeWorkoutSchedule } from "../../js/workouts/workout-schedule.js?v=onboarding-training-days-1";
 import { getTrainingPreferences } from "../../js/core/training-preferences.js?v=onboarding-training-days-1";
+import { getAllExercises } from "../../js/workouts/exercise-library.js?v=exercise-library-catalogue-2";
+import { presetPlans } from "../../js/workouts/workout-plans.js?v=proven-template-builder-1";
+import { celebrityWorkoutPlans } from "../../js/workouts/celebrity-workout-plans.js?v=celebrity-plans-2-women-heroes";
+import { bodybuilderWorkoutPlans } from "../../js/workouts/bodybuilder-workout-plans.js?v=bodybuilder-library-3";
+import { celebrityExpansionPlans } from "../../js/workouts/celebrity-expansion-plans.js?v=celebrity-expansion-2";
 import "../../js/workouts/workout-plan-details.js?v=hide-adapted-source-1";
 
 const content = document.getElementById("content");
 if (!content) throw new Error("Workout preview root is missing.");
+
+const PLAN_KEY = "forge_workout_plans";
+const allCataloguePlans = [...presetPlans, ...celebrityWorkoutPlans, ...bodybuilderWorkoutPlans, ...celebrityExpansionPlans]
+  .filter((plan, index, plans) => plans.findIndex(candidate => candidate.id === plan.id) === index);
+const exerciseMap = new Map(getAllExercises().map(exercise => [exercise.id, exercise]));
+
+// Commercial-use preview photography. Each source page is marked free under the Unsplash License.
+const STOCK_IMAGES = [
+  "https://images.unsplash.com/photo-1745329532593-53a9ec306787?auto=format&fit=crop&w=1200&q=78",
+  "https://images.unsplash.com/photo-1772450014094-8ecd08c5a589?auto=format&fit=crop&w=1200&q=78",
+  "https://images.unsplash.com/photo-1704223523204-504405c9331a?auto=format&fit=crop&w=1200&q=78",
+  "https://images.unsplash.com/photo-1770026137145-e792e19b9060?auto=format&fit=crop&w=1200&q=78",
+  "https://images.unsplash.com/photo-1745329532589-4f33352c4b10?auto=format&fit=crop&w=1200&q=78",
+  "https://images.unsplash.com/photo-1741478551825-e7e5c77a2247?auto=format&fit=crop&w=1200&q=78"
+];
+
+const prefs = safePreferences();
+const filters = {
+  goal: normalizeGoal(prefs.primaryGoal),
+  days: Number(prefs.days) || 4,
+  level: normalizeLevel(prefs.experience),
+  equipment: "Gym"
+};
 
 content.innerHTML = renderWorkoutBuilder();
 safeInitialize("Workout builder", initializeWorkoutBuilder);
@@ -21,184 +49,339 @@ safeInitialize("One-off workout", initializeOneOffWorkout);
 safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
 safeInitialize("Workout catalogue", () => initializeWorkoutCatalogue(content));
 
-decoratePreview();
+const page = content.querySelector(".workout-page");
+const sourceHome = page?.querySelector("[data-workout-home]");
+if (!page || !sourceHome) throw new Error("Workout preview source UI is missing.");
+page.classList.add("workout-landing-preview");
+sourceHome.classList.add("prototype-source-home");
+page.querySelector(".workout-page-title")?.setAttribute("hidden", "");
 
-function decoratePreview() {
-    const page = content.querySelector(".workout-page");
-    const home = page?.querySelector("[data-workout-home]");
-    if (!page || !home) return;
+const landing = document.createElement("section");
+landing.className = "prototype-workout-landing";
+landing.dataset.previewLanding = "";
+page.insertBefore(landing, sourceHome);
+renderLanding();
+bindGlobalPreviewActions();
 
-    page.classList.add("workout-landing-preview");
-    const title = page.querySelector(".workout-page-title h2");
-    const description = page.querySelector(".workout-page-title .section-description");
-    if (title) title.textContent = "Workout";
-    if (description) description.textContent = "Build, choose, and train — without losing the detail when you need it.";
+function renderLanding() {
+  const matches = filteredPlans();
+  const recommended = selectRecommended(matches, 5);
+  const saved = readSavedPlans();
+  const rows = [...saved.map(plan => ({ ...plan, isSavedPlan: true })), ...matches].slice(0, 14);
 
-    const nativeLauncher = page.querySelector("[data-smart-build-launcher]");
-    nativeLauncher?.classList.add("preview-native-launcher");
+  landing.innerHTML = `
+    <header class="prototype-hero">
+      <div>
+        <span class="prototype-kicker">TRAINING</span>
+        <h1>Workout Plans</h1>
+        <p>Structured programs. Real progress.</p>
+      </div>
+      <button class="prototype-new-plan" type="button" data-preview-new-plan>+ New Plan</button>
+    </header>
 
-    const buildSection = createBuildSection();
-    const preferenceSection = createPreferenceSection();
-    home.prepend(preferenceSection);
-    home.prepend(buildSection);
+    <div class="prototype-filter-strip" aria-label="Program filters">
+      ${filterButton("goal", "Goal", filters.goal, targetIcon())}
+      ${filterButton("days", "Days / week", `${filters.days} days`, calendarIcon())}
+      ${filterButton("level", "Level", filters.level, barsIcon())}
+      ${filterButton("equipment", "Equipment", filters.equipment, dumbbellOutlineIcon())}
+    </div>
 
-    const savedSection = page.querySelector("#saved-plan-list")?.closest(".workout-home-section");
-    if (savedSection) {
-        const heading = savedSection.querySelector(".workout-section-heading h3");
-        if (heading) heading.textContent = "Your Workout Plans";
-        savedSection.dataset.previewPlans = "";
+    <section class="prototype-section">
+      <div class="prototype-section-heading">
+        <div><h2>Recommended for You</h2><p>Based on the selections above.</p></div>
+        <button type="button" data-preview-see-all>See All</button>
+      </div>
+      <div class="prototype-recommended" aria-label="Recommended workout plans">
+        ${recommended.map((plan, index) => renderRecommendedCard(plan, index)).join("") || renderNoMatches()}
+      </div>
+    </section>
+
+    <section class="prototype-section" data-preview-all-plans>
+      <div class="prototype-section-heading">
+        <div><h2>All Workout Plans</h2><p>${saved.length ? `${saved.length} saved plan${saved.length === 1 ? "" : "s"} shown first · ` : ""}${matches.length} matching programs</p></div>
+        <button type="button" data-preview-filter="goal">Filter</button>
+      </div>
+      <div class="prototype-plan-list">
+        ${rows.map((plan, index) => renderPlanRow(plan, index)).join("") || renderNoMatches()}
+      </div>
+    </section>
+
+    <p class="prototype-stock-note">Preview photography uses free commercial-use imagery under the Unsplash License.</p>
+  `;
+
+  bindLandingActions();
+}
+
+function renderRecommendedCard(plan, index) {
+  const stats = planStats(plan);
+  const badge = index === 0 ? "BEST MATCH" : index === 1 ? "POPULAR" : index === 2 ? "TRENDING" : "FOR YOU";
+  return `<article class="prototype-program-card" data-preview-plan-card="${escapeHtml(plan.id)}" tabindex="0" role="button" aria-label="Open ${escapeHtml(plan.name)}">
+    <img src="${imageForPlan(plan, index)}" alt="" loading="lazy">
+    <div class="prototype-program-shade"></div>
+    <span class="prototype-program-badge">${badge}</span>
+    <div class="prototype-program-copy">
+      <h3>${escapeHtml(plan.name)}</h3>
+      <p>${escapeHtml(shortDescription(plan.description))}</p>
+      <div class="prototype-program-meta">
+        <span>${calendarIcon()} ${stats.days} days/week</span>
+        <span>${barsIcon()} ${escapeHtml(shortLevel(plan.level))}</span>
+      </div>
+    </div>
+  </article>`;
+}
+
+function renderPlanRow(plan, index) {
+  const stats = planStats(plan);
+  const isSaved = Boolean(plan.isSavedPlan);
+  const next = plan.days?.[0]?.name?.replace(/^Day\s*\d+\s*[-–:]?\s*/i, "") || "Workout A";
+  return `<article class="prototype-plan-row">
+    <button class="prototype-row-main" type="button" data-preview-${isSaved ? "saved" : "catalogue"}-plan="${escapeHtml(plan.id)}">
+      <img src="${imageForPlan(plan, index + 2)}" alt="" loading="lazy">
+      <span class="prototype-row-copy">
+        <small>${isSaved ? "YOUR PLAN" : escapeHtml(plan.sourceLabel || "LEVEL UP")}</small>
+        <strong>${escapeHtml(plan.name || "Workout Plan")}</strong>
+        <em>${escapeHtml(shortDescription(plan.description || "Your saved workout plan."))}</em>
+        <span class="prototype-row-meta">
+          <b>${calendarIcon()} ${stats.days}d/wk</b>
+          <b>${dumbbellOutlineIcon()} ${stats.exercises} exercises</b>
+          <b>${documentIcon()} Next: ${escapeHtml(next)}</b>
+        </span>
+      </span>
+    </button>
+    <button class="prototype-row-action" type="button" data-preview-${isSaved ? "saved" : "catalogue"}-plan="${escapeHtml(plan.id)}">${isSaved ? "Open" : "View"}</button>
+  </article>`;
+}
+
+function filterButton(key, label, value, icon) {
+  return `<button class="prototype-filter" type="button" data-preview-filter="${key}">
+    <span class="prototype-filter-icon">${icon}</span>
+    <span><small>${label}</small><strong>${escapeHtml(value)}</strong></span>
+    <i>⌄</i>
+  </button>`;
+}
+
+function bindLandingActions() {
+  landing.querySelector("[data-preview-new-plan]")?.addEventListener("click", openNewPlanSheet);
+  landing.querySelector("[data-preview-see-all]")?.addEventListener("click", () => landing.querySelector("[data-preview-all-plans]")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  landing.querySelectorAll("[data-preview-filter]").forEach(button => button.addEventListener("click", () => openFilterSheet(button.dataset.previewFilter)));
+  landing.querySelectorAll("[data-preview-plan-card]").forEach(card => {
+    const open = () => openCataloguePlan(card.dataset.previewPlanCard);
+    card.addEventListener("click", open);
+    card.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); } });
+  });
+  landing.querySelectorAll("[data-preview-catalogue-plan]").forEach(button => button.addEventListener("click", () => openCataloguePlan(button.dataset.previewCataloguePlan)));
+  landing.querySelectorAll("[data-preview-saved-plan]").forEach(button => button.addEventListener("click", () => openSavedPlan(button.dataset.previewSavedPlan)));
+}
+
+function openFilterSheet(key) {
+  const options = {
+    goal: ["Hypertrophy", "Hybrid", "Cardio", "Any goal"],
+    days: [2, 3, 4, 5, 6],
+    level: ["Beginner", "Intermediate", "Advanced", "Any level"],
+    equipment: ["Gym", "Dumbbells", "Barbell", "Machines & Cables", "Bodyweight"]
+  }[key] || [];
+  const current = filters[key];
+  openSheet({
+    eyebrow: "PROGRAM FILTER",
+    title: ({ goal: "Training goal", days: "Days per week", level: "Experience level", equipment: "Equipment" })[key],
+    body: `<div class="prototype-sheet-options">${options.map(option => {
+      const value = String(option);
+      const selected = value === String(current);
+      return `<button type="button" data-filter-value="${escapeHtml(value)}" class="${selected ? "selected" : ""}"><span>${escapeHtml(value)}</span><b>${selected ? "✓" : ""}</b></button>`;
+    }).join("")}</div>`,
+    onReady(sheet) {
+      sheet.querySelectorAll("[data-filter-value]").forEach(button => button.addEventListener("click", () => {
+        filters[key] = key === "days" ? Number(button.dataset.filterValue) : button.dataset.filterValue;
+        closeSheet();
+        renderLanding();
+      }));
     }
-    decoratePlanCards();
-    observePlanCards();
+  });
+}
 
-    const catalogue = page.querySelector(".workout-catalogue-details");
-    if (catalogue) {
-        const browseSection = createBrowseSection(catalogue);
-        catalogue.insertAdjacentElement("beforebegin", browseSection);
+function openNewPlanSheet() {
+  openSheet({
+    eyebrow: "ADD WORKOUT",
+    title: "What do you want to do?",
+    body: `<div class="prototype-action-list">
+      ${actionRow("smart", "Smart Build", "Personalized around your goals, schedule, equipment, and priorities.", sparkIcon())}
+      ${actionRow("manual", "Create Manually", "Build a reusable plan exercise by exercise.", pencilIcon())}
+      ${actionRow("import", "Import Routine", "Paste a routine from Notes, Reddit, ChatGPT, or anywhere else.", importIcon())}
+      ${actionRow("one-off", "One-Off Workout", "Train today without saving a reusable plan.", playIcon())}
+      ${actionRow("templates", "Browse Templates", "Open the full Level Up workout catalogue.", gridIcon())}
+    </div>`,
+    onReady(sheet) {
+      sheet.querySelectorAll("[data-preview-create-action]").forEach(button => button.addEventListener("click", async () => {
+        const action = button.dataset.previewCreateAction;
+        closeSheet();
+        await launchExistingFlow(action);
+      }));
     }
-
-    bindBuildActions();
+  });
 }
 
-function createBuildSection() {
-    const section = document.createElement("section");
-    section.className = "workout-preview-section";
-    section.dataset.previewBuildSection = "";
-    section.innerHTML = `
-        <div class="workout-preview-section-head">
-            <div><h3>Build or Add a Plan</h3><p>Choose how you want to get started.</p></div>
-        </div>
-        <div class="workout-preview-scroller" aria-label="Workout creation options">
-            ${buildCard("smart", "Smart Build", "Personalized to your goals, schedule, and preferences.", smartIcon(), true)}
-            ${buildCard("manual", "Create Manually", "Build your own plan from scratch.", pencilIcon())}
-            ${buildCard("import", "Import Routine", "Bring in an existing workout routine.", importIcon())}
-            ${buildCard("one-off", "One-Off Workout", "Train today without creating a saved plan.", playIcon())}
-        </div>`;
-    return section;
+function actionRow(action, title, copy, icon) {
+  return `<button type="button" class="prototype-action-row" data-preview-create-action="${action}">
+    <span class="prototype-action-icon">${icon}</span>
+    <span><strong>${title}</strong><small>${copy}</small></span><i>›</i>
+  </button>`;
 }
 
-function buildCard(action, title, description, icon, primary = false) {
-    return `<button class="workout-create-card${primary ? " is-primary" : ""}" type="button" data-preview-action="${action}">
-        <span class="workout-create-icon">${icon}</span>
-        <strong>${escapeHtml(title)}</strong>
-        <small>${escapeHtml(description)}</small>
-        <span class="workout-create-chevron" aria-hidden="true">›</span>
-    </button>`;
+async function launchExistingFlow(action) {
+  const selectors = {
+    smart: "[data-smart-build]",
+    manual: "#new-plan-btn",
+    import: "[data-routine-import-open]",
+    "one-off": "#one-off-workout-btn",
+    templates: "[data-template-build]"
+  };
+  const button = await clickWhenReady(selectors[action]);
+  if (!button) return showToast("That preview action is still loading. Try again.");
+  landing.hidden = true;
+  button.click();
+  window.setTimeout(() => revealOpenedSurface(), 40);
 }
 
-function createPreferenceSection() {
-    const preferences = safePreferences();
-    const values = [
-        ["Goal", goalLabel(preferences.primaryGoal), targetIcon()],
-        ["Days / week", `${preferences.days || 4} days`, calendarIcon()],
-        ["Experience", experienceLabel(preferences.experience), barsIcon()],
-        ["Session", `${preferences.duration || 60} min`, clockIcon()]
-    ];
-    const section = document.createElement("section");
-    section.className = "workout-preview-section";
-    section.dataset.previewPreferences = "";
-    section.innerHTML = `
-        <div class="workout-preview-section-head">
-            <div><h3>Program Preferences</h3><p>Using the preferences already saved in Level Up.</p></div>
-            <button class="workout-preview-text-action" type="button" data-preview-action="edit-preferences">Edit</button>
-        </div>
-        <div class="workout-pref-strip">
-            ${values.map(([label, value, icon]) => `<button class="workout-pref-card" type="button" data-preview-action="edit-preferences">
-                <span class="workout-pref-icon">${icon}</span>
-                <span><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></span>
-            </button>`).join("")}
-        </div>`;
-    return section;
+async function clickWhenReady(selector, attempts = 30, delay = 60) {
+  if (!selector) return null;
+  for (let index = 0; index < attempts; index += 1) {
+    const element = content.querySelector(selector);
+    if (element) return element;
+    await new Promise(resolve => window.setTimeout(resolve, delay));
+  }
+  return null;
 }
 
-function createBrowseSection(catalogue) {
-    const section = document.createElement("section");
-    section.className = "workout-preview-section";
-    section.dataset.previewBrowse = "";
-    section.innerHTML = `
-        <div class="workout-preview-section-head"><div><h3>Browse Programs</h3><p>Explore Level Up templates when you want a starting point.</p></div></div>
-        <button class="workout-browse-card" type="button" data-preview-browse-open>
-            <span><strong>Workout Catalogue</strong><small>Filter by goal, schedule, equipment, duration, and experience.</small></span>
-            <span class="workout-browse-arrow" aria-hidden="true">›</span>
-        </button>`;
-    section.querySelector("[data-preview-browse-open]")?.addEventListener("click", () => {
-        catalogue.open = true;
-        requestAnimationFrame(() => catalogue.scrollIntoView({ behavior: "smooth", block: "start" }));
-    });
-    return section;
+function revealOpenedSurface() {
+  ["#plan-builder", "[data-smart-build-wizard]", "[data-routine-import-wizard]", "#one-off-workout-builder", ".workout-catalogue-details"].forEach(selector => {
+    const element = content.querySelector(selector);
+    if (element && !element.hidden) element.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 }
 
-function bindBuildActions() {
-    content.querySelectorAll("[data-preview-action]").forEach(button => button.addEventListener("click", () => {
-        const action = button.dataset.previewAction;
-        if (action === "smart" || action === "edit-preferences") {
-            content.querySelector("[data-smart-build]")?.click();
-            return;
-        }
-        if (action === "manual") {
-            content.querySelector("#new-plan-btn")?.click();
-            return;
-        }
-        if (action === "import") {
-            content.querySelector("[data-routine-import-open]")?.click();
-            return;
-        }
-        if (action === "one-off") content.querySelector("#one-off-workout-btn")?.click();
-    }));
+function openCataloguePlan(planId) {
+  const card = content.querySelector(`.catalogue-plan-card[data-plan-id="${cssEscape(planId)}"]`);
+  if (!card) return showToast("This plan is still loading in the preview.");
+  landing.hidden = true;
+  card.click();
 }
 
-function decoratePlanCards() {
-    content.querySelectorAll("#saved-plan-list .preset-plan-card").forEach((card, index) => {
-        if (card.querySelector(".preview-plan-thumb")) return;
-        const thumb = document.createElement("span");
-        thumb.className = "preview-plan-thumb";
-        thumb.setAttribute("aria-hidden", "true");
-        thumb.innerHTML = index % 2 ? planSplitIcon() : dumbbellIcon();
-        card.prepend(thumb);
-    });
+function openSavedPlan(planId) {
+  const card = content.querySelector(`[data-custom-plan-id="${cssEscape(planId)}"]`);
+  if (!card) return showToast("Open the preview from the same browser as Level Up to use your saved plan.");
+  landing.hidden = true;
+  card.click();
 }
 
-function observePlanCards() {
-    const list = content.querySelector("#saved-plan-list");
-    if (!list) return;
-    new MutationObserver(() => decoratePlanCards()).observe(list, { childList: true });
+function bindGlobalPreviewActions() {
+  content.addEventListener("click", event => {
+    if (event.target.closest?.("#close-plan-builder-btn, [data-smart-close], [data-routine-import-close], #close-one-off-workout, .plan-detail-back")) {
+      window.setTimeout(showLanding, 80);
+    }
+  }, true);
 }
 
-function safePreferences() {
-    try { return getTrainingPreferences() || {}; }
-    catch { return {}; }
+function showLanding() {
+  landing.hidden = false;
+  sourceHome.classList.add("prototype-source-home");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function goalLabel(value) {
-    return ({
-        build_muscle: "Build muscle",
-        build_strength: "Get stronger",
-        maintain_muscle: "Maintain",
-        lose_fat_maintain_muscle: "Lose fat",
-        track_training: "Track training"
-    })[value] || "Build muscle";
+function openSheet({ eyebrow, title, body, onReady }) {
+  closeSheet();
+  const overlay = document.createElement("div");
+  overlay.className = "prototype-sheet-overlay";
+  overlay.dataset.previewSheet = "";
+  overlay.innerHTML = `<button class="prototype-sheet-scrim" type="button" aria-label="Close"></button><section class="prototype-sheet" role="dialog" aria-modal="true"><div class="prototype-sheet-grabber"></div><div class="prototype-sheet-head"><div><span>${eyebrow}</span><h2>${title}</h2></div><button type="button" data-sheet-close>Done</button></div>${body}</section>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector(".prototype-sheet-scrim")?.addEventListener("click", closeSheet);
+  overlay.querySelector("[data-sheet-close]")?.addEventListener("click", closeSheet);
+  onReady?.(overlay.querySelector(".prototype-sheet"));
 }
 
-function experienceLabel(value) {
-    return ({ new: "Beginner", intermediate: "Intermediate", experienced: "Experienced", advanced: "Advanced" })[value] || "Intermediate";
+function closeSheet() { document.querySelector("[data-preview-sheet]")?.remove(); }
+
+function filteredPlans() {
+  return allCataloguePlans.filter(plan => {
+    const type = String(plan.trainingType || "Hypertrophy").toLowerCase();
+    const goalMatch = filters.goal === "Any goal"
+      || (filters.goal === "Hypertrophy" && type.includes("hypertrophy"))
+      || (filters.goal === "Hybrid" && type.includes("hybrid"))
+      || (filters.goal === "Cardio" && type.includes("cardio"));
+    const daysMatch = !filters.days || Number(plan.daysPerWeek || plan.days?.length) === Number(filters.days);
+    const levelText = String(plan.level || "").toLowerCase();
+    const levelMatch = filters.level === "Any level" || levelText.includes(String(filters.level).toLowerCase());
+    const equipmentMatch = matchesEquipment(plan, filters.equipment);
+    return goalMatch && daysMatch && levelMatch && equipmentMatch;
+  });
 }
 
-function safeInitialize(name, initializer) {
-    try { return initializer(); }
-    catch (error) { console.error(`${name} failed in workout preview:`, error); return undefined; }
+function matchesEquipment(plan, equipment) {
+  if (!equipment || equipment === "Gym") return true;
+  const values = new Set((plan.days || []).flatMap(day => (day.exercises || []).map(item => String(exerciseMap.get(item.id)?.equipment || ""))));
+  if (equipment === "Dumbbells") return [...values].every(value => !value || /dumbbell|bodyweight/i.test(value));
+  if (equipment === "Barbell") return [...values].some(value => /barbell/i.test(value));
+  if (equipment === "Machines & Cables") return [...values].some(value => /machine|cable/i.test(value));
+  if (equipment === "Bodyweight") return [...values].every(value => !value || /bodyweight/i.test(value));
+  return true;
 }
 
-function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>"']/g, character => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[character]));
+function selectRecommended(plans, count) {
+  const preferred = [...plans].sort((a, b) => recommendationScore(b) - recommendationScore(a));
+  if (preferred.length >= count) return preferred.slice(0, count);
+  const fallback = allCataloguePlans.filter(plan => !preferred.some(item => item.id === plan.id)).slice(0, count - preferred.length);
+  return [...preferred, ...fallback];
 }
 
-function smartIcon(){return '<svg viewBox="0 0 24 24"><path d="m12 2 1.5 5.1L18 9l-4.5 1.8L12 16l-1.5-5.2L6 9l4.5-1.9L12 2Z"/><path d="m19 14 .8 2.4L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.6L19 14Z"/></svg>'}
-function pencilIcon(){return '<svg viewBox="0 0 24 24"><path d="m4 20 4.2-1 10.9-10.9-3.2-3.2L5 15.8 4 20Z"/><path d="m14.7 6.1 3.2 3.2"/></svg>'}
-function importIcon(){return '<svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M5 13v6h14v-6"/></svg>'}
-function playIcon(){return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4V8Z"/></svg>'}
-function targetIcon(){return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 4v3M20 12h-3"/></svg>'}
-function calendarIcon(){return '<svg viewBox="0 0 24 24"><path d="M5 5h14v15H5V5Z"/><path d="M8 3v4M16 3v4M5 9h14"/></svg>'}
-function barsIcon(){return '<svg viewBox="0 0 24 24"><path d="M5 19v-5M12 19V9M19 19V4"/></svg>'}
-function clockIcon(){return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg>'}
-function dumbbellIcon(){return '<svg viewBox="0 0 32 32"><path d="M3 12h4v8H3v-8Zm4-4h4v16H7V8Zm4 7h10v2H11v-2Zm10-7h4v16h-4V8Zm4 4h4v8h-4v-8Z"/></svg>'}
-function planSplitIcon(){return '<svg viewBox="0 0 32 32"><path d="M5 8h8v6H5V8Zm14 0h8v6h-8V8ZM5 19h8v6H5v-6Zm14 0h8v6h-8v-6Z"/><path d="M13 11h6M9 14v5M23 14v5"/></svg>'}
+function recommendationScore(plan) {
+  let score = 0;
+  if (Number(plan.daysPerWeek) === Number(filters.days)) score += 4;
+  if (String(plan.level || "").toLowerCase().includes(String(filters.level).toLowerCase())) score += 3;
+  if (filters.goal === "Any goal" || String(plan.trainingType || "").toLowerCase().includes(filters.goal.toLowerCase())) score += 3;
+  if (matchesEquipment(plan, filters.equipment)) score += 2;
+  if (plan.sourceLabel) score += 0.25;
+  return score;
+}
+
+function planStats(plan) {
+  const days = Array.isArray(plan.days) ? plan.days : [];
+  return {
+    days: Number(plan.daysPerWeek) || days.length || 1,
+    exercises: days.reduce((sum, day) => sum + (day.exercises?.length || 0), 0)
+  };
+}
+
+function imageForPlan(plan, index = 0) {
+  const hash = [...String(plan.id || plan.name || index)].reduce((sum, char) => sum + char.charCodeAt(0), index);
+  return STOCK_IMAGES[Math.abs(hash) % STOCK_IMAGES.length];
+}
+
+function readSavedPlans() {
+  try {
+    const value = JSON.parse(localStorage.getItem(PLAN_KEY) || "[]");
+    return Array.isArray(value) ? value.filter(plan => plan?.id && Array.isArray(plan.days)) : [];
+  } catch { return []; }
+}
+
+function safePreferences() { try { return getTrainingPreferences() || {}; } catch { return {}; } }
+function normalizeGoal(value) { return value === "track_training" ? "Any goal" : value === "build_strength" ? "Hybrid" : "Hypertrophy"; }
+function normalizeLevel(value) { return ({ new: "Beginner", intermediate: "Intermediate", experienced: "Intermediate", advanced: "Advanced" })[value] || "Intermediate"; }
+function shortLevel(value) { const text = String(value || "All levels"); return text.includes("/") ? text.split("/")[0].trim() : text; }
+function shortDescription(value) { const text = String(value || "A structured Level Up training plan.").replace(/\s+/g, " ").trim(); return text.length > 78 ? `${text.slice(0, 75).trim()}…` : text; }
+function renderNoMatches() { return `<div class="prototype-empty"><strong>No exact matches</strong><span>Try changing one of the filters above.</span></div>`; }
+function showToast(message) { let toast = document.querySelector(".prototype-toast"); if (!toast) { toast = document.createElement("div"); toast.className = "prototype-toast"; document.body.appendChild(toast); } toast.textContent = message; toast.classList.add("show"); window.setTimeout(() => toast?.classList.remove("show"), 2600); }
+function cssEscape(value) { return globalThis.CSS?.escape ? CSS.escape(String(value)) : String(value).replace(/["\\]/g, "\\$&"); }
+function safeInitialize(name, initializer) { try { return initializer(); } catch (error) { console.error(`${name} failed in workout preview:`, error); return undefined; } }
+function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, character => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[character])); }
+
+function svg(path){return `<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;}
+function targetIcon(){return svg('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 4v3M20 12h-3"/>');}
+function calendarIcon(){return svg('<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 9h16"/>');}
+function barsIcon(){return svg('<path d="M5 19v-5M12 19V9M19 19V4"/>');}
+function dumbbellOutlineIcon(){return svg('<path d="M3 9v6M6 7v10M6 12h12M18 7v10M21 9v6"/>');}
+function documentIcon(){return svg('<path d="M7 3h7l4 4v14H7V3Z"/><path d="M14 3v5h5M10 12h5M10 16h5"/>');}
+function sparkIcon(){return svg('<path d="m12 3 1.4 4.5L18 9l-4.6 1.5L12 15l-1.4-4.5L6 9l4.6-1.5L12 3Z"/><path d="m19 15 .6 1.8 1.8.6-1.8.6L19 20l-.6-2-1.8-.6 1.8-.6L19 15Z"/>');}
+function pencilIcon(){return svg('<path d="m4 20 4-1 11-11-3-3L5 16l-1 4Z"/><path d="m14.5 6.5 3 3"/>');}
+function importIcon(){return svg('<path d="M12 3v12M8 7l4-4 4 4M5 13v6h14v-6"/>');}
+function playIcon(){return svg('<circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4V8Z"/>');}
+function gridIcon(){return svg('<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>');}
