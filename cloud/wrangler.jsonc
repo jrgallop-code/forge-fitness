@@ -22,7 +22,7 @@
   ],
   "vars": {
     "GOOGLE_CLIENT_ID": "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com",
-    "ALLOWED_ORIGINS": "https://leveluphypertrophy.com,https://www.leveluphypertrophy.com,https://app.leveluphypertrophy.com,https://jrgallop-code.github.io",
+    "ALLOWED_ORIGINS": "https://leveluphypertrophy.com,https://www.leveluphypertrophy.com,https://app.leveluphypertrophy.com,https://admin.leveluphypertrophy.com,https://jrgallop-code.github.io",
     "ANALYTICS_TIME_ZONE": "America/Halifax"
   },
   "d1_databases": [
