@@ -11,20 +11,24 @@ wrangler secret put FATSECRET_CLIENT_ID
 wrangler secret put FATSECRET_CLIENT_SECRET
 ```
 
-Optional scope configuration:
+`FATSECRET_SCOPE` is optional. The recommended setting is either to remove it or set it to:
 
-```sh
-wrangler secret put FATSECRET_SCOPE
+```text
+FATSECRET_SCOPE=auto
 ```
 
-The adapter defaults to `basic`. An account-approved combination such as `premier barcode localization` can enable additional capabilities later.
+In `auto` mode Level Up omits the scope parameter when requesting the OAuth token. FatSecret documents that this returns all scopes the application is entitled to. Level Up then reads the granted scopes from the token and automatically enables Premier search, Canadian localization, and barcode lookup when those capabilities are actually present.
+
+You can still explicitly restrict the integration with a value such as `basic` or an account-approved combination such as `premier barcode localization`.
 
 ## Current behavior
 
 - Existing Level Up Verified, USDA FoodData Central and Open Food Facts results continue to work normally.
 - FatSecret augments manual food search when credentials are configured.
-- Basic scope uses the standard US FatSecret catalogue; localized Canadian FatSecret results require the appropriate localization/Premier access.
-- FatSecret barcode lookup is only attempted when the token includes the `barcode` scope. With `basic`, Level Up keeps using its existing verified/Open Food Facts/USDA barcode flow.
+- Level Up sends the user's country (`CA` for Canadian users) to the Worker.
+- With auto scope discovery, Canadian FatSecret search is used only when the granted token contains both `premier` and `localization`; otherwise FatSecret safely falls back to its US/basic catalogue.
+- FatSecret barcode lookup is attempted only when the granted token includes `barcode`.
+- Each search response includes non-sensitive FatSecret capability diagnostics (granted scopes, requested/effective country, localization availability and whether FatSecret contributed results).
 - If FatSecret is unavailable or rejects a request, Level Up falls back to the existing food results rather than failing the search.
 
 ## Storage and rehydration
@@ -38,10 +42,12 @@ If a stored FatSecret item has not rehydrated yet, the corresponding day is temp
 ## Capabilities
 
 - OAuth 2.0 client-credentials authentication
-- Basic food search: `foods/search/v1`
-- Premier search: `foods/search/v5` when the account scope permits it
-- Food details: `food/v5`
-- Barcode lookup: `food/barcode/find-by-id/v2` when the account/token includes `barcode`
+- Automatic discovery of granted OAuth scopes from the access token
+- Basic food search via method-based `foods.search`
+- Premier search via `foods/search/v5` when `premier` is granted
+- Canadian/localized search when `premier` + `localization` are granted
+- Food details via `food/v5`
+- Barcode lookup via `food/barcode/find-by-id/v2` when `barcode` is granted
 - UPC/EAN normalization to GTIN-13 for FatSecret barcode lookup
 - Worker-isolate access-token caching until shortly before expiry
 
@@ -51,11 +57,11 @@ Level Up adds FatSecret attribution to food surfaces and to the public sign-in s
 
 Use FatSecret's current Attribution Policy for any public/store copy rather than inventing alternative attribution language.
 
-## Upgrading beyond Basic
+## Canada verification
 
-Before enabling localized Canadian FatSecret search or FatSecret barcode lookup:
+For Canadian branded-food verification:
 
-1. Confirm the FatSecret account has the required Premier/localization/barcode access.
-2. Change `FATSECRET_SCOPE` to the exact approved space-delimited scopes.
-3. Test Canadian branded-food ranking against Level Up Verified, USDA and Open Food Facts.
-4. Test barcode fallbacks with representative Canadian UPC/EAN products.
+1. Use `FATSECRET_SCOPE=auto` (or remove `FATSECRET_SCOPE`).
+2. Search a known Canadian item such as a restaurant menu item visible in FatSecret's Canada API tester.
+3. Confirm the response reports an effective country of `CA` and granted `premier` + `localization` scopes.
+4. Confirm FatSecret appears in the returned source list when it contributes a matching item.
