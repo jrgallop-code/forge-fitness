@@ -1,5 +1,5 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-guides-1";
-import { getFormGuideVideo } from "./exercise-guide-video-manifest.js?v=form-videos-1";
+import { getFormGuideVideo } from "./exercise-guide-video-resolver.js?v=form-video-root-fallback-1";
 
 const STYLE_ID = "level-up-form-guide-video-styles";
 const failedVideos = new Set();
@@ -8,7 +8,6 @@ function ensureStyles() {
     if (document.getElementById(STYLE_ID)) return;
 
     const style = document.createElement("style");
-    style.id = STYLE_ID;
     style.textContent = `
         .exercise-guide-video-card {
             margin: 14px 0 12px;
@@ -107,13 +106,30 @@ function createVideoCard(exerciseId, config) {
         void video.play().catch(() => {});
     };
 
-    video.addEventListener("loadeddata", resumePlayback, { once: true });
+    video.addEventListener("loadeddata", () => {
+        failedVideos.delete(exerciseId);
+        resumePlayback();
+    }, { once: true });
     video.addEventListener("canplay", resumePlayback);
 
-    video.addEventListener("error", () => {
+    const handleVideoError = () => {
+        if (
+            config.fallbackSrc &&
+            video.dataset.formGuideFallbackTried !== "true" &&
+            video.src !== config.fallbackSrc
+        ) {
+            video.dataset.formGuideFallbackTried = "true";
+            video.src = config.fallbackSrc;
+            video.load();
+            return;
+        }
+
         failedVideos.add(exerciseId);
         figure.remove();
-    }, { once: true });
+        video.removeEventListener("error", handleVideoError);
+    };
+
+    video.addEventListener("error", handleVideoError);
 
     figure.appendChild(video);
     return figure;
