@@ -11,6 +11,7 @@ test("production Worker always exposes a FatSecret search diagnostic", () => {
     assert.match(wrangler, /"main": "src\/fatsecret-diagnostic-worker\.js"/);
     assert.match(worker, /credentials_missing/);
     assert.match(worker, /diagnostic_missing/);
+    assert.match(worker, /missingBindings/);
     assert.match(worker, /FATSECRET_CLIENT_ID/);
     assert.match(worker, /FATSECRET_CLIENT_SECRET/);
 });
@@ -19,6 +20,16 @@ test("food search displays safe FatSecret runtime state", async () => {
     const module = await import("../js/nutrition/fatsecret-runtime-diagnostics.js");
     assert.equal(module.formatStatus({ configured: false, error: "credentials_missing" }),
         "FatSecret: not connected — Cloudflare credentials missing");
+    assert.equal(module.formatStatus({
+        configured: false,
+        error: "credentials_missing",
+        missingBindings: ["FATSECRET_CLIENT_ID"]
+    }), "FatSecret: not connected — missing FATSECRET_CLIENT_ID in level-up-cloud-api");
+    assert.equal(module.formatStatus({
+        configured: false,
+        error: "credentials_missing",
+        missingBindings: ["FATSECRET_CLIENT_ID", "FATSECRET_CLIENT_SECRET"]
+    }), "FatSecret: not connected — missing FATSECRET_CLIENT_ID + FATSECRET_CLIENT_SECRET in level-up-cloud-api");
     assert.match(module.formatStatus({
         configured: true,
         available: true,
@@ -33,8 +44,9 @@ test("food search displays safe FatSecret runtime state", async () => {
 });
 
 test("food log loads the runtime diagnostic module", () => {
-    assert.match(data, /fatsecret-runtime-diagnostics\.js\?v=fatsecret-runtime-1/);
+    assert.match(data, /fatsecret-runtime-diagnostics\.js\?v=fatsecret-runtime-2/);
     assert.match(client, /window\.__levelUpFatSecretLastStatus/);
+    assert.match(client, /missingBindings/);
     assert.match(client, /data-fat-secret-runtime-status|fatSecretRuntimeStatus/);
 });
 
