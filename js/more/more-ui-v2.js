@@ -25,7 +25,6 @@ const ICONS = {
     account: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM4 21v-2.5C4 15.5 7.6 13 12 13s8 2.5 8 5.5V21H4Zm2-2h12v-.5c0-1.5-2.5-3.5-6-3.5s-6 2-6 3.5v.5Z"/></svg>',
     units: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4V5Zm2 2v10h12V7H6Zm2 2h2v3H8V9Zm3 0h2v5h-2V9Zm3 0h2v3h-2V9Z"/></svg>',
     guidance: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 1 4 12.7V18h-2v-4.4l.5-.3A5 5 0 1 0 7 9c0 1.8.9 3.4 2.5 4.3l.5.3V18H8v-3.3A7 7 0 0 1 12 2Zm-2 18h4v2h-4v-2Zm1-13h2v4h-2V7Zm0 5h2v2h-2v-2Z"/></svg>',
-    analytics: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5h2v12h14v2H4Zm3-3v-5h2v5H7Zm4 0V7h2v9h-2Zm4 0v-8h2v8h-2Z"/></svg>',
     learn: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7c1.1 0 2 .9 2 2v14c-.6-.6-1.4-1-2.4-1H4V4Zm2 2v11h4.6c.1 0 .3 0 .4.1V6H6Zm7 0c0-1.1.9-2 2-2h5v15h-4.6c-1 0-1.8.4-2.4 1V6Zm2 0v11.1c.1-.1.3-.1.4-.1H18V6h-3Z"/></svg>',
     research: '<svg class="app-silhouette-icon more-research-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="5"/><path d="m14 14 5 5M10 7v6M7 10h6"/></svg>'
 };
@@ -41,7 +40,6 @@ export function renderMore() {
     <button class="more-menu-card" type="button" data-more-page="appearance"><span class="more-menu-icon">${ICONS.appearance}</span><span><strong>Appearance</strong><small>Choose from light, dark and system-aware Level Up themes.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Choose body weight, workout weight, distance and measurement units separately.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="adaptive-guidance"><span class="more-menu-icon">${ICONS.guidance}</span><span><strong class="adaptive-title-with-badge">Adaptive Guidance <span class="adaptive-beta-badge">BETA</span></strong><small>Optional recovery, effort, volume and deload suggestions.</small></span></button>
-    <button class="more-menu-card owner-analytics-launch" id="owner-analytics-menu" type="button" data-more-page="admin-analytics" hidden><span class="more-menu-icon">${ICONS.analytics}</span><span><strong>Stats & Analytics</strong><small>Owner-only charts for growth, activity and training engagement.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Body Profile</strong><small>Update your name, personal details, training experience and anatomy appearance.</small></span></button>
     </div>
     <div class="more-menu-group" data-more-group="health"><h3>Health &amp; records</h3>
@@ -59,7 +57,6 @@ export function renderMore() {
 }
 
 export function initializeMore() {
-    revealOwnerAnalyticsMenu();
     document.querySelectorAll("[data-more-page]").forEach(button => button.addEventListener("click", () => {
         const page = button.dataset.morePage;
         if (page === "explore") {
@@ -150,16 +147,4 @@ export function initializeMore() {
         }
         navigate(page);
     }));
-}
-
-async function revealOwnerAnalyticsMenu() {
-    const button = document.getElementById("owner-analytics-menu");
-    if (!button) return;
-    try {
-        const token = JSON.parse(localStorage.getItem("level_up_cloud_session") || "null")?.token;
-        if (!token) return;
-        const response = await fetch("https://api.leveluphypertrophy.com/v1/me", { headers: { Authorization: `Bearer ${token}` } });
-        const payload = await response.json();
-        if (response.ok && payload.user?.isAdmin) button.hidden = false;
-    } catch { /* Keep owner tools hidden when the account check is unavailable. */ }
 }
