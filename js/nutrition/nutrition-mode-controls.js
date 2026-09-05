@@ -37,6 +37,9 @@ function installStyles() {
             -webkit-tap-highlight-color:transparent;
             cursor:pointer;
         }
+        html[data-nutrition-mode="coach"] .nutrition-mode-controls > .nutrition-mode-explainer{
+            display:none!important;
+        }
     `;
     document.head.appendChild(style);
 }
