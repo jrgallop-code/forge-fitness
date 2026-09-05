@@ -8,6 +8,12 @@
     "enabled": true,
     "head_sampling_rate": 1
   },
+  "secrets": {
+    "required": [
+      "FATSECRET_CLIENT_ID",
+      "FATSECRET_CLIENT_SECRET"
+    ]
+  },
   "vars": {
     "GOOGLE_CLIENT_ID": "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com",
     "ALLOWED_ORIGINS": "https://leveluphypertrophy.com,https://www.leveluphypertrophy.com,https://app.leveluphypertrophy.com,https://jrgallop-code.github.io",
