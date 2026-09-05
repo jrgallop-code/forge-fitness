@@ -1,4 +1,5 @@
 import { renderAdminAnalytics, initializeAdminAnalytics } from "./admin-analytics.js?v=owner-dashboard-1";
+import { initializeOwnerProductInsights } from "./product-insights.js?v=owner-product-insights-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
@@ -121,6 +122,7 @@ function showDashboard(user) {
   if (target) target.innerHTML = renderAdminAnalytics();
   document.getElementById("admin-analytics-back")?.remove();
   initializeAdminAnalytics();
+  initializeOwnerProductInsights();
 }
 
 async function signOut() {
@@ -177,7 +179,7 @@ function escapeHtml(value) {
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
-    '"': "&quot;",
+    '\"': "&quot;",
     "'": "&#39;"
   }[character]));
 }
