@@ -14,4 +14,8 @@
 .more-menu-group>.more-menu-card small{display:none!important}
 .more-menu-group .adaptive-title-with-badge{display:flex;align-items:center;gap:7px}
 .more-menu-group .adaptive-beta-badge{padding:3px 6px;font-size:8px;letter-spacing:.09em}
+/* Owner analytics no longer belongs in the consumer PWA. Keep both its launcher
+   and legacy in-app route visually unavailable even if older JS still tries to
+   reveal or navigate to them. The private dashboard now lives separately. */
+.owner-analytics-launch,[data-more-page="admin-analytics"],.admin-analytics-page{display:none!important}
 @media(max-width:380px){.more-menu-grid{gap:14px!important}.more-menu-group>.more-menu-card{min-height:58px!important;padding:9px 11px!important}.more-menu-group>.more-menu-card strong{font-size:13.5px!important}}
