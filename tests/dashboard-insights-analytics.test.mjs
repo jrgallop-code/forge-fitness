@@ -4,6 +4,9 @@ import { readFile } from "node:fs/promises";
 
 const bridge = await readFile(new URL("../js/dashboard/dashboard-insights-analytics.js", import.meta.url), "utf8");
 const analytics = await readFile(new URL("../js/dashboard/dashboard-insights-analytics-v5.js", import.meta.url), "utf8");
+const positionFix = await readFile(new URL("../js/dashboard/dashboard-see-more-position-fix.js", import.meta.url), "utf8");
+const workoutTheme = await readFile(new URL("../js/core/workout-theme-guardrail.js", import.meta.url), "utf8");
+const weightCard = await readFile(new URL("../js/dashboard/dashboard-weight-trend-card.js", import.meta.url), "utf8");
 const weightStyles = await readFile(new URL("../css/dashboard-weight-trend-card.css", import.meta.url), "utf8");
 
 test("original dashboard Trend Weight card styling remains intact", () => {
@@ -14,10 +17,12 @@ test("original dashboard Trend Weight card styling remains intact", () => {
 
 test("See More is visually above Trend Weight without making its grid cell taller", () => {
     assert.match(bridge, /dashboard-insights-analytics-v5/);
+    assert.match(bridge, /dashboard-see-more-position-fix/);
     assert.match(analytics, /dashboard-weight-see-more-wrap\{position:relative;display:block;min-width:0;height:148px/);
-    assert.match(analytics, /dashboard-weight-see-more-action\{position:absolute;right:2px;top:-28px/);
+    assert.match(positionFix, /top:\s*-22px\s*!important/);
     assert.match(analytics, /dashboard-seven-day-sets-card\{height:148px!important;min-height:148px!important;max-height:148px!important;align-self:start!important/);
     assert.match(analytics, />See More</);
+    assert.match(weightCard, /dashboard-insights-analytics\.js\?v=dashboard-insights-6/);
 });
 
 test("See More uses a compact two-column analytics card grid", () => {
@@ -68,4 +73,16 @@ test("goal preview is based on phase start Trend Weight, current Trend Weight, a
     assert.match(analytics, /trend\.trendWeight/);
     assert.match(analytics, /goalWeight/);
     assert.match(analytics, /Math\.min\(100/);
+});
+
+test("workout PR and set-number colors follow the selected appearance", () => {
+    assert.match(bridge, /workout-theme-guardrail/);
+    assert.match(workoutTheme, /html\[data-theme\] #workout-session-logger \.session-set-row > strong/);
+    assert.match(workoutTheme, /background:\s*var\(--accent\)\s*!important/);
+    assert.match(workoutTheme, /color:\s*var\(--accent-contrast\)\s*!important/);
+    assert.match(workoutTheme, /\.live-pr-exercise-badge/);
+    assert.match(workoutTheme, /background:\s*var\(--accent-soft\)\s*!important/);
+    assert.match(workoutTheme, /color:\s*var\(--accent-text\)\s*!important/);
+    assert.match(workoutTheme, /\.live-pr-toast/);
+    assert.doesNotMatch(workoutTheme, /#17181d|#121318/);
 });
