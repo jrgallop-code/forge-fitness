@@ -40,7 +40,9 @@ function mountPrototypeSchedule() {
   if (shell && shell.parentElement !== slot) slot.appendChild(shell);
 
   if (!shell) {
-    slot.innerHTML = `<div class="prototype-schedule-loading">Loading your schedule…</div>`;
+    if (!slot.querySelector(".prototype-schedule-loading")) {
+      slot.innerHTML = `<div class="prototype-schedule-loading">Loading your schedule…</div>`;
+    }
   } else {
     slot.querySelector(".prototype-schedule-loading")?.remove();
     shapeSchedule(shell);
@@ -50,19 +52,21 @@ function mountPrototypeSchedule() {
 }
 
 function shapeSchedule(shell) {
-  if (shell.classList.contains("schedule-banner")) {
-    const top = shell.querySelector(".schedule-banner-top");
-    const actions = shell.querySelector(".schedule-banner-actions");
-    if (top && actions && !shell.querySelector(".prototype-today-card")) {
-      const todayCard = document.createElement("div");
-      todayCard.className = "prototype-today-card";
-      const editor = shell.querySelector(".schedule-editor");
-      shell.insertBefore(todayCard, editor || null);
-      todayCard.append(top, actions);
-    }
+  if (!shell.classList.contains("schedule-banner")) return;
 
-    const eyebrow = shell.querySelector(".prototype-today-card .eyebrow");
-    if (eyebrow) eyebrow.textContent = "TODAY";
+  const top = shell.querySelector(".schedule-banner-top");
+  const actions = shell.querySelector(".schedule-banner-actions");
+  if (top && actions && !shell.querySelector(".prototype-today-card")) {
+    const todayCard = document.createElement("div");
+    todayCard.className = "prototype-today-card";
+    const editor = shell.querySelector(".schedule-editor");
+    shell.insertBefore(todayCard, editor || null);
+    todayCard.append(top, actions);
+  }
+
+  const eyebrow = shell.querySelector(".prototype-today-card .eyebrow");
+  if (eyebrow && eyebrow.textContent.trim() !== "TODAY") {
+    eyebrow.textContent = "TODAY";
   }
 }
 
