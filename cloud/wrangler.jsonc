@@ -4,6 +4,7 @@
   "main": "src/fatsecret-diagnostic-worker.js",
   "compatibility_date": "2026-08-21",
   "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
@@ -14,12 +15,6 @@
       "FATSECRET_CLIENT_SECRET"
     ]
   },
-  "routes": [
-    {
-      "pattern": "api.leveluphypertrophy.com",
-      "custom_domain": true
-    }
-  ],
   "vars": {
     "GOOGLE_CLIENT_ID": "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com",
     "ALLOWED_ORIGINS": "https://leveluphypertrophy.com,https://www.leveluphypertrophy.com,https://app.leveluphypertrophy.com,https://admin.leveluphypertrophy.com,https://jrgallop-code.github.io",
