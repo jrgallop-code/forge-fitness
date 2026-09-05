@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#09090b">
+  <title>Level Up Workout Preview</title>
+  <script>
+    (()=>{try{
+      const raw=JSON.parse(localStorage.getItem('level_up_appearance_settings')||'null');
+      const selected=String(raw?.theme||raw||'level-up');
+      const allowed=['system','level-up','arctic','pure','ocean','midnight','slate','pulse'];
+      const pref=allowed.includes(selected)?selected:'level-up';
+      const hour=new Date().getHours();
+      const effective=pref==='system'?(hour>=7&&hour<19?'arctic':'level-up'):pref;
+      const mode=['arctic','pure','ocean'].includes(effective)?'light':'dark';
+      document.documentElement.dataset.themePreference=pref;
+      document.documentElement.dataset.theme=effective;
+      document.documentElement.dataset.themeMode=mode;
+      document.documentElement.style.colorScheme=mode;
+    }catch{}})();
+  </script>
+  <link rel="stylesheet" href="../../css/styles.css?v=native-app-shell-1">
+  <link rel="stylesheet" href="../../css/workout-plan-rows.css?v=workout-plan-rows-2">
+  <link rel="stylesheet" href="../../css/workout-plan-details.css?v=adapted-source-1">
+  <link rel="stylesheet" href="../../css/workout-catalogue.css?v=templates-destination-1">
+  <link rel="stylesheet" href="../../css/workout-schedule.css?v=workout-schedule-card-radius-1">
+  <link rel="stylesheet" href="../../css/smart-build.css?v=clean-builder-results-1">
+  <link rel="stylesheet" href="../../css/workout-launch-cards.css?v=launcher-grid-hotfix-1">
+  <link rel="stylesheet" href="../../css/native-ios-polish.css?v=workout-date-ios-fix-2">
+  <link rel="stylesheet" href="../../css/appearance-themes.css?v=appearance-themes-14">
+  <link rel="stylesheet" href="./preview.css?v=workout-landing-preview-1">
+</head>
+<body class="workout-preview-body">
+  <div class="preview-safety-bar">
+    <span><strong>PREVIEW</strong> Live Workout tab is unchanged</span>
+    <a href="https://app.leveluphypertrophy.com/">Open live app</a>
+  </div>
+  <main id="content" class="preview-content" aria-live="polite"></main>
+  <nav class="preview-bottom-nav" aria-label="Preview navigation">
+    <span class="preview-nav-item"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.2 12 4l8 7.2V20h-5v-5H9v5H4v-8.8Z"/></svg><small>Dashboard</small></span>
+    <span class="preview-nav-item is-active"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 8h2v8h-2V8Zm2-2h3v12h-3V6Zm3 4h9v4h-9v-4Zm9-4h3v12h-3V6Zm3 2h2v8h-2V8Z"/></svg><small>Workout</small></span>
+    <span class="preview-nav-item"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18.5V5.5M4 18.5h16M7 15l4-4 3 2 5-6"/></svg><small>Progress</small></span>
+    <span class="preview-nav-item"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v5M8 3v5M11 3v5M5 8c0 1.7 1.3 3 3 3s3-1.3 3-3M8 11v10M18 3v18"/></svg><small>Nutrition</small></span>
+    <span class="preview-nav-item"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg><small>More</small></span>
+  </nav>
+  <script type="module" src="./preview.js?v=workout-landing-preview-1"></script>
+</body>
+</html>
