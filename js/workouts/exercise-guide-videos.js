@@ -1,4 +1,5 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-guides-1";
+import { expandedExercises } from "./exercise-library-expansion.js?v=exercise-library-expansion-video-1";
 import { getFormGuideVideo } from "./exercise-guide-video-resolver.js?v=form-video-root-fallback-1";
 
 const STYLE_ID = "level-up-form-guide-video-styles";
@@ -67,10 +68,28 @@ function ensureStyles() {
     document.head.appendChild(style);
 }
 
+function normalizeGuideName(value) {
+    return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[–—]/g, "-")
+        .replace(/\s+/g, " ");
+}
+
 function exerciseIdForGuide(screen) {
+    const explicitId = String(screen?.dataset?.exerciseId || "").trim();
+    if (explicitId) return explicitId;
+
     const title = screen?.querySelector(".exercise-guide-header h2")?.textContent?.trim();
     if (!title) return "";
-    return getAllExercises().find(exercise => exercise?.name === title)?.id || "";
+
+    const normalizedTitle = normalizeGuideName(title);
+    const exercise = [
+        ...expandedExercises,
+        ...getAllExercises()
+    ].find(candidate => normalizeGuideName(candidate?.name) === normalizedTitle);
+
+    return exercise?.id || "";
 }
 
 function createVideoCard(exerciseId, config) {
