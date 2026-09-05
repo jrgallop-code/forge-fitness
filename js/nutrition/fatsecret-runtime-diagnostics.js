@@ -3,6 +3,7 @@ export * from "./fatsecret-live-cache.js?v=fatsecret-runtime-1";
 const FOOD_SEARCH_ENDPOINT = "/v1/foods/search";
 const DIAGNOSTIC_PREFIX = "FatSecret:";
 const SHEET_ATTRIBUTION_STYLE_ID = "level-up-fatsecret-sheet-attribution-style";
+const FATSECRET_BINDINGS = new Set(["FATSECRET_CLIENT_ID", "FATSECRET_CLIENT_SECRET"]);
 
 function installRuntimeDiagnostics() {
     if (typeof window === "undefined" || typeof window.fetch !== "function" || window.__levelUpFatSecretRuntimeDiagnostics) return;
@@ -50,6 +51,13 @@ function renderRuntimeStatus(status) {
 export function formatStatus(status) {
     if (!status || typeof status !== "object") return `${DIAGNOSTIC_PREFIX} no runtime diagnostic`;
     if (!status.configured || status.error === "credentials_missing") {
+        const missing = safeMissingBindings(status.missingBindings);
+        if (missing.length === 1) {
+            return `${DIAGNOSTIC_PREFIX} not connected — missing ${missing[0]} in level-up-cloud-api`;
+        }
+        if (missing.length > 1) {
+            return `${DIAGNOSTIC_PREFIX} not connected — missing ${missing.join(" + ")} in level-up-cloud-api`;
+        }
         return `${DIAGNOSTIC_PREFIX} not connected — Cloudflare credentials missing`;
     }
 
@@ -76,12 +84,19 @@ export function formatStatus(status) {
     return `${DIAGNOSTIC_PREFIX} connected · ${country} ${localizationLabel} · ${candidates} candidates · ${usable} usable${scopeLabel}`;
 }
 
+function safeMissingBindings(values) {
+    return (Array.isArray(values) ? values : [])
+        .map(value => String(value || "").trim())
+        .filter(value => FATSECRET_BINDINGS.has(value));
+}
+
 export function safeStatus(status) {
     if (!status || typeof status !== "object") return null;
     return {
         configured: Boolean(status.configured),
         available: Boolean(status.available),
         error: status.error || null,
+        missingBindings: safeMissingBindings(status.missingBindings),
         scopeMode: status.scopeMode || null,
         grantedScopes: Array.isArray(status.grantedScopes) ? [...status.grantedScopes] : [],
         premier: Boolean(status.premier),
