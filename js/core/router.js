@@ -35,7 +35,6 @@ import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=wo
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-6";
 import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-drive-backup-3";
 import { getCurrentGoal } from "./current-goal.js?v=current-goal-1";
-import { renderAdminAnalytics, initializeAdminAnalytics } from "../analytics/admin-analytics.js?v=repeat-weight-loggers-1";
 import { showSatisfactionSurveyIfEligible } from "../feedback/satisfaction-survey.js?v=satisfaction-survey-1";
 import { showWhatsNewIfEligible } from "../dashboard/whats-new.js?v=first-launch-cleanup-1";
 
@@ -72,7 +71,6 @@ export function navigate(page) {
             case "energy":
                 content.innerHTML = renderCaloriesHub(renderEnergyProfile()); safeInitialize("Food log", initializeFoodLog); safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); break;
             case "more": content.innerHTML = renderMore(); safeInitialize("More", initializeMore); break;
-            case "admin-analytics": content.innerHTML = renderAdminAnalytics(); safeInitialize("Owner analytics", initializeAdminAnalytics); break;
             case "history": content.innerHTML = renderWorkoutHistory(); safeInitialize("Workout history", initializeWorkoutHistory); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
             default:
                 content.innerHTML = renderDashboardWithPerformance(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Workout performance", initializeWorkoutPerformance);
