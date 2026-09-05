@@ -35,8 +35,6 @@ export function fatSecretScopes(env = {}) {
     );
 }
 
-// These synchronous helpers are only pre-flight checks. In auto mode the actual
-// granted scopes are discovered from the OAuth access token before API calls.
 export function fatSecretCanLocalize(env = {}) {
     const configured = fatSecretConfiguredScope(env);
     if (!configured) return true;
@@ -78,9 +76,6 @@ export async function searchFatSecretFoods(query, countryCode, env = {}, options
         payload = await fatSecretJson(url, env, {}, auth);
     }
     else {
-        // FatSecret's OAuth 2.0 Basic example uses the method-based foods.search
-        // API. Region filtering is not sent unless the granted token supports
-        // Premier + localization.
         const url = new URL(`${FATSECRET_API_ROOT}/server.api`);
         const body = new URLSearchParams({
             method: "foods.search",
@@ -109,7 +104,8 @@ export async function getFatSecretFood(foodId, countryCode, env = {}) {
 
     const auth = await getFatSecretAuth(env);
     const capabilities = capabilitiesFromAuth(auth, env);
-    const url = new URL(`${FATSECRET_API_ROOT}/food/v5`);
+    const version = capabilities.premier ? "v5" : "v1";
+    const url = new URL(`${FATSECRET_API_ROOT}/food/${version}`);
     url.searchParams.set("food_id", id);
     url.searchParams.set("format", "json");
 
@@ -287,9 +283,6 @@ async function getFatSecretAuth(env) {
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
         const body = new URLSearchParams({ grant_type: "client_credentials" });
-        // FatSecret documents that omitting scope grants every scope available to
-        // the client. This lets Level Up automatically use localization/barcode
-        // access when the account is entitled to it.
         if (requestedScope) body.set("scope", requestedScope);
 
         const response = await fetch(FATSECRET_TOKEN_URL, {
