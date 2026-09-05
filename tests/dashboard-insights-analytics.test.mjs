@@ -5,9 +5,9 @@ import { readFile } from "node:fs/promises";
 const renderer = await readFile(new URL("../js/dashboard/dashboard-weight-trend-svg.js", import.meta.url), "utf8");
 const weightCard = await readFile(new URL("../js/dashboard/dashboard-weight-trend-card.js", import.meta.url), "utf8");
 const bridge = await readFile(new URL("../js/dashboard/dashboard-insights-analytics.js", import.meta.url), "utf8");
-const analytics = await readFile(new URL("../js/dashboard/dashboard-insights-analytics-v2.js", import.meta.url), "utf8");
+const analytics = await readFile(new URL("../js/dashboard/dashboard-insights-analytics-v3.js", import.meta.url), "utf8");
 
-test("dashboard Trend Weight gets a real left-to-right path trace", () => {
+test("dashboard Trend Weight gets a visible left-to-right path trace", () => {
     assert.match(renderer, /pathLength="1"/);
     assert.match(weightCard, /calculateVisibleWeightTrend/);
     assert.match(analytics, /getTotalLength/);
@@ -17,12 +17,12 @@ test("dashboard Trend Weight gets a real left-to-right path trace", () => {
     assert.match(analytics, /prefers-reduced-motion/);
 });
 
-test("dashboard moves the action above the analytics cards and calls it See More", () => {
-    assert.match(bridge, /dashboard-insights-analytics-v2/);
+test("See More sits immediately above the Weight Trend card", () => {
+    assert.match(bridge, /dashboard-insights-analytics-v3/);
     assert.match(analytics, /dashboard-insights-see-more-row/);
     assert.match(analytics, />See More</);
     assert.doesNotMatch(analytics, />See all</i);
-    assert.match(analytics, /dashboard\.insertAdjacentElement\("beforebegin", row\)/);
+    assert.match(analytics, /weightCard\.insertAdjacentElement\("beforebegin", row\)/);
 });
 
 test("See More contains only goal and energy analytics", () => {
@@ -40,18 +40,19 @@ test("goal progress uses phase start Trend Weight, current Trend Weight, and goa
     assert.match(analytics, /Math\.min\(100/);
 });
 
-test("energy cards use the same adaptive history and range semantics as Progress", () => {
+test("energy graphs mirror Progress data semantics and show current expenditure", () => {
     assert.match(analytics, /getCalculatedMaintenanceHistory/);
     assert.match(analytics, /level_up_tdee_chart_range_v1/);
     assert.match(analytics, /liveMaintenanceCalories/);
-    assert.match(analytics, /completeDays/);
+    assert.match(analytics, /completedDays/);
     assert.match(analytics, /current cal\/day/);
     assert.doesNotMatch(analytics, /AVERAGE/);
-    assert.match(analytics, /Bars are logged calories\. The line uses the same expenditure series as Progress/);
+    assert.match(analytics, /Bars show logged calories\. The line shows the same daily expenditure used in Progress/);
+    assert.match(analytics, /Uses the same daily expenditure values and selected range as Progress/);
 });
 
 test("dashboard energy lines animate from left to right", () => {
-    assert.match(analytics, /function animate\(draw\)/);
+    assert.match(analytics, /function animate\(draw, duration = 1100\)/);
     assert.match(analytics, /requestAnimationFrame/);
     assert.match(analytics, /plotWidth \* progress/);
 });
