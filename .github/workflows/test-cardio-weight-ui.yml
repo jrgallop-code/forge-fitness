@@ -12,6 +12,7 @@ on:
       - "js/dashboard/dashboard-weight-trend-card.js"
       - "js/dashboard/dashboard-weight-trend-svg.js"
       - "js/dashboard/dashboard-insights-analytics.js"
+      - "js/dashboard/dashboard-insights-analytics-v2.js"
       - "tests/cardio-alarm-weight-trend-ui.test.mjs"
       - "tests/dashboard-weight-chart-consistency.test.mjs"
       - "tests/dashboard-insights-analytics.test.mjs"
@@ -29,6 +30,7 @@ on:
       - "js/dashboard/dashboard-weight-trend-card.js"
       - "js/dashboard/dashboard-weight-trend-svg.js"
       - "js/dashboard/dashboard-insights-analytics.js"
+      - "js/dashboard/dashboard-insights-analytics-v2.js"
       - "tests/cardio-alarm-weight-trend-ui.test.mjs"
       - "tests/dashboard-weight-chart-consistency.test.mjs"
       - "tests/dashboard-insights-analytics.test.mjs"
@@ -53,5 +55,6 @@ jobs:
           node --check js/dashboard/dashboard-weight-trend-card.js
           node --check js/dashboard/dashboard-weight-trend-svg.js
           node --check js/dashboard/dashboard-insights-analytics.js
+          node --check js/dashboard/dashboard-insights-analytics-v2.js
       - name: Run UI regressions
         run: node --test tests/cardio-alarm-weight-trend-ui.test.mjs tests/analytics-chart-viewport.test.mjs tests/dashboard-weight-chart-consistency.test.mjs tests/dashboard-insights-analytics.test.mjs
