@@ -3,6 +3,7 @@ import {
     fatSecretCanBarcode,
     fatSecretConfigured,
     findFatSecretFoodByBarcode,
+    getFatSecretCapabilities,
     getFatSecretFood,
     searchFatSecretFoods
 } from "./fatsecret-food-provider.js";
@@ -40,23 +41,34 @@ async function searchFoodsWithFatSecret(url, request, env, ctx) {
     const query = String(url.searchParams.get("q") || "").trim().replace(/\s+/g, " ");
     if (query.length < 2) return baseResponse;
 
+    const country = normalizeCountry(url.searchParams.get("country"));
+    let capabilities = null;
     try {
-        const country = normalizeCountry(url.searchParams.get("country"));
+        capabilities = await getFatSecretCapabilities(env);
         const summaries = await searchFatSecretFoods(query, country, env, { limit: FATSECRET_SEARCH_LIMIT });
         const ids = summaries.map(food => String(food?.fatSecretFoodId || "")).filter(id => /^\d+$/.test(id)).slice(0, FATSECRET_DETAIL_LIMIT);
         const details = (await Promise.all(ids.map(id => getFatSecretFood(id, country, env).catch(() => null))))
             .filter(food => food && Array.isArray(food.portions) && food.portions.some(portion => /^\d+$/.test(String(portion?.servingId || ""))));
-        if (!details.length) return baseResponse;
 
         const payload = await baseResponse.clone().json().catch(() => ({}));
+        const status = fatSecretStatus(capabilities, country, details.length > 0);
+        if (!details.length) return jsonFrom(baseResponse, { ...payload, fatSecret: status });
+
         const baseFoods = Array.isArray(payload?.foods) ? payload.foods : [];
         const foods = mergeSearchResults(baseFoods, details, SEARCH_LIMIT);
         const source = appendSource(payload?.source, "FatSecret");
-        return jsonFrom(baseResponse, { ...payload, foods, source });
+        return jsonFrom(baseResponse, { ...payload, foods, source, fatSecret: status });
     }
     catch (error) {
         console.warn(JSON.stringify({ event: "fatsecret_food_search_failed", reason: error?.name === "AbortError" ? "timeout" : String(error?.message || error) }));
-        return baseResponse;
+        const payload = await baseResponse.clone().json().catch(() => ({}));
+        return jsonFrom(baseResponse, {
+            ...payload,
+            fatSecret: {
+                ...fatSecretStatus(capabilities, country, false),
+                available: false
+            }
+        });
     }
 }
 
@@ -100,6 +112,25 @@ async function authenticatedUser(request, env, ctx) {
     const authRequest = new Request(new URL("/v1/me", request.url), { method: "GET", headers });
     const response = await baseWorker.fetch(authRequest, env, ctx);
     return { ok: response.ok, response };
+}
+
+function fatSecretStatus(capabilities, requestedCountry, contributed) {
+    const canLocalize = Boolean(capabilities?.canLocalize);
+    const effectiveCountry = canLocalize && requestedCountry ? requestedCountry : "US";
+    return {
+        configured: true,
+        available: Boolean(capabilities),
+        scopeMode: capabilities?.scopeMode || null,
+        requestedScope: capabilities?.requestedScope || null,
+        grantedScopes: Array.isArray(capabilities?.grantedScopes) ? capabilities.grantedScopes : [],
+        premier: Boolean(capabilities?.premier),
+        localization: Boolean(capabilities?.localization),
+        canLocalize,
+        canBarcode: Boolean(capabilities?.canBarcode),
+        requestedCountry: requestedCountry || "US",
+        effectiveCountry,
+        contributed: Boolean(contributed)
+    };
 }
 
 function mergeSearchResults(baseFoods, fatSecretFoods, limit) {

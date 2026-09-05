@@ -1,11 +1,12 @@
 const FATSECRET_TOKEN_URL = "https://oauth.fatsecret.com/connect/token";
 const FATSECRET_API_ROOT = "https://platform.fatsecret.com/rest";
-const DEFAULT_SCOPE = "basic";
+const AUTO_SCOPE = "auto";
 const REQUEST_TIMEOUT_MS = 5000;
 
 let tokenCache = {
     key: "",
     token: "",
+    scopes: [],
     expiresAt: 0
 };
 
@@ -16,51 +17,70 @@ export function fatSecretConfigured(env = {}) {
     );
 }
 
+export function fatSecretConfiguredScope(env = {}) {
+    const value = String(env.FATSECRET_SCOPE || "").trim().toLowerCase();
+    return !value || value === AUTO_SCOPE ? "" : value;
+}
+
+export function fatSecretScopeMode(env = {}) {
+    return fatSecretConfiguredScope(env) ? "explicit" : AUTO_SCOPE;
+}
+
 export function fatSecretScopes(env = {}) {
     return new Set(
-        String(env.FATSECRET_SCOPE || DEFAULT_SCOPE)
-            .toLowerCase()
+        fatSecretConfiguredScope(env)
             .split(/\s+/)
             .map(value => value.trim())
             .filter(Boolean)
     );
 }
 
+// These synchronous helpers are only pre-flight checks. In auto mode the actual
+// granted scopes are discovered from the OAuth access token before API calls.
 export function fatSecretCanLocalize(env = {}) {
+    const configured = fatSecretConfiguredScope(env);
+    if (!configured) return true;
     const scopes = fatSecretScopes(env);
-    return scopes.has("premier") || scopes.has("localization");
+    return scopes.has("premier") && scopes.has("localization");
 }
 
 export function fatSecretCanBarcode(env = {}) {
+    const configured = fatSecretConfiguredScope(env);
+    if (!configured) return true;
     return fatSecretScopes(env).has("barcode");
+}
+
+export async function getFatSecretCapabilities(env = {}) {
+    const auth = await getFatSecretAuth(env);
+    return capabilitiesFromAuth(auth, env);
 }
 
 export async function searchFatSecretFoods(query, countryCode, env = {}, options = {}) {
     const searchExpression = String(query || "").trim().replace(/\s+/g, " ");
     if (!fatSecretConfigured(env) || searchExpression.length < 2) return [];
 
-    const scopes = fatSecretScopes(env);
-    const premier = scopes.has("premier");
+    const auth = await getFatSecretAuth(env);
+    const capabilities = capabilitiesFromAuth(auth, env);
     const maxResults = String(clampInteger(options.limit, 1, 20, 8));
     const normalizedCountry = normalizeCountry(countryCode);
     let payload;
 
-    if (premier) {
+    if (capabilities.premier) {
         const url = new URL(`${FATSECRET_API_ROOT}/foods/search/v5`);
         url.searchParams.set("search_expression", searchExpression);
         url.searchParams.set("page_number", "0");
         url.searchParams.set("max_results", maxResults);
         url.searchParams.set("format", "json");
-        if (normalizedCountry) {
+        if (capabilities.canLocalize && normalizedCountry) {
             url.searchParams.set("region", normalizedCountry);
             url.searchParams.set("flag_default_serving", "true");
         }
-        payload = await fatSecretJson(url, env);
+        payload = await fatSecretJson(url, env, {}, auth);
     }
     else {
-        // FatSecret's OAuth 2.0 Basic example uses the legacy method-based
-        // foods.search call. The path-based foods/search/v1 endpoint is
-        // documented with the Premier scope, so do not use it for Basic.
+        // FatSecret's OAuth 2.0 Basic example uses the method-based foods.search
+        // API. Region filtering is not sent unless the granted token supports
+        // Premier + localization.
         const url = new URL(`${FATSECRET_API_ROOT}/server.api`);
         const body = new URLSearchParams({
             method: "foods.search",
@@ -73,11 +93,11 @@ export async function searchFatSecretFoods(query, countryCode, env = {}, options
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body
-        });
+        }, auth);
     }
 
     const foods = asArray(payload?.foods?.food);
-    const responseCountry = premier && normalizedCountry ? normalizedCountry : "US";
+    const responseCountry = capabilities.canLocalize && normalizedCountry ? normalizedCountry : "US";
     return foods
         .map(food => normalizeFatSecretFood(food, { countryCode: responseCountry }))
         .filter(Boolean);
@@ -87,38 +107,44 @@ export async function getFatSecretFood(foodId, countryCode, env = {}) {
     const id = String(foodId || "").trim();
     if (!fatSecretConfigured(env) || !/^\d+$/.test(id)) return null;
 
+    const auth = await getFatSecretAuth(env);
+    const capabilities = capabilitiesFromAuth(auth, env);
     const url = new URL(`${FATSECRET_API_ROOT}/food/v5`);
     url.searchParams.set("food_id", id);
     url.searchParams.set("format", "json");
 
     const normalizedCountry = normalizeCountry(countryCode);
-    if (fatSecretCanLocalize(env) && normalizedCountry) {
+    if (capabilities.canLocalize && normalizedCountry) {
         url.searchParams.set("region", normalizedCountry);
     }
 
-    const payload = await fatSecretJson(url, env);
+    const payload = await fatSecretJson(url, env, {}, auth);
     return normalizeFatSecretFood(payload?.food, {
-        countryCode: fatSecretCanLocalize(env) && normalizedCountry ? normalizedCountry : "US"
+        countryCode: capabilities.canLocalize && normalizedCountry ? normalizedCountry : "US"
     });
 }
 
 export async function findFatSecretFoodByBarcode(barcode, countryCode, env = {}) {
-    if (!fatSecretConfigured(env) || !fatSecretCanBarcode(env)) return null;
+    if (!fatSecretConfigured(env)) return null;
     const gtin13 = toFatSecretGtin13(barcode);
     if (!gtin13) return null;
+
+    const auth = await getFatSecretAuth(env);
+    const capabilities = capabilitiesFromAuth(auth, env);
+    if (!capabilities.canBarcode) return null;
 
     const url = new URL(`${FATSECRET_API_ROOT}/food/barcode/find-by-id/v2`);
     url.searchParams.set("barcode", gtin13);
     url.searchParams.set("format", "json");
 
     const normalizedCountry = normalizeCountry(countryCode);
-    if (fatSecretCanLocalize(env) && normalizedCountry) {
+    if (capabilities.canLocalize && normalizedCountry) {
         url.searchParams.set("region", normalizedCountry);
     }
 
-    const payload = await fatSecretJson(url, env);
+    const payload = await fatSecretJson(url, env, {}, auth);
     const normalized = normalizeFatSecretFood(payload?.food, {
-        countryCode: fatSecretCanLocalize(env) && normalizedCountry ? normalizedCountry : "US",
+        countryCode: capabilities.canLocalize && normalizedCountry ? normalizedCountry : "US",
         barcode: String(barcode || "").replace(/\D/g, "")
     });
     return normalized || null;
@@ -188,13 +214,7 @@ export function parseFatSecretDescription(description) {
         label,
         ...(metric.grams ? { grams: metric.grams } : {}),
         ...(metric.milliliters ? { milliliters: metric.milliliters } : {}),
-        nutrition: {
-            calories,
-            protein,
-            carbs,
-            fat,
-            fiber
-        }
+        nutrition: { calories, protein, carbs, fat, fiber }
     };
 }
 
@@ -205,13 +225,29 @@ export function toFatSecretGtin13(value) {
     return digits.padStart(13, "0");
 }
 
-async function fatSecretJson(url, env, requestOptions = {}) {
-    const token = await getFatSecretAccessToken(env);
+export function decodeFatSecretAccessTokenScopes(token) {
+    try {
+        const part = String(token || "").split(".")[1];
+        if (!part) return [];
+        const normalized = part.replace(/-/g, "+").replace(/_/g, "/");
+        const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+        const payload = JSON.parse(atob(padded));
+        const raw = payload?.scope;
+        const values = Array.isArray(raw) ? raw : String(raw || "").split(/\s+/);
+        return [...new Set(values.map(value => String(value || "").trim().toLowerCase()).filter(Boolean))];
+    }
+    catch {
+        return [];
+    }
+}
+
+async function fatSecretJson(url, env, requestOptions = {}, auth = null) {
+    const credentials = auth || await getFatSecretAuth(env);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
         const headers = new Headers(requestOptions.headers || {});
-        headers.set("Authorization", `Bearer ${token}`);
+        headers.set("Authorization", `Bearer ${credentials.token}`);
         headers.set("Accept", "application/json");
         const response = await fetch(url, {
             ...requestOptions,
@@ -230,26 +266,32 @@ async function fatSecretJson(url, env, requestOptions = {}) {
     }
 }
 
-async function getFatSecretAccessToken(env) {
+async function getFatSecretAuth(env) {
     if (!fatSecretConfigured(env)) throw new Error("FatSecret is not configured.");
 
     const clientId = String(env.FATSECRET_CLIENT_ID || "").trim();
     const clientSecret = String(env.FATSECRET_CLIENT_SECRET || "").trim();
-    const scope = String(env.FATSECRET_SCOPE || DEFAULT_SCOPE).trim() || DEFAULT_SCOPE;
-    const cacheKey = `${clientId}|${scope}`;
+    const requestedScope = fatSecretConfiguredScope(env);
+    const cacheKey = `${clientId}|${requestedScope || AUTO_SCOPE}`;
     const now = Date.now();
 
     if (tokenCache.key === cacheKey && tokenCache.token && tokenCache.expiresAt - 60_000 > now) {
-        return tokenCache.token;
+        return {
+            token: tokenCache.token,
+            scopes: new Set(tokenCache.scopes),
+            scopeMode: requestedScope ? "explicit" : AUTO_SCOPE
+        };
     }
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-        const body = new URLSearchParams({
-            grant_type: "client_credentials",
-            scope
-        });
+        const body = new URLSearchParams({ grant_type: "client_credentials" });
+        // FatSecret documents that omitting scope grants every scope available to
+        // the client. This lets Level Up automatically use localization/barcode
+        // access when the account is entitled to it.
+        if (requestedScope) body.set("scope", requestedScope);
+
         const response = await fetch(FATSECRET_TOKEN_URL, {
             method: "POST",
             headers: {
@@ -264,17 +306,44 @@ async function getFatSecretAccessToken(env) {
         if (!response.ok || !payload?.access_token) {
             throw new Error(payload?.error_description || payload?.error || `FatSecret token request failed (${response.status})`);
         }
+
+        const token = String(payload.access_token);
+        let scopes = decodeFatSecretAccessTokenScopes(token);
+        if (!scopes.length && requestedScope) {
+            scopes = requestedScope.split(/\s+/).map(value => value.trim().toLowerCase()).filter(Boolean);
+        }
+
         const lifetimeSeconds = Math.max(60, Number(payload.expires_in) || 3600);
         tokenCache = {
             key: cacheKey,
-            token: String(payload.access_token),
+            token,
+            scopes,
             expiresAt: now + lifetimeSeconds * 1000
         };
-        return tokenCache.token;
+        return {
+            token,
+            scopes: new Set(scopes),
+            scopeMode: requestedScope ? "explicit" : AUTO_SCOPE
+        };
     }
     finally {
         clearTimeout(timeout);
     }
+}
+
+function capabilitiesFromAuth(auth, env) {
+    const scopes = auth?.scopes instanceof Set ? auth.scopes : new Set(auth?.scopes || []);
+    const premier = scopes.has("premier");
+    const localization = scopes.has("localization");
+    return {
+        scopeMode: auth?.scopeMode || fatSecretScopeMode(env),
+        requestedScope: fatSecretConfiguredScope(env) || null,
+        grantedScopes: [...scopes].sort(),
+        premier,
+        localization,
+        canLocalize: premier && localization,
+        canBarcode: scopes.has("barcode")
+    };
 }
 
 function normalizeServing(serving) {
