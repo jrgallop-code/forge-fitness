@@ -9,6 +9,7 @@ import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workou
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=right-overflow-arc-1";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=onboarding-training-days-1";
+import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=workout-landing-live-1";
 import { renderProgress } from "../progress/progress-ui.js?v=food-log-macro-bars-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-2";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=theme-accent-calendar-1";
@@ -57,7 +58,18 @@ export function navigate(page) {
                 }
                 break;
             case "workout":
-                content.innerHTML = renderWorkoutBuilder(); decorateWorkoutTitle(content); safeInitialize("Workout builder", initializeWorkoutBuilder); safeInitialize("Smart Build", () => initializeSmartBuild(content)); safeInitialize("Routine importer", () => initializeRoutineImporter(content)); safeInitialize("Smart Build superset guard", () => initializeSmartBuildSupersetGuard(content)); safeInitialize("One-off workout", initializeOneOffWorkout); bindManualBuildLauncher(content); safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content)); safeInitialize("Workout catalogue", initializeWorkoutCatalogue); break;
+                content.innerHTML = renderWorkoutBuilder();
+                decorateWorkoutTitle(content);
+                safeInitialize("Workout builder", initializeWorkoutBuilder);
+                safeInitialize("Smart Build", () => initializeSmartBuild(content));
+                safeInitialize("Routine importer", () => initializeRoutineImporter(content));
+                safeInitialize("Smart Build superset guard", () => initializeSmartBuildSupersetGuard(content));
+                safeInitialize("One-off workout", initializeOneOffWorkout);
+                bindManualBuildLauncher(content);
+                safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
+                safeInitialize("Workout catalogue", initializeWorkoutCatalogue);
+                safeInitialize("Workout landing", () => initializeWorkoutLandingLive(content));
+                break;
             case "progress":
                 content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
             case "sleep":
