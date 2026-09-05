@@ -37,3 +37,7 @@ test("food log loads the runtime diagnostic module", () => {
     assert.match(client, /window\.__levelUpFatSecretLastStatus/);
     assert.match(client, /data-fat-secret-runtime-status|fatSecretRuntimeStatus/);
 });
+
+test("FatSecret attribution is hidden from the food-sheet footer", () => {
+    assert.match(client, /\.food-sheet-card \[data-fatsecret-attribution\]\{display:none!important\}/);
+});
