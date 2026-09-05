@@ -8,6 +8,7 @@ function ensureStyles() {
     if (document.getElementById(STYLE_ID)) return;
 
     const style = document.createElement("style");
+    style.id = STYLE_ID;
     style.textContent = `
         .exercise-guide-video-card {
             margin: 14px 0 12px;
