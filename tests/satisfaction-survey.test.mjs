@@ -27,7 +27,7 @@ test("feedback is stored server-side and returned only through owner analytics",
     const [worker, migration, admin] = await Promise.all([
         read("cloud/src/index.js"),
         read("cloud/migrations/0012_satisfaction_feedback.sql"),
-        read("js/analytics/admin-analytics.js")
+        read("admin/admin-analytics.js")
     ]);
     assert.match(worker, /\/v1\/feedback/);
     assert.match(worker, /isAdminUser\(user, env\)/);
