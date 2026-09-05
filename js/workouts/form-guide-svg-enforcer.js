@@ -1,5 +1,5 @@
 import "./form-guide-coverage-runtime.js?v=form-guide-coverage-runtime-3";
-import "./exercise-guide-videos.js?v=form-videos-2";
+import "./exercise-guide-videos.js?v=form-videos-5-expanded-id-fix";
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
 import {
     getFormGuideMuscleVisual,
