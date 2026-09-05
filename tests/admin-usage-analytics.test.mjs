@@ -35,9 +35,9 @@ test("food additions create deduplicated analytics events", async () => {
 test("owner analytics reports current, returning, food, and workout usage", async () => {
     const [worker, admin, router, styles, workerConfig] = await Promise.all([
         read("cloud/src/index.js"),
-        read("js/analytics/admin-analytics.js"),
+        read("admin/admin-analytics.js"),
         read("js/core/router.js"),
-        read("css/admin-analytics-usage.css"),
+        read("admin/admin-analytics-usage.css"),
         read("cloud/wrangler.jsonc")
     ]);
     for (const metric of ["users_today", "new_users_today", "engaged_users_today", "repeat_users", "foods_logged", "food_log_users", "workout_users"]) {
@@ -52,8 +52,8 @@ test("owner analytics reports current, returning, food, and workout usage", asyn
     assert.match(admin, /Signed-in users today/);
     assert.match(admin, /Engaged users today/);
     assert.match(admin, /Halifax local dates/);
-    assert.match(admin, /admin-analytics-usage\.css\?v=workout-source-stats-1/);
-    assert.match(router, /admin-analytics\.js\?v=workout-source-stats-1/);
+    assert.match(admin, /admin-analytics-usage\.css\?v=owner-dashboard-1/);
+    assert.doesNotMatch(router, /admin-analytics/);
     assert.match(workerConfig, /"ANALYTICS_TIME_ZONE": "America\/Halifax"/);
     assert.match(admin, /Users<\/span><span class="is-foods">Foods/);
     assert.match(styles, /admin-analytics-series--users/);
@@ -78,7 +78,7 @@ test("owner analytics reports current, returning, food, and workout usage", asyn
 test("owner analytics counts users with at least one synced weigh-in", async () => {
     const [wrapper, admin] = await Promise.all([
         read("cloud/src/safe-backup-worker-v2.js"),
-        read("js/analytics/admin-analytics.js")
+        read("admin/admin-analytics.js")
     ]);
     assert.match(wrapper, /weight_log_users/);
     assert.match(wrapper, /forge_weight_entries/);
@@ -94,8 +94,8 @@ test("completed workouts report and summarize how they were created", async () =
         read("js/workouts/workout-session.js"),
         read("js/analytics/acquisition.js"),
         read("cloud/src/index.js"),
-        read("js/analytics/admin-analytics.js"),
-        read("css/admin-analytics-usage.css")
+        read("admin/admin-analytics.js"),
+        read("admin/admin-analytics-usage.css")
     ]);
     for (const value of ["coach_builder", "manual_builder", "template_library", "imported_routine", "one_off"]) {
         assert.match(source, new RegExp(value));
