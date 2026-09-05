@@ -171,7 +171,8 @@ function buildAnalyticsMarkup() {
     const goal = goalProgressData(trendInfo);
 
     const averageCalories = average(calories);
-    const averageExpenditure = average(expenditure) ?? Number(currentEstimate?.liveMaintenanceCalories ?? currentEstimate?.maintenanceCalories) || null;
+    const estimateFallback = Number(currentEstimate?.liveMaintenanceCalories ?? currentEstimate?.maintenanceCalories);
+    const averageExpenditure = average(expenditure) ?? (Number.isFinite(estimateFallback) && estimateFallback > 0 ? estimateFallback : null);
     const currentWeight = Number(trendInfo.trend?.trendWeight ?? trendSeries.at(-1)?.weight);
     const weightSvg = trendSeries.length >= 2 ? buildDashboardWeightTrendSvg(trendSeries) : "";
     const calorieDelta = Number.isFinite(averageCalories) && Number.isFinite(averageExpenditure)
