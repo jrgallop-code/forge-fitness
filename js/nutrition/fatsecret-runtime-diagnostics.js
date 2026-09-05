@@ -2,11 +2,13 @@ export * from "./fatsecret-live-cache.js?v=fatsecret-runtime-1";
 
 const FOOD_SEARCH_ENDPOINT = "/v1/foods/search";
 const DIAGNOSTIC_PREFIX = "FatSecret:";
+const SHEET_ATTRIBUTION_STYLE_ID = "level-up-fatsecret-sheet-attribution-style";
 
 function installRuntimeDiagnostics() {
     if (typeof window === "undefined" || typeof window.fetch !== "function" || window.__levelUpFatSecretRuntimeDiagnostics) return;
     const originalFetch = window.fetch.bind(window);
     window.__levelUpFatSecretRuntimeDiagnostics = true;
+    hideFoodSheetAttribution();
 
     window.fetch = async (...args) => {
         const response = await originalFetch(...args);
@@ -23,6 +25,14 @@ function installRuntimeDiagnostics() {
         catch {}
         return response;
     };
+}
+
+function hideFoodSheetAttribution() {
+    if (typeof document === "undefined" || document.getElementById(SHEET_ATTRIBUTION_STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = SHEET_ATTRIBUTION_STYLE_ID;
+    style.textContent = ".food-sheet-card [data-fatsecret-attribution]{display:none!important}";
+    (document.head || document.documentElement)?.appendChild(style);
 }
 
 function renderRuntimeStatus(status) {
