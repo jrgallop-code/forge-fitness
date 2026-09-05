@@ -1,0 +1,13 @@
+.prototype-all-plans-control {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--card-border)) !important;
+  background: linear-gradient(145deg, var(--accent-soft), var(--card)) !important;
+}
+
+.prototype-all-plans-control .prototype-filter-icon {
+  background: var(--accent) !important;
+  color: var(--accent-contrast) !important;
+}
+
+.prototype-all-plans-control strong {
+  color: var(--heading) !important;
+}
