@@ -1,7 +1,7 @@
 import "./rest-alarm-phase1.js?v=rest-authority-1";
 import "./rest-alarm-button-stability.js?v=rest-authority-1";
 import "./rest-timer-authority.js?v=rest-timer-authority-1";
-import "../core/workout-theme-guardrail.js?v=workout-theme-guardrail-2";
+import "../core/workout-theme-guardrail.js?v=workout-theme-guardrail-3";
 import { openActiveWorkout } from "./workout-session.js?v=workout-source-stats-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = 'level_up_active_workout';
@@ -89,8 +89,6 @@ function syncVisibleTimer() {
   const logger = document.getElementById('workout-session-logger');
   const active = getActive();
 
-  // The global alarm banner is workout state, not logger DOM state. Keep it
-  // visible across logger re-renders and page changes whenever a timer exists.
   const banner = document.getElementById('level-up-rest-alarm-banner');
   if (active?.restTimer && banner) banner.hidden = false;
 
