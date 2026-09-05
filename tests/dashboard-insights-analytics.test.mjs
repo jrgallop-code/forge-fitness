@@ -4,21 +4,30 @@ import { readFile } from "node:fs/promises";
 
 const bridge = await readFile(new URL("../js/dashboard/dashboard-insights-analytics.js", import.meta.url), "utf8");
 const analytics = await readFile(new URL("../js/dashboard/dashboard-insights-analytics-v4.js", import.meta.url), "utf8");
-const styles = await readFile(new URL("../css/dashboard-weight-trend-card.css", import.meta.url), "utf8");
+const previewFixes = await readFile(new URL("../js/dashboard/dashboard-insights-preview-fixes.js", import.meta.url), "utf8");
+const weightStyles = await readFile(new URL("../css/dashboard-weight-trend-card.css", import.meta.url), "utf8");
+const setsStyles = await readFile(new URL("../css/dashboard-seven-day-sets.css", import.meta.url), "utf8");
 
 test("original dashboard Trend Weight card styling is restored", () => {
-    assert.doesNotMatch(styles, /dashboard-analytics-screen/);
-    assert.doesNotMatch(styles, /dashboard-insights-see-all/);
-    assert.match(styles, /dashboard-weight-trend-button/);
+    assert.doesNotMatch(weightStyles, /dashboard-analytics-screen/);
+    assert.doesNotMatch(weightStyles, /dashboard-insights-see-all/);
+    assert.match(weightStyles, /dashboard-weight-trend-button/);
 });
 
 test("See More is attached only to the Trend Weight card cell", () => {
     assert.match(bridge, /dashboard-insights-analytics-v4/);
+    assert.match(bridge, /dashboard-insights-preview-fixes/);
     assert.match(analytics, /dashboard-weight-see-more-wrap/);
     assert.match(analytics, /dashboard-weight-see-more-action/);
     assert.match(analytics, />See More</);
     assert.doesNotMatch(analytics, />See all</i);
     assert.match(analytics, /wrapper\.appendChild\(card\)/);
+});
+
+test("Working Sets card matches the Trend Weight card height", () => {
+    assert.match(setsStyles, /min-height:\s*148px/);
+    assert.match(setsStyles, /height:\s*148px/);
+    assert.match(setsStyles, /align-self:\s*end/);
 });
 
 test("See More contains exactly the requested preview types", () => {
@@ -34,6 +43,15 @@ test("energy previews use live expenditure history and completed food-day rules"
     assert.match(analytics, /liveMaintenanceCalories/);
     assert.match(analytics, /level_up_food_log_complete_days_v1/);
     assert.match(analytics, /shiftDateKey\(today, -6\)/);
+});
+
+test("Calories vs Expenditure preview always maps the full seven calendar days", () => {
+    assert.match(previewFixes, /Array\.from\(\{ length: 7 \}/);
+    assert.match(previewFixes, /history\.filter\(point => point\.date < start\)/);
+    assert.match(previewFixes, /live \?\? lastUsable \?\? reviewed/);
+    assert.match(previewFixes, /const step = \(width - left - right\) \/ 6/);
+    assert.match(previewFixes, /month: "numeric", day: "numeric"/);
+    assert.doesNotMatch(previewFixes, /weekday:\s*"narrow"/);
 });
 
 test("energy preview cards navigate to authoritative Progress graphs", () => {
