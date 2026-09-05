@@ -1,4 +1,4 @@
-import "./dashboard-insights-analytics.js?v=dashboard-insights-1";
+import "./dashboard-insights-analytics.js?v=dashboard-see-more-2";
 import { buildDashboardWeightTrendSvg } from "./dashboard-weight-trend-svg.js?v=dashboard-weight-animated-1";
 import { calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 
@@ -60,6 +60,16 @@ function findWeightCard() {
         const title = String(card.querySelector("h3")?.textContent || "").trim();
         return title === "Latest Weight" || title === "Latest Recorded Weight";
     }) || null;
+}
+
+function playTrendTrace(card) {
+    const path = card?.querySelector(".dashboard-weight-trend-average");
+    if (!path || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
+    path.style.animation = "none";
+    path.style.strokeDasharray = "1";
+    path.style.strokeDashoffset = "1";
+    path.getBoundingClientRect();
+    path.style.animation = "dashboardWeightTrace 1400ms cubic-bezier(.2,.7,.2,1) forwards";
 }
 
 function renderWeightTrendCard() {
@@ -128,6 +138,7 @@ function renderWeightTrendCard() {
             </span>
         </button>
     `;
+    requestAnimationFrame(() => playTrendTrace(card));
 }
 
 function openWeightProgress() {
