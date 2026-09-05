@@ -4,10 +4,19 @@ import test from "node:test";
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("consumer app never displays owner analytics surfaces", async () => {
-  const moreStyles = await read("css/more-menu-compact.css");
+test("consumer app contains no owner analytics launcher or route", async () => {
+  const [more, router, moreStyles] = await Promise.all([
+    read("js/more/more-ui-v2.js"),
+    read("js/core/router.js"),
+    read("css/more-menu-compact.css")
+  ]);
+
+  assert.doesNotMatch(more, /owner-analytics-menu/);
+  assert.doesNotMatch(more, /Stats & Analytics/);
+  assert.doesNotMatch(more, /revealOwnerAnalyticsMenu/);
+  assert.doesNotMatch(router, /renderAdminAnalytics/);
+  assert.doesNotMatch(router, /case \"admin-analytics\"/);
   assert.match(moreStyles, /\.owner-analytics-launch/);
-  assert.match(moreStyles, /\[data-more-page=\"admin-analytics\"\]/);
   assert.match(moreStyles, /\.admin-analytics-page\{display:none!important\}/);
 });
 
@@ -28,7 +37,7 @@ test("standalone owner dashboard requires Google sign-in and admin authorization
   assert.match(analytics, /level_up_owner_session/);
 });
 
-test("cloud API accepts the private admin subdomain", async () => {
+test("cloud API configuration includes the private admin subdomain", async () => {
   const workerConfig = await read("cloud/wrangler.jsonc");
   assert.match(workerConfig, /https:\/\/admin\.leveluphypertrophy\.com/);
 });
