@@ -9,8 +9,8 @@ import {
 } from "./fatsecret-food-provider.js";
 
 const SEARCH_LIMIT = 16;
-const FATSECRET_SEARCH_LIMIT = 5;
-const FATSECRET_DETAIL_LIMIT = 3;
+const FATSECRET_SEARCH_LIMIT = 8;
+const FATSECRET_DETAIL_LIMIT = 5;
 
 export default {
     async fetch(request, env, ctx) {
@@ -46,27 +46,44 @@ async function searchFoodsWithFatSecret(url, request, env, ctx) {
     try {
         capabilities = await getFatSecretCapabilities(env);
         const summaries = await searchFatSecretFoods(query, country, env, { limit: FATSECRET_SEARCH_LIMIT });
-        const ids = summaries.map(food => String(food?.fatSecretFoodId || "")).filter(id => /^\d+$/.test(id)).slice(0, FATSECRET_DETAIL_LIMIT);
-        const details = (await Promise.all(ids.map(id => getFatSecretFood(id, country, env).catch(() => null))))
-            .filter(food => food && Array.isArray(food.portions) && food.portions.some(portion => /^\d+$/.test(String(portion?.servingId || ""))));
+
+        // Premier v5 search already returns detailed servings. Keep those results
+        // directly instead of re-fetching and accidentally dropping valid foods.
+        const usableFromSearch = summaries.filter(hasStorableServingId);
+        const needsDetail = summaries
+            .filter(food => !hasStorableServingId(food))
+            .map(food => String(food?.fatSecretFoodId || ""))
+            .filter(id => /^\d+$/.test(id))
+            .slice(0, FATSECRET_DETAIL_LIMIT);
+
+        const enriched = (await Promise.all(needsDetail.map(id => getFatSecretFood(id, country, env).catch(() => null))))
+            .filter(hasStorableServingId);
+        const fatSecretFoods = mergeFatSecretCandidates(summaries, usableFromSearch, enriched);
 
         const payload = await baseResponse.clone().json().catch(() => ({}));
-        const status = fatSecretStatus(capabilities, country, details.length > 0);
-        if (!details.length) return jsonFrom(baseResponse, { ...payload, fatSecret: status });
+        const status = fatSecretStatus(capabilities, country, fatSecretFoods.length > 0, {
+            candidates: summaries.length,
+            usableResults: fatSecretFoods.length,
+            directResults: usableFromSearch.length,
+            enrichedResults: enriched.length
+        });
+        if (!fatSecretFoods.length) return jsonFrom(baseResponse, { ...payload, fatSecret: status });
 
         const baseFoods = Array.isArray(payload?.foods) ? payload.foods : [];
-        const foods = mergeSearchResults(baseFoods, details, SEARCH_LIMIT);
+        const foods = mergeSearchResults(baseFoods, fatSecretFoods, SEARCH_LIMIT);
         const source = appendSource(payload?.source, "FatSecret");
         return jsonFrom(baseResponse, { ...payload, foods, source, fatSecret: status });
     }
     catch (error) {
-        console.warn(JSON.stringify({ event: "fatsecret_food_search_failed", reason: error?.name === "AbortError" ? "timeout" : String(error?.message || error) }));
+        const reason = error?.name === "AbortError" ? "timeout" : String(error?.message || error);
+        console.warn(JSON.stringify({ event: "fatsecret_food_search_failed", reason }));
         const payload = await baseResponse.clone().json().catch(() => ({}));
         return jsonFrom(baseResponse, {
             ...payload,
             fatSecret: {
                 ...fatSecretStatus(capabilities, country, false),
-                available: false
+                available: false,
+                error: safeFatSecretError(reason)
             }
         });
     }
@@ -114,7 +131,7 @@ async function authenticatedUser(request, env, ctx) {
     return { ok: response.ok, response };
 }
 
-function fatSecretStatus(capabilities, requestedCountry, contributed) {
+function fatSecretStatus(capabilities, requestedCountry, contributed, counts = {}) {
     const canLocalize = Boolean(capabilities?.canLocalize);
     const effectiveCountry = canLocalize && requestedCountry ? requestedCountry : "US";
     return {
@@ -129,8 +146,44 @@ function fatSecretStatus(capabilities, requestedCountry, contributed) {
         canBarcode: Boolean(capabilities?.canBarcode),
         requestedCountry: requestedCountry || "US",
         effectiveCountry,
-        contributed: Boolean(contributed)
+        contributed: Boolean(contributed),
+        candidates: Math.max(0, Number(counts.candidates) || 0),
+        usableResults: Math.max(0, Number(counts.usableResults) || 0),
+        directResults: Math.max(0, Number(counts.directResults) || 0),
+        enrichedResults: Math.max(0, Number(counts.enrichedResults) || 0)
     };
+}
+
+function hasStorableServingId(food) {
+    return Boolean(food && Array.isArray(food.portions) && food.portions.some(portion => /^\d+$/.test(String(portion?.servingId || ""))));
+}
+
+function mergeFatSecretCandidates(summaries, direct, enriched) {
+    const usable = new Map();
+    [...direct, ...enriched].forEach(food => {
+        const id = String(food?.fatSecretFoodId || "");
+        if (id && !usable.has(id)) usable.set(id, food);
+    });
+    const ordered = [];
+    (Array.isArray(summaries) ? summaries : []).forEach(summary => {
+        const id = String(summary?.fatSecretFoodId || "");
+        const food = usable.get(id);
+        if (food) ordered.push(food);
+    });
+    usable.forEach((food, id) => {
+        if (!ordered.some(item => String(item?.fatSecretFoodId || "") === id)) ordered.push(food);
+    });
+    return ordered;
+}
+
+function safeFatSecretError(reason) {
+    const text = String(reason || "").toLowerCase();
+    if (text.includes("invalid ip") || text.includes("ip address")) return "invalid_ip";
+    if (text.includes("missing scope")) return "missing_scope";
+    if (text.includes("invalid token")) return "invalid_token";
+    if (text.includes("token request failed")) return "token_request_failed";
+    if (text.includes("timeout")) return "timeout";
+    return "request_failed";
 }
 
 function mergeSearchResults(baseFoods, fatSecretFoods, limit) {
