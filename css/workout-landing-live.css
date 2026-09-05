@@ -1,0 +1,151 @@
+.workout-page.workout-live-page{margin:0!important;padding:0 0 28px!important;border:0!important;background:transparent!important;box-shadow:none!important}
+.workout-live-page>.workout-page-title{display:none!important}
+.workout-live-source-home{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;clip-path:inset(50%)!important}
+.workout-live-landing{display:block;padding-bottom:22px}
+.workout-live-landing[hidden]{display:none!important}
+
+.workout-live-schedule-section{margin:0 0 20px}
+.workout-live-schedule-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:0 2px 8px}
+.workout-live-schedule-heading h2{margin:0;font-size:21px;line-height:1.1;letter-spacing:-.03em;color:var(--heading)}
+.workout-live-schedule-heading p{margin:4px 0 0;color:var(--muted);font-size:10.5px}
+.workout-live-schedule-slot{min-height:86px}
+.workout-live-schedule-slot>.workout-schedule-shell{margin:0!important}
+.workout-live-schedule-slot .schedule-banner{display:flex!important;flex-direction:column;gap:12px;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+.workout-live-schedule-slot .schedule-week-strip{order:1;display:grid!important;grid-template-columns:repeat(7,minmax(40px,1fr));gap:5px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none}
+.workout-live-schedule-slot .schedule-week-strip::-webkit-scrollbar{display:none}
+.workout-live-schedule-slot .schedule-day{display:grid;justify-items:center;gap:4px;min-width:40px;padding:0!important;border:0!important;background:transparent!important;text-align:center}
+.workout-live-schedule-slot .schedule-day span{font-size:9px!important;font-weight:700;letter-spacing:.04em;color:var(--muted)!important;text-transform:uppercase}
+.workout-live-schedule-slot .schedule-day strong{display:grid;place-items:center;width:38px;height:38px;margin:0!important;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--heading);font-size:15px!important;line-height:1}
+.workout-live-schedule-slot .schedule-day.is-today strong{border-color:var(--accent)!important;background:var(--accent)!important;color:#fff!important;box-shadow:0 5px 16px color-mix(in srgb,var(--accent) 34%,transparent)}
+.workout-live-schedule-slot .schedule-day.is-complete strong{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent)}
+.workout-live-schedule-slot .schedule-day small{display:block;width:100%;overflow:hidden;color:var(--muted)!important;font-size:7.5px!important;line-height:1.05;text-overflow:ellipsis;white-space:nowrap}
+.workout-live-today-card{order:2;display:grid;gap:10px;padding:14px 15px;border:1px solid var(--card-border);border-radius:18px;background:linear-gradient(145deg,var(--card),var(--surface-raised));box-shadow:0 10px 26px rgba(0,0,0,.13)}
+.workout-live-today-card .schedule-banner-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.workout-live-today-card .schedule-banner-top>div{display:grid;gap:3px}
+.workout-live-today-card .schedule-banner-top .eyebrow{color:var(--accent-text)!important;font-size:9px;letter-spacing:.12em}
+.workout-live-today-card .schedule-banner-top strong{font-size:18px;line-height:1.15;letter-spacing:-.02em;color:var(--heading)}
+.workout-live-today-card .schedule-edit-link{padding:2px 0;border:0;background:transparent;color:var(--accent-text)!important;font-size:12px;font-weight:750}
+.workout-live-today-card .schedule-banner-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0!important;padding:0!important;border:0!important}
+.workout-live-today-card .schedule-banner-actions>span{max-width:52%;color:var(--muted);font-size:10px;line-height:1.3}
+.workout-live-today-card .schedule-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.workout-live-today-card .schedule-actions button{min-height:34px;padding:8px 11px;border-radius:11px;font-size:10px;font-weight:750}
+.workout-live-schedule-slot .schedule-editor{order:3;margin-top:0;padding:13px;border:1px solid var(--card-border);border-radius:16px;background:var(--card)}
+.workout-live-schedule-slot .schedule-empty,.workout-live-schedule-slot .schedule-setup-shell{padding:14px;border:1px solid var(--card-border);border-radius:18px;background:var(--card)}
+.workout-live-schedule-loading{display:grid;place-items:center;min-height:86px;border:1px solid var(--card-border);border-radius:18px;background:var(--card);color:var(--muted);font-size:12px}
+
+.workout-live-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:2px 2px 15px}
+.workout-live-kicker{display:block;margin-bottom:5px;color:var(--accent-text);font-size:9px;font-weight:850;letter-spacing:.14em}
+.workout-live-hero h1{margin:0;font-size:36px;line-height:1;letter-spacing:-.045em;color:var(--heading)}
+.workout-live-hero p{margin:7px 0 0;color:var(--muted);font-size:13px}
+.workout-live-new-plan{flex:0 0 auto;min-height:40px;padding:0 13px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:12px;background:var(--accent-soft);color:var(--accent-text);font:inherit;font-size:12px;font-weight:800}
+.workout-live-new-plan:active{transform:scale(.97)}
+
+.workout-live-filter-strip{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin:0 -12px 24px;padding:0 12px 4px;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.workout-live-filter-strip::-webkit-scrollbar{display:none}
+.workout-live-filter{flex:0 0 144px;display:grid;grid-template-columns:31px minmax(0,1fr) 12px;align-items:center;gap:8px;min-height:66px;padding:9px 10px;border:1px solid var(--card-border);border-radius:14px;background:var(--card);color:var(--text);text-align:left;scroll-snap-align:start;box-shadow:0 8px 22px rgba(0,0,0,.12)}
+.workout-live-filter:active{transform:scale(.98)}
+.workout-live-filter.is-all{border-color:color-mix(in srgb,var(--accent) 42%,var(--line));background:var(--accent-soft)}
+.workout-live-filter-icon{display:grid;place-items:center;width:31px;height:31px;border-radius:9px;background:var(--accent-soft);color:var(--accent-text)}
+.workout-live-filter.is-all .workout-live-filter-icon{background:var(--accent);color:#fff}
+.workout-live-filter svg,.workout-live-program-meta svg,.workout-live-row-meta svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.workout-live-filter>span:nth-child(2){display:grid;min-width:0;gap:2px}
+.workout-live-filter small{color:var(--muted);font-size:9px;font-weight:650}
+.workout-live-filter strong{overflow:hidden;color:var(--heading);font-size:12px;line-height:1.2;text-overflow:ellipsis;white-space:nowrap}
+.workout-live-filter i{color:var(--muted);font-size:12px;font-style:normal}
+
+.workout-live-section{margin:0 0 25px}
+.workout-live-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:0 2px 10px}
+.workout-live-section-heading h2{margin:0;font-size:21px;line-height:1.1;letter-spacing:-.03em;color:var(--heading)}
+.workout-live-section-heading p{margin:4px 0 0;color:var(--muted);font-size:10.5px}
+.workout-live-section-heading button{padding:4px 0;border:0;background:transparent;color:var(--accent-text);font:inherit;font-size:11.5px;font-weight:800}
+
+.workout-live-recommended{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;margin:0 -12px;padding:0 12px 6px;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.workout-live-recommended::-webkit-scrollbar{display:none}
+.workout-live-program-card{position:relative;flex:0 0 252px;height:330px;overflow:hidden;border:1px solid var(--card-border);border-radius:19px;background:var(--card);color:#fff;scroll-snap-align:start;box-shadow:0 14px 35px rgba(0,0,0,.24);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.workout-live-program-card:active{transform:scale(.987)}
+.workout-live-program-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:var(--surface-raised)}
+.workout-live-program-card[data-art-family="cinematicMale"] img,.workout-live-program-card[data-art-family="cinematicFemale"] img{filter:contrast(1.08) saturate(.88)}
+.workout-live-program-card[data-art-family="bodybuilderMale"] img,.workout-live-program-card[data-art-family="classicPhysique"] img{object-position:center 26%}
+.workout-live-program-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.2) 0%,rgba(0,0,0,.15) 32%,rgba(0,0,0,.58) 60%,rgba(0,0,0,.97) 100%)}
+.workout-live-program-badge{position:absolute;top:12px;left:12px;padding:5px 8px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:rgba(10,10,12,.78);-webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px);color:#fff;font-size:8px;font-weight:900;letter-spacing:.08em;text-shadow:0 1px 5px rgba(0,0,0,.7)}
+.workout-live-program-card:first-child .workout-live-program-badge{background:color-mix(in srgb,var(--accent) 82%,rgba(10,10,12,.84))}
+.workout-live-program-copy{position:absolute;right:10px;bottom:10px;left:10px;z-index:2;padding:13px 12px 11px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:linear-gradient(180deg,rgba(8,8,10,.38),rgba(8,8,10,.82));-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.workout-live-program-copy h3{margin:0;color:#fff!important;font-size:21px;line-height:1.06;letter-spacing:-.035em;text-shadow:0 2px 10px rgba(0,0,0,.9)}
+.workout-live-program-copy p{display:-webkit-box;overflow:hidden;margin:7px 0 11px;color:rgba(255,255,255,.92)!important;font-size:11px;line-height:1.35;text-shadow:0 1px 7px rgba(0,0,0,.95);-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.workout-live-program-meta{display:flex;gap:12px;align-items:center;color:rgba(255,255,255,.98)!important;font-size:9.5px;font-weight:700;text-shadow:0 1px 6px rgba(0,0,0,.95)}
+.workout-live-program-meta span{display:inline-flex;align-items:center;gap:5px}
+.workout-live-program-meta svg{width:14px;height:14px}
+
+.workout-live-plan-list{display:grid;gap:8px}
+.workout-live-plan-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch;gap:8px;min-height:96px;padding:7px;border:1px solid var(--card-border);border-radius:16px;background:var(--card);box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.workout-live-row-main{display:grid;grid-template-columns:82px minmax(0,1fr);gap:11px;align-items:stretch;min-width:0;padding:0;border:0;background:transparent;color:inherit;text-align:left}
+.workout-live-row-main>img{width:82px;height:82px;object-fit:cover;border:1px solid var(--line);border-radius:12px;background:var(--surface-raised)}
+.workout-live-plan-row[data-art-family="bodybuilderMale"] .workout-live-row-main>img,.workout-live-plan-row[data-art-family="classicPhysique"] .workout-live-row-main>img{object-position:center 25%}
+.workout-live-row-copy{display:grid;align-content:center;min-width:0}
+.workout-live-row-copy>small{margin-bottom:2px;color:var(--accent-text);font-size:7.5px;font-weight:850;letter-spacing:.08em}
+.workout-live-row-copy>strong{overflow:hidden;color:var(--heading);font-size:15px;line-height:1.18;text-overflow:ellipsis;white-space:nowrap}
+.workout-live-row-copy>em{display:-webkit-box;overflow:hidden;margin-top:3px;color:var(--muted);font-size:9.5px;font-style:normal;line-height:1.3;-webkit-box-orient:vertical;-webkit-line-clamp:1}
+.workout-live-row-meta{display:flex;align-items:center;gap:9px;overflow:hidden;margin-top:7px;color:var(--text-secondary,var(--muted));font-size:8.5px;white-space:nowrap}
+.workout-live-row-meta b{display:inline-flex;align-items:center;gap:4px;min-width:0;font-weight:650}
+.workout-live-row-meta svg{flex:0 0 auto;width:12px;height:12px}
+.workout-live-row-action{align-self:center;min-width:60px;min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface-raised);color:var(--text);font:inherit;font-size:10px;font-weight:800}
+.workout-live-plan-row.is-saved .workout-live-row-action{border-color:var(--accent);background:var(--accent);color:var(--accent-contrast)}
+.workout-live-row-action:active,.workout-live-row-main:active{opacity:.75}
+
+.workout-live-empty{flex:0 0 100%;display:grid;gap:4px;padding:22px;border:1px dashed var(--line);border-radius:16px;color:var(--muted);text-align:center}
+.workout-live-empty strong{color:var(--heading)}
+.workout-live-empty span{font-size:11px}
+
+.workout-live-sheet-overlay{position:fixed;inset:0;z-index:20000;display:flex;align-items:flex-end;justify-content:center}
+.workout-live-sheet-scrim{position:absolute;inset:0;border:0;background:rgba(0,0,0,.62);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
+.workout-live-sheet{position:relative;z-index:2;width:min(620px,100%);max-height:min(82vh,720px);overflow:auto;padding:9px 14px calc(18px + env(safe-area-inset-bottom));border:1px solid var(--card-border);border-bottom:0;border-radius:24px 24px 0 0;background:color-mix(in srgb,var(--surface) 97%,transparent);color:var(--text);box-shadow:0 -20px 50px rgba(0,0,0,.32)}
+.workout-live-sheet-grabber{width:38px;height:5px;margin:0 auto 12px;border-radius:999px;background:var(--line)}
+.workout-live-sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:13px}
+.workout-live-sheet-head span{display:block;margin-bottom:3px;color:var(--accent-text);font-size:8px;font-weight:850;letter-spacing:.12em}
+.workout-live-sheet-head h2{margin:0;font-size:22px;letter-spacing:-.035em;color:var(--heading)}
+.workout-live-sheet-head>button{padding:5px 0;border:0;background:transparent;color:var(--accent-text);font:inherit;font-size:12px;font-weight:800}
+.workout-live-sheet-options,.workout-live-action-list{display:grid;overflow:hidden;border:1px solid var(--card-border);border-radius:16px;background:var(--card)}
+.workout-live-sheet-options>button{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:50px;padding:0 14px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-size:13px;font-weight:700;text-align:left}
+.workout-live-sheet-options>button:last-child{border-bottom:0}
+.workout-live-sheet-options>button.selected{color:var(--accent-text);background:var(--accent-soft)}
+.workout-live-sheet-options b{color:var(--accent-text)}
+.workout-live-action-row{display:grid;grid-template-columns:40px minmax(0,1fr) 14px;align-items:center;gap:11px;min-height:72px;padding:10px 12px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);text-align:left}
+.workout-live-action-row:last-child{border-bottom:0}
+.workout-live-action-row:active{background:var(--accent-soft)}
+.workout-live-action-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:11px;background:var(--accent-soft);color:var(--accent-text)}
+.workout-live-action-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.workout-live-action-row>span:nth-child(2){display:grid;gap:3px}
+.workout-live-action-row strong{font-size:13px}
+.workout-live-action-row small{color:var(--muted);font-size:9.5px;line-height:1.35}
+.workout-live-action-row i{color:var(--muted);font-size:22px;font-style:normal}
+
+.workout-live-toast{position:fixed;z-index:30000;left:50%;bottom:calc(104px + env(safe-area-inset-bottom));max-width:calc(100vw - 34px);padding:10px 13px;border:1px solid var(--card-border);border-radius:12px;background:var(--surface-raised);color:var(--text);font-size:11px;font-weight:700;opacity:0;transform:translate(-50%,12px);transition:.2s ease;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.workout-live-toast.show{opacity:1;transform:translate(-50%,0)}
+
+.workout-live-page.showing-plan-details>.workout-live-landing{display:none!important}
+
+@media(max-width:430px){
+    .workout-live-filter-strip,.workout-live-recommended{margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px}
+    .workout-live-hero h1{font-size:34px}
+    .workout-live-new-plan{min-height:38px;padding:0 11px;font-size:11px}
+    .workout-live-filter{flex-basis:136px}
+    .workout-live-program-card{flex-basis:238px;height:315px}
+    .workout-live-plan-row{grid-template-columns:minmax(0,1fr) 56px}
+    .workout-live-row-main{grid-template-columns:74px minmax(0,1fr)}
+    .workout-live-row-main>img{width:74px;height:80px}
+    .workout-live-row-action{min-width:54px;padding:0 7px}
+    .workout-live-row-meta{gap:6px}
+    .workout-live-row-meta b:last-child{display:none}
+    .workout-live-schedule-slot .schedule-week-strip{grid-template-columns:repeat(7,44px);gap:4px}
+    .workout-live-schedule-slot .schedule-day strong{width:36px;height:36px}
+    .workout-live-today-card .schedule-banner-actions{align-items:flex-start;flex-direction:column}
+    .workout-live-today-card .schedule-banner-actions>span{max-width:none}
+    .workout-live-today-card .schedule-actions{width:100%;justify-content:flex-start}
+}
+@media(max-width:360px){
+    .workout-live-hero{align-items:flex-start;flex-direction:column}
+    .workout-live-new-plan{align-self:flex-start}
+    .workout-live-program-card{flex-basis:224px}
+    .workout-live-row-copy>em{display:none}
+    .workout-live-row-meta b:nth-child(2){display:none}
+}
