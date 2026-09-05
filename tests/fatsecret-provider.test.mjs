@@ -12,20 +12,37 @@ test("FatSecret provider uses OAuth 2 client credentials and server-side secrets
     assert.match(provider, /Authorization:\s*`Basic/);
 });
 
-test("FatSecret Basic search uses the method-based foods.search API while Premier uses v5", () => {
+test("FatSecret auto mode omits scope so the token receives all account-entitled scopes", async () => {
+    const module = await import("../cloud/src/fatsecret-food-provider.js");
+    assert.equal(module.fatSecretConfiguredScope({}), "");
+    assert.equal(module.fatSecretConfiguredScope({ FATSECRET_SCOPE: "auto" }), "");
+    assert.equal(module.fatSecretScopeMode({ FATSECRET_SCOPE: "auto" }), "auto");
+    assert.equal(module.fatSecretConfiguredScope({ FATSECRET_SCOPE: "basic" }), "basic");
+    assert.match(provider, /if \(requestedScope\) body\.set\("scope", requestedScope\)/);
+    assert.match(provider, /decodeFatSecretAccessTokenScopes/);
+});
+
+test("FatSecret access token scopes are decoded from the JWT", async () => {
+    const module = await import("../cloud/src/fatsecret-food-provider.js");
+    const encode = value => Buffer.from(JSON.stringify(value)).toString("base64url");
+    const token = `${encode({ alg: "none" })}.${encode({ scope: ["basic", "premier", "localization"] })}.x`;
+    assert.deepEqual(module.decodeFatSecretAccessTokenScopes(token), ["basic", "premier", "localization"]);
+});
+
+test("FatSecret Basic search uses foods.search while Premier uses localized v5 when granted", () => {
     assert.match(provider, /server\.api/);
     assert.match(provider, /method:\s*"foods\.search"/);
     assert.match(provider, /method:\s*"POST"/);
     assert.match(provider, /application\/x-www-form-urlencoded/);
     assert.match(provider, /foods\/search\/v5/);
-    assert.match(provider, /scopes\.has\("premier"\)/);
-    assert.doesNotMatch(provider, /foods\/search\/\$\{version\}/);
+    assert.match(provider, /capabilities\.premier/);
+    assert.match(provider, /capabilities\.canLocalize && normalizedCountry/);
 });
 
 test("FatSecret provider supports detailed foods and optional barcode scope", () => {
     assert.match(provider, /food\/v5/);
     assert.match(provider, /food\/barcode\/find-by-id\/v2/);
-    assert.match(provider, /fatSecretScopes\(env\)\.has\("barcode"\)/);
+    assert.match(provider, /capabilities\.canBarcode/);
 });
 
 test("FatSecret normalization carries storable food and serving identifiers", async () => {
