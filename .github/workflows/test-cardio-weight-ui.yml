@@ -6,9 +6,15 @@ on:
       - "css/logger-cardio-timer.css"
       - "css/workout-mode.css"
       - "css/navbar-stability.css"
+      - "css/dashboard-weight-trend-card.css"
       - "js/progress/weight-trend-canvas-smoothing.js"
       - "js/nutrition/single-calorie-target-ui.js"
+      - "js/dashboard/dashboard-weight-trend-card.js"
+      - "js/dashboard/dashboard-weight-trend-svg.js"
+      - "js/dashboard/dashboard-insights-analytics.js"
       - "tests/cardio-alarm-weight-trend-ui.test.mjs"
+      - "tests/dashboard-weight-chart-consistency.test.mjs"
+      - "tests/dashboard-insights-analytics.test.mjs"
       - ".github/workflows/test-cardio-weight-ui.yml"
   push:
     branches:
@@ -17,9 +23,15 @@ on:
       - "css/logger-cardio-timer.css"
       - "css/workout-mode.css"
       - "css/navbar-stability.css"
+      - "css/dashboard-weight-trend-card.css"
       - "js/progress/weight-trend-canvas-smoothing.js"
       - "js/nutrition/single-calorie-target-ui.js"
+      - "js/dashboard/dashboard-weight-trend-card.js"
+      - "js/dashboard/dashboard-weight-trend-svg.js"
+      - "js/dashboard/dashboard-insights-analytics.js"
       - "tests/cardio-alarm-weight-trend-ui.test.mjs"
+      - "tests/dashboard-weight-chart-consistency.test.mjs"
+      - "tests/dashboard-insights-analytics.test.mjs"
       - ".github/workflows/test-cardio-weight-ui.yml"
 
 permissions:
@@ -38,5 +50,8 @@ jobs:
         run: |
           node --check js/progress/weight-trend-canvas-smoothing.js
           node --check js/nutrition/single-calorie-target-ui.js
+          node --check js/dashboard/dashboard-weight-trend-card.js
+          node --check js/dashboard/dashboard-weight-trend-svg.js
+          node --check js/dashboard/dashboard-insights-analytics.js
       - name: Run UI regressions
-        run: node --test tests/cardio-alarm-weight-trend-ui.test.mjs tests/analytics-chart-viewport.test.mjs tests/dashboard-weight-chart-consistency.test.mjs
+        run: node --test tests/cardio-alarm-weight-trend-ui.test.mjs tests/analytics-chart-viewport.test.mjs tests/dashboard-weight-chart-consistency.test.mjs tests/dashboard-insights-analytics.test.mjs
