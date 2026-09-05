@@ -1,11 +1,14 @@
 .dashboard.dashboard-command-insights .metric-card.dashboard-seven-day-sets-card {
-    min-height: 132px;
+    min-height: 148px;
+    height: 148px;
+    align-self: end;
     padding: 14px 15px 13px;
 }
 
 .dashboard-seven-day-sets-content {
     display: flex;
-    min-height: 104px;
+    min-height: 120px;
+    height: 100%;
     flex-direction: column;
 }
 
