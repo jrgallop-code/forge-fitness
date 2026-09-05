@@ -1,0 +1,42 @@
+name: Cardio and weight UI checks
+
+on:
+  pull_request:
+    paths:
+      - "css/logger-cardio-timer.css"
+      - "css/workout-mode.css"
+      - "css/navbar-stability.css"
+      - "js/progress/weight-trend-canvas-smoothing.js"
+      - "js/nutrition/single-calorie-target-ui.js"
+      - "tests/cardio-alarm-weight-trend-ui.test.mjs"
+      - ".github/workflows/test-cardio-weight-ui.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "css/logger-cardio-timer.css"
+      - "css/workout-mode.css"
+      - "css/navbar-stability.css"
+      - "js/progress/weight-trend-canvas-smoothing.js"
+      - "js/nutrition/single-calorie-target-ui.js"
+      - "tests/cardio-alarm-weight-trend-ui.test.mjs"
+      - ".github/workflows/test-cardio-weight-ui.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Check JavaScript syntax
+        run: |
+          node --check js/progress/weight-trend-canvas-smoothing.js
+          node --check js/nutrition/single-calorie-target-ui.js
+      - name: Run UI regressions
+        run: node --test tests/cardio-alarm-weight-trend-ui.test.mjs tests/analytics-chart-viewport.test.mjs tests/dashboard-weight-chart-consistency.test.mjs
