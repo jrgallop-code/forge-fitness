@@ -1,3 +1,5 @@
+import "../analytics/product-state.js?v=owner-product-insights-1";
+
 export const APPEARANCE_STORAGE_KEY = "level_up_appearance_settings";
 
 export const APPEARANCE_THEMES = [
