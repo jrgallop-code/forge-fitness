@@ -17,6 +17,7 @@ on:
       - "tests/cardio-alarm-weight-trend-ui.test.mjs"
       - "tests/dashboard-weight-chart-consistency.test.mjs"
       - "tests/dashboard-insights-analytics.test.mjs"
+      - "tests/dashboard-insights-v5-cache-note.test.mjs"
       - ".github/workflows/test-cardio-weight-ui.yml"
   push:
     branches:
@@ -36,6 +37,7 @@ on:
       - "tests/cardio-alarm-weight-trend-ui.test.mjs"
       - "tests/dashboard-weight-chart-consistency.test.mjs"
       - "tests/dashboard-insights-analytics.test.mjs"
+      - "tests/dashboard-insights-v5-cache-note.test.mjs"
       - ".github/workflows/test-cardio-weight-ui.yml"
 
 permissions:
@@ -59,4 +61,4 @@ jobs:
           node --check js/dashboard/dashboard-insights-analytics.js
           node --check js/dashboard/dashboard-insights-analytics-v5.js
       - name: Run UI regressions
-        run: node --test tests/cardio-alarm-weight-trend-ui.test.mjs tests/analytics-chart-viewport.test.mjs tests/dashboard-weight-chart-consistency.test.mjs tests/dashboard-insights-analytics.test.mjs
+        run: node --test tests/cardio-alarm-weight-trend-ui.test.mjs tests/analytics-chart-viewport.test.mjs tests/dashboard-weight-chart-consistency.test.mjs tests/dashboard-insights-analytics.test.mjs tests/dashboard-insights-v5-cache-note.test.mjs
