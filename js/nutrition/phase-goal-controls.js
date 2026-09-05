@@ -7,14 +7,23 @@ const PHASES_KEY = "level_up_nutrition_phases";
 const WEIGHT_KEY = "forge_weight_entries";
 const GOAL_WEIGHT_KEY = "level_up_goal_weight";
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
+const ADJUSTMENT_HOLD_KEY = "level_up_phase_reassessment_hold";
+const PENDING_REVIEW_KEY = "level_up_pending_maintenance_review_v1";
+const GOAL_WEIGHT_REPAIR_SOURCE = "goal-weight-save-repair";
+const GOAL_WEIGHT_REPAIR_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 const DAY_MS = 86400000;
 let listenersBound = false;
 
 export function initializePhaseGoalControls() {
+    const repaired = repairRecentAccidentalPlannedTarget();
     ensureStyles();
     enhanceGoalsAndCalories();
     enhanceWeightProgress();
     bindListeners();
+    if (repaired) {
+        window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated", { detail: { source: GOAL_WEIGHT_REPAIR_SOURCE } }));
+        window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: GOAL_WEIGHT_REPAIR_SOURCE } }));
+    }
 }
 
 function enhanceGoalsAndCalories() {
@@ -140,8 +149,15 @@ function savePhaseFromNutrition() {
     const goalId = document.getElementById("unified-goal-select")?.value;
     const preset = GOAL_PRESETS[goalId];
     const maintenance = Math.round(Number(document.getElementById("unified-maintenance")?.value));
+    const active = getActiveNutritionPhase();
+    const samePhase = Boolean(active && active.goalId === goalId);
+    const currentTarget = positive(active?.currentCalories ?? active?.startCalories);
     const directTarget = readDirectCalorieTarget();
-    const targetCalories = directTarget ?? Math.round(maintenance + Number(preset?.dailyCalorieAdjustment || 0));
+    const targetCalories = samePhase
+        ? Number.isFinite(directTarget) && Number.isFinite(currentTarget)
+            ? currentTarget + directTarget
+            : currentTarget
+        : directTarget ?? Math.round(maintenance + Number(preset?.dailyCalorieAdjustment || 0));
     const startDate = document.getElementById("nutrition-phase-start-date")?.value || today();
     const goalWeightRaw = Number(document.getElementById("nutrition-phase-goal-weight")?.value);
     const goalWeight = Number.isFinite(goalWeightRaw) && goalWeightRaw > 0 ? Math.round(goalWeightRaw * 10) / 10 : null;
@@ -171,9 +187,11 @@ function savePhaseFromNutrition() {
     const message = result.action === "started"
         ? `Started ${preset.label} on ${formatDate(startDate)} at ${targetCalories} kcal/day.`
         : result.action === "adjusted"
-            ? `Updated ${preset.label}. Calories are ${targetCalories} kcal/day and the phase still starts ${formatDate(result.phase.startDate)}.`
+            ? samePhase && Number.isFinite(directTarget)
+                ? `Added ${directTarget} kcal/day. Your target is now ${targetCalories} kcal/day and the phase still starts ${formatDate(result.phase.startDate)}.`
+                : `Updated ${preset.label}. Calories are ${targetCalories} kcal/day and the phase still starts ${formatDate(result.phase.startDate)}.`
             : result.action === "updated"
-                ? `Updated ${preset.label} phase details. The calorie target is ${targetCalories} kcal/day and trend analysis still starts ${formatDate(result.phase.startDate)}.`
+                ? `Updated ${preset.label} phase details. The calorie target remains ${targetCalories} kcal/day and trend analysis still starts ${formatDate(result.phase.startDate)}.`
                 : `${preset.label} remains active at ${targetCalories} kcal/day.`;
     setText("unified-calorie-message", message);
     scheduleRefresh();
@@ -266,6 +284,57 @@ function savePhaseRecord({ goalId, preset, maintenance, targetCalories, startDat
     phases.push(phase);
     writePhases(phases);
     return { action: "started", phase };
+}
+
+function repairRecentAccidentalPlannedTarget() {
+    const phases = readPhases();
+    const index = activePhaseIndex(phases);
+    if (index < 0) return false;
+    const active = phases[index];
+    const adjustments = Array.isArray(active?.adjustments) ? [...active.adjustments] : [];
+    const latest = adjustments.at(-1);
+    if (!latest || latest.source !== "planned") return false;
+
+    const adjustedAt = new Date(latest.date).getTime();
+    const age = Date.now() - adjustedAt;
+    if (!Number.isFinite(adjustedAt) || age < 0 || age > GOAL_WEIGHT_REPAIR_MAX_AGE_MS) return false;
+
+    const current = positive(active.currentCalories ?? active.startCalories);
+    const previous = positive(latest.previousCalories);
+    const accidental = positive(latest.newCalories);
+    const maintenance = positive(active.maintenanceCalories);
+    const preset = GOAL_PRESETS[active.goalId];
+    if (!current || !previous || !accidental || !maintenance || !preset) return false;
+
+    const expectedFallback = Math.round(maintenance + Number(active.recommendedDailyCalorieAdjustment ?? preset.dailyCalorieAdjustment ?? 0));
+    if (current !== accidental || accidental !== expectedFallback || previous === accidental) return false;
+
+    try {
+        const hold = JSON.parse(localStorage.getItem(ADJUSTMENT_HOLD_KEY) || "null");
+        if (hold?.phaseId === active.id && Math.round(Number(hold.calories)) === current) return false;
+    } catch {}
+
+    const now = new Date().toISOString();
+    phases[index] = {
+        ...active,
+        currentCalories: previous,
+        dailyCalorieAdjustment: previous - maintenance,
+        updatedAt: now,
+        adjustments: [
+            ...adjustments,
+            {
+                date: now,
+                previousCalories: accidental,
+                newCalories: previous,
+                maintenanceCalories: maintenance,
+                source: GOAL_WEIGHT_REPAIR_SOURCE
+            }
+        ]
+    };
+    writePhases(phases);
+    localStorage.removeItem(PENDING_REVIEW_KEY);
+    syncCalculatedCalories(previous);
+    return true;
 }
 
 function scheduleRefresh() {
