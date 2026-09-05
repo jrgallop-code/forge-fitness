@@ -1,0 +1,32 @@
+name: Goal weight save checks
+
+on:
+  pull_request:
+    paths:
+      - "js/nutrition/phase-goal-controls.js"
+      - "tests/goal-weight-save-target.test.mjs"
+      - ".github/workflows/test-goal-weight-save.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "js/nutrition/phase-goal-controls.js"
+      - "tests/goal-weight-save-target.test.mjs"
+      - ".github/workflows/test-goal-weight-save.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Check syntax
+        run: node --check js/nutrition/phase-goal-controls.js
+      - name: Run regression tests
+        run: node --test tests/goal-weight-save-target.test.mjs
