@@ -39,6 +39,7 @@ const filters = {
   level: normalizeLevel(prefs.experience),
   equipment: "Gym"
 };
+let showAllRoutines = false;
 
 content.innerHTML = renderWorkoutBuilder();
 safeInitialize("Workout builder", initializeWorkoutBuilder);
@@ -67,7 +68,14 @@ function renderLanding() {
   const matches = filteredPlans();
   const recommended = selectRecommended(matches, 5);
   const saved = readSavedPlans();
-  const rows = [...saved.map(plan => ({ ...plan, isSavedPlan: true })), ...matches].slice(0, 14);
+  const sourceRows = [
+    ...saved.map(plan => ({ ...plan, isSavedPlan: true })),
+    ...(showAllRoutines ? allCataloguePlans : matches)
+  ];
+  const uniqueRows = sourceRows.filter((plan, index, plans) =>
+    plans.findIndex(candidate => String(candidate.id) === String(plan.id)) === index
+  );
+  const rows = showAllRoutines ? uniqueRows : uniqueRows.slice(0, 14);
 
   landing.innerHTML = `
     <header class="prototype-hero">
@@ -98,8 +106,17 @@ function renderLanding() {
 
     <section class="prototype-section" data-preview-all-plans>
       <div class="prototype-section-heading">
-        <div><h2>All Workout Plans</h2><p>${saved.length ? `${saved.length} saved plan${saved.length === 1 ? "" : "s"} shown first · ` : ""}${matches.length} matching programs</p></div>
-        <button type="button" data-preview-filter="goal">Filter</button>
+        <div>
+          <h2>${showAllRoutines ? "All Workout Routines" : "All Workout Plans"}</h2>
+          <p>${showAllRoutines
+            ? `${allCataloguePlans.length} Level Up routines${saved.length ? ` · ${saved.length} saved plan${saved.length === 1 ? "" : "s"} shown first` : ""}`
+            : `${saved.length ? `${saved.length} saved plan${saved.length === 1 ? "" : "s"} shown first · ` : ""}${matches.length} matching programs`
+          }</p>
+        </div>
+        ${showAllRoutines
+          ? '<button type="button" data-preview-show-matches>Show Matches</button>'
+          : '<button type="button" data-preview-filter="goal">Filter</button>'
+        }
       </div>
       <div class="prototype-plan-list">
         ${rows.map((plan, index) => renderPlanRow(plan, index)).join("") || renderNoMatches()}
@@ -162,7 +179,12 @@ function filterButton(key, label, value, icon) {
 
 function bindLandingActions() {
   landing.querySelector("[data-preview-new-plan]")?.addEventListener("click", openNewPlanSheet);
-  landing.querySelector("[data-preview-see-all]")?.addEventListener("click", () => landing.querySelector("[data-preview-all-plans]")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  landing.querySelector("[data-preview-see-all]")?.addEventListener("click", showAllRoutinesOnLanding);
+  landing.querySelector("[data-preview-show-matches]")?.addEventListener("click", () => {
+    showAllRoutines = false;
+    renderLanding();
+    requestAnimationFrame(() => landing.querySelector("[data-preview-all-plans]")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  });
   landing.querySelectorAll("[data-preview-filter]").forEach(button => button.addEventListener("click", () => openFilterSheet(button.dataset.previewFilter)));
   landing.querySelectorAll("[data-preview-plan-card]").forEach(card => {
     const open = () => openCataloguePlan(card.dataset.previewPlanCard);
@@ -171,6 +193,14 @@ function bindLandingActions() {
   });
   landing.querySelectorAll("[data-preview-catalogue-plan]").forEach(button => button.addEventListener("click", () => openCataloguePlan(button.dataset.previewCataloguePlan)));
   landing.querySelectorAll("[data-preview-saved-plan]").forEach(button => button.addEventListener("click", () => openSavedPlan(button.dataset.previewSavedPlan)));
+}
+
+function showAllRoutinesOnLanding() {
+  showAllRoutines = true;
+  closeSheet();
+  landing.hidden = false;
+  renderLanding();
+  requestAnimationFrame(() => landing.querySelector("[data-preview-all-plans]")?.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
 
 function openFilterSheet(key) {
@@ -192,6 +222,7 @@ function openFilterSheet(key) {
     onReady(sheet) {
       sheet.querySelectorAll("[data-filter-value]").forEach(button => button.addEventListener("click", () => {
         filters[key] = key === "days" ? Number(button.dataset.filterValue) : button.dataset.filterValue;
+        showAllRoutines = false;
         closeSheet();
         renderLanding();
       }));
@@ -207,12 +238,15 @@ function openNewPlanSheet() {
       ${actionRow("smart", "Smart Build", "Personalized around your goals, schedule, equipment, and priorities.", sparkIcon())}
       ${actionRow("manual", "Create Manually", "Build a reusable plan exercise by exercise.", pencilIcon())}
       ${actionRow("import", "Import Routine", "Paste a routine from Notes, Reddit, ChatGPT, or anywhere else.", importIcon())}
-      ${actionRow("one-off", "One-Off Workout", "Train today without saving a reusable plan.", playIcon())}
-      ${actionRow("templates", "Browse Templates", "Open the full Level Up workout catalogue.", gridIcon())}
+      ${actionRow("all-routines", "Browse All Routines", "See every Level Up routine on the main Workout Plans page.", gridIcon())}
     </div>`,
     onReady(sheet) {
       sheet.querySelectorAll("[data-preview-create-action]").forEach(button => button.addEventListener("click", async () => {
         const action = button.dataset.previewCreateAction;
+        if (action === "all-routines") {
+          showAllRoutinesOnLanding();
+          return;
+        }
         closeSheet();
         await launchExistingFlow(action);
       }));
@@ -231,9 +265,7 @@ async function launchExistingFlow(action) {
   const selectors = {
     smart: "[data-smart-build]",
     manual: "#new-plan-btn",
-    import: "[data-routine-import-open]",
-    "one-off": "#one-off-workout-btn",
-    templates: "[data-template-build]"
+    import: "[data-routine-import-open]"
   };
   const button = await clickWhenReady(selectors[action]);
   if (!button) return showToast("That preview action is still loading. Try again.");
@@ -253,7 +285,7 @@ async function clickWhenReady(selector, attempts = 30, delay = 60) {
 }
 
 function revealOpenedSurface() {
-  ["#plan-builder", "[data-smart-build-wizard]", "[data-routine-import-wizard]", "#one-off-workout-builder", ".workout-catalogue-details"].forEach(selector => {
+  ["#plan-builder", "[data-smart-build-wizard]", "[data-routine-import-wizard]", ".workout-catalogue-details"].forEach(selector => {
     const element = content.querySelector(selector);
     if (element && !element.hidden) element.scrollIntoView({ behavior: "smooth", block: "start" });
   });
@@ -275,7 +307,7 @@ function openSavedPlan(planId) {
 
 function bindGlobalPreviewActions() {
   content.addEventListener("click", event => {
-    if (event.target.closest?.("#close-plan-builder-btn, [data-smart-close], [data-routine-import-close], #close-one-off-workout, .plan-detail-back")) {
+    if (event.target.closest?.("#close-plan-builder-btn, [data-smart-close], [data-routine-import-close], .plan-detail-back")) {
       window.setTimeout(showLanding, 80);
     }
   }, true);
