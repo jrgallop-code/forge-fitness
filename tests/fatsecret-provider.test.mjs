@@ -39,8 +39,9 @@ test("FatSecret Basic search uses foods.search while Premier uses localized v5 w
     assert.match(provider, /capabilities\.canLocalize && normalizedCountry/);
 });
 
-test("FatSecret provider supports detailed foods and optional barcode scope", () => {
-    assert.match(provider, /food\/v5/);
+test("FatSecret food detail uses v1 for Basic and v5 for Premier", () => {
+    assert.match(provider, /const version = capabilities\.premier \? "v5" : "v1"/);
+    assert.match(provider, /food\/\$\{version\}/);
     assert.match(provider, /food\/barcode\/find-by-id\/v2/);
     assert.match(provider, /capabilities\.canBarcode/);
 });
