@@ -1,0 +1,7 @@
+.prototype-action-row[data-preview-create-action="all-routines"],
+.prototype-action-row[data-preview-create-action="templates"],
+.prototype-action-row[data-preview-create-action="one-off"],
+.preview-content #one-off-workout-btn,
+.preview-content #one-off-workout-builder {
+  display: none !important;
+}
