@@ -60,13 +60,22 @@ FROM acquired
 GROUP BY source
 ORDER BY acquired_users DESC;
 ```
+
 # Owner analytics
 
-The website includes an owner-only Stats & Analytics screen under More. The Worker protects its aggregate endpoint with the `ADMIN_EMAILS` environment variable (a comma-separated list of normalized account email addresses). Configure it as a production secret before deploying the Worker:
+Owner analytics is deliberately separated from the consumer Level Up PWA. There is no Stats & Analytics launcher or admin route in the app. The standalone owner console is published from `/admin/` and is designed to be placed behind Cloudflare Access when bound to a private admin hostname or path.
+
+The owner console performs its own Google sign-in, creates a separate `level_up_owner_session`, calls `/v1/me`, and refuses to render analytics unless the API returns `isAdmin: true`. The Worker protects its admin endpoints independently with the `ADMIN_EMAILS` environment variable, which is a comma-separated list of normalized administrator email addresses. Configure it as a production secret before deploying the Worker:
 
 `wrangler secret put ADMIN_EMAILS`
 
-The endpoint returns aggregate counts only: total and new users, signed-in and engaged users today, users active over seven days, returning users active on multiple days, food loggers and entries, workout users and completions, onboarding, and acquisition sources. "Today" and the daily chart use `ANALYTICS_TIME_ZONE` (`America/Halifax` in production) with explicit local-midnight boundaries. It does not expose backup payloads, food names, meal contents, or individual workout records. Daily activity and food-use metrics begin accumulating after migration `0008_usage_analytics.sql` is deployed.
+Recommended production layers:
+
+1. Cloudflare Access protects the admin hostname/path and allows only approved owner identities.
+2. The standalone console requires Google sign-in.
+3. The Level Up API requires the signed-in email to be listed in `ADMIN_EMAILS` before returning analytics or allowing restaurant catalogue review actions.
+
+The analytics endpoint returns aggregate/product-operations information such as total and new users, signed-in and engaged users today, users active over seven days, returning users active on multiple days, food loggers and entries, workout users and completions, onboarding, acquisition sources, repeat weight loggers, satisfaction feedback, workout-source mix, and restaurant catalogue quality. "Today" and the daily chart use `ANALYTICS_TIME_ZONE` (`America/Halifax` in production) with explicit local-midnight boundaries. It does not return cloud backup payloads, meal contents, or individual workout-record payloads. Daily activity and food-use metrics begin accumulating after migration `0008_usage_analytics.sql` is deployed.
 
 ## USDA FoodData Central
 
