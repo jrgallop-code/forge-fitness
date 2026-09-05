@@ -28,9 +28,10 @@ function mountPrototypeSchedule() {
       <div class="prototype-schedule-slot" data-prototype-schedule-slot></div>
     `;
 
-    const filters = landing.querySelector(".prototype-filter-strip");
-    if (filters) filters.insertAdjacentElement("afterend", section);
-    else landing.prepend(section);
+    // The schedule is the first thing on the workout landing page, before browsing controls.
+    landing.prepend(section);
+  } else if (landing.firstElementChild !== section) {
+    landing.prepend(section);
   }
 
   const slot = section.querySelector("[data-prototype-schedule-slot]");
