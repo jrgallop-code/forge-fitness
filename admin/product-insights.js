@@ -32,7 +32,11 @@ export function initializeOwnerProductInsights() {
     const content = document.getElementById("admin-analytics-content");
     if (content) {
         observer = new MutationObserver(() => {
-            if (cachedInsights) renderProductInsights(cachedInsights);
+            if (
+                cachedInsights &&
+                !content.querySelector(".owner-product-insights") &&
+                content.querySelector(".admin-analytics-kpis")
+            ) renderProductInsights(cachedInsights);
         });
         observer.observe(content, { childList: true });
     }
@@ -95,7 +99,7 @@ function renderProductInsights(insights) {
         <div class="owner-product-insights-grid">
             ${renderProgramUsage(programRows, migrationPending)}
             ${renderAppearanceUsage(appearanceRows, coverage, migrationPending)}
-            ${renderCurrentProgramChoices(recentPrograms, coverage, migrationPending)}
+            ${renderCurrentProgramChoices(recentPrograms, migrationPending)}
         </div>`;
 
     anchor.insertAdjacentElement("afterend", section);
@@ -150,7 +154,7 @@ function renderAppearanceUsage(rows, coverage, migrationPending) {
     </article>`;
 }
 
-function renderCurrentProgramChoices(rows, coverage, migrationPending) {
+function renderCurrentProgramChoices(rows, migrationPending) {
     const total = rows.reduce((sum, row) => sum + Number(row.users || 0), 0);
     const body = rows.length
         ? rows.map(row => `<div class="owner-current-program-row"><span><strong>${escapeHtml(programLabel(row))}</strong><small>${escapeHtml(sourceLabel(row.program_source))}</small></span><b>${number(row.users)} user${Number(row.users) === 1 ? "" : "s"}</b></div>`).join("")
