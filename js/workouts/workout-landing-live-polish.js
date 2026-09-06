@@ -4,7 +4,7 @@ import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybu
 import { celebrityExpansionPlans } from "./celebrity-expansion-plans.js?v=celebrity-expansion-2";
 
 const STYLE_ID = "workout-landing-live-polish-styles";
-const STYLE_HREF = "/css/workout-landing-live-polish.css?v=workout-landing-live-polish-5";
+const STYLE_HREF = "/css/workout-landing-live-polish.css?v=workout-landing-live-polish-6";
 
 // workout-plan-details.js intentionally uses the unversioned workout-plans module.
 // Keep that module instance populated with every catalogue family so a tap on any
