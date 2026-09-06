@@ -26,6 +26,13 @@ test("Workout landing shows the week strip without a duplicate Today card", asyn
   assert.match(styles, /\.workout-live-schedule-edit/);
 });
 
+test("Workout polish does not install a second schedule MutationObserver", async () => {
+  const polish = await read("js/workouts/workout-landing-live-polish.js");
+  assert.doesNotMatch(polish, /new MutationObserver/);
+  assert.match(polish, /main Workout landing already owns schedule DOM movement/);
+  assert.match(polish, /configureSchedulePresentation/);
+});
+
 test("router cache-busts the refreshed Workout polish module", async () => {
   const router = await read("js/core/router.js");
   assert.match(router, /workout-landing-live-polish\.js\?v=workout-landing-live-polish-2/);
