@@ -30,7 +30,11 @@ export function initializeWorkoutLandingLivePolish(content = document) {
     syncPremadePlanDetailRegistry();
     ensureStylesheet();
 
+    // The main Workout landing already owns schedule DOM movement through its
+    // observer. Do not install a second observer here: two observers reshaping
+    // the same schedule can make Safari appear to ignore the Workout tab.
     content.__workoutLandingPolishObserver?.disconnect?.();
+    delete content.__workoutLandingPolishObserver;
     content.__workoutLandingPolishAbort?.abort?.();
 
     const landing = content.querySelector?.(".workout-live-landing");
@@ -39,16 +43,9 @@ export function initializeWorkoutLandingLivePolish(content = document) {
     const controller = new AbortController();
     content.__workoutLandingPolishAbort = controller;
 
-    const refine = () => {
-        removeLegacyRowIcons(landing);
-        simplifyWorkoutSchedule(landing);
-    };
-
-    refine();
-
-    const observer = new MutationObserver(refine);
-    observer.observe(landing, { childList: true, subtree: true });
-    content.__workoutLandingPolishObserver = observer;
+    removeLegacyRowIcons(landing);
+    configureSchedulePresentation(landing);
+    requestAnimationFrame(() => configureSchedulePresentation(landing));
 
     document.addEventListener("click", event => {
         const target = event.target;
@@ -72,8 +69,9 @@ export function initializeWorkoutLandingLivePolish(content = document) {
         if (!target.closest?.("[data-manual-back]")) return;
         if (content.dataset.workoutLiveManualEntry !== "true") return;
 
-        // Let the manual catalogue clean up its picker first, then close the builder
-        // in the same event turn so Back returns directly to the Workout landing.
+        // Let the exercise picker clean itself up, then close the real builder so
+        // Back returns directly to the Workout landing instead of exposing the
+        // older intermediate builder surface.
         queueMicrotask(() => {
             delete content.dataset.workoutLiveManualEntry;
             content.querySelector("#close-plan-builder-btn")?.click();
@@ -87,26 +85,14 @@ function removeLegacyRowIcons(landing) {
     landing.querySelectorAll(".workout-live-plan-row > svg, .workout-live-row-main > svg").forEach(svg => svg.remove());
 }
 
-function simplifyWorkoutSchedule(landing) {
+function configureSchedulePresentation(landing) {
     const shell = landing.querySelector(".workout-schedule-shell");
     const heading = landing.querySelector(".workout-live-schedule-heading");
     if (!shell || !heading) return;
 
-    // Keep an empty hidden sentinel so the original landing bridge does not recreate
-    // the duplicate Today card on every mutation.
-    const todayCard = shell.querySelector(".workout-live-today-card");
-    if (todayCard) {
-        const top = todayCard.querySelector(".schedule-banner-top");
-        const actions = todayCard.querySelector(".schedule-banner-actions");
-        const weekStrip = shell.querySelector(".schedule-week-strip");
-        const editor = shell.querySelector(".schedule-editor");
-        if (top) shell.insertBefore(top, weekStrip || todayCard);
-        if (actions) shell.insertBefore(actions, editor || null);
-        todayCard.replaceChildren();
-        todayCard.hidden = true;
-        todayCard.setAttribute("aria-hidden", "true");
-    }
-
+    // Keep the native schedule structure intact. The original Workout landing is
+    // the only owner of that DOM; this layer only hides the duplicate Today card
+    // and exposes its existing Edit action beside the weekly strip.
     shell.querySelector(".schedule-banner-top")?.classList.add("workout-live-schedule-context-hidden");
     shell.querySelector(".schedule-banner-actions")?.classList.add("workout-live-schedule-context-hidden");
 
