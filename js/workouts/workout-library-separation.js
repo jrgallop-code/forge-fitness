@@ -1,5 +1,8 @@
+import "./workout-template-adoption.js?v=workout-template-adoption-1";
+
 const PLAN_KEY = "forge_workout_plans";
 const SCHEDULE_KEY = "level_up_workout_schedule_v1";
+const OPEN_ROUTINES_KEY = "level_up_open_my_routines_v1";
 const STYLE_ID = "workout-library-separation-styles";
 const VIEW_KEY = "workoutLibraryView";
 
@@ -66,7 +69,13 @@ export function initializeWorkoutLibrarySeparation(landing) {
     const routinesList = routinesPanel.querySelector("[data-workout-live-your-training-list]");
 
     savedRows
-        .sort((a, b) => Number(rowPlanId(b) === scheduledPlanId) - Number(rowPlanId(a) === scheduledPlanId))
+        .sort((a, b) => {
+            const aId = rowPlanId(a);
+            const bId = rowPlanId(b);
+            const currentDifference = Number(bId === scheduledPlanId) - Number(aId === scheduledPlanId);
+            if (currentDifference) return currentDifference;
+            return planActivity(savedById.get(bId)) - planActivity(savedById.get(aId));
+        })
         .forEach(row => {
             const planId = rowPlanId(row);
             const isCurrent = Boolean(scheduledPlanId && planId === scheduledPlanId);
@@ -103,7 +112,15 @@ export function initializeWorkoutLibrarySeparation(landing) {
     updateCatalogueHeading(catalogueSection);
     markCatalogueCopies(catalogueList, savedPlans, scheduledPlanId);
 
-    const requestedView = landing.dataset[VIEW_KEY] === "routines" ? "routines" : "explore";
+    let requestedView = landing.dataset[VIEW_KEY] === "routines" ? "routines" : "explore";
+    try {
+        if (sessionStorage.getItem(OPEN_ROUTINES_KEY) === "1") {
+            requestedView = "routines";
+            sessionStorage.removeItem(OPEN_ROUTINES_KEY);
+        }
+    }
+    catch {}
+
     const applyView = view => {
         const next = view === "routines" ? "routines" : "explore";
         landing.dataset[VIEW_KEY] = next;
@@ -183,6 +200,11 @@ function planSourceLabel(plan) {
     return "SAVED PLAN";
 }
 
+function planActivity(plan) {
+    const value = Date.parse(plan?.lastUsedAt || plan?.savedAt || plan?.createdAt || "");
+    return Number.isFinite(value) ? value : 0;
+}
+
 function updateCatalogueHeading(section) {
     const heading = section.querySelector(".workout-live-section-heading h2");
     const summary = section.querySelector(".workout-live-section-heading p");
@@ -192,7 +214,7 @@ function updateCatalogueHeading(section) {
     heading.textContent = showingAll ? "All Level Up Plans" : "Explore Level Up Plans";
 
     if (!summary) return;
-    let text = String(summary.textContent || "")
+    const text = String(summary.textContent || "")
         .replace(/^\d+ saved plans? shown first\s*·\s*/i, "")
         .replace(/\s*·\s*\d+ saved plans? shown first$/i, "")
         .trim();
