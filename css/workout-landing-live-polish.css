@@ -79,6 +79,83 @@ body:has(.workout-live-page #plan-builder:not([hidden])){
   scroll-padding-bottom:calc(72px + env(safe-area-inset-bottom));
 }
 
+/* Plan builder must use semantic appearance tokens. The legacy builder still
+   contains dark-only fallbacks, which made light appearances render white text
+   on pale cards. These guards apply to both Modify Workout and manual creation. */
+html[data-theme] .workout-live-page #plan-builder{
+  border-color:var(--card-border)!important;
+  background:var(--card)!important;
+  color:var(--text)!important;
+}
+html[data-theme] .workout-live-page #plan-builder :is(.builder-heading h3,.workout-day-card h3,.workout-day-card h4){
+  color:var(--heading)!important;
+  -webkit-text-fill-color:var(--heading)!important;
+}
+html[data-theme] .workout-live-page #plan-builder :is(.builder-heading p,label,.exercise-prescription label){
+  color:var(--muted)!important;
+  -webkit-text-fill-color:var(--muted)!important;
+}
+html[data-theme] .workout-live-page #plan-builder .workout-day-card{
+  border-color:var(--line)!important;
+  border-left-color:var(--accent)!important;
+  background:var(--surface-raised)!important;
+  color:var(--text)!important;
+}
+html[data-theme] .workout-live-page #plan-builder .exercise-builder-row{
+  border:1px solid var(--card-border)!important;
+  background:var(--card)!important;
+  color:var(--text)!important;
+}
+html[data-theme] .workout-live-page #plan-builder :is(#plan-name,.day-name-input,.exercise-select,.exercise-sets,.exercise-reps,.exercise-notes,select,input,textarea){
+  border-color:var(--line)!important;
+  background:var(--input-bg)!important;
+  color:var(--text)!important;
+  -webkit-text-fill-color:var(--text)!important;
+  caret-color:var(--accent-text)!important;
+}
+html[data-theme] .workout-live-page #plan-builder :is(#plan-name,.day-name-input,.exercise-select,.exercise-sets,.exercise-reps,.exercise-notes,select,input,textarea):focus{
+  border-color:var(--accent)!important;
+  box-shadow:0 0 0 2px var(--accent-glow)!important;
+}
+html[data-theme] .workout-live-page #plan-builder .exercise-recommendation{
+  border:1px solid var(--line)!important;
+  background:var(--surface-raised)!important;
+  color:var(--text-secondary)!important;
+  -webkit-text-fill-color:var(--text-secondary)!important;
+}
+html[data-theme] .workout-live-page #plan-builder .exercise-recommendation span{
+  color:var(--text)!important;
+  -webkit-text-fill-color:var(--text)!important;
+}
+html[data-theme] .workout-live-page #plan-builder .exercise-recommendation strong{
+  color:var(--heading)!important;
+  -webkit-text-fill-color:var(--heading)!important;
+}
+html[data-theme] .workout-live-page #plan-builder .builder-exercise-guide{
+  border-color:color-mix(in srgb,var(--accent) 46%,var(--line))!important;
+  background:var(--accent-soft)!important;
+  color:var(--accent-text)!important;
+  -webkit-text-fill-color:var(--accent-text)!important;
+}
+html[data-theme] .workout-live-page #plan-builder :is(.secondary-btn,.add-exercise-btn){
+  border-color:var(--line)!important;
+  background:var(--surface-raised)!important;
+  color:var(--text)!important;
+  -webkit-text-fill-color:var(--text)!important;
+}
+html[data-theme] .workout-live-page #plan-builder :is(.primary-btn,#save-plan-btn){
+  border-color:var(--accent)!important;
+  background:var(--accent)!important;
+  color:var(--accent-contrast)!important;
+  -webkit-text-fill-color:var(--accent-contrast)!important;
+}
+html[data-theme] .workout-live-page #plan-builder .remove-exercise-btn{
+  border-color:transparent!important;
+  background:transparent!important;
+  color:var(--danger-text)!important;
+  -webkit-text-fill-color:var(--danger-text)!important;
+}
+
 @media(max-width:430px){
   .workout-live-page .workout-live-filter{flex-basis:174px!important;min-width:174px!important}
   .workout-live-page .workout-live-filter.is-all{flex-basis:146px!important;min-width:146px!important}
