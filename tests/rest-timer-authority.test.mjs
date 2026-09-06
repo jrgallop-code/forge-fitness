@@ -33,7 +33,7 @@ test("warm-up inline countdown cannot be flashed off by the legacy working-set t
     // mutation in the MutationObserver microtask, before the browser paints it.
     assert.match(compact, /querySelectorAll\('\.inline-rest-timer'\)/);
     assert.match(compact, /data-set-index/);
-    assert.match(stability, /data-source-type=\\"warmup\\"/);
+    assert.match(stability, /data-source-type="warmup"/);
     assert.match(stability, /MutationObserver/);
     assert.match(stability, /queueMicrotask\(stabilizeWarmupTimer\)/);
     assert.match(stability, /line\.hidden = false/);
