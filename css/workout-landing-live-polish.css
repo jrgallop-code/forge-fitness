@@ -25,6 +25,11 @@
 .workout-live-page .workout-live-row-meta{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:5px 10px!important;overflow:visible!important;margin-top:8px!important;color:var(--text-secondary,var(--muted))!important;font-size:8.75px!important;line-height:1.15!important;white-space:normal!important}
 .workout-live-page .workout-live-row-meta b{display:inline-flex!important;align-items:center!important;gap:4px!important;min-width:0!important;font-weight:650!important;white-space:nowrap!important}
 .workout-live-page .workout-live-row-action{align-self:center!important;min-width:64px!important;min-height:40px!important;margin:0!important;padding:0 11px!important;border-radius:11px!important;font-size:10.5px!important}
+.workout-live-page .workout-live-row-actions{align-self:center;display:grid;gap:6px;min-width:64px}
+.workout-live-page .workout-live-row-actions .workout-live-row-action{width:100%!important;min-width:0!important}
+.workout-live-page .workout-live-row-delete{display:inline-flex;align-items:center;justify-content:center;gap:5px;width:100%;min-height:30px;padding:0 7px;border:1px solid rgba(255,69,58,.36);border-radius:9px;background:rgba(255,69,58,.08);color:#ff453a;font:inherit;font-size:8.5px;font-weight:800;line-height:1}
+.workout-live-page .workout-live-row-delete svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.workout-live-page .workout-live-row-delete:active{transform:scale(.96);background:rgba(255,69,58,.15)}
 
 .workout-live-page .workout-live-schedule-heading{align-items:center!important}
 .workout-live-page .workout-live-schedule-edit{flex:0 0 auto;min-height:34px;padding:0 11px;border:1px solid color-mix(in srgb,var(--accent) 46%,var(--line));border-radius:10px;background:var(--accent-soft);color:var(--accent-text);font:inherit;font-size:11px;font-weight:800}
@@ -85,6 +90,8 @@ body:has(.workout-live-page #plan-builder:not([hidden])){
   .workout-live-page .workout-live-row-main{grid-template-columns:82px minmax(0,1fr)!important;gap:11px!important}
   .workout-live-page .workout-live-row-main>img{width:82px!important;height:88px!important;min-width:82px!important;max-width:82px!important}
   .workout-live-page .workout-live-row-action{min-width:56px!important;padding:0 8px!important}
+  .workout-live-page .workout-live-row-actions{min-width:56px}
+  .workout-live-page .workout-live-row-delete{padding:0 4px;font-size:8px}
   .workout-live-page .workout-live-row-meta b:last-child{display:none!important}
 }
 
@@ -92,4 +99,5 @@ body:has(.workout-live-page #plan-builder:not([hidden])){
   .workout-live-page .workout-live-row-main{grid-template-columns:76px minmax(0,1fr)!important;gap:9px!important}
   .workout-live-page .workout-live-row-main>img{width:76px!important;height:84px!important;min-width:76px!important;max-width:76px!important}
   .workout-live-page .workout-live-row-copy>em{display:none!important}
+  .workout-live-page .workout-live-row-delete span{display:none}
 }
