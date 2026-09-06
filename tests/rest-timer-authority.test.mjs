@@ -4,7 +4,9 @@ import { readFile } from "node:fs/promises";
 
 const authority = await readFile(new URL("../js/workouts/rest-timer-authority.js", import.meta.url), "utf8");
 const warmups = await readFile(new URL("../js/workouts/warmup-session-fix.js", import.meta.url), "utf8");
+const stability = await readFile(new URL("../js/workouts/warmup-timer-stability.js", import.meta.url), "utf8");
 const display = await readFile(new URL("../js/workouts/rest-timer-display-fix.js", import.meta.url), "utf8");
+const compact = await readFile(new URL("../js/workouts/workout-logger-compact.js", import.meta.url), "utf8");
 const theme = await readFile(new URL("../js/core/workout-theme-guardrail.js", import.meta.url), "utf8");
 
 test("working sets use per-exercise timer authority and Off no longer creates a rest", () => {
@@ -17,11 +19,25 @@ test("working sets use per-exercise timer authority and Off no longer creates a 
 
 test("warm-up completion uses the same per-exercise rest timer authority", () => {
     assert.match(warmups, /startRestForWarmupButton/);
+    assert.match(warmups, /warmup-timer-stability\.js\?v=warmup-timer-stability-1/);
     assert.doesNotMatch(warmups, /#start-rest-timer/);
     assert.match(authority, /sourceType:\s*"warmup"/);
     assert.match(authority, /warmupSets/);
     assert.match(display, /\.session-warmup-row\[data-warmup-index/);
     assert.match(display, /\.complete-warmup-btn/);
+});
+
+test("warm-up inline countdown cannot be flashed off by the legacy working-set timer loop", () => {
+    // The old compact logger clears every inline timer but only knows how to
+    // restore data-set-index working rows. The warm-up guard repairs that DOM
+    // mutation in the MutationObserver microtask, before the browser paints it.
+    assert.match(compact, /querySelectorAll\('\.inline-rest-timer'\)/);
+    assert.match(compact, /data-set-index/);
+    assert.match(stability, /data-source-type=\\"warmup\\"/);
+    assert.match(stability, /MutationObserver/);
+    assert.match(stability, /queueMicrotask\(stabilizeWarmupTimer\)/);
+    assert.match(stability, /line\.hidden = false/);
+    assert.match(stability, /line\.dataset\.warmupTimerStable/);
 });
 
 test("one stable timer identity owns expiry and suppresses the legacy duplicate alert path", () => {
