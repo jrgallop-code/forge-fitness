@@ -19,6 +19,14 @@ body {
     box-shadow: 0 10px 28px rgba(0, 0, 0, .46);
 }
 
+/* Workout sheets are mounted directly under body with z-index 20000. Keep the
+   primary tab bar above those Workout-only surfaces so users can always leave
+   or reopen Workout, even if a sheet was left mounted by an interrupted flow. */
+body:has([data-workout-live-sheet]) .bottom-nav,
+body:has(.workout-live-page) .bottom-nav {
+    z-index: 30000;
+}
+
 .bottom-nav .nav-btn {
     position: relative;
     z-index: 1;
@@ -28,6 +36,11 @@ body {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     transform-origin: center;
+}
+
+.bottom-nav .nav-btn[data-page="workout"] {
+    pointer-events: auto !important;
+    touch-action: manipulation;
 }
 
 .bottom-nav .nav-btn.nav-pulse {
