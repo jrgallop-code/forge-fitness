@@ -26,6 +26,15 @@
 .workout-live-page .workout-live-row-meta b{display:inline-flex!important;align-items:center!important;gap:4px!important;min-width:0!important;font-weight:650!important;white-space:nowrap!important}
 .workout-live-page .workout-live-row-action{align-self:center!important;min-width:64px!important;min-height:40px!important;margin:0!important;padding:0 11px!important;border-radius:11px!important;font-size:10.5px!important}
 
+.workout-live-page .workout-live-schedule-heading{align-items:center!important}
+.workout-live-page .workout-live-schedule-edit{flex:0 0 auto;min-height:34px;padding:0 11px;border:1px solid color-mix(in srgb,var(--accent) 46%,var(--line));border-radius:10px;background:var(--accent-soft);color:var(--accent-text);font:inherit;font-size:11px;font-weight:800}
+.workout-live-page .workout-live-schedule-edit:active{transform:scale(.97)}
+.workout-live-page .workout-live-schedule-context-hidden{display:none!important}
+.workout-live-page .workout-live-today-card{display:none!important}
+.workout-live-page .workout-live-schedule-slot .schedule-banner{gap:8px!important}
+.workout-live-page .workout-live-schedule-slot .schedule-week-strip{margin-bottom:0!important}
+.workout-live-page .workout-live-schedule-slot .schedule-editor:not([hidden]){margin-top:10px!important}
+
 @media(max-width:430px){
   .workout-live-page .workout-live-filter{flex-basis:174px!important;min-width:174px!important}
   .workout-live-page .workout-live-filter.is-all{flex-basis:146px!important;min-width:146px!important}
