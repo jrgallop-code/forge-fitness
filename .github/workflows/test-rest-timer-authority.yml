@@ -6,8 +6,10 @@ on:
       - "js/workouts/rest-timer-authority.js"
       - "js/workouts/rest-timer-display-fix.js"
       - "js/workouts/warmup-session-fix.js"
+      - "js/workouts/warmup-plate-calculator.js"
       - "js/core/workout-theme-guardrail.js"
       - "tests/rest-timer-authority.test.mjs"
+      - "tests/warmup-plate-calculator.test.mjs"
       - ".github/workflows/test-rest-timer-authority.yml"
   push:
     branches:
@@ -16,8 +18,10 @@ on:
       - "js/workouts/rest-timer-authority.js"
       - "js/workouts/rest-timer-display-fix.js"
       - "js/workouts/warmup-session-fix.js"
+      - "js/workouts/warmup-plate-calculator.js"
       - "js/core/workout-theme-guardrail.js"
       - "tests/rest-timer-authority.test.mjs"
+      - "tests/warmup-plate-calculator.test.mjs"
       - ".github/workflows/test-rest-timer-authority.yml"
 
 permissions:
@@ -37,6 +41,7 @@ jobs:
           node --check js/workouts/rest-timer-authority.js
           node --check js/workouts/rest-timer-display-fix.js
           node --check js/workouts/warmup-session-fix.js
+          node --check js/workouts/warmup-plate-calculator.js
           node --check js/core/workout-theme-guardrail.js
-      - name: Run rest timer regressions
-        run: node --test tests/rest-timer-authority.test.mjs
+      - name: Run workout regressions
+        run: node --test tests/rest-timer-authority.test.mjs tests/warmup-plate-calculator.test.mjs
