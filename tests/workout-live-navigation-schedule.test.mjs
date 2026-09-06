@@ -26,6 +26,23 @@ test("Workout landing shows the week strip without a duplicate Today card", asyn
   assert.match(styles, /\.workout-live-schedule-edit/);
 });
 
+test("scheduled training days are visually distinct and compact", async () => {
+  const [schedule, styles] = await Promise.all([
+    read("js/workouts/workout-schedule.js"),
+    read("css/workout-landing-live-polish.css")
+  ]);
+  assert.match(schedule, /hasWorkout/);
+  assert.match(schedule, /is-workout/);
+  assert.match(schedule, /is-rest/);
+  assert.match(schedule, /`Workout \$\{workoutNumber\}`/);
+  assert.match(schedule, /"Rest"/);
+  assert.match(schedule, /aria-label=/);
+  assert.match(styles, /\.schedule-day\.is-workout:not\(\.is-today\) strong/);
+  assert.match(styles, /\.schedule-day\.is-workout small/);
+  assert.match(styles, /\.schedule-day\.is-rest:not\(\.is-today\) strong/);
+  assert.match(styles, /var\(--accent-soft\)/);
+});
+
 test("Workout polish does not install a second schedule MutationObserver", async () => {
   const polish = await read("js/workouts/workout-landing-live-polish.js");
   assert.doesNotMatch(polish, /new MutationObserver/);
@@ -78,18 +95,18 @@ test("Modify Workout builder uses semantic theme tokens in every appearance", as
   assert.match(styles, /-webkit-text-fill-color:var\(--text\)!important/);
 });
 
-test("catalogue Modify Workout loads the manual form-guide bridge", async () => {
-  const [polish, guideFix] = await Promise.all([
+test("Workout polish loads the catalogue Modify form-guide bridge", async () => {
+  const [polish, bridge] = await Promise.all([
     read("js/workouts/workout-landing-live-polish.js"),
     read("js/workouts/manual-form-guide-fix.js")
   ]);
   assert.match(polish, /manual-form-guide-fix\.js\?v=catalogue-modify-form-guide-1/);
-  assert.match(guideFix, /#plan-builder\.manual-catalogue \.builder-exercise-guide/);
-  assert.match(guideFix, /levelup:open-exercise-guide/);
-  assert.match(guideFix, /sourceSelector:\s*"#plan-builder"/);
+  assert.match(bridge, /#plan-builder\.manual-catalogue \.builder-exercise-guide/);
+  assert.match(bridge, /levelup:open-exercise-guide/);
+  assert.match(bridge, /sourceSelector: "#plan-builder"/);
 });
 
 test("Workout polish cache-busts its refreshed stylesheet", async () => {
   const polish = await read("js/workouts/workout-landing-live-polish.js");
-  assert.match(polish, /workout-landing-live-polish\.css\?v=workout-landing-live-polish-6/);
+  assert.match(polish, /workout-landing-live-polish\.css\?v=workout-landing-live-polish-7/);
 });
