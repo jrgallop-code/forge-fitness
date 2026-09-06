@@ -95,9 +95,11 @@ function decoratePlanDetail() {
     }
 
     const existing = findSavedTemplateCopy(template);
-    saveButton.disabled = Boolean(existing);
-    saveButton.classList.toggle("is-saved", Boolean(existing));
-    saveButton.textContent = existing ? "Saved to My Routines ✓" : "Save to My Routines";
+    const saved = Boolean(existing);
+    const label = saved ? "Saved to My Routines ✓" : "Save to My Routines";
+    if (saveButton.disabled !== saved) saveButton.disabled = saved;
+    saveButton.classList.toggle("is-saved", saved);
+    if (saveButton.textContent !== label) saveButton.textContent = label;
 }
 
 function saveTemplateFromDetail(template, button) {
@@ -105,9 +107,10 @@ function saveTemplateFromDetail(template, button) {
     if (!saved) return;
     button.disabled = true;
     button.classList.add("is-saved");
-    button.textContent = "Saved to My Routines ✓";
+    if (button.textContent !== "Saved to My Routines ✓") button.textContent = "Saved to My Routines ✓";
 
-    sessionStorage.setItem(OPEN_ROUTINES_KEY, "1");
+    try { sessionStorage.setItem(OPEN_ROUTINES_KEY, "1"); }
+    catch {}
     document.dispatchEvent(new CustomEvent("levelup:workout-library-changed", {
         detail: { planId: saved.id, templateId: template.id, reason: "saved" }
     }));
@@ -166,7 +169,6 @@ function findSavedTemplateCopy(template, suppliedPlans = null) {
     if (exact) return exact;
 
     // Backfill routines saved from templates before provenance metadata existed.
-    // Exact names are used only when the name belongs to a real catalogue plan.
     const templateName = normalizeName(template.name);
     return plans.find(plan => normalizeName(plan?.name) === templateName) || null;
 }
