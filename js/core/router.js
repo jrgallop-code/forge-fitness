@@ -10,6 +10,7 @@ import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-targ
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=onboarding-training-days-1";
 import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=workout-landing-live-1";
+import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-live-polish.js?v=workout-landing-live-polish-1";
 import { renderProgress } from "../progress/progress-ui.js?v=food-log-macro-bars-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-2";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=theme-accent-calendar-1";
@@ -69,6 +70,7 @@ export function navigate(page) {
                 safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
                 safeInitialize("Workout catalogue", initializeWorkoutCatalogue);
                 safeInitialize("Workout landing", () => initializeWorkoutLandingLive(content));
+                safeInitialize("Workout landing polish", () => initializeWorkoutLandingLivePolish(content));
                 break;
             case "progress":
                 content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
