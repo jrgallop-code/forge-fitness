@@ -42,16 +42,32 @@ test("All Plans yields back to the current filter before opening its picker", as
   assert.match(polish, /event\.stopImmediatePropagation\(\)/);
 });
 
-test("Workout New Plan flows clear the fixed bottom navigation", async () => {
+test("Workout New Plan flows hide the fixed bottom navigation", async () => {
   const styles = await read("css/workout-landing-live-polish.css");
+  assert.match(styles, /data-workout-live-sheet/);
   assert.match(styles, /data-smart-build-wizard/);
   assert.match(styles, /data-routine-import-wizard/);
   assert.match(styles, /#plan-builder/);
-  assert.match(styles, /padding-bottom:calc\(138px \+ env\(safe-area-inset-bottom\)\)/);
-  assert.match(styles, /scroll-padding-bottom:calc\(138px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(styles, /display:none!important/);
+  assert.match(styles, /padding-bottom:calc\(72px \+ env\(safe-area-inset-bottom\)\)/);
+});
+
+test("saved user plans restore a compact delete action", async () => {
+  const [polish, styles, workouts] = await Promise.all([
+    read("js/workouts/workout-landing-live-polish.js"),
+    read("css/workout-landing-live-polish.css"),
+    read("js/workouts/workouts.js")
+  ]);
+  assert.match(polish, /data-workout-live-delete-saved-plan/);
+  assert.match(polish, /Delete saved workout plan/);
+  assert.match(polish, /deleteSavedPlanFromLiveCard/);
+  assert.match(polish, /delete plan/i);
+  assert.match(styles, /\.workout-live-row-delete/);
+  assert.match(styles, /#ff453a/);
+  assert.match(workouts, /Delete Plan/);
 });
 
 test("Workout polish cache-busts its refreshed stylesheet", async () => {
   const polish = await read("js/workouts/workout-landing-live-polish.js");
-  assert.match(polish, /workout-landing-live-polish\.css\?v=workout-landing-live-polish-3/);
+  assert.match(polish, /workout-landing-live-polish\.css\?v=workout-landing-live-polish-5/);
 });
