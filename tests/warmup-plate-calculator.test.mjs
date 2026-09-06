@@ -11,7 +11,7 @@ test("warm-ups reuse the same canonical plate trigger used by working sets", () 
     assert.match(warmupPlate, /\.plate-calculator-trigger/);
     assert.doesNotMatch(warmupPlate, /createWarmupButton/);
     assert.doesNotMatch(warmupPlate, /Warm-up plates<\/strong>/);
-    assert.doesNotMatch(warmupPlate, /warmup-plate-weight-wrap/);
+    assert.match(warmupPlate, /cleanupLegacyWarmupControls/);
 });
 
 test("only the warm-up weight currently being edited owns the plate trigger", () => {
