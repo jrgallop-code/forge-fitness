@@ -35,6 +35,31 @@
 .workout-live-page .workout-live-schedule-slot .schedule-week-strip{margin-bottom:0!important}
 .workout-live-page .workout-live-schedule-slot .schedule-editor:not([hidden]){margin-top:10px!important}
 
+/* New-plan surfaces live underneath the fixed tab bar. Give every Workout-only
+   creation flow enough real scroll space to move its final options/actions fully
+   above the nav on iPhone, including the home-indicator safe area. */
+.workout-live-page [data-smart-build-wizard]:not([hidden]),
+.workout-live-page [data-routine-import-wizard]:not([hidden]),
+.workout-live-page #plan-builder:not([hidden]){
+  box-sizing:border-box!important;
+  padding-bottom:calc(138px + env(safe-area-inset-bottom))!important;
+  scroll-margin-bottom:calc(138px + env(safe-area-inset-bottom));
+}
+.workout-live-page [data-smart-build-wizard] .smart-question-card,
+.workout-live-page [data-smart-build-wizard] .smart-review{
+  scroll-margin-bottom:calc(124px + env(safe-area-inset-bottom));
+}
+.workout-live-page [data-smart-build-wizard] .smart-question-actions,
+.workout-live-page [data-smart-build-wizard] .smart-review-actions{
+  position:relative;
+  z-index:1;
+}
+body:has(.workout-live-page [data-smart-build-wizard]:not([hidden])),
+body:has(.workout-live-page [data-routine-import-wizard]:not([hidden])),
+body:has(.workout-live-page #plan-builder:not([hidden])){
+  scroll-padding-bottom:calc(138px + env(safe-area-inset-bottom));
+}
+
 @media(max-width:430px){
   .workout-live-page .workout-live-filter{flex-basis:174px!important;min-width:174px!important}
   .workout-live-page .workout-live-filter.is-all{flex-basis:146px!important;min-width:146px!important}
