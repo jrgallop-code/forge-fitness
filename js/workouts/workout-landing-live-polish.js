@@ -2,6 +2,7 @@ import { presetPlans as detailPresetPlans } from "./workout-plans.js";
 import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-plans-2-women-heroes";
 import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybuilder-library-3";
 import { celebrityExpansionPlans } from "./celebrity-expansion-plans.js?v=celebrity-expansion-2";
+import "./manual-form-guide-fix.js?v=catalogue-modify-form-guide-1";
 
 const STYLE_ID = "workout-landing-live-polish-styles";
 const STYLE_HREF = "/css/workout-landing-live-polish.css?v=workout-landing-live-polish-6";
