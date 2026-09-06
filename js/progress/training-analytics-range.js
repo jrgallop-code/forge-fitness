@@ -227,19 +227,19 @@ function drawRangeCharts() {
     const workoutCanvas = document.getElementById("weekly-workouts-chart") ||
         document.getElementById("weekly-workouts-seven-week-chart");
     const setsCanvas = document.getElementById("weekly-sets-chart");
+    const selectedLabel = rangeWindow.option.label === "ALL"
+        ? "all recorded training"
+        : rangeWindow.option.label;
 
     if (workoutCanvas && !workoutCanvas.closest("[hidden]")) {
         drawTrainingBarChart(
             workoutCanvas,
-            buildChartPoints(sessions, rangeWindow, () => 1),
-            { axisLabel: "Workouts", rangeLabel: rangeWindow.option.label === "ALL" ? "all recorded training" : rangeWindow.option.label }
+            buildWeeklyChartPoints(sessions, rangeWindow, () => 1),
+            { axisLabel: "Weekly workout sessions", rangeLabel: `${selectedLabel} · weekly totals` }
         );
     }
 
     if (setsCanvas && !setsCanvas.closest("[hidden]")) {
-        const selectedLabel = rangeWindow.option.label === "ALL"
-            ? "all recorded training"
-            : rangeWindow.option.label;
         drawTrainingBarChart(
             setsCanvas,
             buildWeeklyChartPoints(sessions, rangeWindow, countWorkingSets),
