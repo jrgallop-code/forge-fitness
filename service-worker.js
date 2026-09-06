@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-06-251";
+const CACHE_VERSION = "2026-09-06-252";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -17,8 +17,8 @@ const CORE_ASSETS = [
     "./js/progress/recovery-secondary-muscles.js?v=recovery-secondary-8",
     "./js/progress/body-composition-ui.js?v=body-composition-ui-1",
     "./js/progress/body-fat-visual-replacement.js?v=approved-body-fat-1",
-    "./js/progress/appearance-volume-goals-fix.js?v=appearance-volume-goals-1",
-    "./css/appearance-volume-goals-fix.css?v=appearance-volume-goals-1",
+    "./js/progress/appearance-volume-goals-fix.js?v=appearance-volume-goals-2",
+    "./css/appearance-volume-goals-fix.css?v=appearance-volume-goals-2",
     "./js/more/body-composition-health-records.js?v=body-comp-health-records-2",
     "./js/more/interactive-workout-tutorial-v5.js?v=interactive-workout-v5-1",
     "./js/dashboard/workout-tutorial-prompt.js?v=workout-tutorial-prompt-2",
