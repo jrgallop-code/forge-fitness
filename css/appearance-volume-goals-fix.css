@@ -1,0 +1,267 @@
+/* Theme-safe cleanup for Smart Build and Progress volume analytics.
+   Loaded last by appearance-volume-goals-fix.js so it can override legacy fixed colours. */
+
+/* Progress: remove fixed dark-surface/text leaks in every appearance. */
+.weekly-volume-note,
+.volume-trends-note {
+    color:var(--text-secondary) !important;
+}
+
+.volume-trends-note strong,
+.volume-trend-muscle strong,
+.volume-trend-metric strong,
+.volume-week-label,
+.volume-muscle-label,
+.volume-heatmap-corner,
+.overall-week-value,
+#overall-weekly-sets-card h4 {
+    color:var(--heading) !important;
+}
+
+.volume-trend-muscle small,
+.volume-trend-metric span,
+.overall-week-column small,
+.volume-legend {
+    color:var(--muted) !important;
+}
+
+.volume-trend-row {
+    border-color:var(--card-border) !important;
+    background:var(--surface-raised) !important;
+    color:var(--text) !important;
+    box-shadow:none !important;
+}
+
+.volume-trend-row.is-on-plan {
+    border-color:color-mix(in srgb,var(--success) 34%,var(--card-border)) !important;
+    background:linear-gradient(90deg,color-mix(in srgb,var(--success) 9%,var(--surface-raised)),var(--surface-raised) 44%) !important;
+}
+
+.volume-trend-row.is-on-plan .volume-trend-muscle small { color:var(--success-text) !important; }
+.volume-trend-row.is-above-plan .volume-trend-muscle small { color:var(--warning-text) !important; }
+.volume-trend-row.is-below-plan .volume-trend-muscle small,
+.volume-trend-row.is-building .volume-trend-muscle small { color:var(--text-secondary) !important; }
+
+#overall-weekly-sets-card,
+.training-progress-view .analytics-card:has(#weekly-workouts-chart),
+.training-progress-view .analytics-card:has(#weekly-workouts-seven-week-chart),
+.training-progress-view .analytics-card:has(#weekly-sets-chart) {
+    border-color:var(--card-border) !important;
+    background:var(--card) !important;
+    color:var(--text) !important;
+    box-shadow:var(--shadow) !important;
+}
+
+.training-chart-kicker { color:var(--accent-text) !important; }
+
+#overall-weekly-sets-card .overall-week-bar-wrap {
+    border-color:var(--line) !important;
+    background:var(--surface-raised) !important;
+    box-shadow:inset 0 1px 8px color-mix(in srgb,var(--text) 7%,transparent) !important;
+}
+
+#overall-weekly-sets-card .overall-week-bar,
+#overall-weekly-sets-card .overall-week-column.is-latest .overall-week-bar {
+    background:linear-gradient(180deg,var(--accent),var(--accent-dark)) !important;
+    box-shadow:none !important;
+}
+
+#overall-weekly-sets-card .overall-week-column.is-latest .overall-week-value {
+    color:var(--heading) !important;
+}
+
+#overall-weekly-sets-card .overall-week-column.is-latest small {
+    color:var(--muted) !important;
+}
+
+.overall-week-value {
+    display:block !important;
+    opacity:1 !important;
+    min-height:1.15em;
+    font-size:12px !important;
+    font-weight:850 !important;
+    font-variant-numeric:tabular-nums;
+}
+
+/* Goal-aware weekly muscle volume heatmap.
+   10–20 credits is the Level Up planning target; colours are guidance, not a hard rule. */
+.volume-cell.volume-band-none {
+    background:var(--surface-raised) !important;
+    border-color:var(--line) !important;
+    color:var(--muted) !important;
+}
+
+.volume-cell.volume-band-very-low {
+    background:color-mix(in srgb,var(--muted) 11%,var(--surface)) !important;
+    border-color:color-mix(in srgb,var(--muted) 28%,var(--line)) !important;
+    color:var(--text-secondary) !important;
+}
+
+.volume-cell.volume-band-below-target {
+    background:color-mix(in srgb,var(--warning) 15%,var(--surface)) !important;
+    border-color:color-mix(in srgb,var(--warning) 42%,var(--line)) !important;
+    color:var(--warning-text) !important;
+}
+
+.volume-cell.volume-band-target {
+    background:color-mix(in srgb,var(--success) 20%,var(--surface)) !important;
+    border-color:color-mix(in srgb,var(--success) 52%,var(--line)) !important;
+    color:var(--success-text) !important;
+}
+
+.volume-cell.volume-band-high {
+    background:color-mix(in srgb,var(--warning) 25%,var(--surface)) !important;
+    border-color:color-mix(in srgb,var(--warning) 62%,var(--line)) !important;
+    color:var(--warning-text) !important;
+}
+
+.volume-cell.volume-band-very-high {
+    background:color-mix(in srgb,var(--danger) 20%,var(--surface)) !important;
+    border-color:color-mix(in srgb,var(--danger) 58%,var(--line)) !important;
+    color:var(--danger-text) !important;
+}
+
+.volume-goal-guide {
+    margin:10px 0 16px;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:var(--surface-raised);
+    color:var(--text-secondary);
+    font-size:12px;
+    line-height:1.45;
+}
+
+.volume-goal-guide strong { color:var(--heading) !important; }
+
+.volume-goal-legend {
+    gap:8px 12px !important;
+    color:var(--text-secondary) !important;
+}
+
+.volume-goal-legend span {
+    white-space:nowrap;
+}
+
+.volume-goal-legend i {
+    width:11px;
+    height:11px;
+    border:1px solid var(--line);
+}
+
+.volume-goal-legend .legend-guide-none { background:var(--surface-raised); }
+.volume-goal-legend .legend-guide-very-low { background:color-mix(in srgb,var(--muted) 18%,var(--surface)); }
+.volume-goal-legend .legend-guide-below { background:color-mix(in srgb,var(--warning) 25%,var(--surface)); }
+.volume-goal-legend .legend-guide-target { background:color-mix(in srgb,var(--success) 34%,var(--surface)); }
+.volume-goal-legend .legend-guide-high { background:color-mix(in srgb,var(--warning) 48%,var(--surface)); }
+.volume-goal-legend .legend-guide-very-high { background:color-mix(in srgb,var(--danger) 42%,var(--surface)); }
+
+/* Smart Build: replace the remaining fixed Level Up Night colours with theme tokens. */
+.smart-build-launcher,
+.smart-question-card,
+.smart-review,
+.smart-picker-panel,
+.smart-pref-columns>div,
+.smart-review-day,
+.smart-set-breakdown {
+    border-color:var(--card-border) !important;
+    background:var(--card) !important;
+    color:var(--text) !important;
+}
+
+.smart-question-card>p,
+.smart-review-note,
+.smart-helper,
+.smart-option small,
+.smart-search-row small,
+.smart-superset-toggle small,
+.smart-review-day summary span,
+.smart-review-day p span,
+.smart-review-exercise small,
+.smart-set-breakdown-heading p,
+.smart-build-launcher-head p {
+    color:var(--text-secondary) !important;
+}
+
+.smart-chip,
+.smart-option,
+.smart-picker-toggle,
+.smart-search-row,
+.smart-selected-chip,
+.smart-superset-toggle,
+.smart-review-meta span,
+.smart-volume-grid div,
+.smart-volume-summary div,
+.smart-review-controls button,
+.smart-search-row button {
+    border-color:var(--line) !important;
+    background:var(--surface-raised) !important;
+    color:var(--text) !important;
+}
+
+.smart-chip.selected,
+.smart-option.selected {
+    border-color:var(--accent) !important;
+    background:var(--accent-soft) !important;
+    color:var(--accent-text) !important;
+}
+
+.smart-question-number,
+.smart-build-progress span {
+    background:var(--accent) !important;
+    color:var(--accent-contrast) !important;
+}
+
+.smart-picker-panel input,
+.smart-question-card input[type="search"] {
+    border-color:var(--line) !important;
+    background:var(--input-bg) !important;
+    color:var(--text) !important;
+}
+
+.smart-field-label,
+.smart-pref-columns strong,
+.smart-search-row strong,
+.smart-review-exercise strong,
+.smart-set-breakdown-row strong {
+    color:var(--heading) !important;
+}
+
+.smart-selected-chip,
+.smart-review-meta span,
+.smart-volume-summary span,
+.smart-set-breakdown-row span {
+    color:var(--text-secondary) !important;
+}
+
+.smart-search-row button[data-prefer-id] {
+    border-color:color-mix(in srgb,var(--accent) 40%,var(--line)) !important;
+    background:var(--accent-soft) !important;
+    color:var(--accent-text) !important;
+}
+
+.smart-search-row button[data-exclude-id],
+.smart-search-row button.levelup-avoid-action,
+.levelup-avoid-action {
+    border-color:color-mix(in srgb,var(--danger) 44%,var(--line)) !important;
+    background:color-mix(in srgb,var(--danger) 10%,var(--surface-raised)) !important;
+    color:var(--danger-text) !important;
+}
+
+.smart-review-day h5,
+.smart-review-exercise,
+.smart-review-day p {
+    border-color:var(--line) !important;
+}
+
+.smart-review-exercise.is-superset,
+.smart-review-day p.is-superset {
+    background:var(--accent-soft) !important;
+}
+
+@media(max-width:560px) {
+    .volume-goal-legend {
+        display:grid !important;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+}
