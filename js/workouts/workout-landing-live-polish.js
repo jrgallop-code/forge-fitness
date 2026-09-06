@@ -4,7 +4,7 @@ import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybu
 import { celebrityExpansionPlans } from "./celebrity-expansion-plans.js?v=celebrity-expansion-2";
 
 const STYLE_ID = "workout-landing-live-polish-styles";
-const STYLE_HREF = "/css/workout-landing-live-polish.css?v=workout-landing-live-polish-4";
+const STYLE_HREF = "/css/workout-landing-live-polish.css?v=workout-landing-live-polish-5";
 
 // workout-plan-details.js intentionally uses the unversioned workout-plans module.
 // Keep that module instance populated with every catalogue family so a tap on any
@@ -45,10 +45,29 @@ export function initializeWorkoutLandingLivePolish(content = document) {
 
     removeLegacyRowIcons(landing);
     configureSchedulePresentation(landing);
-    requestAnimationFrame(() => configureSchedulePresentation(landing));
+    decorateSavedPlanActions({ content, landing });
+    requestAnimationFrame(() => {
+        configureSchedulePresentation(landing);
+        decorateSavedPlanActions({ content, landing });
+    });
 
     document.addEventListener("click", event => {
         const target = event.target;
+
+        const deleteButton = target.closest?.("[data-workout-live-delete-saved-plan]");
+        if (deleteButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            deleteSavedPlanFromLiveCard({ content, landing, button: deleteButton });
+            return;
+        }
+
+        // The landing can replace its plan rows when browsing/filtering. Reapply
+        // the saved-plan action treatment on the next frame without installing a
+        // second MutationObserver over the Workout page.
+        if (target.closest?.("[data-workout-live-see-all], [data-workout-live-show-matches], [data-workout-live-all-control], [data-workout-live-filter-value], #save-plan-btn, #close-plan-builder-btn")) {
+            queueSavedPlanDecoration({ content, landing });
+        }
 
         // "All Plans" is intentionally a temporary browse mode. If the user taps
         // any existing filter while that mode is active, immediately restore the
@@ -65,6 +84,7 @@ export function initializeWorkoutLandingLivePolish(content = document) {
                 showMatches.click();
                 requestAnimationFrame(() => {
                     landing.querySelector(`[data-workout-live-filter="${key}"]`)?.click();
+                    queueSavedPlanDecoration({ content, landing });
                 });
                 return;
             }
@@ -84,6 +104,7 @@ export function initializeWorkoutLandingLivePolish(content = document) {
 
         if (target.closest?.("#close-plan-builder-btn, #save-plan-btn")) {
             delete content.dataset.workoutLiveManualEntry;
+            window.setTimeout(() => decorateSavedPlanActions({ content, landing }), 140);
             return;
         }
 
@@ -104,6 +125,91 @@ export function initializeWorkoutLandingLivePolish(content = document) {
 
 function removeLegacyRowIcons(landing) {
     landing.querySelectorAll(".workout-live-plan-row > svg, .workout-live-row-main > svg").forEach(svg => svg.remove());
+}
+
+function queueSavedPlanDecoration({ content, landing }) {
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => decorateSavedPlanActions({ content, landing }));
+    });
+}
+
+function decorateSavedPlanActions({ landing }) {
+    landing.querySelectorAll(".workout-live-plan-row.is-saved").forEach(row => {
+        if (row.querySelector("[data-workout-live-delete-saved-plan]")) return;
+
+        const openButton = row.querySelector(":scope > .workout-live-row-action[data-workout-live-saved-plan]");
+        if (!openButton) return;
+
+        let actions = row.querySelector(":scope > .workout-live-row-actions");
+        if (!actions) {
+            actions = document.createElement("span");
+            actions.className = "workout-live-row-actions";
+            row.insertBefore(actions, openButton);
+            actions.appendChild(openButton);
+        }
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "workout-live-row-delete";
+        deleteButton.dataset.workoutLiveDeleteSavedPlan = openButton.dataset.workoutLiveSavedPlan || "";
+        deleteButton.setAttribute("aria-label", "Delete saved workout plan");
+        deleteButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg><span>Delete</span>';
+        actions.appendChild(deleteButton);
+    });
+}
+
+function deleteSavedPlanFromLiveCard({ content, landing, button }) {
+    const planId = button.dataset.workoutLiveDeleteSavedPlan;
+    if (!planId) return;
+
+    const sourceCard = content.querySelector(`[data-custom-plan-id="${cssEscape(planId)}"]`);
+    const sourceDelete = [...(sourceCard?.querySelectorAll("button") || [])]
+        .find(candidate => /delete plan/i.test(candidate.textContent || ""));
+
+    if (!sourceDelete) return;
+
+    sourceDelete.click();
+
+    // The legacy delete handler owns confirmation and storage cleanup. If the
+    // user confirmed, remove the corresponding live row immediately so the new
+    // landing stays in sync without navigating away or rebuilding the page.
+    window.setTimeout(() => {
+        if (savedPlanExists(planId)) return;
+        button.closest(".workout-live-plan-row")?.remove();
+        updateSavedPlanSummary(landing);
+    }, 0);
+}
+
+function savedPlanExists(planId) {
+    try {
+        const plans = JSON.parse(localStorage.getItem("forge_workout_plans") || "[]");
+        return Array.isArray(plans) && plans.some(plan => String(plan?.id || "") === String(planId));
+    }
+    catch {
+        return false;
+    }
+}
+
+function updateSavedPlanSummary(landing) {
+    const count = landing.querySelectorAll(".workout-live-plan-row.is-saved").length;
+    const summary = landing.querySelector("[data-workout-live-all-plans] .workout-live-section-heading p");
+    if (!summary) return;
+
+    const label = `${count} saved plan${count === 1 ? "" : "s"} shown first`;
+    let text = summary.textContent || "";
+
+    if (/^\d+ saved plans? shown first · /i.test(text)) {
+        summary.textContent = count
+            ? text.replace(/^\d+ saved plans? shown first/i, label)
+            : text.replace(/^\d+ saved plans? shown first ·\s*/i, "");
+        return;
+    }
+
+    if (/ · \d+ saved plans? shown first$/i.test(text)) {
+        summary.textContent = count
+            ? text.replace(/\d+ saved plans? shown first$/i, label)
+            : text.replace(/ · \d+ saved plans? shown first$/i, "");
+    }
 }
 
 function configureSchedulePresentation(landing) {
@@ -148,6 +254,10 @@ function configureSchedulePresentation(landing) {
             if (editor && !editor.hidden) editor.scrollIntoView({ behavior: "smooth", block: "nearest" });
         });
     });
+}
+
+function cssEscape(value) {
+    return globalThis.CSS?.escape ? CSS.escape(String(value)) : String(value).replace(/["\\]/g, "\\$&");
 }
 
 function ensureStylesheet() {
