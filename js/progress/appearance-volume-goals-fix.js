@@ -1,5 +1,5 @@
 const STYLE_ID = "appearance-volume-goals-fix-styles";
-const STYLE_HREF = "css/appearance-volume-goals-fix.css?v=appearance-volume-goals-2";
+const STYLE_HREF = "css/appearance-volume-goals-fix.css?v=appearance-volume-goals-3";
 const BAND_CLASSES = [
     "volume-band-none",
     "volume-band-very-low",
@@ -8,11 +8,19 @@ const BAND_CLASSES = [
     "volume-band-high",
     "volume-band-very-high"
 ];
+const BAND_STYLE_TOKENS = {
+    "volume-band-none": ["--volume-band-none-bg", "--volume-band-none-border"],
+    "volume-band-very-low": ["--volume-band-very-low-bg", "--volume-band-very-low-border"],
+    "volume-band-below-target": ["--volume-band-below-bg", "--volume-band-below-border"],
+    "volume-band-target": ["--volume-band-target-bg", "--volume-band-target-border"],
+    "volume-band-high": ["--volume-band-high-bg", "--volume-band-high-border"],
+    "volume-band-very-high": ["--volume-band-very-high-bg", "--volume-band-very-high-border"]
+};
 
 function ensureStyles() {
     const existing = document.getElementById(STYLE_ID);
     if (existing) {
-        if (!existing.href.includes("appearance-volume-goals-2")) existing.href = STYLE_HREF;
+        if (!existing.href.includes("appearance-volume-goals-3")) existing.href = STYLE_HREF;
         return;
     }
     const link = document.createElement("link");
@@ -31,6 +39,14 @@ function volumeBand(value) {
     return ["volume-band-very-high", "Very high"];
 }
 
+function applyBandStyles(cell, bandClass) {
+    const tokens = BAND_STYLE_TOKENS[bandClass];
+    if (!tokens) return;
+    cell.style.setProperty("background", `var(${tokens[0]})`, "important");
+    cell.style.setProperty("border-color", `var(${tokens[1]})`, "important");
+    cell.style.setProperty("color", "var(--text)", "important");
+}
+
 function enhanceHeatmap() {
     const container = document.getElementById("weekly-muscle-volume");
     if (!container) return;
@@ -42,6 +58,7 @@ function enhanceHeatmap() {
         const [bandClass, label] = volumeBand(value);
         BAND_CLASSES.forEach(name => cell.classList.remove(name));
         cell.classList.add(bandClass);
+        applyBandStyles(cell, bandClass);
         cell.dataset.volumeStatus = label;
         cell.setAttribute("aria-label", `${cell.title || "Weekly muscle volume"}. ${label}.`);
     });
@@ -152,6 +169,7 @@ function scheduleEnhancements() {
     requestAnimationFrame(() => {
         scheduled = false;
         applyEnhancements();
+        requestAnimationFrame(enhanceHeatmap);
     });
 }
 
@@ -163,5 +181,9 @@ document.addEventListener("click", event => {
         setTimeout(scheduleEnhancements, 0);
     }
 });
+
+window.addEventListener("levelup:muscle-map-colors-changed", scheduleEnhancements);
+window.addEventListener("levelup:appearance-change", scheduleEnhancements);
+window.addEventListener("resize", scheduleEnhancements);
 
 scheduleEnhancements();
