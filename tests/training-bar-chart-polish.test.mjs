@@ -25,6 +25,12 @@ test("bar renderer uses gradient rounded bars and collision-safe labels", () => 
     assert.match(renderer, /shadowBlur = 11/);
 });
 
+test("weekly workout sessions stay grouped by calendar week at every timeframe", () => {
+    assert.match(range, /buildWeeklyChartPoints\(sessions, rangeWindow, \(\) => 1\)/);
+    assert.match(range, /axisLabel:\s*"Weekly workout sessions"/);
+    assert.match(range, /rangeLabel:\s*`\$\{selectedLabel\} · weekly totals`/);
+});
+
 test("weekly working sets stay grouped by calendar week at every timeframe", () => {
     assert.match(range, /function buildWeeklyChartPoints\(/);
     assert.match(range, /bucket:\s*"week"/);
