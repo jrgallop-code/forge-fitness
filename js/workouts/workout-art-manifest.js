@@ -1,3 +1,8 @@
+import heroMaleArt from "./generated-art/hero-male.js?v=themed-workout-art-1";
+import villainArt from "./generated-art/villain.js?v=themed-workout-art-1";
+import bodybuilderArt from "./generated-art/bodybuilder.js?v=themed-workout-art-1";
+import fighterArt from "./generated-art/fighter.js?v=themed-workout-art-1";
+
 const unsplash = id => `https://unsplash.com/photos/${id}/download?force=true&w=1200`;
 
 const ART_POOLS = {
@@ -77,6 +82,37 @@ const ART_POOLS = {
         "https://images.unsplash.com/photo-1541600383005-565c949cf777?auto=format&fit=crop&w=1200&q=82",
         unsplash("mZisJGLWtOM")
     ]
+};
+
+const EXACT_ART_BY_ID = {
+    "metropolis-hero-mass": { src: heroMaleArt, family: "cinematicMale" },
+    "first-avenger-build": { src: heroMaleArt, family: "cinematicMale" },
+    "mercenary-hero-muscle": { src: heroMaleArt, family: "cinematicMale" },
+    "cosmic-king-muscle": { src: heroMaleArt, family: "cinematicMale" },
+    "star-lord-athletic-muscle": { src: heroMaleArt, family: "cinematicMale" },
+
+    "masked-villain-strength": { src: villainArt, family: "cinematicMale" },
+    "bronze-age-warrior-mass": { src: villainArt, family: "cinematicMale" },
+    "monster-slayer-athletic": { src: villainArt, family: "cinematicMale" },
+    "jungle-lord-athletic": { src: villainArt, family: "cinematicMale" },
+    "galactic-titan-mass": { src: villainArt, family: "cinematicMale" },
+
+    "fight-club-lean-definition": { src: fighterArt, family: "boxingMale" },
+    "philadelphia-boxer-conditioning": { src: fighterArt, family: "boxingMale" },
+    "road-house-fighter": { src: fighterArt, family: "boxingMale" },
+    "southpaw-boxing-strength": { src: fighterArt, family: "boxingMale" },
+    "mma-warrior-build": { src: fighterArt, family: "boxingMale" },
+    "martial-arts-hero-strength": { src: fighterArt, family: "boxingMale" },
+
+    "four-time-olympia-volume": { src: bodybuilderArt, family: "bodybuilderMale" },
+    "seven-time-physique-detail": { src: bodybuilderArt, family: "bodybuilderMale" },
+    "myth-era-mass": { src: bodybuilderArt, family: "bodybuilderMale" },
+    "hulking-classic-mass": { src: bodybuilderArt, family: "bodybuilderMale" },
+    "reacher-power-build": { src: bodybuilderArt, family: "bodybuilderMale" },
+    "beast-back-specialization": { src: bodybuilderArt, family: "bodybuilderMale" },
+    "blade-consistency-split": { src: bodybuilderArt, family: "bodybuilderMale" },
+    "predator-back-detail": { src: bodybuilderArt, family: "bodybuilderMale" },
+    "fullness-and-density": { src: bodybuilderArt, family: "bodybuilderMale" }
 };
 
 const FAMILY_BY_ID = {
@@ -162,6 +198,10 @@ function inferFamily(plan) {
 }
 
 export function getPlanArtwork(plan, index = 0) {
+    const id = String(plan?.id || "").toLowerCase();
+    const exact = EXACT_ART_BY_ID[id];
+    if (exact) return exact;
+
     const family = inferFamily(plan);
     const pool = ART_POOLS[family] || ART_POOLS.general;
     const position = Math.abs(hashText(`${plan?.id || plan?.name || index}:${index}`)) % pool.length;
