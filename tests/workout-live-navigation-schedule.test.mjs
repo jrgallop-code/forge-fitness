@@ -67,7 +67,18 @@ test("saved user plans restore a compact delete action", async () => {
   assert.match(workouts, /Delete Plan/);
 });
 
+test("Modify Workout builder uses semantic theme tokens in every appearance", async () => {
+  const styles = await read("css/workout-landing-live-polish.css");
+  assert.match(styles, /html\[data-theme\] \.workout-live-page #plan-builder/);
+  assert.match(styles, /\.exercise-recommendation strong\{[^}]*color:var\(--heading\)!important/);
+  assert.match(styles, /\.builder-exercise-guide\{[^}]*background:var\(--accent-soft\)!important;[^}]*color:var\(--accent-text\)!important/);
+  assert.match(styles, /\.remove-exercise-btn\{[^}]*color:var\(--danger-text\)!important/);
+  assert.match(styles, /\.workout-day-card\{[^}]*background:var\(--surface-raised\)!important/);
+  assert.match(styles, /\.exercise-builder-row\{[^}]*background:var\(--card\)!important/);
+  assert.match(styles, /-webkit-text-fill-color:var\(--text\)!important/);
+});
+
 test("Workout polish cache-busts its refreshed stylesheet", async () => {
   const polish = await read("js/workouts/workout-landing-live-polish.js");
-  assert.match(polish, /workout-landing-live-polish\.css\?v=workout-landing-live-polish-5/);
+  assert.match(polish, /workout-landing-live-polish\.css\?v=workout-landing-live-polish-6/);
 });
