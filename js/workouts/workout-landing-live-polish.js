@@ -4,7 +4,7 @@ import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybu
 import { celebrityExpansionPlans } from "./celebrity-expansion-plans.js?v=celebrity-expansion-2";
 
 const STYLE_ID = "workout-landing-live-polish-styles";
-const STYLE_HREF = "/css/workout-landing-live-polish.css?v=workout-landing-live-polish-2";
+const STYLE_HREF = "/css/workout-landing-live-polish.css?v=workout-landing-live-polish-3";
 
 // workout-plan-details.js intentionally uses the unversioned workout-plans module.
 // Keep that module instance populated with every catalogue family so a tap on any
@@ -49,6 +49,27 @@ export function initializeWorkoutLandingLivePolish(content = document) {
 
     document.addEventListener("click", event => {
         const target = event.target;
+
+        // "All Plans" is intentionally a temporary browse mode. If the user taps
+        // any existing filter while that mode is active, immediately restore the
+        // current filtered result set first, then reopen the requested filter sheet.
+        // This means Goal=Hypertrophy works even when the user chooses the same
+        // value they already had instead of forcing them to change it twice.
+        const filterButton = target.closest?.("[data-workout-live-filter]");
+        const showMatches = landing.querySelector("[data-workout-live-show-matches]");
+        if (filterButton && showMatches) {
+            const key = filterButton.dataset.workoutLiveFilter;
+            if (key) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                showMatches.click();
+                requestAnimationFrame(() => {
+                    landing.querySelector(`[data-workout-live-filter="${key}"]`)?.click();
+                });
+                return;
+            }
+        }
+
         if (target.closest?.('[data-workout-live-create-action="manual"]')) {
             content.dataset.workoutLiveManualEntry = "true";
             return;
