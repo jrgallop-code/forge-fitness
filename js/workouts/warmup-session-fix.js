@@ -1,6 +1,6 @@
 import { startRestForWarmupButton } from "./rest-timer-authority.js?v=rest-timer-authority-1";
 import "./warmup-timer-stability.js?v=warmup-timer-stability-1";
-import "./warmup-plate-calculator.js?v=warmup-plate-calculator-1";
+import "./warmup-plate-calculator.js?v=warmup-plate-calculator-2";
 import "../core/workout-theme-guardrail.js?v=workout-theme-guardrail-2";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
