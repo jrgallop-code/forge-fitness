@@ -1,5 +1,5 @@
 const STYLE_ID = "appearance-volume-goals-fix-styles";
-const STYLE_HREF = "css/appearance-volume-goals-fix.css?v=appearance-volume-goals-1";
+const STYLE_HREF = "css/appearance-volume-goals-fix.css?v=appearance-volume-goals-2";
 const BAND_CLASSES = [
     "volume-band-none",
     "volume-band-very-low",
@@ -10,7 +10,11 @@ const BAND_CLASSES = [
 ];
 
 function ensureStyles() {
-    if (document.getElementById(STYLE_ID)) return;
+    const existing = document.getElementById(STYLE_ID);
+    if (existing) {
+        if (!existing.href.includes("appearance-volume-goals-2")) existing.href = STYLE_HREF;
+        return;
+    }
     const link = document.createElement("link");
     link.id = STYLE_ID;
     link.rel = "stylesheet";
@@ -91,12 +95,47 @@ function enhanceWeeklySetsChart() {
     });
 }
 
+function removeNamedCoachIdentity() {
+    document.querySelectorAll("[data-smart-heading], .smart-build-wizard h2, .smart-build-wizard h3, .smart-build-wizard h4").forEach(heading => {
+        const text = heading.textContent?.trim() || "";
+        if (/^coach\s+.+?\s+is\s+building\s+your\s+program$/i.test(text) || /^.+?\s+is\s+building\s+your\s+program$/i.test(text)) {
+            heading.textContent = "Your coach is building your program";
+        }
+    });
+
+    document.querySelectorAll(".smart-review-meta span").forEach(chip => {
+        if (/^coach\s+.+/i.test(chip.textContent?.trim() || "")) chip.remove();
+    });
+
+    const smartBuildRoots = document.querySelectorAll(".smart-build-wizard, [data-smart-step], .smart-review");
+    smartBuildRoots.forEach(root => {
+        [...root.querySelectorAll("*")].forEach(label => {
+            if ((label.textContent?.trim() || "").toUpperCase() !== "YOUR VIRTUAL COACH") return;
+
+            let candidate = label.parentElement;
+            while (candidate && candidate !== root) {
+                const candidateText = candidate.textContent?.trim() || "";
+                const hasAvatar = Boolean(candidate.querySelector("img, picture, [class*='avatar'], [class*='portrait']"));
+                const looksLikeIdentityCard = /YOUR VIRTUAL COACH/i.test(candidateText) && /\bCoach\s+[^\n·]+/i.test(candidateText);
+                if (hasAvatar && looksLikeIdentityCard) {
+                    candidate.remove();
+                    return;
+                }
+                candidate = candidate.parentElement;
+            }
+
+            label.parentElement?.remove();
+        });
+    });
+}
+
 function enhanceSmartBuildTheme() {
     document.querySelectorAll(".smart-build-wizard button, .smart-question-card button, .smart-picker-panel button").forEach(button => {
         if (button.textContent?.trim().toLowerCase() === "avoid") {
             button.classList.add("levelup-avoid-action");
         }
     });
+    removeNamedCoachIdentity();
 }
 
 function applyEnhancements() {
