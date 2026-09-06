@@ -3,6 +3,7 @@ import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-
 import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybuilder-library-3";
 import { celebrityExpansionPlans } from "./celebrity-expansion-plans.js?v=celebrity-expansion-2";
 import "./manual-form-guide-fix.js?v=catalogue-modify-form-guide-1";
+import { initializeWorkoutLibrarySeparation } from "./workout-library-separation.js?v=workout-library-separation-1";
 
 const STYLE_ID = "workout-landing-live-polish-styles";
 const STYLE_HREF = "/css/workout-landing-live-polish.css?v=workout-landing-live-polish-7";
@@ -47,9 +48,11 @@ export function initializeWorkoutLandingLivePolish(content = document) {
     removeLegacyRowIcons(landing);
     configureSchedulePresentation(landing);
     decorateSavedPlanActions({ content, landing });
+    initializeWorkoutLibrarySeparation(landing);
     requestAnimationFrame(() => {
         configureSchedulePresentation(landing);
         decorateSavedPlanActions({ content, landing });
+        initializeWorkoutLibrarySeparation(landing);
     });
 
     document.addEventListener("click", event => {
@@ -64,8 +67,8 @@ export function initializeWorkoutLandingLivePolish(content = document) {
         }
 
         // The landing can replace its plan rows when browsing/filtering. Reapply
-        // the saved-plan action treatment on the next frame without installing a
-        // second MutationObserver over the Workout page.
+        // the saved-plan action treatment and library separation on the next frame
+        // without installing a second MutationObserver over the Workout page.
         if (target.closest?.("[data-workout-live-see-all], [data-workout-live-show-matches], [data-workout-live-all-control], [data-workout-live-filter-value], #save-plan-btn, #close-plan-builder-btn")) {
             queueSavedPlanDecoration({ content, landing });
         }
@@ -105,7 +108,10 @@ export function initializeWorkoutLandingLivePolish(content = document) {
 
         if (target.closest?.("#close-plan-builder-btn, #save-plan-btn")) {
             delete content.dataset.workoutLiveManualEntry;
-            window.setTimeout(() => decorateSavedPlanActions({ content, landing }), 140);
+            window.setTimeout(() => {
+                decorateSavedPlanActions({ content, landing });
+                initializeWorkoutLibrarySeparation(landing);
+            }, 140);
             return;
         }
 
@@ -130,7 +136,10 @@ function removeLegacyRowIcons(landing) {
 
 function queueSavedPlanDecoration({ content, landing }) {
     requestAnimationFrame(() => {
-        requestAnimationFrame(() => decorateSavedPlanActions({ content, landing }));
+        requestAnimationFrame(() => {
+            decorateSavedPlanActions({ content, landing });
+            initializeWorkoutLibrarySeparation(landing);
+        });
     });
 }
 
@@ -178,6 +187,7 @@ function deleteSavedPlanFromLiveCard({ content, landing, button }) {
         if (savedPlanExists(planId)) return;
         button.closest(".workout-live-plan-row")?.remove();
         updateSavedPlanSummary(landing);
+        initializeWorkoutLibrarySeparation(landing);
     }, 0);
 }
 
