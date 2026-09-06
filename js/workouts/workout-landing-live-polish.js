@@ -92,16 +92,19 @@ function simplifyWorkoutSchedule(landing) {
     const heading = landing.querySelector(".workout-live-schedule-heading");
     if (!shell || !heading) return;
 
-    // Undo the earlier prototype treatment if it is still present in an already-open tab.
+    // Keep an empty hidden sentinel so the original landing bridge does not recreate
+    // the duplicate Today card on every mutation.
     const todayCard = shell.querySelector(".workout-live-today-card");
     if (todayCard) {
         const top = todayCard.querySelector(".schedule-banner-top");
         const actions = todayCard.querySelector(".schedule-banner-actions");
         const weekStrip = shell.querySelector(".schedule-week-strip");
         const editor = shell.querySelector(".schedule-editor");
-        if (top) shell.insertBefore(top, weekStrip || shell.firstChild);
+        if (top) shell.insertBefore(top, weekStrip || todayCard);
         if (actions) shell.insertBefore(actions, editor || null);
-        todayCard.remove();
+        todayCard.replaceChildren();
+        todayCard.hidden = true;
+        todayCard.setAttribute("aria-hidden", "true");
     }
 
     shell.querySelector(".schedule-banner-top")?.classList.add("workout-live-schedule-context-hidden");
