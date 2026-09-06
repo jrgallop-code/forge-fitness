@@ -65,9 +65,25 @@ function renderWeekStrip(schedule) {
     const sessions = getSessions();
     return `<div class="schedule-week-strip">${week.map(date => {
         const item = getScheduledItem(date, schedule, plan);
-        const completed = sessions.some(session => session.planId === plan?.id && Number(session.trainingDayIndex) === Number(item.dayIndex) && session.date === date);
+        const hasWorkout = item.dayIndex !== null && item.dayIndex !== undefined;
+        const completed = hasWorkout && sessions.some(session => session.planId === plan?.id && Number(session.trainingDayIndex) === Number(item.dayIndex) && session.date === date);
         const today = date === localDate();
-        return `<div class="schedule-day ${today ? "is-today" : ""} ${completed ? "is-complete" : ""}"><span>${DAYS[new Date(date + "T12:00:00").getDay()]}</span><strong>${new Date(date + "T12:00:00").getDate()}</strong><small>${completed ? "✓ Done" : escapeHtml(shortDayName(item.title))}</small></div>`;
+        const workoutNumber = hasWorkout ? Number(item.dayIndex) + 1 : null;
+        const compactLabel = completed
+            ? "✓ Done"
+            : item.status === "skipped"
+                ? "Skipped"
+                : hasWorkout
+                    ? `Workout ${workoutNumber}`
+                    : "Rest";
+        const detailLabel = completed
+            ? `Workout ${workoutNumber}: ${item.title}, completed`
+            : item.status === "skipped"
+                ? "Workout skipped"
+                : hasWorkout
+                    ? `Workout ${workoutNumber}: ${item.title}`
+                    : "Recovery day";
+        return `<div class="schedule-day ${hasWorkout ? "is-workout" : "is-rest"} ${today ? "is-today" : ""} ${completed ? "is-complete" : ""}" title="${escapeHtml(detailLabel)}" aria-label="${escapeHtml(`${DAYS[new Date(date + "T12:00:00").getDay()]} ${new Date(date + "T12:00:00").getDate()}, ${detailLabel}`)}"><span>${DAYS[new Date(date + "T12:00:00").getDay()]}</span><strong>${new Date(date + "T12:00:00").getDate()}</strong><small>${escapeHtml(compactLabel)}</small></div>`;
     }).join("")}</div>`;
 }
 
