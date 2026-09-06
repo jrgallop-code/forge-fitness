@@ -5,7 +5,7 @@ import { celebrityExpansionPlans } from "./celebrity-expansion-plans.js?v=celebr
 import "./manual-form-guide-fix.js?v=catalogue-modify-form-guide-1";
 
 const STYLE_ID = "workout-landing-live-polish-styles";
-const STYLE_HREF = "/css/workout-landing-live-polish.css?v=workout-landing-live-polish-6";
+const STYLE_HREF = "/css/workout-landing-live-polish.css?v=workout-landing-live-polish-7";
 
 // workout-plan-details.js intentionally uses the unversioned workout-plans module.
 // Keep that module instance populated with every catalogue family so a tap on any
