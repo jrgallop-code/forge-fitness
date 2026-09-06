@@ -84,39 +84,54 @@
 }
 
 /* Goal-aware weekly muscle volume heatmap.
-   Status is carried by the square fill; number colour stays consistent within the active theme. */
+   Cell fills and legend swatches share these exact tokens so they cannot drift apart. */
+.weekly-muscle-volume {
+    --volume-band-none-bg:color-mix(in srgb,var(--muted) 5%,var(--surface));
+    --volume-band-none-border:color-mix(in srgb,var(--muted) 18%,var(--line));
+    --volume-band-very-low-bg:color-mix(in srgb,var(--muted) 13%,var(--surface));
+    --volume-band-very-low-border:color-mix(in srgb,var(--muted) 30%,var(--line));
+    --volume-band-below-bg:color-mix(in srgb,var(--warning) 30%,var(--surface));
+    --volume-band-below-border:color-mix(in srgb,var(--warning) 55%,var(--line));
+    --volume-band-target-bg:color-mix(in srgb,var(--success) 34%,var(--surface));
+    --volume-band-target-border:color-mix(in srgb,var(--success) 62%,var(--line));
+    --volume-band-high-bg:color-mix(in srgb,var(--warning) 54%,var(--surface));
+    --volume-band-high-border:color-mix(in srgb,var(--warning) 72%,var(--line));
+    --volume-band-very-high-bg:color-mix(in srgb,var(--danger) 48%,var(--surface));
+    --volume-band-very-high-border:color-mix(in srgb,var(--danger) 68%,var(--line));
+}
+
 .volume-cell {
     color:var(--text) !important;
 }
 
 .volume-cell.volume-band-none {
-    background:color-mix(in srgb,var(--muted) 5%,var(--surface)) !important;
-    border-color:color-mix(in srgb,var(--muted) 18%,var(--line)) !important;
+    background:var(--volume-band-none-bg) !important;
+    border-color:var(--volume-band-none-border) !important;
 }
 
 .volume-cell.volume-band-very-low {
-    background:color-mix(in srgb,var(--muted) 13%,var(--surface)) !important;
-    border-color:color-mix(in srgb,var(--muted) 30%,var(--line)) !important;
+    background:var(--volume-band-very-low-bg) !important;
+    border-color:var(--volume-band-very-low-border) !important;
 }
 
 .volume-cell.volume-band-below-target {
-    background:color-mix(in srgb,var(--warning) 30%,var(--surface)) !important;
-    border-color:color-mix(in srgb,var(--warning) 55%,var(--line)) !important;
+    background:var(--volume-band-below-bg) !important;
+    border-color:var(--volume-band-below-border) !important;
 }
 
 .volume-cell.volume-band-target {
-    background:color-mix(in srgb,var(--success) 34%,var(--surface)) !important;
-    border-color:color-mix(in srgb,var(--success) 62%,var(--line)) !important;
+    background:var(--volume-band-target-bg) !important;
+    border-color:var(--volume-band-target-border) !important;
 }
 
 .volume-cell.volume-band-high {
-    background:color-mix(in srgb,var(--warning) 54%,var(--surface)) !important;
-    border-color:color-mix(in srgb,var(--warning) 72%,var(--line)) !important;
+    background:var(--volume-band-high-bg) !important;
+    border-color:var(--volume-band-high-border) !important;
 }
 
 .volume-cell.volume-band-very-high {
-    background:color-mix(in srgb,var(--danger) 48%,var(--surface)) !important;
-    border-color:color-mix(in srgb,var(--danger) 68%,var(--line)) !important;
+    background:var(--volume-band-very-high-bg) !important;
+    border-color:var(--volume-band-very-high-border) !important;
 }
 
 .volume-goal-guide {
@@ -147,30 +162,29 @@
     border:1px solid var(--line);
 }
 
-/* Legend swatches intentionally match the cell fills exactly. */
 .volume-goal-legend .legend-guide-none {
-    background:color-mix(in srgb,var(--muted) 5%,var(--surface));
-    border-color:color-mix(in srgb,var(--muted) 18%,var(--line));
+    background:var(--volume-band-none-bg);
+    border-color:var(--volume-band-none-border);
 }
 .volume-goal-legend .legend-guide-very-low {
-    background:color-mix(in srgb,var(--muted) 13%,var(--surface));
-    border-color:color-mix(in srgb,var(--muted) 30%,var(--line));
+    background:var(--volume-band-very-low-bg);
+    border-color:var(--volume-band-very-low-border);
 }
 .volume-goal-legend .legend-guide-below {
-    background:color-mix(in srgb,var(--warning) 30%,var(--surface));
-    border-color:color-mix(in srgb,var(--warning) 55%,var(--line));
+    background:var(--volume-band-below-bg);
+    border-color:var(--volume-band-below-border);
 }
 .volume-goal-legend .legend-guide-target {
-    background:color-mix(in srgb,var(--success) 34%,var(--surface));
-    border-color:color-mix(in srgb,var(--success) 62%,var(--line));
+    background:var(--volume-band-target-bg);
+    border-color:var(--volume-band-target-border);
 }
 .volume-goal-legend .legend-guide-high {
-    background:color-mix(in srgb,var(--warning) 54%,var(--surface));
-    border-color:color-mix(in srgb,var(--warning) 72%,var(--line));
+    background:var(--volume-band-high-bg);
+    border-color:var(--volume-band-high-border);
 }
 .volume-goal-legend .legend-guide-very-high {
-    background:color-mix(in srgb,var(--danger) 48%,var(--surface));
-    border-color:color-mix(in srgb,var(--danger) 68%,var(--line));
+    background:var(--volume-band-very-high-bg);
+    border-color:var(--volume-band-very-high-border);
 }
 
 /* Smart Build: replace the remaining fixed Level Up Night colours with theme tokens. */
