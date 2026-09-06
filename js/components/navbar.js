@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=first-launch-cleanup-1";
+import { navigate } from "../core/router.js?v=workout-nav-fix-1";
 
 
 export function renderNavbar() {
@@ -76,6 +76,12 @@ export function initializeNavbar() {
             }
 
             event.preventDefault();
+
+            // Workout creation/filter sheets are mounted on document.body rather
+            // than inside #content. Always remove a stale one before changing tabs
+            // so it can never intercept the next navigation tap.
+            document.querySelectorAll("[data-workout-live-sheet]")
+                .forEach(sheet => sheet.remove());
 
             button.classList.remove("nav-pulse");
             void button.offsetWidth;
