@@ -33,7 +33,25 @@ test("Workout polish does not install a second schedule MutationObserver", async
   assert.match(polish, /configureSchedulePresentation/);
 });
 
-test("router cache-busts the refreshed Workout polish module", async () => {
-  const router = await read("js/core/router.js");
-  assert.match(router, /workout-landing-live-polish\.js\?v=workout-landing-live-polish-2/);
+test("All Plans yields back to the current filter before opening its picker", async () => {
+  const polish = await read("js/workouts/workout-landing-live-polish.js");
+  assert.match(polish, /data-workout-live-show-matches/);
+  assert.match(polish, /data-workout-live-filter/);
+  assert.match(polish, /showMatches\.click\(\)/);
+  assert.match(polish, /requestAnimationFrame/);
+  assert.match(polish, /event\.stopImmediatePropagation\(\)/);
+});
+
+test("Workout New Plan flows clear the fixed bottom navigation", async () => {
+  const styles = await read("css/workout-landing-live-polish.css");
+  assert.match(styles, /data-smart-build-wizard/);
+  assert.match(styles, /data-routine-import-wizard/);
+  assert.match(styles, /#plan-builder/);
+  assert.match(styles, /padding-bottom:calc\(138px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(styles, /scroll-padding-bottom:calc\(138px \+ env\(safe-area-inset-bottom\)\)/);
+});
+
+test("Workout polish cache-busts its refreshed stylesheet", async () => {
+  const polish = await read("js/workouts/workout-landing-live-polish.js");
+  assert.match(polish, /workout-landing-live-polish\.css\?v=workout-landing-live-polish-3/);
 });
