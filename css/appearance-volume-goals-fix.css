@@ -84,41 +84,39 @@
 }
 
 /* Goal-aware weekly muscle volume heatmap.
-   10–20 credits is the Level Up planning target; colours are guidance, not a hard rule. */
+   Status is carried by the square fill; number colour stays consistent within the active theme. */
+.volume-cell {
+    color:var(--text) !important;
+}
+
 .volume-cell.volume-band-none {
-    background:var(--surface-raised) !important;
-    border-color:var(--line) !important;
-    color:var(--muted) !important;
+    background:color-mix(in srgb,var(--muted) 5%,var(--surface)) !important;
+    border-color:color-mix(in srgb,var(--muted) 18%,var(--line)) !important;
 }
 
 .volume-cell.volume-band-very-low {
-    background:color-mix(in srgb,var(--muted) 11%,var(--surface)) !important;
-    border-color:color-mix(in srgb,var(--muted) 28%,var(--line)) !important;
-    color:var(--text-secondary) !important;
+    background:color-mix(in srgb,var(--muted) 13%,var(--surface)) !important;
+    border-color:color-mix(in srgb,var(--muted) 30%,var(--line)) !important;
 }
 
 .volume-cell.volume-band-below-target {
-    background:color-mix(in srgb,var(--warning) 15%,var(--surface)) !important;
-    border-color:color-mix(in srgb,var(--warning) 42%,var(--line)) !important;
-    color:var(--warning-text) !important;
+    background:color-mix(in srgb,var(--warning) 30%,var(--surface)) !important;
+    border-color:color-mix(in srgb,var(--warning) 55%,var(--line)) !important;
 }
 
 .volume-cell.volume-band-target {
-    background:color-mix(in srgb,var(--success) 20%,var(--surface)) !important;
-    border-color:color-mix(in srgb,var(--success) 52%,var(--line)) !important;
-    color:var(--success-text) !important;
+    background:color-mix(in srgb,var(--success) 34%,var(--surface)) !important;
+    border-color:color-mix(in srgb,var(--success) 62%,var(--line)) !important;
 }
 
 .volume-cell.volume-band-high {
-    background:color-mix(in srgb,var(--warning) 25%,var(--surface)) !important;
-    border-color:color-mix(in srgb,var(--warning) 62%,var(--line)) !important;
-    color:var(--warning-text) !important;
+    background:color-mix(in srgb,var(--warning) 54%,var(--surface)) !important;
+    border-color:color-mix(in srgb,var(--warning) 72%,var(--line)) !important;
 }
 
 .volume-cell.volume-band-very-high {
-    background:color-mix(in srgb,var(--danger) 20%,var(--surface)) !important;
-    border-color:color-mix(in srgb,var(--danger) 58%,var(--line)) !important;
-    color:var(--danger-text) !important;
+    background:color-mix(in srgb,var(--danger) 48%,var(--surface)) !important;
+    border-color:color-mix(in srgb,var(--danger) 68%,var(--line)) !important;
 }
 
 .volume-goal-guide {
@@ -149,12 +147,31 @@
     border:1px solid var(--line);
 }
 
-.volume-goal-legend .legend-guide-none { background:var(--surface-raised); }
-.volume-goal-legend .legend-guide-very-low { background:color-mix(in srgb,var(--muted) 18%,var(--surface)); }
-.volume-goal-legend .legend-guide-below { background:color-mix(in srgb,var(--warning) 25%,var(--surface)); }
-.volume-goal-legend .legend-guide-target { background:color-mix(in srgb,var(--success) 34%,var(--surface)); }
-.volume-goal-legend .legend-guide-high { background:color-mix(in srgb,var(--warning) 48%,var(--surface)); }
-.volume-goal-legend .legend-guide-very-high { background:color-mix(in srgb,var(--danger) 42%,var(--surface)); }
+/* Legend swatches intentionally match the cell fills exactly. */
+.volume-goal-legend .legend-guide-none {
+    background:color-mix(in srgb,var(--muted) 5%,var(--surface));
+    border-color:color-mix(in srgb,var(--muted) 18%,var(--line));
+}
+.volume-goal-legend .legend-guide-very-low {
+    background:color-mix(in srgb,var(--muted) 13%,var(--surface));
+    border-color:color-mix(in srgb,var(--muted) 30%,var(--line));
+}
+.volume-goal-legend .legend-guide-below {
+    background:color-mix(in srgb,var(--warning) 30%,var(--surface));
+    border-color:color-mix(in srgb,var(--warning) 55%,var(--line));
+}
+.volume-goal-legend .legend-guide-target {
+    background:color-mix(in srgb,var(--success) 34%,var(--surface));
+    border-color:color-mix(in srgb,var(--success) 62%,var(--line));
+}
+.volume-goal-legend .legend-guide-high {
+    background:color-mix(in srgb,var(--warning) 54%,var(--surface));
+    border-color:color-mix(in srgb,var(--warning) 72%,var(--line));
+}
+.volume-goal-legend .legend-guide-very-high {
+    background:color-mix(in srgb,var(--danger) 48%,var(--surface));
+    border-color:color-mix(in srgb,var(--danger) 68%,var(--line));
+}
 
 /* Smart Build: replace the remaining fixed Level Up Night colours with theme tokens. */
 .smart-build-launcher,
