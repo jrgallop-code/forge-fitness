@@ -78,6 +78,17 @@ test("Modify Workout builder uses semantic theme tokens in every appearance", as
   assert.match(styles, /-webkit-text-fill-color:var\(--text\)!important/);
 });
 
+test("catalogue Modify Workout loads the manual form-guide bridge", async () => {
+  const [polish, guideFix] = await Promise.all([
+    read("js/workouts/workout-landing-live-polish.js"),
+    read("js/workouts/manual-form-guide-fix.js")
+  ]);
+  assert.match(polish, /manual-form-guide-fix\.js\?v=catalogue-modify-form-guide-1/);
+  assert.match(guideFix, /#plan-builder\.manual-catalogue \.builder-exercise-guide/);
+  assert.match(guideFix, /levelup:open-exercise-guide/);
+  assert.match(guideFix, /sourceSelector:\s*"#plan-builder"/);
+});
+
 test("Workout polish cache-busts its refreshed stylesheet", async () => {
   const polish = await read("js/workouts/workout-landing-live-polish.js");
   assert.match(polish, /workout-landing-live-polish\.css\?v=workout-landing-live-polish-6/);
