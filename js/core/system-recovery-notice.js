@@ -1,10 +1,21 @@
 const DISMISS_KEY = "level_up_system_recovery_notice_2026_09_03_dismissed";
+const AUDIENCE_KEY = "level_up_system_recovery_notice_2026_09_07_audience";
 const SESSION_KEY = "level_up_cloud_session";
 const NOTICE_ID = "level-up-system-recovery-notice";
+const LEGACY_DATA_KEYS = [
+    "level_up_training_preferences",
+    "level_up_nutrition_profile",
+    "level_up_nutrition_plan",
+    "level_up_food_log_v1",
+    "forge_workout_plans",
+    "forge_workout_sessions",
+    "forge_weight_entries"
+];
 
 installSystemRecoveryNotice();
 
 function installSystemRecoveryNotice() {
+    if (!isLegacyRecoveryAudience()) return removeNotice();
     ensureStyles();
     mountIfEligible();
 
@@ -25,6 +36,23 @@ function installSystemRecoveryNotice() {
             openRestoreHistory();
         }
     });
+}
+
+function isLegacyRecoveryAudience() {
+    try {
+        const saved = localStorage.getItem(AUDIENCE_KEY);
+        if (saved === "legacy") return true;
+        if (saved === "new") return false;
+
+        const legacy = hasValidSession()
+            || localStorage.getItem(DISMISS_KEY) !== null
+            || LEGACY_DATA_KEYS.some(key => localStorage.getItem(key) !== null);
+        localStorage.setItem(AUDIENCE_KEY, legacy ? "legacy" : "new");
+        return legacy;
+    }
+    catch {
+        return false;
+    }
 }
 
 function mountIfEligible() {
