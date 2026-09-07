@@ -69,9 +69,6 @@ function activateStandaloneGuide(state = manualGuideState) {
     const guides = [...state.page.querySelectorAll?.(".exercise-guide-screen") || []];
     if (!guides.length) return;
 
-    // Several legacy compatibility renderers can listen for the same guide
-    // event. Keep one guide shell only so Manual Build always opens a single,
-    // full-screen destination rather than stacking inline guide sections.
     const guide = guides[0];
     guides.slice(1).forEach(extra => extra.remove());
 
@@ -85,9 +82,6 @@ function activateStandaloneGuide(state = manualGuideState) {
 
     document.body.classList.add("manual-builder-guide-open");
     guide.scrollTop = 0;
-
-    // The guide is its own viewport now. Keep the Workout page at the exact
-    // scroll position it had before the guide opened.
     window.scrollTo({ top: state.scrollY, behavior: "auto" });
 }
 
@@ -109,7 +103,7 @@ function restoreManualBuilder() {
 
 function openManualFormGuide(event) {
     const button = event.target.closest?.(
-        "#plan-builder.manual-catalogue .builder-exercise-guide"
+        "#plan-builder.manual-catalogue .builder-exercise-guide, #plan-builder.manual-catalogue .manual-pick-guide"
     );
 
     if (!button) return;
@@ -137,9 +131,6 @@ function openManualFormGuide(event) {
                 backLabel: "✕ Close",
                 restoreScroll: true,
                 preserveViewport: true,
-                // Do not scroll the Workout document to the inline insertion
-                // point. The compatibility screen is promoted to a fixed,
-                // standalone page immediately after it renders.
                 focusGuideStart: false,
                 manualBuilderGuide: true
             }
@@ -154,9 +145,6 @@ function handleGuideBack(event) {
     if (!manualGuideState) return;
     const back = event.target.closest?.(".exercise-guide-screen .exercise-guide-back");
     if (!back) return;
-
-    // Let the owning guide renderer run its normal cleanup first, then enforce
-    // the Manual Build return destination so the Workout landing cannot win.
     setTimeout(restoreManualBuilder, 0);
 }
 
