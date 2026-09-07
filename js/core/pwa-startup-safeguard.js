@@ -46,7 +46,7 @@
         if (document.querySelector('script[data-system-recovery-notice]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/core/system-recovery-notice.js?v=system-recovery-notice-1";
+        script.src = "js/core/system-recovery-notice.js?v=legacy-audience-1";
         script.dataset.systemRecoveryNotice = "1";
         document.head.appendChild(script);
     }
@@ -154,7 +154,7 @@
         if (document.querySelector('script[data-interactive-workout-tutorial]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/more/interactive-workout-tutorial-v5.js?v=interactive-workout-v5-1";
+        script.src = "js/more/interactive-workout-tutorial-v5.js?v=browser-form-guide-pointer-1";
         script.dataset.interactiveWorkoutTutorial = "1";
         document.head.appendChild(script);
     }
