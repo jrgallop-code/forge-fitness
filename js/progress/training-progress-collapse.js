@@ -1,6 +1,7 @@
 import "./appearance-volume-goals-fix.js?v=appearance-volume-goals-4";
 import "./weight-viewport-summary-authority.js?v=weight-viewport-summary-2";
-import "./weight-history-goal-colors.js?v=goal-aware-weight-history-1";
+import "./weight-history-goal-colors.js?v=weight-history-neutral-1";
+import "./progress-initial-tab-stability.js?v=progress-initial-tab-stability-1";
 import "../workouts/workout-delete-message-cleanup.js?v=workout-delete-message-cleanup-1";
 import "../workouts/repeat-workout-day.js?v=repeat-workout-day-1";
 import "../workouts/custom-plan-label-authority.js?v=custom-plan-label-1";
