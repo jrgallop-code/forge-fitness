@@ -1,5 +1,6 @@
 import { renderAdminAnalytics, initializeAdminAnalytics } from "./admin-analytics.js?v=owner-dashboard-1";
 import { initializeOwnerProductInsights } from "./product-insights.js?v=owner-product-insights-1";
+import { initializeActiveUserActivity } from "./active-user-activity.js?v=active-user-activity-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
@@ -123,6 +124,7 @@ function showDashboard(user) {
   document.getElementById("admin-analytics-back")?.remove();
   initializeAdminAnalytics();
   initializeOwnerProductInsights();
+  initializeActiveUserActivity();
 }
 
 async function signOut() {
