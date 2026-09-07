@@ -2,6 +2,7 @@ import "./appearance-volume-goals-fix.js?v=appearance-volume-goals-4";
 import "./weight-viewport-summary-authority.js?v=weight-viewport-summary-2";
 import "../workouts/workout-delete-message-cleanup.js?v=workout-delete-message-cleanup-1";
 import "../workouts/repeat-workout-day.js?v=repeat-workout-day-1";
+import "../workouts/custom-plan-label-authority.js?v=custom-plan-label-1";
 
 function unwrapLegacyDisclosure(liftingProgress) {
     const existing = liftingProgress.querySelector(":scope > .training-progress-disclosure");
