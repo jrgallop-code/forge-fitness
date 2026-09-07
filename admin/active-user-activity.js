@@ -73,6 +73,7 @@ function attachPanelWhenReady() {
       </div>
       <div data-user-activity-status class="admin-user-activity-status">Loading active users…</div>`;
     grid.prepend(panel);
+    if (currentPayload) requestAnimationFrame(renderPanel);
   }
   return panel;
 }
