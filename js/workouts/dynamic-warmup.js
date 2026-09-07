@@ -2,11 +2,31 @@ import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalo
 import { getFormGuideVideo } from "./exercise-guide-video-resolver.js?v=form-video-root-fallback-1";
 
 const STYLE_ID = "dynamic-warmup-styles";
-const STYLE_HREF = "/css/dynamic-warmup.css?v=dynamic-warmup-2";
+const STYLE_HREF = "/css/dynamic-warmup.css?v=dynamic-warmup-3";
 const ACTIVE_KEY = "level_up_active_workout";
 const MODE_KEY = "level_up_dynamic_warmup_mode";
 const SESSION_KEY = "level_up_dynamic_warmup_sessions";
-const FORM_VIDEO_ORIGIN = "https://media.leveluphypertrophy.com/form-videos";
+const WARMUP_VIDEO_ORIGIN = "https://media.leveluphypertrophy.com/warmup-videos";
+const WARMUP_VIDEO_KEYS = Object.freeze({
+  shoulderBand: "band-shoulder-warm-up.mp4",
+  dynamicChest: "dynamic-chest-stretch.mp4",
+  reachRotation: "reach-up-back-rotation.mp4",
+  kneelingRotation: "kneeling-back-rotation.mp4",
+  dynamicBack: "dynamic-back-stretch.mp4",
+  standingRotation: "standing-back-rotation.mp4",
+  kneelingLat: "kneeling-lat-mobilization.mp4",
+  scapulaDips: "scapula-dips.mp4",
+  wristCircles: "wrist-circles.mp4",
+  hipCircles: "hip-circles.mp4",
+  kneeRaise: "dynamic-knee-raises.mp4",
+  ankleRotation: "ankle-rotations.mp4",
+  kneeCircles: "knee-circles.mp4",
+  sideLunge: "dynamic-side-lunges.mp4",
+  bodyweightSquat: "bodyweight-squats.mp4",
+  hipAbduction: "band-hip-abduction.mp4",
+  pullThrough: "band-pull-through.mp4",
+  jumpingJack: "jumping-jacks.mp4"
+});
 
 // Curated from the Level Up Form Videos Google Drive library. These are the
 // most useful dynamic / movement-prep clips for pre-lifting use. Static holds
@@ -314,7 +334,8 @@ function drivePreviewUrl(id) {
 
 function sourceUrls(drill) {
   const urls = [];
-  if (drill.sourceFile) urls.push(`${FORM_VIDEO_ORIGIN}/${encodeURIComponent(drill.sourceFile)}`);
+  const mediaKey = WARMUP_VIDEO_KEYS[drill.key];
+  if (mediaKey) urls.push(`${WARMUP_VIDEO_ORIGIN}/${mediaKey}`);
   if (drill.driveId) urls.push(driveDownloadUrl(drill.driveId));
   const fallback = drill.fallbackId ? getFormGuideVideo(drill.fallbackId) : null;
   if (fallback?.src) urls.push(fallback.src);
@@ -326,7 +347,8 @@ function videoMarkup(drill, className = "") {
   const sources = sourceUrls(drill);
   if (!sources.length) return `<div class="dynamic-warmup-video-fallback ${className}" aria-hidden="true">▶</div>`;
   const packed = encodeURIComponent(JSON.stringify(sources));
-  return `<video class="dynamic-warmup-video ${className}" muted playsinline loop preload="metadata" src="${sources[0]}" data-video-sources="${packed}" data-drive-preview="${drivePreviewUrl(drill.driveId)}" aria-label="${drill.name} demonstration"></video>`;
+  const autoplay = className.includes("is-current") ? " autoplay" : "";
+  return `<video class="dynamic-warmup-video ${className}" muted playsinline loop${autoplay} preload="metadata" src="${sources[0]}" data-video-sources="${packed}" data-drive-preview="${drivePreviewUrl(drill.driveId)}" aria-label="${drill.name} demonstration"></video>`;
 }
 
 function bindVideoFallback(root) {
@@ -376,17 +398,12 @@ function renderPrompt(logger, active) {
   prompt.dataset.dynamicWarmupPrompt = "";
   prompt.innerHTML = `
     <div class="dynamic-warmup-prompt-head">
-      <div><span class="dynamic-warmup-kicker">DYNAMIC WARM-UP</span><h3>${routine.label} prep <small>Optional</small></h3><p>${totalMinutes(drills)} min · ${drills.length} video-guided movements selected from today's exercises.</p></div>
-      <button class="dynamic-warmup-skip" type="button" data-dynamic-warmup-skip>Skip</button>
-    </div>
-    <div class="dynamic-warmup-preview-list">
-      ${drills.map((drill, index) => `<div><b>${index + 1}</b><span><strong>${drill.name}</strong><small>${formatTime(drill.seconds)}</small></span></div>`).join("")}
+      <div><span class="dynamic-warmup-kicker">DYNAMIC WARM-UP</span><h3>Warm up before ${routine.label}? <small>Optional</small></h3><p>${totalMinutes(drills)} min of video-guided movement preparation.</p></div>
+      <button class="dynamic-warmup-skip" type="button" data-dynamic-warmup-skip>Not now</button>
     </div>
     <div class="dynamic-warmup-actions">
-      <label>Warm-up setting<select data-dynamic-warmup-mode><option value="ask">Ask each workout</option><option value="always">Always show</option><option value="off">Off</option></select></label>
-      <button class="dynamic-warmup-start" type="button" data-dynamic-warmup-start>▶ Start Warm-Up</button>
+      <button class="dynamic-warmup-start" type="button" data-dynamic-warmup-start>Yes, Start Warm-Up</button>
     </div>`;
-  prompt.querySelector("[data-dynamic-warmup-mode]").value = getMode();
 
   const anchor = logger.querySelector("#session-exercises") || logger.firstElementChild;
   if (anchor) anchor.insertAdjacentElement("beforebegin", prompt);
@@ -394,11 +411,6 @@ function renderPrompt(logger, active) {
 
   prompt.querySelector("[data-dynamic-warmup-skip]")?.addEventListener("click", () => skipWarmup(active.id));
   prompt.querySelector("[data-dynamic-warmup-start]")?.addEventListener("click", () => startWarmup(active.id, drills, routine.label));
-  prompt.querySelector("[data-dynamic-warmup-mode]")?.addEventListener("change", event => {
-    setMode(event.target.value);
-    if (event.target.value === "off") skipWarmup(active.id, true);
-  });
-
   if (getMode() === "always") requestAnimationFrame(() => startWarmup(active.id, drills, routine.label));
 }
 
@@ -457,6 +469,13 @@ function renderOverlay(workoutId) {
     </div>`;
   document.body.appendChild(overlay);
   bindVideoFallback(overlay);
+  requestAnimationFrame(() => {
+    overlay.querySelector(".dynamic-warmup-queue-item.is-current")?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center"
+    });
+  });
 
   overlay.querySelector("[data-dynamic-warmup-close]")?.addEventListener("click", () => skipWarmup(workoutId));
   overlay.querySelector("[data-dynamic-warmup-skip-sheet]")?.addEventListener("click", () => skipWarmup(workoutId));
@@ -483,11 +502,19 @@ function toggleTimer() {
   running ? stopTimer() : startTimer();
 }
 
+function playCurrentVideo(overlay) {
+  const video = overlay?.querySelector(".dynamic-warmup-video.is-current");
+  if (!video) return;
+  const play = () => video.play?.().catch(() => {});
+  if (video.readyState >= 2) play();
+  else video.addEventListener("canplay", play, { once: true });
+}
+
 function startTimer() {
   if (activeTimer || !sequence.length) return;
   running = true;
   const overlay = document.querySelector("[data-dynamic-warmup-overlay]");
-  overlay?.querySelector(".dynamic-warmup-video.is-current")?.play?.().catch(() => {});
+  playCurrentVideo(overlay);
   const play = overlay?.querySelector("[data-dynamic-warmup-play]");
   if (play) play.textContent = "Ⅱ";
   activeTimer = window.setInterval(() => {
