@@ -2,7 +2,7 @@ import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalo
 import { getFormGuideVideo } from "./exercise-guide-video-resolver.js?v=form-video-root-fallback-1";
 
 const STYLE_ID = "dynamic-warmup-styles";
-const STYLE_HREF = "/css/dynamic-warmup.css?v=dynamic-warmup-3";
+const STYLE_HREF = "/css/dynamic-warmup.css?v=dynamic-warmup-4";
 const ACTIVE_KEY = "level_up_active_workout";
 const MODE_KEY = "level_up_dynamic_warmup_mode";
 const SESSION_KEY = "level_up_dynamic_warmup_sessions";
@@ -225,7 +225,7 @@ function ensureStyles() {
     link.rel = "stylesheet";
     document.head.appendChild(link);
   }
-  if (!link.href.includes("dynamic-warmup-2")) link.href = STYLE_HREF;
+  if (!link.href.includes("dynamic-warmup-4")) link.href = STYLE_HREF;
 }
 
 function readActive() {
@@ -347,8 +347,10 @@ function videoMarkup(drill, className = "") {
   const sources = sourceUrls(drill);
   if (!sources.length) return `<div class="dynamic-warmup-video-fallback ${className}" aria-hidden="true">▶</div>`;
   const packed = encodeURIComponent(JSON.stringify(sources));
-  const autoplay = className.includes("is-current") ? " autoplay" : "";
-  return `<video class="dynamic-warmup-video ${className}" muted playsinline loop${autoplay} preload="metadata" src="${sources[0]}" data-video-sources="${packed}" data-drive-preview="${drivePreviewUrl(drill.driveId)}" aria-label="${drill.name} demonstration"></video>`;
+  const isCurrent = className.includes("is-current");
+  const preload = isCurrent || className.includes("is-thumb") ? "auto" : "metadata";
+  const autoplay = isCurrent ? " autoplay" : "";
+  return `<video class="dynamic-warmup-video ${className}" muted playsinline loop${autoplay} preload="${preload}" src="${sources[0]}" data-video-sources="${packed}" data-drive-preview="${drivePreviewUrl(drill.driveId)}" aria-label="${drill.name} demonstration"></video>`;
 }
 
 function bindVideoFallback(root) {
@@ -356,6 +358,16 @@ function bindVideoFallback(root) {
     if (video.dataset.fallbackBound === "true") return;
     video.dataset.fallbackBound = "true";
     video.dataset.sourceIndex = "0";
+    if (video.classList.contains("is-thumb")) {
+      const showStillFrame = () => {
+        video.pause?.();
+        const duration = Number(video.duration);
+        const frameTime = Number.isFinite(duration) && duration > 0 ? Math.min(0.35, duration / 4) : 0.2;
+        if (Math.abs(Number(video.currentTime || 0) - frameTime) > 0.04) video.currentTime = frameTime;
+      };
+      if (video.readyState >= 1) showStillFrame();
+      else video.addEventListener("loadedmetadata", showStillFrame, { once: true });
+    }
     video.addEventListener("error", () => {
       let sources = [];
       try { sources = JSON.parse(decodeURIComponent(video.dataset.videoSources || "%5B%5D")); } catch {}
@@ -399,11 +411,12 @@ function renderPrompt(logger, active) {
   prompt.innerHTML = `
     <div class="dynamic-warmup-prompt-head">
       <div><span class="dynamic-warmup-kicker">DYNAMIC WARM-UP</span><h3>Warm up before ${routine.label}? <small>Optional</small></h3><p>${totalMinutes(drills)} min of video-guided movement preparation.</p></div>
-      <button class="dynamic-warmup-skip" type="button" data-dynamic-warmup-skip>Not now</button>
     </div>
     <div class="dynamic-warmup-actions">
-      <button class="dynamic-warmup-start" type="button" data-dynamic-warmup-start>Yes, Start Warm-Up</button>
-    </div>`;
+      <button class="dynamic-warmup-skip" type="button" data-dynamic-warmup-skip>No, Not Now</button>
+      <button class="dynamic-warmup-start" type="button" data-dynamic-warmup-start>Yes, Start</button>
+    </div>
+    <p class="dynamic-warmup-setting-note">Turn these prompts off anytime in More → Dynamic Warm-Ups.</p>`;
 
   const anchor = logger.querySelector("#session-exercises") || logger.firstElementChild;
   if (anchor) anchor.insertAdjacentElement("beforebegin", prompt);
