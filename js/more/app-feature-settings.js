@@ -5,8 +5,8 @@ export function renderAppFeatureSettings() {
     return `<section class="dashboard-welcome app-feature-settings-header">
         <div>
             <button class="nutrition-planner-back" type="button" data-feature-settings-back>← More</button>
-            <span class="eyebrow">APP PREFERENCES</span>
-            <h2>App Features</h2>
+            <span class="eyebrow">HEALTH &amp; RECORDS</span>
+            <h2>Nutrition Tracking</h2>
             <p>Choose whether nutrition tracking appears in Level Up. Your saved data is never deleted.</p>
         </div>
     </section>
