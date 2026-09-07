@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-07-259";
+const CACHE_VERSION = "2026-09-07-260";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -22,6 +22,7 @@ const CORE_ASSETS = [
     "./js/progress/appearance-volume-goals-fix.js?v=appearance-volume-goals-4",
     "./css/appearance-volume-goals-fix.css?v=appearance-volume-goals-3",
     "./js/workouts/dynamic-warmup.js?v=dynamic-warmup-2",
+    "./js/workouts/dynamic-warmup-exact-video-hotfix.js?v=dynamic-warmup-exact-1",
     "./css/dynamic-warmup.css?v=dynamic-warmup-2",
     "./js/more/body-composition-health-records.js?v=body-comp-health-records-2",
     "./js/more/interactive-workout-tutorial-v5.js?v=interactive-workout-v5-1",
