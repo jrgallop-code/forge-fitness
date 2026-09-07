@@ -85,21 +85,13 @@ export function renderAdaptiveGuidanceSettings() {
                     <li>No workout plan is changed without your approval.</li>
                 </ul>
             </div>
-            <div class="adaptive-deload-preview-card">
-                <div>
-                    <strong>Preview deload suggestion</strong>
-                    <small>Test the recommendation and recovery-week explanation without changing your data.</small>
-                </div>
-                <button class="secondary-btn" id="adaptive-deload-preview-open" type="button">Preview</button>
-            </div>
             <p id="adaptive-settings-message" class="adaptive-settings-message" aria-live="polite"></p>
         </section>
     `;
 }
 
-export function initializeAdaptiveGuidanceSettings({ onBack, onPreviewWorkout } = {}) {
+export function initializeAdaptiveGuidanceSettings({ onBack } = {}) {
     document.getElementById("adaptive-guidance-back")?.addEventListener("click", () => onBack?.());
-    document.getElementById("adaptive-deload-preview-open")?.addEventListener("click", () => showDeloadPreview(onPreviewWorkout));
     document.getElementById("adaptive-guidance-toggle")?.addEventListener("change", event => {
         const enabled = event.target.checked === true;
         localStorage.setItem(ADAPTIVE_GUIDANCE_SETTINGS_KEY, JSON.stringify({ enabled }));
