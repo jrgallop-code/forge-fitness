@@ -2,6 +2,7 @@ import { calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/wei
 import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "../nutrition/calculated-maintenance.js?v=dashboard-insights-5";
 import { calculateTdee } from "../nutrition/tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "../nutrition/nutrition-storage.js?v=nutrition-phase-1";
+import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-dashboard-visibility-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
@@ -290,9 +291,23 @@ function cleanupOldDashboardActions() {
     heading?.classList.remove("dashboard-command-insights-heading-with-action");
 }
 
+function removeNutritionInsights() {
+    cleanupOldDashboardActions();
+    document.querySelectorAll("#content .dashboard-weight-see-more-wrap").forEach(wrapper => {
+        const card = wrapper.querySelector(":scope > .dashboard-weight-trend-card");
+        if (card) wrapper.replaceWith(card);
+        else wrapper.remove();
+    });
+    closeDashboardInsights();
+}
+
 function ensureSeeMore() {
     ensureStyles();
     cleanupOldDashboardActions();
+    if (!isNutritionEnabled()) {
+        removeNutritionInsights();
+        return;
+    }
     const card = document.querySelector("#content .dashboard-weight-trend-card");
     if (!card) return;
 
@@ -348,6 +363,10 @@ function animatePreviewLines(root) {
 }
 
 export function openDashboardInsights() {
+    if (!isNutritionEnabled()) {
+        closeDashboardInsights();
+        return;
+    }
     ensureStyles();
     document.getElementById(SCREEN_ID)?.remove();
     const screen = document.createElement("section");
@@ -368,6 +387,10 @@ export function closeDashboardInsights() {
 }
 
 function openProgressGraph(kind) {
+    if (!isNutritionEnabled()) {
+        closeDashboardInsights();
+        return;
+    }
     closeDashboardInsights();
     localStorage.setItem(TDEE_RANGE_KEY, "1w");
     document.querySelector('.nav-btn[data-page="progress"]')?.click();
@@ -424,6 +447,7 @@ if (content) new MutationObserver(schedule).observe(content, { childList: true, 
     "levelup:food-log-updated",
     "levelup:weight-updated",
     "levelup:nutrition-phase-updated",
-    "levelup:appearance-changed"
+    "levelup:appearance-changed",
+    "levelup:app-features-updated"
 ].forEach(name => window.addEventListener(name, schedule));
 schedule();

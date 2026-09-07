@@ -1,4 +1,5 @@
 import { CHECK_IN_APPLE_SVG, getMonthlyCheckInEvents } from "../nutrition/check-in-calendar.js?v=checkin-calendar-1";
+import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-dashboard-visibility-1";
 
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
@@ -110,13 +111,14 @@ function renderCards() {
     if (!content || !dashboard || !content.classList.contains("dashboard-command-center")) return;
 
     const thirtyDates = recentDates(DAY_COUNT);
-    const monthDates = currentMonthDates();
+    const nutritionEnabled = isNutritionEnabled();
+    const monthDates = nutritionEnabled ? currentMonthDates() : [];
     const sevenDates = recentDates(RECENT_DAY_COUNT);
     const sevenDateSet = new Set(sevenDates);
     const weightDates = getWeightDateSet();
     const sessions = getCompletedSessions();
     const workoutDates = new Set(sessions.map(sessionDate).filter(Boolean));
-    const checkInEvents = getMonthlyCheckInEvents(new Date());
+    const checkInEvents = nutritionEnabled ? getMonthlyCheckInEvents(new Date()) : [];
 
     const recentWeighInDays = sevenDates.filter(date => weightDates.has(date)).length;
     const recentWorkoutCount = sessions.filter(session => sevenDateSet.has(sessionDate(session))).length;
@@ -124,6 +126,7 @@ function renderCards() {
     const checkInStatus = checkInSummary(checkInEvents);
 
     const signature = JSON.stringify({
+        nutritionEnabled,
         weights: thirtyDates.map(date => weightDates.has(date) ? 1 : 0),
         workouts: thirtyDates.map(date => workoutDates.has(date) ? 1 : 0),
         checkins: checkInEvents.map(event => `${event.date}:${event.state}`),
@@ -177,7 +180,7 @@ function renderCards() {
                 </span>
             </button>
 
-            <button type="button" class="dashboard-habit-card dashboard-habit-card--checkins" data-dashboard-habit="checkins" aria-label="Open Activity Calendar. ${checkInEvents.length} calorie check-ins scheduled this month.">
+            ${nutritionEnabled ? `<button type="button" class="dashboard-habit-card dashboard-habit-card--checkins" data-dashboard-habit="checkins" aria-label="Open Activity Calendar. ${checkInEvents.length} calorie check-ins scheduled this month.">
                 <span class="dashboard-habit-card-heading dashboard-habit-card-heading--icon">
                     <span class="dashboard-habit-checkin-icon" aria-hidden="true">${CHECK_IN_APPLE_SVG}</span>
                     <span><strong>Check-Ins</strong><small>This Month</small></span>
@@ -188,7 +191,7 @@ function renderCards() {
                     <span><b>${handledCheckIns}/${checkInEvents.length || 0}</b><small>${checkInStatus}</small></span>
                     <i class="dashboard-habit-chevron" aria-hidden="true"></i>
                 </span>
-            </button>
+            </button>` : ""}
         </div>
     `;
 }
@@ -225,6 +228,8 @@ if (content) {
     "levelup:weekly-calorie-review-readiness",
     "levelup:calorie-target-applied"
 ].forEach(name => window.addEventListener(name, queueRender));
+
+window.addEventListener("levelup:app-features-updated", queueRender);
 
 window.addEventListener("focus", queueRender);
 window.addEventListener("storage", event => {
