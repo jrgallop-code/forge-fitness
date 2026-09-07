@@ -2,7 +2,7 @@ import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalo
 import { getFormGuideVideo } from "./exercise-guide-video-resolver.js?v=form-video-root-fallback-1";
 
 const STYLE_ID = "dynamic-warmup-styles";
-const STYLE_HREF = "/css/dynamic-warmup.css?v=dynamic-warmup-4";
+const STYLE_HREF = "/css/dynamic-warmup.css?v=dynamic-warmup-5";
 const ACTIVE_KEY = "level_up_active_workout";
 const MODE_KEY = "level_up_dynamic_warmup_mode";
 const SESSION_KEY = "level_up_dynamic_warmup_sessions";
@@ -225,7 +225,7 @@ function ensureStyles() {
     link.rel = "stylesheet";
     document.head.appendChild(link);
   }
-  if (!link.href.includes("dynamic-warmup-4")) link.href = STYLE_HREF;
+  if (!link.href.includes("dynamic-warmup-5")) link.href = STYLE_HREF;
 }
 
 function readActive() {
@@ -398,6 +398,20 @@ function bindVideoFallback(root) {
   });
 }
 
+function openDynamicWarmupSettings() {
+  const moreButton = document.querySelector('.nav-btn[data-page="more"]');
+  if (!moreButton) return;
+  moreButton.click();
+  const openSettings = () => document.querySelector('[data-more-page="dynamic-warmups"]')?.click();
+  requestAnimationFrame(() => {
+    if (!document.querySelector('[data-more-page="dynamic-warmups"]')) {
+      window.setTimeout(openSettings, 60);
+      return;
+    }
+    openSettings();
+  });
+}
+
 function renderPrompt(logger, active) {
   if (!logger || logger.querySelector("[data-dynamic-warmup-prompt]")) return;
   const routine = chooseRoutine(active);
@@ -416,7 +430,7 @@ function renderPrompt(logger, active) {
       <button class="dynamic-warmup-skip" type="button" data-dynamic-warmup-skip>No, Not Now</button>
       <button class="dynamic-warmup-start" type="button" data-dynamic-warmup-start>Yes, Start</button>
     </div>
-    <p class="dynamic-warmup-setting-note">Turn these prompts off anytime in More → Dynamic Warm-Ups.</p>`;
+    <p class="dynamic-warmup-setting-note">Turn these prompts off anytime in More → <button type="button" data-dynamic-warmup-settings>Dynamic Warm-Ups</button>.</p>`;
 
   const anchor = logger.querySelector("#session-exercises") || logger.firstElementChild;
   if (anchor) anchor.insertAdjacentElement("beforebegin", prompt);
@@ -424,6 +438,7 @@ function renderPrompt(logger, active) {
 
   prompt.querySelector("[data-dynamic-warmup-skip]")?.addEventListener("click", () => skipWarmup(active.id));
   prompt.querySelector("[data-dynamic-warmup-start]")?.addEventListener("click", () => startWarmup(active.id, drills, routine.label));
+  prompt.querySelector("[data-dynamic-warmup-settings]")?.addEventListener("click", openDynamicWarmupSettings);
   if (getMode() === "always") requestAnimationFrame(() => startWarmup(active.id, drills, routine.label));
 }
 
