@@ -1,6 +1,7 @@
 import safeWorker from "./safe-backup-worker.js";
 
 const BACKUP_HISTORY_LIMIT = 20;
+const DAY_MS = 86400000;
 
 export default {
     async fetch(request, env, ctx) {
@@ -38,7 +39,12 @@ export default {
             if (!response.ok) return response;
             try {
                 const payload = await response.clone().json();
-                const [weights, repeatWeightLoggers] = await Promise.all([
+                const requestedDays = Number(url.searchParams.get("days") || payload?.days || 30);
+                const days = Number.isFinite(requestedDays) ? Math.min(365, Math.max(7, Math.round(requestedDays))) : 30;
+                const activityStart = new Date(Date.now() - ((days - 1) * DAY_MS)).toISOString();
+                const activeSince = new Date(Date.now() - (7 * DAY_MS)).toISOString();
+
+                const [weights, repeatWeightLoggers, activeUsers, activityRows] = await Promise.all([
                     env.DB.prepare(`
                         SELECT COUNT(*) AS weight_log_users
                         FROM backups
@@ -59,7 +65,28 @@ export default {
                         WHERE weigh_ins > 1
                         ORDER BY weigh_ins DESC, lower(COALESCE(display_name, email)) ASC
                         LIMIT 500
-                    `).all()
+                    `).all(),
+                    env.DB.prepare(`
+                        SELECT id AS user_id, display_name, email, last_active_at
+                        FROM users
+                        WHERE last_active_at >= ?
+                        ORDER BY last_active_at DESC, lower(COALESCE(display_name, email)) ASC
+                        LIMIT 500
+                    `).bind(activeSince).all(),
+                    env.DB.prepare(`
+                        SELECT user_id, activity_type, occurred_at
+                        FROM (
+                            SELECT user_id, 'food' AS activity_type, occurred_at
+                            FROM usage_events
+                            WHERE event_name = 'food_logged' AND occurred_at >= ?
+                            UNION ALL
+                            SELECT user_id, 'workout' AS activity_type, occurred_at
+                            FROM product_events
+                            WHERE event_name = 'workout_completed' AND occurred_at >= ?
+                        )
+                        ORDER BY occurred_at DESC
+                        LIMIT 5000
+                    `).bind(activityStart, activityStart).all()
                 ]);
                 const repeatWeightRows = repeatWeightLoggers?.results || [];
                 payload.totals = {
@@ -68,6 +95,9 @@ export default {
                     repeat_weight_log_users: repeatWeightRows.length
                 };
                 payload.weightLoggers = repeatWeightRows;
+                payload.activeUsers = activeUsers?.results || [];
+                payload.userActivity = activityRows?.results || [];
+                payload.userActivityDays = days;
                 return jsonResponse(payload, response.status, request, env);
             }
             catch (error) {
