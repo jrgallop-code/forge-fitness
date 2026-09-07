@@ -8,8 +8,10 @@ import "./workouts/exercise-guide-resolution-fix.js?v=1";
 import "./workouts/exercise-guide-comprehensive.js?v=comprehensive-form-guides-1";
 import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check-in.js?v=weekly-review-ready-indicator-2";
 import { initializeSatisfactionSurvey } from "./feedback/satisfaction-survey.js?v=satisfaction-survey-1";
+import { applyAppFeaturePreferences } from "./core/app-feature-preferences.js?v=nutrition-feature-choice-1";
 
 initializeSatisfactionSurvey();
+applyAppFeaturePreferences();
 
 const FILLED_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
 const STROKE_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round">${paths}</svg>`;

@@ -1,0 +1,38 @@
+html[data-nutrition-enabled="false"] .nav-btn[data-page="energy"],
+html[data-nutrition-enabled="false"] .dashboard-nutrition,
+html[data-nutrition-enabled="false"] .dashboard-food-summary-card,
+html[data-nutrition-enabled="false"] .dashboard-nutrition-target-card,
+html[data-nutrition-enabled="false"] #nutrition-progress-tab,
+html[data-nutrition-enabled="false"] #calorie-progress {
+    display: none !important;
+}
+
+.app-feature-settings-header,
+.app-feature-settings-card {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.app-feature-settings-card {
+    display: grid;
+    gap: 18px;
+}
+
+.app-feature-status,
+.app-feature-data-note {
+    margin: 0;
+    color: var(--muted, #85858f);
+    line-height: 1.5;
+}
+
+.app-feature-data-note {
+    padding: 14px;
+    border: 1px solid var(--line, rgba(255,255,255,.1));
+    border-radius: 14px;
+    background: var(--accent-soft, rgba(255,44,59,.08));
+}
+
+.app-feature-data-note strong {
+    color: var(--text, #f4f4f6);
+}
