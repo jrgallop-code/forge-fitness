@@ -2,6 +2,9 @@ html[data-nutrition-enabled="false"] .nav-btn[data-page="energy"],
 html[data-nutrition-enabled="false"] .dashboard-nutrition,
 html[data-nutrition-enabled="false"] .dashboard-food-summary-card,
 html[data-nutrition-enabled="false"] .dashboard-nutrition-target-card,
+html[data-nutrition-enabled="false"] .dashboard-habit-card--checkins,
+html[data-nutrition-enabled="false"] .dashboard-weight-see-more-action,
+html[data-nutrition-enabled="false"] #dashboard-insights-analytics-screen,
 html[data-nutrition-enabled="false"] #nutrition-progress-tab,
 html[data-nutrition-enabled="false"] #calorie-progress {
     display: none !important;
