@@ -84,6 +84,7 @@ let storageSnapshot = null;
 let focusedTarget = null;
 let scrollStep = -1;
 let launchTimer = null;
+let positionFrame = null;
 
 install();
 
@@ -108,6 +109,9 @@ function install() {
     document.addEventListener("click", handleClick, true);
     window.addEventListener("resize", schedulePosition);
     window.addEventListener("orientationchange", schedulePosition);
+    window.addEventListener("scroll", schedulePosition, true);
+    window.visualViewport?.addEventListener("resize", schedulePosition);
+    window.visualViewport?.addEventListener("scroll", schedulePosition);
     window.addEventListener("pagehide", restoreProtectedStorage, true);
     window.addEventListener("beforeunload", restoreProtectedStorage, true);
 }
@@ -379,8 +383,11 @@ function setStep(index) {
 }
 
 function schedulePosition() {
-    if (!active || flow) return;
-    window.requestAnimationFrame(positionGuide);
+    if (!active || flow || positionFrame) return;
+    positionFrame = window.requestAnimationFrame(() => {
+        positionFrame = null;
+        positionGuide();
+    });
 }
 
 function positionGuide() {
@@ -415,10 +422,13 @@ function positionGuide() {
         scrollStep = stepIndex;
         target.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
         rect = target.getBoundingClientRect();
+        window.setTimeout(schedulePosition, 80);
     }
 
-    finger.style.left = `${Math.max(16, Math.min(window.innerWidth - 54, rect.left + rect.width / 2 - 18))}px`;
-    finger.style.top = `${Math.max(54, rect.top - 42)}px`;
+    const viewportWidth = window.visualViewport?.width || window.innerWidth;
+    const targetCenter = rect.left + rect.width / 2;
+    finger.style.left = `${Math.max(20, Math.min(viewportWidth - 20, targetCenter))}px`;
+    finger.style.top = `${Math.max(54, rect.top + 3)}px`;
     finger.hidden = false;
 }
 
@@ -603,10 +613,10 @@ function ensureStyles() {
         .interactive-tutorial-guide strong{margin-top:2px;font-size:13px;line-height:1.2}
         .interactive-tutorial-guide p{margin:5px 0 0;color:var(--text-secondary,var(--muted));font-size:10px;line-height:1.48}
         .interactive-tutorial-guide>button{flex:0 0 auto;padding:5px 6px;border:0;background:transparent;color:var(--muted);font-size:9px;font-weight:850}
-        .interactive-tutorial-finger{position:fixed;z-index:10045;width:38px;height:38px;font-size:28px;line-height:38px;text-align:center;pointer-events:none;filter:drop-shadow(0 4px 7px rgba(0,0,0,.45));animation:interactive-tutorial-point .85s ease-in-out infinite alternate}
+        .interactive-tutorial-finger{position:fixed;z-index:10045;width:38px;height:38px;font-size:28px;line-height:38px;text-align:center;pointer-events:none;filter:drop-shadow(0 4px 7px rgba(0,0,0,.45));transform:translate(-50%,-100%);animation:interactive-tutorial-point .85s ease-in-out infinite alternate}
         .interactive-tutorial-finger[hidden]{display:none!important}
         .interactive-tutorial-focus{position:relative!important;z-index:10032!important;outline:3px solid var(--accent)!important;outline-offset:3px!important;box-shadow:0 0 0 7px color-mix(in srgb,var(--accent) 18%,transparent),0 8px 28px rgba(0,0,0,.32)!important}
-        @keyframes interactive-tutorial-point{from{transform:translateY(-3px)}to{transform:translateY(6px)}}
+        @keyframes interactive-tutorial-point{from{transform:translate(-50%,calc(-100% - 3px))}to{transform:translate(-50%,calc(-100% + 3px))}}
         @media(max-width:430px){
             .interactive-workout-v5-card{grid-template-columns:44px minmax(0,1fr);gap:10px;padding:14px}
             .interactive-workout-v5-action{grid-column:2;justify-self:start}
