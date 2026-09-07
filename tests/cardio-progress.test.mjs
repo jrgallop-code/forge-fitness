@@ -50,6 +50,20 @@ test("cardio entries preserve old notes-based RPE and structured RPE", () => {
   assert.equal(summary.load, 330);
 });
 
+test("cardio frequency always uses continuous Monday-Sunday week buckets", () => {
+  const now = new Date("2026-09-06T12:00:00");
+  const entries = [
+    { date: new Date("2026-08-18T12:00:00"), duration: 20, distanceKm: 0, load: null },
+    { date: new Date("2026-09-01T12:00:00"), duration: 30, distanceKm: 0, load: null }
+  ];
+  const weeks = analytics.groupCardioByWeek(entries, now, 28);
+
+  assert.ok(weeks.length >= 4);
+  assert.deepEqual(weeks.map(week => week.start.getDay()), weeks.map(() => 1));
+  assert.ok(weeks.some(week => week.duration === 0));
+  assert.equal(weeks.reduce((sum, week) => sum + week.duration, 0), 50);
+});
+
 test("cardio UI uses the selected appearance accent for trends and bars", async () => {
   const [view, styles, logger] = await Promise.all([
     read("js/progress/progress-ui.js"),
@@ -64,6 +78,15 @@ test("cardio UI uses the selected appearance accent for trends and bars", async 
   assert.match(await read("js/progress/cardio-analytics.js"), /stroke="var\(--accent\)"/);
   assert.match(logger, /class="session-cardio-rpe"/);
   assert.match(logger, /session\.exercises\[exerciseIndex\]\.rpe/);
+});
+
+test("progress prioritizes lifting and removes Photo Log at runtime", async () => {
+  const source = await read("js/progress/cardio-analytics.js");
+  assert.match(source, /tabs\.insertBefore\(liftingButton, tabs\.firstElementChild\)/);
+  assert.match(source, /photo-log-tab/);
+  assert.match(source, /photo-log-progress/);
+  assert.match(source, /liftingButton\.click\(\)/);
+  assert.match(source, /Track lifting performance, body weight, nutrition and cardio over time/);
 });
 
 test("mobile Cardio layout overrides desktop grids after the base rules", async () => {
