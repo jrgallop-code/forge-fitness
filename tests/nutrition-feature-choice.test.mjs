@@ -4,14 +4,16 @@ import { readFile } from "node:fs/promises";
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-const [onboarding, features, settings, more, router, styles, html] = await Promise.all([
+const [onboarding, features, settings, more, router, styles, html, habits, insights] = await Promise.all([
     read("js/onboarding/onboarding.js"),
     read("js/core/app-feature-preferences.js"),
     read("js/more/app-feature-settings.js"),
     read("js/more/more-ui-v2.js"),
     read("js/core/router.js"),
     read("css/app-feature-settings.css"),
-    read("index.html")
+    read("index.html"),
+    read("js/dashboard/dashboard-habit-cards.js"),
+    read("js/dashboard/dashboard-insights-analytics-v5.js")
 ]);
 
 test("onboarding asks whether nutrition should be tracked", () => {
@@ -45,6 +47,17 @@ test("disabled nutrition is hidden and direct nutrition routes are guarded", () 
     assert.match(styles, /#nutrition-progress-tab/);
     assert.match(styles, /\.dashboard-nutrition/);
     assert.match(router, /\["nutrition", "energy"\]\.includes\(page\) && !isNutritionEnabled\(\)/);
+});
+
+test("disabled nutrition removes dashboard check-ins and nutrition analytics", () => {
+    assert.match(habits, /nutritionEnabled \? getMonthlyCheckInEvents/);
+    assert.match(habits, /nutritionEnabled \? `<button[^`]*dashboard-habit-card--checkins/s);
+    assert.match(habits, /levelup:app-features-updated/);
+    assert.match(insights, /if \(!isNutritionEnabled\(\)\) \{\s*removeNutritionInsights\(\);/s);
+    assert.match(insights, /export function openDashboardInsights\(\) \{\s*if \(!isNutritionEnabled\(\)\)/s);
+    assert.match(styles, /\.dashboard-habit-card--checkins/);
+    assert.match(styles, /\.dashboard-weight-see-more-action/);
+    assert.match(styles, /#dashboard-insights-analytics-screen/);
 });
 
 test("published entry point loads the feature release", () => {
