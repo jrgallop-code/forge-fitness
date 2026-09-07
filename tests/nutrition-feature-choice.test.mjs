@@ -37,7 +37,13 @@ test("nutrition visibility defaults on and never deletes saved data", () => {
 });
 
 test("More exposes the reversible nutrition setting", () => {
-    assert.match(more, /data-more-page="app-features"/);
+    const healthGroup = more.match(/data-more-group="health"[\s\S]*?<\/div>/)?.[0] || "";
+    const accountGroup = more.match(/data-more-group="account"[\s\S]*?<\/div>/)?.[0] || "";
+    assert.match(healthGroup, /data-more-page="app-features"[\s\S]*?<strong>Nutrition Tracking<\/strong>/);
+    assert.doesNotMatch(accountGroup, /data-more-page="app-features"/);
+    assert.match(settings, /<h2>Nutrition Tracking<\/h2>/);
+    assert.match(settings, /HEALTH &amp; RECORDS/);
+    assert.match(onboarding, /More → Nutrition Tracking/);
     assert.match(settings, /data-nutrition-feature-toggle/);
     assert.match(settings, /setNutritionEnabled\(toggle\.checked\)/);
 });
