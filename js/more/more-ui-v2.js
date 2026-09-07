@@ -8,7 +8,7 @@ import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-card-1";
 import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.js?v=privacy-account-1";
 import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=more-units-miles-1";
 import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-display-name-1";
-import { renderAdaptiveGuidanceSettings, initializeAdaptiveGuidanceSettings } from "./adaptive-guidance-settings.js?v=deload-workout-preview-1";
+import { renderAdaptiveGuidanceSettings, initializeAdaptiveGuidanceSettings } from "./adaptive-guidance-settings.js?v=remove-deload-preview-1";
 import { openLessonLibrary } from "./learn-level-up.js?v=food-log-macro-bars-1";
 import { openExploreResearch } from "./explore-research.js?v=food-log-macro-bars-1";
 import { appearanceMenuIcon, renderAppearanceSettings, initializeAppearanceSettings } from "./appearance-settings.js?v=pulse-theme-1";
@@ -125,10 +125,7 @@ export function initializeMore() {
                 window.scrollTo({ top: 0, behavior: "smooth" });
             };
             content.innerHTML = renderAdaptiveGuidanceSettings();
-            initializeAdaptiveGuidanceSettings({
-                onBack: showMore,
-                onPreviewWorkout: () => document.querySelector('.nav-btn[data-page="workout"]')?.click()
-            });
+            initializeAdaptiveGuidanceSettings({ onBack: showMore });
             window.scrollTo({ top: 0, behavior: "smooth" });
             return;
         }
