@@ -1,5 +1,6 @@
 import "./appearance-volume-goals-fix.js?v=appearance-volume-goals-4";
 import "../workouts/dynamic-warmup.js?v=dynamic-warmup-2";
+import "../workouts/dynamic-warmup-exact-video-hotfix.js?v=dynamic-warmup-exact-1";
 
 function unwrapLegacyDisclosure(liftingProgress) {
     const existing = liftingProgress.querySelector(":scope > .training-progress-disclosure");
@@ -8,7 +9,6 @@ function unwrapLegacyDisclosure(liftingProgress) {
     const containsAnalytics = Boolean(
         existing.querySelector(".training-progress-tabs, .training-progress-view")
     );
-
     if (!containsAnalytics) return false;
 
     const panel = existing.querySelector(":scope > .training-progress-disclosure-panel");
