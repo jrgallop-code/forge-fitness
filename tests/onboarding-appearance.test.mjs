@@ -23,7 +23,8 @@ test("onboarding applies and persists a selected theme immediately", async () =>
   assert.match(source, /data-onboarding-theme/);
   assert.match(source, /applyAppearanceTheme\(answers\.theme\)/);
   assert.match(source, /changed anytime/);
-  assert.match(source, /ONBOARDING_TOTAL=8/);
+  assert.match(source, /function screenKeys\(\)/);
+  assert.match(source, /"appearance"\]/);
 });
 
 test("onboarding appearance cards have compact phone-friendly previews", async () => {

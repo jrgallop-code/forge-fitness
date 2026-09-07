@@ -39,12 +39,14 @@ import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-d
 import { getCurrentGoal } from "./current-goal.js?v=current-goal-1";
 import { showSatisfactionSurveyIfEligible } from "../feedback/satisfaction-survey.js?v=satisfaction-survey-1";
 import { showWhatsNewIfEligible } from "../dashboard/whats-new.js?v=first-launch-cleanup-1";
+import { isNutritionEnabled } from "./app-feature-preferences.js?v=nutrition-feature-choice-1";
 
 getCurrentGoal();
 
 export function navigate(page) {
     const content = document.getElementById("content");
     if (!content) return;
+    if (["nutrition", "energy"].includes(page) && !isNutritionEnabled()) page = "home";
     try {
         switch (page) {
             case "home":
@@ -73,7 +75,7 @@ export function navigate(page) {
                 safeInitialize("Workout landing polish", () => initializeWorkoutLandingLivePolish(content));
                 break;
             case "progress":
-                content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
+                content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); if (isNutritionEnabled()) { safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); } safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
             case "sleep":
                 content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>Track sleep duration, quality and recovery notes.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
             case "measurements":

@@ -69,7 +69,7 @@ test("completion reveals the plan and keeps acquisition outside the required flo
 });
 
 test("the professional onboarding release is cache-busted", () => {
-  assert.match(html, /css\/onboarding\.css\?v=onboarding-training-days-1/);
-  assert.match(html, /js\/onboarding\/onboarding\.js\?v=onboarding-training-days-1/);
-  assert.match(worker, /CACHE_VERSION = "2026-09-03-144"/);
+  assert.match(html, /css\/onboarding\.css\?v=nutrition-feature-choice-1/);
+  assert.match(html, /js\/onboarding\/onboarding\.js\?v=nutrition-feature-choice-1/);
+  assert.match(worker, /CACHE_VERSION = "2026-09-07-269"/);
 });

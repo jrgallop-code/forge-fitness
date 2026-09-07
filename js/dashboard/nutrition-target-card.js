@@ -17,6 +17,7 @@ import {
     poundsToKg
 }
 from "../nutrition/tdee-calculator.js?v=dashboard-food-summary-1";
+import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-feature-choice-1";
 
 const DISPLAY_MODE_KEY = "level_up_dashboard_calorie_display_v1";
 let listenersBound = false;
@@ -101,6 +102,8 @@ function renderDashboardNutritionSummary() {
     if (!dashboard) return;
 
     dashboard.querySelectorAll(".dashboard-nutrition-target-card, .dashboard-food-summary-card").forEach(card => card.remove());
+
+    if (!isNutritionEnabled()) return;
 
     const profile = getNutritionProfile();
     const goal = getNutritionGoal();

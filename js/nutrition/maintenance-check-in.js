@@ -2,6 +2,7 @@ import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=
 import { getActiveNutritionPhase, getActivePhaseMetrics, saveNutritionPhase } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { setCurrentCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { buildCoordinatedWeeklyUpdate, clearAdjustmentHold, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=independent-tdee-staged-target-1";
+import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-feature-choice-1";
 
 const STATE_KEY = "level_up_maintenance_check_in_v1";
 const PENDING_KEY = "level_up_pending_maintenance_review_v1";
@@ -266,6 +267,14 @@ export function initializeMaintenanceCheckInAlert() {
     const refresh = () => {
         const nav = document.querySelector('.nav-btn[data-page="energy"]');
         if (!nav) return;
+        if (!isNutritionEnabled()) {
+            nav.classList.remove("has-maintenance-check-in");
+            nav.querySelector(".maintenance-nav-badge")?.remove();
+            nav.setAttribute("aria-label", "Nutrition");
+            document.querySelector(".maintenance-hub-alert")?.remove();
+            document.querySelector(".progress-weekly-review-alert")?.remove();
+            return;
+        }
         const phase = getActiveNutritionPhase();
         const currentMaintenance = Number(phase?.maintenanceCalories);
         const currentTarget = Number(phase?.currentCalories ?? phase?.startCalories);
@@ -302,7 +311,7 @@ export function initializeMaintenanceCheckInAlert() {
         renderNutritionHubAlert(displayedCheckIn, mode);
         renderProgressReviewAlert(displayedCheckIn, mode);
     };
-    ["levelup:food-log-updated", "levelup:weight-updated", "levelup:nutrition-updated", "levelup:nutrition-phase-updated", "levelup:maintenance-check-in-updated", "levelup:maintenance-mode-updated", "levelup:weekly-calorie-review-readiness"]
+    ["levelup:food-log-updated", "levelup:weight-updated", "levelup:nutrition-updated", "levelup:nutrition-phase-updated", "levelup:maintenance-check-in-updated", "levelup:maintenance-mode-updated", "levelup:weekly-calorie-review-readiness", "levelup:app-features-updated"]
         .forEach(name => window.addEventListener(name, refresh));
     window.addEventListener("pageshow", refresh);
     document.addEventListener("click", event => {
