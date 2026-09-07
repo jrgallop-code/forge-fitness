@@ -1,5 +1,6 @@
 const STYLE_ID = "appearance-volume-goals-fix-styles";
 const STYLE_HREF = "css/appearance-volume-goals-fix.css?v=appearance-volume-goals-3";
+const NO_TRAINER_STYLE_ID = "smart-build-no-trainers";
 const BAND_CLASSES = [
     "volume-band-none",
     "volume-band-very-low",
@@ -28,6 +29,27 @@ function ensureStyles() {
     link.rel = "stylesheet";
     link.href = STYLE_HREF;
     document.head.appendChild(link);
+}
+
+function ensureNoTrainerStyles() {
+    if (document.getElementById(NO_TRAINER_STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = NO_TRAINER_STYLE_ID;
+    style.textContent = `
+        .smart-build-wizard .smart-coach-context,
+        [data-smart-build-wizard] .smart-coach-context,
+        .smart-build-wizard [class*="virtual-coach"][class*="context"],
+        [data-smart-build-wizard] [class*="virtual-coach"][class*="context"],
+        .smart-build-wizard [class*="coach"][class*="avatar"],
+        [data-smart-build-wizard] [class*="coach"][class*="avatar"],
+        .smart-build-wizard [class*="coach"][class*="portrait"],
+        [data-smart-build-wizard] [class*="coach"][class*="portrait"],
+        .smart-build-wizard [class*="trainer"][class*="avatar"],
+        [data-smart-build-wizard] [class*="trainer"][class*="avatar"] {
+            display:none !important;
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 function volumeBand(value) {
@@ -112,38 +134,72 @@ function enhanceWeeklySetsChart() {
     });
 }
 
-function removeNamedCoachIdentity() {
-    document.querySelectorAll("[data-smart-heading], .smart-build-wizard h2, .smart-build-wizard h3, .smart-build-wizard h4").forEach(heading => {
-        const text = heading.textContent?.trim() || "";
-        if (/^coach\s+.+?\s+is\s+building\s+your\s+program$/i.test(text) || /^.+?\s+is\s+building\s+your\s+program$/i.test(text)) {
-            heading.textContent = "Your coach is building your program";
-        }
-    });
-
-    document.querySelectorAll(".smart-review-meta span").forEach(chip => {
-        if (/^coach\s+.+/i.test(chip.textContent?.trim() || "")) chip.remove();
-    });
-
-    const smartBuildRoots = document.querySelectorAll(".smart-build-wizard, [data-smart-step], .smart-review");
-    smartBuildRoots.forEach(root => {
-        [...root.querySelectorAll("*")].forEach(label => {
-            if ((label.textContent?.trim() || "").toUpperCase() !== "YOUR VIRTUAL COACH") return;
-
-            let candidate = label.parentElement;
-            while (candidate && candidate !== root) {
-                const candidateText = candidate.textContent?.trim() || "";
-                const hasAvatar = Boolean(candidate.querySelector("img, picture, [class*='avatar'], [class*='portrait']"));
-                const looksLikeIdentityCard = /YOUR VIRTUAL COACH/i.test(candidateText) && /\bCoach\s+[^\n·]+/i.test(candidateText);
-                if (hasAvatar && looksLikeIdentityCard) {
-                    candidate.remove();
-                    return;
+function sanitizeStoredTrainerMetadata() {
+    try {
+        const key = "forge_workout_plans";
+        const plans = JSON.parse(localStorage.getItem(key) || "[]");
+        if (!Array.isArray(plans)) return;
+        let changed = false;
+        plans.forEach(plan => {
+            if (!plan || typeof plan !== "object") return;
+            if (plan.smartBuild && typeof plan.smartBuild === "object") {
+                if (Object.prototype.hasOwnProperty.call(plan.smartBuild, "coachId")) {
+                    delete plan.smartBuild.coachId;
+                    changed = true;
                 }
-                candidate = candidate.parentElement;
+                if (Object.prototype.hasOwnProperty.call(plan.smartBuild, "coach")) {
+                    delete plan.smartBuild.coach;
+                    changed = true;
+                }
             }
+        });
+        if (changed) localStorage.setItem(key, JSON.stringify(plans));
+    } catch {}
+}
 
-            label.parentElement?.remove();
+function removeTrainerUiFromSmartBuild() {
+    ensureNoTrainerStyles();
+
+    const roots = document.querySelectorAll(".smart-build-wizard, [data-smart-build-wizard]");
+    roots.forEach(root => {
+        root.querySelectorAll("[data-smart-heading], h2, h3, h4").forEach(heading => {
+            const text = heading.textContent?.trim() || "";
+            if (/\bcoach\b|\btrainer\b|\bMaya\b|\bMarcus\b|\bElena\b|\bOwen\b/i.test(text) && /building|program|plan/i.test(text)) {
+                heading.textContent = "Building your program";
+            }
+        });
+
+        root.querySelectorAll(".smart-coach-build-card").forEach(card => {
+            const title = card.querySelector("h4");
+            if (title) title.textContent = "Building your program";
+            const kicker = card.querySelector(".smart-coach-kicker");
+            if (kicker) kicker.textContent = "PROGRAM DESIGN";
+        });
+
+        root.querySelectorAll(".smart-review-meta span").forEach(chip => {
+            const text = chip.textContent?.trim() || "";
+            if (/^(?:coach|trainer)\b/i.test(text) || /\b(?:Maya|Marcus|Elena|Owen)\b/i.test(text)) chip.remove();
+        });
+
+        root.querySelectorAll("img").forEach(image => {
+            const alt = image.getAttribute("alt") || "";
+            const identityParent = image.closest(".smart-coach-context, [class*='virtual-coach'][class*='context'], [class*='coach'][class*='avatar'], [class*='coach'][class*='portrait'], [class*='trainer'][class*='avatar']");
+            if (/\b(?:coach|trainer|Maya|Marcus|Elena|Owen)\b/i.test(alt) && identityParent) {
+                identityParent.style.setProperty("display", "none", "important");
+            }
+        });
+
+        root.querySelectorAll("small, strong, span, p").forEach(label => {
+            const text = label.textContent?.trim() || "";
+            if (/^(?:YOUR\s+)?VIRTUAL\s+COACH$/i.test(text) || /^(?:coach|trainer)\s+(?:Maya|Marcus|Elena|Owen)\b/i.test(text)) {
+                const identity = label.closest(".smart-coach-context, [class*='virtual-coach'][class*='context'], [class*='coach'][class*='identity'], [class*='trainer'][class*='identity']");
+                if (identity) identity.style.setProperty("display", "none", "important");
+                else label.remove();
+            }
         });
     });
+
+    sanitizeStoredTrainerMetadata();
 }
 
 function enhanceSmartBuildTheme() {
@@ -152,11 +208,12 @@ function enhanceSmartBuildTheme() {
             button.classList.add("levelup-avoid-action");
         }
     });
-    removeNamedCoachIdentity();
+    removeTrainerUiFromSmartBuild();
 }
 
 function applyEnhancements() {
     ensureStyles();
+    ensureNoTrainerStyles();
     enhanceHeatmap();
     enhanceWeeklySetsChart();
     enhanceSmartBuildTheme();
@@ -177,8 +234,9 @@ const observer = new MutationObserver(scheduleEnhancements);
 observer.observe(document.documentElement, { childList: true, subtree: true });
 
 document.addEventListener("click", event => {
-    if (event.target.closest?.("#lifting-tab, .training-progress-tab, .training-analytics-range, .smart-build-wizard")) {
+    if (event.target.closest?.("#lifting-tab, .training-progress-tab, .training-analytics-range, .smart-build-wizard, [data-smart-build-wizard], [data-smart-save]")) {
         setTimeout(scheduleEnhancements, 0);
+        if (event.target.closest?.("[data-smart-save]")) setTimeout(sanitizeStoredTrainerMetadata, 60);
     }
 });
 
