@@ -46,10 +46,12 @@ export function initializeWorkoutLandingLivePolish(content = document) {
     content.__workoutLandingPolishAbort = controller;
 
     removeLegacyRowIcons(landing);
+    renameCustomPlanAction(landing);
     configureSchedulePresentation(landing);
     decorateSavedPlanActions({ content, landing });
     initializeWorkoutLibrarySeparation(landing);
     requestAnimationFrame(() => {
+        renameCustomPlanAction(landing);
         configureSchedulePresentation(landing);
         decorateSavedPlanActions({ content, landing });
         initializeWorkoutLibrarySeparation(landing);
@@ -109,6 +111,7 @@ export function initializeWorkoutLandingLivePolish(content = document) {
         if (target.closest?.("#close-plan-builder-btn, #save-plan-btn")) {
             delete content.dataset.workoutLiveManualEntry;
             window.setTimeout(() => {
+                renameCustomPlanAction(landing);
                 decorateSavedPlanActions({ content, landing });
                 initializeWorkoutLibrarySeparation(landing);
             }, 140);
@@ -134,9 +137,18 @@ function removeLegacyRowIcons(landing) {
     landing.querySelectorAll(".workout-live-plan-row > svg, .workout-live-row-main > svg").forEach(svg => svg.remove());
 }
 
+function renameCustomPlanAction(landing) {
+    const button = landing.querySelector("[data-workout-live-new-plan]");
+    if (button && button.textContent?.trim() !== "+ Custom Plan") {
+        button.textContent = "+ Custom Plan";
+        button.setAttribute("aria-label", "Create a custom workout plan");
+    }
+}
+
 function queueSavedPlanDecoration({ content, landing }) {
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
+            renameCustomPlanAction(landing);
             decorateSavedPlanActions({ content, landing });
             initializeWorkoutLibrarySeparation(landing);
         });
