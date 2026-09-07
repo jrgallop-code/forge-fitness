@@ -72,18 +72,43 @@ export function summarizeCardio(entries) {
     };
 }
 
-export function groupCardioByWeek(entries) {
+// Cardio frequency is always a calendar-week metric. Longer date ranges change
+// how many weeks are visible, never the aggregation unit. Empty weeks are kept
+// so the chart cannot visually collapse into sparse month-like buckets.
+export function groupCardioByWeek(entries, now = new Date(), rangeDays = selectedRange) {
+    const safeEntries = Array.isArray(entries) ? entries : [];
+    const endWeek = startOfWeek(now);
+    let firstWeek = endWeek;
+
+    if (rangeDays > 0) {
+        const rangeStart = new Date(now.getTime() - Math.max(0, rangeDays - 1) * DAY_MS);
+        firstWeek = startOfWeek(rangeStart);
+    }
+    else if (safeEntries.length) {
+        firstWeek = startOfWeek(safeEntries[0].date);
+    }
+
     const groups = new Map();
-    entries.forEach(entry => {
+    for (let cursor = new Date(firstWeek); cursor <= endWeek; cursor = addDays(cursor, 7)) {
+        const start = new Date(cursor);
+        const key = dateKey(start);
+        groups.set(key, { key, start, duration: 0, distanceKm: 0, load: 0, loadCount: 0, sessions: 0 });
+    }
+
+    safeEntries.forEach(entry => {
         const start = startOfWeek(entry.date);
         const key = dateKey(start);
-        const current = groups.get(key) || { key, start, duration: 0, distanceKm: 0, load: 0, loadCount: 0, sessions: 0 };
+        if (!groups.has(key)) return;
+        const current = groups.get(key);
         current.duration += entry.duration || 0;
         current.distanceKm += entry.distanceKm || 0;
         current.sessions += 1;
-        if (Number.isFinite(entry.load)) { current.load += entry.load; current.loadCount += 1; }
-        groups.set(key, current);
+        if (Number.isFinite(entry.load)) {
+            current.load += entry.load;
+            current.loadCount += 1;
+        }
     });
+
     return [...groups.values()].sort((a, b) => a.start - b.start);
 }
 
@@ -102,9 +127,10 @@ export function initializeCardioAnalytics(root = document) {
 
 export function renderCardioAnalytics(panel = document.querySelector("#cardio-progress")) {
     if (!panel) return;
-    const entries = collectCardioEntries(readSessions(), new Date(), selectedRange);
+    const now = new Date();
+    const entries = collectCardioEntries(readSessions(), now, selectedRange);
     const summary = summarizeCardio(entries);
-    const weeks = groupCardioByWeek(entries);
+    const weeks = groupCardioByWeek(entries, now, selectedRange);
     panel.querySelectorAll("[data-cardio-range]").forEach(button => {
         const active = Number(button.dataset.cardioRange) === selectedRange;
         button.classList.toggle("active", active);
@@ -127,14 +153,23 @@ export function renderCardioAnalytics(panel = document.querySelector("#cardio-pr
 function renderWeeklyBars(panel, weeks) {
     const host = panel.querySelector("[data-cardio-weekly]");
     if (!host) return;
+    const card = host.closest(".cardio-analytics-card");
+    const description = card?.querySelector("h4 + p");
+    if (description) description.textContent = "Monday–Sunday cardio minutes for each week.";
+
     const visible = weeks.slice(-12);
     const max = Math.max(1, ...visible.map(week => week.duration));
-    host.innerHTML = visible.length ? visible.map(week => `
-        <div class="cardio-week-column">
-            <strong>${Math.round(week.duration)}</strong>
-            <div class="cardio-week-track"><i style="height:${Math.max(5, Math.round(week.duration / max * 100))}%"></i></div>
-            <span>${week.start.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
-        </div>`).join("") : '<p class="cardio-chart-empty">Complete a cardio workout to start this chart.</p>';
+    host.innerHTML = visible.length ? visible.map(week => {
+        const minutes = Math.round(week.duration);
+        const height = minutes > 0 ? Math.max(5, Math.round(week.duration / max * 100)) : 0;
+        const label = week.start.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        return `
+        <div class="cardio-week-column" title="Week of ${label}: ${minutes} min" aria-label="Week of ${label}: ${minutes} cardio minutes">
+            <strong>${minutes}</strong>
+            <div class="cardio-week-track"><i style="height:${height}%"></i></div>
+            <span>${label}</span>
+        </div>`;
+    }).join("") : '<p class="cardio-chart-empty">Complete a cardio workout to start this chart.</p>';
 }
 
 function renderTrend(panel, entries) {
@@ -178,10 +213,47 @@ function renderRecent(panel, entries) {
     host.innerHTML = entries.length ? entries.slice(-5).reverse().map(entry => `<div class="cardio-recent-row"><div><strong>${escapeHtml(entry.name)}</strong><span>${entry.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></div><div><strong>${formatMinutes(entry.duration)}</strong><span>${entry.distanceKm ? formatDistance(entry.distanceKm) : entry.rpe ? `RPE ${entry.rpe}` : "Time only"}</span></div></div>`).join("") : '<p class="cardio-chart-empty">Your completed cardio sessions will appear here.</p>';
 }
 
+// Progress is primarily a lifting destination. Keep Lifting first/default and
+// remove the unfinished Photo Log surface without changing the saved data model.
+function applyProgressLiftingPriority() {
+    const tabs = document.querySelector(".progress-tabs");
+    if (!tabs || tabs.dataset.liftingPriorityApplied === "true") return;
+
+    const liftingButton = document.getElementById("lifting-tab");
+    const weightButton = document.getElementById("weight-tab");
+    const nutritionButton = document.getElementById("nutrition-progress-tab");
+    const cardioButton = document.getElementById("cardio-progress-tab");
+    if (!liftingButton || !weightButton || !nutritionButton || !cardioButton) return;
+
+    tabs.insertBefore(liftingButton, tabs.firstElementChild);
+    tabs.insertBefore(weightButton, liftingButton.nextElementSibling);
+    tabs.insertBefore(nutritionButton, weightButton.nextElementSibling);
+    tabs.insertBefore(cardioButton, nutritionButton.nextElementSibling);
+
+    document.getElementById("photo-log-tab")?.remove();
+    document.getElementById("photo-log-progress")?.remove();
+
+    const description = tabs.closest(".section-card")?.querySelector(".section-description");
+    if (description) description.textContent = "Track lifting performance, body weight, nutrition and cardio over time.";
+
+    tabs.dataset.liftingPriorityApplied = "true";
+    requestAnimationFrame(() => {
+        if (document.body.contains(liftingButton)) liftingButton.click();
+    });
+}
+
+function initializeProgressPriorityObserver() {
+    applyProgressLiftingPriority();
+    const root = document.getElementById("content") || document.body;
+    if (!root) return;
+    new MutationObserver(applyProgressLiftingPriority).observe(root, { childList: true, subtree: true });
+}
+
 function readSessions() { try { const parsed = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || "[]"); return Array.isArray(parsed) ? parsed : []; } catch { return []; } }
 function sessionTimestamp(session) { const value = session?.completedAt || session?.date || session?.startedAt; const timestamp = new Date(value).getTime(); return Number.isFinite(timestamp) ? timestamp : 0; }
 function positiveNumber(value) { const number = Number(value); return Number.isFinite(number) && number > 0 ? number : null; }
 function startOfWeek(value) { const date = new Date(value); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() - ((date.getDay() + 6) % 7)); return date; }
+function addDays(value, days) { const date = new Date(value); date.setDate(date.getDate() + days); return date; }
 function dateKey(date) { return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`; }
 function titleFromId(id) { return String(id || "").split("-").filter(Boolean).map(word => word[0]?.toUpperCase() + word.slice(1)).join(" "); }
 function formatMinutes(value) { const rounded = Math.round(Number(value) || 0); if (rounded < 60) return `${rounded} min`; const hours = Math.floor(rounded / 60); const minutes = rounded % 60; return minutes ? `${hours}h ${minutes}m` : `${hours}h`; }
@@ -190,3 +262,12 @@ function formatDistance(value) { return `${displayKm(Number(value) || 0).toFixed
 function formatSpeed(value) { if (!Number.isFinite(value)) return "—"; const display = isMetric(UNIT_KINDS.DISTANCE) ? value : value / 1.609344; return `${display.toFixed(1)} ${distanceUnit()}/h`; }
 function setText(root, selector, value) { const element = root.querySelector(selector); if (element) element.textContent = value; }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character])); }
+
+if (typeof document !== "undefined") {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initializeProgressPriorityObserver, { once: true });
+    }
+    else {
+        initializeProgressPriorityObserver();
+    }
+}
