@@ -109,20 +109,6 @@
 .adaptive-settings-details ul { margin: 0; padding-left: 20px; }
 .adaptive-settings-message { min-height: 20px; margin: 13px 0 0; color: #69d98f; font-size: .78rem; }
 
-.adaptive-deload-preview-card {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 12px;
-    align-items: center;
-    margin-top: 14px;
-    padding-top: 14px;
-    border-top: 1px solid rgba(255,255,255,.08);
-}
-.adaptive-deload-preview-card strong,
-.adaptive-deload-preview-card small { display: block; }
-.adaptive-deload-preview-card strong { font-size: .8rem; }
-.adaptive-deload-preview-card small { margin-top: 4px; color: #a8a8b0; font-size: .68rem; line-height: 1.4; }
-.adaptive-deload-preview-card button { min-height: 36px; padding: 7px 11px; font-size: .68rem; }
 .adaptive-preview-label { display: block; margin-bottom: 7px; color: #ff4a51; font-size: .62rem; font-weight: 950; letter-spacing: .09em; }
 .adaptive-deload-preview-sheet .adaptive-recommendation { margin-top: 12px; }
 .adaptive-deload-preview-banner { margin: 13px 0; }
