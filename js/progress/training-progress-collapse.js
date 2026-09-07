@@ -1,4 +1,4 @@
-import "./appearance-volume-goals-fix.js?v=appearance-volume-goals-3";
+import "./appearance-volume-goals-fix.js?v=appearance-volume-goals-4";
 
 function unwrapLegacyDisclosure(liftingProgress) {
     const existing = liftingProgress.querySelector(":scope > .training-progress-disclosure");
