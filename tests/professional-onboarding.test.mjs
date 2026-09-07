@@ -46,6 +46,13 @@ test("onboarding collects the inputs needed for a personalized program", () => {
   assert.match(source, /Tap the exact days you want to train/);
 });
 
+test("onboarding stays above the app navigation and keeps its actions tappable", () => {
+  assert.match(styles, /body\.levelup-onboarding-open \.bottom-nav\{[^}]*visibility:hidden!important[^}]*pointer-events:none!important/);
+  assert.match(styles, /\.levelup-onboarding\{[^}]*z-index:40000/);
+  assert.match(source, /if\(g==="goal"\)\{answers\.primaryGoal=v/);
+  assert.match(source, /if\(key==="goal"\)return!!answers\.primaryGoal/);
+});
+
 test("training location cards use descriptive SVG artwork", () => {
   assert.match(source, /function trainingSetupIcon/);
   assert.match(source, /full_gym:'<path/);
@@ -71,5 +78,5 @@ test("completion reveals the plan and keeps acquisition outside the required flo
 test("the professional onboarding release is cache-busted", () => {
   assert.match(html, /css\/onboarding\.css\?v=nutrition-feature-choice-1/);
   assert.match(html, /js\/onboarding\/onboarding\.js\?v=nutrition-feature-choice-1/);
-  assert.match(worker, /CACHE_VERSION = "2026-09-07-269"/);
+  assert.match(worker, /CACHE_VERSION = "2026-09-07-271"/);
 });
