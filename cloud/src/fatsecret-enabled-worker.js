@@ -9,7 +9,7 @@ import {
 } from "./fatsecret-food-provider.js";
 
 const SEARCH_LIMIT = 16;
-const FATSECRET_SEARCH_LIMIT = 8;
+const FATSECRET_SEARCH_LIMIT = 16;
 const FATSECRET_DETAIL_LIMIT = 5;
 
 export default {

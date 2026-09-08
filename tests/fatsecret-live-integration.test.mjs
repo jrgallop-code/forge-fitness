@@ -31,6 +31,7 @@ test("production worker composes FatSecret with the existing food API", () => {
     assert.match(worker, /getFatSecretDetailResponse/);
     assert.match(provider, /FATSECRET_CLIENT_ID/);
     assert.match(provider, /FATSECRET_CLIENT_SECRET/);
+    assert.match(worker, /const FATSECRET_SEARCH_LIMIT = 16/);
 });
 
 test("manual FatSecret search still runs when USDA is unavailable", () => {
