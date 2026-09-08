@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-08-274";
+const CACHE_VERSION = "2026-09-08-275";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -15,7 +15,7 @@ const CORE_ASSETS = [
     "./js/core/muscle-map-colors.js?v=muscle-map-colors-3",
     "./js/core/muscle-map-rendering-fix.js?v=muscle-map-rendering-fix-5",
     "./js/progress/recovery-secondary-muscles.js?v=recovery-secondary-8",
-    "./js/progress/body-composition-ui.js?v=body-composition-ui-1",
+    "./js/progress/body-composition-ui.js?v=onboarding-body-step-1",
     "./js/progress/body-fat-visual-replacement.js?v=approved-body-fat-1",
     "./js/progress/training-analytics-range.js?v=weekly-workout-sessions-1",
     "./js/progress/cardio-analytics.js?v=theme-accent-calendar-1",
