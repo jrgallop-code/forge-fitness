@@ -983,20 +983,32 @@ export function rankFoodNameMatches(foods, query, brandSearch = detectUsdaBrandS
         .map((food, index) => {
             const name = foodIdentity(food?.name);
             const brand = foodIdentity(food?.brand);
+            const searchableBrand = consumerFacingBrandIdentity(food?.brand);
             const brandMatches = !brandSearch || brand === expectedBrand || brand.startsWith(`${expectedBrand} `) || expectedBrand.startsWith(`${brand} `);
+            const searchableIdentity = brandSearch ? name : `${name} ${searchableBrand}`.trim();
             const nameMatches = productTokens.length
-                ? productTokens.every(token => name.includes(token))
+                ? productTokens.every(token => searchableIdentity.includes(token))
                 : Boolean(brandSearch && brandMatches);
             if (!name || !nameMatches || !brandMatches) return null;
             const exact = name === queryIdentity ? 100 : 0;
             const prefix = name.startsWith(`${queryIdentity} `) || queryIdentity.startsWith(`${name} `) ? 60 : 0;
             const phrase = name.includes(queryIdentity) ? 40 : 0;
+            const brandExact = searchableBrand === queryIdentity ? 80 : 0;
+            const brandPrefix = searchableBrand.startsWith(`${queryIdentity} `) || queryIdentity.startsWith(`${searchableBrand} `) ? 45 : 0;
+            const brandPhrase = searchableBrand.includes(queryIdentity) ? 30 : 0;
             const tokenStart = productTokens.reduce((score, token) => score + (name.startsWith(token) ? 4 : 0), 0);
-            return { food, index, score: exact + prefix + phrase + tokenStart };
+            return { food, index, score: exact + prefix + phrase + brandExact + brandPrefix + brandPhrase + tokenStart };
         })
         .filter(Boolean)
         .sort((a, b) => b.score - a.score || a.index - b.index)
         .map(item => item.food);
+}
+
+function consumerFacingBrandIdentity(value) {
+    const brand = foodIdentity(value);
+    if (!brand) return "";
+    const corporateSuffix = /\b(inc|incorporated|llc|ltd|limited|corp|corporation|company|co|holdings|enterprises)\b/;
+    return corporateSuffix.test(brand) ? "" : brand;
 }
 
 function usdaBrandFoodScore(food, brandIdentity, queryTokens) {
@@ -1265,6 +1277,7 @@ function foodIdentity(value) {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[®™]/g, "")
+        .replace(/[’']s\b/g, "s")
         .replace(/[^a-z0-9]+/g, " ")
         .trim();
 }

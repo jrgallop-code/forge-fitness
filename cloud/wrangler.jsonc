@@ -12,7 +12,8 @@
   "secrets": {
     "required": [
       "FATSECRET_CLIENT_ID",
-      "FATSECRET_CLIENT_SECRET"
+      "FATSECRET_CLIENT_SECRET",
+      "USDA_FDC_API_KEY"
     ]
   },
   "vars": {

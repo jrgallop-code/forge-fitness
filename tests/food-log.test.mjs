@@ -298,6 +298,23 @@ test("manual search matches product names instead of manufacturer names", () => 
     ], "Mars bar");
 
     assert.deepEqual(results.map(food => food.name), ["Mars Bar", "Mars Protein Bar"]);
+    assert.deepEqual(rankFoodNameMatches([
+        { name: "M&M's Milk Chocolate Candies", brand: "Mars Incorporated" }
+    ], "Mars").map(food => food.name), []);
+});
+
+test("manual search matches consumer-facing USDA brands", () => {
+    const daves = {
+        name: "21 Whole Grains and Seeds Organic Bread",
+        brand: "DAVE'S KILLER BREAD"
+    };
+    const foods = [
+        { name: "White Sandwich Bread", brand: "Example Bakery" },
+        daves
+    ];
+
+    assert.deepEqual(rankFoodNameMatches(foods, "daves").map(food => food.name), [daves.name]);
+    assert.deepEqual(rankFoodNameMatches(foods, "Dave's Killer Bread").map(food => food.name), [daves.name]);
 });
 
 test("USDA legacy descriptions remove embedded manufacturers before matching", () => {
