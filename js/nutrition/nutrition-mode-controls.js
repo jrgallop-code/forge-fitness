@@ -1,4 +1,4 @@
-import { getMaintenanceUpdateMode, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
+import { getMaintenanceUpdateMode, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calendar-checkin-day-1";
 
 const VALID_MODES = new Set(["review", "automatic"]);
 let installed = false;

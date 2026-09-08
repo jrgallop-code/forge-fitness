@@ -2,7 +2,7 @@ import {
     createBackupSnapshot,
     verifyBackupSnapshot
 }
-from "./backup-manager.js?v=backup-complete-6";
+from "./backup-manager.js?v=backup-complete-7";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const ZIP_MIME = "application/zip";

@@ -2,7 +2,7 @@ import { ACTIVITY_LEVELS, GOAL_PRESETS, calculateTdee } from "../nutrition/tdee-
 import { getNutritionProfile, saveNutritionProfile, saveNutritionGoal, syncCalculatedCalories } from "../nutrition/nutrition-storage.js?v=onboarding-flow-3";
 import { getActiveNutritionPhase, saveNutritionPhase } from "../nutrition/nutrition-phase.js?v=onboarding-flow-3";
 import { getTrainingPreferences, saveTrainingPreferences } from "../core/training-preferences.js?v=onboarding-flow-3";
-import { getMaintenanceUpdateMode, setMaintenanceUpdateMode } from "../nutrition/maintenance-check-in.js?v=onboarding-flow-3";
+import { getMaintenanceUpdateMode, setMaintenanceUpdateMode } from "../nutrition/maintenance-check-in.js?v=calendar-checkin-day-1";
 
 const FAST = "level_up_onboarding_fast_build";
 const AFTER = "level_up_onboarding_nutrition_after_build";

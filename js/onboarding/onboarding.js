@@ -10,7 +10,7 @@ import { WEEKDAY_ORDER, defaultTrainingDays, normalizeTrainingDays, trainingDays
 import { ACTIVITY_LEVELS, GOAL_PRESETS, calculateTdee } from "../nutrition/tdee-calculator.js?v=nutrition-feature-choice-1";
 import { saveNutritionGoal, syncCalculatedCalories } from "../nutrition/nutrition-storage.js?v=nutrition-feature-choice-1";
 import { saveNutritionPhase } from "../nutrition/nutrition-phase.js?v=nutrition-feature-choice-1";
-import { getMaintenanceUpdateMode, setMaintenanceUpdateMode } from "../nutrition/maintenance-check-in.js?v=nutrition-feature-choice-1";
+import { getMaintenanceUpdateMode, setMaintenanceUpdateMode } from "../nutrition/maintenance-check-in.js?v=calendar-checkin-day-1";
 import { setNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-feature-choice-1";
 
 const WEIGHT_KEY="forge_weight_entries",MANUAL_TARGET_KEY="level_up_manual_calorie_target_v1";

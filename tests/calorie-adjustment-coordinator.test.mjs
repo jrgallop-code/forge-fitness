@@ -1,6 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildAdaptivePaceCorrection, buildCoordinatedWeeklyUpdate } from "../js/nutrition/calorie-adjustment-coordinator.js";
+import { buildAdaptivePaceCorrection, buildCoordinatedWeeklyUpdate, readAdjustmentHold } from "../js/nutrition/calorie-adjustment-coordinator.js";
+
+function withHold(hold, callback) {
+    const previous = globalThis.localStorage;
+    globalThis.localStorage = {
+        getItem(key) {
+            return key === "level_up_phase_reassessment_hold" ? JSON.stringify(hold) : null;
+        }
+    };
+    try { return callback(); }
+    finally {
+        if (previous === undefined) delete globalThis.localStorage;
+        else globalThis.localStorage = previous;
+    }
+}
 
 test("pace correction converts the weekly rate gap into calories", () => {
     assert.equal(buildAdaptivePaceCorrection({ actualRate: 0.75, targetRate: 0.25 }), -250);
@@ -81,4 +95,25 @@ test("2620 calories at minus 0.20 lb per week targets plus 0.25 without double c
     assert.equal(update.targetChange, 450);
     assert.equal(update.paceCorrection, 225);
     assert.equal(update.capped, false);
+});
+
+test("weekly adjustment hold expires when the seventh local calendar date begins", () => {
+    const phase = { id: "phase-1", currentCalories: 2400 };
+    const applied = new Date(2026, 8, 1, 23, 30);
+    const seventhDate = new Date(2026, 8, 8, 0, 5);
+    const hold = { phaseId: phase.id, calories: 2400, appliedAt: applied.toISOString() };
+
+    const result = withHold(hold, () => readAdjustmentHold({ phase, now: seventhDate }));
+    assert.equal(result, null);
+});
+
+test("weekly adjustment hold reports one day on the sixth local calendar date", () => {
+    const phase = { id: "phase-1", currentCalories: 2400 };
+    const applied = new Date(2026, 8, 1, 23, 30);
+    const sixthDate = new Date(2026, 8, 7, 0, 5);
+    const hold = { phaseId: phase.id, calories: 2400, appliedAt: applied.toISOString() };
+
+    const result = withHold(hold, () => readAdjustmentHold({ phase, now: sixthDate }));
+    assert.equal(result?.daysElapsed, 6);
+    assert.equal(result?.daysRemaining, 1);
 });

@@ -1,7 +1,7 @@
 import {
     createBackupSnapshot,
     verifyBackupSnapshot
-} from "../core/backup-manager.js?v=backup-complete-6";
+} from "../core/backup-manager.js?v=backup-complete-7";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";

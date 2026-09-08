@@ -22,6 +22,12 @@ function roundTo25(value) {
     return Math.round(Number(value) / 25) * 25;
 }
 
+function localCalendarDayNumber(value) {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return null;
+    return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / DAY_MS;
+}
+
 export function buildAdaptivePaceCorrection({ actualRate, targetRate } = {}) {
     const actual = finite(actualRate);
     const target = finite(targetRate);
@@ -112,10 +118,14 @@ export function readAdjustmentHold({ phase, currentCalories, now = new Date() } 
     if (!hold || !phase || hold.phaseId !== phase.id) return null;
     const calories = finite(currentCalories ?? phase.currentCalories ?? phase.startCalories);
     if (calories === null || Math.round(Number(hold.calories)) !== Math.round(calories)) return null;
-    const applied = new Date(hold.appliedAt).getTime();
-    const nowTime = new Date(now).getTime();
-    if (!Number.isFinite(applied) || !Number.isFinite(nowTime)) return null;
-    const daysElapsed = Math.max(0, Math.floor((nowTime - applied) / DAY_MS));
+    const appliedDay = localCalendarDayNumber(hold.appliedAt);
+    const currentDay = localCalendarDayNumber(now);
+    if (!Number.isFinite(appliedDay) || !Number.isFinite(currentDay)) return null;
+    // Weekly reviews are calendar events. Expire the hold when the seventh
+    // local date arrives, not seven exact 24-hour periods after the prior
+    // adjustment's clock time. This keeps "today", the countdown and the
+    // actionable review gate on one date boundary (and is DST-safe).
+    const daysElapsed = Math.max(0, Math.round(currentDay - appliedDay));
     if (daysElapsed >= ADJUSTMENT_HOLD_DAYS) return null;
     return {
         ...hold,

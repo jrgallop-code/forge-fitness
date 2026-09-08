@@ -1,5 +1,6 @@
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
-import { getFormGuideVideo } from "./exercise-guide-video-resolver.js?v=form-video-root-fallback-1";
+import { getFormGuideVideo } from "./exercise-guide-video-resolver.js?v=female-form-videos-1";
+import { getAnatomySex } from "../core/anatomy-profile.js?v=female-form-videos-1";
 
 const STYLE_ID = "dynamic-warmup-styles";
 const STYLE_HREF = "/css/dynamic-warmup.css?v=dynamic-warmup-5";
@@ -335,6 +336,7 @@ function drivePreviewUrl(id) {
 function sourceUrls(drill) {
   const urls = [];
   const mediaKey = WARMUP_VIDEO_KEYS[drill.key];
+  if (mediaKey && getAnatomySex() === "female") urls.push(`${WARMUP_VIDEO_ORIGIN}/female/${mediaKey}`);
   if (mediaKey) urls.push(`${WARMUP_VIDEO_ORIGIN}/${mediaKey}`);
   if (drill.driveId) urls.push(driveDownloadUrl(drill.driveId));
   const fallback = drill.fallbackId ? getFormGuideVideo(drill.fallbackId) : null;

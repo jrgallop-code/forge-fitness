@@ -1,4 +1,4 @@
-import { clearPendingMaintenanceReview, getMaintenanceUpdateMode, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calorie-authority-recovery-1";
+import { clearPendingMaintenanceReview, getMaintenanceUpdateMode, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calendar-checkin-day-1";
 import { getActiveNutritionPhase, saveNutritionPhase } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { getNutritionPlan, setCurrentCalories } from "./nutrition-storage.js?v=calorie-authority-recovery-1";
 
