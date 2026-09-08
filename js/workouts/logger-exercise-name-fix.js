@@ -1,5 +1,4 @@
 import "./plate-calculator.js?v=progressive-plate-sizes-1";
-import "./starting-weight-calibration.js?v=granular-units-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 
