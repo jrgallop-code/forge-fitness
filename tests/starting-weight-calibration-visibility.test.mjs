@@ -19,5 +19,5 @@ test("the duplicate starting-weight link and card are not loaded by the app", ()
 });
 
 test("the removal advances the offline app cache", () => {
-    assert.match(worker, /CACHE_VERSION = "2026-09-08-274"/);
+    assert.match(worker, /CACHE_VERSION = "2026-09-08-275"/);
 });
