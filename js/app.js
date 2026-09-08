@@ -1,5 +1,5 @@
 import "./core/appearance-theme.js?v=appearance-themes-3";
-import { navigate } from "./core/router.js?v=dynamic-warmup-settings-1";
+import { navigate } from "./core/router.js?v=dedicated-program-builder-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=workout-nav-fix-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-source-stats-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
@@ -27,6 +27,13 @@ function decorateAppIcons(root=document){replaceColoredEmojis(root);addExerciseB
 
 initializeWorkoutRuntime();
 const content=document.getElementById("content");
+document.addEventListener("levelup:navigate",event=>{
+    const page=String(event.detail?.page||"");
+    if(!page)return;
+    const navPage=page==="program-builder"?"workout":page;
+    document.querySelectorAll(".nav-btn[data-page]").forEach(button=>button.classList.toggle("active",button.dataset.page===navPage));
+    navigate(page);
+});
 if(content)new MutationObserver(()=>scheduleIconDecoration(()=>decorateAppIcons(content))).observe(content,{childList:true,subtree:true});
 navigate("home");
 decorateAppIcons(content||document);

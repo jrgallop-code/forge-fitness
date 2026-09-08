@@ -25,6 +25,30 @@ const LABEL = {
     "40-plus": "40%+"
 };
 
+const FEMALE_POSITION = {
+    "female-10-13": ["0%", "0%"],
+    "female-14-17": ["50%", "0%"],
+    "female-18-21": ["100%", "0%"],
+    "female-22-25": ["0%", "50%"],
+    "female-26-29": ["50%", "50%"],
+    "female-30-33": ["100%", "50%"],
+    "female-34-37": ["0%", "100%"],
+    "female-38-41": ["50%", "100%"],
+    "female-42-plus": ["100%", "100%"]
+};
+
+const FEMALE_LABEL = {
+    "female-10-13": "10–13%",
+    "female-14-17": "14–17%",
+    "female-18-21": "18–21%",
+    "female-22-25": "22–25%",
+    "female-26-29": "26–29%",
+    "female-30-33": "30–33%",
+    "female-34-37": "34–37%",
+    "female-38-41": "38–41%",
+    "female-42-plus": "42%+"
+};
+
 let queued = false;
 ensureStyles();
 schedule();
@@ -41,11 +65,14 @@ function schedule() {
 
 function applyApprovedArtwork(button) {
     const id = button.dataset.bodyFatRange;
-    if (!id || !POSITION[id] || button.dataset.approvedBodyFatArt === "1") return;
-    const [x, y] = POSITION[id];
+    const female = Boolean(FEMALE_POSITION[id]);
+    const position = female ? FEMALE_POSITION[id] : POSITION[id];
+    const label = female ? FEMALE_LABEL[id] : LABEL[id];
+    if (!id || !position || button.dataset.approvedBodyFatArt === "1") return;
+    const [x, y] = position;
     button.dataset.approvedBodyFatArt = "1";
-    button.setAttribute("aria-label", `${LABEL[id]} estimated body fat`);
-    button.innerHTML = `<span class="body-fat-approved-art" aria-hidden="true" style="--bf-x:${x};--bf-y:${y}"></span><span class="body-fat-approved-label">${LABEL[id]}</span>`;
+    button.setAttribute("aria-label", `${label} estimated body fat`);
+    button.innerHTML = `<span class="body-fat-approved-art${female ? " body-fat-approved-art--female" : ""}" aria-hidden="true" style="--bf-x:${x};--bf-y:${y}"></span><span class="body-fat-approved-label">${label}</span>`;
 }
 
 function ensureStyles() {
@@ -57,6 +84,7 @@ function ensureStyles() {
         .body-fat-visual-card{padding:3px!important;border-radius:16px!important;background:transparent!important;overflow:hidden}
         .body-fat-visual-card.selected{border-color:var(--accent)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)!important}
         .body-fat-approved-art{display:block;width:100%;aspect-ratio:4/5;border-radius:13px;background-image:url('${SPRITE}');background-size:300% 300%;background-position:var(--bf-x) var(--bf-y);background-repeat:no-repeat;background-color:#fff}
+        .body-fat-approved-art--female{background-image:url('assets/body-fat-female-grid-v1.webp?v=1')}
         .body-fat-approved-label{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
         .body-fat-visual-card .body-fat-torso,.body-fat-visual-card>strong{display:none!important}
         @media(max-width:520px){.body-fat-visual-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}.body-fat-visual-card{padding:2px!important}}

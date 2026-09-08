@@ -55,7 +55,7 @@
         if (document.querySelector('script[data-body-composition-ui]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/progress/body-composition-ui.js?v=onboarding-body-step-1";
+        script.src = "js/progress/body-composition-ui.js?v=female-body-fat-selector-1";
         script.dataset.bodyCompositionUi = "1";
         document.head.appendChild(script);
     }
@@ -64,7 +64,7 @@
         if (document.querySelector('script[data-body-fat-approved-visual]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/progress/body-fat-visual-replacement.js?v=approved-body-fat-1";
+        script.src = "js/progress/body-fat-visual-replacement.js?v=female-body-fat-selector-1";
         script.dataset.bodyFatApprovedVisual = "1";
         document.head.appendChild(script);
     }

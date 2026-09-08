@@ -13,6 +13,20 @@ export const BODY_FAT_RANGES = [
     { id: "40-plus", label: "40%+", min: 40, max: null, midpoint: 42 }
 ];
 
+export const FEMALE_BODY_FAT_RANGES = [
+    { id: "female-10-13", label: "10–13%", min: 10, max: 13, midpoint: 11.5 },
+    { id: "female-14-17", label: "14–17%", min: 14, max: 17, midpoint: 15.5 },
+    { id: "female-18-21", label: "18–21%", min: 18, max: 21, midpoint: 19.5 },
+    { id: "female-22-25", label: "22–25%", min: 22, max: 25, midpoint: 23.5 },
+    { id: "female-26-29", label: "26–29%", min: 26, max: 29, midpoint: 27.5 },
+    { id: "female-30-33", label: "30–33%", min: 30, max: 33, midpoint: 31.5 },
+    { id: "female-34-37", label: "34–37%", min: 34, max: 37, midpoint: 35.5 },
+    { id: "female-38-41", label: "38–41%", min: 38, max: 41, midpoint: 39.5 },
+    { id: "female-42-plus", label: "42%+", min: 42, max: null, midpoint: 44 }
+];
+
+const ALL_BODY_FAT_RANGES = [...BODY_FAT_RANGES, ...FEMALE_BODY_FAT_RANGES];
+
 export const BODY_FAT_METHODS = [
     { id: "visual", label: "Visual estimate" },
     { id: "smart-scale", label: "Smart scale / BIA" },
@@ -44,12 +58,12 @@ function clamp(value, min, max) {
 export function getBodyFatRange() {
     const saved = readJson(RANGE_KEY, null);
     if (!saved?.rangeId) return null;
-    const range = BODY_FAT_RANGES.find(item => item.id === saved.rangeId);
+    const range = ALL_BODY_FAT_RANGES.find(item => item.id === saved.rangeId);
     return range ? { ...saved, ...range } : null;
 }
 
 export function saveBodyFatRange(rangeId, { source = "visual" } = {}) {
-    const range = BODY_FAT_RANGES.find(item => item.id === rangeId);
+    const range = ALL_BODY_FAT_RANGES.find(item => item.id === rangeId);
     if (!range) {
         localStorage.removeItem(RANGE_KEY);
         window.dispatchEvent(new CustomEvent("levelup:body-composition-updated"));

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-08-275";
+const CACHE_VERSION = "2026-09-08-276";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -11,12 +11,12 @@ const CORE_ASSETS = [
     "./js/account/cloud-background-sync.js",
     "./js/analytics/product-state.js?v=owner-product-insights-1",
     "./js/core/system-recovery-notice.js?v=legacy-audience-1",
-    "./js/core/body-composition.js?v=body-composition-1",
+    "./js/core/body-composition.js?v=female-body-fat-ranges-1",
     "./js/core/muscle-map-colors.js?v=muscle-map-colors-3",
     "./js/core/muscle-map-rendering-fix.js?v=muscle-map-rendering-fix-5",
     "./js/progress/recovery-secondary-muscles.js?v=recovery-secondary-8",
-    "./js/progress/body-composition-ui.js?v=onboarding-body-step-1",
-    "./js/progress/body-fat-visual-replacement.js?v=approved-body-fat-1",
+    "./js/progress/body-composition-ui.js?v=female-body-fat-selector-1",
+    "./js/progress/body-fat-visual-replacement.js?v=female-body-fat-selector-1",
     "./js/progress/training-analytics-range.js?v=weekly-workout-sessions-1",
     "./js/progress/cardio-analytics.js?v=theme-accent-calendar-1",
     "./js/progress/appearance-volume-goals-fix.js?v=appearance-volume-goals-4",
@@ -38,6 +38,7 @@ const CORE_ASSETS = [
     "./js/nutrition/tdee-expenditure-swipe-card.js?v=tdee-expenditure-swipe-2",
     "./assets/level-up-home-icon.svg",
     "./assets/level-up-mark-transparent.svg",
+    "./assets/body-fat-female-grid-v1.webp",
     "./assets/icons/icon-192.png",
     "./assets/icons/icon-384.png",
     "./assets/icons/icon-512.png",
