@@ -47,7 +47,7 @@ function ensureWorkoutMode() {
   return mode;
 }
 
-function openWorkoutMode(logger) {
+export function openWorkoutMode(logger) {
   if (!logger || logger.dataset.editingSessionId) return;
   const mode = ensureWorkoutMode();
   const content = mode.querySelector('#levelup-workout-mode-content');

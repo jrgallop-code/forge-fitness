@@ -36,7 +36,8 @@ export default {
 
 async function searchFoodsWithFatSecret(url, request, env, ctx) {
     const baseResponse = await baseWorker.fetch(request, env, ctx);
-    if (!baseResponse.ok || !fatSecretConfigured(env)) return baseResponse;
+    if (!fatSecretConfigured(env)) return baseResponse;
+    if (!baseResponse.ok && ![429, 502, 503, 504].includes(baseResponse.status)) return baseResponse;
 
     const query = String(url.searchParams.get("q") || "").trim().replace(/\s+/g, " ");
     if (query.length < 2) return baseResponse;
@@ -67,17 +68,33 @@ async function searchFoodsWithFatSecret(url, request, env, ctx) {
             directResults: usableFromSearch.length,
             enrichedResults: enriched.length
         });
-        if (!fatSecretFoods.length) return jsonFrom(baseResponse, { ...payload, fatSecret: status });
+        if (!fatSecretFoods.length) {
+            return baseResponse.ok
+                ? jsonFrom(baseResponse, { ...payload, fatSecret: status })
+                : jsonFrom(baseResponse, {
+                    foods: [],
+                    source: "FatSecret",
+                    warning: payload?.error || "Other food catalogues are temporarily unavailable.",
+                    fatSecret: status
+                });
+        }
 
-        const baseFoods = Array.isArray(payload?.foods) ? payload.foods : [];
+        const baseFoods = baseResponse.ok && Array.isArray(payload?.foods) ? payload.foods : [];
         const foods = mergeSearchResults(baseFoods, fatSecretFoods, SEARCH_LIMIT);
-        const source = appendSource(payload?.source, "FatSecret");
-        return jsonFrom(baseResponse, { ...payload, foods, source, fatSecret: status });
+        const source = appendSource(baseResponse.ok ? payload?.source : "", "FatSecret");
+        return jsonFrom(baseResponse, {
+            ...(baseResponse.ok ? payload : {}),
+            foods,
+            source,
+            ...(baseResponse.ok || !payload?.error ? {} : { warning: payload.error }),
+            fatSecret: status
+        });
     }
     catch (error) {
         const reason = error?.name === "AbortError" ? "timeout" : String(error?.message || error);
         console.warn(JSON.stringify({ event: "fatsecret_food_search_failed", reason }));
         const payload = await baseResponse.clone().json().catch(() => ({}));
+        if (!baseResponse.ok) return baseResponse;
         return jsonFrom(baseResponse, {
             ...payload,
             fatSecret: {

@@ -1,7 +1,7 @@
 import {
     navigate
 }
-from "../core/router.js?v=adaptive-guidance-1";
+from "../core/router.js?v=native-navigation-stability-1";
 
 
 export function renderMore() {

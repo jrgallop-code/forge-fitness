@@ -2,7 +2,7 @@ import "./rest-alarm-phase1.js?v=rest-authority-1";
 import "./rest-alarm-button-stability.js?v=rest-authority-1";
 import "./rest-timer-authority.js?v=rest-timer-authority-1";
 import "../core/workout-theme-guardrail.js?v=workout-theme-guardrail-3";
-import { openActiveWorkout } from "./workout-session.js?v=workout-source-stats-1";
+import { openActiveWorkout } from "./workout-session.js?v=native-navigation-stability-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = 'level_up_active_workout';
 

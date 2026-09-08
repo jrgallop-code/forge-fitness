@@ -33,6 +33,14 @@ test("production worker composes FatSecret with the existing food API", () => {
     assert.match(provider, /FATSECRET_CLIENT_SECRET/);
 });
 
+test("manual FatSecret search still runs when USDA is unavailable", () => {
+    assert.doesNotMatch(worker, /if \(!baseResponse\.ok \|\| !fatSecretConfigured\(env\)\) return baseResponse/);
+    assert.match(worker, /if \(!fatSecretConfigured\(env\)\) return baseResponse/);
+    assert.match(worker, /!\[429, 502, 503, 504\]\.includes\(baseResponse\.status\)/);
+    assert.match(worker, /baseResponse\.ok && Array\.isArray\(payload\?\.foods\)/);
+    assert.match(worker, /warning: payload\?\.error \|\| "Other food catalogues are temporarily unavailable\."/);
+});
+
 test("valid Premier search results are used directly instead of being discarded by a second detail request", () => {
     assert.match(worker, /const usableFromSearch = summaries\.filter\(hasStorableServingId\)/);
     assert.match(worker, /filter\(food => !hasStorableServingId\(food\)\)/);

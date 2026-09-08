@@ -43,10 +43,48 @@ import { isNutritionEnabled } from "./app-feature-preferences.js?v=nutrition-fea
 
 getCurrentGoal();
 
+let navigationEpoch = 0;
+
+function beginRouteChange(content) {
+    const epoch = ++navigationEpoch;
+    const root = document.scrollingElement || document.documentElement;
+    const previousScrollBehavior = root.style.scrollBehavior;
+
+    document.documentElement.classList.add("levelup-route-changing");
+    content.setAttribute("aria-busy", "true");
+    root.style.scrollBehavior = "auto";
+    root.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+
+    return () => {
+        root.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        content.removeAttribute("aria-busy");
+        document.documentElement.classList.remove("levelup-route-changing");
+
+        requestAnimationFrame(() => {
+            if (epoch !== navigationEpoch) return;
+            root.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+            root.style.scrollBehavior = previousScrollBehavior;
+        });
+    };
+}
+
+if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
+}
+
 export function navigate(page) {
     const content = document.getElementById("content");
     if (!content) return;
     if (["nutrition", "energy"].includes(page) && !isNutritionEnabled()) page = "home";
+    const finishRouteChange = beginRouteChange(content);
     try {
         switch (page) {
             case "home":
@@ -106,6 +144,9 @@ export function navigate(page) {
     } catch (error) {
         console.error(`Route ${page} failed while rendering:`, error);
         content.innerHTML = `<section class="section-card"><h2>Page could not load</h2><p class="section-description">The page hit an initialization error. Navigation is still available below.</p></section>`;
+    }
+    finally {
+        finishRouteChange();
     }
 }
 

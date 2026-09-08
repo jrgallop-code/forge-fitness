@@ -273,9 +273,11 @@ function installFoodSearchSourceDiagnostics() {
 if (typeof window !== "undefined") {
     installFoodSearchSourceDiagnostics();
     queueMicrotask(queuePersistedIds);
-    window.addEventListener("online", queuePersistedIds, { passive: true });
-    window.addEventListener("levelup:cloud-session-started", queuePersistedIds);
-    window.addEventListener("storage", event => { if (event.key === SESSION_KEY) queuePersistedIds(); });
+    if (typeof window.addEventListener === "function") {
+        window.addEventListener("online", queuePersistedIds, { passive: true });
+        window.addEventListener("levelup:cloud-session-started", queuePersistedIds);
+        window.addEventListener("storage", event => { if (event.key === SESSION_KEY) queuePersistedIds(); });
+    }
     if (typeof document !== "undefined") {
         const start = () => {
             ensureAttribution(document);

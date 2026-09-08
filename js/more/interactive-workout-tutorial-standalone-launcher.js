@@ -1,6 +1,6 @@
-import { navigate } from "../core/router.js?v=deload-workout-preview-1";
+import { navigate } from "../core/router.js?v=native-navigation-stability-1";
 import { presetPlans } from "../workouts/workout-plans.js?v=interactive-workout-tutorial-6";
-import { openWorkoutLogger, ACTIVE_WORKOUT_STORAGE_KEY } from "../workouts/workout-session.js?v=workout-source-stats-1";
+import { openWorkoutLogger, ACTIVE_WORKOUT_STORAGE_KEY } from "../workouts/workout-session.js?v=native-navigation-stability-1";
 
 const LAUNCHER_ID = "interactive-workout-tutorial-standalone";
 const COMPLETION_KEY = "level_up_interactive_workout_tutorial_v4";

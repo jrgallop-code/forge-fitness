@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=deload-workout-preview-1";
+import { navigate } from "../core/router.js?v=native-navigation-stability-1";
 import { CONTEXTUAL_TUTORIALS, getTutorialState, restartTutorial } from "../core/tutorials.js?v=food-log-macro-bars-1";
 
 const STORAGE_KEY = "level_up_completed_lessons_v1";

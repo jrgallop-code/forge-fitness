@@ -32,12 +32,14 @@ test("the actionable review stays out of Weight Progress and opens from its othe
     assert.match(display, /Logged weekly average/);
     assert.match(display, /Current weight trend/);
     assert.match(display, /Goal weight trend/);
-    assert.match(display, /Independently calculated maintenance/);
+    assert.doesNotMatch(display, /Independently calculated maintenance/);
+    assert.doesNotMatch(display, /Current Expenditure used for review/);
     assert.match(display, /Goal-pacing surplus/);
     assert.match(display, /Calories needed for goal pace/);
     assert.match(display, /Full goal-pacing estimate/);
     assert.match(display, /Recommended staged target now/);
     assert.match(display, /Recommended target now/);
+    assert.match(display, /Level Up limits each weekly change and will reassess your progress next week/);
     assert.match(display, /weeklyAverageCalories: baseline\.useLoggedAverage/);
     assert.match(display, /update\.fullRequestedTarget/);
     assert.match(display, /The saved target changes by/);

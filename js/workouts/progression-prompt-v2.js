@@ -1,4 +1,5 @@
 import { getExerciseById } from './exercise-library.js';
+import { buildBodyweightProgression, isBodyweightEquipment, isWeightedBodyweightEquipment } from './bodyweight-progression.js?v=bodyweight-progression-1';
 
 const ACTIVE_WORKOUT_STORAGE_KEY = 'level_up_active_workout';
 const SESSION_STORAGE_KEY = 'forge_workout_sessions';
@@ -196,6 +197,76 @@ function applyRepGoalPlaceholders(card, goals, suggestedWeight = null) {
   });
 }
 
+function getBodyweightAddedLoad(completedSets) {
+  const loads = completedSets
+    .map(set => Number(set?.weight))
+    .filter(value => Number.isFinite(value) && value > 0);
+  return loads.length ? Math.max(...loads) : 0;
+}
+
+function formatAddedLoadRange(progression, currentAddedWeight) {
+  const range = progression.minimumAddedLoad === progression.maximumAddedLoad
+    ? `${formatLoad(progression.minimumAddedLoad)} lb`
+    : `${formatLoad(progression.minimumAddedLoad)}–${formatLoad(progression.maximumAddedLoad)} lb`;
+  return currentAddedWeight > 0
+    ? `increase the added weight to <b>${range}</b>`
+    : `add <b>${range}</b>`;
+}
+
+function renderBodyweightTopRangePrompt(card, prompt, completedSets, repRange, source, exerciseId, tracksAddedWeight) {
+  const currentAddedWeight = tracksAddedWeight ? getBodyweightAddedLoad(completedSets) : 0;
+  const progression = buildBodyweightProgression({
+    completedReps: completedSets.map(set => set.reps),
+    lower: repRange.lower,
+    upper: repRange.upper,
+    currentAddedWeight
+  });
+  if (!progression?.allAtTop) return false;
+
+  const recordedRir = completedSets
+    .map((set, index) => ({ raw: set.rir, value: Number(set.rir), index }))
+    .filter(item => item.raw !== null && item.raw !== '' && item.raw !== undefined && Number.isFinite(item.value) && item.value >= 0);
+  const zeroRirSets = recordedRir.filter(item => item.value === 0);
+  if (zeroRirSets.length > 1) {
+    applyRepGoalPlaceholders(card, completedSets.map(set => Number(set.reps)), currentAddedWeight || null);
+    prompt.classList.add('progression-prompt-down');
+    prompt.innerHTML = `
+      <span class="progression-arrow">↺</span>
+      <div>
+        <strong>Repeat this progression</strong>
+        <p>Multiple sets reached <b>0 RIR</b>.</p>
+        <small>Keep the same reps and resistance while aiming for 1–3 good reps in reserve.</small>
+      </div>
+    `;
+    showPrompt(prompt, source, exerciseId);
+    return true;
+  }
+
+  const finalSetAtFailure = zeroRirSets.length === 1 && zeroRirSets[0].index === completedSets.length - 1;
+  const loadRepRange = progression.loadRepMinimum === progression.loadRepMaximum
+    ? `${formatLoad(progression.loadRepMinimum)}`
+    : `${formatLoad(progression.loadRepMinimum)}–${formatLoad(progression.loadRepMaximum)}`;
+  const currentLoadCopy = currentAddedWeight > 0
+    ? `keep <b>${formatLoad(currentAddedWeight)} lb added</b>`
+    : 'keep using <b>bodyweight</b>';
+
+  applyRepGoalPlaceholders(card, progression.repGoals, currentAddedWeight || null);
+  prompt.classList.remove('progression-prompt-down');
+  prompt.innerHTML = `
+    <span class="progression-arrow">↑</span>
+    <div>
+      <strong>${finalSetAtFailure ? 'Progress available' : 'Choose your bodyweight progression'}</strong>
+      ${finalSetAtFailure ? '<p>Final set reached <b>0 RIR</b>, so use the more conservative option.</p>' : ''}
+      <p>Every working set reached at least ${formatLoad(repRange.upper)} reps.</p>
+      <p><b>Add resistance:</b> ${formatAddedLoadRange(progression, currentAddedWeight)} and aim for <b>${loadRepRange} reps per set</b>.</p>
+      <p><b>Add reps:</b> ${currentLoadCopy} and aim for <b>${progression.repGoals.map(formatLoad).join(' / ')} reps</b>.</p>
+      <small>Added resistance is optional. Gray rep values show the more-reps option.</small>
+    </div>
+  `;
+  showPrompt(prompt, source, exerciseId);
+  return true;
+}
+
 function ensurePrompt(card) {
   let prompt = card.querySelector('.progression-prompt');
   if (prompt) return prompt;
@@ -268,6 +339,9 @@ function renderCard(card) {
   if (!logger) return;
   const exerciseId = card.dataset.exerciseId;
   if (!exerciseId) return;
+  const exercise = getExerciseById(exerciseId);
+  const isBodyweight = isBodyweightEquipment(exercise?.equipment);
+  const tracksAddedBodyweightLoad = isWeightedBodyweightEquipment(exercise?.equipment);
   const excludedSessionId = logger.dataset.editingSessionId || null;
   const source = findPreviousPerformance(exerciseId, excludedSessionId);
   syncPreviousDisplay(card, source);
@@ -305,7 +379,7 @@ function renderCard(card) {
 
   const state = source.performance;
   const completedSets = getPreferredRecordedSets(state)
-    .filter(set => Number(set.reps) > 0 && Number(set.weight) > 0);
+    .filter(set => Number(set.reps) > 0 && (isBodyweight || Number(set.weight) > 0));
   if (!completedSets.length) {
     hidePrompt(prompt);
     return;
@@ -318,11 +392,25 @@ function renderCard(card) {
     const belowTarget = completedSets.filter(set => Number(set.reps) < repRange.lower);
     const majorityBelow = belowTarget.length > completedSets.length / 2;
     if (!majorityBelow) {
-      const goals = getPerSetRepGoals(card, completedSets, repRange);
+      const bodyweightAddedLoad = tracksAddedBodyweightLoad ? getBodyweightAddedLoad(completedSets) : 0;
+      const bodyweightProgression = isBodyweight
+        ? buildBodyweightProgression({
+            completedReps: completedSets.map(set => set.reps),
+            lower: repRange.lower,
+            upper: repRange.upper,
+            currentAddedWeight: bodyweightAddedLoad
+          })
+        : null;
+      const goals = bodyweightProgression?.repGoals || getPerSetRepGoals(card, completedSets, repRange);
       const priorWeights = completedSets.map(set => Number(set.weight)).filter(weight => weight > 0);
       const sameWeight = priorWeights.length === completedSets.length && new Set(priorWeights).size === 1
         ? priorWeights[0]
         : null;
+      const loadCopy = isBodyweight
+        ? `${bodyweightAddedLoad > 0 ? `Keep <b>${formatLoad(bodyweightAddedLoad)} lb added</b>` : 'Keep using <b>bodyweight</b>'} and `
+        : sameWeight
+          ? `Keep <b>${formatLoad(sameWeight)} lb</b> and `
+          : '';
 
       applyRepGoalPlaceholders(card, goals, sameWeight);
       prompt.classList.remove('progression-prompt-down');
@@ -330,8 +418,8 @@ function renderCard(card) {
         <span class="progression-arrow">↑</span>
         <div>
           <strong>Build reps this session</strong>
-          <p>${sameWeight ? `Keep <b>${formatLoad(sameWeight)} lb</b> and ` : ''}aim for <b>${goals.map(formatLoad).join(' / ')} reps</b>.</p>
-          <small>Add one rep to each set, capped at ${formatLoad(repRange.upper)}. Gray field values show each set goal.</small>
+          <p>${loadCopy}aim for <b>${goals.map(formatLoad).join(' / ')} reps</b>.</p>
+          <small>${isBodyweight ? `Preserve reps already above ${formatLoad(repRange.upper)} and add one rep to sets still building.` : `Add one rep to each set, capped at ${formatLoad(repRange.upper)}.`} Gray field values show each set goal.</small>
         </div>
       `;
       showPrompt(prompt, source, exerciseId);
@@ -361,6 +449,8 @@ function renderCard(card) {
     showPrompt(prompt, source, exerciseId);
     return;
   }
+
+  if (isBodyweight && renderBodyweightTopRangePrompt(card, prompt, completedSets, repRange, source, exerciseId, tracksAddedBodyweightLoad)) return;
 
   const sourceSet = [...completedSets]
     .filter(set => Number(set.reps) >= repRange.upper && Number(set.weight) > 0)

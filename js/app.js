@@ -1,7 +1,7 @@
 import "./core/appearance-theme.js?v=appearance-themes-3";
-import { navigate } from "./core/router.js?v=dedicated-program-builder-1";
+import { navigate } from "./core/router.js?v=native-navigation-stability-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=workout-nav-fix-1";
-import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-source-stats-1";
+import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=native-navigation-stability-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";
 import "./workouts/exercise-guide-resolution-fix.js?v=1";

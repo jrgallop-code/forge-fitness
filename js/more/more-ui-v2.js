@@ -1,5 +1,5 @@
 import "./contact-support.js?v=compact-more-groups-1";
-import { navigate } from "../core/router.js?v=deload-workout-preview-1";
+import { navigate } from "../core/router.js?v=native-navigation-stability-1";
 import { renderExportBackup } from "./export-backup-ui.js?v=full-data-export-1";
 import { initializeBackupManager } from "../core/backup-manager.js?v=backup-complete-7";
 import { initializeGoogleDriveSync } from "../core/google-drive-sync-v2.js?v=visible-drive-backup-3";

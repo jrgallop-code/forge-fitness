@@ -1,4 +1,4 @@
-import { openWorkoutLogger } from "../workouts/workout-session.js?v=workout-source-stats-1";
+import { openWorkoutLogger } from "../workouts/workout-session.js?v=native-navigation-stability-1";
 import { getTrainingPreferences } from "../core/training-preferences.js?v=onboarding-training-days-1";
 import { createOnboardingSchedule } from "./onboarding-schedule.js?v=onboarding-training-days-1";
 

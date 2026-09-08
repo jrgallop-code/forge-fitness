@@ -135,6 +135,12 @@
         #09090b;
 }
 
+/* Prevent the logger from painting before its synchronous recovery check is mounted. */
+.workout-session-logger.adaptive-recovery-pending {
+    visibility: hidden;
+    pointer-events: none;
+}
+
 .adaptive-flow-screen {
     width: min(100%,560px);
     min-height: calc(100dvh - 46px - env(safe-area-inset-top) - env(safe-area-inset-bottom));

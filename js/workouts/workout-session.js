@@ -5,6 +5,11 @@ import {
 }
 from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { classifyWorkoutSource } from "./workout-source.js?v=workout-source-stats-1";
+import {
+    getAdaptiveGuidanceSettings,
+    getDeloadPreviewRequest
+} from "../more/adaptive-guidance-settings.js?v=deload-workout-preview-1";
+import { openWorkoutMode } from "./workout-mode.js?v=native-navigation-stability-1";
 
 import {
     getExerciseOptions
@@ -359,9 +364,16 @@ function renderWorkoutLogger({
     `;
 
 
-    document
-        .querySelector(".workout-page")
-        ?.appendChild(logger);
+    if (editingSessionId) {
+        document
+            .querySelector(".workout-page")
+            ?.appendChild(logger);
+    }
+    else {
+        // Mount directly into the fixed workout surface. Moving the logger here
+        // on a later animation frame caused the underlying Workout page to flash.
+        openWorkoutMode(logger);
+    }
 
 
     bindWorkoutTimerButtons(logger);
@@ -425,10 +437,16 @@ function renderWorkoutLogger({
         }
     }
 
-    logger.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-    });
+    const workoutMode = logger.closest("#levelup-workout-mode");
+    if (workoutMode) {
+        workoutMode.scrollTop = 0;
+    }
+    else {
+        logger.scrollIntoView({
+            behavior: "auto",
+            block: "start"
+        });
+    }
 
 }
 
@@ -580,6 +598,13 @@ function renderSessionExercises({
         return;
     }
 
+    const recoveryCheckPending = !editingSessionId &&
+        getAdaptiveGuidanceSettings().enabled &&
+        !getDeloadPreviewRequest() &&
+        !session?.adaptiveGuidance?.recoveryCompleted &&
+        !session?.adaptiveGuidance?.isDeload;
+    logger.classList.toggle("adaptive-recovery-pending", recoveryCheckPending);
+
 
     container.innerHTML = `
         ${editingSessionId ? "" : renderRestTimerPanel(session)}
@@ -722,6 +747,15 @@ function renderSessionExercises({
                 }
             }
         );
+
+    logger.dispatchEvent(new CustomEvent("levelup:workout-session-rendered", {
+        bubbles: true,
+        detail: { recoveryCheckPending }
+    }));
+
+    if (recoveryCheckPending) {
+        window.setTimeout(() => logger.classList.remove("adaptive-recovery-pending"), 1000);
+    }
 
     updateTimerDisplays();
 

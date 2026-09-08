@@ -246,6 +246,7 @@ function enhanceLogger(logger) {
     renderPreviewNavigationNotice();
     if (!guidanceEnabled() && !preview) {
         logger.classList.remove("adaptive-guidance-on", "adaptive-deload-active");
+        logger.classList.remove("adaptive-recovery-pending");
         logger.querySelectorAll(".adaptive-rir-control,.adaptive-deload-banner").forEach(node => node.remove());
         document.querySelectorAll(".adaptive-recovery-flow,.adaptive-post-flow").forEach(node => node.remove());
         return;
@@ -253,6 +254,7 @@ function enhanceLogger(logger) {
     const active = readActive();
     if (!active) {
         if (preview) renderPreviewWaitingBanner(logger);
+        logger.classList.remove("adaptive-recovery-pending");
         return;
     }
     if (!preview) ensureCycle(active);
@@ -261,6 +263,7 @@ function enhanceLogger(logger) {
     if (!preview) renderRecoveryCheck(logger, readActive() || active);
     else document.querySelector(".adaptive-recovery-flow")?.remove();
     logger.querySelectorAll(".session-exercise-card").forEach(card => renderRirTracker(card, readActive() || active));
+    logger.classList.remove("adaptive-recovery-pending");
 }
 
 function applyDeloadMode(logger, active, preview = getDeloadPreviewRequest()) {
@@ -915,6 +918,10 @@ document.addEventListener("change", event => {
 
 window.addEventListener("levelup:workout-completed", handleWorkoutCompleted);
 window.addEventListener("levelup:adaptive-settings-changed", () => enhanceLogger(document.getElementById("workout-session-logger")));
+document.addEventListener("levelup:workout-session-rendered", event => {
+    const logger = event.target?.closest?.("#workout-session-logger") || document.getElementById("workout-session-logger");
+    enhanceLogger(logger);
+});
 window.addEventListener("levelup:deload-preview-requested", () => window.setTimeout(() => {
     renderPreviewNavigationNotice();
     enhanceLogger(document.getElementById("workout-session-logger"));

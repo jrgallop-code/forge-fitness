@@ -235,10 +235,6 @@ function patchWeeklyReviewModal(signals) {
         if (/current weight trend/i.test(label)) {
             setText(value, formatRate(signals.weightRate));
         }
-        if (/independently calculated maintenance|current expenditure used for review/i.test(label)) {
-            setText(labelNode, "Current Expenditure used for review");
-            setText(value, formatCalories(signals.expenditure));
-        }
     });
 }
 

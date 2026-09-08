@@ -113,13 +113,12 @@ function openWeeklyReviewModal(event = {}) {
                 <div><span>Logged weekly average${recommendation.weeklyAverageLoggedDays ? ` (${recommendation.weeklyAverageLoggedDays}/${recommendation.weeklyAverageTotalDays || 7} days)` : ""}</span><strong>${Number.isFinite(recommendation.weeklyAverageCalories) ? `${recommendation.weeklyAverageCalories} kcal/day` : "Not enough logged days"}</strong></div>
                 <div><span>Current weight trend</span><strong>${formatRate(recommendation.actualRate)}</strong></div>
                 <div><span>Goal weight trend</span><strong>${formatRate(recommendation.targetRate)}</strong></div>
-                <div><span>Independently calculated maintenance</span><strong>${recommendation.fullMaintenanceCalories} kcal/day</strong></div>
                 <div><span>${recommendation.goalDailyAdjustment > 0 ? "Goal-pacing surplus" : recommendation.goalDailyAdjustment < 0 ? "Goal-pacing deficit" : "Goal-pacing adjustment"}</span><strong>${formatSignedCalories(recommendation.goalDailyAdjustment)} cal/day</strong></div>
                 <div><span>Calories needed for goal pace</span><strong>${formatSignedCalories(recommendation.requestedPaceCorrection)} cal/day</strong></div>
                 <div><span>Full goal-pacing estimate</span><strong>${recommendation.goalPacingTarget} kcal/day</strong></div>
                 <div class="weekly-calorie-modal-result"><span>${recommendation.isStagedTarget ? "Recommended staged target now" : "Recommended target now"}</span><strong>${recommendation.targetCalories} kcal/day</strong></div>
             </div>
-            ${recommendation.isStagedTarget ? `<small class="weekly-calorie-modal-cap">This is a staged target. Your calculated maintenance remains independent, and Level Up will reassess the difference from the full goal-pacing estimate next week.</small>` : ""}
+            ${recommendation.isStagedTarget ? `<small class="weekly-calorie-modal-cap">This is a staged target. Level Up limits each weekly change and will reassess your progress next week.</small>` : ""}
             ${recommendation.capped ? `<small class="weekly-calorie-modal-cap">Limited to ${formatSignedCalories(recommendation.behavioralChange ?? recommendation.targetChange)} calories from ${Number.isFinite(recommendation.actualIntakeCalories) ? `your ${recommendation.actualIntakeCalories} weekly average` : "your current target"}. The saved target changes by ${formatSignedCalories(recommendation.targetChange)}. Level Up will reassess next week.</small>` : ""}
             <div class="weekly-calorie-modal-actions">
                 <button id="weekly-modal-review-apply" class="primary-btn" type="button">${preview ? `Test update to ${recommendation.targetCalories}` : `Update to ${recommendation.targetCalories}`}</button>

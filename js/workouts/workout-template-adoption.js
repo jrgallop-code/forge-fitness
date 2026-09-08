@@ -2,7 +2,7 @@ import { presetPlans } from "./workout-plans.js?v=proven-template-builder-1";
 import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-plans-2-women-heroes";
 import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybuilder-library-3";
 import { celebrityExpansionPlans } from "./celebrity-expansion-plans.js?v=celebrity-expansion-2";
-import { openWorkoutLogger } from "./workout-session.js?v=workout-source-stats-1";
+import { openWorkoutLogger } from "./workout-session.js?v=native-navigation-stability-1";
 
 const PLAN_KEY = "forge_workout_plans";
 const PENDING_TEMPLATE_KEY = "level_up_pending_template_adoption_v1";

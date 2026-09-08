@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=deload-workout-preview-1";
+import { navigate } from "../core/router.js?v=native-navigation-stability-1";
 
 const STYLE_ID = "level-up-workout-tutorial-prompt-styles";
 const PROMPT_ID = "workout-tutorial-dashboard-prompt";
