@@ -91,11 +91,15 @@ export async function searchFatSecretFoods(query, countryCode, env = {}, options
         }, auth);
     }
 
-    const foods = asArray(payload?.foods?.food);
+    const foods = extractFatSecretSearchFoods(payload);
     const responseCountry = capabilities.canLocalize && normalizedCountry ? normalizedCountry : "US";
     return foods
         .map(food => normalizeFatSecretFood(food, { countryCode: responseCountry }))
         .filter(Boolean);
+}
+
+export function extractFatSecretSearchFoods(payload) {
+    return asArray(payload?.foods_search?.results?.food ?? payload?.foods?.food);
 }
 
 export async function getFatSecretFood(foodId, countryCode, env = {}) {

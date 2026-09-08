@@ -39,6 +39,19 @@ test("FatSecret Basic search uses foods.search while Premier uses localized v5 w
     assert.match(provider, /capabilities\.canLocalize && normalizedCountry/);
 });
 
+test("FatSecret search reads both Premier v5 and Basic response shapes", async () => {
+    const module = await import("../cloud/src/fatsecret-food-provider.js");
+    const premierFood = { food_id: "501", food_name: "Premier Food" };
+    const basicFood = { food_id: "502", food_name: "Basic Food" };
+
+    assert.deepEqual(module.extractFatSecretSearchFoods({
+        foods_search: { results: { food: [premierFood] } }
+    }), [premierFood]);
+    assert.deepEqual(module.extractFatSecretSearchFoods({
+        foods: { food: basicFood }
+    }), [basicFood]);
+});
+
 test("FatSecret food detail uses v1 for Basic and v5 for Premier", () => {
     assert.match(provider, /const version = capabilities\.premier \? "v5" : "v1"/);
     assert.match(provider, /food\/\$\{version\}/);
