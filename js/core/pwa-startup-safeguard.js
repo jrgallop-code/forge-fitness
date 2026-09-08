@@ -55,7 +55,7 @@
         if (document.querySelector('script[data-body-composition-ui]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/progress/body-composition-ui.js?v=body-composition-ui-1";
+        script.src = "js/progress/body-composition-ui.js?v=onboarding-body-step-1";
         script.dataset.bodyCompositionUi = "1";
         document.head.appendChild(script);
     }
