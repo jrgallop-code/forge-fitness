@@ -44,11 +44,11 @@ function schedule() {
 }
 
 function enhanceOnboarding() {
-    const screen = document.querySelector(".onboarding-profile-screen");
+    const screen = document.querySelector(".onboarding-body-composition-screen");
     if (!screen || screen.querySelector("[data-body-fat-visual-selector]")) return;
-    const anchor = screen.querySelector(".onboarding-units-disclosure");
+    const anchor = screen.querySelector("[data-body-composition-slot]");
     const section = visualSelector("onboarding");
-    if (anchor) anchor.insertAdjacentElement("beforebegin", section);
+    if (anchor) anchor.replaceWith(section);
     else screen.appendChild(section);
 }
 
@@ -88,15 +88,16 @@ function enhanceProgress() {
 
 function visualSelector(context) {
     const saved = getBodyFatRange();
+    const onboarding = context === "onboarding";
     const section = document.createElement("section");
     section.className = `body-fat-visual-selector body-fat-visual-selector--${context}`;
     section.dataset.bodyFatVisualSelector = context;
     section.innerHTML = `
-        <div class="body-fat-visual-head">
+        ${onboarding ? `<div class="body-fat-visual-skip"><button type="button" class="body-fat-not-sure" data-body-fat-range="">Not sure</button></div>` : `<div class="body-fat-visual-head">
             <div><span class="eyebrow">BODY COMPOSITION · OPTIONAL</span><h3>Estimated body fat</h3></div>
             <button type="button" class="body-fat-not-sure" data-body-fat-range="">Not sure</button>
         </div>
-        <p>Choose the closest visual range only if you are comfortable estimating. This is an approximation, not a medical assessment.</p>
+        <p>Choose the closest visual range only if you are comfortable estimating. This is an approximation, not a medical assessment.</p>`}
         <div class="body-fat-visual-grid" role="radiogroup" aria-label="Estimated body-fat range">
             ${BODY_FAT_RANGES.map((range, index) => visualRangeCard(range, index, saved?.rangeId === range.id)).join("")}
         </div>
@@ -384,7 +385,7 @@ function ensureStyles() {
         .body-fat-visual-selector{margin:18px 0;padding:16px;border:1px solid color-mix(in srgb,var(--text,#fff) 11%,transparent);border-radius:18px;background:color-mix(in srgb,var(--surface,#151518) 96%,transparent)}
         .body-fat-visual-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.body-fat-visual-head h3{margin:3px 0 0;color:var(--text)}.body-fat-visual-selector>p{margin:8px 0 12px;color:var(--muted);font-size:12px;line-height:1.45}.body-fat-not-sure{border:0;background:transparent;color:var(--accent);font-weight:800;font-size:11px}.body-fat-visual-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.body-fat-visual-card{min-width:0;padding:7px 5px 8px;border:1px solid color-mix(in srgb,var(--text,#fff) 10%,transparent);border-radius:14px;background:color-mix(in srgb,var(--card,#1c1c1e) 96%,transparent);color:var(--text);cursor:pointer}.body-fat-visual-card.selected{border-color:var(--accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 38%,transparent);background:color-mix(in srgb,var(--accent) 8%,var(--card,#1c1c1e))}.body-fat-visual-card strong{display:block;margin-top:3px;font-size:11px}.body-fat-torso{display:block;width:100%;height:74px}.body-fat-torso-fill{fill:color-mix(in srgb,var(--text,#fff) 8%,transparent)}.body-fat-torso-line,.body-fat-definition path{fill:none;stroke:color-mix(in srgb,var(--text,#fff) 55%,transparent);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}.body-fat-visual-foot{display:block;margin-top:10px;color:var(--muted);font-size:10px;line-height:1.4}
         .body-composition-shell{display:grid;gap:14px}.body-composition-header h3{margin:4px 0}.body-composition-header p{margin:0;color:var(--muted);font-size:12px}.body-composition-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.body-composition-summary article{padding:13px;border:1px solid color-mix(in srgb,var(--text,#fff) 10%,transparent);border-radius:15px;background:var(--card)}.body-composition-summary span,.body-composition-summary small{display:block;color:var(--muted);font-size:10px}.body-composition-summary strong{display:block;margin:4px 0;color:var(--text);font-size:19px}.body-composition-log-card,.body-composition-chart-card,.body-composition-history-card,.body-composition-visual-card-wrap{padding:15px;border:1px solid color-mix(in srgb,var(--text,#fff) 10%,transparent);border-radius:18px;background:var(--card)}.body-composition-log-card h4,.body-composition-chart-card h4,.body-composition-history-card h4{margin:3px 0 8px}.body-composition-log-card form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.body-composition-log-card label{display:grid;gap:5px;color:var(--muted);font-size:10px;font-weight:750}.body-composition-log-card input,.body-composition-log-card select{width:100%;box-sizing:border-box}.body-composition-log-card .primary-btn{grid-column:1/-1}.body-composition-log-card [data-body-fat-entry-status]{margin:8px 0 0;color:var(--muted);font-size:11px}.body-composition-chart-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.body-composition-range-tabs{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.body-composition-range-tabs button{min-width:34px;padding:5px 7px;border:1px solid color-mix(in srgb,var(--text,#fff) 10%,transparent);border-radius:999px;background:transparent;color:var(--muted);font-size:9px;font-weight:850}.body-composition-range-tabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}.body-composition-chart-shell{min-height:220px;position:relative}.body-composition-chart-shell canvas{display:block;width:100%}.body-composition-chart-shell p{padding:70px 10px;text-align:center;color:var(--muted);font-size:12px}.body-composition-visual-card-wrap>.body-fat-visual-selector{margin:0;padding:0;border:0;background:transparent}.body-composition-history-row{display:grid;grid-template-columns:minmax(0,1.25fr) .55fr .9fr auto;gap:8px;align-items:center;padding:10px 0;border-top:1px solid color-mix(in srgb,var(--text,#fff) 8%,transparent);font-size:11px}.body-composition-history-row:first-child{border-top:0}.body-composition-history-row span strong,.body-composition-history-row span small{display:block}.body-composition-history-row span small{color:var(--muted);font-size:9px}.body-composition-history-row button{border:0;background:transparent;color:var(--muted);font-size:10px}
-        .body-fat-visual-selector--onboarding{margin-top:16px}.body-fat-visual-selector--profile{margin-bottom:18px}
+        .body-fat-visual-selector--onboarding{margin:0;padding:0;border:0;background:transparent}.body-fat-visual-skip{display:flex;justify-content:flex-end;margin-bottom:9px}.body-fat-visual-selector--profile{margin-bottom:18px}
         @media(max-width:520px){.body-fat-visual-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.body-composition-log-card form{grid-template-columns:1fr}.body-composition-log-card .primary-btn{grid-column:auto}.body-composition-history-row{grid-template-columns:1.1fr .5fr .8fr auto}.body-composition-chart-head{display:grid}.body-composition-range-tabs{justify-content:flex-start}}
     `;
     document.head.appendChild(style);
