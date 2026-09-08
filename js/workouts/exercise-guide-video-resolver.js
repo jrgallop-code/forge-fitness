@@ -1,7 +1,18 @@
 import { FORM_GUIDE_VIDEOS as MANIFEST_VIDEOS } from "./exercise-guide-video-manifest.js?v=form-videos-3";
+import { getAnatomySex } from "../core/anatomy-profile.js?v=female-form-videos-1";
 
 const FORM_VIDEO_ORIGIN = "https://media.leveluphypertrophy.com";
 const FORM_VIDEO_LIBRARY_BASE_URL = `${FORM_VIDEO_ORIGIN}/form-videos`;
+const FEMALE_FORM_VIDEO_BASE_URL = `${FORM_VIDEO_LIBRARY_BASE_URL}/female`;
+
+// The female Drive library covers every currently mapped object except the
+// close-grip bench press. Keep that one on the existing guide until its female
+// clip is supplied, rather than showing a broken player.
+export const FEMALE_MISSING_OBJECT_KEYS = Object.freeze([
+    "close-grip-bench-press.mp4"
+]);
+
+const femaleMissingObjectKeys = new Set(FEMALE_MISSING_OBJECT_KEYS);
 
 // These 51 objects were uploaded through the Cloudflare R2 dashboard at the
 // bucket root. Keep the legacy library under /form-videos, but prefer root for
@@ -63,7 +74,7 @@ export const ROOT_UPLOADED_OBJECT_KEYS = Object.freeze([
 
 const rootUploadedObjectKeys = new Set(ROOT_UPLOADED_OBJECT_KEYS);
 
-function resolveVideo(config) {
+function resolveMaleVideo(config) {
     if (!config?.objectKey) return config || null;
 
     const rootSrc = `${FORM_VIDEO_ORIGIN}/${config.objectKey}`;
@@ -78,13 +89,29 @@ function resolveVideo(config) {
     });
 }
 
+function resolveVideo(config, sex = getAnatomySex()) {
+    const maleVideo = resolveMaleVideo(config);
+    if (!maleVideo?.objectKey || sex !== "female" || femaleMissingObjectKeys.has(maleVideo.objectKey)) {
+        return maleVideo;
+    }
+
+    return Object.freeze({
+        ...maleVideo,
+        src: `${FEMALE_FORM_VIDEO_BASE_URL}/${maleVideo.objectKey}`,
+        fallbackSrc: maleVideo.src,
+        storagePath: "form-videos/female",
+        sex: "female"
+    });
+}
+
 export const FORM_GUIDE_VIDEOS = Object.freeze(Object.fromEntries(
     Object.entries(MANIFEST_VIDEOS).map(([exerciseId, config]) => [
         exerciseId,
-        resolveVideo(config)
+        resolveMaleVideo(config)
     ])
 ));
 
 export function getFormGuideVideo(exerciseId) {
-    return FORM_GUIDE_VIDEOS[exerciseId] || null;
+    const config = MANIFEST_VIDEOS[exerciseId];
+    return config ? resolveVideo(config) : null;
 }

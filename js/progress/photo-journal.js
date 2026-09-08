@@ -2,7 +2,7 @@ const DATABASE_NAME =
     "level_up_media";
 
 const DATABASE_VERSION =
-    1;
+    2;
 
 const PHOTO_STORE =
     "journal_photos";
@@ -886,18 +886,25 @@ async function getAllPhotos() {
         await openDatabase();
 
 
-    const photos =
-        await requestAsPromise(
-            database
-                .transaction(
-                    PHOTO_STORE,
-                    "readonly"
-                )
-                .objectStore(
-                    PHOTO_STORE
-                )
-                .getAll()
-        );
+    let photos;
+
+    try {
+        photos =
+            await requestAsPromise(
+                database
+                    .transaction(
+                        PHOTO_STORE,
+                        "readonly"
+                    )
+                    .objectStore(
+                        PHOTO_STORE
+                    )
+                    .getAll()
+            );
+    }
+    finally {
+        database.close();
+    }
 
 
     return photos.sort(
@@ -999,6 +1006,15 @@ function openDatabase() {
                 () =>
                     reject(
                         request.error
+                    );
+
+
+            request.onblocked =
+                () =>
+                    reject(
+                        new Error(
+                            "Photo storage is temporarily unavailable."
+                        )
                     );
 
         }
@@ -1158,6 +1174,27 @@ function resizeImage(
 function blobToDataUrl(
     blob
 ) {
+
+    if (
+        typeof blob === "string" &&
+        blob.startsWith("data:image/")
+    ) {
+        return Promise.resolve(
+            blob
+        );
+    }
+
+
+    if (
+        typeof Blob === "undefined" ||
+        !(blob instanceof Blob)
+    ) {
+        return Promise.reject(
+            new Error(
+                "A Photo Journal image has an unsupported format."
+            )
+        );
+    }
 
     return new Promise(
         (resolve, reject) => {

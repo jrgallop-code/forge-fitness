@@ -1,6 +1,6 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-guides-1";
 import { expandedExercises } from "./exercise-library-expansion.js?v=exercise-library-expansion-video-1";
-import { getFormGuideVideo } from "./exercise-guide-video-resolver.js?v=form-video-root-fallback-1";
+import { getFormGuideVideo } from "./exercise-guide-video-resolver.js?v=female-form-videos-1";
 
 const STYLE_ID = "level-up-form-guide-video-styles";
 const failedVideos = new Set();
@@ -96,6 +96,7 @@ function createVideoCard(exerciseId, config) {
     const figure = document.createElement("figure");
     figure.className = "exercise-guide-video-card";
     figure.dataset.formGuideVideo = exerciseId;
+    figure.dataset.formGuideSrc = config.src;
     figure.innerHTML = `
         <figcaption class="exercise-guide-video-label">
             <strong>Form demonstration</strong>
@@ -171,7 +172,7 @@ function enhanceGuide(screen) {
     const header = screen.querySelector(".exercise-guide-header");
     if (!header) return;
 
-    const card = existing?.dataset.formGuideVideo === exerciseId
+    const card = existing?.dataset.formGuideVideo === exerciseId && existing?.dataset.formGuideSrc === config.src
         ? existing
         : createVideoCard(exerciseId, config);
 
@@ -221,6 +222,13 @@ observer.observe(document.documentElement, {
 });
 
 document.addEventListener("levelup:open-exercise-guide", queueGuideRefresh);
+function refreshForProfileChange() {
+    failedVideos.clear();
+    queueGuideRefresh();
+}
+
+document.addEventListener("levelup:profile-updated", refreshForProfileChange);
+document.addEventListener("levelup:nutrition-updated", refreshForProfileChange);
 document.addEventListener("visibilitychange", () => {
     if (!document.hidden) queueGuideRefresh();
 });

@@ -11,5 +11,5 @@ test("form guide video lookup uses explicit exercise ids for expanded guides", (
 
 test("form guide loader cache-busts the corrected video enhancer", () => {
   const source = readFileSync("js/workouts/form-guide-svg-enforcer.js", "utf8");
-  assert.match(source, /exercise-guide-videos\.js\?v=form-videos-5-expanded-id-fix/);
+  assert.match(source, /exercise-guide-videos\.js\?v=female-form-videos-1/);
 });

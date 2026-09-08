@@ -6,7 +6,7 @@ import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=ic
 import "./workouts/exercise-search.js?v=exercise-search-4";
 import "./workouts/exercise-guide-resolution-fix.js?v=1";
 import "./workouts/exercise-guide-comprehensive.js?v=comprehensive-form-guides-1";
-import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check-in.js?v=weekly-review-ready-indicator-2";
+import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check-in.js?v=calendar-checkin-day-1";
 import { initializeSatisfactionSurvey } from "./feedback/satisfaction-survey.js?v=satisfaction-survey-1";
 import { applyAppFeaturePreferences } from "./core/app-feature-preferences.js?v=nutrition-feature-choice-1";
 

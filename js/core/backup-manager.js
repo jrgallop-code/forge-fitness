@@ -1,7 +1,7 @@
 import {
     getBackupProviders
 }
-from "./backup-providers.js?v=backup-provider-1";
+from "./backup-providers.js?v=backup-provider-2";
 
 const MAX_BACKUP_SIZE = 100 * 1024 * 1024;
 const INVALID_STORAGE_KEYS = new Set([
@@ -9,7 +9,7 @@ const INVALID_STORAGE_KEYS = new Set([
     "level_up_cloud_session",
     "level_up_cloud_auto_backup_state"
 ]);
-const BACKUP_FORMAT_VERSION = 5;
+const BACKUP_FORMAT_VERSION = 6;
 const LEVEL_UP_INDEXED_DB_PREFIX = "level_up_";
 
 export function initializeBackupManager() {
@@ -188,6 +188,17 @@ async function exportProviderData() {
         }
         catch (error) {
             console.error(`Backup provider ${provider.id} failed:`, error);
+            if (provider.allowUnavailable) {
+                coverage.push({
+                    id: provider.id,
+                    label: provider.label,
+                    storage: provider.storage,
+                    included: false,
+                    unavailable: true,
+                    itemCount: null
+                });
+                continue;
+            }
             throw new Error(`Complete backup stopped because ${provider.label} could not be exported.`);
         }
     }
@@ -247,10 +258,21 @@ export function verifyBackupSnapshot(backup) {
     const providerCoverage = Array.isArray(backup.coverage?.providers) ? backup.coverage.providers : [];
     getBackupProviders().forEach(provider => {
         const coverage = providerCoverage.find(item => item?.id === provider.id);
+        if (provider.allowUnavailable && coverage?.unavailable === true) return;
         if (!coverage?.included || !Object.prototype.hasOwnProperty.call(externalData, provider.id)) {
             throw new Error(`Backup verification failed: ${provider.label} is missing.`);
         }
     });
+}
+
+function formatBackupWarnings(backup) {
+    const unavailable = (backup?.coverage?.providers || [])
+        .filter(provider => provider?.unavailable === true)
+        .map(provider => provider.label)
+        .filter(Boolean);
+    return unavailable.length
+        ? ` ${unavailable.join(", ")} was unavailable and was not included.`
+        : "";
 }
 
 async function exportBackup() {
@@ -271,7 +293,7 @@ async function exportBackup() {
         if (file && navigator.share && navigator.canShare?.({ files: [file] })) {
             try {
                 await navigator.share({ files: [file], title: "Level Up Backup" });
-                setBackupMessage(`Complete backup verified: ${formatSummary(backup.summary)}.`, "success");
+                setBackupMessage(`Backup verified: ${formatSummary(backup.summary)}.${formatBackupWarnings(backup)}`, "success");
                 renderBackupSummary();
                 return;
             }
@@ -292,7 +314,7 @@ async function exportBackup() {
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-        setBackupMessage(`Complete backup verified and exported: ${formatSummary(backup.summary)}.`, "success");
+        setBackupMessage(`Backup verified and exported: ${formatSummary(backup.summary)}.${formatBackupWarnings(backup)}`, "success");
         renderBackupSummary();
     }
     catch (error) {

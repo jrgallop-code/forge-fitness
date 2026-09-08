@@ -1,7 +1,7 @@
 import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=independent-tdee-staged-target-1";
-import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=weekly-review-ready-indicator-2";
-import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=independent-tdee-staged-target-1";
+import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calendar-checkin-day-1";
+import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=calendar-checkin-day-1";
 import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
 
 const FIRST_CHECK_DAY = 14;

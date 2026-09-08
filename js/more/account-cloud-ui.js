@@ -2,7 +2,7 @@ import {
     createBackupSnapshot,
     restoreBackupSnapshot,
     verifyBackupSnapshot
-} from "../core/backup-manager.js?v=backup-complete-6";
+} from "../core/backup-manager.js?v=backup-complete-7";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
