@@ -47,7 +47,10 @@ function handleClick(root,event){
   const button=event.target.closest?.("button"); if(!button||!root.contains(button))return;
   if(button.matches("[data-manual-build]")){root.querySelector("#new-plan-btn")?.click();return;}
   if(button.matches("[data-template-build]")){const d=root.querySelector(".workout-catalogue-details");if(d){d.open=true;d.scrollIntoView({behavior:"smooth",block:"start"});}return;}
-  if(button.matches("[data-smart-build]")){resetState();openWizard(root);return;}
+  if(button.matches("[data-smart-build]")){
+    if(!root.matches?.(".smart-build-dedicated-page")){document.dispatchEvent(new CustomEvent("levelup:navigate",{detail:{page:"program-builder"}}));return;}
+    resetState();openWizard(root);return;
+  }
   if(button.matches("[data-smart-close]")){closeWizard(root);return;}
   if(button.matches("[data-smart-back]")){state.step=Math.max(0,state.step-1);renderStep(root);return;}
   if(button.matches("[data-smart-next]")){if(state.step===5){state.generated=generateProgram();showCoachBuild(root);return;}state.step+=1;renderStep(root);return;}
@@ -79,7 +82,7 @@ function handleInput(root,event){
 function renderLauncher(){return `<section class="smart-build-launcher" data-smart-build-launcher><div class="smart-build-launcher-head"><span class="eyebrow">BUILD A PROGRAM</span><p>Choose how you want to create your training plan.</p></div><div class="smart-build-choice-grid"><button class="smart-build-choice" type="button" data-manual-build><span class="smart-build-choice-title">Manual Build</span><small>Build it yourself</small></button><button class="smart-build-choice" type="button" data-template-build><span class="smart-build-choice-title">Templates</span><small>Start from a proven split</small></button><button class="smart-build-choice smart-build-choice-primary" type="button" data-smart-build><span class="smart-build-badge">GUIDED</span><span class="smart-build-choice-title">Personalized Plan</span><small>Built from a proven template, then adjusted to you</small></button></div></section>`;}
 function renderWizardShell(){return `<section class="smart-build-wizard" data-smart-build-wizard hidden><div class="smart-build-topbar"><div><span class="eyebrow">SMART BUILD</span><h3 data-smart-heading>Program Builder</h3></div><button class="secondary-btn smart-build-close" type="button" data-smart-close>Close</button></div><div class="smart-build-progress"><span data-smart-progress></span></div><div data-smart-step></div></section>`;}
 function openWizard(root){root.querySelector("[data-workout-home]")?.setAttribute("hidden","");const w=root.querySelector("[data-smart-build-wizard]");if(!w)return;w.hidden=false;renderStep(root);w.scrollIntoView({behavior:"smooth",block:"start"});}
-function closeWizard(root){clearCoachBuildTimer();const w=root.querySelector("[data-smart-build-wizard]"),h=root.querySelector("[data-workout-home]");if(w)w.hidden=true;if(h)h.hidden=false;}
+function closeWizard(root){clearCoachBuildTimer();if(root.matches?.(".smart-build-dedicated-page")){document.querySelector('.nav-btn[data-page="workout"]')?.click();return;}const w=root.querySelector("[data-smart-build-wizard]"),h=root.querySelector("[data-workout-home]");if(w)w.hidden=true;if(h)h.hidden=false;}
 function clearCoachBuildTimer(){if(coachBuildTimer){window.clearTimeout(coachBuildTimer);coachBuildTimer=0;}}
 function showCoachBuild(root){clearCoachBuildTimer();state.step=6;renderStep(root);coachBuildTimer=window.setTimeout(()=>{coachBuildTimer=0;if(state.step!==6)return;state.step=7;renderStep(root);},2600);}
 function renderStep(root){const host=root.querySelector("[data-smart-step]"),progress=root.querySelector("[data-smart-progress]"),heading=root.querySelector("[data-smart-heading]");if(!host||!progress)return;const steps=[renderGoalStep,renderScheduleStep,renderExperienceStep,renderPriorityStep,renderEquipmentStep,renderProgrammingStep,renderCoachBuildStep,renderResultStep];progress.style.width=`${Math.min(100,((state.step+1)/(steps.length-1))*100)}%`;if(heading)heading.textContent=`${GOALS[state.goal].label} Program`;host.innerHTML=steps[state.step]();}

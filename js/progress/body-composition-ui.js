@@ -1,5 +1,6 @@
 import {
     BODY_FAT_RANGES,
+    FEMALE_BODY_FAT_RANGES,
     BODY_FAT_METHODS,
     bodyFatMethodLabel,
     estimateBodyComposition,
@@ -9,8 +10,9 @@ import {
     removeBodyFatEntry,
     saveBodyFatEntry,
     saveBodyFatRange
-} from "../core/body-composition.js?v=body-composition-1";
+} from "../core/body-composition.js?v=female-body-fat-ranges-1";
 import { UNIT_KINDS, isMetric, poundsToKilograms } from "../core/unit-system.js?v=granular-units-1";
+import { getNutritionProfile } from "../nutrition/nutrition-storage.js?v=profile-appearance-1";
 
 const WEIGHT_KEY = "forge_weight_entries";
 const STYLE_ID = "level-up-body-composition-styles";
@@ -89,9 +91,12 @@ function enhanceProgress() {
 function visualSelector(context) {
     const saved = getBodyFatRange();
     const onboarding = context === "onboarding";
+    const sex = anatomySex(context);
+    const ranges = sex === "female" ? FEMALE_BODY_FAT_RANGES : BODY_FAT_RANGES;
     const section = document.createElement("section");
     section.className = `body-fat-visual-selector body-fat-visual-selector--${context}`;
     section.dataset.bodyFatVisualSelector = context;
+    section.dataset.bodyFatSex = sex;
     section.innerHTML = `
         ${onboarding ? `<div class="body-fat-visual-skip"><button type="button" class="body-fat-not-sure" data-body-fat-range="">Not sure</button></div>` : `<div class="body-fat-visual-head">
             <div><span class="eyebrow">BODY COMPOSITION · OPTIONAL</span><h3>Estimated body fat</h3></div>
@@ -99,10 +104,19 @@ function visualSelector(context) {
         </div>
         <p>Choose the closest visual range only if you are comfortable estimating. This is an approximation, not a medical assessment.</p>`}
         <div class="body-fat-visual-grid" role="radiogroup" aria-label="Estimated body-fat range">
-            ${BODY_FAT_RANGES.map((range, index) => visualRangeCard(range, index, saved?.rangeId === range.id)).join("")}
+            ${ranges.map((range, index) => visualRangeCard(range, index, saved?.rangeId === range.id)).join("")}
         </div>
         <small class="body-fat-visual-foot">Level Up uses this only as a small background refinement. Your logged calories and Trend Weight remain the main expenditure inputs.</small>`;
     return section;
+}
+
+function anatomySex(context) {
+    if (context === "onboarding") {
+        const selected = document.querySelector(".onboarding-body-composition-screen")?.dataset.anatomySex
+            || window.__levelUpAnatomySexPreview;
+        return selected === "female" ? "female" : "male";
+    }
+    return getNutritionProfile()?.sex === "female" ? "female" : "male";
 }
 
 function visualRangeCard(range, index, selected) {
