@@ -27,7 +27,7 @@ import {
     totalServingLabel,
     updateEntry,
     withUsefulLiquidPortions
-} from "./food-log-data.js?v=calculated-maintenance-1";
+} from "./food-log-data.js?v=food-search-freeze-fix-1";
 import {
     chooseIngredientFood,
     ingredientPortionSelection,

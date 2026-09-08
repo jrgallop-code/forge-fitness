@@ -231,9 +231,10 @@ function ensureAttribution(root = globalThis.document) {
     }
 }
 
-function updateFoodSearchLoadingCopy(root = globalThis.document) {
+export function updateFoodSearchLoadingCopy(root = globalThis.document) {
     const status = root?.querySelector?.("[data-food-search-status]");
-    if (/^Searching\b/i.test(status?.textContent?.trim() || "")) status.textContent = "Searching foods…";
+    const current = status?.textContent?.trim() || "";
+    if (/^Searching\b/i.test(current) && current !== "Searching foods…") status.textContent = "Searching foods…";
 }
 
 if (typeof window !== "undefined") {

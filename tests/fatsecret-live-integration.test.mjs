@@ -22,6 +22,24 @@ globalThis.CustomEvent = class CustomEvent {
 };
 const data = await import("../js/nutrition/food-log-data.js");
 
+test("provider-neutral search copy does not trigger an observer write loop", () => {
+    let writes = 0;
+    const status = {
+        _value: "Searching foods…",
+        get textContent() { return this._value; },
+        set textContent(value) { writes += 1; this._value = value; }
+    };
+    const root = { querySelector: () => status };
+
+    live.updateFoodSearchLoadingCopy(root);
+    assert.equal(writes, 0);
+
+    status._value = "Searching provider catalogues…";
+    live.updateFoodSearchLoadingCopy(root);
+    assert.equal(status.textContent, "Searching foods…");
+    assert.equal(writes, 1);
+});
+
 test("production worker composes FatSecret with the existing food API", () => {
     assert.match(wrangler, /"main": "src\/fatsecret-(?:enabled|diagnostic)-worker\.js"/);
     assert.match(worker, /searchFatSecretFoods/);

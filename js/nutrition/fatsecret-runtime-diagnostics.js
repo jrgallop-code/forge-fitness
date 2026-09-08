@@ -1,4 +1,4 @@
-export * from "./fatsecret-live-cache.js?v=food-search-polish-1";
+export * from "./fatsecret-live-cache.js?v=food-search-freeze-fix-1";
 
 const FOOD_SEARCH_ENDPOINT = "/v1/foods/search";
 const DIAGNOSTIC_PREFIX = "FatSecret:";

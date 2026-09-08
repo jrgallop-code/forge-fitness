@@ -10,7 +10,7 @@ import {
     requestFatSecretEntry,
     sanitizeFatSecretLog,
     sanitizeFatSecretMeals
-} from "./fatsecret-runtime-diagnostics.js?v=food-search-polish-1";
+} from "./fatsecret-runtime-diagnostics.js?v=food-search-freeze-fix-1";
 
 export * from "./food-log-data-core.js?v=fatsecret-live-1";
 

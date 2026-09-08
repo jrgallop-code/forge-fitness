@@ -44,7 +44,7 @@ test("FatSecret runtime state remains available for internal diagnostics", async
 });
 
 test("food log loads the runtime diagnostic module", () => {
-    assert.match(data, /fatsecret-runtime-diagnostics\.js\?v=food-search-polish-1/);
+    assert.match(data, /fatsecret-runtime-diagnostics\.js\?v=food-search-freeze-fix-1/);
     assert.match(client, /window\.__levelUpFatSecretLastStatus/);
     assert.match(client, /missingBindings/);
     assert.doesNotMatch(client, /data-fat-secret-runtime-status|fatSecretRuntimeStatus/);
