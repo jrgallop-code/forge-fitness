@@ -42,6 +42,7 @@ import {
     calculateMacroTargets,
     poundsToKg
 } from "./tdee-calculator.js?v=food-log-macro-bars-1";
+import { getFoodEmoji } from "./food-emoji.js?v=food-result-emoji-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -749,7 +750,7 @@ function foodResultMarkup(food, index) {
         : food.source === "levelup"
         ? `${food.brand || "Level Up"} · Verified${verification ? ` · ${verification}` : ""}`
         : (food.brand || food.dataType || "USDA food");
-    return `<button class="food-result" type="button" data-food-result="${index}"><span><strong>${escapeHtml(food.name)}</strong><small>${escapeHtml(sourceLabel)}</small></span><b>${Math.round(portion?.nutrition?.calories || 0)} kcal<small>${escapeHtml(portion?.label || "per 100 g")}</small></b></button>`;
+    return `<button class="food-result" type="button" data-food-result="${index}"><span class="food-result-emoji" aria-hidden="true">${getFoodEmoji(food)}</span><span class="food-result-copy"><strong>${escapeHtml(food.name)}</strong><small>${escapeHtml(sourceLabel)}</small></span><b>${Math.round(portion?.nutrition?.calories || 0)} kcal<small>${escapeHtml(portion?.label || "per 100 g")}</small></b></button>`;
 }
 
 async function chooseFood(food) {
