@@ -1,5 +1,5 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
-import { initializeManualSupersetBuilder } from "./manual-superset-builder.js?v=manual-superset-builder-1";
+import { initializeManualSupersetBuilder } from "./manual-superset-builder.js?v=manual-superset-builder-2";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 const LOWER_BODY_MAJOR = new Set(["Quads", "Hamstrings", "Glutes"]);

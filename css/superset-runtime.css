@@ -1,1 +1,69 @@
-.superset-runtime-banner{margin:8px 0 10px;padding:9px 10px;border:1px solid #6f292e;border-radius:11px;background:#211316;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:3px 8px}.superset-runtime-label{width:max-content;padding:3px 6px;border-radius:999px;background:#92222a;color:#fff;font-size:.6rem;font-weight:900;letter-spacing:.08em}.superset-runtime-banner>strong{font-size:.72rem;color:#f0d7d9}.superset-runtime-banner>small{grid-column:1/-1;color:#b7a4a6;font-size:.7rem;line-height:1.35}.superset-live-cue{margin:8px 0 10px;padding:11px 12px;border:1px solid #6d292e;border-radius:12px;background:#1c1214;display:grid;gap:3px}.superset-live-cue[data-tone="rest"]{border-color:#665828;background:#1c1a10}.superset-live-cue[data-tone="neutral"]{border-color:#38383e;background:#17171a}.superset-live-cue strong{font-size:.86rem}.superset-live-cue span{color:#bbb3b4;font-size:.72rem}.superset-cue-kicker{font-weight:900;letter-spacing:.07em;color:#d75d64!important;font-size:.6rem!important}.superset-live-cue[data-tone="rest"] .superset-cue-kicker{color:#d9c76c!important}.session-exercise-card[data-superset-group]{border-color:#49272a}.session-exercise-card[data-superset-group].active-exercise-card{box-shadow:0 0 0 1px #6f292e inset}
+.superset-runtime-banner {
+    display:grid;
+    grid-template-columns:auto 1fr;
+    align-items:center;
+    gap:3px 8px;
+    margin:8px 0 10px;
+    padding:9px 10px;
+    border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line));
+    border-radius:11px;
+    background:var(--accent-soft);
+    color:var(--text);
+}
+
+.superset-runtime-label {
+    width:max-content;
+    padding:3px 6px;
+    border-radius:999px;
+    background:var(--accent);
+    color:var(--accent-contrast);
+    font-size:.6rem;
+    font-weight:900;
+    letter-spacing:.08em;
+}
+
+.superset-runtime-banner>strong {
+    color:var(--heading);
+    font-size:.72rem;
+}
+
+.superset-runtime-banner>small {
+    grid-column:1/-1;
+    color:var(--text-secondary);
+    font-size:.7rem;
+    line-height:1.35;
+}
+
+.superset-live-cue {
+    display:grid;
+    gap:3px;
+    margin:8px 0 10px;
+    padding:11px 12px;
+    border:1px solid color-mix(in srgb,var(--accent) 34%,var(--line));
+    border-radius:12px;
+    background:var(--accent-soft);
+    color:var(--text);
+}
+
+.superset-live-cue[data-tone="rest"] {
+    border-color:color-mix(in srgb,var(--warning) 42%,var(--line));
+    background:color-mix(in srgb,var(--warning) 10%,var(--surface-raised));
+}
+
+.superset-live-cue[data-tone="neutral"] {
+    border-color:var(--line);
+    background:var(--surface-raised);
+}
+
+.superset-live-cue strong { color:var(--heading);font-size:.86rem; }
+.superset-live-cue span { color:var(--text-secondary);font-size:.72rem; }
+.superset-cue-kicker { color:var(--accent-text)!important;font-size:.6rem!important;font-weight:900;letter-spacing:.07em; }
+.superset-live-cue[data-tone="rest"] .superset-cue-kicker { color:var(--warning-text)!important; }
+
+.session-exercise-card[data-superset-group] {
+    border-color:color-mix(in srgb,var(--accent) 36%,var(--card-border));
+}
+
+.session-exercise-card[data-superset-group].active-exercise-card {
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 48%,transparent) inset;
+}

@@ -647,6 +647,44 @@ html[data-theme] .cardio-notes-toggle {
     -webkit-text-fill-color: var(--text) !important;
 }
 
+/* Superset controls previously retained fixed black and red styling in Arctic
+   and other appearances. Every state now follows the active accent and surface. */
+html[data-theme] :is(.session-inline-superset,.session-superset-remove,.superset-runtime-banner>button,.manual-superset-pair,.manual-superset-remove) {
+    border-color: var(--line) !important;
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+}
+
+html[data-theme] :is(.session-exercise-card[data-superset-group] .session-inline-superset,.session-superset-option.selected,.manual-superset-badge) {
+    border-color: color-mix(in srgb,var(--accent) 52%,var(--line)) !important;
+    background: var(--accent-soft) !important;
+    color: var(--accent-text) !important;
+    -webkit-text-fill-color: var(--accent-text) !important;
+}
+
+html[data-theme] :is(.session-superset-option.selected .session-superset-option-marker,.superset-runtime-label,.logger-exercise-strip button.is-superset.active>span) {
+    border-color: var(--accent) !important;
+    background: var(--accent) !important;
+    color: var(--accent-contrast) !important;
+    -webkit-text-fill-color: var(--accent-contrast) !important;
+}
+
+html[data-theme] :is(.session-superset-current span,.session-superset-option small,.session-superset-empty,.superset-runtime-banner>small,.superset-live-cue span) {
+    color: var(--text-secondary) !important;
+    -webkit-text-fill-color: var(--text-secondary) !important;
+}
+
+html[data-theme] :is(.superset-cue-kicker,.session-superset-option em,.logger-exercise-strip button.is-superset>span,.manual-superset-pair) {
+    color: var(--accent-text) !important;
+    -webkit-text-fill-color: var(--accent-text) !important;
+}
+
+html[data-theme] .manual-superset-member {
+    border-color: color-mix(in srgb,var(--accent) 38%,var(--line)) !important;
+    box-shadow: inset 3px 0 0 var(--accent) !important;
+}
+
 /*
  * Onboarding is theme-live: choosing an appearance updates the open flow before
  * the user continues. Keep this final layer authoritative over the older native,

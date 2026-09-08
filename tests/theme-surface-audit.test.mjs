@@ -11,13 +11,16 @@ const planDetails = fs.readFileSync('css/workout-plan-details.css', 'utf8');
 const restAlarm = fs.readFileSync('js/workouts/rest-alarm-phase1.js', 'utf8');
 const globalRestAlarm = fs.readFileSync('js/workouts/rest-alarm-button-stability.js', 'utf8');
 const cardioTimerStyles = fs.readFileSync('css/logger-cardio-timer.css', 'utf8');
+const supersetRuntimeStyles = fs.readFileSync('css/superset-runtime.css', 'utf8');
+const sessionSupersetStyles = fs.readFileSync('css/session-superset-live.css', 'utf8');
+const manualSuperset = fs.readFileSync('js/workouts/manual-superset-builder.js', 'utf8');
 const importerStyles = fs.readFileSync('css/routine-importer.css', 'utf8');
 const importerSummaryStyles = fs.readFileSync('css/routine-importer-summary.css', 'utf8');
 const worker = fs.readFileSync('service-worker.js', 'utf8');
 
 test('theme surface audit loads after the appearance stylesheet', () => {
   const appearance = html.indexOf('css/appearance-themes.css');
-  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-13');
+  const audit = html.indexOf('css/theme-surface-audit.css?v=theme-surface-audit-14');
   assert.ok(appearance >= 0);
   assert.ok(audit > appearance);
 });
@@ -129,11 +132,29 @@ test('late-injected install guidance follows the selected theme', () => {
 });
 
 test('cardio timer and previous-workout text follow every appearance theme', () => {
-  assert.match(cardioTimerStyles, /\.cardio-stopwatch-display\s*\{[\s\S]*color:var\(--text, #fff\)/);
+  assert.match(cardioTimerStyles, /\.cardio-stopwatch-display\s*\{[\s\S]*color:var\(--text,\s*#fff\)/);
   assert.match(styles, /\.cardio-stopwatch-display, \.previous-performance strong/);
   assert.match(styles, /-webkit-text-fill-color:\s*var\(--text\)\s*!important/);
   assert.match(styles, /\.cardio-stopwatch-heading span/);
   assert.match(styles, /\.cardio-notes-toggle/);
+});
+
+test('superset controls use the selected appearance instead of fixed black and red', () => {
+  assert.match(supersetRuntimeStyles, /background:var\(--accent-soft\)/);
+  assert.match(supersetRuntimeStyles, /background:var\(--accent\)/);
+  assert.match(sessionSupersetStyles, /background: var\(--surface-raised\)/);
+  assert.match(sessionSupersetStyles, /background: var\(--accent-soft\)/);
+  assert.match(manualSuperset, /background:var\(--accent-soft\)/);
+  assert.match(styles, /Superset controls previously retained fixed black and red styling/);
+  assert.doesNotMatch(supersetRuntimeStyles, /#211316|#92222a|#6f292e/);
+  assert.doesNotMatch(sessionSupersetStyles, /#17171c|#ef1821|rgba\(239,24,33/);
+  assert.doesNotMatch(manualSuperset, /rgba\(239,68,68|rgba\(127,29,29/);
+});
+
+test('cardio timer programming and fields clear the persistent menu bar', () => {
+  assert.match(cardioTimerStyles, /body\.cardio-alarm-sheet-open \.bottom-nav\s*\{[\s\S]*display:none!important/);
+  assert.match(cardioTimerStyles, /:has\(\.cardio-session-card\) #session-exercises\s*\{[\s\S]*padding-bottom:calc\(112px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(cardioTimerStyles, /\.cardio-session-card\s*\{[\s\S]*scroll-margin-bottom:calc\(112px \+ env\(safe-area-inset-bottom\)\)/);
 });
 
 test('dashboard workout breakdown action stays legible in every appearance', () => {
@@ -170,5 +191,5 @@ test('late-loaded Routine Import controls cannot leak dark surfaces into light a
 });
 
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-02-141/);
+  assert.match(worker, /2026-09-08-277/);
 });

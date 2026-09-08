@@ -238,11 +238,11 @@ function injectStyles() {
     const style = document.createElement("style");
     style.id = "manual-superset-builder-styles";
     style.textContent = `
-        .manual-superset-control{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)}
-        .manual-superset-pair,.manual-superset-remove{border:0;background:transparent;color:#fff;font-size:.72rem;font-weight:800;padding:4px 0;cursor:pointer}
-        .manual-superset-pair{color:#d4d4d8}.manual-superset-remove{color:#fca5a5}
-        .manual-superset-badge{display:inline-flex;align-items:center;border:1px solid rgba(239,68,68,.45);border-radius:999px;padding:4px 8px;color:#fecaca;background:rgba(127,29,29,.24);font-size:.65rem;font-weight:900;letter-spacing:.05em}
-        .manual-superset-member{border-color:rgba(239,68,68,.35)!important;box-shadow:inset 3px 0 0 rgba(239,68,68,.75)}
+        .manual-superset-control{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+        .manual-superset-pair,.manual-superset-remove{border:0;background:transparent;color:var(--text);font-size:.72rem;font-weight:800;padding:4px 0;cursor:pointer}
+        .manual-superset-pair{color:var(--accent-text)}.manual-superset-remove{color:var(--text-secondary)}
+        .manual-superset-badge{display:inline-flex;align-items:center;border:1px solid color-mix(in srgb,var(--accent) 48%,var(--line));border-radius:999px;padding:4px 8px;color:var(--accent-text);background:var(--accent-soft);font-size:.65rem;font-weight:900;letter-spacing:.05em}
+        .manual-superset-member{border-color:color-mix(in srgb,var(--accent) 38%,var(--line))!important;box-shadow:inset 3px 0 0 var(--accent)}
         .manual-superset-hint{color:var(--muted,#a1a1aa);font-size:.68rem}
     `;
     document.head.appendChild(style);

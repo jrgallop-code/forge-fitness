@@ -3,10 +3,10 @@
   min-height: 32px;
   margin: 0;
   padding: 6px 10px;
-  border: 1px solid rgba(255,255,255,.11);
+  border: 1px solid var(--line);
   border-radius: 9px;
-  background: #17171c;
-  color: #e8e8eb;
+  background: var(--surface-raised);
+  color: var(--text);
   font-size: 9px;
   font-weight: 850;
   letter-spacing: .035em;
@@ -18,9 +18,9 @@
 }
 
 .session-exercise-card[data-superset-group] .session-inline-superset {
-  border-color: rgba(239,24,33,.55);
-  background: rgba(239,24,33,.11);
-  color: #fff;
+  border-color: color-mix(in srgb,var(--accent) 52%,var(--line));
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .session-superset-current {
@@ -28,13 +28,14 @@
   gap: 2px;
   margin: 0 0 14px;
   padding: 10px 11px;
-  border: 1px solid rgba(255,255,255,.09);
+  border: 1px solid var(--line);
   border-radius: 12px;
-  background: #151517;
+  background: var(--surface-raised);
+  color: var(--text);
 }
 
 .session-superset-current span {
-  color: rgba(255,255,255,.5);
+  color: var(--muted);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: .045em;
@@ -42,7 +43,7 @@
 }
 
 .session-superset-current strong {
-  color: #fff;
+  color: var(--heading);
   font-size: 13px;
 }
 
@@ -60,16 +61,16 @@
   width: 100%;
   min-height: 56px;
   padding: 9px 10px;
-  border: 1px solid rgba(255,255,255,.09);
+  border: 1px solid var(--line);
   border-radius: 12px;
-  background: #171719;
-  color: #fff;
+  background: var(--surface-raised);
+  color: var(--text);
   text-align: left;
 }
 
 .session-superset-option.selected {
-  border-color: rgba(239,24,33,.5);
-  background: rgba(239,24,33,.09);
+  border-color: color-mix(in srgb,var(--accent) 52%,var(--line));
+  background: var(--accent-soft);
 }
 
 .session-superset-option-marker {
@@ -77,17 +78,18 @@
   place-items: center;
   width: 28px;
   height: 28px;
-  border: 1px solid rgba(255,255,255,.12);
+  border: 1px solid var(--line);
   border-radius: 9px;
-  background: #202024;
-  color: #fff;
+  background: var(--surface);
+  color: var(--text);
   font-size: 17px;
   font-weight: 800;
 }
 
 .session-superset-option.selected .session-superset-option-marker {
-  border-color: #ef1821;
-  background: #ef1821;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
 }
 
 .session-superset-option strong,
@@ -102,12 +104,12 @@
 
 .session-superset-option small {
   margin-top: 3px;
-  color: rgba(255,255,255,.5);
+  color: var(--muted);
   font-size: 9px;
 }
 
 .session-superset-option em {
-  color: #ff6971;
+  color: var(--accent-text);
   font-size: 9px;
   font-style: normal;
   font-weight: 900;
@@ -118,15 +120,18 @@
   width: 100%;
   min-height: 40px;
   margin-top: 12px;
-  color: #ff737a;
+  border-color: var(--line);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
 }
 
 .session-superset-empty {
   margin: 0;
   padding: 12px;
-  border: 1px solid rgba(255,255,255,.08);
+  border: 1px solid var(--line);
   border-radius: 11px;
-  color: rgba(255,255,255,.56);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
   font-size: 10px;
   line-height: 1.4;
 }
@@ -143,10 +148,10 @@
   align-self: center;
   min-height: 29px;
   padding: 5px 8px;
-  border: 1px solid rgba(255,255,255,.11);
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: #2a181b;
-  color: #fff;
+  background: var(--surface);
+  color: var(--text);
   font-size: 9px;
   font-weight: 850;
 }
@@ -160,13 +165,13 @@
   min-width: 28px;
   padding: 0 5px;
   border-radius: 999px;
-  background: rgba(239,24,33,.18);
-  color: #ff737a;
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 
 .logger-exercise-strip button.is-superset.active > span {
-  background: #ef1821;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-contrast);
 }
 
 @media (max-width: 380px) {

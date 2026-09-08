@@ -165,6 +165,24 @@ body.cardio-alarm-sheet-open {
     overflow:hidden;
 }
 
+/* The timer-programming sheet is an immersive task. Hiding the persistent tab
+   bar prevents it from covering the sheet controls on compact iPhone screens. */
+body.cardio-alarm-sheet-open .bottom-nav {
+    display:none!important;
+}
+
+/* Keep the final cardio fields/actions scrollable above the persistent tab bar
+   when the timer sheet is closed. */
+.workout-session-logger:has(.cardio-session-card) #session-exercises {
+    box-sizing:border-box;
+    padding-bottom:calc(112px + env(safe-area-inset-bottom));
+    scroll-padding-bottom:calc(112px + env(safe-area-inset-bottom));
+}
+
+.workout-session-logger .cardio-session-card {
+    scroll-margin-bottom:calc(112px + env(safe-area-inset-bottom));
+}
+
 .cardio-alarm-sheet-overlay[hidden] {
     display:none!important;
 }
@@ -172,7 +190,7 @@ body.cardio-alarm-sheet-open {
 .cardio-alarm-sheet-overlay {
     position:fixed;
     inset:0;
-    z-index:12050;
+    z-index:31050;
     display:flex;
     align-items:flex-end;
     justify-content:center;
@@ -414,7 +432,7 @@ body.cardio-alarm-sheet-open {
     left:max(12px,env(safe-area-inset-left));
     right:max(12px,env(safe-area-inset-right));
     bottom:calc(72px + env(safe-area-inset-bottom));
-    z-index:12060;
+    z-index:31060;
     display:grid;
     grid-template-columns:34px minmax(0,1fr);
     gap:9px;
