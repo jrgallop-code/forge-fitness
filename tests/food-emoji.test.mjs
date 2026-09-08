@@ -37,6 +37,8 @@ test("food search copy stays provider-neutral", () => {
     assert.doesNotMatch(foodLog, /USDA food/);
     assert.doesNotMatch(foodLog, /verifiedCount/);
     assert.doesNotMatch(foodLog, /· Verified/);
+    assert.doesNotMatch(foodLog, /Food data from Level Up verified sources/);
+    assert.match(foodLog, /class="food-data-credit" aria-label="Food data attribution"><\/p>/);
     assert.doesNotMatch(liveCache, /Sources:/);
     assert.doesNotMatch(diagnostics, /target\.textContent/);
 });

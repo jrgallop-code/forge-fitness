@@ -58,7 +58,7 @@ test('Explore supports filters, evidence guides and a saved reading list', () =>
   assert.match(explore, /guide-rest/);
   assert.match(styles, /\.explore-tabs/);
   assert.match(styles, /@media\(max-width:520px\)/);
-  assert.match(worker, /2026-09-08-281/);
+  assert.match(worker, /2026-09-08-282/);
 });
 
 test('Explore photo headings and theme cards retain readable contrast', () => {
