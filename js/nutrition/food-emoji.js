@@ -6,7 +6,7 @@ const FOOD_EMOJI_RULES = [
     [/\bpizza\b/i, "🍕"],
     [/\b(?:hamburger|burger)\b/i, "🍔"],
     [/\b(?:french fries|fries)\b/i, "🍟"],
-    [/\b(?:sandwich|submarine|sub sandwich)\b/i, "🥪"],
+    [/\b(?:sandwich|submarine|sub sandwich|croissan'?wich|panini|clubhouse)\b/i, "🥪"],
     [/\b(?:taco|tacos)\b/i, "🌮"],
     [/\b(?:burrito|wrap)\b/i, "🌯"],
     [/\b(?:soup|stew|chowder)\b/i, "🍲"],
@@ -49,6 +49,9 @@ const FOOD_EMOJI_RULES = [
     [/\b(?:chocolate|candy|confection)\b/i, "🍫"],
     [/\b(?:cake|cupcake)\b/i, "🍰"],
     [/\b(?:donut|doughnut)\b/i, "🍩"],
+    [/\b(?:muffin|croissant|pastry|danish)\b/i, "🥐"],
+    [/\b(?:pancake|pancakes|waffle|waffles)\b/i, "🥞"],
+    [/\b(?:hot dog|hotdog)\b/i, "🌭"],
     [/\bpopcorn\b/i, "🍿"]
 ];
 

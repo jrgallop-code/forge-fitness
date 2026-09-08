@@ -22,6 +22,21 @@ test("food result emojis are local presentation and do not alter provider reques
     assert.match(foodLog, /getFoodEmoji\(food\)/);
     assert.match(foodLog, /class="food-result-emoji" aria-hidden="true"/);
     assert.match(foodLog, /class="food-entry-emoji" aria-hidden="true"/);
-    assert.match(styles, /grid-template-columns:42px minmax\(0,1fr\) auto/);
+    assert.match(styles, /grid-template-columns:48px minmax\(0,1fr\) auto/);
+    assert.match(styles, /font-size:32px/);
     assert.doesNotMatch(emojiSource, /fetch\s*\(/);
+});
+
+test("food search copy stays provider-neutral", () => {
+    const foodLog = readFileSync(new URL("../js/nutrition/food-log.js", import.meta.url), "utf8");
+    const liveCache = readFileSync(new URL("../js/nutrition/fatsecret-live-cache.js", import.meta.url), "utf8");
+    const diagnostics = readFileSync(new URL("../js/nutrition/fatsecret-runtime-diagnostics.js", import.meta.url), "utf8");
+
+    assert.match(foodLog, /Searching foods…/);
+    assert.doesNotMatch(foodLog, /Searching Level Up, USDA/);
+    assert.doesNotMatch(foodLog, /USDA food/);
+    assert.doesNotMatch(foodLog, /verifiedCount/);
+    assert.doesNotMatch(foodLog, /· Verified/);
+    assert.doesNotMatch(liveCache, /Sources:/);
+    assert.doesNotMatch(diagnostics, /target\.textContent/);
 });

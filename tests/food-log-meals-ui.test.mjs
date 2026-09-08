@@ -105,7 +105,7 @@ test("logged meal rows show food emojis and stay expanded after an item is remov
     assert.match(module, /expandedMealKeys\.has\(mealExpansionKey\(selectedDate, meal\)\)/);
     assert.match(module, /if \(details\.open\) expandedMealKeys\.add\(key\)/);
     assert.match(module, /data-food-meal="\$\{meal\}"\$\{expanded \? " open" : ""\}/);
-    assert.match(styles, /\.food-entry-edit\{grid-template-columns:38px minmax\(0,1fr\) auto 12px\}/);
+    assert.match(styles, /\.food-entry-edit\{grid-template-columns:44px minmax\(0,1fr\) auto 12px\}/);
 });
 
 test("food diary uses a restrained native typography hierarchy", async () => {

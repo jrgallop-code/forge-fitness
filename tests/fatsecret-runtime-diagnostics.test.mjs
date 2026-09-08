@@ -16,7 +16,7 @@ test("production Worker always exposes a FatSecret search diagnostic", () => {
     assert.match(worker, /FATSECRET_CLIENT_SECRET/);
 });
 
-test("food search displays safe FatSecret runtime state", async () => {
+test("FatSecret runtime state remains available for internal diagnostics", async () => {
     const module = await import("../js/nutrition/fatsecret-runtime-diagnostics.js");
     assert.equal(module.formatStatus({ configured: false, error: "credentials_missing" }),
         "FatSecret: not connected — Cloudflare credentials missing");
@@ -44,10 +44,11 @@ test("food search displays safe FatSecret runtime state", async () => {
 });
 
 test("food log loads the runtime diagnostic module", () => {
-    assert.match(data, /fatsecret-runtime-diagnostics\.js\?v=fatsecret-runtime-2/);
+    assert.match(data, /fatsecret-runtime-diagnostics\.js\?v=food-search-polish-1/);
     assert.match(client, /window\.__levelUpFatSecretLastStatus/);
     assert.match(client, /missingBindings/);
-    assert.match(client, /data-fat-secret-runtime-status|fatSecretRuntimeStatus/);
+    assert.doesNotMatch(client, /data-fat-secret-runtime-status|fatSecretRuntimeStatus/);
+    assert.doesNotMatch(client, /target\.textContent/);
 });
 
 test("FatSecret attribution is hidden from the food-sheet footer", () => {

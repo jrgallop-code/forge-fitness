@@ -42,7 +42,7 @@ import {
     calculateMacroTargets,
     poundsToKg
 } from "./tdee-calculator.js?v=food-log-macro-bars-1";
-import { getFoodEmoji } from "./food-emoji.js?v=food-entry-emoji-1";
+import { getFoodEmoji } from "./food-emoji.js?v=food-artwork-polish-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -717,7 +717,7 @@ async function searchFoods(event) {
         renderFoodResults(document.querySelector("[data-food-results]"), historyFoods);
         return setText("[data-food-search-status]", historyFoods.length ? `${historyFoods.length} previously logged matches` : "Sign in to search foods. Custom foods still work offline.");
     }
-    setText("[data-food-search-status]", "Searching Level Up, USDA and Open Food Facts…");
+    setText("[data-food-search-status]", "Searching foods…");
     const results = document.querySelector("[data-food-results]");
     if (results) results.innerHTML = "";
     foodSearchController?.abort();
@@ -732,9 +732,8 @@ async function searchFoods(event) {
         if (!response.ok) throw new Error(payload.error || "Food search could not be loaded.");
         const foods = prioritizeLoggedFoodMatches(query, payload.foods || []);
         renderFoodResults(results, foods);
-        const verifiedCount = foods.filter(food => food?.source === "levelup").length;
         const historyCount = foods.filter(food => food?.previouslyLogged).length;
-        const countLabel = `${foods.length} matches${historyCount ? ` · ${historyCount} previously logged` : ""}${verifiedCount ? ` · ${verifiedCount} Level Up verified` : ""}`;
+        const countLabel = `${foods.length} matches${historyCount ? ` · ${historyCount} previously logged` : ""}`;
         setText("[data-food-search-status]", foods.length ? countLabel : "No matches. Try a simpler name or create a custom food.");
     }
     catch (error) {
@@ -751,14 +750,9 @@ function renderFoodResults(container, foods) {
 
 function foodResultMarkup(food, index) {
     const portion = withUsefulLiquidPortions(food).portions?.[0];
-    const verification = food?.provenance?.verificationStatus === "verified"
-        ? `${food.countryCode || ""} official source${food?.provenance?.nutritionScope === "calories_only" ? " · Calories only" : ""}`.trim()
-        : "";
     const sourceLabel = food.previouslyLogged
-        ? `${food.brand || "Your history"} · Previously logged`
-        : food.source === "levelup"
-        ? `${food.brand || "Level Up"} · Verified${verification ? ` · ${verification}` : ""}`
-        : (food.brand || food.dataType || "USDA food");
+        ? `${food.brand ? `${food.brand} · ` : ""}Previously logged`
+        : (food.brand || (food?.provenance?.nutritionScope === "calories_only" ? "Calories only" : "Generic food"));
     return `<button class="food-result" type="button" data-food-result="${index}"><span class="food-result-emoji" aria-hidden="true">${getFoodEmoji(food)}</span><span class="food-result-copy"><strong>${escapeHtml(food.name)}</strong><small>${escapeHtml(sourceLabel)}</small></span><b>${Math.round(portion?.nutrition?.calories || 0)} kcal<small>${escapeHtml(portion?.label || "per 100 g")}</small></b></button>`;
 }
 
@@ -774,7 +768,7 @@ async function chooseFood(food) {
         }
         catch (error) {
             if (error?.name === "AbortError" || requestId !== foodSelectionRequest) return;
-            renderFoodPortionPanel(food, "Full serving choices could not load. Showing the available USDA value.");
+            renderFoodPortionPanel(food, "Full serving choices could not load. Showing the available value.");
         }
         return;
     }
@@ -785,7 +779,7 @@ async function loadFoodDetails(food) {
     const cacheKey = String(food.fdcId);
     if (foodDetailCache.has(cacheKey)) return foodDetailCache.get(cacheKey);
     const token = sessionToken();
-    if (!token) throw new Error("Sign in to load USDA serving details.");
+    if (!token) throw new Error("Sign in to load serving details.");
     foodDetailController = new AbortController();
     const response = await fetch(`${API_URL}/v1/foods/${encodeURIComponent(cacheKey)}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -804,7 +798,7 @@ function renderFoodLoading(food) {
     panel.hidden = false;
     panel.innerHTML = `
         <div class="food-portion-heading"><div><span class="eyebrow">${addContext === "edit" ? "EDIT LOGGED FOOD" : editingMealItemIndex !== null ? "EDIT MEAL ITEM" : "ADD FOOD"}</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="${addContext === "edit" ? "Cancel editing" : "Back to results"}">×</button></div>
-        <div class="food-portion-loading" role="status"><strong>Loading servings…</strong><span>Getting the per-item options from USDA.</span></div>`;
+        <div class="food-portion-loading" role="status"><strong>Loading servings…</strong><span>Getting the available per-item options.</span></div>`;
     panel.querySelector("[data-food-portion-close]")?.addEventListener("click", closeFoodPortionPanel);
 }
 
@@ -1321,7 +1315,7 @@ function renderMealBuilder() {
     const voiceMode = Boolean(mealDraft.voiceMode);
     panel.innerHTML = `
         <header class="food-builder-heading"><div><span class="eyebrow">${voiceMode ? "VOICE LOG" : "MY MEALS"}</span><h3>${voiceMode ? "Review Ingredients" : editingMeal ? "Edit Meal" : "Build a Meal"}</h3></div><button type="button" data-meal-builder-close aria-label="Close meal builder">×</button></header>
-        ${voiceMode ? '<p class="food-voice-review-copy">Check every food and amount before logging. Level Up uses matched database foods for macros and never invents nutrition values.</p>' : `<label>Meal name<input type="text" maxlength="100" value="${escapeHtml(mealDraft.name)}" placeholder="Post-workout lunch" data-meal-name></label><div class="food-builder-photo"><button type="button" data-meal-photo-pick>${mealDraft.photoDataUrl ? `<img src="${escapeHtml(mealDraft.photoDataUrl)}" alt="Meal thumbnail"><span>Change photo</span>` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>'}</button>${mealDraft.photoDataUrl ? '<button type="button" data-meal-photo-remove>Remove</button>' : ""}<input type="file" accept="image/*" data-meal-photo-input hidden></div>`}
+        ${voiceMode ? '<p class="food-voice-review-copy">Check every food and amount before logging. Level Up uses matched foods for macros and never invents nutrition values.</p>' : `<label>Meal name<input type="text" maxlength="100" value="${escapeHtml(mealDraft.name)}" placeholder="Post-workout lunch" data-meal-name></label><div class="food-builder-photo"><button type="button" data-meal-photo-pick>${mealDraft.photoDataUrl ? `<img src="${escapeHtml(mealDraft.photoDataUrl)}" alt="Meal thumbnail"><span>Change photo</span>` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>'}</button>${mealDraft.photoDataUrl ? '<button type="button" data-meal-photo-remove>Remove</button>' : ""}<input type="file" accept="image/*" data-meal-photo-input hidden></div>`}
         ${pastedIngredientsMarkup()}
         <div class="food-builder-macros food-portion-preview food-portion-preview--macros">${macroBreakdownMarkup(totals, `Whole meal · ${mealDraft.items.length} item${mealDraft.items.length === 1 ? "" : "s"}`)}</div>
         <div class="food-builder-items">${mealDraft.items.map((entry, index) => mealItemDetailsMarkup(entry, index)).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>

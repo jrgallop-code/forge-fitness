@@ -1,4 +1,4 @@
-export * from "./fatsecret-live-cache.js?v=fatsecret-runtime-1";
+export * from "./fatsecret-live-cache.js?v=food-search-polish-1";
 
 const FOOD_SEARCH_ENDPOINT = "/v1/foods/search";
 const DIAGNOSTIC_PREFIX = "FatSecret:";
@@ -19,7 +19,6 @@ function installRuntimeDiagnostics() {
             if (requestUrl.includes(FOOD_SEARCH_ENDPOINT)) {
                 response.clone().json().then(payload => {
                     window.__levelUpFatSecretLastStatus = safeStatus(payload?.fatSecret);
-                    window.setTimeout(() => renderRuntimeStatus(payload?.fatSecret), 120);
                 }).catch(() => {});
             }
         }
@@ -34,18 +33,6 @@ function hideFoodSheetAttribution() {
     style.id = SHEET_ATTRIBUTION_STYLE_ID;
     style.textContent = ".food-sheet-card [data-fatsecret-attribution]{display:none!important}";
     (document.head || document.documentElement)?.appendChild(style);
-}
-
-function renderRuntimeStatus(status) {
-    if (typeof document === "undefined") return;
-    const target = document.querySelector("[data-food-search-status]");
-    if (!target) return;
-
-    const current = String(target.textContent || "")
-        .replace(/\s*·\s*FatSecret:\s*.*$/i, "")
-        .trim();
-    target.textContent = `${current || "Search complete"} · ${formatStatus(status)}`;
-    target.dataset.fatSecretRuntimeStatus = JSON.stringify(safeStatus(status));
 }
 
 export function formatStatus(status) {

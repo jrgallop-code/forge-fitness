@@ -22,5 +22,5 @@ test("expanded meal ingredients cannot restore fixed dark controls", () => {
 
 test("meal-builder appearance correction is cache-busted", () => {
   assert.match(index, /css\/theme-surface-audit\.css\?v=theme-surface-audit-14/);
-  assert.match(worker, /2026-09-08-279/);
+  assert.match(worker, /2026-09-08-280/);
 });

@@ -191,5 +191,5 @@ test('late-loaded Routine Import controls cannot leak dark surfaces into light a
 });
 
 test('theme surface release advances the offline cache', () => {
-  assert.match(worker, /2026-09-08-279/);
+  assert.match(worker, /2026-09-08-280/);
 });
