@@ -4,7 +4,10 @@ import { NORTH_AMERICAN_CHAIN_FOODS } from "./data/north-american-chain-foods.js
 import { CANADIAN_CHAIN_EXPANSION } from "./data/canadian-chain-expansion.js";
 
 const MAX_BACKUP_BYTES = 8 * 1024 * 1024;
-const SESSION_DAYS = 30;
+// User and owner sessions stay valid until they are explicitly revoked. Keep a
+// concrete timestamp because the existing D1 schema requires expires_at and
+// the authentication query uses it to reject revoked/legacy expired sessions.
+const SESSION_EXPIRES_AT = "9999-12-31T23:59:59.999Z";
 const PASSWORD_ITERATIONS = 100000;
 const PASSWORD_MIN_LENGTH = 10;
 const PASSWORD_MAX_LENGTH = 128;
@@ -256,7 +259,7 @@ async function issueSession(userId, user, request, env) {
     const now = new Date().toISOString();
     const token = createToken();
     const tokenHash = await sha256(token);
-    const expiresAt = new Date(Date.now() + SESSION_DAYS * 86400000).toISOString();
+    const expiresAt = SESSION_EXPIRES_AT;
     await env.DB.batch([
         env.DB.prepare("DELETE FROM sessions WHERE expires_at <= ?").bind(now),
         env.DB.prepare("UPDATE users SET last_active_at = ? WHERE id = ?").bind(now, userId),
