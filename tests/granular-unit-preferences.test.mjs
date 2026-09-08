@@ -74,7 +74,7 @@ test("onboarding and settings expose all four choices", async () => {
     assert.match(settings, new RegExp(`key: \"${kind}\"`));
   }
   assert.match(onboarding, /setUnitPreferences\(answers\.unitPreferences\)/);
-  assert.match(onboarding, /pounds and kilometres are fully supported/);
+  assert.match(onboarding, /use pounds for body weight and kilometres for cardio/);
   assert.match(onboarding, /unitChoice\("distance","Cardio distance",\[\["km","Kilometres"\],\["mi","Miles"\]\]\)/);
   assert.match(onboarding, /class="onboarding-unit-preferences" data-unit-text-ignore/);
   assert.match(settings, /class="unit-settings-groups" data-unit-text-ignore/);
