@@ -42,7 +42,7 @@ import {
     calculateMacroTargets,
     poundsToKg
 } from "./tdee-calculator.js?v=food-log-macro-bars-1";
-import { getFoodEmoji } from "./food-emoji.js?v=food-result-emoji-1";
+import { getFoodEmoji } from "./food-emoji.js?v=food-entry-emoji-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -71,6 +71,7 @@ let foodVoiceRecognition = null;
 let foodVoiceTranscript = "";
 const foodDetailCache = new Map();
 const barcodeFoodCache = new Map();
+const expandedMealKeys = new Set();
 
 export function renderCaloriesHub(planMarkup) {
     return `
@@ -295,6 +296,9 @@ function renderDay() {
             if (!details) return;
             details.open = !details.open;
             summary.setAttribute("aria-expanded", String(details.open));
+            const key = mealExpansionKey(selectedDate, details.dataset.foodMeal);
+            if (details.open) expandedMealKeys.add(key);
+            else expandedMealKeys.delete(key);
         });
     });
     meals?.querySelectorAll("[data-food-remove]").forEach(button => button.addEventListener("click", () => removeEntry(selectedDate, button.dataset.foodRemove)));
@@ -335,18 +339,23 @@ function mealMarkup(meal, entries, yesterdayEntries) {
     const totals = summarizeEntries(entries);
     const yesterdayCopied = hasCopiedMeal(entries, previousDateKey(selectedDate), meal);
     const showYesterday = yesterdayEntries.length > 0 && !yesterdayCopied;
+    const expanded = expandedMealKeys.has(mealExpansionKey(selectedDate, meal));
     return `
-        <details class="food-meal">
-            <summary><span><strong>${meal}</strong><small>${entries.length ? `${entries.length} item${entries.length === 1 ? "" : "s"}` : "Nothing logged"}</small></span><b>${Math.round(totals.calories)} kcal</b></summary>
+        <details class="food-meal" data-food-meal="${meal}"${expanded ? " open" : ""}>
+            <summary aria-expanded="${expanded}"><span><strong>${meal}</strong><small>${entries.length ? `${entries.length} item${entries.length === 1 ? "" : "s"}` : "Nothing logged"}</small></span><b>${Math.round(totals.calories)} kcal</b></summary>
             <div class="food-meal-body">
                 ${entries.length ? `<div class="food-meal-macros">${macroBreakdownMarkup(totals, `${meal} total · ${entries.length} item${entries.length === 1 ? "" : "s"}`)}</div>` : ""}
                 ${showYesterday ? `<button type="button" class="food-copy-yesterday" data-copy-yesterday="${meal}"><span><strong>Yesterday’s ${meal}</strong><small>${escapeHtml(mealPreview(yesterdayEntries))}</small></span><b>Swipe right <i>→</i></b></button>` : ""}
-                ${entries.map(entry => `<div class="food-entry"><button type="button" class="food-entry-edit" data-food-edit="${escapeHtml(entry.id)}" aria-label="Edit ${escapeHtml(entry.name)}"><span><strong>${escapeHtml(entry.name)}</strong><small>${escapeHtml(entry.brand ? `${entry.brand} · ` : "")}${escapeHtml(totalServingLabel(entry.quantity, entry.servingLabel))}</small></span><b>${Math.round(entry.nutrition?.calories || 0)} kcal</b><i aria-hidden="true">›</i></button><button type="button" class="food-entry-remove" data-food-remove="${escapeHtml(entry.id)}" aria-label="Remove ${escapeHtml(entry.name)}">×</button></div>`).join("")}
+                ${entries.map(entry => `<div class="food-entry"><button type="button" class="food-entry-edit" data-food-edit="${escapeHtml(entry.id)}" aria-label="Edit ${escapeHtml(entry.name)}"><span class="food-entry-emoji" aria-hidden="true">${getFoodEmoji(entry)}</span><span><strong>${escapeHtml(entry.name)}</strong><small>${escapeHtml(entry.brand ? `${entry.brand} · ` : "")}${escapeHtml(totalServingLabel(entry.quantity, entry.servingLabel))}</small></span><b>${Math.round(entry.nutrition?.calories || 0)} kcal</b><i aria-hidden="true">›</i></button><button type="button" class="food-entry-remove" data-food-remove="${escapeHtml(entry.id)}" aria-label="Remove ${escapeHtml(entry.name)}">×</button></div>`).join("")}
                 ${entries.length ? `<button type="button" class="food-save-diary-meal" data-save-diary-meal="${meal}">Save ${meal} as My Meal</button>` : ""}
                 <button type="button" class="food-add-meal" data-food-add-meal="${meal}">+ Add to ${meal}</button>
             </div>
         </details>
     `;
+}
+
+function mealExpansionKey(dateKey, meal) {
+    return `${dateKey}::${meal || ""}`;
 }
 
 function openFoodSheet(meal) {

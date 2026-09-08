@@ -10,6 +10,7 @@ test("food emojis classify common foods using names and provider categories", ()
     assert.equal(getFoodEmoji({ name: "Vanilla ice cream" }), "🍨");
     assert.equal(getFoodEmoji({ name: "Unspecified item", foodCategory: "Poultry Products" }), "🍗");
     assert.equal(getFoodEmoji({ name: "Atlantic salmon" }), "🐟");
+    assert.equal(getFoodEmoji({ name: "Logged food", food: { foodCategory: "Egg Products" } }), "🥚");
     assert.equal(getFoodEmoji({ name: "Mystery product" }), "🍽️");
 });
 
@@ -20,6 +21,7 @@ test("food result emojis are local presentation and do not alter provider reques
 
     assert.match(foodLog, /getFoodEmoji\(food\)/);
     assert.match(foodLog, /class="food-result-emoji" aria-hidden="true"/);
+    assert.match(foodLog, /class="food-entry-emoji" aria-hidden="true"/);
     assert.match(styles, /grid-template-columns:42px minmax\(0,1fr\) auto/);
     assert.doesNotMatch(emojiSource, /fetch\s*\(/);
 });

@@ -98,6 +98,16 @@ test("logged meal items open an editor for serving, meal, quantity, or removal",
     assert.match(styles, /\.food-entry-edit/);
 });
 
+test("logged meal rows show food emojis and stay expanded after an item is removed", async () => {
+    const [module, styles] = await Promise.all([read("../js/nutrition/food-log.js"), read("../css/food-log.css")]);
+    assert.match(module, /class="food-entry-emoji" aria-hidden="true">\$\{getFoodEmoji\(entry\)\}/);
+    assert.match(module, /const expandedMealKeys = new Set\(\)/);
+    assert.match(module, /expandedMealKeys\.has\(mealExpansionKey\(selectedDate, meal\)\)/);
+    assert.match(module, /if \(details\.open\) expandedMealKeys\.add\(key\)/);
+    assert.match(module, /data-food-meal="\$\{meal\}"\$\{expanded \? " open" : ""\}/);
+    assert.match(styles, /\.food-entry-edit\{grid-template-columns:38px minmax\(0,1fr\) auto 12px\}/);
+});
+
 test("food diary uses a restrained native typography hierarchy", async () => {
     const styles = await read("../css/food-log.css");
     assert.match(styles, /Refined native typography/);
@@ -221,7 +231,8 @@ test("expanded diary meals show their own calorie and macro breakdown", async ()
 
 test("diary meals start collapsed and reveal macros only after the header is tapped", async () => {
     const module = await read("../js/nutrition/food-log.js");
-    assert.match(module, /<details class="food-meal">/);
+    assert.match(module, /const expandedMealKeys = new Set\(\)/);
+    assert.match(module, /<details class="food-meal" data-food-meal="\$\{meal\}"\$\{expanded \? " open" : ""\}>/);
     assert.doesNotMatch(module, /<details class="food-meal"[^>]*\$\{entries\.length/);
     assert.match(module, /details\.open = !details\.open/);
 });

@@ -53,10 +53,11 @@ const FOOD_EMOJI_RULES = [
 ];
 
 export function getFoodEmoji(food = {}) {
-    const categories = Array.isArray(food.categories)
-        ? food.categories.join(" ")
-        : String(food.categories || food.category || food.foodCategory || "");
-    const searchable = `${String(food.name || "")} ${categories}`.trim();
+    const nestedFood = food?.food && typeof food.food === "object" ? food.food : {};
+    const categoryValue = food.categories || food.category || food.foodCategory ||
+        nestedFood.categories || nestedFood.category || nestedFood.foodCategory || "";
+    const categories = Array.isArray(categoryValue) ? categoryValue.join(" ") : String(categoryValue);
+    const searchable = `${String(food.name || nestedFood.name || "")} ${categories}`.trim();
     const match = FOOD_EMOJI_RULES.find(([pattern]) => pattern.test(searchable));
     return match?.[1] || "🍽️";
 }
