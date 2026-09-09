@@ -47,3 +47,72 @@ export function saveTrainingPreferences(patch={}){
 export function markOnboardingComplete({migrated=false}={}){return saveTrainingPreferences({onboardingComplete:true,onboardingSkipped:false,onboardingMigrated:Boolean(migrated),onboardingVersion:TRAINING_PREFERENCES_SCHEMA_VERSION,onboardingHandledAt:new Date().toISOString()});}
 export function markOnboardingSkipped(){return saveTrainingPreferences({onboardingComplete:false,onboardingSkipped:true,onboardingMigrated:false,onboardingVersion:TRAINING_PREFERENCES_SCHEMA_VERSION,onboardingHandledAt:new Date().toISOString()});}
 export function onboardingIsHandled(){const preferences=getTrainingPreferences();return preferences.onboardingComplete||preferences.onboardingSkipped;}
+
+// Smart Build replaces the entire input step after a preference is selected.
+// Preserve the open picker/search state across that render, and make the two
+// picker toggles self-healing if a delegated click is missed on mobile/iOS.
+function installSmartBuildExercisePickerFix(){
+    if(typeof document==="undefined")return;
+    let captured=null;
+    const descriptor=button=>{
+        if(button?.matches?.("[data-preferred-toggle]"))return{kind:"toggle",type:"prefer"};
+        if(button?.matches?.("[data-avoid-toggle]"))return{kind:"toggle",type:"avoid"};
+        if(button?.dataset?.preferId)return{kind:"select",type:"prefer"};
+        if(button?.dataset?.excludeId)return{kind:"select",type:"avoid"};
+        return null;
+    };
+    const selectors=type=>type==="prefer"
+        ?{panel:"[data-preferred-panel]",search:"[data-preferred-search]"}
+        :{panel:"[data-avoid-panel]",search:"[data-avoid-search]"};
+    const activeCard=()=>document.querySelector(".smart-build-wizard:not([hidden]) .smart-question-card");
+    const dispatchSearch=input=>input?.dispatchEvent?.(new Event("input",{bubbles:true}));
+
+    document.addEventListener("click",event=>{
+        const button=event.target.closest?.("button");
+        const info=descriptor(button);
+        if(!info)return;
+        const card=button.closest?.(".smart-question-card")||activeCard();
+        const {panel,search}=selectors(info.type);
+        const panelNode=card?.querySelector?.(panel);
+        const searchNode=card?.querySelector?.(search);
+        captured={...info,wasHidden:panelNode?.hidden!==false,query:searchNode?.value||""};
+    },true);
+
+    document.addEventListener("click",event=>{
+        const button=event.target.closest?.("button");
+        const info=descriptor(button);
+        if(!info||!captured||captured.type!==info.type||captured.kind!==info.kind)return;
+        const snapshot=captured;
+        captured=null;
+        const repair=()=>{
+            const card=activeCard();
+            if(!card)return;
+            const {panel,search}=selectors(snapshot.type);
+            const panelNode=card.querySelector(panel);
+            const searchNode=card.querySelector(search);
+            if(!panelNode)return;
+            if(snapshot.kind==="toggle"){
+                const expectedHidden=!snapshot.wasHidden;
+                if(panelNode.hidden!==expectedHidden)panelNode.hidden=expectedHidden;
+                const toggle=card.querySelector(snapshot.type==="prefer"?"[data-preferred-toggle]":"[data-avoid-toggle]");
+                toggle?.setAttribute?.("aria-expanded",String(!expectedHidden));
+                if(!expectedHidden){
+                    dispatchSearch(searchNode);
+                    searchNode?.focus?.({preventScroll:true});
+                }
+                return;
+            }
+            panelNode.hidden=false;
+            if(searchNode){
+                searchNode.value=snapshot.query;
+                dispatchSearch(searchNode);
+            }
+            const toggle=card.querySelector(snapshot.type==="prefer"?"[data-preferred-toggle]":"[data-avoid-toggle]");
+            toggle?.setAttribute?.("aria-expanded","true");
+        };
+        if(snapshot.kind==="select")setTimeout(repair,0);
+        else queueMicrotask(repair);
+    });
+}
+
+installSmartBuildExercisePickerFix();
