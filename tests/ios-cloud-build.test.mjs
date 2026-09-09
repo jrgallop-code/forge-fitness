@@ -34,9 +34,15 @@ test("App Store releases are protected and any push trigger is one-time guarded"
 });
 
 test("App Store releases use cloud signing and clean up the private key", () => {
+    assert.match(releaseWorkflow, /node scripts\/app-store-signing\.mjs create/);
+    assert.match(releaseWorkflow, /CODE_SIGN_STYLE=Manual/);
+    assert.match(releaseWorkflow, /CODE_SIGN_IDENTITY="Apple Distribution"/);
+    assert.match(releaseWorkflow, /PROVISIONING_PROFILE_SPECIFIER="\$APP_STORE_PROFILE_NAME"/);
     assert.match(releaseWorkflow, /-allowProvisioningUpdates/);
     assert.match(releaseWorkflow, /-authenticationKeyPath/);
     assert.match(releaseWorkflow, /xcrun altool --upload-app/);
     assert.match(releaseWorkflow, /if:\s*always\(\)/);
+    assert.match(releaseWorkflow, /node scripts\/app-store-signing\.mjs cleanup/);
+    assert.match(releaseWorkflow, /security delete-keychain/);
     assert.match(releaseWorkflow, /rm -f \"\$AUTH_KEY_PATH\"/);
 });
