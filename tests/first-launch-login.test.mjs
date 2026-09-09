@@ -17,7 +17,8 @@ test('Google login crops the provider iframe to its dark pill', () => {
 test('native login uses the live Google handoff and protected high-contrast colors', () => {
   assert.match(login, /https:\/\/app\.leveluphypertrophy\.com\/ios-auth\.html/);
   assert.doesNotMatch(login, /url: "https:\/\/leveluphypertrophy\.com\/ios-auth\.html"/);
-  assert.match(styles, /level-up-login-google-native\{background:#fff!important;color:#171717!important/);
+  assert.match(styles, /level-up-login-google-native\{background:#050505!important;color:#fff!important/);
+  assert.match(styles, /\.level-up-transfer-auth > p strong \{[^}]*color: #fff !important/);
   assert.match(styles, /-webkit-text-fill-color:\s*#fff\s*!important/);
 });
 
