@@ -93,7 +93,8 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
                     detail: body,
                     endAt: endAt,
                     kind: call.getString("kind") ?? "timer",
-                    theme: call.getString("theme") ?? "level-up"
+                    theme: call.getString("theme") ?? "level-up",
+                    icon: call.getString("icon") ?? "level-up"
                 )
                 call.resolve(["scheduled": true, "liveActivity": self?.liveActivitiesAvailable() ?? false])
             }
@@ -116,10 +117,10 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
         return false
     }
 
-    private func startLiveActivity(key: String, title: String, detail: String, endAt: Date, kind: String, theme: String) {
+    private func startLiveActivity(key: String, title: String, detail: String, endAt: Date, kind: String, theme: String, icon: String) {
         guard #available(iOS 16.1, *), ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         endLiveActivities(key: key)
-        let attributes = LevelUpTimerAttributes(timerID: key, title: title, detail: detail, kind: kind, theme: theme)
+        let attributes = LevelUpTimerAttributes(timerID: key, title: title, detail: detail, kind: kind, theme: theme, icon: icon)
         let state = LevelUpTimerAttributes.ContentState(startedAt: Date(), endAt: endAt)
         do {
             if #available(iOS 16.2, *) {
