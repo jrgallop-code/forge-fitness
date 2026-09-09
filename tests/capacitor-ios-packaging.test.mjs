@@ -17,6 +17,8 @@ test("native scripts build before syncing the iOS project", async () => {
     assert.match(packageJson.scripts["cap:sync:ios"], /build:native.*cap sync ios/);
     assert.equal(packageJson.dependencies["@capacitor/core"], packageJson.dependencies["@capacitor/ios"]);
     assert.equal(packageJson.dependencies["@capacitor/core"], packageJson.devDependencies["@capacitor/cli"]);
+    assert.equal(packageJson.dependencies["@capacitor/haptics"], "8.0.0");
+    assert.equal(packageJson.dependencies["@capacitor/local-notifications"], "8.0.0");
 });
 
 test("native runtime does not register the PWA service worker", async () => {
@@ -33,6 +35,25 @@ test("native iOS uses first-party email login without social-login review blocke
     assert.match(account, /nativeIOS \? "" : '<div id="account-google-button"/);
     assert.match(account, /Delete Cloud Account/);
     assert.match(account, /method: "DELETE"/);
+    assert.match(account, /Generate Transfer Code/);
+    assert.match(login, /Already use Level Up on the web\?/);
+});
+
+test("native iOS provides haptics, background alarms, and selectable app icons", async () => {
+    const native = await readFile(new URL("../js/core/native-capabilities.js", import.meta.url), "utf8");
+    const appearance = await readFile(new URL("../js/more/appearance-settings.js", import.meta.url), "utf8");
+    const info = await readFile(new URL("../ios/App/App/Info.plist", import.meta.url), "utf8");
+    const plugin = await readFile(new URL("../ios/App/App/LevelUpAppIconPlugin.swift", import.meta.url), "utf8");
+    assert.match(native, /plugin\("Haptics"\)/);
+    assert.match(native, /plugin\("LocalNotifications"\)/);
+    assert.match(native, /scheduleNativeAlarm/);
+    assert.match(appearance, /Choose your Level Up icon/);
+    assert.match(appearance, /LevelUpAppIcon\?\.setIcon/);
+    assert.match(info, /CFBundleAlternateIcons/);
+    assert.match(plugin, /setAlternateIconName/);
+    for (const name of ["Arctic", "Pure", "Ocean", "Midnight", "Slate", "Pulse"]) {
+        await readFile(new URL(`../ios/App/App/Assets.xcassets/AppIcon${name}.appiconset/AppIcon${name}-1024.png`, import.meta.url));
+    }
 });
 
 test("the iOS target declares permissions used by Level Up features", async () => {

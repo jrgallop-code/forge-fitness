@@ -1,5 +1,6 @@
 import { APPEARANCE_THEMES, applyAppearanceTheme, getAppearanceTheme, resolveAppearanceTheme } from "../core/appearance-theme.js?v=appearance-themes-3";
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
+import { hapticNotification } from "../core/native-capabilities.js?v=native-feedback-1";
 import {
     MUSCLE_COLOR_PRESETS,
     applyMuscleMapColors,
@@ -10,6 +11,16 @@ import {
 } from "../core/muscle-map-colors.js?v=muscle-map-colors-2";
 
 const PALETTE_ICON = `<svg class="app-silhouette-icon more-appearance-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1.3a2.3 2.3 0 0 0 0-4.6H12a1.8 1.8 0 0 1 0-3.6h3.1A5.9 5.9 0 0 0 21 6.9C18.9 4.4 15.8 3 12 3Z"/><circle cx="7.2" cy="11.8" r="1"/><circle cx="8.7" cy="7.7" r="1"/><circle cx="13" cy="6.2" r="1"/><circle cx="16.8" cy="8.4" r="1"/></svg>`;
+const HOME_ICON_KEY = "level_up_home_icon";
+const HOME_ICONS = [
+    { id: "level-up", name: "Classic" },
+    { id: "arctic", name: "Arctic" },
+    { id: "pure", name: "Pure" },
+    { id: "ocean", name: "Ocean" },
+    { id: "midnight", name: "Midnight" },
+    { id: "slate", name: "Slate" },
+    { id: "pulse", name: "Pulse" }
+];
 
 export function appearanceMenuIcon() {
     return PALETTE_ICON;
@@ -29,6 +40,7 @@ export function renderAppearanceSettings() {
             ${APPEARANCE_THEMES.map(theme => renderThemeCard(theme, selected)).join("")}
         </section>
         <p class="appearance-status" role="status" aria-live="polite"></p>
+        ${isNativeIOS() ? renderHomeIconChoices() : ""}
         ${renderMuscleMapColors(muscleColors)}
         <aside class="appearance-semantic-note"><strong>Training meaning stays consistent</strong><span>Success, caution and discomfort colours keep their meaning. Muscle-map palettes can be personalized independently.</span></aside>
     </section>`;
@@ -53,6 +65,9 @@ export function initializeAppearanceSettings({ onBack } = {}) {
         const status = document.querySelector(".appearance-status");
         if (status) status.textContent = theme === "system" ? `System theme on · ${effective?.name || "Level Up"} active` : `${selected?.name || "Level Up"} applied`;
     }));
+
+    document.querySelectorAll("[data-home-icon]").forEach(button => button.addEventListener("click", () => changeHomeIcon(button.dataset.homeIcon)));
+    if (isNativeIOS()) void syncCurrentHomeIcon();
 
     document.querySelectorAll("[data-muscle-color-choice]").forEach(button => button.addEventListener("click", () => {
         const kind = button.dataset.muscleColorKind === "sets" ? "sets" : "recovery";
@@ -80,6 +95,53 @@ export function initializeAppearanceSettings({ onBack } = {}) {
         const theme = APPEARANCE_THEMES.find(item => item.id === defaults.theme)?.name || "Level Up";
         const status = document.querySelector("[data-muscle-color-status]");
         if (status) status.textContent = `Muscle-map colours reset to the ${theme} defaults.`;
+    });
+}
+
+function isNativeIOS() {
+    return window.Capacitor?.getPlatform?.() === "ios";
+}
+
+function renderHomeIconChoices() {
+    const selected = localStorage.getItem(HOME_ICON_KEY) || "level-up";
+    return `<section class="appearance-home-icons" aria-labelledby="appearance-home-icons-title">
+        <header><small>HOME SCREEN</small><h3 id="appearance-home-icons-title">Choose your Level Up icon</h3><p>Pick the logo that looks best with your iPhone theme. This is independent from the appearance inside the app.</p></header>
+        <div class="appearance-home-icon-grid" role="radiogroup" aria-label="Home-screen app icon">
+            ${HOME_ICONS.map(icon => `<button type="button" class="appearance-home-icon${icon.id === selected ? " is-selected" : ""}" data-home-icon="${icon.id}" role="radio" aria-checked="${icon.id === selected}"><img src="assets/home-icons/${icon.id}.png" alt=""><strong>${icon.name}</strong><span aria-hidden="true">✓</span></button>`).join("")}
+        </div>
+        <p class="appearance-status" data-home-icon-status role="status" aria-live="polite"></p>
+    </section>`;
+}
+
+async function syncCurrentHomeIcon() {
+    try {
+        const current = await window.Capacitor?.Plugins?.LevelUpAppIcon?.getIcon?.();
+        if (current?.name) updateHomeIconSelection(current.name);
+    }
+    catch {}
+}
+
+async function changeHomeIcon(name) {
+    const status = document.querySelector("[data-home-icon-status]");
+    try {
+        if (status) status.textContent = "Updating your home-screen icon…";
+        const result = await window.Capacitor?.Plugins?.LevelUpAppIcon?.setIcon?.({ name });
+        if (!result?.name) throw new Error("Home-screen icon controls are available in the iPhone app.");
+        localStorage.setItem(HOME_ICON_KEY, result.name);
+        updateHomeIconSelection(result.name);
+        void hapticNotification("SUCCESS");
+        if (status) status.textContent = `${HOME_ICONS.find(icon => icon.id === result.name)?.name || "Level Up"} icon applied.`;
+    }
+    catch (error) {
+        if (status) status.textContent = error?.message || "The home-screen icon could not be changed.";
+    }
+}
+
+function updateHomeIconSelection(name) {
+    document.querySelectorAll("[data-home-icon]").forEach(button => {
+        const selected = button.dataset.homeIcon === name;
+        button.classList.toggle("is-selected", selected);
+        button.setAttribute("aria-checked", String(selected));
     });
 }
 

@@ -5,14 +5,14 @@ import { initializeBackupManager } from "../core/backup-manager.js?v=backup-comp
 import { initializeGoogleDriveSync } from "../core/google-drive-sync-v2.js?v=visible-drive-backup-3";
 import { initializeDataSpreadsheetExport } from "../core/data-spreadsheet-export.js?v=full-data-export-1";
 import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-card-1";
-import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.js?v=native-ios-email-1";
+import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.js?v=account-transfer-1";
 import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=more-units-miles-1";
 import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-display-name-1";
 import { renderAdaptiveGuidanceSettings, initializeAdaptiveGuidanceSettings } from "./adaptive-guidance-settings.js?v=remove-deload-preview-1";
 import { renderDynamicWarmupSettings, initializeDynamicWarmupSettings } from "./dynamic-warmup-settings.js?v=dynamic-warmup-settings-1";
 import { openLessonLibrary } from "./learn-level-up.js?v=food-log-macro-bars-1";
 import { openExploreResearch } from "./explore-research.js?v=food-log-macro-bars-1";
-import { appearanceMenuIcon, renderAppearanceSettings, initializeAppearanceSettings } from "./appearance-settings.js?v=pulse-theme-1";
+import { appearanceMenuIcon, renderAppearanceSettings, initializeAppearanceSettings } from "./appearance-settings.js?v=home-icons-1";
 import { renderAppFeatureSettings, initializeAppFeatureSettings } from "./app-feature-settings.js?v=nutrition-feature-choice-1";
 
 const ICONS = {

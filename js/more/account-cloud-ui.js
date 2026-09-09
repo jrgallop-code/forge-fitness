@@ -32,6 +32,18 @@ export function renderAccountCloud() {
             <span id="account-cloud-updated">Your current data remains stored on this device.</span>
         </div>
     </section>
+    <section class="section-card account-cloud-transfer" id="account-cloud-transfer-section" hidden>
+        <span class="eyebrow">MOVE TO IPHONE APP</span><h3>Already use Level Up on the web?</h3>
+        <p>Generate a secure one-time code, then enter it on the iPhone app's sign-in screen. Your existing account and cloud backup stay together.</p>
+        <button class="primary-btn" id="account-cloud-transfer-create" type="button">Generate Transfer Code</button>
+        <div class="account-cloud-transfer-code" id="account-cloud-transfer-code" hidden>
+            <small>ONE-TIME CODE</small>
+            <strong id="account-cloud-transfer-value"></strong>
+            <span>Expires in 10 minutes and can only be used once.</span>
+            <button class="secondary-btn" id="account-cloud-transfer-copy" type="button">Copy Code</button>
+        </div>
+        <p class="account-cloud-transfer-message" id="account-cloud-transfer-message" aria-live="polite"></p>
+    </section>
     <section class="section-card account-cloud-safety">
         <span class="eyebrow">BETA SAFETY</span><h3>Automatic backup with version protection</h3>
         <p>Level Up backs up signed-in app data after changes. If another device has a newer cloud version, automatic upload pauses instead of overwriting it. You can still back up or restore manually here.</p>\n        <div class="account-cloud-links"><a href="https://leveluphypertrophy.com/privacy.html" target="_blank" rel="noopener">Privacy Policy ↗</a><a href="mailto:support@leveluphypertrophy.com">Contact Support</a></div>
@@ -53,6 +65,8 @@ export function initializeAccountCloud({ onBack } = {}) {
     document.getElementById("account-cloud-download")?.addEventListener("click", downloadBackup);
     document.getElementById("account-cloud-signout")?.addEventListener("click", signOut);
     document.getElementById("account-cloud-delete")?.addEventListener("click", deleteAccount);
+    document.getElementById("account-cloud-transfer-create")?.addEventListener("click", createTransferCode);
+    document.getElementById("account-cloud-transfer-copy")?.addEventListener("click", copyTransferCode);
     renderSession();
     if (getSession()?.token) refreshAccount();
     else initializeGoogleButton();
@@ -176,12 +190,39 @@ async function deleteAccount() {
     catch (error) { setMessage(error.message, "error"); }
 }
 
+async function createTransferCode() {
+    const button = document.getElementById("account-cloud-transfer-create");
+    try {
+        setBusy(button, true, "Generating code…");
+        const result = await api("/v1/account/transfer-code", { method: "POST" });
+        const code = String(result?.code || "");
+        if (!code) throw new Error("A transfer code could not be generated.");
+        const panel = document.getElementById("account-cloud-transfer-code");
+        if (panel) panel.hidden = false;
+        setText("account-cloud-transfer-value", code);
+        setTransferMessage("Open the Level Up iPhone app and choose ‘Already use Level Up on the web?’", "success");
+    }
+    catch (error) { setTransferMessage(error.message, "error"); }
+    finally { setBusy(button, false); }
+}
+
+async function copyTransferCode() {
+    const code = document.getElementById("account-cloud-transfer-value")?.textContent?.trim() || "";
+    if (!code) return;
+    try {
+        await navigator.clipboard.writeText(code);
+        setTransferMessage("Transfer code copied.", "success");
+    }
+    catch { setTransferMessage("Press and hold the code to copy it.", "error"); }
+}
+
 function renderSession() {
     const session = getSession();
     const account = readJson(ACCOUNT_KEY);
     const signedIn = Boolean(session?.token && account?.email);
     document.getElementById("account-cloud-actions")?.toggleAttribute("hidden", !signedIn);
     document.getElementById("account-cloud-delete-section")?.toggleAttribute("hidden", !signedIn);
+    document.getElementById("account-cloud-transfer-section")?.toggleAttribute("hidden", !signedIn || isNativeIOS());
     const googleButton = document.getElementById("account-google-button");
     if (googleButton) googleButton.hidden = signedIn;
     setText("account-cloud-name", signedIn ? account.name || "Level Up Beta Member" : "Not signed in");
@@ -273,6 +314,13 @@ function setText(id, value) {
     if (element) element.textContent = value;
 }
 
+function setTransferMessage(message, type = "") {
+    const element = document.getElementById("account-cloud-transfer-message");
+    if (!element) return;
+    element.textContent = message;
+    element.dataset.status = type;
+}
+
 function setBusy(button, busy, label = "") {
     if (!button) return;
     if (!button.dataset.defaultLabel) button.dataset.defaultLabel = button.textContent;
@@ -297,7 +345,7 @@ function ensureAccountCloudStyles() {
     if (document.querySelector('link[data-level-up-account-cloud]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/account-cloud.css?v=privacy-account-1";
+    link.href = "css/account-cloud.css?v=account-transfer-1";
     link.dataset.levelUpAccountCloud = "true";
     document.head.appendChild(link);
 }

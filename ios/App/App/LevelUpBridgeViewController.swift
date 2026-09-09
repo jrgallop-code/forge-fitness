@@ -1,0 +1,8 @@
+import Capacitor
+
+final class LevelUpBridgeViewController: CAPBridgeViewController {
+    override func capacitorDidLoad() {
+        super.capacitorDidLoad()
+        bridge?.registerPluginInstance(LevelUpAppIconPlugin())
+    }
+}

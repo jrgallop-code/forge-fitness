@@ -1,6 +1,6 @@
-import "./rest-alarm-phase1.js?v=rest-authority-1";
+import "./rest-alarm-phase1.js?v=native-alerts-1";
 import "./rest-alarm-button-stability.js?v=rest-authority-1";
-import "./rest-timer-authority.js?v=rest-timer-authority-1";
+import "./rest-timer-authority.js?v=native-alerts-1";
 import "../core/workout-theme-guardrail.js?v=workout-theme-guardrail-3";
 import { openActiveWorkout } from "./workout-session.js?v=native-navigation-stability-1";
 
@@ -125,6 +125,7 @@ document.addEventListener('click', event => {
 window.addEventListener('levelup:rest-timer-started', syncVisibleTimer);
 window.addEventListener('levelup:rest-timer-finished', syncVisibleTimer);
 window.addEventListener('levelup:rest-timer-dismissed', syncVisibleTimer);
+window.addEventListener('levelup:native-alarm-opened', resumeActiveWorkoutFromAlert);
 window.addEventListener('focus', syncVisibleTimer);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) syncVisibleTimer();

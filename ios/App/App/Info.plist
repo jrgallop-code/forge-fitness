@@ -14,6 +14,19 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundleAlternateIcons</key>
+		<dict>
+			<key>AppIconArctic</key><dict><key>CFBundleIconName</key><string>AppIconArctic</string></dict>
+			<key>AppIconPure</key><dict><key>CFBundleIconName</key><string>AppIconPure</string></dict>
+			<key>AppIconOcean</key><dict><key>CFBundleIconName</key><string>AppIconOcean</string></dict>
+			<key>AppIconMidnight</key><dict><key>CFBundleIconName</key><string>AppIconMidnight</string></dict>
+			<key>AppIconSlate</key><dict><key>CFBundleIconName</key><string>AppIconSlate</string></dict>
+			<key>AppIconPulse</key><dict><key>CFBundleIconName</key><string>AppIconPulse</string></dict>
+		</dict>
+		<key>CFBundlePrimaryIcon</key><dict><key>CFBundleIconName</key><string>AppIcon</string></dict>
+	</dict>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>

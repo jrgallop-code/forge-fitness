@@ -1,5 +1,5 @@
 .account-cloud-heading { margin-bottom: 14px; }
-.account-cloud-card, .account-cloud-safety, .account-cloud-delete { margin-bottom: 14px; }
+.account-cloud-card, .account-cloud-transfer, .account-cloud-safety, .account-cloud-delete { margin-bottom: 14px; }
 .account-cloud-profile { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .account-cloud-profile h3, .account-cloud-safety h3, .account-cloud-delete h3 { margin: 5px 0 6px; }
 .account-cloud-profile p, .account-cloud-safety p, .account-cloud-delete p { margin: 0; color: var(--muted, #a5a5aa); }
@@ -14,5 +14,17 @@
 .account-cloud-status strong[data-status="error"] { color: #ff6676; }
 .account-cloud-status span { color: var(--muted, #a5a5aa); font-size: 13px; }
 .danger-text-btn { color: #ff6676; margin-top: 10px; }
+.account-cloud-transfer[hidden], .account-cloud-transfer-code[hidden] { display: none; }
+.account-cloud-transfer h3 { margin: 5px 0 6px; }
+.account-cloud-transfer > p { margin: 0; color: var(--muted, #a5a5aa); }
+.account-cloud-transfer > .primary-btn { width: 100%; margin-top: 18px; }
+.account-cloud-transfer-code { display: grid; justify-items: center; gap: 8px; margin-top: 16px; padding: 18px; border: 1px solid color-mix(in srgb,var(--accent) 35%,var(--line)); border-radius: 16px; background: var(--accent-soft); text-align: center; }
+.account-cloud-transfer-code small { color: var(--accent-text); font-weight: 900; letter-spacing: .12em; }
+.account-cloud-transfer-code strong { color: var(--heading); font-size: clamp(30px,9vw,42px); font-weight: 950; letter-spacing: .09em; user-select: all; }
+.account-cloud-transfer-code span { color: var(--muted, #a5a5aa); font-size: 12px; }
+.account-cloud-transfer-code button { margin-top: 4px; }
+.account-cloud-transfer-message { min-height: 18px; margin-top: 12px !important; font-size: 13px; }
+.account-cloud-transfer-message[data-status="success"] { color: #35c987; }
+.account-cloud-transfer-message[data-status="error"] { color: #ff6676; }
 @media (min-width: 640px) { .account-cloud-actions { grid-template-columns: 1fr 1fr; } .account-cloud-actions .text-btn { grid-column: 1 / -1; } }
 \n.account-cloud-links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; }\n.account-cloud-links a { color: #fff; font-size: 13px; font-weight: 800; text-decoration: underline; text-decoration-color: rgba(255,67,87,.8); text-underline-offset: 4px; }\n

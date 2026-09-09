@@ -1,3 +1,5 @@
+import { cancelNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=native-feedback-1";
+
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const TIMER_SETTINGS_KEY = "level_up_exercise_rest_settings";
 const TIMER_TAG = "level-up-rest-timer";
@@ -126,6 +128,8 @@ function finalizeTimer(timerId) {
     window.dispatchEvent(new CustomEvent("levelup:rest-timer-finished", {
         detail: { timerId: timer.timerId, sourceType: timer.sourceType || "working" }
     }));
+    void cancelNativeAlarm(`rest:${timer.timerId}`);
+    void hapticNotification("SUCCESS");
     showSingleBackgroundNotification(timer);
 }
 
@@ -193,11 +197,19 @@ function startTimerForSource({ active, seconds, sourceType, exerciseIndex, setIn
     window.dispatchEvent(new CustomEvent("levelup:rest-timer-started", {
         detail: { timerId: active.restTimer.timerId, sourceType, exerciseIndex, setIndex, warmupIndex, seconds }
     }));
+    void scheduleNativeAlarm({
+        key: `rest:${active.restTimer.timerId}`,
+        title: "Rest complete",
+        body: "Your next set is ready.",
+        at: active.restTimer.endAt,
+        extra: { type: "levelup:rest-complete", timerId: active.restTimer.timerId }
+    });
     return true;
 }
 
 function clearTimerForDisabledSource(active) {
     if (!active?.restTimer) return;
+    void cancelNativeAlarm(`rest:${active.restTimer.timerId}`);
     active.restTimer = null;
     saveActiveWorkout(active);
     clearScheduledExpiry();
