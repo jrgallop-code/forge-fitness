@@ -28,3 +28,5 @@ Release 11: declare the WidgetKit extension executable in its bundle metadata.
 Release 12: Google sign-in, themed splash, readable dismissible Lock Screen timers, and reliable Smart Build.
 
 Release 13: single iOS timer alert, appearance-matched Lock Screen logos, and direct Smart Build launch.
+
+Release 14: black Google sign-in, readable transfer instructions, and vector Lock Screen Level Up logo.
