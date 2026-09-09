@@ -44,3 +44,5 @@ Release 19: themed splash layouts for Level Up Classic, Arctic, Pure, Ocean, Mid
 Approved full-image themed splash release: display the actual appearance-specific splash artwork for Level Up Classic, Arctic, Pure, Ocean, Midnight, Slate, and Pulse, preserving the live theme-matched loading bar and existing startup safeguards.
 
 Release 20: ship the user-approved full-image splash artwork for Classic, Arctic, Pure, Ocean, Midnight, Slate, and Pulse in the Capacitor app.
+
+Release 21: simplified full-bleed splash artwork for every appearance, with edge-to-edge cover rendering and theme-matched fallback backgrounds to eliminate white gaps.
