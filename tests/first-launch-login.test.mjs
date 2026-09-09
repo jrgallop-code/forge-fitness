@@ -24,5 +24,5 @@ test('native login uses the live Google handoff and protected high-contrast colo
 test('login presentation ships with fresh production cache keys', () => {
   assert.match(login, /first-launch-login\.css\?v=native-auth-contrast-2/);
   assert.match(index, /first-launch-login\.js\?v=native-auth-contrast-2/);
-  assert.match(worker, /2026-09-09-285/);
+  assert.match(worker, /2026-09-09-286/);
 });

@@ -77,12 +77,16 @@ test("native iOS provides haptics, background alarms, and selectable app icons",
     assert.match(widget, /ActivityConfiguration/);
     assert.match(widget, /timerInterval/);
     assert.match(widget, /TimerPalette\.forTheme/);
+    assert.match(widget, /timerLogoName\(for theme:/);
+    assert.doesNotMatch(widget, /dumbbell\.fill/);
     assert.match(widget, /DismissLevelUpTimerIntent/);
     assert.match(widgetInfo, /CFBundleExecutable/);
     assert.match(info, /NSSupportsLiveActivities/);
     for (const name of ["Arctic", "Pure", "Ocean", "Midnight", "Slate", "Pulse"]) {
         await readFile(new URL(`../ios/App/App/Assets.xcassets/AppIcon${name}.appiconset/AppIcon${name}-1024.png`, import.meta.url));
+        await readFile(new URL(`../ios/App/LevelUpTimerWidget/Assets.xcassets/TimerLogo${name}.imageset/Contents.json`, import.meta.url));
     }
+    await readFile(new URL("../ios/App/LevelUpTimerWidget/Assets.xcassets/TimerLogoLevelUp.imageset/Contents.json", import.meta.url));
 });
 
 test("the iOS target declares permissions used by Level Up features", async () => {

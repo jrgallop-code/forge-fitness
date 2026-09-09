@@ -79,6 +79,10 @@ function ensureTimerIdentity(active) {
 }
 
 async function showSingleBackgroundNotification(timer) {
+    // Capacitor schedules the native iOS notification and Live Activity together.
+    // The service-worker fallback is only for the PWA; running it in the native
+    // shell produces a second alert for the same timer.
+    if (window.Capacitor?.isNativePlatform?.()) return;
     if (document.visibilityState !== "hidden") return;
     if (!("Notification" in window) || Notification.permission !== "granted") return;
 

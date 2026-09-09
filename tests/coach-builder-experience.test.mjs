@@ -47,10 +47,13 @@ test("production module cache keys load the current coach builder", async () => 
   ]);
 
   assert.match(index, /css\/smart-build-coach-loading\.css\?v=theme-accent-calendar-1/);
-  assert.match(index, /js\/app\.js\?v=dedicated-program-builder-1/);
+  assert.match(index, /js\/app\.js\?v=smart-build-direct-open-1/);
   assert.match(index, /smart-build-full-body-guardrails\.js\?v=coach-build-personalized-2/);
-  assert.match(app, /\.\/core\/router\.js\?v=dedicated-program-builder-1/);
-  assert.match(router, /\.\.\/workouts\/smart-build\.js\?v=dedicated-program-builder-1/);
+  assert.match(app, /\.\/core\/router\.js\?v=smart-build-direct-open-1/);
+  assert.match(router, /\.\.\/workouts\/smart-build\.js\?v=smart-build-direct-open-1/);
+  assert.match(router, /openSmartBuild\(programBuilder\)/);
+  assert.doesNotMatch(router, /querySelector\("\[data-smart-build\]"\)\?\.click/);
+  assert.match(await read("js/workouts/smart-build.js"), /export function openSmartBuild\(root=document\)/);
   assert.match(await read("js/workouts/smart-build-full-body-guardrails.js"), /smart-build-unified-engine-v11\.js\?v=coach-build-personalized-2/);
 });
 

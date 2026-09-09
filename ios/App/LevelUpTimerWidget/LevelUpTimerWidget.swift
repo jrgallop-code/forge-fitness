@@ -59,11 +59,7 @@ struct LevelUpTimerLiveActivity: Widget {
             let palette = TimerPalette.forTheme(context.attributes.theme)
             HStack(spacing: 12) {
                 RoundedRectangle(cornerRadius: 3).fill(palette.accent).frame(width: 5)
-                Image(systemName: context.attributes.kind == "cardio" ? "figure.run" : "dumbbell.fill")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(palette.accentContrast)
-                    .frame(width: 38, height: 38)
-                    .background(palette.accent, in: RoundedRectangle(cornerRadius: 11))
+                timerLogo(theme: context.attributes.theme, size: 38, cornerRadius: 11)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(context.attributes.kind == "cardio" ? "CARDIO TIMER" : "REST TIMER")
                         .font(.caption2.weight(.heavy)).tracking(1.1).foregroundStyle(palette.accent)
@@ -84,8 +80,10 @@ struct LevelUpTimerLiveActivity: Widget {
             let palette = TimerPalette.forTheme(context.attributes.theme)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Label("Level Up", systemImage: context.attributes.kind == "cardio" ? "figure.run" : "dumbbell.fill")
-                        .font(.caption.weight(.semibold)).foregroundStyle(palette.accent)
+                    HStack(spacing: 6) {
+                        timerLogo(theme: context.attributes.theme, size: 24, cornerRadius: 7)
+                        Text("Level Up").font(.caption.weight(.semibold)).foregroundStyle(palette.accent)
+                    }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     Text(timerInterval: context.state.startedAt...context.state.endAt, countsDown: true)
@@ -103,14 +101,34 @@ struct LevelUpTimerLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                Image(systemName: context.attributes.kind == "cardio" ? "figure.run" : "dumbbell.fill").foregroundStyle(palette.accent)
+                timerLogo(theme: context.attributes.theme, size: 20, cornerRadius: 6)
             } compactTrailing: {
                 Text(timerInterval: context.state.startedAt...context.state.endAt, countsDown: true).monospacedDigit().foregroundStyle(palette.accent).frame(width: 42)
             } minimal: {
-                Image(systemName: "timer").foregroundStyle(palette.accent)
+                timerLogo(theme: context.attributes.theme, size: 20, cornerRadius: 6)
             }
             .keylineTint(palette.accent)
         }
+    }
+
+    private func timerLogoName(for theme: String) -> String {
+        switch theme {
+        case "arctic": return "TimerLogoArctic"
+        case "pure": return "TimerLogoPure"
+        case "ocean": return "TimerLogoOcean"
+        case "midnight": return "TimerLogoMidnight"
+        case "slate": return "TimerLogoSlate"
+        case "pulse": return "TimerLogoPulse"
+        default: return "TimerLogoLevelUp"
+        }
+    }
+
+    private func timerLogo(theme: String, size: CGFloat, cornerRadius: CGFloat) -> some View {
+        Image(timerLogoName(for: theme))
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
 
     @ViewBuilder

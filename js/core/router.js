@@ -2,7 +2,7 @@ import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=proven-templat
 import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=cardio-rpe-1";
 import { initializeOneOffWorkout } from "../workouts/one-off-workout.js?v=cardio-rpe-1";
 import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=proven-template-builder-1";
-import { initializeSmartBuild } from "../workouts/smart-build.js?v=dedicated-program-builder-1";
+import { initializeSmartBuild, openSmartBuild } from "../workouts/smart-build.js?v=smart-build-direct-open-1";
 import { initializeSmartBuildSupersetGuard } from "../workouts/smart-build-superset-guard.js?v=superset-clean-1";
 import { initializeRoutineImporter } from "../workouts/routine-importer.js?v=launcher-grid-hotfix-1";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
@@ -113,13 +113,14 @@ export function navigate(page) {
                 safeInitialize("Workout landing polish", () => initializeWorkoutLandingLivePolish(content));
                 break;
             case "program-builder": {
-                content.innerHTML = `<section class="section-card smart-build-dedicated-page"><div data-workout-home hidden></div></section>`;
+                content.innerHTML = `<section class="section-card smart-build-dedicated-page"><div data-workout-home></div></section>`;
                 const programBuilder = content.querySelector(".smart-build-dedicated-page");
                 safeInitialize("Program Builder", () => initializeSmartBuild(programBuilder));
                 safeInitialize("Program Builder superset guard", () => initializeSmartBuildSupersetGuard(programBuilder));
-                const launcher = programBuilder?.querySelector("[data-smart-build]");
-                if (launcher) launcher.click();
-                else requestAnimationFrame(() => programBuilder?.querySelector("[data-smart-build]")?.click());
+                const opened = safeInitialize("Open Program Builder", () => openSmartBuild(programBuilder));
+                if (!opened) {
+                    content.innerHTML = `<section class="section-card"><h2>Program Builder</h2><p class="section-description">The builder could not open. Return to Workout and try again.</p></section>`;
+                }
                 break;
             }
             case "progress":

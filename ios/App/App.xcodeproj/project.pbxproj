@@ -23,6 +23,7 @@
 		A11C00152FF0000100000011 /* level-up-alarm.wav in Resources */ = {isa = PBXBuildFile; fileRef = A11C00162FF0000100000011 /* level-up-alarm.wav */; };
 		A11C00172FF0000100000011 /* LevelUpTimerWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00182FF0000100000011 /* LevelUpTimerWidget.swift */; };
 		A11C00192FF0000100000011 /* LevelUpTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00142FF0000100000011 /* LevelUpTimerAttributes.swift */; };
+		A11C00412FF0000100000041 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A11C00422FF0000100000041 /* Assets.xcassets */; };
 		A11C001A2FF0000100000011 /* LevelUpTimerWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A11C001B2FF0000100000011 /* LevelUpTimerWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A11C00312FF0000100000031 /* LevelUpNativeAuthPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00322FF0000100000031 /* LevelUpNativeAuthPlugin.swift */; };
 /* End PBXBuildFile section */
@@ -54,6 +55,7 @@
 		A11C00182FF0000100000011 /* LevelUpTimerWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpTimerWidget.swift; sourceTree = "<group>"; };
 		A11C001B2FF0000100000011 /* LevelUpTimerWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LevelUpTimerWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A11C001E2FF0000100000011 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A11C00422FF0000100000041 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A11C00322FF0000100000031 /* LevelUpNativeAuthPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpNativeAuthPlugin.swift; sourceTree = "<group>"; };
 		A11C00332FF0000100000031 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
@@ -114,7 +116,7 @@
 			path = App;
 			sourceTree = "<group>";
 		};
-		A11C00212FF0000100000011 /* LevelUpTimerWidget */ = {isa = PBXGroup; children = (A11C00182FF0000100000011 /* LevelUpTimerWidget.swift */, A11C001E2FF0000100000011 /* Info.plist */, ); path = LevelUpTimerWidget; sourceTree = "<group>"; };
+		A11C00212FF0000100000011 /* LevelUpTimerWidget */ = {isa = PBXGroup; children = (A11C00182FF0000100000011 /* LevelUpTimerWidget.swift */, A11C00422FF0000100000041 /* Assets.xcassets */, A11C001E2FF0000100000011 /* Info.plist */, ); path = LevelUpTimerWidget; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -206,7 +208,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A11C00252FF0000100000011 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A11C00252FF0000100000011 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A11C00412FF0000100000041 /* Assets.xcassets in Resources */, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
