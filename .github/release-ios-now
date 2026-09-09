@@ -18,3 +18,5 @@ Retry 6: export with the same explicit manual profile used by the successful sig
 Release 7: account transfer, native alarms, haptics, and selectable home-screen icons.
 
 Release 8: selectable icons, Lock Screen timers, reliable alarms, and native sign-in options.
+
+Release 9: retry App Store profiles with unique names and transient-error backoff.
