@@ -1,17 +1,19 @@
 import "../core/native-capabilities.js?v=lock-screen-timers-2";
+import "../privacy/analytics-consent.js?v=app-review-privacy-1";
 import { restoreBackupSnapshot, verifyBackupSnapshot } from "../core/backup-manager.js?v=backup-complete-7";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
 const SESSION_KEY = "level_up_cloud_session";
 const ACCOUNT_KEY = "level_up_cloud_account";
+const GUEST_MODE_KEY = "level_up_guest_mode";
 const RECOVERY_PARAMETER = "local-recovery";
 
 initializeFirstLaunchLogin();
 
 function initializeFirstLaunchLogin() {
     ensureStyles();
-    if (hasValidSession() || isRecoveryLaunch()) return;
+    if (hasValidSession() || isGuestMode() || isRecoveryLaunch()) return;
     document.documentElement.classList.add("level-up-login-required");
     const showGate = () => {
         if (document.getElementById("level-up-login-gate")) return;
@@ -20,6 +22,7 @@ function initializeFirstLaunchLogin() {
         initializeNativeProviders();
         initializeEmailAuth();
         initializeTransferAuth();
+        document.getElementById("level-up-login-guest")?.addEventListener("click", continueWithoutAccount);
     };
     if (document.body) showGate();
     else document.addEventListener("DOMContentLoaded", showGate, { once: true });
@@ -30,16 +33,18 @@ function renderGate() {
     return `<div class="level-up-login-gate" id="level-up-login-gate" role="dialog" aria-modal="true" aria-labelledby="level-up-login-title">
         <main class="level-up-login-panel">
             <img class="level-up-login-logo" src="assets/level-up-logo.svg" alt="Level Up">
-            <span class="level-up-login-kicker">LEVEL UP BETA</span>
+            <span class="level-up-login-kicker">LEVEL UP</span>
             <h1 id="level-up-login-title">Your training.<br><span>Your progress.</span></h1>
-            <p class="level-up-login-intro">Sign in to start using Level Up and begin tracking your training.</p>
+            <p class="level-up-login-intro">Sign in for private cloud backup, or continue locally without an account.</p>
             ${nativeIOS ? `<button class="level-up-login-provider level-up-login-apple" id="level-up-login-apple" type="button"><span>Continue with Apple</span><small></small></button>
             <button class="level-up-login-provider level-up-login-google-native" id="level-up-login-google-native" type="button"><span>Continue with Google</span><small>G</small></button>` : '<div class="level-up-login-google" id="level-up-login-google"></div>'}
             <button class="level-up-login-provider level-up-login-email-open" id="level-up-login-email-open" type="button" aria-expanded="false" aria-controls="level-up-email-auth">
                 <span>Continue with email</span><small>EMAIL</small>
             </button>
+            <button class="level-up-login-provider level-up-login-guest" id="level-up-login-guest" type="button">
+                <span>Continue without an account</span><small>LOCAL</small>
+            </button>
             ${nativeIOS ? '<button class="level-up-login-provider level-up-login-transfer-open" id="level-up-login-transfer-open" type="button" aria-expanded="false" aria-controls="level-up-transfer-auth"><span>Already use Level Up on the web?</span><small>TRANSFER</small></button>' : ""}
-            ${nativeIOS ? "" : '<button class="level-up-login-provider" type="button" disabled><span>Apple</span><small>Coming soon</small></button>'}
             <form class="level-up-email-auth" id="level-up-email-auth" hidden novalidate>
                 <div class="level-up-email-auth-header">
                     <button class="level-up-email-back" id="level-up-email-back" type="button" aria-label="Back to sign-in options">←</button>
@@ -294,8 +299,20 @@ async function completeEmailLogin(event) {
 }
 
 function saveSession(payload) {
+    localStorage.removeItem(GUEST_MODE_KEY);
     localStorage.setItem(SESSION_KEY, JSON.stringify({ token: payload.token, expiresAt: payload.expiresAt }));
     localStorage.setItem(ACCOUNT_KEY, JSON.stringify(payload.user));
+}
+
+function continueWithoutAccount() {
+    localStorage.setItem(GUEST_MODE_KEY, "1");
+    document.documentElement.classList.remove("level-up-login-required");
+    document.getElementById("level-up-login-gate")?.remove();
+    window.location.reload();
+}
+
+function isGuestMode() {
+    return localStorage.getItem(GUEST_MODE_KEY) === "1";
 }
 
 function initializeGoogleButton(attempt = 0) {
@@ -369,7 +386,7 @@ function ensureStyles() {
     if (document.querySelector('link[data-level-up-login]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/first-launch-login.css?v=native-auth-contrast-2";
+    link.href = "css/first-launch-login.css?v=app-review-login-1";
     link.dataset.levelUpLogin = "true";
     document.head.appendChild(link);
 }

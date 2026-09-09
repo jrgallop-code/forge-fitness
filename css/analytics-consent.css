@@ -1,0 +1,13 @@
+html.level-up-consent-open,
+html.level-up-consent-open body { overflow: hidden; }
+.analytics-consent-overlay { position: fixed; inset: 0; z-index: 99990; display: grid; place-items: center; overflow-y: auto; padding: max(24px,env(safe-area-inset-top)) 18px max(24px,env(safe-area-inset-bottom)); background: rgba(0,0,0,.78); backdrop-filter: blur(12px); }
+.analytics-consent-card { width: min(100%,430px); box-sizing: border-box; padding: 26px; border: 1px solid var(--line,rgba(255,255,255,.14)); border-radius: 24px; background: var(--card,#17171a); box-shadow: 0 24px 70px rgba(0,0,0,.42); color: var(--text,#f4f4f6); }
+.analytics-consent-card h2 { margin: 7px 0 12px; color: var(--heading,#fff); font-size: clamp(26px,7vw,34px); }
+.analytics-consent-card p { margin: 0 0 12px; color: var(--muted,#a5a5aa); font-size: 14px; line-height: 1.5; }
+.analytics-consent-actions { display: grid; gap: 10px; margin: 20px 0 16px; }
+.analytics-consent-actions button { width: 100%; min-height: 48px; }
+.analytics-consent-card > a { color: var(--accent-text,var(--accent,#69a9ff)); font-size: 12px; font-weight: 800; text-underline-offset: 3px; }
+.account-analytics-choice { display: grid; gap: 12px; margin-top: 15px; }
+.account-analytics-choice label { display: flex; align-items: flex-start; gap: 11px; color: var(--text,#f4f4f6); font-weight: 800; }
+.account-analytics-choice input { width: 20px; height: 20px; flex: 0 0 auto; accent-color: var(--accent,#2f80ff); }
+.account-analytics-choice small { display: block; margin-top: 4px; color: var(--muted,#a5a5aa); font-weight: 500; line-height: 1.4; }

@@ -3,6 +3,11 @@ import {
     restoreBackupSnapshot,
     verifyBackupSnapshot
 } from "../core/backup-manager.js?v=backup-complete-7";
+import {
+    analyticsAllowed,
+    clearAnalyticsConsent,
+    setAnalyticsConsent
+} from "../privacy/analytics-consent.js?v=app-review-privacy-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
@@ -10,18 +15,20 @@ const SESSION_KEY = "level_up_cloud_session";
 const ACCOUNT_KEY = "level_up_cloud_account";
 const LAST_SYNC_KEY = "level_up_cloud_last_sync";
 const AUTO_STATE_KEY = "level_up_cloud_auto_backup_state";
+const GUEST_MODE_KEY = "level_up_guest_mode";
 
 ensureAccountCloudStyles();
 
 export function renderAccountCloud() {
     const nativeIOS = isNativeIOS();
-    return `<section class="dashboard-welcome account-cloud-heading"><div><button class="nutrition-planner-back" id="account-cloud-back" type="button">← More</button><span class="eyebrow">BETA ACCOUNT</span><h2>Account & Cloud</h2><p>Keep a private automatic Level Up backup available across your devices.</p></div></section>
+    return `<section class="dashboard-welcome account-cloud-heading"><div><button class="nutrition-planner-back" id="account-cloud-back" type="button">← More</button><span class="eyebrow">ACCOUNT &amp; PRIVACY</span><h2>Account & Cloud</h2><p>Keep a private automatic Level Up backup available across your devices.</p></div></section>
     <section class="section-card account-cloud-card">
         <div class="account-cloud-profile" id="account-cloud-profile">
-            <div><span class="eyebrow">ACCOUNT</span><h3 id="account-cloud-name">Not signed in</h3><p id="account-cloud-email">${nativeIOS ? "Sign in with your Level Up email account to activate beta cloud storage." : "Sign in with Google to activate beta cloud storage."}</p></div>
+            <div><span class="eyebrow">ACCOUNT</span><h3 id="account-cloud-name">Using without an account</h3><p id="account-cloud-email">Your data is stored locally on this device.</p></div>
             <span class="account-cloud-badge" id="account-cloud-badge">LOCAL ONLY</span>
         </div>
         ${nativeIOS ? "" : '<div id="account-google-button" class="account-google-button"></div>'}
+        <button class="secondary-btn account-cloud-open-login" id="account-cloud-open-login" type="button">Sign In or Create an Account</button>
         <div class="account-cloud-actions" id="account-cloud-actions" hidden>
             <button class="primary-btn" id="account-cloud-upload" type="button">↑ Back Up Now</button>
             <button class="secondary-btn" id="account-cloud-download" type="button">↓ Download to This Device</button>
@@ -30,6 +37,13 @@ export function renderAccountCloud() {
         <div class="account-cloud-status" aria-live="polite">
             <strong id="account-cloud-state">No cloud backup connected.</strong>
             <span id="account-cloud-updated">Your current data remains stored on this device.</span>
+        </div>
+    </section>
+    <section class="section-card account-cloud-privacy">
+        <span class="eyebrow">PRIVACY</span><h3>Optional analytics</h3>
+        <p>Choose whether Level Up may send account-linked app activity such as active days, completed-workout details, food-logging events, appearance and program use. Entered foods, weight values, measurements and photos are not sent as analytics.</p>
+        <div class="account-analytics-choice">
+            <label><input id="account-analytics-consent" type="checkbox"><span>Share optional analytics<small id="account-analytics-status">Off while using Level Up without an account.</small></span></label>
         </div>
     </section>
     <section class="section-card account-cloud-transfer" id="account-cloud-transfer-section" hidden>
@@ -45,8 +59,8 @@ export function renderAccountCloud() {
         <p class="account-cloud-transfer-message" id="account-cloud-transfer-message" aria-live="polite"></p>
     </section>
     <section class="section-card account-cloud-safety">
-        <span class="eyebrow">BETA SAFETY</span><h3>Automatic backup with version protection</h3>
-        <p>Level Up backs up signed-in app data after changes. If another device has a newer cloud version, automatic upload pauses instead of overwriting it. You can still back up or restore manually here.</p>\n        <div class="account-cloud-links"><a href="https://leveluphypertrophy.com/privacy.html" target="_blank" rel="noopener">Privacy Policy ↗</a><a href="mailto:support@leveluphypertrophy.com">Contact Support</a></div>
+        <span class="eyebrow">BACKUP SAFETY</span><h3>Automatic backup with version protection</h3>
+        <p>Level Up backs up signed-in app data after changes. If another device has a newer cloud version, automatic upload pauses instead of overwriting it. You can still back up or restore manually here.</p>\n        <div class="account-cloud-links"><a href="privacy.html">Privacy Policy</a><a href="mailto:support@leveluphypertrophy.com">Contact Support</a></div>
     </section>
     <section class="section-card account-cloud-delete" id="account-cloud-delete-section" hidden>
         <span class="eyebrow">ACCOUNT CONTROL</span><h3>Delete cloud account</h3>
@@ -67,6 +81,8 @@ export function initializeAccountCloud({ onBack } = {}) {
     document.getElementById("account-cloud-delete")?.addEventListener("click", deleteAccount);
     document.getElementById("account-cloud-transfer-create")?.addEventListener("click", createTransferCode);
     document.getElementById("account-cloud-transfer-copy")?.addEventListener("click", copyTransferCode);
+    document.getElementById("account-cloud-open-login")?.addEventListener("click", openAccountLogin);
+    document.getElementById("account-analytics-consent")?.addEventListener("change", updateAnalyticsChoice);
     renderSession();
     if (getSession()?.token) refreshAccount();
     else initializeGoogleButton();
@@ -106,6 +122,7 @@ async function handleGoogleCredential(response) {
         });
         localStorage.setItem(SESSION_KEY, JSON.stringify({ token: session.token, expiresAt: session.expiresAt }));
         localStorage.setItem(ACCOUNT_KEY, JSON.stringify(session.user));
+        localStorage.removeItem(GUEST_MODE_KEY);
         window.dispatchEvent(new CustomEvent("levelup:cloud-session-started"));
         renderSession();
         await refreshAccount();
@@ -184,10 +201,22 @@ async function deleteAccount() {
     if (!window.confirm("This cannot be undone. Delete the cloud account now?")) return;
     try {
         await api("/v1/account", { method: "DELETE" });
+        clearAnalyticsConsent();
         clearSession();
         setMessage("Cloud account deleted. Local device data was not removed.", "success");
     }
     catch (error) { setMessage(error.message, "error"); }
+}
+
+function openAccountLogin() {
+    localStorage.removeItem(GUEST_MODE_KEY);
+    window.location.reload();
+}
+
+function updateAnalyticsChoice(event) {
+    const allowed = Boolean(event.currentTarget?.checked);
+    setAnalyticsConsent(allowed);
+    renderAnalyticsChoice(Boolean(getSession()?.token));
 }
 
 async function createTransferCode() {
@@ -225,15 +254,28 @@ function renderSession() {
     document.getElementById("account-cloud-transfer-section")?.toggleAttribute("hidden", !signedIn || isNativeIOS());
     const googleButton = document.getElementById("account-google-button");
     if (googleButton) googleButton.hidden = signedIn;
-    setText("account-cloud-name", signedIn ? account.name || "Level Up Beta Member" : "Not signed in");
+    document.getElementById("account-cloud-open-login")?.toggleAttribute("hidden", signedIn);
+    setText("account-cloud-name", signedIn ? account.name || "Level Up Member" : "Using without an account");
     setText("account-cloud-email", signedIn
         ? account.email
-        : isNativeIOS()
-            ? "Sign in with your Level Up email account to activate beta cloud storage."
-            : "Sign in with Google to activate beta cloud storage.");
+        : "Sign in or create an account to activate private cloud backup.");
     const autoState = readJson(AUTO_STATE_KEY);
     const needsAttention = autoState?.status === "newer-cloud-backup";
     setText("account-cloud-badge", signedIn ? needsAttention ? "ACTION NEEDED" : "AUTO BACKUP" : "LOCAL ONLY");
+    renderAnalyticsChoice(signedIn);
+}
+
+function renderAnalyticsChoice(signedIn) {
+    const checkbox = document.getElementById("account-analytics-consent");
+    if (checkbox) {
+        checkbox.checked = signedIn && analyticsAllowed();
+        checkbox.disabled = !signedIn;
+    }
+    setText("account-analytics-status", signedIn
+        ? analyticsAllowed()
+            ? "On. You can turn this off at any time."
+            : "Off. Core features and cloud backup still work."
+        : "Off while using Level Up without an account.");
 }
 
 function renderRemoteMeta(remote) {
@@ -279,6 +321,8 @@ function getSession() {
 function clearSession() {
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(ACCOUNT_KEY);
+    clearAnalyticsConsent();
+    localStorage.setItem(GUEST_MODE_KEY, "1");
     renderSession();
     initializeGoogleButton();
 }

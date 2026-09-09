@@ -1,5 +1,21 @@
 # Level Up Cloud Operations
 
+## Sign in with Apple deletion revocation
+
+Apply migration `0019_apple_credentials.sql` before releasing the iOS account flow. The
+Worker exchanges Apple's one-time authorization code, stores the refresh token encrypted,
+and revokes that token before permanently deleting the Level Up account.
+
+Configure these production secrets with `wrangler secret put`:
+
+- `APPLE_TEAM_ID`: the Apple Developer team identifier.
+- `APPLE_KEY_ID`: the identifier of an Apple Developer key that has Sign in with Apple enabled.
+- `APPLE_PRIVATE_KEY`: the complete `.p8` private key for that Sign in with Apple key.
+- `APPLE_TOKEN_ENCRYPTION_KEY`: a stable, random 32-byte value encoded with base64 or base64url.
+
+The optional `APPLE_CLIENT_ID` variable defaults to `com.leveluphypertrophy.app`. Do not
+rotate the encryption key until stored Apple refresh tokens have been revoked or re-encrypted.
+
 ## User activity
 
 `last_active_at` is updated when a signed-in app opens, returns to the foreground, and every 15 minutes while it remains open.

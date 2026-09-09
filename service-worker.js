@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-09-290";
+const CACHE_VERSION = "2026-09-09-291";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -6,7 +6,10 @@ const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 const CORE_ASSETS = [
     "./",
     "./index.html",
+    "./privacy.html",
     "./manifest.webmanifest",
+    "./js/privacy/analytics-consent.js?v=app-review-privacy-1",
+    "./css/analytics-consent.css?v=app-review-privacy-1",
     "./js/account/cloud-backup-history-ui.js?v=backup-history-ui-1",
     "./js/account/cloud-background-sync.js",
     "./js/analytics/product-state.js?v=owner-product-insights-1",

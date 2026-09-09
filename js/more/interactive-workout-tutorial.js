@@ -265,7 +265,7 @@ function reconcileFlow() {
 function ensureGuide() {
     if (document.querySelector("[data-interactive-tutorial-guide]")) return;
     document.body.insertAdjacentHTML("beforeend", `
-        <div class="interactive-tutorial-sandbox-badge" data-interactive-tutorial-badge><span>DEMO</span><strong>Upper / Lower Balanced · Day 1 – Upper A</strong></div>
+        <div class="interactive-tutorial-sandbox-badge" data-interactive-tutorial-badge><span>PRACTICE</span><strong>Upper / Lower Balanced · Day 1 – Upper A</strong></div>
         <div class="interactive-tutorial-finger" data-interactive-tutorial-finger aria-hidden="true">👇</div>
         <aside class="interactive-tutorial-guide" data-interactive-tutorial-guide role="status" aria-live="polite">
             <div><small data-interactive-step-label></small><strong data-interactive-step-title></strong><p data-interactive-step-body></p></div>

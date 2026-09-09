@@ -55,14 +55,14 @@ export function renderExportBackup() {
         <section class="section-card dashboard-drive">
             <div class="backup-icon drive-icon">G</div>
             <div class="backup-copy">
-                <span class="eyebrow">MULTI-DEVICE BETA</span>
+                <span class="eyebrow">MULTI-DEVICE BACKUP</span>
                 <h2>Google Drive</h2>
                 <p>Connect your Google account to transfer the same complete Level Up backup between this device and a visible backup file in Google Drive.</p>
                 <div class="drive-state-row">
                     <span id="google-drive-status" class="drive-status">Not connected</span>
                     <span id="google-drive-last-sync">No Drive transfer completed on this device.</span>
                 </div>
-                <p class="drive-safety-note">Upload copies this device to Drive. Download replaces this device with the Drive copy. Automatic merging is intentionally disabled during the first beta.</p>
+                <p class="drive-safety-note">Upload copies this device to Drive. Download replaces this device with the Drive copy. Automatic merging is intentionally disabled to prevent accidental overwrites.</p>
             </div>
             <div class="backup-actions drive-actions">
                 <button id="connect-google-drive" class="primary-btn" type="button">Connect Google Drive</button>

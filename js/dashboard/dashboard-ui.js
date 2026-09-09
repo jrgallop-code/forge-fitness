@@ -409,7 +409,7 @@ export function renderDashboard() {
             <div class="backup-copy">
 
                 <span class="eyebrow">
-                    MULTI-DEVICE BETA
+                    MULTI-DEVICE BACKUP
                 </span>
 
                 <h2>
@@ -438,7 +438,7 @@ export function renderDashboard() {
                 <p class="drive-safety-note">
                     Upload copies this device to Drive. Download replaces
                     this device with the Drive copy. Automatic merging is
-                    intentionally disabled during the first beta.
+                    intentionally disabled to prevent accidental overwrites.
                 </p>
 
             </div>

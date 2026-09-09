@@ -13,11 +13,16 @@
     "required": [
       "FATSECRET_CLIENT_ID",
       "FATSECRET_CLIENT_SECRET",
-      "USDA_FDC_API_KEY"
+      "USDA_FDC_API_KEY",
+      "APPLE_TEAM_ID",
+      "APPLE_KEY_ID",
+      "APPLE_PRIVATE_KEY",
+      "APPLE_TOKEN_ENCRYPTION_KEY"
     ]
   },
   "vars": {
     "GOOGLE_CLIENT_ID": "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com",
+    "APPLE_CLIENT_ID": "com.leveluphypertrophy.app",
     "ALLOWED_ORIGINS": "https://leveluphypertrophy.com,https://www.leveluphypertrophy.com,https://app.leveluphypertrophy.com,https://admin.leveluphypertrophy.com,https://jrgallop-code.github.io,capacitor://localhost",
     "ANALYTICS_TIME_ZONE": "America/Halifax"
   },

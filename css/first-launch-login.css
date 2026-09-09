@@ -22,6 +22,8 @@ html.level-up-login-required, html.level-up-login-required body { overflow: hidd
 .level-up-login-email-open small { color: #ff6676; }
 .level-up-login-transfer-open { color: #fff; cursor: pointer; }
 .level-up-login-transfer-open small { color: #69a9ff; }
+.level-up-login-guest { background: transparent !important; border-color: rgba(255,255,255,.14) !important; }
+.level-up-login-guest small { color: #9ca3af; }
 .level-up-email-auth[hidden] { display: none !important; }
 .level-up-email-auth { width: min(100%, 340px); display: grid; gap: 13px; margin-top: 4px; }
 .level-up-email-auth-header { display: grid; grid-template-columns: 38px 1fr 38px; align-items: center; min-height: 40px; }

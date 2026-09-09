@@ -1628,7 +1628,7 @@ function loadTrainingDemoData() {
     if (message) {
 
         message.textContent =
-            "12 weeks of demo workouts loaded. Your real workout records were preserved.";
+            "12 weeks of sample workouts loaded. Your real workout records were preserved.";
 
     }
 
@@ -1665,7 +1665,7 @@ function removeTrainingDemoData() {
     if (message) {
 
         message.textContent =
-            "Demo workouts removed. Real workout records were preserved.";
+            "Sample workouts removed. Real workout records were preserved.";
 
     }
 
@@ -1831,7 +1831,7 @@ function createTrainingDemoData() {
                     "demo-12-week-plan",
 
                 planName:
-                    "12-Week Demo Program",
+                    "12-Week Sample Program",
 
                 trainingDayIndex:
                     workoutIndex,

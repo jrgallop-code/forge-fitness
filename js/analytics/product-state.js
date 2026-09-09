@@ -1,3 +1,5 @@
+import { analyticsAllowed } from "../privacy/analytics-consent.js?v=app-review-privacy-1";
+
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
 const APPEARANCE_KEY = "level_up_appearance_settings";
@@ -19,6 +21,11 @@ export function initializeProductStateTracking() {
 
     window.addEventListener("levelup:cloud-session-started", () => {
         queueSnapshot(250, true);
+        void reconcileRecentProgramUsage(true);
+    });
+    window.addEventListener("levelup:analytics-consent-changed", event => {
+        if (!event.detail?.allowed) return;
+        queueSnapshot(100, true);
         void reconcileRecentProgramUsage(true);
     });
     window.addEventListener("levelup:appearance-change", () => queueSnapshot(250, true));
@@ -49,6 +56,7 @@ function queueSnapshot(delay = 0, force = false) {
 }
 
 export async function sendProductStateSnapshot(force = false) {
+    if (!analyticsAllowed()) return false;
     const token = sessionToken();
     if (!token || !navigator.onLine) return false;
 
@@ -82,6 +90,7 @@ export async function sendProductStateSnapshot(force = false) {
 }
 
 export async function reconcileRecentProgramUsage(force = false) {
+    if (!analyticsAllowed()) return false;
     const token = sessionToken();
     if (!token || !navigator.onLine) return false;
     const sessions = recentProgramSessions();
@@ -101,6 +110,7 @@ export async function reconcileRecentProgramUsage(force = false) {
 }
 
 async function sendCompletedProgram(sessionId) {
+    if (!analyticsAllowed()) return false;
     const token = sessionToken();
     if (!token || !navigator.onLine || !sessionId) return false;
     const sessions = safeRead(WORKOUT_LOG_KEY);

@@ -29,7 +29,7 @@ function renderCoachState({ trend, goalRate, currentCalories, isDemo }) {
     if (goalElement && Number.isFinite(goalRate)) goalElement.textContent = formatRate(goalRate);
     if (actualHeading) actualHeading.textContent = trend.label;
     if (actualElement) actualElement.textContent = Number.isFinite(actualRate) ? formatRate(actualRate) : "--";
-    if (confidence) { const status = trend.status === "actual" ? "Established" : trend.status === "preliminary" ? "Preliminary" : "Insufficient"; confidence.textContent = `${status} · ${trend.windowEntries} weigh-ins / ${trend.windowDays} days${isDemo ? " · DEMO" : ""}`; }
+    if (confidence) { const status = trend.status === "actual" ? "Established" : trend.status === "preliminary" ? "Preliminary" : "Insufficient"; confidence.textContent = `${status} · ${trend.windowEntries} weigh-ins / ${trend.windowDays} days${isDemo ? " · SAMPLE" : ""}`; }
     if (trend.status !== "actual" || !Number.isFinite(actualRate)) {
         if (recommendation) recommendation.textContent = trend.status === "preliminary" ? `Your preliminary regression trend is ${formatRate(actualRate)}. Level Up shows the rate now, but waits for at least 14 calendar days and 7 valid weigh-ins before suggesting a calorie change.` : "Keep collecting consistent weight data. A preliminary weekly rate can appear after 7 days; 14 calendar days and 7 valid weigh-ins are required for coaching.";
         if (suggestedText) suggestedText.textContent = ""; hideApply(applyButton); return;

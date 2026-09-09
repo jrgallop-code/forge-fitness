@@ -1,3 +1,5 @@
+import { analyticsAllowed } from "../privacy/analytics-consent.js?v=app-review-privacy-1";
+
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
 const FIRST_TOUCH_KEY = "level_up_acquisition_first_touch";
@@ -14,13 +16,21 @@ let initialized = false;
 
 export function initializeAcquisitionTracking(){
     ensureStyles();
-    captureFirstTouch();
+    if (analyticsAllowed()) captureFirstTouch();
     if(initialized)return;
     initialized=true;
     void submitAcquisition();
     void flushEventQueue();
     window.addEventListener("online",()=>{void submitAcquisition();void flushEventQueue();});
     window.addEventListener("levelup:cloud-session-started",()=>{void submitAcquisition();void flushEventQueue();void reconcileRecentWorkoutEvents();});
+    window.addEventListener("levelup:analytics-consent-changed",event=>{
+        if(!event.detail?.allowed)return;
+        captureFirstTouch();
+        void submitAcquisition();
+        void flushEventQueue();
+        void reconcileRecentFoodLogEvents();
+        void reconcileRecentWorkoutEvents();
+    });
     window.addEventListener("levelup:workout-completed",event=>{
         const detail=event.detail||{};
         void trackProductEvent("workout_completed",{
@@ -60,6 +70,7 @@ export function saveReportedSource(source,otherText=""){
 }
 
 export async function trackProductEvent(eventName,{eventKey,metadata={},occurredAt}={}){
+    if(!analyticsAllowed())return false;
     const token=sessionToken();
     const event={eventName,eventKey:String(eventKey||crypto.randomUUID()),occurredAt:validOccurredAt(occurredAt),metadata};
     if(!token||!navigator.onLine){queueEvent(event);return false;}
@@ -71,6 +82,7 @@ export async function trackProductEvent(eventName,{eventKey,metadata={},occurred
 }
 
 async function reconcileRecentFoodLogEvents(){
+    if(!analyticsAllowed())return;
     if(localStorage.getItem(FOOD_RECONCILE_KEY)==="complete")return;
     const log=safeRead(FOOD_LOG_KEY);
     if(!log||typeof log!=="object"||Array.isArray(log)){localStorage.setItem(FOOD_RECONCILE_KEY,"complete");return;}
@@ -90,6 +102,7 @@ async function reconcileRecentFoodLogEvents(){
 }
 
 async function reconcileRecentWorkoutEvents(){
+    if(!analyticsAllowed())return;
     const sessions=safeRead(WORKOUT_LOG_KEY);
     if(!Array.isArray(sessions))return;
     const cutoff=Date.now()-31*86400000;
@@ -127,6 +140,7 @@ function countWorkingSets(session){
 }
 
 async function flushEventQueue(){
+    if(!analyticsAllowed())return;
     const token=sessionToken(),queue=safeRead(EVENT_QUEUE_KEY);
     if(!token||!navigator.onLine||!Array.isArray(queue)||!queue.length)return;
     const remaining=[];
@@ -140,6 +154,7 @@ async function flushEventQueue(){
 }
 
 function queueEvent(event){
+    if(!analyticsAllowed())return;
     const queue=safeRead(EVENT_QUEUE_KEY);
     const next=Array.isArray(queue)?queue:[];
     if(!next.some(item=>item.eventName===event.eventName&&item.eventKey===event.eventKey))next.push(event);
@@ -153,6 +168,7 @@ function captureFirstTouch(){
 }
 
 async function submitAcquisition(){
+    if(!analyticsAllowed())return false;
     const token=sessionToken(),first=safeRead(FIRST_TOUCH_KEY),reported=safeRead(REPORTED_KEY);
     if(!token||!first||!navigator.onLine)return false;
     const fingerprint=JSON.stringify([token.slice(-12),first,reported]);

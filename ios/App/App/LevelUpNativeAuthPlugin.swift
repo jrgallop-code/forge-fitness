@@ -35,15 +35,18 @@ final class LevelUpNativeAuthPlugin: CAPPlugin, CAPBridgedPlugin, ASAuthorizatio
         guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
               let tokenData = credential.identityToken,
               let identityToken = String(data: tokenData, encoding: .utf8),
+              let codeData = credential.authorizationCode,
+              let authorizationCode = String(data: codeData, encoding: .utf8),
               let call = pendingCall,
               let nonce = rawNonce else {
-            finishWithError("Apple sign-in did not return a valid identity token.")
+            finishWithError("Apple sign-in did not return valid account credentials.")
             return
         }
         let formatter = PersonNameComponentsFormatter()
         let name = credential.fullName.map { formatter.string(from: $0) } ?? ""
         call.resolve([
             "identityToken": identityToken,
+            "authorizationCode": authorizationCode,
             "nonce": nonce,
             "email": credential.email ?? "",
             "name": name,

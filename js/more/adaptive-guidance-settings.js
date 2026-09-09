@@ -61,7 +61,7 @@ export function renderAdaptiveGuidanceSettings() {
             <div>
                 <button class="nutrition-planner-back" id="adaptive-guidance-back" type="button">← More</button>
                 <span class="eyebrow">WORKOUT PREFERENCES</span>
-                <h2 class="adaptive-title-with-badge">Adaptive Guidance <span class="adaptive-beta-badge">BETA</span></h2>
+                <h2>Adaptive Guidance</h2>
                 <p>Optional coaching based on the training information you choose to record.</p>
             </div>
         </section>

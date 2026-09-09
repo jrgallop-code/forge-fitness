@@ -103,7 +103,7 @@ function renderCoachSummary(session) {
   return `
     <section class="adaptive-coach-summary" data-adaptive-session-id="${escapeHtml(session.id)}">
       <div class="adaptive-coach-heading">
-        <span class="adaptive-coach-kicker">ADAPTIVE COACH <em>BETA</em></span>
+        <span class="adaptive-coach-kicker">ADAPTIVE COACH</span>
         <h3>Coach Summary</h3>
         <p>${hasPlanChange ? "Suggestions only—nothing changes unless you apply it." : "Based on this workout and your feedback."}</p>
       </div>

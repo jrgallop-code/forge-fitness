@@ -56,6 +56,20 @@ Before the first release run, register `com.leveluphypertrophy.app` as the app's
 ## App Review readiness
 
 - The iOS build offers Level Up's first-party email login and does not present Google as primary-account authentication. The PWA can continue to offer Google login without changing the native review path.
+- Reviewers can choose **Continue without an account** and use the app's core workout, nutrition, and progress features with data stored locally. A review account is only needed to test cloud backup, restore, and account deletion.
 - Account & Cloud includes an in-app permanent account-deletion flow.
-- Create the App Store privacy answers, screenshots, description, support URL, and review notes. Supply App Review with a working demo account because Level Up requires sign-in.
+- Optional account-linked analytics require an explicit opt-in and can be disabled later under **More → Account & Cloud**.
+- Create the App Store privacy answers, screenshots, description, support URL, privacy-policy URL, and review notes. Supply App Review with a working review account so the cloud flows can be tested, and note that no account is required for local use.
 - Complete physical-device testing and Apple code signing. Those final steps require macOS/Xcode or a macOS CI service plus an Apple Developer membership.
+
+## Sign in with Apple account-deletion setup
+
+The app sends Apple's one-time authorization code to the backend. The backend exchanges it for an encrypted refresh token and revokes that token before deleting an Apple-linked account. Before deploying the updated Worker:
+
+1. Apply `cloud/migrations/0019_apple_credentials.sql` to the production D1 database.
+2. Create a Sign in with Apple private key in the Apple Developer portal for this app's identifier.
+3. Configure the Worker secrets `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`, and `APPLE_TOKEN_ENCRYPTION_KEY`. Use a stable random 32-byte base64 or base64url value for the encryption key.
+4. Confirm `APPLE_CLIENT_ID` is the app bundle ID, `com.leveluphypertrophy.app`, unless the registered identifier changes.
+5. Test a new Apple sign-in followed by in-app account deletion on a physical device. A revocation failure intentionally stops deletion and asks the user to retry, preventing an orphaned Apple authorization.
+
+The App Store Connect upload key described above and the Sign in with Apple authentication key are separate credentials and should remain separately scoped.
