@@ -25,9 +25,10 @@ test("the public validation workflow never references Apple secrets", () => {
     assert.doesNotMatch(workflow, /authenticationKey|provisioning|certificate/i);
 });
 
-test("App Store releases are manual and protected by an environment", () => {
+test("App Store releases are protected and any push trigger is one-time guarded", () => {
     assert.match(releaseWorkflow, /workflow_dispatch:/);
-    assert.doesNotMatch(releaseWorkflow, /\n\s+push:/);
+    assert.match(releaseWorkflow, /push:\s*\n\s*branches:\s*\n\s*- ios\/capacitor-app-store/);
+    assert.match(releaseWorkflow, /paths:\s*\n\s*- \.github\/release-ios-now/);
     assert.match(releaseWorkflow, /environment:\s*app-store/);
     assert.match(releaseWorkflow, /permissions:\s*\n\s*contents:\s*read/);
 });

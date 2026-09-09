@@ -2,6 +2,11 @@ name: iOS App Store Release
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - ios/capacitor-app-store
+    paths:
+      - .github/release-ios-now
 
 permissions:
   contents: read

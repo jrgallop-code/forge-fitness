@@ -1,0 +1,4 @@
+# One-time TestFlight release trigger.
+
+This marker intentionally triggers the protected iOS App Store release workflow
+without merging the Capacitor branch into the production PWA branch.
