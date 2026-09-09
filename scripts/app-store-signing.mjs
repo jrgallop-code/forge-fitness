@@ -36,21 +36,31 @@ function token() {
 }
 
 async function api(endpoint, options = {}) {
-  const response = await fetch(`${apiRoot}${endpoint}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token()}`,
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-  if (response.status === 204) return null;
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
+  const retryable = new Set([429, 500, 502, 503, 504]);
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const response = await fetch(`${apiRoot}${endpoint}`, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${token()}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+    if (response.status === 204) return null;
+    const body = await response.json().catch(() => ({}));
+    if (response.ok) return body;
     const details = body?.errors?.map((error) => error.detail || error.title).filter(Boolean).join('; ');
-    throw new Error(`App Store Connect ${response.status}: ${details || 'request failed'}`);
+    if (!retryable.has(response.status) || attempt === 4) {
+      throw new Error(`App Store Connect ${response.status}: ${details || 'request failed'}`);
+    }
+    const retryAfter = Number(response.headers.get('retry-after'));
+    const delay = Number.isFinite(retryAfter) && retryAfter > 0
+      ? retryAfter * 1000
+      : 1500 * (2 ** attempt);
+    console.warn(`App Store Connect ${response.status}; retrying ${endpoint} in ${Math.round(delay / 1000)}s.`);
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
-  return body;
+  throw new Error('App Store Connect request exhausted its retries.');
 }
 
 function writeOutput(name, value) {
@@ -128,7 +138,8 @@ async function createSigningAssets() {
     const extensionBundleId = extensionBundleIds?.data?.[0]?.id;
     if (!extensionBundleId) throw new Error(`No registered App ID found for ${extensionIdentifier}`);
 
-    const profileName = `Level Up App Store ${required('GITHUB_RUN_ID')}`;
+    const runLabel = `${required('GITHUB_RUN_ID')}-${process.env.GITHUB_RUN_ATTEMPT || '1'}`;
+    const profileName = `Level Up App Store ${runLabel}`;
     const profile = await api('/profiles', {
       method: 'POST',
       body: JSON.stringify({
@@ -145,7 +156,7 @@ async function createSigningAssets() {
     createdProfileIds.push(profile.data.id);
     writeFileSync(profilePath, Buffer.from(profile.data.attributes.profileContent, 'base64'));
 
-    const timerProfileName = `Level Up Timer App Store ${required('GITHUB_RUN_ID')}`;
+    const timerProfileName = `Level Up Timer App Store ${runLabel}`;
     const timerProfile = await api('/profiles', {
       method: 'POST',
       body: JSON.stringify({
