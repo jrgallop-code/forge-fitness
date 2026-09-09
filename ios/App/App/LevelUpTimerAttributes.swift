@@ -13,4 +13,5 @@ struct LevelUpTimerAttributes: ActivityAttributes {
     var detail: String
     var kind: String
     var theme: String
+    var icon: String
 }
