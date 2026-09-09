@@ -35,7 +35,8 @@ html.level-up-login-required, html.level-up-login-required body { overflow: hidd
 .level-up-email-mode { border: 0; background: transparent; color: #e4e4e7; font: inherit; font-size: 13px; font-weight: 800; text-decoration: underline; text-decoration-color: rgba(255,67,87,.8); text-underline-offset: 4px; cursor: pointer; }
 .level-up-email-help { margin: -2px 0 0; color: #85858b; font-size: 11px; line-height: 1.4; }
 .level-up-email-help a { color: #b8b8bd; }
-.level-up-transfer-auth > p { margin: 0; color: #a8a8ae; font-size: 13px; line-height: 1.45; text-align: left; }
+.level-up-transfer-auth > p { margin: 0; color: #c2c2ca !important; -webkit-text-fill-color: #c2c2ca !important; font-size: 13px; line-height: 1.45; text-align: left; }
+.level-up-transfer-auth > p strong { color: #fff !important; -webkit-text-fill-color: #fff !important; }
 .level-up-transfer-auth input { text-transform: uppercase; text-align: center; font-weight: 900; letter-spacing: .12em; }
 .level-up-login-panel.email-auth-open .level-up-login-google,
 .level-up-login-panel.email-auth-open > .level-up-login-provider { display: none; }
@@ -47,7 +48,7 @@ html.level-up-login-required, html.level-up-login-required body { overflow: hidd
 }
 .level-up-login-provider.level-up-login-apple{background:#050505!important;color:#fff!important;border-color:rgba(255,255,255,.32)!important}
 .level-up-login-provider.level-up-login-apple small{font-size:22px;color:#fff}
-.level-up-login-provider.level-up-login-google-native{background:#fff!important;color:#171717!important;-webkit-text-fill-color:#171717!important;border-color:#dadce0!important}
+.level-up-login-provider.level-up-login-google-native{background:#050505!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:rgba(255,255,255,.32)!important}
 .level-up-login-provider.level-up-login-google-native small{font-size:18px;font-weight:900;color:#4285f4!important;-webkit-text-fill-color:#4285f4!important}
 .level-up-login-gate :is(.level-up-login-intro,.level-up-email-help,.level-up-transfer-auth>p){color:#c2c2ca!important}
 .level-up-login-gate :is(.level-up-login-legal a,.level-up-email-help a){color:#e2e8f0!important}
