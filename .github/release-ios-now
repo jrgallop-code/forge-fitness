@@ -2,3 +2,5 @@
 
 This marker intentionally triggers the protected iOS App Store release workflow
 without merging the Capacitor branch into the production PWA branch.
+
+Retry 1: use the Apple Distribution identity for the Release archive.
