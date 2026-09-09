@@ -35,9 +35,10 @@ test("native startup uses the saved appearance splash before the app renders", a
     assert.match(index, /level-up-installed-pwa/);
 });
 
-test("native iOS offers Apple, Google, email, and existing-account transfer", async () => {
+test("native iOS offers Apple, Google, email, and existing-account transfer with protected contrast", async () => {
     const login = await readFile(new URL("../js/account/first-launch-login.js", import.meta.url), "utf8");
     const account = await readFile(new URL("../js/more/account-cloud-ui.js", import.meta.url), "utf8");
+    const styles = await readFile(new URL("../css/first-launch-login.css", import.meta.url), "utf8");
     assert.match(login, /window\.Capacitor\?\.getPlatform\?\.\(\) === "ios"/);
     assert.match(login, /Continue with Apple/);
     assert.match(login, /Continue with Google/);
@@ -50,9 +51,11 @@ test("native iOS offers Apple, Google, email, and existing-account transfer", as
     assert.match(account, /method: "DELETE"/);
     assert.match(account, /Generate Transfer Code/);
     assert.match(login, /Already use Level Up on the web\?/);
+    assert.match(styles, /level-up-login-google-native\{background:#050505!important;color:#fff!important/);
+    assert.match(styles, /level-up-transfer-auth > p strong \{ color: #fff !important;/);
 });
 
-test("native iOS provides haptics, background alarms, and selectable app icons", async () => {
+test("native iOS provides haptics, background alarms, selectable app icons, and a vector Level Up timer logo", async () => {
     const native = await readFile(new URL("../js/core/native-capabilities.js", import.meta.url), "utf8");
     const appearance = await readFile(new URL("../js/more/appearance-settings.js", import.meta.url), "utf8");
     const info = await readFile(new URL("../ios/App/App/Info.plist", import.meta.url), "utf8");
@@ -77,16 +80,17 @@ test("native iOS provides haptics, background alarms, and selectable app icons",
     assert.match(widget, /ActivityConfiguration/);
     assert.match(widget, /timerInterval/);
     assert.match(widget, /TimerPalette\.forTheme/);
-    assert.match(widget, /timerLogoName\(for theme:/);
+    assert.match(widget, /LevelUpThemeLogo/);
+    assert.match(widget, /LevelUpArrow/);
+    assert.match(widget, /timerLogo\(theme: context\.attributes\.theme/);
+    assert.doesNotMatch(widget, /timerLogoName\(for theme:/);
     assert.doesNotMatch(widget, /dumbbell\.fill/);
     assert.match(widget, /DismissLevelUpTimerIntent/);
     assert.match(widgetInfo, /CFBundleExecutable/);
     assert.match(info, /NSSupportsLiveActivities/);
     for (const name of ["Arctic", "Pure", "Ocean", "Midnight", "Slate", "Pulse"]) {
         await readFile(new URL(`../ios/App/App/Assets.xcassets/AppIcon${name}.appiconset/AppIcon${name}-1024.png`, import.meta.url));
-        await readFile(new URL(`../ios/App/LevelUpTimerWidget/Assets.xcassets/TimerLogo${name}.imageset/Contents.json`, import.meta.url));
     }
-    await readFile(new URL("../ios/App/LevelUpTimerWidget/Assets.xcassets/TimerLogoLevelUp.imageset/Contents.json", import.meta.url));
 });
 
 test("the iOS target declares permissions used by Level Up features", async () => {
