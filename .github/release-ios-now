@@ -32,3 +32,5 @@ Release 13: single iOS timer alert, appearance-matched Lock Screen logos, and di
 Release 14: black Google sign-in, readable transfer instructions, and vector Lock Screen Level Up logo. (Blocked by stale packaging test; no TestFlight upload.)
 
 Release 15: same requested fixes with packaging checks aligned to the vector timer implementation.
+
+Release 16: calorie range hierarchy, reliable Custom Builder exercise preferences, and the exact Appearance-selected Lock Screen timer logo.
