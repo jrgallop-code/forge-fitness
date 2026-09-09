@@ -55,7 +55,7 @@ test("native iOS offers Apple, Google, email, and existing-account transfer with
     assert.match(styles, /level-up-transfer-auth > p strong \{ color: #fff !important;/);
 });
 
-test("native iOS uses the selected Appearance home icon in the Lock Screen timer", async () => {
+test("native iOS uses the selected Appearance icon without an opaque Lock Screen tile", async () => {
     const native = await readFile(new URL("../js/core/native-capabilities.js", import.meta.url), "utf8");
     const appearance = await readFile(new URL("../js/more/appearance-settings.js", import.meta.url), "utf8");
     const info = await readFile(new URL("../ios/App/App/Info.plist", import.meta.url), "utf8");
@@ -88,6 +88,15 @@ test("native iOS uses the selected Appearance home icon in the Lock Screen timer
     assert.match(widget, /TimerPalette\.forTheme/);
     assert.match(widget, /timerLogoName\(for icon:/);
     assert.match(widget, /timerLogo\(icon: context\.attributes\.icon/);
+    assert.match(widget, /import UIKit/);
+    assert.match(widget, /TimerLogoRenderer/);
+    assert.match(widget, /UIImage\(named: name\)/);
+    assert.match(widget, /removeBackground\(from: source\)/);
+    assert.match(widget, /defaultAssetName = "TimerLogoLevelUp"/);
+    assert.match(widget, /renderingMode\(\.original\)/);
+    assert.match(widget, /UIGraphicsImageRendererFormat/);
+    assert.match(widget, /expectedTopR/);
+    assert.doesNotMatch(widget, /clipShape\(RoundedRectangle/);
     assert.doesNotMatch(widget, /LevelUpThemeLogo|LevelUpArrow|dumbbell\.fill/);
     assert.match(widget, /DismissLevelUpTimerIntent/);
     assert.match(widgetInfo, /CFBundleExecutable/);
