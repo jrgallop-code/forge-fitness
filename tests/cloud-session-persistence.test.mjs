@@ -4,6 +4,7 @@ import test from "node:test";
 
 const worker = fs.readFileSync("cloud/src/index.js", "utf8");
 const migration = fs.readFileSync("cloud/migrations/0017_persistent_login_sessions.sql", "utf8");
+const workerConfig = JSON.parse(fs.readFileSync("cloud/wrangler.jsonc", "utf8"));
 
 test("new cloud sessions remain valid until explicitly revoked", () => {
     assert.match(worker, /const SESSION_EXPIRES_AT = "9999-12-31T23:59:59\.999Z";/);
@@ -18,4 +19,10 @@ test("new cloud sessions remain valid until explicitly revoked", () => {
 test("the migration extends only sessions that have not already expired", () => {
     assert.match(migration, /SET expires_at = '9999-12-31T23:59:59\.999Z'/);
     assert.match(migration, /WHERE datetime\(expires_at\) > datetime\('now'\)/);
+});
+
+test("the production API accepts the Capacitor iOS origin", () => {
+    const allowedOrigins = workerConfig.vars.ALLOWED_ORIGINS.split(",");
+    assert.ok(allowedOrigins.includes("capacitor://localhost"));
+    assert.match(worker, /origin && !allowedOrigins\(env\)\.has\(origin\)/);
 });
