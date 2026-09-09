@@ -5,7 +5,9 @@ let refreshQueued = false;
 let hiddenForSession = false;
 
 function isStandalone() {
-    return window.matchMedia?.("(display-mode: standalone)")?.matches || navigator.standalone === true;
+    return window.Capacitor?.isNativePlatform?.()
+        || window.matchMedia?.("(display-mode: standalone)")?.matches
+        || navigator.standalone === true;
 }
 
 function isIgnored() {

@@ -101,7 +101,7 @@ function filterWindow(entries, window) {
 }
 
 function ensureRangeStyles() {
-    if (document.getElementById(RANGE_STYLE_ID)) return;
+    if (document.querySelector("[data-weight-chart-range-style]") || document.getElementById(RANGE_STYLE_ID)) return;
     const style = document.createElement("style");
     style.id = RANGE_STYLE_ID;
     style.textContent = `

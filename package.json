@@ -1,0 +1,23 @@
+{
+  "name": "level-up-hypertrophy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Level Up hypertrophy training PWA and native app shell",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "build:native": "node tools/build-native.mjs",
+    "cap:sync:ios": "npm run build:native && cap sync ios",
+    "cap:open:ios": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.1",
+    "@capacitor/ios": "8.5.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.1"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

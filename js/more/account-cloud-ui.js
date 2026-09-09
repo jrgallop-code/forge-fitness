@@ -14,13 +14,14 @@ const AUTO_STATE_KEY = "level_up_cloud_auto_backup_state";
 ensureAccountCloudStyles();
 
 export function renderAccountCloud() {
+    const nativeIOS = isNativeIOS();
     return `<section class="dashboard-welcome account-cloud-heading"><div><button class="nutrition-planner-back" id="account-cloud-back" type="button">← More</button><span class="eyebrow">BETA ACCOUNT</span><h2>Account & Cloud</h2><p>Keep a private automatic Level Up backup available across your devices.</p></div></section>
     <section class="section-card account-cloud-card">
         <div class="account-cloud-profile" id="account-cloud-profile">
-            <div><span class="eyebrow">ACCOUNT</span><h3 id="account-cloud-name">Not signed in</h3><p id="account-cloud-email">Sign in with Google to activate beta cloud storage.</p></div>
+            <div><span class="eyebrow">ACCOUNT</span><h3 id="account-cloud-name">Not signed in</h3><p id="account-cloud-email">${nativeIOS ? "Sign in with your Level Up email account to activate beta cloud storage." : "Sign in with Google to activate beta cloud storage."}</p></div>
             <span class="account-cloud-badge" id="account-cloud-badge">LOCAL ONLY</span>
         </div>
-        <div id="account-google-button" class="account-google-button"></div>
+        ${nativeIOS ? "" : '<div id="account-google-button" class="account-google-button"></div>'}
         <div class="account-cloud-actions" id="account-cloud-actions" hidden>
             <button class="primary-btn" id="account-cloud-upload" type="button">↑ Back Up Now</button>
             <button class="secondary-btn" id="account-cloud-download" type="button">↓ Download to This Device</button>
@@ -40,6 +41,10 @@ export function renderAccountCloud() {
         <p>This permanently removes your Level Up account and its cloud backup. Data currently stored on this device is not deleted.</p>
         <button class="text-btn danger-text-btn" id="account-cloud-delete" type="button">Delete Cloud Account</button>
     </section>`;
+}
+
+function isNativeIOS() {
+    return window.Capacitor?.getPlatform?.() === "ios";
 }
 
 export function initializeAccountCloud({ onBack } = {}) {
@@ -180,7 +185,11 @@ function renderSession() {
     const googleButton = document.getElementById("account-google-button");
     if (googleButton) googleButton.hidden = signedIn;
     setText("account-cloud-name", signedIn ? account.name || "Level Up Beta Member" : "Not signed in");
-    setText("account-cloud-email", signedIn ? account.email : "Sign in with Google to activate beta cloud storage.");
+    setText("account-cloud-email", signedIn
+        ? account.email
+        : isNativeIOS()
+            ? "Sign in with your Level Up email account to activate beta cloud storage."
+            : "Sign in with Google to activate beta cloud storage.");
     const autoState = readJson(AUTO_STATE_KEY);
     const needsAttention = autoState?.status === "newer-cloud-backup";
     setText("account-cloud-badge", signedIn ? needsAttention ? "ACTION NEEDED" : "AUTO BACKUP" : "LOCAL ONLY");

@@ -21,17 +21,18 @@ function initializeFirstLaunchLogin() {
 }
 
 function renderGate() {
+    const nativeIOS = isNativeIOS();
     return `<div class="level-up-login-gate" id="level-up-login-gate" role="dialog" aria-modal="true" aria-labelledby="level-up-login-title">
         <main class="level-up-login-panel">
             <img class="level-up-login-logo" src="assets/level-up-logo.svg" alt="Level Up">
             <span class="level-up-login-kicker">LEVEL UP BETA</span>
             <h1 id="level-up-login-title">Your training.<br><span>Your progress.</span></h1>
             <p class="level-up-login-intro">Sign in to start using Level Up and begin tracking your training.</p>
-            <div class="level-up-login-google" id="level-up-login-google"></div>
+            ${nativeIOS ? "" : '<div class="level-up-login-google" id="level-up-login-google"></div>'}
             <button class="level-up-login-provider level-up-login-email-open" id="level-up-login-email-open" type="button" aria-expanded="false" aria-controls="level-up-email-auth">
                 <span>Continue with email</span><small>EMAIL</small>
             </button>
-            <button class="level-up-login-provider" type="button" disabled><span>Apple</span><small>Coming soon</small></button>
+            ${nativeIOS ? "" : '<button class="level-up-login-provider" type="button" disabled><span>Apple</span><small>Coming soon</small></button>'}
             <form class="level-up-email-auth" id="level-up-email-auth" hidden novalidate>
                 <div class="level-up-email-auth-header">
                     <button class="level-up-email-back" id="level-up-email-back" type="button" aria-label="Back to sign-in options">←</button>
@@ -57,6 +58,10 @@ function renderGate() {
             <p class="level-up-login-legal">Level Up is for adults 18+. Read our <a href="https://leveluphypertrophy.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> or contact <a href="mailto:support@leveluphypertrophy.com">Support</a>.</p>
         </main>
     </div>`;
+}
+
+function isNativeIOS() {
+    return window.Capacitor?.getPlatform?.() === "ios";
 }
 
 function initializeEmailAuth() {

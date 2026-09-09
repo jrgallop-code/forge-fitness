@@ -14,8 +14,8 @@ test('Google login crops the provider iframe to its dark pill', () => {
   assert.match(styles, /\.level-up-login-google iframe \{[^}]*display: block !important/);
 });
 
-test('Google login crop ships with fresh production cache keys', () => {
+test('login presentation ships with fresh production cache keys', () => {
   assert.match(login, /first-launch-login\.css\?v=google-button-crop-2/);
-  assert.match(index, /first-launch-login\.js\?v=google-button-crop-2/);
-  assert.match(worker, /2026-09-08-282/);
+  assert.match(index, /first-launch-login\.js\?v=native-ios-email-1/);
+  assert.match(worker, /2026-09-09-284/);
 });
