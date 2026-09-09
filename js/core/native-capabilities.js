@@ -1,5 +1,12 @@
 const isNative = () => Boolean(window.Capacitor?.isNativePlatform?.());
 const plugin = name => window.Capacitor?.Plugins?.[name] || null;
+const HOME_ICON_KEY = "level_up_home_icon";
+const HOME_ICON_IDS = new Set(["level-up", "arctic", "pure", "ocean", "midnight", "slate", "pulse"]);
+
+function selectedHomeIcon() {
+    const saved = String(localStorage.getItem(HOME_ICON_KEY) || "level-up").toLowerCase();
+    return HOME_ICON_IDS.has(saved) ? saved : "level-up";
+}
 
 export function nativeNotificationId(value) {
     let hash = 2166136261;
@@ -58,7 +65,8 @@ export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, ki
                 key, title, body, at: when.getTime(),
                 type: extra?.type || "levelup:timer-complete",
                 kind,
-                theme: document.documentElement.dataset.theme || "level-up"
+                theme: document.documentElement.dataset.theme || "level-up",
+                icon: selectedHomeIcon()
             });
             return result?.scheduled === true;
         }
