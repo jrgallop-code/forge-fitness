@@ -22,3 +22,5 @@ Release 8: selectable icons, Lock Screen timers, reliable alarms, and native sig
 Release 9: retry App Store profiles with unique names and transient-error backoff.
 
 Release 10: select the main app and timer extension bundle IDs by exact identifier.
+
+Release 11: declare the WidgetKit extension executable in its bundle metadata.
