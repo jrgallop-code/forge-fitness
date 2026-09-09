@@ -42,3 +42,5 @@ Release 18: MacroFactor-style Weight Changes summary in Progress with 3/7/14/30/
 Release 19: themed splash layouts for Level Up Classic, Arctic, Pure, Ocean, Midnight, Slate, and Pulse, preserving the original loading bar with theme-matched accents, plus the Weight Changes summary.
 
 Approved full-image themed splash release: display the actual appearance-specific splash artwork for Level Up Classic, Arctic, Pure, Ocean, Midnight, Slate, and Pulse, preserving the live theme-matched loading bar and existing startup safeguards.
+
+Release 20: ship the user-approved full-image splash artwork for Classic, Arctic, Pure, Ocean, Midnight, Slate, and Pulse in the Capacitor app.
