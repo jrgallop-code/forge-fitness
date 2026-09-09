@@ -35,6 +35,24 @@ test("native startup uses the saved appearance splash before the app renders", a
     assert.match(index, /level-up-installed-pwa/);
 });
 
+test("native web package includes every themed splash image", async () => {
+    const splashes = [
+        "assets/level-up-splash-exact.png",
+        "assets/level-up-splash-arctic-v2.webp",
+        "assets/level-up-splash-pure-v1.webp",
+        "assets/level-up-splash-ocean-v1.webp",
+        "assets/level-up-splash-midnight-v1.webp",
+        "assets/level-up-splash-slate-v1.webp",
+        "assets/level-up-splash-pulse-v1.webp"
+    ];
+    for (const splash of splashes) {
+        const source = await readFile(new URL(`../${splash}`, import.meta.url));
+        const packaged = await readFile(new URL(`../www/${splash}`, import.meta.url));
+        assert.ok(source.length > 0, `${splash} source must not be empty`);
+        assert.deepEqual(packaged, source, `${splash} must be copied unchanged into www`);
+    }
+});
+
 test("native iOS offers Apple, Google, email, and existing-account transfer with protected contrast", async () => {
     const login = await readFile(new URL("../js/account/first-launch-login.js", import.meta.url), "utf8");
     const account = await readFile(new URL("../js/more/account-cloud-ui.js", import.meta.url), "utf8");
