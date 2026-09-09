@@ -2,6 +2,7 @@ import ActivityKit
 import AppIntents
 import WidgetKit
 import SwiftUI
+import UIKit
 
 @main
 struct LevelUpTimerWidgetBundle: WidgetBundle {
@@ -36,6 +37,121 @@ private struct TimerPalette {
     }
 }
 
+private enum TimerLogoRenderer {
+    private static let cache = NSCache<NSString, UIImage>()
+    private static let defaultAssetName = "TimerLogoLevelUp"
+
+    static func image(named requestedName: String) -> UIImage? {
+        let cacheKey = requestedName as NSString
+        if let cached = cache.object(forKey: cacheKey) { return cached }
+
+        let candidates = requestedName == defaultAssetName
+            ? [defaultAssetName]
+            : [requestedName, defaultAssetName]
+
+        for name in candidates {
+            guard let source = UIImage(named: name) else { continue }
+            guard let transparent = removeBackground(from: source) else { continue }
+            cache.setObject(transparent, forKey: cacheKey)
+            return transparent
+        }
+        return nil
+    }
+
+    // Home-screen app icons are intentionally opaque. For the Live Activity,
+    // estimate the icon's background from its four corners, then convert that
+    // background to alpha while preserving the exact selected logo artwork.
+    private static func removeBackground(from source: UIImage) -> UIImage? {
+        let targetSize = CGSize(width: 128, height: 128)
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = false
+        let resized = UIGraphicsImageRenderer(size: targetSize, format: format).image { _ in
+            source.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+        guard let cgImage = resized.cgImage else { return nil }
+
+        let width = cgImage.width
+        let height = cgImage.height
+        let bytesPerPixel = 4
+        let bytesPerRow = width * bytesPerPixel
+        var pixels = [UInt8](repeating: 0, count: height * bytesPerRow)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo.byteOrder32Big.rawValue | CGImageAlphaInfo.premultipliedLast.rawValue
+
+        return pixels.withUnsafeMutableBytes { rawBuffer -> UIImage? in
+            guard let baseAddress = rawBuffer.baseAddress,
+                  let context = CGContext(
+                    data: baseAddress,
+                    width: width,
+                    height: height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: bytesPerRow,
+                    space: colorSpace,
+                    bitmapInfo: bitmapInfo
+                  ) else { return nil }
+
+            context.interpolationQuality = .high
+            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+            let bytes = rawBuffer.bindMemory(to: UInt8.self)
+
+            func rgb(_ x: Int, _ y: Int) -> (Double, Double, Double) {
+                let index = y * bytesPerRow + x * bytesPerPixel
+                return (Double(bytes[index]), Double(bytes[index + 1]), Double(bytes[index + 2]))
+            }
+
+            let topLeft = rgb(0, 0)
+            let topRight = rgb(width - 1, 0)
+            let bottomLeft = rgb(0, height - 1)
+            let bottomRight = rgb(width - 1, height - 1)
+            let lowThreshold = 10.0
+            let highThreshold = 54.0
+
+            func interpolate(_ a: Double, _ b: Double, _ amount: Double) -> Double {
+                a + (b - a) * amount
+            }
+
+            for y in 0..<height {
+                let fy = height > 1 ? Double(y) / Double(height - 1) : 0
+                for x in 0..<width {
+                    let fx = width > 1 ? Double(x) / Double(width - 1) : 0
+                    let index = y * bytesPerRow + x * bytesPerPixel
+
+                    let expectedTopR = interpolate(topLeft.0, topRight.0, fx)
+                    let expectedTopG = interpolate(topLeft.1, topRight.1, fx)
+                    let expectedTopB = interpolate(topLeft.2, topRight.2, fx)
+                    let expectedBottomR = interpolate(bottomLeft.0, bottomRight.0, fx)
+                    let expectedBottomG = interpolate(bottomLeft.1, bottomRight.1, fx)
+                    let expectedBottomB = interpolate(bottomLeft.2, bottomRight.2, fx)
+                    let expectedR = interpolate(expectedTopR, expectedBottomR, fy)
+                    let expectedG = interpolate(expectedTopG, expectedBottomG, fy)
+                    let expectedB = interpolate(expectedTopB, expectedBottomB, fy)
+
+                    let dr = Double(bytes[index]) - expectedR
+                    let dg = Double(bytes[index + 1]) - expectedG
+                    let db = Double(bytes[index + 2]) - expectedB
+                    let distance = sqrt((dr * dr + dg * dg + db * db) / 3.0)
+
+                    let opacity: Double
+                    if distance <= lowThreshold { opacity = 0 }
+                    else if distance >= highThreshold { opacity = 1 }
+                    else { opacity = (distance - lowThreshold) / (highThreshold - lowThreshold) }
+
+                    if opacity < 1 {
+                        bytes[index] = UInt8((Double(bytes[index]) * opacity).rounded())
+                        bytes[index + 1] = UInt8((Double(bytes[index + 1]) * opacity).rounded())
+                        bytes[index + 2] = UInt8((Double(bytes[index + 2]) * opacity).rounded())
+                        bytes[index + 3] = UInt8((Double(bytes[index + 3]) * opacity).rounded())
+                    }
+                }
+            }
+
+            guard let output = context.makeImage() else { return nil }
+            return UIImage(cgImage: output, scale: 1, orientation: .up)
+        }
+    }
+}
+
 @available(iOS 17.0, *)
 struct DismissLevelUpTimerIntent: AppIntent {
     static var title: LocalizedStringResource = "Dismiss Level Up timer"
@@ -59,7 +175,7 @@ struct LevelUpTimerLiveActivity: Widget {
             let palette = TimerPalette.forTheme(context.attributes.theme)
             HStack(spacing: 12) {
                 RoundedRectangle(cornerRadius: 3).fill(palette.accent).frame(width: 5)
-                timerLogo(icon: context.attributes.icon, size: 38, cornerRadius: 11)
+                timerLogo(icon: context.attributes.icon, size: 38)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(context.attributes.kind == "cardio" ? "CARDIO TIMER" : "REST TIMER")
                         .font(.caption2.weight(.heavy)).tracking(1.1).foregroundStyle(palette.accent)
@@ -81,7 +197,7 @@ struct LevelUpTimerLiveActivity: Widget {
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 6) {
-                        timerLogo(icon: context.attributes.icon, size: 24, cornerRadius: 7)
+                        timerLogo(icon: context.attributes.icon, size: 24)
                         Text("Level Up").font(.caption.weight(.semibold)).foregroundStyle(palette.accent)
                     }
                 }
@@ -101,11 +217,11 @@ struct LevelUpTimerLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                timerLogo(icon: context.attributes.icon, size: 20, cornerRadius: 6)
+                timerLogo(icon: context.attributes.icon, size: 20)
             } compactTrailing: {
                 Text(timerInterval: context.state.startedAt...context.state.endAt, countsDown: true).monospacedDigit().foregroundStyle(palette.accent).frame(width: 42)
             } minimal: {
-                timerLogo(icon: context.attributes.icon, size: 20, cornerRadius: 6)
+                timerLogo(icon: context.attributes.icon, size: 20)
             }
             .keylineTint(palette.accent)
         }
@@ -123,12 +239,18 @@ struct LevelUpTimerLiveActivity: Widget {
         }
     }
 
-    private func timerLogo(icon: String, size: CGFloat, cornerRadius: CGFloat) -> some View {
-        Image(timerLogoName(for: icon))
-            .resizable()
-            .scaledToFit()
-            .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+    @ViewBuilder
+    private func timerLogo(icon: String, size: CGFloat) -> some View {
+        if let image = TimerLogoRenderer.image(named: timerLogoName(for: icon)) {
+            Image(uiImage: image)
+                .renderingMode(.original)
+                .resizable()
+                .interpolation(.high)
+                .antialiased(true)
+                .scaledToFit()
+                .frame(width: size, height: size)
+                .accessibilityHidden(true)
+        }
     }
 
     @ViewBuilder
