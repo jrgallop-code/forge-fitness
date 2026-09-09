@@ -102,8 +102,8 @@ async function createSigningAssets() {
   const createdProfileIds = [];
   try {
     const bundleIdentifier = required('APP_BUNDLE_IDENTIFIER');
-    const bundleIds = await api(`/bundleIds?filter%5Bidentifier%5D=${encodeURIComponent(bundleIdentifier)}&limit=1`);
-    const bundleId = bundleIds?.data?.[0]?.id;
+    const bundleIds = await api(`/bundleIds?filter%5Bidentifier%5D=${encodeURIComponent(bundleIdentifier)}&limit=20`);
+    const bundleId = bundleIds?.data?.find((item) => item.attributes?.identifier === bundleIdentifier)?.id;
     if (!bundleId) throw new Error(`No registered App ID found for ${bundleIdentifier}`);
 
     const capabilities = await api(`/bundleIds/${bundleId}/bundleIdCapabilities`);
@@ -127,15 +127,16 @@ async function createSigningAssets() {
     }
 
     const extensionIdentifier = required('APP_EXTENSION_BUNDLE_IDENTIFIER');
-    let extensionBundleIds = await api(`/bundleIds?filter%5Bidentifier%5D=${encodeURIComponent(extensionIdentifier)}&limit=1`);
-    if (!extensionBundleIds?.data?.[0]) {
+    let extensionBundleIds = await api(`/bundleIds?filter%5Bidentifier%5D=${encodeURIComponent(extensionIdentifier)}&limit=20`);
+    let extensionBundleId = extensionBundleIds?.data?.find((item) => item.attributes?.identifier === extensionIdentifier)?.id;
+    if (!extensionBundleId) {
       await api('/bundleIds', {
         method: 'POST',
         body: JSON.stringify({ data: { type: 'bundleIds', attributes: { identifier: extensionIdentifier, name: 'Level Up Timer', platform: 'IOS' } } }),
       });
-      extensionBundleIds = await api(`/bundleIds?filter%5Bidentifier%5D=${encodeURIComponent(extensionIdentifier)}&limit=1`);
+      extensionBundleIds = await api(`/bundleIds?filter%5Bidentifier%5D=${encodeURIComponent(extensionIdentifier)}&limit=20`);
+      extensionBundleId = extensionBundleIds?.data?.find((item) => item.attributes?.identifier === extensionIdentifier)?.id;
     }
-    const extensionBundleId = extensionBundleIds?.data?.[0]?.id;
     if (!extensionBundleId) throw new Error(`No registered App ID found for ${extensionIdentifier}`);
 
     const runLabel = `${required('GITHUB_RUN_ID')}-${process.env.GITHUB_RUN_ATTEMPT || '1'}`;
