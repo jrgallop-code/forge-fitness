@@ -1,4 +1,5 @@
 import { openActiveWorkout } from "./workout-session.js?v=native-navigation-stability-1";
+import { cancelNativeAlarm, hapticNotification, requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=native-feedback-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const CARDIO_TIMER_STORAGE_KEY = "level_up_cardio_timer_state";
@@ -288,6 +289,15 @@ function playCardioAlarmSound() {
 
 async function requestCardioAlerts(button) {
     primeAlarmAudio();
+    if (window.Capacitor?.isNativePlatform?.()) {
+        const granted = await requestNativeAlarmPermission();
+        if (button) button.textContent = granted ? "Alerts enabled" : "Enable in Settings";
+        const overlay = document.getElementById(CARDIO_ALARM_SHEET_ID);
+        const key = overlay?.dataset.timerKey;
+        const card = getCardFromTimerKey(key);
+        if (granted && key && card) scheduleCardioNativeAlarm(card, key, normalizeTimerState(getTimerStore()[key]));
+        return;
+    }
     if (!("Notification" in window)) {
         if (button) button.textContent = "In-app sound on";
         return;
@@ -299,6 +309,7 @@ async function requestCardioAlerts(button) {
 }
 
 function notificationButtonText() {
+    if (window.Capacitor?.isNativePlatform?.()) return "Enable alerts";
     if (!("Notification" in window)) return "In-app sound on";
     if (Notification.permission === "granted") return "Alerts enabled";
     if (Notification.permission === "denied") return "In-app sound on";
@@ -313,6 +324,7 @@ function syncCardioAlertButtons() {
 }
 
 async function showCardioNotification(card, alarmMinutes) {
+    if (window.Capacitor?.isNativePlatform?.()) return;
     if (!("Notification" in window) || Notification.permission !== "granted") return;
     const title = "Cardio time complete";
     const body = `${getCardioName(card)} · ${Number(alarmMinutes).toLocaleString()} minute${Number(alarmMinutes) === 1 ? "" : "s"} reached.`;
@@ -543,6 +555,7 @@ function setAlarmForCard(card, minutes) {
     state.alarmFired = false;
     store[key] = state;
     saveTimerStore(store);
+    scheduleCardioNativeAlarm(card, key, state);
     document.getElementById(CARDIO_ALARM_BANNER_ID)?.setAttribute("hidden", "");
     updateCardioTimerCard(card);
 }
@@ -556,6 +569,7 @@ function clearAlarmForCard(card) {
     state.alarmFired = false;
     store[key] = state;
     saveTimerStore(store);
+    void cancelNativeAlarm(`cardio:${key}`);
     document.getElementById(CARDIO_ALARM_BANNER_ID)?.setAttribute("hidden", "");
     updateCardioTimerCard(card);
 }
@@ -572,6 +586,7 @@ function pauseTimerForCard(card) {
     state.startedAt = null;
     store[key] = state;
     saveTimerStore(store);
+    void cancelNativeAlarm(`cardio:${key}`);
     syncDurationInput(card, state.accumulatedMs);
     updateCardioTimerCard(card);
 }
@@ -584,9 +599,24 @@ function maybeFireCardioAlarm(card, key, state, elapsed) {
     store[key] = state;
     saveTimerStore(store);
     playCardioAlarmSound();
+    void cancelNativeAlarm(`cardio:${key}`);
+    void hapticNotification("SUCCESS");
     showCardioAlarmBanner(card, key, state.alarmMinutes);
     void showCardioNotification(card, state.alarmMinutes);
     return true;
+}
+
+function scheduleCardioNativeAlarm(card, key, state) {
+    if (!state?.running || !state?.alarmMinutes) return;
+    const remaining = state.alarmMinutes * 60000 - getElapsedMs(state);
+    if (remaining <= 0) return;
+    void scheduleNativeAlarm({
+        key: `cardio:${key}`,
+        title: "Cardio time complete",
+        body: `${getCardioName(card)} · ${Number(state.alarmMinutes).toLocaleString()} minute${Number(state.alarmMinutes) === 1 ? "" : "s"} reached.`,
+        at: new Date(Date.now() + remaining),
+        extra: { type: "levelup:cardio-complete", timerKey: key }
+    });
 }
 
 function createCardioTimer(card) {
@@ -631,6 +661,7 @@ function createCardioTimer(card) {
             state.startedAt = new Date().toISOString();
             store[key] = state;
             saveTimerStore(store);
+            scheduleCardioNativeAlarm(card, key, state);
         }
         updateCardioTimerCard(card);
     });
@@ -650,6 +681,7 @@ function createCardioTimer(card) {
             alarmFired: false
         };
         saveTimerStore(store);
+        void cancelNativeAlarm(`cardio:${key}`);
         syncDurationInput(card, 0);
         document.getElementById(CARDIO_ALARM_BANNER_ID)?.setAttribute("hidden", "");
         updateCardioTimerCard(card);

@@ -20,6 +20,8 @@ html.level-up-login-required, html.level-up-login-required body { overflow: hidd
 
 .level-up-login-email-open { color: #fff; cursor: pointer; }
 .level-up-login-email-open small { color: #ff6676; }
+.level-up-login-transfer-open { color: #fff; cursor: pointer; }
+.level-up-login-transfer-open small { color: #69a9ff; }
 .level-up-email-auth[hidden] { display: none !important; }
 .level-up-email-auth { width: min(100%, 340px); display: grid; gap: 13px; margin-top: 4px; }
 .level-up-email-auth-header { display: grid; grid-template-columns: 38px 1fr 38px; align-items: center; min-height: 40px; }
@@ -33,6 +35,8 @@ html.level-up-login-required, html.level-up-login-required body { overflow: hidd
 .level-up-email-mode { border: 0; background: transparent; color: #e4e4e7; font: inherit; font-size: 13px; font-weight: 800; text-decoration: underline; text-decoration-color: rgba(255,67,87,.8); text-underline-offset: 4px; cursor: pointer; }
 .level-up-email-help { margin: -2px 0 0; color: #85858b; font-size: 11px; line-height: 1.4; }
 .level-up-email-help a { color: #b8b8bd; }
+.level-up-transfer-auth > p { margin: 0; color: #a8a8ae; font-size: 13px; line-height: 1.45; text-align: left; }
+.level-up-transfer-auth input { text-transform: uppercase; text-align: center; font-weight: 900; letter-spacing: .12em; }
 .level-up-login-panel.email-auth-open .level-up-login-google,
 .level-up-login-panel.email-auth-open > .level-up-login-provider { display: none; }
 .level-up-login-message:empty { min-height: 0; margin-top: 0; }

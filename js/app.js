@@ -1,5 +1,5 @@
 import "./core/appearance-theme.js?v=appearance-themes-3";
-import { navigate } from "./core/router.js?v=native-navigation-stability-1";
+import { navigate } from "./core/router.js?v=native-features-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=workout-nav-fix-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=native-navigation-stability-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
@@ -38,7 +38,7 @@ if(content)new MutationObserver(()=>scheduleIconDecoration(()=>decorateAppIcons(
 navigate("home");
 decorateAppIcons(content||document);
 
-if("serviceWorker" in navigator){
+if("serviceWorker" in navigator && !window.Capacitor?.isNativePlatform?.()){
     // Update the service worker in the background, but do not reload the open
     // app when a new worker takes control. In-app navigation should never show
     // the startup splash because an update arrived while the user was logging.

@@ -1,3 +1,6 @@
+import "../core/native-capabilities.js?v=native-feedback-1";
+import { restoreBackupSnapshot, verifyBackupSnapshot } from "../core/backup-manager.js?v=backup-complete-7";
+
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -15,23 +18,26 @@ function initializeFirstLaunchLogin() {
         document.body.insertAdjacentHTML("afterbegin", renderGate());
         initializeGoogleButton();
         initializeEmailAuth();
+        initializeTransferAuth();
     };
     if (document.body) showGate();
     else document.addEventListener("DOMContentLoaded", showGate, { once: true });
 }
 
 function renderGate() {
+    const nativeIOS = isNativeIOS();
     return `<div class="level-up-login-gate" id="level-up-login-gate" role="dialog" aria-modal="true" aria-labelledby="level-up-login-title">
         <main class="level-up-login-panel">
             <img class="level-up-login-logo" src="assets/level-up-logo.svg" alt="Level Up">
             <span class="level-up-login-kicker">LEVEL UP BETA</span>
             <h1 id="level-up-login-title">Your training.<br><span>Your progress.</span></h1>
             <p class="level-up-login-intro">Sign in to start using Level Up and begin tracking your training.</p>
-            <div class="level-up-login-google" id="level-up-login-google"></div>
+            ${nativeIOS ? "" : '<div class="level-up-login-google" id="level-up-login-google"></div>'}
             <button class="level-up-login-provider level-up-login-email-open" id="level-up-login-email-open" type="button" aria-expanded="false" aria-controls="level-up-email-auth">
                 <span>Continue with email</span><small>EMAIL</small>
             </button>
-            <button class="level-up-login-provider" type="button" disabled><span>Apple</span><small>Coming soon</small></button>
+            ${nativeIOS ? '<button class="level-up-login-provider level-up-login-transfer-open" id="level-up-login-transfer-open" type="button" aria-expanded="false" aria-controls="level-up-transfer-auth"><span>Already use Level Up on the web?</span><small>TRANSFER</small></button>' : ""}
+            ${nativeIOS ? "" : '<button class="level-up-login-provider" type="button" disabled><span>Apple</span><small>Coming soon</small></button>'}
             <form class="level-up-email-auth" id="level-up-email-auth" hidden novalidate>
                 <div class="level-up-email-auth-header">
                     <button class="level-up-email-back" id="level-up-email-back" type="button" aria-label="Back to sign-in options">←</button>
@@ -53,10 +59,23 @@ function renderGate() {
                 <button class="level-up-email-mode" id="level-up-email-mode" type="button">New to Level Up? Create an account</button>
                 <p class="level-up-email-help" id="level-up-email-help">Forgot your password? <a href="mailto:support@leveluphypertrophy.com">Contact Support</a>.</p>
             </form>
+            ${nativeIOS ? `<form class="level-up-email-auth level-up-transfer-auth" id="level-up-transfer-auth" hidden novalidate>
+                <div class="level-up-email-auth-header">
+                    <button class="level-up-email-back" id="level-up-transfer-back" type="button" aria-label="Back to sign-in options">←</button>
+                    <strong>Move your web account</strong>
+                </div>
+                <p>On the Level Up website, open <strong>More → Account & Cloud</strong> and generate a transfer code.</p>
+                <label><span>One-time transfer code</span><input id="level-up-transfer-code" name="code" type="text" inputmode="text" autocomplete="one-time-code" autocapitalize="characters" maxlength="9" placeholder="ABCD-EFGH" required></label>
+                <button class="level-up-email-submit" id="level-up-transfer-submit" type="submit">Connect Existing Account</button>
+            </form>` : ""}
             <p class="level-up-login-message" id="level-up-login-message" aria-live="polite"></p>
             <p class="level-up-login-legal">Level Up is for adults 18+. Read our <a href="https://leveluphypertrophy.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> or contact <a href="mailto:support@leveluphypertrophy.com">Support</a>.</p>
         </main>
     </div>`;
+}
+
+function isNativeIOS() {
+    return window.Capacitor?.getPlatform?.() === "ios";
 }
 
 function initializeEmailAuth() {
@@ -86,6 +105,78 @@ function initializeEmailAuth() {
         setMessage("");
     });
     form.addEventListener("submit", completeEmailLogin);
+}
+
+function initializeTransferAuth() {
+    const openButton = document.getElementById("level-up-login-transfer-open");
+    const backButton = document.getElementById("level-up-transfer-back");
+    const form = document.getElementById("level-up-transfer-auth");
+    const input = document.getElementById("level-up-transfer-code");
+    if (!openButton || !backButton || !form || !input) return;
+    openButton.addEventListener("click", () => {
+        document.getElementById("level-up-email-auth")?.setAttribute("hidden", "");
+        form.hidden = false;
+        document.querySelector(".level-up-login-panel")?.classList.add("email-auth-open");
+        setMessage("");
+        requestAnimationFrame(() => input.focus());
+    });
+    backButton.addEventListener("click", () => {
+        form.hidden = true;
+        form.reset();
+        document.querySelector(".level-up-login-panel")?.classList.remove("email-auth-open");
+        setMessage("");
+    });
+    input.addEventListener("input", () => {
+        const raw = input.value.toUpperCase().replace(/[^A-Z2-9]/g, "").slice(0, 8);
+        input.value = raw.length > 4 ? `${raw.slice(0, 4)}-${raw.slice(4)}` : raw;
+    });
+    form.addEventListener("submit", completeTransferLogin);
+}
+
+async function completeTransferLogin(event) {
+    event.preventDefault();
+    const code = document.getElementById("level-up-transfer-code")?.value.trim() || "";
+    const submit = document.getElementById("level-up-transfer-submit");
+    if (code.replace(/[^A-Z2-9]/gi, "").length !== 8) return setMessage("Enter the complete transfer code.", "error");
+    try {
+        if (submit) submit.disabled = true;
+        setMessage("Connecting your existing account…");
+        const result = await fetch(`${API_URL}/v1/session/transfer`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code })
+        });
+        let payload = {};
+        try { payload = await result.json(); } catch {}
+        if (!result.ok || !payload?.token) throw new Error(payload.error || "This account could not be transferred.");
+        saveSession(payload);
+        setMessage("Account connected. Restoring your Level Up data…", "success");
+        await restoreTransferredBackup(payload.token);
+        window.location.reload();
+    }
+    catch (error) { setMessage(error?.message || "This account could not be transferred.", "error"); }
+    finally { if (submit) submit.disabled = false; }
+}
+
+async function restoreTransferredBackup(token) {
+    try {
+        const response = await fetch(`${API_URL}/v1/backup`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.status === 404) return false;
+        const payload = await response.json();
+        if (!response.ok || !payload?.backup) return false;
+        verifyBackupSnapshot(payload.backup);
+        await restoreBackupSnapshot(payload.backup, { removeNullValues: true });
+        localStorage.setItem("level_up_cloud_last_sync", JSON.stringify({
+            direction: "download",
+            updatedAt: payload.updatedAt,
+            version: payload.version,
+            completedAt: new Date().toISOString()
+        }));
+        return true;
+    }
+    catch { return false; }
 }
 
 function setEmailMode(mode) {
@@ -223,7 +314,7 @@ function ensureStyles() {
     if (document.querySelector('link[data-level-up-login]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/first-launch-login.css?v=google-button-crop-2";
+    link.href = "css/first-launch-login.css?v=account-transfer-1";
     link.dataset.levelUpLogin = "true";
     document.head.appendChild(link);
 }

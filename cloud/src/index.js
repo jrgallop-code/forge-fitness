@@ -13,6 +13,8 @@ const PASSWORD_MIN_LENGTH = 10;
 const PASSWORD_MAX_LENGTH = 128;
 const AUTH_RATE_WINDOW_MS = 15 * 60 * 1000;
 const AUTH_RATE_MAX_FAILURES = 10;
+const TRANSFER_CODE_LIFETIME_MS = 10 * 60 * 1000;
+const TRANSFER_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const ACQUISITION_SOURCES = new Set(["instagram", "tiktok", "reddit", "youtube", "google_search", "friend_family", "app_recommendation", "other", "prefer_not_to_say"]);
 const CLIENT_EVENT_NAMES = new Set(["onboarding_completed", "workout_completed"]);
 const USAGE_EVENT_NAMES = new Set(["food_logged"]);
@@ -50,6 +52,10 @@ async function handleRequest(request, env, ctx) {
         const body = await readJson(request, 16 * 1024);
         return createEmailSession(body, request, env);
     }
+    if (url.pathname === "/v1/session/transfer" && request.method === "POST") {
+        const body = await readJson(request, 8 * 1024);
+        return redeemAccountTransferCode(body, request, env);
+    }
 
     const user = await requireUser(request, env);
     if (!user) return json({ error: "Sign in required." }, 401, request, env);
@@ -60,6 +66,9 @@ async function handleRequest(request, env, ctx) {
     if (url.pathname === "/v1/account/password" && request.method === "PUT") {
         const body = await readJson(request, 16 * 1024);
         return createPasswordCredential(user, body, request, env);
+    }
+    if (url.pathname === "/v1/account/transfer-code" && request.method === "POST") {
+        return createAccountTransferCode(user, request, env);
     }
     if (url.pathname === "/v1/admin/analytics" && request.method === "GET") {
         return getAdminAnalytics(user, url, request, env);
@@ -294,6 +303,75 @@ async function createPasswordCredential(user, body, request, env) {
         return json({ error: "A Level Up password could not be created for this account." }, 409, request, env);
     }
     return json({ ok: true }, 201, request, env);
+}
+
+async function createAccountTransferCode(user, request, env) {
+    const code = createReadableTransferCode();
+    const codeHash = await sha256(normalizeTransferCode(code));
+    const now = new Date();
+    const createdAt = now.toISOString();
+    const expiresAt = new Date(now.getTime() + TRANSFER_CODE_LIFETIME_MS).toISOString();
+    await env.DB.batch([
+        env.DB.prepare("DELETE FROM account_transfer_codes WHERE user_id = ? OR expires_at <= ?")
+            .bind(user.id, createdAt),
+        env.DB.prepare(`
+            INSERT INTO account_transfer_codes (code_hash, user_id, expires_at, used_at, created_at)
+            VALUES (?, ?, ?, NULL, ?)
+        `).bind(codeHash, user.id, expiresAt, createdAt)
+    ]);
+    return json({ code, expiresAt }, 201, request, env);
+}
+
+async function redeemAccountTransferCode(body, request, env) {
+    const code = normalizeTransferCode(body?.code);
+    const rateKey = await authRateKey("transfer", "device", request);
+    if (await isRateLimited(rateKey, request, env)) {
+        return json({ error: "Too many attempts. Wait 15 minutes and try again." }, 429, request, env);
+    }
+    if (!/^[A-Z2-9]{8}$/.test(code)) {
+        await recordRateFailure(rateKey, env);
+        return json({ error: "That transfer code is not valid." }, 401, request, env);
+    }
+
+    const codeHash = await sha256(code);
+    const now = new Date().toISOString();
+    const account = await env.DB.prepare(`
+        SELECT users.id, users.email, users.display_name, users.avatar_url, users.beta_status,
+               EXISTS(SELECT 1 FROM password_credentials WHERE password_credentials.user_id = users.id) AS has_password
+        FROM account_transfer_codes
+        JOIN users ON users.id = account_transfer_codes.user_id
+        WHERE account_transfer_codes.code_hash = ?
+          AND account_transfer_codes.used_at IS NULL
+          AND account_transfer_codes.expires_at > ?
+          AND users.beta_status = 'active'
+    `).bind(codeHash, now).first();
+    if (!account) {
+        await recordRateFailure(rateKey, env);
+        return json({ error: "That code has expired or was already used." }, 401, request, env);
+    }
+
+    const consumed = await env.DB.prepare(`
+        UPDATE account_transfer_codes SET used_at = ?
+        WHERE code_hash = ? AND used_at IS NULL AND expires_at > ?
+    `).bind(now, codeHash, now).run();
+    if (Number(consumed?.meta?.changes) !== 1) {
+        await recordRateFailure(rateKey, env);
+        return json({ error: "That code has expired or was already used." }, 401, request, env);
+    }
+
+    await clearRateLimit(rateKey, env);
+    return issueSession(account.id, account, request, env);
+}
+
+function normalizeTransferCode(value) {
+    return typeof value === "string" ? value.toUpperCase().replace(/[^A-Z2-9]/g, "") : "";
+}
+
+function createReadableTransferCode() {
+    const bytes = new Uint8Array(8);
+    crypto.getRandomValues(bytes);
+    const raw = [...bytes].map(byte => TRANSFER_CODE_ALPHABET[byte % TRANSFER_CODE_ALPHABET.length]).join("");
+    return `${raw.slice(0, 4)}-${raw.slice(4)}`;
 }
 
 async function issueSession(userId, user, request, env) {

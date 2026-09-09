@@ -1,5 +1,6 @@
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from "./workout-session.js?v=native-navigation-stability-1";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
+import { requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=native-feedback-1";
 
 const EXERCISE_TIMER_SETTINGS_KEY = "level_up_exercise_rest_settings";
 const ALARM_PREFS_KEY = "level_up_rest_alarm_preferences";
@@ -364,6 +365,9 @@ function ensureBanner() {
 }
 
 function notificationStatusMarkup() {
+  if (window.Capacitor?.isNativePlatform?.()) {
+    return `<div class="rest-alarm-alert-row"><span>Get an iPhone alert when Level Up is in the background.</span><button type="button" data-rest-action="alerts">Enable Alerts</button></div>`;
+  }
   if (!("Notification" in window)) {
     return `<div class="rest-alarm-alert-row"><span>Sound + in-app alarm active. Browser notifications are not supported here.</span></div>`;
   }
@@ -380,6 +384,7 @@ function notificationStatusMarkup() {
 }
 
 function getNotificationPermission() {
+  if (window.Capacitor?.isNativePlatform?.()) return "native";
   return "Notification" in window ? Notification.permission : "unsupported";
 }
 
@@ -553,6 +558,20 @@ function startNextSet() {
 }
 
 async function requestAlerts() {
+  if (window.Capacitor?.isNativePlatform?.()) {
+    const granted = await requestNativeAlarmPermission();
+    const timer = getActive()?.restTimer;
+    if (granted && timer?.status === "running" && timer?.endAt) {
+      await scheduleNativeAlarm({
+        key: `rest:${timer.timerId}`,
+        title: "Rest complete",
+        body: "Your next set is ready.",
+        at: timer.endAt,
+        extra: { type: "levelup:rest-complete", timerId: timer.timerId }
+      });
+    }
+    return;
+  }
   if (!("Notification" in window)) return;
   if (Notification.permission !== "default") return;
   try {
