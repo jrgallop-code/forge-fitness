@@ -1,5 +1,6 @@
 import { calculateDisplayWeightTrend, calculateTrendWeight, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { completeTutorial, dismissTutorial, getTutorial, getTutorialState, restartTutorial, setTutorialStep } from "../core/tutorials.js?v=trend-weight-2";
+import "./weight-changes-summary.js?v=weight-changes-1";
 
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 const TREND_TUTORIAL_ID = "trend-weight";
