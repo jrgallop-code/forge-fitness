@@ -34,3 +34,5 @@ Release 14: black Google sign-in, readable transfer instructions, and vector Loc
 Release 15: same requested fixes with packaging checks aligned to the vector timer implementation.
 
 Release 16: calorie range hierarchy, reliable Custom Builder exercise preferences, and the exact Appearance-selected Lock Screen timer logo.
+
+Release 17: remove the opaque app-icon tile from the Live Activity while preserving the selected Appearance logo artwork and default-logo fallback.
