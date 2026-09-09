@@ -16,3 +16,5 @@ Retry 5: export the temporary certificate in Apple Keychain-compatible PKCS#12 f
 Retry 6: export with the same explicit manual profile used by the successful signed archive.
 
 Release 7: account transfer, native alarms, haptics, and selectable home-screen icons.
+
+Release 8: selectable icons, Lock Screen timers, reliable alarms, and native sign-in options.
