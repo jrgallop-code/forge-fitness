@@ -32,6 +32,17 @@ export function initializeSmartBuild(root=document){
     root.addEventListener("click",e=>handleClick(root,e)); root.addEventListener("change",e=>handleChange(root,e)); root.addEventListener("input",e=>handleInput(root,e));
   }
 }
+export function openSmartBuild(root=document){
+  const home=root.querySelector?.("[data-workout-home]");
+  if(!home)return false;
+  if(!root.querySelector?.("[data-smart-build-wizard]"))initializeSmartBuild(root);
+  const wizard=root.querySelector?.("[data-smart-build-wizard]");
+  const stepHost=wizard?.querySelector?.("[data-smart-step]");
+  if(!wizard||!stepHost)return false;
+  resetState();
+  openWizard(root,{scroll:false});
+  return !wizard.hidden&&stepHost.childElementCount>0;
+}
 function freshState(){
   const prefs=getTrainingPreferences();
   const goalMap={build_muscle:"muscle",build_strength:"strength",maintain_muscle:"maintain",lose_fat_maintain_muscle:"maintain"};
@@ -81,7 +92,7 @@ function handleInput(root,event){
 }
 function renderLauncher(){return `<section class="smart-build-launcher" data-smart-build-launcher><div class="smart-build-launcher-head"><span class="eyebrow">BUILD A PROGRAM</span><p>Choose how you want to create your training plan.</p></div><div class="smart-build-choice-grid"><button class="smart-build-choice" type="button" data-manual-build><span class="smart-build-choice-title">Manual Build</span><small>Build it yourself</small></button><button class="smart-build-choice" type="button" data-template-build><span class="smart-build-choice-title">Templates</span><small>Start from a proven split</small></button><button class="smart-build-choice smart-build-choice-primary" type="button" data-smart-build><span class="smart-build-badge">GUIDED</span><span class="smart-build-choice-title">Personalized Plan</span><small>Built from a proven template, then adjusted to you</small></button></div></section>`;}
 function renderWizardShell(){return `<section class="smart-build-wizard" data-smart-build-wizard hidden><div class="smart-build-topbar"><div><span class="eyebrow">SMART BUILD</span><h3 data-smart-heading>Program Builder</h3></div><button class="secondary-btn smart-build-close" type="button" data-smart-close>Close</button></div><div class="smart-build-progress"><span data-smart-progress></span></div><div data-smart-step></div></section>`;}
-function openWizard(root){root.querySelector("[data-workout-home]")?.setAttribute("hidden","");const w=root.querySelector("[data-smart-build-wizard]");if(!w)return;w.hidden=false;renderStep(root);w.scrollIntoView({behavior:"smooth",block:"start"});}
+function openWizard(root,{scroll=true}={}){root.querySelector("[data-workout-home]")?.setAttribute("hidden","");const w=root.querySelector("[data-smart-build-wizard]");if(!w)return;w.hidden=false;renderStep(root);if(scroll)w.scrollIntoView({behavior:"smooth",block:"start"});}
 function closeWizard(root){clearCoachBuildTimer();if(root.matches?.(".smart-build-dedicated-page")){document.querySelector('.nav-btn[data-page="workout"]')?.click();return;}const w=root.querySelector("[data-smart-build-wizard]"),h=root.querySelector("[data-workout-home]");if(w)w.hidden=true;if(h)h.hidden=false;}
 function clearCoachBuildTimer(){if(coachBuildTimer){window.clearTimeout(coachBuildTimer);coachBuildTimer=0;}}
 function showCoachBuild(root){clearCoachBuildTimer();state.step=6;renderStep(root);coachBuildTimer=window.setTimeout(()=>{coachBuildTimer=0;if(state.step!==6)return;state.step=7;renderStep(root);},2600);}
