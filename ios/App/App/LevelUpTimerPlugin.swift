@@ -14,7 +14,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "cancel", returnType: CAPPluginReturnPromise)
     ]
 
-    @objc func requestPermissions(_ call: CAPPluginCall) {
+    @objc override func requestPermissions(_ call: CAPPluginCall) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error = error {
                 call.reject("Notification permission could not be requested.", nil, error)
@@ -24,7 +24,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
-    @objc func checkPermissions(_ call: CAPPluginCall) {
+    @objc override func checkPermissions(_ call: CAPPluginCall) {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             let display: String
             switch settings.authorizationStatus {
