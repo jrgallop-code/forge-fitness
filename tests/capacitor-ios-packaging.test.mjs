@@ -52,6 +52,7 @@ test("native iOS provides haptics, background alarms, and selectable app icons",
     const timerPlugin = await readFile(new URL("../ios/App/App/LevelUpTimerPlugin.swift", import.meta.url), "utf8");
     const sceneDelegate = await readFile(new URL("../ios/App/App/SceneDelegate.swift", import.meta.url), "utf8");
     const widget = await readFile(new URL("../ios/App/LevelUpTimerWidget/LevelUpTimerWidget.swift", import.meta.url), "utf8");
+    const widgetInfo = await readFile(new URL("../ios/App/LevelUpTimerWidget/Info.plist", import.meta.url), "utf8");
     assert.match(native, /plugin\("Haptics"\)/);
     assert.match(native, /plugin\("LocalNotifications"\)/);
     assert.match(native, /scheduleNativeAlarm/);
@@ -65,6 +66,7 @@ test("native iOS provides haptics, background alarms, and selectable app icons",
     assert.match(timerPlugin, /interruptionLevel = \.timeSensitive/);
     assert.match(widget, /ActivityConfiguration/);
     assert.match(widget, /timerInterval/);
+    assert.match(widgetInfo, /CFBundleExecutable/);
     assert.match(info, /NSSupportsLiveActivities/);
     for (const name of ["Arctic", "Pure", "Ocean", "Midnight", "Slate", "Pulse"]) {
         await readFile(new URL(`../ios/App/App/Assets.xcassets/AppIcon${name}.appiconset/AppIcon${name}-1024.png`, import.meta.url));
