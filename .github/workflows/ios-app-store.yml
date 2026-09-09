@@ -147,25 +147,22 @@ jobs:
           plutil -create xml1 "$export_options"
           plutil -insert method -string app-store-connect "$export_options"
           plutil -insert destination -string export "$export_options"
-          plutil -insert signingStyle -string automatic "$export_options"
+          plutil -insert signingStyle -string manual "$export_options"
+          plutil -insert signingCertificate -string "Apple Distribution" "$export_options"
           plutil -insert teamID -string "$APPLE_TEAM_ID" "$export_options"
+          plutil -insert provisioningProfiles -xml \
+            "<dict><key>com.leveluphypertrophy.app</key><string>$APP_STORE_PROFILE_NAME</string></dict>" \
+            "$export_options"
           plutil -insert uploadSymbols -bool true "$export_options"
           echo "EXPORT_OPTIONS_PATH=$export_options" >> "$GITHUB_ENV"
 
       - name: Export signed IPA
-        env:
-          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         run: >-
           xcodebuild
           -exportArchive
           -archivePath "$RUNNER_TEMP/LevelUp.xcarchive"
           -exportPath "$RUNNER_TEMP/LevelUpExport"
           -exportOptionsPlist "$EXPORT_OPTIONS_PATH"
-          -allowProvisioningUpdates
-          -authenticationKeyPath "$AUTH_KEY_PATH"
-          -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID"
-          -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
 
       - name: Upload build to App Store Connect
         shell: bash

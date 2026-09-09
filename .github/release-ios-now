@@ -12,3 +12,5 @@ Retry 3: create temporary distribution signing assets through the App Store Conn
 Retry 4: install the generated signing files from their deterministic temporary paths.
 
 Retry 5: export the temporary certificate in Apple Keychain-compatible PKCS#12 format.
+
+Retry 6: export with the same explicit manual profile used by the successful signed archive.

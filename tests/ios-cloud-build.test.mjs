@@ -38,6 +38,8 @@ test("App Store releases use cloud signing and clean up the private key", () => 
     assert.match(releaseWorkflow, /CODE_SIGN_STYLE=Manual/);
     assert.match(releaseWorkflow, /CODE_SIGN_IDENTITY="Apple Distribution"/);
     assert.match(releaseWorkflow, /PROVISIONING_PROFILE_SPECIFIER="\$APP_STORE_PROFILE_NAME"/);
+    assert.match(releaseWorkflow, /plutil -insert signingStyle -string manual/);
+    assert.match(releaseWorkflow, /plutil -insert provisioningProfiles/);
     assert.match(releaseWorkflow, /-allowProvisioningUpdates/);
     assert.match(releaseWorkflow, /-authenticationKeyPath/);
     assert.match(releaseWorkflow, /xcrun altool --upload-app/);
