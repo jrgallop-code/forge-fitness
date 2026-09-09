@@ -37,7 +37,9 @@ test("App Store releases use cloud signing and clean up the private key", () => 
     assert.match(releaseWorkflow, /node scripts\/app-store-signing\.mjs create/);
     assert.match(releaseWorkflow, /CODE_SIGN_STYLE=Manual/);
     assert.match(releaseWorkflow, /CODE_SIGN_IDENTITY="Apple Distribution"/);
-    assert.match(releaseWorkflow, /PROVISIONING_PROFILE_SPECIFIER="\$APP_STORE_PROFILE_NAME"/);
+    assert.match(releaseWorkflow, /APP_STORE_PROFILE_NAME="\$APP_STORE_PROFILE_NAME"/);
+    assert.match(releaseWorkflow, /TIMER_EXTENSION_PROFILE_NAME="\$TIMER_EXTENSION_PROFILE_NAME"/);
+    assert.match(releaseWorkflow, /com\.leveluphypertrophy\.app\.timer/);
     assert.match(releaseWorkflow, /plutil -insert signingStyle -string manual/);
     assert.match(releaseWorkflow, /plutil -insert provisioningProfiles/);
     assert.match(releaseWorkflow, /-allowProvisioningUpdates/);

@@ -19,6 +19,8 @@ test("native scripts build before syncing the iOS project", async () => {
     assert.equal(packageJson.dependencies["@capacitor/core"], packageJson.devDependencies["@capacitor/cli"]);
     assert.equal(packageJson.dependencies["@capacitor/haptics"], "8.0.0");
     assert.equal(packageJson.dependencies["@capacitor/local-notifications"], "8.0.0");
+    assert.equal(packageJson.dependencies["@capacitor/app"], "8.0.0");
+    assert.equal(packageJson.dependencies["@capacitor/browser"], "8.0.0");
 });
 
 test("native runtime does not register the PWA service worker", async () => {
@@ -26,12 +28,15 @@ test("native runtime does not register the PWA service worker", async () => {
     assert.match(app, /!window\.Capacitor\?\.isNativePlatform\?\.\(\)/);
 });
 
-test("native iOS uses first-party email login without social-login review blockers", async () => {
+test("native iOS offers Apple, Google, email, and existing-account transfer", async () => {
     const login = await readFile(new URL("../js/account/first-launch-login.js", import.meta.url), "utf8");
     const account = await readFile(new URL("../js/more/account-cloud-ui.js", import.meta.url), "utf8");
     assert.match(login, /window\.Capacitor\?\.getPlatform\?\.\(\) === "ios"/);
-    assert.match(login, /nativeIOS \? "" : '<div class="level-up-login-google"/);
-    assert.match(login, /nativeIOS \? "" : '<button class="level-up-login-provider"[^']*Apple/);
+    assert.match(login, /Continue with Apple/);
+    assert.match(login, /Continue with Google/);
+    assert.match(login, /Continue with email/);
+    assert.match(login, /LevelUpNativeAuth\?\.signInWithApple/);
+    assert.match(login, /ios-auth\.html/);
     assert.match(account, /nativeIOS \? "" : '<div id="account-google-button"/);
     assert.match(account, /Delete Cloud Account/);
     assert.match(account, /method: "DELETE"/);
@@ -44,6 +49,9 @@ test("native iOS provides haptics, background alarms, and selectable app icons",
     const appearance = await readFile(new URL("../js/more/appearance-settings.js", import.meta.url), "utf8");
     const info = await readFile(new URL("../ios/App/App/Info.plist", import.meta.url), "utf8");
     const plugin = await readFile(new URL("../ios/App/App/LevelUpAppIconPlugin.swift", import.meta.url), "utf8");
+    const timerPlugin = await readFile(new URL("../ios/App/App/LevelUpTimerPlugin.swift", import.meta.url), "utf8");
+    const sceneDelegate = await readFile(new URL("../ios/App/App/SceneDelegate.swift", import.meta.url), "utf8");
+    const widget = await readFile(new URL("../ios/App/LevelUpTimerWidget/LevelUpTimerWidget.swift", import.meta.url), "utf8");
     assert.match(native, /plugin\("Haptics"\)/);
     assert.match(native, /plugin\("LocalNotifications"\)/);
     assert.match(native, /scheduleNativeAlarm/);
@@ -51,6 +59,13 @@ test("native iOS provides haptics, background alarms, and selectable app icons",
     assert.match(appearance, /LevelUpAppIcon\?\.setIcon/);
     assert.match(info, /CFBundleAlternateIcons/);
     assert.match(plugin, /setAlternateIconName/);
+    assert.match(sceneDelegate, /LevelUpBridgeViewController/);
+    assert.match(timerPlugin, /UNTimeIntervalNotificationTrigger/);
+    assert.match(timerPlugin, /level-up-alarm\.wav/);
+    assert.match(timerPlugin, /interruptionLevel = \.timeSensitive/);
+    assert.match(widget, /ActivityConfiguration/);
+    assert.match(widget, /timerInterval/);
+    assert.match(info, /NSSupportsLiveActivities/);
     for (const name of ["Arctic", "Pure", "Ocean", "Midnight", "Slate", "Pulse"]) {
         await readFile(new URL(`../ios/App/App/Assets.xcassets/AppIcon${name}.appiconset/AppIcon${name}-1024.png`, import.meta.url));
     }

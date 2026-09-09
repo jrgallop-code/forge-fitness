@@ -14,16 +14,23 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key><string>com.leveluphypertrophy.app.auth</string>
+			<key>CFBundleURLSchemes</key><array><string>leveluphypertrophy</string></array>
+		</dict>
+	</array>
 	<key>CFBundleIcons</key>
 	<dict>
 		<key>CFBundleAlternateIcons</key>
 		<dict>
-			<key>AppIconArctic</key><dict><key>CFBundleIconName</key><string>AppIconArctic</string></dict>
-			<key>AppIconPure</key><dict><key>CFBundleIconName</key><string>AppIconPure</string></dict>
-			<key>AppIconOcean</key><dict><key>CFBundleIconName</key><string>AppIconOcean</string></dict>
-			<key>AppIconMidnight</key><dict><key>CFBundleIconName</key><string>AppIconMidnight</string></dict>
-			<key>AppIconSlate</key><dict><key>CFBundleIconName</key><string>AppIconSlate</string></dict>
-			<key>AppIconPulse</key><dict><key>CFBundleIconName</key><string>AppIconPulse</string></dict>
+			<key>AppIconArctic</key><dict><key>CFBundleIconFiles</key><array><string>AppIconArctic</string></array><key>CFBundleIconName</key><string>AppIconArctic</string><key>UIPrerenderedIcon</key><false/></dict>
+			<key>AppIconPure</key><dict><key>CFBundleIconFiles</key><array><string>AppIconPure</string></array><key>CFBundleIconName</key><string>AppIconPure</string><key>UIPrerenderedIcon</key><false/></dict>
+			<key>AppIconOcean</key><dict><key>CFBundleIconFiles</key><array><string>AppIconOcean</string></array><key>CFBundleIconName</key><string>AppIconOcean</string><key>UIPrerenderedIcon</key><false/></dict>
+			<key>AppIconMidnight</key><dict><key>CFBundleIconFiles</key><array><string>AppIconMidnight</string></array><key>CFBundleIconName</key><string>AppIconMidnight</string><key>UIPrerenderedIcon</key><false/></dict>
+			<key>AppIconSlate</key><dict><key>CFBundleIconFiles</key><array><string>AppIconSlate</string></array><key>CFBundleIconName</key><string>AppIconSlate</string><key>UIPrerenderedIcon</key><false/></dict>
+			<key>AppIconPulse</key><dict><key>CFBundleIconFiles</key><array><string>AppIconPulse</string></array><key>CFBundleIconName</key><string>AppIconPulse</string><key>UIPrerenderedIcon</key><false/></dict>
 		</dict>
 		<key>CFBundlePrimaryIcon</key><dict><key>CFBundleIconName</key><string>AppIcon</string></dict>
 	</dict>
@@ -36,6 +43,8 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>

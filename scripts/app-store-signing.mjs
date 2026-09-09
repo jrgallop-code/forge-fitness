@@ -65,6 +65,7 @@ async function createSigningAssets() {
   const csrPath = path.join(signingDirectory, 'distribution.csr');
   const certificatePath = path.join(signingDirectory, 'distribution.cer');
   const profilePath = path.join(signingDirectory, 'LevelUp_AppStore.mobileprovision');
+  const timerProfilePath = path.join(signingDirectory, 'LevelUp_Timer_AppStore.mobileprovision');
   const statePath = path.join(signingDirectory, 'state.json');
 
   execFileSync('openssl', ['genrsa', '-out', privateKeyPath, '2048'], { stdio: 'ignore' });
@@ -88,15 +89,47 @@ async function createSigningAssets() {
   writeFileSync(certificatePath, Buffer.from(certificate.data.attributes.certificateContent, 'base64'));
   writeFileSync(statePath, JSON.stringify({ certificateId: certificate.data.id }));
 
-  let profile;
+  const createdProfileIds = [];
   try {
     const bundleIdentifier = required('APP_BUNDLE_IDENTIFIER');
     const bundleIds = await api(`/bundleIds?filter%5Bidentifier%5D=${encodeURIComponent(bundleIdentifier)}&limit=1`);
     const bundleId = bundleIds?.data?.[0]?.id;
     if (!bundleId) throw new Error(`No registered App ID found for ${bundleIdentifier}`);
 
+    const capabilities = await api(`/bundleIds/${bundleId}/bundleIdCapabilities`);
+    if (!capabilities?.data?.some(item => item.attributes?.capabilityType === 'APPLE_ID_AUTH')) {
+      await api('/bundleIdCapabilities', {
+        method: 'POST',
+        body: JSON.stringify({
+          data: {
+            type: 'bundleIdCapabilities',
+            attributes: {
+              capabilityType: 'APPLE_ID_AUTH',
+              settings: [{
+                key: 'APPLE_ID_AUTH_APP_CONSENT',
+                options: [{ key: 'PRIMARY_APP_CONSENT', enabled: true }],
+              }],
+            },
+            relationships: { bundleId: { data: { type: 'bundleIds', id: bundleId } } },
+          },
+        }),
+      });
+    }
+
+    const extensionIdentifier = required('APP_EXTENSION_BUNDLE_IDENTIFIER');
+    let extensionBundleIds = await api(`/bundleIds?filter%5Bidentifier%5D=${encodeURIComponent(extensionIdentifier)}&limit=1`);
+    if (!extensionBundleIds?.data?.[0]) {
+      await api('/bundleIds', {
+        method: 'POST',
+        body: JSON.stringify({ data: { type: 'bundleIds', attributes: { identifier: extensionIdentifier, name: 'Level Up Timer', platform: 'IOS' } } }),
+      });
+      extensionBundleIds = await api(`/bundleIds?filter%5Bidentifier%5D=${encodeURIComponent(extensionIdentifier)}&limit=1`);
+    }
+    const extensionBundleId = extensionBundleIds?.data?.[0]?.id;
+    if (!extensionBundleId) throw new Error(`No registered App ID found for ${extensionIdentifier}`);
+
     const profileName = `Level Up App Store ${required('GITHUB_RUN_ID')}`;
-    profile = await api('/profiles', {
+    const profile = await api('/profiles', {
       method: 'POST',
       body: JSON.stringify({
         data: {
@@ -109,18 +142,39 @@ async function createSigningAssets() {
         },
       }),
     });
+    createdProfileIds.push(profile.data.id);
     writeFileSync(profilePath, Buffer.from(profile.data.attributes.profileContent, 'base64'));
+
+    const timerProfileName = `Level Up Timer App Store ${required('GITHUB_RUN_ID')}`;
+    const timerProfile = await api('/profiles', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          type: 'profiles',
+          attributes: { name: timerProfileName, profileType: 'IOS_APP_STORE' },
+          relationships: {
+            bundleId: { data: { type: 'bundleIds', id: extensionBundleId } },
+            certificates: { data: [{ type: 'certificates', id: certificate.data.id }] },
+          },
+        },
+      }),
+    });
+    createdProfileIds.push(timerProfile.data.id);
+    writeFileSync(timerProfilePath, Buffer.from(timerProfile.data.attributes.profileContent, 'base64'));
     writeFileSync(statePath, JSON.stringify({
       certificateId: certificate.data.id,
-      profileId: profile.data.id,
+      profileIds: createdProfileIds,
     }));
 
     writeOutput('certificate_path', certificatePath);
     writeOutput('private_key_path', privateKeyPath);
     writeOutput('profile_name', profileName);
     writeOutput('profile_path', profilePath);
+    writeOutput('timer_profile_name', timerProfileName);
+    writeOutput('timer_profile_path', timerProfilePath);
     writeOutput('state_path', statePath);
   } catch (error) {
+    for (const profileId of createdProfileIds) await api(`/profiles/${profileId}`, { method: 'DELETE' }).catch(() => {});
     await api(`/certificates/${certificate.data.id}`, { method: 'DELETE' }).catch(() => {});
     writeFileSync(statePath, '{}');
     throw error;
@@ -131,8 +185,9 @@ async function cleanupSigningAssets() {
   const statePath = process.env.SIGNING_STATE_PATH;
   if (!statePath || !existsSync(statePath)) return;
   const state = JSON.parse(readFileSync(statePath, 'utf8'));
-  if (state.profileId) {
-    await api(`/profiles/${state.profileId}`, { method: 'DELETE' }).catch((error) => {
+  const profileIds = state.profileIds || (state.profileId ? [state.profileId] : []);
+  for (const profileId of profileIds) {
+    await api(`/profiles/${profileId}`, { method: 'DELETE' }).catch((error) => {
       console.warn(`Could not revoke temporary profile: ${error.message}`);
     });
   }

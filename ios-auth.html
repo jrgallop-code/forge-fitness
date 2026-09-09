@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07162d">
+  <title>Connect Level Up</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#07162d;background:#edf6ff}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:28px}.card{width:min(100%,430px);background:#fff;border:1px solid #cfe0f3;border-radius:28px;padding:28px;box-shadow:0 22px 60px #12396824;text-align:center}.mark{width:86px;height:86px;margin:0 auto 18px}.eyebrow{color:#1764be;font-size:12px;font-weight:900;letter-spacing:.18em}.card h1{font-size:30px;line-height:1.05;margin:10px 0}.card p{color:#58708d;line-height:1.5}.google{display:flex;justify-content:center;margin:24px 0 12px}.continue{width:100%;border:0;border-radius:15px;background:#0c5db7;color:#fff;padding:15px;font:800 16px inherit}.continue[hidden]{display:none}.status{min-height:24px;font-weight:700;color:#315a82}.legal{font-size:12px!important}</style>
+</head>
+<body>
+  <main class="card">
+    <img class="mark" src="assets/icons/icon-192.png" alt="Level Up">
+    <span class="eyebrow">LEVEL UP FOR IPHONE</span>
+    <h1>Connect your account</h1>
+    <p>Sign in with the same Google account you use for Level Up. You’ll return to the app automatically.</p>
+    <div class="google" id="google-button"></div>
+    <button class="continue" id="continue" type="button" hidden>Continue in Level Up</button>
+    <p class="status" id="status" aria-live="polite"></p>
+    <p class="legal">The one-time connection code expires in 10 minutes and can only be used once.</p>
+  </main>
+  <script type="module" src="js/account/ios-auth-bridge.js?v=1"></script>
+</body>
+</html>

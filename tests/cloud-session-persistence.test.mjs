@@ -48,3 +48,13 @@ test("Google-authenticated members can create a single-use iOS transfer code", (
     assert.match(firstLaunchLogin, /restoreTransferredBackup\(payload\.token\)/);
     assert.match(firstLaunchLogin, /restoreBackupSnapshot\(payload\.backup/);
 });
+
+test("Apple identity tokens are verified before a persistent Level Up session is issued", () => {
+    const route = worker.indexOf('url.pathname === "/v1/session/apple"');
+    const requireUser = worker.indexOf("const user = await requireUser(request, env)");
+    assert.ok(route >= 0 && route < requireUser);
+    assert.match(worker, /appleid\.apple\.com\/auth\/keys/);
+    assert.match(worker, /RSASSA-PKCS1-v1_5/);
+    assert.match(worker, /claims\.nonce !== await sha256\(nonce\)/);
+    assert.match(worker, /expectedAudience = env\.APPLE_CLIENT_ID \|\| "com\.leveluphypertrophy\.app"/);
+});

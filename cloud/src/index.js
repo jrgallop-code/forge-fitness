@@ -15,6 +15,8 @@ const AUTH_RATE_WINDOW_MS = 15 * 60 * 1000;
 const AUTH_RATE_MAX_FAILURES = 10;
 const TRANSFER_CODE_LIFETIME_MS = 10 * 60 * 1000;
 const TRANSFER_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const APPLE_TOKEN_ISSUER = "https://appleid.apple.com";
+let appleKeyCache = { expiresAt: 0, keys: [] };
 const ACQUISITION_SOURCES = new Set(["instagram", "tiktok", "reddit", "youtube", "google_search", "friend_family", "app_recommendation", "other", "prefer_not_to_say"]);
 const CLIENT_EVENT_NAMES = new Set(["onboarding_completed", "workout_completed"]);
 const USAGE_EVENT_NAMES = new Set(["food_logged"]);
@@ -43,6 +45,10 @@ async function handleRequest(request, env, ctx) {
     if (url.pathname === "/v1/session/google" && request.method === "POST") {
         const body = await readJson(request, 64 * 1024);
         return createGoogleSession(body, request, env);
+    }
+    if (url.pathname === "/v1/session/apple" && request.method === "POST") {
+        const body = await readJson(request, 64 * 1024);
+        return createAppleSession(body, request, env);
     }
     if (url.pathname === "/v1/account/email" && request.method === "POST") {
         const body = await readJson(request, 16 * 1024);
@@ -168,6 +174,95 @@ async function createGoogleSession(body, request, env) {
         request,
         env
     );
+}
+
+async function createAppleSession(body, request, env) {
+    const identityToken = typeof body?.identityToken === "string" ? body.identityToken : "";
+    const nonce = typeof body?.nonce === "string" ? body.nonce : "";
+    if (!identityToken || identityToken.length > 16000 || !nonce || nonce.length > 256) {
+        return json({ error: "Apple sign-in credential is required." }, 400, request, env);
+    }
+
+    let profile;
+    try { profile = await verifyAppleIdentityToken(identityToken, nonce, env); }
+    catch (error) {
+        console.error(JSON.stringify({ event: "apple_signin_failed", message: String(error?.message || error) }));
+        return json({ error: "Apple sign-in could not be verified." }, 401, request, env);
+    }
+
+    const appleId = `apple:${profile.sub}`;
+    const email = normalizeEmail(profile.email);
+    const suppliedName = limitedText(body?.name, 120);
+    const existing = await env.DB.prepare("SELECT id, email, display_name, avatar_url FROM users WHERE id = ? OR email = ? LIMIT 1")
+        .bind(appleId, email).first();
+    const userId = existing?.id || appleId;
+    const now = new Date().toISOString();
+
+    await env.DB.prepare(`
+        INSERT INTO users (id, email, display_name, avatar_url, created_at, updated_at)
+        VALUES (?, ?, ?, NULL, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            email = COALESCE(NULLIF(excluded.email, ''), users.email),
+            display_name = COALESCE(NULLIF(excluded.display_name, ''), users.display_name),
+            updated_at = excluded.updated_at
+    `).bind(userId, email || existing?.email || `${profile.sub}@privaterelay.appleid.com`, suppliedName || existing?.display_name || null, now, now).run();
+    if (!existing) await insertProductEvent(env, userId, "account_created", "account", now, { method: "apple" });
+
+    return issueSession(userId, {
+        id: userId,
+        email: email || existing?.email,
+        display_name: suppliedName || existing?.display_name,
+        avatar_url: existing?.avatar_url,
+        beta_status: "active"
+    }, request, env);
+}
+
+async function verifyAppleIdentityToken(token, nonce, env) {
+    const parts = token.split(".");
+    if (parts.length !== 3) throw new Error("Malformed Apple identity token");
+    const header = JSON.parse(new TextDecoder().decode(base64UrlToBytes(parts[0])));
+    const claims = JSON.parse(new TextDecoder().decode(base64UrlToBytes(parts[1])));
+    if (header.alg !== "RS256" || !header.kid) throw new Error("Unsupported Apple token");
+
+    const keys = await appleVerificationKeys();
+    const jwk = keys.find(key => key.kid === header.kid && key.kty === "RSA");
+    if (!jwk) throw new Error("Apple signing key not found");
+    const publicKey = await crypto.subtle.importKey(
+        "jwk", jwk,
+        { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+        false, ["verify"]
+    );
+    const validSignature = await crypto.subtle.verify(
+        "RSASSA-PKCS1-v1_5", publicKey,
+        base64UrlToBytes(parts[2]),
+        new TextEncoder().encode(`${parts[0]}.${parts[1]}`)
+    );
+    if (!validSignature) throw new Error("Invalid Apple token signature");
+
+    const now = Math.floor(Date.now() / 1000);
+    const expectedAudience = env.APPLE_CLIENT_ID || "com.leveluphypertrophy.app";
+    const audiences = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+    if (claims.iss !== APPLE_TOKEN_ISSUER || !audiences.includes(expectedAudience) || Number(claims.exp) <= now || Number(claims.iat) > now + 60 || !claims.sub) {
+        throw new Error("Apple token claims are not valid");
+    }
+    if (claims.nonce !== await sha256(nonce)) throw new Error("Apple token nonce is not valid");
+    return claims;
+}
+
+async function appleVerificationKeys() {
+    if (appleKeyCache.expiresAt > Date.now() && appleKeyCache.keys.length) return appleKeyCache.keys;
+    const response = await fetch("https://appleid.apple.com/auth/keys");
+    if (!response.ok) throw new Error("Apple verification keys are unavailable");
+    const body = await response.json();
+    const keys = Array.isArray(body?.keys) ? body.keys : [];
+    if (!keys.length) throw new Error("Apple verification keys are empty");
+    appleKeyCache = { keys, expiresAt: Date.now() + 6 * 60 * 60 * 1000 };
+    return keys;
+}
+
+function base64UrlToBytes(value) {
+    const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
+    return base64ToBytes(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "="));
 }
 
 async function createEmailAccount(body, request, env) {

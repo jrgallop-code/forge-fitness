@@ -1,5 +1,5 @@
 import { openActiveWorkout } from "./workout-session.js?v=native-navigation-stability-1";
-import { cancelNativeAlarm, hapticNotification, requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=native-feedback-1";
+import { cancelNativeAlarm, hapticNotification, requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const CARDIO_TIMER_STORAGE_KEY = "level_up_cardio_timer_state";
@@ -442,7 +442,7 @@ function ensureCardioAlarmSheet() {
                 <button type="button" class="cardio-alarm-custom-set">Set</button>
             </div>
             <div class="cardio-alarm-sheet-alert-row">
-                <span>Sound + in-app alarm. Browser notifications are optional.</span>
+                <span>Lock Screen countdown + background alarm.</span>
                 <button type="button" class="cardio-alarm-alerts">${notificationButtonText()}</button>
             </div>
             <p>The alarm fires at the selected elapsed time. Your cardio timer keeps recording until you pause it.</p>
@@ -615,6 +615,7 @@ function scheduleCardioNativeAlarm(card, key, state) {
         title: "Cardio time complete",
         body: `${getCardioName(card)} · ${Number(state.alarmMinutes).toLocaleString()} minute${Number(state.alarmMinutes) === 1 ? "" : "s"} reached.`,
         at: new Date(Date.now() + remaining),
+        kind: "cardio",
         extra: { type: "levelup:cardio-complete", timerKey: key }
     });
 }
