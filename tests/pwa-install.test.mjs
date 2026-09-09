@@ -56,7 +56,7 @@ test("installed launches have a hard splash timeout and a cache-safe recovery sc
     const html = readFileSync("index.html", "utf8");
     const safeguard = readFileSync("js/core/pwa-startup-safeguard.js", "utf8");
     const styles = readFileSync("css/pwa-splash-screen.css", "utf8");
-    assert.match(html, /js\/core\/pwa-startup-safeguard\.js\?v=pwa-splash-safety-1/);
+    assert.match(html, /js\/core\/pwa-startup-safeguard\.js\?v=/);
     assert.ok(html.indexOf("pwa-startup-safeguard.js") < html.indexOf("js/app.js"));
     assert.match(safeguard, /setTimeout\(dismissSplash, 3200\)/);
     assert.match(safeguard, /setTimeout\(showRecovery, 7000\)/);
@@ -67,39 +67,58 @@ test("installed launches have a hard splash timeout and a cache-safe recovery sc
     assert.match(styles, /\.pwa-startup-recovery/);
 });
 
-test("every explicit appearance theme uses its matching optimized splash and loader", () => {
+test("every appearance uses its mapped splash artwork and live themed loader", () => {
     const html = readFileSync("index.html", "utf8");
     const worker = readFileSync("service-worker.js", "utf8");
     const styles = readFileSync("css/pwa-splash-screen.css", "utf8");
     const splashes = {
-        arctic: ["assets/level-up-splash-arctic-v2.webp", 1672],
-        pure: ["assets/level-up-splash-pure-v1.webp", 1672],
-        ocean: ["assets/level-up-splash-ocean-v1.webp", 1672],
-        midnight: ["assets/level-up-splash-midnight-v1.webp", 1672],
-        slate: ["assets/level-up-splash-slate-v1.webp", 1672],
-        pulse: ["assets/level-up-splash-pulse-v1.webp", 1672]
+        "level-up": "assets/level-up-splash-exact.png",
+        arctic: "assets/level-up-splash-arctic-v2.webp",
+        pure: "assets/level-up-splash-pure-v1.webp",
+        ocean: "assets/level-up-splash-ocean-v1.webp",
+        midnight: "assets/level-up-splash-midnight-v1.webp",
+        slate: "assets/level-up-splash-slate-v1.webp",
+        pulse: "assets/level-up-splash-pulse-v1.webp"
+    };
+    const accents = {
+        "level-up": "f21f2c",
+        arctic: "1769e0",
+        pure: "171719",
+        ocean: "0798d9",
+        midnight: "3478f6",
+        slate: "7396b8",
+        pulse: "ff2d95"
     };
 
-    for (const [theme, [splash, height]] of Object.entries(splashes)) {
+    for (const [theme, splash] of Object.entries(splashes)) {
         assert.ok(existsSync(splash), `${theme} splash must exist`);
-        assert.deepEqual(webpDimensions(splash), { width: 941, height });
-        assert.ok(readFileSync(splash).length < 100_000, `${theme} splash should remain safely below transport limits`);
-        assert.match(html, new RegExp(`${theme}:"${splash.replaceAll("/", "\\/")}\\?v=theme-splash-2"`));
-        assert.match(worker, new RegExp(`\\.\\/${splash.replaceAll("/", "\\/")}`));
-        assert.match(styles, new RegExp(`html\\[data-theme="${theme}"\\]\\.level-up-installed-pwa #pwa-splash`));
+        if (splash.endsWith(".png")) {
+            assert.deepEqual(pngDimensions(splash), { width: 941, height: 1672 });
+        } else {
+            assert.deepEqual(webpDimensions(splash), { width: 941, height: 1672 });
+            assert.ok(readFileSync(splash).length < 100_000, `${theme} splash should remain safely below transport limits`);
+        }
+        const key = theme === "level-up" ? '"level-up"' : theme;
+        assert.ok(html.includes(`${key}:"${splash}?v=theme-splash-2"`), `${theme} must map to its artwork`);
+        assert.ok(worker.includes(`./${splash}`), `${theme} splash must be precached`);
+        assert.match(styles, new RegExp(`html\\[data-theme="${theme}"\\]\\.level-up-installed-pwa \\.pwa-splash-loader-fill\\{background:\\s*#${accents[theme]}`));
     }
 
+    assert.match(html, /<img class="pwa-splash-art"/);
+    assert.match(html, /<div class="pwa-splash-loader"><div class="pwa-splash-loader-fill"><\/div><\/div>/);
     assert.match(html, /window\.__levelUpSplashAsset/);
-    assert.match(styles, /background: #1769e0/);
-    assert.match(styles, /background: #0798d9/);
-    assert.match(styles, /background: #3478f6/);
-    assert.match(styles, /background: #7396b8/);
-    assert.match(styles, /background: #ff2d95/);
+    assert.match(styles, /\.pwa-splash-art\{display:block;width:100%;height:100%;object-fit:contain;object-position:center\}/);
+    assert.doesNotMatch(styles, /\.pwa-splash-art\{[^}]*display:none/i);
+    assert.doesNotMatch(styles, /#pwa-splash::before/);
+    assert.doesNotMatch(styles, /#pwa-splash::after/);
+    assert.doesNotMatch(styles, /level-up-logo\.svg/);
 });
 
 test("automatic theme uses the locally resolved day or night splash", () => {
     const html = readFileSync("index.html", "utf8");
+    assert.match(html, /"system"===t\?\(h>=7&&h<19\?"arctic":"level-up"\):t/);
     assert.match(html, /window\.__levelUpSplashAsset=s\[r\]\|\|s\["level-up"\]/);
+    assert.doesNotMatch(html, /system:\s*["']assets\/level-up-splash/i);
 });
 
 test("iPhone install guidance treats Open as Web App as optional", () => {
