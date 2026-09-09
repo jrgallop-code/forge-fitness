@@ -92,7 +92,7 @@ jobs:
           certificate_p12="$SIGNING_DIR/distribution.p12"
 
           openssl x509 -inform DER -in "$SIGNING_DIR/distribution.cer" -out "$certificate_pem"
-          openssl pkcs12 -export \
+          openssl pkcs12 -export -legacy \
             -inkey "$SIGNING_DIR/distribution.key" \
             -in "$certificate_pem" \
             -out "$certificate_p12" \
