@@ -347,8 +347,13 @@ function actionRow(action, title, copy, icon) {
 }
 
 function launchExistingFlow({ content, landing, action }) {
+    if (action === "smart") {
+        landing.hidden = true;
+        document.dispatchEvent(new CustomEvent("levelup:navigate", { detail: { page: "program-builder" } }));
+        return;
+    }
+
     const selector = {
-        smart: "[data-smart-build]",
         manual: "#new-plan-btn",
         import: "[data-routine-import-open]"
     }[action];
@@ -362,14 +367,26 @@ function launchExistingFlow({ content, landing, action }) {
     landing.hidden = true;
     button.click();
 
-    window.setTimeout(() => {
-        const surface = content.querySelector("#plan-builder:not([hidden]), [data-smart-build-wizard]:not([hidden]), [data-routine-import-wizard]:not([hidden])");
+    waitForCreationSurface(content).then(surface => {
         if (surface) surface.scrollIntoView({ behavior: "smooth", block: "start" });
         else if (!content.querySelector("#workout-plan-detail-screen, #workout-session-logger")) {
             landing.hidden = false;
             showToast("That option could not open. Please try again.");
         }
-    }, 60);
+    });
+}
+
+function waitForCreationSurface(content, timeout = 900) {
+    return new Promise(resolve => {
+        const selector = "#plan-builder:not([hidden]), [data-smart-build-wizard]:not([hidden]), [data-routine-import-wizard]:not([hidden])";
+        const startedAt = performance.now();
+        const check = () => {
+            const surface = content.querySelector(selector);
+            if (surface || performance.now() - startedAt >= timeout) resolve(surface || null);
+            else requestAnimationFrame(check);
+        };
+        check();
+    });
 }
 
 function openCataloguePlan({ content, landing, planId }) {

@@ -39,6 +39,14 @@ test("new plan sheet keeps reusable creation flows and browses routines on the l
   assert.match(preview, /clickWhenReady/);
 });
 
+test("Smart Build navigates directly without a fixed-delay failure race", async () => {
+  const landing = await read("js/workouts/workout-landing-live.js");
+  assert.match(landing, /action === "smart"/);
+  assert.match(landing, /page: "program-builder"/);
+  assert.doesNotMatch(landing, /\}, 60\);/);
+  assert.match(landing, /waitForCreationSurface/);
+});
+
 test("prototype uses image-led cards with protected text contrast", async () => {
   const [preview, styles] = await Promise.all([
     read("preview/workout-landing/preview.js"),

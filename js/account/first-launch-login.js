@@ -1,4 +1,4 @@
-import "../core/native-capabilities.js?v=lock-screen-timers-1";
+import "../core/native-capabilities.js?v=lock-screen-timers-2";
 import { restoreBackupSnapshot, verifyBackupSnapshot } from "../core/backup-manager.js?v=backup-complete-7";
 
 const API_URL = "https://api.leveluphypertrophy.com";
@@ -103,7 +103,7 @@ async function openNativeGoogleLogin() {
     setMessage("Opening secure Google sign-in…");
     try {
         await window.Capacitor?.Plugins?.Browser?.open?.({
-            url: "https://leveluphypertrophy.com/ios-auth.html",
+            url: "https://app.leveluphypertrophy.com/ios-auth.html",
             presentationStyle: "popover"
         });
     } catch { setMessage("Google sign-in could not be opened.", "error"); }
@@ -369,7 +369,7 @@ function ensureStyles() {
     if (document.querySelector('link[data-level-up-login]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/first-launch-login.css?v=native-auth-1";
+    link.href = "css/first-launch-login.css?v=native-auth-contrast-2";
     link.dataset.levelUpLogin = "true";
     document.head.appendChild(link);
 }

@@ -14,6 +14,20 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "cancel", returnType: CAPPluginReturnPromise)
     ]
 
+    override func load() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(cleanupExpiredLiveActivities),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        cleanupExpiredLiveActivities()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     @objc override func requestPermissions(_ call: CAPPluginCall) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error = error {
@@ -73,7 +87,14 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
                     call.reject("The timer notification could not be scheduled.", nil, error)
                     return
                 }
-                self?.startLiveActivity(key: key, title: title, detail: body, endAt: endAt, kind: call.getString("kind") ?? "timer")
+                self?.startLiveActivity(
+                    key: key,
+                    title: title,
+                    detail: body,
+                    endAt: endAt,
+                    kind: call.getString("kind") ?? "timer",
+                    theme: call.getString("theme") ?? "level-up"
+                )
                 call.resolve(["scheduled": true, "liveActivity": self?.liveActivitiesAvailable() ?? false])
             }
         }
@@ -95,10 +116,10 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
         return false
     }
 
-    private func startLiveActivity(key: String, title: String, detail: String, endAt: Date, kind: String) {
+    private func startLiveActivity(key: String, title: String, detail: String, endAt: Date, kind: String, theme: String) {
         guard #available(iOS 16.1, *), ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         endLiveActivities(key: key)
-        let attributes = LevelUpTimerAttributes(timerID: key, title: title, detail: detail, kind: kind)
+        let attributes = LevelUpTimerAttributes(timerID: key, title: title, detail: detail, kind: kind, theme: theme)
         let state = LevelUpTimerAttributes.ContentState(startedAt: Date(), endAt: endAt)
         do {
             if #available(iOS 16.2, *) {
@@ -121,6 +142,16 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
                     await activity.end(dismissalPolicy: .immediate)
                 }
             }
+        }
+    }
+
+    @objc private func cleanupExpiredLiveActivities() {
+        guard #available(iOS 16.1, *) else { return }
+        for activity in Activity<LevelUpTimerAttributes>.activities {
+            let endAt: Date
+            if #available(iOS 16.2, *) { endAt = activity.content.state.endAt }
+            else { endAt = activity.contentState.endAt }
+            if endAt <= Date() { endLiveActivities(key: activity.attributes.timerID) }
         }
     }
 }

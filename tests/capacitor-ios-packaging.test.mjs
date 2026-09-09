@@ -28,6 +28,13 @@ test("native runtime does not register the PWA service worker", async () => {
     assert.match(app, /!window\.Capacitor\?\.isNativePlatform\?\.\(\)/);
 });
 
+test("native startup uses the saved appearance splash before the app renders", async () => {
+    const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
+    assert.match(index, /window\.Capacitor\?\.isNativePlatform\?\.\(\)/);
+    assert.match(index, /level_up_appearance_settings/);
+    assert.match(index, /level-up-installed-pwa/);
+});
+
 test("native iOS offers Apple, Google, email, and existing-account transfer", async () => {
     const login = await readFile(new URL("../js/account/first-launch-login.js", import.meta.url), "utf8");
     const account = await readFile(new URL("../js/more/account-cloud-ui.js", import.meta.url), "utf8");
@@ -37,6 +44,7 @@ test("native iOS offers Apple, Google, email, and existing-account transfer", as
     assert.match(login, /Continue with email/);
     assert.match(login, /LevelUpNativeAuth\?\.signInWithApple/);
     assert.match(login, /ios-auth\.html/);
+    assert.match(login, /app\.leveluphypertrophy\.com\/ios-auth\.html/);
     assert.match(account, /nativeIOS \? "" : '<div id="account-google-button"/);
     assert.match(account, /Delete Cloud Account/);
     assert.match(account, /method: "DELETE"/);
@@ -64,8 +72,12 @@ test("native iOS provides haptics, background alarms, and selectable app icons",
     assert.match(timerPlugin, /UNTimeIntervalNotificationTrigger/);
     assert.match(timerPlugin, /level-up-alarm\.wav/);
     assert.match(timerPlugin, /interruptionLevel = \.timeSensitive/);
+    assert.match(timerPlugin, /cleanupExpiredLiveActivities/);
+    assert.match(timerPlugin, /call\.getString\("theme"\)/);
     assert.match(widget, /ActivityConfiguration/);
     assert.match(widget, /timerInterval/);
+    assert.match(widget, /TimerPalette\.forTheme/);
+    assert.match(widget, /DismissLevelUpTimerIntent/);
     assert.match(widgetInfo, /CFBundleExecutable/);
     assert.match(info, /NSSupportsLiveActivities/);
     for (const name of ["Arctic", "Pure", "Ocean", "Midnight", "Slate", "Pulse"]) {

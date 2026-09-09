@@ -57,7 +57,8 @@ export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, ki
             const result = await nativeTimer.schedule({
                 key, title, body, at: when.getTime(),
                 type: extra?.type || "levelup:timer-complete",
-                kind
+                kind,
+                theme: document.documentElement.dataset.theme || "level-up"
             });
             return result?.scheduled === true;
         }
@@ -95,6 +96,15 @@ function bindNativeTouchFeedback() {
         void hapticImpact(strong ? "MEDIUM" : "LIGHT");
     }, { passive: true });
     try {
+        void plugin("App")?.addListener?.("appUrlOpen", event => {
+            try {
+                const url = new URL(event?.url || "");
+                if (url.protocol !== "leveluphypertrophy:" || url.hostname !== "timer" || url.pathname !== "/dismiss") return;
+                const key = url.searchParams.get("key");
+                if (key) void cancelNativeAlarm(key);
+            }
+            catch {}
+        });
         void plugin("LocalNotifications")?.addListener?.("localNotificationActionPerformed", event => {
             window.dispatchEvent(new CustomEvent("levelup:native-alarm-opened", { detail: event?.notification?.extra || {} }));
         });
