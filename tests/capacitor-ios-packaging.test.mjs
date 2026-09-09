@@ -52,7 +52,7 @@ test("native iOS offers Apple, Google, email, and existing-account transfer", as
     assert.match(login, /Already use Level Up on the web\?/);
 });
 
-test("native iOS provides haptics, background alarms, and selectable app icons", async () => {
+test("native iOS provides haptics, background alarms, selectable app icons, and a theme-aware Live Activity logo", async () => {
     const native = await readFile(new URL("../js/core/native-capabilities.js", import.meta.url), "utf8");
     const appearance = await readFile(new URL("../js/more/appearance-settings.js", import.meta.url), "utf8");
     const info = await readFile(new URL("../ios/App/App/Info.plist", import.meta.url), "utf8");
@@ -76,8 +76,10 @@ test("native iOS provides haptics, background alarms, and selectable app icons",
     assert.match(timerPlugin, /call\.getString\("theme"\)/);
     assert.match(widget, /ActivityConfiguration/);
     assert.match(widget, /timerInterval/);
-    assert.match(widget, /TimerPalette\.forTheme/);
-    assert.match(widget, /DismissLevelUpTimerIntent/);
+    assert.match(widget, /LevelUpThemeLogo/);
+    assert.match(widget, /LevelUpArrow/);
+    assert.match(widget, /timerAccent\(for: theme\)/);
+    assert.doesNotMatch(widget, /UIImage|TimerLogos/);
     assert.match(widgetInfo, /CFBundleExecutable/);
     assert.match(info, /NSSupportsLiveActivities/);
     for (const name of ["Arctic", "Pure", "Ocean", "Midnight", "Slate", "Pulse"]) {
