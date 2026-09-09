@@ -1,29 +1,29 @@
 /* Level Up in-app splash for installed PWA and native iOS launches.
    The artwork itself is the approved appearance-specific splash image. */
 #pwa-splash{display:none}
-html.level-up-installed-pwa #pwa-splash{position:fixed;inset:0;z-index:2147483647;display:block;overflow:hidden;min-height:100vh;min-height:100dvh;background:#070405;pointer-events:auto;animation:level-up-splash-out 2.2s ease forwards}
-html.level-up-installed-pwa .pwa-splash-art{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
+html.level-up-installed-pwa #pwa-splash{position:fixed;inset:0;z-index:2147483647;display:block;overflow:hidden;width:100vw;height:100vh;height:100dvh;min-height:100vh;min-height:100dvh;background:#050504;pointer-events:auto;animation:level-up-splash-out 2.2s ease forwards}
+html.level-up-installed-pwa .pwa-splash-art{position:absolute;inset:0;display:block;width:100%;height:100%;min-width:100%;min-height:100%;object-fit:cover;object-position:center center;background:inherit;transform:scale(1.002)}
 html.level-up-installed-pwa .pwa-splash-loader{position:absolute;left:50%;bottom:max(10vh,calc(env(safe-area-inset-bottom) + 42px));width:min(220px,56vw);height:3px;overflow:hidden;border-radius:999px;background:rgba(242,31,44,.18);transform:translateX(-50%);box-shadow:0 0 14px rgba(242,31,44,.25)}
 html.level-up-installed-pwa .pwa-splash-loader-fill{width:100%;height:100%;border-radius:inherit;background:#f21f2c;transform:scaleX(.03);transform-origin:left center;will-change:transform;animation:level-up-fake-load 1.76s cubic-bezier(.22,.61,.36,1) forwards}
-html[data-theme="level-up"].level-up-installed-pwa #pwa-splash{background:#070405}
+html[data-theme="level-up"].level-up-installed-pwa #pwa-splash{background:#050504}
 html[data-theme="level-up"].level-up-installed-pwa .pwa-splash-loader{background:rgba(242,31,44,.18);box-shadow:0 0 14px rgba(242,31,44,.25)}
 html[data-theme="level-up"].level-up-installed-pwa .pwa-splash-loader-fill{background:#f21f2c}
-html[data-theme="arctic"].level-up-installed-pwa #pwa-splash{background:#f3f7fc}
+html[data-theme="arctic"].level-up-installed-pwa #pwa-splash{background:#c1e2fb}
 html[data-theme="arctic"].level-up-installed-pwa .pwa-splash-loader{background:rgba(23,105,224,.16);box-shadow:0 0 12px rgba(23,105,224,.20)}
 html[data-theme="arctic"].level-up-installed-pwa .pwa-splash-loader-fill{background:#1769e0}
-html[data-theme="pure"].level-up-installed-pwa #pwa-splash{background:#f4f4f2}
+html[data-theme="pure"].level-up-installed-pwa #pwa-splash{background:#eceef1}
 html[data-theme="pure"].level-up-installed-pwa .pwa-splash-loader{background:rgba(23,23,25,.12);box-shadow:0 0 10px rgba(23,23,25,.12)}
 html[data-theme="pure"].level-up-installed-pwa .pwa-splash-loader-fill{background:#171719}
-html[data-theme="ocean"].level-up-installed-pwa #pwa-splash{background:#edf8ff}
+html[data-theme="ocean"].level-up-installed-pwa #pwa-splash{background:#62bffa}
 html[data-theme="ocean"].level-up-installed-pwa .pwa-splash-loader{background:rgba(7,152,217,.14);box-shadow:0 0 12px rgba(7,152,217,.18)}
 html[data-theme="ocean"].level-up-installed-pwa .pwa-splash-loader-fill{background:#0798d9}
-html[data-theme="midnight"].level-up-installed-pwa #pwa-splash{background:#050b17}
+html[data-theme="midnight"].level-up-installed-pwa #pwa-splash{background:#010d26}
 html[data-theme="midnight"].level-up-installed-pwa .pwa-splash-loader{background:rgba(52,120,246,.18);box-shadow:0 0 12px rgba(52,120,246,.20)}
 html[data-theme="midnight"].level-up-installed-pwa .pwa-splash-loader-fill{background:#3478f6}
-html[data-theme="slate"].level-up-installed-pwa #pwa-splash{background:#0d1117}
+html[data-theme="slate"].level-up-installed-pwa #pwa-splash{background:#232e3a}
 html[data-theme="slate"].level-up-installed-pwa .pwa-splash-loader{background:rgba(115,150,184,.20);box-shadow:0 0 12px rgba(115,150,184,.18)}
 html[data-theme="slate"].level-up-installed-pwa .pwa-splash-loader-fill{background:#7396b8}
-html[data-theme="pulse"].level-up-installed-pwa #pwa-splash{background:#120912}
+html[data-theme="pulse"].level-up-installed-pwa #pwa-splash{background:#080410}
 html[data-theme="pulse"].level-up-installed-pwa .pwa-splash-loader{background:rgba(255,45,149,.18);box-shadow:0 0 14px rgba(255,45,149,.24)}
 html[data-theme="pulse"].level-up-installed-pwa .pwa-splash-loader-fill{background:#ff2d95}
 @keyframes level-up-fake-load{0%{transform:scaleX(.03)}22%{transform:scaleX(.25)}47%{transform:scaleX(.48)}66%{transform:scaleX(.63)}79%{transform:scaleX(.74)}90%{transform:scaleX(.90)}100%{transform:scaleX(1)}}
