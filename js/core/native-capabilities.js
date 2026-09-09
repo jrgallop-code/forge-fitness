@@ -76,6 +76,20 @@ export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, ki
     catch { return false; }
 }
 
+// A completed native timer needs different treatment from a cancelled timer.
+// On iOS, the Live Activity should disappear at zero while the already-scheduled
+// one-shot completion notification is allowed to fire. Cancelling here would
+// remove that notification and force the web layer to create a second PWA alert.
+export async function finishNativeAlarm(key) {
+    const nativeTimer = plugin("LevelUpTimer");
+    if (!isNative() || !nativeTimer?.finish) return false;
+    try {
+        const result = await nativeTimer.finish({ key });
+        return result?.finished === true;
+    }
+    catch { return false; }
+}
+
 export async function cancelNativeAlarm(key) {
     const nativeTimer = plugin("LevelUpTimer");
     const notifications = plugin("LocalNotifications");
