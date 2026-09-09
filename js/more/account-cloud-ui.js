@@ -14,13 +14,14 @@ const AUTO_STATE_KEY = "level_up_cloud_auto_backup_state";
 ensureAccountCloudStyles();
 
 export function renderAccountCloud() {
+    const nativeIOS = isNativeIOS();
     return `<section class="dashboard-welcome account-cloud-heading"><div><button class="nutrition-planner-back" id="account-cloud-back" type="button">← More</button><span class="eyebrow">BETA ACCOUNT</span><h2>Account & Cloud</h2><p>Keep a private automatic Level Up backup available across your devices.</p></div></section>
     <section class="section-card account-cloud-card">
         <div class="account-cloud-profile" id="account-cloud-profile">
-            <div><span class="eyebrow">ACCOUNT</span><h3 id="account-cloud-name">Not signed in</h3><p id="account-cloud-email">Sign in with Google to activate beta cloud storage.</p></div>
+            <div><span class="eyebrow">ACCOUNT</span><h3 id="account-cloud-name">Not signed in</h3><p id="account-cloud-email">${nativeIOS ? "Sign in with your Level Up email account to activate beta cloud storage." : "Sign in with Google to activate beta cloud storage."}</p></div>
             <span class="account-cloud-badge" id="account-cloud-badge">LOCAL ONLY</span>
         </div>
-        <div id="account-google-button" class="account-google-button"></div>
+        ${nativeIOS ? "" : '<div id="account-google-button" class="account-google-button"></div>'}
         <div class="account-cloud-actions" id="account-cloud-actions" hidden>
             <button class="primary-btn" id="account-cloud-upload" type="button">↑ Back Up Now</button>
             <button class="secondary-btn" id="account-cloud-download" type="button">↓ Download to This Device</button>
@@ -30,6 +31,16 @@ export function renderAccountCloud() {
             <strong id="account-cloud-state">No cloud backup connected.</strong>
             <span id="account-cloud-updated">Your current data remains stored on this device.</span>
         </div>
+    </section>
+    <section class="section-card account-cloud-password" id="account-cloud-password-section" hidden>
+        <span class="eyebrow">IOS APP ACCESS</span><h3>Create a Level Up password</h3>
+        <p>Your Google account and existing data stay connected. Create a separate Level Up password to sign into the iPhone app with the same email address.</p>
+        <form class="account-cloud-password-form" id="account-cloud-password-form" novalidate>
+            <label><span>New password</span><input id="account-cloud-password" type="password" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+            <label><span>Confirm password</span><input id="account-cloud-password-confirm" type="password" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+            <button class="primary-btn" id="account-cloud-password-submit" type="submit">Create App Password</button>
+        </form>
+        <p class="account-cloud-password-message" id="account-cloud-password-message" aria-live="polite"></p>
     </section>
     <section class="section-card account-cloud-safety">
         <span class="eyebrow">BETA SAFETY</span><h3>Automatic backup with version protection</h3>
@@ -42,12 +53,17 @@ export function renderAccountCloud() {
     </section>`;
 }
 
+function isNativeIOS() {
+    return window.Capacitor?.getPlatform?.() === "ios";
+}
+
 export function initializeAccountCloud({ onBack } = {}) {
     document.getElementById("account-cloud-back")?.addEventListener("click", () => onBack?.());
     document.getElementById("account-cloud-upload")?.addEventListener("click", uploadBackup);
     document.getElementById("account-cloud-download")?.addEventListener("click", downloadBackup);
     document.getElementById("account-cloud-signout")?.addEventListener("click", signOut);
     document.getElementById("account-cloud-delete")?.addEventListener("click", deleteAccount);
+    document.getElementById("account-cloud-password-form")?.addEventListener("submit", createAppPassword);
     renderSession();
     if (getSession()?.token) refreshAccount();
     else initializeGoogleButton();
@@ -171,16 +187,47 @@ async function deleteAccount() {
     catch (error) { setMessage(error.message, "error"); }
 }
 
+async function createAppPassword(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const password = document.getElementById("account-cloud-password")?.value || "";
+    const confirmation = document.getElementById("account-cloud-password-confirm")?.value || "";
+    const button = document.getElementById("account-cloud-password-submit");
+    if (password.length < 10) return setPasswordMessage("Password must be at least 10 characters.", "error");
+    if (password !== confirmation) return setPasswordMessage("Passwords do not match.", "error");
+
+    try {
+        setBusy(button, true, "Creating password…");
+        await api("/v1/account/password", { method: "PUT", body: { password } });
+        form.reset();
+        const account = readJson(ACCOUNT_KEY) || {};
+        localStorage.setItem(ACCOUNT_KEY, JSON.stringify({ ...account, hasPassword: true }));
+        renderSession();
+        setMessage("Your Level Up password is ready. You can now sign into the iPhone app.", "success");
+    }
+    catch (error) {
+        setPasswordMessage(error.message, "error");
+    }
+    finally {
+        setBusy(button, false);
+    }
+}
+
 function renderSession() {
     const session = getSession();
     const account = readJson(ACCOUNT_KEY);
     const signedIn = Boolean(session?.token && account?.email);
     document.getElementById("account-cloud-actions")?.toggleAttribute("hidden", !signedIn);
     document.getElementById("account-cloud-delete-section")?.toggleAttribute("hidden", !signedIn);
+    document.getElementById("account-cloud-password-section")?.toggleAttribute("hidden", !signedIn || account?.hasPassword === true);
     const googleButton = document.getElementById("account-google-button");
     if (googleButton) googleButton.hidden = signedIn;
     setText("account-cloud-name", signedIn ? account.name || "Level Up Beta Member" : "Not signed in");
-    setText("account-cloud-email", signedIn ? account.email : "Sign in with Google to activate beta cloud storage.");
+    setText("account-cloud-email", signedIn
+        ? account.email
+        : isNativeIOS()
+            ? "Sign in with your Level Up email account to activate beta cloud storage."
+            : "Sign in with Google to activate beta cloud storage.");
     const autoState = readJson(AUTO_STATE_KEY);
     const needsAttention = autoState?.status === "newer-cloud-backup";
     setText("account-cloud-badge", signedIn ? needsAttention ? "ACTION NEEDED" : "AUTO BACKUP" : "LOCAL ONLY");
@@ -264,6 +311,13 @@ function setText(id, value) {
     if (element) element.textContent = value;
 }
 
+function setPasswordMessage(message, type = "") {
+    const element = document.getElementById("account-cloud-password-message");
+    if (!element) return;
+    element.textContent = message;
+    element.dataset.status = type;
+}
+
 function setBusy(button, busy, label = "") {
     if (!button) return;
     if (!button.dataset.defaultLabel) button.dataset.defaultLabel = button.textContent;
@@ -288,7 +342,7 @@ function ensureAccountCloudStyles() {
     if (document.querySelector('link[data-level-up-account-cloud]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/account-cloud.css?v=privacy-account-1";
+    link.href = "css/account-cloud.css?v=app-password-1";
     link.dataset.levelUpAccountCloud = "true";
     document.head.appendChild(link);
 }

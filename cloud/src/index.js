@@ -57,6 +57,10 @@ async function handleRequest(request, env, ctx) {
     if (url.pathname === "/v1/me" && request.method === "GET") {
         return json({ user: { ...publicUser(user), isAdmin: isAdminUser(user, env) } }, 200, request, env);
     }
+    if (url.pathname === "/v1/account/password" && request.method === "PUT") {
+        const body = await readJson(request, 16 * 1024);
+        return createPasswordCredential(user, body, request, env);
+    }
     if (url.pathname === "/v1/admin/analytics" && request.method === "GET") {
         return getAdminAnalytics(user, url, request, env);
     }
@@ -255,6 +259,43 @@ async function createEmailSession(body, request, env) {
     return issueSession(account.id, account, request, env);
 }
 
+async function createPasswordCredential(user, body, request, env) {
+    const password = typeof body?.password === "string" ? body.password : "";
+    const passwordError = validatePassword(password);
+    if (passwordError) return json({ error: passwordError }, 400, request, env);
+
+    const existing = await env.DB.prepare(
+        "SELECT user_id FROM password_credentials WHERE user_id = ?"
+    ).bind(user.id).first();
+    if (existing) {
+        return json({ error: "A Level Up password is already configured for this account." }, 409, request, env);
+    }
+
+    const salt = new Uint8Array(16);
+    crypto.getRandomValues(salt);
+    const passwordHash = await derivePasswordHash(password, salt, PASSWORD_ITERATIONS);
+    const now = new Date().toISOString();
+    try {
+        await env.DB.prepare(`
+            INSERT INTO password_credentials
+                (user_id, password_hash, password_salt, iterations, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `).bind(
+            user.id,
+            bytesToBase64(passwordHash),
+            bytesToBase64(salt),
+            PASSWORD_ITERATIONS,
+            now,
+            now
+        ).run();
+    }
+    catch (error) {
+        console.error(JSON.stringify({ event: "password_link_failed", userId: user.id, message: String(error?.message || error) }));
+        return json({ error: "A Level Up password could not be created for this account." }, 409, request, env);
+    }
+    return json({ ok: true }, 201, request, env);
+}
+
 async function issueSession(userId, user, request, env) {
     const now = new Date().toISOString();
     const token = createToken();
@@ -365,7 +406,8 @@ async function requireUser(request, env) {
     const tokenHash = await sha256(token);
     const row = await env.DB.prepare(`
         SELECT users.id, users.email, users.display_name, users.avatar_url, users.beta_status,
-               users.last_active_at
+               users.last_active_at,
+               EXISTS(SELECT 1 FROM password_credentials WHERE password_credentials.user_id = users.id) AS has_password
         FROM sessions
         JOIN users ON users.id = sessions.user_id
         WHERE sessions.token_hash = ? AND sessions.expires_at > ? AND users.beta_status = 'active'
@@ -2028,7 +2070,8 @@ function publicUser(user) {
         name: user.display_name || null,
         avatarUrl: user.avatar_url || null,
         betaStatus: user.beta_status || "active",
-        lastActiveAt: user.last_active_at || null
+        lastActiveAt: user.last_active_at || null,
+        hasPassword: Boolean(user.has_password)
     };
 }
 
