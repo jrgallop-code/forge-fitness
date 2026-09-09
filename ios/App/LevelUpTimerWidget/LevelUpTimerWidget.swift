@@ -36,6 +36,61 @@ private struct TimerPalette {
     }
 }
 
+private struct LevelUpArrow: Shape {
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width
+        let h = rect.height
+        let mid = w / 2
+        let headHalf = w * 0.23
+        let shaftHalf = w * 0.075
+        let headY = h * 0.34
+        let bottomY = h * 0.82
+        var path = Path()
+        path.move(to: CGPoint(x: mid, y: h * 0.06))
+        path.addLine(to: CGPoint(x: mid + headHalf, y: headY))
+        path.addLine(to: CGPoint(x: mid + shaftHalf, y: headY))
+        path.addLine(to: CGPoint(x: mid + shaftHalf, y: bottomY))
+        path.addLine(to: CGPoint(x: mid - shaftHalf, y: bottomY))
+        path.addLine(to: CGPoint(x: mid - shaftHalf, y: headY))
+        path.addLine(to: CGPoint(x: mid - headHalf, y: headY))
+        path.closeSubpath()
+        return path
+    }
+}
+
+private struct LevelUpThemeLogo: View {
+    let theme: String
+    let size: CGFloat
+    let cornerRadius: CGFloat
+
+    var body: some View {
+        let palette = TimerPalette.forTheme(theme)
+        ZStack {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(palette.raised)
+            Capsule()
+                .fill(palette.accent)
+                .frame(width: size * 0.58, height: max(2, size * 0.09))
+                .offset(y: size * 0.20)
+            RoundedRectangle(cornerRadius: size * 0.035, style: .continuous)
+                .fill(palette.accent)
+                .frame(width: size * 0.10, height: size * 0.30)
+                .offset(x: -size * 0.25, y: size * 0.20)
+            RoundedRectangle(cornerRadius: size * 0.035, style: .continuous)
+                .fill(palette.accent)
+                .frame(width: size * 0.10, height: size * 0.30)
+                .offset(x: size * 0.25, y: size * 0.20)
+            LevelUpArrow()
+                .fill(palette.accent)
+                .frame(width: size * 0.44, height: size * 0.58)
+                .offset(y: -size * 0.08)
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .accessibilityHidden(true)
+    }
+}
+
 @available(iOS 17.0, *)
 struct DismissLevelUpTimerIntent: AppIntent {
     static var title: LocalizedStringResource = "Dismiss Level Up timer"
@@ -111,24 +166,8 @@ struct LevelUpTimerLiveActivity: Widget {
         }
     }
 
-    private func timerLogoName(for theme: String) -> String {
-        switch theme {
-        case "arctic": return "TimerLogoArctic"
-        case "pure": return "TimerLogoPure"
-        case "ocean": return "TimerLogoOcean"
-        case "midnight": return "TimerLogoMidnight"
-        case "slate": return "TimerLogoSlate"
-        case "pulse": return "TimerLogoPulse"
-        default: return "TimerLogoLevelUp"
-        }
-    }
-
     private func timerLogo(theme: String, size: CGFloat, cornerRadius: CGFloat) -> some View {
-        Image(timerLogoName(for: theme))
-            .resizable()
-            .scaledToFit()
-            .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        LevelUpThemeLogo(theme: theme, size: size, cornerRadius: cornerRadius)
     }
 
     @ViewBuilder
