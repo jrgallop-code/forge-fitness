@@ -119,8 +119,8 @@ jobs:
           echo "SIGNING_KEYCHAIN=$signing_keychain" >> "$GITHUB_ENV"
           echo "INSTALLED_PROFILE_PATH=$installed_profile" >> "$GITHUB_ENV"
           echo "INSTALLED_TIMER_PROFILE_PATH=$installed_timer_profile" >> "$GITHUB_ENV"
-          echo "APP_STORE_PROFILE_NAME=Level Up App Store $GITHUB_RUN_ID" >> "$GITHUB_ENV"
-          echo "TIMER_EXTENSION_PROFILE_NAME=Level Up Timer App Store $GITHUB_RUN_ID" >> "$GITHUB_ENV"
+          echo "APP_STORE_PROFILE_NAME=Level Up App Store $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          echo "TIMER_EXTENSION_PROFILE_NAME=Level Up Timer App Store $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
 
       - name: Archive signed Level Up app
         env:
