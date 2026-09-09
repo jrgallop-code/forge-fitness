@@ -91,9 +91,9 @@ jobs:
           certificate_pem="$SIGNING_DIR/distribution.pem"
           certificate_p12="$SIGNING_DIR/distribution.p12"
 
-          openssl x509 -inform DER -in "${{ steps.signing.outputs.certificate_path }}" -out "$certificate_pem"
+          openssl x509 -inform DER -in "$SIGNING_DIR/distribution.cer" -out "$certificate_pem"
           openssl pkcs12 -export \
-            -inkey "${{ steps.signing.outputs.private_key_path }}" \
+            -inkey "$SIGNING_DIR/distribution.key" \
             -in "$certificate_pem" \
             -out "$certificate_p12" \
             -passout "pass:$signing_password"
@@ -107,13 +107,13 @@ jobs:
 
           profile_directory="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$profile_directory"
-          profile_uuid="$(security cms -D -i "${{ steps.signing.outputs.profile_path }}" | plutil -extract UUID raw -)"
+          profile_uuid="$(security cms -D -i "$SIGNING_DIR/LevelUp_AppStore.mobileprovision" | plutil -extract UUID raw -)"
           installed_profile="$profile_directory/$profile_uuid.mobileprovision"
-          cp "${{ steps.signing.outputs.profile_path }}" "$installed_profile"
+          cp "$SIGNING_DIR/LevelUp_AppStore.mobileprovision" "$installed_profile"
 
           echo "SIGNING_KEYCHAIN=$signing_keychain" >> "$GITHUB_ENV"
           echo "INSTALLED_PROFILE_PATH=$installed_profile" >> "$GITHUB_ENV"
-          echo "APP_STORE_PROFILE_NAME=${{ steps.signing.outputs.profile_name }}" >> "$GITHUB_ENV"
+          echo "APP_STORE_PROFILE_NAME=Level Up App Store $GITHUB_RUN_ID" >> "$GITHUB_ENV"
 
       - name: Archive signed Level Up app
         env:

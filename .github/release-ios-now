@@ -8,3 +8,5 @@ Retry 1: use the Apple Distribution identity for the Release archive.
 Retry 2: let authenticated automatic signing select the distribution identity.
 
 Retry 3: create temporary distribution signing assets through the App Store Connect API and revoke them after upload.
+
+Retry 4: install the generated signing files from their deterministic temporary paths.
