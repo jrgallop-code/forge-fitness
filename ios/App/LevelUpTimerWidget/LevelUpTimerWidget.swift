@@ -1,56 +1,82 @@
 import ActivityKit
 import WidgetKit
 import SwiftUI
-import UIKit
 
 @main
 struct LevelUpTimerWidgetBundle: WidgetBundle {
     var body: some Widget { LevelUpTimerLiveActivity() }
 }
 
+private struct LevelUpArrow: Shape {
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width
+        let h = rect.height
+        let mid = w / 2
+        let headHalf = w * 0.23
+        let shaftHalf = w * 0.075
+        let headY = h * 0.34
+        let bottomY = h * 0.82
+        var path = Path()
+        path.move(to: CGPoint(x: mid, y: h * 0.06))
+        path.addLine(to: CGPoint(x: mid + headHalf, y: headY))
+        path.addLine(to: CGPoint(x: mid + shaftHalf, y: headY))
+        path.addLine(to: CGPoint(x: mid + shaftHalf, y: bottomY))
+        path.addLine(to: CGPoint(x: mid - shaftHalf, y: bottomY))
+        path.addLine(to: CGPoint(x: mid - shaftHalf, y: headY))
+        path.addLine(to: CGPoint(x: mid - headHalf, y: headY))
+        path.closeSubpath()
+        return path
+    }
+}
+
 private struct LevelUpThemeLogo: View {
     let theme: String
     let size: CGFloat
 
-    private var resolvedTheme: String {
-        let supported = Set(["level-up", "arctic", "pure", "ocean", "midnight", "slate", "pulse"])
-        return supported.contains(theme) ? theme : "level-up"
-    }
-
-    private var logo: UIImage? {
-        guard let url = Bundle.main.url(
-            forResource: resolvedTheme,
-            withExtension: "png",
-            subdirectory: "TimerLogos"
-        ) else { return nil }
-        return UIImage(contentsOfFile: url.path)
-    }
-
     var body: some View {
-        Group {
-            if let logo {
-                Image(uiImage: logo)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Image(systemName: "arrow.up.right.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .padding(size * 0.12)
-            }
+        let accent = timerAccent(for: theme)
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+                .fill(timerLogoSurface(for: theme))
+            Capsule()
+                .fill(accent)
+                .frame(width: size * 0.58, height: max(2, size * 0.09))
+                .offset(y: size * 0.20)
+            RoundedRectangle(cornerRadius: size * 0.035, style: .continuous)
+                .fill(accent)
+                .frame(width: size * 0.10, height: size * 0.30)
+                .offset(x: -size * 0.25, y: size * 0.20)
+            RoundedRectangle(cornerRadius: size * 0.035, style: .continuous)
+                .fill(accent)
+                .frame(width: size * 0.10, height: size * 0.30)
+                .offset(x: size * 0.25, y: size * 0.20)
+            LevelUpArrow()
+                .fill(accent)
+                .frame(width: size * 0.44, height: size * 0.58)
+                .offset(y: -size * 0.08)
         }
         .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: size * 0.24, style: .continuous))
+        .accessibilityHidden(true)
     }
 }
 
 private func timerAccent(for theme: String) -> Color {
     switch theme {
-    case "pulse": return Color(red: 0.94, green: 0.31, blue: 0.66)
+    case "level-up": return Color(red: 0.94, green: 0.20, blue: 0.28)
+    case "arctic": return Color(red: 0.12, green: 0.43, blue: 0.86)
+    case "pure": return Color(red: 0.12, green: 0.13, blue: 0.15)
     case "ocean": return Color(red: 0.08, green: 0.58, blue: 0.78)
     case "midnight": return Color(red: 0.39, green: 0.56, blue: 1.0)
     case "slate": return Color(red: 0.48, green: 0.60, blue: 0.74)
-    default: return Color(red: 0.12, green: 0.43, blue: 0.86)
+    case "pulse": return Color(red: 0.94, green: 0.31, blue: 0.66)
+    default: return Color(red: 0.94, green: 0.20, blue: 0.28)
+    }
+}
+
+private func timerLogoSurface(for theme: String) -> Color {
+    switch theme {
+    case "arctic", "pure", "ocean": return Color.black.opacity(0.06)
+    default: return Color.white.opacity(0.10)
     }
 }
 
