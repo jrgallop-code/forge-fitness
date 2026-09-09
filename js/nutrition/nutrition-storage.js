@@ -131,3 +131,38 @@ export function setCurrentCalories(newCalories, reason = "Manual adjustment") {
 export function resetCurrentCaloriesToCalculated() {
     return getNutritionPlan();
 }
+
+// Calorie Stats hierarchy: the 7D / 4W / 12W control governs Average Calories
+// and every range-aware card below it. Keep the control immediately above that
+// first governed card even when Calorie Stats re-renders its full panel.
+function alignCalorieStatsRangeHierarchy(root = document) {
+    const pages = [];
+    if (root?.matches?.(".calorie-stats-page")) pages.push(root);
+    root?.querySelectorAll?.(".calorie-stats-page").forEach(page => pages.push(page));
+    pages.forEach(page => {
+        const ranges = page.querySelector(":scope > .calorie-stats-ranges");
+        const average = page.querySelector(":scope > .calorie-stat-week");
+        if (!ranges || !average || ranges.nextElementSibling === average) return;
+        page.insertBefore(ranges, average);
+    });
+}
+
+function installCalorieStatsHierarchyFix() {
+    if (typeof document === "undefined" || typeof MutationObserver === "undefined") return;
+    let queued = false;
+    const schedule = () => {
+        if (queued) return;
+        queued = true;
+        const run = () => {
+            queued = false;
+            alignCalorieStatsRangeHierarchy(document);
+        };
+        if (typeof requestAnimationFrame === "function") requestAnimationFrame(run);
+        else setTimeout(run, 0);
+    };
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    schedule();
+}
+
+installCalorieStatsHierarchyFix();
