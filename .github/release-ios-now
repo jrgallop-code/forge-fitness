@@ -36,3 +36,5 @@ Release 15: same requested fixes with packaging checks aligned to the vector tim
 Release 16: calorie range hierarchy, reliable Custom Builder exercise preferences, and the exact Appearance-selected Lock Screen timer logo.
 
 Release 17: remove the opaque app-icon tile from the Live Activity while preserving the selected Appearance logo artwork and default-logo fallback.
+
+Release 18: MacroFactor-style Weight Changes summary in Progress with 3/7/14/30/90-day trend windows, unit-aware deltas, mini graphs, and direction indicators.
