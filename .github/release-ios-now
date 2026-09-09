@@ -38,3 +38,5 @@ Release 16: calorie range hierarchy, reliable Custom Builder exercise preference
 Release 17: remove the opaque app-icon tile from the Live Activity while preserving the selected Appearance logo artwork and default-logo fallback.
 
 Release 18: MacroFactor-style Weight Changes summary in Progress with 3/7/14/30/90-day trend windows, unit-aware deltas, mini graphs, and direction indicators.
+
+Release 19: themed splash layouts for Level Up Classic, Arctic, Pure, Ocean, Midnight, Slate, and Pulse, preserving the original loading bar with theme-matched accents, plus the Weight Changes summary.
