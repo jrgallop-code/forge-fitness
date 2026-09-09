@@ -1,4 +1,4 @@
-import { cancelNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-2";
+import { cancelNativeAlarm, finishNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-3";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const TIMER_SETTINGS_KEY = "level_up_exercise_rest_settings";
@@ -132,7 +132,9 @@ function finalizeTimer(timerId) {
     window.dispatchEvent(new CustomEvent("levelup:rest-timer-finished", {
         detail: { timerId: timer.timerId, sourceType: timer.sourceType || "working" }
     }));
-    void cancelNativeAlarm(`rest:${timer.timerId}`);
+    // Completion is different from cancellation. End the lock-screen Live Activity
+    // but leave iOS's scheduled completion notification in place as the one alert.
+    void finishNativeAlarm(`rest:${timer.timerId}`);
     void hapticNotification("SUCCESS");
     showSingleBackgroundNotification(timer);
 }
