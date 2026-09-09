@@ -29,4 +29,6 @@ Release 12: Google sign-in, themed splash, readable dismissible Lock Screen time
 
 Release 13: single iOS timer alert, appearance-matched Lock Screen logos, and direct Smart Build launch.
 
-Release 14: black Google sign-in, readable transfer instructions, and vector Lock Screen Level Up logo.
+Release 14: black Google sign-in, readable transfer instructions, and vector Lock Screen Level Up logo. (Blocked by stale packaging test; no TestFlight upload.)
+
+Release 15: same requested fixes with packaging checks aligned to the vector timer implementation.
