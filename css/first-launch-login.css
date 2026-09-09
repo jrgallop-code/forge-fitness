@@ -45,3 +45,6 @@ html.level-up-login-required, html.level-up-login-required body { overflow: hidd
     .level-up-login-logo { width: 92px; height: 92px; margin-bottom: 12px; }
     .level-up-login-panel h1 { font-size: 38px; }
 }
+.level-up-login-provider.level-up-login-apple{background:#050505;color:#fff;border-color:#050505}
+.level-up-login-provider.level-up-login-apple small{font-size:22px;color:#fff}
+.level-up-login-provider.level-up-login-google-native small{font-size:18px;font-weight:900;color:#4285f4}

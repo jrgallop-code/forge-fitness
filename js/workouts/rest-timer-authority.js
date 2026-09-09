@@ -1,4 +1,4 @@
-import { cancelNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=native-feedback-1";
+import { cancelNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const TIMER_SETTINGS_KEY = "level_up_exercise_rest_settings";
@@ -202,6 +202,7 @@ function startTimerForSource({ active, seconds, sourceType, exerciseIndex, setIn
         title: "Rest complete",
         body: "Your next set is ready.",
         at: active.restTimer.endAt,
+        kind: "rest",
         extra: { type: "levelup:rest-complete", timerId: active.restTimer.timerId }
     });
     return true;

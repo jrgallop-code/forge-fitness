@@ -1,4 +1,4 @@
-import "../core/native-capabilities.js?v=native-feedback-1";
+import "../core/native-capabilities.js?v=lock-screen-timers-1";
 import { restoreBackupSnapshot, verifyBackupSnapshot } from "../core/backup-manager.js?v=backup-complete-7";
 
 const API_URL = "https://api.leveluphypertrophy.com";
@@ -17,6 +17,7 @@ function initializeFirstLaunchLogin() {
         if (document.getElementById("level-up-login-gate")) return;
         document.body.insertAdjacentHTML("afterbegin", renderGate());
         initializeGoogleButton();
+        initializeNativeProviders();
         initializeEmailAuth();
         initializeTransferAuth();
     };
@@ -32,7 +33,8 @@ function renderGate() {
             <span class="level-up-login-kicker">LEVEL UP BETA</span>
             <h1 id="level-up-login-title">Your training.<br><span>Your progress.</span></h1>
             <p class="level-up-login-intro">Sign in to start using Level Up and begin tracking your training.</p>
-            ${nativeIOS ? "" : '<div class="level-up-login-google" id="level-up-login-google"></div>'}
+            ${nativeIOS ? `<button class="level-up-login-provider level-up-login-apple" id="level-up-login-apple" type="button"><span>Continue with Apple</span><small></small></button>
+            <button class="level-up-login-provider level-up-login-google-native" id="level-up-login-google-native" type="button"><span>Continue with Google</span><small>G</small></button>` : '<div class="level-up-login-google" id="level-up-login-google"></div>'}
             <button class="level-up-login-provider level-up-login-email-open" id="level-up-login-email-open" type="button" aria-expanded="false" aria-controls="level-up-email-auth">
                 <span>Continue with email</span><small>EMAIL</small>
             </button>
@@ -76,6 +78,70 @@ function renderGate() {
 
 function isNativeIOS() {
     return window.Capacitor?.getPlatform?.() === "ios";
+}
+
+function initializeNativeProviders() {
+    if (!isNativeIOS()) return;
+    document.getElementById("level-up-login-apple")?.addEventListener("click", completeAppleLogin);
+    document.getElementById("level-up-login-google-native")?.addEventListener("click", openNativeGoogleLogin);
+    try {
+        void window.Capacitor?.Plugins?.App?.addListener?.("appUrlOpen", async event => {
+            const url = new URL(event?.url || "");
+            if (url.protocol !== "leveluphypertrophy:" || url.hostname !== "auth") return;
+            const code = url.searchParams.get("code") || "";
+            await window.Capacitor?.Plugins?.Browser?.close?.();
+            if (code) {
+                try { await redeemTransferCode(code, "Google account connected. Restoring your data…"); }
+                catch (error) { setMessage(error?.message || "Google sign-in could not be completed.", "error"); }
+            }
+            else setMessage(url.searchParams.get("error") || "Google sign-in could not be completed.", "error");
+        });
+    } catch {}
+}
+
+async function openNativeGoogleLogin() {
+    setMessage("Opening secure Google sign-in…");
+    try {
+        await window.Capacitor?.Plugins?.Browser?.open?.({
+            url: "https://leveluphypertrophy.com/ios-auth.html",
+            presentationStyle: "popover"
+        });
+    } catch { setMessage("Google sign-in could not be opened.", "error"); }
+}
+
+async function completeAppleLogin() {
+    const button = document.getElementById("level-up-login-apple");
+    try {
+        if (button) button.disabled = true;
+        setMessage("Connecting securely with Apple…");
+        const credential = await window.Capacitor?.Plugins?.LevelUpNativeAuth?.signInWithApple?.();
+        if (!credential?.identityToken || !credential?.nonce) throw new Error("Apple sign-in is not available in this build.");
+        const response = await fetch(`${API_URL}/v1/session/apple`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(credential)
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload?.token) throw new Error(payload.error || "Apple sign-in could not be completed.");
+        saveSession(payload);
+        setMessage("Signed in with Apple. Opening Level Up…", "success");
+        window.location.reload();
+    } catch (error) { setMessage(error?.message || "Apple sign-in could not be completed.", "error"); }
+    finally { if (button) button.disabled = false; }
+}
+
+async function redeemTransferCode(code, message = "Connecting your existing account…") {
+    setMessage(message);
+    const result = await fetch(`${API_URL}/v1/session/transfer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code })
+    });
+    const payload = await result.json().catch(() => ({}));
+    if (!result.ok || !payload?.token) throw new Error(payload.error || "This account could not be connected.");
+    saveSession(payload);
+    await restoreTransferredBackup(payload.token);
+    window.location.reload();
 }
 
 function initializeEmailAuth() {
@@ -141,18 +207,7 @@ async function completeTransferLogin(event) {
     try {
         if (submit) submit.disabled = true;
         setMessage("Connecting your existing account…");
-        const result = await fetch(`${API_URL}/v1/session/transfer`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code })
-        });
-        let payload = {};
-        try { payload = await result.json(); } catch {}
-        if (!result.ok || !payload?.token) throw new Error(payload.error || "This account could not be transferred.");
-        saveSession(payload);
-        setMessage("Account connected. Restoring your Level Up data…", "success");
-        await restoreTransferredBackup(payload.token);
-        window.location.reload();
+        await redeemTransferCode(code, "Account connected. Restoring your Level Up data…");
     }
     catch (error) { setMessage(error?.message || "This account could not be transferred.", "error"); }
     finally { if (submit) submit.disabled = false; }
@@ -314,7 +369,7 @@ function ensureStyles() {
     if (document.querySelector('link[data-level-up-login]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/first-launch-login.css?v=account-transfer-1";
+    link.href = "css/first-launch-login.css?v=native-auth-1";
     link.dataset.levelUpLogin = "true";
     document.head.appendChild(link);
 }

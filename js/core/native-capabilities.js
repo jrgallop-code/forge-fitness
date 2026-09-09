@@ -21,7 +21,8 @@ export async function hapticNotification(type = "SUCCESS") {
 }
 
 export async function requestNativeAlarmPermission() {
-    const notifications = plugin("LocalNotifications");
+    const nativeTimer = plugin("LevelUpTimer");
+    const notifications = nativeTimer || plugin("LocalNotifications");
     if (!isNative() || !notifications) return false;
     try {
         const current = await notifications.checkPermissions();
@@ -33,27 +34,40 @@ export async function requestNativeAlarmPermission() {
 }
 
 export async function nativeAlarmPermission() {
-    const notifications = plugin("LocalNotifications");
+    const notifications = plugin("LevelUpTimer") || plugin("LocalNotifications");
     if (!isNative() || !notifications) return "unsupported";
     try { return (await notifications.checkPermissions())?.display || "prompt"; }
     catch { return "prompt"; }
 }
 
-export async function scheduleNativeAlarm({ key, title, body, at, extra = {} }) {
+export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, kind = "timer" }) {
+    const nativeTimer = plugin("LevelUpTimer");
     const notifications = plugin("LocalNotifications");
-    if (!isNative() || !notifications) return false;
+    if (!isNative() || (!nativeTimer && !notifications)) return false;
     const when = at instanceof Date ? at : new Date(at);
     if (!Number.isFinite(when.getTime()) || when.getTime() <= Date.now()) return false;
-    if (await nativeAlarmPermission() !== "granted") return false;
+    let permission = await nativeAlarmPermission();
+    if (permission === "prompt") {
+        permission = await requestNativeAlarmPermission() ? "granted" : "denied";
+    }
+    if (permission !== "granted") return false;
     const id = nativeNotificationId(key);
     try {
+        if (nativeTimer?.schedule) {
+            const result = await nativeTimer.schedule({
+                key, title, body, at: when.getTime(),
+                type: extra?.type || "levelup:timer-complete",
+                kind
+            });
+            return result?.scheduled === true;
+        }
         await notifications.cancel({ notifications: [{ id }] });
         await notifications.schedule({ notifications: [{
             id,
             title,
             body,
             schedule: { at: when, allowWhileIdle: true },
-            sound: "default",
+            sound: "level-up-alarm.wav",
             extra: { ...extra, key }
         }] });
         return true;
@@ -62,8 +76,13 @@ export async function scheduleNativeAlarm({ key, title, body, at, extra = {} }) 
 }
 
 export async function cancelNativeAlarm(key) {
+    const nativeTimer = plugin("LevelUpTimer");
     const notifications = plugin("LocalNotifications");
-    if (!isNative() || !notifications) return;
+    if (!isNative() || (!nativeTimer && !notifications)) return;
+    if (nativeTimer?.cancel) {
+        try { await nativeTimer.cancel({ key }); } catch {}
+        return;
+    }
     try { await notifications.cancel({ notifications: [{ id: nativeNotificationId(key) }] }); } catch {}
 }
 

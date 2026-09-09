@@ -10,8 +10,8 @@ final class LevelUpAppIconPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "getIcon", returnType: CAPPluginReturnPromise)
     ]
 
-    private let iconNames: [String: String?] = [
-        "level-up": nil,
+    private let iconNames: [String: String] = [
+        "level-up": "",
         "arctic": "AppIconArctic",
         "pure": "AppIconPure",
         "ocean": "AppIconOcean",
@@ -30,7 +30,7 @@ final class LevelUpAppIconPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Alternate app icons are not supported on this device.")
             return
         }
-        let alternateName = iconNames[requested] ?? nil
+        let alternateName = iconNames[requested].flatMap { $0.isEmpty ? nil : $0 }
         DispatchQueue.main.async {
             UIApplication.shared.setAlternateIconName(alternateName) { error in
                 if let error = error {
@@ -44,7 +44,7 @@ final class LevelUpAppIconPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func getIcon(_ call: CAPPluginCall) {
         let current = UIApplication.shared.alternateIconName
-        let selected = iconNames.first(where: { $0.value == current })?.key ?? "level-up"
+        let selected = current.flatMap { selected in iconNames.first(where: { $0.value == selected })?.key } ?? "level-up"
         call.resolve(["name": selected, "supported": UIApplication.shared.supportsAlternateIcons])
     }
 }

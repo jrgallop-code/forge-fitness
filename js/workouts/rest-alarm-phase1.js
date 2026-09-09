@@ -1,6 +1,6 @@
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from "./workout-session.js?v=native-navigation-stability-1";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
-import { requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=native-feedback-1";
+import { requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-1";
 
 const EXERCISE_TIMER_SETTINGS_KEY = "level_up_exercise_rest_settings";
 const ALARM_PREFS_KEY = "level_up_rest_alarm_preferences";
@@ -366,14 +366,14 @@ function ensureBanner() {
 
 function notificationStatusMarkup() {
   if (window.Capacitor?.isNativePlatform?.()) {
-    return `<div class="rest-alarm-alert-row"><span>Get an iPhone alert when Level Up is in the background.</span><button type="button" data-rest-action="alerts">Enable Alerts</button></div>`;
+    return `<div class="rest-alarm-alert-row"><span>Show this countdown on your Lock Screen and sound an alert when rest ends.</span><button type="button" data-rest-action="alerts">Enable Alerts</button></div>`;
   }
   if (!("Notification" in window)) {
     return `<div class="rest-alarm-alert-row"><span>Sound + in-app alarm active. Browser notifications are not supported here.</span></div>`;
   }
 
   if (Notification.permission === "granted") {
-    return `<div class="rest-alarm-alert-row"><span>✓ Background notification permission is enabled while the PWA/browser can receive it.</span></div>`;
+    return `<div class="rest-alarm-alert-row"><span>✓ Lock Screen countdown and background alarm enabled.</span></div>`;
   }
 
   if (Notification.permission === "denied") {
@@ -567,6 +567,7 @@ async function requestAlerts() {
         title: "Rest complete",
         body: "Your next set is ready.",
         at: timer.endAt,
+        kind: "rest",
         extra: { type: "levelup:rest-complete", timerId: timer.timerId }
       });
     }
