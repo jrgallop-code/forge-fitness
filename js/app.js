@@ -1,5 +1,5 @@
 import "./core/appearance-theme.js?v=appearance-themes-3";
-import { navigate } from "./core/router.js?v=native-features-1";
+import { navigate } from "./core/router.js?v=native-polish-2";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=workout-nav-fix-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=native-navigation-stability-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";

@@ -9,7 +9,7 @@ import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workou
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=right-overflow-arc-1";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=onboarding-training-days-1";
-import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=workout-landing-live-1";
+import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=smart-build-navigation-2";
 import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-live-polish.js?v=workout-landing-live-polish-2";
 import { renderProgress } from "../progress/progress-ui.js?v=food-log-macro-bars-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-2";
@@ -117,7 +117,9 @@ export function navigate(page) {
                 const programBuilder = content.querySelector(".smart-build-dedicated-page");
                 safeInitialize("Program Builder", () => initializeSmartBuild(programBuilder));
                 safeInitialize("Program Builder superset guard", () => initializeSmartBuildSupersetGuard(programBuilder));
-                programBuilder?.querySelector("[data-smart-build]")?.click();
+                const launcher = programBuilder?.querySelector("[data-smart-build]");
+                if (launcher) launcher.click();
+                else requestAnimationFrame(() => programBuilder?.querySelector("[data-smart-build]")?.click());
                 break;
             }
             case "progress":

@@ -1,6 +1,6 @@
-/* Level Up in-app splash for installed PWA launches.
-   index.html adds the root class before first paint when either the standard
-   display-mode check or iOS navigator.standalone reports an installed launch. */
+/* Level Up in-app splash for installed PWA and native iOS launches.
+   index.html adds the root class before first paint and resolves the artwork
+   from the saved appearance preference. */
 
 #pwa-splash {
     display: none;

@@ -14,8 +14,15 @@ test('Google login crops the provider iframe to its dark pill', () => {
   assert.match(styles, /\.level-up-login-google iframe \{[^}]*display: block !important/);
 });
 
-test('Google login crop ships with fresh production cache keys', () => {
-  assert.match(login, /first-launch-login\.css\?v=google-button-crop-2/);
-  assert.match(index, /first-launch-login\.js\?v=google-button-crop-2/);
-  assert.match(worker, /2026-09-08-282/);
+test('native login uses the live Google handoff and protected high-contrast colors', () => {
+  assert.match(login, /https:\/\/app\.leveluphypertrophy\.com\/ios-auth\.html/);
+  assert.doesNotMatch(login, /url: "https:\/\/leveluphypertrophy\.com\/ios-auth\.html"/);
+  assert.match(styles, /level-up-login-google-native\{background:#fff!important;color:#171717!important/);
+  assert.match(styles, /-webkit-text-fill-color:\s*#fff\s*!important/);
+});
+
+test('login presentation ships with fresh production cache keys', () => {
+  assert.match(login, /first-launch-login\.css\?v=native-auth-contrast-2/);
+  assert.match(index, /first-launch-login\.js\?v=native-auth-contrast-2/);
+  assert.match(worker, /2026-09-09-285/);
 });
