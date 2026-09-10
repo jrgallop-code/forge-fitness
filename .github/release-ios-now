@@ -62,3 +62,5 @@ Release 27: enlarged Level Up home-screen icons and a required standalone “How
 Release 28: correct the primary iOS AppIcon so the enlarged Level Up logo appears immediately on the Home Screen.
 
 Release 29: synchronize enlarged Classic, Arctic, Pure, Ocean, Midnight, Slate, and Pulse home-screen icon previews with their native AppIcon assets and refresh the preview cache.
+
+Release 30: limit Version 1.0 to iPhone so App Store Connect no longer requires iPad screenshots.
