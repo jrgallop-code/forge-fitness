@@ -23,6 +23,13 @@ test("native scripts build before syncing the iOS project", async () => {
     assert.equal(packageJson.dependencies["@capacitor/browser"], "8.0.0");
 });
 
+test("the App Store build targets iPhone only", async () => {
+    const project = await readFile(new URL("../ios/App/App.xcodeproj/project.pbxproj", import.meta.url), "utf8");
+    const deviceFamilies = [...project.matchAll(/TARGETED_DEVICE_FAMILY = ([^;]+);/g)].map(match => match[1]);
+    assert.equal(deviceFamilies.length, 4, "the app and timer extension should each declare Debug and Release device families");
+    assert.deepEqual(deviceFamilies, ["1", "1", "1", "1"]);
+});
+
 test("native runtime does not register the PWA service worker", async () => {
     const app = await readFile(new URL("../js/app.js", import.meta.url), "utf8");
     assert.match(app, /!window\.Capacitor\?\.isNativePlatform\?\.\(\)/);
