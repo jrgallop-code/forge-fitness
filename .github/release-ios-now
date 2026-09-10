@@ -50,3 +50,5 @@ Release 21: simplified full-bleed splash artwork for every appearance, with edge
 Release 22: App Store review readiness with optional local mode, explicit analytics consent, production-safe wording, bundled privacy policy, and Sign in with Apple revocation support.
 
 Release 23: interactive theme-matched Lock Screen rest timer with workout context, set details, pause/resume, ±15-second adjustments, skip, and in-app state reconciliation.
+
+Release 24: correct the interactive Live Activity's Swift tracking literal and rerun the signed archive.

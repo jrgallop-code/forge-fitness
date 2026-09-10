@@ -162,7 +162,7 @@ struct LevelUpTimerLiveActivity: Widget {
                     timerLogo(icon: context.attributes.icon, size: 34)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(activityHeading(context))
-                            .font(.caption2.weight(.heavy)).tracking(.8).foregroundStyle(palette.accent).lineLimit(1)
+                            .font(.caption2.weight(.heavy)).tracking(0.8).foregroundStyle(palette.accent).lineLimit(1)
                         Text(activityTitle(context))
                             .font(.subheadline.weight(.bold)).foregroundStyle(palette.heading).lineLimit(1)
                         if context.attributes.kind == "rest" {
