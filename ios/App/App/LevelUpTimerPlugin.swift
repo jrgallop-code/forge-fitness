@@ -188,6 +188,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
         )
     }
 
+    @available(iOS 16.1, *)
     private func startLiveActivity(record: LevelUpTimerRecord) {
         guard #available(iOS 16.1, *), ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         endLiveActivities(key: record.timerID)
