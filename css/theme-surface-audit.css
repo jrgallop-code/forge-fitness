@@ -707,6 +707,7 @@ html[data-theme] .levelup-onboarding :is(
     .onboarding-screen h2,
     .onboarding-screen h3,
     .onboarding-option strong,
+    .onboarding-acquisition-choice strong,
     .onboarding-unit-row > strong,
     .onboarding-exercise-row strong,
     .onboarding-summary strong,
@@ -729,7 +730,6 @@ html[data-theme] .levelup-onboarding :is(
     .onboarding-exercise-row small,
     .onboarding-summary span,
     .onboarding-nutrition-preview span,
-    .onboarding-acquisition-other,
     .onboarding-install-copy p,
     .onboarding-install-note,
     .onboarding-install-dismiss
@@ -754,6 +754,7 @@ html[data-theme] .levelup-onboarding-progress span {
 
 html[data-theme] .levelup-onboarding :is(
     .onboarding-option,
+    .onboarding-acquisition-choice,
     .onboarding-chip,
     .onboarding-no-priority,
     .onboarding-unit-row,
@@ -785,6 +786,7 @@ html[data-theme] .levelup-onboarding :is(
 
 html[data-theme] .levelup-onboarding :is(
     .onboarding-option.selected,
+    .onboarding-acquisition-choice.selected,
     .onboarding-chip.selected,
     .onboarding-no-priority.selected,
     .onboarding-unit-row button.selected,
@@ -804,7 +806,7 @@ html[data-theme] .levelup-onboarding .onboarding-theme-card.selected {
     box-shadow: 0 0 0 2px var(--accent-soft), var(--shadow) !important;
 }
 
-html[data-theme] .levelup-onboarding .onboarding-theme-check {
+html[data-theme] .levelup-onboarding :is(.onboarding-theme-check, .onboarding-acquisition-check) {
     background: var(--accent) !important;
     color: var(--accent-contrast) !important;
     -webkit-text-fill-color: var(--accent-contrast) !important;
@@ -813,8 +815,7 @@ html[data-theme] .levelup-onboarding .onboarding-theme-check {
 html[data-theme] .levelup-onboarding :is(
     .onboarding-profile-grid input,
     .onboarding-profile-grid select,
-    .onboarding-exercise-picker input,
-    .onboarding-acquisition-other input
+    .onboarding-exercise-picker input
 ) {
     border-color: var(--line) !important;
     background: var(--input-bg) !important;
