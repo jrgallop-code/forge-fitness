@@ -58,3 +58,5 @@ Release 25: explicitly annotate the Live Activity record entry point for the app
 Release 26: move the Lock Screen countdown to the far-right header and give the full next-exercise name a two-line, full-width row; allow the in-app timer title to wrap instead of truncating.
 
 Release 27: enlarged Level Up home-screen icons and a required standalone “How did you find us?” onboarding page with branded source choices.
+
+Release 28: correct the primary iOS AppIcon so the enlarged Level Up logo appears immediately on the Home Screen.
