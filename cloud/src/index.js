@@ -136,6 +136,12 @@ async function handleRequest(request, env, ctx) {
         return putBackup(user.id, body, request, env);
     }
     if (url.pathname === "/v1/account" && request.method === "DELETE") {
+        try {
+            await revokeStoredAppleCredential(user.id, env);
+        } catch (error) {
+            console.error(JSON.stringify({ event: "apple_revocation_failed", userId: user.id, message: String(error?.message || error) }));
+            return json({ error: "Apple authorization could not be revoked. Please try deleting the account again." }, 503, request, env);
+        }
         await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id).run();
         return json({ ok: true }, 200, request, env);
     }
@@ -166,8 +172,6 @@ async function createGoogleSession(body, request, env) {
             avatar_url = excluded.avatar_url,
             updated_at = excluded.updated_at
     `).bind(userId, email, profile.name || null, profile.picture || null, now, now).run();
-    if (!existing) await insertProductEvent(env, userId, "account_created", "account", now, { method: "google" });
-
     return issueSession(
         userId,
         { id: userId, email, display_name: profile.name, avatar_url: profile.picture, beta_status: "active" },
@@ -178,8 +182,9 @@ async function createGoogleSession(body, request, env) {
 
 async function createAppleSession(body, request, env) {
     const identityToken = typeof body?.identityToken === "string" ? body.identityToken : "";
+    const authorizationCode = typeof body?.authorizationCode === "string" ? body.authorizationCode : "";
     const nonce = typeof body?.nonce === "string" ? body.nonce : "";
-    if (!identityToken || identityToken.length > 16000 || !nonce || nonce.length > 256) {
+    if (!identityToken || identityToken.length > 16000 || authorizationCode.length > 8000 || !nonce || nonce.length > 256) {
         return json({ error: "Apple sign-in credential is required." }, 400, request, env);
     }
 
@@ -197,17 +202,37 @@ async function createAppleSession(body, request, env) {
         .bind(appleId, email).first();
     const userId = existing?.id || appleId;
     const now = new Date().toISOString();
+    let encryptedRefreshToken = "";
+    if (authorizationCode) {
+        try {
+            const refreshToken = await exchangeAppleAuthorizationCode(authorizationCode, env);
+            encryptedRefreshToken = await encryptAppleRefreshToken(refreshToken, env);
+        } catch (error) {
+            console.error(JSON.stringify({ event: "apple_token_exchange_failed", message: String(error?.message || error) }));
+            return json({ error: "Apple sign-in could not finish securely. Please try again." }, 503, request, env);
+        }
+    }
 
-    await env.DB.prepare(`
-        INSERT INTO users (id, email, display_name, avatar_url, created_at, updated_at)
-        VALUES (?, ?, ?, NULL, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-            email = COALESCE(NULLIF(excluded.email, ''), users.email),
-            display_name = COALESCE(NULLIF(excluded.display_name, ''), users.display_name),
-            updated_at = excluded.updated_at
-    `).bind(userId, email || existing?.email || `${profile.sub}@privaterelay.appleid.com`, suppliedName || existing?.display_name || null, now, now).run();
-    if (!existing) await insertProductEvent(env, userId, "account_created", "account", now, { method: "apple" });
-
+    const statements = [
+        env.DB.prepare(`
+            INSERT INTO users (id, email, display_name, avatar_url, created_at, updated_at)
+            VALUES (?, ?, ?, NULL, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                email = COALESCE(NULLIF(excluded.email, ''), users.email),
+                display_name = COALESCE(NULLIF(excluded.display_name, ''), users.display_name),
+                updated_at = excluded.updated_at
+        `).bind(userId, email || existing?.email || `${profile.sub}@privaterelay.appleid.com`, suppliedName || existing?.display_name || null, now, now)
+    ];
+    if (encryptedRefreshToken) {
+        statements.push(env.DB.prepare(`
+            INSERT INTO apple_credentials (user_id, encrypted_refresh_token, created_at, updated_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                encrypted_refresh_token = excluded.encrypted_refresh_token,
+                updated_at = excluded.updated_at
+        `).bind(userId, encryptedRefreshToken, now, now));
+    }
+    await env.DB.batch(statements);
     return issueSession(userId, {
         id: userId,
         email: email || existing?.email,
@@ -260,6 +285,117 @@ async function appleVerificationKeys() {
     return keys;
 }
 
+async function exchangeAppleAuthorizationCode(authorizationCode, env) {
+    const clientId = env.APPLE_CLIENT_ID || "com.leveluphypertrophy.app";
+    const clientSecret = env.APPLE_CLIENT_SECRET || await createAppleClientSecret(env, clientId);
+    const response = await fetch("https://appleid.apple.com/auth/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            code: authorizationCode,
+            grant_type: "authorization_code"
+        })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || typeof payload?.refresh_token !== "string") {
+        throw new Error(payload?.error || "Apple did not return a refresh token");
+    }
+    return payload.refresh_token;
+}
+
+async function revokeStoredAppleCredential(userId, env) {
+    const credential = await env.DB.prepare(
+        "SELECT encrypted_refresh_token FROM apple_credentials WHERE user_id = ?"
+    ).bind(userId).first();
+    if (!credential?.encrypted_refresh_token) return;
+    const refreshToken = await decryptAppleRefreshToken(credential.encrypted_refresh_token, env);
+    const clientId = env.APPLE_CLIENT_ID || "com.leveluphypertrophy.app";
+    const clientSecret = env.APPLE_CLIENT_SECRET || await createAppleClientSecret(env, clientId);
+    const response = await fetch("https://appleid.apple.com/auth/revoke", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            token: refreshToken,
+            token_type_hint: "refresh_token"
+        })
+    });
+    if (!response.ok) throw new Error(`Apple revocation failed (${response.status})`);
+}
+
+async function createAppleClientSecret(env, clientId) {
+    const teamId = String(env.APPLE_TEAM_ID || "").trim();
+    const keyId = String(env.APPLE_KEY_ID || "").trim();
+    const privateKey = String(env.APPLE_PRIVATE_KEY || "").replace(/\\n/g, "\n").trim();
+    if (!teamId || !keyId || !privateKey) throw new Error("Apple server credentials are not configured");
+    const now = Math.floor(Date.now() / 1000);
+    const header = base64UrlEncode(new TextEncoder().encode(JSON.stringify({ alg: "ES256", kid: keyId })));
+    const claims = base64UrlEncode(new TextEncoder().encode(JSON.stringify({
+        iss: teamId,
+        iat: now,
+        exp: now + 300,
+        aud: APPLE_TOKEN_ISSUER,
+        sub: clientId
+    })));
+    const keyBytes = base64ToBytes(privateKey
+        .replace("-----BEGIN PRIVATE KEY-----", "")
+        .replace("-----END PRIVATE KEY-----", "")
+        .replace(/\s/g, ""));
+    const key = await crypto.subtle.importKey(
+        "pkcs8",
+        keyBytes,
+        { name: "ECDSA", namedCurve: "P-256" },
+        false,
+        ["sign"]
+    );
+    const signingInput = `${header}.${claims}`;
+    const signature = await crypto.subtle.sign(
+        { name: "ECDSA", hash: "SHA-256" },
+        key,
+        new TextEncoder().encode(signingInput)
+    );
+    return `${signingInput}.${base64UrlEncode(new Uint8Array(signature))}`;
+}
+
+async function encryptAppleRefreshToken(refreshToken, env) {
+    const key = await appleEncryptionKey(env, ["encrypt"]);
+    const iv = new Uint8Array(12);
+    crypto.getRandomValues(iv);
+    const ciphertext = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        key,
+        new TextEncoder().encode(refreshToken)
+    );
+    return `v1.${base64UrlEncode(iv)}.${base64UrlEncode(new Uint8Array(ciphertext))}`;
+}
+
+async function decryptAppleRefreshToken(value, env) {
+    const [version, iv, ciphertext] = String(value || "").split(".");
+    if (version !== "v1" || !iv || !ciphertext) throw new Error("Stored Apple credential is invalid");
+    const key = await appleEncryptionKey(env, ["decrypt"]);
+    const plaintext = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: base64UrlToBytes(iv) },
+        key,
+        base64UrlToBytes(ciphertext)
+    );
+    return new TextDecoder().decode(plaintext);
+}
+
+async function appleEncryptionKey(env, usages) {
+    const encoded = String(env.APPLE_TOKEN_ENCRYPTION_KEY || "").trim();
+    if (!encoded) throw new Error("Apple token encryption is not configured");
+    const raw = base64UrlToBytes(encoded);
+    if (raw.byteLength !== 32) throw new Error("Apple token encryption key must contain 32 bytes");
+    return crypto.subtle.importKey("raw", raw, "AES-GCM", false, usages);
+}
+
+function base64UrlEncode(bytes) {
+    return bytesToBase64(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
 function base64UrlToBytes(value) {
     const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
     return base64ToBytes(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "="));
@@ -309,7 +445,6 @@ async function createEmailAccount(body, request, env) {
                 VALUES (?, ?, ?, ?, ?, ?)
             `).bind(userId, bytesToBase64(passwordHash), bytesToBase64(salt), PASSWORD_ITERATIONS, now, now)
         ]);
-        await insertProductEvent(env, userId, "account_created", "account", now, { method: "email" });
     }
     catch (error) {
         console.error(JSON.stringify({ event: "email_signup_failed", message: String(error?.message || error) }));
