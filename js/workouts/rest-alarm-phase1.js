@@ -229,7 +229,7 @@ function ensureStyles() {
     .rest-alarm-top {
       display: grid;
       grid-template-columns: minmax(0,1fr) auto;
-      gap: 12px;
+      gap: 6px;
       align-items: center;
     }
     .rest-alarm-status { display: flex; align-items: center; gap: 7px; }
@@ -246,13 +246,14 @@ function ensureStyles() {
     .rest-alarm-next {
       display: block;
       margin-top: 2px;
-      overflow: hidden;
+      overflow: visible;
       color: #f5f5f7;
       font-size: 12px;
       font-weight: 800;
       line-height: 1.2;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      overflow-wrap: anywhere;
+      text-overflow: clip;
+      white-space: normal;
     }
     .rest-alarm-detail {
       display: flex;
@@ -264,7 +265,7 @@ function ensureStyles() {
       line-height: 1.25;
     }
     .rest-alarm-time {
-      min-width: 68px;
+      min-width: 64px;
       text-align: right;
       color: #ff4f69;
       font-variant-numeric: tabular-nums;
@@ -354,7 +355,8 @@ function ensureStyles() {
     }
     @media (max-width: 390px) {
       #${BANNER_ID} { left: 8px; right: 8px; padding: 10px; bottom: calc(68px + env(safe-area-inset-bottom)); }
-      .rest-alarm-time { min-width: 62px; font-size: 26px; }
+      .rest-alarm-top { gap: 4px; }
+      .rest-alarm-time { min-width: 58px; font-size: 26px; }
       .rest-alarm-controls { gap: 5px; }
       .rest-alarm-controls button { padding-inline: 4px; font-size: 9px; }
     }

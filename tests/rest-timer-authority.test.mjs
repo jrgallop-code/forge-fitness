@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const authority = await readFile(new URL("../js/workouts/rest-timer-authority.js", import.meta.url), "utf8");
+const alarm = await readFile(new URL("../js/workouts/rest-alarm-phase1.js", import.meta.url), "utf8");
 const warmups = await readFile(new URL("../js/workouts/warmup-session-fix.js", import.meta.url), "utf8");
 const stability = await readFile(new URL("../js/workouts/warmup-timer-stability.js", import.meta.url), "utf8");
 const display = await readFile(new URL("../js/workouts/rest-timer-display-fix.js", import.meta.url), "utf8");
@@ -15,6 +16,11 @@ test("working sets use per-exercise timer authority and Off no longer creates a 
     assert.match(authority, /clearTimerForDisabledSource/);
     assert.match(authority, /sourceType:\s*"working"/);
     assert.match(authority, /\.complete-set-btn/);
+});
+
+test("the active rest timer keeps the full next exercise name readable", () => {
+    assert.match(alarm, /\.rest-alarm-next \{[\s\S]*white-space: normal/);
+    assert.match(alarm, /overflow-wrap: anywhere/);
 });
 
 test("warm-up completion uses the same per-exercise rest timer authority", () => {

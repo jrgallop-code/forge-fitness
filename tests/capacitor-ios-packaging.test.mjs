@@ -131,6 +131,7 @@ test("native iOS uses the selected Appearance icon without an opaque Lock Screen
     assert.match(widget, /"Resume" : "Pause"/);
     assert.match(widget, /timerButton\("Skip"/);
     assert.match(widget, /return context\.attributes\.setNumber > 0 \? "Next:/);
+    assert.match(widget, /lineLimit\(2\)\.minimumScaleFactor\(0\.82\)/);
     assert.match(widgetInfo, /CFBundleExecutable/);
     assert.match(info, /NSSupportsLiveActivities/);
     for (const name of ["Arctic", "Pure", "Ocean", "Midnight", "Slate", "Pulse"]) {

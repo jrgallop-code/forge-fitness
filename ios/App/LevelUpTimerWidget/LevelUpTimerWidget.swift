@@ -156,22 +156,25 @@ struct LevelUpTimerLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: LevelUpTimerAttributes.self) { context in
             let palette = TimerPalette.forTheme(context.attributes.theme)
-            VStack(spacing: 8) {
-                HStack(spacing: 9) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
                     RoundedRectangle(cornerRadius: 3).fill(palette.accent).frame(width: 4)
-                    timerLogo(icon: context.attributes.icon, size: 34)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(activityHeading(context))
-                            .font(.caption2.weight(.heavy)).tracking(0.8).foregroundStyle(palette.accent).lineLimit(1)
-                        Text(activityTitle(context))
-                            .font(.subheadline.weight(.bold)).foregroundStyle(palette.heading).lineLimit(1)
-                        if context.attributes.kind == "rest" {
-                            Text(activityDetails(context))
-                                .font(.caption2.weight(.medium)).foregroundStyle(palette.muted).lineLimit(1)
-                        }
-                    }
-                    Spacer(minLength: 4)
+                    timerLogo(icon: context.attributes.icon, size: 30)
+                    Text(activityHeading(context))
+                        .font(.caption2.weight(.heavy)).tracking(0.8).foregroundStyle(palette.accent)
+                        .lineLimit(1).minimumScaleFactor(0.75)
+                    Spacer(minLength: 2)
                     timerText(context: context, palette: palette, font: .title2)
+                        .layoutPriority(2)
+                }
+                Text(activityTitle(context))
+                    .font(.subheadline.weight(.bold)).foregroundStyle(palette.heading)
+                    .lineLimit(2).minimumScaleFactor(0.82)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if context.attributes.kind == "rest" {
+                    Text(activityDetails(context))
+                        .font(.caption2.weight(.medium)).foregroundStyle(palette.muted).lineLimit(1)
                 }
                 if context.attributes.kind == "rest" {
                     restControls(context: context, palette: palette)
@@ -202,7 +205,8 @@ struct LevelUpTimerLiveActivity: Widget {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(activityHeading(context)).font(.caption2.weight(.heavy)).foregroundStyle(palette.accent).lineLimit(1)
-                                Text(activityTitle(context)).font(.caption.weight(.semibold)).foregroundStyle(palette.heading).lineLimit(1)
+                                Text(activityTitle(context)).font(.caption.weight(.semibold)).foregroundStyle(palette.heading)
+                                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                                 if context.attributes.kind == "rest" {
                                     Text(activityDetails(context)).font(.caption2).foregroundStyle(palette.muted).lineLimit(1)
                                 }
