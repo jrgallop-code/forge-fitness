@@ -46,3 +46,5 @@ Approved full-image themed splash release: display the actual appearance-specifi
 Release 20: ship the user-approved full-image splash artwork for Classic, Arctic, Pure, Ocean, Midnight, Slate, and Pulse in the Capacitor app.
 
 Release 21: simplified full-bleed splash artwork for every appearance, with edge-to-edge cover rendering and theme-matched fallback backgrounds to eliminate white gaps.
+
+Release 22: App Store review readiness with optional local mode, explicit analytics consent, production-safe wording, bundled privacy policy, and Sign in with Apple revocation support.
