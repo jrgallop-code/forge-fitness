@@ -107,7 +107,7 @@ function renderHomeIconChoices() {
     return `<section class="appearance-home-icons" aria-labelledby="appearance-home-icons-title">
         <header><small>HOME SCREEN</small><h3 id="appearance-home-icons-title">Choose your Level Up icon</h3><p>Pick the logo that looks best with your iPhone theme. This is independent from the appearance inside the app.</p></header>
         <div class="appearance-home-icon-grid" role="radiogroup" aria-label="Home-screen app icon">
-            ${HOME_ICONS.map(icon => `<button type="button" class="appearance-home-icon${icon.id === selected ? " is-selected" : ""}" data-home-icon="${icon.id}" role="radio" aria-checked="${icon.id === selected}"><img src="assets/home-icons/${icon.id}.png" alt=""><strong>${icon.name}</strong><span aria-hidden="true">✓</span></button>`).join("")}
+            ${HOME_ICONS.map(icon => `<button type="button" class="appearance-home-icon${icon.id === selected ? " is-selected" : ""}" data-home-icon="${icon.id}" role="radio" aria-checked="${icon.id === selected}"><img src="assets/home-icons/${icon.id}.png?v=2" alt=""><strong>${icon.name}</strong><span aria-hidden="true">✓</span></button>`).join("")}
         </div>
         <p class="appearance-status" data-home-icon-status role="status" aria-live="polite"></p>
     </section>`;

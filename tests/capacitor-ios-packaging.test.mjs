@@ -92,10 +92,25 @@ test("native iOS uses the selected Appearance icon without an opaque Lock Screen
     assert.match(native, /updateNativeAlarm/);
     assert.match(native, /syncNativeRestTimerState/);
     assert.match(appearance, /Choose your Level Up icon/);
-    assert.match(appearance, /assets\/home-icons\/\$\{icon\.id\}\.png/);
+    assert.match(appearance, /assets\/home-icons\/\$\{icon\.id\}\.png\?v=2/);
     assert.match(appearance, /LevelUpAppIcon\?\.setIcon/);
     assert.match(info, /CFBundleAlternateIcons/);
     assert.match(plugin, /setAlternateIconName/);
+
+    const iconPairs = [
+        ["level-up", "AppIcon.appiconset/AppIcon-512@2x.png"],
+        ["arctic", "AppIconArctic.appiconset/AppIconArctic-1024.png"],
+        ["pure", "AppIconPure.appiconset/AppIconPure-1024.png"],
+        ["ocean", "AppIconOcean.appiconset/AppIconOcean-1024.png"],
+        ["midnight", "AppIconMidnight.appiconset/AppIconMidnight-1024.png"],
+        ["slate", "AppIconSlate.appiconset/AppIconSlate-1024.png"],
+        ["pulse", "AppIconPulse.appiconset/AppIconPulse-1024.png"]
+    ];
+    for (const [previewName, nativePath] of iconPairs) {
+        const preview = await readFile(new URL(`../assets/home-icons/${previewName}.png`, import.meta.url));
+        const nativeIcon = await readFile(new URL(`../ios/App/App/Assets.xcassets/${nativePath}`, import.meta.url));
+        assert.deepEqual(preview, nativeIcon, `${previewName} preview must exactly match its enlarged native icon`);
+    }
     assert.match(sceneDelegate, /LevelUpBridgeViewController/);
     assert.match(timerPlugin, /UNTimeIntervalNotificationTrigger/);
     assert.match(timerPlugin, /level-up-alarm\.wav/);
