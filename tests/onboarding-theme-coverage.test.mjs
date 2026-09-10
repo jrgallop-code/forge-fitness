@@ -72,6 +72,7 @@ test("the audit covers every onboarding shell, navigation, and typography surfac
 test("all onboarding cards, choices, fields, and completion summaries are theme-owned", () => {
   for (const selector of [
     ".onboarding-option,",
+    ".onboarding-acquisition-choice,",
     ".onboarding-chip,",
     ".onboarding-no-priority,",
     ".onboarding-unit-row,",
@@ -83,8 +84,7 @@ test("all onboarding cards, choices, fields, and completion summaries are theme-
     ".onboarding-unit-choice button,",
     ".onboarding-profile-grid input,",
     ".onboarding-profile-grid select,",
-    ".onboarding-exercise-picker input,",
-    ".onboarding-acquisition-other input"
+    ".onboarding-exercise-picker input"
   ]) assert.ok(audit.includes(selector), `${selector} is covered`);
 
   assert.match(audit, /background:\s*var\(--card\)\s*!important/);
@@ -97,6 +97,7 @@ test("all onboarding cards, choices, fields, and completion summaries are theme-
 test("selected and action states use the active appearance accent", () => {
   for (const selector of [
     ".onboarding-option.selected,",
+    ".onboarding-acquisition-choice.selected,",
     ".onboarding-chip.selected,",
     ".onboarding-no-priority.selected,",
     ".onboarding-unit-row button.selected,",
@@ -111,7 +112,7 @@ test("selected and action states use the active appearance accent", () => {
   assert.match(audit, /background:\s*var\(--accent-soft\)\s*!important/);
   assert.match(audit, /background:\s*var\(--accent\)\s*!important/);
   assert.match(audit, /color:\s*var\(--accent-contrast\)\s*!important/);
-  assert.match(audit, /\.onboarding-theme-check\s*\{[\s\S]*?-webkit-text-fill-color:\s*var\(--accent-contrast\)/);
+  assert.match(audit, /:is\(\.onboarding-theme-check, \.onboarding-acquisition-check\)\s*\{[\s\S]*?-webkit-text-fill-color:\s*var\(--accent-contrast\)/);
 });
 
 test("theme thumbnails keep their own preview palettes", () => {
@@ -164,11 +165,11 @@ test("known fixed-color source files are all represented in the final audit", ()
   assert.match(nativePolish, /\.levelup-onboarding-shell/);
 
   assert.ok(audit.includes(".onboarding-unit-row,"));
-  assert.ok(audit.includes(".onboarding-acquisition-other input"));
+  assert.ok(audit.includes(".onboarding-acquisition-choice,"));
   assert.ok(audit.includes(".onboarding-nutrition-preview > div,"));
   assert.match(audit, /\.levelup-onboarding-shell\s*\{[\s\S]*?background:\s*var\(--bg\)\s*!important/);
 });
 
 test("the onboarding theme correction advances the offline cache", () => {
-  assert.match(worker, /2026-09-08-276/);
+  assert.match(worker, /2026-09-11-292/);
 });

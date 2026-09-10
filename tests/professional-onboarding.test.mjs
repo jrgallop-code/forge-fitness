@@ -66,17 +66,21 @@ test("saved onboarding equipment is respected by Smart Build", () => {
   assert.match(engine, /equipment: savedEquipment\.length \? \[\.\.\.new Set\(savedEquipment\)\] : \["Full Gym"\]/);
 });
 
-test("completion reveals the plan and keeps acquisition outside the required flow", () => {
+test("acquisition is a required standalone onboarding page", () => {
   assert.match(source, /BUILT AROUND YOU/);
   assert.match(source, /YOUR STARTING POINT/);
   assert.match(source, /Your progress starts here/);
-  assert.match(source, /<details class="onboarding-acquisition">/);
-  assert.match(source, /Help us improve Level Up/);
+  assert.match(source, /"appearance","acquisition"/);
+  assert.match(source, /function acquisition\(\)/);
+  assert.match(source, /How did you find us\?/);
+  assert.match(source, /onboarding-acquisition-list/);
+  assert.match(source, /function acquisitionIcon/);
+  assert.doesNotMatch(source, /<details class="onboarding-acquisition">/);
   assert.match(source, /Build My Workout Program/);
 });
 
 test("the professional onboarding release is cache-busted", () => {
   assert.match(html, /css\/onboarding\.css\?v=nutrition-feature-choice-1/);
   assert.match(html, /js\/onboarding\/onboarding\.js\?v=nutrition-steady-program-page-1/);
-  assert.match(worker, /CACHE_VERSION = "2026-09-08-276"/);
+  assert.match(worker, /CACHE_VERSION = "2026-09-11-292"/);
 });
