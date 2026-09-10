@@ -20,7 +20,7 @@ test("working sets use per-exercise timer authority and Off no longer creates a 
 test("warm-up completion uses the same per-exercise rest timer authority", () => {
     assert.match(warmups, /startRestForWarmupButton/);
     assert.match(warmups, /warmup-timer-stability\.js\?v=warmup-timer-stability-1/);
-    assert.match(warmups, /rest-timer-authority\.js\?v=native-single-alert-1/);
+    assert.match(warmups, /rest-timer-authority\.js\?v=interactive-live-activity-1/);
     assert.doesNotMatch(warmups, /#start-rest-timer/);
     assert.match(authority, /sourceType:\s*"warmup"/);
     assert.match(authority, /warmupSets/);

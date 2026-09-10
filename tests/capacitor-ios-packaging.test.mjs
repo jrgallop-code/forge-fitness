@@ -87,7 +87,10 @@ test("native iOS uses the selected Appearance icon without an opaque Lock Screen
     assert.match(native, /plugin\("LocalNotifications"\)/);
     assert.match(native, /scheduleNativeAlarm/);
     assert.match(native, /HOME_ICON_KEY = "level_up_home_icon"/);
-    assert.match(native, /icon: selectedHomeIcon\(\)/);
+    assert.match(native, /function liveActivityAppearance\(\)/);
+    assert.match(native, /icon: liveActivityAppearance\(\)/);
+    assert.match(native, /updateNativeAlarm/);
+    assert.match(native, /syncNativeRestTimerState/);
     assert.match(appearance, /Choose your Level Up icon/);
     assert.match(appearance, /assets\/home-icons\/\$\{icon\.id\}\.png/);
     assert.match(appearance, /LevelUpAppIcon\?\.setIcon/);
@@ -100,7 +103,14 @@ test("native iOS uses the selected Appearance icon without an opaque Lock Screen
     assert.match(timerPlugin, /cleanupExpiredLiveActivities/);
     assert.match(timerPlugin, /call\.getString\("theme"\)/);
     assert.match(timerPlugin, /call\.getString\("icon"\)/);
+    assert.match(timerPlugin, /CAPPluginMethod\(name: "update"/);
+    assert.match(timerPlugin, /CAPPluginMethod\(name: "getState"/);
     assert.match(attributes, /var icon: String/);
+    assert.match(attributes, /var workoutName: String/);
+    assert.match(attributes, /var exerciseName: String/);
+    assert.match(attributes, /struct AdjustLevelUpTimerIntent: LiveActivityIntent/);
+    assert.match(attributes, /struct ToggleLevelUpTimerIntent: LiveActivityIntent/);
+    assert.match(attributes, /struct SkipLevelUpTimerIntent: LiveActivityIntent/);
     assert.match(widget, /ActivityConfiguration/);
     assert.match(widget, /timerInterval/);
     assert.match(widget, /TimerPalette\.forTheme/);
@@ -116,7 +126,11 @@ test("native iOS uses the selected Appearance icon without an opaque Lock Screen
     assert.match(widget, /expectedTopR/);
     assert.doesNotMatch(widget, /clipShape\(RoundedRectangle/);
     assert.doesNotMatch(widget, /LevelUpThemeLogo|LevelUpArrow|dumbbell\.fill/);
-    assert.match(widget, /DismissLevelUpTimerIntent/);
+    assert.match(widget, /timerButton\("−15"/);
+    assert.match(widget, /timerButton\("\+15"/);
+    assert.match(widget, /"Resume" : "Pause"/);
+    assert.match(widget, /timerButton\("Skip"/);
+    assert.match(widget, /return context\.attributes\.setNumber > 0 \? "Next:/);
     assert.match(widgetInfo, /CFBundleExecutable/);
     assert.match(info, /NSSupportsLiveActivities/);
     for (const name of ["Arctic", "Pure", "Ocean", "Midnight", "Slate", "Pulse"]) {

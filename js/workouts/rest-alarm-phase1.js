@@ -1,6 +1,6 @@
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from "./workout-session.js?v=native-navigation-stability-1";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
-import { requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-2";
+import { cancelNativeAlarm, requestNativeAlarmPermission, scheduleNativeAlarm, updateNativeAlarm } from "../core/native-capabilities.js?v=interactive-live-activity-1";
 
 const EXERCISE_TIMER_SETTINGS_KEY = "level_up_exercise_rest_settings";
 const ALARM_PREFS_KEY = "level_up_rest_alarm_preferences";
@@ -137,6 +137,7 @@ function getNextSetContext(active) {
   }
 
   const planned = getPlannedExercise(active, next.exerciseIndex);
+  const day = active?.planSnapshot?.days?.[Number(active.trainingDayIndex) || 0];
   const exerciseId = planned?.id || active?.exercises?.[next.exerciseIndex]?.exerciseId;
   const exercise = getExerciseById(exerciseId);
   const exerciseName = exercise?.name || "Next exercise";
@@ -151,8 +152,36 @@ function getNextSetContext(active) {
     done: false,
     title: `${exerciseName} · Set ${next.setIndex + 1}`,
     detail: target ? `Target ${target} reps` : "Next working set",
-    previous: previous && previous !== "Hasn't started" ? `Previous ${previous}` : ""
+    previous: previous && previous !== "Hasn't started" ? `Previous ${previous}` : "",
+    workoutName: day?.name || active?.planSnapshot?.name || active?.name || "Workout",
+    exerciseName,
+    setNumber: next.setIndex + 1,
+    targetReps: target,
+    previousPerformance: previous && previous !== "Hasn't started" ? previous : ""
   };
+}
+
+function nativeContext(active) {
+  const context = getNextSetContext(active);
+  return {
+    workoutName: context.workoutName || "Workout",
+    exerciseName: context.exerciseName || context.title || "Next exercise",
+    setNumber: context.setNumber || 0,
+    targetReps: context.targetReps || "",
+    previousPerformance: context.previousPerformance || ""
+  };
+}
+
+function syncNativeTimer(active) {
+  const timer = active?.restTimer;
+  if (!timer?.timerId) return;
+  void updateNativeAlarm({
+    key: `rest:${timer.timerId}`,
+    status: timer.status,
+    endAt: timer.endAt,
+    remainingMs: remainingMs(timer),
+    context: nativeContext(active)
+  });
 }
 
 function ensureStyles() {
@@ -492,6 +521,7 @@ function adjustTimer(deltaSeconds) {
   }
 
   saveActive(active);
+  syncNativeTimer(active);
 }
 
 function togglePause() {
@@ -509,26 +539,34 @@ function togglePause() {
     timer.endAt = null;
   }
   saveActive(active);
+  syncNativeTimer(active);
 }
 
 function dismissTimer() {
   const active = getActive();
   if (!active) return;
+  const timerId = active.restTimer?.timerId;
   active.restTimer = null;
   saveActive(active);
+  if (timerId) void cancelNativeAlarm(`rest:${timerId}`);
 }
 
 function restartFinishedTimer(seconds) {
   const active = getActive();
   if (!active) return;
+  const existing = active.restTimer || {};
   active.restTimer = {
+    ...existing,
+    timerId: existing.timerId || `rest-${active.id || "workout"}-${Date.now()}`,
     status: "running",
     durationSeconds: seconds,
+    startedAt: new Date().toISOString(),
     remainingMs: seconds * 1000,
     endAt: new Date(Date.now() + seconds * 1000).toISOString(),
     notified: false
   };
   saveActive(active);
+  syncNativeTimer(active);
 }
 
 function startNextSet() {
@@ -562,13 +600,15 @@ async function requestAlerts() {
     const granted = await requestNativeAlarmPermission();
     const timer = getActive()?.restTimer;
     if (granted && timer?.status === "running" && timer?.endAt) {
+      const context = nativeContext(getActive());
       await scheduleNativeAlarm({
         key: `rest:${timer.timerId}`,
         title: "Rest complete",
-        body: "Your next set is ready.",
+        body: context.setNumber > 0 ? `${context.exerciseName} · Set ${context.setNumber} is ready.` : "Your workout is ready.",
         at: timer.endAt,
         kind: "rest",
-        extra: { type: "levelup:rest-complete", timerId: timer.timerId }
+        extra: { type: "levelup:rest-complete", timerId: timer.timerId },
+        context
       });
     }
     return;

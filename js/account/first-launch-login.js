@@ -1,4 +1,4 @@
-import "../core/native-capabilities.js?v=lock-screen-timers-2";
+import "../core/native-capabilities.js?v=interactive-live-activity-1";
 import "../privacy/analytics-consent.js?v=app-review-privacy-1";
 import { restoreBackupSnapshot, verifyBackupSnapshot } from "../core/backup-manager.js?v=backup-complete-7";
 

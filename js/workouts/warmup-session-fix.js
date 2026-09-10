@@ -1,4 +1,4 @@
-import { startRestForWarmupButton } from "./rest-timer-authority.js?v=native-single-alert-1";
+import { startRestForWarmupButton } from "./rest-timer-authority.js?v=interactive-live-activity-1";
 import "./warmup-timer-stability.js?v=warmup-timer-stability-1";
 import "./warmup-plate-calculator.js?v=warmup-plate-calculator-3";
 import "../core/workout-theme-guardrail.js?v=workout-theme-guardrail-2";

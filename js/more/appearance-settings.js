@@ -1,6 +1,6 @@
 import { APPEARANCE_THEMES, applyAppearanceTheme, getAppearanceTheme, resolveAppearanceTheme } from "../core/appearance-theme.js?v=appearance-themes-3";
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
-import { hapticNotification } from "../core/native-capabilities.js?v=lock-screen-timers-2";
+import { hapticNotification } from "../core/native-capabilities.js?v=interactive-live-activity-1";
 import {
     MUSCLE_COLOR_PRESETS,
     applyMuscleMapColors,

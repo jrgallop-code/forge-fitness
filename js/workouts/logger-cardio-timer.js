@@ -1,5 +1,5 @@
 import { openActiveWorkout } from "./workout-session.js?v=native-navigation-stability-1";
-import { cancelNativeAlarm, hapticNotification, requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-2";
+import { cancelNativeAlarm, hapticNotification, requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=interactive-live-activity-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const CARDIO_TIMER_STORAGE_KEY = "level_up_cardio_timer_state";

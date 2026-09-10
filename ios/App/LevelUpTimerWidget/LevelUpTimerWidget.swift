@@ -152,44 +152,37 @@ private enum TimerLogoRenderer {
     }
 }
 
-@available(iOS 17.0, *)
-struct DismissLevelUpTimerIntent: AppIntent {
-    static var title: LocalizedStringResource = "Dismiss Level Up timer"
-    static var openAppWhenRun = false
-    @Parameter(title: "Timer ID") var timerID: String
-
-    init() {}
-    init(timerID: String) { self.timerID = timerID }
-
-    func perform() async throws -> some IntentResult {
-        for activity in Activity<LevelUpTimerAttributes>.activities where activity.attributes.timerID == timerID {
-            await activity.end(nil, dismissalPolicy: .immediate)
-        }
-        return .result()
-    }
-}
-
 struct LevelUpTimerLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: LevelUpTimerAttributes.self) { context in
             let palette = TimerPalette.forTheme(context.attributes.theme)
-            HStack(spacing: 12) {
-                RoundedRectangle(cornerRadius: 3).fill(palette.accent).frame(width: 5)
-                timerLogo(icon: context.attributes.icon, size: 38)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(context.attributes.kind == "cardio" ? "CARDIO TIMER" : "REST TIMER")
-                        .font(.caption2.weight(.heavy)).tracking(1.1).foregroundStyle(palette.accent)
-                    Text(context.attributes.detail)
-                        .font(.subheadline.weight(.semibold)).foregroundStyle(palette.heading).lineLimit(1)
+            VStack(spacing: 8) {
+                HStack(spacing: 9) {
+                    RoundedRectangle(cornerRadius: 3).fill(palette.accent).frame(width: 4)
+                    timerLogo(icon: context.attributes.icon, size: 34)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(activityHeading(context))
+                            .font(.caption2.weight(.heavy)).tracking(.8).foregroundStyle(palette.accent).lineLimit(1)
+                        Text(activityTitle(context))
+                            .font(.subheadline.weight(.bold)).foregroundStyle(palette.heading).lineLimit(1)
+                        if context.attributes.kind == "rest" {
+                            Text(activityDetails(context))
+                                .font(.caption2.weight(.medium)).foregroundStyle(palette.muted).lineLimit(1)
+                        }
+                    }
+                    Spacer(minLength: 4)
+                    timerText(context: context, palette: palette, font: .title2)
                 }
-                Spacer(minLength: 6)
-                VStack(alignment: .trailing, spacing: 5) {
-                    Text(timerInterval: context.state.startedAt...context.state.endAt, countsDown: true)
-                        .font(.title3.monospacedDigit().weight(.heavy)).foregroundStyle(palette.accent)
-                    dismissControl(context: context, palette: palette)
+                if context.attributes.kind == "rest" {
+                    restControls(context: context, palette: palette)
+                } else {
+                    HStack {
+                        Spacer()
+                        dismissControl(context: context, palette: palette)
+                    }
                 }
             }
-            .padding(.vertical, 12).padding(.horizontal, 13)
+            .padding(.vertical, 10).padding(.horizontal, 13)
             .activityBackgroundTint(palette.background)
             .activitySystemActionForegroundColor(palette.heading)
         } dynamicIsland: { context in
@@ -202,29 +195,98 @@ struct LevelUpTimerLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(timerInterval: context.state.startedAt...context.state.endAt, countsDown: true)
-                        .monospacedDigit().fontWeight(.bold).foregroundStyle(palette.accent)
+                    timerText(context: context, palette: palette, font: .headline)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(context.attributes.kind == "cardio" ? "CARDIO TIMER" : "REST TIMER")
-                                .font(.caption2.weight(.heavy)).foregroundStyle(palette.accent)
-                            Text(context.attributes.detail).font(.caption).foregroundStyle(palette.muted).lineLimit(1)
+                    VStack(spacing: 7) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(activityHeading(context)).font(.caption2.weight(.heavy)).foregroundStyle(palette.accent).lineLimit(1)
+                                Text(activityTitle(context)).font(.caption.weight(.semibold)).foregroundStyle(palette.heading).lineLimit(1)
+                                if context.attributes.kind == "rest" {
+                                    Text(activityDetails(context)).font(.caption2).foregroundStyle(palette.muted).lineLimit(1)
+                                }
+                            }
+                            Spacer()
+                            if context.attributes.kind != "rest" { dismissControl(context: context, palette: palette) }
                         }
-                        Spacer()
-                        dismissControl(context: context, palette: palette)
+                        if context.attributes.kind == "rest" { restControls(context: context, palette: palette) }
                     }
                 }
             } compactLeading: {
                 timerLogo(icon: context.attributes.icon, size: 20)
             } compactTrailing: {
-                Text(timerInterval: context.state.startedAt...context.state.endAt, countsDown: true).monospacedDigit().foregroundStyle(palette.accent).frame(width: 42)
+                timerText(context: context, palette: palette, font: .caption).frame(width: 46)
             } minimal: {
                 timerLogo(icon: context.attributes.icon, size: 20)
             }
             .keylineTint(palette.accent)
         }
+    }
+
+    private func activityHeading(_ context: ActivityViewContext<LevelUpTimerAttributes>) -> String {
+        if context.attributes.kind == "cardio" { return "CARDIO TIMER" }
+        let workout = context.attributes.workoutName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return workout.isEmpty || workout == "Workout" ? "REST TIMER" : "REST TIMER · \(workout.uppercased())"
+    }
+
+    private func activityTitle(_ context: ActivityViewContext<LevelUpTimerAttributes>) -> String {
+        let exercise = context.attributes.exerciseName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if context.attributes.kind != "rest" { return exercise.isEmpty ? context.attributes.detail : exercise }
+        let name = exercise.isEmpty ? context.attributes.detail : exercise
+        return context.attributes.setNumber > 0 ? "Next: \(name) · Set \(context.attributes.setNumber)" : name
+    }
+
+    private func activityDetails(_ context: ActivityViewContext<LevelUpTimerAttributes>) -> String {
+        var parts: [String] = []
+        let target = context.attributes.targetReps.trimmingCharacters(in: .whitespacesAndNewlines)
+        let previous = context.attributes.previousPerformance.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !target.isEmpty { parts.append("Target \(target) reps") }
+        if !previous.isEmpty { parts.append("Previous \(previous)") }
+        return parts.isEmpty ? "Next working set" : parts.joined(separator: "  ·  ")
+    }
+
+    @ViewBuilder
+    private func timerText(context: ActivityViewContext<LevelUpTimerAttributes>, palette: TimerPalette, font: Font) -> some View {
+        if context.state.status == "paused" {
+            Text(formatDuration(context.state.remainingSeconds))
+                .font(font).monospacedDigit().fontWeight(.heavy).foregroundStyle(palette.accent)
+        } else {
+            Text(timerInterval: context.state.startedAt...context.state.endAt, countsDown: true)
+                .font(font).monospacedDigit().fontWeight(.heavy).foregroundStyle(palette.accent)
+        }
+    }
+
+    private func formatDuration(_ seconds: Int) -> String {
+        let safe = max(0, seconds)
+        return "\(safe / 60):\(String(format: "%02d", safe % 60))"
+    }
+
+    @ViewBuilder
+    private func restControls(context: ActivityViewContext<LevelUpTimerAttributes>, palette: TimerPalette) -> some View {
+        if #available(iOS 17.0, *) {
+            HStack(spacing: 7) {
+                timerButton("−15", intent: AdjustLevelUpTimerIntent(timerID: context.attributes.timerID, seconds: -15), palette: palette)
+                timerButton(context.state.status == "paused" ? "Resume" : "Pause", intent: ToggleLevelUpTimerIntent(timerID: context.attributes.timerID), palette: palette, emphasized: true)
+                timerButton("+15", intent: AdjustLevelUpTimerIntent(timerID: context.attributes.timerID, seconds: 15), palette: palette)
+                timerButton("Skip", intent: SkipLevelUpTimerIntent(timerID: context.attributes.timerID), palette: palette)
+            }
+        } else {
+            Link(destination: timerURL(context.attributes.timerID)) {
+                Text("Open Level Up for timer controls").font(.caption.weight(.semibold)).frame(maxWidth: .infinity)
+            }
+            .foregroundStyle(palette.accent)
+        }
+    }
+
+    @available(iOS 17.0, *)
+    private func timerButton<I: AppIntent>(_ title: String, intent: I, palette: TimerPalette, emphasized: Bool = false) -> some View {
+        Button(intent: intent) {
+            Text(title).font(.caption2.weight(.bold)).lineLimit(1).frame(maxWidth: .infinity, minHeight: 27)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(emphasized ? palette.accentContrast : palette.heading)
+        .background(emphasized ? palette.accent : palette.raised, in: RoundedRectangle(cornerRadius: 8))
     }
 
     private func timerLogoName(for icon: String) -> String {
@@ -256,13 +318,13 @@ struct LevelUpTimerLiveActivity: Widget {
     @ViewBuilder
     private func dismissControl(context: ActivityViewContext<LevelUpTimerAttributes>, palette: TimerPalette) -> some View {
         if #available(iOS 17.0, *) {
-            Button(intent: DismissLevelUpTimerIntent(timerID: context.attributes.timerID)) {
+            Button(intent: SkipLevelUpTimerIntent(timerID: context.attributes.timerID)) {
                 Image(systemName: "xmark").font(.caption.weight(.bold)).frame(width: 24, height: 24)
             }
             .buttonStyle(.plain).foregroundStyle(palette.heading).background(palette.raised, in: Circle())
             .accessibilityLabel("Dismiss timer")
         } else {
-            Link(destination: dismissURL(context.attributes.timerID)) {
+            Link(destination: timerURL(context.attributes.timerID)) {
                 Image(systemName: "xmark").font(.caption.weight(.bold)).foregroundStyle(palette.heading)
                     .frame(width: 24, height: 24).background(palette.raised, in: Circle())
             }
@@ -270,7 +332,7 @@ struct LevelUpTimerLiveActivity: Widget {
         }
     }
 
-    private func dismissURL(_ timerID: String) -> URL {
+    private func timerURL(_ timerID: String) -> URL {
         var components = URLComponents()
         components.scheme = "leveluphypertrophy"
         components.host = "timer"
