@@ -1,5 +1,5 @@
 import { getExerciseById } from './exercise-library.js?v=exercise-library-3';
-import { UNIT_KINDS, massUnit } from '../core/unit-system.js?v=granular-units-1';
+import { UNIT_KINDS, canonicalInputValue, displayMass, formatMass as formatUnitMass, massUnit } from '../core/unit-system.js?v=granular-units-1';
 
 const SESSION_STORAGE_KEY = 'forge_workout_sessions';
 const STYLE_HREF = 'css/starting-weight-calibration.css?v=starting-weight-1';
@@ -241,7 +241,7 @@ function chooseDifficulty(button) {
   const modal = button.closest('.starting-weight-calibration-backdrop');
   if (!modal || !activeCard) return;
 
-  const testWeight = Number(modal.querySelector('.starting-weight-test-load')?.value);
+  const testWeight = canonicalInputValue(modal.querySelector('.starting-weight-test-load'));
   const message = modal.querySelector('.starting-weight-calibration-message');
   const result = modal.querySelector('.starting-weight-calibration-result');
 
@@ -257,8 +257,8 @@ function chooseDifficulty(button) {
   modal.querySelectorAll('[data-starting-weight-difficulty]').forEach(item => item.classList.toggle('selected', item === button));
   message.textContent = '';
   modal.dataset.suggestedLoad = String(suggested);
-  modal.querySelector('[data-starting-weight-result]').textContent = `${formatLoad(suggested)} lb`;
-  modal.querySelector('[data-use-starting-weight]').textContent = `Use ${formatLoad(suggested)} lb`;
+  modal.querySelector('[data-starting-weight-result]').textContent = formatUnitMass(suggested, 1, UNIT_KINDS.LIFTING_WEIGHT);
+  modal.querySelector('[data-use-starting-weight]').textContent = `Use ${formatUnitMass(suggested, 1, UNIT_KINDS.LIFTING_WEIGHT)}`;
   result.hidden = false;
 }
 
@@ -266,7 +266,8 @@ function applySuggestion(modal) {
   const suggested = Number(modal.dataset.suggestedLoad);
   if (!Number.isFinite(suggested) || !activeTargetInput || !activeTargetInput.isConnected) return;
 
-  activeTargetInput.value = formatLoad(suggested);
+  activeTargetInput.value = formatLoad(displayMass(suggested, 1, UNIT_KINDS.LIFTING_WEIGHT));
+  activeTargetInput.dataset.levelUpRenderedUnit = massUnit(UNIT_KINDS.LIFTING_WEIGHT) === 'kg' ? 'metric' : 'imperial';
   activeTargetInput.dispatchEvent(new Event('input', { bubbles: true }));
   activeTargetInput.dispatchEvent(new Event('change', { bubbles: true }));
   updateHelperVisibility(activeCard);

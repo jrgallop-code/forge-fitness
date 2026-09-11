@@ -1,4 +1,5 @@
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-cardio-3";
+import { canonicalInputValue, setCanonicalUnitPlaceholder } from "../core/unit-system.js?v=granular-units-1";
 
 const ACTIVE_KEY = "level_up_active_workout";
 const SESSION_KEY = "forge_workout_sessions";
@@ -178,7 +179,7 @@ function updateSuggestedPlaceholders(block, set, exerciseId) {
         const index = Number(row.dataset.dropIndex);
         const input = row.querySelector(".drop-set-weight");
         const suggestion = drops[index]?.suggestedWeight;
-        if (input) input.placeholder = suggestion ?? "Weight";
+        if (input) setCanonicalUnitPlaceholder(input, suggestion ?? "Weight");
     });
 }
 
@@ -388,7 +389,9 @@ document.addEventListener("input", event => {
     if (!drop) return;
 
     const field = input.matches(".drop-set-weight") ? "weight" : "reps";
-    const value = input.value === "" ? null : Number(input.value);
+    const value = input.matches(".drop-set-weight")
+        ? canonicalInputValue(input)
+        : input.value === "" ? null : Number(input.value);
     if (drop.completed) {
         drop[field] = value;
     }

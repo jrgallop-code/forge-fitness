@@ -1,5 +1,11 @@
 import { getExerciseById } from './exercise-library.js';
 import { buildBodyweightProgression, isBodyweightEquipment, isWeightedBodyweightEquipment } from './bodyweight-progression.js?v=bodyweight-progression-1';
+import {
+  UNIT_KINDS,
+  canonicalInputValue,
+  formatMass as formatUnitMass,
+  setCanonicalUnitPlaceholder
+} from '../core/unit-system.js?v=granular-units-1';
 
 const ACTIVE_WORKOUT_STORAGE_KEY = 'level_up_active_workout';
 const SESSION_STORAGE_KEY = 'forge_workout_sessions';
@@ -128,7 +134,10 @@ function getDiscomfortCaution(source, exerciseId) {
 
 function formatPreviousSet(set) {
   if (!set) return "Hasn't started";
-  return `${set.weight ?? '—'} × ${set.reps ?? '—'}`;
+  const weight = set.weight === null || set.weight === undefined || set.weight === ''
+    ? '—'
+    : formatUnitMass(set.weight, 1, UNIT_KINDS.LIFTING_WEIGHT);
+  return `${weight} × ${set.reps ?? '—'}`;
 }
 
 function formatPreviousSummary(performance) {
@@ -160,7 +169,7 @@ function syncPreviousDisplay(card, source) {
     if (value) value.textContent = formatPreviousSet(previousSet);
     const weight = row.querySelector('.session-weight');
     const reps = row.querySelector('.session-reps');
-    if (weight) weight.placeholder = previousSet?.weight ?? 'Weight';
+    if (weight) setCanonicalUnitPlaceholder(weight, previousSet?.weight ?? 'Weight');
     if (reps) reps.placeholder = previousSet?.reps ?? 'Reps';
   });
 }
@@ -170,7 +179,7 @@ function applyProgressionPlaceholders(card, suggestedLoad, minimumReps) {
   card.querySelectorAll('.session-set-row').forEach(row => {
     const weight = row.querySelector('.session-weight');
     const reps = row.querySelector('.session-reps');
-    if (weight && !weight.value) weight.placeholder = formatLoad(suggestedLoad);
+    if (weight && !weight.value) setCanonicalUnitPlaceholder(weight, suggestedLoad);
     if (reps && !reps.value) reps.placeholder = formatLoad(minimumReps);
   });
 }
@@ -189,7 +198,7 @@ function applyRepGoalPlaceholders(card, goals, suggestedWeight = null) {
     const weight = row.querySelector('.session-weight');
     const reps = row.querySelector('.session-reps');
     if (weight && !weight.value && Number.isFinite(suggestedWeight)) {
-      weight.placeholder = formatLoad(suggestedWeight);
+      setCanonicalUnitPlaceholder(weight, suggestedWeight);
     }
     if (reps && !reps.value && Number.isFinite(goals[index])) {
       reps.placeholder = formatLoad(goals[index]);
@@ -302,7 +311,7 @@ function getLiveCompletedSets(card) {
   return [...card.querySelectorAll('.session-set-row')]
     .filter(row => row.classList.contains('completed'))
     .map(row => ({
-      weight: Number(row.querySelector('.session-weight')?.value),
+      weight: canonicalInputValue(row.querySelector('.session-weight')),
       reps: Number(row.querySelector('.session-reps')?.value)
     }))
     .filter(set => Number.isFinite(set.reps) && set.reps > 0);

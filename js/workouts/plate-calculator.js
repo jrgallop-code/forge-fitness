@@ -1,4 +1,5 @@
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
+import { canonicalInputValue } from "../core/unit-system.js?v=granular-units-1";
 
 const SETTINGS_KEY = "level_up_plate_calculator_settings";
 const STYLESHEET_HREF = "css/plate-calculator.css?v=plate-calculator-2";
@@ -273,7 +274,7 @@ function updateTrigger(card, row, profile) {
 
     const settings = getExerciseSettings(exerciseId, profile);
     const baseWeight = effectiveBaseWeight(settings);
-    const calculationTotal = calculationTotalForProfile(input.value, profile, settings);
+    const calculationTotal = calculationTotalForProfile(canonicalInputValue(input), profile, settings);
     const solution = calculatePlateSolution(calculationTotal, baseWeight, settings.plates);
     const summary = plateSummary(solution);
     const closestLoad = closestEnteredLoad(solution, profile, baseWeight);
@@ -374,7 +375,7 @@ function renderSheet() {
     if (!sheetContext) return;
     const { card, row, profile, exerciseId } = sheetContext;
     const input = row?.querySelector(".session-weight");
-    const enteredLoad = Number(input?.value);
+    const enteredLoad = canonicalInputValue(input);
     const settings = getExerciseSettings(exerciseId, profile);
     const baseWeight = effectiveBaseWeight(settings);
     const calculationTotal = calculationTotalForProfile(enteredLoad, profile, settings);

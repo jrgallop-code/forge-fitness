@@ -4,6 +4,7 @@ import {
 }
 from "../workouts/exercise-library.js";
 import { drawTrainingBarChart } from "./training-bar-chart-renderer.js?v=analytics-bar-polish-1";
+import { UNIT_KINDS, formatMass as formatUnitMass } from "../core/unit-system.js?v=granular-units-1";
 
 
 const SESSION_STORAGE_KEY =
@@ -1525,7 +1526,10 @@ function formatSet(set) {
     }
 
 
-    return `${set.weight ?? "—"} × ${set.reps ?? "—"}`;
+    const weight = set.weight === null || set.weight === undefined || set.weight === ""
+        ? "—"
+        : formatUnitMass(set.weight, 1, UNIT_KINDS.LIFTING_WEIGHT);
+    return `${weight} × ${set.reps ?? "—"}`;
 
 }
 
