@@ -4,7 +4,7 @@ function ensureWorkoutModeStyles() {
   if (document.querySelector('link[data-workout-mode-styles]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = 'css/workout-mode.css?v=standalone-workout-mode-1';
+  link.href = 'css/workout-mode.css?v=mobile-logger-full-bleed-1';
   link.dataset.workoutModeStyles = 'true';
   document.head.appendChild(link);
 }
