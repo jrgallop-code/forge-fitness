@@ -301,7 +301,11 @@ function renderPlaceholderForPreference(input) {
 function handleLiveInput(event) {
     const input = event.target;
     if (!input?.matches?.("input[data-level-up-unit-kind]")) return;
-    if (!input.matches(".session-weight,.drop-set-weight,.history-drop-weight,.session-warmup-weight,.plate-calculator-base-input,.starting-weight-test-load,[data-measurement-field]")) return;
+    // Keep lifting loads in the selected display unit while the user types.
+    // Converting each keystroke strips an in-progress decimal (for example
+    // `22.`), making decimal kilogram loads impossible to enter on mobile.
+    if (input.dataset.levelUpUnitKind === UNIT_KINDS.LIFTING_WEIGHT) return;
+    if (!input.matches("[data-measurement-field]")) return;
     const changed = toCanonicalInput(input);
     if (changed) queueMicrotask(() => renderInputForPreference(input));
 }

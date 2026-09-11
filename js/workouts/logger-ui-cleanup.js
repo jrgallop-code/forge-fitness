@@ -1,3 +1,5 @@
+import { canonicalInputValue } from "../core/unit-system.js?v=granular-units-1";
+
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 
 function readActiveWorkout() {
@@ -245,7 +247,7 @@ function renderWarmupRows(card) {
         anchor = row;
 
         row.querySelector(".session-warmup-weight")?.addEventListener("input", event => {
-            saveWarmupValue(card, warmupIndex, "weight", event.target.value === "" ? null : Number(event.target.value));
+            saveWarmupValue(card, warmupIndex, "weight", canonicalInputValue(event.target));
         });
         row.querySelector(".session-warmup-reps")?.addEventListener("input", event => {
             saveWarmupValue(card, warmupIndex, "reps", event.target.value === "" ? null : Number(event.target.value));
