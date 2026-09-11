@@ -26,3 +26,12 @@ test('login presentation ships with fresh production cache keys', () => {
   assert.match(index, /first-launch-login\.js\?v=native-auth-contrast-2/);
   assert.match(worker, /2026-09-09-291/);
 });
+
+test('email sign-in hides and disables confirmation while signup requires it', () => {
+  assert.match(styles, /\.level-up-email-confirm\[hidden\] \{ display: none !important; \}/);
+  assert.match(login, /id="level-up-email-confirm"[^>]*disabled/);
+  assert.match(login, /confirmationRow\.hidden = !creating/);
+  assert.match(login, /confirmation\.required = creating/);
+  assert.match(login, /confirmation\.disabled = !creating/);
+  assert.match(login, /if \(!creating\) confirmation\.value = ""/);
+});

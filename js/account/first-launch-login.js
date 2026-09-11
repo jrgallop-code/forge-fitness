@@ -60,7 +60,7 @@ function renderGate() {
                 </label>
                 <label class="level-up-email-confirm" id="level-up-email-confirm-row" hidden>
                     <span>Confirm password</span>
-                    <input id="level-up-email-confirm" name="confirmPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128">
+                    <input id="level-up-email-confirm" name="confirmPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" disabled>
                 </label>
                 <button class="level-up-email-submit" id="level-up-email-submit" type="submit">Sign in</button>
                 <button class="level-up-email-mode" id="level-up-email-mode" type="button">New to Level Up? Create an account</button>
@@ -259,6 +259,8 @@ function setEmailMode(mode) {
     toggle.textContent = creating ? "Already have an account? Sign in" : "New to Level Up? Create an account";
     confirmationRow.hidden = !creating;
     confirmation.required = creating;
+    confirmation.disabled = !creating;
+    if (!creating) confirmation.value = "";
     password.autocomplete = creating ? "new-password" : "current-password";
     help.hidden = creating;
 }
