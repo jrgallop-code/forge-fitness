@@ -72,3 +72,5 @@ Release 32: expand the active workout logger nearly edge-to-edge on iPhone while
 Release 33: native JSON backup sharing and immediate return to the login screen after signing out.
 
 Release 34: isolate local workout, nutrition, weight, measurement, and profile data between iOS accounts and restore the signed-in account backup before opening the app.
+
+Release 35: existing email sign-in requests one password; confirmation remains exclusive to new-account registration.
