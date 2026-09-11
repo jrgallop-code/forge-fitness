@@ -66,3 +66,5 @@ Release 29: synchronize enlarged Classic, Arctic, Pure, Ocean, Midnight, Slate, 
 Release 30: limit Version 1.0 to iPhone so App Store Connect no longer requires iPad screenshots.
 
 Release 31: correct KG/LB workout conversion across logging and history, including decimal kilogram entry and warm-up weights.
+
+Release 32: expand the active workout logger nearly edge-to-edge on iPhone while preserving safe-area spacing for controls.
