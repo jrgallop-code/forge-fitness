@@ -4,6 +4,7 @@ import { calculatePrCounts } from "./workout-pr-badges.js?v=workout-pr-badges-2"
 import { deleteCompletedWorkout, discardActiveWorkout, getActiveWorkout, getWorkoutSessions, openActiveWorkout, openCompletedWorkoutForEdit } from "./workout-session.js?v=native-navigation-stability-1";
 import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
 import { resolveSessionExerciseIdentity } from "./session-exercise-identity.js?v=repair-generic-exercise-1";
+import { UNIT_KINDS, formatMass as formatUnitMass } from "../core/unit-system.js?v=granular-units-1";
 
 export function renderWorkoutHistory() {
     const active = getActiveWorkout();
@@ -59,7 +60,7 @@ function renderWorkoutPreview(session, prCount) {
     return `<div class="workout-history-preview-backdrop" id="workout-history-preview" role="dialog" aria-modal="true" aria-labelledby="workout-preview-title">
         <section class="workout-history-preview-sheet">
             <div class="workout-preview-header"><button class="workout-preview-close" data-preview-close type="button" aria-label="Close">×</button><div><span class="eyebrow">${isOneOff(session) ? "ONE-OFF WORKOUT" : "WORKOUT SUMMARY"}</span><h2 id="workout-preview-title">${escapeHtml(session.planName || "Workout")}</h2><p>${escapeHtml(session.trainingDayName || "Training day")} • ${formatDate(session.date)}</p></div><button class="workout-preview-edit" data-preview-edit type="button">Edit</button></div>
-            <div class="workout-preview-stats"><div><span>Duration</span><strong>${formatSavedDuration(session)}</strong></div><div><span>Volume</span><strong>${volume > 0 ? `${formatNumber(volume)} lb` : "—"}</strong></div><div><span>Completed</span><strong>${formatProgress(session)}</strong></div><div class="workout-preview-pr-stat"><span>Personal Records</span><strong>${prCount > 0 ? `${trophyIcon()} PR · ${prCount}` : "—"}</strong></div></div>
+            <div class="workout-preview-stats"><div><span>Duration</span><strong>${formatSavedDuration(session)}</strong></div><div><span>Volume</span><strong>${volume > 0 ? formatUnitMass(volume, 0, UNIT_KINDS.LIFTING_WEIGHT) : "—"}</strong></div><div><span>Completed</span><strong>${formatProgress(session)}</strong></div><div class="workout-preview-pr-stat"><span>Personal Records</span><strong>${prCount > 0 ? `${trophyIcon()} PR · ${prCount}` : "—"}</strong></div></div>
             <div class="workout-preview-exercises">${recordedExercises.length ? recordedExercises.map(renderPreviewExercise).join("") : `<p class="workout-preview-empty">No recorded exercise data in this workout.</p>`}</div>
         </section>
     </div>`;
@@ -124,14 +125,13 @@ function hasRecordedExerciseData(exercise) {
 
 function formatSet(set) {
     const weight = Number(set.weight); const reps = Number(set.reps);
-    if (Number.isFinite(weight) && weight > 0 && Number.isFinite(reps)) return `${weight} lb × ${reps}`;
+    if (Number.isFinite(weight) && weight > 0 && Number.isFinite(reps)) return `${formatUnitMass(weight, 1, UNIT_KINDS.LIFTING_WEIGHT)} × ${reps}`;
     if (Number.isFinite(reps)) return `${reps} reps`;
-    if (Number.isFinite(weight) && weight > 0) return `${weight} lb`;
+    if (Number.isFinite(weight) && weight > 0) return formatUnitMass(weight, 1, UNIT_KINDS.LIFTING_WEIGHT);
     return "Recorded";
 }
 
 function capitalize(value) { const text = String(value || ""); return text ? text.charAt(0).toUpperCase() + text.slice(1) : ""; }
-function formatNumber(value) { return Math.round(value).toLocaleString(); }
 function refreshHistory() { const content = document.getElementById("content"); if (content) { content.innerHTML = renderWorkoutHistory(); initializeWorkoutHistory(); } }
 function isOneOff(session) { return Boolean(session?.isOneOff || session?.planSnapshot?.isOneOff || String(session?.planId || "").startsWith("one-off-")); }
 function formatProgress(session) {

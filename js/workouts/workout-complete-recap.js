@@ -2,6 +2,7 @@ import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
 import { repairWorkoutSessionList, resolveSessionExerciseIdentity } from "./session-exercise-identity.js?v=repair-generic-exercise-1";
+import { UNIT_KINDS, formatMass as formatUnitMass } from "../core/unit-system.js?v=granular-units-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const ARM_HERO_URL = "assets/workout-complete-arm.webp?v=2";
@@ -80,7 +81,7 @@ function renderRecap(session, history) {
         <div class="workout-complete-recap__stats">
           <div><span class="workout-complete-recap__stat-icon">◷</span><strong>${formatDuration(session.durationMs)}</strong><span>Duration</span></div>
           <div><span class="workout-complete-recap__stat-icon">▥</span><strong>${stats.workingSets}</strong><span>Working Sets</span></div>
-          <div><span class="workout-complete-recap__stat-icon">◆</span><strong>${formatNumber(stats.volume)} lb</strong><span>Total Volume</span></div>
+          <div><span class="workout-complete-recap__stat-icon">◆</span><strong>${formatUnitMass(stats.volume, 0, UNIT_KINDS.LIFTING_WEIGHT)}</strong><span>Total Volume</span></div>
           <div><span class="workout-complete-recap__stat-icon">☷</span><strong>${stats.exerciseCount}</strong><span>Exercises</span></div>
         </div>
       </section>
@@ -189,14 +190,14 @@ function findWins(session, history, stats) {
     const currentWeight=Math.max(...current.map(s=>Number(s.weight)||0));
     const priorWeight=Math.max(...prior.map(s=>Number(s.weight)||0));
     const exerciseName=resolveSessionExerciseIdentity(item).name;
-    if (currentWeight>priorWeight) wins.push({type:"WEIGHT PR",icon:"🏆",title:exerciseName,value:`${formatNumber(currentWeight)} lb`,detail:"NEW RECORD!",isNew:true});
+    if (currentWeight>priorWeight) wins.push({type:"WEIGHT PR",icon:"🏆",title:exerciseName,value:formatUnitMass(currentWeight, 1, UNIT_KINDS.LIFTING_WEIGHT),detail:"NEW RECORD!",isNew:true});
     const currentReps=Math.max(...current.map(s=>Number(s.reps)||0));
     const priorReps=Math.max(...prior.map(s=>Number(s.reps)||0));
     if (currentReps>priorReps) wins.push({type:"REPS PR",icon:"★",title:exerciseName,value:`${currentReps} REPS`,detail:"NEW RECORD!",isNew:true});
   });
   const priorVolumes=history.map(s=>summarizeSession(s).volume).filter(v=>v>0);
   const bestPrior=priorVolumes.length?Math.max(...priorVolumes):0;
-  if (stats.volume>bestPrior && bestPrior>0) wins.unshift({type:"VOLUME PR",icon:"🏆",title:"Total Workout Volume",value:`${formatNumber(stats.volume)} lb`,detail:"NEW RECORD!",isNew:true});
+  if (stats.volume>bestPrior && bestPrior>0) wins.unshift({type:"VOLUME PR",icon:"🏆",title:"Total Workout Volume",value:formatUnitMass(stats.volume, 0, UNIT_KINDS.LIFTING_WEIGHT),detail:"NEW RECORD!",isNew:true});
 
   const sevenDayCount=countWorkoutsLast7Days(session,history);
   if (sevenDayCount>=2) wins.push({type:"CONSISTENCY",icon:"🔥",title:`${sevenDayCount} workouts in the last 7 days`,value:sevenDayCount>=4?"STRONG RUN":"KEEP ROLLING",detail:"Momentum matters."});

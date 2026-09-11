@@ -107,6 +107,34 @@ export function canonicalMass(value, kind = UNIT_KINDS.BODY_WEIGHT) {
     return isMetric(kind) ? number / LB_TO_KG : number;
 }
 
+export function canonicalInputValue(input) {
+    if (!input) return null;
+    const value = Number(input?.value);
+    if (!Number.isFinite(value) || input?.value === "") return null;
+    const kind = input?.dataset?.levelUpUnitKind || inputKind(input);
+    if (!kind) return value;
+    const renderedUnit = input?.dataset?.levelUpRenderedUnit || (isMetric(kind) ? METRIC : IMPERIAL);
+    return renderedUnit === METRIC ? toCanonical(kind, value) : value;
+}
+
+export function formatMass(value, digits = 1, kind = UNIT_KINDS.BODY_WEIGHT) {
+    const shown = displayMass(value, digits, kind);
+    if (shown === null) return "—";
+    return `${Number(shown).toLocaleString(undefined, { maximumFractionDigits: digits })} ${massUnit(kind)}`;
+}
+
+export function setCanonicalUnitPlaceholder(input, value) {
+    if (!input) return;
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+        delete input.dataset.levelUpCanonicalPlaceholder;
+        input.placeholder = value == null ? "" : String(value);
+        return;
+    }
+    input.dataset.levelUpCanonicalPlaceholder = String(number);
+    renderPlaceholderForPreference(input);
+}
+
 export function displayLength(value, digits = 1) {
     const number = Number(value);
     if (!Number.isFinite(number)) return null;
@@ -228,6 +256,9 @@ function prepareInput(input) {
     if (!kind) return;
     input.dataset.levelUpUnitKind = kind;
     if (!input.dataset.levelUpCanonicalStep) input.dataset.levelUpCanonicalStep = input.step || "";
+    if (!input.dataset.levelUpCanonicalPlaceholder && Number.isFinite(Number(input.placeholder)) && input.placeholder !== "") {
+        input.dataset.levelUpCanonicalPlaceholder = input.placeholder;
+    }
     renderInputForPreference(input);
 }
 
@@ -235,8 +266,8 @@ function inputKind(input) {
     if (input.matches("[data-measurement-field]")) return "length";
     const identity = [input.id, input.name, input.className, input.getAttribute("aria-label")].join(" ").toLowerCase();
     if (/distance/.test(identity)) return "distance";
-    if (input.matches(".session-weight,.plate-calculator-base-input") || /(load|lifting|exercise|1rm|one.?rep)/.test(identity)) return UNIT_KINDS.LIFTING_WEIGHT;
-    if (/weight/.test(identity)) return UNIT_KINDS.BODY_WEIGHT;
+    if (input.matches(".session-weight,.drop-set-weight,.history-drop-weight,.session-warmup-weight,.plate-calculator-base-input,.starting-weight-test-load") || /(load|lifting|exercise|1rm|one.?rep)/.test(identity)) return UNIT_KINDS.LIFTING_WEIGHT;
+    if (/weight/.test(identity)) return workoutMassContext(input) ? UNIT_KINDS.LIFTING_WEIGHT : UNIT_KINDS.BODY_WEIGHT;
     const label = input.closest("label")?.textContent?.toLowerCase() || "";
     if (/\b(lb|lbs|kg)\b/.test(label)) return workoutMassContext(input) ? UNIT_KINDS.LIFTING_WEIGHT : UNIT_KINDS.BODY_WEIGHT;
     return "";
@@ -246,21 +277,31 @@ function renderInputForPreference(input) {
     const kind = input.dataset.levelUpUnitKind;
     const desired = isMetric(kind) ? METRIC : IMPERIAL;
     const rendered = input.dataset.levelUpRenderedUnit || IMPERIAL;
-    if (desired === rendered) return;
-    const value = Number(input.value);
-    if (Number.isFinite(value) && input.value !== "") {
-        const next = desired === METRIC ? fromCanonical(kind, value) : toCanonical(kind, value);
-        input.value = formatInput(next, kind);
+    if (desired !== rendered) {
+        const value = Number(input.value);
+        if (Number.isFinite(value) && input.value !== "") {
+            const next = desired === METRIC ? fromCanonical(kind, value) : toCanonical(kind, value);
+            input.value = formatInput(next, kind);
+        }
+        input.dataset.levelUpRenderedUnit = desired;
     }
-    input.dataset.levelUpRenderedUnit = desired;
     if (desired === METRIC) input.step = kind === "distance" ? "0.01" : "0.1";
     else input.step = input.dataset.levelUpCanonicalStep || input.step;
+    renderPlaceholderForPreference(input);
+}
+
+function renderPlaceholderForPreference(input) {
+    const canonical = Number(input.dataset.levelUpCanonicalPlaceholder);
+    if (!Number.isFinite(canonical)) return;
+    const kind = input.dataset.levelUpUnitKind;
+    const shown = isMetric(kind) ? fromCanonical(kind, canonical) : canonical;
+    input.placeholder = formatInput(shown, kind);
 }
 
 function handleLiveInput(event) {
     const input = event.target;
     if (!input?.matches?.("input[data-level-up-unit-kind]")) return;
-    if (!input.matches(".session-weight,.plate-calculator-base-input,[data-measurement-field]")) return;
+    if (!input.matches(".session-weight,.drop-set-weight,.history-drop-weight,.session-warmup-weight,.plate-calculator-base-input,.starting-weight-test-load,[data-measurement-field]")) return;
     const changed = toCanonicalInput(input);
     if (changed) queueMicrotask(() => renderInputForPreference(input));
 }
