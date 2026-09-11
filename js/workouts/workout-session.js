@@ -10,6 +10,12 @@ import {
     getDeloadPreviewRequest
 } from "../more/adaptive-guidance-settings.js?v=deload-workout-preview-1";
 import { openWorkoutMode } from "./workout-mode.js?v=native-navigation-stability-1";
+import {
+    UNIT_KINDS,
+    canonicalInputValue,
+    formatMass as formatUnitMass,
+    massUnit
+} from "../core/unit-system.js?v=granular-units-1";
 
 import {
     getExerciseOptions
@@ -63,6 +69,15 @@ export function initializeWorkoutRuntime() {
         () => {
             checkRestTimerExpiry();
             updateTimerDisplays();
+        }
+    );
+
+    window.addEventListener(
+        "levelup:units-changed",
+        () => {
+            if (document.getElementById("workout-session-logger") && getActiveWorkout()) {
+                openActiveWorkout();
+            }
         }
     );
 
@@ -662,7 +677,7 @@ function renderSessionExercises({
                         </div>
                     ` : ""}
                     <div class="previous-performance"><strong>Previous workout</strong><span>${formatPrevious(previous)}</span></div>
-                    <div class="session-set-header"><span>Set</span><span>Last Workout</span><span>Weight</span><span>Reps</span></div>
+                    <div class="session-set-header"><span>Set</span><span>Last Workout</span><span>Weight (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})</span><span>Reps</span></div>
                     ${state.sets.map((set, setIndex) => {
                         const previousSet =
                             previous?.sets?.[setIndex];
@@ -1123,10 +1138,7 @@ function bindSessionInputs({
                         ?.addEventListener(
                             "input",
                             event => {
-                                set.weight =
-                                    event.target.value === ""
-                                        ? null
-                                        : Number(event.target.value);
+                                set.weight = canonicalInputValue(event.target);
                                 session.currentExerciseIndex = exerciseIndex;
                                 session.currentSetIndex = setIndex;
                                 persist();
@@ -1194,7 +1206,7 @@ function bindSessionInputs({
                                 const dropIndex = Number(dropRow.dataset.dropIndex);
                                 const drop = set.dropSets[dropIndex];
                                 dropRow.querySelector(".history-drop-weight")?.addEventListener("input", event => {
-                                    drop.weight = event.target.value === "" ? null : Number(event.target.value);
+                                    drop.weight = canonicalInputValue(event.target);
                                 });
                                 dropRow.querySelector(".history-drop-reps")?.addEventListener("input", event => {
                                     drop.reps = event.target.value === "" ? null : Number(event.target.value);
@@ -1958,7 +1970,7 @@ function formatPrevious(previous) {
                 set.weight !== null || set.reps !== null
             )
             .map(set =>
-                `${set.weight ?? "—"} × ${set.reps ?? "—"}`
+                `${formatPreviousWeight(set.weight)} × ${set.reps ?? "—"}`
             ) || [];
     return sets.length
         ? sets.join(" • ")
@@ -1966,11 +1978,17 @@ function formatPrevious(previous) {
 }
 
 function formatPreviousSet(set) {
-    const main = `${set.weight ?? "—"} × ${set.reps ?? "—"}`;
+    const main = `${formatPreviousWeight(set.weight)} × ${set.reps ?? "—"}`;
     const drops = (Array.isArray(set.dropSets) ? set.dropSets : [])
         .filter(drop => drop.weight !== null || drop.reps !== null)
-        .map((drop, index) => `Drop ${index + 1}: ${drop.weight ?? "—"} × ${drop.reps ?? "—"}`);
+        .map((drop, index) => `Drop ${index + 1}: ${formatPreviousWeight(drop.weight)} × ${drop.reps ?? "—"}`);
     return drops.length ? `${main}<small class="previous-drop-values">↳ ${drops.join(" · ")}</small>` : main;
+}
+
+function formatPreviousWeight(value) {
+    return value === null || value === undefined || value === ""
+        ? "—"
+        : formatUnitMass(value, 1, UNIT_KINDS.LIFTING_WEIGHT);
 }
 
 
