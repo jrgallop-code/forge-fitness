@@ -65,7 +65,7 @@ export function renderAccountCloud() {
     </section>
     <section class="section-card account-cloud-delete" id="account-cloud-delete-section" hidden>
         <span class="eyebrow">ACCOUNT CONTROL</span><h3>Delete cloud account</h3>
-        <p>This permanently removes your Level Up account and its cloud backup. Data currently stored on this device is not deleted.</p>
+        <p>This permanently removes your Level Up account, cloud backup, and the account's app data from this device.</p>
         <button class="text-btn danger-text-btn" id="account-cloud-delete" type="button">Delete Cloud Account</button>
     </section>`;
 }
@@ -208,13 +208,14 @@ async function signOut() {
 }
 
 async function deleteAccount() {
-    if (!window.confirm("Permanently delete your Level Up cloud account and cloud backup?\n\nData stored on this device will remain here.")) return;
+    if (!window.confirm("Permanently delete your Level Up account, cloud backup, and this account's app data from this device?")) return;
     if (!window.confirm("This cannot be undone. Delete the cloud account now?")) return;
     try {
         await api("/v1/account", { method: "DELETE" });
         clearAnalyticsConsent();
-        clearSession();
-        setMessage("Cloud account deleted. Local device data was not removed.", "success");
+        clearSession({ requireLogin: true });
+        await clearLocalAppData({ preserveDevicePreferences: true });
+        window.location.reload();
     }
     catch (error) { setMessage(error.message, "error"); }
 }

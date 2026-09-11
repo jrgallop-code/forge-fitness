@@ -31,6 +31,17 @@ test("native sign-out clears guest mode and immediately reloads into the login g
     assert.match(account, /if \(requireLogin\) localStorage\.removeItem\(GUEST_MODE_KEY\)/);
 });
 
+test("account deletion clears local account data and returns to the login gate", async () => {
+    const account = await read("js/more/account-cloud-ui.js");
+    const deletion = account.match(/async function deleteAccount\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
+
+    assert.match(deletion, /await api\("\/v1\/account", \{ method: "DELETE" \}\)/);
+    assert.match(deletion, /clearSession\(\{ requireLogin: true \}\)/);
+    assert.match(deletion, /await clearLocalAppData\(\{ preserveDevicePreferences: true \}\)/);
+    assert.match(deletion, /window\.location\.reload\(\)/);
+    assert.doesNotMatch(deletion, /Local device data was not removed/);
+});
+
 test("native account switching clears old local records before restoring the new account", async () => {
     const [login, backup] = await Promise.all([
         read("js/account/first-launch-login.js"),
