@@ -64,3 +64,5 @@ Release 28: correct the primary iOS AppIcon so the enlarged Level Up logo appear
 Release 29: synchronize enlarged Classic, Arctic, Pure, Ocean, Midnight, Slate, and Pulse home-screen icon previews with their native AppIcon assets and refresh the preview cache.
 
 Release 30: limit Version 1.0 to iPhone so App Store Connect no longer requires iPad screenshots.
+
+Release 31: correct KG/LB workout conversion across logging and history, including decimal kilogram entry and warm-up weights.
