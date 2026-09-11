@@ -93,6 +93,29 @@ test("lifting inputs save canonical pounds while displaying the selected unit", 
   assert.equal(placeholderInput.placeholder, "220.5");
 });
 
+test("decimal kilogram input remains editable until it is saved", async () => {
+  values.clear();
+  units.setUnitPreferences({ liftingWeight: "kg" }, { reload: true });
+
+  const decimalInput = {
+    value: "22.5",
+    dataset: {
+      levelUpUnitKind: units.UNIT_KINDS.LIFTING_WEIGHT,
+      levelUpRenderedUnit: units.METRIC
+    }
+  };
+  const canonical = units.canonicalInputValue(decimalInput);
+  assert.ok(Math.abs(canonical - 49.604) < 0.001);
+  assert.equal(decimalInput.value, "22.5");
+
+  const [unitSystem, warmups] = await Promise.all([
+    read("js/core/unit-system.js"),
+    read("js/workouts/logger-ui-cleanup.js")
+  ]);
+  assert.match(unitSystem, /if \(input\.dataset\.levelUpUnitKind === UNIT_KINDS\.LIFTING_WEIGHT\) return/);
+  assert.match(warmups, /saveWarmupValue\(card, warmupIndex, "weight", canonicalInputValue\(event\.target\)\)/);
+});
+
 test("workout surfaces use canonical lifting weights and unit-aware display", async () => {
   const [session, drops, prompts, history, recap, progress, calibration, plates] = await Promise.all([
     read("js/workouts/workout-session.js"),
