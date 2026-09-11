@@ -2,6 +2,7 @@ import {
     getBackupProviders
 }
 from "./backup-providers.js?v=backup-provider-2";
+import { shareNativeJsonFile } from "./native-capabilities.js?v=native-json-export-1";
 
 const MAX_BACKUP_SIZE = 100 * 1024 * 1024;
 const INVALID_STORAGE_KEYS = new Set([
@@ -286,6 +287,18 @@ async function exportBackup() {
 
         const blob = new Blob([json], { type: "application/json" });
         const filename = `level-up-backup-${getLocalDateValue()}.json`;
+
+        const nativeExport = await shareNativeJsonFile({ content: json, filename });
+        if (nativeExport) {
+            if (nativeExport.cancelled) {
+                setBackupMessage("Backup prepared and verified. Export cancelled before saving.");
+                return;
+            }
+            setBackupMessage(`Backup verified and ready to save: ${formatSummary(backup.summary)}.${formatBackupWarnings(backup)}`, "success");
+            renderBackupSummary();
+            return;
+        }
+
         const file = typeof File === "function"
             ? new File([blob], filename, { type: "application/json" })
             : null;

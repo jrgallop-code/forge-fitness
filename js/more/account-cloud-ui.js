@@ -190,8 +190,17 @@ async function downloadBackup() {
 }
 
 async function signOut() {
-    try { await api("/v1/session", { method: "DELETE" }); }
-    catch (error) { console.warn("Cloud sign-out request failed:", error); }
+    const revokeRequest = api("/v1/session", { method: "DELETE" })
+        .catch(error => console.warn("Cloud sign-out request failed:", error));
+
+    if (isNativeIOS()) {
+        clearSession({ requireLogin: true });
+        void revokeRequest;
+        window.location.reload();
+        return;
+    }
+
+    await revokeRequest;
     clearSession();
     setMessage("Signed out. Data on this device remains available.");
 }
@@ -318,11 +327,12 @@ function getSession() {
     return session;
 }
 
-function clearSession() {
+function clearSession({ requireLogin = false } = {}) {
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(ACCOUNT_KEY);
     clearAnalyticsConsent();
-    localStorage.setItem(GUEST_MODE_KEY, "1");
+    if (requireLogin) localStorage.removeItem(GUEST_MODE_KEY);
+    else localStorage.setItem(GUEST_MODE_KEY, "1");
     renderSession();
     initializeGoogleButton();
 }

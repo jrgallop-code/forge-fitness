@@ -1,5 +1,20 @@
 const isNative = () => Boolean(window.Capacitor?.isNativePlatform?.());
 const plugin = name => window.Capacitor?.Plugins?.[name] || null;
+
+export async function shareNativeJsonFile({ content, filename }) {
+    const exporter = plugin("LevelUpFileExport");
+    if (!isNative() || !exporter?.shareJson) return null;
+
+    const result = await exporter.shareJson({
+        content: String(content || ""),
+        filename: String(filename || "level-up-backup.json")
+    });
+
+    return {
+        completed: result?.completed === true,
+        cancelled: result?.cancelled === true
+    };
+}
 const HOME_ICON_KEY = "level_up_home_icon";
 const HOME_ICON_IDS = new Set(["level-up", "arctic", "pure", "ocean", "midnight", "slate", "pulse"]);
 

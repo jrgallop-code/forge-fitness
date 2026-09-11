@@ -26,6 +26,7 @@
 		A11C00412FF0000100000041 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A11C00422FF0000100000041 /* Assets.xcassets */; };
 		A11C001A2FF0000100000011 /* LevelUpTimerWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A11C001B2FF0000100000011 /* LevelUpTimerWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A11C00312FF0000100000031 /* LevelUpNativeAuthPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00322FF0000100000031 /* LevelUpNativeAuthPlugin.swift */; };
+		A11C00512FF0000100000051 /* LevelUpFileExportPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00522FF0000100000051 /* LevelUpFileExportPlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 		A11C001E2FF0000100000011 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A11C00422FF0000100000041 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A11C00322FF0000100000031 /* LevelUpNativeAuthPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpNativeAuthPlugin.swift; sourceTree = "<group>"; };
+		A11C00522FF0000100000051 /* LevelUpFileExportPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpFileExportPlugin.swift; sourceTree = "<group>"; };
 		A11C00332FF0000100000031 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
@@ -103,6 +105,7 @@
 				A11C00142FF0000100000011 /* LevelUpTimerAttributes.swift */,
 				A11C00162FF0000100000011 /* level-up-alarm.wav */,
 				A11C00322FF0000100000031 /* LevelUpNativeAuthPlugin.swift */,
+				A11C00522FF0000100000051 /* LevelUpFileExportPlugin.swift */,
 				A11C00332FF0000100000031 /* App.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
@@ -223,6 +226,7 @@
 				A11C00112FF0000100000011 /* LevelUpTimerPlugin.swift in Sources */,
 				A11C00132FF0000100000011 /* LevelUpTimerAttributes.swift in Sources */,
 				A11C00312FF0000100000031 /* LevelUpNativeAuthPlugin.swift in Sources */,
+				A11C00512FF0000100000051 /* LevelUpFileExportPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
