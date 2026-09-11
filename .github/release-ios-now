@@ -76,3 +76,5 @@ Release 34: isolate local workout, nutrition, weight, measurement, and profile d
 Release 35: existing email sign-in requests one password; confirmation remains exclusive to new-account registration.
 
 Release 36: complete in-app account deletion by removing the cloud account, clearing local account data, and returning directly to sign-in.
+
+Release 37: preserve the authenticated Google session before restoring cloud backup so a restore warning cannot return the user to login.
