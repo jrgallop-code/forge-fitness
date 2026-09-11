@@ -128,8 +128,7 @@ async function completeAppleLogin() {
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || !payload?.token) throw new Error(payload.error || "Apple sign-in could not be completed.");
-        await restoreNativeAccountBackup(payload.token);
-        saveSession(payload);
+        await activateSession(payload);
         setMessage("Signed in with Apple. Opening Level Up…", "success");
         window.location.reload();
     } catch (error) { setMessage(error?.message || "Apple sign-in could not be completed.", "error"); }
@@ -145,8 +144,7 @@ async function redeemTransferCode(code, message = "Connecting your existing acco
     });
     const payload = await result.json().catch(() => ({}));
     if (!result.ok || !payload?.token) throw new Error(payload.error || "This account could not be connected.");
-    await restoreNativeAccountBackup(payload.token);
-    saveSession(payload);
+    await activateSession(payload);
     window.location.reload();
 }
 
@@ -220,7 +218,6 @@ async function completeTransferLogin(event) {
 }
 
 async function restoreNativeAccountBackup(token) {
-    if (!isNativeIOS()) return false;
     const response = await fetch(`${API_URL}/v1/backup`, {
         headers: { Authorization: `Bearer ${token}` }
     });
@@ -230,7 +227,6 @@ async function restoreNativeAccountBackup(token) {
         throw new Error(payload.error || "Your account data could not be loaded.");
     }
     verifyBackupSnapshot(payload.backup);
-    await clearLocalAppData({ preserveDevicePreferences: true });
     await restoreBackupSnapshot(payload.backup, { removeNullValues: true });
     localStorage.setItem("level_up_cloud_last_sync", JSON.stringify({
         direction: "download",
@@ -239,6 +235,30 @@ async function restoreNativeAccountBackup(token) {
         completedAt: new Date().toISOString()
     }));
     return true;
+}
+
+async function activateSession(payload) {
+    if (!isNativeIOS()) {
+        saveSession(payload);
+        return false;
+    }
+
+    await clearLocalAppData({ preserveDevicePreferences: true });
+    saveSession(payload);
+    try {
+        return await restoreNativeAccountBackup(payload.token);
+    }
+    catch (error) {
+        console.warn("Cloud backup could not be restored during sign-in:", error);
+        localStorage.setItem("level_up_cloud_restore_warning", JSON.stringify({
+            message: error?.message || "Cloud backup could not be restored automatically.",
+            createdAt: new Date().toISOString()
+        }));
+        return false;
+    }
+    finally {
+        saveSession(payload);
+    }
 }
 
 function setEmailMode(mode) {
@@ -290,8 +310,7 @@ async function completeEmailLogin(event) {
         let payload = {};
         try { payload = await result.json(); } catch {}
         if (!result.ok || !payload?.token) throw new Error(payload.error || "Email sign-in could not be completed.");
-        await restoreNativeAccountBackup(payload.token);
-        saveSession(payload);
+        await activateSession(payload);
         setMessage("Signed in. Opening Level Up…", "success");
         window.location.reload();
     }
@@ -358,8 +377,7 @@ async function completeGoogleLogin(response) {
         let payload = {};
         try { payload = await result.json(); } catch {}
         if (!result.ok || !payload?.token) throw new Error(payload.error || "Google sign-in could not be completed.");
-        await restoreNativeAccountBackup(payload.token);
-        saveSession(payload);
+        await activateSession(payload);
         setMessage("Signed in. Opening Level Up…", "success");
         window.location.reload();
     }

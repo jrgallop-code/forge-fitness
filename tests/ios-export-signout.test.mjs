@@ -48,9 +48,11 @@ test("native account switching clears old local records before restoring the new
         read("js/core/backup-manager.js")
     ]);
 
-    assert.match(login, /async function restoreNativeAccountBackup\(token\)/);
-    assert.match(login, /await clearLocalAppData\(\{ preserveDevicePreferences: true \}\);\s*await restoreBackupSnapshot\(payload\.backup/s);
-    assert.match(login, /await restoreNativeAccountBackup\(payload\.token\);\s*saveSession\(payload\)/s);
+    assert.match(login, /async function activateSession\(payload\)/);
+    assert.match(login, /await clearLocalAppData\(\{ preserveDevicePreferences: true \}\);\s*saveSession\(payload\);\s*try \{\s*return await restoreNativeAccountBackup\(payload\.token\)/s);
+    assert.match(login, /Cloud backup could not be restored during sign-in/);
+    assert.match(login, /finally \{\s*saveSession\(payload\);\s*\}/s);
+    assert.match(login, /await activateSession\(payload\)/);
     assert.match(backup, /export async function clearLocalAppData/);
     assert.match(backup, /"level_up_appearance_settings"/);
     assert.match(backup, /"level_up_home_icon"/);
