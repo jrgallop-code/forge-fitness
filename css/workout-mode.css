@@ -13,5 +13,22 @@ body.levelup-workout-mode-active{overflow:hidden}
 
 @media(max-width:600px){
   .levelup-workout-mode-bar{padding-top:10px;padding-bottom:8px}
-  #levelup-workout-mode-content{padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right));padding-bottom:24px}
+  /* Use the phone's full width for the active logger. The small inner inset
+     protects controls from the glass edge while avoiding the previous double
+     gutter from both the workout-mode shell and the logger card. */
+  #levelup-workout-mode-content{
+    width:100%;
+    max-width:none;
+    padding-left:0;
+    padding-right:0;
+    padding-bottom:24px;
+  }
+  #levelup-workout-mode-content>.workout-session-logger{
+    box-sizing:border-box;
+    padding-left:max(6px,env(safe-area-inset-left))!important;
+    padding-right:max(6px,env(safe-area-inset-right))!important;
+    border-left:0!important;
+    border-right:0!important;
+    border-radius:0!important;
+  }
 }
