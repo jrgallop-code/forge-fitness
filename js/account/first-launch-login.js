@@ -1,6 +1,6 @@
 import "../core/native-capabilities.js?v=interactive-live-activity-1";
 import "../privacy/analytics-consent.js?v=app-review-privacy-1";
-import { restoreBackupSnapshot, verifyBackupSnapshot } from "../core/backup-manager.js?v=backup-complete-7";
+import { clearLocalAppData, restoreBackupSnapshot, verifyBackupSnapshot } from "../core/backup-manager.js?v=account-isolation-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
@@ -128,6 +128,7 @@ async function completeAppleLogin() {
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || !payload?.token) throw new Error(payload.error || "Apple sign-in could not be completed.");
+        await restoreNativeAccountBackup(payload.token);
         saveSession(payload);
         setMessage("Signed in with Apple. Opening Level Up…", "success");
         window.location.reload();
@@ -144,8 +145,8 @@ async function redeemTransferCode(code, message = "Connecting your existing acco
     });
     const payload = await result.json().catch(() => ({}));
     if (!result.ok || !payload?.token) throw new Error(payload.error || "This account could not be connected.");
+    await restoreNativeAccountBackup(payload.token);
     saveSession(payload);
-    await restoreTransferredBackup(payload.token);
     window.location.reload();
 }
 
@@ -218,25 +219,26 @@ async function completeTransferLogin(event) {
     finally { if (submit) submit.disabled = false; }
 }
 
-async function restoreTransferredBackup(token) {
-    try {
-        const response = await fetch(`${API_URL}/v1/backup`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        if (response.status === 404) return false;
-        const payload = await response.json();
-        if (!response.ok || !payload?.backup) return false;
-        verifyBackupSnapshot(payload.backup);
-        await restoreBackupSnapshot(payload.backup, { removeNullValues: true });
-        localStorage.setItem("level_up_cloud_last_sync", JSON.stringify({
-            direction: "download",
-            updatedAt: payload.updatedAt,
-            version: payload.version,
-            completedAt: new Date().toISOString()
-        }));
-        return true;
+async function restoreNativeAccountBackup(token) {
+    if (!isNativeIOS()) return false;
+    const response = await fetch(`${API_URL}/v1/backup`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    if (response.status === 404) return false;
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload?.backup) {
+        throw new Error(payload.error || "Your account data could not be loaded.");
     }
-    catch { return false; }
+    verifyBackupSnapshot(payload.backup);
+    await clearLocalAppData({ preserveDevicePreferences: true });
+    await restoreBackupSnapshot(payload.backup, { removeNullValues: true });
+    localStorage.setItem("level_up_cloud_last_sync", JSON.stringify({
+        direction: "download",
+        updatedAt: payload.updatedAt,
+        version: payload.version,
+        completedAt: new Date().toISOString()
+    }));
+    return true;
 }
 
 function setEmailMode(mode) {
@@ -286,6 +288,7 @@ async function completeEmailLogin(event) {
         let payload = {};
         try { payload = await result.json(); } catch {}
         if (!result.ok || !payload?.token) throw new Error(payload.error || "Email sign-in could not be completed.");
+        await restoreNativeAccountBackup(payload.token);
         saveSession(payload);
         setMessage("Signed in. Opening Level Up…", "success");
         window.location.reload();
@@ -353,6 +356,7 @@ async function completeGoogleLogin(response) {
         let payload = {};
         try { payload = await result.json(); } catch {}
         if (!result.ok || !payload?.token) throw new Error(payload.error || "Google sign-in could not be completed.");
+        await restoreNativeAccountBackup(payload.token);
         saveSession(payload);
         setMessage("Signed in. Opening Level Up…", "success");
         window.location.reload();

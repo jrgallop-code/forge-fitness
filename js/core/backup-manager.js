@@ -8,10 +8,15 @@ const MAX_BACKUP_SIZE = 100 * 1024 * 1024;
 const INVALID_STORAGE_KEYS = new Set([
     "setItem",
     "level_up_cloud_session",
-    "level_up_cloud_auto_backup_state"
+    "level_up_cloud_auto_backup_state",
+    "level_up_local_data_owner"
 ]);
 const BACKUP_FORMAT_VERSION = 6;
 const LEVEL_UP_INDEXED_DB_PREFIX = "level_up_";
+const DEVICE_PREFERENCE_KEYS = new Set([
+    "level_up_appearance_settings",
+    "level_up_home_icon"
+]);
 
 export function initializeBackupManager() {
     cleanupInvalidStorageKeys();
@@ -392,6 +397,34 @@ export async function restoreBackupSnapshot(backup, { removeNullValues = false }
 
     cleanupInvalidStorageKeys();
     await importProviderData(backup);
+}
+
+export async function clearLocalAppData({ preserveDevicePreferences = true } = {}) {
+    const preserved = new Map();
+    if (preserveDevicePreferences) {
+        DEVICE_PREFERENCE_KEYS.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) preserved.set(key, value);
+        });
+    }
+
+    const keys = [];
+    for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (key) keys.push(key);
+    }
+    keys.forEach(key => localStorage.removeItem(key));
+    preserved.forEach((value, key) => localStorage.setItem(key, value));
+
+    for (const provider of getBackupProviders()) {
+        try {
+            await provider.importData([]);
+        }
+        catch (error) {
+            if (!provider.allowUnavailable) throw error;
+            console.warn(`${provider.label} could not be cleared during sign-out:`, error);
+        }
+    }
 }
 
 async function importBackup(file, fileInput) {

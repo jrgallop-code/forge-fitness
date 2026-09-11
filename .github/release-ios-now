@@ -70,3 +70,5 @@ Release 31: correct KG/LB workout conversion across logging and history, includi
 Release 32: expand the active workout logger nearly edge-to-edge on iPhone while preserving safe-area spacing for controls.
 
 Release 33: native JSON backup sharing and immediate return to the login screen after signing out.
+
+Release 34: isolate local workout, nutrition, weight, measurement, and profile data between iOS accounts and restore the signed-in account backup before opening the app.

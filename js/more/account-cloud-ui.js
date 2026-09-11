@@ -1,4 +1,5 @@
 import {
+    clearLocalAppData,
     createBackupSnapshot,
     restoreBackupSnapshot,
     verifyBackupSnapshot
@@ -195,6 +196,7 @@ async function signOut() {
 
     if (isNativeIOS()) {
         clearSession({ requireLogin: true });
+        await clearLocalAppData({ preserveDevicePreferences: true });
         void revokeRequest;
         window.location.reload();
         return;

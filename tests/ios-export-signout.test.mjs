@@ -26,6 +26,22 @@ test("native sign-out clears guest mode and immediately reloads into the login g
     const nativeBranch = account.match(/if \(isNativeIOS\(\)\) \{([\s\S]*?)\n    \}/)?.[1] || "";
 
     assert.match(nativeBranch, /clearSession\(\{ requireLogin: true \}\)/);
+    assert.match(nativeBranch, /await clearLocalAppData\(\{ preserveDevicePreferences: true \}\)/);
     assert.match(nativeBranch, /window\.location\.reload\(\)/);
     assert.match(account, /if \(requireLogin\) localStorage\.removeItem\(GUEST_MODE_KEY\)/);
+});
+
+test("native account switching clears old local records before restoring the new account", async () => {
+    const [login, backup] = await Promise.all([
+        read("js/account/first-launch-login.js"),
+        read("js/core/backup-manager.js")
+    ]);
+
+    assert.match(login, /async function restoreNativeAccountBackup\(token\)/);
+    assert.match(login, /await clearLocalAppData\(\{ preserveDevicePreferences: true \}\);\s*await restoreBackupSnapshot\(payload\.backup/s);
+    assert.match(login, /await restoreNativeAccountBackup\(payload\.token\);\s*saveSession\(payload\)/s);
+    assert.match(backup, /export async function clearLocalAppData/);
+    assert.match(backup, /"level_up_appearance_settings"/);
+    assert.match(backup, /"level_up_home_icon"/);
+    assert.match(backup, /await provider\.importData\(\[\]\)/);
 });
