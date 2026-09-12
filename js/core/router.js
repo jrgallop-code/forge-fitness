@@ -27,7 +27,7 @@ import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../pro
 import { initializeMeasurementHistoryDetail } from "../progress/measurements-history-detail.js?v=measurement-history-1";
 import { renderNutrition, renderWater, initializeNutrition, showNutritionView } from "../nutrition/nutrition-ui.js?v=water-only-1";
 import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energy-profile.js?v=food-log-macro-bars-1";
-import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v=eating-out-1";
+import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v=eating-out-2";
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=weekly-review-modal-1";
