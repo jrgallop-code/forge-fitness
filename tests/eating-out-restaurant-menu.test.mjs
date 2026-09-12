@@ -6,7 +6,7 @@ const read = relative => readFile(new URL(`../${relative}`, import.meta.url), "u
 
 test("Food Log exposes a clear Eating Out entry point", async () => {
     const foodLog = await read("js/nutrition/food-log.js");
-    assert.match(foodLog, /restaurant-menu\.js\?v=eating-out-2/);
+    assert.match(foodLog, /restaurant-menu\.js\?v=eating-out-3/);
     assert.match(foodLog, /data-food-eating-out/);
     assert.match(foodLog, />Eating Out</);
     assert.match(foodLog, /Browse restaurant menus by calories and protein/);
@@ -20,8 +20,11 @@ test("Restaurant Menus searches real food data and supports restaurant discovery
     assert.match(menu, /Search restaurants/);
     assert.match(menu, /Boston Pizza/);
     assert.match(menu, /Swiss Chalet/);
+    assert.match(menu, /Mezza Lebanese Kitchen/);
     assert.match(menu, /Subway/);
     assert.match(menu, /\/v1\/foods\/search\?q=/);
+    assert.match(menu, /&menu=1/);
+    assert.match(menu, /food\?\.menuSection/);
     assert.match(menu, /data-restaurant-menu-search/);
     assert.match(menu, /data-restaurant-quick="fits"/);
     assert.match(menu, /data-restaurant-quick="under700"/);
@@ -30,6 +33,16 @@ test("Restaurant Menus searches real food data and supports restaurant discovery
     assert.match(menu, /data-restaurant-min-protein/);
     assert.match(menu, /Coverage varies/);
     assert.doesNotMatch(menu, /Prototype dataset|mock menu data/i);
+});
+
+test("restaurant catalogue mode returns complete verified menus before external providers", async () => {
+    const [baseWorker, fatSecretWorker] = await Promise.all([
+        read("cloud/src/index.js"),
+        read("cloud/src/fatsecret-enabled-worker.js")
+    ]);
+    assert.match(baseWorker, /restaurantMenu.*searchVerifiedFoods\(query, env, countryCode, 250\)/s);
+    assert.match(baseWorker, /restaurantCatalogue:\s*true/);
+    assert.match(fatSecretWorker, /cataloguePayload\?\.restaurantCatalogue/);
 });
 
 test("Eating Out inherits the active appearance instead of hard-coding one theme", async () => {
@@ -46,10 +59,10 @@ test("Eating Out inherits the active appearance instead of hard-coding one theme
 test("PWA routing and caching include the restaurant menu source", async () => {
     const router = await read("js/core/router.js");
     const worker = await read("service-worker.js");
-    assert.match(router, /food-log\.js\?v=eating-out-2/);
-    assert.match(worker, /2026-09-12-300/);
-    assert.match(worker, /restaurant-menu\.js\?v=eating-out-2/);
-    assert.match(worker, /restaurant-menu\.css\?v=eating-out-2/);
+    assert.match(router, /food-log\.js\?v=eating-out-3/);
+    assert.match(worker, /2026-09-12-301/);
+    assert.match(worker, /restaurant-menu\.js\?v=eating-out-3/);
+    assert.match(worker, /restaurant-menu\.css\?v=eating-out-3/);
 });
 
 test("Food Log search controls stay on one balanced row without a microphone", async () => {

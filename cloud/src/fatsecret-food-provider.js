@@ -60,13 +60,14 @@ export async function searchFatSecretFoods(query, countryCode, env = {}, options
     const auth = await getFatSecretAuth(env);
     const capabilities = capabilitiesFromAuth(auth, env);
     const maxResults = String(clampInteger(options.limit, 1, 20, 8));
+    const pageNumber = String(clampInteger(options.page, 0, 100, 0));
     const normalizedCountry = normalizeCountry(countryCode);
     let payload;
 
     if (capabilities.premier) {
         const url = new URL(`${FATSECRET_API_ROOT}/foods/search/v5`);
         url.searchParams.set("search_expression", searchExpression);
-        url.searchParams.set("page_number", "0");
+        url.searchParams.set("page_number", pageNumber);
         url.searchParams.set("max_results", maxResults);
         url.searchParams.set("format", "json");
         if (capabilities.canLocalize && normalizedCountry) {
@@ -80,7 +81,7 @@ export async function searchFatSecretFoods(query, countryCode, env = {}, options
         const body = new URLSearchParams({
             method: "foods.search",
             search_expression: searchExpression,
-            page_number: "0",
+            page_number: pageNumber,
             max_results: maxResults,
             format: "json"
         });

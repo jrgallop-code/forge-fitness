@@ -508,6 +508,34 @@ test("Canadian expansion migration preserves source, region, and nutrition scope
     assert.match(migration, /official_restaurant/);
 });
 
+test("Mezza's complete official chart is bundled with full macros and menu sections", async () => {
+    const { MEZZA_FOODS } = await import("../cloud/src/data/mezza-foods.js");
+    const allMezza = searchBundledVerifiedFoods("Mezza Lebanese Kitchen");
+    const wrap = allMezza.find(food => food.catalogueId === "mezza-ca-regular-chicken-shawarma-wrap");
+    const plate = allMezza.find(food => food.catalogueId === "mezza-ca-mixed-grill-plate-rice");
+    const zeroCalorieTopping = allMezza.find(food => food.catalogueId === "mezza-ca-pickles");
+
+    assert.equal(MEZZA_FOODS.length, 84);
+    assert.equal(allMezza.length, 84);
+    assert.deepEqual(wrap.portions[0].nutrition, { calories: 470, protein: 27, carbs: 25, fat: 30, fiber: 3 });
+    assert.equal(wrap.portions[0].label, "1 regular wrap (280 g)");
+    assert.deepEqual(plate.portions[0].nutrition, { calories: 1340, protein: 67, carbs: 98, fat: 75, fiber: 7 });
+    assert.equal(plate.menuSection, "Plates with rice");
+    assert.equal(zeroCalorieTopping.provenance.nutritionScope, "full");
+    assert.ok(allMezza.every(food => food.provenance.sourceName === "Mezza Lebanese Kitchen official nutrition chart"));
+    assert.ok(allMezza.every(food => food.provenance.verifiedAt === "2026-09-12"));
+});
+
+test("Mezza migration mirrors all 84 official rows and preserves full nutrition scope", async () => {
+    const migration = await readFile(new URL("../cloud/migrations/0020_mezza_foods.sql", import.meta.url), "utf8");
+    assert.equal((migration.match(/\('mezza-ca-/g) || []).length, 84);
+    assert.match(migration, /ALTER TABLE verified_foods ADD COLUMN menu_section TEXT/);
+    assert.match(migration, /'Regular Chicken Shawarma Wrap'.*470, 27, 25, 30, 3/);
+    assert.match(migration, /'Mixed Grill Plate with Rice'.*1340, 67, 98, 75, 7/);
+    assert.match(migration, /'Pickles'.*0, 0, 0, 0, 0.*'full'/);
+    assert.match(migration, /Mezza_NutritionChart-May-2026\.pdf/);
+});
+
 test("Canadian and US Grenade barcodes resolve to regional variants of one product family", () => {
     const canadian = findBundledVerifiedFoodByBarcode("847534004261");
     const us = findBundledVerifiedFoodByBarcode("847534004063");

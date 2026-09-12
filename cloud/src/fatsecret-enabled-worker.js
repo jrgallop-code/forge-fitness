@@ -11,6 +11,8 @@ import {
 const SEARCH_LIMIT = 16;
 const FATSECRET_SEARCH_LIMIT = 16;
 const FATSECRET_DETAIL_LIMIT = 5;
+const RESTAURANT_MENU_PAGE_SIZE = 20;
+const RESTAURANT_MENU_PAGES = 5;
 
 export default {
     async fetch(request, env, ctx) {
@@ -36,6 +38,11 @@ export default {
 
 async function searchFoodsWithFatSecret(url, request, env, ctx) {
     const baseResponse = await baseWorker.fetch(request, env, ctx);
+    const restaurantMenu = url.searchParams.get("menu") === "1";
+    if (restaurantMenu && baseResponse.ok) {
+        const cataloguePayload = await baseResponse.clone().json().catch(() => null);
+        if (cataloguePayload?.restaurantCatalogue) return baseResponse;
+    }
     if (!fatSecretConfigured(env)) return baseResponse;
     if (!baseResponse.ok && ![429, 502, 503, 504].includes(baseResponse.status)) return baseResponse;
 
@@ -46,7 +53,11 @@ async function searchFoodsWithFatSecret(url, request, env, ctx) {
     let capabilities = null;
     try {
         capabilities = await getFatSecretCapabilities(env);
-        const summaries = await searchFatSecretFoods(query, country, env, { limit: FATSECRET_SEARCH_LIMIT });
+        const summaries = restaurantMenu
+            ? mergeFatSecretCandidates(...await Promise.all(Array.from({ length: RESTAURANT_MENU_PAGES }, (_, page) =>
+                searchFatSecretFoods(query, country, env, { limit: RESTAURANT_MENU_PAGE_SIZE, page })
+            )))
+            : await searchFatSecretFoods(query, country, env, { limit: FATSECRET_SEARCH_LIMIT });
 
         // Premier v5 search already returns detailed servings. Keep those results
         // directly instead of re-fetching and accidentally dropping valid foods.
@@ -80,7 +91,7 @@ async function searchFoodsWithFatSecret(url, request, env, ctx) {
         }
 
         const baseFoods = baseResponse.ok && Array.isArray(payload?.foods) ? payload.foods : [];
-        const foods = mergeSearchResults(baseFoods, fatSecretFoods, SEARCH_LIMIT);
+        const foods = mergeSearchResults(baseFoods, fatSecretFoods, restaurantMenu ? RESTAURANT_MENU_PAGE_SIZE * RESTAURANT_MENU_PAGES : SEARCH_LIMIT);
         const source = appendSource(baseResponse.ok ? payload?.source : "", "FatSecret");
         return jsonFrom(baseResponse, {
             ...(baseResponse.ok ? payload : {}),
