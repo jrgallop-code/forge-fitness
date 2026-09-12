@@ -37,6 +37,8 @@ test("FatSecret Basic search uses foods.search while Premier uses localized v5 w
     assert.match(provider, /foods\/search\/v5/);
     assert.match(provider, /capabilities\.premier/);
     assert.match(provider, /capabilities\.canLocalize && normalizedCountry/);
+    assert.match(provider, /page_number", pageNumber/);
+    assert.match(provider, /page_number: pageNumber/);
 });
 
 test("FatSecret search reads both Premier v5 and Basic response shapes", async () => {

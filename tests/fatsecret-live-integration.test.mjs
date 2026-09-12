@@ -52,6 +52,14 @@ test("production worker composes FatSecret with the existing food API", () => {
     assert.match(worker, /const FATSECRET_SEARCH_LIMIT = 16/);
 });
 
+test("restaurant menus page through FatSecret instead of truncating a chain to normal search limits", () => {
+    assert.match(worker, /const RESTAURANT_MENU_PAGE_SIZE = 20/);
+    assert.match(worker, /const RESTAURANT_MENU_PAGES = 5/);
+    assert.match(worker, /Array\.from\(\{ length: RESTAURANT_MENU_PAGES \}/);
+    assert.match(worker, /searchFatSecretFoods\(query, country, env, \{ limit: RESTAURANT_MENU_PAGE_SIZE, page \}\)/);
+    assert.match(worker, /restaurantMenu \? RESTAURANT_MENU_PAGE_SIZE \* RESTAURANT_MENU_PAGES : SEARCH_LIMIT/);
+});
+
 test("manual FatSecret search still runs when USDA is unavailable", () => {
     assert.doesNotMatch(worker, /if \(!baseResponse\.ok \|\| !fatSecretConfigured\(env\)\) return baseResponse/);
     assert.match(worker, /if \(!fatSecretConfigured\(env\)\) return baseResponse/);

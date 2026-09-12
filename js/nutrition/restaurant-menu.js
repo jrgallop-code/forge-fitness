@@ -3,6 +3,7 @@ const SESSION_KEY = "level_up_cloud_session";
 
 const FEATURED_RESTAURANTS = [
     restaurant("Boston Pizza", "BP", "Pizza & casual dining"),
+    restaurant("Mezza Lebanese Kitchen", "MZ", "Wraps, plates & bowls"),
     restaurant("Swiss Chalet", "SC", "Chicken & family meals"),
     restaurant("Subway", "SW", "Sandwiches & bowls"),
     restaurant("McDonald's", "M", "Burgers & breakfast"),
@@ -64,7 +65,7 @@ function ensureRestaurantMenuStyles() {
     if (document.querySelector("link[data-restaurant-menu-styles]")) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/restaurant-menu.css?v=eating-out-2";
+    link.href = "css/restaurant-menu.css?v=eating-out-3";
     link.dataset.restaurantMenuStyles = "";
     document.head.append(link);
 }
@@ -228,7 +229,7 @@ async function loadRestaurant(nextRestaurant) {
     state.loading = true;
     renderResults();
     try {
-        const response = await fetch(`${API_URL}/v1/foods/search?q=${encodeURIComponent(nextRestaurant.name)}&country=${countryCode()}`, {
+        const response = await fetch(`${API_URL}/v1/foods/search?q=${encodeURIComponent(nextRestaurant.name)}&country=${countryCode()}&menu=1`, {
             headers: { Authorization: `Bearer ${token}` },
             signal: controller.signal
         });
@@ -358,11 +359,16 @@ function groupFoods(foods) {
         if (!groups.has(category)) groups.set(category, []);
         groups.get(category).push(food);
     });
-    const order = ["High-protein picks", "Breakfast", "Burgers & sandwiches", "Pizza & pasta", "Bowls, salads & entrées", "Sides & snacks", "Drinks & treats", "Menu items"];
-    return [...groups.entries()].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
+    const order = ["Wraps", "Plates with fries", "Plates with rice", "Bowls", "Lunch plates", "Poutines", "Salads", "Desserts & extras", "Sauces", "Sides", "Protein", "Toppings", "High-protein picks", "Breakfast", "Burgers & sandwiches", "Pizza & pasta", "Bowls, salads & entrées", "Sides & snacks", "Drinks & treats", "Menu items"];
+    return [...groups.entries()].sort((a, b) => {
+        const aIndex = order.indexOf(a[0]);
+        const bIndex = order.indexOf(b[0]);
+        return (aIndex < 0 ? order.length : aIndex) - (bIndex < 0 ? order.length : bIndex);
+    });
 }
 
 function menuCategory(food) {
+    if (food?.menuSection) return food.menuSection;
     const name = normalize(`${food?.name || ""} ${food?.category || ""}`);
     const protein = primaryNutrition(food).protein;
     if (protein >= 40) return "High-protein picks";

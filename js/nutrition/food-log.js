@@ -43,7 +43,7 @@ import {
     poundsToKg
 } from "./tdee-calculator.js?v=food-log-macro-bars-1";
 import { getFoodEmoji } from "./food-emoji.js?v=food-artwork-polish-1";
-import { initializeRestaurantMenu, openRestaurantMenu } from "./restaurant-menu.js?v=eating-out-2";
+import { initializeRestaurantMenu, openRestaurantMenu } from "./restaurant-menu.js?v=eating-out-3";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";

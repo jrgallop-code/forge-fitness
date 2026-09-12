@@ -2,6 +2,7 @@ import { SWISS_CHALET_FOODS } from "./data/swiss-chalet-foods.js";
 import { PUR_SIMPLE_FOODS } from "./data/pur-simple-foods.js";
 import { NORTH_AMERICAN_CHAIN_FOODS } from "./data/north-american-chain-foods.js";
 import { CANADIAN_CHAIN_EXPANSION } from "./data/canadian-chain-expansion.js";
+import { MEZZA_FOODS } from "./data/mezza-foods.js";
 
 const MAX_BACKUP_BYTES = 8 * 1024 * 1024;
 // User and owner sessions stay valid until they are explicitly revoked. Keep a
@@ -726,8 +727,19 @@ async function requireUser(request, env) {
 async function searchUsdaFoods(userId, url, request, env, ctx) {
     const query = String(url.searchParams.get("q") || "").trim().replace(/\s+/g, " ");
     const countryCode = normalizeRestaurantCountry(url.searchParams.get("country"));
+    const restaurantMenu = url.searchParams.get("menu") === "1";
     if (query.length < 2) return json({ error: "Enter at least 2 characters." }, 400, request, env);
     if (query.length > 80) return json({ error: "Food search is too long." }, 400, request, env);
+    if (restaurantMenu) {
+        const verifiedFoods = await searchVerifiedFoods(query, env, countryCode, 250);
+        if (verifiedFoods.length) {
+            return json({
+                foods: verifiedFoods,
+                source: "Level Up Verified",
+                restaurantCatalogue: true
+            }, 200, request, env);
+        }
+    }
     const brandSearch = detectUsdaBrandSearch(query);
     const [verifiedFoods, cachedExternalFoods, liveExternalResult] = await Promise.all([
         searchVerifiedFoods(query, env, countryCode),
@@ -1372,8 +1384,7 @@ function usdaBrandFoodScore(food, brandIdentity, queryTokens) {
     return 20 + tokenMatches + (allTokensMatch ? 15 : 0) + (brandedBar ? 5 : 0);
 }
 
-async function searchVerifiedFoods(query, env, countryCode = "CA") {
-    if (!env?.DB) return [];
+async function searchVerifiedFoods(query, env, countryCode = "CA", limit = 8) {
     const normalizedQuery = foodIdentity(query);
     if (!normalizedQuery) return [];
     const allTokens = normalizedQuery.split(" ").filter(Boolean).slice(0, 6);
@@ -1381,12 +1392,13 @@ async function searchVerifiedFoods(query, env, countryCode = "CA") {
     const tokens = searchTokens.length ? searchTokens : allTokens;
     const tokenFilters = tokens.map(() => "instr(search_text, ?) > 0").join(" AND ");
     let storedFoods = [];
-    try {
+    if (env?.DB) try {
         const result = await env.DB.prepare(`
             SELECT id, name, brand, category, country_code, barcode, product_family_id, serving_label,
                    serving_grams, calories, protein_g, carbs_g, fat_g, fiber_g,
                    source_name, source_url, verified_at, source_type, verification_status,
-                   nutrition_scope, serving_type, popularity_score, last_checked_at, next_review_at
+                   nutrition_scope, serving_type, popularity_score, last_checked_at, next_review_at,
+                   menu_section
             FROM verified_foods
             WHERE status = 'active' AND verification_status = 'verified' AND ${tokenFilters}
             ORDER BY CASE
@@ -1397,14 +1409,14 @@ async function searchVerifiedFoods(query, env, countryCode = "CA") {
                 WHEN search_text LIKE ? THEN 1
                 ELSE 2
             END, popularity_score DESC, brand, name
-            LIMIT 12
-        `).bind(...tokens, countryCode, query.toLowerCase(), `${normalizedQuery}%`).all();
+            LIMIT ?
+        `).bind(...tokens, countryCode, query.toLowerCase(), `${normalizedQuery}%`, Math.max(12, Math.min(250, limit))).all();
         storedFoods = (Array.isArray(result?.results) ? result.results : []).map(normalizeVerifiedFood).filter(Boolean);
     }
     catch (error) {
         console.error(JSON.stringify({ event: "verified_food_search_failed", reason: String(error?.message || error) }));
     }
-    return rankRestaurantFoods(rankFoodNameMatches(mergeFoodResults(storedFoods, searchBundledVerifiedFoods(query)), query), query, countryCode).slice(0, 8);
+    return rankRestaurantFoods(rankFoodNameMatches(mergeFoodResults(storedFoods, searchBundledVerifiedFoods(query)), query), query, countryCode).slice(0, Math.max(1, Math.min(250, limit)));
 }
 
 export function normalizeVerifiedFood(row) {
@@ -1435,6 +1447,7 @@ export function normalizeVerifiedFood(row) {
         brand: limitedText(row?.brand, 120),
         dataType: String(limitedText(row?.category, 100) || "").toLowerCase() === "restaurant food" ? "Verified restaurant item" : "Level Up Verified",
         category: limitedText(row?.category, 100),
+        menuSection: limitedText(row?.menu_section, 80),
         countryCode: limitedText(row?.country_code, 8),
         barcode: limitedText(row?.barcode, 40),
         provenance: {
@@ -1554,10 +1567,15 @@ const BUNDLED_VERIFIED_FOODS = [
         ...food,
         category: "Restaurant food",
         verifiedAt: "2026-08-31"
+    })),
+    ...MEZZA_FOODS.map(food => bundledVerifiedFood({
+        ...food,
+        category: "Restaurant food",
+        verifiedAt: "2026-09-12"
     }))
 ];
 
-function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, barcode = "", barcodeAliases = [], label, grams, calories, protein, carbs, fat, fiber = 0, category = "", countryCode = "CA", sourceName = "", sourceUrl, verifiedAt = "2026-08-27" }) {
+function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, barcode = "", barcodeAliases = [], label, grams, calories, protein, carbs, fat, fiber = 0, category = "", menuSection = "", nutritionScope = "", countryCode = "CA", sourceName = "", sourceUrl, verifiedAt = "2026-08-27" }) {
     const nutrition = { calories, protein, carbs, fat, fiber };
     const portions = [{ label: foodServingLabel(label, grams), ...(grams ? { grams } : {}), nutrition }];
     if (grams && Math.abs(grams - 100) > .01) {
@@ -1574,8 +1592,9 @@ function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, b
         barcodeAliases: barcodeAliases.map(normalizeBarcode).filter(Boolean),
         dataType: "Level Up Verified",
         category: category || (brand === "Grenade" ? "Protein bar" : "Restaurant food"),
+        menuSection,
         countryCode,
-        provenance: { sourceName: sourceName || (brand === "Grenade" ? "Grenade" : "McDonald's Canada"), sourceUrl, verifiedAt, sourceType: "official_restaurant", verificationStatus: "verified", nutritionScope: protein || carbs || fat ? "full" : "calories_only", lastCheckedAt: verifiedAt },
+        provenance: { sourceName: sourceName || (brand === "Grenade" ? "Grenade" : "McDonald's Canada"), sourceUrl, verifiedAt, sourceType: "official_restaurant", verificationStatus: "verified", nutritionScope: nutritionScope || (protein || carbs || fat ? "full" : "calories_only"), lastCheckedAt: verifiedAt },
         detailsLoaded: true,
         portions: addUsefulGramPortions(portions)
     };
@@ -2239,7 +2258,7 @@ async function importRedditSource(body, request, env) {
     catch { return json({ error: "Enter a valid Reddit link." }, 400, request, env); }
     const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
     if (parsed.protocol !== "https:" || !["reddit.com", "old.reddit.com", "redd.it"].includes(host)) {
-        return json({ error: "This import currently supports Reddit links only." }, 400, request, env);
+        return json({ error: "This beta currently supports Reddit links only." }, 400, request, env);
     }
     const match = host === "redd.it" ? parsed.pathname.match(/^\/([a-z0-9]+)/i) : parsed.pathname.match(/\/comments\/([a-z0-9]+)/i);
     if (!match) return json({ error: "This does not look like a Reddit post link." }, 400, request, env);
@@ -2343,7 +2362,7 @@ async function putBackup(userId, body, request, env) {
     }
     const payload = JSON.stringify(backup);
     const byteSize = new TextEncoder().encode(payload).byteLength;
-    if (byteSize > MAX_BACKUP_BYTES) return json({ error: "This backup is too large for cloud storage." }, 413, request, env);
+    if (byteSize > MAX_BACKUP_BYTES) return json({ error: "This backup is too large for beta cloud storage." }, 413, request, env);
 
     const current = await env.DB.prepare("SELECT version FROM backups WHERE user_id = ?").bind(userId).first();
     const now = new Date().toISOString();
