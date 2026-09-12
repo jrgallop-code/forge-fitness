@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const bridge = await readFile(new URL("../js/dashboard/dashboard-insights-analytics.js", import.meta.url), "utf8");
 const analytics = await readFile(new URL("../js/dashboard/dashboard-insights-analytics-v5.js", import.meta.url), "utf8");
+const goalTimeline = await readFile(new URL("../js/dashboard/dashboard-goal-timeline.js", import.meta.url), "utf8");
 const positionFix = await readFile(new URL("../js/dashboard/dashboard-see-more-position-fix.js", import.meta.url), "utf8");
 const workoutTheme = await readFile(new URL("../js/core/workout-theme-guardrail.js", import.meta.url), "utf8");
 const weightCard = await readFile(new URL("../js/dashboard/dashboard-weight-trend-card.js", import.meta.url), "utf8");
@@ -24,7 +25,7 @@ test("See More has a dedicated gap above the analytics row without changing card
     assert.match(positionFix, /top:\s*-27px\s*!important/);
     assert.match(analytics, /dashboard-seven-day-sets-card\{height:148px!important;min-height:148px!important;max-height:148px!important;align-self:start!important/);
     assert.match(analytics, />See More</);
-    assert.match(weightCard, /dashboard-insights-analytics\.js\?v=dashboard-insights-6/);
+    assert.match(weightCard, /dashboard-insights-analytics\.js\?v=goal-timeline-2/);
 });
 
 test("See More uses a compact two-column analytics card grid", () => {
@@ -32,7 +33,7 @@ test("See More uses a compact two-column analytics card grid", () => {
     assert.match(analytics, /dashboard-preview-card\{position:relative;display:flex;min-width:0;min-height:166px/);
     assert.match(analytics, /<h3>Expenditure<\/h3>/);
     assert.match(analytics, /<h3>Calories vs Expenditure<\/h3>/);
-    assert.match(analytics, /<h3>Goal Progress<\/h3>/);
+    assert.match(goalTimeline, /<h3>Goal Timeline<\/h3>/);
     assert.doesNotMatch(analytics, /<h3>Weight Trend<\/h3>/);
     assert.match(analytics, /Last 7 Days/);
 });
@@ -70,11 +71,12 @@ test("energy preview cards navigate to authoritative Progress graphs", () => {
 });
 
 test("goal preview is based on phase start Trend Weight, current Trend Weight, and goal weight", () => {
-    assert.match(analytics, /startingTrendWeight/);
-    assert.match(analytics, /calculateVisibleWeightTrend/);
-    assert.match(analytics, /trend\.trendWeight/);
-    assert.match(analytics, /goalWeight/);
-    assert.match(analytics, /Math\.min\(100/);
+    assert.match(analytics, /getGoalTimelineViewModel/);
+    assert.match(goalTimeline, /startingTrendWeight/);
+    assert.match(goalTimeline, /calculateVisibleWeightTrend/);
+    assert.match(goalTimeline, /trend\.trendWeight/);
+    assert.match(goalTimeline, /goalWeight/);
+    assert.match(goalTimeline, /calculateGoalTimeline/);
 });
 
 test("workout PR and set-number colors follow the selected appearance", () => {
