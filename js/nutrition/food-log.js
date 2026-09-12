@@ -43,7 +43,7 @@ import {
     poundsToKg
 } from "./tdee-calculator.js?v=food-log-macro-bars-1";
 import { getFoodEmoji } from "./food-emoji.js?v=food-artwork-polish-1";
-import { initializeRestaurantMenu, openRestaurantMenu } from "./restaurant-menu.js?v=eating-out-3";
+import { initializeRestaurantMenu, openRestaurantMenu } from "./restaurant-menu.js?v=eating-out-4";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -738,7 +738,7 @@ async function searchFoods(event) {
     foodSearchController?.abort();
     foodSearchController = new AbortController();
     try {
-        const country = String(navigator.language || "en-CA").toUpperCase().endsWith("-US") ? "US" : "CA";
+        const country = foodSearchCountry();
         const response = await fetch(`${API_URL}/v1/foods/search?q=${encodeURIComponent(query)}&country=${country}`, {
             headers: { Authorization: `Bearer ${token}` },
             signal: foodSearchController.signal
@@ -787,6 +787,19 @@ async function chooseFood(food) {
         }
         return;
     }
+    if (food?.source === "fatsecret" && food?.fatSecretFoodId && !hasFatSecretServingId(food)) {
+        renderFoodLoading(food);
+        try {
+            const detailed = await loadFatSecretFoodDetails(food);
+            if (requestId !== foodSelectionRequest) return;
+            renderFoodPortionPanel(detailed);
+        }
+        catch (error) {
+            if (error?.name === "AbortError" || requestId !== foodSelectionRequest) return;
+            renderFoodDetailError(food, error?.message || "Serving details could not be loaded.");
+        }
+        return;
+    }
     renderFoodPortionPanel(food);
 }
 
@@ -806,6 +819,35 @@ async function loadFoodDetails(food) {
     return payload.food;
 }
 
+async function loadFatSecretFoodDetails(food) {
+    const foodId = String(food?.fatSecretFoodId || "").trim();
+    if (!/^\d+$/.test(foodId)) throw new Error("This restaurant item is missing its food identifier.");
+    const cacheKey = `fatsecret:${foodId}`;
+    if (foodDetailCache.has(cacheKey)) return foodDetailCache.get(cacheKey);
+    const token = sessionToken();
+    if (!token) throw new Error("Sign in to load serving details.");
+    foodDetailController = new AbortController();
+    const response = await fetch(`${API_URL}/v1/foods/fatsecret/${encodeURIComponent(foodId)}?country=${foodSearchCountry()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: foodDetailController.signal,
+        cache: "no-store"
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.food || !hasFatSecretServingId(payload.food)) {
+        throw new Error(payload.error || "Complete serving details are unavailable for this item.");
+    }
+    foodDetailCache.set(cacheKey, payload.food);
+    return payload.food;
+}
+
+function hasFatSecretServingId(food) {
+    return Array.isArray(food?.portions) && food.portions.some(portion => /^\d+$/.test(String(portion?.servingId || "")));
+}
+
+function foodSearchCountry() {
+    return String(navigator.language || "en-CA").toUpperCase().endsWith("-US") ? "US" : "CA";
+}
+
 function renderFoodLoading(food) {
     selectedFood = food;
     const panel = document.querySelector("[data-food-portion]");
@@ -815,6 +857,18 @@ function renderFoodLoading(food) {
         <div class="food-portion-heading"><div><span class="eyebrow">${addContext === "edit" ? "EDIT LOGGED FOOD" : editingMealItemIndex !== null ? "EDIT MEAL ITEM" : "ADD FOOD"}</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="${addContext === "edit" ? "Cancel editing" : "Back to results"}">×</button></div>
         <div class="food-portion-loading" role="status"><strong>Loading servings…</strong><span>Getting the available per-item options.</span></div>`;
     panel.querySelector("[data-food-portion-close]")?.addEventListener("click", closeFoodPortionPanel);
+}
+
+function renderFoodDetailError(food, message) {
+    selectedFood = food;
+    const panel = document.querySelector("[data-food-portion]");
+    if (!panel) return;
+    panel.hidden = false;
+    panel.innerHTML = `
+        <div class="food-portion-heading"><div><span class="eyebrow">SERVING DETAILS</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="Back to results">×</button></div>
+        <div class="food-portion-loading" role="alert"><strong>Couldn’t load this item</strong><span>${escapeHtml(message)}</span><button type="button" class="primary-btn" data-food-detail-retry>Try again</button></div>`;
+    panel.querySelector("[data-food-portion-close]")?.addEventListener("click", closeFoodPortionPanel);
+    panel.querySelector("[data-food-detail-retry]")?.addEventListener("click", () => { void chooseFood(food); });
 }
 
 function closeFoodPortionPanel() {

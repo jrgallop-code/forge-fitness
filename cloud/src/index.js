@@ -736,7 +736,7 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
             return json({
                 foods: verifiedFoods,
                 source: "Level Up Verified",
-                restaurantCatalogue: true
+                restaurantCatalogue: isCompleteVerifiedRestaurantCatalogue(query, verifiedFoods)
             }, 200, request, env);
         }
     }
@@ -848,6 +848,12 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
         foods,
         source: foodSearchSource(verifiedFoods, usdaFoods, externalFoods)
     }, 200, request, env);
+}
+
+function isCompleteVerifiedRestaurantCatalogue(query, foods) {
+    const identity = foodIdentity(query);
+    if (identity !== "mezza lebanese kitchen") return false;
+    return Array.isArray(foods) && foods.length >= MEZZA_FOODS.length && foods.every(food => foodIdentity(food?.brand) === identity);
 }
 
 function foodSearchSource(verifiedFoods, usdaFoods, externalFoods) {
@@ -2258,7 +2264,7 @@ async function importRedditSource(body, request, env) {
     catch { return json({ error: "Enter a valid Reddit link." }, 400, request, env); }
     const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
     if (parsed.protocol !== "https:" || !["reddit.com", "old.reddit.com", "redd.it"].includes(host)) {
-        return json({ error: "This beta currently supports Reddit links only." }, 400, request, env);
+        return json({ error: "This import currently supports Reddit links only." }, 400, request, env);
     }
     const match = host === "redd.it" ? parsed.pathname.match(/^\/([a-z0-9]+)/i) : parsed.pathname.match(/\/comments\/([a-z0-9]+)/i);
     if (!match) return json({ error: "This does not look like a Reddit post link." }, 400, request, env);
@@ -2362,7 +2368,7 @@ async function putBackup(userId, body, request, env) {
     }
     const payload = JSON.stringify(backup);
     const byteSize = new TextEncoder().encode(payload).byteLength;
-    if (byteSize > MAX_BACKUP_BYTES) return json({ error: "This backup is too large for beta cloud storage." }, 413, request, env);
+    if (byteSize > MAX_BACKUP_BYTES) return json({ error: "This backup is too large for cloud storage." }, 413, request, env);
 
     const current = await env.DB.prepare("SELECT version FROM backups WHERE user_id = ?").bind(userId).first();
     const now = new Date().toISOString();
