@@ -10,7 +10,7 @@ test("Weight context entry loads the smoothed carbs and calorie renderers", () =
     assert.match(entry, /initializeWeightCarbsChartV3\(root\)/);
     assert.match(entry, /initializeWeightCarbsInteractionEnhancements\(root\)/);
     assert.match(entry, /initializeWeightCalorieContextV2\(root\)/);
-    assert.match(entry, /smoothed-visible-trend-1/);
+    assert.match(entry, /weight-calorie-context-v2\.js\?v=fatsecret-progress-calories-1/);
     assert.doesNotMatch(entry, /weight-secondary-context/);
 });
 
@@ -32,7 +32,9 @@ test("third Weight carousel graph is Calories and uses shared Trend Weight", () 
     assert.equal(existsSync("js/progress/weight-secondary-context.js"), false);
 });
 
-test("calories are read directly from logged nutrition snapshots", () => {
+test("calories are read from the hydrated food log", () => {
+    assert.match(calories, /import \{ readFoodLog \}/);
+    assert.match(calories, /const foodLog = readFoodLog\(\)/);
     assert.match(calories, /entry\?\.nutrition\?\.calories/);
     assert.match(calories, /reduce\(\(sum, entry\)/);
     assert.match(calories, /calories: Number\.isFinite\(calories\) \? calories : null/);
