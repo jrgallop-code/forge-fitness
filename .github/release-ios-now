@@ -78,3 +78,5 @@ Release 35: existing email sign-in requests one password; confirmation remains e
 Release 36: complete in-app account deletion by removing the cloud account, clearing local account data, and returning directly to sign-in.
 
 Release 37: preserve the authenticated Google session before restoring cloud backup so a restore warning cannot return the user to login.
+
+Release 38: include FatSecret foods across Progress calorie statistics and the Goal Timeline inside Dashboard See More, with a bottom-safe goal and pace action.
