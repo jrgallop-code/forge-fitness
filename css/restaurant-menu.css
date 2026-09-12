@@ -1,3 +1,4 @@
+/* Shared controls for Food Log search and the Eating Out experience. */
 .food-search{grid-template-columns:minmax(0,1fr) 96px!important;align-items:stretch;gap:8px!important}
 .food-search-entry{display:grid;grid-template-columns:minmax(0,1fr) 48px!important;align-items:stretch;gap:8px;min-width:0}
 .food-search-field{position:relative;min-width:0}
