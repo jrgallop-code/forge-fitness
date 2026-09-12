@@ -5,10 +5,12 @@ import { readFile } from "node:fs/promises";
 const worker = await readFile(new URL("../cloud/src/fatsecret-enabled-worker.js", import.meta.url), "utf8");
 const provider = await readFile(new URL("../cloud/src/fatsecret-food-provider.js", import.meta.url), "utf8");
 const dataSource = await readFile(new URL("../js/nutrition/food-log-data.js", import.meta.url), "utf8");
+const foodLogSource = await readFile(new URL("../js/nutrition/food-log.js", import.meta.url), "utf8");
 const cacheSource = await readFile(new URL("../js/nutrition/fatsecret-live-cache.js", import.meta.url), "utf8");
 const wrangler = await readFile(new URL("../cloud/wrangler.jsonc", import.meta.url), "utf8");
 
 const live = await import("../js/nutrition/fatsecret-live-cache.js");
+const fatSecretWorker = await import("../cloud/src/fatsecret-enabled-worker.js");
 
 const storage = new Map();
 globalThis.localStorage = {
@@ -74,6 +76,35 @@ test("valid Premier search results are used directly instead of being discarded 
     assert.match(worker, /mergeFatSecretCandidates/);
     assert.match(worker, /directResults/);
     assert.match(worker, /enrichedResults/);
+});
+
+test("late Basic restaurant summaries remain visible until they are hydrated on selection", () => {
+    const summaries = Array.from({ length: 70 }, (_, index) => ({
+        source: "fatsecret",
+        fatSecretFoodId: String(index + 1),
+        name: index === 69 ? "Thai Chicken Wrap - Grilled Chicken" : `Boston Pizza Item ${index + 1}`,
+        brand: "Boston Pizza",
+        detailsLoaded: false,
+        portions: [{ label: "1 serving", nutrition: { calories: 500 + index } }]
+    }));
+    const enriched = summaries.slice(0, 5).map((food, index) => ({
+        ...food,
+        detailsLoaded: true,
+        portions: [{ servingId: String(1000 + index), label: "1 serving", nutrition: food.portions[0].nutrition }]
+    }));
+    const foods = fatSecretWorker.mergeFatSecretCandidates(summaries, [], enriched, { includeSummaries: true });
+    assert.equal(foods.length, 70);
+    assert.equal(foods[0].detailsLoaded, true);
+    assert.equal(foods[69].name, "Thai Chicken Wrap - Grilled Chicken");
+    assert.equal(foods[69].detailsLoaded, false);
+});
+
+test("Food Log hydrates a selected FatSecret summary before it can be logged", () => {
+    assert.match(foodLogSource, /food\?\.source === "fatsecret"/);
+    assert.match(foodLogSource, /!hasFatSecretServingId\(food\)/);
+    assert.match(foodLogSource, /loadFatSecretFoodDetails/);
+    assert.match(foodLogSource, /\/v1\/foods\/fatsecret\/\$\{encodeURIComponent\(foodId\)\}/);
+    assert.match(foodLogSource, /!payload\.food \|\| !hasFatSecretServingId\(payload\.food\)/);
 });
 
 test("FatSecret failures expose only a safe diagnostic code", () => {

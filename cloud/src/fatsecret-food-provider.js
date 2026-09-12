@@ -173,6 +173,8 @@ export function normalizeFatSecretFood(food, options = {}) {
     const brand = cleanText(food.brand_name, 120);
     const barcode = String(options.barcode || "").replace(/\D/g, "").slice(0, 14) || null;
 
+    const detailsLoaded = portions.some(portion => /^\d+$/.test(String(portion?.servingId || "")));
+
     return {
         source: "fatsecret",
         catalogueId: `fatsecret:${foodId}`,
@@ -184,7 +186,7 @@ export function normalizeFatSecretFood(food, options = {}) {
         barcode,
         portions,
         servingLabel: portions[0].label,
-        detailsLoaded: true,
+        detailsLoaded,
         provenance: {
             sourceName: "FatSecret",
             sourceUrl,

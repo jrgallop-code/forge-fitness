@@ -70,7 +70,11 @@ async function searchFoodsWithFatSecret(url, request, env, ctx) {
 
         const enriched = (await Promise.all(needsDetail.map(id => getFatSecretFood(id, country, env).catch(() => null))))
             .filter(hasStorableServingId);
-        const fatSecretFoods = mergeFatSecretCandidates(summaries, usableFromSearch, enriched);
+        // Basic FatSecret search returns useful nutrition summaries without a
+        // serving_id. Keep those summaries visible and hydrate the selected
+        // food on demand instead of discarding everything after the first few
+        // detail lookups.
+        const fatSecretFoods = mergeFatSecretCandidates(summaries, usableFromSearch, enriched, { includeSummaries: true });
 
         const payload = await baseResponse.clone().json().catch(() => ({}));
         const status = fatSecretStatus(capabilities, country, fatSecretFoods.length > 0, {
@@ -186,7 +190,8 @@ function hasStorableServingId(food) {
     return Boolean(food && Array.isArray(food.portions) && food.portions.some(portion => /^\d+$/.test(String(portion?.servingId || ""))));
 }
 
-function mergeFatSecretCandidates(summaries, direct, enriched) {
+export function mergeFatSecretCandidates(summaries, direct, enriched, options = {}) {
+    const includeSummaries = Boolean(options.includeSummaries);
     const usable = new Map();
     [...direct, ...enriched].forEach(food => {
         const id = String(food?.fatSecretFoodId || "");
@@ -195,7 +200,7 @@ function mergeFatSecretCandidates(summaries, direct, enriched) {
     const ordered = [];
     (Array.isArray(summaries) ? summaries : []).forEach(summary => {
         const id = String(summary?.fatSecretFoodId || "");
-        const food = usable.get(id);
+        const food = usable.get(id) || (includeSummaries ? summary : null);
         if (food) ordered.push(food);
     });
     usable.forEach((food, id) => {

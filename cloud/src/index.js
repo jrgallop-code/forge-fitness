@@ -736,7 +736,7 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
             return json({
                 foods: verifiedFoods,
                 source: "Level Up Verified",
-                restaurantCatalogue: true
+                restaurantCatalogue: isCompleteVerifiedRestaurantCatalogue(query, verifiedFoods)
             }, 200, request, env);
         }
     }
@@ -848,6 +848,12 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
         foods,
         source: foodSearchSource(verifiedFoods, usdaFoods, externalFoods)
     }, 200, request, env);
+}
+
+function isCompleteVerifiedRestaurantCatalogue(query, foods) {
+    const identity = foodIdentity(query);
+    if (identity !== "mezza lebanese kitchen") return false;
+    return Array.isArray(foods) && foods.length >= MEZZA_FOODS.length && foods.every(food => foodIdentity(food?.brand) === identity);
 }
 
 function foodSearchSource(verifiedFoods, usdaFoods, externalFoods) {

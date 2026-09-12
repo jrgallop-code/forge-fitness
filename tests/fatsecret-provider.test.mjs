@@ -85,6 +85,21 @@ test("FatSecret normalization carries storable food and serving identifiers", as
     assert.equal(food.portions[0].servingId, "202");
     assert.equal(food.portions[0].grams, 60);
     assert.equal(food.portions[0].nutrition.calories, 210);
+    assert.equal(food.detailsLoaded, true);
+});
+
+test("FatSecret summary nutrition remains selectable but is marked for detail hydration", async () => {
+    const module = await import("../cloud/src/fatsecret-food-provider.js");
+    const food = module.normalizeFatSecretFood({
+        food_id: "303",
+        food_name: "Thai Chicken Wrap - Grilled Chicken",
+        brand_name: "Boston Pizza",
+        food_description: "Per 1 serving - Calories: 820 kcal | Fat: 33 g | Carbs: 87 g | Protein: 42 g"
+    }, { countryCode: "CA" });
+    assert.equal(food.fatSecretFoodId, "303");
+    assert.equal(food.portions[0].nutrition.calories, 820);
+    assert.equal(food.portions[0].servingId, undefined);
+    assert.equal(food.detailsLoaded, false);
 });
 
 test("FatSecret barcode normalization produces GTIN-13", async () => {
