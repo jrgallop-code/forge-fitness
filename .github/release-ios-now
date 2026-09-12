@@ -80,3 +80,5 @@ Release 36: complete in-app account deletion by removing the cloud account, clea
 Release 37: preserve the authenticated Google session before restoring cloud backup so a restore warning cannot return the user to login.
 
 Release 38: include FatSecret foods across Progress calorie statistics and the Goal Timeline inside Dashboard See More, with a bottom-safe goal and pace action.
+
+Release 39: add Eating Out restaurant-menu browsing and polish Food Log search controls by removing the microphone and aligning search, barcode scanning, and Search in one balanced row.
