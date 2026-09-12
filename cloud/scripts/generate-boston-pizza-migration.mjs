@@ -37,16 +37,20 @@ const rows = BOSTON_PIZZA_FOODS.map(food => `  (${[
     quote("2026-09-12"),
     quote("2026-12-11"),
     quote(food.menuSection)
-].join(", ")})`).join(",\n");
+].join(", ")})`);
 
-const sql = `INSERT OR IGNORE INTO verified_foods (
+const insertHeader = `INSERT OR IGNORE INTO verified_foods (
   id, name, brand, category, country_code, search_text, barcode, serving_label, serving_grams,
   calories, protein_g, carbs_g, fat_g, fiber_g, source_name, source_url, verified_at, status,
   created_at, updated_at, restaurant_slug, region_code, source_type, verification_status,
   nutrition_scope, serving_type, popularity_score, last_checked_at, next_review_at, menu_section
-) VALUES
-${rows};
-`;
+) VALUES`;
+const batchSize = 20;
+const statements = [];
+for (let index = 0; index < rows.length; index += batchSize) {
+    statements.push(`${insertHeader}\n${rows.slice(index, index + batchSize).join(",\n")};`);
+}
+const sql = `${statements.join("\n\n")}\n`;
 
 await writeFile(outputUrl, sql, "utf8");
 console.log(`Wrote ${BOSTON_PIZZA_FOODS.length} Boston Pizza foods to ${fileURLToPath(outputUrl)}`);
