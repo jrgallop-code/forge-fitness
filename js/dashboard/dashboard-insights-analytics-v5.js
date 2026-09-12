@@ -2,7 +2,7 @@ import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } fro
 import { calculateTdee } from "../nutrition/tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "../nutrition/nutrition-storage.js?v=nutrition-phase-1";
 import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-dashboard-visibility-1";
-import { getGoalTimelineViewModel, goalTimelinePreviewMarkup } from "./dashboard-goal-timeline.js?v=goal-timeline-1";
+import { getGoalTimelineViewModel, goalTimelinePreviewMarkup } from "./dashboard-goal-timeline.js?v=goal-timeline-2";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";

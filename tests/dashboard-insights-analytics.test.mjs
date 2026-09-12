@@ -25,7 +25,7 @@ test("See More has a dedicated gap above the analytics row without changing card
     assert.match(positionFix, /top:\s*-27px\s*!important/);
     assert.match(analytics, /dashboard-seven-day-sets-card\{height:148px!important;min-height:148px!important;max-height:148px!important;align-self:start!important/);
     assert.match(analytics, />See More</);
-    assert.match(weightCard, /dashboard-insights-analytics\.js\?v=goal-timeline-1/);
+    assert.match(weightCard, /dashboard-insights-analytics\.js\?v=goal-timeline-2/);
 });
 
 test("See More uses a compact two-column analytics card grid", () => {

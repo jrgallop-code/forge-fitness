@@ -1,7 +1,6 @@
 import { calculateGoalTimeline } from "../core/goal-timeline.js?v=goal-timeline-1";
 import { calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
-import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-dashboard-visibility-1";
 
 const WEIGHT_KEY = "forge_weight_entries";
 const PHASES_KEY = "level_up_nutrition_phases";
@@ -16,7 +15,6 @@ const PHASE_LABELS = {
     custom: "Custom Goal"
 };
 
-let queued = false;
 let returnFocus = null;
 
 export function getGoalTimelineViewModel() {
@@ -120,83 +118,9 @@ function timelineSupportingCopy(model) {
     return "A current and starting weight are needed to calculate a date.";
 }
 
-function renderDashboardCard(model) {
-    const dashboard = document.querySelector("#content .dashboard.dashboard-command-insights, #content .dashboard");
-    const existing = dashboard?.querySelector(".dashboard-goal-timeline-card");
-    if (!dashboard || !isNutritionEnabled() || !model.configured) {
-        existing?.remove();
-        return;
-    }
-
-    const signature = JSON.stringify({
-        status: model.status,
-        date: model.estimatedDate,
-        weeks: model.weeks,
-        percent: Math.round(model.percent * 10),
-        current: model.currentWeight,
-        goal: model.goalWeight,
-        rate: model.selectedRateLbPerWeek,
-        unit: massUnit()
-    });
-    let card = existing;
-    if (!card) {
-        card = document.createElement("article");
-        card.className = "metric-card dashboard-goal-timeline-card";
-    }
-    if (card.dataset.signature !== signature) {
-        card.dataset.signature = signature;
-        card.innerHTML = compactCardMarkup(model);
-    }
-
-    const weightCard = dashboard.querySelector(".dashboard-weight-see-more-wrap, .dashboard-weight-trend-card");
-    if (!card.isConnected) {
-        if (weightCard) weightCard.insertAdjacentElement("afterend", card);
-        else dashboard.appendChild(card);
-    }
-}
-
-function compactCardMarkup(model) {
-    const headline = timelineHeadline(model, true);
-    const percent = Number(model.percent || 0).toFixed(1);
-    return `<button type="button" class="dashboard-goal-timeline-button" data-goal-timeline-open><span class="dashboard-goal-timeline-head"><span><h3>Goal Timeline</h3><small>${escapeHtml(model.phaseLabel)}</small></span><span aria-hidden="true">›</span></span><span class="dashboard-goal-timeline-date"><small>Optimistic estimate</small><strong>${escapeHtml(headline)}</strong></span><span class="dashboard-goal-timeline-track" aria-label="${Math.round(model.percent || 0)} percent of the way to goal"><i style="width:${percent}%"></i></span><span class="dashboard-goal-timeline-foot"><small>${model.ready ? `${formatWeight(model.currentWeight)} → ${formatWeight(model.goalWeight)}` : timelineSupportingCopy(model)}</small><strong>${model.status === "scheduled" ? `~${model.weeks} wk · ${formatRate(model.selectedRateLbPerWeek)}` : "View details"}</strong></span></button>`;
-}
-
-function renderWeightProgressStrip(model) {
-    const summary = document.querySelector("#weight-progress .weight-summary");
-    const existing = document.querySelector("#weight-progress .weight-goal-timeline-strip");
-    if (!summary || !isNutritionEnabled() || !model.configured) {
-        existing?.remove();
-        return;
-    }
-    const signature = `${model.status}|${model.estimatedDate}|${model.weeks}|${model.selectedRateLbPerWeek}|${massUnit()}`;
-    let strip = existing;
-    if (!strip) {
-        strip = document.createElement("button");
-        strip.type = "button";
-        strip.className = "weight-goal-timeline-strip";
-        strip.dataset.goalTimelineOpen = "";
-        summary.insertAdjacentElement("afterend", strip);
-    }
-    if (strip.dataset.signature === signature) return;
-    strip.dataset.signature = signature;
-    strip.innerHTML = `<span><small>Optimistic goal timeline</small><strong>${escapeHtml(timelineHeadline(model, true))}</strong></span><span>${model.status === "scheduled" ? `About ${model.weeks} weeks at ${formatRate(model.selectedRateLbPerWeek)}` : escapeHtml(timelineSupportingCopy(model))}<b aria-hidden="true">›</b></span>`;
-}
-
-function renderSurfaces() {
-    const model = getGoalTimelineViewModel();
-    renderDashboardCard(model);
-    renderWeightProgressStrip(model);
+function refreshOpenTimeline() {
     const open = document.getElementById(SCREEN_ID);
-    if (open) open.innerHTML = detailMarkup(model);
-}
-
-function schedule() {
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(() => {
-        queued = false;
-        renderSurfaces();
-    });
+    if (open) open.innerHTML = detailMarkup(getGoalTimelineViewModel());
 }
 
 function openGoalSettings() {
@@ -320,8 +244,6 @@ document.addEventListener("keydown", event => {
     }
 });
 
-const content = document.getElementById("content");
-if (content) new MutationObserver(schedule).observe(content, { childList: true, subtree: true });
 [
     "pageshow",
     "levelup:weight-updated",
@@ -330,5 +252,4 @@ if (content) new MutationObserver(schedule).observe(content, { childList: true, 
     "levelup:current-goal-updated",
     "levelup:units-changed",
     "levelup:app-features-updated"
-].forEach(name => window.addEventListener(name, schedule));
-schedule();
+].forEach(name => window.addEventListener(name, refreshOpenTimeline));

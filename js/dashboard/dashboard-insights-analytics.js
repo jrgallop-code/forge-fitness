@@ -1,3 +1,3 @@
 import "./dashboard-see-more-position-fix.js?v=dashboard-see-more-position-3";
 import "../core/workout-theme-guardrail.js?v=workout-theme-guardrail-3";
-export * from "./dashboard-insights-analytics-v5.js?v=goal-timeline-1";
+export * from "./dashboard-insights-analytics-v5.js?v=goal-timeline-2";

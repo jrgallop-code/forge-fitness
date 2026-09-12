@@ -1,4 +1,4 @@
-import "./dashboard-insights-analytics.js?v=goal-timeline-1";
+import "./dashboard-insights-analytics.js?v=goal-timeline-2";
 import { buildDashboardWeightTrendSvg } from "./dashboard-weight-trend-svg.js?v=dashboard-weight-style-sync-1";
 import { calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 

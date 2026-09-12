@@ -41,9 +41,10 @@ test("goal timeline handles fat loss, maintenance, reached goals, and a mismatch
     assert.equal(missingRate.status, "rate_missing");
 });
 
-test("dashboard and Weight Progress expose one compact timeline and one detailed view", () => {
-    assert.match(dashboard, /dashboard-goal-timeline-card/);
-    assert.match(dashboard, /weight-goal-timeline-strip/);
+test("goal timeline stays inside See More and opens one detailed view", () => {
+    assert.doesNotMatch(dashboard, /dashboard-goal-timeline-card/);
+    assert.doesNotMatch(dashboard, /weight-goal-timeline-strip/);
+    assert.match(dashboard, /goalTimelinePreviewMarkup/);
     assert.match(dashboard, /data-goal-timeline-open/);
     assert.match(dashboard, /Estimated goal date/);
     assert.match(dashboard, /Selected pace/);
@@ -52,12 +53,14 @@ test("dashboard and Weight Progress expose one compact timeline and one detailed
     assert.match(dashboard, /Plateaus, water-weight changes, missed targets/);
     assert.match(dashboard, /data-goal-timeline-edit/);
     assert.match(styles, /\.goal-timeline-screen/);
+    assert.match(styles, /z-index:\s*31050/);
+    assert.match(styles, /bottom:\s*calc\(12px \+ env\(safe-area-inset-bottom\)\)/);
 });
 
 test("the PWA preloads and cache-busts goal timeline assets", () => {
-    assert.match(serviceWorker, /2026-09-12-297/);
-    assert.match(serviceWorker, /dashboard-goal-timeline\.js\?v=goal-timeline-1/);
-    assert.match(serviceWorker, /goal-timeline\.css\?v=goal-timeline-1/);
-    assert.match(index, /dashboard-command-center\.css\?v=goal-timeline-1/);
-    assert.match(index, /dashboard-weight-trend-card\.js\?v=goal-timeline-1/);
+    assert.match(serviceWorker, /2026-09-12-298/);
+    assert.match(serviceWorker, /dashboard-goal-timeline\.js\?v=goal-timeline-2/);
+    assert.match(serviceWorker, /goal-timeline\.css\?v=goal-timeline-2/);
+    assert.match(index, /dashboard-command-center\.css\?v=goal-timeline-2/);
+    assert.match(index, /dashboard-weight-trend-card\.js\?v=goal-timeline-2/);
 });
