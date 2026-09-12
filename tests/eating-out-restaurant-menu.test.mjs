@@ -6,7 +6,7 @@ const read = relative => readFile(new URL(`../${relative}`, import.meta.url), "u
 
 test("Food Log exposes a clear Eating Out entry point", async () => {
     const foodLog = await read("js/nutrition/food-log.js");
-    assert.match(foodLog, /restaurant-menu\.js\?v=eating-out-4/);
+    assert.match(foodLog, /restaurant-menu\.js\?v=eating-out-5/);
     assert.match(foodLog, /data-food-eating-out/);
     assert.match(foodLog, />Eating Out</);
     assert.match(foodLog, /Browse restaurant menus by calories and protein/);
@@ -42,7 +42,8 @@ test("restaurant catalogue mode returns complete verified menus before external 
     ]);
     assert.match(baseWorker, /restaurantMenu.*searchVerifiedFoods\(query, env, countryCode, 250\)/s);
     assert.match(baseWorker, /restaurantCatalogue:\s*isCompleteVerifiedRestaurantCatalogue\(query, verifiedFoods\)/);
-    assert.match(baseWorker, /identity !== "mezza lebanese kitchen"/);
+    assert.match(baseWorker, /\["mezza lebanese kitchen", MEZZA_FOODS\.length\]/);
+    assert.match(baseWorker, /\["boston pizza", BOSTON_PIZZA_FOODS\.length\]/);
     assert.match(fatSecretWorker, /cataloguePayload\?\.restaurantCatalogue/);
 });
 
@@ -60,10 +61,17 @@ test("Eating Out inherits the active appearance instead of hard-coding one theme
 test("PWA routing and caching include the restaurant menu source", async () => {
     const router = await read("js/core/router.js");
     const worker = await read("service-worker.js");
-    assert.match(router, /food-log\.js\?v=eating-out-4/);
-    assert.match(worker, /2026-09-12-302/);
-    assert.match(worker, /restaurant-menu\.js\?v=eating-out-4/);
-    assert.match(worker, /restaurant-menu\.css\?v=eating-out-4/);
+    assert.match(router, /food-log\.js\?v=eating-out-5/);
+    assert.match(worker, /2026-09-12-303/);
+    assert.match(worker, /restaurant-menu\.js\?v=eating-out-5/);
+    assert.match(worker, /restaurant-menu\.css\?v=eating-out-5/);
+});
+
+test("Boston Pizza cards show both per-slice and whole-pizza calories", async () => {
+    const menu = await read("js/nutrition/restaurant-menu.js");
+    assert.match(menu, /\^1 whole \/i/);
+    assert.match(menu, /cal whole/);
+    assert.match(menu, /"Apps and Shareables".*"Pizza"/);
 });
 
 test("Food Log search controls stay on one balanced row without a microphone", async () => {

@@ -536,6 +536,33 @@ test("Mezza migration mirrors all 84 official rows and preserves full nutrition 
     assert.match(migration, /Mezza_NutritionChart-May-2026\.pdf/);
 });
 
+test("Boston Pizza's complete official menu includes Thai Chicken Wrap and whole-pizza portions", async () => {
+    const { BOSTON_PIZZA_FOODS } = await import("../cloud/src/data/boston-pizza-foods.js");
+    const allBostonPizza = searchBundledVerifiedFoods("Boston Pizza");
+    const grilledWrap = allBostonPizza.find(food => food.catalogueId === "boston-pizza-ca-sandwiches-burgers-thai-chicken-wrap-grilled-chicken");
+    const smallPizza = allBostonPizza.find(food => food.catalogueId === "boston-pizza-ca-pizza-create-your-own-pizza-small-per-slice");
+
+    assert.equal(BOSTON_PIZZA_FOODS.length, 231);
+    assert.equal(allBostonPizza.length, 231);
+    assert.deepEqual(grilledWrap.portions[0].nutrition, { calories: 820, protein: 42, carbs: 87, fat: 33, fiber: 5 });
+    assert.equal(grilledWrap.menuSection, "Sandwiches & Burgers");
+    assert.equal(smallPizza.portions[0].label, "1 slice (small pizza)");
+    assert.deepEqual(smallPizza.portions[0].nutrition, { calories: 120, protein: 6, carbs: 17, fat: 3.5, fiber: 1 });
+    assert.equal(smallPizza.portions[1].label, "1 whole small pizza (8 slices)");
+    assert.deepEqual(smallPizza.portions[1].nutrition, { calories: 960, protein: 48, carbs: 136, fat: 28, fiber: 8 });
+    assert.ok(allBostonPizza.every(food => food.provenance.sourceName === "Boston Pizza Canada official nutrition page"));
+    assert.ok(allBostonPizza.every(food => food.provenance.verifiedAt === "2026-09-12"));
+});
+
+test("Boston Pizza migration mirrors all 231 official rows and full macros", async () => {
+    const migration = await readFile(new URL("../cloud/migrations/0021_boston_pizza_foods.sql", import.meta.url), "utf8");
+    assert.equal((migration.match(/\('boston-pizza-ca-/g) || []).length, 231);
+    assert.match(migration, /'Thai Chicken Wrap - Grilled chicken'.*820, 42, 87, 33, 5/);
+    assert.match(migration, /'Create Your Own Pizza - Small \(per slice\)'.*120, 6, 17, 3\.5, 1/);
+    assert.match(migration, /Boston Pizza Canada official nutrition page/);
+    assert.match(migration, /'full'/);
+});
+
 test("Canadian and US Grenade barcodes resolve to regional variants of one product family", () => {
     const canadian = findBundledVerifiedFoodByBarcode("847534004261");
     const us = findBundledVerifiedFoodByBarcode("847534004063");
