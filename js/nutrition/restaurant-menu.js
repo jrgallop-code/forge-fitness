@@ -65,7 +65,7 @@ function ensureRestaurantMenuStyles() {
     if (document.querySelector("link[data-restaurant-menu-styles]")) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/restaurant-menu.css?v=eating-out-4";
+    link.href = "css/restaurant-menu.css?v=eating-out-5";
     link.dataset.restaurantMenuStyles = "";
     document.head.append(link);
 }
@@ -359,7 +359,7 @@ function groupFoods(foods) {
         if (!groups.has(category)) groups.set(category, []);
         groups.get(category).push(food);
     });
-    const order = ["Wraps", "Plates with fries", "Plates with rice", "Bowls", "Lunch plates", "Poutines", "Salads", "Desserts & extras", "Sauces", "Sides", "Protein", "Toppings", "High-protein picks", "Breakfast", "Burgers & sandwiches", "Pizza & pasta", "Bowls, salads & entrées", "Sides & snacks", "Drinks & treats", "Menu items"];
+    const order = ["Apps and Shareables", "Mains", "Bowls and Salads", "Sandwiches & Burgers", "Desserts", "Sides", "GlutenWise®", "Kids", "Pasta", "Pizza", "Wraps", "Plates with fries", "Plates with rice", "Bowls", "Lunch plates", "Poutines", "Salads", "Desserts & extras", "Sauces", "Protein", "Toppings", "High-protein picks", "Breakfast", "Burgers & sandwiches", "Pizza & pasta", "Bowls, salads & entrées", "Sides & snacks", "Drinks & treats", "Menu items"];
     return [...groups.entries()].sort((a, b) => {
         const aIndex = order.indexOf(a[0]);
         const bIndex = order.indexOf(b[0]);
@@ -383,6 +383,10 @@ function menuCategory(food) {
 
 function itemMarkup(food, foodIndex) {
     const nutrition = primaryNutrition(food);
+    const wholePizza = food?.portions?.find(portion => /^1 whole /i.test(String(portion?.label || "")));
+    const servingCopy = wholePizza
+        ? `${food.portions?.[0]?.label || "1 slice"} · ${Math.round(Number(wholePizza.nutrition?.calories) || 0)} cal whole`
+        : food.portions?.[0]?.label || "1 serving";
     const caloriesOnly = food?.provenance?.nutritionScope === "calories_only";
     const remainingCalories = finiteDifference(state.context?.targets?.calories, state.context?.totals?.calories);
     const badges = [
@@ -393,7 +397,7 @@ function itemMarkup(food, foodIndex) {
     ].filter(Boolean).slice(0, 3);
     return `<button type="button" class="restaurant-menu-item" data-restaurant-food-index="${foodIndex}" aria-label="Add ${escapeHtml(food.name)}">
         <span class="restaurant-menu-item-icon" aria-hidden="true">${plateSvg()}</span>
-        <span class="restaurant-menu-item-copy"><strong>${escapeHtml(food.name)}</strong><small>${escapeHtml(food.portions?.[0]?.label || "1 serving")}</small><span>${badges.map(badge => `<i>${escapeHtml(badge)}</i>`).join("")}</span>${caloriesOnly ? "" : `<em>C ${roundOne(nutrition.carbs)} g · F ${roundOne(nutrition.fat)} g</em>`}</span>
+        <span class="restaurant-menu-item-copy"><strong>${escapeHtml(food.name)}</strong><small>${escapeHtml(servingCopy)}</small><span>${badges.map(badge => `<i>${escapeHtml(badge)}</i>`).join("")}</span>${caloriesOnly ? "" : `<em>C ${roundOne(nutrition.carbs)} g · F ${roundOne(nutrition.fat)} g</em>`}</span>
         <span class="restaurant-menu-item-macros"><strong>${Math.round(nutrition.calories)}</strong><small>calories</small>${caloriesOnly ? '<em>Macros unavailable</em>' : `<b>${roundOne(nutrition.protein)}<small> g protein</small></b>`}</span>
     </button>`;
 }

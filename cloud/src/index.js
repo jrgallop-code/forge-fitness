@@ -3,6 +3,7 @@ import { PUR_SIMPLE_FOODS } from "./data/pur-simple-foods.js";
 import { NORTH_AMERICAN_CHAIN_FOODS } from "./data/north-american-chain-foods.js";
 import { CANADIAN_CHAIN_EXPANSION } from "./data/canadian-chain-expansion.js";
 import { MEZZA_FOODS } from "./data/mezza-foods.js";
+import { BOSTON_PIZZA_FOODS } from "./data/boston-pizza-foods.js";
 
 const MAX_BACKUP_BYTES = 8 * 1024 * 1024;
 // User and owner sessions stay valid until they are explicitly revoked. Keep a
@@ -852,8 +853,11 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
 
 function isCompleteVerifiedRestaurantCatalogue(query, foods) {
     const identity = foodIdentity(query);
-    if (identity !== "mezza lebanese kitchen") return false;
-    return Array.isArray(foods) && foods.length >= MEZZA_FOODS.length && foods.every(food => foodIdentity(food?.brand) === identity);
+    const expectedCount = new Map([
+        ["mezza lebanese kitchen", MEZZA_FOODS.length],
+        ["boston pizza", BOSTON_PIZZA_FOODS.length]
+    ]).get(identity);
+    return Boolean(expectedCount) && Array.isArray(foods) && foods.length >= expectedCount && foods.every(food => foodIdentity(food?.brand) === identity);
 }
 
 function foodSearchSource(verifiedFoods, usdaFoods, externalFoods) {
@@ -1436,9 +1440,12 @@ export function normalizeVerifiedFood(row) {
         fat: safeFoodNumber(row?.fat_g),
         fiber: safeFoodNumber(row?.fiber_g)
     };
+    const brand = limitedText(row?.brand, 120);
+    const menuSection = limitedText(row?.menu_section, 80);
     const servingGrams = Number(row?.serving_grams);
+    const servingLabel = foodServingLabel(limitedText(row?.serving_label, 80) || "1 serving", servingGrams);
     const portions = [{
-        label: foodServingLabel(limitedText(row?.serving_label, 80) || "1 serving", servingGrams),
+        label: servingLabel,
         ...(Number.isFinite(servingGrams) && servingGrams > 0 ? { grams: servingGrams } : {}),
         nutrition
     }];
@@ -1450,10 +1457,10 @@ export function normalizeVerifiedFood(row) {
         catalogueId: id,
         productFamilyId: limitedText(row?.product_family_id, 100),
         name,
-        brand: limitedText(row?.brand, 120),
+        brand,
         dataType: String(limitedText(row?.category, 100) || "").toLowerCase() === "restaurant food" ? "Verified restaurant item" : "Level Up Verified",
         category: limitedText(row?.category, 100),
-        menuSection: limitedText(row?.menu_section, 80),
+        menuSection,
         countryCode: limitedText(row?.country_code, 8),
         barcode: limitedText(row?.barcode, 40),
         provenance: {
@@ -1468,7 +1475,7 @@ export function normalizeVerifiedFood(row) {
         },
         popularityScore: safeFoodNumber(row?.popularity_score),
         detailsLoaded: true,
-        portions: addUsefulGramPortions(portions)
+        portions: addUsefulGramPortions(addRestaurantServingOptions(portions, { brand, menuSection, servingLabel }))
     };
 }
 
@@ -1578,6 +1585,11 @@ const BUNDLED_VERIFIED_FOODS = [
         ...food,
         category: "Restaurant food",
         verifiedAt: "2026-09-12"
+    })),
+    ...BOSTON_PIZZA_FOODS.map(food => bundledVerifiedFood({
+        ...food,
+        category: "Restaurant food",
+        verifiedAt: "2026-09-12"
     }))
 ];
 
@@ -1602,8 +1614,22 @@ function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, b
         countryCode,
         provenance: { sourceName: sourceName || (brand === "Grenade" ? "Grenade" : "McDonald's Canada"), sourceUrl, verifiedAt, sourceType: "official_restaurant", verificationStatus: "verified", nutritionScope: nutritionScope || (protein || carbs || fat ? "full" : "calories_only"), lastCheckedAt: verifiedAt },
         detailsLoaded: true,
-        portions: addUsefulGramPortions(portions)
+        portions: addUsefulGramPortions(addRestaurantServingOptions(portions, { brand, menuSection, servingLabel: label }))
     };
+}
+
+function addRestaurantServingOptions(portions, { brand, menuSection, servingLabel }) {
+    if (brand !== "Boston Pizza" || menuSection !== "Pizza") return portions;
+    const match = String(servingLabel || "").match(/^1 slice \((small|medium|large) pizza\)$/i);
+    if (!match) return portions;
+    const size = match[1].toLowerCase();
+    const slices = { small: 8, medium: 10, large: 12 }[size];
+    const slice = portions[0];
+    if (!slice?.nutrition || !slices) return portions;
+    return [...portions, {
+        label: `1 whole ${size} pizza (${slices} slices)`,
+        nutrition: scaleUsdaNutrition(slice.nutrition, slices)
+    }];
 }
 
 async function getUsdaFoodDetails(fdcId, request, env) {
