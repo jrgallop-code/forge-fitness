@@ -1,8 +1,8 @@
 import { calculateTrendWeightSeries, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
+import { readFoodLog } from "../nutrition/food-log-data.js?v=fatsecret-progress-calories-1";
 
 const WEIGHT_KEY = "forge_weight_entries";
-const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
 const PHASES_KEY = "level_up_nutrition_phases";
 const RANGE_KEY = "level_up_weight_chart_range";
@@ -166,7 +166,7 @@ function buildState() {
     const trendSeries = calculateTrendWeightSeries(weights).filter(entry => entry.date >= window.startDate && entry.date <= window.endDate);
     const trendByDate = new Map(trendSeries.map(entry => [entry.date, entry.weight]));
     const weightByDate = new Map(weights.map(entry => [entry.date, entry.weight]));
-    const foodLog = readJson(FOOD_LOG_KEY, {});
+    const foodLog = readFoodLog();
     const completeDays = readJson(FOOD_COMPLETE_KEY, {});
     const series = datesBetween(window.startDate, window.endDate).map(date => {
         const entries = Array.isArray(foodLog?.[date]) ? foodLog[date] : [];

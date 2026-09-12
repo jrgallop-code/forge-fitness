@@ -1,7 +1,7 @@
 import { calculateDisplayWeightTrend, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=tdee-smoothed-weight-rate-1";
 import { estimateTissueEnergyPerLb } from "../core/body-composition.js?v=body-composition-1";
+import { readFoodLog } from "./food-log-data.js?v=fatsecret-progress-calories-1";
 
-const FOOD_LOG_KEY = "level_up_food_log_v1";
 const WEIGHT_KEY = "forge_weight_entries";
 const WEEKLY_ESTIMATE_KEY = "level_up_weekly_tdee_estimate_v1";
 const WEEKLY_HISTORY_KEY = "level_up_weekly_tdee_history_v1";
@@ -164,7 +164,7 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], endDa
 }
 
 export function getCalculatedMaintenanceEstimate(profileEstimate = null) {
-    const foodLog = readJson(FOOD_LOG_KEY, {});
+    const foodLog = readFoodLog();
     const weights = readJson(WEIGHT_KEY, []);
     const today = new Date();
     const liveEstimate = calculateMaintenanceEstimate({ foodLog, weights, endDate: today, profileEstimate });
@@ -239,7 +239,8 @@ export function calculateMaintenanceHistory({ foodLog = {}, weights = [], snapsh
 
 export function getCalculatedMaintenanceHistory(profileEstimate = null, { startDate = null } = {}) {
     const today = new Date();
-    const foodRaw = localStorage.getItem(FOOD_LOG_KEY) || "";
+    const foodLog = readFoodLog();
+    const foodFingerprint = JSON.stringify(foodLog);
     const weightRaw = localStorage.getItem(WEIGHT_KEY) || "";
     const historyRaw = localStorage.getItem(WEEKLY_HISTORY_KEY) || "";
     const snapshotRaw = localStorage.getItem(WEEKLY_ESTIMATE_KEY) || "";
@@ -249,7 +250,7 @@ export function getCalculatedMaintenanceHistory(profileEstimate = null, { startD
         && maintenanceHistoryCache.date === dateKey(today)
         && maintenanceHistoryCache.startDate === startDate
         && maintenanceHistoryCache.profileEstimate === profileEstimate
-        && maintenanceHistoryCache.foodRaw === foodRaw
+        && maintenanceHistoryCache.foodFingerprint === foodFingerprint
         && maintenanceHistoryCache.weightRaw === weightRaw
         && maintenanceHistoryCache.historyRaw === historyRaw
         && maintenanceHistoryCache.snapshotRaw === snapshotRaw
@@ -257,9 +258,7 @@ export function getCalculatedMaintenanceHistory(profileEstimate = null, { startD
         && maintenanceHistoryCache.bodyFatEntriesRaw === bodyFatEntriesRaw;
     if (cacheMatches) return maintenanceHistoryCache.points;
 
-    let foodLog = {};
     let weights = [];
-    try { foodLog = JSON.parse(foodRaw || "{}") || {}; } catch { foodLog = {}; }
     try { weights = JSON.parse(weightRaw || "[]") || []; } catch { weights = []; }
     const snapshotHistory = readStoredMaintenanceHistory();
     const points = calculateMaintenanceHistory({ foodLog, weights, snapshotHistory, startDate, endDate: today, profileEstimate });
@@ -267,7 +266,7 @@ export function getCalculatedMaintenanceHistory(profileEstimate = null, { startD
         date: dateKey(today),
         startDate,
         profileEstimate,
-        foodRaw,
+        foodFingerprint,
         weightRaw,
         historyRaw,
         snapshotRaw,

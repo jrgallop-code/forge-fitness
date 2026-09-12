@@ -4,9 +4,9 @@ import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1"
 import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calendar-checkin-day-1";
 import { getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=calendar-checkin-day-1";
+import { readFoodLog } from "./food-log-data.js?v=fatsecret-progress-calories-1";
 import { completeTutorial, dismissTutorial, getTutorial, getTutorialState, setTutorialStep, shouldShowTutorial } from "../core/tutorials.js?v=food-log-macro-bars-1";
 
-const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
 const RANGE_KEY = "level_up_calorie_stats_range_v1";
 const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
@@ -71,8 +71,11 @@ export function isCaloriesInTarget(calories, target) {
     return Math.abs(Number(calories) - Number(target)) <= calorieTargetTolerance(target);
 }
 
-function daysForRange(count) {
-    const log = readJson(FOOD_LOG_KEY, {});
+export function calorieDaysForRange(count) {
+    // FatSecret entries are intentionally persisted as provider IDs rather than
+    // nutrition snapshots. Use the shared reader so those entries are hydrated
+    // before Progress calculates calories and macros.
+    const log = readFoodLog();
     const completedDays = readJson(FOOD_COMPLETE_KEY, {});
     return Array.from({ length: count }, (_, index) => {
         const date = dateKeyOffset(index - count + 1);
@@ -85,6 +88,8 @@ function daysForRange(count) {
         return { date, logged: entries.length > 0, complete: completedDays?.[date] === true, mealCalories, ...summarize(entries) };
     });
 }
+
+const daysForRange = calorieDaysForRange;
 
 function average(days, key) {
     const logged = days.filter(day => day.logged);

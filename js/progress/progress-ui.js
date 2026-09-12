@@ -1,4 +1,4 @@
-import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=food-log-macro-bars-1";
+import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=fatsecret-progress-calories-1";
 
 export function renderProgress() {
 

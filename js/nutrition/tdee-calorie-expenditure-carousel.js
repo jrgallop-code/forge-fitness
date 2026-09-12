@@ -1,8 +1,8 @@
 import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "./calculated-maintenance.js?v=tdee-live-daily-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
+import { readFoodLog } from "./food-log-data.js?v=fatsecret-progress-calories-1";
 
-const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
 const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
 const STYLE_ID = "level-up-calorie-expenditure-card-styles";
@@ -215,7 +215,7 @@ function buildComparisonState() {
     const profileEstimate = profileMaintenance();
     const current = getCalculatedMaintenanceEstimate(profileEstimate);
     const history = getCalculatedMaintenanceHistory(profileEstimate, { startDate: historyStart });
-    const foodLog = readJson(FOOD_LOG_KEY, {});
+    const foodLog = readFoodLog();
     const completedDays = readJson(FOOD_COMPLETE_KEY, {});
     const today = localDateKey();
     const currentLive = positive(current?.liveMaintenanceCalories);
