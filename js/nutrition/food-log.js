@@ -43,6 +43,7 @@ import {
     poundsToKg
 } from "./tdee-calculator.js?v=food-log-macro-bars-1";
 import { getFoodEmoji } from "./food-emoji.js?v=food-artwork-polish-1";
+import { initializeRestaurantMenu, openRestaurantMenu } from "./restaurant-menu.js?v=eating-out-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -122,6 +123,11 @@ function renderFoodSheet() {
                     <div class="food-search-entry"><div class="food-search-field"><input type="search" name="query" minlength="2" maxlength="80" autocomplete="off" placeholder="Search foods" aria-label="Search foods"></div><button type="button" class="food-voice-open" data-food-voice aria-label="Log ingredients by voice" title="Log ingredients by voice" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="12" rx="4"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"/></svg></button><button type="button" class="food-barcode-open" data-barcode-open aria-label="Scan a food barcode" title="Scan barcode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7 5v14M10 5v14M14 5v14M17 5v14M20 5v14M2.5 5h2M19.5 5h2M2.5 19h2M19.5 19h2"/></svg></button></div>
                     <button type="submit" class="primary-btn">Search</button>
                 </form>
+                <button type="button" class="food-eating-out-entry" data-food-eating-out>
+                    <span class="food-eating-out-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3v6M8 3v6M11 3v6M5 9c0 1.7 1.3 3 3 3s3-1.3 3-3M8 12v9M18 3v18M18 3c-2.5 2.7-3.7 5.7-3.7 9H18"/></svg></span>
+                    <span><strong>Eating Out</strong><small>Browse restaurant menus by calories and protein</small></span>
+                    <b aria-hidden="true">›</b>
+                </button>
                 <div class="food-sheet-tabs">
                     <button type="button" class="active" data-food-mode="recent">Recent</button>
                     <button type="button" data-food-mode="meals">My Meals</button>
@@ -214,6 +220,16 @@ export function initializeFoodLog() {
         foodSearchTimer = window.setTimeout(() => foodSearchForm.requestSubmit(), 300);
     });
     initializeFoodVoiceInput();
+    initializeRestaurantMenu({
+        getContext: () => ({
+            dateKey: selectedDate,
+            meal: selectedMeal,
+            targets: activeTargets(),
+            totals: summarizeEntries(entriesForDate(selectedDate))
+        }),
+        onChooseFood: food => { void chooseFood(food); }
+    });
+    document.querySelector("[data-food-eating-out]")?.addEventListener("click", openRestaurantMenu);
     document.querySelector("[data-barcode-open]")?.addEventListener("click", openBarcodeScanner);
     document.querySelector("[data-barcode-close]")?.addEventListener("click", closeBarcodeScanner);
     document.querySelector("[data-barcode-form]")?.addEventListener("submit", submitManualBarcode);
