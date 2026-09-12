@@ -63,19 +63,12 @@ test("My Meals can build a reusable meal from pasted ingredients", async () => {
     assert.match(styles, /\.food-builder-paste/);
 });
 
-test("food search offers free browser voice logging with review before save", async () => {
-    const [module, parser, styles] = await Promise.all([
-        read("../js/nutrition/food-log.js"),
-        read("../js/nutrition/ingredient-paste-parser.js"),
-        read("../css/food-log.css")
-    ]);
-    assert.match(module, /data-food-voice/);
-    assert.match(module, /webkitSpeechRecognition/);
-    assert.match(module, /Review Ingredients/);
-    assert.match(module, /never invents nutrition values/);
-    assert.match(module, /Log to \$\{escapeHtml\(selectedMeal\)\}/);
-    assert.match(parser, /parseSpokenIngredientText/);
-    assert.match(styles, /\.food-voice-open\.is-listening/);
+test("food search removes the microphone while keeping paste ingredients available", async () => {
+    const module = await read("../js/nutrition/food-log.js");
+    assert.doesNotMatch(module, /class="food-voice-open"/);
+    assert.doesNotMatch(module, /initializeFoodVoiceInput\(\);/);
+    assert.match(module, /data-paste-meal/);
+    assert.match(module, /Paste Ingredients/);
 });
 
 test("the pasted ingredient field does not collapse behind meal cards when the iOS keyboard opens", async () => {

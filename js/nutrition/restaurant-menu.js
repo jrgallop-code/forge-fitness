@@ -64,7 +64,7 @@ function ensureRestaurantMenuStyles() {
     if (document.querySelector("link[data-restaurant-menu-styles]")) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/restaurant-menu.css?v=eating-out-1";
+    link.href = "css/restaurant-menu.css?v=eating-out-2";
     link.dataset.restaurantMenuStyles = "";
     document.head.append(link);
 }

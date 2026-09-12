@@ -6,11 +6,12 @@ const read = relative => readFile(new URL(`../${relative}`, import.meta.url), "u
 
 test("Food Log exposes a clear Eating Out entry point", async () => {
     const foodLog = await read("js/nutrition/food-log.js");
-    assert.match(foodLog, /restaurant-menu\.js\?v=eating-out-1/);
+    assert.match(foodLog, /restaurant-menu\.js\?v=eating-out-2/);
     assert.match(foodLog, /data-food-eating-out/);
     assert.match(foodLog, />Eating Out</);
     assert.match(foodLog, /Browse restaurant menus by calories and protein/);
     assert.match(foodLog, /onChooseFood:\s*food\s*=>\s*\{\s*void chooseFood\(food\)/);
+    assert.doesNotMatch(foodLog, /class="food-voice-open"/);
 });
 
 test("Restaurant Menus searches real food data and supports restaurant discovery", async () => {
@@ -45,8 +46,22 @@ test("Eating Out inherits the active appearance instead of hard-coding one theme
 test("PWA routing and caching include the restaurant menu source", async () => {
     const router = await read("js/core/router.js");
     const worker = await read("service-worker.js");
-    assert.match(router, /food-log\.js\?v=eating-out-1/);
-    assert.match(worker, /2026-09-12-299/);
-    assert.match(worker, /restaurant-menu\.js\?v=eating-out-1/);
-    assert.match(worker, /restaurant-menu\.css\?v=eating-out-1/);
+    assert.match(router, /food-log\.js\?v=eating-out-2/);
+    assert.match(worker, /2026-09-12-300/);
+    assert.match(worker, /restaurant-menu\.js\?v=eating-out-2/);
+    assert.match(worker, /restaurant-menu\.css\?v=eating-out-2/);
+});
+
+test("Food Log search controls stay on one balanced row without a microphone", async () => {
+    const [foodLog, styles] = await Promise.all([
+        read("js/nutrition/food-log.js"),
+        read("css/restaurant-menu.css")
+    ]);
+    assert.doesNotMatch(foodLog, /class="food-voice-open"/);
+    assert.match(foodLog, /food-search-submit/);
+    assert.match(foodLog, /food-search-field"><svg/);
+    assert.match(styles, /\.food-search\{grid-template-columns:minmax\(0,1fr\) 96px!important/);
+    assert.match(styles, /\.food-search-entry\{[^}]*grid-template-columns:minmax\(0,1fr\) 48px!important/);
+    assert.match(styles, /\.food-search \.food-barcode-open\{[^}]*width:48px!important;height:48px/);
+    assert.match(styles, /\.food-search>\.food-search-submit\{[^}]*width:96px[^}]*height:48px/);
 });

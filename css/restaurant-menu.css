@@ -1,4 +1,12 @@
-.food-eating-out-entry{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:11px;width:100%;min-height:62px;margin:11px 0 0;padding:9px 12px;border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));border-radius:15px;background:linear-gradient(100deg,var(--accent-soft),var(--surface-raised));color:var(--text);text-align:left;box-shadow:0 8px 24px color-mix(in srgb,var(--accent-glow) 35%,transparent)}
+.food-search{grid-template-columns:minmax(0,1fr) 96px!important;align-items:stretch;gap:8px!important}
+.food-search-entry{display:grid;grid-template-columns:minmax(0,1fr) 48px!important;align-items:stretch;gap:8px;min-width:0}
+.food-search-field{position:relative;min-width:0}
+.food-search-field>svg{position:absolute;z-index:1;top:50%;left:14px;width:19px;height:19px;transform:translateY(-50%);fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;pointer-events:none}
+.food-search-field>input{height:48px;min-height:48px!important;padding-right:12px!important;padding-left:42px!important;border-radius:14px!important}
+.food-search .food-barcode-open{display:grid;place-items:center;width:48px!important;height:48px;min-height:48px;padding:12px;border:1px solid var(--line)!important;border-radius:14px;background:var(--surface-raised)!important;color:var(--text)!important}
+.food-search .food-barcode-open svg{width:24px;height:24px}
+.food-search>.food-search-submit{width:96px;min-width:96px;min-height:48px;height:48px;padding:0 14px;border-radius:14px;font-size:13px;box-shadow:none}
+.food-eating-out-entry{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:11px;width:100%;min-height:64px;margin:10px 0 0;padding:10px 13px;border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));border-radius:14px;background:linear-gradient(100deg,var(--accent-soft),var(--surface-raised));color:var(--text);text-align:left;box-shadow:0 7px 20px color-mix(in srgb,var(--accent-glow) 26%,transparent)}
 .food-eating-out-entry:active{transform:scale(.992)}
 .food-eating-out-entry:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .food-eating-out-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--accent);color:var(--accent-contrast);box-shadow:0 7px 18px var(--accent-glow)}
@@ -146,6 +154,8 @@ body.restaurant-menu-open{overflow:hidden}
 }
 
 @media(max-width:355px){
+    .food-search{grid-template-columns:minmax(0,1fr) 84px!important}
+    .food-search>.food-search-submit{width:84px;min-width:84px;padding:0 10px}
     .restaurant-menu-back span{display:none}
     .restaurant-menu-topbar{grid-template-columns:44px minmax(0,1fr) 44px}
     .restaurant-menu-item{grid-template-columns:minmax(0,1fr) 72px}
