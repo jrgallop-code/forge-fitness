@@ -392,6 +392,19 @@ function showBuilder() {
             "[data-workout-home]"
         );
 
+    const liveLanding =
+        document.querySelector(
+            "[data-workout-live-landing]"
+        );
+
+
+    if (liveLanding) {
+
+        liveLanding.hidden =
+            true;
+
+    }
+
 
     if (workoutHome) {
 
@@ -412,6 +425,76 @@ function showBuilder() {
         });
 
     }
+
+}
+
+
+function editSavedPlan(plan) {
+
+    if (!plan || typeof plan !== "object") {
+        return false;
+    }
+
+
+    workingPlan =
+        JSON.parse(
+            JSON.stringify(
+                plan
+            )
+        );
+
+
+    showBuilder();
+
+
+    const nameInput =
+        document.getElementById(
+            "plan-name"
+        );
+
+
+    if (nameInput) {
+
+        nameInput.value =
+            workingPlan.name ||
+            "";
+
+    }
+
+
+    renderWorkoutDays();
+
+
+    document
+        .getElementById(
+            "plan-builder"
+        )
+        ?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
+
+    return true;
+
+}
+
+
+export function editSavedWorkoutPlan(planId) {
+
+    const normalizedPlanId =
+        String(planId || "");
+
+
+    const plan =
+        getSavedPlans()
+            .find(savedPlan =>
+                String(savedPlan?.id || "") ===
+                normalizedPlanId
+            );
+
+
+    return editSavedPlan(plan);
 
 }
 
@@ -1349,43 +1432,7 @@ function renderSavedPlans(
             "click",
             () => {
 
-                workingPlan =
-                    JSON.parse(
-                        JSON.stringify(
-                            plan
-                        )
-                    );
-
-
-                showBuilder();
-
-
-                const nameInput =
-                    document.getElementById(
-                        "plan-name"
-                    );
-
-
-                if (nameInput) {
-
-                    nameInput.value =
-                        workingPlan.name ||
-                        "";
-
-                }
-
-
-                renderWorkoutDays();
-
-
-                document
-                    .getElementById(
-                        "plan-builder"
-                    )
-                    ?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start"
-                    });
+                editSavedPlan(plan);
 
             }
         );

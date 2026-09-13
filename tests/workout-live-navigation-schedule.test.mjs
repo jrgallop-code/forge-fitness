@@ -84,6 +84,21 @@ test("saved user plans restore a compact delete action", async () => {
   assert.match(workouts, /Delete Plan/);
 });
 
+test("saved workout Modify opens the editor directly instead of replaying a hidden card click", async () => {
+  const [details, workouts] = await Promise.all([
+    read("js/workouts/workout-plan-details.js"),
+    read("js/workouts/workouts.js")
+  ]);
+  assert.match(details, /import \{ editSavedWorkoutPlan \} from "\.\/workouts\.js\?v=saved-plan-edit-2"/);
+  assert.match(details, /editSavedWorkoutPlan\(plan\.id\)/);
+  assert.doesNotMatch(details, /levelup:edit-saved-workout-plan/);
+  assert.doesNotMatch(details, /find\(button => \/edit plan\/i/);
+  assert.match(workouts, /function editSavedPlan\(plan\)/);
+  assert.match(workouts, /export function editSavedWorkoutPlan\(planId\)/);
+  assert.match(workouts, /getSavedPlans\(\)[\s\S]*String\(savedPlan\?\.id/);
+  assert.match(workouts, /\[data-workout-live-landing\]/);
+});
+
 test("Modify Workout builder uses semantic theme tokens in every appearance", async () => {
   const styles = await read("css/workout-landing-live-polish.css");
   assert.match(styles, /html\[data-theme\] \.workout-live-page #plan-builder/);
