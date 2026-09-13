@@ -13,6 +13,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "schedule", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "update", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getState", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "finish", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "cancel", returnType: CAPPluginReturnPromise)
     ]
 
@@ -150,6 +151,20 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve(result)
     }
 
+    // Reaching zero is not cancellation. Preserve the scheduled one-shot alert
+    // and let the Lock Screen card show its completed state briefly.
+    @objc func finish(_ call: CAPPluginCall) {
+        guard #available(iOS 16.1, *),
+              let key = call.getString("key") else {
+            call.resolve(["finished": false])
+            return
+        }
+        Task {
+            await LevelUpTimerStateStore.finish(timerID: key)
+            call.resolve(["finished": true])
+        }
+    }
+
     @objc func cancel(_ call: CAPPluginCall) {
         let key = call.getString("key") ?? ""
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationIdentifier(key)])
@@ -236,7 +251,9 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
             let endAt: Date
             if #available(iOS 16.2, *) { endAt = activity.content.state.endAt }
             else { endAt = activity.contentState.endAt }
-            if endAt <= Date() { endLiveActivities(key: activity.attributes.timerID) }
+            if endAt <= Date() {
+                Task { await LevelUpTimerStateStore.finish(timerID: activity.attributes.timerID) }
+            }
         }
     }
 }

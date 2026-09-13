@@ -94,3 +94,5 @@ Release 43: add verified Canadian restaurant catalogues with full macros, improv
 Release 44: synchronize expanded restaurant menus and optional onboarding goal weight, simplify crowded energy-balance charts, and keep calorie/expenditure timeframes synchronized.
 
 Release 45: separate expenditure-card timeframes from the calorie-summary 7D, 4W, and 12W controls.
+
+Release 46: keep completed rest timers visible on the Lock Screen and preserve the native completion alert.

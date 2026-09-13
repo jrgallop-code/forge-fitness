@@ -1,4 +1,4 @@
-import { cancelNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=interactive-live-activity-1";
+import { cancelNativeAlarm, finishNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=live-activity-completion-1";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
@@ -133,7 +133,9 @@ function finalizeTimer(timerId) {
     window.dispatchEvent(new CustomEvent("levelup:rest-timer-finished", {
         detail: { timerId: timer.timerId, sourceType: timer.sourceType || "working" }
     }));
-    void cancelNativeAlarm(`rest:${timer.timerId}`);
+    // Completion must not use cancellation: cancellation removes the pending
+    // native alert and immediately tears down the Lock Screen timer.
+    void finishNativeAlarm(`rest:${timer.timerId}`);
     void hapticNotification("SUCCESS");
     showSingleBackgroundNotification(timer);
 }

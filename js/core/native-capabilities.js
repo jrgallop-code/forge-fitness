@@ -133,6 +133,16 @@ export async function updateNativeAlarm({ key, status, endAt = null, remainingMs
     catch { return false; }
 }
 
+export async function finishNativeAlarm(key) {
+    const nativeTimer = plugin("LevelUpTimer");
+    if (!isNative() || !nativeTimer?.finish || !key) return false;
+    try {
+        const result = await nativeTimer.finish({ key });
+        return result?.finished === true;
+    }
+    catch { return false; }
+}
+
 let nativeTimerSyncing = false;
 export async function syncNativeRestTimerState() {
     const nativeTimer = plugin("LevelUpTimer");

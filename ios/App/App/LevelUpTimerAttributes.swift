@@ -112,6 +112,27 @@ enum LevelUpTimerStateStore {
         }
     }
 
+    static func finish(timerID: String, now: Date = Date()) async {
+        guard var record = record(for: timerID) else { return }
+        record.status = "finished"
+        record.remainingSeconds = 0
+        record.endAt = nil
+        save(record)
+
+        let state = contentState(for: record, now: now)
+        let dismissAt = now.addingTimeInterval(60)
+        for activity in Activity<LevelUpTimerAttributes>.activities where activity.attributes.timerID == timerID {
+            if #available(iOS 16.2, *) {
+                await activity.end(
+                    ActivityContent(state: state, staleDate: nil),
+                    dismissalPolicy: .after(dismissAt)
+                )
+            } else {
+                await activity.end(using: state, dismissalPolicy: .after(dismissAt))
+            }
+        }
+    }
+
     static func endActivities(timerID: String) async {
         for activity in Activity<LevelUpTimerAttributes>.activities where activity.attributes.timerID == timerID {
             if #available(iOS 16.2, *) {
@@ -137,6 +158,10 @@ enum LevelUpTimerStateStore {
         }
         save(record)
         rescheduleNotification(for: record)
+        if next == 0 {
+            await finish(timerID: timerID, now: now)
+            return
+        }
         await updateActivities(for: record)
     }
 

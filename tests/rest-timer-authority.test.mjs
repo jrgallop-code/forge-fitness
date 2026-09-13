@@ -26,7 +26,7 @@ test("the active rest timer keeps the full next exercise name readable", () => {
 test("warm-up completion uses the same per-exercise rest timer authority", () => {
     assert.match(warmups, /startRestForWarmupButton/);
     assert.match(warmups, /warmup-timer-stability\.js\?v=warmup-timer-stability-1/);
-    assert.match(warmups, /rest-timer-authority\.js\?v=interactive-live-activity-1/);
+    assert.match(warmups, /rest-timer-authority\.js\?v=live-activity-completion-1/);
     assert.doesNotMatch(warmups, /#start-rest-timer/);
     assert.match(authority, /sourceType:\s*"warmup"/);
     assert.match(authority, /warmupSets/);
@@ -55,6 +55,8 @@ test("one stable timer identity owns expiry and suppresses the legacy duplicate 
     assert.match(authority, /renotify:\s*false/);
     assert.match(authority, /getNotifications\(\{ tag: TIMER_TAG \}\)/);
     assert.match(authority, /if \(window\.Capacitor\?\.isNativePlatform\?\.\(\)\) return;/);
+    assert.match(authority, /finishNativeAlarm\(\`rest:\$\{timer\.timerId\}\`\)/);
+    assert.doesNotMatch(authority, /finalizeTimer[\s\S]*?cancelNativeAlarm\(\`rest:\$\{timer\.timerId\}\`\)/);
 });
 
 test("active rest banner is kept visible independently of logger DOM rerenders", () => {

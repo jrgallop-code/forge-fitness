@@ -1,6 +1,6 @@
-import "./rest-alarm-phase1.js?v=live-activity-full-title-1";
+import "./rest-alarm-phase1.js?v=live-activity-completion-1";
 import "./rest-alarm-button-stability.js?v=interactive-live-activity-1";
-import "./rest-timer-authority.js?v=interactive-live-activity-1";
+import "./rest-timer-authority.js?v=live-activity-completion-1";
 import "../core/workout-theme-guardrail.js?v=workout-theme-guardrail-3";
 import { openActiveWorkout } from "./workout-session.js?v=native-navigation-stability-1";
 

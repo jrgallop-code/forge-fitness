@@ -127,6 +127,10 @@ test("native iOS uses the selected Appearance icon without an opaque Lock Screen
     assert.match(timerPlugin, /call\.getString\("icon"\)/);
     assert.match(timerPlugin, /CAPPluginMethod\(name: "update"/);
     assert.match(timerPlugin, /CAPPluginMethod\(name: "getState"/);
+    assert.match(timerPlugin, /CAPPluginMethod\(name: "finish"/);
+    assert.match(timerPlugin, /LevelUpTimerStateStore\.finish/);
+    assert.match(attributes, /dismissalPolicy: \.after\(dismissAt\)/);
+    assert.match(native, /export async function finishNativeAlarm/);
     assert.match(attributes, /var icon: String/);
     assert.match(attributes, /var workoutName: String/);
     assert.match(attributes, /var exerciseName: String/);
