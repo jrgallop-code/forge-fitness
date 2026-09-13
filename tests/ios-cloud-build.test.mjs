@@ -45,8 +45,11 @@ test("App Store releases use cloud signing and clean up the private key", () => 
     assert.match(releaseWorkflow, /-allowProvisioningUpdates/);
     assert.match(releaseWorkflow, /-authenticationKeyPath/);
     assert.match(releaseWorkflow, /xcrun altool --upload-app/);
+    assert.match(releaseWorkflow, /codesign --verify --deep --strict/);
     assert.match(releaseWorkflow, /if:\s*always\(\)/);
     assert.match(releaseWorkflow, /node scripts\/app-store-signing\.mjs cleanup/);
+    assert.match(releaseWorkflow, /steps\.upload\.outcome.*!=.*success/);
+    assert.match(releaseWorkflow, /Keeping App Store signing assets active while Apple processes/);
     assert.match(releaseWorkflow, /security delete-keychain/);
     assert.match(releaseWorkflow, /rm -f \"\$AUTH_KEY_PATH\"/);
 });
