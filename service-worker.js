@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-13-316";
+const CACHE_VERSION = "2026-09-13-317";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -184,6 +184,7 @@ self.addEventListener("notificationclick", event => {
     event.notification.close();
     const data = event.notification.data || {};
     const isPersonalRecord = data.type === "levelup:personal-record" && data.sessionId;
+    const isScheduledWorkout = data.type === "levelup:scheduled-workout" && data.planId;
     event.waitUntil(
         clients.matchAll({ type: "window", includeUncontrolled: true }).then(async windows => {
             const existing = windows.find(client => "focus" in client);
@@ -191,10 +192,13 @@ self.addEventListener("notificationclick", event => {
                 await existing.focus();
                 existing.postMessage(isPersonalRecord
                     ? { type: "levelup:open-workout-pr", sessionId: data.sessionId }
-                    : { type: "levelup:open-active-workout" });
+                    : isScheduledWorkout
+                        ? { type: "levelup:open-scheduled-workout", ...data }
+                        : { type: "levelup:open-active-workout" });
                 return existing;
             }
             if (isPersonalRecord) return clients.openWindow(`./?workoutPr=${encodeURIComponent(data.sessionId)}`);
+            if (isScheduledWorkout) return clients.openWindow(`./?scheduledWorkout=1&planId=${encodeURIComponent(data.planId)}&dayIndex=${encodeURIComponent(data.dayIndex)}&date=${encodeURIComponent(data.date)}`);
             return clients.openWindow("./?resumeWorkout=1");
         })
     );

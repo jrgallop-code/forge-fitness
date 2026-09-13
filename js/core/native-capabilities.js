@@ -132,6 +132,49 @@ export async function showAppNotification({ key, title, body, extra = {} }) {
     catch { return false; }
 }
 
+const browserReminderTimers = new Map();
+const scheduledNotificationIdsKey = group => `level_up_scheduled_notification_ids:${group}`;
+
+export async function replaceScheduledAppNotifications(group, items = []) {
+    const key = scheduledNotificationIdsKey(group);
+    let previousIds = [];
+    try { previousIds = JSON.parse(localStorage.getItem(key) || "[]"); } catch {}
+
+    if (isNative()) {
+        const notifications = plugin("LocalNotifications");
+        if (!notifications) return false;
+        try {
+            if (previousIds.length) await notifications.cancel({ notifications: previousIds.map(id => ({ id })) });
+            const permission = (await notifications.checkPermissions())?.display;
+            if (permission !== "granted") return false;
+            const scheduled = items
+                .map(item => ({ ...item, at: item.at instanceof Date ? item.at : new Date(item.at) }))
+                .filter(item => Number.isFinite(item.at.getTime()) && item.at.getTime() > Date.now())
+                .map(item => ({
+                    id: nativeNotificationId(`${group}:${item.key}`),
+                    title: item.title,
+                    body: item.body,
+                    schedule: { at: item.at, allowWhileIdle: true },
+                    extra: { ...(item.extra || {}), key: item.key }
+                }));
+            if (scheduled.length) await notifications.schedule({ notifications: scheduled });
+            localStorage.setItem(key, JSON.stringify(scheduled.map(item => item.id)));
+            return true;
+        }
+        catch { return false; }
+    }
+
+    for (const timer of browserReminderTimers.values()) clearTimeout(timer);
+    browserReminderTimers.clear();
+    items.forEach(item => {
+        const delay = new Date(item.at).getTime() - Date.now();
+        if (delay <= 0 || delay > 2147483647) return;
+        const timer = window.setTimeout(() => void showAppNotification(item), delay);
+        browserReminderTimers.set(`${group}:${item.key}`, timer);
+    });
+    return items.length > 0;
+}
+
 export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, kind = "timer", context = {}, notification = true }) {
     const nativeTimer = plugin("LevelUpTimer");
     const notifications = plugin("LocalNotifications");
