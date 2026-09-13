@@ -1,7 +1,8 @@
-import { getEnergyBalanceState, getEnergyBalanceWindow } from "./energy-balance-state.js?v=energy-balance-30d-1";
+import { getEnergyBalanceState, getEnergyBalanceWindow } from "./energy-balance-state.js?v=energy-balance-range-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
+const CALORIE_RANGE_KEY = "level_up_calorie_stats_range_v1";
 const STYLE_ID = "level-up-energy-balance-summary-styles";
 
 let queued = false;
@@ -24,7 +25,7 @@ function install() {
     }, true);
 
     window.addEventListener("storage", event => {
-        if ([FOOD_LOG_KEY, FOOD_COMPLETE_KEY].includes(event.key)) schedule();
+        if ([FOOD_LOG_KEY, FOOD_COMPLETE_KEY, CALORIE_RANGE_KEY].includes(event.key)) schedule();
     });
 }
 
@@ -98,7 +99,9 @@ function localDateKey(date = new Date()) {
 
 function buildState() {
     const endDate = localDateKey();
-    const window = getEnergyBalanceWindow(endDate);
+    const requested = Number(localStorage.getItem(CALORIE_RANGE_KEY));
+    const days = [7, 28, 84].includes(requested) ? requested : 7;
+    const window = getEnergyBalanceWindow(endDate, days);
     return { ...getEnergyBalanceState(window), windowStart: window.startDate, windowEnd: window.endDate };
 }
 

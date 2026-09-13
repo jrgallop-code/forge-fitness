@@ -11,10 +11,14 @@ globalThis.CustomEvent = class CustomEvent {};
 
 const { ENERGY_BALANCE_WINDOW_DAYS, getEnergyBalanceWindow, summarizeEnergyRange } = await import("../js/nutrition/energy-balance-state.js?test=shared-seven-day-energy");
 
-test("the Energy Balance detail uses one inclusive rolling 30-day window", () => {
-    assert.equal(ENERGY_BALANCE_WINDOW_DAYS, 30);
-    assert.deepEqual(getEnergyBalanceWindow("2026-09-13"), {
-        startDate: "2026-08-15",
+test("the Energy Balance detail supports the calorie-stat timeframe windows", () => {
+    assert.equal(ENERGY_BALANCE_WINDOW_DAYS, 7);
+    assert.deepEqual(getEnergyBalanceWindow("2026-09-13", 28), {
+        startDate: "2026-08-17",
+        endDate: "2026-09-13"
+    });
+    assert.deepEqual(getEnergyBalanceWindow("2026-09-13", 84), {
+        startDate: "2026-06-22",
         endDate: "2026-09-13"
     });
 });
