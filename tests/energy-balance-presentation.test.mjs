@@ -4,25 +4,28 @@ import { readFile } from "node:fs/promises";
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Calories vs Expenditure is a fixed rolling 30-day detail independent of the TDEE range", async () => {
+test("Calories vs Expenditure follows the visible 7D, 4W and 12W calorie timeframe", async () => {
     const [state, comparison, summary] = await Promise.all([
         read("js/nutrition/energy-balance-state.js"),
         read("js/nutrition/tdee-calorie-expenditure-carousel.js"),
         read("js/nutrition/tdee-energy-balance-summary.js")
     ]);
 
-    assert.match(state, /ENERGY_BALANCE_WINDOW_DAYS = 30/);
+    assert.match(state, /ENERGY_BALANCE_WINDOW_DAYS = 7/);
     assert.match(state, /getEnergyBalanceWindow/);
-    assert.match(comparison, /ENERGY BALANCE · LAST 30 DAYS/);
+    assert.match(comparison, /level_up_calorie_stats_range_v1/);
+    assert.match(comparison, /\[7, 28, 84\]\.includes\(requested\)/);
+    assert.match(comparison, /getEnergyBalanceWindow\(endDate, days\)/);
+    assert.match(comparison, /ENERGY BALANCE · \$\{rangeLabel\(state\.days\)\}/);
     assert.match(comparison, /getEnergyBalanceState\(window\)/);
     assert.match(comparison, /points: state\.visible/);
-    assert.doesNotMatch(comparison, /TDEE_RANGE_KEY|selectedRange\(|rangeStart\(/);
-    assert.match(summary, /getEnergyBalanceWindow\(endDate\)/);
+    assert.match(comparison, /\[data-calorie-stats-range\]/);
+    assert.match(summary, /level_up_calorie_stats_range_v1/);
+    assert.match(summary, /getEnergyBalanceWindow\(endDate, days\)/);
     assert.match(summary, /windowStart: window\.startDate/);
-    assert.doesNotMatch(summary, /TDEE_RANGE_KEY|selectedRange\(|rangeStart\(/);
 });
 
-test("the 30-day comparison uses compact solid bars, readable dates, and missing-log details", async () => {
+test("every timeframe keeps compact solid bars, readable dates, and missing-log details", async () => {
     const comparison = await read("js/nutrition/tdee-calorie-expenditure-carousel.js");
 
     assert.doesNotMatch(comparison, /context\.strokeRect/);
@@ -51,11 +54,11 @@ test("the PWA cache and import chain request the new Energy Balance implementati
         read("js/progress/weight-carbs-chart.js")
     ]);
 
-    assert.match(worker, /2026-09-13-309/);
-    assert.match(index, /js\/app\.js\?v=energy-balance-30d-1/);
-    assert.match(app, /router\.js\?v=energy-balance-30d-1/);
-    assert.match(router, /weight-carbs-chart\.js\?v=energy-balance-30d-1/);
-    assert.match(bridge, /tdee-calorie-expenditure-carousel\.js\?v=energy-balance-30d-1/);
-    assert.match(bridge, /tdee-energy-balance-summary\.js\?v=energy-balance-30d-1/);
+    assert.match(worker, /2026-09-13-310/);
+    assert.match(index, /js\/app\.js\?v=energy-balance-range-1/);
+    assert.match(app, /router\.js\?v=energy-balance-range-1/);
+    assert.match(router, /weight-carbs-chart\.js\?v=energy-balance-range-1/);
+    assert.match(bridge, /tdee-calorie-expenditure-carousel\.js\?v=energy-balance-range-1/);
+    assert.match(bridge, /tdee-energy-balance-summary\.js\?v=energy-balance-range-1/);
     assert.match(bridge, /tdee-expenditure-swipe-card\.js\?v=energy-card-height-1/);
 });

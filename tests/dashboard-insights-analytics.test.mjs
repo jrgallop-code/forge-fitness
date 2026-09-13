@@ -70,7 +70,7 @@ test("Dashboard and Progress share one expenditure and energy-balance state", ()
     assert.match(analytics, /averageExpenditure: state\.averageVisibleExpenditure/);
     assert.match(analytics, /balance: state\.balance/);
     assert.match(analytics, /kcal\/day avg/);
-    assert.match(energySummary, /getEnergyBalanceWindow\(endDate\)/);
+    assert.match(energySummary, /getEnergyBalanceWindow\(endDate, days\)/);
     assert.match(energySummary, /getEnergyBalanceState\(window\)/);
     assert.match(expenditureGraph, /getEnergyBalanceState\(\{ startDate, endDate \}\)/);
     assert.doesNotMatch(analytics, /getCalculatedMaintenanceEstimate|getCalculatedMaintenanceHistory/);

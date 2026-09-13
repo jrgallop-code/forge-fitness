@@ -1,5 +1,6 @@
-import { getEnergyBalanceState, getEnergyBalanceWindow } from "./energy-balance-state.js?v=energy-balance-30d-1";
+import { getEnergyBalanceState, getEnergyBalanceWindow } from "./energy-balance-state.js?v=energy-balance-range-1";
 
+const CALORIE_RANGE_KEY = "level_up_calorie_stats_range_v1";
 const STYLE_ID = "level-up-calorie-expenditure-card-styles";
 let queued = false;
 let resizeBound = false;
@@ -151,11 +152,23 @@ function formatDate(value) {
     return new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function selectedRangeDays() {
+    const requested = Number(localStorage.getItem(CALORIE_RANGE_KEY));
+    return [7, 28, 84].includes(requested) ? requested : 7;
+}
+
+function rangeLabel(days) {
+    if (days === 7) return "LAST 7 DAYS";
+    if (days === 28) return "LAST 4 WEEKS";
+    return "LAST 12 WEEKS";
+}
+
 function buildComparisonState() {
     const endDate = localDateKey();
-    const window = getEnergyBalanceWindow(endDate);
+    const days = selectedRangeDays();
+    const window = getEnergyBalanceWindow(endDate, days);
     const state = getEnergyBalanceState(window);
-    return { range: "30d", startDate: window.startDate, endDate: window.endDate, points: state.visible };
+    return { days, startDate: window.startDate, endDate: window.endDate, points: state.visible };
 }
 
 function niceAxisStep(value) {
@@ -195,7 +208,7 @@ function ensureComparisonCard(graphCard) {
     card.dataset.calorieExpenditureComparisonCard = "1";
     card.innerHTML = `
         <header class="calorie-expenditure-card-heading">
-            <div><small>ENERGY BALANCE · LAST 30 DAYS</small><h3>Calories vs Expenditure</h3></div>
+            <div><small data-energy-balance-range-label>ENERGY BALANCE</small><h3>Calories vs Expenditure</h3></div>
             <p>Bars show logged calories. The line shows daily expenditure.</p>
         </header>
         <div class="calorie-expenditure-shell">
@@ -212,6 +225,8 @@ function ensureComparisonCard(graphCard) {
 }
 
 function renderComparisonChart(card, state) {
+    const range = card.querySelector("[data-energy-balance-range-label]");
+    if (range) range.textContent = `ENERGY BALANCE · ${rangeLabel(state.days)}`;
     const canvas = card.querySelector("[data-calorie-expenditure-chart]");
     const tooltip = card.querySelector("[data-calorie-expenditure-tooltip]");
     const shell = canvas?.closest(".calorie-expenditure-shell");
@@ -406,7 +421,7 @@ if (!resizeBound) {
 }
 
 document.addEventListener("click", event => {
-    if (event.target.closest?.("#nutrition-progress-tab, [data-page='progress']")) window.setTimeout(schedule, 0);
+    if (event.target.closest?.("#nutrition-progress-tab, [data-page='progress'], [data-calorie-stats-range]")) window.setTimeout(schedule, 0);
 }, true);
 
 schedule();
