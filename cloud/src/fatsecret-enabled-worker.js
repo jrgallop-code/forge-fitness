@@ -13,6 +13,7 @@ const FATSECRET_SEARCH_LIMIT = 16;
 const FATSECRET_DETAIL_LIMIT = 5;
 const RESTAURANT_MENU_PAGE_SIZE = 20;
 const RESTAURANT_MENU_PAGES = 5;
+const RESTAURANT_MENU_RESULT_LIMIT = 250;
 
 export default {
     async fetch(request, env, ctx) {
@@ -95,7 +96,7 @@ async function searchFoodsWithFatSecret(url, request, env, ctx) {
         }
 
         const baseFoods = baseResponse.ok && Array.isArray(payload?.foods) ? payload.foods : [];
-        const foods = mergeSearchResults(baseFoods, fatSecretFoods, restaurantMenu ? RESTAURANT_MENU_PAGE_SIZE * RESTAURANT_MENU_PAGES : SEARCH_LIMIT);
+        const foods = mergeSearchResults(baseFoods, fatSecretFoods, restaurantMenu ? RESTAURANT_MENU_RESULT_LIMIT : SEARCH_LIMIT);
         const source = appendSource(baseResponse.ok ? payload?.source : "", "FatSecret");
         return jsonFrom(baseResponse, {
             ...(baseResponse.ok ? payload : {}),
@@ -219,7 +220,7 @@ function safeFatSecretError(reason) {
     return "request_failed";
 }
 
-function mergeSearchResults(baseFoods, fatSecretFoods, limit) {
+export function mergeSearchResults(baseFoods, fatSecretFoods, limit) {
     const verified = baseFoods.filter(food => food?.source === "levelup");
     const other = baseFoods.filter(food => food?.source !== "levelup");
     const ordered = [...verified, ...other.slice(0, 8), ...fatSecretFoods, ...other.slice(8)];
