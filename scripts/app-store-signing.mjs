@@ -84,7 +84,7 @@ async function createSigningAssets() {
     '-subj', '/CN=Level Up CI Distribution/C=CA',
   ], { stdio: 'ignore' });
 
-  const certificate = await api('/certificates', {
+  const certificateRequest = {
     method: 'POST',
     body: JSON.stringify({
       data: {
@@ -95,7 +95,32 @@ async function createSigningAssets() {
         },
       },
     }),
-  });
+  };
+
+  let certificate;
+  try {
+    certificate = await api('/certificates', certificateRequest);
+  } catch (error) {
+    const reachedCertificateLimit =
+      /App Store Connect 409:.*(?:current Distribution certificate|pending certificate request)/i.test(error.message);
+    if (!reachedCertificateLimit) throw error;
+
+    // Successful uploads keep their temporary distribution certificate active
+    // while Apple validates the binary. On the next release that certificate's
+    // private key is no longer available because the prior runner was destroyed,
+    // so rotate the prior CI certificate before creating this run's replacement.
+    const existing = await api('/certificates?filter%5BcertificateType%5D=DISTRIBUTION&limit=200');
+    const distributionCertificates = (existing?.data || [])
+      .filter(item => item.attributes?.certificateType === 'DISTRIBUTION');
+    if (!distributionCertificates.length) throw error;
+
+    for (const item of distributionCertificates) {
+      await api(`/certificates/${item.id}`, { method: 'DELETE' });
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    certificate = await api('/certificates', certificateRequest);
+  }
   writeFileSync(certificatePath, Buffer.from(certificate.data.attributes.certificateContent, 'base64'));
   writeFileSync(statePath, JSON.stringify({ certificateId: certificate.data.id }));
 

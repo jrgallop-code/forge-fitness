@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const workflow = await readFile(new URL("../.github/workflows/ios-capacitor.yml", import.meta.url), "utf8");
 const releaseWorkflow = await readFile(new URL("../.github/workflows/ios-app-store.yml", import.meta.url), "utf8");
+const signingScript = await readFile(new URL("../scripts/app-store-signing.mjs", import.meta.url), "utf8");
 
 test("iOS cloud builds use the free standard macOS 26 runner", () => {
     assert.match(workflow, /runs-on:\s*macos-26/);
@@ -52,4 +53,11 @@ test("App Store releases use cloud signing and clean up the private key", () => 
     assert.match(releaseWorkflow, /Keeping App Store signing assets active while Apple processes/);
     assert.match(releaseWorkflow, /security delete-keychain/);
     assert.match(releaseWorkflow, /rm -f \"\$AUTH_KEY_PATH\"/);
+});
+
+test("App Store signing rotates the previous CI distribution certificate on the next release", () => {
+  assert.match(signingScript, /reachedCertificateLimit/);
+  assert.match(signingScript, /filter%5BcertificateType%5D=DISTRIBUTION/);
+  assert.match(signingScript, /api\(`\/certificates\/\$\{item\.id\}`,[\s\S]*method: 'DELETE'/);
+  assert.match(signingScript, /certificate = await api\('\/certificates', certificateRequest\)/);
 });
