@@ -1,5 +1,11 @@
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
+const APPROVED_LOGO_USAGE_BASES = new Set(["written_permission", "documented_license"]);
+const RESTAURANT_LOGO_ASSET_PATTERN = /^assets\/restaurant-logos\/[a-z0-9][a-z0-9._/-]*\.(?:svg|png|webp)$/i;
+
+// Add artwork here only after its app-display rights have been documented.
+// Restaurant search results and external APIs cannot opt themselves into logo display.
+const APPROVED_RESTAURANT_LOGOS = Object.freeze({});
 
 const FEATURED_RESTAURANTS = [
     restaurant("Boston Pizza", "BP", "Pizza & casual dining"),
@@ -47,7 +53,19 @@ let hooks = { getContext: () => ({}), onChooseFood: () => {} };
 let returnFocus = null;
 
 function restaurant(name, mark, description) {
-    return { id: normalize(name).replace(/ /g, "-"), name, mark, description, known: true };
+    const id = normalize(name).replace(/ /g, "-");
+    return { id, name, mark, description, known: true, logo: APPROVED_RESTAURANT_LOGOS[id] || null };
+}
+
+export function approvedRestaurantLogoAsset(item) {
+    const logo = item?.logo;
+    const assetPath = String(logo?.assetPath || "").trim();
+    if (logo?.status !== "approved") return "";
+    if (!APPROVED_LOGO_USAGE_BASES.has(String(logo?.usageBasis || ""))) return "";
+    if (!String(logo?.rightsHolder || "").trim() || !String(logo?.permissionReference || "").trim()) return "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(logo?.approvedAt || ""))) return "";
+    if (!RESTAURANT_LOGO_ASSET_PATTERN.test(assetPath) || assetPath.includes("..")) return "";
+    return assetPath;
 }
 
 export function initializeRestaurantMenu(options = {}) {
@@ -65,7 +83,7 @@ function ensureRestaurantMenuStyles() {
     if (document.querySelector("link[data-restaurant-menu-styles]")) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/restaurant-menu.css?v=eating-out-5";
+    link.href = "css/restaurant-menu.css?v=eating-out-6";
     link.dataset.restaurantMenuStyles = "";
     document.head.append(link);
 }
@@ -115,7 +133,7 @@ function screenMarkup() {
                 <article class="restaurant-menu-hero">
                     <div class="restaurant-menu-hero-kicker"><span>RESTAURANT NUTRITION</span><span data-restaurant-destination></span></div>
                     <button type="button" class="restaurant-menu-picker" data-restaurant-sheet-open="restaurants" aria-haspopup="dialog">
-                        <span class="restaurant-menu-mark" data-restaurant-mark>BP</span>
+                        <span class="restaurant-menu-mark" data-restaurant-mark>${restaurantBrandContent(FEATURED_RESTAURANTS[0])}</span>
                         <span><small>VIEWING MENU FOR</small><strong data-restaurant-name>Boston Pizza</strong><em data-restaurant-meta>Searchable nutrition results</em></span>
                         ${chevronSvg("right")}
                     </button>
@@ -269,7 +287,7 @@ function renderContext() {
     const caloriesLeft = finiteDifference(targets.calories, totals.calories);
     const proteinLeft = finiteDifference(targets.protein, totals.protein);
     setText("[data-restaurant-name]", state.restaurant.name);
-    setText("[data-restaurant-mark]", state.restaurant.mark || initials(state.restaurant.name));
+    renderRestaurantBrand(document.querySelector("[data-restaurant-mark]"), state.restaurant);
     setText("[data-restaurant-meta]", state.loading ? "Loading available nutrition…" : `${state.foods.length || "Searchable"} menu result${state.foods.length === 1 ? "" : "s"}`);
     setText("[data-restaurant-destination]", `${context.meal || "Meal"} · ${friendlyDate(context.dateKey)}`);
     setText("[data-restaurant-calories-left]", caloriesLeft === null ? "Not set" : `${Math.round(caloriesLeft)} cal`);
@@ -427,7 +445,7 @@ function restaurantPickerMarkup() {
 }
 
 function restaurantButtons(restaurants) {
-    return restaurants.map(item => `<button type="button" data-restaurant-choice="${escapeHtml(item.id)}"><span>${escapeHtml(item.mark)}</span><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.description)}</small></span>${chevronSvg("right")}</button>`).join("");
+    return restaurants.map(item => `<button type="button" data-restaurant-choice="${escapeHtml(item.id)}"><span class="restaurant-picker-brand">${restaurantBrandContent(item)}</span><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.description)}</small></span>${chevronSvg("right")}</button>`).join("");
 }
 
 function filterSheetMarkup() {
@@ -443,7 +461,7 @@ function filterSheetMarkup() {
 function aboutMarkup() {
     return `<header class="restaurant-menu-sheet-heading"><div><small id="restaurant-sheet-title">ABOUT EATING OUT</small><h2>Restaurant nutrition, organized for your goal</h2></div><button type="button" data-restaurant-sheet-close-local aria-label="Close">×</button></header>
         <div class="restaurant-about-list"><p><b>1</b><span><strong>Choose or search a restaurant</strong><small>Level Up checks the restaurant foods available through its current food-data sources.</small></span></p><p><b>2</b><span><strong>Compare the whole result</strong><small>Calories, protein, carbs and fat appear together whenever the source provides them.</small></span></p><p><b>3</b><span><strong>Add through Food Log</strong><small>Select an item, confirm its serving and meal, then log it normally.</small></span></p></div>
-        <p class="restaurant-about-note">Menus and recipes change. Level Up can organize available nutrition, but it cannot guarantee that every restaurant item or customization is present.</p>`;
+        <p class="restaurant-about-note">Menus and recipes change. Level Up can organize available nutrition, but it cannot guarantee that every restaurant item or customization is present. Restaurant logos appear only when Level Up has documented permission or a compatible licence; otherwise an initials badge is shown.</p>`;
 }
 
 function bindSheet(type, content) {
@@ -488,6 +506,7 @@ function bindSheet(type, content) {
 }
 
 function bindRestaurantChoices(container) {
+    bindRestaurantLogoFallbacks(container);
     container?.querySelectorAll("[data-restaurant-choice]").forEach(button => button.addEventListener("click", () => {
         const item = FEATURED_RESTAURANTS.find(restaurantItem => restaurantItem.id === button.dataset.restaurantChoice);
         if (item) chooseRestaurant(item);
@@ -552,6 +571,34 @@ function normalize(value) {
 
 function initials(value) {
     return normalize(value).split(" ").filter(Boolean).slice(0, 2).map(word => word[0]).join("").toUpperCase() || "R";
+}
+
+function restaurantBrandContent(item) {
+    const fallback = escapeHtml(item?.mark || initials(item?.name));
+    const logoAsset = approvedRestaurantLogoAsset(item);
+    return `<span class="restaurant-brand-fallback" aria-hidden="true">${fallback}</span>${logoAsset ? `<img class="restaurant-brand-logo" data-restaurant-logo src="${escapeHtml(logoAsset)}" alt="" loading="lazy" decoding="async">` : ""}`;
+}
+
+function renderRestaurantBrand(node, item) {
+    if (!node) return;
+    const logoAsset = approvedRestaurantLogoAsset(item);
+    node.classList.toggle("has-approved-logo", Boolean(logoAsset));
+    node.innerHTML = restaurantBrandContent(item);
+    bindRestaurantLogoFallbacks(node);
+}
+
+function bindRestaurantLogoFallbacks(scope) {
+    scope?.querySelectorAll?.("[data-restaurant-logo]").forEach(image => {
+        if (image.dataset.restaurantLogoBound === "true") return;
+        image.dataset.restaurantLogoBound = "true";
+        const useFallback = () => {
+            image.hidden = true;
+            image.closest(".restaurant-menu-mark, .restaurant-picker-brand")?.classList.remove("has-approved-logo");
+        };
+        image.addEventListener("error", useFallback, { once: true });
+        if (image.complete && image.naturalWidth === 0) useFallback();
+        else image.closest(".restaurant-menu-mark, .restaurant-picker-brand")?.classList.add("has-approved-logo");
+    });
 }
 
 function setText(selector, value, scope = document) {

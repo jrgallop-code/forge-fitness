@@ -6,7 +6,7 @@ const read = relative => readFile(new URL(`../${relative}`, import.meta.url), "u
 
 test("Food Log exposes a clear Eating Out entry point", async () => {
     const foodLog = await read("js/nutrition/food-log.js");
-    assert.match(foodLog, /restaurant-menu\.js\?v=eating-out-5/);
+    assert.match(foodLog, /restaurant-menu\.js\?v=eating-out-6/);
     assert.match(foodLog, /data-food-eating-out/);
     assert.match(foodLog, />Eating Out</);
     assert.match(foodLog, /Browse restaurant menus by calories and protein/);
@@ -63,10 +63,35 @@ test("Eating Out inherits the active appearance instead of hard-coding one theme
 test("PWA routing and caching include the restaurant menu source", async () => {
     const router = await read("js/core/router.js");
     const worker = await read("service-worker.js");
-    assert.match(router, /food-log\.js\?v=eating-out-5/);
-    assert.match(worker, /2026-09-12-303/);
-    assert.match(worker, /restaurant-menu\.js\?v=eating-out-5/);
-    assert.match(worker, /restaurant-menu\.css\?v=eating-out-5/);
+    assert.match(router, /food-log\.js\?v=eating-out-6/);
+    assert.match(worker, /2026-09-13-304/);
+    assert.match(worker, /restaurant-menu\.js\?v=eating-out-6/);
+    assert.match(worker, /restaurant-menu\.css\?v=eating-out-6/);
+});
+
+test("restaurant logos require documented rights and a bundled local asset", async () => {
+    const { approvedRestaurantLogoAsset } = await import("../js/nutrition/restaurant-menu.js");
+    const approved = {
+        logo: {
+            status: "approved",
+            usageBasis: "written_permission",
+            rightsHolder: "Example Restaurant Ltd.",
+            permissionReference: "legal/example-restaurant-permission.pdf",
+            approvedAt: "2026-09-13",
+            assetPath: "assets/restaurant-logos/example-restaurant.svg"
+        }
+    };
+    assert.equal(approvedRestaurantLogoAsset(approved), "assets/restaurant-logos/example-restaurant.svg");
+    assert.equal(approvedRestaurantLogoAsset({ logo: { ...approved.logo, status: "pending" } }), "");
+    assert.equal(approvedRestaurantLogoAsset({ logo: { ...approved.logo, permissionReference: "" } }), "");
+    assert.equal(approvedRestaurantLogoAsset({ logo: { ...approved.logo, assetPath: "https://example.com/logo.svg" } }), "");
+    assert.equal(approvedRestaurantLogoAsset({ logo: { ...approved.logo, assetPath: "assets/restaurant-logos/../unapproved.svg" } }), "");
+
+    const menu = await read("js/nutrition/restaurant-menu.js");
+    const styles = await read("css/restaurant-menu.css");
+    assert.match(menu, /Restaurant logos appear only when Level Up has documented permission or a compatible licence/);
+    assert.match(menu, /bindRestaurantLogoFallbacks/);
+    assert.match(styles, /\.restaurant-brand-logo/);
 });
 
 test("Boston Pizza cards show both per-slice and whole-pizza calories", async () => {
