@@ -1,7 +1,4 @@
-import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "./calculated-maintenance.js?v=tdee-live-daily-1";
-import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
-import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
-import { readFoodLog } from "./food-log-data.js?v=fatsecret-progress-calories-1";
+import { getEnergyBalanceState } from "./energy-balance-state.js?v=energy-summary-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
@@ -120,21 +117,9 @@ function shiftDateKey(value, days) {
     return localDateKey(date);
 }
 
-function positive(value) {
-    const number = Number(value);
-    return Number.isFinite(number) && number > 0 ? number : null;
-}
-
 function activePhase() {
     const phases = readJson("level_up_nutrition_phases", []);
     return Array.isArray(phases) ? [...phases].reverse().find(phase => !phase?.endDate) || null : null;
-}
-
-function profileMaintenance() {
-    const profile = getNutritionProfile();
-    if (!profile || Number(profile.age) < 18) return null;
-    try { return Math.round(Number(calculateTdee(profile).tdee)) || null; }
-    catch { return null; }
 }
 
 function selectedRange(phase) {
@@ -148,73 +133,12 @@ function rangeStart(range, phase, endDate) {
     return shiftDateKey(endDate, -(RANGE_OPTIONS[range].days - 1));
 }
 
-function caloriesForDay(entries) {
-    if (!Array.isArray(entries) || !entries.length) return null;
-    const total = entries.reduce((sum, entry) => sum + Math.max(0, Number(entry?.nutrition?.calories) || 0), 0);
-    return total > 0 ? total : null;
-}
-
 function buildState() {
     const phase = activePhase();
     const range = selectedRange(phase);
     const endDate = localDateKey();
     const requestedStart = rangeStart(range, phase, endDate);
-    const historyStart = requestedStart ? shiftDateKey(requestedStart, -28) : null;
-    const profileEstimate = profileMaintenance();
-    const current = getCalculatedMaintenanceEstimate(profileEstimate);
-    const history = getCalculatedMaintenanceHistory(profileEstimate, { startDate: historyStart });
-    const foodLog = readFoodLog();
-    const completedDays = readJson(FOOD_COMPLETE_KEY, {});
-    const today = localDateKey();
-    const currentLive = positive(current?.liveMaintenanceCalories);
-
-    if (currentLive !== null && history.at(-1)?.date === today) {
-        history[history.length - 1].liveMaintenanceCalories = currentLive;
-    }
-
-    let lastUsable = null;
-    const enriched = history.map(point => {
-        const live = positive(point.liveMaintenanceCalories);
-        const reviewed = positive(point.maintenanceCalories);
-        let expenditureCalories = null;
-
-        if (live !== null) {
-            expenditureCalories = live;
-            lastUsable = live;
-        } else {
-            const held = lastUsable ?? reviewed;
-            if (held !== null) {
-                expenditureCalories = held;
-                lastUsable = held;
-            }
-        }
-
-        const isToday = point.date === today;
-        const intakeCalories = isToday && completedDays?.[today] !== true
-            ? null
-            : caloriesForDay(foodLog?.[point.date]);
-
-        return { ...point, expenditureCalories, intakeCalories };
-    });
-
-    const visibleStart = requestedStart
-        || enriched.find(point => positive(point.expenditureCalories) !== null)?.date
-        || endDate;
-
-    const visible = enriched.filter(point => point.date >= visibleStart && point.date <= endDate && positive(point.expenditureCalories) !== null);
-    const matched = visible.filter(point => positive(point.intakeCalories) !== null && positive(point.expenditureCalories) !== null);
-
-    if (!matched.length) {
-        return { startDate: visibleStart, endDate, matched, averageIntake: null, averageExpenditure: null, balance: null };
-    }
-
-    const averageIntake = matched.reduce((sum, point) => sum + positive(point.intakeCalories), 0) / matched.length;
-    const averageExpenditure = matched.reduce((sum, point) => sum + positive(point.expenditureCalories), 0) / matched.length;
-    const balance = averageIntake - averageExpenditure;
-    const matchedStart = matched[0]?.date || visibleStart;
-    const matchedEnd = matched.at(-1)?.date || endDate;
-
-    return { startDate: matchedStart, endDate: matchedEnd, matched, averageIntake, averageExpenditure, balance };
+    return getEnergyBalanceState({ startDate: requestedStart, endDate });
 }
 
 function formatNumber(value) {

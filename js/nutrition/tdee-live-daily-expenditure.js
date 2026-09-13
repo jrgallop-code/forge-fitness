@@ -1,6 +1,4 @@
-import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "./calculated-maintenance.js?v=tdee-live-daily-1";
-import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
-import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
+import { getEnergyBalanceState } from "./energy-balance-state.js?v=energy-summary-1";
 
 const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
 const STYLE_ID = "level-up-live-daily-expenditure-styles";
@@ -81,13 +79,6 @@ function activePhase() {
     return Array.isArray(phases) ? [...phases].reverse().find(phase => !phase?.endDate) || null : null;
 }
 
-function profileMaintenance() {
-    const profile = getNutritionProfile();
-    if (!profile || Number(profile.age) < 18) return null;
-    try { return Math.round(Number(calculateTdee(profile).tdee)) || null; }
-    catch { return null; }
-}
-
 function selectedRange(phase) {
     const requested = String(localStorage.getItem(TDEE_RANGE_KEY) || "3m").toLowerCase();
     return RANGE_OPTIONS[requested] && (requested !== "phase" || phase?.startDate) ? requested : "3m";
@@ -104,37 +95,13 @@ function buildState() {
     const range = selectedRange(phase);
     const endDate = localDateKey();
     const startDate = rangeStart(range, phase, endDate);
-    const historyStart = startDate ? shiftDateKey(startDate, -28) : null;
-    const profileEstimate = profileMaintenance();
-    const current = getCalculatedMaintenanceEstimate(profileEstimate);
-    const raw = getCalculatedMaintenanceHistory(profileEstimate, { startDate: historyStart });
-
-    const today = localDateKey();
-    const currentLive = positive(current?.liveMaintenanceCalories);
-    if (currentLive !== null && raw.at(-1)?.date === today) raw[raw.length - 1].liveMaintenanceCalories = currentLive;
-
-    let lastUsable = null;
-    const enriched = raw.map(point => {
-        const live = positive(point.liveMaintenanceCalories);
-        const reviewed = positive(point.maintenanceCalories);
-        if (live !== null) {
-            lastUsable = live;
-            return { ...point, expenditureCalories: live, mode: "updating" };
-        }
-        const held = lastUsable ?? reviewed;
-        if (held !== null) {
-            lastUsable = held;
-            return { ...point, expenditureCalories: held, mode: "holding" };
-        }
-        return { ...point, expenditureCalories: null, mode: "learning" };
-    });
-
-    const visibleStart = startDate
-        || enriched.find(point => positive(point.expenditureCalories) !== null)?.date
-        || endDate;
-    const points = enriched.filter(point => point.date >= visibleStart && point.date <= endDate && positive(point.expenditureCalories) !== null);
-    const currentMode = currentLive !== null ? "updating" : positive(current?.maintenanceCalories) !== null ? "holding" : "learning";
-    return { range, startDate: visibleStart, endDate, points, profileEstimate, current, currentLive, currentMode };
+    const state = getEnergyBalanceState({ startDate, endDate });
+    return {
+        ...state,
+        range,
+        startDate: state.visibleStart,
+        points: state.visible
+    };
 }
 
 function themeColor(token, fallback) {
