@@ -89,6 +89,12 @@ function bindSwipe(wrapper) {
     if (wrapper.dataset.tdeeSwipeBound === "1") return;
     wrapper.dataset.tdeeSwipeBound = "1";
 
+    if (typeof ResizeObserver === "function") {
+        const observer = new ResizeObserver(() => syncHeight(wrapper, currentPage(wrapper), false));
+        wrapper.querySelectorAll(":scope > .calorie-stat-card").forEach(card => observer.observe(card));
+        wrapper.__levelUpEnergyCardResizeObserver = observer;
+    }
+
     let touchStartX = null;
     let touchStartY = null;
 
@@ -127,6 +133,7 @@ function currentPage(wrapper) {
 }
 
 function scrollToPage(wrapper, index, smooth) {
+    syncHeight(wrapper, index, smooth);
     wrapper.scrollTo({ left: index * wrapper.clientWidth, behavior: smooth ? "smooth" : "auto" });
     window.setTimeout(() => updatePager(wrapper), smooth ? 240 : 0);
 }
@@ -136,6 +143,17 @@ function updatePager(wrapper) {
     wrapper.querySelectorAll("[data-tdee-expenditure-page]").forEach(button => {
         button.setAttribute("aria-pressed", String(Number(button.dataset.tdeeExpenditurePage) === index));
     });
+    syncHeight(wrapper, index, true);
+}
+
+function syncHeight(wrapper, pageIndex = currentPage(wrapper), animate = false) {
+    const cards = [...wrapper.querySelectorAll(":scope > .calorie-stat-card")];
+    const activeCard = cards[Math.max(0, Math.min(cards.length - 1, pageIndex))];
+    if (!activeCard) return;
+    const height = Math.ceil(activeCard.getBoundingClientRect().height || activeCard.scrollHeight || 0);
+    if (!height) return;
+    wrapper.classList.toggle("is-height-animated", Boolean(animate));
+    wrapper.style.height = `${height}px`;
 }
 
 function ensureStyles() {
@@ -145,12 +163,13 @@ function ensureStyles() {
     style.textContent = `
         #calorie-progress .tdee-expenditure-swipe-card {
             display: flex;
-            align-items: stretch;
+            align-items: flex-start;
             gap: 0;
             width: 100%;
             max-width: 100%;
             overflow-x: auto;
             overflow-y: hidden;
+            transition: none;
             scroll-snap-type: x mandatory;
             scroll-behavior: smooth;
             scrollbar-width: none;
@@ -158,6 +177,9 @@ function ensureStyles() {
         }
         #calorie-progress .tdee-expenditure-swipe-card::-webkit-scrollbar {
             display: none;
+        }
+        #calorie-progress .tdee-expenditure-swipe-card.is-height-animated {
+            transition: height .2s ease;
         }
         #calorie-progress .tdee-expenditure-swipe-card > .calorie-stat-card {
             position: relative;
@@ -170,6 +192,7 @@ function ensureStyles() {
             scroll-snap-align: start;
             scroll-snap-stop: always;
             box-sizing: border-box;
+            align-self: flex-start;
         }
         #calorie-progress .tdee-expenditure-swipe-card > .calorie-expenditure-comparison-card {
             margin-left: 0 !important;
