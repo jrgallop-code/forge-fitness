@@ -1,6 +1,6 @@
 import "./core/appearance-theme.js?v=appearance-themes-3";
-import { navigate } from "./core/router.js?v=saved-plan-edit-2";
-import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=saved-plan-edit-2";
+import { navigate } from "./core/router.js?v=history-editor-route-1";
+import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=history-editor-route-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=native-navigation-stability-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";

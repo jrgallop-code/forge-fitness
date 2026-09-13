@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=saved-plan-edit-2";
+import { navigate } from "../core/router.js?v=history-editor-route-1";
 
 
 export function renderNavbar() {

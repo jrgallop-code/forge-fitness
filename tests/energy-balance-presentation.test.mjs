@@ -63,9 +63,9 @@ test("the PWA cache and import chain request the new Energy Balance implementati
         read("js/progress/weight-carbs-chart.js")
     ]);
 
-    assert.match(worker, /2026-09-13-314/);
-    assert.match(index, /js\/app\.js\?v=saved-plan-edit-2/);
-    assert.match(app, /router\.js\?v=saved-plan-edit-2/);
+    assert.match(worker, /2026-09-13-315/);
+    assert.match(index, /js\/app\.js\?v=history-editor-route-1/);
+    assert.match(app, /router\.js\?v=history-editor-route-1/);
     assert.match(router, /weight-carbs-chart\.js\?v=energy-balance-range-3/);
     assert.match(router, /calorie-stats\.js\?v=energy-carousel-control-1/);
     assert.match(bridge, /tdee-calorie-expenditure-carousel\.js\?v=energy-balance-range-3/);
