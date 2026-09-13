@@ -17,6 +17,19 @@ const FEATURED_RESTAURANTS = [
     restaurant("Pür & Simple", "PS", "Breakfast & brunch"),
     restaurant("A&W Canada", "AW", "Burgers & breakfast"),
     restaurant("Harvey's", "H", "Burgers & grilled chicken"),
+    restaurant("Tim Hortons", "TH", "Coffee, breakfast & baked goods"),
+    restaurant("Mary Brown's", "MB", "Chicken, sandwiches & sides"),
+    restaurant("Pizza Pizza", "PP", "Pizza, chicken & sides"),
+    restaurant("Booster Juice", "BJ", "Smoothies, bowls & wraps"),
+    restaurant("The Keg", "K", "Steak, seafood & casual dining"),
+    restaurant("Montana's", "MT", "BBQ, burgers & ribs"),
+    restaurant("Kelseys", "K", "Burgers, wings & casual dining"),
+    restaurant("East Side Mario's", "ES", "Pasta, pizza & Italian favourites"),
+    restaurant("Five Guys", "FG", "Burgers, hot dogs & fries"),
+    restaurant("New York Fries", "NY", "Fries, poutines & hot dogs"),
+    restaurant("Cora", "C", "Breakfast, crêpes & brunch"),
+    restaurant("Little Caesars", "LC", "Whole pizzas, wings & sides"),
+    restaurant("Freshii", "F", "Bowls, wraps & smoothies"),
     restaurant("Wendy's", "W", "Burgers & chicken"),
     restaurant("Dairy Queen", "DQ", "Meals & treats"),
     restaurant("Starbucks", "S", "Coffee & café food"),
@@ -84,7 +97,7 @@ function ensureRestaurantMenuStyles() {
     if (document.querySelector("link[data-restaurant-menu-styles]")) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/restaurant-menu.css?v=eating-out-7";
+    link.href = "css/restaurant-menu.css?v=eating-out-8";
     link.dataset.restaurantMenuStyles = "";
     document.head.append(link);
 }
@@ -416,6 +429,7 @@ function itemMarkup(food, foodIndex) {
     const badges = [
         remainingCalories !== null && nutrition.calories <= remainingCalories ? "Fits today" : "",
         nutrition.protein >= 30 ? "High protein" : "",
+        food?.provenance?.calculationMethod === "component_sum" ? "Calculated" : "",
         food?.provenance?.verificationStatus === "verified" ? "Verified" : "",
         caloriesOnly ? "Calories only" : ""
     ].filter(Boolean).slice(0, 3);
@@ -467,7 +481,7 @@ function filterSheetMarkup() {
 function aboutMarkup() {
     return `<header class="restaurant-menu-sheet-heading"><div><small id="restaurant-sheet-title">ABOUT EATING OUT</small><h2>Restaurant nutrition, organized for your goal</h2></div><button type="button" data-restaurant-sheet-close-local aria-label="Close">×</button></header>
         <div class="restaurant-about-list"><p><b>1</b><span><strong>Choose or search a restaurant</strong><small>Level Up checks the restaurant foods available through its current food-data sources.</small></span></p><p><b>2</b><span><strong>Compare the whole result</strong><small>Calories, protein, carbs and fat appear together whenever the source provides them.</small></span></p><p><b>3</b><span><strong>Add through Food Log</strong><small>Select an item, confirm its serving and meal, then log it normally.</small></span></p></div>
-        <p class="restaurant-about-note">Menus and recipes change. Level Up can organize available nutrition, but it cannot guarantee that every restaurant item or customization is present. Restaurant logos appear only when Level Up has documented permission or a compatible licence; otherwise an initials badge is shown.</p>`;
+        <p class="restaurant-about-note">Menus and recipes change. Level Up can organize available nutrition, but it cannot guarantee that every restaurant item or customization is present. “Calculated” identifies an exact sum of official component values, such as a plain burger built from the restaurant’s listed bun and patties; unlisted toppings are not included. Restaurant logos appear only when Level Up has documented permission or a compatible licence; otherwise an initials badge is shown.</p>`;
 }
 
 function bindSheet(type, content) {

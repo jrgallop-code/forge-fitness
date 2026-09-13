@@ -55,12 +55,13 @@ test("production worker composes FatSecret with the existing food API", () => {
 });
 
 test("restaurant menus page through FatSecret instead of truncating a chain to normal search limits", () => {
-    assert.match(worker, /const RESTAURANT_MENU_PAGE_SIZE = 20/);
-    assert.match(worker, /const RESTAURANT_MENU_PAGES = 5/);
-    assert.match(worker, /const RESTAURANT_MENU_RESULT_LIMIT = 250/);
+    assert.match(worker, /const RESTAURANT_MENU_PAGE_SIZE = 50/);
+    assert.match(worker, /const RESTAURANT_MENU_PAGES = 6/);
+    assert.match(worker, /const RESTAURANT_MENU_RESULT_LIMIT = 500/);
     assert.match(worker, /Array\.from\(\{ length: RESTAURANT_MENU_PAGES \}/);
     assert.match(worker, /searchFatSecretFoods\(query, country, env, \{ limit: RESTAURANT_MENU_PAGE_SIZE, page \}\)/);
     assert.match(worker, /restaurantMenu \? RESTAURANT_MENU_RESULT_LIMIT : SEARCH_LIMIT/);
+    assert.match(provider, /clampInteger\(options\.limit, 1, 50, 8\)/);
 });
 
 test("manual FatSecret search still runs when USDA is unavailable", () => {
@@ -100,23 +101,23 @@ test("late Basic restaurant summaries remain visible until they are hydrated on 
     assert.equal(foods[69].detailsLoaded, false);
 });
 
-test("verified restaurant catalogues are not truncated to the 100 FatSecret fetch slots", () => {
-    const verified = Array.from({ length: 231 }, (_, index) => ({
+test("verified restaurant catalogues are not truncated when FatSecret supplements them", () => {
+    const verified = Array.from({ length: 350 }, (_, index) => ({
         source: "levelup",
         catalogueId: `bp-${index + 1}`,
         name: `Boston Pizza Item ${index + 1}`,
         brand: "Boston Pizza"
     }));
-    const external = Array.from({ length: 100 }, (_, index) => ({
+    const external = Array.from({ length: 300 }, (_, index) => ({
         source: "fatsecret",
         fatSecretFoodId: String(index + 1),
         name: `FatSecret Item ${index + 1}`,
         brand: "Boston Pizza"
     }));
-    const foods = fatSecretWorker.mergeSearchResults(verified, external, 250);
-    assert.equal(foods.length, 250);
-    assert.equal(foods.filter(food => food.source === "levelup").length, 231);
-    assert.ok(foods.some(food => food.catalogueId === "bp-231"));
+    const foods = fatSecretWorker.mergeSearchResults(verified, external, 500);
+    assert.equal(foods.length, 500);
+    assert.equal(foods.filter(food => food.source === "levelup").length, 350);
+    assert.ok(foods.some(food => food.catalogueId === "bp-350"));
 });
 
 test("Food Log hydrates a selected FatSecret summary before it can be logged", () => {

@@ -12,9 +12,9 @@ import {
 const SEARCH_LIMIT = 16;
 const FATSECRET_SEARCH_LIMIT = 16;
 const FATSECRET_DETAIL_LIMIT = 5;
-const RESTAURANT_MENU_PAGE_SIZE = 20;
-const RESTAURANT_MENU_PAGES = 5;
-const RESTAURANT_MENU_RESULT_LIMIT = 250;
+const RESTAURANT_MENU_PAGE_SIZE = 50;
+const RESTAURANT_MENU_PAGES = 6;
+const RESTAURANT_MENU_RESULT_LIMIT = 500;
 
 export default {
     async fetch(request, env, ctx) {
