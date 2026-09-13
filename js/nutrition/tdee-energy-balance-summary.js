@@ -1,17 +1,9 @@
-import { getEnergyBalanceState } from "./energy-balance-state.js?v=energy-summary-1";
+import { getEnergyBalanceState, getEnergyBalanceWindow } from "./energy-balance-state.js?v=energy-balance-range-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
-const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
+const CALORIE_RANGE_KEY = "level_up_calorie_stats_range_v1";
 const STYLE_ID = "level-up-energy-balance-summary-styles";
-const RANGE_OPTIONS = {
-    "1w": { days: 7 },
-    "1m": { days: 30 },
-    "3m": { days: 90 },
-    "6m": { days: 180 },
-    phase: {},
-    all: {}
-};
 
 let queued = false;
 
@@ -33,7 +25,7 @@ function install() {
     }, true);
 
     window.addEventListener("storage", event => {
-        if ([TDEE_RANGE_KEY, FOOD_LOG_KEY, FOOD_COMPLETE_KEY, "level_up_nutrition_phases"].includes(event.key)) schedule();
+        if ([FOOD_LOG_KEY, FOOD_COMPLETE_KEY, CALORIE_RANGE_KEY].includes(event.key)) schedule();
     });
 }
 
@@ -101,44 +93,16 @@ function schedule() {
     });
 }
 
-function readJson(key, fallback) {
-    try { return JSON.parse(localStorage.getItem(key) || "null") ?? fallback; }
-    catch { return fallback; }
-}
-
 function localDateKey(date = new Date()) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function shiftDateKey(value, days) {
-    const date = new Date(`${value}T12:00:00`);
-    if (!Number.isFinite(date.getTime())) return value;
-    date.setDate(date.getDate() + days);
-    return localDateKey(date);
-}
-
-function activePhase() {
-    const phases = readJson("level_up_nutrition_phases", []);
-    return Array.isArray(phases) ? [...phases].reverse().find(phase => !phase?.endDate) || null : null;
-}
-
-function selectedRange(phase) {
-    const requested = String(localStorage.getItem(TDEE_RANGE_KEY) || "3m").toLowerCase();
-    return RANGE_OPTIONS[requested] && (requested !== "phase" || phase?.startDate) ? requested : "3m";
-}
-
-function rangeStart(range, phase, endDate) {
-    if (range === "all") return null;
-    if (range === "phase") return String(phase?.startDate || endDate);
-    return shiftDateKey(endDate, -(RANGE_OPTIONS[range].days - 1));
-}
-
 function buildState() {
-    const phase = activePhase();
-    const range = selectedRange(phase);
     const endDate = localDateKey();
-    const requestedStart = rangeStart(range, phase, endDate);
-    return getEnergyBalanceState({ startDate: requestedStart, endDate });
+    const requested = Number(localStorage.getItem(CALORIE_RANGE_KEY));
+    const days = [7, 28, 84].includes(requested) ? requested : 7;
+    const window = getEnergyBalanceWindow(endDate, days);
+    return { ...getEnergyBalanceState(window), windowStart: window.startDate, windowEnd: window.endDate };
 }
 
 function formatNumber(value) {
@@ -193,7 +157,7 @@ function renderSummary() {
         summary.dataset.state = "learning";
         setText(label, "Energy balance");
         value.innerHTML = `— <span>kcal/day</span>`;
-        setText(period, formatPeriod(state.startDate, state.endDate));
+        setText(period, formatPeriod(state.windowStart, state.windowEnd));
         setText(detail, "Not enough matched calorie and expenditure days yet.");
         return;
     }
@@ -206,6 +170,6 @@ function renderSummary() {
 
     const sign = rounded < 0 ? "−" : rounded > 0 ? "+" : "";
     value.innerHTML = `${sign}${formatNumber(Math.abs(rounded))} <span>kcal/day</span>`;
-    setText(period, formatPeriod(state.startDate, state.endDate));
+    setText(period, formatPeriod(state.windowStart, state.windowEnd));
     setText(detail, `${state.matched.length} logged ${state.matched.length === 1 ? "day" : "days"} · Avg calories ${formatNumber(state.averageIntake)} · Avg expenditure ${formatNumber(state.averageExpenditure)}`);
 }

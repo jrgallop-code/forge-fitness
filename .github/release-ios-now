@@ -90,3 +90,5 @@ Release 41: require confirmed restaurant-brand matches in Eating Out search and 
 Release 42: make Dashboard and Progress use the same seven-day expenditure average, hydrated restaurant calories, completed-day rules, and energy-balance calculation.
 
 Release 43: add verified Canadian restaurant catalogues with full macros, improved restaurant coverage, whole-pizza serving context, calculated-item disclosure, and expanded exact-brand menu results.
+
+Release 44: synchronize expanded restaurant menus and optional onboarding goal weight, simplify crowded energy-balance charts, and keep calorie/expenditure timeframes synchronized.

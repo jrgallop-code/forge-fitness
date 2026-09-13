@@ -3,6 +3,8 @@ import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { readCompletedFoodDays, readFoodLog } from "./food-log-data.js?v=fatsecret-progress-calories-1";
 
+export const ENERGY_BALANCE_WINDOW_DAYS = 7;
+
 export function energyDateKey(date = new Date()) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
@@ -12,6 +14,14 @@ export function shiftEnergyDateKey(value, days) {
     if (!Number.isFinite(date.getTime())) return value;
     date.setDate(date.getDate() + days);
     return energyDateKey(date);
+}
+
+export function getEnergyBalanceWindow(endDate = energyDateKey(), requestedDays = ENERGY_BALANCE_WINDOW_DAYS) {
+    const days = Math.max(1, Math.round(Number(requestedDays) || ENERGY_BALANCE_WINDOW_DAYS));
+    return {
+        startDate: shiftEnergyDateKey(endDate, -(days - 1)),
+        endDate
+    };
 }
 
 function positive(value) {

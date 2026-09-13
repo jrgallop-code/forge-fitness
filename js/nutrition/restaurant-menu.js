@@ -1,50 +1,20 @@
+import { RESTAURANT_DIRECTORY, restaurantBrandIdentity, restaurantBrandMatches, restaurantForId, restaurantMarket } from "./restaurant-directory.js?v=eating-out-directory-1";
+export { restaurantBrandIdentity } from "./restaurant-directory.js?v=eating-out-directory-1";
+
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
 const APPROVED_LOGO_USAGE_BASES = new Set(["written_permission", "documented_license"]);
 const RESTAURANT_LOGO_ASSET_PATTERN = /^assets\/restaurant-logos\/[a-z0-9][a-z0-9._/-]*\.(?:svg|png|webp)$/i;
-const RESTAURANT_BRAND_SUFFIXES = new Set(["canada", "canadian", "restaurant", "restaurants", "inc", "incorporated", "ltd", "limited", "llc", "corp", "corporation"]);
 
 // Add artwork here only after its app-display rights have been documented.
 // Restaurant search results and external APIs cannot opt themselves into logo display.
 const APPROVED_RESTAURANT_LOGOS = Object.freeze({});
 
-const FEATURED_RESTAURANTS = [
-    restaurant("Boston Pizza", "BP", "Pizza & casual dining"),
-    restaurant("Mezza Lebanese Kitchen", "MZ", "Wraps, plates & bowls"),
-    restaurant("Swiss Chalet", "SC", "Chicken & family meals"),
-    restaurant("Subway", "SW", "Sandwiches & bowls"),
-    restaurant("McDonald's", "M", "Burgers & breakfast"),
-    restaurant("Pür & Simple", "PS", "Breakfast & brunch"),
-    restaurant("A&W Canada", "AW", "Burgers & breakfast"),
-    restaurant("Harvey's", "H", "Burgers & grilled chicken"),
-    restaurant("Tim Hortons", "TH", "Coffee, breakfast & baked goods"),
-    restaurant("Mary Brown's", "MB", "Chicken, sandwiches & sides"),
-    restaurant("Pizza Pizza", "PP", "Pizza, chicken & sides"),
-    restaurant("Booster Juice", "BJ", "Smoothies, bowls & wraps"),
-    restaurant("The Keg", "K", "Steak, seafood & casual dining"),
-    restaurant("Montana's", "MT", "BBQ, burgers & ribs"),
-    restaurant("Kelseys", "K", "Burgers, wings & casual dining"),
-    restaurant("East Side Mario's", "ES", "Pasta, pizza & Italian favourites"),
-    restaurant("Five Guys", "FG", "Burgers, hot dogs & fries"),
-    restaurant("New York Fries", "NY", "Fries, poutines & hot dogs"),
-    restaurant("Cora", "C", "Breakfast, crêpes & brunch"),
-    restaurant("Little Caesars", "LC", "Whole pizzas, wings & sides"),
-    restaurant("Freshii", "F", "Bowls, wraps & smoothies"),
-    restaurant("Wendy's", "W", "Burgers & chicken"),
-    restaurant("Dairy Queen", "DQ", "Meals & treats"),
-    restaurant("Starbucks", "S", "Coffee & café food"),
-    restaurant("Pizza Hut", "PH", "Pizza & sides"),
-    restaurant("Domino's", "D", "Pizza & sides"),
-    restaurant("Burger King", "BK", "Burgers & chicken"),
-    restaurant("Popeyes", "P", "Chicken & sides"),
-    restaurant("Chipotle", "C", "Bowls & salads"),
-    restaurant("Taco Bell", "TB", "Tacos & burritos"),
-    restaurant("Chick-fil-A", "CFA", "Chicken & salads"),
-    restaurant("Dunkin'", "DD", "Coffee & breakfast"),
-    restaurant("Panera Bread", "PB", "Soups, salads & sandwiches"),
-    restaurant("Panda Express", "PE", "Bowls & entrées"),
-    restaurant("Olive Garden", "OG", "Pasta & entrées")
-];
+const FEATURED_RESTAURANTS = RESTAURANT_DIRECTORY.map(item => ({
+    ...item,
+    known: true,
+    logo: APPROVED_RESTAURANT_LOGOS[item.id] || null
+}));
 
 const state = {
     restaurant: FEATURED_RESTAURANTS[0],
@@ -65,11 +35,6 @@ const state = {
 const cache = new Map();
 let hooks = { getContext: () => ({}), onChooseFood: () => {} };
 let returnFocus = null;
-
-function restaurant(name, mark, description) {
-    const id = normalize(name).replace(/ /g, "-");
-    return { id, name, mark, description, known: true, logo: APPROVED_RESTAURANT_LOGOS[id] || null };
-}
 
 export function approvedRestaurantLogoAsset(item) {
     const logo = item?.logo;
@@ -97,7 +62,7 @@ function ensureRestaurantMenuStyles() {
     if (document.querySelector("link[data-restaurant-menu-styles]")) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/restaurant-menu.css?v=eating-out-8";
+    link.href = "css/restaurant-menu.css?v=eating-out-9";
     link.dataset.restaurantMenuStyles = "";
     document.head.append(link);
 }
@@ -235,7 +200,8 @@ async function loadRestaurant(nextRestaurant) {
         input.value = "";
         input.placeholder = `Search ${nextRestaurant.name} menu`;
     }
-    const cacheKey = `${countryCode()}:${normalize(nextRestaurant.name)}`;
+    const market = restaurantMarket(nextRestaurant, countryCode());
+    const cacheKey = `${market}:${nextRestaurant.id || normalize(nextRestaurant.name)}`;
     renderContext();
     if (cache.has(cacheKey)) {
         const cached = cache.get(cacheKey);
@@ -261,14 +227,15 @@ async function loadRestaurant(nextRestaurant) {
     state.loading = true;
     renderResults();
     try {
-        const response = await fetch(`${API_URL}/v1/foods/search?q=${encodeURIComponent(nextRestaurant.name)}&country=${countryCode()}&menu=1`, {
+        const restaurantId = nextRestaurant.known ? `&restaurant=${encodeURIComponent(nextRestaurant.id)}` : "";
+        const response = await fetch(`${API_URL}/v1/foods/search?q=${encodeURIComponent(nextRestaurant.searchName || nextRestaurant.name)}&country=${market}&menu=1${restaurantId}`, {
             headers: { Authorization: `Bearer ${token}` },
             signal: controller.signal
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(payload.error || "Restaurant menu could not be loaded.");
         const usable = (Array.isArray(payload.foods) ? payload.foods : []).filter(food => food?.portions?.[0]?.nutrition);
-        const matching = usable.filter(food => restaurantFoodMatches(food, nextRestaurant.name));
+        const matching = usable.filter(food => restaurantFoodMatches(food, nextRestaurant));
         state.foods = matching;
         state.source = String(payload.source || "");
         state.warning = String(payload.warning || "");
@@ -286,17 +253,16 @@ async function loadRestaurant(nextRestaurant) {
     }
 }
 
-export function restaurantFoodMatches(food, restaurantName) {
-    const restaurantIdentity = restaurantBrandIdentity(restaurantName);
+export function restaurantFoodMatches(food, restaurantItemOrName) {
+    const known = typeof restaurantItemOrName === "object"
+        ? restaurantItemOrName
+        : restaurantForId(restaurantItemOrName) || FEATURED_RESTAURANTS.find(item =>
+            item.brandAliases.some(alias => restaurantBrandIdentity(alias) === restaurantBrandIdentity(restaurantItemOrName))
+        );
+    if (known?.known !== false && known?.brandAliases) return restaurantBrandMatches(food, known);
+    const restaurantIdentity = restaurantBrandIdentity(restaurantItemOrName?.name || restaurantItemOrName);
     const brandIdentity = restaurantBrandIdentity(food?.brand);
     return Boolean(restaurantIdentity && brandIdentity && restaurantIdentity === brandIdentity);
-}
-
-export function restaurantBrandIdentity(value) {
-    const tokens = normalize(value).split(" ").filter(Boolean);
-    if (tokens[0] === "the") tokens.shift();
-    while (tokens.length > 1 && RESTAURANT_BRAND_SUFFIXES.has(tokens[tokens.length - 1])) tokens.pop();
-    return tokens.join(" ");
 }
 
 function renderContext() {
@@ -307,7 +273,8 @@ function renderContext() {
     const proteinLeft = finiteDifference(targets.protein, totals.protein);
     setText("[data-restaurant-name]", state.restaurant.name);
     renderRestaurantBrand(document.querySelector("[data-restaurant-mark]"), state.restaurant);
-    setText("[data-restaurant-meta]", state.loading ? "Loading available nutrition…" : `${state.foods.length || "Searchable"} menu result${state.foods.length === 1 ? "" : "s"}`);
+    const market = restaurantMarket(state.restaurant, countryCode());
+    setText("[data-restaurant-meta]", state.loading ? `Loading ${market === "US" ? "U.S." : "Canadian"} nutrition…` : `${state.foods.length || "Searchable"} confirmed item${state.foods.length === 1 ? "" : "s"} · ${market === "US" ? "U.S." : "Canada"}`);
     setText("[data-restaurant-destination]", `${context.meal || "Meal"} · ${friendlyDate(context.dateKey)}`);
     setText("[data-restaurant-calories-left]", caloriesLeft === null ? "Not set" : `${Math.round(caloriesLeft)} cal`);
     setText("[data-restaurant-protein-left]", proteinLeft === null ? "Not set" : `${roundOne(proteinLeft)} g`);
@@ -434,7 +401,7 @@ function itemMarkup(food, foodIndex) {
         caloriesOnly ? "Calories only" : ""
     ].filter(Boolean).slice(0, 3);
     return `<button type="button" class="restaurant-menu-item" data-restaurant-food-index="${foodIndex}" aria-label="Add ${escapeHtml(food.name)}">
-        <span class="restaurant-menu-item-icon" aria-hidden="true">${plateSvg()}</span>
+        <span class="restaurant-menu-item-icon" aria-hidden="true">${utensilsSvg()}</span>
         <span class="restaurant-menu-item-copy"><strong>${escapeHtml(food.name)}</strong><small>${escapeHtml(servingCopy)}</small><span>${badges.map(badge => `<i>${escapeHtml(badge)}</i>`).join("")}</span>${caloriesOnly ? "" : `<em>C ${roundOne(nutrition.carbs)} g · F ${roundOne(nutrition.fat)} g</em>`}</span>
         <span class="restaurant-menu-item-macros"><strong>${Math.round(nutrition.calories)}</strong><small>calories</small>${caloriesOnly ? '<em>Macros unavailable</em>' : `<b>${roundOne(nutrition.protein)}<small> g protein</small></b>`}</span>
     </button>`;
@@ -465,7 +432,7 @@ function restaurantPickerMarkup() {
 }
 
 function restaurantButtons(restaurants) {
-    return restaurants.map(item => `<button type="button" data-restaurant-choice="${escapeHtml(item.id)}"><span class="restaurant-picker-brand">${restaurantBrandContent(item)}</span><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.description)}</small></span>${chevronSvg("right")}</button>`).join("");
+    return restaurants.map(item => `<button type="button" data-restaurant-choice="${escapeHtml(item.id)}"><span class="restaurant-picker-brand">${restaurantBrandContent(item)}</span><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.description)} · ${escapeHtml(marketLabel(item))}</small></span>${chevronSvg("right")}</button>`).join("");
 }
 
 function filterSheetMarkup() {
@@ -493,7 +460,7 @@ function bindSheet(type, content) {
         const hint = content.querySelector("[data-restaurant-picker-hint]");
         const renderChoices = () => {
             const query = normalize(input?.value);
-            const matches = FEATURED_RESTAURANTS.filter(item => normalize(`${item.name} ${item.description}`).includes(query));
+            const matches = FEATURED_RESTAURANTS.filter(item => normalize(`${item.name} ${item.description} ${item.brandAliases.join(" ")}`).includes(query));
             if (hint) hint.textContent = query ? (matches.length ? "Matching restaurants" : "No supported match — search the restaurant name") : "Popular restaurants";
             if (list) list.innerHTML = restaurantButtons(matches);
             bindRestaurantChoices(list);
@@ -503,8 +470,9 @@ function bindSheet(type, content) {
             event.preventDefault();
             const name = String(input?.value || "").trim().replace(/\s+/g, " ");
             if (name.length < 2) return;
-            const known = FEATURED_RESTAURANTS.find(item => normalize(item.name) === normalize(name));
-            chooseRestaurant(known || { id: normalize(name).replace(/ /g, "-"), name, mark: initials(name), description: "Search results", known: false });
+            const identity = restaurantBrandIdentity(name);
+            const known = FEATURED_RESTAURANTS.find(item => item.brandAliases.some(alias => restaurantBrandIdentity(alias) === identity));
+            chooseRestaurant(known || { id: normalize(name).replace(/ /g, "-"), name, searchName: name, mark: initials(name), description: "Confirmed exact-brand results", markets: [countryCode()], brandAliases: [name], known: false });
         });
         bindRestaurantChoices(list);
     }
@@ -593,6 +561,12 @@ function initials(value) {
     return normalize(value).split(" ").filter(Boolean).slice(0, 2).map(word => word[0]).join("").toUpperCase() || "R";
 }
 
+function marketLabel(item) {
+    const markets = Array.isArray(item?.markets) ? item.markets : [];
+    if (markets.includes("CA") && markets.includes("US")) return "Canada & U.S.";
+    return restaurantMarket(item, countryCode()) === "US" ? "U.S." : "Canada";
+}
+
 function restaurantBrandContent(item) {
     const fallback = escapeHtml(item?.mark || initials(item?.name));
     const logoAsset = approvedRestaurantLogoAsset(item);
@@ -654,6 +628,6 @@ function slidersSvg() {
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6"/></svg>';
 }
 
-function plateSvg() {
-    return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.5"/><path d="M3 20h18"/></svg>';
+function utensilsSvg() {
+    return '<svg viewBox="0 0 24 24"><path d="M5 3v5a3 3 0 0 0 6 0V3M8 3v18M17 3v18M17 3c2.7 1.8 3.3 5.8 0 9"/></svg>';
 }

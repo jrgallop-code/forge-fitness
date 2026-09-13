@@ -68,6 +68,6 @@ test("disabled nutrition removes dashboard check-ins and nutrition analytics", (
 
 test("published entry point loads the feature release", () => {
     assert.match(html, /css\/app-feature-settings\.css\?v=nutrition-feature-choice-1/);
-    assert.match(html, /js\/onboarding\/onboarding\.js\?v=nutrition-feature-choice-1/);
-    assert.match(html, /js\/app\.js\?v=nutrition-feature-choice-1/);
+    assert.match(html, /js\/onboarding\/onboarding\.js\?v=onboarding-goal-weight-1/);
+    assert.match(html, /js\/app\.js\?v=energy-balance-range-1/);
 });

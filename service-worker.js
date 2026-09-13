@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-13-307";
+const CACHE_VERSION = "2026-09-13-310";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -33,14 +33,15 @@ const CORE_ASSETS = [
     "./js/nutrition/nutrition-authority-sync.js?v=nutrition-authority-sync-2",
     "./js/nutrition/nutrition-mode-ui.js?v=nutrition-mode-ui-1",
     "./js/nutrition/nutrition-mode-controls.js?v=nutrition-mode-controls-1",
-    "./js/nutrition/restaurant-menu.js?v=eating-out-8",
-    "./css/restaurant-menu.css?v=eating-out-8",
+    "./js/nutrition/restaurant-menu.js?v=eating-out-9",
+    "./js/nutrition/restaurant-directory.js?v=eating-out-directory-1",
+    "./css/restaurant-menu.css?v=eating-out-9",
     "./js/nutrition/weekly-check-in-status.js?v=weekly-checkin-status-1",
     "./js/nutrition/check-in-calendar.js?v=checkin-calendar-1",
-    "./js/nutrition/tdee-calorie-expenditure-carousel.js?v=fatsecret-progress-calories-1",
-    "./js/nutrition/energy-balance-state.js?v=energy-summary-1",
-    "./js/nutrition/tdee-energy-balance-summary.js?v=energy-summary-1",
-    "./js/nutrition/tdee-expenditure-swipe-card.js?v=tdee-expenditure-swipe-2",
+    "./js/nutrition/tdee-calorie-expenditure-carousel.js?v=energy-balance-range-1",
+    "./js/nutrition/energy-balance-state.js?v=energy-balance-range-1",
+    "./js/nutrition/tdee-energy-balance-summary.js?v=energy-balance-range-1",
+    "./js/nutrition/tdee-expenditure-swipe-card.js?v=energy-card-height-1",
     "./assets/level-up-home-icon.svg",
     "./assets/level-up-mark-transparent.svg",
     "./assets/body-fat-female-grid-v1.webp",

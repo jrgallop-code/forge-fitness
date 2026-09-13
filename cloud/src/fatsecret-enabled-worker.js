@@ -1,5 +1,6 @@
 import baseWorker from "./safe-backup-worker-v2.js";
-import { restaurantBrandMatchesQuery } from "./index.js";
+import { restaurantMatchesRequest } from "./index.js";
+import { restaurantForId, restaurantMarket } from "../../js/nutrition/restaurant-directory.js";
 import {
     fatSecretCanBarcode,
     fatSecretConfigured,
@@ -51,15 +52,20 @@ async function searchFoodsWithFatSecret(url, request, env, ctx) {
     const query = String(url.searchParams.get("q") || "").trim().replace(/\s+/g, " ");
     if (query.length < 2) return baseResponse;
 
-    const country = normalizeCountry(url.searchParams.get("country"));
+    const restaurantId = restaurantMenu ? String(url.searchParams.get("restaurant") || "").trim().toLowerCase() : "";
+    const restaurantDefinition = restaurantForId(restaurantId);
+    const providerQuery = restaurantDefinition?.searchName || query;
+    const country = restaurantDefinition
+        ? restaurantMarket(restaurantDefinition, normalizeCountry(url.searchParams.get("country")))
+        : normalizeCountry(url.searchParams.get("country"));
     let capabilities = null;
     try {
         capabilities = await getFatSecretCapabilities(env);
         const summaries = restaurantMenu
             ? mergeFatSecretCandidates(...await Promise.all(Array.from({ length: RESTAURANT_MENU_PAGES }, (_, page) =>
-                searchFatSecretFoods(query, country, env, { limit: RESTAURANT_MENU_PAGE_SIZE, page })
+                searchFatSecretFoods(providerQuery, country, env, { limit: RESTAURANT_MENU_PAGE_SIZE, page })
             )))
-            : await searchFatSecretFoods(query, country, env, { limit: FATSECRET_SEARCH_LIMIT });
+            : await searchFatSecretFoods(providerQuery, country, env, { limit: FATSECRET_SEARCH_LIMIT });
 
         // Premier v5 search already returns detailed servings. Keep those results
         // directly instead of re-fetching and accidentally dropping valid foods.
@@ -78,7 +84,7 @@ async function searchFoodsWithFatSecret(url, request, env, ctx) {
         // detail lookups.
         const providerFoods = mergeFatSecretCandidates(summaries, usableFromSearch, enriched, { includeSummaries: true });
         const fatSecretFoods = restaurantMenu
-            ? providerFoods.filter(food => restaurantBrandMatchesQuery(food, query))
+            ? providerFoods.filter(food => restaurantMatchesRequest(food, query, restaurantId, country))
             : providerFoods;
 
         const payload = await baseResponse.clone().json().catch(() => ({}));
@@ -101,7 +107,7 @@ async function searchFoodsWithFatSecret(url, request, env, ctx) {
 
         const baseCandidates = baseResponse.ok && Array.isArray(payload?.foods) ? payload.foods : [];
         const baseFoods = restaurantMenu
-            ? baseCandidates.filter(food => restaurantBrandMatchesQuery(food, query))
+            ? baseCandidates.filter(food => restaurantMatchesRequest(food, query, restaurantId, country))
             : baseCandidates;
         const foods = mergeSearchResults(baseFoods, fatSecretFoods, restaurantMenu ? RESTAURANT_MENU_RESULT_LIMIT : SEARCH_LIMIT);
         const source = appendSource(baseResponse.ok ? payload?.source : "", "FatSecret");

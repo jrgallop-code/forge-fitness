@@ -1,19 +1,7 @@
-import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "./calculated-maintenance.js?v=tdee-live-daily-1";
-import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
-import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
-import { readFoodLog } from "./food-log-data.js?v=fatsecret-progress-calories-1";
+import { getEnergyBalanceState, getEnergyBalanceWindow } from "./energy-balance-state.js?v=energy-balance-range-1";
 
-const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
-const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
+const CALORIE_RANGE_KEY = "level_up_calorie_stats_range_v1";
 const STYLE_ID = "level-up-calorie-expenditure-card-styles";
-const RANGE_OPTIONS = {
-    "1w": { days: 7 },
-    "1m": { days: 30 },
-    "3m": { days: 90 },
-    "6m": { days: 180 },
-    phase: {},
-    all: {}
-};
 let queued = false;
 let resizeBound = false;
 
@@ -39,7 +27,7 @@ function ensureStyles() {
         }
         #calorie-progress .calorie-expenditure-card-heading small {
             color: var(--muted);
-            font-size: 8px;
+            font-size: 9px;
             font-weight: 900;
             letter-spacing: .09em;
             text-transform: uppercase;
@@ -54,7 +42,7 @@ function ensureStyles() {
             margin: 0;
             max-width: 150px;
             color: var(--text-secondary, var(--muted));
-            font-size: 9px;
+            font-size: 10px;
             font-weight: 650;
             line-height: 1.35;
             text-align: right;
@@ -109,7 +97,7 @@ function ensureStyles() {
             gap: 12px;
             margin-top: 7px;
             color: var(--text-secondary, var(--muted));
-            font-size: 8px;
+            font-size: 10px;
             font-weight: 850;
         }
         #calorie-progress .calorie-expenditure-legend span {
@@ -122,11 +110,10 @@ function ensureStyles() {
             box-sizing: border-box;
         }
         #calorie-progress .calorie-expenditure-legend .is-calories {
-            width: 8px;
+            width: 7px;
             height: 10px;
-            border: 1px solid var(--accent);
             border-radius: 2px;
-            background: color-mix(in srgb, var(--accent) 28%, transparent);
+            background: color-mix(in srgb, var(--accent) 58%, transparent);
         }
         #calorie-progress .calorie-expenditure-legend .is-expenditure {
             width: 17px;
@@ -136,7 +123,7 @@ function ensureStyles() {
         #calorie-progress .calorie-expenditure-hint {
             margin: 5px 0 0;
             color: var(--muted);
-            font-size: 8px;
+            font-size: 10px;
             font-weight: 650;
             text-align: center;
         }
@@ -144,20 +131,8 @@ function ensureStyles() {
     document.head.appendChild(style);
 }
 
-function readJson(key, fallback) {
-    try { return JSON.parse(localStorage.getItem(key) || "null") ?? fallback; }
-    catch { return fallback; }
-}
-
 function localDateKey(date = new Date()) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
-function shiftDateKey(value, days) {
-    const date = new Date(`${value}T12:00:00`);
-    if (!Number.isFinite(date.getTime())) return value;
-    date.setDate(date.getDate() + days);
-    return localDateKey(date);
 }
 
 function positive(value) {
@@ -177,84 +152,23 @@ function formatDate(value) {
     return new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function activePhase() {
-    const phases = readJson("level_up_nutrition_phases", []);
-    return Array.isArray(phases) ? [...phases].reverse().find(phase => !phase?.endDate) || null : null;
+function selectedRangeDays() {
+    const requested = Number(localStorage.getItem(CALORIE_RANGE_KEY));
+    return [7, 28, 84].includes(requested) ? requested : 7;
 }
 
-function profileMaintenance() {
-    const profile = getNutritionProfile();
-    if (!profile || Number(profile.age) < 18) return null;
-    try { return Math.round(Number(calculateTdee(profile).tdee)) || null; }
-    catch { return null; }
-}
-
-function selectedRange(phase) {
-    const requested = String(localStorage.getItem(TDEE_RANGE_KEY) || "3m").toLowerCase();
-    return RANGE_OPTIONS[requested] && (requested !== "phase" || phase?.startDate) ? requested : "3m";
-}
-
-function rangeStart(range, phase, endDate) {
-    if (range === "all") return null;
-    if (range === "phase") return String(phase?.startDate || endDate);
-    return shiftDateKey(endDate, -(RANGE_OPTIONS[range].days - 1));
-}
-
-function caloriesForDay(entries) {
-    if (!Array.isArray(entries) || !entries.length) return null;
-    const total = entries.reduce((sum, entry) => sum + Math.max(0, Number(entry?.nutrition?.calories) || 0), 0);
-    return total > 0 ? total : null;
+function rangeLabel(days) {
+    if (days === 7) return "LAST 7 DAYS";
+    if (days === 28) return "LAST 4 WEEKS";
+    return "LAST 12 WEEKS";
 }
 
 function buildComparisonState() {
-    const phase = activePhase();
-    const range = selectedRange(phase);
     const endDate = localDateKey();
-    const requestedStart = rangeStart(range, phase, endDate);
-    const historyStart = requestedStart ? shiftDateKey(requestedStart, -28) : null;
-    const profileEstimate = profileMaintenance();
-    const current = getCalculatedMaintenanceEstimate(profileEstimate);
-    const history = getCalculatedMaintenanceHistory(profileEstimate, { startDate: historyStart });
-    const foodLog = readFoodLog();
-    const completedDays = readJson(FOOD_COMPLETE_KEY, {});
-    const today = localDateKey();
-    const currentLive = positive(current?.liveMaintenanceCalories);
-    if (currentLive !== null && history.at(-1)?.date === today) history[history.length - 1].liveMaintenanceCalories = currentLive;
-
-    let lastUsable = null;
-    const enriched = history.map(point => {
-        const live = positive(point.liveMaintenanceCalories);
-        const reviewed = positive(point.maintenanceCalories);
-        let expenditureCalories = null;
-        if (live !== null) {
-            expenditureCalories = live;
-            lastUsable = live;
-        } else {
-            const held = lastUsable ?? reviewed;
-            if (held !== null) {
-                expenditureCalories = held;
-                lastUsable = held;
-            }
-        }
-        const isToday = point.date === today;
-        const intakeCalories = isToday && completedDays?.[today] !== true
-            ? null
-            : caloriesForDay(foodLog?.[point.date]);
-        return { ...point, expenditureCalories, intakeCalories, isToday };
-    });
-
-    const visibleStart = requestedStart
-        || enriched.find(point => positive(point.expenditureCalories) !== null)?.date
-        || endDate;
-    const points = enriched.filter(point =>
-        point.date >= visibleStart
-        && point.date <= endDate
-        && positive(point.expenditureCalories) !== null
-        && positive(point.intakeCalories) !== null
-    );
-    const graphStart = points[0]?.date || visibleStart;
-    const graphEnd = points.at(-1)?.date || endDate;
-    return { range, startDate: graphStart, endDate: graphEnd, points };
+    const days = selectedRangeDays();
+    const window = getEnergyBalanceWindow(endDate, days);
+    const state = getEnergyBalanceState(window);
+    return { days, startDate: window.startDate, endDate: window.endDate, points: state.visible };
 }
 
 function niceAxisStep(value) {
@@ -294,7 +208,7 @@ function ensureComparisonCard(graphCard) {
     card.dataset.calorieExpenditureComparisonCard = "1";
     card.innerHTML = `
         <header class="calorie-expenditure-card-heading">
-            <div><small>ENERGY BALANCE</small><h3>Calories vs Expenditure</h3></div>
+            <div><small data-energy-balance-range-label>ENERGY BALANCE</small><h3>Calories vs Expenditure</h3></div>
             <p>Bars show logged calories. The line shows daily expenditure.</p>
         </header>
         <div class="calorie-expenditure-shell">
@@ -305,12 +219,14 @@ function ensureComparisonCard(graphCard) {
             <span><i class="is-calories"></i>Calories</span>
             <span><i class="is-expenditure"></i>Expenditure</span>
         </div>
-        <p class="calorie-expenditure-hint">Tap or drag for daily values. Uses the expenditure range selected above.</p>`;
+        <p class="calorie-expenditure-hint">Tap or drag for daily values.</p>`;
     graphCard.insertAdjacentElement("afterend", card);
     return card;
 }
 
 function renderComparisonChart(card, state) {
+    const range = card.querySelector("[data-energy-balance-range-label]");
+    if (range) range.textContent = `ENERGY BALANCE · ${rangeLabel(state.days)}`;
     const canvas = card.querySelector("[data-calorie-expenditure-chart]");
     const tooltip = card.querySelector("[data-calorie-expenditure-tooltip]");
     const shell = canvas?.closest(".calorie-expenditure-shell");
@@ -378,13 +294,9 @@ function renderComparisonChart(card, state) {
             const base = y(0);
             const left = Math.max(padding.left, Math.min(width - padding.right - barWidth, pointX - barWidth / 2));
             context.save();
-            context.globalAlpha = .28;
+            context.globalAlpha = .52;
             context.fillStyle = accent;
             context.fillRect(left, top, barWidth, Math.max(1, base - top));
-            context.globalAlpha = .55;
-            context.strokeStyle = accent;
-            context.lineWidth = 1;
-            context.strokeRect(left + .5, top + .5, Math.max(0, barWidth - 1), Math.max(0, base - top - 1));
             context.restore();
         });
 
@@ -403,14 +315,14 @@ function renderComparisonChart(card, state) {
             context.restore();
         }
 
-        const labelCount = state.range === "1w" ? 7 : 5;
+        const labelCount = 5;
         context.fillStyle = muted;
-        context.font = "800 8px Arial";
-        context.textAlign = "center";
+        context.font = "800 10px Arial";
         context.textBaseline = "alphabetic";
         for (let index = 0; index < labelCount; index += 1) {
             const labelDate = new Date(startMs + (endMs - startMs) * index / Math.max(1, labelCount - 1));
             const pointX = padding.left + index / Math.max(1, labelCount - 1) * plotWidth;
+            context.textAlign = index === 0 ? "left" : index === labelCount - 1 ? "right" : "center";
             context.fillText(formatDate(localDateKey(labelDate)), pointX, height - 7);
         }
 
@@ -455,7 +367,7 @@ function renderComparisonChart(card, state) {
         const expenditure = positive(point.expenditureCalories);
         const difference = intake !== null && expenditure !== null ? intake - expenditure : null;
         tooltip.hidden = false;
-        tooltip.innerHTML = `<strong>${formatDate(point.date)}</strong><span>Calories: ${formatNumber(intake)}</span><span>Expenditure: ${formatNumber(expenditure)}</span><small>${difference !== null ? `${difference >= 0 ? "+" : "−"}${formatNumber(Math.abs(difference))} cal ${difference >= 0 ? "above" : "below"} expenditure` : "No matched data for this day."}</small>`;
+        tooltip.innerHTML = `<strong>${formatDate(point.date)}</strong><span>Calories: ${intake !== null ? formatNumber(intake) : "Not logged"}</span><span>Expenditure: ${formatNumber(expenditure)}</span><small>${difference !== null ? `${difference >= 0 ? "+" : "−"}${formatNumber(Math.abs(difference))} cal ${difference >= 0 ? "above" : "below"} expenditure` : "No completed calorie log for this day."}</small>`;
         const desiredLeft = relative < bounds.width / 2 ? relative + 10 : relative - 148;
         tooltip.style.left = `${Math.max(8, Math.min(bounds.width - 142, desiredLeft))}px`;
         draw();
@@ -509,7 +421,7 @@ if (!resizeBound) {
 }
 
 document.addEventListener("click", event => {
-    if (event.target.closest?.("[data-tdee-chart-range], #nutrition-progress-tab, [data-page='progress']")) window.setTimeout(schedule, 0);
+    if (event.target.closest?.("#nutrition-progress-tab, [data-page='progress'], [data-calorie-stats-range]")) window.setTimeout(schedule, 0);
 }, true);
 
 schedule();
