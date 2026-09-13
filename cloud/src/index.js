@@ -4,6 +4,10 @@ import { NORTH_AMERICAN_CHAIN_FOODS } from "./data/north-american-chain-foods.js
 import { CANADIAN_CHAIN_EXPANSION } from "./data/canadian-chain-expansion.js";
 import { MEZZA_FOODS } from "./data/mezza-foods.js";
 import { BOSTON_PIZZA_FOODS } from "./data/boston-pizza-foods.js";
+import {
+    CANADIAN_RESTAURANT_CATALOGUES,
+    COMPLETE_CANADIAN_RESTAURANT_CATALOGUE_COUNTS
+} from "./data/canadian-restaurant-catalogues.js";
 
 const MAX_BACKUP_BYTES = 8 * 1024 * 1024;
 // User and owner sessions stay valid until they are explicitly revoked. Keep a
@@ -732,7 +736,7 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
     if (query.length < 2) return json({ error: "Enter at least 2 characters." }, 400, request, env);
     if (query.length > 80) return json({ error: "Food search is too long." }, 400, request, env);
     if (restaurantMenu) {
-        const verifiedFoods = (await searchVerifiedFoods(query, env, countryCode, 250))
+        const verifiedFoods = (await searchVerifiedFoods(query, env, countryCode, 500))
             .filter(food => restaurantBrandMatchesQuery(food, query));
         if (verifiedFoods.length) {
             return json({
@@ -863,7 +867,9 @@ export function isCompleteVerifiedRestaurantCatalogue(query, foods) {
     const identity = restaurantBrandIdentity(query);
     const expectedCount = new Map([
         ["mezza lebanese kitchen", MEZZA_FOODS.length],
-        ["boston pizza", BOSTON_PIZZA_FOODS.length]
+        ["boston pizza", BOSTON_PIZZA_FOODS.length],
+        ...Object.entries(COMPLETE_CANADIAN_RESTAURANT_CATALOGUE_COUNTS)
+            .map(([brand, count]) => [restaurantBrandIdentity(brand), count])
     ]).get(identity);
     if (!expectedCount || !Array.isArray(foods)) return false;
     return foods.filter(food => restaurantBrandMatchesQuery(food, query)).length >= expectedCount;
@@ -1447,13 +1453,13 @@ async function searchVerifiedFoods(query, env, countryCode = "CA", limit = 8) {
                 ELSE 2
             END, popularity_score DESC, brand, name
             LIMIT ?
-        `).bind(...tokens, countryCode, query.toLowerCase(), `${normalizedQuery}%`, Math.max(12, Math.min(250, limit))).all();
+        `).bind(...tokens, countryCode, query.toLowerCase(), `${normalizedQuery}%`, Math.max(12, Math.min(500, limit))).all();
         storedFoods = (Array.isArray(result?.results) ? result.results : []).map(normalizeVerifiedFood).filter(Boolean);
     }
     catch (error) {
         console.error(JSON.stringify({ event: "verified_food_search_failed", reason: String(error?.message || error) }));
     }
-    return rankRestaurantFoods(rankFoodNameMatches(mergeFoodResults(storedFoods, searchBundledVerifiedFoods(query)), query), query, countryCode).slice(0, Math.max(1, Math.min(250, limit)));
+    return rankRestaurantFoods(rankFoodNameMatches(mergeFoodResults(storedFoods, searchBundledVerifiedFoods(query)), query), query, countryCode).slice(0, Math.max(1, Math.min(500, limit)));
 }
 
 export function normalizeVerifiedFood(row) {
@@ -1608,6 +1614,10 @@ const BUNDLED_VERIFIED_FOODS = [
         category: "Restaurant food",
         verifiedAt: "2026-08-31"
     })),
+    ...CANADIAN_RESTAURANT_CATALOGUES.map(food => bundledVerifiedFood({
+        ...food,
+        category: "Restaurant food"
+    })),
     ...MEZZA_FOODS.map(food => bundledVerifiedFood({
         ...food,
         category: "Restaurant food",
@@ -1620,7 +1630,7 @@ const BUNDLED_VERIFIED_FOODS = [
     }))
 ];
 
-function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, barcode = "", barcodeAliases = [], label, grams, calories, protein, carbs, fat, fiber = 0, category = "", menuSection = "", nutritionScope = "", countryCode = "CA", sourceName = "", sourceUrl, verifiedAt = "2026-08-27" }) {
+function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, barcode = "", barcodeAliases = [], label, grams, calories, protein, carbs, fat, fiber = 0, category = "", menuSection = "", nutritionScope = "", countryCode = "CA", sourceName = "", sourceUrl, verifiedAt = "2026-08-27", calculationMethod = "", sourceNote = "" }) {
     const nutrition = { calories, protein, carbs, fat, fiber };
     const portions = [{ label: foodServingLabel(label, grams), ...(grams ? { grams } : {}), nutrition }];
     if (grams && Math.abs(grams - 100) > .01) {
@@ -1639,7 +1649,16 @@ function bundledVerifiedFood({ id, productFamilyId = "", name, brand, aliases, b
         category: category || (brand === "Grenade" ? "Protein bar" : "Restaurant food"),
         menuSection,
         countryCode,
-        provenance: { sourceName: sourceName || (brand === "Grenade" ? "Grenade" : "McDonald's Canada"), sourceUrl, verifiedAt, sourceType: "official_restaurant", verificationStatus: "verified", nutritionScope: nutritionScope || (protein || carbs || fat ? "full" : "calories_only"), lastCheckedAt: verifiedAt },
+        provenance: {
+            sourceName: sourceName || (brand === "Grenade" ? "Grenade" : "McDonald's Canada"),
+            sourceUrl,
+            verifiedAt,
+            sourceType: "official_restaurant",
+            verificationStatus: "verified",
+            nutritionScope: nutritionScope || (protein || carbs || fat ? "full" : "calories_only"),
+            lastCheckedAt: verifiedAt,
+            ...(calculationMethod ? { calculationMethod, sourceNote } : {})
+        },
         detailsLoaded: true,
         portions: addUsefulGramPortions(addRestaurantServingOptions(portions, { brand, menuSection, servingLabel: label }))
     };

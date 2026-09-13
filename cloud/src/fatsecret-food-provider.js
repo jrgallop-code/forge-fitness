@@ -59,7 +59,10 @@ export async function searchFatSecretFoods(query, countryCode, env = {}, options
 
     const auth = await getFatSecretAuth(env);
     const capabilities = capabilitiesFromAuth(auth, env);
-    const maxResults = String(clampInteger(options.limit, 1, 20, 8));
+    // FatSecret accepts up to 50 search results per page. Restaurant catalogue
+    // searches use that full page size so popular chains are not capped at the
+    // first 100 loosely ranked items.
+    const maxResults = String(clampInteger(options.limit, 1, 50, 8));
     const pageNumber = String(clampInteger(options.page, 0, 100, 0));
     const normalizedCountry = normalizeCountry(countryCode);
     let payload;
