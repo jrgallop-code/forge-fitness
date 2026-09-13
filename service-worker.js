@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-13-315";
+const CACHE_VERSION = "2026-09-13-316";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -182,14 +182,19 @@ self.addEventListener("fetch", event => {
 
 self.addEventListener("notificationclick", event => {
     event.notification.close();
+    const data = event.notification.data || {};
+    const isPersonalRecord = data.type === "levelup:personal-record" && data.sessionId;
     event.waitUntil(
         clients.matchAll({ type: "window", includeUncontrolled: true }).then(async windows => {
             const existing = windows.find(client => "focus" in client);
             if (existing) {
                 await existing.focus();
-                existing.postMessage({ type: "levelup:open-active-workout" });
+                existing.postMessage(isPersonalRecord
+                    ? { type: "levelup:open-workout-pr", sessionId: data.sessionId }
+                    : { type: "levelup:open-active-workout" });
                 return existing;
             }
+            if (isPersonalRecord) return clients.openWindow(`./?workoutPr=${encodeURIComponent(data.sessionId)}`);
             return clients.openWindow("./?resumeWorkout=1");
         })
     );

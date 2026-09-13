@@ -77,6 +77,61 @@ export async function nativeAlarmPermission() {
     catch { return "prompt"; }
 }
 
+export async function requestAppNotificationPermission() {
+    if (isNative()) {
+        const notifications = plugin("LocalNotifications");
+        if (!notifications) return "unsupported";
+        try {
+            const current = await notifications.checkPermissions();
+            if (current?.display === "granted") return "granted";
+            return (await notifications.requestPermissions())?.display || "denied";
+        }
+        catch { return "denied"; }
+    }
+    if (!("Notification" in window)) return "unsupported";
+    try {
+        if (Notification.permission === "granted") return "granted";
+        return await Notification.requestPermission();
+    }
+    catch { return "denied"; }
+}
+
+export async function showAppNotification({ key, title, body, extra = {} }) {
+    if (isNative()) {
+        const notifications = plugin("LocalNotifications");
+        if (!notifications) return false;
+        try {
+            const permission = (await notifications.checkPermissions())?.display;
+            if (permission !== "granted") return false;
+            await notifications.schedule({ notifications: [{
+                id: nativeNotificationId(key), title, body,
+                schedule: { at: new Date(Date.now() + 500) },
+                extra: { ...extra, key }
+            }] });
+            return true;
+        }
+        catch { return false; }
+    }
+    if (!("Notification" in window) || Notification.permission !== "granted") return false;
+    try {
+        const registration = await navigator.serviceWorker?.ready;
+        if (registration?.showNotification) {
+            await registration.showNotification(title, {
+                body,
+                icon: "assets/icons/icon-192.png",
+                badge: "assets/icons/icon-192.png",
+                tag: key,
+                data: extra
+            });
+            return true;
+        }
+        const notification = new Notification(title, { body, icon: "assets/icons/icon-192.png", tag: key });
+        notification.onclick = () => { window.focus(); window.dispatchEvent(new CustomEvent("levelup:open-workout-pr", { detail: extra })); };
+        return true;
+    }
+    catch { return false; }
+}
+
 export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, kind = "timer", context = {}, notification = true }) {
     const nativeTimer = plugin("LevelUpTimer");
     const notifications = plugin("LocalNotifications");
@@ -231,7 +286,9 @@ function bindNativeTouchFeedback() {
             if (event?.isActive) void syncNativeRestTimerState();
         });
         void plugin("LocalNotifications")?.addListener?.("localNotificationActionPerformed", event => {
-            window.dispatchEvent(new CustomEvent("levelup:native-alarm-opened", { detail: event?.notification?.extra || {} }));
+            const detail = event?.notification?.extra || {};
+            window.dispatchEvent(new CustomEvent("levelup:native-alarm-opened", { detail }));
+            window.dispatchEvent(new CustomEvent("levelup:native-notification-opened", { detail }));
         });
     }
     catch {}

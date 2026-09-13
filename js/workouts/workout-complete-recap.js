@@ -28,6 +28,14 @@ window.addEventListener("levelup:workout-completed", event => {
   }, 0);
 });
 
+export function openWorkoutCompletionRecap(sessionId) {
+  const sessions = readSessions();
+  const completed = sessions.find(session => String(session?.id) === String(sessionId || ""));
+  if (!completed) return false;
+  renderRecap(completed, sessions.filter(session => session.id !== completed.id));
+  return true;
+}
+
 function showLatestCompletedWorkout() {
   const sessions = readSessions();
   const latest = [...sessions].filter(s => s?.completedAt).sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt))[0];

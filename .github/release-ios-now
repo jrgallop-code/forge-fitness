@@ -106,3 +106,5 @@ Release 48 retry: rotate the prior CI distribution certificate before signing th
 Release 48 retry 2: compile the non-optional native timer record after the ActivityKit availability guard.
 
 Release 49: restore persistent Lock Screen Live Activities for rest and cardio timers.
+
+Release 50: add opt-in personal-record notifications that combine each workout's records into one alert and open the completed workout recap when tapped.

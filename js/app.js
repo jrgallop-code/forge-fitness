@@ -51,3 +51,4 @@ document.body.insertAdjacentHTML("beforeend",renderNavbar());
 initializeNavbar();
 initializeMaintenanceCheckInAlert();
 decorateAppIcons(document);
+import "./notifications/personal-record-notifications.js?v=personal-record-notifications-1";
