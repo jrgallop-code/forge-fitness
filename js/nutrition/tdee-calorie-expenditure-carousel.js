@@ -412,7 +412,7 @@ function schedule() {
 
 const content = document.getElementById("content");
 if (content) new MutationObserver(schedule).observe(content, { childList: true, subtree: true });
-["pageshow", "levelup:nutrition-updated", "levelup:food-log-updated", "levelup:weight-updated", "levelup:appearance-changed"]
+["pageshow", "levelup:nutrition-updated", "levelup:food-log-updated", "levelup:weight-updated", "levelup:appearance-changed", "levelup:calorie-range-changed"]
     .forEach(name => window.addEventListener(name, schedule));
 
 if (!resizeBound) {

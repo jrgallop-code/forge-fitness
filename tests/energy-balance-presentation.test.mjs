@@ -5,10 +5,11 @@ import { readFile } from "node:fs/promises";
 const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("Calories vs Expenditure follows the visible 7D, 4W and 12W calorie timeframe", async () => {
-    const [state, comparison, summary] = await Promise.all([
+    const [state, comparison, summary, calorieStats] = await Promise.all([
         read("js/nutrition/energy-balance-state.js"),
         read("js/nutrition/tdee-calorie-expenditure-carousel.js"),
-        read("js/nutrition/tdee-energy-balance-summary.js")
+        read("js/nutrition/tdee-energy-balance-summary.js"),
+        read("js/nutrition/calorie-stats.js")
     ]);
 
     assert.match(state, /ENERGY_BALANCE_WINDOW_DAYS = 7/);
@@ -20,7 +21,11 @@ test("Calories vs Expenditure follows the visible 7D, 4W and 12W calorie timefra
     assert.match(comparison, /getEnergyBalanceState\(window\)/);
     assert.match(comparison, /points: state\.visible/);
     assert.match(comparison, /\[data-calorie-stats-range\]/);
+    assert.match(comparison, /levelup:calorie-range-changed/);
     assert.match(summary, /level_up_calorie_stats_range_v1/);
+    assert.match(summary, /levelup:calorie-range-changed/);
+    assert.match(calorieStats, /queueMicrotask/);
+    assert.match(calorieStats, /levelup:calorie-range-changed/);
     assert.match(summary, /getEnergyBalanceWindow\(endDate, days\)/);
     assert.match(summary, /windowStart: window\.startDate/);
 });
@@ -54,11 +59,12 @@ test("the PWA cache and import chain request the new Energy Balance implementati
         read("js/progress/weight-carbs-chart.js")
     ]);
 
-    assert.match(worker, /2026-09-13-310/);
-    assert.match(index, /js\/app\.js\?v=energy-balance-range-1/);
-    assert.match(app, /router\.js\?v=energy-balance-range-1/);
-    assert.match(router, /weight-carbs-chart\.js\?v=energy-balance-range-1/);
-    assert.match(bridge, /tdee-calorie-expenditure-carousel\.js\?v=energy-balance-range-1/);
-    assert.match(bridge, /tdee-energy-balance-summary\.js\?v=energy-balance-range-1/);
+    assert.match(worker, /2026-09-13-311/);
+    assert.match(index, /js\/app\.js\?v=energy-balance-range-2/);
+    assert.match(app, /router\.js\?v=energy-balance-range-2/);
+    assert.match(router, /weight-carbs-chart\.js\?v=energy-balance-range-2/);
+    assert.match(router, /calorie-stats\.js\?v=calorie-range-control-1/);
+    assert.match(bridge, /tdee-calorie-expenditure-carousel\.js\?v=energy-balance-range-2/);
+    assert.match(bridge, /tdee-energy-balance-summary\.js\?v=energy-balance-range-2/);
     assert.match(bridge, /tdee-expenditure-swipe-card\.js\?v=energy-card-height-1/);
 });

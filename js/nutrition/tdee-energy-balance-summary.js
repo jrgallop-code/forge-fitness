@@ -27,6 +27,7 @@ function install() {
     window.addEventListener("storage", event => {
         if ([FOOD_LOG_KEY, FOOD_COMPLETE_KEY, CALORIE_RANGE_KEY].includes(event.key)) schedule();
     });
+    window.addEventListener("levelup:calorie-range-changed", schedule);
 }
 
 function ensureStyles() {
