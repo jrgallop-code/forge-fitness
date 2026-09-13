@@ -2,6 +2,7 @@ const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
 const APPROVED_LOGO_USAGE_BASES = new Set(["written_permission", "documented_license"]);
 const RESTAURANT_LOGO_ASSET_PATTERN = /^assets\/restaurant-logos\/[a-z0-9][a-z0-9._/-]*\.(?:svg|png|webp)$/i;
+const RESTAURANT_BRAND_SUFFIXES = new Set(["canada", "canadian", "restaurant", "restaurants", "inc", "incorporated", "ltd", "limited", "llc", "corp", "corporation"]);
 
 // Add artwork here only after its app-display rights have been documented.
 // Restaurant search results and external APIs cannot opt themselves into logo display.
@@ -83,7 +84,7 @@ function ensureRestaurantMenuStyles() {
     if (document.querySelector("link[data-restaurant-menu-styles]")) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "css/restaurant-menu.css?v=eating-out-6";
+    link.href = "css/restaurant-menu.css?v=eating-out-7";
     link.dataset.restaurantMenuStyles = "";
     document.head.append(link);
 }
@@ -145,7 +146,7 @@ function screenMarkup() {
                     </div>
                 </article>
 
-                <p class="restaurant-menu-notice" role="note">${infoSvg()}<span><strong>Coverage varies.</strong> Results use available food data and may not reproduce every current menu item. Confirm values with the restaurant when accuracy matters.</span></p>
+                <p class="restaurant-menu-notice" role="note">${infoSvg()}<span><strong>Confirmed restaurant results only.</strong> Level Up hides foods unless the data source identifies them as belonging to the selected restaurant. Coverage may therefore be incomplete.</span></p>
 
                 <form class="restaurant-menu-search" data-restaurant-menu-search role="search">
                     ${searchSvg()}
@@ -255,7 +256,7 @@ async function loadRestaurant(nextRestaurant) {
         if (!response.ok) throw new Error(payload.error || "Restaurant menu could not be loaded.");
         const usable = (Array.isArray(payload.foods) ? payload.foods : []).filter(food => food?.portions?.[0]?.nutrition);
         const matching = usable.filter(food => restaurantFoodMatches(food, nextRestaurant.name));
-        state.foods = matching.length ? matching : (nextRestaurant.known ? [] : usable);
+        state.foods = matching;
         state.source = String(payload.source || "");
         state.warning = String(payload.warning || "");
         cache.set(cacheKey, { foods: state.foods, source: state.source, warning: state.warning });
@@ -272,12 +273,17 @@ async function loadRestaurant(nextRestaurant) {
     }
 }
 
-function restaurantFoodMatches(food, restaurantName) {
-    const restaurantIdentity = normalize(restaurantName);
-    const brandIdentity = normalize(food?.brand);
-    const nameIdentity = normalize(food?.name);
-    if (!restaurantIdentity) return false;
-    return Boolean(brandIdentity && (brandIdentity.includes(restaurantIdentity) || restaurantIdentity.includes(brandIdentity))) || nameIdentity.includes(restaurantIdentity);
+export function restaurantFoodMatches(food, restaurantName) {
+    const restaurantIdentity = restaurantBrandIdentity(restaurantName);
+    const brandIdentity = restaurantBrandIdentity(food?.brand);
+    return Boolean(restaurantIdentity && brandIdentity && restaurantIdentity === brandIdentity);
+}
+
+export function restaurantBrandIdentity(value) {
+    const tokens = normalize(value).split(" ").filter(Boolean);
+    if (tokens[0] === "the") tokens.shift();
+    while (tokens.length > 1 && RESTAURANT_BRAND_SUFFIXES.has(tokens[tokens.length - 1])) tokens.pop();
+    return tokens.join(" ");
 }
 
 function renderContext() {
@@ -350,7 +356,7 @@ function renderResults() {
     const source = state.source ? ` · ${state.source}` : "";
     setText("[data-restaurant-results-status]", `${foods.length} of ${state.foods.length} available item${state.foods.length === 1 ? "" : "s"}${source}`);
     if (!state.foods.length) {
-        container.innerHTML = `<div class="restaurant-menu-empty">${searchSvg()}<strong>No menu results found</strong><p>Try another restaurant name. Coverage will expand as more official menus and licensed data are added.</p><button type="button" data-restaurant-sheet-open-local="restaurants">Search restaurants</button></div>`;
+        container.innerHTML = `<div class="restaurant-menu-empty">${searchSvg()}<strong>No confirmed menu items found</strong><p>Level Up did not receive any foods clearly identified as ${escapeHtml(state.restaurant.name)} items. Uncertain matches are hidden.</p><button type="button" data-restaurant-sheet-open-local="restaurants">Search restaurants</button></div>`;
         container.querySelector("[data-restaurant-sheet-open-local]")?.addEventListener("click", () => openSheet("restaurants"));
         return;
     }
@@ -566,7 +572,7 @@ function friendlyDate(dateKey) {
 }
 
 function normalize(value) {
-    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[®™]/g, "").replace(/[’']s\b/g, "s").replace(/[^a-z0-9]+/g, " ").trim();
 }
 
 function initials(value) {

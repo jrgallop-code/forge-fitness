@@ -1,4 +1,5 @@
 import baseWorker from "./safe-backup-worker-v2.js";
+import { restaurantBrandMatchesQuery } from "./index.js";
 import {
     fatSecretCanBarcode,
     fatSecretConfigured,
@@ -75,7 +76,10 @@ async function searchFoodsWithFatSecret(url, request, env, ctx) {
         // serving_id. Keep those summaries visible and hydrate the selected
         // food on demand instead of discarding everything after the first few
         // detail lookups.
-        const fatSecretFoods = mergeFatSecretCandidates(summaries, usableFromSearch, enriched, { includeSummaries: true });
+        const providerFoods = mergeFatSecretCandidates(summaries, usableFromSearch, enriched, { includeSummaries: true });
+        const fatSecretFoods = restaurantMenu
+            ? providerFoods.filter(food => restaurantBrandMatchesQuery(food, query))
+            : providerFoods;
 
         const payload = await baseResponse.clone().json().catch(() => ({}));
         const status = fatSecretStatus(capabilities, country, fatSecretFoods.length > 0, {
@@ -95,7 +99,10 @@ async function searchFoodsWithFatSecret(url, request, env, ctx) {
                 });
         }
 
-        const baseFoods = baseResponse.ok && Array.isArray(payload?.foods) ? payload.foods : [];
+        const baseCandidates = baseResponse.ok && Array.isArray(payload?.foods) ? payload.foods : [];
+        const baseFoods = restaurantMenu
+            ? baseCandidates.filter(food => restaurantBrandMatchesQuery(food, query))
+            : baseCandidates;
         const foods = mergeSearchResults(baseFoods, fatSecretFoods, restaurantMenu ? RESTAURANT_MENU_RESULT_LIMIT : SEARCH_LIMIT);
         const source = appendSource(baseResponse.ok ? payload?.source : "", "FatSecret");
         return jsonFrom(baseResponse, {
