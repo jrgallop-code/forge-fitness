@@ -102,3 +102,5 @@ Release 47: preserve the distribution certificate through Apple's asynchronous v
 Release 48: restore Lock Screen Live Activity timers independently of notification permission and open saved plans and completed Workout History sessions directly in their editors.
 
 Release 48 retry: rotate the prior CI distribution certificate before signing the replacement build.
+
+Release 48 retry 2: compile the non-optional native timer record after the ActivityKit availability guard.

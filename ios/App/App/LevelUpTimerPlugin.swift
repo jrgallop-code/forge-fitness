@@ -76,8 +76,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
                 return
             }
 
-            guard #available(iOS 16.1, *),
-                  let record = self.timerRecord(call: call, key: key, title: title, detail: body, endAt: endAt) else {
+            guard #available(iOS 16.1, *) else {
                 if let notificationError {
                     call.reject("The timer notification could not be scheduled.", nil, notificationError)
                 } else {
@@ -90,6 +89,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
                 return
             }
 
+            let record = self.timerRecord(call: call, key: key, title: title, detail: body, endAt: endAt)
             LevelUpTimerStateStore.save(record)
             Task { @MainActor in
                 let activityResult = await self.startLiveActivity(record: record)

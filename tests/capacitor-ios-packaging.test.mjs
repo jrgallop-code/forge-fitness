@@ -182,3 +182,9 @@ test("the iOS target declares permissions used by Level Up features", async () =
         "NSSpeechRecognitionUsageDescription"
     ]) assert.match(info, new RegExp(`<key>${permission}</key>`));
 });
+
+test("the native timer creates its non-optional record after the iOS availability guard", async () => {
+  const timerPlugin = await readFile(new URL("../ios/App/App/LevelUpTimerPlugin.swift", import.meta.url), "utf8");
+  assert.doesNotMatch(timerPlugin, /guard #available\(iOS 16\.1, \*\),\s*let record/);
+  assert.match(timerPlugin, /guard #available\(iOS 16\.1, \*\) else[\s\S]*let record = self\.timerRecord/);
+});
