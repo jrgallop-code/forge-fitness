@@ -96,3 +96,5 @@ Release 44: synchronize expanded restaurant menus and optional onboarding goal w
 Release 45: separate expenditure-card timeframes from the calorie-summary 7D, 4W, and 12W controls.
 
 Release 46: keep completed rest timers visible on the Lock Screen and preserve the native completion alert.
+
+Release 47: preserve the distribution certificate through Apple's asynchronous validation and verify the exported IPA signature before upload.
