@@ -256,7 +256,10 @@ struct LevelUpTimerLiveActivity: Widget {
             Text(formatDuration(context.state.remainingSeconds))
                 .font(font).monospacedDigit().fontWeight(.heavy).foregroundStyle(palette.accent)
         } else {
-            Text(timerInterval: context.state.startedAt...context.state.endAt, countsDown: true)
+            Text(
+                timerInterval: context.state.startedAt...(context.attributes.kind == "cardio" ? .distantFuture : context.state.endAt),
+                countsDown: context.attributes.kind != "cardio"
+            )
                 .font(font).monospacedDigit().fontWeight(.heavy).foregroundStyle(palette.accent)
         }
     }

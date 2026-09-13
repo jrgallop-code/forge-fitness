@@ -77,7 +77,7 @@ export async function nativeAlarmPermission() {
     catch { return "prompt"; }
 }
 
-export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, kind = "timer", context = {} }) {
+export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, kind = "timer", context = {}, notification = true }) {
     const nativeTimer = plugin("LevelUpTimer");
     const notifications = plugin("LocalNotifications");
     if (!isNative() || (!nativeTimer && !notifications)) return false;
@@ -95,14 +95,21 @@ export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, ki
         }
         try {
             const theme = document.documentElement.dataset.theme || "level-up";
-            const result = await nativeTimer.schedule({
+            const payload = {
                 key, title, body, at: when.getTime(),
                 type: extra?.type || "levelup:timer-complete",
                 kind,
+                notificationEnabled: notification !== false,
                 theme,
                 icon: liveActivityAppearance(),
                 ...nativeTimerContext(context)
-            });
+            };
+            let result = await nativeTimer.schedule(payload);
+            if (result?.liveActivity !== true && !/disabled in iOS Settings/i.test(String(result?.liveActivityError || ""))) {
+                await new Promise(resolve => setTimeout(resolve, 350));
+                const retry = await nativeTimer.schedule(payload);
+                if (retry?.liveActivity === true || retry?.scheduled === true) result = retry;
+            }
             window.dispatchEvent(new CustomEvent("levelup:native-timer-scheduled", { detail: result || {} }));
             return result?.scheduled === true;
         }

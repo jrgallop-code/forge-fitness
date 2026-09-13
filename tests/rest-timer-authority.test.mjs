@@ -26,7 +26,7 @@ test("the active rest timer keeps the full next exercise name readable", () => {
 test("warm-up completion uses the same per-exercise rest timer authority", () => {
     assert.match(warmups, /startRestForWarmupButton/);
     assert.match(warmups, /warmup-timer-stability\.js\?v=warmup-timer-stability-1/);
-    assert.match(warmups, /rest-timer-authority\.js\?v=live-activity-start-1/);
+    assert.match(warmups, /rest-timer-authority\.js\?v=live-activity-persistent-1/);
     assert.doesNotMatch(warmups, /#start-rest-timer/);
     assert.match(authority, /sourceType:\s*"warmup"/);
     assert.match(authority, /warmupSets/);

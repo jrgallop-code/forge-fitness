@@ -124,8 +124,12 @@ test("native iOS uses the selected Appearance icon without an opaque Lock Screen
     assert.match(timerPlugin, /interruptionLevel = \.timeSensitive/);
     assert.match(timerPlugin, /finishSchedule\(false, nil\)/);
     assert.match(timerPlugin, /notificationScheduled \|\| activityResult\.started/);
+    assert.match(native, /notificationEnabled: notification !== false/);
+    assert.match(native, /result\?\.liveActivity !== true[\s\S]*nativeTimer\.schedule\(payload\)/);
     assert.match(timerPlugin, /@MainActor\s+private func startLiveActivity/);
     assert.match(timerPlugin, /for activity in Activity<LevelUpTimerAttributes>\.activities/);
+    assert.match(timerPlugin, /first\(where: \{ \$0\.attributes\.timerID == record\.timerID \}\)/);
+    assert.match(timerPlugin, /activity\.attributes\.kind != "cardio"/);
     assert.match(native, /A local Live Activity does not require notification permission/);
     assert.match(native, /window\.dispatchEvent\(new CustomEvent\("levelup:native-timer-scheduled"/);
     assert.match(timerPlugin, /cleanupExpiredLiveActivities/);
@@ -145,6 +149,7 @@ test("native iOS uses the selected Appearance icon without an opaque Lock Screen
     assert.match(attributes, /struct SkipLevelUpTimerIntent: LiveActivityIntent/);
     assert.match(widget, /ActivityConfiguration/);
     assert.match(widget, /timerInterval/);
+    assert.match(widget, /context\.attributes\.kind == "cardio" \? \.distantFuture/);
     assert.match(widget, /TimerPalette\.forTheme/);
     assert.match(widget, /timerLogoName\(for icon:/);
     assert.match(widget, /timerLogo\(icon: context\.attributes\.icon/);

@@ -104,3 +104,5 @@ Release 48: restore Lock Screen Live Activity timers independently of notificati
 Release 48 retry: rotate the prior CI distribution certificate before signing the replacement build.
 
 Release 48 retry 2: compile the non-optional native timer record after the ActivityKit availability guard.
+
+Release 49: restore persistent Lock Screen Live Activities for rest and cardio timers.
