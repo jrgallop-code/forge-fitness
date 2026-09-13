@@ -172,7 +172,30 @@ jobs:
           -exportPath "$RUNNER_TEMP/LevelUpExport"
           -exportOptionsPlist "$EXPORT_OPTIONS_PATH"
 
+      - name: Verify exported app signatures
+        shell: bash
+        run: |
+          ipa_path="$(find "$RUNNER_TEMP/LevelUpExport" -name '*.ipa' -print -quit)"
+          if [[ -z "$ipa_path" ]]; then
+            echo "No IPA was produced."
+            exit 1
+          fi
+
+          verification_directory="$RUNNER_TEMP/LevelUpSignatureVerification"
+          mkdir -p "$verification_directory"
+          ditto -x -k "$ipa_path" "$verification_directory"
+
+          app_path="$(find "$verification_directory/Payload" -maxdepth 1 -name '*.app' -print -quit)"
+          if [[ -z "$app_path" ]]; then
+            echo "The IPA does not contain an app bundle."
+            exit 1
+          fi
+
+          codesign --verify --deep --strict --verbose=4 "$app_path"
+          codesign -d --verbose=4 "$app_path"
+
       - name: Upload build to App Store Connect
+        id: upload
         shell: bash
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
@@ -194,7 +217,14 @@ jobs:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         run: |
-          node scripts/app-store-signing.mjs cleanup
+          # Apple validates the distribution certificate asynchronously after
+          # altool accepts the upload. Revoking it here caused ITMS-90035.
+          # Only revoke server-side assets when no build was successfully sent.
+          if [[ "${{ steps.upload.outcome }}" != "success" ]]; then
+            node scripts/app-store-signing.mjs cleanup
+          else
+            echo "Keeping App Store signing assets active while Apple processes the uploaded build."
+          fi
           if [[ -n "${INSTALLED_PROFILE_PATH:-}" ]]; then
             rm -f "$INSTALLED_PROFILE_PATH"
           fi
