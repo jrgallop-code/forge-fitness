@@ -86,3 +86,5 @@ Release 39: add Eating Out restaurant-menu browsing and polish Food Log search c
 Release 40: add complete official Boston Pizza and Mezza catalogues with full macros, include Thai Chicken Wrap, support per-slice and whole-pizza servings, and remove the 100-item restaurant-menu cap.
 
 Release 41: require confirmed restaurant-brand matches in Eating Out search and add legally gated restaurant-logo support with initials fallback.
+
+Release 42: make Dashboard and Progress use the same seven-day expenditure average, hydrated restaurant calories, completed-day rules, and energy-balance calculation.
