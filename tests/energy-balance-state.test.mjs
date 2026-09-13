@@ -9,9 +9,17 @@ globalThis.localStorage = {
 globalThis.window = { addEventListener() {}, dispatchEvent() {} };
 globalThis.CustomEvent = class CustomEvent {};
 
-const { summarizeEnergyRange } = await import("../js/nutrition/energy-balance-state.js?test=shared-seven-day-energy");
+const { ENERGY_BALANCE_WINDOW_DAYS, getEnergyBalanceWindow, summarizeEnergyRange } = await import("../js/nutrition/energy-balance-state.js?test=shared-seven-day-energy");
 
-test("one seven-day state produces the expenditure average and calorie balance used by both graphs", () => {
+test("the Energy Balance detail uses one inclusive rolling 30-day window", () => {
+    assert.equal(ENERGY_BALANCE_WINDOW_DAYS, 30);
+    assert.deepEqual(getEnergyBalanceWindow("2026-09-13"), {
+        startDate: "2026-08-15",
+        endDate: "2026-09-13"
+    });
+});
+
+test("a populated range produces the expenditure average and calorie balance used by both graphs", () => {
     const dates = ["2026-09-06", "2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11", "2026-09-12"];
     const expenditure = [2775, 2750, 2750, 2725, 2700, 2675, 2675];
     const intake = [2900, 2750, 2900, 2450, 2925, 2825, 2815];
