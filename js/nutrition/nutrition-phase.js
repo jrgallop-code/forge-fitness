@@ -16,10 +16,12 @@ export function getNutritionPhaseHistory() {
     return readPhases().filter(p => p?.startDate && p?.goalId).sort((a,b) => String(b.startDate).localeCompare(String(a.startDate)));
 }
 
-export function saveNutritionPhase({ goalId, maintenanceCalories, targetCalories }) {
+export function saveNutritionPhase({ goalId, maintenanceCalories, targetCalories, goalWeight = undefined }) {
     const preset = GOAL_PRESETS[goalId];
     const maintenance = positive(maintenanceCalories);
     const calories = positive(targetCalories);
+    const goalWeightProvided = goalWeight !== undefined;
+    const normalizedGoalWeight = normalizeGoalWeight(goalWeight);
     if (!preset || !maintenance || !calories) return { action: "invalid", phase: null };
 
     const phases = readPhases();
@@ -30,8 +32,11 @@ export function saveNutritionPhase({ goalId, maintenanceCalories, targetCalories
 
     if (active?.goalId === goalId) {
         const previous = positive(active.currentCalories ?? active.startCalories);
-        const changed = previous !== calories || positive(active.maintenanceCalories) !== maintenance;
+        const previousGoalWeight = normalizeGoalWeight(active.goalWeight ?? active.targetWeight);
+        const changed = previous !== calories || positive(active.maintenanceCalories) !== maintenance || (goalWeightProvided && previousGoalWeight !== normalizedGoalWeight);
         const next = { ...active, label: preset.label, currentCalories: calories, maintenanceCalories: maintenance, targetWeeklyRate: preset.weeklyWeightChangeLb, dailyCalorieAdjustment: preset.dailyCalorieAdjustment, updatedAt: now };
+        if (goalWeightProvided && normalizedGoalWeight !== null) next.goalWeight = normalizedGoalWeight;
+        else if (goalWeightProvided) { delete next.goalWeight; delete next.targetWeight; }
         if (previous !== calories) next.adjustments = [...(Array.isArray(active.adjustments) ? active.adjustments : []), { date: now, previousCalories: previous, newCalories: calories, maintenanceCalories: maintenance }];
         phases[index] = next;
         writePhases(phases);
@@ -54,6 +59,7 @@ export function saveNutritionPhase({ goalId, maintenanceCalories, targetCalories
         maintenanceCalories: maintenance,
         startCalories: calories,
         currentCalories: calories,
+        ...(normalizedGoalWeight !== null ? { goalWeight: normalizedGoalWeight } : {}),
         adjustments: [],
         status: "active",
         createdAt: now,
@@ -226,6 +232,7 @@ function activeIndex(v){for(let i=v.length-1;i>=0;i-=1)if(v[i]&&!v[i].endDate&&G
 function readWeights(){try{return normalizeWeightEntries(JSON.parse(localStorage.getItem(WEIGHT_KEY)||"[]"))}catch{return[]}}
 function trendWeight(entries){if(!entries.length)return null;const latest=entries.at(-1),cut=dateMs(latest.date)-6*86400000,recent=entries.filter(e=>dateMs(e.date)>=cut);const n=recent.length?recent.reduce((s,e)=>s+e.weight,0)/recent.length:latest.weight;return Math.round(n*100)/100}
 function finiteNumber(value){if(value===null||value===undefined||value==="")return null;const n=Number(value);return Number.isFinite(n)?n:null}
+function normalizeGoalWeight(value){const n=finiteNumber(value);return Number.isFinite(n)&&n>0?Math.round(n*10)/10:null}
 function positive(v){const n=Math.round(Number(v));return Number.isFinite(n)&&n>0?n:null}
 function notify(){window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated"))}
 function localDate(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}

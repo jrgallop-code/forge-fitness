@@ -103,6 +103,7 @@ body.levelup-onboarding-open .bottom-nav{opacity:0!important;visibility:hidden!i
 .onboarding-profile-grid label>small{font-size:.58rem}
 .onboarding-profile-wide{grid-column:1/-1}
 .onboarding-profile-grid input,.onboarding-profile-grid select,.onboarding-exercise-picker input{width:100%;min-width:0;height:48px;border:1px solid var(--line);border-radius:13px;background:var(--input-bg,var(--card));color:var(--text);padding:10px 12px;font-size:1rem;text-transform:none}
+.onboarding-goal-weight-field>em{font-size:.65rem;font-style:normal;font-weight:650;letter-spacing:0;line-height:1.35;text-transform:none;color:var(--muted)}
 .onboarding-units-disclosure{border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
 .onboarding-units-disclosure summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;cursor:pointer;color:var(--text);font-size:.78rem;font-weight:850}
 .onboarding-units-disclosure summary span{color:var(--muted);font-size:.66rem;font-weight:750}

@@ -6,7 +6,7 @@ const read = relative => readFile(new URL(`../${relative}`, import.meta.url), "u
 
 test("Food Log exposes a clear Eating Out entry point", async () => {
     const foodLog = await read("js/nutrition/food-log.js");
-    assert.match(foodLog, /restaurant-menu\.js\?v=eating-out-8/);
+    assert.match(foodLog, /restaurant-menu\.js\?v=eating-out-9/);
     assert.match(foodLog, /data-food-eating-out/);
     assert.match(foodLog, />Eating Out</);
     assert.match(foodLog, /Browse restaurant menus by calories and protein/);
@@ -15,27 +15,32 @@ test("Food Log exposes a clear Eating Out entry point", async () => {
 });
 
 test("Restaurant Menus searches real food data and supports restaurant discovery", async () => {
-    const menu = await read("js/nutrition/restaurant-menu.js");
+    const [menu, directory] = await Promise.all([
+        read("js/nutrition/restaurant-menu.js"),
+        read("js/nutrition/restaurant-directory.js")
+    ]);
+    const restaurantSources = `${menu}\n${directory}`;
     assert.match(menu, /Restaurant Menus/);
     assert.match(menu, /Search restaurants/);
     assert.match(menu, /Boston Pizza/);
-    assert.match(menu, /Swiss Chalet/);
-    assert.match(menu, /Mezza Lebanese Kitchen/);
-    assert.match(menu, /Tim Hortons/);
-    assert.match(menu, /Mary Brown's/);
-    assert.match(menu, /Pizza Pizza/);
-    assert.match(menu, /Booster Juice/);
-    assert.match(menu, /The Keg/);
-    assert.match(menu, /Montana's/);
-    assert.match(menu, /Kelseys/);
-    assert.match(menu, /East Side Mario's/);
-    assert.match(menu, /Five Guys/);
-    assert.match(menu, /New York Fries/);
-    assert.match(menu, /Cora/);
-    assert.match(menu, /Little Caesars/);
-    assert.match(menu, /Freshii/);
-    assert.match(menu, /Subway/);
+    assert.match(restaurantSources, /Swiss Chalet/);
+    assert.match(restaurantSources, /Mezza Lebanese Kitchen/);
+    assert.match(restaurantSources, /Tim Hortons/);
+    assert.match(restaurantSources, /Mary Brown's/);
+    assert.match(restaurantSources, /Pizza Pizza/);
+    assert.match(restaurantSources, /Booster Juice/);
+    assert.match(restaurantSources, /The Keg/);
+    assert.match(restaurantSources, /Montana's/);
+    assert.match(restaurantSources, /Kelseys/);
+    assert.match(restaurantSources, /East Side Mario's/);
+    assert.match(restaurantSources, /Five Guys/);
+    assert.match(restaurantSources, /New York Fries/);
+    assert.match(restaurantSources, /Cora/);
+    assert.match(restaurantSources, /Little Caesars/);
+    assert.match(restaurantSources, /Freshii/);
+    assert.match(restaurantSources, /Subway/);
     assert.match(menu, /\/v1\/foods\/search\?q=/);
+    assert.match(menu, /&restaurant=/);
     assert.match(menu, /&menu=1/);
     assert.match(menu, /food\?\.menuSection/);
     assert.match(menu, /data-restaurant-menu-search/);
@@ -74,15 +79,15 @@ test("restaurant catalogue mode returns complete verified menus before external 
         read("cloud/src/index.js"),
         read("cloud/src/fatsecret-enabled-worker.js")
     ]);
-    assert.match(baseWorker, /restaurantMenu.*searchVerifiedFoods\(query, env, countryCode, 500\)/s);
-    assert.match(baseWorker, /filter\(food => restaurantBrandMatchesQuery\(food, query\)\)/);
-    assert.match(baseWorker, /restaurantCatalogue:\s*isCompleteVerifiedRestaurantCatalogue\(query, verifiedFoods\)/);
+    assert.match(baseWorker, /restaurantMenu.*searchVerifiedFoods\(restaurantQuery, env, countryCode, 500\)/s);
+    assert.match(baseWorker, /filter\(matchesRestaurant\)/);
+    assert.match(baseWorker, /restaurantCatalogue:\s*isCompleteVerifiedRestaurantCatalogue\(query, verifiedFoods, restaurantId, countryCode\)/);
     assert.match(baseWorker, /\["mezza lebanese kitchen", MEZZA_FOODS\.length\]/);
     assert.match(baseWorker, /\["boston pizza", BOSTON_PIZZA_FOODS\.length\]/);
     assert.match(fatSecretWorker, /cataloguePayload\?\.restaurantCatalogue/);
     assert.match(fatSecretWorker, /RESTAURANT_MENU_RESULT_LIMIT = 500/);
-    assert.match(fatSecretWorker, /providerFoods\.filter\(food => restaurantBrandMatchesQuery\(food, query\)\)/);
-    assert.match(fatSecretWorker, /baseCandidates\.filter\(food => restaurantBrandMatchesQuery\(food, query\)\)/);
+    assert.match(fatSecretWorker, /providerFoods\.filter\(food => restaurantMatchesRequest\(food, query, restaurantId, country\)\)/);
+    assert.match(fatSecretWorker, /baseCandidates\.filter\(food => restaurantMatchesRequest\(food, query, restaurantId, country\)\)/);
     assert.doesNotMatch(fatSecretWorker, /restaurantMenu \? RESTAURANT_MENU_PAGE_SIZE \* RESTAURANT_MENU_PAGES/);
 });
 
@@ -100,10 +105,11 @@ test("Eating Out inherits the active appearance instead of hard-coding one theme
 test("PWA routing and caching include the restaurant menu source", async () => {
     const router = await read("js/core/router.js");
     const worker = await read("service-worker.js");
-    assert.match(router, /food-log\.js\?v=eating-out-8/);
-    assert.match(worker, /2026-09-13-307/);
-    assert.match(worker, /restaurant-menu\.js\?v=eating-out-8/);
-    assert.match(worker, /restaurant-menu\.css\?v=eating-out-8/);
+    assert.match(router, /food-log\.js\?v=eating-out-9/);
+    assert.match(worker, /2026-09-13-308/);
+    assert.match(worker, /restaurant-menu\.js\?v=eating-out-9/);
+    assert.match(worker, /restaurant-directory\.js\?v=eating-out-directory-1/);
+    assert.match(worker, /restaurant-menu\.css\?v=eating-out-9/);
 });
 
 test("restaurant logos require documented rights and a bundled local asset", async () => {

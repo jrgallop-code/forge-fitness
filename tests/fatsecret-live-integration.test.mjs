@@ -59,7 +59,7 @@ test("restaurant menus page through FatSecret instead of truncating a chain to n
     assert.match(worker, /const RESTAURANT_MENU_PAGES = 6/);
     assert.match(worker, /const RESTAURANT_MENU_RESULT_LIMIT = 500/);
     assert.match(worker, /Array\.from\(\{ length: RESTAURANT_MENU_PAGES \}/);
-    assert.match(worker, /searchFatSecretFoods\(query, country, env, \{ limit: RESTAURANT_MENU_PAGE_SIZE, page \}\)/);
+    assert.match(worker, /searchFatSecretFoods\(providerQuery, country, env, \{ limit: RESTAURANT_MENU_PAGE_SIZE, page \}\)/);
     assert.match(worker, /restaurantMenu \? RESTAURANT_MENU_RESULT_LIMIT : SEARCH_LIMIT/);
     assert.match(provider, /clampInteger\(options\.limit, 1, 50, 8\)/);
 });

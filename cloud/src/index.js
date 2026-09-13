@@ -8,6 +8,11 @@ import {
     CANADIAN_RESTAURANT_CATALOGUES,
     COMPLETE_CANADIAN_RESTAURANT_CATALOGUE_COUNTS
 } from "./data/canadian-restaurant-catalogues.js";
+import {
+    PRIORITY_RESTAURANT_CATALOGUES,
+    COMPLETE_PRIORITY_RESTAURANT_CATALOGUE_COUNTS
+} from "./data/priority-restaurant-catalogues.js";
+import { restaurantBrandIdentity as directoryBrandIdentity, restaurantBrandMatches, restaurantForId, restaurantMarket } from "../../js/nutrition/restaurant-directory.js";
 
 const MAX_BACKUP_BYTES = 8 * 1024 * 1024;
 // User and owner sessions stay valid until they are explicitly revoked. Keep a
@@ -731,33 +736,41 @@ async function requireUser(request, env) {
 
 async function searchUsdaFoods(userId, url, request, env, ctx) {
     const query = String(url.searchParams.get("q") || "").trim().replace(/\s+/g, " ");
-    const countryCode = normalizeRestaurantCountry(url.searchParams.get("country"));
     const restaurantMenu = url.searchParams.get("menu") === "1";
+    const restaurantId = restaurantMenu ? String(url.searchParams.get("restaurant") || "").trim().toLowerCase() : "";
+    const restaurantDefinition = restaurantId ? restaurantForId(restaurantId) : null;
+    if (restaurantId && !restaurantDefinition) return json({ error: "This restaurant is not in the supported directory." }, 400, request, env);
+    const countryCode = restaurantDefinition
+        ? restaurantMarket(restaurantDefinition, normalizeRestaurantCountry(url.searchParams.get("country")))
+        : normalizeRestaurantCountry(url.searchParams.get("country"));
+    const restaurantQuery = restaurantDefinition?.searchName || query;
+    const matchesRestaurant = food => restaurantMatchesRequest(food, query, restaurantId, countryCode);
     if (query.length < 2) return json({ error: "Enter at least 2 characters." }, 400, request, env);
     if (query.length > 80) return json({ error: "Food search is too long." }, 400, request, env);
     if (restaurantMenu) {
-        const verifiedFoods = (await searchVerifiedFoods(query, env, countryCode, 500))
-            .filter(food => restaurantBrandMatchesQuery(food, query));
+        const verifiedFoods = (await searchVerifiedFoods(restaurantQuery, env, countryCode, 500))
+            .filter(matchesRestaurant);
         if (verifiedFoods.length) {
             return json({
                 foods: verifiedFoods,
                 source: "Level Up Verified",
-                restaurantCatalogue: isCompleteVerifiedRestaurantCatalogue(query, verifiedFoods)
+                restaurant: restaurantDefinition ? restaurantResponseMetadata(restaurantDefinition, countryCode) : undefined,
+                restaurantCatalogue: isCompleteVerifiedRestaurantCatalogue(query, verifiedFoods, restaurantId, countryCode)
             }, 200, request, env);
         }
     }
-    const brandSearch = detectUsdaBrandSearch(query);
+    const brandSearch = detectUsdaBrandSearch(restaurantQuery);
     const [verifiedCandidates, cachedExternalFoods, liveExternalResult] = await Promise.all([
-        searchVerifiedFoods(query, env, countryCode),
-        searchExternalFoodCache(query, env),
-        fetchOpenFoodFactsSearch(query)
+        searchVerifiedFoods(restaurantQuery, env, countryCode),
+        searchExternalFoodCache(restaurantQuery, env),
+        fetchOpenFoodFactsSearch(restaurantQuery)
     ]);
     const verifiedFoods = restaurantMenu
-        ? verifiedCandidates.filter(food => restaurantBrandMatchesQuery(food, query))
+        ? verifiedCandidates.filter(matchesRestaurant)
         : verifiedCandidates;
     const externalFoods = rankFoodNameMatches(
         mergeFoodResults(cachedExternalFoods, liveExternalResult.foods),
-        query,
+        restaurantQuery,
         brandSearch
     ).slice(0, 8);
     if (liveExternalResult.foods.length) {
@@ -765,8 +778,8 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
         if (ctx?.waitUntil) ctx.waitUntil(cacheWrites);
         else await cacheWrites;
     }
-    const availableFoods = rankRestaurantFoods(mergeFoodResults(verifiedFoods, externalFoods), query, countryCode)
-        .filter(food => !restaurantMenu || restaurantBrandMatchesQuery(food, query))
+    const availableFoods = rankRestaurantFoods(mergeFoodResults(verifiedFoods, externalFoods), restaurantQuery, countryCode)
+        .filter(food => !restaurantMenu || matchesRestaurant(food))
         .slice(0, 16);
     if (!env.USDA_FDC_API_KEY) {
         if (availableFoods.length) {
@@ -779,7 +792,7 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
         return json({ error: "USDA food search is not configured yet." }, 503, request, env);
     }
 
-    const upstreamUrl = usdaFoodSearchUrl(env.USDA_FDC_API_KEY, query, 15);
+    const upstreamUrl = usdaFoodSearchUrl(env.USDA_FDC_API_KEY, restaurantQuery, 15);
     const brandUrl = brandSearch
         ? usdaFoodSearchUrl(env.USDA_FDC_API_KEY, brandSearch.usdaQuery, 50, "Branded")
         : null;
@@ -841,18 +854,18 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
     let brandFoods = [];
     if (brandResponse?.ok && brandSearch) {
         const brandPayload = await brandResponse.json().catch(() => ({}));
-        brandFoods = rankUsdaBrandFoods(brandPayload?.foods, query, brandSearch);
+        brandFoods = rankUsdaBrandFoods(brandPayload?.foods, restaurantQuery, brandSearch);
     }
     else if (brandResponse && !brandResponse.ok) {
         console.error(JSON.stringify({ event: "usda_brand_search_failed", brand: brandSearch?.name, status: brandResponse.status }));
     }
     const usdaFoods = rankFoodNameMatches(
         dedupeUsdaFoods([...brandFoods, ...searchFoods].map(normalizeUsdaFood).filter(Boolean)),
-        query,
+        restaurantQuery,
         brandSearch
     );
-    const foods = rankRestaurantFoods(mergeFoodResults(verifiedFoods, usdaFoods, externalFoods), query, countryCode)
-        .filter(food => !restaurantMenu || restaurantBrandMatchesQuery(food, query))
+    const foods = rankRestaurantFoods(mergeFoodResults(verifiedFoods, usdaFoods, externalFoods), restaurantQuery, countryCode)
+        .filter(food => !restaurantMenu || matchesRestaurant(food))
         .slice(0, 16);
     const missWrite = recordFoodSearchCoverage(userId, query, countryCode, foods.length, verifiedFoods.length, env);
     if (ctx?.waitUntil) ctx.waitUntil(missWrite);
@@ -863,34 +876,46 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
     }, 200, request, env);
 }
 
-export function isCompleteVerifiedRestaurantCatalogue(query, foods) {
-    const identity = restaurantBrandIdentity(query);
+export function isCompleteVerifiedRestaurantCatalogue(query, foods, restaurantId = "", countryCode = "CA") {
+    const definition = restaurantForId(restaurantId);
+    const identity = restaurantBrandIdentity(definition?.name || query);
     const expectedCount = new Map([
         ["mezza lebanese kitchen", MEZZA_FOODS.length],
         ["boston pizza", BOSTON_PIZZA_FOODS.length],
         ...Object.entries(COMPLETE_CANADIAN_RESTAURANT_CATALOGUE_COUNTS)
+            .map(([brand, count]) => [restaurantBrandIdentity(brand), count]),
+        ...Object.entries(COMPLETE_PRIORITY_RESTAURANT_CATALOGUE_COUNTS)
             .map(([brand, count]) => [restaurantBrandIdentity(brand), count])
     ]).get(identity);
     if (!expectedCount || !Array.isArray(foods)) return false;
-    return foods.filter(food => restaurantBrandMatchesQuery(food, query)).length >= expectedCount;
+    return foods.filter(food => restaurantMatchesRequest(food, query, restaurantId, countryCode)).length >= expectedCount;
 }
 
-const RESTAURANT_BRAND_SUFFIXES = new Set([
-    "canada", "canadian", "restaurant", "restaurants", "inc", "incorporated",
-    "ltd", "limited", "llc", "corp", "corporation"
-]);
-
 export function restaurantBrandIdentity(value) {
-    const tokens = foodIdentity(value).split(" ").filter(Boolean);
-    if (tokens[0] === "the") tokens.shift();
-    while (tokens.length > 1 && RESTAURANT_BRAND_SUFFIXES.has(tokens.at(-1))) tokens.pop();
-    return tokens.join(" ");
+    return directoryBrandIdentity(value);
 }
 
 export function restaurantBrandMatchesQuery(food, query) {
     const expected = restaurantBrandIdentity(query);
     const actual = restaurantBrandIdentity(food?.brand);
     return Boolean(expected && actual && expected === actual);
+}
+
+export function restaurantMatchesRequest(food, query, restaurantId = "", countryCode = "CA") {
+    const definition = restaurantForId(restaurantId);
+    const brandMatches = definition ? restaurantBrandMatches(food, definition) : restaurantBrandMatchesQuery(food, query);
+    if (!brandMatches) return false;
+    const foodCountry = normalizeRestaurantCountry(food?.countryCode || countryCode);
+    return !food?.countryCode || foodCountry === normalizeRestaurantCountry(countryCode);
+}
+
+function restaurantResponseMetadata(definition, countryCode) {
+    return {
+        id: definition.id,
+        name: definition.name,
+        countryCode,
+        nutritionSource: definition.nutritionSource || null
+    };
 }
 
 function foodSearchSource(verifiedFoods, usdaFoods, externalFoods) {
@@ -1615,6 +1640,10 @@ const BUNDLED_VERIFIED_FOODS = [
         verifiedAt: "2026-08-31"
     })),
     ...CANADIAN_RESTAURANT_CATALOGUES.map(food => bundledVerifiedFood({
+        ...food,
+        category: "Restaurant food"
+    })),
+    ...PRIORITY_RESTAURANT_CATALOGUES.map(food => bundledVerifiedFood({
         ...food,
         category: "Restaurant food"
     })),
