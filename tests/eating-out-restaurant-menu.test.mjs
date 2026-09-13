@@ -6,7 +6,7 @@ const read = relative => readFile(new URL(`../${relative}`, import.meta.url), "u
 
 test("Food Log exposes a clear Eating Out entry point", async () => {
     const foodLog = await read("js/nutrition/food-log.js");
-    assert.match(foodLog, /restaurant-menu\.js\?v=eating-out-5/);
+    assert.match(foodLog, /restaurant-menu\.js\?v=eating-out-7/);
     assert.match(foodLog, /data-food-eating-out/);
     assert.match(foodLog, />Eating Out</);
     assert.match(foodLog, /Browse restaurant menus by calories and protein/);
@@ -31,8 +31,29 @@ test("Restaurant Menus searches real food data and supports restaurant discovery
     assert.match(menu, /data-restaurant-quick="protein40"/);
     assert.match(menu, /data-restaurant-max-calories/);
     assert.match(menu, /data-restaurant-min-protein/);
-    assert.match(menu, /Coverage varies/);
+    assert.match(menu, /Confirmed restaurant results only/);
     assert.doesNotMatch(menu, /Prototype dataset|mock menu data/i);
+});
+
+test("restaurant menu results require an exact restaurant brand identity", async () => {
+    const [menuModule, workerModule, menuSource] = await Promise.all([
+        import("../js/nutrition/restaurant-menu.js"),
+        import("../cloud/src/index.js"),
+        read("js/nutrition/restaurant-menu.js")
+    ]);
+    const confirmed = { name: "Southwest Chicken Bowl", brand: "The Chopped Leaf Restaurants" };
+    const falsePositive = { name: "Chopped Leaf Salad", brand: "Unrelated Grocery Brand" };
+    const missingBrand = { name: "The Chopped Leaf Caesar Wrap", brand: "" };
+
+    assert.equal(menuModule.restaurantFoodMatches(confirmed, "Chopped Leaf"), true);
+    assert.equal(menuModule.restaurantFoodMatches(falsePositive, "Chopped Leaf"), false);
+    assert.equal(menuModule.restaurantFoodMatches(missingBrand, "Chopped Leaf"), false);
+    assert.equal(workerModule.restaurantBrandMatchesQuery(confirmed, "Chopped Leaf"), true);
+    assert.equal(workerModule.restaurantBrandMatchesQuery(falsePositive, "Chopped Leaf"), false);
+    assert.equal(workerModule.restaurantBrandMatchesQuery(missingBrand, "Chopped Leaf"), false);
+    assert.doesNotMatch(menuSource, /matching\.length \? matching : \(nextRestaurant\.known \? \[\] : usable\)/);
+    assert.match(menuSource, /Confirmed restaurant results only/);
+    assert.match(menuSource, /Uncertain matches are hidden/);
 });
 
 test("restaurant catalogue mode returns complete verified menus before external providers", async () => {
@@ -41,11 +62,14 @@ test("restaurant catalogue mode returns complete verified menus before external 
         read("cloud/src/fatsecret-enabled-worker.js")
     ]);
     assert.match(baseWorker, /restaurantMenu.*searchVerifiedFoods\(query, env, countryCode, 250\)/s);
+    assert.match(baseWorker, /filter\(food => restaurantBrandMatchesQuery\(food, query\)\)/);
     assert.match(baseWorker, /restaurantCatalogue:\s*isCompleteVerifiedRestaurantCatalogue\(query, verifiedFoods\)/);
     assert.match(baseWorker, /\["mezza lebanese kitchen", MEZZA_FOODS\.length\]/);
     assert.match(baseWorker, /\["boston pizza", BOSTON_PIZZA_FOODS\.length\]/);
     assert.match(fatSecretWorker, /cataloguePayload\?\.restaurantCatalogue/);
     assert.match(fatSecretWorker, /RESTAURANT_MENU_RESULT_LIMIT = 250/);
+    assert.match(fatSecretWorker, /providerFoods\.filter\(food => restaurantBrandMatchesQuery\(food, query\)\)/);
+    assert.match(fatSecretWorker, /baseCandidates\.filter\(food => restaurantBrandMatchesQuery\(food, query\)\)/);
     assert.doesNotMatch(fatSecretWorker, /restaurantMenu \? RESTAURANT_MENU_PAGE_SIZE \* RESTAURANT_MENU_PAGES/);
 });
 
@@ -63,10 +87,35 @@ test("Eating Out inherits the active appearance instead of hard-coding one theme
 test("PWA routing and caching include the restaurant menu source", async () => {
     const router = await read("js/core/router.js");
     const worker = await read("service-worker.js");
-    assert.match(router, /food-log\.js\?v=eating-out-5/);
-    assert.match(worker, /2026-09-12-303/);
-    assert.match(worker, /restaurant-menu\.js\?v=eating-out-5/);
-    assert.match(worker, /restaurant-menu\.css\?v=eating-out-5/);
+    assert.match(router, /food-log\.js\?v=eating-out-7/);
+    assert.match(worker, /2026-09-13-305/);
+    assert.match(worker, /restaurant-menu\.js\?v=eating-out-7/);
+    assert.match(worker, /restaurant-menu\.css\?v=eating-out-7/);
+});
+
+test("restaurant logos require documented rights and a bundled local asset", async () => {
+    const { approvedRestaurantLogoAsset } = await import("../js/nutrition/restaurant-menu.js");
+    const approved = {
+        logo: {
+            status: "approved",
+            usageBasis: "written_permission",
+            rightsHolder: "Example Restaurant Ltd.",
+            permissionReference: "legal/example-restaurant-permission.pdf",
+            approvedAt: "2026-09-13",
+            assetPath: "assets/restaurant-logos/example-restaurant.svg"
+        }
+    };
+    assert.equal(approvedRestaurantLogoAsset(approved), "assets/restaurant-logos/example-restaurant.svg");
+    assert.equal(approvedRestaurantLogoAsset({ logo: { ...approved.logo, status: "pending" } }), "");
+    assert.equal(approvedRestaurantLogoAsset({ logo: { ...approved.logo, permissionReference: "" } }), "");
+    assert.equal(approvedRestaurantLogoAsset({ logo: { ...approved.logo, assetPath: "https://example.com/logo.svg" } }), "");
+    assert.equal(approvedRestaurantLogoAsset({ logo: { ...approved.logo, assetPath: "assets/restaurant-logos/../unapproved.svg" } }), "");
+
+    const menu = await read("js/nutrition/restaurant-menu.js");
+    const styles = await read("css/restaurant-menu.css");
+    assert.match(menu, /Restaurant logos appear only when Level Up has documented permission or a compatible licence/);
+    assert.match(menu, /bindRestaurantLogoFallbacks/);
+    assert.match(styles, /\.restaurant-brand-logo/);
 });
 
 test("Boston Pizza cards show both per-slice and whole-pizza calories", async () => {

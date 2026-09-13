@@ -58,7 +58,7 @@ test("goal timeline stays inside See More and opens one detailed view", () => {
 });
 
 test("the PWA preloads and cache-busts goal timeline assets", () => {
-    assert.match(serviceWorker, /2026-09-12-303/);
+    assert.match(serviceWorker, /2026-09-13-305/);
     assert.match(serviceWorker, /dashboard-goal-timeline\.js\?v=goal-timeline-2/);
     assert.match(serviceWorker, /goal-timeline\.css\?v=goal-timeline-2/);
     assert.match(index, /dashboard-command-center\.css\?v=goal-timeline-2/);

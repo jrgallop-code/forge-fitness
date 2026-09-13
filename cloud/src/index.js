@@ -732,7 +732,8 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
     if (query.length < 2) return json({ error: "Enter at least 2 characters." }, 400, request, env);
     if (query.length > 80) return json({ error: "Food search is too long." }, 400, request, env);
     if (restaurantMenu) {
-        const verifiedFoods = await searchVerifiedFoods(query, env, countryCode, 250);
+        const verifiedFoods = (await searchVerifiedFoods(query, env, countryCode, 250))
+            .filter(food => restaurantBrandMatchesQuery(food, query));
         if (verifiedFoods.length) {
             return json({
                 foods: verifiedFoods,
@@ -742,11 +743,14 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
         }
     }
     const brandSearch = detectUsdaBrandSearch(query);
-    const [verifiedFoods, cachedExternalFoods, liveExternalResult] = await Promise.all([
+    const [verifiedCandidates, cachedExternalFoods, liveExternalResult] = await Promise.all([
         searchVerifiedFoods(query, env, countryCode),
         searchExternalFoodCache(query, env),
         fetchOpenFoodFactsSearch(query)
     ]);
+    const verifiedFoods = restaurantMenu
+        ? verifiedCandidates.filter(food => restaurantBrandMatchesQuery(food, query))
+        : verifiedCandidates;
     const externalFoods = rankFoodNameMatches(
         mergeFoodResults(cachedExternalFoods, liveExternalResult.foods),
         query,
@@ -757,7 +761,9 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
         if (ctx?.waitUntil) ctx.waitUntil(cacheWrites);
         else await cacheWrites;
     }
-    const availableFoods = rankRestaurantFoods(mergeFoodResults(verifiedFoods, externalFoods), query, countryCode).slice(0, 16);
+    const availableFoods = rankRestaurantFoods(mergeFoodResults(verifiedFoods, externalFoods), query, countryCode)
+        .filter(food => !restaurantMenu || restaurantBrandMatchesQuery(food, query))
+        .slice(0, 16);
     if (!env.USDA_FDC_API_KEY) {
         if (availableFoods.length) {
             return json({
@@ -841,7 +847,9 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
         query,
         brandSearch
     );
-    const foods = rankRestaurantFoods(mergeFoodResults(verifiedFoods, usdaFoods, externalFoods), query, countryCode).slice(0, 16);
+    const foods = rankRestaurantFoods(mergeFoodResults(verifiedFoods, usdaFoods, externalFoods), query, countryCode)
+        .filter(food => !restaurantMenu || restaurantBrandMatchesQuery(food, query))
+        .slice(0, 16);
     const missWrite = recordFoodSearchCoverage(userId, query, countryCode, foods.length, verifiedFoods.length, env);
     if (ctx?.waitUntil) ctx.waitUntil(missWrite);
     else await missWrite;
@@ -852,13 +860,31 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
 }
 
 export function isCompleteVerifiedRestaurantCatalogue(query, foods) {
-    const identity = foodIdentity(query);
+    const identity = restaurantBrandIdentity(query);
     const expectedCount = new Map([
         ["mezza lebanese kitchen", MEZZA_FOODS.length],
         ["boston pizza", BOSTON_PIZZA_FOODS.length]
     ]).get(identity);
     if (!expectedCount || !Array.isArray(foods)) return false;
-    return foods.filter(food => foodIdentity(food?.brand) === identity).length >= expectedCount;
+    return foods.filter(food => restaurantBrandMatchesQuery(food, query)).length >= expectedCount;
+}
+
+const RESTAURANT_BRAND_SUFFIXES = new Set([
+    "canada", "canadian", "restaurant", "restaurants", "inc", "incorporated",
+    "ltd", "limited", "llc", "corp", "corporation"
+]);
+
+export function restaurantBrandIdentity(value) {
+    const tokens = foodIdentity(value).split(" ").filter(Boolean);
+    if (tokens[0] === "the") tokens.shift();
+    while (tokens.length > 1 && RESTAURANT_BRAND_SUFFIXES.has(tokens.at(-1))) tokens.pop();
+    return tokens.join(" ");
+}
+
+export function restaurantBrandMatchesQuery(food, query) {
+    const expected = restaurantBrandIdentity(query);
+    const actual = restaurantBrandIdentity(food?.brand);
+    return Boolean(expected && actual && expected === actual);
 }
 
 function foodSearchSource(verifiedFoods, usdaFoods, externalFoods) {

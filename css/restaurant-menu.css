@@ -37,7 +37,11 @@ body.restaurant-menu-open{overflow:hidden}
 .restaurant-menu-hero>*{position:relative;z-index:1}
 .restaurant-menu-hero-kicker{display:flex;align-items:center;justify-content:space-between;gap:12px;color:color-mix(in srgb,var(--accent-contrast) 76%,transparent);font-size:8px;font-weight:850;letter-spacing:.1em}
 .restaurant-menu-picker{display:grid;grid-template-columns:44px minmax(0,1fr) 22px;align-items:center;gap:10px;width:100%;min-height:69px;padding:10px;border:1px solid color-mix(in srgb,var(--accent-contrast) 18%,transparent);border-radius:16px;background:color-mix(in srgb,var(--accent-dark) 74%,transparent);color:var(--accent-contrast);text-align:left}
-.restaurant-menu-mark{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:color-mix(in srgb,var(--accent-contrast) 13%,transparent);font-size:12px;font-weight:900;letter-spacing:-.03em}
+.restaurant-menu-mark{position:relative;display:grid;place-items:center;overflow:hidden;width:44px;height:44px;border-radius:12px;background:color-mix(in srgb,var(--accent-contrast) 13%,transparent);font-size:12px;font-weight:900;letter-spacing:-.03em}
+.restaurant-brand-fallback{display:grid;place-items:center;width:100%;height:100%}
+.restaurant-brand-logo{position:absolute;inset:0;box-sizing:border-box;width:100%;height:100%;padding:5px;border-radius:inherit;background:#fff;object-fit:contain}
+.restaurant-brand-logo[hidden]{display:none}
+.restaurant-menu-mark.has-approved-logo,.restaurant-picker-brand.has-approved-logo{background:#fff!important;color:#14213d!important}
 .restaurant-menu-picker>span:nth-child(2){display:grid;gap:2px;min-width:0}
 .restaurant-menu-picker small{font-size:7px;font-weight:800;letter-spacing:.12em;opacity:.72}
 .restaurant-menu-picker strong{overflow:hidden;color:inherit;font-size:16px;text-overflow:ellipsis;white-space:nowrap}
@@ -121,7 +125,7 @@ body.restaurant-menu-open{overflow:hidden}
 .restaurant-picker-hint{margin:12px 2px 8px;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .restaurant-picker-list{display:grid;gap:7px}
 .restaurant-picker-list>button{display:grid;grid-template-columns:40px minmax(0,1fr) 19px;align-items:center;gap:10px;width:100%;min-height:61px;padding:9px 11px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--text);text-align:left}
-.restaurant-picker-list>button>span:first-child{display:grid;place-items:center;width:40px;height:40px;border-radius:11px;background:var(--accent-soft);color:var(--accent-text);font-size:10px;font-weight:900}
+.restaurant-picker-list>button>span:first-child{position:relative;display:grid;place-items:center;overflow:hidden;width:40px;height:40px;border-radius:11px;background:var(--accent-soft);color:var(--accent-text);font-size:10px;font-weight:900}
 .restaurant-picker-list>button>span:nth-child(2){display:grid;gap:3px;min-width:0}
 .restaurant-picker-list strong{color:var(--heading);font-size:12px}
 .restaurant-picker-list small{overflow:hidden;color:var(--muted);font-size:9px;text-overflow:ellipsis;white-space:nowrap}

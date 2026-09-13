@@ -84,3 +84,5 @@ Release 38: include FatSecret foods across Progress calorie statistics and the G
 Release 39: add Eating Out restaurant-menu browsing and polish Food Log search controls by removing the microphone and aligning search, barcode scanning, and Search in one balanced row.
 
 Release 40: add complete official Boston Pizza and Mezza catalogues with full macros, include Thai Chicken Wrap, support per-slice and whole-pizza servings, and remove the 100-item restaurant-menu cap.
+
+Release 41: require confirmed restaurant-brand matches in Eating Out search and add legally gated restaurant-logo support with initials fallback.
