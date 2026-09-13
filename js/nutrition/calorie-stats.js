@@ -672,14 +672,11 @@ function renderStats(panel) {
             <article class="calorie-stat-card calorie-phase-insight"><small>LEVEL UP INSIGHT</small><strong>${insight[0]}</strong><p>${insight[1]}</p></article>
         </section>`;
 
-    panel.querySelectorAll("[data-calorie-stats-range]").forEach(button => button.addEventListener("click", () => {
-        localStorage.setItem(RANGE_KEY, button.dataset.calorieStatsRange);
-        renderStats(panel);
-    }));
     panel.querySelectorAll("[data-tdee-chart-range]").forEach(button => button.addEventListener("click", () => {
         if (button.disabled) return;
         localStorage.setItem(TDEE_RANGE_KEY, button.dataset.tdeeChartRange);
         renderStats(panel);
+        window.dispatchEvent(new CustomEvent("levelup:tdee-range-changed", { detail: { range: button.dataset.tdeeChartRange } }));
     }));
     panel.querySelectorAll("[data-calorie-meal-column]").forEach(button => button.addEventListener("click", () => {
         const wasExpanded = button.getAttribute("aria-expanded") === "true";
@@ -712,6 +709,19 @@ export function initializeCalorieStats(root = document) {
     const panel = root.querySelector?.("[data-progress-calorie-stats]");
     if (panel) renderStats(panel);
 }
+
+document.addEventListener("click", event => {
+    const button = event.target.closest?.("[data-calorie-stats-range]");
+    if (!button) return;
+    const days = Number(button.dataset.calorieStatsRange);
+    if (![7, 28, 84].includes(days)) return;
+    const panel = button.closest("[data-progress-calorie-stats]");
+    queueMicrotask(() => {
+        localStorage.setItem(RANGE_KEY, String(days));
+        if (panel?.isConnected) renderStats(panel);
+        window.dispatchEvent(new CustomEvent("levelup:calorie-range-changed", { detail: { days } }));
+    });
+}, true);
 
 window.addEventListener("levelup:food-log-updated", () => {
     const panel = document.querySelector("#calorie-progress:not([hidden]) [data-progress-calorie-stats]");

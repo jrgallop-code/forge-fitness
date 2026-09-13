@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-13-310";
+const CACHE_VERSION = "2026-09-13-312";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -38,9 +38,9 @@ const CORE_ASSETS = [
     "./css/restaurant-menu.css?v=eating-out-9",
     "./js/nutrition/weekly-check-in-status.js?v=weekly-checkin-status-1",
     "./js/nutrition/check-in-calendar.js?v=checkin-calendar-1",
-    "./js/nutrition/tdee-calorie-expenditure-carousel.js?v=energy-balance-range-1",
+    "./js/nutrition/tdee-calorie-expenditure-carousel.js?v=energy-balance-range-3",
     "./js/nutrition/energy-balance-state.js?v=energy-balance-range-1",
-    "./js/nutrition/tdee-energy-balance-summary.js?v=energy-balance-range-1",
+    "./js/nutrition/tdee-energy-balance-summary.js?v=energy-balance-range-3",
     "./js/nutrition/tdee-expenditure-swipe-card.js?v=energy-card-height-1",
     "./assets/level-up-home-icon.svg",
     "./assets/level-up-mark-transparent.svg",

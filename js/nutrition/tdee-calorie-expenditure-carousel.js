@@ -1,6 +1,14 @@
-import { getEnergyBalanceState, getEnergyBalanceWindow } from "./energy-balance-state.js?v=energy-balance-range-1";
+import { getEnergyBalanceState, shiftEnergyDateKey } from "./energy-balance-state.js?v=energy-balance-range-1";
 
-const CALORIE_RANGE_KEY = "level_up_calorie_stats_range_v1";
+const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
+const TDEE_RANGES = {
+    "1w": { days: 7, label: "LAST 1 WEEK" },
+    "1m": { days: 30, label: "LAST 1 MONTH" },
+    "3m": { days: 90, label: "LAST 3 MONTHS" },
+    "6m": { days: 180, label: "LAST 6 MONTHS" },
+    phase: { label: "CURRENT PHASE" },
+    all: { label: "ALL DATA" }
+};
 const STYLE_ID = "level-up-calorie-expenditure-card-styles";
 let queued = false;
 let resizeBound = false;
@@ -152,23 +160,29 @@ function formatDate(value) {
     return new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function selectedRangeDays() {
-    const requested = Number(localStorage.getItem(CALORIE_RANGE_KEY));
-    return [7, 28, 84].includes(requested) ? requested : 7;
+function activePhaseStart() {
+    try {
+        const phases = JSON.parse(localStorage.getItem("level_up_nutrition_phases") || "[]");
+        return Array.isArray(phases) ? [...phases].reverse().find(phase => !phase?.endDate)?.startDate || null : null;
+    } catch { return null; }
 }
 
-function rangeLabel(days) {
-    if (days === 7) return "LAST 7 DAYS";
-    if (days === 28) return "LAST 4 WEEKS";
-    return "LAST 12 WEEKS";
+function selectedExpenditureRange(phaseStart) {
+    const requested = String(localStorage.getItem(TDEE_RANGE_KEY) || "3m").toLowerCase();
+    return TDEE_RANGES[requested] && (requested !== "phase" || phaseStart) ? requested : "3m";
 }
 
 function buildComparisonState() {
     const endDate = localDateKey();
-    const days = selectedRangeDays();
-    const window = getEnergyBalanceWindow(endDate, days);
-    const state = getEnergyBalanceState(window);
-    return { days, startDate: window.startDate, endDate: window.endDate, points: state.visible };
+    const phaseStart = activePhaseStart();
+    const range = selectedExpenditureRange(phaseStart);
+    const startDate = range === "all"
+        ? null
+        : range === "phase"
+            ? phaseStart
+            : shiftEnergyDateKey(endDate, -(TDEE_RANGES[range].days - 1));
+    const state = getEnergyBalanceState({ startDate, endDate });
+    return { range, startDate: startDate || state.visibleStart, endDate, points: state.visible };
 }
 
 function niceAxisStep(value) {
@@ -226,7 +240,7 @@ function ensureComparisonCard(graphCard) {
 
 function renderComparisonChart(card, state) {
     const range = card.querySelector("[data-energy-balance-range-label]");
-    if (range) range.textContent = `ENERGY BALANCE · ${rangeLabel(state.days)}`;
+    if (range) range.textContent = `ENERGY BALANCE · ${TDEE_RANGES[state.range].label}`;
     const canvas = card.querySelector("[data-calorie-expenditure-chart]");
     const tooltip = card.querySelector("[data-calorie-expenditure-tooltip]");
     const shell = canvas?.closest(".calorie-expenditure-shell");
@@ -412,7 +426,7 @@ function schedule() {
 
 const content = document.getElementById("content");
 if (content) new MutationObserver(schedule).observe(content, { childList: true, subtree: true });
-["pageshow", "levelup:nutrition-updated", "levelup:food-log-updated", "levelup:weight-updated", "levelup:appearance-changed"]
+["pageshow", "levelup:nutrition-updated", "levelup:food-log-updated", "levelup:weight-updated", "levelup:appearance-changed", "levelup:tdee-range-changed"]
     .forEach(name => window.addEventListener(name, schedule));
 
 if (!resizeBound) {
@@ -421,7 +435,7 @@ if (!resizeBound) {
 }
 
 document.addEventListener("click", event => {
-    if (event.target.closest?.("#nutrition-progress-tab, [data-page='progress'], [data-calorie-stats-range]")) window.setTimeout(schedule, 0);
+    if (event.target.closest?.("#nutrition-progress-tab, [data-page='progress'], [data-tdee-chart-range]")) window.setTimeout(schedule, 0);
 }, true);
 
 schedule();

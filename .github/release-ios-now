@@ -92,3 +92,5 @@ Release 42: make Dashboard and Progress use the same seven-day expenditure avera
 Release 43: add verified Canadian restaurant catalogues with full macros, improved restaurant coverage, whole-pizza serving context, calculated-item disclosure, and expanded exact-brand menu results.
 
 Release 44: synchronize expanded restaurant menus and optional onboarding goal weight, simplify crowded energy-balance charts, and keep calorie/expenditure timeframes synchronized.
+
+Release 45: separate expenditure-card timeframes from the calorie-summary 7D, 4W, and 12W controls.

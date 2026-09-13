@@ -68,7 +68,7 @@ test("revised onboarding assets are cache-busted", () => {
   assert.match(html, /onboarding-granular-units\.css\?v=onboarding-units-step-1/);
   assert.match(html, /onboarding\.js\?v=onboarding-goal-weight-1/);
   assert.match(html, /pwa-startup-safeguard\.js\?v=female-body-fat-selector-1/);
-  assert.match(html, /app\.js\?v=energy-balance-range-1/);
+  assert.match(html, /app\.js\?v=energy-balance-range-3/);
   assert.match(worker, /body-composition-ui\.js\?v=female-body-fat-selector-1/);
-  assert.match(worker, /CACHE_VERSION = "2026-09-13-310"/);
+  assert.match(worker, /CACHE_VERSION = "2026-09-13-312"/);
 });
