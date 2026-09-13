@@ -676,6 +676,7 @@ function renderStats(panel) {
         if (button.disabled) return;
         localStorage.setItem(TDEE_RANGE_KEY, button.dataset.tdeeChartRange);
         renderStats(panel);
+        window.dispatchEvent(new CustomEvent("levelup:tdee-range-changed", { detail: { range: button.dataset.tdeeChartRange } }));
     }));
     panel.querySelectorAll("[data-calorie-meal-column]").forEach(button => button.addEventListener("click", () => {
         const wasExpanded = button.getAttribute("aria-expanded") === "true";

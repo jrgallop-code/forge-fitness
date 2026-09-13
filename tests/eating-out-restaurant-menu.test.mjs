@@ -106,7 +106,7 @@ test("PWA routing and caching include the restaurant menu source", async () => {
     const router = await read("js/core/router.js");
     const worker = await read("service-worker.js");
     assert.match(router, /food-log\.js\?v=eating-out-9/);
-    assert.match(worker, /2026-09-13-311/);
+    assert.match(worker, /2026-09-13-312/);
     assert.match(worker, /restaurant-menu\.js\?v=eating-out-9/);
     assert.match(worker, /restaurant-directory\.js\?v=eating-out-directory-1/);
     assert.match(worker, /restaurant-menu\.css\?v=eating-out-9/);

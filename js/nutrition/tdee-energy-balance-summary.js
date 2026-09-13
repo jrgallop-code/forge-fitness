@@ -1,8 +1,9 @@
-import { getEnergyBalanceState, getEnergyBalanceWindow } from "./energy-balance-state.js?v=energy-balance-range-1";
+import { getEnergyBalanceState, shiftEnergyDateKey } from "./energy-balance-state.js?v=energy-balance-range-1";
 
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
-const CALORIE_RANGE_KEY = "level_up_calorie_stats_range_v1";
+const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
+const TDEE_RANGE_DAYS = { "1w": 7, "1m": 30, "3m": 90, "6m": 180 };
 const STYLE_ID = "level-up-energy-balance-summary-styles";
 
 let queued = false;
@@ -25,9 +26,9 @@ function install() {
     }, true);
 
     window.addEventListener("storage", event => {
-        if ([FOOD_LOG_KEY, FOOD_COMPLETE_KEY, CALORIE_RANGE_KEY].includes(event.key)) schedule();
+        if ([FOOD_LOG_KEY, FOOD_COMPLETE_KEY, TDEE_RANGE_KEY].includes(event.key)) schedule();
     });
-    window.addEventListener("levelup:calorie-range-changed", schedule);
+    window.addEventListener("levelup:tdee-range-changed", schedule);
 }
 
 function ensureStyles() {
@@ -100,10 +101,16 @@ function localDateKey(date = new Date()) {
 
 function buildState() {
     const endDate = localDateKey();
-    const requested = Number(localStorage.getItem(CALORIE_RANGE_KEY));
-    const days = [7, 28, 84].includes(requested) ? requested : 7;
-    const window = getEnergyBalanceWindow(endDate, days);
-    return { ...getEnergyBalanceState(window), windowStart: window.startDate, windowEnd: window.endDate };
+    let phaseStart = null;
+    try {
+        const phases = JSON.parse(localStorage.getItem("level_up_nutrition_phases") || "[]");
+        phaseStart = Array.isArray(phases) ? [...phases].reverse().find(phase => !phase?.endDate)?.startDate || null : null;
+    } catch {}
+    const requested = String(localStorage.getItem(TDEE_RANGE_KEY) || "3m").toLowerCase();
+    const range = (TDEE_RANGE_DAYS[requested] || requested === "all" || (requested === "phase" && phaseStart)) ? requested : "3m";
+    const startDate = range === "all" ? null : range === "phase" ? phaseStart : shiftEnergyDateKey(endDate, -(TDEE_RANGE_DAYS[range] - 1));
+    const state = getEnergyBalanceState({ startDate, endDate });
+    return { ...state, windowStart: startDate || state.visibleStart, windowEnd: endDate };
 }
 
 function formatNumber(value) {
