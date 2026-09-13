@@ -51,7 +51,29 @@ function openWorkoutPreview(sessionId) {
     };
     modal?.querySelector("[data-preview-close]")?.addEventListener("click", close);
     modal?.addEventListener("click", event => { if (event.target === modal) close(); });
-    modal?.querySelector("[data-preview-edit]")?.addEventListener("click", () => { close(); navigate("workout"); openCompletedWorkoutForEdit(session.id); });
+    modal?.querySelector("[data-preview-edit]")?.addEventListener("click", () => {
+        close();
+        openWorkoutHistoryEditor(session.id);
+    });
+}
+
+function openWorkoutHistoryEditor(sessionId) {
+    navigate("workout");
+
+    if (!openCompletedWorkoutForEdit(sessionId)) {
+        return false;
+    }
+
+    const landing = document.querySelector("[data-workout-live-landing]");
+    if (landing) {
+        landing.hidden = true;
+    }
+
+    document
+        .getElementById("workout-session-logger")
+        ?.scrollIntoView({ behavior: "auto", block: "start" });
+
+    return true;
 }
 
 function renderWorkoutPreview(session, prCount) {

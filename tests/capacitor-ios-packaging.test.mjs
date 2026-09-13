@@ -122,6 +122,12 @@ test("native iOS uses the selected Appearance icon without an opaque Lock Screen
     assert.match(timerPlugin, /UNTimeIntervalNotificationTrigger/);
     assert.match(timerPlugin, /level-up-alarm\.wav/);
     assert.match(timerPlugin, /interruptionLevel = \.timeSensitive/);
+    assert.match(timerPlugin, /finishSchedule\(false, nil\)/);
+    assert.match(timerPlugin, /notificationScheduled \|\| activityResult\.started/);
+    assert.match(timerPlugin, /@MainActor\s+private func startLiveActivity/);
+    assert.match(timerPlugin, /for activity in Activity<LevelUpTimerAttributes>\.activities/);
+    assert.match(native, /A local Live Activity does not require notification permission/);
+    assert.match(native, /window\.dispatchEvent\(new CustomEvent\("levelup:native-timer-scheduled"/);
     assert.match(timerPlugin, /cleanupExpiredLiveActivities/);
     assert.match(timerPlugin, /call\.getString\("theme"\)/);
     assert.match(timerPlugin, /call\.getString\("icon"\)/);

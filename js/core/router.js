@@ -1,5 +1,5 @@
 import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=proven-template-builder-1";
-import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=cardio-rpe-1";
+import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=saved-plan-edit-2";
 import { initializeOneOffWorkout } from "../workouts/one-off-workout.js?v=cardio-rpe-1";
 import { initializeWorkoutCatalogue } from "../workouts/workout-catalogue.js?v=proven-template-builder-1";
 import { initializeSmartBuild, openSmartBuild } from "../workouts/smart-build.js?v=smart-build-direct-open-1";
@@ -9,7 +9,7 @@ import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workou
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=right-overflow-arc-1";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=onboarding-training-days-1";
-import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=smart-build-navigation-2";
+import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=saved-plan-edit-2";
 import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-live-polish.js?v=workout-landing-live-polish-2";
 import { renderProgress } from "../progress/progress-ui.js?v=fatsecret-progress-calories-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-2";
@@ -32,7 +32,7 @@ import { initializeProteinTargetExplanation } from "../nutrition/protein-target-
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=weekly-review-modal-1";
 import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=account-transfer-icons-1";
-import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=cardio-rpe-1";
+import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=history-editor-route-1";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-2";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-7";
 import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-drive-backup-3";

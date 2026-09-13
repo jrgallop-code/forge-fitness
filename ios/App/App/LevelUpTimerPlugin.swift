@@ -70,9 +70,51 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         let center = UNUserNotificationCenter.current()
+        let finishSchedule: (Bool, Error?) -> Void = { [weak self] notificationScheduled, notificationError in
+            guard let self else {
+                call.reject("The native timer is unavailable.")
+                return
+            }
+
+            guard #available(iOS 16.1, *),
+                  let record = self.timerRecord(call: call, key: key, title: title, detail: body, endAt: endAt) else {
+                if let notificationError {
+                    call.reject("The timer notification could not be scheduled.", nil, notificationError)
+                } else {
+                    call.resolve([
+                        "scheduled": notificationScheduled,
+                        "notification": notificationScheduled,
+                        "liveActivity": false
+                    ])
+                }
+                return
+            }
+
+            LevelUpTimerStateStore.save(record)
+            Task { @MainActor in
+                let activityResult = await self.startLiveActivity(record: record)
+                let scheduled = notificationScheduled || activityResult.started
+                var result: [String: Any] = [
+                    "scheduled": scheduled,
+                    "notification": notificationScheduled,
+                    "liveActivity": activityResult.started
+                ]
+                if let message = activityResult.error { result["liveActivityError"] = message }
+                if let notificationError { result["notificationError"] = notificationError.localizedDescription }
+                call.resolve(result)
+            }
+        }
+
         center.getNotificationSettings { [weak self] settings in
-            guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional || settings.authorizationStatus == .ephemeral else {
-                call.reject("Notification permission is not enabled.")
+            guard let self else {
+                call.reject("The native timer is unavailable.")
+                return
+            }
+            let notificationsEnabled = settings.authorizationStatus == .authorized
+                || settings.authorizationStatus == .provisional
+                || settings.authorizationStatus == .ephemeral
+            guard notificationsEnabled else {
+                finishSchedule(false, nil)
                 return
             }
 
@@ -84,18 +126,9 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
             content.userInfo = ["key": key, "type": call.getString("type") ?? "levelup:timer-complete"]
 
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, endAt.timeIntervalSinceNow), repeats: false)
-            let request = UNNotificationRequest(identifier: self?.notificationIdentifier(key) ?? key, content: content, trigger: trigger)
+            let request = UNNotificationRequest(identifier: self.notificationIdentifier(key), content: content, trigger: trigger)
             center.add(request) { error in
-                if let error = error {
-                    call.reject("The timer notification could not be scheduled.", nil, error)
-                    return
-                }
-                if #available(iOS 16.1, *),
-                   let record = self?.timerRecord(call: call, key: key, title: title, detail: body, endAt: endAt) {
-                    LevelUpTimerStateStore.save(record)
-                    self?.startLiveActivity(record: record)
-                }
-                call.resolve(["scheduled": true, "liveActivity": self?.liveActivitiesAvailable() ?? false])
+                finishSchedule(error == nil, error)
             }
         }
     }
@@ -204,9 +237,23 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @available(iOS 16.1, *)
-    private func startLiveActivity(record: LevelUpTimerRecord) {
-        guard #available(iOS 16.1, *), ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        endLiveActivities(key: record.timerID)
+    @MainActor
+    private func startLiveActivity(record: LevelUpTimerRecord) async -> (started: Bool, error: String?) {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            return (false, "Live Activities are disabled in iOS Settings.")
+        }
+
+        // Level Up owns one active workout timer. Await removal of any older
+        // timer before requesting its replacement so rapid consecutive sets do
+        // not race ActivityKit or exhaust the system activity limit.
+        for activity in Activity<LevelUpTimerAttributes>.activities {
+            if #available(iOS 16.2, *) {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            } else {
+                await activity.end(dismissalPolicy: .immediate)
+            }
+        }
+
         let attributes = LevelUpTimerAttributes(
             timerID: record.timerID,
             title: record.title,
@@ -227,8 +274,10 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
             } else {
                 _ = try Activity.request(attributes: attributes, contentState: state, pushType: nil)
             }
+            return (true, nil)
         } catch {
             NSLog("Level Up Live Activity could not start: %@", error.localizedDescription)
+            return (false, error.localizedDescription)
         }
     }
 

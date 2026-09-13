@@ -2,6 +2,7 @@ import { getPresetPlan } from "./workout-plans.js";
 import { getExerciseById } from "./exercise-library.js";
 import { openWorkoutLogger } from "./workout-session.js?v=native-navigation-stability-1";
 import { createGeneratedExerciseGuide } from "./exercise-guide-generator.js?v=full-library-guides-1";
+import { editSavedWorkoutPlan } from "./workouts.js?v=saved-plan-edit-2";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 let bypassNextPlanClick = false;
@@ -486,9 +487,7 @@ function showPlanDetails({ plan, type, card }) {
         closePlanDetails();
 
         if (type === "custom") {
-            const editButton = [...card.querySelectorAll("button")]
-                .find(button => /edit plan/i.test(button.textContent || ""));
-            editButton?.click();
+            editSavedWorkoutPlan(plan.id);
             return;
         }
 

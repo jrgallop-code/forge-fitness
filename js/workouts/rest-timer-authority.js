@@ -1,4 +1,4 @@
-import { cancelNativeAlarm, finishNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=live-activity-completion-1";
+import { cancelNativeAlarm, finishNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=live-activity-start-1";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";

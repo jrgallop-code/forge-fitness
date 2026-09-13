@@ -83,14 +83,17 @@ export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, ki
     if (!isNative() || (!nativeTimer && !notifications)) return false;
     const when = at instanceof Date ? at : new Date(at);
     if (!Number.isFinite(when.getTime()) || when.getTime() <= Date.now()) return false;
-    let permission = await nativeAlarmPermission();
-    if (permission === "prompt") {
-        permission = await requestNativeAlarmPermission() ? "granted" : "denied";
-    }
-    if (permission !== "granted") return false;
-    const id = nativeNotificationId(key);
-    try {
-        if (nativeTimer?.schedule) {
+
+    // A local Live Activity does not require notification permission. Always
+    // call the native timer bridge when it is available; the bridge schedules
+    // the audible alert only when notifications are authorized and starts the
+    // Lock Screen activity independently.
+    if (nativeTimer?.schedule) {
+        let permission = await nativeAlarmPermission();
+        if (permission === "prompt") {
+            permission = await requestNativeAlarmPermission() ? "granted" : "denied";
+        }
+        try {
             const theme = document.documentElement.dataset.theme || "level-up";
             const result = await nativeTimer.schedule({
                 key, title, body, at: when.getTime(),
@@ -100,8 +103,19 @@ export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, ki
                 icon: liveActivityAppearance(),
                 ...nativeTimerContext(context)
             });
+            window.dispatchEvent(new CustomEvent("levelup:native-timer-scheduled", { detail: result || {} }));
             return result?.scheduled === true;
         }
+        catch { return false; }
+    }
+
+    let permission = await nativeAlarmPermission();
+    if (permission === "prompt") {
+        permission = await requestNativeAlarmPermission() ? "granted" : "denied";
+    }
+    if (permission !== "granted") return false;
+    const id = nativeNotificationId(key);
+    try {
         await notifications.cancel({ notifications: [{ id }] });
         await notifications.schedule({ notifications: [{
             id,

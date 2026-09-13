@@ -98,3 +98,5 @@ Release 45: separate expenditure-card timeframes from the calorie-summary 7D, 4W
 Release 46: keep completed rest timers visible on the Lock Screen and preserve the native completion alert.
 
 Release 47: preserve the distribution certificate through Apple's asynchronous validation and verify the exported IPA signature before upload.
+
+Release 48: restore Lock Screen Live Activity timers independently of notification permission and open saved plans and completed Workout History sessions directly in their editors.

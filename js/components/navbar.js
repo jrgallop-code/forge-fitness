@@ -1,4 +1,4 @@
-import { navigate } from "../core/router.js?v=native-navigation-stability-1";
+import { navigate } from "../core/router.js?v=history-editor-route-1";
 
 
 export function renderNavbar() {
