@@ -45,6 +45,8 @@ test("restaurant catalogue mode returns complete verified menus before external 
     assert.match(baseWorker, /\["mezza lebanese kitchen", MEZZA_FOODS\.length\]/);
     assert.match(baseWorker, /\["boston pizza", BOSTON_PIZZA_FOODS\.length\]/);
     assert.match(fatSecretWorker, /cataloguePayload\?\.restaurantCatalogue/);
+    assert.match(fatSecretWorker, /RESTAURANT_MENU_RESULT_LIMIT = 250/);
+    assert.doesNotMatch(fatSecretWorker, /restaurantMenu \? RESTAURANT_MENU_PAGE_SIZE \* RESTAURANT_MENU_PAGES/);
 });
 
 test("Eating Out inherits the active appearance instead of hard-coding one theme", async () => {

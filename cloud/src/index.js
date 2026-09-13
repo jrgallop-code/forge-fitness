@@ -851,13 +851,14 @@ async function searchUsdaFoods(userId, url, request, env, ctx) {
     }, 200, request, env);
 }
 
-function isCompleteVerifiedRestaurantCatalogue(query, foods) {
+export function isCompleteVerifiedRestaurantCatalogue(query, foods) {
     const identity = foodIdentity(query);
     const expectedCount = new Map([
         ["mezza lebanese kitchen", MEZZA_FOODS.length],
         ["boston pizza", BOSTON_PIZZA_FOODS.length]
     ]).get(identity);
-    return Boolean(expectedCount) && Array.isArray(foods) && foods.length >= expectedCount && foods.every(food => foodIdentity(food?.brand) === identity);
+    if (!expectedCount || !Array.isArray(foods)) return false;
+    return foods.filter(food => foodIdentity(food?.brand) === identity).length >= expectedCount;
 }
 
 function foodSearchSource(verifiedFoods, usdaFoods, externalFoods) {

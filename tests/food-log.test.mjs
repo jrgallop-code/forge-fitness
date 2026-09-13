@@ -12,7 +12,7 @@ globalThis.window = { dispatchEvent() {} };
 globalThis.CustomEvent = class CustomEvent { constructor(type, options) { this.type = type; this.detail = options?.detail; } };
 
 const data = await import("../js/nutrition/food-log-data.js");
-const { barcodeVariants, consumerUsdaProductName, dedupeUsdaFoods, detectUsdaBrandSearch, findBundledVerifiedFoodByBarcode, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeOpenFoodFactsProduct, normalizeOpenFoodFactsSearchProducts, normalizeUsdaFood, normalizeVerifiedFood, rankFoodNameMatches, rankRestaurantFoods, rankUsdaBrandFoods, searchBundledVerifiedFoods, searchCachedExternalFoods, selectExactUsdaBarcodeFood, validateRestaurantFoodCandidate } = await import("../cloud/src/index.js");
+const { barcodeVariants, consumerUsdaProductName, dedupeUsdaFoods, detectUsdaBrandSearch, findBundledVerifiedFoodByBarcode, isCompleteVerifiedRestaurantCatalogue, isValidBarcode, mergeFoodResults, normalizeBarcode, normalizeOpenFoodFactsProduct, normalizeOpenFoodFactsSearchProducts, normalizeUsdaFood, normalizeVerifiedFood, rankFoodNameMatches, rankRestaurantFoods, rankUsdaBrandFoods, searchBundledVerifiedFoods, searchCachedExternalFoods, selectExactUsdaBarcodeFood, validateRestaurantFoodCandidate } = await import("../cloud/src/index.js");
 
 test("restaurant staging accepts exact official nutrition and marks calories-only records", () => {
     const validation = validateRestaurantFoodCandidate({
@@ -552,6 +552,9 @@ test("Boston Pizza's complete official menu includes Thai Chicken Wrap and whole
     assert.deepEqual(smallPizza.portions[1].nutrition, { calories: 960, protein: 48, carbs: 136, fat: 28, fiber: 8 });
     assert.ok(allBostonPizza.every(food => food.provenance.sourceName === "Boston Pizza Canada official nutrition page"));
     assert.ok(allBostonPizza.every(food => food.provenance.verifiedAt === "2026-09-12"));
+    assert.equal(isCompleteVerifiedRestaurantCatalogue("Boston Pizza", allBostonPizza), true);
+    assert.equal(isCompleteVerifiedRestaurantCatalogue("Boston Pizza", [...allBostonPizza, { brand: "Another Restaurant" }]), true);
+    assert.equal(isCompleteVerifiedRestaurantCatalogue("Boston Pizza", allBostonPizza.slice(0, 230)), false);
 });
 
 test("Boston Pizza migration mirrors all 231 official rows and full macros", async () => {
