@@ -61,13 +61,26 @@ test("all active Progress calorie consumers use the hydrated food-log reader", a
         "js/nutrition/calorie-stats.js",
         "js/nutrition/calculated-maintenance.js",
         "js/nutrition/tdee-calorie-expenditure-carousel.js",
-        "js/nutrition/tdee-energy-balance-summary.js",
+        "js/nutrition/energy-balance-state.js",
         "js/progress/weight-calorie-context-v2.js"
     ];
     const sources = await Promise.all(paths.map(path => readFile(new URL(`../${path}`, import.meta.url), "utf8")));
 
     sources.forEach((source, index) => {
-        assert.match(source, /import \{ readFoodLog \}/, `${paths[index]} must import the hydrated reader`);
-        assert.match(source, /const foodLog = readFoodLog\(\)|const log = readFoodLog\(\)/, `${paths[index]} must use the hydrated reader`);
+        assert.match(source, /import \{[^}]*readFoodLog[^}]*\}/, `${paths[index]} must import the hydrated reader`);
+        assert.match(source, /const foodLog = readFoodLog\(\)|const log = readFoodLog\(\)|foodLog: readFoodLog\(\)/, `${paths[index]} must use the hydrated reader`);
     });
+});
+
+test("Dashboard energy analytics reaches FatSecret nutrition through the shared hydrated state", async () => {
+    const [dashboard, state] = await Promise.all([
+        readFile(new URL("../js/dashboard/dashboard-insights-analytics-v5.js", import.meta.url), "utf8"),
+        readFile(new URL("../js/nutrition/energy-balance-state.js", import.meta.url), "utf8")
+    ]);
+
+    assert.match(dashboard, /getEnergyBalanceState/);
+    assert.match(state, /import \{ readCompletedFoodDays, readFoodLog \}/);
+    assert.match(state, /foodLog: readFoodLog\(\)/);
+    assert.match(state, /completedDays: readCompletedFoodDays\(\)/);
+    assert.doesNotMatch(dashboard, /localStorage\.getItem\(FOOD_LOG_KEY\)/);
 });

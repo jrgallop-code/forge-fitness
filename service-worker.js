@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-13-305";
+const CACHE_VERSION = "2026-09-13-306";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -38,7 +38,8 @@ const CORE_ASSETS = [
     "./js/nutrition/weekly-check-in-status.js?v=weekly-checkin-status-1",
     "./js/nutrition/check-in-calendar.js?v=checkin-calendar-1",
     "./js/nutrition/tdee-calorie-expenditure-carousel.js?v=fatsecret-progress-calories-1",
-    "./js/nutrition/tdee-energy-balance-summary.js?v=fatsecret-progress-calories-1",
+    "./js/nutrition/energy-balance-state.js?v=energy-summary-1",
+    "./js/nutrition/tdee-energy-balance-summary.js?v=energy-summary-1",
     "./js/nutrition/tdee-expenditure-swipe-card.js?v=tdee-expenditure-swipe-2",
     "./assets/level-up-home-icon.svg",
     "./assets/level-up-mark-transparent.svg",

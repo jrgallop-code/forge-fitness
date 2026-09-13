@@ -1,11 +1,7 @@
-import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "../nutrition/calculated-maintenance.js?v=dashboard-insights-5";
-import { calculateTdee } from "../nutrition/tdee-calculator.js?v=nutrition-phase-1";
-import { getNutritionProfile } from "../nutrition/nutrition-storage.js?v=nutrition-phase-1";
+import { energyDateKey, getEnergyBalanceState, shiftEnergyDateKey } from "../nutrition/energy-balance-state.js?v=energy-summary-1";
 import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-dashboard-visibility-1";
 import { getGoalTimelineViewModel, goalTimelinePreviewMarkup } from "./dashboard-goal-timeline.js?v=goal-timeline-2";
 
-const FOOD_LOG_KEY = "level_up_food_log_v1";
-const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
 const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
 const SCREEN_ID = "dashboard-insights-analytics-screen";
 const STYLE_ID = "dashboard-see-more-preview-v5-styles";
@@ -54,84 +50,26 @@ function ensureStyles() {
     document.head.appendChild(style);
 }
 
-function readJson(key, fallback) {
-    try { return JSON.parse(localStorage.getItem(key) || "null") ?? fallback; }
-    catch { return fallback; }
-}
-
-function localDateKey(date = new Date()) {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
-function shiftDateKey(key, days) {
-    const date = new Date(`${key}T12:00:00`);
-    date.setDate(date.getDate() + days);
-    return localDateKey(date);
-}
-
-function positive(value) {
-    const number = Number(value);
-    return Number.isFinite(number) && number > 0 ? number : null;
-}
-
 function formatNumber(value) {
     return Math.round(Number(value)).toLocaleString();
 }
 
-function profileMaintenance() {
-    const profile = getNutritionProfile();
-    if (!profile || Number(profile.age) < 18) return null;
-    try { return Math.round(Number(calculateTdee(profile).tdee)) || null; }
-    catch { return null; }
-}
-
-function caloriesForDay(entries) {
-    if (!Array.isArray(entries) || !entries.length) return null;
-    const total = entries.reduce((sum, entry) => sum + Math.max(0, Number(entry?.nutrition?.calories) || 0), 0);
-    return total > 0 ? total : null;
-}
-
 function sevenDayEnergy() {
-    const today = localDateKey();
-    const start = shiftDateKey(today, -6);
-    const profileEstimate = profileMaintenance();
-    const current = getCalculatedMaintenanceEstimate(profileEstimate);
-    const history = getCalculatedMaintenanceHistory(profileEstimate, { startDate: shiftDateKey(start, -28) });
-    const currentLive = positive(current?.liveMaintenanceCalories);
-    if (currentLive !== null && history.at(-1)?.date === today) {
-        history[history.length - 1].liveMaintenanceCalories = currentLive;
-    }
-
-    const foodLog = readJson(FOOD_LOG_KEY, {});
-    const completedDays = readJson(FOOD_COMPLETE_KEY, {});
-    const historyByDate = new Map(history.map(point => [point.date, point]));
-    let lastUsable = null;
-
-    history.filter(point => point.date < start).forEach(point => {
-        const live = positive(point.liveMaintenanceCalories);
-        const reviewed = positive(point.maintenanceCalories);
-        const held = live ?? lastUsable ?? reviewed;
-        if (held !== null) lastUsable = held;
-    });
-
-    const dates = Array.from({ length: 7 }, (_, index) => shiftDateKey(start, index));
-    const points = dates.map(date => {
-        const point = historyByDate.get(date);
-        const live = positive(point?.liveMaintenanceCalories);
-        const reviewed = positive(point?.maintenanceCalories);
-        const expenditure = live ?? lastUsable ?? reviewed;
-        if (positive(expenditure) !== null) lastUsable = expenditure;
-        const calories = date === today && completedDays?.[today] !== true
-            ? null
-            : caloriesForDay(foodLog?.[date]);
-        return { date, expenditure: positive(expenditure), calories: positive(calories) };
-    });
+    const today = energyDateKey();
+    const start = shiftEnergyDateKey(today, -6);
+    const state = getEnergyBalanceState({ startDate: start, endDate: today });
+    const points = state.points.map(point => ({
+        date: point.date,
+        expenditure: point.expenditureCalories,
+        calories: point.intakeCalories
+    }));
 
     return {
         start,
         today,
         points,
-        current: currentLive ?? positive(current?.maintenanceCalories)
+        averageExpenditure: state.averageVisibleExpenditure,
+        balance: state.balance
     };
 }
 
@@ -190,16 +128,10 @@ function comparisonSvg(state) {
     return `<div class="dashboard-preview-chart"><svg class="dashboard-preview-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true"><path class="dashboard-preview-axis" d="M${left} ${base} H${width - right}"></path>${bars}<path class="dashboard-preview-energy-line" data-preview-animated-line d="${line}"></path></svg></div>`;
 }
 
-function averageBalance(points) {
-    const matched = points.filter(point => Number.isFinite(point.calories) && Number.isFinite(point.expenditure));
-    if (!matched.length) return null;
-    return matched.reduce((sum, point) => sum + point.calories - point.expenditure, 0) / matched.length;
-}
-
 function screenMarkup() {
     const energy = sevenDayEnergy();
     const goal = getGoalTimelineViewModel();
-    const balance = averageBalance(energy.points);
+    const balance = energy.balance;
     const balanceValue = Number.isFinite(balance)
         ? `${balance > 0 ? "+" : balance < 0 ? "−" : ""}${formatNumber(Math.abs(balance))}`
         : "--";
@@ -207,7 +139,7 @@ function screenMarkup() {
         ? `kcal/day ${balance > 0 ? "surplus" : balance < 0 ? "deficit" : "balanced"}`
         : "energy balance";
 
-    return `<header class="dashboard-preview-header"><button class="dashboard-preview-back" type="button" data-dashboard-insights-close aria-label="Back">‹</button><div><small>Dashboard</small><h2>Insights &amp; Analytics</h2></div></header><main class="dashboard-preview-body"><h3 class="dashboard-preview-section-title">All</h3><div class="dashboard-preview-grid"><button type="button" class="dashboard-preview-card" data-dashboard-open-progress="expenditure"><h3>Expenditure</h3><span class="sub">Last 7 Days</span>${expenditureSvg(energy)}<div class="value"><strong>${energy.current !== null ? formatNumber(energy.current) : "--"}</strong><span>kcal/day</span></div><span class="dashboard-preview-chevron">›</span></button><button type="button" class="dashboard-preview-card" data-dashboard-open-progress="comparison"><h3>Calories vs Expenditure</h3><span class="sub">Last 7 Days</span>${comparisonSvg(energy)}<div class="value"><strong>${balanceValue}</strong><span>${balanceLabel}</span></div><span class="dashboard-preview-chevron">›</span></button>${goalTimelinePreviewMarkup(goal)}</div><p class="dashboard-preview-hint">Tap a card to open more detail.</p></main>`;
+    return `<header class="dashboard-preview-header"><button class="dashboard-preview-back" type="button" data-dashboard-insights-close aria-label="Back">‹</button><div><small>Dashboard</small><h2>Insights &amp; Analytics</h2></div></header><main class="dashboard-preview-body"><h3 class="dashboard-preview-section-title">All</h3><div class="dashboard-preview-grid"><button type="button" class="dashboard-preview-card" data-dashboard-open-progress="expenditure"><h3>Expenditure</h3><span class="sub">Last 7 Days</span>${expenditureSvg(energy)}<div class="value"><strong>${Number.isFinite(energy.averageExpenditure) ? formatNumber(energy.averageExpenditure) : "--"}</strong><span>kcal/day avg</span></div><span class="dashboard-preview-chevron">›</span></button><button type="button" class="dashboard-preview-card" data-dashboard-open-progress="comparison"><h3>Calories vs Expenditure</h3><span class="sub">Last 7 Days</span>${comparisonSvg(energy)}<div class="value"><strong>${balanceValue}</strong><span>${balanceLabel}</span></div><span class="dashboard-preview-chevron">›</span></button>${goalTimelinePreviewMarkup(goal)}</div><p class="dashboard-preview-hint">Tap a card to open more detail.</p></main>`;
 }
 
 function cleanupOldDashboardActions() {
