@@ -19,3 +19,10 @@ test("removes non-timer notifications while preserving rest and cardio alarms", 
     assert.match(read("js/workouts/rest-timer-authority.js"), /scheduleNativeAlarm/);
     assert.match(read("js/workouts/logger-cardio-timer.js"), /scheduleNativeAlarm/);
 });
+
+test("cardio Live Activity uses running copy while its completion notification retains reached copy", () => {
+    const cardio = read("js/workouts/logger-cardio-timer.js");
+    assert.match(cardio, /liveActivityTitle: "Cardio timer"/);
+    assert.match(cardio, /liveActivityDetail: getCardioName\(card\)/);
+    assert.match(cardio, /minute\$\{Number\(state\.alarmMinutes\) === 1 \? "" : "s"\} reached/);
+});
