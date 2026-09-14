@@ -9,7 +9,7 @@ const CORE_ASSETS = [
     "./manifest.webmanifest",
     "./js/account/cloud-backup-history-ui.js?v=backup-history-ui-1",
     "./js/account/cloud-background-sync.js",
-    "./js/analytics/product-state.js?v=owner-product-insights-1",
+    "./js/analytics/product-state.js?v=user-demographics-1",
     "./js/core/system-recovery-notice.js?v=legacy-audience-1",
     "./js/core/body-composition.js?v=female-body-fat-ranges-1",
     "./js/core/muscle-map-colors.js?v=muscle-map-colors-3",
