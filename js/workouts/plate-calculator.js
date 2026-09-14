@@ -2,7 +2,7 @@ import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
 import { canonicalInputValue, canonicalMass, displayMass, massUnit, UNIT_KINDS } from "../core/unit-system.js?v=granular-units-1";
 
 const SETTINGS_KEY = "level_up_plate_calculator_settings";
-const STYLESHEET_HREF = "css/plate-calculator.css?v=original-equipment-controls-1";
+const STYLESHEET_HREF = "css/plate-calculator.css?v=visible-equipment-controls-1";
 const DEFAULT_PLATES = [45, 25, 10, 5, 2.5];
 const OPTIONAL_PLATES = [45, 35, 25, 10, 5, 2.5, 1.25];
 const PLATE_MACHINE_IDS = new Set([
@@ -415,12 +415,8 @@ function renderSheet() {
             ${exactNote}
         </div>
 
-        <button type="button" class="plate-calculator-settings-toggle" aria-expanded="false">
-            <span><strong>Equipment settings</strong><small>${profile.settingsLabel}: ${settingsSummary}</small></span>
-            <span aria-hidden="true">›</span>
-        </button>
-
-        <div class="plate-calculator-settings" hidden>
+        <div class="plate-calculator-settings">
+            <div class="plate-calculator-settings-heading"><strong>Equipment settings</strong><small>${profile.settingsLabel}: ${settingsSummary}</small></div>
             <label class="plate-calculator-base-toggle-row">
                 <span class="plate-calculator-base-toggle-copy"><strong>${profile.toggleLabel}</strong><small>${profile.toggleHelp}</small></span>
                 <span class="plate-calculator-switch">
@@ -443,14 +439,6 @@ function renderSheet() {
             <p>Saved for this exercise on this device.</p>
         </div>
     `;
-
-    body.querySelector(".plate-calculator-settings-toggle")?.addEventListener("click", event => {
-        const button = event.currentTarget;
-        const panel = body.querySelector(".plate-calculator-settings");
-        const opening = panel?.hidden !== false;
-        if (panel) panel.hidden = !opening;
-        button.setAttribute("aria-expanded", String(opening));
-    });
 
     body.querySelector(".plate-calculator-base-enabled")?.addEventListener("change", event => {
         const next = getExerciseSettings(exerciseId, profile);
