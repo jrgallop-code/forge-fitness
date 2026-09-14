@@ -214,13 +214,22 @@ function startTimerForSource({ active, seconds, sourceType, exerciseIndex, setIn
     return true;
 }
 
-function clearTimerForDisabledSource(active) {
-    if (!active?.restTimer) return;
-    void cancelNativeAlarm(`rest:${active.restTimer.timerId}`);
+export function cancelActiveRestTimer({ active = readActiveWorkout(), exerciseIndex = null } = {}) {
+    if (!active?.restTimer) return false;
+    const timerExerciseIndex = Number(active.restTimer.exerciseIndex);
+    if (exerciseIndex !== null && Number(exerciseIndex) !== timerExerciseIndex) return false;
+
+    const timerId = active.restTimer.timerId;
+    if (timerId) void cancelNativeAlarm(`rest:${timerId}`);
     active.restTimer = null;
     saveActiveWorkout(active);
     clearScheduledExpiry();
     window.dispatchEvent(new CustomEvent("levelup:rest-timer-dismissed"));
+    return true;
+}
+
+function clearTimerForDisabledSource(active) {
+    cancelActiveRestTimer({ active });
 }
 
 function exerciseMetaFromButton(button, rowSelector, indexAttribute) {
@@ -306,6 +315,17 @@ document.addEventListener("click", event => {
     if (!button) return;
     const meta = exerciseMetaFromButton(button, ".session-set-row", "setIndex");
     window.setTimeout(() => reconcileWorkingSet(meta), RECONCILE_DELAY_MS);
+}, true);
+
+// Switching an exercise timer off must cancel an already-running countdown,
+// not merely prevent the next set from starting another one. Listen at the
+// document level because multiple logger layouts render this same control.
+document.addEventListener("change", event => {
+    const toggle = event.target?.closest?.(".exercise-timer-enabled");
+    if (!toggle || toggle.checked) return;
+    const card = toggle.closest(".session-exercise-card[data-exercise-index]");
+    if (!card) return;
+    cancelActiveRestTimer({ exerciseIndex: Number(card.dataset.exerciseIndex) });
 }, true);
 
 window.addEventListener("focus", keepActiveTimerAuthoritative);
