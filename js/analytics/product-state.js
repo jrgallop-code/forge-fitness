@@ -7,6 +7,8 @@ const PROGRAM_RECONCILE_KEY = "level_up_program_analytics_reconcile_v1";
 const SNAPSHOT_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 const RECENT_PROGRAM_DAYS = 31;
 const MAX_PROGRAM_SESSIONS = 50;
+const PROFILE_KEY = "level_up_nutrition_profile";
+const TRAINING_PREFERENCES_KEY = "level_up_training_preferences";
 
 let initialized = false;
 let sendTimer = 0;
@@ -54,12 +56,14 @@ export async function sendProductStateSnapshot(force = false) {
 
     const appearance = appearanceState();
     const program = latestProgramState();
+    const demographics = demographicState();
     const state = {
         appearanceTheme: appearance.selected,
         effectiveTheme: appearance.effective,
         programId: program?.id || null,
         programName: program?.name || null,
-        programSource: program?.source || null
+        programSource: program?.source || null,
+        ...demographics
     };
 
     const fingerprint = JSON.stringify([token.slice(-12), state]);
@@ -79,6 +83,27 @@ export async function sendProductStateSnapshot(force = false) {
     } catch {
         return false;
     }
+}
+
+function demographicState() {
+    const profile = safeRead(PROFILE_KEY) || {};
+    const training = safeRead(TRAINING_PREFERENCES_KEY) || {};
+    const age = Number(profile.age);
+    const ageBand = !Number.isFinite(age) ? null
+        : age < 25 ? "18–24"
+            : age < 35 ? "25–34"
+                : age < 45 ? "35–44"
+                    : age < 55 ? "45–54"
+                        : age < 65 ? "55–64" : "65+";
+    return {
+        ageBand,
+        sex: ["male", "female"].includes(profile.sex) ? profile.sex : null,
+        primaryGoal: cleanText(training.primaryGoal, 64) || null,
+        experience: cleanText(training.experience, 64) || null,
+        trainingDays: Number.isFinite(Number(training.days)) ? Math.max(0, Math.min(7, Math.round(Number(training.days)))) : null,
+        trainingSetup: cleanText(training.trainingSetup, 64) || null,
+        nutritionEnabled: typeof training.nutritionEnabled === "boolean" ? training.nutritionEnabled : null
+    };
 }
 
 export async function reconcileRecentProgramUsage(force = false) {
