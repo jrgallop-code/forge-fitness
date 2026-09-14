@@ -1,6 +1,7 @@
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from "./workout-session.js?v=native-navigation-stability-1";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
-import { cancelNativeAlarm, requestNativeAlarmPermission, scheduleNativeAlarm, updateNativeAlarm } from "../core/native-capabilities.js?v=live-activity-persistent-1";
+import { requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-2";
+import { cancelActiveRestTimer } from "./rest-timer-authority.js?v=warmup-toggle-cancel-1";
 
 const EXERCISE_TIMER_SETTINGS_KEY = "level_up_exercise_rest_settings";
 const ALARM_PREFS_KEY = "level_up_rest_alarm_preferences";
@@ -137,7 +138,6 @@ function getNextSetContext(active) {
   }
 
   const planned = getPlannedExercise(active, next.exerciseIndex);
-  const day = active?.planSnapshot?.days?.[Number(active.trainingDayIndex) || 0];
   const exerciseId = planned?.id || active?.exercises?.[next.exerciseIndex]?.exerciseId;
   const exercise = getExerciseById(exerciseId);
   const exerciseName = exercise?.name || "Next exercise";
@@ -152,36 +152,8 @@ function getNextSetContext(active) {
     done: false,
     title: `${exerciseName} · Set ${next.setIndex + 1}`,
     detail: target ? `Target ${target} reps` : "Next working set",
-    previous: previous && previous !== "Hasn't started" ? `Previous ${previous}` : "",
-    workoutName: day?.name || active?.planSnapshot?.name || active?.name || "Workout",
-    exerciseName,
-    setNumber: next.setIndex + 1,
-    targetReps: target,
-    previousPerformance: previous && previous !== "Hasn't started" ? previous : ""
+    previous: previous && previous !== "Hasn't started" ? `Previous ${previous}` : ""
   };
-}
-
-function nativeContext(active) {
-  const context = getNextSetContext(active);
-  return {
-    workoutName: context.workoutName || "Workout",
-    exerciseName: context.exerciseName || context.title || "Next exercise",
-    setNumber: context.setNumber || 0,
-    targetReps: context.targetReps || "",
-    previousPerformance: context.previousPerformance || ""
-  };
-}
-
-function syncNativeTimer(active) {
-  const timer = active?.restTimer;
-  if (!timer?.timerId) return;
-  void updateNativeAlarm({
-    key: `rest:${timer.timerId}`,
-    status: timer.status,
-    endAt: timer.endAt,
-    remainingMs: remainingMs(timer),
-    context: nativeContext(active)
-  });
 }
 
 function ensureStyles() {
@@ -229,7 +201,7 @@ function ensureStyles() {
     .rest-alarm-top {
       display: grid;
       grid-template-columns: minmax(0,1fr) auto;
-      gap: 6px;
+      gap: 12px;
       align-items: center;
     }
     .rest-alarm-status { display: flex; align-items: center; gap: 7px; }
@@ -246,14 +218,13 @@ function ensureStyles() {
     .rest-alarm-next {
       display: block;
       margin-top: 2px;
-      overflow: visible;
+      overflow: hidden;
       color: #f5f5f7;
       font-size: 12px;
       font-weight: 800;
       line-height: 1.2;
-      overflow-wrap: anywhere;
-      text-overflow: clip;
-      white-space: normal;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .rest-alarm-detail {
       display: flex;
@@ -265,7 +236,7 @@ function ensureStyles() {
       line-height: 1.25;
     }
     .rest-alarm-time {
-      min-width: 64px;
+      min-width: 68px;
       text-align: right;
       color: #ff4f69;
       font-variant-numeric: tabular-nums;
@@ -355,8 +326,7 @@ function ensureStyles() {
     }
     @media (max-width: 390px) {
       #${BANNER_ID} { left: 8px; right: 8px; padding: 10px; bottom: calc(68px + env(safe-area-inset-bottom)); }
-      .rest-alarm-top { gap: 4px; }
-      .rest-alarm-time { min-width: 58px; font-size: 26px; }
+      .rest-alarm-time { min-width: 62px; font-size: 26px; }
       .rest-alarm-controls { gap: 5px; }
       .rest-alarm-controls button { padding-inline: 4px; font-size: 9px; }
     }
@@ -523,7 +493,6 @@ function adjustTimer(deltaSeconds) {
   }
 
   saveActive(active);
-  syncNativeTimer(active);
 }
 
 function togglePause() {
@@ -541,34 +510,23 @@ function togglePause() {
     timer.endAt = null;
   }
   saveActive(active);
-  syncNativeTimer(active);
 }
 
 function dismissTimer() {
-  const active = getActive();
-  if (!active) return;
-  const timerId = active.restTimer?.timerId;
-  active.restTimer = null;
-  saveActive(active);
-  if (timerId) void cancelNativeAlarm(`rest:${timerId}`);
+  cancelActiveRestTimer();
 }
 
 function restartFinishedTimer(seconds) {
   const active = getActive();
   if (!active) return;
-  const existing = active.restTimer || {};
   active.restTimer = {
-    ...existing,
-    timerId: existing.timerId || `rest-${active.id || "workout"}-${Date.now()}`,
     status: "running",
     durationSeconds: seconds,
-    startedAt: new Date().toISOString(),
     remainingMs: seconds * 1000,
     endAt: new Date(Date.now() + seconds * 1000).toISOString(),
     notified: false
   };
   saveActive(active);
-  syncNativeTimer(active);
 }
 
 function startNextSet() {
@@ -576,6 +534,7 @@ function startNextSet() {
   if (!active) return;
   const next = getNextSet(active);
 
+  cancelActiveRestTimer();
   active.restTimer = null;
   if (!next) {
     saveActive(active);
@@ -602,15 +561,13 @@ async function requestAlerts() {
     const granted = await requestNativeAlarmPermission();
     const timer = getActive()?.restTimer;
     if (granted && timer?.status === "running" && timer?.endAt) {
-      const context = nativeContext(getActive());
       await scheduleNativeAlarm({
         key: `rest:${timer.timerId}`,
         title: "Rest complete",
-        body: context.setNumber > 0 ? `${context.exerciseName} · Set ${context.setNumber} is ready.` : "Your workout is ready.",
+        body: "Your next set is ready.",
         at: timer.endAt,
         kind: "rest",
-        extra: { type: "levelup:rest-complete", timerId: timer.timerId },
-        context
+        extra: { type: "levelup:rest-complete", timerId: timer.timerId }
       });
     }
     return;
