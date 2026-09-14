@@ -1,5 +1,5 @@
-import { renderAdminAnalytics, initializeAdminAnalytics } from "./admin-analytics.js?v=user-activity-2";
-import { initializeOwnerProductInsights } from "./product-insights.js?v=user-demographics-1";
+import { renderAdminAnalytics, initializeAdminAnalytics } from "./admin-analytics.js?v=user-activity-3";
+import { initializeOwnerProductInsights } from "./product-insights.js?v=user-demographics-2";
 import { initializeDailyUserQuery } from "./daily-user-query.js?v=daily-user-query-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
