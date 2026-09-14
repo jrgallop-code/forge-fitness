@@ -142,9 +142,9 @@ test("workout surfaces use canonical lifting weights and unit-aware display", as
   assert.match(plates, /massUnit\(UNIT_KINDS\.LIFTING_WEIGHT\)/);
   assert.match(plates, /canonicalMass\(event\.target\.value, UNIT_KINDS\.LIFTING_WEIGHT\)/);
   assert.match(plates, /data-unit-input-ignore/);
-  assert.match(plates, /plate-calculator-base-row-primary/);
-  assert.match(plates, /next\.includeBase = true/);
-  assert.doesNotMatch(plates, /class="plate-calculator-base-row" \$\{settings\.includeBase \? "" : "hidden"\}/);
+  assert.match(plates, /class="plate-calculator-base-row" \$\{settings\.includeBase \? "" : "hidden"\}/);
+  assert.match(plates, /class="plate-calculator-base-enabled"/);
+  assert.match(plates, /data-plate-option=/);
 });
 
 test("onboarding and settings expose all four choices", async () => {
