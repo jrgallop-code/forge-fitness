@@ -116,3 +116,5 @@ Release 52: remove personal-record and scheduled-workout reminders while preserv
 Release 53: expose editable bar and machine base weight directly in the plate calculator.
 
 Release 54: restore plate presets, manual base weight, and independent base-inclusion controls without changing plate visuals.
+
+Release 55: force delivery of the restored equipment controls and persist base-weight edits directly from iOS input.
