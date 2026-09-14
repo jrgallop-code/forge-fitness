@@ -117,7 +117,7 @@ test("decimal kilogram input remains editable until it is saved", async () => {
 });
 
 test("workout surfaces use canonical lifting weights and unit-aware display", async () => {
-  const [session, drops, prompts, history, recap, progress, calibration, plates] = await Promise.all([
+  const [session, drops, prompts, history, recap, progress, calibration, plates, plateCss] = await Promise.all([
     read("js/workouts/workout-session.js"),
     read("js/workouts/drop-set-runtime.js"),
     read("js/workouts/progression-prompt-v2.js"),
@@ -125,7 +125,8 @@ test("workout surfaces use canonical lifting weights and unit-aware display", as
     read("js/workouts/workout-complete-recap.js"),
     read("js/progress/training-progress.js"),
     read("js/workouts/starting-weight-calibration.js"),
-    read("js/workouts/plate-calculator.js")
+    read("js/workouts/plate-calculator.js"),
+    read("css/plate-calculator.css")
   ]);
 
   assert.match(session, /set\.weight = canonicalInputValue\(event\.target\)/);
@@ -146,6 +147,18 @@ test("workout surfaces use canonical lifting weights and unit-aware display", as
   assert.match(plates, /class="plate-calculator-base-enabled"/);
   assert.match(plates, /data-plate-option=/);
   assert.match(plates, /baseInput\?\.addEventListener\("input"/);
+  assert.match(plates, /<div class="plate-calculator-settings" \$\{settingsExpanded \? "" : "hidden"\}>/);
+  assert.match(plates, /kg: \{ defaults: \[20, 15, 10, 5, 2\.5\], options: \[25, 20, 15, 10, 5, 2\.5, 1\.25\] \}/);
+  assert.match(plates, /formattedDisplayedWeight\(plate\)/);
+  assert.doesNotMatch(plates, /data-plate-add=/);
+  assert.match(plates, /settingsExpanded = opening/);
+  assert.match(plates, /Common bar weights/);
+  assert.match(plates, /Men's Olympic/);
+  assert.match(plates, /Women's Olympic/);
+  assert.match(plates, /data-bar-weight-preset/);
+  assert.match(plates, /canonicalMass\(button\.dataset\.barWeightPreset, UNIT_KINDS\.LIFTING_WEIGHT\)/);
+  assert.match(plateCss, /\.plate-calculator-bar-options button,\s*\.plate-calculator-plate-options button\{/);
+  assert.match(plateCss, /\.plate-calculator-bar-options button\[aria-pressed="true"\],/);
 });
 
 test("onboarding and settings expose all four choices", async () => {
