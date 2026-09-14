@@ -39,14 +39,14 @@ test("warm-up completion uses the same per-exercise rest timer authority", () =>
     assert.match(display, /\.complete-warmup-btn/);
 });
 
-test("warm-up inline countdown cannot be flashed off by the legacy working-set timer loop", () => {
-    // The compact logger only owns data-set-index working rows and exits before
-    // attempting to render a warm-up timer beneath the current working set.
-    assert.match(compact, /querySelectorAll\('\.inline-rest-timer\[data-set-index\]'\)/);
-    assert.doesNotMatch(compact, /querySelectorAll\('\.inline-rest-timer'\)/);
-    assert.match(compact, /data-set-index/);
-    assert.match(compact, /restTimer\?\.sourceType === 'warmup'/);
-    assert.match(compact, /previousTimerHadTime = false;\s*return;/);
+test("one unified renderer owns working-set and warm-up inline countdowns", () => {
+    // The unified display is the sole inline countdown owner for both working
+    // and warm-up sets. The compact logger must not create or refresh a second.
+    assert.doesNotMatch(compact, /timerLine\.className = 'inline-rest-timer'/);
+    assert.doesNotMatch(compact, /function updateInlineTimers/);
+    assert.doesNotMatch(compact, /setInterval\(updateInlineTimers/);
+    assert.match(display, /function syncVisibleTimer/);
+    assert.match(display, /data-source-type/);
     assert.match(stability, /data-source-type="warmup"/);
     assert.match(stability, /MutationObserver/);
     assert.match(stability, /queueMicrotask\(stabilizeWarmupTimer\)/);
