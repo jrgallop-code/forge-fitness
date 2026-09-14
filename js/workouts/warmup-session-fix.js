@@ -1,4 +1,4 @@
-import { startRestForWarmupButton } from "./rest-timer-authority.js?v=live-activity-persistent-1";
+import { cancelActiveRestTimer, startRestForWarmupButton } from "./rest-timer-authority.js?v=warmup-toggle-cancel-1";
 import "./warmup-timer-stability.js?v=warmup-timer-stability-1";
 import "./warmup-plate-calculator.js?v=warmup-plate-calculator-3";
 import "../core/workout-theme-guardrail.js?v=workout-theme-guardrail-2";
@@ -58,8 +58,19 @@ function startRestAfterCompletedWarmup(event) {
     // then reads the same per-exercise Rest Timer toggle/duration used by working
     // sets, so warm-ups and working sets cannot drift onto separate timer logic.
     const row = button.closest(".session-warmup-row");
-    if (!row?.classList.contains("completed")) return;
-    startRestForWarmupButton(button);
+    if (!row) return;
+    if (row.classList.contains("completed")) {
+        startRestForWarmupButton(button);
+        return;
+    }
+
+    const card = row.closest(".session-exercise-card[data-exercise-index]");
+    if (!card) return;
+    cancelActiveRestTimer({
+        exerciseIndex: Number(card.dataset.exerciseIndex),
+        sourceType: "warmup",
+        warmupIndex: Number(row.dataset.warmupIndex)
+    });
 }
 
 installWarmupStorageGuard();
