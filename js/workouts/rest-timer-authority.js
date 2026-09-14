@@ -257,7 +257,16 @@ function reconcileWorkingSet(meta) {
     if (!meta || !Number.isFinite(meta.exerciseIndex) || !Number.isFinite(meta.index)) return;
     const active = readActiveWorkout();
     const completed = active?.exercises?.[meta.exerciseIndex]?.sets?.[meta.index]?.completed === true;
-    if (!active || !completed) return;
+    if (!active) return;
+    if (!completed) {
+        cancelActiveRestTimer({
+            active,
+            exerciseIndex: meta.exerciseIndex,
+            sourceType: "working",
+            setIndex: meta.index
+        });
+        return;
+    }
 
     const setting = getExerciseRestSetting(meta.exerciseId);
     if (!setting.enabled) {
