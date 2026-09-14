@@ -98,6 +98,8 @@ export default {
                 payload.activeUsers = activeUsers?.results || [];
                 payload.userActivity = activityRows?.results || [];
                 payload.userActivityDays = days;
+                const selectedUserId = String(url.searchParams.get("user") || "").trim().slice(0, 160);
+                if (selectedUserId) payload.selectedUserHistory = await selectedUserHistory(env, selectedUserId);
                 return jsonResponse(payload, response.status, request, env);
             }
             catch (error) {
@@ -109,6 +111,46 @@ export default {
         return safeWorker.fetch(request, env, ctx);
     }
 };
+
+async function selectedUserHistory(env, userId) {
+    const [user, activity, backup] = await Promise.all([
+        env.DB.prepare("SELECT id, display_name, email, created_at, last_active_at FROM users WHERE id = ? LIMIT 1").bind(userId).first(),
+        env.DB.prepare(`
+            SELECT activity_type, occurred_at, metadata_json FROM (
+                SELECT 'food' AS activity_type, occurred_at, metadata_json FROM usage_events
+                WHERE user_id = ? AND event_name = 'food_logged'
+                UNION ALL
+                SELECT 'workout' AS activity_type, occurred_at, metadata_json FROM product_events
+                WHERE user_id = ? AND event_name = 'workout_completed'
+            ) ORDER BY occurred_at DESC LIMIT 10000
+        `).bind(userId, userId).all(),
+        env.DB.prepare("SELECT payload FROM backups WHERE user_id = ? LIMIT 1").bind(userId).first()
+    ]);
+    if (!user) return null;
+
+    let weightEntries = [];
+    try {
+        const data = JSON.parse(backup?.payload || "null")?.data;
+        const rows = data?.forge_weight_entries;
+        if (Array.isArray(rows)) {
+            weightEntries = rows.map(row => ({
+                activity_type: "weight",
+                occurred_at: weightOccurredAt(row),
+                value: Number(row?.weight ?? row?.weightLb ?? row?.value) || null
+            })).filter(row => row.occurred_at);
+        }
+    } catch {}
+
+    return { user, events: [...(activity?.results || []), ...weightEntries].sort((a, b) => String(b.occurred_at).localeCompare(String(a.occurred_at))) };
+}
+
+function weightOccurredAt(row) {
+    const value = row?.date || row?.occurredAt || row?.createdAt || row?.timestamp;
+    if (!value) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(value))) return `${value}T12:00:00.000Z`;
+    const time = Date.parse(value);
+    return Number.isFinite(time) ? new Date(time).toISOString() : "";
+}
 
 async function authenticatedUser(request, env, ctx) {
     const headers = new Headers(request.headers);
