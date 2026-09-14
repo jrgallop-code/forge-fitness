@@ -705,10 +705,18 @@ function updateAddSetLabel(card, exerciseId) {
 
 function updateInlineTimers() {
   const active = getActive();
-  document.querySelectorAll('.inline-rest-timer').forEach(line => {
+  // This is the legacy working-set renderer. Warm-up countdowns are owned by
+  // rest-timer-display-fix.js and carry sourceType/itemIndex metadata instead
+  // of data-set-index. Touching every inline timer here made the warm-up timer
+  // briefly appear below Set 1 on each 500 ms update.
+  document.querySelectorAll('.inline-rest-timer[data-set-index]').forEach(line => {
     line.hidden = true;
     line.textContent = '';
   });
+  if (active?.restTimer?.sourceType === 'warmup') {
+    previousTimerHadTime = false;
+    return;
+  }
   if (!active?.restTimer) {
     previousTimerHadTime = false;
     return;
