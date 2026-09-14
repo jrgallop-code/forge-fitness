@@ -74,17 +74,19 @@ export default {
                         LIMIT 500
                     `).bind(activeSince).all(),
                     env.DB.prepare(`
-                        SELECT user_id, activity_type, occurred_at
+                        SELECT activity.user_id, activity.activity_type, activity.occurred_at, activity.metadata_json,
+                               u.display_name, u.email
                         FROM (
-                            SELECT user_id, 'food' AS activity_type, occurred_at
+                            SELECT user_id, 'food' AS activity_type, occurred_at, metadata_json
                             FROM usage_events
                             WHERE event_name = 'food_logged' AND occurred_at >= ?
                             UNION ALL
-                            SELECT user_id, 'workout' AS activity_type, occurred_at
+                            SELECT user_id, 'workout' AS activity_type, occurred_at, metadata_json
                             FROM product_events
                             WHERE event_name = 'workout_completed' AND occurred_at >= ?
-                        )
-                        ORDER BY occurred_at DESC
+                        ) activity
+                        JOIN users u ON u.id = activity.user_id
+                        ORDER BY activity.occurred_at DESC
                         LIMIT 5000
                     `).bind(activityStart, activityStart).all()
                 ]);
