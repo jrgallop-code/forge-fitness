@@ -2,7 +2,7 @@ import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
 import { canonicalInputValue, canonicalMass, displayMass, massUnit, UNIT_KINDS } from "../core/unit-system.js?v=granular-units-1";
 
 const SETTINGS_KEY = "level_up_plate_calculator_settings";
-const STYLESHEET_HREF = "css/plate-calculator.css?v=refined-equipment-controls-1";
+const STYLESHEET_HREF = "css/plate-calculator.css?v=refined-equipment-controls-2";
 const PLATE_PRESETS = {
     lb: { defaults: [45, 25, 10, 5, 2.5], options: [45, 35, 25, 10, 5, 2.5, 1.25] },
     kg: { defaults: [20, 15, 10, 5, 2.5], options: [25, 20, 15, 10, 5, 2.5, 1.25] }
@@ -16,6 +16,7 @@ const PLATE_MACHINE_IDS = new Set([
 
 let sheetContext = null;
 let enhanceQueued = false;
+let settingsExpanded = false;
 
 function ensureStylesheet() {
     if (!document.querySelector('link[data-plate-calculator-style="true"]')) {
@@ -437,12 +438,12 @@ function renderSheet() {
             ${exactNote}
         </div>
 
-        <button type="button" class="plate-calculator-settings-toggle" aria-expanded="false">
+        <button type="button" class="plate-calculator-settings-toggle" aria-expanded="${settingsExpanded}">
             <span><strong>Equipment settings</strong><small>${profile.settingsLabel}: ${settingsSummary}</small></span>
             <span aria-hidden="true">›</span>
         </button>
 
-        <div class="plate-calculator-settings" hidden>
+        <div class="plate-calculator-settings" ${settingsExpanded ? "" : "hidden"}>
             <label class="plate-calculator-base-toggle-row">
                 <span class="plate-calculator-base-toggle-copy"><strong>${profile.toggleLabel}</strong><small>${profile.toggleHelp}</small></span>
                 <span class="plate-calculator-switch">
@@ -454,13 +455,6 @@ function renderSheet() {
                 <span>${profile.settingsLabel}</span>
                 <span class="plate-calculator-number-wrap"><input class="plate-calculator-base-input" data-unit-input-ignore type="number" inputmode="decimal" min="0" step="0.25" value="${formatWeight(visibleBaseWeight)}" aria-label="${profile.settingsLabel} in ${liftingUnit}"><b>${liftingUnit}</b></span>
             </label>
-            <div class="plate-calculator-quick-add">
-                <span>Add a plate per side</span>
-                <small>Tap a preset to add one matching plate to each side and update the workout weight.</small>
-                <div class="plate-calculator-quick-options">
-                    ${settings.plates.map(plate => `<button type="button" data-plate-add="${plate}">+${formattedDisplayedWeight(plate)}</button>`).join("")}
-                </div>
-            </div>
             <div class="plate-calculator-available">
                 <span>Available plate sizes</span>
                 <small>Select the plates your gym has. The calculation above updates immediately.</small>
@@ -478,6 +472,7 @@ function renderSheet() {
         const button = event.currentTarget;
         const panel = body.querySelector(".plate-calculator-settings");
         const opening = panel?.hidden !== false;
+        settingsExpanded = opening;
         if (panel) panel.hidden = !opening;
         button.setAttribute("aria-expanded", String(opening));
         if (opening) panel?.scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -498,20 +493,6 @@ function renderSheet() {
         saveExerciseSettings(exerciseId, next);
     });
     baseInput?.addEventListener("change", () => {
-        renderSheet();
-        refreshCard(card);
-    });
-
-    body.querySelector(".plate-calculator-quick-options")?.addEventListener("click", event => {
-        const button = event.target.closest("button[data-plate-add]");
-        if (!button || !input) return;
-        const plate = Number(button.dataset.plateAdd);
-        const current = canonicalInputValue(input);
-        const startingLoad = Number.isFinite(current) && current > 0
-            ? current
-            : profile.kind === "barbell" ? baseWeight : 0;
-        input.value = formatWeight(displayedWeight(startingLoad + plate * 2));
-        input.dispatchEvent(new Event("input", { bubbles: true }));
         renderSheet();
         refreshCard(card);
     });
@@ -545,6 +526,7 @@ function openSheet(card, requestedRow) {
     if (!row) return;
 
     sheetContext = { card, row, profile, exerciseId };
+    settingsExpanded = false;
     const overlay = createSheet();
     renderSheet();
     overlay.hidden = false;
@@ -560,6 +542,7 @@ function closeSheet() {
     window.setTimeout(() => {
         overlay.hidden = true;
         sheetContext = null;
+        settingsExpanded = false;
     }, 180);
 }
 
