@@ -31,12 +31,21 @@ test("turning a running exercise timer off cancels every timer surface", () => {
 test("warm-up completion uses the same per-exercise rest timer authority", () => {
     assert.match(warmups, /startRestForWarmupButton/);
     assert.match(warmups, /warmup-timer-stability\.js\?v=warmup-timer-stability-1/);
-    assert.match(warmups, /rest-timer-authority\.js\?v=cancel-running-timer-1/);
+    assert.match(warmups, /rest-timer-authority\.js\?v=warmup-toggle-cancel-1/);
     assert.doesNotMatch(warmups, /#start-rest-timer/);
     assert.match(authority, /sourceType:\s*"warmup"/);
     assert.match(authority, /warmupSets/);
     assert.match(display, /\.session-warmup-row\[data-warmup-index/);
     assert.match(display, /\.complete-warmup-btn/);
+});
+
+test("unchecking a warm-up cancels only that warm-up's active rest", () => {
+    assert.match(warmups, /cancelActiveRestTimer/);
+    assert.match(warmups, /if \(row\.classList\.contains\("completed"\)\)/);
+    assert.match(warmups, /sourceType: "warmup"/);
+    assert.match(warmups, /warmupIndex: Number\(row\.dataset\.warmupIndex\)/);
+    assert.match(authority, /timer\.sourceType !== sourceType/);
+    assert.match(authority, /Number\(warmupIndex\) !== Number\(timer\.warmupIndex\)/);
 });
 
 test("one unified renderer owns working-set and warm-up inline countdowns", () => {
