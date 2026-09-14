@@ -77,104 +77,6 @@ export async function nativeAlarmPermission() {
     catch { return "prompt"; }
 }
 
-export async function requestAppNotificationPermission() {
-    if (isNative()) {
-        const notifications = plugin("LocalNotifications");
-        if (!notifications) return "unsupported";
-        try {
-            const current = await notifications.checkPermissions();
-            if (current?.display === "granted") return "granted";
-            return (await notifications.requestPermissions())?.display || "denied";
-        }
-        catch { return "denied"; }
-    }
-    if (!("Notification" in window)) return "unsupported";
-    try {
-        if (Notification.permission === "granted") return "granted";
-        return await Notification.requestPermission();
-    }
-    catch { return "denied"; }
-}
-
-export async function showAppNotification({ key, title, body, extra = {} }) {
-    if (isNative()) {
-        const notifications = plugin("LocalNotifications");
-        if (!notifications) return false;
-        try {
-            const permission = (await notifications.checkPermissions())?.display;
-            if (permission !== "granted") return false;
-            await notifications.schedule({ notifications: [{
-                id: nativeNotificationId(key), title, body,
-                schedule: { at: new Date(Date.now() + 500) },
-                extra: { ...extra, key }
-            }] });
-            return true;
-        }
-        catch { return false; }
-    }
-    if (!("Notification" in window) || Notification.permission !== "granted") return false;
-    try {
-        const registration = await navigator.serviceWorker?.ready;
-        if (registration?.showNotification) {
-            await registration.showNotification(title, {
-                body,
-                icon: "assets/icons/icon-192.png",
-                badge: "assets/icons/icon-192.png",
-                tag: key,
-                data: extra
-            });
-            return true;
-        }
-        const notification = new Notification(title, { body, icon: "assets/icons/icon-192.png", tag: key });
-        notification.onclick = () => { window.focus(); window.dispatchEvent(new CustomEvent("levelup:open-workout-pr", { detail: extra })); };
-        return true;
-    }
-    catch { return false; }
-}
-
-const browserReminderTimers = new Map();
-const scheduledNotificationIdsKey = group => `level_up_scheduled_notification_ids:${group}`;
-
-export async function replaceScheduledAppNotifications(group, items = []) {
-    const key = scheduledNotificationIdsKey(group);
-    let previousIds = [];
-    try { previousIds = JSON.parse(localStorage.getItem(key) || "[]"); } catch {}
-
-    if (isNative()) {
-        const notifications = plugin("LocalNotifications");
-        if (!notifications) return false;
-        try {
-            if (previousIds.length) await notifications.cancel({ notifications: previousIds.map(id => ({ id })) });
-            const permission = (await notifications.checkPermissions())?.display;
-            if (permission !== "granted") return false;
-            const scheduled = items
-                .map(item => ({ ...item, at: item.at instanceof Date ? item.at : new Date(item.at) }))
-                .filter(item => Number.isFinite(item.at.getTime()) && item.at.getTime() > Date.now())
-                .map(item => ({
-                    id: nativeNotificationId(`${group}:${item.key}`),
-                    title: item.title,
-                    body: item.body,
-                    schedule: { at: item.at, allowWhileIdle: true },
-                    extra: { ...(item.extra || {}), key: item.key }
-                }));
-            if (scheduled.length) await notifications.schedule({ notifications: scheduled });
-            localStorage.setItem(key, JSON.stringify(scheduled.map(item => item.id)));
-            return true;
-        }
-        catch { return false; }
-    }
-
-    for (const timer of browserReminderTimers.values()) clearTimeout(timer);
-    browserReminderTimers.clear();
-    items.forEach(item => {
-        const delay = new Date(item.at).getTime() - Date.now();
-        if (delay <= 0 || delay > 2147483647) return;
-        const timer = window.setTimeout(() => void showAppNotification(item), delay);
-        browserReminderTimers.set(`${group}:${item.key}`, timer);
-    });
-    return items.length > 0;
-}
-
 export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, kind = "timer", context = {}, notification = true }) {
     const nativeTimer = plugin("LevelUpTimer");
     const notifications = plugin("LocalNotifications");
@@ -331,7 +233,6 @@ function bindNativeTouchFeedback() {
         void plugin("LocalNotifications")?.addListener?.("localNotificationActionPerformed", event => {
             const detail = event?.notification?.extra || {};
             window.dispatchEvent(new CustomEvent("levelup:native-alarm-opened", { detail }));
-            window.dispatchEvent(new CustomEvent("levelup:native-notification-opened", { detail }));
         });
     }
     catch {}
