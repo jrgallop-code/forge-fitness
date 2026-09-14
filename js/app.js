@@ -51,3 +51,4 @@ document.body.insertAdjacentHTML("beforeend",renderNavbar());
 initializeNavbar();
 initializeMaintenanceCheckInAlert();
 decorateAppIcons(document);
+import "./core/non-timer-notification-cleanup.js?v=remove-non-timer-notifications-1";
