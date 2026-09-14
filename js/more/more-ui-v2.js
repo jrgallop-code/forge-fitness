@@ -147,11 +147,7 @@ export function initializeMore() {
         if (page === "adaptive-guidance") {
             const content = document.getElementById("content");
             if (!content) return;
-            const showMore = () => {
-                content.innerHTML = renderMore();
-                initializeMore();
-                window.scrollTo({ top: 0, behavior: "smooth" });
-            };
+            const showMore = () => { content.innerHTML = renderMore(); initializeMore(); window.scrollTo({ top: 0, behavior: "smooth" }); };
             content.innerHTML = renderAdaptiveGuidanceSettings();
             initializeAdaptiveGuidanceSettings({ onBack: showMore });
             window.scrollTo({ top: 0, behavior: "smooth" });
