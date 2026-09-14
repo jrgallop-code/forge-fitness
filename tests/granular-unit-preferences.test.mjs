@@ -145,6 +145,7 @@ test("workout surfaces use canonical lifting weights and unit-aware display", as
   assert.match(plates, /class="plate-calculator-base-row" \$\{settings\.includeBase \? "" : "hidden"\}/);
   assert.match(plates, /class="plate-calculator-base-enabled"/);
   assert.match(plates, /data-plate-option=/);
+  assert.match(plates, /baseInput\?\.addEventListener\("input"/);
 });
 
 test("onboarding and settings expose all four choices", async () => {
