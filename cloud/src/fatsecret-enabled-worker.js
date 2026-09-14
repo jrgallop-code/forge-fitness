@@ -1,5 +1,6 @@
 import baseWorker from "./safe-backup-worker-v2.js";
 import { restaurantMatchesRequest } from "./index.js";
+import { barcodeFoodResponse } from "./barcode-food-quality.js";
 import { restaurantForId, restaurantMarket } from "../../js/nutrition/restaurant-directory.js";
 import {
     fatSecretCanBarcode,
@@ -154,13 +155,26 @@ async function getFatSecretDetailResponse(foodId, url, request, env, ctx) {
 
 async function barcodeWithFatSecretFallback(barcode, url, request, env, ctx) {
     const baseResponse = await baseWorker.fetch(request, env, ctx);
-    if (baseResponse.ok || !fatSecretConfigured(env) || !fatSecretCanBarcode(env)) return baseResponse;
+    if ([400, 401, 403].includes(baseResponse.status) || !fatSecretConfigured(env) || !fatSecretCanBarcode(env)) return baseResponse;
+
+    const basePayload = await baseResponse.clone().json().catch(() => ({}));
+    if (baseResponse.ok && basePayload?.source === "Level Up Verified") return baseResponse;
 
     try {
         const country = normalizeCountry(url.searchParams.get("country"));
-        const food = await findFatSecretFoodByBarcode(barcode, country, env);
-        if (!food) return baseResponse;
-        return jsonFrom(baseResponse, { food, source: "FatSecret", barcode });
+        const fatSecretFood = await findFatSecretFoodByBarcode(barcode, country, env);
+        const baseFoods = Array.isArray(basePayload?.candidates) && basePayload.candidates.length
+            ? basePayload.candidates
+            : basePayload?.food
+                ? [basePayload.food]
+                : [];
+        const selection = barcodeFoodResponse([...baseFoods, fatSecretFood].filter(Boolean), { countryCode: country });
+        if (!selection) return baseResponse;
+        return jsonFrom(baseResponse, {
+            ...selection,
+            source: selection.candidates.length ? "Multiple food catalogues" : selection.food.provenance?.sourceName || "FatSecret",
+            barcode
+        });
     }
     catch (error) {
         console.warn(JSON.stringify({ event: "fatsecret_barcode_lookup_failed", barcode, reason: String(error?.message || error) }));

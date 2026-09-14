@@ -48,6 +48,8 @@ import { initializeRestaurantMenu, openRestaurantMenu } from "./restaurant-menu.
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
 const CALORIES_TAB_KEY = "level_up_calories_tab_v1";
+const BARCODE_CHOICE_KEY = "level_up_barcode_choices_v1";
+const BARCODE_CHOICE_MAX_AGE_MS = 90 * 86400000;
 const ZXING_BROWSER_URL = "https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/zxing-browser.min.js";
 const ZXING_BROWSER_INTEGRITY = "sha384-HRtzk9lZgkbSgvUyQrnfC/GxiXZgwaNyD7hC9wcXlsBpDhkS80ISl73juef2FRuf";
 let selectedDate = localDateKey();
@@ -556,6 +558,13 @@ async function lookupBarcode(value) {
         chooseFood(barcodeFoodCache.get(barcode));
         return;
     }
+    const rememberedFood = readRememberedBarcodeFood(barcode);
+    if (rememberedFood) {
+        barcodeFoodCache.set(barcode, rememberedFood);
+        closeBarcodeScanner();
+        chooseFood(rememberedFood);
+        return;
+    }
     const token = sessionToken();
     if (!token) {
         stopBarcodeScanner();
@@ -573,7 +582,7 @@ async function lookupBarcode(value) {
     const customButton = document.querySelector("[data-barcode-custom]");
     if (customButton) customButton.hidden = true;
     try {
-        const response = await fetch(`${API_URL}/v1/foods/barcode/${encodeURIComponent(barcode)}`, {
+        const response = await fetch(`${API_URL}/v1/foods/barcode/${encodeURIComponent(barcode)}?country=${foodSearchCountry()}`, {
             headers: { Authorization: `Bearer ${token}` },
             signal: barcodeLookupController.signal
         });
@@ -591,6 +600,19 @@ async function lookupBarcode(value) {
             return;
         }
         if (!response.ok || !payload.food) throw new Error(payload.error || "Barcode lookup could not be loaded.");
+        const candidates = Array.isArray(payload.candidates) ? payload.candidates.filter(Boolean) : [];
+        if (candidates.length > 1) {
+            closeBarcodeScanner();
+            showFoodMode("search");
+            const comparableCandidates = candidates.map(food => ({ ...food, barcodeCandidate: true }));
+            renderFoodResults(document.querySelector("[data-food-results]"), comparableCandidates, food => {
+                const { barcodeCandidate, ...selectedFood } = food;
+                rememberBarcodeFood(barcode, selectedFood);
+                chooseFood(selectedFood);
+            });
+            setText("[data-food-search-status]", "We found different nutrition records for this barcode. Choose the one that matches your label.");
+            return;
+        }
         barcodeFoodCache.set(barcode, payload.food);
         closeBarcodeScanner();
         chooseFood(payload.food);
@@ -757,17 +779,45 @@ async function searchFoods(event) {
     }
 }
 
-function renderFoodResults(container, foods) {
+function renderFoodResults(container, foods, onSelect = chooseFood) {
     if (!container) return;
     container.innerHTML = foods.map((food, index) => foodResultMarkup(food, index)).join("");
-    container.querySelectorAll("[data-food-result]").forEach(button => button.addEventListener("click", () => chooseFood(foods[Number(button.dataset.foodResult)])));
+    container.querySelectorAll("[data-food-result]").forEach(button => button.addEventListener("click", () => onSelect(foods[Number(button.dataset.foodResult)])));
+}
+
+function readRememberedBarcodeFood(barcode) {
+    try {
+        const choices = JSON.parse(localStorage.getItem(BARCODE_CHOICE_KEY) || "{}");
+        const entry = choices?.[barcode];
+        if (!entry?.food || Date.now() - Number(entry.updatedAt || 0) > BARCODE_CHOICE_MAX_AGE_MS) return null;
+        return entry.food;
+    }
+    catch { return null; }
+}
+
+function rememberBarcodeFood(barcode, food) {
+    if (!barcode || !food) return;
+    try {
+        const choices = JSON.parse(localStorage.getItem(BARCODE_CHOICE_KEY) || "{}");
+        choices[barcode] = { food, updatedAt: Date.now() };
+        const recent = Object.entries(choices)
+            .sort(([, a], [, b]) => Number(b?.updatedAt || 0) - Number(a?.updatedAt || 0))
+            .slice(0, 100);
+        localStorage.setItem(BARCODE_CHOICE_KEY, JSON.stringify(Object.fromEntries(recent)));
+        barcodeFoodCache.set(barcode, food);
+    }
+    catch {}
 }
 
 function foodResultMarkup(food, index) {
     const portion = withUsefulLiquidPortions(food).portions?.[0];
-    const sourceLabel = food.previouslyLogged
+    const nutrition = portion?.nutrition || {};
+    const defaultSourceLabel = food.previouslyLogged
         ? `${food.brand ? `${food.brand} · ` : ""}Previously logged`
         : (food.brand || (food?.provenance?.nutritionScope === "calories_only" ? "Calories only" : "Generic food"));
+    const sourceLabel = food.barcodeCandidate
+        ? `${food.brand ? `${food.brand} · ` : ""}P ${roundOne(nutrition.protein || 0)}g · C ${roundOne(nutrition.carbs || 0)}g · F ${roundOne(nutrition.fat || 0)}g`
+        : defaultSourceLabel;
     return `<button class="food-result" type="button" data-food-result="${index}"><span class="food-result-emoji" aria-hidden="true">${getFoodEmoji(food)}</span><span class="food-result-copy"><strong>${escapeHtml(food.name)}</strong><small>${escapeHtml(sourceLabel)}</small></span><b>${Math.round(portion?.nutrition?.calories || 0)} kcal<small>${escapeHtml(portion?.label || "per 100 g")}</small></b></button>`;
 }
 

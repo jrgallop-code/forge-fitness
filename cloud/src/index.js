@@ -12,6 +12,7 @@ import {
     PRIORITY_RESTAURANT_CATALOGUES,
     COMPLETE_PRIORITY_RESTAURANT_CATALOGUE_COUNTS
 } from "./data/priority-restaurant-catalogues.js";
+import { assessBarcodeFood, barcodeFoodResponse, isPlausibleZeroCalorieFood } from "./barcode-food-quality.js";
 import { restaurantBrandIdentity as directoryBrandIdentity, restaurantBrandMatches, restaurantForId, restaurantMarket } from "../../js/nutrition/restaurant-directory.js";
 
 const MAX_BACKUP_BYTES = 8 * 1024 * 1024;
@@ -938,52 +939,36 @@ async function getFoodByBarcode(value, request, env, ctx) {
     }
 
     const cachedFood = await readExternalFoodCache(barcode, env);
-    if (cachedFood) {
-        return json({ food: cachedFood, source: cachedFood.provenance?.sourceName || "External food catalogue", barcode, cached: true }, 200, request, env);
-    }
+    const openFoodFactsPromise = cachedFood
+        ? Promise.resolve({ ok: true, food: cachedFood, status: 200, cached: true })
+        : fetchOpenFoodFactsBarcode(barcode);
+    const usdaPromise = env.USDA_FDC_API_KEY
+        ? fetchUsdaFoodsByBarcode(env.USDA_FDC_API_KEY, barcode)
+        : Promise.resolve({ ok: true, food: null, statuses: [] });
+    const [openFoodFactsResult, usdaResult] = await Promise.all([openFoodFactsPromise, usdaPromise]);
 
-    const openFoodFactsResult = await fetchOpenFoodFactsBarcode(barcode);
-    if (openFoodFactsResult.food) {
+    if (openFoodFactsResult.food && !openFoodFactsResult.cached && assessBarcodeFood(openFoodFactsResult.food).usable) {
         const cacheWrite = writeExternalFoodCache(barcode, openFoodFactsResult.food, env);
         if (ctx?.waitUntil) ctx.waitUntil(cacheWrite);
         else await cacheWrite;
-        return json({ food: openFoodFactsResult.food, source: "Open Food Facts", barcode }, 200, request, env);
-    }
-    if (!env.USDA_FDC_API_KEY) {
-        if (!openFoodFactsResult.ok) return json({ error: "Barcode lookup is temporarily unavailable.", barcode }, 502, request, env);
-        return json({ error: "Product not found.", barcode }, 404, request, env);
     }
 
-    const queries = barcodeVariants(barcode);
-    try {
-        const firstResult = await fetchUsdaBarcodeVariant(env.USDA_FDC_API_KEY, queries[0]);
-        const firstFood = firstResult.ok ? selectExactUsdaBarcodeFood(firstResult.foods, barcode) : null;
-        const remainingResults = firstFood || queries.length === 1
-            ? []
-            : await Promise.all(queries.slice(1).map(query => fetchUsdaBarcodeVariant(env.USDA_FDC_API_KEY, query)));
-        const results = [firstResult, ...remainingResults];
-        const rawFood = firstFood || selectExactUsdaBarcodeFood(results.flatMap(result => result.ok ? result.foods : []), barcode);
-        const normalizedFood = rawFood ? normalizeUsdaFood(rawFood) : null;
-        const food = normalizedFood ? { ...normalizedFood, detailsLoaded: true } : null;
-        if (!food) {
-            const failures = results.filter(result => !result.ok);
-            if (failures.length) {
-                const busy = failures.some(result => result.status === 429);
-                console.error(JSON.stringify({ event: "usda_barcode_lookup_incomplete", barcodeLength: barcode.length, queries: queries.length, failures: failures.map(result => result.status || result.reason) }));
-                return json({ error: busy ? "USDA lookup is busy. Wait a moment and try again." : "Barcode lookup is temporarily unavailable." }, busy ? 429 : 502, request, env);
-            }
-            return json({ error: "Product not found.", barcode }, 404, request, env);
-        }
-        return json({ food, source: "USDA FoodData Central", barcode }, 200, request, env);
+    const selection = barcodeFoodResponse([openFoodFactsResult.food, ...(usdaResult.foods || [])].filter(Boolean));
+    if (selection) {
+        const sources = selection.candidates.length
+            ? "Multiple food catalogues"
+            : selection.food.provenance?.sourceName || selection.food.dataType || "External food catalogue";
+        return json({ ...selection, source: sources, barcode, cached: Boolean(openFoodFactsResult.cached) }, 200, request, env);
     }
-    catch (error) {
-        console.error(JSON.stringify({ event: "usda_barcode_lookup_failed", reason: error?.name === "AbortError" ? "timeout" : "network", barcodeLength: barcode.length }));
-        return json({ error: "Barcode lookup is temporarily unavailable." }, 502, request, env);
-    }
+    const statuses = [openFoodFactsResult.status, ...(usdaResult.statuses || [])];
+    const busy = statuses.includes(429);
+    const unavailable = !openFoodFactsResult.ok || usdaResult.ok === false;
+    if (unavailable) return json({ error: busy ? "Food lookup is busy. Wait a moment and try again." : "Barcode lookup is temporarily unavailable.", barcode }, busy ? 429 : 502, request, env);
+    return json({ error: "Product not found or its nutrition information is incomplete.", barcode }, 404, request, env);
 }
 
 const OPEN_FOOD_FACTS_CACHE_DAYS = 30;
-const OPEN_FOOD_FACTS_CACHE_SCHEMA = 2;
+const OPEN_FOOD_FACTS_CACHE_SCHEMA = 3;
 const OPEN_FOOD_FACTS_USER_AGENT = "LevelUpHypertrophy/1.0 (support@leveluphypertrophy.com)";
 
 async function fetchOpenFoodFactsBarcode(barcode) {
@@ -1065,8 +1050,8 @@ export function normalizeOpenFoodFactsProduct(product, barcode) {
 
     const inputSets = Array.isArray(product?.nutrition?.input_sets) ? product.nutrition.input_sets : [];
     const packagingSets = inputSets.filter(set => set?.source === "packaging" && (!set?.preparation || set.preparation === "as_sold"));
-    const servingSet = packagingSets.find(set => set?.per === "serving" && openFoodFactsSetNutrition(set).calories > 0);
-    const hundredGramSet = packagingSets.find(set => set?.per === "100g" && openFoodFactsSetNutrition(set).calories > 0);
+    const servingSet = packagingSets.find(set => set?.per === "serving");
+    const hundredGramSet = packagingSets.find(set => set?.per === "100g");
     const legacyNutriments = product?.nutriments && typeof product.nutriments === "object" ? product.nutriments : {};
     const legacyPer100 = {
         calories: openFoodFactsNutrient(legacyNutriments, "energy-kcal_100g"),
@@ -1086,24 +1071,27 @@ export function normalizeOpenFoodFactsProduct(product, barcode) {
     const perServing = servingSet ? openFoodFactsSetNutrition(servingSet) : legacyPerServing;
     const servingSize = limitedText(product?.serving_size, 80);
     const servingGrams = openFoodFactsServingGrams(product?.serving_quantity || servingSet?.per_quantity, servingSize);
-    const per100 = explicitPer100.calories > 0
+    const plausibleZero = isPlausibleZeroCalorieFood({ name, brand: product?.brands, category: product?.categories });
+    const hasPer100 = Object.values(explicitPer100).some(value => value > 0) || plausibleZero;
+    const hasPerServing = Object.values(perServing).some(value => value > 0) || plausibleZero;
+    const per100 = hasPer100
         ? explicitPer100
-        : servingGrams > 0 && perServing.calories > 0
+        : servingGrams > 0 && hasPerServing
             ? scaleUsdaNutrition(perServing, 100 / servingGrams)
             : legacyPer100;
-    if (!(per100.calories > 0) && !(perServing.calories > 0)) return null;
+    if (!Object.values(per100).some(value => value > 0) && !hasPerServing && !plausibleZero) return null;
     const portions = [];
-    if (servingGrams > 0 && per100.calories > 0) {
+    if (servingGrams > 0 && (Object.values(per100).some(value => value > 0) || plausibleZero)) {
         portions.push({
             label: foodServingLabel(servingSize || "1 serving", servingGrams),
             grams: servingGrams,
-            nutrition: perServing.calories > 0 ? perServing : scaleUsdaNutrition(per100, servingGrams / 100)
+            nutrition: hasPerServing ? perServing : scaleUsdaNutrition(per100, servingGrams / 100)
         });
     }
-    else if (perServing.calories > 0) {
+    else if (hasPerServing) {
         portions.push({ label: servingSize || "1 serving", nutrition: perServing });
     }
-    if (per100.calories > 0 && Math.abs(servingGrams - 100) > .01) {
+    if ((Object.values(per100).some(value => value > 0) || plausibleZero) && Math.abs(servingGrams - 100) > .01) {
         portions.push({ label: "100 g", grams: 100, nutrition: per100 });
     }
     if (!portions.length) return null;
@@ -1267,6 +1255,30 @@ async function fetchUsdaBarcodeVariant(apiKey, query) {
     }
     finally {
         clearTimeout(timeout);
+    }
+}
+
+async function fetchUsdaFoodsByBarcode(apiKey, barcode) {
+    const queries = barcodeVariants(barcode);
+    try {
+        const results = await Promise.all(queries.map(query => fetchUsdaBarcodeVariant(apiKey, query)));
+        const rawFoods = results.flatMap(result => result.ok ? result.foods : [])
+            .filter(food => barcodeVariants(food?.gtinUpc).some(candidate => queries.includes(candidate)));
+        const normalizedFoods = rawFoods.map(food => {
+            const normalized = normalizeUsdaFood(food);
+            return normalized ? { ...normalized, detailsLoaded: true } : null;
+        }).filter(Boolean);
+        const selection = barcodeFoodResponse(normalizedFoods);
+        return {
+            ok: results.some(result => result.ok),
+            food: selection?.food || null,
+            foods: selection?.candidates?.length ? selection.candidates : selection?.food ? [selection.food] : [],
+            statuses: results.filter(result => !result.ok).map(result => result.status || result.reason)
+        };
+    }
+    catch (error) {
+        console.error(JSON.stringify({ event: "usda_barcode_lookup_failed", reason: error?.name === "AbortError" ? "timeout" : "network", barcodeLength: barcode.length }));
+        return { ok: false, food: null, statuses: [0] };
     }
 }
 

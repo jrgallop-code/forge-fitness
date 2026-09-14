@@ -63,8 +63,8 @@ test("barcode matching treats UPC-A and zero-padded EAN/GTIN as the same product
 test("barcode endpoint retries equivalent USDA barcode forms before reporting not found", async () => {
     const worker = await readFile(new URL("../cloud/src/index.js", import.meta.url), "utf8");
     assert.match(worker, /const queries = barcodeVariants\(barcode\)/);
-    assert.match(worker, /queries\.slice\(1\)\.map\(query => fetchUsdaBarcodeVariant/);
-    assert.match(worker, /selectExactUsdaBarcodeFood\(results\.flatMap/);
+    assert.match(worker, /queries\.map\(query => fetchUsdaBarcodeVariant/);
+    assert.match(worker, /barcodeFoodResponse\(normalizedFoods\)/);
 });
 
 test("food log scales a serving and totals its macros", () => {
@@ -257,7 +257,7 @@ test("Level Up verified matches rank before USDA and replace exact duplicates", 
 
 test("manual search finds products previously discovered by barcode", () => {
     const cached = {
-        cacheSchema: 2,
+        cacheSchema: 3,
         source: "openfoodfacts",
         barcode: "12345670",
         name: "Pomme de terre rouge",
@@ -639,13 +639,15 @@ test("Open Food Facts prefers grams printed in the serving label when metadata c
     assert.equal(food.portions[0].nutrition.calories, 120);
 });
 
-test("barcode lookup uses verified, cached, Open Food Facts, then USDA sources", async () => {
+test("barcode lookup keeps verified foods authoritative and compares external sources", async () => {
     const worker = await readFile(new URL("../cloud/src/index.js", import.meta.url), "utf8");
     const verifiedAt = worker.indexOf("await findVerifiedFoodByBarcode(barcode, env)");
     const cacheAt = worker.indexOf("await readExternalFoodCache(barcode, env)");
-    const openAt = worker.indexOf("await fetchOpenFoodFactsBarcode(barcode)");
-    const usdaAt = worker.indexOf("await fetchUsdaBarcodeVariant(env.USDA_FDC_API_KEY");
-    assert.ok(verifiedAt > -1 && verifiedAt < cacheAt && cacheAt < openAt && openAt < usdaAt);
+    const openAt = worker.indexOf("fetchOpenFoodFactsBarcode(barcode)");
+    const usdaAt = worker.indexOf("fetchUsdaFoodsByBarcode(env.USDA_FDC_API_KEY, barcode)");
+    assert.ok(verifiedAt > -1 && verifiedAt < cacheAt && cacheAt < openAt && cacheAt < usdaAt);
+    assert.match(worker, /Promise\.all\(\[openFoodFactsPromise, usdaPromise\]\)/);
+    assert.match(worker, /barcodeFoodResponse\(\[openFoodFactsResult\.food, \.\.\.\(usdaResult\.foods/);
     assert.match(worker, /api\/v3\.6\/product\/\$\{encodeURIComponent\(barcode\)\}\.json/);
     assert.match(worker, /LevelUpHypertrophy\/1\.0 \(support@leveluphypertrophy\.com\)/);
 });

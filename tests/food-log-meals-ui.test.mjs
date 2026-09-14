@@ -158,6 +158,10 @@ test("food picker includes a compact barcode scanner with manual and custom fall
     assert.match(worker, /selectExactUsdaBarcodeFood/);
     assert.match(worker, /fetchUsdaBarcodeVariant/);
     assert.match(worker, /const queries = barcodeVariants\(barcode\)/);
+    assert.match(module, /We found different nutrition records for this barcode/);
+    assert.match(module, /\?country=\$\{foodSearchCountry\(\)\}/);
+    assert.match(module, /level_up_barcode_choices_v1/);
+    assert.match(module, /rememberBarcodeFood\(barcode, food\)/);
 });
 
 

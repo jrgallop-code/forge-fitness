@@ -1,3 +1,5 @@
+import { isPlausibleZeroCalorieFood } from "./barcode-food-quality.js";
+
 const FATSECRET_TOKEN_URL = "https://oauth.fatsecret.com/connect/token";
 const FATSECRET_API_ROOT = "https://platform.fatsecret.com/rest";
 const AUTO_SCOPE = "auto";
@@ -160,8 +162,9 @@ export function normalizeFatSecretFood(food, options = {}) {
     const name = cleanText(food.food_name, 180);
     if (!foodId || !name) return null;
 
+    const zeroCalorieIdentity = { name, brand: food.brand_name };
     let portions = asArray(food?.servings?.serving)
-        .map(normalizeServing)
+        .map(serving => normalizeServing(serving, zeroCalorieIdentity))
         .filter(Boolean);
 
     if (!portions.length) {
@@ -349,7 +352,7 @@ function capabilitiesFromAuth(auth, env) {
     };
 }
 
-function normalizeServing(serving) {
+function normalizeServing(serving, food = {}) {
     if (!serving || typeof serving !== "object") return null;
     const label = cleanText(serving.serving_description, 80) || "1 serving";
     const calories = positiveOrZero(serving.calories);
@@ -357,7 +360,7 @@ function normalizeServing(serving) {
     const carbs = positiveOrZero(serving.carbohydrate ?? serving.carbs);
     const fat = positiveOrZero(serving.fat);
     const fiber = positiveOrZero(serving.fiber);
-    if (![calories, protein, carbs, fat].some(number => number > 0)) return null;
+    if (![calories, protein, carbs, fat].some(number => number > 0) && !isPlausibleZeroCalorieFood(food)) return null;
 
     const amount = Number(serving.metric_serving_amount);
     const unit = String(serving.metric_serving_unit || "").toLowerCase();
