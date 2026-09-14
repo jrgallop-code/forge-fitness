@@ -17,6 +17,13 @@ test("working sets use per-exercise timer authority and Off no longer creates a 
     assert.match(authority, /\.complete-set-btn/);
 });
 
+test("unchecking a working set cancels only that set's active rest", () => {
+    assert.match(authority, /if \(!completed\) \{/);
+    assert.match(authority, /sourceType: "working"/);
+    assert.match(authority, /setIndex: meta\.index/);
+    assert.match(authority, /Number\(setIndex\) !== Number\(timer\.setIndex\)/);
+});
+
 test("turning a running exercise timer off cancels every timer surface", () => {
     assert.match(authority, /export function cancelActiveRestTimer/);
     assert.match(authority, /cancelNativeAlarm\(`rest:\$\{timerId\}`\)/);
