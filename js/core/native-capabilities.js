@@ -40,7 +40,16 @@ export async function nativeAlarmPermission() {
     catch { return "prompt"; }
 }
 
-export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, kind = "timer" }) {
+export async function scheduleNativeAlarm({
+    key,
+    title,
+    body,
+    at,
+    extra = {},
+    kind = "timer",
+    liveActivityTitle = title,
+    liveActivityDetail = body
+}) {
     const nativeTimer = plugin("LevelUpTimer");
     const notifications = plugin("LocalNotifications");
     if (!isNative() || (!nativeTimer && !notifications)) return false;
@@ -58,6 +67,8 @@ export async function scheduleNativeAlarm({ key, title, body, at, extra = {}, ki
                 key, title, body, at: when.getTime(),
                 type: extra?.type || "levelup:timer-complete",
                 kind,
+                liveActivityTitle,
+                liveActivityDetail,
                 theme: document.documentElement.dataset.theme || "level-up"
             });
             return result?.scheduled === true;
