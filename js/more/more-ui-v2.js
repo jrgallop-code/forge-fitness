@@ -10,7 +10,6 @@ import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v
 import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-display-name-1";
 import { renderAdaptiveGuidanceSettings, initializeAdaptiveGuidanceSettings } from "./adaptive-guidance-settings.js?v=remove-deload-preview-1";
 import { renderDynamicWarmupSettings, initializeDynamicWarmupSettings } from "./dynamic-warmup-settings.js?v=dynamic-warmup-settings-1";
-import { renderNotificationSettings, initializeNotificationSettings } from "./notification-settings.js?v=personal-record-notifications-1";
 import { openLessonLibrary } from "./learn-level-up.js?v=food-log-macro-bars-1";
 import { openExploreResearch } from "./explore-research.js?v=food-log-macro-bars-1";
 import { appearanceMenuIcon, renderAppearanceSettings, initializeAppearanceSettings } from "./appearance-settings.js?v=home-icons-1";
@@ -30,7 +29,6 @@ const ICONS = {
     features: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v2H5V5Zm0 12h14v2H5v-2Zm4-7h10v2H9v-2Zm-4 5h10v-2H5v2Zm2-6a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm10 4a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/></svg>',
     guidance: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 1 4 12.7V18h-2v-4.4l.5-.3A5 5 0 1 0 7 9c0 1.8.9 3.4 2.5 4.3l.5.3V18H8v-3.3A7 7 0 0 1 12 2Zm-2 18h4v2h-4v-2Zm1-13h2v4h-2V7Zm0 5h2v2h-2v-2Z"/></svg>',
     warmup: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a8 8 0 0 1 7.7 5.8l-1.9.5A6 6 0 0 0 7.1 6H10v2H4V2h2v2.6A8 8 0 0 1 12 2Zm8 14v6h-2v-2.6A8 8 0 0 1 4.3 16.2l1.9-.5A6 6 0 0 0 16.9 18H14v-2h6Z"/></svg>',
-    notifications: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 0 1 5 5v3.3l2 3.2V16H5v-2.5l2-3.2V7a5 5 0 0 1 5-5Zm0 2a3 3 0 0 0-3 3v3.9L7.1 14h9.8L15 10.9V7a3 3 0 0 0-3-3Zm-2 14h4a2 2 0 0 1-4 0Z"/></svg>',
     learn: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7c1.1 0 2 .9 2 2v14c-.6-.6-1.4-1-2.4-1H4V4Zm2 2v11h4.6c.1 0 .3 0 .4.1V6H6Zm7 0c0-1.1.9-2 2-2h5v15h-4.6c-1 0-1.8.4-2.4 1V6Zm2 0v11.1c.1-.1.3-.1.4-.1H18V6h-3Z"/></svg>',
     research: '<svg class="app-silhouette-icon more-research-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="5"/><path d="m14 14 5 5M10 7v6M7 10h6"/></svg>'
 };
@@ -47,7 +45,6 @@ export function renderMore() {
     <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Choose body weight, workout weight, distance and measurement units separately.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="adaptive-guidance"><span class="more-menu-icon">${ICONS.guidance}</span><span><strong>Adaptive Guidance</strong><small>Optional recovery, effort, volume and deload suggestions.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="dynamic-warmups"><span class="more-menu-icon">${ICONS.warmup}</span><span><strong>Dynamic Warm-Ups</strong><small>Turn optional video-guided movement preparation on or off.</small></span></button>
-    <button class="more-menu-card" type="button" data-more-page="notifications"><span class="more-menu-icon">${ICONS.notifications}</span><span><strong>Notifications</strong><small>Choose personal record celebrations and future workout reminders.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Body Profile</strong><small>Update your name, personal details, training experience and anatomy appearance.</small></span></button>
     </div>
     <div class="more-menu-group" data-more-group="health"><h3>Health &amp; records</h3>
@@ -153,15 +150,6 @@ export function initializeMore() {
             const showMore = () => { content.innerHTML = renderMore(); initializeMore(); window.scrollTo({ top: 0, behavior: "smooth" }); };
             content.innerHTML = renderAdaptiveGuidanceSettings();
             initializeAdaptiveGuidanceSettings({ onBack: showMore });
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            return;
-        }
-        if (page === "notifications") {
-            const content = document.getElementById("content");
-            if (!content) return;
-            const showMore = () => { content.innerHTML = renderMore(); initializeMore(); window.scrollTo({ top: 0, behavior: "smooth" }); };
-            content.innerHTML = renderNotificationSettings();
-            initializeNotificationSettings({ onBack: showMore });
             window.scrollTo({ top: 0, behavior: "smooth" });
             return;
         }
