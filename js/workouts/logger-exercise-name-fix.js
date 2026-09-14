@@ -1,4 +1,4 @@
-import "./plate-calculator.js?v=refined-equipment-controls-1";
+import "./plate-calculator.js?v=refined-equipment-controls-2";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 
