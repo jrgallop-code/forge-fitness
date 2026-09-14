@@ -24,7 +24,7 @@ test("demographics are collected and displayed only as aggregates", () => {
   assert.match(worker, /demographicRows/);
   assert.match(insights, /Aggregate onboarding profiles only/);
   assert.match(insights, /owner-demographic-grid/);
-  assert.match(page, /owner-demographics\.css\?v=user-demographics-1/);
+  assert.match(page, /owner-demographics\.css\?v=user-demographics-2/);
 });
 
 test("demographic migration adds fields and backfills existing onboarding aggregates", () => {
