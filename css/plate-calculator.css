@@ -475,28 +475,6 @@
     font-weight:650;
 }
 
-.plate-calculator-base-row-primary{
-    margin-top:14px;
-    padding-top:14px;
-    border-top:1px solid rgba(255,255,255,.08);
-}
-
-.plate-calculator-base-row-primary > span:first-child{
-    display:grid;
-    gap:3px;
-}
-
-.plate-calculator-base-row-primary strong{
-    color:#f1f1f4;
-    font-size:12px;
-}
-
-.plate-calculator-base-row-primary small{
-    color:#8f8f98;
-    font-size:9px;
-    font-weight:650;
-}
-
 .plate-calculator-number-wrap{
     display:flex;
     align-items:center;
