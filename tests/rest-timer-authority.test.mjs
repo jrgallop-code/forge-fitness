@@ -8,6 +8,7 @@ const stability = await readFile(new URL("../js/workouts/warmup-timer-stability.
 const display = await readFile(new URL("../js/workouts/rest-timer-display-fix.js", import.meta.url), "utf8");
 const compact = await readFile(new URL("../js/workouts/workout-logger-compact.js", import.meta.url), "utf8");
 const theme = await readFile(new URL("../js/core/workout-theme-guardrail.js", import.meta.url), "utf8");
+const compactCss = await readFile(new URL("../css/workout-logger-compact.css", import.meta.url), "utf8");
 
 test("working sets use per-exercise timer authority and Off no longer creates a rest", () => {
     assert.match(authority, /getExerciseRestSetting/);
@@ -29,6 +30,15 @@ test("unchecking a working set cancels only that set's active rest", () => {
 test("running rest Live Activity does not show completion copy", () => {
     assert.match(authority, /liveActivityTitle: "Rest timer"/);
     assert.match(authority, /liveActivityDetail: "Next working set"/);
+    assert.match(authority, /context: nativeActivityContext\(active\)/);
+    assert.match(authority, /exerciseName/);
+    assert.match(authority, /setNumber: next\.setIndex \+ 1/);
+});
+
+test("completed timer feedback uses compact green status styling", () => {
+    assert.match(compactCss, /#session-message:not\(:empty\)/);
+    assert.match(compactCss, /color: #22c55e/);
+    assert.match(compactCss, /font-size: 14px/);
 });
 
 test("turning a running exercise timer off cancels every timer surface", () => {
