@@ -2,7 +2,7 @@ import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
 import { canonicalInputValue, canonicalMass, displayMass, massUnit, UNIT_KINDS } from "../core/unit-system.js?v=granular-units-1";
 
 const SETTINGS_KEY = "level_up_plate_calculator_settings";
-const STYLESHEET_HREF = "css/plate-calculator.css?v=manual-bar-weight-1";
+const STYLESHEET_HREF = "css/plate-calculator.css?v=original-equipment-controls-1";
 const DEFAULT_PLATES = [45, 25, 10, 5, 2.5];
 const OPTIONAL_PLATES = [45, 35, 25, 10, 5, 2.5, 1.25];
 const PLATE_MACHINE_IDS = new Set([
@@ -460,10 +460,13 @@ function renderSheet() {
         refreshCard(card);
     });
 
-    body.querySelector(".plate-calculator-base-input")?.addEventListener("change", event => {
+    const baseInput = body.querySelector(".plate-calculator-base-input");
+    baseInput?.addEventListener("input", event => {
         const next = getExerciseSettings(exerciseId, profile);
         next.baseWeight = Math.max(0, canonicalMass(event.target.value, UNIT_KINDS.LIFTING_WEIGHT) || 0);
         saveExerciseSettings(exerciseId, next);
+    });
+    baseInput?.addEventListener("change", () => {
         renderSheet();
         refreshCard(card);
     });
