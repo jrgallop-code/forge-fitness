@@ -44,6 +44,7 @@ async function loadAnalytics(days) {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Analytics could not be loaded.");
         content.innerHTML = renderAnalytics(data);
+        bindUserDirectory(content);
         content.hidden = false;
         status.hidden = true;
     } catch (error) {
@@ -70,10 +71,51 @@ function renderAnalytics(data) {
         renderSatisfactionFeedback(feedbackSummary, feedback)
     ].join("");
     const chart = daily.length ? daily.map(item => `<div class="admin-analytics-bar" title="${escapeHtml(item.day)} · ${number(item.active_users)} users · ${number(item.foods)} foods · ${number(item.workouts)} workouts"><div><i class="admin-analytics-series admin-analytics-series--users" style="height:${barHeight(item.active_users, max)}%"></i><i class="admin-analytics-series admin-analytics-series--foods" style="height:${barHeight(item.foods, max)}%"></i><i class="admin-analytics-series admin-analytics-series--workouts" style="height:${barHeight(item.workouts, max)}%"></i></div><small>${escapeHtml(item.day.slice(5))}</small></div>`).join("") : `<p class="admin-analytics-empty">Usage will appear here as people open the app, log food, and train.</p>`;
-    const workoutSourceBreakdown = renderWorkoutSourceBreakdown(data.workoutSources || []);
+    const workoutSourceBreakdown = renderUserDirectory(people, data.days)
+        + renderDemographicsCard(data.productInsights?.demographics || {})
+        + renderWorkoutSourceBreakdown(data.workoutSources || []);
     return `<div class="admin-analytics-kpis">
         ${kpi("Total users", totals.total_users, "all time")}${kpi("New users today", totals.new_users_today, todayLabel)}${kpi("Signed-in users today", totals.users_today, `opened the app · ${todayLabel}`)}${kpi("Engaged users today", totals.engaged_users_today, "logged food or a workout")}${kpi("Active users", totals.active_users, "last 7 days")}${kpi("Returning users", totals.repeat_users, `2+ local days in ${data.days} days`)}${kpi("Food loggers", totals.food_log_users, `in ${data.days} days`)}${kpi("Weight loggers", totals.weight_log_users, "all time · at least 1 weigh-in")}${kpi("Repeat weight loggers", totals.repeat_weight_log_users, "all time · 2+ weigh-ins")}${kpi("Workout users", totals.workout_users, `in ${data.days} days`)}${kpi("Workouts logged", totals.workouts, `in ${data.days} days`)}
     </div><div class="admin-analytics-grid"><section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACTIVITY</span><h3>Daily app usage</h3><p>Halifax local dates · updated ${escapeHtml(updatedLabel)}</p></div><div class="admin-analytics-legend"><span class="is-users">Users</span><span class="is-foods">Foods</span><span class="is-workouts">Workouts</span></div></div><div class="admin-analytics-chart">${chart}</div></section><section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGEMENT</span><h3>What people use</h3></div></div><div class="admin-analytics-funnel"><div><span>Returning users</span><strong>${number(totals.repeat_users)}</strong></div><div><span>People logging food</span><strong>${number(totals.food_log_users)}</strong></div><div><span>Food entries logged</span><strong>${number(totals.foods_logged)}</strong></div><div><span>People with weigh-ins</span><strong>${number(totals.weight_log_users)}</strong></div><div><span>Repeat weight loggers</span><strong>${number(totals.repeat_weight_log_users)}</strong></div><div><span>People completing workouts</span><strong>${number(totals.workout_users)}</strong></div><div><span>Onboarding completed</span><strong>${number(totals.onboarding_completions)}</strong></div></div></section>${workoutSourceBreakdown}<section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACQUISITION</span><h3>Where people came from</h3></div></div><div class="admin-analytics-sources">${sourceRows || `<p class="admin-analytics-empty">No acquisition responses yet.</p>`}</div></section><section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGED USERS</span><h3>Who logged activity</h3><p>Food and workout lists follow the selected period. Repeat weight loggers are all-time and exclude users with only one weigh-in.</p></div></div><div class="admin-analytics-stat-groups">${namedStats}</div></section></div>`;
+}
+
+function renderUserDirectory(people, days) {
+    const rows = people.map(person => `<div class="admin-user-directory-row" data-user-search="${escapeHtml(`${personName(person)} ${person.email || ""}`.toLowerCase())}"><span><strong>${escapeHtml(personName(person))}</strong><small>${escapeHtml(person.email || "")}</small></span><div><b>${number(person.active_days)}<small>active days</small></b><b>${number(person.foods_logged)}<small>foods</small></b><b>${number(person.workouts_logged)}<small>workouts</small></b></div></div>`).join("");
+    return `<section class="admin-analytics-card admin-user-directory"><div class="admin-analytics-card-head"><div><span class="eyebrow">USER LOOKUP</span><h3>What each user has done</h3><p>Activity during the selected ${number(days)}-day period.</p></div></div><label class="admin-user-search"><span>Search by name or email</span><input type="search" placeholder="Start typing a user…" data-admin-user-search></label><div class="admin-user-directory-list">${rows || `<p class="admin-analytics-empty">No users were active in this period.</p>`}</div><p class="admin-user-directory-empty" hidden>No users match that search.</p></section>`;
+}
+
+function bindUserDirectory(content) {
+    const input = content.querySelector("[data-admin-user-search]");
+    if (!input) return;
+    input.addEventListener("input", () => {
+        const query = input.value.trim().toLowerCase();
+        const rows = [...content.querySelectorAll(".admin-user-directory-row")];
+        let shown = 0;
+        rows.forEach(row => {
+            const match = !query || String(row.dataset.userSearch || "").includes(query);
+            row.hidden = !match;
+            if (match) shown += 1;
+        });
+        content.querySelector(".admin-user-directory-empty")?.toggleAttribute("hidden", shown > 0);
+    });
+}
+
+function renderDemographicsCard(demographics) {
+    const titleCase = value => String(value || "").replace(/[-_]+/g, " ").replace(/\b\w/g, letter => letter.toUpperCase());
+    const groups = [
+        ["Age", demographics.ageBands, value => value], ["Sex", demographics.sexes, titleCase],
+        ["Primary goal", demographics.goals, titleCase], ["Experience", demographics.experience, titleCase],
+        ["Training days", demographics.trainingDays, value => `${value} days/week`],
+        ["Training setup", demographics.trainingSetups, titleCase],
+        ["Nutrition", demographics.nutritionUsage, value => String(value) === "1" ? "Enabled" : "Disabled"]
+    ];
+    const sections = groups.map(([label, values, format]) => {
+        const rows = Array.isArray(values) ? values : [];
+        const total = rows.reduce((sum, row) => sum + Number(row.users || 0), 0);
+        if (!rows.length) return "";
+        return `<section class="admin-demographic-group"><h4>${escapeHtml(label)}</h4>${rows.map(row => { const count = Number(row.users || 0); const percent = total ? Math.round(count / total * 100) : 0; return `<div><span>${escapeHtml(format(row.value))}</span><i><b style="width:${percent}%"></b></i><strong>${number(count)} <small>${percent}%</small></strong></div>`; }).join("")}</section>`;
+    }).join("");
+    return `<section class="admin-analytics-card admin-demographics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">DEMOGRAPHICS</span><h3>Who uses Level Up</h3><p>Aggregate onboarding profiles only.</p></div></div><div class="admin-demographic-grid">${sections || `<p class="admin-analytics-empty">Coverage will fill as signed-in users reopen Level Up.</p>`}</div></section>`;
 }
 
 function renderWorkoutSourceBreakdown(rows) {
@@ -116,10 +158,18 @@ function kpi(label, value, detail) { return `<div class="admin-analytics-kpi"><s
 function barHeight(value, max) { return Number(value || 0) ? Math.max(5, Math.round(Number(value) / max * 100)) : 0; }
 
 function ensureUsageStyles() {
-    if (document.querySelector("link[data-admin-usage-styles]")) return;
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "css/admin-analytics-usage.css?v=workout-source-stats-1";
-    link.dataset.adminUsageStyles = "";
-    document.head.append(link);
+    if (!document.querySelector("link[data-admin-usage-styles]")) {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = "css/admin-analytics-usage.css?v=workout-source-stats-1";
+        link.dataset.adminUsageStyles = "";
+        document.head.append(link);
+    }
+    if (!document.querySelector("link[data-admin-demographics-styles]")) {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = "css/admin-demographics.css?v=user-demographics-1";
+        link.dataset.adminDemographicsStyles = "";
+        document.head.append(link);
+    }
 }
