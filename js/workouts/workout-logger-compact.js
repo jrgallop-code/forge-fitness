@@ -4,10 +4,8 @@ import { getExerciseById } from './exercise-library.js?v=exercise-library-catalo
 import { removeWorkoutSet, setHasRecordedData } from './logger-set-removal.js?v=logger-set-removal-1';
 
 const TIMER_SETTINGS_KEY = 'level_up_exercise_rest_settings';
-let inlineTimerInterval = null;
 let observer = null;
 let audioContext = null;
-let previousTimerHadTime = false;
 
 function getTimerSettings() {
   try {
@@ -36,13 +34,6 @@ function saveActive(active) {
   localStorage.setItem(ACTIVE_WORKOUT_STORAGE_KEY, JSON.stringify(active));
 }
 
-function formatSeconds(seconds) {
-  const value = Math.max(0, Math.ceil(seconds));
-  const m = Math.floor(value / 60);
-  const s = value % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
-
 function getAudioContext() {
   if (audioContext) return audioContext;
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -55,30 +46,6 @@ function unlockAlarmAudio() {
   const context = getAudioContext();
   if (!context) return;
   if (context.state === 'suspended') context.resume().catch(() => {});
-}
-
-function playRestAlarm() {
-  const context = getAudioContext();
-  if (!context) return;
-  if (context.state === 'suspended') {
-    context.resume().then(playRestAlarm).catch(() => {});
-    return;
-  }
-
-  const start = context.currentTime;
-  [0, 0.2, 0.4].forEach((offset, index) => {
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = 'sine';
-    oscillator.frequency.value = index === 2 ? 1046 : 880;
-    gain.gain.setValueAtTime(0.0001, start + offset);
-    gain.gain.exponentialRampToValueAtTime(0.18, start + offset + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + 0.15);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start(start + offset);
-    oscillator.stop(start + offset + 0.17);
-  });
 }
 
 function ensureHiddenRestSelect(logger) {
@@ -634,7 +601,6 @@ function enhanceLogger(logger) {
               active.restTimer = null;
               saveActive(active);
             }
-            updateInlineTimers();
           }, 0);
         });
       }
@@ -658,12 +624,6 @@ function enhanceLogger(logger) {
         row.appendChild(removeSet);
       }
 
-      const timerLine = document.createElement('div');
-      timerLine.className = 'inline-rest-timer';
-      timerLine.dataset.exerciseIndex = String(exerciseIndex);
-      timerLine.dataset.setIndex = String(setIndex);
-      timerLine.hidden = true;
-      row.insertAdjacentElement('afterend', timerLine);
     });
 
     if (!logger.dataset.editingSessionId) {
@@ -694,51 +654,12 @@ function enhanceLogger(logger) {
   }
 
   setupExerciseCarousel(logger);
-  updateInlineTimers();
 }
 
 function updateAddSetLabel(card, exerciseId) {
   const button = card.querySelector('.compact-add-set-btn');
   if (!button) return;
   button.textContent = '+ Add Set';
-}
-
-function updateInlineTimers() {
-  const active = getActive();
-  // This is the legacy working-set renderer. Warm-up countdowns are owned by
-  // rest-timer-display-fix.js and carry sourceType/itemIndex metadata instead
-  // of data-set-index. Touching every inline timer here made the warm-up timer
-  // briefly appear below Set 1 on each 500 ms update.
-  document.querySelectorAll('.inline-rest-timer[data-set-index]').forEach(line => {
-    line.hidden = true;
-    line.textContent = '';
-  });
-  if (active?.restTimer?.sourceType === 'warmup') {
-    previousTimerHadTime = false;
-    return;
-  }
-  if (!active?.restTimer) {
-    previousTimerHadTime = false;
-    return;
-  }
-
-  let remainingMs = Number(active.restTimer.remainingMs) || 0;
-  if (active.restTimer.status === 'running' && active.restTimer.endAt) {
-    remainingMs = Math.max(0, new Date(active.restTimer.endAt).getTime() - Date.now());
-  }
-
-  if (remainingMs <= 0) {
-    if (previousTimerHadTime) playRestAlarm();
-    previousTimerHadTime = false;
-    return;
-  }
-
-  previousTimerHadTime = true;
-  const selector = `.inline-rest-timer[data-exercise-index="${active.currentExerciseIndex}"][data-set-index="${active.currentSetIndex}"]`;
-  const line = document.querySelector(selector);
-  if (!line) return;
-  line.hidden = false;
-  line.textContent = formatSeconds(remainingMs / 1000);
 }
 
 function scanForLogger() {
@@ -760,5 +681,4 @@ observer = new MutationObserver(mutations => {
 });
 observer.observe(document.body, { childList: true, subtree: true });
 
-inlineTimerInterval = setInterval(updateInlineTimers, 500);
 scanForLogger();
