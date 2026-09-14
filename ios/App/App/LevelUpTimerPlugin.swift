@@ -76,8 +76,8 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
                 self?.startLiveActivity(
                     key: key,
-                    title: title,
-                    detail: body,
+                    title: call.getString("liveActivityTitle") ?? title,
+                    detail: call.getString("liveActivityDetail") ?? body,
                     endAt: endAt,
                     kind: call.getString("kind") ?? "timer",
                     theme: call.getString("theme") ?? "level-up"
