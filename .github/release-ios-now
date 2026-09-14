@@ -120,3 +120,5 @@ Release 54: show neutral cardio copy while counting, retain reached copy at comp
 Release 54 retry: align packaging checks with the current interactive Lock Screen timer widget.
 
 Release 54 retry 2: restore the interactive persistent timer bridge and compile the cardio Live Activity labels.
+
+Release 55: keep running rest copy accurate and cancel native Live Activities immediately when a working set is unchecked.
