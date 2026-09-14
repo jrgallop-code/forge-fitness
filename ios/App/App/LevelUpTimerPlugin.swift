@@ -89,7 +89,13 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
                 return
             }
 
-            let record = self.timerRecord(\n                call: call,\n                key: key,\n                title: call.getString("liveActivityTitle") ?? title,\n                detail: call.getString("liveActivityDetail") ?? body,\n                endAt: endAt\n            )
+            let record = self.timerRecord(
+                call: call,
+                key: key,
+                title: call.getString("liveActivityTitle") ?? title,
+                detail: call.getString("liveActivityDetail") ?? body,
+                endAt: endAt
+            )
             LevelUpTimerStateStore.save(record)
             Task { @MainActor in
                 let activityResult = await self.startLiveActivity(record: record)
