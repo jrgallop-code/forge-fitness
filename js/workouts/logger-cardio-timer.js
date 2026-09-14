@@ -616,6 +616,8 @@ function scheduleCardioNativeAlarm(card, key, state) {
         body: `${getCardioName(card)} · ${Number(state.alarmMinutes).toLocaleString()} minute${Number(state.alarmMinutes) === 1 ? "" : "s"} reached.`,
         at: new Date(Date.now() + remaining),
         kind: "cardio",
+        liveActivityTitle: "Cardio timer",
+        liveActivityDetail: getCardioName(card),
         extra: { type: "levelup:cardio-complete", timerKey: key }
     });
 }
