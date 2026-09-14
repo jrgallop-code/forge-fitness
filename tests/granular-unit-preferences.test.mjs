@@ -151,6 +151,11 @@ test("workout surfaces use canonical lifting weights and unit-aware display", as
   assert.match(plates, /formattedDisplayedWeight\(plate\)/);
   assert.doesNotMatch(plates, /data-plate-add=/);
   assert.match(plates, /settingsExpanded = opening/);
+  assert.match(plates, /Common bar weights/);
+  assert.match(plates, /Men's Olympic/);
+  assert.match(plates, /Women's Olympic/);
+  assert.match(plates, /data-bar-weight-preset/);
+  assert.match(plates, /canonicalMass\(button\.dataset\.barWeightPreset, UNIT_KINDS\.LIFTING_WEIGHT\)/);
 });
 
 test("onboarding and settings expose all four choices", async () => {
