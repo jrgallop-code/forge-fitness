@@ -112,3 +112,5 @@ Release 50: add opt-in personal-record notifications that combine each workout's
 Release 51: add Lock Screen workout-day, upcoming-workout, and missed-workout reminders with configurable timing, quiet hours, and direct workout opening.
 
 Release 52: remove personal-record and scheduled-workout reminders while preserving rest and cardio timer alerts and Lock Screen Live Activities.
+
+Release 53: unify warm-up and working-set countdown rendering, cancel timers when disabled, and stop a warm-up timer when its completion is unchecked.
