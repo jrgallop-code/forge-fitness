@@ -51,5 +51,4 @@ document.body.insertAdjacentHTML("beforeend",renderNavbar());
 initializeNavbar();
 initializeMaintenanceCheckInAlert();
 decorateAppIcons(document);
-import "./notifications/personal-record-notifications.js?v=personal-record-notifications-1";
-import "./notifications/workout-reminders.js?v=workout-reminders-1";
+import "./core/non-timer-notification-cleanup.js?v=remove-non-timer-notifications-1";
