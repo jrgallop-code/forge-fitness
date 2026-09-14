@@ -202,7 +202,6 @@ function getSessions() { try { const value = JSON.parse(localStorage.getItem(SES
 function getSchedule() { try { const value = JSON.parse(localStorage.getItem(SCHEDULE_KEY) || "null"); return value && typeof value === "object" ? value : null; } catch { return null; } }
 function saveSchedule(value) {
     localStorage.setItem(SCHEDULE_KEY, JSON.stringify(value));
-    window.dispatchEvent(new CustomEvent("levelup:workout-schedule-updated", { detail: value }));
 }
 function ensureOnboardingSchedule(plans, schedule) {
     let preferences;
