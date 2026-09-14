@@ -1,5 +1,5 @@
 import { openActiveWorkout } from "./workout-session.js?v=native-navigation-stability-1";
-import { cancelNativeAlarm, hapticNotification, requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=live-activity-persistent-1";
+import { cancelNativeAlarm, hapticNotification, requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-2";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const CARDIO_TIMER_STORAGE_KEY = "level_up_cardio_timer_state";
@@ -599,6 +599,7 @@ function maybeFireCardioAlarm(card, key, state, elapsed) {
     store[key] = state;
     saveTimerStore(store);
     playCardioAlarmSound();
+    void cancelNativeAlarm(`cardio:${key}`);
     void hapticNotification("SUCCESS");
     showCardioAlarmBanner(card, key, state.alarmMinutes);
     void showCardioNotification(card, state.alarmMinutes);
@@ -606,21 +607,17 @@ function maybeFireCardioAlarm(card, key, state, elapsed) {
 }
 
 function scheduleCardioNativeAlarm(card, key, state) {
-    if (!state?.running) return;
-    const hasAlarm = Number(state.alarmMinutes) > 0 && !state.alarmFired;
-    const remaining = hasAlarm
-        ? state.alarmMinutes * 60000 - getElapsedMs(state)
-        : 8 * 60 * 60 * 1000;
+    if (!state?.running || !state?.alarmMinutes) return;
+    const remaining = state.alarmMinutes * 60000 - getElapsedMs(state);
     if (remaining <= 0) return;
     void scheduleNativeAlarm({
         key: `cardio:${key}`,
-        title: hasAlarm ? "Cardio time complete" : "Cardio timer",
-        body: hasAlarm
-            ? `${getCardioName(card)} · ${Number(state.alarmMinutes).toLocaleString()} minute${Number(state.alarmMinutes) === 1 ? "" : "s"} reached.`
-            : `${getCardioName(card)} is in progress.`,
+        title: "Cardio time complete",
+        body: `${getCardioName(card)} · ${Number(state.alarmMinutes).toLocaleString()} minute${Number(state.alarmMinutes) === 1 ? "" : "s"} reached.`,
         at: new Date(Date.now() + remaining),
         kind: "cardio",
-        notification: hasAlarm,
+        liveActivityTitle: "Cardio timer",
+        liveActivityDetail: getCardioName(card),
         extra: { type: "levelup:cardio-complete", timerKey: key }
     });
 }
