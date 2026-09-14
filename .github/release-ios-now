@@ -114,3 +114,5 @@ Release 51: add Lock Screen workout-day, upcoming-workout, and missed-workout re
 Release 52: remove personal-record and scheduled-workout reminders while preserving rest and cardio timer alerts and Lock Screen Live Activities.
 
 Release 53: expose editable bar and machine base weight directly in the plate calculator.
+
+Release 54: restore plate presets, manual base weight, and independent base-inclusion controls without changing plate visuals.
