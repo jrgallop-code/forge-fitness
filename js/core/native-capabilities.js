@@ -120,7 +120,8 @@ function bindNativeTouchFeedback() {
             catch {}
         });
         void plugin("LocalNotifications")?.addListener?.("localNotificationActionPerformed", event => {
-            window.dispatchEvent(new CustomEvent("levelup:native-alarm-opened", { detail: event?.notification?.extra || {} }));
+            const detail = event?.notification?.extra || {};
+            window.dispatchEvent(new CustomEvent("levelup:native-alarm-opened", { detail }));
         });
     }
     catch {}
