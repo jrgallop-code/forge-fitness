@@ -1,0 +1,31 @@
+.admin-user-directory { grid-column: 1 / -1; }
+.admin-user-search { display: grid; gap: 6px; margin-bottom: 12px; }
+.admin-user-search span { color: #9999a2; font-size: 10px; font-weight: 800; }
+.admin-user-search input { width: 100%; min-height: 44px; padding: 0 13px; border: 1px solid #34343b; border-radius: 11px; background: #101012; color: #fff; font: inherit; font-size: 16px; }
+.admin-user-directory-list { display: grid; gap: 7px; }
+.admin-user-directory-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 12px; border: 1px solid #2b2b31; border-radius: 12px; background: #151518; }
+.admin-user-directory-row[hidden] { display: none; }
+.admin-user-directory-row > span { display: grid; gap: 2px; min-width: 0; }
+.admin-user-directory-row > span strong { font-size: 13px; }
+.admin-user-directory-row > span small { overflow: hidden; color: #85858e; font-size: 9px; text-overflow: ellipsis; }
+.admin-user-directory-row > div { display: flex; gap: 7px; }
+.admin-user-directory-row b { display: grid; min-width: 72px; padding: 7px 9px; border-radius: 9px; background: #202024; text-align: center; font-size: 14px; }
+.admin-user-directory-row b small { color: #8e8e97; font-size: 8px; font-weight: 700; }
+.admin-user-directory-empty { color: #888892; font-size: 12px; }
+.owner-demographics { grid-column: 1 / -1; }
+.owner-demographic-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.owner-demographic-group { padding: 13px; border: 1px solid #2b2b31; border-radius: 13px; background: #131316; }
+.owner-demographic-group h5 { margin: 0 0 10px; font-size: 12px; }
+.owner-demographic-group > div { display: grid; grid-template-columns: 100px minmax(60px, 1fr) 58px; align-items: center; gap: 8px; margin-top: 7px; }
+.owner-demographic-group span { overflow: hidden; color: #b5b5bc; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.owner-demographic-group i { height: 6px; overflow: hidden; border-radius: 99px; background: #29292e; }
+.owner-demographic-group i b { display: block; height: 100%; border-radius: 99px; background: #f0525d; }
+.owner-demographic-group strong { text-align: right; font-size: 10px; }
+.owner-demographic-group strong small { color: #85858e; font-size: 8px; }
+@media (max-width: 700px) {
+  .admin-user-directory-row { align-items: flex-start; display: grid; }
+  .admin-user-directory-row > div { width: 100%; }
+  .admin-user-directory-row b { flex: 1; min-width: 0; }
+  .owner-demographic-grid { grid-template-columns: 1fr; }
+  .owner-demographic-group > div { grid-template-columns: 90px minmax(50px, 1fr) 54px; }
+}
