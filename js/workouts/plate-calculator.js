@@ -413,6 +413,10 @@ function renderSheet() {
                 <div><span>Total</span><strong>${Number.isFinite(displayedTotal) ? `${formatWeight(displayedTotal)} lb` : "—"}</strong></div>
             </div>
             ${exactNote}
+            <label class="plate-calculator-base-row plate-calculator-base-row-primary" data-base-included="${settings.includeBase}">
+                <span><strong>${profile.settingsLabel}</strong><small>Tap to enter this equipment's starting weight</small></span>
+                <span class="plate-calculator-number-wrap"><input class="plate-calculator-base-input" data-unit-input-ignore type="number" inputmode="decimal" min="0" step="0.25" value="${formatWeight(visibleBaseWeight)}" aria-label="${profile.settingsLabel} in ${liftingUnit}"><b>${liftingUnit}</b></span>
+            </label>
         </div>
 
         <button type="button" class="plate-calculator-settings-toggle" aria-expanded="false">
@@ -427,10 +431,6 @@ function renderSheet() {
                     <input class="plate-calculator-base-enabled" type="checkbox" ${settings.includeBase ? "checked" : ""} aria-label="${profile.toggleLabel}">
                     <i aria-hidden="true"></i>
                 </span>
-            </label>
-            <label class="plate-calculator-base-row" data-base-included="${settings.includeBase}">
-                <span>${profile.settingsLabel}</span>
-                <span class="plate-calculator-number-wrap"><input class="plate-calculator-base-input" data-unit-input-ignore type="number" inputmode="decimal" min="0" step="0.25" value="${formatWeight(visibleBaseWeight)}" aria-label="${profile.settingsLabel} in ${liftingUnit}"><b>${liftingUnit}</b></span>
             </label>
             <div class="plate-calculator-available">
                 <span>Available plates</span>
@@ -463,6 +463,7 @@ function renderSheet() {
     body.querySelector(".plate-calculator-base-input")?.addEventListener("change", event => {
         const next = getExerciseSettings(exerciseId, profile);
         next.baseWeight = Math.max(0, canonicalMass(event.target.value, UNIT_KINDS.LIFTING_WEIGHT) || 0);
+        next.includeBase = true;
         saveExerciseSettings(exerciseId, next);
         renderSheet();
         refreshCard(card);
