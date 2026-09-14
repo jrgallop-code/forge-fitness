@@ -2261,7 +2261,12 @@ async function getAdminAnalytics(user, url, request, env) {
     const activeSince = new Date(Date.now() - 7 * 86400000).toISOString();
     const timeZone = analyticsTimeZone(env);
     const today = localDayBounds(Date.now(), timeZone);
-    const [totals, usageSummary, acquisition, people, feedbackSummary, feedback, restaurantCatalogue, workoutSources] = await Promise.all([
+    const requestedDate = String(url.searchParams.get("date") || "");
+    const selectedDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) && Number.isFinite(Date.parse(`${requestedDate}T12:00:00.000Z`))
+        ? requestedDate
+        : today.date;
+    const selectedDay = localDayBounds(`${selectedDate}T12:00:00.000Z`, timeZone);
+    const [totals, usageSummary, acquisition, people, feedbackSummary, feedback, workoutSources, selectedDayUsers, selectedDayActive] = await Promise.all([
         env.DB.prepare(`SELECT
             (SELECT COUNT(*) FROM users) AS total_users,
             (SELECT COUNT(*) FROM users WHERE created_at >= ?) AS new_users,
@@ -2322,7 +2327,6 @@ async function getAdminAnalytics(user, url, request, env) {
                 u.display_name, u.email
             FROM satisfaction_feedback sf JOIN users u ON u.id = sf.user_id
             WHERE sf.created_at >= ? ORDER BY sf.created_at DESC LIMIT 100`).bind(since).all(),
-        getRestaurantCatalogueAdminData(env),
         env.DB.prepare(`SELECT workout_source, COUNT(*) AS workouts, COUNT(DISTINCT user_id) AS users
             FROM (
                 SELECT user_id,
@@ -2338,7 +2342,29 @@ async function getAdminAnalytics(user, url, request, env) {
                 WHERE event_name = 'workout_completed' AND occurred_at >= ?
             )
             GROUP BY workout_source
-            ORDER BY workouts DESC`).bind(since).all()
+            ORDER BY workouts DESC`).bind(since).all(),
+        env.DB.prepare(`SELECT
+                u.id AS user_id,
+                u.display_name,
+                u.email,
+                u.created_at,
+                (SELECT COUNT(*) FROM usage_events ue
+                    WHERE ue.user_id = u.id AND ue.event_name = 'food_logged'
+                    AND ue.occurred_at >= ? AND ue.occurred_at < ?) AS food_logs,
+                (SELECT COUNT(*) FROM product_events pe
+                    WHERE pe.user_id = u.id AND pe.event_name = 'workout_completed'
+                    AND pe.occurred_at >= ? AND pe.occurred_at < ?) AS workout_logs
+            FROM users u
+            WHERE u.created_at >= ? AND u.created_at < ?
+            ORDER BY u.created_at ASC`).bind(
+                selectedDay.start, selectedDay.end,
+                selectedDay.start, selectedDay.end,
+                selectedDay.start, selectedDay.end
+            ).all(),
+        env.DB.prepare(`SELECT COUNT(DISTINCT user_id) AS users
+            FROM usage_events
+            WHERE event_name = 'app_active' AND occurred_at >= ? AND occurred_at < ?`)
+            .bind(selectedDay.start, selectedDay.end).first()
     ]);
     const localTotals = { ...(totals || {}), repeat_users: usageSummary.repeatUsers };
     return json({
@@ -2353,8 +2379,13 @@ async function getAdminAnalytics(user, url, request, env) {
         people: people?.results || [],
         feedbackSummary: feedbackSummary || {},
         feedback: feedback?.results || [],
-        restaurantCatalogue,
-        workoutSources: workoutSources?.results || []
+        workoutSources: workoutSources?.results || [],
+        selectedDay: {
+            date: selectedDay.date,
+            activeUsers: Number(selectedDayActive?.users || 0),
+            newUsers: selectedDayUsers?.results?.length || 0,
+            users: selectedDayUsers?.results || []
+        }
     }, 200, request, env);
 }
 
