@@ -74,7 +74,9 @@ function renderAnalytics(data) {
         renderSatisfactionFeedback(feedbackSummary, feedback)
     ].join("");
     const chart = daily.length ? daily.map(item => `<div class="admin-analytics-bar" title="${escapeHtml(item.day)} · ${number(item.active_users)} users · ${number(item.foods)} foods · ${number(item.workouts)} workouts"><div><i class="admin-analytics-series admin-analytics-series--users" style="height:${barHeight(item.active_users, max)}%"></i><i class="admin-analytics-series admin-analytics-series--foods" style="height:${barHeight(item.foods, max)}%"></i><i class="admin-analytics-series admin-analytics-series--workouts" style="height:${barHeight(item.workouts, max)}%"></i></div><small>${escapeHtml(item.day.slice(5))}</small></div>`).join("") : `<p class="admin-analytics-empty">Usage will appear here as people open the app, log food, and train.</p>`;
-    const workoutSourceBreakdown = renderUserDirectory(people, data.days) + renderWorkoutSourceBreakdown(data.workoutSources || []);
+    const workoutSourceBreakdown = renderDailyActivity(data.userActivity || [], data.days)
+        + renderUserDirectory(people, data.days)
+        + renderWorkoutSourceBreakdown(data.workoutSources || []);
     return `<div class="admin-analytics-kpis">
         ${kpi("Total users", totals.total_users, "all time")}${kpi("New users today", totals.new_users_today, todayLabel)}${kpi("Signed-in users today", totals.users_today, `opened the app · ${todayLabel}`)}${kpi("Engaged users today", totals.engaged_users_today, "logged food or a workout")}${kpi("Active users", totals.active_users, "last 7 days")}${kpi("Returning users", totals.repeat_users, `2+ local days in ${data.days} days`)}${kpi("Food loggers", totals.food_log_users, `in ${data.days} days`)}${kpi("Weight loggers", totals.weight_log_users, "all time · at least 1 weigh-in")}${kpi("Repeat weight loggers", totals.repeat_weight_log_users, "all time · 2+ weigh-ins")}${kpi("Workout users", totals.workout_users, `in ${data.days} days`)}${kpi("Workouts logged", totals.workouts, `in ${data.days} days`)}
     </div><div class="admin-analytics-grid"><section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACTIVITY</span><h3>Daily app usage</h3><p>Halifax local dates · updated ${escapeHtml(updatedLabel)}</p></div><div class="admin-analytics-legend"><span class="is-users">Users</span><span class="is-foods">Foods</span><span class="is-workouts">Workouts</span></div></div><div class="admin-analytics-chart">${chart}</div></section><section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGEMENT</span><h3>What people use</h3></div></div><div class="admin-analytics-funnel"><div><span>Returning users</span><strong>${number(totals.repeat_users)}</strong></div><div><span>People logging food</span><strong>${number(totals.food_log_users)}</strong></div><div><span>Food entries logged</span><strong>${number(totals.foods_logged)}</strong></div><div><span>People with weigh-ins</span><strong>${number(totals.weight_log_users)}</strong></div><div><span>Repeat weight loggers</span><strong>${number(totals.repeat_weight_log_users)}</strong></div><div><span>People completing workouts</span><strong>${number(totals.workout_users)}</strong></div><div><span>Onboarding completed</span><strong>${number(totals.onboarding_completions)}</strong></div></div></section>${workoutSourceBreakdown}<section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACQUISITION</span><h3>Where people came from</h3></div></div><div class="admin-analytics-sources">${sourceRows || `<p class="admin-analytics-empty">No acquisition responses yet.</p>`}</div></section><section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGED USERS</span><h3>Who logged activity</h3><p>Food and workout lists follow the selected period. Repeat weight loggers are all-time and exclude users with only one weigh-in.</p></div></div><div class="admin-analytics-stat-groups">${namedStats}</div></section></div>`;
@@ -82,7 +84,42 @@ function renderAnalytics(data) {
 
 function renderUserDirectory(people, days) {
     const rows = people.map(person => `<button type="button" class="admin-user-directory-row" data-user-id="${escapeHtml(person.id)}" data-user-search="${escapeHtml(`${personName(person)} ${person.email || ""}`.toLowerCase())}"><span><strong>${escapeHtml(personName(person))}</strong><small>${escapeHtml(person.email || "")}</small></span><span class="admin-user-totals"><b>${number(person.active_days)}<small>active days</small></b><b>${number(person.foods_logged)}<small>foods</small></b><b>${number(person.workouts_logged)}<small>workouts</small></b><em>View dates ›</em></span></button>`).join("");
-    return `<section class="admin-analytics-card admin-user-directory"><div class="admin-analytics-card-head"><div><span class="eyebrow">USER LOOKUP</span><h3>What each user has done</h3><p>Search any account, then open its complete recorded activity history.</p></div></div><label class="admin-user-search"><span>Search by name or email</span><input type="search" placeholder="Start typing a user…" data-admin-user-search></label><div class="admin-user-directory-list">${rows || `<p class="admin-analytics-empty">No users found.</p>`}</div><p class="admin-user-directory-empty" hidden>No users match that search.</p><div class="admin-user-history" hidden></div></section>`;
+    return `<details class="admin-analytics-card admin-user-directory"><summary><span><small>USER LOOKUP</small><strong>Find a user</strong></span><em>Search by name ›</em></summary><div class="admin-user-search-body"><p>Type a name or email, then open the user to see their complete recorded history.</p><label class="admin-user-search"><span>Name or email</span><input type="search" placeholder="Start typing a user…" data-admin-user-search></label><div class="admin-user-directory-list" hidden>${rows || `<p class="admin-analytics-empty">No users found.</p>`}</div><p class="admin-user-directory-empty" hidden>No users match that search.</p><div class="admin-user-history" hidden></div></div></details>`;
+}
+
+function renderDailyActivity(events, days) {
+    const grouped = new Map();
+    events.forEach(event => {
+        const date = historyDateKey(event.occurred_at);
+        if (!date) return;
+        if (!grouped.has(date)) grouped.set(date, []);
+        grouped.get(date).push(event);
+    });
+    const rows = [...grouped.entries()].map(([date, items]) => `<section class="admin-daily-activity-day"><header><strong>${escapeHtml(formatHistoryDate(`${date}T12:00:00Z`))}</strong><small>${number(items.length)} event${items.length === 1 ? "" : "s"}</small></header><div>${items.map(renderDailyEvent).join("")}</div></section>`).join("");
+    return `<section class="admin-analytics-card admin-daily-activity"><div class="admin-analytics-card-head"><div><span class="eyebrow">DAY BY DAY</span><h3>Who logged what and when</h3><p>Food and completed workouts during the selected ${number(days)}-day period, shown in Halifax time.</p></div></div><div class="admin-daily-activity-list">${rows || `<p class="admin-analytics-empty">No tracked activity in this period.</p>`}</div></section>`;
+}
+
+function renderDailyEvent(event) {
+    let metadata = {};
+    try { metadata = JSON.parse(event.metadata_json || "{}"); } catch {}
+    const workoutName = metadata.planName || metadata.workoutName || "Workout completed";
+    const label = event.activity_type === "food" ? "Food logged" : workoutName;
+    const tone = event.activity_type === "food" ? "is-food" : "is-workout";
+    return `<div class="admin-daily-activity-event"><time>${escapeHtml(formatHistoryTime(event.occurred_at))}</time><span><strong>${escapeHtml(personName(event))}</strong><small>${escapeHtml(event.email || "")}</small></span><b class="${tone}">${escapeHtml(label)}</b></div>`;
+}
+
+function historyDateKey(value) {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "";
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Halifax", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+    const item = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return `${item.year}-${item.month}-${item.day}`;
+}
+
+function formatHistoryTime(value) {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "—";
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Halifax", hour: "numeric", minute: "2-digit" }).format(date);
 }
 
 function bindUserDirectory(content) {
@@ -91,13 +128,15 @@ function bindUserDirectory(content) {
     input.addEventListener("input", () => {
         const query = input.value.trim().toLowerCase();
         const rows = [...content.querySelectorAll(".admin-user-directory-row")];
+        const list = content.querySelector(".admin-user-directory-list");
+        if (list) list.hidden = !query;
         let shown = 0;
         rows.forEach(row => {
             const match = !query || String(row.dataset.userSearch || "").includes(query);
             row.hidden = !match;
             if (match) shown += 1;
         });
-        content.querySelector(".admin-user-directory-empty")?.toggleAttribute("hidden", shown > 0);
+        content.querySelector(".admin-user-directory-empty")?.toggleAttribute("hidden", !query || shown > 0);
     });
     content.querySelectorAll("[data-user-id]").forEach(row => row.addEventListener("click", () => loadUserHistory(content, row.dataset.userId)));
     content.addEventListener("click", event => {
