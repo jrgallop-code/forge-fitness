@@ -83,21 +83,37 @@ async function recordProductState(request, productState, env) {
     const programId = limitedText(productState.programId, 128);
     const programName = limitedText(productState.programName, 160);
     const programSource = limitedText(productState.programSource, 64);
+    const ageBand = limitedText(productState.ageBand, 16);
+    const sex = ["male", "female"].includes(productState.sex) ? productState.sex : null;
+    const primaryGoal = limitedText(productState.primaryGoal, 64);
+    const experience = limitedText(productState.experience, 64);
+    const trainingDays = Number.isFinite(Number(productState.trainingDays)) ? Math.max(0, Math.min(7, Math.round(Number(productState.trainingDays)))) : null;
+    const trainingSetup = limitedText(productState.trainingSetup, 64);
+    const nutritionEnabled = typeof productState.nutritionEnabled === "boolean" ? Number(productState.nutritionEnabled) : null;
     const now = new Date().toISOString();
 
     try {
         await env.DB.prepare(`
             INSERT INTO user_product_state
-                (user_id, appearance_theme, effective_theme, program_id, program_name, program_source, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                (user_id, appearance_theme, effective_theme, program_id, program_name, program_source,
+                 age_band, sex, primary_goal, experience, training_days, training_setup, nutrition_enabled, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
                 appearance_theme = excluded.appearance_theme,
                 effective_theme = excluded.effective_theme,
                 program_id = excluded.program_id,
                 program_name = excluded.program_name,
                 program_source = excluded.program_source,
+                age_band = excluded.age_band,
+                sex = excluded.sex,
+                primary_goal = excluded.primary_goal,
+                experience = excluded.experience,
+                training_days = excluded.training_days,
+                training_setup = excluded.training_setup,
+                nutrition_enabled = excluded.nutrition_enabled,
                 updated_at = excluded.updated_at
-        `).bind(userId, appearanceTheme, effectiveTheme, programId, programName, programSource, now).run();
+        `).bind(userId, appearanceTheme, effectiveTheme, programId, programName, programSource,
+            ageBand, sex, primaryGoal, experience, trainingDays, trainingSetup, nutritionEnabled, now).run();
     }
     catch (error) {
         console.info(JSON.stringify({ event: "product_state_write_unavailable", reason: String(error?.message || error) }));
@@ -150,7 +166,7 @@ async function getProductInsights(url, env) {
     const since = new Date(Date.now() - days * 86400000).toISOString();
 
     try {
-        const [programUsage, appearance, recentPrograms, coverage] = await Promise.all([
+        const [programUsage, appearance, recentPrograms, coverage, ageBands, sexes, goals, experience, trainingDays, trainingSetups, nutritionUsage] = await Promise.all([
             env.DB.prepare(`
                 SELECT program_name, program_id, COUNT(*) AS workouts, COUNT(DISTINCT user_id) AS users
                 FROM (
@@ -194,7 +210,14 @@ async function getProductInsights(url, env) {
                 SELECT
                     (SELECT COUNT(*) FROM user_product_state) AS tracked_users,
                     (SELECT COUNT(*) FROM users) AS total_users
-            `).first()
+            `).first(),
+            demographicRows(env, "age_band"),
+            demographicRows(env, "sex"),
+            demographicRows(env, "primary_goal"),
+            demographicRows(env, "experience"),
+            demographicRows(env, "training_days"),
+            demographicRows(env, "training_setup"),
+            demographicRows(env, "nutrition_enabled")
         ]);
 
         return {
@@ -202,6 +225,11 @@ async function getProductInsights(url, env) {
             appearance: appearance?.results || [],
             recentPrograms: recentPrograms?.results || [],
             coverage: coverage || { tracked_users: 0, total_users: 0 },
+            demographics: {
+                ageBands: ageBands?.results || [], sexes: sexes?.results || [], goals: goals?.results || [],
+                experience: experience?.results || [], trainingDays: trainingDays?.results || [],
+                trainingSetups: trainingSetups?.results || [], nutritionUsage: nutritionUsage?.results || []
+            },
             migrationPending: false
         };
     }
@@ -211,11 +239,18 @@ async function getProductInsights(url, env) {
     }
 }
 
+function demographicRows(env, column) {
+    const allowed = new Set(["age_band", "sex", "primary_goal", "experience", "training_days", "training_setup", "nutrition_enabled"]);
+    if (!allowed.has(column)) throw new Error("Unsupported demographic field");
+    return env.DB.prepare(`SELECT ${column} AS value, COUNT(*) AS users FROM user_product_state WHERE ${column} IS NOT NULL AND ${column} <> '' GROUP BY ${column} ORDER BY users DESC, value`).all();
+}
+
 function emptyProductInsights(migrationPending = false) {
     return {
         programUsage: [],
         appearance: [],
         recentPrograms: [],
+        demographics: { ageBands: [], sexes: [], goals: [], experience: [], trainingDays: [], trainingSetups: [], nutritionUsage: [] },
         coverage: { tracked_users: 0, total_users: 0 },
         migrationPending
     };
