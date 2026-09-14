@@ -2,9 +2,11 @@ import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
 import { canonicalInputValue, canonicalMass, displayMass, massUnit, UNIT_KINDS } from "../core/unit-system.js?v=granular-units-1";
 
 const SETTINGS_KEY = "level_up_plate_calculator_settings";
-const STYLESHEET_HREF = "css/plate-calculator.css?v=visible-equipment-controls-1";
-const DEFAULT_PLATES = [45, 25, 10, 5, 2.5];
-const OPTIONAL_PLATES = [45, 35, 25, 10, 5, 2.5, 1.25];
+const STYLESHEET_HREF = "css/plate-calculator.css?v=refined-equipment-controls-1";
+const PLATE_PRESETS = {
+    lb: { defaults: [45, 25, 10, 5, 2.5], options: [45, 35, 25, 10, 5, 2.5, 1.25] },
+    kg: { defaults: [20, 15, 10, 5, 2.5], options: [25, 20, 15, 10, 5, 2.5, 1.25] }
+};
 const PLATE_MACHINE_IDS = new Set([
     "leg-press",
     "hack-squat",
@@ -80,9 +82,15 @@ function loadingProfile(exerciseId) {
 
 function getExerciseSettings(exerciseId, profile) {
     const saved = readSettings()[exerciseId] || {};
-    const plates = Array.isArray(saved.plates)
-        ? saved.plates.map(Number).filter(value => OPTIONAL_PLATES.includes(value))
-        : DEFAULT_PLATES;
+    const liftingUnit = massUnit(UNIT_KINDS.LIFTING_WEIGHT);
+    const preset = PLATE_PRESETS[liftingUnit] || PLATE_PRESETS.lb;
+    const options = preset.options.map(value => canonicalMass(value, UNIT_KINDS.LIFTING_WEIGHT));
+    const defaults = preset.defaults.map(value => canonicalMass(value, UNIT_KINDS.LIFTING_WEIGHT));
+    const legacyPlates = liftingUnit === "lb" && Array.isArray(saved.plates) ? saved.plates : null;
+    const savedPlates = saved.platesByUnit?.[liftingUnit] || legacyPlates;
+    const plates = Array.isArray(savedPlates)
+        ? savedPlates.map(Number).filter(value => options.some(option => Math.abs(option - value) < .001))
+        : defaults;
     const savedBaseWeight = Number.isFinite(Number(saved.baseWeight))
         ? Math.max(0, Number(saved.baseWeight))
         : profile.defaultBaseWeight;
@@ -95,18 +103,24 @@ function getExerciseSettings(exerciseId, profile) {
     return {
         includeBase,
         baseWeight: savedBaseWeight,
-        plates: plates.length ? [...new Set(plates)].sort((a, b) => b - a) : DEFAULT_PLATES
+        liftingUnit,
+        plateOptions: options,
+        plates: plates.length ? [...new Set(plates)].sort((a, b) => b - a) : defaults
     };
 }
 
 function saveExerciseSettings(exerciseId, settings) {
     const all = readSettings();
+    const previous = all[exerciseId] || {};
+    const liftingUnit = settings.liftingUnit || massUnit(UNIT_KINDS.LIFTING_WEIGHT);
     all[exerciseId] = {
+        ...previous,
         includeBase: Boolean(settings.includeBase),
         baseWeight: Math.max(0, Number(settings.baseWeight) || 0),
-        plates: [...new Set((settings.plates || []).map(Number))]
-            .filter(value => OPTIONAL_PLATES.includes(value))
-            .sort((a, b) => b - a)
+        platesByUnit: {
+            ...(previous.platesByUnit || {}),
+            [liftingUnit]: [...new Set((settings.plates || []).map(Number))].sort((a, b) => b - a)
+        }
     };
     writeSettings(all);
 }
@@ -141,6 +155,14 @@ function displayedBarWeight(value) {
     return displayMass(value, 2, UNIT_KINDS.LIFTING_WEIGHT);
 }
 
+function displayedWeight(value) {
+    return displayMass(value, 2, UNIT_KINDS.LIFTING_WEIGHT);
+}
+
+function formattedDisplayedWeight(value) {
+    return `${formatWeight(displayedWeight(value))} ${massUnit(UNIT_KINDS.LIFTING_WEIGHT)}`;
+}
+
 function calculatePlateSolution(totalWeight, baseWeight, plates) {
     const total = Number(totalWeight);
     const base = Math.max(0, Number(baseWeight) || 0);
@@ -165,7 +187,7 @@ function calculatePlateSolution(totalWeight, baseWeight, plates) {
         };
     }
 
-    const SCALE = 4;
+    const SCALE = 100;
     const targetUnits = Math.max(0, Math.round(desiredPerSide * SCALE));
     const coinUnits = available.map(value => ({ value, units: Math.round(value * SCALE) }));
     const largest = Math.max(...coinUnits.map(item => item.units));
@@ -240,7 +262,7 @@ function plateSummary(solution) {
     const entries = [...solution.counts.entries()].sort((a, b) => b[0] - a[0]);
     if (!entries.length) return "No plates";
     return entries
-        .map(([plate, count]) => count > 1 ? `${formatWeight(plate)} lb × ${count}` : `${formatWeight(plate)} lb`)
+        .map(([plate, count]) => count > 1 ? `${formattedDisplayedWeight(plate)} × ${count}` : formattedDisplayedWeight(plate))
         .join(" · ");
 }
 
@@ -285,7 +307,7 @@ function updateTrigger(card, row, profile) {
     const detail = trigger.querySelector(".plate-calculator-trigger-copy span");
     if (detail) {
         detail.textContent = solution && !solution.exact && !solution.belowBase
-            ? `${summary} · ${formatWeight(closestLoad)} lb`
+            ? `${summary} · ${formattedDisplayedWeight(closestLoad)}`
             : summary;
     }
     trigger.setAttribute("aria-label", `Open plate calculator. Per side: ${summary}`);
@@ -360,8 +382,8 @@ function renderPlateVisual(solution) {
             <div class="plate-calculator-plates">
                 ${extra ? `<span class="plate-calculator-more">+${extra}</span>` : ""}
                 ${shown.map((plate, index) => `
-                    <span class="plate-calculator-plate" style="--plate-scale:${plateVisualScale(plate)};--plate-order:${index}" title="${formatWeight(plate)} lb">
-                        <b>${formatWeight(plate)} lb</b>
+                    <span class="plate-calculator-plate" style="--plate-scale:${plateVisualScale(plate)};--plate-order:${index}" title="${formattedDisplayedWeight(plate)}">
+                        <b>${formattedDisplayedWeight(plate)}</b>
                     </span>
                 `).join("")}
                 <span class="plate-calculator-stop" aria-hidden="true"></span>
@@ -391,7 +413,7 @@ function renderSheet() {
     const closestLoad = closestEnteredLoad(solution, profile, baseWeight);
     const nearestTitle = profile.kind === "plate-machine" ? "Closest plate load" : "Closest available";
     const exactNote = solution && !solution.belowBase && !solution.exact
-        ? `<div class="plate-calculator-nearest"><strong>${nearestTitle}: ${formatWeight(closestLoad)} lb</strong><span>${solution.difference > 0 ? "+" : ""}${formatWeight(solution.difference)} lb from entered load</span></div>`
+        ? `<div class="plate-calculator-nearest"><strong>${nearestTitle}: ${formattedDisplayedWeight(closestLoad)}</strong><span>${solution.difference > 0 ? "+" : ""}${formattedDisplayedWeight(solution.difference)} from entered load</span></div>`
         : "";
     const liftingUnit = massUnit(UNIT_KINDS.LIFTING_WEIGHT);
     const visibleBaseWeight = displayedBarWeight(settings.baseWeight);
@@ -410,13 +432,17 @@ function renderSheet() {
             <div class="plate-calculator-summary">
                 <div><span>Per side</span><strong>${solution ? plateSummary(solution) : "Enter a load"}</strong></div>
                 <div><span>${profile.baseLabel}</span><strong>${baseDisplay}</strong></div>
-                <div><span>Total</span><strong>${Number.isFinite(displayedTotal) ? `${formatWeight(displayedTotal)} lb` : "—"}</strong></div>
+                <div><span>Total</span><strong>${Number.isFinite(displayedTotal) ? formattedDisplayedWeight(displayedTotal) : "—"}</strong></div>
             </div>
             ${exactNote}
         </div>
 
-        <div class="plate-calculator-settings">
-            <div class="plate-calculator-settings-heading"><strong>Equipment settings</strong><small>${profile.settingsLabel}: ${settingsSummary}</small></div>
+        <button type="button" class="plate-calculator-settings-toggle" aria-expanded="false">
+            <span><strong>Equipment settings</strong><small>${profile.settingsLabel}: ${settingsSummary}</small></span>
+            <span aria-hidden="true">›</span>
+        </button>
+
+        <div class="plate-calculator-settings" hidden>
             <label class="plate-calculator-base-toggle-row">
                 <span class="plate-calculator-base-toggle-copy"><strong>${profile.toggleLabel}</strong><small>${profile.toggleHelp}</small></span>
                 <span class="plate-calculator-switch">
@@ -428,17 +454,34 @@ function renderSheet() {
                 <span>${profile.settingsLabel}</span>
                 <span class="plate-calculator-number-wrap"><input class="plate-calculator-base-input" data-unit-input-ignore type="number" inputmode="decimal" min="0" step="0.25" value="${formatWeight(visibleBaseWeight)}" aria-label="${profile.settingsLabel} in ${liftingUnit}"><b>${liftingUnit}</b></span>
             </label>
+            <div class="plate-calculator-quick-add">
+                <span>Add a plate per side</span>
+                <small>Tap a preset to add one matching plate to each side and update the workout weight.</small>
+                <div class="plate-calculator-quick-options">
+                    ${settings.plates.map(plate => `<button type="button" data-plate-add="${plate}">+${formattedDisplayedWeight(plate)}</button>`).join("")}
+                </div>
+            </div>
             <div class="plate-calculator-available">
-                <span>Available plates</span>
+                <span>Available plate sizes</span>
+                <small>Select the plates your gym has. The calculation above updates immediately.</small>
                 <div class="plate-calculator-plate-options">
-                    ${OPTIONAL_PLATES.map(plate => `
-                        <button type="button" data-plate-option="${plate}" aria-pressed="${settings.plates.includes(plate)}">${formatWeight(plate)} lb</button>
+                    ${settings.plateOptions.map(plate => `
+                        <button type="button" data-plate-option="${plate}" aria-pressed="${settings.plates.some(selected => Math.abs(selected - plate) < .001)}">${formattedDisplayedWeight(plate)}</button>
                     `).join("")}
                 </div>
             </div>
             <p>Saved for this exercise on this device.</p>
         </div>
     `;
+
+    body.querySelector(".plate-calculator-settings-toggle")?.addEventListener("click", event => {
+        const button = event.currentTarget;
+        const panel = body.querySelector(".plate-calculator-settings");
+        const opening = panel?.hidden !== false;
+        if (panel) panel.hidden = !opening;
+        button.setAttribute("aria-expanded", String(opening));
+        if (opening) panel?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
 
     body.querySelector(".plate-calculator-base-enabled")?.addEventListener("change", event => {
         const next = getExerciseSettings(exerciseId, profile);
@@ -455,6 +498,20 @@ function renderSheet() {
         saveExerciseSettings(exerciseId, next);
     });
     baseInput?.addEventListener("change", () => {
+        renderSheet();
+        refreshCard(card);
+    });
+
+    body.querySelector(".plate-calculator-quick-options")?.addEventListener("click", event => {
+        const button = event.target.closest("button[data-plate-add]");
+        if (!button || !input) return;
+        const plate = Number(button.dataset.plateAdd);
+        const current = canonicalInputValue(input);
+        const startingLoad = Number.isFinite(current) && current > 0
+            ? current
+            : profile.kind === "barbell" ? baseWeight : 0;
+        input.value = formatWeight(displayedWeight(startingLoad + plate * 2));
+        input.dispatchEvent(new Event("input", { bubbles: true }));
         renderSheet();
         refreshCard(card);
     });
