@@ -75,6 +75,8 @@ test("native iOS provides haptics, background alarms, selectable app icons, and 
     assert.match(timerPlugin, /CAPPluginMethod\(name: "finish"/);
     assert.match(timerPlugin, /endLiveActivities\(key: key\)/);
     assert.match(timerPlugin, /call\.getString\("theme"\)/);
+    assert.match(timerPlugin, /call\.getString\("liveActivityTitle"\) \?\? title/);
+    assert.match(timerPlugin, /call\.getString\("liveActivityDetail"\) \?\? body/);
     assert.match(widget, /ActivityConfiguration/);
     assert.match(widget, /timerInterval/);
     assert.match(widget, /LevelUpThemeLogo/);
