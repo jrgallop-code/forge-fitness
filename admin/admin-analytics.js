@@ -81,8 +81,8 @@ function renderAnalytics(data) {
 }
 
 function renderUserDirectory(people, days) {
-    const rows = people.map(person => `<div class="admin-user-directory-row" data-user-search="${escapeHtml(`${personName(person)} ${person.email || ""}`.toLowerCase())}"><span><strong>${escapeHtml(personName(person))}</strong><small>${escapeHtml(person.email || "")}</small></span><div><b>${number(person.active_days)}<small>active days</small></b><b>${number(person.foods_logged)}<small>foods</small></b><b>${number(person.workouts_logged)}<small>workouts</small></b></div></div>`).join("");
-    return `<section class="admin-analytics-card admin-user-directory"><div class="admin-analytics-card-head"><div><span class="eyebrow">USER LOOKUP</span><h3>What each user has done</h3><p>Activity during the selected ${number(days)}-day period.</p></div></div><label class="admin-user-search"><span>Search by name or email</span><input type="search" placeholder="Start typing a user…" data-admin-user-search></label><div class="admin-user-directory-list">${rows || `<p class="admin-analytics-empty">No users were active in this period.</p>`}</div><p class="admin-user-directory-empty" hidden>No users match that search.</p></section>`;
+    const rows = people.map(person => `<button type="button" class="admin-user-directory-row" data-user-id="${escapeHtml(person.id)}" data-user-search="${escapeHtml(`${personName(person)} ${person.email || ""}`.toLowerCase())}"><span><strong>${escapeHtml(personName(person))}</strong><small>${escapeHtml(person.email || "")}</small></span><span class="admin-user-totals"><b>${number(person.active_days)}<small>active days</small></b><b>${number(person.foods_logged)}<small>foods</small></b><b>${number(person.workouts_logged)}<small>workouts</small></b><em>View dates ›</em></span></button>`).join("");
+    return `<section class="admin-analytics-card admin-user-directory"><div class="admin-analytics-card-head"><div><span class="eyebrow">USER LOOKUP</span><h3>What each user has done</h3><p>Search any account, then open its complete recorded activity history.</p></div></div><label class="admin-user-search"><span>Search by name or email</span><input type="search" placeholder="Start typing a user…" data-admin-user-search></label><div class="admin-user-directory-list">${rows || `<p class="admin-analytics-empty">No users found.</p>`}</div><p class="admin-user-directory-empty" hidden>No users match that search.</p><div class="admin-user-history" hidden></div></section>`;
 }
 
 function bindUserDirectory(content) {
@@ -99,6 +99,57 @@ function bindUserDirectory(content) {
         });
         content.querySelector(".admin-user-directory-empty")?.toggleAttribute("hidden", shown > 0);
     });
+    content.querySelectorAll("[data-user-id]").forEach(row => row.addEventListener("click", () => loadUserHistory(content, row.dataset.userId)));
+    content.addEventListener("click", event => {
+        if (!event.target.closest("[data-close-user-history]")) return;
+        const target = content.querySelector(".admin-user-history");
+        if (target) { target.hidden = true; target.innerHTML = ""; }
+    });
+}
+
+async function loadUserHistory(content, userId) {
+    const target = content.querySelector(".admin-user-history");
+    if (!target || !userId) return;
+    target.hidden = false;
+    target.innerHTML = `<p class="admin-analytics-empty">Loading complete activity history…</p>`;
+    try {
+        const days = Number(document.getElementById("admin-analytics-range")?.value || 30);
+        const response = await fetch(`${API_URL}/v1/admin/analytics?days=${days}&user=${encodeURIComponent(userId)}`, { headers: { Authorization: `Bearer ${sessionToken()}` } });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "User history could not be loaded.");
+        target.innerHTML = renderUserHistory(payload.selectedUserHistory);
+        target.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch (error) {
+        target.innerHTML = `<p class="admin-analytics-empty">${escapeHtml(error.message)}</p>`;
+    }
+}
+
+function renderUserHistory(history) {
+    if (!history?.user) return `<p class="admin-analytics-empty">This user could not be found.</p>`;
+    const days = new Map();
+    (history.events || []).forEach(event => {
+        const date = formatHistoryDate(event.occurred_at);
+        if (!date) return;
+        if (!days.has(date)) days.set(date, { food: 0, workout: 0, weight: 0, weights: [] });
+        const day = days.get(date);
+        if (event.activity_type === "weight") { day.weight += 1; if (Number(event.value)) day.weights.push(Number(event.value)); }
+        else if (event.activity_type === "workout") day.workout += 1;
+        else if (event.activity_type === "food") day.food += 1;
+    });
+    const rows = [...days.entries()].map(([date, activity]) => {
+        const items = [];
+        if (activity.food) items.push(`<span class="is-food">${number(activity.food)} food entr${activity.food === 1 ? "y" : "ies"}</span>`);
+        if (activity.workout) items.push(`<span class="is-workout">${number(activity.workout)} workout${activity.workout === 1 ? "" : "s"}</span>`);
+        if (activity.weight) items.push(`<span class="is-weight">${number(activity.weight)} weigh-in${activity.weight === 1 ? "" : "s"}${activity.weights.length ? ` · ${activity.weights.map(value => number(value)).join(", ")}` : ""}</span>`);
+        return `<div class="admin-user-history-day"><strong>${escapeHtml(date)}</strong><div>${items.join("")}</div></div>`;
+    }).join("");
+    return `<div class="admin-user-history-head"><div><span class="eyebrow">COMPLETE HISTORY</span><h4>${escapeHtml(personName(history.user))}</h4><small>${escapeHtml(history.user.email || "")}</small></div><button type="button" data-close-user-history>Close</button></div><div class="admin-user-history-days">${rows || `<p class="admin-analytics-empty">No food, workout, or weigh-in dates have been recorded.</p>`}</div>`;
+}
+
+function formatHistoryDate(value) {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "";
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Halifax", year: "numeric", month: "short", day: "numeric", weekday: "short" }).format(date);
 }
 
 function renderWorkoutSourceBreakdown(rows) {
