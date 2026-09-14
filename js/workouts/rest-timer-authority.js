@@ -214,12 +214,22 @@ function startTimerForSource({ active, seconds, sourceType, exerciseIndex, setIn
     return true;
 }
 
-export function cancelActiveRestTimer({ active = readActiveWorkout(), exerciseIndex = null } = {}) {
+export function cancelActiveRestTimer({
+    active = readActiveWorkout(),
+    exerciseIndex = null,
+    sourceType = null,
+    setIndex = null,
+    warmupIndex = null
+} = {}) {
     if (!active?.restTimer) return false;
-    const timerExerciseIndex = Number(active.restTimer.exerciseIndex);
+    const timer = active.restTimer;
+    const timerExerciseIndex = Number(timer.exerciseIndex);
     if (exerciseIndex !== null && Number(exerciseIndex) !== timerExerciseIndex) return false;
+    if (sourceType !== null && timer.sourceType !== sourceType) return false;
+    if (setIndex !== null && Number(setIndex) !== Number(timer.setIndex)) return false;
+    if (warmupIndex !== null && Number(warmupIndex) !== Number(timer.warmupIndex)) return false;
 
-    const timerId = active.restTimer.timerId;
+    const timerId = timer.timerId;
     if (timerId) void cancelNativeAlarm(`rest:${timerId}`);
     active.restTimer = null;
     saveActiveWorkout(active);
