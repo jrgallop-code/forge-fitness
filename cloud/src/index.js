@@ -2311,11 +2311,8 @@ async function getAdminAnalytics(user, url, request, env) {
                 (SELECT COUNT(*) FROM product_events pe
                     WHERE pe.user_id = u.id AND pe.event_name = 'workout_completed' AND pe.occurred_at >= ?) AS workouts_logged
             FROM users u
-            WHERE u.last_active_at >= ?
-                OR EXISTS (SELECT 1 FROM usage_events ue WHERE ue.user_id = u.id AND ue.occurred_at >= ?)
-                OR EXISTS (SELECT 1 FROM product_events pe WHERE pe.user_id = u.id AND pe.occurred_at >= ?)
             ORDER BY latest_activity_at DESC, u.created_at DESC
-            LIMIT 500`).bind(since, since, since, since, since, since).all(),
+            LIMIT 500`).bind(since, since, since).all(),
         env.DB.prepare(`SELECT COUNT(*) AS responses, ROUND(AVG(rating), 2) AS average_rating,
             SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) AS rating_1,
             SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) AS rating_2,
