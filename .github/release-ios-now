@@ -118,3 +118,5 @@ Release 53: expose editable bar and machine base weight directly in the plate ca
 Release 54: restore plate presets, manual base weight, and independent base-inclusion controls without changing plate visuals.
 
 Release 55: force delivery of the restored equipment controls and persist base-weight edits directly from iOS input.
+
+Release 56: refine the plate calculator with persistent equipment settings, unit-aware bar templates, and theme-safe bar preset styling.
