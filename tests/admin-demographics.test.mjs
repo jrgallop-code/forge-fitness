@@ -10,12 +10,22 @@ const [admin, insights, productState, worker, historyWorker, migration, page] = 
   read("cloud/migrations/0022_user_demographics.sql"), read("admin/index.html")
 ]);
 
-test("owner dashboard permanently exposes searchable per-user activity", () => {
-  assert.match(admin, /What each user has done/);
+test("owner dashboard exposes a collapsed search-first user activity lookup", () => {
+  assert.match(admin, /<details class="admin-analytics-card admin-user-directory">/);
+  assert.match(admin, /Find a user/);
   assert.match(admin, /data-admin-user-search/);
+  assert.match(admin, /admin-user-directory-list" hidden/);
   assert.match(admin, /person\.active_days/);
   assert.match(admin, /person\.foods_logged/);
   assert.match(admin, /person\.workouts_logged/);
+});
+
+test("owner dashboard groups named activity by Halifax day and time", () => {
+  assert.match(admin, /renderDailyActivity/);
+  assert.match(admin, /Who logged what and when/);
+  assert.match(admin, /America\/Halifax/);
+  assert.match(historyWorker, /u\.display_name, u\.email/);
+  assert.match(historyWorker, /activity\.metadata_json/);
 });
 
 test("selecting a user loads every recorded activity date", () => {
@@ -36,7 +46,7 @@ test("demographics are collected and displayed only as aggregates", () => {
   assert.match(worker, /demographicRows/);
   assert.match(insights, /Aggregate onboarding profiles only/);
   assert.match(insights, /owner-demographic-grid/);
-  assert.match(page, /owner-demographics\.css\?v=user-history-1/);
+  assert.match(page, /owner-demographics\.css\?v=day-by-day-1/);
 });
 
 test("demographic migration adds fields and backfills existing onboarding aggregates", () => {
