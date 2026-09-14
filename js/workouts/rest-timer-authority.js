@@ -1,4 +1,5 @@
 import { cancelNativeAlarm, finishNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-3";
+import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const TIMER_SETTINGS_KEY = "level_up_exercise_rest_settings";
@@ -166,6 +167,45 @@ function timerSourceKey(active, sourceType, exerciseIndex, setIndex, warmupIndex
     ].join("|");
 }
 
+function nativeActivityContext(active) {
+    const dayIndex = Number(active?.trainingDayIndex) || 0;
+    const day = active?.planSnapshot?.days?.[dayIndex];
+    const startExercise = Math.max(0, Number(active?.currentExerciseIndex) || 0);
+    const startSet = Math.max(-1, Number(active?.currentSetIndex));
+    let next = null;
+
+    for (let exerciseIndex = startExercise; exerciseIndex < (active?.exercises?.length || 0) && !next; exerciseIndex += 1) {
+        const sets = active.exercises[exerciseIndex]?.sets || [];
+        const firstSet = exerciseIndex === startExercise ? Math.max(0, startSet + 1) : 0;
+        for (let setIndex = firstSet; setIndex < sets.length; setIndex += 1) {
+            if (!sets[setIndex]?.completed) {
+                next = { exerciseIndex, setIndex };
+                break;
+            }
+        }
+    }
+
+    const workoutName = day?.name || active?.planSnapshot?.name || active?.name || "Workout";
+    if (!next) return { workoutName };
+
+    const planned = day?.exercises?.[next.exerciseIndex];
+    const state = active?.exercises?.[next.exerciseIndex];
+    const exerciseId = planned?.id || state?.exerciseId || state?.id;
+    const exerciseName = getExerciseById(exerciseId)?.name || planned?.name || state?.name || "Next exercise";
+    const targetReps = String(planned?.reps || "").trim();
+    const row = document.querySelector(
+        `.session-exercise-card[data-exercise-index="${next.exerciseIndex}"] .session-set-row[data-set-index="${next.setIndex}"]`
+    );
+    const previous = row?.querySelector(".previous-set-value")?.textContent?.trim() || "";
+    return {
+        workoutName,
+        exerciseName,
+        setNumber: next.setIndex + 1,
+        targetReps,
+        previousPerformance: previous && previous !== "Hasn't started" ? previous : ""
+    };
+}
+
 function startTimerForSource({ active, seconds, sourceType, exerciseIndex, setIndex = null, warmupIndex = null }) {
     if (!active || !Number.isFinite(seconds) || seconds <= 0) return false;
 
@@ -209,6 +249,7 @@ function startTimerForSource({ active, seconds, sourceType, exerciseIndex, setIn
         body: "Your next set is ready.",
         liveActivityTitle: "Rest timer",
         liveActivityDetail: "Next working set",
+        context: nativeActivityContext(active),
         at: active.restTimer.endAt,
         kind: "rest",
         extra: { type: "levelup:rest-complete", timerId: active.restTimer.timerId }
