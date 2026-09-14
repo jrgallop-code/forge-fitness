@@ -1,5 +1,4 @@
-import { cancelNativeAlarm, finishNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=live-activity-persistent-1";
-import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
+import { cancelNativeAlarm, finishNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-3";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const TIMER_SETTINGS_KEY = "level_up_exercise_rest_settings";
@@ -133,8 +132,8 @@ function finalizeTimer(timerId) {
     window.dispatchEvent(new CustomEvent("levelup:rest-timer-finished", {
         detail: { timerId: timer.timerId, sourceType: timer.sourceType || "working" }
     }));
-    // Completion must not use cancellation: cancellation removes the pending
-    // native alert and immediately tears down the Lock Screen timer.
+    // Completion is different from cancellation. End the lock-screen Live Activity
+    // but leave iOS's scheduled completion notification in place as the one alert.
     void finishNativeAlarm(`rest:${timer.timerId}`);
     void hapticNotification("SUCCESS");
     showSingleBackgroundNotification(timer);
@@ -165,46 +164,6 @@ function timerSourceKey(active, sourceType, exerciseIndex, setIndex, warmupIndex
         Number(exerciseIndex),
         sourceType === "warmup" ? Number(warmupIndex) : Number(setIndex)
     ].join("|");
-}
-
-function nativeActivityContext(active) {
-    const dayIndex = Number(active?.trainingDayIndex) || 0;
-    const day = active?.planSnapshot?.days?.[dayIndex];
-    const startExercise = Math.max(0, Number(active?.currentExerciseIndex) || 0);
-    const startSet = Math.max(-1, Number(active?.currentSetIndex));
-    let next = null;
-
-    for (let exerciseIndex = startExercise; exerciseIndex < (active?.exercises?.length || 0) && !next; exerciseIndex += 1) {
-        const sets = active.exercises[exerciseIndex]?.sets || [];
-        const firstSet = exerciseIndex === startExercise ? Math.max(0, startSet + 1) : 0;
-        for (let setIndex = firstSet; setIndex < sets.length; setIndex += 1) {
-            if (!sets[setIndex]?.completed) {
-                next = { exerciseIndex, setIndex };
-                break;
-            }
-        }
-    }
-
-    if (!next) {
-        return { workoutName: day?.name || active?.planSnapshot?.name || active?.name || "Workout" };
-    }
-
-    const planned = day?.exercises?.[next.exerciseIndex];
-    const state = active?.exercises?.[next.exerciseIndex];
-    const exerciseId = planned?.id || state?.exerciseId || state?.id;
-    const exerciseName = getExerciseById(exerciseId)?.name || planned?.name || state?.name || "Next exercise";
-    const targetReps = String(planned?.reps || "").trim();
-    const row = document.querySelector(
-        `.session-exercise-card[data-exercise-index="${next.exerciseIndex}"] .session-set-row[data-set-index="${next.setIndex}"]`
-    );
-    const previous = row?.querySelector(".previous-set-value")?.textContent?.trim() || "";
-    return {
-        workoutName: day?.name || active?.planSnapshot?.name || active?.name || "Workout",
-        exerciseName,
-        setNumber: next.setIndex + 1,
-        targetReps,
-        previousPerformance: previous && previous !== "Hasn't started" ? previous : ""
-    };
 }
 
 function startTimerForSource({ active, seconds, sourceType, exerciseIndex, setIndex = null, warmupIndex = null }) {
@@ -244,26 +203,43 @@ function startTimerForSource({ active, seconds, sourceType, exerciseIndex, setIn
     window.dispatchEvent(new CustomEvent("levelup:rest-timer-started", {
         detail: { timerId: active.restTimer.timerId, sourceType, exerciseIndex, setIndex, warmupIndex, seconds }
     }));
-    const context = nativeActivityContext(active);
     void scheduleNativeAlarm({
         key: `rest:${active.restTimer.timerId}`,
         title: "Rest complete",
-        body: context.setNumber ? `${context.exerciseName} · Set ${context.setNumber} is ready.` : "Your workout is ready.",
+        body: "Your next set is ready.",
         at: active.restTimer.endAt,
         kind: "rest",
-        extra: { type: "levelup:rest-complete", timerId: active.restTimer.timerId },
-        context
+        extra: { type: "levelup:rest-complete", timerId: active.restTimer.timerId }
     });
     return true;
 }
 
-function clearTimerForDisabledSource(active) {
-    if (!active?.restTimer) return;
-    void cancelNativeAlarm(`rest:${active.restTimer.timerId}`);
+export function cancelActiveRestTimer({
+    active = readActiveWorkout(),
+    exerciseIndex = null,
+    sourceType = null,
+    setIndex = null,
+    warmupIndex = null
+} = {}) {
+    if (!active?.restTimer) return false;
+    const timer = active.restTimer;
+    const timerExerciseIndex = Number(timer.exerciseIndex);
+    if (exerciseIndex !== null && Number(exerciseIndex) !== timerExerciseIndex) return false;
+    if (sourceType !== null && timer.sourceType !== sourceType) return false;
+    if (setIndex !== null && Number(setIndex) !== Number(timer.setIndex)) return false;
+    if (warmupIndex !== null && Number(warmupIndex) !== Number(timer.warmupIndex)) return false;
+
+    const timerId = timer.timerId;
+    if (timerId) void cancelNativeAlarm(`rest:${timerId}`);
     active.restTimer = null;
     saveActiveWorkout(active);
     clearScheduledExpiry();
     window.dispatchEvent(new CustomEvent("levelup:rest-timer-dismissed"));
+    return true;
+}
+
+function clearTimerForDisabledSource(active) {
+    cancelActiveRestTimer({ active });
 }
 
 function exerciseMetaFromButton(button, rowSelector, indexAttribute) {
@@ -349,6 +325,17 @@ document.addEventListener("click", event => {
     if (!button) return;
     const meta = exerciseMetaFromButton(button, ".session-set-row", "setIndex");
     window.setTimeout(() => reconcileWorkingSet(meta), RECONCILE_DELAY_MS);
+}, true);
+
+// Switching an exercise timer off must cancel an already-running countdown,
+// not merely prevent the next set from starting another one. Listen at the
+// document level because multiple logger layouts render this same control.
+document.addEventListener("change", event => {
+    const toggle = event.target?.closest?.(".exercise-timer-enabled");
+    if (!toggle || toggle.checked) return;
+    const card = toggle.closest(".session-exercise-card[data-exercise-index]");
+    if (!card) return;
+    cancelActiveRestTimer({ exerciseIndex: Number(card.dataset.exerciseIndex) });
 }, true);
 
 window.addEventListener("focus", keepActiveTimerAuthoritative);
