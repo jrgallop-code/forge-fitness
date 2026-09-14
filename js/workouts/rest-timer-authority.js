@@ -207,6 +207,8 @@ function startTimerForSource({ active, seconds, sourceType, exerciseIndex, setIn
         key: `rest:${active.restTimer.timerId}`,
         title: "Rest complete",
         body: "Your next set is ready.",
+        liveActivityTitle: "Rest timer",
+        liveActivityDetail: "Next working set",
         at: active.restTimer.endAt,
         kind: "rest",
         extra: { type: "levelup:rest-complete", timerId: active.restTimer.timerId }
@@ -333,6 +335,20 @@ document.addEventListener("click", event => {
     const button = event.target?.closest?.(".complete-set-btn");
     if (!button) return;
     const meta = exerciseMetaFromButton(button, ".session-set-row", "setIndex");
+
+    // Capture the timer identity before the logger's own click handlers can clear
+    // or replace the persisted web state. Without this immediate cancellation,
+    // the in-app countdown can disappear while its native Live Activity survives.
+    const active = readActiveWorkout();
+    const completed = active?.exercises?.[meta?.exerciseIndex]?.sets?.[meta?.index]?.completed === true;
+    if (completed) {
+        cancelActiveRestTimer({
+            active,
+            exerciseIndex: meta.exerciseIndex,
+            sourceType: "working",
+            setIndex: meta.index
+        });
+    }
     window.setTimeout(() => reconcileWorkingSet(meta), RECONCILE_DELAY_MS);
 }, true);
 
