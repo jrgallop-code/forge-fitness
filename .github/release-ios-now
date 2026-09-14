@@ -120,3 +120,5 @@ Release 54: restore plate presets, manual base weight, and independent base-incl
 Release 55: force delivery of the restored equipment controls and persist base-weight edits directly from iOS input.
 
 Release 56: refine the plate calculator with persistent equipment settings, unit-aware bar templates, and theme-safe bar preset styling.
+
+Release 57: improve barcode nutrition accuracy, compare conflicting records, flag invalid zero-macro products, and remember confirmed choices.
