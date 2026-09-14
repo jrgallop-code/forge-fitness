@@ -17,10 +17,21 @@ test("working sets use per-exercise timer authority and Off no longer creates a 
     assert.match(authority, /\.complete-set-btn/);
 });
 
+test("turning a running exercise timer off cancels every timer surface", () => {
+    assert.match(authority, /export function cancelActiveRestTimer/);
+    assert.match(authority, /cancelNativeAlarm\(`rest:\$\{timerId\}`\)/);
+    assert.match(authority, /clearScheduledExpiry\(\)/);
+    assert.match(authority, /levelup:rest-timer-dismissed/);
+    assert.match(authority, /\.exercise-timer-enabled/);
+    assert.match(authority, /if \(!toggle \|\| toggle\.checked\) return/);
+    assert.match(authority, /exerciseIndex: Number\(card\.dataset\.exerciseIndex\)/);
+    assert.match(display, /levelup:rest-timer-dismissed/);
+});
+
 test("warm-up completion uses the same per-exercise rest timer authority", () => {
     assert.match(warmups, /startRestForWarmupButton/);
     assert.match(warmups, /warmup-timer-stability\.js\?v=warmup-timer-stability-1/);
-    assert.match(warmups, /rest-timer-authority\.js\?v=native-single-alert-1/);
+    assert.match(warmups, /rest-timer-authority\.js\?v=cancel-running-timer-1/);
     assert.doesNotMatch(warmups, /#start-rest-timer/);
     assert.match(authority, /sourceType:\s*"warmup"/);
     assert.match(authority, /warmupSets/);
@@ -29,11 +40,12 @@ test("warm-up completion uses the same per-exercise rest timer authority", () =>
 });
 
 test("warm-up inline countdown cannot be flashed off by the legacy working-set timer loop", () => {
-    // The old compact logger clears every inline timer but only knows how to
-    // restore data-set-index working rows. The warm-up guard repairs that DOM
-    // mutation in the MutationObserver microtask, before the browser paints it.
-    assert.match(compact, /querySelectorAll\('\.inline-rest-timer'\)/);
+    // The compact logger only owns data-set-index working rows and exits before
+    // attempting to render a warm-up timer beneath the current working set.
+    assert.match(compact, /querySelectorAll\('\.inline-rest-timer\[data-set-index\]'\)/);
     assert.match(compact, /data-set-index/);
+    assert.match(compact, /restTimer\?\.sourceType === 'warmup'/);
+    assert.match(compact, /previousTimerHadTime = false;\s*return;/);
     assert.match(stability, /data-source-type="warmup"/);
     assert.match(stability, /MutationObserver/);
     assert.match(stability, /queueMicrotask\(stabilizeWarmupTimer\)/);
