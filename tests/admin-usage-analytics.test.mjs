@@ -75,6 +75,27 @@ test("owner analytics reports current, returning, food, and workout usage", asyn
     assert.match(styles, /admin-analytics-stat-person/);
 });
 
+test("owner analytics can query new users and their first-day logging by date", async () => {
+    const [worker, admin, dashboard, app] = await Promise.all([
+        read("cloud/src/index.js"),
+        read("admin/admin-analytics.js"),
+        read("admin/daily-user-query.js"),
+        read("admin/app.js")
+    ]);
+    assert.match(worker, /url\.searchParams\.get\("date"\)/);
+    assert.match(worker, /selectedDayUsers/);
+    assert.match(worker, /u\.created_at >= \? AND u\.created_at < \?/);
+    assert.match(worker, /AS food_logs/);
+    assert.match(worker, /AS workout_logs/);
+    assert.match(worker, /selectedDay:\s*\{/);
+    assert.match(dashboard, /type="date"/);
+    assert.match(dashboard, /Active users/);
+    assert.match(dashboard, /New accounts/);
+    assert.match(dashboard, /No tracked logs that day/);
+    assert.match(app, /initializeDailyUserQuery/);
+    assert.doesNotMatch(admin, /Restaurant|restaurantCatalogue|data-restaurant-review/);
+});
+
 test("owner analytics counts users with at least one synced weigh-in", async () => {
     const [wrapper, admin] = await Promise.all([
         read("cloud/src/safe-backup-worker-v2.js"),
