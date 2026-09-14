@@ -110,3 +110,5 @@ Release 49: restore persistent Lock Screen Live Activities for rest and cardio t
 Release 50: add opt-in personal-record notifications that combine each workout's records into one alert and open the completed workout recap when tapped.
 
 Release 51: add Lock Screen workout-day, upcoming-workout, and missed-workout reminders with configurable timing, quiet hours, and direct workout opening.
+
+Release 52: remove personal-record and scheduled-workout reminders while preserving rest and cardio timer alerts and Lock Screen Live Activities.
