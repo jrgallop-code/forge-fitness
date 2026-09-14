@@ -380,6 +380,22 @@
     padding:14px;
 }
 
+.plate-calculator-settings-heading{
+    display:grid;
+    gap:3px;
+    margin-bottom:13px;
+}
+
+.plate-calculator-settings-heading strong{
+    color:#e7e7ea;
+    font-size:12px;
+}
+
+.plate-calculator-settings-heading small{
+    color:#8f8f98;
+    font-size:9px;
+}
+
 .plate-calculator-base-toggle-row{
     display:flex;
     align-items:center;
