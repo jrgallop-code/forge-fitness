@@ -1,8 +1,8 @@
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
-import { canonicalInputValue } from "../core/unit-system.js?v=granular-units-1";
+import { canonicalInputValue, canonicalMass, displayMass, massUnit, UNIT_KINDS } from "../core/unit-system.js?v=granular-units-1";
 
 const SETTINGS_KEY = "level_up_plate_calculator_settings";
-const STYLESHEET_HREF = "css/plate-calculator.css?v=plate-calculator-2";
+const STYLESHEET_HREF = "css/plate-calculator.css?v=manual-bar-weight-1";
 const DEFAULT_PLATES = [45, 25, 10, 5, 2.5];
 const OPTIONAL_PLATES = [45, 35, 25, 10, 5, 2.5, 1.25];
 const PLATE_MACHINE_IDS = new Set([
@@ -135,6 +135,10 @@ function formatWeight(value) {
     if (!Number.isFinite(number)) return "—";
     const rounded = Math.round(number * 100) / 100;
     return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+function displayedBarWeight(value) {
+    return displayMass(value, 2, UNIT_KINDS.LIFTING_WEIGHT);
 }
 
 function calculatePlateSolution(totalWeight, baseWeight, plates) {
@@ -389,8 +393,11 @@ function renderSheet() {
     const exactNote = solution && !solution.belowBase && !solution.exact
         ? `<div class="plate-calculator-nearest"><strong>${nearestTitle}: ${formatWeight(closestLoad)} lb</strong><span>${solution.difference > 0 ? "+" : ""}${formatWeight(solution.difference)} lb from entered load</span></div>`
         : "";
-    const baseDisplay = settings.includeBase ? `${formatWeight(settings.baseWeight)} lb` : "None";
-    const settingsSummary = settings.includeBase ? `${formatWeight(settings.baseWeight)} lb` : "Off";
+    const liftingUnit = massUnit(UNIT_KINDS.LIFTING_WEIGHT);
+    const visibleBaseWeight = displayedBarWeight(settings.baseWeight);
+    const formattedBaseWeight = `${formatWeight(visibleBaseWeight)} ${liftingUnit}`;
+    const baseDisplay = settings.includeBase ? formattedBaseWeight : "Not included";
+    const settingsSummary = settings.includeBase ? formattedBaseWeight : `${formattedBaseWeight} · not included`;
     const displayedTotal = Number.isFinite(enteredLoad) && enteredLoad > 0
         ? profile.kind === "plate-machine"
             ? enteredLoad + baseWeight
@@ -421,9 +428,9 @@ function renderSheet() {
                     <i aria-hidden="true"></i>
                 </span>
             </label>
-            <label class="plate-calculator-base-row" ${settings.includeBase ? "" : "hidden"}>
+            <label class="plate-calculator-base-row" data-base-included="${settings.includeBase}">
                 <span>${profile.settingsLabel}</span>
-                <span class="plate-calculator-number-wrap"><input class="plate-calculator-base-input" type="number" inputmode="decimal" min="0" step="0.25" value="${formatWeight(settings.baseWeight)}"><b>lb</b></span>
+                <span class="plate-calculator-number-wrap"><input class="plate-calculator-base-input" data-unit-input-ignore type="number" inputmode="decimal" min="0" step="0.25" value="${formatWeight(visibleBaseWeight)}" aria-label="${profile.settingsLabel} in ${liftingUnit}"><b>${liftingUnit}</b></span>
             </label>
             <div class="plate-calculator-available">
                 <span>Available plates</span>
@@ -455,7 +462,7 @@ function renderSheet() {
 
     body.querySelector(".plate-calculator-base-input")?.addEventListener("change", event => {
         const next = getExerciseSettings(exerciseId, profile);
-        next.baseWeight = Math.max(0, Number(event.target.value) || 0);
+        next.baseWeight = Math.max(0, canonicalMass(event.target.value, UNIT_KINDS.LIFTING_WEIGHT) || 0);
         saveExerciseSettings(exerciseId, next);
         renderSheet();
         refreshCard(card);
