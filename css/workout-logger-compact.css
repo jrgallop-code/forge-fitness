@@ -328,3 +328,19 @@
     margin-top: 5px;
     padding: 8px 9px;
 }
+
+/* Keep completion feedback compact and intentional above the app navigation. */
+.workout-session-logger #session-message:not(:empty) {
+    width: fit-content;
+    max-width: calc(100% - 24px);
+    margin: 14px auto 6px;
+    padding: 7px 11px;
+    color: #22c55e;
+    background: rgba(34, 197, 94, .08);
+    border: 1px solid rgba(34, 197, 94, .24);
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.3;
+    text-align: center;
+}
