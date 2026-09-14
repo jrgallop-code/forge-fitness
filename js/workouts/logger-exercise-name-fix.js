@@ -1,4 +1,4 @@
-import "./plate-calculator.js?v=manual-bar-weight-2";
+import "./plate-calculator.js?v=manual-bar-weight-3";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 
