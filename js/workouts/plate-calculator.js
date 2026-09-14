@@ -2,10 +2,24 @@ import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
 import { canonicalInputValue, canonicalMass, displayMass, massUnit, UNIT_KINDS } from "../core/unit-system.js?v=granular-units-1";
 
 const SETTINGS_KEY = "level_up_plate_calculator_settings";
-const STYLESHEET_HREF = "css/plate-calculator.css?v=refined-equipment-controls-2";
+const STYLESHEET_HREF = "css/plate-calculator.css?v=refined-equipment-controls-3";
 const PLATE_PRESETS = {
     lb: { defaults: [45, 25, 10, 5, 2.5], options: [45, 35, 25, 10, 5, 2.5, 1.25] },
     kg: { defaults: [20, 15, 10, 5, 2.5], options: [25, 20, 15, 10, 5, 2.5, 1.25] }
+};
+const BAR_WEIGHT_PRESETS = {
+    lb: [
+        { label: "Men's Olympic", value: 45 },
+        { label: "Women's Olympic", value: 35 },
+        { label: "EZ curl", value: 25 },
+        { label: "Training bar", value: 15 }
+    ],
+    kg: [
+        { label: "Men's Olympic", value: 20 },
+        { label: "Women's Olympic", value: 15 },
+        { label: "EZ curl", value: 10 },
+        { label: "Training bar", value: 7.5 }
+    ]
 };
 const PLATE_MACHINE_IDS = new Set([
     "leg-press",
@@ -455,6 +469,18 @@ function renderSheet() {
                 <span>${profile.settingsLabel}</span>
                 <span class="plate-calculator-number-wrap"><input class="plate-calculator-base-input" data-unit-input-ignore type="number" inputmode="decimal" min="0" step="0.25" value="${formatWeight(visibleBaseWeight)}" aria-label="${profile.settingsLabel} in ${liftingUnit}"><b>${liftingUnit}</b></span>
             </label>
+            ${profile.kind === "barbell" && settings.includeBase ? `
+                <div class="plate-calculator-bar-presets">
+                    <span>Common bar weights</span>
+                    <small>Choose a template or enter the exact bar weight above.</small>
+                    <div class="plate-calculator-bar-options">
+                        ${BAR_WEIGHT_PRESETS[liftingUnit].map(preset => {
+                            const canonicalWeight = canonicalMass(preset.value, UNIT_KINDS.LIFTING_WEIGHT);
+                            return `<button type="button" data-bar-weight-preset="${preset.value}" aria-pressed="${Math.abs(settings.baseWeight - canonicalWeight) < .001}"><strong>${preset.label}</strong><small>${formatWeight(preset.value)} ${liftingUnit}</small></button>`;
+                        }).join("")}
+                    </div>
+                </div>
+            ` : ""}
             <div class="plate-calculator-available">
                 <span>Available plate sizes</span>
                 <small>Select the plates your gym has. The calculation above updates immediately.</small>
@@ -493,6 +519,16 @@ function renderSheet() {
         saveExerciseSettings(exerciseId, next);
     });
     baseInput?.addEventListener("change", () => {
+        renderSheet();
+        refreshCard(card);
+    });
+
+    body.querySelector(".plate-calculator-bar-options")?.addEventListener("click", event => {
+        const button = event.target.closest("button[data-bar-weight-preset]");
+        if (!button) return;
+        const next = getExerciseSettings(exerciseId, profile);
+        next.baseWeight = Math.max(0, canonicalMass(button.dataset.barWeightPreset, UNIT_KINDS.LIFTING_WEIGHT) || 0);
+        saveExerciseSettings(exerciseId, next);
         renderSheet();
         refreshCard(card);
     });
