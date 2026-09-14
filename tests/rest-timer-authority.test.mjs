@@ -22,6 +22,13 @@ test("unchecking a working set cancels only that set's active rest", () => {
     assert.match(authority, /sourceType: "working"/);
     assert.match(authority, /setIndex: meta\.index/);
     assert.match(authority, /Number\(setIndex\) !== Number\(timer\.setIndex\)/);
+    assert.match(authority, /const completed = active\?\.exercises\?\.\[meta\?\.exerciseIndex\]/);
+    assert.match(authority, /if \(completed\) \{[\s\S]*?cancelActiveRestTimer\(\{/);
+});
+
+test("running rest Live Activity does not show completion copy", () => {
+    assert.match(authority, /liveActivityTitle: "Rest timer"/);
+    assert.match(authority, /liveActivityDetail: "Next working set"/);
 });
 
 test("turning a running exercise timer off cancels every timer surface", () => {
