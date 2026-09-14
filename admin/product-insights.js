@@ -100,9 +100,35 @@ function renderProductInsights(insights) {
             ${renderProgramUsage(programRows, migrationPending)}
             ${renderAppearanceUsage(appearanceRows, coverage, migrationPending)}
             ${renderCurrentProgramChoices(recentPrograms, migrationPending)}
+            ${renderDemographics(insights?.demographics || {}, migrationPending)}
         </div>`;
 
     anchor.insertAdjacentElement("afterend", section);
+}
+
+function renderDemographics(demographics, migrationPending) {
+    const groups = [
+        ["Age", demographics.ageBands, value => value],
+        ["Sex", demographics.sexes, value => titleCase(value)],
+        ["Primary goal", demographics.goals, value => titleCase(value)],
+        ["Experience", demographics.experience, value => titleCase(value)],
+        ["Training days", demographics.trainingDays, value => `${value} days/week`],
+        ["Training setup", demographics.trainingSetups, value => titleCase(value)],
+        ["Nutrition", demographics.nutritionUsage, value => String(value) === "1" ? "Enabled" : "Disabled"]
+    ];
+    const content = groups.map(([label, rows, format]) => demographicGroup(label, rows, format)).join("");
+    return `<article class="owner-insight-card owner-insight-card-wide owner-demographics"><div class="owner-insight-card-head"><div><span class="eyebrow">DEMOGRAPHICS</span><h4>Who uses Level Up</h4></div></div><p class="owner-insight-caption">Aggregate onboarding profiles only. Individual demographic answers are not shown.</p><div class="owner-demographic-grid">${content || emptyInsight(migrationPending ? "Demographic coverage will fill as signed-in users reopen the app." : "No demographic profiles reported yet.")}</div></article>`;
+}
+
+function demographicGroup(label, rows, format) {
+    const values = Array.isArray(rows) ? rows : [];
+    const total = values.reduce((sum, row) => sum + Number(row.users || 0), 0);
+    if (!values.length) return "";
+    return `<section class="owner-demographic-group"><h5>${escapeHtml(label)}</h5>${values.map(row => {
+        const count = Number(row.users || 0);
+        const percent = total ? Math.round(count / total * 100) : 0;
+        return `<div><span>${escapeHtml(format(row.value))}</span><i><b style="width:${percent}%"></b></i><strong>${number(count)} <small>${percent}%</small></strong></div>`;
+    }).join("")}</section>`;
 }
 
 function renderProgramUsage(rows, migrationPending) {
