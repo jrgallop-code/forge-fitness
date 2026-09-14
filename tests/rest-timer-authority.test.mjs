@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const authority = await readFile(new URL("../js/workouts/rest-timer-authority.js", import.meta.url), "utf8");
-const alarm = await readFile(new URL("../js/workouts/rest-alarm-phase1.js", import.meta.url), "utf8");
 const warmups = await readFile(new URL("../js/workouts/warmup-session-fix.js", import.meta.url), "utf8");
 const stability = await readFile(new URL("../js/workouts/warmup-timer-stability.js", import.meta.url), "utf8");
 const display = await readFile(new URL("../js/workouts/rest-timer-display-fix.js", import.meta.url), "utf8");
@@ -18,15 +17,21 @@ test("working sets use per-exercise timer authority and Off no longer creates a 
     assert.match(authority, /\.complete-set-btn/);
 });
 
-test("the active rest timer keeps the full next exercise name readable", () => {
-    assert.match(alarm, /\.rest-alarm-next \{[\s\S]*white-space: normal/);
-    assert.match(alarm, /overflow-wrap: anywhere/);
+test("turning a running exercise timer off cancels every timer surface", () => {
+    assert.match(authority, /export function cancelActiveRestTimer/);
+    assert.match(authority, /cancelNativeAlarm\(`rest:\$\{timerId\}`\)/);
+    assert.match(authority, /clearScheduledExpiry\(\)/);
+    assert.match(authority, /levelup:rest-timer-dismissed/);
+    assert.match(authority, /\.exercise-timer-enabled/);
+    assert.match(authority, /if \(!toggle \|\| toggle\.checked\) return/);
+    assert.match(authority, /exerciseIndex: Number\(card\.dataset\.exerciseIndex\)/);
+    assert.match(display, /levelup:rest-timer-dismissed/);
 });
 
 test("warm-up completion uses the same per-exercise rest timer authority", () => {
     assert.match(warmups, /startRestForWarmupButton/);
     assert.match(warmups, /warmup-timer-stability\.js\?v=warmup-timer-stability-1/);
-    assert.match(warmups, /rest-timer-authority\.js\?v=live-activity-persistent-1/);
+    assert.match(warmups, /rest-timer-authority\.js\?v=warmup-toggle-cancel-1/);
     assert.doesNotMatch(warmups, /#start-rest-timer/);
     assert.match(authority, /sourceType:\s*"warmup"/);
     assert.match(authority, /warmupSets/);
@@ -34,12 +39,23 @@ test("warm-up completion uses the same per-exercise rest timer authority", () =>
     assert.match(display, /\.complete-warmup-btn/);
 });
 
-test("warm-up inline countdown cannot be flashed off by the legacy working-set timer loop", () => {
-    // The old compact logger clears every inline timer but only knows how to
-    // restore data-set-index working rows. The warm-up guard repairs that DOM
-    // mutation in the MutationObserver microtask, before the browser paints it.
-    assert.match(compact, /querySelectorAll\('\.inline-rest-timer'\)/);
-    assert.match(compact, /data-set-index/);
+test("unchecking a warm-up cancels only that warm-up's active rest", () => {
+    assert.match(warmups, /cancelActiveRestTimer/);
+    assert.match(warmups, /if \(row\.classList\.contains\("completed"\)\)/);
+    assert.match(warmups, /sourceType: "warmup"/);
+    assert.match(warmups, /warmupIndex: Number\(row\.dataset\.warmupIndex\)/);
+    assert.match(authority, /timer\.sourceType !== sourceType/);
+    assert.match(authority, /Number\(warmupIndex\) !== Number\(timer\.warmupIndex\)/);
+});
+
+test("one unified renderer owns working-set and warm-up inline countdowns", () => {
+    // The unified display is the sole inline countdown owner for both working
+    // and warm-up sets. The compact logger must not create or refresh a second.
+    assert.doesNotMatch(compact, /timerLine\.className = 'inline-rest-timer'/);
+    assert.doesNotMatch(compact, /function updateInlineTimers/);
+    assert.doesNotMatch(compact, /setInterval\(updateInlineTimers/);
+    assert.match(display, /function syncVisibleTimer/);
+    assert.match(display, /data-source-type/);
     assert.match(stability, /data-source-type="warmup"/);
     assert.match(stability, /MutationObserver/);
     assert.match(stability, /queueMicrotask\(stabilizeWarmupTimer\)/);
@@ -55,8 +71,6 @@ test("one stable timer identity owns expiry and suppresses the legacy duplicate 
     assert.match(authority, /renotify:\s*false/);
     assert.match(authority, /getNotifications\(\{ tag: TIMER_TAG \}\)/);
     assert.match(authority, /if \(window\.Capacitor\?\.isNativePlatform\?\.\(\)\) return;/);
-    assert.match(authority, /finishNativeAlarm\(\`rest:\$\{timer\.timerId\}\`\)/);
-    assert.doesNotMatch(authority, /finalizeTimer[\s\S]*?cancelNativeAlarm\(\`rest:\$\{timer\.timerId\}\`\)/);
 });
 
 test("active rest banner is kept visible independently of logger DOM rerenders", () => {
