@@ -16,7 +16,9 @@ const generatedFemaleShoulders = fs.readFileSync('assets/exercise-anatomy/female
 
 test('rep exercises own persistent optional notes', () => {
   assert.match(session, /trackingType:\s*"reps",\s*notes:\s*""/s);
-  assert.match(session, /class="session-lifting-notes"/);
+  assert.match(session, /class="session-lifting-note/);
+  assert.match(session, /class="session-note-preview"/);
+  assert.match(session, /class="session-note-editor" hidden/);
   assert.match(session, /class="session-rep-notes"[^>]*maxlength="500"/);
   assert.match(session, /session\.exercises\[exerciseIndex\]\.notes\s*=\s*event\.target\.value/);
   assert.match(session, /\.querySelector\("\.session-rep-notes"\)[\s\S]*?persist\(\)/);

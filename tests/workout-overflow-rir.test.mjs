@@ -18,6 +18,7 @@ test("exercise overflow groups Superset, Warm-up, and Smart Swap while leaving F
   assert.match(actions, /data-session-overflow-action="warmup"/);
   assert.match(actions, /data-session-overflow-action="swap"/);
   assert.match(actions, /data-session-overflow-action="reorder"/);
+  assert.match(actions, /data-session-overflow-action="note"/);
   assert.match(actions, /Smart Swap/);
   assert.match(actions, /Reorder Exercises/);
   assert.match(actionStyles, /\.session-overflow-source\{display:none!important\}/);
@@ -72,5 +73,5 @@ test("the workout tutorial and production entry point load the new controls", ()
   assert.match(tutorial, /Open set options/);
   assert.match(tutorial, /data-session-overflow-action="warmup"/);
   assert.match(entry, /drop-set-runtime\.js\?v=floating-rir-1/);
-  assert.match(entry, /session-exercise-actions\.js\?v=exercise-reorder-loupe-1/);
+  assert.match(entry, /session-exercise-actions\.js\?v=exercise-note-flow-1/);
 });
