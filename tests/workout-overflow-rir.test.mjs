@@ -17,13 +17,28 @@ test("exercise overflow groups Superset, Warm-up, and Smart Swap while leaving F
   assert.match(actions, /data-session-overflow-action="superset"/);
   assert.match(actions, /data-session-overflow-action="warmup"/);
   assert.match(actions, /data-session-overflow-action="swap"/);
+  assert.match(actions, /data-session-overflow-action="reorder"/);
   assert.match(actions, /Smart Swap/);
+  assert.match(actions, /Reorder Exercises/);
   assert.match(actionStyles, /\.session-overflow-source\{display:none!important\}/);
   assert.doesNotMatch(actions, /data-session-overflow-action="form-guide"/);
   assert.match(compactLogger, /exercise-timer-btn/);
   assert.match(compactLogger, /exercise-timer-popover/);
   assert.match(actions, /className = 'exercise-more-btn'/);
   assert.doesNotMatch(actions, /aria-label', 'Exercise actions and rest timer'/);
+});
+
+test("exercise reorder sheet supports hold-and-drag and commits the day order safely", () => {
+  assert.match(actions, /session-reorder-list/);
+  assert.match(actions, /setPointerCapture/);
+  assert.match(actions, /elementFromPoint/);
+  assert.match(actions, /Confirm Order/);
+  assert.match(actions, /day\.exercises = order\.map/);
+  assert.match(actions, /active\.exercises = order\.map/);
+  assert.match(actions, /active\.currentExerciseIndex = Math\.max/);
+  assert.match(actions, /active\.restTimer\.exerciseIndex = nextTimerExercise/);
+  assert.match(actions, /applyOrderToSavedWorkoutDay/);
+  assert.match(actions, /levelup:workout-plans-changed/);
 });
 
 test("working-set circle offers optional per-set RIR and preserves Drop Set access", () => {
@@ -53,5 +68,5 @@ test("the workout tutorial and native entry point load the new controls", () => 
   assert.match(tutorial, /Open set options/);
   assert.match(tutorial, /data-session-overflow-action="warmup"/);
   assert.match(entry, /drop-set-runtime\.js\?v=floating-rir-1/);
-  assert.match(entry, /session-exercise-actions\.js\?v=separate-rest-menu-1/);
+  assert.match(entry, /session-exercise-actions\.js\?v=exercise-reorder-1/);
 });
