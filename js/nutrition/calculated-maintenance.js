@@ -124,8 +124,11 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], endDa
         ? trend.rate * (Number(tissueEnergy.kcalPerLb) / 7)
         : null;
     const raw = Number.isFinite(averageIntake) && Number.isFinite(correction) ? averageIntake - correction : null;
+    // Expenditure is an estimate, not a calorie prescription. Preserve its
+    // natural whole-calorie resolution so the live trend can move smoothly;
+    // actionable calorie targets are rounded separately by the weekly coach.
     const maintenanceCalories = enoughEarly && Number.isFinite(raw)
-        ? Math.round(Math.min(6000, Math.max(800, raw)) / 25) * 25
+        ? Math.round(Math.min(6000, Math.max(800, raw)))
         : null;
     const status = enoughEstablished ? "established" : enoughPreliminary ? "preliminary" : enoughEarly ? "early" : "learning";
     const label = status === "established" ? "High confidence" : status === "preliminary" ? "Building confidence" : status === "early" ? "Early estimate" : "Not enough data";
@@ -322,7 +325,7 @@ export function stabilizeMaintenanceEstimate({ liveEstimate, previousEstimate = 
     const liveCalories = Number(live.maintenanceCalories);
     const maximumStep = live.status === "established" ? HIGH_CONFIDENCE_CAP : BUILDING_CONFIDENCE_CAP;
     const change = Math.max(-maximumStep, Math.min(maximumStep, liveCalories - previousCalories));
-    const nextCalories = Math.round((previousCalories + change) / 25) * 25;
+    const nextCalories = Math.round(previousCalories + change);
     const nextSnapshot = {
         reviewedAt: todayKey,
         estimate: {
