@@ -659,6 +659,56 @@ function createSupersetButton(card, logger, heading) {
   return button;
 }
 
+function ensureExerciseOverflow(card) {
+  if (!card || card.dataset.trackingType !== 'reps') return;
+  const menu = card.querySelector('.exercise-options-popover');
+  const trigger = card.querySelector('.exercise-more-btn');
+  if (!menu || !trigger) return;
+  menu.setAttribute('role', 'dialog');
+  menu.setAttribute('aria-label', 'Exercise actions and rest timer');
+
+  let actions = menu.querySelector('.session-overflow-actions');
+  if (!actions) {
+    actions = document.createElement('div');
+    actions.className = 'session-overflow-actions';
+    actions.setAttribute('aria-label', 'Exercise actions');
+    actions.innerHTML = `
+      <button type="button" data-session-overflow-action="superset">
+        <span>Superset</span><small>Pair with another exercise</small>
+      </button>
+      <button type="button" data-session-overflow-action="warmup">
+        <span>Warm-up</span><small>Show optional warm-up sets</small>
+      </button>
+      <button type="button" data-session-overflow-action="swap">
+        <span>Smart Swap</span><small>Choose a similar exercise for today</small>
+      </button>
+    `;
+    menu.insertAdjacentElement('afterbegin', actions);
+  }
+
+  const sources = {
+    superset: card.querySelector('.session-inline-superset'),
+    warmup: card.querySelector('.exercise-warmup-btn'),
+    swap: card.querySelector('.session-inline-swap')
+  };
+
+  Object.entries(sources).forEach(([name, source]) => {
+    const action = actions.querySelector(`[data-session-overflow-action="${name}"]`);
+    if (!action) return;
+    action.hidden = !source;
+    source?.classList.add('session-overflow-source');
+  });
+
+  const supersetAction = actions.querySelector('[data-session-overflow-action="superset"] span');
+  const warmupAction = actions.querySelector('[data-session-overflow-action="warmup"] span');
+  if (supersetAction) supersetAction.textContent = sources.superset?.textContent?.trim() || 'Superset';
+  if (warmupAction) warmupAction.textContent = sources.warmup?.getAttribute('aria-expanded') === 'true' ? 'Hide Warm-up' : 'Warm-up';
+
+  trigger.textContent = '•••';
+  trigger.setAttribute('aria-label', 'Open exercise actions');
+  trigger.setAttribute('aria-haspopup', 'dialog');
+}
+
 function ensureInlineActions(card, logger) {
   const liftingActions = card.querySelector('.compact-exercise-actions');
   const liftingHeading = card.querySelector('.compact-exercise-header h4');
@@ -689,6 +739,7 @@ function ensureInlineActions(card, logger) {
     if (supersetButton && supersetButton.textContent !== supersetLabel) {
       supersetButton.textContent = supersetLabel;
     }
+    ensureExerciseOverflow(card);
     return;
   }
 
@@ -710,7 +761,10 @@ function ensureInlineActions(card, logger) {
 function enhanceActiveLogger() {
   const logger = document.getElementById('workout-session-logger');
   if (!logger || logger.dataset.editingSessionId) return;
-  logger.querySelectorAll('.session-exercise-card').forEach(card => ensureInlineActions(card, logger));
+  logger.querySelectorAll('.session-exercise-card').forEach(card => {
+    ensureInlineActions(card, logger);
+    ensureExerciseOverflow(card);
+  });
   logger.querySelectorAll('.session-exercise-card[data-tracking-type="reps"]').forEach(card => {
     if (card.querySelector('.session-add-exercise-btn')) return;
     const addSet = card.querySelector('.compact-add-set-btn');
@@ -738,6 +792,23 @@ const observer = new MutationObserver(() => {
 observer.observe(document.body, { childList: true, subtree: true });
 
 document.addEventListener('click', event => {
+  const overflowAction = event.target.closest('[data-session-overflow-action]');
+  if (overflowAction) {
+    const card = overflowAction.closest('.session-exercise-card');
+    const action = overflowAction.dataset.sessionOverflowAction;
+    const selector = action === 'superset'
+      ? '.session-inline-superset'
+      : action === 'warmup'
+        ? '.exercise-warmup-btn'
+        : '.session-inline-swap';
+    const source = card?.querySelector(selector);
+    const menu = overflowAction.closest('.exercise-options-popover');
+    if (menu) menu.hidden = true;
+    source?.click();
+    window.setTimeout(() => ensureExerciseOverflow(card), 0);
+    return;
+  }
+
   if (event.target.closest('#begin-session-btn, [data-page="workout"], .nav-workout')) {
     setTimeout(enhanceActiveLogger, 0);
     setTimeout(enhanceActiveLogger, 100);

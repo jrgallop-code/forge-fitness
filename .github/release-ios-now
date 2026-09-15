@@ -130,3 +130,5 @@ Release 59: calendar-based weekly calorie check-ins with an optional same-day we
 Release 60: add an iOS-test-only control to restore pre-review calories and TDEE and reopen the latest completed weekly check-in without changing logs.
 
 Release 61: remove the completed weekly check-in replay control after validation while preserving optional same-day weigh-in guidance.
+
+Release 62: consolidate workout actions into an exercise overflow menu and add optional per-set RIR selection to working-set circles.

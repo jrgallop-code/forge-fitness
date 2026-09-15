@@ -262,7 +262,9 @@ function enhanceLogger(logger) {
     applyDeloadMode(logger, active, preview);
     if (!preview) renderRecoveryCheck(logger, readActive() || active);
     else document.querySelector(".adaptive-recovery-flow")?.remove();
-    logger.querySelectorAll(".session-exercise-card").forEach(card => renderRirTracker(card, readActive() || active));
+    // Per-set RIR is recorded from the working-set number menu. Remove the
+    // former exercise-level questionnaire if an older render left one behind.
+    logger.querySelectorAll(".adaptive-rir-control").forEach(node => node.remove());
     logger.classList.remove("adaptive-recovery-pending");
 }
 

@@ -193,8 +193,59 @@ function protectDropInputs(block) {
 
 function closeMenus(except = null) {
     document.querySelectorAll(".drop-set-menu").forEach(menu => {
-        if (menu !== except) menu.hidden = true;
+        if (menu === except) return;
+        menu.hidden = true;
+        rowForDropControl(menu)?.querySelector(":scope > .drop-set-menu-trigger")?.setAttribute("aria-expanded", "false");
     });
+}
+
+function hasRirValue(value) {
+    return value !== null && value !== "" && value !== undefined && Number.isFinite(Number(value));
+}
+
+function updateSetTrigger(row, value) {
+    const trigger = row?.querySelector(":scope > .drop-set-menu-trigger");
+    if (!trigger) return;
+    const setNumber = Number(row.dataset.setIndex) + 1;
+    const hasRir = hasRirValue(value);
+    const rir = hasRir ? Math.min(4, Math.max(0, Number(value))) : null;
+    trigger.innerHTML = `<span class="working-set-number">${setNumber}</span>${hasRir ? `<sup class="set-rir-superscript">R${rir === 4 ? "4+" : rir}</sup>` : ""}`;
+    trigger.classList.toggle("has-rir", hasRir);
+    if (hasRir) trigger.dataset.rir = String(rir);
+    else delete trigger.dataset.rir;
+    trigger.setAttribute("aria-label", hasRir
+        ? `Set ${setNumber}, RIR ${rir === 4 ? "4 or more" : rir}. Open set options`
+        : `Set ${setNumber}. Add optional RIR or a drop set`);
+}
+
+function updateSetMenu(row) {
+    const menu = row?.parentElement?.querySelector(`.drop-set-menu[data-parent-set="${row.dataset.setIndex}"]`);
+    if (!menu) return;
+    const { set } = getContext(row);
+    const current = hasRirValue(set?.rir) ? Math.min(4, Math.max(0, Number(set.rir))) : null;
+    menu.querySelectorAll("[data-set-rir-value]").forEach(button => {
+        const selected = current !== null && Number(button.dataset.setRirValue) === current;
+        button.classList.toggle("selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
+    });
+    const clear = menu.querySelector("[data-clear-set-rir]");
+    if (clear) clear.hidden = current === null;
+    const addDropButton = menu.querySelector("[data-add-drop-set]");
+    if (addDropButton) addDropButton.disabled = ensureDropSets(set).length >= MAX_DROPS;
+    updateSetTrigger(row, current);
+}
+
+function setRir(row, nextValue) {
+    const { active, card, exerciseIndex, setIndex, set } = getContext(row);
+    if (!active || !card || !set) return;
+    const current = hasRirValue(set.rir) ? Math.min(4, Math.max(0, Number(set.rir))) : null;
+    const value = nextValue === null || current === nextValue ? null : nextValue;
+    set.rir = value;
+    saveActive(active);
+    card.closest("#workout-session-logger")?.dispatchEvent(new CustomEvent("levelup:adaptive-guidance-changed", {
+        detail: { kind: "set-rir", exerciseIndex, setIndex, value }
+    }));
+    updateSetMenu(row);
 }
 
 function renderBlock(row) {
@@ -270,14 +321,26 @@ function enhanceRow(row) {
     trigger.type = "button";
     trigger.className = "drop-set-menu-trigger";
     trigger.textContent = number.textContent;
-    trigger.setAttribute("aria-label", `Set ${number.textContent} actions`);
+    trigger.setAttribute("aria-haspopup", "dialog");
+    trigger.setAttribute("aria-expanded", "false");
     number.replaceWith(trigger);
 
     const menu = document.createElement("div");
     menu.className = "drop-set-menu";
     menu.dataset.parentSet = row.dataset.setIndex;
     menu.hidden = true;
-    menu.innerHTML = '<button type="button" data-add-drop-set>Add Drop Set</button>';
+    menu.setAttribute("role", "dialog");
+    menu.setAttribute("aria-label", `Set ${Number(row.dataset.setIndex) + 1} options`);
+    menu.innerHTML = `
+        <div class="set-rir-menu-heading">
+            <strong>Reps in reserve</strong>
+            <small>Optional · good-form reps you had left</small>
+        </div>
+        <div class="set-rir-options" role="group" aria-label="Reps in reserve">
+            ${[0, 1, 2, 3, 4].map(value => `<button type="button" data-set-rir-value="${value}" data-rir-tone="${value}" aria-pressed="false">${value === 4 ? "4+" : value}</button>`).join("")}
+        </div>
+        <button class="clear-set-rir" type="button" data-clear-set-rir hidden>Clear RIR</button>
+        <button class="add-drop-set-from-menu" type="button" data-add-drop-set>Add Drop Set</button>`;
     row.insertAdjacentElement("afterend", menu);
 
     const block = document.createElement("div");
@@ -291,6 +354,7 @@ function enhanceRow(row) {
         row.classList.add("has-drop-set");
         dispatchDropSync(row, set);
     }
+    updateSetMenu(row);
     renderBlock(row);
 }
 
@@ -309,8 +373,33 @@ document.addEventListener("click", event => {
     const trigger = event.target.closest(".drop-set-menu-trigger");
     if (trigger) {
         const row = trigger.closest(".session-set-row");
-        const { set } = getContext(row);
-        if ((Array.isArray(set?.dropSets) ? set.dropSets.length : 0) < MAX_DROPS) addDrop(row);
+        const menu = row?.closest(".session-exercise-card")?.querySelector(`.drop-set-menu[data-parent-set="${row.dataset.setIndex}"]`);
+        if (!menu) return;
+        const opening = menu.hidden;
+        closeMenus(opening ? menu : null);
+        menu.hidden = !opening;
+        trigger.setAttribute("aria-expanded", String(opening));
+        if (opening) updateSetMenu(row);
+        return;
+    }
+
+    const rirChoice = event.target.closest("[data-set-rir-value]");
+    if (rirChoice) {
+        const menu = rirChoice.closest(".drop-set-menu");
+        const row = rowForDropControl(menu);
+        if (row) setRir(row, Number(rirChoice.dataset.setRirValue));
+        if (menu) menu.hidden = true;
+        row?.querySelector(":scope > .drop-set-menu-trigger")?.setAttribute("aria-expanded", "false");
+        return;
+    }
+
+    const clearRir = event.target.closest("[data-clear-set-rir]");
+    if (clearRir) {
+        const menu = clearRir.closest(".drop-set-menu");
+        const row = rowForDropControl(menu);
+        if (row) setRir(row, null);
+        if (menu) menu.hidden = true;
+        row?.querySelector(":scope > .drop-set-menu-trigger")?.setAttribute("aria-expanded", "false");
         return;
     }
 
@@ -320,6 +409,7 @@ document.addEventListener("click", event => {
         const row = rowForDropControl(menu);
         if (row?.matches(".session-set-row")) addDrop(row);
         menu.hidden = true;
+        row?.querySelector(":scope > .drop-set-menu-trigger")?.setAttribute("aria-expanded", "false");
         return;
     }
 
