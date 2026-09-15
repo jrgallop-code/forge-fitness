@@ -21,6 +21,16 @@ function saveActive(active) {
     localStorage.setItem(ACTIVE_KEY, JSON.stringify(active));
 }
 
+function getLoggerSession(source) {
+    const logger = source?.closest?.("#workout-session-logger") || document.getElementById("workout-session-logger");
+    return logger?.__levelUpSession || readActive();
+}
+
+function persistRuntimeSession(row, session) {
+    const logger = row?.closest?.("#workout-session-logger");
+    if (!logger?.dataset.editingSessionId) saveActive(session);
+}
+
 function dispatchDropSync(row, set) {
     const exerciseIndex = Number(row.closest(".session-exercise-card")?.dataset.exerciseIndex);
     const setIndex = Number(row.dataset.setIndex);
@@ -33,7 +43,7 @@ function dispatchDropSync(row, set) {
 }
 
 function persistDropSets(row, active, set, { deferSessionSync = false } = {}) {
-    saveActive(active);
+    persistRuntimeSession(row, active);
     if (!deferSessionSync) {
         dispatchDropSync(row, set);
         return;
@@ -48,7 +58,7 @@ function getContext(row) {
     const exerciseIndex = Number(card?.dataset.exerciseIndex);
     const setIndex = Number(row.dataset.setIndex);
     const exerciseId = card?.dataset.exerciseId || "";
-    const active = readActive();
+    const active = getLoggerSession(row);
     const set = active?.exercises?.[exerciseIndex]?.sets?.[setIndex];
     return { active, card, exerciseIndex, setIndex, exerciseId, set };
 }
@@ -242,7 +252,7 @@ function setRir(row, nextValue) {
     const current = hasRirValue(set.rir) ? Math.min(4, Math.max(0, Number(set.rir))) : null;
     const value = nextValue === null || current === nextValue ? null : nextValue;
     set.rir = value;
-    saveActive(active);
+    persistRuntimeSession(row, active);
     card.closest("#workout-session-logger")?.dispatchEvent(new CustomEvent("levelup:set-rir-changed", {
         detail: { kind: "set-rir", exerciseIndex, setIndex, value }
     }));
@@ -314,7 +324,7 @@ function addDrop(row) {
 }
 
 function enhanceRow(row) {
-    if (row.dataset.dropSetEnhanced || row.closest("#workout-session-logger")?.dataset.editingSessionId) return;
+    if (row.dataset.dropSetEnhanced) return;
     row.dataset.dropSetEnhanced = "1";
     const number = row.querySelector(":scope > strong");
     if (!number) return;

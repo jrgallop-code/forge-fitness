@@ -1,4 +1,4 @@
-import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=native-navigation-stability-1';
+import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=history-rir-edit-1';
 import './exercise-library-expansion.js?v=exercise-library-expansion-1';
 import { addCustomExercise, getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { createGeneratedExerciseGuide } from './exercise-guide-generator.js?v=full-library-guides-1';
@@ -79,7 +79,7 @@ function createReplacementState(exercise, priorState) {
     ...metadata,
     trackingType: 'reps',
     notes: '',
-    sets: Array.from({ length: setCount }, () => ({ weight: null, reps: null, completed: false }))
+    sets: Array.from({ length: setCount }, () => ({ weight: null, reps: null, rir: null, completed: false }))
   };
 }
 
@@ -587,7 +587,10 @@ function openReorderSheet(logger) {
   sheet.hidden = false;
 }
 
-function appendExerciseToActiveWorkout(exerciseId) {
+function appendExerciseToWorkout(exerciseId, logger) {
+  if (logger?.dataset.editingSessionId) {
+    return Boolean(logger.__levelUpEditApi?.addExercise(exerciseId));
+  }
   const active = readActiveWorkout();
   const exercise = getExerciseById(exerciseId);
   const day = getSessionDay(active);
@@ -654,9 +657,9 @@ function ensureAddExerciseSheet(logger) {
     const message = customForm.querySelector('.exercise-browser-custom-message');
     if (!name) { message.textContent = 'Enter an exercise name.'; return; }
     const exercise = addCustomExercise({ name, muscleGroup: value('custom-muscle'), equipment: value('custom-equipment'), type: value('custom-type'), recommendedReps: value('custom-reps'), defaultSets: value('custom-sets') });
-    if (!exercise || !appendExerciseToActiveWorkout(exercise.id)) { message.textContent = 'Custom exercise could not be added.'; return; }
+    if (!exercise || !appendExerciseToWorkout(exercise.id, logger)) { message.textContent = 'Custom exercise could not be added.'; return; }
     close();
-    openActiveWorkout();
+    if (!logger.dataset.editingSessionId) openActiveWorkout();
   });
   sheet.querySelectorAll('[data-session-muscle]').forEach(button => button.addEventListener('click', () => {
     sheet.dataset.muscle = button.dataset.sessionMuscle || '';
@@ -669,9 +672,9 @@ function ensureAddExerciseSheet(logger) {
   }));
   sheet.querySelector('[data-session-add-results]')?.addEventListener('click', event => {
     const button = event.target.closest('[data-session-add-id]');
-    if (!button || !appendExerciseToActiveWorkout(button.dataset.sessionAddId)) return;
+    if (!button || !appendExerciseToWorkout(button.dataset.sessionAddId, logger)) return;
     close();
-    openActiveWorkout();
+    if (!logger.dataset.editingSessionId) openActiveWorkout();
   });
   sheet.addEventListener('click', event => { if (event.target === sheet) close(); });
   sheet.renderExerciseResults = render;
@@ -913,15 +916,21 @@ function ensureExerciseOverflow(card) {
       <button type="button" data-session-overflow-action="reorder">
         <span>Reorder Exercises</span><small>Press, hold, and arrange this workout day</small>
       </button>
+      <button type="button" data-session-overflow-action="remove" hidden>
+        <span>Remove Exercise</span><small>Delete it from this saved workout</small>
+      </button>
     `;
     menu.appendChild(actions);
   }
 
-  const sources = {
-    superset: card.querySelector('.session-inline-superset'),
-    warmup: card.querySelector('.exercise-warmup-btn'),
-    swap: card.querySelector('.session-inline-swap')
-  };
+  const editingSavedWorkout = Boolean(card.closest('#workout-session-logger')?.dataset.editingSessionId);
+  const sources = editingSavedWorkout
+    ? { superset: null, warmup: null, swap: null }
+    : {
+        superset: card.querySelector('.session-inline-superset'),
+        warmup: card.querySelector('.exercise-warmup-btn'),
+        swap: card.querySelector('.session-inline-swap')
+      };
 
   Object.entries(sources).forEach(([name, source]) => {
     const action = actions.querySelector(`[data-session-overflow-action="${name}"]`);
@@ -945,7 +954,9 @@ function ensureExerciseOverflow(card) {
     if (label) label.textContent = noteValue ? 'Edit Note' : 'Add Note';
   }
   const reorderAction = actions.querySelector('[data-session-overflow-action="reorder"]');
-  if (reorderAction) reorderAction.hidden = (getSessionDay(readActiveWorkout())?.exercises?.length || 0) < 2;
+  if (reorderAction) reorderAction.hidden = editingSavedWorkout || (getSessionDay(readActiveWorkout())?.exercises?.length || 0) < 2;
+  const removeAction = actions.querySelector('[data-session-overflow-action="remove"]');
+  if (removeAction) removeAction.hidden = !editingSavedWorkout;
 
   trigger.textContent = '•••';
   trigger.setAttribute('aria-label', 'Open exercise actions');
@@ -1019,9 +1030,10 @@ function ensureInlineActions(card, logger) {
 
 function enhanceActiveLogger() {
   const logger = document.getElementById('workout-session-logger');
-  if (!logger || logger.dataset.editingSessionId) return;
+  if (!logger) return;
+  const editingSavedWorkout = Boolean(logger.dataset.editingSessionId);
   logger.querySelectorAll('.session-exercise-card').forEach(card => {
-    ensureInlineActions(card, logger);
+    if (!editingSavedWorkout) ensureInlineActions(card, logger);
     ensureExerciseOverflow(card);
   });
   logger.querySelectorAll('.session-exercise-card[data-tracking-type="reps"]').forEach(card => {
@@ -1065,6 +1077,11 @@ document.addEventListener('click', event => {
     }
     if (action === 'note') {
       card?.querySelector('.session-note-preview')?.click();
+      return;
+    }
+    if (action === 'remove') {
+      const logger = card?.closest('#workout-session-logger');
+      logger?.__levelUpEditApi?.removeExercise(Number(card?.dataset.exerciseIndex));
       return;
     }
     const selector = action === 'superset'

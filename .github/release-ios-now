@@ -144,3 +144,5 @@ Release 66: prevent disabled rest timers from briefly creating and flashing a le
 Release 67: suppress the iOS text-selection loupe and touch callout while dragging exercises in the reorder sheet.
 
 Release 68: add persistent exercise notes, theme-specific high-contrast RIR colours, and the corrected empty-note layout for saved-workout editing.
+
+Release 69: preserve per-set RIR in completed workouts and reuse the live workout logger layout and controls when editing saved workouts.

@@ -25,8 +25,9 @@ test('rep exercises own persistent optional notes', () => {
   assert.match(session, /\.querySelector\("\.session-cardio-notes"\)[\s\S]*?persist\(\)/);
 });
 
-test('active workout add exercise preserves canonical identity and plan snapshot', () => {
-  assert.match(actions, /function appendExerciseToActiveWorkout\(exerciseId\)/);
+test('active and saved workout add exercise preserve canonical identity and plan snapshot', () => {
+  assert.match(actions, /function appendExerciseToWorkout\(exerciseId, logger\)/);
+  assert.match(actions, /__levelUpEditApi\?\.addExercise\(exerciseId\)/);
   assert.match(actions, /const exercise = getExerciseById\(exerciseId\)/);
   assert.match(actions, /id:\s*exercise\.id/);
   assert.match(actions, /day\.exercises\.push\(plannedExercise\)/);
@@ -74,13 +75,13 @@ test('shared visual browser defaults to All and combines muscle with search', ()
   assert.match(browser, /data-exercise-browser-custom/);
   assert.match(manual, /querySelector\("\[data-exercise-browser-custom\]"\).*startCustom/);
   assert.match(actions, /addCustomExercise\(\{ name, muscleGroup:/);
-  assert.match(actions, /appendExerciseToActiveWorkout\(exercise\.id\)/);
+  assert.match(actions, /appendExerciseToWorkout\(exercise\.id, logger\)/);
   assert.doesNotMatch(manual, /hydrateExerciseAnatomy/);
   assert.doesNotMatch(actions, /hydrateExerciseAnatomy/);
   assert.match(index, /manual-builder-catalogue\.js\?v=appearance-leaks-1/);
   assert.match(index, /manual-plan-setup\.js\?v=appearance-leaks-1/);
-  assert.match(index, /session-exercise-actions\.js\?v=compact-add-actions-1/);
-  assert.match(index, /workout-logger-compact\.js\?v=compact-add-actions-1/);
-  assert.match(index, /session-exercise-actions\.css\?v=compact-add-actions-1/);
+  assert.match(index, /session-exercise-actions\.js\?v=history-rir-edit-1/);
+  assert.match(index, /workout-logger-compact\.js\?v=history-rir-edit-1/);
+  assert.match(index, /session-exercise-actions\.css\?v=history-rir-edit-1/);
   assert.match(browser, /exercise-browser\.css\?v=isolated-carousel-1/);
 });

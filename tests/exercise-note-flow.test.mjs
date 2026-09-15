@@ -42,7 +42,7 @@ test("the exercise menu opens the same Add or Edit Note field", () => {
   assert.match(actions, /data-session-overflow-action="note"/);
   assert.match(actions, /noteValue \? 'Edit Note' : 'Add Note'/);
   assert.match(actions, /querySelector\('\.session-note-preview'\)\?\.click\(\)/);
-  assert.match(entry, /session-exercise-actions\.css\?v=note-empty-layout-2/);
-  assert.match(entry, /js\/app\.js\?v=exercise-icon-scope-1/);
-  assert.match(entry, /session-exercise-actions\.js\?v=exercise-note-flow-1/);
+  assert.match(entry, /session-exercise-actions\.css\?v=history-rir-edit-1/);
+  assert.match(entry, /js\/app\.js\?v=history-rir-edit-1/);
+  assert.match(entry, /session-exercise-actions\.js\?v=history-rir-edit-1/);
 });
