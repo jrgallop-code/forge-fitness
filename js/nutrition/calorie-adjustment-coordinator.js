@@ -79,11 +79,14 @@ export function buildCoordinatedWeeklyUpdate({
     const behavioralChange = useObservedPaceBaseline
         ? requestedPaceCorrection
         : clamp(fullRequestedTarget - adjustmentBaseline, maximumChange);
-    const nextTarget = useObservedPaceBaseline
+    const unroundedTarget = useObservedPaceBaseline
         ? roundTo25(fullRequestedTarget)
         : observedIntake === null
         ? target + clamp(maintenanceChange + requestedPaceCorrection, maximumChange)
         : adjustmentBaseline + behavioralChange;
+    // Targets remain simple 25-calorie prescriptions even though the TDEE
+    // estimate feeding this calculation now has one-calorie resolution.
+    const nextTarget = roundTo25(unroundedTarget);
     const targetChange = Math.round(nextTarget - target);
     const paceCorrection = useObservedPaceBaseline
         ? requestedPaceCorrection

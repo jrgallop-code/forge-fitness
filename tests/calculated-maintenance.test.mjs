@@ -28,7 +28,7 @@ test("infers maintenance from intake and a losing smoothed weight trend", () => 
         endDate: new Date("2026-08-29T12:00:00")
     });
     assert.equal(result.status, "established");
-    assert.equal(result.maintenanceCalories, 2525);
+    assert.equal(result.maintenanceCalories, 2528);
     assert.equal(Math.round(result.energyCorrection), 228);
 });
 
@@ -41,7 +41,18 @@ test("subtracts a gaining smoothed trend from average intake", () => {
         weights: weightHistory(21, 180, .4),
         endDate: new Date("2026-08-29T12:00:00")
     });
-    assert.equal(result.maintenanceCalories, 2525);
+    assert.equal(result.maintenanceCalories, 2518);
+});
+
+test("keeps calculated TDEE at whole-calorie precision instead of 25-calorie steps", () => {
+    const result = calculateMaintenanceEstimate({
+        foodLog: foodHistory(21, 2713),
+        weights: weightHistory(21, 180, .4),
+        endDate: new Date("2026-08-29T12:00:00")
+    });
+
+    assert.equal(result.maintenanceCalories, 2531);
+    assert.notEqual(result.maintenanceCalories % 25, 0);
 });
 
 test("stays in learning until food and weight minimums are met", () => {
@@ -64,7 +75,7 @@ test("shows a usable early estimate from two food days and an established weight
     });
     assert.equal(result.status, "early");
     assert.equal(result.label, "Early estimate");
-    assert.equal(result.maintenanceCalories, 2475);
+    assert.equal(result.maintenanceCalories, 2478);
 });
 
 test("uses the smoothed rate for the energy correction", () => {
@@ -75,7 +86,7 @@ test("uses the smoothed rate for the energy correction", () => {
     });
     assert.equal(result.averageIntake, 2621);
     assert.equal(Math.round(result.energyCorrection), 97);
-    assert.equal(result.maintenanceCalories, 2725);
+    assert.equal(result.maintenanceCalories, 2718);
 });
 
 test("counts all logged days through yesterday even when legacy completion flags are partial", () => {
@@ -191,6 +202,17 @@ test("limits a building-confidence weekly TDEE update to 50 calories", () => {
     });
     assert.equal(result.estimate.maintenanceCalories, 2450);
     assert.equal(result.snapshot.reviewedAt, "2026-08-30");
+});
+
+test("a stabilized TDEE update preserves one-calorie precision", () => {
+    const snapshot = { reviewedAt: "2026-08-22", estimate: { maintenanceCalories: 2407, status: "preliminary" } };
+    const result = stabilizeMaintenanceEstimate({
+        liveEstimate: { maintenanceCalories: 2438, status: "preliminary", foodDays: 8, weighIns: 10, weightSpanDays: 18 },
+        snapshot,
+        today: new Date("2026-08-30T12:00:00")
+    });
+
+    assert.equal(result.estimate.maintenanceCalories, 2438);
 });
 
 test("limits a high-confidence weekly TDEE update to 100 calories", () => {

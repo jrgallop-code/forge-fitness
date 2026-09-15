@@ -58,6 +58,19 @@ test("an on-target phase preserves the adaptive offset when maintenance changes"
     assert.equal(update.paceCorrection, 0);
 });
 
+test("whole-calorie TDEE changes still produce 25-calorie calorie targets", () => {
+    const update = buildCoordinatedWeeklyUpdate({
+        currentMaintenance: 2279,
+        proposedMaintenance: 2336,
+        currentTarget: 2400,
+        adaptiveReady: false
+    });
+
+    assert.equal(update.maintenanceCalories, 2336);
+    assert.equal(update.targetCalories, 2450);
+    assert.equal(update.targetCalories % 25, 0);
+});
+
 test("a weekly recommendation applies the rate gap once to actual intake", () => {
     const update = buildCoordinatedWeeklyUpdate({
         currentMaintenance: 2275,

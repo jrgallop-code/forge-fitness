@@ -122,3 +122,5 @@ Release 55: force delivery of the restored equipment controls and persist base-w
 Release 56: refine the plate calculator with persistent equipment settings, unit-aware bar templates, and theme-safe bar preset styling.
 
 Release 57: improve barcode nutrition accuracy, compare conflicting records, flag invalid zero-macro products, and remember confirmed choices.
+
+Release 58: use whole-calorie precision for TDEE while retaining 25-calorie calorie-target increments.
