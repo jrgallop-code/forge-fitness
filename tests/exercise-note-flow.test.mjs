@@ -7,6 +7,7 @@ const actions = readFileSync("js/workouts/session-exercise-actions.js", "utf8");
 const cleanup = readFileSync("js/workouts/logger-ui-cleanup.js", "utf8");
 const styles = readFileSync("css/session-exercise-actions.css", "utf8");
 const entry = readFileSync("index.html", "utf8");
+const app = readFileSync("js/app.js", "utf8");
 
 test("exercise notes sit between the target and previous-performance content", () => {
   const target = session.indexOf('<p class="session-target">Target:');
@@ -32,12 +33,16 @@ test("empty saved-workout notes use a clean text prompt without visible SVG cont
   assert.match(session, /class="session-note-empty-hint">Optional</);
   assert.match(styles, /\.session-lifting-note:not\(\.has-note\) \.session-note-icon,[^}]*\.session-note-edit-icon\{display:none\}/);
   assert.match(styles, /\.session-lifting-note:not\(\.has-note\) \.session-note-empty-icon\{display:grid/);
+  assert.match(styles, /\.session-note-preview>\.app-exercise-person-icon\{display:none!important\}/);
+  assert.match(app, /EXERCISE_ICON_BUTTON_SELECTOR="\.add-exercise-btn, \.session-add-exercise-btn/);
+  assert.doesNotMatch(app, /querySelectorAll\?\.\("button"\).*\\bexercises\?\\b/);
 });
 
 test("the exercise menu opens the same Add or Edit Note field", () => {
   assert.match(actions, /data-session-overflow-action="note"/);
   assert.match(actions, /noteValue \? 'Edit Note' : 'Add Note'/);
   assert.match(actions, /querySelector\('\.session-note-preview'\)\?\.click\(\)/);
-  assert.match(entry, /session-exercise-actions\.css\?v=note-empty-cleanup-1/);
+  assert.match(entry, /session-exercise-actions\.css\?v=note-empty-layout-2/);
+  assert.match(entry, /js\/app\.js\?v=exercise-icon-scope-1/);
   assert.match(entry, /session-exercise-actions\.js\?v=exercise-note-flow-1/);
 });
