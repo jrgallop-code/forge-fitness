@@ -154,16 +154,6 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
     }
 
     const checkDay = Number(phaseTrend.checkDay);
-    const dataPhaseDay = Number(phaseTrend.dataPhaseDay);
-    const waitingForScheduledWeighIn = Number.isFinite(checkDay)
-        && Number.isFinite(dataPhaseDay)
-        && Number(phaseTrend.phaseDay) >= checkDay
-        && dataPhaseDay < checkDay;
-
-    if (phaseTrend.awaitingNewWeighIn || waitingForScheduledWeighIn) {
-        return buildMetrics("AWAITING WEIGH-IN", trend, actual, target, tolerance, referenceWeight, false, metadata);
-    }
-
     if (!Number.isFinite(target)) {
         return buildMetrics("NEED MORE DATA", trend, actual, null, tolerance, referenceWeight, false, metadata);
     }
@@ -185,12 +175,10 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
         }
     }
 
-    const checkReachedByWeighIn = Number.isFinite(checkDay)
-        && Number.isFinite(dataPhaseDay)
-        && dataPhaseDay >= checkDay;
+    const checkReachedByCalendar = Number.isFinite(checkDay)
+        && Number(phaseTrend.phaseDay) >= checkDay;
     const recommendationReady = trend.status === "actual"
-        && !phaseTrend.awaitingNewWeighIn
-        && checkReachedByWeighIn
+        && checkReachedByCalendar
         && checkDay >= FIRST_PHASE_CHECK_DAY;
     return buildMetrics(status, trend, actual, target, tolerance, referenceWeight, recommendationReady, metadata);
 }

@@ -14,6 +14,7 @@ const MINIMUM_CHANGE = 50;
 const CHECK_IN_DAYS = 7;
 const MAXIMUM_AUTOMATIC_CHANGE = 150;
 const MODES = new Set(["review", "automatic", "track"]);
+const WEIGHT_KEY = "forge_weight_entries";
 
 function localDateKey(date = new Date()) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -27,6 +28,22 @@ function parseDate(value) {
 function positive(value) {
     const number = Number(value);
     return Number.isFinite(number) && number > 0 ? number : null;
+}
+
+function hasTodaysWeighIn() {
+    try {
+        const entries = JSON.parse(localStorage.getItem(WEIGHT_KEY) || "[]");
+        const today = localDateKey();
+        return Array.isArray(entries) && entries.some(entry => String(entry?.date || "") === today && positive(entry?.weight) !== null);
+    } catch {
+        return false;
+    }
+}
+
+function optionalWeighInCopy() {
+    return hasTodaysWeighIn()
+        ? "Review and apply the same target shown in Nutrition."
+        : "For the best estimate, weigh in today before reviewing. You can still continue without it.";
 }
 
 export function readMaintenanceCheckInState() {
@@ -255,7 +272,7 @@ function renderProgressReviewAlert(checkIn, mode) {
     alert.className = "progress-weekly-review-alert";
     alert.innerHTML = preview
         ? `<span>TEST · WEEKLY CALORIE REVIEW</span><strong>Preview your review flow</strong><small>No target or log data will change.</small><button type="button">Review test</button>`
-        : `<span>WEEKLY CALORIE REVIEW</span><strong>Your calorie update is ready</strong><small>Review and apply the same target shown in Nutrition.</small><button type="button">Review target</button>`;
+        : `<span>WEEKLY CALORIE REVIEW</span><strong>Your calorie update is ready</strong><small>${optionalWeighInCopy()}</small><button type="button">Review target</button>`;
     alert.querySelector("button")?.addEventListener("click", () => {
         window.dispatchEvent(new CustomEvent("levelup:open-weekly-calorie-review", { detail: { preview } }));
     });
@@ -333,7 +350,7 @@ function renderNutritionHubAlert(checkIn, mode) {
     alert.className = "maintenance-hub-alert";
     alert.innerHTML = preview
         ? `<div><span>TEST · WEEKLY CALORIE REVIEW</span><strong>Preview your review flow</strong><small>Uses your current data without changing your target.</small></div><button type="button">Review test</button>`
-        : `<div><span>WEEKLY CALORIE REVIEW</span><strong>Your calorie update is ready</strong><small>Review one recommended daily target.</small></div><button type="button">Review</button>`;
+        : `<div><span>WEEKLY CALORIE REVIEW</span><strong>Your calorie update is ready</strong><small>${optionalWeighInCopy()}</small></div><button type="button">Review</button>`;
     alert.querySelector("button")?.addEventListener("click", () => {
         window.dispatchEvent(new CustomEvent("levelup:open-weekly-calorie-review", { detail: { preview } }));
     });

@@ -124,3 +124,5 @@ Release 56: refine the plate calculator with persistent equipment settings, unit
 Release 57: improve barcode nutrition accuracy, compare conflicting records, flag invalid zero-macro products, and remember confirmed choices.
 
 Release 58: use whole-calorie precision for TDEE while retaining 25-calorie calorie-target increments.
+
+Release 59: calendar-based weekly calorie check-ins with an optional same-day weigh-in prompt and live recommendation recalculation.

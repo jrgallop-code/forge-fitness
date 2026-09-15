@@ -196,11 +196,11 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
     // rolling rate, however, needs complete 7-day comparison windows. When the
     // previous rolling window reaches before the phase start, include available
     // pre-phase weigh-ins as context instead of silently shortening that window.
-    const dataCheckDay = dataPhaseDay >= FIRST_PHASE_CHECK_DAY
+    const calendarCheckDay = phaseDay >= FIRST_PHASE_CHECK_DAY
         ? FIRST_PHASE_CHECK_DAY
-            + (Math.floor((dataPhaseDay - FIRST_PHASE_CHECK_DAY) / PHASE_CHECK_CADENCE_DAYS) * PHASE_CHECK_CADENCE_DAYS)
+            + (Math.floor((phaseDay - FIRST_PHASE_CHECK_DAY) / PHASE_CHECK_CADENCE_DAYS) * PHASE_CHECK_CADENCE_DAYS)
         : FIRST_PHASE_CHECK_DAY;
-    const checkDay = dataCheckDay;
+    const checkDay = calendarCheckDay;
     const checkDate = shiftDate(phaseStartDate, checkDay - 1);
     const trendDate = rolling ? rollingEndDate : checkDate;
     const result = calculateWeightTrend(rolling ? rollingContext : normalized, { endDate: trendDate, minEntriesPerWindow });
@@ -222,7 +222,10 @@ export function calculatePhaseMovingAverageTrend(entries, options = {}) {
         nextCheckDate,
         daysUntilTrend: 0,
         daysUntilCheck: Math.max(0, nextCheckDay - phaseDay),
-        awaitingNewWeighIn: phaseDay >= nextCheckDay && dataPhaseDay < nextCheckDay
+        // A same-day weigh-in improves the estimate, but the calendar-based
+        // check-in remains available with the most recent usable trend.
+        awaitingNewWeighIn: false,
+        hasCheckDayWeighIn: dataPhaseDay >= checkDay
     };
 }
 

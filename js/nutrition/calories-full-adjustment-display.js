@@ -52,6 +52,15 @@ function setWeeklyReviewReadyState(ready) {
     }));
 }
 
+function hasTodaysWeighIn() {
+    try {
+        const entries = normalizeWeightEntries(JSON.parse(localStorage.getItem(WEIGHT_KEY) || "[]"));
+        return entries.some(entry => entry.date === localDateKey());
+    } catch {
+        return false;
+    }
+}
+
 function syncAppliedTargetAcrossSurfaces(targetCalories) {
     const target = Math.round(Number(targetCalories));
     if (!Number.isFinite(target)) return;
@@ -108,6 +117,7 @@ function openWeeklyReviewModal(event = {}) {
         <section class="weekly-calorie-modal-card" role="dialog" aria-modal="true" aria-labelledby="weekly-calorie-modal-title">
             <header><div><span>${preview ? "TEST PREVIEW · " : ""}WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">Your recommended target</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
             <p>${preview ? "This demonstrates what the review would show using your current data. Nothing in this preview will be saved." : "Your logged week, full calculation and recommended change now."}</p>
+            ${!preview && !hasTodaysWeighIn() ? `<small class="weekly-calorie-modal-cap">For the best estimate, weigh in today before reviewing. This is optional—you can still use the recommendation below.</small>` : ""}
             <div class="weekly-calorie-modal-breakdown">
                 <div><span>Current saved target</span><strong>${recommendation.previousTarget} kcal/day</strong></div>
                 <div><span>Logged weekly average${recommendation.weeklyAverageLoggedDays ? ` (${recommendation.weeklyAverageLoggedDays}/${recommendation.weeklyAverageTotalDays || 7} days)` : ""}</span><strong>${Number.isFinite(recommendation.weeklyAverageCalories) ? `${recommendation.weeklyAverageCalories} kcal/day` : "Not enough logged days"}</strong></div>
