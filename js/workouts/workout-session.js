@@ -657,8 +657,10 @@ function renderSessionExercises({
                     <p class="session-target">Target: ${state.sets.length} sets × ${escapeHtml(plannedExercise.reps || "—")} reps</p>
                     <div class="session-lifting-note ${String(state.notes || "").trim() ? "has-note" : ""}">
                         <button class="session-note-preview" type="button" aria-expanded="false">
+                            <span class="session-note-empty-icon" aria-hidden="true">+</span>
                             <svg class="session-note-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h8l3 3v14H6.5z"></path><path d="M14.5 3.5v4h4M9 12h6M9 15.5h6"></path></svg>
                             <span class="session-note-copy">${String(state.notes || "").trim() ? escapeHtml(String(state.notes).trim()) : "Add exercise note"}</span>
+                            <span class="session-note-empty-hint">Optional</span>
                             <svg class="session-note-edit-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 16.5-1 3.5 3.5-1L18 8.5 14.5 5zM13.5 6l3.5 3.5"></path></svg>
                         </button>
                         <div class="session-note-editor" hidden>

@@ -57,8 +57,10 @@ test("working-set circle offers optional per-set RIR and preserves Drop Set acce
   assert.match(dropStyles, /position: fixed/);
   assert.match(dropStyles, /bottom: calc\(96px \+ env\(safe-area-inset-bottom\)\)/);
   assert.match(dropStyles, /data-rir="0"/);
-  assert.match(dropStyles, /#ef3f49/);
-  assert.match(themeGuardrail, /hasRir \? "var\(--rir-color\)"/);
+  assert.match(dropStyles, /var\(--rir-0,#c92f40\)/);
+  assert.match(dropStyles, /var\(--rir-contrast/);
+  assert.match(themeGuardrail, /forceImportant\(trigger, "border-color", "var\(--accent\)"\)/);
+  assert.match(themeGuardrail, /color-mix\(in srgb, var\(--rir-color\) 34%, transparent\)/);
 });
 
 test("adaptive guidance survey and settings are removed from the application runtime", () => {

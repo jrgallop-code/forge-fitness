@@ -44,6 +44,58 @@ html[data-theme="pulse"] {
   --body-background:radial-gradient(circle at 82% -10%,rgba(255,45,149,.17),transparent 34rem),#120912;--shadow:0 18px 50px rgba(8,0,7,.5);--red:var(--accent);--red-dark:var(--accent-dark);--red-glow:var(--accent-glow);
 }
 
+/* RIR badges use a coordinated, high-contrast palette for each appearance. */
+:root,
+html[data-theme="level-up"] {
+  --rir-0:#c92f40;--rir-0-contrast:#fff;
+  --rir-1:#b45a22;--rir-1-contrast:#fff;
+  --rir-2:#9e4770;--rir-2-contrast:#fff;
+  --rir-3:#6f5a9a;--rir-3-contrast:#fff;
+  --rir-4:#5d7180;--rir-4-contrast:#fff;
+}
+html[data-theme="arctic"] {
+  --rir-0:#a92f52;--rir-0-contrast:#fff;
+  --rir-1:#5b3fa1;--rir-1-contrast:#fff;
+  --rir-2:#1769e0;--rir-2-contrast:#fff;
+  --rir-3:#087d86;--rir-3-contrast:#fff;
+  --rir-4:#5f6f82;--rir-4-contrast:#fff;
+}
+html[data-theme="pure"] {
+  --rir-0:#9d3045;--rir-0-contrast:#fff;
+  --rir-1:#171719;--rir-1-contrast:#fff;
+  --rir-2:#424247;--rir-2-contrast:#fff;
+  --rir-3:#67676c;--rir-3-contrast:#fff;
+  --rir-4:#b8b8bc;--rir-4-contrast:#202022;
+}
+html[data-theme="ocean"] {
+  --rir-0:#ad3656;--rir-0-contrast:#fff;
+  --rir-1:#4e4ba6;--rir-1-contrast:#fff;
+  --rir-2:#0577a8;--rir-2-contrast:#fff;
+  --rir-3:#087f75;--rir-3-contrast:#fff;
+  --rir-4:#657681;--rir-4-contrast:#fff;
+}
+html[data-theme="midnight"] {
+  --rir-0:#bd3d64;--rir-0-contrast:#fff;
+  --rir-1:#7042af;--rir-1-contrast:#fff;
+  --rir-2:#3265bf;--rir-2-contrast:#fff;
+  --rir-3:#247a8f;--rir-3-contrast:#fff;
+  --rir-4:#5f6c82;--rir-4-contrast:#fff;
+}
+html[data-theme="slate"] {
+  --rir-0:#a9434e;--rir-0-contrast:#fff;
+  --rir-1:#6c4d95;--rir-1-contrast:#fff;
+  --rir-2:#547a9d;--rir-2-contrast:#fff;
+  --rir-3:#3d7c7a;--rir-3-contrast:#fff;
+  --rir-4:#626d76;--rir-4-contrast:#fff;
+}
+html[data-theme="pulse"] {
+  --rir-0:#f04a66;--rir-0-contrast:#240710;
+  --rir-1:#c81970;--rir-1-contrast:#fff;
+  --rir-2:#9134ab;--rir-2-contrast:#fff;
+  --rir-3:#654da7;--rir-3-contrast:#fff;
+  --rir-4:#756070;--rir-4-contrast:#fff;
+}
+
 html,body{background:var(--bg)!important;color:var(--text)}
 body{background:var(--body-background)!important;transition:background-color .2s ease,color .2s ease}
 :where(h1,h2,h3,h4,h5,h6,strong,legend,label){color:var(--heading)}
@@ -244,6 +296,7 @@ html[data-theme-mode="light"] .seven-day-volume-muscle{stroke:rgba(16,32,58,.62)
 #overall-weekly-sets-card .overall-week-column.is-latest .overall-week-value,#overall-weekly-sets-card .overall-week-column.is-latest small{color:var(--text)!important}
 
 :where(.drop-set-menu,.session-exercise-swap-panel,.session-smart-option,.session-lifting-note,.session-rep-notes,.session-add-search,.session-add-results>button,.session-superset-current,.session-superset-option,.superset-runtime-banner,.superset-live-cue,.exercise-options-popover,.exercise-timer-popover,.exercise-warmup-panel,.warmup-suggestion-row,.workout-complete-recap__details-card,.workout-complete-recap__insight){border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
+html[data-theme] .session-lifting-note:not(.has-note){border-color:var(--line)!important;background:transparent!important}
 :where(.drop-set-menu button,.drop-set-row input,.drop-set-complete,.drop-set-remove,.session-swap-close,.session-swap-field select,.warmup-close-btn,.warmup-load-entry input){border-color:var(--line)!important;background:var(--input-bg)!important;color:var(--text)!important}
 
 /* Theme-safe typography: never allow legacy white/grey text to disappear on light surfaces. */

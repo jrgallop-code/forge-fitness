@@ -27,10 +27,17 @@ test("saved notes use a compact preview and expand only for editing", () => {
   assert.match(styles, /\.session-lifting-note\.is-editing \.session-note-preview\{display:none\}/);
 });
 
+test("empty saved-workout notes use a clean text prompt without visible SVG controls", () => {
+  assert.match(session, /class="session-note-empty-icon"[^>]*>\+</);
+  assert.match(session, /class="session-note-empty-hint">Optional</);
+  assert.match(styles, /\.session-lifting-note:not\(\.has-note\) \.session-note-icon,[^}]*\.session-note-edit-icon\{display:none\}/);
+  assert.match(styles, /\.session-lifting-note:not\(\.has-note\) \.session-note-empty-icon\{display:grid/);
+});
+
 test("the exercise menu opens the same Add or Edit Note field", () => {
   assert.match(actions, /data-session-overflow-action="note"/);
   assert.match(actions, /noteValue \? 'Edit Note' : 'Add Note'/);
   assert.match(actions, /querySelector\('\.session-note-preview'\)\?\.click\(\)/);
-  assert.match(entry, /session-exercise-actions\.css\?v=exercise-note-flow-1/);
+  assert.match(entry, /session-exercise-actions\.css\?v=note-empty-cleanup-1/);
   assert.match(entry, /session-exercise-actions\.js\?v=exercise-note-flow-1/);
 });
