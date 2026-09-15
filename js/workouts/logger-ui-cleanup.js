@@ -1,4 +1,5 @@
 import { canonicalInputValue } from "../core/unit-system.js?v=granular-units-1";
+import { cancelActiveRestTimer } from "./rest-timer-authority.js?v=warmup-row-parity-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 
@@ -248,6 +249,7 @@ function renderWarmupRows(card) {
             <input class="session-warmup-weight" type="number" inputmode="decimal" min="0" step="0.5" value="${set.weight ?? ""}" placeholder="Weight" aria-label="Warm-up set ${warmupIndex + 1} weight">
             <input class="session-warmup-reps" type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ""}" placeholder="Reps" aria-label="Warm-up set ${warmupIndex + 1} reps">
             <button class="complete-warmup-btn secondary-btn" type="button" aria-label="${set.completed ? "Warm-up set completed" : "Complete warm-up set"}"></button>
+            <button class="logger-remove-set-btn logger-remove-warmup-btn" type="button" aria-label="Remove warm-up set ${warmupIndex + 1}">−</button>
         `;
         anchor.insertAdjacentElement("afterend", row);
         anchor = row;
@@ -267,6 +269,22 @@ function renderWarmupRows(card) {
             row.classList.toggle("completed", latestSet.completed);
             const button = row.querySelector(".complete-warmup-btn");
             button?.setAttribute("aria-label", latestSet.completed ? "Warm-up set completed" : "Complete warm-up set");
+        });
+        row.querySelector(".logger-remove-warmup-btn")?.addEventListener("click", () => {
+            const current = getWarmupState(card);
+            if (!current.active || !Array.isArray(current.state?.warmupSets)) return;
+            const timer = current.active.restTimer;
+            if (timer?.sourceType === "warmup" && Number(timer.exerciseIndex) === current.exerciseIndex) {
+                cancelActiveRestTimer({
+                    exerciseIndex: current.exerciseIndex,
+                    sourceType: "warmup",
+                    warmupIndex: Number(timer.warmupIndex)
+                });
+                current.active.restTimer = null;
+            }
+            current.state.warmupSets.splice(warmupIndex, 1);
+            saveActiveWorkout(current.active);
+            renderWarmupRows(card);
         });
     });
 }

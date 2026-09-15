@@ -134,3 +134,5 @@ Release 61: remove the completed weekly check-in replay control after validation
 Release 62: consolidate workout actions into an exercise overflow menu and add optional per-set RIR selection to working-set circles.
 
 Release 63: restore dedicated rest-timer access, compact the exercise header, float and polish RIR set controls, and remove adaptive-guidance surveys.
+
+Release 64: align warm-up rows with working sets and add per-row warm-up removal.
