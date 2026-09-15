@@ -1,7 +1,7 @@
 import "./core/appearance-theme.js?v=appearance-themes-3";
 import { navigate } from "./core/router.js?v=history-editor-route-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=history-editor-route-1";
-import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=native-navigation-stability-1";
+import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=exercise-note-flow-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";
 import "./workouts/exercise-guide-resolution-fix.js?v=1";
@@ -22,7 +22,8 @@ const ICON_TOKENS=Object.keys(ICONS).sort((a,b)=>b.length-a.length);
 const ICON_REGEX=new RegExp(`(${ICON_TOKENS.map(token=>token.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")})`,"g");
 function createIconElement(svgMarkup){const template=document.createElement("template");template.innerHTML=svgMarkup.trim();return template.content.firstElementChild;}
 function replaceColoredEmojis(root){if(!root)return;const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){const parent=node.parentElement;if(!parent||parent.closest("script, style, textarea, input, option"))return NodeFilter.FILTER_REJECT;return ICON_TOKENS.some(token=>node.nodeValue?.includes(token))?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});const matches=[];let node;while((node=walker.nextNode()))matches.push(node);matches.forEach(textNode=>{const parts=textNode.nodeValue.split(ICON_REGEX),fragment=document.createDocumentFragment();parts.forEach(part=>{if(!part)return;fragment.append(ICONS[part]?createIconElement(ICONS[part]):document.createTextNode(part));});textNode.replaceWith(fragment);});}
-function addExerciseButtonIcons(root){root.querySelectorAll?.("button").forEach(button=>{if(button.matches(".more-menu-card, .level-up-coach-card")||!/\bexercises?\b/i.test(button.textContent||"")||button.querySelector(".app-exercise-person-icon"))return;button.insertBefore(createIconElement(EXERCISE_LIFTER_SVG),button.firstChild);});}
+const EXERCISE_ICON_BUTTON_SELECTOR=".add-exercise-btn, .session-add-exercise-btn, #history-add-exercise-btn, #add-one-off-exercise, [data-manual-confirm]";
+function addExerciseButtonIcons(root){root.querySelectorAll?.(EXERCISE_ICON_BUTTON_SELECTOR).forEach(button=>{if(!/^(\+\s*)?Add Exercises?\b/i.test((button.textContent||"").trim())||button.querySelector(".app-exercise-person-icon"))return;button.insertBefore(createIconElement(EXERCISE_LIFTER_SVG),button.firstChild);});}
 function decorateAppIcons(root=document){replaceColoredEmojis(root);addExerciseButtonIcons(root);}
 
 initializeWorkoutRuntime();

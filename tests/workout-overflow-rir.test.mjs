@@ -18,6 +18,7 @@ test("exercise overflow groups Superset, Warm-up, and Smart Swap while leaving F
   assert.match(actions, /data-session-overflow-action="warmup"/);
   assert.match(actions, /data-session-overflow-action="swap"/);
   assert.match(actions, /data-session-overflow-action="reorder"/);
+  assert.match(actions, /data-session-overflow-action="note"/);
   assert.match(actions, /Smart Swap/);
   assert.match(actions, /Reorder Exercises/);
   assert.match(actionStyles, /\.session-overflow-source\{display:none!important\}/);
@@ -56,8 +57,10 @@ test("working-set circle offers optional per-set RIR and preserves Drop Set acce
   assert.match(dropStyles, /position: fixed/);
   assert.match(dropStyles, /bottom: calc\(96px \+ env\(safe-area-inset-bottom\)\)/);
   assert.match(dropStyles, /data-rir="0"/);
-  assert.match(dropStyles, /#ef3f49/);
-  assert.match(themeGuardrail, /hasRir \? "var\(--rir-color\)"/);
+  assert.match(dropStyles, /var\(--rir-0,#c92f40\)/);
+  assert.match(dropStyles, /var\(--rir-contrast/);
+  assert.match(themeGuardrail, /forceImportant\(trigger, "border-color", "var\(--accent\)"\)/);
+  assert.match(themeGuardrail, /color-mix\(in srgb, var\(--rir-color\) 34%, transparent\)/);
 });
 
 test("adaptive guidance survey and settings are removed from the TestFlight runtime", () => {
@@ -72,5 +75,5 @@ test("the workout tutorial and native entry point load the new controls", () => 
   assert.match(tutorial, /Open set options/);
   assert.match(tutorial, /data-session-overflow-action="warmup"/);
   assert.match(entry, /drop-set-runtime\.js\?v=floating-rir-1/);
-  assert.match(entry, /session-exercise-actions\.js\?v=exercise-reorder-loupe-1/);
+  assert.match(entry, /session-exercise-actions\.js\?v=exercise-note-flow-1/);
 });

@@ -655,6 +655,19 @@ function renderSessionExercises({
                 <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-tracking-type="reps">
                     <h4>${escapeHtml(exercise?.name || "Exercise")}</h4>
                     <p class="session-target">Target: ${state.sets.length} sets × ${escapeHtml(plannedExercise.reps || "—")} reps</p>
+                    <div class="session-lifting-note ${String(state.notes || "").trim() ? "has-note" : ""}">
+                        <button class="session-note-preview" type="button" aria-expanded="false">
+                            <span class="session-note-empty-icon" aria-hidden="true">+</span>
+                            <svg class="session-note-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h8l3 3v14H6.5z"></path><path d="M14.5 3.5v4h4M9 12h6M9 15.5h6"></path></svg>
+                            <span class="session-note-copy">${String(state.notes || "").trim() ? escapeHtml(String(state.notes).trim()) : "Add exercise note"}</span>
+                            <span class="session-note-empty-hint">Optional</span>
+                            <svg class="session-note-edit-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 16.5-1 3.5 3.5-1L18 8.5 14.5 5zM13.5 6l3.5 3.5"></path></svg>
+                        </button>
+                        <div class="session-note-editor" hidden>
+                            <textarea class="session-rep-notes" maxlength="500" placeholder="Technique, setup, machine setting, pain, cues…">${escapeHtml(state.notes || "")}</textarea>
+                            <div class="session-note-editor-actions"><small>Saved automatically</small><button class="session-note-done" type="button">Done</button></div>
+                        </div>
+                    </div>
                     ${editingSessionId ? `
                         <div class="routine-set-editor">
                             <strong>${state.sets.length} ${state.sets.length === 1 ? "set" : "sets"}</strong>
@@ -678,10 +691,6 @@ function renderSessionExercises({
                             ${editingSessionId ? `<div class="drop-set-block history-edit-drop-block" data-parent-set="${setIndex}"></div>` : ""}
                         `;
                     }).join("")}
-                    <details class="session-lifting-notes" ${state.notes ? "open" : ""}>
-                        <summary><span>Notes${state.notes ? "" : " (optional)"}</span><em>${state.notes ? "Added" : "›"}</em></summary>
-                        <textarea class="session-rep-notes" maxlength="500" placeholder="Technique, setup, machine setting, pain, cues…">${escapeHtml(state.notes || "")}</textarea>
-                    </details>
                     ${editingSessionId ? `
                         <div class="edit-session-exercise-actions">
                             <button class="remove-session-exercise secondary-btn" type="button">Remove Exercise</button>
@@ -1023,6 +1032,44 @@ function bindSessionInputs({
             const exerciseIndex =
                 Number(card.dataset.exerciseIndex);
 
+            const noteShell = card.querySelector(".session-lifting-note");
+            const noteToggle = noteShell?.querySelector(".session-note-preview");
+            const noteEditor = noteShell?.querySelector(".session-note-editor");
+            const noteTextarea = noteShell?.querySelector(".session-rep-notes");
+            const noteCopy = noteShell?.querySelector(".session-note-copy");
+            const noteDone = noteShell?.querySelector(".session-note-done");
+
+            const syncNotePreview = () => {
+                const note = String(noteTextarea?.value || "").trim();
+                noteShell?.classList.toggle("has-note", Boolean(note));
+                if (noteCopy) noteCopy.textContent = note || "Add exercise note";
+                if (noteToggle) noteToggle.setAttribute("aria-label", note ? "Edit exercise note" : "Add exercise note");
+                const menuNoteLabel = card.querySelector('[data-session-overflow-action="note"] span');
+                if (menuNoteLabel) menuNoteLabel.textContent = note ? "Edit Note" : "Add Note";
+            };
+
+            const closeNoteEditor = () => {
+                if (!noteShell || !noteEditor || !noteToggle) return;
+                noteShell.classList.remove("is-editing");
+                noteEditor.hidden = true;
+                noteToggle.setAttribute("aria-expanded", "false");
+                noteTextarea?.blur();
+                syncNotePreview();
+            };
+
+            noteToggle?.addEventListener("click", () => {
+                if (!noteShell || !noteEditor) return;
+                noteShell.classList.add("is-editing");
+                noteEditor.hidden = false;
+                noteToggle.setAttribute("aria-expanded", "true");
+                window.requestAnimationFrame(() => noteTextarea?.focus());
+            });
+            noteDone?.addEventListener("click", closeNoteEditor);
+            noteTextarea?.addEventListener("keydown", event => {
+                if (event.key === "Escape") closeNoteEditor();
+            });
+            syncNotePreview();
+
             card
                 .querySelector(".session-rep-notes")
                 ?.addEventListener(
@@ -1030,6 +1077,7 @@ function bindSessionInputs({
                     event => {
                         session.exercises[exerciseIndex].notes = event.target.value;
                         session.currentExerciseIndex = exerciseIndex;
+                        syncNotePreview();
                         persist();
                     }
                 );

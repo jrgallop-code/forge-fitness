@@ -81,6 +81,12 @@ function polishExerciseHeader(card, index, total) {
     const position = title.querySelector(".logger-exercise-position");
     if (position) position.textContent = `Exercise ${index + 1} of ${total}`;
 
+    const target = card.querySelector(".session-target");
+    const note = card.querySelector(".session-lifting-note");
+    if (target && note && target.nextElementSibling !== note) {
+        target.insertAdjacentElement("afterend", note);
+    }
+
     let tools = card.querySelector(".logger-exercise-tools");
     if (!tools) {
         tools = document.createElement("div");

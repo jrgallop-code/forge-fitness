@@ -1,4 +1,4 @@
-const STYLE_ID = "workout-theme-guardrail-4";
+const STYLE_ID = "workout-theme-guardrail-5";
 const OBSERVER_FLAG = "__levelUpWorkoutThemeGuardrailObserver";
 
 function ensureStyles() {
@@ -19,8 +19,8 @@ function ensureStyles() {
         }
 
         html[data-theme] #workout-session-logger .drop-set-menu-trigger.has-rir {
-            border-color: var(--rir-color) !important;
-            box-shadow: 0 0 0 2px color-mix(in srgb, var(--rir-color) 20%, transparent) !important;
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--rir-color) 34%, transparent) !important;
         }
 
         html[data-theme] #workout-session-logger .session-set-row.has-drop-set .drop-set-menu-trigger,
@@ -89,6 +89,13 @@ function ensureStyles() {
             color: var(--text) !important;
         }
 
+        html[data-theme] #workout-session-logger .drop-set-menu .set-rir-options button.selected {
+            border-color: var(--rir-choice) !important;
+            background: var(--rir-choice) !important;
+            color: var(--rir-choice-contrast) !important;
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--rir-choice) 24%, transparent) !important;
+        }
+
         html[data-theme] #workout-session-logger .drop-set-block {
             border-left-color: var(--accent) !important;
             background: color-mix(in srgb, var(--accent) 6%, transparent) !important;
@@ -152,11 +159,11 @@ function forceImportant(element, property, value) {
 
 function themeSetTrigger(trigger) {
     const hasRir = trigger?.classList?.contains("has-rir");
-    forceImportant(trigger, "border-color", hasRir ? "var(--rir-color)" : "var(--accent)");
+    forceImportant(trigger, "border-color", "var(--accent)");
     forceImportant(trigger, "background", "var(--accent)");
     forceImportant(trigger, "color", "var(--accent-contrast)");
     forceImportant(trigger, "box-shadow", hasRir
-        ? "0 0 0 2px color-mix(in srgb, var(--rir-color) 20%, transparent)"
+        ? "0 0 0 2px color-mix(in srgb, var(--rir-color) 34%, transparent)"
         : "0 0 0 1px var(--accent-glow)");
 }
 

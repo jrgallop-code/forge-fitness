@@ -907,6 +907,9 @@ function ensureExerciseOverflow(card) {
       <button type="button" data-session-overflow-action="swap">
         <span>Smart Swap</span><small>Choose a similar exercise for today</small>
       </button>
+      <button type="button" data-session-overflow-action="note">
+        <span>Add Note</span><small>Record a cue or session detail</small>
+      </button>
       <button type="button" data-session-overflow-action="reorder">
         <span>Reorder Exercises</span><small>Press, hold, and arrange this workout day</small>
       </button>
@@ -934,6 +937,13 @@ function ensureExerciseOverflow(card) {
   const warmupAction = actions.querySelector('[data-session-overflow-action="warmup"] span');
   if (supersetAction) supersetAction.textContent = sources.superset?.textContent?.trim() || 'Superset';
   if (warmupAction) warmupAction.textContent = sources.warmup?.getAttribute('aria-expanded') === 'true' ? 'Hide Warm-up' : 'Warm-up';
+  const noteAction = actions.querySelector('[data-session-overflow-action="note"]');
+  const noteValue = card.querySelector('.session-rep-notes')?.value?.trim() || '';
+  if (noteAction) {
+    noteAction.hidden = card.dataset.trackingType === 'notes' || !card.querySelector('.session-note-preview');
+    const label = noteAction.querySelector('span');
+    if (label) label.textContent = noteValue ? 'Edit Note' : 'Add Note';
+  }
   const reorderAction = actions.querySelector('[data-session-overflow-action="reorder"]');
   if (reorderAction) reorderAction.hidden = (getSessionDay(readActiveWorkout())?.exercises?.length || 0) < 2;
 
@@ -1051,6 +1061,10 @@ document.addEventListener('click', event => {
     if (action === 'reorder') {
       const logger = card?.closest('#workout-session-logger');
       if (logger) openReorderSheet(logger);
+      return;
+    }
+    if (action === 'note') {
+      card?.querySelector('.session-note-preview')?.click();
       return;
     }
     const selector = action === 'superset'
