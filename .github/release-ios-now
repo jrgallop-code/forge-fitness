@@ -138,3 +138,5 @@ Release 63: restore dedicated rest-timer access, compact the exercise header, fl
 Release 64: align warm-up rows with working sets and add per-row warm-up removal.
 
 Release 65: add hold-and-drag exercise reordering with confirmed current-session and saved-day updates.
+
+Release 66: prevent disabled rest timers from briefly creating and flashing a legacy 90-second countdown.

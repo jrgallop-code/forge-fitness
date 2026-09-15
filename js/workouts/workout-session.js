@@ -1274,7 +1274,14 @@ function getSelectedRestSeconds(logger) {
         );
     }
 
-    return Number(select?.value) || 90;
+    if (!select) {
+        return 90;
+    }
+
+    const seconds = Number(select.value);
+    return Number.isFinite(seconds)
+        ? Math.max(0, seconds)
+        : 90;
 
 }
 
@@ -1498,16 +1505,17 @@ function getWorkoutElapsedMs(session) {
 function startRestTimer(seconds) {
 
     const active = getActiveWorkout();
-    if (!active) {
+    const durationSeconds = Number(seconds);
+    if (!active || !Number.isFinite(durationSeconds) || durationSeconds <= 0) {
         return;
     }
     active.restTimer = {
         status: "running",
-        durationSeconds: seconds,
+        durationSeconds,
         endAt:
-            new Date(Date.now() + seconds * 1000).toISOString(),
+            new Date(Date.now() + durationSeconds * 1000).toISOString(),
         remainingMs:
-            seconds * 1000,
+            durationSeconds * 1000,
         notified: false
     };
     saveActiveWorkout(active);

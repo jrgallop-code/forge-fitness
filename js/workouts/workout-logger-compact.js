@@ -54,7 +54,7 @@ function ensureHiddenRestSelect(logger) {
     select = document.createElement('select');
     select.id = 'rest-duration-select';
     select.hidden = true;
-    select.innerHTML = '<option value="60">60</option><option value="90">90</option><option value="120">120</option><option value="180">180</option>';
+    select.innerHTML = '<option value="0">Off</option><option value="60">60</option><option value="90">90</option><option value="120">120</option><option value="180">180</option>';
     logger.appendChild(select);
   }
   return select;

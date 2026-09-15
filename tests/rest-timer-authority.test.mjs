@@ -7,6 +7,7 @@ const warmups = await readFile(new URL("../js/workouts/warmup-session-fix.js", i
 const stability = await readFile(new URL("../js/workouts/warmup-timer-stability.js", import.meta.url), "utf8");
 const display = await readFile(new URL("../js/workouts/rest-timer-display-fix.js", import.meta.url), "utf8");
 const compact = await readFile(new URL("../js/workouts/workout-logger-compact.js", import.meta.url), "utf8");
+const session = await readFile(new URL("../js/workouts/workout-session.js", import.meta.url), "utf8");
 const theme = await readFile(new URL("../js/core/workout-theme-guardrail.js", import.meta.url), "utf8");
 const compactCss = await readFile(new URL("../css/workout-logger-compact.css", import.meta.url), "utf8");
 
@@ -16,6 +17,10 @@ test("working sets use per-exercise timer authority and Off no longer creates a 
     assert.match(authority, /clearTimerForDisabledSource/);
     assert.match(authority, /sourceType:\s*"working"/);
     assert.match(authority, /\.complete-set-btn/);
+    assert.match(compact, /<option value="0">Off<\/option>/);
+    assert.match(session, /return Number\.isFinite\(seconds\)[\s\S]*?Math\.max\(0, seconds\)/);
+    assert.match(session, /durationSeconds <= 0/);
+    assert.doesNotMatch(session, /return Number\(select\?\.value\) \|\| 90/);
 });
 
 test("unchecking a working set cancels only that set's active rest", () => {
