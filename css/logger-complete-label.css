@@ -48,7 +48,8 @@
 
 /* Keep set removal visible without crowding the weight and reps fields. */
 .workout-session-logger .session-set-header,
-.workout-session-logger .session-set-row {
+.workout-session-logger .session-set-row,
+.workout-session-logger .session-warmup-row {
   grid-template-columns: 32px minmax(44px, 1fr) minmax(62px, 76px) minmax(48px, 60px) 32px 32px !important;
   gap: 5px !important;
 }
@@ -91,7 +92,8 @@
 
 @media (max-width: 380px) {
   .workout-session-logger .session-set-header,
-  .workout-session-logger .session-set-row {
+  .workout-session-logger .session-set-row,
+  .workout-session-logger .session-warmup-row {
     grid-template-columns: 30px minmax(40px, 1fr) minmax(56px, 68px) minmax(46px, 56px) 30px 30px !important;
     gap: 4px !important;
   }

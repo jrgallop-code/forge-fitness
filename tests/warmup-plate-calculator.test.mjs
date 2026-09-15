@@ -45,6 +45,15 @@ test("warm-up sets remain warm-ups rather than entering working-set analytics", 
     assert.doesNotMatch(warmupPlate, /1RM|oneRepMax|personalRecord|trainingVolume/i);
 });
 
+test("warm-up rows match the six-column working-set grid and can be removed", async () => {
+    const rowStyles = await readFile(new URL("../css/logger-complete-label.css", import.meta.url), "utf8");
+    assert.match(rowStyles, /\.session-set-row,\s*\n\.workout-session-logger \.session-warmup-row\s*\{/);
+    assert.match(rowStyles, /grid-template-columns:\s*32px[\s\S]*32px 32px !important/);
+    assert.match(loggerCleanup, /logger-remove-warmup-btn/);
+    assert.match(loggerCleanup, /warmupSets\.splice\(warmupIndex, 1\)/);
+    assert.match(loggerCleanup, /cancelActiveRestTimer/);
+});
+
 test("warm-up session bootstrap loads the working-set-parity bridge", () => {
     assert.match(warmupBridge, /warmup-plate-calculator\.js\?v=warmup-plate-calculator-3/);
 });

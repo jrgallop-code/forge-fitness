@@ -21,6 +21,8 @@ const SPECIAL_MUSCLE_PROFILES = {
   'ab-wheel-rollout': { primary: ['Rectus Abdominis'], secondary: ['Deep Core', 'Obliques'] }
 };
 
+const PLAN_STORAGE_KEY = 'forge_workout_plans';
+
 function readActiveWorkout() {
   try {
     const active = JSON.parse(localStorage.getItem(ACTIVE_WORKOUT_STORAGE_KEY) || 'null');
@@ -379,6 +381,212 @@ function getSessionDay(active) {
   return active?.planSnapshot?.days?.[Number(active.trainingDayIndex) || 0] || null;
 }
 
+function readSavedPlans() {
+  try {
+    const plans = JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY) || '[]');
+    return Array.isArray(plans) ? plans : [];
+  } catch {
+    return [];
+  }
+}
+
+function savedDayCanFollowActiveOrder(active, orderLength) {
+  const plans = readSavedPlans();
+  const plan = plans.find(item => item?.id === active?.planId);
+  const day = plan?.days?.[Number(active?.trainingDayIndex) || 0];
+  return Boolean(day && Array.isArray(day.exercises) && day.exercises.length === orderLength);
+}
+
+function applyOrderToSavedWorkoutDay(active, order) {
+  const plans = readSavedPlans();
+  const planIndex = plans.findIndex(item => item?.id === active?.planId);
+  if (planIndex < 0) return false;
+  const dayIndex = Number(active.trainingDayIndex) || 0;
+  const day = plans[planIndex]?.days?.[dayIndex];
+  if (!day || !Array.isArray(day.exercises) || day.exercises.length !== order.length) return false;
+  day.exercises = order.map(index => day.exercises[index]).filter(Boolean);
+  if (day.exercises.length !== order.length) return false;
+  localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(plans));
+  window.dispatchEvent(new CustomEvent('levelup:workout-plans-changed', {
+    detail: { planId: active.planId, dayIndex, reason: 'exercise-order' }
+  }));
+  return true;
+}
+
+function reorderExerciseName(planned, state) {
+  return getExerciseById(planned?.id)?.name || planned?.name || planned?.exerciseName || state?.name || state?.exerciseName || 'Exercise';
+}
+
+function renderReorderItems(active) {
+  const day = getSessionDay(active);
+  return (day?.exercises || []).map((planned, index) => {
+    const state = active.exercises?.[index];
+    const definition = getExerciseById(planned?.id);
+    const detail = [definition?.muscleGroup || state?.muscleGroup, definition?.equipment || state?.equipment].filter(Boolean).join(' · ');
+    return `
+      <div class="session-reorder-item" data-reorder-original-index="${index}">
+        <span class="session-reorder-position">${index + 1}</span>
+        <span class="session-reorder-copy"><strong>${escapeHtml(reorderExerciseName(planned, state))}</strong><small>${escapeHtml(detail || 'Workout exercise')}</small></span>
+        <button class="session-reorder-handle" type="button" aria-label="Hold and drag ${escapeHtml(reorderExerciseName(planned, state))}. Use arrow keys to move it.">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="6" r="1.4"></circle><circle cx="16" cy="6" r="1.4"></circle><circle cx="8" cy="12" r="1.4"></circle><circle cx="16" cy="12" r="1.4"></circle><circle cx="8" cy="18" r="1.4"></circle><circle cx="16" cy="18" r="1.4"></circle></svg>
+        </button>
+      </div>`;
+  }).join('');
+}
+
+function renumberReorderItems(list) {
+  [...list.querySelectorAll('.session-reorder-item')].forEach((item, index) => {
+    const position = item.querySelector('.session-reorder-position');
+    if (position) position.textContent = String(index + 1);
+  });
+}
+
+function bindReorderGestures(list) {
+  if (!list || list.dataset.reorderGesturesBound === 'true') return;
+  list.dataset.reorderGesturesBound = 'true';
+  let gesture = null;
+
+  const finish = () => {
+    if (!gesture) return;
+    window.clearTimeout(gesture.holdTimer);
+    gesture.item.classList.remove('dragging');
+    list.classList.remove('dragging-exercise');
+    gesture = null;
+    renumberReorderItems(list);
+  };
+
+  list.addEventListener('pointerdown', event => {
+    const handle = event.target.closest('.session-reorder-handle');
+    const item = handle?.closest('.session-reorder-item');
+    if (!handle || !item || event.button > 0) return;
+    gesture = {
+      pointerId: event.pointerId,
+      handle,
+      item,
+      startX: event.clientX,
+      startY: event.clientY,
+      active: false,
+      holdTimer: window.setTimeout(() => {
+        if (!gesture || gesture.item !== item) return;
+        gesture.active = true;
+        item.classList.add('dragging');
+        list.classList.add('dragging-exercise');
+        navigator.vibrate?.(10);
+      }, 220)
+    };
+    handle.setPointerCapture?.(event.pointerId);
+  });
+
+  // Keep iOS's text-selection loupe and touch callout out of this drag-only control.
+  list.addEventListener('contextmenu', event => {
+    if (event.target.closest('.session-reorder-item')) event.preventDefault();
+  });
+  list.addEventListener('selectstart', event => {
+    if (event.target.closest('.session-reorder-item')) event.preventDefault();
+  });
+  list.addEventListener('dragstart', event => {
+    if (event.target.closest('.session-reorder-item')) event.preventDefault();
+  });
+
+  list.addEventListener('pointermove', event => {
+    if (!gesture || event.pointerId !== gesture.pointerId) return;
+    if (!gesture.active) {
+      if (Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) > 8) finish();
+      return;
+    }
+    event.preventDefault();
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('.session-reorder-item');
+    if (!target || target === gesture.item || target.parentElement !== list) return;
+    const placeAfter = event.clientY > target.getBoundingClientRect().top + target.offsetHeight / 2;
+    list.insertBefore(gesture.item, placeAfter ? target.nextSibling : target);
+    renumberReorderItems(list);
+  });
+
+  list.addEventListener('pointerup', finish);
+  list.addEventListener('pointercancel', finish);
+  list.addEventListener('keydown', event => {
+    const handle = event.target.closest('.session-reorder-handle');
+    const item = handle?.closest('.session-reorder-item');
+    if (!item || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault();
+    if (event.key === 'ArrowUp' && item.previousElementSibling) list.insertBefore(item, item.previousElementSibling);
+    if (event.key === 'ArrowDown' && item.nextElementSibling) list.insertBefore(item.nextElementSibling, item);
+    renumberReorderItems(list);
+    handle.focus();
+  });
+}
+
+function closeReorderSheet(sheet) {
+  if (sheet) sheet.hidden = true;
+}
+
+function ensureReorderSheet(logger) {
+  let sheet = logger.querySelector('#session-reorder-sheet');
+  if (sheet) return sheet;
+  sheet = document.createElement('div');
+  sheet.id = 'session-reorder-sheet';
+  sheet.className = 'session-exercise-swap-sheet session-reorder-sheet';
+  sheet.hidden = true;
+  sheet.innerHTML = `
+    <div class="session-exercise-swap-panel session-reorder-panel" role="dialog" aria-modal="true" aria-labelledby="session-reorder-title">
+      <div class="session-swap-heading">
+        <div><span class="eyebrow">WORKOUT DAY</span><h4 id="session-reorder-title">Reorder Exercises</h4></div>
+        <button class="session-swap-close session-reorder-close" type="button" aria-label="Close exercise reorder">×</button>
+      </div>
+      <p class="session-swap-note session-reorder-note"></p>
+      <div class="session-reorder-list" aria-label="Exercise order"></div>
+      <p class="session-reorder-help">Press and hold the dotted handle, then drag the exercise into position.</p>
+      <div class="session-reorder-actions">
+        <button class="secondary-btn session-reorder-cancel" type="button">Cancel</button>
+        <button class="primary-btn session-reorder-confirm" type="button">Confirm Order</button>
+      </div>
+    </div>`;
+  logger.appendChild(sheet);
+  const close = () => closeReorderSheet(sheet);
+  sheet.querySelector('.session-reorder-close')?.addEventListener('click', close);
+  sheet.querySelector('.session-reorder-cancel')?.addEventListener('click', close);
+  sheet.addEventListener('click', event => { if (event.target === sheet) close(); });
+  sheet.querySelector('.session-reorder-confirm')?.addEventListener('click', () => {
+    const active = readActiveWorkout();
+    const day = getSessionDay(active);
+    const list = sheet.querySelector('.session-reorder-list');
+    const order = [...(list?.querySelectorAll('.session-reorder-item') || [])].map(item => Number(item.dataset.reorderOriginalIndex));
+    if (!active || !day || order.length !== day.exercises?.length || new Set(order).size !== order.length) return;
+
+    const priorPlanned = [...day.exercises];
+    const priorStates = [...(active.exercises || [])];
+    const previousCurrent = Number(active.currentExerciseIndex) || 0;
+    const previousTimerExercise = Number(active.restTimer?.exerciseIndex);
+    day.exercises = order.map(index => priorPlanned[index]);
+    active.exercises = order.map(index => priorStates[index]);
+    active.currentExerciseIndex = Math.max(0, order.indexOf(previousCurrent));
+    if (active.restTimer && Number.isInteger(previousTimerExercise)) {
+      const nextTimerExercise = order.indexOf(previousTimerExercise);
+      if (nextTimerExercise >= 0) active.restTimer.exerciseIndex = nextTimerExercise;
+    }
+    applyOrderToSavedWorkoutDay(active, order);
+    saveActiveWorkout(active);
+    closeReorderSheet(sheet);
+    openActiveWorkout();
+  });
+  bindReorderGestures(sheet.querySelector('.session-reorder-list'));
+  return sheet;
+}
+
+function openReorderSheet(logger) {
+  const active = readActiveWorkout();
+  const day = getSessionDay(active);
+  if (!active || !day || !Array.isArray(day.exercises) || day.exercises.length < 2) return;
+  const sheet = ensureReorderSheet(logger);
+  const list = sheet.querySelector('.session-reorder-list');
+  const note = sheet.querySelector('.session-reorder-note');
+  if (list) list.innerHTML = renderReorderItems(active);
+  if (note) note.textContent = savedDayCanFollowActiveOrder(active, day.exercises.length)
+    ? `Set the order for ${day.name || active.trainingDayName || 'this workout day'}. Your current session and saved workout day will both update.`
+    : `Set the order for ${day.name || active.trainingDayName || 'this workout day'}. This order will apply to the current workout.`;
+  sheet.hidden = false;
+}
+
 function appendExerciseToActiveWorkout(exerciseId) {
   const active = readActiveWorkout();
   const exercise = getExerciseById(exerciseId);
@@ -659,6 +867,97 @@ function createSupersetButton(card, logger, heading) {
   return button;
 }
 
+function ensureExerciseOverflow(card) {
+  if (!card || card.dataset.trackingType !== 'reps') return;
+  const header = card.querySelector('.compact-exercise-header');
+  const headerActions = header?.querySelector('.compact-exercise-actions');
+  if (!header || !headerActions) return;
+
+  let trigger = headerActions.querySelector('.exercise-more-btn');
+  if (!trigger) {
+    trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'exercise-more-btn';
+    trigger.textContent = '•••';
+    headerActions.appendChild(trigger);
+  }
+
+  let menu = header.querySelector('.exercise-options-popover');
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.className = 'exercise-options-popover';
+    menu.hidden = true;
+    header.appendChild(menu);
+  }
+  menu.setAttribute('role', 'dialog');
+  menu.setAttribute('aria-label', 'Exercise actions');
+
+  let actions = menu.querySelector('.session-overflow-actions');
+  if (!actions) {
+    actions = document.createElement('div');
+    actions.className = 'session-overflow-actions';
+    actions.setAttribute('aria-label', 'Exercise actions');
+    actions.innerHTML = `
+      <button type="button" data-session-overflow-action="superset">
+        <span>Superset</span><small>Pair with another exercise</small>
+      </button>
+      <button type="button" data-session-overflow-action="warmup">
+        <span>Warm-up</span><small>Show optional warm-up sets</small>
+      </button>
+      <button type="button" data-session-overflow-action="swap">
+        <span>Smart Swap</span><small>Choose a similar exercise for today</small>
+      </button>
+      <button type="button" data-session-overflow-action="reorder">
+        <span>Reorder Exercises</span><small>Press, hold, and arrange this workout day</small>
+      </button>
+    `;
+    menu.appendChild(actions);
+  }
+
+  const sources = {
+    superset: card.querySelector('.session-inline-superset'),
+    warmup: card.querySelector('.exercise-warmup-btn'),
+    swap: card.querySelector('.session-inline-swap')
+  };
+
+  Object.entries(sources).forEach(([name, source]) => {
+    const action = actions.querySelector(`[data-session-overflow-action="${name}"]`);
+    if (!action) return;
+    action.hidden = !source;
+    source?.classList.add('session-overflow-source');
+  });
+  card.querySelectorAll('.logger-exercise-tools').forEach(tools => {
+    tools.classList.toggle('only-overflow-sources', !tools.querySelector(':scope > :not(.session-overflow-source)'));
+  });
+
+  const supersetAction = actions.querySelector('[data-session-overflow-action="superset"] span');
+  const warmupAction = actions.querySelector('[data-session-overflow-action="warmup"] span');
+  if (supersetAction) supersetAction.textContent = sources.superset?.textContent?.trim() || 'Superset';
+  if (warmupAction) warmupAction.textContent = sources.warmup?.getAttribute('aria-expanded') === 'true' ? 'Hide Warm-up' : 'Warm-up';
+  const reorderAction = actions.querySelector('[data-session-overflow-action="reorder"]');
+  if (reorderAction) reorderAction.hidden = (getSessionDay(readActiveWorkout())?.exercises?.length || 0) < 2;
+
+  trigger.textContent = '•••';
+  trigger.setAttribute('aria-label', 'Open exercise actions');
+  trigger.setAttribute('aria-haspopup', 'dialog');
+  trigger.setAttribute('aria-expanded', String(!menu.hidden));
+  if (trigger.dataset.exerciseOverflowBound !== 'true') {
+    trigger.dataset.exerciseOverflowBound = 'true';
+    trigger.addEventListener('click', event => {
+      event.stopPropagation();
+      const opening = menu.hidden;
+      card.closest('#workout-session-logger')?.querySelectorAll('.exercise-options-popover, .exercise-timer-popover').forEach(other => {
+        if (other !== menu) other.hidden = true;
+      });
+      card.closest('#workout-session-logger')?.querySelectorAll('.exercise-more-btn, .exercise-timer-btn').forEach(button => {
+        if (button !== trigger) button.setAttribute('aria-expanded', 'false');
+      });
+      menu.hidden = !opening;
+      trigger.setAttribute('aria-expanded', String(opening));
+    });
+  }
+}
+
 function ensureInlineActions(card, logger) {
   const liftingActions = card.querySelector('.compact-exercise-actions');
   const liftingHeading = card.querySelector('.compact-exercise-header h4');
@@ -670,7 +969,7 @@ function ensureInlineActions(card, logger) {
 
     if (!card.querySelector('.session-inline-swap')) {
       const button = createSwapButton(card, logger, liftingHeading);
-      const timerButton = liftingActions.querySelector('.exercise-more-btn');
+      const timerButton = liftingActions.querySelector('.exercise-timer-btn');
       if (timerButton) liftingActions.insertBefore(button, timerButton);
       else liftingActions.appendChild(button);
     }
@@ -689,6 +988,7 @@ function ensureInlineActions(card, logger) {
     if (supersetButton && supersetButton.textContent !== supersetLabel) {
       supersetButton.textContent = supersetLabel;
     }
+    ensureExerciseOverflow(card);
     return;
   }
 
@@ -710,7 +1010,10 @@ function ensureInlineActions(card, logger) {
 function enhanceActiveLogger() {
   const logger = document.getElementById('workout-session-logger');
   if (!logger || logger.dataset.editingSessionId) return;
-  logger.querySelectorAll('.session-exercise-card').forEach(card => ensureInlineActions(card, logger));
+  logger.querySelectorAll('.session-exercise-card').forEach(card => {
+    ensureInlineActions(card, logger);
+    ensureExerciseOverflow(card);
+  });
   logger.querySelectorAll('.session-exercise-card[data-tracking-type="reps"]').forEach(card => {
     if (card.querySelector('.session-add-exercise-btn')) return;
     const addSet = card.querySelector('.compact-add-set-btn');
@@ -738,6 +1041,29 @@ const observer = new MutationObserver(() => {
 observer.observe(document.body, { childList: true, subtree: true });
 
 document.addEventListener('click', event => {
+  const overflowAction = event.target.closest('[data-session-overflow-action]');
+  if (overflowAction) {
+    const card = overflowAction.closest('.session-exercise-card');
+    const action = overflowAction.dataset.sessionOverflowAction;
+    const menu = overflowAction.closest('.exercise-options-popover');
+    if (menu) menu.hidden = true;
+    card?.querySelector('.exercise-more-btn')?.setAttribute('aria-expanded', 'false');
+    if (action === 'reorder') {
+      const logger = card?.closest('#workout-session-logger');
+      if (logger) openReorderSheet(logger);
+      return;
+    }
+    const selector = action === 'superset'
+      ? '.session-inline-superset'
+      : action === 'warmup'
+        ? '.exercise-warmup-btn'
+        : '.session-inline-swap';
+    const source = card?.querySelector(selector);
+    source?.click();
+    window.setTimeout(() => ensureExerciseOverflow(card), 0);
+    return;
+  }
+
   if (event.target.closest('#begin-session-btn, [data-page="workout"], .nav-workout')) {
     setTimeout(enhanceActiveLogger, 0);
     setTimeout(enhanceActiveLogger, 100);

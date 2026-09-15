@@ -29,7 +29,12 @@ const STEPS = [
         body: "Tap Form Guide whenever you want a technique refresher. Close the guide when you are ready to continue."
     },
     {
-        target: `${PRIMARY_SELECTOR} .exercise-warmup-btn`,
+        target: `${PRIMARY_SELECTOR} .exercise-more-btn`,
+        title: "Open exercise actions",
+        body: "Tap the three dots to find Superset, Warm-up, Smart Swap and rest-timer settings without crowding the workout log."
+    },
+    {
+        target: `${PRIMARY_SELECTOR} [data-session-overflow-action="warmup"]`,
         title: "Show your warm-up sets",
         body: "Tap Warm-up to reveal the suggested warm-up sets. They stay separate from your programmed working sets."
     },
@@ -50,13 +55,23 @@ const STEPS = [
     },
     {
         target: `${PRIMARY_SELECTOR} .session-set-row[data-set-index="0"] .drop-set-menu-trigger`,
-        title: "Add a drop set",
-        body: "Tap the set action to add a lighter Drop Set row, then enter the weight and reps you perform."
+        title: "Open set options",
+        body: "Tap the set number to optionally record RIR or add a lighter Drop Set. RIR improves future progression guidance."
     },
     {
-        target: `${PRIMARY_SELECTOR} .session-inline-swap`,
+        target: `${PRIMARY_SELECTOR} .drop-set-menu[data-parent-set="0"] [data-add-drop-set]`,
+        title: "Add a drop set",
+        body: "Add Drop Set stays in the set menu. Tap it, then enter the lighter weight and reps you perform."
+    },
+    {
+        target: `${PRIMARY_SELECTOR} .exercise-more-btn`,
+        title: "Open exercise actions",
+        body: "Open the three-dot menu again to access Smart Swap."
+    },
+    {
+        target: `${PRIMARY_SELECTOR} [data-session-overflow-action="swap"]`,
         title: "Swap an exercise for today",
-        body: "Tap Swap when equipment is busy or you need another movement. Smart Swap ranks alternatives with a similar training purpose."
+        body: "Tap Smart Swap when equipment is busy or you need another movement. It ranks alternatives with a similar training purpose."
     },
     {
         target: `${FIRST_CARD_SELECTOR} .compact-add-set-btn`,
@@ -190,15 +205,21 @@ function handleClick(event) {
         return;
     }
 
-    if (event.target.closest?.(`${PRIMARY_SELECTOR} .exercise-warmup-btn`)) {
-        window.setTimeout(() => setStep(3), 140);
+    if (event.target.closest?.(`${PRIMARY_SELECTOR} .exercise-more-btn`)) {
+        if (stepIndex === 2) window.setTimeout(() => setStep(3), 80);
+        if (stepIndex === 9) window.setTimeout(() => setStep(10), 80);
+        return;
+    }
+
+    if (event.target.closest?.(`${PRIMARY_SELECTOR} [data-session-overflow-action="warmup"]`)) {
+        window.setTimeout(() => setStep(4), 140);
         return;
     }
 
     if (event.target.closest?.(`${PRIMARY_SELECTOR} .complete-warmup-btn`)) {
         window.setTimeout(() => {
             preparePrimarySet();
-            setStep(4);
+            setStep(5);
         }, 160);
         return;
     }
@@ -209,22 +230,27 @@ function handleClick(event) {
     }
 
     if (event.target.closest?.(`${PRIMARY_SELECTOR} .session-set-row[data-set-index="0"] .complete-set-btn`)) {
-        window.setTimeout(() => setStep(6), 180);
+        window.setTimeout(() => setStep(7), 180);
         return;
     }
 
     if (event.target.closest?.(`${PRIMARY_SELECTOR} .session-set-row[data-set-index="0"] .drop-set-menu-trigger`)) {
-        window.setTimeout(() => setStep(7), 160);
+        window.setTimeout(() => setStep(8), 100);
         return;
     }
 
-    if (event.target.closest?.(`${PRIMARY_SELECTOR} .session-inline-swap`)) {
+    if (event.target.closest?.(`${PRIMARY_SELECTOR} .drop-set-menu[data-parent-set="0"] [data-add-drop-set]`)) {
+        window.setTimeout(() => setStep(9), 160);
+        return;
+    }
+
+    if (event.target.closest?.(`${PRIMARY_SELECTOR} [data-session-overflow-action="swap"]`)) {
         beginFlow("swap");
         return;
     }
 
     if (event.target.closest?.(`${FIRST_CARD_SELECTOR} .compact-add-set-btn`)) {
-        window.setTimeout(() => setStep(9), 180);
+        window.setTimeout(() => setStep(12), 180);
         return;
     }
 
@@ -301,9 +327,9 @@ function reconcileFlow() {
     flow = null;
     flowOpened = false;
     if (finishedFlow === "form") setStep(2);
-    if (finishedFlow === "plate") setStep(5);
-    if (finishedFlow === "swap") setStep(8);
-    if (finishedFlow === "add") setStep(10);
+    if (finishedFlow === "plate") setStep(6);
+    if (finishedFlow === "swap") setStep(11);
+    if (finishedFlow === "add") setStep(13);
 }
 
 function getFlowState(name) {

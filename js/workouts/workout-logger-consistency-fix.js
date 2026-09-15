@@ -48,22 +48,24 @@ function ensureMenuShell(card, logger) {
     header.appendChild(heading);
   }
 
-  let button = header.querySelector('.exercise-more-btn');
-  let menu = header.querySelector('.exercise-options-popover');
+  let button = header.querySelector('.exercise-timer-btn');
+  let menu = header.querySelector('.exercise-timer-popover');
   const existingShell = Boolean(button && menu);
 
   if (!button) {
     button = document.createElement('button');
     button.type = 'button';
-    button.className = 'exercise-more-btn';
-    button.setAttribute('aria-label', 'Exercise options and rest timer');
-    button.textContent = '•••';
+    button.className = 'exercise-timer-btn';
+    button.setAttribute('aria-label', 'Rest timer settings');
+    button.setAttribute('aria-haspopup', 'dialog');
+    button.setAttribute('aria-expanded', 'false');
+    button.textContent = '◷';
     header.appendChild(button);
   }
 
   if (!menu) {
     menu = document.createElement('div');
-    menu.className = 'exercise-options-popover';
+    menu.className = 'exercise-timer-popover';
     menu.hidden = true;
     header.appendChild(menu);
   }
@@ -75,10 +77,11 @@ function ensureMenuShell(card, logger) {
     button.dataset.menuToggleBound = 'true';
     button.addEventListener('click', event => {
       event.stopPropagation();
-      logger.querySelectorAll('.exercise-options-popover').forEach(other => {
+      logger.querySelectorAll('.exercise-timer-popover, .exercise-options-popover').forEach(other => {
         if (other !== menu) other.hidden = true;
       });
       menu.hidden = !menu.hidden;
+      button.setAttribute('aria-expanded', String(!menu.hidden));
     });
   }
 
@@ -151,8 +154,9 @@ function enhanceAvailableCards() {
   if (logger.dataset.timerConsistencyCloseBound !== 'true') {
     logger.dataset.timerConsistencyCloseBound = 'true';
     logger.addEventListener('click', event => {
-      if (!event.target.closest('.exercise-more-btn, .exercise-options-popover')) {
-        logger.querySelectorAll('.exercise-options-popover').forEach(menu => { menu.hidden = true; });
+      if (!event.target.closest('.exercise-timer-btn, .exercise-timer-popover, .exercise-more-btn, .exercise-options-popover')) {
+        logger.querySelectorAll('.exercise-timer-popover, .exercise-options-popover').forEach(menu => { menu.hidden = true; });
+        logger.querySelectorAll('.exercise-timer-btn, .exercise-more-btn').forEach(button => button.setAttribute('aria-expanded', 'false'));
       }
     });
   }
@@ -162,8 +166,8 @@ const observer = new MutationObserver(mutations => {
   if (mutations.some(mutation => [...mutation.addedNodes].some(node =>
     node.nodeType === 1 && (
       node.id === 'workout-session-logger' ||
-      node.matches?.('.session-exercise-card, .exercise-options-popover') ||
-      node.querySelector?.('#workout-session-logger, .session-exercise-card, .exercise-options-popover')
+      node.matches?.('.session-exercise-card, .exercise-timer-popover') ||
+      node.querySelector?.('#workout-session-logger, .session-exercise-card, .exercise-timer-popover')
     )
   ))) {
     setTimeout(enhanceAvailableCards, 0);

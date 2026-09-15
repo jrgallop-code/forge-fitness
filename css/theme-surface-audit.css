@@ -685,6 +685,28 @@ html[data-theme] .manual-superset-member {
     box-shadow: inset 3px 0 0 var(--accent) !important;
 }
 
+/* RIR keeps a semantic effort scale while retaining each appearance's
+   surfaces and typography. These rules intentionally follow the generic
+   themed button rules above. */
+html[data-theme] .drop-set-menu .set-rir-options button {
+    border-color: color-mix(in srgb,var(--rir-choice) 48%,var(--line)) !important;
+    background: color-mix(in srgb,var(--rir-choice) 9%,var(--surface-raised)) !important;
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+}
+
+html[data-theme] .drop-set-menu .set-rir-options button.selected {
+    border-color: var(--rir-choice) !important;
+    background: var(--rir-choice) !important;
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+}
+
+html[data-theme] .drop-set-menu :is(.set-rir-menu-heading small,.clear-set-rir) {
+    color: var(--muted) !important;
+    -webkit-text-fill-color: var(--muted) !important;
+}
+
 /*
  * Onboarding is theme-live: choosing an appearance updates the open flow before
  * the user continues. Keep this final layer authoritative over the older native,

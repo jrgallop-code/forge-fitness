@@ -54,7 +54,7 @@ function ensureHiddenRestSelect(logger) {
     select = document.createElement('select');
     select.id = 'rest-duration-select';
     select.hidden = true;
-    select.innerHTML = '<option value="60">60</option><option value="90">90</option><option value="120">120</option><option value="180">180</option>';
+    select.innerHTML = '<option value="0">Off</option><option value="60">60</option><option value="90">90</option><option value="120">120</option><option value="180">180</option>';
     logger.appendChild(select);
   }
   return select;
@@ -483,9 +483,15 @@ function enhanceLogger(logger) {
 
     const menuButton = document.createElement('button');
     menuButton.type = 'button';
-    menuButton.className = 'exercise-more-btn';
-    menuButton.setAttribute('aria-label', 'Exercise options and rest timer');
-    menuButton.textContent = '•••';
+    menuButton.className = 'exercise-timer-btn';
+    menuButton.setAttribute('aria-label', 'Rest timer settings');
+    menuButton.setAttribute('aria-haspopup', 'dialog');
+    menuButton.setAttribute('aria-expanded', 'false');
+    menuButton.innerHTML = `
+      <svg class="exercise-alarm-clock-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="13" r="7"></circle>
+        <path d="M12 9v4l2.6 1.6M7 3.8 4.6 6.2M17 3.8l2.4 2.4M8.5 20l-1.2 1.5M15.5 20l1.2 1.5M9 3h6"></path>
+      </svg>`;
     headerActions.appendChild(menuButton);
     header.appendChild(headerActions);
 
@@ -516,7 +522,7 @@ function enhanceLogger(logger) {
     const current = settings[exerciseId] || { enabled: false, seconds: 120 };
 
     const menu = document.createElement('div');
-    menu.className = 'exercise-options-popover';
+    menu.className = 'exercise-timer-popover';
     menu.hidden = true;
     menu.innerHTML = `
       <div class="exercise-option-row">
@@ -541,10 +547,11 @@ function enhanceLogger(logger) {
     menuButton.addEventListener('click', event => {
       unlockAlarmAudio();
       event.stopPropagation();
-      logger.querySelectorAll('.exercise-options-popover').forEach(other => {
+      logger.querySelectorAll('.exercise-timer-popover, .exercise-options-popover').forEach(other => {
         if (other !== menu) other.hidden = true;
       });
       menu.hidden = !menu.hidden;
+      menuButton.setAttribute('aria-expanded', String(!menu.hidden));
     });
 
     const timerToggle = menu.querySelector('.exercise-timer-enabled');
@@ -647,8 +654,9 @@ function enhanceLogger(logger) {
 
   if (initialEnhancement) {
     logger.addEventListener('click', event => {
-      if (!event.target.closest('.exercise-more-btn, .exercise-options-popover')) {
-        logger.querySelectorAll('.exercise-options-popover').forEach(menu => menu.hidden = true);
+      if (!event.target.closest('.exercise-timer-btn, .exercise-timer-popover, .exercise-more-btn, .exercise-options-popover')) {
+        logger.querySelectorAll('.exercise-timer-popover, .exercise-options-popover').forEach(menu => menu.hidden = true);
+        logger.querySelectorAll('.exercise-timer-btn, .exercise-more-btn').forEach(button => button.setAttribute('aria-expanded', 'false'));
       }
     });
   }

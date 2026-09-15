@@ -231,7 +231,7 @@ function syncDurationInput(card, elapsedMs) {
 }
 
 function decorateAlarmClockButtons(logger) {
-    logger.querySelectorAll(".exercise-more-btn").forEach(button => {
+    logger.querySelectorAll(".exercise-timer-btn").forEach(button => {
         if (button.dataset.alarmClockIcon === "true") return;
         button.dataset.alarmClockIcon = "true";
         button.innerHTML = ALARM_CLOCK_SVG;
@@ -778,8 +778,8 @@ const observer = new MutationObserver(mutations => {
         [...mutation.addedNodes].some(node =>
             node.nodeType === 1 && (
                 node.id === "workout-session-logger" ||
-                node.matches?.(".session-exercise-card, .exercise-more-btn") ||
-                node.querySelector?.("#workout-session-logger, .session-exercise-card, .exercise-more-btn")
+                node.matches?.(".session-exercise-card, .exercise-timer-btn") ||
+                node.querySelector?.("#workout-session-logger, .session-exercise-card, .exercise-timer-btn")
             )
         )
     );

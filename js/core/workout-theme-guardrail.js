@@ -1,4 +1,4 @@
-const STYLE_ID = "workout-theme-guardrail-3";
+const STYLE_ID = "workout-theme-guardrail-4";
 const OBSERVER_FLAG = "__levelUpWorkoutThemeGuardrailObserver";
 
 function ensureStyles() {
@@ -16,6 +16,11 @@ function ensureStyles() {
 
         html[data-theme] #workout-session-logger .drop-set-menu-trigger::after {
             color: var(--muted) !important;
+        }
+
+        html[data-theme] #workout-session-logger .drop-set-menu-trigger.has-rir {
+            border-color: var(--rir-color) !important;
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--rir-color) 20%, transparent) !important;
         }
 
         html[data-theme] #workout-session-logger .session-set-row.has-drop-set .drop-set-menu-trigger,
@@ -146,18 +151,23 @@ function forceImportant(element, property, value) {
 }
 
 function themeSetTrigger(trigger) {
-    forceImportant(trigger, "border-color", "var(--accent)");
+    const hasRir = trigger?.classList?.contains("has-rir");
+    forceImportant(trigger, "border-color", hasRir ? "var(--rir-color)" : "var(--accent)");
     forceImportant(trigger, "background", "var(--accent)");
     forceImportant(trigger, "color", "var(--accent-contrast)");
-    forceImportant(trigger, "box-shadow", "0 0 0 1px var(--accent-glow)");
+    forceImportant(trigger, "box-shadow", hasRir
+        ? "0 0 0 2px color-mix(in srgb, var(--rir-color) 20%, transparent)"
+        : "0 0 0 1px var(--accent-glow)");
 }
 
 function applyRuntimeTheme(root = document) {
     root.querySelectorAll?.("#workout-session-logger .session-set-row > strong, #workout-session-logger .drop-set-menu-trigger").forEach(themeSetTrigger);
 
     root.querySelectorAll?.("#workout-session-logger .session-set-row.has-drop-set .drop-set-menu-trigger, #workout-session-logger .session-set-row.live-pr-set .drop-set-menu-trigger").forEach(trigger => {
-        forceImportant(trigger, "border-color", "var(--accent-dark)");
-        forceImportant(trigger, "box-shadow", "0 0 0 2px var(--accent-glow)");
+        if (!trigger.classList.contains("has-rir")) {
+            forceImportant(trigger, "border-color", "var(--accent-dark)");
+            forceImportant(trigger, "box-shadow", "0 0 0 2px var(--accent-glow)");
+        }
     });
 
     root.querySelectorAll?.("#workout-session-logger .session-warmup-row > strong").forEach(circle => {
