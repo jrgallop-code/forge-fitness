@@ -8,6 +8,9 @@ import { buildCoordinatedWeeklyUpdate, clearAdjustmentHold, markPhaseCheckHandle
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const LEGACY_CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
 const WEEKLY_REVIEW_PREVIEW_KEY = "level_up_weekly_review_preview";
+// Enabled only on the isolated iOS TestFlight branch. Remove before promoting
+// a release candidate to the public App Store build.
+const IOS_CHECKIN_TEST_CONTROLS = true;
 let maintenanceDraft = null;
 let targetDraft = null;
 let pendingAdaptiveCheckDay = null;
@@ -46,6 +49,9 @@ export function initializeUnifiedGoalsCalories() {
         refreshMaintenanceMode();
     });
     document.getElementById("unified-save-plan")?.addEventListener("click", saveUnifiedPlan);
+    if (IOS_CHECKIN_TEST_CONTROLS) {
+        document.getElementById("unified-replay-review")?.addEventListener("click", replayLastWeeklyReview);
+    }
     document.getElementById("save-nutrition-profile-btn")?.addEventListener("click", () => window.setTimeout(refreshAll, 30));
     window.addEventListener("levelup:nutrition-updated", refreshAll);
     window.addEventListener("levelup:nutrition-phase-updated", refreshAll);
@@ -113,6 +119,13 @@ function renderUnifiedCard() {
         </div>
         <button id="unified-save-plan" class="primary-btn" type="button">Save</button>
         <p id="unified-calorie-message" class="nutrition-message" aria-live="polite"></p>
+        ${IOS_CHECKIN_TEST_CONTROLS ? `
+            <div class="unified-maintenance-block" data-ios-checkin-test-control>
+                <span class="eyebrow">TEST BUILD</span>
+                <strong>Weekly check-in testing</strong>
+                <small class="unified-help">Restore the values from before your latest decision and reopen that check-in. Food logs and weigh-ins stay unchanged.</small>
+                <button id="unified-replay-review" class="secondary-btn" type="button" hidden>Reopen latest check-in for testing</button>
+            </div>` : ""}
         <div id="nutrition-phase-history"></div>
         <small class="unified-adult-note">Weight trend checks use only weigh-ins from the start of the active phase.</small>
     `;
@@ -296,9 +309,29 @@ function getReplaySnapshot(phase) {
         && Math.round(Number(item.newCalories)) === Math.round(currentCalories));
     const previousTarget = Number(latest?.previousCalories);
     const previousMaintenance = Number(latest?.previousMaintenance ?? phase.maintenanceCalories);
-    return Number.isFinite(previousTarget) && Number.isFinite(previousMaintenance)
-        ? { previousTarget, previousMaintenance }
+    if (Number.isFinite(previousTarget) && Number.isFinite(previousMaintenance)) {
+        return { previousTarget, previousMaintenance };
+    }
+
+    // Keeping the prior target creates no adjustment snapshot. A handled
+    // check-in can still be reopened safely because its current values are
+    // already the pre-review values.
+    const handled = getHandledReviewForPhase(phase);
+    const currentMaintenance = Number(phase.maintenanceCalories);
+    return handled && Number.isFinite(currentCalories) && Number.isFinite(currentMaintenance)
+        ? { previousTarget: currentCalories, previousMaintenance: currentMaintenance }
         : null;
+}
+
+function getHandledReviewForPhase(phase) {
+    if (!phase) return null;
+    const key = String(phase?.id || `${phase?.goalId || "phase"}|${phase?.startDate || ""}`);
+    try {
+        const state = JSON.parse(localStorage.getItem("level_up_weekly_phase_checkin_state") || "{}");
+        return state && typeof state === "object" && !Array.isArray(state) ? state[key] || null : null;
+    } catch {
+        return null;
+    }
 }
 
 function clearHandledReviewForPhase(phase) {
@@ -318,7 +351,10 @@ function replayLastWeeklyReview() {
     const snapshot = getReplaySnapshot(phase);
     const previousTarget = Number(snapshot?.previousTarget);
     const previousMaintenance = Number(snapshot?.previousMaintenance);
-    if (!phase || !Number.isFinite(previousTarget) || !Number.isFinite(previousMaintenance)) return;
+    if (!phase || !Number.isFinite(previousTarget) || !Number.isFinite(previousMaintenance)) {
+        setText("unified-calorie-message", "No completed weekly check-in is available to reopen.");
+        return;
+    }
     if (!window.confirm("Undo the last calorie update and reopen the same weekly review? Your food logs and weigh-ins will not be changed.")) return;
 
     saveNutritionPhase({

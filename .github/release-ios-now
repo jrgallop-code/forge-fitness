@@ -126,3 +126,5 @@ Release 57: improve barcode nutrition accuracy, compare conflicting records, fla
 Release 58: use whole-calorie precision for TDEE while retaining 25-calorie calorie-target increments.
 
 Release 59: calendar-based weekly calorie check-ins with an optional same-day weigh-in prompt and live recommendation recalculation.
+
+Release 60: add an iOS-test-only control to restore pre-review calories and TDEE and reopen the latest completed weekly check-in without changing logs.

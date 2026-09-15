@@ -91,12 +91,12 @@ test("live calorie logic excludes future weigh-ins and Goals & Plan shows the sa
     assert.match(goals, /active\.currentCalories \?\? active\.startCalories/);
 });
 
-test("Goals & Calories no longer exposes weekly review testing controls", () => {
+test("the iOS test build exposes a clearly gated weekly review replay control", () => {
     const goals = readFileSync("js/nutrition/unified-goals-calories.js", "utf8");
-    assert.doesNotMatch(goals, /id="unified-preview-review"/);
-    assert.doesNotMatch(goals, /id="unified-replay-review"/);
-    assert.doesNotMatch(goals, />Preview Weekly Calorie Review</);
-    assert.doesNotMatch(goals, />Undo last update and replay review</);
+    assert.match(goals, /const IOS_CHECKIN_TEST_CONTROLS = true/);
+    assert.match(goals, /id="unified-replay-review"/);
+    assert.match(goals, /Reopen latest check-in for testing/);
+    assert.match(goals, /getHandledReviewForPhase/);
 });
 
 test("a ready review is shared by Nutrition and Progress and applied targets refresh immediately", () => {
