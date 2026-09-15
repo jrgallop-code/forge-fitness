@@ -1,7 +1,7 @@
 import { navigate } from "../core/router.js?v=native-navigation-stability-1";
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { calculatePrCounts } from "./workout-pr-badges.js?v=workout-pr-badges-2";
-import { deleteCompletedWorkout, discardActiveWorkout, getActiveWorkout, getWorkoutSessions, openActiveWorkout, openCompletedWorkoutForEdit } from "./workout-session.js?v=native-navigation-stability-1";
+import { deleteCompletedWorkout, discardActiveWorkout, getActiveWorkout, getWorkoutSessions, openActiveWorkout, openCompletedWorkoutForEdit } from "./workout-session.js?v=history-rir-edit-1";
 import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
 import { resolveSessionExerciseIdentity } from "./session-exercise-identity.js?v=repair-generic-exercise-1";
 import { UNIT_KINDS, formatMass as formatUnitMass } from "../core/unit-system.js?v=granular-units-1";
@@ -147,10 +147,13 @@ function hasRecordedExerciseData(exercise) {
 
 function formatSet(set) {
     const weight = Number(set.weight); const reps = Number(set.reps);
-    if (Number.isFinite(weight) && weight > 0 && Number.isFinite(reps)) return `${formatUnitMass(weight, 1, UNIT_KINDS.LIFTING_WEIGHT)} × ${reps}`;
-    if (Number.isFinite(reps)) return `${reps} reps`;
-    if (Number.isFinite(weight) && weight > 0) return formatUnitMass(weight, 1, UNIT_KINDS.LIFTING_WEIGHT);
-    return "Recorded";
+    const rir = set.rir !== null && set.rir !== "" && set.rir !== undefined && Number.isFinite(Number(set.rir))
+        ? ` · RIR ${Number(set.rir) >= 4 ? "4+" : Math.max(0, Math.round(Number(set.rir)))}`
+        : "";
+    if (Number.isFinite(weight) && weight > 0 && Number.isFinite(reps)) return `${formatUnitMass(weight, 1, UNIT_KINDS.LIFTING_WEIGHT)} × ${reps}${rir}`;
+    if (Number.isFinite(reps)) return `${reps} reps${rir}`;
+    if (Number.isFinite(weight) && weight > 0) return `${formatUnitMass(weight, 1, UNIT_KINDS.LIFTING_WEIGHT)}${rir}`;
+    return `Recorded${rir}`;
 }
 
 function capitalize(value) { const text = String(value || ""); return text ? text.charAt(0).toUpperCase() + text.slice(1) : ""; }

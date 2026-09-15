@@ -74,6 +74,6 @@ test("adaptive guidance survey and settings are removed from the application run
 test("the workout tutorial and production entry point load the new controls", () => {
   assert.match(tutorial, /Open set options/);
   assert.match(tutorial, /data-session-overflow-action="warmup"/);
-  assert.match(entry, /drop-set-runtime\.js\?v=floating-rir-1/);
-  assert.match(entry, /session-exercise-actions\.js\?v=exercise-note-flow-1/);
+  assert.match(entry, /drop-set-runtime\.js\?v=history-rir-edit-1/);
+  assert.match(entry, /session-exercise-actions\.js\?v=history-rir-edit-1/);
 });

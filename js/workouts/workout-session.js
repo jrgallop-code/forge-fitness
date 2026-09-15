@@ -14,11 +14,6 @@ import {
 } from "../core/unit-system.js?v=granular-units-1";
 
 import {
-    getExerciseOptions
-}
-from "./workout-ui.js";
-
-import {
     repairWorkoutSessionList,
     resolveSessionExerciseIdentity
 }
@@ -340,7 +335,7 @@ function renderWorkoutLogger({
         <div class="workout-session-status">
             <div>
                 <span>Workout duration</span>
-                <strong id="workout-duration-display">00:00:00</strong>
+                <strong id="workout-duration-display">${editingSessionId ? formatDuration(Number(session?.durationMs) || Number(session?.durationMinutes) * 60000 || 0) : "00:00:00"}</strong>
             </div>
             <div class="workout-timer-actions">
                 <button id="pause-workout-timer" class="secondary-btn" type="button">Pause</button>
@@ -579,7 +574,23 @@ function enrichCompletedExercise(exercise, plannedExercise = {}) {
     const identity = resolveSessionExerciseIdentity(exercise, plannedExercise);
     return {
         ...exercise,
-        ...identity
+        ...identity,
+        sets: (exercise?.sets || []).map(normalizeSavedSet)
+    };
+}
+
+function normalizeRirValue(value) {
+    if (value === null || value === "" || value === undefined) return null;
+    const numeric = Number(value);
+    return Number.isFinite(numeric)
+        ? Math.min(4, Math.max(0, Math.round(numeric)))
+        : null;
+}
+
+function normalizeSavedSet(set = {}) {
+    return {
+        ...set,
+        rir: normalizeRirValue(set.rir)
     };
 }
 
@@ -607,10 +618,14 @@ function renderSessionExercises({
         return;
     }
 
+    // Runtime controls use this in-memory session for both an active workout and
+    // a completed workout being edited. Completed edits are only written back
+    // when the user presses Update Saved Workout.
+    logger.__levelUpSession = session;
+    logger.__levelUpPlan = plan;
+
     container.innerHTML = `
         ${editingSessionId ? "" : renderRestTimerPanel(session)}
-
-        ${editingSessionId ? renderEditWorkoutExerciseControls() : ""}
 
         ${(day.exercises || []).map((plannedExercise, exerciseIndex) => {
             const exercise =
@@ -646,7 +661,6 @@ function renderSessionExercises({
                         <label class="cardio-notes-label">Notes (optional)
                             <textarea class="session-cardio-notes" maxlength="500" placeholder="Pace, resistance, intervals…">${escapeHtml(state.notes || "")}</textarea>
                         </label>
-                        ${editingSessionId ? '<button class="remove-session-exercise secondary-btn" type="button">Remove Exercise</button>' : ""}
                     </article>
                 `;
             }
@@ -668,13 +682,6 @@ function renderSessionExercises({
                             <div class="session-note-editor-actions"><small>Saved automatically</small><button class="session-note-done" type="button">Done</button></div>
                         </div>
                     </div>
-                    ${editingSessionId ? `
-                        <div class="routine-set-editor">
-                            <strong>${state.sets.length} ${state.sets.length === 1 ? "set" : "sets"}</strong>
-                            <button class="remove-session-set secondary-btn" type="button" ${state.sets.length <= 1 ? "disabled" : ""} aria-label="Remove one set">− Set</button>
-                            <button class="add-session-set primary-btn" type="button" aria-label="Add one set">+ Set</button>
-                        </div>
-                    ` : ""}
                     <div class="previous-performance"><strong>Previous workout</strong><span>${formatPrevious(previous)}</span></div>
                     <div class="session-set-header"><span>Set</span><span>Last Workout</span><span>Weight (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})</span><span>Reps</span></div>
                     ${state.sets.map((set, setIndex) => {
@@ -688,14 +695,8 @@ function renderSessionExercises({
                                 <input class="session-reps" type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ""}" placeholder="${previousSet?.reps ?? "Reps"}" aria-label="Set ${setIndex + 1} reps">
                                 <button class="complete-set-btn secondary-btn" type="button">${set.completed ? "✓ Completed" : "Complete Set"}</button>
                             </div>
-                            ${editingSessionId ? `<div class="drop-set-block history-edit-drop-block" data-parent-set="${setIndex}"></div>` : ""}
                         `;
                     }).join("")}
-                    ${editingSessionId ? `
-                        <div class="edit-session-exercise-actions">
-                            <button class="remove-session-exercise secondary-btn" type="button">Remove Exercise</button>
-                        </div>
-                    ` : ""}
                 </article>
             `;
         }).join("")}
@@ -763,36 +764,6 @@ function renderSessionExercises({
 }
 
 
-function renderEditWorkoutExerciseControls() {
-
-    return `
-        <section class="edit-workout-exercises">
-            <div>
-                <span class="eyebrow">WORKOUT ROUTINE</span>
-                <h4>Add exercises and sets</h4>
-                <p>Build out this workout just like a new routine. Use the set controls on each exercise below.</p>
-            </div>
-            <label>
-                Exercise
-                <select id="history-add-exercise-select">
-                    ${getExerciseOptions()}
-                </select>
-            </label>
-            <label>
-                Sets
-                <input id="history-add-exercise-sets" type="number" inputmode="numeric" min="1" max="20" step="1" value="3">
-            </label>
-            <label>
-                Target reps
-                <input id="history-add-exercise-reps" type="text" maxlength="20" value="8-12" placeholder="8-12">
-            </label>
-            <button id="history-add-exercise-btn" class="primary-btn" type="button">+ Add Exercise</button>
-        </section>
-    `;
-
-}
-
-
 function bindEditWorkoutExerciseControls({
     plan,
     logger,
@@ -809,149 +780,72 @@ function bindEditWorkoutExerciseControls({
         return;
     }
 
-    logger
-        .querySelector("#history-add-exercise-btn")
-        ?.addEventListener(
-            "click",
-            () => {
-                const exerciseId =
-                    logger.querySelector("#history-add-exercise-select")?.value;
-                const exercise =
-                    getExerciseById(exerciseId);
+    const rerender = () => {
+        session.planSnapshot = clone(plan);
+        renderSessionExercises({ plan, logger, session, editingSessionId });
+    };
 
-                if (!exercise) {
-                    return;
-                }
-
-                const setCount =
-                    Math.min(
-                        20,
-                        Math.max(
-                            1,
-                            Number(logger.querySelector("#history-add-exercise-sets")?.value) || 3
-                        )
-                    );
-                const targetReps =
-                    logger.querySelector("#history-add-exercise-reps")?.value.trim() ||
-                    exercise.recommendedReps ||
-                    "8-12";
-                const plannedExercise = {
-                    id: exercise.id,
-                    sets: exercise.trackingType === "notes" ? 1 : setCount,
-                    reps: targetReps
-                };
-
-                day.exercises.push(plannedExercise);
-                session.exercises.push(
-                    createExerciseState({
-                        exercises: [plannedExercise]
-                    })[0]
-                );
-                session.planSnapshot =
-                    clone(plan);
-
-                renderSessionExercises({
-                    plan,
-                    logger,
-                    session,
-                    editingSessionId
-                });
-            }
-        );
-
-    logger
-        .querySelectorAll(".session-exercise-card")
-        .forEach(card => {
-            const exerciseIndex =
-                Number(card.dataset.exerciseIndex);
-
-            card
-                .querySelector(".add-session-set")
-                ?.addEventListener(
-                    "click",
-                    () => {
-                        const state =
-                            session.exercises[exerciseIndex];
-                        const plannedExercise =
-                            day.exercises[exerciseIndex];
-
-                        state.sets.push({
-                            weight: null,
-                            reps: null,
-                            completed: false
-                        });
-                        plannedExercise.sets =
-                            state.sets.length;
-                        session.planSnapshot =
-                            clone(plan);
-
-                        renderSessionExercises({
-                            plan,
-                            logger,
-                            session,
-                            editingSessionId
-                        });
-                    }
-                );
-
-            card
-                .querySelector(".remove-session-set")
-                ?.addEventListener(
-                    "click",
-                    () => {
-                        const state =
-                            session.exercises[exerciseIndex];
-
-                        if (state.sets.length <= 1) {
-                            return;
-                        }
-
-                        state.sets.pop();
-                        day.exercises[exerciseIndex].sets =
-                            state.sets.length;
-                        session.planSnapshot =
-                            clone(plan);
-
-                        renderSessionExercises({
-                            plan,
-                            logger,
-                            session,
-                            editingSessionId
-                        });
-                    }
-                );
-
-            card
-                .querySelector(".remove-session-exercise")
-                ?.addEventListener(
-                    "click",
-                    () => {
-                        const exerciseName =
-                            getExerciseById(card.dataset.exerciseId)?.name ||
-                            "this exercise";
-                        const confirmed =
-                            window.confirm(
-                                `Remove ${exerciseName} and its recorded data from this workout?`
-                            );
-
-                        if (!confirmed) {
-                            return;
-                        }
-
-                        day.exercises.splice(exerciseIndex, 1);
-                        session.exercises.splice(exerciseIndex, 1);
-                        session.planSnapshot =
-                            clone(plan);
-
-                        renderSessionExercises({
-                            plan,
-                            logger,
-                            session,
-                            editingSessionId
-                        });
-                    }
-                );
-        });
+    logger.__levelUpEditApi = {
+        rerender,
+        addExercise(exerciseId) {
+            const exercise = getExerciseById(exerciseId);
+            if (!exercise) return false;
+            const plannedExercise = {
+                id: exercise.id,
+                name: exercise.name,
+                exerciseName: exercise.name,
+                muscleGroup: exercise.muscleGroup || "",
+                type: exercise.type || "",
+                equipment: exercise.equipment || "",
+                trackingType: exercise.trackingType || "reps",
+                sets: exercise.trackingType === "notes" ? 1 : 3,
+                reps: exercise.recommendedReps || "8-12"
+            };
+            day.exercises.push(plannedExercise);
+            session.exercises.push(createExerciseState({ exercises: [plannedExercise] })[0]);
+            session.currentExerciseIndex = session.exercises.length - 1;
+            session.currentSetIndex = 0;
+            rerender();
+            return true;
+        },
+        addSet(exerciseIndex) {
+            const state = session.exercises?.[exerciseIndex];
+            const plannedExercise = day.exercises?.[exerciseIndex];
+            if (!state?.sets || !plannedExercise) return false;
+            state.sets.push({ weight: null, reps: null, rir: null, completed: false });
+            plannedExercise.sets = state.sets.length;
+            session.currentExerciseIndex = exerciseIndex;
+            session.currentSetIndex = state.sets.length - 1;
+            rerender();
+            return true;
+        },
+        removeSet(exerciseIndex, setIndex) {
+            const state = session.exercises?.[exerciseIndex];
+            const set = state?.sets?.[setIndex];
+            if (!state?.sets || state.sets.length <= 1 || !set) return false;
+            const hasRir = set.rir !== null && set.rir !== "" && set.rir !== undefined;
+            const hasData = set.weight !== null || set.reps !== null || hasRir || set.completed || (set.dropSets || []).length;
+            if (hasData && !window.confirm(`Remove set ${setIndex + 1} and its recorded data?`)) return false;
+            state.sets.splice(setIndex, 1);
+            day.exercises[exerciseIndex].sets = state.sets.length;
+            session.currentExerciseIndex = exerciseIndex;
+            session.currentSetIndex = Math.max(0, Math.min(setIndex, state.sets.length - 1));
+            rerender();
+            return true;
+        },
+        removeExercise(exerciseIndex) {
+            const plannedExercise = day.exercises?.[exerciseIndex];
+            if (!plannedExercise || day.exercises.length <= 1) return false;
+            const exerciseName = getExerciseById(plannedExercise.id)?.name || "this exercise";
+            if (!window.confirm(`Remove ${exerciseName} and its recorded data from this workout?`)) return false;
+            day.exercises.splice(exerciseIndex, 1);
+            session.exercises.splice(exerciseIndex, 1);
+            session.currentExerciseIndex = Math.max(0, Math.min(exerciseIndex, session.exercises.length - 1));
+            session.currentSetIndex = 0;
+            rerender();
+            return true;
+        }
+    };
 
 }
 
@@ -1200,46 +1094,6 @@ function bindSessionInputs({
                             }
                         );
 
-                    if (editingSessionId) {
-                        const dropBlock = card.querySelector(`.history-edit-drop-block[data-parent-set="${setIndex}"]`);
-                        const renderEditDrops = () => {
-                            if (!dropBlock) return;
-                            if (!Array.isArray(set.dropSets)) set.dropSets = [];
-                            dropBlock.innerHTML = set.dropSets.map((drop, dropIndex) => `
-                                <div class="drop-set-row ${drop.completed ? "completed" : ""}" data-drop-index="${dropIndex}">
-                                    <span class="drop-set-label">↳ Drop ${dropIndex + 1}</span>
-                                    <input class="history-drop-weight" type="number" inputmode="decimal" min="0" step="0.5" value="${drop.weight ?? ""}" placeholder="Weight" aria-label="Drop ${dropIndex + 1} weight">
-                                    <input class="history-drop-reps" type="number" inputmode="numeric" min="0" step="1" value="${drop.reps ?? ""}" placeholder="Reps" aria-label="Drop ${dropIndex + 1} reps">
-                                    <button class="drop-set-complete" type="button" aria-label="Complete drop ${dropIndex + 1}">${drop.completed ? "✓" : ""}</button>
-                                    <button class="drop-set-remove" type="button" aria-label="Remove drop ${dropIndex + 1}">×</button>
-                                </div>
-                            `).join("") + (set.dropSets.length < 3 ? '<button class="drop-set-add-another" type="button">+ Add Drop Set</button>' : "");
-
-                            dropBlock.querySelectorAll(".drop-set-row").forEach(dropRow => {
-                                const dropIndex = Number(dropRow.dataset.dropIndex);
-                                const drop = set.dropSets[dropIndex];
-                                dropRow.querySelector(".history-drop-weight")?.addEventListener("input", event => {
-                                    drop.weight = canonicalInputValue(event.target);
-                                });
-                                dropRow.querySelector(".history-drop-reps")?.addEventListener("input", event => {
-                                    drop.reps = event.target.value === "" ? null : Number(event.target.value);
-                                });
-                                dropRow.querySelector(".drop-set-complete")?.addEventListener("click", () => {
-                                    drop.completed = !drop.completed;
-                                    renderEditDrops();
-                                });
-                                dropRow.querySelector(".drop-set-remove")?.addEventListener("click", () => {
-                                    set.dropSets.splice(dropIndex, 1);
-                                    renderEditDrops();
-                                });
-                            });
-                            dropBlock.querySelector(".drop-set-add-another")?.addEventListener("click", () => {
-                                set.dropSets.push({ weight: null, reps: null, completed: false });
-                                renderEditDrops();
-                            });
-                        };
-                        renderEditDrops();
-                    }
                 });
         });
 
@@ -1933,7 +1787,7 @@ function createEditableSession(session, plan) {
                 ...exercise,
                 sets:
                     (exercise.sets || []).map(set => ({
-                        ...set,
+                        ...normalizeSavedSet(set),
                         completed:
                             set.completed ??
                             (set.weight !== null || set.reps !== null)
@@ -1988,16 +1842,18 @@ function formatPrevious(previous) {
             ?.filter(set =>
                 set.weight !== null || set.reps !== null
             )
-            .map(set =>
-                `${formatPreviousWeight(set.weight)} × ${set.reps ?? "—"}`
-            ) || [];
+            .map(set => {
+                const rir = normalizeRirValue(set.rir);
+                return `${formatPreviousWeight(set.weight)} × ${set.reps ?? "—"}${rir === null ? "" : ` · RIR ${rir >= 4 ? "4+" : rir}`}`;
+            }) || [];
     return sets.length
         ? sets.join(" • ")
         : "No previous performance recorded.";
 }
 
 function formatPreviousSet(set) {
-    const main = `${formatPreviousWeight(set.weight)} × ${set.reps ?? "—"}`;
+    const rir = normalizeRirValue(set.rir);
+    const main = `${formatPreviousWeight(set.weight)} × ${set.reps ?? "—"}${rir === null ? "" : ` · RIR ${rir >= 4 ? "4+" : rir}`}`;
     const drops = (Array.isArray(set.dropSets) ? set.dropSets : [])
         .filter(drop => drop.weight !== null || drop.reps !== null)
         .map((drop, index) => `Drop ${index + 1}: ${formatPreviousWeight(drop.weight)} × ${drop.reps ?? "—"}`);

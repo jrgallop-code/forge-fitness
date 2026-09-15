@@ -17,8 +17,8 @@ test("Workout History Edit opens the completed-session editor and hides the plan
     assert.match(history, /navigate\("workout"\)[\s\S]*openCompletedWorkoutForEdit\(sessionId\)/);
     assert.match(history, /querySelector\("\[data-workout-live-landing\]"\)[\s\S]*landing\.hidden = true/);
     assert.doesNotMatch(history, /navigate\("workout"\); openCompletedWorkoutForEdit\(session\.id\)/);
-    assert.match(router, /workout-history\.js\?v=history-editor-route-1/);
-    assert.match(app, /router\.js\?v=history-editor-route-1/);
-    assert.match(index, /js\/app\.js\?v=history-editor-route-1/);
-    assert.match(worker, /CACHE_VERSION = "2026-09-13-315"/);
+    assert.match(router, /workout-history\.js\?v=history-rir-edit-1/);
+    assert.match(app, /router\.js\?v=history-rir-edit-1/);
+    assert.match(index, /js\/app\.js\?v=history-rir-edit-1/);
+    assert.match(worker, /CACHE_VERSION = "2026-09-15-335"/);
 });

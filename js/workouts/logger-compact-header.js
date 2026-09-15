@@ -59,7 +59,7 @@ function syncMetadata(logger) {
     const line = logger.querySelector(".logger-compact-day-date");
     if (!line) return;
 
-    const active = readActiveWorkout();
+    const active = logger.__levelUpSession || readActiveWorkout();
     const select = logger.querySelector("#session-day-select");
     const date = logger.querySelector("#session-date");
     const dayName =
@@ -88,8 +88,8 @@ function bindDetailsToggle(logger, button, fields) {
 }
 
 function ensureCompactHeader(logger) {
-    if (!logger || logger.dataset.editingSessionId) return;
-    const active = readActiveWorkout();
+    if (!logger) return;
+    const active = logger.__levelUpSession || readActiveWorkout();
     if (!active) return;
 
     const exercises = logger.querySelector("#session-exercises");

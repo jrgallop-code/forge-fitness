@@ -1,4 +1,4 @@
-import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=native-navigation-stability-1';
+import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=history-rir-edit-1';
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { removeWorkoutSet, setHasRecordedData } from './logger-set-removal.js?v=logger-set-removal-1';
@@ -593,6 +593,7 @@ function enhanceLogger(logger) {
         complete.setAttribute('aria-label', `Complete set ${setIndex + 1}`);
 
         complete.addEventListener('pointerdown', () => {
+          if (logger.dataset.editingSessionId) return;
           unlockAlarmAudio();
           applyExerciseTimerToCore(logger, exerciseId);
         }, true);
@@ -612,14 +613,16 @@ function enhanceLogger(logger) {
         });
       }
 
-      if (!logger.dataset.editingSessionId) {
-        const removeSet = document.createElement('button');
-        removeSet.type = 'button';
-        removeSet.className = 'logger-remove-set-btn';
-        removeSet.textContent = '−';
-        removeSet.disabled = card.querySelectorAll('.session-set-row').length <= 1;
-        removeSet.setAttribute('aria-label', `Remove set ${setIndex + 1}`);
-        removeSet.addEventListener('click', () => {
+      const removeSet = document.createElement('button');
+      removeSet.type = 'button';
+      removeSet.className = 'logger-remove-set-btn';
+      removeSet.textContent = '−';
+      removeSet.disabled = card.querySelectorAll('.session-set-row').length <= 1;
+      removeSet.setAttribute('aria-label', `Remove set ${setIndex + 1}`);
+      removeSet.addEventListener('click', () => {
+        if (logger.dataset.editingSessionId) {
+          logger.__levelUpEditApi?.removeSet(exerciseIndex, setIndex);
+        } else {
           const active = getActive();
           const set = active?.exercises?.[exerciseIndex]?.sets?.[setIndex];
           if (!active || !set) return;
@@ -627,29 +630,31 @@ function enhanceLogger(logger) {
           if (!removeWorkoutSet(active, exerciseIndex, setIndex)) return;
           saveActive(active);
           openActiveWorkout();
-        });
-        row.appendChild(removeSet);
-      }
+        }
+      });
+      row.appendChild(removeSet);
 
     });
 
-    if (!logger.dataset.editingSessionId) {
-      const addSet = document.createElement('button');
-      addSet.type = 'button';
-      addSet.className = 'compact-add-set-btn';
-      card.appendChild(addSet);
-      updateAddSetLabel(card, exerciseId);
-      addSet.addEventListener('click', () => {
+    const addSet = document.createElement('button');
+    addSet.type = 'button';
+    addSet.className = 'compact-add-set-btn';
+    card.appendChild(addSet);
+    updateAddSetLabel(card, exerciseId);
+    addSet.addEventListener('click', () => {
+      if (logger.dataset.editingSessionId) {
+        logger.__levelUpEditApi?.addSet(exerciseIndex);
+      } else {
         const active = getActive();
         const state = active?.exercises?.[exerciseIndex];
         if (!state || !Array.isArray(state.sets)) return;
-        state.sets.push({ weight: null, reps: null, completed: false });
+        state.sets.push({ weight: null, reps: null, rir: null, completed: false });
         const planned = active.planSnapshot?.days?.[active.trainingDayIndex]?.exercises?.[exerciseIndex];
         if (planned) planned.sets = state.sets.length;
         saveActive(active);
         openActiveWorkout();
-      });
-    }
+      }
+    });
   });
 
   if (initialEnhancement) {

@@ -49,8 +49,8 @@ test("TDEE history chart matches the app's graph ranges and supports daily inspe
   assert.doesNotMatch(calculation, /phase\?\.adjustments/);
   assert.match(calculation, /maintenanceCalories: positiveNumber\(estimate\.maintenanceCalories\)/);
   assert.match(index, /css\/calorie-stats\.css\?v=food-log-macro-bars-1/);
-  assert.match(index, /js\/app\.js\?v=history-editor-route-1/);
-    assert.match(app, /router\.js\?v=history-editor-route-1/);
+  assert.match(index, /js\/app\.js\?v=history-rir-edit-1/);
+    assert.match(app, /router\.js\?v=history-rir-edit-1/);
   assert.match(router, /progress-ui\.js\?v=fatsecret-progress-calories-1/);
   assert.match(router, /calorie-stats\.js\?v=energy-carousel-control-1/);
   assert.match(progress, /calorie-stats\.js\?v=fatsecret-progress-calories-1/);
