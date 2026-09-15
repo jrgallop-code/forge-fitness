@@ -197,6 +197,7 @@ function closeMenus(except = null) {
         menu.hidden = true;
         rowForDropControl(menu)?.querySelector(":scope > .drop-set-menu-trigger")?.setAttribute("aria-expanded", "false");
     });
+    document.body.classList.toggle("set-options-open", Boolean(except && !except.hidden));
 }
 
 function hasRirValue(value) {
@@ -209,7 +210,7 @@ function updateSetTrigger(row, value) {
     const setNumber = Number(row.dataset.setIndex) + 1;
     const hasRir = hasRirValue(value);
     const rir = hasRir ? Math.min(4, Math.max(0, Number(value))) : null;
-    trigger.innerHTML = `<span class="working-set-number">${setNumber}</span>${hasRir ? `<sup class="set-rir-superscript">R${rir === 4 ? "4+" : rir}</sup>` : ""}`;
+    trigger.innerHTML = `<span class="working-set-number">${setNumber}</span>${hasRir ? `<sup class="set-rir-superscript">${rir === 4 ? "4+" : rir}</sup>` : ""}`;
     trigger.classList.toggle("has-rir", hasRir);
     if (hasRir) trigger.dataset.rir = String(rir);
     else delete trigger.dataset.rir;
@@ -242,7 +243,7 @@ function setRir(row, nextValue) {
     const value = nextValue === null || current === nextValue ? null : nextValue;
     set.rir = value;
     saveActive(active);
-    card.closest("#workout-session-logger")?.dispatchEvent(new CustomEvent("levelup:adaptive-guidance-changed", {
+    card.closest("#workout-session-logger")?.dispatchEvent(new CustomEvent("levelup:set-rir-changed", {
         detail: { kind: "set-rir", exerciseIndex, setIndex, value }
     }));
     updateSetMenu(row);
@@ -333,8 +334,12 @@ function enhanceRow(row) {
     menu.setAttribute("aria-label", `Set ${Number(row.dataset.setIndex) + 1} options`);
     menu.innerHTML = `
         <div class="set-rir-menu-heading">
-            <strong>Reps in reserve</strong>
-            <small>Optional · good-form reps you had left</small>
+            <div>
+                <span>SET ${Number(row.dataset.setIndex) + 1} · EFFORT</span>
+                <strong>How many reps were left?</strong>
+                <small>Optional · estimate good-form reps still in reserve</small>
+            </div>
+            <button class="set-rir-menu-close" type="button" data-close-set-menu aria-label="Close set options">×</button>
         </div>
         <div class="set-rir-options" role="group" aria-label="Reps in reserve">
             ${[0, 1, 2, 3, 4].map(value => `<button type="button" data-set-rir-value="${value}" data-rir-tone="${value}" aria-pressed="false">${value === 4 ? "4+" : value}</button>`).join("")}
@@ -379,7 +384,14 @@ document.addEventListener("click", event => {
         closeMenus(opening ? menu : null);
         menu.hidden = !opening;
         trigger.setAttribute("aria-expanded", String(opening));
+        document.body.classList.toggle("set-options-open", opening);
         if (opening) updateSetMenu(row);
+        return;
+    }
+
+    const close = event.target.closest("[data-close-set-menu]");
+    if (close) {
+        closeMenus();
         return;
     }
 
@@ -390,6 +402,7 @@ document.addEventListener("click", event => {
         if (row) setRir(row, Number(rirChoice.dataset.setRirValue));
         if (menu) menu.hidden = true;
         row?.querySelector(":scope > .drop-set-menu-trigger")?.setAttribute("aria-expanded", "false");
+        document.body.classList.remove("set-options-open");
         return;
     }
 
@@ -400,6 +413,7 @@ document.addEventListener("click", event => {
         if (row) setRir(row, null);
         if (menu) menu.hidden = true;
         row?.querySelector(":scope > .drop-set-menu-trigger")?.setAttribute("aria-expanded", "false");
+        document.body.classList.remove("set-options-open");
         return;
     }
 
@@ -410,6 +424,7 @@ document.addEventListener("click", event => {
         if (row?.matches(".session-set-row")) addDrop(row);
         menu.hidden = true;
         row?.querySelector(":scope > .drop-set-menu-trigger")?.setAttribute("aria-expanded", "false");
+        document.body.classList.remove("set-options-open");
         return;
     }
 

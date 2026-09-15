@@ -4,7 +4,9 @@ import { readFileSync } from "node:fs";
 
 const actions = readFileSync("js/workouts/session-exercise-actions.js", "utf8");
 const dropSets = readFileSync("js/workouts/drop-set-runtime.js", "utf8");
-const adaptive = readFileSync("js/workouts/adaptive-guidance.js", "utf8");
+const compactLogger = readFileSync("js/workouts/workout-logger-compact.js", "utf8");
+const session = readFileSync("js/workouts/workout-session.js", "utf8");
+const more = readFileSync("js/more/more-ui-v2.js", "utf8");
 const actionStyles = readFileSync("css/session-exercise-actions.css", "utf8");
 const dropStyles = readFileSync("css/drop-set-runtime.css", "utf8");
 const themeGuardrail = readFileSync("js/core/workout-theme-guardrail.js", "utf8");
@@ -18,28 +20,38 @@ test("exercise overflow groups Superset, Warm-up, and Smart Swap while leaving F
   assert.match(actions, /Smart Swap/);
   assert.match(actionStyles, /\.session-overflow-source\{display:none!important\}/);
   assert.doesNotMatch(actions, /data-session-overflow-action="form-guide"/);
+  assert.match(compactLogger, /exercise-timer-btn/);
+  assert.match(compactLogger, /exercise-timer-popover/);
+  assert.match(actions, /className = 'exercise-more-btn'/);
+  assert.doesNotMatch(actions, /aria-label', 'Exercise actions and rest timer'/);
 });
 
 test("working-set circle offers optional per-set RIR and preserves Drop Set access", () => {
   assert.match(dropSets, /data-set-rir-value/);
   assert.match(dropSets, /data-clear-set-rir/);
   assert.match(dropSets, /data-add-drop-set>Add Drop Set/);
-  assert.match(dropSets, /kind: "set-rir"/);
+  assert.match(dropSets, /levelup:set-rir-changed/);
   assert.match(dropSets, /set\.rir = value/);
   assert.match(dropSets, /set-rir-superscript/);
+  assert.doesNotMatch(dropSets, /set-rir-superscript">R\$\{/);
+  assert.match(dropStyles, /position: fixed/);
+  assert.match(dropStyles, /bottom: calc\(96px \+ env\(safe-area-inset-bottom\)\)/);
   assert.match(dropStyles, /data-rir="0"/);
   assert.match(dropStyles, /#ef3f49/);
   assert.match(themeGuardrail, /hasRir \? "var\(--rir-color\)"/);
 });
 
-test("legacy exercise-level RIR questionnaire is no longer rendered", () => {
-  assert.doesNotMatch(adaptive, /forEach\(card => renderRirTracker/);
-  assert.match(adaptive, /querySelectorAll\("\.adaptive-rir-control"\).*remove/);
+test("adaptive guidance survey and settings are removed from the TestFlight runtime", () => {
+  assert.doesNotMatch(entry, /css\/adaptive-guidance\.css/);
+  assert.doesNotMatch(entry, /js\/workouts\/adaptive-guidance\.js/);
+  assert.doesNotMatch(more, /data-more-page="adaptive-guidance"/);
+  assert.doesNotMatch(session, /getAdaptiveGuidanceSettings|getDeloadPreviewRequest|session-guidance/);
+  assert.match(session, /levelup:set-rir-changed/);
 });
 
 test("the workout tutorial and native entry point load the new controls", () => {
   assert.match(tutorial, /Open set options/);
   assert.match(tutorial, /data-session-overflow-action="warmup"/);
-  assert.match(entry, /drop-set-runtime\.js\?v=set-circle-rir-1/);
-  assert.match(entry, /session-exercise-actions\.js\?v=exercise-overflow-1/);
+  assert.match(entry, /drop-set-runtime\.js\?v=floating-rir-1/);
+  assert.match(entry, /session-exercise-actions\.js\?v=separate-rest-menu-1/);
 });

@@ -87,10 +87,16 @@ function polishExerciseHeader(card, index, total) {
         header.insertAdjacentElement("afterend", tools);
     }
 
+    const actions = header.querySelector(".compact-exercise-actions");
     const formGuide = card.querySelector(".logger-form-guide-btn");
     const warmup = card.querySelector(".exercise-warmup-btn");
-    if (formGuide && formGuide.parentElement !== tools) tools.appendChild(formGuide);
+    const timer = actions?.querySelector(".exercise-timer-btn");
+    if (formGuide && actions && formGuide.parentElement !== actions) {
+        if (timer) actions.insertBefore(formGuide, timer);
+        else actions.prepend(formGuide);
+    }
     if (warmup && warmup.parentElement !== tools) tools.appendChild(warmup);
+    tools.classList.toggle("only-overflow-sources", !tools.querySelector(":scope > :not(.session-overflow-source)"));
 }
 
 function setupExerciseStrip(logger) {

@@ -61,8 +61,6 @@ function renderRecap(session, history) {
         </div>
       </header>
 
-      ${renderCoachSummary(session)}
-
       <section class="workout-complete-recap__hero">
         <div class="workout-complete-recap__crushing"><small>YOU ARE</small><strong>CRUSHING IT</strong><small>TODAY!</small></div>
         <div class="workout-complete-recap__body-glow is-arm-hero" data-arm-hero-installed="true">
@@ -95,57 +93,6 @@ function renderRecap(session, history) {
   document.body.appendChild(overlay);
   document.body.classList.add("workout-recap-open");
   overlay.querySelectorAll("[data-recap-done]").forEach(button => button.addEventListener("click", closeRecap));
-}
-
-function renderCoachSummary(session) {
-  const recommendations = session?.adaptiveGuidance?.recommendations || [];
-  if (!recommendations.length) return "";
-  const hasPlanChange = recommendations.some(item => item.type === "volume" || item.type === "deload");
-  return `
-    <section class="adaptive-coach-summary" data-adaptive-session-id="${escapeHtml(session.id)}">
-      <div class="adaptive-coach-heading">
-        <span class="adaptive-coach-kicker">ADAPTIVE COACH</span>
-        <h3>Coach Summary</h3>
-        <p>${hasPlanChange ? "Suggestions only—nothing changes unless you apply it." : "Based on this workout and your feedback."}</p>
-      </div>
-      <div class="adaptive-recommendation-list">
-        ${recommendations.map(renderCoachRecommendation).join("")}
-      </div>
-    </section>`;
-}
-
-function renderCoachRecommendation(recommendation) {
-  const presentation = coachRecommendationPresentation(recommendation);
-  if (recommendation.status) {
-    const status = recommendation.status === "applied" ? "Applied" : recommendation.type === "hold" ? "Acknowledged" : "Kept current";
-    return `<article class="adaptive-recommendation adaptive-recommendation--${presentation.tone}"><span class="adaptive-recommendation-kicker">${presentation.label}</span><strong>${escapeHtml(recommendation.title)}</strong><p class="adaptive-recommendation-status">${escapeHtml(status)}</p></article>`;
-  }
-  if (recommendation.type === "status") {
-    return `<article class="adaptive-recommendation adaptive-recommendation--${presentation.tone}"><span class="adaptive-recommendation-kicker">${presentation.label}</span><strong>${escapeHtml(recommendation.title)}</strong><p>${escapeHtml(recommendation.reason)}</p></article>`;
-  }
-  const primaryAction = recommendation.type === "volume"
-    ? `<button class="primary-btn" type="button" data-adaptive-action="apply-volume" data-recommendation-id="${escapeHtml(recommendation.id)}">Apply</button>`
-    : recommendation.type === "deload"
-      ? `<button class="primary-btn" type="button" data-adaptive-action="start-deload" data-recommendation-id="${escapeHtml(recommendation.id)}">Start deload</button>`
-      : "";
-  return `
-    <article class="adaptive-recommendation adaptive-recommendation--${presentation.tone}">
-      <span class="adaptive-recommendation-kicker">${presentation.label}</span>
-      <strong>${escapeHtml(recommendation.title)}</strong>
-      <p>${escapeHtml(recommendation.reason)}</p>
-      <div class="adaptive-recommendation-actions">
-        ${primaryAction}
-        <button class="secondary-btn" type="button" data-adaptive-action="dismiss" data-recommendation-id="${escapeHtml(recommendation.id)}">${recommendation.type === "hold" ? "Got it" : "Keep current"}</button>
-      </div>
-    </article>`;
-}
-
-function coachRecommendationPresentation(recommendation) {
-  if (recommendation?.type === "deload") return { tone: "recovery", label: "RECOVERY RECOMMENDATION" };
-  if (recommendation?.type === "hold") return { tone: "caution", label: "TRAINING CAUTION" };
-  if (recommendation?.type === "volume" && Number(recommendation.delta) > 0) return { tone: "progress", label: "PROGRESS OPTION" };
-  if (recommendation?.type === "volume") return { tone: "caution", label: "RECOVERY OPTION" };
-  return { tone: "steady", label: "NEXT WORKOUT" };
 }
 
 function renderConfetti() {

@@ -120,18 +120,6 @@ function findPreviousPerformance(exerciseId, excludedSessionId = null) {
   return null;
 }
 
-function getDiscomfortCaution(source, exerciseId) {
-  const guidance = source?.session?.adaptiveGuidance || {};
-  if (guidance.discomfortExerciseId !== exerciseId) return null;
-  if (guidance.discomfort === 'minor') {
-    return 'Consider holding the current load—you reported minor discomfort last time.';
-  }
-  if (guidance.discomfort === 'significant') {
-    return 'Consider reducing the load or changing the exercise—you reported significant discomfort last time.';
-  }
-  return null;
-}
-
 function formatPreviousSet(set) {
   if (!set) return "Hasn't started";
   const weight = set.weight === null || set.weight === undefined || set.weight === ''
@@ -295,15 +283,6 @@ function hidePrompt(prompt) {
 }
 
 function showPrompt(prompt, source, exerciseId) {
-  const caution = getDiscomfortCaution(source, exerciseId);
-  if (caution) {
-    prompt.insertAdjacentHTML('beforeend', `
-      <div class="progression-discomfort-caution" role="note">
-        <strong>Caution</strong>
-        <span>${caution}</span>
-      </div>
-    `);
-  }
   prompt.hidden = false;
 }
 
@@ -364,10 +343,6 @@ function renderCard(card) {
 
   const active = readJson(ACTIVE_WORKOUT_STORAGE_KEY, null);
   if (!active) {
-    hidePrompt(prompt);
-    return;
-  }
-  if (active?.adaptiveGuidance?.isDeload) {
     hidePrompt(prompt);
     return;
   }

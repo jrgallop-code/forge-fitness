@@ -661,11 +661,28 @@ function createSupersetButton(card, logger, heading) {
 
 function ensureExerciseOverflow(card) {
   if (!card || card.dataset.trackingType !== 'reps') return;
-  const menu = card.querySelector('.exercise-options-popover');
-  const trigger = card.querySelector('.exercise-more-btn');
-  if (!menu || !trigger) return;
+  const header = card.querySelector('.compact-exercise-header');
+  const headerActions = header?.querySelector('.compact-exercise-actions');
+  if (!header || !headerActions) return;
+
+  let trigger = headerActions.querySelector('.exercise-more-btn');
+  if (!trigger) {
+    trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'exercise-more-btn';
+    trigger.textContent = '•••';
+    headerActions.appendChild(trigger);
+  }
+
+  let menu = header.querySelector('.exercise-options-popover');
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.className = 'exercise-options-popover';
+    menu.hidden = true;
+    header.appendChild(menu);
+  }
   menu.setAttribute('role', 'dialog');
-  menu.setAttribute('aria-label', 'Exercise actions and rest timer');
+  menu.setAttribute('aria-label', 'Exercise actions');
 
   let actions = menu.querySelector('.session-overflow-actions');
   if (!actions) {
@@ -683,7 +700,7 @@ function ensureExerciseOverflow(card) {
         <span>Smart Swap</span><small>Choose a similar exercise for today</small>
       </button>
     `;
-    menu.insertAdjacentElement('afterbegin', actions);
+    menu.appendChild(actions);
   }
 
   const sources = {
@@ -698,6 +715,9 @@ function ensureExerciseOverflow(card) {
     action.hidden = !source;
     source?.classList.add('session-overflow-source');
   });
+  card.querySelectorAll('.logger-exercise-tools').forEach(tools => {
+    tools.classList.toggle('only-overflow-sources', !tools.querySelector(':scope > :not(.session-overflow-source)'));
+  });
 
   const supersetAction = actions.querySelector('[data-session-overflow-action="superset"] span');
   const warmupAction = actions.querySelector('[data-session-overflow-action="warmup"] span');
@@ -707,6 +727,22 @@ function ensureExerciseOverflow(card) {
   trigger.textContent = '•••';
   trigger.setAttribute('aria-label', 'Open exercise actions');
   trigger.setAttribute('aria-haspopup', 'dialog');
+  trigger.setAttribute('aria-expanded', String(!menu.hidden));
+  if (trigger.dataset.exerciseOverflowBound !== 'true') {
+    trigger.dataset.exerciseOverflowBound = 'true';
+    trigger.addEventListener('click', event => {
+      event.stopPropagation();
+      const opening = menu.hidden;
+      card.closest('#workout-session-logger')?.querySelectorAll('.exercise-options-popover, .exercise-timer-popover').forEach(other => {
+        if (other !== menu) other.hidden = true;
+      });
+      card.closest('#workout-session-logger')?.querySelectorAll('.exercise-more-btn, .exercise-timer-btn').forEach(button => {
+        if (button !== trigger) button.setAttribute('aria-expanded', 'false');
+      });
+      menu.hidden = !opening;
+      trigger.setAttribute('aria-expanded', String(opening));
+    });
+  }
 }
 
 function ensureInlineActions(card, logger) {
@@ -720,7 +756,7 @@ function ensureInlineActions(card, logger) {
 
     if (!card.querySelector('.session-inline-swap')) {
       const button = createSwapButton(card, logger, liftingHeading);
-      const timerButton = liftingActions.querySelector('.exercise-more-btn');
+      const timerButton = liftingActions.querySelector('.exercise-timer-btn');
       if (timerButton) liftingActions.insertBefore(button, timerButton);
       else liftingActions.appendChild(button);
     }
@@ -804,6 +840,7 @@ document.addEventListener('click', event => {
     const source = card?.querySelector(selector);
     const menu = overflowAction.closest('.exercise-options-popover');
     if (menu) menu.hidden = true;
+    card?.querySelector('.exercise-more-btn')?.setAttribute('aria-expanded', 'false');
     source?.click();
     window.setTimeout(() => ensureExerciseOverflow(card), 0);
     return;

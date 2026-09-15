@@ -132,3 +132,5 @@ Release 60: add an iOS-test-only control to restore pre-review calories and TDEE
 Release 61: remove the completed weekly check-in replay control after validation while preserving optional same-day weigh-in guidance.
 
 Release 62: consolidate workout actions into an exercise overflow menu and add optional per-set RIR selection to working-set circles.
+
+Release 63: restore dedicated rest-timer access, compact the exercise header, float and polish RIR set controls, and remove adaptive-guidance surveys.

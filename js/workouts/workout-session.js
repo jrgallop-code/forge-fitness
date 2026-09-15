@@ -5,10 +5,6 @@ import {
 }
 from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { classifyWorkoutSource } from "./workout-source.js?v=workout-source-stats-1";
-import {
-    getAdaptiveGuidanceSettings,
-    getDeloadPreviewRequest
-} from "../more/adaptive-guidance-settings.js?v=deload-workout-preview-1";
 import { openWorkoutMode } from "./workout-mode.js?v=native-navigation-stability-1";
 import {
     UNIT_KINDS,
@@ -508,8 +504,6 @@ function createActiveSession(plan, logger) {
             0,
         currentSetIndex:
             0,
-        adaptiveGuidance:
-            null,
         restTimer:
             null
     };
@@ -612,14 +606,6 @@ function renderSessionExercises({
     if (!container) {
         return;
     }
-
-    const recoveryCheckPending = !editingSessionId &&
-        getAdaptiveGuidanceSettings().enabled &&
-        !getDeloadPreviewRequest() &&
-        !session?.adaptiveGuidance?.recoveryCompleted &&
-        !session?.adaptiveGuidance?.isDeload;
-    logger.classList.toggle("adaptive-recovery-pending", recoveryCheckPending);
-
 
     container.innerHTML = `
         ${editingSessionId ? "" : renderRestTimerPanel(session)}
@@ -762,15 +748,6 @@ function renderSessionExercises({
                 }
             }
         );
-
-    logger.dispatchEvent(new CustomEvent("levelup:workout-session-rendered", {
-        bubbles: true,
-        detail: { recoveryCheckPending }
-    }));
-
-    if (recoveryCheckPending) {
-        window.setTimeout(() => logger.classList.remove("adaptive-recovery-pending"), 1000);
-    }
 
     updateTimerDisplays();
 
@@ -1025,30 +1002,18 @@ function bindSessionInputs({
         persist();
     });
 
-    logger.addEventListener("levelup:adaptive-guidance-changed", event => {
+    logger.addEventListener("levelup:set-rir-changed", event => {
         const detail = event.detail || {};
-
-        if (detail.kind === "set-rir") {
-            const exerciseIndex = Number(detail.exerciseIndex);
-            const setIndex = Number(detail.setIndex);
-            const set = session.exercises?.[exerciseIndex]?.sets?.[setIndex];
-            if (!set) return;
-            const hasValue = detail.value !== null && detail.value !== "" && detail.value !== undefined;
-            const value = hasValue ? Number(detail.value) : null;
-            set.rir = Number.isFinite(value) ? Math.min(4, Math.max(0, value)) : null;
-            session.currentExerciseIndex = exerciseIndex;
-            session.currentSetIndex = setIndex;
-            persist();
-            return;
-        }
-
-        if (detail.kind === "session-guidance") {
-            session.adaptiveGuidance = {
-                ...(session.adaptiveGuidance || {}),
-                ...(detail.value || {})
-            };
-            persist();
-        }
+        const exerciseIndex = Number(detail.exerciseIndex);
+        const setIndex = Number(detail.setIndex);
+        const set = session.exercises?.[exerciseIndex]?.sets?.[setIndex];
+        if (!set) return;
+        const hasValue = detail.value !== null && detail.value !== "" && detail.value !== undefined;
+        const value = hasValue ? Number(detail.value) : null;
+        set.rir = Number.isFinite(value) ? Math.min(4, Math.max(0, value)) : null;
+        session.currentExerciseIndex = exerciseIndex;
+        session.currentSetIndex = setIndex;
+        persist();
     });
 
 
@@ -1360,8 +1325,6 @@ function saveCompletedSession({
         durationMs,
         durationMinutes:
             Math.round(durationMs / 60000),
-        adaptiveGuidance:
-            clone(session.adaptiveGuidance || null),
         exercises:
             clone((session.exercises || []).map((exercise, index) =>
                 enrichCompletedExercise(exercise, completedDay?.exercises?.[index])
