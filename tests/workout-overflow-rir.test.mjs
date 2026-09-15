@@ -39,6 +39,10 @@ test("exercise reorder sheet supports hold-and-drag and commits the day order sa
   assert.match(actions, /active\.restTimer\.exerciseIndex = nextTimerExercise/);
   assert.match(actions, /applyOrderToSavedWorkoutDay/);
   assert.match(actions, /levelup:workout-plans-changed/);
+  assert.match(actions, /addEventListener\('contextmenu'/);
+  assert.match(actions, /addEventListener\('selectstart'/);
+  assert.match(actionStyles, /-webkit-user-select:none/);
+  assert.match(actionStyles, /-webkit-touch-callout:none/);
 });
 
 test("working-set circle offers optional per-set RIR and preserves Drop Set access", () => {
@@ -68,5 +72,5 @@ test("the workout tutorial and native entry point load the new controls", () => 
   assert.match(tutorial, /Open set options/);
   assert.match(tutorial, /data-session-overflow-action="warmup"/);
   assert.match(entry, /drop-set-runtime\.js\?v=floating-rir-1/);
-  assert.match(entry, /session-exercise-actions\.js\?v=exercise-reorder-1/);
+  assert.match(entry, /session-exercise-actions\.js\?v=exercise-reorder-loupe-1/);
 });

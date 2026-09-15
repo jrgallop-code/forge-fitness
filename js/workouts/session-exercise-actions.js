@@ -477,6 +477,17 @@ function bindReorderGestures(list) {
     handle.setPointerCapture?.(event.pointerId);
   });
 
+  // Keep iOS's text-selection loupe and touch callout out of this drag-only control.
+  list.addEventListener('contextmenu', event => {
+    if (event.target.closest('.session-reorder-item')) event.preventDefault();
+  });
+  list.addEventListener('selectstart', event => {
+    if (event.target.closest('.session-reorder-item')) event.preventDefault();
+  });
+  list.addEventListener('dragstart', event => {
+    if (event.target.closest('.session-reorder-item')) event.preventDefault();
+  });
+
   list.addEventListener('pointermove', event => {
     if (!gesture || event.pointerId !== gesture.pointerId) return;
     if (!gesture.active) {
