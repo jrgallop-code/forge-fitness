@@ -28,7 +28,7 @@ private struct DashboardProvider: TimelineProvider {
 
     func getSnapshot(in context: Context, completion: @escaping (DashboardEntry) -> Void) { completion(entry()) }
     func getTimeline(in context: Context, completion: @escaping (Timeline<DashboardEntry>) -> Void) {
-        completion(Timeline(entries: [entry()], policy: .after(Calendar.current.date(byAdding: .minute, value: 30, to: .now) ?? .now.addingTimeInterval(1800))))
+        completion(Timeline(entries: [entry()], policy: .after(Calendar.current.date(byAdding: .minute, value: 5, to: .now) ?? .now.addingTimeInterval(300))))
     }
 
     private func entry() -> DashboardEntry {

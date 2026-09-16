@@ -395,13 +395,21 @@ function syncBanner(force = false) {
   const active = getActive();
   const timer = active?.restTimer;
 
-  if (!logger || !active || !timer) {
+  if (!active || !timer) {
     banner.hidden = true;
     if (!active || !timer) {
       banner.classList.remove("is-minimized");
       delete banner.dataset.restTimerIdentity;
     }
     lastTimerSignature = "";
+    return;
+  }
+
+  // The global sticky renderer owns the same persisted timer when the user
+  // leaves the workout logger. Do not hide its banner from this logger-only
+  // renderer while the countdown is still active.
+  if (!logger) {
+    banner.hidden = false;
     return;
   }
 

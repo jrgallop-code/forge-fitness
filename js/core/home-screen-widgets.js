@@ -8,6 +8,7 @@ const PLAN_KEY = "forge_workout_plans";
 const SESSION_KEY = "forge_workout_sessions";
 const SCHEDULE_KEY = "level_up_workout_schedule_v1";
 let timer = 0;
+let lastSnapshotSignature = "";
 
 export function isNativeIOS() {
     try { return window.Capacitor?.getPlatform?.() === "ios" || (window.Capacitor?.isNativePlatform?.() && /iPhone|iPad|iPod/i.test(navigator.userAgent)); }
@@ -51,12 +52,24 @@ function workoutSnapshot() {
 }
 
 export function dashboardWidgetSnapshot() { return { version: 1, updatedAt: new Date().toISOString(), theme: theme(), ...nutritionSnapshot(), ...workoutSnapshot() }; }
+function snapshotSignature(snapshot = dashboardWidgetSnapshot()) {
+    const { updatedAt: _updatedAt, ...stable } = snapshot;
+    return JSON.stringify(stable);
+}
 export async function syncHomeScreenWidget() {
     if (!isNativeIOS()) return { available: false };
     const plugin = window.Capacitor?.Plugins?.[PLUGIN]; if (!plugin?.sync) return { available: false };
-    return plugin.sync({ snapshot: JSON.stringify(dashboardWidgetSnapshot()) });
+    const snapshot = dashboardWidgetSnapshot();
+    const result = await plugin.sync({ snapshot: JSON.stringify(snapshot) });
+    lastSnapshotSignature = snapshotSignature(snapshot);
+    return result;
 }
 export function scheduleHomeScreenWidgetSync() { if (!isNativeIOS()) return; clearTimeout(timer); timer = window.setTimeout(() => { syncHomeScreenWidget().catch(() => {}); }, 120); }
-["levelup:nutrition-updated", "levelup:nutrition-phase-updated", "levelup:food-log-updated", "levelup:workout-completed", "levelup:appearance-changed", "pageshow", "focus"].forEach(name => window.addEventListener(name, scheduleHomeScreenWidgetSync));
+["levelup:nutrition-updated", "levelup:nutrition-phase-updated", "levelup:food-log-updated", "levelup:weight-updated", "levelup:workout-completed", "levelup:workout-plans-changed", "levelup:workout-schedule-changed", "levelup:appearance-changed", "pageshow", "focus"].forEach(name => window.addEventListener(name, scheduleHomeScreenWidgetSync));
+window.addEventListener("storage", scheduleHomeScreenWidgetSync);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) scheduleHomeScreenWidgetSync(); });
+window.setInterval(() => {
+    if (!isNativeIOS() || document.hidden) return;
+    if (snapshotSignature() !== lastSnapshotSignature) scheduleHomeScreenWidgetSync();
+}, 750);
 scheduleHomeScreenWidgetSync();

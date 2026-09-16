@@ -1,5 +1,5 @@
 import { openActiveWorkout } from "./workout-session.js?v=native-navigation-stability-1";
-import { cancelNativeAlarm, hapticNotification, requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-2";
+import { cancelNativeAlarm, finishNativeAlarm, hapticNotification, requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=timer-completion-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const CARDIO_TIMER_STORAGE_KEY = "level_up_cardio_timer_state";
@@ -244,6 +244,13 @@ function getCardioName(card) {
     return card?.querySelector("h4")?.textContent?.trim() || "Cardio";
 }
 
+function getCurrentWorkoutName() {
+    const active = getActiveWorkout();
+    const dayIndex = Number(active?.trainingDayIndex) || 0;
+    const day = active?.planSnapshot?.days?.[dayIndex];
+    return String(day?.name || active?.planSnapshot?.name || active?.name || "Workout").trim() || "Workout";
+}
+
 function primeAlarmAudio() {
     try {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -377,10 +384,15 @@ function ensureCardioAlarmBanner() {
             const state = normalizeTimerState(store[key]);
             state.alarmMinutes = Math.min(240, (Number(state.alarmMinutes) || Math.ceil(getElapsedMs(state) / 60000)) + 5);
             state.alarmFired = false;
+            state.running = true;
+            state.startedAt = new Date().toISOString();
             store[key] = state;
             saveTimerStore(store);
             banner.hidden = true;
-            if (card) updateCardioTimerCard(card);
+            if (card) {
+                scheduleCardioNativeAlarm(card, key, state);
+                updateCardioTimerCard(card);
+            }
             return;
         }
         if (button.dataset.cardioAlarmAction === "pause") {
@@ -400,10 +412,9 @@ function showCardioAlarmBanner(card, key, alarmMinutes) {
         <div class="cardio-alarm-banner-copy">
             <small>CARDIO ALARM</small>
             <strong>${escapeHtml(getCardioName(card))} · ${escapeHtml(String(alarmMinutes))} min complete</strong>
-            <span>Timer is still recording.</span>
+            <span>Timer stopped at your selected target.</span>
         </div>
         <div class="cardio-alarm-banner-actions">
-            <button type="button" data-cardio-alarm-action="pause">Pause</button>
             <button type="button" class="cardio-alarm-primary" data-cardio-alarm-action="plus5">+5 min</button>
             <button type="button" data-cardio-alarm-action="dismiss">Dismiss</button>
         </div>`;
@@ -445,7 +456,7 @@ function ensureCardioAlarmSheet() {
                 <span>Lock Screen countdown + background alarm.</span>
                 <button type="button" class="cardio-alarm-alerts">${notificationButtonText()}</button>
             </div>
-            <p>The alarm fires at the selected elapsed time. Your cardio timer keeps recording until you pause it.</p>
+            <p>The alarm fires at the selected time and stops the cardio timer automatically.</p>
         </section>`;
 
     overlay.addEventListener("click", event => {
@@ -594,12 +605,15 @@ function pauseTimerForCard(card) {
 function maybeFireCardioAlarm(card, key, state, elapsed) {
     if (!state.running || state.alarmFired || !state.alarmMinutes) return false;
     if (elapsed < state.alarmMinutes * 60000) return false;
+    state.accumulatedMs = state.alarmMinutes * 60000;
+    state.running = false;
+    state.startedAt = null;
     state.alarmFired = true;
     const store = getTimerStore();
     store[key] = state;
     saveTimerStore(store);
     playCardioAlarmSound();
-    void cancelNativeAlarm(`cardio:${key}`);
+    void finishNativeAlarm(`cardio:${key}`);
     void hapticNotification("SUCCESS");
     showCardioAlarmBanner(card, key, state.alarmMinutes);
     void showCardioNotification(card, state.alarmMinutes);
@@ -618,6 +632,10 @@ function scheduleCardioNativeAlarm(card, key, state) {
         kind: "cardio",
         liveActivityTitle: "Cardio timer",
         liveActivityDetail: getCardioName(card),
+        context: {
+            workoutName: getCurrentWorkoutName(),
+            exerciseName: getCardioName(card)
+        },
         extra: { type: "levelup:cardio-complete", timerKey: key }
     });
 }

@@ -16,6 +16,7 @@ test("iOS ships theme-aware small and medium dashboard widgets", async () => {
   assert.match(widget, /\.supportedFamilies\(\[\.systemSmall, \.systemMedium\]\)/);
   assert.match(widget, /caloriesConsumed/);
   assert.match(widget, /nextWorkout/);
+  assert.match(widget, /value: 5, to: \.now/);
   assert.match(plugin, /group\.com\.leveluphypertrophy\.app\.widgets/);
   assert.match(plugin, /reloadTimelines\(ofKind: "LevelUpDashboardWidget"\)/);
   assert.match(project, /LevelUpDashboardWidget\.swift in Sources/);
@@ -40,8 +41,12 @@ test("the native app shares live dashboard data and explains how to add the widg
   assert.match(guide, /Add Widget/);
   assert.match(guide, /Search for <b>Level Up<\/b>/);
   assert.match(guide, /home-screen-widgets\.css\?v=home-widget-2/);
-  assert.match(more, /home-screen-widgets\.js\?v=home-widget-2/);
-  assert.match(router, /more-ui-v2\.js\?v=home-widget-theme-2/);
+  assert.match(more, /home-screen-widgets\.js\?v=home-widget-live-3/);
+  assert.match(router, /more-ui-v2\.js\?v=home-widget-live-3/);
+  assert.match(sync, /levelup:weight-updated/);
+  assert.match(sync, /levelup:workout-plans-changed/);
+  assert.match(sync, /snapshotSignature\(\) !== lastSnapshotSignature/);
+  assert.match(sync, /}, 750\)/);
   assert.match(styles, /\.home-widget-page[\s\S]*color: var\(--text\) !important/);
   assert.match(styles, /background: var\(--surface-raised\) !important/);
   assert.match(styles, /\.home-widget-preview span[\s\S]*color: var\(--text-secondary\) !important/);

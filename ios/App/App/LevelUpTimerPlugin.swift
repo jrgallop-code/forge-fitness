@@ -253,7 +253,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
         let state = LevelUpTimerStateStore.contentState(for: record)
         if let existing = Activity<LevelUpTimerAttributes>.activities.first(where: { $0.attributes.timerID == record.timerID }) {
             if #available(iOS 16.2, *) {
-                await existing.update(ActivityContent(state: state, staleDate: record.kind == "cardio" ? nil : state.endAt.addingTimeInterval(60)))
+                await existing.update(ActivityContent(state: state, staleDate: state.endAt.addingTimeInterval(60)))
             } else {
                 await existing.update(using: state)
             }
@@ -286,7 +286,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
         )
         do {
             if #available(iOS 16.2, *) {
-                _ = try Activity.request(attributes: attributes, content: ActivityContent(state: state, staleDate: record.kind == "cardio" ? nil : state.endAt.addingTimeInterval(60)), pushType: nil)
+                _ = try Activity.request(attributes: attributes, content: ActivityContent(state: state, staleDate: state.endAt.addingTimeInterval(60)), pushType: nil)
             } else {
                 _ = try Activity.request(attributes: attributes, contentState: state, pushType: nil)
             }
@@ -316,7 +316,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
             let endAt: Date
             if #available(iOS 16.2, *) { endAt = activity.content.state.endAt }
             else { endAt = activity.contentState.endAt }
-            if activity.attributes.kind != "cardio", endAt <= Date() {
+            if endAt <= Date() {
                 Task { await LevelUpTimerStateStore.finish(timerID: activity.attributes.timerID) }
             }
         }

@@ -13,8 +13,8 @@ import { openLessonLibrary } from "./learn-level-up.js?v=food-log-macro-bars-1";
 import { openExploreResearch } from "./explore-research.js?v=food-log-macro-bars-1";
 import { appearanceMenuIcon, renderAppearanceSettings, initializeAppearanceSettings } from "./appearance-settings.js?v=home-icons-1";
 import { renderAppFeatureSettings, initializeAppFeatureSettings } from "./app-feature-settings.js?v=nutrition-feature-choice-1";
-import { renderHomeScreenWidgets, initializeHomeScreenWidgets } from "./home-screen-widgets.js?v=home-widget-2";
-import { isNativeIOS } from "../core/home-screen-widgets.js?v=home-widget-2";
+import { renderHomeScreenWidgets, initializeHomeScreenWidgets } from "./home-screen-widgets.js?v=home-widget-live-3";
+import { isNativeIOS } from "../core/home-screen-widgets.js?v=home-widget-live-3";
 
 const ICONS = {
     appearance: appearanceMenuIcon(),

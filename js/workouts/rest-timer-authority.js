@@ -109,11 +109,11 @@ async function showSingleBackgroundNotification(timer) {
 function finalizeTimer(timerId) {
     const active = readActiveWorkout();
     const timer = active?.restTimer;
-    if (!active || !timer || timer.timerId !== timerId || timer.status !== "running" || !timer.endAt) return;
+    if (!active || !timer || timer.timerId !== timerId || !["running", "finished"].includes(timer.status)) return;
 
-    const endAtMs = new Date(timer.endAt).getTime();
-    if (!Number.isFinite(endAtMs)) return;
-    if (Date.now() < endAtMs - EXPIRY_EARLY_MS - 5) {
+    const endAtMs = timer.endAt ? new Date(timer.endAt).getTime() : NaN;
+    if (timer.status === "running" && !Number.isFinite(endAtMs)) return;
+    if (timer.status === "running" && Date.now() < endAtMs - EXPIRY_EARLY_MS - 5) {
         scheduleExpiry(active, timer);
         return;
     }
@@ -122,6 +122,7 @@ function finalizeTimer(timerId) {
     // to change identity when core expiry cleared endAt, causing the same alarm to
     // sound twice. `notified` also prevents the older core notification path from
     // firing a second alert.
+    const shouldAlert = timer.status === "running" && timer.notified !== true;
     timer.status = "finished";
     timer.remainingMs = 0;
     timer.notified = true;
@@ -136,8 +137,10 @@ function finalizeTimer(timerId) {
     // Completion is different from cancellation. End the lock-screen Live Activity
     // but leave iOS's scheduled completion notification in place as the one alert.
     void finishNativeAlarm(`rest:${timer.timerId}`);
-    void hapticNotification("SUCCESS");
-    showSingleBackgroundNotification(timer);
+    if (shouldAlert) {
+        void hapticNotification("SUCCESS");
+        showSingleBackgroundNotification(timer);
+    }
 }
 
 function scheduleExpiry(active, timer) {
@@ -364,6 +367,7 @@ function keepActiveTimerAuthoritative() {
     if (!currentTimer) return;
 
     if (currentTimer.status === "running" && currentTimer.endAt) scheduleExpiry(refreshed, currentTimer);
+    else if (currentTimer.status === "finished" && currentTimer.authorityFinished !== true) finalizeTimer(currentTimer.timerId);
     else clearScheduledExpiry();
 
     // A timer is global workout state, not DOM state. Never let a logger re-render

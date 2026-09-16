@@ -175,10 +175,8 @@ struct LevelUpTimerLiveActivity: Widget {
                     .lineLimit(2).minimumScaleFactor(0.82)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                if context.attributes.kind == "rest" {
-                    Text(activityDetails(context))
-                        .font(.caption2.weight(.medium)).foregroundStyle(palette.muted).lineLimit(1)
-                }
+                Text(activityDetails(context))
+                    .font(.caption2.weight(.medium)).foregroundStyle(palette.muted).lineLimit(1)
                 if context.attributes.kind == "rest" {
                     restControls(context: context, palette: palette)
                 } else {
@@ -210,9 +208,7 @@ struct LevelUpTimerLiveActivity: Widget {
                                 Text(activityHeading(context)).font(.caption2.weight(.heavy)).foregroundStyle(palette.accent).lineLimit(1)
                                 Text(activityTitle(context)).font(.caption.weight(.semibold)).foregroundStyle(palette.heading)
                                     .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                                if context.attributes.kind == "rest" {
-                                    Text(activityDetails(context)).font(.caption2).foregroundStyle(palette.muted).lineLimit(1)
-                                }
+                                Text(activityDetails(context)).font(.caption2).foregroundStyle(palette.muted).lineLimit(1)
                             }
                             Spacer()
                             if context.attributes.kind != "rest" { dismissControl(context: context, palette: palette) }
@@ -233,19 +229,25 @@ struct LevelUpTimerLiveActivity: Widget {
 
     private func activityHeading(_ context: ActivityViewContext<LevelUpTimerAttributes>) -> String {
         if context.attributes.kind == "cardio" { return "CARDIO TIMER" }
-        let workout = context.attributes.workoutName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return workout.isEmpty || workout == "Workout" ? "REST TIMER" : "REST TIMER · \(workout.uppercased())"
+        return "REST TIMER"
     }
 
     private func activityTitle(_ context: ActivityViewContext<LevelUpTimerAttributes>) -> String {
+        let workout = context.attributes.workoutName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !workout.isEmpty && workout != "Workout" { return workout }
         let exercise = context.attributes.exerciseName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if context.attributes.kind != "rest" { return exercise.isEmpty ? context.attributes.detail : exercise }
-        let name = exercise.isEmpty ? context.attributes.detail : exercise
-        return context.attributes.setNumber > 0 ? "Next: \(name) · Set \(context.attributes.setNumber)" : name
+        return exercise.isEmpty ? context.attributes.detail : exercise
     }
 
     private func activityDetails(_ context: ActivityViewContext<LevelUpTimerAttributes>) -> String {
+        let exercise = context.attributes.exerciseName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if context.attributes.kind == "cardio" {
+            return exercise.isEmpty ? context.attributes.detail : exercise
+        }
         var parts: [String] = []
+        if !exercise.isEmpty {
+            parts.append(context.attributes.setNumber > 0 ? "Up next: \(exercise) · Set \(context.attributes.setNumber)" : exercise)
+        }
         let target = context.attributes.targetReps.trimmingCharacters(in: .whitespacesAndNewlines)
         let previous = context.attributes.previousPerformance.trimmingCharacters(in: .whitespacesAndNewlines)
         if !target.isEmpty { parts.append("Target \(target) reps") }
@@ -260,8 +262,8 @@ struct LevelUpTimerLiveActivity: Widget {
                 .font(font).monospacedDigit().fontWeight(.heavy).foregroundStyle(palette.accent)
         } else {
             Text(
-                timerInterval: context.state.startedAt...(context.attributes.kind == "cardio" ? .distantFuture : context.state.endAt),
-                countsDown: context.attributes.kind != "cardio"
+                timerInterval: context.state.startedAt...context.state.endAt,
+                countsDown: true
             )
                 .font(font).monospacedDigit().fontWeight(.heavy).foregroundStyle(palette.accent)
         }

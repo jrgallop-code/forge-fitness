@@ -26,14 +26,17 @@ test("cardio alarm surfaces sit above the active workout and bottom navigation",
     assert.ok(banner > nav, `alarm banner ${banner} must be above nav ${nav}`);
 });
 
-test("cardio always starts a native Lock Screen activity and keeps it after the optional alarm fires", () => {
+test("cardio stops exactly at the selected target and finishes its Lock Screen activity", () => {
     const alarmFunction = cardioTimer.slice(
         cardioTimer.indexOf("function maybeFireCardioAlarm"),
         cardioTimer.indexOf("function scheduleCardioNativeAlarm")
     );
-    assert.match(cardioTimer, /if \(!state\?\.running\) return;/);
-    assert.match(cardioTimer, /notification: hasAlarm/);
+    assert.match(alarmFunction, /state\.accumulatedMs = state\.alarmMinutes \* 60000/);
+    assert.match(alarmFunction, /state\.running = false/);
+    assert.match(alarmFunction, /state\.startedAt = null/);
+    assert.match(alarmFunction, /finishNativeAlarm\(`cardio:\$\{key\}`\)/);
     assert.doesNotMatch(alarmFunction, /cancelNativeAlarm\(`cardio:\$\{key\}`\)/);
+    assert.match(cardioTimer, /stops the cardio timer automatically/);
 });
 
 test("trend smoothing loads before the authoritative viewport renderer", () => {
