@@ -103,7 +103,7 @@ function refreshGoalCheckIn() {
     const currentCalories = getActiveCalories();
 
     if (metrics.status === "PRELIMINARY" || metrics.status === "PRELIMINARY TREND") {
-        setText("goal-check-in-message", `Preliminary phase rate: ${formatRate(actual)}. Level Up makes the first calorie decision on Day 14 when enough weigh-in data is available.`);
+        setText("goal-check-in-message", `Week 1 informational check-in: ${formatRate(actual)}. Level Up keeps calories steady until the first decision on Day 14.`);
         setText("goal-check-in-suggested", ""); hideApply(); return;
     }
 
