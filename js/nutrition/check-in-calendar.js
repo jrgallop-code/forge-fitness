@@ -1,9 +1,10 @@
 import { getNutritionPhaseHistory } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calendar-checkin-day-1";
-import { getWeeklyCheckInStatus } from "./weekly-check-in-status.js?v=calendar-checkin-day-1";
+import { getWeeklyCheckInStatus } from "./weekly-check-in-status.js?v=calendar-checkin-day-1-weekly-informational-checkin-1";
 
 const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";
-const FIRST_CHECK_DAY = 14;
+const FIRST_INFORMATIONAL_CHECK_DAY = 7;
+const FIRST_CALORIE_REVIEW_DAY = 14;
 const CADENCE_DAYS = 7;
 
 function localDate(date = new Date()) {
@@ -43,6 +44,7 @@ function monthBounds(date = new Date()) {
 }
 
 function stateLabel(state) {
+    if (state === "informational") return "Week 1 informational check-in";
     if (state === "handled") return "Check-in completed";
     if (state === "ready") return "Calorie review ready";
     if (state === "waiting") return "Check-in due · more data needed";
@@ -68,8 +70,18 @@ function canonicalPhaseEvents(phase, bounds, handledState, today) {
     const lastDate = phaseEnd < bounds.end ? phaseEnd : bounds.end;
     const handled = handledState[phaseKey(phase)];
     const lastHandledCheckDay = Number(handled?.lastHandledCheckDay);
-    let checkDay = FIRST_CHECK_DAY;
-    let date = shiftDate(phase.startDate, FIRST_CHECK_DAY - 1);
+    const informationalDate = shiftDate(phase.startDate, FIRST_INFORMATIONAL_CHECK_DAY - 1);
+    if (informationalDate >= bounds.start && informationalDate <= lastDate) {
+        events.push(eventFor({
+            date: informationalDate,
+            checkDay: FIRST_INFORMATIONAL_CHECK_DAY,
+            phase,
+            state: "informational"
+        }));
+    }
+
+    let checkDay = FIRST_CALORIE_REVIEW_DAY;
+    let date = shiftDate(phase.startDate, FIRST_CALORIE_REVIEW_DAY - 1);
 
     while (date && date <= lastDate) {
         if (date >= bounds.start) {
@@ -90,7 +102,8 @@ function canonicalPhaseEvents(phase, bounds, handledState, today) {
 function activePhaseEvents(phase, status, bounds, handledState, today) {
     if (!phase?.startDate || status?.mode === "track") return [];
 
-    const firstReviewDate = shiftDate(phase.startDate, FIRST_CHECK_DAY - 1);
+    const informationalDate = shiftDate(phase.startDate, FIRST_INFORMATIONAL_CHECK_DAY - 1);
+    const firstReviewDate = shiftDate(phase.startDate, FIRST_CALORIE_REVIEW_DAY - 1);
     let anchor = status?.reviewDate || firstReviewDate;
     if (!anchor) return [];
 
@@ -112,6 +125,14 @@ function activePhaseEvents(phase, status, bounds, handledState, today) {
     const events = [];
     const activeEnd = phase.endDate || bounds.end;
     const lastDate = activeEnd < bounds.end ? activeEnd : bounds.end;
+    if (informationalDate >= bounds.start && informationalDate <= lastDate) {
+        events.push(eventFor({
+            date: informationalDate,
+            checkDay: FIRST_INFORMATIONAL_CHECK_DAY,
+            phase,
+            state: "informational"
+        }));
+    }
 
     while (date && date <= lastDate) {
         let state;
@@ -158,7 +179,7 @@ export function getMonthlyCheckInEvents(viewDate = new Date()) {
     // One date can only represent one check-in. This also protects against a
     // phase boundary landing on the same calendar day as another phase event.
     const unique = new Map();
-    const priority = { ready: 5, waiting: 4, handled: 3, upcoming: 2, past: 1 };
+    const priority = { ready: 6, waiting: 5, handled: 4, informational: 3, upcoming: 2, past: 1 };
     events.forEach(event => {
         const current = unique.get(event.date);
         if (!current || (priority[event.state] || 0) > (priority[current.state] || 0)) unique.set(event.date, event);
