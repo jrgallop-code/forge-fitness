@@ -6,10 +6,13 @@ import UIKit
 
 @main
 struct LevelUpTimerWidgetBundle: WidgetBundle {
-    var body: some Widget { LevelUpTimerLiveActivity() }
+    var body: some Widget {
+        LevelUpTimerLiveActivity()
+        LevelUpDashboardWidget()
+    }
 }
 
-private struct TimerPalette {
+struct TimerPalette {
     let background: Color
     let raised: Color
     let heading: Color

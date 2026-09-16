@@ -67,6 +67,20 @@ function writeOutput(name, value) {
   appendFileSync(required('GITHUB_OUTPUT'), `${name}=${value}\n`);
 }
 
+async function ensureBundleCapability(bundleId, capabilityType, settings = undefined) {
+  const capabilities = await api(`/bundleIds/${bundleId}/bundleIdCapabilities`);
+  const existing = capabilities?.data?.find(item => item.attributes?.capabilityType === capabilityType);
+  const attributes = { capabilityType, ...(settings ? { settings } : {}) };
+  if (existing) {
+    if (settings) await api(`/bundleIdCapabilities/${existing.id}`, { method: 'PATCH', body: JSON.stringify({ data: { type: 'bundleIdCapabilities', id: existing.id, attributes } }) });
+    return;
+  }
+  await api('/bundleIdCapabilities', {
+    method: 'POST',
+    body: JSON.stringify({ data: { type: 'bundleIdCapabilities', attributes, relationships: { bundleId: { data: { type: 'bundleIds', id: bundleId } } } } }),
+  });
+}
+
 async function createSigningAssets() {
   const signingDirectory = required('SIGNING_DIR');
   mkdirSync(signingDirectory, { recursive: true });
@@ -131,25 +145,7 @@ async function createSigningAssets() {
     const bundleId = bundleIds?.data?.find((item) => item.attributes?.identifier === bundleIdentifier)?.id;
     if (!bundleId) throw new Error(`No registered App ID found for ${bundleIdentifier}`);
 
-    const capabilities = await api(`/bundleIds/${bundleId}/bundleIdCapabilities`);
-    if (!capabilities?.data?.some(item => item.attributes?.capabilityType === 'APPLE_ID_AUTH')) {
-      await api('/bundleIdCapabilities', {
-        method: 'POST',
-        body: JSON.stringify({
-          data: {
-            type: 'bundleIdCapabilities',
-            attributes: {
-              capabilityType: 'APPLE_ID_AUTH',
-              settings: [{
-                key: 'APPLE_ID_AUTH_APP_CONSENT',
-                options: [{ key: 'PRIMARY_APP_CONSENT', enabled: true }],
-              }],
-            },
-            relationships: { bundleId: { data: { type: 'bundleIds', id: bundleId } } },
-          },
-        }),
-      });
-    }
+    await ensureBundleCapability(bundleId, 'APPLE_ID_AUTH', [{ key: 'APPLE_ID_AUTH_APP_CONSENT', options: [{ key: 'PRIMARY_APP_CONSENT', enabled: true }] }]);
 
     const extensionIdentifier = required('APP_EXTENSION_BUNDLE_IDENTIFIER');
     let extensionBundleIds = await api(`/bundleIds?filter%5Bidentifier%5D=${encodeURIComponent(extensionIdentifier)}&limit=20`);
@@ -163,6 +159,10 @@ async function createSigningAssets() {
       extensionBundleId = extensionBundleIds?.data?.find((item) => item.attributes?.identifier === extensionIdentifier)?.id;
     }
     if (!extensionBundleId) throw new Error(`No registered App ID found for ${extensionIdentifier}`);
+
+    const appGroupSettings = [{ key: 'APP_GROUPS', options: [{ key: 'group.com.leveluphypertrophy.app.widgets', enabled: true }] }];
+    await ensureBundleCapability(bundleId, 'APP_GROUPS', appGroupSettings);
+    await ensureBundleCapability(extensionBundleId, 'APP_GROUPS', appGroupSettings);
 
     const runLabel = `${required('GITHUB_RUN_ID')}-${process.env.GITHUB_RUN_ATTEMPT || '1'}`;
     const profileName = `Level Up App Store ${runLabel}`;
