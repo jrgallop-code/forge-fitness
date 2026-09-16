@@ -1,4 +1,4 @@
-import { GOAL_PRESETS } from "./tdee-calculator.js?v=phase-goal-controls-1";
+import { GOAL_PRESETS, roundCalorieTarget } from "./tdee-calculator.js?v=calorie-target-rounding-1";
 import { getNutritionProfile, saveNutritionGoal, syncCalculatedCalories } from "./nutrition-storage.js?v=phase-goal-controls-1";
 import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-live-weighin-1";
 import { normalizeWeightEntries } from "../core/weight-trend.js?v=phase-goal-controls-1";
@@ -135,7 +135,7 @@ function bindListeners() {
 function readDirectCalorieTarget() {
     const input = document.getElementById("unified-direct-calorie-target");
     if (!input) return null;
-    const value = Math.round(Number(input.value));
+    const value = roundCalorieTarget(input.value);
     return Number.isFinite(value) && value > 0 ? value : null;
 }
 
@@ -153,11 +153,11 @@ function savePhaseFromNutrition() {
     const samePhase = Boolean(active && active.goalId === goalId);
     const currentTarget = positive(active?.currentCalories ?? active?.startCalories);
     const directTarget = readDirectCalorieTarget();
-    const targetCalories = samePhase
+    const targetCalories = roundCalorieTarget(samePhase
         ? Number.isFinite(directTarget) && Number.isFinite(currentTarget)
             ? currentTarget + directTarget
             : currentTarget
-        : directTarget ?? Math.round(maintenance + Number(preset?.dailyCalorieAdjustment || 0));
+        : directTarget ?? maintenance + Number(preset?.dailyCalorieAdjustment || 0));
     const startDate = document.getElementById("nutrition-phase-start-date")?.value || today();
     const goalWeightRaw = Number(document.getElementById("nutrition-phase-goal-weight")?.value);
     const goalWeight = Number.isFinite(goalWeightRaw) && goalWeightRaw > 0 ? Math.round(goalWeightRaw * 10) / 10 : null;
