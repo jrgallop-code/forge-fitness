@@ -1,5 +1,5 @@
 import { initializeUnifiedGoalsCalories } from "./unified-goals-calories.js?v=calorie-authority-recovery-1";
-import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=single-calorie-authority-1";
+import { initializeNutritionPlanUI } from "./nutrition-plan-ui-v4.js?v=single-calorie-authority-1-weekly-informational-checkin-1";
 import { initializePhaseGoalControls } from "./phase-goal-controls.js?v=phase-goal-controls-live-weighin-1";
 import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-only-1";
@@ -146,7 +146,7 @@ function getCalorieSuggestion() {
 
     if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: `On track · next check Day ${metrics.trend?.nextCheckDay || "--"}` };
     if (metrics.status === "PRELIMINARY TREND") {
-        return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Preliminary 7-day trend · first calorie decision on Day 14" };
+        return { primary: `${Math.round(currentCalories)} kcal/day`, secondary: "Week 1 informational check-in · first calorie decision on Day 14" };
     }
     if (["BUILDING TREND", "NEED MORE DATA", "NEED MORE PHASE DATA"].includes(metrics.status)) {
         return {
