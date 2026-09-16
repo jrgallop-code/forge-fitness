@@ -105,3 +105,52 @@
     min-height: 36px;
   }
 }
+
+/* Exercise-name readability: keep full names visible without making the logger bulky. */
+.workout-session-logger .compact-exercise-header {
+  align-items: flex-start;
+}
+
+.workout-session-logger .logger-exercise-title {
+  min-width: 0;
+  overflow: visible;
+}
+
+.workout-session-logger .logger-exercise-title h4 {
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.workout-session-logger .compact-exercise-actions {
+  align-self: flex-start;
+  padding-top: 1px;
+}
+
+/* Give the exercise strip enough room to show useful names while keeping it horizontally scrollable. */
+.workout-session-logger .logger-exercise-strip button {
+  min-width: 138px;
+  max-width: 190px;
+}
+
+.workout-session-logger .logger-exercise-strip button.active {
+  min-width: 180px;
+  max-width: 220px;
+}
+
+@media (max-width: 380px) {
+  .workout-session-logger .logger-exercise-strip button {
+    min-width: 126px;
+    max-width: 168px;
+  }
+
+  .workout-session-logger .logger-exercise-strip button.active {
+    min-width: 164px;
+    max-width: 196px;
+  }
+}
