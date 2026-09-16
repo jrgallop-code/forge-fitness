@@ -4,7 +4,8 @@ import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-c
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=calendar-checkin-day-1";
 import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
 
-const FIRST_CHECK_DAY = 14;
+const FIRST_INFORMATIONAL_CHECK_DAY = 7;
+const FIRST_CALORIE_REVIEW_DAY = 14;
 const WEEKLY_CADENCE_DAYS = 7;
 const MIN_COMPLETE_FOOD_DAYS = 4;
 const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";
@@ -128,9 +129,12 @@ export function getWeeklyCheckInStatus() {
     const foodNeeded = Math.max(0, MIN_COMPLETE_FOOD_DAYS - foodDays);
     const recentWeighIns = Math.max(0, Number(checkIn?.recentWeighIns ?? estimate?.recentWeighIns ?? estimate?.weighIns) || 0);
     const needsWeighIn = metrics?.status === "AWAITING WEIGH-IN" || recentWeighIns < 1;
-    const reviewReady = mode !== "track" && authoritativeReviewReady(checkIn);
-    const firstCheckDate = trend.nextCheckDate || shiftDateKey(phase.startDate, FIRST_CHECK_DAY - 1);
-    const currentCheckDate = trend.checkDate || firstCheckDate;
+    const reviewReady = phaseDay >= FIRST_CALORIE_REVIEW_DAY
+        && mode !== "track"
+        && authoritativeReviewReady(checkIn);
+    const firstInformationalDate = shiftDateKey(phase.startDate, FIRST_INFORMATIONAL_CHECK_DAY - 1);
+    const firstCalorieReviewDate = shiftDateKey(phase.startDate, FIRST_CALORIE_REVIEW_DAY - 1);
+    const currentCheckDate = trend.checkDate || firstCalorieReviewDate;
     const nextCheckDate = trend.nextCheckDate || shiftDateKey(currentCheckDate, WEEKLY_CADENCE_DAYS);
 
     let state = "upcoming";
@@ -164,14 +168,32 @@ export function getWeeklyCheckInStatus() {
             : "Your latest Trend Weight and completed nutrition days are ready to review.";
         context = "Review one recommended daily calorie target, then Level Up waits seven days before another change.";
         progress = 100;
-    } else if (phaseDay < FIRST_CHECK_DAY) {
+    } else if (phaseDay < FIRST_INFORMATIONAL_CHECK_DAY) {
         state = "upcoming";
-        reviewDate = firstCheckDate;
-        const remaining = Math.max(0, daysBetween(today, reviewDate) ?? (FIRST_CHECK_DAY - phaseDay));
-        headline = remaining === 1 ? "First check-in tomorrow" : `First check-in ${formatWeekday(reviewDate)}`;
-        detail = `${remaining} day${remaining === 1 ? "" : "s"} remaining · Phase Day ${phaseDay} of ${FIRST_CHECK_DAY}`;
-        context = "Level Up builds your initial Trend Weight first. The first calorie decision is on Day 14.";
-        progress = clamp(((phaseDay - 1) / (FIRST_CHECK_DAY - 1)) * 100);
+        reviewDate = firstInformationalDate;
+        const remaining = Math.max(0, daysBetween(today, reviewDate) ?? (FIRST_INFORMATIONAL_CHECK_DAY - phaseDay));
+        headline = remaining === 1 ? "First weekly check-in tomorrow" : `First weekly check-in ${formatWeekday(reviewDate)}`;
+        detail = `${remaining} day${remaining === 1 ? "" : "s"} remaining · Phase Day ${phaseDay} of ${FIRST_INFORMATIONAL_CHECK_DAY}`;
+        context = "Week 1 reviews your early Trend Weight and logging consistency. It is informational, so your calorie target stays unchanged.";
+        progress = clamp(((phaseDay - 1) / (FIRST_INFORMATIONAL_CHECK_DAY - 1)) * 100);
+    } else if (phaseDay === FIRST_INFORMATIONAL_CHECK_DAY) {
+        state = "informational";
+        reviewDate = firstInformationalDate;
+        const earlyRate = Number(metrics?.actualRateLbPerWeek);
+        headline = "Week 1 check-in";
+        detail = Number.isFinite(earlyRate)
+            ? `Early Trend Weight: ${earlyRate > 0 ? "+" : ""}${earlyRate.toFixed(2)} lb/week`
+            : "Early trend and logging review";
+        context = `This check-in is informational. Keep calories at ${Number.isFinite(currentTarget) ? `${Math.round(currentTarget).toLocaleString()} kcal/day` : "your current target"} while Level Up gathers a second week of response data.`;
+        progress = 100;
+    } else if (phaseDay < FIRST_CALORIE_REVIEW_DAY) {
+        state = "upcoming";
+        reviewDate = firstCalorieReviewDate;
+        const remaining = Math.max(0, daysBetween(today, reviewDate) ?? (FIRST_CALORIE_REVIEW_DAY - phaseDay));
+        headline = remaining === 1 ? "First calorie review tomorrow" : `First calorie review ${formatWeekday(reviewDate)}`;
+        detail = `${remaining} day${remaining === 1 ? "" : "s"} remaining · Phase Day ${phaseDay} of ${FIRST_CALORIE_REVIEW_DAY}`;
+        context = "Your Week 1 check-in was informational. Day 14 is the first check-in that can recommend a calorie adjustment.";
+        progress = clamp(((phaseDay - FIRST_INFORMATIONAL_CHECK_DAY) / WEEKLY_CADENCE_DAYS) * 100);
     } else if (metrics?.status === "AWAITING WEIGH-IN") {
         state = "waiting";
         reviewDate = trend.awaitingNewWeighIn ? (trend.nextCheckDate || today) : (currentCheckDate || today);
@@ -204,7 +226,7 @@ export function getWeeklyCheckInStatus() {
         detail = `${remaining} day${remaining === 1 ? "" : "s"} remaining · ${formatDate(reviewDate)}`;
         context = "Your latest assessment did not produce a target change. Level Up will reassess on the next weekly check-in.";
         progress = clamp(((WEEKLY_CADENCE_DAYS - Math.min(WEEKLY_CADENCE_DAYS, remaining)) / WEEKLY_CADENCE_DAYS) * 100);
-    } else if (phaseDay >= FIRST_CHECK_DAY && (metrics?.status === "NEED MORE DATA" || foodNeeded > 0 || needsWeighIn)) {
+    } else if (phaseDay >= FIRST_CALORIE_REVIEW_DAY && (metrics?.status === "NEED MORE DATA" || foodNeeded > 0 || needsWeighIn)) {
         state = "waiting";
         reviewDate = currentCheckDate || today;
         headline = "Check-in due — more data needed";
@@ -242,6 +264,7 @@ export function getWeeklyCheckInStatus() {
 function badgeCopy(status) {
     if (status.state === "ready") return "READY";
     if (status.state === "waiting") return "ACTION NEEDED";
+    if (status.state === "informational") return "WEEK 1";
     if (status.state === "tracking") return "PAUSED";
     if (!status.reviewDate) return "WEEKLY";
     const remaining = daysBetween(localDateKey(), status.reviewDate);
@@ -265,9 +288,9 @@ function mainCardMarkup(status) {
             <div><span class="eyebrow">WEEKLY CALORIE CHECK-IN</span><h3>${status.headline}</h3><p>${status.detail}</p></div>
             <b class="weekly-checkin-badge">${badgeCopy(status)}</b>
         </header>
-        <div class="weekly-checkin-progress" aria-label="Weekly check-in progress"><i><b style="width:${status.progress}%"></b></i><small>${status.state === "tracking" ? "Weekly reviews paused" : status.phaseDay < FIRST_CHECK_DAY ? `Initial review progress · Day ${status.phaseDay} of ${FIRST_CHECK_DAY}` : "Weekly review cycle"}</small></div>
+        <div class="weekly-checkin-progress" aria-label="Weekly check-in progress"><i><b style="width:${status.progress}%"></b></i><small>${progressCopy(status)}</small></div>
         ${dataMarkup(status)}
-        <div class="weekly-checkin-context"><p>${status.context}</p><small>First calorie review: Day 14 · then every 7 days · completed nutrition days + Trend Weight.</small></div>
+        <div class="weekly-checkin-context"><p>${status.context}</p><small>Weekly check-ins start Day 7 · first calorie review Day 14 · then every 7 days.</small></div>
         ${status.reviewReady ? '<button type="button" class="weekly-checkin-review-btn" data-weekly-checkin-review>Review now</button>' : ""}
     </section>`;
 }
@@ -283,11 +306,29 @@ function progressCardMarkup(status) {
 function dashboardCopy(status) {
     if (status.state === "ready") return "Calorie review ready";
     if (status.state === "waiting") return "Calorie check-in due · more data needed";
+    if (status.state === "informational") return "Week 1 check-in available · calories held steady";
     if (status.state === "tracking") return "Weekly calorie reviews paused";
     const remaining = status.reviewDate ? daysBetween(localDateKey(), status.reviewDate) : null;
-    if (remaining === 1) return "Next calorie check-in tomorrow";
-    if (remaining === 0) return "Calorie check-in today";
-    return `Next calorie check-in ${status.reviewDate ? formatWeekday(status.reviewDate) : "next week"}${Number.isFinite(remaining) ? ` · ${remaining} days` : ""}`;
+    const milestone = status.phaseDay < FIRST_INFORMATIONAL_CHECK_DAY
+        ? "weekly check-in"
+        : status.phaseDay < FIRST_CALORIE_REVIEW_DAY
+            ? "calorie review"
+            : "calorie check-in";
+    if (remaining === 1) return `Next ${milestone} tomorrow`;
+    if (remaining === 0) return `${milestone[0].toUpperCase()}${milestone.slice(1)} today`;
+    return `Next ${milestone} ${status.reviewDate ? formatWeekday(status.reviewDate) : "next week"}${Number.isFinite(remaining) ? ` · ${remaining} days` : ""}`;
+}
+
+function progressCopy(status) {
+    if (status.state === "tracking") return "Weekly reviews paused";
+    if (status.state === "informational") return "Week 1 informational check-in · Day 7";
+    if (status.phaseDay < FIRST_INFORMATIONAL_CHECK_DAY) {
+        return `Week 1 check-in progress · Day ${status.phaseDay} of ${FIRST_INFORMATIONAL_CHECK_DAY}`;
+    }
+    if (status.phaseDay < FIRST_CALORIE_REVIEW_DAY) {
+        return `First calorie review progress · Day ${status.phaseDay} of ${FIRST_CALORIE_REVIEW_DAY}`;
+    }
+    return "Weekly review cycle";
 }
 
 function dashboardMarkup(status) {
