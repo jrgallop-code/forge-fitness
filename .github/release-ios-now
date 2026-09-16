@@ -162,3 +162,5 @@ Release 73 retry 2: regenerate signing profiles after assigning the shared widge
 Release 73 retry 3: regenerate profiles after assigning the widget App Group to the timer extension App ID.
 
 Release 74: correct Home Screen Widgets guide contrast across every light and dark appearance theme.
+
+Release 75: stop cardio timers at their selected target, keep in-app rest timers visible, show the current workout on Live Activities, and refresh Home Screen widgets as data changes.
