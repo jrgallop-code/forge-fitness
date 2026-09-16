@@ -150,3 +150,5 @@ Release 69: preserve per-set RIR in completed workouts and reuse the live workou
 Release 70: improve workout exercise-name visibility and remove the duplicate Add/Edit Note item from the exercise overflow menu while keeping the logger note field.
 
 Release 71: add the Day 7 informational phase check-in, keep Day 14 as the first actionable calorie review, and continue reviews every seven days.
+
+Release 72: bring all Progress cards close to the iPhone screen edges across Lifting, Weight, Nutrition, and Cardio while preserving safe-area and card content padding.
