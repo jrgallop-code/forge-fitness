@@ -148,3 +148,5 @@ Release 68: add persistent exercise notes, theme-specific high-contrast RIR colo
 Release 69: preserve per-set RIR in completed workouts and reuse the live workout logger layout and controls when editing saved workouts.
 
 Release 70: improve workout exercise-name visibility and remove the duplicate Add/Edit Note item from the exercise overflow menu while keeping the logger note field.
+
+Release 71: add the Day 7 informational phase check-in, keep Day 14 as the first actionable calorie review, and continue reviews every seven days.
