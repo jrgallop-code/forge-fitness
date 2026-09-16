@@ -154,3 +154,5 @@ Release 71: add the Day 7 informational phase check-in, keep Day 14 as the first
 Release 72: bring all Progress cards close to the iPhone screen edges across Lifting, Weight, Nutrition, and Cardio while preserving safe-area and card content padding.
 
 Release 73: add theme-aware small and medium Home Screen widgets for nutrition, upcoming workouts, and weekly training, plus an in-app setup guide.
+
+Release 73 retry: use Apple's supported capability-only App Group provisioning while retaining the shared widget entitlement.
