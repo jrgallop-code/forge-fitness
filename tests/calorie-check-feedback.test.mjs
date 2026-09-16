@@ -15,12 +15,20 @@ test("labels a blocked check as provisional rather than recommending the current
     assert.equal(message, "No calorie recommendation yet · Add 1 more weigh-in in the previous 7-day block (3/4 previous weigh-ins · 4/4 current weigh-ins) · Provisional pace: +0.37 vs +0.25 lb/week");
 });
 
-test("states the phase day before the first calorie decision", () => {
+test("announces the informational Day 7 check-in during the first week", () => {
+    const message = buildPendingCalorieCheckMessage({
+        metrics: { targetRateLbPerWeek: -0.5, toleranceLbPerWeek: 0.16, trend: { phaseDay: 5 } },
+        visibleRate: -0.45
+    });
+    assert.match(message, /First weekly check-in on Day 7 · currently Day 5 · first calorie decision on Day 14/);
+});
+
+test("labels the Week 1 check-in as informational before Day 14", () => {
     const message = buildPendingCalorieCheckMessage({
         metrics: { targetRateLbPerWeek: -0.5, toleranceLbPerWeek: 0.16, trend: { phaseDay: 10 } },
         visibleRate: -0.45
     });
-    assert.match(message, /First calorie check on Day 14 · currently Day 10/);
+    assert.match(message, /Week 1 check-in is informational · first calorie decision on Day 14 · currently Day 10/);
 });
 
 test("asks for a new scheduled weigh-in when both comparison windows are complete", () => {

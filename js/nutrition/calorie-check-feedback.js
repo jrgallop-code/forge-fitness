@@ -34,8 +34,12 @@ export function buildPendingCalorieCheckMessage({ metrics, visibleRate = null, f
     const completedFoodDays = foodDays === null ? null : Math.max(0, Math.round(foodDays));
     const missingFoodDays = completedFoodDays === null ? 0 : Math.max(0, foodMinimum - completedFoodDays);
 
+    if (phaseDay !== null && phaseDay < 7) {
+        return `${assessment ? `${assessment} · ` : ""}First weekly check-in on Day 7 · currently Day ${Math.round(phaseDay)} · first calorie decision on Day 14`;
+    }
+
     if (phaseDay !== null && phaseDay < 14) {
-        return `${assessment ? `${assessment} · ` : ""}First calorie check on Day 14 · currently Day ${Math.round(phaseDay)}`;
+        return `${assessment ? `${assessment} · ` : ""}Week 1 check-in is informational · first calorie decision on Day 14 · currently Day ${Math.round(phaseDay)}`;
     }
 
     const minimum = Math.max(1, Math.round(finite(trend.minEntriesPerWindow) || 4));

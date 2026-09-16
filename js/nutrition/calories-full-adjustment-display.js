@@ -359,15 +359,15 @@ function syncCoach(metrics, phase) {
     const suggestionNode = document.getElementById(weeklyCoach ? "weekly-coach-suggestion" : "goal-check-in-suggested");
 
     if (metrics.status === "BUILDING TREND") {
-        setText(messageNode, `Keep logging weight. A preliminary trend begins on Day 7; calorie decisions wait until Day ${FIRST_CHECK_DAY}.`);
+        setText(messageNode, `Keep logging weight. Your Week 1 informational check-in is on Day 7; calorie decisions wait until Day ${FIRST_CHECK_DAY}.`);
         setText(suggestionNode, `First calorie decision: Day ${FIRST_CHECK_DAY}.`);
         hideCoachActions();
         return;
     }
 
     if (metrics.status === "PRELIMINARY TREND") {
-        setText(messageNode, `Preliminary rolling trend: ${formatRate(actual)}. This is informational until Day ${FIRST_CHECK_DAY}.`);
-        setText(suggestionNode, `No calorie decision before Day ${FIRST_CHECK_DAY}.`);
+        setText(messageNode, `Week 1 informational check-in: ${formatRate(actual)}. Calories stay unchanged until the first decision on Day ${FIRST_CHECK_DAY}.`);
+        setText(suggestionNode, `Hold the current target until Day ${FIRST_CHECK_DAY}.`);
         hideCoachActions();
         return;
     }
@@ -486,7 +486,7 @@ function syncSuggestedCalories(metrics, phase) {
     } else if (metrics.status === "AWAITING WEIGH-IN") {
         secondary = buildPendingCalorieCheckMessage({ metrics, visibleRate, foodLoggedDays: baseline?.intake?.loggedDays });
     } else if (metrics.status === "PRELIMINARY TREND") {
-        secondary = `${calorieBaselineCopy(baseline)} · first calorie decision on Day ${FIRST_CHECK_DAY}`;
+        secondary = `${calorieBaselineCopy(baseline)} · Week 1 informational check-in · first calorie decision on Day ${FIRST_CHECK_DAY}`;
     } else if (metrics.status === "BUILDING TREND") {
         secondary = `${calorieBaselineCopy(baseline)} · preliminary trend begins on Day 7`;
     } else if (metrics.recommendationReady && !baseline.useLoggedAverage) {

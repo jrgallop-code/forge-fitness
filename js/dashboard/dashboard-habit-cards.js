@@ -1,4 +1,4 @@
-import { CHECK_IN_APPLE_SVG, getMonthlyCheckInEvents } from "../nutrition/check-in-calendar.js?v=checkin-calendar-1";
+import { CHECK_IN_APPLE_SVG, getMonthlyCheckInEvents } from "../nutrition/check-in-calendar.js?v=checkin-calendar-1-weekly-informational-checkin-1";
 import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-dashboard-visibility-1";
 
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
@@ -98,6 +98,7 @@ function checkInSummary(events) {
     const next = events.find(event => event.date >= today);
     if (next?.state === "ready") return "Review ready";
     if (next?.state === "waiting") return "Action needed";
+    if (next?.state === "informational") return "Week 1 check-in";
     if (next) {
         const date = new Date(`${next.date}T12:00:00`);
         return `Next ${date.toLocaleDateString(undefined, { weekday: "short" })}`;
@@ -197,7 +198,7 @@ function renderCards() {
 }
 
 function openActivityCalendar() {
-    import("./activity-calendar.js?v=checkin-calendar-1")
+    import("./activity-calendar.js?v=checkin-calendar-1-weekly-informational-checkin-1")
         .then(module => module.openActivityCalendar())
         .catch(error => console.warn("Activity Calendar could not open", error));
 }
