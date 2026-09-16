@@ -109,7 +109,7 @@
         if (document.querySelector('script[data-nutrition-mode-ui]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/nutrition/nutrition-mode-ui.js?v=nutrition-mode-ui-1";
+        script.src = "js/nutrition/nutrition-mode-ui.js?v=nutrition-mode-ui-1-weekly-informational-checkin-1";
         script.dataset.nutritionModeUi = "1";
         document.head.appendChild(script);
     }
@@ -127,7 +127,7 @@
         if (document.querySelector('script[data-weekly-checkin-status]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/nutrition/weekly-check-in-status.js?v=calendar-checkin-day-1";
+        script.src = "js/nutrition/weekly-check-in-status.js?v=calendar-checkin-day-1-weekly-informational-checkin-1";
         script.dataset.weeklyCheckinStatus = "1";
         document.head.appendChild(script);
     }
