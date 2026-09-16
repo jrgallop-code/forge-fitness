@@ -32,6 +32,13 @@
         return Number.isFinite(number) && number > 0 ? number : null;
     }
 
+    function roundCalorieTarget(value) {
+        const calories = Number(value);
+        return Number.isFinite(calories) && calories > 0
+            ? Math.max(25, Math.round(calories / 25) * 25)
+            : null;
+    }
+
     function selectedGoalId() {
         return document.getElementById("unified-goal-select")?.value || "";
     }
@@ -39,7 +46,7 @@
     function displayedPlannedTarget() {
         const text = document.getElementById("unified-active-target")?.textContent || "";
         const match = text.replace(/,/g, "").match(/\d+/);
-        return match ? positive(match[0]) : null;
+        return match ? roundCalorieTarget(match[0]) : null;
     }
 
     function setText(node, value) {
