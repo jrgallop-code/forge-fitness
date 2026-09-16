@@ -9,6 +9,7 @@
 .session-overflow-actions>button span{font-size:12px;font-weight:900;line-height:1.2}
 .session-overflow-actions>button small{margin-top:2px;color:var(--muted,rgba(255,255,255,.55));font-size:9px;line-height:1.25}
 .session-overflow-actions>button:active{transform:scale(.985);border-color:var(--accent,#ef1821)}
+.session-overflow-actions>[data-session-overflow-action="note"]{display:none!important}
 .session-reorder-panel{display:flex;flex-direction:column;width:min(100%,460px);max-height:calc(100dvh - 150px - env(safe-area-inset-bottom));overflow:hidden}
 .session-reorder-note{flex:0 0 auto}
 .session-reorder-list{display:grid;gap:8px;min-height:0;padding:2px 1px;overflow-y:auto;overscroll-behavior:contain;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
