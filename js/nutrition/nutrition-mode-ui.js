@@ -179,7 +179,7 @@ function modeCardMarkup(state) {
                     <button type="button" class="${state.coachApplyMode === "review" ? "is-selected" : ""}" data-coach-update-choice="review" role="radio" aria-checked="${state.coachApplyMode === "review"}">Review before applying</button>
                     <button type="button" class="${state.coachApplyMode === "automatic" ? "is-selected" : ""}" data-coach-update-choice="automatic" role="radio" aria-checked="${state.coachApplyMode === "automatic"}">Apply automatically</button>
                 </div>
-                <p class="nutrition-mode-explainer">Your first calorie review is on Day 14, then every 7 days. Review mode asks first; Automatic applies qualifying updates for you.</p>
+                <p class="nutrition-mode-explainer">Your first weekly check-in is informational on Day 7. The first calorie review is Day 14, then every 7 days. Review mode asks first; Automatic applies qualifying updates for you.</p>
             </div>
         ` : `
             <div class="nutrition-mode-controls">
