@@ -125,6 +125,7 @@ document.addEventListener('click', event => {
 window.addEventListener('levelup:rest-timer-started', syncVisibleTimer);
 window.addEventListener('levelup:rest-timer-finished', syncVisibleTimer);
 window.addEventListener('levelup:rest-timer-dismissed', syncVisibleTimer);
+window.addEventListener('levelup:native-rest-timer-synced', syncVisibleTimer);
 window.addEventListener('levelup:native-alarm-opened', resumeActiveWorkoutFromAlert);
 window.addEventListener('focus', syncVisibleTimer);
 document.addEventListener('visibilitychange', () => {

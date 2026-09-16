@@ -6,6 +6,7 @@ const cardioCss = await readFile(new URL("../css/logger-cardio-timer.css", impor
 const workoutCss = await readFile(new URL("../css/workout-mode.css", import.meta.url), "utf8");
 const navCss = await readFile(new URL("../css/navbar-stability.css", import.meta.url), "utf8");
 const loader = await readFile(new URL("../js/nutrition/single-calorie-target-ui.js", import.meta.url), "utf8");
+const cardioTimer = await readFile(new URL("../js/workouts/logger-cardio-timer.js", import.meta.url), "utf8");
 
 function zIndex(source, selector) {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -23,6 +24,19 @@ test("cardio alarm surfaces sit above the active workout and bottom navigation",
     assert.ok(sheet > nav, `alarm sheet ${sheet} must be above nav ${nav}`);
     assert.ok(banner > workout, `alarm banner ${banner} must be above workout ${workout}`);
     assert.ok(banner > nav, `alarm banner ${banner} must be above nav ${nav}`);
+});
+
+test("cardio stops exactly at the selected target and finishes its Lock Screen activity", () => {
+    const alarmFunction = cardioTimer.slice(
+        cardioTimer.indexOf("function maybeFireCardioAlarm"),
+        cardioTimer.indexOf("function scheduleCardioNativeAlarm")
+    );
+    assert.match(alarmFunction, /state\.accumulatedMs = state\.alarmMinutes \* 60000/);
+    assert.match(alarmFunction, /state\.running = false/);
+    assert.match(alarmFunction, /state\.startedAt = null/);
+    assert.match(alarmFunction, /finishNativeAlarm\(`cardio:\$\{key\}`\)/);
+    assert.doesNotMatch(alarmFunction, /cancelNativeAlarm\(`cardio:\$\{key\}`\)/);
+    assert.match(cardioTimer, /stops the cardio timer automatically/);
 });
 
 test("trend smoothing loads before the authoritative viewport renderer", () => {

@@ -1,4 +1,5 @@
 import { cancelNativeAlarm, finishNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-3";
+import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 const TIMER_SETTINGS_KEY = "level_up_exercise_rest_settings";
@@ -108,11 +109,11 @@ async function showSingleBackgroundNotification(timer) {
 function finalizeTimer(timerId) {
     const active = readActiveWorkout();
     const timer = active?.restTimer;
-    if (!active || !timer || timer.timerId !== timerId || timer.status !== "running" || !timer.endAt) return;
+    if (!active || !timer || timer.timerId !== timerId || !["running", "finished"].includes(timer.status)) return;
 
-    const endAtMs = new Date(timer.endAt).getTime();
-    if (!Number.isFinite(endAtMs)) return;
-    if (Date.now() < endAtMs - EXPIRY_EARLY_MS - 5) {
+    const endAtMs = timer.endAt ? new Date(timer.endAt).getTime() : NaN;
+    if (timer.status === "running" && !Number.isFinite(endAtMs)) return;
+    if (timer.status === "running" && Date.now() < endAtMs - EXPIRY_EARLY_MS - 5) {
         scheduleExpiry(active, timer);
         return;
     }
@@ -121,6 +122,7 @@ function finalizeTimer(timerId) {
     // to change identity when core expiry cleared endAt, causing the same alarm to
     // sound twice. `notified` also prevents the older core notification path from
     // firing a second alert.
+    const shouldAlert = timer.status === "running" && timer.notified !== true;
     timer.status = "finished";
     timer.remainingMs = 0;
     timer.notified = true;
@@ -135,8 +137,10 @@ function finalizeTimer(timerId) {
     // Completion is different from cancellation. End the lock-screen Live Activity
     // but leave iOS's scheduled completion notification in place as the one alert.
     void finishNativeAlarm(`rest:${timer.timerId}`);
-    void hapticNotification("SUCCESS");
-    showSingleBackgroundNotification(timer);
+    if (shouldAlert) {
+        void hapticNotification("SUCCESS");
+        showSingleBackgroundNotification(timer);
+    }
 }
 
 function scheduleExpiry(active, timer) {
@@ -164,6 +168,45 @@ function timerSourceKey(active, sourceType, exerciseIndex, setIndex, warmupIndex
         Number(exerciseIndex),
         sourceType === "warmup" ? Number(warmupIndex) : Number(setIndex)
     ].join("|");
+}
+
+function nativeActivityContext(active) {
+    const dayIndex = Number(active?.trainingDayIndex) || 0;
+    const day = active?.planSnapshot?.days?.[dayIndex];
+    const startExercise = Math.max(0, Number(active?.currentExerciseIndex) || 0);
+    const startSet = Math.max(-1, Number(active?.currentSetIndex));
+    let next = null;
+
+    for (let exerciseIndex = startExercise; exerciseIndex < (active?.exercises?.length || 0) && !next; exerciseIndex += 1) {
+        const sets = active.exercises[exerciseIndex]?.sets || [];
+        const firstSet = exerciseIndex === startExercise ? Math.max(0, startSet + 1) : 0;
+        for (let setIndex = firstSet; setIndex < sets.length; setIndex += 1) {
+            if (!sets[setIndex]?.completed) {
+                next = { exerciseIndex, setIndex };
+                break;
+            }
+        }
+    }
+
+    const workoutName = day?.name || active?.planSnapshot?.name || active?.name || "Workout";
+    if (!next) return { workoutName };
+
+    const planned = day?.exercises?.[next.exerciseIndex];
+    const state = active?.exercises?.[next.exerciseIndex];
+    const exerciseId = planned?.id || state?.exerciseId || state?.id;
+    const exerciseName = getExerciseById(exerciseId)?.name || planned?.name || state?.name || "Next exercise";
+    const targetReps = String(planned?.reps || "").trim();
+    const row = document.querySelector(
+        `.session-exercise-card[data-exercise-index="${next.exerciseIndex}"] .session-set-row[data-set-index="${next.setIndex}"]`
+    );
+    const previous = row?.querySelector(".previous-set-value")?.textContent?.trim() || "";
+    return {
+        workoutName,
+        exerciseName,
+        setNumber: next.setIndex + 1,
+        targetReps,
+        previousPerformance: previous && previous !== "Hasn't started" ? previous : ""
+    };
 }
 
 function startTimerForSource({ active, seconds, sourceType, exerciseIndex, setIndex = null, warmupIndex = null }) {
@@ -207,6 +250,9 @@ function startTimerForSource({ active, seconds, sourceType, exerciseIndex, setIn
         key: `rest:${active.restTimer.timerId}`,
         title: "Rest complete",
         body: "Your next set is ready.",
+        liveActivityTitle: "Rest timer",
+        liveActivityDetail: "Next working set",
+        context: nativeActivityContext(active),
         at: active.restTimer.endAt,
         kind: "rest",
         extra: { type: "levelup:rest-complete", timerId: active.restTimer.timerId }
@@ -321,6 +367,7 @@ function keepActiveTimerAuthoritative() {
     if (!currentTimer) return;
 
     if (currentTimer.status === "running" && currentTimer.endAt) scheduleExpiry(refreshed, currentTimer);
+    else if (currentTimer.status === "finished" && currentTimer.authorityFinished !== true) finalizeTimer(currentTimer.timerId);
     else clearScheduledExpiry();
 
     // A timer is global workout state, not DOM state. Never let a logger re-render
@@ -333,6 +380,20 @@ document.addEventListener("click", event => {
     const button = event.target?.closest?.(".complete-set-btn");
     if (!button) return;
     const meta = exerciseMetaFromButton(button, ".session-set-row", "setIndex");
+
+    // Capture the timer identity before the logger's own click handlers can clear
+    // or replace the persisted web state. Without this immediate cancellation,
+    // the in-app countdown can disappear while its native Live Activity survives.
+    const active = readActiveWorkout();
+    const completed = active?.exercises?.[meta?.exerciseIndex]?.sets?.[meta?.index]?.completed === true;
+    if (completed) {
+        cancelActiveRestTimer({
+            active,
+            exerciseIndex: meta.exerciseIndex,
+            sourceType: "working",
+            setIndex: meta.index
+        });
+    }
     window.setTimeout(() => reconcileWorkingSet(meta), RECONCILE_DELAY_MS);
 }, true);
 

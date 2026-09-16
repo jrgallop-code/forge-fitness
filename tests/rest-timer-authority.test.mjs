@@ -9,6 +9,7 @@ const display = await readFile(new URL("../js/workouts/rest-timer-display-fix.js
 const compact = await readFile(new URL("../js/workouts/workout-logger-compact.js", import.meta.url), "utf8");
 const session = await readFile(new URL("../js/workouts/workout-session.js", import.meta.url), "utf8");
 const theme = await readFile(new URL("../js/core/workout-theme-guardrail.js", import.meta.url), "utf8");
+const phaseOne = await readFile(new URL("../js/workouts/rest-alarm-phase1.js", import.meta.url), "utf8");
 
 test("working sets use per-exercise timer authority and Off no longer creates a rest", () => {
     assert.match(authority, /getExerciseRestSetting/);
@@ -89,6 +90,9 @@ test("active rest banner is kept visible independently of logger DOM rerenders",
     assert.match(authority, /level-up-rest-alarm-banner/);
     assert.match(authority, /banner\.hidden = false/);
     assert.match(display, /active\?\.restTimer && banner/);
+    assert.match(phaseOne, /if \(!active \|\| !timer\)/);
+    assert.match(phaseOne, /if \(!logger\) \{[\s\S]*?banner\.hidden = false;[\s\S]*?return;/);
+    assert.match(display, /levelup:native-rest-timer-synced/);
 });
 
 test("working-set number circles are forced to the selected theme at runtime", () => {
