@@ -1,5 +1,5 @@
 import { calculateWorkoutVolume } from "../workouts/volume-calculator.js?v=two-dumbbells-1";
-import { CHECK_IN_APPLE_SVG, getMonthlyCheckInEvents } from "../nutrition/check-in-calendar.js?v=checkin-calendar-1";
+import { CHECK_IN_APPLE_SVG, getMonthlyCheckInEvents } from "../nutrition/check-in-calendar.js?v=checkin-calendar-1-weekly-informational-checkin-1";
 
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
@@ -186,6 +186,7 @@ function calendarDays(date) {
 }
 
 function checkInMeta(event) {
+    if (event.state === "informational") return "Week 1 informational check-in. Review the early trend and keep calories steady until the first calorie review on Day 14.";
     if (event.state === "handled") return "Weekly calorie review completed.";
     if (event.state === "ready") return "Your calorie review is ready to open in Nutrition → Goals & Plan.";
     if (event.state === "waiting") return "The scheduled review is due, but Level Up still needs enough current nutrition and weight data.";
