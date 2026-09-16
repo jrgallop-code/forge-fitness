@@ -1,4 +1,4 @@
-import { GOAL_PRESETS, calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
+import { GOAL_PRESETS, calculateTdee, roundCalorieTarget } from "./tdee-calculator.js?v=calorie-target-rounding-1";
 import { getNutritionProfile, getNutritionGoal, saveNutritionGoal, getNutritionPlan, setCurrentCalories, syncCalculatedCalories } from "./nutrition-storage.js?v=calorie-authority-recovery-1";
 import { getActiveNutritionPhase, getNutritionPhaseHistory, getActivePhaseMetrics, getPhaseDayNumber, saveNutritionPhase } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=independent-tdee-staged-target-1";
@@ -253,10 +253,10 @@ function calculatePreview() {
         && active?.goalId === goalId
         && Number.isFinite(Number(active?.currentCalories ?? active?.startCalories));
     const target = useCoordinatedTarget
-        ? Math.round(targetDraft)
+        ? roundCalorieTarget(targetDraft)
         : useSavedActiveTarget
-            ? Math.round(Number(active.currentCalories ?? active.startCalories))
-            : Math.round(maintenance + goal.dailyCalorieAdjustment);
+            ? roundCalorieTarget(active.currentCalories ?? active.startCalories)
+            : roundCalorieTarget(maintenance + goal.dailyCalorieAdjustment);
     return { goalId, goal, maintenance: Math.round(maintenance), rate: goal.weeklyWeightChangeLb, dailyAdjustment: target - Math.round(maintenance), target };
 }
 
