@@ -152,3 +152,5 @@ Release 70: improve workout exercise-name visibility and remove the duplicate Ad
 Release 71: add the Day 7 informational phase check-in, keep Day 14 as the first actionable calorie review, and continue reviews every seven days.
 
 Release 72: bring all Progress cards close to the iPhone screen edges across Lifting, Weight, Nutrition, and Cardio while preserving safe-area and card content padding.
+
+Release 73: add theme-aware small and medium Home Screen widgets for nutrition, upcoming workouts, and weekly training, plus an in-app setup guide.
