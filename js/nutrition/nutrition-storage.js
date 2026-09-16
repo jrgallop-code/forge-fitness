@@ -1,3 +1,5 @@
+import { roundCalorieTarget } from "./tdee-calculator.js?v=calorie-target-rounding-1";
+
 const NUTRITION_PROFILE_KEY = "level_up_nutrition_profile";
 const NUTRITION_GOAL_KEY = "level_up_nutrition_goal";
 const NUTRITION_MACRO_KEY = "level_up_nutrition_macro";
@@ -45,10 +47,21 @@ export function getNutritionPlan() {
     const calculated = Number(plan?.calculatedCalories);
     const legacyCurrent = Number(plan?.currentCalories);
     const calories = Number.isFinite(calculated) && calculated > 0
-        ? calculated
+        ? roundCalorieTarget(calculated)
         : Number.isFinite(legacyCurrent) && legacyCurrent > 0
-            ? legacyCurrent
+            ? roundCalorieTarget(legacyCurrent)
             : null;
+
+    if (plan && calories && (calculated !== calories || legacyCurrent !== calories)) {
+        localStorage.setItem(
+            NUTRITION_PLAN_KEY,
+            JSON.stringify({
+                ...plan,
+                calculatedCalories: calories,
+                currentCalories: calories
+            })
+        );
+    }
 
     return {
         calculatedCalories: calories,
@@ -64,9 +77,9 @@ export function saveNutritionPlan(plan) {
     const requested = Number(plan?.calculatedCalories);
     const legacyRequested = Number(plan?.currentCalories);
     const calories = Number.isFinite(requested) && requested > 0
-        ? Math.round(requested)
+        ? roundCalorieTarget(requested)
         : Number.isFinite(legacyRequested) && legacyRequested > 0
-            ? Math.round(legacyRequested)
+            ? roundCalorieTarget(legacyRequested)
             : null;
 
     localStorage.setItem(
@@ -83,7 +96,7 @@ export function saveNutritionPlan(plan) {
 }
 
 export function syncCalculatedCalories(calculatedCalories) {
-    const calories = Math.round(Number(calculatedCalories));
+    const calories = roundCalorieTarget(calculatedCalories);
     if (!Number.isFinite(calories) || calories <= 0) {
         return getNutritionPlan();
     }
@@ -101,7 +114,7 @@ export function syncCalculatedCalories(calculatedCalories) {
 
 // Backward-compatible function: any adjustment now changes the single calculated target.
 export function setCurrentCalories(newCalories, reason = "Manual adjustment") {
-    const calories = Math.round(Number(newCalories));
+    const calories = roundCalorieTarget(newCalories);
     if (!Number.isFinite(calories) || calories <= 0) return null;
 
     const plan = getNutritionPlan();

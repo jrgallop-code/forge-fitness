@@ -1,6 +1,7 @@
 import {
     GOAL_PRESETS,
-    calculateTdee
+    calculateTdee,
+    roundCalorieTarget
 }
 from "./tdee-calculator.js?v=manual-goals-1";
 
@@ -81,7 +82,7 @@ function getCurrentInputs({ preferTyped = false } = {}) {
         estimatedTdee,
         maintenance,
         weeklyRate,
-        calculatedCalories: Math.round(maintenance + ((weeklyRate * 3500) / 7)),
+        calculatedCalories: roundCalorieTarget(maintenance + ((weeklyRate * 3500) / 7)),
         manualMaintenance: savedMaintenance !== null || (preferTyped && maintenanceInput?.value !== ""),
         customRate: savedRate !== null || (preferTyped && rateInput?.value !== "")
     };

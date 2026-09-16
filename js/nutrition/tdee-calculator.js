@@ -82,6 +82,21 @@ export const MACRO_PRESETS = {
 
 export const PROTEIN_GRAMS_PER_LB = 1;
 export const PROTEIN_GRAMS_PER_KG = 2.20462;
+export const CALORIE_TARGET_INCREMENT = 25;
+
+
+export function roundCalorieTarget(value) {
+    const calories = Number(value);
+
+    if (!Number.isFinite(calories) || calories <= 0) {
+        return null;
+    }
+
+    return Math.max(
+        CALORIE_TARGET_INCREMENT,
+        Math.round(calories / CALORIE_TARGET_INCREMENT) * CALORIE_TARGET_INCREMENT
+    );
+}
 
 
 export function calculateBmr({ age, sex, heightCm, weightKg }) {
@@ -126,7 +141,7 @@ export function calculateGoalCalories(tdee, goalId) {
         label: goal.label,
         dailyCalorieAdjustment: goal.dailyCalorieAdjustment,
         weeklyWeightChangeLb: goal.weeklyWeightChangeLb,
-        calories: Math.round(tdee + goal.dailyCalorieAdjustment),
+        calories: roundCalorieTarget(tdee + goal.dailyCalorieAdjustment),
         description: goal.description
     };
 }
@@ -151,13 +166,13 @@ export function calculateMacroTargets({
     weightKg,
     macroPreset = "balanced"
 }) {
+    const targetCalories = roundCalorieTarget(calories);
     const preset =
         MACRO_PRESETS[macroPreset] ||
         MACRO_PRESETS.balanced;
 
     if (
-        !Number.isFinite(calories) ||
-        calories <= 0 ||
+        !Number.isFinite(targetCalories) ||
         !Number.isFinite(weightKg) ||
         weightKg <= 0
     ) {
@@ -171,13 +186,13 @@ export function calculateMacroTargets({
         protein * 4;
 
     const fatCalories =
-        calories * preset.fatShare;
+        targetCalories * preset.fatShare;
 
     const fat =
         Math.round(fatCalories / 9);
 
     const carbohydrateCalories =
-        calories -
+        targetCalories -
         proteinCalories -
         fatCalories;
 
@@ -189,7 +204,7 @@ export function calculateMacroTargets({
         Math.round(carbohydrateCalories / 4);
 
     return {
-        calories: Math.round(calories),
+        calories: targetCalories,
         protein,
         carbs,
         fat,

@@ -1,4 +1,4 @@
-import { GOAL_PRESETS } from "./tdee-calculator.js?v=direct-calorie-target-1";
+import { GOAL_PRESETS, roundCalorieTarget } from "./tdee-calculator.js?v=calorie-target-rounding-1";
 import { getNutritionProfile, saveNutritionGoal, syncCalculatedCalories } from "./nutrition-storage.js?v=direct-calorie-target-1";
 import { getActiveNutritionPhase } from "./nutrition-phase.js?v=direct-calorie-target-1";
 import { normalizeWeightEntries } from "../core/weight-trend.js?v=direct-calorie-target-1";
@@ -36,13 +36,13 @@ function readMaintenance() {
 function recommendedTarget(goalId = selectedGoalId(), maintenance = readMaintenance()) {
     const preset = GOAL_PRESETS[goalId];
     if (!preset || !Number.isFinite(maintenance)) return null;
-    return Math.max(1, Math.round(maintenance + Number(preset.dailyCalorieAdjustment || 0)));
+    return roundCalorieTarget(maintenance + Number(preset.dailyCalorieAdjustment || 0));
 }
 
 function currentPhaseCaloriesForGoal(goalId = selectedGoalId()) {
     const phase = getActiveNutritionPhase();
     if (!phase || phase.goalId !== goalId) return null;
-    const value = Math.round(Number(phase.currentCalories ?? phase.startCalories));
+    const value = roundCalorieTarget(phase.currentCalories ?? phase.startCalories);
     return Number.isFinite(value) && value > 0 ? value : null;
 }
 
@@ -56,7 +56,7 @@ function seedTargetValue(goalId = selectedGoalId()) {
 }
 
 function rawInputValue() {
-    const value = Math.round(Number(document.getElementById("unified-direct-calorie-target")?.value));
+    const value = roundCalorieTarget(document.getElementById("unified-direct-calorie-target")?.value);
     return Number.isFinite(value) && value > 0 ? value : null;
 }
 
@@ -125,9 +125,11 @@ function directTargetValue() {
     const entered = rawInputValue();
     if (isSamePhase(goalId)) {
         const current = currentPhaseCaloriesForGoal(goalId);
-        return Number.isFinite(current) && Number.isFinite(entered) ? current + entered : null;
+        return Number.isFinite(current) && Number.isFinite(entered)
+            ? roundCalorieTarget(current + entered)
+            : null;
     }
-    return entered;
+    return roundCalorieTarget(entered);
 }
 
 function updateTargetContext() {

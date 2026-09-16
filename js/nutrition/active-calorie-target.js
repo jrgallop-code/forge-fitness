@@ -1,7 +1,8 @@
 import {
     GOAL_PRESETS,
     calculateTdee,
-    calculateGoalCalories
+    calculateGoalCalories,
+    roundCalorieTarget
 }
 from "./tdee-calculator.js?v=active-target-1";
 
@@ -49,7 +50,7 @@ export function getAutoTarget() {
 
     return {
         source: "auto",
-        calories: Math.round(Number(recommendation.calories)),
+        calories: roundCalorieTarget(recommendation.calories),
         maintenance: estimatedTdee,
         weeklyRate: getPresetWeeklyRate(goal.goalId)
     };
@@ -89,7 +90,7 @@ export function getManualTarget() {
 
     return {
         source: "manual",
-        calories: Math.round(maintenance + ((weeklyRate * 3500) / 7)),
+        calories: roundCalorieTarget(maintenance + ((weeklyRate * 3500) / 7)),
         maintenance,
         weeklyRate
     };
@@ -137,7 +138,7 @@ function saveTargetSnapshot(target) {
         ACTIVE_TARGET_SNAPSHOT_KEY,
         JSON.stringify({
             source: target.source,
-            calories: Math.round(Number(target.calories)),
+            calories: roundCalorieTarget(target.calories),
             maintenance: Number(target.maintenance),
             weeklyRate: Number(target.weeklyRate),
             updatedAt: new Date().toISOString()
@@ -161,7 +162,7 @@ function readSavedTarget() {
 
         return {
             source: parsed.source === "manual" ? "manual" : "auto",
-            calories: Math.round(Number(parsed.calories)),
+            calories: roundCalorieTarget(parsed.calories),
             maintenance: Number(parsed.maintenance),
             weeklyRate: Number(parsed.weeklyRate)
         };
