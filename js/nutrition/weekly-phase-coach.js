@@ -219,7 +219,7 @@ function ensureCoachCard() {
             <button id="weekly-coach-apply" class="primary-btn" type="button" hidden></button>
             <button id="weekly-coach-keep" class="secondary-btn" type="button" hidden>Keep Current Target</button>
         </div>
-        <p class="weekly-coach-method">The weight trend starts on Day 7 and moves forward only when you log a new weigh-in. Calorie decisions begin on Day 14 and repeat on the weekly schedule, but a new assessment will wait for new weight data. Each 7-day comparison window still needs at least 4 weigh-ins.</p>
+        <p class="weekly-coach-method">Week 1 has an informational check-in on Day 7. Calorie decisions begin on Day 14 and repeat weekly, but a new assessment waits for current weight data. Each 7-day comparison window still needs at least 4 weigh-ins.</p>
         <details class="weekly-coach-test" id="weekly-coach-test-lab">
             <summary>Coach Test Scenarios</summary>
             <small class="weekly-test-note">Simulation only — these examples do not change your saved phase or weigh-ins.</small>
@@ -282,7 +282,7 @@ function refreshCoach() {
         setText("weekly-coach-previous-label", "Starting Trend");
         setText("weekly-coach-status", "BUILDING TREND");
         setText("weekly-coach-confidence", `Day ${trend.phaseDay} · preliminary trend Day ${FIRST_TREND_DAY}`);
-        setText("weekly-coach-message", `Keep logging weight. A preliminary 7-day trend will appear on Day ${FIRST_TREND_DAY}. Calorie recommendations still wait until Day ${FIRST_CHECK_DAY}.`);
+        setText("weekly-coach-message", `Keep logging weight. Your Week 1 informational check-in appears on Day ${FIRST_TREND_DAY}. Calorie recommendations wait until Day ${FIRST_CHECK_DAY}.`);
         setText("weekly-coach-suggestion", `Preliminary trend in ${trend.daysUntilTrend} day${trend.daysUntilTrend === 1 ? "" : "s"}.`);
         hideActions();
         syncCurrentPhaseSummary(phase);
@@ -294,7 +294,7 @@ function refreshCoach() {
         setText("weekly-coach-status", "PRELIMINARY TREND");
         setText("weekly-coach-confidence", `Day ${trend.phaseDay} · ${trend.currentEntries} weigh-ins in current 7-day window`);
         setText("weekly-coach-message", `Preliminary rolling trend: ${formatRate(trend.weeklyChange)}. This compares your latest 7-day moving average with your phase starting trend.`);
-        setText("weekly-coach-suggestion", `Informational only. First calorie decision is Day ${FIRST_CHECK_DAY}${trend.daysUntilCheck > 0 ? ` · in ${trend.daysUntilCheck} day${trend.daysUntilCheck === 1 ? "" : "s"}` : ""}.`);
+        setText("weekly-coach-suggestion", `Week 1 check-in · informational only. First calorie decision is Day ${FIRST_CHECK_DAY}${trend.daysUntilCheck > 0 ? ` · in ${trend.daysUntilCheck} day${trend.daysUntilCheck === 1 ? "" : "s"}` : ""}.`);
         hideActions();
         syncCurrentPhaseSummary(phase);
         return;
