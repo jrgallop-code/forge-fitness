@@ -146,3 +146,5 @@ Release 67: suppress the iOS text-selection loupe and touch callout while draggi
 Release 68: add persistent exercise notes, theme-specific high-contrast RIR colours, and the corrected empty-note layout for saved-workout editing.
 
 Release 69: preserve per-set RIR in completed workouts and reuse the live workout logger layout and controls when editing saved workouts.
+
+Release 70: improve workout exercise-name visibility and remove the duplicate Add/Edit Note item from the exercise overflow menu while keeping the logger note field.
