@@ -5,6 +5,7 @@ final class LevelUpBridgeViewController: CAPBridgeViewController {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(LevelUpAppIconPlugin())
         bridge?.registerPluginInstance(LevelUpTimerPlugin())
+        bridge?.registerPluginInstance(LevelUpDashboardWidgetPlugin())
         bridge?.registerPluginInstance(LevelUpNativeAuthPlugin())
         bridge?.registerPluginInstance(LevelUpFileExportPlugin())
     }
