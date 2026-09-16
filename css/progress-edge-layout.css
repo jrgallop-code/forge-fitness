@@ -1,0 +1,43 @@
+/* Give Progress the same near-edge mobile canvas as the workout logger.
+   Individual cards keep their own internal padding for readable copy/charts. */
+@media (max-width: 700px) {
+    #content:has(> .progress-page) {
+        padding-left: max(6px, env(safe-area-inset-left));
+        padding-right: max(6px, env(safe-area-inset-right));
+    }
+
+    #content > .progress-page.section-card {
+        width: 100%;
+        max-width: none;
+        margin-inline: 0;
+        padding: 17px 6px;
+        border-radius: 20px;
+    }
+
+    .progress-page > h2,
+    .progress-page > .section-description {
+        margin-left: 8px;
+        margin-right: 8px;
+    }
+
+    .progress-page > .progress-tabs,
+    .progress-page > #lifting-progress,
+    .progress-page > #weight-progress,
+    .progress-page > #nutrition-progress,
+    .progress-page > #cardio-progress {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+@media (max-width: 390px) {
+    #content:has(> .progress-page) {
+        padding-left: max(4px, env(safe-area-inset-left));
+        padding-right: max(4px, env(safe-area-inset-right));
+    }
+
+    #content > .progress-page.section-card {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+}
