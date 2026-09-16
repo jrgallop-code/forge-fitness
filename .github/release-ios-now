@@ -158,3 +158,5 @@ Release 73: add theme-aware small and medium Home Screen widgets for nutrition, 
 Release 73 retry: use Apple's supported capability-only App Group provisioning while retaining the shared widget entitlement.
 
 Release 73 retry 2: regenerate signing profiles after assigning the shared widget App Group to both App IDs.
+
+Release 73 retry 3: regenerate profiles after assigning the widget App Group to the timer extension App ID.
