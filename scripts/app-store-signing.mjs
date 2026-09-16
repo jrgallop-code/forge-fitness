@@ -160,9 +160,11 @@ async function createSigningAssets() {
     }
     if (!extensionBundleId) throw new Error(`No registered App ID found for ${extensionIdentifier}`);
 
-    const appGroupSettings = [{ key: 'APP_GROUPS', options: [{ key: 'group.com.leveluphypertrophy.app.widgets', enabled: true }] }];
-    await ensureBundleCapability(bundleId, 'APP_GROUPS', appGroupSettings);
-    await ensureBundleCapability(extensionBundleId, 'APP_GROUPS', appGroupSettings);
+    // App Store Connect enables App Groups through the capability endpoint,
+    // but group membership itself is configured once in Certificates,
+    // Identifiers & Profiles. The API rejects an APP_GROUPS settings payload.
+    await ensureBundleCapability(bundleId, 'APP_GROUPS');
+    await ensureBundleCapability(extensionBundleId, 'APP_GROUPS');
 
     const runLabel = `${required('GITHUB_RUN_ID')}-${process.env.GITHUB_RUN_ATTEMPT || '1'}`;
     const profileName = `Level Up App Store ${runLabel}`;
