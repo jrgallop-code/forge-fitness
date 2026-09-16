@@ -4,7 +4,7 @@ export function renderProgress() {
 
     return `
 
-        <section class="section-card">
+        <section class="section-card progress-page">
 
             <h2>📈 Progress</h2>
 
