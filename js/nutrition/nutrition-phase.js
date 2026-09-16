@@ -1,4 +1,4 @@
-import { GOAL_PRESETS } from "./tdee-calculator.js?v=phase-tolerance-1";
+import { GOAL_PRESETS, roundCalorieTarget } from "./tdee-calculator.js?v=calorie-target-rounding-1";
 import { calculatePhaseMovingAverageTrend, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-phase-authority-1";
 
 const PHASES_KEY = "level_up_nutrition_phases";
@@ -9,7 +9,23 @@ const DEFAULT_TOLERANCE_LB = 0.1;
 const FIRST_PHASE_CHECK_DAY = 14;
 
 export function getActiveNutritionPhase() {
-    return [...readPhases()].reverse().find(p => p && !p.endDate && GOAL_PRESETS[p.goalId]) || null;
+    const phases = readPhases();
+    const index = activeIndex(phases);
+    if (index < 0) return null;
+
+    const active = phases[index];
+    const currentCalories = roundCalorieTarget(active.currentCalories ?? active.startCalories);
+    const startCalories = roundCalorieTarget(active.startCalories ?? active.currentCalories);
+    if (!currentCalories || !startCalories) return active;
+
+    if (active.currentCalories !== currentCalories || active.startCalories !== startCalories) {
+        const normalized = { ...active, startCalories, currentCalories };
+        phases[index] = normalized;
+        writePhases(phases);
+        return normalized;
+    }
+
+    return active;
 }
 
 export function getNutritionPhaseHistory() {
@@ -19,7 +35,7 @@ export function getNutritionPhaseHistory() {
 export function saveNutritionPhase({ goalId, maintenanceCalories, targetCalories, goalWeight = undefined }) {
     const preset = GOAL_PRESETS[goalId];
     const maintenance = positive(maintenanceCalories);
-    const calories = positive(targetCalories);
+    const calories = roundCalorieTarget(targetCalories);
     const goalWeightProvided = goalWeight !== undefined;
     const normalizedGoalWeight = normalizeGoalWeight(goalWeight);
     if (!preset || !maintenance || !calories) return { action: "invalid", phase: null };
