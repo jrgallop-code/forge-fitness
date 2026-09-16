@@ -135,7 +135,7 @@ function syncCoach(metrics, phase) {
 
     if (metrics.status === "BUILDING TREND") {
         setText(document.getElementById("weekly-coach-confidence"), `Day ${trend.phaseDay} · preliminary trend Day ${FIRST_CHECK_DAY - 7}`);
-        setText(document.getElementById("weekly-coach-message"), `Keep logging weight. A preliminary 7-day trend will appear on Day ${FIRST_CHECK_DAY - 7}. Calorie recommendations wait until Day ${FIRST_CHECK_DAY}.`);
+        setText(document.getElementById("weekly-coach-message"), `Keep logging weight. Your Week 1 informational check-in appears on Day ${FIRST_CHECK_DAY - 7}. Calorie recommendations wait until Day ${FIRST_CHECK_DAY}.`);
         setText(document.getElementById("weekly-coach-suggestion"), `First calorie decision: Day ${FIRST_CHECK_DAY}.`);
         hideCoachActions();
         return;
@@ -143,8 +143,8 @@ function syncCoach(metrics, phase) {
 
     if (metrics.status === "PRELIMINARY TREND") {
         setText(document.getElementById("weekly-coach-confidence"), `Day ${trend.phaseDay} · ${trend.currentEntries} weigh-ins in current 7-day window`);
-        setText(document.getElementById("weekly-coach-message"), `Preliminary rolling trend: ${formatRate(actual)}. This is informational until Day ${FIRST_CHECK_DAY}.`);
-        setText(document.getElementById("weekly-coach-suggestion"), `No calorie decision before Day ${FIRST_CHECK_DAY}.`);
+        setText(document.getElementById("weekly-coach-message"), `Week 1 informational check-in: ${formatRate(actual)}. Calories stay unchanged until the first decision on Day ${FIRST_CHECK_DAY}.`);
+        setText(document.getElementById("weekly-coach-suggestion"), `Hold the current target until Day ${FIRST_CHECK_DAY}.`);
         hideCoachActions();
         return;
     }
@@ -242,7 +242,7 @@ function syncSuggestedCalories(metrics, phase) {
     } else if (metrics.status === "AWAITING WEIGH-IN") {
         secondary = `Awaiting a new weigh-in for the Day ${Number.isFinite(checkDay) ? checkDay : FIRST_CHECK_DAY} assessment`;
     } else if (metrics.status === "PRELIMINARY TREND") {
-        secondary = `Preliminary 7-day trend · first calorie decision on Day ${FIRST_CHECK_DAY}`;
+        secondary = `Week 1 informational check-in · first calorie decision on Day ${FIRST_CHECK_DAY}`;
     } else if (metrics.status === "BUILDING TREND") {
         secondary = `Preliminary trend begins on Day ${FIRST_CHECK_DAY - 7}`;
     } else if (["ON TRACK", "MAINTAINING"].includes(metrics.status)) {
