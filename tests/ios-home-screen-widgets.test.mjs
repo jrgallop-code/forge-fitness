@@ -23,10 +23,12 @@ test("iOS ships theme-aware small and medium dashboard widgets", async () => {
 });
 
 test("the native app shares live dashboard data and explains how to add the widget", async () => {
-  const [sync, more, guide, appEntitlements, widgetEntitlements] = await Promise.all([
+  const [sync, more, guide, styles, router, appEntitlements, widgetEntitlements] = await Promise.all([
     read("js/core/home-screen-widgets.js"),
     read("js/more/more-ui-v2.js"),
     read("js/more/home-screen-widgets.js"),
+    read("css/home-screen-widgets.css"),
+    read("js/core/router.js"),
     read("ios/App/App/App.entitlements"),
     read("ios/App/LevelUpTimerWidget/LevelUpTimerWidget.entitlements")
   ]);
@@ -37,5 +39,12 @@ test("the native app shares live dashboard data and explains how to add the widg
   assert.match(more, /Home Screen Widgets/);
   assert.match(guide, /Add Widget/);
   assert.match(guide, /Search for <b>Level Up<\/b>/);
+  assert.match(guide, /home-screen-widgets\.css\?v=home-widget-2/);
+  assert.match(more, /home-screen-widgets\.js\?v=home-widget-2/);
+  assert.match(router, /more-ui-v2\.js\?v=home-widget-theme-2/);
+  assert.match(styles, /\.home-widget-page[\s\S]*color: var\(--text\) !important/);
+  assert.match(styles, /background: var\(--surface-raised\) !important/);
+  assert.match(styles, /\.home-widget-preview span[\s\S]*color: var\(--text-secondary\) !important/);
+  assert.doesNotMatch(styles, /--surface-elevated|--text-primary|--border-color/);
   for (const value of [appEntitlements, widgetEntitlements]) assert.match(value, /group\.com\.leveluphypertrophy\.app\.widgets/);
 });
