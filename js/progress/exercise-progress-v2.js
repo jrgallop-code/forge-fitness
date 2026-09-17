@@ -20,6 +20,8 @@ export function initializeExerciseProgressV2() {
         oldCanvas.replaceWith(host);
     }
     if (!document.getElementById("exercise-strength-chart-v2")) return;
+    selectedEquipment = "all";
+    selectedMachineView = "combined";
     addAllHistoryExercises();
     bindControls();
     renderExerciseProgressV2();
@@ -51,6 +53,7 @@ function bindControls() {
     bindOnce(document.getElementById("progress-range"), "change", renderExerciseProgressV2);
     bindOnce(document.getElementById("exercise-equipment-filter"), "change", event => {
         selectedEquipment = event.target.value || "all";
+        if (selectedEquipment === "all") selectedMachineView = "combined";
         renderExerciseProgressV2();
     });
     document.querySelectorAll("[data-exercise-metric]").forEach(button => bindOnce(button, "click", () => {
@@ -308,7 +311,7 @@ function renderEquipmentSummary(records, profiles) {
         const change = latest && first && profileRecords.length > 1 && value(first) > 0
             ? (value(latest) - value(first)) / value(first) * 100
             : null;
-        return `<div class="exercise-volume-stat"><span>${escapeHtml(profile.name)}</span><strong>${latest ? label(value(latest)) : "—"}</strong><small>${change === null ? "Baseline" : `${signedPercent(change)} from baseline`}</small></div>`;
+        return `<div class="exercise-volume-stat"><span>${escapeHtml(profile.name)}</span><strong>${latest ? label(value(latest)) : "—"}</strong><small class="${changeToneClass(change)}">${change === null ? "Baseline" : `${signedPercent(change)} from baseline`}</small></div>`;
     }).join("") + `<p class="exercise-volume-detail">Single workouts establish a baseline. More workouts form each machine’s line.</p>`;
 }
 
@@ -358,7 +361,7 @@ function renderHistory(container, records) {
             .find(item => item.profileId === record.profileId) || null;
         return selectedMetric === "volume" ? `
             <div class="exercise-history-row"><span>${formatDate(record.date)}</span><strong>${formatVolume(record.sessionVolume)}</strong>
-            <span>${previous ? signedPercent((record.sessionVolume - previous.sessionVolume) / previous.sessionVolume * 100) : "Baseline"}</span><span>${escapeHtml(record.profileName)}</span><span>${record.completedSets}</span></div>` : `
+            <span class="exercise-history-change ${previous ? changeToneClass(record.sessionVolume - previous.sessionVolume) : ""}">${previous ? signedPercent((record.sessionVolume - previous.sessionVolume) / previous.sessionVolume * 100) : "Baseline"}</span><span>${escapeHtml(record.profileName)}</span><span>${record.completedSets}</span></div>` : `
             <div class="exercise-history-row"><span>${formatDate(record.date)}</span><strong>${formatSet(record.bestSet)}</strong>
             <span>${formatMass(record.estimatedOneRepMax, 1)}</span><span>${escapeHtml(record.profileName)}</span><span>${record.completedSets}</span></div>`;
     }).join("");
@@ -563,6 +566,7 @@ function signedVolume(value) { return `${value > 0 ? "+" : ""}${Number(displayVo
 function signedMass(value, digits = 0) { return `${value > 0 ? "+" : ""}${formatMass(value, digits)}`; }
 function signedNumber(value) { return `${value > 0 ? "+" : ""}${value}`; }
 function signedPercent(value) { return Number.isFinite(value) ? `${value > 0 ? "+" : ""}${value.toFixed(1)}%` : "—"; }
+function changeToneClass(value) { return value > 0 ? "is-positive" : value < 0 ? "is-negative" : ""; }
 function formatSet(set) { return `${formatMass(Number(set.weight))} × ${Number(set.reps)}`; }
 function formatAxis(value) { return Math.abs(value) >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k` : Math.round(value); }
 function niceStep(value) { const power = 10 ** Math.floor(Math.log10(Math.max(1, value))); const normalized = value / power; return (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * power; }

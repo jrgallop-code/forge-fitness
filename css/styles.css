@@ -2024,6 +2024,16 @@ font-size:16px;
     line-height:1.25;
 }
 
+.exercise-volume-stat small.is-positive,
+.exercise-history-change.is-positive {
+    color:#4bd180;
+}
+
+.exercise-volume-stat small.is-negative,
+.exercise-history-change.is-negative {
+    color:#f0b24a;
+}
+
 .exercise-volume-detail {
     grid-column:1/-1;
     margin:0;

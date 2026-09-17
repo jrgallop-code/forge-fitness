@@ -27,7 +27,16 @@ test("machine progress supports normalized and raw separated charts", () => {
 });
 
 test("combined progress remains an undifferentiated line", () => {
+    assert.match(progressChart, /selectedEquipment = "all";\s*selectedMachineView = "combined";/);
+    assert.match(progressChart, /if \(selectedEquipment === "all"\) selectedMachineView = "combined"/);
     assert.match(progressChart, /Combined view connects every workout without differentiating machines/);
     assert.match(progressChart, /Combined line — machines are not differentiated/);
     assert.match(progressChart, /renderSvgChart\(host, records\)/);
+});
+
+test("positive and negative individual-machine changes use semantic colors", () => {
+    assert.match(progressChart, /changeToneClass\(change\)/);
+    assert.match(progressChart, /exercise-history-change/);
+    assert.match(styles, /exercise-volume-stat small\.is-positive/);
+    assert.match(styles, /exercise-volume-stat small\.is-negative/);
 });

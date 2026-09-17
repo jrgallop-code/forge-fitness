@@ -172,3 +172,5 @@ Release 77: stop the machine-sheet DOM update loop, restore responsive text entr
 Release 78: restore Machine buttons in the separate full-screen iOS workout surface while retaining the responsive input and safe-area fixes.
 
 TestFlight build 94: add combined, normalized comparison, and per-machine progress views; remove nearby-gym location lookup; and carry the most recently completed workout's machine into the next session.
+
+TestFlight build 95: make Combined the default per-exercise machine view and apply semantic green and yellow-brown colors to positive and negative individual-machine percentage changes.
