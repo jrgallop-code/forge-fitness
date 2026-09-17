@@ -170,3 +170,5 @@ Release 76: add machine-specific workout tracking with guided equipment profiles
 Release 77: stop the machine-sheet DOM update loop, restore responsive text entry, and keep Save above the iPhone navigation and safe area.
 
 Release 78: restore Machine buttons in the separate full-screen iOS workout surface while retaining the responsive input and safe-area fixes.
+
+TestFlight build 94: add combined, normalized comparison, and per-machine progress views; remove nearby-gym location lookup; and carry the most recently completed workout's machine into the next session.

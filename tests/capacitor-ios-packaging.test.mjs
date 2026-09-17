@@ -94,32 +94,29 @@ test("the iOS target declares permissions used by Level Up features", async () =
     const info = await readFile(new URL("../ios/App/App/Info.plist", import.meta.url), "utf8");
     for (const permission of [
         "NSCameraUsageDescription",
-        "NSLocationWhenInUseUsageDescription",
         "NSMicrophoneUsageDescription",
         "NSPhotoLibraryUsageDescription",
         "NSSpeechRecognitionUsageDescription"
     ]) assert.match(info, new RegExp(`<key>${permission}</key>`));
 });
 
-test("native iOS packages machine profiles and opt-in nearby-gym lookup", async () => {
-    const [session, profileUi, nearbyGyms, profileStyles, iosFixStyles] = await Promise.all([
+test("native iOS packages machine profiles without location lookup", async () => {
+    const [session, profileUi, profileStyles, iosFixStyles] = await Promise.all([
         readFile(new URL("../js/workouts/workout-session.js", import.meta.url), "utf8"),
         readFile(new URL("../js/workouts/machine-profile-ui.js", import.meta.url), "utf8"),
-        readFile(new URL("../js/workouts/nearby-gym-service.js", import.meta.url), "utf8"),
         readFile(new URL("../css/machine-profile.css", import.meta.url), "utf8"),
         readFile(new URL("../css/machine-profile-ios-fix.css", import.meta.url), "utf8")
     ]);
     assert.match(session, /machine-profile-ui\.js/);
-    assert.match(profileUi, /Use location/);
-    assert.match(profileUi, /Exact coordinates are not saved/);
-    assert.match(nearbyGyms, /navigator\.geolocation\.getCurrentPosition/);
-    assert.match(nearbyGyms, /overpass-api\.de/);
+    assert.doesNotMatch(profileUi, /Use location/);
+    assert.doesNotMatch(profileUi, /navigator\.geolocation/);
+    assert.match(profileUi, /GoodLife Penhorn/);
     assert.match(profileStyles, /machine-profile-sheet/);
     assert.match(profileUi, /formButton\.nextElementSibling !== button/);
-    assert.match(profileUi, /setTimeout\(renderGymResults, 140\)/);
     assert.match(profileUi, /observer\.observe\(document\.body/);
     assert.match(profileUi, /#workout-session-logger, \.session-exercise-card, \.logger-form-guide-btn/);
     assert.match(iosFixStyles, /machine-profile-open \.bottom-nav/);
     assert.match(iosFixStyles, /z-index: 40000/);
     assert.match(iosFixStyles, /position: sticky/);
+    assert.match(session, /getSavedSessions\(\)[\s\S]*sort\(compareSessionsNewest\)[\s\S]*equipmentProfileId/);
 });

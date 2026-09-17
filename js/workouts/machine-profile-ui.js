@@ -4,12 +4,10 @@ import {
     deleteEquipmentProfile,
     getEquipmentProfile,
     getEquipmentProfiles,
-    getSavedGymSuggestions,
     rememberEquipmentProfile,
     saveEquipmentProfile,
     supportsEquipmentProfiles
 } from "./equipment-profiles.js?v=machine-profile-sheet-1";
-import { findNearbyGyms } from "./nearby-gym-service.js?v=machine-profile-sheet-1";
 
 const machineProfileStyles = document.createElement("link");
 machineProfileStyles.rel = "stylesheet";
@@ -94,7 +92,6 @@ function openMachineSheet(logger, card) {
     const profiles = getEquipmentProfiles(exerciseId);
     const selectedId = card.dataset.equipmentProfileId || "default";
     let editingId = selectedId === "default" ? "" : selectedId;
-    let gymCandidates = getSavedGymSuggestions();
 
     const sheet = document.createElement("section");
     sheet.className = "machine-profile-sheet";
@@ -133,13 +130,8 @@ function openMachineSheet(logger, card) {
             <form class="machine-profile-form">
                 <label class="machine-profile-field machine-profile-location-field">
                     <span>Which gym or location is it at? <small>Optional</small></span>
-                    <div class="machine-profile-location-input">
-                        <input name="gymName" type="text" maxlength="80" autocomplete="off" autocapitalize="words" enterkeyhint="next" placeholder="Start typing, e.g. GoodLife">
-                        <button data-nearby-gyms type="button">Use location</button>
-                    </div>
+                    <input name="gymName" type="text" maxlength="80" autocomplete="organization" autocapitalize="words" enterkeyhint="next" placeholder="e.g. GoodLife Penhorn">
                     <input name="gymAddress" type="text" maxlength="120" placeholder="Address (optional)">
-                    <div class="machine-profile-gym-results" hidden></div>
-                    <small class="machine-profile-location-status">Location is requested only if you tap “Use location.” Exact coordinates are not saved.</small>
                 </label>
 
                 <div class="machine-profile-two-column">
@@ -196,14 +188,9 @@ function openMachineSheet(logger, card) {
     document.body.classList.add("machine-profile-open");
 
     const form = sheet.querySelector(".machine-profile-form");
-    const results = sheet.querySelector(".machine-profile-gym-results");
     const gymInput = form.elements.gymName;
-    const addressInput = form.elements.gymAddress;
-    const status = sheet.querySelector(".machine-profile-location-status");
-    let gymRenderTimer = null;
 
     const close = () => {
-        window.clearTimeout(gymRenderTimer);
         sheet.remove();
         if (activeSheet === sheet) activeSheet = null;
         document.body.classList.remove("machine-profile-open");
@@ -228,57 +215,7 @@ function openMachineSheet(logger, card) {
         close();
     };
 
-    const renderGymResults = () => {
-        const query = gymInput.value.trim().toLowerCase();
-        const matches = gymCandidates
-            .filter(gym => !query || `${gym.name} ${gym.address}`.toLowerCase().includes(query))
-            .slice(0, 8);
-        results.hidden = !matches.length || query.length < 2;
-        results.innerHTML = matches.map((gym, index) => `
-            <button type="button" data-gym-index="${index}">
-                <span><strong>${escapeHtml(gym.name)}</strong><small>${escapeHtml(gym.address || (gym.source === "saved" ? "Previously saved" : "Nearby gym"))}</small></span>
-                ${Number.isFinite(gym.distanceKm) ? `<b>${gym.distanceKm.toFixed(1)} km</b>` : ""}
-            </button>
-        `).join("");
-        results.querySelectorAll("[data-gym-index]").forEach(button => {
-            button.addEventListener("click", () => {
-                const gym = matches[Number(button.dataset.gymIndex)];
-                gymInput.value = gym.name;
-                addressInput.value = gym.address || "";
-                results.hidden = true;
-            });
-        });
-    };
-
     fillProfile(getEquipmentProfile(exerciseId, selectedId));
-    gymInput.addEventListener("input", () => {
-        window.clearTimeout(gymRenderTimer);
-        gymRenderTimer = window.setTimeout(renderGymResults, 140);
-    });
-    sheet.querySelector("[data-nearby-gyms]").addEventListener("click", async event => {
-        const button = event.currentTarget;
-        button.disabled = true;
-        status.textContent = "Finding gyms near you…";
-        try {
-            const nearby = await findNearbyGyms();
-            const combined = new Map();
-            [...getSavedGymSuggestions(), ...nearby].forEach(gym =>
-                combined.set(`${gym.name}|${gym.address}`.toLowerCase(), gym)
-            );
-            gymCandidates = [...combined.values()];
-            status.textContent = nearby.length
-                ? `${nearby.length} nearby gyms found. Start typing a name to narrow the list.`
-                : "No named gyms were found nearby. You can enter the location manually.";
-            renderGymResults();
-            gymInput.focus();
-        }
-        catch (error) {
-            status.textContent = error?.message || "Nearby gyms could not be loaded. You can enter the location manually.";
-        }
-        finally {
-            button.disabled = false;
-        }
-    });
 
     sheet.querySelectorAll("[data-saved-profile]").forEach(button => {
         button.addEventListener("click", () =>

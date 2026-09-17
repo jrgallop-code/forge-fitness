@@ -7,6 +7,7 @@ let unitListenerBound = false;
 let selectedMetric = "volume";
 let selectedEquipment = "all";
 let selectedExerciseId = "";
+let selectedMachineView = "combined";
 
 export function initializeExerciseProgressV2() {
     const oldCanvas = document.getElementById("exercise-strength-chart");
@@ -56,6 +57,10 @@ function bindControls() {
         selectedMetric = button.dataset.exerciseMetric;
         renderExerciseProgressV2();
     }));
+    document.querySelectorAll("[data-machine-view]").forEach(button => bindOnce(button, "click", () => {
+        selectedMachineView = button.dataset.machineView || "combined";
+        renderExerciseProgressV2();
+    }));
 }
 
 function bindOnce(element, eventName, handler) {
@@ -75,37 +80,59 @@ function renderExerciseProgressV2() {
     const profiles = getProfiles(allRecords);
     if (selectedExerciseId !== select.value) {
         selectedExerciseId = select.value;
-        selectedEquipment = selectedMetric === "volume"
-            ? "all"
-            : allRecords.at(-1)?.profileId || "all";
+        selectedEquipment = "all";
+        selectedMachineView = "combined";
     }
     updateEquipmentFilter(profiles);
+    const hasMachineBreakdown = selectedEquipment === "all" && profiles.length > 1;
+    const comparisonProfiles = profiles.filter(profile => profile.id !== "default");
+    updateMachineViewControls(hasMachineBreakdown, comparisonProfiles.length > 1);
+    updateControls(hasMachineBreakdown);
+
+    if (hasMachineBreakdown && selectedMachineView === "compare") {
+        const records = filterRange(allRecords.filter(record => record.profileId !== "default"));
+        renderNormalizedEquipmentSummary(records, comparisonProfiles);
+        renderNormalizedMachineChart(host, records, comparisonProfiles);
+        renderEquipmentLegend(comparisonProfiles, "Compare each machine from its own baseline.");
+        renderHistory(history, records);
+        return;
+    }
+
+    if (hasMachineBreakdown && selectedMachineView === "separate") {
+        const records = filterRange(allRecords);
+        renderEquipmentSummary(records, profiles);
+        renderSeparateMachineCharts(host, records, profiles);
+        renderEquipmentLegend(profiles, "Raw results stay separated by machine.");
+        renderHistory(history, records);
+        return;
+    }
+
     const equipmentRecords = selectedEquipment === "all"
-        ? selectedMetric === "volume"
-            ? aggregateEquipmentRecords(allRecords)
-            : allRecords
+        ? aggregateEquipmentRecords(allRecords)
         : allRecords.filter(record => record.profileId === selectedEquipment);
     const records = filterRange(equipmentRecords);
-    updateControls();
-    const comparisonRecords = selectedEquipment === "all" && selectedMetric === "volume"
-        ? aggregateEquipmentRecords(allRecords)
-        : selectedEquipment === "all"
-            ? allRecords
-            : allRecords.filter(record => record.profileId === selectedEquipment);
-    if (selectedMetric === "strength" && selectedEquipment === "all" && profiles.length > 1) {
-        renderStrengthEquipmentSummary(allRecords, profiles);
-    }
-    else {
-        renderComparison(comparisonRecords);
-    }
-    if (selectedMetric === "strength" && selectedEquipment === "all" && profiles.length > 1) {
-        renderMultiEquipmentStrengthChart(host, records, profiles);
-    }
-    else {
-        renderSvgChart(host, records);
-    }
-    renderEquipmentLegend(profiles);
-    renderHistory(history, records);
+    renderComparison(equipmentRecords);
+    renderSvgChart(host, records);
+    renderEquipmentLegend(
+        selectedEquipment === "all" && hasMachineBreakdown
+            ? []
+            : profiles.filter(profile => selectedEquipment === "all" || profile.id === selectedEquipment),
+        hasMachineBreakdown ? "Combined line — machines are not differentiated." : ""
+    );
+    renderHistory(history, selectedEquipment === "all" && hasMachineBreakdown ? filterRange(allRecords) : records);
+}
+
+function updateMachineViewControls(visible, canCompare) {
+    const controls = document.getElementById("exercise-machine-view-controls");
+    if (!controls) return;
+    controls.hidden = !visible;
+    controls.classList.toggle("has-two-options", !canCompare);
+    const compareButton = controls.querySelector('[data-machine-view="compare"]');
+    if (compareButton) compareButton.hidden = !canCompare;
+    if (!canCompare && selectedMachineView === "compare") selectedMachineView = "separate";
+    controls.querySelectorAll("[data-machine-view]").forEach(button =>
+        button.setAttribute("aria-pressed", String(button.dataset.machineView === selectedMachineView))
+    );
 }
 
 function getExerciseRecords(exerciseId) {
@@ -224,12 +251,24 @@ function filterRange(records) {
     });
 }
 
-function updateControls() {
+function updateControls(hasMachineBreakdown = false) {
     document.querySelectorAll("[data-exercise-metric]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.exerciseMetric === selectedMetric)));
     const note = document.getElementById("exercise-progress-note");
-    if (note) note.textContent = selectedMetric === "volume"
-        ? "Two-dumbbell exercises count both dumbbells; other loads use weight × reps."
-        : "Best-set Epley estimate—not a tested maximum.";
+    if (!note) return;
+    if (hasMachineBreakdown && selectedMachineView === "compare") {
+        note.textContent = "Each machine starts at 0%. Compare improvement—not the displayed weight.";
+    }
+    else if (hasMachineBreakdown && selectedMachineView === "separate") {
+        note.textContent = "Each card uses only workouts logged on that machine.";
+    }
+    else if (hasMachineBreakdown) {
+        note.textContent = "Combined view connects every workout without differentiating machines.";
+    }
+    else {
+        note.textContent = selectedMetric === "volume"
+            ? "Two-dumbbell exercises count both dumbbells; other loads use weight × reps."
+            : "Best-set Epley estimate—not a tested maximum.";
+    }
 }
 
 function renderComparison(records) {
@@ -256,14 +295,37 @@ function renderComparison(records) {
         <p class="exercise-volume-detail">${isVolume ? buildChangeDetail(latest, previous) : buildStrengthDetail(latest, previous)}</p>`;
 }
 
-function renderStrengthEquipmentSummary(records, profiles) {
+function renderEquipmentSummary(records, profiles) {
     const container = document.getElementById("exercise-volume-comparison");
     if (!container) return;
     container.hidden = false;
     container.innerHTML = profiles.map(profile => {
-        const latest = records.filter(record => record.profileId === profile.id).at(-1);
-        return `<div class="exercise-volume-stat"><span>${escapeHtml(profile.name)}</span><strong>${latest ? formatMass(latest.estimatedOneRepMax, 1) : "—"}</strong></div>`;
-    }).join("") + `<p class="exercise-volume-detail">Each line is calculated only from workouts logged on that equipment.</p>`;
+        const profileRecords = records.filter(record => record.profileId === profile.id);
+        const latest = profileRecords.at(-1);
+        const first = profileRecords[0];
+        const value = record => selectedMetric === "volume" ? record.sessionVolume : record.estimatedOneRepMax;
+        const label = number => selectedMetric === "volume" ? formatVolume(number) : formatMass(number, 1);
+        const change = latest && first && profileRecords.length > 1 && value(first) > 0
+            ? (value(latest) - value(first)) / value(first) * 100
+            : null;
+        return `<div class="exercise-volume-stat"><span>${escapeHtml(profile.name)}</span><strong>${latest ? label(value(latest)) : "—"}</strong><small>${change === null ? "Baseline" : `${signedPercent(change)} from baseline`}</small></div>`;
+    }).join("") + `<p class="exercise-volume-detail">Single workouts establish a baseline. More workouts form each machine’s line.</p>`;
+}
+
+function renderNormalizedEquipmentSummary(records, profiles) {
+    const container = document.getElementById("exercise-volume-comparison");
+    if (!container) return;
+    container.hidden = false;
+    container.innerHTML = profiles.map(profile => {
+        const profileRecords = records.filter(record => record.profileId === profile.id);
+        const first = profileRecords[0];
+        const latest = profileRecords.at(-1);
+        const value = record => selectedMetric === "volume" ? record.sessionVolume : record.estimatedOneRepMax;
+        const change = first && latest && profileRecords.length > 1 && value(first) > 0
+            ? (value(latest) - value(first)) / value(first) * 100
+            : null;
+        return `<div class="exercise-volume-stat"><span>${escapeHtml(profile.name)}</span><strong class="${change > 0 ? "is-positive" : change < 0 ? "is-negative" : ""}">${change === null ? "Baseline" : signedPercent(change)}</strong><small>${profileRecords.length} workout${profileRecords.length === 1 ? "" : "s"}</small></div>`;
+    }).join("") + `<p class="exercise-volume-detail">Each machine begins at 0%, so different resistance systems can be compared fairly.</p>`;
 }
 
 function buildStrengthDetail(latest, previous) {
@@ -292,7 +354,8 @@ function renderHistory(container, records) {
     }
     container.innerHTML = [...records].reverse().map((record, reverseIndex) => {
         const originalIndex = records.length - 1 - reverseIndex;
-        const previous = originalIndex > 0 ? records[originalIndex - 1] : null;
+        const previous = records.slice(0, originalIndex).reverse()
+            .find(item => item.profileId === record.profileId) || null;
         return selectedMetric === "volume" ? `
             <div class="exercise-history-row"><span>${formatDate(record.date)}</span><strong>${formatVolume(record.sessionVolume)}</strong>
             <span>${previous ? signedPercent((record.sessionVolume - previous.sessionVolume) / previous.sessionVolume * 100) : "Baseline"}</span><span>${escapeHtml(record.profileName)}</span><span>${record.completedSets}</span></div>` : `
@@ -305,15 +368,12 @@ function equipmentColor(index) {
     return ["#2f91ff", "#31c978", "#ffb020", "#b879ff", "#ff5b67", "#3ed6d0"][index % 6];
 }
 
-function renderEquipmentLegend(profiles) {
+function renderEquipmentLegend(profiles, message = "") {
     const legend = document.getElementById("exercise-equipment-legend");
     if (!legend) return;
-    const visible = selectedEquipment === "all"
-        ? profiles
-        : profiles.filter(profile => profile.id === selectedEquipment);
-    legend.innerHTML = visible.map((profile, index) => `
+    legend.innerHTML = profiles.map((profile, index) => `
         <span><i style="background:${equipmentColor(index)}"></i>${escapeHtml(profile.name)}</span>
-    `).join("");
+    `).join("") + (message ? `<p>${escapeHtml(message)}</p>` : "");
 }
 
 function renderMultiEquipmentStrengthChart(host, records, profiles) {
@@ -355,6 +415,98 @@ function renderMultiEquipmentStrengthChart(host, records, profiles) {
         ${seriesMarkup}
         ${orderedKeys.map((key, index) => { const record = records.find(item => `${item.date}|${item.completedAt}` === key); const show = orderedKeys.length <= 6 || index === 0 || index === orderedKeys.length - 1 || index % Math.ceil(orderedKeys.length / 5) === 0; const x = orderedKeys.length === 1 ? padding.left + chartWidth / 2 : padding.left + index / (orderedKeys.length - 1) * chartWidth; return show ? `<text x="${x}" y="${height - 16}" text-anchor="middle" fill="var(--muted)" font-size="10">${formatShortDate(record?.date)}</text>` : ""; }).join("")}
     </svg>`;
+}
+
+function metricValue(record) {
+    return selectedMetric === "volume"
+        ? displayVolume(record.sessionVolume)
+        : displayMass(record.estimatedOneRepMax, 1, UNIT_KINDS.LIFTING_WEIGHT);
+}
+
+function renderNormalizedMachineChart(host, records, profiles) {
+    const width = Math.max(320, Math.round(host.clientWidth || 700));
+    const height = width <= 520 ? 280 : 310;
+    const padding = { top: 38, right: 18, bottom: 42, left: 56 };
+    const orderedKeys = [...new Set(records.map(record => `${record.date}|${record.completedAt}`))].sort();
+    const series = profiles.map(profile => {
+        const profileRecords = records.filter(record => record.profileId === profile.id);
+        const baseline = metricValue(profileRecords[0]);
+        return {
+            profile,
+            points: profileRecords.map(record => ({
+                ...record,
+                value: baseline > 0 ? (metricValue(record) - baseline) / baseline * 100 : 0
+            }))
+        };
+    }).filter(item => item.points.length);
+    const values = series.flatMap(item => item.points.map(point => point.value));
+    if (!values.length) {
+        host.innerHTML = '<p class="empty-state">Log a workout on a saved machine to establish its baseline.</p>';
+        return;
+    }
+    const minValue = Math.min(0, ...values);
+    const maxValue = Math.max(0, ...values);
+    const spread = Math.max(10, maxValue - minValue);
+    const axisMin = Math.floor((minValue - spread * .15) / 5) * 5;
+    const axisMax = Math.max(axisMin + 10, Math.ceil((maxValue + spread * .15) / 5) * 5);
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+    const getX = record => orderedKeys.length === 1
+        ? padding.left + chartWidth / 2
+        : padding.left + orderedKeys.indexOf(`${record.date}|${record.completedAt}`) / (orderedKeys.length - 1) * chartWidth;
+    const getY = value => padding.top + (axisMax - value) / (axisMax - axisMin) * chartHeight;
+    const ticks = Array.from({ length: 3 }, (_, index) => axisMin + (axisMax - axisMin) * index / 2);
+    host.setAttribute("aria-label", "Percentage improvement by machine");
+    host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="Percentage improvement from each machine baseline">
+        <text x="${padding.left}" y="20" fill="var(--accent-text)" font-size="10" font-weight="800" letter-spacing="1.2">PROGRESS FROM BASELINE (%)</text>
+        ${ticks.map(tick => { const y = getY(tick); return `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="var(--line)"/><text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" fill="var(--muted)" font-size="10">${tick > 0 ? "+" : ""}${Math.round(tick)}%</text>`; }).join("")}
+        ${series.map((item, index) => {
+            const color = equipmentColor(index);
+            const coordinates = item.points.map(point => `${getX(point)},${getY(point.value)}`).join(" ");
+            return `${item.points.length > 1 ? `<polyline points="${coordinates}" fill="none" stroke="${color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>` : ""}${item.points.map(point => `<circle cx="${getX(point)}" cy="${getY(point.value)}" r="4" fill="${color}" stroke="var(--card)" stroke-width="2"><title>${escapeHtml(item.profile.name)} · ${formatDate(point.date)}: ${signedPercent(point.value)}</title></circle>`).join("")}`;
+        }).join("")}
+        ${orderedKeys.map((key, index) => { const record = records.find(item => `${item.date}|${item.completedAt}` === key); const show = orderedKeys.length <= 6 || index === 0 || index === orderedKeys.length - 1 || index % Math.ceil(orderedKeys.length / 5) === 0; const x = orderedKeys.length === 1 ? padding.left + chartWidth / 2 : padding.left + index / (orderedKeys.length - 1) * chartWidth; return show ? `<text x="${x}" y="${height - 16}" text-anchor="middle" fill="var(--muted)" font-size="10">${formatShortDate(record?.date)}</text>` : ""; }).join("")}
+    </svg>`;
+}
+
+function renderSeparateMachineCharts(host, records, profiles) {
+    host.setAttribute("aria-label", "Raw progress separated by machine");
+    host.innerHTML = `<div class="machine-small-multiples">${profiles.map((profile, profileIndex) => {
+        const points = records.filter(record => record.profileId === profile.id);
+        if (!points.length) return "";
+        const values = points.map(metricValue);
+        const minValue = Math.min(...values);
+        const maxValue = Math.max(...values);
+        const spread = Math.max(selectedMetric === "volume" ? 100 : 5, maxValue - minValue);
+        const axisMin = Math.max(0, minValue - spread * .18);
+        const axisMax = Math.max(axisMin + 1, maxValue + spread * .18);
+        const width = 320;
+        const height = 150;
+        const padding = { top: 18, right: 14, bottom: 27, left: 14 };
+        const chartWidth = width - padding.left - padding.right;
+        const chartHeight = height - padding.top - padding.bottom;
+        const coords = points.map((point, index) => ({
+            ...point,
+            value: values[index],
+            x: points.length === 1 ? width / 2 : padding.left + index / (points.length - 1) * chartWidth,
+            y: padding.top + (axisMax - values[index]) / (axisMax - axisMin) * chartHeight
+        }));
+        const color = equipmentColor(profileIndex);
+        const coordinates = coords.map(point => `${point.x},${point.y}`).join(" ");
+        const latest = points.at(-1);
+        const latestLabel = selectedMetric === "volume" ? formatVolume(latest.sessionVolume) : formatMass(latest.estimatedOneRepMax, 1);
+        return `<article class="machine-progress-card">
+            <header><div><strong>${escapeHtml(profile.name)}</strong><small>${points.length === 1 ? "Baseline set" : `${points.length} workouts`}</small></div><b>${latestLabel}</b></header>
+            <svg viewBox="0 0 ${width} ${height}" width="100%" role="img" aria-label="${escapeHtml(profile.name)} raw progress">
+                <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="var(--line)"/>
+                ${coords.length > 1 ? `<polyline points="${coordinates}" fill="none" stroke="${color}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>` : ""}
+                ${coords.map(point => `<circle cx="${point.x}" cy="${point.y}" r="5" fill="${color}" stroke="var(--card)" stroke-width="2"><title>${formatDate(point.date)}: ${selectedMetric === "volume" ? formatVolume(point.sessionVolume) : formatMass(point.estimatedOneRepMax, 1)}</title></circle>`).join("")}
+                <text x="${padding.left}" y="${height - 8}" fill="var(--muted)" font-size="10">${formatShortDate(points[0].date)}</text>
+                ${points.length > 1 ? `<text x="${width - padding.right}" y="${height - 8}" text-anchor="end" fill="var(--muted)" font-size="10">${formatShortDate(points.at(-1).date)}</text>` : ""}
+            </svg>
+            ${points.length === 1 ? "<p>More workouts will form a line.</p>" : ""}
+        </article>`;
+    }).join("")}</div>`;
 }
 
 function renderSvgChart(host, records) {

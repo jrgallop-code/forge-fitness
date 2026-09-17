@@ -407,6 +407,12 @@ export function renderProgress() {
                             <button type="button" data-exercise-metric="strength" aria-pressed="false">Estimated 1RM</button>
                         </div>
 
+                        <div class="exercise-machine-view-controls" id="exercise-machine-view-controls" aria-label="Machine graph view" hidden>
+                            <button type="button" data-machine-view="combined" aria-pressed="true">Combined</button>
+                            <button type="button" data-machine-view="compare" aria-pressed="false">Compare %</button>
+                            <button type="button" data-machine-view="separate" aria-pressed="false">By machine</button>
+                        </div>
+
                         <div class="exercise-volume-comparison" id="exercise-volume-comparison" aria-live="polite"></div>
 
                         <p class="analytics-note exercise-chart-note" id="exercise-progress-note">

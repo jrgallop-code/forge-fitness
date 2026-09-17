@@ -52,8 +52,6 @@
 	<string>Level Up uses the camera to scan food barcodes and capture meal or progress photos.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Level Up uses the microphone when you choose voice-assisted food logging.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Level Up uses your location only when you choose to find nearby gyms for a machine profile.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Level Up lets you choose private meal and progress photos from your photo library.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

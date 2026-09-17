@@ -1724,6 +1724,16 @@ function getPreviousPerformance(
 
 function getInitialEquipmentProfile(exercise) {
     if (!supportsEquipmentProfiles(exercise)) return {};
+    const previousExercise = getSavedSessions()
+        .sort(compareSessionsNewest)
+        .map(session => session.exercises?.find(item => item.exerciseId === exercise.id))
+        .find(Boolean);
+    if (previousExercise) {
+        return {
+            equipmentProfileId: previousExercise.equipmentProfileId || "default",
+            equipmentProfileName: previousExercise.equipmentProfileName || "Default machine"
+        };
+    }
     const profile = getLastEquipmentProfile(exercise.id);
     return {
         equipmentProfileId: profile.id,
