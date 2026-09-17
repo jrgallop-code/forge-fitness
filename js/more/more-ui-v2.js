@@ -15,6 +15,7 @@ import { appearanceMenuIcon, renderAppearanceSettings, initializeAppearanceSetti
 import { renderAppFeatureSettings, initializeAppFeatureSettings } from "./app-feature-settings.js?v=nutrition-feature-choice-1";
 import { renderHomeScreenWidgets, initializeHomeScreenWidgets } from "./home-screen-widgets.js?v=home-widget-live-3";
 import { isNativeIOS } from "../core/home-screen-widgets.js?v=home-widget-live-3";
+import { renderRestTimerGameSettings, initializeRestTimerGameSettings } from "./rest-timer-game-settings.js?v=protein-run-1";
 
 const ICONS = {
     appearance: appearanceMenuIcon(),
@@ -32,10 +33,12 @@ const ICONS = {
     learn: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7c1.1 0 2 .9 2 2v14c-.6-.6-1.4-1-2.4-1H4V4Zm2 2v11h4.6c.1 0 .3 0 .4.1V6H6Zm7 0c0-1.1.9-2 2-2h5v15h-4.6c-1 0-1.8.4-2.4 1V6Zm2 0v11.1c.1-.1.3-.1.4-.1H18V6h-3Z"/></svg>',
     research: '<svg class="app-silhouette-icon more-research-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="5"/><path d="m14 14 5 5M10 7v6M7 10h6"/></svg>',
     widgets: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3V3Zm2 2v4h4V5H5Zm8-2h8v5h-8V3Zm2 2v1h4V5h-4Zm-2 5h8v11h-8V10Zm2 2v7h4v-7h-4ZM3 13h8v8H3v-8Zm2 2v4h4v-4H5Z"/></svg>'
+    ,game: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10a5 5 0 0 1 4.8 6.4l-1.2 4A3.5 3.5 0 0 1 14.8 19l-1.4-1.6h-2.8L9.2 19a3.5 3.5 0 0 1-5.8-1.6l-1.2-4A5 5 0 0 1 7 7Zm0 2a3 3 0 0 0-2.9 3.9l1.2 4a1.5 1.5 0 0 0 2.5.7l2-2.2h4.6l2 2.2a1.5 1.5 0 0 0 2.5-.7l1.2-4A3 3 0 0 0 17 9H7Zm1 2h2v2h2v2h-2v2H8v-2H6v-2h2v-2Zm8 .5a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4Zm2 3a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4Z"/></svg>'
 };
 
 export function renderMore() {
     const widgetCard = isNativeIOS() ? `<button class="more-menu-card" type="button" data-more-page="home-widgets"><span class="more-menu-icon">${ICONS.widgets}</span><span><strong>Home Screen Widgets</strong><small>See daily nutrition and workout stats at a glance.</small></span></button>` : "";
+    const gameCard = isNativeIOS() ? `<button class="more-menu-card" type="button" data-more-page="rest-game"><span class="more-menu-icon">${ICONS.game}</span><span><strong>Protein Run</strong><small>Show or hide the optional 8-bit rest timer game.</small></span></button>` : "";
     return `<section class="more-compact-header"><span class="eyebrow">SETTINGS & TOOLS</span><h2>More</h2></section>
     <section class="more-menu-grid" aria-label="More tools">
     <div class="more-menu-group" data-more-group="explore"><h3>Science &amp; learning</h3>
@@ -45,6 +48,7 @@ export function renderMore() {
     <button class="more-menu-card" type="button" data-more-page="account-cloud"><span class="more-menu-icon">${ICONS.account}</span><span><strong>Account & Cloud</strong><small>Sign in for private cloud backup and device transfer.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="appearance"><span class="more-menu-icon">${ICONS.appearance}</span><span><strong>Appearance</strong><small>Choose from light, dark and system-aware Level Up themes.</small></span></button>
     ${widgetCard}
+    ${gameCard}
     <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Choose body weight, workout weight, distance and measurement units separately.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="dynamic-warmups"><span class="more-menu-icon">${ICONS.warmup}</span><span><strong>Dynamic Warm-Ups</strong><small>Turn optional video-guided movement preparation on or off.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Body Profile</strong><small>Update your name, personal details, training experience and anatomy appearance.</small></span></button>
@@ -89,6 +93,15 @@ export function initializeMore() {
             if (!content) return;
             const showMore = () => { content.innerHTML = renderMore(); initializeMore(); window.scrollTo({ top: 0, behavior: "smooth" }); };
             content.innerHTML = renderHomeScreenWidgets(); initializeHomeScreenWidgets({ onBack: showMore }); window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+        }
+        if (page === "rest-game") {
+            const content = document.getElementById("content");
+            if (!content) return;
+            const showMore = () => { content.innerHTML = renderMore(); initializeMore(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+            content.innerHTML = renderRestTimerGameSettings();
+            initializeRestTimerGameSettings({ onBack: showMore });
+            window.scrollTo({ top: 0, behavior: "smooth" });
             return;
         }
         if (page === "app-features") {
