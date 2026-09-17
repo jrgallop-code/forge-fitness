@@ -1,4 +1,5 @@
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
+import "./machine-profile-ui.js?v=machine-profile-sheet-ios-1";
 
 import {
     getExerciseById
@@ -18,6 +19,12 @@ import {
     resolveSessionExerciseIdentity
 }
 from "./session-exercise-identity.js?v=repair-generic-exercise-1";
+
+import {
+    getLastEquipmentProfile,
+    supportsEquipmentProfiles
+}
+from "./equipment-profiles.js?v=equipment-profiles-1";
 
 
 const SESSION_STORAGE_KEY =
@@ -544,6 +551,7 @@ function createExerciseState(day) {
                 ...exerciseStateMetadata(exercise, plannedExercise),
                 trackingType: "reps",
                 notes: "",
+                ...getInitialEquipmentProfile(exercise),
                 sets:
                     Array.from(
                         { length: setCount },
@@ -623,6 +631,12 @@ function renderSessionExercises({
     // when the user presses Update Saved Workout.
     logger.__levelUpSession = session;
     logger.__levelUpPlan = plan;
+    logger.__levelUpEquipmentContext = {
+        plan,
+        session,
+        editingSessionId
+    };
+    bindEquipmentProfileEvents(logger);
 
     container.innerHTML = `
         ${editingSessionId ? "" : renderRestTimerPanel(session)}
@@ -638,6 +652,7 @@ function renderSessionExercises({
                     plan.id,
                     dayIndex,
                     plannedExercise.id,
+                    state.equipmentProfileId,
                     editingSessionId
                 );
 
@@ -666,7 +681,7 @@ function renderSessionExercises({
             }
 
             return `
-                <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-tracking-type="reps">
+                <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-equipment-profile-id="${escapeHtml(state.equipmentProfileId || "default")}" data-tracking-type="reps">
                     <h4>${escapeHtml(exercise?.name || "Exercise")}</h4>
                     <p class="session-target">Target: ${state.sets.length} sets × ${escapeHtml(plannedExercise.reps || "—")} reps</p>
                     <div class="session-lifting-note ${String(state.notes || "").trim() ? "has-note" : ""}">
@@ -761,6 +776,31 @@ function renderSessionExercises({
 
     updateTimerDisplays();
 
+}
+
+
+function bindEquipmentProfileEvents(logger) {
+    if (logger.dataset.equipmentProfileEventsBound === "true") return;
+    logger.dataset.equipmentProfileEventsBound = "true";
+    logger.addEventListener("levelup:equipment-profile-selected", event => {
+        const context = logger.__levelUpEquipmentContext;
+        const exerciseIndex = Number(event.detail?.exerciseIndex);
+        const profile = event.detail?.profile;
+        const state = context?.session?.exercises?.[exerciseIndex];
+        if (!context || !state || !profile?.id) return;
+
+        state.equipmentProfileId = profile.id;
+        state.equipmentProfileName = profile.name || "Default machine";
+        context.session.currentExerciseIndex = exerciseIndex;
+        if (!context.editingSessionId) saveActiveWorkout(context.session);
+
+        renderSessionExercises({
+            plan: context.plan,
+            logger,
+            session: context.session,
+            editingSessionId: context.editingSessionId
+        });
+    });
 }
 
 
@@ -1653,6 +1693,7 @@ function getPreviousPerformance(
     planId,
     dayIndex,
     exerciseId,
+    equipmentProfileId = "default",
     excludedSessionId = null
 ) {
 
@@ -1669,7 +1710,8 @@ function getPreviousPerformance(
     for (const session of sessions) {
         const performance =
             session.exercises?.find(exercise =>
-                exercise.exerciseId === exerciseId
+                exercise.exerciseId === exerciseId &&
+                (exercise.equipmentProfileId || "default") === equipmentProfileId
             );
         if (performance) {
             return performance;
@@ -1677,6 +1719,16 @@ function getPreviousPerformance(
     }
     return null;
 
+}
+
+
+function getInitialEquipmentProfile(exercise) {
+    if (!supportsEquipmentProfiles(exercise)) return {};
+    const profile = getLastEquipmentProfile(exercise.id);
+    return {
+        equipmentProfileId: profile.id,
+        equipmentProfileName: profile.name
+    };
 }
 
 
