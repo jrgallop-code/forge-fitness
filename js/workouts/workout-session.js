@@ -8,6 +8,15 @@ import {
 }
 from "./workout-ui.js";
 
+import {
+    addEquipmentProfile,
+    getEquipmentProfiles,
+    getLastEquipmentProfile,
+    rememberEquipmentProfile,
+    supportsEquipmentProfiles
+}
+from "./equipment-profiles.js";
+
 
 const SESSION_STORAGE_KEY =
     "forge_workout_sessions";
@@ -507,6 +516,7 @@ function createExerciseState(day) {
             return {
                 exerciseId: plannedExercise.id,
                 trackingType: "reps",
+                ...getInitialEquipmentProfile(exercise),
                 sets:
                     Array.from(
                         { length: setCount },
@@ -562,6 +572,7 @@ function renderSessionExercises({
                     plan.id,
                     dayIndex,
                     plannedExercise.id,
+                    state.equipmentProfileId,
                     editingSessionId
                 );
 
@@ -588,9 +599,10 @@ function renderSessionExercises({
             }
 
             return `
-                <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-tracking-type="reps">
+                <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-equipment-profile-id="${escapeHtml(state.equipmentProfileId || "default")}" data-tracking-type="reps">
                     <h4>${escapeHtml(exercise?.name || "Exercise")}</h4>
                     <p class="session-target">Target: ${state.sets.length} sets × ${escapeHtml(plannedExercise.reps || "—")} reps</p>
+                    ${renderEquipmentProfileControl(exercise, state)}
                     ${editingSessionId ? `
                         <div class="routine-set-editor">
                             <strong>${state.sets.length} ${state.sets.length === 1 ? "set" : "sets"}</strong>
@@ -632,6 +644,7 @@ function renderSessionExercises({
 
 
     bindSessionInputs({
+        plan,
         logger,
         session,
         editingSessionId
@@ -906,6 +919,7 @@ function renderRestTimerPanel(session) {
 
 
 function bindSessionInputs({
+    plan,
     logger,
     session,
     editingSessionId
@@ -923,6 +937,56 @@ function bindSessionInputs({
         .forEach(card => {
             const exerciseIndex =
                 Number(card.dataset.exerciseIndex);
+
+            card
+                .querySelector(".session-equipment-select")
+                ?.addEventListener(
+                    "change",
+                    event => {
+                        const state =
+                            session.exercises[exerciseIndex];
+                        const exerciseId =
+                            state.exerciseId;
+
+                        if (event.target.value === "__add__") {
+                            const name = window.prompt(
+                                "Name this machine (for example, GoodLife · Life Fitness)"
+                            );
+                            const profile =
+                                addEquipmentProfile(exerciseId, name);
+
+                            if (!profile) {
+                                renderSessionExercises({
+                                    plan,
+                                    logger,
+                                    session,
+                                    editingSessionId
+                                });
+                                return;
+                            }
+
+                            state.equipmentProfileId = profile.id;
+                            state.equipmentProfileName = profile.name;
+                        }
+                        else {
+                            const profile =
+                                rememberEquipmentProfile(
+                                    exerciseId,
+                                    event.target.value
+                                );
+                            state.equipmentProfileId = profile.id;
+                            state.equipmentProfileName = profile.name;
+                        }
+
+                        persist();
+                        renderSessionExercises({
+                            plan,
+                            logger,
+                            session,
+                            editingSessionId
+                        });
+                    }
+                );
 
             card
                 .querySelector(".session-cardio-duration")
@@ -1573,6 +1637,7 @@ function getPreviousPerformance(
     planId,
     dayIndex,
     exerciseId,
+    equipmentProfileId = "default",
     excludedSessionId = null
 ) {
 
@@ -1588,13 +1653,65 @@ function getPreviousPerformance(
     for (const session of sessions) {
         const performance =
             session.exercises?.find(exercise =>
-                exercise.exerciseId === exerciseId
+                exercise.exerciseId === exerciseId &&
+                (
+                    exercise.equipmentProfileId ||
+                    "default"
+                ) === equipmentProfileId
             );
         if (performance) {
             return performance;
         }
     }
     return null;
+
+}
+
+
+function getInitialEquipmentProfile(exercise) {
+
+    if (!supportsEquipmentProfiles(exercise)) {
+        return {};
+    }
+
+    const profile =
+        getLastEquipmentProfile(exercise.id);
+
+    return {
+        equipmentProfileId:
+            profile.id,
+        equipmentProfileName:
+            profile.name
+    };
+
+}
+
+
+function renderEquipmentProfileControl(exercise, state) {
+
+    if (!supportsEquipmentProfiles(exercise)) {
+        return "";
+    }
+
+    const selectedId =
+        state.equipmentProfileId ||
+        "default";
+    const profiles =
+        getEquipmentProfiles(exercise.id);
+
+    return `
+        <label class="session-equipment-control">
+            <span>Machine</span>
+            <select class="session-equipment-select" aria-label="Machine used for ${escapeHtml(exercise.name)}">
+                ${profiles.map(profile => `
+                    <option value="${escapeHtml(profile.id)}" ${profile.id === selectedId ? "selected" : ""}>
+                        ${escapeHtml(profile.name)}
+                    </option>
+                `).join("")}
+                <option value="__add__">+ Add machine…</option>
+            </select>
+        </label>
+    `;
 
 }
 

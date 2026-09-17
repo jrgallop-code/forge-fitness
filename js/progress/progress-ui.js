@@ -359,9 +359,19 @@ export function renderProgress() {
 
                     <div class="analytics-card">
 
-                        <h4 id="exercise-progress-title">
-                            Exercise Progress
-                        </h4>
+                        <div class="exercise-chart-heading">
+                            <div>
+                                <h4 id="exercise-progress-title">
+                                    Exercise Progress
+                                </h4>
+                                <span class="equipment-chart-kicker">Estimated 1RM</span>
+                            </div>
+
+                            <label>
+                                Machine
+                                <select id="exercise-strength-equipment"></select>
+                            </label>
+                        </div>
 
                         <p class="analytics-note">
                             Y-axis: Epley estimated one-rep maximum in pounds.
@@ -375,6 +385,29 @@ export function renderProgress() {
                             aria-label="Estimated exercise strength"
                         ></canvas>
 
+                        <div id="exercise-strength-legend" class="equipment-chart-legend"></div>
+
+                    </div>
+
+                    <div class="analytics-card">
+
+                        <div class="exercise-chart-heading">
+                            <div>
+                                <h4>Training Volume</h4>
+                                <span class="equipment-chart-kicker">Weight × reps, stacked by machine</span>
+                            </div>
+
+                            <span class="equipment-volume-mode">All equipment</span>
+                        </div>
+
+                        <canvas
+                            id="exercise-volume-chart"
+                            class="training-chart"
+                            aria-label="Exercise training volume by machine"
+                        ></canvas>
+
+                        <div id="exercise-volume-legend" class="equipment-chart-legend"></div>
+
                     </div>
 
                     <div class="analytics-card">
@@ -383,6 +416,7 @@ export function renderProgress() {
                             <span>Date</span>
                             <span>Best Set</span>
                             <span>Est. 1RM</span>
+                            <span>Machine</span>
                             <span>Sets</span>
                         </div>
 

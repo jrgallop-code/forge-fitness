@@ -87,8 +87,8 @@ export function calculatePrCounts(sessions) {
         let count = 0;
         const scores = getSessionExerciseScores(session);
 
-        scores.forEach((score, exerciseId) => {
-            const previous = records.get(exerciseId) || {};
+        scores.forEach((score, profileKey) => {
+            const previous = records.get(profileKey) || {};
             let isPr = false;
 
             if (score.weighted != null) {
@@ -99,7 +99,7 @@ export function calculatePrCounts(sessions) {
                 previous.reps = previous.reps == null ? score.reps : Math.max(previous.reps, score.reps);
             }
 
-            records.set(exerciseId, previous);
+            records.set(profileKey, previous);
             if (isPr) count += 1;
         });
 
@@ -123,7 +123,8 @@ export function evaluateLiveWorkoutPrs(activeSession, historicalSessions = []) {
             .filter(({ set }) => isValidRecordedSet(set));
         if (!validSets.length) return;
 
-        const previous = records.get(exerciseId) || {};
+        const profileKey = getExerciseProfileKey(exercise);
+        const previous = records.get(profileKey) || {};
         const weighted = validSets
             .filter(({ set }) => Number(set.weight) > 0 && Number(set.reps) > 0)
             .map(({ set, setIndex }) => ({ set, setIndex, score: estimateOneRepMax(set) }));
@@ -154,11 +155,11 @@ export function evaluateLiveWorkoutPrs(activeSession, historicalSessions = []) {
 function buildHistoricalRecords(sessions) {
     const records = new Map();
     orderSessions(sessions).forEach(({ session }) => {
-        getSessionExerciseScores(session).forEach((score, exerciseId) => {
-            const record = records.get(exerciseId) || {};
+        getSessionExerciseScores(session).forEach((score, profileKey) => {
+            const record = records.get(profileKey) || {};
             if (score.weighted != null) record.weighted = record.weighted == null ? score.weighted : Math.max(record.weighted, score.weighted);
             if (score.reps != null) record.reps = record.reps == null ? score.reps : Math.max(record.reps, score.reps);
-            records.set(exerciseId, record);
+            records.set(profileKey, record);
         });
     });
     return records;
@@ -186,7 +187,8 @@ function getSessionExerciseScores(session) {
         const weightedScores = sets
             .filter(set => Number(set.weight) > 0 && Number(set.reps) > 0)
             .map(estimateOneRepMax);
-        const current = scores.get(exerciseId) || { weighted: null, reps: null };
+        const profileKey = getExerciseProfileKey(exercise);
+        const current = scores.get(profileKey) || { weighted: null, reps: null };
 
         if (weightedScores.length) {
             const bestWeighted = Math.max(...weightedScores);
@@ -198,9 +200,15 @@ function getSessionExerciseScores(session) {
                 current.reps = current.reps == null ? bestReps : Math.max(current.reps, bestReps);
             }
         }
-        scores.set(exerciseId, current);
+        scores.set(profileKey, current);
     });
     return scores;
+}
+
+function getExerciseProfileKey(exercise) {
+    const exerciseId = exercise?.exerciseId || exercise?.id || "";
+    const profileId = exercise?.equipmentProfileId || "default";
+    return `${exerciseId}::${profileId}`;
 }
 
 function isValidRecordedSet(set) {

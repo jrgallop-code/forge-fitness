@@ -8,10 +8,10 @@ import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workou
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=single-calorie-target-2";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=workout-schedule-3";
-import { renderProgress } from "../progress/progress-ui.js?v=progress-photo-tab-1";
+import { renderProgress } from "../progress/progress-ui.js?v=equipment-profiles-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-tracker-photo-tab-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=weight-progress-immediate-1";
-import { initializeTrainingProgress } from "../progress/training-progress.js?v=exercise-progress-reps-zero-nodata-2";
+import { initializeTrainingProgress } from "../progress/training-progress.js?v=equipment-profiles-1";
 import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=overall-strength-index-2";
 import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.js?v=training-analytics-5";
 import { initializeMuscleRecoveryMap } from "../progress/muscle-recovery-map.js?v=recovery-traced-1";
@@ -26,7 +26,7 @@ import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calor
 import { renderGoalProjection, initializeGoalProjection } from "../nutrition/goal-projection.js?v=selected-target-projection-4";
 import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=more-bmi-2";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=workout-history-preview-2";
-import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-2";
+import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=equipment-profiles-1";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-3";
 import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-drive-backup-1";
 

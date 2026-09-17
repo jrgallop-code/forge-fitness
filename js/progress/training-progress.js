@@ -63,6 +63,16 @@ export function initializeTrainingProgress() {
 
     document
         .getElementById(
+            "exercise-strength-equipment"
+        )
+        ?.addEventListener(
+            "change",
+            renderExerciseProgress
+        );
+
+
+    document
+        .getElementById(
             "load-training-demo"
         )
         ?.addEventListener(
@@ -454,6 +464,46 @@ function renderExerciseProgress() {
         );
 
 
+    const equipmentSelect =
+        document.getElementById(
+            "exercise-strength-equipment"
+        );
+    const previousEquipmentValue =
+        equipmentSelect?.dataset.exerciseId === exerciseId
+            ? equipmentSelect.value
+            : "";
+    const profiles =
+        getRecordProfiles(records);
+
+    if (equipmentSelect) {
+        equipmentSelect.innerHTML = `
+            <option value="all">Compare machines</option>
+            ${profiles.map(profile => `
+                <option value="${escapeHtml(profile.id)}">
+                    ${escapeHtml(profile.name)}
+                </option>
+            `).join("")}
+        `;
+
+        const latestProfileId =
+            records[records.length - 1]?.profileId ||
+            profiles[0]?.id ||
+            "all";
+        equipmentSelect.value =
+            ["all", ...profiles.map(profile => profile.id)]
+                .includes(previousEquipmentValue)
+                ? previousEquipmentValue
+                : latestProfileId;
+        equipmentSelect.dataset.exerciseId = exerciseId || "";
+        equipmentSelect.disabled = profiles.length < 2;
+    }
+
+    const selectedProfileId =
+        equipmentSelect?.value ||
+        profiles[0]?.id ||
+        "all";
+
+
     const title =
         document.getElementById(
             "exercise-progress-title"
@@ -472,18 +522,65 @@ function renderExerciseProgress() {
     }
 
 
-    drawLineChart(
+    const strengthSeries =
+        profiles
+            .filter(profile =>
+                selectedProfileId === "all" ||
+                profile.id === selectedProfileId
+            )
+            .map((profile, index) => ({
+                id:
+                    profile.id,
+                name:
+                    profile.name,
+                color:
+                    getEquipmentColor(index),
+                points:
+                    records
+                        .filter(record =>
+                            record.profileId === profile.id
+                        )
+                        .map(record => ({
+                            label:
+                                formatShortDate(record.date),
+                            date:
+                                record.date,
+                            value:
+                                record.estimatedOneRepMax
+                        }))
+            }));
+
+    drawEquipmentLineChart(
         "exercise-strength-chart",
-        records.map(record => ({
-            label:
-                formatShortDate(
-                    record.date
-                ),
+        strengthSeries
+    );
+    renderEquipmentLegend(
+        "exercise-strength-legend",
+        strengthSeries
+    );
 
-            value:
-                record.estimatedOneRepMax
+    const volumeSeries =
+        profiles.map((profile, index) => ({
+            id:
+                profile.id,
+            name:
+                profile.name,
+            color:
+                getEquipmentColor(index),
+            values:
+                records
+                    .filter(record =>
+                        record.profileId === profile.id
+                    )
+        }));
 
-        }))
+    drawEquipmentVolumeChart(
+        "exercise-volume-chart",
+        volumeSeries
+    );
+    renderEquipmentLegend(
+        "exercise-volume-legend",
+        volumeSeries
     );
 
 
@@ -533,6 +630,10 @@ function renderExerciseProgress() {
                         ${record.estimatedOneRepMax
                             ? record.estimatedOneRepMax.toFixed(1)
                             : "—"}
+                    </span>
+
+                    <span class="exercise-history-machine">
+                        ${escapeHtml(record.profileName)}
                     </span>
 
                     <span>
@@ -610,12 +711,356 @@ function getExerciseRecords(
                     ),
 
                 completedSets:
-                    completed.length
+                    completed.length,
+
+                volume:
+                    completed.reduce(
+                        (total, set) =>
+                            total +
+                            Number(set.weight) *
+                            Number(set.reps),
+                        0
+                    ),
+
+                profileId:
+                    exercise.equipmentProfileId ||
+                    "default",
+
+                profileName:
+                    exercise.equipmentProfileName ||
+                    "Default machine"
 
             };
 
         })
-        .filter(Boolean);
+        .filter(Boolean)
+        .sort((a, b) =>
+            String(a.date).localeCompare(String(b.date))
+        );
+
+}
+
+
+function getRecordProfiles(records) {
+
+    const profiles = new Map();
+
+    records.forEach(record => {
+        profiles.set(
+            record.profileId,
+            {
+                id:
+                    record.profileId,
+                name:
+                    record.profileName
+            }
+        );
+    });
+
+    return [...profiles.values()];
+
+}
+
+
+function getEquipmentColor(index) {
+
+    return [
+        "#2f91ff",
+        "#31c978",
+        "#ffb020",
+        "#b879ff",
+        "#ff5b67",
+        "#3ed6d0"
+    ][index % 6];
+
+}
+
+
+function renderEquipmentLegend(elementId, series) {
+
+    const element =
+        document.getElementById(elementId);
+
+    if (!element) {
+        return;
+    }
+
+    element.innerHTML =
+        series
+            .filter(item =>
+                item.points?.length ||
+                item.values?.length
+            )
+            .map(item => `
+                <span>
+                    <i style="background:${item.color}"></i>
+                    ${escapeHtml(item.name)}
+                </span>
+            `)
+            .join("");
+
+}
+
+
+function drawEquipmentLineChart(canvasId, series) {
+
+    const canvas =
+        document.getElementById(canvasId);
+    const context =
+        canvas && prepareCanvas(canvas);
+    const points =
+        series.flatMap(item => item.points || []);
+
+    if (!canvas || !context) {
+        return;
+    }
+
+    drawEmptyOrAxes(
+        context,
+        canvas,
+        points,
+        "Epley Estimated 1RM (lb)"
+    );
+
+    if (!points.length) {
+        return;
+    }
+
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    const padding = {
+        top: 35,
+        right: 20,
+        bottom: 45,
+        left: 55
+    };
+    const dates =
+        [...new Set(points.map(point => point.date))]
+            .sort();
+    const values =
+        points.map(point => point.value);
+    const minimum = Math.min(...values);
+    const maximum = Math.max(...values);
+    const margin =
+        Math.max(5, (maximum - minimum) * .15);
+    const axisMinimum =
+        Math.max(0, Math.floor((minimum - margin) / 5) * 5);
+    const axisMaximum =
+        Math.max(
+            axisMinimum + 10,
+            Math.ceil((maximum + margin) / 5) * 5
+        );
+    const axisRange = axisMaximum - axisMinimum;
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+    const getX = date =>
+        padding.left +
+        (dates.length === 1
+            ? chartWidth / 2
+            : dates.indexOf(date) / (dates.length - 1) * chartWidth);
+    const getY = value =>
+        height - padding.bottom -
+        (value - axisMinimum) / axisRange * chartHeight;
+
+    for (let tick = 0; tick <= 4; tick++) {
+        const value = axisMinimum + axisRange * tick / 4;
+        const y = getY(value);
+        context.strokeStyle = "#2f2f2f";
+        context.lineWidth = 1;
+        context.beginPath();
+        context.moveTo(padding.left, y);
+        context.lineTo(width - padding.right, y);
+        context.stroke();
+        context.fillStyle = "#a0a0a0";
+        context.font = "11px Arial";
+        context.textAlign = "right";
+        context.fillText(value.toFixed(0), padding.left - 8, y + 4);
+    }
+
+    series.forEach(item => {
+        const coordinates =
+            (item.points || []).map(point => ({
+                ...point,
+                x:
+                    getX(point.date),
+                y:
+                    getY(point.value)
+            }));
+
+        if (!coordinates.length) {
+            return;
+        }
+
+        context.strokeStyle = item.color;
+        context.lineWidth = 3;
+        context.beginPath();
+        coordinates.forEach((point, index) => {
+            if (index === 0) {
+                context.moveTo(point.x, point.y);
+            }
+            else {
+                context.lineTo(point.x, point.y);
+            }
+        });
+        context.stroke();
+
+        coordinates.forEach(point => {
+            context.fillStyle = item.color;
+            context.beginPath();
+            context.arc(point.x, point.y, 4, 0, Math.PI * 2);
+            context.fill();
+        });
+    });
+
+    dates.forEach((date, index) => {
+        const showLabel =
+            dates.length <= 6 ||
+            index === 0 ||
+            index === dates.length - 1 ||
+            index % Math.ceil(dates.length / 5) === 0;
+
+        if (showLabel) {
+            context.fillStyle = "#a0a0a0";
+            context.font = "11px Arial";
+            context.textAlign = "center";
+            context.fillText(
+                formatShortDate(date),
+                getX(date),
+                height - 18
+            );
+        }
+    });
+
+}
+
+
+function drawEquipmentVolumeChart(canvasId, series) {
+
+    const canvas =
+        document.getElementById(canvasId);
+    const context =
+        canvas && prepareCanvas(canvas);
+    const records =
+        series.flatMap(item => item.values || []);
+
+    if (!canvas || !context) {
+        return;
+    }
+
+    drawEmptyOrAxes(
+        context,
+        canvas,
+        records,
+        "Training volume (lb)"
+    );
+
+    if (!records.length) {
+        return;
+    }
+
+    const dates =
+        [...new Set(records.map(record => record.date))]
+            .sort();
+    const totalsByDate =
+        new Map(dates.map(date => [date, 0]));
+    const volumeBySeries =
+        series.map(item => ({
+            ...item,
+            byDate:
+                (item.values || []).reduce((totals, record) => {
+                    totals.set(
+                        record.date,
+                        (totals.get(record.date) || 0) + record.volume
+                    );
+                    return totals;
+                }, new Map())
+        }));
+
+    volumeBySeries.forEach(item =>
+        dates.forEach(date =>
+            totalsByDate.set(
+                date,
+                totalsByDate.get(date) +
+                (item.byDate.get(date) || 0)
+            )
+        )
+    );
+
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    const padding = {
+        top: 35,
+        right: 20,
+        bottom: 45,
+        left: 55
+    };
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+    const maximum =
+        Math.max(...totalsByDate.values(), 1);
+    const barSlot = chartWidth / dates.length;
+    const barWidth =
+        Math.min(42, Math.max(8, barSlot * .62));
+
+    for (let tick = 0; tick <= 4; tick++) {
+        const value = maximum * tick / 4;
+        const y =
+            height - padding.bottom - value / maximum * chartHeight;
+        context.strokeStyle = "#2f2f2f";
+        context.beginPath();
+        context.moveTo(padding.left, y);
+        context.lineTo(width - padding.right, y);
+        context.stroke();
+        context.fillStyle = "#a0a0a0";
+        context.font = "11px Arial";
+        context.textAlign = "right";
+        context.fillText(
+            Math.round(value).toLocaleString(),
+            padding.left - 8,
+            y + 4
+        );
+    }
+
+    dates.forEach((date, dateIndex) => {
+        const x =
+            padding.left +
+            barSlot * dateIndex +
+            (barSlot - barWidth) / 2;
+        let stackedHeight = 0;
+
+        volumeBySeries.forEach(item => {
+            const value = item.byDate.get(date) || 0;
+            if (!value) {
+                return;
+            }
+            const segmentHeight = value / maximum * chartHeight;
+            context.fillStyle = item.color;
+            context.fillRect(
+                x,
+                height - padding.bottom - stackedHeight - segmentHeight,
+                barWidth,
+                segmentHeight
+            );
+            stackedHeight += segmentHeight;
+        });
+
+        const showLabel =
+            dates.length <= 6 ||
+            dateIndex === 0 ||
+            dateIndex === dates.length - 1 ||
+            dateIndex % Math.ceil(dates.length / 5) === 0;
+
+        if (showLabel) {
+            context.fillStyle = "#a0a0a0";
+            context.font = "11px Arial";
+            context.textAlign = "center";
+            context.fillText(
+                formatShortDate(date),
+                x + barWidth / 2,
+                height - 18
+            );
+        }
+    });
 
 }
 
@@ -2153,6 +2598,8 @@ function exportSessionsAsCsv() {
         "plan",
         "training_day",
         "exercise_id",
+        "equipment_profile_id",
+        "equipment_profile_name",
         "set_number",
         "weight",
         "reps",
@@ -2181,6 +2628,8 @@ function exportSessionsAsCsv() {
                             session.planName,
                             session.trainingDayName,
                             exercise.exerciseId,
+                            exercise.equipmentProfileId || "default",
+                            exercise.equipmentProfileName || "Default machine",
                             "",
                             "",
                             "",
@@ -2201,6 +2650,8 @@ function exportSessionsAsCsv() {
                                 session.planName,
                                 session.trainingDayName,
                                 exercise.exerciseId,
+                                exercise.equipmentProfileId || "default",
+                                exercise.equipmentProfileName || "Default machine",
                                 index + 1,
                                 set.weight ?? "",
                                 set.reps ?? "",

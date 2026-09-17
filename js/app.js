@@ -1,6 +1,6 @@
 import { navigate } from "./core/router.js?v=smart-build-clean-2";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=rounded-pulse-1";
-import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-session-7-cardio-fields";
+import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=workout-session-8-equipment-profiles";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
 import "./workouts/exercise-search.js?v=exercise-search-4";
 
