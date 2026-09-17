@@ -21,6 +21,16 @@ if (!document.querySelector('link[href*="machine-profile.css"]')) {
     document.head.append(machineProfileStyles);
 }
 
+const machineProfileIosFixStyles = document.createElement("link");
+machineProfileIosFixStyles.rel = "stylesheet";
+machineProfileIosFixStyles.href = new URL(
+    "../../css/machine-profile-ios-fix.css?v=machine-profile-ios-fix-1",
+    import.meta.url
+).href;
+if (!document.querySelector('link[href*="machine-profile-ios-fix.css"]')) {
+    document.head.append(machineProfileIosFixStyles);
+}
+
 let activeSheet = null;
 
 
@@ -67,10 +77,10 @@ function addMachineButton(logger, card) {
 
     const formButton = card.querySelector(".logger-form-guide-btn:not(.logger-machine-profile-btn)");
     const actions = card.querySelector(".compact-exercise-actions");
-    if (formButton?.parentElement) {
+    if (formButton?.parentElement && formButton.nextElementSibling !== button) {
         formButton.insertAdjacentElement("afterend", button);
     }
-    else if (actions) {
+    else if (actions && button.parentElement !== actions) {
         actions.prepend(button);
     }
 }
@@ -124,7 +134,7 @@ function openMachineSheet(logger, card) {
                 <label class="machine-profile-field machine-profile-location-field">
                     <span>Which gym or location is it at? <small>Optional</small></span>
                     <div class="machine-profile-location-input">
-                        <input name="gymName" type="text" maxlength="80" autocomplete="off" placeholder="Start typing, e.g. GoodLife">
+                        <input name="gymName" type="text" maxlength="80" autocomplete="off" autocapitalize="words" enterkeyhint="next" placeholder="Start typing, e.g. GoodLife">
                         <button data-nearby-gyms type="button">Use location</button>
                     </div>
                     <input name="gymAddress" type="text" maxlength="120" placeholder="Address (optional)">
@@ -190,8 +200,10 @@ function openMachineSheet(logger, card) {
     const gymInput = form.elements.gymName;
     const addressInput = form.elements.gymAddress;
     const status = sheet.querySelector(".machine-profile-location-status");
+    let gymRenderTimer = null;
 
     const close = () => {
+        window.clearTimeout(gymRenderTimer);
         sheet.remove();
         if (activeSheet === sheet) activeSheet = null;
         document.body.classList.remove("machine-profile-open");
@@ -239,7 +251,10 @@ function openMachineSheet(logger, card) {
     };
 
     fillProfile(getEquipmentProfile(exerciseId, selectedId));
-    gymInput.addEventListener("input", renderGymResults);
+    gymInput.addEventListener("input", () => {
+        window.clearTimeout(gymRenderTimer);
+        gymRenderTimer = window.setTimeout(renderGymResults, 140);
+    });
     sheet.querySelector("[data-nearby-gyms]").addEventListener("click", async event => {
         const button = event.currentTarget;
         button.disabled = true;
@@ -254,8 +269,6 @@ function openMachineSheet(logger, card) {
             status.textContent = nearby.length
                 ? `${nearby.length} nearby gyms found. Start typing a name to narrow the list.`
                 : "No named gyms were found nearby. You can enter the location manually.";
-            if (!gymInput.value) gymInput.value = " ";
-            gymInput.value = gymInput.value.trim();
             renderGymResults();
             gymInput.focus();
         }
@@ -314,13 +327,26 @@ function escapeHtml(value) {
 }
 
 
+let scanQueued = false;
 const observer = new MutationObserver(mutations => {
-    if (mutations.some(mutation => mutation.addedNodes.length)) {
-        window.requestAnimationFrame(() => scan());
-    }
+    const loggerChanged = mutations.some(mutation =>
+        [...mutation.addedNodes].some(node =>
+            node.nodeType === Node.ELEMENT_NODE &&
+            (
+                node.matches?.("#workout-session-logger, .session-exercise-card, .logger-form-guide-btn") ||
+                node.querySelector?.("#workout-session-logger, .session-exercise-card, .logger-form-guide-btn")
+            )
+        )
+    );
+    if (!loggerChanged || scanQueued) return;
+    scanQueued = true;
+    window.requestAnimationFrame(() => {
+        scanQueued = false;
+        scan();
+    });
 });
 
-observer.observe(document.body, {
+observer.observe(document.getElementById("content") || document.body, {
     childList: true,
     subtree: true
 });

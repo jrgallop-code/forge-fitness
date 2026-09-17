@@ -102,11 +102,12 @@ test("the iOS target declares permissions used by Level Up features", async () =
 });
 
 test("native iOS packages machine profiles and opt-in nearby-gym lookup", async () => {
-    const [session, profileUi, nearbyGyms, profileStyles] = await Promise.all([
+    const [session, profileUi, nearbyGyms, profileStyles, iosFixStyles] = await Promise.all([
         readFile(new URL("../js/workouts/workout-session.js", import.meta.url), "utf8"),
         readFile(new URL("../js/workouts/machine-profile-ui.js", import.meta.url), "utf8"),
         readFile(new URL("../js/workouts/nearby-gym-service.js", import.meta.url), "utf8"),
-        readFile(new URL("../css/machine-profile.css", import.meta.url), "utf8")
+        readFile(new URL("../css/machine-profile.css", import.meta.url), "utf8"),
+        readFile(new URL("../css/machine-profile-ios-fix.css", import.meta.url), "utf8")
     ]);
     assert.match(session, /machine-profile-ui\.js/);
     assert.match(profileUi, /Use location/);
@@ -114,4 +115,9 @@ test("native iOS packages machine profiles and opt-in nearby-gym lookup", async 
     assert.match(nearbyGyms, /navigator\.geolocation\.getCurrentPosition/);
     assert.match(nearbyGyms, /overpass-api\.de/);
     assert.match(profileStyles, /machine-profile-sheet/);
+    assert.match(profileUi, /formButton\.nextElementSibling !== button/);
+    assert.match(profileUi, /setTimeout\(renderGymResults, 140\)/);
+    assert.match(iosFixStyles, /machine-profile-open \.bottom-nav/);
+    assert.match(iosFixStyles, /z-index: 40000/);
+    assert.match(iosFixStyles, /position: sticky/);
 });

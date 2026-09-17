@@ -1,0 +1,51 @@
+/* iOS interaction and safe-area corrections for the machine-profile sheet. */
+body.machine-profile-open .bottom-nav {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+.machine-profile-sheet {
+    z-index: 40000;
+    box-sizing: border-box;
+}
+
+.machine-profile-panel {
+    box-sizing: border-box;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-padding-top: 88px;
+    scroll-padding-bottom: calc(112px + env(safe-area-inset-bottom));
+}
+
+.machine-profile-field input,
+.machine-profile-field textarea {
+    scroll-margin-block: 100px;
+}
+
+.machine-profile-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    margin-inline: -4px;
+    padding: 10px 4px calc(10px + env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, transparent 0, var(--card) 18px);
+}
+
+@media (max-width: 699px) {
+    .machine-profile-sheet {
+        align-items: stretch;
+        padding: 0;
+    }
+
+    .machine-profile-panel {
+        width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100vh;
+        max-height: 100dvh;
+        padding-top: max(9px, env(safe-area-inset-top));
+        padding-bottom: calc(18px + env(safe-area-inset-bottom));
+        border-radius: 0;
+    }
+}
