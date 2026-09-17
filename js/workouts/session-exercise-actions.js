@@ -1,4 +1,4 @@
-import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=history-rir-edit-1';
+import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=equipment-profiles-1';
 import './exercise-library-expansion.js?v=exercise-library-expansion-1';
 import { addCustomExercise, getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { createGeneratedExerciseGuide } from './exercise-guide-generator.js?v=full-library-guides-1';

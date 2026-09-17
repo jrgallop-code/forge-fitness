@@ -392,9 +392,15 @@ export function renderProgress() {
 
                     <div class="analytics-card">
 
-                        <h4 id="exercise-progress-title">
-                            Exercise Progress
-                        </h4>
+                        <div class="exercise-chart-heading">
+                            <h4 id="exercise-progress-title">
+                                Exercise Progress
+                            </h4>
+                            <label>
+                                Equipment
+                                <select id="exercise-equipment-filter"></select>
+                            </label>
+                        </div>
 
                         <div class="exercise-metric-controls" aria-label="Exercise progress metric">
                             <button type="button" data-exercise-metric="volume" aria-pressed="true">Session Volume</button>
@@ -413,6 +419,8 @@ export function renderProgress() {
                             aria-label="Estimated exercise strength"
                         ></canvas>
 
+                        <div id="exercise-equipment-legend" class="equipment-chart-legend"></div>
+
                     </div>
 
                     <div class="analytics-card">
@@ -421,6 +429,7 @@ export function renderProgress() {
                             <span>Date</span>
                             <span>Volume</span>
                             <span>Change</span>
+                            <span>Equipment</span>
                             <span>Sets</span>
                         </div>
 
