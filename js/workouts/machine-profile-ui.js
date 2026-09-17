@@ -346,7 +346,10 @@ const observer = new MutationObserver(mutations => {
     });
 });
 
-observer.observe(document.getElementById("content") || document.body, {
+// Active workouts are mounted in #levelup-workout-mode directly under body,
+// while saved-workout editing remains inside #content. Observe both surfaces
+// through body, but the callback above ignores unrelated sheet mutations.
+observer.observe(document.body, {
     childList: true,
     subtree: true
 });

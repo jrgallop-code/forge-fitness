@@ -117,6 +117,8 @@ test("native iOS packages machine profiles and opt-in nearby-gym lookup", async 
     assert.match(profileStyles, /machine-profile-sheet/);
     assert.match(profileUi, /formButton\.nextElementSibling !== button/);
     assert.match(profileUi, /setTimeout\(renderGymResults, 140\)/);
+    assert.match(profileUi, /observer\.observe\(document\.body/);
+    assert.match(profileUi, /#workout-session-logger, \.session-exercise-card, \.logger-form-guide-btn/);
     assert.match(iosFixStyles, /machine-profile-open \.bottom-nav/);
     assert.match(iosFixStyles, /z-index: 40000/);
     assert.match(iosFixStyles, /position: sticky/);

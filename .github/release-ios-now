@@ -168,3 +168,5 @@ Release 75: stop cardio timers at their selected target, keep in-app rest timers
 Release 76: add machine-specific workout tracking with guided equipment profiles, opt-in nearby-gym lookup, and machine-aware strength, volume, progression, and PR history.
 
 Release 77: stop the machine-sheet DOM update loop, restore responsive text entry, and keep Save above the iPhone navigation and safe area.
+
+Release 78: restore Machine buttons in the separate full-screen iOS workout surface while retaining the responsive input and safe-area fixes.
