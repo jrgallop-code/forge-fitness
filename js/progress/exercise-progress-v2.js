@@ -5,6 +5,8 @@ import { calculateSetVolume } from "../workouts/volume-calculator.js?v=two-dumbb
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 let unitListenerBound = false;
 let selectedMetric = "volume";
+let selectedEquipment = "all";
+let selectedExerciseId = "";
 
 export function initializeExerciseProgressV2() {
     const oldCanvas = document.getElementById("exercise-strength-chart");
@@ -46,6 +48,10 @@ function bindControls() {
     bindOnce(document.getElementById("exercise-progress-select"), "change", renderExerciseProgressV2);
     bindOnce(document.getElementById("lifting-tab"), "click", () => requestAnimationFrame(renderExerciseProgressV2));
     bindOnce(document.getElementById("progress-range"), "change", renderExerciseProgressV2);
+    bindOnce(document.getElementById("exercise-equipment-filter"), "change", event => {
+        selectedEquipment = event.target.value || "all";
+        renderExerciseProgressV2();
+    });
     document.querySelectorAll("[data-exercise-metric]").forEach(button => bindOnce(button, "click", () => {
         selectedMetric = button.dataset.exerciseMetric;
         renderExerciseProgressV2();
@@ -66,33 +72,123 @@ function renderExerciseProgressV2() {
     const history = document.getElementById("exercise-history-body");
     if (!host || !select || !history) return;
     const allRecords = getExerciseRecords(select.value);
-    const records = filterRange(allRecords);
+    const profiles = getProfiles(allRecords);
+    if (selectedExerciseId !== select.value) {
+        selectedExerciseId = select.value;
+        selectedEquipment = selectedMetric === "volume"
+            ? "all"
+            : allRecords.at(-1)?.profileId || "all";
+    }
+    updateEquipmentFilter(profiles);
+    const equipmentRecords = selectedEquipment === "all"
+        ? selectedMetric === "volume"
+            ? aggregateEquipmentRecords(allRecords)
+            : allRecords
+        : allRecords.filter(record => record.profileId === selectedEquipment);
+    const records = filterRange(equipmentRecords);
     updateControls();
-    renderComparison(allRecords);
-    renderSvgChart(host, records);
+    const comparisonRecords = selectedEquipment === "all" && selectedMetric === "volume"
+        ? aggregateEquipmentRecords(allRecords)
+        : selectedEquipment === "all"
+            ? allRecords
+            : allRecords.filter(record => record.profileId === selectedEquipment);
+    if (selectedMetric === "strength" && selectedEquipment === "all" && profiles.length > 1) {
+        renderStrengthEquipmentSummary(allRecords, profiles);
+    }
+    else {
+        renderComparison(comparisonRecords);
+    }
+    if (selectedMetric === "strength" && selectedEquipment === "all" && profiles.length > 1) {
+        renderMultiEquipmentStrengthChart(host, records, profiles);
+    }
+    else {
+        renderSvgChart(host, records);
+    }
+    renderEquipmentLegend(profiles);
     renderHistory(history, records);
 }
 
 function getExerciseRecords(exerciseId) {
     if (!exerciseId) return [];
-    return getSessions().map(session => {
-        const sets = (session.exercises || [])
+    return getSessions().flatMap(session => {
+        const grouped = new Map();
+        (session.exercises || [])
             .filter(exercise => exercise?.exerciseId === exerciseId && exercise?.trackingType !== "notes")
-            .flatMap(exercise => Array.isArray(exercise.sets) ? exercise.sets : [])
-            .filter(isWorkingSet);
-        if (!sets.length) return null;
-        const ranked = sets.map(set => ({ set, oneRepMax: estimateOneRepMax(set) })).sort((a, b) => b.oneRepMax - a.oneRepMax);
-        return {
-            date: session.date,
-            completedAt: session.completedAt || session.updatedAt || "",
-            bestSet: ranked[0].set,
-            estimatedOneRepMax: ranked[0].oneRepMax,
-            completedSets: sets.length,
-            totalReps: sets.reduce((sum, set) => sum + Number(set.reps) + dropReps(set), 0),
-            sessionVolume: sets.reduce((sum, set) => sum + calculateSetVolume(set, exerciseId), 0),
-            heaviestWeight: Math.max(...sets.map(set => Number(set.weight)))
+            .forEach(exercise => {
+                const profileId = exercise.equipmentProfileId || "default";
+                const current = grouped.get(profileId) || {
+                    profileId,
+                    profileName: exercise.equipmentProfileName || "Default machine",
+                    sets: []
+                };
+                current.sets.push(...(Array.isArray(exercise.sets) ? exercise.sets : []).filter(isWorkingSet));
+                grouped.set(profileId, current);
+            });
+
+        return [...grouped.values()].map(group => {
+            if (!group.sets.length) return null;
+            const ranked = group.sets.map(set => ({ set, oneRepMax: estimateOneRepMax(set) })).sort((a, b) => b.oneRepMax - a.oneRepMax);
+            return {
+                date: session.date,
+                completedAt: session.completedAt || session.updatedAt || "",
+                profileId: group.profileId,
+                profileName: group.profileName,
+                bestSet: ranked[0].set,
+                estimatedOneRepMax: ranked[0].oneRepMax,
+                completedSets: group.sets.length,
+                totalReps: group.sets.reduce((sum, set) => sum + Number(set.reps) + dropReps(set), 0),
+                sessionVolume: group.sets.reduce((sum, set) => sum + calculateSetVolume(set, exerciseId), 0),
+                heaviestWeight: Math.max(...group.sets.map(set => Number(set.weight)))
+            };
+        }).filter(Boolean);
+    }).sort(compareRecords);
+}
+
+function getProfiles(records) {
+    const profiles = new Map();
+    records.forEach(record => profiles.set(record.profileId, {
+        id: record.profileId,
+        name: record.profileName
+    }));
+    return [...profiles.values()];
+}
+
+function updateEquipmentFilter(profiles) {
+    const select = document.getElementById("exercise-equipment-filter");
+    if (!select) return;
+    select.innerHTML = `<option value="all">All equipment</option>${profiles.map(profile =>
+        `<option value="${escapeHtml(profile.id)}">${escapeHtml(profile.name)}</option>`
+    ).join("")}`;
+    const values = ["all", ...profiles.map(profile => profile.id)];
+    if (!values.includes(selectedEquipment)) selectedEquipment = "all";
+    select.value = selectedEquipment;
+    select.disabled = profiles.length < 2;
+}
+
+function aggregateEquipmentRecords(records) {
+    const grouped = new Map();
+    records.forEach(record => {
+        const key = `${record.date || ""}|${record.completedAt || ""}`;
+        const current = grouped.get(key) || {
+            ...record,
+            profileId: "all",
+            profileName: "All equipment",
+            completedSets: 0,
+            totalReps: 0,
+            sessionVolume: 0,
+            heaviestWeight: 0
         };
-    }).filter(Boolean).sort(compareRecords);
+        current.completedSets += record.completedSets;
+        current.totalReps += record.totalReps;
+        current.sessionVolume += record.sessionVolume;
+        current.heaviestWeight = Math.max(current.heaviestWeight, record.heaviestWeight);
+        if (record.estimatedOneRepMax > current.estimatedOneRepMax) {
+            current.estimatedOneRepMax = record.estimatedOneRepMax;
+            current.bestSet = record.bestSet;
+        }
+        grouped.set(key, current);
+    });
+    return [...grouped.values()].sort(compareRecords);
 }
 
 function isWorkingSet(set) {
@@ -160,6 +256,16 @@ function renderComparison(records) {
         <p class="exercise-volume-detail">${isVolume ? buildChangeDetail(latest, previous) : buildStrengthDetail(latest, previous)}</p>`;
 }
 
+function renderStrengthEquipmentSummary(records, profiles) {
+    const container = document.getElementById("exercise-volume-comparison");
+    if (!container) return;
+    container.hidden = false;
+    container.innerHTML = profiles.map(profile => {
+        const latest = records.filter(record => record.profileId === profile.id).at(-1);
+        return `<div class="exercise-volume-stat"><span>${escapeHtml(profile.name)}</span><strong>${latest ? formatMass(latest.estimatedOneRepMax, 1) : "—"}</strong></div>`;
+    }).join("") + `<p class="exercise-volume-detail">Each line is calculated only from workouts logged on that equipment.</p>`;
+}
+
 function buildStrengthDetail(latest, previous) {
     if (!previous) return `Best set ${formatSet(latest.bestSet)} establishes your baseline`;
     return `Best set ${formatSet(latest.bestSet)} · previously ${formatSet(previous.bestSet)}`;
@@ -178,8 +284,8 @@ function buildChangeDetail(latest, previous) {
 function renderHistory(container, records) {
     const header = container.previousElementSibling;
     if (header?.classList.contains("exercise-history-header")) header.innerHTML = selectedMetric === "volume"
-        ? "<span>Date</span><span>Volume</span><span>Change</span><span>Sets</span>"
-        : "<span>Date</span><span>Best Set</span><span>Est. 1RM</span><span>Sets</span>";
+        ? "<span>Date</span><span>Volume</span><span>Change</span><span>Equipment</span><span>Sets</span>"
+        : "<span>Date</span><span>Best Set</span><span>Est. 1RM</span><span>Equipment</span><span>Sets</span>";
     if (!records.length) {
         container.innerHTML = '<p class="empty-state">No completed weighted working sets in this timeframe.</p>';
         return;
@@ -189,10 +295,66 @@ function renderHistory(container, records) {
         const previous = originalIndex > 0 ? records[originalIndex - 1] : null;
         return selectedMetric === "volume" ? `
             <div class="exercise-history-row"><span>${formatDate(record.date)}</span><strong>${formatVolume(record.sessionVolume)}</strong>
-            <span>${previous ? signedPercent((record.sessionVolume - previous.sessionVolume) / previous.sessionVolume * 100) : "Baseline"}</span><span>${record.completedSets}</span></div>` : `
+            <span>${previous ? signedPercent((record.sessionVolume - previous.sessionVolume) / previous.sessionVolume * 100) : "Baseline"}</span><span>${escapeHtml(record.profileName)}</span><span>${record.completedSets}</span></div>` : `
             <div class="exercise-history-row"><span>${formatDate(record.date)}</span><strong>${formatSet(record.bestSet)}</strong>
-            <span>${formatMass(record.estimatedOneRepMax, 1)}</span><span>${record.completedSets}</span></div>`;
+            <span>${formatMass(record.estimatedOneRepMax, 1)}</span><span>${escapeHtml(record.profileName)}</span><span>${record.completedSets}</span></div>`;
     }).join("");
+}
+
+function equipmentColor(index) {
+    return ["#2f91ff", "#31c978", "#ffb020", "#b879ff", "#ff5b67", "#3ed6d0"][index % 6];
+}
+
+function renderEquipmentLegend(profiles) {
+    const legend = document.getElementById("exercise-equipment-legend");
+    if (!legend) return;
+    const visible = selectedEquipment === "all"
+        ? profiles
+        : profiles.filter(profile => profile.id === selectedEquipment);
+    legend.innerHTML = visible.map((profile, index) => `
+        <span><i style="background:${equipmentColor(index)}"></i>${escapeHtml(profile.name)}</span>
+    `).join("");
+}
+
+function renderMultiEquipmentStrengthChart(host, records, profiles) {
+    const width = Math.max(320, Math.round(host.clientWidth || 700));
+    const height = width <= 520 ? 280 : 310;
+    const padding = { top: 38, right: 18, bottom: 42, left: 56 };
+    const values = records.map(record => displayMass(record.estimatedOneRepMax, 1, UNIT_KINDS.LIFTING_WEIGHT));
+    const axisLabel = `Estimated 1RM (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})`;
+    if (!values.length) {
+        host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="No exercise progress data"><text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="var(--muted)" font-size="12">No completed weighted sets to plot</text></svg>`;
+        return;
+    }
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    const spread = Math.max(5, maxValue - minValue);
+    const step = 5;
+    const axisMin = Math.max(0, Math.floor((minValue - spread * .12) / step) * step);
+    const axisMax = Math.max(axisMin + 10, Math.ceil((maxValue + spread * .12) / step) * step);
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+    const orderedKeys = [...new Set(records.map(record => `${record.date}|${record.completedAt}`))].sort();
+    const getX = record => orderedKeys.length === 1
+        ? padding.left + chartWidth / 2
+        : padding.left + orderedKeys.indexOf(`${record.date}|${record.completedAt}`) / (orderedKeys.length - 1) * chartWidth;
+    const getY = value => padding.top + (axisMax - value) / (axisMax - axisMin) * chartHeight;
+    const ticks = Array.from({ length: 3 }, (_, index) => axisMin + (axisMax - axisMin) * index / 2);
+    const seriesMarkup = profiles.map((profile, profileIndex) => {
+        const points = records.filter(record => record.profileId === profile.id).map(record => ({
+            ...record,
+            value: displayMass(record.estimatedOneRepMax, 1, UNIT_KINDS.LIFTING_WEIGHT)
+        }));
+        const color = equipmentColor(profileIndex);
+        const coordinates = points.map(point => `${getX(point)},${getY(point.value)}`).join(" ");
+        return `${points.length > 1 ? `<polyline points="${coordinates}" fill="none" stroke="${color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>` : ""}${points.map(point => `<circle cx="${getX(point)}" cy="${getY(point.value)}" r="4" fill="${color}" stroke="var(--card)" stroke-width="2"><title>${escapeHtml(profile.name)} · ${formatDate(point.date)}: ${formatMass(point.estimatedOneRepMax, 1)}</title></circle>`).join("")}`;
+    }).join("");
+    host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="${axisLabel} by equipment">
+        <text x="${padding.left}" y="20" fill="var(--accent-text)" font-size="10" font-weight="800" letter-spacing="1.2">${axisLabel.toUpperCase()}</text>
+        ${ticks.map(tick => { const y = getY(tick); return `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="var(--line)"/><text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" fill="var(--muted)" font-size="10">${formatAxis(tick)}</text>`; }).join("")}
+        ${seriesMarkup}
+        ${orderedKeys.map((key, index) => { const record = records.find(item => `${item.date}|${item.completedAt}` === key); const show = orderedKeys.length <= 6 || index === 0 || index === orderedKeys.length - 1 || index % Math.ceil(orderedKeys.length / 5) === 0; const x = orderedKeys.length === 1 ? padding.left + chartWidth / 2 : padding.left + index / (orderedKeys.length - 1) * chartWidth; return show ? `<text x="${x}" y="${height - 16}" text-anchor="middle" fill="var(--muted)" font-size="10">${formatShortDate(record?.date)}</text>` : ""; }).join("")}
+    </svg>`;
 }
 
 function renderSvgChart(host, records) {
@@ -255,3 +417,4 @@ function niceStep(value) { const power = 10 ** Math.floor(Math.log10(Math.max(1,
 function parseDate(value) { if (!value) return null; const date = new Date(`${String(value).slice(0, 10)}T12:00:00`); return Number.isFinite(date.getTime()) ? date : null; }
 function formatDate(value) { const date = parseDate(value); return date ? new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" }).format(date) : "Unknown"; }
 function formatShortDate(value) { const date = parseDate(value); return date ? new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date) : ""; }
+function escapeHtml(value) { return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
