@@ -102,25 +102,19 @@ function hasValidPerformance(performance) {
     Boolean(String(performance.notes || '').trim());
 }
 
-function findExercisePerformance(session, exerciseId, equipmentProfileId = 'default') {
-  const direct = (session?.exercises || []).find(item =>
-    item?.exerciseId === exerciseId &&
-    (item?.equipmentProfileId || 'default') === equipmentProfileId
-  );
+function findExercisePerformance(session, exerciseId) {
+  const direct = (session?.exercises || []).find(item => item?.exerciseId === exerciseId);
   if (direct) return direct;
   const planned = session?.planSnapshot?.days?.[session?.trainingDayIndex]?.exercises || [];
   const index = planned.findIndex(item => item?.id === exerciseId);
-  const fallback = index >= 0 ? session?.exercises?.[index] || null : null;
-  return fallback && (fallback.equipmentProfileId || 'default') === equipmentProfileId
-    ? fallback
-    : null;
+  return index >= 0 ? session?.exercises?.[index] || null : null;
 }
 
-function findPreviousPerformance(exerciseId, equipmentProfileId = 'default', excludedSessionId = null) {
+function findPreviousPerformance(exerciseId, excludedSessionId = null) {
   const sessions = readJson(SESSION_STORAGE_KEY, []);
   if (!Array.isArray(sessions)) return null;
   for (const session of [...sessions].filter(item => item?.id !== excludedSessionId && item?.adaptiveGuidance?.isDeload !== true).sort(compareSessionsNewest)) {
-    const performance = findExercisePerformance(session, exerciseId, equipmentProfileId);
+    const performance = findExercisePerformance(session, exerciseId);
     if (hasValidPerformance(performance)) return { session, performance };
   }
   return null;
@@ -337,8 +331,7 @@ function renderCard(card) {
   const isBodyweight = isBodyweightEquipment(exercise?.equipment);
   const tracksAddedBodyweightLoad = isWeightedBodyweightEquipment(exercise?.equipment);
   const excludedSessionId = logger.dataset.editingSessionId || null;
-  const equipmentProfileId = card.dataset.equipmentProfileId || 'default';
-  const source = findPreviousPerformance(exerciseId, equipmentProfileId, excludedSessionId);
+  const source = findPreviousPerformance(exerciseId, excludedSessionId);
   syncPreviousDisplay(card, source);
 
   if (card.dataset.trackingType !== 'reps') return;

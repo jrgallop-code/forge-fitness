@@ -1,6 +1,6 @@
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
-import { evaluateLiveWorkoutPrs, initializeWorkoutPrBadges } from "./workout-pr-badges.js?v=equipment-profiles-1";
+import { evaluateLiveWorkoutPrs, initializeWorkoutPrBadges } from "./workout-pr-badges.js?v=workout-pr-badges-4";
 
 const ACTIVE_KEY = "level_up_active_workout";
 const SESSION_KEY = "forge_workout_sessions";

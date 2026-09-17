@@ -19,15 +19,6 @@ import {
 }
 from "./session-exercise-identity.js?v=repair-generic-exercise-1";
 
-import {
-    addEquipmentProfile,
-    getEquipmentProfiles,
-    getLastEquipmentProfile,
-    rememberEquipmentProfile,
-    supportsEquipmentProfiles
-}
-from "./equipment-profiles.js?v=equipment-profiles-1";
-
 
 const SESSION_STORAGE_KEY =
     "forge_workout_sessions";
@@ -553,7 +544,6 @@ function createExerciseState(day) {
                 ...exerciseStateMetadata(exercise, plannedExercise),
                 trackingType: "reps",
                 notes: "",
-                ...getInitialEquipmentProfile(exercise),
                 sets:
                     Array.from(
                         { length: setCount },
@@ -648,7 +638,6 @@ function renderSessionExercises({
                     plan.id,
                     dayIndex,
                     plannedExercise.id,
-                    state.equipmentProfileId,
                     editingSessionId
                 );
 
@@ -677,10 +666,9 @@ function renderSessionExercises({
             }
 
             return `
-                <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-equipment-profile-id="${escapeHtml(state.equipmentProfileId || "default")}" data-tracking-type="reps">
+                <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-tracking-type="reps">
                     <h4>${escapeHtml(exercise?.name || "Exercise")}</h4>
                     <p class="session-target">Target: ${state.sets.length} sets × ${escapeHtml(plannedExercise.reps || "—")} reps</p>
-                    ${renderEquipmentProfileControl(exercise, state)}
                     <div class="session-lifting-note ${String(state.notes || "").trim() ? "has-note" : ""}">
                         <button class="session-note-preview" type="button" aria-expanded="false">
                             <span class="session-note-empty-icon" aria-hidden="true">+</span>
@@ -723,7 +711,6 @@ function renderSessionExercises({
 
 
     bindSessionInputs({
-        plan,
         logger,
         session,
         editingSessionId
@@ -896,7 +883,6 @@ function renderRestTimerPanel(session) {
 
 
 function bindSessionInputs({
-    plan,
     logger,
     session,
     editingSessionId
@@ -939,32 +925,6 @@ function bindSessionInputs({
         .forEach(card => {
             const exerciseIndex =
                 Number(card.dataset.exerciseIndex);
-
-            card.querySelector(".session-equipment-select")?.addEventListener("change", event => {
-                const state = session.exercises[exerciseIndex];
-                const exerciseId = state.exerciseId;
-
-                if (event.target.value === "__add__") {
-                    const name = window.prompt(
-                        "Name this machine (for example, GoodLife · Life Fitness)"
-                    );
-                    const profile = addEquipmentProfile(exerciseId, name);
-                    if (!profile) {
-                        renderSessionExercises({ plan, logger, session, editingSessionId });
-                        return;
-                    }
-                    state.equipmentProfileId = profile.id;
-                    state.equipmentProfileName = profile.name;
-                }
-                else {
-                    const profile = rememberEquipmentProfile(exerciseId, event.target.value);
-                    state.equipmentProfileId = profile.id;
-                    state.equipmentProfileName = profile.name;
-                }
-
-                persist();
-                renderSessionExercises({ plan, logger, session, editingSessionId });
-            });
 
             const noteShell = card.querySelector(".session-lifting-note");
             const noteToggle = noteShell?.querySelector(".session-note-preview");
@@ -1693,7 +1653,6 @@ function getPreviousPerformance(
     planId,
     dayIndex,
     exerciseId,
-    equipmentProfileId = "default",
     excludedSessionId = null
 ) {
 
@@ -1710,8 +1669,7 @@ function getPreviousPerformance(
     for (const session of sessions) {
         const performance =
             session.exercises?.find(exercise =>
-                exercise.exerciseId === exerciseId &&
-                (exercise.equipmentProfileId || "default") === equipmentProfileId
+                exercise.exerciseId === exerciseId
             );
         if (performance) {
             return performance;
@@ -1719,33 +1677,6 @@ function getPreviousPerformance(
     }
     return null;
 
-}
-
-
-function getInitialEquipmentProfile(exercise) {
-    if (!supportsEquipmentProfiles(exercise)) return {};
-    const profile = getLastEquipmentProfile(exercise.id);
-    return {
-        equipmentProfileId: profile.id,
-        equipmentProfileName: profile.name
-    };
-}
-
-
-function renderEquipmentProfileControl(exercise, state) {
-    if (!supportsEquipmentProfiles(exercise)) return "";
-    const selectedId = state.equipmentProfileId || "default";
-    const profiles = getEquipmentProfiles(exercise.id);
-    return `
-        <label class="session-equipment-control">
-            <span>Machine</span>
-            <select class="session-equipment-select" aria-label="Machine used for ${escapeHtml(exercise.name)}">
-                ${profiles.map(profile => `
-                    <option value="${escapeHtml(profile.id)}" ${profile.id === selectedId ? "selected" : ""}>${escapeHtml(profile.name)}</option>
-                `).join("")}
-                <option value="__add__">+ Add machine…</option>
-            </select>
-        </label>`;
 }
 
 

@@ -1,4 +1,4 @@
-import { openActiveWorkout } from "./workout-session.js?v=equipment-profiles-1";
+import { openActiveWorkout } from "./workout-session.js?v=native-navigation-stability-1";
 import { cancelNativeAlarm, finishNativeAlarm, hapticNotification, requestNativeAlarmPermission, scheduleNativeAlarm } from "../core/native-capabilities.js?v=timer-completion-1";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";

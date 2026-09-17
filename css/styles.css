@@ -1864,62 +1864,6 @@ font-size:16px;
     max-width:420px;
 }
 
-.exercise-chart-heading {
-    display:flex;
-    align-items:flex-end;
-    justify-content:space-between;
-    gap:16px;
-}
-
-.exercise-chart-heading label {
-    color:var(--muted);
-    font-size:12px;
-    font-weight:700;
-}
-
-.exercise-chart-heading select {
-    display:block;
-    min-width:170px;
-    margin-top:6px;
-}
-
-.equipment-chart-legend {
-    display:flex;
-    flex-wrap:wrap;
-    gap:12px;
-    margin-top:10px;
-    color:var(--muted);
-    font-size:12px;
-}
-
-.equipment-chart-legend span {
-    display:flex;
-    align-items:center;
-    gap:6px;
-}
-
-.equipment-chart-legend i {
-    width:9px;
-    height:9px;
-    border-radius:50%;
-}
-
-.session-equipment-control {
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-top:10px;
-    color:var(--muted);
-    font-size:12px;
-    font-weight:700;
-}
-
-.session-equipment-control select {
-    flex:1;
-    min-width:0;
-    min-height:38px;
-}
-
 .exercise-metric-controls {
     display:flex;
     gap:6px;
@@ -2023,7 +1967,7 @@ font-size:16px;
 .exercise-history-header,
 .exercise-history-row {
     display:grid;
-    grid-template-columns:1.05fr 1fr .8fr 1fr .45fr;
+    grid-template-columns:1.2fr 1fr 1fr .6fr;
     gap:10px;
     padding:11px 8px;
     align-items:center;
@@ -2086,15 +2030,6 @@ font-size:16px;
 
 @media(max-width:520px) {
 
-    .exercise-chart-heading {
-        align-items:stretch;
-        flex-direction:column;
-    }
-
-    .exercise-chart-heading select {
-        width:100%;
-    }
-
     .training-progress-header label,
     .training-progress-header select {
         width:100%;
@@ -2106,7 +2041,7 @@ font-size:16px;
 
     .exercise-history-header,
     .exercise-history-row {
-        grid-template-columns:.85fr .85fr .65fr .9fr .35fr;
+        grid-template-columns:1fr .9fr .8fr .4fr;
         gap:5px;
         font-size:11px;
     }

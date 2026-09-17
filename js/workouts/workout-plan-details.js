@@ -1,6 +1,6 @@
 import { getPresetPlan } from "./workout-plans.js";
 import { getExerciseById } from "./exercise-library.js";
-import { openWorkoutLogger } from "./workout-session.js?v=equipment-profiles-1";
+import { openWorkoutLogger } from "./workout-session.js?v=native-navigation-stability-1";
 import { createGeneratedExerciseGuide } from "./exercise-guide-generator.js?v=full-library-guides-1";
 import { editSavedWorkoutPlan } from "./workouts.js?v=saved-plan-edit-2";
 
