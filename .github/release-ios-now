@@ -1,3 +1,178 @@
 # One-time TestFlight release trigger.
 
-Build 105 — clarify couch enemies and improve comic damage reactions.
+This marker intentionally triggers the protected iOS App Store release workflow
+without merging the Capacitor branch into the production PWA branch.
+
+Retry 1: use the Apple Distribution identity for the Release archive.
+
+Retry 2: let authenticated automatic signing select the distribution identity.
+
+Retry 3: create temporary distribution signing assets through the App Store Connect API and revoke them after upload.
+
+Retry 4: install the generated signing files from their deterministic temporary paths.
+
+Retry 5: export the temporary certificate in Apple Keychain-compatible PKCS#12 format.
+
+Retry 6: export with the same explicit manual profile used by the successful signed archive.
+
+Release 7: account transfer, native alarms, haptics, and selectable home-screen icons.
+
+Release 8: selectable icons, Lock Screen timers, reliable alarms, and native sign-in options.
+
+Release 9: retry App Store profiles with unique names and transient-error backoff.
+
+Release 10: select the main app and timer extension bundle IDs by exact identifier.
+
+Release 11: declare the WidgetKit extension executable in its bundle metadata.
+
+Release 12: Google sign-in, themed splash, readable dismissible Lock Screen timers, and reliable Smart Build.
+
+Release 13: single iOS timer alert, appearance-matched Lock Screen logos, and direct Smart Build launch.
+
+Release 14: black Google sign-in, readable transfer instructions, and vector Lock Screen Level Up logo. (Blocked by stale packaging test; no TestFlight upload.)
+
+Release 15: same requested fixes with packaging checks aligned to the vector timer implementation.
+
+Release 16: calorie range hierarchy, reliable Custom Builder exercise preferences, and the exact Appearance-selected Lock Screen timer logo.
+
+Release 17: remove the opaque app-icon tile from the Live Activity while preserving the selected Appearance logo artwork and default-logo fallback.
+
+Release 18: MacroFactor-style Weight Changes summary in Progress with 3/7/14/30/90-day trend windows, unit-aware deltas, mini graphs, and direction indicators.
+
+Release 19: themed splash layouts for Level Up Classic, Arctic, Pure, Ocean, Midnight, Slate, and Pulse, preserving the original loading bar with theme-matched accents, plus the Weight Changes summary.
+
+Approved full-image themed splash release: display the actual appearance-specific splash artwork for Level Up Classic, Arctic, Pure, Ocean, Midnight, Slate, and Pulse, preserving the live theme-matched loading bar and existing startup safeguards.
+
+Release 20: ship the user-approved full-image splash artwork for Classic, Arctic, Pure, Ocean, Midnight, Slate, and Pulse in the Capacitor app.
+
+Release 21: simplified full-bleed splash artwork for every appearance, with edge-to-edge cover rendering and theme-matched fallback backgrounds to eliminate white gaps.
+
+Release 22: App Store review readiness with optional local mode, explicit analytics consent, production-safe wording, bundled privacy policy, and Sign in with Apple revocation support.
+
+Release 23: interactive theme-matched Lock Screen rest timer with workout context, set details, pause/resume, ±15-second adjustments, skip, and in-app state reconciliation.
+
+Release 24: correct the interactive Live Activity's Swift tracking literal and rerun the signed archive.
+
+Release 25: explicitly annotate the Live Activity record entry point for the app's iOS 15 deployment target.
+
+Release 26: move the Lock Screen countdown to the far-right header and give the full next-exercise name a two-line, full-width row; allow the in-app timer title to wrap instead of truncating.
+
+Release 27: enlarged Level Up home-screen icons and a required standalone “How did you find us?” onboarding page with branded source choices.
+
+Release 28: correct the primary iOS AppIcon so the enlarged Level Up logo appears immediately on the Home Screen.
+
+Release 29: synchronize enlarged Classic, Arctic, Pure, Ocean, Midnight, Slate, and Pulse home-screen icon previews with their native AppIcon assets and refresh the preview cache.
+
+Release 30: limit Version 1.0 to iPhone so App Store Connect no longer requires iPad screenshots.
+
+Release 31: correct KG/LB workout conversion across logging and history, including decimal kilogram entry and warm-up weights.
+
+Release 32: expand the active workout logger nearly edge-to-edge on iPhone while preserving safe-area spacing for controls.
+
+Release 33: native JSON backup sharing and immediate return to the login screen after signing out.
+
+Release 34: isolate local workout, nutrition, weight, measurement, and profile data between iOS accounts and restore the signed-in account backup before opening the app.
+
+Release 35: existing email sign-in requests one password; confirmation remains exclusive to new-account registration.
+
+Release 36: complete in-app account deletion by removing the cloud account, clearing local account data, and returning directly to sign-in.
+
+Release 37: preserve the authenticated Google session before restoring cloud backup so a restore warning cannot return the user to login.
+
+Release 38: include FatSecret foods across Progress calorie statistics and the Goal Timeline inside Dashboard See More, with a bottom-safe goal and pace action.
+
+Release 39: add Eating Out restaurant-menu browsing and polish Food Log search controls by removing the microphone and aligning search, barcode scanning, and Search in one balanced row.
+
+Release 40: add complete official Boston Pizza and Mezza catalogues with full macros, include Thai Chicken Wrap, support per-slice and whole-pizza servings, and remove the 100-item restaurant-menu cap.
+
+Release 41: require confirmed restaurant-brand matches in Eating Out search and add legally gated restaurant-logo support with initials fallback.
+
+Release 42: make Dashboard and Progress use the same seven-day expenditure average, hydrated restaurant calories, completed-day rules, and energy-balance calculation.
+
+Release 43: add verified Canadian restaurant catalogues with full macros, improved restaurant coverage, whole-pizza serving context, calculated-item disclosure, and expanded exact-brand menu results.
+
+Release 44: synchronize expanded restaurant menus and optional onboarding goal weight, simplify crowded energy-balance charts, and keep calorie/expenditure timeframes synchronized.
+
+Release 45: separate expenditure-card timeframes from the calorie-summary 7D, 4W, and 12W controls.
+
+Release 46: keep completed rest timers visible on the Lock Screen and preserve the native completion alert.
+
+Release 47: preserve the distribution certificate through Apple's asynchronous validation and verify the exported IPA signature before upload.
+
+Release 48: restore Lock Screen Live Activity timers independently of notification permission and open saved plans and completed Workout History sessions directly in their editors.
+
+Release 48 retry: rotate the prior CI distribution certificate before signing the replacement build.
+
+Release 48 retry 2: compile the non-optional native timer record after the ActivityKit availability guard.
+
+Release 49: restore persistent Lock Screen Live Activities for rest and cardio timers.
+
+Release 50: add opt-in personal-record notifications that combine each workout's records into one alert and open the completed workout recap when tapped.
+
+Release 51: add Lock Screen workout-day, upcoming-workout, and missed-workout reminders with configurable timing, quiet hours, and direct workout opening.
+
+Release 52: remove personal-record and scheduled-workout reminders while preserving rest and cardio timer alerts and Lock Screen Live Activities.
+
+Release 53: expose editable bar and machine base weight directly in the plate calculator.
+
+Release 54: restore plate presets, manual base weight, and independent base-inclusion controls without changing plate visuals.
+
+Release 55: force delivery of the restored equipment controls and persist base-weight edits directly from iOS input.
+
+Release 56: refine the plate calculator with persistent equipment settings, unit-aware bar templates, and theme-safe bar preset styling.
+
+Release 57: improve barcode nutrition accuracy, compare conflicting records, flag invalid zero-macro products, and remember confirmed choices.
+
+Release 58: use whole-calorie precision for TDEE while retaining 25-calorie calorie-target increments.
+
+Release 59: calendar-based weekly calorie check-ins with an optional same-day weigh-in prompt and live recommendation recalculation.
+
+Release 60: add an iOS-test-only control to restore pre-review calories and TDEE and reopen the latest completed weekly check-in without changing logs.
+
+Release 61: remove the completed weekly check-in replay control after validation while preserving optional same-day weigh-in guidance.
+
+Release 62: consolidate workout actions into an exercise overflow menu and add optional per-set RIR selection to working-set circles.
+
+Release 63: restore dedicated rest-timer access, compact the exercise header, float and polish RIR set controls, and remove adaptive-guidance surveys.
+
+Release 64: align warm-up rows with working sets and add per-row warm-up removal.
+
+Release 65: add hold-and-drag exercise reordering with confirmed current-session and saved-day updates.
+
+Release 66: prevent disabled rest timers from briefly creating and flashing a legacy 90-second countdown.
+
+Release 67: suppress the iOS text-selection loupe and touch callout while dragging exercises in the reorder sheet.
+
+Release 68: add persistent exercise notes, theme-specific high-contrast RIR colours, and the corrected empty-note layout for saved-workout editing.
+
+Release 69: preserve per-set RIR in completed workouts and reuse the live workout logger layout and controls when editing saved workouts.
+
+Release 70: improve workout exercise-name visibility and remove the duplicate Add/Edit Note item from the exercise overflow menu while keeping the logger note field.
+
+Release 71: add the Day 7 informational phase check-in, keep Day 14 as the first actionable calorie review, and continue reviews every seven days.
+
+Release 72: bring all Progress cards close to the iPhone screen edges across Lifting, Weight, Nutrition, and Cardio while preserving safe-area and card content padding.
+
+Release 73: add theme-aware small and medium Home Screen widgets for nutrition, upcoming workouts, and weekly training, plus an in-app setup guide.
+
+Release 73 retry: use Apple's supported capability-only App Group provisioning while retaining the shared widget entitlement.
+
+Release 73 retry 2: regenerate signing profiles after assigning the shared widget App Group to both App IDs.
+
+Release 73 retry 3: regenerate profiles after assigning the widget App Group to the timer extension App ID.
+
+Release 74: correct Home Screen Widgets guide contrast across every light and dark appearance theme.
+
+Release 75: stop cardio timers at their selected target, keep in-app rest timers visible, show the current workout on Live Activities, and refresh Home Screen widgets as data changes.
+
+Release 76: add machine-specific workout tracking with guided equipment profiles, opt-in nearby-gym lookup, and machine-aware strength, volume, progression, and PR history.
+
+Release 77: stop the machine-sheet DOM update loop, restore responsive text entry, and keep Save above the iPhone navigation and safe area.
+
+Release 78: restore Machine buttons in the separate full-screen iOS workout surface while retaining the responsive input and safe-area fixes.
+
+TestFlight build 94: add combined, normalized comparison, and per-machine progress views; remove nearby-gym location lookup; and carry the most recently completed workout's machine into the next session.
+
+TestFlight build 95: make Combined the default per-exercise machine view and apply semantic green and yellow-brown colors to positive and negative individual-machine percentage changes.
+
+TestFlight build 106: bundle CC0 arcade sound effects, add a seamless helicopter rotor, rotate comic damage grunts, and replace synthesized speech.

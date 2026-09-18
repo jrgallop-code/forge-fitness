@@ -10,6 +10,23 @@ const STYLE_ID = "level-up-protein-run-style";
 const PROTEIN_PER_GROWTH_STAGE = 6;
 const MAX_GROWTH_STAGE = 3;
 const CRUSH_MODE_MS = 7000;
+const SAMPLE_FILES = {
+  menuSelect: "menu-select.mp3",
+  gameStart: "game-start.mp3",
+  pickup: "protein-pickup.mp3",
+  power: "power-up.mp3",
+  shoot: "whey-shot.mp3",
+  impact: "couch-hit.mp3",
+  crush: "ghost-crush.mp3",
+  explosion: "enemy-explosion.mp3",
+  damageImpact: "player-hit.mp3",
+  rotor: "helicopter-rotor.mp3",
+  damageGrunt1: "damage-grunt-1.mp3",
+  damageGrunt2: "damage-grunt-2.mp3",
+  damageGrunt3: "damage-grunt-3.mp3",
+  gameOver: "game-over-scream.mp3"
+};
+const DAMAGE_GRUNTS = ["damageGrunt1", "damageGrunt2", "damageGrunt3"];
 
 const MAZE = [
   "#################",
@@ -45,10 +62,13 @@ let frameId = null;
 let touchStart = null;
 let audioContext = null;
 let audioMaster = null;
+let sampleLoadPromise = null;
+const sampleBuffers = new Map();
 let musicTimer = null;
 let musicStep = 0;
-let rotorTimer = null;
+let rotorSource = null;
 let lastGruntAt = 0;
+let lastGruntIndex = -1;
 
 export function isRestTimerGameEnabled() {
   return localStorage.getItem(ENABLED_KEY) !== "false";
@@ -101,6 +121,44 @@ function ensureAudio() {
   return audioContext;
 }
 
+function sampleUrl(file) {
+  return new URL(`../../assets/audio/arcade/${file}`, import.meta.url).href;
+}
+
+function preloadArcadeSamples() {
+  const context = ensureAudio();
+  if (!context) return Promise.resolve();
+  if (sampleLoadPromise) return sampleLoadPromise;
+  sampleLoadPromise = Promise.all(Object.entries(SAMPLE_FILES).map(async ([name, file]) => {
+    try {
+      const response = await fetch(sampleUrl(file));
+      if (!response.ok) throw new Error(`Arcade audio ${response.status}`);
+      sampleBuffers.set(name, await context.decodeAudioData(await response.arrayBuffer()));
+    } catch (error) {
+      console.warn(`Unable to load arcade sound: ${name}`, error);
+    }
+  }));
+  return sampleLoadPromise;
+}
+
+function playSample(name, { volume = .65, playbackRate = 1, delay = 0, loop = false } = {}) {
+  const context = ensureAudio();
+  const buffer = sampleBuffers.get(name);
+  if (!context || !audioMaster || !buffer) {
+    void preloadArcadeSamples();
+    return null;
+  }
+  const source = context.createBufferSource();
+  const gain = context.createGain();
+  source.buffer = buffer;
+  source.loop = loop;
+  source.playbackRate.value = playbackRate;
+  gain.gain.value = volume;
+  source.connect(gain).connect(audioMaster);
+  source.start(context.currentTime + delay);
+  return source;
+}
+
 function tone(frequency, duration = .08, { type = "square", volume = .14, endFrequency = null, delay = 0 } = {}) {
   const context = ensureAudio();
   if (!context || !audioMaster) return;
@@ -139,41 +197,45 @@ function playComicalGrunt() {
   if (now - lastGruntAt < 550) return;
   lastGruntAt = now;
 
-  // An exaggerated three-part arcade hit: impact, chesty fall and rubbery
-  // after-bounce. It makes the reaction funny even if speech is unavailable.
-  noise(.075, .16);
-  tone(185, .11, { type: "square", volume: .15, endFrequency: 82 });
-  tone(138, .38, { type: "sawtooth", volume: .21, endFrequency: 54, delay: .045 });
-  tone(72, .28, { type: "triangle", volume: .17, endFrequency: 112, delay: .22 });
-  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") return;
-  const reactions = [
-    { words: "Ooof!", rate: .68, pitch: .48 },
-    { words: "Uuugh!", rate: .62, pitch: .42 },
-    { words: "Nooo! My gains!", rate: .74, pitch: .58 }
-  ];
-  const reaction = reactions[Math.floor(Math.random() * reactions.length)];
-  const utterance = new SpeechSynthesisUtterance(reaction.words);
-  const voices = window.speechSynthesis.getVoices();
-  const preferredNames = /Fred|Ralph|Rocko|Daniel|Aaron|Alex/i;
-  utterance.voice = voices.find(voice => /^en[-_]/i.test(voice.lang) && preferredNames.test(voice.name))
-    || voices.find(voice => /^en[-_]/i.test(voice.lang))
-    || null;
-  utterance.rate = reaction.rate;
-  utterance.pitch = reaction.pitch;
-  utterance.volume = 1;
-  window.speechSynthesis.speak(utterance);
+  let nextIndex = Math.floor(Math.random() * DAMAGE_GRUNTS.length);
+  if (nextIndex === lastGruntIndex) nextIndex = (nextIndex + 1) % DAMAGE_GRUNTS.length;
+  lastGruntIndex = nextIndex;
+  const source = playSample(DAMAGE_GRUNTS[nextIndex], {
+    volume: .9,
+    playbackRate: .94 + Math.random() * .12
+  });
+  if (!source) {
+    // A brief offline fallback while bundled samples finish decoding.
+    noise(.075, .13);
+    tone(138, .24, { type: "sawtooth", volume: .16, endFrequency: 58 });
+  }
 }
 
 function playEffect(name) {
   if (!soundEnabled()) return;
-  if (name === "pickup") tone(660, .045, { volume: .08, endFrequency: 880 });
-  if (name === "power") [440, 660, 880].forEach((note, index) => tone(note, .11, { volume: .1, delay: index * .055 }));
-  if (name === "shoot") { noise(.045, .12); tone(150, .07, { type: "sawtooth", volume: .09, endFrequency: 70 }); }
-  if (name === "impact") { noise(.1, .15); tone(90, .14, { type: "square", volume: .12, endFrequency: 42 }); }
-  if (name === "crush") { noise(.13, .16); tone(75, .18, { type: "sawtooth", volume: .14, endFrequency: 38 }); }
+  if (name === "menu-select") playSample("menuSelect", { volume: .28 });
+  if (name === "game-start") playSample("gameStart", { volume: .6 });
+  if (name === "pickup" && !playSample("pickup", { volume: .5 })) tone(660, .045, { volume: .08, endFrequency: 880 });
+  if (name === "power" && !playSample("power", { volume: .6 })) [440, 660, 880].forEach((note, index) => tone(note, .11, { volume: .1, delay: index * .055 }));
+  if (name === "shoot" && !playSample("shoot", { volume: .42, playbackRate: .98 + Math.random() * .08 })) {
+    noise(.045, .12);
+    tone(150, .07, { type: "sawtooth", volume: .09, endFrequency: 70 });
+  }
+  if (name === "impact") {
+    if (!playSample("impact", { volume: .72 })) noise(.1, .15);
+    playSample("explosion", { volume: .34, playbackRate: 1.12, delay: .025 });
+  }
+  if (name === "crush") {
+    if (!playSample("crush", { volume: .8 })) noise(.13, .16);
+    playSample("explosion", { volume: .3, playbackRate: 1.18, delay: .035 });
+  }
   if (name === "damage") {
-    // Original comic action-hero reaction; no sampled or imitated celebrity voice.
+    playSample("damageImpact", { volume: .62 });
     playComicalGrunt();
+  }
+  if (name === "game-over") {
+    playSample("damageImpact", { volume: .72 });
+    if (!playSample("gameOver", { volume: .92, playbackRate: .97, delay: .04 })) playComicalGrunt();
   }
   if (name === "rest-over") [784, 659, 523].forEach((note, index) => tone(note, .18, { volume: .12, delay: index * .12 }));
 }
@@ -213,18 +275,20 @@ function stopMusic() {
 }
 
 function startRotor() {
-  if (!soundEnabled() || rotorTimer) return;
-  const thump = () => {
-    tone(48, .09, { type: "triangle", volume: .06, endFrequency: 38 });
-    noise(.025, .018);
-  };
-  thump();
-  rotorTimer = window.setInterval(thump, 115);
+  if (!soundEnabled() || rotorSource) return;
+  rotorSource = playSample("rotor", { volume: .32, loop: true });
+  if (!rotorSource) {
+    void preloadArcadeSamples().then(() => {
+      if (soundEnabled() && game?.mode === "chopper" && !rotorSource) startRotor();
+    });
+  }
 }
 
 function stopRotor() {
-  if (rotorTimer) window.clearInterval(rotorTimer);
-  rotorTimer = null;
+  if (rotorSource) {
+    try { rotorSource.stop(); } catch { /* Already stopped. */ }
+  }
+  rotorSource = null;
 }
 
 function updateSoundButtons() {
@@ -239,6 +303,7 @@ function toggleArcadeSound() {
   localStorage.setItem(SOUND_KEY, enabled ? "true" : "false");
   updateSoundButtons();
   if (enabled) {
+    void preloadArcadeSamples();
     startMusic();
     if (game?.mode === "chopper") startRotor();
   } else {
@@ -493,7 +558,7 @@ function resolveCollisions(now) {
     hit.y = 9;
     hit.direction = DIRECTIONS.up;
   } else {
-    playEffect("damage");
+    playEffect(game.lives <= 1 ? "game-over" : "damage");
     game.lives = Math.max(0, game.lives - 1);
     game.player = { x: 8, y: 9 };
     game.enemies[0].x = 7;
@@ -765,8 +830,9 @@ function updateChopper(now) {
     }
     if (!enemy.hit && Math.abs(enemy.x - game.player.x) < .075 && Math.abs(enemy.y - game.player.y) < .075) {
       enemy.hit = true;
+      const finalLife = game.lives <= 1;
       game.lives = Math.max(0, game.lives - 1);
-      playEffect("damage");
+      playEffect(finalLife ? "game-over" : "damage");
       game.message = "GAINS DAMAGED!";
       game.messageUntil = now + 650;
       if (!game.lives) game.lives = 3;
@@ -1058,6 +1124,8 @@ function openArcadeMenu() {
   overlay.querySelector("[data-rest-game-view]").hidden = true;
   overlay.querySelector("[data-rest-arcade-clock]").textContent = timer.status === "paused" ? "PAUSED" : formatTime(remainingMs(timer));
   updateSoundButtons();
+  void preloadArcadeSamples();
+  playEffect("menu-select");
   stopRotor();
   startMusic();
   window.requestAnimationFrame(renderArcadePreviews);
@@ -1080,6 +1148,7 @@ function openGame(mode = "protein") {
   game = mode === "chopper" ? createChopperState(canvas) : createGameState(canvas);
   const isChopper = game.mode === "chopper";
   updateSoundButtons();
+  playEffect("game-start");
   startMusic();
   if (isChopper) startRotor();
   else stopRotor();
