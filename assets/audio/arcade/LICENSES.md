@@ -2,6 +2,8 @@
 
 All audio files in this directory are dedicated to the public domain under Creative Commons CC0 1.0.
 
+The `.wav` files are PCM conversions of the corresponding sourced clips for reliable offline playback in the iOS WebView.
+
 ## Kenney
 
 Source packs: Interface Sounds, Impact Sounds, and Sci-fi Sounds by Kenney.

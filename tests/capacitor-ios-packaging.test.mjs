@@ -90,6 +90,23 @@ test("native iOS provides haptics, background alarms, selectable app icons, and 
     }
 });
 
+test("native iOS packages reliable arcade audio and enables audible playback", async () => {
+    const appDelegate = await readFile(new URL("../ios/App/App/AppDelegate.swift", import.meta.url), "utf8");
+    assert.match(appDelegate, /import AVFoundation/);
+    assert.match(appDelegate, /setCategory\(\.playback, mode: \.default, options: \[\.mixWithOthers\]\)/);
+    assert.match(appDelegate, /setActive\(true\)/);
+    for (const name of [
+        "helicopter-rotor",
+        "damage-grunt-1",
+        "damage-grunt-2",
+        "damage-grunt-3",
+        "game-over-scream",
+        "whey-shot"
+    ]) {
+        await readFile(new URL(`../assets/audio/arcade/${name}.wav`, import.meta.url));
+    }
+});
+
 test("the iOS target declares permissions used by Level Up features", async () => {
     const info = await readFile(new URL("../ios/App/App/Info.plist", import.meta.url), "utf8");
     for (const permission of [

@@ -11,20 +11,20 @@ const PROTEIN_PER_GROWTH_STAGE = 6;
 const MAX_GROWTH_STAGE = 3;
 const CRUSH_MODE_MS = 7000;
 const SAMPLE_FILES = {
-  menuSelect: "menu-select.mp3",
-  gameStart: "game-start.mp3",
-  pickup: "protein-pickup.mp3",
-  power: "power-up.mp3",
-  shoot: "whey-shot.mp3",
-  impact: "couch-hit.mp3",
-  crush: "ghost-crush.mp3",
-  explosion: "enemy-explosion.mp3",
-  damageImpact: "player-hit.mp3",
-  rotor: "helicopter-rotor.mp3",
-  damageGrunt1: "damage-grunt-1.mp3",
-  damageGrunt2: "damage-grunt-2.mp3",
-  damageGrunt3: "damage-grunt-3.mp3",
-  gameOver: "game-over-scream.mp3"
+  menuSelect: "menu-select.wav",
+  gameStart: "game-start.wav",
+  pickup: "protein-pickup.wav",
+  power: "power-up.wav",
+  shoot: "whey-shot.wav",
+  impact: "couch-hit.wav",
+  crush: "ghost-crush.wav",
+  explosion: "enemy-explosion.wav",
+  damageImpact: "player-hit.wav",
+  rotor: "helicopter-rotor.wav",
+  damageGrunt1: "damage-grunt-1.wav",
+  damageGrunt2: "damage-grunt-2.wav",
+  damageGrunt3: "damage-grunt-3.wav",
+  gameOver: "game-over-scream.wav"
 };
 const DAMAGE_GRUNTS = ["damageGrunt1", "damageGrunt2", "damageGrunt3"];
 

@@ -7,7 +7,7 @@ const timerDisplay = readFileSync(new URL("../js/workouts/rest-timer-display-fix
 const more = readFileSync(new URL("../js/more/more-ui-v2.js", import.meta.url), "utf8");
 
 test("Protein Run is loaded with the rest timer and gated to native iOS", () => {
-  assert.match(timerDisplay, /rest-timer-game\.js\?v=protein-run-3/);
+  assert.match(timerDisplay, /rest-timer-game\.js\?v=protein-run-4/);
   assert.match(game, /if \(isNativeIOS\(\)\) initialize\(\)/);
 });
 
@@ -74,7 +74,7 @@ test("arcade audio includes music and bundled CC0 gameplay samples", () => {
   assert.match(game, /function startMusic\(/);
   assert.match(game, /function startRotor\(/);
   assert.match(game, /const SAMPLE_FILES =/);
-  assert.match(game, /helicopter-rotor\.mp3/);
+  assert.match(game, /helicopter-rotor\.wav/);
   assert.match(game, /playEffect\("shoot"\)/);
   assert.match(game, /playEffect\("impact"\)/);
   assert.match(game, /"game-over" : "damage"/);
@@ -95,7 +95,7 @@ test("arcade music stays synthesized while damage rotates non-repeating recorded
   assert.match(game, /function playComicalGrunt\(/);
   assert.match(game, /const DAMAGE_GRUNTS =/);
   assert.match(game, /if \(nextIndex === lastGruntIndex\)/);
-  assert.match(game, /game-over-scream\.mp3/);
+  assert.match(game, /game-over-scream\.wav/);
   assert.doesNotMatch(game, /SpeechSynthesisUtterance/);
   assert.doesNotMatch(game, /My gains/);
 });

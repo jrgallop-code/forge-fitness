@@ -1,4 +1,4 @@
-import { isRestTimerGameEnabled, setRestTimerGameEnabled } from "../workouts/rest-timer-game.js?v=protein-run-3";
+import { isRestTimerGameEnabled, setRestTimerGameEnabled } from "../workouts/rest-timer-game.js?v=protein-run-4";
 
 export function renderRestTimerGameSettings() {
   const enabled = isRestTimerGameEnabled();
