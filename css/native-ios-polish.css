@@ -446,11 +446,10 @@ input[type="radio"] {
     letter-spacing: -.01em;
 }
 
-/* The web navigation remains the fallback on the PWA and older iOS. It is
-   hidden only after the iOS 26 shell confirms that native buttons are ready. */
-html.level-up-native-liquid-glass .bottom-nav {
+/* Keep the familiar Level Up bar on iOS 26, but let native SwiftUI render and
+   handle its tab buttons. Older iOS and the PWA keep the complete web nav. */
+html.level-up-native-liquid-glass .bottom-nav .nav-btn {
     opacity: 0 !important;
-    visibility: hidden !important;
     pointer-events: none !important;
 }
 
