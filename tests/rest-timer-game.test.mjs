@@ -33,3 +33,17 @@ test("protein grows the lifter and unlocks a flashing ghost crush mode", () => {
   assert.match(game, /BICEP CRUSH!/);
   assert.match(game, /fillText\(large \? "PRO" : "P"/);
 });
+
+test("maze directions respond on touch-down and turn before reaching a wall", () => {
+  assert.match(game, /addEventListener\("pointerdown"/);
+  assert.match(game, /if \(!isWall\(nextX, nextY\)\) game\.direction = game\.queued/);
+});
+
+test("Gym Chopper is a second rest-game option with hold controls and protein fire", () => {
+  assert.match(game, /function createChopperState/);
+  assert.match(game, /function drawGymChopper/);
+  assert.match(game, /function shootChopper/);
+  assert.match(game, /dataset\.restGameLaunch = "chopper"/);
+  assert.match(game, /COUCH POTATO DOWN!/);
+  assert.match(game, /data-chopper-fire/);
+});

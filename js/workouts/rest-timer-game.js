@@ -3,6 +3,7 @@ import { isNativeIOS } from "../core/home-screen-widgets.js?v=home-widget-live-3
 const ACTIVE_KEY = "level_up_active_workout";
 const ENABLED_KEY = "level_up_rest_timer_game_enabled";
 const HIGH_SCORE_KEY = "level_up_protein_run_high_score";
+const CHOPPER_HIGH_SCORE_KEY = "level_up_gym_chopper_high_score";
 const OVERLAY_ID = "level-up-protein-run";
 const STYLE_ID = "level-up-protein-run-style";
 const PROTEIN_PER_GROWTH_STAGE = 6;
@@ -80,7 +81,9 @@ function ensureStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    .protein-run-launch { grid-column: 1 / -1; min-height: 38px; border-color: color-mix(in srgb, var(--accent, #2d8cff) 70%, white 18%) !important; background: color-mix(in srgb, var(--accent, #2d8cff) 28%, #07111f) !important; color: #fff !important; font-size: 11px !important; letter-spacing: .03em; }
+    .rest-game-launch { min-height: 38px; border-color: color-mix(in srgb, var(--accent, #2d8cff) 70%, white 18%) !important; background: color-mix(in srgb, var(--accent, #2d8cff) 28%, #07111f) !important; color: #fff !important; font-size: 10px !important; letter-spacing: .01em; }
+    .protein-run-launch { grid-column: 1 / 3; }
+    .gym-chopper-launch { grid-column: 3 / 5; }
     #${OVERLAY_ID} { position: fixed; inset: 0; z-index: 20000; display: grid; align-items: end; background: rgba(1, 5, 12, .76); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
     #${OVERLAY_ID}[hidden] { display: none !important; }
     .protein-run-shell { width: 100%; max-height: 94svh; overflow: auto; border-radius: 24px 24px 0 0; padding: 14px 14px calc(16px + env(safe-area-inset-bottom)); background: #050912; border: 2px solid var(--protein-run-accent, #2d8cff); box-shadow: 0 -22px 65px rgba(0,0,0,.58); color: #f7fbff; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; image-rendering: pixelated; }
@@ -103,6 +106,9 @@ function ensureStyles() {
     .protein-run-controls [data-game-direction="left"] { grid-column: 1; grid-row: 2; }
     .protein-run-controls [data-game-direction="down"] { grid-column: 2; grid-row: 2; }
     .protein-run-controls [data-game-direction="right"] { grid-column: 3; grid-row: 2; }
+    .protein-run-controls .gym-chopper-fire { display: none; grid-column: 3; grid-row: 1; background: #a52525; border-color: #ff7474; font-size: 13px; }
+    #${OVERLAY_ID}[data-game-mode="chopper"] .protein-run-controls .gym-chopper-fire { display: block; }
+    #${OVERLAY_ID}[data-game-mode="chopper"] .protein-run-stage canvas { aspect-ratio: 4 / 5; }
     .protein-run-help { margin: 11px 0 0; text-align: center; color: #8fa6c0; font-size: 11px; line-height: 1.35; }
     html[data-theme="pulse"] #${OVERLAY_ID} { --protein-run-accent: #ff4fa3; --protein-run-shadow: #6d1641; }
     html[data-theme="arctic"] #${OVERLAY_ID}, html[data-theme="pure"] #${OVERLAY_ID}, html[data-theme="ocean"] #${OVERLAY_ID} { --protein-run-accent: #3296ff; --protein-run-shadow: #174a79; }
@@ -131,6 +137,7 @@ function createGameState(canvas) {
     if (cell === "P") powers.add(`${x},${y}`);
   }));
   return {
+    mode: "protein",
     canvas,
     ctx: canvas.getContext("2d", { alpha: false }),
     player: { x: 8, y: 9 },
@@ -155,6 +162,27 @@ function createGameState(canvas) {
   };
 }
 
+function createChopperState(canvas) {
+  return {
+    mode: "chopper",
+    canvas,
+    ctx: canvas.getContext("2d", { alpha: false }),
+    player: { x: .2, y: .5 },
+    motion: { x: 0, y: 0 },
+    bullets: [],
+    enemies: [],
+    score: 0,
+    lives: 3,
+    lastFrame: 0,
+    lastSpawn: 0,
+    rotorAngle: 0,
+    timerId: readActive()?.restTimer?.timerId || "",
+    finished: false,
+    message: "FIRE THE GAINS!",
+    messageUntil: performance.now() + 1200
+  };
+}
+
 function resetBoard(state) {
   const next = createGameState(state.canvas);
   next.score = state.score;
@@ -176,7 +204,20 @@ function chooseEnemyDirection(enemy) {
 
 function setDirection(name) {
   if (!game || !DIRECTIONS[name]) return;
+  if (game.mode === "chopper") {
+    game.motion = { ...DIRECTIONS[name] };
+    return;
+  }
   game.queued = DIRECTIONS[name];
+  const nextX = game.player.x + game.queued.x;
+  const nextY = game.player.y + game.queued.y;
+  if (!isWall(nextX, nextY)) game.direction = game.queued;
+}
+
+function stopChopperDirection(name) {
+  if (!game || game.mode !== "chopper" || !DIRECTIONS[name]) return;
+  const direction = DIRECTIONS[name];
+  if (game.motion.x === direction.x && game.motion.y === direction.y) game.motion = { x: 0, y: 0 };
 }
 
 function growthStage(state = game) {
@@ -341,7 +382,149 @@ function drawProteinTub(ctx, x, y, cellW, cellH, large = false) {
   ctx.fillText(large ? "PRO" : "P", left + w / 2, top + h * .57);
 }
 
-function draw(now) {
+function shootChopper() {
+  if (!game || game.mode !== "chopper" || game.finished) return;
+  game.bullets.push({ x: game.player.x + .08, y: game.player.y });
+  game.message = "PROTEIN CANNON!";
+  game.messageUntil = performance.now() + 280;
+}
+
+function spawnChopperEnemy(now) {
+  if (!game || game.mode !== "chopper" || now - game.lastSpawn < 650) return;
+  game.lastSpawn = now;
+  game.enemies.push({
+    x: 1.08,
+    y: .12 + Math.random() * .76,
+    speed: .14 + Math.random() * .1,
+    wobble: Math.random() * Math.PI * 2,
+    label: Math.random() < .5 ? "Z" : "0"
+  });
+}
+
+function updateChopper(now) {
+  if (!game || game.mode !== "chopper") return;
+  const delta = Math.min(.035, game.lastFrame ? (now - game.lastFrame) / 1000 : .016);
+  game.lastFrame = now;
+  game.rotorAngle += delta * 18;
+  const speed = .62;
+  game.player.x = Math.max(.08, Math.min(.82, game.player.x + game.motion.x * speed * delta));
+  game.player.y = Math.max(.08, Math.min(.92, game.player.y + game.motion.y * speed * delta));
+  spawnChopperEnemy(now);
+  game.bullets.forEach(bullet => { bullet.x += delta * .95; });
+  game.enemies.forEach(enemy => {
+    enemy.x -= delta * enemy.speed;
+    enemy.y += Math.sin(now / 260 + enemy.wobble) * delta * .035;
+  });
+
+  game.enemies.forEach(enemy => {
+    const bulletIndex = game.bullets.findIndex(bullet => Math.abs(bullet.x - enemy.x) < .055 && Math.abs(bullet.y - enemy.y) < .055);
+    if (bulletIndex >= 0) {
+      game.bullets.splice(bulletIndex, 1);
+      enemy.hit = true;
+      game.score += 100;
+      game.message = enemy.label === "Z" ? "COUCH POTATO DOWN!" : "ZERO REPS!";
+      game.messageUntil = now + 520;
+    }
+    if (!enemy.hit && Math.abs(enemy.x - game.player.x) < .075 && Math.abs(enemy.y - game.player.y) < .075) {
+      enemy.hit = true;
+      game.lives = Math.max(0, game.lives - 1);
+      game.message = "GAINS DAMAGED!";
+      game.messageUntil = now + 650;
+      if (!game.lives) game.lives = 3;
+    }
+  });
+  game.bullets = game.bullets.filter(bullet => bullet.x < 1.12);
+  game.enemies = game.enemies.filter(enemy => !enemy.hit && enemy.x > -.12);
+}
+
+function drawGymChopper(now) {
+  if (!game || game.mode !== "chopper") return;
+  const { canvas, ctx } = game;
+  const rect = canvas.getBoundingClientRect();
+  const scale = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  const targetW = Math.max(272, Math.floor(rect.width * scale));
+  const targetH = Math.floor(targetW * 1.25);
+  if (canvas.width !== targetW || canvas.height !== targetH) {
+    canvas.width = targetW;
+    canvas.height = targetH;
+  }
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.fillStyle = "#071426";
+  ctx.fillRect(0, 0, w, h);
+  // Pixel skyline and moving cloud bands.
+  ctx.fillStyle = "#173250";
+  for (let i = 0; i < 8; i += 1) {
+    const x = ((i * .17 + now / 18000) % 1.25) * w - w * .1;
+    ctx.fillRect(x, h * (.12 + (i % 4) * .2), w * .09, h * .025);
+  }
+  ctx.fillStyle = "#0d253b";
+  for (let i = 0; i < 9; i += 1) {
+    const buildingW = w / 9;
+    const buildingH = h * (.08 + (i % 3) * .035);
+    ctx.fillRect(i * buildingW, h - buildingH, buildingW * .82, buildingH);
+  }
+
+  game.bullets.forEach(bullet => {
+    const bx = bullet.x * w;
+    const by = bullet.y * h;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(bx, by - 5, 14, 10);
+    ctx.fillStyle = "#ff4567";
+    ctx.fillRect(bx + 3, by - 2, 8, 4);
+  });
+
+  game.enemies.forEach(enemy => {
+    const x = enemy.x * w;
+    const y = enemy.y * h;
+    const size = Math.max(18, w * .055);
+    ctx.fillStyle = "#a96d37";
+    ctx.fillRect(x - size * .55, y - size * .42, size * 1.1, size * .84);
+    ctx.fillRect(x - size * .38, y - size * .62, size * .76, size * .25);
+    ctx.fillStyle = "#f4d6a8";
+    ctx.fillRect(x - size * .3, y - size * .08, size * .16, size * .16);
+    ctx.fillRect(x + size * .14, y - size * .08, size * .16, size * .16);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `900 ${size * .38}px ui-monospace, monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(enemy.label, x, y + size * .24);
+  });
+
+  // Barbell-rotor helicopter with a flexing bicep fuselage.
+  const px = game.player.x * w;
+  const py = game.player.y * h;
+  const unit = Math.max(3, w * .012);
+  ctx.fillStyle = "#d8e6f5";
+  ctx.fillRect(px - unit * 5, py - unit * 5, unit * 10, unit);
+  ctx.fillStyle = "#454f60";
+  ctx.fillRect(px - unit * 6, py - unit * 6, unit, unit * 3);
+  ctx.fillRect(px + unit * 5, py - unit * 6, unit, unit * 3);
+  ctx.fillStyle = "#2387ff";
+  ctx.fillRect(px - unit * 4, py - unit * 2, unit * 8, unit * 4);
+  ctx.fillRect(px - unit * 6, py - unit, unit * 3, unit * 2);
+  ctx.fillStyle = "#79d9ff";
+  ctx.fillRect(px + unit, py - unit * 1.4, unit * 2.5, unit * 2);
+  ctx.fillStyle = "#f4a447";
+  ctx.fillRect(px - unit * 2, py - unit * 3, unit * 2, unit * 3);
+  ctx.fillRect(px - unit * 3, py - unit * 4, unit * 2, unit * 2);
+  ctx.fillRect(px - unit * 4, py - unit * 5, unit * 2, unit * 2);
+  ctx.fillStyle = "#172234";
+  ctx.fillRect(px - unit * 3, py + unit * 2, unit * 2, unit);
+  ctx.fillRect(px + unit, py + unit * 2, unit * 2, unit);
+
+  if (game.message && now < game.messageUntil) {
+    ctx.fillStyle = "rgba(2,4,10,.8)";
+    ctx.fillRect(w * .16, h * .1, w * .68, h * .08);
+    ctx.fillStyle = "#fff36b";
+    ctx.font = `900 ${Math.max(14, w * .047)}px ui-monospace, monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(game.message, w / 2, h * .14);
+  }
+}
+
+function drawProteinRun(now) {
   if (!game) return;
   const { canvas, ctx } = game;
   const rect = canvas.getBoundingClientRect();
@@ -393,7 +576,8 @@ function syncHud() {
   overlay.querySelector("[data-protein-run-clock]").textContent = timer?.status === "paused" ? "PAUSED" : formatTime(ms);
   overlay.querySelector("[data-protein-run-score]").textContent = String(game.score).padStart(5, "0");
   overlay.querySelector("[data-protein-run-lives]").textContent = "💪".repeat(game.lives);
-  overlay.querySelector("[data-protein-run-size]").textContent = `${growthStage(game) + 1}/4`;
+  overlay.querySelector("[data-protein-run-size-label]").textContent = game.mode === "chopper" ? "AMMO" : "SIZE";
+  overlay.querySelector("[data-protein-run-size]").textContent = game.mode === "chopper" ? "∞" : `${growthStage(game) + 1}/4`;
   const finished = !sameTimer || timer?.status === "finished" || ms <= 0;
   overlay.querySelector("[data-protein-run-finish]")?.classList.toggle("is-visible", finished);
   game.finished = finished;
@@ -402,7 +586,7 @@ function syncHud() {
 
 function gameLoop(now) {
   if (!game) return;
-  if (game.poweredUntil && now >= game.poweredUntil && growthStage(game) >= MAX_GROWTH_STAGE) {
+  if (game.mode === "protein" && game.poweredUntil && now >= game.poweredUntil && growthStage(game) >= MAX_GROWTH_STAGE) {
     game.poweredUntil = 0;
     game.proteinCollected = PROTEIN_PER_GROWTH_STAGE;
     game.message = "POWER DOWN";
@@ -410,15 +594,19 @@ function gameLoop(now) {
   }
   const playing = !document.hidden && syncHud();
   if (playing) {
-    movePlayer(now);
-    moveEnemies(now);
-    resolveCollisions(now);
+    if (game.mode === "chopper") updateChopper(now);
+    else {
+      movePlayer(now);
+      moveEnemies(now);
+      resolveCollisions(now);
+    }
   }
-  draw(now);
+  if (game.mode === "chopper") drawGymChopper(now);
+  else drawProteinRun(now);
   frameId = requestAnimationFrame(gameLoop);
 }
 
-function openGame() {
+function openGame(mode = "protein") {
   const timer = readActive()?.restTimer;
   if (!timer || timer.status === "finished") return;
   ensureStyles();
@@ -428,20 +616,32 @@ function openGame() {
     overlay.id = OVERLAY_ID;
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
-    overlay.setAttribute("aria-label", "Protein Run rest timer game");
+    overlay.setAttribute("aria-label", "Rest timer arcade game");
     overlay.innerHTML = `<div class="protein-run-shell">
-      <header class="protein-run-header"><div><span class="protein-run-kicker">8-BIT REST TIMER</span><h2>Protein Run</h2></div><div style="display:flex;gap:8px"><div class="protein-run-clock" data-protein-run-clock>0:00</div><button class="protein-run-close" type="button" data-protein-run-close aria-label="Close game">×</button></div></header>
-      <div class="protein-run-scorebar"><span>SCORE <b data-protein-run-score>00000</b></span><span>SIZE <b data-protein-run-size>1/4</b></span><span data-protein-run-lives>💪💪💪</span><span>HIGH <b data-protein-run-high>00000</b></span></div>
+      <header class="protein-run-header"><div><span class="protein-run-kicker">8-BIT REST TIMER</span><h2 data-rest-game-title>Protein Run</h2></div><div style="display:flex;gap:8px"><div class="protein-run-clock" data-protein-run-clock>0:00</div><button class="protein-run-close" type="button" data-protein-run-close aria-label="Close game">×</button></div></header>
+      <div class="protein-run-scorebar"><span>SCORE <b data-protein-run-score>00000</b></span><span><i data-protein-run-size-label style="font-style:normal">SIZE</i> <b data-protein-run-size>1/4</b></span><span data-protein-run-lives>💪💪💪</span><span>HIGH <b data-protein-run-high>00000</b></span></div>
       <div class="protein-run-stage"><canvas aria-label="Maze with a bicep collecting protein powder"></canvas><div class="protein-run-finish" data-protein-run-finish><div><strong>Rest Over!</strong><span>Get back to work.</span></div></div></div>
-      <div class="protein-run-controls" aria-label="Game controls"><button type="button" data-game-direction="up" aria-label="Move up">▲</button><button type="button" data-game-direction="left" aria-label="Move left">◀</button><button type="button" data-game-direction="down" aria-label="Move down">▼</button><button type="button" data-game-direction="right" aria-label="Move right">▶</button></div>
-      <p class="protein-run-help">Collect the clearly labelled protein tubs to grow. At maximum size, the ghosts flash—run into them and crush them with your biceps. Closing the game never stops your rest timer.</p>
+      <div class="protein-run-controls" aria-label="Game controls"><button type="button" data-game-direction="up" aria-label="Move up">▲</button><button type="button" data-game-direction="left" aria-label="Move left">◀</button><button type="button" data-game-direction="down" aria-label="Move down">▼</button><button type="button" data-game-direction="right" aria-label="Move right">▶</button><button class="gym-chopper-fire" type="button" data-chopper-fire>FIRE</button></div>
+      <p class="protein-run-help" data-rest-game-help>Collect the clearly labelled protein tubs to grow. At maximum size, the ghosts flash—run into them and crush them with your biceps. Closing the game never stops your rest timer.</p>
     </div>`;
     document.body.appendChild(overlay);
     overlay.addEventListener("click", event => {
       if (event.target.closest("[data-protein-run-close]")) closeGame();
-      const direction = event.target.closest("[data-game-direction]")?.dataset.gameDirection;
-      if (direction) setDirection(direction);
+      if (event.target.closest("[data-chopper-fire]")) shootChopper();
     });
+    overlay.addEventListener("pointerdown", event => {
+      const direction = event.target.closest("[data-game-direction]")?.dataset.gameDirection;
+      if (direction) {
+        event.preventDefault();
+        setDirection(direction);
+      }
+    });
+    const stopDirection = event => {
+      const direction = event.target.closest("[data-game-direction]")?.dataset.gameDirection;
+      if (direction) stopChopperDirection(direction);
+    };
+    overlay.addEventListener("pointerup", stopDirection);
+    overlay.addEventListener("pointercancel", stopDirection);
     const canvas = overlay.querySelector("canvas");
     canvas.addEventListener("touchstart", event => {
       const touch = event.changedTouches[0];
@@ -458,18 +658,27 @@ function openGame() {
     }, { passive: true });
   }
   overlay.hidden = false;
+  overlay.dataset.gameMode = mode;
   document.body.style.overflow = "hidden";
   const canvas = overlay.querySelector("canvas");
-  game = createGameState(canvas);
-  overlay.querySelector("[data-protein-run-high]").textContent = String(Number(localStorage.getItem(HIGH_SCORE_KEY)) || 0).padStart(5, "0");
+  game = mode === "chopper" ? createChopperState(canvas) : createGameState(canvas);
+  const isChopper = game.mode === "chopper";
+  overlay.querySelector("[data-rest-game-title]").textContent = isChopper ? "Gym Chopper" : "Protein Run";
+  overlay.querySelector("[data-rest-game-help]").textContent = isChopper
+    ? "Hold the arrows to fly. Fire protein scoops at the flying couch potatoes before they damage your gains. Closing the game never stops your rest timer."
+    : "Collect the clearly labelled protein tubs to grow. At maximum size, the ghosts flash—run into them and crush them with your biceps. Closing the game never stops your rest timer.";
+  canvas.setAttribute("aria-label", isChopper ? "Muscle helicopter shooting flying couch potatoes" : "Maze with a lifter collecting protein powder");
+  const highScoreKey = isChopper ? CHOPPER_HIGH_SCORE_KEY : HIGH_SCORE_KEY;
+  overlay.querySelector("[data-protein-run-high]").textContent = String(Number(localStorage.getItem(highScoreKey)) || 0).padStart(5, "0");
   cancelAnimationFrame(frameId);
   frameId = requestAnimationFrame(gameLoop);
 }
 
 function closeGame() {
   if (game) {
-    const high = Math.max(Number(localStorage.getItem(HIGH_SCORE_KEY)) || 0, game.score);
-    localStorage.setItem(HIGH_SCORE_KEY, String(high));
+    const highScoreKey = game.mode === "chopper" ? CHOPPER_HIGH_SCORE_KEY : HIGH_SCORE_KEY;
+    const high = Math.max(Number(localStorage.getItem(highScoreKey)) || 0, game.score);
+    localStorage.setItem(highScoreKey, String(high));
   }
   game = null;
   cancelAnimationFrame(frameId);
@@ -481,26 +690,32 @@ function closeGame() {
 
 function syncLaunchButton() {
   if (!isRestTimerGameEnabled()) {
-    document.querySelectorAll(".protein-run-launch").forEach(button => button.remove());
+    document.querySelectorAll(".rest-game-launch").forEach(button => button.remove());
     return;
   }
   const active = readActive();
   const timer = active?.restTimer;
   const controls = document.querySelector("#level-up-rest-alarm-banner .rest-alarm-controls");
   if (!controls || !timer || timer.status === "finished") return;
-  if (controls.querySelector(".protein-run-launch")) return;
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "protein-run-launch";
-  button.dataset.restGameLaunch = "true";
-  button.textContent = "🎮 Play Protein Run";
-  controls.appendChild(button);
+  if (controls.querySelector(".rest-game-launch")) return;
+  const protein = document.createElement("button");
+  protein.type = "button";
+  protein.className = "rest-game-launch protein-run-launch";
+  protein.dataset.restGameLaunch = "protein";
+  protein.textContent = "💪 Protein Run";
+  const chopper = document.createElement("button");
+  chopper.type = "button";
+  chopper.className = "rest-game-launch gym-chopper-launch";
+  chopper.dataset.restGameLaunch = "chopper";
+  chopper.textContent = "🚁 Gym Chopper";
+  controls.append(protein, chopper);
 }
 
 function initialize() {
   ensureStyles();
   document.addEventListener("click", event => {
-    if (event.target.closest("[data-rest-game-launch]")) openGame();
+    const launcher = event.target.closest("[data-rest-game-launch]");
+    if (launcher) openGame(launcher.dataset.restGameLaunch);
   });
   document.addEventListener("levelup:rest-game-setting-changed", syncLaunchButton);
   document.addEventListener("levelup:rest-timer-finished", () => syncHud());
@@ -510,7 +725,12 @@ function initialize() {
       event.preventDefault();
       setDirection(keyMap[event.key]);
     }
+    if (game?.mode === "chopper" && (event.key === " " || event.key === "Enter")) shootChopper();
     if (game && event.key === "Escape") closeGame();
+  });
+  document.addEventListener("keyup", event => {
+    const keyMap = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
+    if (game?.mode === "chopper" && keyMap[event.key]) stopChopperDirection(keyMap[event.key]);
   });
   new MutationObserver(syncLaunchButton).observe(document.body, { childList: true, subtree: true });
   window.setInterval(syncLaunchButton, 500);

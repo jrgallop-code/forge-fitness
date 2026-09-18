@@ -5,15 +5,15 @@ export function renderRestTimerGameSettings() {
   return `<section class="dashboard-welcome app-feature-settings-header"><div>
     <button class="nutrition-planner-back" type="button" data-rest-game-back>← More</button>
     <span class="eyebrow">WORKOUT PREFERENCES</span>
-    <h2>Protein Run</h2>
-    <p>An optional 8-bit maze game you can play while the real rest timer keeps running.</p>
+    <h2>Rest Timer Games</h2>
+    <p>Optional 8-bit games you can play while the real rest timer keeps running.</p>
   </div></section>
   <section class="section-card app-feature-settings-card">
-    <div class="adaptive-toggle-row"><div><strong>Show Protein Run</strong><span>Add a Play Protein Run button to active rest timers</span></div>
-      <label class="adaptive-switch"><input type="checkbox" data-rest-game-toggle ${enabled ? "checked" : ""}><span aria-hidden="true"></span><span class="sr-only">Show Protein Run during rest timers</span></label>
+    <div class="adaptive-toggle-row"><div><strong>Show Rest Timer Games</strong><span>Add Protein Run and Gym Chopper to active rest timers</span></div>
+      <label class="adaptive-switch"><input type="checkbox" data-rest-game-toggle ${enabled ? "checked" : ""}><span aria-hidden="true"></span><span class="sr-only">Show games during rest timers</span></label>
     </div>
-    <p class="app-feature-status" data-rest-game-status>${enabled ? "The game button appears during active rest timers." : "The game is hidden from rest timers."}</p>
-    <p class="app-feature-data-note"><strong>Your timer stays in control.</strong> Playing, pausing or closing the game never changes the workout countdown or lock-screen alert.</p>
+    <p class="app-feature-status" data-rest-game-status>${enabled ? "Both game options appear during active rest timers." : "Rest timer games are hidden."}</p>
+    <p class="app-feature-data-note"><strong>Your timer stays in control.</strong> Choose Protein Run or Gym Chopper. Playing, pausing or closing either game never changes the workout countdown or lock-screen alert.</p>
   </section>`;
 }
 
@@ -24,8 +24,7 @@ export function initializeRestTimerGameSettings({ onBack } = {}) {
   toggle?.addEventListener("change", () => {
     const enabled = setRestTimerGameEnabled(toggle.checked);
     if (status) status.textContent = enabled
-      ? "The game button appears during active rest timers."
-      : "The game is hidden from rest timers.";
+      ? "Both game options appear during active rest timers."
+      : "Rest timer games are hidden.";
   });
 }
-

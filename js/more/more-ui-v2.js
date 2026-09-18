@@ -38,7 +38,7 @@ const ICONS = {
 
 export function renderMore() {
     const widgetCard = isNativeIOS() ? `<button class="more-menu-card" type="button" data-more-page="home-widgets"><span class="more-menu-icon">${ICONS.widgets}</span><span><strong>Home Screen Widgets</strong><small>See daily nutrition and workout stats at a glance.</small></span></button>` : "";
-    const gameCard = isNativeIOS() ? `<button class="more-menu-card" type="button" data-more-page="rest-game"><span class="more-menu-icon">${ICONS.game}</span><span><strong>Protein Run</strong><small>Show or hide the optional 8-bit rest timer game.</small></span></button>` : "";
+    const gameCard = isNativeIOS() ? `<button class="more-menu-card" type="button" data-more-page="rest-game"><span class="more-menu-icon">${ICONS.game}</span><span><strong>Rest Timer Games</strong><small>Show or hide Protein Run and Gym Chopper.</small></span></button>` : "";
     return `<section class="more-compact-header"><span class="eyebrow">SETTINGS & TOOLS</span><h2>More</h2></section>
     <section class="more-menu-grid" aria-label="More tools">
     <div class="more-menu-group" data-more-group="explore"><h3>Science &amp; learning</h3>
