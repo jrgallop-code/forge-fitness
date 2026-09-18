@@ -27,6 +27,12 @@ const SAMPLE_FILES = {
   gameOver: "game-over-scream.wav"
 };
 const DAMAGE_GRUNTS = ["damageGrunt1", "damageGrunt2", "damageGrunt3"];
+const COUCH_POTATO_SPRITE_URLS = [
+  "assets/games/gym-chopper/couch-potato-a.png?v=1",
+  "assets/games/gym-chopper/couch-potato-b.png?v=1",
+  "assets/games/gym-chopper/couch-potato-c.png?v=1",
+  "assets/games/gym-chopper/couch-potato-d.png?v=1"
+];
 
 const MAZE = [
   "#################",
@@ -70,6 +76,7 @@ let rotorSource = null;
 let rotorRetryPending = false;
 let lastGruntAt = 0;
 let lastGruntIndex = -1;
+let couchPotatoSprites = [];
 
 export function isRestTimerGameEnabled() {
   return localStorage.getItem(ENABLED_KEY) !== "false";
@@ -696,11 +703,39 @@ function shootChopper() {
   game.messageUntil = performance.now() + 280;
 }
 
-function drawFlyingCouchDude(ctx, x, y, size, now, wobble) {
+function ensureCouchPotatoSprites() {
+  if (couchPotatoSprites.length || typeof Image === "undefined") return couchPotatoSprites;
+  couchPotatoSprites = COUCH_POTATO_SPRITE_URLS.map(source => {
+    const image = new Image();
+    image.decoding = "async";
+    image.addEventListener("load", () => {
+      const overlay = document.getElementById(OVERLAY_ID);
+      if (overlay && !overlay.hidden && !overlay.querySelector("[data-rest-arcade-select]")?.hidden) {
+        window.requestAnimationFrame(renderArcadePreviews);
+      }
+    }, { once: true });
+    image.src = source;
+    return image;
+  });
+  return couchPotatoSprites;
+}
+
+function drawFlyingCouchDude(ctx, x, y, size, now, wobble, variant = 0) {
   const bob = Math.sin(now / 180 + wobble) * size * .05;
   const top = y + bob;
+  const sprites = ensureCouchPotatoSprites();
+  const sprite = sprites[Math.abs(Number(variant) || 0) % COUCH_POTATO_SPRITE_URLS.length];
+  if (sprite?.complete && sprite.naturalWidth > 0) {
+    const width = size * 2.15;
+    const height = width * (sprite.naturalHeight / sprite.naturalWidth);
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(sprite, x - width / 2, top - height * .55, width, height);
+    ctx.restore();
+    return;
+  }
 
-  // Extra-wide couch with a dark outline, separate back cushions and arms.
+  // Lightweight fallback while the detailed pixel-art sprite finishes loading.
   ctx.fillStyle = "#1b120d";
   ctx.fillRect(x - size * .9, top - size * .34, size * 1.8, size * .95);
   ctx.fillStyle = "#8b522c";
@@ -840,6 +875,7 @@ function spawnChopperEnemy(now) {
     y: .12 + Math.random() * .76,
     speed: .14 + Math.random() * .1,
     wobble: Math.random() * Math.PI * 2,
+    variant: Math.floor(Math.random() * COUCH_POTATO_SPRITE_URLS.length),
     label: Math.random() < .5 ? "Z" : "0"
   });
 }
@@ -924,7 +960,7 @@ function drawGymChopper(now, state = game) {
     const x = enemy.x * w;
     const y = enemy.y * h;
     const size = Math.max(36, w * .115);
-    drawFlyingCouchDude(ctx, x, y, size, now, enemy.wobble);
+    drawFlyingCouchDude(ctx, x, y, size, now, enemy.wobble, enemy.variant);
   });
 
   // Muscle-action helicopter with a real cabin, rotors and door gunner.
@@ -1072,8 +1108,10 @@ function renderArcadePreviews() {
     preview.player = { x: .28, y: .48 };
     preview.bullets = [{ x: .58, y: .47 }, { x: .72, y: .47 }];
     preview.enemies = [
-      { x: .83, y: .3, wobble: 0, label: "Z" },
-      { x: .9, y: .7, wobble: 2, label: "0" }
+      { x: .84, y: .17, wobble: 0, variant: 0, label: "Z" },
+      { x: .91, y: .39, wobble: 1, variant: 1, label: "0" },
+      { x: .84, y: .61, wobble: 2, variant: 2, label: "Z" },
+      { x: .91, y: .83, wobble: 3, variant: 3, label: "0" }
     ];
     preview.message = "FIRE THE GAINS!";
     preview.messageUntil = now + 60000;
@@ -1168,6 +1206,7 @@ function openArcadeMenu() {
   overlay.querySelector("[data-rest-game-view]").hidden = true;
   overlay.querySelector("[data-rest-arcade-clock]").textContent = timer.status === "paused" ? "PAUSED" : formatTime(remainingMs(timer));
   updateSoundButtons();
+  ensureCouchPotatoSprites();
   void preloadArcadeSamples();
   playEffect("menu-select");
   stopRotor();
@@ -1191,6 +1230,7 @@ function openGame(mode = "protein") {
   const canvas = overlay.querySelector("[data-rest-game-canvas]");
   game = mode === "chopper" ? createChopperState(canvas) : createGameState(canvas);
   const isChopper = game.mode === "chopper";
+  if (isChopper) ensureCouchPotatoSprites();
   updateSoundButtons();
   playEffect("game-start");
   startMusic();

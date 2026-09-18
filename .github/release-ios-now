@@ -189,3 +189,5 @@ TestFlight build 111: replace the faux glass bar with five native iOS 26 Liquid 
 TestFlight build 113: restore the familiar Level Up bottom bar and apply native Liquid Glass only to the selected tab, matching Tinder's subtle capsule treatment.
 
 TestFlight build 114: fully remove the Liquid Glass navigation experiment and restore the original Level Up bottom bar and its established visibility behavior.
+
+TestFlight build 115: add all four approved pixel-art couch-potato enemies to Gym Chopper with randomized in-game variation and exact sprite-based rendering.

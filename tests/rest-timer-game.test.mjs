@@ -105,9 +105,13 @@ test("arcade music stays synthesized while damage rotates non-repeating recorded
   assert.doesNotMatch(game, /My gains/);
 });
 
-test("Gym Chopper enemies clearly depict shirtless adults lounging in briefs on couches", () => {
-  assert.match(game, /Shirtless, slouched adult/);
-  assert.match(game, /Bright briefs and waistband/);
-  assert.match(game, /Face, open mouth and belly button/);
+test("Gym Chopper rotates all four detailed couch-potato sprites", () => {
+  assert.match(game, /couch-potato-a\.png/);
+  assert.match(game, /couch-potato-b\.png/);
+  assert.match(game, /couch-potato-c\.png/);
+  assert.match(game, /couch-potato-d\.png/);
+  assert.match(game, /variant: Math\.floor\(Math\.random\(\) \* COUCH_POTATO_SPRITE_URLS\.length\)/);
+  assert.match(game, /ctx\.drawImage\(sprite/);
+  assert.match(game, /ctx\.imageSmoothingEnabled = false/);
   assert.match(game, /const size = Math\.max\(36, w \* \.115\)/);
 });
