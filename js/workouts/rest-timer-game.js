@@ -48,6 +48,7 @@ let audioMaster = null;
 let musicTimer = null;
 let musicStep = 0;
 let rotorTimer = null;
+let lastGruntAt = 0;
 
 export function isRestTimerGameEnabled() {
   return localStorage.getItem(ENABLED_KEY) !== "false";
@@ -133,6 +134,25 @@ function noise(duration = .08, volume = .1) {
   source.start();
 }
 
+function playComicalGrunt() {
+  const now = performance.now();
+  if (now - lastGruntAt < 550) return;
+  lastGruntAt = now;
+
+  // Add a formant-like low growl under the spoken reaction so it lands over
+  // music and rotor noise. The device voice remains generic and unselected.
+  tone(142, .34, { type: "sawtooth", volume: .2, endFrequency: 62 });
+  tone(96, .38, { type: "triangle", volume: .15, endFrequency: 43, delay: .025 });
+  noise(.15, .085);
+  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") return;
+  const reactions = ["OOF!", "UGH!", "MY GAINS!"];
+  const utterance = new SpeechSynthesisUtterance(reactions[Math.floor(Math.random() * reactions.length)]);
+  utterance.rate = .82;
+  utterance.pitch = .55;
+  utterance.volume = .72;
+  window.speechSynthesis.speak(utterance);
+}
+
 function playEffect(name) {
   if (!soundEnabled()) return;
   if (name === "pickup") tone(660, .045, { volume: .08, endFrequency: 880 });
@@ -141,10 +161,8 @@ function playEffect(name) {
   if (name === "impact") { noise(.1, .15); tone(90, .14, { type: "square", volume: .12, endFrequency: 42 }); }
   if (name === "crush") { noise(.13, .16); tone(75, .18, { type: "sawtooth", volume: .14, endFrequency: 38 }); }
   if (name === "damage") {
-    // Original synthesized action-hero grunt; no sampled or imitated voice.
-    tone(125, .28, { type: "sawtooth", volume: .18, endFrequency: 58 });
-    tone(92, .32, { type: "triangle", volume: .13, endFrequency: 45, delay: .035 });
-    noise(.12, .07);
+    // Original comic action-hero reaction; no sampled or imitated celebrity voice.
+    playComicalGrunt();
   }
   if (name === "rest-over") [784, 659, 523].forEach((note, index) => tone(note, .18, { volume: .12, delay: index * .12 }));
 }
@@ -152,16 +170,30 @@ function playEffect(name) {
 function startMusic() {
   if (!soundEnabled() || musicTimer) return;
   ensureAudio();
-  const melody = [330, 392, 494, 659, 494, 392, 349, 440, 523, 698, 523, 440, 294, 370, 440, 587];
-  const bass = [82, 82, 98, 98, 110, 110, 98, 98];
+  // Original 178 BPM minor-key action riff, shaped after the reference's
+  // rapid repeated notes, pulsing bass and sharp arcade percussion.
+  const bpm = 178;
+  const sixteenthMs = 60000 / bpm / 4;
+  const melody = [
+    392, null, 466, 523, 587, null, 523, 466,
+    392, 349, 392, 466, 587, 698, 587, 523,
+    392, null, 466, 523, 622, null, 587, 523,
+    466, 392, 349, 392, 466, 523, 466, 349
+  ];
+  const bass = [98, 98, 87, 87, 78, 78, 87, 73];
   const tick = () => {
     const step = musicStep++;
-    tone(melody[step % melody.length], .095, { type: "square", volume: .045 });
-    if (step % 2 === 0) tone(bass[Math.floor(step / 2) % bass.length], .18, { type: "triangle", volume: .055 });
-    if (step % 4 === 2) noise(.025, .025);
+    const lead = melody[step % melody.length];
+    if (lead) tone(lead, .07, { type: "square", volume: .055, endFrequency: lead * .985 });
+    if (step % 4 === 0) {
+      tone(bass[Math.floor(step / 4) % bass.length], .16, { type: "sawtooth", volume: .065, endFrequency: 48 });
+      tone(64, .08, { type: "triangle", volume: .08, endFrequency: 34 });
+    }
+    if (step % 4 === 2) noise(.055, .05);
+    else if (step % 2 === 1) noise(.018, .018);
   };
   tick();
-  musicTimer = window.setInterval(tick, 125);
+  musicTimer = window.setInterval(tick, sixteenthMs);
 }
 
 function stopMusic() {

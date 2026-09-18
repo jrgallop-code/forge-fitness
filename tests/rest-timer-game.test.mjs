@@ -76,6 +76,15 @@ test("arcade audio includes music, rotor, shooting, impacts and damage grunt syn
   assert.match(game, /playEffect\("shoot"\)/);
   assert.match(game, /playEffect\("impact"\)/);
   assert.match(game, /playEffect\("damage"\)/);
-  assert.match(game, /Original synthesized action-hero grunt/);
+  assert.match(game, /Original comic action-hero reaction/);
   assert.match(game, /data-arcade-sound/);
+});
+
+test("arcade music uses a fast minor action riff and damage triggers comic vocal reactions", () => {
+  assert.match(game, /const bpm = 178/);
+  assert.match(game, /rapid repeated notes, pulsing bass and sharp arcade percussion/);
+  assert.match(game, /function playComicalGrunt\(/);
+  assert.match(game, /\["OOF!", "UGH!", "MY GAINS!"\]/);
+  assert.match(game, /new SpeechSynthesisUtterance/);
+  assert.match(game, /no sampled or imitated celebrity voice/);
 });
