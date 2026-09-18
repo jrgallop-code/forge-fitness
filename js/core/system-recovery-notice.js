@@ -92,7 +92,7 @@ function hasValidSession() {
     try {
         const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
         if (!session?.token) return false;
-        return !session.expiresAt || Date.parse(session.expiresAt) > Date.now();
+        return true;
     }
     catch {
         return false;

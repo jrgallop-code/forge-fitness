@@ -49,10 +49,15 @@ function startCloudBackgroundSync() {
         void adoptCompletedSync(event.detail);
     });
     document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState !== "visible") return;
-        void recordActivity();
-        scheduleBackup(5_000);
+        if (document.visibilityState === "visible") {
+            void recordActivity();
+            scheduleBackup(5_000);
+        }
+        else scheduleBackup(0);
     });
+    window.addEventListener("levelup:workout-completed", () => scheduleBackup(1_000));
+    window.addEventListener("levelup:food-log-updated", () => scheduleBackup(5_000));
+    window.addEventListener("levelup:nutrition-updated", () => scheduleBackup(5_000));
     document.addEventListener("change", () => scheduleBackup(BACKUP_DEBOUNCE_MS), true);
     document.addEventListener("click", event => {
         if (event.target.closest?.("button,[data-page]")) scheduleBackup(BACKUP_DEBOUNCE_MS);
@@ -338,7 +343,6 @@ async function api(path, { method = "GET", body } = {}) {
 function getSession() {
     const session = readJson(SESSION_KEY);
     if (!session?.token) return null;
-    if (session.expiresAt && Date.parse(session.expiresAt) <= Date.now()) return null;
     return session;
 }
 

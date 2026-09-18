@@ -45,8 +45,20 @@ test("Google-authenticated members can create a single-use iOS transfer code", (
     assert.match(accountCloudUi, /api\("\/v1\/account\/transfer-code", \{ method: "POST"/);
     assert.match(firstLaunchLogin, /Already use Level Up on the web\?/);
     assert.match(firstLaunchLogin, /\/v1\/session\/transfer/);
-    assert.match(firstLaunchLogin, /restoreTransferredBackup\(payload\.token\)/);
+    assert.match(firstLaunchLogin, /await activateSession\(payload\)/);
     assert.match(firstLaunchLogin, /restoreBackupSnapshot\(payload\.backup/);
+});
+
+test("persistent server sessions are not rejected by obsolete client expiry dates", () => {
+    const backgroundSync = fs.readFileSync("js/account/cloud-background-sync.js", "utf8");
+    const historyUi = fs.readFileSync("js/account/cloud-backup-history-ui.js", "utf8");
+    const analyticsConsent = fs.readFileSync("js/privacy/analytics-consent.js", "utf8");
+
+    assert.doesNotMatch(firstLaunchLogin, /Date\.parse\(session\.expiresAt\)/);
+    assert.doesNotMatch(accountCloudUi, /Date\.parse\(session\.expiresAt\)/);
+    assert.doesNotMatch(backgroundSync, /Date\.parse\(session\.expiresAt\)/);
+    assert.doesNotMatch(historyUi, /Date\.parse\(session\.expiresAt\)/);
+    assert.doesNotMatch(analyticsConsent, /Date\.parse\(session\.expiresAt\)/);
 });
 
 test("Apple identity tokens are verified before a persistent Level Up session is issued", () => {

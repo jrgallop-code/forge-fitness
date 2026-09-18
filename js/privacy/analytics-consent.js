@@ -62,7 +62,7 @@ function ensureConsentStyles() {
 function hasSignedInSession() {
     try {
         const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
-        return Boolean(session?.token && (!session.expiresAt || Date.parse(session.expiresAt) > Date.now()));
+        return Boolean(session?.token);
     } catch {
         return false;
     }

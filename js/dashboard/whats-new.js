@@ -54,7 +54,7 @@ function renderChangeCard([icon, title, description]) {
 function isSignedInAndOnboarded() {
     try {
         const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
-        const signedIn = Boolean(session?.token) && (!session.expiresAt || Date.parse(session.expiresAt) > Date.now());
+        const signedIn = Boolean(session?.token);
         if (!signedIn) return false;
         const preferences = JSON.parse(localStorage.getItem(TRAINING_PREFERENCES_KEY) || "null");
         return Boolean(preferences?.onboardingComplete || preferences?.onboardingSkipped);

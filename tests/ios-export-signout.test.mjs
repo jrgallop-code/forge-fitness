@@ -21,12 +21,13 @@ test("iOS JSON backup export opens the native share and save sheet", async () =>
     assert.match(plugin, /UIActivityViewController\(activityItems: \[fileURL\]/);
 });
 
-test("native sign-out clears guest mode and immediately reloads into the login gate", async () => {
+test("native sign-out preserves local history and immediately reloads into the login gate", async () => {
     const account = await read("js/more/account-cloud-ui.js");
     const nativeBranch = account.match(/if \(isNativeIOS\(\)\) \{([\s\S]*?)\n    \}/)?.[1] || "";
 
     assert.match(nativeBranch, /clearSession\(\{ requireLogin: true \}\)/);
-    assert.match(nativeBranch, /await clearLocalAppData\(\{ preserveDevicePreferences: true \}\)/);
+    assert.match(nativeBranch, /localStorage\.setItem\(LOCAL_DATA_OWNER_KEY/);
+    assert.doesNotMatch(nativeBranch, /clearLocalAppData/);
     assert.match(nativeBranch, /window\.location\.reload\(\)/);
     assert.match(account, /if \(requireLogin\) localStorage\.removeItem\(GUEST_MODE_KEY\)/);
 });
@@ -42,14 +43,16 @@ test("account deletion clears local account data and returns to the login gate",
     assert.doesNotMatch(deletion, /Local device data was not removed/);
 });
 
-test("native account switching clears old local records before restoring the new account", async () => {
+test("native reauthentication preserves same-account local history before restoring cloud data", async () => {
     const [login, backup] = await Promise.all([
         read("js/account/first-launch-login.js"),
         read("js/core/backup-manager.js")
     ]);
 
     assert.match(login, /async function activateSession\(payload\)/);
-    assert.match(login, /await clearLocalAppData\(\{ preserveDevicePreferences: true \}\);\s*saveSession\(payload\);\s*try \{\s*return await restoreNativeAccountBackup\(payload\.token\)/s);
+    assert.match(login, /if \(localDataPresent && \(sameAccount \|\| sameOwner/);
+    assert.match(login, /await uploadPreservedLocalData\(payload\.token\)/);
+    assert.match(login, /This iPhone contains Level Up data for another account\. It was not erased/);
     assert.match(login, /Cloud backup could not be restored during sign-in/);
     assert.match(login, /finally \{\s*saveSession\(payload\);\s*\}/s);
     assert.match(login, /await activateSession\(payload\)/);

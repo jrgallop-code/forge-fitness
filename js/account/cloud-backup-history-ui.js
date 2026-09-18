@@ -229,7 +229,6 @@ function sessionToken() {
     try {
         const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
         if (!session?.token) return "";
-        if (session.expiresAt && Date.parse(session.expiresAt) <= Date.now()) return "";
         return session.token;
     }
     catch { return ""; }

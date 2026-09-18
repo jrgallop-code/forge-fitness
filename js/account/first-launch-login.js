@@ -1,11 +1,14 @@
 import "../core/native-capabilities.js?v=interactive-live-activity-1";
 import "../privacy/analytics-consent.js?v=app-review-privacy-1";
-import { clearLocalAppData, restoreBackupSnapshot, verifyBackupSnapshot } from "../core/backup-manager.js?v=account-isolation-1";
+import { clearLocalAppData, createBackupSnapshot, restoreBackupSnapshot, verifyBackupSnapshot } from "../core/backup-manager.js?v=reauth-data-safety-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
 const SESSION_KEY = "level_up_cloud_session";
 const ACCOUNT_KEY = "level_up_cloud_account";
+const LOCAL_DATA_OWNER_KEY = "level_up_local_data_owner";
+const LAST_SYNC_KEY = "level_up_cloud_last_sync";
+const AUTO_STATE_KEY = "level_up_cloud_auto_backup_state";
 const GUEST_MODE_KEY = "level_up_guest_mode";
 const RECOVERY_PARAMETER = "local-recovery";
 
@@ -243,10 +246,44 @@ async function activateSession(payload) {
         return false;
     }
 
+    const previousAccount = readJson(ACCOUNT_KEY);
+    const previousOwner = localStorage.getItem(LOCAL_DATA_OWNER_KEY);
+    const localDataPresent = hasMeaningfulLocalData();
+    const sameAccount = accountsMatch(previousAccount, payload.user);
+    const sameOwner = ownerMatches(previousOwner, payload.user);
+
+    // Reauthentication must never erase newer offline-first data. Legacy iOS
+    // installs may not have an owner marker yet, so an unowned local history
+    // is treated as belonging to the account the member just chose.
+    if (localDataPresent && (sameAccount || sameOwner || (!previousAccount && !previousOwner))) {
+        saveSession(payload);
+        localStorage.setItem(LOCAL_DATA_OWNER_KEY, String(payload.user?.id || payload.user?.email || "signed-in"));
+        try {
+            await uploadPreservedLocalData(payload.token);
+        }
+        catch (error) {
+            console.warn("Newer on-device data was preserved but could not be backed up during sign-in:", error);
+            localStorage.setItem("level_up_cloud_restore_warning", JSON.stringify({
+                message: "Your on-device data was preserved, but cloud backup needs attention. Open More → Account & Cloud and tap Back Up Now.",
+                createdAt: new Date().toISOString()
+            }));
+        }
+        finally {
+            saveSession(payload);
+        }
+        return false;
+    }
+
+    if (localDataPresent && !sameAccount && !sameOwner && (previousAccount || previousOwner)) {
+        throw new Error("This iPhone contains Level Up data for another account. It was not erased. Sign in with the original account to recover and back it up.");
+    }
+
     await clearLocalAppData({ preserveDevicePreferences: true });
     saveSession(payload);
     try {
-        return await restoreNativeAccountBackup(payload.token);
+        const restored = await restoreNativeAccountBackup(payload.token);
+        localStorage.setItem(LOCAL_DATA_OWNER_KEY, String(payload.user?.id || payload.user?.email || "signed-in"));
+        return restored;
     }
     catch (error) {
         console.warn("Cloud backup could not be restored during sign-in:", error);
@@ -259,6 +296,82 @@ async function activateSession(payload) {
     finally {
         saveSession(payload);
     }
+}
+
+async function uploadPreservedLocalData(token) {
+    const metaResponse = await fetch(`${API_URL}/v1/backup/meta`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    const meta = await metaResponse.json().catch(() => ({}));
+    if (!metaResponse.ok) throw new Error(meta.error || "Cloud backup status could not be checked.");
+
+    const backup = await createBackupSnapshot();
+    verifyBackupSnapshot(backup);
+    const response = await fetch(`${API_URL}/v1/backup`, {
+        method: "PUT",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            backup,
+            expectedVersion: meta.backup ? Number(meta.backup.version) : null,
+            uploadMode: "automatic"
+        })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "Your preserved device data could not be backed up.");
+
+    const completedAt = new Date().toISOString();
+    localStorage.setItem(LAST_SYNC_KEY, JSON.stringify({
+        direction: "reauth-preserved-upload",
+        updatedAt: result.updatedAt,
+        version: result.version,
+        completedAt
+    }));
+    localStorage.setItem(AUTO_STATE_KEY, JSON.stringify({
+        version: Number(result.version),
+        updatedAt: result.updatedAt,
+        completedAt,
+        status: "synced"
+    }));
+}
+
+function hasMeaningfulLocalData() {
+    const nonEmptyArray = key => {
+        const value = readJson(key);
+        return Array.isArray(value) && value.length > 0;
+    };
+    const nonEmptyObject = key => {
+        const value = readJson(key);
+        return value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length > 0;
+    };
+    return [
+        "forge_workout_sessions",
+        "forge_weight_entries",
+        "forge_workout_plans",
+        "level_up_body_measurements",
+        "level_up_sleep_entries",
+        "level_up_nutrition_phases"
+    ].some(nonEmptyArray) || nonEmptyObject("level_up_food_log_v1");
+}
+
+function accountsMatch(left, right) {
+    if (!left || !right) return false;
+    if (left.id && right.id) return String(left.id) === String(right.id);
+    return Boolean(left.email && right.email && String(left.email).toLowerCase() === String(right.email).toLowerCase());
+}
+
+function ownerMatches(owner, account) {
+    if (!owner || !account) return false;
+    const normalizedOwner = String(owner).toLowerCase();
+    return normalizedOwner === String(account.id || "").toLowerCase() ||
+        normalizedOwner === String(account.email || "").toLowerCase();
+}
+
+function readJson(key) {
+    try { return JSON.parse(localStorage.getItem(key) || "null"); }
+    catch { return null; }
 }
 
 function setEmailMode(mode) {
@@ -390,7 +503,9 @@ function hasValidSession() {
     try {
         const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
         if (!session?.token) return false;
-        return !session.expiresAt || Date.parse(session.expiresAt) > Date.now();
+        // Server-side revocation is authoritative. Older app builds stored a
+        // short client expiry even after server sessions became persistent.
+        return true;
     }
     catch { return false; }
 }
