@@ -46,4 +46,7 @@ test("Gym Chopper is a second rest-game option with hold controls and protein fi
   assert.match(game, /dataset\.restGameLaunch = "chopper"/);
   assert.match(game, /COUCH POTATO DOWN!/);
   assert.match(game, /data-chopper-fire/);
+  assert.match(game, /function drawFlyingCouchDude/);
+  assert.match(game, /function drawActionChopper/);
+  assert.match(game, /fillText\("WHEY"/);
 });

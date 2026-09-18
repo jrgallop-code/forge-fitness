@@ -384,9 +384,114 @@ function drawProteinTub(ctx, x, y, cellW, cellH, large = false) {
 
 function shootChopper() {
   if (!game || game.mode !== "chopper" || game.finished) return;
-  game.bullets.push({ x: game.player.x + .08, y: game.player.y });
+  game.bullets.push({ x: game.player.x + .145, y: game.player.y + .015 });
   game.message = "PROTEIN CANNON!";
   game.messageUntil = performance.now() + 280;
+}
+
+function drawFlyingCouchDude(ctx, x, y, size, now, wobble) {
+  const bob = Math.sin(now / 180 + wobble) * size * .05;
+  const top = y + bob;
+
+  // Chunky old couch, complete with sagging cushions and tiny hover jets.
+  ctx.fillStyle = "#59351f";
+  ctx.fillRect(x - size * .72, top - size * .04, size * 1.44, size * .58);
+  ctx.fillStyle = "#a86b35";
+  ctx.fillRect(x - size * .62, top - size * .3, size * 1.24, size * .58);
+  ctx.fillStyle = "#c98748";
+  ctx.fillRect(x - size * .5, top + size * .18, size * .46, size * .25);
+  ctx.fillRect(x + size * .04, top + size * .18, size * .46, size * .25);
+  ctx.fillStyle = "#744526";
+  ctx.fillRect(x - size * .8, top - size * .12, size * .2, size * .62);
+  ctx.fillRect(x + size * .6, top - size * .12, size * .2, size * .62);
+  ctx.fillStyle = "#72ddff";
+  ctx.fillRect(x - size * .57, top + size * .57, size * .17, size * .13);
+  ctx.fillRect(x + size * .4, top + size * .57, size * .17, size * .13);
+
+  // Big-bellied couch potato sitting deep in the cushions.
+  ctx.fillStyle = "#f2c092";
+  ctx.fillRect(x - size * .18, top - size * .72, size * .36, size * .29);
+  ctx.fillStyle = "#402519";
+  ctx.fillRect(x - size * .2, top - size * .77, size * .4, size * .1);
+  ctx.fillStyle = "#f4d13d";
+  ctx.fillRect(x - size * .34, top - size * .44, size * .68, size * .52);
+  ctx.fillStyle = "#f7cfaa";
+  ctx.beginPath();
+  ctx.ellipse(x, top - size * .05, size * .36, size * .33, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#fff2d6";
+  ctx.fillRect(x - size * .12, top - size * .12, size * .24, size * .17);
+  ctx.fillStyle = "#24334b";
+  ctx.fillRect(x - size * .42, top + size * .08, size * .3, size * .13);
+  ctx.fillRect(x + size * .12, top + size * .08, size * .3, size * .13);
+  ctx.fillStyle = "#111827";
+  ctx.fillRect(x - size * .1, top - size * .62, size * .05, size * .05);
+  ctx.fillRect(x + size * .05, top - size * .62, size * .05, size * .05);
+}
+
+function drawActionChopper(ctx, px, py, unit, now) {
+  const rotorPulse = Math.abs(Math.sin(now / 55));
+
+  // Tail boom, tail rotor, landing skids and a recognizable helicopter cabin.
+  ctx.fillStyle = "#315b32";
+  ctx.fillRect(px - unit * 8.2, py - unit * .9, unit * 6.2, unit * 1.8);
+  ctx.fillStyle = "#75a64f";
+  ctx.fillRect(px - unit * 9.2, py - unit * 2.1, unit * 1.4, unit * 4.2);
+  ctx.fillStyle = "#d9e7ec";
+  ctx.fillRect(px - unit * 9.85, py - unit * .2, unit * 2.7, unit * .4);
+  ctx.fillRect(px - unit * 8.7, py - unit * 1.35, unit * .4, unit * 2.7);
+  ctx.fillStyle = "#467a40";
+  ctx.beginPath();
+  ctx.ellipse(px, py, unit * 4.8, unit * 3.1, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(px - unit * 3.4, py - unit * 2.2, unit * 6.7, unit * 4.4);
+  ctx.fillStyle = "#94dcff";
+  ctx.fillRect(px + unit * .6, py - unit * 1.85, unit * 2.8, unit * 2.25);
+  ctx.fillStyle = "#d9f5ff";
+  ctx.fillRect(px + unit * 1.2, py - unit * 1.45, unit * 1.5, unit * .42);
+  ctx.fillStyle = "#1b2a23";
+  ctx.fillRect(px - unit * 3.1, py + unit * 2.7, unit * 6.6, unit * .42);
+  ctx.fillRect(px - unit * 3.5, py + unit * 2, unit * .42, unit * 1.1);
+  ctx.fillRect(px + unit * 3.1, py + unit * 2, unit * .42, unit * 1.1);
+
+  // Mast and animated main rotor.
+  ctx.fillStyle = "#c8d4dc";
+  ctx.fillRect(px - unit * .25, py - unit * 4.2, unit * .5, unit * 2);
+  ctx.fillRect(px - unit * (7 + rotorPulse * 2), py - unit * 4.4, unit * (14 + rotorPulse * 4), unit * .42);
+  ctx.fillStyle = "#202933";
+  ctx.fillRect(px - unit * 1.1, py - unit * 4.65, unit * 2.2, unit * .85);
+
+  // Generic '80s muscle-action hero leaning out of the open door.
+  const hx = px + unit * 2.9;
+  const hy = py - unit * .2;
+  ctx.fillStyle = "#f0b06f";
+  ctx.fillRect(hx - unit * .5, hy - unit * 3.15, unit * 1.25, unit * 1.25);
+  ctx.fillStyle = "#d7a042";
+  ctx.fillRect(hx - unit * .65, hy - unit * 3.45, unit * 1.5, unit * .45);
+  ctx.fillStyle = "#1c2127";
+  ctx.fillRect(hx - unit * .44, hy - unit * 2, unit * 1.65, unit * 2.35);
+  ctx.fillStyle = "#f0b06f";
+  ctx.beginPath();
+  ctx.ellipse(hx - unit * .85, hy - unit * 1.15, unit * .8, unit * 1.05, -.45, 0, Math.PI * 2);
+  ctx.ellipse(hx + unit * 1.15, hy - unit * 1.1, unit * .88, unit * 1.08, .45, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(hx + unit * 1.15, hy - unit * 1.25, unit * 2.6, unit * .6);
+
+  // Protein-fed machine gun and muzzle flash.
+  ctx.fillStyle = "#121820";
+  ctx.fillRect(hx + unit * 1.3, hy - unit * .85, unit * 4.35, unit * .65);
+  ctx.fillRect(hx + unit * 2.05, hy - unit * .2, unit * .65, unit * 1.4);
+  ctx.fillStyle = "#e6edf2";
+  ctx.fillRect(hx + unit * .65, hy - unit * .25, unit * 1.45, unit * 1.1);
+  ctx.fillStyle = "#e83b4f";
+  ctx.font = `900 ${Math.max(5, unit * .58)}px ui-monospace, monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("WHEY", hx + unit * 1.38, hy + unit * .3);
+  if (game?.message === "PROTEIN CANNON!" && now < game.messageUntil) {
+    ctx.fillStyle = "#fff36b";
+    ctx.fillRect(hx + unit * 5.65, hy - unit * 1.05, unit * 1.2, unit * 1.05);
+  }
 }
 
 function spawnChopperEnemy(now) {
@@ -477,41 +582,15 @@ function drawGymChopper(now) {
   game.enemies.forEach(enemy => {
     const x = enemy.x * w;
     const y = enemy.y * h;
-    const size = Math.max(18, w * .055);
-    ctx.fillStyle = "#a96d37";
-    ctx.fillRect(x - size * .55, y - size * .42, size * 1.1, size * .84);
-    ctx.fillRect(x - size * .38, y - size * .62, size * .76, size * .25);
-    ctx.fillStyle = "#f4d6a8";
-    ctx.fillRect(x - size * .3, y - size * .08, size * .16, size * .16);
-    ctx.fillRect(x + size * .14, y - size * .08, size * .16, size * .16);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `900 ${size * .38}px ui-monospace, monospace`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(enemy.label, x, y + size * .24);
+    const size = Math.max(29, w * .09);
+    drawFlyingCouchDude(ctx, x, y, size, now, enemy.wobble);
   });
 
-  // Barbell-rotor helicopter with a flexing bicep fuselage.
+  // Muscle-action helicopter with a real cabin, rotors and door gunner.
   const px = game.player.x * w;
   const py = game.player.y * h;
-  const unit = Math.max(3, w * .012);
-  ctx.fillStyle = "#d8e6f5";
-  ctx.fillRect(px - unit * 5, py - unit * 5, unit * 10, unit);
-  ctx.fillStyle = "#454f60";
-  ctx.fillRect(px - unit * 6, py - unit * 6, unit, unit * 3);
-  ctx.fillRect(px + unit * 5, py - unit * 6, unit, unit * 3);
-  ctx.fillStyle = "#2387ff";
-  ctx.fillRect(px - unit * 4, py - unit * 2, unit * 8, unit * 4);
-  ctx.fillRect(px - unit * 6, py - unit, unit * 3, unit * 2);
-  ctx.fillStyle = "#79d9ff";
-  ctx.fillRect(px + unit, py - unit * 1.4, unit * 2.5, unit * 2);
-  ctx.fillStyle = "#f4a447";
-  ctx.fillRect(px - unit * 2, py - unit * 3, unit * 2, unit * 3);
-  ctx.fillRect(px - unit * 3, py - unit * 4, unit * 2, unit * 2);
-  ctx.fillRect(px - unit * 4, py - unit * 5, unit * 2, unit * 2);
-  ctx.fillStyle = "#172234";
-  ctx.fillRect(px - unit * 3, py + unit * 2, unit * 2, unit);
-  ctx.fillRect(px + unit, py + unit * 2, unit * 2, unit);
+  const unit = Math.max(3, w * .0095);
+  drawActionChopper(ctx, px, py, unit, now);
 
   if (game.message && now < game.messageUntil) {
     ctx.fillStyle = "rgba(2,4,10,.8)";
