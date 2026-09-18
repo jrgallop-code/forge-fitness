@@ -24,14 +24,14 @@ private struct LevelUpLiquidGlassNavigation: View {
     ]
 
     var body: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 4) {
             ForEach(items, id: \.page) { item in
                 navigationButton(item)
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.top, 6)
-        .padding(.bottom, 4)
+        .frame(maxWidth: 546)
+        .padding(.horizontal, 21)
+        .padding(.bottom, 7)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .opacity(state.isVisible ? 1 : 0)
         .allowsHitTesting(state.isVisible)
@@ -44,11 +44,12 @@ private struct LevelUpLiquidGlassNavigation: View {
     ) -> some View {
         if state.selectedPage == item.page {
             buttonLabel(item)
-                .buttonStyle(.glassProminent)
-                .tint(Color(red: 0.95, green: 0.12, blue: 0.18))
+                .buttonStyle(.glass)
+                .foregroundStyle(Color(red: 1.0, green: 0.29, blue: 0.33))
         } else {
             buttonLabel(item)
-                .buttonStyle(.glass)
+                .buttonStyle(.plain)
+                .foregroundStyle(Color(uiColor: .secondaryLabel))
         }
     }
 
@@ -67,10 +68,10 @@ private struct LevelUpLiquidGlassNavigation: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.76)
             }
-            .frame(maxWidth: .infinity, minHeight: 48)
+            .frame(maxWidth: .infinity, minHeight: 55)
             .contentShape(Rectangle())
         }
-        .buttonBorderShape(.capsule)
+        .buttonBorderShape(.roundedRectangle(radius: 17))
         .accessibilityLabel(item.title)
     }
 }
