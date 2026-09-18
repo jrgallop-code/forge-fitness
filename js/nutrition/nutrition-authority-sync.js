@@ -1,5 +1,6 @@
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=nutrition-authority-sync-2";
 import { getActiveNutritionPhase } from "./nutrition-phase.js?v=nutrition-authority-sync-2";
+import { resolvePhaseMaintenance } from "./new-phase-maintenance.js?v=new-phase-current-expenditure-1";
 
 const SNAPSHOT_KEY = "level_up_weekly_tdee_estimate_v1";
 const STYLE_ID = "level-up-nutrition-authority-sync-styles";
@@ -98,7 +99,7 @@ function patchNutritionPhase(signals) {
             const evidence = Number.isFinite(expenditure)
                 ? `${estimate?.label || "Estimate"} · ${Number(estimate?.foodDays) || 0} food days · ${Number(estimate?.weighIns) || 0} weigh-ins`
                 : `${Number(estimate?.foodDays) || 0}/2 food days · ${Number(estimate?.weighIns) || 0}/3 weigh-ins`;
-            setText(meta, `${evidence} · identical to Progress → Nutrition`);
+            setText(meta, `${evidence} · same daily expenditure shown in Progress → Nutrition`);
         }
     }
 
@@ -119,7 +120,14 @@ function patchNutritionPhase(signals) {
 
     const input = document.getElementById("unified-maintenance");
     if (input && phase && planBaseline !== null && document.activeElement !== input) {
-        const rounded = String(Math.round(planBaseline));
+        const selectedGoalId = document.getElementById("unified-goal-select")?.value;
+        const displayBaseline = resolvePhaseMaintenance({
+            selectedGoalId,
+            activeGoalId: phase.goalId,
+            enteredMaintenance: planBaseline,
+            estimate
+        });
+        const rounded = String(Math.round(displayBaseline));
         if (input.value !== rounded) input.value = rounded;
     }
 
@@ -194,6 +202,7 @@ function handleInitialPlanCalculatedTdee(event) {
 // live expenditure into that review snapshot so the recommendation uses the same
 // TDEE visible in Progress. This does NOT change the phase baseline or calorie
 // target; those remain unchanged until the user actually applies the review.
+// Current expenditure used for review is therefore identical across both screens.
 function syncReviewCalculationToCurrentExpenditure(signals) {
     if (document.documentElement.dataset.weeklyCalorieReviewReady !== "true") return;
     const live = positive(signals.expenditure);

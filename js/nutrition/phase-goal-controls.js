@@ -2,6 +2,8 @@ import { GOAL_PRESETS, roundCalorieTarget } from "./tdee-calculator.js?v=calorie
 import { getNutritionProfile, saveNutritionGoal, syncCalculatedCalories } from "./nutrition-storage.js?v=phase-goal-controls-1";
 import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-live-weighin-1";
 import { normalizeWeightEntries } from "../core/weight-trend.js?v=phase-goal-controls-1";
+import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=new-phase-current-expenditure-1";
+import { resolvePhaseMaintenance } from "./new-phase-maintenance.js?v=new-phase-current-expenditure-1";
 
 const PHASES_KEY = "level_up_nutrition_phases";
 const WEIGHT_KEY = "forge_weight_entries";
@@ -148,8 +150,14 @@ function savePhaseFromNutrition() {
 
     const goalId = document.getElementById("unified-goal-select")?.value;
     const preset = GOAL_PRESETS[goalId];
-    const maintenance = Math.round(Number(document.getElementById("unified-maintenance")?.value));
     const active = getActiveNutritionPhase();
+    const enteredMaintenance = Math.round(Number(document.getElementById("unified-maintenance")?.value));
+    const maintenance = resolvePhaseMaintenance({
+        selectedGoalId: goalId,
+        activeGoalId: active?.goalId,
+        enteredMaintenance,
+        estimate: getCalculatedMaintenanceEstimate()
+    });
     const samePhase = Boolean(active && active.goalId === goalId);
     const currentTarget = positive(active?.currentCalories ?? active?.startCalories);
     const directTarget = readDirectCalorieTarget();

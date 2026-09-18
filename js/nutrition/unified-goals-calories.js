@@ -4,6 +4,7 @@ import { getActiveNutritionPhase, getNutritionPhaseHistory, getActivePhaseMetric
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=independent-tdee-staged-target-1";
 import { clearPendingMaintenanceReview, getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, readPendingMaintenanceReview, setMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calendar-checkin-day-1";
 import { buildCoordinatedWeeklyUpdate, clearAdjustmentHold, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=calendar-checkin-day-1";
+import { resolvePhaseMaintenance } from "./new-phase-maintenance.js?v=new-phase-current-expenditure-1";
 
 const MANUAL_MAINTENANCE_KEY = "level_up_manual_maintenance_calories";
 const LEGACY_CUSTOM_WEEKLY_RATE_KEY = "level_up_custom_weekly_rate";
@@ -29,8 +30,10 @@ export function initializeUnifiedGoalsCalories() {
     hydrateMaintenance();
     refreshAll();
     document.getElementById("unified-goal-select")?.addEventListener("change", () => {
+        maintenanceDraft = null;
         targetDraft = null;
         pendingAdaptiveCheckDay = null;
+        hydrateMaintenance(true);
         refreshAll();
     });
     document.getElementById("unified-maintenance")?.addEventListener("input", event => {
@@ -137,7 +140,25 @@ function hydrateMaintenance(force = true) {
     if (!input || (!force && document.activeElement === input)) return;
     const active = getActiveNutritionPhase();
     const manual = getStoredManualMaintenance();
-    input.value = maintenanceDraft !== null ? String(maintenanceDraft) : Number.isFinite(Number(active?.maintenanceCalories)) ? String(active.maintenanceCalories) : Number.isFinite(manual) ? String(manual) : Number.isFinite(estimated) ? String(estimated) : "";
+    const selectedGoalId = document.getElementById("unified-goal-select")?.value;
+    const fallback = Number.isFinite(Number(active?.maintenanceCalories))
+        ? Number(active.maintenanceCalories)
+        : Number.isFinite(manual)
+            ? manual
+            : Number.isFinite(estimated)
+                ? estimated
+                : null;
+    const resolved = resolvePhaseMaintenance({
+        selectedGoalId,
+        activeGoalId: active?.goalId,
+        enteredMaintenance: fallback,
+        estimate: calculatedMaintenance()
+    });
+    input.value = maintenanceDraft !== null
+        ? String(maintenanceDraft)
+        : Number.isFinite(resolved)
+            ? String(Math.round(resolved))
+            : "";
 }
 
 function useEstimatedMaintenance() {
