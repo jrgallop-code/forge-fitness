@@ -1864,6 +1864,46 @@ font-size:16px;
     max-width:420px;
 }
 
+.exercise-chart-heading {
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+}
+
+.exercise-chart-heading label {
+    color:var(--muted);
+    font-size:12px;
+    font-weight:700;
+}
+
+.exercise-chart-heading select {
+    display:block;
+    min-width:170px;
+    margin-top:6px;
+}
+
+.equipment-chart-legend {
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-top:10px;
+    color:var(--muted);
+    font-size:12px;
+}
+
+.equipment-chart-legend span {
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+
+.equipment-chart-legend i {
+    width:9px;
+    height:9px;
+    border-radius:50%;
+}
+
 .exercise-metric-controls {
     display:flex;
     gap:6px;
@@ -1891,6 +1931,39 @@ font-size:16px;
 
 .exercise-metric-controls button {
     flex:1;
+}
+
+.exercise-machine-view-controls {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:6px;
+    margin-top:8px;
+}
+
+.exercise-machine-view-controls.has-two-options {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+}
+
+.exercise-machine-view-controls[hidden],
+.exercise-machine-view-controls button[hidden] {
+    display:none;
+}
+
+.exercise-machine-view-controls button {
+    min-height:34px;
+    padding:6px;
+    color:var(--muted);
+    background:var(--surface-raised,#18181c);
+    border:1px solid var(--line,#38383f);
+    border-radius:10px;
+    font-size:11px;
+    font-weight:800;
+}
+
+.exercise-machine-view-controls button[aria-pressed="true"] {
+    color:var(--button-primary-text,#fff);
+    background:var(--accent-dark,var(--red));
+    border-color:var(--accent,var(--red));
 }
 
 .exercise-metric-controls button[aria-pressed="true"] {
@@ -1943,6 +2016,24 @@ font-size:16px;
     color:#f0b24a;
 }
 
+.exercise-volume-stat small {
+    display:block;
+    margin-top:4px;
+    color:var(--muted);
+    font-size:9px;
+    line-height:1.25;
+}
+
+.exercise-volume-stat small.is-positive,
+.exercise-history-change.is-positive {
+    color:#4bd180;
+}
+
+.exercise-volume-stat small.is-negative,
+.exercise-history-change.is-negative {
+    color:#f0b24a;
+}
+
 .exercise-volume-detail {
     grid-column:1/-1;
     margin:0;
@@ -1964,10 +2055,67 @@ font-size:16px;
     min-height:300px;
 }
 
+.machine-small-multiples {
+    display:grid;
+    gap:10px;
+    padding:8px 0;
+}
+
+.machine-progress-card {
+    overflow:hidden;
+    padding:12px;
+    border:1px solid var(--line,#303037);
+    border-radius:14px;
+    background:var(--surface-raised,#17171b);
+}
+
+.machine-progress-card header {
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+}
+
+.machine-progress-card header strong,
+.machine-progress-card header small {
+    display:block;
+}
+
+.machine-progress-card header strong {
+    color:var(--heading,#fff);
+    font-size:12px;
+}
+
+.machine-progress-card header small,
+.machine-progress-card p {
+    margin:3px 0 0;
+    color:var(--muted);
+    font-size:10px;
+}
+
+.machine-progress-card header b {
+    color:var(--heading,#fff);
+    font-size:12px;
+    white-space:nowrap;
+}
+
+.machine-progress-card svg {
+    display:block;
+    margin-top:5px;
+}
+
+.equipment-chart-legend p {
+    flex-basis:100%;
+    margin:2px 0 0;
+    color:var(--muted);
+    font-size:10px;
+    line-height:1.35;
+}
+
 .exercise-history-header,
 .exercise-history-row {
     display:grid;
-    grid-template-columns:1.2fr 1fr 1fr .6fr;
+    grid-template-columns:1.05fr 1fr .8fr 1fr .45fr;
     gap:10px;
     padding:11px 8px;
     align-items:center;
@@ -2030,6 +2178,15 @@ font-size:16px;
 
 @media(max-width:520px) {
 
+    .exercise-chart-heading {
+        align-items:stretch;
+        flex-direction:column;
+    }
+
+    .exercise-chart-heading select {
+        width:100%;
+    }
+
     .training-progress-header label,
     .training-progress-header select {
         width:100%;
@@ -2041,7 +2198,7 @@ font-size:16px;
 
     .exercise-history-header,
     .exercise-history-row {
-        grid-template-columns:1fr .9fr .8fr .4fr;
+        grid-template-columns:.85fr .85fr .65fr .9fr .35fr;
         gap:5px;
         font-size:11px;
     }

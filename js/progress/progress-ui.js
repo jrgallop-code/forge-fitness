@@ -392,13 +392,25 @@ export function renderProgress() {
 
                     <div class="analytics-card">
 
-                        <h4 id="exercise-progress-title">
-                            Exercise Progress
-                        </h4>
+                        <div class="exercise-chart-heading">
+                            <h4 id="exercise-progress-title">
+                                Exercise Progress
+                            </h4>
+                            <label>
+                                Equipment
+                                <select id="exercise-equipment-filter"></select>
+                            </label>
+                        </div>
 
                         <div class="exercise-metric-controls" aria-label="Exercise progress metric">
                             <button type="button" data-exercise-metric="volume" aria-pressed="true">Session Volume</button>
                             <button type="button" data-exercise-metric="strength" aria-pressed="false">Estimated 1RM</button>
+                        </div>
+
+                        <div class="exercise-machine-view-controls" id="exercise-machine-view-controls" aria-label="Machine graph view" hidden>
+                            <button type="button" data-machine-view="combined" aria-pressed="true">Combined</button>
+                            <button type="button" data-machine-view="compare" aria-pressed="false">Compare %</button>
+                            <button type="button" data-machine-view="separate" aria-pressed="false">By machine</button>
                         </div>
 
                         <div class="exercise-volume-comparison" id="exercise-volume-comparison" aria-live="polite"></div>
@@ -413,6 +425,8 @@ export function renderProgress() {
                             aria-label="Estimated exercise strength"
                         ></canvas>
 
+                        <div id="exercise-equipment-legend" class="equipment-chart-legend"></div>
+
                     </div>
 
                     <div class="analytics-card">
@@ -421,6 +435,7 @@ export function renderProgress() {
                             <span>Date</span>
                             <span>Volume</span>
                             <span>Change</span>
+                            <span>Equipment</span>
                             <span>Sets</span>
                         </div>
 

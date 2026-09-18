@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-16-339";
+const CACHE_VERSION = "2026-09-18-340";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -7,6 +7,26 @@ const CORE_ASSETS = [
     "./",
     "./index.html",
     "./manifest.webmanifest",
+    "./css/machine-profile.css?v=machine-profile-sheet-pwa-1",
+    "./assets/games/gym-chopper/couch-potato-a.png?v=1",
+    "./assets/games/gym-chopper/couch-potato-b.png?v=1",
+    "./assets/games/gym-chopper/couch-potato-c.png?v=1",
+    "./assets/games/gym-chopper/couch-potato-d.png?v=1",
+    "./assets/games/gym-chopper/helicopter-a.png?v=1",
+    "./assets/audio/arcade/menu-select.wav",
+    "./assets/audio/arcade/game-start.wav",
+    "./assets/audio/arcade/protein-pickup.wav",
+    "./assets/audio/arcade/power-up.wav",
+    "./assets/audio/arcade/whey-shot.wav",
+    "./assets/audio/arcade/couch-hit.wav",
+    "./assets/audio/arcade/ghost-crush.wav",
+    "./assets/audio/arcade/enemy-explosion.wav",
+    "./assets/audio/arcade/player-hit.wav",
+    "./assets/audio/arcade/helicopter-rotor.wav",
+    "./assets/audio/arcade/damage-grunt-1.wav",
+    "./assets/audio/arcade/damage-grunt-2.wav",
+    "./assets/audio/arcade/damage-grunt-3.wav",
+    "./assets/audio/arcade/game-over-scream.wav",
     "./js/account/cloud-backup-history-ui.js?v=backup-history-ui-1",
     "./js/account/cloud-background-sync.js",
     "./js/analytics/product-state.js?v=user-demographics-1",

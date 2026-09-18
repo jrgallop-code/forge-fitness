@@ -10,6 +10,7 @@ const SESSION_KEY = "level_up_cloud_session";
 const ACCOUNT_KEY = "level_up_cloud_account";
 const LAST_SYNC_KEY = "level_up_cloud_last_sync";
 const AUTO_STATE_KEY = "level_up_cloud_auto_backup_state";
+const LOCAL_DATA_OWNER_KEY = "level_up_local_data_owner";
 
 ensureAccountCloudStyles();
 
@@ -173,6 +174,9 @@ async function downloadBackup() {
 }
 
 async function signOut() {
+    const account = readJson(ACCOUNT_KEY);
+    const owner = account?.id || account?.email;
+    if (owner) localStorage.setItem(LOCAL_DATA_OWNER_KEY, String(owner));
     try { await api("/v1/session", { method: "DELETE" }); }
     catch (error) { console.warn("Cloud sign-out request failed:", error); }
     clearSession();
@@ -272,7 +276,7 @@ async function api(path, { method = "GET", body, auth = true } = {}) {
 
 function getSession() {
     const session = readJson(SESSION_KEY);
-    if (!session?.token || (session.expiresAt && Date.parse(session.expiresAt) <= Date.now())) return null;
+    if (!session?.token) return null;
     return session;
 }
 

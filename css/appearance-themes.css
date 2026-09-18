@@ -283,6 +283,8 @@ html[data-theme-mode="light"] .seven-day-volume-muscle{stroke:rgba(16,32,58,.62)
 .training-progress-view[data-view="exercises"] .exercise-volume-stat strong{color:var(--heading)!important}
 .training-progress-view[data-view="exercises"] .exercise-volume-stat strong.is-positive{color:var(--success-text)!important}
 .training-progress-view[data-view="exercises"] .exercise-volume-stat strong.is-negative{color:var(--warning-text)!important}
+.training-progress-view[data-view="exercises"] .exercise-volume-stat small.is-positive,.training-progress-view[data-view="exercises"] .exercise-history-change.is-positive{color:var(--success-text)!important}
+.training-progress-view[data-view="exercises"] .exercise-volume-stat small.is-negative,.training-progress-view[data-view="exercises"] .exercise-history-change.is-negative{color:var(--warning-text)!important}
 .training-progress-view[data-view="exercises"] .exercise-volume-detail{border:1px solid var(--line)!important;background:var(--surface-raised)!important;color:var(--text-secondary)!important}
 .training-progress-view[data-view="exercises"] .exercise-chart-note{color:var(--text-secondary)!important}
 .strength-index-summary{border-color:var(--line)!important;background:var(--surface-raised)!important;color:var(--text)!important}
