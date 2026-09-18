@@ -182,3 +182,5 @@ TestFlight build 107: keep Gym Chopper responsive when iOS cannot decode the hel
 TestFlight build 108: make arcade effects reliably audible on iOS with PCM WAV clips and an active playback audio session that works with the Ring/Silent switch.
 
 TestFlight build 109: play arcade effects through a dedicated native iOS audio plugin and add an immediate impact-and-grunt Test Sound button.
+
+TestFlight build 110: give the iOS bottom navigation an adaptive Liquid Glass material with refracted highlights and a translucent selected-tab capsule.

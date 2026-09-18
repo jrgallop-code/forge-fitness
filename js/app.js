@@ -10,6 +10,9 @@ import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check
 import { initializeSatisfactionSurvey } from "./feedback/satisfaction-survey.js?v=satisfaction-survey-1";
 import { applyAppFeaturePreferences } from "./core/app-feature-preferences.js?v=nutrition-feature-choice-1";
 
+const isNativeIOSApp = window.Capacitor?.getPlatform?.() === "ios";
+document.documentElement.classList.toggle("level-up-native-ios", isNativeIOSApp);
+
 initializeSatisfactionSurvey();
 applyAppFeaturePreferences();
 
