@@ -195,3 +195,5 @@ TestFlight build 115: add all four approved pixel-art couch-potato enemies to Gy
 TestFlight build 116: replace the drawn Gym Chopper player vehicle with the approved olive helicopter and muscular machine-gun door gunner pixel-art sprite.
 
 TestFlight build 117: hide bottom navigation throughout rest games, compare dashboard performance by each lift's latest matching history, and reuse the full exercise browser for manual workout swaps.
+
+TestFlight build 118: stop all arcade music, rotor loops, delayed effects, and active audio sources when a game closes or its rest timer is dismissed.
