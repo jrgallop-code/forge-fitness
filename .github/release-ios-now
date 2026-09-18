@@ -191,3 +191,5 @@ TestFlight build 113: restore the familiar Level Up bottom bar and apply native 
 TestFlight build 114: fully remove the Liquid Glass navigation experiment and restore the original Level Up bottom bar and its established visibility behavior.
 
 TestFlight build 115: add all four approved pixel-art couch-potato enemies to Gym Chopper with randomized in-game variation and exact sprite-based rendering.
+
+TestFlight build 116: replace the drawn Gym Chopper player vehicle with the approved olive helicopter and muscular machine-gun door gunner pixel-art sprite.

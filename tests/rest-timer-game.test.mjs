@@ -115,3 +115,10 @@ test("Gym Chopper rotates all four detailed couch-potato sprites", () => {
   assert.match(game, /ctx\.imageSmoothingEnabled = false/);
   assert.match(game, /const size = Math\.max\(36, w \* \.115\)/);
 });
+
+test("Gym Chopper uses the approved olive helicopter and muscular door gunner sprite", () => {
+  assert.match(game, /assets\/games\/gym-chopper\/helicopter-a\.png/);
+  assert.match(game, /function ensureActionChopperSprite/);
+  assert.match(game, /const width = unit \* 20\.5/);
+  assert.match(game, /ctx\.drawImage\(sprite, px - width \/ 2/);
+});

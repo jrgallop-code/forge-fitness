@@ -33,6 +33,7 @@ const COUCH_POTATO_SPRITE_URLS = [
   "assets/games/gym-chopper/couch-potato-c.png?v=1",
   "assets/games/gym-chopper/couch-potato-d.png?v=1"
 ];
+const ACTION_CHOPPER_SPRITE_URL = "assets/games/gym-chopper/helicopter-a.png?v=1";
 
 const MAZE = [
   "#################",
@@ -77,6 +78,7 @@ let rotorRetryPending = false;
 let lastGruntAt = 0;
 let lastGruntIndex = -1;
 let couchPotatoSprites = [];
+let actionChopperSprite = null;
 
 export function isRestTimerGameEnabled() {
   return localStorage.getItem(ENABLED_KEY) !== "false";
@@ -720,6 +722,20 @@ function ensureCouchPotatoSprites() {
   return couchPotatoSprites;
 }
 
+function ensureActionChopperSprite() {
+  if (actionChopperSprite || typeof Image === "undefined") return actionChopperSprite;
+  actionChopperSprite = new Image();
+  actionChopperSprite.decoding = "async";
+  actionChopperSprite.addEventListener("load", () => {
+    const overlay = document.getElementById(OVERLAY_ID);
+    if (overlay && !overlay.hidden && !overlay.querySelector("[data-rest-arcade-select]")?.hidden) {
+      window.requestAnimationFrame(renderArcadePreviews);
+    }
+  }, { once: true });
+  actionChopperSprite.src = ACTION_CHOPPER_SPRITE_URL;
+  return actionChopperSprite;
+}
+
 function drawFlyingCouchDude(ctx, x, y, size, now, wobble, variant = 0) {
   const bob = Math.sin(now / 180 + wobble) * size * .05;
   const top = y + bob;
@@ -803,6 +819,17 @@ function drawFlyingCouchDude(ctx, x, y, size, now, wobble, variant = 0) {
 }
 
 function drawActionChopper(ctx, px, py, unit, now, state = game) {
+  const sprite = ensureActionChopperSprite();
+  if (sprite?.complete && sprite.naturalWidth > 0) {
+    const width = unit * 20.5;
+    const height = width * (sprite.naturalHeight / sprite.naturalWidth);
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(sprite, px - width / 2, py - height / 2, width, height);
+    ctx.restore();
+    return;
+  }
+
   const rotorPulse = Math.abs(Math.sin(now / 55));
 
   // Tail boom, tail rotor, landing skids and a recognizable helicopter cabin.
@@ -1207,6 +1234,7 @@ function openArcadeMenu() {
   overlay.querySelector("[data-rest-arcade-clock]").textContent = timer.status === "paused" ? "PAUSED" : formatTime(remainingMs(timer));
   updateSoundButtons();
   ensureCouchPotatoSprites();
+  ensureActionChopperSprite();
   void preloadArcadeSamples();
   playEffect("menu-select");
   stopRotor();
@@ -1230,7 +1258,10 @@ function openGame(mode = "protein") {
   const canvas = overlay.querySelector("[data-rest-game-canvas]");
   game = mode === "chopper" ? createChopperState(canvas) : createGameState(canvas);
   const isChopper = game.mode === "chopper";
-  if (isChopper) ensureCouchPotatoSprites();
+  if (isChopper) {
+    ensureCouchPotatoSprites();
+    ensureActionChopperSprite();
+  }
   updateSoundButtons();
   playEffect("game-start");
   startMusic();
