@@ -4,6 +4,7 @@ const ACTIVE_KEY = "level_up_active_workout";
 const ENABLED_KEY = "level_up_rest_timer_game_enabled";
 const HIGH_SCORE_KEY = "level_up_protein_run_high_score";
 const CHOPPER_HIGH_SCORE_KEY = "level_up_gym_chopper_high_score";
+const SOUND_KEY = "level_up_rest_arcade_sound";
 const OVERLAY_ID = "level-up-protein-run";
 const STYLE_ID = "level-up-protein-run-style";
 const PROTEIN_PER_GROWTH_STAGE = 6;
@@ -42,6 +43,11 @@ const DIRECTIONS = {
 let game = null;
 let frameId = null;
 let touchStart = null;
+let audioContext = null;
+let audioMaster = null;
+let musicTimer = null;
+let musicStep = 0;
+let rotorTimer = null;
 
 export function isRestTimerGameEnabled() {
   return localStorage.getItem(ENABLED_KEY) !== "false";
@@ -76,6 +82,128 @@ function formatTime(ms) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
+function soundEnabled() {
+  return localStorage.getItem(SOUND_KEY) !== "false";
+}
+
+function ensureAudio() {
+  if (!soundEnabled()) return null;
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return null;
+  if (!audioContext) {
+    audioContext = new AudioContext();
+    audioMaster = audioContext.createGain();
+    audioMaster.gain.value = .16;
+    audioMaster.connect(audioContext.destination);
+  }
+  if (audioContext.state === "suspended") void audioContext.resume();
+  return audioContext;
+}
+
+function tone(frequency, duration = .08, { type = "square", volume = .14, endFrequency = null, delay = 0 } = {}) {
+  const context = ensureAudio();
+  if (!context || !audioMaster) return;
+  const start = context.currentTime + delay;
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, start);
+  if (endFrequency) oscillator.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency), start + duration);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(volume, start + .008);
+  gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+  oscillator.connect(gain).connect(audioMaster);
+  oscillator.start(start);
+  oscillator.stop(start + duration + .02);
+}
+
+function noise(duration = .08, volume = .1) {
+  const context = ensureAudio();
+  if (!context || !audioMaster) return;
+  const length = Math.max(1, Math.floor(context.sampleRate * duration));
+  const buffer = context.createBuffer(1, length, context.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let index = 0; index < length; index += 1) data[index] = Math.random() * 2 - 1;
+  const source = context.createBufferSource();
+  const gain = context.createGain();
+  source.buffer = buffer;
+  gain.gain.setValueAtTime(volume, context.currentTime);
+  gain.gain.exponentialRampToValueAtTime(.0001, context.currentTime + duration);
+  source.connect(gain).connect(audioMaster);
+  source.start();
+}
+
+function playEffect(name) {
+  if (!soundEnabled()) return;
+  if (name === "pickup") tone(660, .045, { volume: .08, endFrequency: 880 });
+  if (name === "power") [440, 660, 880].forEach((note, index) => tone(note, .11, { volume: .1, delay: index * .055 }));
+  if (name === "shoot") { noise(.045, .12); tone(150, .07, { type: "sawtooth", volume: .09, endFrequency: 70 }); }
+  if (name === "impact") { noise(.1, .15); tone(90, .14, { type: "square", volume: .12, endFrequency: 42 }); }
+  if (name === "crush") { noise(.13, .16); tone(75, .18, { type: "sawtooth", volume: .14, endFrequency: 38 }); }
+  if (name === "damage") {
+    // Original synthesized action-hero grunt; no sampled or imitated voice.
+    tone(125, .28, { type: "sawtooth", volume: .18, endFrequency: 58 });
+    tone(92, .32, { type: "triangle", volume: .13, endFrequency: 45, delay: .035 });
+    noise(.12, .07);
+  }
+  if (name === "rest-over") [784, 659, 523].forEach((note, index) => tone(note, .18, { volume: .12, delay: index * .12 }));
+}
+
+function startMusic() {
+  if (!soundEnabled() || musicTimer) return;
+  ensureAudio();
+  const melody = [330, 392, 494, 659, 494, 392, 349, 440, 523, 698, 523, 440, 294, 370, 440, 587];
+  const bass = [82, 82, 98, 98, 110, 110, 98, 98];
+  const tick = () => {
+    const step = musicStep++;
+    tone(melody[step % melody.length], .095, { type: "square", volume: .045 });
+    if (step % 2 === 0) tone(bass[Math.floor(step / 2) % bass.length], .18, { type: "triangle", volume: .055 });
+    if (step % 4 === 2) noise(.025, .025);
+  };
+  tick();
+  musicTimer = window.setInterval(tick, 125);
+}
+
+function stopMusic() {
+  if (musicTimer) window.clearInterval(musicTimer);
+  musicTimer = null;
+}
+
+function startRotor() {
+  if (!soundEnabled() || rotorTimer) return;
+  const thump = () => {
+    tone(48, .09, { type: "triangle", volume: .06, endFrequency: 38 });
+    noise(.025, .018);
+  };
+  thump();
+  rotorTimer = window.setInterval(thump, 115);
+}
+
+function stopRotor() {
+  if (rotorTimer) window.clearInterval(rotorTimer);
+  rotorTimer = null;
+}
+
+function updateSoundButtons() {
+  document.querySelectorAll("[data-arcade-sound]").forEach(button => {
+    button.textContent = soundEnabled() ? "🔊" : "🔇";
+    button.setAttribute("aria-label", soundEnabled() ? "Mute arcade sound" : "Turn on arcade sound");
+  });
+}
+
+function toggleArcadeSound() {
+  const enabled = !soundEnabled();
+  localStorage.setItem(SOUND_KEY, enabled ? "true" : "false");
+  updateSoundButtons();
+  if (enabled) {
+    startMusic();
+    if (game?.mode === "chopper") startRotor();
+  } else {
+    stopMusic();
+    stopRotor();
+  }
+}
+
 function ensureStyles() {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
@@ -91,13 +219,17 @@ function ensureStyles() {
     .rest-arcade-marquee strong { display: block; color: #fff36b; font-size: clamp(25px, 8vw, 38px); line-height: .95; letter-spacing: -.07em; text-shadow: 3px 3px 0 #ff326d; }
     .rest-arcade-marquee span { display: block; margin-top: 7px; color: #d7e5f6; font-size: 10px; letter-spacing: .18em; }
     .rest-arcade-close { position: absolute; z-index: 2; top: 7px; right: 2px; min-width: 42px; min-height: 42px; border: 2px solid #6f86a1; border-radius: 7px; background: #172234; color: #fff; font-size: 22px; }
+    .rest-arcade-sound { min-width: 42px; min-height: 42px; border: 2px solid #6f86a1; border-radius: 7px; background: #172234; color: #fff; font-size: 18px; }
+    .rest-arcade-select > .rest-arcade-sound { position: absolute; z-index: 2; top: 7px; left: 2px; }
     .rest-arcade-clock { position: relative; width: max-content; margin: 14px auto 16px; border: 2px solid var(--protein-run-accent, #2d8cff); padding: 6px 14px; color: #fff; background: #07111f; box-shadow: 3px 3px 0 var(--protein-run-shadow, #16365b); font-size: 18px; font-weight: 900; }
     .rest-arcade-grid { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
     .rest-arcade-card { min-width: 0; overflow: hidden; border: 3px solid #586f8f; border-radius: 8px; padding: 0 0 12px; background: #0d1728; color: #fff; box-shadow: 5px 5px 0 #000; text-align: left; touch-action: manipulation; }
     .rest-arcade-card:active { transform: translate(3px,3px); box-shadow: 2px 2px 0 #000; }
     .rest-arcade-card:first-child { border-color: #39d5ff; }
     .rest-arcade-card:last-child { border-color: #ff6b49; }
-    .rest-arcade-art { display: block; width: 100%; aspect-ratio: 4 / 3; border-bottom: 3px solid currentColor; background: #02040a; }
+    .rest-arcade-art { display: block; width: 100%; aspect-ratio: 4 / 3; border-bottom: 3px solid currentColor; background: #02040a; image-rendering: pixelated; }
+    canvas.rest-arcade-art[data-arcade-preview="protein"] { aspect-ratio: 17 / 19; }
+    canvas.rest-arcade-art[data-arcade-preview="chopper"] { aspect-ratio: 4 / 5; }
     .rest-arcade-card-copy { display: block; padding: 10px 10px 0; }
     .rest-arcade-card-title { display: block; min-height: 38px; color: #fff; font-size: clamp(15px, 4.6vw, 21px); font-weight: 900; line-height: 1; text-transform: uppercase; }
     .rest-arcade-card-desc { display: block; min-height: 43px; margin-top: 7px; color: #aebfd3; font-size: 10px; line-height: 1.35; }
@@ -176,7 +308,8 @@ function createGameState(canvas) {
     lastPlayerMove: 0,
     lastEnemyMove: 0,
     timerId: readActive()?.restTimer?.timerId || "",
-    finished: false
+    finished: false,
+    finishedSoundPlayed: false
   };
 }
 
@@ -196,6 +329,7 @@ function createChopperState(canvas) {
     rotorAngle: 0,
     timerId: readActive()?.restTimer?.timerId || "",
     finished: false,
+    finishedSoundPlayed: false,
     message: "FIRE THE GAINS!",
     messageUntil: performance.now() + 1200
   };
@@ -252,6 +386,7 @@ function collectProtein(amount, now) {
   game.proteinCollected += amount;
   const nextStage = growthStage(game);
   if (nextStage > previousStage) {
+    playEffect("power");
     game.message = nextStage >= MAX_GROWTH_STAGE ? "MAX FLEX!" : "BIGGER!";
     game.messageUntil = now + 900;
   }
@@ -277,10 +412,12 @@ function movePlayer(now) {
   const key = `${game.player.x},${game.player.y}`;
   if (game.pellets.delete(key)) {
     game.score += 10;
+    playEffect("pickup");
     collectProtein(1, now);
   }
   if (game.powers.delete(key)) {
     game.score += 75;
+    playEffect("power");
     collectProtein(4, now);
   }
   if (!game.pellets.size && !game.powers.size) game = resetBoard(game);
@@ -305,6 +442,7 @@ function resolveCollisions(now) {
   const hit = game.enemies.find(enemy => enemy.x === game.player.x && enemy.y === game.player.y);
   if (!hit) return;
   if (isCrushMode(now)) {
+    playEffect("crush");
     game.score += 250;
     game.message = "BICEP CRUSH!";
     game.messageUntil = now + 850;
@@ -312,6 +450,7 @@ function resolveCollisions(now) {
     hit.y = 9;
     hit.direction = DIRECTIONS.up;
   } else {
+    playEffect("damage");
     game.lives = Math.max(0, game.lives - 1);
     game.player = { x: 8, y: 9 };
     game.enemies[0].x = 7;
@@ -403,6 +542,7 @@ function drawProteinTub(ctx, x, y, cellW, cellH, large = false) {
 function shootChopper() {
   if (!game || game.mode !== "chopper" || game.finished) return;
   game.bullets.push({ x: game.player.x + .145, y: game.player.y + .015 });
+  playEffect("shoot");
   game.message = "PROTEIN CANNON!";
   game.messageUntil = performance.now() + 280;
 }
@@ -447,7 +587,7 @@ function drawFlyingCouchDude(ctx, x, y, size, now, wobble) {
   ctx.fillRect(x + size * .05, top - size * .62, size * .05, size * .05);
 }
 
-function drawActionChopper(ctx, px, py, unit, now) {
+function drawActionChopper(ctx, px, py, unit, now, state = game) {
   const rotorPulse = Math.abs(Math.sin(now / 55));
 
   // Tail boom, tail rotor, landing skids and a recognizable helicopter cabin.
@@ -506,7 +646,7 @@ function drawActionChopper(ctx, px, py, unit, now) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("WHEY", hx + unit * 1.38, hy + unit * .3);
-  if (game?.message === "PROTEIN CANNON!" && now < game.messageUntil) {
+  if (state?.message === "PROTEIN CANNON!" && now < state.messageUntil) {
     ctx.fillStyle = "#fff36b";
     ctx.fillRect(hx + unit * 5.65, hy - unit * 1.05, unit * 1.2, unit * 1.05);
   }
@@ -545,12 +685,14 @@ function updateChopper(now) {
       game.bullets.splice(bulletIndex, 1);
       enemy.hit = true;
       game.score += 100;
+      playEffect("impact");
       game.message = enemy.label === "Z" ? "COUCH POTATO DOWN!" : "ZERO REPS!";
       game.messageUntil = now + 520;
     }
     if (!enemy.hit && Math.abs(enemy.x - game.player.x) < .075 && Math.abs(enemy.y - game.player.y) < .075) {
       enemy.hit = true;
       game.lives = Math.max(0, game.lives - 1);
+      playEffect("damage");
       game.message = "GAINS DAMAGED!";
       game.messageUntil = now + 650;
       if (!game.lives) game.lives = 3;
@@ -560,9 +702,9 @@ function updateChopper(now) {
   game.enemies = game.enemies.filter(enemy => !enemy.hit && enemy.x > -.12);
 }
 
-function drawGymChopper(now) {
-  if (!game || game.mode !== "chopper") return;
-  const { canvas, ctx } = game;
+function drawGymChopper(now, state = game) {
+  if (!state || state.mode !== "chopper") return;
+  const { canvas, ctx } = state;
   const rect = canvas.getBoundingClientRect();
   const scale = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
   const targetW = Math.max(272, Math.floor(rect.width * scale));
@@ -588,7 +730,7 @@ function drawGymChopper(now) {
     ctx.fillRect(i * buildingW, h - buildingH, buildingW * .82, buildingH);
   }
 
-  game.bullets.forEach(bullet => {
+  state.bullets.forEach(bullet => {
     const bx = bullet.x * w;
     const by = bullet.y * h;
     ctx.fillStyle = "#ffffff";
@@ -597,7 +739,7 @@ function drawGymChopper(now) {
     ctx.fillRect(bx + 3, by - 2, 8, 4);
   });
 
-  game.enemies.forEach(enemy => {
+  state.enemies.forEach(enemy => {
     const x = enemy.x * w;
     const y = enemy.y * h;
     const size = Math.max(29, w * .09);
@@ -605,25 +747,25 @@ function drawGymChopper(now) {
   });
 
   // Muscle-action helicopter with a real cabin, rotors and door gunner.
-  const px = game.player.x * w;
-  const py = game.player.y * h;
+  const px = state.player.x * w;
+  const py = state.player.y * h;
   const unit = Math.max(3, w * .0095);
-  drawActionChopper(ctx, px, py, unit, now);
+  drawActionChopper(ctx, px, py, unit, now, state);
 
-  if (game.message && now < game.messageUntil) {
+  if (state.message && now < state.messageUntil) {
     ctx.fillStyle = "rgba(2,4,10,.8)";
     ctx.fillRect(w * .16, h * .1, w * .68, h * .08);
     ctx.fillStyle = "#fff36b";
     ctx.font = `900 ${Math.max(14, w * .047)}px ui-monospace, monospace`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(game.message, w / 2, h * .14);
+    ctx.fillText(state.message, w / 2, h * .14);
   }
 }
 
-function drawProteinRun(now) {
-  if (!game) return;
-  const { canvas, ctx } = game;
+function drawProteinRun(now, state = game) {
+  if (!state) return;
+  const { canvas, ctx } = state;
   const rect = canvas.getBoundingClientRect();
   const scale = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
   const targetW = Math.max(272, Math.floor(rect.width * scale));
@@ -646,20 +788,20 @@ function drawProteinRun(now) {
       return;
     }
     const key = `${x},${y}`;
-    if (game.pellets.has(key)) drawProteinTub(ctx, x, y, cellW, cellH, false);
-    if (game.powers.has(key)) drawProteinTub(ctx, x, y, cellW, cellH, true);
+    if (state.pellets.has(key)) drawProteinTub(ctx, x, y, cellW, cellH, false);
+    if (state.powers.has(key)) drawProteinTub(ctx, x, y, cellW, cellH, true);
   }));
-  const crushable = isCrushMode(now);
-  drawLifter(ctx, game.player.x, game.player.y, cellW, cellH, growthStage(game), crushable);
-  game.enemies.forEach(enemy => drawGhost(ctx, enemy, cellW, cellH, crushable, now));
-  if (game.message && now < game.messageUntil) {
+  const crushable = isCrushMode(now, state);
+  drawLifter(ctx, state.player.x, state.player.y, cellW, cellH, growthStage(state), crushable);
+  state.enemies.forEach(enemy => drawGhost(ctx, enemy, cellW, cellH, crushable, now));
+  if (state.message && now < state.messageUntil) {
     ctx.fillStyle = "rgba(2,4,10,.82)";
     ctx.fillRect(canvas.width * .22, canvas.height * .44, canvas.width * .56, canvas.height * .1);
     ctx.fillStyle = crushable ? "#fff36b" : "#72e89a";
     ctx.font = `900 ${Math.max(15, canvas.width * .055)}px ui-monospace, monospace`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(game.message, canvas.width / 2, canvas.height * .49);
+    ctx.fillText(state.message, canvas.width / 2, canvas.height * .49);
   }
 }
 
@@ -678,6 +820,12 @@ function syncHud() {
   const finished = !sameTimer || timer?.status === "finished" || ms <= 0;
   overlay.querySelector("[data-protein-run-finish]")?.classList.toggle("is-visible", finished);
   game.finished = finished;
+  if (finished && !game.finishedSoundPlayed) {
+    game.finishedSoundPlayed = true;
+    playEffect("rest-over");
+    stopMusic();
+    stopRotor();
+  }
   return !finished && timer?.status !== "paused";
 }
 
@@ -711,10 +859,45 @@ function arcadeMenuLoop() {
   const clock = overlay.querySelector("[data-rest-arcade-clock]");
   if (!timer || timer.status === "finished" || remainingMs(timer) <= 0) {
     clock.textContent = "REST OVER";
+    playEffect("rest-over");
+    stopMusic();
+    stopRotor();
     return;
   }
   clock.textContent = timer.status === "paused" ? "PAUSED" : formatTime(remainingMs(timer));
   frameId = requestAnimationFrame(arcadeMenuLoop);
+}
+
+function renderArcadePreviews() {
+  const overlay = document.getElementById(OVERLAY_ID);
+  if (!overlay) return;
+  const now = performance.now();
+  const proteinCanvas = overlay.querySelector('[data-arcade-preview="protein"]');
+  const chopperCanvas = overlay.querySelector('[data-arcade-preview="chopper"]');
+
+  if (proteinCanvas) {
+    const preview = createGameState(proteinCanvas);
+    preview.player = { x: 7, y: 5 };
+    preview.proteinCollected = PROTEIN_PER_GROWTH_STAGE * MAX_GROWTH_STAGE;
+    preview.poweredUntil = now + 60000;
+    preview.message = "CRUSH MODE!";
+    preview.messageUntil = now + 60000;
+    preview.pellets = new Set([...preview.pellets].filter((_, index) => index % 3 === 0));
+    drawProteinRun(now, preview);
+  }
+
+  if (chopperCanvas) {
+    const preview = createChopperState(chopperCanvas);
+    preview.player = { x: .28, y: .48 };
+    preview.bullets = [{ x: .58, y: .47 }, { x: .72, y: .47 }];
+    preview.enemies = [
+      { x: .83, y: .3, wobble: 0, label: "Z" },
+      { x: .9, y: .7, wobble: 2, label: "0" }
+    ];
+    preview.message = "FIRE THE GAINS!";
+    preview.messageUntil = now + 60000;
+    drawGymChopper(now, preview);
+  }
 }
 
 function ensureGameOverlay() {
@@ -727,34 +910,26 @@ function ensureGameOverlay() {
     overlay.setAttribute("aria-label", "Rest timer arcade game");
     overlay.innerHTML = `<div class="protein-run-shell">
       <div class="rest-arcade-select" data-rest-arcade-select>
+        <button class="rest-arcade-sound" type="button" data-arcade-sound aria-label="Mute arcade sound">🔊</button>
         <button class="rest-arcade-close" type="button" data-protein-run-close aria-label="Close arcade">×</button>
         <div class="rest-arcade-marquee"><strong>LEVEL UP<br>ARCADE</strong><span>CHOOSE YOUR GAME</span></div>
         <div class="rest-arcade-clock">REST <b data-rest-arcade-clock>0:00</b></div>
         <div class="rest-arcade-grid">
           <button class="rest-arcade-card" type="button" data-arcade-game="protein">
-            <svg class="rest-arcade-art" viewBox="0 0 200 150" role="img" aria-label="Muscular arm collecting protein in a neon maze">
-              <rect width="200" height="150" fill="#03101e"/><path d="M8 8h184v18H26v34h116v18H58v34h134v30H8v-18h32V94H8z" fill="#168bff"/><path d="M16 16h168v4H20v34h116v4H52v48h132v28H16v-4h30V88H16z" fill="#061c35"/>
-              <g fill="#fff"><rect x="73" y="72" width="18" height="25"/><rect x="76" y="66" width="12" height="7"/></g><rect x="75" y="79" width="14" height="9" fill="#ff426f"/><text x="82" y="87" text-anchor="middle" font-size="7" font-weight="900" fill="#fff">PRO</text>
-              <g fill="#f2ad65"><rect x="107" y="75" width="19" height="25"/><rect x="101" y="69" width="12" height="12"/><rect x="96" y="63" width="11" height="10"/></g><rect x="109" y="82" width="15" height="9" fill="#111827"/><circle cx="155" cy="46" r="5" fill="#fff36b"/><circle cx="174" cy="101" r="5" fill="#fff36b"/>
-            </svg>
+            <canvas class="rest-arcade-art" data-arcade-preview="protein" role="img" aria-label="Actual Protein Run gameplay showing the maze, lifter, protein tubs and ghosts"></canvas>
             <span class="rest-arcade-card-copy"><span class="rest-arcade-card-title">Protein Run</span><span class="rest-arcade-card-desc">Eat protein. Grow huge. Crush the ghosts.</span><span class="rest-arcade-card-play">PLAY ▶</span></span>
           </button>
           <button class="rest-arcade-card" type="button" data-arcade-game="chopper">
-            <svg class="rest-arcade-art" viewBox="0 0 200 150" role="img" aria-label="Muscle action hero firing from a helicopter at a flying couch">
-              <rect width="200" height="150" fill="#101a2b"/><g fill="#274361"><rect x="8" y="23" width="38" height="7"/><rect x="151" y="45" width="34" height="7"/><rect x="19" y="123" width="29" height="27"/><rect x="57" y="132" width="35" height="18"/><rect x="168" y="118" width="32" height="32"/></g>
-              <g><rect x="18" y="69" width="62" height="10" fill="#315b32"/><rect x="11" y="60" width="9" height="29" fill="#75a64f"/><ellipse cx="88" cy="73" rx="31" ry="22" fill="#467a40"/><rect x="83" y="57" width="23" height="18" fill="#94dcff"/><rect x="50" y="43" width="73" height="5" fill="#d9e7ec"/><rect x="84" y="46" width="5" height="13" fill="#d9e7ec"/><rect x="69" y="96" width="45" height="4" fill="#111827"/></g>
-              <g><rect x="101" y="54" width="10" height="12" fill="#f0b06f"/><rect x="99" y="51" width="14" height="4" fill="#d7a042"/><rect x="101" y="67" width="14" height="20" fill="#171d24"/><circle cx="117" cy="72" r="7" fill="#f0b06f"/><rect x="116" y="70" width="35" height="5" fill="#111827"/><rect x="146" y="68" width="17" height="4" fill="#111827"/><rect x="163" y="65" width="10" height="10" fill="#fff36b"/></g>
-              <g><rect x="150" y="99" width="42" height="23" fill="#a86b35"/><rect x="145" y="105" width="10" height="23" fill="#744526"/><rect x="187" y="105" width="10" height="23" fill="#744526"/><circle cx="171" cy="93" r="9" fill="#f2c092"/><rect x="158" y="99" width="27" height="18" rx="8" fill="#f7cfaa"/><rect x="160" y="91" width="23" height="12" fill="#f4d13d"/></g>
-            </svg>
+            <canvas class="rest-arcade-art" data-arcade-preview="chopper" role="img" aria-label="Actual Gym Chopper gameplay showing the helicopter, whey shots and flying couch potatoes"></canvas>
             <span class="rest-arcade-card-copy"><span class="rest-arcade-card-title">Gym Chopper</span><span class="rest-arcade-card-desc">Fire whey at flying couch potatoes.</span><span class="rest-arcade-card-play">PLAY ▶</span></span>
           </button>
         </div>
         <p class="rest-arcade-insert">● PRESS A GAME TO START ●</p>
       </div>
       <div data-rest-game-view hidden>
-        <header class="protein-run-header"><div><span class="protein-run-kicker">8-BIT REST TIMER</span><h2 data-rest-game-title>Protein Run</h2></div><div style="display:flex;gap:8px"><div class="protein-run-clock" data-protein-run-clock>0:00</div><button class="protein-run-close" type="button" data-protein-run-close aria-label="Close game">×</button></div></header>
+        <header class="protein-run-header"><div><span class="protein-run-kicker">8-BIT REST TIMER</span><h2 data-rest-game-title>Protein Run</h2></div><div style="display:flex;gap:8px"><button class="rest-arcade-sound" type="button" data-arcade-sound aria-label="Mute arcade sound">🔊</button><div class="protein-run-clock" data-protein-run-clock>0:00</div><button class="protein-run-close" type="button" data-protein-run-close aria-label="Close game">×</button></div></header>
         <div class="protein-run-scorebar"><span>SCORE <b data-protein-run-score>00000</b></span><span><i data-protein-run-size-label style="font-style:normal">SIZE</i> <b data-protein-run-size>1/4</b></span><span data-protein-run-lives>💪💪💪</span><span>HIGH <b data-protein-run-high>00000</b></span></div>
-        <div class="protein-run-stage"><canvas aria-label="Maze with a bicep collecting protein powder"></canvas><div class="protein-run-finish" data-protein-run-finish><div><strong>Rest Over!</strong><span>Get back to work.</span></div></div></div>
+        <div class="protein-run-stage"><canvas data-rest-game-canvas aria-label="Maze with a bicep collecting protein powder"></canvas><div class="protein-run-finish" data-protein-run-finish><div><strong>Rest Over!</strong><span>Get back to work.</span></div></div></div>
         <div class="protein-run-controls" aria-label="Game controls"><button type="button" data-game-direction="up" aria-label="Move up">▲</button><button type="button" data-game-direction="left" aria-label="Move left">◀</button><button type="button" data-game-direction="down" aria-label="Move down">▼</button><button type="button" data-game-direction="right" aria-label="Move right">▶</button><button class="gym-chopper-fire" type="button" data-chopper-fire>FIRE</button></div>
         <p class="protein-run-help" data-rest-game-help>Collect the clearly labelled protein tubs to grow. At maximum size, the ghosts flash—run into them and crush them with your biceps. Closing the game never stops your rest timer.</p>
       </div>
@@ -762,6 +937,7 @@ function ensureGameOverlay() {
     document.body.appendChild(overlay);
     overlay.addEventListener("click", event => {
       if (event.target.closest("[data-protein-run-close]")) closeGame();
+      if (event.target.closest("[data-arcade-sound]")) toggleArcadeSound();
       if (event.target.closest("[data-chopper-fire]")) shootChopper();
       const selection = event.target.closest("[data-arcade-game]");
       if (selection) openGame(selection.dataset.arcadeGame);
@@ -779,7 +955,7 @@ function ensureGameOverlay() {
     };
     overlay.addEventListener("pointerup", stopDirection);
     overlay.addEventListener("pointercancel", stopDirection);
-    const canvas = overlay.querySelector("canvas");
+    const canvas = overlay.querySelector("[data-rest-game-canvas]");
     canvas.addEventListener("touchstart", event => {
       const touch = event.changedTouches[0];
       touchStart = { x: touch.clientX, y: touch.clientY };
@@ -807,6 +983,10 @@ function openArcadeMenu() {
   overlay.querySelector("[data-rest-arcade-select]").hidden = false;
   overlay.querySelector("[data-rest-game-view]").hidden = true;
   overlay.querySelector("[data-rest-arcade-clock]").textContent = timer.status === "paused" ? "PAUSED" : formatTime(remainingMs(timer));
+  updateSoundButtons();
+  stopRotor();
+  startMusic();
+  window.requestAnimationFrame(renderArcadePreviews);
   document.body.style.overflow = "hidden";
   cancelAnimationFrame(frameId);
   frameId = requestAnimationFrame(arcadeMenuLoop);
@@ -822,9 +1002,13 @@ function openGame(mode = "protein") {
   overlay.querySelector("[data-rest-arcade-select]").hidden = true;
   overlay.querySelector("[data-rest-game-view]").hidden = false;
   document.body.style.overflow = "hidden";
-  const canvas = overlay.querySelector("canvas");
+  const canvas = overlay.querySelector("[data-rest-game-canvas]");
   game = mode === "chopper" ? createChopperState(canvas) : createGameState(canvas);
   const isChopper = game.mode === "chopper";
+  updateSoundButtons();
+  startMusic();
+  if (isChopper) startRotor();
+  else stopRotor();
   overlay.querySelector("[data-rest-game-title]").textContent = isChopper ? "Gym Chopper" : "Protein Run";
   overlay.querySelector("[data-rest-game-help]").textContent = isChopper
     ? "Hold the arrows to fly. Fire protein scoops at the flying couch potatoes before they damage your gains. Closing the game never stops your rest timer."
@@ -843,6 +1027,8 @@ function closeGame() {
     localStorage.setItem(highScoreKey, String(high));
   }
   game = null;
+  stopMusic();
+  stopRotor();
   cancelAnimationFrame(frameId);
   frameId = null;
   const overlay = document.getElementById(OVERLAY_ID);

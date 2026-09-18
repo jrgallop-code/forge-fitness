@@ -1,6 +1,7 @@
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=nutrition-authority-sync-2";
 import { getActiveNutritionPhase } from "./nutrition-phase.js?v=nutrition-authority-sync-2";
 import { resolvePhaseMaintenance } from "./new-phase-maintenance.js?v=new-phase-current-expenditure-1";
+import { repairInheritedNewPhaseTarget } from "./legacy-new-phase-target-repair.js?v=inherited-phase-target-repair-1";
 
 const SNAPSHOT_KEY = "level_up_weekly_tdee_estimate_v1";
 const STYLE_ID = "level-up-nutrition-authority-sync-styles";
@@ -10,6 +11,13 @@ let lastReviewSync = "";
 install();
 
 function install() {
+    const repaired = repairInheritedNewPhaseTarget(getCalculatedMaintenanceEstimate());
+    if (repaired) {
+        window.setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("levelup:nutrition-phase-updated", { detail: { source: "inherited-phase-target-repair" } }));
+            window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: "inherited-phase-target-repair" } }));
+        }, 0);
+    }
     ensureStyles();
     schedule();
     new MutationObserver(schedule).observe(document.documentElement, {

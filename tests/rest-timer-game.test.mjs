@@ -61,3 +61,21 @@ test("one Play Game button opens an illustrated arcade game selector", () => {
   assert.doesNotMatch(game, /protein\.textContent = "💪 Protein Run"/);
   assert.doesNotMatch(game, /chopper\.textContent = "🚁 Gym Chopper"/);
 });
+
+test("arcade selector previews are rendered by the real game canvases", () => {
+  assert.match(game, /data-arcade-preview="protein"/);
+  assert.match(game, /data-arcade-preview="chopper"/);
+  assert.match(game, /drawProteinRun\(now, preview\)/);
+  assert.match(game, /drawGymChopper\(now, preview\)/);
+  assert.doesNotMatch(game, /<svg class="rest-arcade-art"/);
+});
+
+test("arcade audio includes music, rotor, shooting, impacts and damage grunt synthesis", () => {
+  assert.match(game, /function startMusic\(/);
+  assert.match(game, /function startRotor\(/);
+  assert.match(game, /playEffect\("shoot"\)/);
+  assert.match(game, /playEffect\("impact"\)/);
+  assert.match(game, /playEffect\("damage"\)/);
+  assert.match(game, /Original synthesized action-hero grunt/);
+  assert.match(game, /data-arcade-sound/);
+});
