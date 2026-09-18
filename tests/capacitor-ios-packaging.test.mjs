@@ -92,9 +92,18 @@ test("native iOS provides haptics, background alarms, selectable app icons, and 
 
 test("native iOS packages reliable arcade audio and enables audible playback", async () => {
     const appDelegate = await readFile(new URL("../ios/App/App/AppDelegate.swift", import.meta.url), "utf8");
+    const bridge = await readFile(new URL("../ios/App/App/LevelUpBridgeViewController.swift", import.meta.url), "utf8");
+    const plugin = await readFile(new URL("../ios/App/App/LevelUpArcadeAudioPlugin.swift", import.meta.url), "utf8");
+    const project = await readFile(new URL("../ios/App/App.xcodeproj/project.pbxproj", import.meta.url), "utf8");
     assert.match(appDelegate, /import AVFoundation/);
     assert.match(appDelegate, /setCategory\(\.playback, mode: \.default, options: \[\.mixWithOthers\]\)/);
     assert.match(appDelegate, /setActive\(true\)/);
+    assert.match(bridge, /registerPluginInstance\(LevelUpArcadeAudioPlugin\(\)\)/);
+    assert.match(plugin, /let jsName = "LevelUpArcadeAudio"/);
+    assert.match(plugin, /AVAudioPlayer\(contentsOf: url\)/);
+    assert.match(plugin, /subdirectory: "public\/assets\/audio\/arcade"/);
+    assert.match(plugin, /player\.numberOfLoops = loop \? -1 : 0/);
+    assert.match(project, /LevelUpArcadeAudioPlugin\.swift in Sources/);
     for (const name of [
         "helicopter-rotor",
         "damage-grunt-1",

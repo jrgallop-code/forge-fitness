@@ -1,6 +1,6 @@
 import "./rest-alarm-phase1.js?v=lock-screen-timers-1";
 import "./rest-alarm-button-stability.js?v=rest-authority-1";
-import "./rest-timer-game.js?v=protein-run-4";
+import "./rest-timer-game.js?v=protein-run-5";
 import "./rest-timer-authority.js?v=warmup-toggle-cancel-1";
 import "../core/workout-theme-guardrail.js?v=workout-theme-guardrail-5";
 import { openActiveWorkout } from "./workout-session.js?v=native-navigation-stability-1";

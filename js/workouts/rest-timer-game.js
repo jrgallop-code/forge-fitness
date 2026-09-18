@@ -126,6 +126,10 @@ function sampleUrl(file) {
   return new URL(`../../assets/audio/arcade/${file}`, import.meta.url).href;
 }
 
+function nativeArcadeAudio() {
+  return window.Capacitor?.Plugins?.LevelUpArcadeAudio || null;
+}
+
 function preloadArcadeSamples() {
   const context = ensureAudio();
   if (!context) return Promise.resolve();
@@ -142,7 +146,7 @@ function preloadArcadeSamples() {
   return sampleLoadPromise;
 }
 
-function playSample(name, { volume = .65, playbackRate = 1, delay = 0, loop = false } = {}) {
+function playWebSample(name, { volume = .65, playbackRate = 1, delay = 0, loop = false } = {}) {
   const context = ensureAudio();
   const buffer = sampleBuffers.get(name);
   if (!context || !audioMaster || !buffer) {
@@ -158,6 +162,23 @@ function playSample(name, { volume = .65, playbackRate = 1, delay = 0, loop = fa
   source.connect(gain).connect(audioMaster);
   source.start(context.currentTime + delay);
   return source;
+}
+
+function playSample(name, options = {}) {
+  const native = nativeArcadeAudio();
+  const file = SAMPLE_FILES[name];
+  if (native && file) {
+    const soundName = file.replace(/\.wav$/i, "");
+    const { volume = .65, playbackRate = 1, delay = 0, loop = false } = options;
+    const play = () => native.play({ name: soundName, volume, playbackRate, loop })
+      .catch(() => playWebSample(name, options));
+    if (delay > 0) window.setTimeout(play, delay * 1000);
+    else void play();
+    return {
+      stop: () => { void native.stop({ name: soundName }).catch(() => {}); }
+    };
+  }
+  return playWebSample(name, options);
 }
 
 function tone(frequency, duration = .08, { type = "square", volume = .14, endFrequency = null, delay = 0 } = {}) {
@@ -321,6 +342,16 @@ function toggleArcadeSound() {
   }
 }
 
+function testArcadeSound(button) {
+  if (!soundEnabled()) {
+    localStorage.setItem(SOUND_KEY, "true");
+    updateSoundButtons();
+  }
+  button.textContent = "PLAYING HIT + GRUNT…";
+  playEffect("damage");
+  window.setTimeout(() => { button.textContent = "🔊 TEST SOUND"; }, 1300);
+}
+
 function ensureStyles() {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
@@ -352,6 +383,7 @@ function ensureStyles() {
     .rest-arcade-card-desc { display: block; min-height: 43px; margin-top: 7px; color: #aebfd3; font-size: 10px; line-height: 1.35; }
     .rest-arcade-card-play { display: block; margin-top: 9px; border: 2px solid #fff; padding: 7px 4px; background: var(--protein-run-accent, #2d8cff); color: #06101d; font-size: 11px; font-weight: 900; text-align: center; box-shadow: 2px 2px 0 #000; }
     .rest-arcade-insert { position: relative; margin: 18px 0 0; color: #fff36b; font-size: 11px; text-align: center; letter-spacing: .12em; animation: rest-arcade-blink 1s steps(2,end) infinite; }
+    .rest-arcade-test-sound { position: relative; display: block; min-height: 38px; margin: 16px auto 0; border: 2px solid #fff; padding: 7px 16px; background: #39d5ff; color: #06101d; font: 900 11px ui-monospace, monospace; box-shadow: 3px 3px 0 #000; }
     @keyframes rest-arcade-blink { 50% { opacity: .35; } }
     @media (max-width: 350px) { .rest-arcade-grid { grid-template-columns: 1fr; } .rest-arcade-card { display: grid; grid-template-columns: 42% 58%; padding: 0; } .rest-arcade-art { aspect-ratio: 1; border: 0; border-right: 3px solid currentColor; } .rest-arcade-card-copy { padding-bottom: 9px; } }
     .protein-run-header { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; margin-bottom: 10px; }
@@ -1073,6 +1105,7 @@ function ensureGameOverlay() {
             <span class="rest-arcade-card-copy"><span class="rest-arcade-card-title">Gym Chopper</span><span class="rest-arcade-card-desc">Fire whey at flying couch potatoes.</span><span class="rest-arcade-card-play">PLAY ▶</span></span>
           </button>
         </div>
+        <button class="rest-arcade-test-sound" type="button" data-arcade-test-sound>🔊 TEST SOUND</button>
         <p class="rest-arcade-insert">● PRESS A GAME TO START ●</p>
       </div>
       <div data-rest-game-view hidden>
@@ -1087,6 +1120,8 @@ function ensureGameOverlay() {
     overlay.addEventListener("click", event => {
       if (event.target.closest("[data-protein-run-close]")) closeGame();
       if (event.target.closest("[data-arcade-sound]")) toggleArcadeSound();
+      const soundTest = event.target.closest("[data-arcade-test-sound]");
+      if (soundTest) testArcadeSound(soundTest);
       if (event.target.closest("[data-chopper-fire]")) shootChopper();
       const selection = event.target.closest("[data-arcade-game]");
       if (selection) openGame(selection.dataset.arcadeGame);

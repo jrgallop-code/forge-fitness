@@ -7,7 +7,7 @@ const timerDisplay = readFileSync(new URL("../js/workouts/rest-timer-display-fix
 const more = readFileSync(new URL("../js/more/more-ui-v2.js", import.meta.url), "utf8");
 
 test("Protein Run is loaded with the rest timer and gated to native iOS", () => {
-  assert.match(timerDisplay, /rest-timer-game\.js\?v=protein-run-4/);
+  assert.match(timerDisplay, /rest-timer-game\.js\?v=protein-run-5/);
   assert.match(game, /if \(isNativeIOS\(\)\) initialize\(\)/);
 });
 
@@ -80,6 +80,11 @@ test("arcade audio includes music and bundled CC0 gameplay samples", () => {
   assert.match(game, /"game-over" : "damage"/);
   assert.match(game, /playSample\("damageImpact"/);
   assert.match(game, /data-arcade-sound/);
+  assert.match(game, /data-arcade-test-sound/);
+  assert.match(game, /function testArcadeSound\(button\)/);
+  assert.match(game, /PLAYING HIT \+ GRUNT/);
+  assert.match(game, /LevelUpArcadeAudio/);
+  assert.match(game, /native\.play\(\{ name: soundName, volume, playbackRate, loop \}\)/);
 });
 
 test("Gym Chopper still launches when iOS cannot decode the rotor clip", () => {

@@ -180,3 +180,5 @@ TestFlight build 106: bundle CC0 arcade sound effects, add a seamless helicopter
 TestFlight build 107: keep Gym Chopper responsive when iOS cannot decode the helicopter rotor clip by limiting audio loading to one safe retry.
 
 TestFlight build 108: make arcade effects reliably audible on iOS with PCM WAV clips and an active playback audio session that works with the Ring/Silent switch.
+
+TestFlight build 109: play arcade effects through a dedicated native iOS audio plugin and add an immediate impact-and-grunt Test Sound button.
