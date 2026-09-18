@@ -15,7 +15,7 @@ test("the signed-in app uses a content-first native shell", async () => {
     assert.match(styles, /#content\s*\{[^}]*env\(safe-area-inset-top\)/s);
 });
 
-test("iOS 26 uses five native Liquid Glass buttons without a glass bar", async () => {
+test("iOS 26 keeps the Level Up bar and uses a neutral glass selected tab", async () => {
     const [app, navbar, styles, nativeNavigation, bridge, project] = await Promise.all([
         readFile(new URL("../js/app.js", import.meta.url), "utf8"),
         readFile(new URL("../js/components/navbar.js", import.meta.url), "utf8"),
@@ -27,7 +27,8 @@ test("iOS 26 uses five native Liquid Glass buttons without a glass bar", async (
 
     assert.match(nativeNavigation, /@available\(iOS 26\.0, \*\)/);
     assert.match(nativeNavigation, /buttonStyle\(\.glass\)/);
-    assert.match(nativeNavigation, /buttonStyle\(\.glassProminent\)/);
+    assert.match(nativeNavigation, /buttonStyle\(\.plain\)/);
+    assert.doesNotMatch(nativeNavigation, /buttonStyle\(\.glassProminent\)/);
     assert.match(nativeNavigation, /ForEach\(items, id: \\.page\)/);
     assert.doesNotMatch(nativeNavigation, /GlassEffectContainer/);
     assert.match(bridge, /registerPluginInstance\(LevelUpNativeNavigationPlugin\(\)\)/);
@@ -38,7 +39,8 @@ test("iOS 26 uses five native Liquid Glass buttons without a glass bar", async (
     assert.match(app, /!document\.getElementById\("level-up-login-gate"\)/);
     assert.match(app, /!document\.body\.classList\.contains\("levelup-onboarding-open"\)/);
     assert.match(navbar, /__levelUpNativeNavigationSelect\?\.\(page\)/);
-    assert.match(styles, /html\.level-up-native-liquid-glass \.bottom-nav/);
+    assert.match(styles, /html\.level-up-native-liquid-glass \.bottom-nav \.nav-btn/);
+    assert.doesNotMatch(styles, /html\.level-up-native-liquid-glass \.bottom-nav\s*\{[^}]*visibility:\s*hidden/s);
     assert.doesNotMatch(styles, /html\.level-up-native-ios \.bottom-nav/);
     assert.doesNotMatch(app, /level-up-native-ios/);
 });
