@@ -84,7 +84,17 @@ test("arcade music uses a fast minor action riff and damage triggers comic vocal
   assert.match(game, /const bpm = 178/);
   assert.match(game, /rapid repeated notes, pulsing bass and sharp arcade percussion/);
   assert.match(game, /function playComicalGrunt\(/);
-  assert.match(game, /\["OOF!", "UGH!", "MY GAINS!"\]/);
+  assert.match(game, /"Ooof!"/);
+  assert.match(game, /"Uuugh!"/);
+  assert.match(game, /"Nooo! My gains!"/);
+  assert.match(game, /preferredNames = \/Fred\|Ralph\|Rocko/);
   assert.match(game, /new SpeechSynthesisUtterance/);
   assert.match(game, /no sampled or imitated celebrity voice/);
+});
+
+test("Gym Chopper enemies clearly depict shirtless adults lounging in briefs on couches", () => {
+  assert.match(game, /Shirtless, slouched adult/);
+  assert.match(game, /Bright briefs and waistband/);
+  assert.match(game, /Face, open mouth and belly button/);
+  assert.match(game, /const size = Math\.max\(36, w \* \.115\)/);
 });

@@ -139,17 +139,28 @@ function playComicalGrunt() {
   if (now - lastGruntAt < 550) return;
   lastGruntAt = now;
 
-  // Add a formant-like low growl under the spoken reaction so it lands over
-  // music and rotor noise. The device voice remains generic and unselected.
-  tone(142, .34, { type: "sawtooth", volume: .2, endFrequency: 62 });
-  tone(96, .38, { type: "triangle", volume: .15, endFrequency: 43, delay: .025 });
-  noise(.15, .085);
+  // An exaggerated three-part arcade hit: impact, chesty fall and rubbery
+  // after-bounce. It makes the reaction funny even if speech is unavailable.
+  noise(.075, .16);
+  tone(185, .11, { type: "square", volume: .15, endFrequency: 82 });
+  tone(138, .38, { type: "sawtooth", volume: .21, endFrequency: 54, delay: .045 });
+  tone(72, .28, { type: "triangle", volume: .17, endFrequency: 112, delay: .22 });
   if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") return;
-  const reactions = ["OOF!", "UGH!", "MY GAINS!"];
-  const utterance = new SpeechSynthesisUtterance(reactions[Math.floor(Math.random() * reactions.length)]);
-  utterance.rate = .82;
-  utterance.pitch = .55;
-  utterance.volume = .72;
+  const reactions = [
+    { words: "Ooof!", rate: .68, pitch: .48 },
+    { words: "Uuugh!", rate: .62, pitch: .42 },
+    { words: "Nooo! My gains!", rate: .74, pitch: .58 }
+  ];
+  const reaction = reactions[Math.floor(Math.random() * reactions.length)];
+  const utterance = new SpeechSynthesisUtterance(reaction.words);
+  const voices = window.speechSynthesis.getVoices();
+  const preferredNames = /Fred|Ralph|Rocko|Daniel|Aaron|Alex/i;
+  utterance.voice = voices.find(voice => /^en[-_]/i.test(voice.lang) && preferredNames.test(voice.name))
+    || voices.find(voice => /^en[-_]/i.test(voice.lang))
+    || null;
+  utterance.rate = reaction.rate;
+  utterance.pitch = reaction.pitch;
+  utterance.volume = 1;
   window.speechSynthesis.speak(utterance);
 }
 
@@ -583,40 +594,71 @@ function drawFlyingCouchDude(ctx, x, y, size, now, wobble) {
   const bob = Math.sin(now / 180 + wobble) * size * .05;
   const top = y + bob;
 
-  // Chunky old couch, complete with sagging cushions and tiny hover jets.
-  ctx.fillStyle = "#59351f";
-  ctx.fillRect(x - size * .72, top - size * .04, size * 1.44, size * .58);
-  ctx.fillStyle = "#a86b35";
-  ctx.fillRect(x - size * .62, top - size * .3, size * 1.24, size * .58);
-  ctx.fillStyle = "#c98748";
-  ctx.fillRect(x - size * .5, top + size * .18, size * .46, size * .25);
-  ctx.fillRect(x + size * .04, top + size * .18, size * .46, size * .25);
-  ctx.fillStyle = "#744526";
-  ctx.fillRect(x - size * .8, top - size * .12, size * .2, size * .62);
-  ctx.fillRect(x + size * .6, top - size * .12, size * .2, size * .62);
+  // Extra-wide couch with a dark outline, separate back cushions and arms.
+  ctx.fillStyle = "#1b120d";
+  ctx.fillRect(x - size * .9, top - size * .34, size * 1.8, size * .95);
+  ctx.fillStyle = "#8b522c";
+  ctx.fillRect(x - size * .76, top - size * .28, size * 1.52, size * .72);
+  ctx.fillStyle = "#bb7540";
+  ctx.fillRect(x - size * .66, top - size * .48, size * .62, size * .45);
+  ctx.fillRect(x + size * .04, top - size * .48, size * .62, size * .45);
+  ctx.fillStyle = "#d08a4d";
+  ctx.fillRect(x - size * .64, top + size * .13, size * .6, size * .24);
+  ctx.fillRect(x + size * .04, top + size * .13, size * .6, size * .24);
+  ctx.fillStyle = "#60351f";
+  ctx.fillRect(x - size * .9, top - size * .23, size * .22, size * .75);
+  ctx.fillRect(x + size * .68, top - size * .23, size * .22, size * .75);
   ctx.fillStyle = "#72ddff";
-  ctx.fillRect(x - size * .57, top + size * .57, size * .17, size * .13);
-  ctx.fillRect(x + size * .4, top + size * .57, size * .17, size * .13);
+  ctx.fillRect(x - size * .58, top + size * .52, size * .2, size * .13);
+  ctx.fillRect(x + size * .38, top + size * .52, size * .2, size * .13);
 
-  // Big-bellied couch potato sitting deep in the cushions.
-  ctx.fillStyle = "#f2c092";
-  ctx.fillRect(x - size * .18, top - size * .72, size * .36, size * .29);
-  ctx.fillStyle = "#402519";
-  ctx.fillRect(x - size * .2, top - size * .77, size * .4, size * .1);
-  ctx.fillStyle = "#f4d13d";
-  ctx.fillRect(x - size * .34, top - size * .44, size * .68, size * .52);
-  ctx.fillStyle = "#f7cfaa";
+  // Shirtless, slouched adult: head, arms, a large belly, briefs and dangling legs.
+  const skin = "#f2bd8e";
+  const outline = "#3a2118";
+  ctx.fillStyle = outline;
   ctx.beginPath();
-  ctx.ellipse(x, top - size * .05, size * .36, size * .33, 0, 0, Math.PI * 2);
+  ctx.ellipse(x + size * .28, top - size * .66, size * .28, size * .3, -.12, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = "#fff2d6";
-  ctx.fillRect(x - size * .12, top - size * .12, size * .24, size * .17);
-  ctx.fillStyle = "#24334b";
-  ctx.fillRect(x - size * .42, top + size * .08, size * .3, size * .13);
-  ctx.fillRect(x + size * .12, top + size * .08, size * .3, size * .13);
-  ctx.fillStyle = "#111827";
-  ctx.fillRect(x - size * .1, top - size * .62, size * .05, size * .05);
-  ctx.fillRect(x + size * .05, top - size * .62, size * .05, size * .05);
+  ctx.fillStyle = skin;
+  ctx.beginPath();
+  ctx.ellipse(x + size * .28, top - size * .64, size * .23, size * .25, -.12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#55301e";
+  ctx.fillRect(x + size * .08, top - size * .88, size * .37, size * .1);
+  ctx.fillRect(x + size * .39, top - size * .82, size * .09, size * .19);
+
+  ctx.fillStyle = outline;
+  ctx.beginPath();
+  ctx.ellipse(x - size * .08, top - size * .17, size * .55, size * .48, -.12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = skin;
+  ctx.beginPath();
+  ctx.ellipse(x - size * .08, top - size * .16, size * .49, size * .42, -.12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = skin;
+  ctx.fillRect(x - size * .62, top - size * .37, size * .18, size * .55);
+  ctx.fillRect(x + size * .33, top - size * .3, size * .48, size * .16);
+
+  // Bright briefs and waistband make the intentionally underdressed gag obvious.
+  ctx.fillStyle = "#f8fbff";
+  ctx.fillRect(x - size * .28, top + size * .08, size * .57, size * .28);
+  ctx.fillStyle = "#ef405f";
+  ctx.fillRect(x - size * .28, top + size * .08, size * .57, size * .07);
+  ctx.fillStyle = outline;
+  ctx.fillRect(x - size * .02, top + size * .15, size * .04, size * .2);
+  ctx.fillStyle = skin;
+  ctx.fillRect(x - size * .22, top + size * .34, size * .2, size * .29);
+  ctx.fillRect(x + size * .08, top + size * .34, size * .2, size * .29);
+  ctx.fillStyle = "#eceff5";
+  ctx.fillRect(x - size * .24, top + size * .58, size * .24, size * .1);
+  ctx.fillRect(x + size * .07, top + size * .58, size * .24, size * .1);
+
+  // Face, open mouth and belly button remain readable at game scale.
+  ctx.fillStyle = "#1b2028";
+  ctx.fillRect(x + size * .17, top - size * .68, size * .05, size * .05);
+  ctx.fillRect(x + size * .34, top - size * .68, size * .05, size * .05);
+  ctx.fillRect(x + size * .23, top - size * .55, size * .14, size * .07);
+  ctx.fillRect(x - size * .12, top - size * .05, size * .05, size * .05);
 }
 
 function drawActionChopper(ctx, px, py, unit, now, state = game) {
@@ -774,7 +816,7 @@ function drawGymChopper(now, state = game) {
   state.enemies.forEach(enemy => {
     const x = enemy.x * w;
     const y = enemy.y * h;
-    const size = Math.max(29, w * .09);
+    const size = Math.max(36, w * .115);
     drawFlyingCouchDude(ctx, x, y, size, now, enemy.wobble);
   });
 
