@@ -7,7 +7,7 @@ const timerDisplay = readFileSync(new URL("../js/workouts/rest-timer-display-fix
 const more = readFileSync(new URL("../js/more/more-ui-v2.js", import.meta.url), "utf8");
 
 test("Level Up Arcade is loaded with the PWA rest timer", () => {
-  assert.match(timerDisplay, /rest-timer-game\.js\?v=level-up-arcade-pwa-1/);
+  assert.match(timerDisplay, /rest-timer-game\.js\?v=level-up-arcade-pwa-2/);
   assert.match(game, /initialize\(\);/);
   assert.doesNotMatch(game, /if \(isNativeIOS\(\)\) initialize\(\)/);
 });
@@ -16,6 +16,16 @@ test("the bottom navigation is hidden only while the rest arcade is open", () =>
   assert.match(game, /body\.level-up-rest-game-open \.bottom-nav \{ display: none !important; \}/);
   assert.match(game, /document\.body\.classList\.add\("level-up-rest-game-open"\)/);
   assert.match(game, /document\.body\.classList\.remove\("level-up-rest-game-open"\)/);
+});
+
+test("closing the arcade or dismissing the timer stops every audio source", () => {
+  assert.match(game, /function stopAllArcadeAudio\(\)/);
+  assert.match(game, /activeAudioSources\.forEach/);
+  assert.match(game, /delayedAudioTimers\.forEach/);
+  assert.match(game, /native\.stop/);
+  assert.match(game, /window\.addEventListener\("levelup:rest-timer-dismissed", closeGame\)/);
+  assert.match(game, /window\.addEventListener\("levelup:rest-timer-finished"/);
+  assert.match(game, /window\.addEventListener\("pagehide", stopAllArcadeAudio\)/);
 });
 
 test("Protein Run reads but never writes the rest timer state", () => {

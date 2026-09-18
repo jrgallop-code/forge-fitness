@@ -69,6 +69,8 @@ let audioContext = null;
 let audioMaster = null;
 let sampleLoadPromise = null;
 const sampleBuffers = new Map();
+const activeAudioSources = new Set();
+const delayedAudioTimers = new Set();
 let musicTimer = null;
 let musicStep = 0;
 let rotorSource = null;
@@ -125,6 +127,7 @@ function ensureAudio() {
     audioMaster.gain.value = .16;
     audioMaster.connect(audioContext.destination);
   }
+  audioMaster.gain.value = .16;
   if (audioContext.state === "suspended") void audioContext.resume();
   return audioContext;
 }
@@ -167,6 +170,7 @@ function playWebSample(name, { volume = .65, playbackRate = 1, delay = 0, loop =
   source.playbackRate.value = playbackRate;
   gain.gain.value = volume;
   source.connect(gain).connect(audioMaster);
+  trackAudioSource(source);
   source.start(context.currentTime + delay);
   return source;
 }
@@ -179,7 +183,13 @@ function playSample(name, options = {}) {
     const { volume = .65, playbackRate = 1, delay = 0, loop = false } = options;
     const play = () => native.play({ name: soundName, volume, playbackRate, loop })
       .catch(() => playWebSample(name, options));
-    if (delay > 0) window.setTimeout(play, delay * 1000);
+    if (delay > 0) {
+      const timer = window.setTimeout(() => {
+        delayedAudioTimers.delete(timer);
+        play();
+      }, delay * 1000);
+      delayedAudioTimers.add(timer);
+    }
     else void play();
     return {
       stop: () => { void native.stop({ name: soundName }).catch(() => {}); }
@@ -201,6 +211,7 @@ function tone(frequency, duration = .08, { type = "square", volume = .14, endFre
   gain.gain.exponentialRampToValueAtTime(volume, start + .008);
   gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
   oscillator.connect(gain).connect(audioMaster);
+  trackAudioSource(oscillator);
   oscillator.start(start);
   oscillator.stop(start + duration + .02);
 }
@@ -218,7 +229,36 @@ function noise(duration = .08, volume = .1) {
   gain.gain.setValueAtTime(volume, context.currentTime);
   gain.gain.exponentialRampToValueAtTime(.0001, context.currentTime + duration);
   source.connect(gain).connect(audioMaster);
+  trackAudioSource(source);
   source.start();
+}
+
+function trackAudioSource(source) {
+  activeAudioSources.add(source);
+  source.addEventListener?.("ended", () => activeAudioSources.delete(source), { once: true });
+  return source;
+}
+
+function stopAllArcadeAudio() {
+  stopMusic();
+  stopRotor();
+  delayedAudioTimers.forEach(timer => window.clearTimeout(timer));
+  delayedAudioTimers.clear();
+  activeAudioSources.forEach(source => {
+    try { source.stop(); } catch { /* Already stopped. */ }
+  });
+  activeAudioSources.clear();
+  if (audioMaster && audioContext) {
+    audioMaster.gain.cancelScheduledValues(audioContext.currentTime);
+    audioMaster.gain.setValueAtTime(0, audioContext.currentTime);
+    void audioContext.suspend().catch(() => {});
+  }
+  const native = nativeArcadeAudio();
+  if (native) {
+    Object.values(SAMPLE_FILES).forEach(file => {
+      void native.stop({ name: file.replace(/\.wav$/i, "") }).catch(() => {});
+    });
+  }
 }
 
 function playComicalGrunt() {
@@ -1065,9 +1105,8 @@ function syncHud() {
   game.finished = finished;
   if (finished && !game.finishedSoundPlayed) {
     game.finishedSoundPlayed = true;
+    stopAllArcadeAudio();
     playEffect("rest-over");
-    stopMusic();
-    stopRotor();
   }
   return !finished && timer?.status !== "paused";
 }
@@ -1102,9 +1141,8 @@ function arcadeMenuLoop() {
   const clock = overlay.querySelector("[data-rest-arcade-clock]");
   if (!timer || timer.status === "finished" || remainingMs(timer) <= 0) {
     clock.textContent = "REST OVER";
+    stopAllArcadeAudio();
     playEffect("rest-over");
-    stopMusic();
-    stopRotor();
     return;
   }
   clock.textContent = timer.status === "paused" ? "PAUSED" : formatTime(remainingMs(timer));
@@ -1286,8 +1324,7 @@ function closeGame() {
     localStorage.setItem(highScoreKey, String(high));
   }
   game = null;
-  stopMusic();
-  stopRotor();
+  stopAllArcadeAudio();
   cancelAnimationFrame(frameId);
   frameId = null;
   const overlay = document.getElementById(OVERLAY_ID);
@@ -1321,7 +1358,12 @@ function initialize() {
     if (launcher) openArcadeMenu();
   });
   document.addEventListener("levelup:rest-game-setting-changed", syncLaunchButton);
-  document.addEventListener("levelup:rest-timer-finished", () => syncHud());
+  window.addEventListener("levelup:rest-timer-finished", () => {
+    stopAllArcadeAudio();
+    syncHud();
+  });
+  window.addEventListener("levelup:rest-timer-dismissed", closeGame);
+  window.addEventListener("pagehide", stopAllArcadeAudio);
   document.addEventListener("keydown", event => {
     const keyMap = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
     if (game && keyMap[event.key]) {
