@@ -187,3 +187,5 @@ TestFlight build 110: give the iOS bottom navigation an adaptive Liquid Glass ma
 TestFlight build 111: replace the faux glass bar with five native iOS 26 Liquid Glass buttons while preserving the existing older-iOS and PWA navigation.
 
 TestFlight build 113: restore the familiar Level Up bottom bar and apply native Liquid Glass only to the selected tab, matching Tinder's subtle capsule treatment.
+
+TestFlight build 114: fully remove the Liquid Glass navigation experiment and restore the original Level Up bottom bar and its established visibility behavior.

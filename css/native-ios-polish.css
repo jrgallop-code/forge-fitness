@@ -446,13 +446,6 @@ input[type="radio"] {
     letter-spacing: -.01em;
 }
 
-/* Keep the familiar Level Up bar on iOS 26, but let native SwiftUI render and
-   handle its tab buttons. Older iOS and the PWA keep the complete web nav. */
-html.level-up-native-liquid-glass .bottom-nav .nav-btn {
-    opacity: 0 !important;
-    pointer-events: none !important;
-}
-
 @keyframes navTapPulse {
     0% { transform: scale(1); }
     45% { transform: scale(.94); }

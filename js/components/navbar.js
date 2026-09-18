@@ -100,8 +100,6 @@ export function initializeNavbar() {
                     )
                 );
 
-            window.__levelUpNativeNavigationSelect?.(page);
-
             try {
                 navigate(page);
             }
