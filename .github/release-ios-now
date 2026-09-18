@@ -176,3 +176,5 @@ TestFlight build 94: add combined, normalized comparison, and per-machine progre
 TestFlight build 95: make Combined the default per-exercise machine view and apply semantic green and yellow-brown colors to positive and negative individual-machine percentage changes.
 
 TestFlight build 106: bundle CC0 arcade sound effects, add a seamless helicopter rotor, rotate comic damage grunts, and replace synthesized speech.
+
+TestFlight build 107: keep Gym Chopper responsive when iOS cannot decode the helicopter rotor clip by limiting audio loading to one safe retry.

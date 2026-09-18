@@ -7,7 +7,7 @@ const timerDisplay = readFileSync(new URL("../js/workouts/rest-timer-display-fix
 const more = readFileSync(new URL("../js/more/more-ui-v2.js", import.meta.url), "utf8");
 
 test("Protein Run is loaded with the rest timer and gated to native iOS", () => {
-  assert.match(timerDisplay, /rest-timer-game\.js\?v=protein-run-2/);
+  assert.match(timerDisplay, /rest-timer-game\.js\?v=protein-run-3/);
   assert.match(game, /if \(isNativeIOS\(\)\) initialize\(\)/);
 });
 
@@ -80,6 +80,13 @@ test("arcade audio includes music and bundled CC0 gameplay samples", () => {
   assert.match(game, /"game-over" : "damage"/);
   assert.match(game, /playSample\("damageImpact"/);
   assert.match(game, /data-arcade-sound/);
+});
+
+test("Gym Chopper still launches when iOS cannot decode the rotor clip", () => {
+  assert.match(game, /let rotorRetryPending = false/);
+  assert.match(game, /game must remain playable even without rotor audio/);
+  assert.match(game, /rotorSource = playSample\("rotor", \{ volume: \.32, loop: true \}\)/);
+  assert.doesNotMatch(game, /preloadArcadeSamples\(\)\.then\(\(\) => \{[\s\S]{0,220}startRotor\(\)/);
 });
 
 test("arcade music stays synthesized while damage rotates non-repeating recorded grunts", () => {

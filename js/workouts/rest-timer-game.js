@@ -67,6 +67,7 @@ const sampleBuffers = new Map();
 let musicTimer = null;
 let musicStep = 0;
 let rotorSource = null;
+let rotorRetryPending = false;
 let lastGruntAt = 0;
 let lastGruntIndex = -1;
 
@@ -275,12 +276,19 @@ function stopMusic() {
 }
 
 function startRotor() {
-  if (!soundEnabled() || rotorSource) return;
+  if (!soundEnabled() || rotorSource || rotorRetryPending) return;
   rotorSource = playSample("rotor", { volume: .32, loop: true });
   if (!rotorSource) {
-    void preloadArcadeSamples().then(() => {
-      if (soundEnabled() && game?.mode === "chopper" && !rotorSource) startRotor();
-    });
+    rotorRetryPending = true;
+    void preloadArcadeSamples()
+      .then(() => {
+        rotorRetryPending = false;
+        if (!soundEnabled() || game?.mode !== "chopper" || rotorSource) return;
+        // Retry once after decoding. Never recurse when WebKit rejects the clip;
+        // the game must remain playable even without rotor audio.
+        rotorSource = playSample("rotor", { volume: .32, loop: true });
+      })
+      .catch(() => { rotorRetryPending = false; });
   }
 }
 
@@ -289,6 +297,7 @@ function stopRotor() {
     try { rotorSource.stop(); } catch { /* Already stopped. */ }
   }
   rotorSource = null;
+  rotorRetryPending = false;
 }
 
 function updateSoundButtons() {
