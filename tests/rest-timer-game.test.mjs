@@ -43,10 +43,21 @@ test("Gym Chopper is a second rest-game option with hold controls and protein fi
   assert.match(game, /function createChopperState/);
   assert.match(game, /function drawGymChopper/);
   assert.match(game, /function shootChopper/);
-  assert.match(game, /dataset\.restGameLaunch = "chopper"/);
+  assert.match(game, /data-arcade-game="chopper"/);
   assert.match(game, /COUCH POTATO DOWN!/);
   assert.match(game, /data-chopper-fire/);
   assert.match(game, /function drawFlyingCouchDude/);
   assert.match(game, /function drawActionChopper/);
   assert.match(game, /fillText\("WHEY"/);
+});
+
+test("one Play Game button opens an illustrated arcade game selector", () => {
+  assert.match(game, /launcher\.textContent = "🎮 Play Game"/);
+  assert.match(game, /function openArcadeMenu/);
+  assert.match(game, /LEVEL UP<br>ARCADE/);
+  assert.match(game, /data-arcade-game="protein"/);
+  assert.match(game, /data-arcade-game="chopper"/);
+  assert.match(game, /class="rest-arcade-art"/);
+  assert.doesNotMatch(game, /protein\.textContent = "💪 Protein Run"/);
+  assert.doesNotMatch(game, /chopper\.textContent = "🚁 Gym Chopper"/);
 });

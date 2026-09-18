@@ -81,12 +81,30 @@ function ensureStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    .rest-game-launch { min-height: 38px; border-color: color-mix(in srgb, var(--accent, #2d8cff) 70%, white 18%) !important; background: color-mix(in srgb, var(--accent, #2d8cff) 28%, #07111f) !important; color: #fff !important; font-size: 10px !important; letter-spacing: .01em; }
-    .protein-run-launch { grid-column: 1 / 3; }
-    .gym-chopper-launch { grid-column: 3 / 5; }
+    .rest-game-launch { grid-column: 1 / -1; min-height: 38px; border-color: color-mix(in srgb, var(--accent, #2d8cff) 70%, white 18%) !important; background: color-mix(in srgb, var(--accent, #2d8cff) 28%, #07111f) !important; color: #fff !important; font-size: 11px !important; font-weight: 900 !important; letter-spacing: .05em; }
     #${OVERLAY_ID} { position: fixed; inset: 0; z-index: 20000; display: grid; align-items: end; background: rgba(1, 5, 12, .76); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
     #${OVERLAY_ID}[hidden] { display: none !important; }
     .protein-run-shell { width: 100%; max-height: 94svh; overflow: auto; border-radius: 24px 24px 0 0; padding: 14px 14px calc(16px + env(safe-area-inset-bottom)); background: #050912; border: 2px solid var(--protein-run-accent, #2d8cff); box-shadow: 0 -22px 65px rgba(0,0,0,.58); color: #f7fbff; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; image-rendering: pixelated; }
+    .rest-arcade-select { position: relative; min-height: min(650px, 82svh); overflow: hidden; padding: 8px 2px 18px; }
+    .rest-arcade-select::before { content: ""; pointer-events: none; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(255,255,255,.035) 3px 4px); }
+    .rest-arcade-marquee { position: relative; margin: 0 48px 9px; border: 3px solid #fff36b; padding: 12px 8px 9px; background: #25104a; box-shadow: 0 0 0 4px #ff4fa3, 6px 6px 0 #000; text-align: center; }
+    .rest-arcade-marquee strong { display: block; color: #fff36b; font-size: clamp(25px, 8vw, 38px); line-height: .95; letter-spacing: -.07em; text-shadow: 3px 3px 0 #ff326d; }
+    .rest-arcade-marquee span { display: block; margin-top: 7px; color: #d7e5f6; font-size: 10px; letter-spacing: .18em; }
+    .rest-arcade-close { position: absolute; z-index: 2; top: 7px; right: 2px; min-width: 42px; min-height: 42px; border: 2px solid #6f86a1; border-radius: 7px; background: #172234; color: #fff; font-size: 22px; }
+    .rest-arcade-clock { position: relative; width: max-content; margin: 14px auto 16px; border: 2px solid var(--protein-run-accent, #2d8cff); padding: 6px 14px; color: #fff; background: #07111f; box-shadow: 3px 3px 0 var(--protein-run-shadow, #16365b); font-size: 18px; font-weight: 900; }
+    .rest-arcade-grid { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+    .rest-arcade-card { min-width: 0; overflow: hidden; border: 3px solid #586f8f; border-radius: 8px; padding: 0 0 12px; background: #0d1728; color: #fff; box-shadow: 5px 5px 0 #000; text-align: left; touch-action: manipulation; }
+    .rest-arcade-card:active { transform: translate(3px,3px); box-shadow: 2px 2px 0 #000; }
+    .rest-arcade-card:first-child { border-color: #39d5ff; }
+    .rest-arcade-card:last-child { border-color: #ff6b49; }
+    .rest-arcade-art { display: block; width: 100%; aspect-ratio: 4 / 3; border-bottom: 3px solid currentColor; background: #02040a; }
+    .rest-arcade-card-copy { display: block; padding: 10px 10px 0; }
+    .rest-arcade-card-title { display: block; min-height: 38px; color: #fff; font-size: clamp(15px, 4.6vw, 21px); font-weight: 900; line-height: 1; text-transform: uppercase; }
+    .rest-arcade-card-desc { display: block; min-height: 43px; margin-top: 7px; color: #aebfd3; font-size: 10px; line-height: 1.35; }
+    .rest-arcade-card-play { display: block; margin-top: 9px; border: 2px solid #fff; padding: 7px 4px; background: var(--protein-run-accent, #2d8cff); color: #06101d; font-size: 11px; font-weight: 900; text-align: center; box-shadow: 2px 2px 0 #000; }
+    .rest-arcade-insert { position: relative; margin: 18px 0 0; color: #fff36b; font-size: 11px; text-align: center; letter-spacing: .12em; animation: rest-arcade-blink 1s steps(2,end) infinite; }
+    @keyframes rest-arcade-blink { 50% { opacity: .35; } }
+    @media (max-width: 350px) { .rest-arcade-grid { grid-template-columns: 1fr; } .rest-arcade-card { display: grid; grid-template-columns: 42% 58%; padding: 0; } .rest-arcade-art { aspect-ratio: 1; border: 0; border-right: 3px solid currentColor; } .rest-arcade-card-copy { padding-bottom: 9px; } }
     .protein-run-header { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; margin-bottom: 10px; }
     .protein-run-kicker { display: block; color: var(--protein-run-accent, #2d8cff); font-size: 11px; font-weight: 900; letter-spacing: .14em; }
     .protein-run-header h2 { margin: 3px 0 0; font: 900 24px/1 ui-monospace, "SFMono-Regular", Menlo, monospace; letter-spacing: -.05em; text-transform: uppercase; }
@@ -685,10 +703,21 @@ function gameLoop(now) {
   frameId = requestAnimationFrame(gameLoop);
 }
 
-function openGame(mode = "protein") {
+function arcadeMenuLoop() {
+  const overlay = document.getElementById(OVERLAY_ID);
+  const select = overlay?.querySelector("[data-rest-arcade-select]");
+  if (!overlay || overlay.hidden || select?.hidden) return;
   const timer = readActive()?.restTimer;
-  if (!timer || timer.status === "finished") return;
-  ensureStyles();
+  const clock = overlay.querySelector("[data-rest-arcade-clock]");
+  if (!timer || timer.status === "finished" || remainingMs(timer) <= 0) {
+    clock.textContent = "REST OVER";
+    return;
+  }
+  clock.textContent = timer.status === "paused" ? "PAUSED" : formatTime(remainingMs(timer));
+  frameId = requestAnimationFrame(arcadeMenuLoop);
+}
+
+function ensureGameOverlay() {
   let overlay = document.getElementById(OVERLAY_ID);
   if (!overlay) {
     overlay = document.createElement("section");
@@ -697,16 +726,45 @@ function openGame(mode = "protein") {
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-label", "Rest timer arcade game");
     overlay.innerHTML = `<div class="protein-run-shell">
-      <header class="protein-run-header"><div><span class="protein-run-kicker">8-BIT REST TIMER</span><h2 data-rest-game-title>Protein Run</h2></div><div style="display:flex;gap:8px"><div class="protein-run-clock" data-protein-run-clock>0:00</div><button class="protein-run-close" type="button" data-protein-run-close aria-label="Close game">×</button></div></header>
-      <div class="protein-run-scorebar"><span>SCORE <b data-protein-run-score>00000</b></span><span><i data-protein-run-size-label style="font-style:normal">SIZE</i> <b data-protein-run-size>1/4</b></span><span data-protein-run-lives>💪💪💪</span><span>HIGH <b data-protein-run-high>00000</b></span></div>
-      <div class="protein-run-stage"><canvas aria-label="Maze with a bicep collecting protein powder"></canvas><div class="protein-run-finish" data-protein-run-finish><div><strong>Rest Over!</strong><span>Get back to work.</span></div></div></div>
-      <div class="protein-run-controls" aria-label="Game controls"><button type="button" data-game-direction="up" aria-label="Move up">▲</button><button type="button" data-game-direction="left" aria-label="Move left">◀</button><button type="button" data-game-direction="down" aria-label="Move down">▼</button><button type="button" data-game-direction="right" aria-label="Move right">▶</button><button class="gym-chopper-fire" type="button" data-chopper-fire>FIRE</button></div>
-      <p class="protein-run-help" data-rest-game-help>Collect the clearly labelled protein tubs to grow. At maximum size, the ghosts flash—run into them and crush them with your biceps. Closing the game never stops your rest timer.</p>
+      <div class="rest-arcade-select" data-rest-arcade-select>
+        <button class="rest-arcade-close" type="button" data-protein-run-close aria-label="Close arcade">×</button>
+        <div class="rest-arcade-marquee"><strong>LEVEL UP<br>ARCADE</strong><span>CHOOSE YOUR GAME</span></div>
+        <div class="rest-arcade-clock">REST <b data-rest-arcade-clock>0:00</b></div>
+        <div class="rest-arcade-grid">
+          <button class="rest-arcade-card" type="button" data-arcade-game="protein">
+            <svg class="rest-arcade-art" viewBox="0 0 200 150" role="img" aria-label="Muscular arm collecting protein in a neon maze">
+              <rect width="200" height="150" fill="#03101e"/><path d="M8 8h184v18H26v34h116v18H58v34h134v30H8v-18h32V94H8z" fill="#168bff"/><path d="M16 16h168v4H20v34h116v4H52v48h132v28H16v-4h30V88H16z" fill="#061c35"/>
+              <g fill="#fff"><rect x="73" y="72" width="18" height="25"/><rect x="76" y="66" width="12" height="7"/></g><rect x="75" y="79" width="14" height="9" fill="#ff426f"/><text x="82" y="87" text-anchor="middle" font-size="7" font-weight="900" fill="#fff">PRO</text>
+              <g fill="#f2ad65"><rect x="107" y="75" width="19" height="25"/><rect x="101" y="69" width="12" height="12"/><rect x="96" y="63" width="11" height="10"/></g><rect x="109" y="82" width="15" height="9" fill="#111827"/><circle cx="155" cy="46" r="5" fill="#fff36b"/><circle cx="174" cy="101" r="5" fill="#fff36b"/>
+            </svg>
+            <span class="rest-arcade-card-copy"><span class="rest-arcade-card-title">Protein Run</span><span class="rest-arcade-card-desc">Eat protein. Grow huge. Crush the ghosts.</span><span class="rest-arcade-card-play">PLAY ▶</span></span>
+          </button>
+          <button class="rest-arcade-card" type="button" data-arcade-game="chopper">
+            <svg class="rest-arcade-art" viewBox="0 0 200 150" role="img" aria-label="Muscle action hero firing from a helicopter at a flying couch">
+              <rect width="200" height="150" fill="#101a2b"/><g fill="#274361"><rect x="8" y="23" width="38" height="7"/><rect x="151" y="45" width="34" height="7"/><rect x="19" y="123" width="29" height="27"/><rect x="57" y="132" width="35" height="18"/><rect x="168" y="118" width="32" height="32"/></g>
+              <g><rect x="18" y="69" width="62" height="10" fill="#315b32"/><rect x="11" y="60" width="9" height="29" fill="#75a64f"/><ellipse cx="88" cy="73" rx="31" ry="22" fill="#467a40"/><rect x="83" y="57" width="23" height="18" fill="#94dcff"/><rect x="50" y="43" width="73" height="5" fill="#d9e7ec"/><rect x="84" y="46" width="5" height="13" fill="#d9e7ec"/><rect x="69" y="96" width="45" height="4" fill="#111827"/></g>
+              <g><rect x="101" y="54" width="10" height="12" fill="#f0b06f"/><rect x="99" y="51" width="14" height="4" fill="#d7a042"/><rect x="101" y="67" width="14" height="20" fill="#171d24"/><circle cx="117" cy="72" r="7" fill="#f0b06f"/><rect x="116" y="70" width="35" height="5" fill="#111827"/><rect x="146" y="68" width="17" height="4" fill="#111827"/><rect x="163" y="65" width="10" height="10" fill="#fff36b"/></g>
+              <g><rect x="150" y="99" width="42" height="23" fill="#a86b35"/><rect x="145" y="105" width="10" height="23" fill="#744526"/><rect x="187" y="105" width="10" height="23" fill="#744526"/><circle cx="171" cy="93" r="9" fill="#f2c092"/><rect x="158" y="99" width="27" height="18" rx="8" fill="#f7cfaa"/><rect x="160" y="91" width="23" height="12" fill="#f4d13d"/></g>
+            </svg>
+            <span class="rest-arcade-card-copy"><span class="rest-arcade-card-title">Gym Chopper</span><span class="rest-arcade-card-desc">Fire whey at flying couch potatoes.</span><span class="rest-arcade-card-play">PLAY ▶</span></span>
+          </button>
+        </div>
+        <p class="rest-arcade-insert">● PRESS A GAME TO START ●</p>
+      </div>
+      <div data-rest-game-view hidden>
+        <header class="protein-run-header"><div><span class="protein-run-kicker">8-BIT REST TIMER</span><h2 data-rest-game-title>Protein Run</h2></div><div style="display:flex;gap:8px"><div class="protein-run-clock" data-protein-run-clock>0:00</div><button class="protein-run-close" type="button" data-protein-run-close aria-label="Close game">×</button></div></header>
+        <div class="protein-run-scorebar"><span>SCORE <b data-protein-run-score>00000</b></span><span><i data-protein-run-size-label style="font-style:normal">SIZE</i> <b data-protein-run-size>1/4</b></span><span data-protein-run-lives>💪💪💪</span><span>HIGH <b data-protein-run-high>00000</b></span></div>
+        <div class="protein-run-stage"><canvas aria-label="Maze with a bicep collecting protein powder"></canvas><div class="protein-run-finish" data-protein-run-finish><div><strong>Rest Over!</strong><span>Get back to work.</span></div></div></div>
+        <div class="protein-run-controls" aria-label="Game controls"><button type="button" data-game-direction="up" aria-label="Move up">▲</button><button type="button" data-game-direction="left" aria-label="Move left">◀</button><button type="button" data-game-direction="down" aria-label="Move down">▼</button><button type="button" data-game-direction="right" aria-label="Move right">▶</button><button class="gym-chopper-fire" type="button" data-chopper-fire>FIRE</button></div>
+        <p class="protein-run-help" data-rest-game-help>Collect the clearly labelled protein tubs to grow. At maximum size, the ghosts flash—run into them and crush them with your biceps. Closing the game never stops your rest timer.</p>
+      </div>
     </div>`;
     document.body.appendChild(overlay);
     overlay.addEventListener("click", event => {
       if (event.target.closest("[data-protein-run-close]")) closeGame();
       if (event.target.closest("[data-chopper-fire]")) shootChopper();
+      const selection = event.target.closest("[data-arcade-game]");
+      if (selection) openGame(selection.dataset.arcadeGame);
     });
     overlay.addEventListener("pointerdown", event => {
       const direction = event.target.closest("[data-game-direction]")?.dataset.gameDirection;
@@ -736,8 +794,33 @@ function openGame(mode = "protein") {
       setDirection(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up"));
     }, { passive: true });
   }
+  return overlay;
+}
+
+function openArcadeMenu() {
+  const timer = readActive()?.restTimer;
+  if (!timer || timer.status === "finished") return;
+  ensureStyles();
+  const overlay = ensureGameOverlay();
+  overlay.hidden = false;
+  overlay.dataset.gameMode = "select";
+  overlay.querySelector("[data-rest-arcade-select]").hidden = false;
+  overlay.querySelector("[data-rest-game-view]").hidden = true;
+  overlay.querySelector("[data-rest-arcade-clock]").textContent = timer.status === "paused" ? "PAUSED" : formatTime(remainingMs(timer));
+  document.body.style.overflow = "hidden";
+  cancelAnimationFrame(frameId);
+  frameId = requestAnimationFrame(arcadeMenuLoop);
+}
+
+function openGame(mode = "protein") {
+  const timer = readActive()?.restTimer;
+  if (!timer || timer.status === "finished") return;
+  ensureStyles();
+  const overlay = ensureGameOverlay();
   overlay.hidden = false;
   overlay.dataset.gameMode = mode;
+  overlay.querySelector("[data-rest-arcade-select]").hidden = true;
+  overlay.querySelector("[data-rest-game-view]").hidden = false;
   document.body.style.overflow = "hidden";
   const canvas = overlay.querySelector("canvas");
   game = mode === "chopper" ? createChopperState(canvas) : createGameState(canvas);
@@ -777,24 +860,19 @@ function syncLaunchButton() {
   const controls = document.querySelector("#level-up-rest-alarm-banner .rest-alarm-controls");
   if (!controls || !timer || timer.status === "finished") return;
   if (controls.querySelector(".rest-game-launch")) return;
-  const protein = document.createElement("button");
-  protein.type = "button";
-  protein.className = "rest-game-launch protein-run-launch";
-  protein.dataset.restGameLaunch = "protein";
-  protein.textContent = "💪 Protein Run";
-  const chopper = document.createElement("button");
-  chopper.type = "button";
-  chopper.className = "rest-game-launch gym-chopper-launch";
-  chopper.dataset.restGameLaunch = "chopper";
-  chopper.textContent = "🚁 Gym Chopper";
-  controls.append(protein, chopper);
+  const launcher = document.createElement("button");
+  launcher.type = "button";
+  launcher.className = "rest-game-launch";
+  launcher.dataset.restGameLaunch = "arcade";
+  launcher.textContent = "🎮 Play Game";
+  controls.append(launcher);
 }
 
 function initialize() {
   ensureStyles();
   document.addEventListener("click", event => {
     const launcher = event.target.closest("[data-rest-game-launch]");
-    if (launcher) openGame(launcher.dataset.restGameLaunch);
+    if (launcher) openArcadeMenu();
   });
   document.addEventListener("levelup:rest-game-setting-changed", syncLaunchButton);
   document.addEventListener("levelup:rest-timer-finished", () => syncHud());
@@ -805,7 +883,7 @@ function initialize() {
       setDirection(keyMap[event.key]);
     }
     if (game?.mode === "chopper" && (event.key === " " || event.key === "Enter")) shootChopper();
-    if (game && event.key === "Escape") closeGame();
+    if (event.key === "Escape" && !document.getElementById(OVERLAY_ID)?.hidden) closeGame();
   });
   document.addEventListener("keyup", event => {
     const keyMap = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" };
