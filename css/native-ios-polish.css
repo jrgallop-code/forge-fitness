@@ -446,96 +446,12 @@ input[type="radio"] {
     letter-spacing: -.01em;
 }
 
-/* iOS-only Liquid Glass tab bar. The Capacitor shell adds the class at
-   startup, so these materials never alter the PWA navigation. */
-html.level-up-native-ios .bottom-nav {
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, .19) 0%, rgba(255, 255, 255, .055) 34%, rgba(8, 12, 21, .43) 100%) !important;
-    border: 1px solid rgba(255, 255, 255, .24) !important;
-    border-top-color: rgba(255, 255, 255, .42) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .22),
-        inset 0 -1px 0 rgba(0, 0, 0, .18),
-        0 18px 44px rgba(0, 0, 0, .38),
-        0 2px 10px rgba(0, 0, 0, .2) !important;
-    -webkit-backdrop-filter: blur(30px) saturate(190%) contrast(108%) !important;
-    backdrop-filter: blur(30px) saturate(190%) contrast(108%) !important;
-}
-
-html.level-up-native-ios .bottom-nav::before,
-html.level-up-native-ios .bottom-nav::after {
-    content: "";
-    position: absolute;
-    pointer-events: none;
-}
-
-html.level-up-native-ios .bottom-nav::before {
-    z-index: 0;
-    inset: 0;
-    background:
-        radial-gradient(ellipse at 20% -25%, rgba(255, 255, 255, .31), transparent 42%),
-        radial-gradient(ellipse at 82% 125%, color-mix(in srgb, var(--accent, #f21f2c) 15%, transparent), transparent 48%);
-}
-
-html.level-up-native-ios .bottom-nav::after {
-    z-index: 0;
-    top: 2px;
-    left: 10%;
-    width: 80%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .68), transparent);
-    opacity: .72;
-}
-
-html.level-up-native-ios .bottom-nav .nav-btn {
-    border: 1px solid transparent !important;
-    background: transparent !important;
-    color: rgba(245, 247, 255, .69) !important;
-    text-shadow: 0 1px 5px rgba(0, 0, 0, .42);
-}
-
-html.level-up-native-ios .bottom-nav .nav-btn:not(.active) .nav-icon {
-    color: rgba(245, 247, 255, .72) !important;
-    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .32));
-}
-
-html.level-up-native-ios .bottom-nav .nav-btn.active {
-    border-color: color-mix(in srgb, var(--accent, #f21f2c) 35%, rgba(255, 255, 255, .4)) !important;
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .075)),
-        color-mix(in srgb, var(--accent-soft, rgba(242, 31, 44, .18)) 78%, transparent) !important;
-    color: var(--accent-text, #ff5963) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .34),
-        inset 0 -1px 0 rgba(255, 255, 255, .07),
-        0 5px 15px color-mix(in srgb, var(--accent, #f21f2c) 16%, transparent) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(170%) !important;
-    backdrop-filter: blur(18px) saturate(170%) !important;
-}
-
-html.level-up-native-ios .bottom-nav .nav-btn.active .nav-icon,
-html.level-up-native-ios .bottom-nav .nav-btn.active .nav-icon-stroke {
-    color: var(--accent-text, #ff5963) !important;
-}
-
-html[data-theme-mode="light"].level-up-native-ios .bottom-nav {
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, .34) 48%, rgba(224, 235, 247, .32)) !important;
-    border-color: rgba(255, 255, 255, .78) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .95),
-        inset 0 -1px 0 rgba(58, 79, 104, .12),
-        0 16px 38px rgba(30, 52, 77, .2) !important;
-}
-
-html[data-theme-mode="light"].level-up-native-ios .bottom-nav .nav-btn {
-    color: rgba(25, 42, 64, .64) !important;
-    text-shadow: 0 1px 1px rgba(255, 255, 255, .7);
-}
-
-html[data-theme-mode="light"].level-up-native-ios .bottom-nav .nav-btn:not(.active) .nav-icon {
-    color: rgba(25, 42, 64, .67) !important;
-    filter: none;
+/* The web navigation remains the fallback on the PWA and older iOS. It is
+   hidden only after the iOS 26 shell confirms that native buttons are ready. */
+html.level-up-native-liquid-glass .bottom-nav {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
 }
 
 @keyframes navTapPulse {

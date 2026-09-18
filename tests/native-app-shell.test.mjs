@@ -15,15 +15,30 @@ test("the signed-in app uses a content-first native shell", async () => {
     assert.match(styles, /#content\s*\{[^}]*env\(safe-area-inset-top\)/s);
 });
 
-test("the iOS bottom navigation uses an app-only Liquid Glass material", async () => {
-    const [app, styles] = await Promise.all([
+test("iOS 26 uses five native Liquid Glass buttons without a glass bar", async () => {
+    const [app, navbar, styles, nativeNavigation, bridge, project] = await Promise.all([
         readFile(new URL("../js/app.js", import.meta.url), "utf8"),
-        readFile(new URL("../css/native-ios-polish.css", import.meta.url), "utf8")
+        readFile(new URL("../js/components/navbar.js", import.meta.url), "utf8"),
+        readFile(new URL("../css/native-ios-polish.css", import.meta.url), "utf8"),
+        readFile(new URL("../ios/App/App/LevelUpLiquidGlassNavigation.swift", import.meta.url), "utf8"),
+        readFile(new URL("../ios/App/App/LevelUpBridgeViewController.swift", import.meta.url), "utf8"),
+        readFile(new URL("../ios/App/App.xcodeproj/project.pbxproj", import.meta.url), "utf8")
     ]);
 
-    assert.match(app, /classList\.toggle\("level-up-native-ios", isNativeIOSApp\)/);
-    assert.match(styles, /html\.level-up-native-ios \.bottom-nav/);
-    assert.match(styles, /backdrop-filter: blur\(30px\) saturate\(190%\) contrast\(108%\)/);
-    assert.match(styles, /html\[data-theme-mode="light"\]\.level-up-native-ios \.bottom-nav/);
-    assert.match(styles, /never alter the PWA navigation/);
+    assert.match(nativeNavigation, /@available\(iOS 26\.0, \*\)/);
+    assert.match(nativeNavigation, /buttonStyle\(\.glass\)/);
+    assert.match(nativeNavigation, /buttonStyle\(\.glassProminent\)/);
+    assert.match(nativeNavigation, /ForEach\(items, id: \\.page\)/);
+    assert.doesNotMatch(nativeNavigation, /GlassEffectContainer/);
+    assert.match(bridge, /registerPluginInstance\(LevelUpNativeNavigationPlugin\(\)\)/);
+    assert.match(project, /LevelUpLiquidGlassNavigation\.swift in Sources/);
+
+    assert.match(app, /LevelUpNativeNavigation/);
+    assert.match(app, /result\?\.available === true/);
+    assert.match(app, /!document\.getElementById\("level-up-login-gate"\)/);
+    assert.match(app, /!document\.body\.classList\.contains\("levelup-onboarding-open"\)/);
+    assert.match(navbar, /__levelUpNativeNavigationSelect\?\.\(page\)/);
+    assert.match(styles, /html\.level-up-native-liquid-glass \.bottom-nav/);
+    assert.doesNotMatch(styles, /html\.level-up-native-ios \.bottom-nav/);
+    assert.doesNotMatch(app, /level-up-native-ios/);
 });

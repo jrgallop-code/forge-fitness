@@ -184,3 +184,4 @@ TestFlight build 108: make arcade effects reliably audible on iOS with PCM WAV c
 TestFlight build 109: play arcade effects through a dedicated native iOS audio plugin and add an immediate impact-and-grunt Test Sound button.
 
 TestFlight build 110: give the iOS bottom navigation an adaptive Liquid Glass material with refracted highlights and a translucent selected-tab capsule.
+TestFlight build 111: replace the faux glass bar with five native iOS 26 Liquid Glass buttons while preserving the existing older-iOS and PWA navigation.

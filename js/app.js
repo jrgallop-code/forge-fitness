@@ -10,8 +10,53 @@ import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check
 import { initializeSatisfactionSurvey } from "./feedback/satisfaction-survey.js?v=satisfaction-survey-1";
 import { applyAppFeaturePreferences } from "./core/app-feature-preferences.js?v=nutrition-feature-choice-1";
 
-const isNativeIOSApp = window.Capacitor?.getPlatform?.() === "ios";
-document.documentElement.classList.toggle("level-up-native-ios", isNativeIOSApp);
+const nativeNavigation = window.Capacitor?.Plugins?.LevelUpNativeNavigation;
+let nativeLiquidGlassAvailable = false;
+let nativeNavigationPage = "home";
+let nativeNavigationVisible = null;
+
+function syncNativeNavigationPage(page) {
+    const nextPage = String(page || "");
+    if (!nextPage) return;
+    nativeNavigationPage = nextPage;
+    if (!nativeLiquidGlassAvailable) return;
+    void nativeNavigation.setActive({ page: nextPage })
+        .catch(error => console.warn("Native navigation state could not be updated:", error));
+}
+
+function syncNativeNavigationVisibility() {
+    if (!nativeLiquidGlassAvailable) return;
+    const visible = !document.getElementById("level-up-login-gate")
+        && !document.body.classList.contains("levelup-onboarding-open");
+    if (nativeNavigationVisible === visible) return;
+    nativeNavigationVisible = visible;
+    void nativeNavigation.setVisible({ visible })
+        .catch(error => console.warn("Native navigation visibility could not be updated:", error));
+}
+
+window.__levelUpNativeNavigationSelect = syncNativeNavigationPage;
+
+function initializeNativeLiquidGlassNavigation() {
+    if (!nativeNavigation?.isAvailable) return;
+    void nativeNavigation.isAvailable()
+        .then(result => {
+            nativeLiquidGlassAvailable = result?.available === true;
+            document.documentElement.classList.toggle(
+                "level-up-native-liquid-glass",
+                nativeLiquidGlassAvailable
+            );
+            if (!nativeLiquidGlassAvailable) return;
+            syncNativeNavigationPage(nativeNavigationPage);
+            syncNativeNavigationVisibility();
+            new MutationObserver(syncNativeNavigationVisibility).observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ["class"]
+            });
+        })
+        .catch(error => console.warn("Native Liquid Glass navigation is unavailable:", error));
+}
 
 initializeSatisfactionSurvey();
 applyAppFeaturePreferences();
@@ -36,6 +81,7 @@ document.addEventListener("levelup:navigate",event=>{
     if(!page)return;
     const navPage=page==="program-builder"?"workout":page;
     document.querySelectorAll(".nav-btn[data-page]").forEach(button=>button.classList.toggle("active",button.dataset.page===navPage));
+    syncNativeNavigationPage(navPage);
     navigate(page);
 });
 if(content)new MutationObserver(()=>scheduleIconDecoration(()=>decorateAppIcons(content))).observe(content,{childList:true,subtree:true});
@@ -53,6 +99,7 @@ if("serviceWorker" in navigator && !window.Capacitor?.isNativePlatform?.()){
 
 document.body.insertAdjacentHTML("beforeend",renderNavbar());
 initializeNavbar();
+initializeNativeLiquidGlassNavigation();
 initializeMaintenanceCheckInAlert();
 decorateAppIcons(document);
 import "./core/non-timer-notification-cleanup.js?v=remove-non-timer-notifications-1";

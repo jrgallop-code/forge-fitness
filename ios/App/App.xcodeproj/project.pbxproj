@@ -30,6 +30,7 @@
 		A11C00612FF0000100000061 /* LevelUpDashboardWidgetPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00622FF0000100000061 /* LevelUpDashboardWidgetPlugin.swift */; };
 		A11C00632FF0000100000061 /* LevelUpDashboardWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00642FF0000100000061 /* LevelUpDashboardWidget.swift */; };
 		A11C00712FF0000100000071 /* LevelUpArcadeAudioPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00722FF0000100000071 /* LevelUpArcadeAudioPlugin.swift */; };
+		A11C00812FF0000100000081 /* LevelUpLiquidGlassNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00822FF0000100000081 /* LevelUpLiquidGlassNavigation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +68,7 @@
 		A11C00642FF0000100000061 /* LevelUpDashboardWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpDashboardWidget.swift; sourceTree = "<group>"; };
 		A11C00652FF0000100000061 /* LevelUpTimerWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LevelUpTimerWidget.entitlements; sourceTree = "<group>"; };
 		A11C00722FF0000100000071 /* LevelUpArcadeAudioPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpArcadeAudioPlugin.swift; sourceTree = "<group>"; };
+		A11C00822FF0000100000081 /* LevelUpLiquidGlassNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpLiquidGlassNavigation.swift; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -115,6 +117,7 @@
 				A11C00522FF0000100000051 /* LevelUpFileExportPlugin.swift */,
 				A11C00622FF0000100000061 /* LevelUpDashboardWidgetPlugin.swift */,
 				A11C00722FF0000100000071 /* LevelUpArcadeAudioPlugin.swift */,
+				A11C00822FF0000100000081 /* LevelUpLiquidGlassNavigation.swift */,
 				A11C00332FF0000100000031 /* App.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
@@ -238,6 +241,7 @@
 				A11C00512FF0000100000051 /* LevelUpFileExportPlugin.swift in Sources */,
 				A11C00612FF0000100000061 /* LevelUpDashboardWidgetPlugin.swift in Sources */,
 				A11C00712FF0000100000071 /* LevelUpArcadeAudioPlugin.swift in Sources */,
+				A11C00812FF0000100000081 /* LevelUpLiquidGlassNavigation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
