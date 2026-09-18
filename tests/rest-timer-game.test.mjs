@@ -23,3 +23,13 @@ test("Protein Run remains optional from More settings", () => {
   assert.match(game, /level_up_rest_timer_game_enabled/);
 });
 
+test("protein grows the lifter and unlocks a flashing ghost crush mode", () => {
+  assert.match(game, /function drawLifter/);
+  assert.match(game, /PROTEIN_PER_GROWTH_STAGE/);
+  assert.match(game, /MAX_GROWTH_STAGE/);
+  assert.match(game, /CRUSH MODE!/);
+  assert.match(game, /function drawGhost/);
+  assert.match(game, /Math\.floor\(now \/ 150\) % 2/);
+  assert.match(game, /BICEP CRUSH!/);
+  assert.match(game, /fillText\(large \? "PRO" : "P"/);
+});

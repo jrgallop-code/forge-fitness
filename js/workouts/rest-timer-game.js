@@ -5,6 +5,9 @@ const ENABLED_KEY = "level_up_rest_timer_game_enabled";
 const HIGH_SCORE_KEY = "level_up_protein_run_high_score";
 const OVERLAY_ID = "level-up-protein-run";
 const STYLE_ID = "level-up-protein-run-style";
+const PROTEIN_PER_GROWTH_STAGE = 6;
+const MAX_GROWTH_STAGE = 3;
+const CRUSH_MODE_MS = 7000;
 
 const MAZE = [
   "#################",
@@ -141,7 +144,10 @@ function createGameState(canvas) {
     ],
     score: 0,
     lives: 3,
+    proteinCollected: 0,
     poweredUntil: 0,
+    message: "",
+    messageUntil: 0,
     lastPlayerMove: 0,
     lastEnemyMove: 0,
     timerId: readActive()?.restTimer?.timerId || "",
@@ -153,6 +159,8 @@ function resetBoard(state) {
   const next = createGameState(state.canvas);
   next.score = state.score;
   next.lives = state.lives;
+  next.proteinCollected = state.proteinCollected;
+  next.poweredUntil = state.poweredUntil;
   next.timerId = state.timerId;
   return next;
 }
@@ -171,6 +179,30 @@ function setDirection(name) {
   game.queued = DIRECTIONS[name];
 }
 
+function growthStage(state = game) {
+  return Math.min(MAX_GROWTH_STAGE, Math.floor((state?.proteinCollected || 0) / PROTEIN_PER_GROWTH_STAGE));
+}
+
+function isCrushMode(now, state = game) {
+  return Boolean(state && growthStage(state) >= MAX_GROWTH_STAGE && now < state.poweredUntil);
+}
+
+function collectProtein(amount, now) {
+  if (!game) return;
+  const previousStage = growthStage(game);
+  game.proteinCollected += amount;
+  const nextStage = growthStage(game);
+  if (nextStage > previousStage) {
+    game.message = nextStage >= MAX_GROWTH_STAGE ? "MAX FLEX!" : "BIGGER!";
+    game.messageUntil = now + 900;
+  }
+  if (nextStage >= MAX_GROWTH_STAGE && now >= game.poweredUntil) {
+    game.poweredUntil = now + CRUSH_MODE_MS;
+    game.message = "CRUSH MODE!";
+    game.messageUntil = now + 1300;
+  }
+}
+
 function movePlayer(now) {
   if (!game || now - game.lastPlayerMove < 92) return;
   game.lastPlayerMove = now;
@@ -184,10 +216,13 @@ function movePlayer(now) {
     game.player.y = nextY;
   }
   const key = `${game.player.x},${game.player.y}`;
-  if (game.pellets.delete(key)) game.score += 10;
+  if (game.pellets.delete(key)) {
+    game.score += 10;
+    collectProtein(1, now);
+  }
   if (game.powers.delete(key)) {
-    game.score += 50;
-    game.poweredUntil = now + 5000;
+    game.score += 75;
+    collectProtein(4, now);
   }
   if (!game.pellets.size && !game.powers.size) game = resetBoard(game);
 }
@@ -210,8 +245,10 @@ function resolveCollisions(now) {
   if (!game) return;
   const hit = game.enemies.find(enemy => enemy.x === game.player.x && enemy.y === game.player.y);
   if (!hit) return;
-  if (now < game.poweredUntil) {
-    game.score += 200;
+  if (isCrushMode(now)) {
+    game.score += 250;
+    game.message = "BICEP CRUSH!";
+    game.messageUntil = now + 850;
     hit.x = 8;
     hit.y = 9;
     hit.direction = DIRECTIONS.up;
@@ -226,29 +263,82 @@ function resolveCollisions(now) {
   }
 }
 
-function drawBicep(ctx, x, y, size, powered) {
-  const px = Math.max(2, Math.floor(size / 7));
-  ctx.fillStyle = powered ? "#fff36b" : "#f3a43b";
-  ctx.fillRect(x + px, y + px * 3, px * 5, px * 3);
-  ctx.fillRect(x + px * 2, y + px, px * 3, px * 4);
-  ctx.fillRect(x + px * 4, y + px * 2, px * 2, px * 2);
-  ctx.fillStyle = "#7d3f10";
-  ctx.fillRect(x, y + px * 5, px * 2, px * 2);
-  ctx.fillRect(x + px * 5, y + px * 5, px * 2, px * 2);
+function drawLifter(ctx, cellX, cellY, cellW, cellH, stage, powered) {
+  const scale = .7 + stage * .16;
+  const unit = Math.max(1.3, Math.min(cellW, cellH) * .115 * scale);
+  const cx = cellX * cellW + cellW / 2;
+  const cy = cellY * cellH + cellH / 2;
+  const x = cx - unit * 4;
+  const y = cy - unit * 4.8;
+  const skin = powered ? "#fff36b" : stage >= 2 ? "#f59f34" : "#f4b45f";
+  const suit = powered ? "#ffffff" : "#1678e5";
+
+  if (powered) {
+    ctx.fillStyle = Math.floor(performance.now() / 110) % 2 ? "#fff" : "#ffe74f";
+    ctx.fillRect(x - unit, y - unit, unit * 10, unit * 11);
+    ctx.fillStyle = "#02040a";
+    ctx.fillRect(x, y, unit * 8, unit * 9);
+  }
+
+  // Head and hair.
+  ctx.fillStyle = "#3b2418";
+  ctx.fillRect(x + unit * 3, y, unit * 3, unit);
+  ctx.fillStyle = skin;
+  ctx.fillRect(x + unit * 3, y + unit, unit * 3, unit * 2);
+  // Flexed arms and oversized biceps.
+  ctx.fillRect(x + unit, y + unit * 2, unit * 2, unit * 2);
+  ctx.fillRect(x, y + unit, unit * 2, unit * 2);
+  ctx.fillRect(x + unit * 6, y + unit * 2, unit * 2, unit * 2);
+  ctx.fillRect(x + unit * 7, y + unit, unit * 2, unit * 2);
+  ctx.fillRect(x + unit, y + unit * 4, unit * 2, unit);
+  ctx.fillRect(x + unit * 6, y + unit * 4, unit * 2, unit);
+  // Torso and lifting belt.
+  ctx.fillStyle = suit;
+  ctx.fillRect(x + unit * 2, y + unit * 3, unit * 5, unit * 4);
+  ctx.fillStyle = "#101722";
+  ctx.fillRect(x + unit * 2, y + unit * 6, unit * 5, unit);
+  ctx.fillStyle = "#f4c542";
+  ctx.fillRect(x + unit * 4, y + unit * 6, unit, unit);
+  // Legs.
+  ctx.fillStyle = suit;
+  ctx.fillRect(x + unit * 2, y + unit * 7, unit * 2, unit * 2);
+  ctx.fillRect(x + unit * 5, y + unit * 7, unit * 2, unit * 2);
 }
 
-function drawShaker(ctx, enemy, cellW, cellH, powered) {
+function drawGhost(ctx, enemy, cellW, cellH, crushable, now) {
   const pad = Math.max(2, Math.floor(cellW * .2));
   const x = enemy.x * cellW + pad;
   const y = enemy.y * cellH + pad;
   const w = cellW - pad * 2;
   const h = cellH - pad * 2;
-  ctx.fillStyle = powered ? "#48576b" : enemy.color;
-  ctx.fillRect(x + w * .18, y + h * .12, w * .64, h * .18);
-  ctx.fillRect(x, y + h * .3, w, h * .58);
+  const flash = crushable && Math.floor(now / 150) % 2 === 0;
+  ctx.fillStyle = crushable ? (flash ? "#ffffff" : "#514dff") : enemy.color;
+  ctx.fillRect(x + w * .12, y + h * .12, w * .76, h * .22);
+  ctx.fillRect(x, y + h * .3, w, h * .52);
+  ctx.fillRect(x, y + h * .78, w * .25, h * .16);
+  ctx.fillRect(x + w * .38, y + h * .78, w * .24, h * .16);
+  ctx.fillRect(x + w * .75, y + h * .78, w * .25, h * .16);
   ctx.fillStyle = "#fff";
   ctx.fillRect(x + w * .2, y + h * .46, w * .16, h * .16);
   ctx.fillRect(x + w * .64, y + h * .46, w * .16, h * .16);
+}
+
+function drawProteinTub(ctx, x, y, cellW, cellH, large = false) {
+  const w = cellW * (large ? .72 : .48);
+  const h = cellH * (large ? .76 : .52);
+  const left = x * cellW + (cellW - w) / 2;
+  const top = y * cellH + (cellH - h) / 2;
+  ctx.fillStyle = "#dce8f5";
+  ctx.fillRect(left + w * .08, top, w * .84, h * .18);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(left, top + h * .18, w, h * .78);
+  ctx.fillStyle = large ? "#ff4567" : "#2d8cff";
+  ctx.fillRect(left + w * .08, top + h * .39, w * .84, h * .36);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `900 ${Math.max(5, h * (large ? .22 : .3))}px ui-monospace, monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(large ? "PRO" : "P", left + w / 2, top + h * .57);
 }
 
 function draw(now) {
@@ -276,19 +366,21 @@ function draw(now) {
       return;
     }
     const key = `${x},${y}`;
-    if (game.pellets.has(key)) {
-      ctx.fillStyle = "#eef7ff";
-      ctx.fillRect(x * cellW + cellW * .42, y * cellH + cellH * .42, cellW * .16, cellH * .16);
-    }
-    if (game.powers.has(key)) {
-      ctx.fillStyle = "#f8f8f8";
-      ctx.fillRect(x * cellW + cellW * .28, y * cellH + cellH * .22, cellW * .44, cellH * .58);
-      ctx.fillStyle = "#ff4567";
-      ctx.fillRect(x * cellW + cellW * .34, y * cellH + cellH * .43, cellW * .32, cellH * .14);
-    }
+    if (game.pellets.has(key)) drawProteinTub(ctx, x, y, cellW, cellH, false);
+    if (game.powers.has(key)) drawProteinTub(ctx, x, y, cellW, cellH, true);
   }));
-  drawBicep(ctx, game.player.x * cellW + cellW * .08, game.player.y * cellH + cellH * .08, Math.min(cellW, cellH) * .85, now < game.poweredUntil);
-  game.enemies.forEach(enemy => drawShaker(ctx, enemy, cellW, cellH, now < game.poweredUntil));
+  const crushable = isCrushMode(now);
+  drawLifter(ctx, game.player.x, game.player.y, cellW, cellH, growthStage(game), crushable);
+  game.enemies.forEach(enemy => drawGhost(ctx, enemy, cellW, cellH, crushable, now));
+  if (game.message && now < game.messageUntil) {
+    ctx.fillStyle = "rgba(2,4,10,.82)";
+    ctx.fillRect(canvas.width * .22, canvas.height * .44, canvas.width * .56, canvas.height * .1);
+    ctx.fillStyle = crushable ? "#fff36b" : "#72e89a";
+    ctx.font = `900 ${Math.max(15, canvas.width * .055)}px ui-monospace, monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(game.message, canvas.width / 2, canvas.height * .49);
+  }
 }
 
 function syncHud() {
@@ -301,6 +393,7 @@ function syncHud() {
   overlay.querySelector("[data-protein-run-clock]").textContent = timer?.status === "paused" ? "PAUSED" : formatTime(ms);
   overlay.querySelector("[data-protein-run-score]").textContent = String(game.score).padStart(5, "0");
   overlay.querySelector("[data-protein-run-lives]").textContent = "💪".repeat(game.lives);
+  overlay.querySelector("[data-protein-run-size]").textContent = `${growthStage(game) + 1}/4`;
   const finished = !sameTimer || timer?.status === "finished" || ms <= 0;
   overlay.querySelector("[data-protein-run-finish]")?.classList.toggle("is-visible", finished);
   game.finished = finished;
@@ -309,6 +402,12 @@ function syncHud() {
 
 function gameLoop(now) {
   if (!game) return;
+  if (game.poweredUntil && now >= game.poweredUntil && growthStage(game) >= MAX_GROWTH_STAGE) {
+    game.poweredUntil = 0;
+    game.proteinCollected = PROTEIN_PER_GROWTH_STAGE;
+    game.message = "POWER DOWN";
+    game.messageUntil = now + 750;
+  }
   const playing = !document.hidden && syncHud();
   if (playing) {
     movePlayer(now);
@@ -332,10 +431,10 @@ function openGame() {
     overlay.setAttribute("aria-label", "Protein Run rest timer game");
     overlay.innerHTML = `<div class="protein-run-shell">
       <header class="protein-run-header"><div><span class="protein-run-kicker">8-BIT REST TIMER</span><h2>Protein Run</h2></div><div style="display:flex;gap:8px"><div class="protein-run-clock" data-protein-run-clock>0:00</div><button class="protein-run-close" type="button" data-protein-run-close aria-label="Close game">×</button></div></header>
-      <div class="protein-run-scorebar"><span>SCORE <b data-protein-run-score>00000</b></span><span data-protein-run-lives>💪💪💪</span><span>HIGH <b data-protein-run-high>00000</b></span></div>
+      <div class="protein-run-scorebar"><span>SCORE <b data-protein-run-score>00000</b></span><span>SIZE <b data-protein-run-size>1/4</b></span><span data-protein-run-lives>💪💪💪</span><span>HIGH <b data-protein-run-high>00000</b></span></div>
       <div class="protein-run-stage"><canvas aria-label="Maze with a bicep collecting protein powder"></canvas><div class="protein-run-finish" data-protein-run-finish><div><strong>Rest Over!</strong><span>Get back to work.</span></div></div></div>
       <div class="protein-run-controls" aria-label="Game controls"><button type="button" data-game-direction="up" aria-label="Move up">▲</button><button type="button" data-game-direction="left" aria-label="Move left">◀</button><button type="button" data-game-direction="down" aria-label="Move down">▼</button><button type="button" data-game-direction="right" aria-label="Move right">▶</button></div>
-      <p class="protein-run-help">Swipe the maze or use the arrows. Eat protein tubs and avoid the shaker bots. Closing the game never stops your rest timer.</p>
+      <p class="protein-run-help">Collect the clearly labelled protein tubs to grow. At maximum size, the ghosts flash—run into them and crush them with your biceps. Closing the game never stops your rest timer.</p>
     </div>`;
     document.body.appendChild(overlay);
     overlay.addEventListener("click", event => {
@@ -419,4 +518,3 @@ function initialize() {
 }
 
 if (isNativeIOS()) initialize();
-
