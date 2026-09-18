@@ -7,7 +7,7 @@ import { initializeSmartBuildSupersetGuard } from "../workouts/smart-build-super
 import { initializeRoutineImporter } from "../workouts/routine-importer.js?v=launcher-grid-hotfix-1";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
 import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=right-overflow-arc-1";
-import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=workout-performance-1";
+import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=exercise-history-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=onboarding-training-days-1";
 import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=saved-plan-edit-2";
 import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-live-polish.js?v=workout-landing-live-polish-2";

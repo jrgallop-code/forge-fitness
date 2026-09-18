@@ -7,8 +7,14 @@ const timerDisplay = readFileSync(new URL("../js/workouts/rest-timer-display-fix
 const more = readFileSync(new URL("../js/more/more-ui-v2.js", import.meta.url), "utf8");
 
 test("Protein Run is loaded with the rest timer and gated to native iOS", () => {
-  assert.match(timerDisplay, /rest-timer-game\.js\?v=protein-run-5/);
+  assert.match(timerDisplay, /rest-timer-game\.js\?v=protein-run-6/);
   assert.match(game, /if \(isNativeIOS\(\)\) initialize\(\)/);
+});
+
+test("the bottom navigation is hidden only while the rest arcade is open", () => {
+  assert.match(game, /body\.level-up-rest-game-open \.bottom-nav \{ display: none !important; \}/);
+  assert.match(game, /document\.body\.classList\.add\("level-up-rest-game-open"\)/);
+  assert.match(game, /document\.body\.classList\.remove\("level-up-rest-game-open"\)/);
 });
 
 test("Protein Run reads but never writes the rest timer state", () => {

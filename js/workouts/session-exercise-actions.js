@@ -95,18 +95,6 @@ function getEligibleExercises(currentExercise) {
     });
 }
 
-function buildSwapOptions(currentExercise) {
-  const choices = getEligibleExercises(currentExercise);
-  const sameGroup = choices.filter(item => item.muscleGroup && item.muscleGroup === currentExercise?.muscleGroup);
-  const others = choices.filter(item => !item.muscleGroup || item.muscleGroup !== currentExercise?.muscleGroup);
-  const renderOptions = items => items.map(item =>
-    `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}${item.equipment ? ` · ${escapeHtml(item.equipment)}` : ''}</option>`
-  ).join('');
-
-  if (!choices.length) return '<option value="">No compatible exercises available</option>';
-  return `${sameGroup.length ? `<optgroup label="${escapeHtml(currentExercise?.muscleGroup || 'Similar')} options">${renderOptions(sameGroup)}</optgroup>` : ''}${others.length ? `<optgroup label="${currentExercise?.trackingType === 'notes' ? 'Other cardio exercises' : 'Other exercises'}">${renderOptions(others)}</optgroup>` : ''}`;
-}
-
 function getMuscleProfile(exercise) {
   if (!exercise) return { primary: [], secondary: [] };
   const special = SPECIAL_MUSCLE_PROFILES[exercise.id];
@@ -272,14 +260,10 @@ function ensureSwapSheet(logger) {
       </section>
       <div class="session-manual-swap">
         <span class="session-manual-label">CHOOSE ANOTHER MANUALLY</span>
-        <label class="session-swap-field">
-          <span>Replace with</span>
-          <select class="session-swap-select"></select>
-        </label>
+        <button class="secondary-btn session-swap-browse" type="button">Choose Your Own</button>
       </div>
       <div class="session-swap-actions">
         <button class="secondary-btn session-remove-today" type="button">Remove for Today</button>
-        <button class="primary-btn session-swap-confirm" type="button">Swap for Today</button>
       </div>
       <button class="session-swap-cancel" type="button">Cancel</button>
     </div>`;
@@ -289,7 +273,12 @@ function ensureSwapSheet(logger) {
   sheet.querySelector('.session-swap-close')?.addEventListener('click', close);
   sheet.querySelector('.session-swap-cancel')?.addEventListener('click', close);
   sheet.addEventListener('click', event => { if (event.target === sheet) close(); });
-  sheet.querySelector('.session-swap-confirm')?.addEventListener('click', () => applySwap(sheet));
+  sheet.querySelector('.session-swap-browse')?.addEventListener('click', () => {
+    const exerciseIndex = Number(sheet.dataset.exerciseIndex);
+    if (!Number.isInteger(exerciseIndex)) return;
+    closeSwapSheet(sheet);
+    openAddExerciseSheet(logger, { mode: 'swap', exerciseIndex });
+  });
   sheet.querySelector('.session-remove-today')?.addEventListener('click', () => removeExerciseForToday(sheet));
   sheet.querySelector('.session-smart-options')?.addEventListener('click', event => {
     const button = event.target.closest('[data-smart-swap-id]');
@@ -307,12 +296,10 @@ function openSwapSheet(card, logger) {
   if (!Number.isInteger(exerciseIndex) || !currentExercise) return;
 
   const sheet = ensureSwapSheet(logger);
-  const select = sheet.querySelector('.session-swap-select');
   const title = sheet.querySelector('#session-swap-title');
   const smartOptions = sheet.querySelector('.session-smart-options');
   sheet.dataset.exerciseIndex = String(exerciseIndex);
   if (title) title.textContent = `Swap ${currentExercise.name}`;
-  if (select) select.innerHTML = buildSwapOptions(currentExercise);
   if (smartOptions) smartOptions.innerHTML = renderSmartRecommendations(currentExercise, active, exerciseIndex);
   sheet.hidden = false;
 }
@@ -346,11 +333,6 @@ function applyReplacement(sheet, replacementId) {
   saveActiveWorkout(active);
   closeSwapSheet(sheet);
   openActiveWorkout();
-}
-
-function applySwap(sheet) {
-  const replacementId = sheet?.querySelector('.session-swap-select')?.value;
-  applyReplacement(sheet, replacementId);
 }
 
 function removeExerciseForToday(source) {
@@ -626,10 +608,22 @@ function ensureAddExerciseSheet(logger) {
     <div class="session-add-results" data-session-add-results></div>
   </div>`;
   logger.appendChild(sheet);
-  const close = () => { sheet.hidden = true; };
+  const close = () => {
+    sheet.hidden = true;
+    sheet.dataset.selectionMode = 'add';
+    sheet.dataset.exerciseIndex = '';
+  };
   const render = () => {
     const query = sheet.querySelector('.session-add-search')?.value || '';
+    const swapIndex = Number(sheet.dataset.exerciseIndex);
+    const active = sheet.dataset.selectionMode === 'swap' ? readActiveWorkout() : null;
+    const currentId = Number.isInteger(swapIndex) ? getSessionDay(active)?.exercises?.[swapIndex]?.id : '';
+    const currentExercise = getExerciseById(currentId);
     const results = getAllExercises().filter(item => item?.id && item?.name)
+      .filter(item => sheet.dataset.selectionMode !== 'swap' || (
+        item.id !== currentId &&
+        (item.trackingType || 'reps') === (currentExercise?.trackingType || 'reps')
+      ))
       .filter(item => matchesExerciseBrowser(item, { muscle: sheet.dataset.muscle, query }))
       .sort((a, b) => String(a.muscleGroup).localeCompare(String(b.muscleGroup)) || String(a.name).localeCompare(String(b.name)));
     sheet.querySelector('[data-session-add-results]').innerHTML = results.length ? results.map(item => `<button type="button" data-session-add-id="${escapeHtml(item.id)}"><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml([item.muscleGroup, item.equipment].filter(Boolean).join(' · '))}</small></span><b>+</b></button>`).join('') : '<p>No matching exercises.</p>';
@@ -657,7 +651,12 @@ function ensureAddExerciseSheet(logger) {
     const message = customForm.querySelector('.exercise-browser-custom-message');
     if (!name) { message.textContent = 'Enter an exercise name.'; return; }
     const exercise = addCustomExercise({ name, muscleGroup: value('custom-muscle'), equipment: value('custom-equipment'), type: value('custom-type'), recommendedReps: value('custom-reps'), defaultSets: value('custom-sets') });
-    if (!exercise || !appendExerciseToWorkout(exercise.id, logger)) { message.textContent = 'Custom exercise could not be added.'; return; }
+    if (!exercise) { message.textContent = 'Custom exercise could not be added.'; return; }
+    if (sheet.dataset.selectionMode === 'swap') {
+      applyReplacement(sheet, exercise.id);
+      return;
+    }
+    if (!appendExerciseToWorkout(exercise.id, logger)) { message.textContent = 'Custom exercise could not be added.'; return; }
     close();
     if (!logger.dataset.editingSessionId) openActiveWorkout();
   });
@@ -672,7 +671,12 @@ function ensureAddExerciseSheet(logger) {
   }));
   sheet.querySelector('[data-session-add-results]')?.addEventListener('click', event => {
     const button = event.target.closest('[data-session-add-id]');
-    if (!button || !appendExerciseToWorkout(button.dataset.sessionAddId, logger)) return;
+    if (!button) return;
+    if (sheet.dataset.selectionMode === 'swap') {
+      applyReplacement(sheet, button.dataset.sessionAddId);
+      return;
+    }
+    if (!appendExerciseToWorkout(button.dataset.sessionAddId, logger)) return;
     close();
     if (!logger.dataset.editingSessionId) openActiveWorkout();
   });
@@ -681,11 +685,34 @@ function ensureAddExerciseSheet(logger) {
   return sheet;
 }
 
-function openAddExerciseSheet(logger) {
+function openAddExerciseSheet(logger, { mode = 'add', exerciseIndex = null } = {}) {
   const sheet = ensureAddExerciseSheet(logger);
+  sheet.dataset.selectionMode = mode;
+  sheet.dataset.exerciseIndex = mode === 'swap' && Number.isInteger(exerciseIndex) ? String(exerciseIndex) : '';
+  sheet.dataset.muscle = '';
+  const heading = sheet.querySelector('#session-add-title');
+  const eyebrow = sheet.querySelector('.session-swap-heading .eyebrow');
+  if (heading) heading.textContent = mode === 'swap' ? 'Choose Replacement' : 'Add Exercise';
+  if (eyebrow) eyebrow.textContent = mode === 'swap' ? 'TODAY ONLY' : 'ACTIVE WORKOUT';
+  const customForm = sheet.querySelector('[data-session-custom-form]');
+  if (customForm) customForm.hidden = true;
+  const search = sheet.querySelector('.session-add-search');
+  if (search) {
+    search.hidden = false;
+    search.value = '';
+  }
+  const carousel = sheet.querySelector('.exercise-muscle-carousel');
+  if (carousel) carousel.hidden = false;
+  const results = sheet.querySelector('[data-session-add-results]');
+  if (results) results.hidden = false;
+  sheet.querySelectorAll('[data-session-muscle]').forEach(button => {
+    const selected = !button.dataset.sessionMuscle;
+    button.classList.toggle('selected', selected);
+    button.setAttribute('aria-selected', String(selected));
+  });
   sheet.hidden = false;
   sheet.renderExerciseResults?.();
-  setTimeout(() => sheet.querySelector('.session-add-search')?.focus(), 50);
+  setTimeout(() => search?.focus(), 50);
 }
 
 function clearSupersetGroup(day, group) {

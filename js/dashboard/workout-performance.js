@@ -18,7 +18,7 @@ export function renderWorkoutPerformanceDashboard() {
         ${result.topImprovement ? `<div class="performance-top"><span>Top improvement</span><strong>${escapeHtml(result.topImprovement.name)}</strong><small>${escapeHtml(result.topImprovement.detail)}</small></div>` : ""}
         <button class="performance-toggle" type="button" data-performance-toggle aria-expanded="false" ${result.exercises.length ? "" : "hidden"}>View exercise breakdown</button>
         <div class="performance-breakdown" data-performance-panel hidden>${result.exercises.map(renderExerciseRow).join("")}</div>
-        <p class="performance-note">Score compares completed working sets with the previous matching workout. New exercises are not scored.</p>
+        <p class="performance-note">Each lift is compared with its most recent logged performance, even when it appears in a different workout. New exercises are not scored.</p>
     </section>`;
 }
 
@@ -51,7 +51,7 @@ function showCompletedSummary(logger) {
         ${result.topImprovement ? `<div class="performance-top"><span>Top improvement</span><strong>${escapeHtml(result.topImprovement.name)}</strong><small>${escapeHtml(result.topImprovement.detail)}</small></div>` : ""}
         <button class="performance-toggle" type="button" data-performance-toggle aria-expanded="false" ${result.exercises.length ? "" : "hidden"}>View exercise breakdown</button>
         <div class="performance-breakdown" data-performance-panel hidden>${result.exercises.map(renderExerciseRow).join("")}</div>
-        <p class="performance-note">This is a session comparison, not a judgment of effort. Normal day-to-day changes are expected.</p>
+        <p class="performance-note">Each lift is compared with its most recent logged performance. Normal day-to-day changes are expected.</p>
         <button class="primary-btn performance-done" type="button" data-performance-done>Done</button>
     </div>`;
     bindToggles(logger);
@@ -59,15 +59,10 @@ function showCompletedSummary(logger) {
     logger.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function calculatePerformance(session, allSessions) {
-    const previous = allSessions.find(item =>
-        item.id !== session.id &&
-        item.planId === session.planId &&
-        Number(item.trainingDayIndex) === Number(session.trainingDayIndex) &&
-        getSessionTime(item) < getSessionTime(session)
-    );
-    const previousById = new Map((previous?.exercises || []).map(item => [item.exerciseId, item]));
-    const older = allSessions.filter(item => item.id !== session.id && getSessionTime(item) < getSessionTime(session));
+export function calculatePerformance(session, allSessions) {
+    const older = allSessions
+        .filter(item => item.id !== session.id && getSessionTime(item) < getSessionTime(session))
+        .sort((a, b) => getSessionTime(b) - getSessionTime(a));
     const exercises = [];
     let completedSets = 0;
     let plannedSets = 0;
@@ -77,7 +72,8 @@ function calculatePerformance(session, allSessions) {
         const definition = getExerciseById(current.exerciseId);
         if (definition?.trackingType === "notes" || current.trackingType === "notes") return;
         const currentSets = completedSetsOnly(current.sets);
-        const previousSets = completedSetsOnly(previousById.get(current.exerciseId)?.sets);
+        const previousExercise = findPreviousExercisePerformance(older, current);
+        const previousSets = completedSetsOnly(previousExercise?.sets);
         plannedSets += Array.isArray(current.sets) ? current.sets.length : 0;
         completedSets += currentSets.length;
         if (!currentSets.length) {
@@ -98,7 +94,7 @@ function calculatePerformance(session, allSessions) {
 
         const historicalBest = Math.max(0, ...older.flatMap(item =>
             (item.exercises || [])
-                .filter(exercise => exercise.exerciseId === current.exerciseId)
+                .filter(exercise => exerciseMatches(current, exercise))
                 .map(exercise => getSetMetric(completedSetsOnly(exercise.sets)).score)
         ));
         const isPr = historicalBest > 0 && currentMetric.score > historicalBest * 1.005;
@@ -129,6 +125,21 @@ function calculatePerformance(session, allSessions) {
         .sort((a, b) => b.change - a.change)[0] || null;
 
     return { score, label: getLabel(score), improved, maintained, declined, prs, completedSets, exercises, topImprovement };
+}
+
+function findPreviousExercisePerformance(olderSessions, currentExercise) {
+    for (const priorSession of olderSessions) {
+        const match = (priorSession.exercises || []).find(exercise =>
+            exerciseMatches(currentExercise, exercise) && completedSetsOnly(exercise.sets).length
+        );
+        if (match) return match;
+    }
+    return null;
+}
+
+function exerciseMatches(current, previous) {
+    if (!current?.exerciseId || previous?.exerciseId !== current.exerciseId) return false;
+    return (previous.equipmentProfileId || "default") === (current.equipmentProfileId || "default");
 }
 
 function renderScore(result) {

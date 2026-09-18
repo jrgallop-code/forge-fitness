@@ -369,6 +369,7 @@ function ensureStyles() {
     .rest-game-launch { grid-column: 1 / -1; min-height: 38px; border-color: color-mix(in srgb, var(--accent, #2d8cff) 70%, white 18%) !important; background: color-mix(in srgb, var(--accent, #2d8cff) 28%, #07111f) !important; color: #fff !important; font-size: 11px !important; font-weight: 900 !important; letter-spacing: .05em; }
     #${OVERLAY_ID} { position: fixed; inset: 0; z-index: 20000; display: grid; align-items: end; background: rgba(1, 5, 12, .76); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
     #${OVERLAY_ID}[hidden] { display: none !important; }
+    body.level-up-rest-game-open .bottom-nav { display: none !important; }
     .protein-run-shell { width: 100%; max-height: 94svh; overflow: auto; border-radius: 24px 24px 0 0; padding: 14px 14px calc(16px + env(safe-area-inset-bottom)); background: #050912; border: 2px solid var(--protein-run-accent, #2d8cff); box-shadow: 0 -22px 65px rgba(0,0,0,.58); color: #f7fbff; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; image-rendering: pixelated; }
     .rest-arcade-select { position: relative; min-height: min(650px, 82svh); overflow: hidden; padding: 8px 2px 18px; }
     .rest-arcade-select::before { content: ""; pointer-events: none; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(255,255,255,.035) 3px 4px); }
@@ -1228,6 +1229,7 @@ function openArcadeMenu() {
   ensureStyles();
   const overlay = ensureGameOverlay();
   overlay.hidden = false;
+  document.body.classList.add("level-up-rest-game-open");
   overlay.dataset.gameMode = "select";
   overlay.querySelector("[data-rest-arcade-select]").hidden = false;
   overlay.querySelector("[data-rest-game-view]").hidden = true;
@@ -1251,6 +1253,7 @@ function openGame(mode = "protein") {
   ensureStyles();
   const overlay = ensureGameOverlay();
   overlay.hidden = false;
+  document.body.classList.add("level-up-rest-game-open");
   overlay.dataset.gameMode = mode;
   overlay.querySelector("[data-rest-arcade-select]").hidden = true;
   overlay.querySelector("[data-rest-game-view]").hidden = false;
@@ -1291,6 +1294,7 @@ function closeGame() {
   frameId = null;
   const overlay = document.getElementById(OVERLAY_ID);
   if (overlay) overlay.hidden = true;
+  document.body.classList.remove("level-up-rest-game-open");
   document.body.style.overflow = "";
 }
 
