@@ -4,7 +4,7 @@ import { renderExportBackup } from "./export-backup-ui.js?v=full-data-export-1";
 import { initializeBackupManager } from "../core/backup-manager.js?v=backup-complete-7";
 import { initializeGoogleDriveSync } from "../core/google-drive-sync-v2.js?v=visible-drive-backup-3";
 import { initializeDataSpreadsheetExport } from "../core/data-spreadsheet-export.js?v=full-data-export-1";
-import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-card-1";
+import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-medical-sources-1";
 import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.js?v=account-transfer-1";
 import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=more-units-miles-1";
 import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-display-name-1";
@@ -111,7 +111,7 @@ export function initializeMore() {
         if (page === "bmi") {
             const content = document.getElementById("content");
             if (!content) return;
-            content.innerHTML = `<section class="dashboard-welcome"><div><button class="nutrition-planner-back" id="bmi-back-more" type="button">← More</button><span class="eyebrow">BODY PROFILE</span><h2>BMI</h2><p>Your BMI uses the height and weight saved in Body Profile.</p></div></section>${renderBmiCard()}`;
+            content.innerHTML = `<section class="dashboard-welcome"><div><button class="nutrition-planner-back" id="bmi-back-more" type="button">← More</button><span class="eyebrow">BODY PROFILE</span><h2>BMI</h2><p>An adult screening measure calculated from the height and weight saved in Body Profile.</p></div></section>${renderBmiCard()}`;
             initializeBmiCard();
             document.getElementById("bmi-back-more")?.addEventListener("click", () => { content.innerHTML = renderMore(); initializeMore(); window.scrollTo({ top: 0, behavior: "smooth" }); });
             window.scrollTo({ top: 0, behavior: "smooth" });
