@@ -23,7 +23,10 @@ test('workout recap offers swipeable share cards and profile-aware anatomy', () 
   assert.doesNotMatch(recapSource, /data-recap-share="copy"/);
   assert.match(recapSource, /data-recap-background/);
   assert.match(recapSource, /level-up-mark-transparent\.svg/);
+  assert.match(recapSource, /drawBrandWordmark/);
+  assert.match(recapSource, /SHARE_ICON/);
   assert.match(recapSource, /LevelUpInstagramShare/);
+  assert.doesNotMatch(recapSource, /openInstagramStories/);
   assert.match(recapSource, /navigator\.share/);
   assert.match(recapSource, /canvas\.toBlob/);
 });

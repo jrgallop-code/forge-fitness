@@ -7,41 +7,8 @@ final class LevelUpInstagramSharePlugin: CAPPlugin, CAPBridgedPlugin {
     let identifier = "LevelUpInstagramSharePlugin"
     let jsName = "LevelUpInstagramShare"
     let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "shareToStories", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "saveImage", returnType: CAPPluginReturnPromise)
     ]
-
-    @objc func shareToStories(_ call: CAPPluginCall) {
-        guard let imageData = decodedImageData(from: call) else {
-            call.reject("The workout image could not be prepared.")
-            return
-        }
-        guard let storiesURL = URL(string: "instagram-stories://share") else {
-            call.resolve(["opened": false])
-            return
-        }
-
-        DispatchQueue.main.async {
-            guard UIApplication.shared.canOpenURL(storiesURL) else {
-                call.resolve(["opened": false, "reason": "not-installed"])
-                return
-            }
-
-            var pasteboardItem: [String: Any] = [
-                "com.instagram.sharedSticker.backgroundImage": imageData
-            ]
-            if let contentURL = call.getString("contentUrl"), !contentURL.isEmpty {
-                pasteboardItem["com.instagram.sharedSticker.contentURL"] = contentURL
-            }
-            UIPasteboard.general.setItems(
-                [pasteboardItem],
-                options: [.expirationDate: Date().addingTimeInterval(300)]
-            )
-            UIApplication.shared.open(storiesURL, options: [:]) { opened in
-                call.resolve(["opened": opened])
-            }
-        }
-    }
 
     @objc func saveImage(_ call: CAPPluginCall) {
         guard let data = decodedImageData(from: call), let image = UIImage(data: data) else {

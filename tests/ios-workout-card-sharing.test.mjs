@@ -7,17 +7,16 @@ const bridge = readFileSync(new URL('../ios/App/App/LevelUpBridgeViewController.
 const plist = readFileSync(new URL('../ios/App/App/Info.plist', import.meta.url), 'utf8');
 const project = readFileSync(new URL('../ios/App/App.xcodeproj/project.pbxproj', import.meta.url), 'utf8');
 
-test('iOS exposes native Instagram Stories and Photos saving for workout cards', () => {
+test('iOS exposes native Photos saving for workout cards', () => {
   assert.match(plugin, /jsName = "LevelUpInstagramShare"/);
-  assert.match(plugin, /instagram-stories:\/\/share/);
-  assert.match(plugin, /com\.instagram\.sharedSticker\.backgroundImage/);
+  assert.doesNotMatch(plugin, /instagram-stories:\/\/share/);
+  assert.doesNotMatch(plugin, /shareToStories/);
   assert.match(plugin, /PHAssetChangeRequest\.creationRequestForAsset/);
   assert.match(bridge, /registerPluginInstance\(LevelUpInstagramSharePlugin\(\)\)/);
 });
 
 test('the iOS target declares and compiles workout-card sharing support', () => {
-  assert.match(plist, /LSApplicationQueriesSchemes/);
-  assert.match(plist, /instagram-stories/);
+  assert.doesNotMatch(plist, /instagram-stories/);
   assert.match(plist, /NSPhotoLibraryAddUsageDescription/);
   assert.match(project, /LevelUpInstagramSharePlugin\.swift in Sources/);
 });
