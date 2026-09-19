@@ -4,18 +4,15 @@ import { readFile } from "node:fs/promises";
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-const [recovery, tutorial, safeguard, worker] = await Promise.all([
-    read("js/core/system-recovery-notice.js"),
+const [tutorial, safeguard, worker] = await Promise.all([
     read("js/more/interactive-workout-tutorial-v5.js"),
     read("js/core/pwa-startup-safeguard.js"),
     read("service-worker.js")
 ]);
 
-test("data recovery notice is limited to the existing-user rollout audience", () => {
-    assert.match(recovery, /AUDIENCE_KEY/);
-    assert.match(recovery, /if \(!isLegacyRecoveryAudience\(\)\) return removeNotice\(\)/);
-    assert.match(recovery, /localStorage\.setItem\(AUDIENCE_KEY, legacy \? "legacy" : "new"\)/);
-    assert.match(recovery, /hasValidSession\(\)[\s\S]*LEGACY_DATA_KEYS\.some/);
+test("the retired system recovery notice is no longer loaded", () => {
+    assert.doesNotMatch(safeguard, /system-recovery-notice/);
+    assert.doesNotMatch(worker, /system-recovery-notice/);
 });
 
 test("workout tutorial fingertip stays anchored to Form Guide in Safari browser viewports", () => {
@@ -28,9 +25,7 @@ test("workout tutorial fingertip stays anchored to Form Guide in Safari browser 
 });
 
 test("startup and offline assets load the corrected modules", () => {
-    assert.match(safeguard, /system-recovery-notice\.js\?v=legacy-audience-1/);
-    assert.match(safeguard, /interactive-workout-tutorial-v5\.js\?v=browser-form-guide-pointer-1/);
-    assert.match(worker, /CACHE_VERSION = "2026-09-07-273"/);
-    assert.match(worker, /system-recovery-notice\.js\?v=legacy-audience-1/);
+    assert.match(safeguard, /interactive-workout-tutorial-v5\.js\?v=workout-overflow-rir-1/);
+    assert.match(worker, /CACHE_VERSION = "2026-09-19-342"/);
     assert.match(worker, /interactive-workout-tutorial-v5\.js\?v=browser-form-guide-pointer-1/);
 });

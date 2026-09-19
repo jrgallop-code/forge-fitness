@@ -6,7 +6,6 @@
     let dismissed = false;
 
     installCloudBackupRecovery();
-    installSystemRecoveryNotice();
     installBodyComposition();
     installBodyFatApprovedVisual();
     installBodyCompositionHealthRecords();
@@ -40,15 +39,6 @@
         syncRestoreButton();
         const observer = new MutationObserver(syncRestoreButton);
         observer.observe(document.documentElement, { childList: true, subtree: true });
-    }
-
-    function installSystemRecoveryNotice() {
-        if (document.querySelector('script[data-system-recovery-notice]')) return;
-        const script = document.createElement("script");
-        script.type = "module";
-        script.src = "js/core/system-recovery-notice.js?v=legacy-audience-1";
-        script.dataset.systemRecoveryNotice = "1";
-        document.head.appendChild(script);
     }
 
     function installBodyComposition() {
