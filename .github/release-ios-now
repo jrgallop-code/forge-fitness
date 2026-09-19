@@ -197,3 +197,5 @@ TestFlight build 116: replace the drawn Gym Chopper player vehicle with the appr
 TestFlight build 117: hide bottom navigation throughout rest games, compare dashboard performance by each lift's latest matching history, and reuse the full exercise browser for manual workout swaps.
 
 TestFlight build 118: stop all arcade music, rotor loops, delayed effects, and active audio sources when a game closes or its rest timer is dismissed.
+
+TestFlight build 119: clean up the mobile Measurements experience and add BMI calculation, limitations, adult reference ranges, and authoritative medical sources.
