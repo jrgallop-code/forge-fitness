@@ -23,15 +23,14 @@ import { initializeMuscleRecoveryMap } from "../progress/muscle-recovery-map.js?
 import { initializeWeightCarbsChart } from "../progress/weight-carbs-chart.js?v=energy-balance-range-3";
 import { initializeCalorieStats } from "../nutrition/calorie-stats.js?v=energy-carousel-control-1";
 import { renderSleepTracker, initializeSleepTracker } from "../progress/sleep-tracker.js?v=sleep-tracker-2";
-import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../progress/measurements-tracker.js?v=measurements-image-1";
-import { initializeMeasurementHistoryDetail } from "../progress/measurements-history-detail.js?v=measurement-history-1";
+import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../progress/measurements-tracker.js?v=measurements-mobile-cleanup-1";
 import { renderNutrition, renderWater, initializeNutrition, showNutritionView } from "../nutrition/nutrition-ui.js?v=water-only-1";
 import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energy-profile.js?v=food-log-macro-bars-1";
 import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v=barcode-quality-1";
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1-weekly-informational-checkin-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-target-rounding-1";
-import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=home-widget-live-3";
+import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=bmi-medical-sources-1";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=history-rir-edit-1";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-2";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-7";
@@ -128,7 +127,7 @@ export function navigate(page) {
             case "sleep":
                 content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>Track sleep duration, quality and recovery notes.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
             case "measurements":
-                content.innerHTML = renderMeasurementsTracker(); safeInitialize("Measurements tracker", initializeMeasurementsTracker); safeInitialize("Measurement history detail", initializeMeasurementHistoryDetail); break;
+                content.innerHTML = renderMeasurementsTracker(); safeInitialize("Measurements tracker", initializeMeasurementsTracker); break;
             case "nutrition":
                 content.innerHTML = renderNutrition(); safeInitialize("Nutrition", initializeNutrition); safeInitialize("Nutrition main view", () => showNutritionView("main")); break;
             case "water":

@@ -1,4 +1,6 @@
 const PROFILE_KEY = "level_up_nutrition_profile";
+const CDC_BMI_URL = "https://www.cdc.gov/bmi/adult-calculator/bmi-categories.html";
+const NHLBI_BMI_URL = "https://www.nhlbi.nih.gov/calculate-your-bmi";
 
 export function renderBmiCard() {
     return `
@@ -31,10 +33,36 @@ export function renderBmiCard() {
 
             <div class="bmi-index-result">
                 <strong data-bmi-category>Save Body Profile to calculate BMI</strong>
-                <small data-bmi-detail>Source: Body Profile height and weight.</small>
+                <small data-bmi-detail>Calculated from the height and weight saved in Body Profile.</small>
             </div>
 
-            <p class="bmi-index-note">BMI is an adult screening measure based on height and weight. It does not directly measure body composition or diagnose health.</p>
+            <section class="bmi-method-card" aria-labelledby="bmi-method-title">
+                <span class="eyebrow">CALCULATION</span>
+                <h4 id="bmi-method-title">How this result is calculated</h4>
+                <p class="bmi-formula"><span>BMI</span><strong>weight (kg) ÷ height² (m²)</strong></p>
+                <p>Level Up converts the height and weight saved in Body Profile to metric units, then applies this formula.</p>
+            </section>
+
+            <section class="bmi-reference-card" aria-labelledby="bmi-reference-title">
+                <span class="eyebrow">SOURCES &amp; LIMITATIONS</span>
+                <h4 id="bmi-reference-title">Adult BMI reference ranges</h4>
+                <p class="bmi-reference-intro">The ranges shown above follow CDC categories for adults age 20 and older.</p>
+                <div class="bmi-reference-table" role="table" aria-label="Adult BMI categories">
+                    <div role="row"><span role="cell">Underweight</span><strong role="cell">Below 18.5</strong></div>
+                    <div role="row"><span role="cell">Healthy weight</span><strong role="cell">18.5–24.9</strong></div>
+                    <div role="row"><span role="cell">Overweight</span><strong role="cell">25.0–29.9</strong></div>
+                    <div role="row"><span role="cell">Obesity</span><strong role="cell">30.0 or greater</strong></div>
+                </div>
+                <div class="bmi-medical-notice" role="note">
+                    <strong>Screening measure, not a diagnosis</strong>
+                    <p>BMI does not directly measure body fat or distinguish fat, muscle and bone. It is one potential health indicator and should be considered with other factors.</p>
+                    <p>Do not use this result to make medical decisions. If you have questions about your BMI or health, consult a qualified healthcare professional.</p>
+                </div>
+                <div class="bmi-source-links" aria-label="BMI medical sources">
+                    <a href="${CDC_BMI_URL}" target="_blank" rel="noopener noreferrer">CDC: Adult BMI Categories <span aria-hidden="true">↗</span></a>
+                    <a href="${NHLBI_BMI_URL}" target="_blank" rel="noopener noreferrer">NIH/NHLBI: Calculate Your BMI <span aria-hidden="true">↗</span></a>
+                </div>
+            </section>
         </section>
     `;
 }
@@ -53,14 +81,14 @@ export function initializeBmiCard() {
     if (!Number.isFinite(bmi)) {
         if (value) value.textContent = "--";
         if (category) category.textContent = "Save Body Profile to calculate BMI";
-        if (detail) detail.textContent = "Source: Body Profile height and weight.";
+        if (detail) detail.textContent = "Calculated from the height and weight saved in Body Profile.";
         if (pointer) pointer.style.opacity = "0";
         return;
     }
 
     if (value) value.textContent = bmi.toFixed(1);
     if (category) category.textContent = getCategory(bmi);
-    if (detail) detail.textContent = "Calculated from your saved Body Profile height and weight.";
+    if (detail) detail.textContent = "Calculated from your saved Body Profile using weight (kg) ÷ height² (m²).";
     if (pointer) {
         pointer.style.opacity = "1";
         pointer.setAttribute("transform", `rotate(${bmiToAngle(bmi)} 120 112)`);
