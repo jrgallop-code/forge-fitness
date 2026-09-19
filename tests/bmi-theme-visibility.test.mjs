@@ -34,7 +34,7 @@ test("BMI visibility release is cache-busted", () => {
     assert.match(router, /more-ui-v2\.js\?v=[^"']*bmi-medical-sources-1/);
     assert.match(more, /bmi-card\.js\?v=bmi-medical-sources-1/);
     assert.match(html, /theme-surface-audit\.css\?v=theme-surface-audit-14/);
-    assert.match(worker, /2026-09-18-341/);
+    assert.match(worker, /2026-09-19-342/);
 });
 
 test("BMI screen explains its formula and adult reference thresholds", () => {
