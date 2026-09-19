@@ -209,3 +209,5 @@ TestFlight build 122: add a swipeable workout-completion recap with shareable ce
 TestFlight build 123: polish workout recap sharing with theme backgrounds, readable achievement text, Level Up branding, direct Instagram Stories handoff, and reliable Photos downloads.
 
 TestFlight build 124: route Instagram sharing through the image-bearing iOS share composer, add the outlined LEVEL UP wordmark beside the logo, and use the standard square-and-up-arrow Share icon.
+
+TestFlight build 125: add primary and secondary muscle highlighting to workout recap cards, show every detected PR in compact layouts, and keep warm-up inputs focused while editing.

@@ -15,8 +15,8 @@ test('workout recap renders the final arm artwork on its first paint', () => {
 test('workout recap offers swipeable share cards and profile-aware anatomy', () => {
   assert.match(recapSource, /data-recap-carousel/);
   assert.match(recapSource, /renderMuscleSlide/);
-  assert.match(recapSource, /renderAnatomy\("front",data\.trained\)/);
-  assert.match(recapSource, /renderAnatomy\("back",data\.trained\)/);
+  assert.match(recapSource, /renderAnatomy\("front",data\.muscleStats\)/);
+  assert.match(recapSource, /renderAnatomy\("back",data\.muscleStats\)/);
   assert.match(recapSource, /data-recap-share="instagram"/);
   assert.match(recapSource, /data-recap-share="share"/);
   assert.match(recapSource, /data-recap-share="download"/);
@@ -29,6 +29,21 @@ test('workout recap offers swipeable share cards and profile-aware anatomy', () 
   assert.doesNotMatch(recapSource, /openInstagramStories/);
   assert.match(recapSource, /navigator\.share/);
   assert.match(recapSource, /canvas\.toBlob/);
+});
+
+test('workout recap distinguishes shared primary and secondary muscle credits', () => {
+  assert.match(recapSource, /getExerciseImpacts/);
+  assert.match(recapSource, /credit>=1/);
+  assert.match(recapSource, /is-primary/);
+  assert.match(recapSource, /is-secondary/);
+  assert.match(recapSource, /Primary · 1\.0/);
+  assert.match(recapSource, /Secondary · 0\.5/);
+});
+
+test('achievement cards render every detected personal record', () => {
+  assert.match(recapSource, /const prs=data\.wins\.filter/);
+  assert.match(recapSource, /rows\.map\(win/);
+  assert.doesNotMatch(recapSource, /data\.wins\.slice\(0,3\)/);
 });
 
 test('the arm artwork is preloaded and the asynchronous replacement launcher is removed', () => {

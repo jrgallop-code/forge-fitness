@@ -158,7 +158,7 @@ window.setTimeout(refreshLiveDisplay, 0);
 if (!document.querySelector('link[data-workout-complete-recap-style]')) {
     const recapStyle = document.createElement("link");
     recapStyle.rel = "stylesheet";
-    recapStyle.href = "css/workout-complete-recap.css?v=share-carousel-3";
+    recapStyle.href = "css/workout-complete-recap.css?v=share-carousel-4";
     recapStyle.dataset.workoutCompleteRecapStyle = "true";
     document.head.appendChild(recapStyle);
 }
@@ -169,4 +169,4 @@ if (!document.querySelector('link[data-workout-complete-recap-recovery-style]'))
     anatomyStyle.dataset.workoutCompleteRecapRecoveryStyle = "true";
     document.head.appendChild(anatomyStyle);
 }
-import("./workout-complete-recap.js?v=share-carousel-3");
+import("./workout-complete-recap.js?v=share-carousel-4");
