@@ -44,6 +44,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>instagram-stories</string>
+	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
@@ -54,6 +58,8 @@
 	<string>Level Up uses the microphone when you choose voice-assisted food logging.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Level Up lets you choose private meal and progress photos from your photo library.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Level Up saves a workout summary card to your photo library when you tap Download.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Level Up converts a spoken meal description into text when you choose voice-assisted food logging.</string>
 	<key>UIApplicationSceneManifest</key>
