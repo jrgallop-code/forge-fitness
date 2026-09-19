@@ -203,3 +203,5 @@ TestFlight build 119: clean up the mobile Measurements experience and add BMI ca
 TestFlight build 120: remove the obsolete system data-recovery notice while retaining manual backup and restore controls.
 
 TestFlight build 121: correct exercise progress equipment labels and synchronize single-series legend colors with the active chart theme.
+
+TestFlight build 122: add a swipeable workout-completion recap with shareable celebration, muscle, totals, achievement, and top-set cards.

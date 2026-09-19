@@ -9,7 +9,19 @@ test('workout recap renders the final arm artwork on its first paint', () => {
   assert.match(recapSource, /workout-complete-recap__body-glow is-arm-hero/);
   assert.match(recapSource, /data-arm-hero-installed="true"/);
   assert.match(recapSource, /workout-complete-arm\.webp/);
-  assert.doesNotMatch(recapSource, /renderFrontBody\(trained\)/);
+  assert.match(recapSource, /renderCelebrationSlide/);
+});
+
+test('workout recap offers swipeable share cards and profile-aware anatomy', () => {
+  assert.match(recapSource, /data-recap-carousel/);
+  assert.match(recapSource, /renderMuscleSlide/);
+  assert.match(recapSource, /renderAnatomy\("front",data\.trained\)/);
+  assert.match(recapSource, /renderAnatomy\("back",data\.trained\)/);
+  assert.match(recapSource, /data-recap-share="instagram"/);
+  assert.match(recapSource, /data-recap-share="download"/);
+  assert.match(recapSource, /Copy summary/);
+  assert.match(recapSource, /navigator\.share/);
+  assert.match(recapSource, /canvas\.toBlob/);
 });
 
 test('the arm artwork is preloaded and the asynchronous replacement launcher is removed', () => {
