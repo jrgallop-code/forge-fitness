@@ -148,7 +148,7 @@ function getExerciseRecords(exerciseId) {
                 const profileId = exercise.equipmentProfileId || "default";
                 const current = grouped.get(profileId) || {
                     profileId,
-                    profileName: exercise.equipmentProfileName || "Default machine",
+                    profileName: resolveEquipmentLabel(exerciseId, profileId, exercise.equipmentProfileName),
                     sets: []
                 };
                 current.sets.push(...(Array.isArray(exercise.sets) ? exercise.sets : []).filter(isWorkingSet));
@@ -174,6 +174,17 @@ function getExerciseRecords(exerciseId) {
     }).sort(compareRecords);
 }
 
+export function resolveEquipmentLabel(exerciseId, profileId = "default", savedName = "") {
+    const cleanSavedName = String(savedName || "").trim();
+    if (profileId !== "default" && cleanSavedName && cleanSavedName !== "Default machine") {
+        return cleanSavedName;
+    }
+    const libraryEquipment = String(getExerciseById(exerciseId)?.equipment || "").trim();
+    if (libraryEquipment) return libraryEquipment;
+    if (cleanSavedName && cleanSavedName !== "Default machine") return cleanSavedName;
+    return "Equipment";
+}
+
 function getProfiles(records) {
     const profiles = new Map();
     records.forEach(record => profiles.set(record.profileId, {
@@ -186,6 +197,13 @@ function getProfiles(records) {
 function updateEquipmentFilter(profiles) {
     const select = document.getElementById("exercise-equipment-filter");
     if (!select) return;
+    if (profiles.length < 2) {
+        selectedEquipment = "all";
+        select.innerHTML = `<option value="all">${escapeHtml(profiles[0]?.name || "Equipment")}</option>`;
+        select.value = "all";
+        select.disabled = true;
+        return;
+    }
     select.innerHTML = `<option value="all">All equipment</option>${profiles.map(profile =>
         `<option value="${escapeHtml(profile.id)}">${escapeHtml(profile.name)}</option>`
     ).join("")}`;
@@ -375,7 +393,7 @@ function renderEquipmentLegend(profiles, message = "") {
     const legend = document.getElementById("exercise-equipment-legend");
     if (!legend) return;
     legend.innerHTML = profiles.map((profile, index) => `
-        <span><i style="background:${equipmentColor(index)}"></i>${escapeHtml(profile.name)}</span>
+        <span><i style="background:${profiles.length === 1 ? "var(--accent)" : equipmentColor(index)}"></i>${escapeHtml(profile.name)}</span>
     `).join("") + (message ? `<p>${escapeHtml(message)}</p>` : "");
 }
 
