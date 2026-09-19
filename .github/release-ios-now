@@ -201,3 +201,5 @@ TestFlight build 118: stop all arcade music, rotor loops, delayed effects, and a
 TestFlight build 119: clean up the mobile Measurements experience and add BMI calculation, limitations, adult reference ranges, and authoritative medical sources.
 
 TestFlight build 120: remove the obsolete system data-recovery notice while retaining manual backup and restore controls.
+
+TestFlight build 121: correct exercise progress equipment labels and synchronize single-series legend colors with the active chart theme.
