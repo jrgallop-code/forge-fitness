@@ -16,6 +16,7 @@ final class LevelUpProgressPhotosPlugin: CAPPlugin, CAPBridgedPlugin {
         let id: String
         let date: String
         let note: String
+        let weight: Double?
         let createdAt: String
     }
 
@@ -34,7 +35,11 @@ final class LevelUpProgressPhotosPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         let note = String((call.getString("note") ?? "").prefix(160))
-        let metadata = PhotoMetadata(id: id, date: date, note: note, createdAt: createdAt)
+        let suppliedWeight = call.getDouble("weight")
+        let weight: Double? = suppliedWeight.flatMap { value in
+            value.isFinite && value > 0 ? value : nil
+        }
+        let metadata = PhotoMetadata(id: id, date: date, note: note, weight: weight, createdAt: createdAt)
 
         do {
             let directory = try protectedDirectory(owner: call.getString("owner"))
@@ -66,13 +71,17 @@ final class LevelUpProgressPhotosPlugin: CAPPlugin, CAPBridgedPlugin {
                     let imageData = try? Data(contentsOf: directory.appendingPathComponent("\(id).jpg"))
                 else { return nil }
 
-                return [
+                var payload: [String: Any] = [
                     "id": metadata.id,
                     "date": metadata.date,
                     "note": metadata.note,
                     "createdAt": metadata.createdAt,
                     "image": "data:image/jpeg;base64,\(imageData.base64EncodedString())"
                 ]
+                if let weight = metadata.weight {
+                    payload["weight"] = weight
+                }
+                return payload
             }.sorted {
                 let left = "\($0["date"] ?? "")|\($0["createdAt"] ?? "")"
                 let right = "\($1["date"] ?? "")|\($1["createdAt"] ?? "")"
