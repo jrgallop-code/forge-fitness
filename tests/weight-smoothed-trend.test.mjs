@@ -34,14 +34,14 @@ test("interpolates only between real weigh-ins", () => {
     assert.equal(series.at(-1).date, "2026-08-23");
 });
 
-test("Trend Weight uses 25 percent new data and 75 percent prior trend", () => {
+test("Trend Weight uses 10 percent new data and 90 percent prior trend", () => {
     const series = calculateTrendWeightSeries([
         weight("2026-08-20", 180.0),
         weight("2026-08-21", 179.8)
     ]);
 
     assert.equal(Number(series[0].weight.toFixed(2)), 180.00);
-    assert.equal(Number(series[1].weight.toFixed(2)), 179.95);
+    assert.equal(Number(series[1].weight.toFixed(2)), 179.98);
 });
 
 test("visible weekly pace is calculated from the smoothed trend series", () => {

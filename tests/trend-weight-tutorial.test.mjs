@@ -14,8 +14,9 @@ test("Trend Weight tutorial explains the smoothed weekly model", () => {
     assert.match(tutorials, /id: "trend-weight"/);
     assert.match(tutorials, /title: "Understand Trend Weight"/);
     assert.match(tutorials, /tab: "weight-tab"/);
+    assert.match(tutorials, /Each new day contributes 10% to the updated trend while 90% comes from the previous trend/);
     assert.match(tutorials, /latest 20 days of smoothed Trend Weight/);
-    assert.match(tutorials, /TDEE now uses this same smoothed weekly weight-change signal/);
+    assert.match(tutorials, /TDEE uses this same smoothed weekly weight-change signal/);
 });
 
 test("visible Weekly Trend uses the smoothed Trend Weight engine", () => {
@@ -28,7 +29,7 @@ test("visible Weekly Trend uses the smoothed Trend Weight engine", () => {
 });
 
 test("TDEE keeps its evidence architecture but consumes the smoothed weekly rate", () => {
-    assert.match(trendCore, /VISIBLE_TREND_ALPHA = 0\.25/);
+    assert.match(trendCore, /VISIBLE_TREND_ALPHA = 0\.10/);
     assert.match(trendCore, /VISIBLE_RATE_DAYS = 20/);
     assert.match(tdee, /calculateDisplayWeightTrend/);
     assert.match(tdee, /calculateVisibleWeightTrend/);
