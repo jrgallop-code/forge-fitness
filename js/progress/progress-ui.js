@@ -1,5 +1,5 @@
 import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=fatsecret-progress-calories-1";
-import { renderPhotoJournal } from "./photo-journal.js?v=native-progress-photos-1";
+import { renderPhotoJournal } from "./photo-journal.js?v=native-photo-picker-1";
 
 export function renderProgress() {
 
@@ -53,7 +53,7 @@ export function renderProgress() {
                     id="photo-log-tab"
                     type="button"
                 >
-                    Photo Log
+                    📷 Photos
                 </button>
 
             </div>

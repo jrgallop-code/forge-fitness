@@ -3842,6 +3842,7 @@ textarea:focus {
 
 .photo-entry-panel label,
 .photo-compare-selectors label {
+    min-width:0;
     color:var(--muted);
     font-size:11px;
     font-weight:750;
@@ -3849,6 +3850,10 @@ textarea:focus {
 
 .photo-entry-panel input,
 .photo-compare-selectors select {
+    display:block;
+    box-sizing:border-box;
+    min-width:0;
+    max-width:100%;
     width:100%;
     margin-top:6px;
     padding:11px;
@@ -3856,6 +3861,11 @@ textarea:focus {
     background:#09090c;
     border:1px solid #3b3b43;
     border-radius:9px;
+}
+
+#photo-journal-date {
+    height:44px;
+    line-height:20px;
 }
 
 .photo-file-control input {

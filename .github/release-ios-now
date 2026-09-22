@@ -217,3 +217,5 @@ TestFlight build 126: use 10% of each new daily weight and 90% of the prior Tren
 TestFlight build 127: use 15% of each new daily weight and 85% of the prior Trend Weight, with weekly rate regression across exactly three weeks (21 days).
 
 TestFlight build 128: refine workout completion card copy, make nutrition backups prompt and non-postponable, and add an encrypted, on-device-only iOS progress photo journal with dated side-by-side comparison.
+
+TestFlight build 129: polish the iOS progress photo form, add a theme-aware camera SVG, and allow selecting existing photos from the iPhone library.

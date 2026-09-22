@@ -66,7 +66,6 @@ export function renderPhotoJournal() {
                         id="photo-journal-note"
                         type="text"
                         maxlength="160"
-                        placeholder="Equipment setup, exercise form, session memory…"
                     >
                 </label>
 
@@ -76,7 +75,6 @@ export function renderPhotoJournal() {
                         id="photo-journal-file"
                         type="file"
                         accept="image/*"
-                        capture="environment"
                     >
                 </label>
 

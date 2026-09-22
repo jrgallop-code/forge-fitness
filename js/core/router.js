@@ -11,9 +11,9 @@ import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from 
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=onboarding-training-days-1";
 import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=saved-plan-edit-2";
 import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-live-polish.js?v=workout-landing-live-polish-2";
-import { renderProgress } from "../progress/progress-ui.js?v=progress-edge-cards-1";
+import { renderProgress } from "../progress/progress-ui.js?v=native-photo-picker-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-2";
-import { initializePhotoJournal } from "../progress/photo-journal.js?v=native-progress-photos-1";
+import { initializePhotoJournal } from "../progress/photo-journal.js?v=native-photo-picker-1";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=theme-accent-calendar-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=smoothed-visible-trend-release-1";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=analytics-bar-polish-1";
