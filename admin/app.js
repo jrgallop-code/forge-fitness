@@ -1,4 +1,4 @@
-import { renderAdminAnalytics, initializeAdminAnalytics } from "./admin-analytics.js?v=owner-dashboard-1";
+import { renderAdminAnalytics, initializeAdminAnalytics } from "./admin-analytics.js?v=platform-analytics-1";
 import { initializeOwnerProductInsights } from "./product-insights.js?v=owner-product-insights-1";
 import { initializeActiveUserActivity } from "./active-user-activity.js?v=active-user-activity-1";
 
