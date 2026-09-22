@@ -3793,7 +3793,8 @@ textarea:focus {
 .photo-journal {
     margin-top:28px;
     padding:clamp(20px, 3vw, 28px);
-    background:linear-gradient(145deg, #18181d, #101014);
+    color:var(--text);
+    background:linear-gradient(145deg, var(--surface-raised), var(--surface));
     border:1px solid var(--line);
     border-radius:20px;
     box-shadow:var(--shadow);
@@ -3819,8 +3820,8 @@ textarea:focus {
 
 .photo-private-badge {
     padding:8px 11px;
-    color:#c8c8cf;
-    background:#212127;
+    color:var(--text-secondary);
+    background:var(--surface-raised);
     border:1px solid var(--line);
     border-radius:999px;
     font-size:10px;
@@ -3830,26 +3831,24 @@ textarea:focus {
 
 .photo-entry-panel {
     display:grid;
-    grid-template-columns:160px minmax(220px, 1fr) minmax(220px, 1fr) auto;
+    grid-template-columns:160px 130px minmax(190px, 1fr) minmax(220px, 1fr) auto;
     gap:12px;
     align-items:end;
     margin-top:22px;
     padding:17px;
-    background:#111115;
+    background:var(--surface-raised);
     border:1px solid var(--line);
     border-radius:15px;
 }
 
-.photo-entry-panel label,
-.photo-compare-selectors label {
+.photo-entry-panel label {
     min-width:0;
     color:var(--muted);
     font-size:11px;
     font-weight:750;
 }
 
-.photo-entry-panel input,
-.photo-compare-selectors select {
+.photo-entry-panel input {
     display:block;
     box-sizing:border-box;
     min-width:0;
@@ -3857,8 +3856,8 @@ textarea:focus {
     width:100%;
     margin-top:6px;
     padding:11px;
-    color:white;
-    background:#09090c;
+    color:var(--text);
+    background:var(--input-bg);
     border:1px solid #3b3b43;
     border-radius:9px;
 }
@@ -3884,27 +3883,37 @@ textarea:focus {
     color:#ff8d92;
 }
 
-.photo-compare-panel {
-    margin-top:20px;
-    padding:18px;
-    background:#111115;
-    border:1px solid var(--line);
-    border-radius:16px;
-}
-
-.photo-compare-selectors {
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:12px;
-    margin-top:15px;
-}
-
 .photo-comparison {
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:12px;
-    min-height:220px;
-    margin-top:15px;
+    margin-top:20px;
+    padding:14px;
+    background:var(--surface-raised);
+    border:1px solid var(--line);
+    border-radius:16px;
+}
+
+.photo-comparison[hidden] {
+    display:none;
+}
+
+.photo-comparison-heading {
+    grid-column:1 / -1;
+    display:grid;
+    gap:3px;
+    padding:2px 2px 3px;
+}
+
+.photo-comparison-heading span {
+    color:var(--accent, #ef1821);
+    font-size:9px;
+    font-weight:850;
+    letter-spacing:.12em;
+}
+
+.photo-comparison-heading strong {
+    font-size:13px;
 }
 
 .photo-comparison > p {
@@ -3914,7 +3923,7 @@ textarea:focus {
     min-height:220px;
     padding:24px;
     color:var(--muted);
-    background:#0b0b0e;
+    background:var(--surface);
     border:1px dashed #3d3d45;
     border-radius:13px;
     text-align:center;
@@ -3922,7 +3931,7 @@ textarea:focus {
 
 .photo-comparison figure {
     overflow:hidden;
-    background:#0b0b0e;
+    background:var(--card);
     border:1px solid var(--line);
     border-radius:14px;
 }
@@ -3930,15 +3939,20 @@ textarea:focus {
 .photo-comparison img {
     display:block;
     width:100%;
-    height:clamp(240px, 38vw, 470px);
-    object-fit:contain;
-    background:#050506;
+    aspect-ratio:3 / 4;
+    object-fit:cover;
+    background:var(--bg);
 }
 
 .photo-comparison figcaption {
     display:grid;
     gap:3px;
     padding:12px;
+}
+
+.photo-comparison figcaption b {
+    color:var(--accent, #ef1821);
+    font-size:12px;
 }
 
 .photo-comparison figcaption span {
@@ -3951,41 +3965,149 @@ textarea:focus {
     margin-top:24px;
 }
 
-.photo-gallery-heading > span {
+.photo-gallery-heading > div {
+    display:grid;
+    gap:3px;
+}
+
+.photo-gallery-heading span {
     color:var(--muted);
     font-size:11px;
 }
 
+.photo-compare-action {
+    min-height:38px;
+    padding:8px 13px;
+    color:var(--text, #fff);
+    background:transparent;
+    border:1px solid var(--accent, #ef1821);
+    border-radius:999px;
+    font-size:11px;
+    font-weight:800;
+    cursor:pointer;
+}
+
+.photo-compare-action.is-active {
+    color:#fff;
+    background:var(--accent, #ef1821);
+}
+
+.photo-compare-action:disabled {
+    opacity:.42;
+    cursor:not-allowed;
+}
+
+.photo-selection-guide {
+    margin-top:13px;
+    padding:10px 13px;
+    color:var(--text, #fff);
+    background:color-mix(in srgb, var(--accent, #ef1821) 12%, var(--surface-raised));
+    border:1px solid color-mix(in srgb, var(--accent, #ef1821) 42%, transparent);
+    border-radius:11px;
+    font-size:11px;
+    font-weight:800;
+    text-align:center;
+}
+
+.photo-selection-guide[hidden] {
+    display:none;
+}
+
 .photo-journal-gallery {
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
+    display:flex;
     gap:12px;
     margin-top:13px;
+    padding:1px 1px 10px;
+    overflow-x:auto;
+    overscroll-behavior-inline:contain;
+    scroll-snap-type:x mandatory;
+    scrollbar-width:none;
+}
+
+.photo-journal-gallery::-webkit-scrollbar {
+    display:none;
 }
 
 .photo-empty-state {
-    grid-column:1 / -1;
+    width:100%;
     padding:34px 20px;
     color:var(--muted);
-    background:#0b0b0e;
+    background:var(--surface);
     border:1px dashed #3d3d45;
     border-radius:13px;
     text-align:center;
 }
 
 .photo-journal-card {
+    flex:0 0 clamp(150px, 27vw, 210px);
     overflow:hidden;
-    background:#111115;
+    background:var(--card);
     border:1px solid var(--line);
     border-radius:14px;
+    scroll-snap-align:start;
+    transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 
-.photo-journal-card > img {
+.photo-journal-card.is-selected {
+    border-color:var(--accent, #ef1821);
+    box-shadow:0 0 0 2px color-mix(in srgb, var(--accent, #ef1821) 32%, transparent);
+    transform:translateY(-1px);
+}
+
+.photo-select-target {
+    position:relative;
     display:block;
     width:100%;
-    aspect-ratio:4 / 3;
+    padding:0;
+    background:var(--bg);
+    border:0;
+    cursor:default;
+}
+
+.photo-journal-gallery.is-comparing .photo-select-target {
+    cursor:pointer;
+}
+
+.photo-select-target > img {
+    display:block;
+    width:100%;
+    aspect-ratio:3 / 4;
     object-fit:cover;
-    background:#050506;
+    background:var(--bg);
+}
+
+.photo-selection-number {
+    position:absolute;
+    top:9px;
+    right:9px;
+    display:none;
+    place-items:center;
+    width:25px;
+    height:25px;
+    color:#fff;
+    background:rgba(10,10,13,.68);
+    border:2px solid rgba(255,255,255,.9);
+    border-radius:50%;
+    font-size:11px;
+    font-weight:900;
+    backdrop-filter:blur(5px);
+}
+
+.photo-journal-gallery.is-comparing .photo-selection-number {
+    display:grid;
+}
+
+.photo-journal-card.is-selected .photo-selection-number {
+    background:var(--accent, #ef1821);
+    border-color:var(--accent, #ef1821);
+}
+
+.photo-card-weight {
+    display:block;
+    margin-top:3px;
+    color:var(--accent, #ef1821);
+    font-size:11px;
+    font-weight:800;
 }
 
 .photo-card-copy {
@@ -4008,8 +4130,8 @@ textarea:focus {
 .photo-card-copy button {
     margin-top:10px;
     padding:7px 9px;
-    color:#ff8d92;
-    background:#222229;
+    color:var(--danger-text, #ff8d92);
+    background:var(--surface-raised);
     border:1px solid var(--line);
     border-radius:8px;
     font-size:10px;
@@ -4032,8 +4154,7 @@ textarea:focus {
         flex-direction:column;
     }
 
-    .photo-entry-panel,
-    .photo-compare-selectors {
+    .photo-entry-panel {
         grid-template-columns:1fr;
     }
 
@@ -4041,17 +4162,35 @@ textarea:focus {
         width:100%;
     }
 
-    .photo-comparison {
-        grid-template-columns:1fr;
-    }
-
     .photo-comparison img {
-        height:auto;
-        max-height:520px;
+        aspect-ratio:3 / 4;
     }
 
     .photo-journal-gallery {
-        grid-template-columns:repeat(2, minmax(0, 1fr));
+        margin-right:-20px;
+        padding-right:20px;
+    }
+
+    .photo-journal-card {
+        flex-basis:min(43vw, 180px);
+    }
+
+    .photo-comparison {
+        gap:8px;
+        padding:10px;
+    }
+
+    .photo-comparison figcaption {
+        padding:9px;
+    }
+
+    .photo-comparison figcaption strong,
+    .photo-comparison figcaption b {
+        font-size:11px;
+    }
+
+    .photo-comparison figcaption span {
+        font-size:9px;
     }
 }
 
