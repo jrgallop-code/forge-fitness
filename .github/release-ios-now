@@ -225,3 +225,5 @@ TestFlight build 130: release version 1.0.1 with the polished progress photo for
 TestFlight build 131: add iOS and PWA platform analytics, engagement breakdowns, and iOS version/build reporting.
 
 TestFlight build 132: add the MyFitnessPal-style progress photo carousel, tap-to-select side-by-side comparison, and dated weight context.
+
+TestFlight build 133: align the iOS progress-photo date field with the weight, note, and photo controls while preserving the native date picker.
