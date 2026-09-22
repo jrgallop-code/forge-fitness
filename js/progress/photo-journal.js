@@ -31,7 +31,6 @@ let selectedPhotoIds = [];
 let activePhotoId = "";
 let galleryMode = "single";
 let selectedMonth = "all";
-let comparisonZoom = 1;
 
 
 export function renderPhotoJournal() {
@@ -110,13 +109,9 @@ export function renderPhotoJournal() {
 
                 <div id="photo-gallery-stage" class="photo-gallery-stage" aria-live="polite"></div>
 
-                <div id="photo-zoom-controls" class="photo-zoom-controls" hidden>
-                    <button type="button" data-photo-zoom="out" aria-label="Zoom out">−</button>
-                    <input id="photo-zoom-range" type="range" min="1" max="3" step="0.25" value="1" aria-label="Comparison zoom">
-                    <button type="button" data-photo-zoom="in" aria-label="Zoom in">＋</button>
-                    <button type="button" data-photo-zoom="reset">Reset</button>
-                    <span id="photo-zoom-value">100%</span>
-                </div>
+                <p id="photo-gallery-gesture-hint" class="photo-gallery-gesture-hint" hidden>
+                    Compare up to two photos. Pinch each photo to zoom and drag to inspect it.
+                </p>
 
                 <div id="photo-gallery-carousel" class="photo-gallery-carousel" aria-label="Progress photo carousel"></div>
             </div>
@@ -177,15 +172,6 @@ export function initializePhotoJournal() {
     document.querySelectorAll("[data-photo-view]").forEach(button =>
         button.addEventListener("click", () => setGalleryMode(button.dataset.photoView))
     );
-
-    document.querySelectorAll("[data-photo-zoom]").forEach(button =>
-        button.addEventListener("click", () => changePhotoZoom(button.dataset.photoZoom))
-    );
-
-    document.getElementById("photo-zoom-range")?.addEventListener("input", event => {
-        comparisonZoom = clampZoom(event.target.value);
-        applyPhotoZoom();
-    });
 
     window.addEventListener(
         "levelup:units-changed",
@@ -572,7 +558,6 @@ function openGallery(id) {
     activePhotoId = id;
     galleryMode = "single";
     selectedPhotoIds = [id];
-    comparisonZoom = 1;
     document.documentElement.classList.add("photo-gallery-open");
     document.getElementById("photo-journal-list-screen")?.setAttribute("hidden", "");
     document.getElementById("photo-gallery-screen")?.removeAttribute("hidden");
@@ -585,14 +570,12 @@ function closeGallery() {
     document.getElementById("photo-gallery-screen")?.setAttribute("hidden", "");
     document.getElementById("photo-journal-list-screen")?.removeAttribute("hidden");
     document.documentElement.classList.remove("photo-gallery-open");
-    comparisonZoom = 1;
     renderPhotos();
 }
 
 
 function setGalleryMode(mode) {
     galleryMode = mode === "compare" ? "compare" : "single";
-    comparisonZoom = 1;
     if (galleryMode === "compare") {
         const anchor = visiblePhotos.find(photo => photo.id === activePhotoId) || visiblePhotos[0];
         const alternate = visiblePhotos.find(photo => photo.id !== anchor?.id);
@@ -612,8 +595,10 @@ function selectGalleryPhoto(id) {
         selectedPhotoIds = [id];
     }
     else if (!selectedPhotoIds.includes(id)) {
-        const anchor = activePhotoId && activePhotoId !== id ? activePhotoId : selectedPhotoIds[0];
-        selectedPhotoIds = [anchor, id].filter(Boolean);
+        const anchor = selectedPhotoIds.includes(activePhotoId)
+            ? activePhotoId
+            : selectedPhotoIds.at(-1);
+        selectedPhotoIds = [anchor, id].filter(Boolean).slice(-2);
         sortSelectedPhotos();
     }
     renderPhotos();
@@ -633,8 +618,8 @@ function sortSelectedPhotos() {
 function renderGallery() {
     const stage = document.getElementById("photo-gallery-stage");
     const carousel = document.getElementById("photo-gallery-carousel");
-    const zoomControls = document.getElementById("photo-zoom-controls");
-    if (!stage || !carousel || !zoomControls) return;
+    const gestureHint = document.getElementById("photo-gallery-gesture-hint");
+    if (!stage || !carousel || !gestureHint) return;
 
     document.querySelectorAll("[data-photo-view]").forEach(button => {
         const active = button.dataset.photoView === galleryMode;
@@ -642,7 +627,8 @@ function renderGallery() {
         button.disabled = button.dataset.photoView === "compare" && visiblePhotos.length < 2;
     });
 
-    zoomControls.hidden = galleryMode !== "compare" || selectedPhotoIds.length !== 2;
+    selectedPhotoIds = selectedPhotoIds.slice(0, 2);
+    gestureHint.hidden = galleryMode !== "compare" || selectedPhotoIds.length !== 2;
 
     if (!visiblePhotos.length) {
         stage.innerHTML = `<div class="photo-empty-state">No photos saved yet.</div>`;
@@ -671,7 +657,6 @@ function renderGallery() {
     carousel.querySelectorAll("[data-photo-id]").forEach(button =>
         button.addEventListener("click", () => selectGalleryPhoto(button.dataset.photoId))
     );
-    applyPhotoZoom();
 }
 
 
@@ -698,11 +683,11 @@ function renderCompareStage(stage) {
         stage.innerHTML = `<div class="photo-empty-state">Choose two photos from the carousel to compare.</div>`;
         return;
     }
-    stage.innerHTML = `<div class="photo-viewer-compare" style="--photo-zoom:${comparisonZoom}">
+    stage.innerHTML = `<div class="photo-viewer-compare">
         ${photos.map((photo, index) => {
             const url = createObjectUrl(photo.image);
             return `<figure>
-                <div class="photo-zoom-pane" data-photo-zoom-pane>
+                <div class="photo-zoom-pane" data-photo-zoom-pane aria-label="Pinch to zoom comparison photo ${index + 1}">
                     <img src="${url}" alt="Comparison photo ${index + 1} from ${escapeHtml(formatLongDate(photo.date))}">
                 </div>
                 <figcaption>
@@ -713,52 +698,107 @@ function renderCompareStage(stage) {
         }).join("")}
     </div>`;
     const panes = [...stage.querySelectorAll("[data-photo-zoom-pane]")];
-    panes.forEach(pane => {
-        pane.addEventListener("dblclick", () => {
-            comparisonZoom = comparisonZoom > 1 ? 1 : 2.5;
-            applyPhotoZoom();
-        });
-    });
-    let syncingScroll = false;
-    panes.forEach((pane, index) => {
-        pane.addEventListener("scroll", () => {
-            if (syncingScroll) return;
-            const other = panes[index === 0 ? 1 : 0];
-            if (!other) return;
-            syncingScroll = true;
-            const horizontal = pane.scrollWidth > pane.clientWidth
-                ? pane.scrollLeft / (pane.scrollWidth - pane.clientWidth)
-                : 0;
-            const vertical = pane.scrollHeight > pane.clientHeight
-                ? pane.scrollTop / (pane.scrollHeight - pane.clientHeight)
-                : 0;
-            other.scrollLeft = horizontal * Math.max(0, other.scrollWidth - other.clientWidth);
-            other.scrollTop = vertical * Math.max(0, other.scrollHeight - other.clientHeight);
-            requestAnimationFrame(() => { syncingScroll = false; });
-        }, { passive: true });
-    });
-}
-
-
-function changePhotoZoom(action) {
-    if (action === "reset") comparisonZoom = 1;
-    else comparisonZoom = clampZoom(comparisonZoom + (action === "in" ? .25 : -.25));
-    applyPhotoZoom();
+    panes.forEach(installPhotoPinchZoom);
 }
 
 
 function clampZoom(value) {
-    return Math.min(3, Math.max(1, Number(value) || 1));
+    return Math.min(4, Math.max(1, Number(value) || 1));
 }
 
 
-function applyPhotoZoom() {
-    const viewer = document.querySelector(".photo-viewer-compare");
-    const range = document.getElementById("photo-zoom-range");
-    const value = document.getElementById("photo-zoom-value");
-    viewer?.style.setProperty("--photo-zoom", comparisonZoom);
-    if (range) range.value = String(comparisonZoom);
-    if (value) value.textContent = `${Math.round(comparisonZoom * 100)}%`;
+function installPhotoPinchZoom(pane) {
+    const image = pane.querySelector("img");
+    if (!image) return;
+
+    const pointers = new Map();
+    const state = {
+        scale: 1,
+        x: 0,
+        y: 0,
+        startScale: 1,
+        startX: 0,
+        startY: 0,
+        startDistance: 0,
+        startMidX: 0,
+        startMidY: 0,
+        panPointerX: 0,
+        panPointerY: 0
+    };
+
+    const applyTransform = () => {
+        const maxX = pane.clientWidth * (state.scale - 1) / 2;
+        const maxY = pane.clientHeight * (state.scale - 1) / 2;
+        state.x = Math.max(-maxX, Math.min(maxX, state.x));
+        state.y = Math.max(-maxY, Math.min(maxY, state.y));
+        if (state.scale === 1) state.x = state.y = 0;
+        image.style.transform = `translate3d(${state.x}px, ${state.y}px, 0) scale(${state.scale})`;
+    };
+
+    const pointerPair = () => [...pointers.values()].slice(0, 2);
+    const distance = ([first, second]) => Math.hypot(second.x - first.x, second.y - first.y);
+    const midpoint = ([first, second]) => ({
+        x: (first.x + second.x) / 2,
+        y: (first.y + second.y) / 2
+    });
+
+    pane.addEventListener("pointerdown", event => {
+        pane.setPointerCapture?.(event.pointerId);
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pointers.size === 1) {
+            state.startX = state.x;
+            state.startY = state.y;
+            state.panPointerX = event.clientX;
+            state.panPointerY = event.clientY;
+        }
+        else if (pointers.size === 2) {
+            const pair = pointerPair();
+            const mid = midpoint(pair);
+            state.startDistance = Math.max(1, distance(pair));
+            state.startScale = state.scale;
+            state.startX = state.x;
+            state.startY = state.y;
+            state.startMidX = mid.x;
+            state.startMidY = mid.y;
+        }
+    });
+
+    pane.addEventListener("pointermove", event => {
+        if (!pointers.has(event.pointerId)) return;
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pointers.size >= 2) {
+            const pair = pointerPair();
+            const mid = midpoint(pair);
+            state.scale = clampZoom(state.startScale * distance(pair) / state.startDistance);
+            state.x = state.startX + mid.x - state.startMidX;
+            state.y = state.startY + mid.y - state.startMidY;
+        }
+        else if (state.scale > 1) {
+            state.x = state.startX + event.clientX - state.panPointerX;
+            state.y = state.startY + event.clientY - state.panPointerY;
+        }
+        applyTransform();
+    });
+
+    const releasePointer = event => {
+        pointers.delete(event.pointerId);
+        if (pointers.size === 1) {
+            const remaining = [...pointers.values()][0];
+            state.startX = state.x;
+            state.startY = state.y;
+            state.panPointerX = remaining.x;
+            state.panPointerY = remaining.y;
+        }
+    };
+    pane.addEventListener("pointerup", releasePointer);
+    pane.addEventListener("pointercancel", releasePointer);
+    pane.addEventListener("lostpointercapture", releasePointer);
+
+    pane.addEventListener("dblclick", () => {
+        state.scale = 1;
+        state.x = state.y = 0;
+        applyTransform();
+    });
 }
 
 
