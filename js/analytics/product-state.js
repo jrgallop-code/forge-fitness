@@ -1,4 +1,5 @@
 import { analyticsAllowed } from "../privacy/analytics-consent.js?v=app-review-privacy-1";
+import { analyticsRuntimeContext } from "./runtime-context.js?v=platform-analytics-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -79,7 +80,7 @@ export async function sendProductStateSnapshot(force = false) {
         const response = await fetch(`${API_URL}/v1/activity`, {
             method: "POST",
             headers: authHeaders(token),
-            body: JSON.stringify({ productState: state })
+            body: JSON.stringify({ ...await analyticsRuntimeContext(), productState: state })
         });
         if (!response.ok) return false;
         safeSet(SNAPSHOT_STATE_KEY, { fingerprint, sentAt: new Date().toISOString() });
@@ -133,6 +134,7 @@ async function sendProgramSession(session, token) {
                 eventKey: String(session.id),
                 occurredAt: workoutOccurredAt(session) || new Date().toISOString(),
                 metadata: {
+                    ...await analyticsRuntimeContext(),
                     planId: programId || null,
                     planName: programName || null,
                     workoutSource: cleanText(session.workoutSource, 64) || null,
