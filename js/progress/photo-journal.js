@@ -1,3 +1,10 @@
+import {
+    canonicalMass,
+    displayMass,
+    massUnit,
+    UNIT_KINDS
+} from "../core/unit-system.js?v=granular-units-1";
+
 const DATABASE_NAME =
     "level_up_media";
 
@@ -15,9 +22,13 @@ const JPEG_QUALITY =
 
 const ACCOUNT_STORAGE_KEY = "level_up_cloud_account";
 const SESSION_STORAGE_KEY = "level_up_cloud_session";
+const WEIGHT_STORAGE_KEY = "forge_weight_entries";
 
 
 let activeObjectUrls = [];
+let visiblePhotos = [];
+let selectedPhotoIds = [];
+let comparisonMode = false;
 
 
 export function renderPhotoJournal() {
@@ -61,6 +72,19 @@ export function renderPhotoJournal() {
                 </label>
 
                 <label>
+                    Weight <span id="photo-weight-unit">(${massUnit(UNIT_KINDS.BODY_WEIGHT)})</span>
+                    <input
+                        id="photo-journal-weight"
+                        type="number"
+                        min="1"
+                        max="1400"
+                        step="0.1"
+                        inputmode="decimal"
+                        data-unit-input-ignore
+                    >
+                </label>
+
+                <label>
                     Optional note
                     <input
                         id="photo-journal-note"
@@ -95,54 +119,28 @@ export function renderPhotoJournal() {
             </div>
 
 
-            <div class="photo-compare-panel">
-
-                <div class="photo-compare-heading">
-                    <div>
-                        <h4>Side-by-Side Viewer</h4>
-                        <p>
-                            Select any two journal images to view together.
-                        </p>
-                    </div>
+            <div class="photo-gallery-heading">
+                <div>
+                    <h4>Progress Gallery</h4>
+                    <span id="photo-count">0 photos</span>
                 </div>
-
-                <div class="photo-compare-selectors">
-
-                    <label>
-                        Left photo
-                        <select id="compare-photo-left">
-                            <option value="">
-                                Select a photo
-                            </option>
-                        </select>
-                    </label>
-
-                    <label>
-                        Right photo
-                        <select id="compare-photo-right">
-                            <option value="">
-                                Select a photo
-                            </option>
-                        </select>
-                    </label>
-
-                </div>
-
-                <div
-                    id="photo-comparison"
-                    class="photo-comparison"
+                <button
+                    id="toggle-photo-compare"
+                    class="photo-compare-action"
+                    type="button"
+                    disabled
                 >
-                    <p>
-                        Choose two photos to open the side-by-side viewer.
-                    </p>
-                </div>
-
+                    Compare Photos
+                </button>
             </div>
 
-
-            <div class="photo-gallery-heading">
-                <h4>Journal Photos</h4>
-                <span id="photo-count">0 photos</span>
+            <div
+                id="photo-selection-guide"
+                class="photo-selection-guide"
+                aria-live="polite"
+                hidden
+            >
+                Select two photos to compare
             </div>
 
             <div
@@ -153,6 +151,12 @@ export function renderPhotoJournal() {
                     No photos saved yet.
                 </div>
             </div>
+
+            <div
+                id="photo-comparison"
+                class="photo-comparison"
+                hidden
+            ></div>
 
         </section>
     `;
@@ -180,6 +184,13 @@ export function initializePhotoJournal() {
     dateInput.value =
         getLocalDateValue();
 
+    syncWeightForDate(dateInput.value);
+
+    dateInput.addEventListener(
+        "change",
+        () => syncWeightForDate(dateInput.value)
+    );
+
 
     document
         .getElementById(
@@ -192,23 +203,20 @@ export function initializePhotoJournal() {
 
 
     document
-        .getElementById(
-            "compare-photo-left"
-        )
-        ?.addEventListener(
-            "change",
-            renderComparison
-        );
+        .getElementById("toggle-photo-compare")
+        ?.addEventListener("click", toggleComparisonMode);
 
-
-    document
-        .getElementById(
-            "compare-photo-right"
-        )
-        ?.addEventListener(
-            "change",
-            renderComparison
-        );
+    window.addEventListener(
+        "levelup:units-changed",
+        () => {
+            const unit = document.getElementById("photo-weight-unit");
+            if (!unit) return;
+            unit.textContent = `(${massUnit(UNIT_KINDS.BODY_WEIGHT)})`;
+            syncWeightForDate(dateInput.value);
+            renderPhotos();
+        },
+        { once: true }
+    );
 
 
     renderPhotos();
@@ -235,6 +243,9 @@ export async function exportPhotoRecords() {
                 note:
                     photo.note ||
                     "",
+
+                weight:
+                    normalizedWeight(photo.weight),
 
                 createdAt:
                     photo.createdAt,
@@ -313,6 +324,9 @@ export async function importPhotoRecords(
                             160
                         ),
 
+                    weight:
+                        normalizedWeight(record.weight),
+
                     createdAt:
                         record.createdAt ||
                         new Date()
@@ -361,6 +375,22 @@ async function savePhoto() {
         ?.value
         .trim() ||
         "";
+
+    const weightInput =
+        document.getElementById(
+            "photo-journal-weight"
+        );
+
+    const enteredWeight =
+        weightInput?.value === ""
+            ? null
+            : canonicalMass(
+                weightInput?.value,
+                UNIT_KINDS.BODY_WEIGHT
+            );
+
+    const weight =
+        normalizedWeight(enteredWeight);
 
 
     const fileInput =
@@ -428,6 +458,8 @@ async function savePhoto() {
 
             note,
 
+            weight,
+
             createdAt:
                 new Date()
                     .toISOString(),
@@ -453,6 +485,8 @@ async function savePhoto() {
             noteInput.value =
                 "";
         }
+
+        syncWeightForDate(date);
 
 
         setPhotoMessage(
@@ -484,6 +518,11 @@ async function renderPhotos() {
     const photos =
         await getAllPhotos();
 
+    visiblePhotos = photos;
+    selectedPhotoIds = selectedPhotoIds.filter(id =>
+        photos.some(photo => photo.id === id)
+    );
+
 
     const gallery =
         document.getElementById(
@@ -505,14 +544,11 @@ async function renderPhotos() {
     }
 
 
-    updateComparisonOptions(
-        photos
-    );
-
-
     if (!gallery) {
         return;
     }
+
+    gallery.classList.toggle("is-comparing", comparisonMode);
 
 
     if (!photos.length) {
@@ -523,6 +559,9 @@ async function renderPhotos() {
             </div>
         `;
 
+        comparisonMode = false;
+        selectedPhotoIds = [];
+        updateComparisonControls();
         renderComparison();
 
         return;
@@ -541,20 +580,27 @@ async function renderPhotos() {
 
             return `
                 <article
-                    class="photo-journal-card"
+                    class="photo-journal-card${selectedPhotoIds.includes(photo.id) ? " is-selected" : ""}"
                     data-photo-id="${escapeHtml(
                         photo.id
                     )}"
                 >
 
-                    <img
-                        src="${url}"
-                        alt="Journal photo from ${escapeHtml(
-                            formatDate(
-                                photo.date
-                            )
-                        )}"
+                    <button
+                        class="photo-select-target"
+                        type="button"
+                        data-photo-id="${escapeHtml(photo.id)}"
+                        aria-label="${selectedPhotoIds.includes(photo.id) ? "Deselect" : "Select"} photo from ${escapeHtml(formatDate(photo.date))}"
+                        aria-pressed="${selectedPhotoIds.includes(photo.id) ? "true" : "false"}"
                     >
+                        <img
+                            src="${url}"
+                            alt="Journal photo from ${escapeHtml(formatDate(photo.date))}"
+                        >
+                        <span class="photo-selection-number" aria-hidden="true">
+                            ${selectedPhotoIds.includes(photo.id) ? selectedPhotoIds.indexOf(photo.id) + 1 : ""}
+                        </span>
+                    </button>
 
                     <div class="photo-card-copy">
                         <strong>
@@ -564,6 +610,10 @@ async function renderPhotos() {
                                 )
                             )}
                         </strong>
+
+                        <span class="photo-card-weight">
+                            ${escapeHtml(formatPhotoWeight(photo))}
+                        </span>
 
                         <p>
                             ${photo.note
@@ -593,6 +643,18 @@ async function renderPhotos() {
 
     gallery
         .querySelectorAll(
+            ".photo-select-target"
+        )
+        .forEach(button =>
+            button.addEventListener(
+                "click",
+                () => selectPhotoForComparison(button.dataset.photoId)
+            )
+        );
+
+
+    gallery
+        .querySelectorAll(
             ".remove-journal-photo"
         )
         .forEach(button =>
@@ -606,75 +668,68 @@ async function renderPhotos() {
         );
 
 
+    updateComparisonControls();
     renderComparison();
 
 }
 
 
-function updateComparisonOptions(
-    photos
-) {
-
-    const selects = [
-        document.getElementById(
-            "compare-photo-left"
-        ),
-        document.getElementById(
-            "compare-photo-right"
-        )
-    ];
-
-
-    selects.forEach(select => {
-
-        if (!select) {
-            return;
-        }
-
-
-        const current =
-            select.value;
-
-
-        select.innerHTML = `
-            <option value="">
-                Select a photo
-            </option>
-
-            ${photos.map(photo => `
-                <option value="${escapeHtml(
-                    photo.id
-                )}">
-                    ${escapeHtml(
-                        formatDate(
-                            photo.date
-                        )
-                    )}${photo.note
-                        ? ` — ${escapeHtml(
-                            photo.note
-                        )}`
-                        : ""}
-                </option>
-            `).join("")}
-        `;
-
-
-        if (
-            photos.some(photo =>
-                photo.id ===
-                current
-            )
-        ) {
-            select.value =
-                current;
-        }
-
-    });
-
+function toggleComparisonMode() {
+    comparisonMode = !comparisonMode;
+    selectedPhotoIds = [];
+    updateComparisonControls();
+    renderPhotos();
 }
 
 
-async function renderComparison() {
+function selectPhotoForComparison(id) {
+    if (!comparisonMode) return;
+
+    if (selectedPhotoIds.includes(id)) {
+        selectedPhotoIds = selectedPhotoIds.filter(photoId => photoId !== id);
+    }
+    else if (selectedPhotoIds.length < 2) {
+        selectedPhotoIds.push(id);
+    }
+    else {
+        selectedPhotoIds = [selectedPhotoIds[1], id];
+    }
+
+    if (selectedPhotoIds.length === 2) {
+        selectedPhotoIds.sort((leftId, rightId) => {
+            const left = visiblePhotos.find(photo => photo.id === leftId);
+            const right = visiblePhotos.find(photo => photo.id === rightId);
+            return `${left?.date || ""}|${left?.createdAt || ""}`
+                .localeCompare(`${right?.date || ""}|${right?.createdAt || ""}`);
+        });
+    }
+
+    renderPhotos();
+}
+
+
+function updateComparisonControls() {
+    const toggle = document.getElementById("toggle-photo-compare");
+    const guide = document.getElementById("photo-selection-guide");
+
+    if (toggle) {
+        toggle.disabled = visiblePhotos.length < 2;
+        toggle.textContent = comparisonMode ? "Cancel" : "Compare Photos";
+        toggle.classList.toggle("is-active", comparisonMode);
+    }
+
+    if (guide) {
+        guide.hidden = !comparisonMode;
+        guide.textContent = selectedPhotoIds.length === 0
+            ? "Select two photos to compare"
+            : selectedPhotoIds.length === 1
+                ? "Select one more photo"
+                : "Comparison ready";
+    }
+}
+
+
+function renderComparison() {
 
     const container =
         document.getElementById(
@@ -687,48 +742,15 @@ async function renderComparison() {
     }
 
 
-    const leftId =
-        document.getElementById(
-            "compare-photo-left"
-        )
-        ?.value;
-
-
-    const rightId =
-        document.getElementById(
-            "compare-photo-right"
-        )
-        ?.value;
-
-
-    if (
-        !leftId ||
-        !rightId
-    ) {
-
-        container.innerHTML = `
-            <p>
-                Choose two photos to open the side-by-side viewer.
-            </p>
-        `;
-
+    if (selectedPhotoIds.length !== 2) {
+        container.hidden = true;
+        container.innerHTML = "";
         return;
-
     }
 
-
-    const [
-        left,
-        right
-    ] =
-        await Promise.all([
-            getPhoto(
-                leftId
-            ),
-            getPhoto(
-                rightId
-            )
-        ]);
+    const [left, right] = selectedPhotoIds.map(id =>
+        visiblePhotos.find(photo => photo.id === id)
+    );
 
 
     if (
@@ -739,19 +761,15 @@ async function renderComparison() {
     }
 
 
-    const leftUrl =
-        createObjectUrl(
-            left.image
-        );
+    const leftUrl = createObjectUrl(left.image);
+    const rightUrl = createObjectUrl(right.image);
 
-
-    const rightUrl =
-        createObjectUrl(
-            right.image
-        );
-
-
+    container.hidden = false;
     container.innerHTML = `
+        <div class="photo-comparison-heading">
+            <span>PHOTO COMPARISON</span>
+            <strong>${escapeHtml(formatDate(left.date))} — ${escapeHtml(formatDate(right.date))}</strong>
+        </div>
         <figure>
             <img
                 src="${leftUrl}"
@@ -769,12 +787,8 @@ async function renderComparison() {
                         )
                     )}
                 </strong>
-                <span>
-                    ${escapeHtml(
-                        left.note ||
-                        "No note"
-                    )}
-                </span>
+                <b>${escapeHtml(formatPhotoWeight(left))}</b>
+                ${left.note ? `<span>${escapeHtml(left.note)}</span>` : ""}
             </figcaption>
         </figure>
 
@@ -795,12 +809,8 @@ async function renderComparison() {
                         )
                     )}
                 </strong>
-                <span>
-                    ${escapeHtml(
-                        right.note ||
-                        "No note"
-                    )}
-                </span>
+                <b>${escapeHtml(formatPhotoWeight(right))}</b>
+                ${right.note ? `<span>${escapeHtml(right.note)}</span>` : ""}
             </figcaption>
         </figure>
     `;
@@ -864,6 +874,7 @@ async function savePhotoRecord(
             id: photo.id,
             date: photo.date,
             note: photo.note || "",
+            weight: normalizedWeight(photo.weight),
             createdAt: photo.createdAt,
             imageData: await blobToDataUrl(photo.image),
             owner: photoOwner()
@@ -996,6 +1007,7 @@ function nativePhotoRecord(record) {
         id: String(record?.id || ""),
         date: String(record?.date || ""),
         note: String(record?.note || "").slice(0, 160),
+        weight: normalizedWeight(record?.weight),
         createdAt: String(record?.createdAt || ""),
         image: dataUrlToBlob(String(record?.image || ""))
     };
@@ -1409,6 +1421,50 @@ function setPhotoMessage(
         isError
     );
 
+}
+
+
+function getWeightEntries() {
+    try {
+        const entries = JSON.parse(localStorage.getItem(WEIGHT_STORAGE_KEY) || "[]");
+        return Array.isArray(entries) ? entries : [];
+    }
+    catch {
+        return [];
+    }
+}
+
+
+function weightForDate(date) {
+    const entry = getWeightEntries()
+        .filter(item => item?.date === date && normalizedWeight(item?.weight) !== null)
+        .at(-1);
+    return normalizedWeight(entry?.weight);
+}
+
+
+function syncWeightForDate(date) {
+    const input = document.getElementById("photo-journal-weight");
+    if (!input) return;
+    const weight = weightForDate(date);
+    const shown = weight === null
+        ? null
+        : displayMass(weight, 1, UNIT_KINDS.BODY_WEIGHT);
+    input.value = shown === null ? "" : String(shown);
+}
+
+
+function normalizedWeight(value) {
+    const weight = Number(value);
+    return Number.isFinite(weight) && weight > 0 ? weight : null;
+}
+
+
+function formatPhotoWeight(photo) {
+    const weight = normalizedWeight(photo?.weight) ?? weightForDate(photo?.date);
+    if (weight === null) return "No weight logged";
+    const shown = displayMass(weight, 1, UNIT_KINDS.BODY_WEIGHT);
+    return `${Number(shown).toLocaleString(undefined, { maximumFractionDigits: 1 })} ${massUnit(UNIT_KINDS.BODY_WEIGHT)}`;
 }
 
 
