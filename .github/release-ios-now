@@ -221,3 +221,5 @@ TestFlight build 128: refine workout completion card copy, make nutrition backup
 TestFlight build 129 (upload rejected): Apple closed the approved 1.0 release train before this upload could be accepted.
 
 TestFlight build 130: release version 1.0.1 with the polished progress photo form, theme-aware camera SVG, and iPhone photo-library selection.
+
+TestFlight build 131: add iOS and PWA platform analytics, engagement breakdowns, and iOS version/build reporting.
