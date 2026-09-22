@@ -3842,6 +3842,7 @@ textarea:focus {
 }
 
 .photo-entry-panel label {
+    width:100%;
     min-width:0;
     color:var(--muted);
     font-size:11px;
@@ -3863,8 +3864,27 @@ textarea:focus {
 }
 
 #photo-journal-date {
+    inline-size:100%;
+    min-inline-size:0;
+    max-inline-size:100%;
+    min-height:44px;
     height:44px;
+    padding-block:0;
     line-height:20px;
+    text-align:left;
+    -webkit-appearance:none;
+    appearance:none;
+}
+
+#photo-journal-date::-webkit-date-and-time-value {
+    min-width:0;
+    margin:0;
+    text-align:left;
+}
+
+#photo-journal-date::-webkit-datetime-edit {
+    min-width:0;
+    padding:0;
 }
 
 .photo-file-control input {
