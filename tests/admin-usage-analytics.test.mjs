@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("usage analytics records one active event per user per day", async () => {
+test("usage analytics records one active event per user, platform, and day", async () => {
     const [worker, migration] = await Promise.all([
         read("cloud/src/index.js"),
         read("cloud/migrations/0008_usage_analytics.sql")
@@ -14,6 +14,29 @@ test("usage analytics records one active event per user per day", async () => {
     assert.match(worker, /'app_active'/);
     assert.match(worker, /ON CONFLICT\(user_id, event_name, event_key\) DO NOTHING/);
     assert.match(worker, /const day = localDateKey\(now, analyticsTimeZone\(env\)\)/);
+    assert.match(worker, /const eventKey = `\$\{day\}:\$\{metadata\.platform\}`/);
+});
+
+test("analytics separates iOS, PWA, and legacy activity and records iOS versions", async () => {
+    const [runtime, tracking, activity, worker, admin, styles] = await Promise.all([
+        read("js/analytics/runtime-context.js"),
+        read("js/analytics/acquisition.js"),
+        read("js/account/cloud-background-sync.js"),
+        read("cloud/src/index.js"),
+        read("admin/admin-analytics.js"),
+        read("admin/platform-analytics.css")
+    ]);
+    assert.match(runtime, /getPlatform/);
+    assert.match(runtime, /App\?\.getInfo/);
+    assert.match(tracking, /analyticsRuntimeContext/);
+    assert.match(activity, /body: await analyticsRuntimeContext\(\)/);
+    assert.match(worker, /getPlatformAnalytics/);
+    assert.match(worker, /iosVersions/);
+    assert.match(worker, /iosFirstSeenUsers/);
+    assert.match(admin, /iOS app and PWA/);
+    assert.match(admin, /Legacy \/ Unknown/);
+    assert.match(admin, /Build/);
+    assert.match(styles, /admin-platform-grid/);
 });
 
 test("food additions create deduplicated analytics events", async () => {
