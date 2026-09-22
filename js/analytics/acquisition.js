@@ -1,4 +1,5 @@
 import { analyticsAllowed } from "../privacy/analytics-consent.js?v=app-review-privacy-1";
+import { analyticsRuntimeContext } from "./runtime-context.js?v=platform-analytics-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -72,7 +73,7 @@ export function saveReportedSource(source,otherText=""){
 export async function trackProductEvent(eventName,{eventKey,metadata={},occurredAt}={}){
     if(!analyticsAllowed())return false;
     const token=sessionToken();
-    const event={eventName,eventKey:String(eventKey||crypto.randomUUID()),occurredAt:validOccurredAt(occurredAt),metadata};
+    const event={eventName,eventKey:String(eventKey||crypto.randomUUID()),occurredAt:validOccurredAt(occurredAt),metadata:{...metadata,...await analyticsRuntimeContext()}};
     if(!token||!navigator.onLine){queueEvent(event);return false;}
     try{
         const response=await fetch(`${API_URL}/v1/events`,{method:"POST",headers:authHeaders(token),body:JSON.stringify(event)});
