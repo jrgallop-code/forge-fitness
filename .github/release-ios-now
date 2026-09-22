@@ -229,3 +229,5 @@ TestFlight build 132: add the MyFitnessPal-style progress photo carousel, tap-to
 TestFlight build 133: align the iOS progress-photo date field with the weight, note, and photo controls while preserving the native date picker.
 
 TestFlight build 134: redesign the iOS progress photo log with month-grouped entries, a full-screen large-photo gallery, individual and side-by-side comparison modes, synchronized panning, and 100–300% zoom.
+
+TestFlight build 135: limit photo comparison to two images, remove the fixed black image area and manual zoom controls, and add independent pinch-to-zoom and drag-to-pan gestures for each photo.
