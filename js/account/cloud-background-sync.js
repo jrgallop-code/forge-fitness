@@ -3,6 +3,7 @@ import {
     verifyBackupSnapshot
 } from "../core/backup-manager.js?v=backup-complete-7";
 import { analyticsAllowed } from "../privacy/analytics-consent.js?v=app-review-privacy-1";
+import { analyticsRuntimeContext } from "../analytics/runtime-context.js?v=platform-analytics-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
@@ -91,7 +92,7 @@ function scheduleBackup(delay) {
 async function recordActivity() {
     if (!analyticsAllowed() || authBlocked || isRecoveryLaunch() || !navigator.onLine || !getSession()) return;
     try {
-        await api("/v1/activity", { method: "POST" });
+        await api("/v1/activity", { method: "POST", body: await analyticsRuntimeContext() });
     }
     catch (error) {
         if (error.status === 401) markAuthenticationRequired();
