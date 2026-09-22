@@ -37,14 +37,23 @@ test("native progress photo entry supports the library and keeps the form aligne
     assert.match(styles, /\.photo-entry-panel input\s*\{[\s\S]*box-sizing:border-box;[\s\S]*max-width:100%/);
 });
 
-test("progress photos use a tap-to-select carousel and a two-up comparison", () => {
-    assert.match(journal, /id="toggle-photo-compare"/);
-    assert.match(journal, /selectedPhotoIds\.length < 2/);
-    assert.match(journal, /selectedPhotoIds = \[selectedPhotoIds\[1\], id\]/);
+test("progress photos use an entry list and a large gallery with comparison zoom", () => {
+    assert.match(journal, /id="photo-journal-list-screen"/);
+    assert.match(journal, /id="photo-entry-period"/);
+    assert.match(journal, /formatMonthYear\(period\)/);
+    assert.match(journal, /id="photo-gallery-screen"/);
+    assert.match(journal, /data-photo-view="single"/);
+    assert.match(journal, /data-photo-view="compare"/);
+    assert.match(journal, /id="photo-gallery-carousel"/);
+    assert.match(journal, /id="photo-zoom-range"/);
+    assert.match(journal, /comparisonZoom = clampZoom/);
+    assert.match(journal, /other\.scrollTop = vertical/);
     assert.doesNotMatch(journal, /id="compare-photo-left"/);
     assert.doesNotMatch(journal, /id="compare-photo-right"/);
-    assert.match(styles, /\.photo-journal-gallery\s*\{[\s\S]*overflow-x:auto;[\s\S]*scroll-snap-type:x mandatory/);
-    assert.match(styles, /\.photo-comparison\s*\{[\s\S]*grid-template-columns:1fr 1fr/);
+    assert.match(styles, /\.photo-gallery-carousel\s*\{[\s\S]*overflow-x:auto;[\s\S]*scroll-snap-type:x mandatory/);
+    assert.match(styles, /\.photo-viewer-compare\s*\{[\s\S]*grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/);
+    assert.match(styles, /\.photo-zoom-pane\s*\{[\s\S]*overflow:auto;[\s\S]*pinch-zoom/);
+    assert.match(styles, /\.photo-viewer-single-frame\s*\{[\s\S]*64dvh/);
 });
 
 test("progress photo metadata includes body weight with legacy weight fallback", () => {
