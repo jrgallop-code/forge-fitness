@@ -213,3 +213,5 @@ TestFlight build 124: route Instagram sharing through the image-bearing iOS shar
 TestFlight build 125: add primary and secondary muscle highlighting to workout recap cards, show every detected PR in compact layouts, and keep warm-up inputs focused while editing.
 
 TestFlight build 126: use 10% of each new daily weight and 90% of the prior Trend Weight while preserving the existing regression-based weekly rate.
+
+TestFlight build 127: use 15% of each new daily weight and 85% of the prior Trend Weight, with weekly rate regression across exactly three weeks (21 days).

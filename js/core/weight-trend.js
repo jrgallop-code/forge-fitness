@@ -18,8 +18,8 @@ const DISPLAY_TREND_FULL_SPAN_DAYS = 14;
 // User-facing Trend Weight model. Missing dates between real weigh-ins are
 // linearly interpolated, then an exponentially weighted moving average gives
 // recent days more influence without allowing one scale reading to dominate.
-const VISIBLE_TREND_ALPHA = 0.10;
-const VISIBLE_RATE_DAYS = 20;
+const VISIBLE_TREND_ALPHA = 0.15;
+const VISIBLE_RATE_DAYS = 21;
 const VISIBLE_TREND_MIN_ENTRIES = 3;
 const VISIBLE_TREND_MIN_SPAN_DAYS = 5;
 const VISIBLE_TREND_FULL_ENTRIES = 6;
