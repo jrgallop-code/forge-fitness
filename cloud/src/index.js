@@ -122,7 +122,8 @@ async function handleRequest(request, env, ctx) {
         return importRedditSource(body, request, env);
     }
     if (url.pathname === "/v1/activity" && request.method === "POST") {
-        return recordActivity(user.id, request, env);
+        const body = await readOptionalJson(request, 8 * 1024);
+        return recordActivity(user.id, body, request, env);
     }
     if (url.pathname === "/v1/acquisition" && request.method === "PUT") {
         const body = await readJson(request, 8 * 1024);
@@ -2023,18 +2024,30 @@ async function recordSatisfactionFeedback(userId, body, request, env) {
     return json({ ok: true, submittedAt: now }, 201, request, env);
 }
 
-async function recordActivity(userId, request, env) {
+async function recordActivity(userId, body, request, env) {
     const now = new Date().toISOString();
     const day = localDateKey(now, analyticsTimeZone(env));
+    const metadata = analyticsClientMetadata(body);
+    const eventKey = `${day}:${metadata.platform}`;
     await env.DB.batch([
         env.DB.prepare("UPDATE users SET last_active_at = ? WHERE id = ?").bind(now, userId),
         env.DB.prepare(`
             INSERT INTO usage_events (id, user_id, event_name, event_key, occurred_at, metadata_json, created_at)
-            VALUES (?, ?, 'app_active', ?, ?, '{}', ?)
+            VALUES (?, ?, 'app_active', ?, ?, ?, ?)
             ON CONFLICT(user_id, event_name, event_key) DO NOTHING
-        `).bind(crypto.randomUUID(), userId, day, now, now)
+        `).bind(crypto.randomUUID(), userId, eventKey, now, JSON.stringify(metadata), now)
     ]);
     return json({ ok: true, lastActiveAt: now }, 200, request, env);
+}
+
+function analyticsClientMetadata(value) {
+    const platform = value?.platform === "ios" ? "ios" : value?.platform === "pwa" ? "pwa" : "unknown";
+    const metadata = { platform };
+    const appVersion = limitedText(value?.appVersion, 32);
+    const appBuild = limitedText(value?.appBuild, 32);
+    if (appVersion) metadata.appVersion = appVersion;
+    if (appBuild) metadata.appBuild = appBuild;
+    return metadata;
 }
 
 function analyticsTimeZone(env) {
@@ -2253,6 +2266,60 @@ async function getLocalUsageSummary(env, since, timeZone) {
     };
 }
 
+async function getPlatformAnalytics(env, since, activeSince, today) {
+    const platformExpression = `CASE
+        WHEN json_extract(metadata_json, '$.platform') = 'ios' THEN 'ios'
+        WHEN json_extract(metadata_json, '$.platform') = 'pwa' THEN 'pwa'
+        ELSE 'unknown' END`;
+    const [activity, engagement, versions, firstIos] = await Promise.all([
+        env.DB.prepare(`SELECT ${platformExpression} AS platform,
+                COUNT(DISTINCT CASE WHEN occurred_at >= ? THEN user_id END) AS active_users,
+                COUNT(DISTINCT CASE WHEN occurred_at >= ? THEN user_id END) AS active_users_7d,
+                COUNT(DISTINCT CASE WHEN occurred_at >= ? AND occurred_at < ? THEN user_id END) AS users_today
+            FROM usage_events WHERE event_name = 'app_active' GROUP BY platform`)
+            .bind(since, activeSince, today.start, today.end).all(),
+        env.DB.prepare(`SELECT platform,
+                SUM(CASE WHEN kind = 'food' THEN 1 ELSE 0 END) AS foods_logged,
+                COUNT(DISTINCT CASE WHEN kind = 'food' THEN user_id END) AS food_log_users,
+                SUM(CASE WHEN kind = 'workout' THEN 1 ELSE 0 END) AS workouts,
+                COUNT(DISTINCT CASE WHEN kind = 'workout' THEN user_id END) AS workout_users,
+                COUNT(DISTINCT user_id) AS engaged_users
+            FROM (
+                SELECT user_id, 'food' AS kind, ${platformExpression} AS platform
+                FROM usage_events WHERE event_name = 'food_logged' AND occurred_at >= ?
+                UNION ALL
+                SELECT user_id, 'workout' AS kind, ${platformExpression} AS platform
+                FROM product_events WHERE event_name = 'workout_completed' AND occurred_at >= ?
+            ) GROUP BY platform`).bind(since, since).all(),
+        env.DB.prepare(`SELECT
+                COALESCE(NULLIF(json_extract(metadata_json, '$.appVersion'), ''), 'Unknown') AS app_version,
+                COALESCE(NULLIF(json_extract(metadata_json, '$.appBuild'), ''), 'Unknown') AS app_build,
+                COUNT(DISTINCT user_id) AS users,
+                MAX(occurred_at) AS last_seen_at
+            FROM usage_events
+            WHERE event_name = 'app_active' AND occurred_at >= ?
+                AND json_extract(metadata_json, '$.platform') = 'ios'
+            GROUP BY app_version, app_build ORDER BY users DESC, last_seen_at DESC`).bind(since).all(),
+        env.DB.prepare(`SELECT COUNT(*) AS users FROM (
+                SELECT user_id, MIN(occurred_at) AS first_seen_at
+                FROM usage_events
+                WHERE event_name = 'app_active' AND json_extract(metadata_json, '$.platform') = 'ios'
+                GROUP BY user_id
+            ) WHERE first_seen_at >= ?`).bind(since).first()
+    ]);
+    const rows = new Map(["ios", "pwa", "unknown"].map(platform => [platform, {
+        platform, active_users: 0, active_users_7d: 0, users_today: 0,
+        engaged_users: 0, foods_logged: 0, food_log_users: 0, workouts: 0, workout_users: 0
+    }]));
+    for (const result of activity?.results || []) Object.assign(rows.get(result.platform), result);
+    for (const result of engagement?.results || []) Object.assign(rows.get(result.platform), result);
+    return {
+        platforms: [...rows.values()],
+        iosFirstSeenUsers: Number(firstIos?.users || 0),
+        iosVersions: versions?.results || []
+    };
+}
+
 async function getAdminAnalytics(user, url, request, env) {
     if (!isAdminUser(user, env)) return json({ error: "Admin access required." }, 403, request, env);
     const requestedDays = Number(url.searchParams.get("days") || 30);
@@ -2261,7 +2328,7 @@ async function getAdminAnalytics(user, url, request, env) {
     const activeSince = new Date(Date.now() - 7 * 86400000).toISOString();
     const timeZone = analyticsTimeZone(env);
     const today = localDayBounds(Date.now(), timeZone);
-    const [totals, usageSummary, acquisition, people, feedbackSummary, feedback, restaurantCatalogue, workoutSources] = await Promise.all([
+    const [totals, usageSummary, platformAnalytics, acquisition, people, feedbackSummary, feedback, restaurantCatalogue, workoutSources] = await Promise.all([
         env.DB.prepare(`SELECT
             (SELECT COUNT(*) FROM users) AS total_users,
             (SELECT COUNT(*) FROM users WHERE created_at >= ?) AS new_users,
@@ -2284,6 +2351,7 @@ async function getAdminAnalytics(user, url, request, env) {
                 today.start, today.end, today.start, today.end,
                 since, since, since, since, since).first(),
         getLocalUsageSummary(env, since, timeZone),
+        getPlatformAnalytics(env, since, activeSince, today),
         env.DB.prepare(`SELECT COALESCE(NULLIF(reported_source, ''), 'Not answered') AS source, COUNT(*) AS users
             FROM user_acquisition GROUP BY source ORDER BY users DESC`).all(),
         env.DB.prepare(`SELECT
@@ -2349,6 +2417,7 @@ async function getAdminAnalytics(user, url, request, env) {
         updatedAt: new Date().toISOString(),
         totals: localTotals,
         daily: usageSummary.daily,
+        platformAnalytics,
         acquisition: acquisition?.results || [],
         people: people?.results || [],
         feedbackSummary: feedbackSummary || {},
@@ -2530,6 +2599,16 @@ async function readJson(request, maxBytes) {
     if (length > maxBytes) throw new HttpError(413, "Request is too large.");
     const buffer = await request.arrayBuffer();
     if (buffer.byteLength > maxBytes) throw new HttpError(413, "Request is too large.");
+    try { return JSON.parse(new TextDecoder().decode(buffer)); }
+    catch { throw new HttpError(400, "Request body must be valid JSON."); }
+}
+
+async function readOptionalJson(request, maxBytes) {
+    const length = Number(request.headers.get("Content-Length") || 0);
+    if (length > maxBytes) throw new HttpError(413, "Request is too large.");
+    const buffer = await request.arrayBuffer();
+    if (buffer.byteLength > maxBytes) throw new HttpError(413, "Request is too large.");
+    if (!buffer.byteLength) return {};
     try { return JSON.parse(new TextDecoder().decode(buffer)); }
     catch { throw new HttpError(400, "Request body must be valid JSON."); }
 }
