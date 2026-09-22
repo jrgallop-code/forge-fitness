@@ -32,7 +32,8 @@ test("native progress photo entry supports the library and keeps the form aligne
     assert.match(app, /"📷":STROKE_ICON/);
     assert.doesNotMatch(journal, /capture="environment"/);
     assert.doesNotMatch(journal, /placeholder="Equipment setup/);
-    assert.match(styles, /#photo-journal-date\s*\{[\s\S]*height:44px/);
+    assert.match(styles, /#photo-journal-date\s*\{[\s\S]*max-inline-size:100%;[\s\S]*height:44px;[\s\S]*appearance:none/);
+    assert.match(styles, /#photo-journal-date::\-webkit-date-and-time-value\s*\{[\s\S]*text-align:left/);
     assert.match(styles, /\.photo-entry-panel input\s*\{[\s\S]*box-sizing:border-box;[\s\S]*max-width:100%/);
 });
 
