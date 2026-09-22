@@ -33,5 +33,24 @@ test("native progress photo entry supports the library and keeps the form aligne
     assert.doesNotMatch(journal, /capture="environment"/);
     assert.doesNotMatch(journal, /placeholder="Equipment setup/);
     assert.match(styles, /#photo-journal-date\s*\{[\s\S]*height:44px/);
-    assert.match(styles, /\.photo-entry-panel input,[\s\S]*box-sizing:border-box;[\s\S]*max-width:100%/);
+    assert.match(styles, /\.photo-entry-panel input\s*\{[\s\S]*box-sizing:border-box;[\s\S]*max-width:100%/);
+});
+
+test("progress photos use a tap-to-select carousel and a two-up comparison", () => {
+    assert.match(journal, /id="toggle-photo-compare"/);
+    assert.match(journal, /selectedPhotoIds\.length < 2/);
+    assert.match(journal, /selectedPhotoIds = \[selectedPhotoIds\[1\], id\]/);
+    assert.doesNotMatch(journal, /id="compare-photo-left"/);
+    assert.doesNotMatch(journal, /id="compare-photo-right"/);
+    assert.match(styles, /\.photo-journal-gallery\s*\{[\s\S]*overflow-x:auto;[\s\S]*scroll-snap-type:x mandatory/);
+    assert.match(styles, /\.photo-comparison\s*\{[\s\S]*grid-template-columns:1fr 1fr/);
+});
+
+test("progress photo metadata includes body weight with legacy weight fallback", () => {
+    assert.match(journal, /id="photo-journal-weight"/);
+    assert.match(journal, /id="photo-journal-weight"[\s\S]*data-unit-input-ignore/);
+    assert.match(journal, /WEIGHT_STORAGE_KEY = "forge_weight_entries"/);
+    assert.match(journal, /formatPhotoWeight\(photo\)/);
+    assert.match(plugin, /let weight: Double\?/);
+    assert.match(plugin, /payload\["weight"\] = weight/);
 });
