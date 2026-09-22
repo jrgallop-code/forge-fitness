@@ -213,8 +213,8 @@ function renderRecent(panel, entries) {
     host.innerHTML = entries.length ? entries.slice(-5).reverse().map(entry => `<div class="cardio-recent-row"><div><strong>${escapeHtml(entry.name)}</strong><span>${entry.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></div><div><strong>${formatMinutes(entry.duration)}</strong><span>${entry.distanceKm ? formatDistance(entry.distanceKm) : entry.rpe ? `RPE ${entry.rpe}` : "Time only"}</span></div></div>`).join("") : '<p class="cardio-chart-empty">Your completed cardio sessions will appear here.</p>';
 }
 
-// Progress is primarily a lifting destination. Keep Lifting first/default and
-// remove the unfinished Photo Log surface without changing the saved data model.
+// Progress is primarily a lifting destination. Native iOS also exposes the
+// local-only photo journal; browsers keep the web surface photo-free.
 function applyProgressLiftingPriority() {
     const tabs = document.querySelector(".progress-tabs");
     if (!tabs || tabs.dataset.liftingPriorityApplied === "true") return;
@@ -223,23 +223,37 @@ function applyProgressLiftingPriority() {
     const weightButton = document.getElementById("weight-tab");
     const nutritionButton = document.getElementById("nutrition-progress-tab");
     const cardioButton = document.getElementById("cardio-progress-tab");
+    const photoButton = document.getElementById("photo-log-tab");
     if (!liftingButton || !weightButton || !nutritionButton || !cardioButton) return;
 
     tabs.insertBefore(liftingButton, tabs.firstElementChild);
     tabs.insertBefore(weightButton, liftingButton.nextElementSibling);
     tabs.insertBefore(nutritionButton, weightButton.nextElementSibling);
-    tabs.insertBefore(cardioButton, nutritionButton.nextElementSibling);
-
-    document.getElementById("photo-log-tab")?.remove();
-    document.getElementById("photo-log-progress")?.remove();
+    if (isNativeIos() && photoButton) {
+        tabs.dataset.nativePhotos = "true";
+        photoButton.textContent = "📷 Photos";
+        tabs.insertBefore(photoButton, nutritionButton.nextElementSibling);
+        tabs.insertBefore(cardioButton, photoButton.nextElementSibling);
+    }
+    else {
+        tabs.insertBefore(cardioButton, nutritionButton.nextElementSibling);
+        photoButton?.remove();
+        document.getElementById("photo-log-progress")?.remove();
+    }
 
     const description = tabs.closest(".section-card")?.querySelector(".section-description");
-    if (description) description.textContent = "Track lifting performance, body weight, nutrition and cardio over time.";
+    if (description) description.textContent = isNativeIos()
+        ? "Track lifting performance, body weight, nutrition, progress photos and cardio over time."
+        : "Track lifting performance, body weight, nutrition and cardio over time.";
 
     tabs.dataset.liftingPriorityApplied = "true";
     requestAnimationFrame(() => {
         if (document.body.contains(liftingButton)) liftingButton.click();
     });
+}
+
+function isNativeIos() {
+    return window.Capacitor?.isNativePlatform?.() === true && window.Capacitor?.getPlatform?.() === "ios";
 }
 
 function initializeProgressPriorityObserver() {

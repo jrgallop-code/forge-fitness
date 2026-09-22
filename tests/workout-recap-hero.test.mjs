@@ -31,6 +31,12 @@ test('workout recap offers swipeable share cards and profile-aware anatomy', () 
   assert.match(recapSource, /canvas\.toBlob/);
 });
 
+test('workout recap uses the revised first and second card copy', () => {
+  assert.doesNotMatch(recapSource, /YOU CRUSHED IT/);
+  assert.match(recapSource, /slideFrame\("celebration", `Workout #\$\{data\.workoutNumber\}`, ""/);
+  assert.match(recapSource, /TODAY'S WORKOUT/);
+});
+
 test('workout recap distinguishes shared primary and secondary muscle credits', () => {
   assert.match(recapSource, /getExerciseImpacts/);
   assert.match(recapSource, /credit>=1/);

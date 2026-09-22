@@ -13,6 +13,9 @@ const MAX_IMAGE_EDGE =
 const JPEG_QUALITY =
     0.82;
 
+const ACCOUNT_STORAGE_KEY = "level_up_cloud_account";
+const SESSION_STORAGE_KEY = "level_up_cloud_session";
+
 
 let activeObjectUrls = [];
 
@@ -30,18 +33,18 @@ export function renderPhotoJournal() {
                     </span>
 
                     <h3>
-                        Photo Journal
+                        Progress Photos
                     </h3>
 
                     <p>
-                        Save private, dated reference photos and notes.
-                        Images remain in this browser unless exported
-                        through Backup & Restore.
+                        Save dated reference photos and compare any two side by side.
+                        Photos stay inside Level Up on this iPhone and are never
+                        included in cloud or device backups.
                     </p>
                 </div>
 
                 <span class="photo-private-badge">
-                    🔒 Private on this device
+                    🔒 On this iPhone only
                 </span>
 
             </div>
@@ -161,6 +164,10 @@ export function renderPhotoJournal() {
 
 export function initializePhotoJournal() {
 
+    if (!nativePhotoPlugin()) {
+        return;
+    }
+
     const dateInput =
         document.getElementById(
             "photo-journal-date"
@@ -214,7 +221,7 @@ export function initializePhotoJournal() {
 export async function exportPhotoRecords() {
 
     const photos =
-        await getAllPhotos();
+        await getAllLegacyPhotos();
 
 
     return Promise.all(
@@ -462,7 +469,7 @@ async function savePhoto() {
     catch {
 
         setPhotoMessage(
-            "The photo could not be saved. Try a smaller image or free some browser storage.",
+            "The photo could not be saved. Try a smaller image or free some space on this iPhone.",
             true
         );
 
@@ -831,23 +838,17 @@ async function removePhoto(
     }
 
 
-    const database =
-        await openDatabase();
-
-
-    await requestAsPromise(
-        database
-            .transaction(
-                PHOTO_STORE,
-                "readwrite"
-            )
-            .objectStore(
-                PHOTO_STORE
-            )
-            .delete(
-                id
-            )
-    );
+    const plugin = nativePhotoPlugin();
+    if (plugin) {
+        await plugin.deletePhoto({ id, owner: photoOwner() });
+    }
+    else {
+        const database = await openDatabase();
+        await requestAsPromise(
+            database.transaction(PHOTO_STORE, "readwrite").objectStore(PHOTO_STORE).delete(id)
+        );
+        database.close();
+    }
 
 
     await renderPhotos();
@@ -858,6 +859,19 @@ async function removePhoto(
 async function savePhotoRecord(
     photo
 ) {
+
+    const plugin = nativePhotoPlugin();
+    if (plugin) {
+        await plugin.savePhoto({
+            id: photo.id,
+            date: photo.date,
+            note: photo.note || "",
+            createdAt: photo.createdAt,
+            imageData: await blobToDataUrl(photo.image),
+            owner: photoOwner()
+        });
+        return;
+    }
 
     const database =
         await openDatabase();
@@ -881,6 +895,18 @@ async function savePhotoRecord(
 
 
 async function getAllPhotos() {
+
+    const plugin = nativePhotoPlugin();
+    if (plugin) {
+        const result = await plugin.listPhotos({ owner: photoOwner() });
+        return (Array.isArray(result?.photos) ? result.photos : []).map(nativePhotoRecord);
+    }
+
+    return getAllLegacyPhotos();
+}
+
+
+async function getAllLegacyPhotos() {
 
     const database =
         await openDatabase();
@@ -934,6 +960,11 @@ async function getPhoto(
     id
 ) {
 
+    const plugin = nativePhotoPlugin();
+    if (plugin) {
+        return (await getAllPhotos()).find(photo => photo.id === id) || null;
+    }
+
     const database =
         await openDatabase();
 
@@ -952,6 +983,37 @@ async function getPhoto(
             )
     );
 
+}
+
+
+function nativePhotoPlugin() {
+    if (window.Capacitor?.isNativePlatform?.() !== true || window.Capacitor?.getPlatform?.() !== "ios") return null;
+    const plugin = window.Capacitor?.Plugins?.LevelUpProgressPhotos;
+    return plugin?.savePhoto && plugin?.listPhotos && plugin?.deletePhoto ? plugin : null;
+}
+
+
+function nativePhotoRecord(record) {
+    return {
+        id: String(record?.id || ""),
+        date: String(record?.date || ""),
+        note: String(record?.note || "").slice(0, 160),
+        createdAt: String(record?.createdAt || ""),
+        image: dataUrlToBlob(String(record?.image || ""))
+    };
+}
+
+
+function photoOwner() {
+    for (const key of [ACCOUNT_STORAGE_KEY, SESSION_STORAGE_KEY]) {
+        try {
+            const value = JSON.parse(localStorage.getItem(key) || "null");
+            const identifier = value?.id || value?.userId || value?.email || value?.account?.id || value?.account?.email;
+            if (identifier) return String(identifier);
+        }
+        catch {}
+    }
+    return "local-device-owner";
 }
 
 

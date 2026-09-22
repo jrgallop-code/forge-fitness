@@ -1,4 +1,5 @@
 import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=fatsecret-progress-calories-1";
+import { renderPhotoJournal } from "./photo-journal.js?v=native-progress-photos-1";
 
 export function renderProgress() {
 
@@ -539,14 +540,7 @@ export function renderProgress() {
             </div>
 
             <div id="photo-log-progress" hidden>
-                <section class="photo-log-coming-soon">
-                    <span class="eyebrow">PHOTO LOG</span>
-                    <div class="photo-log-placeholder-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24"><path d="M4 7.5h3l1.2-2h7.6l1.2 2h3v11H4v-11Z"/><circle cx="12" cy="13" r="3.2"/></svg>
-                    </div>
-                    <h3>Photo Log</h3>
-                    <p>Photo records are managed from Health &amp; Records.</p>
-                </section>
+                ${renderPhotoJournal()}
             </div>
 
         </section>
