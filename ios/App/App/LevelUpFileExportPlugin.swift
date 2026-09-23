@@ -1,6 +1,12 @@
 import UIKit
 import Capacitor
 
+private final class LevelUpPDFPageRenderer: UIPrintPageRenderer {
+    private let levelUpPaperRect = CGRect(x: 0, y: 0, width: 612, height: 792)
+    override var paperRect: CGRect { levelUpPaperRect }
+    override var printableRect: CGRect { levelUpPaperRect.insetBy(dx: 28, dy: 28) }
+}
+
 @objc(LevelUpFileExportPlugin)
 final class LevelUpFileExportPlugin: CAPPlugin, CAPBridgedPlugin {
     let identifier = "LevelUpFileExportPlugin"
@@ -60,13 +66,8 @@ final class LevelUpFileExportPlugin: CAPPlugin, CAPBridgedPlugin {
             }
 
             let formatter = UIMarkupTextPrintFormatter(markupText: html)
-            let renderer = UIPrintPageRenderer()
+            let renderer = LevelUpPDFPageRenderer()
             renderer.addPrintFormatter(formatter, startingAtPageAt: 0)
-
-            let paperRect = CGRect(x: 0, y: 0, width: 612, height: 792)
-            let printableRect = paperRect.insetBy(dx: 28, dy: 28)
-            renderer.setValue(NSValue(cgRect: paperRect), forKey: "paperRect")
-            renderer.setValue(NSValue(cgRect: printableRect), forKey: "printableRect")
 
             let pageCount = renderer.numberOfPages
             guard pageCount > 0 && pageCount <= 40 else {
@@ -76,14 +77,14 @@ final class LevelUpFileExportPlugin: CAPPlugin, CAPBridgedPlugin {
             renderer.prepare(forDrawingPages: NSRange(location: 0, length: pageCount))
 
             let data = NSMutableData()
-            UIGraphicsBeginPDFContextToData(data, paperRect, [
+            UIGraphicsBeginPDFContextToData(data, renderer.paperRect, [
                 kCGPDFContextCreator as String: "Level Up",
                 kCGPDFContextTitle as String: filename
             ])
             for pageIndex in 0..<pageCount {
                 autoreleasepool {
-                    UIGraphicsBeginPDFPageWithInfo(paperRect, nil)
-                    renderer.drawPage(at: pageIndex, in: UIGraphicsGetPDFContextBounds())
+                    UIGraphicsBeginPDFPageWithInfo(renderer.paperRect, nil)
+                    renderer.drawPage(at: pageIndex, in: renderer.paperRect)
                 }
             }
             UIGraphicsEndPDFContext()
