@@ -4,6 +4,16 @@ import { readFile } from "node:fs/promises";
 
 const read = path => readFile(new URL(path, import.meta.url), "utf8");
 
+test("food log date opens a calendar and selects an editable diary day", async () => {
+    const [module, styles] = await Promise.all([read("../js/nutrition/food-log.js"), read("../css/food-log.css")]);
+    assert.match(module, /data-food-calendar-toggle aria-label="Choose food log date"/);
+    assert.match(module, /data-food-calendar-month="-1"/);
+    assert.match(module, /data-food-calendar-date="\$\{key\}"/);
+    assert.match(module, /selectedDate = dateButton\.dataset\.foodCalendarDate;\s*closeFoodCalendar\(\);\s*renderDay\(\)/);
+    assert.match(module, /entriesForDate\(key\)\.length > 0/);
+    assert.match(styles, /\.food-log-calendar\[hidden\]\{display:none\}/);
+});
+
 test("food picker is meal-first and includes Recent, My Meals, and My Foods", async () => {
     const module = await read("../js/nutrition/food-log.js");
     assert.match(module, /class="food-meal-picker"/);
