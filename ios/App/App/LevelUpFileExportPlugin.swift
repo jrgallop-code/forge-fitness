@@ -32,7 +32,8 @@ private final class LevelUpPDFWebJob: NSObject, WKNavigationDelegate {
 
     func start(in presenter: UIViewController) {
         presenter.view.addSubview(webView)
-        webView.loadHTMLString(html, baseURL: nil)
+        let publicURL = Bundle.main.url(forResource: "public", withExtension: nil)
+        webView.loadHTMLString(html, baseURL: publicURL)
         DispatchQueue.main.asyncAfter(deadline: .now() + 12) { [weak self] in
             guard let self, !self.finished else { return }
             self.finish(.failure(NSError(
