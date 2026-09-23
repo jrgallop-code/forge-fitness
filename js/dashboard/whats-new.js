@@ -1,31 +1,17 @@
-const VIEW_KEY = "level_up_whats_new_2026_09_views";
-const SESSION_KEY = "level_up_cloud_session";
+const VIEW_KEY = "level_up_whats_new_ios_launch_2026_09_views";
 const TRAINING_PREFERENCES_KEY = "level_up_training_preferences";
-const MAX_VIEWS = 2;
+const APP_STORE_URL = "https://apps.apple.com/ca/app/level-up-workout-nutrition/id6810024008";
+const MAX_VIEWS = 1;
 let memoryViews = 0;
 
-const ICONS = {
-    appearance: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1.2a1.8 1.8 0 0 0 0-3.6h-.7a1.7 1.7 0 0 1 0-3.4H15a6 6 0 0 0 0-12h-3Z"/><circle cx="7.4" cy="10" r="1"/><circle cx="9" cy="6.8" r="1"/><circle cx="13" cy="6" r="1"/><circle cx="16.3" cy="8.2" r="1"/></svg>`,
-    research: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>`,
-    program: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h3v6H3zM6 7h3v10H6zM9 11h6v2H9zM15 7h3v10h-3zM18 9h3v6h-3z"/></svg>`,
-    progress: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16M7 15l4-4 3 2 5-6"/><path d="M16.5 7H19v2.5"/></svg>`,
-    weight: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 8a3 3 0 0 1 6 0M12 11v4M12 11l2 2"/></svg>`,
-    workout: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h3v6H3zM6 7h3v10H6zM9 11h6v2H9zM15 7h3v10h-3zM18 9h3v6h-3z"/><path d="M12 4v3M10.5 5.5h3"/></svg>`
-};
-
-const CHANGES = [
-    ["appearance", "Make Level Up yours", "Choose from seven polished themes, including Arctic, Ocean and Midnight. System mode now follows your local day and night."],
-    ["research", "Explore the research", "Read reviewed muscle-growth and nutrition summaries, open the original studies and save useful evidence for later."],
-    ["program", "Programs built around you", "The coach-led builder now creates a more personal plan around your schedule, experience, equipment and muscle priorities."],
-    ["progress", "See progress more clearly", "Track training volume, estimated 1RM, strength improvements and muscle recovery in one connected progress experience."],
-    ["weight", "Understand weight changes", "New weight, calorie and carbohydrate insights help separate real trends from normal day-to-day fluctuations."],
-    ["workout", "Smoother workouts and form guides", "Use clearer anatomy guides, Smart Swap, RIR, supersets and drop sets without breaking the flow of your session."]
-];
+function isNativeIOS() {
+    return window.Capacitor?.getPlatform?.() === "ios";
+}
 
 function getStoredViews() {
     try {
         const stored = Number.parseInt(localStorage.getItem(VIEW_KEY) || "0", 10);
-        return Number.isFinite(stored) ? Math.max(0, stored) : 0;
+        return Number.isFinite(stored) ? Math.max(memoryViews, stored) : memoryViews;
     } catch {
         return memoryViews;
     }
@@ -40,22 +26,8 @@ function storeViews(views) {
     }
 }
 
-function renderChangeCard([icon, title, description]) {
-    return `
-        <article class="whats-new-card">
-            <span class="whats-new-card-icon">${ICONS[icon]}</span>
-            <div>
-                <h3>${title}</h3>
-                <p>${description}</p>
-            </div>
-        </article>`;
-}
-
-function isSignedInAndOnboarded() {
+function isOnboarded() {
     try {
-        const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
-        const signedIn = Boolean(session?.token) && (!session.expiresAt || Date.parse(session.expiresAt) > Date.now());
-        if (!signedIn) return false;
         const preferences = JSON.parse(localStorage.getItem(TRAINING_PREFERENCES_KEY) || "null");
         return Boolean(preferences?.onboardingComplete || preferences?.onboardingSkipped);
     } catch {
@@ -63,19 +35,12 @@ function isSignedInAndOnboarded() {
     }
 }
 
-export function showWhatsNewIfEligible() {
+export function openWhatsNew() {
+    if (isNativeIOS()) return false;
     if (document.querySelector(".whats-new-overlay")) return true;
-    if (!isSignedInAndOnboarded()) return false;
-
-    const views = getStoredViews();
-    if (views >= MAX_VIEWS) return false;
-
-    const nextView = views + 1;
-    storeViews(nextView);
 
     const overlay = document.createElement("section");
     overlay.className = "whats-new-overlay";
-    overlay.dataset.whatsNewView = String(nextView);
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-labelledby", "whats-new-title");
@@ -86,16 +51,23 @@ export function showWhatsNewIfEligible() {
             </button>
             <header class="whats-new-hero">
                 <span class="eyebrow">LEVEL UP · WHAT'S NEW</span>
-                <h2 id="whats-new-title">A stronger app, built around your training.</h2>
-                <p>Fresh ways to personalize your experience, build better programs and understand the work you put in.</p>
-                <div class="whats-new-view-count" aria-label="View ${nextView} of ${MAX_VIEWS}">
-                    <span class="is-active"></span><span class="${nextView === MAX_VIEWS ? "is-active" : ""}"></span>
-                    <b>${nextView} of ${MAX_VIEWS}</b>
-                </div>
+                <h2 id="whats-new-title">Level Up is now on iPhone.</h2>
+                <p>Keep using the web app, or move to the iOS app and bring your workout, weight, nutrition and other saved data with you.</p>
+                <a class="primary-btn whats-new-store-link" href="${APP_STORE_URL}" target="_blank" rel="noopener noreferrer">Get the iOS app ↗</a>
             </header>
-            <div class="whats-new-grid">${CHANGES.map(renderChangeCard).join("")}</div>
+            <section class="whats-new-transfer" aria-labelledby="whats-new-transfer-title">
+                <span class="eyebrow">MOVE YOUR DATA SAFELY</span>
+                <h3 id="whats-new-transfer-title">How to switch to the iPhone app</h3>
+                <ol class="whats-new-steps">
+                    <li><strong>Save a backup on the web.</strong> Open <b>More → Exports &amp; Backup → Export Backup</b> and keep the downloaded JSON file. Then open <b>More → Account &amp; Cloud</b>. Sign in with Google if you use Level Up locally, and make sure your existing data is still visible.</li>
+                    <li><strong>Upload your current data.</strong> In <b>Account &amp; Cloud</b>, tap <b>Back Up Now</b>. Wait for confirmation and check that the cloud backup shows an updated date. Do this after your last web entry so the iPhone receives the latest copy.</li>
+                    <li><strong>Connect the iPhone app.</strong> In the same web page, tap <b>Generate Transfer Code</b>. Open the iOS app and select <b>Already use Level Up on the web?</b> on its sign-in screen. Enter the one-time code within 10 minutes; the app will connect your account and restore its cloud backup.</li>
+                    <li><strong>Check before moving on.</strong> In the iOS app, confirm your recent workouts, weight entries, nutrition log and plans are present. Keep the web app and exported backup until everything looks right. If anything is missing, return to <b>Account &amp; Cloud</b> on the web before making new iOS entries.</li>
+                </ol>
+                <p class="whats-new-safety">The transfer code connects your account; <b>Back Up Now</b> copies your web data. Generating a code alone does not upload unsynced entries.</p>
+            </section>
             <footer class="whats-new-footer">
-                <p>${nextView === MAX_VIEWS ? "This is the final automatic preview." : "We'll show this once more so you have time to explore."}</p>
+                <p>This guide stays in <b>More → iPhone app &amp; transfer</b> whenever you need it.</p>
                 <button class="primary-btn whats-new-done" type="button" data-whats-new-close>Got it</button>
             </footer>
         </div>`;
@@ -121,6 +93,15 @@ export function showWhatsNewIfEligible() {
     document.addEventListener("keydown", onKeydown);
     requestAnimationFrame(() => overlay.querySelector(".whats-new-close")?.focus());
     return true;
+}
+
+export function showWhatsNewIfEligible() {
+    if (isNativeIOS() || !isOnboarded()) return false;
+    if (document.querySelector(".whats-new-overlay")) return true;
+    if (getStoredViews() >= MAX_VIEWS) return false;
+    const opened = openWhatsNew();
+    if (opened) storeViews(MAX_VIEWS);
+    return opened;
 }
 
 export { VIEW_KEY, MAX_VIEWS };
