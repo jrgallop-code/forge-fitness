@@ -233,3 +233,5 @@ TestFlight build 134: redesign the iOS progress photo log with month-grouped ent
 TestFlight build 135: limit photo comparison to two images, remove the fixed black image area and manual zoom controls, and add independent pinch-to-zoom and drag-to-pan gestures for each photo.
 
 TestFlight build 136: make the weekly check-in and phase carousel show the same smoothed Trend Weight rate; preserve missing-data handling.
+
+TestFlight build 137: hide web Home Screen installation cards and reminders in native iOS while retaining widgets and app icon controls.
