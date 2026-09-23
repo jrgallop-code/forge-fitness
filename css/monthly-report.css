@@ -65,3 +65,5 @@
 .monthly-graph-legend .is-muscle-low{background:color-mix(in srgb,var(--accent) 25%,var(--surface-raised))}
 .monthly-graph-legend .is-muscle-high{background:var(--accent)}
 .monthly-muscle-silhouette{display:none!important}@media(max-width:520px){.monthly-muscle-visual{grid-template-columns:1fr}.monthly-anatomy-flip{min-height:330px}.monthly-anatomy-svg{height:290px}.monthly-report-panel-host{min-height:360px}}
+.monthly-graph-legend .is-workout-day{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.monthly-graph-legend .is-strength-gain{height:4px;background:var(--accent)}
