@@ -237,3 +237,5 @@ TestFlight build 136: make the weekly check-in and phase carousel show the same 
 TestFlight build 137: hide web Home Screen installation cards and reminders in native iOS while retaining widgets and app icon controls.
 
 TestFlight build 138: open a calendar from the Food Log date, mark logged days, and select a date to review or edit its meals.
+
+TestFlight build 139: keep the Food Log calendar open when moving between months, including months with no logged food.
