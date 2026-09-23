@@ -206,7 +206,7 @@ test("native iOS packages adaptive monthly reports and classic PDF export", asyn
     assert.doesNotMatch(report, /Weekly Muscle Volume/);
     assert.doesNotMatch(report, /label: "Weekly Volume"/);
     assert.match(report, /pdfHeader\(logo, report, "Training"\)/);
-    assert.match(report, /pdfHeader\(logo, report, "Strength"\)/);
+    assert.match(report, /index === 0 \? "Strength" : "Strength · Continued"/);
     assert.match(report, /pdfHeader\(logo, report, "Monthly Volume"\)/);
     assert.match(report, /pdfHeader\(logo, report, "Weight"\)/);
     assert.match(report, /pdfHeader\(logo, report, "Nutrition"\)/);
