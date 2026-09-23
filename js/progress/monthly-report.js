@@ -173,8 +173,7 @@ function closeMonthlyScreen(screen, progressPage) {
 function renderReport(report) {
     const tabs = reportTabs(report);
     return '<header class="monthly-report-view-head">' +
-        '<button type="button" class="monthly-report-back" data-monthly-report-back>← Reports</button>' +
-        '<div class="monthly-report-head-actions"><button type="button" data-monthly-share>Share Summary</button><button type="button" data-monthly-pdf>Export PDF</button></div></header>' +
+        '<button type="button" class="monthly-report-back" data-monthly-report-back>← Reports</button></header>' +
         '<nav class="monthly-report-section-nav" aria-label="Monthly report sections">' +
             tabs.map(function (tab, index) {
                 return '<button type="button" data-report-tab="' + tab.id + '" aria-pressed="' + (index === 0 ? "true" : "false") + '">' + escapeHtml(tab.label) + '</button>';
