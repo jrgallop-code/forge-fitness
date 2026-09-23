@@ -436,7 +436,7 @@ function renderEffortCardio(report) {
         '</div>';
     }
     return '<section class="monthly-report-card" id="monthly-section-effort">' +
-        '<div class="monthly-report-card-head"><div><span class="eyebrow">EFFORT & CARDIO</span><h2>How you trained</h2><p>Shown only when enough data is available.</p></div></div>' +
+        '<div class="monthly-report-card-head"><div><span class="eyebrow">TRAINING EFFORT</span><h2>How you trained</h2><p>Shown only when enough data is available.</p></div></div>' +
         rir + cardio + '</section>';
 }
 
@@ -505,7 +505,6 @@ export function buildMonthlyReport(monthKey) {
     const muscles = muscleSummary(sessions, bounds);
     const weight = weightSummary(weights, monthKey, phase);
     const nutrition = nutritionSummary(foodLog, monthKey, phase);
-    const cardio = cardioSummary(allSessions, bounds);
     const rir = rirSummary(sessions);
     const previous = {
         training: trainingSummary(previousSessions, null, monthBounds(previousMonth)),
@@ -530,7 +529,6 @@ export function buildMonthlyReport(monthKey) {
         muscles: muscles,
         weight: weight,
         nutrition: nutrition,
-        cardio: cardio,
         rir: rir,
         recommendations: snapshot && Array.isArray(snapshot.recommendations) ? snapshot.recommendations : generatedRecommendations,
         keepDoing: snapshot && Array.isArray(snapshot.keepDoing) ? snapshot.keepDoing : generatedKeepDoing,
@@ -694,16 +692,6 @@ function nutritionSummary(foodLog, monthKey, phase) {
         averageBalance: state.balance,
         chartPoints: state.visible
     };
-}
-
-function cardioSummary(sessions, bounds) {
-    const end = new Date(bounds.end + "T23:59:59");
-    const entries = collectCardioEntries(sessions, end, 0).filter(function (entry) {
-        return entry.timestamp >= dateMs(bounds.start) && entry.timestamp <= dateMs(bounds.end) + DAY_MS - 1;
-    });
-    if (!entries.length) return { available: false, sessions: 0 };
-    const summary = summarizeCardio(entries);
-    return Object.assign({ available: true, entries: entries }, summary);
 }
 
 function rirSummary(sessions) {
@@ -880,7 +868,7 @@ function buildPdfHtml(report, markSvg) {
             pdfKpi(report.training.workouts, "WORKOUTS") + pdfKpi(report.prCount, "PRS") +
             pdfKpi(report.training.activeDays, "ACTIVE DAYS") + pdfKpi(report.training.workingSets, "WORKING SETS") +
         '</div>' +
-        (report.weight.available ? '<div class="cover-highlight">TREND WEIGHT <b>' + formatSigned(report.weight.change, 1) + ' lb</b></div>' : '') +
+        (report.weight.available ? '<div class="cover-highlight">TREND WEIGHT <b>' + report.weight.end.toFixed(1) + ' lb</b></div>' : '') +
         '<footer>LEVEL UP · TRACK. PROGRESS. IMPROVE.</footer></section>');
 
     pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Executive Summary") +
@@ -914,12 +902,12 @@ function buildPdfHtml(report, markSvg) {
     if (report.weight.available) {
         pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Body Weight") +
             '<h2>Trend weight</h2><p class="lead">Daily weigh-ins are smoothed to reduce normal scale noise.</p>' +
-            '<div class="pdf-chart">' + lineChartSvg(report.weight.points, "trend", report.weight.targetLine, "Weight trend chart") + '</div>' +
+            '<div class="pdf-chart">' + lineChartSvg(report.weight.trendSeries, "weight", report.weight.goalWeight, "Weight trend chart") + '</div>' +
             '<div class="pdf-summary-grid">' +
                 pdfSummary(report.weight.start.toFixed(1) + " lb", "Start") +
                 pdfSummary(report.weight.end.toFixed(1) + " lb", "End") +
                 pdfSummary(formatSigned(report.weight.change, 1) + " lb", "Change") +
-                pdfSummary(Number.isFinite(report.weight.weeklyRate) ? formatSigned(report.weight.weeklyRate, 2) + " /wk" : "—", "Average rate") +
+                pdfSummary(Number.isFinite(report.weight.weeklyRate) ? formatSigned(report.weight.weeklyRate, 2) + " lb/wk" : "Need more data", report.weight.rateLabel || "Weekly Trend") +
             '</div><div class="pdf-insight"><b>Level Up observation</b><p>' + escapeHtml(report.weight.insight) + '</p></div>' +
             pdfFooter(report, pdfPage++) + '</section>');
     }
@@ -927,7 +915,7 @@ function buildPdfHtml(report, markSvg) {
     if (report.nutrition.available) {
         pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Nutrition") +
             '<h2>Calories & expenditure</h2><div class="pdf-chart">' +
-            twoLineChartSvg(report.nutrition.chartPoints, "calories", "expenditure", "Calories and expenditure chart") + '</div>' +
+            twoLineChartSvg(report.nutrition.chartPoints.map(function (point) { return { date: point.date, calories: point.intakeCalories, expenditure: point.expenditureCalories }; }), "calories", "expenditure", "Calories and expenditure chart") + '</div>' +
             '<div class="pdf-summary-grid">' +
                 pdfSummary(Math.round(report.nutrition.averageCalories).toLocaleString(), "Avg calories") +
                 pdfSummary(Math.round(report.nutrition.averageProtein) + " g", "Avg protein") +
@@ -1074,13 +1062,14 @@ function summaryText(report) {
 }
 
 function lineChartSvg(points, valueKey, target, aria) {
-    const values = points.map(function (point) { return finite(point[valueKey]); }).filter(Number.isFinite);
+    const safePoints = Array.isArray(points) ? points : [];
+    const values = safePoints.map(function (point) { return finite(point[valueKey]); }).filter(Number.isFinite);
     if (Number.isFinite(target)) values.push(target);
     if (values.length < 2) return "";
     const width = 640, height = 230, pad = 28;
     const min = Math.min.apply(null, values), max = Math.max.apply(null, values), range = Math.max(.1, max - min);
-    const xy = points.map(function (point, index) {
-        return { x: pad + (width - pad * 2) * (index / Math.max(1, points.length - 1)), y: height - pad - (height - pad * 2) * ((Number(point[valueKey]) - min) / range) };
+    const xy = safePoints.map(function (point, index) {
+        return { x: pad + (width - pad * 2) * (index / Math.max(1, safePoints.length - 1)), y: height - pad - (height - pad * 2) * ((Number(point[valueKey]) - min) / range) };
     });
     const path = xy.map(function (p, index) { return (index ? "L" : "M") + " " + p.x.toFixed(1) + " " + p.y.toFixed(1); }).join(" ");
     let targetLine = "";
@@ -1095,7 +1084,7 @@ function lineChartSvg(points, valueKey, target, aria) {
 }
 
 function twoLineChartSvg(points, firstKey, secondKey, aria) {
-    const usable = points.filter(function (point) { return Number.isFinite(finite(point[firstKey])); });
+    const usable = (Array.isArray(points) ? points : []).filter(function (point) { return Number.isFinite(finite(point[firstKey])); });
     if (usable.length < 2) return "";
     const values = [];
     usable.forEach(function (point) {
