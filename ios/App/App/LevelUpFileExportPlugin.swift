@@ -7,8 +7,34 @@ final class LevelUpFileExportPlugin: CAPPlugin, CAPBridgedPlugin {
     let jsName = "LevelUpFileExport"
     let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "shareJson", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "sharePdf", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "sharePdf", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "shareImage", returnType: CAPPluginReturnPromise)
     ]
+
+
+    @objc func shareImage(_ call: CAPPluginCall) {
+        guard let encoded = call.getString("imageData"), !encoded.isEmpty,
+              let data = Data(base64Encoded: encoded) else {
+            call.reject("The image could not be prepared.")
+            return
+        }
+
+        let requestedName = call.getString("filename") ?? "level-up-summary.png"
+        let safeName = requestedName
+            .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: "\\", with: "-")
+        let filename = safeName.lowercased().hasSuffix(".png") ? safeName : "\(safeName).png"
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+
+        do {
+            try data.write(to: fileURL, options: .atomic)
+        } catch {
+            call.reject("The image could not be prepared.", nil, error)
+            return
+        }
+
+        presentShareSheet(fileURL: fileURL, call: call)
+    }
 
     @objc func sharePdf(_ call: CAPPluginCall) {
         guard let html = call.getString("html"), !html.isEmpty else {
@@ -42,14 +68,23 @@ final class LevelUpFileExportPlugin: CAPPlugin, CAPBridgedPlugin {
             renderer.setValue(NSValue(cgRect: paperRect), forKey: "paperRect")
             renderer.setValue(NSValue(cgRect: printableRect), forKey: "printableRect")
 
+            let pageCount = renderer.numberOfPages
+            guard pageCount > 0 && pageCount <= 40 else {
+                call.reject("The PDF layout could not be prepared.")
+                return
+            }
+            renderer.prepare(forDrawingPages: NSRange(location: 0, length: pageCount))
+
             let data = NSMutableData()
             UIGraphicsBeginPDFContextToData(data, paperRect, [
                 kCGPDFContextCreator as String: "Level Up",
                 kCGPDFContextTitle as String: filename
             ])
-            for pageIndex in 0..<renderer.numberOfPages {
-                UIGraphicsBeginPDFPageWithInfo(paperRect, nil)
-                renderer.drawPage(at: pageIndex, in: UIGraphicsGetPDFContextBounds())
+            for pageIndex in 0..<pageCount {
+                autoreleasepool {
+                    UIGraphicsBeginPDFPageWithInfo(paperRect, nil)
+                    renderer.drawPage(at: pageIndex, in: UIGraphicsGetPDFContextBounds())
+                }
             }
             UIGraphicsEndPDFContext()
 
@@ -60,17 +95,7 @@ final class LevelUpFileExportPlugin: CAPPlugin, CAPBridgedPlugin {
                 return
             }
 
-            let activity = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
-            if let popover = activity.popoverPresentationController {
-                popover.sourceView = presenter.view
-                popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 1, height: 1)
-                popover.permittedArrowDirections = []
-            }
-            activity.completionWithItemsHandler = { _, completed, _, _ in
-                try? FileManager.default.removeItem(at: fileURL)
-                call.resolve(["completed": completed, "cancelled": !completed])
-            }
-            presenter.present(activity, animated: true)
+            self.presentShareSheet(fileURL: fileURL, call: call)
         }
     }
 
@@ -114,4 +139,33 @@ final class LevelUpFileExportPlugin: CAPPlugin, CAPBridgedPlugin {
             presenter.present(activity, animated: true)
         }
     }
+
+    private func presentShareSheet(fileURL: URL, call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let presenter = self.bridge?.viewController else {
+                try? FileManager.default.removeItem(at: fileURL)
+                call.reject("The iOS share menu could not be opened.")
+                return
+            }
+
+            if presenter.presentedViewController != nil {
+                try? FileManager.default.removeItem(at: fileURL)
+                call.reject("Close the current sheet before sharing.")
+                return
+            }
+
+            let activity = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+            if let popover = activity.popoverPresentationController {
+                popover.sourceView = presenter.view
+                popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 1, height: 1)
+                popover.permittedArrowDirections = []
+            }
+            activity.completionWithItemsHandler = { _, completed, _, _ in
+                try? FileManager.default.removeItem(at: fileURL)
+                call.resolve(["completed": completed, "cancelled": !completed])
+            }
+            presenter.present(activity, animated: true)
+        }
+    }
+
 }
