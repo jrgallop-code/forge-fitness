@@ -11,6 +11,7 @@ test("weekly check-in status separates the informational and actionable mileston
     assert.match(status, /FIRST_CALORIE_REVIEW_DAY = 14/);
     assert.match(status, /state = "informational"/);
     assert.match(status, /Week 1 check-in/);
+    assert.match(status, /earlyRate = metrics\?\.actualRateLbPerWeek/);
     assert.match(status, /This check-in is informational/);
     assert.match(status, /first calorie review Day 14/);
     assert.doesNotMatch(status, /reviewReady: state === "informational"/);
