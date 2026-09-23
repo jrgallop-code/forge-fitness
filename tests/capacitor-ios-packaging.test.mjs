@@ -146,3 +146,33 @@ test("native iOS packages machine profiles without location lookup", async () =>
     assert.match(iosFixStyles, /position: sticky/);
     assert.match(session, /getSavedSessions\(\)[\s\S]*sort\(compareSessionsNewest\)[\s\S]*equipmentProfileId/);
 });
+
+
+test("native iOS packages adaptive monthly reports and classic PDF export", async () => {
+    const report = await readFile(new URL("../js/progress/monthly-report.js", import.meta.url), "utf8");
+    const styles = await readFile(new URL("../css/monthly-report.css", import.meta.url), "utf8");
+    const router = await readFile(new URL("../js/core/router.js", import.meta.url), "utf8");
+    const native = await readFile(new URL("../js/core/native-capabilities.js", import.meta.url), "utf8");
+    const exporter = await readFile(new URL("../ios/App/App/LevelUpFileExportPlugin.swift", import.meta.url), "utf8");
+
+    assert.match(report, /level_up_monthly_report_snapshots_v1/);
+    assert.match(report, /assets\/level-up-logo\.svg/);
+    assert.match(report, /weight\.available/);
+    assert.match(report, /nutrition\.available/);
+    assert.match(report, /rir\.available/);
+    assert.match(report, /recommendations/);
+    assert.match(report, /Keep doing/);
+    assert.match(report, /#e51b26/);
+    assert.match(report, /background:#fff/);
+    assert.match(report, /shareNativePdfFile/);
+    assert.match(report, /Previous Reports/);
+    assert.match(styles, /monthly-report-entry-card/);
+    assert.match(styles, /monthly-report-screen/);
+    assert.match(router, /initializeMonthlyReports/);
+    assert.match(router, /initializeMonthlyReportDashboardPrompt/);
+    assert.match(native, /shareNativePdfFile/);
+    assert.match(exporter, /CAPPluginMethod\(name: "sharePdf"/);
+    assert.match(exporter, /UIMarkupTextPrintFormatter/);
+    assert.match(exporter, /UIPrintPageRenderer/);
+    assert.match(exporter, /UIGraphicsBeginPDFContextToData/);
+});
