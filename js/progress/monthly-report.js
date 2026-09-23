@@ -18,6 +18,8 @@ const PHASES_KEY = "level_up_nutrition_phases";
 const SNAPSHOT_KEY = "level_up_monthly_report_snapshots_v1";
 const SEEN_KEY = "level_up_monthly_report_seen_v1";
 const PENDING_KEY = "level_up_monthly_report_pending_v1";
+const DISMISSED_KEY = "level_up_monthly_report_dismissed_v1";
+const OPEN_HUB_KEY = "level_up_monthly_report_open_hub_v1";
 const DAY_MS = 86400000;
 const REPORT_VERSION = 1;
 const STYLE_ID = "level-up-monthly-report-style";
@@ -32,9 +34,16 @@ export function initializeMonthlyReports(root = document) {
 
     const monthKey = preferredMonthKey();
     const report = buildMonthlyReport(monthKey);
-    tabs.insertAdjacentHTML("beforebegin", renderEntryCard(report));
-    const opener = page.querySelector("[data-monthly-report-open]");
-    if (opener) opener.addEventListener("click", function () { openMonthlyReportsHub(page, monthKey); });
+    if (!isReportDismissed(monthKey)) {
+        tabs.insertAdjacentHTML("beforebegin", renderEntryCard(report));
+        bindReportPromptActions(page, monthKey);
+    }
+
+    if (localStorage.getItem(OPEN_HUB_KEY) === "1") {
+        localStorage.removeItem(OPEN_HUB_KEY);
+        requestAnimationFrame(function () { openMonthlyReportsHub(page, monthKey); });
+        return;
+    }
 
     const pending = localStorage.getItem(PENDING_KEY);
     if (/^\d{4}-\d{2}$/.test(String(pending || ""))) {
@@ -52,7 +61,7 @@ export function initializeMonthlyReportDashboardPrompt(root = document) {
     const now = new Date();
     if (now.getDate() > 7) return;
     const previous = shiftMonth(monthKeyForDate(now), -1);
-    if (!monthHasMeaningfulData(previous) || seenMonths().has(previous)) return;
+    if (!monthHasMeaningfulData(previous) || seenMonths().has(previous) || isReportDismissed(previous)) return;
 
     const host = root.querySelector ? (root.querySelector("#content") || root) : root;
     if (!host || host.querySelector("[data-monthly-report-dashboard]")) return;
@@ -62,18 +71,24 @@ export function initializeMonthlyReportDashboardPrompt(root = document) {
     card.className = "monthly-report-dashboard-card";
     card.dataset.monthlyReportDashboard = "";
     card.innerHTML =
+        '<button class="monthly-report-prompt-close" type="button" data-monthly-prompt-close aria-label="Dismiss ' + escapeHtml(report.label) + ' report prompt">×</button>' +
         '<div><span class="eyebrow">MONTHLY REPORT</span>' +
         '<strong>Your ' + escapeHtml(report.label) + ' report is ready</strong>' +
         '<p>See what improved and what to focus on next.</p></div>' +
-        '<button class="primary-btn" type="button">View Report</button>';
+        '<button class="primary-btn" type="button" data-monthly-dashboard-view>View Report</button>';
     const first = host.firstElementChild;
     if (first) first.insertAdjacentElement("afterend", card);
     else host.prepend(card);
 
-    const button = card.querySelector("button");
+    const button = card.querySelector("[data-monthly-dashboard-view]");
     if (button) button.addEventListener("click", function () {
         localStorage.setItem(PENDING_KEY, previous);
         document.dispatchEvent(new CustomEvent("levelup:navigate", { detail: { page: "progress" } }));
+    });
+    const close = card.querySelector("[data-monthly-prompt-close]");
+    if (close) close.addEventListener("click", function () {
+        dismissReportPrompt(previous);
+        showDismissedMessage(card);
     });
 }
 
@@ -92,7 +107,8 @@ function renderEntryCard(report) {
     if (report.prCount) stats.push(report.prCount + " PRs");
     if (report.weight.available) stats.push(formatSigned(report.weight.change, 1) + " lb");
     if (!stats.length && report.nutrition.available) stats.push(report.nutrition.loggedDays + " nutrition days");
-    return '<section class="monthly-report-entry-card">' +
+    return '<section class="monthly-report-entry-card" data-monthly-report-prompt="' + report.monthKey + '">' +
+        '<button class="monthly-report-prompt-close" type="button" data-monthly-prompt-close aria-label="Dismiss ' + escapeHtml(report.label) + ' report prompt">×</button>' +
         '<div class="monthly-report-entry-art" aria-hidden="true"><img src="assets/level-up-mark-transparent.svg" alt=""></div>' +
         '<div class="monthly-report-entry-copy">' +
             '<div class="monthly-report-entry-kicker"><span>MONTHLY REPORT</span><b>' + (report.isCurrent ? "LIVE" : "READY") + '</b></div>' +
@@ -102,6 +118,39 @@ function renderEntryCard(report) {
         '</div>' +
         '<button type="button" class="monthly-report-entry-action" data-monthly-report-open>View Report</button>' +
     '</section>';
+}
+
+function bindReportPromptActions(root, monthKey) {
+    const opener = root.querySelector("[data-monthly-report-open]");
+    if (opener) opener.addEventListener("click", function () { openMonthlyReportsHub(root, monthKey); });
+    const close = root.querySelector("[data-monthly-prompt-close]");
+    if (close) close.addEventListener("click", function () {
+        const card = close.closest(".monthly-report-entry-card");
+        dismissReportPrompt(monthKey);
+        if (card) showDismissedMessage(card);
+    });
+}
+
+function dismissedMonths() {
+    return new Set(readArray(DISMISSED_KEY));
+}
+
+function isReportDismissed(monthKey) {
+    return dismissedMonths().has(monthKey);
+}
+
+function dismissReportPrompt(monthKey) {
+    const months = dismissedMonths();
+    months.add(monthKey);
+    localStorage.setItem(DISMISSED_KEY, JSON.stringify(Array.from(months).slice(-36)));
+}
+
+function showDismissedMessage(card) {
+    if (!card) return;
+    card.innerHTML = '<div class="monthly-report-dismissed-note"><strong>Report prompt hidden</strong><span>You can reopen Monthly Reports anytime in More → Health & records.</span></div>';
+    window.setTimeout(function () {
+        if (card && card.isConnected) card.remove();
+    }, 3200);
 }
 
 function openMonthlyReportsHub(progressPage, preferred) {
