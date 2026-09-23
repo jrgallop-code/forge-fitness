@@ -306,6 +306,7 @@ function workoutShareLanding(rawCode) {
     const code = String(rawCode || "").toUpperCase();
     const deepLink = "leveluphypertrophy://workout/import?id=" + encodeURIComponent(code);
     const appStore = "https://apps.apple.com/ca/app/level-up-workout-nutrition/id6810024008";
+    const webApp = "https://app.leveluphypertrophy.com/?workoutShare=" + encodeURIComponent(code);
     const html =
         '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
         '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' +
@@ -313,7 +314,8 @@ function workoutShareLanding(rawCode) {
         '<style>:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif}*{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:max(24px,env(safe-area-inset-top)) 18px max(24px,env(safe-area-inset-bottom));background:radial-gradient(circle at 50% -10%,rgba(239,24,33,.15),transparent 30rem),#09090b;color:#f7f7f8}main{width:min(100%,430px);padding:28px 22px;border:1px solid rgba(255,255,255,.1);border-radius:24px;background:#151519;box-shadow:0 24px 70px rgba(0,0,0,.42);text-align:center}.mark{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 18px;border-radius:17px;background:#df141e;color:#fff;font-size:29px;font-weight:950}h1{margin:0;font-size:28px}p{margin:10px auto 22px;color:#b8b8c0;font-size:15px;line-height:1.5}a{display:grid;place-items:center;width:100%;min-height:50px;border-radius:13px;font-weight:800;text-decoration:none}.open{background:#df141e;color:#fff}.store{margin-top:10px;border:1px solid rgba(255,255,255,.12);background:#242429;color:#fff}small{display:block;margin-top:18px;color:#85858e;font-size:12px;line-height:1.45}</style></head>' +
         '<body><main><div class="mark" aria-hidden="true">L</div><h1>Shared Level Up Workout</h1>' +
         '<p>Open this workout in Level Up, review it, then add your own copy to My Workouts.</p>' +
-        '<a class="open" href="' + deepLink + '">Open in Level Up</a>' +
+        '<a class="open" href="' + deepLink + '">Open in Level Up App</a>' +
+        '<a class="store" href="' + webApp + '">Open Level Up Web App</a>' +
         '<a class="store" href="' + appStore + '">Get Level Up on the App Store</a>' +
         '<small>Share code: ' + code + '</small></main></body></html>';
 
