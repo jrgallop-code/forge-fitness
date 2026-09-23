@@ -41,9 +41,7 @@ function clonePortable(value, key = "", depth = 0) {
 
     const output = {};
     Object.entries(value).forEach(([childKey, childValue]) => {
-        if (DANGEROUS_KEYS.has(childKey)) return;
-        if (depth === 0 && PRIVATE_KEYS.has(childKey)) return;
-        if (PRIVATE_KEYS.has(childKey) && /history|previous|last|record|session|completed|logged/i.test(childKey)) return;
+        if (DANGEROUS_KEYS.has(childKey) || PRIVATE_KEYS.has(childKey)) return;
         output[childKey] = clonePortable(childValue, childKey, depth + 1);
     });
     return output;
@@ -99,7 +97,7 @@ function decodeBase64Url(value) {
 }
 
 function normalizePackage(input) {
-    if (!input || typeof input !== "object" || Number(input.version) !== SHARE_VERSION) return null;
+    if (!input || typeof input !== "object" || input.kind !== "levelup-workout" || Number(input.version) !== SHARE_VERSION) return null;
     const plan = clonePortable(input.plan);
     if (!plan || typeof plan !== "object") return null;
 
