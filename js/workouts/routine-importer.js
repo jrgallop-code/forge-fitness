@@ -1,7 +1,7 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { parseRoutineText } from "./routine-import-parser.js?v=exercise-match-1";
 import { formatSetCredits, getWeeklyPlanVolume } from "./plan-muscle-volume.js?v=plan-volume-shared-1";
-import { decodeSharedWorkoutFromText, getSharedWorkoutStats, importSharedWorkoutPackage } from "./workout-sharing.js?v=ios-share-workout-1";
+import { extractSharedWorkoutCode, getSharedWorkoutStats, importSharedWorkoutPackage, resolveSharedWorkoutFromText } from "./workout-sharing.js?v=ios-share-workout-2";
 
 const PLAN_KEY = "forge_workout_plans";
 const EXAMPLE = `Push Day
@@ -134,15 +134,25 @@ async function pasteClipboard(page) {
   }
 }
 
-function buildReview(page) {
+async function buildReview(page) {
   const text = page.querySelector("#routine-import-text")?.value.trim() || "";
   const message = page.querySelector("[data-routine-message]");
   if (!text) { if (message) message.textContent = "Paste a routine first."; return; }
-  const sharedPackage = decodeSharedWorkoutFromText(text);
-  if (sharedPackage) {
-    importState = { rawText: text, sharedPackage };
-    renderSharedWorkoutReview(page);
-    return;
+  const sharedCode = extractSharedWorkoutCode(text);
+  try {
+    const sharedPackage = await resolveSharedWorkoutFromText(text);
+    if (sharedPackage) {
+      importState = { rawText: text, sharedPackage };
+      renderSharedWorkoutReview(page);
+      return;
+    }
+  }
+  catch (error) {
+    console.error("Shared workout lookup failed:", error);
+    if (sharedCode) {
+      if (message) message.textContent = "That shared Level Up workout could not be loaded. Check your connection and try again.";
+      return;
+    }
   }
   const parsed = parseRoutineText(text);
   if (!parsed.days.length) { if (message) message.textContent = "No exercises were recognized. Try lines such as Bench Press - 3x8-12."; return; }
