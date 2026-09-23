@@ -1139,22 +1139,25 @@ function pdfWeightChartSvg(weight) {
     const values = entries.map(function (point) { return Number(point.weight); })
         .concat(trend.map(function (point) { return Number(point.weight); }))
         .filter(Number.isFinite);
+    if (Number.isFinite(weight.goalWeight)) values.push(weight.goalWeight);
     if (values.length < 2) return "";
 
-    const width = 640, height = 230;
-    const pad = { left: 42, right: 16, top: 18, bottom: 30 };
+    const width = 640, height = 250;
+    const pad = { left: 64, right: 28, top: 20, bottom: 48 };
     const minRaw = Math.min.apply(null, values), maxRaw = Math.max.apply(null, values);
     const span = Math.max(.5, maxRaw - minRaw);
-    let minimum = minRaw - Math.max(.6, span * .15);
-    let maximum = maxRaw + Math.max(.6, span * .15);
-    const showGoal = Number.isFinite(weight.goalWeight) && weight.goalWeight >= minimum && weight.goalWeight <= maximum;
-    if (showGoal) {
+    let minimum = minRaw - Math.max(.6, span * .12);
+    let maximum = maxRaw + Math.max(.6, span * .12);
+    if (Number.isFinite(weight.goalWeight)) {
         minimum = Math.min(minimum, weight.goalWeight - .5);
         maximum = Math.max(maximum, weight.goalWeight + .5);
     }
+
     const startMs = dateMs(weight.startDate), endMs = dateMs(weight.endDate), elapsed = Math.max(1, endMs - startMs);
-    const x = function (date) { return pad.left + ((dateMs(date) - startMs) / elapsed) * (width - pad.left - pad.right); };
-    const y = function (value) { return pad.top + ((maximum - value) / Math.max(.1, maximum - minimum)) * (height - pad.top - pad.bottom); };
+    const plotWidth = width - pad.left - pad.right;
+    const plotHeight = height - pad.top - pad.bottom;
+    const x = function (date) { return pad.left + ((dateMs(date) - startMs) / elapsed) * plotWidth; };
+    const y = function (value) { return pad.top + ((maximum - value) / Math.max(.1, maximum - minimum)) * plotHeight; };
     const path = function (points) {
         return points.map(function (point, index) {
             return (index ? "L" : "M") + " " + x(point.date).toFixed(1) + " " + y(Number(point.weight)).toFixed(1);
@@ -1162,19 +1165,44 @@ function pdfWeightChartSvg(weight) {
     };
 
     let grid = "";
-    for (let index = 0; index <= 3; index += 1) {
-        const yy = pad.top + (height - pad.top - pad.bottom) * index / 3;
-        grid += '<line x1="' + pad.left + '" y1="' + yy + '" x2="' + (width - pad.right) + '" y2="' + yy + '"/>';
+    let yLabels = "";
+    for (let index = 0; index <= 4; index += 1) {
+        const fraction = index / 4;
+        const yy = pad.top + plotHeight * fraction;
+        const value = maximum - (maximum - minimum) * fraction;
+        grid += '<line x1="' + pad.left + '" y1="' + yy.toFixed(1) + '" x2="' + (width - pad.right) + '" y2="' + yy.toFixed(1) + '"/>';
+        yLabels += '<text class="axis-label" x="' + (pad.left - 8) + '" y="' + (yy + 3).toFixed(1) + '" text-anchor="end">' + value.toFixed(1) + '</text>';
     }
-    const goal = showGoal
-        ? '<line class="target" x1="' + pad.left + '" y1="' + y(weight.goalWeight).toFixed(1) + '" x2="' + (width - pad.right) + '" y2="' + y(weight.goalWeight).toFixed(1) + '"/>'
+
+    const midMs = startMs + elapsed / 2;
+    const midDate = localDate(new Date(midMs));
+    const xLabels =
+        '<text class="axis-label" x="' + pad.left + '" y="' + (height - 24) + '" text-anchor="start">' + escapeHtml(formatPdfAxisDate(weight.startDate)) + '</text>' +
+        '<text class="axis-label" x="' + (pad.left + plotWidth / 2).toFixed(1) + '" y="' + (height - 24) + '" text-anchor="middle">' + escapeHtml(formatPdfAxisDate(midDate)) + '</text>' +
+        '<text class="axis-label" x="' + (width - pad.right) + '" y="' + (height - 24) + '" text-anchor="end">' + escapeHtml(formatPdfAxisDate(weight.endDate)) + '</text>';
+
+    const goal = Number.isFinite(weight.goalWeight)
+        ? '<line class="target" x1="' + pad.left + '" y1="' + y(weight.goalWeight).toFixed(1) + '" x2="' + (width - pad.right) + '" y2="' + y(weight.goalWeight).toFixed(1) + '"/>' +
+          '<text class="goal-label" x="' + (width - pad.right - 4) + '" y="' + Math.max(pad.top + 10, y(weight.goalWeight) - 5).toFixed(1) + '" text-anchor="end">Goal ' + weight.goalWeight.toFixed(1) + ' lb</text>'
         : "";
-    return '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Monthly weight trend">' +
+
+    return '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Monthly weight trend with goal weight">' +
         '<g class="grid">' + grid + '</g>' +
+        yLabels +
         (entries.length > 1 ? '<path d="' + path(entries) + '" class="daily" fill="none"/>' : '') +
         entries.map(function (point) { return '<circle class="daily-point" cx="' + x(point.date) + '" cy="' + y(Number(point.weight)) + '" r="2.5"/>'; }).join("") +
         (trend.length > 1 ? '<path d="' + path(trend) + '" class="trend-weight-line" fill="none"/>' : '') +
-        goal + '</svg>';
+        goal +
+        xLabels +
+        '<text class="axis-title" x="' + (pad.left + plotWidth / 2).toFixed(1) + '" y="' + (height - 4) + '" text-anchor="middle">Date</text>' +
+        '<text class="axis-title" x="14" y="' + (pad.top + plotHeight / 2).toFixed(1) + '" text-anchor="middle" transform="rotate(-90 14 ' + (pad.top + plotHeight / 2).toFixed(1) + ')">Weight (lb)</text>' +
+        '</svg>';
+}
+
+function formatPdfAxisDate(value) {
+    const date = new Date(String(value || "") + "T12:00:00");
+    if (!Number.isFinite(date.getTime())) return String(value || "");
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function pdfEnergyChartSvg(points, startDate, endDate) {
