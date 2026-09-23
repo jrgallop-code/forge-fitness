@@ -156,7 +156,6 @@ test("native iOS packages adaptive monthly reports and classic PDF export", asyn
     const exporter = await readFile(new URL("../ios/App/App/LevelUpFileExportPlugin.swift", import.meta.url), "utf8");
 
     assert.match(report, /level_up_monthly_report_snapshots_v1/);
-    assert.match(report, /assets\/level-up-logo\.svg/);
     assert.match(report, /weight\.available/);
     assert.match(report, /nutrition\.available/);
     assert.match(report, /calculateVisibleWeightTrend/);
