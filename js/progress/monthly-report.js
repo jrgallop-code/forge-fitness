@@ -4,10 +4,13 @@ import { calculatePrCounts } from "../workouts/workout-pr-badges.js?v=monthly-re
 import { readFoodLog, summarizeEntries } from "../nutrition/food-log-data.js?v=food-search-freeze-fix-1";
 import { getNutritionMacroPreference, getNutritionPlan, getNutritionProfile } from "../nutrition/nutrition-storage.js?v=food-log-macro-bars-1";
 import { calculateMacroTargets, poundsToKg } from "../nutrition/tdee-calculator.js?v=food-log-macro-bars-1";
-import { getCalculatedMaintenanceHistory } from "../nutrition/calculated-maintenance.js?v=energy-summary-1";
 import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-feature-choice-1";
-import { collectCardioEntries, summarizeCardio } from "./cardio-analytics.js?v=monthly-report-1";
-import { shareNativePdfFile } from "../core/native-capabilities.js?v=monthly-pdf-report-1";
+import { calculateTrendWeightSeries, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
+import { getEnergyBalanceState } from "../nutrition/energy-balance-state.js?v=energy-balance-range-1";
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
+import { drawSharedWeightTrendChart } from "./weight-trend-chart.js?v=monthly-report-shared-1";
+import { drawSharedCalorieExpenditureChart } from "../nutrition/tdee-calorie-expenditure-carousel.js?v=monthly-report-shared-1";
+import { shareNativePdfFile, shareNativeImageFile } from "../core/native-capabilities.js?v=monthly-pdf-report-2";
 
 const SESSION_KEY = "forge_workout_sessions";
 const WEIGHT_KEY = "forge_weight_entries";
@@ -90,7 +93,7 @@ function renderEntryCard(report) {
     if (report.weight.available) stats.push(formatSigned(report.weight.change, 1) + " lb");
     if (!stats.length && report.nutrition.available) stats.push(report.nutrition.loggedDays + " nutrition days");
     return '<section class="monthly-report-entry-card">' +
-        '<div class="monthly-report-entry-art" aria-hidden="true"><img src="assets/level-up-logo.svg" alt=""></div>' +
+        '<div class="monthly-report-entry-art" aria-hidden="true"><img src="assets/level-up-mark-transparent.svg" alt=""></div>' +
         '<div class="monthly-report-entry-copy">' +
             '<div class="monthly-report-entry-kicker"><span>MONTHLY REPORT</span><b>' + (report.isCurrent ? "LIVE" : "READY") + '</b></div>' +
             '<h3>' + escapeHtml(report.label) + '</h3>' +
@@ -168,41 +171,118 @@ function closeMonthlyScreen(screen, progressPage) {
 }
 
 function renderReport(report) {
-    const sections = [];
-    if (report.training.workouts) sections.push(renderConsistency(report));
-    if (report.strength.available) sections.push(renderStrength(report));
-    if (report.muscles.available) sections.push(renderMuscles(report));
-    if (report.weight.available) sections.push(renderWeight(report));
-    if (report.nutrition.available) sections.push(renderNutrition(report));
-    if (report.rir.available || report.cardio.available) sections.push(renderEffortCardio(report));
-    sections.push(renderImprovement(report));
-    sections.push(renderFocus(report));
-
-    let overviewExtras = "";
-    if (report.nutrition.available) overviewExtras += '<div><span>Avg calories</span><strong>' + Math.round(report.nutrition.averageCalories).toLocaleString() + '</strong></div>';
-    if (report.weight.available) overviewExtras += '<div><span>Weight rate</span><strong>' + (Number.isFinite(report.weight.weeklyRate) ? formatSigned(report.weight.weeklyRate, 2) + " lb/wk" : "—") + '</strong></div>';
-
+    const tabs = reportTabs(report);
     return '<header class="monthly-report-view-head">' +
         '<button type="button" class="monthly-report-back" data-monthly-report-back>← Reports</button>' +
         '<div class="monthly-report-head-actions"><button type="button" data-monthly-share>Share Summary</button><button type="button" data-monthly-pdf>Export PDF</button></div></header>' +
-        '<section class="monthly-report-hero">' +
-            '<img src="assets/level-up-logo.svg" alt="Level Up" class="monthly-report-logo">' +
-            '<span class="eyebrow">' + (report.isCurrent ? "MONTH IN PROGRESS" : "MONTHLY PERFORMANCE REPORT") + '</span>' +
-            '<h1>' + escapeHtml(report.label) + '</h1><p>' + escapeHtml(report.overviewLine) + '</p>' +
-            '<div class="monthly-report-hero-metrics">' + heroMetrics(report) + '</div>' +
-            (report.weight.available ? '<div class="monthly-report-hero-highlight"><span>Trend weight</span><strong>' + formatSigned(report.weight.change, 1) + ' lb</strong></div>' : '') +
-        '</section>' +
-        '<nav class="monthly-report-section-nav" aria-label="Report sections">' +
-            '<button type="button" data-report-jump="monthly-section-overview">Overview</button>' +
-            (report.training.workouts ? '<button type="button" data-report-jump="monthly-section-consistency">Training</button>' : '') +
-            (report.strength.available ? '<button type="button" data-report-jump="monthly-section-strength">Strength</button>' : '') +
-            (report.muscles.available ? '<button type="button" data-report-jump="monthly-section-muscles">Muscles</button>' : '') +
-            '<button type="button" data-report-jump="monthly-section-focus">Focus</button>' +
+        '<nav class="monthly-report-section-nav" aria-label="Monthly report sections">' +
+            tabs.map(function (tab, index) {
+                return '<button type="button" data-report-tab="' + tab.id + '" aria-pressed="' + (index === 0 ? "true" : "false") + '">' + escapeHtml(tab.label) + '</button>';
+            }).join("") +
         '</nav>' +
-        '<section class="monthly-report-overview" id="monthly-section-overview">' + overviewMetrics(report, overviewExtras) + '</section>' +
-        sections.join("") +
+        '<div class="monthly-report-panel-host" data-monthly-report-panel></div>' +
         '<footer class="monthly-report-footer-actions"><button class="secondary-btn" type="button" data-monthly-share>Share Summary</button>' +
         '<button class="primary-btn" type="button" data-monthly-pdf>Export Full PDF</button><p data-monthly-export-status aria-live="polite"></p></footer>';
+}
+
+function reportTabs(report) {
+    const tabs = [{ id: "overview", label: "Overview" }];
+    if (report.training.workouts) tabs.push({ id: "training", label: "Training" });
+    if (report.strength.available) tabs.push({ id: "strength", label: "Strength" });
+    if (report.muscles.available) tabs.push({ id: "muscles", label: "Muscles" });
+    if (report.weight.available) tabs.push({ id: "weight", label: "Weight" });
+    if (report.nutrition.available) tabs.push({ id: "nutrition", label: "Nutrition" });
+    tabs.push({ id: "focus", label: "Focus" });
+    return tabs;
+}
+
+function renderOverviewPanel(report) {
+    let extras = "";
+    if (report.nutrition.available) extras += '<div><span>Avg calories</span><strong>' + Math.round(report.nutrition.averageCalories).toLocaleString() + '</strong></div>';
+    if (report.weight.available) extras += '<div><span>Weekly trend</span><strong>' + (Number.isFinite(report.weight.weeklyRate) ? formatSigned(report.weight.weeklyRate, 2) + " lb/wk" : "—") + '</strong></div>';
+
+    return '<section class="monthly-report-hero monthly-report-single-card">' +
+        '<img src="assets/level-up-mark-transparent.svg" alt="Level Up" class="monthly-report-logo">' +
+        '<span class="eyebrow">' + (report.isCurrent ? "MONTH IN PROGRESS" : "MONTHLY PERFORMANCE REPORT") + '</span>' +
+        '<h1>' + escapeHtml(report.label) + '</h1><p>' + escapeHtml(report.overviewLine) + '</p>' +
+        '<div class="monthly-report-hero-metrics">' + heroMetrics(report) + '</div>' +
+        (report.weight.available ? '<div class="monthly-report-hero-highlight"><span>Trend weight</span><strong>' + report.weight.end.toFixed(1) + ' lb</strong></div>' : '') +
+        '<div class="monthly-report-overview">' + overviewMetrics(report, extras) + '</div>' +
+    '</section>';
+}
+
+function renderFocusPanel(report) {
+    return '<section class="monthly-report-card monthly-report-focus monthly-report-single-card">' +
+        '<div class="monthly-report-card-head"><div><span class="eyebrow">MONTHLY TAKEAWAYS</span><h2>What improved & what comes next</h2><p>Wins first, then a maximum of three data-backed priorities.</p></div></div>' +
+        '<div class="monthly-improvement-grid">' +
+            (report.improvements.length ? report.improvements : [{ title: "Consistency", value: report.training.workouts + " workouts", note: "Your monthly baseline" }]).slice(0,3).map(function (item) {
+                return '<article><span>' + escapeHtml(item.title) + '</span><strong>' + escapeHtml(item.value) + '</strong><p>' + escapeHtml(item.note) + '</p></article>';
+            }).join("") +
+        '</div>' +
+        '<div class="monthly-focus-list">' + report.recommendations.map(function (item, index) {
+            return '<article><b>0' + (index + 1) + '</b><div><strong>' + escapeHtml(item.title) + '</strong><p>' + escapeHtml(item.reason) + '</p><span>Target: ' + escapeHtml(item.target) + '</span></div></article>';
+        }).join("") + '</div>' +
+        '<div class="monthly-keep-doing"><h3>Keep doing</h3>' + report.keepDoing.map(function (item) { return '<p>✓ ' + escapeHtml(item) + '</p>'; }).join("") + '</div>' +
+    '</section>';
+}
+
+function renderReportPanel(report, key) {
+    if (key === "training") return renderConsistency(report);
+    if (key === "strength") return renderStrength(report);
+    if (key === "muscles") return renderMuscles(report);
+    if (key === "weight") return renderWeight(report);
+    if (key === "nutrition") return renderNutrition(report);
+    if (key === "focus") return renderFocusPanel(report);
+    return renderOverviewPanel(report);
+}
+
+function showReportPanel(screen, report, key) {
+    const host = screen.querySelector("[data-monthly-report-panel]");
+    if (!host) return;
+    host.innerHTML = renderReportPanel(report, key);
+    screen.querySelectorAll("[data-report-tab]").forEach(function (button) {
+        button.setAttribute("aria-pressed", String(button.dataset.reportTab === key));
+    });
+    bindPanelInteractions(host, report, key);
+}
+
+function bindPanelInteractions(host, report, key) {
+    if (key === "weight" && report.weight.available) {
+        requestAnimationFrame(function () {
+            const canvas = host.querySelector("[data-monthly-weight-chart]");
+            if (!canvas) return;
+            drawSharedWeightTrendChart(canvas, {
+                entries: report.weight.entries,
+                trendSeries: report.weight.trendSeries,
+                goalWeight: report.weight.goalWeight,
+                startDate: report.weight.startDate,
+                endDate: report.weight.endDate,
+                label: report.label
+            });
+        });
+    }
+
+    if (key === "nutrition" && report.nutrition.available) {
+        requestAnimationFrame(function () {
+            const canvas = host.querySelector("[data-monthly-energy-chart]");
+            if (!canvas) return;
+            drawSharedCalorieExpenditureChart(canvas, {
+                points: report.nutrition.chartPoints,
+                startDate: report.nutrition.startDate,
+                endDate: report.nutrition.endDate
+            });
+        });
+    }
+
+    if (key === "muscles" && report.muscles.available) {
+        const flip = host.querySelector("[data-monthly-anatomy-flip]");
+        if (flip) flip.addEventListener("click", function () {
+            const nextSide = flip.dataset.side === "back" ? "front" : "back";
+            flip.dataset.side = nextSide;
+            flip.innerHTML = monthlyAnatomyMarkup(report, nextSide);
+            flip.setAttribute("aria-label", "Show " + (nextSide === "front" ? "back" : "front") + " muscle view");
+        });
+    }
 }
 
 function metricBlock(value, label) {
@@ -228,7 +308,7 @@ function overviewMetrics(report, extras) {
     let html = "";
     if (report.training.workouts) {
         html += '<div><span>Training time</span><strong>' + formatDuration(report.training.durationMinutes) + '</strong></div>';
-        html += '<div><span>Avg / week</span><strong>' + report.training.workoutsPerWeek.toFixed(1) + '</strong></div>';
+        html += '<div><span>Average training per week</span><strong>' + report.training.workoutsPerWeek.toFixed(1) + ' workouts/week</strong></div>';
     }
     html += extras || "";
     if (!html) html = '<div><span>Report status</span><strong>Building history</strong></div>';
@@ -276,48 +356,67 @@ function renderStrength(report) {
 
 function renderMuscles(report) {
     const top = report.muscles.rows.slice(0, 8);
-    return '<section class="monthly-report-card" id="monthly-section-muscles">' +
+    return '<section class="monthly-report-card monthly-report-single-card" id="monthly-section-muscles">' +
         '<div class="monthly-report-card-head"><div><span class="eyebrow">MUSCLE DEVELOPMENT</span><h2>What you trained</h2>' +
-        '<p>Effective sets use full credit for primary muscles and partial credit for secondary muscles.</p></div></div>' +
-        '<div class="monthly-muscle-visual"><div class="monthly-muscle-silhouette" aria-hidden="true">' + muscleSilhouette(top) + '</div>' +
-        '<div class="monthly-muscle-bars">' + barRows(top.map(function (row) { return { label: row.name, value: row.sets, suffix: "" }; }), 8) + '</div></div>' +
+        '<p>Tap the anatomy to flip between front and back. Primary sets receive full credit and secondary muscles partial credit.</p></div></div>' +
+        '<div class="monthly-muscle-visual">' +
+            '<button class="monthly-anatomy-flip" type="button" data-monthly-anatomy-flip data-side="front" aria-label="Show back muscle view">' + monthlyAnatomyMarkup(report, "front") + '</button>' +
+            '<div class="monthly-muscle-bars">' + barRows(top.map(function (row) { return { label: row.name, value: row.sets, suffix: "" }; }), 8) + '</div>' +
+        '</div>' +
+        '<div class="monthly-graph-legend"><span><i class="is-muscle-low"></i>Lower weekly volume</span><span><i class="is-muscle-high"></i>Higher weekly volume</span></div>' +
     '</section>';
 }
 
+function monthlyAnatomyMarkup(report, side) {
+    const config = getAnatomyConfig(side);
+    const volume = new Map(report.muscles.rows.map(function (row) { return [row.name, row.sets / Math.max(1, report.muscles.weeks)]; }));
+    const overlays = Object.entries(config.regions).flatMap(function (entry) {
+        const muscle = entry[0];
+        const ids = entry[1];
+        const sets = Number(volume.get(muscle) || (muscle === "Rear Delts" ? volume.get("Shoulders") || 0 : 0));
+        const intensity = Math.max(0, Math.min(1, sets / 12));
+        return ids.map(function (id) {
+            const href = config.asset + "#" + id;
+            return '<use href="' + href + '" xlink:href="' + href + '" class="monthly-anatomy-muscle" style="--monthly-muscle-intensity:' + intensity.toFixed(3) + '"/>';
+        });
+    }).join("");
+    return '<span class="monthly-anatomy-side">' + (side === "front" ? "Front" : "Back") + '</span>' +
+        '<svg class="monthly-anatomy-svg" viewBox="' + config.viewBox + '" role="img" aria-label="' + (side === "front" ? "Front" : "Back") + ' monthly muscle volume" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+            '<image href="' + config.asset + '" xlink:href="' + config.asset + '" x="' + config.imageX + '" y="0" width="960" height="1920" preserveAspectRatio="xMidYMid meet"/>' +
+            overlays +
+        '</svg><small>Tap to flip</small>';
+}
+
 function renderWeight(report) {
-    return '<section class="monthly-report-card" id="monthly-section-weight">' +
-        '<div class="monthly-report-card-head"><div><span class="eyebrow">BODY WEIGHT</span><h2>Weight & goal</h2><p>Smoothed from your logged weigh-ins.</p></div>' +
-        '<strong>' + formatSigned(report.weight.change, 1) + '<small>lb</small></strong></div>' +
-        lineChartSvg(report.weight.points, "trend", report.weight.targetLine, "Weight trend chart") +
+    return '<section class="monthly-report-card monthly-report-single-card" id="monthly-section-weight">' +
+        '<div class="monthly-report-card-head"><div><span class="eyebrow">BODY WEIGHT</span><h2>Weight & goal</h2><p>Uses the same smoothed Trend Weight and Weekly Trend calculations as Weight Progress.</p></div>' +
+        '<strong>' + report.weight.end.toFixed(1) + '<small>trend lb</small></strong></div>' +
+        '<div class="monthly-shared-chart-shell"><canvas data-monthly-weight-chart aria-label="Monthly weight trend"></canvas></div>' +
+        '<div class="monthly-graph-legend"><span><i class="is-daily-weight"></i>Daily weight</span><span><i class="is-trend-weight"></i>Trend Weight</span>' +
+        (Number.isFinite(report.weight.goalWeight) ? '<span><i class="is-goal-weight"></i>Goal weight</span>' : '') + '</div>' +
         '<div class="monthly-report-four">' +
-            smallStat("Start", report.weight.start.toFixed(1) + " lb") +
-            smallStat("End", report.weight.end.toFixed(1) + " lb") +
-            smallStat("Rate", Number.isFinite(report.weight.weeklyRate) ? formatSigned(report.weight.weeklyRate, 2) + "/wk" : "—") +
-            smallStat("Goal", Number.isFinite(report.weight.targetWeeklyRate) ? formatSigned(report.weight.targetWeeklyRate, 2) + "/wk" : "—") +
+            smallStat("Trend at start", report.weight.start.toFixed(1) + " lb") +
+            smallStat("Current trend", report.weight.end.toFixed(1) + " lb") +
+            smallStat("Trend change", formatSigned(report.weight.change, 1) + " lb") +
+            smallStat(report.weight.rateLabel || "Weekly Trend", Number.isFinite(report.weight.weeklyRate) ? formatSigned(report.weight.weeklyRate, 2) + " lb/wk" : "Need more data") +
         '</div><p class="monthly-report-insight">' + escapeHtml(report.weight.insight) + '</p></section>';
 }
 
 function renderNutrition(report) {
     const n = report.nutrition;
-    let protein = "";
-    if (n.proteinTarget) {
-        protein = '<div class="monthly-protein-strip" aria-label="Protein target consistency">' +
-            n.daily.map(function (day) {
-                const height = Math.max(18, Math.min(100, day.protein / n.proteinTarget * 100));
-                return '<i class="' + (day.protein >= n.proteinTarget ? "hit" : "") + '" style="height:' + height + '%"></i>';
-            }).join("") + '</div>' +
-            '<p class="monthly-report-insight">Protein target reached on <strong>' + n.proteinHitDays + " of " + n.loggedDays + '</strong> logged days.</p>';
-    }
-    return '<section class="monthly-report-card" id="monthly-section-nutrition">' +
-        '<div class="monthly-report-card-head"><div><span class="eyebrow">NUTRITION</span><h2>Fueling the month</h2><p>Only logged days are included in averages.</p></div>' +
-        '<strong>' + n.loggedDays + '<small>logged days</small></strong></div>' +
-        twoLineChartSvg(n.chartPoints, "calories", "expenditure", "Calories and expenditure chart") +
+    return '<section class="monthly-report-card monthly-report-single-card" id="monthly-section-nutrition">' +
+        '<div class="monthly-report-card-head"><div><span class="eyebrow">ENERGY BALANCE</span><h2>Calories vs Expenditure</h2><p>The same calorie/expenditure series used in Progress, scoped to this report month.</p></div>' +
+        '<strong>' + n.loggedDays + '<small>matched days</small></strong></div>' +
+        '<div class="monthly-shared-chart-shell"><canvas data-monthly-energy-chart aria-label="Monthly calories compared with expenditure"></canvas></div>' +
+        '<div class="monthly-graph-legend"><span><i class="is-calories"></i>Calories</span><span><i class="is-expenditure"></i>Expenditure</span></div>' +
         '<div class="monthly-report-four">' +
-            smallStat("Avg intake", Math.round(n.averageCalories).toLocaleString()) +
-            smallStat("Avg protein", Math.round(n.averageProtein) + " g") +
-            smallStat("Expenditure", Number.isFinite(n.averageExpenditure) ? Math.round(n.averageExpenditure).toLocaleString() : "—") +
-            smallStat("Balance", Number.isFinite(n.averageBalance) ? formatSigned(Math.round(n.averageBalance), 0) : "—") +
-        '</div>' + protein + '</section>';
+            smallStat("Avg calories", Number.isFinite(n.averageCalories) ? Math.round(n.averageCalories).toLocaleString() : "—") +
+            smallStat("Avg expenditure", Number.isFinite(n.averageExpenditure) ? Math.round(n.averageExpenditure).toLocaleString() : "—") +
+            smallStat("Energy balance", Number.isFinite(n.averageBalance) ? formatSigned(Math.round(n.averageBalance), 0) + " kcal/day" : "—") +
+            smallStat("Avg protein", Number.isFinite(n.averageProtein) ? Math.round(n.averageProtein) + " g" : "—") +
+        '</div>' +
+        (n.proteinTarget ? '<p class="monthly-report-insight">Protein target reached on <strong>' + n.proteinHitDays + ' of ' + n.loggedDays + '</strong> matched/logged days.</p>' : '') +
+    '</section>';
 }
 
 function renderEffortCardio(report) {
@@ -373,18 +472,21 @@ function bindReport(screen, progressPage, report) {
         bindHub(screen, progressPage, report.monthKey);
         window.scrollTo({ top: 0, behavior: "auto" });
     });
-    screen.querySelectorAll("[data-report-jump]").forEach(function (button) {
+
+    screen.querySelectorAll("[data-report-tab]").forEach(function (button) {
         button.addEventListener("click", function () {
-            const target = document.getElementById(button.dataset.reportJump);
-            if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+            showReportPanel(screen, report, button.dataset.reportTab || "overview");
         });
     });
+
     screen.querySelectorAll("[data-monthly-share]").forEach(function (button) {
-        button.addEventListener("click", function () { shareReportSummary(report, screen); });
+        button.addEventListener("click", function () { shareReportSummary(report, screen, button); });
     });
     screen.querySelectorAll("[data-monthly-pdf]").forEach(function (button) {
         button.addEventListener("click", function () { exportPdf(report, screen, button); });
     });
+
+    showReportPanel(screen, report, "overview");
 }
 
 export function buildMonthlyReport(monthKey) {
@@ -510,71 +612,87 @@ function muscleSummary(sessions, bounds) {
 }
 
 function weightSummary(allWeights, monthKey, phase) {
-    const monthWeights = allWeights.filter(function (entry) { return inMonth(entry.date, monthKey); });
-    if (monthWeights.length < 4) return { available: false, count: monthWeights.length };
-    const points = monthWeights.map(function (entry) {
-        return { date: entry.date, weight: Number(entry.weight), trend: rollingWeightAverage(allWeights, entry.date) };
-    }).filter(function (point) { return Number.isFinite(point.trend); });
-    if (!points.length) return { available: false, count: monthWeights.length };
+    const bounds = monthBounds(monthKey);
+    const normalized = normalizeWeightEntries(allWeights).filter(function (entry) { return entry.date <= bounds.end; });
+    const monthWeights = normalized.filter(function (entry) { return inMonth(entry.date, monthKey); });
+    if (monthWeights.length < 3) return { available: false, count: monthWeights.length };
 
-    const first = points[0];
-    const last = points[points.length - 1];
-    const span = (dateMs(last.date) - dateMs(first.date)) / DAY_MS;
-    const change = last.trend - first.trend;
-    const weeklyRate = span >= 7 ? change / span * 7 : null;
+    const latestEntryDate = monthWeights[monthWeights.length - 1].date;
+    const visibleTrend = calculateVisibleWeightTrend(normalized, { endDate: latestEntryDate });
+    const fullSeries = calculateTrendWeightSeries(normalized, { endDate: latestEntryDate });
+    const trendSeries = fullSeries.filter(function (entry) { return entry.date >= bounds.start && entry.date <= latestEntryDate; });
+    if (!trendSeries.length || !Number.isFinite(visibleTrend.trendWeight)) return { available: false, count: monthWeights.length };
+
+    const startTrend = Number(trendSeries[0].weight);
+    const endTrend = Number(visibleTrend.trendWeight);
+    const change = endTrend - startTrend;
+    const weeklyRate = Number.isFinite(visibleTrend.weeklyChange) ? visibleTrend.weeklyChange : null;
     const targetWeeklyRate = finite(phase && phase.targetWeeklyRate);
-    let insight = "Your trend is based on the weigh-ins you recorded this month.";
+    const goalWeight = finite(phase && (phase.targetWeight != null ? phase.targetWeight : phase.goalWeight)) != null
+        ? finite(phase && (phase.targetWeight != null ? phase.targetWeight : phase.goalWeight))
+        : finite(localStorage.getItem("level_up_goal_weight"));
+
+    let insight = "Trend Weight and Weekly Trend match the same smoothed signal used in Weight Progress.";
     if (Number.isFinite(weeklyRate) && Number.isFinite(targetWeeklyRate)) {
         const tolerance = Math.max(0.15, Math.abs(targetWeeklyRate) * 0.3);
         const delta = weeklyRate - targetWeeklyRate;
-        if (Math.abs(delta) <= tolerance) insight = "Your weight trend stayed close to your selected goal rate.";
-        else if (delta > 0) insight = "Your weight trend moved faster than your selected goal rate.";
-        else insight = "Your weight trend moved slower than your selected goal rate.";
+        if (Math.abs(delta) <= tolerance) insight = "Your current Weekly Trend is close to your selected goal rate.";
+        else if (delta > 0) insight = "Your current Weekly Trend is moving faster than your selected goal rate.";
+        else insight = "Your current Weekly Trend is moving slower than your selected goal rate.";
     }
+
     return {
-        available: true, count: monthWeights.length, start: first.trend, end: last.trend,
-        change: change, spanDays: span, weeklyRate: weeklyRate, targetWeeklyRate: targetWeeklyRate,
-        targetLine: Number.isFinite(targetWeeklyRate) && span >= 7 ? first.trend + targetWeeklyRate * span / 7 : null,
-        insight: insight, points: points
+        available: true,
+        count: monthWeights.length,
+        entries: monthWeights,
+        trendSeries: trendSeries,
+        startDate: bounds.start,
+        endDate: latestEntryDate,
+        start: startTrend,
+        end: endTrend,
+        change: change,
+        weeklyRate: weeklyRate,
+        rateLabel: visibleTrend.label || "Weekly Trend",
+        targetWeeklyRate: targetWeeklyRate,
+        goalWeight: goalWeight,
+        insight: insight
     };
 }
 
 function nutritionSummary(foodLog, monthKey, phase) {
     if (!isNutritionEnabled()) return { available: false, loggedDays: 0 };
-    const keys = Object.keys(foodLog || {}).filter(function (key) { return inMonth(key, monthKey); }).sort();
-    const daily = keys.map(function (date) {
+    const bounds = monthBounds(monthKey);
+    const reportEnd = bounds.isCurrent ? localDate() : bounds.end;
+    const state = getEnergyBalanceState({ startDate: bounds.start, endDate: reportEnd });
+    const matched = state.matched || [];
+    if (matched.length < 4) return { available: false, loggedDays: matched.length };
+
+    const proteinDays = Object.keys(foodLog || {}).filter(function (date) {
+        return date >= bounds.start && date <= reportEnd && Array.isArray(foodLog[date]) && foodLog[date].length;
+    }).sort().map(function (date) {
         const totals = summarizeEntries(foodLog[date]);
-        return { date: date, calories: totals.calories, protein: totals.protein, carbs: totals.carbs, fat: totals.fat };
-    }).filter(function (day) { return day.calories > 0; });
-    if (daily.length < 4) return { available: false, loggedDays: daily.length };
-
-    const averageCalories = average(daily.map(function (day) { return day.calories; }));
-    const averageProtein = average(daily.map(function (day) { return day.protein; }));
-    const proteinTarget = activeProteinTarget();
-    const proteinHitDays = proteinTarget ? daily.filter(function (day) { return day.protein >= proteinTarget; }).length : 0;
-    const expenditureHistory = getCalculatedMaintenanceHistory(null, { startDate: monthKey + "-01" })
-        .filter(function (point) { return inMonth(point.date, monthKey); })
-        .map(function (point) {
-            return { date: point.date, expenditure: finite(point.liveMaintenanceCalories) != null ? finite(point.liveMaintenanceCalories) : finite(point.maintenanceCalories) };
-        }).filter(function (point) { return Number.isFinite(point.expenditure); });
-
-    const byDate = new Map(expenditureHistory.map(function (point) { return [point.date, point.expenditure]; }));
-    let lastExpenditure = null;
-    const chartPoints = daily.map(function (day) {
-        const exact = byDate.get(day.date);
-        if (Number.isFinite(exact)) lastExpenditure = exact;
-        return { date: day.date, calories: day.calories, protein: day.protein, expenditure: Number.isFinite(exact) ? exact : lastExpenditure };
+        return { date: date, protein: totals.protein };
     });
-    const usableExpenditure = chartPoints.map(function (point) { return point.expenditure; }).filter(Number.isFinite);
-    const averageExpenditure = usableExpenditure.length ? average(usableExpenditure) : null;
-    const calorieTarget = finite(phase && phase.currentCalories) != null ? finite(phase.currentCalories) :
-        finite(phase && phase.startCalories) != null ? finite(phase.startCalories) : finite(getNutritionPlan().calculatedCalories);
+    const averageProtein = proteinDays.length ? average(proteinDays.map(function (day) { return day.protein; })) : null;
+    const proteinTarget = activeProteinTarget();
+    const proteinHitDays = proteinTarget ? proteinDays.filter(function (day) { return day.protein >= proteinTarget; }).length : 0;
 
     return {
-        available: true, loggedDays: daily.length, daily: daily, averageCalories: averageCalories, averageProtein: averageProtein,
-        calorieTarget: calorieTarget, proteinTarget: proteinTarget, proteinHitDays: proteinHitDays,
-        proteinHitRate: proteinTarget ? proteinHitDays / daily.length : null, averageExpenditure: averageExpenditure,
-        averageBalance: Number.isFinite(averageExpenditure) ? averageCalories - averageExpenditure : null, chartPoints: chartPoints
+        available: true,
+        startDate: bounds.start,
+        endDate: reportEnd,
+        loggedDays: matched.length,
+        daily: proteinDays,
+        averageCalories: state.averageIntake,
+        averageProtein: averageProtein,
+        calorieTarget: finite(phase && phase.currentCalories) != null ? finite(phase.currentCalories) :
+            finite(phase && phase.startCalories) != null ? finite(phase.startCalories) : finite(getNutritionPlan().calculatedCalories),
+        proteinTarget: proteinTarget,
+        proteinHitDays: proteinHitDays,
+        proteinHitRate: proteinTarget && proteinDays.length ? proteinHitDays / proteinDays.length : null,
+        averageExpenditure: state.averageExpenditure,
+        averageBalance: state.balance,
+        chartPoints: state.visible
     };
 }
 
@@ -732,8 +850,8 @@ async function exportPdf(report, screen, button) {
     button.textContent = "Preparing…";
     if (status) status.textContent = "Building your Level Up report…";
     try {
-        const logoSvg = await fetch("assets/level-up-logo.svg").then(function (response) { return response.ok ? response.text() : ""; });
-        const html = buildPdfHtml(report, logoSvg);
+        const markSvg = await fetch("assets/level-up-mark-transparent.svg").then(function (response) { return response.ok ? response.text() : ""; });
+        const html = buildPdfHtml(report, markSvg);
         const result = await shareNativePdfFile({ html: html, filename: "Level-Up-" + report.monthKey + "-Performance-Report.pdf" });
         if (!result) throw new Error("PDF export is available in the iOS app.");
         if (status) status.textContent = result.cancelled ? "PDF export cancelled." : "PDF ready to save or share.";
@@ -746,8 +864,9 @@ async function exportPdf(report, screen, button) {
     }
 }
 
-function buildPdfHtml(report, logoSvg) {
-    const logo = logoSvg ? '<div class="brand-logo">' + logoSvg + '</div>' : '<div class="brand-fallback">LEVEL UP</div>';
+function buildPdfHtml(report, markSvg) {
+    const markData = extractEmbeddedMarkData(markSvg);
+    const logo = markData ? '<div class="brand-logo"><img src="' + markData + '" alt="Level Up"></div>' : '<div class="brand-fallback">LEVEL UP</div>';
     const profile = getNutritionProfile() || {};
     const displayName = String(profile.displayName || "").trim();
     const pages = [];
@@ -831,6 +950,11 @@ function buildPdfHtml(report, logoSvg) {
     return '<!doctype html><html><head><meta charset="utf-8"><style>' + pdfCss() + '</style></head><body>' + pages.join("") + '</body></html>';
 }
 
+function extractEmbeddedMarkData(svgText) {
+    const match = String(svgText || "").match(/href="(data:image\/png;base64,[^"]+)"/i);
+    return match ? match[1] : "";
+}
+
 function pdfKpi(value, label) { return '<div><b>' + escapeHtml(value) + '</b><small>' + label + '</small></div>'; }
 function pdfSummary(value, label) { return '<div><b>' + escapeHtml(value) + '</b><span>' + label + '</span></div>'; }
 function pdfHeader(logo, report, title) { return '<header class="pdf-header">' + logo + '<div><small>LEVEL UP · ' + escapeHtml(report.label).toUpperCase() + '</small><h1>' + escapeHtml(title) + '</h1></div></header>'; }
@@ -839,11 +963,11 @@ function pdfFooter(report, page) { return '<footer class="pdf-footer"><span>LEVE
 function pdfCss() {
     return '@page{size:letter;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff;color:#111;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;-webkit-print-color-adjust:exact}' +
     '.pdf-page{position:relative;min-height:736px;padding:32px 38px 46px;background:#fff;page-break-after:always;overflow:hidden}.pdf-cover{padding-top:58px}' +
-    '.brand-logo{width:74px;height:74px;overflow:hidden}.brand-logo svg{display:block;width:74px;height:74px}.brand-fallback{font-size:20px;font-weight:950}' +
+    '.brand-logo{width:74px;height:74px;overflow:hidden}.brand-logo img{display:block;width:74px;height:74px;object-fit:contain;filter:drop-shadow(1px 0 #000) drop-shadow(-1px 0 #000) drop-shadow(0 1px #000) drop-shadow(0 -1px #000)}.brand-fallback{font-size:20px;font-weight:950}' +
     '.cover-rule{width:56px;height:5px;background:#e51b26;margin:30px 0}.pdf-cover>span{font-size:12px;font-weight:850;letter-spacing:2px}.pdf-cover h1{font-size:42px;margin:8px 0 5px;letter-spacing:-1.5px}.pdf-cover h2{font-size:18px;margin:0 0 6px}.pdf-cover>p{font-size:17px;color:#555;margin:0 0 34px}' +
     '.pdf-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:25px 0}.pdf-kpis>div,.pdf-summary-grid>div{padding:16px;border:1px solid #ddd;border-radius:12px;background:#f7f7f8}.pdf-kpis b,.pdf-summary-grid b{display:block;font-size:22px}.pdf-kpis small,.pdf-summary-grid span{display:block;margin-top:4px;color:#666;font-size:9px;font-weight:800;letter-spacing:.7px}' +
     '.cover-highlight{margin-top:18px;padding:18px;border-left:5px solid #e51b26;background:#f5f5f5;font-weight:800}.cover-highlight b{float:right;color:#e51b26}.pdf-cover footer{position:absolute;bottom:38px;left:38px;font-size:9px;font-weight:800;letter-spacing:1.4px}' +
-    '.pdf-header{display:flex;align-items:center;gap:16px;padding-bottom:18px;border-bottom:2px solid #111;margin-bottom:24px}.pdf-header .brand-logo,.pdf-header .brand-logo svg{width:42px;height:42px}.pdf-header small{font-size:8px;letter-spacing:1.2px;color:#e51b26;font-weight:900}.pdf-header h1{font-size:24px;margin:3px 0 0}' +
+    '.pdf-header{display:flex;align-items:center;gap:16px;padding-bottom:18px;border-bottom:2px solid #111;margin-bottom:24px}.pdf-header .brand-logo,.pdf-header .brand-logo img{width:42px;height:42px}.pdf-header small{font-size:8px;letter-spacing:1.2px;color:#e51b26;font-weight:900}.pdf-header h1{font-size:24px;margin:3px 0 0}' +
     '.pdf-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}.pdf-panel{padding:18px;border-radius:12px;background:#111;color:#fff;margin:14px 0}.pdf-panel h2{margin:0 0 8px;font-size:18px}.pdf-panel p{margin:0;line-height:1.5;color:#e4e4e4}' +
     '.pdf-two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}.pdf-two>div{padding:16px;border:1px solid #e0e0e0;border-radius:12px}.pdf-two h3{margin:0 0 10px}.check,.focus{font-size:11px;line-height:1.5}.check b{color:#198754}.focus b{color:#e51b26}.muted,.lead{color:#666}' +
     '.pdf-bars{display:grid;gap:8px;margin:12px 0 22px}.pdf-bar{display:grid;grid-template-columns:145px 1fr 55px;align-items:center;gap:10px;font-size:10px}.pdf-bar-track{height:10px;border-radius:999px;background:#e7e7e9;overflow:hidden}.pdf-bar-fill{height:100%;background:#e51b26}.pdf-bar strong{text-align:right}' +
@@ -853,26 +977,35 @@ function pdfCss() {
     '.pdf-keep{margin-top:22px;padding:18px;background:#f4f4f5;border-radius:12px}.pdf-keep h2{margin:0 0 8px}.pdf-keep p{margin:6px 0;font-size:11px}.pdf-closing{margin-top:26px;font-size:24px;font-weight:950;letter-spacing:-.5px}.pdf-footer{position:absolute;left:38px;right:38px;bottom:24px;display:flex;justify-content:space-between;border-top:1px solid #ddd;padding-top:8px;font-size:7px;color:#777;letter-spacing:.8px}';
 }
 
-async function shareReportSummary(report, screen) {
+async function shareReportSummary(report, screen, button) {
     const status = screen.querySelector("[data-monthly-export-status]");
+    const original = button && button.textContent;
+    if (button) { button.disabled = true; button.textContent = "Preparing…"; }
     try {
         const blob = await summaryCardBlob(report);
-        const file = typeof File === "function" ? new File([blob], "Level-Up-" + report.monthKey + "-Summary.png", { type: "image/png" }) : null;
-        if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], title: report.label + " · Level Up" });
-            if (status) status.textContent = "Summary shared.";
-            return;
-        }
-        if (navigator.share) {
-            await navigator.share({ title: report.label + " · Level Up", text: summaryText(report) });
-            return;
-        }
-        throw new Error("Sharing is not available on this device.");
+        const dataUrl = await blobToDataUrl(blob);
+        const base64 = String(dataUrl).split(",")[1] || "";
+        const result = await shareNativeImageFile({
+            imageData: base64,
+            filename: "Level-Up-" + report.monthKey + "-Summary.png"
+        });
+        if (!result) throw new Error("Share Summary is available in the iOS app.");
+        if (status) status.textContent = result.cancelled ? "Sharing cancelled." : "Summary ready to share.";
     } catch (error) {
-        if (error && error.name === "AbortError") return;
         console.error("Monthly summary share failed:", error);
         if (status) status.textContent = error && error.message ? error.message : "The summary could not be shared.";
+    } finally {
+        if (button) { button.disabled = false; button.textContent = original; }
     }
+}
+
+function blobToDataUrl(blob) {
+    return new Promise(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function () { resolve(String(reader.result || "")); };
+        reader.onerror = function () { reject(new Error("The image could not be prepared.")); };
+        reader.readAsDataURL(blob);
+    });
 }
 
 async function summaryCardBlob(report) {
@@ -889,7 +1022,7 @@ async function summaryCardBlob(report) {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 1080, 1350);
     try {
-        const logo = await loadImage("assets/level-up-logo.svg");
+        const logo = await loadImage("assets/level-up-mark-transparent.svg");
         ctx.drawImage(logo, 72, 68, 112, 112);
     } catch {}
     ctx.fillStyle = "#fff";
