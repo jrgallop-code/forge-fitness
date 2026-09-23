@@ -226,6 +226,9 @@ export function initializeFoodLog() {
         }
     });
     calendar?.addEventListener("click", event => {
+        // Repainting month buttons removes the tapped element before the document
+        // click listener runs; keep this calendar interaction from closing it.
+        event.stopPropagation();
         const monthButton = event.target.closest("[data-food-calendar-month]");
         if (monthButton) {
             calendarMonth.setMonth(calendarMonth.getMonth() + Number(monthButton.dataset.foodCalendarMonth));
