@@ -165,3 +165,20 @@
 .food-voice-open svg{display:block;width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .food-voice-open[hidden]{display:none}.food-voice-open.is-listening{border-color:#ff3444;background:#3a181c;color:#ff5360;box-shadow:0 0 0 4px rgba(255,52,68,.12)}
 .food-voice-review-copy{margin:0;padding:11px 12px;border:1px solid rgba(75,209,132,.24);border-radius:12px;background:rgba(75,209,132,.07);color:#aeb7b2;font-size:12px;line-height:1.45}
+
+/* Food diary date picker */
+.food-log-date-nav [data-food-calendar-toggle]{position:relative;padding-right:31px}
+.food-log-date-nav [data-food-calendar-toggle] svg{position:absolute;right:10px;top:50%;width:17px;height:17px;transform:translateY(-50%);fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.72}
+.food-log-calendar[hidden]{display:none}
+.food-log-calendar{display:grid;gap:10px;padding:14px;border:1px solid var(--card-border,#393941);border-radius:18px;background:var(--card,#1c1c20);color:var(--text,#f4f4f5);box-shadow:var(--shadow,0 14px 30px rgba(0,0,0,.18))}
+.food-calendar-header{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;text-align:center}
+.food-calendar-header strong{font-size:15px}
+.food-calendar-header button{width:38px;height:38px;border:0;border-radius:10px;background:var(--surface-raised,#29292e);color:var(--text,#f4f4f5);font-size:23px}
+.food-calendar-weekdays,.food-calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;text-align:center}
+.food-calendar-weekdays span{padding:3px 0;color:var(--muted,#96969f);font-size:11px;font-weight:700}
+.food-calendar-days button{position:relative;display:grid;place-items:center;justify-self:center;width:min(100%,44px);min-height:42px;padding:2px 2px 9px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--text,#f4f4f5);font-family:inherit;font-size:14px;font-weight:650}
+.food-calendar-days button.today{border-color:var(--accent,#ff4b58)}
+.food-calendar-days button.selected{background:var(--accent-soft,rgba(255,75,88,.16));color:var(--accent-text,#ff4b58);font-weight:800}
+.food-calendar-days button i{position:absolute;bottom:5px;width:5px;height:5px;border-radius:50%;background:var(--accent,#ff4b58)}
+.food-calendar-today{justify-self:end;min-height:36px;padding:5px 10px;border:0;border-radius:9px;background:var(--accent-soft,rgba(255,75,88,.16));color:var(--accent-text,#ff4b58);font-family:inherit;font-size:12px;font-weight:700}
+.food-log-calendar button:focus-visible,.food-log-date-nav [data-food-calendar-toggle]:focus-visible{outline:2px solid var(--accent,#ff4b58);outline-offset:2px}
