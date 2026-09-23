@@ -131,25 +131,20 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
     const visibleTrend = latestMeasurementDate
         ? calculateVisibleWeightTrend(allWeights, {
             endDate: latestMeasurementDate,
-            rateDays: 20,
-            minEntries: 3,
-            minSpanDays: 5,
-            fullEntries: 6,
-            fullSpanDays: 14
+            allowFuture: metadata.isFutureTest
         })
         : null;
-    const useVisibleTrend = Number.isFinite(Number(visibleTrend?.weeklyChange));
-    const trend = useVisibleTrend
-        ? {
-            ...phaseTrend,
-            status: visibleTrend.status || phaseTrend.status,
-            label: visibleTrend.label || phaseTrend.label,
-            weeklyChange: Number(visibleTrend.weeklyChange),
-            reason: null,
-            measurementDate: latestMeasurementDate,
-            visibleTrend: true
-        }
-        : phaseTrend;
+    // The check-in and the Progress carousel must use identical rate eligibility
+    // and smoothing. Phase windows supply scheduling metadata, never a fallback rate.
+    const trend = {
+        ...phaseTrend,
+        status: visibleTrend?.status || "insufficient",
+        label: visibleTrend?.label || "Weekly Trend",
+        weeklyChange: Number.isFinite(visibleTrend?.weeklyChange) ? visibleTrend.weeklyChange : null,
+        reason: visibleTrend?.status === "insufficient" ? "insufficient-visible-trend" : null,
+        measurementDate: latestMeasurementDate,
+        visibleTrend: true
+    };
 
     const actual = finiteNumber(trend?.weeklyChange);
     const target = finiteNumber(phase.targetWeeklyRate);
