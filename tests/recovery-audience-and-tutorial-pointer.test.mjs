@@ -26,6 +26,6 @@ test("workout tutorial fingertip stays anchored to Form Guide in Safari browser 
 
 test("startup and offline assets load the corrected modules", () => {
     assert.match(safeguard, /interactive-workout-tutorial-v5\.js\?v=workout-overflow-rir-1/);
-    assert.match(worker, /CACHE_VERSION = "2026-09-19-342"/);
+    assert.match(worker, /CACHE_VERSION = "2026-09-23-ios-launch-343"/);
     assert.match(worker, /interactive-workout-tutorial-v5\.js\?v=browser-form-guide-pointer-1/);
 });

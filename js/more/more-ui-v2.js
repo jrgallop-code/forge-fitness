@@ -6,6 +6,7 @@ import { initializeGoogleDriveSync } from "../core/google-drive-sync-v2.js?v=vis
 import { initializeDataSpreadsheetExport } from "../core/data-spreadsheet-export.js?v=full-data-export-1";
 import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-medical-sources-1";
 import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.js?v=account-transfer-1";
+import { openWhatsNew } from "../dashboard/whats-new.js?v=ios-launch-1";
 import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=more-units-miles-1";
 import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-display-name-1";
 import { renderDynamicWarmupSettings, initializeDynamicWarmupSettings } from "./dynamic-warmup-settings.js?v=dynamic-warmup-settings-1";
@@ -25,6 +26,7 @@ const ICONS = {
     bmi: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18a8 8 0 1 1 16 0h-2a6 6 0 1 0-12 0H4Zm8-9 1.8 5.2-1.9.6L10.2 10 12 9Zm-6 9h12v2H6v-2Z"/></svg>',
     backup: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a5 5 0 0 1 4.8 3.6A4.5 4.5 0 0 1 17.5 15H14v-2h3.5a2.5 2.5 0 1 0-.6-4.9l-1.1.3-.2-1.1A3 3 0 0 0 9.8 7L9.5 8.2l-1.2-.1H8a3 3 0 0 0 0 6h2v2H8A5 5 0 0 1 7.9 6a5 5 0 0 1 4.1-3Zm-1 8h2v6.2l2.1-2.1 1.4 1.4-4.5 4.5-4.5-4.5 1.4-1.4 2.1 2.1V11Z"/></svg>',
     account: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM4 21v-2.5C4 15.5 7.6 13 12 13s8 2.5 8 5.5V21H4Zm2-2h12v-.5c0-1.5-2.5-3.5-6-3.5s-6 2-6 3.5v.5Z"/></svg>',
+    iphone: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 5h4M11 19h2"/></svg>',
     units: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4V5Zm2 2v10h12V7H6Zm2 2h2v3H8V9Zm3 0h2v5h-2V9Zm3 0h2v3h-2V9Z"/></svg>',
     features: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v2H5V5Zm0 12h14v2H5v-2Zm4-7h10v2H9v-2Zm-4 5h10v-2H5v2Zm2-6a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm10 4a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/></svg>',
     warmup: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a8 8 0 0 1 7.7 5.8l-1.9.5A6 6 0 0 0 7.1 6H10v2H4V2h2v2.6A8 8 0 0 1 12 2Zm8 14v6h-2v-2.6A8 8 0 0 1 4.3 16.2l1.9-.5A6 6 0 0 0 16.9 18H14v-2h6Z"/></svg>',
@@ -41,6 +43,7 @@ export function renderMore() {
     </div>
     <div class="more-menu-group" data-more-group="account"><h3>Account &amp; app</h3>
     <button class="more-menu-card" type="button" data-more-page="account-cloud"><span class="more-menu-icon">${ICONS.account}</span><span><strong>Account & Cloud</strong><small>Sign in for private beta cloud backup and device transfer.</small></span></button>
+    ${window.Capacitor?.getPlatform?.() === "ios" ? "" : `<button class="more-menu-card" type="button" data-more-page="ios-transfer"><span class="more-menu-icon">${ICONS.iphone}</span><span><strong>iPhone app &amp; transfer</strong><small>Get the iOS app and move your web data safely.</small></span></button>`}
     <button class="more-menu-card" type="button" data-more-page="appearance"><span class="more-menu-icon">${ICONS.appearance}</span><span><strong>Appearance</strong><small>Choose from light, dark and system-aware Level Up themes.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="rest-game"><span class="more-menu-icon">${ICONS.game}</span><span><strong>Rest Timer Games</strong><small>Show or hide Protein Run and Gym Chopper.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Choose body weight, workout weight, distance and measurement units separately.</small></span></button>
@@ -65,6 +68,10 @@ export function renderMore() {
 export function initializeMore() {
     document.querySelectorAll("[data-more-page]").forEach(button => button.addEventListener("click", () => {
         const page = button.dataset.morePage;
+        if (page === "ios-transfer") {
+            openWhatsNew();
+            return;
+        }
         if (page === "explore") {
             openExploreResearch();
             return;
