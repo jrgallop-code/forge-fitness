@@ -8,8 +8,8 @@ const startup = readFileSync("js/core/pwa-startup-safeguard.js", "utf8");
 
 test("nutrition phase consumes the same visible Trend Weight rate as Progress", () => {
     assert.match(phase, /calculateVisibleWeightTrend/);
-    assert.match(phase, /rateDays:\s*20/);
-    assert.match(phase, /weeklyChange:\s*Number\(visibleTrend\.weeklyChange\)/);
+    assert.match(phase, /weeklyChange:\s*Number\.isFinite\(visibleTrend\?\.weeklyChange\)\s*\?\s*visibleTrend\.weeklyChange\s*:\s*null/);
+    assert.doesNotMatch(phase, /weeklyChange:\s*Number\(visibleTrend\.weeklyChange\)/);
 });
 
 test("nutrition phase presents one live expenditure and a separate weekly plan baseline", () => {

@@ -179,7 +179,7 @@ export function getWeeklyCheckInStatus() {
     } else if (phaseDay === FIRST_INFORMATIONAL_CHECK_DAY) {
         state = "informational";
         reviewDate = firstInformationalDate;
-        const earlyRate = Number(metrics?.actualRateLbPerWeek);
+        const earlyRate = metrics?.actualRateLbPerWeek;
         headline = "Week 1 check-in";
         detail = Number.isFinite(earlyRate)
             ? `Early Trend Weight: ${earlyRate > 0 ? "+" : ""}${earlyRate.toFixed(2)} lb/week`
