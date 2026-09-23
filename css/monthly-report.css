@@ -68,3 +68,12 @@
 .monthly-muscle-silhouette{display:none!important}@media(max-width:520px){.monthly-muscle-visual{grid-template-columns:1fr}.monthly-anatomy-flip{min-height:330px}.monthly-anatomy-svg{height:290px}.monthly-report-panel-host{min-height:360px}}
 .monthly-graph-legend .is-workout-day{width:10px;height:10px;border-radius:50%;background:var(--accent)}
 .monthly-graph-legend .is-strength-gain{height:4px;background:var(--accent)}
+
+.monthly-report-entry-card,.monthly-report-dashboard-card{position:relative}
+.monthly-report-prompt-close{position:absolute;top:8px;right:8px;z-index:3;display:grid;width:28px;height:28px;padding:0;place-items:center;border:1px solid var(--line);border-radius:999px;background:color-mix(in srgb,var(--surface-raised) 92%,transparent);color:var(--muted);font:700 18px/1 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}
+.monthly-report-prompt-close:active{transform:scale(.94)}
+.monthly-report-entry-card .monthly-report-entry-action{margin-right:26px}
+.monthly-report-dashboard-card .primary-btn{margin-right:26px}
+.monthly-report-dismissed-note{grid-column:1/-1;display:grid;gap:4px;width:100%;padding:5px 4px}
+.monthly-report-dismissed-note strong{color:var(--heading);font-size:.78rem}
+.monthly-report-dismissed-note span{color:var(--text-secondary);font-size:.68rem;line-height:1.4}
