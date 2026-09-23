@@ -322,6 +322,18 @@ function bindPanelInteractions(host, report, key) {
         });
     }
 
+    if (key === "strength" && report.strength.available) {
+        const swipe = host.querySelector("[data-monthly-strength-swipe]");
+        const label = host.querySelector("[data-strength-page-label]");
+        if (swipe && label) {
+            swipe.addEventListener("scroll", function () {
+                const width = Math.max(1, swipe.clientWidth);
+                const page = Math.max(0, Math.min(Math.round(swipe.scrollLeft / width), Math.ceil(report.strength.improvements.length / 5) - 1));
+                label.textContent = (page + 1) + " / " + Math.ceil(report.strength.improvements.length / 5);
+            }, { passive: true });
+        }
+    }
+
     if (key === "muscles" && report.muscles.available) {
         const flip = host.querySelector("[data-monthly-anatomy-flip]");
         if (flip) flip.addEventListener("click", function () {
@@ -395,10 +407,18 @@ function renderConsistency(report) {
 }
 
 function renderStrength(report) {
+    const pages = chunk(report.strength.improvements, 5);
     return '<section class="monthly-report-card" id="monthly-section-strength">' +
-        '<div class="monthly-report-card-head"><div><span class="eyebrow">STRENGTH</span><h2>You got stronger</h2><p>First-to-latest comparable performance this month.</p></div>' +
+        '<div class="monthly-report-card-head"><div><span class="eyebrow">STRENGTH</span><h2>You got stronger</h2><p>Every lift with a measurable first-to-latest improvement this month, strongest gains first.</p></div>' +
         '<strong>' + report.prCount + '<small>PRs</small></strong></div>' +
-        '<div class="monthly-strength-bars">' + barRows(report.strength.improvements.map(function (item) { return { label: item.name, value: item.percent, suffix: "%" }; }), 5) + '</div>' +
+        '<div class="monthly-strength-swipe" data-monthly-strength-swipe>' +
+            pages.map(function (page, pageIndex) {
+                return '<div class="monthly-strength-page" data-strength-page="' + pageIndex + '">' +
+                    barRows(page.map(function (item) { return { label: item.name, value: item.percent, suffix: "%" }; }), page.length) +
+                '</div>';
+            }).join("") +
+        '</div>' +
+        (pages.length > 1 ? '<div class="monthly-strength-pager"><span data-strength-page-label>1 / ' + pages.length + '</span><small>Swipe for more lifts</small></div>' : '') +
         '<div class="monthly-graph-legend"><span><i class="is-strength-gain"></i>Estimated strength change vs first comparable session</span></div>' +
         (report.strength.best ? '<div class="monthly-pr-highlight"><span>BIGGEST IMPROVEMENT</span><strong>' + escapeHtml(report.strength.best.name) + '</strong><b>+' + report.strength.best.percent.toFixed(1) + '%</b></div>' : '') +
     '</section>';
@@ -616,7 +636,7 @@ function strengthSummary(sessions) {
         const last = points[points.length - 1];
         if (!(first.value > 0) || last.value <= first.value) return null;
         return { id: record.id, name: record.name, first: first.value, last: last.value, percent: (last.value - first.value) / first.value * 100 };
-    }).filter(Boolean).sort(function (a, b) { return b.percent - a.percent; }).slice(0, 5);
+    }).filter(Boolean).sort(function (a, b) { return b.percent - a.percent; });
     return { available: improvements.length > 0, improvements: improvements, best: improvements[0] || null };
 }
 
@@ -632,11 +652,25 @@ function muscleSummary(sessions, bounds) {
             });
         });
     });
-    const rows = Array.from(totals.entries()).map(function (entry) { return { name: entry[0], sets: round1(entry[1]) }; })
-        .sort(function (a, b) { return b.sets - a.sets; });
+
+    // Use the same canonical anatomy groups so low/zero-volume muscles never vanish
+    // from the monthly breakdown (e.g. Chest remains visible even with few sets).
+    const frontGroups = Object.keys(getAnatomyConfig("front").regions || {});
+    const backGroups = Object.keys(getAnatomyConfig("back").regions || {});
+    const canonical = Array.from(new Set(frontGroups.concat(backGroups).concat(Array.from(totals.keys()))));
+    const rows = canonical.map(function (name) {
+        return { name: name, sets: round1(totals.get(name) || 0) };
+    }).sort(function (a, b) {
+        return b.sets - a.sets || a.name.localeCompare(b.name);
+    });
+
     const totalDays = daysInMonth(bounds.monthKey);
     const coveredDays = Math.max(1, Math.min(totalDays, bounds.isCurrent ? new Date().getDate() : totalDays));
-    return { available: rows.length > 0, rows: rows, weeks: coveredDays / 7 };
+    return {
+        available: rows.some(function (row) { return row.sets > 0; }),
+        rows: rows,
+        weeks: coveredDays / 7
+    };
 }
 
 function weightSummary(allWeights, monthKey, phase) {
@@ -1310,6 +1344,14 @@ function muscleSilhouette(rows) {
         return '<span style="--heat:' + opacity + ";--y:" + (18 + index * 12) + '%"></span>';
     }).join("");
     return '<div class="monthly-body-outline"><i class="head"></i><i class="torso"></i><i class="arm a"></i><i class="arm b"></i><i class="leg a"></i><i class="leg b"></i>' + segments + '</div>';
+}
+
+function chunk(items, size) {
+    const source = Array.isArray(items) ? items : [];
+    const width = Math.max(1, Math.round(Number(size) || 1));
+    const output = [];
+    for (let index = 0; index < source.length; index += width) output.push(source.slice(index, index + width));
+    return output.length ? output : [[]];
 }
 
 function availableMonths() {
