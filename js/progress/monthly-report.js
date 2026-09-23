@@ -8,8 +8,8 @@ import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutriti
 import { calculateTrendWeightSeries, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { getEnergyBalanceState } from "../nutrition/energy-balance-state.js?v=energy-balance-range-1";
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
-import { drawSharedWeightTrendChart } from "./weight-trend-chart.js?v=monthly-report-shared-1";
-import { drawSharedCalorieExpenditureChart } from "../nutrition/tdee-calorie-expenditure-carousel.js?v=monthly-report-shared-1";
+import { drawSharedWeightTrendChart } from "./weight-trend-chart.js?v=progress-range-first-paint-1";
+import { drawSharedCalorieExpenditureChart } from "../nutrition/tdee-calorie-expenditure-carousel.js?v=energy-balance-range-3";
 import { shareNativePdfFile, shareNativeImageFile } from "../core/native-capabilities.js?v=monthly-pdf-report-2";
 
 const SESSION_KEY = "forge_workout_sessions";
@@ -336,6 +336,7 @@ function renderConsistency(report) {
         '<strong>' + report.training.workoutsPerWeek.toFixed(1) + '<small>/week</small></strong></div>' +
         '<div class="monthly-calendar-weekdays"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>' +
         '<div class="monthly-calendar-grid">' + cells.join("") + '</div>' +
+        '<div class="monthly-graph-legend"><span><i class="is-workout-day"></i>Completed workout day</span></div>' +
         '<div class="monthly-report-three">' +
             metricBlock(report.training.workouts, "Workouts") +
             metricBlock(formatDuration(report.training.durationMinutes), "Training time") +
@@ -350,6 +351,7 @@ function renderStrength(report) {
         '<div class="monthly-report-card-head"><div><span class="eyebrow">STRENGTH</span><h2>You got stronger</h2><p>First-to-latest comparable performance this month.</p></div>' +
         '<strong>' + report.prCount + '<small>PRs</small></strong></div>' +
         '<div class="monthly-strength-bars">' + barRows(report.strength.improvements.map(function (item) { return { label: item.name, value: item.percent, suffix: "%" }; }), 5) + '</div>' +
+        '<div class="monthly-graph-legend"><span><i class="is-strength-gain"></i>Estimated strength change vs first comparable session</span></div>' +
         (report.strength.best ? '<div class="monthly-pr-highlight"><span>BIGGEST IMPROVEMENT</span><strong>' + escapeHtml(report.strength.best.name) + '</strong><b>+' + report.strength.best.percent.toFixed(1) + '%</b></div>' : '') +
     '</section>';
 }
@@ -644,8 +646,9 @@ function nutritionSummary(foodLog, monthKey, phase) {
     const matched = state.matched || [];
     if (matched.length < 4) return { available: false, loggedDays: matched.length };
 
+    const matchedDates = new Set(matched.map(function (point) { return point.date; }));
     const proteinDays = Object.keys(foodLog || {}).filter(function (date) {
-        return date >= bounds.start && date <= reportEnd && Array.isArray(foodLog[date]) && foodLog[date].length;
+        return matchedDates.has(date) && Array.isArray(foodLog[date]) && foodLog[date].length;
     }).sort().map(function (date) {
         const totals = summarizeEntries(foodLog[date]);
         return { date: date, protein: totals.protein };
