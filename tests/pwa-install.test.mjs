@@ -130,6 +130,16 @@ test("iPhone install guidance treats Open as Web App as optional", () => {
     }
 });
 
+test("native iOS hides web Home Screen installation cards and reminders", () => {
+    const onboarding = readFileSync("js/onboarding/onboarding-install-help.js", "utf8");
+    const more = readFileSync("js/more/install-level-up.js", "utf8");
+    const banner = readFileSync("js/more/install-reminder-banner.js", "utf8");
+    assert.match(onboarding, /if \(isNativeApp\(\)\) \{\s*document\.querySelectorAll\("\[data-onboarding-install-card\]"\)/);
+    assert.match(more, /if \(isNativeApp\(\)\) \{\s*grid\?\.querySelector\("\[data-install-level-up-entry\]"\)\?\.remove\(\)/);
+    assert.match(more, /function openInstallGuide\(\) \{\s*if \(isNativeApp\(\)\) return/);
+    assert.match(banner, /\|\| isNativeApp\(\)/);
+});
+
 test("installed-app confirmation remains legible in light appearances", () => {
     const more = readFileSync("js/more/install-level-up.js", "utf8");
     assert.match(more, /color:var\(--success-text,#147a3c\)/);

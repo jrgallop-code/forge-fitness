@@ -1,4 +1,4 @@
-import "../more/install-level-up.js?v=install-success-contrast-1";
+import "../more/install-level-up.js?v=native-install-guard-1";
 
 const STYLE_ID = "levelup-onboarding-install-help-styles";
 let selectedPlatform = detectPlatform();
@@ -16,6 +16,11 @@ function isStandalone() {
     return window.Capacitor?.isNativePlatform?.()
         || window.matchMedia?.("(display-mode: standalone)")?.matches
         || navigator.standalone === true;
+}
+
+function isNativeApp() {
+    return window.Capacitor?.isNativePlatform?.() === true
+        || window.Capacitor?.getPlatform?.() === "ios";
 }
 
 function ensureStyles() {
@@ -95,6 +100,10 @@ function cardMarkup() {
 }
 
 function enhanceCompletion() {
+    if (isNativeApp()) {
+        document.querySelectorAll("[data-onboarding-install-card]").forEach(card => card.remove());
+        return;
+    }
     if (dismissed) return;
     const completion = document.querySelector(".levelup-onboarding:not(.levelup-nutrition-setup) .onboarding-completion");
     if (!completion || !completion.querySelector("[data-onboarding-finish]")) return;
@@ -109,6 +118,7 @@ function scheduleEnhance() {
     refreshQueued = true;
     requestAnimationFrame(() => {
         refreshQueued = false;
+        if (isNativeApp()) { enhanceCompletion(); return; }
         ensureStyles();
         enhanceCompletion();
     });

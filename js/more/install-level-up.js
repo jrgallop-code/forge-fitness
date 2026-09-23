@@ -17,6 +17,11 @@ function isStandalone() {
         || navigator.standalone === true;
 }
 
+function isNativeApp() {
+    return window.Capacitor?.isNativePlatform?.() === true
+        || window.Capacitor?.getPlatform?.() === "ios";
+}
+
 function ensureStyles() {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement("style");
@@ -88,6 +93,7 @@ function renderGuide() {
 }
 
 function openInstallGuide() {
+    if (isNativeApp()) return;
     ensureStyles();
     const content = document.getElementById("content");
     if (!content) return;
@@ -98,8 +104,12 @@ function openInstallGuide() {
 window.addEventListener("levelup:open-install-guide", openInstallGuide);
 
 function enhanceMoreMenu() {
-    ensureStyles();
     const grid = document.querySelector("#content .more-menu-grid");
+    if (isNativeApp()) {
+        grid?.querySelector("[data-install-level-up-entry]")?.remove();
+        return;
+    }
+    ensureStyles();
     if (!grid || grid.querySelector("[data-install-level-up-entry]")) return;
     const exportsCard = grid.querySelector('[data-more-page="exports-backup"]');
     if (exportsCard) exportsCard.insertAdjacentHTML("beforebegin", menuCardMarkup());
@@ -128,6 +138,7 @@ document.addEventListener("click", event => {
     const entry = event.target.closest?.("[data-install-level-up-entry]");
     if (entry) {
         event.preventDefault();
+        if (isNativeApp()) return;
         openInstallGuide();
         return;
     }
