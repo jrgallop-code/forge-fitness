@@ -5,7 +5,7 @@ import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-
 import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybuilder-library-3";
 import { celebrityExpansionPlans } from "./celebrity-expansion-plans.js?v=celebrity-expansion-2";
 import { getPlanArtwork } from "./workout-art-manifest.js?v=workout-art-direction-1";
-import "./workout-plan-details.js?v=saved-plan-edit-2";
+import "./workout-plan-details.js?v=pwa-workout-sharing-1";
 
 const PLAN_KEY = "forge_workout_plans";
 const STYLE_ID = "workout-landing-live-styles";
