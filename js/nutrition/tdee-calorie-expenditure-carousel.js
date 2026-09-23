@@ -199,6 +199,92 @@ function comparisonAxis(points) {
     return { yMin: 0, yMax: Math.max(step * 4, Math.ceil(maximum / step) * step) };
 }
 
+
+export function drawSharedCalorieExpenditureChart(canvas, { points = [], startDate, endDate } = {}) {
+    const safePoints = (Array.isArray(points) ? points : []).filter(point => point && point.date && positive(point.expenditureCalories) !== null);
+    if (!canvas || !safePoints.length || !startDate || !endDate) return;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    const shell = canvas.parentElement || canvas;
+    const ratio = Math.min(2, window.devicePixelRatio || 1);
+    const width = Math.max(280, Math.round(shell.clientWidth || 320));
+    const height = 250;
+    const padding = { top: 16, right: 46, bottom: 30, left: 8 };
+    const startMs = new Date(startDate + "T12:00:00").getTime();
+    const endMs = new Date(endDate + "T12:00:00").getTime();
+    const plotWidth = width - padding.left - padding.right;
+    const plotHeight = height - padding.top - padding.bottom;
+    const axis = comparisonAxis(safePoints);
+    const x = point => padding.left + ((new Date(point.date + "T12:00:00").getTime() - startMs) / Math.max(1, endMs - startMs)) * plotWidth;
+    const y = value => padding.top + (1 - (Number(value) - axis.yMin) / (axis.yMax - axis.yMin)) * plotHeight;
+    const accent = themeColor("--accent", "#ff3b4b");
+    const text = themeColor("--text", "#ffffff");
+    const muted = themeColor("--muted", "#85858f");
+
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    canvas.style.height = height + "px";
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.clearRect(0, 0, width, height);
+
+    context.font = "800 9px Arial";
+    context.textAlign = "left";
+    context.textBaseline = "middle";
+    for (let index = 0; index <= 4; index += 1) {
+        const value = axis.yMax - (axis.yMax - axis.yMin) * index / 4;
+        const lineY = padding.top + plotHeight * index / 4;
+        context.strokeStyle = themeColor("--line", "rgba(255,255,255,.09)");
+        context.lineWidth = 1;
+        context.setLineDash([3, 3]);
+        context.beginPath();
+        context.moveTo(padding.left, lineY);
+        context.lineTo(width - padding.right + 4, lineY);
+        context.stroke();
+        context.setLineDash([]);
+        context.fillStyle = muted;
+        context.fillText(formatNumber(value), width - padding.right + 9, lineY);
+    }
+
+    const daysInRange = Math.max(1, Math.round((endMs - startMs) / 86400000) + 1);
+    const barWidth = Math.max(1, Math.min(22, plotWidth / daysInRange * .62));
+    safePoints.forEach(point => {
+        const intake = positive(point.intakeCalories);
+        if (intake === null) return;
+        const pointX = x(point);
+        const top = y(intake);
+        const base = y(0);
+        const left = Math.max(padding.left, Math.min(width - padding.right - barWidth, pointX - barWidth / 2));
+        context.save();
+        context.globalAlpha = .52;
+        context.fillStyle = accent;
+        context.fillRect(left, top, barWidth, Math.max(1, base - top));
+        context.restore();
+    });
+
+    context.save();
+    context.strokeStyle = text;
+    context.lineWidth = 2.5;
+    context.globalAlpha = .94;
+    context.beginPath();
+    safePoints.forEach((point, index) => {
+        if (index === 0) context.moveTo(x(point), y(point.expenditureCalories));
+        else context.lineTo(x(point), y(point.expenditureCalories));
+    });
+    context.stroke();
+    context.restore();
+
+    const labelCount = 5;
+    context.fillStyle = muted;
+    context.font = "800 10px Arial";
+    context.textBaseline = "alphabetic";
+    for (let index = 0; index < labelCount; index += 1) {
+        const labelDate = new Date(startMs + (endMs - startMs) * index / Math.max(1, labelCount - 1));
+        const pointX = padding.left + index / Math.max(1, labelCount - 1) * plotWidth;
+        context.textAlign = index === 0 ? "left" : index === labelCount - 1 ? "right" : "center";
+        context.fillText(formatDate(localDateKey(labelDate)), pointX, height - 7);
+    }
+}
+
 function restoreLegacyCarousel(graphCard) {
     const legacy = graphCard.querySelector("[data-expenditure-visual-carousel]");
     if (!legacy) return;
