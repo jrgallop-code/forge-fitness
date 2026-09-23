@@ -414,7 +414,7 @@ function renderStrength(report) {
         '<div class="monthly-strength-swipe" data-monthly-strength-swipe>' +
             pages.map(function (page, pageIndex) {
                 return '<div class="monthly-strength-page" data-strength-page="' + pageIndex + '">' +
-                    barRows(page.map(function (item) { return { label: item.name, value: item.percent, suffix: "%" }; }), page.length) +
+                    barRows(page.map(function (item) { return { label: item.name, value: item.percent, suffix: "%" }; }), page.length, report.strength.improvements[0] && report.strength.improvements[0].percent) +
                 '</div>';
             }).join("") +
         '</div>' +
@@ -1019,7 +1019,7 @@ function buildPdfHtml(report, markSvg, anatomy = {}) {
                 '</p></div>' +
                 (index === 0 ? '<div class="pdf-pr-count"><b>' + report.prCount + '</b><span>PRs this month</span></div>' : '') +
                 '<div class="pdf-bars">' +
-                    pdfBarRows(strengthRows.map(function (row) { return { label: row.name, value: row.percent, suffix: "%" }; })) +
+                    pdfBarRows(strengthRows.map(function (row) { return { label: row.name, value: row.percent, suffix: "%" }; }), report.strength.improvements[0] && report.strength.improvements[0].percent) +
                 '</div>' +
                 '<div class="pdf-legend"><span><i class="strength-gain"></i>Estimated strength change vs first comparable session</span></div>' +
                 (index === 0 && report.strength.best ? '<div class="pdf-insight"><b>Biggest improvement</b><p>' + escapeHtml(report.strength.best.name) + ' · +' + report.strength.best.percent.toFixed(1) + '%</p></div>' : '') +
@@ -1411,9 +1411,11 @@ function twoLineChartSvg(points, firstKey, secondKey, aria) {
         '<path d="' + pathFor(firstKey) + '" class="trend first" fill="none"/><path d="' + pathFor(secondKey) + '" class="trend second" fill="none"/></svg>';
 }
 
-function barRows(rows, limit) {
+function barRows(rows, limit, scaleMax = null) {
     const visible = rows.slice(0, limit);
-    const max = Math.max.apply(null, [1].concat(visible.map(function (row) { return Number(row.value) || 0; })));
+    const max = Number.isFinite(Number(scaleMax)) && Number(scaleMax) > 0
+        ? Number(scaleMax)
+        : Math.max.apply(null, [1].concat(visible.map(function (row) { return Number(row.value) || 0; })));
     return visible.map(function (row) {
         const numeric = Number(row.value) || 0;
         const width = numeric > 0 ? Math.max(3, numeric / max * 100) : 0;
@@ -1422,8 +1424,10 @@ function barRows(rows, limit) {
     }).join("");
 }
 
-function pdfBarRows(rows) {
-    const max = Math.max.apply(null, [1].concat(rows.map(function (row) { return Number(row.value) || 0; })));
+function pdfBarRows(rows, scaleMax = null) {
+    const max = Number.isFinite(Number(scaleMax)) && Number(scaleMax) > 0
+        ? Number(scaleMax)
+        : Math.max.apply(null, [1].concat(rows.map(function (row) { return Number(row.value) || 0; })));
     return rows.map(function (row) {
         const numeric = Number(row.value) || 0;
         const width = numeric > 0 ? Math.max(3, numeric / max * 100) : 0;
