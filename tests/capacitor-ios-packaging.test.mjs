@@ -182,9 +182,14 @@ test("native iOS packages adaptive monthly reports and classic PDF export", asyn
     assert.match(exporter, /CAPPluginMethod\(name: "sharePdf"/);
     assert.match(exporter, /CAPPluginMethod\(name: "shareImage"/);
     assert.match(exporter, /UIMarkupTextPrintFormatter/);
-    assert.match(exporter, /UIPrintPageRenderer/);
+    assert.match(exporter, /LevelUpPDFPageRenderer/);
+    assert.match(exporter, /override var paperRect/);
+    assert.match(exporter, /override var printableRect/);
+    assert.doesNotMatch(exporter, /setValue\(NSValue\(cgRect: paperRect\), forKey: "paperRect"\)/);
+    assert.doesNotMatch(exporter, /setValue\(NSValue\(cgRect: printableRect\), forKey: "printableRect"\)/);
     assert.match(exporter, /UIGraphicsBeginPDFContextToData/);
     assert.match(exporter, /prepare\(forDrawingPages:/);
+    assert.doesNotMatch(report, /monthly-report-head-actions/);
     assert.match(report, /level-up-mark-transparent\.svg/);
     assert.doesNotMatch(report, /level-up-logo\.svg/);
 });
