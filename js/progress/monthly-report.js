@@ -442,19 +442,26 @@ function strengthSummary(sessions) {
             if (!id) return;
             const best = bestWeightedSet(exercise.sets || []);
             if (!best) return;
-            if (!records.has(id)) records.set(id, []);
-            records.get(id).push({ date: session.date, value: best.e1rm });
+            const profileId = String(exercise.equipmentProfileId || "default");
+            const key = id + "::" + profileId;
+            if (!records.has(key)) {
+                records.set(key, {
+                    id: id,
+                    name: exerciseName(id) + (profileId !== "default" && exercise.equipmentProfileName ? " · " + exercise.equipmentProfileName : ""),
+                    points: []
+                });
+            }
+            records.get(key).points.push({ date: session.date, value: best.e1rm });
         });
     });
-    const improvements = Array.from(records.entries()).map(function (entry) {
-        const id = entry[0];
-        const points = entry[1];
+    const improvements = Array.from(records.values()).map(function (record) {
+        const points = record.points;
         if (points.length < 2) return null;
         points.sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
         const first = points[0];
         const last = points[points.length - 1];
         if (!(first.value > 0) || last.value <= first.value) return null;
-        return { id: id, name: exerciseName(id), first: first.value, last: last.value, percent: (last.value - first.value) / first.value * 100 };
+        return { id: record.id, name: record.name, first: first.value, last: last.value, percent: (last.value - first.value) / first.value * 100 };
     }).filter(Boolean).sort(function (a, b) { return b.percent - a.percent; }).slice(0, 5);
     return { available: improvements.length > 0, improvements: improvements, best: improvements[0] || null };
 }
@@ -991,7 +998,9 @@ function availableMonths() {
 
 function preferredMonthKey() {
     const current = monthKeyForDate(new Date());
-    return monthHasMeaningfulData(current) ? current : shiftMonth(current, -1);
+    if (monthHasMeaningfulData(current)) return current;
+    const previous = shiftMonth(current, -1);
+    return monthHasMeaningfulData(previous) ? previous : current;
 }
 function monthHasMeaningfulData(month) {
     return readArray(SESSION_KEY).some(function (item) { return inMonth(item && item.date, month); }) ||
