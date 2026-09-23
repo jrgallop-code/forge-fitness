@@ -231,3 +231,5 @@ TestFlight build 133: align the iOS progress-photo date field with the weight, n
 TestFlight build 134: redesign the iOS progress photo log with month-grouped entries, a full-screen large-photo gallery, individual and side-by-side comparison modes, synchronized panning, and 100–300% zoom.
 
 TestFlight build 135: limit photo comparison to two images, remove the fixed black image area and manual zoom controls, and add independent pinch-to-zoom and drag-to-pan gestures for each photo.
+
+TestFlight build 136: make the weekly check-in and phase carousel show the same smoothed Trend Weight rate; preserve missing-data handling.
