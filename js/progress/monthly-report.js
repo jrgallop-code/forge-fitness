@@ -128,18 +128,21 @@ function renderHub(preferred) {
         '<button class="primary-btn" type="button" data-monthly-view="' + chosen + '">View Report</button></section>' +
         '<div class="monthly-report-history-head"><h3>Previous Reports</h3><small>Rebuilt from your saved Level Up history</small></div>' +
         '<div class="monthly-report-history">' +
-        (previous.length ? previous.map(function (month) { return renderHistoryRow(buildMonthlyReport(month)); }).join("") :
+        (previous.length ? previous.map(function (month) { return renderHistoryRowForMonth(month); }).join("") :
         '<p class="monthly-report-empty">Previous months will appear here as you build history.</p>') +
         '</div>';
 }
 
-function renderHistoryRow(report) {
+function renderHistoryRowForMonth(monthKey) {
+    const sessions = readArray(SESSION_KEY).filter(function (session) { return session && session.isDemo !== true && inMonth(session.date, monthKey); });
+    const weights = readArray(WEIGHT_KEY).filter(function (entry) { return validWeight(entry) && inMonth(entry.date, monthKey); }).sort(byDate);
     const bits = [];
-    if (report.training.workouts) bits.push(report.training.workouts + " workouts");
-    if (report.prCount) bits.push(report.prCount + " PRs");
-    if (report.weight.available) bits.push(formatSigned(report.weight.change, 1) + " lb");
-    return '<button type="button" class="monthly-report-history-row" data-monthly-view="' + report.monthKey + '">' +
-        '<span><strong>' + escapeHtml(report.label) + '</strong><small>' + escapeHtml(bits.join(" · ") || "Report available") + '</small></span><b>›</b></button>';
+    if (sessions.length) bits.push(sessions.length + " workout" + (sessions.length === 1 ? "" : "s"));
+    if (weights.length >= 2) bits.push(formatSigned(Number(weights[weights.length - 1].weight) - Number(weights[0].weight), 1) + " lb");
+    const foodDays = Object.keys(readFoodLog() || {}).filter(function (key) { return inMonth(key, monthKey); }).length;
+    if (!bits.length && foodDays) bits.push(foodDays + " nutrition days");
+    return '<button type="button" class="monthly-report-history-row" data-monthly-view="' + monthKey + '">' +
+        '<span><strong>' + escapeHtml(labelForMonth(monthKey)) + '</strong><small>' + escapeHtml(bits.join(" · ") || "Report available") + '</small></span><b>›</b></button>';
 }
 
 function bindHub(screen, progressPage, preferred) {
@@ -186,12 +189,7 @@ function renderReport(report) {
             '<img src="assets/level-up-logo.svg" alt="Level Up" class="monthly-report-logo">' +
             '<span class="eyebrow">' + (report.isCurrent ? "MONTH IN PROGRESS" : "MONTHLY PERFORMANCE REPORT") + '</span>' +
             '<h1>' + escapeHtml(report.label) + '</h1><p>' + escapeHtml(report.overviewLine) + '</p>' +
-            '<div class="monthly-report-hero-metrics">' +
-                metricBlock(report.training.workouts, "Workouts") +
-                metricBlock(report.prCount, "PRs") +
-                metricBlock(report.training.activeDays, "Active days") +
-                metricBlock(report.training.workingSets, "Working sets") +
-            '</div>' +
+            '<div class="monthly-report-hero-metrics">' + heroMetrics(report) + '</div>' +
             (report.weight.available ? '<div class="monthly-report-hero-highlight"><span>Trend weight</span><strong>' + formatSigned(report.weight.change, 1) + ' lb</strong></div>' : '') +
         '</section>' +
         '<nav class="monthly-report-section-nav" aria-label="Report sections">' +
@@ -201,11 +199,7 @@ function renderReport(report) {
             (report.muscles.available ? '<button type="button" data-report-jump="monthly-section-muscles">Muscles</button>' : '') +
             '<button type="button" data-report-jump="monthly-section-focus">Focus</button>' +
         '</nav>' +
-        '<section class="monthly-report-overview" id="monthly-section-overview">' +
-            '<div><span>Training time</span><strong>' + formatDuration(report.training.durationMinutes) + '</strong></div>' +
-            '<div><span>Avg / week</span><strong>' + report.training.workoutsPerWeek.toFixed(1) + '</strong></div>' +
-            overviewExtras +
-        '</section>' +
+        '<section class="monthly-report-overview" id="monthly-section-overview">' + overviewMetrics(report, overviewExtras) + '</section>' +
         sections.join("") +
         '<footer class="monthly-report-footer-actions"><button class="secondary-btn" type="button" data-monthly-share>Share Summary</button>' +
         '<button class="primary-btn" type="button" data-monthly-pdf>Export Full PDF</button><p data-monthly-export-status aria-live="polite"></p></footer>';
@@ -213,6 +207,32 @@ function renderReport(report) {
 
 function metricBlock(value, label) {
     return '<div><strong>' + escapeHtml(value) + '</strong><span>' + escapeHtml(label) + '</span></div>';
+}
+
+function heroMetrics(report) {
+    const items = [];
+    if (report.training.workouts) {
+        items.push(metricBlock(report.training.workouts, "Workouts"));
+        if (report.prCount) items.push(metricBlock(report.prCount, "PRs"));
+        items.push(metricBlock(report.training.activeDays, "Active days"));
+        items.push(metricBlock(report.training.workingSets, "Working sets"));
+    }
+    if (report.weight.available && items.length < 4) items.push(metricBlock(formatSigned(report.weight.change, 1) + " lb", "Trend change"));
+    if (report.nutrition.available && items.length < 4) items.push(metricBlock(Math.round(report.nutrition.averageCalories).toLocaleString(), "Avg calories"));
+    if (report.nutrition.available && items.length < 4) items.push(metricBlock(Math.round(report.nutrition.averageProtein) + " g", "Avg protein"));
+    if (!items.length) items.push(metricBlock("—", "Log data to build report"));
+    return items.slice(0, 4).join("");
+}
+
+function overviewMetrics(report, extras) {
+    let html = "";
+    if (report.training.workouts) {
+        html += '<div><span>Training time</span><strong>' + formatDuration(report.training.durationMinutes) + '</strong></div>';
+        html += '<div><span>Avg / week</span><strong>' + report.training.workoutsPerWeek.toFixed(1) + '</strong></div>';
+    }
+    html += extras || "";
+    if (!html) html = '<div><span>Report status</span><strong>Building history</strong></div>';
+    return html;
 }
 
 function renderConsistency(report) {
@@ -1035,7 +1055,7 @@ function bestWeightedSet(sets) { const valid = (sets || []).filter(function (set
 function exerciseName(id) { const found = getAllExercises().find(function (exercise) { return String(exercise.id) === String(id); }); return found && found.name ? found.name : String(id || "Exercise").split("-").map(function (word) { return word ? word[0].toUpperCase() + word.slice(1) : ""; }).join(" "); }
 function longestDateStreak(dates) { const sorted = Array.from(new Set(dates)).sort(); let best = 0, current = 0, last = null; sorted.forEach(function (value) { const time = dateMs(value); if (last != null && Math.round((time - last) / DAY_MS) === 1) current += 1; else current = 1; best = Math.max(best, current); last = time; }); return best; }
 function average(values) { const clean = values.map(Number).filter(Number.isFinite); return clean.length ? clean.reduce(function (a,b) { return a+b; }, 0) / clean.length : null; }
-function finite(value) { const n = Number(value); return Number.isFinite(n) ? n : null; }
+function finite(value) { if (value === null || value === undefined || value === "") return null; const n = Number(value); return Number.isFinite(n) ? n : null; }
 function round1(value) { return Math.round(Number(value) * 10) / 10; }
 function formatSigned(value, digits) { const n = Number(value); if (!Number.isFinite(n)) return "—"; return (n > 0 ? "+" : "") + n.toFixed(digits == null ? 1 : digits); }
 function formatDuration(minutes) { const n = Math.max(0, Math.round(Number(minutes) || 0)); if (n < 60) return n + "m"; const h = Math.floor(n / 60), m = n % 60; return m ? h + "h " + m + "m" : h + "h"; }
