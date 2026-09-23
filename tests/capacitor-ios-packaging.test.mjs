@@ -181,7 +181,12 @@ test("native iOS packages adaptive monthly reports and classic PDF export", asyn
     assert.match(native, /shareNativeImageFile/);
     assert.match(exporter, /CAPPluginMethod\(name: "sharePdf"/);
     assert.match(exporter, /CAPPluginMethod\(name: "shareImage"/);
-    assert.match(exporter, /UIMarkupTextPrintFormatter/);
+    assert.match(exporter, /import WebKit/);
+    assert.match(exporter, /LevelUpPDFWebJob/);
+    assert.match(exporter, /WKWebViewConfiguration/);
+    assert.match(exporter, /loadHTMLString/);
+    assert.match(exporter, /viewPrintFormatter/);
+    assert.doesNotMatch(exporter, /UIMarkupTextPrintFormatter/);
     assert.match(exporter, /LevelUpPDFPageRenderer/);
     assert.match(exporter, /override var paperRect/);
     assert.match(exporter, /override var printableRect/);
@@ -192,4 +197,7 @@ test("native iOS packages adaptive monthly reports and classic PDF export", asyn
     assert.doesNotMatch(report, /monthly-report-head-actions/);
     assert.match(report, /level-up-mark-transparent\.svg/);
     assert.doesNotMatch(report, /level-up-logo\.svg/);
+    assert.match(report, /WEEKLY VOLUME/);
+    assert.match(report, /Weekly Muscle Volume/);
+    assert.match(styles, /--muscle-set-accent/);
 });
