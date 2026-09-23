@@ -3,6 +3,7 @@ import { getExerciseById } from "./exercise-library.js";
 import { openWorkoutLogger } from "./workout-session.js?v=native-navigation-stability-1";
 import { createGeneratedExerciseGuide } from "./exercise-guide-generator.js?v=full-library-guides-1";
 import { editSavedWorkoutPlan } from "./workouts.js?v=saved-plan-edit-2";
+import { shareWorkoutPlan } from "./workout-sharing.js?v=ios-share-workout-1";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 let bypassNextPlanClick = false;
@@ -433,7 +434,13 @@ function showPlanDetails({ plan, type, card }) {
     screen.innerHTML = `
         <button class="plan-detail-back" type="button" aria-label="Back to workout plans">← Workout Plans</button>
 
-        <div class="plan-detail-header">
+        <div class="plan-detail-header has-share-menu">
+            <div class="plan-detail-overflow">
+                <button class="plan-detail-overflow-button" type="button" data-plan-overflow aria-label="More workout actions" aria-expanded="false">⋯</button>
+                <div class="plan-detail-overflow-menu" data-plan-overflow-menu hidden>
+                    <button type="button" data-share-workout>Share Workout</button>
+                </div>
+            </div>
             <span class="eyebrow">${type === "template" ? "LEVEL UP TEMPLATE" : "WORKOUT PLAN"}</span>
             <h2>${escapeHtml(plan?.name || "Workout Plan")}</h2>
             ${plan?.description ? `<p>${escapeHtml(plan.description)}</p>` : ""}
@@ -477,6 +484,51 @@ function showPlanDetails({ plan, type, card }) {
     });
 
     screen.querySelector(".plan-detail-back")?.addEventListener("click", closePlanDetails);
+
+    const overflowButton = screen.querySelector("[data-plan-overflow]");
+    const overflowMenu = screen.querySelector("[data-plan-overflow-menu]");
+    const closeOverflowMenu = () => {
+        if (!overflowMenu || !overflowButton) return;
+        overflowMenu.hidden = true;
+        overflowButton.setAttribute("aria-expanded", "false");
+    };
+
+    overflowButton?.addEventListener("click", event => {
+        event.stopPropagation();
+        const opening = overflowMenu?.hidden !== false;
+        if (overflowMenu) overflowMenu.hidden = !opening;
+        overflowButton.setAttribute("aria-expanded", opening ? "true" : "false");
+    });
+
+    screen.querySelector("[data-share-workout]")?.addEventListener("click", async event => {
+        event.stopPropagation();
+        closeOverflowMenu();
+        const button = event.currentTarget;
+        button.disabled = true;
+        try {
+            const result = await shareWorkoutPlan(plan);
+            if (result.method === "copy") {
+                const status = document.createElement("p");
+                status.className = "workout-message";
+                status.textContent = "Workout share message copied.";
+                screen.querySelector(".plan-detail-header")?.appendChild(status);
+                window.setTimeout(() => status.remove(), 2200);
+            }
+            else if (result.method === "unsupported" && result.text) {
+                window.prompt("Copy this workout share message:", result.text);
+            }
+        }
+        catch (error) {
+            console.error("Workout sharing failed:", error);
+        }
+        finally {
+            button.disabled = false;
+        }
+    });
+
+    screen.addEventListener("click", event => {
+        if (!event.target.closest(".plan-detail-overflow")) closeOverflowMenu();
+    });
 
     screen.querySelector("#start-workout-plan")?.addEventListener("click", () => {
         closePlanDetails();
