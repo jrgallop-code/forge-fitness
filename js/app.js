@@ -1,5 +1,5 @@
 import "./core/appearance-theme.js?v=appearance-themes-3";
-import { navigate } from "./core/router.js?v=equipment-profiles-1-bmi-medical-sources-1-ios-launch-guide-1-food-calendar-2";
+import { navigate } from "./core/router.js?v=pwa-workout-sharing-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=history-editor-route-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=equipment-profiles-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
