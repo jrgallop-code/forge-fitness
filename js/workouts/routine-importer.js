@@ -1,6 +1,7 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { parseRoutineText } from "./routine-import-parser.js?v=exercise-match-1";
 import { formatSetCredits, getWeeklyPlanVolume } from "./plan-muscle-volume.js?v=plan-volume-shared-1";
+import { extractSharedWorkoutCode, getSharedWorkoutStats, importSharedWorkoutPackage, resolveSharedWorkoutFromText } from "./workout-sharing.js?v=pwa-share-workout-1";
 
 const PLAN_KEY = "forge_workout_plans";
 const EXAMPLE = `Push Day
@@ -47,7 +48,7 @@ function renderShell() {
 }
 
 function renderPasteStage() {
-  return `<div class="routine-import-paste-card"><label for="routine-import-text">Routine text</label><textarea id="routine-import-text" maxlength="20000" placeholder="Paste a routine from ChatGPT or another source…&#10;&#10;Push Day&#10;Bench Press - 3x6-8&#10;Cable Fly - 3x12-15"></textarea><div class="routine-import-tools"><button class="secondary-btn" type="button" data-routine-paste>Paste from Clipboard</button><button class="routine-import-text-action" type="button" data-routine-example>Use example</button><button class="routine-import-text-action" type="button" data-routine-clear>Clear</button><small data-routine-count>0 / 20,000</small></div><p class="routine-import-message" data-routine-message aria-live="polite"></p><button class="primary-btn routine-import-build" type="button" data-routine-build>Build Pasted Routine</button></div>`;
+  return `<div class="routine-import-paste-card"><label for="routine-import-text">Routine text</label><textarea id="routine-import-text" maxlength="100000" placeholder="Paste a routine from ChatGPT or another source…&#10;&#10;Push Day&#10;Bench Press - 3x6-8&#10;Cable Fly - 3x12-15"></textarea><div class="routine-import-tools"><button class="secondary-btn" type="button" data-routine-paste>Paste from Clipboard</button><button class="routine-import-text-action" type="button" data-routine-example>Use example</button><button class="routine-import-text-action" type="button" data-routine-clear>Clear</button><small data-routine-count>0 / 100,000</small></div><p class="routine-import-message" data-routine-message aria-live="polite"></p><button class="primary-btn routine-import-build" type="button" data-routine-build>Build Pasted Routine</button></div>`;
 }
 
 function handleClick(event, page) {
@@ -63,6 +64,7 @@ function handleClick(event, page) {
   if (button.matches("[data-routine-confirm]")) return confirmMatch(button, page);
   if (button.matches("[data-routine-remove]")) return removeExercise(button, page);
   if (button.matches("[data-routine-up], [data-routine-down]")) return moveExercise(button, page);
+  if (button.matches("[data-routine-save-shared]")) return saveSharedRoutine(button, page);
   if (button.matches("[data-routine-save]")) return saveRoutine(button, page);
 }
 
@@ -132,14 +134,76 @@ async function pasteClipboard(page) {
   }
 }
 
-function buildReview(page) {
+async function buildReview(page) {
   const text = page.querySelector("#routine-import-text")?.value.trim() || "";
   const message = page.querySelector("[data-routine-message]");
   if (!text) { if (message) message.textContent = "Paste a routine first."; return; }
+  const sharedCode = extractSharedWorkoutCode(text);
+  try {
+    const sharedPackage = await resolveSharedWorkoutFromText(text);
+    if (sharedPackage) {
+      importState = { rawText: text, sharedPackage };
+      renderSharedWorkoutReview(page);
+      return;
+    }
+  }
+  catch (error) {
+    console.error("Shared workout lookup failed:", error);
+    if (sharedCode) {
+      if (message) message.textContent = "That shared Level Up workout could not be loaded. Check your connection and try again.";
+      return;
+    }
+  }
   const parsed = parseRoutineText(text);
   if (!parsed.days.length) { if (message) message.textContent = "No exercises were recognized. Try lines such as Bench Press - 3x8-12."; return; }
   importState = { name: suggestedName(parsed.days), rawText: text, days: parsed.days, skipped: parsed.skipped };
   renderReview(page);
+}
+
+function renderSharedWorkoutReview(page) {
+  const stage = page.querySelector("[data-routine-import-stage]");
+  const packageValue = importState?.sharedPackage;
+  if (!stage || !packageValue) return;
+  const plan = packageValue.plan;
+  const stats = getSharedWorkoutStats(packageValue);
+  stage.innerHTML = `<div class="routine-import-review">
+    <div class="routine-import-review-head">
+      <div><span class="eyebrow">SHARED WORKOUT</span><h3>${escapeHtml(plan.name)}</h3><p>This is a Level Up workout package. Its template settings will be preserved when you add it.</p></div>
+      <button class="secondary-btn" type="button" data-routine-back>← Back</button>
+    </div>
+    <div class="routine-import-summary">
+      <div><span class="eyebrow">WORKOUT SUMMARY</span><h4>${stats.days} days · ${stats.exercises} exercises</h4><p>${stats.workingSets} weekly working sets</p><small>Personal workout history, PRs and previous loads are not included.</small></div>
+    </div>
+    <div class="routine-import-days">
+      ${plan.days.map((day, dayIndex) => `<section class="routine-import-day"><div class="routine-import-day-head"><span class="eyebrow">DAY ${dayIndex + 1}</span><h4>${escapeHtml(day.name)}</h4></div><div class="routine-import-exercises">${day.exercises.map(item => `<article class="routine-import-exercise"><div class="routine-import-match"><div><strong>${escapeHtml(getAllExercises().find(exercise => exercise.id === item.id)?.name || packageValue.customExercises?.find(exercise => exercise.id === item.id)?.name || item.id)}</strong><small>${Number(item.sets) || 0} sets${item.reps ? ` · ${escapeHtml(item.reps)} reps` : ""}</small></div></div></article>`).join("")}</div></section>`).join("")}
+    </div>
+    <div class="routine-import-savebar">
+      <div><strong>Ready to add</strong><small>An independent copy will be added to My Workouts.</small></div>
+      <button class="primary-btn" type="button" data-routine-save-shared>Add to My Workouts</button>
+    </div>
+  </div>`;
+}
+
+function saveSharedRoutine(button, page) {
+  const packageValue = importState?.sharedPackage;
+  if (!packageValue) return;
+  try {
+    button.disabled = true;
+    const imported = importSharedWorkoutPackage(packageValue);
+    button.textContent = "Added ✓";
+    window.setTimeout(() => {
+      closeImporter(page);
+      document.querySelector('.nav-btn[data-page="workout"]')?.click();
+      window.setTimeout(() => {
+        document.querySelector(`[data-custom-plan-id="${imported.id}"]`)?.click();
+      }, 140);
+    }, 220);
+  }
+  catch (error) {
+    console.error("Shared workout import failed:", error);
+    button.disabled = false;
+    button.textContent = "Could not add workout";
+  }
 }
 
 function renderReview(page) {
@@ -216,6 +280,6 @@ function saveRoutine(button, page) {
 
 function findItem(dayIndex, exerciseIndex) { return importState?.days?.[Number(dayIndex)]?.exercises?.[Number(exerciseIndex)] || null; }
 function suggestedName(days) { return days.length === 1 ? `${days[0].name} Routine` : `${days.length}-Day Imported Routine`; }
-function updateCounter(page) { const text = page.querySelector("#routine-import-text")?.value || ""; const counter = page.querySelector("[data-routine-count]"); if (counter) counter.textContent = `${text.length.toLocaleString()} / 20,000`; }
+function updateCounter(page) { const text = page.querySelector("#routine-import-text")?.value || ""; const counter = page.querySelector("[data-routine-count]"); if (counter) counter.textContent = `${text.length.toLocaleString()} / 100,000`; }
 function readPlans() { try { const value = JSON.parse(localStorage.getItem(PLAN_KEY) || "[]"); return Array.isArray(value) ? value : []; } catch { return []; } }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character])); }
