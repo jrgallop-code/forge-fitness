@@ -1,6 +1,8 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
+const API_URL = "https://api.leveluphypertrophy.com";
+const CLOUD_SESSION_KEY = "level_up_cloud_session";
 const CUSTOM_EXERCISE_STORAGE_KEY = "forge_custom_exercises";
 const SHARE_SCHEME = "leveluphypertrophy:";
 const SHARE_HOST = "workout";
@@ -177,6 +179,67 @@ export function decodeSharedWorkoutFromText(text) {
     return compactToken ? decodeSharedWorkoutToken(compactToken) : null;
 }
 
+export function extractSharedWorkoutCode(text) {
+    const value = String(text || "");
+    const webCode = value.match(/https:\/\/api\.leveluphypertrophy\.com\/w\/([A-Z2-9]{7})/i)?.[1];
+    if (webCode) return webCode.toUpperCase();
+    const deepLinkCode = value.match(/leveluphypertrophy:\/\/workout\/import\?[^\s]*?id=([A-Z2-9]{7})/i)?.[1];
+    return deepLinkCode ? deepLinkCode.toUpperCase() : "";
+}
+
+function cloudSessionToken() {
+    try {
+        return JSON.parse(localStorage.getItem(CLOUD_SESSION_KEY) || "null")?.token || "";
+    }
+    catch {
+        return "";
+    }
+}
+
+function cloudHeaders() {
+    const headers = { "Content-Type": "application/json" };
+    const token = cloudSessionToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
+}
+
+async function createShortWorkoutShare(packageValue) {
+    const response = await fetch(`${API_URL}/v1/workout-shares`, {
+        method: "POST",
+        headers: cloudHeaders(),
+        body: JSON.stringify({ workout: packageValue })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload?.url || !/\/w\/[A-Z2-9]{7}$/i.test(payload.url)) {
+        throw new Error(payload?.error || "Short workout link could not be created.");
+    }
+    return {
+        code: String(payload.code || "").toUpperCase(),
+        url: String(payload.url),
+        expiresAt: payload.expiresAt || null
+    };
+}
+
+export async function fetchSharedWorkoutPackage(code) {
+    const normalizedCode = String(code || "").toUpperCase();
+    if (!/^[A-Z2-9]{7}$/.test(normalizedCode)) throw new Error("Shared workout code is not valid.");
+    const response = await fetch(`${API_URL}/v1/workout-shares/${encodeURIComponent(normalizedCode)}`, {
+        headers: { Accept: "application/json" }
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload?.error || "Shared workout could not be loaded.");
+    const normalized = normalizePackage(payload?.workout);
+    if (!normalized) throw new Error("Shared workout data is not valid.");
+    return normalized;
+}
+
+export async function resolveSharedWorkoutFromText(text) {
+    const embedded = decodeSharedWorkoutFromText(text);
+    if (embedded) return embedded;
+    const code = extractSharedWorkoutCode(text);
+    return code ? fetchSharedWorkoutPackage(code) : null;
+}
+
 export function getSharedWorkoutStats(packageValue) {
     const normalized = normalizePackage(packageValue);
     const days = normalized?.plan?.days || [];
@@ -240,20 +303,33 @@ export function importSharedWorkoutPackage(packageValue) {
     return plan;
 }
 
-function shareMessageForPlan(plan) {
+async function shareMessageForPlan(plan) {
     const packageValue = createSharedWorkoutPackage(plan);
-    const token = encodeSharedWorkoutPackage(packageValue);
     const stats = getSharedWorkoutStats(packageValue);
-    const link = `https://app.leveluphypertrophy.com/share-workout.html?data=${token}`;
+    let link = "";
+    let shortCode = "";
+
+    try {
+        const shortShare = await createShortWorkoutShare(packageValue);
+        link = shortShare.url;
+        shortCode = shortShare.code;
+    }
+    catch (error) {
+        console.warn("Short workout share unavailable; using embedded fallback.", error);
+        const token = encodeSharedWorkoutPackage(packageValue);
+        link = `https://app.leveluphypertrophy.com/share-workout.html?data=${token}`;
+    }
+
     return {
         packageValue,
         link,
+        shortCode,
         text: `${packageValue.plan.name} — Level Up Workout\n${stats.days} day${stats.days === 1 ? "" : "s"} · ${stats.exercises} exercises · ${stats.workingSets} working sets\n\nOpen this workout in Level Up. If needed, copy this message and paste it into Workout → Import Routine.`
     };
 }
 
 export async function shareWorkoutPlan(plan) {
-    const share = shareMessageForPlan(plan);
+    const share = await shareMessageForPlan(plan);
 
     if (navigator.share) {
         try {
@@ -393,14 +469,22 @@ export function presentSharedWorkoutPreview(packageValue) {
     return true;
 }
 
-function handleWorkoutUrl(value) {
+async function handleWorkoutUrl(value) {
     try {
         const url = new URL(String(value || ""));
         if (url.protocol !== SHARE_SCHEME || url.hostname !== SHARE_HOST || url.pathname !== SHARE_PATH) return false;
-        const packageValue = decodeSharedWorkoutToken(url.searchParams.get("data"));
-        return packageValue ? presentSharedWorkoutPreview(packageValue) : false;
+
+        const embedded = decodeSharedWorkoutToken(url.searchParams.get("data"));
+        if (embedded) return presentSharedWorkoutPreview(embedded);
+
+        const code = String(url.searchParams.get("id") || "").toUpperCase();
+        if (!/^[A-Z2-9]{7}$/.test(code)) return false;
+
+        const packageValue = await fetchSharedWorkoutPackage(code);
+        return presentSharedWorkoutPreview(packageValue);
     }
-    catch {
+    catch (error) {
+        console.error("Shared workout link could not be opened:", error);
         return false;
     }
 }
@@ -416,10 +500,10 @@ function bindNativeListener() {
     nativeListenerBound = true;
     try {
         void appPlugin.addListener("appUrlOpen", event => {
-            handleWorkoutUrl(event?.url);
+            void handleWorkoutUrl(event?.url);
         });
         void appPlugin.getLaunchUrl?.().then(result => {
-            if (result?.url) handleWorkoutUrl(result.url);
+            if (result?.url) void handleWorkoutUrl(result.url);
         }).catch(() => {});
     }
     catch {
