@@ -240,3 +240,4 @@ TestFlight build 138: open a calendar from the Food Log date, mark logged days, 
 
 TestFlight build 139: keep the Food Log calendar open when moving between months, including months with no logged food.
 TestFlight build 140: add compact iOS workout sharing with full-template import fidelity, native share sheet, deep-link preview, custom-exercise transfer, and personal-history privacy filtering.
+TestFlight build 141: fix shared-workout theme leaks, use a clickable HTTPS handoff link, place shared/import sheets above the iOS tab bar, and preserve safe-area clearance for import actions.
