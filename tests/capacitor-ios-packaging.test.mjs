@@ -154,6 +154,7 @@ test("native iOS packages adaptive monthly reports and classic PDF export", asyn
     const router = await readFile(new URL("../js/core/router.js", import.meta.url), "utf8");
     const native = await readFile(new URL("../js/core/native-capabilities.js", import.meta.url), "utf8");
     const exporter = await readFile(new URL("../ios/App/App/LevelUpFileExportPlugin.swift", import.meta.url), "utf8");
+    const more = await readFile(new URL("../js/more/more-ui-v2.js", import.meta.url), "utf8");
 
     assert.match(report, /level_up_monthly_report_snapshots_v1/);
     assert.match(report, /weight\.available/);
@@ -177,6 +178,8 @@ test("native iOS packages adaptive monthly reports and classic PDF export", asyn
     assert.match(styles, /monthly-report-screen/);
     assert.match(router, /initializeMonthlyReports/);
     assert.match(router, /initializeMonthlyReportDashboardPrompt/);
+    assert.match(more, /data-more-page="monthly-reports"/);
+    assert.match(more, /level_up_monthly_report_open_hub_v1/);
     assert.match(native, /shareNativePdfFile/);
     assert.match(native, /shareNativeImageFile/);
     assert.match(exporter, /CAPPluginMethod\(name: "sharePdf"/);
@@ -200,4 +203,12 @@ test("native iOS packages adaptive monthly reports and classic PDF export", asyn
     assert.match(report, /WEEKLY VOLUME/);
     assert.match(report, /Weekly Muscle Volume/);
     assert.match(styles, /--muscle-set-accent/);
+    assert.match(report, /level_up_monthly_report_dismissed_v1/);
+    assert.match(report, /monthly-report-prompt-close/);
+    assert.match(report, /level_up_monthly_report_open_hub_v1/);
+    assert.match(exporter, /import WebKit/);
+    assert.match(exporter, /LevelUpPDFWebJob/);
+    assert.match(exporter, /loadHTMLString/);
+    assert.match(exporter, /viewPrintFormatter/);
+    assert.doesNotMatch(exporter, /UIMarkupTextPrintFormatter/);
 });
