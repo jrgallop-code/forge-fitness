@@ -82,7 +82,7 @@ function ensureStyles() {
     const link = document.createElement("link");
     link.id = STYLE_ID;
     link.rel = "stylesheet";
-    link.href = "css/monthly-report.css?v=ios-monthly-report-1";
+    link.href = "css/monthly-report.css?v=ios-monthly-report-2";
     document.head.appendChild(link);
 }
 
@@ -417,27 +417,6 @@ function renderNutrition(report) {
         '</div>' +
         (n.proteinTarget ? '<p class="monthly-report-insight">Protein target reached on <strong>' + n.proteinHitDays + ' of ' + n.loggedDays + '</strong> matched/logged days.</p>' : '') +
     '</section>';
-}
-
-function renderEffortCardio(report) {
-    let rir = "";
-    if (report.rir.available) {
-        rir = '<div class="monthly-effort-layout"><div class="monthly-rir-ring"><strong>' + report.rir.count + '</strong><span>RIR sets</span></div>' +
-            '<div class="monthly-rir-list">' + [0,1,2,3,4].map(function (value) {
-                return '<div><span>' + (value === 4 ? "4+" : value) + ' RIR</span><i><b style="width:' + report.rir.percentages[value] + '%"></b></i><strong>' + report.rir.percentages[value].toFixed(0) + '%</strong></div>';
-            }).join("") + '</div></div>';
-    }
-    let cardio = "";
-    if (report.cardio.available) {
-        cardio = '<div class="monthly-cardio-summary">' +
-            metricBlock(report.cardio.sessions, "Sessions") +
-            metricBlock(Math.round(report.cardio.duration), "Minutes") +
-            metricBlock(report.cardio.distanceKm.toFixed(report.cardio.distanceKm >= 10 ? 1 : 2), "km") +
-        '</div>';
-    }
-    return '<section class="monthly-report-card" id="monthly-section-effort">' +
-        '<div class="monthly-report-card-head"><div><span class="eyebrow">TRAINING EFFORT</span><h2>How you trained</h2><p>Shown only when enough data is available.</p></div></div>' +
-        rir + cardio + '</section>';
 }
 
 function renderImprovement(report) {
@@ -903,6 +882,8 @@ function buildPdfHtml(report, markSvg) {
         pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Body Weight") +
             '<h2>Trend weight</h2><p class="lead">Daily weigh-ins are smoothed to reduce normal scale noise.</p>' +
             '<div class="pdf-chart">' + lineChartSvg(report.weight.trendSeries, "weight", report.weight.goalWeight, "Weight trend chart") + '</div>' +
+            '<div class="pdf-legend"><span><i class="trend-weight"></i>Trend Weight</span>' +
+            (Number.isFinite(report.weight.goalWeight) ? '<span><i class="goal-weight"></i>Goal weight</span>' : '') + '</div>' +
             '<div class="pdf-summary-grid">' +
                 pdfSummary(report.weight.start.toFixed(1) + " lb", "Start") +
                 pdfSummary(report.weight.end.toFixed(1) + " lb", "End") +
@@ -916,6 +897,7 @@ function buildPdfHtml(report, markSvg) {
         pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Nutrition") +
             '<h2>Calories & expenditure</h2><div class="pdf-chart">' +
             twoLineChartSvg(report.nutrition.chartPoints.map(function (point) { return { date: point.date, calories: point.intakeCalories, expenditure: point.expenditureCalories }; }), "calories", "expenditure", "Calories and expenditure chart") + '</div>' +
+            '<div class="pdf-legend"><span><i class="calories"></i>Calories</span><span><i class="expenditure"></i>Expenditure</span></div>' +
             '<div class="pdf-summary-grid">' +
                 pdfSummary(Math.round(report.nutrition.averageCalories).toLocaleString(), "Avg calories") +
                 pdfSummary(Math.round(report.nutrition.averageProtein) + " g", "Avg protein") +
@@ -959,7 +941,7 @@ function pdfCss() {
     '.pdf-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}.pdf-panel{padding:18px;border-radius:12px;background:#111;color:#fff;margin:14px 0}.pdf-panel h2{margin:0 0 8px;font-size:18px}.pdf-panel p{margin:0;line-height:1.5;color:#e4e4e4}' +
     '.pdf-two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}.pdf-two>div{padding:16px;border:1px solid #e0e0e0;border-radius:12px}.pdf-two h3{margin:0 0 10px}.check,.focus{font-size:11px;line-height:1.5}.check b{color:#198754}.focus b{color:#e51b26}.muted,.lead{color:#666}' +
     '.pdf-bars{display:grid;gap:8px;margin:12px 0 22px}.pdf-bar{display:grid;grid-template-columns:145px 1fr 55px;align-items:center;gap:10px;font-size:10px}.pdf-bar-track{height:10px;border-radius:999px;background:#e7e7e9;overflow:hidden}.pdf-bar-fill{height:100%;background:#e51b26}.pdf-bar strong{text-align:right}' +
-    '.pdf-chart{margin:12px 0 20px;padding:12px;border:1px solid #ddd;border-radius:12px}.pdf-chart svg{display:block;width:100%;height:210px}.pdf-chart .grid line{stroke:#ddd}.pdf-chart .trend{stroke:#e51b26;stroke-width:3}.pdf-chart .second{stroke:#555}.pdf-chart circle{fill:#e51b26}.pdf-chart .target{stroke:#777;stroke-dasharray:5 4}' +
+    '.pdf-chart{margin:12px 0 8px;padding:12px;border:1px solid #ddd;border-radius:12px}.pdf-chart svg{display:block;width:100%;height:210px}.pdf-chart .grid line{stroke:#ddd}.pdf-chart .trend{stroke:#e51b26;stroke-width:3}.pdf-chart .second{stroke:#111}.pdf-chart circle{fill:#e51b26}.pdf-chart .target{stroke:#777;stroke-dasharray:5 4}.pdf-legend{display:flex;gap:14px;margin:0 0 18px;color:#555;font-size:9px;font-weight:750}.pdf-legend span{display:inline-flex;align-items:center;gap:5px}.pdf-legend i{display:inline-block;width:16px;height:4px;border-radius:999px;background:#ddd}.pdf-legend .trend-weight{background:#e51b26}.pdf-legend .goal-weight{height:2px;background:repeating-linear-gradient(90deg,#777 0 5px,transparent 5px 8px)}.pdf-legend .calories{width:10px;height:10px;border-radius:2px;background:#e51b26;opacity:.55}.pdf-legend .expenditure{height:3px;background:#111}' +
     '.pdf-insight{padding:16px;border-left:5px solid #e51b26;background:#f6f6f7;margin-top:18px}.pdf-insight b{font-size:11px;text-transform:uppercase;letter-spacing:.7px}.pdf-insight p{margin:6px 0 0;line-height:1.5}' +
     '.pdf-focus-list{display:grid;gap:14px}.pdf-focus-list article{display:grid;grid-template-columns:48px 1fr;gap:14px;padding:16px;border:1px solid #ddd;border-radius:14px}.pdf-focus-list article>b{display:grid;place-items:center;width:42px;height:42px;border-radius:10px;background:#e51b26;color:#fff}.pdf-focus-list h2{font-size:16px;margin:0 0 5px}.pdf-focus-list p{font-size:11px;line-height:1.45;color:#555;margin:0 0 8px}.pdf-focus-list strong{font-size:10px;color:#e51b26}' +
     '.pdf-keep{margin-top:22px;padding:18px;background:#f4f4f5;border-radius:12px}.pdf-keep h2{margin:0 0 8px}.pdf-keep p{margin:6px 0;font-size:11px}.pdf-closing{margin-top:26px;font-size:24px;font-weight:950;letter-spacing:-.5px}.pdf-footer{position:absolute;left:38px;right:38px;bottom:24px;display:flex;justify-content:space-between;border-top:1px solid #ddd;padding-top:8px;font-size:7px;color:#777;letter-spacing:.8px}';
