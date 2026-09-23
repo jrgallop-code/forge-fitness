@@ -170,6 +170,9 @@ export function decodeSharedWorkoutFromText(text) {
     const directToken = value.match(/leveluphypertrophy:\/\/workout\/import\?[^\s]*?data=([A-Za-z0-9_-]+)/i)?.[1];
     if (directToken) return decodeSharedWorkoutToken(directToken);
 
+    const webToken = value.match(/https:\/\/app\.leveluphypertrophy\.com\/share-workout\.html\?[^\s]*?data=([A-Za-z0-9_-]+)/i)?.[1];
+    if (webToken) return decodeSharedWorkoutToken(webToken);
+
     const compactToken = value.match(/LEVELUP_WORKOUT_V1:([A-Za-z0-9_-]+)/i)?.[1];
     return compactToken ? decodeSharedWorkoutToken(compactToken) : null;
 }
@@ -241,11 +244,11 @@ function shareMessageForPlan(plan) {
     const packageValue = createSharedWorkoutPackage(plan);
     const token = encodeSharedWorkoutPackage(packageValue);
     const stats = getSharedWorkoutStats(packageValue);
-    const link = `leveluphypertrophy://workout/import?data=${token}`;
+    const link = `https://app.leveluphypertrophy.com/share-workout.html?data=${token}`;
     return {
         packageValue,
         link,
-        text: `${packageValue.plan.name} — Level Up Workout\n${stats.days} day${stats.days === 1 ? "" : "s"} · ${stats.exercises} exercises · ${stats.workingSets} working sets\n\nOpen this workout in Level Up:\n${link}\n\nIf the link does not open, copy this message and paste it into Workout → Import Routine.`
+        text: `${packageValue.plan.name} — Level Up Workout\n${stats.days} day${stats.days === 1 ? "" : "s"} · ${stats.exercises} exercises · ${stats.workingSets} working sets\n\nOpen this workout in Level Up. If needed, copy this message and paste it into Workout → Import Routine.`
     };
 }
 
@@ -256,7 +259,8 @@ export async function shareWorkoutPlan(plan) {
         try {
             await navigator.share({
                 title: `${share.packageValue.plan.name} — Level Up`,
-                text: share.text
+                text: share.text,
+                url: share.link
             });
             return { method: "share", link: share.link };
         }
@@ -266,11 +270,11 @@ export async function shareWorkoutPlan(plan) {
     }
 
     if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(share.text);
+        await navigator.clipboard.writeText(`${share.text}\n\n${share.link}`);
         return { method: "copy", link: share.link };
     }
 
-    return { method: "unsupported", link: share.link, text: share.text };
+    return { method: "unsupported", link: share.link, text: `${share.text}\n\n${share.link}` };
 }
 
 function escapeHtml(value) {
@@ -291,23 +295,25 @@ function ensureStyles() {
         .plan-detail-header{position:relative}
         .plan-detail-header.has-share-menu{padding-right:3rem}
         .plan-detail-overflow{position:absolute;right:0;top:0;z-index:5}
-        .plan-detail-overflow-button{width:2.5rem;height:2.5rem;border-radius:999px;border:1px solid color-mix(in srgb,currentColor 18%,transparent);background:color-mix(in srgb,var(--card-bg,#17171b) 92%,transparent);color:inherit;font-size:1.45rem;line-height:1;display:grid;place-items:center;padding:0}
-        .plan-detail-overflow-menu{position:absolute;right:0;top:2.8rem;min-width:10.5rem;padding:.35rem;border-radius:.8rem;background:var(--card-bg,#17171b);border:1px solid color-mix(in srgb,currentColor 18%,transparent);box-shadow:0 12px 30px rgba(0,0,0,.24)}
+        .plan-detail-overflow-button{width:2.5rem;height:2.5rem;border-radius:999px;border:1px solid var(--line);background:var(--surface-raised);color:var(--text);-webkit-text-fill-color:var(--text);font-size:1.45rem;line-height:1;display:grid;place-items:center;padding:0}
+        .plan-detail-overflow-menu{position:absolute;right:0;top:2.8rem;min-width:10.5rem;padding:.35rem;border-radius:.8rem;background:var(--surface);color:var(--text);border:1px solid var(--line);box-shadow:var(--shadow)}
         .plan-detail-overflow-menu[hidden]{display:none}
-        .plan-detail-overflow-menu button{width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:.7rem .8rem;border-radius:.6rem;font:inherit}
-        .plan-detail-overflow-menu button:active{background:color-mix(in srgb,currentColor 10%,transparent)}
-        .shared-workout-overlay{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.64);display:grid;align-items:end;padding:1rem}
-        .shared-workout-sheet{width:min(100%,34rem);max-height:min(84vh,44rem);overflow:auto;margin:0 auto;background:var(--card-bg,#17171b);color:var(--text-color,#fff);border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:1.2rem;padding:1rem;box-shadow:0 18px 60px rgba(0,0,0,.4)}
-        .shared-workout-sheet h2{margin:.25rem 0 .3rem;font-size:1.35rem}
-        .shared-workout-sheet p{margin:.2rem 0 .9rem;opacity:.76}
+        .plan-detail-overflow-menu button{width:100%;border:0;background:transparent;color:var(--text);-webkit-text-fill-color:var(--text);text-align:left;padding:.7rem .8rem;border-radius:.6rem;font:inherit}
+        .plan-detail-overflow-menu button:active{background:var(--accent-soft)}
+        .shared-workout-overlay{position:fixed;inset:0;z-index:40050;background:rgba(0,0,0,.64);display:grid;align-items:end;padding:1rem}
+        .shared-workout-sheet{width:min(100%,34rem);max-height:min(84vh,44rem);overflow:auto;margin:0 auto;background:var(--surface);color:var(--text);border:1px solid var(--card-border,var(--line));border-radius:1.2rem;padding:1rem;box-shadow:var(--shadow)}
+        .shared-workout-sheet h2{margin:.25rem 0 .3rem;font-size:1.35rem;color:var(--heading)}
+        .shared-workout-sheet p{margin:.2rem 0 .9rem;color:var(--text-secondary)}
         .shared-workout-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin:.9rem 0}
-        .shared-workout-stats div{padding:.7rem .45rem;border-radius:.75rem;background:color-mix(in srgb,currentColor 7%,transparent);text-align:center}
+        .shared-workout-stats div{padding:.7rem .45rem;border-radius:.75rem;border:1px solid var(--line);background:var(--surface-raised);text-align:center;color:var(--text)}
         .shared-workout-stats strong,.shared-workout-stats span{display:block}
-        .shared-workout-stats span{font-size:.72rem;opacity:.7;margin-top:.15rem}
+        .shared-workout-stats strong{color:var(--heading)}
+        .shared-workout-stats span{font-size:.72rem;color:var(--muted);margin-top:.15rem}
         .shared-workout-days{display:grid;gap:.45rem;margin:.8rem 0 1rem}
-        .shared-workout-day{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.72rem .8rem;border-radius:.75rem;background:color-mix(in srgb,currentColor 6%,transparent)}
-        .shared-workout-day span{font-size:.78rem;opacity:.7}
-        .shared-workout-actions{display:grid;grid-template-columns:1fr 1.25fr;gap:.6rem;position:sticky;bottom:-1rem;padding-top:.7rem;background:var(--card-bg,#17171b)}
+        .shared-workout-day{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.72rem .8rem;border:1px solid var(--line);border-radius:.75rem;background:var(--surface-raised);color:var(--text)}
+        .shared-workout-day strong{color:var(--heading)}
+        .shared-workout-day span{font-size:.78rem;color:var(--muted)}
+        .shared-workout-actions{display:grid;grid-template-columns:1fr 1.25fr;gap:.6rem;position:sticky;bottom:-1rem;padding:.7rem 0 calc(1rem + env(safe-area-inset-bottom));background:var(--surface)}
         @media (min-width:700px){.shared-workout-overlay{align-items:center}}
     `;
     document.head.appendChild(style);
