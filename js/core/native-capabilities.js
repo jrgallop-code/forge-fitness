@@ -30,6 +30,21 @@ export async function shareNativePdfFile({ html, filename }) {
         cancelled: result?.cancelled === true
     };
 }
+
+export async function shareNativeImageFile({ imageData, filename }) {
+    const exporter = plugin("LevelUpFileExport");
+    if (!isNative() || !exporter?.shareImage) return null;
+
+    const result = await exporter.shareImage({
+        imageData: String(imageData || ""),
+        filename: String(filename || "level-up-summary.png")
+    });
+
+    return {
+        completed: result?.completed === true,
+        cancelled: result?.cancelled === true
+    };
+}
 const HOME_ICON_KEY = "level_up_home_icon";
 const HOME_ICON_IDS = new Set(["level-up", "arctic", "pure", "ocean", "midnight", "slate", "pulse"]);
 
