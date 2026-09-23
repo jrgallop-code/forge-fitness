@@ -904,7 +904,11 @@ async function exportPdf(report, screen, button) {
     if (status) status.textContent = "Building your Level Up report…";
     try {
         const markSvg = await fetch("assets/level-up-mark-transparent.svg").then(function (response) { return response.ok ? response.text() : ""; });
-        const html = buildPdfHtml(report, markSvg);
+        const anatomy = report.muscles.available ? {
+            front: await buildPdfAnatomyData(report, "front"),
+            back: await buildPdfAnatomyData(report, "back")
+        } : {};
+        const html = buildPdfHtml(report, markSvg, anatomy);
         const result = await shareNativePdfFile({ html: html, filename: "Level-Up-" + report.monthKey + "-Performance-Report.pdf" });
         if (!result) throw new Error("PDF export is available in the iOS app.");
         if (status) status.textContent = result.cancelled ? "PDF export cancelled." : "PDF ready to save or share.";
@@ -917,7 +921,61 @@ async function exportPdf(report, screen, button) {
     }
 }
 
-function buildPdfHtml(report, markSvg) {
+async function buildPdfAnatomyData(report, side) {
+    const config = getAnatomyConfig(side);
+    const source = await fetch(config.asset).then(function (response) {
+        if (!response.ok) throw new Error("The muscle map could not be loaded.");
+        return response.text();
+    });
+    const parser = new DOMParser();
+    const documentValue = parser.parseFromString(source, "image/svg+xml");
+    const svg = documentValue.documentElement;
+    if (!svg || svg.nodeName.toLowerCase() !== "svg") return "";
+
+    svg.setAttribute("viewBox", config.viewBox);
+    svg.setAttribute("width", "960");
+    svg.setAttribute("height", "1920");
+    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+
+    const volume = new Map(report.muscles.rows.map(function (row) { return [row.name, row.sets]; }));
+    const monthlyScale = Math.max(12, 12 * Math.max(1, report.muscles.weeks));
+    const overlay = documentValue.createElementNS("http://www.w3.org/2000/svg", "g");
+    overlay.setAttribute("id", "level-up-monthly-volume-overlay");
+
+    Object.entries(config.regions || {}).forEach(function (entry) {
+        const muscle = entry[0];
+        const ids = entry[1];
+        const sets = Number(volume.get(muscle) || (muscle === "Rear Delts" ? volume.get("Shoulders") || 0 : 0));
+        const intensity = Math.max(0, Math.min(1, sets / monthlyScale));
+        if (!(intensity > 0)) return;
+        ids.forEach(function (id) {
+            const use = documentValue.createElementNS("http://www.w3.org/2000/svg", "use");
+            use.setAttribute("href", "#" + id);
+            use.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#" + id);
+            use.setAttribute("fill", "#45CB75");
+            use.setAttribute("fill-opacity", intensity.toFixed(3));
+            use.setAttribute("stroke", "#222");
+            use.setAttribute("stroke-width", "1.2");
+            overlay.appendChild(use);
+        });
+    });
+    svg.appendChild(overlay);
+
+    const serialized = new XMLSerializer().serializeToString(svg);
+    return "data:image/svg+xml;base64," + utf8Base64(serialized);
+}
+
+function utf8Base64(value) {
+    const bytes = new TextEncoder().encode(String(value || ""));
+    let binary = "";
+    for (let index = 0; index < bytes.length; index += 0x8000) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(index, Math.min(index + 0x8000, bytes.length)));
+    }
+    return btoa(binary);
+}
+
+function buildPdfHtml(report, markSvg, anatomy = {}) {
     const markData = extractEmbeddedMarkData(markSvg);
     const logo = markData ? '<div class="brand-logo"><img src="' + markData + '" alt="Level Up"></div>' : '<div class="brand-fallback">LEVEL UP</div>';
     const profile = getNutritionProfile() || {};
@@ -951,17 +1009,22 @@ function buildPdfHtml(report, markSvg) {
             pdfFooter(report, pdfPage++) + '</section>');
     }
 
-    // Strength mirrors the in-app Strength tab.
+    // Strength mirrors the in-app Strength tab and retains every improved lift.
     if (report.strength.available) {
-        pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Strength") +
-            '<div class="pdf-section-intro"><span>STRENGTH</span><h2>You got stronger</h2><p>First-to-latest comparable performance this month.</p></div>' +
-            '<div class="pdf-pr-count"><b>' + report.prCount + '</b><span>PRs this month</span></div>' +
-            '<div class="pdf-bars">' +
-                pdfBarRows(report.strength.improvements.map(function (row) { return { label: row.name, value: row.percent, suffix: "%" }; })) +
-            '</div>' +
-            '<div class="pdf-legend"><span><i class="strength-gain"></i>Estimated strength change vs first comparable session</span></div>' +
-            (report.strength.best ? '<div class="pdf-insight"><b>Biggest improvement</b><p>' + escapeHtml(report.strength.best.name) + ' · +' + report.strength.best.percent.toFixed(1) + '%</p></div>' : '') +
-            pdfFooter(report, pdfPage++) + '</section>');
+        const strengthPages = chunk(report.strength.improvements, 8);
+        strengthPages.forEach(function (strengthRows, index) {
+            pages.push('<section class="pdf-page">' + pdfHeader(logo, report, index === 0 ? "Strength" : "Strength · Continued") +
+                '<div class="pdf-section-intro"><span>STRENGTH</span><h2>You got stronger</h2><p>' +
+                    (index === 0 ? 'Every lift with a measurable first-to-latest improvement this month, strongest gains first.' : 'Additional improved lifts from this month.') +
+                '</p></div>' +
+                (index === 0 ? '<div class="pdf-pr-count"><b>' + report.prCount + '</b><span>PRs this month</span></div>' : '') +
+                '<div class="pdf-bars">' +
+                    pdfBarRows(strengthRows.map(function (row) { return { label: row.name, value: row.percent, suffix: "%" }; })) +
+                '</div>' +
+                '<div class="pdf-legend"><span><i class="strength-gain"></i>Estimated strength change vs first comparable session</span></div>' +
+                (index === 0 && report.strength.best ? '<div class="pdf-insight"><b>Biggest improvement</b><p>' + escapeHtml(report.strength.best.name) + ' · +' + report.strength.best.percent.toFixed(1) + '%</p></div>' : '') +
+                pdfFooter(report, pdfPage++) + '</section>');
+        });
     }
 
     // Monthly Volume mirrors the in-app Monthly Volume tab. PDF shows both sides because it cannot flip.
@@ -969,8 +1032,8 @@ function buildPdfHtml(report, markSvg) {
         pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Monthly Volume") +
             '<div class="pdf-section-intro"><span>MONTHLY VOLUME</span><h2>Monthly Muscle Volume</h2><p>Effective set credits accumulated during this report month.</p></div>' +
             '<div class="pdf-volume-layout"><div class="pdf-anatomy-pair">' +
-                '<div>' + monthlyAnatomyMarkup(report, "front") + '</div>' +
-                '<div>' + monthlyAnatomyMarkup(report, "back") + '</div>' +
+                '<figure><span>Front</span>' + (anatomy.front ? '<img src="' + anatomy.front + '" alt="Front monthly muscle volume">' : '') + '</figure>' +
+                '<figure><span>Back</span>' + (anatomy.back ? '<img src="' + anatomy.back + '" alt="Back monthly muscle volume">' : '') + '</figure>' +
             '</div><div class="pdf-bars">' +
                 pdfBarRows(report.muscles.rows.map(function (row) { return { label: row.name, value: row.sets, suffix: " sets" }; })) +
             '</div></div>' +
@@ -1324,16 +1387,20 @@ function barRows(rows, limit) {
     const visible = rows.slice(0, limit);
     const max = Math.max.apply(null, [1].concat(visible.map(function (row) { return Number(row.value) || 0; })));
     return visible.map(function (row) {
-        return '<div class="monthly-bar-row"><span>' + escapeHtml(row.label) + '</span><div><i style="width:' + Math.max(3, (Number(row.value) || 0) / max * 100) + '%"></i></div><strong>' +
-            Number(row.value).toFixed(1) + escapeHtml(row.suffix) + '</strong></div>';
+        const numeric = Number(row.value) || 0;
+        const width = numeric > 0 ? Math.max(3, numeric / max * 100) : 0;
+        return '<div class="monthly-bar-row"><span>' + escapeHtml(row.label) + '</span><div><i style="width:' + width + '%"></i></div><strong>' +
+            numeric.toFixed(1) + escapeHtml(row.suffix) + '</strong></div>';
     }).join("");
 }
 
 function pdfBarRows(rows) {
     const max = Math.max.apply(null, [1].concat(rows.map(function (row) { return Number(row.value) || 0; })));
     return rows.map(function (row) {
+        const numeric = Number(row.value) || 0;
+        const width = numeric > 0 ? Math.max(3, numeric / max * 100) : 0;
         return '<div class="pdf-bar"><span>' + escapeHtml(row.label) + '</span><div class="pdf-bar-track"><div class="pdf-bar-fill" style="width:' +
-            Math.max(3, (Number(row.value) || 0) / max * 100) + '%"></div></div><strong>' + Number(row.value).toFixed(1) + escapeHtml(row.suffix) + '</strong></div>';
+            width + '%"></div></div><strong>' + numeric.toFixed(1) + escapeHtml(row.suffix) + '</strong></div>';
     }).join("");
 }
 
