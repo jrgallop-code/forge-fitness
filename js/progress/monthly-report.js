@@ -61,7 +61,7 @@ export function initializeMonthlyReportDashboardPrompt(root = document) {
     const now = new Date();
     if (now.getDate() > 7) return;
     const previous = shiftMonth(monthKeyForDate(now), -1);
-    if (!monthHasMeaningfulData(previous) || seenMonths().has(previous) || isReportDismissed(previous)) return;
+    if (!monthHasMeaningfulData(previous) || isReportDismissed(previous)) return;
 
     const host = root.querySelector ? (root.querySelector("#content") || root) : root;
     if (!host || host.querySelector("[data-monthly-report-dashboard]")) return;
