@@ -53,6 +53,8 @@ const BARCODE_CHOICE_MAX_AGE_MS = 90 * 86400000;
 const ZXING_BROWSER_URL = "https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/zxing-browser.min.js";
 const ZXING_BROWSER_INTEGRITY = "sha384-HRtzk9lZgkbSgvUyQrnfC/GxiXZgwaNyD7hC9wcXlsBpDhkS80ISl73juef2FRuf";
 let selectedDate = localDateKey();
+let calendarMonth = new Date(`${selectedDate.slice(0, 7)}-01T12:00:00`);
+let calendarEventsAbort = null;
 let selectedFood = null;
 let selectedMeal = "Breakfast";
 let addContext = "log";
@@ -99,9 +101,10 @@ function renderFoodLogShell() {
             </header>
             <div class="food-log-date-nav">
                 <button type="button" data-food-date-shift="-1" aria-label="Previous day">←</button>
-                <button type="button" data-food-date-today><strong data-food-date-label>Today</strong><small data-food-date-value></small></button>
+                <button type="button" data-food-calendar-toggle aria-label="Choose food log date" aria-expanded="false" aria-controls="food-log-calendar"><strong data-food-date-label>Today</strong><small data-food-date-value></small><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg></button>
                 <button type="button" data-food-date-shift="1" aria-label="Next day">→</button>
             </div>
+            <div class="food-log-calendar" id="food-log-calendar" data-food-calendar hidden></div>
             <article class="food-daily-summary" data-food-summary></article>
             <div class="food-day-complete" data-food-day-complete></div>
             <div class="food-meals" data-food-meals></div>
@@ -210,7 +213,43 @@ export function initializeFoodLog() {
     bindHubTabs(hub);
     hub.querySelector("[data-food-add]")?.addEventListener("click", openFoodSheet);
     hub.querySelectorAll("[data-food-date-shift]").forEach(button => button.addEventListener("click", () => shiftDate(Number(button.dataset.foodDateShift))));
-    hub.querySelector("[data-food-date-today]")?.addEventListener("click", () => { selectedDate = localDateKey(); renderDay(); });
+    const calendarToggle = hub.querySelector("[data-food-calendar-toggle]");
+    const calendar = hub.querySelector("[data-food-calendar]");
+    calendarToggle?.addEventListener("click", () => {
+        if (!calendar) return;
+        const opening = calendar.hidden;
+        calendar.hidden = !opening;
+        calendarToggle.setAttribute("aria-expanded", String(opening));
+        if (opening) {
+            calendarMonth = new Date(`${selectedDate.slice(0, 7)}-01T12:00:00`);
+            renderFoodCalendar();
+        }
+    });
+    calendar?.addEventListener("click", event => {
+        const monthButton = event.target.closest("[data-food-calendar-month]");
+        if (monthButton) {
+            calendarMonth.setMonth(calendarMonth.getMonth() + Number(monthButton.dataset.foodCalendarMonth));
+            renderFoodCalendar();
+            return;
+        }
+        const dateButton = event.target.closest("[data-food-calendar-date]");
+        if (dateButton) {
+            selectedDate = dateButton.dataset.foodCalendarDate;
+            closeFoodCalendar();
+            renderDay();
+        }
+    });
+    calendarEventsAbort?.abort();
+    calendarEventsAbort = new AbortController();
+    document.addEventListener("click", event => {
+        if (calendar && !calendar.hidden && !calendar.contains(event.target) && !calendarToggle?.contains(event.target)) closeFoodCalendar();
+    }, { signal: calendarEventsAbort.signal });
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && calendar && !calendar.hidden) {
+            closeFoodCalendar();
+            calendarToggle?.focus();
+        }
+    }, { signal: calendarEventsAbort.signal });
     document.querySelectorAll("[data-food-close]").forEach(button => button.addEventListener("click", closeFoodSheet));
     document.querySelectorAll("[data-food-mode]").forEach(button => button.addEventListener("click", () => showFoodMode(button.dataset.foodMode)));
     document.querySelectorAll("[data-food-target-meal]").forEach(button => button.addEventListener("click", () => selectTargetMeal(button.dataset.foodTargetMeal)));
@@ -282,7 +321,34 @@ function shiftDate(days) {
     const date = new Date(`${selectedDate}T12:00:00`);
     date.setDate(date.getDate() + days);
     selectedDate = localDateKey(date);
+    closeFoodCalendar();
     renderDay();
+}
+
+function closeFoodCalendar() {
+    const calendar = document.querySelector("[data-food-calendar]");
+    if (calendar) calendar.hidden = true;
+    document.querySelector("[data-food-calendar-toggle]")?.setAttribute("aria-expanded", "false");
+}
+
+function renderFoodCalendar() {
+    const calendar = document.querySelector("[data-food-calendar]");
+    if (!calendar || calendar.hidden) return;
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstWeekday = new Date(year, month, 1, 12).getDay();
+    const daysInMonth = new Date(year, month + 1, 0, 12).getDate();
+    const monthLabel = calendarMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    const today = localDateKey();
+    const cells = Array.from({ length: firstWeekday }, () => '<span aria-hidden="true"></span>');
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day, 12);
+        const key = localDateKey(date);
+        const hasFood = entriesForDate(key).length > 0;
+        const label = date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+        cells.push(`<button type="button" data-food-calendar-date="${key}" aria-label="${label}${hasFood ? ", food logged" : ""}" aria-pressed="${key === selectedDate}" class="${key === selectedDate ? "selected " : ""}${key === today ? "today" : ""}">${day}${hasFood ? '<i aria-hidden="true"></i>' : ""}</button>`);
+    }
+    calendar.innerHTML = `<div class="food-calendar-header"><button type="button" data-food-calendar-month="-1" aria-label="Previous month">‹</button><strong>${monthLabel}</strong><button type="button" data-food-calendar-month="1" aria-label="Next month">›</button></div><div class="food-calendar-weekdays" aria-hidden="true">${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => `<span>${day}</span>`).join("")}</div><div class="food-calendar-days">${cells.join("")}</div><button type="button" class="food-calendar-today" data-food-calendar-date="${today}">Go to today</button>`;
 }
 
 function renderDay() {
@@ -294,6 +360,7 @@ function renderDay() {
     const isToday = selectedDate === localDateKey();
     setText("[data-food-date-label]", isToday ? "Today" : date.toLocaleDateString(undefined, { weekday: "long" }));
     setText("[data-food-date-value]", date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }));
+    renderFoodCalendar();
     const summary = document.querySelector("[data-food-summary]");
     if (summary) summary.innerHTML = summaryMarkup(totals, target);
     const completion = document.querySelector("[data-food-day-complete]");
