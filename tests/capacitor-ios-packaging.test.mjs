@@ -188,6 +188,7 @@ test("native iOS packages adaptive monthly reports and classic PDF export", asyn
     assert.match(exporter, /LevelUpPDFWebJob/);
     assert.match(exporter, /WKWebViewConfiguration/);
     assert.match(exporter, /loadHTMLString/);
+    assert.match(exporter, /Bundle\.main\.url\(forResource: "public", withExtension: nil\)/);
     assert.match(exporter, /viewPrintFormatter/);
     assert.doesNotMatch(exporter, /UIMarkupTextPrintFormatter/);
     assert.match(exporter, /LevelUpPDFPageRenderer/);
@@ -200,8 +201,18 @@ test("native iOS packages adaptive monthly reports and classic PDF export", asyn
     assert.doesNotMatch(report, /monthly-report-head-actions/);
     assert.match(report, /level-up-mark-transparent\.svg/);
     assert.doesNotMatch(report, /level-up-logo\.svg/);
-    assert.match(report, /WEEKLY VOLUME/);
-    assert.match(report, /Weekly Muscle Volume/);
+    assert.match(report, /MONTHLY VOLUME/);
+    assert.match(report, /Monthly Muscle Volume/);
+    assert.doesNotMatch(report, /Weekly Muscle Volume/);
+    assert.doesNotMatch(report, /label: "Weekly Volume"/);
+    assert.match(report, /pdfHeader\(logo, report, "Training"\)/);
+    assert.match(report, /pdfHeader\(logo, report, "Strength"\)/);
+    assert.match(report, /pdfHeader\(logo, report, "Monthly Volume"\)/);
+    assert.match(report, /pdfHeader\(logo, report, "Weight"\)/);
+    assert.match(report, /pdfHeader\(logo, report, "Nutrition"\)/);
+    assert.match(report, /pdfHeader\(logo, report, "Focus"\)/);
+    assert.doesNotMatch(report, /Executive Summary/);
+    assert.doesNotMatch(report, /Training & Strength/);
     assert.match(styles, /--muscle-set-accent/);
     assert.match(report, /level_up_monthly_report_dismissed_v1/);
     assert.match(report, /monthly-report-prompt-close/);
