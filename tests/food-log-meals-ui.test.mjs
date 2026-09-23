@@ -8,6 +8,7 @@ test("food log date opens a calendar and selects an editable diary day", async (
     const [module, styles] = await Promise.all([read("../js/nutrition/food-log.js"), read("../css/food-log.css")]);
     assert.match(module, /data-food-calendar-toggle aria-label="Choose food log date"/);
     assert.match(module, /data-food-calendar-month="-1"/);
+    assert.match(module, /calendar\?\.addEventListener\("click", event => \{\s*\/\/[^\n]*\n[^\n]*\n\s*event\.stopPropagation\(\)/);
     assert.match(module, /data-food-calendar-date="\$\{key\}"/);
     assert.match(module, /selectedDate = dateButton\.dataset\.foodCalendarDate;\s*closeFoodCalendar\(\);\s*renderDay\(\)/);
     assert.match(module, /entriesForDate\(key\)\.length > 0/);
