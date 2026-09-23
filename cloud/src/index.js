@@ -27,6 +27,19 @@ const AUTH_RATE_WINDOW_MS = 15 * 60 * 1000;
 const AUTH_RATE_MAX_FAILURES = 10;
 const TRANSFER_CODE_LIFETIME_MS = 10 * 60 * 1000;
 const TRANSFER_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const WORKOUT_SHARE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const WORKOUT_SHARE_CODE_LENGTH = 7;
+const WORKOUT_SHARE_MAX_BYTES = 64 * 1024;
+const WORKOUT_SHARE_LIFETIME_MS = 180 * 24 * 60 * 60 * 1000;
+const WORKOUT_SHARE_PUBLIC_ORIGIN = "https://api.leveluphypertrophy.com";
+const WORKOUT_SHARE_PRIVATE_KEYS = new Set([
+    "userId", "ownerId", "accountId", "lastWorkout", "lastWorkoutAt",
+    "workoutHistory", "history", "sessions", "completedWorkouts", "prs",
+    "personalRecords", "progressHistory", "progressionHistory",
+    "previousWeight", "previousReps", "lastWeight", "lastReps",
+    "loggedWeight", "weightHistory"
+]);
+const WORKOUT_SHARE_DANGEROUS_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 const APPLE_TOKEN_ISSUER = "https://appleid.apple.com";
 let appleKeyCache = { expiresAt: 0, keys: [] };
 const ACQUISITION_SOURCES = new Set(["instagram", "tiktok", "reddit", "youtube", "google_search", "friend_family", "app_recommendation", "other", "prefer_not_to_say"]);
@@ -73,6 +86,19 @@ async function handleRequest(request, env, ctx) {
     if (url.pathname === "/v1/session/transfer" && request.method === "POST") {
         const body = await readJson(request, 8 * 1024);
         return redeemAccountTransferCode(body, request, env);
+    }
+
+    if (url.pathname === "/v1/workout-shares" && request.method === "POST") {
+        const body = await readJson(request, WORKOUT_SHARE_MAX_BYTES + 16 * 1024);
+        return createWorkoutShare(body, request, env);
+    }
+    const workoutShareMatch = url.pathname.match(/^\/v1\/workout-shares\/([A-Z2-9]{7})$/i);
+    if (workoutShareMatch && request.method === "GET") {
+        return getWorkoutShare(workoutShareMatch[1], request, env);
+    }
+    const workoutShareLandingMatch = url.pathname.match(/^\/w\/([A-Z2-9]{7})$/i);
+    if (workoutShareLandingMatch && request.method === "GET") {
+        return workoutShareLanding(workoutShareLandingMatch[1]);
     }
 
     const user = await requireUser(request, env);
@@ -159,6 +185,332 @@ async function handleRequest(request, env, ctx) {
         return json({ ok: true }, 200, request, env);
     }
     return json({ error: "Not found." }, 404, request, env);
+}
+
+function sanitizeWorkoutShareValue(value, depth = 0) {
+    if (depth > 40) return null;
+    if (value === null || ["string", "number", "boolean"].includes(typeof value)) return value;
+    if (Array.isArray(value)) return value.map(item => sanitizeWorkoutShareValue(item, depth + 1));
+    if (!value || typeof value !== "object") return null;
+
+    const output = {};
+    for (const [key, child] of Object.entries(value)) {
+        if (WORKOUT_SHARE_DANGEROUS_KEYS.has(key) || WORKOUT_SHARE_PRIVATE_KEYS.has(key)) continue;
+        output[key] = sanitizeWorkoutShareValue(child, depth + 1);
+    }
+    return output;
+}
+
+function normalizeWorkoutSharePackage(input) {
+    if (!input || typeof input !== "object" || input.kind !== "levelup-workout" || Number(input.version) !== 1) return null;
+    const clean = sanitizeWorkoutShareValue(input);
+    const plan = clean?.plan;
+    if (!plan || typeof plan !== "object" || Array.isArray(plan)) return null;
+
+    plan.name = limitedText(plan.name, 120) || "Shared Workout";
+    if (!Array.isArray(plan.days) || plan.days.length < 1 || plan.days.length > 14) return null;
+
+    for (const day of plan.days) {
+        if (!day || typeof day !== "object" || Array.isArray(day) || !Array.isArray(day.exercises) || day.exercises.length > 60) return null;
+        day.name = limitedText(day.name, 120) || "Workout Day";
+        for (const exercise of day.exercises) {
+            if (!exercise || typeof exercise !== "object" || Array.isArray(exercise)) return null;
+            exercise.id = limitedText(exercise.id, 160);
+            if (!exercise.id) return null;
+            if (exercise.reps != null) exercise.reps = limitedText(exercise.reps, 80);
+            if (exercise.sets != null) exercise.sets = Math.max(0, Math.min(30, Number(exercise.sets) || 0));
+        }
+    }
+
+    clean.customExercises = Array.isArray(clean.customExercises)
+        ? clean.customExercises
+            .filter(exercise => exercise && typeof exercise === "object" && !Array.isArray(exercise))
+            .filter(exercise => String(exercise.id || "").startsWith("custom-"))
+            .slice(0, 100)
+        : [];
+
+    const payloadJson = JSON.stringify(clean);
+    if (new TextEncoder().encode(payloadJson).byteLength > WORKOUT_SHARE_MAX_BYTES) return null;
+    return { clean, payloadJson };
+}
+
+function createWorkoutShareCode() {
+    const bytes = new Uint8Array(WORKOUT_SHARE_CODE_LENGTH);
+    crypto.getRandomValues(bytes);
+    return [...bytes].map(byte => WORKOUT_SHARE_ALPHABET[byte % WORKOUT_SHARE_ALPHABET.length]).join("");
+}
+
+async function createWorkoutShare(body, request, env) {
+    const normalized = normalizeWorkoutSharePackage(body?.workout || body);
+    if (!normalized) return json({ error: "Workout share data is not valid." }, 400, request, env);
+
+    const rateKey = await authRateKey("workout-share", "device", request);
+    if (await isRateLimited(rateKey, request, env)) {
+        return json({ error: "Too many workout shares were created from this device. Try again shortly." }, 429, request, env);
+    }
+
+    const creator = await requireUser(request, env);
+    const now = new Date();
+    const createdAt = now.toISOString();
+    const expiresAt = new Date(now.getTime() + WORKOUT_SHARE_LIFETIME_MS).toISOString();
+    await env.DB.prepare("DELETE FROM workout_shares WHERE expires_at <= ?").bind(createdAt).run();
+
+    let code = "";
+    let inserted = false;
+    for (let attempt = 0; attempt < 8 && !inserted; attempt += 1) {
+        code = createWorkoutShareCode();
+        try {
+            await env.DB.prepare(`
+                INSERT INTO workout_shares
+                    (code, payload_json, creator_user_id, created_at, expires_at, open_count)
+                VALUES (?, ?, ?, ?, ?, 0)
+            `).bind(code, normalized.payloadJson, creator?.id || null, createdAt, expiresAt).run();
+            inserted = true;
+        }
+        catch (error) {
+            const message = String(error?.message || error);
+            if (!/unique|constraint/i.test(message)) throw error;
+        }
+    }
+
+    if (!inserted) return json({ error: "A share link could not be created. Try again." }, 503, request, env);
+    await recordRateFailure(rateKey, env);
+
+    return json({
+        code,
+        url: `${WORKOUT_SHARE_PUBLIC_ORIGIN}/w/${code}`,
+        expiresAt
+    }, 201, request, env);
+}
+
+async function getWorkoutShare(rawCode, request, env) {
+    const code = String(rawCode || "").toUpperCase();
+    if (!new RegExp(`^[A-Z2-9]{${WORKOUT_SHARE_CODE_LENGTH}}import { SWISS_CHALET_FOODS } from "./data/swiss-chalet-foods.js";
+import { PUR_SIMPLE_FOODS } from "./data/pur-simple-foods.js";
+import { NORTH_AMERICAN_CHAIN_FOODS } from "./data/north-american-chain-foods.js";
+import { CANADIAN_CHAIN_EXPANSION } from "./data/canadian-chain-expansion.js";
+import { MEZZA_FOODS } from "./data/mezza-foods.js";
+import { BOSTON_PIZZA_FOODS } from "./data/boston-pizza-foods.js";
+import {
+    CANADIAN_RESTAURANT_CATALOGUES,
+    COMPLETE_CANADIAN_RESTAURANT_CATALOGUE_COUNTS
+} from "./data/canadian-restaurant-catalogues.js";
+import {
+    PRIORITY_RESTAURANT_CATALOGUES,
+    COMPLETE_PRIORITY_RESTAURANT_CATALOGUE_COUNTS
+} from "./data/priority-restaurant-catalogues.js";
+import { assessBarcodeFood, barcodeFoodResponse, isPlausibleZeroCalorieFood } from "./barcode-food-quality.js";
+import { restaurantBrandIdentity as directoryBrandIdentity, restaurantBrandMatches, restaurantForId, restaurantMarket } from "../../js/nutrition/restaurant-directory.js";
+
+const MAX_BACKUP_BYTES = 8 * 1024 * 1024;
+// User and owner sessions stay valid until they are explicitly revoked. Keep a
+// concrete timestamp because the existing D1 schema requires expires_at and
+// the authentication query uses it to reject revoked/legacy expired sessions.
+const SESSION_EXPIRES_AT = "9999-12-31T23:59:59.999Z";
+const PASSWORD_ITERATIONS = 100000;
+const PASSWORD_MIN_LENGTH = 10;
+const PASSWORD_MAX_LENGTH = 128;
+const AUTH_RATE_WINDOW_MS = 15 * 60 * 1000;
+const AUTH_RATE_MAX_FAILURES = 10;
+const TRANSFER_CODE_LIFETIME_MS = 10 * 60 * 1000;
+const TRANSFER_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const WORKOUT_SHARE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const WORKOUT_SHARE_CODE_LENGTH = 7;
+const WORKOUT_SHARE_MAX_BYTES = 64 * 1024;
+const WORKOUT_SHARE_LIFETIME_MS = 180 * 24 * 60 * 60 * 1000;
+const WORKOUT_SHARE_PUBLIC_ORIGIN = "https://api.leveluphypertrophy.com";
+const WORKOUT_SHARE_PRIVATE_KEYS = new Set([
+    "userId", "ownerId", "accountId", "lastWorkout", "lastWorkoutAt",
+    "workoutHistory", "history", "sessions", "completedWorkouts", "prs",
+    "personalRecords", "progressHistory", "progressionHistory",
+    "previousWeight", "previousReps", "lastWeight", "lastReps",
+    "loggedWeight", "weightHistory"
+]);
+const WORKOUT_SHARE_DANGEROUS_KEYS = new Set(["__proto__", "prototype", "constructor"]);
+const APPLE_TOKEN_ISSUER = "https://appleid.apple.com";
+let appleKeyCache = { expiresAt: 0, keys: [] };
+const ACQUISITION_SOURCES = new Set(["instagram", "tiktok", "reddit", "youtube", "google_search", "friend_family", "app_recommendation", "other", "prefer_not_to_say"]);
+const CLIENT_EVENT_NAMES = new Set(["onboarding_completed", "workout_completed"]);
+const USAGE_EVENT_NAMES = new Set(["food_logged"]);
+
+export default {
+    async fetch(request, env, ctx) {
+        try {
+            return await handleRequest(request, env, ctx);
+        }
+        catch (error) {
+            console.error(JSON.stringify({ event: "unhandled_request_error", message: String(error?.message || error) }));
+            const status = error instanceof HttpError ? error.status : 500;
+            const message = error instanceof HttpError ? error.message : "The cloud service could not complete this request.";
+            return json({ error: message }, status, request, env);
+        }
+    }
+};
+
+async function handleRequest(request, env, ctx) {
+    const url = new URL(request.url);
+    const origin = request.headers.get("Origin");
+    if (request.method === "OPTIONS") return preflight(request, env);
+    if (origin && !allowedOrigins(env).has(origin)) return json({ error: "Origin not allowed." }, 403, request, env);
+    if (url.pathname === "/health" && request.method === "GET") return json({ ok: true }, 200, request, env);
+
+    if (url.pathname === "/v1/session/google" && request.method === "POST") {
+        const body = await readJson(request, 64 * 1024);
+        return createGoogleSession(body, request, env);
+    }
+    if (url.pathname === "/v1/session/apple" && request.method === "POST") {
+        const body = await readJson(request, 64 * 1024);
+        return createAppleSession(body, request, env);
+    }
+    if (url.pathname === "/v1/account/email" && request.method === "POST") {
+        const body = await readJson(request, 16 * 1024);
+        return createEmailAccount(body, request, env);
+    }
+    if (url.pathname === "/v1/session/email" && request.method === "POST") {
+        const body = await readJson(request, 16 * 1024);
+        return createEmailSession(body, request, env);
+    }
+    if (url.pathname === "/v1/session/transfer" && request.method === "POST") {
+        const body = await readJson(request, 8 * 1024);
+        return redeemAccountTransferCode(body, request, env);
+    }
+
+    if (url.pathname === "/v1/workout-shares" && request.method === "POST") {
+        const body = await readJson(request, WORKOUT_SHARE_MAX_BYTES + 16 * 1024);
+        return createWorkoutShare(body, request, env);
+    }
+    const workoutShareMatch = url.pathname.match(/^\/v1\/workout-shares\/([A-Z2-9]{7})$/i);
+    if (workoutShareMatch && request.method === "GET") {
+        return getWorkoutShare(workoutShareMatch[1], request, env);
+    }
+    const workoutShareLandingMatch = url.pathname.match(/^\/w\/([A-Z2-9]{7})$/i);
+    if (workoutShareLandingMatch && request.method === "GET") {
+        return workoutShareLanding(workoutShareLandingMatch[1]);
+    }
+
+    const user = await requireUser(request, env);
+    if (!user) return json({ error: "Sign in required." }, 401, request, env);
+
+    if (url.pathname === "/v1/me" && request.method === "GET") {
+        return json({ user: { ...publicUser(user), isAdmin: isAdminUser(user, env) } }, 200, request, env);
+    }
+    if (url.pathname === "/v1/account/password" && request.method === "PUT") {
+        const body = await readJson(request, 16 * 1024);
+        return createPasswordCredential(user, body, request, env);
+    }
+    if (url.pathname === "/v1/account/transfer-code" && request.method === "POST") {
+        return createAccountTransferCode(user, request, env);
+    }
+    if (url.pathname === "/v1/admin/analytics" && request.method === "GET") {
+        return getAdminAnalytics(user, url, request, env);
+    }
+    if (url.pathname === "/v1/admin/restaurants/staging" && request.method === "POST") {
+        const body = await readJson(request, 32 * 1024);
+        return stageRestaurantFood(user, body, request, env);
+    }
+    const restaurantReviewMatch = url.pathname.match(/^\/v1\/admin\/restaurants\/staging\/([^/]+)\/review$/);
+    if (restaurantReviewMatch && request.method === "POST") {
+        const body = await readJson(request, 8 * 1024);
+        return reviewRestaurantFood(user, restaurantReviewMatch[1], body, request, env);
+    }
+    if (url.pathname === "/v1/feedback/status" && request.method === "GET") {
+        return getSatisfactionFeedbackStatus(user.id, request, env);
+    }
+    if (url.pathname === "/v1/feedback" && request.method === "POST") {
+        const body = await readJson(request, 8 * 1024);
+        return recordSatisfactionFeedback(user.id, body, request, env);
+    }
+    if (url.pathname === "/v1/foods/search" && request.method === "GET") {
+        return searchUsdaFoods(user.id, url, request, env, ctx);
+    }
+    const foodBarcodeMatch = url.pathname.match(/^\/v1\/foods\/barcode\/(\d+)$/);
+    if (foodBarcodeMatch && request.method === "GET") {
+        return getFoodByBarcode(foodBarcodeMatch[1], request, env, ctx);
+    }
+    const foodDetailMatch = url.pathname.match(/^\/v1\/foods\/(\d+)$/);
+    if (foodDetailMatch && request.method === "GET") {
+        return getUsdaFoodDetails(Number(foodDetailMatch[1]), request, env);
+    }
+    if (url.pathname === "/v1/import/reddit" && request.method === "POST") {
+        const body = await readJson(request, 8 * 1024);
+        return importRedditSource(body, request, env);
+    }
+    if (url.pathname === "/v1/activity" && request.method === "POST") {
+        const body = await readOptionalJson(request, 8 * 1024);
+        return recordActivity(user.id, body, request, env);
+    }
+    if (url.pathname === "/v1/acquisition" && request.method === "PUT") {
+        const body = await readJson(request, 8 * 1024);
+        return putAcquisition(user.id, body, request, env);
+    }
+    if (url.pathname === "/v1/events" && request.method === "POST") {
+        const body = await readJson(request, 8 * 1024);
+        return recordProductEvent(user.id, body, request, env);
+    }
+    if (url.pathname === "/v1/session" && request.method === "DELETE") {
+        await deleteSession(request, env);
+        return json({ ok: true }, 200, request, env);
+    }
+    if (url.pathname === "/v1/backup/meta" && request.method === "GET") {
+        return getBackupMeta(user.id, request, env);
+    }
+    if (url.pathname === "/v1/backup" && request.method === "GET") {
+        return getBackup(user.id, request, env);
+    }
+    if (url.pathname === "/v1/backup" && request.method === "PUT") {
+        const body = await readJson(request, MAX_BACKUP_BYTES + 64 * 1024);
+        return putBackup(user.id, body, request, env);
+    }
+    if (url.pathname === "/v1/account" && request.method === "DELETE") {
+        try {
+            await revokeStoredAppleCredential(user.id, env);
+        } catch (error) {
+            console.error(JSON.stringify({ event: "apple_revocation_failed", userId: user.id, message: String(error?.message || error) }));
+            return json({ error: "Apple authorization could not be revoked. Please try deleting the account again." }, 503, request, env);
+        }
+        await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id).run();
+        return json({ ok: true }, 200, request, env);
+    }
+    return json({ error: "Not found." }, 404, request, env);
+}
+
+).test(code)) {
+        return json({ error: "Workout share not found." }, 404, request, env);
+    }
+
+    const now = new Date().toISOString();
+    const row = await env.DB.prepare(`
+        SELECT payload_json, expires_at
+        FROM workout_shares
+        WHERE code = ? AND expires_at > ?
+    `).bind(code, now).first();
+    if (!row) return json({ error: "This workout share has expired or does not exist." }, 404, request, env);
+
+    let workout;
+    try { workout = JSON.parse(row.payload_json); }
+    catch { return json({ error: "This workout share could not be read." }, 500, request, env); }
+
+    await env.DB.prepare("UPDATE workout_shares SET open_count = open_count + 1 WHERE code = ?").bind(code).run();
+    return json({ code, workout, expiresAt: row.expires_at }, 200, request, env);
+}
+
+function workoutShareLanding(rawCode) {
+    const code = String(rawCode || "").toUpperCase();
+    const deepLink = `leveluphypertrophy://workout/import?id=${encodeURIComponent(code)}`;
+    const appStore = "https://apps.apple.com/ca/app/level-up-workout-nutrition/id6810024008";
+    const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#09090b"><title>Open Level Up Workout</title>
+<style>:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif}*{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:max(24px,env(safe-area-inset-top)) 18px max(24px,env(safe-area-inset-bottom));background:radial-gradient(circle at 50% -10%,rgba(239,24,33,.15),transparent 30rem),#09090b;color:#f7f7f8}main{width:min(100%,430px);padding:28px 22px;border:1px solid rgba(255,255,255,.1);border-radius:24px;background:#151519;box-shadow:0 24px 70px rgba(0,0,0,.42);text-align:center}.mark{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 18px;border-radius:17px;background:#df141e;color:#fff;font-size:29px;font-weight:950}h1{margin:0;font-size:28px}p{margin:10px auto 22px;color:#b8b8c0;font-size:15px;line-height:1.5}a{display:grid;place-items:center;width:100%;min-height:50px;border-radius:13px;font-weight:800;text-decoration:none}.open{background:#df141e;color:#fff}.store{margin-top:10px;border:1px solid rgba(255,255,255,.12);background:#242429;color:#fff}small{display:block;margin-top:18px;color:#85858e;font-size:12px;line-height:1.45}</style></head>
+<body><main><div class="mark" aria-hidden="true">L</div><h1>Shared Level Up Workout</h1><p>Open this workout in Level Up, review it, then add your own copy to My Workouts.</p><a class="open" href="${deepLink}">Open in Level Up</a><a class="store" href="${appStore}">Get Level Up on the App Store</a><small>Share code: ${code}</small></main></body></html>`;
+    return new Response(html, {
+        status: 200,
+        headers: {
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "no-referrer"
+        }
+    });
 }
 
 async function createGoogleSession(body, request, env) {
