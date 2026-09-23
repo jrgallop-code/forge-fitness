@@ -54,7 +54,7 @@ final class LevelUpFileExportPlugin: CAPPlugin, CAPBridgedPlugin {
             UIGraphicsEndPDFContext()
 
             do {
-                try data.write(to: fileURL, options: .atomic)
+                try (data as Data).write(to: fileURL, options: .atomic)
             } catch {
                 call.reject("The PDF could not be prepared.", nil, error)
                 return
