@@ -10,6 +10,11 @@ function isStandalone() {
         || navigator.standalone === true;
 }
 
+function isNativeApp() {
+    return window.Capacitor?.isNativePlatform?.() === true
+        || window.Capacitor?.getPlatform?.() === "ios";
+}
+
 function isIgnored() {
     try { return localStorage.getItem(DISMISSED_KEY) === "true"; }
     catch { return false; }
@@ -17,6 +22,7 @@ function isIgnored() {
 
 function shouldStayHidden() {
     return hiddenForSession
+        || isNativeApp()
         || isStandalone()
         || isIgnored()
         || document.documentElement.classList.contains("level-up-login-required")
