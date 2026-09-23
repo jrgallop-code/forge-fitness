@@ -981,10 +981,11 @@ function muscleSilhouette(rows) {
 }
 
 function availableMonths() {
-    const months = new Set([monthKeyForDate(new Date())]);
+    const months = new Set();
     readArray(SESSION_KEY).forEach(function (item) { addMonth(months, item && item.date); });
     readArray(WEIGHT_KEY).forEach(function (item) { addMonth(months, item && item.date); });
     Object.keys(readFoodLog() || {}).forEach(function (key) { addMonth(months, key); });
+    if (!months.size) months.add(monthKeyForDate(new Date()));
     return Array.from(months).filter(function (month) { return /^\d{4}-\d{2}$/.test(month); }).sort().reverse().slice(0, 24);
 }
 
