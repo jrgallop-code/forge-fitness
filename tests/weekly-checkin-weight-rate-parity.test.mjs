@@ -1,7 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 import { calculateVisibleWeightTrend } from "../js/core/weight-trend.js";
 import { getActivePhaseMetrics } from "../js/nutrition/nutrition-phase.js";
+
+const phaseRateDisplay = await readFile(new URL("../js/nutrition/phase-rate-display.js", import.meta.url), "utf8");
+
+test("phase carousel does not override the shared rate with a raw regression", () => {
+    assert.match(phaseRateDisplay, /formatRate\(metrics\.actualRateLbPerWeek\)/);
+    assert.doesNotMatch(phaseRateDisplay, /calculateDisplayWeightTrend/);
+});
 
 function dateOffset(days) {
     const date = new Date();
