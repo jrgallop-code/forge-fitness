@@ -188,7 +188,7 @@ function reportTabs(report) {
     const tabs = [{ id: "overview", label: "Overview" }];
     if (report.training.workouts) tabs.push({ id: "training", label: "Training" });
     if (report.strength.available) tabs.push({ id: "strength", label: "Strength" });
-    if (report.muscles.available) tabs.push({ id: "muscles", label: "Muscles" });
+    if (report.muscles.available) tabs.push({ id: "muscles", label: "Weekly Volume" });
     if (report.weight.available) tabs.push({ id: "weight", label: "Weight" });
     if (report.nutrition.available) tabs.push({ id: "nutrition", label: "Nutrition" });
     tabs.push({ id: "focus", label: "Focus" });
@@ -356,13 +356,15 @@ function renderStrength(report) {
 }
 
 function renderMuscles(report) {
-    const top = report.muscles.rows.slice(0, 8);
+    const weekly = report.muscles.rows.slice(0, 8).map(function (row) {
+        return { name: row.name, sets: row.sets / Math.max(1, report.muscles.weeks) };
+    });
     return '<section class="monthly-report-card monthly-report-single-card" id="monthly-section-muscles">' +
-        '<div class="monthly-report-card-head"><div><span class="eyebrow">MUSCLE DEVELOPMENT</span><h2>What you trained</h2>' +
-        '<p>Tap the anatomy to flip between front and back. Primary sets receive full credit and secondary muscles partial credit.</p></div></div>' +
+        '<div class="monthly-report-card-head"><div><span class="eyebrow">WEEKLY VOLUME</span><h2>Weekly Muscle Volume</h2>' +
+        '<p>Average effective set credits per week across this report period. Tap the anatomy to flip between front and back.</p></div></div>' +
         '<div class="monthly-muscle-visual">' +
             '<button class="monthly-anatomy-flip" type="button" data-monthly-anatomy-flip data-side="front" aria-label="Show back muscle view">' + monthlyAnatomyMarkup(report, "front") + '</button>' +
-            '<div class="monthly-muscle-bars">' + barRows(top.map(function (row) { return { label: row.name, value: row.sets, suffix: "" }; }), 8) + '</div>' +
+            '<div class="monthly-muscle-bars">' + barRows(weekly.map(function (row) { return { label: row.name, value: row.sets, suffix: "/wk" }; }), 8) + '</div>' +
         '</div>' +
         '<div class="monthly-graph-legend"><span><i class="is-muscle-low"></i>Lower weekly volume</span><span><i class="is-muscle-high"></i>Higher weekly volume</span></div>' +
     '</section>';
