@@ -405,13 +405,13 @@ function renderStrength(report) {
 }
 
 function renderMuscles(report) {
-    const monthly = report.muscles.rows.slice(0, 8);
+    const monthly = report.muscles.rows;
     return '<section class="monthly-report-card monthly-report-single-card" id="monthly-section-muscles">' +
         '<div class="monthly-report-card-head"><div><span class="eyebrow">MONTHLY VOLUME</span><h2>Monthly Muscle Volume</h2>' +
         '<p>Effective set credits accumulated during this report month. Tap the anatomy to flip between front and back.</p></div></div>' +
         '<div class="monthly-muscle-visual">' +
             '<button class="monthly-anatomy-flip" type="button" data-monthly-anatomy-flip data-side="front" aria-label="Show back muscle view">' + monthlyAnatomyMarkup(report, "front") + '</button>' +
-            '<div class="monthly-muscle-bars">' + barRows(monthly.map(function (row) { return { label: row.name, value: row.sets, suffix: " sets" }; }), 8) + '</div>' +
+            '<div class="monthly-muscle-bars">' + barRows(monthly.map(function (row) { return { label: row.name, value: row.sets, suffix: " sets" }; }), monthly.length) + '</div>' +
         '</div>' +
         '<div class="monthly-graph-legend"><span><i class="is-muscle-low"></i>Lower monthly volume</span><span><i class="is-muscle-high"></i>Higher monthly volume</span></div>' +
     '</section>';
@@ -938,7 +938,7 @@ function buildPdfHtml(report, markSvg) {
                 '<div>' + monthlyAnatomyMarkup(report, "front") + '</div>' +
                 '<div>' + monthlyAnatomyMarkup(report, "back") + '</div>' +
             '</div><div class="pdf-bars">' +
-                pdfBarRows(report.muscles.rows.slice(0, 8).map(function (row) { return { label: row.name, value: row.sets, suffix: " sets" }; })) +
+                pdfBarRows(report.muscles.rows.map(function (row) { return { label: row.name, value: row.sets, suffix: " sets" }; })) +
             '</div></div>' +
             '<div class="pdf-legend"><span><i class="volume-low"></i>Lower monthly volume</span><span><i class="volume-high"></i>Higher monthly volume</span></div>' +
             '<p class="pdf-note">Primary muscles receive 1.0 set credit and secondary muscles receive partial credit, matching the in-app volume calculation.</p>' +
