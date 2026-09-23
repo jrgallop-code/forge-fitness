@@ -36,7 +36,11 @@ export function initializeMonthlyReports(root = document) {
     const pending = localStorage.getItem(PENDING_KEY);
     if (/^\d{4}-\d{2}$/.test(String(pending || ""))) {
         localStorage.removeItem(PENDING_KEY);
-        requestAnimationFrame(function () { openMonthlyReportsHub(page, pending); });
+        requestAnimationFrame(function () {
+            openMonthlyReportsHub(page, pending);
+            const screen = document.querySelector("[data-monthly-report-screen]");
+            if (screen) renderReportView(screen, page, pending);
+        });
     }
 }
 
@@ -727,6 +731,7 @@ function buildPdfHtml(report, logoSvg) {
     const profile = getNutritionProfile() || {};
     const displayName = String(profile.displayName || "").trim();
     const pages = [];
+    let pdfPage = 2;
 
     pages.push('<section class="pdf-page pdf-cover">' + logo +
         '<div class="cover-rule"></div><span>MONTHLY PERFORMANCE REPORT</span><h1>' + escapeHtml(report.label) + '</h1>' +
@@ -754,7 +759,7 @@ function buildPdfHtml(report, logoSvg) {
             }).join("") : '<p class="muted">More comparisons will appear as your history grows.</p>') +
         '</div><div><h3>Focus next month</h3>' +
             report.recommendations.map(function (item) { return '<p class="focus"><b>' + escapeHtml(item.title) + '</b><br>' + escapeHtml(item.target) + '</p>'; }).join("") +
-        '</div></div>' + pdfFooter(report, 2) + '</section>');
+        '</div></div>' + pdfFooter(report, pdfPage++) + '</section>');
 
     if (report.training.workouts || report.strength.available || report.muscles.available) {
         pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Training & Strength") +
@@ -764,7 +769,7 @@ function buildPdfHtml(report, logoSvg) {
                 pdfBarRows(report.strength.improvements.map(function (row) { return { label: row.name, value: row.percent, suffix: "%" }; })) + '</div>' : '') +
             (report.muscles.available ? '<h2>Effective sets by muscle</h2><div class="pdf-bars">' +
                 pdfBarRows(report.muscles.rows.slice(0,8).map(function (row) { return { label: row.name, value: row.sets, suffix: "" }; })) + '</div>' : '') +
-            pdfFooter(report, 3) + '</section>');
+            pdfFooter(report, pdfPage++) + '</section>');
     }
 
     if (report.weight.available) {
@@ -777,7 +782,7 @@ function buildPdfHtml(report, logoSvg) {
                 pdfSummary(formatSigned(report.weight.change, 1) + " lb", "Change") +
                 pdfSummary(Number.isFinite(report.weight.weeklyRate) ? formatSigned(report.weight.weeklyRate, 2) + " /wk" : "—", "Average rate") +
             '</div><div class="pdf-insight"><b>Level Up observation</b><p>' + escapeHtml(report.weight.insight) + '</p></div>' +
-            pdfFooter(report, 4) + '</section>');
+            pdfFooter(report, pdfPage++) + '</section>');
     }
 
     if (report.nutrition.available) {
@@ -792,7 +797,7 @@ function buildPdfHtml(report, logoSvg) {
             '</div>' +
             (report.nutrition.proteinTarget ? '<div class="pdf-insight"><b>Protein consistency</b><p>Target reached on ' +
                 report.nutrition.proteinHitDays + " of " + report.nutrition.loggedDays + ' logged days.</p></div>' : '') +
-            pdfFooter(report, 5) + '</section>');
+            pdfFooter(report, pdfPage++) + '</section>');
     }
 
     pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Your " + labelForMonth(shiftMonth(report.monthKey, 1), true) + " Focus") +
@@ -801,7 +806,7 @@ function buildPdfHtml(report, logoSvg) {
                 '</p><strong>Target: ' + escapeHtml(item.target) + '</strong></div></article>';
         }).join("") + '</div><div class="pdf-keep"><h2>Keep doing</h2>' +
         report.keepDoing.map(function (item) { return '<p>✓ ' + escapeHtml(item) + '</p>'; }).join("") +
-        '</div><div class="pdf-closing">KEEP PROGRESSING.</div>' + pdfFooter(report, 6) + '</section>');
+        '</div><div class="pdf-closing">KEEP PROGRESSING.</div>' + pdfFooter(report, pdfPage++) + '</section>');
 
     return '<!doctype html><html><head><meta charset="utf-8"><style>' + pdfCss() + '</style></head><body>' + pages.join("") + '</body></html>';
 }
