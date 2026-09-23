@@ -237,7 +237,7 @@ function reportTabs(report) {
     const tabs = [{ id: "overview", label: "Overview" }];
     if (report.training.workouts) tabs.push({ id: "training", label: "Training" });
     if (report.strength.available) tabs.push({ id: "strength", label: "Strength" });
-    if (report.muscles.available) tabs.push({ id: "muscles", label: "Weekly Volume" });
+    if (report.muscles.available) tabs.push({ id: "muscles", label: "Monthly Volume" });
     if (report.weight.available) tabs.push({ id: "weight", label: "Weight" });
     if (report.nutrition.available) tabs.push({ id: "nutrition", label: "Nutrition" });
     tabs.push({ id: "focus", label: "Focus" });
@@ -405,28 +405,27 @@ function renderStrength(report) {
 }
 
 function renderMuscles(report) {
-    const weekly = report.muscles.rows.slice(0, 8).map(function (row) {
-        return { name: row.name, sets: row.sets / Math.max(1, report.muscles.weeks) };
-    });
+    const monthly = report.muscles.rows.slice(0, 8);
     return '<section class="monthly-report-card monthly-report-single-card" id="monthly-section-muscles">' +
-        '<div class="monthly-report-card-head"><div><span class="eyebrow">WEEKLY VOLUME</span><h2>Weekly Muscle Volume</h2>' +
-        '<p>Average effective set credits per week across this report period. Tap the anatomy to flip between front and back.</p></div></div>' +
+        '<div class="monthly-report-card-head"><div><span class="eyebrow">MONTHLY VOLUME</span><h2>Monthly Muscle Volume</h2>' +
+        '<p>Effective set credits accumulated during this report month. Tap the anatomy to flip between front and back.</p></div></div>' +
         '<div class="monthly-muscle-visual">' +
             '<button class="monthly-anatomy-flip" type="button" data-monthly-anatomy-flip data-side="front" aria-label="Show back muscle view">' + monthlyAnatomyMarkup(report, "front") + '</button>' +
-            '<div class="monthly-muscle-bars">' + barRows(weekly.map(function (row) { return { label: row.name, value: row.sets, suffix: "/wk" }; }), 8) + '</div>' +
+            '<div class="monthly-muscle-bars">' + barRows(monthly.map(function (row) { return { label: row.name, value: row.sets, suffix: " sets" }; }), 8) + '</div>' +
         '</div>' +
-        '<div class="monthly-graph-legend"><span><i class="is-muscle-low"></i>Lower weekly volume</span><span><i class="is-muscle-high"></i>Higher weekly volume</span></div>' +
+        '<div class="monthly-graph-legend"><span><i class="is-muscle-low"></i>Lower monthly volume</span><span><i class="is-muscle-high"></i>Higher monthly volume</span></div>' +
     '</section>';
 }
 
 function monthlyAnatomyMarkup(report, side) {
     const config = getAnatomyConfig(side);
-    const volume = new Map(report.muscles.rows.map(function (row) { return [row.name, row.sets / Math.max(1, report.muscles.weeks)]; }));
+    const volume = new Map(report.muscles.rows.map(function (row) { return [row.name, row.sets]; }));
+    const monthlyScale = Math.max(12, 12 * Math.max(1, report.muscles.weeks));
     const overlays = Object.entries(config.regions).flatMap(function (entry) {
         const muscle = entry[0];
         const ids = entry[1];
         const sets = Number(volume.get(muscle) || (muscle === "Rear Delts" ? volume.get("Shoulders") || 0 : 0));
-        const intensity = Math.max(0, Math.min(1, sets / 12));
+        const intensity = Math.max(0, Math.min(1, sets / monthlyScale));
         return ids.map(function (id) {
             const href = config.asset + "#" + id;
             return '<use href="' + href + '" xlink:href="' + href + '" class="monthly-anatomy-muscle" style="--monthly-muscle-intensity:' + intensity.toFixed(3) + '"/>';
@@ -890,87 +889,225 @@ function buildPdfHtml(report, markSvg) {
     const profile = getNutritionProfile() || {};
     const displayName = String(profile.displayName || "").trim();
     const pages = [];
-    let pdfPage = 2;
+    let pdfPage = 1;
 
+    // Cover / Overview mirrors the in-app Overview panel.
     pages.push('<section class="pdf-page pdf-cover">' + logo +
-        '<div class="cover-rule"></div><span>MONTHLY PERFORMANCE REPORT</span><h1>' + escapeHtml(report.label) + '</h1>' +
+        '<div class="cover-rule"></div><span>' + (report.isCurrent ? "MONTH IN PROGRESS" : "MONTHLY PERFORMANCE REPORT") + '</span><h1>' + escapeHtml(report.label) + '</h1>' +
         (displayName ? '<h2>' + escapeHtml(displayName) + '</h2>' : '') +
-        '<p>Training. Progress. Better decisions.</p>' +
-        '<div class="pdf-kpis">' +
-            pdfKpi(report.training.workouts, "WORKOUTS") + pdfKpi(report.prCount, "PRS") +
-            pdfKpi(report.training.activeDays, "ACTIVE DAYS") + pdfKpi(report.training.workingSets, "WORKING SETS") +
-        '</div>' +
+        '<p>' + escapeHtml(report.overviewLine) + '</p>' +
+        '<div class="pdf-kpis">' + pdfOverviewKpis(report) + '</div>' +
         (report.weight.available ? '<div class="cover-highlight">TREND WEIGHT <b>' + report.weight.end.toFixed(1) + ' lb</b></div>' : '') +
+        '<div class="pdf-overview-grid">' + pdfOverviewDetails(report) + '</div>' +
         '<footer>LEVEL UP · TRACK. PROGRESS. IMPROVE.</footer></section>');
+    pdfPage += 1;
 
-    pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Executive Summary") +
-        '<div class="pdf-summary-grid">' +
-            pdfSummary(report.training.workouts, "Workouts") +
-            pdfSummary(formatDuration(report.training.durationMinutes), "Training time") +
-            pdfSummary(report.prCount, "PRs") +
-            pdfSummary(report.training.activeDays, "Active days") +
-            (report.weight.available ? pdfSummary(formatSigned(report.weight.change, 1) + " lb", "Trend change") : '') +
-            (report.nutrition.available ? pdfSummary(Math.round(report.nutrition.averageProtein) + " g", "Avg protein") : '') +
-        '</div><div class="pdf-panel"><h2>Month at a glance</h2><p>' + escapeHtml(report.overviewLine) + '</p></div>' +
-        '<div class="pdf-two"><div><h3>What improved</h3>' +
-            (report.improvements.length ? report.improvements.map(function (item) {
-                return '<p class="check"><b>✓ ' + escapeHtml(item.title) + ':</b> ' + escapeHtml(item.value) + ' · ' + escapeHtml(item.note) + '</p>';
-            }).join("") : '<p class="muted">More comparisons will appear as your history grows.</p>') +
-        '</div><div><h3>Focus next month</h3>' +
-            report.recommendations.map(function (item) { return '<p class="focus"><b>' + escapeHtml(item.title) + '</b><br>' + escapeHtml(item.target) + '</p>'; }).join("") +
-        '</div></div>' + pdfFooter(report, pdfPage++) + '</section>');
-
-    if (report.training.workouts || report.strength.available || report.muscles.available) {
-        pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Training & Strength") +
-            '<div class="pdf-kpis light">' + pdfKpi(report.training.workouts, "WORKOUTS") + pdfKpi(report.training.workingSets, "WORKING SETS") +
-            pdfKpi(report.training.workoutsPerWeek.toFixed(1), "PER WEEK") + pdfKpi(report.prCount, "PRS") + '</div>' +
-            (report.strength.available ? '<h2>Strength improvements</h2><div class="pdf-bars">' +
-                pdfBarRows(report.strength.improvements.map(function (row) { return { label: row.name, value: row.percent, suffix: "%" }; })) + '</div>' : '') +
-            (report.muscles.available ? '<h2>Effective sets by muscle</h2><div class="pdf-bars">' +
-                pdfBarRows(report.muscles.rows.slice(0,8).map(function (row) { return { label: row.name, value: row.sets, suffix: "" }; })) + '</div>' : '') +
+    // Training mirrors the in-app Training tab.
+    if (report.training.workouts) {
+        pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Training") +
+            '<div class="pdf-section-intro"><span>CONSISTENCY</span><h2>Training consistency</h2><p>Every completed workout across the month.</p></div>' +
+            pdfTrainingCalendar(report) +
+            '<div class="pdf-legend"><span><i class="workout-day"></i>Completed workout day</span></div>' +
+            '<div class="pdf-summary-grid">' +
+                pdfSummary(report.training.workouts, "Workouts") +
+                pdfSummary(formatDuration(report.training.durationMinutes), "Training time") +
+                pdfSummary(report.training.workoutsPerWeek.toFixed(1) + " /wk", "Average training per week") +
+                pdfSummary(report.training.longestStreak, "Day streak") +
+            '</div>' +
             pdfFooter(report, pdfPage++) + '</section>');
     }
 
+    // Strength mirrors the in-app Strength tab.
+    if (report.strength.available) {
+        pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Strength") +
+            '<div class="pdf-section-intro"><span>STRENGTH</span><h2>You got stronger</h2><p>First-to-latest comparable performance this month.</p></div>' +
+            '<div class="pdf-pr-count"><b>' + report.prCount + '</b><span>PRs this month</span></div>' +
+            '<div class="pdf-bars">' +
+                pdfBarRows(report.strength.improvements.map(function (row) { return { label: row.name, value: row.percent, suffix: "%" }; })) +
+            '</div>' +
+            '<div class="pdf-legend"><span><i class="strength-gain"></i>Estimated strength change vs first comparable session</span></div>' +
+            (report.strength.best ? '<div class="pdf-insight"><b>Biggest improvement</b><p>' + escapeHtml(report.strength.best.name) + ' · +' + report.strength.best.percent.toFixed(1) + '%</p></div>' : '') +
+            pdfFooter(report, pdfPage++) + '</section>');
+    }
+
+    // Monthly Volume mirrors the in-app Monthly Volume tab. PDF shows both sides because it cannot flip.
+    if (report.muscles.available) {
+        pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Monthly Volume") +
+            '<div class="pdf-section-intro"><span>MONTHLY VOLUME</span><h2>Monthly Muscle Volume</h2><p>Effective set credits accumulated during this report month.</p></div>' +
+            '<div class="pdf-volume-layout"><div class="pdf-anatomy-pair">' +
+                '<div>' + monthlyAnatomyMarkup(report, "front") + '</div>' +
+                '<div>' + monthlyAnatomyMarkup(report, "back") + '</div>' +
+            '</div><div class="pdf-bars">' +
+                pdfBarRows(report.muscles.rows.slice(0, 8).map(function (row) { return { label: row.name, value: row.sets, suffix: " sets" }; })) +
+            '</div></div>' +
+            '<div class="pdf-legend"><span><i class="volume-low"></i>Lower monthly volume</span><span><i class="volume-high"></i>Higher monthly volume</span></div>' +
+            '<p class="pdf-note">Primary muscles receive 1.0 set credit and secondary muscles receive partial credit, matching the in-app volume calculation.</p>' +
+            pdfFooter(report, pdfPage++) + '</section>');
+    }
+
+    // Weight mirrors the in-app Weight tab, including daily values, Trend Weight, goal and current rate.
     if (report.weight.available) {
-        pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Body Weight") +
-            '<h2>Trend weight</h2><p class="lead">Daily weigh-ins are smoothed to reduce normal scale noise.</p>' +
-            '<div class="pdf-chart">' + lineChartSvg(report.weight.trendSeries, "weight", report.weight.goalWeight, "Weight trend chart") + '</div>' +
-            '<div class="pdf-legend"><span><i class="trend-weight"></i>Trend Weight</span>' +
+        pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Weight") +
+            '<div class="pdf-section-intro"><span>BODY WEIGHT</span><h2>Weight & goal</h2><p>Uses the same smoothed Trend Weight and Weekly Trend calculations as Weight Progress.</p></div>' +
+            '<div class="pdf-chart">' + pdfWeightChartSvg(report.weight) + '</div>' +
+            '<div class="pdf-legend"><span><i class="daily-weight"></i>Daily weight</span><span><i class="trend-weight"></i>Trend Weight</span>' +
             (Number.isFinite(report.weight.goalWeight) ? '<span><i class="goal-weight"></i>Goal weight</span>' : '') + '</div>' +
             '<div class="pdf-summary-grid">' +
-                pdfSummary(report.weight.start.toFixed(1) + " lb", "Start") +
-                pdfSummary(report.weight.end.toFixed(1) + " lb", "End") +
-                pdfSummary(formatSigned(report.weight.change, 1) + " lb", "Change") +
+                pdfSummary(report.weight.start.toFixed(1) + " lb", "Trend at start") +
+                pdfSummary(report.weight.end.toFixed(1) + " lb", "Current trend") +
+                pdfSummary(formatSigned(report.weight.change, 1) + " lb", "Trend change") +
                 pdfSummary(Number.isFinite(report.weight.weeklyRate) ? formatSigned(report.weight.weeklyRate, 2) + " lb/wk" : "Need more data", report.weight.rateLabel || "Weekly Trend") +
             '</div><div class="pdf-insight"><b>Level Up observation</b><p>' + escapeHtml(report.weight.insight) + '</p></div>' +
             pdfFooter(report, pdfPage++) + '</section>');
     }
 
+    // Nutrition mirrors Calories vs Expenditure exactly: calorie bars + expenditure line + same summary metrics.
     if (report.nutrition.available) {
         pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Nutrition") +
-            '<h2>Calories & expenditure</h2><div class="pdf-chart">' +
-            twoLineChartSvg(report.nutrition.chartPoints.map(function (point) { return { date: point.date, calories: point.intakeCalories, expenditure: point.expenditureCalories }; }), "calories", "expenditure", "Calories and expenditure chart") + '</div>' +
+            '<div class="pdf-section-intro"><span>ENERGY BALANCE</span><h2>Calories vs Expenditure</h2><p>The same calorie/expenditure series used in Progress, scoped to this report month.</p></div>' +
+            '<div class="pdf-chart">' + pdfEnergyChartSvg(report.nutrition.chartPoints, report.nutrition.startDate, report.nutrition.endDate) + '</div>' +
             '<div class="pdf-legend"><span><i class="calories"></i>Calories</span><span><i class="expenditure"></i>Expenditure</span></div>' +
             '<div class="pdf-summary-grid">' +
-                pdfSummary(Math.round(report.nutrition.averageCalories).toLocaleString(), "Avg calories") +
-                pdfSummary(Math.round(report.nutrition.averageProtein) + " g", "Avg protein") +
+                pdfSummary(Number.isFinite(report.nutrition.averageCalories) ? Math.round(report.nutrition.averageCalories).toLocaleString() : "—", "Avg calories") +
                 pdfSummary(Number.isFinite(report.nutrition.averageExpenditure) ? Math.round(report.nutrition.averageExpenditure).toLocaleString() : "—", "Avg expenditure") +
-                pdfSummary(report.nutrition.loggedDays, "Logged days") +
+                pdfSummary(Number.isFinite(report.nutrition.averageBalance) ? formatSigned(Math.round(report.nutrition.averageBalance), 0) + " kcal/day" : "—", "Energy balance") +
+                pdfSummary(Number.isFinite(report.nutrition.averageProtein) ? Math.round(report.nutrition.averageProtein) + " g" : "—", "Avg protein") +
             '</div>' +
             (report.nutrition.proteinTarget ? '<div class="pdf-insight"><b>Protein consistency</b><p>Target reached on ' +
-                report.nutrition.proteinHitDays + " of " + report.nutrition.loggedDays + ' logged days.</p></div>' : '') +
+                report.nutrition.proteinHitDays + " of " + report.nutrition.loggedDays + ' matched/logged days.</p></div>' : '') +
             pdfFooter(report, pdfPage++) + '</section>');
     }
 
-    pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Your " + labelForMonth(shiftMonth(report.monthKey, 1), true) + " Focus") +
-        '<div class="pdf-focus-list">' + report.recommendations.map(function (item, index) {
+    // Focus mirrors the in-app Focus tab, including wins, priorities and Keep Doing.
+    pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Focus") +
+        '<div class="pdf-section-intro"><span>MONTHLY TAKEAWAYS</span><h2>What improved & what comes next</h2><p>Wins first, then a maximum of three data-backed priorities.</p></div>' +
+        '<div class="pdf-improvement-grid">' +
+            (report.improvements.length ? report.improvements : [{ title: "Consistency", value: report.training.workouts + " workouts", note: "Your monthly baseline" }]).slice(0, 3).map(function (item) {
+                return '<article><span>' + escapeHtml(item.title) + '</span><b>' + escapeHtml(item.value) + '</b><p>' + escapeHtml(item.note) + '</p></article>';
+            }).join("") +
+        '</div><div class="pdf-focus-list">' + report.recommendations.map(function (item, index) {
             return '<article><b>0' + (index + 1) + '</b><div><h2>' + escapeHtml(item.title) + '</h2><p>' + escapeHtml(item.reason) +
                 '</p><strong>Target: ' + escapeHtml(item.target) + '</strong></div></article>';
         }).join("") + '</div><div class="pdf-keep"><h2>Keep doing</h2>' +
         report.keepDoing.map(function (item) { return '<p>✓ ' + escapeHtml(item) + '</p>'; }).join("") +
-        '</div><div class="pdf-closing">KEEP PROGRESSING.</div>' + pdfFooter(report, pdfPage++) + '</section>');
+        '</div>' + pdfFooter(report, pdfPage++) + '</section>');
 
     return '<!doctype html><html><head><meta charset="utf-8"><style>' + pdfCss() + '</style></head><body>' + pages.join("") + '</body></html>';
+}
+
+function pdfOverviewKpis(report) {
+    const items = [];
+    if (report.training.workouts) {
+        items.push(pdfKpi(report.training.workouts, "WORKOUTS"));
+        items.push(pdfKpi(report.prCount, "PRS"));
+        items.push(pdfKpi(report.training.activeDays, "ACTIVE DAYS"));
+        items.push(pdfKpi(report.training.workingSets, "WORKING SETS"));
+    }
+    if (report.weight.available && items.length < 4) items.push(pdfKpi(formatSigned(report.weight.change, 1) + " lb", "TREND CHANGE"));
+    if (report.nutrition.available && items.length < 4) items.push(pdfKpi(Math.round(report.nutrition.averageCalories).toLocaleString(), "AVG CALORIES"));
+    if (report.nutrition.available && items.length < 4) items.push(pdfKpi(Math.round(report.nutrition.averageProtein) + " g", "AVG PROTEIN"));
+    if (!items.length) items.push(pdfKpi("—", "BUILDING HISTORY"));
+    return items.slice(0, 4).join("");
+}
+
+function pdfOverviewDetails(report) {
+    const items = [];
+    if (report.training.workouts) {
+        items.push(pdfSummary(formatDuration(report.training.durationMinutes), "Training time"));
+        items.push(pdfSummary(report.training.workoutsPerWeek.toFixed(1) + " workouts/week", "Average training per week"));
+    }
+    if (report.nutrition.available) items.push(pdfSummary(Math.round(report.nutrition.averageCalories).toLocaleString(), "Avg calories"));
+    if (report.weight.available) items.push(pdfSummary(Number.isFinite(report.weight.weeklyRate) ? formatSigned(report.weight.weeklyRate, 2) + " lb/wk" : "—", "Weekly trend"));
+    return items.join("");
+}
+
+function pdfTrainingCalendar(report) {
+    const days = daysInMonth(report.monthKey);
+    const workoutDays = new Set(report.training.sessions.map(function (session) { return String(session.date || ""); }));
+    const parts = report.monthKey.split("-").map(Number);
+    const firstWeekday = new Date(parts[0], parts[1] - 1, 1, 12).getDay();
+    const cells = [];
+    for (let index = 0; index < firstWeekday; index += 1) cells.push('<span class="is-empty"></span>');
+    for (let day = 1; day <= days; day += 1) {
+        const key = report.monthKey + "-" + String(day).padStart(2, "0");
+        cells.push('<span class="' + (workoutDays.has(key) ? "is-workout" : "") + '">' + day + '</span>');
+    }
+    return '<div class="pdf-calendar-weekdays"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>' +
+        '<div class="pdf-calendar-grid">' + cells.join("") + '</div>';
+}
+
+function pdfWeightChartSvg(weight) {
+    const entries = Array.isArray(weight.entries) ? weight.entries : [];
+    const trend = Array.isArray(weight.trendSeries) ? weight.trendSeries : [];
+    const values = entries.map(function (point) { return Number(point.weight); })
+        .concat(trend.map(function (point) { return Number(point.weight); }))
+        .filter(Number.isFinite);
+    if (Number.isFinite(weight.goalWeight)) values.push(weight.goalWeight);
+    if (values.length < 2) return "";
+
+    const width = 640, height = 230;
+    const pad = { left: 42, right: 16, top: 18, bottom: 30 };
+    const minRaw = Math.min.apply(null, values), maxRaw = Math.max.apply(null, values);
+    const span = Math.max(.5, maxRaw - minRaw), minimum = minRaw - Math.max(.6, span * .15), maximum = maxRaw + Math.max(.6, span * .15);
+    const startMs = dateMs(weight.startDate), endMs = dateMs(weight.endDate), elapsed = Math.max(1, endMs - startMs);
+    const x = function (date) { return pad.left + ((dateMs(date) - startMs) / elapsed) * (width - pad.left - pad.right); };
+    const y = function (value) { return pad.top + ((maximum - value) / Math.max(.1, maximum - minimum)) * (height - pad.top - pad.bottom); };
+    const path = function (points) {
+        return points.map(function (point, index) {
+            return (index ? "L" : "M") + " " + x(point.date).toFixed(1) + " " + y(Number(point.weight)).toFixed(1);
+        }).join(" ");
+    };
+
+    let grid = "";
+    for (let index = 0; index <= 3; index += 1) {
+        const yy = pad.top + (height - pad.top - pad.bottom) * index / 3;
+        grid += '<line x1="' + pad.left + '" y1="' + yy + '" x2="' + (width - pad.right) + '" y2="' + yy + '"/>';
+    }
+    const goal = Number.isFinite(weight.goalWeight)
+        ? '<line class="target" x1="' + pad.left + '" y1="' + y(weight.goalWeight).toFixed(1) + '" x2="' + (width - pad.right) + '" y2="' + y(weight.goalWeight).toFixed(1) + '"/>'
+        : "";
+    return '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Monthly weight trend">' +
+        '<g class="grid">' + grid + '</g>' +
+        (entries.length > 1 ? '<path d="' + path(entries) + '" class="daily" fill="none"/>' : '') +
+        entries.map(function (point) { return '<circle class="daily-point" cx="' + x(point.date) + '" cy="' + y(Number(point.weight)) + '" r="2.5"/>'; }).join("") +
+        (trend.length > 1 ? '<path d="' + path(trend) + '" class="trend-weight-line" fill="none"/>' : '') +
+        goal + '</svg>';
+}
+
+function pdfEnergyChartSvg(points, startDate, endDate) {
+    const safe = (Array.isArray(points) ? points : []).filter(function (point) {
+        return point && point.date && Number.isFinite(Number(point.expenditureCalories));
+    });
+    if (!safe.length) return "";
+    const width = 640, height = 230;
+    const pad = { left: 18, right: 18, top: 16, bottom: 30 };
+    const values = safe.flatMap(function (point) {
+        return [Number(point.expenditureCalories), Number(point.intakeCalories)].filter(Number.isFinite);
+    });
+    const maximum = Math.max.apply(null, [1000].concat(values));
+    const yMax = Math.ceil(maximum / 500) * 500;
+    const startMs = dateMs(startDate), endMs = dateMs(endDate), elapsed = Math.max(1, endMs - startMs);
+    const x = function (date) { return pad.left + ((dateMs(date) - startMs) / elapsed) * (width - pad.left - pad.right); };
+    const y = function (value) { return pad.top + (1 - Number(value) / yMax) * (height - pad.top - pad.bottom); };
+    let grid = "";
+    for (let index = 0; index <= 4; index += 1) {
+        const yy = pad.top + (height - pad.top - pad.bottom) * index / 4;
+        grid += '<line x1="' + pad.left + '" y1="' + yy + '" x2="' + (width - pad.right) + '" y2="' + yy + '"/>';
+    }
+    const days = Math.max(1, Math.round((endMs - startMs) / DAY_MS) + 1);
+    const barWidth = Math.max(2, Math.min(18, (width - pad.left - pad.right) / days * .62));
+    const bars = safe.map(function (point) {
+        const intake = Number(point.intakeCalories);
+        if (!Number.isFinite(intake) || intake <= 0) return "";
+        const xx = x(point.date) - barWidth / 2;
+        const yy = y(intake);
+        return '<rect class="calorie-bar" x="' + xx.toFixed(1) + '" y="' + yy.toFixed(1) + '" width="' + barWidth.toFixed(1) + '" height="' + Math.max(1, y(0) - yy).toFixed(1) + '"/>';
+    }).join("");
+    const line = safe.map(function (point, index) {
+        return (index ? "L" : "M") + " " + x(point.date).toFixed(1) + " " + y(Number(point.expenditureCalories)).toFixed(1);
+    }).join(" ");
+    return '<svg viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Monthly calories compared with expenditure">' +
+        '<g class="grid">' + grid + '</g>' + bars + '<path d="' + line + '" class="expenditure-line" fill="none"/></svg>';
 }
 
 function extractEmbeddedMarkData(svgText) {
@@ -996,7 +1133,7 @@ function pdfCss() {
     '.pdf-bars{display:grid;gap:8px;margin:12px 0 22px}.pdf-bar{display:grid;grid-template-columns:145px 1fr 55px;align-items:center;gap:10px;font-size:10px}.pdf-bar-track{height:10px;border-radius:999px;background:#e7e7e9;overflow:hidden}.pdf-bar-fill{height:100%;background:#e51b26}.pdf-bar strong{text-align:right}' +
     '.pdf-chart{margin:12px 0 8px;padding:12px;border:1px solid #ddd;border-radius:12px}.pdf-chart svg{display:block;width:100%;height:210px}.pdf-chart .grid line{stroke:#ddd}.pdf-chart .trend{stroke:#e51b26;stroke-width:3}.pdf-chart .second{stroke:#111}.pdf-chart circle{fill:#e51b26}.pdf-chart .target{stroke:#777;stroke-dasharray:5 4}.pdf-legend{display:flex;gap:14px;margin:0 0 18px;color:#555;font-size:9px;font-weight:750}.pdf-legend span{display:inline-flex;align-items:center;gap:5px}.pdf-legend i{display:inline-block;width:16px;height:4px;border-radius:999px;background:#ddd}.pdf-legend .trend-weight{background:#e51b26}.pdf-legend .goal-weight{height:2px;background:repeating-linear-gradient(90deg,#777 0 5px,transparent 5px 8px)}.pdf-legend .calories{width:10px;height:10px;border-radius:2px;background:#e51b26;opacity:.55}.pdf-legend .expenditure{height:3px;background:#111}' +
     '.pdf-insight{padding:16px;border-left:5px solid #e51b26;background:#f6f6f7;margin-top:18px}.pdf-insight b{font-size:11px;text-transform:uppercase;letter-spacing:.7px}.pdf-insight p{margin:6px 0 0;line-height:1.5}' +
-    '.pdf-focus-list{display:grid;gap:14px}.pdf-focus-list article{display:grid;grid-template-columns:48px 1fr;gap:14px;padding:16px;border:1px solid #ddd;border-radius:14px}.pdf-focus-list article>b{display:grid;place-items:center;width:42px;height:42px;border-radius:10px;background:#e51b26;color:#fff}.pdf-focus-list h2{font-size:16px;margin:0 0 5px}.pdf-focus-list p{font-size:11px;line-height:1.45;color:#555;margin:0 0 8px}.pdf-focus-list strong{font-size:10px;color:#e51b26}' +
+    '.pdf-section-intro{margin-bottom:16px}.pdf-section-intro>span{color:#e51b26;font-size:9px;font-weight:900;letter-spacing:1.2px}.pdf-section-intro h2{margin:4px 0 4px;font-size:20px}.pdf-section-intro p{margin:0;color:#666;font-size:11px;line-height:1.45}.pdf-overview-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px}.pdf-calendar-weekdays,.pdf-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}.pdf-calendar-weekdays{margin:12px 0 7px}.pdf-calendar-weekdays span{text-align:center;color:#777;font-size:8px;font-weight:800}.pdf-calendar-grid span{display:grid;place-items:center;height:42px;border:1px solid #ddd;border-radius:50%;background:#f6f6f7;color:#555;font-size:10px;font-weight:800}.pdf-calendar-grid .is-workout{border-color:#e51b26;background:#e51b26;color:#fff}.pdf-calendar-grid .is-empty{visibility:hidden}.pdf-pr-count{display:flex;align-items:end;gap:8px;margin:8px 0 14px}.pdf-pr-count b{font-size:36px}.pdf-pr-count span{padding-bottom:5px;color:#666;font-size:10px}.pdf-volume-layout{display:grid;grid-template-columns:230px 1fr;gap:18px;align-items:center}.pdf-anatomy-pair{display:grid;grid-template-columns:1fr 1fr;gap:5px}.pdf-anatomy-pair>div{position:relative;min-width:0}.pdf-anatomy-pair .monthly-anatomy-side{display:block;margin-bottom:3px;color:#555;font-size:8px;font-weight:800;text-align:center}.pdf-anatomy-pair .monthly-anatomy-svg{display:block;width:100%;height:250px}.pdf-anatomy-pair .monthly-anatomy-muscle{fill:#45CB75;fill-opacity:var(--monthly-muscle-intensity,0)!important;stroke:#333;stroke-width:1}.pdf-anatomy-pair small{display:none}.pdf-note{margin-top:14px;color:#666;font-size:9px;line-height:1.45}.pdf-improvement-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}.pdf-improvement-grid article{padding:13px;border:1px solid #ddd;border-radius:12px;background:#f7f7f8}.pdf-improvement-grid span{display:block;color:#e51b26;font-size:8px;font-weight:900;text-transform:uppercase}.pdf-improvement-grid b{display:block;margin-top:5px;font-size:16px}.pdf-improvement-grid p{margin:4px 0 0;color:#666;font-size:9px}.pdf-chart .daily{stroke:rgba(69,203,117,.38);stroke-width:1.4}.pdf-chart .daily-point{fill:rgba(69,203,117,.78)}.pdf-chart .trend-weight-line{stroke:#45CB75;stroke-width:3}.pdf-chart .calorie-bar{fill:#e51b26;fill-opacity:.52}.pdf-chart .expenditure-line{stroke:#111;stroke-width:2.5}.pdf-legend .daily-weight{height:3px;background:rgba(69,203,117,.65)}.pdf-legend .workout-day{width:10px;height:10px;border-radius:50%;background:#e51b26}.pdf-legend .strength-gain{background:#e51b26}.pdf-legend .volume-low{background:rgba(69,203,117,.28)}.pdf-legend .volume-high{background:#45CB75}' +'.pdf-focus-list{display:grid;gap:14px}.pdf-focus-list article{display:grid;grid-template-columns:48px 1fr;gap:14px;padding:16px;border:1px solid #ddd;border-radius:14px}.pdf-focus-list article>b{display:grid;place-items:center;width:42px;height:42px;border-radius:10px;background:#e51b26;color:#fff}.pdf-focus-list h2{font-size:16px;margin:0 0 5px}.pdf-focus-list p{font-size:11px;line-height:1.45;color:#555;margin:0 0 8px}.pdf-focus-list strong{font-size:10px;color:#e51b26}' +
     '.pdf-keep{margin-top:22px;padding:18px;background:#f4f4f5;border-radius:12px}.pdf-keep h2{margin:0 0 8px}.pdf-keep p{margin:6px 0;font-size:11px}.pdf-closing{margin-top:26px;font-size:24px;font-weight:950;letter-spacing:-.5px}.pdf-footer{position:absolute;left:38px;right:38px;bottom:24px;display:flex;justify-content:space-between;border-top:1px solid #ddd;padding-top:8px;font-size:7px;color:#777;letter-spacing:.8px}';
 }
 
