@@ -47,7 +47,7 @@
 .monthly-anatomy-flip{position:relative;display:grid;width:100%;min-height:292px;padding:8px;border:1px solid var(--line);border-radius:16px;background:var(--surface-raised);color:var(--text);place-items:center;overflow:hidden;font:inherit;cursor:pointer}
 .monthly-anatomy-svg{display:block;width:100%;height:252px;overflow:visible}
 .monthly-anatomy-svg image{pointer-events:none}
-.monthly-anatomy-muscle{fill:var(--accent);fill-opacity:var(--monthly-muscle-intensity,0)!important;stroke:color-mix(in srgb,var(--heading) 70%,transparent);stroke-width:1.3;vector-effect:non-scaling-stroke;pointer-events:none}
+.monthly-anatomy-muscle{fill:var(--muscle-set-accent,var(--accent));fill-opacity:var(--monthly-muscle-intensity,0)!important;stroke:color-mix(in srgb,var(--heading) 70%,transparent);stroke-width:1.3;vector-effect:non-scaling-stroke;pointer-events:none}
 .monthly-anatomy-side{position:absolute;left:10px;top:9px;z-index:2;padding:4px 7px;border:1px solid var(--line);border-radius:999px;background:color-mix(in srgb,var(--card) 88%,transparent);color:var(--text-secondary);font-size:.56rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
 .monthly-anatomy-flip>small{position:absolute;right:10px;bottom:9px;z-index:2;color:var(--muted);font-size:.56rem;font-weight:800}
 .monthly-muscle-visual{grid-template-columns:minmax(125px,.95fr) minmax(0,1.25fr);align-items:stretch}
@@ -62,8 +62,9 @@
 .monthly-graph-legend .is-goal-weight{height:2px;background:repeating-linear-gradient(90deg,var(--muted) 0 5px,transparent 5px 8px)}
 .monthly-graph-legend .is-calories{width:10px;height:10px;border-radius:2px;background:var(--accent);opacity:.52}
 .monthly-graph-legend .is-expenditure{height:3px;background:var(--text)}
-.monthly-graph-legend .is-muscle-low{background:color-mix(in srgb,var(--accent) 25%,var(--surface-raised))}
-.monthly-graph-legend .is-muscle-high{background:var(--accent)}
+.monthly-graph-legend .is-muscle-low{background:color-mix(in srgb,var(--muscle-set-accent,var(--accent)) 25%,var(--surface-raised))}
+.monthly-graph-legend .is-muscle-high{background:var(--muscle-set-accent,var(--accent))}
+#monthly-section-muscles .monthly-bar-row i{background:var(--muscle-set-accent,var(--accent));box-shadow:0 0 12px color-mix(in srgb,var(--muscle-set-accent,var(--accent)) 24%,transparent)}
 .monthly-muscle-silhouette{display:none!important}@media(max-width:520px){.monthly-muscle-visual{grid-template-columns:1fr}.monthly-anatomy-flip{min-height:330px}.monthly-anatomy-svg{height:290px}.monthly-report-panel-host{min-height:360px}}
 .monthly-graph-legend .is-workout-day{width:10px;height:10px;border-radius:50%;background:var(--accent)}
 .monthly-graph-legend .is-strength-gain{height:4px;background:var(--accent)}
