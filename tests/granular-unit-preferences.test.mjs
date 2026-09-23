@@ -135,7 +135,7 @@ test("workout surfaces use canonical lifting weights and unit-aware display", as
   assert.match(prompts, /weight: canonicalInputValue\(row\.querySelector\('\.session-weight'\)\)/);
   assert.match(prompts, /setCanonicalUnitPlaceholder\(weight, previousSet\?\.weight/);
   assert.match(history, /formatUnitMass\(weight, 1, UNIT_KINDS\.LIFTING_WEIGHT\)/);
-  assert.match(recap, /formatUnitMass\(stats\.volume, 0, UNIT_KINDS\.LIFTING_WEIGHT\)/);
+  assert.match(recap, /formatUnitMass\(stats\.volume,\s*0,\s*UNIT_KINDS\.LIFTING_WEIGHT\)/);
   assert.match(progress, /formatUnitMass\(set\.weight, 1, UNIT_KINDS\.LIFTING_WEIGHT\)/);
   assert.match(calibration, /canonicalInputValue\(modal\.querySelector\('\.starting-weight-test-load'\)\)/);
   assert.match(plates, /calculationTotalForProfile\(canonicalInputValue\(input\)/);

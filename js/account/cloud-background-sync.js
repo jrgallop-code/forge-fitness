@@ -14,7 +14,9 @@ const BACKUP_CHECK_INTERVAL_MS = 2 * 60 * 1000;
 const BACKUP_DEBOUNCE_MS = 20 * 1000;
 
 let backupTimer = null;
+let backupDueAt = 0;
 let backupInFlight = false;
+let backupRequestedWhileInFlight = false;
 let syncStarted = false;
 let authBlocked = false;
 
@@ -29,7 +31,11 @@ function initializeCloudBackgroundSync() {
 }
 
 function startCloudBackgroundSync() {
-    if (syncStarted || authBlocked || isRecoveryLaunch() || !getSession()) return;
+    if (authBlocked || isRecoveryLaunch() || !getSession()) return;
+    if (syncStarted) {
+        scheduleBackup(1_000);
+        return;
+    }
     syncStarted = true;
 
     void recordActivity();
@@ -52,8 +58,8 @@ function startCloudBackgroundSync() {
         else scheduleBackup(0);
     });
     window.addEventListener("levelup:workout-completed", () => scheduleBackup(1_000));
-    window.addEventListener("levelup:food-log-updated", () => scheduleBackup(5_000));
-    window.addEventListener("levelup:nutrition-updated", () => scheduleBackup(5_000));
+    window.addEventListener("levelup:food-log-updated", () => scheduleBackup(1_000));
+    window.addEventListener("levelup:nutrition-updated", () => scheduleBackup(1_000));
     document.addEventListener("change", () => scheduleBackup(BACKUP_DEBOUNCE_MS), true);
     document.addEventListener("click", event => {
         if (event.target.closest?.("button,[data-page]")) scheduleBackup(BACKUP_DEBOUNCE_MS);
@@ -62,8 +68,20 @@ function startCloudBackgroundSync() {
 
 function scheduleBackup(delay) {
     if (authBlocked || isRecoveryLaunch() || isLocalDataSandbox() || !getSession() || !navigator.onLine) return;
+    const dueAt = Date.now() + Math.max(0, Number(delay) || 0);
+    if (backupInFlight) {
+        backupRequestedWhileInFlight = true;
+        return;
+    }
+    // A generic click/change must never postpone an earlier nutrition or workout save.
+    if (backupTimer && backupDueAt && backupDueAt <= dueAt) return;
     window.clearTimeout(backupTimer);
-    backupTimer = window.setTimeout(() => void runAutomaticBackup(), Math.max(0, delay));
+    backupDueAt = dueAt;
+    backupTimer = window.setTimeout(() => {
+        backupTimer = null;
+        backupDueAt = 0;
+        void runAutomaticBackup();
+    }, Math.max(0, dueAt - Date.now()));
 }
 
 async function recordActivity() {
@@ -78,7 +96,11 @@ async function recordActivity() {
 }
 
 async function runAutomaticBackup() {
-    if (backupInFlight || authBlocked || isRecoveryLaunch() || isLocalDataSandbox() || !navigator.onLine || !getSession()) return;
+    if (backupInFlight) {
+        backupRequestedWhileInFlight = true;
+        return;
+    }
+    if (authBlocked || isRecoveryLaunch() || isLocalDataSandbox() || !navigator.onLine || !getSession()) return;
     backupInFlight = true;
 
     try {
@@ -180,6 +202,10 @@ async function runAutomaticBackup() {
     }
     finally {
         backupInFlight = false;
+        if (backupRequestedWhileInFlight) {
+            backupRequestedWhileInFlight = false;
+            scheduleBackup(1_000);
+        }
     }
 }
 
@@ -353,6 +379,8 @@ function isLocalDataSandbox() {
 function markAuthenticationRequired() {
     authBlocked = true;
     window.clearTimeout(backupTimer);
+    backupTimer = null;
+    backupDueAt = 0;
     saveAutoState({
         ...readJson(AUTO_STATE_KEY),
         status: "auth-required",

@@ -10,10 +10,10 @@ const muscleVolumeSource = readFileSync(new URL('../js/progress/weekly-muscle-vo
 const identitySource = readFileSync(new URL('../js/workouts/session-exercise-identity.js', import.meta.url), 'utf8');
 
 test('active workout and recap use the expanded exercise catalogue for swapped IDs', () => {
-  for (const source of [sessionSource, recapSource]) {
-    assert.ok(source.includes('exercise-library-expansion.js?v=exercise-library-expansion-1'));
-    assert.ok(source.includes('exercise-library.js?v=exercise-library-catalogue-2'));
-  }
+  assert.ok(sessionSource.includes('exercise-library-expansion.js?v=exercise-library-expansion-1'));
+  assert.ok(sessionSource.includes('exercise-library.js?v=exercise-library-catalogue-2'));
+  assert.ok(recapSource.includes('exercise-library-expansion.js?v=exercise-library-expansion-1'));
+  assert.ok(recapSource.includes('session-exercise-identity.js?v=repair-generic-exercise-1'));
 });
 
 test('Dumbbell Fly remains a named catalogue entry after a swap', async () => {
@@ -36,7 +36,7 @@ test('history, recap, and muscle volume resolve expanded swapped exercises', () 
   assert.match(historySource, /exercise-library-expansion\.js/);
   assert.match(muscleVolumeSource, /exercise-library-expansion\.js/);
   assert.match(recapSource, /resolveSessionExerciseIdentity\(item\)\.name/);
-  assert.match(recapSource, /item\.muscleGroup\|\|getExerciseById/);
+  assert.match(recapSource, /getExerciseImpacts\(item\)/);
 });
 
 test('generic Exercise placeholders are repaired from saved swap IDs and plan snapshots', async () => {

@@ -327,7 +327,12 @@ window.addEventListener("storage", event => {
 
 const content = document.getElementById("content");
 if (content) {
-    new MutationObserver(queueSetup).observe(content, { childList: true, subtree: true });
+    new MutationObserver(() => {
+        // MutationObserver callbacks run before the browser's next paint. Build
+        // the range control in this turn so Progress never paints a transient
+        // legacy/generic control before the finished segmented control exists.
+        ensureControls();
+    }).observe(content, { childList: true, subtree: true });
 }
 
 queueSetup();

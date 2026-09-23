@@ -35,7 +35,7 @@ function getSetCount(exercise) {
     return Number.isFinite(count) && count > 0 ? count : 0;
 }
 
-function getExerciseImpacts(exercise) {
+export function getExerciseImpacts(exercise) {
     const definition = getExerciseById(exercise?.id || exercise?.exerciseId);
     let primary = [];
     let secondary = [];

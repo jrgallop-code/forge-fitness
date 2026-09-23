@@ -107,10 +107,24 @@ test("a ready review is shared by Nutrition and Progress and applied targets ref
     assert.match(alert, /renderProgressReviewAlert\(checkIn, mode\)/);
     assert.match(alert, /progress-weekly-review-alert/);
     assert.match(alert, /Review target/);
+    assert.match(alert, /For the best estimate, weigh in today before reviewing/);
+    assert.match(alert, /You can still continue without it/);
     assert.match(alert, /levelup:open-weekly-calorie-review/);
     assert.match(display, /syncAppliedTargetAcrossSurfaces\(recommendation\.targetCalories\)/);
     assert.match(display, /levelup:calorie-target-applied/);
     assert.match(display, /Adjustment applied · reassess in 7 days/);
+});
+
+test("scheduled calorie reviews are calendar-based and do not require a same-day weigh-in", () => {
+    const phase = readFileSync("js/nutrition/nutrition-phase.js", "utf8");
+    const trend = readFileSync("js/core/weight-trend.js", "utf8");
+    const display = readFileSync("js/nutrition/calories-full-adjustment-display.js", "utf8");
+
+    assert.match(trend, /Math\.floor\(\(phaseDay - FIRST_PHASE_CHECK_DAY\)/);
+    assert.match(trend, /hasCheckDayWeighIn: dataPhaseDay >= checkDay/);
+    assert.match(phase, /checkReachedByCalendar/);
+    assert.doesNotMatch(phase, /return buildMetrics\("AWAITING WEIGH-IN"/);
+    assert.match(display, /This is optional—you can still use the recommendation below/);
 });
 
 test("the Nutrition dot uses the exact actionable review state", () => {

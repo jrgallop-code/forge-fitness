@@ -28,8 +28,8 @@ test("infers maintenance from intake and a losing smoothed weight trend", () => 
         endDate: new Date("2026-08-29T12:00:00")
     });
     assert.equal(result.status, "established");
-    assert.equal(result.maintenanceCalories, 2528);
-    assert.equal(Math.round(result.energyCorrection), 228);
+    assert.equal(result.maintenanceCalories, 2496);
+    assert.equal(Math.round(result.energyCorrection), 196);
 });
 
 test("subtracts a gaining smoothed trend from average intake", () => {
@@ -41,7 +41,7 @@ test("subtracts a gaining smoothed trend from average intake", () => {
         weights: weightHistory(21, 180, .4),
         endDate: new Date("2026-08-29T12:00:00")
     });
-    assert.equal(result.maintenanceCalories, 2518);
+    assert.equal(result.maintenanceCalories, 2543);
 });
 
 test("keeps calculated TDEE at whole-calorie precision instead of 25-calorie steps", () => {
@@ -51,7 +51,7 @@ test("keeps calculated TDEE at whole-calorie precision instead of 25-calorie ste
         endDate: new Date("2026-08-29T12:00:00")
     });
 
-    assert.equal(result.maintenanceCalories, 2531);
+    assert.equal(result.maintenanceCalories, 2556);
     assert.notEqual(result.maintenanceCalories % 25, 0);
 });
 
@@ -75,7 +75,7 @@ test("shows a usable early estimate from two food days and an established weight
     });
     assert.equal(result.status, "early");
     assert.equal(result.label, "Early estimate");
-    assert.equal(result.maintenanceCalories, 2478);
+    assert.equal(result.maintenanceCalories, 2432);
 });
 
 test("uses the smoothed rate for the energy correction", () => {
@@ -85,8 +85,8 @@ test("uses the smoothed rate for the energy correction", () => {
         endDate: new Date("2026-08-29T12:00:00")
     });
     assert.equal(result.averageIntake, 2621);
-    assert.equal(Math.round(result.energyCorrection), 97);
-    assert.equal(result.maintenanceCalories, 2718);
+    assert.equal(Math.round(result.energyCorrection), 75);
+    assert.equal(result.maintenanceCalories, 2696);
 });
 
 test("counts all logged days through yesterday even when legacy completion flags are partial", () => {
@@ -157,7 +157,7 @@ test("includes today's latest weigh-in so TDEE matches the current Weight Progre
     assert.equal(result.endDate, "2026-08-28");
 });
 
-test("the validated real weigh-in pattern rounds to the MacroFactor-matching +0.06 weekly rate", () => {
+test("the validated real weigh-in pattern reflects the 15/85 three-week trend response", () => {
     const weights = [
         ["2026-08-05",160.1],["2026-08-06",157.4],["2026-08-07",157.4],["2026-08-08",158.0],["2026-08-09",158.4],
         ["2026-08-13",158.0],["2026-08-22",158.2],["2026-08-23",156.6],["2026-08-24",159.8],["2026-08-25",158.8],
@@ -165,7 +165,7 @@ test("the validated real weigh-in pattern rounds to the MacroFactor-matching +0.
         ["2026-08-31",156.8],["2026-09-01",157.2],["2026-09-02",158.2],["2026-09-03",159.4]
     ].map(([date, weight]) => ({ date, weight }));
     const result = calculateVisibleWeightTrend(weights, { endDate: "2026-09-03" });
-    assert.equal(result.weeklyChange.toFixed(2), "0.06");
+    assert.equal(result.weeklyChange.toFixed(2), "-0.02");
 });
 
 test("holds the displayed TDEE for seven days even when the live estimate changes", () => {

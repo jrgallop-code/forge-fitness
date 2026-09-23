@@ -214,6 +214,16 @@ function saveWarmupValue(card, warmupIndex, field, value) {
     if (!active || !set) return;
     set[field] = value;
     saveActiveWorkout(active);
+    card.dataset.warmupRowsSignature = getWarmupRowsSignature(state.warmupSets);
+}
+
+function getWarmupRowsSignature(warmups = []) {
+    return JSON.stringify(warmups.map(set => [
+        set?.weight ?? null,
+        set?.reps ?? null,
+        Boolean(set?.completed),
+        set?.suggestedPercent ?? null
+    ]));
 }
 
 function renderWarmupRows(card) {
@@ -224,12 +234,7 @@ function renderWarmupRows(card) {
 
     const { state } = getWarmupState(card);
     const warmups = Array.isArray(state?.warmupSets) ? state.warmupSets : [];
-    const signature = JSON.stringify(warmups.map(set => [
-        set?.weight ?? null,
-        set?.reps ?? null,
-        Boolean(set?.completed),
-        set?.suggestedPercent ?? null
-    ]));
+    const signature = getWarmupRowsSignature(warmups);
     const existingRows = card.querySelectorAll(".session-warmup-row");
     if (card.dataset.warmupRowsSignature === signature && existingRows.length === warmups.length) return;
 
