@@ -4,6 +4,7 @@ import {
     restoreBackupSnapshot,
     verifyBackupSnapshot
 } from "../core/backup-manager.js?v=backup-complete-7";
+import { analyticsRuntimeContext } from "../analytics/runtime-context.js?v=platform-analytics-1";
 import {
     analyticsAllowed,
     clearAnalyticsConsent,
@@ -120,7 +121,7 @@ async function handleGoogleCredential(response) {
         const session = await api("/v1/session/google", {
             method: "POST",
             auth: false,
-            body: { credential: response?.credential }
+            body: { credential: response?.credential, ...await analyticsRuntimeContext() }
         });
         localStorage.setItem(SESSION_KEY, JSON.stringify({ token: session.token, expiresAt: session.expiresAt }));
         localStorage.setItem(ACCOUNT_KEY, JSON.stringify(session.user));
