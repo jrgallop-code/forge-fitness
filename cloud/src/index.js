@@ -345,20 +345,32 @@ async function createGoogleSession(body, request, env) {
     const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first();
     const userId = existing?.id || profile.sub;
     const now = new Date().toISOString();
+    const metadata = analyticsClientMetadata(body);
     await env.DB.prepare(`
-        INSERT INTO users (id, email, display_name, avatar_url, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO users (
+            id, email, display_name, avatar_url, created_at, updated_at,
+            signup_platform, signup_app_version, signup_app_build, first_ios_at, first_pwa_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             email = excluded.email,
             display_name = excluded.display_name,
             avatar_url = excluded.avatar_url,
             updated_at = excluded.updated_at
-    `).bind(userId, email, profile.name || null, profile.picture || null, now, now).run();
+    `).bind(
+        userId, email, profile.name || null, profile.picture || null, now, now,
+        metadata.platform,
+        metadata.appVersion || null,
+        metadata.appBuild || null,
+        metadata.platform === "ios" ? now : null,
+        metadata.platform === "pwa" ? now : null
+    ).run();
     return issueSession(
         userId,
         { id: userId, email, display_name: profile.name, avatar_url: profile.picture, beta_status: "active" },
         request,
-        env
+        env,
+        body
     );
 }
 
@@ -384,6 +396,7 @@ async function createAppleSession(body, request, env) {
         .bind(appleId, email).first();
     const userId = existing?.id || appleId;
     const now = new Date().toISOString();
+    const metadata = analyticsClientMetadata({ ...body, platform: "ios" });
     let encryptedRefreshToken = "";
     if (authorizationCode) {
         try {
@@ -397,13 +410,27 @@ async function createAppleSession(body, request, env) {
 
     const statements = [
         env.DB.prepare(`
-            INSERT INTO users (id, email, display_name, avatar_url, created_at, updated_at)
-            VALUES (?, ?, ?, NULL, ?, ?)
+            INSERT INTO users (
+                id, email, display_name, avatar_url, created_at, updated_at,
+                signup_platform, signup_app_version, signup_app_build, first_ios_at, first_pwa_at
+            )
+            VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 email = COALESCE(NULLIF(excluded.email, ''), users.email),
                 display_name = COALESCE(NULLIF(excluded.display_name, ''), users.display_name),
                 updated_at = excluded.updated_at
-        `).bind(userId, email || existing?.email || `${profile.sub}@privaterelay.appleid.com`, suppliedName || existing?.display_name || null, now, now)
+        `).bind(
+            userId,
+            email || existing?.email || `${profile.sub}@privaterelay.appleid.com`,
+            suppliedName || existing?.display_name || null,
+            now,
+            now,
+            metadata.platform,
+            metadata.appVersion || null,
+            metadata.appBuild || null,
+            now,
+            null
+        )
     ];
     if (encryptedRefreshToken) {
         statements.push(env.DB.prepare(`
@@ -421,7 +448,7 @@ async function createAppleSession(body, request, env) {
         display_name: suppliedName || existing?.display_name,
         avatar_url: existing?.avatar_url,
         beta_status: "active"
-    }, request, env);
+    }, request, env, { ...body, platform: "ios" });
 }
 
 async function verifyAppleIdentityToken(token, nonce, env) {
@@ -614,13 +641,24 @@ async function createEmailAccount(body, request, env) {
     crypto.getRandomValues(salt);
     const passwordHash = await derivePasswordHash(password, salt, PASSWORD_ITERATIONS);
     const now = new Date().toISOString();
+    const metadata = analyticsClientMetadata(body);
 
     try {
         await env.DB.batch([
             env.DB.prepare(`
-                INSERT INTO users (id, email, display_name, avatar_url, created_at, updated_at)
-                VALUES (?, ?, NULL, NULL, ?, ?)
-            `).bind(userId, email, now, now),
+                INSERT INTO users (
+                    id, email, display_name, avatar_url, created_at, updated_at,
+                    signup_platform, signup_app_version, signup_app_build, first_ios_at, first_pwa_at
+                )
+                VALUES (?, ?, NULL, NULL, ?, ?, ?, ?, ?, ?, ?)
+            `).bind(
+                userId, email, now, now,
+                metadata.platform,
+                metadata.appVersion || null,
+                metadata.appBuild || null,
+                metadata.platform === "ios" ? now : null,
+                metadata.platform === "pwa" ? now : null
+            ),
             env.DB.prepare(`
                 INSERT INTO password_credentials
                     (user_id, password_hash, password_salt, iterations, created_at, updated_at)
@@ -639,7 +677,8 @@ async function createEmailAccount(body, request, env) {
         userId,
         { id: userId, email, display_name: null, avatar_url: null, beta_status: "active" },
         request,
-        env
+        env,
+        body
     );
 }
 
@@ -677,7 +716,7 @@ async function createEmailSession(body, request, env) {
     }
 
     await clearRateLimit(rateKey, env);
-    return issueSession(account.id, account, request, env);
+    return issueSession(account.id, account, request, env, body);
 }
 
 async function createPasswordCredential(user, body, request, env) {
@@ -772,7 +811,7 @@ async function redeemAccountTransferCode(body, request, env) {
     }
 
     await clearRateLimit(rateKey, env);
-    return issueSession(account.id, account, request, env);
+    return issueSession(account.id, account, request, env, body);
 }
 
 function normalizeTransferCode(value) {
@@ -786,14 +825,21 @@ function createReadableTransferCode() {
     return `${raw.slice(0, 4)}-${raw.slice(4)}`;
 }
 
-async function issueSession(userId, user, request, env) {
+async function issueSession(userId, user, request, env, clientMetadata = {}) {
     const now = new Date().toISOString();
+    const metadata = analyticsClientMetadata(clientMetadata);
     const token = createToken();
     const tokenHash = await sha256(token);
     const expiresAt = SESSION_EXPIRES_AT;
     await env.DB.batch([
         env.DB.prepare("DELETE FROM sessions WHERE expires_at <= ?").bind(now),
-        env.DB.prepare("UPDATE users SET last_active_at = ? WHERE id = ?").bind(now, userId),
+        env.DB.prepare(`
+            UPDATE users SET
+                last_active_at = ?,
+                first_ios_at = CASE WHEN ? = 'ios' THEN COALESCE(first_ios_at, ?) ELSE first_ios_at END,
+                first_pwa_at = CASE WHEN ? = 'pwa' THEN COALESCE(first_pwa_at, ?) ELSE first_pwa_at END
+            WHERE id = ?
+        `).bind(now, metadata.platform, now, metadata.platform, now, userId),
         env.DB.prepare("INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)")
             .bind(tokenHash, userId, expiresAt, now)
     ]);
@@ -2211,7 +2257,13 @@ async function recordActivity(userId, body, request, env) {
     const metadata = analyticsClientMetadata(body);
     const eventKey = `${day}:${metadata.platform}`;
     await env.DB.batch([
-        env.DB.prepare("UPDATE users SET last_active_at = ? WHERE id = ?").bind(now, userId),
+        env.DB.prepare(`
+            UPDATE users SET
+                last_active_at = ?,
+                first_ios_at = CASE WHEN ? = 'ios' THEN COALESCE(first_ios_at, ?) ELSE first_ios_at END,
+                first_pwa_at = CASE WHEN ? = 'pwa' THEN COALESCE(first_pwa_at, ?) ELSE first_pwa_at END
+            WHERE id = ?
+        `).bind(now, metadata.platform, now, metadata.platform, now, userId),
         env.DB.prepare(`
             INSERT INTO usage_events (id, user_id, event_name, event_key, occurred_at, metadata_json, created_at)
             VALUES (?, ?, 'app_active', ?, ?, ?, ?)
@@ -2449,7 +2501,8 @@ async function getLocalUsageSummary(env, since, timeZone) {
 
 async function getPlatformAnalytics(env, since, activeSince, today) {
     const platformExpression = `CASE WHEN json_extract(metadata_json, '$.platform') = 'ios' THEN 'ios' WHEN json_extract(metadata_json, '$.platform') = 'pwa' THEN 'pwa' ELSE 'unknown' END`;
-    const [activity, engagement, versions, firstIos] = await Promise.all([
+    const signupExpression = `CASE WHEN signup_platform = 'ios' THEN 'ios' WHEN signup_platform = 'pwa' THEN 'pwa' ELSE 'unknown' END`;
+    const [activity, engagement, versions, firstIos, signups, conversions, bothPlatforms] = await Promise.all([
         env.DB.prepare(`SELECT ${platformExpression} AS platform,
                 COUNT(DISTINCT CASE WHEN occurred_at >= ? THEN user_id END) AS active_users,
                 COUNT(DISTINCT CASE WHEN occurred_at >= ? THEN user_id END) AS active_users_7d,
@@ -2474,12 +2527,41 @@ async function getPlatformAnalytics(env, since, activeSince, today) {
         env.DB.prepare(`SELECT COUNT(*) AS users FROM (
                 SELECT user_id, MIN(occurred_at) AS first_seen_at FROM usage_events
                 WHERE event_name = 'app_active' AND json_extract(metadata_json, '$.platform') = 'ios' GROUP BY user_id
-            ) WHERE first_seen_at >= ?`).bind(since).first()
+            ) WHERE first_seen_at >= ?`).bind(since).first(),
+        env.DB.prepare(`SELECT ${signupExpression} AS platform,
+                COUNT(*) AS new_users,
+                SUM(CASE WHEN created_at >= ? AND created_at < ? THEN 1 ELSE 0 END) AS new_users_today
+            FROM users WHERE created_at >= ?
+            GROUP BY platform`).bind(today.start, today.end, since).all(),
+        env.DB.prepare(`SELECT COUNT(*) AS users
+            FROM users
+            WHERE signup_platform = 'pwa' AND first_ios_at IS NOT NULL AND first_ios_at >= ?`).bind(since).first(),
+        env.DB.prepare(`SELECT COUNT(*) AS users
+            FROM users WHERE first_ios_at IS NOT NULL AND first_pwa_at IS NOT NULL`).first()
     ]);
-    const rows = new Map(["ios", "pwa", "unknown"].map(platform => [platform, { platform, active_users: 0, active_users_7d: 0, users_today: 0, engaged_users: 0, foods_logged: 0, food_log_users: 0, workouts: 0, workout_users: 0 }]));
+    const rows = new Map(["ios", "pwa", "unknown"].map(platform => [platform, {
+        platform, active_users: 0, active_users_7d: 0, users_today: 0, engaged_users: 0,
+        foods_logged: 0, food_log_users: 0, workouts: 0, workout_users: 0, new_users: 0, new_users_today: 0
+    }]));
     for (const result of activity?.results || []) Object.assign(rows.get(result.platform), result);
     for (const result of engagement?.results || []) Object.assign(rows.get(result.platform), result);
-    return { platforms: [...rows.values()], iosFirstSeenUsers: Number(firstIos?.users || 0), iosVersions: versions?.results || [] };
+    for (const result of signups?.results || []) Object.assign(rows.get(result.platform), result);
+    return {
+        platforms: [...rows.values()],
+        iosFirstSeenUsers: Number(firstIos?.users || 0),
+        iosVersions: versions?.results || [],
+        pwaToIosConversions: Number(conversions?.users || 0),
+        bothPlatforms: Number(bothPlatforms?.users || 0)
+    };
+}
+
+function signupPlatformCounts(rows) {
+    const counts = { ios: 0, pwa: 0, unknown: 0 };
+    for (const row of rows || []) {
+        const platform = row?.signup_platform === "ios" ? "ios" : row?.signup_platform === "pwa" ? "pwa" : "unknown";
+        counts[platform] += 1;
+    }
+    return counts;
 }
 
 async function getAdminAnalytics(user, url, request, env) {
@@ -2500,6 +2582,9 @@ async function getAdminAnalytics(user, url, request, env) {
             (SELECT COUNT(*) FROM users) AS total_users,
             (SELECT COUNT(*) FROM users WHERE created_at >= ?) AS new_users,
             (SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ?) AS new_users_today,
+            (SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ? AND signup_platform = 'ios') AS new_users_ios_today,
+            (SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ? AND signup_platform = 'pwa') AS new_users_pwa_today,
+            (SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ? AND (signup_platform IS NULL OR signup_platform NOT IN ('ios', 'pwa'))) AS new_users_unknown_today,
             (SELECT COUNT(*) FROM users WHERE last_active_at >= ?) AS active_users,
             (SELECT COUNT(*) FROM users WHERE last_active_at >= ? AND last_active_at < ?) AS users_today,
             (SELECT COUNT(*) FROM (
@@ -2514,9 +2599,17 @@ async function getAdminAnalytics(user, url, request, env) {
             (SELECT COUNT(*) FROM product_events WHERE event_name = 'workout_completed' AND occurred_at >= ?) AS workouts,
             (SELECT COUNT(DISTINCT user_id) FROM product_events WHERE event_name = 'workout_completed' AND occurred_at >= ?) AS workout_users,
             (SELECT COUNT(*) FROM product_events WHERE event_name = 'onboarding_completed' AND occurred_at >= ?) AS onboarding_completions`)
-            .bind(since, today.start, today.end, activeSince, today.start, today.end,
+            .bind(
+                since,
+                today.start, today.end,
+                today.start, today.end,
+                today.start, today.end,
+                today.start, today.end,
+                activeSince,
+                today.start, today.end,
                 today.start, today.end, today.start, today.end,
-                since, since, since, since, since).first(),
+                since, since, since, since, since
+            ).first(),
         getLocalUsageSummary(env, since, timeZone),
         getPlatformAnalytics(env, since, activeSince, today),
         env.DB.prepare(`SELECT COALESCE(NULLIF(reported_source, ''), 'Not answered') AS source, COUNT(*) AS users
@@ -2528,6 +2621,11 @@ async function getAdminAnalytics(user, url, request, env) {
                 u.avatar_url,
                 u.created_at,
                 u.last_active_at,
+                u.signup_platform,
+                u.signup_app_version,
+                u.signup_app_build,
+                u.first_ios_at,
+                u.first_pwa_at,
                 MAX(
                     COALESCE(u.last_active_at, ''),
                     COALESCE((SELECT MAX(ue_latest.occurred_at) FROM usage_events ue_latest WHERE ue_latest.user_id = u.id), ''),
@@ -2575,6 +2673,9 @@ async function getAdminAnalytics(user, url, request, env) {
                 u.display_name,
                 u.email,
                 u.created_at,
+                u.signup_platform,
+                u.signup_app_version,
+                u.signup_app_build,
                 (SELECT COUNT(*) FROM usage_events ue
                     WHERE ue.user_id = u.id AND ue.event_name = 'food_logged'
                     AND ue.occurred_at >= ? AND ue.occurred_at < ?) AS food_logs,
@@ -2612,6 +2713,7 @@ async function getAdminAnalytics(user, url, request, env) {
             date: selectedDay.date,
             activeUsers: Number(selectedDayActive?.users || 0),
             newUsers: selectedDayUsers?.results?.length || 0,
+            newUsersByPlatform: signupPlatformCounts(selectedDayUsers?.results || []),
             users: selectedDayUsers?.results || []
         }
     }, 200, request, env);
