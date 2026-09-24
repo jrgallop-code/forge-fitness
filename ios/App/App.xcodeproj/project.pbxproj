@@ -32,6 +32,7 @@
 		A11C00712FF0000100000071 /* LevelUpArcadeAudioPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00722FF0000100000071 /* LevelUpArcadeAudioPlugin.swift */; };
 		A11C00812FF0000100000081 /* LevelUpInstagramSharePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00822FF0000100000081 /* LevelUpInstagramSharePlugin.swift */; };
 		A11C00912FF0000100000091 /* LevelUpProgressPhotosPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00922FF0000100000091 /* LevelUpProgressPhotosPlugin.swift */; };
+		A11C00A12FF00001000000A1 /* LevelUpSQLiteStorePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00A22FF00001000000A1 /* LevelUpSQLiteStorePlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -121,6 +122,7 @@
 				A11C00722FF0000100000071 /* LevelUpArcadeAudioPlugin.swift */,
 				A11C00822FF0000100000081 /* LevelUpInstagramSharePlugin.swift */,
 				A11C00922FF0000100000091 /* LevelUpProgressPhotosPlugin.swift */,
+				A11C00A22FF00001000000A1 /* LevelUpSQLiteStorePlugin.swift */,
 				A11C00332FF0000100000031 /* App.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
@@ -246,6 +248,7 @@
 				A11C00712FF0000100000071 /* LevelUpArcadeAudioPlugin.swift in Sources */,
 				A11C00812FF0000100000081 /* LevelUpInstagramSharePlugin.swift in Sources */,
 				A11C00912FF0000100000091 /* LevelUpProgressPhotosPlugin.swift in Sources */,
+				A11C00A12FF00001000000A1 /* LevelUpSQLiteStorePlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -401,6 +404,7 @@
 				);
 				MARKETING_VERSION = 1.0.1;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
+				OTHER_LDFLAGS = "$(inherited) -lsqlite3";
 				PRODUCT_BUNDLE_IDENTIFIER = com.leveluphypertrophy.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -424,6 +428,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.1;
+				OTHER_LDFLAGS = "$(inherited) -lsqlite3";
 				PRODUCT_BUNDLE_IDENTIFIER = com.leveluphypertrophy.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "$(APP_STORE_PROFILE_NAME)";
