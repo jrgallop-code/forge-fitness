@@ -258,3 +258,4 @@ TestFlight build 151: make progress-photo exports reproduce the selected card's 
 TestFlight build 152: label estimated 1RM change as Since Previous and add all-time Since First Logged strength gain with the baseline value and date.
 
 TestFlight build 153: extend estimated 1RM-style progress comparisons to Session Volume with Since Previous and all-time Since First Logged volume, baseline value, and date.
+TestFlight build 154: harden automatic cloud backup against iOS suspension/storage pressure — critical workout, food, nutrition, weight, measurement and sleep saves now queue cloud backup within ~350ms; generic edits within 3s; app background/page-hide starts backup immediately; add native app-state backup trigger and faster launch/online catch-up.
