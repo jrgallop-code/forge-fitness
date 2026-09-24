@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-24-pwa-startup-recovery-349";
+const CACHE_VERSION = "2026-09-24-backup-lifecycle-346";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -28,7 +28,7 @@ const CORE_ASSETS = [
     "./assets/audio/arcade/damage-grunt-3.wav",
     "./assets/audio/arcade/game-over-scream.wav",
     "./js/account/cloud-backup-history-ui.js?v=backup-history-ui-1",
-    "./js/account/cloud-background-sync.js",
+    "./js/account/cloud-background-sync.js?v=backup-lifecycle-2",
     "./js/analytics/product-state.js?v=user-demographics-1",
     "./js/core/body-composition.js?v=female-body-fat-ranges-1",
     "./js/core/muscle-map-colors.js?v=muscle-map-colors-3",
