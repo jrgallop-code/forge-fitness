@@ -283,6 +283,9 @@ function saveSleepEntry() {
         SLEEP_STORAGE_KEY,
         JSON.stringify(entries)
     );
+    window.dispatchEvent(new CustomEvent("levelup:sleep-updated", {
+        detail: { source: "sleep-tracker", action: "save", count: entries.length }
+    }));
 
 
     editingSleepDate =
@@ -551,6 +554,9 @@ function removeSleepEntry(date) {
         SLEEP_STORAGE_KEY,
         JSON.stringify(entries)
     );
+    window.dispatchEvent(new CustomEvent("levelup:sleep-updated", {
+        detail: { source: "sleep-tracker", action: "remove", count: entries.length }
+    }));
 
 
     updateSleepDisplay();
