@@ -18,3 +18,14 @@ test("latest strength point receives a theme accent halo inside a polished chart
     assert.match(chartStyles, /linear-gradient\(155deg/);
     assert.match(chartStyles, /var\(--accent-glow/);
 });
+
+test("session volume and estimated 1RM distinguish recent change from all-time baseline progress", () => {
+    assert.match(chartSource, /Since Previous/);
+    assert.match(chartSource, /Since first logged/);
+    assert.match(chartSource, /baselineChange = records\.length > 1 \? latestValue - baselineValue/);
+    assert.match(chartSource, /Baseline \$\{valueLabel\(baselineValue\)\} · \$\{formatDate\(first\.date\)\}/);
+    assert.doesNotMatch(chartSource, /isVolume \? "Change" : "Since Previous"/);
+    assert.doesNotMatch(chartSource, /const baselineSummary = !isVolume/);
+    assert.match(chartStyles, /\.exercise-progress-baseline/);
+    assert.match(chartStyles, /grid-column: 1 \/ -1/);
+});

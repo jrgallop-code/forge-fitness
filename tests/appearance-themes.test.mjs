@@ -269,7 +269,7 @@ test("exercise analytics cards and lines inherit the Arctic blue palette", async
   assert.match(styles, /\.exercise-volume-detail\{border:1px solid var\(--line\)!important;background:var\(--surface-raised\)!important;color:var\(--text-secondary\)!important/);
   assert.match(chart, /stroke="var\(--accent\)" stroke-width="3"/);
   assert.doesNotMatch(chart, /stroke="#ff3139"/);
-  assert.match(router, /exercise-progress-v2\.js\?v=equipment-labels-1/);
+  assert.match(router, /exercise-progress-v2\.js\?v=baseline-volume-progress-2/);
 });
 
 test("production entry points load the theme before paint and bust caches", async () => {

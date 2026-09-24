@@ -35,3 +35,52 @@
         border-radius: 15px;
     }
 }
+
+.exercise-volume-stat.is-summary > span {
+    min-height: 2.2em;
+    line-height: 1.1;
+}
+
+.exercise-progress-baseline {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 3px 12px;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--line, rgba(255,255,255,.08));
+    border-radius: 12px;
+    background: var(--surface-raised, #17171b);
+    color: var(--text, #fff);
+}
+
+.exercise-progress-baseline span {
+    color: var(--muted, #85858f);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.exercise-progress-baseline strong {
+    color: var(--heading, #fff);
+    font-size: 14px;
+    line-height: 1.2;
+    text-align: right;
+}
+
+.exercise-progress-baseline strong.is-positive {
+    color: var(--success-text, #4bd180);
+}
+
+.exercise-progress-baseline strong.is-negative {
+    color: var(--warning-text, #f0b24a);
+}
+
+.exercise-progress-baseline small {
+    grid-column: 1 / -1;
+    color: var(--text-secondary, #d5d5da);
+    font-size: 11px;
+    line-height: 1.25;
+}

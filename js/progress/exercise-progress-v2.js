@@ -302,17 +302,27 @@ function renderComparison(records) {
     }
     const latest = records.at(-1);
     const previous = records.at(-2);
+    const first = records[0];
     const isVolume = selectedMetric === "volume";
     const latestValue = isVolume ? latest.sessionVolume : latest.estimatedOneRepMax;
     const previousValue = previous ? (isVolume ? previous.sessionVolume : previous.estimatedOneRepMax) : null;
+    const baselineValue = isVolume ? first.sessionVolume : first.estimatedOneRepMax;
     const change = previous ? latestValue - previousValue : null;
     const percent = previousValue > 0 ? change / previousValue * 100 : null;
+    const baselineChange = records.length > 1 ? latestValue - baselineValue : null;
+    const baselinePercent = baselineValue > 0 && baselineChange !== null ? baselineChange / baselineValue * 100 : null;
     const valueLabel = value => isVolume ? formatVolume(value) : formatMass(value, 1);
     const changeLabel = value => isVolume ? signedVolume(value) : signedMass(value, 1);
+    const baselineSummary = `<p class="exercise-progress-baseline">
+            <span>Since first logged</span>
+            <strong class="${baselineChange > 0 ? "is-positive" : baselineChange < 0 ? "is-negative" : ""}">${baselineChange === null ? "Baseline established" : `${changeLabel(baselineChange)} · ${signedPercent(baselinePercent)}`}</strong>
+            <small>Baseline ${valueLabel(baselineValue)} · ${formatDate(first.date)}</small>
+        </p>`;
     container.innerHTML = `
-        <div class="exercise-volume-stat"><span>Latest</span><strong>${valueLabel(latestValue)}</strong></div>
-        <div class="exercise-volume-stat"><span>Previous</span><strong>${previous ? valueLabel(previousValue) : "—"}</strong></div>
-        <div class="exercise-volume-stat"><span>Change</span><strong class="${change > 0 ? "is-positive" : change < 0 ? "is-negative" : ""}">${change === null ? "First session" : `${changeLabel(change)} · ${signedPercent(percent)}`}</strong></div>
+        <div class="exercise-volume-stat is-summary"><span>Latest</span><strong>${valueLabel(latestValue)}</strong></div>
+        <div class="exercise-volume-stat is-summary"><span>Previous</span><strong>${previous ? valueLabel(previousValue) : "—"}</strong></div>
+        <div class="exercise-volume-stat is-summary"><span>Since Previous</span><strong class="${change > 0 ? "is-positive" : change < 0 ? "is-negative" : ""}">${change === null ? "First session" : `${changeLabel(change)} · ${signedPercent(percent)}`}</strong></div>
+        ${baselineSummary}
         <p class="exercise-volume-detail">${isVolume ? buildChangeDetail(latest, previous) : buildStrengthDetail(latest, previous)}</p>`;
 }
 
