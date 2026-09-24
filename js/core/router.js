@@ -12,6 +12,7 @@ import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/
 import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=pwa-workout-sharing-1";
 import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-live-polish.js?v=workout-landing-live-polish-2";
 import { renderProgress } from "../progress/progress-ui.js?v=equipment-profiles-1";
+import { initializeMonthlyReports, initializeMonthlyReportDashboardPrompt } from "../progress/monthly-report.js?v=pwa-monthly-reports-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-2";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=theme-accent-calendar-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=smoothed-visible-trend-release-1";
@@ -30,7 +31,7 @@ import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1-weekly-informational-checkin-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-target-rounding-1";
-import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=account-transfer-icons-1-bmi-medical-sources-1-ios-launch-guide-1";
+import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=pwa-monthly-reports-1";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=history-rir-edit-1";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=equipment-profiles-1";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-7";
@@ -93,6 +94,7 @@ export function navigate(page) {
                 safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
                 safeInitialize("Backup manager", initializeBackupManager);
                 safeInitialize("Google Drive sync", initializeGoogleDriveSync);
+                safeInitialize("Monthly report prompt", () => initializeMonthlyReportDashboardPrompt(content));
                 if (!safeInitialize("What's New", showWhatsNewIfEligible)) {
                     safeInitialize("Satisfaction survey", () => showSatisfactionSurveyIfEligible(content));
                 }
@@ -123,7 +125,7 @@ export function navigate(page) {
                 break;
             }
             case "progress":
-                content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); if (isNutritionEnabled()) { safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); } safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
+                content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); if (isNutritionEnabled()) { safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); } safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); safeInitialize("Monthly reports", () => initializeMonthlyReports(content)); break;
             case "sleep":
                 content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>Track sleep duration, quality and recovery notes.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
             case "measurements":
@@ -139,6 +141,7 @@ export function navigate(page) {
             default:
                 content.innerHTML = renderDashboardWithPerformance(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Workout performance", initializeWorkoutPerformance);
                 safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
+                safeInitialize("Monthly report prompt", () => initializeMonthlyReportDashboardPrompt(content));
                 if (!safeInitialize("What's New", showWhatsNewIfEligible)) {
                     safeInitialize("Satisfaction survey", () => showSatisfactionSurveyIfEligible(content));
                 }

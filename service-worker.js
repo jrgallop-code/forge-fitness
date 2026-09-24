@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-09-23-pwa-workout-sharing-345";
+const CACHE_VERSION = "2026-09-24-pwa-monthly-reports-346";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -42,6 +42,7 @@ const CORE_ASSETS = [
     "./js/progress/progress-initial-tab-stability.js?v=progress-initial-tab-stability-1",
     "./js/progress/weight-history-goal-colors.js?v=weight-history-neutral-1",
     "./css/progress-edge-layout.css?v=progress-edge-cards-1",
+    "./css/monthly-report.css?v=pwa-monthly-reports-1",
     "./css/appearance-volume-goals-fix.css?v=appearance-volume-goals-3",
     "./js/more/body-composition-health-records.js?v=body-comp-health-records-2",
     "./js/more/interactive-workout-tutorial-v5.js?v=browser-form-guide-pointer-1",
