@@ -13,7 +13,7 @@ import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.j
 import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-live-polish.js?v=workout-landing-live-polish-2";
 import { renderProgress } from "../progress/progress-ui.js?v=native-photo-picker-1-photo-carousel-1-photo-gallery-detail-2";
 import { initializeMonthlyReports, initializeMonthlyReportDashboardPrompt } from "../progress/monthly-report.js?v=ios-monthly-report-2";
-import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-2";
+import { initializeWeightTracker } from "../progress/weight-tracker.js?v=backup-lifecycle-2";
 import { initializePhotoJournal } from "../progress/photo-journal.js?v=progress-photo-share-1";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=theme-accent-calendar-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=smoothed-visible-trend-release-1";
@@ -24,8 +24,8 @@ import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.j
 import { initializeMuscleRecoveryMap } from "../progress/muscle-recovery-map.js?v=recovery-traced-1";
 import { initializeWeightCarbsChart } from "../progress/weight-carbs-chart.js?v=energy-balance-range-3";
 import { initializeCalorieStats } from "../nutrition/calorie-stats.js?v=energy-carousel-control-1";
-import { renderSleepTracker, initializeSleepTracker } from "../progress/sleep-tracker.js?v=sleep-tracker-2";
-import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../progress/measurements-tracker.js?v=measurements-mobile-cleanup-1";
+import { renderSleepTracker, initializeSleepTracker } from "../progress/sleep-tracker.js?v=backup-lifecycle-2";
+import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../progress/measurements-tracker.js?v=backup-lifecycle-2";
 import { renderNutrition, renderWater, initializeNutrition, showNutritionView } from "../nutrition/nutrition-ui.js?v=water-only-1";
 import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energy-profile.js?v=food-log-macro-bars-1";
 import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v=food-calendar-2";
