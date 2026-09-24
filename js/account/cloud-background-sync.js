@@ -11,7 +11,8 @@ const AUTO_STATE_KEY = "level_up_cloud_auto_backup_state";
 const RECOVERY_PARAMETER = "local-recovery";
 const ACTIVITY_INTERVAL_MS = 15 * 60 * 1000;
 const BACKUP_CHECK_INTERVAL_MS = 2 * 60 * 1000;
-const BACKUP_DEBOUNCE_MS = 20 * 1000;
+const BACKUP_DEBOUNCE_MS = 3 * 1000;
+const CRITICAL_BACKUP_DELAY_MS = 350;
 
 let backupTimer = null;
 let backupDueAt = 0;
@@ -39,13 +40,13 @@ function startCloudBackgroundSync() {
     syncStarted = true;
 
     void recordActivity();
-    scheduleBackup(30_000);
+    scheduleBackup(5_000);
 
     window.setInterval(() => void recordActivity(), ACTIVITY_INTERVAL_MS);
     window.setInterval(() => scheduleBackup(0), BACKUP_CHECK_INTERVAL_MS);
     window.addEventListener("online", () => {
         void recordActivity();
-        scheduleBackup(2_000);
+        scheduleBackup(750);
     });
     window.addEventListener("levelup:cloud-sync-complete", event => {
         void adoptCompletedSync(event.detail);
@@ -53,17 +54,56 @@ function startCloudBackgroundSync() {
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
             void recordActivity();
-            scheduleBackup(5_000);
+            scheduleBackup(1_000);
         }
-        else scheduleBackup(0);
+        else {
+            // iOS can suspend the WebView before a zero-delay timer gets a chance
+            // to run, so begin the upload immediately while the app still has CPU.
+            void runAutomaticBackup();
+        }
     });
-    window.addEventListener("levelup:workout-completed", () => scheduleBackup(1_000));
-    window.addEventListener("levelup:food-log-updated", () => scheduleBackup(1_000));
-    window.addEventListener("levelup:nutrition-updated", () => scheduleBackup(1_000));
+    window.addEventListener("pagehide", () => {
+        void runAutomaticBackup();
+    });
+
+    [
+        "levelup:workout-completed",
+        "levelup:food-log-updated",
+        "levelup:nutrition-updated",
+        "levelup:nutrition-phase-updated",
+        "levelup:weight-updated",
+        "levelup:measurements-updated",
+        "levelup:sleep-updated",
+        "levelup:workout-library-changed",
+        "levelup:shared-workout-imported",
+        "levelup:body-composition-updated"
+    ].forEach(name => window.addEventListener(name, () => scheduleBackup(CRITICAL_BACKUP_DELAY_MS)));
+
+    bindNativeLifecycleBackup();
     document.addEventListener("change", () => scheduleBackup(BACKUP_DEBOUNCE_MS), true);
     document.addEventListener("click", event => {
         if (event.target.closest?.("button,[data-page]")) scheduleBackup(BACKUP_DEBOUNCE_MS);
     }, true);
+}
+
+function bindNativeLifecycleBackup() {
+    try {
+        const appPlugin = window.Capacitor?.Plugins?.App;
+        if (!appPlugin?.addListener) return;
+        void appPlugin.addListener("appStateChange", event => {
+            if (event?.isActive) {
+                void recordActivity();
+                scheduleBackup(750);
+            }
+            else {
+                // Start the request immediately before iOS freezes the WebView.
+                void runAutomaticBackup();
+            }
+        });
+    }
+    catch (error) {
+        console.warn("Native backup lifecycle listener was unavailable:", error?.message || error);
+    }
 }
 
 function scheduleBackup(delay) {
