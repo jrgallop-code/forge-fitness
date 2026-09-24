@@ -178,3 +178,13 @@ test("signup platform attribution separates iOS and PWA acquisition", async () =
     assert.match(daily, /admin-daily-platform/);
     assert.match(styles, /admin-platform-badge/);
 });
+
+
+test("current native builds can be attributed from the Capacitor origin", async () => {
+    const worker = await read("cloud/src/index.js");
+    assert.match(worker, /function authClientMetadata/);
+    assert.match(worker, /capacitor:\/\/localhost/);
+    assert.match(worker, /ionic:\/\/localhost/);
+    assert.match(worker, /authClientMetadata\(body, request\)/);
+    assert.match(worker, /authClientMetadata\(clientMetadata, request\)/);
+});
