@@ -250,3 +250,5 @@ TestFlight build 147: restore Monthly Volume to total effective set credits for 
 TestFlight build 148: monthly report completeness pass — show every tracked muscle group including low/zero-volume rows; retain all improved lifts sorted strongest-first with swipe pages in-app and continuation pages in PDF; wrap long lift/exercise names without ellipses; embed self-contained highlighted front/back muscle maps in PDF; always show goal weight in PDF and label Weight (lb) and Date axes.
 
 TestFlight build 149: add on-device progress-photo share cards with five branded layouts, trend-weight, workout and timeline milestones, social formats, crop-aware export, and the native iOS share sheet.
+
+TestFlight build 150: keep the progress-photo gallery and sharing controls above the persistent iOS tab bar, hide tab-bar interaction while open, and add bottom safe-area clearance.

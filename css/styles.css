@@ -4407,7 +4407,7 @@ textarea:focus {
 .photo-gallery-screen {
     position:fixed;
     inset:0;
-    z-index:12000;
+    z-index:31000;
     min-width:0;
     padding:max(15px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom));
     overflow-y:auto;
@@ -4419,6 +4419,12 @@ textarea:focus {
 html.photo-gallery-open,
 html.photo-gallery-open body {
     overflow:hidden!important;
+}
+
+html.photo-gallery-open .bottom-nav {
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
 }
 
 .photo-gallery-topbar {
@@ -4673,8 +4679,8 @@ html.photo-gallery-open body {
 .photo-share-screen {
     position:fixed;
     inset:0;
-    z-index:12010;
-    padding:max(15px, env(safe-area-inset-top)) 0 max(18px, env(safe-area-inset-bottom));
+    z-index:31010;
+    padding:max(15px, env(safe-area-inset-top)) 0 calc(34px + env(safe-area-inset-bottom));
     overflow-y:auto;
     background:var(--bg);
     overscroll-behavior:contain;

@@ -83,4 +83,6 @@ test("two-photo comparisons create branded on-device share cards", () => {
     assert.match(journal, /photoCropStates/);
     assert.match(styles, /\.photo-share-carousel\s*\{[\s\S]*scroll-snap-type:x mandatory/);
     assert.match(styles, /\.photo-share-card\s*\{[\s\S]*aspect-ratio:4 \/ 5/);
+    assert.match(styles, /html\.photo-gallery-open \.bottom-nav\s*\{[\s\S]*visibility:hidden!important;[\s\S]*pointer-events:none!important/);
+    assert.match(styles, /\.photo-share-screen\s*\{[\s\S]*z-index:31010;[\s\S]*env\(safe-area-inset-bottom\)/);
 });
