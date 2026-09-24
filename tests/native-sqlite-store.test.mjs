@@ -5,7 +5,6 @@ import test from "node:test";
 const store = fs.readFileSync("js/core/native-sqlite-store.js", "utf8");
 const login = fs.readFileSync("js/account/first-launch-login.js", "utf8");
 const bridge = fs.readFileSync("ios/App/App/LevelUpBridgeViewController.swift", "utf8");
-const plugin = fs.readFileSync("ios/App/App/LevelUpSQLiteStorePlugin.swift", "utf8");
 const project = fs.readFileSync("ios/App/App.xcodeproj/project.pbxproj", "utf8");
 
 test("iOS startup restores native SQLite data before login recovery", () => {
@@ -25,10 +24,9 @@ test("native SQLite mirror excludes auth tokens and persists Level Up data", () 
 
 test("native bridge registers the SQLite plugin and Xcode links sqlite3", () => {
     assert.match(bridge, /LevelUpSQLiteStorePlugin\(\)/);
-    assert.match(plugin, /import SQLite3/);
-    assert.match(plugin, /PRAGMA journal_mode=WAL/);
-    assert.match(plugin, /PRAGMA synchronous=FULL/);
-    assert.match(plugin, /BEGIN IMMEDIATE TRANSACTION/);
-    assert.match(project, /LevelUpSQLiteStorePlugin\.swift in Sources/);
+    assert.match(bridge, /import SQLite3/);
+    assert.match(bridge, /PRAGMA journal_mode=WAL/);
+    assert.match(bridge, /PRAGMA synchronous=FULL/);
+    assert.match(bridge, /BEGIN IMMEDIATE TRANSACTION/);
     assert.match(project, /-lsqlite3/);
 });
