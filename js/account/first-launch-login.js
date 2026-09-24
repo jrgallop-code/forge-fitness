@@ -2,6 +2,7 @@ import "../core/native-capabilities.js?v=interactive-live-activity-1";
 import "../privacy/analytics-consent.js?v=app-review-privacy-1";
 import { clearLocalAppData, createBackupSnapshot, restoreBackupSnapshot, verifyBackupSnapshot } from "../core/backup-manager.js?v=reauth-data-safety-1";
 import { initializeNativeSQLiteStore } from "../core/native-sqlite-store.js?v=sqlite-safety-store-1";
+import { analyticsRuntimeContext } from "../analytics/runtime-context.js?v=platform-analytics-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
@@ -113,8 +114,12 @@ function initializeNativeProviders() {
 async function openNativeGoogleLogin() {
     setMessage("Opening secure Google sign-in…");
     try {
+        const context = await analyticsRuntimeContext();
+        const params = new URLSearchParams({ platform: "ios" });
+        if (context.appVersion) params.set("appVersion", context.appVersion);
+        if (context.appBuild) params.set("appBuild", context.appBuild);
         await window.Capacitor?.Plugins?.Browser?.open?.({
-            url: "https://app.leveluphypertrophy.com/ios-auth.html",
+            url: `https://app.leveluphypertrophy.com/ios-auth.html?${params.toString()}`,
             presentationStyle: "popover"
         });
     } catch { setMessage("Google sign-in could not be opened.", "error"); }
@@ -130,7 +135,7 @@ async function completeAppleLogin() {
         const response = await fetch(`${API_URL}/v1/session/apple`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(credential)
+            body: JSON.stringify({ ...credential, ...await analyticsRuntimeContext(), platform: "ios" })
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || !payload?.token) throw new Error(payload.error || "Apple sign-in could not be completed.");
@@ -146,7 +151,7 @@ async function redeemTransferCode(code, message = "Connecting your existing acco
     const result = await fetch(`${API_URL}/v1/session/transfer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code })
+        body: JSON.stringify({ code, ...await analyticsRuntimeContext() })
     });
     const payload = await result.json().catch(() => ({}));
     if (!result.ok || !payload?.token) throw new Error(payload.error || "This account could not be connected.");
@@ -421,7 +426,7 @@ async function completeEmailLogin(event) {
         const result = await fetch(`${API_URL}${endpoint}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, ...await analyticsRuntimeContext() })
         });
         let payload = {};
         try { payload = await result.json(); } catch {}
@@ -488,7 +493,7 @@ async function completeGoogleLogin(response) {
         const result = await fetch(`${API_URL}/v1/session/google`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ credential: response?.credential })
+            body: JSON.stringify({ credential: response?.credential, ...await analyticsRuntimeContext() })
         });
         let payload = {};
         try { payload = await result.json(); } catch {}
