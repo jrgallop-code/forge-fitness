@@ -1,6 +1,6 @@
-import { renderAdminAnalytics, initializeAdminAnalytics } from "./admin-analytics.js?v=platform-analytics-1";
+import { renderAdminAnalytics, initializeAdminAnalytics } from "./admin-analytics.js?v=platform-acquisition-2";
 import { initializeOwnerProductInsights } from "./product-insights.js?v=user-demographics-2";
-import { initializeDailyUserQuery } from "./daily-user-query.js?v=daily-user-query-1";
+import { initializeDailyUserQuery } from "./daily-user-query.js?v=platform-acquisition-2";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
