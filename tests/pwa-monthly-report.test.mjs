@@ -31,7 +31,7 @@ test("PWA monthly reports use browser-native share and printable PDF output", as
 
 test("PWA cache includes monthly report styling", async () => {
     const worker = await read("service-worker.js");
-    assert.match(worker, /2026-09-24-pwa-monthly-reports-348/);
+    assert.match(worker, /2026-09-24-pwa-startup-recovery-349/);
     assert.match(worker, /monthly-report\.css\?v=pwa-monthly-reports-1/);
 });
 
@@ -42,4 +42,15 @@ test("monthly report chart dependencies expose the shared renderers", async () =
     ]);
     assert.match(weightChart, /export function drawSharedWeightTrendChart/);
     assert.match(energyChart, /export function drawSharedCalorieExpenditureChart/);
+});
+
+test("PWA sign-in startup can safely clear local data", async () => {
+    const [backupManager, firstLaunch, index] = await Promise.all([
+        read("js/core/backup-manager.js"),
+        read("js/account/first-launch-login.js"),
+        read("index.html")
+    ]);
+    assert.match(backupManager, /export async function clearLocalAppData/);
+    assert.match(firstLaunch, /backup-manager\.js\?v=pwa-reauth-data-safety-2/);
+    assert.match(index, /first-launch-login\.js\?v=reauth-data-safety-pwa-2/);
 });

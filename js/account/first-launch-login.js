@@ -1,5 +1,5 @@
 import "../core/native-capabilities.js?v=lock-screen-timers-2";
-import { clearLocalAppData, createBackupSnapshot, restoreBackupSnapshot, verifyBackupSnapshot } from "../core/backup-manager.js?v=reauth-data-safety-1";
+import { clearLocalAppData, createBackupSnapshot, restoreBackupSnapshot, verifyBackupSnapshot } from "../core/backup-manager.js?v=pwa-reauth-data-safety-2";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
