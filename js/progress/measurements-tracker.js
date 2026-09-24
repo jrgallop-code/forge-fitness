@@ -121,6 +121,9 @@ function getEntries() {
 
 function saveEntries(entries) {
     localStorage.setItem(MEASUREMENTS_STORAGE_KEY, JSON.stringify(entries));
+    window.dispatchEvent(new CustomEvent("levelup:measurements-updated", {
+        detail: { source: "measurements-tracker", count: entries.length }
+    }));
 }
 
 function saveEntry() {
