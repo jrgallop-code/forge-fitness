@@ -29,6 +29,15 @@ test("PWA monthly reports use browser-native share and printable PDF output", as
 
 test("PWA cache includes monthly report styling", async () => {
     const worker = await read("service-worker.js");
-    assert.match(worker, /2026-09-24-pwa-monthly-reports-346/);
+    assert.match(worker, /2026-09-24-pwa-monthly-reports-347/);
     assert.match(worker, /monthly-report\.css\?v=pwa-monthly-reports-1/);
+});
+
+test("monthly report chart dependencies expose the shared renderers", async () => {
+    const [weightChart, energyChart] = await Promise.all([
+        read("js/progress/weight-trend-chart.js"),
+        read("js/nutrition/tdee-calorie-expenditure-carousel.js")
+    ]);
+    assert.match(weightChart, /export function drawSharedWeightTrendChart/);
+    assert.match(energyChart, /export function drawSharedCalorieExpenditureChart/);
 });

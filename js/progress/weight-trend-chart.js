@@ -178,6 +178,11 @@ function updatePeriodSummary(card, trendSeries) {
     }
 }
 
+export function drawSharedWeightTrendChart(canvas, { entries = [], trendSeries = [], goalWeight = null, startDate, endDate, label = "Monthly report" } = {}) {
+    if (!canvas || !startDate || !endDate) return;
+    drawChart(canvas, entries, trendSeries, goalWeight, { startDate, endDate, label }, entries.length);
+}
+
 function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntries) {
     const context = canvas.getContext("2d");
     if (!context) return;
