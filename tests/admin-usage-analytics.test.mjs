@@ -145,3 +145,36 @@ test("workout source classifier distinguishes every creation path", async () => 
     assert.equal(classifyWorkoutSource({ id: "import-1", importedRoutine: {} }), "imported_routine");
     assert.equal(classifyWorkoutSource({ id: "one-off-1", isOneOff: true }), "one_off");
 });
+
+
+test("signup platform attribution separates iOS and PWA acquisition", async () => {
+    const [migration, worker, login, iosBridge, accountCloud, admin, daily, styles] = await Promise.all([
+        read("cloud/migrations/0024_signup_platform.sql"),
+        read("cloud/src/index.js"),
+        read("js/account/first-launch-login.js"),
+        read("js/account/ios-auth-bridge.js"),
+        read("js/more/account-cloud-ui.js"),
+        read("admin/admin-analytics.js"),
+        read("admin/daily-user-query.js"),
+        read("admin/platform-analytics.css")
+    ]);
+    for (const column of ["signup_platform", "signup_app_version", "signup_app_build", "first_ios_at", "first_pwa_at"]) {
+        assert.match(migration, new RegExp(column));
+        assert.match(worker, new RegExp(column));
+    }
+    assert.match(login, /analyticsRuntimeContext/);
+    assert.match(login, /platform: "ios"/);
+    assert.match(iosBridge, /platform: "ios"/);
+    assert.match(accountCloud, /analyticsRuntimeContext/);
+    assert.match(worker, /pwaToIosConversions/);
+    assert.match(worker, /bothPlatforms/);
+    assert.match(worker, /new_users_ios_today/);
+    assert.match(worker, /new_users_pwa_today/);
+    assert.match(admin, /New iOS today/);
+    assert.match(admin, /New PWA today/);
+    assert.match(admin, /PWA → iOS conversions/);
+    assert.match(admin, /Used both platforms/);
+    assert.match(daily, /newUsersByPlatform/);
+    assert.match(daily, /admin-daily-platform/);
+    assert.match(styles, /admin-platform-badge/);
+});
