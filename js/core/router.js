@@ -12,7 +12,7 @@ import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/
 import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=pwa-workout-sharing-1";
 import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-live-polish.js?v=workout-landing-live-polish-2";
 import { renderProgress } from "../progress/progress-ui.js?v=equipment-profiles-1";
-import { initializeMonthlyReports, initializeMonthlyReportDashboardPrompt } from "../progress/monthly-report.js?v=pwa-monthly-reports-1";
+import { initializeMonthlyReports, initializeMonthlyReportDashboardPrompt } from "../progress/monthly-report.js?v=pwa-monthly-reports-2";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-2";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=theme-accent-calendar-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=smoothed-visible-trend-release-1";
@@ -31,7 +31,7 @@ import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1-weekly-informational-checkin-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-target-rounding-1";
-import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=pwa-monthly-reports-1";
+import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=pwa-monthly-reports-2";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=history-rir-edit-1";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=equipment-profiles-1";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-7";

@@ -8,8 +8,8 @@ import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutriti
 import { calculateTrendWeightSeries, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { getEnergyBalanceState } from "../nutrition/energy-balance-state.js?v=energy-balance-range-1";
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
-import { drawSharedWeightTrendChart } from "./weight-trend-chart.js?v=progress-range-first-paint-1";
-import { drawSharedCalorieExpenditureChart } from "../nutrition/tdee-calorie-expenditure-carousel.js?v=energy-balance-range-3";
+import { drawSharedWeightTrendChart } from "./weight-trend-chart.js?v=pwa-monthly-report-chart-1";
+import { drawSharedCalorieExpenditureChart } from "../nutrition/tdee-calorie-expenditure-carousel.js?v=pwa-monthly-report-chart-1";
 
 const SESSION_KEY = "forge_workout_sessions";
 const WEIGHT_KEY = "forge_weight_entries";
