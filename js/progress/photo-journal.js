@@ -4,6 +4,9 @@ import {
     massUnit,
     UNIT_KINDS
 } from "../core/unit-system.js?v=granular-units-1";
+import {
+    calculateTrendWeightSeries
+} from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 
 const DATABASE_NAME =
     "level_up_media";
@@ -23,6 +26,15 @@ const JPEG_QUALITY =
 const ACCOUNT_STORAGE_KEY = "level_up_cloud_account";
 const SESSION_STORAGE_KEY = "level_up_cloud_session";
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
+const WORKOUT_STORAGE_KEY = "forge_workout_sessions";
+const PHOTO_SHARE_TEMPLATES = ["before-after", "weight", "training", "timeline", "minimal"];
+const PHOTO_SHARE_FORMATS = {
+    post: { width: 1080, height: 1350, label: "Post" },
+    story: { width: 1080, height: 1920, label: "Story" },
+    square: { width: 1080, height: 1080, label: "Square" }
+};
+const PHOTO_SHARE_LOGO = "assets/level-up-mark-transparent.svg";
+const PHOTO_SHARE_URL = "leveluphypertrophy.com";
 
 
 let activeObjectUrls = [];
@@ -31,6 +43,10 @@ let selectedPhotoIds = [];
 let activePhotoId = "";
 let galleryMode = "single";
 let selectedMonth = "all";
+let activePhotoShareTemplate = 0;
+let photoShareFormat = "post";
+let photoShareShowWeights = false;
+const photoCropStates = new Map();
 
 
 export function renderPhotoJournal() {
@@ -114,6 +130,38 @@ export function renderPhotoJournal() {
                 </p>
 
                 <div id="photo-gallery-carousel" class="photo-gallery-carousel" aria-label="Progress photo carousel"></div>
+
+                <button id="open-photo-share" class="primary-btn photo-share-launch" type="button" hidden>
+                    Create &amp; Share
+                </button>
+            </div>
+
+            <div id="photo-share-screen" class="photo-share-screen" hidden>
+                <div class="photo-share-topbar">
+                    <button id="close-photo-share" type="button" aria-label="Back to photo comparison">‹</button>
+                    <div><span class="eyebrow">PROGRESS PHOTOS</span><h3>Customize</h3></div>
+                    <button id="export-photo-share" type="button">Next</button>
+                </div>
+
+                <div id="photo-share-carousel" class="photo-share-carousel" aria-label="Progress photo share templates"></div>
+                <div id="photo-share-dots" class="photo-share-dots" role="tablist" aria-label="Share card template"></div>
+                <p class="photo-share-swipe-hint">Swipe to choose a layout</p>
+
+                <section class="photo-share-options" aria-label="Share card options">
+                    <div>
+                        <strong>FORMAT</strong>
+                        <div class="photo-share-format" role="radiogroup" aria-label="Image format">
+                            ${Object.entries(PHOTO_SHARE_FORMATS).map(([value, option]) => `<button type="button" data-photo-share-format="${value}" aria-pressed="${value === "post"}">${option.label}</button>`).join("")}
+                        </div>
+                    </div>
+                    <label>
+                        <span><strong>SHOW WEIGHTS</strong><small>Include each recorded weight beneath its photo</small></span>
+                        <input id="photo-share-show-weights" type="checkbox">
+                    </label>
+                    <p id="photo-share-status" role="status" aria-live="polite"></p>
+                </section>
+
+                <p class="photo-share-privacy">Created on this iPhone. Your photos leave Level Up only after you choose where to share them.</p>
             </div>
 
         </section>
@@ -168,6 +216,21 @@ export function initializePhotoJournal() {
     });
 
     document.getElementById("close-photo-gallery")?.addEventListener("click", closeGallery);
+    document.getElementById("open-photo-share")?.addEventListener("click", openPhotoShare);
+    document.getElementById("close-photo-share")?.addEventListener("click", closePhotoShare);
+    document.getElementById("export-photo-share")?.addEventListener("click", exportActivePhotoShare);
+    document.getElementById("photo-share-show-weights")?.addEventListener("change", event => {
+        photoShareShowWeights = event.target.checked === true;
+        renderPhotoShare();
+    });
+    document.querySelectorAll("[data-photo-share-format]").forEach(button =>
+        button.addEventListener("click", () => {
+            photoShareFormat = PHOTO_SHARE_FORMATS[button.dataset.photoShareFormat]
+                ? button.dataset.photoShareFormat
+                : "post";
+            renderPhotoShare();
+        })
+    );
 
     document.querySelectorAll("[data-photo-view]").forEach(button =>
         button.addEventListener("click", () => setGalleryMode(button.dataset.photoView))
@@ -568,6 +631,7 @@ function openGallery(id) {
 
 function closeGallery() {
     document.getElementById("photo-gallery-screen")?.setAttribute("hidden", "");
+    document.getElementById("photo-share-screen")?.setAttribute("hidden", "");
     document.getElementById("photo-journal-list-screen")?.removeAttribute("hidden");
     document.documentElement.classList.remove("photo-gallery-open");
     renderPhotos();
@@ -629,6 +693,8 @@ function renderGallery() {
 
     selectedPhotoIds = selectedPhotoIds.slice(0, 2);
     gestureHint.hidden = galleryMode !== "compare" || selectedPhotoIds.length !== 2;
+    const shareButton = document.getElementById("open-photo-share");
+    if (shareButton) shareButton.hidden = galleryMode !== "compare" || selectedPhotoIds.length !== 2;
 
     if (!visiblePhotos.length) {
         stage.innerHTML = `<div class="photo-empty-state">No photos saved yet.</div>`;
@@ -698,7 +764,477 @@ function renderCompareStage(stage) {
         }).join("")}
     </div>`;
     const panes = [...stage.querySelectorAll("[data-photo-zoom-pane]")];
-    panes.forEach(installPhotoPinchZoom);
+    panes.forEach((pane, index) => installPhotoPinchZoom(pane, photos[index]?.id));
+}
+
+
+function openPhotoShare() {
+    if (galleryMode !== "compare" || selectedPhotoIds.length !== 2) return;
+    activePhotoShareTemplate = 0;
+    document.getElementById("photo-gallery-screen")?.setAttribute("hidden", "");
+    document.getElementById("photo-share-screen")?.removeAttribute("hidden");
+    renderPhotoShare();
+    requestAnimationFrame(() => document.getElementById("photo-share-screen")?.scrollIntoView({ block: "start" }));
+}
+
+
+function closePhotoShare() {
+    document.getElementById("photo-share-screen")?.setAttribute("hidden", "");
+    document.getElementById("photo-gallery-screen")?.removeAttribute("hidden");
+    renderGallery();
+}
+
+
+function selectedSharePhotos() {
+    return selectedPhotoIds
+        .map(id => visiblePhotos.find(photo => photo.id === id))
+        .filter(Boolean)
+        .sort((a, b) => `${a.date}|${a.createdAt}`.localeCompare(`${b.date}|${b.createdAt}`));
+}
+
+
+function buildPhotoShareData() {
+    const photos = selectedSharePhotos();
+    const [before, after] = photos;
+    if (!before || !after) return null;
+    const milliseconds = new Date(`${after.date}T12:00:00`) - new Date(`${before.date}T12:00:00`);
+    const days = Math.max(0, Math.round(milliseconds / 86400000));
+    const trendSeries = calculateTrendWeightSeries(getWeightEntries(), { endDate: after.date, allowFuture: true });
+    const beforeTrend = trendSeries.find(entry => entry.date === before.date)?.weight;
+    const afterTrend = trendSeries.find(entry => entry.date === after.date)?.weight;
+    const beforeRaw = normalizedWeight(before.weight) ?? weightForDate(before.date);
+    const afterRaw = normalizedWeight(after.weight) ?? weightForDate(after.date);
+    const hasTrend = Number.isFinite(beforeTrend) && Number.isFinite(afterTrend);
+    const weightChange = hasTrend
+        ? afterTrend - beforeTrend
+        : Number.isFinite(beforeRaw) && Number.isFinite(afterRaw)
+            ? afterRaw - beforeRaw
+            : null;
+    return {
+        before,
+        after,
+        days,
+        weeks: days >= 7 ? Math.max(1, Math.round(days / 7)) : 0,
+        workoutCount: countWorkoutsBetween(before.date, after.date),
+        weightChange,
+        weightSource: hasTrend ? "Trend weight" : "Weight change",
+        beforeWeight: beforeRaw,
+        afterWeight: afterRaw
+    };
+}
+
+
+function renderPhotoShare() {
+    const carousel = document.getElementById("photo-share-carousel");
+    const dots = document.getElementById("photo-share-dots");
+    const data = buildPhotoShareData();
+    if (!carousel || !dots || !data) return;
+
+    const urls = [createObjectUrl(data.before.image), createObjectUrl(data.after.image)];
+    carousel.className = `photo-share-carousel is-${photoShareFormat}`;
+    carousel.innerHTML = PHOTO_SHARE_TEMPLATES.map((template, index) =>
+        renderPhotoShareCard(template, index, data, urls)
+    ).join("");
+    dots.innerHTML = PHOTO_SHARE_TEMPLATES.map((template, index) =>
+        `<button type="button" data-photo-share-dot="${index}" class="${index === activePhotoShareTemplate ? "is-active" : ""}" aria-label="Show ${escapeHtml(photoShareTemplateName(template))} template" aria-selected="${index === activePhotoShareTemplate}"></button>`
+    ).join("");
+
+    document.querySelectorAll("[data-photo-share-format]").forEach(button =>
+        button.setAttribute("aria-pressed", String(button.dataset.photoShareFormat === photoShareFormat))
+    );
+    const checkbox = document.getElementById("photo-share-show-weights");
+    if (checkbox) checkbox.checked = photoShareShowWeights;
+
+    carousel.querySelectorAll("[data-photo-share-slide]").forEach(card =>
+        card.addEventListener("click", () => setPhotoShareTemplate(Number(card.dataset.photoShareSlide)))
+    );
+    dots.querySelectorAll("[data-photo-share-dot]").forEach(button =>
+        button.addEventListener("click", () => setPhotoShareTemplate(Number(button.dataset.photoShareDot), true))
+    );
+    carousel.addEventListener("scroll", syncPhotoShareTemplateFromScroll, { passive: true });
+    requestAnimationFrame(() => scrollPhotoShareTemplateIntoView(false));
+}
+
+
+function renderPhotoShareCard(template, index, data, urls) {
+    const milestone = formatWeightMilestone(data);
+    const duration = formatPhotoDuration(data.days);
+    const metric = template === "weight" && milestone
+        ? `<div class="photo-share-card__hero"><strong>${escapeHtml(milestone.value)}</strong><span>${escapeHtml(data.weightSource.toUpperCase())} · ${escapeHtml(duration)}</span></div>`
+        : template === "training"
+            ? `<div class="photo-share-card__hero"><strong>${data.workoutCount}</strong><span>${data.workoutCount === 1 ? "WORKOUT" : "WORKOUTS"} COMPLETED · ${escapeHtml(duration)}</span></div>`
+            : template === "timeline"
+                ? `<div class="photo-share-card__hero"><strong>${data.days}</strong><span>${data.days === 1 ? "DAY" : "DAYS"} OF PROGRESS</span></div>`
+                : template === "before-after"
+                    ? `<div class="photo-share-card__hero"><strong>MY PROGRESS</strong><span>${escapeHtml(duration)}</span></div>`
+                    : "";
+    const cropBefore = photoCropStates.get(data.before.id) || { scale: 1, nx: 0, ny: 0 };
+    const cropAfter = photoCropStates.get(data.after.id) || { scale: 1, nx: 0, ny: 0 };
+    return `<article class="photo-share-card is-${template}${index === activePhotoShareTemplate ? " is-active" : ""}" data-photo-share-slide="${index}">
+        <header><span class="photo-share-brand"><img src="${PHOTO_SHARE_LOGO}" alt=""><b><i>LEVEL</i> <em>UP</em></b></span><small>${escapeHtml(photoShareTemplateName(template).toUpperCase())}</small></header>
+        ${metric}
+        <div class="photo-share-card__photos">
+            ${renderSharePhoto(data.before, urls[0], "BEFORE", cropBefore)}
+            ${renderSharePhoto(data.after, urls[1], "AFTER", cropAfter)}
+        </div>
+        <footer><span>${escapeHtml(duration)}</span><strong>${PHOTO_SHARE_URL}</strong></footer>
+    </article>`;
+}
+
+
+function renderSharePhoto(photo, url, label, crop) {
+    const scale = clampZoom(crop.scale);
+    const xPercent = (Number(crop.nx) || 0) * (scale - 1) * 50;
+    const yPercent = (Number(crop.ny) || 0) * (scale - 1) * 50;
+    const weight = normalizedWeight(photo.weight) ?? weightForDate(photo.date);
+    const shownWeight = photoShareShowWeights && weight !== null
+        ? `<small>${escapeHtml(formatWeightValue(weight))}</small>`
+        : "";
+    return `<figure><div><img src="${url}" alt="${label} progress photo" style="transform:translate(${xPercent}%,${yPercent}%) scale(${scale})"></div><figcaption><b>${label}</b><span>${escapeHtml(formatShortDateWithYear(photo.date))}</span>${shownWeight}</figcaption></figure>`;
+}
+
+
+function setPhotoShareTemplate(index, scroll = false) {
+    activePhotoShareTemplate = Math.max(0, Math.min(PHOTO_SHARE_TEMPLATES.length - 1, Number(index) || 0));
+    document.querySelectorAll("[data-photo-share-slide]").forEach(card =>
+        card.classList.toggle("is-active", Number(card.dataset.photoShareSlide) === activePhotoShareTemplate)
+    );
+    document.querySelectorAll("[data-photo-share-dot]").forEach(button => {
+        const active = Number(button.dataset.photoShareDot) === activePhotoShareTemplate;
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-selected", String(active));
+    });
+    if (scroll) scrollPhotoShareTemplateIntoView(true);
+}
+
+
+function scrollPhotoShareTemplateIntoView(smooth) {
+    document.querySelector(`[data-photo-share-slide="${activePhotoShareTemplate}"]`)?.scrollIntoView({
+        behavior: smooth ? "smooth" : "auto",
+        inline: "center",
+        block: "nearest"
+    });
+}
+
+
+function syncPhotoShareTemplateFromScroll(event) {
+    const carousel = event.currentTarget;
+    cancelAnimationFrame(carousel._photoShareFrame);
+    carousel._photoShareFrame = requestAnimationFrame(() => {
+        const center = carousel.getBoundingClientRect().left + carousel.clientWidth / 2;
+        const slides = [...carousel.querySelectorAll("[data-photo-share-slide]")];
+        const closest = slides.reduce((best, slide) => {
+            const rect = slide.getBoundingClientRect();
+            const distance = Math.abs(rect.left + rect.width / 2 - center);
+            return !best || distance < best.distance ? { index: Number(slide.dataset.photoShareSlide), distance } : best;
+        }, null);
+        if (closest) setPhotoShareTemplate(closest.index);
+    });
+}
+
+
+function photoShareTemplateName(template) {
+    return ({
+        "before-after": "Before & After",
+        weight: "Weight Milestone",
+        training: "Training Milestone",
+        timeline: "Consistency",
+        minimal: "Minimal"
+    })[template] || "Progress";
+}
+
+
+async function exportActivePhotoShare() {
+    const button = document.getElementById("export-photo-share");
+    const status = document.getElementById("photo-share-status");
+    const data = buildPhotoShareData();
+    if (!button || !status || !data) return;
+    button.disabled = true;
+    status.textContent = "Preparing your progress card…";
+    try {
+        const blob = await createPhotoShareImage(data, activePhotoShareTemplate, photoShareFormat);
+        const file = new File([blob], `level-up-progress-${data.before.date}-to-${data.after.date}.png`, { type: "image/png" });
+        if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+            await navigator.share({
+                title: "My Level Up progress",
+                text: `${formatPhotoDuration(data.days)} of progress with Level Up. https://${PHOTO_SHARE_URL}`,
+                files: [file]
+            });
+            status.textContent = "Progress card shared.";
+        }
+        else if (await savePhotoShareToPhotos(blob)) {
+            status.textContent = "Progress card saved to Photos.";
+        }
+        else {
+            downloadPhotoShare(blob, file.name);
+            status.textContent = "Progress card downloaded.";
+        }
+    }
+    catch (error) {
+        status.textContent = error?.name === "AbortError"
+            ? "Sharing cancelled."
+            : "The progress card could not be prepared. Please try again.";
+    }
+    finally {
+        button.disabled = false;
+    }
+}
+
+
+async function createPhotoShareImage(data, index, formatName) {
+    const format = PHOTO_SHARE_FORMATS[formatName] || PHOTO_SHARE_FORMATS.post;
+    const canvas = document.createElement("canvas");
+    canvas.width = format.width;
+    canvas.height = format.height;
+    const context = canvas.getContext("2d");
+    const template = PHOTO_SHARE_TEMPLATES[index] || PHOTO_SHARE_TEMPLATES[0];
+    const [beforeImage, afterImage, logo] = await Promise.all([
+        loadPhotoShareImage(data.before.image),
+        loadPhotoShareImage(data.after.image),
+        loadPhotoShareImage(PHOTO_SHARE_LOGO).catch(() => null)
+    ]);
+    drawPhotoShareBackground(context, canvas.width, canvas.height);
+
+    const margin = Math.round(canvas.width * .06);
+    const headerHeight = Math.round(canvas.height * .095);
+    const footerHeight = Math.round(canvas.height * .085);
+    const metricHeight = template === "minimal" ? 0 : Math.round(canvas.height * .14);
+    const photosTop = margin + headerHeight + metricHeight;
+    const photosBottom = canvas.height - margin - footerHeight;
+    const photoGap = Math.max(8, Math.round(canvas.width * .012));
+    const photoWidth = (canvas.width - (margin * 2) - photoGap) / 2;
+    const photoHeight = photosBottom - photosTop;
+
+    drawPhotoShareHeader(context, logo, margin, margin, canvas.width - margin * 2, headerHeight, template);
+    if (metricHeight) drawPhotoShareMetric(context, data, template, canvas.width / 2, margin + headerHeight, metricHeight);
+
+    drawPhotoSharePhoto(context, beforeImage, data.before, data.beforeWeight, "BEFORE", margin, photosTop, photoWidth, photoHeight, photoCropStates.get(data.before.id));
+    drawPhotoSharePhoto(context, afterImage, data.after, data.afterWeight, "AFTER", margin + photoWidth + photoGap, photosTop, photoWidth, photoHeight, photoCropStates.get(data.after.id));
+    drawPhotoShareFooter(context, data, margin, photosBottom, canvas.width - margin * 2, footerHeight);
+
+    return new Promise((resolve, reject) =>
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Image export failed.")), "image/png", .96)
+    );
+}
+
+
+function drawPhotoShareBackground(context, width, height) {
+    context.fillStyle = "#09090b";
+    context.fillRect(0, 0, width, height);
+    const glow = context.createRadialGradient(width * .5, height * .35, 20, width * .5, height * .35, height * .7);
+    glow.addColorStop(0, "rgba(223,20,30,.22)");
+    glow.addColorStop(1, "rgba(9,9,11,0)");
+    context.fillStyle = glow;
+    context.fillRect(0, 0, width, height);
+}
+
+
+function drawPhotoShareHeader(context, logo, x, y, width, height, template) {
+    if (logo) context.drawImage(logo, x, y + height * .08, height * .72, height * .72);
+    context.textBaseline = "middle";
+    context.textAlign = "left";
+    context.font = `italic 950 ${Math.round(height * .3)}px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif`;
+    context.fillStyle = "#f7f7f8";
+    context.fillText("LEVEL", x + height * .84, y + height * .43);
+    const levelWidth = context.measureText("LEVEL ").width;
+    context.fillStyle = "#df141e";
+    context.fillText("UP", x + height * .84 + levelWidth, y + height * .43);
+    context.textAlign = "right";
+    context.font = `800 ${Math.round(height * .16)}px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif`;
+    context.fillStyle = "#a8a8b1";
+    context.fillText(photoShareTemplateName(template).toUpperCase(), x + width, y + height * .43);
+}
+
+
+function drawPhotoShareMetric(context, data, template, centerX, y, height) {
+    let primary = "MY PROGRESS";
+    let secondary = formatPhotoDuration(data.days).toUpperCase();
+    const milestone = formatWeightMilestone(data);
+    if (template === "weight" && milestone) {
+        primary = milestone.value;
+        secondary = `${data.weightSource.toUpperCase()} · ${secondary}`;
+    }
+    else if (template === "training") {
+        primary = String(data.workoutCount);
+        secondary = `${data.workoutCount === 1 ? "WORKOUT" : "WORKOUTS"} COMPLETED · ${secondary}`;
+    }
+    else if (template === "timeline") {
+        primary = String(data.days);
+        secondary = `${data.days === 1 ? "DAY" : "DAYS"} OF PROGRESS`;
+    }
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillStyle = template === "before-after" ? "#f7f7f8" : "#df141e";
+    context.font = `950 ${Math.round(height * .43)}px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif`;
+    fitCanvasText(context, primary, centerX, y + height * .38, 920);
+    context.fillStyle = "#b3b3bc";
+    context.font = `800 ${Math.round(height * .14)}px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif`;
+    context.fillText(secondary, centerX, y + height * .76);
+}
+
+
+function drawPhotoSharePhoto(context, image, photo, rawWeight, label, x, y, width, height, crop) {
+    const captionHeight = Math.max(86, height * .12);
+    const imageHeight = height - captionHeight;
+    context.save();
+    roundedCanvasPath(context, x, y, width, height, Math.max(18, width * .045));
+    context.clip();
+    context.fillStyle = "#050506";
+    context.fillRect(x, y, width, imageHeight);
+    drawCroppedPhoto(context, image, x, y, width, imageHeight, crop);
+    context.fillStyle = "#1c1c22";
+    context.fillRect(x, y + imageHeight, width, captionHeight);
+    context.restore();
+    context.textBaseline = "middle";
+    context.textAlign = "left";
+    context.fillStyle = "#df141e";
+    context.font = `900 ${Math.round(captionHeight * .23)}px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif`;
+    context.fillText(label, x + captionHeight * .22, y + imageHeight + captionHeight * .34);
+    context.fillStyle = "#f7f7f8";
+    context.font = `750 ${Math.round(captionHeight * .19)}px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif`;
+    context.fillText(formatShortDateWithYear(photo.date), x + captionHeight * .22, y + imageHeight + captionHeight * .67);
+    if (photoShareShowWeights && Number.isFinite(rawWeight)) {
+        context.textAlign = "right";
+        context.fillStyle = "#a8a8b1";
+        context.fillText(formatWeightValue(rawWeight), x + width - captionHeight * .22, y + imageHeight + captionHeight * .67);
+    }
+}
+
+
+function drawCroppedPhoto(context, image, x, y, width, height, crop = {}) {
+    const scale = clampZoom(crop?.scale);
+    const sourceRatio = image.width / image.height;
+    const destinationRatio = width / height;
+    let sourceWidth = sourceRatio > destinationRatio ? image.height * destinationRatio : image.width;
+    let sourceHeight = sourceRatio > destinationRatio ? image.height : image.width / destinationRatio;
+    sourceWidth /= scale;
+    sourceHeight /= scale;
+    const nx = Math.max(-1, Math.min(1, Number(crop?.nx) || 0));
+    const ny = Math.max(-1, Math.min(1, Number(crop?.ny) || 0));
+    const sourceX = Math.max(0, Math.min(image.width - sourceWidth, (image.width - sourceWidth) / 2 - nx * (image.width - sourceWidth) / 2));
+    const sourceY = Math.max(0, Math.min(image.height - sourceHeight, (image.height - sourceHeight) / 2 - ny * (image.height - sourceHeight) / 2));
+    context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+}
+
+
+function drawPhotoShareFooter(context, data, x, y, width, height) {
+    context.strokeStyle = "#34343a";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(x, y + height * .25);
+    context.lineTo(x + width, y + height * .25);
+    context.stroke();
+    context.textBaseline = "middle";
+    context.font = `750 ${Math.round(height * .18)}px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif`;
+    context.textAlign = "left";
+    context.fillStyle = "#a8a8b1";
+    context.fillText(formatPhotoDuration(data.days), x, y + height * .64);
+    context.textAlign = "right";
+    context.fillStyle = "#df141e";
+    context.fillText(PHOTO_SHARE_URL, x + width, y + height * .64);
+}
+
+
+function roundedCanvasPath(context, x, y, width, height, radius) {
+    context.beginPath();
+    context.roundRect(x, y, width, height, radius);
+}
+
+
+function fitCanvasText(context, text, x, y, maxWidth) {
+    while (context.measureText(text).width > maxWidth) {
+        const match = context.font.match(/(\d+)px/);
+        const size = Number(match?.[1]);
+        if (!size || size <= 24) break;
+        context.font = context.font.replace(`${size}px`, `${size - 2}px`);
+    }
+    context.fillText(text, x, y);
+}
+
+
+function loadPhotoShareImage(source) {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        let url = "";
+        image.onload = () => {
+            if (url) URL.revokeObjectURL(url);
+            resolve(image);
+        };
+        image.onerror = error => {
+            if (url) URL.revokeObjectURL(url);
+            reject(error);
+        };
+        if (source instanceof Blob) {
+            url = URL.createObjectURL(source);
+            image.src = url;
+        }
+        else image.src = String(source);
+    });
+}
+
+
+async function savePhotoShareToPhotos(blob) {
+    const plugin = window.Capacitor?.Plugins?.LevelUpInstagramShare;
+    if (window.Capacitor?.isNativePlatform?.() !== true || !plugin?.saveImage) return false;
+    const dataUrl = await blobToDataUrl(blob);
+    const result = await plugin.saveImage({ imageData: String(dataUrl).split(",")[1] || "" });
+    return result?.saved === true;
+}
+
+
+function downloadPhotoShare(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+
+function countWorkoutsBetween(startDate, endDate) {
+    let sessions = [];
+    try {
+        const parsed = JSON.parse(localStorage.getItem(WORKOUT_STORAGE_KEY) || "[]");
+        if (Array.isArray(parsed)) sessions = parsed;
+    }
+    catch {}
+    return sessions.filter(session => {
+        if (!session?.completedAt && !session?.date) return false;
+        const date = String(session.date || session.completedAt).slice(0, 10);
+        return date >= startDate && date <= endDate;
+    }).length;
+}
+
+
+function formatWeightMilestone(data) {
+    if (!Number.isFinite(data.weightChange)) return null;
+    const shown = Math.abs(displayMass(data.weightChange, 1, UNIT_KINDS.BODY_WEIGHT));
+    const unit = massUnit(UNIT_KINDS.BODY_WEIGHT);
+    if (shown < .05) return { value: "WEIGHT MAINTAINED" };
+    return { value: `${shown.toFixed(1)} ${unit} ${data.weightChange < 0 ? "DOWN" : "UP"}` };
+}
+
+
+function formatPhotoDuration(days) {
+    if (days === 0) return "Same-day comparison";
+    if (days >= 14 && days % 7 === 0) return `${days / 7} weeks of progress`;
+    return `${days} ${days === 1 ? "day" : "days"} of progress`;
+}
+
+
+function formatWeightValue(weight) {
+    const shown = displayMass(weight, 1, UNIT_KINDS.BODY_WEIGHT);
+    return `${Number(shown).toLocaleString(undefined, { maximumFractionDigits: 1 })} ${massUnit(UNIT_KINDS.BODY_WEIGHT)}`;
+}
+
+
+function formatShortDateWithYear(value) {
+    return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" })
+        .format(new Date(`${value}T12:00:00`));
 }
 
 
@@ -707,13 +1243,14 @@ function clampZoom(value) {
 }
 
 
-function installPhotoPinchZoom(pane) {
+function installPhotoPinchZoom(pane, photoId) {
     const image = pane.querySelector("img");
     if (!image) return;
 
     const pointers = new Map();
+    const saved = photoCropStates.get(photoId) || {};
     const state = {
-        scale: 1,
+        scale: clampZoom(saved.scale),
         x: 0,
         y: 0,
         startScale: 1,
@@ -729,11 +1266,23 @@ function installPhotoPinchZoom(pane) {
     const applyTransform = () => {
         const maxX = pane.clientWidth * (state.scale - 1) / 2;
         const maxY = pane.clientHeight * (state.scale - 1) / 2;
+        if (state.restorePosition) {
+            state.x = (Number(saved.nx) || 0) * maxX;
+            state.y = (Number(saved.ny) || 0) * maxY;
+            state.restorePosition = false;
+        }
         state.x = Math.max(-maxX, Math.min(maxX, state.x));
         state.y = Math.max(-maxY, Math.min(maxY, state.y));
         if (state.scale === 1) state.x = state.y = 0;
         image.style.transform = `translate3d(${state.x}px, ${state.y}px, 0) scale(${state.scale})`;
+        if (photoId) photoCropStates.set(photoId, {
+            scale: state.scale,
+            nx: maxX ? state.x / maxX : 0,
+            ny: maxY ? state.y / maxY : 0
+        });
     };
+    state.restorePosition = true;
+    requestAnimationFrame(applyTransform);
 
     const pointerPair = () => [...pointers.values()].slice(0, 2);
     const distance = ([first, second]) => Math.hypot(second.x - first.x, second.y - first.y);

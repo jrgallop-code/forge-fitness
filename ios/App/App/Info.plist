@@ -55,7 +55,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Level Up lets you choose private meal and progress photos from your photo library.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Level Up saves a workout summary card to your photo library when you tap Download.</string>
+	<string>Level Up saves workout or progress cards to your photo library when you choose to save them.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Level Up converts a spoken meal description into text when you choose voice-assisted food logging.</string>
 	<key>UIApplicationSceneManifest</key>

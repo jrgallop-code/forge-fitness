@@ -14,7 +14,7 @@ import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-
 import { renderProgress } from "../progress/progress-ui.js?v=native-photo-picker-1-photo-carousel-1-photo-gallery-detail-2";
 import { initializeMonthlyReports, initializeMonthlyReportDashboardPrompt } from "../progress/monthly-report.js?v=ios-monthly-report-2";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=weight-history-trend-2";
-import { initializePhotoJournal } from "../progress/photo-journal.js?v=native-photo-picker-1-photo-carousel-1-photo-gallery-detail-2";
+import { initializePhotoJournal } from "../progress/photo-journal.js?v=progress-photo-share-1";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=theme-accent-calendar-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=smoothed-visible-trend-release-1";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=analytics-bar-polish-1";

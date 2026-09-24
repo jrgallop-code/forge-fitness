@@ -12,7 +12,7 @@ final class LevelUpInstagramSharePlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func saveImage(_ call: CAPPluginCall) {
         guard let data = decodedImageData(from: call), let image = UIImage(data: data) else {
-            call.reject("The workout image could not be prepared.")
+            call.reject("The image could not be prepared.")
             return
         }
 
@@ -25,7 +25,7 @@ final class LevelUpInstagramSharePlugin: CAPPlugin, CAPBridgedPlugin {
                 PHAssetChangeRequest.creationRequestForAsset(from: image)
             }) { saved, error in
                 if let error {
-                    call.reject("The workout card could not be saved.", nil, error)
+                    call.reject("The image could not be saved.", nil, error)
                 } else {
                     call.resolve(["saved": saved])
                 }

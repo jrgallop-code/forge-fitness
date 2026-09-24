@@ -47,7 +47,7 @@ test("progress photos use an entry list and a two-photo gallery with independent
     assert.match(journal, /id="photo-gallery-carousel"/);
     assert.match(journal, /Compare up to two photos/);
     assert.match(journal, /selectedPhotoIds = selectedPhotoIds\.slice\(0, 2\)/);
-    assert.match(journal, /panes\.forEach\(installPhotoPinchZoom\)/);
+    assert.match(journal, /panes\.forEach\(\(pane, index\) => installPhotoPinchZoom\(pane, photos\[index\]\?\.id\)\)/);
     assert.match(journal, /pointerdown/);
     assert.match(journal, /pointermove/);
     assert.match(journal, /Math\.hypot/);
@@ -69,4 +69,18 @@ test("progress photo metadata includes body weight with legacy weight fallback",
     assert.match(journal, /formatPhotoWeight\(photo\)/);
     assert.match(plugin, /let weight: Double\?/);
     assert.match(plugin, /payload\["weight"\] = weight/);
+});
+
+test("two-photo comparisons create branded on-device share cards", () => {
+    assert.match(journal, /id="open-photo-share"/);
+    assert.match(journal, /id="photo-share-carousel"/);
+    assert.match(journal, /PHOTO_SHARE_TEMPLATES = \["before-after", "weight", "training", "timeline", "minimal"\]/);
+    assert.match(journal, /calculateTrendWeightSeries/);
+    assert.match(journal, /countWorkoutsBetween/);
+    assert.match(journal, /leveluphypertrophy\.com/);
+    assert.match(journal, /navigator\.share/);
+    assert.match(journal, /LevelUpInstagramShare/);
+    assert.match(journal, /photoCropStates/);
+    assert.match(styles, /\.photo-share-carousel\s*\{[\s\S]*scroll-snap-type:x mandatory/);
+    assert.match(styles, /\.photo-share-card\s*\{[\s\S]*aspect-ratio:4 \/ 5/);
 });
