@@ -254,3 +254,5 @@ TestFlight build 149: add on-device progress-photo share cards with five branded
 TestFlight build 150: keep the progress-photo gallery and sharing controls above the persistent iOS tab bar, hide tab-bar interaction while open, and add bottom safe-area clearance.
 
 TestFlight build 151: make progress-photo exports reproduce the selected card's exact object-fit, pinch-zoom and pan geometry across portrait, landscape and social export formats.
+
+TestFlight build 152: label estimated 1RM change as Since Previous and add all-time Since First Logged strength gain with the baseline value and date.
