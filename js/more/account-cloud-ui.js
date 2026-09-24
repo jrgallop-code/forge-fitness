@@ -3,6 +3,7 @@ import {
     restoreBackupSnapshot,
     verifyBackupSnapshot
 } from "../core/backup-manager.js?v=backup-complete-7";
+import { analyticsRuntimeContext } from "../analytics/runtime-context.js?v=platform-analytics-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
@@ -103,7 +104,7 @@ async function handleGoogleCredential(response) {
         const session = await api("/v1/session/google", {
             method: "POST",
             auth: false,
-            body: { credential: response?.credential }
+            body: { credential: response?.credential, ...await analyticsRuntimeContext() }
         });
         localStorage.setItem(SESSION_KEY, JSON.stringify({ token: session.token, expiresAt: session.expiresAt }));
         localStorage.setItem(ACCOUNT_KEY, JSON.stringify(session.user));
