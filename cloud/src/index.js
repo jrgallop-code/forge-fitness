@@ -345,7 +345,7 @@ async function createGoogleSession(body, request, env) {
     const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first();
     const userId = existing?.id || profile.sub;
     const now = new Date().toISOString();
-    const metadata = analyticsClientMetadata(body);
+    const metadata = authClientMetadata(body, request);
     await env.DB.prepare(`
         INSERT INTO users (
             id, email, display_name, avatar_url, created_at, updated_at,
@@ -396,7 +396,7 @@ async function createAppleSession(body, request, env) {
         .bind(appleId, email).first();
     const userId = existing?.id || appleId;
     const now = new Date().toISOString();
-    const metadata = analyticsClientMetadata({ ...body, platform: "ios" });
+    const metadata = authClientMetadata(body, request, "ios");
     let encryptedRefreshToken = "";
     if (authorizationCode) {
         try {
@@ -641,7 +641,7 @@ async function createEmailAccount(body, request, env) {
     crypto.getRandomValues(salt);
     const passwordHash = await derivePasswordHash(password, salt, PASSWORD_ITERATIONS);
     const now = new Date().toISOString();
-    const metadata = analyticsClientMetadata(body);
+    const metadata = authClientMetadata(body, request);
 
     try {
         await env.DB.batch([
@@ -827,7 +827,7 @@ function createReadableTransferCode() {
 
 async function issueSession(userId, user, request, env, clientMetadata = {}) {
     const now = new Date().toISOString();
-    const metadata = analyticsClientMetadata(clientMetadata);
+    const metadata = authClientMetadata(clientMetadata, request);
     const token = createToken();
     const tokenHash = await sha256(token);
     const expiresAt = SESSION_EXPIRES_AT;
@@ -2271,6 +2271,13 @@ async function recordActivity(userId, body, request, env) {
         `).bind(crypto.randomUUID(), userId, eventKey, now, JSON.stringify(metadata), now)
     ]);
     return json({ ok: true, lastActiveAt: now }, 200, request, env);
+}
+
+function authClientMetadata(value, request, forcedPlatform = "") {
+    const origin = String(request?.headers?.get?.("Origin") || "").toLowerCase();
+    const nativeIOS = origin === "capacitor://localhost" || origin === "ionic://localhost";
+    const platform = forcedPlatform || value?.platform || (nativeIOS ? "ios" : "");
+    return analyticsClientMetadata({ ...value, platform });
 }
 
 function analyticsClientMetadata(value) {
