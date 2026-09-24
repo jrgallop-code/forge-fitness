@@ -1,6 +1,7 @@
 import "../core/native-capabilities.js?v=interactive-live-activity-1";
 import "../privacy/analytics-consent.js?v=app-review-privacy-1";
 import { clearLocalAppData, createBackupSnapshot, restoreBackupSnapshot, verifyBackupSnapshot } from "../core/backup-manager.js?v=reauth-data-safety-1";
+import { initializeNativeSQLiteStore } from "../core/native-sqlite-store.js?v=sqlite-safety-store-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
@@ -12,7 +13,9 @@ const AUTO_STATE_KEY = "level_up_cloud_auto_backup_state";
 const GUEST_MODE_KEY = "level_up_guest_mode";
 const RECOVERY_PARAMETER = "local-recovery";
 
-initializeFirstLaunchLogin();
+void initializeNativeSQLiteStore()
+    .catch(error => console.warn("Native SQLite startup recovery was unavailable:", error))
+    .finally(() => initializeFirstLaunchLogin());
 
 function initializeFirstLaunchLogin() {
     ensureStyles();
