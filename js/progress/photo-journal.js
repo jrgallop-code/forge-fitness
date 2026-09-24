@@ -1102,18 +1102,49 @@ function drawPhotoSharePhoto(context, image, photo, rawWeight, label, x, y, widt
 
 
 function drawCroppedPhoto(context, image, x, y, width, height, crop = {}) {
+    const source = calculateCroppedPhotoSource(
+        image.width,
+        image.height,
+        width,
+        height,
+        crop
+    );
+    context.drawImage(image, source.x, source.y, source.width, source.height, x, y, width, height);
+}
+
+
+export function calculateCroppedPhotoSource(imageWidth, imageHeight, frameWidth, frameHeight, crop = {}) {
+    const safeImageWidth = Math.max(1, Number(imageWidth) || 1);
+    const safeImageHeight = Math.max(1, Number(imageHeight) || 1);
+    const safeFrameWidth = Math.max(1, Number(frameWidth) || 1);
+    const safeFrameHeight = Math.max(1, Number(frameHeight) || 1);
     const scale = clampZoom(crop?.scale);
-    const sourceRatio = image.width / image.height;
-    const destinationRatio = width / height;
-    let sourceWidth = sourceRatio > destinationRatio ? image.height * destinationRatio : image.width;
-    let sourceHeight = sourceRatio > destinationRatio ? image.height : image.width / destinationRatio;
-    sourceWidth /= scale;
-    sourceHeight /= scale;
+    const coverScale = Math.max(
+        safeFrameWidth / safeImageWidth,
+        safeFrameHeight / safeImageHeight
+    );
+    const renderedScale = coverScale * scale;
+    const width = safeFrameWidth / renderedScale;
+    const height = safeFrameHeight / renderedScale;
     const nx = Math.max(-1, Math.min(1, Number(crop?.nx) || 0));
     const ny = Math.max(-1, Math.min(1, Number(crop?.ny) || 0));
-    const sourceX = Math.max(0, Math.min(image.width - sourceWidth, (image.width - sourceWidth) / 2 - nx * (image.width - sourceWidth) / 2));
-    const sourceY = Math.max(0, Math.min(image.height - sourceHeight, (image.height - sourceHeight) / 2 - ny * (image.height - sourceHeight) / 2));
-    context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+
+    // The comparison and share previews translate an element that is already
+    // object-fit: cover, then scale that element around its centre. Recreate
+    // those exact CSS pixels here instead of treating nx/ny as a percentage of
+    // the photograph's total crop area, which overstates movement whenever the
+    // photo and export frame have different aspect ratios.
+    const translatedX = nx * safeFrameWidth * (scale - 1) / 2;
+    const translatedY = ny * safeFrameHeight * (scale - 1) / 2;
+    const x = Math.max(0, Math.min(
+        safeImageWidth - width,
+        (safeImageWidth - width) / 2 - translatedX / renderedScale
+    ));
+    const y = Math.max(0, Math.min(
+        safeImageHeight - height,
+        (safeImageHeight - height) / 2 - translatedY / renderedScale
+    ));
+    return { x, y, width, height };
 }
 
 
