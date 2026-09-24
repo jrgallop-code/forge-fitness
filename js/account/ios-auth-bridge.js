@@ -3,6 +3,7 @@ const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.goo
 const SESSION_KEY = "level_up_cloud_session";
 const status = document.getElementById("status");
 const continueButton = document.getElementById("continue");
+const authParams = new URLSearchParams(window.location.search);
 
 function sessionToken() {
     try { return JSON.parse(localStorage.getItem(SESSION_KEY) || "null")?.token || ""; }
@@ -34,7 +35,12 @@ async function finishGoogle(response) {
         const result = await fetch(`${API_URL}/v1/session/google`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ credential: response.credential })
+            body: JSON.stringify({
+                credential: response.credential,
+                platform: "ios",
+                appVersion: authParams.get("appVersion") || undefined,
+                appBuild: authParams.get("appBuild") || undefined
+            })
         });
         const payload = await result.json().catch(() => ({}));
         if (!result.ok || !payload?.token) throw new Error(payload.error || "Google sign-in could not be completed.");
