@@ -256,3 +256,5 @@ TestFlight build 150: keep the progress-photo gallery and sharing controls above
 TestFlight build 151: make progress-photo exports reproduce the selected card's exact object-fit, pinch-zoom and pan geometry across portrait, landscape and social export formats.
 
 TestFlight build 152: label estimated 1RM change as Since Previous and add all-time Since First Logged strength gain with the baseline value and date.
+
+TestFlight build 153: extend estimated 1RM-style progress comparisons to Session Volume with Since Previous and all-time Since First Logged volume, baseline value, and date.

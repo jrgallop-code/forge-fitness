@@ -41,7 +41,7 @@
     line-height: 1.1;
 }
 
-.exercise-strength-baseline {
+.exercise-progress-baseline {
     grid-column: 1 / -1;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -55,7 +55,7 @@
     color: var(--text, #fff);
 }
 
-.exercise-strength-baseline span {
+.exercise-progress-baseline span {
     color: var(--muted, #85858f);
     font-size: 10px;
     font-weight: 850;
@@ -63,22 +63,22 @@
     text-transform: uppercase;
 }
 
-.exercise-strength-baseline strong {
+.exercise-progress-baseline strong {
     color: var(--heading, #fff);
     font-size: 14px;
     line-height: 1.2;
     text-align: right;
 }
 
-.exercise-strength-baseline strong.is-positive {
+.exercise-progress-baseline strong.is-positive {
     color: var(--success-text, #4bd180);
 }
 
-.exercise-strength-baseline strong.is-negative {
+.exercise-progress-baseline strong.is-negative {
     color: var(--warning-text, #f0b24a);
 }
 
-.exercise-strength-baseline small {
+.exercise-progress-baseline small {
     grid-column: 1 / -1;
     color: var(--text-secondary, #d5d5da);
     font-size: 11px;

@@ -313,17 +313,15 @@ function renderComparison(records) {
     const baselinePercent = baselineValue > 0 && baselineChange !== null ? baselineChange / baselineValue * 100 : null;
     const valueLabel = value => isVolume ? formatVolume(value) : formatMass(value, 1);
     const changeLabel = value => isVolume ? signedVolume(value) : signedMass(value, 1);
-    const baselineSummary = !isVolume
-        ? `<p class="exercise-strength-baseline">
+    const baselineSummary = `<p class="exercise-progress-baseline">
             <span>Since first logged</span>
             <strong class="${baselineChange > 0 ? "is-positive" : baselineChange < 0 ? "is-negative" : ""}">${baselineChange === null ? "Baseline established" : `${changeLabel(baselineChange)} · ${signedPercent(baselinePercent)}`}</strong>
             <small>Baseline ${valueLabel(baselineValue)} · ${formatDate(first.date)}</small>
-        </p>`
-        : "";
+        </p>`;
     container.innerHTML = `
         <div class="exercise-volume-stat is-summary"><span>Latest</span><strong>${valueLabel(latestValue)}</strong></div>
         <div class="exercise-volume-stat is-summary"><span>Previous</span><strong>${previous ? valueLabel(previousValue) : "—"}</strong></div>
-        <div class="exercise-volume-stat is-summary"><span>${isVolume ? "Change" : "Since Previous"}</span><strong class="${change > 0 ? "is-positive" : change < 0 ? "is-negative" : ""}">${change === null ? "First session" : `${changeLabel(change)} · ${signedPercent(percent)}`}</strong></div>
+        <div class="exercise-volume-stat is-summary"><span>Since Previous</span><strong class="${change > 0 ? "is-positive" : change < 0 ? "is-negative" : ""}">${change === null ? "First session" : `${changeLabel(change)} · ${signedPercent(percent)}`}</strong></div>
         ${baselineSummary}
         <p class="exercise-volume-detail">${isVolume ? buildChangeDetail(latest, previous) : buildStrengthDetail(latest, previous)}</p>`;
 }
