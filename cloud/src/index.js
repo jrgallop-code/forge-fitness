@@ -2647,6 +2647,7 @@ function iosLaunchEmailContent({ testMode = false } = {}) {
     ${previewNote}
     <div style="border:1px solid #27272a;border-radius:18px;overflow:hidden;background:#111113;">
       <div style="padding:30px 26px 26px;border-top:4px solid #dc2626;">
+        <img src="https://leveluphypertrophy.com/assets/level-up-logo.svg" width="72" height="72" alt="Level Up" style="display:block;width:72px;height:72px;margin:0 0 14px;border:0;outline:none;text-decoration:none;" />
         <div style="font-size:12px;font-weight:800;letter-spacing:.14em;color:#ef4444;">LEVEL UP</div>
         <h1 style="margin:10px 0 10px;font-size:32px;line-height:1.08;color:#fff;">Level Up is now on iPhone.</h1>
         <p style="margin:0;color:#d4d4d8;font-size:17px;line-height:1.6;">A full workout, nutrition and progress tracker — now available as an iOS app, and <strong style="color:#fff;">free to use.</strong></p>
