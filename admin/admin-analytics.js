@@ -45,6 +45,7 @@ async function loadAnalytics(days) {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Analytics could not be loaded.");
         content.innerHTML = renderAnalytics(data);
+        bindEmailDelivery(content);
         bindUserDirectory(content);
         content.hidden = false;
         status.hidden = true;
@@ -78,9 +79,60 @@ function renderAnalytics(data) {
         + renderDailyActivity(data.userActivity || [], data.days)
         + renderUserDirectory(people, data.days)
         + renderWorkoutSourceBreakdown(data.workoutSources || []);
+    const emailDelivery = renderEmailDelivery(data.emailDelivery || {});
     return `<div class="admin-analytics-kpis">
         ${kpi("Total users", totals.total_users, "all time")}${kpi("New users today", totals.new_users_today, todayLabel)}${kpi("New iOS today", totals.new_users_ios_today, "account created on iPhone")}${kpi("New PWA today", totals.new_users_pwa_today, "account created on web/PWA")}${Number(totals.new_users_unknown_today || 0) ? kpi("New unknown today", totals.new_users_unknown_today, "older or unattributed client") : ""}${kpi("Signed-in users today", totals.users_today, `opened the app · ${todayLabel}`)}${kpi("Engaged users today", totals.engaged_users_today, "logged food or a workout")}${kpi("Active users", totals.active_users, "last 7 days")}${kpi("Returning users", totals.repeat_users, `2+ local days in ${data.days} days`)}${kpi("Food loggers", totals.food_log_users, `in ${data.days} days`)}${kpi("Weight loggers", totals.weight_log_users, "all time · at least 1 weigh-in")}${kpi("Repeat weight loggers", totals.repeat_weight_log_users, "all time · 2+ weigh-ins")}${kpi("Workout users", totals.workout_users, `in ${data.days} days`)}${kpi("Workouts logged", totals.workouts, `in ${data.days} days`)}
-    </div><div class="admin-analytics-grid"><section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACTIVITY</span><h3>Daily app usage</h3><p>Halifax local dates · updated ${escapeHtml(updatedLabel)}</p></div><div class="admin-analytics-legend"><span class="is-users">Users</span><span class="is-foods">Foods</span><span class="is-workouts">Workouts</span></div></div><div class="admin-analytics-chart">${chart}</div></section><section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGEMENT</span><h3>What people use</h3></div></div><div class="admin-analytics-funnel"><div><span>Returning users</span><strong>${number(totals.repeat_users)}</strong></div><div><span>People logging food</span><strong>${number(totals.food_log_users)}</strong></div><div><span>Food entries logged</span><strong>${number(totals.foods_logged)}</strong></div><div><span>People with weigh-ins</span><strong>${number(totals.weight_log_users)}</strong></div><div><span>Repeat weight loggers</span><strong>${number(totals.repeat_weight_log_users)}</strong></div><div><span>People completing workouts</span><strong>${number(totals.workout_users)}</strong></div><div><span>Onboarding completed</span><strong>${number(totals.onboarding_completions)}</strong></div></div></section>${workoutSourceBreakdown}<section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACQUISITION</span><h3>Where people came from</h3></div></div><div class="admin-analytics-sources">${sourceRows || `<p class="admin-analytics-empty">No acquisition responses yet.</p>`}</div></section><section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGED USERS</span><h3>Who logged activity</h3><p>Food and workout lists follow the selected period. Repeat weight loggers are all-time and exclude users with only one weigh-in.</p></div></div><div class="admin-analytics-stat-groups">${namedStats}</div></section></div>`;
+    </div><div class="admin-analytics-grid">${emailDelivery}<section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACTIVITY</span><h3>Daily app usage</h3><p>Halifax local dates · updated ${escapeHtml(updatedLabel)}</p></div><div class="admin-analytics-legend"><span class="is-users">Users</span><span class="is-foods">Foods</span><span class="is-workouts">Workouts</span></div></div><div class="admin-analytics-chart">${chart}</div></section><section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGEMENT</span><h3>What people use</h3></div></div><div class="admin-analytics-funnel"><div><span>Returning users</span><strong>${number(totals.repeat_users)}</strong></div><div><span>People logging food</span><strong>${number(totals.food_log_users)}</strong></div><div><span>Food entries logged</span><strong>${number(totals.foods_logged)}</strong></div><div><span>People with weigh-ins</span><strong>${number(totals.weight_log_users)}</strong></div><div><span>Repeat weight loggers</span><strong>${number(totals.repeat_weight_log_users)}</strong></div><div><span>People completing workouts</span><strong>${number(totals.workout_users)}</strong></div><div><span>Onboarding completed</span><strong>${number(totals.onboarding_completions)}</strong></div></div></section>${workoutSourceBreakdown}<section class="admin-analytics-card"><div class="admin-analytics-card-head"><div><span class="eyebrow">ACQUISITION</span><h3>Where people came from</h3></div></div><div class="admin-analytics-sources">${sourceRows || `<p class="admin-analytics-empty">No acquisition responses yet.</p>`}</div></section><section class="admin-analytics-card admin-analytics-wide"><div class="admin-analytics-card-head"><div><span class="eyebrow">ENGAGED USERS</span><h3>Who logged activity</h3><p>Food and workout lists follow the selected period. Repeat weight loggers are all-time and exclude users with only one weigh-in.</p></div></div><div class="admin-analytics-stat-groups">${namedStats}</div></section></div>`;
+}
+
+
+function renderEmailDelivery(config) {
+    const configured = Boolean(config?.configured);
+    const recipient = config?.testRecipient || "owner account";
+    return `<section class="admin-analytics-card admin-email-delivery">
+        <div class="admin-analytics-card-head">
+            <div><span class="eyebrow">EMAIL</span><h3>Resend delivery</h3><p>Production email is sent through the Cloudflare Worker. The API key never reaches the browser.</p></div>
+            <span class="admin-email-state ${configured ? "is-ready" : "is-off"}">${configured ? "Connected" : "Not configured"}</span>
+        </div>
+        <div class="admin-email-details">
+            <div><span>From</span><strong>${escapeHtml(config?.from || "Level Up <support@leveluphypertrophy.com>")}</strong></div>
+            <div><span>Test recipient</span><strong>${escapeHtml(recipient)}</strong></div>
+        </div>
+        <div class="admin-email-actions">
+            <button type="button" class="owner-primary" data-admin-send-email-test ${configured ? "" : "disabled"}>Send test email</button>
+            <p data-admin-email-test-status>${configured ? "Ready to send a private delivery test to the signed-in owner account." : "Add RESEND_API_KEY to the production Worker to enable email."}</p>
+        </div>
+    </section>`;
+}
+
+function bindEmailDelivery(content) {
+    const button = content.querySelector("[data-admin-send-email-test]");
+    const status = content.querySelector("[data-admin-email-test-status]");
+    if (!button || !status) return;
+    button.addEventListener("click", async () => {
+        if (button.disabled) return;
+        button.disabled = true;
+        const previous = button.textContent;
+        button.textContent = "Sending…";
+        status.textContent = "Sending through Resend…";
+        status.className = "";
+        try {
+            const response = await fetch(`${API_URL}/v1/admin/email/test`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${sessionToken()}` }
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(payload.error || "The test email could not be sent.");
+            status.textContent = `Sent to ${payload.to}. Check the inbox and spam folder if it does not arrive shortly.`;
+            status.className = "is-success";
+        } catch (error) {
+            status.textContent = error.message || "The test email could not be sent.";
+            status.className = "is-error";
+        } finally {
+            button.disabled = false;
+            button.textContent = previous;
+        }
+    });
 }
 
 function renderPlatformAnalytics(data, days) {
