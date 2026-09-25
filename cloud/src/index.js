@@ -35,6 +35,8 @@ const WORKOUT_SHARE_PUBLIC_ORIGIN = "https://api.leveluphypertrophy.com";
 const RESEND_EMAIL_API = "https://api.resend.com/emails";
 const SUPPORT_EMAIL = "support@leveluphypertrophy.com";
 const SUPPORT_FROM = `Level Up <${SUPPORT_EMAIL}>`;
+const IOS_APP_STORE_URL = "https://apps.apple.com/ca/app/level-up-workout-nutrition/id6810024008";
+const IOS_LAUNCH_EMAIL_SUBJECT = "Level Up is now on iPhone — move your data safely";
 const WORKOUT_SHARE_PRIVATE_KEYS = new Set([
     "userId", "ownerId", "accountId", "lastWorkout", "lastWorkoutAt",
     "workoutHistory", "history", "sessions", "completedWorkouts", "prs",
@@ -122,6 +124,9 @@ async function handleRequest(request, env, ctx) {
     }
     if (url.pathname === "/v1/admin/email/test" && request.method === "POST") {
         return sendAdminTestEmail(user, request, env);
+    }
+    if (url.pathname === "/v1/admin/email/ios-launch/test" && request.method === "POST") {
+        return sendAdminIosLaunchTestEmail(user, request, env);
     }
     if (url.pathname === "/v1/admin/restaurants/staging" && request.method === "POST") {
         const body = await readJson(request, 32 * 1024);
@@ -2629,6 +2634,123 @@ async function sendAdminTestEmail(user, request, env) {
     }
 }
 
+
+function iosLaunchEmailContent({ testMode = false } = {}) {
+    const previewNote = testMode
+        ? '<div style="margin:0 0 18px;padding:10px 12px;border:1px solid #3f3f46;border-radius:10px;background:#18181b;color:#d4d4d8;font-size:12px;"><strong style="color:#fff;">OWNER TEST</strong> — this is a preview. No Level Up users were emailed.</div>'
+        : '';
+    const html = `<!doctype html>
+<html>
+<body style="margin:0;background:#09090b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#f4f4f5;">
+  <div style="display:none;max-height:0;overflow:hidden;">Level Up is now available on iPhone. Follow these steps before moving your web data.</div>
+  <div style="max-width:640px;margin:0 auto;padding:28px 18px 36px;">
+    ${previewNote}
+    <div style="border:1px solid #27272a;border-radius:18px;overflow:hidden;background:#111113;">
+      <div style="padding:28px 26px 22px;border-top:4px solid #dc2626;">
+        <div style="font-size:12px;font-weight:800;letter-spacing:.14em;color:#ef4444;">LEVEL UP</div>
+        <h1 style="margin:10px 0 10px;font-size:30px;line-height:1.1;color:#fff;">Level Up is now on iPhone.</h1>
+        <p style="margin:0;color:#d4d4d8;font-size:16px;line-height:1.6;">You can keep using the web app, or move to the iOS app and bring your workouts, weight, nutrition and other saved data with you.</p>
+        <a href="${IOS_APP_STORE_URL}" style="display:inline-block;margin-top:20px;padding:13px 18px;border-radius:10px;background:#dc2626;color:#fff;text-decoration:none;font-weight:800;">Get Level Up on the App Store</a>
+      </div>
+      <div style="padding:8px 26px 28px;">
+        <h2 style="margin:18px 0 10px;font-size:20px;color:#fff;">Moving from the web app? Do this first.</h2>
+        <ol style="margin:0;padding-left:22px;color:#d4d4d8;line-height:1.65;">
+          <li style="margin-bottom:12px;"><strong style="color:#fff;">Save a local backup.</strong> On the web app, open <strong>More → Exports &amp; Backup → Export Backup</strong> and keep the downloaded JSON file.</li>
+          <li style="margin-bottom:12px;"><strong style="color:#fff;">Upload your latest web data.</strong> Open <strong>More → Account &amp; Cloud</strong>. Sign in if needed, make sure your existing data is visible, then tap <strong>Back Up Now</strong>. Wait for confirmation and check that the cloud backup date updated.</li>
+          <li style="margin-bottom:12px;"><strong style="color:#fff;">Generate a transfer code.</strong> In <strong>Account &amp; Cloud</strong>, tap <strong>Generate Transfer Code</strong>. In the iPhone app, choose <strong>Already use Level Up on the web?</strong> and enter that one-time code within 10 minutes.</li>
+          <li><strong style="color:#fff;">Verify your data before continuing.</strong> Check your recent workouts, weight entries, nutrition log and plans in the iPhone app. Keep the web app and exported backup until everything looks right.</li>
+        </ol>
+        <div style="margin-top:20px;padding:14px 16px;border-radius:12px;background:#18181b;color:#d4d4d8;font-size:14px;line-height:1.5;"><strong style="color:#fff;">Important:</strong> the transfer code connects your account; <strong>Back Up Now</strong> is what uploads your current web data. Generating a code by itself does not upload unsynced entries.</div>
+      </div>
+    </div>
+    <p style="margin:18px 6px 0;color:#71717a;font-size:12px;line-height:1.5;">Level Up · leveluphypertrophy.com · support@leveluphypertrophy.com${testMode ? '<br>The live broadcast will include an unsubscribe option.' : ''}</p>
+  </div>
+</body>
+</html>`;
+    const text = `Level Up is now on iPhone.
+
+You can keep using the web app, or move to the iOS app and bring your workouts, weight, nutrition and other saved data with you.
+
+Get the iOS app:
+${IOS_APP_STORE_URL}
+
+If you are moving from the web app:
+
+1. Save a local backup: More → Exports & Backup → Export Backup. Keep the downloaded JSON file.
+2. Upload your latest web data: More → Account & Cloud → Back Up Now. Wait for confirmation and check that the cloud backup date updated.
+3. Generate a transfer code: Account & Cloud → Generate Transfer Code. In the iPhone app choose "Already use Level Up on the web?" and enter the one-time code within 10 minutes.
+4. Verify recent workouts, weight entries, nutrition log and plans before making new iPhone entries.
+
+Important: the transfer code connects your account. Back Up Now is what uploads your current web data. Generating a code by itself does not upload unsynced entries.
+
+Level Up
+leveluphypertrophy.com
+support@leveluphypertrophy.com${testMode ? "\n\nOWNER TEST: No Level Up users were emailed. The live broadcast will include an unsubscribe option." : ""}`;
+    return { html, text };
+}
+
+async function sendAdminIosLaunchTestEmail(user, request, env) {
+    if (!isAdminUser(user, env)) return json({ error: "Admin access required." }, 403, request, env);
+    const recipient = normalizeEmail(user?.email);
+    if (!recipient) return json({ error: "The signed-in owner account does not have a valid email address." }, 400, request, env);
+    if (!env.RESEND_API_KEY) return json({ error: "Resend is not configured on the production Worker." }, 503, request, env);
+
+    const content = iosLaunchEmailContent({ testMode: true });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    try {
+        const response = await fetch(RESEND_EMAIL_API, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${env.RESEND_API_KEY}`,
+                "Content-Type": "application/json",
+                "Idempotency-Key": `ios-launch-owner-test/${recipient}/${new Date().toISOString().slice(0, 13)}`
+            },
+            body: JSON.stringify({
+                from: SUPPORT_FROM,
+                to: [recipient],
+                subject: `[TEST] ${IOS_LAUNCH_EMAIL_SUBJECT}`,
+                html: content.html,
+                text: content.text,
+                tags: [
+                    { name: "category", value: "ios_launch" },
+                    { name: "mode", value: "owner_test" }
+                ]
+            }),
+            signal: controller.signal
+        });
+        let payload = {};
+        try { payload = await response.json(); } catch {}
+        if (!response.ok) {
+            console.error(JSON.stringify({
+                event: "resend_ios_launch_test_failed",
+                status: response.status,
+                code: limitedText(payload?.name || payload?.code, 80),
+                message: limitedText(payload?.message, 240)
+            }));
+            return json({ error: payload?.message || "Resend rejected the announcement test." }, 502, request, env);
+        }
+        console.info(JSON.stringify({ event: "resend_ios_launch_test_sent", recipient, emailId: payload?.id || null }));
+        return json({
+            ok: true,
+            id: payload?.id || null,
+            to: recipient,
+            from: SUPPORT_FROM,
+            subject: IOS_LAUNCH_EMAIL_SUBJECT
+        }, 200, request, env);
+    }
+    catch (error) {
+        console.error(JSON.stringify({
+            event: "resend_ios_launch_test_failed",
+            reason: error?.name === "AbortError" ? "timeout" : String(error?.message || error)
+        }));
+        return json({ error: "The iOS announcement test could not be completed." }, 502, request, env);
+    }
+    finally {
+        clearTimeout(timeout);
+    }
+}
+
 async function getAdminAnalytics(user, url, request, env) {
     if (!isAdminUser(user, env)) return json({ error: "Admin access required." }, 403, request, env);
     const requestedDays = Number(url.searchParams.get("days") || 30);
@@ -2645,6 +2767,8 @@ async function getAdminAnalytics(user, url, request, env) {
     const [totals, usageSummary, platformAnalytics, acquisition, people, feedbackSummary, feedback, workoutSources, selectedDayUsers, selectedDayActive] = await Promise.all([
         env.DB.prepare(`SELECT
             (SELECT COUNT(*) FROM users) AS total_users,
+            (SELECT COUNT(*) FROM users WHERE email IS NOT NULL AND trim(email) <> '') AS registered_email_users,
+            (SELECT COUNT(*) FROM users WHERE lower(email) LIKE '%@privaterelay.appleid.com') AS apple_private_relay_users,
             (SELECT COUNT(*) FROM users WHERE created_at >= ?) AS new_users,
             (SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ?) AS new_users_today,
             (SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ? AND signup_platform = 'ios') AS new_users_ios_today,
@@ -2778,7 +2902,11 @@ async function getAdminAnalytics(user, url, request, env) {
             provider: "Resend",
             configured: Boolean(env.RESEND_API_KEY),
             from: SUPPORT_FROM,
-            testRecipient: normalizeEmail(user?.email) || ""
+            testRecipient: normalizeEmail(user?.email) || "",
+            registeredRecipients: Number(localTotals.registered_email_users || 0),
+            applePrivateRelayRecipients: Number(localTotals.apple_private_relay_users || 0),
+            iosLaunchSubject: IOS_LAUNCH_EMAIL_SUBJECT,
+            iosLaunchAppStoreUrl: IOS_APP_STORE_URL
         },
         selectedDay: {
             date: selectedDay.date,
