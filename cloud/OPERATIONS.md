@@ -84,3 +84,16 @@ The Calories food log searches FoodData Central through the Worker so the API ke
 `wrangler secret put USDA_FDC_API_KEY`
 
 The app sends only a food search phrase to USDA. User identity, diary entries, meal names and daily totals remain in Level Up and are not sent to USDA.
+
+
+## Resend email delivery
+
+Production email delivery uses Resend from the Cloudflare Worker. Configure the production Worker secret as `RESEND_API_KEY`; never expose the key in browser code or commit it to the repository.
+
+The private owner analytics console shows whether the secret is available to the Worker and provides an owner-only **Send test email** control. The test is always sent to the authenticated administrator account and uses:
+
+`Level Up <support@leveluphypertrophy.com>`
+
+The test endpoint is `POST /v1/admin/email/test` and requires a valid Level Up session whose email is listed in `ADMIN_EMAILS`.
+
+Bulk announcements are intentionally not sent by this test endpoint. Before adding a broadcast flow, keep marketing consent/unsubscribe state separate from authentication email addresses and use Resend's audience/suppression features.
