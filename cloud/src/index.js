@@ -2963,10 +2963,6 @@ async function sendAdminIosLaunchServiceNotice(user, request, env) {
         }
 
         const providerAfter = await getResendIosLaunchProviderStatus(env);
-        if (providerAfter.available && providerAfter.productionCount < sentCount) {
-            throw new Error(`Resend history only shows ${providerAfter.productionCount} of ${sentCount} accepted production emails.`);
-        }
-
         const sentAt = new Date().toISOString();
         await env.DB.prepare(`
             UPDATE email_campaign_sends
@@ -2980,7 +2976,13 @@ async function sendAdminIosLaunchServiceNotice(user, request, env) {
             recipientCount: sentCount,
             providerCount: providerAfter.productionCount
         }));
-        return json({ ok: true, recipientCount: sentCount, sentAt, providerCount: providerAfter.productionCount }, 200, request, env);
+        return json({
+            ok: true,
+            recipientCount: sentCount,
+            sentAt,
+            providerCount: providerAfter.productionCount,
+            providerHistoryCaughtUp: !providerAfter.available || providerAfter.productionCount >= sentCount
+        }, 200, request, env);
     }
     catch (error) {
         const failedAt = new Date().toISOString();
@@ -2994,7 +2996,12 @@ async function sendAdminIosLaunchServiceNotice(user, request, env) {
             campaign: IOS_LAUNCH_CAMPAIGN_KEY,
             message: String(error?.message || error)
         }));
-        return json({ error: "The iOS service notice could not be sent to all recipients." }, 502, request, env);
+        return json({
+            error: "The iOS account update was only partially accepted by Resend.",
+            detail: limitedText(String(error?.message || error), 500),
+            acceptedCount: sentCount,
+            expectedCount: recipients.length
+        }, 502, request, env);
     }
 }
 
