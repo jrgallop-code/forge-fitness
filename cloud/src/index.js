@@ -33,12 +33,13 @@ const WORKOUT_SHARE_MAX_BYTES = 64 * 1024;
 const WORKOUT_SHARE_LIFETIME_MS = 180 * 24 * 60 * 60 * 1000;
 const WORKOUT_SHARE_PUBLIC_ORIGIN = "https://api.leveluphypertrophy.com";
 const RESEND_EMAIL_API = "https://api.resend.com/emails";
+const RESEND_BATCH_API = "https://api.resend.com/emails/batch";
 const SUPPORT_EMAIL = "support@leveluphypertrophy.com";
 const SUPPORT_FROM = `Level Up <${SUPPORT_EMAIL}>`;
 const IOS_APP_STORE_URL = "https://apps.apple.com/ca/app/level-up-workout-nutrition/id6810024008";
 const IOS_LAUNCH_TRACK_URL = "https://api.leveluphypertrophy.com/r/ios-launch";
 const IOS_LAUNCH_CAMPAIGN_KEY = "ios_launch_2026_09";
-const IOS_LAUNCH_EMAIL_SUBJECT = "Level Up is now on iPhone — thank you for being here";
+const IOS_LAUNCH_EMAIL_SUBJECT = "Level Up is now on iPhone — how to move your data safely";
 const EMAIL_MAILING_ADDRESS = "942 Tacoma Drive, Dartmouth, NS, Canada";
 const WORKOUT_SHARE_PRIVATE_KEYS = new Set([
     "userId", "ownerId", "accountId", "lastWorkout", "lastWorkoutAt",
@@ -137,6 +138,9 @@ async function handleRequest(request, env, ctx) {
     }
     if (url.pathname === "/v1/admin/email/ios-launch/test" && request.method === "POST") {
         return sendAdminIosLaunchTestEmail(user, request, env);
+    }
+    if (url.pathname === "/v1/admin/email/ios-launch/send" && request.method === "POST") {
+        return sendAdminIosLaunchServiceNotice(user, request, env);
     }
     if (url.pathname === "/v1/admin/restaurants/staging" && request.method === "POST") {
         const body = await readJson(request, 32 * 1024);
@@ -2685,100 +2689,53 @@ function iosLaunchEmailContent({ testMode = false, unsubscribeUrl = "" } = {}) {
     const html = `<!doctype html>
 <html>
 <body style="margin:0;background:#09090b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#f4f4f5;">
-  <div style="display:none;max-height:0;overflow:hidden;">Level Up is now on iPhone. The app is free to use, packed with workout, nutrition and progress tools, and built with help from users like you.</div>
+  <div style="display:none;max-height:0;overflow:hidden;">Level Up is now available on iPhone. Here is how to move your existing web data safely.</div>
   <div style="max-width:640px;margin:0 auto;padding:28px 18px 36px;">
     ${previewNote}
     <div style="border:1px solid #27272a;border-radius:18px;overflow:hidden;background:#111113;">
       <div style="padding:30px 26px 26px;border-top:4px solid #dc2626;">
-        <div style="font-size:12px;font-weight:800;letter-spacing:.14em;color:#ef4444;">LEVEL UP</div>
-        <h1 style="margin:10px 0 10px;font-size:32px;line-height:1.08;color:#fff;">Level Up is now on iPhone.</h1>
-        <p style="margin:0;color:#d4d4d8;font-size:17px;line-height:1.6;">A full workout, nutrition and progress tracker — now available as an iOS app, and <strong style="color:#fff;">free to use.</strong></p>
-        <a href="${appStoreHref}" style="display:inline-block;margin-top:22px;padding:14px 19px;border-radius:10px;background:#dc2626;color:#fff;text-decoration:none;font-weight:800;">Get Level Up on the App Store</a>
+        <div style="font-size:12px;font-weight:800;letter-spacing:.14em;color:#ef4444;">LEVEL UP · ACCOUNT UPDATE</div>
+        <h1 style="margin:10px 0 10px;font-size:32px;line-height:1.08;color:#fff;">Level Up is now available on iPhone.</h1>
+        <p style="margin:0;color:#d4d4d8;font-size:16px;line-height:1.6;">If you currently use Level Up on the web and want to move to the iOS app, your workout, weight, nutrition and saved-plan data can come with you.</p>
+        <a href="${appStoreHref}" style="display:inline-block;margin-top:22px;padding:14px 19px;border-radius:10px;background:#dc2626;color:#fff;text-decoration:none;font-weight:800;">Open Level Up on the App Store</a>
       </div>
 
       <div style="padding:0 26px 6px;">
-        <div style="padding:18px 18px;border-radius:14px;background:#18181b;border:1px solid #27272a;">
+        <div style="padding:18px;border-radius:14px;background:#18181b;border:1px solid #27272a;">
           <div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#ef4444;">THANK YOU</div>
-          <p style="margin:7px 0 0;color:#e4e4e7;font-size:15px;line-height:1.6;">Level Up has grown because people actually use it, send feedback, report problems and suggest better ways to do things. We genuinely appreciate everyone who has given the app a try and helped shape what it is becoming.</p>
+          <p style="margin:7px 0 0;color:#e4e4e7;font-size:15px;line-height:1.6;">Thank you for using Level Up and for the feedback that has helped improve it. This message is to make sure existing users know the iPhone app is available and how to move their data safely if they choose to switch.</p>
         </div>
       </div>
 
-      <div style="padding:18px 26px 8px;">
-        <h2 style="margin:0 0 6px;font-size:22px;color:#fff;">More than a workout logger</h2>
-        <p style="margin:0 0 16px;color:#a1a1aa;font-size:14px;line-height:1.5;">Level Up brings the main tools you need to train, eat and track progress into one place.</p>
-
-        <div style="margin-bottom:10px;padding:15px 16px;border:1px solid #27272a;border-radius:12px;background:#151517;">
-          <strong style="display:block;color:#fff;font-size:15px;">Smarter workout tracking</strong>
-          <span style="display:block;margin-top:5px;color:#b4b4bc;font-size:14px;line-height:1.55;">Build routines, use proven templates, log RIR, track progression, rest timers, supersets, drop sets, plate loading, workout history and personal records.</span>
-        </div>
-
-        <div style="margin-bottom:10px;padding:15px 16px;border:1px solid #27272a;border-radius:12px;background:#151517;">
-          <strong style="display:block;color:#fff;font-size:15px;">Nutrition without another app</strong>
-          <span style="display:block;margin-top:5px;color:#b4b4bc;font-size:14px;line-height:1.55;">Track calories and macros, scan barcodes, search foods, save meals and foods, and browse supported restaurant menu items.</span>
-        </div>
-
-        <div style="margin-bottom:10px;padding:15px 16px;border:1px solid #27272a;border-radius:12px;background:#151517;">
-          <strong style="display:block;color:#fff;font-size:15px;">Progress you can actually see</strong>
-          <span style="display:block;margin-top:5px;color:#b4b4bc;font-size:14px;line-height:1.55;">Follow body-weight trends, strength and estimated 1RM, training volume, measurements, progress photos and longer-term reports.</span>
-        </div>
-
-        <div style="padding:15px 16px;border:1px solid #27272a;border-radius:12px;background:#151517;">
-          <strong style="display:block;color:#fff;font-size:15px;">Planning and guidance</strong>
-          <span style="display:block;margin-top:5px;color:#b4b4bc;font-size:14px;line-height:1.55;">Use workout templates, Smart Build, training schedules, recovery tools and progression guidance to make the next session easier to plan.</span>
-        </div>
-
-        <div style="margin-top:16px;padding:14px 16px;border-radius:12px;background:#2a0d0d;border:1px solid #5f1717;">
-          <strong style="color:#fff;">And yes — Level Up is free to use.</strong>
-          <span style="display:block;margin-top:4px;color:#d4d4d8;font-size:14px;line-height:1.5;">You do not need a subscription to start training, logging food or tracking your progress.</span>
-        </div>
-      </div>
-
-      <div style="padding:18px 26px 28px;">
-        <h2 style="margin:0 0 10px;font-size:20px;color:#fff;">Already use Level Up on the web?</h2>
-        <p style="margin:0 0 14px;color:#a1a1aa;font-size:14px;line-height:1.5;">Your existing data can come with you. Follow these steps before you switch:</p>
+      <div style="padding:20px 26px 28px;">
+        <h2 style="margin:0 0 10px;font-size:21px;color:#fff;">Before switching from the web app</h2>
         <ol style="margin:0;padding-left:22px;color:#d4d4d8;line-height:1.65;">
           <li style="margin-bottom:12px;"><strong style="color:#fff;">Save a local backup.</strong> On the web app, open <strong>More → Exports &amp; Backup → Export Backup</strong> and keep the downloaded JSON file.</li>
           <li style="margin-bottom:12px;"><strong style="color:#fff;">Upload your latest web data.</strong> Open <strong>More → Account &amp; Cloud</strong>. Sign in if needed, make sure your existing data is visible, then tap <strong>Back Up Now</strong>. Wait for confirmation and check that the cloud backup date updated.</li>
           <li style="margin-bottom:12px;"><strong style="color:#fff;">Generate a transfer code.</strong> In <strong>Account &amp; Cloud</strong>, tap <strong>Generate Transfer Code</strong>. In the iPhone app, choose <strong>Already use Level Up on the web?</strong> and enter that one-time code within 10 minutes.</li>
           <li><strong style="color:#fff;">Verify your data before continuing.</strong> Check your recent workouts, weight entries, nutrition log and plans in the iPhone app. Keep the web app and exported backup until everything looks right.</li>
         </ol>
+
         <div style="margin-top:20px;padding:14px 16px;border-radius:12px;background:#18181b;color:#d4d4d8;font-size:14px;line-height:1.5;"><strong style="color:#fff;">Important:</strong> the transfer code connects your account; <strong>Back Up Now</strong> is what uploads your current web data. Generating a code by itself does not upload unsynced entries.</div>
-        <a href="${appStoreHref}" style="display:inline-block;margin-top:22px;padding:14px 19px;border-radius:10px;background:#dc2626;color:#fff;text-decoration:none;font-weight:800;">Download Level Up for iPhone</a>
+
+        <a href="${appStoreHref}" style="display:inline-block;margin-top:22px;padding:14px 19px;border-radius:10px;background:#dc2626;color:#fff;text-decoration:none;font-weight:800;">Open the iPhone app listing</a>
       </div>
     </div>
-    <p style="margin:18px 6px 0;color:#71717a;font-size:12px;line-height:1.6;">Thank you for being part of Level Up.<br>${EMAIL_MAILING_ADDRESS}<br>leveluphypertrophy.com · support@leveluphypertrophy.com${testMode ? '<br>The live broadcast will include a one-click unsubscribe link.' : unsubscribeUrl ? `<br><a href="${unsubscribeUrl}" style="color:#a1a1aa;">Unsubscribe</a>` : ''}</p>
+    <p style="margin:18px 6px 0;color:#71717a;font-size:12px;line-height:1.6;">Level Up<br>${EMAIL_MAILING_ADDRESS}<br>leveluphypertrophy.com · support@leveluphypertrophy.com${testMode ? '<br>The live notice will include a one-click unsubscribe link.' : unsubscribeUrl ? `<br><a href="${unsubscribeUrl}" style="color:#a1a1aa;">Unsubscribe from future Level Up emails</a>` : ''}</p>
   </div>
 </body>
 </html>`;
 
-    const text = `Level Up is now on iPhone.
+    const text = `Level Up is now available on iPhone.
 
-A full workout, nutrition and progress tracker — now available as an iOS app, and free to use.
+If you currently use Level Up on the web and want to move to the iOS app, your workout, weight, nutrition and saved-plan data can come with you.
 
-THANK YOU
+Thank you for using Level Up and for the feedback that has helped improve it. This message is to make sure existing users know the iPhone app is available and how to move their data safely if they choose to switch.
 
-Level Up has grown because people actually use it, send feedback, report problems and suggest better ways to do things. We genuinely appreciate everyone who has given the app a try and helped shape what it is becoming.
-
-WHAT LEVEL UP INCLUDES
-
-Smarter workout tracking
-Build routines, use proven templates, log RIR, track progression, rest timers, supersets, drop sets, plate loading, workout history and personal records.
-
-Nutrition without another app
-Track calories and macros, scan barcodes, search foods, save meals and foods, and browse supported restaurant menu items.
-
-Progress you can actually see
-Follow body-weight trends, strength and estimated 1RM, training volume, measurements, progress photos and longer-term reports.
-
-Planning and guidance
-Use workout templates, Smart Build, training schedules, recovery tools and progression guidance.
-
-And yes — Level Up is free to use. You do not need a subscription to start training, logging food or tracking your progress.
-
-Get the iOS app:
+Open the App Store:
 ${testMode ? IOS_APP_STORE_URL : IOS_LAUNCH_TRACK_URL}
 
-ALREADY USE LEVEL UP ON THE WEB?
+BEFORE SWITCHING FROM THE WEB APP
 
 1. Save a local backup: More → Exports & Backup → Export Backup. Keep the downloaded JSON file.
 2. Upload your latest web data: More → Account & Cloud → Back Up Now. Wait for confirmation and check that the cloud backup date updated.
@@ -2787,10 +2744,10 @@ ALREADY USE LEVEL UP ON THE WEB?
 
 Important: the transfer code connects your account. Back Up Now is what uploads your current web data. Generating a code by itself does not upload unsynced entries.
 
-Thank you for being part of Level Up.
+Level Up
 ${EMAIL_MAILING_ADDRESS}
 leveluphypertrophy.com
-support@leveluphypertrophy.com${testMode ? "\n\nOWNER TEST: No Level Up users were emailed. The live broadcast will include a one-click unsubscribe link." : unsubscribeUrl ? `\nUnsubscribe: ${unsubscribeUrl}` : ""}`;
+support@leveluphypertrophy.com${testMode ? "\n\nOWNER TEST: No Level Up users were emailed. The live notice will include a one-click unsubscribe link." : unsubscribeUrl ? `\nUnsubscribe: ${unsubscribeUrl}` : ""}`;
     return { html, text };
 }
 async function sendAdminIosLaunchTestEmail(user, request, env) {
@@ -2855,6 +2812,135 @@ async function sendAdminIosLaunchTestEmail(user, request, env) {
     }
 }
 
+
+async function sendAdminIosLaunchServiceNotice(user, request, env) {
+    if (!isAdminUser(user, env)) return json({ error: "Admin access required." }, 403, request, env);
+    if (!env.RESEND_API_KEY) return json({ error: "Resend is not configured on the production Worker." }, 503, request, env);
+
+    const existing = await env.DB.prepare(
+        "SELECT status, recipient_count, sent_at FROM email_campaign_sends WHERE campaign_key = ?"
+    ).bind(IOS_LAUNCH_CAMPAIGN_KEY).first();
+    if (existing?.status === "sent") {
+        return json({
+            ok: true,
+            alreadySent: true,
+            recipientCount: Number(existing.recipient_count || 0),
+            sentAt: existing.sent_at || null
+        }, 200, request, env);
+    }
+    if (existing?.status === "sending") {
+        return json({ error: "This service notice is already being sent." }, 409, request, env);
+    }
+
+    const recipientRows = await env.DB.prepare(`
+        SELECT u.id, u.email
+        FROM users u
+        LEFT JOIN email_unsubscribe_tokens eut ON eut.user_id = u.id
+        WHERE u.beta_status = 'active'
+          AND u.email IS NOT NULL
+          AND trim(u.email) <> ''
+          AND eut.unsubscribed_at IS NULL
+        ORDER BY u.created_at ASC
+    `).all();
+    const recipients = (recipientRows?.results || [])
+        .map(row => ({ id: row.id, email: normalizeEmail(row.email) }))
+        .filter(row => row.id && row.email);
+
+    if (!recipients.length) return json({ error: "No eligible registered email recipients were found." }, 409, request, env);
+
+    const now = new Date().toISOString();
+    await env.DB.prepare(`
+        INSERT INTO email_campaign_sends (campaign_key, status, recipient_count, sent_at, updated_at, error_message)
+        VALUES (?, 'sending', ?, NULL, ?, NULL)
+        ON CONFLICT(campaign_key) DO UPDATE SET
+            status = 'sending',
+            recipient_count = excluded.recipient_count,
+            sent_at = NULL,
+            updated_at = excluded.updated_at,
+            error_message = NULL
+    `).bind(IOS_LAUNCH_CAMPAIGN_KEY, recipients.length, now).run();
+
+    const tokens = [];
+    for (const recipient of recipients) {
+        const existingToken = await env.DB.prepare(
+            "SELECT token FROM email_unsubscribe_tokens WHERE user_id = ?"
+        ).bind(recipient.id).first();
+        const token = existingToken?.token || crypto.randomUUID();
+        if (!existingToken?.token) {
+            await env.DB.prepare(`
+                INSERT INTO email_unsubscribe_tokens (token, user_id, email, created_at, unsubscribed_at)
+                VALUES (?, ?, ?, ?, NULL)
+            `).bind(token, recipient.id, recipient.email, now).run();
+        }
+        tokens.push({ ...recipient, token });
+    }
+
+    try {
+        let sentCount = 0;
+        for (let offset = 0; offset < tokens.length; offset += 100) {
+            const chunk = tokens.slice(offset, offset + 100);
+            const batch = chunk.map(recipient => {
+                const unsubscribeUrl = `https://api.leveluphypertrophy.com/email/unsubscribe/${recipient.token}`;
+                const content = iosLaunchEmailContent({ unsubscribeUrl });
+                return {
+                    from: SUPPORT_FROM,
+                    to: [recipient.email],
+                    subject: IOS_LAUNCH_EMAIL_SUBJECT,
+                    html: content.html,
+                    text: content.text,
+                    tags: [
+                        { name: "category", value: "account_update" },
+                        { name: "campaign", value: "ios_launch_2026_09" }
+                    ]
+                };
+            });
+            const response = await fetch(RESEND_BATCH_API, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${env.RESEND_API_KEY}`,
+                    "Content-Type": "application/json",
+                    "Idempotency-Key": `${IOS_LAUNCH_CAMPAIGN_KEY}/batch/${Math.floor(offset / 100)}`
+                },
+                body: JSON.stringify(batch)
+            });
+            let payload = {};
+            try { payload = await response.json(); } catch {}
+            if (!response.ok) {
+                throw new Error(payload?.message || `Resend rejected batch ${Math.floor(offset / 100) + 1}.`);
+            }
+            sentCount += chunk.length;
+        }
+
+        const sentAt = new Date().toISOString();
+        await env.DB.prepare(`
+            UPDATE email_campaign_sends
+            SET status = 'sent', recipient_count = ?, sent_at = ?, updated_at = ?, error_message = NULL
+            WHERE campaign_key = ?
+        `).bind(sentCount, sentAt, sentAt, IOS_LAUNCH_CAMPAIGN_KEY).run();
+
+        console.info(JSON.stringify({
+            event: "ios_launch_service_notice_sent",
+            campaign: IOS_LAUNCH_CAMPAIGN_KEY,
+            recipientCount: sentCount
+        }));
+        return json({ ok: true, recipientCount: sentCount, sentAt }, 200, request, env);
+    }
+    catch (error) {
+        const failedAt = new Date().toISOString();
+        await env.DB.prepare(`
+            UPDATE email_campaign_sends
+            SET status = 'failed', updated_at = ?, error_message = ?
+            WHERE campaign_key = ?
+        `).bind(failedAt, limitedText(String(error?.message || error), 500), IOS_LAUNCH_CAMPAIGN_KEY).run();
+        console.error(JSON.stringify({
+            event: "ios_launch_service_notice_failed",
+            campaign: IOS_LAUNCH_CAMPAIGN_KEY,
+            message: String(error?.message || error)
+        }));
+        return json({ error: "The iOS service notice could not be sent to all recipients." }, 502, request, env);
+    }
+}
+
 async function getAdminAnalytics(user, url, request, env) {
     if (!isAdminUser(user, env)) return json({ error: "Admin access required." }, 403, request, env);
     const requestedDays = Number(url.searchParams.get("days") || 30);
@@ -2868,7 +2954,7 @@ async function getAdminAnalytics(user, url, request, env) {
         ? requestedDate
         : today.date;
     const selectedDay = localDayBounds(`${selectedDate}T12:00:00.000Z`, timeZone);
-    const [totals, usageSummary, platformAnalytics, acquisition, people, feedbackSummary, feedback, workoutSources, selectedDayUsers, selectedDayActive] = await Promise.all([
+    const [totals, usageSummary, platformAnalytics, acquisition, people, feedbackSummary, feedback, workoutSources, selectedDayUsers, selectedDayActive, iosLaunchSend] = await Promise.all([
         env.DB.prepare(`SELECT
             (SELECT COUNT(*) FROM users) AS total_users,
             (SELECT COUNT(*) FROM users WHERE email IS NOT NULL AND trim(email) <> '') AS registered_email_users,
@@ -2986,7 +3072,10 @@ async function getAdminAnalytics(user, url, request, env) {
         env.DB.prepare(`SELECT COUNT(DISTINCT user_id) AS users
             FROM usage_events
             WHERE event_name = 'app_active' AND occurred_at >= ? AND occurred_at < ?`)
-            .bind(selectedDay.start, selectedDay.end).first()
+            .bind(selectedDay.start, selectedDay.end).first(),
+        env.DB.prepare(`SELECT status, recipient_count, sent_at, error_message
+            FROM email_campaign_sends WHERE campaign_key = ?`)
+            .bind(IOS_LAUNCH_CAMPAIGN_KEY).first()
     ]);
     const localTotals = { ...(totals || {}), repeat_users: usageSummary.repeatUsers };
     return json({
@@ -3012,7 +3101,8 @@ async function getAdminAnalytics(user, url, request, env) {
             applePrivateRelayRecipients: Number(localTotals.apple_private_relay_users || 0),
             iosLaunchSubject: IOS_LAUNCH_EMAIL_SUBJECT,
             iosLaunchAppStoreUrl: IOS_APP_STORE_URL,
-            iosLaunchAppStoreClicks: Number(localTotals.ios_launch_app_store_clicks || 0)
+            iosLaunchAppStoreClicks: Number(localTotals.ios_launch_app_store_clicks || 0),
+            iosLaunchSend: iosLaunchSend || null
         },
         selectedDay: {
             date: selectedDay.date,
