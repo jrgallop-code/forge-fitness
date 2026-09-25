@@ -2764,7 +2764,7 @@ async function sendAdminIosLaunchTestEmail(user, request, env) {
             headers: {
                 "Authorization": `Bearer ${env.RESEND_API_KEY}`,
                 "Content-Type": "application/json",
-                "Idempotency-Key": `ios-launch-owner-test/${recipient}/${new Date().toISOString().slice(0, 13)}`
+                "Idempotency-Key": `ios-launch-owner-test/${recipient}/${crypto.randomUUID()}`
             },
             body: JSON.stringify({
                 from: SUPPORT_FROM,
