@@ -32,6 +32,9 @@ const WORKOUT_SHARE_CODE_LENGTH = 7;
 const WORKOUT_SHARE_MAX_BYTES = 64 * 1024;
 const WORKOUT_SHARE_LIFETIME_MS = 180 * 24 * 60 * 60 * 1000;
 const WORKOUT_SHARE_PUBLIC_ORIGIN = "https://api.leveluphypertrophy.com";
+const RESEND_EMAIL_API = "https://api.resend.com/emails";
+const SUPPORT_EMAIL = "support@leveluphypertrophy.com";
+const SUPPORT_FROM = `Level Up <${SUPPORT_EMAIL}>`;
 const WORKOUT_SHARE_PRIVATE_KEYS = new Set([
     "userId", "ownerId", "accountId", "lastWorkout", "lastWorkoutAt",
     "workoutHistory", "history", "sessions", "completedWorkouts", "prs",
@@ -116,6 +119,9 @@ async function handleRequest(request, env, ctx) {
     }
     if (url.pathname === "/v1/admin/analytics" && request.method === "GET") {
         return getAdminAnalytics(user, url, request, env);
+    }
+    if (url.pathname === "/v1/admin/email/test" && request.method === "POST") {
+        return sendAdminTestEmail(user, request, env);
     }
     if (url.pathname === "/v1/admin/restaurants/staging" && request.method === "POST") {
         const body = await readJson(request, 32 * 1024);
@@ -2571,6 +2577,58 @@ function signupPlatformCounts(rows) {
     return counts;
 }
 
+
+async function sendAdminTestEmail(user, request, env) {
+    if (!isAdminUser(user, env)) return json({ error: "Admin access required." }, 403, request, env);
+    const recipient = normalizeEmail(user?.email);
+    if (!recipient) return json({ error: "The signed-in owner account does not have a valid email address." }, 400, request, env);
+    if (!env.RESEND_API_KEY) return json({ error: "Resend is not configured on the production Worker." }, 503, request, env);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    try {
+        const response = await fetch(RESEND_EMAIL_API, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${env.RESEND_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                from: SUPPORT_FROM,
+                to: [recipient],
+                subject: "Level Up email delivery test",
+                text: "Resend is connected to the Level Up production backend. Email delivery from support@leveluphypertrophy.com is working.",
+                html: "<p><strong>Resend is connected to Level Up.</strong></p><p>Email delivery from <code>support@leveluphypertrophy.com</code> is working.</p>",
+                tags: [{ name: "category", value: "admin_test" }]
+            }),
+            signal: controller.signal
+        });
+        let payload = {};
+        try { payload = await response.json(); } catch {}
+        if (!response.ok) {
+            console.error(JSON.stringify({
+                event: "resend_admin_test_failed",
+                status: response.status,
+                code: limitedText(payload?.name || payload?.code, 80),
+                message: limitedText(payload?.message, 240)
+            }));
+            return json({ error: payload?.message || "Resend rejected the test email." }, 502, request, env);
+        }
+        console.info(JSON.stringify({ event: "resend_admin_test_sent", recipient, emailId: payload?.id || null }));
+        return json({ ok: true, id: payload?.id || null, to: recipient, from: SUPPORT_FROM }, 200, request, env);
+    }
+    catch (error) {
+        console.error(JSON.stringify({
+            event: "resend_admin_test_failed",
+            reason: error?.name === "AbortError" ? "timeout" : String(error?.message || error)
+        }));
+        return json({ error: "The Resend test request could not be completed." }, 502, request, env);
+    }
+    finally {
+        clearTimeout(timeout);
+    }
+}
+
 async function getAdminAnalytics(user, url, request, env) {
     if (!isAdminUser(user, env)) return json({ error: "Admin access required." }, 403, request, env);
     const requestedDays = Number(url.searchParams.get("days") || 30);
@@ -2716,6 +2774,12 @@ async function getAdminAnalytics(user, url, request, env) {
         feedbackSummary: feedbackSummary || {},
         feedback: feedback?.results || [],
         workoutSources: workoutSources?.results || [],
+        emailDelivery: {
+            provider: "Resend",
+            configured: Boolean(env.RESEND_API_KEY),
+            from: SUPPORT_FROM,
+            testRecipient: normalizeEmail(user?.email) || ""
+        },
         selectedDay: {
             date: selectedDay.date,
             activeUsers: Number(selectedDayActive?.users || 0),
