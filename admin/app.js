@@ -1,4 +1,4 @@
-import { renderAdminAnalytics, initializeAdminAnalytics } from "./admin-analytics.js?v=email-delivery-1";
+import { renderAdminAnalytics, initializeAdminAnalytics } from "./admin-analytics.js?v=ios-email-preview-1";
 import { initializeOwnerProductInsights } from "./product-insights.js?v=user-demographics-2";
 import { initializeDailyUserQuery } from "./daily-user-query.js?v=platform-acquisition-2";
 
