@@ -36,6 +36,8 @@ const RESEND_EMAIL_API = "https://api.resend.com/emails";
 const SUPPORT_EMAIL = "support@leveluphypertrophy.com";
 const SUPPORT_FROM = `Level Up <${SUPPORT_EMAIL}>`;
 const IOS_APP_STORE_URL = "https://apps.apple.com/ca/app/level-up-workout-nutrition/id6810024008";
+const IOS_LAUNCH_TRACK_URL = "https://api.leveluphypertrophy.com/r/ios-launch";
+const IOS_LAUNCH_CAMPAIGN_KEY = "ios_launch_2026_09";
 const IOS_LAUNCH_EMAIL_SUBJECT = "Level Up is now on iPhone — thank you for being here";
 const WORKOUT_SHARE_PRIVATE_KEYS = new Set([
     "userId", "ownerId", "accountId", "lastWorkout", "lastWorkoutAt",
@@ -71,6 +73,9 @@ async function handleRequest(request, env, ctx) {
     if (request.method === "OPTIONS") return preflight(request, env);
     if (origin && !allowedOrigins(env).has(origin)) return json({ error: "Origin not allowed." }, 403, request, env);
     if (url.pathname === "/health" && request.method === "GET") return json({ ok: true }, 200, request, env);
+    if (url.pathname === "/r/ios-launch" && request.method === "GET") {
+        return recordIosLaunchClick(request, env);
+    }
 
     if (url.pathname === "/v1/session/google" && request.method === "POST") {
         const body = await readJson(request, 64 * 1024);
@@ -2635,7 +2640,21 @@ async function sendAdminTestEmail(user, request, env) {
 }
 
 
+async function recordIosLaunchClick(request, env) {
+    const now = new Date().toISOString();
+    try {
+        await env.DB.prepare(`
+            INSERT INTO email_campaign_clicks (id, campaign_key, clicked_at)
+            VALUES (?, ?, ?)
+        `).bind(crypto.randomUUID(), IOS_LAUNCH_CAMPAIGN_KEY, now).run();
+    } catch (error) {
+        console.error(JSON.stringify({ event: "ios_launch_click_write_failed", message: String(error?.message || error) }));
+    }
+    return Response.redirect(IOS_APP_STORE_URL, 302);
+}
+
 function iosLaunchEmailContent({ testMode = false } = {}) {
+    const appStoreHref = testMode ? IOS_APP_STORE_URL : IOS_LAUNCH_TRACK_URL;
     const previewNote = testMode
         ? '<div style="margin:0 0 18px;padding:10px 12px;border:1px solid #3f3f46;border-radius:10px;background:#18181b;color:#d4d4d8;font-size:12px;"><strong style="color:#fff;">OWNER TEST</strong> — this is a preview. No Level Up users were emailed.</div>'
         : '';
@@ -2647,11 +2666,10 @@ function iosLaunchEmailContent({ testMode = false } = {}) {
     ${previewNote}
     <div style="border:1px solid #27272a;border-radius:18px;overflow:hidden;background:#111113;">
       <div style="padding:30px 26px 26px;border-top:4px solid #dc2626;">
-        <img src="https://leveluphypertrophy.com/assets/level-up-email-logo-v3.png" width="72" height="72" alt="Level Up" style="display:block;width:72px;height:72px;margin:0 0 14px;border:0;outline:none;text-decoration:none;" />
         <div style="font-size:12px;font-weight:800;letter-spacing:.14em;color:#ef4444;">LEVEL UP</div>
         <h1 style="margin:10px 0 10px;font-size:32px;line-height:1.08;color:#fff;">Level Up is now on iPhone.</h1>
         <p style="margin:0;color:#d4d4d8;font-size:17px;line-height:1.6;">A full workout, nutrition and progress tracker — now available as an iOS app, and <strong style="color:#fff;">free to use.</strong></p>
-        <a href="${IOS_APP_STORE_URL}" style="display:inline-block;margin-top:22px;padding:14px 19px;border-radius:10px;background:#dc2626;color:#fff;text-decoration:none;font-weight:800;">Get Level Up on the App Store</a>
+        <a href="${appStoreHref}" style="display:inline-block;margin-top:22px;padding:14px 19px;border-radius:10px;background:#dc2626;color:#fff;text-decoration:none;font-weight:800;">Get Level Up on the App Store</a>
       </div>
 
       <div style="padding:0 26px 6px;">
@@ -2701,7 +2719,7 @@ function iosLaunchEmailContent({ testMode = false } = {}) {
           <li><strong style="color:#fff;">Verify your data before continuing.</strong> Check your recent workouts, weight entries, nutrition log and plans in the iPhone app. Keep the web app and exported backup until everything looks right.</li>
         </ol>
         <div style="margin-top:20px;padding:14px 16px;border-radius:12px;background:#18181b;color:#d4d4d8;font-size:14px;line-height:1.5;"><strong style="color:#fff;">Important:</strong> the transfer code connects your account; <strong>Back Up Now</strong> is what uploads your current web data. Generating a code by itself does not upload unsynced entries.</div>
-        <a href="${IOS_APP_STORE_URL}" style="display:inline-block;margin-top:22px;padding:14px 19px;border-radius:10px;background:#dc2626;color:#fff;text-decoration:none;font-weight:800;">Download Level Up for iPhone</a>
+        <a href="${appStoreHref}" style="display:inline-block;margin-top:22px;padding:14px 19px;border-radius:10px;background:#dc2626;color:#fff;text-decoration:none;font-weight:800;">Download Level Up for iPhone</a>
       </div>
     </div>
     <p style="margin:18px 6px 0;color:#71717a;font-size:12px;line-height:1.5;">Thank you for being part of Level Up.<br>leveluphypertrophy.com · support@leveluphypertrophy.com${testMode ? '<br>The live broadcast will include an unsubscribe option.' : ''}</p>
@@ -2734,7 +2752,7 @@ Use workout templates, Smart Build, training schedules, recovery tools and progr
 And yes — Level Up is free to use. You do not need a subscription to start training, logging food or tracking your progress.
 
 Get the iOS app:
-${IOS_APP_STORE_URL}
+${testMode ? IOS_APP_STORE_URL : IOS_LAUNCH_TRACK_URL}
 
 ALREADY USE LEVEL UP ON THE WEB?
 
@@ -2830,6 +2848,7 @@ async function getAdminAnalytics(user, url, request, env) {
             (SELECT COUNT(*) FROM users) AS total_users,
             (SELECT COUNT(*) FROM users WHERE email IS NOT NULL AND trim(email) <> '') AS registered_email_users,
             (SELECT COUNT(*) FROM users WHERE lower(email) LIKE '%@privaterelay.appleid.com') AS apple_private_relay_users,
+            (SELECT COUNT(*) FROM email_campaign_clicks WHERE campaign_key = '${IOS_LAUNCH_CAMPAIGN_KEY}') AS ios_launch_app_store_clicks,
             (SELECT COUNT(*) FROM users WHERE created_at >= ?) AS new_users,
             (SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ?) AS new_users_today,
             (SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ? AND signup_platform = 'ios') AS new_users_ios_today,
@@ -2967,7 +2986,8 @@ async function getAdminAnalytics(user, url, request, env) {
             registeredRecipients: Number(localTotals.registered_email_users || 0),
             applePrivateRelayRecipients: Number(localTotals.apple_private_relay_users || 0),
             iosLaunchSubject: IOS_LAUNCH_EMAIL_SUBJECT,
-            iosLaunchAppStoreUrl: IOS_APP_STORE_URL
+            iosLaunchAppStoreUrl: IOS_APP_STORE_URL,
+            iosLaunchAppStoreClicks: Number(localTotals.ios_launch_app_store_clicks || 0)
         },
         selectedDay: {
             date: selectedDay.date,
