@@ -111,9 +111,10 @@ function renderEmailDelivery(config) {
             <p>This draft uses the same transfer steps shown inside Level Up: export a backup, run Back Up Now, generate a 10-minute transfer code, then verify the restored data on iPhone.</p>
             ${Number(config?.applePrivateRelayRecipients || 0) ? `<small>${number(config.applePrivateRelayRecipients)} account${Number(config.applePrivateRelayRecipients) === 1 ? "" : "s"} use Apple Private Relay email addresses.</small>` : ""}
             <div class="admin-email-actions">
-                <button type="button" class="owner-primary" data-admin-send-ios-launch-test ${configured ? "" : "disabled"}>Send announcement test to me</button>
+                <button type="button" class="owner-primary" data-admin-send-ios-launch-test ${configured ? "" : "disabled"}>Send account-update test to me</button>
+                <button type="button" class="owner-primary" data-admin-send-ios-launch-live ${configured || config?.iosLaunchSend?.status === "sent" ? "" : "disabled"}>${config?.iosLaunchSend?.status === "sent" ? "Account update sent" : "Send account update to users"}</button>
                 <a href="${escapeHtml(config?.iosLaunchAppStoreUrl || "https://apps.apple.com/ca/app/level-up-workout-nutrition/id6810024008")}" target="_blank" rel="noopener noreferrer">Open App Store listing ↗</a>
-                <p data-admin-ios-launch-status>No bulk email is enabled yet. This button only emails the signed-in owner account. Owner test clicks are not counted.</p>
+                <p data-admin-ios-launch-status>${config?.iosLaunchSend?.status === "sent" ? `Sent once to ${number(config.iosLaunchSend.recipient_count)} registered account${Number(config.iosLaunchSend.recipient_count) === 1 ? "" : "s"} · ${escapeHtml(formatAnalyticsTime(config.iosLaunchSend.sent_at))}.` : "This is an operational iOS availability and data-transfer notice. Owner test clicks are not counted."}</p>
             </div>
         </div>
     </section>`;
@@ -151,6 +152,7 @@ function bindEmailDelivery(content) {
 
     const announcementButton = content.querySelector("[data-admin-send-ios-launch-test]");
     const announcementStatus = content.querySelector("[data-admin-ios-launch-status]");
+    const liveButton = content.querySelector("[data-admin-send-ios-launch-live]");
     if (announcementButton && announcementStatus) {
         announcementButton.addEventListener("click", async () => {
             if (announcementButton.disabled) return;
@@ -174,6 +176,38 @@ function bindEmailDelivery(content) {
             } finally {
                 announcementButton.disabled = false;
                 announcementButton.textContent = previous;
+            }
+        });
+    }
+
+    if (liveButton && announcementStatus) {
+        liveButton.addEventListener("click", async () => {
+            if (liveButton.disabled || liveButton.textContent.includes("sent")) return;
+            const confirmed = window.confirm("Send this iOS availability and data-transfer account update to all eligible registered Level Up email accounts? This campaign can only be sent once.");
+            if (!confirmed) return;
+            liveButton.disabled = true;
+            const previous = liveButton.textContent;
+            liveButton.textContent = "Sending…";
+            announcementStatus.textContent = "Sending the account update through Resend…";
+            announcementStatus.className = "";
+            try {
+                const response = await fetch(`${API_URL}/v1/admin/email/ios-launch/send`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${sessionToken()}` }
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload.error || "The account update could not be sent.");
+                liveButton.textContent = "Account update sent";
+                liveButton.disabled = true;
+                announcementStatus.textContent = payload.alreadySent
+                    ? `This account update was already sent to ${number(payload.recipientCount)} users.`
+                    : `Sent successfully to ${number(payload.recipientCount)} registered accounts.`;
+                announcementStatus.className = "is-success";
+            } catch (error) {
+                liveButton.disabled = false;
+                liveButton.textContent = previous;
+                announcementStatus.textContent = error.message || "The account update could not be sent.";
+                announcementStatus.className = "is-error";
             }
         });
     }
