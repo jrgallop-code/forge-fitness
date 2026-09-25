@@ -2813,23 +2813,70 @@ async function sendAdminIosLaunchTestEmail(user, request, env) {
 }
 
 
+
+async function getResendIosLaunchProviderStatus(env) {
+    if (!env.RESEND_API_KEY) return { available: false, productionCount: 0, testCount: 0, lastEvent: null, error: "Resend is not configured." };
+    let after = "";
+    let productionCount = 0;
+    let testCount = 0;
+    let lastEvent = null;
+    try {
+        for (let page = 0; page < 10; page += 1) {
+            const url = new URL(RESEND_EMAIL_API);
+            url.searchParams.set("limit", "100");
+            if (after) url.searchParams.set("after", after);
+            const response = await fetch(url.toString(), {
+                headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}` }
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(payload?.message || "Resend email history could not be read.");
+            const emails = Array.isArray(payload?.data) ? payload.data : [];
+            for (const email of emails) {
+                if (email?.subject === IOS_LAUNCH_EMAIL_SUBJECT) {
+                    productionCount += 1;
+                    if (!lastEvent) lastEvent = email?.last_event || null;
+                }
+                if (email?.subject === `[TEST] ${IOS_LAUNCH_EMAIL_SUBJECT}`) testCount += 1;
+            }
+            if (!payload?.has_more || !emails.length) break;
+            after = emails[emails.length - 1]?.id || "";
+            if (!after) break;
+        }
+        return { available: true, productionCount, testCount, lastEvent, error: null };
+    } catch (error) {
+        return {
+            available: false,
+            productionCount: 0,
+            testCount: 0,
+            lastEvent: null,
+            error: limitedText(String(error?.message || error), 240)
+        };
+    }
+}
+
 async function sendAdminIosLaunchServiceNotice(user, request, env) {
     if (!isAdminUser(user, env)) return json({ error: "Admin access required." }, 403, request, env);
     if (!env.RESEND_API_KEY) return json({ error: "Resend is not configured on the production Worker." }, 503, request, env);
 
     const existing = await env.DB.prepare(
-        "SELECT status, recipient_count, sent_at FROM email_campaign_sends WHERE campaign_key = ?"
+        "SELECT status, recipient_count, sent_at, updated_at, error_message FROM email_campaign_sends WHERE campaign_key = ?"
     ).bind(IOS_LAUNCH_CAMPAIGN_KEY).first();
-    if (existing?.status === "sent") {
+    const providerBefore = await getResendIosLaunchProviderStatus(env);
+    const expectedPreviously = Number(existing?.recipient_count || 0);
+    if (existing?.status === "sent" && providerBefore.available && expectedPreviously > 0 && providerBefore.productionCount >= expectedPreviously) {
         return json({
             ok: true,
             alreadySent: true,
-            recipientCount: Number(existing.recipient_count || 0),
-            sentAt: existing.sent_at || null
+            recipientCount: expectedPreviously,
+            sentAt: existing.sent_at || null,
+            providerCount: providerBefore.productionCount
         }, 200, request, env);
     }
     if (existing?.status === "sending") {
-        return json({ error: "This service notice is already being sent." }, 409, request, env);
+        const ageMs = Date.now() - Date.parse(existing.updated_at || "");
+        if (Number.isFinite(ageMs) && ageMs < 2 * 60 * 1000) {
+            return json({ error: "This account update is still being processed. Try again in a minute if it does not complete." }, 409, request, env);
+        }
     }
 
     const recipientRows = await env.DB.prepare(`
@@ -2908,7 +2955,16 @@ async function sendAdminIosLaunchServiceNotice(user, request, env) {
             if (!response.ok) {
                 throw new Error(payload?.message || `Resend rejected batch ${Math.floor(offset / 100) + 1}.`);
             }
-            sentCount += chunk.length;
+            const accepted = Array.isArray(payload?.data) ? payload.data.filter(item => item?.id) : [];
+            if (accepted.length !== chunk.length) {
+                throw new Error(`Resend accepted ${accepted.length} of ${chunk.length} emails in batch ${Math.floor(offset / 100) + 1}.`);
+            }
+            sentCount += accepted.length;
+        }
+
+        const providerAfter = await getResendIosLaunchProviderStatus(env);
+        if (providerAfter.available && providerAfter.productionCount < sentCount) {
+            throw new Error(`Resend history only shows ${providerAfter.productionCount} of ${sentCount} accepted production emails.`);
         }
 
         const sentAt = new Date().toISOString();
@@ -2921,9 +2977,10 @@ async function sendAdminIosLaunchServiceNotice(user, request, env) {
         console.info(JSON.stringify({
             event: "ios_launch_service_notice_sent",
             campaign: IOS_LAUNCH_CAMPAIGN_KEY,
-            recipientCount: sentCount
+            recipientCount: sentCount,
+            providerCount: providerAfter.productionCount
         }));
-        return json({ ok: true, recipientCount: sentCount, sentAt }, 200, request, env);
+        return json({ ok: true, recipientCount: sentCount, sentAt, providerCount: providerAfter.productionCount }, 200, request, env);
     }
     catch (error) {
         const failedAt = new Date().toISOString();
@@ -2954,7 +3011,7 @@ async function getAdminAnalytics(user, url, request, env) {
         ? requestedDate
         : today.date;
     const selectedDay = localDayBounds(`${selectedDate}T12:00:00.000Z`, timeZone);
-    const [totals, usageSummary, platformAnalytics, acquisition, people, feedbackSummary, feedback, workoutSources, selectedDayUsers, selectedDayActive, iosLaunchSend] = await Promise.all([
+    const [totals, usageSummary, platformAnalytics, acquisition, people, feedbackSummary, feedback, workoutSources, selectedDayUsers, selectedDayActive, iosLaunchSend, iosLaunchProvider] = await Promise.all([
         env.DB.prepare(`SELECT
             (SELECT COUNT(*) FROM users) AS total_users,
             (SELECT COUNT(*) FROM users WHERE email IS NOT NULL AND trim(email) <> '') AS registered_email_users,
@@ -3073,9 +3130,10 @@ async function getAdminAnalytics(user, url, request, env) {
             FROM usage_events
             WHERE event_name = 'app_active' AND occurred_at >= ? AND occurred_at < ?`)
             .bind(selectedDay.start, selectedDay.end).first(),
-        env.DB.prepare(`SELECT status, recipient_count, sent_at, error_message
+        env.DB.prepare(`SELECT status, recipient_count, sent_at, updated_at, error_message
             FROM email_campaign_sends WHERE campaign_key = ?`)
-            .bind(IOS_LAUNCH_CAMPAIGN_KEY).first()
+            .bind(IOS_LAUNCH_CAMPAIGN_KEY).first(),
+        getResendIosLaunchProviderStatus(env)
     ]);
     const localTotals = { ...(totals || {}), repeat_users: usageSummary.repeatUsers };
     return json({
@@ -3102,7 +3160,8 @@ async function getAdminAnalytics(user, url, request, env) {
             iosLaunchSubject: IOS_LAUNCH_EMAIL_SUBJECT,
             iosLaunchAppStoreUrl: IOS_APP_STORE_URL,
             iosLaunchAppStoreClicks: Number(localTotals.ios_launch_app_store_clicks || 0),
-            iosLaunchSend: iosLaunchSend || null
+            iosLaunchSend: iosLaunchSend || null,
+            iosLaunchProvider: iosLaunchProvider || null
         },
         selectedDay: {
             date: selectedDay.date,
