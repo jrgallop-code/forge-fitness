@@ -89,50 +89,93 @@ function renderAnalytics(data) {
 function renderEmailDelivery(config) {
     const configured = Boolean(config?.configured);
     const recipient = config?.testRecipient || "owner account";
-    return `<section class="admin-analytics-card admin-email-delivery">
+    return \`<section class="admin-analytics-card admin-email-delivery">
         <div class="admin-analytics-card-head">
             <div><span class="eyebrow">EMAIL</span><h3>Resend delivery</h3><p>Production email is sent through the Cloudflare Worker. The API key never reaches the browser.</p></div>
-            <span class="admin-email-state ${configured ? "is-ready" : "is-off"}">${configured ? "Connected" : "Not configured"}</span>
+            <span class="admin-email-state \${configured ? "is-ready" : "is-off"}">\${configured ? "Connected" : "Not configured"}</span>
         </div>
         <div class="admin-email-details">
-            <div><span>From</span><strong>${escapeHtml(config?.from || "Level Up <support@leveluphypertrophy.com>")}</strong></div>
-            <div><span>Test recipient</span><strong>${escapeHtml(recipient)}</strong></div>
+            <div><span>From</span><strong>\${escapeHtml(config?.from || "Level Up <support@leveluphypertrophy.com>")}</strong></div>
+            <div><span>Test recipient</span><strong>\${escapeHtml(recipient)}</strong></div>
         </div>
         <div class="admin-email-actions">
-            <button type="button" class="owner-primary" data-admin-send-email-test ${configured ? "" : "disabled"}>Send test email</button>
-            <p data-admin-email-test-status>${configured ? "Ready to send a private delivery test to the signed-in owner account." : "Add RESEND_API_KEY to the production Worker to enable email."}</p>
+            <button type="button" class="owner-primary" data-admin-send-email-test \${configured ? "" : "disabled"}>Send delivery test</button>
+            <p data-admin-email-test-status>\${configured ? "Ready to send a private delivery test to the signed-in owner account." : "Add RESEND_API_KEY to the production Worker to enable email."}</p>
         </div>
-    </section>`;
+        <div class="admin-email-draft">
+            <div class="admin-email-draft-head">
+                <div><span>ANNOUNCEMENT DRAFT</span><strong>\${escapeHtml(config?.iosLaunchSubject || "Level Up is now on iPhone — move your data safely")}</strong></div>
+                <b>\${number(config?.registeredRecipients)} registered email\${Number(config?.registeredRecipients) === 1 ? "" : "s"}</b>
+            </div>
+            <p>This draft uses the same transfer steps shown inside Level Up: export a backup, run Back Up Now, generate a 10-minute transfer code, then verify the restored data on iPhone.</p>
+            \${Number(config?.applePrivateRelayRecipients || 0) ? \`<small>\${number(config.applePrivateRelayRecipients)} account\${Number(config.applePrivateRelayRecipients) === 1 ? "" : "s"} use Apple Private Relay email addresses.</small>\` : ""}
+            <div class="admin-email-actions">
+                <button type="button" class="owner-primary" data-admin-send-ios-launch-test \${configured ? "" : "disabled"}>Send announcement test to me</button>
+                <a href="\${escapeHtml(config?.iosLaunchAppStoreUrl || "https://apps.apple.com/ca/app/level-up-workout-nutrition/id6810024008")}" target="_blank" rel="noopener noreferrer">Open App Store listing ↗</a>
+                <p data-admin-ios-launch-status>No bulk email is enabled yet. This button only emails the signed-in owner account.</p>
+            </div>
+        </div>
+    </section>\`;
 }
 
 function bindEmailDelivery(content) {
     const button = content.querySelector("[data-admin-send-email-test]");
     const status = content.querySelector("[data-admin-email-test-status]");
-    if (!button || !status) return;
-    button.addEventListener("click", async () => {
-        if (button.disabled) return;
-        button.disabled = true;
-        const previous = button.textContent;
-        button.textContent = "Sending…";
-        status.textContent = "Sending through Resend…";
-        status.className = "";
-        try {
-            const response = await fetch(`${API_URL}/v1/admin/email/test`, {
-                method: "POST",
-                headers: { Authorization: `Bearer ${sessionToken()}` }
-            });
-            const payload = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(payload.error || "The test email could not be sent.");
-            status.textContent = `Sent to ${payload.to}. Check the inbox and spam folder if it does not arrive shortly.`;
-            status.className = "is-success";
-        } catch (error) {
-            status.textContent = error.message || "The test email could not be sent.";
-            status.className = "is-error";
-        } finally {
-            button.disabled = false;
-            button.textContent = previous;
-        }
-    });
+    if (button && status) {
+        button.addEventListener("click", async () => {
+            if (button.disabled) return;
+            button.disabled = true;
+            const previous = button.textContent;
+            button.textContent = "Sending…";
+            status.textContent = "Sending through Resend…";
+            status.className = "";
+            try {
+                const response = await fetch(\`\${API_URL}/v1/admin/email/test\`, {
+                    method: "POST",
+                    headers: { Authorization: \`Bearer \${sessionToken()}\` }
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload.error || "The test email could not be sent.");
+                status.textContent = \`Sent to \${payload.to}. Check the inbox and spam folder if it does not arrive shortly.\`;
+                status.className = "is-success";
+            } catch (error) {
+                status.textContent = error.message || "The test email could not be sent.";
+                status.className = "is-error";
+            } finally {
+                button.disabled = false;
+                button.textContent = previous;
+            }
+        });
+    }
+
+    const announcementButton = content.querySelector("[data-admin-send-ios-launch-test]");
+    const announcementStatus = content.querySelector("[data-admin-ios-launch-status]");
+    if (announcementButton && announcementStatus) {
+        announcementButton.addEventListener("click", async () => {
+            if (announcementButton.disabled) return;
+            announcementButton.disabled = true;
+            const previous = announcementButton.textContent;
+            announcementButton.textContent = "Sending…";
+            announcementStatus.textContent = "Sending the iOS announcement preview through Resend…";
+            announcementStatus.className = "";
+            try {
+                const response = await fetch(\`\${API_URL}/v1/admin/email/ios-launch/test\`, {
+                    method: "POST",
+                    headers: { Authorization: \`Bearer \${sessionToken()}\` }
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload.error || "The announcement test could not be sent.");
+                announcementStatus.textContent = \`Announcement preview sent to \${payload.to}. No users were emailed.\`;
+                announcementStatus.className = "is-success";
+            } catch (error) {
+                announcementStatus.textContent = error.message || "The announcement test could not be sent.";
+                announcementStatus.className = "is-error";
+            } finally {
+                announcementButton.disabled = false;
+                announcementButton.textContent = previous;
+            }
+        });
+    }
 }
 
 function renderPlatformAnalytics(data, days) {
