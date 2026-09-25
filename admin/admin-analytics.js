@@ -97,6 +97,7 @@ function renderEmailDelivery(config) {
         <div class="admin-email-details">
             <div><span>From</span><strong>${escapeHtml(config?.from || "Level Up <support@leveluphypertrophy.com>")}</strong></div>
             <div><span>Test recipient</span><strong>${escapeHtml(recipient)}</strong></div>
+            <div><span>App Store clicks</span><strong>${number(config?.iosLaunchAppStoreClicks)}</strong><small>both email buttons combined</small></div>
         </div>
         <div class="admin-email-actions">
             <button type="button" class="owner-primary" data-admin-send-email-test ${configured ? "" : "disabled"}>Send delivery test</button>
@@ -112,7 +113,7 @@ function renderEmailDelivery(config) {
             <div class="admin-email-actions">
                 <button type="button" class="owner-primary" data-admin-send-ios-launch-test ${configured ? "" : "disabled"}>Send announcement test to me</button>
                 <a href="${escapeHtml(config?.iosLaunchAppStoreUrl || "https://apps.apple.com/ca/app/level-up-workout-nutrition/id6810024008")}" target="_blank" rel="noopener noreferrer">Open App Store listing ↗</a>
-                <p data-admin-ios-launch-status>No bulk email is enabled yet. This button only emails the signed-in owner account.</p>
+                <p data-admin-ios-launch-status>No bulk email is enabled yet. This button only emails the signed-in owner account. Owner test clicks are not counted.</p>
             </div>
         </div>
     </section>`;
