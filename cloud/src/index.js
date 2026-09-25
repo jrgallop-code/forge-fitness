@@ -39,6 +39,7 @@ const IOS_APP_STORE_URL = "https://apps.apple.com/ca/app/level-up-workout-nutrit
 const IOS_LAUNCH_TRACK_URL = "https://api.leveluphypertrophy.com/r/ios-launch";
 const IOS_LAUNCH_CAMPAIGN_KEY = "ios_launch_2026_09";
 const IOS_LAUNCH_EMAIL_SUBJECT = "Level Up is now on iPhone — thank you for being here";
+const EMAIL_MAILING_ADDRESS = "942 Tacoma Drive, Dartmouth, NS, Canada";
 const WORKOUT_SHARE_PRIVATE_KEYS = new Set([
     "userId", "ownerId", "accountId", "lastWorkout", "lastWorkoutAt",
     "workoutHistory", "history", "sessions", "completedWorkouts", "prs",
@@ -75,6 +76,10 @@ async function handleRequest(request, env, ctx) {
     if (url.pathname === "/health" && request.method === "GET") return json({ ok: true }, 200, request, env);
     if (url.pathname === "/r/ios-launch" && request.method === "GET") {
         return recordIosLaunchClick(request, env);
+    }
+    const emailUnsubscribeMatch = url.pathname.match(/^\/email\/unsubscribe\/([0-9a-f-]{36})$/i);
+    if (emailUnsubscribeMatch && request.method === "GET") {
+        return unsubscribeEmailRecipient(emailUnsubscribeMatch[1], request, env);
     }
 
     if (url.pathname === "/v1/session/google" && request.method === "POST") {
@@ -2653,7 +2658,26 @@ async function recordIosLaunchClick(request, env) {
     return Response.redirect(IOS_APP_STORE_URL, 302);
 }
 
-function iosLaunchEmailContent({ testMode = false } = {}) {
+async function unsubscribeEmailRecipient(token, request, env) {
+    const normalizedToken = String(token || "").toLowerCase();
+    const now = new Date().toISOString();
+    const result = await env.DB.prepare(`
+        UPDATE email_unsubscribe_tokens
+        SET unsubscribed_at = COALESCE(unsubscribed_at, ?)
+        WHERE token = ?
+    `).bind(now, normalizedToken).run();
+    const found = Number(result?.meta?.changes || 0) > 0;
+    const title = found ? "You’re unsubscribed" : "This unsubscribe link is not valid";
+    const message = found
+        ? "You will no longer receive Level Up promotional emails at this address."
+        : "This link could not be matched to a Level Up email recipient.";
+    return new Response(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head><body style="margin:0;background:#09090b;color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif"><main style="max-width:560px;margin:60px auto;padding:24px"><div style="border-top:4px solid #dc2626;background:#111113;border-radius:16px;padding:28px;border:1px solid #27272a"><div style="color:#ef4444;font-size:12px;font-weight:800;letter-spacing:.14em">LEVEL UP</div><h1 style="margin:10px 0 8px;font-size:28px">${title}</h1><p style="color:#d4d4d8;line-height:1.6">${message}</p><p style="color:#71717a;font-size:12px;margin-top:24px">${EMAIL_MAILING_ADDRESS}<br>support@leveluphypertrophy.com</p></div></main></body></html>`, {
+        status: found ? 200 : 404,
+        headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" }
+    });
+}
+
+function iosLaunchEmailContent({ testMode = false, unsubscribeUrl = "" } = {}) {
     const appStoreHref = testMode ? IOS_APP_STORE_URL : IOS_LAUNCH_TRACK_URL;
     const previewNote = testMode
         ? '<div style="margin:0 0 18px;padding:10px 12px;border:1px solid #3f3f46;border-radius:10px;background:#18181b;color:#d4d4d8;font-size:12px;"><strong style="color:#fff;">OWNER TEST</strong> — this is a preview. No Level Up users were emailed.</div>'
@@ -2722,7 +2746,7 @@ function iosLaunchEmailContent({ testMode = false } = {}) {
         <a href="${appStoreHref}" style="display:inline-block;margin-top:22px;padding:14px 19px;border-radius:10px;background:#dc2626;color:#fff;text-decoration:none;font-weight:800;">Download Level Up for iPhone</a>
       </div>
     </div>
-    <p style="margin:18px 6px 0;color:#71717a;font-size:12px;line-height:1.5;">Thank you for being part of Level Up.<br>leveluphypertrophy.com · support@leveluphypertrophy.com${testMode ? '<br>The live broadcast will include an unsubscribe option.' : ''}</p>
+    <p style="margin:18px 6px 0;color:#71717a;font-size:12px;line-height:1.6;">Thank you for being part of Level Up.<br>${EMAIL_MAILING_ADDRESS}<br>leveluphypertrophy.com · support@leveluphypertrophy.com${testMode ? '<br>The live broadcast will include a one-click unsubscribe link.' : unsubscribeUrl ? `<br><a href="${unsubscribeUrl}" style="color:#a1a1aa;">Unsubscribe</a>` : ''}</p>
   </div>
 </body>
 </html>`;
@@ -2764,8 +2788,9 @@ ALREADY USE LEVEL UP ON THE WEB?
 Important: the transfer code connects your account. Back Up Now is what uploads your current web data. Generating a code by itself does not upload unsynced entries.
 
 Thank you for being part of Level Up.
+${EMAIL_MAILING_ADDRESS}
 leveluphypertrophy.com
-support@leveluphypertrophy.com${testMode ? "\n\nOWNER TEST: No Level Up users were emailed. The live broadcast will include an unsubscribe option." : ""}`;
+support@leveluphypertrophy.com${testMode ? "\n\nOWNER TEST: No Level Up users were emailed. The live broadcast will include a one-click unsubscribe link." : unsubscribeUrl ? `\nUnsubscribe: ${unsubscribeUrl}` : ""}`;
     return { html, text };
 }
 async function sendAdminIosLaunchTestEmail(user, request, env) {
