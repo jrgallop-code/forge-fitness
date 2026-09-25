@@ -114,9 +114,9 @@ function renderEmailDelivery(config) {
                 <div>
                     <span>SEND TO REGISTERED USERS</span>
                     <strong>${number(config?.registeredRecipients)} account email${Number(config?.registeredRecipients) === 1 ? "" : "s"}</strong>
-                    <small>This one-time account update explains the iOS move and data-transfer steps.</small>
+                    <small>Backend state: ${escapeHtml(config?.iosLaunchSend?.status || "not sent")} · Resend production emails found: ${number(config?.iosLaunchProvider?.productionCount || 0)}.</small>
                 </div>
-                <button type="button" class="owner-primary admin-email-live-button" data-admin-send-ios-launch-live ${configured || config?.iosLaunchSend?.status === "sent" ? "" : "disabled"}>${config?.iosLaunchSend?.status === "sent" ? "Account update sent" : "Send account update to users"}</button>
+                <button type="button" class="owner-primary admin-email-live-button" data-admin-send-ios-launch-live ${configured ? "" : "disabled"}>${config?.iosLaunchProvider?.productionCount >= Number(config?.registeredRecipients || 0) && Number(config?.registeredRecipients || 0) > 0 ? "Account update verified" : config?.iosLaunchSend?.status === "sent" ? "Verify / retry send" : "Send account update to users"}</button>
             </div>
             <div class="admin-email-actions">
                 <button type="button" class="owner-primary" data-admin-send-ios-launch-test ${configured ? "" : "disabled"}>Send test to me</button>
@@ -189,8 +189,8 @@ function bindEmailDelivery(content) {
 
     if (liveButton && announcementStatus) {
         liveButton.addEventListener("click", async () => {
-            if (liveButton.disabled || liveButton.textContent.includes("sent")) return;
-            const confirmed = window.confirm("Send this iOS availability and data-transfer account update to all eligible registered Level Up email accounts? This campaign can only be sent once.");
+            if (liveButton.disabled || liveButton.textContent.includes("verified")) return;
+            const confirmed = window.confirm("Send or safely retry this iOS availability and data-transfer update? Resend idempotency prevents the same accepted batch from being duplicated during the retry window.");
             if (!confirmed) return;
             liveButton.disabled = true;
             const previous = liveButton.textContent;
@@ -204,11 +204,11 @@ function bindEmailDelivery(content) {
                 });
                 const payload = await response.json().catch(() => ({}));
                 if (!response.ok) throw new Error(payload.error || "The account update could not be sent.");
-                liveButton.textContent = "Account update sent";
+                liveButton.textContent = "Account update verified";
                 liveButton.disabled = true;
                 announcementStatus.textContent = payload.alreadySent
-                    ? `This account update was already sent to ${number(payload.recipientCount)} users.`
-                    : `Sent successfully to ${number(payload.recipientCount)} registered accounts.`;
+                    ? `Verified: Resend has ${number(payload.providerCount || payload.recipientCount)} production emails for this account update.`
+                    : `Accepted and verified for ${number(payload.recipientCount)} registered accounts.`;
                 announcementStatus.className = "is-success";
             } catch (error) {
                 liveButton.disabled = false;
