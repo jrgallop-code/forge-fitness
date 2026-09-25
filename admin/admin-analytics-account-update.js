@@ -114,7 +114,7 @@ function renderEmailDelivery(config) {
                 <div>
                     <span>SEND TO REGISTERED USERS</span>
                     <strong>${number(config?.registeredRecipients)} account email${Number(config?.registeredRecipients) === 1 ? "" : "s"}</strong>
-                    <small>Backend state: ${escapeHtml(config?.iosLaunchSend?.status || "not sent")} · Resend production emails found: ${number(config?.iosLaunchProvider?.productionCount || 0)}.</small>
+                    <small>Backend state: ${escapeHtml(config?.iosLaunchSend?.status || "not sent")} · Resend production emails found: ${number(config?.iosLaunchProvider?.productionCount || 0)} of ${number(config?.iosLaunchSend?.recipient_count || config?.registeredRecipients || 0)} expected.${config?.iosLaunchSend?.error_message ? ` Last error: ${escapeHtml(config.iosLaunchSend.error_message)}` : ""}</small>
                 </div>
                 <button type="button" class="owner-primary admin-email-live-button" data-admin-send-ios-launch-live ${configured ? "" : "disabled"}>${config?.iosLaunchProvider?.productionCount >= Number(config?.registeredRecipients || 0) && Number(config?.registeredRecipients || 0) > 0 ? "Account update verified" : config?.iosLaunchSend?.status === "sent" ? "Verify / retry send" : "Send account update to users"}</button>
             </div>
@@ -203,12 +203,19 @@ function bindEmailDelivery(content) {
                     headers: { Authorization: `Bearer ${sessionToken()}` }
                 });
                 const payload = await response.json().catch(() => ({}));
-                if (!response.ok) throw new Error(payload.error || "The account update could not be sent.");
+                if (!response.ok) {
+                    const countText = Number.isFinite(Number(payload.acceptedCount)) && Number.isFinite(Number(payload.expectedCount))
+                        ? ` Accepted ${number(payload.acceptedCount)} of ${number(payload.expectedCount)} before the error.`
+                        : "";
+                    throw new Error((payload.detail || payload.error || "The account update could not be sent.") + countText);
+                }
                 liveButton.textContent = "Account update verified";
                 liveButton.disabled = true;
                 announcementStatus.textContent = payload.alreadySent
                     ? `Verified: Resend has ${number(payload.providerCount || payload.recipientCount)} production emails for this account update.`
-                    : `Accepted and verified for ${number(payload.recipientCount)} registered accounts.`;
+                    : payload.providerHistoryCaughtUp === false
+                        ? `Resend accepted ${number(payload.recipientCount)} emails. Its history count is still catching up; refresh this page shortly to confirm the final count.`
+                        : `Resend accepted ${number(payload.recipientCount)} registered-account emails.`;
                 announcementStatus.className = "is-success";
             } catch (error) {
                 liveButton.disabled = false;
