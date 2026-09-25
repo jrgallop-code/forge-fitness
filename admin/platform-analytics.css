@@ -96,3 +96,32 @@
   .admin-email-draft-head { flex-direction: column; }
   .admin-email-draft-head > b { white-space: normal; }
 }
+
+
+.admin-email-live-send {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin:16px 0 12px;
+  padding:16px;
+  border:1px solid rgba(220,38,38,.45);
+  border-radius:14px;
+  background:rgba(220,38,38,.08);
+}
+.admin-email-live-send span,
+.admin-email-live-send strong,
+.admin-email-live-send small { display:block; }
+.admin-email-live-send span {
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  color:#ef4444;
+}
+.admin-email-live-send strong { margin-top:4px; font-size:17px; }
+.admin-email-live-send small { margin-top:4px; opacity:.72; line-height:1.45; }
+.admin-email-live-button { flex:0 0 auto; }
+@media (max-width:680px) {
+  .admin-email-live-send { align-items:stretch; flex-direction:column; }
+  .admin-email-live-button { width:100%; }
+}
