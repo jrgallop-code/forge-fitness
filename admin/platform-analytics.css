@@ -46,3 +46,53 @@
 @media (max-width: 680px) {
   .admin-email-details { grid-template-columns: 1fr; }
 }
+
+
+.admin-email-draft {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.admin-email-draft-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.admin-email-draft-head > div span,
+.admin-email-draft-head > div strong { display: block; }
+.admin-email-draft-head > div span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  opacity: .6;
+}
+.admin-email-draft-head > div strong {
+  margin-top: 4px;
+  font-size: 16px;
+}
+.admin-email-draft-head > b {
+  white-space: nowrap;
+  font-size: 13px;
+}
+.admin-email-draft > p {
+  margin: 8px 0;
+  line-height: 1.5;
+  opacity: .8;
+}
+.admin-email-draft > small {
+  display: block;
+  margin-bottom: 12px;
+  opacity: .65;
+}
+.admin-email-actions a {
+  color: inherit;
+  font-weight: 750;
+  text-decoration: none;
+}
+.admin-email-actions a:hover { text-decoration: underline; }
+@media (max-width: 680px) {
+  .admin-email-draft-head { flex-direction: column; }
+  .admin-email-draft-head > b { white-space: normal; }
+}
