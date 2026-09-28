@@ -1,3 +1,4 @@
+import "./goal-trajectory-card.js?v=ios-goal-trajectory-1";
 import "./appearance-volume-goals-fix.js?v=appearance-volume-goals-4";
 import "./weight-viewport-summary-authority.js?v=weight-viewport-summary-2";
 import "./weight-history-goal-colors.js?v=weight-history-neutral-1";
