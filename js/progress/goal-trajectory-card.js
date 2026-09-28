@@ -96,10 +96,9 @@ export function renderGoalTrajectory() {
 }
 
 function bindZoom(card) {
-    if(card.dataset.zoomBound==="1")return;
-    card.dataset.zoomBound="1";
     const chart=card.querySelector("[data-chart]");
-    if(!chart)return;
+    if(!chart||chart.dataset.zoomBound==="1")return;
+    chart.dataset.zoomBound="1";
     let pinch=null;
     const distance=event=>Math.hypot(event.touches[0].clientX-event.touches[1].clientX,event.touches[0].clientY-event.touches[1].clientY);
     chart.addEventListener("touchstart",event=>{if(event.touches.length===2)pinch={distance:distance(event),zoom:Number(card.dataset.zoom)||1};},{passive:true});
