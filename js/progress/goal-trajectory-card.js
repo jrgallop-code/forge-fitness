@@ -28,11 +28,8 @@ function model() {
     return {goal,active,points,startDate,startMs};
 }
 function goalEndMs(data) {
-    const {goal,startMs}=data;
-    const start=finite(goal.startWeight), target=finite(goal.goalWeight), weekly=finite(goal.selectedRateLbPerWeek);
-    if(start===null||target===null||weekly===null||!Number.isFinite(startMs)||weekly===0)return null;
-    const weeks=(target-start)/weekly;
-    return Number.isFinite(weeks)&&weeks>=0&&weeks<=520 ? startMs+weeks*604800000 : null;
+    const key=data.goal.estimatedDate;
+    return data.goal.status==="scheduled"&&/^\d{4}-\d{2}-\d{2}$/.test(key||"") ? dateValue(key) : null;
 }
 function graph(data, range, zoom=1) {
     const {goal,points,startMs}=data;
@@ -64,13 +61,10 @@ function graph(data, range, zoom=1) {
     return '<svg class="lugt-chart" viewBox="0 0 354 220" role="img" aria-label="Trend weight and target trajectory through the projected goal date"><g>'+ticks+goalLine+'<path d="'+target+'" stroke="#f25265" stroke-width="2.4" fill="none"/>'+endDot+(path?'<path d="'+path+'" stroke="#9c9bd7" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" fill="none"/>':"")+'</g><text x="42" y="214" fill="currentColor" opacity=".65" font-size="10">'+label(xMin)+'</text><text x="344" y="214" text-anchor="end" fill="currentColor" opacity=".65" font-size="10">'+label(xMax)+'</text></svg>';
 }
 function projectedEndDate(data) {
-    const {goal,startMs} = data;
-    const start=finite(goal.startWeight), target=finite(goal.goalWeight), weekly=finite(goal.selectedRateLbPerWeek);
-    if(start===null||target===null||weekly===null||!Number.isFinite(startMs)||weekly===0)return "Not available";
-    const weeks=(target-start)/weekly;
-    if(!Number.isFinite(weeks)||weeks<0||weeks>520)return "Not available";
-    const date=new Date(startMs+weeks*604800000);
-    return date.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
+    const goal=data.goal;
+    if(goal.status==="reached")return "Goal reached";
+    if(goal.status!=="scheduled"||!goal.estimatedDate)return "Not available";
+    return new Date(goal.estimatedDate+"T12:00:00").toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
 }
 function styles() {
     if(document.getElementById(styleId))return;
