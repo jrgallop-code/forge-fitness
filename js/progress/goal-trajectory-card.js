@@ -27,28 +27,40 @@ function model() {
     if (start !== null && startDate && (!points.length || points[0].date !== startDate)) points.unshift({date:startDate,weight:start});
     return {goal,active,points,startDate,startMs};
 }
-function graph(data, weeks) {
-    const {goal,points,startMs} = data;
-    const selected = finite(goal.selectedRateLbPerWeek);
-    const start = finite(goal.startWeight);
-    if (start === null || selected === null || !Number.isFinite(startMs) || !points.length) return '<p class="lugt-empty">Add a starting weight and target rate to see your trajectory.</p>';
-    const cutoff = weeks ? Date.now() - weeks * 7 * 86400000 : startMs;
-    const shown = points.filter(point => dateValue(point.date) >= cutoff);
-    const actual = shown.length ? shown : points.slice(-1);
-    const end = Math.max(Date.now(),dateValue(actual.at(-1).date));
-    const projected = Math.max(end, startMs + 6 * 7 * 86400000);
-    const xMin = weeks ? Math.max(startMs, cutoff) : startMs;
-    const xMax = projected;
-    const targetAt = time => start + selected * ((time - startMs) / 604800000);
-    const values = [...actual.map(point => point.weight),targetAt(xMin),targetAt(xMax),finite(goal.goalWeight)].filter(value => value !== null);
-    const lo = Math.min(...values)-1, hi = Math.max(...values)+1;
-    const x = time => 42 + 302*(time-xMin)/Math.max(1,xMax-xMin);
-    const y = weight => 194 - 162*(weight-lo)/Math.max(1,hi-lo);
-    const path = actual.map((point,i) => (i ? "L" : "M")+x(dateValue(point.date)).toFixed(1)+","+y(point.weight).toFixed(1)).join(" ");
-    const target = "M"+x(xMin).toFixed(1)+","+y(targetAt(xMin)).toFixed(1)+" L"+x(xMax).toFixed(1)+","+y(targetAt(xMax)).toFixed(1);
-    const goalLine = finite(goal.goalWeight) !== null ? '<line x1="42" x2="344" y1="'+y(goal.goalWeight)+'" y2="'+y(goal.goalWeight)+'" stroke="#51c99c" stroke-width="1.4" stroke-dasharray="5 5"/>' : "";
-    const ticks = [0,1,2,3].map(i => {const val=lo+(hi-lo)*i/3;return '<g><line x1="42" x2="344" y1="'+y(val)+'" y2="'+y(val)+'" stroke="currentColor" opacity=".12"/><text x="35" y="'+(y(val)+4)+'" text-anchor="end" fill="currentColor" opacity=".65" font-size="10">'+format(val)+'</text></g>';}).join("");
-    return '<svg class="lugt-chart" viewBox="0 0 354 220" role="img" aria-label="Smoothed trend weight compared with the target weight trajectory"><g>'+ticks+goalLine+'<path d="'+target+'" stroke="#f25265" stroke-width="2.4" fill="none"/><path d="'+path+'" stroke="#9c9bd7" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" fill="none"/></g><text x="42" y="214" fill="currentColor" opacity=".65" font-size="10">'+safe(actual[0].date)+'</text><text x="344" y="214" text-anchor="end" fill="currentColor" opacity=".65" font-size="10">'+new Date(xMax).toLocaleDateString(undefined,{month:"short",day:"numeric"})+'</text></svg>';
+function goalEndMs(data) {
+    const {goal,startMs}=data;
+    const start=finite(goal.startWeight), target=finite(goal.goalWeight), weekly=finite(goal.selectedRateLbPerWeek);
+    if(start===null||target===null||weekly===null||!Number.isFinite(startMs)||weekly===0)return null;
+    const weeks=(target-start)/weekly;
+    return Number.isFinite(weeks)&&weeks>=0&&weeks<=520 ? startMs+weeks*604800000 : null;
+}
+function graph(data, weeks, zoom=1) {
+    const {goal,points,startMs}=data;
+    const selected=finite(goal.selectedRateLbPerWeek), start=finite(goal.startWeight);
+    if(start===null||selected===null||!Number.isFinite(startMs)||!points.length)return '<p class="lugt-empty">Add a starting weight and target rate to see your trajectory.</p>';
+    const today=Date.now(), endMs=goalEndMs(data);
+    const fullEnd=Math.max(today,endMs||0,startMs+6*604800000);
+    // All always includes the actual goal intersection; shorter views remain anchored to today.
+    const xMax=weeks ? Math.max(today,startMs+604800000) : fullEnd;
+    const baseMin=weeks ? Math.max(startMs,today-weeks*604800000) : startMs;
+    const span=Math.max(86400000,xMax-baseMin);
+    const xMin=Math.max(startMs,xMax-span/Math.max(1,zoom));
+    const targetAt=time=>start+selected*((time-startMs)/604800000);
+    const actual=points.filter(point=>{const ms=dateValue(point.date);return ms>=xMin&&ms<=xMax;});
+    const values=[...actual.map(point=>point.weight),targetAt(xMin),targetAt(xMax)];
+    const targetWeight=finite(goal.goalWeight);
+    if(targetWeight!==null)values.push(targetWeight);
+    const lo=Math.min(...values)-1,hi=Math.max(...values)+1;
+    const x=time=>42+302*(time-xMin)/Math.max(1,xMax-xMin);
+    const y=weight=>194-162*(weight-lo)/Math.max(1,hi-lo);
+    const path=actual.map((point,i)=>(i?"L":"M")+x(dateValue(point.date)).toFixed(1)+","+y(point.weight).toFixed(1)).join(" ");
+    const targetEnd=endMs!==null ? Math.min(xMax,endMs) : xMax;
+    const target='M'+x(xMin).toFixed(1)+','+y(targetAt(xMin)).toFixed(1)+' L'+x(targetEnd).toFixed(1)+','+y(targetAt(targetEnd)).toFixed(1);
+    const goalLine=targetWeight!==null?'<line x1="42" x2="344" y1="'+y(targetWeight)+'" y2="'+y(targetWeight)+'" stroke="#51c99c" stroke-width="1.4" stroke-dasharray="5 5"/>':"";
+    const endDot=endMs!==null&&endMs>=xMin&&endMs<=xMax?'<circle cx="'+x(endMs)+'" cy="'+y(targetAt(endMs))+'" r="4" fill="#f25265"/><text x="'+Math.min(340,x(endMs))+'" y="'+(y(targetAt(endMs))-10)+'" text-anchor="end" fill="currentColor" font-size="10">Goal</text>':"";
+    const ticks=[0,1,2,3].map(i=>{const val=lo+(hi-lo)*i/3;return '<g><line x1="42" x2="344" y1="'+y(val)+'" y2="'+y(val)+'" stroke="currentColor" opacity=".12"/><text x="35" y="'+(y(val)+4)+'" text-anchor="end" fill="currentColor" opacity=".65" font-size="10">'+format(val)+'</text></g>';}).join("");
+    const label=ms=>new Date(ms).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+    return '<svg class="lugt-chart" viewBox="0 0 354 220" role="img" aria-label="Trend weight and target trajectory through the projected goal date"><g>'+ticks+goalLine+'<path d="'+target+'" stroke="#f25265" stroke-width="2.4" fill="none"/>'+endDot+(path?'<path d="'+path+'" stroke="#9c9bd7" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" fill="none"/>':"")+'</g><text x="42" y="214" fill="currentColor" opacity=".65" font-size="10">'+label(xMin)+'</text><text x="344" y="214" text-anchor="end" fill="currentColor" opacity=".65" font-size="10">'+label(xMax)+'</text></svg>';
 }
 function projectedEndDate(data) {
     const {goal,startMs} = data;
@@ -70,16 +82,36 @@ export function renderGoalTrajectory() {
     styles();
     let card=document.getElementById(ID);
     if(!card){card=document.createElement("section");card.id=ID;const anchor=section.querySelector(".weight-summary");anchor?.insertAdjacentElement("afterend",card);if(!card.isConnected)section.append(card);}
-    const previous=card.dataset.range||"12";
+    const previous=card.dataset.range||"0";
+    const zoom=Math.max(1,Math.min(16,Number(card.dataset.zoom)||1));
     const data=model(),goal=data.goal;
     if(!goal.configured){card.hidden=true;return;}card.hidden=false;
     const progress=Math.max(0,Math.min(100,finite(goal.percent)||0));
-    card.innerHTML='<div class="lugt-head"><div><h3>Goal Progress</h3><div class="lugt-sub">'+safe(goal.phaseLabel)+'</div></div><div class="lugt-tabs" aria-label="Graph time range">'+[["4","4W"],["12","12W"],["0","All"]].map(([v,label])=>'<button type="button" data-range="'+v+'" aria-pressed="'+(v===previous)+'">'+label+'</button>').join("")+'</div></div><div data-chart>'+graph(data,Number(previous))+'</div><div class="lugt-legend"><span><i style="background:#9c9bd7"></i>Trend weight</span><span><i style="background:#f25265"></i>Target trajectory</span><span><i style="background:#51c99c"></i>Goal weight</span></div><div class="lugt-metrics"><div><small>Start</small><strong>'+format(goal.startWeight)+' lb</strong></div><div><small>Current trend</small><strong>'+format(goal.currentWeight)+' lb</strong></div><div><small>Goal</small><strong>'+format(goal.goalWeight)+' lb</strong></div></div><div class="lugt-progress"><span style="width:'+progress+'%"></span></div><div class="lugt-note">'+Math.round(progress)+'% complete</div><div class="lugt-metrics"><div><small>Target rate</small><strong>'+rate(goal.selectedRateLbPerWeek)+'</strong></div><div><small>Actual trend rate</small><strong>'+ (goal.actualRateStatus==="insufficient"?"Calibrating":rate(goal.actualRateLbPerWeek))+'</strong></div><div><small>Difference</small><strong>'+ (finite(goal.actualRateLbPerWeek)!==null&&finite(goal.selectedRateLbPerWeek)!==null?rate(goal.actualRateLbPerWeek-goal.selectedRateLbPerWeek):"—")+'</strong></div></div><p class="lugt-note"><strong>Projected goal date:</strong> '+safe(projectedEndDate(data))+' · Based on your selected target rate, not a prediction.</p><p class="lugt-note">The zigzag line is smoothed trend weight, not individual weigh-ins. The straight line is your selected weekly target. Future target values are plans, not predictions.</p>';
+    card.innerHTML='<div class="lugt-head"><div><h3>Goal Progress</h3><div class="lugt-sub">'+safe(goal.phaseLabel)+'</div></div><div class="lugt-tabs" aria-label="Graph time range">'+[["4","4W"],["12","12W"],["0","All"]].map(([v,label])=>'<button type="button" data-range="'+v+'" aria-pressed="'+(v===previous)+'">'+label+'</button>').join("")+'</div></div><div data-chart>'+graph(data,Number(previous),zoom)+'</div><div class="lugt-legend"><span><i style="background:#9c9bd7"></i>Trend weight</span><span><i style="background:#f25265"></i>Target trajectory</span><span><i style="background:#51c99c"></i>Goal weight</span></div><div class="lugt-metrics"><div><small>Start</small><strong>'+format(goal.startWeight)+' lb</strong></div><div><small>Current trend</small><strong>'+format(goal.currentWeight)+' lb</strong></div><div><small>Goal</small><strong>'+format(goal.goalWeight)+' lb</strong></div></div><div class="lugt-progress"><span style="width:'+progress+'%"></span></div><div class="lugt-note">'+Math.round(progress)+'% complete</div><div class="lugt-metrics"><div><small>Target rate</small><strong>'+rate(goal.selectedRateLbPerWeek)+'</strong></div><div><small>Actual trend rate</small><strong>'+ (goal.actualRateStatus==="insufficient"?"Calibrating":rate(goal.actualRateLbPerWeek))+'</strong></div><div><small>Difference</small><strong>'+ (finite(goal.actualRateLbPerWeek)!==null&&finite(goal.selectedRateLbPerWeek)!==null?rate(goal.actualRateLbPerWeek-goal.selectedRateLbPerWeek):"—")+'</strong></div></div><p class="lugt-note"><strong>Projected goal date:</strong> '+safe(projectedEndDate(data))+' · Based on your selected target rate, not a prediction.</p><p class="lugt-note">The zigzag line is smoothed trend weight, not individual weigh-ins. The straight line is your selected weekly target. Future target values are plans, not predictions.</p>';
     card.dataset.range=previous;
+    card.dataset.zoom=String(zoom);
     mountInCarousel(section,card);
-    card.querySelectorAll("[data-range]").forEach(button=>button.addEventListener("click",()=>{card.dataset.range=button.dataset.range;renderGoalTrajectory();}));
+    bindZoom(card);
+    card.querySelectorAll("[data-range]").forEach(button=>button.addEventListener("click",()=>{card.dataset.range=button.dataset.range;card.dataset.zoom="1";renderGoalTrajectory();}));
 }
 
+function bindZoom(card) {
+    if(card.dataset.zoomBound==="1")return;
+    card.dataset.zoomBound="1";
+    const chart=card.querySelector("[data-chart]");
+    if(!chart)return;
+    let pinch=null;
+    const distance=event=>Math.hypot(event.touches[0].clientX-event.touches[1].clientX,event.touches[0].clientY-event.touches[1].clientY);
+    chart.addEventListener("touchstart",event=>{if(event.touches.length===2)pinch={distance:distance(event),zoom:Number(card.dataset.zoom)||1};},{passive:true});
+    chart.addEventListener("touchmove",event=>{
+        if(!pinch||event.touches.length!==2)return;
+        event.preventDefault();
+        const next=Math.max(1,Math.min(16,pinch.zoom*distance(event)/Math.max(1,pinch.distance)));
+        card.dataset.zoom=String(next);
+        chart.innerHTML=graph(model(),Number(card.dataset.range)||0,next);
+    },{passive:false});
+    chart.addEventListener("touchend",event=>{if(event.touches.length<2)pinch=null;},{passive:true});
+}
 function mountInCarousel(section,card) {
     const chart=section.querySelector(".weight-chart-card");
     const track=chart?.querySelector("[data-weight-graph-carousel-track-v2]");
