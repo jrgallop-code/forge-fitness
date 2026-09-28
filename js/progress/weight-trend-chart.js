@@ -6,9 +6,9 @@ const GOAL_WEIGHT_STORAGE_KEY = "level_up_goal_weight";
 const NUTRITION_PHASES_STORAGE_KEY = "level_up_nutrition_phases";
 const RANGE_STORAGE_KEY = "level_up_weight_chart_range";
 const RANGE_STYLE_ID = "level-up-weight-chart-range-styles";
-const TREND_GREEN = "#45cb75";
-const DAILY_WEIGHT_LINE = "rgba(112, 181, 137, 0.34)";
-const DAILY_WEIGHT_POINT = "rgba(126, 194, 151, 0.82)";
+const TREND_ACCENT = "#e71929";
+const DAILY_WEIGHT_LINE_OPACITY = 0.34;
+const DAILY_WEIGHT_POINT_OPACITY = 0.82;
 const RANGE_OPTIONS = [
     { id: "1w", label: "1W", days: 7 },
     { id: "1m", label: "1M", days: 30 },
@@ -22,6 +22,12 @@ let queued = false;
 
 function themeColor(token, fallback) {
     return getComputedStyle(document.documentElement).getPropertyValue(token).trim() || fallback;
+}
+
+function weightAccent() {
+    const theme = document.documentElement.dataset.theme;
+    if (theme === "arctic") return themeColor("--accent", "#1769e0");
+    return themeColor("--accent", TREND_ACCENT);
 }
 
 function localDateString(date = new Date()) {
@@ -107,7 +113,7 @@ function ensureRangeStyles() {
     style.textContent = `
         #weight-progress .weight-chart-range-control{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin:10px 0 6px;padding:3px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.025)}
         #weight-progress .weight-chart-range-control button{min-width:0;min-height:32px;margin:0;padding:5px 3px;border:1px solid transparent;border-radius:8px;background:transparent;color:#8f8f98;font-size:10px;font-weight:900;letter-spacing:.02em;line-height:1;touch-action:manipulation}
-        #weight-progress .weight-chart-range-control button[aria-pressed="true"]{border-color:rgba(69,203,117,.45);background:rgba(31,92,55,.52);color:#fff;box-shadow:inset 0 0 0 1px rgba(69,203,117,.08)}
+        #weight-progress .weight-chart-range-control button[aria-pressed="true"]{border-color:color-mix(in srgb,var(--accent,#e71929) 45%,transparent);background:color-mix(in srgb,var(--accent,#e71929) 32%,transparent);color:#fff;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent,#e71929) 8%,transparent)}
         #weight-progress .weight-chart-range-control button:disabled{opacity:.32}
         @media(max-width:380px){#weight-progress .weight-chart-range-control{gap:3px;padding:3px}#weight-progress .weight-chart-range-control button{min-height:30px;padding-inline:2px;font-size:9px}}
     `;
@@ -250,7 +256,7 @@ function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntrie
             const yy = y(entry.weight);
             if (index === 0) context.moveTo(xx, yy); else context.lineTo(xx, yy);
         });
-        context.strokeStyle = DAILY_WEIGHT_LINE;
+        context.strokeStyle = `color-mix(in srgb, ${weightAccent()} ${DAILY_WEIGHT_LINE_OPACITY * 100}%, transparent)`;
         context.lineWidth = 1.4;
         context.stroke();
     }
@@ -258,13 +264,13 @@ function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntrie
     entries.forEach(entry => {
         context.beginPath();
         context.arc(x(entry.date), y(entry.weight), 2.7, 0, Math.PI * 2);
-        context.fillStyle = DAILY_WEIGHT_POINT;
+        context.fillStyle = `color-mix(in srgb, ${weightAccent()} ${DAILY_WEIGHT_POINT_OPACITY * 100}%, transparent)`;
         context.fill();
     });
 
     if (trendSeries.length >= 2) {
         context.save();
-        context.shadowColor = "rgba(69,203,117,.3)";
+        context.shadowColor = `color-mix(in srgb, ${weightAccent()} 30%, transparent)`;
         context.shadowBlur = 8;
         context.beginPath();
         trendSeries.forEach((entry, index) => {
@@ -272,7 +278,7 @@ function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntrie
             const yy = y(entry.weight);
             if (index === 0) context.moveTo(xx, yy); else context.lineTo(xx, yy);
         });
-        context.strokeStyle = themeColor("--success", TREND_GREEN);
+        context.strokeStyle = weightAccent();
         context.lineWidth = 3;
         context.lineJoin = "round";
         context.lineCap = "round";
