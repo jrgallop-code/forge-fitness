@@ -276,3 +276,5 @@ Release 161: fix Goal Progress card markup and overlapping layout.
 Release 162: unify Dashboard and Progress goal date, rate and future projection.
 
 Release 163: separate heaviest-weight and estimated 1RM PRs in live workouts and recap.
+
+Release 164: weight chart appearance colours.
