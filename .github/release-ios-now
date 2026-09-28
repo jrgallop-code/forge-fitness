@@ -262,3 +262,5 @@ TestFlight build 154: harden automatic cloud backup against iOS suspension/stora
 TestFlight build 155: add native SQLite persistence safety layer for iOS. Existing Level Up local data automatically migrates into an Application Support SQLite database on first launch; Level Up/Forge storage writes are mirrored transactionally with WAL + FULL synchronous durability; auth tokens are excluded; missing WebView data is restored from SQLite before login/cloud recovery; retain hardened near-immediate cloud backup from build 154.
 
 TestFlight build 156: track signed-in iOS Account & Cloud activity with the native platform identifier so owner analytics can distinguish iOS usage from PWA usage.
+
+Release 157: Goal Progress trend weight versus target trajectory in iOS test build.
