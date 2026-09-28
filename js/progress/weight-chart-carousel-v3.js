@@ -140,7 +140,7 @@ function syncPager(card) {
     card.querySelectorAll("[data-weight-graph-page-v2]").forEach(button => {
         button.setAttribute("aria-pressed", String(Number(button.dataset.weightGraphPageV2) === index));
     });
-    if (index === 1) scheduleRefresh(card);
+    if (index === 2) scheduleRefresh(card);
 }
 
 function bindRefreshes(card) {
