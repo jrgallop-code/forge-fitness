@@ -266,3 +266,5 @@ TestFlight build 156: track signed-in iOS Account & Cloud activity with the nati
 Release 157: Goal Progress trend weight versus target trajectory in iOS test build.
 
 Release 158: retry Goal Progress with iOS version 1.0.2 after Apple rejected 1.0.1.
+
+Release 159: Goal swipe carousel, projected goal date, full target trajectory and pinch zoom.
