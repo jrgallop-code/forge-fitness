@@ -158,7 +158,7 @@ function renderLanding({ content, page, sourceHome, landing, state }) {
                 <span class="workout-live-finisher-count">${finisherPlans.length} finishers</span>
             </div>
             <div class="workout-live-filter-strip workout-live-finisher-filters" aria-label="Finisher categories">
-                ${finisherCategories.map(category => `<button type="button" class="workout-live-filter" data-workout-live-finisher-filter="${escapeHtml(category)}"><span class="workout-live-filter-icon">${dumbbellIcon()}</span><span><small>Target</small><strong>${escapeHtml(category)}</strong></span><i>›</i></button>`).join("")}
+                <button type="button" class="workout-live-filter active" data-workout-live-finisher-filter="All"><span class="workout-live-filter-icon">${gridIcon()}</span><span><small>Browse</small><strong>All</strong></span><i>›</i></button>${finisherCategories.map(category => `<button type="button" class="workout-live-filter" data-workout-live-finisher-filter="${escapeHtml(category)}"><span class="workout-live-filter-icon">${dumbbellIcon()}</span><span><small>Target</small><strong>${escapeHtml(category)}</strong></span><i>›</i></button>`).join("")}
             </div>
             <div class="workout-live-recommended workout-live-finisher-grid" aria-label="Workout finishers">
                 ${finisherPlans.map((plan, index) => renderFinisherCard(plan, index)).join("")}
@@ -228,8 +228,9 @@ function bindLandingActions({ content, page, sourceHome, landing, state, render 
         button.addEventListener("click", () => {
             const category = button.dataset.workoutLiveFinisherFilter;
             landing.querySelectorAll("[data-workout-live-finisher-card]").forEach(card => {
-                card.hidden = card.dataset.finisherCategory !== category;
+                card.hidden = category !== "All" && card.dataset.finisherCategory !== category;
             });
+            landing.querySelectorAll("[data-workout-live-finisher-filter]").forEach(item => item.classList.toggle("active", item === button));
         });
     });
 
