@@ -2454,7 +2454,7 @@ export const presetPlans = [
       { id: "seated-calf-raise", sets: 4, reps: "10-15" }
     ]}
   ]
-}
+    },
 
     ...finisherPlans
 ];
