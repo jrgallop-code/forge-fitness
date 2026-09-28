@@ -17,7 +17,8 @@ const allCataloguePlans = [
     ...celebrityWorkoutPlans,
     ...bodybuilderWorkoutPlans,
     ...celebrityExpansionPlans
-].filter((plan, index, plans) => plans.findIndex(candidate => String(candidate?.id) === String(plan?.id)) === index);
+].filter(plan => String(plan?.trainingType || "").toLowerCase() !== "finisher")
+ .filter((plan, index, plans) => plans.findIndex(candidate => String(candidate?.id) === String(plan?.id)) === index);
 
 const exerciseMap = new Map(getAllExercises().map(exercise => [exercise.id, exercise]));
 const finisherCategories = ["Arms", "Shoulders", "Legs", "Back", "Core", "Full Body"];
