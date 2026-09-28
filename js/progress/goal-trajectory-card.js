@@ -16,7 +16,8 @@ function phase() {
 function model() {
     const goal = getGoalTimelineViewModel();
     const active = phase();
-    const today = new Date().toLocaleDateString("en-CA");
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
     const weights = normalizeWeightEntries(parse("forge_weight_entries", [])).filter(item => item.date <= today);
     const trend = calculateVisibleWeightTrend(weights);
     const startDate = active?.startDate || parse("level_up_current_goal", {})?.startDate || weights[0]?.date;
@@ -36,7 +37,7 @@ function graph(data, weeks) {
     const actual = shown.length ? shown : points.slice(-1);
     const end = Math.max(Date.now(),dateValue(actual.at(-1).date));
     const projected = Math.max(end, startMs + 6 * 7 * 86400000);
-    const xMin = Math.min(startMs, dateValue(actual[0].date));
+    const xMin = weeks ? Math.max(startMs, cutoff) : startMs;
     const xMax = projected;
     const targetAt = time => start + selected * ((time - startMs) / 604800000);
     const values = [...actual.map(point => point.weight),targetAt(xMin),targetAt(xMax),finite(goal.goalWeight)].filter(value => value !== null);
@@ -48,6 +49,15 @@ function graph(data, weeks) {
     const goalLine = finite(goal.goalWeight) !== null ? '<line x1="42" x2="344" y1="'+y(goal.goalWeight)+'" y2="'+y(goal.goalWeight)+'" stroke="#51c99c" stroke-width="1.4" stroke-dasharray="5 5"/>' : "";
     const ticks = [0,1,2,3].map(i => {const val=lo+(hi-lo)*i/3;return '<g><line x1="42" x2="344" y1="'+y(val)+'" y2="'+y(val)+'" stroke="currentColor" opacity=".12"/><text x="35" y="'+(y(val)+4)+'" text-anchor="end" fill="currentColor" opacity=".65" font-size="10">'+format(val)+'</text></g>';}).join("");
     return '<svg class="lugt-chart" viewBox="0 0 354 220" role="img" aria-label="Smoothed trend weight compared with the target weight trajectory"><g>'+ticks+goalLine+'<path d="'+target+'" stroke="#f25265" stroke-width="2.4" fill="none"/><path d="'+path+'" stroke="#9c9bd7" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" fill="none"/></g><text x="42" y="214" fill="currentColor" opacity=".65" font-size="10">'+safe(actual[0].date)+'</text><text x="344" y="214" text-anchor="end" fill="currentColor" opacity=".65" font-size="10">'+new Date(xMax).toLocaleDateString(undefined,{month:"short",day:"numeric"})+'</text></svg>';
+}
+function projectedEndDate(data) {
+    const {goal,startMs} = data;
+    const start=finite(goal.startWeight), target=finite(goal.goalWeight), weekly=finite(goal.selectedRateLbPerWeek);
+    if(start===null||target===null||weekly===null||!Number.isFinite(startMs)||weekly===0)return "Not available";
+    const weeks=(target-start)/weekly;
+    if(!Number.isFinite(weeks)||weeks<0||weeks>520)return "Not available";
+    const date=new Date(startMs+weeks*604800000);
+    return date.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
 }
 function styles() {
     if(document.getElementById(styleId))return;
@@ -64,14 +74,40 @@ export function renderGoalTrajectory() {
     const data=model(),goal=data.goal;
     if(!goal.configured){card.hidden=true;return;}card.hidden=false;
     const progress=Math.max(0,Math.min(100,finite(goal.percent)||0));
-    card.innerHTML='<div class="lugt-head"><div><h3>Goal Progress</h3><div class="lugt-sub">'+safe(goal.phaseLabel)+'</div></div><div class="lugt-tabs" aria-label="Graph time range">'+[["4","4W"],["12","12W"],["0","All"]].map(([v,label])=>'<button type="button" data-range="'+v+'" aria-pressed="'+(v===previous)+'">'+label+'</button>').join("")+'</div></div><div data-chart>'+graph(data,Number(previous))+'</div><div class="lugt-legend"><span><i style="background:#9c9bd7"></i>Trend weight</span><span><i style="background:#f25265"></i>Target trajectory</span><span><i style="background:#51c99c"></i>Goal weight</span></div><div class="lugt-metrics"><div><small>Start</small><strong>'+format(goal.startWeight)+' lb</strong></div><div><small>Current trend</small><strong>'+format(goal.currentWeight)+' lb</strong></div><div><small>Goal</small><strong>'+format(goal.goalWeight)+' lb</strong></div></div><div class="lugt-progress"><span style="width:'+progress+'%"></span></div><div class="lugt-note">'+Math.round(progress)+'% complete</div><div class="lugt-metrics"><div><small>Target rate</small><strong>'+rate(goal.selectedRateLbPerWeek)+'</strong></div><div><small>Actual trend rate</small><strong>'+ (goal.actualRateStatus==="insufficient"?"Calibrating":rate(goal.actualRateLbPerWeek))+'</strong></div><div><small>Difference</small><strong>'+ (finite(goal.actualRateLbPerWeek)!==null&&finite(goal.selectedRateLbPerWeek)!==null?rate(goal.actualRateLbPerWeek-goal.selectedRateLbPerWeek):"—")+'</strong></div></div><p class="lugt-note">The zigzag line is smoothed trend weight, not individual weigh-ins. The straight line is your selected weekly target. Future target values are plans, not predictions.</p>';
+    card.innerHTML='<div class="lugt-head"><div><h3>Goal Progress</h3><div class="lugt-sub">'+safe(goal.phaseLabel)+'</div></div><div class="lugt-tabs" aria-label="Graph time range">'+[["4","4W"],["12","12W"],["0","All"]].map(([v,label])=>'<button type="button" data-range="'+v+'" aria-pressed="'+(v===previous)+'">'+label+'</button>').join("")+'</div></div><div data-chart>'+graph(data,Number(previous))+'</div><div class="lugt-legend"><span><i style="background:#9c9bd7"></i>Trend weight</span><span><i style="background:#f25265"></i>Target trajectory</span><span><i style="background:#51c99c"></i>Goal weight</span></div><div class="lugt-metrics"><div><small>Start</small><strong>'+format(goal.startWeight)+' lb</strong></div><div><small>Current trend</small><strong>'+format(goal.currentWeight)+' lb</strong></div><div><small>Goal</small><strong>'+format(goal.goalWeight)+' lb</strong></div></div><div class="lugt-progress"><span style="width:'+progress+'%"></span></div><div class="lugt-note">'+Math.round(progress)+'% complete</div><div class="lugt-metrics"><div><small>Target rate</small><strong>'+rate(goal.selectedRateLbPerWeek)+'</strong></div><div><small>Actual trend rate</small><strong>'+ (goal.actualRateStatus==="insufficient"?"Calibrating":rate(goal.actualRateLbPerWeek))+'</strong></div><div><small>Difference</small><strong>'+ (finite(goal.actualRateLbPerWeek)!==null&&finite(goal.selectedRateLbPerWeek)!==null?rate(goal.actualRateLbPerWeek-goal.selectedRateLbPerWeek):"—")+'</strong></div></div><p class="lugt-note"><strong>Projected goal date:</strong> '+safe(projectedEndDate(data))+' · Based on your selected target rate, not a prediction.</p><p class="lugt-note">The zigzag line is smoothed trend weight, not individual weigh-ins. The straight line is your selected weekly target. Future target values are plans, not predictions.</p>';
     card.dataset.range=previous;
+    mountInCarousel(section,card);
     card.querySelectorAll("[data-range]").forEach(button=>button.addEventListener("click",()=>{card.dataset.range=button.dataset.range;renderGoalTrajectory();}));
+}
+
+function mountInCarousel(section,card) {
+    const chart=section.querySelector(".weight-chart-card");
+    const track=chart?.querySelector("[data-weight-graph-carousel-track-v2]");
+    const pager=chart?.querySelector(".weight-graph-carousel-pager-v2");
+    const carbs=track?.querySelector('[data-weight-graph-slide-v2="carbs"]');
+    if(!track||!pager||!carbs)return;
+    let slide=track.querySelector('[data-weight-graph-slide-v2="goal"]');
+    if(!slide){slide=document.createElement("section");slide.className="weight-graph-carousel-slide-v2 is-goal";slide.dataset.weightGraphSlideV2="goal";track.insertBefore(slide,carbs);}
+    if(card.parentElement!==slide)slide.appendChild(card);
+    let button=pager.querySelector('[data-weight-graph-page-v2="1"]');
+    if(!button||button.textContent!=="Goal"){
+        button=document.createElement("button");button.type="button";button.dataset.weightGraphPageV2="1";button.textContent="Goal";button.setAttribute("aria-pressed","false");pager.insertBefore(button,pager.firstElementChild?.nextSibling||null);
+        button.addEventListener("click",()=>track.scrollTo({left:track.clientWidth,behavior:"smooth"}));
+    }
+    pager.querySelectorAll("button").forEach(item=>{
+        if(item===button)return;
+        if(item.textContent?.trim()==="Weight + Carbs")item.dataset.weightGraphPageV2="2";
+        if(item.textContent?.trim()==="Weight + Calories")item.dataset.weightGraphPageV2="3";
+    });
+    const calories=track.querySelector('[data-weight-graph-slide-v2="calories"]');
+    if(calories&&calories.previousElementSibling!==carbs)track.append(calories);
+    card.style.margin="0";
 }
 let pending=false;
 function queue(){if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;renderGoalTrajectory();});}
-new MutationObserver(records=>{if(records.some(record=>[...record.addedNodes].some(node=>node.nodeType===1&&(node.id==="weight-progress"||node.querySelector?.("#weight-progress")))))queue();}).observe(document.documentElement,{childList:true,subtree:true});
+new MutationObserver(records=>{if(records.some(record=>[...record.addedNodes].some(node=>node.nodeType===1&&(node.id==="weight-progress"||node.querySelector?.("#weight-progress")||node.matches?.("[data-weight-graph-carousel-track-v2]")))))queue();}).observe(document.documentElement,{childList:true,subtree:true});
 document.addEventListener("click",event=>{if(event.target.closest?.("#weight-tab"))setTimeout(queue,0);});
 window.addEventListener("storage",queue);
 document.addEventListener("weight:updated",queue);
+["levelup:weight-updated","levelup:nutrition-phase-updated"].forEach(name=>window.addEventListener(name,queue));
 queue();
