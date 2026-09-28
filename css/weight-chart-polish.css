@@ -14,7 +14,7 @@
     inset: auto 12% -46px;
     height: 90px;
     border-radius: 50%;
-    background: rgba(69,203,117,.07);
+    background: color-mix(in srgb, var(--accent, #e71929) 7%, transparent);
     filter: blur(34px);
     pointer-events: none;
 }
@@ -30,7 +30,7 @@
 #weight-progress .weight-chart-kicker {
     display: block;
     margin-bottom: 6px;
-    color: #45cb75;
+    color: var(--accent, #e71929);
     font-size: 9px;
     font-weight: 900;
     letter-spacing: .18em;
@@ -69,7 +69,7 @@
 }
 
 #weight-progress .weight-chart-period-stat strong {
-    color: #74dc98;
+    color: var(--accent, #e71929);
     font-size: 22px;
     letter-spacing: -.025em;
     line-height: 1.1;
@@ -112,10 +112,10 @@
 }
 
 #weight-progress .weight-chart-range-control button[aria-pressed="true"] {
-    border-color: rgba(69,203,117,.45);
-    background: rgba(31,92,55,.52);
+    border-color: color-mix(in srgb, var(--accent, #e71929) 45%, transparent);
+    background: color-mix(in srgb, var(--accent, #e71929) 32%, transparent);
     color: #fff;
-    box-shadow: inset 0 0 0 1px rgba(69,203,117,.08);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent, #e71929) 8%, transparent);
 }
 
 #weight-progress .weight-chart-range-control button:disabled {
