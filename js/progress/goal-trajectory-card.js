@@ -53,9 +53,14 @@ function graph(data, range, zoom=1) {
     const y=weight=>194-162*(weight-lo)/Math.max(1,hi-lo);
     const path=actual.map((point,i)=>(i?"L":"M")+x(dateValue(point.date)).toFixed(1)+","+y(point.weight).toFixed(1)).join(" ");
     const targetEnd=endMs!==null ? Math.min(xMax,endMs) : xMax;
-    const target='M'+x(xMin).toFixed(1)+','+y(targetAt(xMin)).toFixed(1)+' L'+x(targetEnd).toFixed(1)+','+y(targetAt(targetEnd)).toFixed(1);
+    const current=finite(goal.currentWeight);
+    const historicalEnd=Math.min(xMax,Math.max(xMin,today));
+    const target='M'+x(xMin).toFixed(1)+','+y(targetAt(xMin)).toFixed(1)+' L'+x(historicalEnd).toFixed(1)+','+y(targetAt(historicalEnd)).toFixed(1)
+        +(current!==null&&endMs!==null&&endMs>today&&xMax>today
+          ? ' M'+x(today).toFixed(1)+','+y(current).toFixed(1)+' L'+x(targetEnd).toFixed(1)+','+y(finite(goal.goalWeight)).toFixed(1)
+          : '');
     const goalLine=targetWeight!==null?'<line x1="42" x2="344" y1="'+y(targetWeight)+'" y2="'+y(targetWeight)+'" stroke="#51c99c" stroke-width="1.4" stroke-dasharray="5 5"/>':"";
-    const endDot=endMs!==null&&endMs>=xMin&&endMs<=xMax?'<circle cx="'+x(endMs)+'" cy="'+y(targetAt(endMs))+'" r="4" fill="#f25265"/><text x="'+Math.min(340,x(endMs))+'" y="'+(y(targetAt(endMs))-10)+'" text-anchor="end" fill="currentColor" font-size="10">Goal</text>':"";
+    const endDot=endMs!==null&&endMs>=xMin&&endMs<=xMax?'<circle cx="'+x(endMs)+'" cy="'+y(goal.goalWeight)+'" r="4" fill="#f25265"/><text x="'+Math.min(340,x(endMs))+'" y="'+(y(goal.goalWeight)-10)+'" text-anchor="end" fill="currentColor" font-size="10">Goal</text>':"";
     const ticks=[0,1,2,3].map(i=>{const val=lo+(hi-lo)*i/3;return '<g><line x1="42" x2="344" y1="'+y(val)+'" y2="'+y(val)+'" stroke="currentColor" opacity=".12"/><text x="35" y="'+(y(val)+4)+'" text-anchor="end" fill="currentColor" opacity=".65" font-size="10">'+format(val)+'</text></g>';}).join("");
     const label=ms=>new Date(ms).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
     return '<svg class="lugt-chart" viewBox="0 0 354 220" role="img" aria-label="Trend weight and target trajectory through the projected goal date"><g>'+ticks+goalLine+'<path d="'+target+'" stroke="#f25265" stroke-width="2.4" fill="none"/>'+endDot+(path?'<path d="'+path+'" stroke="#9c9bd7" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" fill="none"/>':"")+'</g><text x="42" y="214" fill="currentColor" opacity=".65" font-size="10">'+label(xMin)+'</text><text x="344" y="214" text-anchor="end" fill="currentColor" opacity=".65" font-size="10">'+label(xMax)+'</text></svg>';
