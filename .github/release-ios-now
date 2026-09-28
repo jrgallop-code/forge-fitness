@@ -264,3 +264,5 @@ TestFlight build 155: add native SQLite persistence safety layer for iOS. Existi
 TestFlight build 156: track signed-in iOS Account & Cloud activity with the native platform identifier so owner analytics can distinguish iOS usage from PWA usage.
 
 Release 157: Goal Progress trend weight versus target trajectory in iOS test build.
+
+Release 158: retry Goal Progress with iOS version 1.0.2 after Apple rejected 1.0.1.
