@@ -69,7 +69,7 @@ function refreshLiveDisplay() {
 
         const badge = document.createElement("div");
         badge.className = "live-pr-exercise-badge";
-        badge.innerHTML = `${trophyIcon()}<span>PR achieved</span>`;
+        badge.innerHTML = `${trophyIcon()}<span>${detail.types?.map(type=>type==="weight"?"Weight PR":"Estimated 1RM PR").join(" + ")||"PR achieved"}</span>`;
         card.querySelector("h4")?.insertAdjacentElement("afterend", badge);
     });
 }
@@ -90,7 +90,7 @@ function handleCompletedSet(button, beforeStatus) {
 
     const beforeDetail = beforeStatus?.details?.get(exerciseId);
     const newlyEstablished = !beforeDetail;
-    const improvedAgain = beforeDetail && afterDetail.score > beforeDetail.score + SCORE_EPSILON;
+    const improvedAgain = beforeDetail && (afterDetail.score > beforeDetail.score + SCORE_EPSILON || afterDetail.types?.some(type=>!beforeDetail.types?.includes(type)));
     if (!newlyEstablished && !improvedAgain) return;
     showPrToast(exerciseId, afterDetail);
 }
@@ -119,7 +119,7 @@ function formatPrDetail(detail) {
     if (detail?.mode === "weighted") {
         const weight = Number(set.weight);
         const reps = Number(set.reps);
-        return `${weight} lb × ${reps} · est. 1RM ${Math.round(detail.score)} lb`;
+        return `${detail.types?.map(type=>type==="weight"?"Heaviest weight PR":"Estimated 1RM PR").join(" + ")||"PR"} · ${weight} lb × ${reps} · est. 1RM ${Math.round(detail.score)} lb`;
     }
     return `${Number(set.reps) || 0} reps`;
 }
