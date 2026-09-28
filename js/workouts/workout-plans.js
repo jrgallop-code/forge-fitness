@@ -1,3 +1,5 @@
+import { finisherPlans } from "./finisher-plans.js?v=pwa-finisher-library-1";
+
 export const presetPlans = [
 
     {
@@ -2454,6 +2456,7 @@ export const presetPlans = [
   ]
 }
 
+    ...finisherPlans
 ];
 
 
