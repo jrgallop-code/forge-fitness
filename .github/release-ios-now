@@ -270,3 +270,5 @@ Release 158: retry Goal Progress with iOS version 1.0.2 after Apple rejected 1.0
 Release 159: Goal swipe carousel, projected goal date, full target trajectory and pinch zoom.
 
 Release 160: shared graph range, swipe pagination dots and compact projected goal date.
+
+Release 161: fix Goal Progress card markup and overlapping layout.
