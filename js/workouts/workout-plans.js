@@ -1,5 +1,3 @@
-import { finisherPlans } from "./finisher-plans.js?v=pwa-finisher-library-1";
-
 export const presetPlans = [
 
     {
@@ -2454,9 +2452,8 @@ export const presetPlans = [
       { id: "seated-calf-raise", sets: 4, reps: "10-15" }
     ]}
   ]
-    },
+}
 
-    ...finisherPlans
 ];
 
 
