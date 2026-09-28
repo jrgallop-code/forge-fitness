@@ -149,11 +149,3 @@
     .workout-live-row-copy>em{display:none}
     .workout-live-row-meta b:nth-child(2){display:none}
 }
-
-.workout-live-finishers{margin-top:4px}
-.workout-live-finisher-count{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}
-.workout-live-finisher-filters{margin:0 0 10px;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
-.workout-live-finisher-filters::-webkit-scrollbar{display:none}
-.workout-live-finisher-filters .workout-live-filter{min-width:max-content}
-.workout-live-finisher-grid .workout-live-finisher-card{cursor:pointer}
-.workout-live-finisher-card[hidden]{display:none!important}
