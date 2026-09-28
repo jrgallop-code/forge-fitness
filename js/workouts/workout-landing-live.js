@@ -4,7 +4,6 @@ import { presetPlans } from "./workout-plans.js?v=proven-template-builder-1";
 import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-plans-2-women-heroes";
 import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybuilder-library-3";
 import { celebrityExpansionPlans } from "./celebrity-expansion-plans.js?v=celebrity-expansion-2";
-import { finisherPlans } from "./finisher-plans.js?v=pwa-finisher-library-1";
 import { getPlanArtwork } from "./workout-art-manifest.js?v=workout-art-direction-1";
 import "./workout-plan-details.js?v=pwa-workout-sharing-1";
 
@@ -17,11 +16,9 @@ const allCataloguePlans = [
     ...celebrityWorkoutPlans,
     ...bodybuilderWorkoutPlans,
     ...celebrityExpansionPlans
-].filter(plan => String(plan?.trainingType || "").toLowerCase() !== "finisher")
- .filter((plan, index, plans) => plans.findIndex(candidate => String(candidate?.id) === String(plan?.id)) === index);
+].filter((plan, index, plans) => plans.findIndex(candidate => String(candidate?.id) === String(plan?.id)) === index);
 
 const exerciseMap = new Map(getAllExercises().map(exercise => [exercise.id, exercise]));
-const finisherCategories = ["Arms", "Shoulders", "Legs", "Back", "Core", "Full Body"];
 
 export function initializeWorkoutLandingLive(content = document) {
     const page = content.querySelector?.(".workout-page");
@@ -152,19 +149,6 @@ function renderLanding({ content, page, sourceHome, landing, state }) {
             </div>
         </section>
 
-        <section class="workout-live-section workout-live-finishers" data-workout-live-finishers>
-            <div class="workout-live-section-heading">
-                <div><h2>Finishers</h2><p>Short, targeted workouts to add to the end of your session.</p></div>
-                <span class="workout-live-finisher-count">${finisherPlans.length} finishers</span>
-            </div>
-            <div class="workout-live-filter-strip workout-live-finisher-filters" aria-label="Finisher categories">
-                <button type="button" class="workout-live-filter active" data-workout-live-finisher-filter="All"><span class="workout-live-filter-icon">${gridIcon()}</span><span><small>Browse</small><strong>All</strong></span><i>›</i></button>${finisherCategories.map(category => `<button type="button" class="workout-live-filter" data-workout-live-finisher-filter="${escapeHtml(category)}"><span class="workout-live-filter-icon">${dumbbellIcon()}</span><span><small>Target</small><strong>${escapeHtml(category)}</strong></span><i>›</i></button>`).join("")}
-            </div>
-            <div class="workout-live-recommended workout-live-finisher-grid" aria-label="Workout finishers">
-                ${finisherPlans.map((plan, index) => renderFinisherCard(plan, index)).join("")}
-            </div>
-        </section>
-
         <section class="workout-live-section" data-workout-live-all-plans>
             <div class="workout-live-section-heading">
                 <div>
@@ -214,27 +198,7 @@ function bindLandingActions({ content, page, sourceHome, landing, state, render 
         button.addEventListener("click", () => openFilterSheet({ key: button.dataset.workoutLiveFilter, state, render }));
     });
 
-    landing.querySelectorAll("[data-workout-live-finisher-card]").forEach(card => {
-        const open = () => openCataloguePlan({ content, landing, planId: card.dataset.workoutLiveFinisherCard });
-        card.addEventListener("click", open);
-        card.addEventListener("keydown", event => {
-            if (event.key !== "Enter" && event.key !== " ") return;
-            event.preventDefault();
-            open();
-        });
-    });
-
-    landing.querySelectorAll("[data-workout-live-finisher-filter]").forEach(button => {
-        button.addEventListener("click", () => {
-            const category = button.dataset.workoutLiveFinisherFilter;
-            landing.querySelectorAll("[data-workout-live-finisher-card]").forEach(card => {
-                card.hidden = category !== "All" && card.dataset.finisherCategory !== category;
-            });
-            landing.querySelectorAll("[data-workout-live-finisher-filter]").forEach(item => item.classList.toggle("active", item === button));
-        });
-    });
-
-        landing.querySelectorAll("[data-workout-live-plan-card]").forEach(card => {
+    landing.querySelectorAll("[data-workout-live-plan-card]").forEach(card => {
         const open = () => openCataloguePlan({ content, landing, planId: card.dataset.workoutLivePlanCard });
         card.addEventListener("click", open);
         card.addEventListener("keydown", event => {
@@ -251,26 +215,6 @@ function bindLandingActions({ content, page, sourceHome, landing, state, render 
     landing.querySelectorAll("[data-workout-live-saved-plan]").forEach(button => {
         button.addEventListener("click", () => openSavedPlan({ content, landing, planId: button.dataset.workoutLiveSavedPlan }));
     });
-}
-
-function renderFinisherCard(plan, index) {
-    const stats = planStats(plan);
-    const artwork = getPlanArtwork(plan, index + 24);
-    return `
-        <article class="workout-live-program-card workout-live-finisher-card" data-workout-live-finisher-card="${escapeHtml(plan.id)}" data-finisher-category="${escapeHtml(plan.finisherCategory)}" data-art-family="${escapeHtml(artwork.family)}" tabindex="0" role="button" aria-label="Open ${escapeHtml(plan.name)}">
-            <img src="${escapeHtml(artwork.src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1745329532593-53a9ec306787?auto=format&fit=crop&w=1200&q=82'">
-            <div class="workout-live-program-shade"></div>
-            <span class="workout-live-program-badge">${escapeHtml(plan.estimatedMinutes)} MIN</span>
-            <div class="workout-live-program-copy">
-                <h3>${escapeHtml(plan.name)}</h3>
-                <p>${escapeHtml(shortDescription(plan.description))}</p>
-                <div class="workout-live-program-meta">
-                    <span>${dumbbellIcon()} ${escapeHtml(plan.finisherCategory)}</span>
-                    <span>${barsIcon()} ${escapeHtml(shortLevel(plan.level))}</span>
-                </div>
-            </div>
-        </article>
-    `;
 }
 
 function renderRecommendedCard(plan, index) {
