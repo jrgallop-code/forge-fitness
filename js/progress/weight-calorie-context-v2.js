@@ -46,11 +46,11 @@ function ensureSlide(root) {
         track.appendChild(slide);
     }
 
-    let button = pager.querySelector('[data-weight-graph-page-v2="2"]');
+    let button = pager.querySelector('[data-weight-graph-page-v2="3"]');
     if (!button) {
         button = document.createElement("button");
         button.type = "button";
-        button.dataset.weightGraphPageV2 = "2";
+        button.dataset.weightGraphPageV2 = "3";
         button.setAttribute("aria-pressed", "false");
         button.textContent = "Weight + Calories";
         pager.appendChild(button);
@@ -60,9 +60,9 @@ function ensureSlide(root) {
     if (pager.dataset.calorieV2Bound !== "1") {
         pager.dataset.calorieV2Bound = "1";
         pager.addEventListener("click", event => {
-            const target = event.target.closest?.('[data-weight-graph-page-v2="2"]');
+            const target = event.target.closest?.('[data-weight-graph-page-v2="3"]');
             if (!target) return;
-            track.scrollTo({ left: 2 * track.clientWidth, behavior: "smooth" });
+            track.scrollTo({ left: 3 * track.clientWidth, behavior: "smooth" });
         });
         track.addEventListener("scroll", () => requestAnimationFrame(() => syncPager(card)), { passive: true });
     }
@@ -107,11 +107,11 @@ function renderSlide() {
 function syncPager(card) {
     const track = card.querySelector("[data-weight-graph-carousel-track-v2]");
     if (!track) return;
-    const index = Math.max(0, Math.min(2, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
+    const index = Math.max(0, Math.min(3, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
     card.querySelectorAll("[data-weight-graph-page-v2]").forEach(button => {
         button.setAttribute("aria-pressed", String(Number(button.dataset.weightGraphPageV2) === index));
     });
-    if (index === 2) schedule(card);
+    if (index === 3) schedule(card);
 }
 
 function bindCanvas(card) {
