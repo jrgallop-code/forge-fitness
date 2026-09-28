@@ -272,3 +272,5 @@ Release 159: Goal swipe carousel, projected goal date, full target trajectory an
 Release 160: shared graph range, swipe pagination dots and compact projected goal date.
 
 Release 161: fix Goal Progress card markup and overlapping layout.
+
+Release 162: unify Dashboard and Progress goal date, rate and future projection.
