@@ -25,14 +25,8 @@ function themeColor(token, fallback) {
 }
 
 function weightAccent() {
-    const root = document.documentElement;
-    const appearance = [root.dataset.theme, root.dataset.appearance, document.body?.dataset.theme, document.body?.dataset.appearance, root.className, document.body?.className].join(" ").toLowerCase();
-    const color = appearance.includes("arctic") ? "#1769e0" : "#e71929";
-    const card = document.querySelector("#weight-progress .weight-chart-card");
-    if (card && card.style.getPropertyValue("--weight-chart-accent") !== color) card.style.setProperty("--weight-chart-accent", color);
-    return color;
+    return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#df141e";
 }
-
 function weightTint(alpha) {
     const hex = weightAccent().slice(1);
     return `rgba(${parseInt(hex.slice(0,2),16)},${parseInt(hex.slice(2,4),16)},${parseInt(hex.slice(4,6),16)},${alpha})`;
@@ -278,7 +272,7 @@ function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntrie
 
     if (trendSeries.length >= 2) {
         context.save();
-        context.shadowColor = weightTint(.3);
+        context.shadowColor = weightTint(30);
         context.shadowBlur = 8;
         context.beginPath();
         trendSeries.forEach((entry, index) => {
