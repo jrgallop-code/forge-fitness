@@ -13,7 +13,10 @@ const DAILY_WEIGHT_POINT_OPACITY = 82;
 function weightAccent() {
     const root = document.documentElement;
     const appearance = [root.dataset.theme, root.dataset.appearance, document.body?.dataset.theme, document.body?.dataset.appearance, root.className, document.body?.className].join(" ").toLowerCase();
-    return appearance.includes("arctic") ? "#1769e0" : "#e71929";
+    const color = appearance.includes("arctic") ? "#1769e0" : "#e71929";
+    const card = document.querySelector("#weight-progress .weight-chart-card");
+    if (card && card.style.getPropertyValue("--weight-chart-accent") !== color) card.style.setProperty("--weight-chart-accent", color);
+    return color;
 }
 function weightTint(opacity) {
     const hex=weightAccent().slice(1);
