@@ -25,9 +25,14 @@ function themeColor(token, fallback) {
 }
 
 function weightAccent() {
-    const theme = document.documentElement.dataset.theme;
-    if (theme === "arctic") return themeColor("--accent", "#1769e0");
-    return themeColor("--accent", TREND_ACCENT);
+    const root = document.documentElement;
+    const appearance = [root.dataset.theme, root.dataset.appearance, document.body?.dataset.theme, document.body?.dataset.appearance, root.className, document.body?.className].join(" ").toLowerCase();
+    return appearance.includes("arctic") ? "#1769e0" : "#e71929";
+}
+
+function weightTint(alpha) {
+    const hex = weightAccent().slice(1);
+    return `rgba(${parseInt(hex.slice(0,2),16)},${parseInt(hex.slice(2,4),16)},${parseInt(hex.slice(4,6),16)},${alpha})`;
 }
 
 function localDateString(date = new Date()) {
@@ -256,7 +261,7 @@ function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntrie
             const yy = y(entry.weight);
             if (index === 0) context.moveTo(xx, yy); else context.lineTo(xx, yy);
         });
-        context.strokeStyle = `color-mix(in srgb, ${weightAccent()} ${DAILY_WEIGHT_LINE_OPACITY * 100}%, transparent)`;
+        context.strokeStyle = weightTint(DAILY_WEIGHT_LINE_OPACITY);
         context.lineWidth = 1.4;
         context.stroke();
     }
@@ -264,13 +269,13 @@ function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntrie
     entries.forEach(entry => {
         context.beginPath();
         context.arc(x(entry.date), y(entry.weight), 2.7, 0, Math.PI * 2);
-        context.fillStyle = `color-mix(in srgb, ${weightAccent()} ${DAILY_WEIGHT_POINT_OPACITY * 100}%, transparent)`;
+        context.fillStyle = weightTint(DAILY_WEIGHT_POINT_OPACITY);
         context.fill();
     });
 
     if (trendSeries.length >= 2) {
         context.save();
-        context.shadowColor = `color-mix(in srgb, ${weightAccent()} 30%, transparent)`;
+        context.shadowColor = weightTint(.3);
         context.shadowBlur = 8;
         context.beginPath();
         trendSeries.forEach((entry, index) => {
