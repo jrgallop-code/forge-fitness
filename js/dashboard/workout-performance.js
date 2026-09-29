@@ -1,4 +1,5 @@
 import { getExerciseById } from "../workouts/exercise-library.js";
+import { evaluateLiveWorkoutPrs } from "../workouts/workout-pr-badges.js";
 
 const SESSION_KEY = "forge_workout_sessions";
 let completionHandlerBound = false;
@@ -18,7 +19,7 @@ export function renderWorkoutPerformanceDashboard() {
         ${result.topImprovement ? `<div class="performance-top"><span>Top improvement</span><strong>${escapeHtml(result.topImprovement.name)}</strong><small>${escapeHtml(result.topImprovement.detail)}</small></div>` : ""}
         <button class="performance-toggle" type="button" data-performance-toggle aria-expanded="false" ${result.exercises.length ? "" : "hidden"}>View exercise breakdown</button>
         <div class="performance-breakdown" data-performance-panel hidden>${result.exercises.map(renderExerciseRow).join("")}</div>
-        <p class="performance-note">Each lift is compared with its most recent logged performance, even when it appears in a different workout. New exercises are not scored.</p>
+        <p class="performance-note">Each lift is compared with its most recent logged performance. Weight and estimated 1RM records use the same PR rules as your workout logger. New exercises are not scored.</p>
     </section>`;
 }
 
@@ -66,7 +67,8 @@ export function calculatePerformance(session, allSessions) {
     const exercises = [];
     let completedSets = 0;
     let plannedSets = 0;
-    let prs = 0;
+    const livePrs = evaluateLiveWorkoutPrs(session, older);
+    let prs = livePrs.count;
 
     (session.exercises || []).forEach(current => {
         const definition = getExerciseById(current.exerciseId);
@@ -88,21 +90,16 @@ export function calculatePerformance(session, allSessions) {
         const currentMetric = getSetMetric(currentSets);
         const previousMetric = getSetMetric(previousSets);
         const change = previousMetric.score > 0 ? (currentMetric.score - previousMetric.score) / previousMetric.score : 0;
+        const pr = livePrs.details.get(current.exerciseId || current.id);
+        const isPr = Boolean(pr);
         let status = "Maintained";
-        if (change > 0.015) status = "Improved";
+        if (isPr || change > 0.015) status = "Improved";
         else if (change < -0.03) status = "Declined";
-
-        const historicalBest = Math.max(0, ...older.flatMap(item =>
-            (item.exercises || [])
-                .filter(exercise => exerciseMatches(current, exercise))
-                .map(exercise => getSetMetric(completedSetsOnly(exercise.sets)).score)
-        ));
-        const isPr = historicalBest > 0 && currentMetric.score > historicalBest * 1.005;
-        if (isPr) prs += 1;
         exercises.push({
             name: definition?.name || "Exercise",
             status,
             isPr,
+            prTypes: pr?.types || (pr?.mode === "reps" ? ["reps"] : []),
             change,
             detail: `${formatBestSet(currentSets)} · Previous ${formatBestSet(previousSets)}`
         });
@@ -122,7 +119,7 @@ export function calculatePerformance(session, allSessions) {
     }
     const topImprovement = exercises
         .filter(item => item.status === "Improved")
-        .sort((a, b) => b.change - a.change)[0] || null;
+        .sort((a, b) => Number(b.isPr) - Number(a.isPr) || b.change - a.change)[0] || null;
 
     return { score, label: getLabel(score), improved, maintained, declined, prs, completedSets, exercises, topImprovement };
 }
@@ -150,7 +147,7 @@ function renderStatusStrip(result) {
 }
 function renderExerciseRow(item) {
     const className = item.status.toLowerCase().replace(/\s+/g, "-");
-    return `<div class="performance-row"><div><strong>${escapeHtml(item.name)}${item.isPr ? ' <span class="performance-pr">PR</span>' : ""}</strong><small>${escapeHtml(item.detail)}</small></div><span class="performance-row-status is-${className}">${item.status === "Improved" ? "↑" : item.status === "Maintained" ? "=" : item.status === "Declined" ? "↓" : "·"} ${escapeHtml(item.status)}</span></div>`;
+    return `<div class="performance-row"><div><strong>${escapeHtml(item.name)}${item.isPr ? ` <span class="performance-pr">${escapeHtml(item.prTypes.map(type => type === "weight" ? "Weight PR" : type === "estimated1rm" ? "Estimated 1RM PR" : "Rep PR").join(" + ") || "PR")}</span>` : ""}</strong><small>${escapeHtml(item.detail)}</small></div><span class="performance-row-status is-${className}">${item.status === "Improved" ? "↑" : item.status === "Maintained" ? "=" : item.status === "Declined" ? "↓" : "·"} ${escapeHtml(item.status)}</span></div>`;
 }
 function bindToggles(root) {
     root.querySelectorAll?.("[data-performance-toggle]").forEach(button => {
