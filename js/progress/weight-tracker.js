@@ -8,7 +8,7 @@ import {
 }
 from "../nutrition/tdee-calculator.js?v=weight-goals-1";
 
-import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
+import { canonicalInputValue, displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
 import { calculateDisplayWeightTrend } from "../core/weight-trend.js?v=progress-regression-trend-1";
 
 const WEIGHT_STORAGE_KEY =
@@ -181,10 +181,7 @@ function saveGoalWeight() {
             "reference-weight"
         );
 
-    const value =
-        Number(
-            input?.value
-        );
+    const value = canonicalInputValue(input);
 
     if (!Number.isFinite(value) || value <= 0) {
         localStorage.removeItem(
@@ -282,10 +279,7 @@ function saveWeightEntry() {
     const date =
         dateElement?.value;
 
-    const weight =
-        Number(
-            weightElement?.value
-        );
+    const weight = canonicalInputValue(weightElement);
 
     if (
         !date ||
@@ -610,9 +604,7 @@ function updateSummary(
     if (latestElement) {
         latestElement.textContent =
             entries.length
-                ? `${entries[
-                    entries.length - 1
-                ].weight.toFixed(1)} lb`
+                ? `${displayMass(entries.at(-1).weight, 1).toFixed(1)} ${massUnit()}`
                 : "--";
     }
 
@@ -698,13 +690,13 @@ function updateHistory(
                             ${formatDirectionalWeight(
                                 row.weight,
                                 row.weightChange
-                            )} lb
+                            )} ${massUnit()}
                         </strong>
 
                         <span>
                             ${row.average === null
                                 ? "--"
-                                : `${row.average.toFixed(1)} lb`}
+                                : `${displayMass(row.average, 1).toFixed(1)} ${massUnit()}`}
                         </span>
 
                         <span class="weight-history-trend ${trendDirectionClass(row.weeklyTrend)}">
@@ -1181,8 +1173,7 @@ function editWeightEntry(date) {
     }
 
     if (weightInput) {
-        weightInput.value =
-            entry.weight;
+        weightInput.value = displayMass(entry.weight, 1);
         weightInput.focus();
     }
 
@@ -1289,7 +1280,7 @@ function formatDirectionalWeight(
         change === null ||
         change === undefined
     ) {
-        return value.toFixed(1);
+        return displayMass(value, 1).toFixed(1);
     }
 
     const arrow =
@@ -1299,7 +1290,7 @@ function formatDirectionalWeight(
                 ? "↓"
                 : "→";
 
-    return `${arrow} ${value.toFixed(1)}`;
+    return `${arrow} ${displayMass(value, 1).toFixed(1)}`;
 }
 
 
@@ -1309,7 +1300,7 @@ function formatWeeklyChange(value) {
     }
 
     if (Math.abs(value) < 0.005) {
-        return "→ 0.00 lb/wk";
+        return `→ 0.00 ${massUnit()}/wk`;
     }
 
     const arrow =
@@ -1317,7 +1308,7 @@ function formatWeeklyChange(value) {
             ? "↑"
             : "↓";
 
-    return `${arrow} ${Math.abs(value).toFixed(2)} lb/wk`;
+    return `${arrow} ${displayMass(Math.abs(value), 2).toFixed(2)} ${massUnit()}/wk`;
 }
 
 

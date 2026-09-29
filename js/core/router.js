@@ -13,7 +13,7 @@ import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.j
 import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-live-polish.js?v=workout-landing-live-polish-2";
 import { renderProgress } from "../progress/progress-ui.js?v=equipment-profiles-1";
 import { initializeMonthlyReports, initializeMonthlyReportDashboardPrompt } from "../progress/monthly-report.js?v=pwa-monthly-reports-2";
-import { initializeWeightTracker } from "../progress/weight-tracker.js?v=backup-lifecycle-2";
+import { initializeWeightTracker } from "../progress/weight-tracker.js?v=pwa-weight-units-1";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=theme-accent-calendar-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=smoothed-visible-trend-release-1";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=analytics-bar-polish-1";

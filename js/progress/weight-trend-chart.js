@@ -21,6 +21,10 @@ function themeColor(token, fallback) {
     return getComputedStyle(document.documentElement).getPropertyValue(token).trim() || fallback;
 }
 
+function weightAccent() {
+    return themeColor("--accent", "#df141e");
+}
+
 function localDateString(date = new Date()) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
@@ -104,7 +108,7 @@ function ensureRangeStyles() {
     style.textContent = `
         #weight-progress .weight-chart-range-control{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin:10px 0 6px;padding:3px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.025)}
         #weight-progress .weight-chart-range-control button{min-width:0;min-height:32px;margin:0;padding:5px 3px;border:1px solid transparent;border-radius:8px;background:transparent;color:#8f8f98;font-size:10px;font-weight:900;letter-spacing:.02em;line-height:1;touch-action:manipulation}
-        #weight-progress .weight-chart-range-control button[aria-pressed="true"]{border-color:rgba(69,203,117,.45);background:rgba(31,92,55,.52);color:#fff;box-shadow:inset 0 0 0 1px rgba(69,203,117,.08)}
+        #weight-progress .weight-chart-range-control button[aria-pressed="true"]{border-color:color-mix(in srgb,var(--accent,#df141e) 45%,transparent);background:color-mix(in srgb,var(--accent,#df141e) 32%,transparent);color:#fff;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent,#df141e) 8%,transparent)}
         #weight-progress .weight-chart-range-control button:disabled{opacity:.32}
         @media(max-width:380px){#weight-progress .weight-chart-range-control{gap:3px;padding:3px}#weight-progress .weight-chart-range-control button{min-height:30px;padding-inline:2px;font-size:9px}}
     `;
@@ -247,7 +251,7 @@ function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntrie
             const yy = y(entry.weight);
             if (index === 0) context.moveTo(xx, yy); else context.lineTo(xx, yy);
         });
-        context.strokeStyle = themeColor("--accent", "#df141e");
+        context.strokeStyle = weightAccent();
         context.globalAlpha = .34;
         context.lineWidth = 1.4;
         context.stroke();
@@ -257,7 +261,7 @@ function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntrie
     entries.forEach(entry => {
         context.beginPath();
         context.arc(x(entry.date), y(entry.weight), 2.7, 0, Math.PI * 2);
-        context.fillStyle = themeColor("--accent", "#df141e");
+        context.fillStyle = weightAccent();
         context.globalAlpha = .72;
         context.fill();
         context.globalAlpha = 1;
@@ -265,7 +269,7 @@ function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntrie
 
     if (trendSeries.length >= 2) {
         context.save();
-        context.shadowColor = themeColor("--accent-glow", "rgba(223,20,30,.22)");
+        context.shadowColor = weightAccent();
         context.shadowBlur = 8;
         context.beginPath();
         trendSeries.forEach((entry, index) => {
@@ -273,7 +277,7 @@ function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntrie
             const yy = y(entry.weight);
             if (index === 0) context.moveTo(xx, yy); else context.lineTo(xx, yy);
         });
-        context.strokeStyle = themeColor("--accent", "#df141e");
+        context.strokeStyle = weightAccent();
         context.lineWidth = 3;
         context.lineJoin = "round";
         context.lineCap = "round";
