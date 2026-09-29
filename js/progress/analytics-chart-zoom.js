@@ -408,23 +408,27 @@ function drawWeight(instance, state, scaleOverride = null) {
     if (visibleEntries.length >= 2) {
         context.beginPath();
         visibleEntries.forEach((entry, index) => index ? context.lineTo(x(entry.date), y(entry.weight)) : context.moveTo(x(entry.date), y(entry.weight)));
-        context.strokeStyle = "rgba(112,181,137,.34)";
+        context.strokeStyle = themeColor("--accent", "#df141e");
+        context.globalAlpha = .34;
         context.lineWidth = 1.4;
         context.stroke();
+        context.globalAlpha = 1;
     }
     visibleEntries.forEach(entry => {
         context.beginPath();
         context.arc(x(entry.date), y(entry.weight), 2.7, 0, Math.PI * 2);
-        context.fillStyle = "rgba(126,194,151,.82)";
+        context.fillStyle = themeColor("--accent", "#df141e");
+        context.globalAlpha = .82;
         context.fill();
+        context.globalAlpha = 1;
     });
     if (visibleTrend.length >= 2) {
         context.save();
-        context.shadowColor = "rgba(69,203,117,.28)";
+        context.shadowColor = themeColor("--accent-glow", "rgba(223,20,30,.22)");
         context.shadowBlur = 7;
         context.beginPath();
         visibleTrend.forEach((entry, index) => index ? context.lineTo(x(entry.date), y(entry.weight)) : context.moveTo(x(entry.date), y(entry.weight)));
-        context.strokeStyle = themeColor("--success", "#45cb75");
+        context.strokeStyle = themeColor("--accent", "#df141e");
         context.lineWidth = 3;
         context.lineJoin = "round";
         context.lineCap = "round";
