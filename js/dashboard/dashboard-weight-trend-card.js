@@ -1,5 +1,5 @@
 import "./dashboard-insights-analytics.js?v=energy-summary-1";
-import { buildDashboardWeightTrendSvg } from "./dashboard-weight-trend-svg.js?v=dashboard-weight-style-sync-1";
+import { buildDashboardWeightTrendSvg } from "./dashboard-weight-trend-svg.js?v=weight-palette-all-169";
 import { calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 
 const WEIGHT_STORAGE_KEY = "forge_weight_entries";
