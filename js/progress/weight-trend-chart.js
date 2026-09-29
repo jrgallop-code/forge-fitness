@@ -6,9 +6,6 @@ const GOAL_WEIGHT_STORAGE_KEY = "level_up_goal_weight";
 const NUTRITION_PHASES_STORAGE_KEY = "level_up_nutrition_phases";
 const RANGE_STORAGE_KEY = "level_up_weight_chart_range";
 const RANGE_STYLE_ID = "level-up-weight-chart-range-styles";
-const TREND_GREEN = "#45cb75";
-const DAILY_WEIGHT_LINE = "rgba(112, 181, 137, 0.34)";
-const DAILY_WEIGHT_POINT = "rgba(126, 194, 151, 0.82)";
 const RANGE_OPTIONS = [
     { id: "1w", label: "1W", days: 7 },
     { id: "1m", label: "1M", days: 30 },
@@ -250,21 +247,25 @@ function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntrie
             const yy = y(entry.weight);
             if (index === 0) context.moveTo(xx, yy); else context.lineTo(xx, yy);
         });
-        context.strokeStyle = DAILY_WEIGHT_LINE;
+        context.strokeStyle = themeColor("--accent", "#df141e");
+        context.globalAlpha = .34;
         context.lineWidth = 1.4;
         context.stroke();
+        context.globalAlpha = 1;
     }
 
     entries.forEach(entry => {
         context.beginPath();
         context.arc(x(entry.date), y(entry.weight), 2.7, 0, Math.PI * 2);
-        context.fillStyle = DAILY_WEIGHT_POINT;
+        context.fillStyle = themeColor("--accent", "#df141e");
+        context.globalAlpha = .72;
         context.fill();
+        context.globalAlpha = 1;
     });
 
     if (trendSeries.length >= 2) {
         context.save();
-        context.shadowColor = "rgba(69,203,117,.3)";
+        context.shadowColor = themeColor("--accent-glow", "rgba(223,20,30,.22)");
         context.shadowBlur = 8;
         context.beginPath();
         trendSeries.forEach((entry, index) => {
@@ -272,7 +273,7 @@ function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntrie
             const yy = y(entry.weight);
             if (index === 0) context.moveTo(xx, yy); else context.lineTo(xx, yy);
         });
-        context.strokeStyle = themeColor("--success", TREND_GREEN);
+        context.strokeStyle = themeColor("--accent", "#df141e");
         context.lineWidth = 3;
         context.lineJoin = "round";
         context.lineCap = "round";

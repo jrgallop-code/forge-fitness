@@ -73,12 +73,12 @@
 
 .dashboard-weight-trend-average {
     fill:none;
-    stroke:#45cb75;
+    stroke:var(--accent,#df141e);
     stroke-width:2.6;
     stroke-linecap:round;
     stroke-linejoin:round;
     vector-effect:non-scaling-stroke;
-    filter:drop-shadow(0 0 2.5px rgba(69,203,117,.3));
+    filter:drop-shadow(0 0 2.5px var(--accent-glow,rgba(223,20,30,.22)));
 }
 
 .dashboard-weight-trend-empty {
