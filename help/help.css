@@ -2,3 +2,17 @@
 .count{margin:-8px 0 15px;color:#85858b;font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.08em}.search-status{min-height:1.5em;color:#aaa9a7;font-size:13px;margin:9px 0 0!important}.article .sources li{margin:9px 0}
 /* The Help Center uses the public website palette regardless of the app's saved theme. */
 html,body{background:#070707!important;color:#f7f7f5!important;color-scheme:dark}header .help-brand,header .help-brand strong,.article h1,.article h2,.article h3,.category h2{color:#f7f7f5!important}.article,.category{color:#f7f7f5}.article p,.article li{color:#c3c2c4}.crumb{color:#a7a7aa}
+/* Real app screenshots sit inside a restrained iPhone frame. The source images remain unaltered. */
+.help-screens{margin:40px 0 44px;padding:24px 16px;background:#0b0b0c;border:1px solid var(--line)}
+.help-screens h2{margin:0 0 22px!important;text-align:center;font-size:24px!important}
+.help-phone-gallery{display:flex;flex-wrap:wrap;justify-content:center;align-items:start;gap:28px}
+.help-phone-figure{width:min(100%,310px);margin:0}
+.help-phone-link{display:block;color:inherit;border-radius:46px}
+.help-phone-link:hover{text-decoration:none}
+.help-phone-device{position:relative;display:block;width:100%;padding:8px;background:#050506;border:2px solid #57575d;border-radius:48px;box-shadow:0 24px 55px rgba(0,0,0,.55),inset 0 0 0 2px #161619;transition:transform .18s ease}
+.help-phone-link:hover .help-phone-device{transform:translateY(-3px)}
+.help-phone-device::before{content:"";position:absolute;left:50%;top:12px;z-index:1;transform:translateX(-50%);width:31%;height:15px;background:#030304;border-radius:0 0 15px 15px;pointer-events:none}
+.help-phone-device img{display:block;width:100%;height:auto;aspect-ratio:944/2048;object-fit:cover;border-radius:38px;background:#0a0a0c}
+.help-phone-figure figcaption{padding:14px 5px 0;color:#c3c2c4;font-size:14px;line-height:1.55}
+.help-phone-figure figcaption a{display:block;margin-top:6px;font-weight:750}
+@media(max-width:640px){.help-screens{margin-left:-12px;margin-right:-12px;padding:22px 10px}.help-phone-gallery{gap:34px}.help-phone-figure{width:min(100%,300px)}}
