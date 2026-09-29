@@ -8,9 +8,16 @@ const PHASES_KEY = "level_up_nutrition_phases";
 const RANGE_KEY = "level_up_weight_chart_range";
 const STYLE_ID = "level-up-weight-calorie-context-v2-styles";
 const CALORIE_COLOR = "#ff5a5f";
-const TREND_GREEN = "#45cb75";
-const DAILY_WEIGHT = "rgba(126,194,151,.82)";
-const DAILY_WEIGHT_LINE = "rgba(112,181,137,.34)";
+const TREND_ACCENT = "#e71929";
+const DAILY_WEIGHT_POINT_OPACITY = 82;
+const DAILY_WEIGHT_LINE_OPACITY = 34;
+function weightAccent() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#df141e";
+}
+function weightTint(opacity) {
+    const hex=weightAccent().slice(1);
+    return `rgba(${parseInt(hex.slice(0,2),16)},${parseInt(hex.slice(2,4),16)},${parseInt(hex.slice(4,6),16)},${opacity/100})`;
+}
 const RANGE_OPTIONS = {
     "1w": { days: 7 },
     "1m": { days: 30 },
@@ -46,11 +53,11 @@ function ensureSlide(root) {
         track.appendChild(slide);
     }
 
-    let button = pager.querySelector('[data-weight-graph-page-v2="2"]');
+    let button = pager.querySelector('[data-weight-graph-page-v2="3"]');
     if (!button) {
         button = document.createElement("button");
         button.type = "button";
-        button.dataset.weightGraphPageV2 = "2";
+        button.dataset.weightGraphPageV2 = "3";
         button.setAttribute("aria-pressed", "false");
         button.textContent = "Weight + Calories";
         pager.appendChild(button);
@@ -60,9 +67,9 @@ function ensureSlide(root) {
     if (pager.dataset.calorieV2Bound !== "1") {
         pager.dataset.calorieV2Bound = "1";
         pager.addEventListener("click", event => {
-            const target = event.target.closest?.('[data-weight-graph-page-v2="2"]');
+            const target = event.target.closest?.('[data-weight-graph-page-v2="3"]');
             if (!target) return;
-            track.scrollTo({ left: 2 * track.clientWidth, behavior: "smooth" });
+            track.scrollTo({ left: 3 * track.clientWidth, behavior: "smooth" });
         });
         track.addEventListener("scroll", () => requestAnimationFrame(() => syncPager(card)), { passive: true });
     }
@@ -107,11 +114,11 @@ function renderSlide() {
 function syncPager(card) {
     const track = card.querySelector("[data-weight-graph-carousel-track-v2]");
     if (!track) return;
-    const index = Math.max(0, Math.min(2, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
+    const index = Math.max(0, Math.min(3, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
     card.querySelectorAll("[data-weight-graph-page-v2]").forEach(button => {
         button.setAttribute("aria-pressed", String(Number(button.dataset.weightGraphPageV2) === index));
     });
-    if (index === 2) schedule(card);
+    if (index === 3) schedule(card);
 }
 
 function bindCanvas(card) {
@@ -277,23 +284,23 @@ function draw(canvas, state, activeDate) {
     if (raw.length > 1) {
         context.beginPath();
         raw.forEach((day, index) => index ? context.lineTo(x(day.date), yWeight(day.weight)) : context.moveTo(x(day.date), yWeight(day.weight)));
-        context.strokeStyle = DAILY_WEIGHT_LINE;
+        context.strokeStyle = weightTint(DAILY_WEIGHT_LINE_OPACITY);
         context.lineWidth = 1.5;
         context.stroke();
     }
     raw.forEach(day => {
         context.beginPath();
         context.arc(x(day.date), yWeight(day.weight), activeDate === day.date ? 5 : 2.6, 0, Math.PI * 2);
-        context.fillStyle = activeDate === day.date ? "#fff" : DAILY_WEIGHT;
+        context.fillStyle = activeDate === day.date ? "#fff" : weightTint(DAILY_WEIGHT_POINT_OPACITY);
         context.fill();
     });
 
     if (state.trendSeries.length > 1) {
         const points = state.trendSeries.map(day => ({ x: x(day.date), y: yWeight(day.weight) }));
         context.save();
-        context.shadowColor = "rgba(69,203,117,.3)";
+        context.shadowColor = weightTint(30);
         context.shadowBlur = 8;
-        context.strokeStyle = TREND_GREEN;
+        context.strokeStyle = weightAccent();
         context.lineWidth = 3;
         context.lineJoin = "round";
         context.lineCap = "round";
@@ -381,7 +388,7 @@ function ensureStyles() {
         .weight-graph-carousel-slide-v2.is-calories{padding:0 1px}.weight-calories-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.weight-calories-head h3{margin:3px 0;font-size:18px}.weight-calories-head p{margin:0;color:#9898a3;font-size:10px}
         .weight-calories-info{position:relative}.weight-calories-info summary{display:grid;place-items:center;width:30px;height:30px;border:1px solid #3b3b42;border-radius:50%;background:#242429;color:#c6c6cd;font-weight:900;list-style:none}.weight-calories-info summary::-webkit-details-marker{display:none}.weight-calories-info>div{position:absolute;z-index:8;top:36px;right:0;width:min(300px,calc(100vw - 52px));padding:12px;border:1px solid #3a3a41;border-radius:14px;background:#202024;box-shadow:0 14px 36px rgba(0,0,0,.5)}.weight-calories-info p{margin:6px 0;color:#a1a1aa;font-size:10px;line-height:1.45}.weight-calories-info small{color:#85858e;font-size:9px;line-height:1.4}
         .weight-calories-chart-shell{position:relative;min-height:330px;border-top:1px solid #303036;border-bottom:1px solid #303036}.weight-calories-chart-shell canvas{display:block;width:100%;height:330px;touch-action:pan-y}.weight-calories-tooltip{position:absolute;z-index:5;top:12px;left:12px;display:grid;gap:3px;padding:9px 10px;border:1px solid rgba(255,255,255,.14);border-radius:11px;background:rgba(24,24,28,.97);box-shadow:0 10px 28px rgba(0,0,0,.4)}.weight-calories-tooltip strong{font-size:11px}.weight-calories-tooltip span{display:flex;justify-content:space-between;gap:14px;color:#d2d2d7;font-size:10px}.weight-calories-tooltip b{color:#8f8f99;font-size:9px}
-        .weight-calories-legend{display:flex;flex-wrap:wrap;gap:8px 13px;margin-top:9px;color:#92929c;font-size:9px;font-weight:800}.weight-calories-legend span{display:flex;align-items:center;gap:5px}.weight-calories-legend i{display:block;width:13px;height:3px;border-radius:999px}.weight-calories-legend .is-weight{background:${DAILY_WEIGHT}}.weight-calories-legend .is-trend{background:${TREND_GREEN}}.weight-calories-legend .is-calories{height:8px;border-radius:3px;background:${CALORIE_COLOR}}
+        .weight-calories-legend{display:flex;flex-wrap:wrap;gap:8px 13px;margin-top:9px;color:#92929c;font-size:9px;font-weight:800}.weight-calories-legend span{display:flex;align-items:center;gap:5px}.weight-calories-legend i{display:block;width:13px;height:3px;border-radius:999px}.weight-calories-legend .is-weight{background:color-mix(in srgb,var(--accent,#df141e) 82%,transparent)}.weight-calories-legend .is-trend{background:var(--accent,#df141e)}.weight-calories-legend .is-calories{height:8px;border-radius:3px;background:${CALORIE_COLOR}}
         .weight-calories-note{margin:0;color:#777780;font-size:8.5px}.weight-calories-empty{padding:15px;border:1px dashed #3a3a42;border-radius:14px;background:#1b1b1f}.weight-calories-empty strong{font-size:14px}.weight-calories-empty p{margin:5px 0 0;color:#9696a0;font-size:11px}
         @media(max-width:520px){.weight-calories-chart-shell,.weight-calories-chart-shell canvas{min-height:330px;height:330px}}
     `;

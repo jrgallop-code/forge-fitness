@@ -123,6 +123,12 @@ async function handleRequest(request, env, ctx) {
     if (url.pathname === "/v1/me" && request.method === "GET") {
         return json({ user: { ...publicUser(user), isAdmin: isAdminUser(user, env) } }, 200, request, env);
     }
+    if (url.pathname === "/v1/support/threads" && request.method === "GET") return listSupportThreads(user, request, env);
+    if (url.pathname === "/v1/support/threads" && request.method === "POST") return createSupportThread(user, await readJson(request, 8 * 1024), request, env);
+    const supportThreadMatch = url.pathname.match(/^\/v1\/support\/threads\/([0-9a-f-]{36})$/i);
+    if (supportThreadMatch && request.method === "GET") return readSupportThread(user, supportThreadMatch[1], request, env);
+    const supportReplyMatch = url.pathname.match(/^\/v1\/support\/threads\/([0-9a-f-]{36})\/messages$/i);
+    if (supportReplyMatch && request.method === "POST") return replySupportThread(user, supportReplyMatch[1], await readJson(request, 8 * 1024), request, env);
     if (url.pathname === "/v1/account/password" && request.method === "PUT") {
         const body = await readJson(request, 16 * 1024);
         return createPasswordCredential(user, body, request, env);
@@ -3256,6 +3262,53 @@ function collectRedditComments(children, output) {
 
 function isAdminUser(user, env) {
     return String(env.ADMIN_EMAILS || "").split(",").map(value => value.trim().toLowerCase()).filter(Boolean).includes(String(user.email || "").toLowerCase());
+}
+
+async function listSupportThreads(user, request, env) {
+    const admin = isAdminUser(user, env);
+    const query = env.DB.prepare(`SELECT t.id, t.issue_type, t.status, t.created_at, t.updated_at,
+        u.email AS user_email, u.display_name AS user_name,
+        (SELECT body FROM support_messages WHERE thread_id = t.id ORDER BY created_at DESC LIMIT 1) AS latest_message
+        FROM support_threads t JOIN users u ON u.id = t.user_id
+        ${admin ? '' : 'WHERE t.user_id = ?'} ORDER BY t.updated_at DESC LIMIT 100`);
+    const rows = await (admin ? query : query.bind(user.id)).all();
+    return json({ threads: rows.results || [] }, 200, request, env);
+}
+
+async function supportThreadFor(user, id, env) {
+    const thread = await env.DB.prepare('SELECT id, user_id, issue_type, status, created_at, updated_at FROM support_threads WHERE id = ?').bind(id).first();
+    if (!thread || (thread.user_id !== user.id && !isAdminUser(user, env))) throw new HttpError(404, 'Conversation not found.');
+    return thread;
+}
+
+async function readSupportThread(user, id, request, env) {
+    const thread = await supportThreadFor(user, id, env);
+    const messages = await env.DB.prepare('SELECT id, sender, body, created_at FROM support_messages WHERE thread_id = ? ORDER BY created_at LIMIT 200').bind(id).all();
+    return json({ thread, messages: messages.results || [] }, 200, request, env);
+}
+
+async function createSupportThread(user, body, request, env) {
+    const issueType = String(body.issueType || '').trim().slice(0, 80);
+    const description = String(body.description || '').trim();
+    const steps = String(body.steps || '').trim();
+    if (!issueType || !description || description.length > 2200 || steps.length > 1200) throw new HttpError(400, 'Enter a valid issue type and description.');
+    const recent = await env.DB.prepare("SELECT COUNT(*) AS count FROM support_threads WHERE user_id = ? AND created_at > ?").bind(user.id, new Date(Date.now() - 86400000).toISOString()).first();
+    if (recent.count >= 10) throw new HttpError(429, 'Please continue an existing conversation today.');
+    const id = crypto.randomUUID(), now = new Date().toISOString();
+    await env.DB.prepare('INSERT INTO support_threads (id, user_id, issue_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?)').bind(id, user.id, issueType, now, now).run();
+    await env.DB.prepare('INSERT INTO support_messages (id, thread_id, sender, body, created_at) VALUES (?, ?, ?, ?, ?)').bind(crypto.randomUUID(), id, 'user', steps ? `${description}\n\nSteps to reproduce: ${steps}` : description, now).run();
+    return json({ id }, 201, request, env);
+}
+
+async function replySupportThread(user, id, body, request, env) {
+    await supportThreadFor(user, id, env);
+    const message = String(body.message || '').trim();
+    if (!message || message.length > 4000) throw new HttpError(400, 'Enter a message of up to 4000 characters.');
+    const sender = isAdminUser(user, env) ? 'support' : 'user';
+    const now = new Date().toISOString();
+    await env.DB.prepare('INSERT INTO support_messages (id, thread_id, sender, body, created_at) VALUES (?, ?, ?, ?, ?)').bind(crypto.randomUUID(), id, sender, message, now).run();
+    await env.DB.prepare('UPDATE support_threads SET updated_at = ?, status = ? WHERE id = ?').bind(now, sender === 'support' ? 'answered' : 'open', id).run();
+    return json({ ok: true }, 201, request, env);
 }
 
 async function deleteSession(request, env) {

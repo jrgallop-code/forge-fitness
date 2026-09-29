@@ -1,6 +1,6 @@
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
-import { evaluateLiveWorkoutPrs, initializeWorkoutPrBadges } from "./workout-pr-badges.js?v=equipment-profiles-1";
+import { evaluateLiveWorkoutPrs, initializeWorkoutPrBadges } from "./workout-pr-badges.js?v=pwa-pr-parity-1";
 
 const ACTIVE_KEY = "level_up_active_workout";
 const SESSION_KEY = "forge_workout_sessions";
@@ -69,7 +69,7 @@ function refreshLiveDisplay() {
 
         const badge = document.createElement("div");
         badge.className = "live-pr-exercise-badge";
-        badge.innerHTML = `${trophyIcon()}<span>PR achieved</span>`;
+        badge.innerHTML = `${trophyIcon()}<span>${detail.types?.map(type=>type==="weight"?"Weight PR":"Estimated 1RM PR").join(" + ")||"PR achieved"}</span>`;
         card.querySelector("h4")?.insertAdjacentElement("afterend", badge);
     });
 }
@@ -90,7 +90,7 @@ function handleCompletedSet(button, beforeStatus) {
 
     const beforeDetail = beforeStatus?.details?.get(exerciseId);
     const newlyEstablished = !beforeDetail;
-    const improvedAgain = beforeDetail && afterDetail.score > beforeDetail.score + SCORE_EPSILON;
+    const improvedAgain = beforeDetail && (afterDetail.score > beforeDetail.score + SCORE_EPSILON || afterDetail.types?.some(type=>!beforeDetail.types?.includes(type)));
     if (!newlyEstablished && !improvedAgain) return;
     showPrToast(exerciseId, afterDetail);
 }
@@ -119,7 +119,7 @@ function formatPrDetail(detail) {
     if (detail?.mode === "weighted") {
         const weight = Number(set.weight);
         const reps = Number(set.reps);
-        return `${weight} lb × ${reps} · est. 1RM ${Math.round(detail.score)} lb`;
+        return `${detail.types?.map(type=>type==="weight"?"Heaviest weight PR":"Estimated 1RM PR").join(" + ")||"PR"} · ${weight} lb × ${reps} · est. 1RM ${Math.round(detail.score)} lb`;
     }
     return `${Number(set.reps) || 0} reps`;
 }
@@ -169,4 +169,4 @@ if (!document.querySelector('link[data-workout-complete-recap-recovery-style]'))
     anatomyStyle.dataset.workoutCompleteRecapRecoveryStyle = "true";
     document.head.appendChild(anatomyStyle);
 }
-import("./workout-complete-recap.js?v=recap-copy-5");
+import("./workout-complete-recap.js?v=pwa-pr-parity-1");

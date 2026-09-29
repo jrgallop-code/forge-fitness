@@ -7,6 +7,18 @@
     box-shadow: 0 20px 45px rgba(0,0,0,.22);
 }
 
+#support-conversations {margin:16px 0 24px;padding:18px;border:1px solid rgba(255,255,255,.15);border-radius:14px;color:inherit}
+#support-conversations h3 {margin:0 0 14px}
+.support-thread-button {display:flex;width:100%;justify-content:space-between;gap:12px;align-items:center;margin:6px 0;padding:12px;border:1px solid rgba(128,128,128,.35);border-radius:10px;background:transparent;color:inherit;text-align:left;font:inherit}
+.support-thread-button small {opacity:.72}
+#support-thread-detail {margin-top:20px}
+.support-messages {display:grid;gap:10px;max-height:420px;overflow:auto}
+.support-message {padding:12px;border-radius:10px;background:rgba(128,128,128,.13)}
+.support-message time {display:block;font-size:12px;opacity:.65}
+.support-message p {white-space:normal;overflow-wrap:anywhere;margin:8px 0 0}
+#support-reply-form {display:grid;gap:10px;margin-top:20px}
+#support-reply-body {min-height:95px;border-radius:10px;padding:12px;font:inherit;background:transparent;color:inherit;border:1px solid rgba(128,128,128,.45)}
+
 .support-report-intro {
     margin: 0 0 22px;
     color: #aaa9af;

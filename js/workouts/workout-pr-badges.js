@@ -74,8 +74,9 @@ export function calculatePrCounts(sessions) {
             let isPr = false;
 
             if (score.weighted != null) {
-                if (previous.weighted != null && score.weighted > previous.weighted + EPSILON) isPr = true;
+                if ((previous.weighted != null && score.weighted > previous.weighted + EPSILON) || (previous.maxWeight != null && score.maxWeight > previous.maxWeight + EPSILON)) isPr = true;
                 previous.weighted = previous.weighted == null ? score.weighted : Math.max(previous.weighted, score.weighted);
+                previous.maxWeight = previous.maxWeight == null ? score.maxWeight : Math.max(previous.maxWeight, score.maxWeight);
             } else if (score.reps != null) {
                 if (previous.reps != null && score.reps > previous.reps) isPr = true;
                 previous.reps = previous.reps == null ? score.reps : Math.max(previous.reps, score.reps);
@@ -114,8 +115,12 @@ export function evaluateLiveWorkoutPrs(activeSession, historicalSessions = []) {
         let result = null;
         if (weighted.length) {
             const best = weighted.sort((a, b) => b.score - a.score)[0];
-            if (previous.weighted != null && best.score > previous.weighted + EPSILON) {
-                result = { exerciseId, mode: "weighted", bestSetIndex: best.setIndex, bestSet: best.set, score: best.score, previousScore: previous.weighted };
+            const heaviest=weighted.reduce((a,b)=>Number(b.set.weight)>Number(a.set.weight)?b:a);
+            const oneRepPr=previous.weighted!=null&&best.score>previous.weighted+EPSILON;
+            const weightPr=previous.maxWeight!=null&&Number(heaviest.set.weight)>previous.maxWeight+EPSILON;
+            if(oneRepPr||weightPr){
+                const winner=oneRepPr?best:heaviest;
+                result={exerciseId,mode:"weighted",types:[...(weightPr?["weight"]:[]),...(oneRepPr?["estimated1rm"]:[])],bestSetIndex:winner.setIndex,bestSet:winner.set,score:winner.score,previousScore:previous.weighted};
             }
         } else {
             const repSets = validSets
@@ -140,6 +145,7 @@ function buildHistoricalRecords(sessions) {
         getSessionExerciseScores(session).forEach((score, profileKey) => {
             const record = records.get(profileKey) || {};
             if (score.weighted != null) record.weighted = record.weighted == null ? score.weighted : Math.max(record.weighted, score.weighted);
+            if (score.maxWeight != null) record.maxWeight = record.maxWeight == null ? score.maxWeight : Math.max(record.maxWeight, score.maxWeight);
             if (score.reps != null) record.reps = record.reps == null ? score.reps : Math.max(record.reps, score.reps);
             records.set(profileKey, record);
         });
@@ -170,11 +176,13 @@ function getSessionExerciseScores(session) {
             .filter(set => Number(set.weight) > 0 && Number(set.reps) > 0)
             .map(estimateOneRepMax);
         const profileKey = getExerciseProfileKey(exercise);
-        const current = scores.get(profileKey) || { weighted: null, reps: null };
+        const current = scores.get(profileKey) || { weighted: null, maxWeight: null, reps: null };
 
         if (weightedScores.length) {
             const bestWeighted = Math.max(...weightedScores);
             current.weighted = current.weighted == null ? bestWeighted : Math.max(current.weighted, bestWeighted);
+            const maxWeight=Math.max(...sets.filter(set=>Number(set.weight)>0&&Number(set.reps)>0).map(set=>Number(set.weight)));
+            current.maxWeight=current.maxWeight==null?maxWeight:Math.max(current.maxWeight,maxWeight);
         } else {
             const repScores = sets.map(set => Number(set.reps)).filter(reps => reps > 0);
             if (repScores.length) {
