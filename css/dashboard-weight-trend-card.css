@@ -73,12 +73,12 @@
 
 .dashboard-weight-trend-average {
     fill:none;
-    stroke:#45cb75;
+    stroke:var(--weight-chart-accent, #e71929);
     stroke-width:2.6;
     stroke-linecap:round;
     stroke-linejoin:round;
     vector-effect:non-scaling-stroke;
-    filter:drop-shadow(0 0 2.5px rgba(69,203,117,.3));
+    filter:drop-shadow(0 0 2.5px color-mix(in srgb, var(--weight-chart-accent, #e71929) 30%, transparent));
 }
 
 .dashboard-weight-trend-empty {
@@ -136,3 +136,7 @@
         font-size: 0.5rem;
     }
 }
+
+/* Keep dashboard sparkline aligned with the Progress weight palette. */
+:root, :root[data-theme="level-up"], :root[data-theme="midnight"], :root[data-theme="slate"], :root[data-theme="pulse"] { --weight-chart-accent: #e71929; }
+:root[data-theme="arctic"] { --weight-chart-accent: #1769e0; }
