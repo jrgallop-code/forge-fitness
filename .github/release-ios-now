@@ -282,3 +282,5 @@ Release 164: weight chart appearance colours.
 Release 165: align Dashboard workout performance with live weight and estimated 1RM PR detection.
 
 Release: consistent red/Arctic-blue weight trend lines and points across all weight charts.
+
+Release: force refreshed iOS weight chart modules for consistent red and Arctic blue lines and points.
