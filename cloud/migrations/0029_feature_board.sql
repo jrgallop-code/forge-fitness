@@ -1,0 +1,4 @@
+CREATE TABLE feature_requests (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, title TEXT NOT NULL, body TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'Under review', published INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);
+CREATE TABLE feature_votes (request_id TEXT NOT NULL REFERENCES feature_requests(id) ON DELETE CASCADE, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, PRIMARY KEY(request_id,user_id));
+CREATE TABLE feature_comments (id TEXT PRIMARY KEY, request_id TEXT NOT NULL REFERENCES feature_requests(id) ON DELETE CASCADE, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, body TEXT NOT NULL, parent_id TEXT REFERENCES feature_comments(id) ON DELETE SET NULL, created_at TEXT NOT NULL);
+CREATE TABLE feature_reports (comment_id TEXT NOT NULL REFERENCES feature_comments(id) ON DELETE CASCADE, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, PRIMARY KEY(comment_id,user_id));

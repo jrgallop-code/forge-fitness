@@ -1,3 +1,4 @@
+import { featureBoard } from "./feature-board.js";
 import { SWISS_CHALET_FOODS } from "./data/swiss-chalet-foods.js";
 import { PUR_SIMPLE_FOODS } from "./data/pur-simple-foods.js";
 import { NORTH_AMERICAN_CHAIN_FOODS } from "./data/north-american-chain-foods.js";
@@ -117,6 +118,11 @@ async function handleRequest(request, env, ctx) {
         return workoutShareLanding(workoutShareLandingMatch[1]);
     }
 
+    if (url.pathname === '/v1/features' || url.pathname.startsWith('/v1/features/')) {
+        const user = request.headers.get('Authorization') ? await requireUser(request, env) : null;
+        const result = await featureBoard(request, env, user, user ? isAdminUser(user, env) : false, readJson);
+        return json(result.data, result.status, request, env);
+    }
     const user = await requireUser(request, env);
     if (!user) return json({ error: "Sign in required." }, 401, request, env);
 

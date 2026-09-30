@@ -1,3 +1,4 @@
+import { openFeatureBoard } from "./feature-board.js?v=1";
 const SUPPORT_ENDPOINT = "https://formsubmit.co/ajax/jrgallop@gmail.com";
 const CLOUD_ENDPOINT = "https://api.leveluphypertrophy.com";
 const SUPPORT_ICON = '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H9l-5 4V4Zm2 2v9.2l2.3-1.2H18V6H6Zm5 2h2v4h-2V8Zm0 5h2v2h-2v-2Z"/></svg>';
@@ -12,13 +13,13 @@ function ensureSupportStyles() {
 }
 
 function supportCardMarkup() {
-    return `<button class="more-menu-card" type="button" data-contact-support-card><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Contact Support</strong><small>Report an issue and follow up in the app.</small></span></button><a class="more-menu-card" href="help/"><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Help Center</strong><small>Guides to workouts, nutrition, progress and your account.</small></span></a>`;
+    return `<button class="more-menu-card" type="button" data-contact-support-card><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Contact Support</strong><small>Report an issue and follow up in the app.</small></span></button><a class="more-menu-card" href="https://app.leveluphypertrophy.com/help/"><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Help Center</strong><small>Guides to workouts, nutrition, progress and your account.</small></span></a><button class="more-menu-card" type="button" data-feature-board><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Request a Feature</strong><small>Suggest ideas, vote and join the discussion.</small></span></button>`;
 }
 
 function renderContactSupport() {
     return `<section class="dashboard-welcome"><div><button class="nutrition-planner-back" id="support-back-more" type="button">← More</button><span class="eyebrow">HELP & FEEDBACK</span><h2>Contact Support</h2><p>Report an issue directly from Level Up.</p></div></section>
     <section class="support-report-card" aria-labelledby="support-report-title">
-        <p><a href="help/">Browse the Help Center ↗</a></p>
+        <p><a href="https://app.leveluphypertrophy.com/help/">Browse the Help Center ↗</a></p>
         <div id="support-conversations" hidden></div>
         <p class="support-report-intro" id="support-report-title">Tell us what went wrong. Your report will be sent without opening your email app.</p>
         <form class="support-report-form" id="support-report-form">
@@ -219,9 +220,13 @@ async function openSupportThread(panel, id) {
 function enhanceMorePage() {
     const grid = document.querySelector("#content .more-menu-grid");
     if (!grid || grid.querySelector("[data-contact-support-card]")) return;
-    const group = grid.querySelector('[data-more-group="app-data"]') || grid;
+    const group = document.createElement("div");
+    group.className = "more-menu-group";
+    group.innerHTML = "<h3>Help &amp; Support</h3>";
+    grid.appendChild(group);
     group.insertAdjacentHTML("beforeend", supportCardMarkup());
     grid.querySelector("[data-contact-support-card]")?.addEventListener("click", openSupport);
+    grid.querySelector("[data-feature-board]")?.addEventListener("click", openFeatureBoard);
 }
 
 ensureSupportStyles();
