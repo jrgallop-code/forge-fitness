@@ -12,14 +12,14 @@ function ensureSupportStyles() {
     document.head.appendChild(link);
 }
 
-function supportCardMarkup() {
-    return `<button class="more-menu-card" type="button" data-contact-support-card><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Contact Support</strong><small>Report an issue and follow up in the app.</small></span></button><a class="more-menu-card" href="https://app.leveluphypertrophy.com/help/"><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Help Center</strong><small>Guides to workouts, nutrition, progress and your account.</small></span></a><button class="more-menu-card" type="button" data-feature-board><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Request a Feature</strong><small>Suggest ideas, vote and join the discussion.</small></span></button>`;
+export function supportCardMarkup() {
+    return `<button class="more-menu-card" type="button" data-contact-support-card><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Contact Support</strong><small>Report an issue and follow up in the app.</small></span></button><button class="more-menu-card" type="button" data-help-center><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Help Center</strong><small>Guides to workouts, nutrition, progress and your account.</small></span></button><button class="more-menu-card" type="button" data-feature-board><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Request a Feature</strong><small>Suggest ideas, vote and join the discussion.</small></span></button>`;
 }
 
 function renderContactSupport() {
     return `<section class="dashboard-welcome"><div><button class="nutrition-planner-back" id="support-back-more" type="button">← More</button><span class="eyebrow">HELP & FEEDBACK</span><h2>Contact Support</h2><p>Report an issue directly from Level Up.</p></div></section>
     <section class="support-report-card" aria-labelledby="support-report-title">
-        <p><a href="https://app.leveluphypertrophy.com/help/">Browse the Help Center ↗</a></p>
+        <p><button type="button" data-help-center>Browse the Help Center</button></p>
         <div id="support-conversations" hidden></div>
         <p class="support-report-intro" id="support-report-title">Tell us what went wrong. Your report will be sent without opening your email app.</p>
         <form class="support-report-form" id="support-report-form">
@@ -156,6 +156,7 @@ function openSupport() {
         content.querySelector('#support-conversations').hidden = false;
         content.querySelector('#support-conversations').textContent = 'Sign in under More → Account & Cloud to exchange messages with support in the app. You can still send a one-way report below.';
     }
+    content.querySelector("[data-help-center]")?.addEventListener("click", openHelpCenter);
     const form = content.querySelector("#support-report-form");
     form?.addEventListener("submit", event => {
         event.preventDefault();
@@ -217,21 +218,25 @@ async function openSupportThread(panel, id) {
     } catch (error) { detail.textContent = error.message; }
 }
 
-function enhanceMorePage() {
+export function initializeSupportControls() {
     const grid = document.querySelector("#content .more-menu-grid");
-    if (!grid || grid.querySelector("[data-contact-support-card]")) return;
-    const group = document.createElement("div");
-    group.className = "more-menu-group";
-    group.innerHTML = "<h3>Help &amp; Support</h3>";
-    grid.appendChild(group);
-    group.insertAdjacentHTML("beforeend", supportCardMarkup());
-    grid.querySelector("[data-contact-support-card]")?.addEventListener("click", openSupport);
-    grid.querySelector("[data-feature-board]")?.addEventListener("click", openFeatureBoard);
+    grid?.querySelector("[data-contact-support-card]")?.addEventListener("click", openSupport);
+    grid?.querySelector("[data-feature-board]")?.addEventListener("click", openFeatureBoard);
+    grid?.querySelector("[data-help-center]")?.addEventListener("click", openHelpCenter);
 }
-
+async function openHelpCenter() {
+    const browser = window.Capacitor?.Plugins?.Browser;
+    if (window.Capacitor?.isNativePlatform?.() && browser?.open) {
+        try { await browser.open({ url: "https://app.leveluphypertrophy.com/help/" }); return; }
+        catch (error) { console.warn("Opening Help Center in app", error); }
+    }
+    const content = document.getElementById("content");
+    if (!content) return;
+    content.innerHTML = '<section class="dashboard-welcome"><div><button class="nutrition-planner-back" id="help-back-more" type="button">← More</button><h2>Help Center</h2></div></section><iframe title="Level Up Help Center" src="https://app.leveluphypertrophy.com/help/" style="display:block;width:100%;height:75vh;border:0;border-radius:14px;background:white"></iframe>';
+    content.querySelector("#help-back-more").addEventListener("click", returnToMore);
+    window.scrollTo({ top: 0 });
+}
 ensureSupportStyles();
-const content = document.getElementById("content");
-if (content) {
-    enhanceMorePage();
-    new MutationObserver(enhanceMorePage).observe(content, { childList: true, subtree: true });
-}
+const helpStyle = document.createElement("style");
+helpStyle.textContent = '.more-menu-card{text-decoration:none!important} #feature-list{display:grid;gap:12px;margin:18px 0}.support-thread-button{display:block;width:100%;padding:12px;text-align:left;font:inherit;background:transparent;color:inherit;border:1px solid rgba(128,128,128,.3);border-radius:10px}.support-thread-button small{display:block;margin-top:6px}.support-message{padding:14px;border-radius:12px;background:rgba(128,128,128,.12)}.support-message time{display:block;font-size:12px;opacity:.7}.support-message p{overflow-wrap:anywhere}#feature-search,#feature-title,#feature-body,#feature-comment-body{box-sizing:border-box;width:100%;padding:12px;font:inherit;color:inherit;background:transparent;border:1px solid rgba(128,128,128,.45);border-radius:12px}#feature-body,#feature-comment-body{min-height:120px}';
+document.head.appendChild(helpStyle);

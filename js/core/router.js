@@ -31,7 +31,7 @@ import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1-weekly-informational-checkin-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-target-rounding-1";
-import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=pwa-help-support-1";
+import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=help-navigation-2";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=history-rir-edit-1";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=pwa-pr-parity-1";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-7";
