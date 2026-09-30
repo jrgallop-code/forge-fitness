@@ -293,3 +293,5 @@ Release: Help & Support with Help Center, moderated feature requests, votes, com
 Release: always show Request a Feature in More; open Help Center with native Done control and preserve app navigation.
 
 Release: use selected lifting units in dashboard highlights and previous set comparisons; correct activity calendar volume/weigh-ins and strength improvement units.
+
+Release: remove outdated monthly weight chart legend in report and PDF.
