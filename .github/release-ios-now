@@ -291,3 +291,5 @@ Weight viewport canvas palette correction, 2026-09-29.
 Release: Help & Support with Help Center, moderated feature requests, votes, comments, replies and developer moderation.
 
 Release: always show Request a Feature in More; open Help Center with native Done control and preserve app navigation.
+
+Release: use selected lifting units in dashboard highlights and previous set comparisons; correct activity calendar volume/weigh-ins and strength improvement units.

@@ -709,7 +709,7 @@ function renderRecentImprovements(
 
                 <span>
                     Estimated 1RM increased by
-                    ${item.change.toFixed(1)} lb
+                    ${formatUnitMass(item.change, 1, UNIT_KINDS.LIFTING_WEIGHT)}
                 </span>
 
             </div>

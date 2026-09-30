@@ -1,3 +1,4 @@
+import { UNIT_KINDS, formatMass as formatUnitMass } from "../core/unit-system.js?v=granular-units-1";
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 
 function estimateOneRepMax(set) {
@@ -113,7 +114,7 @@ function renderStrengthTrendSummary() {
     summary.className = `exercise-strength-trend-summary is-${direction}`;
     summary.innerHTML = `
         <span class="strength-trend-label">Estimated strength change</span>
-        <strong>${arrow} ${sign}${change.toFixed(1)} lb <span>(${sign}${percent.toFixed(1)}%)</span></strong>
+        <strong>${arrow} ${sign}${formatUnitMass(change, 1, UNIT_KINDS.LIFTING_WEIGHT)} <span>(${sign}${percent.toFixed(1)}%)</span></strong>
         <small>From ${formatShortDate(first.date)} to ${formatShortDate(last.date)} · ${getDurationLabel(first.date, last.date)}</small>
     `;
 }
