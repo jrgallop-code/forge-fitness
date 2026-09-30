@@ -1,3 +1,4 @@
+import { UNIT_KINDS, formatMass as formatUnitMass } from "../core/unit-system.js?v=granular-units-1";
 import { calculateWorkoutVolume } from "../workouts/volume-calculator.js?v=two-dumbbells-1";
 import { CHECK_IN_APPLE_SVG, getMonthlyCheckInEvents } from "../nutrition/check-in-calendar.js?v=checkin-calendar-1-weekly-informational-checkin-1";
 
@@ -147,15 +148,12 @@ function workoutSummary(session) {
     if (duration) parts.push(duration);
     if (exercises) parts.push(`${exercises} ${exercises === 1 ? "exercise" : "exercises"}`);
     if (sets) parts.push(`${sets} ${sets === 1 ? "set" : "sets"}`);
-    if (volume > 0) parts.push(`${Math.round(volume).toLocaleString()} lb volume`);
+    if (volume > 0) parts.push(`${formatUnitMass(volume, 0, UNIT_KINDS.LIFTING_WEIGHT)} volume`);
     return parts.join(" · ");
 }
 
 function formatWeight(value) {
-    return `${Number(value).toLocaleString(undefined, {
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1
-    })} lb`;
+    return formatUnitMass(value, 1, UNIT_KINDS.BODY_WEIGHT);
 }
 
 function weighInChange(entry, weights) {
@@ -169,7 +167,7 @@ function weighInChange(entry, weights) {
     if (!Number.isFinite(difference)) return "";
     if (Math.abs(difference) < 0.05) return "No change from previous weigh-in";
     const sign = difference > 0 ? "+" : "−";
-    return `${sign}${Math.abs(difference).toFixed(1)} lb from previous weigh-in`;
+    return `${sign}${formatUnitMass(Math.abs(difference), 1, UNIT_KINDS.BODY_WEIGHT)} from previous weigh-in`;
 }
 
 function calendarDays(date) {

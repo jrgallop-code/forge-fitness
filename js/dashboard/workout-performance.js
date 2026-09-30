@@ -1,3 +1,4 @@
+import { UNIT_KINDS, formatMass as formatUnitMass } from "../core/unit-system.js?v=granular-units-1";
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { evaluateLiveWorkoutPrs } from "../workouts/workout-pr-badges.js";
 
@@ -176,7 +177,7 @@ function getSetMetric(sets) {
 function formatBestSet(sets) {
     const best = getSetMetric(sets);
     if (!best.score) return "No completed sets";
-    return best.weight > 0 ? `${formatNumber(best.weight)} × ${best.reps}` : `${best.reps} reps`;
+    return best.weight > 0 ? `${formatUnitMass(best.weight, 1, UNIT_KINDS.LIFTING_WEIGHT)} × ${best.reps}` : `${best.reps} reps`;
 }
 function getLabel(score) {
     if (score === null) return "Baseline Session";
