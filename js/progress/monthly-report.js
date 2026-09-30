@@ -462,8 +462,6 @@ function renderWeight(report) {
         '<div class="monthly-report-card-head"><div><span class="eyebrow">BODY WEIGHT</span><h2>Weight & goal</h2><p>Uses the same smoothed Trend Weight and Weekly Trend calculations as Weight Progress.</p></div>' +
         '<strong>' + report.weight.end.toFixed(1) + '<small>trend lb</small></strong></div>' +
         '<div class="monthly-shared-chart-shell"><canvas data-monthly-weight-chart aria-label="Monthly weight trend"></canvas></div>' +
-        '<div class="monthly-graph-legend"><span><i class="is-daily-weight"></i>Daily weight</span><span><i class="is-trend-weight"></i>Trend Weight</span>' +
-        (Number.isFinite(report.weight.goalWeight) ? '<span><i class="is-goal-weight"></i>Goal weight</span>' : '') + '</div>' +
         '<div class="monthly-report-four">' +
             smallStat("Trend at start", report.weight.start.toFixed(1) + " lb") +
             smallStat("Current trend", report.weight.end.toFixed(1) + " lb") +
@@ -1063,8 +1061,6 @@ function buildPdfHtml(report, markSvg, anatomy = {}) {
         pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Weight") +
             '<div class="pdf-section-intro"><span>BODY WEIGHT</span><h2>Weight & goal</h2><p>Uses the same smoothed Trend Weight and Weekly Trend calculations as Weight Progress.</p></div>' +
             '<div class="pdf-chart">' + pdfWeightChartSvg(report.weight) + '</div>' +
-            '<div class="pdf-legend"><span><i class="daily-weight"></i>Daily weight</span><span><i class="trend-weight"></i>Trend Weight</span>' +
-            (Number.isFinite(report.weight.goalWeight) ? '<span><i class="goal-weight"></i>Goal weight</span>' : '') + '</div>' +
             '<div class="pdf-summary-grid">' +
                 pdfSummary(report.weight.start.toFixed(1) + " lb", "Trend at start") +
                 pdfSummary(report.weight.end.toFixed(1) + " lb", "Current trend") +
