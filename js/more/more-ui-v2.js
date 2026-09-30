@@ -1,4 +1,4 @@
-import "./contact-support.js?v=feature-board-1";
+import { supportCardMarkup, initializeSupportControls } from "./contact-support.js?v=help-navigation-2";
 import { navigate } from "../core/router.js?v=native-navigation-stability-1";
 import { renderExportBackup } from "./export-backup-ui.js?v=full-data-export-1";
 import { initializeBackupManager } from "../core/backup-manager.js?v=backup-complete-7";
@@ -67,10 +67,12 @@ export function renderMore() {
     <button class="more-menu-card" type="button" data-more-page="learn"><span class="more-menu-icon">${ICONS.learn}</span><span><strong>Tutorials</strong><small>Restart in-app tutorials and open walkthroughs for workouts, nutrition and progress.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="exports-backup"><span class="more-menu-icon">${ICONS.backup}</span><span><strong>Exports & Backup</strong><small>Export, restore and transfer your Level Up data with Google Drive.</small></span></button>
     </div>
+    <div class="more-menu-group" data-more-group="help-support"><h3>Help &amp; Support</h3>${supportCardMarkup()}</div>
     </section>`;
 }
 
 export function initializeMore() {
+    initializeSupportControls();
     document.querySelectorAll("[data-more-page]").forEach(button => button.addEventListener("click", () => {
         const page = button.dataset.morePage;
         if (page === "explore") {
