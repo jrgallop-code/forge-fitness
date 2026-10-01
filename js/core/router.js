@@ -12,7 +12,7 @@ import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/
 import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=pwa-workout-sharing-1";
 import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-live-polish.js?v=workout-landing-live-polish-2";
 import { renderProgress } from "../progress/progress-ui.js?v=weight-reps-progress-1";
-import { initializeMonthlyReports, initializeMonthlyReportDashboardPrompt } from "../progress/monthly-report.js?v=pwa-monthly-reports-2";
+import { initializeMonthlyReports, initializeMonthlyReportDashboardPrompt } from "../progress/monthly-report.js?v=monthly-lifecycle-1";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=pwa-weight-units-1";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=theme-accent-calendar-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=smoothed-visible-trend-release-1";
