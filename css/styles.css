@@ -5190,3 +5190,6 @@ html.photo-gallery-open .bottom-nav {
         width:100%;
     }
 }
+
+.exercise-chart-heading label[hidden] { display:none !important; }
+.exercise-metric-controls button { min-width:0; }
