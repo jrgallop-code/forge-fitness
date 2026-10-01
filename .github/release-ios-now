@@ -295,3 +295,5 @@ Release: always show Request a Feature in More; open Help Center with native Don
 Release: use selected lifting units in dashboard highlights and previous set comparisons; correct activity calendar volume/weigh-ins and strength improvement units.
 
 Release: remove outdated monthly weight chart legend in report and PDF.
+
+Release: align Progress insight with the visible weekly weight trend and compare pace with the saved goal (e.g., +1.18 versus +0.50 lb/week).

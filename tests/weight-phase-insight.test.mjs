@@ -11,6 +11,13 @@ test("a slower gain is compared with the numeric goal, not merely its direction"
     assert.match(copy, /revisit calorie intake at your next check-in/);
 });
 
+test("a 1.18 lb/week gain against a 0.5 lb/week goal prompts a pace review", () => {
+    const [heading, copy] = phaseWeightInsight({ phase: { type: "lean-bulk", targetWeeklyRate: 0.5 }, rate: 1.18, loggedCount: 6 });
+    assert.equal(heading, "Above goal pace");
+    assert.match(copy, /\+1\.18 lb\/week versus a goal of \+0\.50 lb\/week/);
+    assert.match(copy, /revisit calorie intake at your next check-in/);
+});
+
 test("near-goal and sparse-data states avoid premature calorie changes", () => {
     assert.equal(phaseWeightInsight({ phase, rate: 1.42, loggedCount: 6 })[0], "Near goal pace");
     assert.equal(phaseWeightInsight({ phase, rate: 1.18, loggedCount: 2 })[0], "More data needed");
