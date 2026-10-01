@@ -297,3 +297,5 @@ Release: use selected lifting units in dashboard highlights and previous set com
 Release: remove outdated monthly weight chart legend in report and PDF.
 
 Release: align Progress insight with the visible weekly weight trend and compare pace with the saved goal (e.g., +1.18 versus +0.50 lb/week).
+
+Release: add Weight & reps exercise progress and show the Machine selector only for machine and cable exercises.
