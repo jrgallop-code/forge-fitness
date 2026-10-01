@@ -12,6 +12,8 @@ import { drawSharedWeightTrendChart } from "./weight-trend-chart.js?v=progress-r
 import { drawSharedCalorieExpenditureChart } from "../nutrition/tdee-calorie-expenditure-carousel.js?v=energy-balance-range-3";
 import { shareNativePdfFile, shareNativeImageFile } from "../core/native-capabilities.js?v=monthly-pdf-report-2";
 
+import { chooseMonthlyReportPrompt } from "./monthly-report-lifecycle.js?v=monthly-lifecycle-1";
+
 const SESSION_KEY = "forge_workout_sessions";
 const WEIGHT_KEY = "forge_weight_entries";
 const PHASES_KEY = "level_up_nutrition_phases";
@@ -33,11 +35,7 @@ export function initializeMonthlyReports(root = document) {
     if (!tabs) return;
 
     const monthKey = preferredMonthKey();
-    const report = buildMonthlyReport(monthKey);
-    if (!isReportDismissed(monthKey)) {
-        tabs.insertAdjacentHTML("beforebegin", renderEntryCard(report));
-        bindReportPromptActions(page, monthKey);
-    }
+    refreshProgressReportPrompt(page);
 
     if (localStorage.getItem(OPEN_HUB_KEY) === "1") {
         localStorage.removeItem(OPEN_HUB_KEY);
@@ -73,7 +71,7 @@ export function initializeMonthlyReportDashboardPrompt(root = document) {
     card.innerHTML =
         '<button class="monthly-report-prompt-close" type="button" data-monthly-prompt-close aria-label="Dismiss ' + escapeHtml(report.label) + ' report prompt">×</button>' +
         '<div><span class="eyebrow">MONTHLY REPORT</span>' +
-        '<strong>Your ' + escapeHtml(report.label) + ' report is ready</strong>' +
+        '<strong>Your ' + escapeHtml(report.label) + ' report is complete</strong>' +
         '<p>See what improved and what to focus on next.</p></div>' +
         '<button class="primary-btn" type="button" data-monthly-dashboard-view>View Report</button>';
     const first = host.firstElementChild;
@@ -101,6 +99,19 @@ function ensureStyles() {
     document.head.appendChild(link);
 }
 
+function refreshProgressReportPrompt(page) {
+    page.querySelector("[data-monthly-report-prompt]")?.remove();
+    const now = new Date();
+    const current = monthKeyForDate(now);
+    const previous = shiftMonth(current, -1);
+    const chosen = chooseMonthlyReportPrompt({ now, current, previous,
+        previousHasData: monthHasMeaningfulData(previous), currentHasData: monthHasMeaningfulData(current),
+        previousDismissed: isReportDismissed(previous), currentDismissed: isReportDismissed(current) });
+    if (!chosen) return;
+    page.querySelector(".progress-tabs")?.insertAdjacentHTML("beforebegin", renderEntryCard(buildMonthlyReport(chosen)));
+    bindReportPromptActions(page, chosen);
+}
+
 function renderEntryCard(report) {
     const stats = [];
     if (report.training.workouts) stats.push(report.training.workouts + " workouts");
@@ -111,9 +122,9 @@ function renderEntryCard(report) {
         '<button class="monthly-report-prompt-close" type="button" data-monthly-prompt-close aria-label="Dismiss ' + escapeHtml(report.label) + ' report prompt">×</button>' +
         '<div class="monthly-report-entry-art" aria-hidden="true"><img src="assets/level-up-mark-transparent.svg" alt=""></div>' +
         '<div class="monthly-report-entry-copy">' +
-            '<div class="monthly-report-entry-kicker"><span>MONTHLY REPORT</span><b>' + (report.isCurrent ? "LIVE" : "READY") + '</b></div>' +
-            '<h3>' + escapeHtml(report.label) + '</h3>' +
-            '<p>Training, progress and useful next steps in one place.</p>' +
+            '<div class="monthly-report-entry-kicker"><span>MONTHLY REPORT</span><b>' + (report.isCurrent ? "LIVE" : "COMPLETE") + '</b></div>' +
+            '<h3>' + escapeHtml(report.label) + (report.isCurrent ? '' : ' report is complete') + '</h3>' +
+            '<p>' + (report.isCurrent ? 'Your month so far. Final takeaways arrive after month-end.' : 'Review your completed month and what to focus on next.') + '</p>' +
             '<small>' + escapeHtml(stats.join(" · ") || "Your month in review") + '</small>' +
         '</div>' +
         '<button type="button" class="monthly-report-entry-action" data-monthly-report-open>View Report</button>' +
@@ -127,7 +138,7 @@ function bindReportPromptActions(root, monthKey) {
     if (close) close.addEventListener("click", function () {
         const card = close.closest(".monthly-report-entry-card");
         dismissReportPrompt(monthKey);
-        if (card) showDismissedMessage(card);
+        if (card) { card.remove(); refreshProgressReportPrompt(root); }
     });
 }
 
@@ -208,13 +219,17 @@ function bindHub(screen, progressPage, preferred) {
 function renderReportView(screen, progressPage, monthKey) {
     const report = buildMonthlyReport(monthKey);
     markSeen(monthKey);
+    if (!report.isCurrent) screen.dataset.reviewedMonth = monthKey;
     screen.innerHTML = renderReport(report);
     bindReport(screen, progressPage, report);
     window.scrollTo({ top: 0, behavior: "auto" });
 }
 
 function closeMonthlyScreen(screen, progressPage) {
+    const reviewed = screen.dataset.reviewedMonth;
+    if (reviewed && reviewed !== monthKeyForDate(new Date())) dismissReportPrompt(reviewed);
     screen.remove();
+    refreshProgressReportPrompt(progressPage);
     progressPage.hidden = false;
     window.scrollTo({ top: 0, behavior: "auto" });
 }
@@ -260,6 +275,7 @@ function renderOverviewPanel(report) {
 }
 
 function renderFocusPanel(report) {
+    if (report.isCurrent) return '<section class="monthly-report-card monthly-report-focus monthly-report-single-card"><div class="monthly-report-card-head"><div><span class="eyebrow">MONTH IN PROGRESS</span><h2>Focus available after month-end</h2><p>Your wins and next-month priorities will be available once ' + escapeHtml(report.label) + ' is complete.</p></div></div></section>';
     return '<section class="monthly-report-card monthly-report-focus monthly-report-single-card">' +
         '<div class="monthly-report-card-head"><div><span class="eyebrow">MONTHLY TAKEAWAYS</span><h2>What improved & what comes next</h2><p>Wins first, then a maximum of three data-backed priorities.</p></div></div>' +
         '<div class="monthly-improvement-grid">' +
@@ -498,6 +514,7 @@ function renderImprovement(report) {
 }
 
 function renderFocus(report) {
+    if (report.isCurrent) return renderFocusPanel(report);
     const nextLabel = labelForMonth(shiftMonth(report.monthKey, 1), true);
     return '<section class="monthly-report-card monthly-report-focus" id="monthly-section-focus">' +
         '<div class="monthly-report-card-head"><div><span class="eyebrow">NEXT MONTH</span><h2>Focus for ' + escapeHtml(nextLabel) + '</h2>' +
@@ -1071,6 +1088,9 @@ function buildPdfHtml(report, markSvg, anatomy = {}) {
             pdfFooter(report, pdfPage++) + '</section>');
     }
 
+    if (report.isCurrent) {
+        pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Focus") + '<h2>Focus available after month-end</h2><p>Your wins and next-month priorities will be available once ' + escapeHtml(report.label) + ' is complete.</p>' + pdfFooter(report, pdfPage++) + '</section>');
+    } else {
     // Focus mirrors the in-app Focus tab, including wins, priorities and Keep Doing.
     pages.push('<section class="pdf-page">' + pdfHeader(logo, report, "Focus") +
         '<div class="pdf-section-intro"><span>MONTHLY TAKEAWAYS</span><h2>What improved & what comes next</h2><p>Wins first, then a maximum of three data-backed priorities.</p></div>' +
@@ -1084,6 +1104,8 @@ function buildPdfHtml(report, markSvg, anatomy = {}) {
         }).join("") + '</div><div class="pdf-keep"><h2>Keep doing</h2>' +
         report.keepDoing.map(function (item) { return '<p>✓ ' + escapeHtml(item) + '</p>'; }).join("") +
         '</div>' + pdfFooter(report, pdfPage++) + '</section>');
+
+    }
 
     return '<!doctype html><html><head><meta charset="utf-8"><style>' + pdfCss() + '</style></head><body>' + pages.join("") + '</body></html>';
 }
