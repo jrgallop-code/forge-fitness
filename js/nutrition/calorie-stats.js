@@ -6,6 +6,8 @@ import { getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=calendar-checkin-day-1";
 import { readFoodLog } from "./food-log-data.js?v=fatsecret-progress-calories-1";
 import { completeTutorial, dismissTutorial, getTutorial, getTutorialState, setTutorialStep, shouldShowTutorial } from "../core/tutorials.js?v=food-log-macro-bars-1";
+import { calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
+import { phaseWeightInsight } from "./weight-phase-insight.js?v=progress-insight-rate-1";
 
 const FOOD_COMPLETE_KEY = "level_up_food_log_complete_days_v1";
 const RANGE_KEY = "level_up_calorie_stats_range_v1";
@@ -583,17 +585,14 @@ function mealWeekView(days, target) {
     return `<div class="calorie-meal-week-value-region" aria-live="polite">${valuePanels.join("")}</div><div class="calorie-meal-week-chart" aria-label="Calories by meal for the last seven days"><div class="calorie-meal-week-axis" aria-hidden="true"><small>cal</small>${axisTicks}</div><div class="calorie-meal-week-plot">${dayBars}${averageBar}</div></div><p class="calorie-meal-week-hint">Tap a bar to view its values.</p><div class="calorie-meal-week-metrics"><span><small>${differenceLabel}</small><strong>${weeklyDifference === null ? "—" : formatNumber(Math.abs(weeklyDifference))}</strong></span><span><small>Daily average</small><strong>${included.length ? formatNumber(averageCalories) : "—"}</strong></span><span><small>Daily goal</small><strong>${target > 0 ? formatNumber(target) : "—"}</strong></span></div>${included.length < 7 ? '<p class="calorie-stat-note">Today joins the average after calorie tracking is marked complete.</p>' : ""}`;
 }
 
-function phaseInsight(targets, rate, loggedCount) {
-    if (loggedCount < 4) return ["More data needed", "Log at least 4 days to create a useful calorie and weight trend."];
-    if (rate === null) return ["Calories tracked", "Add at least two weigh-ins in this range to compare intake with your weight trend."];
-    const phaseText = String(targets.phase?.type || targets.phase?.goal || targets.phase?.name || "").toLowerCase();
-    const cutting = /cut|loss|lose/.test(phaseText);
-    const bulking = /bulk|gain|build/.test(phaseText);
-    const aligned = cutting ? rate < 0 : bulking ? rate > 0 : Math.abs(rate) < .35;
-    if (cutting || bulking) return aligned
-        ? ["Phase trend aligned", `Your weight trend is moving ${rate < 0 ? "down" : "up"} at ${Math.abs(rate).toFixed(2)} lb/week. Keep following your current plan.`]
-        : ["Watch the trend", `Your weight trend is ${rate > 0 ? "+" : ""}${rate.toFixed(2)} lb/week, which may not match your current phase. Keep logging before changing calories.`];
-    return ["Weight trend", `Your current trend is ${rate > 0 ? "+" : ""}${rate.toFixed(2)} lb/week.`];
+function currentVisibleWeightRate() {
+    const today = localDateKey();
+    const weights = normalizeWeightEntries(readJson("forge_weight_entries", []))
+        .filter(entry => entry.date <= today);
+    const latestDate = weights.at(-1)?.date;
+    if (!latestDate) return null;
+    const rate = calculateVisibleWeightTrend(weights, { endDate: latestDate }).weeklyChange;
+    return Number.isFinite(rate) ? rate : null;
 }
 
 function renderStats(panel) {
@@ -618,8 +617,7 @@ function renderStats(panel) {
     const historyStart = tdeeStart ? shiftDateKey(tdeeStart, -28) : null;
     const tdeeHistory = getCalculatedMaintenanceHistory(formulaEstimate, { startDate: historyStart });
     const tdeeTrend = expenditureTrendState(tdeeHistory, targets, maintenance, tdeeRange);
-    const rate = Number.isFinite(maintenance.weightRateLbPerWeek) ? maintenance.weightRateLbPerWeek : null;
-    const insight = phaseInsight(targets, rate, logged.length);
+    const insight = phaseWeightInsight({ phase: targets.phase, rate: currentVisibleWeightRate(), loggedCount: logged.length });
     const checkIn = getMaintenanceCheckIn({
         estimate: maintenance,
         currentMaintenance: targets.phase?.maintenanceCalories,
