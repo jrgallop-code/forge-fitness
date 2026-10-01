@@ -396,8 +396,8 @@ export function renderProgress() {
                             <h4 id="exercise-progress-title">
                                 Exercise Progress
                             </h4>
-                            <label>
-                                Equipment
+                            <label hidden>
+                                Machine
                                 <select id="exercise-equipment-filter"></select>
                             </label>
                         </div>
@@ -405,6 +405,7 @@ export function renderProgress() {
                         <div class="exercise-metric-controls" aria-label="Exercise progress metric">
                             <button type="button" data-exercise-metric="volume" aria-pressed="true">Session Volume</button>
                             <button type="button" data-exercise-metric="strength" aria-pressed="false">Estimated 1RM</button>
+                            <button type="button" data-exercise-metric="weight" aria-pressed="false">Weight &amp; reps</button>
                         </div>
 
                         <div class="exercise-machine-view-controls" id="exercise-machine-view-controls" aria-label="Machine graph view" hidden>

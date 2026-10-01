@@ -2,6 +2,8 @@ import { UNIT_KINDS, displayMass, massUnit } from "../core/unit-system.js?v=gran
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { calculateSetVolume } from "../workouts/volume-calculator.js?v=two-dumbbells-1";
 
+import { supportsEquipmentProfiles } from "../workouts/equipment-profiles.js";
+
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 let unitListenerBound = false;
 let selectedMetric = "volume";
@@ -79,7 +81,7 @@ function renderExerciseProgressV2() {
     const select = document.getElementById("exercise-progress-select");
     const history = document.getElementById("exercise-history-body");
     if (!host || !select || !history) return;
-    const allRecords = getExerciseRecords(select.value);
+    const allRecords = getExerciseRecords(select.value).filter(record => selectedMetric !== "weight" || record.weightSet);
     const profiles = getProfiles(allRecords);
     if (selectedExerciseId !== select.value) {
         selectedExerciseId = select.value;
@@ -87,7 +89,8 @@ function renderExerciseProgressV2() {
         selectedMachineView = "combined";
     }
     updateEquipmentFilter(profiles);
-    const hasMachineBreakdown = selectedEquipment === "all" && profiles.length > 1;
+    if (!supportsEquipmentProfiles(getExerciseById(select.value))) { selectedEquipment = "all"; selectedMachineView = "combined"; }
+    const hasMachineBreakdown = selectedEquipment === "all" && profiles.length > 1 && supportsEquipmentProfiles(getExerciseById(select.value));
     const comparisonProfiles = profiles.filter(profile => profile.id !== "default");
     updateMachineViewControls(hasMachineBreakdown, comparisonProfiles.length > 1);
     updateControls(hasMachineBreakdown);
@@ -164,6 +167,7 @@ function getExerciseRecords(exerciseId) {
                 profileId: group.profileId,
                 profileName: group.profileName,
                 bestSet: ranked[0].set,
+                weightSet: selectWeightSet(group.sets),
                 estimatedOneRepMax: ranked[0].oneRepMax,
                 completedSets: group.sets.length,
                 totalReps: group.sets.reduce((sum, set) => sum + Number(set.reps) + dropReps(set), 0),
@@ -197,6 +201,8 @@ function getProfiles(records) {
 function updateEquipmentFilter(profiles) {
     const select = document.getElementById("exercise-equipment-filter");
     if (!select) return;
+    const machine = supportsEquipmentProfiles(getExerciseById(selectedExerciseId));
+    select.closest("label").hidden = !machine;
     if (profiles.length < 2) {
         selectedEquipment = "all";
         select.innerHTML = `<option value="all">${escapeHtml(profiles[0]?.name || "Equipment")}</option>`;
@@ -204,7 +210,7 @@ function updateEquipmentFilter(profiles) {
         select.disabled = true;
         return;
     }
-    select.innerHTML = `<option value="all">All equipment</option>${profiles.map(profile =>
+    select.innerHTML = `<option value="all">All machines</option>${profiles.map(profile =>
         `<option value="${escapeHtml(profile.id)}">${escapeHtml(profile.name)}</option>`
     ).join("")}`;
     const values = ["all", ...profiles.map(profile => profile.id)];
@@ -230,6 +236,8 @@ function aggregateEquipmentRecords(records) {
         current.totalReps += record.totalReps;
         current.sessionVolume += record.sessionVolume;
         current.heaviestWeight = Math.max(current.heaviestWeight, record.heaviestWeight);
+        if (record.weightSet && (!current.weightSet || Number(record.weightSet.weight) > Number(current.weightSet.weight) ||
+            (Number(record.weightSet.weight) === Number(current.weightSet.weight) && Number(record.weightSet.reps) > Number(current.weightSet.reps)))) current.weightSet = record.weightSet;
         if (record.estimatedOneRepMax > current.estimatedOneRepMax) {
             current.estimatedOneRepMax = record.estimatedOneRepMax;
             current.bestSet = record.bestSet;
@@ -238,6 +246,17 @@ function aggregateEquipmentRecords(records) {
     });
     return [...grouped.values()].sort(compareRecords);
 }
+
+export function selectWeightSet(sets) {
+    return sets.filter(isWorkingSet).filter(set => !["drop", "dropset", "drop-set"].includes(set.type || set.setType))
+        .sort((a, b) => Number(b.weight) - Number(a.weight) || Number(b.reps) - Number(a.reps))[0] || null;
+}
+
+function rawMetricValue(record) {
+    if (selectedMetric === "weight") return Number(record.weightSet?.weight || 0);
+    return selectedMetric === "volume" ? record.sessionVolume : record.estimatedOneRepMax;
+}
+function metricSet(record) { return selectedMetric === "weight" ? record.weightSet : record.bestSet; }
 
 function isWorkingSet(set) {
     if (!set || set.isWarmup || set.warmup || set.type === "warmup" || set.setType === "warmup") return false;
@@ -288,7 +307,7 @@ function updateControls(hasMachineBreakdown = false) {
     else {
         note.textContent = selectedMetric === "volume"
             ? "Two-dumbbell exercises count both dumbbells; other loads use weight × reps."
-            : "Best-set Epley estimate—not a tested maximum.";
+            : selectedMetric === "weight" ? "Heaviest working set with reps. More weight and more reps are separate milestones; weight alone does not prove a strength gain." : "Best-set Epley estimate—not a tested maximum.";
     }
 }
 
@@ -297,16 +316,16 @@ function renderComparison(records) {
     if (!container) return;
     container.hidden = false;
     if (!records.length) {
-        container.innerHTML = `<p class="empty-state">Log this exercise to establish your first ${selectedMetric === "volume" ? "session volume" : "estimated 1RM"}.</p>`;
+        container.innerHTML = `<p class="empty-state">Log this exercise to establish your first ${selectedMetric === "volume" ? "session volume" : selectedMetric === "weight" ? "working weight" : "estimated 1RM"}.</p>`;
         return;
     }
     const latest = records.at(-1);
     const previous = records.at(-2);
     const first = records[0];
     const isVolume = selectedMetric === "volume";
-    const latestValue = isVolume ? latest.sessionVolume : latest.estimatedOneRepMax;
-    const previousValue = previous ? (isVolume ? previous.sessionVolume : previous.estimatedOneRepMax) : null;
-    const baselineValue = isVolume ? first.sessionVolume : first.estimatedOneRepMax;
+    const latestValue = rawMetricValue(latest);
+    const previousValue = previous ? (rawMetricValue(previous)) : null;
+    const baselineValue = rawMetricValue(first);
     const change = previous ? latestValue - previousValue : null;
     const percent = previousValue > 0 ? change / previousValue * 100 : null;
     const baselineChange = records.length > 1 ? latestValue - baselineValue : null;
@@ -323,7 +342,7 @@ function renderComparison(records) {
         <div class="exercise-volume-stat is-summary"><span>Previous</span><strong>${previous ? valueLabel(previousValue) : "—"}</strong></div>
         <div class="exercise-volume-stat is-summary"><span>Since Previous</span><strong class="${change > 0 ? "is-positive" : change < 0 ? "is-negative" : ""}">${change === null ? "First session" : `${changeLabel(change)} · ${signedPercent(percent)}`}</strong></div>
         ${baselineSummary}
-        <p class="exercise-volume-detail">${isVolume ? buildChangeDetail(latest, previous) : buildStrengthDetail(latest, previous)}</p>`;
+        <p class="exercise-volume-detail">${isVolume ? buildChangeDetail(latest, previous) : (selectedMetric === "weight" ? buildWeightDetail(latest, previous) : buildStrengthDetail(latest, previous))}</p>`;
 }
 
 function renderEquipmentSummary(records, profiles) {
@@ -334,7 +353,7 @@ function renderEquipmentSummary(records, profiles) {
         const profileRecords = records.filter(record => record.profileId === profile.id);
         const latest = profileRecords.at(-1);
         const first = profileRecords[0];
-        const value = record => selectedMetric === "volume" ? record.sessionVolume : record.estimatedOneRepMax;
+        const value = record => rawMetricValue(record);
         const label = number => selectedMetric === "volume" ? formatVolume(number) : formatMass(number, 1);
         const change = latest && first && profileRecords.length > 1 && value(first) > 0
             ? (value(latest) - value(first)) / value(first) * 100
@@ -351,12 +370,22 @@ function renderNormalizedEquipmentSummary(records, profiles) {
         const profileRecords = records.filter(record => record.profileId === profile.id);
         const first = profileRecords[0];
         const latest = profileRecords.at(-1);
-        const value = record => selectedMetric === "volume" ? record.sessionVolume : record.estimatedOneRepMax;
+        const value = record => rawMetricValue(record);
         const change = first && latest && profileRecords.length > 1 && value(first) > 0
             ? (value(latest) - value(first)) / value(first) * 100
             : null;
         return `<div class="exercise-volume-stat"><span>${escapeHtml(profile.name)}</span><strong class="${change > 0 ? "is-positive" : change < 0 ? "is-negative" : ""}">${change === null ? "Baseline" : signedPercent(change)}</strong><small>${profileRecords.length} workout${profileRecords.length === 1 ? "" : "s"}</small></div>`;
     }).join("") + `<p class="exercise-volume-detail">Each machine begins at 0%, so different resistance systems can be compared fairly.</p>`;
+}
+
+function buildWeightDetail(latest, previous) {
+    if (!latest.weightSet) return "No regular weighted working sets recorded.";
+    const current = formatSet(latest.weightSet);
+    if (!previous?.weightSet) return `Heaviest working set ${current} establishes your baseline`;
+    const delta = Number(latest.weightSet.weight) - Number(previous.weightSet.weight);
+    const reps = Number(latest.weightSet.reps) - Number(previous.weightSet.reps);
+    const milestone = delta > 0 ? "Weight increased" : delta === 0 && reps > 0 ? "Rep improvement" : delta === 0 ? "Same working weight" : "Lower working weight";
+    return `${milestone} · ${current} · previously ${formatSet(previous.weightSet)}`;
 }
 
 function buildStrengthDetail(latest, previous) {
@@ -378,7 +407,7 @@ function renderHistory(container, records) {
     const header = container.previousElementSibling;
     if (header?.classList.contains("exercise-history-header")) header.innerHTML = selectedMetric === "volume"
         ? "<span>Date</span><span>Volume</span><span>Change</span><span>Equipment</span><span>Sets</span>"
-        : "<span>Date</span><span>Best Set</span><span>Est. 1RM</span><span>Equipment</span><span>Sets</span>";
+        : (selectedMetric === "weight" ? "<span>Date</span><span>Weight & reps</span><span>Weight</span><span>Machine</span><span>Sets</span>" : "<span>Date</span><span>Best Set</span><span>Est. 1RM</span><span>Equipment</span><span>Sets</span>");
     if (!records.length) {
         container.innerHTML = '<p class="empty-state">No completed weighted working sets in this timeframe.</p>';
         return;
@@ -390,8 +419,8 @@ function renderHistory(container, records) {
         return selectedMetric === "volume" ? `
             <div class="exercise-history-row"><span>${formatDate(record.date)}</span><strong>${formatVolume(record.sessionVolume)}</strong>
             <span class="exercise-history-change ${previous ? changeToneClass(record.sessionVolume - previous.sessionVolume) : ""}">${previous ? signedPercent((record.sessionVolume - previous.sessionVolume) / previous.sessionVolume * 100) : "Baseline"}</span><span>${escapeHtml(record.profileName)}</span><span>${record.completedSets}</span></div>` : `
-            <div class="exercise-history-row"><span>${formatDate(record.date)}</span><strong>${formatSet(record.bestSet)}</strong>
-            <span>${formatMass(record.estimatedOneRepMax, 1)}</span><span>${escapeHtml(record.profileName)}</span><span>${record.completedSets}</span></div>`;
+            <div class="exercise-history-row"><span>${formatDate(record.date)}</span><strong>${formatSet(metricSet(record))}</strong>
+            <span>${formatMass(rawMetricValue(record), 1)}</span><span>${escapeHtml(record.profileName)}</span><span>${record.completedSets}</span></div>`;
     }).join("");
 }
 
@@ -411,7 +440,7 @@ function renderMultiEquipmentStrengthChart(host, records, profiles) {
     const width = Math.max(320, Math.round(host.clientWidth || 700));
     const height = width <= 520 ? 280 : 310;
     const padding = { top: 38, right: 18, bottom: 42, left: 56 };
-    const values = records.map(record => displayMass(record.estimatedOneRepMax, 1, UNIT_KINDS.LIFTING_WEIGHT));
+    const values = records.map(record => displayMass(rawMetricValue(record), 1, UNIT_KINDS.LIFTING_WEIGHT));
     const axisLabel = `Estimated 1RM (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})`;
     if (!values.length) {
         host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="No exercise progress data"><text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="var(--muted)" font-size="12">No completed weighted sets to plot</text></svg>`;
@@ -434,11 +463,11 @@ function renderMultiEquipmentStrengthChart(host, records, profiles) {
     const seriesMarkup = profiles.map((profile, profileIndex) => {
         const points = records.filter(record => record.profileId === profile.id).map(record => ({
             ...record,
-            value: displayMass(record.estimatedOneRepMax, 1, UNIT_KINDS.LIFTING_WEIGHT)
+            value: displayMass(rawMetricValue(record), 1, UNIT_KINDS.LIFTING_WEIGHT)
         }));
         const color = equipmentColor(profileIndex);
         const coordinates = points.map(point => `${getX(point)},${getY(point.value)}`).join(" ");
-        return `${points.length > 1 ? `<polyline points="${coordinates}" fill="none" stroke="${color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>` : ""}${points.map(point => `<circle cx="${getX(point)}" cy="${getY(point.value)}" r="4" fill="${color}" stroke="var(--card)" stroke-width="2"><title>${escapeHtml(profile.name)} · ${formatDate(point.date)}: ${formatMass(point.estimatedOneRepMax, 1)}</title></circle>`).join("")}`;
+        return `${points.length > 1 ? `<polyline points="${coordinates}" fill="none" stroke="${color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>` : ""}${points.map(point => `<circle cx="${getX(point)}" cy="${getY(point.value)}" r="4" fill="${color}" stroke="var(--card)" stroke-width="2"><title>${escapeHtml(profile.name)} · ${formatDate(point.date)}: ${(selectedMetric === "weight" ? formatSet(point.weightSet) : formatMass(point.estimatedOneRepMax, 1))}</title></circle>`).join("")}`;
     }).join("");
     host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="${axisLabel} by equipment">
         <text x="${padding.left}" y="20" fill="var(--accent-text)" font-size="10" font-weight="800" letter-spacing="1.2">${axisLabel.toUpperCase()}</text>
@@ -451,7 +480,7 @@ function renderMultiEquipmentStrengthChart(host, records, profiles) {
 function metricValue(record) {
     return selectedMetric === "volume"
         ? displayVolume(record.sessionVolume)
-        : displayMass(record.estimatedOneRepMax, 1, UNIT_KINDS.LIFTING_WEIGHT);
+        : displayMass(rawMetricValue(record), 1, UNIT_KINDS.LIFTING_WEIGHT);
 }
 
 function renderNormalizedMachineChart(host, records, profiles) {
@@ -525,13 +554,13 @@ function renderSeparateMachineCharts(host, records, profiles) {
         const color = equipmentColor(profileIndex);
         const coordinates = coords.map(point => `${point.x},${point.y}`).join(" ");
         const latest = points.at(-1);
-        const latestLabel = selectedMetric === "volume" ? formatVolume(latest.sessionVolume) : formatMass(latest.estimatedOneRepMax, 1);
+        const latestLabel = selectedMetric === "volume" ? formatVolume(latest.sessionVolume) : (selectedMetric === "weight" ? formatSet(latest.weightSet) : formatMass(latest.estimatedOneRepMax, 1));
         return `<article class="machine-progress-card">
             <header><div><strong>${escapeHtml(profile.name)}</strong><small>${points.length === 1 ? "Baseline set" : `${points.length} workouts`}</small></div><b>${latestLabel}</b></header>
             <svg viewBox="0 0 ${width} ${height}" width="100%" role="img" aria-label="${escapeHtml(profile.name)} raw progress">
                 <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="var(--line)"/>
                 ${coords.length > 1 ? `<polyline points="${coordinates}" fill="none" stroke="${color}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>` : ""}
-                ${coords.map(point => `<circle cx="${point.x}" cy="${point.y}" r="5" fill="${color}" stroke="var(--card)" stroke-width="2"><title>${formatDate(point.date)}: ${selectedMetric === "volume" ? formatVolume(point.sessionVolume) : formatMass(point.estimatedOneRepMax, 1)}</title></circle>`).join("")}
+                ${coords.map(point => `<circle cx="${point.x}" cy="${point.y}" r="5" fill="${color}" stroke="var(--card)" stroke-width="2"><title>${formatDate(point.date)}: ${selectedMetric === "volume" ? formatVolume(point.sessionVolume) : (selectedMetric === "weight" ? formatSet(point.weightSet) : formatMass(point.estimatedOneRepMax, 1))}</title></circle>`).join("")}
                 <text x="${padding.left}" y="${height - 8}" fill="var(--muted)" font-size="10">${formatShortDate(points[0].date)}</text>
                 ${points.length > 1 ? `<text x="${width - padding.right}" y="${height - 8}" text-anchor="end" fill="var(--muted)" font-size="10">${formatShortDate(points.at(-1).date)}</text>` : ""}
             </svg>
@@ -542,12 +571,12 @@ function renderSeparateMachineCharts(host, records, profiles) {
 
 function renderSvgChart(host, records) {
     const isVolume = selectedMetric === "volume";
-    const valueFor = record => isVolume ? displayVolume(record.sessionVolume) : displayMass(record.estimatedOneRepMax, 1, UNIT_KINDS.LIFTING_WEIGHT);
+    const valueFor = record => isVolume ? displayVolume(record.sessionVolume) : displayMass(rawMetricValue(record), 1, UNIT_KINDS.LIFTING_WEIGHT);
     const values = records.map(valueFor).filter(Number.isFinite);
     const width = Math.max(320, Math.round(host.clientWidth || 700));
     const height = width <= 520 ? 280 : 310;
     const padding = { top: 38, right: 18, bottom: 42, left: 56 };
-    const axisLabel = isVolume ? `Session Volume (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})` : `Estimated 1RM (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})`;
+    const axisLabel = `${isVolume ? "Session Volume" : selectedMetric === "weight" ? "Working weight" : "Estimated 1RM"} (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})`;
     host.setAttribute("aria-label", `${axisLabel} across logged sessions`);
     if (!values.length) {
         host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="No exercise progress data"><text x="${padding.left}" y="20" fill="var(--accent-text)" font-size="10" font-weight="800" letter-spacing="1.2">${axisLabel.toUpperCase()}</text><line x1="${padding.left}" y1="${padding.top}" x2="${width - padding.right}" y2="${padding.top}" stroke="var(--line)"/><line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="var(--line)"/><text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="var(--muted)" font-size="12">No completed weighted sets to plot</text></svg>`;
@@ -584,7 +613,7 @@ function renderSvgChart(host, records) {
         ${ticks.map(tick => { const y = padding.top + (axisMax - tick) / (axisMax - axisMin) * chartHeight; return `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="var(--line)"/><text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" fill="var(--muted)" font-size="10">${formatAxis(tick)}</text>`; }).join("")}
         ${coords.length > 1 ? `<polygon points="${areaPoints}" fill="url(#exercise-progress-accent-fill)"/>` : ""}
         <polyline points="${linePoints}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" filter="url(#exercise-progress-accent-glow)"/>
-        ${coords.map((point, index) => { const show = coords.length <= 8 || index === 0 || index === coords.length - 1 || index % Math.ceil(coords.length / 6) === 0; const latest = index === coords.length - 1; return `${latest ? `<circle cx="${point.x}" cy="${point.y}" r="8" fill="var(--accent)" fill-opacity=".18"/>` : ""}<circle cx="${point.x}" cy="${point.y}" r="${latest ? 4 : 3}" fill="${latest ? "var(--accent)" : "var(--accent-dark)"}" stroke="var(--card)" stroke-width="2"><title>${formatDate(point.date)}: ${isVolume ? formatVolume(point.sessionVolume) : formatMass(point.estimatedOneRepMax, 1)}</title></circle>${show ? `<text x="${point.x}" y="${height - 16}" text-anchor="middle" fill="var(--muted)" font-size="10">${formatShortDate(point.date)}</text>` : ""}`; }).join("")}</svg>`;
+        ${coords.map((point, index) => { const show = coords.length <= 8 || index === 0 || index === coords.length - 1 || index % Math.ceil(coords.length / 6) === 0; const latest = index === coords.length - 1; return `${latest ? `<circle cx="${point.x}" cy="${point.y}" r="8" fill="var(--accent)" fill-opacity=".18"/>` : ""}<circle cx="${point.x}" cy="${point.y}" r="${latest ? 4 : 3}" fill="${latest ? "var(--accent)" : "var(--accent-dark)"}" stroke="var(--card)" stroke-width="2"><title>${formatDate(point.date)}: ${isVolume ? formatVolume(point.sessionVolume) : (selectedMetric === "weight" ? formatSet(point.weightSet) : formatMass(point.estimatedOneRepMax, 1))}</title></circle>${selectedMetric === "weight" && show && point.weightSet ? `<text x="${point.x}" y="${point.y - 12}" text-anchor="${index === 0 ? "start" : latest ? "end" : "middle"}" fill="var(--accent-text)" font-size="10">${formatSet(point.weightSet)}</text>` : ""}${show ? `<text x="${point.x}" y="${height - 16}" text-anchor="middle" fill="var(--muted)" font-size="10">${formatShortDate(point.date)}</text>` : ""}`; }).join("")}</svg>`;
 }
 
 function displayVolume(value) { return displayMass(value, 0, UNIT_KINDS.LIFTING_WEIGHT); }
@@ -595,7 +624,7 @@ function signedMass(value, digits = 0) { return `${value > 0 ? "+" : ""}${format
 function signedNumber(value) { return `${value > 0 ? "+" : ""}${value}`; }
 function signedPercent(value) { return Number.isFinite(value) ? `${value > 0 ? "+" : ""}${value.toFixed(1)}%` : "—"; }
 function changeToneClass(value) { return value > 0 ? "is-positive" : value < 0 ? "is-negative" : ""; }
-function formatSet(set) { return `${formatMass(Number(set.weight))} × ${Number(set.reps)}`; }
+function formatSet(set) { if (!set) return "—"; return `${formatMass(Number(set.weight))} × ${Number(set.reps)}`; }
 function formatAxis(value) { return Math.abs(value) >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k` : Math.round(value); }
 function niceStep(value) { const power = 10 ** Math.floor(Math.log10(Math.max(1, value))); const normalized = value / power; return (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * power; }
 function parseDate(value) { if (!value) return null; const date = new Date(`${String(value).slice(0, 10)}T12:00:00`); return Number.isFinite(date.getTime()) ? date : null; }

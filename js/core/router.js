@@ -11,13 +11,13 @@ import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from 
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=onboarding-training-days-1";
 import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=pwa-workout-sharing-1";
 import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-live-polish.js?v=workout-landing-live-polish-2";
-import { renderProgress } from "../progress/progress-ui.js?v=equipment-profiles-1";
+import { renderProgress } from "../progress/progress-ui.js?v=weight-reps-progress-1";
 import { initializeMonthlyReports, initializeMonthlyReportDashboardPrompt } from "../progress/monthly-report.js?v=pwa-monthly-reports-2";
 import { initializeWeightTracker } from "../progress/weight-tracker.js?v=pwa-weight-units-1";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=theme-accent-calendar-1";
 import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=smoothed-visible-trend-release-1";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=analytics-bar-polish-1";
-import { initializeExerciseProgressV2 } from "../progress/exercise-progress-v2.js?v=baseline-volume-progress-2";
+import { initializeExerciseProgressV2 } from "../progress/exercise-progress-v2.js?v=weight-reps-progress-1";
 import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=analytics-summary-polish-1";
 import { initializeWeeklyMuscleVolume } from "../progress/weekly-muscle-volume.js?v=repair-generic-exercise-1";
 import { initializeMuscleRecoveryMap } from "../progress/muscle-recovery-map.js?v=recovery-traced-1";
