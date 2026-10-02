@@ -95,8 +95,19 @@ function ensureCarousel(card) {
     if (rangeControl) track.insertAdjacentElement("afterend", rangeControl);
     card.dataset.weightGraphCarouselV3 = "1";
 
+    const watchedSlides = new WeakSet();
+    const resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(() => syncCarouselHeight(card)) : null;
+    const watchSlides = () => {
+        [...track.children].forEach(slide => {
+            if (!watchedSlides.has(slide)) { watchedSlides.add(slide); resizeObserver?.observe(slide); }
+        });
+        syncCarouselHeight(card);
+    };
+    watchSlides();
+    window.addEventListener("resize", watchSlides, { passive: true });
     if (!observer) {
         observer = new MutationObserver(() => {
+            watchSlides();
             const control = card.querySelector(".weight-chart-range-control");
             const activeTrack = card.querySelector("[data-weight-graph-carousel-track-v2]");
             if (control && activeTrack && control.previousElementSibling !== activeTrack) activeTrack.insertAdjacentElement("afterend", control);
@@ -140,12 +151,23 @@ function renderCarbSlide() {
     `;
 }
 
+function syncCarouselHeight(card) {
+    const track = card.querySelector("[data-weight-graph-carousel-track-v2]");
+    if (!track || !track.clientWidth) return;
+    const slides = [...track.children];
+    const index = Math.max(0, Math.min(slides.length - 1, Math.round(track.scrollLeft / track.clientWidth)));
+    const slide = slides[index];
+    const height = Math.ceil(slide?.getBoundingClientRect().height || 0);
+    if (height > 0 && track.style.height !== `${height}px`) track.style.height = `${height}px`;
+}
+
 function syncPager(card) {
     const track = card.querySelector("[data-weight-graph-carousel-track-v2]");
     if (!track) return;
     const maxPage = Math.max(0, card.querySelectorAll("[data-weight-graph-slide-v2]").length - 1);
     const index = Math.max(0, Math.min(maxPage, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
-    card.dataset.weightGraphView = index === 1 ? "carbs" : "trend";
+    card.dataset.weightGraphView = index === 0 ? "trend" : "carbs";
+    syncCarouselHeight(card);
     card.querySelectorAll("[data-weight-graph-page-v2]").forEach(button => {
         button.setAttribute("aria-pressed", String(Number(button.dataset.weightGraphPageV2) === index));
     });
@@ -539,7 +561,7 @@ function ensureStyles() {
     style.id = STYLE_ID;
     style.textContent = `
         #weight-progress .weight-chart-card{overflow:hidden}
-        #weight-progress .weight-graph-carousel-track-v2{display:flex;width:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+        #weight-progress .weight-graph-carousel-track-v2{display:flex;align-items:flex-start;width:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
         #weight-progress .weight-graph-carousel-track-v2::-webkit-scrollbar{display:none}
         #weight-progress .weight-graph-carousel-slide-v2{flex:0 0 100%;min-width:0;box-sizing:border-box;scroll-snap-align:start;scroll-snap-stop:always}
         #weight-progress .weight-graph-carousel-slide-v2.is-carbs{padding:0 1px}

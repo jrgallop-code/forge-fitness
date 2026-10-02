@@ -75,3 +75,9 @@ test('expanded view reuses chart and controls, preserves viewport and restores p
  i.expandedRanges.children[0].click();assert.equal(selected,1,'range buttons forward to original controls');
  api.closeExpandedWeightChart(i);assert.equal(i.expandedDialog,null);assert.equal(stage.parentNode,card);assert.deepEqual(card.children,order);assert.equal(app.inert,false);assert.equal(body.style.overflow,'auto');assert.ok(trigger.focused);assert.deepEqual(api.effectiveWindow(i),before);
 });
+
+test('weekends are neutral shaded and daily grids simplify at decade scale',()=>{
+ const {api,instance:i,context}=harness();const bands=[];let strokes=0;context.fillRect=(x,y,w,h)=>bands.push({x,w,color:context.fillStyle});context.stroke=()=>strokes++;
+ api.drawWeight(i,{start:'2026-09-26',end:'2026-10-02'});assert.equal(bands.length,2);assert.ok(bands.every(b=>b.color==='#64748b'));const weeklyStrokes=strokes;
+ bands.length=0;strokes=0;api.drawWeight(i,{start:'2016-10-05',end:'2026-10-02'});assert.equal(bands.length,0);assert.ok(weeklyStrokes>0&&strokes>0);
+});

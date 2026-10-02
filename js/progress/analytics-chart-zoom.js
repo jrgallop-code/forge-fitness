@@ -450,9 +450,19 @@ function drawWeightCalendar(context, start, end, left, right, top, bottom) {
     const months = calendarPeriods(start, end, "month");
     const years = calendarPeriods(start, end, "year");
     context.save();
-    context.fillStyle = themeColor("--accent", "#df141e");
-    context.globalAlpha = .035;
-    (days > 730 ? years : months).forEach(period => { if (period.key % 2 === 0) context.fillRect(x(period.start), top, x(period.end) - x(period.start), bottom - top); });
+    // Weekend shading remains neutral and disappears before daily bands become too narrow.
+    if ((right - left) / days >= 2) {
+        context.fillStyle = themeColor("--muted", "#85858f");
+        context.globalAlpha = .07;
+        for (let index = 0; index < days; index++) {
+            const date = shiftDate(start, index);
+            const weekday = new Date(dateMs(date)).getDay();
+            if (weekday === 0 || weekday === 6) {
+                const from = x(dateMs(date)), to = Math.min(right, x(dateMs(shiftDate(date, 1))));
+                context.fillRect(from, top, to - from, bottom - top);
+            }
+        }
+    }
     context.globalAlpha = 1;
     context.textAlign = "center";
     context.fillStyle = themeColor("--muted", "#85858f");
@@ -483,10 +493,21 @@ function drawWeightCalendar(context, start, end, left, right, top, bottom) {
     }
     context.strokeStyle = themeColor("--line", "rgba(255,255,255,.07)");
     context.lineWidth = 1;
-    const boundaries = days > 730 ? years : months;
-    boundaries.forEach(period => {
-        context.beginPath(); context.moveTo(x(period.start), top); context.lineTo(x(period.start), bottom); context.stroke();
-    });
+    const drawBoundary = (ms, alpha = 1) => {
+        context.globalAlpha = alpha;
+        context.beginPath(); context.moveTo(x(ms), top); context.lineTo(x(ms), bottom); context.stroke();
+    };
+    const dayWidth = (right - left) / days;
+    if (dayWidth >= 5) {
+        for (let index = 0; index < days; index++) drawBoundary(dateMs(shiftDate(start, index)), .45);
+    } else if (dayWidth >= 1.5) {
+        for (let index = 0; index < days; index++) {
+            const date = shiftDate(start, index);
+            if (new Date(dateMs(date)).getDay() === 1) drawBoundary(dateMs(date), .55);
+        }
+    }
+    (days > 730 ? years : months).forEach(period => drawBoundary(period.start));
+    drawBoundary(dateMs(end));
     context.restore();
 }
 
@@ -655,8 +676,9 @@ function drawWeight(instance, state, scaleOverride = null) {
     drawWeightCalendar(context, state.start, state.end, padding.left, width - padding.right, padding.top, height - padding.bottom);
     context.font = "10px Arial";
     context.textAlign = "right";
-    for (let index = 0; index <= 3; index += 1) {
-        const fraction = index / 3;
+    const gridSteps = Math.max(4, Math.min(10, Math.floor(plotHeight / 48)));
+    for (let index = 0; index <= gridSteps; index += 1) {
+        const fraction = index / gridSteps;
         const yy = padding.top + plotHeight * fraction;
         const value = scale.max - yRange * fraction;
         context.strokeStyle = themeColor("--line", "rgba(255,255,255,.07)");

@@ -309,3 +309,5 @@ Release: Happy Scale-inspired weight timeline with adaptive year/month/day heade
 Release: restore the previous quadratic visual smoothing on the weight timeline, match the fill to the same curve, enlarge the chart, and give Today a readable full-width control area. Test build only.
 
 Release: chart-first weight layout with responsive tall plot, compact single-row controls, statistics below the plot, and a full-screen expanded chart that preserves zoom, history navigation, exact-date selection, focus, and scrolling on Done. Test build only.
+
+Release: remove first weight card carousel gap, adaptive horizontal and vertical grid, day/month/year date headers and neutral grey weekend shading. Preserve enlarged chart and canonical smoothed trend. Test build only.
