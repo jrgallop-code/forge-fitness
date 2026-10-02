@@ -14,6 +14,7 @@ const RANGE_OPTIONS = [
     { id: "1m", label: "1M", days: 30 },
     { id: "3m", label: "3M", days: 90 },
     { id: "6m", label: "6M", days: 180 },
+    { id: "1y", label: "1Y", days: 365 },
     { id: "phase", label: "PHASE" },
     { id: "all", label: "ALL" }
 ];
@@ -134,6 +135,13 @@ function ensureRangeControls(legacyCanvas, selectedRange, activePhase) {
         controls.innerHTML = RANGE_OPTIONS.map(option => `<button type="button" data-weight-chart-range="${option.id}" aria-pressed="false">${option.label}</button>`).join("");
         legacyCanvas.insertAdjacentElement("beforebegin", controls);
     }
+    if (!controls.querySelector('[data-weight-chart-range="1y"]')) {
+        const button = document.createElement("button");
+        button.type = "button"; button.dataset.weightChartRange = "1y"; button.textContent = "1Y";
+        controls.insertBefore(button, controls.querySelector('[data-weight-chart-range="phase"]'));
+    }
+    controls.style.gridTemplateColumns = "repeat(7,minmax(34px,1fr))";
+    controls.style.overflowX = "auto";
     controls.querySelectorAll("button[data-weight-chart-range]").forEach(button => {
         const range = button.dataset.weightChartRange;
         const unavailable = range === "phase" && !activePhase?.startDate;
@@ -377,3 +385,4 @@ document.addEventListener("click", event => {
 }, true);
 
 schedule();
+
