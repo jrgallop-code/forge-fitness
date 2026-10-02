@@ -303,3 +303,5 @@ Release: add Weight & reps exercise progress and show the Machine selector only 
 Release: prioritize the completed monthly report for seven days, unlock live reports after review/close, and defer live Focus until month-end.
 
 Release: remove crowded weight and rep labels above exercise progress chart points; retain dates, points, and table details.
+
+Release: Happy Scale-inspired weight timeline with adaptive year/month/day headers, weigh-in-to-trend stems, month-grouped history, 1Y range, all-history pinch zoom and pan, Today return, and pixel-based rendering for multi-year datasets. Trend calculation unchanged. Test build only.
