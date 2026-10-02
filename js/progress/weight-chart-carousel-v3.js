@@ -90,7 +90,18 @@ function ensureCarousel(card) {
         if (!button) return;
         track.scrollTo({ left: Number(button.dataset.weightGraphPageV2) * track.clientWidth, behavior: "smooth" });
     });
-    track.addEventListener("scroll", () => requestAnimationFrame(() => syncPager(card)), { passive: true });
+    let settleTimer;
+    track.addEventListener("scroll", () => {
+        track.dataset.scrolling = "1";
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(() => {
+            delete track.dataset.scrolling;
+            const page = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+            const target = page * track.clientWidth;
+            if (Math.abs(track.scrollLeft - target) > 1) track.scrollTo({ left: target, behavior: "smooth" });
+            syncPager(card);
+        }, 160);
+    }, { passive: true });
 
     if (rangeControl) track.insertAdjacentElement("afterend", rangeControl);
     card.dataset.weightGraphCarouselV3 = "1";
@@ -153,7 +164,7 @@ function renderCarbSlide() {
 
 function syncCarouselHeight(card) {
     const track = card.querySelector("[data-weight-graph-carousel-track-v2]");
-    if (!track || !track.clientWidth) return;
+    if (!track || !track.clientWidth || track.dataset.scrolling === "1") return;
     const slides = [...track.children];
     const index = Math.max(0, Math.min(slides.length - 1, Math.round(track.scrollLeft / track.clientWidth)));
     const slide = slides[index];
@@ -563,7 +574,7 @@ function ensureStyles() {
         #weight-progress .weight-chart-card{overflow:hidden}
         #weight-progress .weight-graph-carousel-track-v2{display:flex;align-items:flex-start;width:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
         #weight-progress .weight-graph-carousel-track-v2::-webkit-scrollbar{display:none}
-        #weight-progress .weight-graph-carousel-slide-v2{flex:0 0 100%;min-width:0;box-sizing:border-box;scroll-snap-align:start;scroll-snap-stop:always}
+        #weight-progress .weight-graph-carousel-slide-v2{flex:0 0 100%!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden}
         #weight-progress .weight-graph-carousel-slide-v2.is-carbs{padding:0 1px}
         #weight-progress .weight-graph-carousel-pager-v2{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px;padding:3px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.025)}
         #weight-progress .weight-graph-carousel-pager-v2.has-three-weight-pages{grid-template-columns:repeat(3,1fr)}

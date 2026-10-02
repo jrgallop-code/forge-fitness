@@ -81,3 +81,9 @@ test('weekends are neutral shaded and daily grids simplify at decade scale',()=>
  api.drawWeight(i,{start:'2026-09-26',end:'2026-10-02'});assert.equal(bands.length,2);assert.ok(bands.every(b=>b.color==='#64748b'));const weeklyStrokes=strokes;
  bands.length=0;strokes=0;api.drawWeight(i,{start:'2016-10-05',end:'2026-10-02'});assert.equal(bands.length,0);assert.ok(weeklyStrokes>0&&strokes>0);
 });
+
+test('daily labels sit at block centers and All retains partial October label',()=>{
+ const {api,instance:i,labels}=harness();api.drawWeight(i,{start:'2026-09-17',end:'2026-09-23'});
+ const day=labels.find(l=>l.s==='17'&&l.y===39);assert.ok(Math.abs(day.x-(50+272/14))<.1);
+ labels.length=0;api.drawWeight(i,{start:'2026-08-05',end:'2026-10-02'});assert.ok(labels.some(l=>l.s==='OCT'&&l.y===39));
+});

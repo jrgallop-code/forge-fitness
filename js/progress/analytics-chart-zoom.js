@@ -100,7 +100,7 @@ function ensureStyles() {
         .has-weight-hero .weight-chart-period-summary{padding:12px!important;margin:10px 0 0!important;border:1px solid var(--line);border-radius:14px;background:var(--surface-raised,var(--card));gap:5px 16px!important}
         .has-weight-hero .weight-chart-period-stat strong{font-size:21px!important}
         .has-weight-hero .weight-chart-period-dates{font-size:10px!important}
-        .analytics-viewport-controls[data-kind="weight"],.weight-chart-expanded .analytics-viewport-controls[data-kind="weight"]{display:grid!important;grid-template-columns:44px 44px minmax(70px,1fr) minmax(70px,1fr)!important;gap:7px!important;padding:0!important;border:0!important;background:transparent!important;margin:8px 0 0!important}
+        .analytics-viewport-controls[data-kind="weight"],.weight-chart-expanded .analytics-viewport-controls[data-kind="weight"]{display:grid!important;grid-template-columns:34px 34px 34px 34px minmax(60px,1fr) minmax(60px,1fr)!important;gap:7px!important;padding:0!important;border:0!important;background:transparent!important;margin:8px 0 0!important}
         .analytics-viewport-controls[data-kind="weight"] .analytics-viewport-status{display:none!important}
         .analytics-viewport-controls[data-kind="weight"] button{grid-column:auto!important;min-width:0!important;width:100%;height:38px;white-space:nowrap;padding:0 8px!important;font-size:12px!important}
         .analytics-viewport-controls[data-kind="weight"] [data-viewport-out],.analytics-viewport-controls[data-kind="weight"] [data-viewport-in]{font-size:21px!important}
@@ -431,7 +431,7 @@ function sampleWeightPoints(points, x, bucketWidth) {
     return [...indices].sort((a, b) => a - b).map(index => points[index]);
 }
 function calendarPeriods(start, end, unit) {
-    const first = dateMs(start), last = dateMs(end), periods = [];
+    const first = dateMs(start), last = dateMs(shiftDate(end, 1)), periods = [];
     const cursor = new Date(first);
     if (unit === "year") cursor.setMonth(0, 1); else cursor.setDate(1);
     while (cursor.getTime() <= last) {
@@ -444,7 +444,7 @@ function calendarPeriods(start, end, unit) {
     return periods;
 }
 function drawWeightCalendar(context, start, end, left, right, top, bottom) {
-    const first = dateMs(start), elapsed = Math.max(1, dateMs(end) - first);
+    const first = dateMs(start), elapsed = Math.max(1, dateMs(shiftDate(end, 1)) - first);
     const x = ms => left + (ms - first) / elapsed * (right - left);
     const days = daysBetween(start, end);
     const months = calendarPeriods(start, end, "month");
@@ -479,15 +479,16 @@ function drawWeightCalendar(context, start, end, left, right, top, bottom) {
     if (days <= 45) {
         const step = Math.max(1, Math.ceil(days / Math.max(2, (right - left) / 30)));
         for (let index = 0; index < days; index += step) {
-            const date = shiftDate(start, index), xx = x(dateMs(date));
+            const date = shiftDate(start, index), xx = x(dateMs(date) + DAY_MS / 2);
             context.fillText(String(new Date(dateMs(date)).getDate()), clamp(xx, left + 5, right - 5), 39);
         }
     } else {
         months.forEach(period => {
             const labelWidth = context.measureText(period.label).width;
             const center = (x(period.start) + x(period.end)) / 2;
-            if (x(period.end) - x(period.start) >= labelWidth + 6 && center - labelWidth / 2 >= previousRight + 8) {
-                context.fillText(period.label, center, 39); previousRight = center + labelWidth / 2;
+            const labelCenter = clamp(center, left + labelWidth / 2, right - labelWidth / 2);
+            if (labelCenter - labelWidth / 2 >= previousRight + 8) {
+                context.fillText(period.label, labelCenter, 39); previousRight = labelCenter + labelWidth / 2;
             }
         });
     }
@@ -507,7 +508,7 @@ function drawWeightCalendar(context, start, end, left, right, top, bottom) {
         }
     }
     (days > 730 ? years : months).forEach(period => drawBoundary(period.start));
-    drawBoundary(dateMs(end));
+    drawBoundary(dateMs(shiftDate(end, 1)));
     context.restore();
 }
 
@@ -667,9 +668,9 @@ function drawWeight(instance, state, scaleOverride = null) {
     const plotWidth = Math.max(1, width - padding.left - padding.right);
     const plotHeight = Math.max(1, height - padding.top - padding.bottom);
     const first = dateMs(state.start);
-    const last = dateMs(state.end);
+    const last = dateMs(shiftDate(state.end, 1));
     const elapsed = Math.max(1, last - first);
-    const x = date => padding.left + ((dateMs(date) - first) / elapsed) * plotWidth;
+    const x = date => padding.left + ((dateMs(date) + DAY_MS / 2 - first) / elapsed) * plotWidth;
     const yRange = Math.max(.1, scale.max - scale.min);
     const y = value => padding.top + ((scale.max - value) / yRange) * plotHeight;
 
@@ -1172,6 +1173,9 @@ function createInstance(legacy) {
     controls.innerHTML = '<button type="button" data-viewport-out aria-label="Zoom out">−</button><span class="analytics-viewport-status"><strong>Full selected range</strong><small>Pinch, use +, or choose exact dates</small></span><button type="button" data-viewport-in aria-label="Zoom in">+</button><button type="button" class="analytics-viewport-dates" data-viewport-dates aria-expanded="false">Dates</button><button type="button" class="analytics-viewport-reset" data-viewport-reset>Reset</button>';
 
     if (kind === "weight") {
+        const pan = document.createElement("span");
+        pan.innerHTML = '<button type="button" data-viewport-earlier aria-label="Pan to earlier dates">←</button><button type="button" data-viewport-later aria-label="Pan to later dates">→</button>';
+        [...pan.children].forEach(button => controls.insertBefore(button, controls.querySelector("[data-viewport-dates]")));
         controls.querySelector("[data-viewport-reset]").textContent = "Today";
         controls.querySelector("[data-viewport-reset]").setAttribute("aria-label", "Return to latest weigh-ins");
     }
@@ -1241,6 +1245,15 @@ function createInstance(legacy) {
         const start = instance.kind === "weight" ? shiftDate(domain.end, -(daysBetween(state.start, state.end) - 1)) : domain.start;
         commitWindow(instance, start, domain.end);
     });
+    if (kind === "weight") {
+        const panBy = direction => {
+            const state = effectiveWindow(instance);
+            const next = shiftedWindow(state.domain, state.start, state.end, direction * Math.max(1, Math.round(daysBetween(state.start, state.end) / 2)));
+            commitWindow(instance, next.start, next.end);
+        };
+        controls.querySelector("[data-viewport-earlier]").addEventListener("click", () => panBy(-1));
+        controls.querySelector("[data-viewport-later]").addEventListener("click", () => panBy(1));
+    }
     instance.dates.addEventListener("click", () => {
         datePanel.hidden = !datePanel.hidden;
         instance.dates.setAttribute("aria-expanded", String(!datePanel.hidden));
