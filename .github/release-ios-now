@@ -301,3 +301,5 @@ Release: align Progress insight with the visible weekly weight trend and compare
 Release: add Weight & reps exercise progress and show the Machine selector only for machine and cable exercises.
 
 Release: prioritize the completed monthly report for seven days, unlock live reports after review/close, and defer live Focus until month-end.
+
+Release: remove crowded weight and rep labels above exercise progress chart points; retain dates, points, and table details.
