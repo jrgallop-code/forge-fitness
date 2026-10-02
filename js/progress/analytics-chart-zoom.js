@@ -7,7 +7,7 @@ import { getNutritionProfile } from "../nutrition/nutrition-storage.js?v=nutriti
 const STYLE_ID = "level-up-analytics-viewport-styles";
 const WEIGHT_WINDOW_KEY = "level_up_weight_chart_viewport_v4";
 const EXPENDITURE_WINDOW_KEY = "level_up_expenditure_chart_viewport_v4";
-const READY_VERSION = "7";
+const READY_VERSION = "8";
 const MIN_VISIBLE_DAYS = 2;
 const DAY_MS = 86400000;
 const RANGE_DAYS = { "1w": 7, "7d": 7, "1m": 30, "4w": 28, "3m": 90, "12w": 84, "6m": 180, "1y": 365, "365d": 365 };
@@ -81,6 +81,11 @@ function ensureStyles() {
             .analytics-viewport-controls button{min-width:0;width:100%;height:31px;padding-inline:6px}
             .analytics-viewport-dates{grid-column:1/3;min-width:0!important}
             .analytics-viewport-reset{grid-column:3;min-width:0!important}
+            .analytics-viewport-controls[data-kind="weight"]{grid-template-columns:32px minmax(0,1fr) 70px 32px}
+            .analytics-viewport-controls[data-kind="weight"] .analytics-viewport-status{grid-column:2/4}
+            .analytics-viewport-controls[data-kind="weight"] [data-viewport-in]{grid-column:4}
+            .analytics-viewport-controls[data-kind="weight"] .analytics-viewport-dates{grid-column:1/3}
+            .analytics-viewport-controls[data-kind="weight"] .analytics-viewport-reset{grid-column:3/5;min-width:70px!important;padding-inline:12px;white-space:nowrap}
             .analytics-viewport-date-panel{grid-template-columns:minmax(0,1fr);gap:8px;padding:9px}
             .analytics-viewport-date-panel button{grid-column:1;width:100%}
             .analytics-viewport-scrubber{gap:5px;margin-top:8px;font-size:7px}
@@ -456,8 +461,19 @@ function drawWeightCalendar(context, start, end, left, right, top, bottom) {
     context.restore();
 }
 
+function traceWeightTrendCurve(context, points) {
+    if (!points.length) return;
+    context.moveTo(points[0].x, points[0].y);
+    for (let index = 1; index < points.length - 1; index += 1) {
+        const current = points[index], next = points[index + 1];
+        context.quadraticCurveTo(current.x, current.y, (current.x + next.x) / 2, (current.y + next.y) / 2);
+    }
+    const last = points.at(-1);
+    if (points.length > 1) context.lineTo(last.x, last.y);
+}
+
 function drawWeight(instance, state, scaleOverride = null) {
-    const prepared = prepareCanvas(instance, (instance.stage.clientWidth || 320) <= 520 ? 330 : 380);
+    const prepared = prepareCanvas(instance, (instance.stage.clientWidth || 320) <= 520 ? 385 : 435);
     if (!prepared) return { points: [], scale: null };
     const { context, width, height } = prepared;
     const entries = readWeightEntries();
@@ -509,7 +525,7 @@ function drawWeight(instance, state, scaleOverride = null) {
     if (sampledTrend.length >= 2) {
         const accent = themeColor("--accent", "#df141e");
         context.beginPath();
-        sampledTrend.forEach((entry, index) => index ? context.lineTo(x(entry.date), y(entry.weight)) : context.moveTo(x(entry.date), y(entry.weight)));
+        traceWeightTrendCurve(context, sampledTrend.map(entry => ({ x: x(entry.date), y: y(entry.weight) })));
         context.lineTo(x(sampledTrend.at(-1).date), height - padding.bottom);
         context.lineTo(x(sampledTrend[0].date), height - padding.bottom);
         context.closePath();
@@ -518,7 +534,7 @@ function drawWeight(instance, state, scaleOverride = null) {
         context.fill();
         context.globalAlpha = 1;
         context.beginPath();
-        sampledTrend.forEach((entry, index) => index ? context.lineTo(x(entry.date), y(entry.weight)) : context.moveTo(x(entry.date), y(entry.weight)));
+        traceWeightTrendCurve(context, sampledTrend.map(entry => ({ x: x(entry.date), y: y(entry.weight) })));
         context.strokeStyle = accent;
         context.lineWidth = 3;
         context.lineJoin = "round";
