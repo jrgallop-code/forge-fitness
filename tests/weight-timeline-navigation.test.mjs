@@ -46,3 +46,12 @@ test('pointer pinch zooms and horizontal drag pans to older history', () => {
  const zoomed=api.effectiveWindow(i);assert.ok(api.daysBetween(zoomed.start,zoomed.end)<api.daysBetween(initial.start,initial.end));
  fire('pointerdown',3,90);fire('pointermove',3,290);fire('pointerup',3,290);assert.ok(api.effectiveWindow(i).start<zoomed.start);
 });
+
+test('weight rendering uses the previous quadratic smoothing for both trend line and fill', () => {
+ const {api,instance:i,context}=harness();let curves=0;context.quadraticCurveTo=()=>curves++;
+ const result=api.drawWeight(i,api.effectiveWindow(i));assert.ok(curves>0,'trend must use curved segments');
+ assert.equal(curves%2,0,'line and fill trace the same curve');
+ assert.equal(i.canvas.style.height,'385px');
+ const expected=calculateTrendWeightSeries(JSON.parse(harness().storage.get('forge_weight_entries')));
+ assert.equal(result.points.at(-1).trend,expected.at(-1).weight);
+});
