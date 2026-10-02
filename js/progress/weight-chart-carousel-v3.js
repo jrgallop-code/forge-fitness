@@ -22,6 +22,7 @@ const RANGE_OPTIONS = {
     "1m": { days: 30, label: "1M" },
     "3m": { days: 90, label: "3M" },
     "6m": { days: 180, label: "6M" },
+    "1y": { days: 365, label: "1Y" },
     phase: { label: "PHASE" },
     all: { label: "ALL" }
 };
@@ -556,3 +557,4 @@ function ensureStyles() {
     `;
     document.head.appendChild(style);
 }
+
