@@ -688,7 +688,9 @@ function updateHistory(
         [...rows]
             .reverse()
             .map(
-                row => `
+                (row, index, sortedRows) => `
+                    ${index === 0 || row.date.slice(0, 7) !== sortedRows[index - 1].date.slice(0, 7)
+                        ? `<div class="weight-history-month" role="heading" aria-level="4">${new Date(`${row.date}T12:00:00`).toLocaleDateString(undefined, { month: "long", year: "numeric" })}</div>` : ""}
                     <div class="weight-table-row">
                         <span>
                             ${formatDate(row.date)}
@@ -1332,3 +1334,4 @@ function formatDate(date) {
         }
     );
 }
+
