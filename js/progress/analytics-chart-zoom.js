@@ -7,13 +7,24 @@ import { getNutritionProfile } from "../nutrition/nutrition-storage.js?v=nutriti
 const STYLE_ID = "level-up-analytics-viewport-styles";
 const WEIGHT_WINDOW_KEY = "level_up_weight_chart_viewport_v4";
 const EXPENDITURE_WINDOW_KEY = "level_up_expenditure_chart_viewport_v4";
-const READY_VERSION = "6";
+const READY_VERSION = "7";
 const MIN_VISIBLE_DAYS = 2;
 const DAY_MS = 86400000;
 const RANGE_DAYS = { "1w": 7, "7d": 7, "1m": 30, "4w": 28, "3m": 90, "12w": 84, "6m": 180, "1y": 365, "365d": 365 };
 const instances = new WeakMap();
 const liveInstances = new Set();
 let attachQueued = false;
+let weightDataCache = { raw: null, today: null, entries: [], trend: [] };
+function weightData() {
+    const raw = localStorage.getItem("forge_weight_entries") || "[]";
+    const today = localDateString();
+    if (raw !== weightDataCache.raw || today !== weightDataCache.today) {
+        let entries = [];
+        try { entries = normalizeWeightEntries(JSON.parse(raw)).filter(entry => entry.date <= today); } catch {}
+        weightDataCache = { raw, today, entries, trend: calculateTrendWeightSeries(entries) };
+    }
+    return weightDataCache;
+}
 
 function ensureStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -22,10 +33,12 @@ function ensureStyles() {
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
+        #weight-history-list .weight-history-month{padding:14px 10px 8px;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--line)}
         .analytics-viewport-legacy{display:none!important}
         .analytics-viewport-host{position:relative;min-width:0}
         .analytics-viewport-stage{position:relative;overflow:hidden;border-radius:inherit;touch-action:pan-y;min-width:0}
         .analytics-viewport-stage>canvas[data-analytics-viewport-chart]{display:block!important;width:100%!important;max-width:100%;opacity:1!important;touch-action:pan-y}
+        .analytics-viewport-stage[data-kind="weight"],.analytics-viewport-stage[data-kind="weight"]>canvas{touch-action:none!important}
         .analytics-viewport-tooltip{position:absolute;z-index:6;display:grid;gap:2px;min-width:116px;max-width:176px;padding:7px 9px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:10px;background:var(--card,#17171a);box-shadow:0 8px 24px rgba(0,0,0,.2);pointer-events:none;color:var(--text,#f4f4f6);font-size:10px;line-height:1.25}
         .analytics-viewport-tooltip[hidden]{display:none!important}
         .analytics-viewport-tooltip strong{font-size:11px}
@@ -117,14 +130,7 @@ function stableMetric(strong, value, suffix = "cal") {
 }
 function positive(value) { const n = Number(value); return Number.isFinite(n) && n > 0 ? n : null; }
 
-function readWeightEntries() {
-    try {
-        const today = localDateString();
-        return normalizeWeightEntries(JSON.parse(localStorage.getItem("forge_weight_entries") || "[]")).filter(entry => entry.date <= today);
-    } catch {
-        return [];
-    }
-}
+function readWeightEntries() { return weightData().entries; }
 function phaseStartDate() {
     try {
         const phases = JSON.parse(localStorage.getItem("level_up_nutrition_phases") || "[]");
@@ -206,6 +212,12 @@ function selectedRange(instance) {
 function domainFor(instance) {
     const range = selectedRange(instance);
     const today = localDateString();
+    if (instance.kind === "weight") {
+        const presetDays = RANGE_DAYS[range] || 90;
+        const earliest = readWeightEntries()[0]?.date || today;
+        if (range === "all") return { start: earliest, end: today };
+        return { start: earliest < shiftDate(today, -(presetDays - 1)) ? earliest : shiftDate(today, -(presetDays - 1)), end: today };
+    }
     if (range === "phase") {
         const start = phaseStartDate();
         if (start) return { start, end: today };
@@ -242,11 +254,18 @@ function normalizeWindow(domain, start, end) {
     }
     return a === domain.start && b === domain.end ? null : { start: a, end: b };
 }
+function selectedWeightWindow(instance, domain) {
+    const range = selectedRange(instance);
+    if (range === "all") return null;
+    const start = range === "phase" ? phaseStartDate() : shiftDate(domain.end, -((RANGE_DAYS[range] || 90) - 1));
+    return normalizeWindow(domain, start || domain.start, domain.end);
+}
 function effectiveWindow(instance) {
     const domain = domainFor(instance);
     const candidate = instance.hasPreview ? instance.previewWindow : readStoredWindow(instance.kind);
-    const window = candidate ? normalizeWindow(domain, candidate.start, candidate.end) : null;
-    return window ? { domain, window, start: window.start, end: window.end } : { domain, window: null, start: domain.start, end: domain.end };
+    const stored = candidate ? normalizeWindow(domain, candidate.start, candidate.end) : null;
+    const viewport = stored || (!instance.hasPreview && !candidate && instance.kind === "weight" ? selectedWeightWindow(instance, domain) : null);
+    return viewport ? { domain, window: viewport, start: viewport.start, end: viewport.end } : { domain, window: null, start: domain.start, end: domain.end };
 }
 function saveWindow(kind, value) {
     if (!value) sessionStorage.removeItem(storageKey(kind));
@@ -362,12 +381,87 @@ function updateExpenditureSummary(instance, start, end, points) {
     stableText(metrics[1]?.querySelector("b"), !Number.isFinite(change) ? "Waiting" : change > 0 ? "Increase" : change < 0 ? "Decrease" : "No change");
 }
 
+function sampleWeightPoints(points, x, bucketWidth) {
+    if (points.length < 3) return points;
+    const buckets = new Map();
+    points.forEach((point, index) => {
+        const key = Math.floor(x(point.date) / bucketWidth);
+        const bucket = buckets.get(key) || { first: index, last: index, min: index, max: index };
+        bucket.last = index;
+        if (point.weight < points[bucket.min].weight) bucket.min = index;
+        if (point.weight > points[bucket.max].weight) bucket.max = index;
+        buckets.set(key, bucket);
+    });
+    const indices = new Set([0, points.length - 1]);
+    buckets.forEach(bucket => [bucket.first, bucket.min, bucket.max, bucket.last].forEach(index => indices.add(index)));
+    return [...indices].sort((a, b) => a - b).map(index => points[index]);
+}
+function calendarPeriods(start, end, unit) {
+    const first = dateMs(start), last = dateMs(end), periods = [];
+    const cursor = new Date(first);
+    if (unit === "year") cursor.setMonth(0, 1); else cursor.setDate(1);
+    while (cursor.getTime() <= last) {
+        const from = cursor.getTime();
+        const label = unit === "year" ? String(cursor.getFullYear()) : cursor.toLocaleDateString(undefined, { month: "short" }).toUpperCase();
+        const key = unit === "year" ? cursor.getFullYear() : cursor.getFullYear() * 12 + cursor.getMonth();
+        if (unit === "year") cursor.setFullYear(cursor.getFullYear() + 1); else cursor.setMonth(cursor.getMonth() + 1);
+        periods.push({ start: Math.max(first, from), end: Math.min(last, cursor.getTime()), label, key });
+    }
+    return periods;
+}
+function drawWeightCalendar(context, start, end, left, right, top, bottom) {
+    const first = dateMs(start), elapsed = Math.max(1, dateMs(end) - first);
+    const x = ms => left + (ms - first) / elapsed * (right - left);
+    const days = daysBetween(start, end);
+    const months = calendarPeriods(start, end, "month");
+    const years = calendarPeriods(start, end, "year");
+    context.save();
+    context.fillStyle = themeColor("--accent", "#df141e");
+    context.globalAlpha = .035;
+    (days > 730 ? years : months).forEach(period => { if (period.key % 2 === 0) context.fillRect(x(period.start), top, x(period.end) - x(period.start), bottom - top); });
+    context.globalAlpha = 1;
+    context.textAlign = "center";
+    context.fillStyle = themeColor("--muted", "#85858f");
+    context.font = "600 12px Arial";
+    let previousRight = -Infinity;
+    const upperPeriods = days <= 45 ? months.map(p => ({ ...p, label: p.label + " " + new Date(p.start).getFullYear() })) : years;
+    upperPeriods.forEach(period => {
+        const labelWidth = context.measureText(period.label).width;
+        const center = clamp((x(period.start) + x(period.end)) / 2, left + labelWidth / 2, right - labelWidth / 2);
+        if (center - labelWidth / 2 >= previousRight + 8) { context.fillText(period.label, center, 17); previousRight = center + labelWidth / 2; }
+    });
+    context.font = "10px Arial";
+    previousRight = -Infinity;
+    if (days <= 45) {
+        const step = Math.max(1, Math.ceil(days / Math.max(2, (right - left) / 30)));
+        for (let index = 0; index < days; index += step) {
+            const date = shiftDate(start, index), xx = x(dateMs(date));
+            context.fillText(String(new Date(dateMs(date)).getDate()), clamp(xx, left + 5, right - 5), 39);
+        }
+    } else {
+        months.forEach(period => {
+            const labelWidth = context.measureText(period.label).width;
+            const center = (x(period.start) + x(period.end)) / 2;
+            if (x(period.end) - x(period.start) >= labelWidth + 6 && center - labelWidth / 2 >= previousRight + 8) {
+                context.fillText(period.label, center, 39); previousRight = center + labelWidth / 2;
+            }
+        });
+    }
+    context.strokeStyle = themeColor("--line", "rgba(255,255,255,.07)");
+    context.lineWidth = 1;
+    const boundaries = days > 730 ? years : months;
+    boundaries.forEach(period => {
+        context.beginPath(); context.moveTo(x(period.start), top); context.lineTo(x(period.start), bottom); context.stroke();
+    });
+    context.restore();
+}
+
 function drawWeight(instance, state, scaleOverride = null) {
     const prepared = prepareCanvas(instance, (instance.stage.clientWidth || 320) <= 520 ? 330 : 380);
     if (!prepared) return { points: [], scale: null };
     const { context, width, height } = prepared;
     const entries = readWeightEntries();
-    const trend = calculateTrendWeightSeries(entries);
+    const trend = weightData().trend;
     const visibleEntries = entries.filter(entry => entry.date >= state.start && entry.date <= state.end);
     const visibleTrend = trend.filter(entry => entry.date >= state.start && entry.date <= state.end);
     updateWeightSummary(instance, state.start, state.end, visibleEntries, visibleTrend);
@@ -379,7 +473,7 @@ function drawWeight(instance, state, scaleOverride = null) {
     const goal = goalWeight();
     const targetScale = weightScale(values, goal);
     const scale = scaleOverride || targetScale;
-    const padding = { left: 50, right: 18, top: 20, bottom: 42 };
+    const padding = { left: 50, right: 18, top: 58, bottom: 18 };
     const plotWidth = Math.max(1, width - padding.left - padding.right);
     const plotHeight = Math.max(1, height - padding.top - padding.bottom);
     const first = dateMs(state.start);
@@ -389,6 +483,7 @@ function drawWeight(instance, state, scaleOverride = null) {
     const yRange = Math.max(.1, scale.max - scale.min);
     const y = value => padding.top + ((scale.max - value) / yRange) * plotHeight;
 
+    drawWeightCalendar(context, state.start, state.end, padding.left, width - padding.right, padding.top, height - padding.bottom);
     context.font = "10px Arial";
     context.textAlign = "right";
     for (let index = 0; index <= 3; index += 1) {
@@ -405,36 +500,50 @@ function drawWeight(instance, state, scaleOverride = null) {
         context.fillStyle = themeColor("--muted", "#85858f");
         context.fillText(Number.isFinite(shown) ? shown.toFixed(1) : "", padding.left - 8, yy + 3);
     }
-    if (visibleEntries.length >= 2) {
+    const trendByDate = new Map(visibleTrend.map(point => [point.date, point.weight]));
+    const sampledTrend = sampleWeightPoints(visibleTrend, x, 1);
+    context.save();
+    context.beginPath();
+    context.rect(padding.left - 3, padding.top, plotWidth + 6, plotHeight);
+    context.clip();
+    if (sampledTrend.length >= 2) {
+        const accent = themeColor("--accent", "#df141e");
         context.beginPath();
-        visibleEntries.forEach((entry, index) => index ? context.lineTo(x(entry.date), y(entry.weight)) : context.moveTo(x(entry.date), y(entry.weight)));
-        context.strokeStyle = themeColor("--accent", "#df141e");
-        context.globalAlpha = .34;
-        context.lineWidth = 1.4;
-        context.stroke();
-        context.globalAlpha = 1;
-    }
-    visibleEntries.forEach(entry => {
-        context.beginPath();
-        context.arc(x(entry.date), y(entry.weight), 2.7, 0, Math.PI * 2);
-        context.fillStyle = themeColor("--accent", "#df141e");
-        context.globalAlpha = .82;
+        sampledTrend.forEach((entry, index) => index ? context.lineTo(x(entry.date), y(entry.weight)) : context.moveTo(x(entry.date), y(entry.weight)));
+        context.lineTo(x(sampledTrend.at(-1).date), height - padding.bottom);
+        context.lineTo(x(sampledTrend[0].date), height - padding.bottom);
+        context.closePath();
+        context.fillStyle = accent;
+        context.globalAlpha = .09;
         context.fill();
         context.globalAlpha = 1;
-    });
-    if (visibleTrend.length >= 2) {
-        context.save();
-        context.shadowColor = themeColor("--accent-glow", "rgba(223,20,30,.22)");
-        context.shadowBlur = 7;
         context.beginPath();
-        visibleTrend.forEach((entry, index) => index ? context.lineTo(x(entry.date), y(entry.weight)) : context.moveTo(x(entry.date), y(entry.weight)));
-        context.strokeStyle = themeColor("--accent", "#df141e");
+        sampledTrend.forEach((entry, index) => index ? context.lineTo(x(entry.date), y(entry.weight)) : context.moveTo(x(entry.date), y(entry.weight)));
+        context.strokeStyle = accent;
         context.lineWidth = 3;
         context.lineJoin = "round";
         context.lineCap = "round";
         context.stroke();
-        context.restore();
     }
+    const sampledEntries = sampleWeightPoints(visibleEntries, x, 4);
+    sampledEntries.forEach(entry => {
+        const trendWeight = trendByDate.get(entry.date);
+        context.strokeStyle = themeColor("--accent", "#df141e");
+        context.fillStyle = themeColor("--accent", "#df141e");
+        if (Number.isFinite(trendWeight)) {
+            context.globalAlpha = .4;
+            context.lineWidth = 1;
+            context.beginPath();
+            context.moveTo(x(entry.date), y(trendWeight));
+            context.lineTo(x(entry.date), y(entry.weight));
+            context.stroke();
+        }
+        context.globalAlpha = .8;
+        context.beginPath();
+        context.arc(x(entry.date), y(entry.weight), visibleEntries.length > plotWidth / 3 ? 1.6 : 2.7, 0, Math.PI * 2);
+        context.fill();
+    });
+    context.restore();
     if (Number.isFinite(goal) && goal >= scale.min && goal <= scale.max) {
         context.save();
         context.setLineDash([5, 5]);
@@ -445,14 +554,14 @@ function drawWeight(instance, state, scaleOverride = null) {
         context.stroke();
         context.restore();
     }
-    drawDateAxis(context, state.start, state.end, padding.left, width - padding.right, height - 14);
+
     context.textAlign = "left";
     context.fillStyle = themeColor("--muted", "#85858f");
     context.font = "9px Arial";
     context.fillText(massUnit(), 8, 14);
     const points = visibleEntries.map(entry => {
-        const trendPoint = visibleTrend.find(point => point.date === entry.date);
-        return { date: entry.date, value: entry.weight, trend: trendPoint?.weight ?? null, x: x(entry.date) };
+        const trendWeight = trendByDate.get(entry.date);
+        return { date: entry.date, value: entry.weight, trend: trendWeight ?? null, x: x(entry.date) };
     });
     return { points, scale: targetScale };
 }
@@ -557,11 +666,11 @@ function updateStatus(instance) {
     const active = Boolean(state.window);
     const visibleDays = daysBetween(state.start, state.end);
     const sameYear = state.start.slice(0, 4) === state.end.slice(0, 4);
-    stableText(instance.statusStrong, active ? `Viewing ${formatDate(state.start, !sameYear)} – ${formatDate(state.end, true)}` : "Full selected range");
-    stableText(instance.statusSmall, active ? `${visibleDays} days · drag chart or scrubber to move` : "Pinch, use +, or choose exact dates");
+    stableText(instance.statusStrong, instance.kind === "weight" ? formatLongRange(state.start, state.end) : active ? `Viewing ${formatDate(state.start, !sameYear)} – ${formatDate(state.end, true)}` : "Full selected range");
+    stableText(instance.statusSmall, instance.kind === "weight" ? `${visibleDays} days · pinch to zoom · drag for history` : active ? `${visibleDays} days · drag chart or scrubber to move` : "Pinch, use +, or choose exact dates");
     instance.minus.disabled = !active;
     instance.plus.disabled = visibleDays <= Math.min(MIN_VISIBLE_DAYS, daysBetween(state.domain.start, state.domain.end));
-    instance.reset.disabled = !active;
+    instance.reset.disabled = instance.kind === "weight" ? state.end === state.domain.end : !active;
     instance.startInput.min = state.domain.start;
     instance.startInput.max = state.domain.end;
     instance.endInput.min = state.domain.start;
@@ -627,7 +736,7 @@ function commitWindow(instance, start, end, { animate = true } = {}) {
     const oldScale = instance.yScale;
     instance.previewWindow = null;
     instance.hasPreview = false;
-    saveWindow(instance.kind, next);
+    saveWindow(instance.kind, instance.kind === "weight" ? (next || { start: domain.start, end: domain.end }) : next);
     if (animate) animateCommittedScale(instance, oldScale);
     else renderInstance(instance);
 }
@@ -688,7 +797,7 @@ function showNearestPoint(instance, clientX) {
     stableText(instance.tooltipDate, formatDate(nearest.date, true));
     stableText(instance.tooltipValue, `${instance.kind === "weight" ? "Weight" : "Expenditure"}: ${Number(shown).toLocaleString(undefined, { maximumFractionDigits: instance.kind === "weight" ? 1 : 0 })} ${unit}`);
     const extra = Number.isFinite(trendShown)
-        ? `Trend Weight: ${trendShown.toFixed(1)} ${unit}`
+        ? `Trend: ${trendShown.toFixed(1)} ${unit} · ${shown - trendShown > 0 ? "+" : ""}${(shown - trendShown).toFixed(1)} vs trend`
         : instance.kind === "expenditure"
             ? (nearest.mode === "holding" ? "Holding last usable estimate" : "Updating from current evidence")
             : "";
@@ -723,7 +832,7 @@ function bindGestures(instance) {
             const values = [...pointers.values()];
             const rect = instance.stage.getBoundingClientRect();
             const centerX = (values[0].x + values[1].x) / 2;
-            const fraction = clamp((centerX - rect.left) / Math.max(1, rect.width), 0, 1);
+            const fraction = clamp((centerX - rect.left - (instance.kind === "weight" ? 50 : 0)) / Math.max(1, rect.width - (instance.kind === "weight" ? 68 : 0)), 0, 1);
             pinchStart = {
                 distance: Math.max(1, Math.hypot(values[1].x - values[0].x, values[1].y - values[0].y)),
                 days: daysBetween(state.start, state.end),
@@ -791,7 +900,7 @@ function bindGestures(instance) {
                 const preview = instance.previewWindow;
                 const domain = domainFor(instance);
                 commitWindow(instance, preview?.start || domain.start, preview?.end || domain.end);
-            } else if (!hadPinch && !moved && !longPressed) {
+            } else if (event.type !== "pointercancel" && !hadPinch && !moved && !longPressed) {
                 const now = Date.now();
                 if (now - lastTap < 300 && effectiveWindow(instance).window) {
                     const domain = domainFor(instance);
@@ -841,6 +950,7 @@ function createInstance(legacy) {
     const stage = document.createElement("div");
     stage.className = "analytics-viewport-stage";
     stage.dataset.kind = kind;
+    if (kind === "weight") stage.style.touchAction = "none";
     const canvas = legacy.cloneNode(false);
     canvas.removeAttribute("id");
     canvas.removeAttribute("data-expenditure-chart");
@@ -867,6 +977,10 @@ function createInstance(legacy) {
     controls.setAttribute("aria-label", "Chart viewport controls");
     controls.innerHTML = '<button type="button" data-viewport-out aria-label="Zoom out">−</button><span class="analytics-viewport-status"><strong>Full selected range</strong><small>Pinch, use +, or choose exact dates</small></span><button type="button" data-viewport-in aria-label="Zoom in">+</button><button type="button" class="analytics-viewport-dates" data-viewport-dates aria-expanded="false">Dates</button><button type="button" class="analytics-viewport-reset" data-viewport-reset>Reset</button>';
 
+    if (kind === "weight") {
+        controls.querySelector("[data-viewport-reset]").textContent = "Today";
+        controls.querySelector("[data-viewport-reset]").setAttribute("aria-label", "Return to latest weigh-ins");
+    }
     const footerAnchor = expenditureShell || stage;
     footerAnchor.insertAdjacentElement("afterend", controls);
 
@@ -886,7 +1000,7 @@ function createInstance(legacy) {
     const hint = document.createElement("p");
     hint.className = "analytics-viewport-hint";
     hint.dataset.kind = kind;
-    hint.textContent = "The graph, average, change, and date span all use the same visible window. Pinch to zoom, drag to pan, or hold for daily details.";
+    hint.textContent = kind === "weight" ? "Pinch to zoom · Drag through history · Tap a weigh-in for details" : "The graph, average, change, and date span all use the same visible window. Pinch to zoom, drag to pan, or hold for daily details.";
     scrubber.insertAdjacentElement("afterend", hint);
 
     const instance = {
@@ -929,7 +1043,9 @@ function createInstance(legacy) {
     instance.plus.addEventListener("click", () => zoomBy(instance, 1.6));
     instance.reset.addEventListener("click", () => {
         const domain = domainFor(instance);
-        commitWindow(instance, domain.start, domain.end);
+        const state = effectiveWindow(instance);
+        const start = instance.kind === "weight" ? shiftDate(domain.end, -(daysBetween(state.start, state.end) - 1)) : domain.start;
+        commitWindow(instance, start, domain.end);
     });
     instance.dates.addEventListener("click", () => {
         datePanel.hidden = !datePanel.hidden;
@@ -988,8 +1104,9 @@ function resetForRangeButton(target) {
 
 document.addEventListener("click", event => resetForRangeButton(event.target));
 window.addEventListener("resize", scheduleAttach, { passive: true });
-["levelup:theme-changed", "levelup:appearance-changed", "levelup:nutrition-updated", "levelup:weight-updated", "levelup:food-log-updated", "levelup:nutrition-phase-updated"]
+["levelup:units-changed", "levelup:theme-changed", "levelup:appearance-changed", "levelup:nutrition-updated", "levelup:weight-updated", "levelup:food-log-updated", "levelup:nutrition-phase-updated"]
     .forEach(name => window.addEventListener(name, scheduleAttach));
 const mutationRoot = document.getElementById("content") || document.body;
 if (mutationRoot) new MutationObserver(() => scheduleAttach()).observe(mutationRoot, { childList: true, subtree: true, characterData: true });
 scheduleAttach();
+
