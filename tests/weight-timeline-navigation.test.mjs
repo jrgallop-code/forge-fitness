@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+import { Element } from './tiny-dom.mjs';
 import { calculateTrendWeightSeries, normalizeWeightEntries } from '../js/core/weight-trend.js';
 
 const source = readFileSync(new URL('../js/progress/analytics-chart-zoom.js', import.meta.url), 'utf8').replace(/^import .*;\n/gm, '').split('document.addEventListener("click", event => resetForRangeButton')[0];
@@ -18,8 +19,8 @@ function harness() {
   storage.set('forge_weight_entries',JSON.stringify(dates));storage.set('level_up_weight_chart_range','3m');
   const store = { getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k) };
   const sandbox = { calculateTrendWeightSeries,normalizeWeightEntries,localStorage:store,sessionStorage:store,displayMass:v=>v,massUnit:()=> 'lb',getComputedStyle:()=>({getPropertyValue:k=>({'--accent':'#146bea','--muted':'#64748b','--line':'#dce5ef'}[k]||'')}),document:{documentElement:{},querySelector:()=>null},window:{devicePixelRatio:1},Date,Map,Set,Math,JSON,setTimeout,clearTimeout,performance,requestAnimationFrame:()=>{} };
-  vm.createContext(sandbox);vm.runInContext(source+'\nglobalThis.api={effectiveWindow,domainFor,zoomBy,commitWindow,drawWeight,calendarPeriods,sampleWeightPoints,shiftDate,daysBetween,bindGestures};',sandbox);
-  return { api:sandbox.api,instance,dates,storage,handlers,labels,context,canvas };
+  vm.createContext(sandbox);vm.runInContext(source+'\nglobalThis.api={effectiveWindow,domainFor,zoomBy,commitWindow,drawWeight,calendarPeriods,sampleWeightPoints,shiftDate,daysBetween,bindGestures,weightChartHeight,openExpandedWeightChart,closeExpandedWeightChart,layoutWeightCard};',sandbox);
+  return { api:sandbox.api,instance,dates,storage,handlers,labels,context,canvas,sandbox };
 }
 
 test('a preset can zoom out to ten years, pan beyond its initial range and retain exact trend values', () => {
@@ -54,4 +55,23 @@ test('weight rendering uses the previous quadratic smoothing for both trend line
  assert.equal(i.canvas.style.height,'385px');
  const expected=calculateTrendWeightSeries(JSON.parse(harness().storage.get('forge_weight_entries')));
  assert.equal(result.points.at(-1).trend,expected.at(-1).weight);
+});
+
+
+test('expanded view reuses chart and controls, preserves viewport and restores page focus and scrolling', () => {
+ const h=harness(),{api,instance:i,sandbox}=h;
+ const body=new Element('body'),app=new Element('div'),card=new Element('section');card.className='weight-chart-card';body.appendChild(app);app.appendChild(card);
+ const doc={body,documentElement:{},getElementById:id=>id==='app'?app:null,createElement:tag=>new Element(tag),createComment:()=>new Element('#comment'),addEventListener(){},removeEventListener(){},querySelector:()=>null};sandbox.document=doc;sandbox.window.addEventListener=()=>{};sandbox.window.removeEventListener=()=>{};sandbox.window.innerHeight=844;body.style.overflow='auto';
+ const legacy=new Element('canvas');card.appendChild(legacy);i.legacy=legacy;
+ const stage=new Element('div');stage.clientWidth=340;const canvas=new Element('canvas');canvas.style={};canvas.getContext=()=>h.context;stage.appendChild(canvas);card.appendChild(stage);i.stage=stage;i.canvas=canvas;
+ const ranges=new Element('div');ranges.className='weight-chart-range-control';card.appendChild(ranges);
+ let selected=0;const range=new Element('button');range.textContent='3M';range.setAttribute('data-weight-chart-range','3m');range.setAttribute('aria-pressed','true');range.addEventListener('click',()=>selected++);ranges.appendChild(range);
+ for(const name of ['controls','datePanel','scrubber','hint']){i[name]=new Element('div');card.appendChild(i[name]);}i.datePanel.hidden=true;
+ const summary=new Element('div');summary.className='weight-chart-period-summary';card.appendChild(summary);
+ api.layoutWeightCard(i);const order=[...card.children];const before=api.effectiveWindow(i);const trigger=new Element('button');
+ api.openExpandedWeightChart(i,trigger);const modal=i.expandedDialog;
+ assert.ok(modal.open);assert.equal(i.stage,stage);assert.equal(stage.parentNode,modal);assert.equal(i.controls.parentNode,modal);assert.equal(app.inert,true);assert.equal(body.style.overflow,'hidden');
+ assert.ok(api.weightChartHeight(i)>api.weightChartHeight({...i,expandedDialog:null}));
+ i.expandedRanges.children[0].click();assert.equal(selected,1,'range buttons forward to original controls');
+ api.closeExpandedWeightChart(i);assert.equal(i.expandedDialog,null);assert.equal(stage.parentNode,card);assert.deepEqual(card.children,order);assert.equal(app.inert,false);assert.equal(body.style.overflow,'auto');assert.ok(trigger.focused);assert.deepEqual(api.effectiveWindow(i),before);
 });

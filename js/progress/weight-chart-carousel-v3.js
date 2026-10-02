@@ -92,14 +92,14 @@ function ensureCarousel(card) {
     });
     track.addEventListener("scroll", () => requestAnimationFrame(() => syncPager(card)), { passive: true });
 
-    if (rangeControl) card.insertBefore(rangeControl, track);
+    if (rangeControl) track.insertAdjacentElement("afterend", rangeControl);
     card.dataset.weightGraphCarouselV3 = "1";
 
     if (!observer) {
         observer = new MutationObserver(() => {
             const control = card.querySelector(".weight-chart-range-control");
             const activeTrack = card.querySelector("[data-weight-graph-carousel-track-v2]");
-            if (control && activeTrack && control.nextElementSibling !== activeTrack) card.insertBefore(control, activeTrack);
+            if (control && activeTrack && control.previousElementSibling !== activeTrack) activeTrack.insertAdjacentElement("afterend", control);
         });
         observer.observe(card, { childList: true, subtree: true });
     }
@@ -145,6 +145,7 @@ function syncPager(card) {
     if (!track) return;
     const maxPage = Math.max(0, card.querySelectorAll("[data-weight-graph-slide-v2]").length - 1);
     const index = Math.max(0, Math.min(maxPage, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
+    card.dataset.weightGraphView = index === 1 ? "carbs" : "trend";
     card.querySelectorAll("[data-weight-graph-page-v2]").forEach(button => {
         button.setAttribute("aria-pressed", String(Number(button.dataset.weightGraphPageV2) === index));
     });
@@ -557,4 +558,5 @@ function ensureStyles() {
     `;
     document.head.appendChild(style);
 }
+
 
