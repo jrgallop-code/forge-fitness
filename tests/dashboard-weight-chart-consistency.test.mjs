@@ -18,6 +18,6 @@ test("compact renderer shows only the smoothed seven-day trend", () => {
     assert.match(renderer, /6 \* DAY_MS/);
     assert.match(renderer, /dashboard-weight-trend-average/);
     assert.match(renderer, /traceSmoothPath/);
-    assert.match(styles, /stroke:#45cb75/);
+    assert.match(styles, /stroke:\s*var\(--accent/);
     assert.doesNotMatch(renderer, /daily-line|daily-point|trend-area|latest-halo|<circle/);
 });
