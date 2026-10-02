@@ -1,14 +1,14 @@
 import { navigate } from "../core/router.js?v=native-navigation-stability-1";
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { calculatePrCounts } from "./workout-pr-badges.js?v=workout-pr-badges-2";
-import { deleteCompletedWorkout, discardActiveWorkout, getActiveWorkout, getWorkoutSessions, openActiveWorkout, openCompletedWorkoutForEdit } from "./workout-session.js?v=history-rir-edit-1";
+import { deleteCompletedWorkout, discardActiveWorkout, getActiveWorkout, getWorkoutSessions, openActiveWorkout, openCompletedWorkoutForEdit, resumeCompletedWorkout } from "./workout-session.js?v=history-rir-edit-1";
 import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
 import { resolveSessionExerciseIdentity } from "./session-exercise-identity.js?v=repair-generic-exercise-1";
 import { UNIT_KINDS, formatMass as formatUnitMass } from "../core/unit-system.js?v=granular-units-1";
 
 export function renderWorkoutHistory() {
     const active = getActiveWorkout();
-    const sessions = getWorkoutSessions().sort((a, b) => String(b.completedAt || b.date || "").localeCompare(String(a.completedAt || a.date || "")));
+    const sessions = getWorkoutSessions().filter(session => session.id !== active?.resumedFromSessionId).sort((a, b) => String(b.completedAt || b.date || "").localeCompare(String(a.completedAt || a.date || "")));
 
     return `
         <section class="dashboard-welcome"><div><span class="eyebrow">TRAINING RECORDS</span><h2>Workout History</h2><p>Tap a completed workout to review its summary and training details.</p></div></section>
@@ -51,6 +51,14 @@ function openWorkoutPreview(sessionId) {
     };
     modal?.querySelector("[data-preview-close]")?.addEventListener("click", close);
     modal?.addEventListener("click", event => { if (event.target === modal) close(); });
+    modal?.querySelector("[data-preview-resume]")?.addEventListener("click", () => {
+        close();
+        navigate("workout");
+        if (resumeCompletedWorkout(session.id)) {
+            const landing = document.querySelector("[data-workout-live-landing]");
+            if (landing) landing.hidden = true;
+        }
+    });
     modal?.querySelector("[data-preview-edit]")?.addEventListener("click", () => {
         close();
         openWorkoutHistoryEditor(session.id);
@@ -81,7 +89,7 @@ function renderWorkoutPreview(session, prCount) {
     const volume = calculateWorkoutVolume(session);
     return `<div class="workout-history-preview-backdrop" id="workout-history-preview" role="dialog" aria-modal="true" aria-labelledby="workout-preview-title">
         <section class="workout-history-preview-sheet">
-            <div class="workout-preview-header"><button class="workout-preview-close" data-preview-close type="button" aria-label="Close">×</button><div><span class="eyebrow">${isOneOff(session) ? "ONE-OFF WORKOUT" : "WORKOUT SUMMARY"}</span><h2 id="workout-preview-title">${escapeHtml(session.planName || "Workout")}</h2><p>${escapeHtml(session.trainingDayName || "Training day")} • ${formatDate(session.date)}</p></div><button class="workout-preview-edit" data-preview-edit type="button">Edit</button></div>
+            <div class="workout-preview-header"><button class="workout-preview-close" data-preview-close type="button" aria-label="Close">×</button><div><span class="eyebrow">${isOneOff(session) ? "ONE-OFF WORKOUT" : "WORKOUT SUMMARY"}</span><h2 id="workout-preview-title">${escapeHtml(session.planName || "Workout")}</h2><p>${escapeHtml(session.trainingDayName || "Training day")} • ${formatDate(session.date)}</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="workout-preview-edit" data-preview-edit type="button">Edit</button><button class="secondary-btn" data-preview-resume type="button">Resume workout</button></div></div>
             <div class="workout-preview-stats"><div><span>Duration</span><strong>${formatSavedDuration(session)}</strong></div><div><span>Volume</span><strong>${volume > 0 ? formatUnitMass(volume, 0, UNIT_KINDS.LIFTING_WEIGHT) : "—"}</strong></div><div><span>Completed</span><strong>${formatProgress(session)}</strong></div><div class="workout-preview-pr-stat"><span>Personal Records</span><strong>${prCount > 0 ? `${trophyIcon()} PR · ${prCount}` : "—"}</strong></div></div>
             <div class="workout-preview-exercises">${recordedExercises.length ? recordedExercises.map(renderPreviewExercise).join("") : `<p class="workout-preview-empty">No recorded exercise data in this workout.</p>`}</div>
         </section>
@@ -171,3 +179,4 @@ function getActiveDuration(session) { const accumulated = Number(session.accumul
 function formatDuration(milliseconds) { const totalMinutes = Math.max(0, Math.round(milliseconds / 60000)); const hours = Math.floor(totalMinutes / 60); const minutes = totalMinutes % 60; return hours ? `${hours}h ${minutes}m` : `${minutes} min`; }
 function formatDate(value) { if (!value) return "Unknown date"; return new Date(`${value}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); }
 function escapeHtml(value) { return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+

@@ -1,3 +1,4 @@
+import { resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
 import { getExerciseById } from './exercise-library.js';
 import { buildBodyweightProgression, isBodyweightEquipment, isWeightedBodyweightEquipment } from './bodyweight-progression.js?v=bodyweight-progression-1';
 import {
@@ -117,7 +118,7 @@ function findExercisePerformance(session, exerciseId, equipmentProfileId = 'defa
 }
 
 function findPreviousPerformance(exerciseId, equipmentProfileId = 'default', excludedSessionId = null) {
-  const sessions = readJson(SESSION_STORAGE_KEY, []);
+  const sessions = resumeProgressionHistory(readJson(SESSION_STORAGE_KEY, []), readJson(ACTIVE_WORKOUT_STORAGE_KEY, null));
   if (!Array.isArray(sessions)) return null;
   for (const session of [...sessions].filter(item => item?.id !== excludedSessionId && item?.adaptiveGuidance?.isDeload !== true).sort(compareSessionsNewest)) {
     const performance = findExercisePerformance(session, exerciseId, equipmentProfileId);
@@ -543,3 +544,4 @@ const observer = new MutationObserver(mutations => {
 
 observer.observe(document.body, { childList: true, subtree: true });
 scan();
+

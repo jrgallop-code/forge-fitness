@@ -315,3 +315,5 @@ Release: remove first weight card carousel gap, adaptive horizontal and vertical
 Release: stable carousel snap and heights, centered daily blocks including last day, partial October header retained, explicit earlier/later pan controls. Test build only.
 
 Release: extend weight trend line and fill across centered-day margins to both plot edges. Settle carousel to measured card boundaries with one instant alignment after touch/inertia, preventing competing smooth snaps. Test build only.
+
+Release: Undo finish and Resume workout reopen completed sessions in full live logger. Preserve original records/date/sets/RIR/drops/notes, accumulate only resumed active time, protect active conflicts, replace same record on refinish, and use original prior progression/PR history. Test build only.

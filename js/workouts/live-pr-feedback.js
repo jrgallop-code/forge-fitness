@@ -169,4 +169,4 @@ if (!document.querySelector('link[data-workout-complete-recap-recovery-style]'))
     anatomyStyle.dataset.workoutCompleteRecapRecoveryStyle = "true";
     document.head.appendChild(anatomyStyle);
 }
-import("./workout-complete-recap.js?v=recap-copy-5");
+import("./workout-complete-recap.js?v=resume-workout-1");

@@ -1,3 +1,4 @@
+import { resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const EPSILON = 0.01;
 
@@ -93,7 +94,7 @@ export function calculatePrCounts(sessions) {
 }
 
 export function evaluateLiveWorkoutPrs(activeSession, historicalSessions = []) {
-    const records = buildHistoricalRecords(historicalSessions);
+    const records = buildHistoricalRecords(resumeProgressionHistory(historicalSessions, activeSession));
     const details = new Map();
 
     (activeSession?.exercises || []).forEach(exercise => {
@@ -229,3 +230,4 @@ function getSessions() {
         return [];
     }
 }
+
