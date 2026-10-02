@@ -1,3 +1,4 @@
+import { resumeCompletedWorkout, getActiveWorkout } from "./workout-session.js?v=history-rir-edit-1";
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
 import { repairWorkoutSessionList, resolveSessionExerciseIdentity } from "./session-exercise-identity.js?v=repair-generic-exercise-1";
@@ -52,6 +53,7 @@ function showLatestCompletedWorkout() {
 }
 
 function renderRecap(session, history) {
+  if (getActiveWorkout()?.resumedFromSessionId === session.id) return;
   const existing = document.querySelector("[data-workout-complete-recap]");
   if (existing?.dataset.recapSessionId === session.id) return;
   existing?.remove();
@@ -91,11 +93,17 @@ function renderRecap(session, history) {
           <button type="button" data-recap-share="download"><span>↓</span><small>Download</small></button>
         </div><p class="workout-complete-recap__share-status" data-recap-share-status role="status" aria-live="polite"></p>
       </section>
+      <button type="button" class="secondary-btn" data-recap-undo style="width:100%;margin-bottom:8px">Undo finish · Resume workout</button>
       <button type="button" class="primary-btn workout-complete-recap__done" data-recap-done>DONE</button>
     </div>`;
   document.body.appendChild(overlay);
   document.body.classList.add("workout-recap-open");
   overlay.querySelectorAll("[data-recap-done]").forEach(button => button.addEventListener("click", closeRecap));
+  overlay.querySelector("[data-recap-undo]")?.addEventListener("click", () => {
+    completionClickAt = 0;
+    closeRecap();
+    resumeCompletedWorkout(session.id);
+  });
   initializeBackgroundChoices(overlay, payload);
   initializeCarousel(overlay);
   initializeShareActions(overlay, payload);
@@ -160,3 +168,5 @@ function closeRecap(){document.querySelector("[data-workout-complete-recap]")?.r
 function readSessions(){try{const parsed=JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY)||"[]");if(!Array.isArray(parsed))return[];const repaired=repairWorkoutSessionList(parsed);if(repaired.changed)localStorage.setItem(SESSION_STORAGE_KEY,JSON.stringify(repaired.sessions));return repaired.sessions;}catch{return[];}}
 function formatDurationShort(ms){const total=Math.max(0,Math.round((Number(ms)||0)/60000));return`${total} min`;}
 function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
+
+

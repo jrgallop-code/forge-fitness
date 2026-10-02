@@ -9,6 +9,7 @@ const RANGE_RULES = {
     "1m": { minSpanDays: 14, minEntries: 4, description: "about 2 weeks" },
     "3m": { minSpanDays: 45, minEntries: 6, description: "about 6 weeks" },
     "6m": { minSpanDays: 90, minEntries: 8, description: "about 3 months" },
+    "1y": { minSpanDays: 180, minEntries: 12, description: "about 6 months" },
     "all": { available: true }
 };
 
@@ -154,3 +155,4 @@ document.addEventListener("click", event => {
 window.addEventListener("levelup:nutrition-phase-updated", queueApply);
 window.addEventListener("resize", queueApply);
 queueApply();
+

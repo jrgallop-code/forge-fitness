@@ -1,3 +1,4 @@
+import { createResumedWorkout, resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import "./machine-profile-ui.js?v=machine-profile-sheet-pwa-1";
 
@@ -99,7 +100,7 @@ export function initializeActiveWorkoutUI() {
 
 export function getLastWorkoutForPlan(planId) {
 
-    return getSavedSessions()
+    return resumeProgressionHistory(getSavedSessions(), getActiveWorkout())
         .filter(session =>
             session.planId === planId
         )
@@ -192,6 +193,28 @@ export function openActiveWorkout() {
 }
 
 
+export function resumeCompletedWorkout(sessionId) {
+    const active = getActiveWorkout();
+    if (active) {
+        if (active.resumedFromSessionId === sessionId) return openActiveWorkout();
+        if (window.confirm(`"${active.planName || "Another workout"}" is already active. Open it instead? Finish or discard it before resuming this workout.`)) openActiveWorkout();
+        return false;
+    }
+    const completed = getSavedSessions().find(item => item.id === sessionId);
+    if (!completed) return false;
+    const plan = getPlanForSession(completed);
+    if (!plan?.days?.length) return false;
+    const normalized = createEditableSession(completed, plan);
+    const resumed = createResumedWorkout(normalized, plan);
+    // Keep the original saved record untouched until this active session is completed.
+    resumed.resumedCompletedSnapshot = clone(completed);
+    saveActiveWorkout(resumed);
+    window.dispatchEvent(new CustomEvent("levelup:workout-resumed", { detail: { sessionId } }));
+    openActiveWorkout();
+    resumeRuntimeTimers();
+    return true;
+}
+
 export function openCompletedWorkoutForEdit(sessionId) {
 
     const session =
@@ -275,7 +298,7 @@ export function discardActiveWorkout() {
 
     const confirmed =
         window.confirm(
-            `Discard the unfinished "${active.planName || "workout"}"? The recorded sets will be removed.`
+            active.resumedFromSessionId ? `Discard the changes to "${active.planName || "workout"}"? Your original completed workout will be kept.` : `Discard the unfinished "${active.planName || "workout"}"? The recorded sets will be removed.`
         );
 
     if (!confirmed) {
@@ -653,7 +676,7 @@ function renderSessionExercises({
                     dayIndex,
                     plannedExercise.id,
                     state.equipmentProfileId,
-                    editingSessionId
+                    editingSessionId || session.resumedFromSessionId
                 );
 
             if (state.trackingType === "notes") {
@@ -1247,6 +1270,7 @@ function saveCompletedSession({
 
     const completedDay = plan.days?.[Number(session.trainingDayIndex) || 0];
     const completed = {
+        ...clone(session.resumedCompletedSnapshot || {}),
         id:
             editingSessionId ||
             session.id.replace(/^active-/, "session-"),
@@ -1266,7 +1290,7 @@ function saveCompletedSession({
             plan.days?.[session.trainingDayIndex]?.name ||
             "Workout",
         startedAt:
-            session.startedAt || null,
+            session.resumedCompletedSnapshot?.startedAt || session.startedAt || null,
         completedAt:
             editingSessionId
                 ? session.completedAt || new Date().toISOString()
@@ -1698,7 +1722,7 @@ function getPreviousPerformance(
 ) {
 
     const sessions =
-        getSavedSessions()
+        resumeProgressionHistory(getSavedSessions(), getActiveWorkout())
             .filter(session =>
                 session.id !== excludedSessionId &&
                 session.planId === planId &&
@@ -1988,3 +2012,5 @@ function escapeHtml(value) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
+

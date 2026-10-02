@@ -169,4 +169,5 @@ if (!document.querySelector('link[data-workout-complete-recap-recovery-style]'))
     anatomyStyle.dataset.workoutCompleteRecapRecoveryStyle = "true";
     document.head.appendChild(anatomyStyle);
 }
-import("./workout-complete-recap.js?v=pwa-pr-parity-1");
+import("./workout-complete-recap.js?v=resume-workout-1");
+

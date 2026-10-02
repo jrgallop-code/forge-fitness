@@ -22,6 +22,7 @@ const RANGE_OPTIONS = {
     "1m": { days: 30, label: "1M" },
     "3m": { days: 90, label: "3M" },
     "6m": { days: 180, label: "6M" },
+    "1y": { days: 365, label: "1Y" },
     phase: { label: "PHASE" },
     all: { label: "ALL" }
 };
@@ -87,18 +88,29 @@ function ensureCarousel(card) {
     pager.addEventListener("click", event => {
         const button = event.target.closest?.("[data-weight-graph-page-v2]");
         if (!button) return;
-        track.scrollTo({ left: Number(button.dataset.weightGraphPageV2) * track.clientWidth, behavior: "smooth" });
+        track.scrollTo({ left: carouselOffsets(track)[Number(button.dataset.weightGraphPageV2)] || 0, behavior: "smooth" });
     });
-    track.addEventListener("scroll", () => requestAnimationFrame(() => syncPager(card)), { passive: true });
+    bindCarouselSettling(card, track);
 
-    if (rangeControl) card.insertBefore(rangeControl, track);
+    if (rangeControl) track.insertAdjacentElement("afterend", rangeControl);
     card.dataset.weightGraphCarouselV3 = "1";
 
+    const watchedSlides = new WeakSet();
+    const resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(() => syncCarouselHeight(card)) : null;
+    const watchSlides = () => {
+        [...track.children].forEach(slide => {
+            if (!watchedSlides.has(slide)) { watchedSlides.add(slide); resizeObserver?.observe(slide); }
+        });
+        syncCarouselHeight(card);
+    };
+    watchSlides();
+    window.addEventListener("resize", watchSlides, { passive: true });
     if (!observer) {
         observer = new MutationObserver(() => {
+            watchSlides();
             const control = card.querySelector(".weight-chart-range-control");
             const activeTrack = card.querySelector("[data-weight-graph-carousel-track-v2]");
-            if (control && activeTrack && control.nextElementSibling !== activeTrack) card.insertBefore(control, activeTrack);
+            if (control && activeTrack && control.previousElementSibling !== activeTrack) activeTrack.insertAdjacentElement("afterend", control);
         });
         observer.observe(card, { childList: true, subtree: true });
     }
@@ -139,11 +151,69 @@ function renderCarbSlide() {
     `;
 }
 
+function carouselOffsets(track) {
+    const origin = track.getBoundingClientRect().left + (track.clientLeft || 0);
+    const maximum = Math.max(0, track.scrollWidth - track.clientWidth);
+    return [...track.children].map(slide => Math.max(0, Math.min(maximum,
+        slide.getBoundingClientRect().left - origin + track.scrollLeft)));
+}
+function nearestCarouselPage(track) {
+    const offsets = carouselOffsets(track);
+    return offsets.reduce((best, offset, index) =>
+        Math.abs(offset - track.scrollLeft) < Math.abs(offsets[best] - track.scrollLeft) ? index : best, 0);
+}
+function bindCarouselSettling(card, track) {
+    let timer = 0, touching = false, aligning = false;
+    const settle = () => {
+        clearTimeout(timer);
+        if (touching || aligning || !track.isConnected || !track.clientWidth) return;
+        const page = nearestCarouselPage(track);
+        const target = carouselOffsets(track)[page] || 0;
+        aligning = true;
+        // Avoid WebKit native snap/inertia competing with a second smooth scroll.
+        const snap = track.style.scrollSnapType;
+        const behavior = track.style.scrollBehavior;
+        track.style.scrollSnapType = "none";
+        track.style.scrollBehavior = "auto";
+        track.scrollTo({ left: target, behavior: "instant" });
+        delete track.dataset.scrolling;
+        syncPager(card);
+        requestAnimationFrame(() => {
+            track.style.scrollSnapType = snap;
+            track.style.scrollBehavior = behavior;
+            aligning = false;
+        });
+    };
+    const queue = () => { clearTimeout(timer); timer = setTimeout(settle, 180); };
+    track.addEventListener("touchstart", () => { touching = true; clearTimeout(timer); track.dataset.scrolling = "1"; }, { passive: true });
+    const release = () => { touching = false; queue(); };
+    track.addEventListener("touchend", release, { passive: true });
+    track.addEventListener("touchcancel", release, { passive: true });
+    track.addEventListener("scroll", () => {
+        if (aligning) return;
+        track.dataset.scrolling = "1";
+        queue();
+    }, { passive: true });
+    track.addEventListener("scrollend", settle, { passive: true });
+}
+
+function syncCarouselHeight(card) {
+    const track = card.querySelector("[data-weight-graph-carousel-track-v2]");
+    if (!track || !track.clientWidth || track.dataset.scrolling === "1") return;
+    const slides = [...track.children];
+    const index = nearestCarouselPage(track);
+    const slide = slides[index];
+    const height = Math.ceil(slide?.getBoundingClientRect().height || 0);
+    if (height > 0 && track.style.height !== `${height}px`) track.style.height = `${height}px`;
+}
+
 function syncPager(card) {
     const track = card.querySelector("[data-weight-graph-carousel-track-v2]");
     if (!track) return;
     const maxPage = Math.max(0, card.querySelectorAll("[data-weight-graph-slide-v2]").length - 1);
-    const index = Math.max(0, Math.min(maxPage, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
+    const index = Math.max(0, Math.min(maxPage, nearestCarouselPage(track)));
+    card.dataset.weightGraphView = index === 0 ? "trend" : "carbs";
+    syncCarouselHeight(card);
     card.querySelectorAll("[data-weight-graph-page-v2]").forEach(button => {
         button.setAttribute("aria-pressed", String(Number(button.dataset.weightGraphPageV2) === index));
     });
@@ -537,9 +607,9 @@ function ensureStyles() {
     style.id = STYLE_ID;
     style.textContent = `
         #weight-progress .weight-chart-card{overflow:hidden}
-        #weight-progress .weight-graph-carousel-track-v2{display:flex;width:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+        #weight-progress .weight-graph-carousel-track-v2{display:flex;align-items:flex-start;width:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-padding:0;gap:0;padding:0;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
         #weight-progress .weight-graph-carousel-track-v2::-webkit-scrollbar{display:none}
-        #weight-progress .weight-graph-carousel-slide-v2{flex:0 0 100%;min-width:0;box-sizing:border-box;scroll-snap-align:start;scroll-snap-stop:always}
+        #weight-progress .weight-graph-carousel-slide-v2{flex:0 0 100%!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box;margin:0;scroll-margin:0;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden}
         #weight-progress .weight-graph-carousel-slide-v2.is-carbs{padding:0 1px}
         #weight-progress .weight-graph-carousel-pager-v2{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px;padding:3px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.025)}
         #weight-progress .weight-graph-carousel-pager-v2.has-three-weight-pages{grid-template-columns:repeat(3,1fr)}
@@ -556,3 +626,7 @@ function ensureStyles() {
     `;
     document.head.appendChild(style);
 }
+
+
+
+
