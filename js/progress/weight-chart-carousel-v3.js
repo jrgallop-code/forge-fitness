@@ -88,20 +88,9 @@ function ensureCarousel(card) {
     pager.addEventListener("click", event => {
         const button = event.target.closest?.("[data-weight-graph-page-v2]");
         if (!button) return;
-        track.scrollTo({ left: Number(button.dataset.weightGraphPageV2) * track.clientWidth, behavior: "smooth" });
+        track.scrollTo({ left: carouselOffsets(track)[Number(button.dataset.weightGraphPageV2)] || 0, behavior: "smooth" });
     });
-    let settleTimer;
-    track.addEventListener("scroll", () => {
-        track.dataset.scrolling = "1";
-        clearTimeout(settleTimer);
-        settleTimer = setTimeout(() => {
-            delete track.dataset.scrolling;
-            const page = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
-            const target = page * track.clientWidth;
-            if (Math.abs(track.scrollLeft - target) > 1) track.scrollTo({ left: target, behavior: "smooth" });
-            syncPager(card);
-        }, 160);
-    }, { passive: true });
+    bindCarouselSettling(card, track);
 
     if (rangeControl) track.insertAdjacentElement("afterend", rangeControl);
     card.dataset.weightGraphCarouselV3 = "1";
@@ -162,11 +151,57 @@ function renderCarbSlide() {
     `;
 }
 
+function carouselOffsets(track) {
+    const origin = track.getBoundingClientRect().left + (track.clientLeft || 0);
+    const maximum = Math.max(0, track.scrollWidth - track.clientWidth);
+    return [...track.children].map(slide => Math.max(0, Math.min(maximum,
+        slide.getBoundingClientRect().left - origin + track.scrollLeft)));
+}
+function nearestCarouselPage(track) {
+    const offsets = carouselOffsets(track);
+    return offsets.reduce((best, offset, index) =>
+        Math.abs(offset - track.scrollLeft) < Math.abs(offsets[best] - track.scrollLeft) ? index : best, 0);
+}
+function bindCarouselSettling(card, track) {
+    let timer = 0, touching = false, aligning = false;
+    const settle = () => {
+        clearTimeout(timer);
+        if (touching || aligning || !track.isConnected || !track.clientWidth) return;
+        const page = nearestCarouselPage(track);
+        const target = carouselOffsets(track)[page] || 0;
+        aligning = true;
+        // Avoid WebKit native snap/inertia competing with a second smooth scroll.
+        const snap = track.style.scrollSnapType;
+        const behavior = track.style.scrollBehavior;
+        track.style.scrollSnapType = "none";
+        track.style.scrollBehavior = "auto";
+        track.scrollTo({ left: target, behavior: "instant" });
+        delete track.dataset.scrolling;
+        syncPager(card);
+        requestAnimationFrame(() => {
+            track.style.scrollSnapType = snap;
+            track.style.scrollBehavior = behavior;
+            aligning = false;
+        });
+    };
+    const queue = () => { clearTimeout(timer); timer = setTimeout(settle, 180); };
+    track.addEventListener("touchstart", () => { touching = true; clearTimeout(timer); track.dataset.scrolling = "1"; }, { passive: true });
+    const release = () => { touching = false; queue(); };
+    track.addEventListener("touchend", release, { passive: true });
+    track.addEventListener("touchcancel", release, { passive: true });
+    track.addEventListener("scroll", () => {
+        if (aligning) return;
+        track.dataset.scrolling = "1";
+        queue();
+    }, { passive: true });
+    track.addEventListener("scrollend", settle, { passive: true });
+}
+
 function syncCarouselHeight(card) {
     const track = card.querySelector("[data-weight-graph-carousel-track-v2]");
     if (!track || !track.clientWidth || track.dataset.scrolling === "1") return;
     const slides = [...track.children];
-    const index = Math.max(0, Math.min(slides.length - 1, Math.round(track.scrollLeft / track.clientWidth)));
+    const index = nearestCarouselPage(track);
     const slide = slides[index];
     const height = Math.ceil(slide?.getBoundingClientRect().height || 0);
     if (height > 0 && track.style.height !== `${height}px`) track.style.height = `${height}px`;
@@ -176,7 +211,7 @@ function syncPager(card) {
     const track = card.querySelector("[data-weight-graph-carousel-track-v2]");
     if (!track) return;
     const maxPage = Math.max(0, card.querySelectorAll("[data-weight-graph-slide-v2]").length - 1);
-    const index = Math.max(0, Math.min(maxPage, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
+    const index = Math.max(0, Math.min(maxPage, nearestCarouselPage(track)));
     card.dataset.weightGraphView = index === 0 ? "trend" : "carbs";
     syncCarouselHeight(card);
     card.querySelectorAll("[data-weight-graph-page-v2]").forEach(button => {
@@ -572,9 +607,9 @@ function ensureStyles() {
     style.id = STYLE_ID;
     style.textContent = `
         #weight-progress .weight-chart-card{overflow:hidden}
-        #weight-progress .weight-graph-carousel-track-v2{display:flex;align-items:flex-start;width:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+        #weight-progress .weight-graph-carousel-track-v2{display:flex;align-items:flex-start;width:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-padding:0;gap:0;padding:0;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
         #weight-progress .weight-graph-carousel-track-v2::-webkit-scrollbar{display:none}
-        #weight-progress .weight-graph-carousel-slide-v2{flex:0 0 100%!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden}
+        #weight-progress .weight-graph-carousel-slide-v2{flex:0 0 100%!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box;margin:0;scroll-margin:0;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden}
         #weight-progress .weight-graph-carousel-slide-v2.is-carbs{padding:0 1px}
         #weight-progress .weight-graph-carousel-pager-v2{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px;padding:3px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.025)}
         #weight-progress .weight-graph-carousel-pager-v2.has-three-weight-pages{grid-template-columns:repeat(3,1fr)}
@@ -591,5 +626,6 @@ function ensureStyles() {
     `;
     document.head.appendChild(style);
 }
+
 
 

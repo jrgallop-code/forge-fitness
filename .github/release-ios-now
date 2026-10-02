@@ -313,3 +313,5 @@ Release: chart-first weight layout with responsive tall plot, compact single-row
 Release: remove first weight card carousel gap, adaptive horizontal and vertical grid, day/month/year date headers and neutral grey weekend shading. Preserve enlarged chart and canonical smoothed trend. Test build only.
 
 Release: stable carousel snap and heights, centered daily blocks including last day, partial October header retained, explicit earlier/later pan controls. Test build only.
+
+Release: extend weight trend line and fill across centered-day margins to both plot edges. Settle carousel to measured card boundaries with one instant alignment after touch/inertia, preventing competing smooth snaps. Test build only.

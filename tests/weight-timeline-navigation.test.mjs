@@ -87,3 +87,13 @@ test('daily labels sit at block centers and All retains partial October label',(
  const day=labels.find(l=>l.s==='17'&&l.y===39);assert.ok(Math.abs(day.x-(50+272/14))<.1);
  labels.length=0;api.drawWeight(i,{start:'2026-08-05',end:'2026-10-02'});assert.ok(labels.some(l=>l.s==='OCT'&&l.y===39));
 });
+
+
+test('trend line and fill reach both plot edges while weigh-ins remain centered',()=>{
+ const {api,instance:i,context}=harness();const moves=[],lines=[];context.moveTo=(x,y)=>moves.push([x,y]);context.lineTo=(x,y)=>lines.push([x,y]);
+ const result=api.drawWeight(i,{start:'2026-09-26',end:'2026-10-02'});
+ assert.ok(result.points[0].x>50&&result.points.at(-1).x<322);
+ assert.ok(moves.some(p=>p[0]===50));assert.ok(lines.some(p=>p[0]===322));
+ // Both fill and stroke extend to the same last trend height.
+ const last=lines.filter(p=>p[0]===322);assert.ok(last.some((p,index)=>last.some((q,j)=>j!==index&&q[1]===p[1])));
+});

@@ -1,5 +1,5 @@
 import "../progress/weight-trend-canvas-smoothing.js?v=weight-trend-smoothing-1";
-import "../progress/analytics-chart-zoom.js?v=weight-chart-navigation-1";
+import "../progress/analytics-chart-zoom.js?v=weight-chart-edge-snap-1";
 import "./weekly-change-choice-fix.js?v=weekly-change-choice-fix-1";
 
 const STYLE_ID = "level-up-streamlined-goals-calories-styles";

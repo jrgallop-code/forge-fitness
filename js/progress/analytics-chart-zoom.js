@@ -636,15 +636,17 @@ function openExpandedWeightChart(instance, trigger) {
     header.querySelector("button").focus();
 }
 
-function traceWeightTrendCurve(context, points) {
+function traceWeightTrendCurve(context, points, edges = null) {
     if (!points.length) return;
-    context.moveTo(points[0].x, points[0].y);
+    context.moveTo(edges ? edges.left : points[0].x, points[0].y);
+    if (edges) context.lineTo(points[0].x, points[0].y);
     for (let index = 1; index < points.length - 1; index += 1) {
         const current = points[index], next = points[index + 1];
         context.quadraticCurveTo(current.x, current.y, (current.x + next.x) / 2, (current.y + next.y) / 2);
     }
     const last = points.at(-1);
     if (points.length > 1) context.lineTo(last.x, last.y);
+    if (edges) context.lineTo(edges.right, last.y);
 }
 
 function drawWeight(instance, state, scaleOverride = null) {
@@ -698,19 +700,19 @@ function drawWeight(instance, state, scaleOverride = null) {
     context.beginPath();
     context.rect(padding.left - 3, padding.top, plotWidth + 6, plotHeight);
     context.clip();
-    if (sampledTrend.length >= 2) {
+    if (sampledTrend.length) {
         const accent = themeColor("--accent", "#df141e");
         context.beginPath();
-        traceWeightTrendCurve(context, sampledTrend.map(entry => ({ x: x(entry.date), y: y(entry.weight) })));
-        context.lineTo(x(sampledTrend.at(-1).date), height - padding.bottom);
-        context.lineTo(x(sampledTrend[0].date), height - padding.bottom);
+        traceWeightTrendCurve(context, sampledTrend.map(entry => ({ x: x(entry.date), y: y(entry.weight) })), { left: padding.left, right: width - padding.right });
+        context.lineTo(width - padding.right, height - padding.bottom);
+        context.lineTo(padding.left, height - padding.bottom);
         context.closePath();
         context.fillStyle = accent;
         context.globalAlpha = .09;
         context.fill();
         context.globalAlpha = 1;
         context.beginPath();
-        traceWeightTrendCurve(context, sampledTrend.map(entry => ({ x: x(entry.date), y: y(entry.weight) })));
+        traceWeightTrendCurve(context, sampledTrend.map(entry => ({ x: x(entry.date), y: y(entry.weight) })), { left: padding.left, right: width - padding.right });
         context.strokeStyle = accent;
         context.lineWidth = 3;
         context.lineJoin = "round";
@@ -1317,5 +1319,6 @@ window.addEventListener("resize", scheduleAttach, { passive: true });
 const mutationRoot = document.getElementById("content") || document.body;
 if (mutationRoot) new MutationObserver(() => scheduleAttach()).observe(mutationRoot, { childList: true, subtree: true, characterData: true });
 scheduleAttach();
+
 
 
