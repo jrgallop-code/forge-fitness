@@ -1,3 +1,4 @@
+import { MAX_WORKING_SETS, clampWorkingSets, normalizeGeneratedDayNames } from "./smart-build-constraints.js?v=builder-four-sets-1";
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { getTrainingPreferences } from "../core/training-preferences.js?v=onboarding-1";
 import { renderMusclePriorityChoice } from "./muscle-priority-visual.js?v=female-back-regions-1";
@@ -191,7 +192,7 @@ function seedTemplateDays(match,preferred){
       if(!def)return null;
       if(def.id!==item.id)match.substitutions+=1;
       used.push(def.id);
-      return{id:def.id,name:def.name,sets:Math.max(2,Math.min(5,Number(item.sets)||3)),reps:def.id===item.id?String(item.reps||repRangeFor(def)):repRangeFor(def),muscleGroup:def.muscleGroup};
+      return{id:def.id,name:def.name,sets:clampWorkingSets(item.sets),reps:def.id===item.id?String(item.reps||repRangeFor(def)):repRangeFor(def),muscleGroup:def.muscleGroup};
     }).filter(Boolean);
     return{name:sourceDay.name,muscles:musclesForTemplateDay(sourceDay,exercises,dayIndex),exercises};
   });
@@ -228,13 +229,13 @@ function generateProgram(){
       if(existingForMuscle&&existingForMuscle.sets<setCeiling){const add=Math.min(setCeiling-existingForMuscle.sets,maxDirectSetsPerMuscleSession()-muscleSets,remaining);existingForMuscle.sets+=add;remaining-=add;cursor+=1;continue;}
       const normalCap=sessionExerciseRange().max;
       if(day.exercises.length>=normalCap){
-        const receiver=day.exercises.filter(x=>x.muscleGroup===muscle&&x.sets<6).sort((a,b)=>a.sets-b.sets)[0];
-        if(receiver){const add=Math.min(6-receiver.sets,maxDirectSetsPerMuscleSession()-muscleSets,remaining);if(add>0){receiver.sets+=add;remaining-=add;cursor+=1;continue;}}
+        const receiver=day.exercises.filter(x=>x.muscleGroup===muscle&&x.sets<MAX_WORKING_SETS).sort((a,b)=>a.sets-b.sets)[0];
+        if(receiver){const add=Math.min(MAX_WORKING_SETS-receiver.sets,maxDirectSetsPerMuscleSession()-muscleSets,remaining);if(add>0){receiver.sets+=add;remaining-=add;cursor+=1;continue;}}
         cursor+=1;if(eligible.every(i=>days[i].exercises.length>=normalCap))break;continue;
       }
       const def=chooseExerciseForMuscle(muscle,usedByMuscle.get(muscle),preferred,dayIndex,day.exercises.map(x=>x.id));if(!def)break;
       const room=maxDirectSetsPerMuscleSession()-muscleSets,chunk=Math.min(3,remaining,room);
-      if(chunk<2){const receiver=day.exercises.find(x=>x.muscleGroup===muscle&&x.sets<6);if(receiver){receiver.sets=Math.min(6,receiver.sets+chunk);remaining-=chunk;}break;}
+      if(chunk<2){const receiver=day.exercises.find(x=>x.muscleGroup===muscle&&x.sets<MAX_WORKING_SETS);if(receiver){receiver.sets=Math.min(MAX_WORKING_SETS,receiver.sets+chunk);remaining-=chunk;}break;}
       day.exercises.push({id:def.id,name:def.name,sets:chunk,reps:repRangeFor(def),muscleGroup:muscle});usedByMuscle.get(muscle).push(def.id);remaining-=chunk;cursor+=1;
     }
   });
@@ -242,6 +243,7 @@ function generateProgram(){
   validateGeneratedProgram(days,preferred);
   ensureSessionVariety(days,preferred);
   days.forEach(day=>{consolidateSession(day);day.exercises=sortExercises(day.exercises);fitSessionTime(day);day.exercises=sortExercises(day.exercises);if(state.supersets)assignSupersets(day);});
+  normalizeGeneratedDayNames(days,exerciseMap());
   return{days,summary:buildSummary(days),baseTemplate:{id:match.plan.id,name:match.plan.name,sourceName:match.plan.sourceName||"",sourceUrl:match.plan.sourceUrl||"",description:match.plan.description||"",adjustments:templateAdjustmentSummary(match),matchScore:Math.round(match.score)}};
 }
 function dayMuscleSets(day,muscle){return day.exercises.filter(x=>x.muscleGroup===muscle).reduce((s,x)=>s+(Number(x.sets)||0),0);}
@@ -295,13 +297,13 @@ function consolidateSession(day){
   while(day.exercises.length>max){
     const candidates=day.exercises.map((x,i)=>({x,i})).filter(({x})=>!state.priorities.includes(x.muscleGroup)).sort((a,b)=>a.x.sets-b.x.sets);
     const remove=candidates[0];if(!remove)break;
-    const same=day.exercises.find((x,i)=>i!==remove.i&&x.muscleGroup===remove.x.muscleGroup&&x.sets<6);
-    if(same){same.sets=Math.min(6,same.sets+remove.x.sets);day.exercises.splice(remove.i,1);}else break;
+    const same=day.exercises.find((x,i)=>i!==remove.i&&x.muscleGroup===remove.x.muscleGroup&&x.sets<MAX_WORKING_SETS);
+    if(same){same.sets=Math.min(MAX_WORKING_SETS,same.sets+remove.x.sets);day.exercises.splice(remove.i,1);}else break;
   }
 }
 function validateGeneratedProgram(days,preferred){
   days.forEach((day,dayIndex)=>{
-    day.exercises.forEach(item=>{item.sets=Math.max(2,Number(item.sets)||2);});
+    day.exercises.forEach(item=>{item.sets=clampWorkingSets(item.sets,2);});
     if(/full body/i.test(day.name)){
       ensureDayCategory(day,["Chest","Shoulders"],preferred,dayIndex);
       ensureDayCategory(day,["Back"],preferred,dayIndex);
@@ -337,7 +339,7 @@ function assignSupersets(day){let n=1;day.exercises.forEach(x=>delete x.superset
 function canSuperset(a,b){if(!a||!b||belongsToProtectedCompound(a)||belongsToProtectedCompound(b)||a.muscleGroup===b.muscleGroup||INTERFERENCE.has(`${a.muscleGroup}|${b.muscleGroup}`))return false;return a.type==="isolation"||b.type==="isolation";}
 function belongsToProtectedCompound(def){if(!def)return false;const lowerBody=["Quads","Hamstrings","Glutes"].includes(def.muscleGroup)&&def.type==="compound";return lowerBody||NEVER_SUPERSET.some(p=>p.test(def.name||""));}
 function replaceExercise(di,ei){const day=state.generated?.days?.[di],item=day?.exercises?.[ei];if(!item)return;const usedInDay=new Set(day.exercises.map((x,index)=>index===ei?null:x.id).filter(Boolean));const pool=availableExercises().filter(e=>e.muscleGroup===item.muscleGroup&&e.id!==item.id&&!usedInDay.has(e.id));if(!pool.length)return;const next=pool[(state.variation+ei+di+1)%pool.length];item.id=next.id;item.name=next.name;item.reps=repRangeFor(next);if(state.supersets)assignSupersets(day);}
-function adjustSets(di,ei,delta){const item=state.generated?.days?.[di]?.exercises?.[ei];if(!item)return;item.sets=Math.max(2,Math.min(6,item.sets+delta));}
+function adjustSets(di,ei,delta){const item=state.generated?.days?.[di]?.exercises?.[ei];if(!item)return;item.sets=clampWorkingSets(item.sets+delta,2);}
 function calculateWeeklySets(program){const totals=Object.fromEntries(MUSCLES.map(m=>[m,0]));program.days.forEach(d=>d.exercises.forEach(x=>{if(totals[x.muscleGroup]!==undefined)totals[x.muscleGroup]+=Number(x.sets)||0;}));return totals;}
 function buildSummary(days){const totalSets=days.reduce((sum,d)=>sum+d.exercises.reduce((s,e)=>s+e.sets,0),0),counts=days.map(d=>d.exercises.length),priority=state.priorities.length?` Priority: ${state.priorities.join(", ")}.`:"",ss=state.supersets?" Accessory supersets are used only when pairings are low-interference.":"";return`${totalSets} working sets across ${days.length} days; ${Math.min(...counts)}–${Math.max(...counts)} exercises per session.${priority}${ss}`;}
 function saveGeneratedPlan(root){if(!state.generated)return;const plans=readPlans(),base=state.generated.baseTemplate||{},adaptedName=base.sourceName||base.name||"Level Up template",plan={id:`smart-${Date.now()}`,name:`Personalized — ${GOALS[state.goal].label}`,adaptedFrom:{id:base.id||"",name:adaptedName,templateName:base.name||adaptedName,url:base.sourceUrl||"",note:base.adjustments||""},sourceName:adaptedName,sourceUrl:base.sourceUrl||"",days:state.generated.days.map(d=>({name:d.name,exercises:d.exercises.map(item=>{const out={id:item.id,sets:item.sets,reps:item.reps};if(item.supersetGroup)out.supersetGroup=item.supersetGroup;return out;})})),smartBuild:{version:10,goal:state.goal,days:state.days,duration:state.duration,priorities:[...state.priorities],experience:state.experience,equipment:[...state.equipment],supersets:state.supersets,templateId:base.id||"",templateName:base.name||"",templateSourceName:adaptedName,templateSourceUrl:base.sourceUrl||"",createdAt:new Date().toISOString()}};plans.push(plan);localStorage.setItem(PLAN_STORAGE_KEY,JSON.stringify(plans));const button=root.querySelector("[data-smart-save]");if(button){button.disabled=true;button.textContent="Saved ✓";}window.setTimeout(()=>document.querySelector('.nav-btn[data-page="workout"]')?.click(),150);}
