@@ -55,7 +55,7 @@ jobs:
           npm run cap:sync:ios
 
       - name: Run iOS packaging checks
-        run: node --test tests/capacitor-ios-packaging.test.mjs tests/ios-cloud-build.test.mjs tests/native-app-shell.test.mjs
+        run: node --test tests/live-set-progression.test.mjs tests/capacitor-ios-packaging.test.mjs tests/ios-cloud-build.test.mjs tests/native-app-shell.test.mjs
 
       - name: Create temporary App Store Connect key
         shell: bash

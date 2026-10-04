@@ -317,3 +317,5 @@ Release: stable carousel snap and heights, centered daily blocks including last 
 Release: extend weight trend line and fill across centered-day margins to both plot edges. Settle carousel to measured card boundaries with one instant alignment after touch/inertia, preventing competing smooth snaps. Test build only.
 
 Release: Undo finish and Resume workout reopen completed sessions in full live logger. Preserve original records/date/sets/RIR/drops/notes, accumulate only resumed active time, protect active conflicts, replace same record on refinish, and use original prior progression/PR history. Test build only.
+
+Release: real-time completed-set guidance holds the latest performed load within the workout, with weight increases reserved for the next session.
