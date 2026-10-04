@@ -333,3 +333,5 @@ Release: test 60/30/10 calendar-week weighted regression for the visible smoothe
 Release: Goals & Plan uses the weighted Progress rate independently of expenditure; connect historical and future goal trajectory segments and scale partial projections correctly.
 
 Release: selectable calorie intake ranges in Nutrition Progress, arbitrary start/end dates, rolling seven-day and calendar-week shortcuts, preceding-period comparison, daily bars, logging coverage, trend-weight change and tappable weekly history. iOS test build only.
+
+Release: preserve expenditure-first Nutrition Progress hierarchy, replace duplicate average calorie bars with selectable intake chart, and use a themed month calendar for tap-to-select ranges with a This week shortcut.

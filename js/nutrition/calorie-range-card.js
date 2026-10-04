@@ -1,3 +1,4 @@
+import { openCalorieRangeCalendar } from './calorie-range-calendar.js?v=calorie-calendar-1';
 import { readFoodLog, readCompletedFoodDays } from './food-log-data.js?v=fatsecret-progress-calories-1';
 import { calculateTrendWeightSeries } from '../core/weight-trend.js?v=smoothed-visible-trend-1';
 import { compareCalorieRange, shiftCalorieDate, validateCalorieRange, dateNumber } from './calorie-range-model.js?v=calorie-range-1';
@@ -39,16 +40,5 @@ export function initializeCalorieRangeCard(panel,target=0){
     function select(start,end){localStorage.setItem(KEY,JSON.stringify({start,end}));initializeCalorieRangeCard(panel,target);}
     host.querySelectorAll('[data-calorie-shift]').forEach(button=>button.addEventListener('click',()=>{const shift=Number(button.dataset.calorieShift)*current.days.length;select(shiftCalorieDate(range.start,shift),shiftCalorieDate(range.end,shift));}));
     host.querySelectorAll('[data-calorie-history-start]').forEach(button=>button.addEventListener('click',()=>select(button.dataset.calorieHistoryStart,button.dataset.end)));
-    host.querySelector('[data-calorie-dates]').addEventListener('click',()=>openDates(range,today,select));
-}
-function openDates(range,today,select){
-    document.getElementById('lucr-date-dialog')?.remove();
-    const dialog=document.createElement('dialog');dialog.id='lucr-date-dialog';dialog.className='lucr-dialog';dialog.setAttribute('aria-labelledby','lucr-date-heading');
-    dialog.innerHTML=`<h3 id="lucr-date-heading">Select date range</h3><div class="lucr-shortcuts"><button data-shortcut="7">Last 7 days</button><button data-shortcut="week">This week</button></div><label>Start date<input type="date" data-start value="${range.start}" max="${today}" required></label><label>End date<input type="date" data-end value="${range.end}" max="${today}" required></label><button data-seven-end>7 days ending on selected end date</button><p class="lucr-error" role="alert"></p><div class="lucr-actions"><button data-cancel>Cancel</button><button data-apply>Apply range</button></div>`;
-    document.body.appendChild(dialog);const start=dialog.querySelector('[data-start]'),end=dialog.querySelector('[data-end]');
-    dialog.querySelectorAll('[data-shortcut]').forEach(button=>button.addEventListener('click',()=>{end.value=today;start.value=button.dataset.shortcut==='week'?calendarStart(today):shiftCalorieDate(today,-6);}));
-    dialog.querySelector('[data-seven-end]').addEventListener('click',()=>{if(Number.isFinite(dateNumber(end.value)))start.value=shiftCalorieDate(end.value,-6);});
-    dialog.querySelector('[data-cancel]').addEventListener('click',()=>dialog.close());
-    dialog.querySelector('[data-apply]').addEventListener('click',()=>{const error=validateCalorieRange(start.value,end.value,today);dialog.querySelector('.lucr-error').textContent=error;if(error)return;select(start.value,end.value);dialog.close();});
-    dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();
+    host.querySelector('[data-calorie-dates]').addEventListener('click',()=>openCalorieRangeCalendar(range,today,select));
 }

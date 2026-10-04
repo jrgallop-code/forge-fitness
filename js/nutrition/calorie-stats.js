@@ -631,24 +631,17 @@ function renderStats(panel) {
     panel.innerHTML = `
         <section class="calorie-stats-page">
             <header><span class="eyebrow">CALORIE TRENDS</span><h2>Calorie Stats</h2><p>See whether your intake is supporting your current goal.</p></header>
-            <div class="calorie-stats-ranges" aria-label="Stats date range">
-                ${Object.entries({7:"7D",28:"4W",84:"12W"}).map(([value,label]) => `<button type="button" class="${count === Number(value) ? "active" : ""}" data-calorie-stats-range="${value}">${label}</button>`).join("")}
-            </div>
-            <div data-calorie-range-card></div>
             ${maintenanceCard(maintenance, checkIn)}
+            ${expenditureTrendCard(tdeeTrend, formulaEstimate, targets.phase)}
+            ${expenditureTutorialCard()}
+            <div data-calorie-range-card></div>
             <article class="calorie-stat-card calorie-target-rule">
                 <div><small>CALORIE TARGET</small><strong>${targets.calories ? `${formatNumber(targets.calories)} cal/day (${formatNumber(lower)}–${formatNumber(upper)})` : "No calorie goal set"}</strong></div>
                 <p>A day is in target when it is within ±3% of your calorie goal.</p>
             </article>
-            ${expenditureTrendCard(tdeeTrend, formulaEstimate, targets.phase)}
-            ${expenditureTutorialCard()}
-            <article class="calorie-stat-card calorie-stat-week">
-                <div class="calorie-stat-title"><span><small>AVERAGE CALORIES</small><strong>${averageDayCount ? formatNumber(avgCalories) : "—"}</strong></span><b>${averageDayCount} of ${count} days in average</b></div>
-                <div class="calorie-stat-bars ${displayDays.length === 7 ? "is-seven" : ""}">${bars(displayDays, targets.calories)}</div>
-                <div class="calorie-stat-goal">
-                    <span><i class="target"></i>In target</span><span><i class="outside"></i>Outside target</span><b>${difference === null ? "Set a calorie goal" : `${difference > 0 ? "+" : ""}${formatNumber(difference)} average vs goal`}</b>
-                </div>
-            </article>
+            <div class="calorie-stats-ranges" aria-label="Stats date range">
+                ${Object.entries({7:"7D",28:"4W",84:"12W"}).map(([value,label]) => `<button type="button" class="${count === Number(value) ? "active" : ""}" data-calorie-stats-range="${value}">${label}</button>`).join("")}
+            </div>
             <article class="calorie-stat-card">
                 <div class="calorie-stat-section-title"><span><small>CONSISTENCY</small><strong>${inTarget} days in target</strong></span><b>${logged.length ? Math.round(inTarget / logged.length * 100) : 0}%</b></div>
                 <div class="calorie-stat-consistency"><span><strong>${logged.length}</strong><small>Days logged</small></span><span><strong>${inTarget}</strong><small>Calories in target</small></span><span><strong>${proteinDays}</strong><small>Protein goal hit</small></span></div>
