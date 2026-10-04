@@ -1,3 +1,4 @@
+import { initializeCalorieRangeCard } from "./calorie-range-card.js?v=calorie-range-1";
 import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "./calculated-maintenance.js?v=food-log-macro-bars-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
@@ -633,6 +634,7 @@ function renderStats(panel) {
             <div class="calorie-stats-ranges" aria-label="Stats date range">
                 ${Object.entries({7:"7D",28:"4W",84:"12W"}).map(([value,label]) => `<button type="button" class="${count === Number(value) ? "active" : ""}" data-calorie-stats-range="${value}">${label}</button>`).join("")}
             </div>
+            <div data-calorie-range-card></div>
             ${maintenanceCard(maintenance, checkIn)}
             <article class="calorie-stat-card calorie-target-rule">
                 <div><small>CALORIE TARGET</small><strong>${targets.calories ? `${formatNumber(targets.calories)} cal/day (${formatNumber(lower)}–${formatNumber(upper)})` : "No calorie goal set"}</strong></div>
@@ -691,6 +693,7 @@ function renderStats(panel) {
         values.hidden = false;
     }));
     panel.querySelector("[data-maintenance-review]")?.addEventListener("click", () => openMaintenanceReview(checkIn));
+    initializeCalorieRangeCard(panel, targets.calories);
     renderExpenditureChart(panel, tdeeTrend, formulaEstimate);
     initializeExpenditureTutorial(panel);
 }
