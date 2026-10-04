@@ -55,9 +55,10 @@ function graph(data, range, zoom=1) {
     const targetEnd=endMs!==null ? Math.min(xMax,endMs) : xMax;
     const current=finite(goal.currentWeight);
     const historicalEnd=Math.min(xMax,Math.max(xMin,today));
+    const projectionAt=time=>current+selected*((time-today)/604800000);
     const target='M'+x(xMin).toFixed(1)+','+y(targetAt(xMin)).toFixed(1)+' L'+x(historicalEnd).toFixed(1)+','+y(targetAt(historicalEnd)).toFixed(1)
         +(current!==null&&endMs!==null&&endMs>today&&xMax>today
-          ? ' M'+x(today).toFixed(1)+','+y(current).toFixed(1)+' L'+x(targetEnd).toFixed(1)+','+y(finite(goal.goalWeight)).toFixed(1)
+          ? ' L'+x(today).toFixed(1)+','+y(current).toFixed(1)+' L'+x(targetEnd).toFixed(1)+','+y(projectionAt(targetEnd)).toFixed(1)
           : '');
     const goalLine=targetWeight!==null?'<line x1="42" x2="344" y1="'+y(targetWeight)+'" y2="'+y(targetWeight)+'" stroke="#51c99c" stroke-width="1.4" stroke-dasharray="5 5"/>':"";
     const endDot=endMs!==null&&endMs>=xMin&&endMs<=xMax?'<circle cx="'+x(endMs)+'" cy="'+y(goal.goalWeight)+'" r="4" fill="#f25265"/><text x="'+Math.min(340,x(endMs))+'" y="'+(y(goal.goalWeight)-10)+'" text-anchor="end" fill="currentColor" font-size="10">Goal</text>':"";

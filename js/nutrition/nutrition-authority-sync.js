@@ -1,5 +1,5 @@
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=nutrition-authority-sync-2";
-import { getActiveNutritionPhase } from "./nutrition-phase.js?v=nutrition-authority-sync-2";
+import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-authority-sync-2";
 import { resolvePhaseMaintenance } from "./new-phase-maintenance.js?v=new-phase-current-expenditure-1";
 import { repairInheritedNewPhaseTarget } from "./legacy-new-phase-target-repair.js?v=inherited-phase-target-repair-1";
 
@@ -55,6 +55,7 @@ function positive(value) {
 }
 
 function finite(value) {
+    if (value === null || value === undefined || value === "") return null;
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
 }
@@ -72,9 +73,8 @@ function getAuthoritySignals() {
         estimate,
         phase,
         expenditure: currentExpenditure(estimate),
-        // This is deliberately the exact Trend Weight rate consumed by the TDEE engine.
-        // Do not calculate a separate phase-specific user-facing rate here.
-        weightRate: finite(estimate?.weightRateLbPerWeek),
+        // Display the same weighted rate as Progress; expenditure retains its own estimator.
+        weightRate: finite(getActivePhaseMetrics(phase, { rolling: true })?.actualRateLbPerWeek),
         planBaseline: positive(phase?.maintenanceCalories),
         targetCalories: positive(phase?.currentCalories ?? phase?.startCalories)
     };
