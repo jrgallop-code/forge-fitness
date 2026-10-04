@@ -773,6 +773,7 @@ function renderSessionExercises({
         if (completionRequested) return;
         completionRequested = true;
         await finishSongCaptures();
+        if (!editingSessionId && getActiveWorkout()?.id !== session.id) return;
         saveCompletedSession({
             plan,
             logger,
@@ -1141,7 +1142,7 @@ function bindSessionInputs({
                                 set.completed =
                                     !set.completed;
                                 if (!editingSessionId) {
-                                    if (set.completed) captureSetSong(set, persist);
+                                    if (set.completed) captureSetSong(set, persist, () => getActiveWorkout()?.id === session.id);
                                     else clearSetSong(set);
                                 }
                                 row.classList.toggle(

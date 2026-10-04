@@ -44,3 +44,10 @@ test('disconnect clears saved, active and in-memory songs while preserving PR da
     assert.equal(session.exercises[0].sets[0].music, undefined);
     for (const value of store.values()) { assert.ok(!value.includes('spotify')); assert.ok(value.includes('110')); }
 });
+
+test('discarded workouts cannot be revived by an in-flight song capture', async () => {
+    globalThis.window = { Capacitor: { Plugins: { LevelUpSpotify: { snapshot: async () => state() } } } };
+    const set = { completed: true };
+    await captureSetSong(set, () => assert.fail('discarded workout saved'), () => false);
+    assert.equal(set.music, undefined);
+});

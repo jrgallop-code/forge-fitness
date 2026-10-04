@@ -66,6 +66,7 @@ jobs:
               raise SystemExit("Invalid SPOTIFY_CLIENT_ID")
           path = Path("ios/App/App/Info.plist")
           data = plistlib.loads(path.read_bytes())
+          print("Spotify connection configured:", bool(client_id))
           data["SpotifyClientID"] = client_id
           path.write_bytes(plistlib.dumps(data))
           PY

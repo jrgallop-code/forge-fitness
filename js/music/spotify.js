@@ -13,7 +13,7 @@ export function songFromState(state, now = Date.now()) {
 }
 export async function spotifyStatus() { return await plugin()?.status?.() || { connected: false, configured: false }; }
 export async function connectSpotify() { return await plugin()?.connect?.({ reauthorize: true }); }
-export function captureSetSong(set, persist) {
+export function captureSetSong(set, persist, isCurrent = () => true) {
     clearSetSong(set);
     const attempt = attempts.get(set);
     const version = generation;
@@ -23,7 +23,7 @@ export function captureSetSong(set, persist) {
         Promise.resolve().then(() => plugin()?.snapshot?.()).catch(() => null),
         new Promise(resolve => { timeout = setTimeout(() => resolve(null), 1800); })
     ]).then(state => {
-        if (version !== generation || attempt !== attempts.get(set) || !set.completed) return;
+        if (version !== generation || attempt !== attempts.get(set) || !set.completed || !isCurrent()) return;
         const song = songFromState(state);
         if (song) { set.music = song; persist(); }
     });

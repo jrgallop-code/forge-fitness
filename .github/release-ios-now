@@ -321,3 +321,5 @@ Release: Undo finish and Resume workout reopen completed sessions in full live l
 Release: real-time completed-set guidance holds the latest performed load within the workout, with weight increases reserved for the next session.
 
 Release: preserve prescribed per-set rep goals unless the latest completed load differs from the initial prescription.
+
+Release: iOS Spotify App Remote connection, current-song capture on completed working sets, and PR song history under More. Preserve completion cards. SpotifyClientID supplied through SPOTIFY_CLIENT_ID Actions variable; show setup pending when absent.

@@ -92,7 +92,7 @@ final class LevelUpSpotifyRemote: NSObject, SPTAppRemoteDelegate, SPTAppRemotePl
         api.getPlayerState { [weak self] result, error in
             DispatchQueue.main.async {
                 guard let self = self else { completion(["connected": false]); return }
-                if error == nil, let player = result as? SPTAppRemotePlayerState { self.update(player); completion(self.status()) }
+                if remote.isConnected, error == nil, let player = result as? SPTAppRemotePlayerState { self.update(player); completion(self.status()) }
                 else { completion(["connected": false]) }
             }
         }
