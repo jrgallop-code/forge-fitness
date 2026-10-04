@@ -303,6 +303,40 @@ function getLiveCompletedSets(card) {
     .filter(set => Number.isFinite(set.reps) && set.reps > 0);
 }
 
+export function getLiveSetTarget(sets, repRange) {
+  const latest = sets.filter(set => Number.isFinite(set.weight) && set.weight > 0 &&
+    Number.isFinite(set.reps) && set.reps > 0).at(-1);
+  if (!latest) return null;
+  return { weight: latest.weight, reps: Math.max(repRange.lower, Math.min(repRange.upper, latest.reps)),
+    belowTarget: latest.reps < repRange.lower, atTop: latest.reps >= repRange.upper };
+}
+
+function renderLiveSetPrompt(card, prompt, repRange, exerciseId) {
+  const target = getLiveSetTarget(getLiveCompletedSets(card), repRange);
+  if (!target) return false;
+  const remaining = [...card.querySelectorAll('.session-set-row')]
+    .filter(row => !row.classList.contains('completed'));
+  const reduction = target.belowTarget ? getRecommendedReducedLoad(target.weight, exerciseId) : null;
+  const nextWeight = reduction?.suggestedLoad ?? target.weight;
+  const load = formatUnitMass(nextWeight, 1, UNIT_KINDS.LIFTING_WEIGHT);
+  remaining.forEach(row => {
+    const weight = row.querySelector('.session-weight');
+    const reps = row.querySelector('.session-reps');
+    if (weight && !weight.value) setCanonicalUnitPlaceholder(weight, nextWeight);
+    if (reps && !reps.value) reps.placeholder = String(target.reps);
+  });
+  prompt.classList.toggle('progression-prompt-down', target.belowTarget);
+  prompt.innerHTML = `
+    <span class="progression-arrow">${target.belowTarget ? '↓' : '↺'}</span>
+    <div>
+      <strong>${remaining.length ? (target.belowTarget ? 'Consider a lighter load' : `Continue at ${load}`) : 'Working sets complete'}</strong>
+      <p>${remaining.length ? `Aim for <b>${load} × ${target.reps} reps</b> next set.` : 'Your completed sets will guide your next workout.'}</p>
+      <small>${target.belowTarget ? `Your latest set was below the ${repRange.lower}–${repRange.upper} rep target.` : target.atTop ? 'Top of the rep range reached. Keep this weight today; weight increases are assessed for your next workout.' : 'Repeat the weight and reps from your latest completed set.'}</small>
+    </div>`;
+  prompt.hidden = false;
+  return true;
+}
+
 function renderLiveBelowTargetPrompt(card, prompt, repRange, exerciseId, source) {
   const completedSets = getLiveCompletedSets(card);
   if (completedSets.length < 2) return false;
@@ -362,6 +396,7 @@ function renderCard(card) {
     return;
   }
 
+  if (!isBodyweight && renderLiveSetPrompt(card, prompt, repRange, exerciseId)) return;
   if (renderLiveBelowTargetPrompt(card, prompt, repRange, exerciseId, source)) return;
 
   if (!source) {
@@ -517,6 +552,9 @@ function bindLogger(logger) {
   logger.dataset.progressionV2Bound = 'true';
   const refresh = () => refreshLogger(logger);
   refresh();
+  logger.addEventListener('input', event => {
+    if (event.target.matches('.session-weight, .session-reps')) setTimeout(refresh, 20);
+  });
   logger.addEventListener('click', event => {
     if (event.target.closest('.complete-set-btn')) setTimeout(refresh, 80);
   });
