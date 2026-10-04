@@ -319,3 +319,5 @@ Release: extend weight trend line and fill across centered-day margins to both p
 Release: Undo finish and Resume workout reopen completed sessions in full live logger. Preserve original records/date/sets/RIR/drops/notes, accumulate only resumed active time, protect active conflicts, replace same record on refinish, and use original prior progression/PR history. Test build only.
 
 Release: real-time completed-set guidance holds the latest performed load within the workout, with weight increases reserved for the next session.
+
+Release: preserve prescribed per-set rep goals unless the latest completed load differs from the initial prescription.
