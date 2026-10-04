@@ -401,6 +401,7 @@ function generateProgram() {
 
   if (baseTemplate) seedFromTemplate(days, baseTemplate, split, pool, exerciseMap, usedCounts);
   else seedWorkoutStructure(days, split.templates, pool, usedCounts);
+  enforceFullBodyBalance(days, pool, exerciseMap, usedCounts);
   ensurePriorityFrequency(days, split.mapping, pool, usedCounts);
 
   const targets = getWeeklyTargets();
@@ -413,6 +414,8 @@ function generateProgram() {
   ensureMinimumExercises(days, split.templates, split.mapping, pool, usedCounts, exerciseMap);
   repairDuration(days, exerciseMap);
   ensureMinimumExercises(days, split.templates, split.mapping, pool, usedCounts, exerciseMap);
+  repairDuration(days, exerciseMap);
+  enforceFullBodyBalance(days, pool, exerciseMap, usedCounts);
   repairDuration(days, exerciseMap);
   orderExercises(days, exerciseMap);
   applyAccessorySupersets(days, exerciseMap);
@@ -677,6 +680,75 @@ function addStimulus(days, muscle, eligible, pool, exerciseMap, usedCounts, prio
     if (day.exercises.length < exerciseRange().max && addExercise(day, muscle, 2, pool, usedCounts, slot.index, { role: "volume" })) return true;
   }
   return false;
+}
+
+const UPPER_BODY_MUSCLES = new Set(["Chest", "Back", "Shoulders", "Biceps", "Triceps"]);
+const LOWER_BODY_MUSCLES = new Set(["Quads", "Hamstrings", "Glutes", "Calves"]);
+const FULL_BODY_COVERAGE = [
+  { muscles: ["Chest", "Shoulders"], role: "press" },
+  { muscles: ["Back"], role: "pull" },
+  { muscles: ["Quads"], role: "knee" },
+  { muscles: ["Hamstrings", "Glutes"], role: "posterior" }
+];
+
+function isFullBodyDay(day) {
+  return /full[\s-]*body/i.test(day.name || "")
+    || (day.intended?.some(muscle => UPPER_BODY_MUSCLES.has(muscle))
+      && day.intended?.some(muscle => LOWER_BODY_MUSCLES.has(muscle)));
+}
+
+function fullBodyCounts(day) {
+  return {
+    upper: day.exercises.filter(item => UPPER_BODY_MUSCLES.has(item.primaryMuscle)).length,
+    lower: day.exercises.filter(item => LOWER_BODY_MUSCLES.has(item.primaryMuscle)).length
+  };
+}
+
+function enforceFullBodyBalance(days, pool, exerciseMap, usedCounts) {
+  days.forEach((day, dayIndex) => {
+    if (!isFullBodyDay(day)) return;
+    const covered = (items, group) => items.some(item => group.muscles.includes(item.primaryMuscle));
+    const addBalancedExercise = (muscles, role, replaceRegion = null) => {
+      const choices = muscles.slice().sort((a, b) => primarySetsForMuscle(day, a) - primarySetsForMuscle(day, b));
+      for (const muscle of choices) {
+        const candidate = pickExercise(day, muscle, pool, usedCounts, dayIndex, { role, structural: true });
+        if (!candidate) continue;
+        const removable = day.exercises.map((item, index) => ({ item, index }))
+          .filter(({ item, index }) => {
+            if (replaceRegion && !replaceRegion.has(item.primaryMuscle)) return false;
+            const remaining = day.exercises.filter((_, i) => i !== index);
+            return FULL_BODY_COVERAGE.every(group => !covered(day.exercises, group) || covered(remaining, group));
+          })
+          .sort((a, b) => Number(state.priorities.includes(a.item.primaryMuscle)) - Number(state.priorities.includes(b.item.primaryMuscle))
+            || Number(state.preferredIds.includes(a.item.id)) - Number(state.preferredIds.includes(b.item.id))
+            || Number(a.item.structural) - Number(b.item.structural) || a.item.sets - b.item.sets);
+        const remove = removable[0];
+        // Replace an accessory when possible instead of extending a full session.
+        if (remove) {
+          day.exercises.splice(remove.index, 1);
+          usedCounts.set(remove.item.id, Math.max(0, (usedCounts.get(remove.item.id) || 0) - 1));
+          addExercise(day, muscle, Math.min(3, remove.item.sets), pool, usedCounts, dayIndex, { role, structural: true });
+          return true;
+        }
+        if (replaceRegion || day.exercises.length >= exerciseRange().max) continue;
+        if (addExercise(day, muscle, 2, pool, usedCounts, dayIndex, { role, structural: true })) return true;
+      }
+      return false;
+    };
+
+    for (const group of FULL_BODY_COVERAGE) {
+      if (!covered(day.exercises, group)) addBalancedExercise(group.muscles, group.role);
+    }
+    let attempts = exerciseRange().max;
+    while (attempts-- > 0) {
+      const { upper, lower } = fullBodyCounts(day);
+      if (Math.abs(upper - lower) <= 1) break;
+      const changed = lower < upper
+        ? addBalancedExercise(["Quads", "Hamstrings", "Glutes"], "volume", UPPER_BODY_MUSCLES)
+        : addBalancedExercise(["Chest", "Back", "Shoulders"], "volume", LOWER_BODY_MUSCLES);
+      if (!changed) break;
+    }
+  });
 }
 
 function ensureMinimumExercises(days, templates, mapping, pool, usedCounts, exerciseMap) {
@@ -948,6 +1020,18 @@ function validateProgram(days, targets, minimums, effective, exposureCounts, spl
   if (!baseTemplate) warnings.push("No exact proven template exists for this schedule, so the evidence-based split fallback was used.");
   days.forEach(day => {
     if (day.exercises.length < 4) issues.push(`${day.name} has only ${day.exercises.length} exercises`);
+    if (isFullBodyDay(day)) {
+      const { upper, lower } = fullBodyCounts(day);
+      if (lower < 2 || !day.exercises.some(item => item.primaryMuscle === "Quads")
+        || !day.exercises.some(item => ["Hamstrings", "Glutes"].includes(item.primaryMuscle))) {
+        issues.push(`${day.name} needs two lower-body exercises covering quads and the posterior chain`);
+      }
+      if (upper < 2 || !day.exercises.some(item => ["Chest", "Shoulders"].includes(item.primaryMuscle))
+        || !day.exercises.some(item => item.primaryMuscle === "Back")) {
+        issues.push(`${day.name} needs upper-body pushing and pulling exercises`);
+      }
+      if (Math.abs(upper - lower) > 1) warnings.push(`${day.name} could not reach a balanced upper/lower exercise split with the selected equipment`);
+    }
     if (day.exercises.some(item => !Number.isInteger(item.sets) || item.sets < 2 || item.sets > MAX_WORKING_SETS)) issues.push(`${day.name} contains an invalid working-set count`);
     const ids = day.exercises.map(item => item.id);
     if (new Set(ids).size !== ids.length) issues.push(`${day.name} contains a duplicate exercise`);

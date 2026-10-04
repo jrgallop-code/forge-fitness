@@ -97,3 +97,52 @@ test('day naming preserves legitimate cardio and unchanged lifting labels', () =
   normalizeGeneratedDayNames(days, map);
   assert.deepEqual(days.map(day => day.name), ['Cardio', 'Upper A']);
 });
+
+test('full-body sessions balance upper/lower counts even with upper-body priorities', () => {
+  const { context } = engine([]);
+  for (const days of [3, 4, 6]) {
+    for (const duration of [30, 45, 60, 90]) {
+      for (const variation of [0, 1, 5]) {
+        const result = context.build({ goal: 'muscle', experience: 'intermediate', splitPreference: 'full-body', days, duration, variation, priorities: ['Chest', 'Shoulders', 'Biceps'], equipment: ['Full Gym'] });
+        for (const day of result.days) {
+          const muscles = day.exercises.map(item => item.primaryMuscle);
+          const upper = muscles.filter(m => ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps'].includes(m)).length;
+          const lower = muscles.filter(m => ['Quads', 'Hamstrings', 'Glutes', 'Calves'].includes(m)).length;
+          assert.ok(lower >= 2, `${day.name}: ${muscles.join(', ')}`);
+          assert.ok(muscles.includes('Quads'));
+          assert.ok(muscles.some(m => ['Hamstrings', 'Glutes'].includes(m)));
+          assert.ok(muscles.includes('Back'));
+          assert.ok(muscles.some(m => ['Chest', 'Shoulders'].includes(m)));
+          assert.ok(Math.abs(upper - lower) <= 1, `${day.name}: ${upper} upper / ${lower} lower`);
+          assert.ok(day.exercises.length <= (duration <= 30 ? 5 : duration <= 45 ? 6 : duration <= 60 ? 7 : 8));
+          assert.ok(day.exercises.every(item => item.sets <= 4));
+        }
+      }
+    }
+  }
+});
+
+test('upper-heavy full-body source templates are repaired without extending the exercise count', () => {
+  const items = ['barbell-bench-press', 'barbell-row', 'overhead-press', 'dumbbell-curl', 'tricep-pushdown', 'back-squat'].map(id => ({ id, sets: 3, reps: '8-12' }));
+  const plan = { id: 'upper-heavy', name: 'Upper-heavy source', trainingType: 'Hypertrophy', level: 'Intermediate', daysPerWeek: 3, days: Array.from({ length: 3 }, (_, i) => ({ name: `Full Body ${i + 1}`, exercises: items })) };
+  const { context } = engine([plan]);
+  const result = context.build({ days: 3, duration: 60, priorities: ['Chest'], variation: 0 });
+  assert.equal(result.baseTemplate.id, plan.id);
+  for (const day of result.days) {
+    const upper = day.exercises.filter(item => ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps'].includes(item.primaryMuscle)).length;
+    const lower = day.exercises.filter(item => ['Quads', 'Hamstrings', 'Glutes', 'Calves'].includes(item.primaryMuscle)).length;
+    assert.ok(lower >= 2);
+    assert.ok(Math.abs(upper - lower) <= 1);
+    assert.ok(day.exercises.length <= 7);
+  }
+});
+
+test('unavailable lower-body exercises fail full-body validation rather than passing an upper-only plan', () => {
+  const { context, storage } = engine([]);
+  context.getAllExercises = () => exercises.filter(exercise => !['Quads', 'Hamstrings', 'Glutes', 'Calves'].includes(exercise.muscleGroup));
+  const result = context.build({ days: 3, duration: 60, splitPreference: 'full-body', priorities: [], variation: 0 });
+  assert.equal(result.validation.passed, false);
+  assert.ok(result.validation.issues.some(issue => issue.includes('needs two lower-body')));
+  context.save({});
+  assert.equal(storage.has('forge_workout_plans'), false);
+});

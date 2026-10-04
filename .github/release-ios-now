@@ -341,3 +341,5 @@ Release: fix calorie intake controls, selected history rows and calendar appeara
 Release: guard weekly calorie adjustments against conflicting recent seven-day trends or insufficient completed intake evidence; add Lean Bulk — Aggressive (+1 lb/week).
 
 Release: cap Smart Build working sets at four per exercise, including priority volume and template imports; rename adapted cardio/rower days to match generated resistance sessions.
+
+Release: enforce full-body upper/lower exercise balance, protect quad and posterior-chain coverage, and repair upper-heavy sessions within existing exercise and time limits.
