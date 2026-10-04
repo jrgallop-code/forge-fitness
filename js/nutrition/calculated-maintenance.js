@@ -80,6 +80,8 @@ function sharedWeightTrend(weights, endKey) {
     const smoothed = calculateVisibleWeightTrend(normalized, {
         endDate: endKey,
         rateDays: 20,
+        // Keep expenditure on its existing intake-matched window during the rate experiment.
+        rateWeighting: "equal",
         minEntries: 3,
         minSpanDays: 5,
         fullEntries: 6,

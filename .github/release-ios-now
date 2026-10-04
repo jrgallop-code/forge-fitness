@@ -327,3 +327,5 @@ Release: iOS Spotify App Remote connection, current-song capture on completed wo
 Release: match Spotify menu icon to theme-aware app silhouette icons and replace faded unavailable connection control with an explicit setup explanation.
 
 Release: remove Spotify & PR Songs entry and navigation from the iOS app while Spotify access is unresolved.
+
+Release: test 60/30/10 calendar-week weighted regression for the visible smoothed weekly rate. Preserve trend smoothing, evidence gates and existing expenditure weighting pending evaluation.
