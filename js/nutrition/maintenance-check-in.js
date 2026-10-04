@@ -79,6 +79,7 @@ export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTar
         proposedMaintenance,
         currentTarget: target,
         actualRate: adaptiveMetrics?.actualRateLbPerWeek,
+        recentTrendGuard: adaptiveMetrics?.recentTrendGuard,
         targetRate: adaptiveMetrics?.targetRateLbPerWeek,
         adaptiveReady: Boolean(adaptiveMetrics?.recommendationReady) && !["ON TRACK", "MAINTAINING"].includes(adaptiveMetrics?.status)
     });
@@ -151,11 +152,12 @@ export function buildAutomaticMaintenanceUpdate(checkIn, maximumChange = MAXIMUM
         proposedMaintenance: Number.isFinite(Number(checkIn.proposedMaintenance)) ? checkIn.proposedMaintenance : fallbackProposed,
         currentTarget: checkIn.currentTarget,
         actualRate: checkIn.adaptiveMetrics?.actualRateLbPerWeek,
+        recentTrendGuard: checkIn.adaptiveMetrics?.recentTrendGuard,
         targetRate: checkIn.adaptiveMetrics?.targetRateLbPerWeek,
         adaptiveReady: Boolean(checkIn.adaptiveMetrics?.recommendationReady) && !["ON TRACK", "MAINTAINING"].includes(checkIn.adaptiveMetrics?.status),
         maximumChange
     });
-    if (!update) return null;
+    if (!update || update.guardedHold) return null;
     return {
         ...update,
         appliedChange: update.targetChange

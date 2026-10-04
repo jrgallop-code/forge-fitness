@@ -243,6 +243,7 @@ function useCalculatedMaintenance() {
         proposedMaintenance: estimate.maintenanceCalories,
         currentTarget,
         actualRate: metrics?.actualRateLbPerWeek,
+        recentTrendGuard: metrics?.recentTrendGuard,
         targetRate: metrics?.targetRateLbPerWeek,
         adaptiveReady: Boolean(metrics?.recommendationReady) && !["ON TRACK", "MAINTAINING"].includes(metrics?.status)
     }) : null;

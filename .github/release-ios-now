@@ -337,3 +337,5 @@ Release: selectable calorie intake ranges in Nutrition Progress, arbitrary start
 Release: preserve expenditure-first Nutrition Progress hierarchy, replace duplicate average calorie bars with selectable intake chart, and use a themed month calendar for tap-to-select ranges with a This week shortcut.
 
 Release: fix calorie intake controls, selected history rows and calendar appearance leaks using shared surface-raised, line, accent-text and accent-contrast tokens across all seven appearances.
+
+Release: guard weekly calorie adjustments against conflicting recent seven-day trends or insufficient completed intake evidence; add Lean Bulk — Aggressive (+1 lb/week).

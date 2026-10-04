@@ -57,6 +57,12 @@ export const GOAL_PRESETS = {
         dailyCalorieAdjustment: 250,
         weeklyWeightChangeLb: 0.5,
         description: "Targets about 0.5 lb/week using an estimated 250 kcal/day surplus."
+    },
+    bulk_aggressive: {
+        label: "Lean Bulk — Aggressive",
+        dailyCalorieAdjustment: 500,
+        weeklyWeightChangeLb: 1,
+        description: "Targets about 1 lb/week using an initial estimated 500 kcal/day surplus. Faster weight gain can include more fat gain."
     }
 };
 
