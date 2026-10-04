@@ -339,3 +339,5 @@ Release: preserve expenditure-first Nutrition Progress hierarchy, replace duplic
 Release: fix calorie intake controls, selected history rows and calendar appearance leaks using shared surface-raised, line, accent-text and accent-contrast tokens across all seven appearances.
 
 Release: guard weekly calorie adjustments against conflicting recent seven-day trends or insufficient completed intake evidence; add Lean Bulk — Aggressive (+1 lb/week).
+
+Release: cap Smart Build working sets at four per exercise, including priority volume and template imports; rename adapted cardio/rower days to match generated resistance sessions.

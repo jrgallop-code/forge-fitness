@@ -1,3 +1,4 @@
+import { MAX_WORKING_SETS, clampWorkingSets, normalizeGeneratedDayNames } from "./smart-build-constraints.js?v=builder-four-sets-1";
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { getTrainingPreferences } from "../core/training-preferences.js?v=onboarding-1";
 import { renderMusclePriorityChoice } from "./muscle-priority-visual.js?v=female-back-regions-1";
@@ -416,6 +417,7 @@ function generateProgram() {
   orderExercises(days, exerciseMap);
   applyAccessorySupersets(days, exerciseMap);
 
+  normalizeGeneratedDayNames(days, exerciseMap);
   const effective = calculateEffectiveVolume(days, exerciseMap);
   const direct = calculateDirectVolume(days, exerciseMap);
   const exposureCounts = calculateDirectExposureCounts(days, exerciseMap);
@@ -551,11 +553,11 @@ function seedFromTemplate(days, plan, split, pool, exerciseMap, usedCounts) {
       const muscle = normalizedDisplayMuscle(original?.muscleGroup);
       if (!MUSCLES.includes(muscle)) continue;
       if (allowedIds.has(source.id) && !days[dayIndex].exercises.some(item => item.id === source.id)) {
-        const sets = Math.max(2, Math.min(5, Number(source.sets) || 3));
+        const sets = clampWorkingSets(source.sets);
         days[dayIndex].exercises.push({ id: source.id, sets, reps: String(source.reps || getRepTarget(original)), primaryMuscle: muscle, structural: true });
         usedCounts.set(source.id, (usedCounts.get(source.id) || 0) + 1);
       } else {
-        addExercise(days[dayIndex], muscle, Math.max(2, Math.min(4, Number(source.sets) || 3)), pool, usedCounts, dayIndex, { role: "template-substitution", structural: true });
+        addExercise(days[dayIndex], muscle, clampWorkingSets(source.sets), pool, usedCounts, dayIndex, { role: "template-substitution", structural: true });
       }
     }
   });
@@ -667,7 +669,7 @@ function addStimulus(days, muscle, eligible, pool, exerciseMap, usedCounts, prio
       if (addExercise(day, muscle, 2, pool, usedCounts, slot.index, { role: "volume" })) return true;
     }
     const existing = sameMuscle.sort((a, b) => a.sets - b.sets)[0];
-    const ceiling = priority ? 5 : 4;
+    const ceiling = MAX_WORKING_SETS;
     if (existing && existing.sets < ceiling) {
       existing.sets += 1;
       return true;
@@ -739,7 +741,7 @@ function addExercise(day, muscle, sets, pool, usedCounts, dayIndex, options = {}
   if (!candidate) return false;
   day.exercises.push({
     id: candidate.id,
-    sets: Math.max(2, sets),
+    sets: clampWorkingSets(sets),
     reps: getRepTarget(candidate),
     primaryMuscle: normalizedDisplayMuscle(candidate.muscleGroup),
     structural: Boolean(options.structural)
@@ -946,6 +948,7 @@ function validateProgram(days, targets, minimums, effective, exposureCounts, spl
   if (!baseTemplate) warnings.push("No exact proven template exists for this schedule, so the evidence-based split fallback was used.");
   days.forEach(day => {
     if (day.exercises.length < 4) issues.push(`${day.name} has only ${day.exercises.length} exercises`);
+    if (day.exercises.some(item => !Number.isInteger(item.sets) || item.sets < 2 || item.sets > MAX_WORKING_SETS)) issues.push(`${day.name} contains an invalid working-set count`);
     const ids = day.exercises.map(item => item.id);
     if (new Set(ids).size !== ids.length) issues.push(`${day.name} contains a duplicate exercise`);
     if (estimateMinutes(day.exercises, exerciseMap, state.supersets) > state.duration + 6) issues.push(`${day.name} is likely too long for the selected duration`);
@@ -1003,6 +1006,7 @@ function renderMuscleSetBreakdown(effective = {}) {
 
 function savePlan(button) {
   if (!generated?.validation?.passed || saveInProgress) return;
+  if (generated.days.some(day => day.exercises.some(item => !Number.isInteger(item.sets) || item.sets < 2 || item.sets > MAX_WORKING_SETS))) return;
   saveInProgress = true;
   try {
     const plans = readPlans();
