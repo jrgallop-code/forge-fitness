@@ -14,6 +14,7 @@ final class LevelUpBridgeViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(LevelUpInstagramSharePlugin())
         bridge?.registerPluginInstance(LevelUpProgressPhotosPlugin())
         bridge?.registerPluginInstance(LevelUpSQLiteStorePlugin())
+        bridge?.registerPluginInstance(LevelUpSpotifyPlugin())
     }
 }
 

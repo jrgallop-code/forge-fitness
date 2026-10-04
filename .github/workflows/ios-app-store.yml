@@ -54,8 +54,24 @@ jobs:
           npm ci
           npm run cap:sync:ios
 
+      - name: Configure Spotify app identifier
+        env:
+          SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID }}
+        run: |
+          python3 - <<'PY'
+          import os, plistlib, re
+          from pathlib import Path
+          client_id = os.environ.get("SPOTIFY_CLIENT_ID", "").strip()
+          if client_id and not re.fullmatch(r"[a-fA-F0-9]{32}", client_id):
+              raise SystemExit("Invalid SPOTIFY_CLIENT_ID")
+          path = Path("ios/App/App/Info.plist")
+          data = plistlib.loads(path.read_bytes())
+          data["SpotifyClientID"] = client_id
+          path.write_bytes(plistlib.dumps(data))
+          PY
+
       - name: Run iOS packaging checks
-        run: node --test tests/live-set-progression.test.mjs tests/capacitor-ios-packaging.test.mjs tests/ios-cloud-build.test.mjs tests/native-app-shell.test.mjs
+        run: node --test tests/spotify-pr-tagging.test.mjs tests/live-set-progression.test.mjs tests/capacitor-ios-packaging.test.mjs tests/ios-cloud-build.test.mjs tests/native-app-shell.test.mjs
 
       - name: Create temporary App Store Connect key
         shell: bash

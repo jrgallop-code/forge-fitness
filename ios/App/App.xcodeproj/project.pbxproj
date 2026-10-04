@@ -32,6 +32,8 @@
 		A11C00712FF0000100000071 /* LevelUpArcadeAudioPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00722FF0000100000071 /* LevelUpArcadeAudioPlugin.swift */; };
 		A11C00812FF0000100000081 /* LevelUpInstagramSharePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00822FF0000100000081 /* LevelUpInstagramSharePlugin.swift */; };
 		A11C00912FF0000100000091 /* LevelUpProgressPhotosPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00922FF0000100000091 /* LevelUpProgressPhotosPlugin.swift */; };
+		A11C00A12FF00001000000A1 /* SpotifyiOS in Frameworks */ = {isa = PBXBuildFile; productRef = A11C00A22FF00001000000A1; };
+		A11C00A32FF00001000000A1 /* LevelUpSpotifyPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00A42FF00001000000A1; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +74,7 @@
 		A11C00822FF0000100000081 /* LevelUpInstagramSharePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpInstagramSharePlugin.swift; sourceTree = "<group>"; };
 		A11C00922FF0000100000091 /* LevelUpProgressPhotosPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpProgressPhotosPlugin.swift; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
+		A11C00A42FF00001000000A1 /* LevelUpSpotifyPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpSpotifyPlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,6 +83,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */,
+                A11C00A12FF00001000000A1 /* SpotifyiOS in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -110,6 +114,7 @@
 			isa = PBXGroup;
 			children = (
 				9582B6822FE993A50072D4E8 /* SceneDelegate.swift */,
+                A11C00A42FF00001000000A1 /* LevelUpSpotifyPlugin.swift */,
 				A11C00022FF0000100000001 /* LevelUpBridgeViewController.swift */,
 				A11C00042FF0000100000001 /* LevelUpAppIconPlugin.swift */,
 				A11C00122FF0000100000011 /* LevelUpTimerPlugin.swift */,
@@ -154,6 +159,7 @@
 			);
 			name = App;
 			packageProductDependencies = (
+                A11C00A22FF00001000000A1 /* SpotifyiOS */,
 				4D22ABE82AF431CB00220026 /* CapApp-SPM */,
 			);
 			productName = App;
@@ -199,6 +205,7 @@
 			);
 			mainGroup = 504EC2FB1FED79650016851F;
 			packageReferences = (
+                A11C00A52FF00001000000A1 /* Spotify SDK */,
 				D4C12C0A2AAA248700AAC8A2 /* XCLocalSwiftPackageReference "CapApp-SPM" */,
 			);
 			productRefGroup = 504EC3051FED79650016851F /* Products */;
@@ -236,6 +243,7 @@
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
+                A11C00A32FF00001000000A1 /* LevelUpSpotifyPlugin.swift in Sources */,
 				A11C00012FF0000100000001 /* LevelUpBridgeViewController.swift in Sources */,
 				A11C00032FF0000100000001 /* LevelUpAppIconPlugin.swift in Sources */,
 				A11C00112FF0000100000011 /* LevelUpTimerPlugin.swift in Sources */,
@@ -500,6 +508,10 @@
 		A11C00232FF0000100000011 /* Build configuration list for PBXNativeTarget "LevelUpTimerWidget" */ = {isa = XCConfigurationList; buildConfigurations = (A11C00262FF0000100000011 /* Debug */, A11C00272FF0000100000011 /* Release */, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+        A11C00A52FF00001000000A1 = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/spotify/ios-sdk.git"; requirement = {kind = revision; revision = 8d3a71dc25282072f8aa8bb0611cea2324e18f28; }; };
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCLocalSwiftPackageReference section */
 		D4C12C0A2AAA248700AAC8A2 /* XCLocalSwiftPackageReference "CapApp-SPM" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -513,6 +525,7 @@
 			package = D4C12C0A2AAA248700AAC8A2 /* XCLocalSwiftPackageReference "CapApp-SPM" */;
 			productName = "CapApp-SPM";
 		};
+        A11C00A22FF00001000000A1 = {isa = XCSwiftPackageProductDependency; package = A11C00A52FF00001000000A1; productName = SpotifyiOS; };
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 504EC2FC1FED79650016851F /* Project object */;

@@ -13,12 +13,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window?.rootViewController = LevelUpBridgeViewController()
         window?.makeKeyAndVisible()
 
+        for context in connectionOptions.urlContexts { _ = LevelUpSpotifyRemote.shared.handle(context.url) }
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
     }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        for context in URLContexts {
+            if LevelUpSpotifyRemote.shared.handle(context.url) { return }
+        }
         SceneDelegateProxy.shared.scene(scene, openURLContexts: URLContexts)
     }
+
+    func sceneDidBecomeActive(_ scene: UIScene) { LevelUpSpotifyRemote.shared.active() }
+    func sceneWillResignActive(_ scene: UIScene) { LevelUpSpotifyRemote.shared.inactive() }
 
     func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
         SceneDelegateProxy.shared.scene(scene, continue: userActivity)

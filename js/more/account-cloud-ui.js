@@ -197,6 +197,7 @@ async function signOut() {
         .catch(error => console.warn("Cloud sign-out request failed:", error));
 
     if (isNativeIOS()) {
+        await window.Capacitor?.Plugins?.LevelUpSpotify?.disconnect?.().catch(() => {});
         const account = readJson(ACCOUNT_KEY);
         const owner = account?.id || account?.email;
         if (owner) localStorage.setItem(LOCAL_DATA_OWNER_KEY, String(owner));
@@ -216,6 +217,7 @@ async function deleteAccount() {
     if (!window.confirm("This cannot be undone. Delete the cloud account now?")) return;
     try {
         await api("/v1/account", { method: "DELETE" });
+        await window.Capacitor?.Plugins?.LevelUpSpotify?.disconnect?.().catch(() => {});
         clearAnalyticsConsent();
         clearSession({ requireLogin: true });
         await clearLocalAppData({ preserveDevicePreferences: true });

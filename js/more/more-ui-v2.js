@@ -1,3 +1,4 @@
+import { renderSpotify, initializeSpotify } from "../music/spotify-ui.js";
 import { supportCardMarkup, initializeSupportControls } from "./contact-support.js?v=help-navigation-2";
 import { navigate } from "../core/router.js?v=native-navigation-stability-1";
 import { renderExportBackup } from "./export-backup-ui.js?v=full-data-export-1";
@@ -48,6 +49,7 @@ export function renderMore() {
     <div class="more-menu-group" data-more-group="account"><h3>Account &amp; app</h3>
     <button class="more-menu-card" type="button" data-more-page="account-cloud"><span class="more-menu-icon">${ICONS.account}</span><span><strong>Account & Cloud</strong><small>Sign in for private cloud backup and device transfer.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="appearance"><span class="more-menu-icon">${ICONS.appearance}</span><span><strong>Appearance</strong><small>Choose from light, dark and system-aware Level Up themes.</small></span></button>
+    ${isNativeIOS() ? `<button class="more-menu-card" type="button" data-more-page="spotify"><span class="more-menu-icon">♪</span><span><strong>Spotify &amp; PR Songs</strong><small>Connect your music and remember songs played when logging PRs.</small></span></button>` : ""}
     ${widgetCard}
     ${gameCard}
     <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Choose body weight, workout weight, distance and measurement units separately.</small></span></button>
@@ -90,6 +92,14 @@ export function initializeMore() {
             content.innerHTML = renderAppearanceSettings();
             initializeAppearanceSettings({ onBack: showMore });
             window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+        }
+        if (page === "spotify") {
+            const content = document.getElementById("content");
+            if (!content) return;
+            content.innerHTML = renderSpotify();
+            initializeSpotify({ onBack: () => { content.innerHTML = renderMore(); initializeMore(); } });
+            window.scrollTo({ top: 0 });
             return;
         }
         if (page === "home-widgets") {

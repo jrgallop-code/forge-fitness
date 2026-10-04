@@ -73,3 +73,11 @@ The app sends Apple's one-time authorization code to the backend. The backend ex
 5. Test a new Apple sign-in followed by in-app account deletion on a physical device. A revocation failure intentionally stops deletion and asks the user to retry, preventing an orphaned Apple authorization.
 
 The App Store Connect upload key described above and the Sign in with Apple authentication key are separate credentials and should remain separately scoped.
+
+## Spotify App Remote test setup
+
+The iOS test feature uses Spotify's official iOS SDK, pinned to revision `8d3a71dc25282072f8aa8bb0611cea2324e18f28`. It does not call the Spotify Web API. Register an iOS developer app with Bundle ID `com.leveluphypertrophy.app` and redirect URI `levelupspotify://callback`. Set the public Client ID in the repository/environment Actions variable `SPOTIFY_CLIENT_ID` before building. Do not supply or embed a Client Secret. Without the variable the app explicitly shows setup pending and disables Connect.
+
+Open More → Spotify & PR Songs, connect, and play music in Spotify. Music snapshots attach to completed working sets. PR song history uses existing Level Up PR evaluation, including machine-specific records. No completion/share card changes are included. Paused playback, ads, episodes, stale/disconnected states and failed requests produce no song tag. Requests time out after 1.8 seconds; workout completion waits for outstanding captures before saving. Undo invalidates outstanding requests. Saved-workout editing preserves tags; it never captures current music.
+
+Disconnect removes Spotify credentials and Spotify song fields from local active/saved/in-memory sessions. Account sign-out clears native Spotify credentials. Physical-device testing is required: authorization/cancel, headphones, Free/Premium playback, app switching, lock/unlock, song changes, complete+immediately finish, undo/redo, restart, PR history, editing/resuming, and disconnect. Public access and permission for persistent PR tagging remain unconfirmed; this is a test integration, not a production rollout.

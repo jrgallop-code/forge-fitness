@@ -1,3 +1,4 @@
+import { captureSetSong, finishSongCaptures, clearSetSong, watchMusicSession } from "../music/spotify.js";
 import { createResumedWorkout, resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import "./machine-profile-ui.js?v=machine-profile-sheet-ios-1";
@@ -768,9 +769,10 @@ function renderSessionExercises({
     }
 
     let completionRequested = false;
-    const completeWorkout = () => {
+    const completeWorkout = async () => {
         if (completionRequested) return;
         completionRequested = true;
+        await finishSongCaptures();
         saveCompletedSession({
             plan,
             logger,
@@ -951,6 +953,7 @@ function bindSessionInputs({
     editingSessionId
 }) {
 
+    watchMusicSession(session);
     const persist = () => {
         if (!editingSessionId) {
             saveActiveWorkout(session);
@@ -1137,6 +1140,10 @@ function bindSessionInputs({
                             () => {
                                 set.completed =
                                     !set.completed;
+                                if (!editingSessionId) {
+                                    if (set.completed) captureSetSong(set, persist);
+                                    else clearSetSong(set);
+                                }
                                 row.classList.toggle(
                                     "completed",
                                     set.completed
