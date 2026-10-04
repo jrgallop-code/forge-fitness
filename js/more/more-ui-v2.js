@@ -1,3 +1,4 @@
+import { renderProgressiveOverloadSettings, initializeProgressiveOverloadSettings } from "./progressive-overload-settings.js?v=progressive-overload-toggle-1";
 import { supportCardMarkup, initializeSupportControls } from "./contact-support.js?v=help-navigation-2";
 import { navigate } from "../core/router.js?v=pwa-monthly-reports-2";
 import { renderExportBackup } from "./export-backup-ui.js?v=full-data-export-1";
@@ -18,6 +19,7 @@ import { renderRestTimerGameSettings, initializeRestTimerGameSettings } from "./
 
 const ICONS = {
     appearance: appearanceMenuIcon(),
+    progression: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h2v16h16v2H3V3Zm4 12 5-5 3 3 4-5h-3V6h6v6h-2V9l-5 7-3-3-3.6 3.4L7 15Z"/></svg>',
     profile: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c4.4 0 8 2.3 8 5.2V21H4v-2.8C4 15.3 7.6 13 12 13Zm-5.9 6h11.8v-.8c0-1.3-2.4-3.2-5.9-3.2s-5.9 1.9-5.9 3.2v.8Z"/></svg>',
     history: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 1-7.2 4.5H2l3.6-3.6L9.2 8.5H6.8A6 6 0 1 0 12 6v3l2.8 1.7-1 1.7L10 10V4h2Z"/></svg>',
     reports: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16v18H4V3Zm2 2v14h12V5H6Zm2 9h2v3H8v-3Zm3-4h2v7h-2v-7Zm3-3h2v10h-2V7ZM8 7h4v2H8V7Z"/></svg>',
@@ -48,6 +50,7 @@ export function renderMore() {
     <button class="more-menu-card" type="button" data-more-page="appearance"><span class="more-menu-icon">${ICONS.appearance}</span><span><strong>Appearance</strong><small>Choose from light, dark and system-aware Level Up themes.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="rest-game"><span class="more-menu-icon">${ICONS.game}</span><span><strong>Rest Timer Games</strong><small>Show or hide Protein Run and Gym Chopper.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Choose body weight, workout weight, distance and measurement units separately.</small></span></button>
+    <button class="more-menu-card" type="button" data-more-page="progressive-overload"><span class="more-menu-icon">${ICONS.progression}</span><span><strong>Progressive Overload</strong><small>Turn suggested weight and rep targets on or off.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="dynamic-warmups"><span class="more-menu-icon">${ICONS.warmup}</span><span><strong>Dynamic Warm-Ups</strong><small>Turn optional video-guided movement preparation on or off.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Body Profile</strong><small>Update your name, personal details, training experience and anatomy appearance.</small></span></button>
     </div>
@@ -153,6 +156,15 @@ export function initializeMore() {
             };
             content.innerHTML = renderUnitSettings();
             initializeUnitSettings({ onBack: showMore });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+        }
+        if (page === "progressive-overload") {
+            const content = document.getElementById("content");
+            if (!content) return;
+            const showMore = () => { content.innerHTML = renderMore(); initializeMore(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+            content.innerHTML = renderProgressiveOverloadSettings();
+            initializeProgressiveOverloadSettings({ onBack: showMore });
             window.scrollTo({ top: 0, behavior: "smooth" });
             return;
         }
