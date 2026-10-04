@@ -256,7 +256,7 @@ function legacyGoalId(goal) {
     if (goal.type === "maintenance") return "maintain";
     const rate = Math.abs(Number(goal.targetRateLbPerWeek));
     if (goal.type === "fat_loss") return rate >= 0.75 ? "cut_moderate" : "cut_gentle";
-    return rate >= 0.4 ? "bulk_standard" : "bulk_conservative";
+    return rate >= 0.75 ? "bulk_aggressive" : rate >= 0.4 ? "bulk_standard" : "bulk_conservative";
 }
 
 function calculateStatus(goal, trend, actualPct, goalReached) {
@@ -335,7 +335,7 @@ function phaseTypeFromGoal(type) {
 }
 
 function legacyPresetRate(goalId) {
-    return ({ maintain: 0, cut_gentle: -0.5, cut_moderate: -1, bulk_conservative: 0.25, bulk_standard: 0.5 })[goalId] ?? null;
+    return ({ maintain: 0, cut_gentle: -0.5, cut_moderate: -1, bulk_conservative: 0.25, bulk_standard: 0.5, bulk_aggressive: 1 })[goalId] ?? null;
 }
 
 function normalizeType(type) {

@@ -1,3 +1,4 @@
+import { recentWeightGuardCopy } from './recent-weight-guard.js?v=recent-weight-guard-1';
 import {
     getActiveNutritionPhase,
     getActivePhaseMetrics,
@@ -107,7 +108,7 @@ function openWeeklyReviewModal(event = {}) {
         ? { ...liveMetrics, recommendationReady: true, status: "NEEDS ATTENTION", actualRateLbPerWeek: previewActual, targetRateLbPerWeek: targetRate }
         : liveMetrics;
     const recommendation = buildSharedRecommendation(metrics, phase, { preview });
-    if ((!preview && !metrics?.recommendationReady) || !recommendation || (!preview && recommendation.targetChange === 0)) return;
+    if ((!preview && !metrics?.recommendationReady) || !recommendation || (!preview && recommendation.targetChange === 0 && !recommendation.guardedHold)) return;
 
     closeWeeklyReviewModal();
     const modal = document.createElement("div");
@@ -115,23 +116,25 @@ function openWeeklyReviewModal(event = {}) {
     modal.dataset.weeklyCalorieModal = "1";
     modal.innerHTML = `
         <section class="weekly-calorie-modal-card" role="dialog" aria-modal="true" aria-labelledby="weekly-calorie-modal-title">
-            <header><div><span>${preview ? "TEST PREVIEW · " : ""}WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">Your recommended target</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
+            <header><div><span>${preview ? "TEST PREVIEW · " : ""}WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">${recommendation.guardedHold ? "Keep calories unchanged this week" : "Your recommended target"}</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
             <p>${preview ? "This demonstrates what the review would show using your current data. Nothing in this preview will be saved." : "Your logged week, full calculation and recommended change now."}</p>
+            ${recommendation.guardedHold ? `<p class="weekly-calorie-modal-cap">${recentWeightGuardCopy(recommendation.recentTrendGuard, recommendation.previousTarget)}</p>` : ""}
             ${!preview && !hasTodaysWeighIn() ? `<small class="weekly-calorie-modal-cap">For the best estimate, weigh in today before reviewing. This is optional—you can still use the recommendation below.</small>` : ""}
             <div class="weekly-calorie-modal-breakdown">
                 <div><span>Current saved target</span><strong>${recommendation.previousTarget} kcal/day</strong></div>
                 <div><span>Logged weekly average${recommendation.weeklyAverageLoggedDays ? ` (${recommendation.weeklyAverageLoggedDays}/${recommendation.weeklyAverageTotalDays || 7} days)` : ""}</span><strong>${Number.isFinite(recommendation.weeklyAverageCalories) ? `${recommendation.weeklyAverageCalories} kcal/day` : "Not enough logged days"}</strong></div>
                 <div><span>Current weight trend</span><strong>${formatRate(recommendation.actualRate)}</strong></div>
+                ${Number.isFinite(recommendation.recentTrendGuard?.recentRate) ? `<div><span>Recent seven-day trend</span><strong>${formatRate(recommendation.recentTrendGuard.recentRate)}</strong></div>` : ""}
                 <div><span>Goal weight trend</span><strong>${formatRate(recommendation.targetRate)}</strong></div>
-                <div><span>${recommendation.goalDailyAdjustment > 0 ? "Goal-pacing surplus" : recommendation.goalDailyAdjustment < 0 ? "Goal-pacing deficit" : "Goal-pacing adjustment"}</span><strong>${formatSignedCalories(recommendation.goalDailyAdjustment)} cal/day</strong></div>
+                ${!recommendation.guardedHold ? `<div><span>${recommendation.goalDailyAdjustment > 0 ? "Goal-pacing surplus" : recommendation.goalDailyAdjustment < 0 ? "Goal-pacing deficit" : "Goal-pacing adjustment"}</span><strong>${formatSignedCalories(recommendation.goalDailyAdjustment)} cal/day</strong></div>
                 <div><span>Calories needed for goal pace</span><strong>${formatSignedCalories(recommendation.requestedPaceCorrection)} cal/day</strong></div>
-                <div><span>Full goal-pacing estimate</span><strong>${recommendation.goalPacingTarget} kcal/day</strong></div>
+                <div><span>Full goal-pacing estimate</span><strong>${recommendation.goalPacingTarget} kcal/day</strong></div>` : ""}
                 <div class="weekly-calorie-modal-result"><span>${recommendation.isStagedTarget ? "Recommended staged target now" : "Recommended target now"}</span><strong>${recommendation.targetCalories} kcal/day</strong></div>
             </div>
             ${recommendation.isStagedTarget ? `<small class="weekly-calorie-modal-cap">This is a staged target. Level Up limits each weekly change and will reassess your progress next week.</small>` : ""}
             ${recommendation.capped ? `<small class="weekly-calorie-modal-cap">Limited to ${formatSignedCalories(recommendation.behavioralChange ?? recommendation.targetChange)} calories from ${Number.isFinite(recommendation.actualIntakeCalories) ? `your ${recommendation.actualIntakeCalories} weekly average` : "your current target"}. The saved target changes by ${formatSignedCalories(recommendation.targetChange)}. Level Up will reassess next week.</small>` : ""}
             <div class="weekly-calorie-modal-actions">
-                <button id="weekly-modal-review-apply" class="primary-btn" type="button">${preview ? `Test update to ${recommendation.targetCalories}` : `Update to ${recommendation.targetCalories}`}</button>
+                <button id="weekly-modal-review-apply" class="primary-btn" type="button">${preview ? `Test update to ${recommendation.targetCalories}` : recommendation.guardedHold ? "Keep target and reassess next week" : `Update to ${recommendation.targetCalories}`}</button>
                 <button id="weekly-modal-review-keep" class="secondary-btn" type="button">${preview ? "Close preview" : `Keep ${recommendation.previousTarget}`}</button>
             </div>
             <small data-weekly-modal-status aria-live="polite"></small>
@@ -234,6 +237,7 @@ function buildSharedRecommendation(metrics, phase, { preview = false } = {}) {
         proposedMaintenance,
         currentTarget,
         actualRate: metrics?.actualRateLbPerWeek,
+        recentTrendGuard: metrics?.recentTrendGuard,
         targetRate: metrics?.targetRateLbPerWeek,
         adaptiveReady: metrics?.recommendationReady === true && !["ON TRACK", "MAINTAINING"].includes(metrics?.status),
         actualIntakeCalories: baseline.useLoggedAverage ? baseline.calories : null,
@@ -255,7 +259,7 @@ function buildSharedRecommendation(metrics, phase, { preview = false } = {}) {
         fullTargetCalories,
         goalDailyAdjustment,
         goalPacingTarget,
-        isStagedTarget: Math.round(update.targetCalories) !== goalPacingTarget,
+        isStagedTarget: !update.guardedHold && Math.round(update.targetCalories) !== goalPacingTarget,
         actualRate: Number(metrics?.actualRateLbPerWeek),
         targetRate: Number(metrics?.targetRateLbPerWeek),
         weeklyAverageCalories: baseline.useLoggedAverage ? Math.round(baseline.calories) : null,
@@ -398,7 +402,9 @@ function syncCoach(metrics, phase) {
 
     const hold = getHold(phase, currentCalories);
     if (hold) {
-        setText(messageNode, "The calorie adjustment is being measured. Hold the current target for 7 days before another change.");
+        setText(messageNode, hold.source === "recent-weight-guard"
+            ? "Calories are unchanged while we collect another week of weight and food logs."
+            : "The calorie adjustment is being measured. Hold the current target for 7 days before another change.");
         setText(suggestionNode, `Current target: ${Math.round(currentCalories)} kcal/day · reassess in ${hold.daysRemaining} day${hold.daysRemaining === 1 ? "" : "s"}.`);
         hideCoachActions();
         return;
@@ -421,6 +427,12 @@ function syncCoach(metrics, phase) {
     const recommendation = buildSharedRecommendation(metrics, phase);
     if (!recommendation) {
         setText(suggestionNode, "The shared weekly calorie review could not calculate a safe update yet.");
+        hideCoachActions();
+        return;
+    }
+    if (recommendation.guardedHold) {
+        setText(messageNode, recentWeightGuardCopy(recommendation.recentTrendGuard, currentCalories));
+        setText(suggestionNode, "Keep your target and review again next week.");
         hideCoachActions();
         return;
     }
@@ -474,7 +486,7 @@ function syncSuggestedCalories(metrics, phase) {
         : null;
     const reviewReady = Boolean(
         sharedRecommendation
-        && sharedRecommendation.targetChange !== 0
+        && (sharedRecommendation.targetChange !== 0 || sharedRecommendation.guardedHold)
         && Number.isFinite(actual)
         && Number.isFinite(target)
     );
@@ -482,7 +494,7 @@ function syncSuggestedCalories(metrics, phase) {
 
     if (hold) {
         primary = `${Math.round(currentCalories)} kcal/day`;
-        secondary = `Adjustment applied · reassess in ${hold.daysRemaining} day${hold.daysRemaining === 1 ? "" : "s"}`;
+        secondary = `${hold.source === "recent-weight-guard" ? "Calories held" : "Adjustment applied"} · reassess in ${hold.daysRemaining} day${hold.daysRemaining === 1 ? "" : "s"}`;
     } else if (metrics.status === "AWAITING WEIGH-IN") {
         secondary = buildPendingCalorieCheckMessage({ metrics, visibleRate, foodLoggedDays: baseline?.intake?.loggedDays });
     } else if (metrics.status === "PRELIMINARY TREND") {
@@ -501,10 +513,12 @@ function syncSuggestedCalories(metrics, phase) {
         const recommendation = sharedRecommendation || buildSharedRecommendation(metrics, phase);
         if (!recommendation) return;
         primary = `${recommendation.targetCalories} kcal/day`;
-        secondary = recommendation.targetChange === 0
+        secondary = recommendation.guardedHold
+            ? recentWeightGuardCopy(recommendation.recentTrendGuard, currentCalories)
+            : recommendation.targetChange === 0
             ? "Your current target still fits your progress."
             : "One recommended update based on your latest progress.";
-        if (recommendation.targetChange !== 0) showWeightReview(recommendation);
+        if (recommendation.targetChange !== 0 || recommendation.guardedHold) showWeightReview(recommendation);
         else hideWeightReview();
     } else {
         secondary = buildPendingCalorieCheckMessage({ metrics, visibleRate, foodLoggedDays: baseline?.intake?.loggedDays });
@@ -549,6 +563,16 @@ function applyFullAdjustment(event, context = {}) {
 
     const recommendation = context.recommendation || buildSharedRecommendation(metrics, phase);
     if (!recommendation) return;
+    if (recommendation.guardedHold) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        markCheckHandled(phase, checkDay, "recent-trend-held");
+        markMaintenanceCheckInReviewed({ proposedMaintenance: phase.maintenanceCalories }, "recent-trend-held");
+        startAdjustmentHold({ phase, calories: currentCalories, maintenanceCalories: phase.maintenanceCalories, source: "recent-weight-guard" });
+        closeWeeklyReviewModal();
+        scheduleRefresh();
+        return;
+    }
     const independentMaintenance = Number(recommendation.fullMaintenanceCalories ?? recommendation.estimate?.maintenanceCalories ?? recommendation.maintenanceCalories);
     if (!Number.isFinite(independentMaintenance) || independentMaintenance <= 0) return;
     event.preventDefault();

@@ -1,3 +1,4 @@
+import { decideRecentWeightGuard } from './recent-weight-guard.js?v=recent-weight-guard-1';
 const HOLD_KEY = "level_up_phase_reassessment_hold";
 const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";
 const DAY_MS = 86400000;
@@ -45,6 +46,7 @@ export function buildCoordinatedWeeklyUpdate({
     targetRate = null,
     adaptiveReady = false,
     actualIntakeCalories = null,
+    recentTrendGuard = null,
     maximumChange = WEEKLY_ADJUSTMENT_CAP
 } = {}) {
     const maintenance = finite(currentMaintenance);
@@ -110,6 +112,20 @@ export function buildCoordinatedWeeklyUpdate({
         result.behavioralChange = Math.round(behavioralChange);
         result.fullRequestedTarget = fullRequestedTarget;
         result.usedObservedPaceBaseline = useObservedPaceBaseline;
+    }
+    if (recentTrendGuard) {
+        const guard = decideRecentWeightGuard(recentTrendGuard, useObservedPaceBaseline && requestedPaceCorrection !== 0 ? requestedPaceCorrection : result.targetChange);
+        result.recentTrendGuard = guard;
+        if (guard.hold) {
+            result.unGuardedTargetCalories = result.targetCalories;
+            result.targetCalories = Math.round(target);
+            result.maintenanceCalories = Math.round(maintenance);
+            result.targetChange = 0;
+            result.maintenanceChange = 0;
+            result.paceCorrection = 0;
+            result.behavioralChange = 0;
+            result.guardedHold = true;
+        }
     }
     return result;
 }
