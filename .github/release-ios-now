@@ -329,3 +329,5 @@ Release: match Spotify menu icon to theme-aware app silhouette icons and replace
 Release: remove Spotify & PR Songs entry and navigation from the iOS app while Spotify access is unresolved.
 
 Release: test 60/30/10 calendar-week weighted regression for the visible smoothed weekly rate. Preserve trend smoothing, evidence gates and existing expenditure weighting pending evaluation.
+
+Release: Goals & Plan uses the weighted Progress rate independently of expenditure; connect historical and future goal trajectory segments and scale partial projections correctly.
