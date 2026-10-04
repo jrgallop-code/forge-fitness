@@ -335,3 +335,5 @@ Release: Goals & Plan uses the weighted Progress rate independently of expenditu
 Release: selectable calorie intake ranges in Nutrition Progress, arbitrary start/end dates, rolling seven-day and calendar-week shortcuts, preceding-period comparison, daily bars, logging coverage, trend-weight change and tappable weekly history. iOS test build only.
 
 Release: preserve expenditure-first Nutrition Progress hierarchy, replace duplicate average calorie bars with selectable intake chart, and use a themed month calendar for tap-to-select ranges with a This week shortcut.
+
+Release: fix calorie intake controls, selected history rows and calendar appearance leaks using shared surface-raised, line, accent-text and accent-contrast tokens across all seven appearances.
