@@ -15,13 +15,13 @@ export function initializeSpotify({ onBack } = {}) {
     const refresh = async () => {
         const state = await spotifyStatus().catch(() => ({ connected: false }));
         if (!root.isConnected) return;
-        status.textContent = !state.configured ? 'Spotify setup is pending for this test build.' : state.connected ? (state.paused ? 'Spotify is paused. Sets will not receive song tags.' : state.track ? `Now playing on Spotify: ${state.track.title} — ${state.track.artist}` : 'Connected. Waiting for a song.') : state.message || 'Start music in Spotify, then connect here.';
-        connect.disabled = !state.configured;
+        status.textContent = !state.configured ? 'Spotify connection needs Level Up’s developer configuration. Signing into Spotify alone will not enable it yet.' : state.connected ? (state.paused ? 'Spotify is paused. Sets will not receive song tags.' : state.track ? `Now playing on Spotify: ${state.track.title} — ${state.track.artist}` : 'Connected. Waiting for a song.') : state.message || 'Start music in Spotify, then connect here.';
+        connect.disabled = false;
         connect.hidden = Boolean(state.connected);
         disconnect.hidden = !state.authorized;
         renderPrSongs(root);
     };
-    connect.onclick = async () => { connect.disabled = true; try { await connectSpotify(); await refresh(); } catch (error) { status.textContent = error.message || 'Could not connect to Spotify.'; } finally { connect.disabled = false; } };
+    connect.onclick = async () => { connect.disabled = true; try { const state = await spotifyStatus(); if (!state.configured) { status.textContent = "Spotify connection is not configured in this build. Level Up needs a registered Spotify Client ID before accounts can connect."; return; } await connectSpotify(); await refresh(); } catch (error) { status.textContent = error.message || 'Could not connect to Spotify.'; } finally { connect.disabled = false; } };
     disconnect.onclick = async () => { disconnect.disabled = true; try { await disconnectSpotify(); await refresh(); } catch { status.textContent = 'Could not disconnect. Try again.'; } finally { disconnect.disabled = false; } };
     refresh();
     const timer = setInterval(() => { if (root.isConnected) refresh(); else clearInterval(timer); }, 2500);
