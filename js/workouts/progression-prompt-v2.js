@@ -311,6 +311,33 @@ export function getLiveSetTarget(sets, repRange) {
     belowTarget: latest.reps < repRange.lower, atTop: latest.reps >= repRange.upper };
 }
 
+export function hasLiveLoadDeviation(actualWeight, prescribedWeight) {
+  // Allow display rounding to the nearest 0.1 kg (stored loads are in lb).
+  return Number.isFinite(actualWeight) && actualWeight > 0 &&
+    (!Number.isFinite(prescribedWeight) || Math.abs(actualWeight - prescribedWeight) > 0.12);
+}
+
+function shouldUseLiveSetGuidance(card, source, repRange, exerciseId) {
+  const sets = source ? getPreferredRecordedSets(source.performance)
+    .filter(set => Number(set.reps) > 0 && Number(set.weight) > 0) : [];
+  const failures = sets.filter(set => set.rir !== null && set.rir !== '' &&
+    set.rir !== undefined && Number(set.rir) === 0).length;
+  const allAtTop = sets.length >= 2 && sets.every(set => Number(set.reps) >= repRange.upper);
+  const heaviest = sets.length ? Math.max(...sets.map(set => Number(set.weight))) : null;
+  const range = allAtTop ? getRecommendedLoadRange(heaviest, exerciseId) : null;
+  const increasedLoad = range && failures <= 1 ? getSuggestedProgressionLoad(range, exerciseId) : null;
+  const majorityBelow = sets.filter(set => Number(set.reps) < repRange.lower).length > sets.length / 2;
+  const reducedLoad = !allAtTop && majorityBelow ? getRecommendedReducedLoad(heaviest, exerciseId)?.suggestedLoad : null;
+  const rows = [...card.querySelectorAll('.session-set-row')];
+  const latestIndex = rows.findLastIndex(row => row.classList.contains('completed') &&
+    Number(row.querySelector('.session-reps')?.value) > 0 &&
+    canonicalInputValue(row.querySelector('.session-weight')) > 0);
+  if (latestIndex < 0) return false;
+  const actual = canonicalInputValue(rows[latestIndex].querySelector('.session-weight'));
+  const prescribed = increasedLoad ?? reducedLoad ?? (allAtTop && failures > 1 ? heaviest : Number(sets[latestIndex]?.weight));
+  return hasLiveLoadDeviation(actual, prescribed);
+}
+
 function renderLiveSetPrompt(card, prompt, repRange, exerciseId) {
   const target = getLiveSetTarget(getLiveCompletedSets(card), repRange);
   if (!target) return false;
@@ -396,8 +423,9 @@ function renderCard(card) {
     return;
   }
 
-  if (!isBodyweight && renderLiveSetPrompt(card, prompt, repRange, exerciseId)) return;
-  if (renderLiveBelowTargetPrompt(card, prompt, repRange, exerciseId, source)) return;
+  if (!isBodyweight && shouldUseLiveSetGuidance(card, source, repRange, exerciseId) &&
+    renderLiveSetPrompt(card, prompt, repRange, exerciseId)) return;
+  if (isBodyweight && renderLiveBelowTargetPrompt(card, prompt, repRange, exerciseId, source)) return;
 
   if (!source) {
     hidePrompt(prompt);
