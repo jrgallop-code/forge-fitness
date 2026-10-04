@@ -345,3 +345,5 @@ Release: cap Smart Build working sets at four per exercise, including priority v
 Release: enforce full-body upper/lower exercise balance, protect quad and posterior-chain coverage, and repair upper-heavy sessions within existing exercise and time limits.
 
 Release: derive generated program titles and split badges from actual resistance workouts; remove inherited cardio claims and repeated day-count prefixes.
+
+Release: add default-on Progressive Overload guidance toggle beside Dynamic Warm-Ups in More; disable next-session and live prompts while retaining workout logging and history.

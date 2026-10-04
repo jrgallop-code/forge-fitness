@@ -1,3 +1,4 @@
+import { isProgressiveOverloadEnabled, PROGRESSIVE_OVERLOAD_KEY, PROGRESSIVE_OVERLOAD_EVENT } from "../core/progressive-overload-preferences.js?v=progressive-overload-toggle-1";
 import { resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
 import { getExerciseById } from './exercise-library.js';
 import { buildBodyweightProgression, isBodyweightEquipment, isWeightedBodyweightEquipment } from './bodyweight-progression.js?v=bodyweight-progression-1';
@@ -405,7 +406,7 @@ function renderCard(card) {
 
   if (card.dataset.trackingType !== 'reps') return;
   const prompt = ensurePrompt(card);
-  if (excludedSessionId) {
+  if (!isProgressiveOverloadEnabled() || excludedSessionId) {
     hidePrompt(prompt);
     return;
   }
@@ -608,5 +609,7 @@ const observer = new MutationObserver(mutations => {
   if (needsRefresh) setTimeout(scan, 20);
 });
 
+window.addEventListener(PROGRESSIVE_OVERLOAD_EVENT, scan);
+window.addEventListener("storage", event => { if (event.key === PROGRESSIVE_OVERLOAD_KEY || event.key === null) scan(); });
 observer.observe(document.body, { childList: true, subtree: true });
 scan();

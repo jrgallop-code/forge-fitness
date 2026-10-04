@@ -1,0 +1,11 @@
+.progressive-overload-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.progressive-overload-toggle-row strong,.progressive-overload-toggle-row div>span{display:block}
+.progressive-overload-toggle-row div>span{margin-top:6px;color:var(--muted);line-height:1.5}
+.progressive-overload-switch{position:relative;display:grid;align-items:center;min-height:44px;flex:0 0 52px;cursor:pointer}
+.progressive-overload-switch input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.progressive-overload-switch>span:not(.sr-only){position:relative;display:block;width:52px;height:32px;border-radius:999px;border:1px solid var(--line);background:var(--surface-raised);pointer-events:none}
+.progressive-overload-switch>span:not(.sr-only)::after{content:"";position:absolute;top:4px;left:4px;width:22px;height:22px;border-radius:50%;background:var(--muted)}
+.progressive-overload-switch input:checked+span{background:var(--accent);border-color:var(--accent)}
+.progressive-overload-switch input:checked+span::after{left:24px;background:var(--accent-contrast)}
+.progressive-overload-switch input:focus-visible+span{outline:2px solid var(--accent-text);outline-offset:3px}
+.progressive-overload-switch .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
