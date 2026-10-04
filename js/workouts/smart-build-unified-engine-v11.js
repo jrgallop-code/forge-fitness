@@ -421,6 +421,8 @@ function generateProgram() {
   applyAccessorySupersets(days, exerciseMap);
 
   normalizeGeneratedDayNames(days, exerciseMap);
+  split.label = describeGeneratedSplit(days);
+  split.shortLabel = split.label;
   const effective = calculateEffectiveVolume(days, exerciseMap);
   const direct = calculateDirectVolume(days, exerciseMap);
   const exposureCounts = calculateDirectExposureCounts(days, exerciseMap);
@@ -1054,6 +1056,25 @@ function validateProgram(days, targets, minimums, effective, exposureCounts, spl
 
   return { passed: issues.length === 0, issues, warnings };
 }
+function describeGeneratedSplit(days) {
+  const regions = days.map(day => {
+    const { upper, lower } = fullBodyCounts(day);
+    return upper && lower ? "full" : upper ? "upper" : lower ? "lower" : "core";
+  });
+  const kinds = new Set(regions);
+  if (kinds.size === 1 && kinds.has("full")) return "Full Body";
+  if (kinds.has("upper") && kinds.has("lower") && kinds.has("full")) return "Upper / Lower + Full Body";
+  if (kinds.has("upper") && kinds.has("lower")) {
+    if (days.every(day => /\b(push|pull|legs)\b/i.test(day.name))) return "Push / Pull / Legs";
+    return "Upper / Lower";
+  }
+  if (kinds.has("upper") && kinds.has("full")) return "Upper Body + Full Body";
+  if (kinds.has("lower") && kinds.has("full")) return "Lower Body + Full Body";
+  if (kinds.has("upper")) return "Upper Body Split";
+  if (kinds.has("lower")) return "Lower Body Split";
+  return "Resistance Training";
+}
+
 function buildPlanName(split = getSplitDefinition(state.days)) {
   const priority = state.priorities.length ? ` — ${state.priorities.map(displayMuscle).join(" + ")} Priority` : "";
   const splitName = split.shortLabel || split.label;

@@ -45,6 +45,9 @@ test('four-day mixed template gets resistance names after its cardio exercises a
   const { context } = engine([mixed]);
   const result = context.build({ goal: 'muscle', days: 4, duration: 60, priorities: ['Chest'], variation: 0 });
   assert.equal(result.baseTemplate.id, mixed.id);
+  assert.doesNotMatch(result.name, /cardio|rower|4-Day 4-Day/i);
+  assert.doesNotMatch(result.split.label, /cardio|rower|4-Day/i);
+  assert.equal(result.smartBuild.splitLabel, result.split.label);
   assert.match(result.days[1].name, /^Day 2 — (Full Body|Upper Body|Lower Body|Resistance Training)$/);
   assert.ok(result.days.every(day => !/cardio|rower/i.test(day.name)));
 });
@@ -87,6 +90,7 @@ test('a valid four-set program saves its reviewed names and prescriptions', () =
   assert.equal(result.validation.passed, true, result.validation.issues.join('; '));
   context.save({});
   const saved = JSON.parse(storage.get('forge_workout_plans'))[0];
+  assert.equal(saved.name, result.name);
   assert.deepEqual(saved.days, JSON.parse(JSON.stringify(result.days.map(day => ({ name: day.name, exercises: day.exercises.map(item => ({ id: item.id, sets: item.sets, reps: item.reps, ...(item.supersetGroup ? { supersetGroup: item.supersetGroup } : {}) })) })))));
 });
 
