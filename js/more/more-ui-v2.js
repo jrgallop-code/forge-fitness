@@ -1,4 +1,3 @@
-import { renderSpotify, initializeSpotify } from "../music/spotify-ui.js";
 import { supportCardMarkup, initializeSupportControls } from "./contact-support.js?v=help-navigation-2";
 import { navigate } from "../core/router.js?v=native-navigation-stability-1";
 import { renderExportBackup } from "./export-backup-ui.js?v=full-data-export-1";
@@ -19,7 +18,6 @@ import { isNativeIOS } from "../core/home-screen-widgets.js?v=home-widget-live-3
 import { renderRestTimerGameSettings, initializeRestTimerGameSettings } from "./rest-timer-game-settings.js?v=protein-run-1";
 
 const ICONS = {
-    music: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v12.2A4 4 0 1 0 11 20V8l8-2v8.2a4 4 0 1 0 2 3.8V2L9 4ZM7 20a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm10-2a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"/></svg>',
     appearance: appearanceMenuIcon(),
     profile: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c4.4 0 8 2.3 8 5.2V21H4v-2.8C4 15.3 7.6 13 12 13Zm-5.9 6h11.8v-.8c0-1.3-2.4-3.2-5.9-3.2s-5.9 1.9-5.9 3.2v.8Z"/></svg>',
     history: '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 1-7.2 4.5H2l3.6-3.6L9.2 8.5H6.8A6 6 0 1 0 12 6v3l2.8 1.7-1 1.7L10 10V4h2Z"/></svg>',
@@ -50,7 +48,6 @@ export function renderMore() {
     <div class="more-menu-group" data-more-group="account"><h3>Account &amp; app</h3>
     <button class="more-menu-card" type="button" data-more-page="account-cloud"><span class="more-menu-icon">${ICONS.account}</span><span><strong>Account & Cloud</strong><small>Sign in for private cloud backup and device transfer.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="appearance"><span class="more-menu-icon">${ICONS.appearance}</span><span><strong>Appearance</strong><small>Choose from light, dark and system-aware Level Up themes.</small></span></button>
-    ${isNativeIOS() ? `<button class="more-menu-card" type="button" data-more-page="spotify"><span class="more-menu-icon">${ICONS.music}</span><span><strong>Spotify &amp; PR Songs</strong><small>Connect your music and remember songs played when logging PRs.</small></span></button>` : ""}
     ${widgetCard}
     ${gameCard}
     <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Choose body weight, workout weight, distance and measurement units separately.</small></span></button>
@@ -93,14 +90,6 @@ export function initializeMore() {
             content.innerHTML = renderAppearanceSettings();
             initializeAppearanceSettings({ onBack: showMore });
             window.scrollTo({ top: 0, behavior: "smooth" });
-            return;
-        }
-        if (page === "spotify") {
-            const content = document.getElementById("content");
-            if (!content) return;
-            content.innerHTML = renderSpotify();
-            initializeSpotify({ onBack: () => { content.innerHTML = renderMore(); initializeMore(); } });
-            window.scrollTo({ top: 0 });
             return;
         }
         if (page === "home-widgets") {
