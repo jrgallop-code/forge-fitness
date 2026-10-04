@@ -80,6 +80,8 @@ function sharedWeightTrend(weights, endKey) {
     const smoothed = calculateVisibleWeightTrend(normalized, {
         endDate: endKey,
         rateDays: 20,
+        // Preserve expenditure weighting while evaluating the recent-rate method.
+        rateWeighting: "equal",
         minEntries: 3,
         minSpanDays: 5,
         fullEntries: 6,

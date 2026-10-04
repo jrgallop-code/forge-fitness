@@ -380,6 +380,34 @@ export function calculateTrendWeight(entries, options = {}) {
     return Number.isFinite(value) ? value : null;
 }
 
+/** Calendar-age weights for the experimental 60/30/10 weekly-rate fit.
+ * Each full seven-day block receives 60%, 30%, or 10% of total influence.
+ * Partial histories retain per-day weights; missing days do not count as evidence.
+ */
+export function recentWeekRegressionWeight(date, endDate) {
+    const age = Math.round((dateMs(endDate) - dateMs(date)) / DAY_MS);
+    if (!Number.isFinite(age) || age < 0 || age >= 21) return 0;
+    return (age < 7 ? 0.60 : age < 14 ? 0.30 : 0.10) / 7;
+}
+
+export function calculateRecentWeightedWeeklyChange(entries, endDate) {
+    const points = entries.filter(entry => Number.isFinite(Number(entry.weight)))
+        .map(entry => ({ x: (dateMs(entry.date) - dateMs(endDate)) / DAY_MS,
+            y: Number(entry.weight), w: recentWeekRegressionWeight(entry.date, endDate) }))
+        .filter(point => point.w > 0 && Number.isFinite(point.x));
+    const total = points.reduce((sum, point) => sum + point.w, 0);
+    if (points.length < 2 || !total) return null;
+    const meanX = points.reduce((sum, point) => sum + point.w * point.x, 0) / total;
+    const meanY = points.reduce((sum, point) => sum + point.w * point.y, 0) / total;
+    let numerator = 0;
+    let denominator = 0;
+    for (const point of points) {
+        numerator += point.w * (point.x - meanX) * (point.y - meanY);
+        denominator += point.w * (point.x - meanX) ** 2;
+    }
+    return denominator > 0 ? 7 * numerator / denominator : null;
+}
+
 export function calculateVisibleWeightTrend(entries, options = {}) {
     const allowFuture = options.allowFuture === true;
     const today = localDate();
@@ -417,7 +445,9 @@ export function calculateVisibleWeightTrend(entries, options = {}) {
         : 0;
     const series = calculateTrendWeightSeries(eligible, { ...options, endDate, allowFuture });
     const rateSeries = series.filter(entry => entry.date >= rateStart && entry.date <= endDate);
-    const weeklyChange = calculateRegressionWeeklyChange(rateSeries);
+    const weeklyChange = options.rateWeighting === "equal"
+        ? calculateRegressionWeeklyChange(rateSeries)
+        : calculateRecentWeightedWeeklyChange(rateSeries, endDate);
     const trendWeight = Number(series.at(-1)?.weight);
     const ready = actualWindow.length >= minEntries
         && spanDays >= minSpanDays

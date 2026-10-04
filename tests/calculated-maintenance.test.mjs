@@ -116,7 +116,7 @@ test("stale completion metadata does not hide current logged food days", () => {
     assert.equal(result.status, "early");
 });
 
-test("uses the same smoothed weekly rate as Weight Progress", () => {
+test("preserves equal-weight expenditure during the recent-rate experiment", () => {
     const weights = weightHistory(21, 180, .35);
     weights.push({ ...weights[8], weight: weights[8].weight + .2 });
     const endDate = new Date("2026-08-29T12:00:00");
@@ -128,6 +128,7 @@ test("uses the same smoothed weekly rate as Weight Progress", () => {
     const shared = calculateVisibleWeightTrend(weights, {
         endDate: "2026-08-28",
         rateDays: 20,
+        rateWeighting: "equal",
         minEntries: 3,
         minSpanDays: 5,
         fullEntries: 6,
@@ -136,7 +137,7 @@ test("uses the same smoothed weekly rate as Weight Progress", () => {
     assert.equal(result.weightRateLbPerWeek, shared.weeklyChange);
 });
 
-test("includes today's latest weigh-in so TDEE matches the current Weight Progress rate", () => {
+test("includes today's latest weigh-in in the preserved expenditure rate", () => {
     const weights = weightHistory(21, 180, .35);
     weights.push({ date: "2026-08-29", weight: 182.1 });
     const result = calculateMaintenanceEstimate({
@@ -147,6 +148,7 @@ test("includes today's latest weigh-in so TDEE matches the current Weight Progre
     const shared = calculateVisibleWeightTrend(weights, {
         endDate: "2026-08-29",
         rateDays: 20,
+        rateWeighting: "equal",
         minEntries: 3,
         minSpanDays: 5,
         fullEntries: 6,
@@ -164,7 +166,7 @@ test("the validated real weigh-in pattern reflects the 15/85 three-week trend re
         ["2026-08-26",159.2],["2026-08-27",159.8],["2026-08-28",159.6],["2026-08-29",158.2],["2026-08-30",156.8],
         ["2026-08-31",156.8],["2026-09-01",157.2],["2026-09-02",158.2],["2026-09-03",159.4]
     ].map(([date, weight]) => ({ date, weight }));
-    const result = calculateVisibleWeightTrend(weights, { endDate: "2026-09-03" });
+    const result = calculateVisibleWeightTrend(weights, { endDate: "2026-09-03", rateWeighting: "equal" });
     assert.equal(result.weeklyChange.toFixed(2), "-0.02");
 });
 
