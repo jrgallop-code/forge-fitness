@@ -1,3 +1,5 @@
+import { isBodyweightPlan } from './workout-equipment-filter.js';
+import { getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { presetPlans } from "./workout-plans.js?v=proven-template-builder-1";
 import { presetPlans as detailPresetPlans } from "./workout-plans.js?v=proven-template-builder-1";
 import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-plans-2-women-heroes";
@@ -127,7 +129,7 @@ export function initializeWorkoutCatalogue(root = document) {
                 || (duration === "61" && maximum > 60);
             const matches = (!type || card.dataset.type.includes(type))
                 && (!days || card.dataset.days === days)
-                && (!equipment || card.dataset.equipment.includes(equipment))
+                && (!equipment || (equipment === "bodyweight" ? isBodyweightPlan(presetPlans.find(plan => String(plan.id) === String(card.dataset.planId)), getExerciseById) : card.dataset.equipment.includes(equipment)))
                 && (!level || card.dataset.level.includes(level))
                 && durationMatch;
             card.hidden = !matches;

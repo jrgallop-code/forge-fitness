@@ -71,7 +71,7 @@ export function initializeWorkoutLandingLivePolish(content = document) {
         // The landing can replace its plan rows when browsing/filtering. Reapply
         // the saved-plan action treatment and library separation on the next frame
         // without installing a second MutationObserver over the Workout page.
-        if (target.closest?.("[data-workout-live-see-all], [data-workout-live-show-matches], [data-workout-live-all-control], [data-workout-live-filter-value], #save-plan-btn, #close-plan-builder-btn")) {
+        if (target.closest?.("[data-workout-live-circuits], [data-workout-live-see-all], [data-workout-live-show-matches], [data-workout-live-all-control], [data-workout-live-filter-value], #save-plan-btn, #close-plan-builder-btn")) {
             queueSavedPlanDecoration({ content, landing });
         }
 

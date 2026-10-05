@@ -1,3 +1,4 @@
+import { isCircuit, CIRCUIT_PROGRESS_NOTE, circuitRoundsCompleted } from './circuit-history.js';
 import { navigate } from "../core/router.js?v=native-navigation-stability-1";
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { calculatePrCounts } from "./workout-pr-badges.js?v=workout-pr-badges-2";
@@ -89,9 +90,9 @@ function renderWorkoutPreview(session, prCount) {
     const volume = calculateWorkoutVolume(session);
     return `<div class="workout-history-preview-backdrop" id="workout-history-preview" role="dialog" aria-modal="true" aria-labelledby="workout-preview-title">
         <section class="workout-history-preview-sheet">
-            <div class="workout-preview-header"><button class="workout-preview-close" data-preview-close type="button" aria-label="Close">×</button><div><span class="eyebrow">${isOneOff(session) ? "ONE-OFF WORKOUT" : "WORKOUT SUMMARY"}</span><h2 id="workout-preview-title">${escapeHtml(session.planName || "Workout")}</h2><p>${escapeHtml(session.trainingDayName || "Training day")} • ${formatDate(session.date)}</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="workout-preview-edit" data-preview-edit type="button">Edit</button><button class="secondary-btn" data-preview-resume type="button">Resume workout</button></div></div>
-            <div class="workout-preview-stats"><div><span>Duration</span><strong>${formatSavedDuration(session)}</strong></div><div><span>Volume</span><strong>${volume > 0 ? formatUnitMass(volume, 0, UNIT_KINDS.LIFTING_WEIGHT) : "—"}</strong></div><div><span>Completed</span><strong>${formatProgress(session)}</strong></div><div class="workout-preview-pr-stat"><span>Personal Records</span><strong>${prCount > 0 ? `${trophyIcon()} PR · ${prCount}` : "—"}</strong></div></div>
-            <div class="workout-preview-exercises">${recordedExercises.length ? recordedExercises.map(renderPreviewExercise).join("") : `<p class="workout-preview-empty">No recorded exercise data in this workout.</p>`}</div>
+            <div class="workout-preview-header"><button class="workout-preview-close" data-preview-close type="button" aria-label="Close">×</button><div><span class="eyebrow">${isCircuit(session) ? "CIRCUIT SUMMARY" : isOneOff(session) ? "ONE-OFF WORKOUT" : "WORKOUT SUMMARY"}</span><h2 id="workout-preview-title">${escapeHtml(session.planName || "Workout")}</h2><p>${escapeHtml(session.trainingDayName || "Training day")} • ${formatDate(session.date)}</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="workout-preview-edit" data-preview-edit type="button">Edit</button><button class="secondary-btn" data-preview-resume type="button">Resume workout</button></div></div>
+            <div class="workout-preview-stats"><div><span>Duration</span><strong>${formatSavedDuration(session)}</strong></div><div><span>Volume</span><strong>${volume > 0 ? formatUnitMass(volume, 0, UNIT_KINDS.LIFTING_WEIGHT) : "—"}</strong></div><div><span>Completed</span><strong>${formatProgress(session)}</strong></div>${isCircuit(session) ? "" : `<div class="workout-preview-pr-stat"><span>Personal Records</span><strong>${prCount > 0 ? `${trophyIcon()} PR · ${prCount}` : "—"}</strong></div>`}</div>
+            ${isCircuit(session) ? `<p>${escapeHtml(CIRCUIT_PROGRESS_NOTE)}</p><p><strong>${circuitRoundsCompleted(session)} complete rounds</strong></p>` : ""}<div class="workout-preview-exercises">${recordedExercises.length ? recordedExercises.map(renderPreviewExercise).join("") : `<p class="workout-preview-empty">No recorded exercise data in this workout.</p>`}</div>
         </section>
     </div>`;
 }
@@ -134,7 +135,7 @@ function trophyIcon() {
 function renderHistoryCard(session) {
     const dropSetCount = countRecordedDropSets(session);
     return `<article class="history-workout-card history-workout-card-clickable" data-session-id="${escapeHtml(session.id)}" tabindex="0" role="button" aria-label="View ${escapeHtml(session.planName || "workout")} summary">
-        <div class="history-workout-card-top"><span class="history-status completed">${isOneOff(session) ? "One-Off Workout" : "Completed"}</span><time datetime="${escapeHtml(session.date || "")}">${formatDate(session.date)}</time></div>
+        <div class="history-workout-card-top"><span class="history-status completed">${isCircuit(session) ? "Circuit · separate progress" : isOneOff(session) ? "One-Off Workout" : "Completed"}</span><time datetime="${escapeHtml(session.date || "")}">${formatDate(session.date)}</time></div>
         <h3>${escapeHtml(session.planName || "Workout")}</h3><p>${escapeHtml(session.trainingDayName || "Training day")}</p>
         <div class="history-workout-metrics"><span>${formatProgress(session)}</span><span>${formatSavedDuration(session)}</span>${dropSetCount ? `<span>${dropSetCount} drop ${dropSetCount === 1 ? "set" : "sets"}</span>` : ""}</div>
         <div class="history-card-actions"><span class="history-view-summary">View Summary ›</span><button class="delete-history-workout secondary-btn" type="button" data-session-id="${escapeHtml(session.id)}">Delete</button></div>

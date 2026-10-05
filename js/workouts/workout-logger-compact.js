@@ -1,3 +1,4 @@
+import { isCircuit, readCircuitSessions } from './circuit-history.js';
 import { resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=history-rir-edit-1';
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
@@ -84,7 +85,8 @@ function formatLoad(value) {
 
 function getSavedWorkoutSessions() {
   try {
-    const parsed = JSON.parse(localStorage.getItem('forge_workout_sessions') || '[]');
+    const active = getActive();
+    const parsed = isCircuit(active) ? readCircuitSessions().filter(session => session.circuitId === active.circuitId) : JSON.parse(localStorage.getItem('forge_workout_sessions') || '[]');
     return Array.isArray(parsed) ? resumeProgressionHistory(parsed, getActive()) : [];
   } catch {
     return [];
@@ -583,7 +585,7 @@ function enhanceLogger(logger) {
 
     const setHeader = card.querySelector('.session-set-header');
     if (setHeader) {
-      setHeader.innerHTML = '<span>Set</span><span>Previous</span><span>lbs</span><span>Reps</span><span>✓</span><span aria-label="Remove set">−</span>';
+      setHeader.innerHTML = `<span>${logger.dataset.trainingContext === 'circuit' ? 'Round' : 'Set'}</span><span>Previous</span><span>lbs</span><span>Reps</span><span>✓</span><span aria-label="Remove set">−</span>`;
     }
 
     [...card.querySelectorAll('.session-set-row')].forEach(row => {

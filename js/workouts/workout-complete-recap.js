@@ -29,7 +29,7 @@ document.addEventListener("click", event => {
   const button = event.target.closest?.("#save-session-btn");
   if (!button) return;
   const logger = button.closest("#workout-session-logger");
-  if (!logger || logger.dataset.editingSessionId) return;
+  if (!logger || logger.dataset.editingSessionId || logger.dataset.trainingContext === "circuit") return;
   completionClickAt = Date.now();
   window.setTimeout(showLatestCompletedWorkout, 160);
 }, true);

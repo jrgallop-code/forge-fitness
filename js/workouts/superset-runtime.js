@@ -1,3 +1,5 @@
+import { canonicalInputValue } from '../core/unit-system.js?v=granular-units-1';
+import { isCircuit, circuitRoundTransition, tagCircuitSession } from './circuit-history.js';
 import { ACTIVE_WORKOUT_STORAGE_KEY } from "./workout-session.js?v=native-navigation-stability-1";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
 
@@ -16,6 +18,7 @@ function getActive() {
 
 function saveActive(active) {
     if (!active) return;
+    tagCircuitSession(active);
     active.updatedAt = new Date().toISOString();
     localStorage.setItem(ACTIVE_WORKOUT_STORAGE_KEY, JSON.stringify(active));
 }
@@ -259,6 +262,15 @@ function annotateLogger(logger = document.getElementById("workout-session-logger
         if (tab) tab.classList.add("is-superset");
         if (tabMarker && tabMarker.textContent !== exerciseCode) tabMarker.textContent = exerciseCode;
 
+        if (isCircuit(active)) {
+            let circuitBanner = card.querySelector('.superset-runtime-banner');
+            if (!circuitBanner) {
+                circuitBanner = document.createElement('div'); circuitBanner.className = 'superset-runtime-banner';
+                circuitBanner.innerHTML = `<strong>Circuit · ${active.planSnapshot.rounds} rounds</strong><small>Exercise ${position + 1} of ${members.length} · ${position === members.length - 1 ? 'Rest after the full round' : 'Next exercise, then rest after the full round'}</small>`;
+                (card.querySelector('.compact-exercise-header') || card.querySelector('h4'))?.insertAdjacentElement('afterend', circuitBanner);
+            }
+            return;
+        }
         if (card.querySelector(".superset-runtime-banner")) return;
         const banner = document.createElement("div");
         banner.className = "superset-runtime-banner";
@@ -290,7 +302,7 @@ function handleClick(event) {
     if (saveButton) {
         const logger = saveButton.closest("#workout-session-logger");
         const active = getActive();
-        if (logger && !logger.dataset.editingSessionId && active && hasSupersets(active)) {
+        if (logger && !logger.dataset.editingSessionId && active && hasSupersets(active) && !isCircuit(active)) {
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
@@ -332,6 +344,30 @@ function handleClick(event) {
     event.stopImmediatePropagation();
 
     const completing = !set.completed;
+    if (isCircuit(active)) {
+        const repsInput = row.querySelector('.session-reps');
+        const weightInput = row.querySelector('.session-weight');
+        if (completing && (!(Number(repsInput?.value) > 0) || (weightInput?.value !== '' && Number(weightInput?.value) < 0))) {
+            showCue(logger, '<strong>Enter your actual reps before completing this exercise.</strong>', 'neutral');
+            return;
+        }
+        set.reps = repsInput?.value === '' ? null : Number(repsInput.value);
+        set.weight = weightInput ? canonicalInputValue(weightInput) : null;
+        setRowCompletion(row, set, completing);
+        const next = completing ? circuitRoundTransition(active, members, setIndex) : null;
+        active.restTimer = null;
+        const seconds = Math.max(0, Number(active.planSnapshot.circuitRestSeconds) || 0);
+        if (next) {
+            active.currentExerciseIndex = next.exerciseIndex; active.currentSetIndex = next.setIndex;
+            if (next.rest && seconds) startSupersetRest(active, seconds);
+        }
+        saveActive(active);
+        showCue(logger, !completing ? '<strong>Circuit round marked incomplete.</strong>' : next ?
+            `<span class="superset-cue-kicker">ROUND ${setIndex + 1}</span><strong>${next.rest && seconds ? 'Rest ' + formatSeconds(seconds) : 'Next: ' + escapeHtml(getExerciseName(day.exercises[next.exerciseIndex].id))}</strong><span>Next exercise: ${escapeHtml(getExerciseName(day.exercises[next.exerciseIndex].id))} · Round ${next.setIndex + 1}</span>` :
+            '<strong>All circuit rounds complete.</strong><span>Finish the workout to save your circuit results.</span>', next?.rest ? 'rest' : 'next');
+        if (next) setTimeout(() => goToExercise(logger, next.exerciseIndex), 0);
+        return;
+    }
     setRowCompletion(row, set, completing);
     active.currentExerciseIndex = exerciseIndex;
     active.currentSetIndex = setIndex;
