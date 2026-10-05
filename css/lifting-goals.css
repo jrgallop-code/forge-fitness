@@ -37,3 +37,20 @@
 .circuit-completion-card{max-height:calc(100dvh - 40px);overflow-y:auto;box-sizing:border-box}
 .lifting-goal-form input,.lifting-goal-form select{font-size:16px}
 
+
+
+/* Compact dashboard previews; collection and detail artwork keep their larger sizes. */
+#lifting-goals-dashboard .section-card{padding:10px 12px}
+#lifting-goals-dashboard header{margin:0 0 4px;min-height:36px}
+#lifting-goals-dashboard h2{font-size:1rem;line-height:1.25}
+#lifting-goals-dashboard header button{min-height:44px;padding:4px 6px;font-size:.85rem}
+#lifting-goals-dashboard .lifting-goals-grid{gap:6px}
+#lifting-goals-dashboard .lifting-goal-summary{gap:4px;padding:0 2px;min-height:44px}
+#lifting-goals-dashboard .lifting-goal-summary .lifting-goal-ring{width:60px;height:60px}
+#lifting-goals-dashboard .lifting-goal-summary .lifting-goal-ring strong{font-size:.95rem}
+#lifting-goals-dashboard .lifting-goal-summary>strong{font-size:.75rem;line-height:1.25;font-weight:600}
+#lifting-goals-dashboard .training-badges-recent{gap:6px;align-items:start}
+#lifting-goals-dashboard .training-badge-button{gap:4px;padding:0 2px;min-height:44px}
+#lifting-goals-dashboard .training-badge-art{width:64px;max-width:100%;height:64px}
+#lifting-goals-dashboard .training-badge-button span{font-size:.75rem;line-height:1.25;font-weight:600}
+#lifting-goals-dashboard .training-goal-muted{margin:6px 0 0;font-size:.75rem;line-height:1.35}
