@@ -1,3 +1,4 @@
+import { renderSessionBadges } from '../goals/lifting-goals-ui.js';
 import { resumeCompletedWorkout, getActiveWorkout } from "./workout-session.js?v=history-rir-edit-1";
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
@@ -77,6 +78,7 @@ function renderRecap(session, history) {
         <button type="button" class="workout-complete-recap__close" data-recap-done aria-label="Close">×</button>
         <div class="workout-complete-recap__title-wrap"><span class="workout-complete-recap__kicker">WORKOUT</span><h2>COMPLETE!</h2><p>⚡ ${escapeHtml(dayName)} <span>•</span> ${formatDurationShort(session.durationMs)}</p></div>
       </header>
+      ${renderSessionBadges(session.id)}
       <div class="workout-complete-recap__carousel" data-recap-carousel>
         ${renderCelebrationSlide(payload)}${renderMuscleSlide(payload)}${renderTotalsSlide(payload)}${renderAchievementsSlide(payload)}${renderTopSetsSlide(payload)}
       </div>
@@ -168,4 +170,5 @@ function closeRecap(){document.querySelector("[data-workout-complete-recap]")?.r
 function readSessions(){try{const parsed=JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY)||"[]");if(!Array.isArray(parsed))return[];const repaired=repairWorkoutSessionList(parsed);if(repaired.changed)localStorage.setItem(SESSION_STORAGE_KEY,JSON.stringify(repaired.sessions));return repaired.sessions;}catch{return[];}}
 function formatDurationShort(ms){const total=Math.max(0,Math.round((Number(ms)||0)/60000));return`${total} min`;}
 function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
+
 

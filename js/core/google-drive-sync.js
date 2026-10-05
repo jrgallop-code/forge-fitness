@@ -21,6 +21,8 @@ const BACKUP_KEYS = [
     "forge_workout_plans",
     "forge_workout_sessions",
     "level_up_circuit_sessions_v1",
+    "level_up_lifting_goals_v1",
+    "level_up_training_badges_v1",
     "level_up_active_workout",
     "forge_custom_exercises",
     "forge_weight_entries",
@@ -939,3 +941,4 @@ function formatDriveDate(
     );
 
 }
+
