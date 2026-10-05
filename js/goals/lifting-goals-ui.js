@@ -1,4 +1,4 @@
-import { BADGES, BADGES_KEY, GOALS_KEY, readJson, readGoals, reconcileBadges, goalProgress, startingGoalSet, goalBaseline, saveGoal, deleteGoal } from './lifting-goals-engine.js';
+import { BADGES, BADGE_METRIC_LABELS, BADGES_KEY, GOALS_KEY, readJson, readGoals, reconcileBadges, goalProgress, startingGoalSet, goalBaseline, saveGoal, deleteGoal } from './lifting-goals-engine.js';
 import { badgeArt } from './training-badge-art.js';
 import { getAllExercises } from '../workouts/exercise-library.js?v=exercise-library-catalogue-2';
 import '../workouts/exercise-library-expansion.js?v=exercise-library-expansion-1';
@@ -11,12 +11,14 @@ const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp
 const mass = weight => formatMass(weight, 1, UNIT_KINDS.LIFTING_WEIGHT);
 const targetText = goal => `${mass(goal.targetWeight)}${goal.targetReps ? ` × ${goal.targetReps} reps` : ''}`;
 let queued = false, modal = null, previousFocus = null;
+let badgeFilter='All';
+const artOptions=(badge,earned)=>({locked:!earned,milestone:badge.threshold,metric:badge.metric,customArt:badge.customArt,showMilestone:badge.showMilestone!==false});
 
 function ring(percent) {
   return `<span class="lifting-goal-ring" role="img" aria-label="${percent}% of goal progress"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="goal-ring-track" cx="50" cy="50" r="42"/><circle class="goal-ring-progress" cx="50" cy="50" r="42" pathLength="100" stroke-dasharray="${percent} 100"/></svg><strong>${percent}%</strong></span>`;
 }
 function badgeButton(badge, earned, action = 'badge') {
-  return `<button type="button" class="training-badge-button${earned ? '' : ' is-locked'}" data-${action}="${badge.id}">${badgeArt(badge.art, {locked: !earned, milestone: badge.threshold, metric: badge.metric})}<span>${escape(badge.name)}</span>${action === 'badge' ? `<small>${earned ? 'Earned' : 'Not earned · View requirements'}</small>` : ''}</button>`;
+  return `<button type="button" class="training-badge-button${earned ? '' : ' is-locked'}" data-${action}="${badge.id}">${badgeArt(badge.art, artOptions(badge,earned))}<span>${escape(badge.name)}</span>${action === 'badge' ? `<small>${earned ? 'Earned' : 'Not earned · View requirements'}</small>` : ''}</button>`;
 }
 function dashboardMarkup() {
   const sessions = regularSessions(), goals = readGoals();
@@ -58,13 +60,15 @@ function openModal(title, html, back = null) {
 }
 export function openBadgeCollection() {
   const state=reconcileBadges(allSessions());
-  openModal('Your Badges',`<p class="training-goal-muted">${Object.keys(state.earned).length} of ${BADGES.length} earned · ${state.metrics.currentWeeks} week${state.metrics.currentWeeks===1?'':'s'} in your current streak</p><div class="training-badge-grid">${BADGES.map(b=>badgeButton(b,state.earned[b.id])).join('')}</div>`);
+  const filters=['All','Earned','Locked',...new Set(BADGES.map(b=>b.category))];
+  const visible=BADGES.filter(b=>badgeFilter==='All' || badgeFilter==='Earned' && state.earned[b.id] || badgeFilter==='Locked' && !state.earned[b.id] || b.category===badgeFilter);
+  openModal('Your Badges',`<p class="training-goal-muted">${BADGES.filter(b=>state.earned[b.id]).length} of ${BADGES.length} earned · ${state.metrics.currentWeeks} week${state.metrics.currentWeeks===1?'':'s'} in your current streak</p><div class="training-badge-filters" role="group" aria-label="Filter badges">${filters.map(filter=>`<button type="button" data-badge-filter="${escape(filter)}" aria-pressed="${filter===badgeFilter}">${escape(filter)}</button>`).join('')}</div><div class="training-badge-grid">${visible.map(b=>badgeButton(b,state.earned[b.id])).join('')}</div>${visible.length?'':'<p class="training-goal-muted">No badges in this filter yet.</p>'}`);
 }
 function openBadgeDetail(id) {
   const badge=BADGES.find(b=>b.id===id); if (!badge) return;
   const returnScroll=modal?.scrollTop || 0;
   const state=reconcileBadges(allSessions()), earned=state.earned[id];
-  openModal(badge.name,`<div class="training-badge-detail">${badgeArt(badge.art,{locked:!earned,milestone:badge.threshold,metric:badge.metric})}<strong>${earned ? 'Earned' : 'Not earned yet'}</strong><p>${escape(badge.description)}</p>${earned ? `<p class="training-goal-muted">Earned ${escape(new Date(earned.earnedAt).toLocaleDateString())}</p>` : `<p class="training-goal-muted">${Math.min(state.metrics[badge.metric],badge.threshold)} / ${badge.threshold} ${badge.metric==='weeks'?'consecutive weeks':badge.metric==='prs'?'lifting records':badge.metric==='circuits'?'circuit workouts':'workouts'}</p>`}</div>`,()=>{openBadgeCollection();modal.scrollTop=returnScroll;});
+  openModal(badge.name,`<div class="training-badge-detail">${badgeArt(badge.art,artOptions(badge,earned))}<strong>${earned ? 'Earned' : 'Not earned yet'}</strong><p>${escape(badge.description)}</p>${earned ? `<p class="training-goal-muted">Earned ${escape(new Date(earned.earnedAt).toLocaleDateString())}</p>` : `<p class="training-goal-muted">${Math.min(state.metrics[badge.metric]||0,badge.threshold)} / ${badge.threshold} ${escape(BADGE_METRIC_LABELS[badge.metric]||'achievements')}</p>`}</div>`,()=>{openBadgeCollection();modal.scrollTop=returnScroll;});
 }
 function openGoalDetail(id) {
   const goal=readGoals().find(g=>g.id===id); if (!goal) return;
@@ -116,7 +120,8 @@ export function renderSessionBadges(sessionId) {
 
 document.addEventListener('click',event=>{
   const button=event.target.closest?.('button'); if (!button) return;
-  if (button.hasAttribute('data-badges-open') || button.hasAttribute('data-dashboard-badge')) openBadgeCollection();
+  if(button.dataset.badgeFilter) {badgeFilter=button.dataset.badgeFilter;openBadgeCollection();}
+  else if (button.hasAttribute('data-badges-open') || button.hasAttribute('data-dashboard-badge')) {badgeFilter='All';openBadgeCollection();}
   else if (button.dataset.badge) openBadgeDetail(button.dataset.badge);
   else if (button.dataset.goalDetail) openGoalDetail(button.dataset.goalDetail);
   else if (button.hasAttribute('data-goal-add')) openGoalForm();
@@ -128,6 +133,17 @@ document.addEventListener('click',event=>{
 });
 window.addEventListener('levelup:workout-completed',event=>{
   reconcileBadges(allSessions(),{notify:true,sessionId:event.detail?.sessionId});queueRender();
+});
+window.addEventListener('levelup:monthly-report-reviewed',()=>{
+  const result=reconcileBadges(allSessions(),{notify:true});queueRender();
+  if(!result.newlyEarned.includes('first-chapter')) return;
+  const badge=BADGES.find(b=>b.id==='first-chapter');
+  document.getElementById('training-badge-notice')?.remove();
+  const notice=document.createElement('div');notice.id='training-badge-notice';notice.setAttribute('role','status');
+  notice.innerHTML=`<span>Badge earned: ${escape(badge.name)}</span><button type="button" data-badge="${badge.id}">View badge</button><button type="button" data-badge-notice-close aria-label="Dismiss badge notification">×</button>`;
+  document.body.appendChild(notice);
+  notice.querySelector('[data-badge]').addEventListener('click',()=>notice.remove());
+  notice.querySelector('[data-badge-notice-close]').addEventListener('click',()=>notice.remove());
 });
 window.addEventListener('levelup:units-changed',()=>{closeModal();queueRender();});
 for (const name of ['storage','levelup:appearance-change','levelup:workout-resumed']) window.addEventListener(name,queueRender);

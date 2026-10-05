@@ -54,3 +54,17 @@ test('completion earns badges, renders notification only once, and resumes canno
  h.windowListeners['levelup:workout-completed']({detail:{sessionId:'session-1'}});
  assert.equal(vm.runInContext("renderSessionBadges('session-1')",h.context),'');
 });
+test('collection filters expose new requirements and progress uses the correct metric label',()=>{
+ const h=harness();h.flush();
+ h.documentListeners.click({target:{closest:()=>({dataset:{badgeFilter:'Goals'},hasAttribute:()=>false})}});
+ assert.match(h.elements.get('modal').innerHTML,/First Summit/);assert.doesNotMatch(h.elements.get('modal').innerHTML,/data-badge="first"/);
+ h.documentListeners.click({target:{closest:()=>({dataset:{badge:'goal-collector'},hasAttribute:()=>false})}});
+ assert.match(h.elements.get('modal').innerHTML,/distinct goals reached/);assert.doesNotMatch(h.elements.get('modal').innerHTML,/NaN/);
+});
+test('reviewing a completed report awards First Chapter and announces it only once',()=>{
+ const h=harness();h.flush();h.storage.setItem('level_up_monthly_report_seen_v1',JSON.stringify(['2026-09']));
+ h.windowListeners['levelup:monthly-report-reviewed']();
+ assert.match(h.elements.get('modal').innerHTML,/Badge earned: First Chapter/);
+ const state=JSON.parse(h.storage.getItem(engine.BADGES_KEY));assert.ok(state.earned['first-chapter']);
+ assert.deepEqual(engine.reconcileBadges([],{storage:h.storage,notify:true}).newlyEarned,[]);
+});

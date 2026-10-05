@@ -222,6 +222,7 @@ function renderReportView(screen, progressPage, monthKey) {
     if (!report.isCurrent) screen.dataset.reviewedMonth = monthKey;
     screen.innerHTML = renderReport(report);
     bindReport(screen, progressPage, report);
+    if (!report.isCurrent) window.dispatchEvent(new CustomEvent('levelup:monthly-report-reviewed', {detail:{monthKey}}));
     window.scrollTo({ top: 0, behavior: "auto" });
 }
 

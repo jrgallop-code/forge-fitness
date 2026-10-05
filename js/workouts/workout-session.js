@@ -3,6 +3,7 @@ import { ensureCircuitStyles } from './circuit-styles.js';
 import { CIRCUIT_PROGRESS_NOTE, isCircuit, readCircuitSessions, sessionStorageKey, tagCircuitSession, circuitPreviousPerformance } from './circuit-history.js';
 import { captureSetSong, finishSongCaptures, clearSetSong, watchMusicSession } from "../music/spotify.js";
 import { createResumedWorkout, resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
+import { getBadgeWeeklyTarget } from '../goals/lifting-goals-engine.js';
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import "./machine-profile-ui.js?v=machine-profile-sheet-ios-1";
 
@@ -511,6 +512,8 @@ function createActiveSession(plan, logger) {
         plan.days[dayIndex];
 
     const session = {
+        badgeWeeklyTarget: getBadgeWeeklyTarget(),
+        badgeLocalStartMinutes: new Date().getHours()*60+new Date().getMinutes(),
         id:
             `active-${Date.now()}`,
         status:
@@ -1319,6 +1322,8 @@ function saveCompletedSession({
             "Workout",
         startedAt:
             session.resumedCompletedSnapshot?.startedAt || session.startedAt || null,
+        badgeWeeklyTarget: session.resumedCompletedSnapshot?.badgeWeeklyTarget ?? session.badgeWeeklyTarget ?? null,
+        badgeLocalStartMinutes: session.resumedCompletedSnapshot?.badgeLocalStartMinutes ?? session.badgeLocalStartMinutes ?? null,
         completedAt:
             editingSessionId
                 ? session.completedAt || new Date().toISOString()
@@ -2044,4 +2049,3 @@ function escapeHtml(value) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
-

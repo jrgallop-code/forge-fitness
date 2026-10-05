@@ -72,7 +72,7 @@ jobs:
           PY
 
       - name: Run iOS packaging checks
-        run: node --test tests/spotify-pr-tagging.test.mjs tests/live-set-progression.test.mjs tests/capacitor-ios-packaging.test.mjs tests/ios-cloud-build.test.mjs tests/native-app-shell.test.mjs
+        run: node --test tests/spotify-pr-tagging.test.mjs tests/live-set-progression.test.mjs tests/capacitor-ios-packaging.test.mjs tests/ios-cloud-build.test.mjs tests/native-app-shell.test.mjs tests/training-badge-expanded-rules.test.mjs tests/lifting-goals-badges.test.mjs tests/lifting-goals-ui.test.mjs tests/lifting-goals-balanced-score.test.mjs tests/dashboard-badges-scroll-stability.test.mjs
 
       - name: Create temporary App Store Connect key
         shell: bash

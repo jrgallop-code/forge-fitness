@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {existsSync} from 'node:fs';
 import { readGoals, saveGoal, deleteGoal, goalProgress, badgeMetrics, reconcileBadges, BADGES, BADGES_KEY, GOALS_KEY } from '../js/goals/lifting-goals-engine.js';
 import { badgeArt } from '../js/goals/training-badge-art.js';
 import { canonicalMass, displayMass, UNIT_KINDS } from '../js/core/unit-system.js';
@@ -79,22 +80,29 @@ test('historical awards bootstrap quietly, new awards appear once, and earned ba
  assert.ok(reconcileBadges([],{storage:s,now:new Date('2026-12-01')}).earned.three);
  assert.ok(JSON.parse(s.getItem(BADGES_KEY)).earned.first);
 });
-test('faceted artwork uses external transparent assets and locks without replacing its illustration',()=>{
+test('sports emblem artwork uses external transparent assets and locks without replacing its illustration',()=>{
  for(const kind of ['shoe','dumbbells','trophy','calendar','plant','plate']){
    const earned=badgeArt(kind),locked=badgeArt(kind,{locked:true});
-   assert.match(earned,/<image href="assets\/training-badges\/[a-z]+-faceted-v1\.webp"/);
+   assert.match(earned,/<image href="assets\/training-badges\/[a-z]+-sports-v1\.webp"/);
    assert.match(locked,/is-locked/);
    assert.equal(earned.match(/href="([^"]+)"/)[1],locked.match(/href="([^"]+)"/)[1]);
  }
- assert.match(badgeArt('dumbbells',{metric:'circuits',milestone:10}),/circuit-faceted/);
- assert.match(badgeArt('plate',{metric:'sessions',milestone:50}),/mountain-faceted/);
+ assert.match(badgeArt('dumbbells',{metric:'circuits',milestone:10}),/circuit-sports/);
+ assert.match(badgeArt('plate',{metric:'sessions',milestone:50}),/mountain-sports/);
 });
 test('expanded collection has unique milestones and circuit awards stay independent of PR awards',()=>{
- assert.equal(BADGES.length,24);assert.equal(new Set(BADGES.map(b=>b.id)).size,24);
+ assert.equal(BADGES.length,48);assert.equal(new Set(BADGES.map(b=>b.id)).size,48);
  const history=Array.from({length:10},(_,i)=>session(`c${i}`,'2026-09-21',1000,20,{trainingContext:'circuit'}));
  const result=reconcileBadges(history,{storage:storage(),now:new Date('2026-10-05')});
  assert.ok(result.earned['circuits-1']);assert.ok(result.earned['circuits-10']);
  assert.equal(result.earned.pr,undefined);assert.equal(result.earned['prs-5'],undefined);
  assert.match(badgeArt('plate',{milestone:500}),/>500<\/text>/);
  assert.match(badgeArt('calendar',{milestone:52}),/>52<\/text>/);
+});
+test('every badge resolves a packaged sports-emblem asset, including four-digit milestones',()=>{
+ for(const badge of BADGES) {
+  const markup=badgeArt(badge.art,{milestone:badge.threshold,metric:badge.metric,customArt:badge.customArt,showMilestone:badge.showMilestone!==false});
+  const path=markup.match(/href="([^"]+)"/)[1];assert.ok(existsSync(new URL('../'+path,import.meta.url)),`${badge.name}: ${path}`);
+ }
+ assert.match(badgeArt('phoenix',{customArt:true,milestone:1000}),/>1000<\/text>/);
 });

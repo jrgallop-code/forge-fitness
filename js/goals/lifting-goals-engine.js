@@ -19,6 +19,37 @@ BADGES.push(
   ...[1,10,25,50].map(number => ({ id: `circuits-${number}`, name: number === 1 ? 'Circuit Starter' : `${number} Circuits`, description: `Complete ${number} circuit ${number===1?'workout':'workouts'}. These achievements celebrate circuits separately from lifting records.`, threshold: number, metric: 'circuits', art: 'dumbbells' }))
 );
 
+// Stable IDs preserve the original 24 awards while extending the collection.
+const additions = [
+ ['750-club','750 Club','Complete 750 workouts. There is no deadline.',750,'sessions','fortress','Milestones'],
+ ['the-thousand','The Thousand','Complete 1,000 workouts. Every completed lifting or circuit workout counts once.',1000,'sessions','phoenix','Milestones'],
+ ['living-legend','Living Legend','Complete 2,000 workouts. There is no deadline.',2000,'sessions','dragon','Milestones'],
+ ['two-years-strong','Two Years Strong','Train in 104 consecutive Monday–Sunday weeks. At least one workout per week counts; rest days are encouraged.',104,'weeks','tree','Consistency'],
+ ['century-records','Century of Records','Earn 100 lifting PRs. Each exercise contributes at most one PR per workout, compared with the same machine. Circuits and warm-ups are excluded.',100,'prs','plate','Strength'],
+ ['record-collector','Record Collector','Earn 250 lifting PRs across completed workouts. Circuits and warm-ups are excluded.',250,'prs','chest','Strength'],
+ ['circuit-centurion','Circuit Centurion','Complete 100 circuit workouts. Circuit results remain separate from lifting records.',100,'circuits','circuit','Circuits'],
+ ['first-summit','First Summit','Reach your first lifting goal by completing its target weight and reps in one working set after creating the goal. Weight-only legacy goals do not count.',1,'goalsReached','mountain','Goals'],
+ ['goal-collector','Goal Collector','Reach five distinct lifting goals with both weight and rep targets. Duplicating the same exercise, machine, weight and rep target does not count again.',5,'goalsReached','constellation','Goals'],
+ ['one-more-rep','One More Rep','Beat your previous best reps at the same weight, on the same exercise and machine, in a completed lifting workout.',1,'repRecords','lightning','Strength'],
+ ['new-territory','New Territory','Beat your previous heaviest working-set weight on the same exercise and machine in a completed lifting workout.',1,'weightRecords','rocket','Strength'],
+ ['across-board','Across the Board','Set lifting PRs on five different exercises within any 30 consecutive calendar days. Machines are compared separately, but each exercise counts once.',5,'diverseRecords','constellation','Strength'],
+ ['the-comeback','The Comeback','Complete a workout after at least 14 calendar days since your previous workout. Your earlier workout must be recorded.',1,'comebacks','phoenix','Consistency'],
+ ['back-rhythm','Back in Rhythm','After a comeback, complete a workout in each of four consecutive Monday–Sunday weeks, starting with your return week.',4,'returnWeeks','bridge','Consistency'],
+ ['your-pace','Your Pace','Meet your chosen weekly workout target in four consecutive Monday–Sunday weeks. Uses the schedule or training frequency saved when each new workout starts; changing the target starts a new run.',4,'targetWeeks','compass','Consistency'],
+ ['early-bird','Early Bird','Complete five workouts started from 5:00 am up to 8:00 am, using the local start time recorded when you began. This is optional; any time of day is a good time to train.',5,'earlyStarts','falcon','Consistency'],
+ ['night-owl','Night Owl','Complete five workouts started from 8:00 pm up to 11:00 pm, using the local start time recorded when you began. This is optional; there is no need to change your sleep routine.',5,'nightStarts','owl','Consistency'],
+ ['weekend-warrior','Weekend Warrior','Train on Saturday or Sunday in eight distinct Monday–Sunday weeks. Both days in one week count as one week.',8,'weekendWeeks','bear','Consistency'],
+ ['homegrown-strength','Homegrown Strength','Complete 20 bodyweight-only workouts. Every recorded exercise must use bodyweight equipment and no added load; mixed-equipment workouts do not count.',20,'bodyweightSessions','tree','Exploration'],
+ ['circuit-explorer','Circuit Explorer','Complete three distinct circuit templates. Repeating or editing the same template counts once.',3,'circuitTemplates','planets','Circuits'],
+ ['rep-reporter','Rep Reporter','Record reps in reserve (RIR 0–4+) on 30 completed lifting working sets. Warm-ups and circuits are excluded.',30,'rirSets','eye','Exploration'],
+ ['plan-architect','Plan Architect','Create a plan with the manual or Smart Build builder, then complete its first workout. Starting a library template alone does not count.',1,'createdPlans','blueprint','Exploration'],
+ ['first-chapter','First Chapter','Open a completed monthly report to review your progress. Live reports and dismissing the report banner do not count.',1,'reportsReviewed','book','Exploration'],
+ ['four-seasons','Four Seasons','Complete a workout in each of four consecutive calendar quarters (January–March, April–June, July–September, October–December).',4,'quarters','seasons','Consistency']
+];
+BADGES.forEach(b => { b.category = b.metric==='prs'?'Strength':b.metric==='weeks'?'Consistency':b.metric==='circuits'?'Circuits':'Milestones'; });
+BADGES.push(...additions.map(([id,name,description,threshold,metric,art,category])=>({id,name,description,threshold,metric,art,category,customArt:true,showMilestone:['sessions','weeks','prs','circuits'].includes(metric)})));
+export const BADGE_METRIC_LABELS = {sessions:'workouts',weeks:'consecutive weeks',prs:'lifting PRs',circuits:'circuits',goalsReached:'distinct goals reached',repRecords:'rep PRs',weightRecords:'weight PRs',diverseRecords:'exercises in 30 days',comebacks:'comebacks',returnWeeks:'consecutive return weeks',targetWeeks:'weeks meeting your target',earlyStarts:'early starts',nightStarts:'evening starts',weekendWeeks:'weekend weeks',bodyweightSessions:'bodyweight workouts',circuitTemplates:'circuit templates',rirSets:'sets with RIR',createdPlans:'created plans completed',reportsReviewed:'completed reports reviewed',quarters:'consecutive quarters'};
+
 export function readJson(key, fallback, storage = localStorage) {
   try { return JSON.parse(storage.getItem(key) || 'null') ?? fallback; } catch { return fallback; }
 }
@@ -29,7 +60,7 @@ export function completedSessions(sessions) {
   const seen = new Set();
   return (Array.isArray(sessions) ? sessions : []).filter(session => {
     if (!session?.id || !session.completedAt || seen.has(session.id)) return false;
-    const meaningful = (session.exercises || []).some(exercise => (exercise.sets || []).some(set => set.completed !== false && !set.isWarmup && !set.warmup && (Number(set.reps) > 0 || Number(set.durationSeconds) > 0 || Number(set.durationMinutes) > 0 || Number(set.distance) > 0)));
+    const meaningful = (session.exercises || []).some(exercise => (exercise.sets || []).some(set => set.completed !== false && !set.isWarmup && !set.warmup && set.type!=='warmup' && (Number(set.reps) > 0 || Number(set.durationSeconds) > 0 || Number(set.durationMinutes) > 0 || Number(set.distance) > 0)));
     if (!meaningful) return false;
     seen.add(session.id); return true;
   });
@@ -43,7 +74,7 @@ function weekNumber(date) {
   const utc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
   return Math.floor((utc - 4 * 86400000) / (7 * 86400000));
 }
-export function badgeMetrics(sessions, now = new Date()) {
+export function badgeMetrics(sessions, now = new Date(), context = {}) {
   const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
   const valid = completedSessions(sessions).filter(s => { const date=dayDate(s); return date && date <= endOfToday; });
   const weeks = [...new Set(valid.map(dayDate).filter(Boolean).map(weekNumber))].sort((a,b) => a-b);
@@ -54,18 +85,113 @@ export function badgeMetrics(sessions, now = new Date()) {
   while (weeks.includes(cursor--)) currentWeeks++;
   const lifting = valid.filter(s => !isCircuit(s)).map(s => ({ ...s, exercises: (s.exercises || []).filter(e => !isCircuit(e)).map(e => ({ ...e, sets: (e.sets || []).filter(validWorkingSet) })) }));
   const prs = [...calculatePrCounts(lifting).values()].reduce((a,b) => a+b, 0);
-  return { sessions: valid.length, weeks: bestWeeks, currentWeeks, prs, circuits: valid.filter(isCircuit).length };
+  return { sessions: valid.length, weeks: bestWeeks, currentWeeks, prs, circuits: valid.filter(isCircuit).length, ...extraBadgeMetrics(valid,now,context) };
+}
+const calendarDay = date => Math.floor(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())/86400000);
+function longestRun(values) {
+  let run=0,best=0,last=null;
+  for(const value of [...new Set(values)].sort((a,b)=>a-b)) {run=value===last+1?run+1:1;best=Math.max(best,run);last=value;}
+  return best;
+}
+export function getBadgeWeeklyTarget(storage = localStorage) {
+  const schedule=readJson('level_up_workout_schedule_v1',null,storage);
+  const scheduled=Object.values(schedule?.weekly || {}).filter(value=>value!==null && value!=='' && value!==undefined).length;
+  if(scheduled>=1 && scheduled<=7) return scheduled;
+  const preference=readJson('level_up_training_preferences',{},storage);
+  const days=Number(preference.days);
+  return Number.isInteger(days) && days>=1 && days<=7 ? days : null;
+}
+function extraBadgeMetrics(valid,now,context) {
+  const ordered=[...valid].sort((a,b)=>calendarDay(dayDate(a))-calendarDay(dayDate(b)) || Date.parse(a.completedAt)-Date.parse(b.completedAt));
+  const records=new Map(),events=[],weekends=new Set(),circuitTemplates=new Set(),quarters=[];
+  const targetCounts=new Map();
+  let repRecords=0,weightRecords=0,rirSets=0,bodyweightSessions=0,earlyStarts=0,nightStarts=0,createdPlans=0,comebacks=0,returnWeeks=0;
+  const createdPlanIds=new Set(),comebackWeeks=[];
+  let previousDay=null;
+  for(const session of ordered) {
+    const date=dayDate(session),day=calendarDay(date),week=weekNumber(date);
+    if(previousDay!==null && day-previousDay>=14) {comebacks++;comebackWeeks.push(week);}
+    previousDay=day;
+    if(date.getDay()===0 || date.getDay()===6) weekends.add(week);
+    quarters.push(date.getFullYear()*4+Math.floor(date.getMonth()/3));
+    const minutes=Number.isInteger(session.badgeLocalStartMinutes) ? session.badgeLocalStartMinutes : session.startedAt && Number.isFinite(Date.parse(session.startedAt)) ? new Date(session.startedAt).getHours()*60+new Date(session.startedAt).getMinutes() : null;
+    if(minutes!==null && minutes>=300 && minutes<480) earlyStarts++;
+    if(minutes!==null && minutes>=1200 && minutes<1380) nightStarts++;
+    const target=Number(session.badgeWeeklyTarget);
+    if(Number.isInteger(target) && target>=1 && target<=7) {
+      const values=targetCounts.get(week)||{target,count:0,mixed:false};
+      if(values.target!==target) values.mixed=true;
+      values.count++;targetCounts.set(week,values);
+    }
+    // Bodyweight exploration can include circuits, while strength/RIR records
+    // below remain restricted to regular lifting history.
+    const recordedSet=set=>set.completed!==false && !set.isWarmup && !set.warmup && set.type!=='warmup' && (Number(set.reps)>0 || Number(set.durationSeconds)>0 || Number(set.durationMinutes)>0 || Number(set.distance)>0);
+    const recordedExercises=(session.exercises||[]).filter(e=>(e.sets||[]).some(recordedSet));
+    if(recordedExercises.length && recordedExercises.every(e=>String(e.equipment||'').toLowerCase().replace(/[\s_-]/g,'')==='bodyweight' && e.sets.filter(recordedSet).every(set=>Number(set.weight||0)===0))) bodyweightSessions++;
+    if(isCircuit(session)) {if(session.circuitId) circuitTemplates.add(session.circuitId);continue;}
+    const exercises=(session.exercises||[]).filter(e=>!isCircuit(e) && (e.sets||[]).some(validWorkingSet));
+    const source=session.workoutSource,plan=session.planSnapshot;
+    if(session.planId && (source==='manual_builder' || source==='coach_builder' || plan?.smartBuild) && !createdPlanIds.has(session.planId)) {createdPlanIds.add(session.planId);createdPlans++;}
+    // Compare all sets with the records BEFORE this workout, then update.
+    // This prevents sets within the same workout from establishing their own PRs.
+    const nextRecords=new Map(),sessionRecords=new Set();
+    for(const e of exercises) {
+      const id=e.exerciseId||e.id;if(!id) continue;
+      const key=`${id}::${e.equipmentProfileId||'default'}`;
+      const previous=records.get(key)||{strength:null,weight:null,reps:new Map()};
+      const next=nextRecords.get(key)||{strength:previous.strength,weight:previous.weight,reps:new Map(previous.reps)};
+      let hasRepRecord=false,hasWeightRecord=false;
+      for(const set of e.sets.filter(validWorkingSet)) {
+        const weight=Number(set.weight),reps=Number(set.reps),weightKey=weight.toFixed(6),strength=estimatedGoalStrength({weight,reps});
+        if(set.rir!==null && set.rir!==undefined && set.rir!=='' && Number.isFinite(Number(set.rir)) && Number(set.rir)>=0 && Number(set.rir)<=4) rirSets++;
+        const priorReps=previous.reps.get(weightKey);
+        if(priorReps!==undefined && reps>priorReps) hasRepRecord=true;
+        if(previous.weight!==null && weight>previous.weight+.01) hasWeightRecord=true;
+        if((weight>0 && previous.strength!==null && strength>previous.strength+.01) || (weight>0 && previous.weight!==null && weight>previous.weight+.01) || (weight===0 && priorReps!==undefined && reps>priorReps)) sessionRecords.add(id);
+        next.strength=next.strength===null?strength:Math.max(next.strength,strength);
+        next.weight=next.weight===null?weight:Math.max(next.weight,weight);
+        next.reps.set(weightKey,Math.max(next.reps.get(weightKey)||0,reps));
+      }
+      if(hasRepRecord) repRecords++;
+      if(hasWeightRecord) weightRecords++;
+      nextRecords.set(key,next);
+    }
+    for(const [key,value] of nextRecords) records.set(key,value);
+    if(sessionRecords.size) events.push({day,ids:sessionRecords});
+  }
+  let diverseRecords=0;
+  for(let i=0,left=0;i<events.length;i++) {
+    while(events[i].day-events[left].day>29) left++;
+    const ids=new Set();for(let j=left;j<=i;j++) for(const id of events[j].ids) ids.add(id);
+    diverseRecords=Math.max(diverseRecords,ids.size);
+  }
+  const weeks=new Set(ordered.map(s=>weekNumber(dayDate(s))));
+  for(const start of comebackWeeks) {let run=0;while(weeks.has(start+run)) run++;returnWeeks=Math.max(returnWeeks,run);}
+  let targetWeeks=0,run=0,last=null,lastTarget=null;
+  for(const [week,value] of [...targetCounts].sort((a,b)=>a[0]-b[0])) {
+    if(value.mixed || value.count<value.target) {run=0;last=null;continue;}
+    run=week===last+1 && value.target===lastTarget ? run+1 : 1;
+    targetWeeks=Math.max(targetWeeks,run);last=week;lastTarget=value.target;
+  }
+  const month=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const reportsReviewed=Array.isArray(context.seenMonths)?new Set(context.seenMonths.filter(key=>/^\d{4}-(0[1-9]|1[0-2])$/.test(key) && key<month)).size:0;
+  return {goalsReached:Object.values(context.reachedGoals||{}).filter((value,index,array)=>array.indexOf(value)===index).length,repRecords,weightRecords,diverseRecords,comebacks,returnWeeks,targetWeeks,earlyStarts,nightStarts,weekendWeeks:weekends.size,bodyweightSessions,circuitTemplates:circuitTemplates.size,rirSets,createdPlans,reportsReviewed,quarters:longestRun(quarters)};
 }
 export function reconcileBadges(sessions, { storage = localStorage, now = new Date(), notify = false, sessionId = null } = {}) {
-  const metrics = badgeMetrics(sessions, now);
   const previous = readJson(BADGES_KEY, {}, storage);
+  const reachedGoals={...(previous.reachedGoals||{})};
+  const valid=completedSessions(sessions).filter(session=>dayDate(session) && calendarDay(dayDate(session))<=calendarDay(now));
+  for(const goal of readGoals(storage)) if(!reachedGoals[goal.id] && Number(goal.targetReps)>0 && goal.createdAt && goalProgress(goal,valid).reached) {
+    reachedGoals[goal.id]=`${goal.exerciseId}::${goal.equipmentProfileId||'default'}::${Number(goal.targetWeight).toFixed(6)}::${goal.targetReps}`;
+  }
+  const metrics = badgeMetrics(sessions, now, {reachedGoals,seenMonths:readJson('level_up_monthly_report_seen_v1',[],storage)});
   const earned = previous.earned && typeof previous.earned === 'object' ? { ...previous.earned } : {};
   const newlyEarned = [];
   for (const badge of BADGES) if (!earned[badge.id] && metrics[badge.metric] >= badge.threshold) {
     earned[badge.id] = { earnedAt: now.toISOString(), sessionId: notify ? sessionId : null };
     if (notify) newlyEarned.push(badge.id);
   }
-  const next = { version: 1, earned };
+  const next = { version: 2, earned, reachedGoals };
   if (JSON.stringify(previous) !== JSON.stringify(next)) storage.setItem(BADGES_KEY, JSON.stringify(next));
   return { earned, metrics, newlyEarned };
 }
