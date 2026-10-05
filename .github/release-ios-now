@@ -349,3 +349,5 @@ Release: derive generated program titles and split badges from actual resistance
 Release: add default-on Progressive Overload guidance toggle beside Dynamic Warm-Ups in More; disable next-session and live prompts while retaining workout logging and history.
 
 Release: isolated circuit library and bodyweight filter/templates, 2026-10-05.
+
+Circuit filter label and placement fix — October 5, 2026.

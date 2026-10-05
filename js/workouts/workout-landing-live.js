@@ -139,11 +139,11 @@ function renderLanding({ content, page, sourceHome, landing, state }) {
 
         <div class="workout-live-filter-strip" aria-label="Program filters">
             ${allPlansButton(state.showAllPlans)}
-            <button class="workout-live-filter${state.circuitsOnly ? " active" : ""}" type="button" data-workout-live-circuits><strong>Circuits</strong><small>Separate progress</small></button>
             ${filterButton("goal", "Goal", state.filters.goal, targetIcon())}
             ${filterButton("days", "Days / week", `${state.filters.days} days`, calendarIcon())}
             ${filterButton("level", "Level", state.filters.level, barsIcon())}
             ${filterButton("equipment", "Equipment", state.filters.equipment, dumbbellIcon())}
+            <button class="workout-live-filter${state.circuitsOnly ? " active" : ""}" type="button" data-workout-live-circuits><span><strong>Circuits</strong></span></button>
         </div>
 
         <section class="workout-live-section" ${state.circuitsOnly ? "hidden" : ""}>
