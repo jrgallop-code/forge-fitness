@@ -54,3 +54,10 @@
 #lifting-goals-dashboard .training-badge-art{width:64px;max-width:100%;height:64px}
 #lifting-goals-dashboard .training-badge-button span{font-size:.75rem;line-height:1.25;font-weight:600}
 #lifting-goals-dashboard .training-goal-muted{margin:6px 0 0;font-size:.75rem;line-height:1.35}
+
+/* Keep illustrated badge colours, alpha and dimensions stable in every appearance. */
+.training-badge-art{overflow:visible}
+.training-badge-art image{pointer-events:none}
+.training-badge-art.is-locked{filter:grayscale(1);opacity:.62}
+.training-badge-button.is-locked .training-badge-art{opacity:.62;filter:grayscale(1)}
+.training-badge-art .badge-number{font-variant-numeric:tabular-nums}

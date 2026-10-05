@@ -79,10 +79,15 @@ test('historical awards bootstrap quietly, new awards appear once, and earned ba
  assert.ok(reconcileBadges([],{storage:s,now:new Date('2026-12-01')}).earned.three);
  assert.ok(JSON.parse(s.getItem(BADGES_KEY)).earned.first);
 });
-test('all classic artwork has a transparent SVG background and appearance-aware strokes',()=>{
+test('faceted artwork uses external transparent assets and locks without replacing its illustration',()=>{
  for(const kind of ['shoe','dumbbells','trophy','calendar','plant','plate']){
-   const svg=badgeArt(kind);assert.match(svg,/fill="none"/);assert.match(svg,/stroke="currentColor"/);assert.doesNotMatch(svg,/#fff|#000|<image|fill="white"|fill="black"/);
+   const earned=badgeArt(kind),locked=badgeArt(kind,{locked:true});
+   assert.match(earned,/<image href="assets\/training-badges\/[a-z]+-faceted-v1\.webp"/);
+   assert.match(locked,/is-locked/);
+   assert.equal(earned.match(/href="([^"]+)"/)[1],locked.match(/href="([^"]+)"/)[1]);
  }
+ assert.match(badgeArt('dumbbells',{metric:'circuits',milestone:10}),/circuit-faceted/);
+ assert.match(badgeArt('plate',{metric:'sessions',milestone:50}),/mountain-faceted/);
 });
 test('expanded collection has unique milestones and circuit awards stay independent of PR awards',()=>{
  assert.equal(BADGES.length,24);assert.equal(new Set(BADGES.map(b=>b.id)).size,24);
