@@ -306,7 +306,10 @@ function ensureMuscleSnapshot() {
         grid.style.gridColumn = "1 / -1";
         grid.style.width = "100%";
         grid.style.margin = "0";
-        if (grid.parentElement !== dashboard || grid !== dashboard.lastElementChild) {
+        const goals = dashboard.querySelector("#lifting-goals-dashboard");
+        if (goals) {
+            if (grid.parentElement !== dashboard || grid.nextElementSibling !== goals) dashboard.insertBefore(grid, goals);
+        } else if (grid.parentElement !== dashboard || grid !== dashboard.lastElementChild) {
             dashboard.appendChild(grid);
         }
     }
