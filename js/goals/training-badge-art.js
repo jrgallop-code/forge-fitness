@@ -12,7 +12,7 @@ export function badgeArt(kind, { locked = false, milestone = null } = {}) {
   let art=ART[kind] || ART.trophy;
   const number=Number(milestone);
   if(Number.isInteger(number) && number>0 && number<=999){
-    const text=(x,y,size)=>`<text class="badge-accent" x="${x}" y="${y}" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="700" font-size="${size}" fill="currentColor" stroke="none">${number}</text>`;
+    const text=(x,y,size)=>`<text class="badge-number" x="${x}" y="${y}" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="700" font-size="${size}" fill="currentColor" stroke="none">${number}</text>`;
     if(kind==='plate') art='<circle cx="44" cy="44" r="29"/><circle cx="44" cy="44" r="22"/><circle cx="44" cy="35" r="6"/>'+text(44,63,14);
     if(kind==='calendar') art='<rect x="20" y="24" width="48" height="43" rx="5"/><path d="M20 37h48M29 18v12m30-12v12"/>'+text(44,59,18);
   }
