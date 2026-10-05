@@ -1,5 +1,5 @@
-#lifting-goals-dashboard{margin:14px 20px;display:grid;gap:14px}
-#lifting-goals-dashboard .section-card{margin:0;padding:18px;background:var(--card);border:1px solid var(--card-border,var(--line));border-radius:20px;color:var(--text)}
+#lifting-goals-dashboard{grid-column:1 / -1;margin:0;min-width:0;width:100%;box-sizing:border-box;display:grid;gap:10px}
+#lifting-goals-dashboard .section-card{margin:0;min-width:0;width:100%;box-sizing:border-box;padding:15px;background:var(--card);border:1px solid var(--card-border,var(--line));border-radius:18px;color:var(--text)}
 #lifting-goals-dashboard header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
 #lifting-goals-dashboard h2{font-size:1.15rem;margin:0;color:var(--heading)}
 #lifting-goals-dashboard header button{border:0;background:none;color:var(--accent-text,var(--accent));font:inherit;font-weight:700;padding:8px}
@@ -17,6 +17,7 @@
 .training-badge-art{display:block;width:100%;max-width:100px;height:auto;color:var(--heading);background:transparent}
 .training-badge-art .badge-rim{stroke:var(--line);stroke-width:2}.training-badge-art .badge-accent{stroke:var(--accent)}
 .training-badge-art.is-locked{color:var(--muted)}.training-badge-art.is-locked .badge-accent{stroke:var(--muted)}
+.training-badge-button.is-locked{color:var(--muted)}.training-badge-button.is-locked .training-badge-art{opacity:.6;filter:grayscale(1)}
 .training-goal-muted{color:var(--muted);font-size:.85rem;line-height:1.6}
 .training-goals-open{overflow:hidden}
 .training-goals-overlay{position:fixed;inset:0;z-index:16000;background:var(--bg);overflow:auto;overscroll-behavior:contain;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);color:var(--text)}

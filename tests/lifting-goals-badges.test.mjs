@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readGoals, saveGoal, deleteGoal, goalProgress, badgeMetrics, reconcileBadges, BADGES_KEY, GOALS_KEY } from '../js/goals/lifting-goals-engine.js';
+import { readGoals, saveGoal, deleteGoal, goalProgress, badgeMetrics, reconcileBadges, BADGES, BADGES_KEY, GOALS_KEY } from '../js/goals/lifting-goals-engine.js';
 import { badgeArt } from '../js/goals/training-badge-art.js';
 import { canonicalMass, displayMass, UNIT_KINDS } from '../js/core/unit-system.js';
 
@@ -82,4 +82,13 @@ test('all classic artwork has a transparent SVG background and appearance-aware 
  for(const kind of ['shoe','dumbbells','trophy','calendar','plant','plate']){
    const svg=badgeArt(kind);assert.match(svg,/fill="none"/);assert.match(svg,/stroke="currentColor"/);assert.doesNotMatch(svg,/#fff|#000|<image|fill="white"|fill="black"/);
  }
+});
+test('expanded collection has unique milestones and circuit awards stay independent of PR awards',()=>{
+ assert.equal(BADGES.length,24);assert.equal(new Set(BADGES.map(b=>b.id)).size,24);
+ const history=Array.from({length:10},(_,i)=>session(`c${i}`,'2026-09-21',1000,20,{trainingContext:'circuit'}));
+ const result=reconcileBadges(history,{storage:storage(),now:new Date('2026-10-05')});
+ assert.ok(result.earned['circuits-1']);assert.ok(result.earned['circuits-10']);
+ assert.equal(result.earned.pr,undefined);assert.equal(result.earned['prs-5'],undefined);
+ assert.match(badgeArt('plate',{milestone:500}),/>500<\/text>/);
+ assert.match(badgeArt('calendar',{milestone:52}),/>52<\/text>/);
 });

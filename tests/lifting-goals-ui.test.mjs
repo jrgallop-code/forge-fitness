@@ -15,7 +15,7 @@ function harness() {
    querySelector(){return new Element();}
  }
  const elements=new Map(),welcome=new Element(),anchor=new Element(),content=new Element();
- content.querySelector=s=>s.includes('welcome')?welcome:s.includes('today')||s.includes('schedule-dashboard')?anchor:new Element();
+ content.querySelector=s=>s.includes('welcome')?welcome:s.includes('dashboard-muscle-snapshot')?anchor:new Element();
  content.contains=e=>e.isConnected;
  anchor.insertAdjacentElement=(where,e)=>{anchor.nextElementSibling=e;elements.set(e.id,e);};
  const documentListeners={},windowListeners={},frame=[];
@@ -24,7 +24,7 @@ function harness() {
  const context=vm.createContext({...engine,badgeArt,console,Date,localStorage:storage,document,window:{addEventListener:(k,v)=>windowListeners[k]=v},requestAnimationFrame:f=>frame.push(f),MutationObserver:class{constructor(f){this.callback=f;}observe(){}},getAllExercises:()=>[],getEquipmentProfiles:()=>[],supportsEquipmentProfiles:()=>false,UNIT_KINDS:{LIFTING_WEIGHT:'liftingWeight'},formatMass:w=>`${w} lb`,displayMass:w=>w,canonicalMass:w=>Number(w),massUnit:()=> 'lb'});
  const source=fs.readFileSync(new URL('../js/goals/lifting-goals-ui.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace(/^export /gm,'');
  vm.runInContext(source,context);
- return {context,storage,documentListeners,windowListeners,elements,frame,flush(){while(frame.length)frame.shift()();}};
+ return {context,storage,documentListeners,windowListeners,elements,anchor,frame,flush(){while(frame.length)frame.shift()();}};
 }
 test('dashboard stays compact, lists multiple goals, and does not continuously rewrite normalized markup',()=>{
  const h=harness();
@@ -33,11 +33,13 @@ test('dashboard stays compact, lists multiple goals, and does not continuously r
  assert.match(root.innerHTML,/Bench Press/);assert.match(root.innerHTML,/Dumbbell Curl/);assert.match(root.innerHTML,/data-goal-add/);
  assert.doesNotMatch(root.innerHTML,/100 lb|30 lb|Starting best|Best at target/);
  const writes=root.writes;root.html+=' normalized by browser';vm.runInContext('renderDashboard()',h.context);assert.equal(root.writes,writes);
+ assert.equal(h.anchor.nextElementSibling,root);
 });
 test('dashboard badges open collection, each collection badge opens its own description, and goal opens details',()=>{
  const h=harness();h.flush();
  h.documentListeners.click({target:{closest:()=>({dataset:{dashboardBadge:'first'},hasAttribute:k=>k==='data-dashboard-badge'})}});
  assert.match(h.elements.get('modal').innerHTML,/Your Badges/);assert.match(h.elements.get('modal').innerHTML,/data-badge="ten"/);
+ assert.match(h.elements.get('modal').innerHTML,/is-locked/);assert.match(h.elements.get('modal').innerHTML,/View requirements/);
  h.documentListeners.click({target:{closest:()=>({dataset:{badge:'two-weeks'},hasAttribute:()=>false})}});
  assert.match(h.elements.get('modal').innerHTML,/two consecutive Monday/);
  h.storage.setItem(engine.GOALS_KEY,JSON.stringify([{id:'one',exerciseId:'bench',name:'Bench Press',targetWeight:100,baselineWeight:50}]));

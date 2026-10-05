@@ -16,7 +16,7 @@ function ring(percent) {
   return `<span class="lifting-goal-ring" role="img" aria-label="${percent}% of goal progress"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="goal-ring-track" cx="50" cy="50" r="42"/><circle class="goal-ring-progress" cx="50" cy="50" r="42" pathLength="100" stroke-dasharray="${percent} 100"/></svg><strong>${percent}%</strong></span>`;
 }
 function badgeButton(badge, earned, action = 'badge') {
-  return `<button type="button" class="training-badge-button" data-${action}="${badge.id}">${badgeArt(badge.art, {locked: !earned})}<span>${escape(badge.name)}</span>${action === 'badge' ? `<small>${earned ? 'Earned' : 'Locked'}</small>` : ''}</button>`;
+  return `<button type="button" class="training-badge-button${earned ? '' : ' is-locked'}" data-${action}="${badge.id}">${badgeArt(badge.art, {locked: !earned, milestone: badge.number})}<span>${escape(badge.name)}</span>${action === 'badge' ? `<small>${earned ? 'Earned' : 'Not earned · View requirements'}</small>` : ''}</button>`;
 }
 function dashboardMarkup() {
   const sessions = regularSessions(), goals = readGoals();
@@ -27,7 +27,7 @@ function dashboardMarkup() {
 function renderDashboard() {
   const content = document.getElementById('content');
   if (!content?.querySelector(':scope > .dashboard-welcome') || !content.querySelector(':scope > .dashboard')) return;
-  const anchor = content.querySelector('.dashboard-command-today, .schedule-dashboard-card');
+  const anchor = content.querySelector('[data-dashboard-muscle-snapshot]');
   if (!anchor) return;
   let root = document.getElementById('lifting-goals-dashboard');
   if (!root || !content.contains(root)) { root = document.createElement('div'); root.id = 'lifting-goals-dashboard'; root.setAttribute('data-unit-text-ignore',''); }
@@ -62,8 +62,9 @@ export function openBadgeCollection() {
 }
 function openBadgeDetail(id) {
   const badge=BADGES.find(b=>b.id===id); if (!badge) return;
+  const returnScroll=modal?.scrollTop || 0;
   const state=reconcileBadges(allSessions()), earned=state.earned[id];
-  openModal(badge.name,`<div class="training-badge-detail">${badgeArt(badge.art,{locked:!earned})}<strong>${earned ? 'Earned' : 'Not earned yet'}</strong><p>${escape(badge.description)}</p>${earned ? `<p class="training-goal-muted">Earned ${escape(new Date(earned.earnedAt).toLocaleDateString())}</p>` : `<p class="training-goal-muted">${Math.min(state.metrics[badge.metric],badge.threshold)} / ${badge.threshold} ${badge.metric==='weeks'?'consecutive weeks':badge.metric==='prs'?'lifting records':'workouts'}</p>`}</div>`,openBadgeCollection);
+  openModal(badge.name,`<div class="training-badge-detail">${badgeArt(badge.art,{locked:!earned,milestone:badge.number})}<strong>${earned ? 'Earned' : 'Not earned yet'}</strong><p>${escape(badge.description)}</p>${earned ? `<p class="training-goal-muted">Earned ${escape(new Date(earned.earnedAt).toLocaleDateString())}</p>` : `<p class="training-goal-muted">${Math.min(state.metrics[badge.metric],badge.threshold)} / ${badge.threshold} ${badge.metric==='weeks'?'consecutive weeks':badge.metric==='prs'?'lifting records':badge.metric==='circuits'?'circuit workouts':'workouts'}</p>`}</div>`,()=>{openBadgeCollection();modal.scrollTop=returnScroll;});
 }
 function openGoalDetail(id) {
   const goal=readGoals().find(g=>g.id===id); if (!goal) return;

@@ -12,6 +12,13 @@ export const BADGES = [
   { id: 'ten', name: 'Ten Workouts', description: 'Complete ten workouts. Lifting and circuit sessions both count.', threshold: 10, metric: 'sessions', art: 'plate' }
 ];
 
+BADGES.push(
+  ...[5,25,50,100,250,500].map(number => ({ id: `sessions-${number}`, name: `${number} Workouts`, description: `Complete ${number} workouts in total. Lifting and circuits both count; there is no deadline.`, threshold: number, number, metric: 'sessions', art: 'plate' })),
+  ...[8,12,26,52].map(number => ({ id: `weeks-${number}`, name: `${number} Weeks Strong`, description: `Complete at least one workout in each of ${number} consecutive Monday–Sunday weeks. Rest days are encouraged, and earned badges are permanent.`, threshold: number, number, metric: 'weeks', art: 'calendar' })),
+  ...[5,10,25,50].map(number => ({ id: `prs-${number}`, name: `${number} Lifting PRs`, description: `Earn ${number} lifting records across completed workouts. Each exercise can contribute one PR per workout, compared with the same exercise and machine. Circuit sets do not count.`, threshold: number, metric: 'prs', art: 'trophy' })),
+  ...[1,10,25,50].map(number => ({ id: `circuits-${number}`, name: number === 1 ? 'Circuit Starter' : `${number} Circuits`, description: `Complete ${number} circuit ${number===1?'workout':'workouts'}. These achievements celebrate circuits separately from lifting records.`, threshold: number, metric: 'circuits', art: 'dumbbells' }))
+);
+
 export function readJson(key, fallback, storage = localStorage) {
   try { return JSON.parse(storage.getItem(key) || 'null') ?? fallback; } catch { return fallback; }
 }
@@ -47,7 +54,7 @@ export function badgeMetrics(sessions, now = new Date()) {
   while (weeks.includes(cursor--)) currentWeeks++;
   const lifting = valid.filter(s => !isCircuit(s)).map(s => ({ ...s, exercises: (s.exercises || []).filter(e => !isCircuit(e)).map(e => ({ ...e, sets: (e.sets || []).filter(validWorkingSet) })) }));
   const prs = [...calculatePrCounts(lifting).values()].reduce((a,b) => a+b, 0);
-  return { sessions: valid.length, weeks: bestWeeks, currentWeeks, prs };
+  return { sessions: valid.length, weeks: bestWeeks, currentWeeks, prs, circuits: valid.filter(isCircuit).length };
 }
 export function reconcileBadges(sessions, { storage = localStorage, now = new Date(), notify = false, sessionId = null } = {}) {
   const metrics = badgeMetrics(sessions, now);

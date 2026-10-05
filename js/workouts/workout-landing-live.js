@@ -143,7 +143,7 @@ function renderLanding({ content, page, sourceHome, landing, state }) {
             ${filterButton("days", "Days / week", `${state.filters.days} days`, calendarIcon())}
             ${filterButton("level", "Level", state.filters.level, barsIcon())}
             ${filterButton("equipment", "Equipment", state.filters.equipment, dumbbellIcon())}
-            <button class="workout-live-filter${state.circuitsOnly ? " active" : ""}" type="button" data-workout-live-circuits><span style="grid-column: 1 / -1"><strong>Circuits</strong></span></button>
+            <button class="workout-live-filter${state.circuitsOnly ? " active" : ""}" type="button" data-workout-live-circuits><span class="workout-live-filter-icon">${circuitIcon()}</span><span><strong>Circuits</strong></span></button>
         </div>
 
         <section class="workout-live-section" ${state.circuitsOnly ? "hidden" : ""}>
@@ -637,3 +637,5 @@ function gridIcon() { return svg('<rect x="4" y="4" width="6" height="6" rx="1"/
 function sparkIcon() { return svg('<path d="m12 3 1.4 4.5L18 9l-4.6 1.5L12 15l-1.4-4.5L6 9l4.6-1.5L12 3Z"/><path d="m19 15 .6 1.8 1.8.6-1.8.6L19 20l-.6-2-1.8-.6 1.8-.6L19 15Z"/>'); }
 function pencilIcon() { return svg('<path d="m4 20 4-1 11-11-3-3L5 16l-1 4Z"/><path d="m14.5 6.5 3 3"/>'); }
 function importIcon() { return svg('<path d="M12 3v12M8 7l4-4 4 4M5 13v6h14v-6"/>'); }
+
+function circuitIcon() { return svg('<path d="M4 15a8 8 0 1 1 15-6"/><path d="M19 4v5h-5"/>'); }

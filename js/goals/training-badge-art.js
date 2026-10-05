@@ -8,6 +8,13 @@ const ART = {
   plant: '<path d="M44 56V35q-15 1-20-16 18-3 20 16Zm0 8V41q15 0 20-17-18-3-20 17M31 67h26M24 59h7v16h-7zm33 0h7v16h-7zM31 64h26v6H31"/><path class="badge-accent" d="M30 25l10 8m18-4-11 9"/>',
   plate: '<circle cx="44" cy="44" r="29"/><circle cx="44" cy="44" r="22"/><circle cx="44" cy="37" r="6"/><path class="badge-accent" d="m33 53 4-3v14m13-14q-5 0-5 7t5 7q5 0 5-7t-5-7Z"/>'
 };
-export function badgeArt(kind, { locked = false } = {}) {
-  return `<svg class="training-badge-art${locked ? ' is-locked' : ''}" viewBox="0 0 88 88" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><circle class="badge-rim" cx="44" cy="44" r="41"/>${ART[kind] || ART.trophy}</svg>`;
+export function badgeArt(kind, { locked = false, milestone = null } = {}) {
+  let art=ART[kind] || ART.trophy;
+  const number=Number(milestone);
+  if(Number.isInteger(number) && number>0 && number<=999){
+    const text=(x,y,size)=>`<text class="badge-accent" x="${x}" y="${y}" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="700" font-size="${size}" fill="currentColor" stroke="none">${number}</text>`;
+    if(kind==='plate') art='<circle cx="44" cy="44" r="29"/><circle cx="44" cy="44" r="22"/><circle cx="44" cy="35" r="6"/>'+text(44,63,14);
+    if(kind==='calendar') art='<rect x="20" y="24" width="48" height="43" rx="5"/><path d="M20 37h48M29 18v12m30-12v12"/>'+text(44,59,18);
+  }
+  return `<svg class="training-badge-art${locked ? ' is-locked' : ''}" viewBox="0 0 88 88" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><circle class="badge-rim" cx="44" cy="44" r="41"/>${art}</svg>`;
 }
