@@ -1,3 +1,6 @@
+import { isBodyweightPlan } from './workout-equipment-filter.js';
+import { circuitTemplates } from './circuit-templates.js';
+import { openCircuitTemplate, renderCircuitLibraryRow, ensureCircuitStyles } from './circuit-library.js';
 import { getTrainingPreferences } from "../core/training-preferences.js?v=onboarding-training-days-1";
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { presetPlans } from "./workout-plans.js?v=proven-template-builder-1";
@@ -12,6 +15,7 @@ const STYLE_ID = "workout-landing-live-styles";
 const STYLE_HREF = "/css/workout-landing-live.css?v=workout-landing-live-1";
 
 const allCataloguePlans = [
+    ...circuitTemplates,
     ...presetPlans,
     ...celebrityWorkoutPlans,
     ...bodybuilderWorkoutPlans,
@@ -93,6 +97,7 @@ function createInitialState() {
             level: normalizeLevel(preferences.experience),
             equipment: "Gym"
         },
+        circuitsOnly: false,
         showAllPlans: false
     };
 }
@@ -101,11 +106,12 @@ function renderLanding({ content, page, sourceHome, landing, state }) {
     const existingSchedule = landing.querySelector(".workout-schedule-shell");
     if (existingSchedule) sourceHome.prepend(existingSchedule);
 
-    const matches = filteredPlans(state.filters);
+    const matches = state.circuitsOnly ? circuitTemplates : filteredPlans(state.filters);
+    ensureCircuitStyles();
     const recommended = selectRecommended(matches, state.filters, 5);
     const saved = readSavedPlans();
-    const sourceRows = [
-        ...saved.map(plan => ({ ...plan, isSavedPlan: true })),
+    const sourceRows = state.circuitsOnly ? circuitTemplates : [
+        ...saved.filter(plan => state.showAllPlans || matchesEquipment(plan, state.filters.equipment)).map(plan => ({ ...plan, isSavedPlan: true })),
         ...(state.showAllPlans ? allCataloguePlans : matches)
     ];
     const rows = sourceRows
@@ -137,9 +143,10 @@ function renderLanding({ content, page, sourceHome, landing, state }) {
             ${filterButton("days", "Days / week", `${state.filters.days} days`, calendarIcon())}
             ${filterButton("level", "Level", state.filters.level, barsIcon())}
             ${filterButton("equipment", "Equipment", state.filters.equipment, dumbbellIcon())}
+            <button class="workout-live-filter${state.circuitsOnly ? " active" : ""}" type="button" data-workout-live-circuits><span class="workout-live-filter-icon">${circuitIcon()}</span><span><strong>Circuits</strong></span></button>
         </div>
 
-        <section class="workout-live-section">
+        <section class="workout-live-section" ${state.circuitsOnly ? "hidden" : ""}>
             <div class="workout-live-section-heading">
                 <div><h2>Recommended for You</h2><p>Based on your current plan preferences.</p></div>
                 <button type="button" data-workout-live-see-all>See All</button>
@@ -152,7 +159,7 @@ function renderLanding({ content, page, sourceHome, landing, state }) {
         <section class="workout-live-section" data-workout-live-all-plans>
             <div class="workout-live-section-heading">
                 <div>
-                    <h2>${state.showAllPlans ? "All Workout Plans" : "Workout Plans"}</h2>
+                    <h2>${state.circuitsOnly ? "Circuits" : state.showAllPlans ? "All Workout Plans" : "Workout Plans"}</h2>
                     <p>${state.showAllPlans
                         ? `${allCataloguePlans.length} Level Up routines${saved.length ? ` · ${saved.length} saved plan${saved.length === 1 ? "" : "s"} shown first` : ""}`
                         : `${saved.length ? `${saved.length} saved plan${saved.length === 1 ? "" : "s"} shown first · ` : ""}${matches.length} matching programs`
@@ -174,9 +181,11 @@ function renderLanding({ content, page, sourceHome, landing, state }) {
 }
 
 function bindLandingActions({ content, page, sourceHome, landing, state, render }) {
+    landing.querySelector("[data-workout-live-circuits]")?.addEventListener("click", () => { state.circuitsOnly = true; state.showAllPlans = false; render(); });
     landing.querySelector("[data-workout-live-new-plan]")?.addEventListener("click", () => openNewPlanSheet({ content, landing }));
 
     landing.querySelector("[data-workout-live-see-all]")?.addEventListener("click", () => {
+        state.circuitsOnly = false;
         state.showAllPlans = true;
         render();
         requestAnimationFrame(() => landing.querySelector("[data-workout-live-all-plans]")?.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -189,13 +198,14 @@ function bindLandingActions({ content, page, sourceHome, landing, state, render 
     });
 
     landing.querySelector("[data-workout-live-all-control]")?.addEventListener("click", () => {
+        state.circuitsOnly = false;
         state.showAllPlans = true;
         render();
         requestAnimationFrame(() => landing.querySelector("[data-workout-live-all-plans]")?.scrollIntoView({ behavior: "smooth", block: "start" }));
     });
 
     landing.querySelectorAll("[data-workout-live-filter]").forEach(button => {
-        button.addEventListener("click", () => openFilterSheet({ key: button.dataset.workoutLiveFilter, state, render }));
+        button.addEventListener("click", () => { state.circuitsOnly = false; openFilterSheet({ key: button.dataset.workoutLiveFilter, state, render }); });
     });
 
     landing.querySelectorAll("[data-workout-live-plan-card]").forEach(card => {
@@ -239,6 +249,7 @@ function renderRecommendedCard(plan, index) {
 }
 
 function renderPlanRow(plan, index) {
+    if (plan.trainingContext === "circuit") return renderCircuitLibraryRow(plan);
     const stats = planStats(plan);
     const isSaved = Boolean(plan.isSavedPlan);
     const artwork = getPlanArtwork(plan, index + 9);
@@ -390,6 +401,7 @@ function waitForCreationSurface(content, timeout = 900) {
 }
 
 function openCataloguePlan({ content, landing, planId }) {
+    if (openCircuitTemplate(planId, landing)) return;
     const card = content.querySelector(`.catalogue-plan-card[data-plan-id="${cssEscape(planId)}"]`);
     if (!card) {
         showToast("That plan could not be opened.");
@@ -473,6 +485,7 @@ function showLanding({ landing, render }) {
 
 function filteredPlans(filters) {
     return allCataloguePlans.filter(plan => {
+        if (plan.trainingContext === "circuit") return false;
         const type = String(plan.trainingType || "Hypertrophy").toLowerCase();
         const goalMatch = filters.goal === "Any goal"
             || (filters.goal === "Hypertrophy" && type.includes("hypertrophy"))
@@ -491,14 +504,14 @@ function matchesEquipment(plan, equipment) {
     if (equipment === "Dumbbells") return [...values].every(value => !value || /dumbbell|bodyweight/i.test(value));
     if (equipment === "Barbell") return [...values].some(value => /barbell/i.test(value));
     if (equipment === "Machines & Cables") return [...values].some(value => /machine|cable/i.test(value));
-    if (equipment === "Bodyweight") return [...values].every(value => !value || /bodyweight/i.test(value));
+    if (equipment === "Bodyweight") return isBodyweightPlan(plan, id => exerciseMap.get(id));
     return true;
 }
 
 function selectRecommended(plans, filters, count) {
     const preferred = [...plans].sort((a, b) => recommendationScore(b, filters) - recommendationScore(a, filters));
     if (preferred.length >= count) return preferred.slice(0, count);
-    const fallback = allCataloguePlans.filter(plan => !preferred.some(item => item.id === plan.id)).slice(0, count - preferred.length);
+    const fallback = allCataloguePlans.filter(plan => plan.trainingContext !== "circuit" && matchesEquipment(plan, filters.equipment) && !preferred.some(item => item.id === plan.id)).slice(0, count - preferred.length);
     return [...preferred, ...fallback];
 }
 
@@ -624,3 +637,5 @@ function gridIcon() { return svg('<rect x="4" y="4" width="6" height="6" rx="1"/
 function sparkIcon() { return svg('<path d="m12 3 1.4 4.5L18 9l-4.6 1.5L12 15l-1.4-4.5L6 9l4.6-1.5L12 3Z"/><path d="m19 15 .6 1.8 1.8.6-1.8.6L19 20l-.6-2-1.8-.6 1.8-.6L19 15Z"/>'); }
 function pencilIcon() { return svg('<path d="m4 20 4-1 11-11-3-3L5 16l-1 4Z"/><path d="m14.5 6.5 3 3"/>'); }
 function importIcon() { return svg('<path d="M12 3v12M8 7l4-4 4 4M5 13v6h14v-6"/>'); }
+
+function circuitIcon() { return svg('<path d="M4 15a8 8 0 1 1 15-6"/><path d="M19 4v5h-5"/>'); }

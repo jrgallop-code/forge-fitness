@@ -363,7 +363,10 @@ function prepareInsights(content, dashboard) {
         muscleSnapshot.style.gridColumn = "1 / -1";
         muscleSnapshot.style.width = "100%";
         muscleSnapshot.style.margin = "0";
-        if (muscleSnapshot.parentElement !== dashboard || muscleSnapshot !== dashboard.lastElementChild) {
+        const goals = dashboard.querySelector('#lifting-goals-dashboard');
+        if (goals) {
+            if (muscleSnapshot.parentElement !== dashboard || muscleSnapshot.nextElementSibling !== goals) dashboard.insertBefore(muscleSnapshot, goals);
+        } else if (muscleSnapshot.parentElement !== dashboard || muscleSnapshot !== dashboard.lastElementChild) {
             dashboard.appendChild(muscleSnapshot);
         }
     }

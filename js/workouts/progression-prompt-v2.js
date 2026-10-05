@@ -394,6 +394,11 @@ function renderLiveBelowTargetPrompt(card, prompt, repRange, exerciseId, source)
 function renderCard(card) {
   const logger = card.closest('#workout-session-logger');
   if (!logger) return;
+  if (logger.dataset.trainingContext === 'circuit') {
+    const prompt = card.querySelector('.progression-prompt');
+    if (prompt) hidePrompt(prompt);
+    return;
+  }
   const exerciseId = card.dataset.exerciseId;
   if (!exerciseId) return;
   const exercise = getExerciseById(exerciseId);

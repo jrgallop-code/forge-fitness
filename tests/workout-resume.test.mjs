@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {createResumedWorkout,resumeProgressionHistory} from '../js/workouts/workout-resume.js';
+import { isCircuit, sessionStorageKey, tagCircuitSession, circuitPreviousPerformance } from '../js/workouts/circuit-history.js';
 const plan={id:'p',name:'Push',days:[{name:'Chest',exercises:[{id:'bench',sets:2,reps:'8-12'}]}]};
 const completed={id:'session-1',date:'2026-10-01',planId:'p',planName:'Push',trainingDayIndex:0,startedAt:'2026-10-01T10:00:00Z',completedAt:'2026-10-01T11:00:00Z',durationMs:3600000,planSnapshot:plan,customNotes:'Keep me',exercises:[{exerciseId:'bench',notes:'Good',sets:[{weight:100,reps:10,rir:2,completed:true,dropSets:[{weight:80,reps:8}]},{weight:null,reps:null,completed:false}]}]};
 function harness(){
  const data=new Map([['forge_workout_sessions',JSON.stringify([completed])]]),events=[];let opened=0;
- const sandbox={createResumedWorkout,resumeProgressionHistory,localStorage:{getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)},window:{confirm:()=>false,dispatchEvent:e=>events.push(e),alert:()=>{}},document:{getElementById:()=>null},repairWorkoutSessionList:rows=>({sessions:rows,changed:false}),resolveSessionExerciseIdentity:()=>({}),classifyWorkoutSource:()=> 'plan',CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},clearInterval(){},Date,JSON,console};
+ const sandbox={isCircuit,sessionStorageKey,tagCircuitSession,circuitPreviousPerformance,readCircuitSessions:()=>JSON.parse(data.get('level_up_circuit_sessions_v1')||'[]'),createResumedWorkout,resumeProgressionHistory,localStorage:{getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)},window:{confirm:()=>false,dispatchEvent:e=>events.push(e),alert:()=>{}},document:{getElementById:()=>null},repairWorkoutSessionList:rows=>({sessions:rows,changed:false}),resolveSessionExerciseIdentity:()=>({}),classifyWorkoutSource:()=> 'plan',CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},clearInterval(){},Date,JSON,console};
  vm.createContext(sandbox);let source=readFileSync(new URL('../js/workouts/workout-session.js',import.meta.url),'utf8').replace(/^import\s[\s\S]*?;\n/gm,'').replace(/^export /gm,'');
  vm.runInContext(source+'\nrenderWorkoutLogger=()=>{globalThis.opened=(globalThis.opened||0)+1};resumeRuntimeTimers=()=>{};renderActiveWorkoutBanner=()=>{};globalThis.api={resumeCompletedWorkout,getActiveWorkout,discardActiveWorkout,saveCompletedSession,getWorkoutElapsedMs};',sandbox);
  return{data,events,sandbox,api:sandbox.api};

@@ -1,9 +1,14 @@
-const CACHE_VERSION = "2026-10-04-progressive-overload-toggle-1";
+const CACHE_VERSION = "2026-10-05-circuits-goals-calorie-ranges-1";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
+    "./css/lifting-goals.css?v=compact-dashboard-210",
+    "./css/circuit-library.css",
+    "./js/goals/lifting-goals-ui.js?v=balanced-goals-209",
+    "./js/workouts/circuit-library.js",
+    "./js/nutrition/calorie-range-card.js?v=calorie-range-1",
     "./",
     "./index.html",
     "./manifest.webmanifest",

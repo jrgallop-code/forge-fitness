@@ -1,3 +1,6 @@
+import { showCircuitCompletion } from './circuit-completion.js';
+import { ensureCircuitStyles } from './circuit-styles.js';
+import { CIRCUIT_PROGRESS_NOTE, isCircuit, readCircuitSessions, sessionStorageKey, tagCircuitSession, circuitPreviousPerformance } from './circuit-history.js';
 import { createResumedWorkout, resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import "./machine-profile-ui.js?v=machine-profile-sheet-pwa-1";
@@ -135,7 +138,7 @@ export function getActiveWorkout() {
 
 
 export function getWorkoutSessions() {
-    return getSavedSessions();
+    return [...getSavedSessions(), ...readCircuitSessions()];
 }
 
 
@@ -200,7 +203,7 @@ export function resumeCompletedWorkout(sessionId) {
         if (window.confirm(`"${active.planName || "Another workout"}" is already active. Open it instead? Finish or discard it before resuming this workout.`)) openActiveWorkout();
         return false;
     }
-    const completed = getSavedSessions().find(item => item.id === sessionId);
+    const completed = getWorkoutSessions().find(item => item.id === sessionId);
     if (!completed) return false;
     const plan = getPlanForSession(completed);
     if (!plan?.days?.length) return false;
@@ -218,7 +221,7 @@ export function resumeCompletedWorkout(sessionId) {
 export function openCompletedWorkoutForEdit(sessionId) {
 
     const session =
-        getSavedSessions()
+        getWorkoutSessions()
             .find(item =>
                 item.id === sessionId
             );
@@ -251,7 +254,7 @@ export function openCompletedWorkoutForEdit(sessionId) {
 export function deleteCompletedWorkout(sessionId) {
 
     const session =
-        getSavedSessions()
+        getWorkoutSessions()
             .find(item =>
                 item.id === sessionId
             );
@@ -272,9 +275,9 @@ export function deleteCompletedWorkout(sessionId) {
 
 
     localStorage.setItem(
-        SESSION_STORAGE_KEY,
+        sessionStorageKey(session),
         JSON.stringify(
-            getSavedSessions()
+            getWorkoutSessions().filter(item => sessionStorageKey(item) === sessionStorageKey(session))
                 .filter(item =>
                     item.id !== sessionId
                 )
@@ -318,6 +321,7 @@ function renderWorkoutLogger({
     editingSessionId
 }) {
 
+    if (isCircuit(plan)) ensureCircuitStyles();
     const days =
         Array.isArray(plan?.days)
             ? plan.days
@@ -343,6 +347,7 @@ function renderWorkoutLogger({
         "workout-session-logger";
     logger.className =
         "plan-builder workout-session-logger";
+    logger.dataset.trainingContext = isCircuit(plan) ? "circuit" : "lifting";
     logger.dataset.editingSessionId =
         editingSessionId || "";
 
@@ -358,10 +363,11 @@ function renderWorkoutLogger({
                     ${editingSessionId ? "EDIT WORKOUT" : session ? "ACTIVE WORKOUT" : "START WORKOUT"}
                 </span>
                 <h3>${escapeHtml(plan.name || "My Workout Plan")}</h3>
-                <p>${editingSessionId ? "Update the saved workout without creating a duplicate." : "Your progress saves automatically on this device."}</p>
+                <p>${isCircuit(plan) ? CIRCUIT_PROGRESS_NOTE : editingSessionId ? "Update the saved workout without creating a duplicate." : "Your progress saves automatically on this device."}</p>
             </div>
         </div>
 
+        ${isCircuit(plan) ? `<div class="circuit-session-header"><label class="circuit-rest-control">Rest between rounds<select data-circuit-session-rest>${[0,30,60,90,120,180].map(seconds => `<option value="${seconds}" ${seconds === Number(plan.circuitRestSeconds) ? "selected" : ""}>${seconds ? seconds + " sec" : "Off"}</option>`).join("")}</select></label><p>${plan.rounds} rounds · Complete exercises in order. Rest only after a full round.</p><div class="circuit-progress-note">${CIRCUIT_PROGRESS_NOTE}</div></div>` : ""}
         <div class="workout-session-status">
             <div>
                 <span>Workout duration</span>
@@ -393,7 +399,7 @@ function renderWorkoutLogger({
 
         ${session
             ? ""
-            : '<button id="begin-session-btn" class="primary-btn" type="button">Begin Workout</button>'}
+            : `<button id="begin-session-btn" class="primary-btn" type="button">${isCircuit(plan) ? 'Begin Circuit' : 'Begin Workout'}</button>`}
 
         <div id="session-exercises"></div>
         <div id="session-message" class="workout-message" aria-live="polite"></div>
@@ -412,6 +418,11 @@ function renderWorkoutLogger({
     }
 
 
+    logger.querySelector("[data-circuit-session-rest]")?.addEventListener("change", event => {
+        plan.circuitRestSeconds = Number(event.target.value);
+        const active = getActiveWorkout();
+        if (active && !editingSessionId) { active.planSnapshot.circuitRestSeconds = plan.circuitRestSeconds; saveActiveWorkout(active); }
+    });
     bindWorkoutTimerButtons(logger);
 
     logger
@@ -534,6 +545,7 @@ function createActiveSession(plan, logger) {
     };
 
 
+    tagCircuitSession(session, plan);
     saveActiveWorkout(session);
     resumeRuntimeTimers();
     return session;
@@ -706,7 +718,7 @@ function renderSessionExercises({
             return `
                 <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-equipment-profile-id="${escapeHtml(state.equipmentProfileId || "default")}" data-tracking-type="reps">
                     <h4>${escapeHtml(exercise?.name || "Exercise")}</h4>
-                    <p class="session-target">Target: ${state.sets.length} sets × ${escapeHtml(plannedExercise.reps || "—")} reps</p>
+                    <p class="session-target">Target: ${state.sets.length} ${isCircuit(plan) ? "rounds" : "sets"} × ${escapeHtml(plannedExercise.reps || "—")} reps</p>
                     <div class="session-lifting-note ${String(state.notes || "").trim() ? "has-note" : ""}">
                         <button class="session-note-preview" type="button" aria-expanded="false">
                             <span class="session-note-empty-icon" aria-hidden="true">+</span>
@@ -774,7 +786,7 @@ function renderSessionExercises({
         saveCompletedSession({
             plan,
             logger,
-            session,
+            session: !editingSessionId && isCircuit(plan) ? getActiveWorkout() || session : session,
             editingSessionId
         });
     };
@@ -952,6 +964,14 @@ function bindSessionInputs({
 }) {
 
     const persist = () => {
+        if (!editingSessionId && isCircuit(session)) {
+            const latest = getActiveWorkout();
+            if (latest?.id === session.id) {
+                session.restTimer = latest.restTimer;
+                session.planSnapshot = latest.planSnapshot;
+                session.exercises.forEach((exercise, i) => exercise.sets?.forEach((set, j) => { set.completed = latest.exercises?.[i]?.sets?.[j]?.completed ?? set.completed; }));
+            }
+        }
         if (!editingSessionId) {
             saveActiveWorkout(session);
         }
@@ -1304,8 +1324,9 @@ function saveCompletedSession({
             ))
     };
 
-    const sessions =
-        getSavedSessions();
+    tagCircuitSession(completed, plan);
+    const storageKey = sessionStorageKey(completed);
+    const sessions = isCircuit(completed) ? readCircuitSessions() : getSavedSessions();
     const index =
         sessions.findIndex(item =>
             item.id === completed.id
@@ -1319,7 +1340,7 @@ function saveCompletedSession({
     }
 
     localStorage.setItem(
-        SESSION_STORAGE_KEY,
+        storageKey,
         JSON.stringify(sessions)
     );
 
@@ -1339,11 +1360,13 @@ function saveCompletedSession({
     }
 
     renderActiveWorkoutBanner();
+    if (!editingSessionId && isCircuit(completed)) showCircuitCompletion(completed);
 
 }
 
 
 function saveActiveWorkout(session) {
+    tagCircuitSession(session);
 
     session.updatedAt =
         new Date().toISOString();
@@ -1721,6 +1744,7 @@ function getPreviousPerformance(
     excludedSessionId = null
 ) {
 
+    if (String(planId).startsWith('level-up-circuit-')) return circuitPreviousPerformance(planId, exerciseId, excludedSessionId);
     const sessions =
         resumeProgressionHistory(getSavedSessions(), getActiveWorkout())
             .filter(session =>

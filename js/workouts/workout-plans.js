@@ -1,3 +1,4 @@
+import { bodyweightWorkoutPlans } from './bodyweight-workout-plans.js';
 export const presetPlans = [
 
     {
@@ -2456,6 +2457,8 @@ export const presetPlans = [
 
 ];
 
+
+presetPlans.push(...bodyweightWorkoutPlans);
 
 export function getPresetPlan(id) {
 

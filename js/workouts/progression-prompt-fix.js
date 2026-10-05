@@ -82,7 +82,7 @@ function ensurePrompt(card) {
 
 function renderPrompt(card) {
   const logger = card.closest('#workout-session-logger');
-  if (!logger || logger.dataset.editingSessionId) return;
+  if (!logger || logger.dataset.editingSessionId || logger.dataset.trainingContext === 'circuit') return;
 
   const active = readJson(ACTIVE_WORKOUT_STORAGE_KEY, null);
   if (!active) return;

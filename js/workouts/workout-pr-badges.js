@@ -1,3 +1,4 @@
+import { isCircuit } from './circuit-history.js';
 import { resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 const EPSILON = 0.01;
@@ -94,6 +95,7 @@ export function calculatePrCounts(sessions) {
 }
 
 export function evaluateLiveWorkoutPrs(activeSession, historicalSessions = []) {
+    if (isCircuit(activeSession)) return { count: 0, details: new Map() };
     const records = buildHistoricalRecords(resumeProgressionHistory(historicalSessions, activeSession));
     const details = new Map();
 
@@ -164,6 +166,7 @@ function orderSessions(sessions) {
 }
 
 function getSessionExerciseScores(session) {
+    if (isCircuit(session)) return new Map();
     const scores = new Map();
     (session?.exercises || []).forEach(exercise => {
         if (exercise?.trackingType === "notes") return;
@@ -203,7 +206,7 @@ function getExerciseProfileKey(exercise) {
 }
 
 function isValidRecordedSet(set) {
-    if (!set || set.completed === false) return false;
+    if (!set || isCircuit(set) || set.completed === false) return false;
     const reps = Number(set.reps);
     const weight = Number(set.weight);
     return reps > 0 || weight > 0;

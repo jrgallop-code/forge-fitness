@@ -1,3 +1,4 @@
+import { isCircuit } from './circuit-history.js';
 import { cancelNativeAlarm, finishNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-3";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
 
@@ -303,7 +304,7 @@ function reconcileWorkingSet(meta) {
     if (!meta || !Number.isFinite(meta.exerciseIndex) || !Number.isFinite(meta.index)) return;
     const active = readActiveWorkout();
     const completed = active?.exercises?.[meta.exerciseIndex]?.sets?.[meta.index]?.completed === true;
-    if (!active) return;
+    if (!active || isCircuit(active)) return;
     if (!completed) {
         cancelActiveRestTimer({
             active,

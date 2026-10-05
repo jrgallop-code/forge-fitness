@@ -1,3 +1,4 @@
+import { renderSessionBadges } from '../goals/lifting-goals-ui.js';
 import { resumeCompletedWorkout, getActiveWorkout } from "./workout-session.js?v=history-rir-edit-1";
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
@@ -29,7 +30,7 @@ document.addEventListener("click", event => {
   const button = event.target.closest?.("#save-session-btn");
   if (!button) return;
   const logger = button.closest("#workout-session-logger");
-  if (!logger || logger.dataset.editingSessionId) return;
+  if (!logger || logger.dataset.editingSessionId || logger.dataset.trainingContext === "circuit") return;
   completionClickAt = Date.now();
   window.setTimeout(showLatestCompletedWorkout, 160);
 }, true);
@@ -77,6 +78,7 @@ function renderRecap(session, history) {
         <button type="button" class="workout-complete-recap__close" data-recap-done aria-label="Close">×</button>
         <div class="workout-complete-recap__title-wrap"><span class="workout-complete-recap__kicker">WORKOUT</span><h2>COMPLETE!</h2><p>⚡ ${escapeHtml(dayName)} <span>•</span> ${formatDurationShort(session.durationMs)}</p></div>
       </header>
+      ${renderSessionBadges(session.id)}
       <div class="workout-complete-recap__carousel" data-recap-carousel>
         ${renderCelebrationSlide(payload)}${renderMuscleSlide(payload)}${renderTotalsSlide(payload)}${renderAchievementsSlide(payload)}${renderTopSetsSlide(payload)}
       </div>
