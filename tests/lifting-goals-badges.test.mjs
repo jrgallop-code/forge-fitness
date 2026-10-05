@@ -8,12 +8,12 @@ function storage() {const values=new Map();return {getItem:k=>values.get(k)??nul
 function session(id,date,weight=50,reps=12,overrides={}) { return {id,date,completedAt:`${date}T15:00:00Z`,exercises:[{exerciseId:'dumbbell-bench-press',sets:[{weight,reps,completed:true}]}],...overrides}; }
 const goalInput={exerciseId:'dumbbell-bench-press',name:'Dumbbell Bench Press',targetWeight:65,targetReps:12};
 const created=new Date('2026-09-20T16:00:00Z');
-test('baseline-relative goal shows 67% at 60 lb, and requires the actual rep target',()=>{
+test('baseline-relative goal credits lower reps but requires the actual rep target for completion',()=>{
  const s=storage(), history=[session('baseline','2026-09-19')];
  const goal=saveGoal(goalInput,history,s,created);
  assert.equal(goal.baselineWeight,50);
  assert.equal(goalProgress(goal,[...history,session('new','2026-09-21',60)]).percent,67);
- assert.equal(goalProgress(goal,[...history,session('lowreps','2026-09-21',65,10)]).percent,0);
+ assert.equal(goalProgress(goal,[...history,session('lowreps','2026-09-21',65,10)]).percent,90);
  assert.equal(goalProgress(goal,[...history,session('hit','2026-09-21',65,12)]).percent,100);
  assert.equal(goalProgress(goal,[...history,session('exceeded','2026-09-21',80,12)]).percent,100);
  assert.equal(goalProgress(goal,[...history,session('almost','2026-09-21',64.99,12)]).percent,99);
@@ -36,7 +36,8 @@ test('multiple goals persist independently, editing preserves baseline and delet
  deleteGoal(a.id,s);assert.equal(readGoals(s)[0].id,b.id);assert.equal(s.getItem('forge_workout_sessions'),original);
 });
 test('goal without rep target allows any positive rep set and lighter workouts do not reduce progress',()=>{
- const s=storage(),g=saveGoal({...goalInput,targetReps:null},[session('base','2026-09-19',50,1)],s,created);
+ const s=storage(),g={...goalInput,id:'legacy',baselineWeight:50,targetReps:null,createdAt:created.toISOString()};
+ s.setItem(GOALS_KEY,JSON.stringify([g]));
  const history=[session('new','2026-09-21',60,1),session('lighter','2026-09-22',40,15)];
  assert.equal(goalProgress(g,history).percent,67);
 });
