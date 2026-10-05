@@ -143,7 +143,7 @@ function renderLanding({ content, page, sourceHome, landing, state }) {
             ${filterButton("days", "Days / week", `${state.filters.days} days`, calendarIcon())}
             ${filterButton("level", "Level", state.filters.level, barsIcon())}
             ${filterButton("equipment", "Equipment", state.filters.equipment, dumbbellIcon())}
-            <button class="workout-live-filter${state.circuitsOnly ? " active" : ""}" type="button" data-workout-live-circuits><span><strong>Circuits</strong></span></button>
+            <button class="workout-live-filter${state.circuitsOnly ? " active" : ""}" type="button" data-workout-live-circuits><span style="grid-column: 1 / -1"><strong>Circuits</strong></span></button>
         </div>
 
         <section class="workout-live-section" ${state.circuitsOnly ? "hidden" : ""}>
