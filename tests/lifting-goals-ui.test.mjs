@@ -68,3 +68,10 @@ test('reviewing a completed report awards First Chapter and announces it only on
  const state=JSON.parse(h.storage.getItem(engine.BADGES_KEY));assert.ok(state.earned['first-chapter']);
  assert.deepEqual(engine.reconcileBadges([],{storage:h.storage,notify:true}).newlyEarned,[]);
 });
+
+test('nutrition category hides immediately with feature disabled while earned badges persist',()=>{
+ const h=harness();h.flush();h.storage.setItem(engine.BADGES_KEY,JSON.stringify({earned:{'first-plate':{earnedAt:'2026-10-01'}}}));
+ vm.runInContext('openBadgeCollection()',h.context);assert.match(h.elements.get('modal').innerHTML,/First Plate/);
+ h.storage.setItem('level_up_training_preferences',JSON.stringify({nutritionEnabled:false}));
+ vm.runInContext('openBadgeCollection()',h.context);assert.doesNotMatch(h.elements.get('modal').innerHTML,/First Plate|data-badge-filter="Nutrition"/);assert.ok(JSON.parse(h.storage.getItem(engine.BADGES_KEY)).earned['first-plate']);
+});

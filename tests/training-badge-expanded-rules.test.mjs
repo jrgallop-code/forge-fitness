@@ -5,7 +5,7 @@ const storage=()=>{const values=new Map();return {getItem:k=>values.get(k)??null
 const now=new Date('2026-10-05T12:00:00');
 const workout=(id,date='2026-10-01',weight=50,reps=8,extra={})=>({id,date,completedAt:`${date}T12:00:00Z`,exercises:[{exerciseId:'bench',equipment:'Dumbbell',sets:[{weight,reps,completed:true}]}],...extra});
 test('all 24 additions are available alongside the original awards, including 1,000 and 2,000 workouts',()=>{
- assert.equal(BADGES.length,48);assert.equal(new Set(BADGES.map(b=>b.id)).size,48);
+ assert.equal(BADGES.length,60);assert.equal(new Set(BADGES.map(b=>b.id)).size,60);
  const history=Array.from({length:2000},(_,i)=>workout(`w${i}`));
  const result=reconcileBadges([...history,history[0]],{storage:storage(),now});
  for(const id of ['750-club','the-thousand','living-legend'])assert.ok(result.earned[id]);

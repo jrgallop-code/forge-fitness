@@ -91,7 +91,7 @@ test('sports emblem artwork uses external transparent assets and locks without r
  assert.match(badgeArt('plate',{metric:'sessions',milestone:50}),/mountain-sports/);
 });
 test('expanded collection has unique milestones and circuit awards stay independent of PR awards',()=>{
- assert.equal(BADGES.length,48);assert.equal(new Set(BADGES.map(b=>b.id)).size,48);
+ assert.equal(BADGES.length,60);assert.equal(new Set(BADGES.map(b=>b.id)).size,60);
  const history=Array.from({length:10},(_,i)=>session(`c${i}`,'2026-09-21',1000,20,{trainingContext:'circuit'}));
  const result=reconcileBadges(history,{storage:storage(),now:new Date('2026-10-05')});
  assert.ok(result.earned['circuits-1']);assert.ok(result.earned['circuits-10']);

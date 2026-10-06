@@ -1,3 +1,4 @@
+import { NUTRITION_BADGES, nutritionEnabled, nutritionBadgeMetrics, nutritionTargets } from './nutrition-badges.js';
 import { isCircuit } from '../workouts/circuit-history.js';
 import { calculatePrCounts } from '../workouts/workout-pr-badges.js';
 
@@ -48,7 +49,9 @@ const additions = [
 ];
 BADGES.forEach(b => { b.category = b.metric==='prs'?'Strength':b.metric==='weeks'?'Consistency':b.metric==='circuits'?'Circuits':'Milestones'; });
 BADGES.push(...additions.map(([id,name,description,threshold,metric,art,category])=>({id,name,description,threshold,metric,art,category,customArt:true,showMilestone:['sessions','weeks','prs','circuits'].includes(metric)})));
-export const BADGE_METRIC_LABELS = {sessions:'workouts',weeks:'consecutive weeks',prs:'lifting PRs',circuits:'circuits',goalsReached:'distinct goals reached',repRecords:'rep PRs',weightRecords:'weight PRs',diverseRecords:'exercises in 30 days',comebacks:'comebacks',returnWeeks:'consecutive return weeks',targetWeeks:'weeks meeting your target',earlyStarts:'early starts',nightStarts:'evening starts',weekendWeeks:'weekend weeks',bodyweightSessions:'bodyweight workouts',circuitTemplates:'circuit templates',rirSets:'sets with RIR',createdPlans:'created plans completed',reportsReviewed:'completed reports reviewed',quarters:'consecutive quarters'};
+BADGES.push(...NUTRITION_BADGES);
+export const availableBadges = (storage = localStorage) => BADGES.filter(b=>!b.nutrition || nutritionEnabled(storage));
+export const BADGE_METRIC_LABELS = {sessions:'workouts',weeks:'consecutive weeks',prs:'lifting PRs',circuits:'circuits',goalsReached:'distinct goals reached',repRecords:'rep PRs',weightRecords:'weight PRs',diverseRecords:'exercises in 30 days',comebacks:'comebacks',returnWeeks:'consecutive return weeks',targetWeeks:'weeks meeting your target',earlyStarts:'early starts',nightStarts:'evening starts',weekendWeeks:'weekend weeks',bodyweightSessions:'bodyweight workouts',circuitTemplates:'circuit templates',rirSets:'sets with RIR',createdPlans:'created plans completed',reportsReviewed:'completed reports reviewed',quarters:'consecutive quarters',foodDays:'completed food days',foodRhythm:'days in seven days',proteinWeek:'protein days in seven days',proteinMonth:'protein days in 30 days',calorieDays:'days within your target range',nutritionReviews:'check-ins',intakeWeeks:'weeks reviewed',savedMeals:'distinct saved meals',weightGoals:'weight goals reached',maintenanceGoals:'maintenance periods'};
 
 export function readJson(key, fallback, storage = localStorage) {
   try { return JSON.parse(storage.getItem(key) || 'null') ?? fallback; } catch { return fallback; }
@@ -177,21 +180,24 @@ function extraBadgeMetrics(valid,now,context) {
   const reportsReviewed=Array.isArray(context.seenMonths)?new Set(context.seenMonths.filter(key=>/^\d{4}-(0[1-9]|1[0-2])$/.test(key) && key<month)).size:0;
   return {goalsReached:Object.values(context.reachedGoals||{}).filter((value,index,array)=>array.indexOf(value)===index).length,repRecords,weightRecords,diverseRecords,comebacks,returnWeeks,targetWeeks,earlyStarts,nightStarts,weekendWeeks:weekends.size,bodyweightSessions,circuitTemplates:circuitTemplates.size,rirSets,createdPlans,reportsReviewed,quarters:longestRun(quarters)};
 }
-export function reconcileBadges(sessions, { storage = localStorage, now = new Date(), notify = false, sessionId = null } = {}) {
+export function reconcileBadges(sessions, { storage = localStorage, now = new Date(), notify = false, sessionId = null, nutritionEvent = null } = {}) {
   const previous = readJson(BADGES_KEY, {}, storage);
+  const nutritionState={nutritionTargets:{...(previous.nutritionTargets||{})},intakeReviewed:[...(previous.intakeReviewed||[])]};
+  if(nutritionEnabled(storage) && nutritionEvent?.dateKey && nutritionEvent.action==='day_completed') nutritionState.nutritionTargets[nutritionEvent.dateKey]=nutritionTargets(storage);
+  if(nutritionEnabled(storage) && nutritionEvent?.action==='intake_reviewed' && /^\d{4}-\d{2}-\d{2}$/.test(nutritionEvent.dateKey||'') && !nutritionState.intakeReviewed.includes(nutritionEvent.dateKey)) nutritionState.intakeReviewed.push(nutritionEvent.dateKey);
   const reachedGoals={...(previous.reachedGoals||{})};
   const valid=completedSessions(sessions).filter(session=>dayDate(session) && calendarDay(dayDate(session))<=calendarDay(now));
   for(const goal of readGoals(storage)) if(!reachedGoals[goal.id] && Number(goal.targetReps)>0 && goal.createdAt && goalProgress(goal,valid).reached) {
     reachedGoals[goal.id]=`${goal.exerciseId}::${goal.equipmentProfileId||'default'}::${Number(goal.targetWeight).toFixed(6)}::${goal.targetReps}`;
   }
-  const metrics = badgeMetrics(sessions, now, {reachedGoals,seenMonths:readJson('level_up_monthly_report_seen_v1',[],storage)});
+  const metrics = {...badgeMetrics(sessions, now, {reachedGoals,seenMonths:readJson('level_up_monthly_report_seen_v1',[],storage)}),...(nutritionEnabled(storage)?nutritionBadgeMetrics(storage,now,nutritionState):{})};
   const earned = previous.earned && typeof previous.earned === 'object' ? { ...previous.earned } : {};
   const newlyEarned = [];
-  for (const badge of BADGES) if (!earned[badge.id] && metrics[badge.metric] >= badge.threshold) {
+  for (const badge of availableBadges(storage)) if (!earned[badge.id] && metrics[badge.metric] >= badge.threshold) {
     earned[badge.id] = { earnedAt: now.toISOString(), sessionId: notify ? sessionId : null };
     if (notify) newlyEarned.push(badge.id);
   }
-  const next = { version: 2, earned, reachedGoals };
+  const next = { version: 3, earned, reachedGoals, ...nutritionState };
   if (JSON.stringify(previous) !== JSON.stringify(next)) storage.setItem(BADGES_KEY, JSON.stringify(next));
   return { earned, metrics, newlyEarned };
 }

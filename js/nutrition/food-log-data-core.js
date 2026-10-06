@@ -143,6 +143,7 @@ export function saveSavedMeal(meal) {
     };
     const next = [safeMeal, ...meals.filter(item => item?.id !== safeMeal.id)].slice(0, 100);
     localStorage.setItem(SAVED_MEALS_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", {detail:{source:"saved-meal"}}));
     return safeMeal;
 }
 
