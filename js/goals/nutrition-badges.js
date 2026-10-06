@@ -4,8 +4,8 @@ export const NUTRITION_BADGES = [
  ['first-plate','First Plate','Mark your first food-log day complete.',1,'foodDays'],
  ['nutrition-rhythm','Finding Your Rhythm','Complete food logs on five days within any seven calendar days.',5,'foodRhythm'],
  ['nutrition-regular','Nutrition Regular','Complete 30 food-log days in total. There is no deadline.',30,'foodDays'],
- ['protein-foundation','Protein Foundation','Meet your personal protein target on five completed days within seven days. Targets are saved when each day is completed; exceeding them gives no extra credit.',5,'proteinWeek'],
- ['protein-consistency','Protein Consistency','Meet your personal protein target on 20 completed days within 30 days. Missing a day does not erase progress.',20,'proteinMonth'],
+ ['protein-foundation','Protein Foundation','Reach at least your personal protein minimum on five logged days within seven days. Going over counts too. Saved daily targets are used when available; older logs use your current target.',5,'proteinWeek'],
+ ['protein-consistency','Protein Consistency','Reach at least your personal protein minimum on 20 logged days within 30 days. Going over counts too. Saved daily targets are used when available; older logs use your current target.',20,'proteinMonth'],
  ['plan-practice','Plan in Practice','Complete five days within 10% of your calorie target saved when logging was completed. Eating below the range does not count.',5,'calorieDays'],
  ['checkin-ready','Check-In Ready','Complete a nutrition check-in with enough data. Keeping your current calories counts too.',1,'nutritionReviews'],
  ['nutrition-awareness','Building Awareness','Review intake summaries for four different Monday–Sunday weeks.',4,'intakeWeeks'],
@@ -30,7 +30,7 @@ export function nutritionTargets(storage){
 }
 let cachedSignature=null,cachedMetrics=null;
 export function nutritionBadgeMetrics(storage,now,state={}){
- const signature=JSON.stringify([key(now),state.nutritionTargets,state.intakeReviewed,...['level_up_food_log_v1','level_up_food_log_complete_days_v1','level_up_saved_meals_v1','level_up_maintenance_check_in_v1','forge_weight_entries','level_up_nutrition_phases','level_up_goal_weight'].map(k=>storage.getItem(k))]);
+ const signature=JSON.stringify([key(now),state.nutritionTargets,state.intakeReviewed,...['level_up_food_log_v1','level_up_food_log_complete_days_v1','level_up_saved_meals_v1','level_up_maintenance_check_in_v1','forge_weight_entries','level_up_nutrition_phases','level_up_goal_weight','level_up_nutrition_macro','level_up_nutrition_profile','level_up_nutrition_plan'].map(k=>storage.getItem(k))]);
  if(signature===cachedSignature)return {...cachedMetrics};
  const result=calculateNutritionBadgeMetrics(storage,now,state);cachedSignature=signature;cachedMetrics=result;return {...result};
 }
@@ -38,8 +38,13 @@ function calculateNutritionBadgeMetrics(storage,now,state={}){
  const today=key(now),log=read(storage,'level_up_food_log_v1',{}),complete=read(storage,'level_up_food_log_complete_days_v1',{});
  const dates=Object.keys(complete).filter(d=>validDate(d)&&d<=today&&complete[d]===true&&Array.isArray(log[d])&&log[d].length);
  const snapshots=state.nutritionTargets||{},proteinDates=[],calorieDates=[];
+ const fallback=nutritionTargets(storage).protein;
+ for(const d of Object.keys(log).filter(d=>validDate(d)&&d<=today&&Array.isArray(log[d])&&log[d].length)){
+ const target=Number(snapshots[d]?.protein)||fallback;const total=log[d].reduce((n,e)=>n+Math.max(0,Number(e.nutrition?.protein)||0),0);
+ if(target>0&&total>=target)proteinDates.push(d);
+ }
  for(const d of dates){const entries=log[d],target=snapshots[d],protein=entries.reduce((n,e)=>n+Math.max(0,Number(e.nutrition?.protein)||0),0),calories=entries.reduce((n,e)=>n+Math.max(0,Number(e.nutrition?.calories)||0),0);
- if(target?.protein>0&&protein>=target.protein)proteinDates.push(d);
+ 
  if(target?.calories>0&&Math.abs(calories-target.calories)<=target.calories*.1)calorieDates.push(d);}
  const meals=read(storage,'level_up_saved_meals_v1',[]).filter(m=>m.items?.length);
  const distinct=new Set(meals.map(m=>JSON.stringify(m.items.map(i=>[i.foodId||i.name,i.amount,i.nutrition]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))))));

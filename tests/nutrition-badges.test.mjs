@@ -13,7 +13,7 @@ test('nutrition disabled hides all 12 badges, skips earning and preserves existi
 });
 test('completed days only, rolling windows, missing targets excluded and target snapshots prevent retroactive scoring',()=>{
  const s=storage({'level_up_food_log_v1':logs,'level_up_food_log_complete_days_v1':{...complete,'2026-10-06':true},'level_up_nutrition_plan':{currentCalories:2700},'level_up_nutrition_macro':{useManual:true,manualMacros:{protein:150}}});
- let m=nutritionBadgeMetrics(s,now);assert.equal(m.foodDays,5);assert.equal(m.foodRhythm,5);assert.equal(m.proteinWeek,0);
+ let m=nutritionBadgeMetrics(s,now);assert.equal(m.foodDays,5);assert.equal(m.foodRhythm,5);assert.equal(m.proteinWeek,5);
  for(const d of Object.keys(logs))reconcileBadges([],{storage:s,now,nutritionEvent:{action:'day_completed',dateKey:d}});
  let state=JSON.parse(s.getItem(BADGES_KEY));m=nutritionBadgeMetrics(s,now,state);assert.equal(m.proteinWeek,5);assert.equal(m.calorieDays,5);
  s.setItem('level_up_nutrition_macro',JSON.stringify({useManual:true,manualMacros:{protein:300}}));assert.equal(nutritionBadgeMetrics(s,now,state).proteinWeek,5);
@@ -36,4 +36,10 @@ test('weight goal uses trend and minimum history; maintenance needs four weeks a
 });
 test('new nutrition awards announce once and survive reopened logs',()=>{
  const s=storage({'level_up_food_log_v1':logs,'level_up_food_log_complete_days_v1':complete});const first=reconcileBadges([],{storage:s,now,notify:true});assert.ok(first.newlyEarned.includes('first-plate'));assert.equal(reconcileBadges([],{storage:s,now,notify:true}).newlyEarned.length,0);s.setItem('level_up_food_log_complete_days_v1','{}');assert.ok(reconcileBadges([],{storage:s,now}).earned['first-plate']);
+});
+
+test('protein minimum counts exact and above target on older logged days even without completion snapshots',()=>{
+ const s=storage({'level_up_nutrition_macro':{useManual:true,manualMacros:{protein:150}},'level_up_food_log_v1':{'2026-10-01':[{nutrition:{protein:150}}],'2026-10-02':[{nutrition:{protein:180}}],'2026-10-03':[{nutrition:{protein:149}}]}});
+ assert.equal(nutritionBadgeMetrics(s,now).proteinWeek,2);
+ s.setItem('level_up_nutrition_macro',JSON.stringify({useManual:true,manualMacros:{protein:190}}));assert.equal(nutritionBadgeMetrics(s,now).proteinWeek,0);
 });
