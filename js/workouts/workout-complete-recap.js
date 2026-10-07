@@ -1,3 +1,4 @@
+import { evaluateLiveWorkoutPrs } from "./workout-pr-badges.js";
 import { renderSessionBadges } from '../goals/lifting-goals-ui.js';
 import { resumeCompletedWorkout, getActiveWorkout } from "./workout-session.js?v=history-rir-edit-1";
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
@@ -66,7 +67,7 @@ function renderRecap(session, history) {
   const dayName = session.trainingDayName || session.planName || "Workout";
   const workoutNumber = history.filter(item => item?.completedAt).length + 1;
   const profileName = String(getNutritionProfile()?.displayName || "").trim();
-  const payload = { session, stats, wins, muscleStats, trained, topSets, dayName, workoutNumber, profileName, shareTheme: resolveAppearanceTheme(getAppearanceTheme()) };
+  const payload = { session, history, stats, wins, muscleStats, trained, topSets, dayName, workoutNumber, profileName, shareTheme: resolveAppearanceTheme(getAppearanceTheme()) };
   const overlay = document.createElement("section");
   overlay.className = "workout-complete-recap";
   overlay.dataset.workoutCompleteRecap = "true";
@@ -82,7 +83,7 @@ function renderRecap(session, history) {
       <div class="workout-complete-recap__carousel" data-recap-carousel>
         ${renderCelebrationSlide(payload)}${renderMuscleSlide(payload)}${renderTotalsSlide(payload)}${renderAchievementsSlide(payload)}${renderTopSetsSlide(payload)}${renderExercisesSlide(payload)}
       </div>
-      <div class="workout-complete-recap__dots" role="tablist" aria-label="Workout recap cards">${["Celebration","Muscles","Totals","Achievements","Top sets","Exercises"].map((label,index) => `<button type="button" class="${index === 0 ? "is-active" : ""}" data-recap-dot="${index}" aria-label="Show ${label} card" aria-selected="${index === 0}"></button>`).join("")}</div>
+      <div class="workout-complete-recap__dots" role="tablist" aria-label="Workout recap cards">${["Celebration","Muscles","Totals","Achievements","Top sets",...exerciseRecapPages(payload).map((_,index)=>`Exercises ${index+1}`)].map((label,index) => `<button type="button" class="${index === 0 ? "is-active" : ""}" data-recap-dot="${index}" aria-label="Show ${label} card" aria-selected="${index === 0}"></button>`).join("")}</div>
       <p class="workout-complete-recap__swipe-hint">Swipe for more workout highlights</p>
       <section class="workout-complete-recap__share-panel">
         <div><strong>SHARE YOUR WORKOUT</strong><small>Share the card on screen · Tag @leveluphypertrophy</small></div>
@@ -121,32 +122,69 @@ function renderAchievementsSlide(data) { const prs=data.wins.filter(win=>/PR/.te
 function renderTopSetsSlide(data) { const rows=data.topSets.length?data.topSets.slice(0,3).map((item,index)=>`<div><span>${index+1}</span><p><strong>${escapeHtml(item.name)}</strong><small>${formatUnitMass(item.weight,1,UNIT_KINDS.LIFTING_WEIGHT)} × ${item.reps} reps</small></p><b>${formatUnitMass(item.estimatedOneRepMax,0,UNIT_KINDS.LIFTING_WEIGHT)}<small>EST. 1RM</small></b></div>`).join(""):`<p class="workout-complete-recap__empty">Complete weighted sets to build your top-set recap.</p>`; return slideFrame("top-sets", "Strongest sets", "TOP PERFORMANCES", `<div class="workout-complete-recap__top-sets">${rows}</div><p class="workout-complete-recap__card-caption">Built from this workout's heaviest estimated one-rep maxes.</p>`, data.profileName); }
 
 
-export function completedExerciseRows(session) {
+
+export function completedExerciseRows(session, history = []) {
   return (session.exercises || []).flatMap((exercise, index) => {
     const sets = (exercise.sets || []).filter(set => set?.completed === true && !set.isWarmup && set.type !== "warmup");
     if (!sets.length) return [];
     const planned = session.planSnapshot?.days?.[session.trainingDayIndex || 0]?.exercises?.[index];
-    return [{ name: resolveSessionExerciseIdentity(exercise, planned).name, sets: sets.length }];
+    const identity = resolveSessionExerciseIdentity(exercise, planned);
+    const cleanHistory = history.filter(old => old.id !== session.id && new Date(old.completedAt || old.date).getTime() < new Date(session.completedAt || session.date).getTime()).map(old => ({...old, exercises:(old.exercises||[]).map(item=>({...item, sets:(item.sets||[]).filter(set=>set.completed===true&&!set.isWarmup&&set.type!=="warmup")}))}));
+    const pr = evaluateLiveWorkoutPrs({...session, exercises:[{...exercise, sets}]}, cleanHistory).details.get(exercise.exerciseId || exercise.id);
+    const previousSets = cleanHistory.flatMap(old=>(old.exercises||[]).filter(item=>(item.exerciseId||item.id)===(exercise.exerciseId||exercise.id)&&(item.equipmentProfileId||"default")===(exercise.equipmentProfileId||"default")).flatMap(item=>item.sets||[]));
+    const types = pr ? (pr.types || ["reps"]) : [];
+    const labels = types.map(type=>type==="weight"?"Weight PR":type==="estimated1rm"?"Est. 1RM PR":"Rep PR");
+    const details = [];
+    if (types.includes("weight")) details.push(`New best weight: ${formatUnitMass(Math.max(...sets.map(set=>Number(set.weight)||0)),1,UNIT_KINDS.LIFTING_WEIGHT)}`);
+    if (pr?.mode === "reps") details.push(`${pr.previousScore} → ${pr.score} reps`);
+    // A same-load rep improvement also explains an estimated-1RM record.
+    if (types.includes("estimated1rm")) {
+      const load = Number(pr.bestSet?.weight);
+      const previous = previousSets.filter(set=>Math.abs(Number(set.weight)-load)<0.01);
+      const best = previous.length ? Math.max(...previous.map(set=>Number(set.reps)||0)) : null;
+      if (best !== null && Number(pr.bestSet.reps)>best) {labels[labels.indexOf("Est. 1RM PR")]="Rep PR"; details.push(`At ${formatUnitMass(load,1,UNIT_KINDS.LIFTING_WEIGHT)}: ${best} → ${pr.bestSet.reps} reps`);}
+      else details.push(`Estimated 1RM: ${formatUnitMass(pr.previousScore,1,UNIT_KINDS.LIFTING_WEIGHT)} → ${formatUnitMass(pr.score,1,UNIT_KINDS.LIFTING_WEIGHT)}`);
+    }
+    const groups=[];
+    sets.forEach(set=>{
+      const weight=Number(set.weight)||0;
+      const reps=Number(set.reps)||0;
+      const key=weight+"|"+(reps>0?"reps":"other");
+      let group=groups.at(-1);
+      if (!group || group.key!==key) {group={key,weight,reps:[],other:[]};groups.push(group);}
+      if(reps>0)group.reps.push(reps);
+      else group.other.push(Number(set.durationSeconds)>0?`${set.durationSeconds}s`:"Completed");
+    });
+    const each=/dumbbell/i.test(identity.equipment||"")?" each":"";
+    const lines=groups.map(group=>group.reps.length?`${group.weight>0?formatUnitMass(group.weight,1,UNIT_KINDS.LIFTING_WEIGHT)+each:"Bodyweight"} × ${group.reps.join(", ")} reps`:group.other.join(" · "));
+    return [{ name: identity.name, sets:sets.length, lines, prLabels:[...new Set(labels)], prDetails:details }];
   });
+}
+function exerciseRecapPages(data) {
+  const rows=completedExerciseRows(data.session,data.history||[]);
+  return rows.length?Array.from({length:Math.ceil(rows.length/3)},(_,index)=>rows.slice(index*3,index*3+3)):[[]];
 }
 function renderExercisesSlide(data) {
-  const rows = completedExerciseRows(data.session);
-  const date = new Date(data.session.completedAt || data.session.date);
-  const dateText = Number.isFinite(date.getTime()) ? date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }) : "";
-  return slideFrame("exercises", "Exercises", "COMPLETED THIS WORKOUT",
-    `<div class="workout-complete-recap__exercise-list">${rows.length ? rows.map(row => `<p><b>${row.sets}×</b><span>${escapeHtml(row.name)}</span></p>`).join("") : '<p class="workout-complete-recap__empty">No completed working sets recorded.</p>'}</div><p class="workout-complete-recap__card-caption">${escapeHtml(data.dayName)}${dateText ? ` · ${escapeHtml(dateText)}` : ""}</p>`, data.profileName);
+  const pages=exerciseRecapPages(data);
+  const date=new Date(data.session.completedAt||data.session.date);
+  const dateText=Number.isFinite(date.getTime())?date.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"}):"";
+  return pages.map((rows,index)=>slideFrame("exercises","Exercises",pages.length>1?`COMPLETED · ${index+1}/${pages.length}`:"COMPLETED THIS WORKOUT",
+    `<div class="workout-complete-recap__exercise-list">${rows.length?rows.map(row=>`<section class="recap-exercise-detail"><header><strong>${escapeHtml(row.name)}</strong><small>${row.sets} ${row.sets===1?"set":"sets"}</small></header>${row.prLabels.length?`<div class="recap-exercise-pr">${row.prLabels.map(label=>`<span>🏆 ${escapeHtml(label)}</span>`).join("")}</div>`:""}<div class="recap-exercise-loads">${row.lines.map(line=>`<div>${escapeHtml(line)}</div>`).join("")}</div>${row.prDetails.map(detail=>`<small class="recap-exercise-improvement">${escapeHtml(detail)}</small>`).join("")}</section>`).join(""):'<p class="workout-complete-recap__empty">No completed working sets recorded.</p>'}</div><p class="workout-complete-recap__card-caption">${escapeHtml(data.dayName)}${dateText?` · ${escapeHtml(dateText)}`:""}</p>`,data.profileName)).join("");
 }
-function drawExercisesShareCard(ctx, data, p) {
-  const rows = completedExerciseRows(data.session);
-  rows.forEach((row, index) => {
-    const y = 310 + index * 75;
-    drawText(ctx, `${row.sets}×`, 140, y, 34, 900, p.text, "left");
-    drawFittedText(ctx, row.name, 215, y, 32, 650, p.text, "left", 720);
+function drawExercisesShareCard(ctx,data,p,pageIndex=0) {
+  const pages=exerciseRecapPages(data),rows=pages[pageIndex]||[];let y=300;
+  rows.forEach(row=>{
+    drawFittedText(ctx,row.name,140,y,32,850,p.text,"left",650);
+    drawText(ctx,`${row.sets} sets`,930,y,24,650,p.muted,"right");y+=48;
+    if(row.prLabels.length){drawText(ctx,`🏆 ${row.prLabels.join(" · ")}`,140,y,24,850,p.accent,"left");y+=42;}
+    row.lines.forEach(line=>{drawFittedText(ctx,line,140,y,28,650,p.muted,"left",790);y+=40;});
+    row.prDetails.forEach(detail=>{drawFittedText(ctx,detail,140,y,24,700,p.accent,"left",790);y+=36;});y+=30;
   });
-  if (!rows.length) drawText(ctx, "No completed working sets recorded.", 540, 440, 28, 650, p.muted);
-  drawFittedText(ctx, data.dayName, 540, ctx.canvas.height - 350, 30, 750, p.text, "center", 790);
-  const date = new Date(data.session.completedAt || data.session.date);
-  if (Number.isFinite(date.getTime())) drawText(ctx, date.toLocaleDateString(undefined, {weekday:"short",day:"numeric",month:"short"}), 540, ctx.canvas.height - 300, 26, 650, p.muted);
+  if(!rows.length)drawText(ctx,"No completed working sets recorded.",540,440,28,650,p.muted);
+  drawFittedText(ctx,data.dayName,540,ctx.canvas.height-350,30,750,p.text,"center",790);
+  const date=new Date(data.session.completedAt||data.session.date);
+  if(Number.isFinite(date.getTime()))drawText(ctx,date.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"}),540,ctx.canvas.height-300,26,650,p.muted);
+  if(pages.length>1)drawText(ctx,`Exercises · ${pageIndex+1} / ${pages.length}`,540,ctx.canvas.height-250,20,650,p.muted);
 }
 
 function renderAnatomy(side, muscleStats) { const {asset,regions,viewBox,imageX}=getAnatomyConfig(side), roles=new Map(muscleStats.map(item=>[normalizeMuscle(item.muscle),item.primarySets>0?"is-primary":"is-secondary"])); const paths=Object.entries(regions).flatMap(([muscle,ids])=>ids.map(id=>{const href=`${asset}#${id}`,role=roles.get(normalizeMuscle(muscle))||"";return `<use href="${href}" xlink:href="${href}" class="workout-complete-recap__anatomy-muscle ${role}"/>`;})).join(""); return `<figure><svg viewBox="${viewBox}" role="img" aria-label="${side} view of primary and secondary muscles trained" xmlns:xlink="http://www.w3.org/1999/xlink"><image href="${asset}" xlink:href="${asset}" x="${imageX}" y="0" width="960" height="1920" preserveAspectRatio="xMidYMid meet"/>${paths}</svg><figcaption>${side}</figcaption></figure>`; }
@@ -162,7 +200,7 @@ function initializeShareActions(overlay,payload) { overlay.querySelectorAll("[da
 async function saveImageToPhotos(blob) { const plugin=window.Capacitor?.Plugins?.LevelUpInstagramShare;if(!window.Capacitor?.isNativePlatform?.()||!plugin?.saveImage)return false;const imageData=await blobToBase64(blob);const result=await plugin.saveImage({imageData});return result?.saved===true; }
 function blobToBase64(blob) { return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result||"").split(",")[1]||"");reader.onerror=()=>reject(reader.error||new Error("Image conversion failed"));reader.readAsDataURL(blob);}); }
 
-async function createShareImage(data,index) { const canvas=document.createElement("canvas");canvas.width=1080;canvas.height=index===5?Math.max(1350,700+completedExerciseRows(data.session).length*75):1350;const ctx=canvas.getContext("2d"),palette=getSharePalette(data.shareTheme),{accent,bg,card,text,muted,line}=palette;ctx.fillStyle=bg;ctx.fillRect(0,0,1080,canvas.height);const glow=ctx.createRadialGradient(540,430,20,540,430,620);glow.addColorStop(0,hexWithAlpha(accent,"32"));glow.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=glow;ctx.fillRect(0,0,1080,1100);roundRect(ctx,70,70,940,canvas.height-190,58);ctx.fillStyle=card;ctx.fill();ctx.strokeStyle=hexWithAlpha(accent,"88");ctx.lineWidth=3;ctx.stroke();const titles=["","TODAY'S WORKOUT","THE WORK ADDS UP","LEVEL UP!","TOP PERFORMANCES","COMPLETED EXERCISES"],brows=[`WORKOUT #${data.workoutNumber}`,"MUSCLES TRAINED","TRAINING TOTALS","SESSION WINS","STRONGEST SETS","YOUR WORKOUT"];drawText(ctx,brows[index]||brows[0],540,150,24,800,accent);if(titles[index])drawText(ctx,titles[index],540,218,53,950,text);if(index===1)await drawMuscleShareCard(ctx,data,palette);else if(index===2)drawTotalsShareCard(ctx,data,palette);else if(index===3)drawAchievementShareCard(ctx,data,palette);else if(index===4)drawTopSetsShareCard(ctx,data,palette);else if(index===5)drawExercisesShareCard(ctx,data,palette);else drawCelebrationShareCard(ctx,data,palette);ctx.save();ctx.translate(0,canvas.height-1350);await drawBrandFooter(ctx,data,palette);ctx.restore();drawText(ctx,"leveluphypertrophy.com",540,canvas.height-50,23,700,accent);return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("Image export failed")),"image/png",.95)); }
+async function createShareImage(data,index) { const canvas=document.createElement("canvas");canvas.width=1080;canvas.height=index>=5?Math.max(1350,750+(exerciseRecapPages(data)[index-5]||[]).reduce((height,row)=>height+78+row.lines.length*40+row.prDetails.length*36+(row.prLabels.length?42:0),0)):1350;const ctx=canvas.getContext("2d"),palette=getSharePalette(data.shareTheme),{accent,bg,card,text,muted,line}=palette;ctx.fillStyle=bg;ctx.fillRect(0,0,1080,canvas.height);const glow=ctx.createRadialGradient(540,430,20,540,430,620);glow.addColorStop(0,hexWithAlpha(accent,"32"));glow.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=glow;ctx.fillRect(0,0,1080,1100);roundRect(ctx,70,70,940,canvas.height-190,58);ctx.fillStyle=card;ctx.fill();ctx.strokeStyle=hexWithAlpha(accent,"88");ctx.lineWidth=3;ctx.stroke();const titles=["","TODAY'S WORKOUT","THE WORK ADDS UP","LEVEL UP!","TOP PERFORMANCES","COMPLETED EXERCISES"],brows=[`WORKOUT #${data.workoutNumber}`,"MUSCLES TRAINED","TRAINING TOTALS","SESSION WINS","STRONGEST SETS","YOUR WORKOUT"];drawText(ctx,brows[index]||(index>=5?"YOUR WORKOUT":brows[0]),540,150,24,800,accent);if(titles[index]||index>=5)drawText(ctx,titles[index]||"COMPLETED EXERCISES",540,218,53,950,text);if(index===1)await drawMuscleShareCard(ctx,data,palette);else if(index===2)drawTotalsShareCard(ctx,data,palette);else if(index===3)drawAchievementShareCard(ctx,data,palette);else if(index===4)drawTopSetsShareCard(ctx,data,palette);else if(index>=5)drawExercisesShareCard(ctx,data,palette,index-5);else drawCelebrationShareCard(ctx,data,palette);ctx.save();ctx.translate(0,canvas.height-1350);await drawBrandFooter(ctx,data,palette);ctx.restore();drawText(ctx,"leveluphypertrophy.com",540,canvas.height-50,23,700,accent);return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("Image export failed")),"image/png",.95)); }
 function drawCelebrationShareCard(ctx,data,p){drawText(ctx,"YOU ARE",540,260,35,900,p.text);drawText(ctx,"CRUSHING IT",540,375,94,950,p.accent);drawText(ctx,"TODAY!",540,440,42,900,p.text);drawStatPill(ctx,150,650,240,170,String(data.stats.workingSets),"WORKING SETS",p);drawStatPill(ctx,420,650,240,170,String(data.stats.totalReps),"TOTAL REPS",p);drawStatPill(ctx,690,650,240,170,formatDurationShort(data.session.durationMs),"DURATION",p);drawText(ctx,data.dayName,540,940,42,850,p.text);drawText(ctx,`${data.wins.length} ${data.wins.length===1?"WIN":"WINS"} THIS WORKOUT`,540,995,24,800,p.accent);}
 function drawTotalsShareCard(ctx,data,p){drawText(ctx,"YOU LIFTED A TOTAL OF",540,370,28,800,p.muted);drawText(ctx,formatUnitMass(data.stats.volume,0,UNIT_KINDS.LIFTING_WEIGHT),540,505,90,950,p.text);drawText(ctx,volumeComparison(data.stats.volume),540,570,28,700,p.accent);drawStatPill(ctx,155,720,350,190,String(data.stats.workingSets),"WORKING SETS",p);drawStatPill(ctx,575,720,350,190,String(data.stats.totalReps),"TOTAL REPS",p);drawText(ctx,`${data.stats.exerciseCount} exercises · ${formatDurationShort(data.session.durationMs)}`,540,1010,30,750,p.text);}
 function drawAchievementShareCard(ctx,data,p){const prs=data.wins.filter(w=>/PR/.test(w.type)),rows=prs.length?prs:data.wins;drawText(ctx,"🏆",540,300,76,900,p.text);drawText(ctx,String(prs.length),540,410,104,950,p.accent);drawText(ctx,"PERSONAL RECORDS",540,475,27,850,p.text);rows.forEach((win,i)=>{const y=540+i*96;ctx.fillStyle=softCardColor(p);roundRect(ctx,135,y,810,78,19);ctx.fill();drawText(ctx,win.icon,175,y+39,27,800,p.text);drawText(ctx,win.type,215,y+25,18,850,p.accent,"left");drawFittedText(ctx,win.title,215,y+53,22,750,p.text,"left",430);drawFittedText(ctx,win.value,905,y+39,23,900,p.text,"right",210);});}
