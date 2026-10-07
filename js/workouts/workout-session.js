@@ -1,3 +1,4 @@
+import { getBadgeWeeklyTarget } from '../goals/lifting-goals-engine.js';
 import { showCircuitCompletion } from './circuit-completion.js';
 import { ensureCircuitStyles } from './circuit-styles.js';
 import { CIRCUIT_PROGRESS_NOTE, isCircuit, readCircuitSessions, sessionStorageKey, tagCircuitSession, circuitPreviousPerformance } from './circuit-history.js';
@@ -510,6 +511,8 @@ function createActiveSession(plan, logger) {
         plan.days[dayIndex];
 
     const session = {
+        badgeWeeklyTarget: getBadgeWeeklyTarget(),
+        badgeLocalStartMinutes: new Date().getHours()*60+new Date().getMinutes(),
         id:
             `active-${Date.now()}`,
         status:
@@ -1311,6 +1314,8 @@ function saveCompletedSession({
             "Workout",
         startedAt:
             session.resumedCompletedSnapshot?.startedAt || session.startedAt || null,
+        badgeWeeklyTarget: session.resumedCompletedSnapshot?.badgeWeeklyTarget ?? session.badgeWeeklyTarget ?? null,
+        badgeLocalStartMinutes: session.resumedCompletedSnapshot?.badgeLocalStartMinutes ?? session.badgeLocalStartMinutes ?? null,
         completedAt:
             editingSessionId
                 ? session.completedAt || new Date().toISOString()

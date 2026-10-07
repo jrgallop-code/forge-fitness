@@ -218,7 +218,10 @@ function bindHub(screen, progressPage, preferred) {
 function renderReportView(screen, progressPage, monthKey) {
     const report = buildMonthlyReport(monthKey);
     markSeen(monthKey);
-    if (!report.isCurrent) screen.dataset.reviewedMonth = monthKey;
+    if (!report.isCurrent) {
+        screen.dataset.reviewedMonth = monthKey;
+        window.dispatchEvent(new CustomEvent('levelup:monthly-report-reviewed', {detail:{monthKey}}));
+    }
     screen.innerHTML = renderReport(report);
     bindReport(screen, progressPage, report);
     window.scrollTo({ top: 0, behavior: "auto" });

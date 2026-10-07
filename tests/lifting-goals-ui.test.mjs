@@ -13,6 +13,7 @@ function harness() {
    set innerHTML(value){this.html=value;this.writes++;}get innerHTML(){return this.html||'';}
    setAttribute(k,v){this.attributes[k]=v;}focus(){}remove(){this.isConnected=false;}addEventListener(k,v){this.listeners[k]=v;}
    querySelector(){return new Element();}
+   querySelectorAll(){return [];}
  }
  const elements=new Map(),welcome=new Element(),anchor=new Element(),content=new Element();
  content.querySelector=s=>s.includes('welcome')?welcome:s.includes('dashboard-muscle-snapshot')?anchor:new Element();
@@ -53,4 +54,25 @@ test('completion earns badges, renders notification only once, and resumes canno
  assert.equal(vm.runInContext("renderSessionBadges('session-1')",h.context),'');
  h.windowListeners['levelup:workout-completed']({detail:{sessionId:'session-1'}});
  assert.equal(vm.runInContext("renderSessionBadges('session-1')",h.context),'');
+});
+test('collection filters expose new requirements and progress uses the correct metric label',()=>{
+ const h=harness();h.flush();
+ h.documentListeners.click({target:{closest:()=>({dataset:{badgeFilter:'Goals'},hasAttribute:()=>false})}});
+ assert.match(h.elements.get('modal').innerHTML,/First Summit/);assert.doesNotMatch(h.elements.get('modal').innerHTML,/data-badge="first"/);
+ h.documentListeners.click({target:{closest:()=>({dataset:{badge:'goal-collector'},hasAttribute:()=>false})}});
+ assert.match(h.elements.get('modal').innerHTML,/distinct goals reached/);assert.doesNotMatch(h.elements.get('modal').innerHTML,/NaN/);
+});
+test('reviewing a completed report awards First Chapter and announces it only once',()=>{
+ const h=harness();h.flush();h.storage.setItem('level_up_monthly_report_seen_v1',JSON.stringify(['2026-09']));
+ h.windowListeners['levelup:monthly-report-reviewed']();
+ assert.match(h.elements.get('modal').innerHTML,/Badge earned: First Chapter/);
+ const state=JSON.parse(h.storage.getItem(engine.BADGES_KEY));assert.ok(state.earned['first-chapter']);
+ assert.deepEqual(engine.reconcileBadges([],{storage:h.storage,notify:true}).newlyEarned,[]);
+});
+
+test('nutrition category hides immediately with feature disabled while earned badges persist',()=>{
+ const h=harness();h.flush();h.storage.setItem(engine.BADGES_KEY,JSON.stringify({earned:{'first-plate':{earnedAt:'2026-10-01'}}}));
+ vm.runInContext('openBadgeCollection()',h.context);assert.match(h.elements.get('modal').innerHTML,/First Plate/);
+ h.storage.setItem('level_up_training_preferences',JSON.stringify({nutritionEnabled:false}));
+ vm.runInContext('openBadgeCollection()',h.context);assert.doesNotMatch(h.elements.get('modal').innerHTML,/First Plate|data-badge-filter="Nutrition"/);assert.ok(JSON.parse(h.storage.getItem(engine.BADGES_KEY)).earned['first-plate']);
 });

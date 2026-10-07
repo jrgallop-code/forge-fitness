@@ -116,14 +116,14 @@ function openWeeklyReviewModal(event = {}) {
     modal.dataset.weeklyCalorieModal = "1";
     modal.innerHTML = `
         <section class="weekly-calorie-modal-card" role="dialog" aria-modal="true" aria-labelledby="weekly-calorie-modal-title">
-            <header><div><span>${preview ? "TEST PREVIEW · " : ""}WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">${recommendation.guardedHold ? "Keep calories unchanged this week" : "Your recommended target"}</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
+            <header><div><span>${preview ? "TEST PREVIEW · " : ""}WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">${recommendation.guardedHold ? "Hold your recent average this week" : "Your recommended target"}</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
             <p>${preview ? "This demonstrates what the review would show using your current data. Nothing in this preview will be saved." : "Your logged week, full calculation and recommended change now."}</p>
-            ${recommendation.guardedHold ? `<p class="weekly-calorie-modal-cap">${recentWeightGuardCopy(recommendation.recentTrendGuard, recommendation.previousTarget)}</p>` : ""}
+            ${recommendation.guardedHold ? `<p class="weekly-calorie-modal-cap">${recentWeightGuardCopy(recommendation.recentTrendGuard, recommendation.targetCalories)}</p>` : ""}
             ${!preview && !hasTodaysWeighIn() ? `<small class="weekly-calorie-modal-cap">For the best estimate, weigh in today before reviewing. This is optional—you can still use the recommendation below.</small>` : ""}
             <div class="weekly-calorie-modal-breakdown">
                 <div><span>Current saved target</span><strong>${recommendation.previousTarget} kcal/day</strong></div>
                 <div><span>Logged weekly average${recommendation.weeklyAverageLoggedDays ? ` (${recommendation.weeklyAverageLoggedDays}/${recommendation.weeklyAverageTotalDays || 7} days)` : ""}</span><strong>${Number.isFinite(recommendation.weeklyAverageCalories) ? `${recommendation.weeklyAverageCalories} kcal/day` : "Not enough logged days"}</strong></div>
-                <div><span>Current weight trend</span><strong>${formatRate(recommendation.actualRate)}</strong></div>
+                <div><span>${getVisibleTrend(metrics)?.windowDays || 21}-day weight trend</span><strong>${formatRate(recommendation.actualRate)}</strong></div>
                 ${Number.isFinite(recommendation.recentTrendGuard?.recentRate) ? `<div><span>Recent seven-day trend</span><strong>${formatRate(recommendation.recentTrendGuard.recentRate)}</strong></div>` : ""}
                 <div><span>Goal weight trend</span><strong>${formatRate(recommendation.targetRate)}</strong></div>
                 ${!recommendation.guardedHold ? `<div><span>${recommendation.goalDailyAdjustment > 0 ? "Goal-pacing surplus" : recommendation.goalDailyAdjustment < 0 ? "Goal-pacing deficit" : "Goal-pacing adjustment"}</span><strong>${formatSignedCalories(recommendation.goalDailyAdjustment)} cal/day</strong></div>
@@ -134,7 +134,7 @@ function openWeeklyReviewModal(event = {}) {
             ${recommendation.isStagedTarget ? `<small class="weekly-calorie-modal-cap">This is a staged target. Level Up limits each weekly change and will reassess your progress next week.</small>` : ""}
             ${recommendation.capped ? `<small class="weekly-calorie-modal-cap">Limited to ${formatSignedCalories(recommendation.behavioralChange ?? recommendation.targetChange)} calories from ${Number.isFinite(recommendation.actualIntakeCalories) ? `your ${recommendation.actualIntakeCalories} weekly average` : "your current target"}. The saved target changes by ${formatSignedCalories(recommendation.targetChange)}. Level Up will reassess next week.</small>` : ""}
             <div class="weekly-calorie-modal-actions">
-                <button id="weekly-modal-review-apply" class="primary-btn" type="button">${preview ? `Test update to ${recommendation.targetCalories}` : recommendation.guardedHold ? "Keep target and reassess next week" : `Update to ${recommendation.targetCalories}`}</button>
+                <button id="weekly-modal-review-apply" class="primary-btn" type="button">${preview ? `Test update to ${recommendation.targetCalories}` : recommendation.guardedHold ? `Use ${recommendation.targetCalories} and reassess next week` : `Update to ${recommendation.targetCalories}`}</button>
                 <button id="weekly-modal-review-keep" class="secondary-btn" type="button">${preview ? "Close preview" : `Keep ${recommendation.previousTarget}`}</button>
             </div>
             <small data-weekly-modal-status aria-live="polite"></small>
@@ -275,7 +275,8 @@ function getAdaptiveCalorieBaseline(metrics, currentCalories) {
     const intake = getLoggedCalorieWindow({
         startDate,
         endDate,
-        minLoggedDays: 4
+        minLoggedDays: 4,
+        requireCompleted: true
     });
     const useLoggedAverage = intake.sufficient && Number.isFinite(Number(intake.averageCalories));
     return {
@@ -566,9 +567,18 @@ function applyFullAdjustment(event, context = {}) {
     if (recommendation.guardedHold) {
         event.preventDefault();
         event.stopImmediatePropagation();
+        if (recommendation.targetCalories !== currentCalories) {
+            const saved = saveNutritionPhase({ goalId: phase.goalId, maintenanceCalories: phase.maintenanceCalories, targetCalories: recommendation.targetCalories });
+            if (Number(saved?.phase?.currentCalories) !== recommendation.targetCalories) {
+                setText(document.querySelector("[data-weekly-modal-status]"), "The target did not save. Please try again.");
+                return;
+            }
+            setCurrentCalories(recommendation.targetCalories, "weekly review rounded logged average hold");
+            window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
+        }
         markCheckHandled(phase, checkDay, "recent-trend-held");
         markMaintenanceCheckInReviewed({ proposedMaintenance: phase.maintenanceCalories }, "recent-trend-held");
-        startAdjustmentHold({ phase, calories: currentCalories, maintenanceCalories: phase.maintenanceCalories, source: "recent-weight-guard" });
+        startAdjustmentHold({ phase, calories: recommendation.targetCalories, maintenanceCalories: phase.maintenanceCalories, source: "recent-weight-guard" });
         closeWeeklyReviewModal();
         scheduleRefresh();
         return;

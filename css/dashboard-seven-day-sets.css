@@ -1,8 +1,8 @@
 .dashboard.dashboard-command-insights .metric-card.dashboard-seven-day-sets-card {
     min-height: 148px;
-    height: 148px;
-    max-height: 148px;
-    align-self: start;
+    height: auto;
+    max-height: none;
+    align-self: stretch;
     box-sizing: border-box;
     padding: 14px 15px 13px;
 }
@@ -102,4 +102,27 @@
     .dashboard-seven-day-sets-value strong {
         font-size: 1.08rem;
     }
+}
+
+/* Both cards share the grid row height regardless of nutrition visibility. */
+.dashboard.dashboard-command-insights > .metric-card.dashboard-seven-day-sets-card,
+.dashboard.dashboard-command-insights > .metric-card.dashboard-weight-trend-card {
+    align-self: stretch;
+    height: auto;
+    min-height: 174px;
+    max-height: none;
+    margin: 0;
+    box-sizing: border-box;
+}
+.dashboard.dashboard-command-insights .dashboard-seven-day-sets-content {
+    flex: 1;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+}
+.dashboard.dashboard-command-insights .dashboard-weight-trend-button {
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
 }

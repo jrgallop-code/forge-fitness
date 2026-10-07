@@ -82,3 +82,12 @@ test('kg display rounding does not count as changing the prescribed weight', () 
   const f = fixture(); assert.equal(f.context.hasLiveLoadDeviation(100.09, 100), false);
   assert.equal(f.context.hasLiveLoadDeviation(90, 100), true);
 });
+
+test('mixed working weights move a topped-out lighter set to the heavier load at minimum reps', () => {
+ const f=fixture();
+ const targets=f.context.getMixedWeightProgression([{weight:15,reps:20},{weight:20,reps:12}],{lower:12,upper:20});
+ assert.deepEqual(JSON.parse(JSON.stringify(targets)),[{weight:20,reps:12,increased:true},{weight:20,reps:13,increased:false}]);
+ assert.equal(f.context.getMixedWeightProgression([{weight:20,reps:12},{weight:20,reps:14}],{lower:12,upper:20}),null);
+ assert.equal(f.context.getMixedWeightProgression([{weight:15,reps:19},{weight:20,reps:12}],{lower:12,upper:20}),null);
+ assert.equal(f.context.getMixedWeightProgression([{weight:15,reps:20},{weight:20,reps:8}],{lower:12,upper:20}),null);
+});
