@@ -377,3 +377,5 @@ Protein badges count minimum met or exceeded and prior logs 2026-10-05
 Release: rounded logged-average calorie holds, explicit trend windows, mixed-weight progression exception, stable badge filters, exercise names, accessible goal actions and equal dashboard cards — October 7, 2026.
 
 Release version 1.0.3 for October 7 fixes; version 1.0.2 is already submitted for review.
+
+Release: enforce matching Working Sets and Weight Trend card geometry with nutrition disabled — October 7, 2026.
