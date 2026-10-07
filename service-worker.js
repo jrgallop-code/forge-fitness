@@ -1,4 +1,4 @@
-const CACHE_VERSION = "2026-10-07-ios-parity-no-photos-1";
+const CACHE_VERSION = "2026-10-07-completed-exercise-recap-1";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
