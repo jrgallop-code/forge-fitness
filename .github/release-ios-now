@@ -381,3 +381,5 @@ Release version 1.0.3 for October 7 fixes; version 1.0.2 is already submitted fo
 Release: enforce matching Working Sets and Weight Trend card geometry with nutrition disabled — October 7, 2026.
 
 Release: correct script-injected height and top margin after nutrition removes Weight Trend wrapper — October 7, 2026.
+
+Release: completed-exercises recap and share card using only confirmed working sets — October 7, 2026.
