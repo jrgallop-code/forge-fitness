@@ -383,3 +383,5 @@ Release: enforce matching Working Sets and Weight Trend card geometry with nutri
 Release: correct script-injected height and top margin after nutrition removes Weight Trend wrapper — October 7, 2026.
 
 Release: completed-exercises recap and share card using only confirmed working sets — October 7, 2026.
+
+Release: themed completed-exercise set details, PR annotations and paginated share cards — October 7, 2026.

@@ -48,3 +48,13 @@
 @media(max-width:390px){.workout-complete-recap__achievement-list>div{grid-template-columns:34px minmax(0,1fr) auto;gap:7px;padding:11px}.workout-complete-recap__achievement-list>div>b{max-width:92px;font-size:11px}.workout-complete-recap__brand-lockup{gap:4px}.workout-complete-recap__brand-lockup img{width:35px;height:32px}.workout-complete-recap__brand-lockup b{font-size:13px}.workout-complete-recap__profile-name{max-width:45%;font-size:10px}}
 
 .workout-complete-recap__exercise-list{flex:1;overflow-y:auto;padding:20px 0;min-height:0}.workout-complete-recap__exercise-list p{display:flex;gap:12px;margin:0 0 12px;align-items:baseline;font-size:1.05rem;line-height:1.45}.workout-complete-recap__exercise-list b{flex:0 0 auto;color:var(--recap-share-text,var(--text))}.workout-complete-recap__exercise-list span{overflow-wrap:anywhere;color:var(--recap-share-muted,var(--muted))}
+
+.recap-exercise-detail{padding:12px 0;border-bottom:1px solid var(--share-line);text-align:left}
+.recap-exercise-detail:last-child{border-bottom:0}
+.recap-exercise-detail header{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.recap-exercise-detail header strong{font-size:1.05rem;line-height:1.3;color:var(--share-text);overflow-wrap:anywhere}
+.recap-exercise-detail header small{white-space:nowrap;color:var(--share-muted);font-size:.72rem}
+.recap-exercise-loads{margin-top:8px;font-size:.87rem;line-height:1.6;color:var(--share-muted)}
+.recap-exercise-pr{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.recap-exercise-pr span{display:inline-flex;align-items:center;border:1px solid var(--share-accent);border-radius:999px;padding:3px 8px;font-size:.65rem;font-weight:800;color:var(--share-accent);background:color-mix(in srgb,var(--share-accent) 9%,transparent)}
+.recap-exercise-improvement{display:block;color:var(--share-accent);font-size:.74rem;line-height:1.5;margin-top:5px}
