@@ -1,8 +1,21 @@
-const PLAN_STORAGE_KEY = "forge_workout_plans";
-
-let editingPlanId = null;
 let pairingState = [];
-let preSavePlanIds = new Set();
+const boundRoots = new WeakSet();
+
+export function beginSupersetEditing(plan) {
+    pairingState = (plan?.days || []).map(day =>
+        (day.exercises || []).map(exercise => exercise.supersetGroup || null));
+}
+
+export function applySupersetsToPlan(plan) {
+    (plan.days || []).forEach((day, dayIndex) => {
+        ensureDayState(dayIndex, day.exercises.length);
+        day.exercises.forEach((exercise, exerciseIndex) => {
+            const group = pairingState[dayIndex][exerciseIndex];
+            if (group) exercise.supersetGroup = group;
+            else delete exercise.supersetGroup;
+        });
+    });
+}
 
 export function initializeManualSupersetBuilder(root = document) {
     const builder = root.querySelector?.("#plan-builder");
@@ -13,19 +26,11 @@ export function initializeManualSupersetBuilder(root = document) {
 
     injectStyles();
 
-    if (root.dataset?.manualSupersetDelegationBound !== "true") {
-        root.dataset.manualSupersetDelegationBound = "true";
+    if (!boundRoots.has(root)) {
+        boundRoots.add(root);
         root.addEventListener("click", handleBuilderClick);
         root.addEventListener("change", handleBuilderChange);
     }
-
-    saveButton.addEventListener("click", () => {
-        preSavePlanIds = new Set(getPlans().map(plan => plan.id));
-    }, true);
-
-    saveButton.addEventListener("click", () => {
-        persistSupersetsAfterCoreSave();
-    });
 
     decorateBuilder(daysHost);
 }
@@ -33,29 +38,6 @@ export function initializeManualSupersetBuilder(root = document) {
 function handleBuilderClick(event) {
     const target = event.target.closest?.("button");
     if (!target) return;
-
-    if (target.id === "new-plan-btn") {
-        editingPlanId = null;
-        pairingState = [];
-        queueDecorate();
-        return;
-    }
-
-    if (target.classList.contains("secondary-btn") && target.textContent.trim() === "Edit Plan") {
-        const card = target.closest("[data-custom-plan-id]");
-        editingPlanId = card?.dataset.customPlanId || null;
-        loadPairingState(editingPlanId);
-        queueDecorate();
-        return;
-    }
-
-    if (target.classList.contains("remove-exercise-btn")) {
-        const dayIndex = Number(target.dataset.dayIndex);
-        const exerciseIndex = Number(target.dataset.exerciseIndex);
-        removePairingSlot(dayIndex, exerciseIndex);
-        queueDecorate();
-        return;
-    }
 
     if (target.matches("[data-manual-superset-pair]")) {
         const dayIndex = Number(target.dataset.dayIndex);
@@ -84,7 +66,8 @@ function handleBuilderChange(event) {
     }
 }
 
-function decorateBuilder(daysHost) {
+export function decorateBuilder(daysHost) {
+    injectStyles();
     const dayCards = [...daysHost.querySelectorAll(".workout-day-card")];
 
     dayCards.forEach((card, dayIndex) => {
@@ -153,7 +136,7 @@ function clearGroupAt(day, exerciseIndex) {
     }
 }
 
-function removePairingSlot(dayIndex, exerciseIndex) {
+export function removePairingSlot(dayIndex, exerciseIndex) {
     const day = pairingState[dayIndex];
     if (!day) return;
     const group = day[exerciseIndex];
@@ -188,42 +171,6 @@ function nextGroup(day) {
     let index = 1;
     while (used.has(`S${index}`)) index += 1;
     return `S${index}`;
-}
-
-function loadPairingState(planId) {
-    const plan = getPlans().find(item => item.id === planId);
-    pairingState = (plan?.days || []).map(day => (day.exercises || []).map(exercise => exercise.supersetGroup || null));
-}
-
-function persistSupersetsAfterCoreSave() {
-    const plans = getPlans();
-    let target = editingPlanId ? plans.find(plan => plan.id === editingPlanId) : null;
-
-    if (!target) {
-        target = plans.find(plan => plan?.id && !preSavePlanIds.has(plan.id)) || plans[plans.length - 1];
-    }
-    if (!target) return;
-
-    (target.days || []).forEach((day, dayIndex) => {
-        const groups = pairingState[dayIndex] || [];
-        (day.exercises || []).forEach((exercise, exerciseIndex) => {
-            const group = groups[exerciseIndex] || null;
-            if (group) exercise.supersetGroup = group;
-            else delete exercise.supersetGroup;
-        });
-    });
-
-    localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(plans));
-    editingPlanId = target.id;
-}
-
-function getPlans() {
-    try {
-        const plans = JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY) || "[]");
-        return Array.isArray(plans) ? plans : [];
-    } catch {
-        return [];
-    }
 }
 
 function queueDecorate() {

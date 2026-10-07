@@ -1,3 +1,5 @@
+import { initializeManualSupersetBuilder, beginSupersetEditing, decorateBuilder, applySupersetsToPlan, removePairingSlot } from "./manual-superset-builder.js?v=manual-superset-builder-2";
+
 import {
     addCustomExercise,
     getExerciseById
@@ -124,6 +126,8 @@ export function initializeWorkoutBuilder() {
             hideCustomExerciseForm
         );
 
+
+    initializeManualSupersetBuilder();
 
     renderSavedPlans();
 
@@ -326,6 +330,8 @@ function createNewPlan() {
     };
 
 
+    beginSupersetEditing(workingPlan);
+
     showBuilder();
 
 
@@ -356,6 +362,8 @@ function loadPreset(planId) {
 
 
     delete workingPlan.id;
+
+    beginSupersetEditing(workingPlan);
 
 
     showBuilder();
@@ -443,6 +451,8 @@ function editSavedPlan(plan) {
             )
         );
 
+
+    beginSupersetEditing(workingPlan);
 
     showBuilder();
 
@@ -591,6 +601,8 @@ function removeExercise(
     dayIndex,
     exerciseIndex
 ) {
+
+    removePairingSlot(dayIndex, exerciseIndex);
 
     workingPlan
         .days[dayIndex]
@@ -785,6 +797,7 @@ function renderWorkoutDays() {
 
 
     attachBuilderListeners();
+    decorateBuilder(container);
 
 }
 
@@ -1117,6 +1130,8 @@ function attachBuilderListeners() {
 
 
 function savePlan() {
+
+    applySupersetsToPlan(workingPlan);
 
     const nameInput =
         document.getElementById(
