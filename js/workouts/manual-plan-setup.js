@@ -111,7 +111,8 @@ function renderExerciseIndex(card, di, all, activeIndex) {
     const name = document.createElement("strong");
     name.textContent = exercise.name;
     const detail = document.createElement("small");
-    detail.textContent = describeExercise(row, exercise);
+    detail.textContent = describeExercise(row, exercise) +
+      (row.dataset.supersetGroup ? ` · Superset ${row.dataset.supersetGroup}` : "");
     copy.append(name, detail);
 
     const chevron = document.createElement("span");
@@ -138,7 +139,8 @@ function patch() {
   const workoutDays = document.getElementById("workout-days");
   if (!root?.classList.contains("manual-catalogue") || root.hidden || workoutDays?.hidden) return;
 
-  setText(root.querySelector(".builder-heading h3"), "Set Up Your Workout Plan");
+  setText(root.querySelector(".builder-heading h3"),
+    root.dataset.editingPlan === "true" ? "Modify Your Workout Plan" : "Set Up Your Workout Plan");
   setText(root.querySelector(".builder-heading p"), "Adjust each exercise using the same compact layout as your workout logger.");
 
   days().forEach((card, di) => {
@@ -239,6 +241,15 @@ function changeSets(button, delta) {
   queue();
 }
 
+document.addEventListener("levelup:plan-builder-opened", event => {
+  currentByDay.clear();
+  countByDay.clear();
+  builder()?.classList.add("manual-catalogue");
+  if (builder()) builder().dataset.editingPlan = String(Boolean(event.detail?.editing));
+  queue();
+});
+document.addEventListener("levelup:plan-builder-rendered", queue);
+
 document.addEventListener("click", event => {
   const button = event.target.closest("button");
   if (!button) return;
@@ -262,7 +273,7 @@ document.addEventListener("click", event => {
     const ei = Number(row?.dataset.setupIndex);
     if (Number.isFinite(di)) currentByDay.set(di, Math.max(0, ei - 1));
     queueMicrotask(queue);
-  } else if (button.matches(".add-exercise-btn,#add-day-btn")) {
+  } else if (button.matches(".add-exercise-btn,#add-day-btn,[data-manual-superset-pair],[data-manual-superset-remove]")) {
     queueMicrotask(queue);
   }
 });

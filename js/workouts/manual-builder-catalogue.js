@@ -355,6 +355,15 @@ function bubble(ev) {
   }
 }
 
+document.addEventListener("levelup:plan-builder-opened", () => {
+  active = true;
+  picker = null;
+  customDay = null;
+  planBuilder()?.classList.add("manual-catalogue");
+  queuePatch();
+});
+document.addEventListener("levelup:plan-builder-rendered", queuePatch);
+
 document.addEventListener("click", capture, true);
 document.addEventListener("click", bubble);
 

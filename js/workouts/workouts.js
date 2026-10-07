@@ -427,6 +427,10 @@ function showBuilder() {
         builder.hidden =
             false;
 
+        document.dispatchEvent(new CustomEvent("levelup:plan-builder-opened", {
+            detail: { editing: Boolean(workingPlan.id) }
+        }));
+
         builder.scrollIntoView({
             behavior: "smooth",
             block: "start"
@@ -798,6 +802,7 @@ function renderWorkoutDays() {
 
     attachBuilderListeners();
     decorateBuilder(container);
+    document.dispatchEvent(new CustomEvent("levelup:plan-builder-rendered"));
 
 }
 
