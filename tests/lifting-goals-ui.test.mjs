@@ -13,6 +13,7 @@ function harness() {
    set innerHTML(value){this.html=value;this.writes++;}get innerHTML(){return this.html||'';}
    setAttribute(k,v){this.attributes[k]=v;}focus(){}remove(){this.isConnected=false;}addEventListener(k,v){this.listeners[k]=v;}
    querySelector(){return new Element();}
+   querySelectorAll(){return [];}
  }
  const elements=new Map(),welcome=new Element(),anchor=new Element(),content=new Element();
  content.querySelector=s=>s.includes('welcome')?welcome:s.includes('dashboard-muscle-snapshot')?anchor:new Element();

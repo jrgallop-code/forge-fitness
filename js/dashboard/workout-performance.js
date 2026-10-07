@@ -1,3 +1,4 @@
+import { resolveSessionExerciseIdentity } from "../workouts/session-exercise-identity.js?v=repair-generic-exercise-1";
 import { UNIT_KINDS, formatMass as formatUnitMass } from "../core/unit-system.js?v=granular-units-1";
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { evaluateLiveWorkoutPrs } from "../workouts/workout-pr-badges.js";
@@ -73,6 +74,7 @@ export function calculatePerformance(session, allSessions) {
 
     (session.exercises || []).forEach(current => {
         const definition = getExerciseById(current.exerciseId);
+        const identity = resolveSessionExerciseIdentity(current, session.planSnapshot?.days?.[session.trainingDayIndex || 0]?.exercises?.[(session.exercises || []).indexOf(current)]);
         if (definition?.trackingType === "notes" || current.trackingType === "notes") return;
         const currentSets = completedSetsOnly(current.sets);
         const previousExercise = findPreviousExercisePerformance(older, current);
@@ -80,11 +82,11 @@ export function calculatePerformance(session, allSessions) {
         plannedSets += Array.isArray(current.sets) ? current.sets.length : 0;
         completedSets += currentSets.length;
         if (!currentSets.length) {
-            exercises.push({ name: definition?.name || "Exercise", status: "Incomplete", detail: "No completed working sets" });
+            exercises.push({ name: identity.name, status: "Incomplete", detail: "No completed working sets" });
             return;
         }
         if (!previousSets.length) {
-            exercises.push({ name: definition?.name || "Exercise", status: "New", detail: formatBestSet(currentSets) });
+            exercises.push({ name: identity.name, status: "New", detail: formatBestSet(currentSets) });
             return;
         }
 
@@ -97,7 +99,7 @@ export function calculatePerformance(session, allSessions) {
         if (isPr || change > 0.015) status = "Improved";
         else if (change < -0.03) status = "Declined";
         exercises.push({
-            name: definition?.name || "Exercise",
+            name: identity.name,
             status,
             isPr,
             prTypes: pr?.types || (pr?.mode === "reps" ? ["reps"] : []),

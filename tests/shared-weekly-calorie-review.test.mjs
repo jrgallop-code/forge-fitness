@@ -30,7 +30,7 @@ test("the actionable review stays out of Weight Progress and opens from its othe
     assert.match(display, /Weekly calorie target save failed/);
     assert.match(display, /role="dialog" aria-modal="true"/);
     assert.match(display, /Logged weekly average/);
-    assert.match(display, /Current weight trend/);
+    assert.match(display, /-day weight trend/);
     assert.match(display, /Goal weight trend/);
     assert.doesNotMatch(display, /Independently calculated maintenance/);
     assert.doesNotMatch(display, /Current Expenditure used for review/);

@@ -247,7 +247,7 @@ export function prioritizeLoggedFoodMatches(query, databaseFoods = [], limit = 5
     return [...history, ...remaining].slice(0, limit);
 }
 
-export function getLoggedCalorieWindow({ startDate, endDate, minLoggedDays = 4 } = {}) {
+export function getLoggedCalorieWindow({ startDate, endDate, minLoggedDays = 4, requireCompleted = false } = {}) {
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
     if (!datePattern.test(String(startDate || "")) || !datePattern.test(String(endDate || "")) || startDate > endDate) {
         return { startDate: null, endDate: null, totalDays: 0, loggedDays: 0, averageCalories: null, sufficient: false };
@@ -259,6 +259,7 @@ export function getLoggedCalorieWindow({ startDate, endDate, minLoggedDays = 4 }
     let totalDays = 0;
     for (const date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
         totalDays += 1;
+        if (requireCompleted && !isFoodDayComplete(core.localDateKey(date))) continue;
         const entries = log[core.localDateKey(date)];
         if (!Array.isArray(entries) || !entries.length || entries.some(entry => entry?.fatSecretPending)) continue;
         loggedCalories.push(core.summarizeEntries(entries).calories);

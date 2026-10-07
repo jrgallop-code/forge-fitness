@@ -180,6 +180,15 @@ function applyProgressionPlaceholders(card, suggestedLoad, minimumReps) {
   });
 }
 
+export function getMixedWeightProgression(sets, repRange) {
+  const heaviest = Math.max(...sets.map(set => Number(set.weight) || 0));
+  const heavierInRange = sets.some(set => Number(set.weight) === heaviest && Number(set.reps) >= repRange.lower);
+  if (!heavierInRange || !sets.some(set => Number(set.weight) > 0 && Number(set.weight) < heaviest && Number(set.reps) >= repRange.upper)) return null;
+  return sets.map(set => Number(set.weight) > 0 && Number(set.weight) < heaviest && Number(set.reps) >= repRange.upper
+    ? { weight: heaviest, reps: repRange.lower, increased: true }
+    : { weight: Number(set.weight), reps: Math.min(repRange.upper, Math.max(repRange.lower, Number(set.reps) + 1)), increased: false });
+}
+
 function getPerSetRepGoals(card, completedSets, repRange) {
   const rowCount = card.querySelectorAll('.session-set-row').length;
   return Array.from({ length: rowCount }, (_, index) => {
@@ -335,7 +344,8 @@ function shouldUseLiveSetGuidance(card, source, repRange, exerciseId) {
     canonicalInputValue(row.querySelector('.session-weight')) > 0);
   if (latestIndex < 0) return false;
   const actual = canonicalInputValue(rows[latestIndex].querySelector('.session-weight'));
-  const prescribed = increasedLoad ?? reducedLoad ?? (allAtTop && failures > 1 ? heaviest : Number(sets[latestIndex]?.weight));
+  const mixed = !allAtTop && !majorityBelow ? getMixedWeightProgression(sets, repRange) : null;
+  const prescribed = increasedLoad ?? reducedLoad ?? mixed?.[latestIndex]?.weight ?? (allAtTop && failures > 1 ? heaviest : Number(sets[latestIndex]?.weight));
   return hasLiveLoadDeviation(actual, prescribed);
 }
 
@@ -462,7 +472,9 @@ function renderCard(card) {
             currentAddedWeight: bodyweightAddedLoad
           })
         : null;
+      const mixed = !isBodyweight ? getMixedWeightProgression(completedSets, repRange) : null;
       const goals = bodyweightProgression?.repGoals || getPerSetRepGoals(card, completedSets, repRange);
+      if (mixed) mixed.forEach((target, index) => { goals[index] = target.reps; });
       const priorWeights = completedSets.map(set => Number(set.weight)).filter(weight => weight > 0);
       const sameWeight = priorWeights.length === completedSets.length && new Set(priorWeights).size === 1
         ? priorWeights[0]
@@ -474,13 +486,17 @@ function renderCard(card) {
           : '';
 
       applyRepGoalPlaceholders(card, goals, sameWeight);
+      if (mixed) card.querySelectorAll('.session-set-row').forEach((row, index) => {
+        const input = row.querySelector('.session-weight');
+        if (input && !input.value && mixed[index]) setCanonicalUnitPlaceholder(input, mixed[index].weight);
+      });
       prompt.classList.remove('progression-prompt-down');
       prompt.innerHTML = `
         <span class="progression-arrow">↑</span>
         <div>
           <strong>Build reps this session</strong>
-          <p>${loadCopy}aim for <b>${goals.map(formatLoad).join(' / ')} reps</b>.</p>
-          <small>${isBodyweight ? `Preserve reps already above ${formatLoad(repRange.upper)} and add one rep to sets still building.` : `Add one rep to each set, capped at ${formatLoad(repRange.upper)}.`} Gray field values show each set goal.</small>
+          <p>${mixed ? `Aim for <b>${mixed.map(target => `${formatUnitMass(target.weight, 1, UNIT_KINDS.LIFTING_WEIGHT)} × ${target.reps}`).join(' / ')}</b>.` : `${loadCopy}aim for <b>${goals.map(formatLoad).join(' / ')} reps</b>.`}</p>
+          <small>${mixed ? `Move lighter sets that reached the top of the range to your heavier working weight and restart at ${repRange.lower} reps.` : isBodyweight ? `Preserve reps already above ${formatLoad(repRange.upper)} and add one rep to sets still building.` : `Add one rep to each set, capped at ${formatLoad(repRange.upper)}.`} Gray field values show each set goal.</small>
         </div>
       `;
       showPrompt(prompt, source, exerciseId);

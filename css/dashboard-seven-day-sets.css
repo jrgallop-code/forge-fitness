@@ -1,8 +1,8 @@
 .dashboard.dashboard-command-insights .metric-card.dashboard-seven-day-sets-card {
     min-height: 148px;
-    height: 148px;
-    max-height: 148px;
-    align-self: start;
+    height: auto;
+    max-height: none;
+    align-self: stretch;
     box-sizing: border-box;
     padding: 14px 15px 13px;
 }

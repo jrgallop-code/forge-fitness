@@ -118,9 +118,9 @@ export function buildCoordinatedWeeklyUpdate({
         result.recentTrendGuard = guard;
         if (guard.hold) {
             result.unGuardedTargetCalories = result.targetCalories;
-            result.targetCalories = Math.round(target);
+            result.targetCalories = observedIntake === null ? Math.round(target) : roundTo25(observedIntake);
             result.maintenanceCalories = Math.round(maintenance);
-            result.targetChange = 0;
+            result.targetChange = result.targetCalories - Math.round(target);
             result.maintenanceChange = 0;
             result.paceCorrection = 0;
             result.behavioralChange = 0;

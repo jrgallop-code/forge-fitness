@@ -47,7 +47,7 @@ function openModal(title, html, back = null) {
   modal.innerHTML=`<section class="training-goals-sheet" role="dialog" aria-modal="true" aria-labelledby="training-goals-title"><header><button type="button" data-training-back aria-label="${back ? 'Back' : 'Close'}">${back ? '‹ Back' : 'Close'}</button><h2 id="training-goals-title" tabindex="-1">${escape(title)}</h2></header>${html}</section>`;
   document.body.appendChild(modal); document.body.classList.add('training-goals-open');
   modal.querySelector('[data-training-back]').addEventListener('click',back || closeModal);
-  modal.querySelector('h2').focus();
+  modal.querySelector('h2').focus({preventScroll:true});
   modal.addEventListener('keydown',event => {
     if (event.key==='Escape') { event.preventDefault(); (back || closeModal)(); }
     if (event.key==='Tab') {
@@ -121,7 +121,15 @@ export function renderSessionBadges(sessionId) {
 
 document.addEventListener('click',event=>{
   const button=event.target.closest?.('button'); if (!button) return;
-  if(button.dataset.badgeFilter) {badgeFilter=button.dataset.badgeFilter;openBadgeCollection();}
+  if(button.dataset.badgeFilter) {
+    if (badgeFilter === button.dataset.badgeFilter) return;
+    const scroll = modal?.scrollTop || 0;
+    const horizontal = modal?.querySelector('.training-badge-filters')?.scrollLeft || 0;
+    badgeFilter=button.dataset.badgeFilter;openBadgeCollection();
+    modal.scrollTop=scroll;
+    modal.querySelector('.training-badge-filters').scrollLeft=horizontal;
+    [...modal.querySelectorAll('[data-badge-filter]')].find(item=>item.dataset.badgeFilter===badgeFilter)?.focus({preventScroll:true});
+  }
   else if (button.hasAttribute('data-badges-open') || button.hasAttribute('data-dashboard-badge')) {badgeFilter='All';openBadgeCollection();}
   else if (button.dataset.badge) openBadgeDetail(button.dataset.badge);
   else if (button.dataset.goalDetail) openGoalDetail(button.dataset.goalDetail);

@@ -59,19 +59,19 @@ test('today and explicitly incomplete food logs do not count; empty completed da
     assert.equal(evidence({ foodLog: {}, completedDays: Object.fromEntries(Object.keys(foodLog).map(d => [d, true])) }).foodDays, 0);
 });
 
-test('guard preserves both saved target and maintenance without double counting intake', () => {
+test('guard holds logged intake while preserving maintenance without double counting', () => {
     const update = buildCoordinatedWeeklyUpdate({ currentMaintenance: 2300, proposedMaintenance: 2400, currentTarget: 2700, actualIntakeCalories: 2600, actualRate: 1.1, targetRate: .5, adaptiveReady: true, recentTrendGuard: decision(1.1, .4) });
     assert.equal(update.guardedHold, true);
-    assert.equal(update.targetCalories, 2700);
+    assert.equal(update.targetCalories, 2600);
     assert.equal(update.maintenanceCalories, 2300);
-    assert.equal(update.targetChange, 0);
+    assert.equal(update.targetChange, -100);
     assert.equal(update.behavioralChange, 0);
 });
 
 test('guard compares the intended behavioral correction even when intake exceeds the saved target', () => {
     const update = buildCoordinatedWeeklyUpdate({ currentMaintenance: 2300, proposedMaintenance: 2400, currentTarget: 2400, actualIntakeCalories: 2800, actualRate: 1, targetRate: .5, adaptiveReady: true, recentTrendGuard: decision(1, .5) });
     assert.equal(update.guardedHold, true);
-    assert.equal(update.targetCalories, 2400);
+    assert.equal(update.targetCalories, 2800);
 });
 
 test('automatic maintenance cannot bypass a conflicting recent trend', () => {
@@ -89,3 +89,10 @@ test('aggressive bulk is a distinct one-pound preset after the existing bulk cho
 test("unconfirmed historical food logs do not imply complete intake evidence", () => {
     assert.equal(evidence({ completedDays: {} }).confidence, "insufficient");
 });
+
+ test('guard rounds an eligible 2841 average to 2850 and falls back without intake', () => {
+ const args = {currentMaintenance:2300, proposedMaintenance:2400,currentTarget:2700,actualRate:1.1,targetRate:.5,adaptiveReady:true,recentTrendGuard:decision(1.1,.4)};
+ assert.equal(buildCoordinatedWeeklyUpdate({...args,actualIntakeCalories:2841}).targetCalories,2850);
+ assert.equal(buildCoordinatedWeeklyUpdate(args).targetCalories,2700);
+ assert.equal(buildCoordinatedWeeklyUpdate({...args,actualIntakeCalories:2812.5}).targetCalories,2825);
+ });
