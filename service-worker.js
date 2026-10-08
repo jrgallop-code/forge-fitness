@@ -1,9 +1,10 @@
-const CACHE_VERSION = "forge-compact-plan-modify-20261007";
+const CACHE_VERSION = "forge-expenditure-changes-20261008";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
+    "./js/nutrition/expenditure-changes-summary.js?v=expenditure-changes-1",
     "./",
     "./index.html",
     "./manifest.webmanifest",
