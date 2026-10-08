@@ -12,22 +12,16 @@ export function initializeInstagramSavedVideos(panel) {
     if (!document.querySelector('link[href*="instagram-saved-videos.css"]')) {
         const style = document.createElement('link'); style.rel = 'stylesheet'; style.href = 'css/instagram-saved-videos.css'; document.head.append(style);
     }
-    const list = panel.querySelector('[data-workout-live-your-training-list]');
-    const tabs = document.createElement('div'); tabs.className = 'ig-tabs'; tabs.setAttribute('role', 'tablist');
-    tabs.innerHTML = '<button role="tab" aria-selected="true" class="active">Routines</button><button role="tab" aria-selected="false">Saved Videos</button>';
-    list.before(tabs);
-    const videos = document.createElement('section'); videos.className = 'ig-library'; videos.hidden = true; list.after(videos);
-    const select = video => { list.hidden = video; videos.hidden = !video; [...tabs.children].forEach((b,i) => { b.classList.toggle('active', Boolean(i) === video); b.setAttribute('aria-selected', String(Boolean(i) === video)); }); };
-    tabs.children[0].onclick = () => select(false); tabs.children[1].onclick = () => select(true);
+    const videos = document.createElement('section'); videos.className = 'ig-library'; panel.appendChild(videos);
     let folder = 'All';
     const render = () => {
         const items = read(); const folders = ['All', ...new Set(items.map(x => x.folder || 'Unfiled'))];
-        videos.innerHTML = `<button class="ig-primary" data-add>＋ Save video</button><div class="ig-folders">${folders.map(f => `<button class="${f === folder ? 'active' : ''}" data-folder="${esc(f)}">${esc(f)}</button>`).join('')}</div><div class="ig-cards">${items.filter(x => folder === 'All' || (x.folder || 'Unfiled') === folder).map(x => `<button class="ig-card" data-video="${esc(x.id)}"><div class="ig-cover">${cover(x)}<span class="ig-play">▶</span></div><div><small>${logo} Instagram</small><strong>${esc(x.title || 'Saved Instagram workout')}</strong><span>${esc(x.folder || 'Unfiled')}</span></div></button>`).join('') || '<div class="ig-empty"><strong>Save a workout from Instagram</strong><p>Keep your favourite Reels here, then build a routine from their written workout.</p></div>'}</div><p class="ig-message" aria-live="polite"></p>`;
+        videos.innerHTML = `<button class="ig-primary" data-add>＋ Add Video</button><div class="ig-folders">${folders.map(f => `<button class="${f === folder ? 'active' : ''}" data-folder="${esc(f)}">${esc(f)}</button>`).join('')}</div><div class="ig-cards">${items.filter(x => folder === 'All' || (x.folder || 'Unfiled') === folder).map(x => `<button class="ig-card" data-video="${esc(x.id)}"><div class="ig-cover">${cover(x)}<span class="ig-play">▶</span></div><div><small>${logo} Instagram</small><strong>${esc(x.title || 'Saved Instagram workout')}</strong><span>${esc(x.folder || 'Unfiled')}</span></div></button>`).join('') || '<div class="ig-empty"><strong>Save a workout from Instagram</strong><p>Keep your favourite Reels here, then build a routine from their written workout.</p></div>'}</div><p class="ig-message" aria-live="polite"></p>`;
         videos.querySelector('[data-add]').onclick = () => editVideo(null, render);
         videos.querySelectorAll('[data-folder]').forEach(b => b.onclick = () => { folder = b.dataset.folder; render(); });
         videos.querySelectorAll('[data-video]').forEach(b => b.onclick = () => showVideo(read().find(x => x.id === b.dataset.video), render));
     };
-    panel._igRefresh = (show = true) => { render(); if (show) select(true); };
+    panel._igRefresh = (show = true) => { render(); if (show) document.querySelector('[data-workout-library-tab="videos"]')?.click(); };
     render();
     if (!listenerBound) {
         listenerBound = true;
@@ -101,9 +95,9 @@ async function importPending() {
             await plugin().acknowledgeVideo({id:item.id});
         }
         if (changed) {
-            sessionStorage.setItem('level_up_open_my_routines_v1','1');
-            document.querySelector('[data-workout-library-panel="routines"]')?._igRefresh?.();
-            document.querySelector('[data-workout-library-tab="routines"]')?.click();
+            sessionStorage.setItem('level_up_open_my_videos_v1','1');
+            document.querySelector('[data-workout-library-panel="videos"]')?._igRefresh?.();
+            document.querySelector('[data-workout-library-tab="videos"]')?.click();
             document.dispatchEvent(new CustomEvent('levelup:instagram-videos-imported'));
         }
     } catch (e) { const el = document.querySelector('.ig-library .ig-message'); if (el) el.textContent = 'Could not import shared videos. They will be retried when you return.'; console.warn('Instagram inbox import unavailable',e); } finally { checking = false; }
@@ -117,6 +111,6 @@ async function fetchIncomingPreview(id, url) {
         if (!item.cover && preview.cover) item.cover = preview.cover;
         if (item.title === 'Saved Instagram workout' && preview.title) item.title = preview.title.slice(0,100);
         localStorage.setItem(VIDEO_KEY, JSON.stringify(items));
-        document.querySelector('[data-workout-library-panel="routines"]')?._igRefresh?.(false);
+        document.querySelector('[data-workout-library-panel="videos"]')?._igRefresh?.(false);
     } catch {}
 }

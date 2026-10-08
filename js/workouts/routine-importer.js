@@ -245,11 +245,11 @@ function renderReview(page) {
   const total = importState.days.reduce((sum, day) => sum + day.exercises.length, 0);
   const uncertain = importState.days.flatMap(day => day.exercises).filter(item => !item.match.confirmed).length;
   const incomplete = !canSaveImport();
-  stage.innerHTML = `<div class="routine-import-review"><div class="routine-import-review-head"><div><span class="eyebrow">IMPORT REVIEW</span><h3>${importState.days.length} days · ${total} exercises</h3><p>${uncertain ? `${uncertain} match${uncertain === 1 ? "" : "es"} need your confirmation.` : (incomplete ? "Add sets and rep targets to the regular workout." : "Everything is ready to save.")}</p></div><button class="secondary-btn" type="button" data-routine-back>← Edit Paste</button></div><label class="routine-import-name">Routine name<input type="text" maxlength="80" value="${escapeHtml(importState.name)}" data-routine-name></label>${importState.skipped.length ? `<div class="routine-import-skipped"><strong>${importState.skipped.length} line${importState.skipped.length === 1 ? " was" : "s were"} not imported</strong><small>Headers, notes, and progression instructions are kept in the original import text.</small></div>` : ""}<div class="routine-import-days">${importState.days.map(renderDay).join("")}</div>${renderImportSummary()}<div class="routine-import-savebar"><div><strong>${uncertain ? "Confirm highlighted matches" : incomplete ? "Add missing sets and rep targets" : "Ready to save"}</strong><small>Your original routine remains unchanged until you save.</small></div><button class="primary-btn" type="button" data-routine-save ${incomplete ? "disabled" : ""}>Save Routine</button></div></div>`;
+  stage.innerHTML = `<div class="routine-import-review"><div class="routine-import-review-head"><div><span class="eyebrow">IMPORT REVIEW</span><h3>${importState.days.length} days · ${total} exercises</h3><p>${uncertain ? `${uncertain} match${uncertain === 1 ? "" : "es"} need your confirmation.` : (incomplete ? "Add sets and rep targets to the regular workout." : "Everything is ready to save.")}</p></div><button class="secondary-btn" type="button" data-routine-back>← Edit Paste</button></div><label class="routine-import-name">Routine name<input type="text" maxlength="80" value="${escapeHtml(importState.name)}" data-routine-name></label>${importState.skipped.length ? `<div class="routine-import-skipped"><strong>${importState.skipped.length} line${importState.skipped.length === 1 ? " was" : "s were"} not imported</strong><small>Headers, notes, and progression instructions are kept in the original import text.</small></div>` : ""}<div class="routine-import-days">${importState.days.map(renderDay).join("")}</div>${renderImportSummary()}<div class="routine-import-savebar"><div><strong>${uncertain ? "Confirm highlighted matches" : incomplete ? "Add missing sets and rep targets" : "Ready to save"}</strong><small>Your original routine remains unchanged until you save.</small></div><button class="primary-btn" type="button" data-routine-save ${incomplete ? "disabled" : ""}>Save to My Routines</button></div></div>`;
 }
 
 function renderImportSummary() {
-  if(importState.kind === 'circuit')return `<section class="routine-import-summary"><h4>Circuit · ${importState.rounds} rounds</h4><p>${importState.days.flatMap(d=>d.exercises).length} exercises per round · ${importState.rest} seconds rest between rounds</p><small>Rep targets are optional. Uses the circuit round logger and separate circuit history.</small></section>`;
+  if(importState.kind === 'circuit')return `<section class="routine-import-summary"><h4>Circuit · ${importState.rounds} rounds</h4><p>${importState.days.flatMap(d=>d.exercises).length} exercises per round · ${importState.rest} seconds rest between rounds</p><small>Rep targets are optional. Repeat the exercise list each round.</small></section>`;
   let workingSets = 0;
   importState.days.forEach(day => day.exercises.forEach(item => {
     const sets = Number(item.sets || 0);
@@ -313,13 +313,14 @@ function saveRoutine(button, page) {
     Object.assign(plan,{circuitId:plan.id,trainingContext:'circuit',trainingType:'circuit',catalogueCategory:'circuit',rounds:importState.rounds,circuitRestSeconds:importState.rest,daysPerWeek:1});
     for(const day of plan.days) for(const exercise of day.exercises) Object.assign(exercise,{sets:plan.rounds,trainingContext:'circuit',circuitId:plan.id,supersetGroup:plan.id});
   }
+  plan.savedAt = new Date().toISOString();
   const plans = readPlans();
   plans.push(plan);
   localStorage.setItem(PLAN_KEY, JSON.stringify(plans));
-  if (sourceVideo) sessionStorage.setItem("level_up_open_my_routines_v1", "1");
+  sessionStorage.setItem("level_up_open_my_routines_v1", "1");
   button.disabled = true;
   button.textContent = "Saved ✓";
-  window.setTimeout(() => { closeImporter(page); document.querySelector('.nav-btn[data-page="workout"]')?.click(); }, 250);
+  window.setTimeout(() => { closeImporter(page); document.dispatchEvent(new CustomEvent("levelup:routine-saved", { detail: { planId: plan.id } })); }, 250);
 }
 
 function findItem(dayIndex, exerciseIndex) { return importState?.days?.[Number(dayIndex)]?.exercises?.[Number(exerciseIndex)] || null; }

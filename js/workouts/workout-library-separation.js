@@ -18,6 +18,7 @@ export function initializeWorkoutLibrarySeparation(landing) {
     const recommendedSection = landing.querySelector(".workout-live-recommended")?.closest(".workout-live-section");
     if (!hero || !filterStrip || !catalogueSection || !catalogueList || !recommendedSection) return false;
 
+    const hasVideos = window.Capacitor?.getPlatform?.() === "ios";
     const savedRows = [...landing.querySelectorAll(".workout-live-plan-row.is-saved")];
     const savedPlans = readSavedPlans();
     const savedById = new Map(savedPlans.map(plan => [String(plan.id), plan]));
@@ -26,6 +27,7 @@ export function initializeWorkoutLibrarySeparation(landing) {
     let switcher = landing.querySelector("[data-workout-library-switcher]");
     let panels = landing.querySelector("[data-workout-library-panels]");
     let explorePanel = landing.querySelector('[data-workout-library-panel="explore"]');
+    let videosPanel = landing.querySelector('[data-workout-library-panel="videos"]');
     let routinesPanel = landing.querySelector('[data-workout-library-panel="routines"]');
 
     if (!switcher) {
@@ -39,6 +41,7 @@ export function initializeWorkoutLibrarySeparation(landing) {
     switcher.innerHTML = `
         <button type="button" role="tab" data-workout-library-tab="explore">Explore</button>
         <button type="button" role="tab" data-workout-library-tab="routines">My Routines <span>${savedPlans.length}</span></button>
+        ${hasVideos ? '<button type="button" role="tab" data-workout-library-tab="videos">My Videos</button>' : ""}
     `;
 
     if (!panels) {
@@ -110,12 +113,22 @@ export function initializeWorkoutLibrarySeparation(landing) {
         `;
     }
 
-    initializeInstagramSavedVideos(routinesPanel);
+    if (hasVideos) {
+        if (!videosPanel) {
+            videosPanel = document.createElement('section');
+            videosPanel.className = 'workout-live-library-panel workout-live-library-videos';
+            videosPanel.dataset.workoutLibraryPanel = 'videos';
+            panels.appendChild(videosPanel);
+        }
+        videosPanel.innerHTML = '<div class="workout-live-library-heading"><div><span>MY VIDEOS</span><h2>My Videos</h2><p>Saved workout videos, ready to turn into routines.</p></div></div>';
+        initializeInstagramSavedVideos(videosPanel);
+    }
+    switcher.classList.toggle('has-videos', hasVideos);
 
     updateCatalogueHeading(catalogueSection);
     markCatalogueCopies(catalogueList, savedPlans, scheduledPlanId);
 
-    let requestedView = landing.dataset[VIEW_KEY] === "routines" ? "routines" : "explore";
+    let requestedView = ["routines", "videos"].includes(landing.dataset[VIEW_KEY]) ? landing.dataset[VIEW_KEY] : "explore";
     try {
         if (sessionStorage.getItem(OPEN_ROUTINES_KEY) === "1") {
             requestedView = "routines";
@@ -124,8 +137,14 @@ export function initializeWorkoutLibrarySeparation(landing) {
     }
     catch {}
 
+    try {
+        if (hasVideos && sessionStorage.getItem('level_up_open_my_videos_v1') === '1') {
+            requestedView = 'videos';
+            sessionStorage.removeItem('level_up_open_my_videos_v1');
+        }
+    } catch {}
     const applyView = view => {
-        const next = view === "routines" ? "routines" : "explore";
+        const next = view === "videos" && hasVideos ? "videos" : view === "routines" ? "routines" : "explore";
         landing.dataset[VIEW_KEY] = next;
         switcher.querySelectorAll("[data-workout-library-tab]").forEach(button => {
             const active = button.dataset.workoutLibraryTab === next;
@@ -134,6 +153,7 @@ export function initializeWorkoutLibrarySeparation(landing) {
         });
         explorePanel.hidden = next !== "explore";
         routinesPanel.hidden = next !== "routines";
+        if (videosPanel) videosPanel.hidden = next !== "videos";
     };
 
     switcher.querySelectorAll("[data-workout-library-tab]").forEach(button => {
@@ -183,6 +203,7 @@ function bindSwipeNavigation({ panels, landing, applyView }) {
         const deltaY = touch.clientY - startY;
         if (Math.abs(deltaX) < 55 || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
 
+        if (landing.dataset[VIEW_KEY] === 'videos') return;
         const current = landing.dataset[VIEW_KEY] === "routines" ? "routines" : "explore";
         if (deltaX > 0 && current === "explore") applyView("routines");
         else if (deltaX < 0 && current === "routines") applyView("explore");
@@ -285,6 +306,9 @@ function ensureStyles() {
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
+.workout-live-page .workout-live-library-switcher.has-videos{grid-template-columns:repeat(3,minmax(0,1fr))}
+.workout-live-page .workout-live-library-switcher.has-videos button{min-width:0;padding:12px 5px;font-size:13px;white-space:nowrap}
+
 .workout-live-page .workout-live-library-switcher{
   display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:0 2px 18px;padding:4px;
   border:1px solid var(--card-border);border-radius:14px;background:var(--surface-raised);

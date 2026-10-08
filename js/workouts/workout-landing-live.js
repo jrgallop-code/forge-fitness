@@ -1,3 +1,4 @@
+import { buildWorkoutLibraryRows } from "./workout-library-rows.js";
 import { isBodyweightPlan } from './workout-equipment-filter.js';
 import { circuitTemplates } from './circuit-templates.js';
 import { openCircuitTemplate, renderCircuitLibraryRow, ensureCircuitStyles } from './circuit-library.js';
@@ -48,6 +49,7 @@ export function initializeWorkoutLandingLive(content = document) {
 
     const render = () => renderLanding({ content, page, sourceHome, landing, state });
     render();
+    document.addEventListener("levelup:routine-saved", () => showLanding({ landing, render }), { signal: controller.signal });
 
     content.addEventListener("click", event => {
         const target = event.target;
@@ -110,13 +112,8 @@ function renderLanding({ content, page, sourceHome, landing, state }) {
     ensureCircuitStyles();
     const recommended = selectRecommended(matches, state.filters, 5);
     const saved = readSavedPlans();
-    const sourceRows = state.circuitsOnly ? circuitTemplates : [
-        ...saved.filter(plan => state.showAllPlans || matchesEquipment(plan, state.filters.equipment)).map(plan => ({ ...plan, isSavedPlan: true })),
-        ...(state.showAllPlans ? allCataloguePlans : matches)
-    ];
-    const rows = sourceRows
-        .filter((plan, index, plans) => plans.findIndex(candidate => String(candidate.id) === String(plan.id)) === index)
-        .slice(0, state.showAllPlans ? undefined : 14);
+    const rows = buildWorkoutLibraryRows(saved, state.circuitsOnly ? circuitTemplates : (state.showAllPlans ? allCataloguePlans : matches), state.showAllPlans);
+
 
     landing.innerHTML = `
         <section class="workout-live-schedule-section" data-workout-live-schedule>

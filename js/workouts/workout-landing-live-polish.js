@@ -57,6 +57,15 @@ export function initializeWorkoutLandingLivePolish(content = document) {
         initializeWorkoutLibrarySeparation(landing);
     });
 
+    document.addEventListener("levelup:routine-saved", event => {
+        decorateSavedPlanActions({ content, landing });
+        initializeWorkoutLibrarySeparation(landing);
+        landing.querySelector('[data-workout-library-tab="routines"]')?.click();
+        const savedButton = [...landing.querySelectorAll('[data-workout-live-saved-plan]')]
+            .find(button => button.dataset.workoutLiveSavedPlan === event.detail?.planId);
+        savedButton?.closest('.workout-live-plan-row')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, { signal: controller.signal });
+
     document.addEventListener("click", event => {
         const target = event.target;
 

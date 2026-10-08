@@ -15,3 +15,11 @@
 .ig-routine-import .routine-import-topbar{position:sticky;top:0;z-index:3;background:var(--card);padding:14px 0;display:flex;align-items:flex-start;gap:12px}.ig-routine-import .routine-import-topbar>div{min-width:0;flex:1}.ig-routine-import [data-routine-import-close]{min-width:64px;min-height:44px;flex-shrink:0}.ig-routine-import .routine-import-topbar h3{font-size:20px}.ig-routine-import .routine-import-topbar p{font-size:13px}
 .ig-dialog{top:max(48px,calc(env(safe-area-inset-top,0px) + 12px));max-height:calc(100dvh - max(48px,calc(env(safe-area-inset-top,0px) + 12px)) - env(safe-area-inset-bottom,0px) - 18px)}
 .routine-import-wizard.ig-routine-import:not([hidden]){top:max(48px,calc(env(safe-area-inset-top,0px) + 12px))!important}
+
+/* Compact header leaves the exercise review visible on smaller iPhones. */
+.ig-routine-import .routine-import-topbar{flex-direction:row!important;align-items:center;padding:10px 0;border-bottom:1px solid var(--card-border)}
+.ig-routine-import .routine-import-topbar .eyebrow,
+.ig-routine-import .routine-import-topbar p{display:none}
+.ig-routine-import .routine-import-topbar h3{font-size:17px;line-height:1.3;margin:0}
+.ig-routine-import [data-routine-import-close]{align-self:center!important;padding:8px 12px;font-size:14px;min-width:60px}
+.ig-routine-import .routine-import-review-head h3{font-size:18px}
