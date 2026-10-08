@@ -358,8 +358,28 @@ document.addEventListener("levelup:open-exercise-guide", event => {
     });
 });
 
+
+function overviewSupersets(exercises) {
+    const groups = new Map();
+    exercises.forEach((exercise, index) => {
+        const group = exercise?.supersetGroup;
+        if (!group) return;
+        if (!groups.has(group)) groups.set(group, []);
+        groups.get(group).push(index);
+    });
+    const labels = new Map();
+    let groupNumber = 0;
+    groups.forEach(indices => {
+        if (indices.length < 2) return;
+        const label = String.fromCharCode(65 + groupNumber++);
+        indices.forEach((index, position) => labels.set(index, { label, position: position + 1 }));
+    });
+    return labels;
+}
+
 function renderDay(day, index) {
     const exercises = Array.isArray(day?.exercises) ? day.exercises : [];
+    const supersets = overviewSupersets(exercises);
 
     return `
         <section class="plan-detail-day" data-plan-day-index="${index}">
@@ -372,16 +392,18 @@ function renderDay(day, index) {
             </div>
 
             <div class="plan-detail-exercise-list">
-                ${exercises.length ? exercises.map(exercise => {
+                ${exercises.length ? exercises.map((exercise, exerciseIndex) => {
+                    const superset = supersets.get(exerciseIndex);
                     const hasGuide = Boolean(getExerciseGuide(exercise?.id));
                     const tag = hasGuide ? "button" : "div";
                     return `
-                    <${tag} class="plan-detail-exercise-row ${hasGuide ? "has-exercise-guide" : ""}" ${hasGuide ? `type="button" data-exercise-guide="${escapeHtml(exercise.id)}" aria-label="Open ${escapeHtml(exerciseName(exercise.id))} exercise guide"` : ""}>
+                    <${tag} class="plan-detail-exercise-row ${superset ? "is-overview-superset" : ""} ${hasGuide ? "has-exercise-guide" : ""}" ${hasGuide ? `type="button" data-exercise-guide="${escapeHtml(exercise.id)}" aria-label="Open ${escapeHtml(exerciseName(exercise.id))} exercise guide"` : ""}>
                         <span class="plan-detail-exercise-thumb" aria-hidden="true">
                             ${exerciseThumbnail(exercise?.id)}
                         </span>
                         <span class="plan-detail-exercise-copy">
                             <span class="plan-detail-exercise-name">${escapeHtml(exerciseName(exercise?.id))}${hasGuide ? '<span class="exercise-guide-label">Form guide</span>' : ""}</span>
+                            ${superset ? `<span class="plan-overview-superset-label">Superset ${superset.label} · ${superset.label}${superset.position}</span>` : ""}
                             <span class="plan-detail-exercise-target">
                                 ${Number(exercise?.sets) || 0} sets
                                 ${exercise?.reps ? ` × ${escapeHtml(exercise.reps)} reps` : ""}
@@ -432,6 +454,7 @@ function showPlanDetails({ plan, type, card }) {
     screen.id = "workout-plan-detail-screen";
     screen.className = "workout-plan-detail-screen";
     screen.innerHTML = `
+        <style>#workout-plan-detail-screen .plan-detail-exercise-row.is-overview-superset{border-left:3px solid var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--card,var(--surface)))}#workout-plan-detail-screen .plan-overview-superset-label{display:block;width:fit-content;margin:5px 0;font-size:11px;font-weight:800;line-height:1.4;color:var(--accent-text,var(--accent));border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);border-radius:6px;padding:2px 7px}</style>
         <button class="plan-detail-back" type="button" aria-label="Back to workout plans">← Workout Plans</button>
 
         <div class="plan-detail-header has-share-menu">
