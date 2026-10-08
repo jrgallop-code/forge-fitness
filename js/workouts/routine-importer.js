@@ -23,9 +23,10 @@ export function openRoutineFromVideo(video) {
   initializeRoutineImporter();
   openImporter(page);
   sourceVideo = { id: video.id, title: video.title, url: video.url };
+  page.querySelector("[data-routine-import-wizard]")?.classList.add("ig-routine-import");
   const top = page.querySelector(".routine-import-topbar");
   top.querySelector("h3").textContent = "Create routine from workout text";
-  top.querySelector("p").textContent = `Paste the written exercises, sets and reps from ${video.title}. Review the draft before saving. Your Instagram video will stay attached.`;
+  top.querySelector("p").textContent = `Paste the written exercises, sets and reps, or import a screenshot of the text from ${video.title}. Review the draft before saving. Your Instagram video will stay attached.`;
 }
 
 
@@ -61,7 +62,7 @@ function renderShell() {
 }
 
 function renderPasteStage() {
-  return `<div class="routine-import-paste-card"><label for="routine-import-text">Routine text</label><textarea id="routine-import-text" maxlength="100000" placeholder="Paste a routine from ChatGPT or another source…&#10;&#10;Push Day&#10;Bench Press - 3x6-8&#10;Cable Fly - 3x12-15"></textarea><div class="routine-import-tools"><button class="secondary-btn" type="button" data-routine-paste>Paste from Clipboard</button><button class="routine-import-text-action" type="button" data-routine-example>Use example</button><button class="routine-import-text-action" type="button" data-routine-clear>Clear</button><small data-routine-count>0 / 100,000</small></div><p class="routine-import-message" data-routine-message aria-live="polite"></p><button class="primary-btn routine-import-build" type="button" data-routine-build>Build Pasted Routine</button></div>`;
+  return `<div class="routine-import-paste-card"><label for="routine-import-text">Routine text</label><textarea id="routine-import-text" maxlength="100000" placeholder="Paste a routine from ChatGPT or another source…&#10;&#10;Push Day&#10;Bench Press - 3x6-8&#10;Cable Fly - 3x12-15"></textarea><div class="routine-import-tools"><button class="secondary-btn" type="button" data-routine-paste>Paste from Clipboard</button><button class="routine-import-text-action" type="button" data-routine-example>Use example</button><button class="routine-import-text-action" type="button" data-routine-clear>Clear</button><small data-routine-count>0 / 100,000</small></div>${window.Capacitor?.getPlatform?.() === "ios" ? `<button type="button" class="secondary-btn" data-routine-screenshot>Or import screenshot of the text</button><p>Reads written exercises on your iPhone. Review the extracted text before building.</p>` : ""}<p class="routine-import-message" data-routine-message aria-live="polite"></p><button class="primary-btn routine-import-build" type="button" data-routine-build>Build Pasted Routine</button></div>`;
 }
 
 function handleClick(event, page) {
@@ -72,6 +73,7 @@ function handleClick(event, page) {
   if (button.matches("[data-routine-example]")) return setPasteText(page, EXAMPLE);
   if (button.matches("[data-routine-clear]")) return setPasteText(page, "");
   if (button.matches("[data-routine-paste]")) return pasteClipboard(page);
+  if (button.matches("[data-routine-screenshot]")) return importScreenshot(page, button);
   if (button.matches("[data-routine-build]")) return buildReview(page);
   if (button.matches("[data-routine-back]")) return showPaste(page);
   if (button.matches("[data-routine-confirm]")) return confirmMatch(button, page);
@@ -107,6 +109,7 @@ function handleInput(event, page) {
 
 function openImporter(page) {
   sourceVideo = null;
+  page.querySelector("[data-routine-import-wizard]")?.classList.remove("ig-routine-import");
   const top = page.querySelector(".routine-import-topbar");
   if (top) { top.querySelector("h3").textContent = "Paste your routine"; top.querySelector("p").textContent = "Paste a written routine, then review everything before saving."; }
   page.querySelector("[data-workout-home]")?.setAttribute("hidden", "");
@@ -302,3 +305,17 @@ function suggestedName(days) { return days.length === 1 ? `${days[0].name} Routi
 function updateCounter(page) { const text = page.querySelector("#routine-import-text")?.value || ""; const counter = page.querySelector("[data-routine-count]"); if (counter) counter.textContent = `${text.length.toLocaleString()} / 100,000`; }
 function readPlans() { try { const value = JSON.parse(localStorage.getItem(PLAN_KEY) || "[]"); return Array.isArray(value) ? value : []; } catch { return []; } }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character])); }
+
+async function importScreenshot(page, button) {
+  const message = page.querySelector('[data-routine-message]');
+  button.disabled = true;
+  try {
+    const result = await window.Capacitor.Plugins.LevelUpInstagramShare.readWorkoutScreenshot();
+    if (result.cancelled || page.querySelector('[data-routine-import-wizard]')?.hidden) return;
+    if (!result.text?.trim()) throw new Error('No text found. Choose a clear screenshot of the written routine.');
+    const existing = page.querySelector('#routine-import-text')?.value?.trim();
+    setPasteText(page, [existing, result.text].filter(Boolean).join('\n\n'));
+    if (message) message.textContent = 'Screenshot text added. Correct anything unclear, then tap Build Pasted Routine.';
+  } catch (e) { if (message) message.textContent = e.message || 'Could not read this screenshot.'; }
+  finally { button.disabled = false; }
+}

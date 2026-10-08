@@ -3,18 +3,67 @@ import Photos
 import Security
 import Capacitor
 import LinkPresentation
+import PhotosUI
+import Vision
 
 @objc(LevelUpInstagramSharePlugin)
-final class LevelUpInstagramSharePlugin: CAPPlugin, CAPBridgedPlugin {
+final class LevelUpInstagramSharePlugin: CAPPlugin, CAPBridgedPlugin, PHPickerViewControllerDelegate {
     let identifier = "LevelUpInstagramSharePlugin"
     let jsName = "LevelUpInstagramShare"
     let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "saveImage", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "readWorkoutScreenshot", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openInstagram", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "pendingVideos", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "acknowledgeVideo", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "videoPreview", returnType: CAPPluginReturnPromise)
     ]
+
+    private var screenshotCall: CAPPluginCall?
+
+    @objc func readWorkoutScreenshot(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard self.screenshotCall == nil, let controller = self.bridge?.viewController else {
+                call.reject("The image picker is already open or unavailable."); return
+            }
+            self.screenshotCall = call
+            var config = PHPickerConfiguration()
+            config.filter = .images; config.selectionLimit = 1
+            let picker = PHPickerViewController(configuration: config)
+            picker.delegate = self
+            controller.present(picker, animated: true)
+        }
+    }
+
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        let call = screenshotCall
+        screenshotCall = nil
+        picker.dismiss(animated: true)
+        guard let call else { return }
+        guard let result = results.first else { call.resolve(["cancelled": true]); return }
+        result.itemProvider.loadObject(ofClass: UIImage.self) { object, error in
+            guard let image = object as? UIImage else { call.reject("Couldn't open that image.", nil, error); return }
+            DispatchQueue.global(qos: .userInitiated).async {
+                let scale = min(1, 2400 / max(image.size.width, image.size.height))
+                let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+                let format = UIGraphicsImageRendererFormat(); format.scale = 1
+                let normalized = UIGraphicsImageRenderer(size: size, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+                guard let cgImage = normalized.cgImage else { call.reject("Couldn't read that image."); return }
+                let request = VNRecognizeTextRequest()
+                request.recognitionLevel = .accurate
+                request.usesLanguageCorrection = true
+                request.recognitionLanguages = ["en-US"]
+                do {
+                    try VNImageRequestHandler(cgImage: cgImage, orientation: .up).perform([request])
+                    let lines = (request.results ?? []).sorted { a, b in
+                        if abs(a.boundingBox.midY - b.boundingBox.midY) > 0.015 { return a.boundingBox.midY > b.boundingBox.midY }
+                        return a.boundingBox.minX < b.boundingBox.minX
+                    }.compactMap { $0.topCandidates(1).first?.string }
+                    call.resolve(["text": lines.joined(separator: "\n")])
+                } catch { call.reject("Couldn't recognize the screenshot text.", nil, error) }
+            }
+        }
+    }
 
     private var metadataProviders: [UUID: LPMetadataProvider] = [:]
 
