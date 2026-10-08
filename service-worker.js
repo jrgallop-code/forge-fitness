@@ -1,9 +1,10 @@
-const CACHE_VERSION = "forge-pwa-progress-tabs-20261007";
+const CACHE_VERSION = "forge-expenditure-changes-20261008";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
+    "./js/nutrition/expenditure-changes-summary.js?v=expenditure-changes-1",
     "./css/lifting-goals.css?v=compact-dashboard-210",
     "./css/circuit-library.css",
     "./js/goals/lifting-goals-ui.js?v=balanced-goals-209",
