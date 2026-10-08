@@ -2,82 +2,158 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CAPACITOR_DEBUG</key>
+	<key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Level Up</string>
+	<string>Level Up</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
-	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key><string>com.leveluphypertrophy.app.auth</string>
-			<key>CFBundleURLSchemes</key><array><string>leveluphypertrophy</string><string>levelupspotify</string></array>
-		</dict>
-	</array>
-	<key>SpotifyClientID</key><string></string>
-	<key>LSApplicationQueriesSchemes</key><array><string>spotify</string></array>
 	<key>CFBundleIcons</key>
 	<dict>
 		<key>CFBundleAlternateIcons</key>
 		<dict>
-			<key>AppIconArctic</key><dict><key>CFBundleIconFiles</key><array><string>AppIconArctic</string></array><key>CFBundleIconName</key><string>AppIconArctic</string><key>UIPrerenderedIcon</key><false/></dict>
-			<key>AppIconPure</key><dict><key>CFBundleIconFiles</key><array><string>AppIconPure</string></array><key>CFBundleIconName</key><string>AppIconPure</string><key>UIPrerenderedIcon</key><false/></dict>
-			<key>AppIconOcean</key><dict><key>CFBundleIconFiles</key><array><string>AppIconOcean</string></array><key>CFBundleIconName</key><string>AppIconOcean</string><key>UIPrerenderedIcon</key><false/></dict>
-			<key>AppIconMidnight</key><dict><key>CFBundleIconFiles</key><array><string>AppIconMidnight</string></array><key>CFBundleIconName</key><string>AppIconMidnight</string><key>UIPrerenderedIcon</key><false/></dict>
-			<key>AppIconSlate</key><dict><key>CFBundleIconFiles</key><array><string>AppIconSlate</string></array><key>CFBundleIconName</key><string>AppIconSlate</string><key>UIPrerenderedIcon</key><false/></dict>
-			<key>AppIconPulse</key><dict><key>CFBundleIconFiles</key><array><string>AppIconPulse</string></array><key>CFBundleIconName</key><string>AppIconPulse</string><key>UIPrerenderedIcon</key><false/></dict>
+			<key>AppIconArctic</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIconArctic</string>
+				</array>
+				<key>CFBundleIconName</key>
+				<string>AppIconArctic</string>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>AppIconMidnight</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIconMidnight</string>
+				</array>
+				<key>CFBundleIconName</key>
+				<string>AppIconMidnight</string>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>AppIconOcean</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIconOcean</string>
+				</array>
+				<key>CFBundleIconName</key>
+				<string>AppIconOcean</string>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>AppIconPulse</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIconPulse</string>
+				</array>
+				<key>CFBundleIconName</key>
+				<string>AppIconPulse</string>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>AppIconPure</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIconPure</string>
+				</array>
+				<key>CFBundleIconName</key>
+				<string>AppIconPure</string>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>AppIconSlate</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>AppIconSlate</string>
+				</array>
+				<key>CFBundleIconName</key>
+				<string>AppIconSlate</string>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
 		</dict>
-		<key>CFBundlePrimaryIcon</key><dict><key>CFBundleIconName</key><string>AppIcon</string></dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconName</key>
+			<string>AppIcon</string>
+		</dict>
 	</dict>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.leveluphypertrophy.app.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>leveluphypertrophy</string>
+				<string>levelupspotify</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>spotify</string>
+		<string>instagram</string>
+	</array>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Level Up uses the camera to scan food barcodes and capture meal or progress photos.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Level Up uses the microphone when you choose voice-assisted food logging.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Level Up lets you choose private meal and progress photos from your photo library.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Level Up saves workout or progress cards to your photo library when you choose to save them.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Level Up lets you choose private meal and progress photos from your photo library.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Level Up converts a spoken meal description into text when you choose voice-assisted food logging.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>SharedKeychainAccessGroup</key>
+	<string>$(AppIdentifierPrefix)com.leveluphypertrophy.app</string>
+	<key>SpotifyClientID</key>
+	<string></string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
-    <false/>
-    <key>UISceneConfigurations</key>
-    <dict>
-      <key>UIWindowSceneSessionRoleApplication</key>
-      <array>
-        <dict>
-            <key>UISceneConfigurationName</key>
-            <string>Default Configuration</string>
-            <key>UISceneDelegateClassName</key>
-            <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
-            <key>UISceneStoryboardFile</key>
-            <string>Main</string>
-        </dict>
-      </array>
-    </dict>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
 	</dict>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

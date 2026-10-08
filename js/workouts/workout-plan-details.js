@@ -1,3 +1,4 @@
+import { normalizeInstagramLink } from "./instagram-video-model.js";
 import { getPresetPlan } from "./workout-plans.js";
 import { getExerciseById } from "./exercise-library.js";
 import { openWorkoutLogger } from "./workout-session.js?v=native-navigation-stability-1";
@@ -467,6 +468,7 @@ function showPlanDetails({ plan, type, card }) {
             <span class="eyebrow">${type === "template" ? "LEVEL UP TEMPLATE" : "WORKOUT PLAN"}</span>
             <h2>${escapeHtml(plan?.name || "Workout Plan")}</h2>
             ${plan?.description ? `<p>${escapeHtml(plan.description)}</p>` : ""}
+            ${normalizeInstagramLink(plan?.sourceVideo?.url) ? `<a class="plan-source-link" href="${escapeHtml(normalizeInstagramLink(plan.sourceVideo.url))}" target="_blank" rel="noopener noreferrer">Watch attached Instagram workout ↗</a>` : ""}
             ${type === "template" && plan?.sourceUrl ? `<a class="plan-source-link" href="${escapeHtml(plan.sourceUrl)}" target="_blank" rel="noopener noreferrer">View documented training source ↗</a>` : ""}
         </div>
 

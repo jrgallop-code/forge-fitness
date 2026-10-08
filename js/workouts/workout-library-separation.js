@@ -1,3 +1,4 @@
+import { initializeInstagramSavedVideos } from "./instagram-saved-videos.js";
 import "./workout-template-adoption.js?v=workout-template-adoption-1";
 
 const PLAN_KEY = "forge_workout_plans";
@@ -108,6 +109,8 @@ export function initializeWorkoutLibrarySeparation(landing) {
             </div>
         `;
     }
+
+    initializeInstagramSavedVideos(routinesPanel);
 
     updateCatalogueHeading(catalogueSection);
     markCatalogueCopies(catalogueList, savedPlans, scheduledPlanId);

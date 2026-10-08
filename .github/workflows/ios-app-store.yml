@@ -72,7 +72,7 @@ jobs:
           PY
 
       - name: Run iOS packaging checks
-        run: node --test tests/spotify-pr-tagging.test.mjs tests/live-set-progression.test.mjs tests/capacitor-ios-packaging.test.mjs tests/ios-cloud-build.test.mjs tests/native-app-shell.test.mjs tests/nutrition-badges.test.mjs tests/training-badge-expanded-rules.test.mjs tests/lifting-goals-badges.test.mjs tests/lifting-goals-ui.test.mjs tests/lifting-goals-balanced-score.test.mjs tests/dashboard-badges-scroll-stability.test.mjs
+        run: node --test tests/instagram-video-model.test.mjs tests/spotify-pr-tagging.test.mjs tests/live-set-progression.test.mjs tests/capacitor-ios-packaging.test.mjs tests/ios-cloud-build.test.mjs tests/native-app-shell.test.mjs tests/nutrition-badges.test.mjs tests/training-badge-expanded-rules.test.mjs tests/lifting-goals-badges.test.mjs tests/lifting-goals-ui.test.mjs tests/lifting-goals-balanced-score.test.mjs tests/dashboard-badges-scroll-stability.test.mjs
 
       - name: Create temporary App Store Connect key
         shell: bash
@@ -133,6 +133,12 @@ jobs:
           installed_timer_profile="$profile_directory/$timer_profile_uuid.mobileprovision"
           cp "$SIGNING_DIR/LevelUp_Timer_AppStore.mobileprovision" "$installed_timer_profile"
 
+          share_profile_uuid="$(security cms -D -i "$SIGNING_DIR/LevelUp_Share_AppStore.mobileprovision" | plutil -extract UUID raw -)"
+          installed_share_profile="$profile_directory/$share_profile_uuid.mobileprovision"
+          cp "$SIGNING_DIR/LevelUp_Share_AppStore.mobileprovision" "$installed_share_profile"
+          echo "INSTALLED_SHARE_PROFILE_PATH=$installed_share_profile" >> "$GITHUB_ENV"
+          echo "SHARE_EXTENSION_PROFILE_NAME=Level Up Share App Store $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+
           echo "SIGNING_KEYCHAIN=$signing_keychain" >> "$GITHUB_ENV"
           echo "INSTALLED_PROFILE_PATH=$installed_profile" >> "$GITHUB_ENV"
           echo "INSTALLED_TIMER_PROFILE_PATH=$installed_timer_profile" >> "$GITHUB_ENV"
@@ -156,6 +162,7 @@ jobs:
           CODE_SIGN_IDENTITY="Apple Distribution"
           APP_STORE_PROFILE_NAME="$APP_STORE_PROFILE_NAME"
           TIMER_EXTENSION_PROFILE_NAME="$TIMER_EXTENSION_PROFILE_NAME"
+          SHARE_EXTENSION_PROFILE_NAME="$SHARE_EXTENSION_PROFILE_NAME"
           CURRENT_PROJECT_VERSION="${{ github.run_number }}"
           -allowProvisioningUpdates
           -authenticationKeyPath "$AUTH_KEY_PATH"
@@ -176,7 +183,7 @@ jobs:
           plutil -insert signingCertificate -string "Apple Distribution" "$export_options"
           plutil -insert teamID -string "$APPLE_TEAM_ID" "$export_options"
           plutil -insert provisioningProfiles -xml \
-            "<dict><key>com.leveluphypertrophy.app</key><string>$APP_STORE_PROFILE_NAME</string><key>com.leveluphypertrophy.app.timer</key><string>$TIMER_EXTENSION_PROFILE_NAME</string></dict>" \
+            "<dict><key>com.leveluphypertrophy.app</key><string>$APP_STORE_PROFILE_NAME</string><key>com.leveluphypertrophy.app.timer</key><string>$TIMER_EXTENSION_PROFILE_NAME</string><key>com.leveluphypertrophy.app.share</key><string>$SHARE_EXTENSION_PROFILE_NAME</string></dict>" \
             "$export_options"
           plutil -insert uploadSymbols -bool true "$export_options"
           echo "EXPORT_OPTIONS_PATH=$export_options" >> "$GITHUB_ENV"
@@ -247,6 +254,9 @@ jobs:
           fi
           if [[ -n "${INSTALLED_TIMER_PROFILE_PATH:-}" ]]; then
             rm -f "$INSTALLED_TIMER_PROFILE_PATH"
+          fi
+          if [[ -n "${INSTALLED_SHARE_PROFILE_PATH:-}" ]]; then
+            rm -f "$INSTALLED_SHARE_PROFILE_PATH"
           fi
           if [[ -n "${SIGNING_KEYCHAIN:-}" ]]; then
             security delete-keychain "$SIGNING_KEYCHAIN" || true

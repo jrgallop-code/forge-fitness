@@ -34,14 +34,17 @@
 		A11C00912FF0000100000091 /* LevelUpProgressPhotosPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00922FF0000100000091 /* LevelUpProgressPhotosPlugin.swift */; };
 		A11C00A12FF00001000000A1 /* SpotifyiOS in Frameworks */ = {isa = PBXBuildFile; productRef = A11C00A22FF00001000000A1; };
 		A11C00A32FF00001000000A1 /* LevelUpSpotifyPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00A42FF00001000000A1; };
+		B16A00000000000000000001 = {isa = PBXBuildFile; fileRef = B16A00000000000000000002; };
+		B16A00000000000000000004 = {isa = PBXBuildFile; fileRef = B16A00000000000000000003; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		A11C001C2FF0000100000011 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = 504EC2FC1FED79650016851F /* Project object */; proxyType = 1; remoteGlobalIDString = A11C00202FF0000100000011; remoteInfo = LevelUpTimerWidget; };
+		B16A0000000000000000000B = {isa = PBXContainerItemProxy; containerPortal = 504EC2FC1FED79650016851F; proxyType = 1; remoteGlobalIDString = B16A00000000000000000006; remoteInfo = LevelUpVideoShare; };
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		A11C001D2FF0000100000011 /* Embed App Extensions */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (A11C001A2FF0000100000011 /* LevelUpTimerWidget.appex in Embed App Extensions */, ); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0; };
+		A11C001D2FF0000100000011 /* Embed App Extensions */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (B16A00000000000000000004, A11C001A2FF0000100000011 /* LevelUpTimerWidget.appex in Embed App Extensions */, ); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +78,10 @@
 		A11C00922FF0000100000091 /* LevelUpProgressPhotosPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpProgressPhotosPlugin.swift; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 		A11C00A42FF00001000000A1 /* LevelUpSpotifyPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpSpotifyPlugin.swift; sourceTree = "<group>"; };
+		B16A00000000000000000002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		B16A00000000000000000003 = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LevelUpVideoShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B16A0000000000000000000F = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B16A00000000000000000010 = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LevelUpVideoShare.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +95,7 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A11C001F2FF0000100000011 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		B16A00000000000000000009 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -97,6 +105,7 @@
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
 				A11C00212FF0000100000011 /* LevelUpTimerWidget */,
+B16A00000000000000000005,
 				504EC3051FED79650016851F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -106,6 +115,7 @@
 			children = (
 				504EC3041FED79650016851F /* App.app */,
 				A11C001B2FF0000100000011 /* LevelUpTimerWidget.appex */,
+B16A00000000000000000003,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -140,6 +150,7 @@
 			sourceTree = "<group>";
 		};
 		A11C00212FF0000100000011 /* LevelUpTimerWidget */ = {isa = PBXGroup; children = (A11C00182FF0000100000011 /* LevelUpTimerWidget.swift */, A11C00642FF0000100000061 /* LevelUpDashboardWidget.swift */, A11C00652FF0000100000061 /* LevelUpTimerWidget.entitlements */, A11C00422FF0000100000041 /* Assets.xcassets */, A11C001E2FF0000100000011 /* Info.plist */, ); path = LevelUpTimerWidget; sourceTree = "<group>"; };
+		B16A00000000000000000005 = {isa = PBXGroup; children = (B16A00000000000000000002, B16A0000000000000000000F, B16A00000000000000000010, ); path = LevelUpVideoShare; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -156,6 +167,7 @@
 			);
 			dependencies = (
 				A11C00222FF0000100000011 /* PBXTargetDependency */,
+B16A0000000000000000000C,
 			);
 			name = App;
 			packageProductDependencies = (
@@ -178,6 +190,7 @@
 			productReference = A11C001B2FF0000100000011 /* LevelUpTimerWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		B16A00000000000000000006 /* LevelUpVideoShare */ = {isa = PBXNativeTarget; buildConfigurationList = B16A00000000000000000007; buildPhases = (B16A00000000000000000008, B16A00000000000000000009, B16A0000000000000000000A, ); buildRules = (); dependencies = (); name = LevelUpVideoShare; productName = LevelUpVideoShare; productReference = B16A00000000000000000003; productType = "com.apple.product-type.app-extension"; };
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -214,6 +227,7 @@
 			targets = (
 				504EC3031FED79650016851F /* App */,
 				A11C00202FF0000100000011 /* LevelUpTimerWidget */,
+B16A00000000000000000006,
 			);
 		};
 /* End PBXProject section */
@@ -234,6 +248,7 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A11C00252FF0000100000011 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A11C00412FF0000100000041 /* Assets.xcassets in Resources */, ); runOnlyForDeploymentPostprocessing = 0; };
+		B16A0000000000000000000A = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -258,10 +273,12 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A11C00242FF0000100000011 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A11C00172FF0000100000011 /* LevelUpTimerWidget.swift in Sources */, A11C00632FF0000100000061 /* LevelUpDashboardWidget.swift in Sources */, A11C00192FF0000100000011 /* LevelUpTimerAttributes.swift in Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
+		B16A00000000000000000008 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B16A00000000000000000001, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
 		A11C00222FF0000100000011 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = A11C00202FF0000100000011 /* LevelUpTimerWidget */; targetProxy = A11C001C2FF0000100000011 /* PBXContainerItemProxy */; };
+		B16A0000000000000000000C = {isa = PBXTargetDependency; target = B16A00000000000000000006; targetProxy = B16A0000000000000000000B; };
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
@@ -484,6 +501,8 @@
 			};
 			name = Release;
 		};
+		B16A0000000000000000000D = {isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGN_STYLE = Automatic; CODE_SIGN_ENTITLEMENTS = LevelUpVideoShare/LevelUpVideoShare.entitlements; CURRENT_PROJECT_VERSION = 1; INFOPLIST_FILE = LevelUpVideoShare/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 15.0; MARKETING_VERSION = 1.0.3; PRODUCT_BUNDLE_IDENTIFIER = com.leveluphypertrophy.app.share; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks");}; name = Debug; };
+		B16A0000000000000000000E = {isa = XCBuildConfiguration; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CODE_SIGN_STYLE = Automatic; CODE_SIGN_ENTITLEMENTS = LevelUpVideoShare/LevelUpVideoShare.entitlements; CURRENT_PROJECT_VERSION = 1; INFOPLIST_FILE = LevelUpVideoShare/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 15.0; MARKETING_VERSION = 1.0.3; PRODUCT_BUNDLE_IDENTIFIER = com.leveluphypertrophy.app.share; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks"); PROVISIONING_PROFILE_SPECIFIER = "$(SHARE_EXTENSION_PROFILE_NAME)";}; name = Release; };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -506,6 +525,7 @@
 			defaultConfigurationName = Release;
 		};
 		A11C00232FF0000100000011 /* Build configuration list for PBXNativeTarget "LevelUpTimerWidget" */ = {isa = XCConfigurationList; buildConfigurations = (A11C00262FF0000100000011 /* Debug */, A11C00272FF0000100000011 /* Release */, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		B16A00000000000000000007 = {isa = XCConfigurationList; buildConfigurations = (B16A0000000000000000000D, B16A0000000000000000000E, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */

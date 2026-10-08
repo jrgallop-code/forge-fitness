@@ -24,6 +24,7 @@ on:
   pull_request:
     branches:
       - main
+      - ios/capacitor-app-store
     paths:
       - .github/workflows/ios-capacitor.yml
       - .github/workflows/ios-app-store.yml
@@ -87,7 +88,7 @@ jobs:
           PY
 
       - name: Run iOS packaging checks
-        run: node --test tests/spotify-pr-tagging.test.mjs tests/capacitor-ios-packaging.test.mjs tests/native-app-shell.test.mjs
+        run: node --test tests/instagram-video-model.test.mjs tests/spotify-pr-tagging.test.mjs tests/capacitor-ios-packaging.test.mjs tests/native-app-shell.test.mjs
 
       - name: Report Apple toolchain
         run: xcodebuild -version

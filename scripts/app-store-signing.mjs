@@ -166,6 +166,14 @@ async function createSigningAssets() {
     await ensureBundleCapability(bundleId, 'APP_GROUPS');
     await ensureBundleCapability(extensionBundleId, 'APP_GROUPS');
 
+    const shareIdentifier = 'com.leveluphypertrophy.app.share';
+    let shareBundleIds = await api(`/bundleIds?filter%5Bidentifier%5D=${encodeURIComponent(shareIdentifier)}&limit=20`);
+    let shareBundleId = shareBundleIds?.data?.find(item => item.attributes?.identifier === shareIdentifier)?.id;
+    if (!shareBundleId) {
+      const created = await api('/bundleIds', { method: 'POST', body: JSON.stringify({ data: { type: 'bundleIds', attributes: { identifier: shareIdentifier, name: 'Level Up Video Share', platform: 'IOS' } } }) });
+      shareBundleId = created.data.id;
+    }
+
     const runLabel = `${required('GITHUB_RUN_ID')}-${process.env.GITHUB_RUN_ATTEMPT || '1'}`;
     const profileName = `Level Up App Store ${runLabel}`;
     const profile = await api('/profiles', {
@@ -200,6 +208,14 @@ async function createSigningAssets() {
     });
     createdProfileIds.push(timerProfile.data.id);
     writeFileSync(timerProfilePath, Buffer.from(timerProfile.data.attributes.profileContent, 'base64'));
+    const shareProfileName = `Level Up Share App Store ${runLabel}`;
+    const shareProfile = await api('/profiles', { method: 'POST', body: JSON.stringify({ data: {
+      type: 'profiles', attributes: { name: shareProfileName, profileType: 'IOS_APP_STORE' },
+      relationships: { bundleId: { data: { type: 'bundleIds', id: shareBundleId } }, certificates: { data: [{ type: 'certificates', id: certificate.data.id }] } }
+    } }) });
+    createdProfileIds.push(shareProfile.data.id);
+    writeFileSync(path.join(signingDirectory, 'LevelUp_Share_AppStore.mobileprovision'), Buffer.from(shareProfile.data.attributes.profileContent, 'base64'));
+
     writeFileSync(statePath, JSON.stringify({
       certificateId: certificate.data.id,
       profileIds: createdProfileIds,

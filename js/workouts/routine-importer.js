@@ -15,6 +15,19 @@ Seated Cable Row - 3x8-12
 Dumbbell Curl - 3x10-15`;
 
 let importState = null;
+let sourceVideo = null;
+
+export function openRoutineFromVideo(video) {
+  const page = document.querySelector(".workout-page");
+  if (!page) return;
+  initializeRoutineImporter();
+  openImporter(page);
+  sourceVideo = { id: video.id, title: video.title, url: video.url };
+  const top = page.querySelector(".routine-import-topbar");
+  top.querySelector("h3").textContent = "Create routine from workout text";
+  top.querySelector("p").textContent = `Paste the written exercises, sets and reps from ${video.title}. Review the draft before saving. Your Instagram video will stay attached.`;
+}
+
 
 export function initializeRoutineImporter(root = document) {
   ensureStyles();
@@ -93,6 +106,9 @@ function handleInput(event, page) {
 }
 
 function openImporter(page) {
+  sourceVideo = null;
+  const top = page.querySelector(".routine-import-topbar");
+  if (top) { top.querySelector("h3").textContent = "Paste your routine"; top.querySelector("p").textContent = "Paste a written routine, then review everything before saving."; }
   page.querySelector("[data-workout-home]")?.setAttribute("hidden", "");
   page.querySelector("[data-smart-build-wizard]")?.setAttribute("hidden", "");
   const wizard = page.querySelector("[data-routine-import-wizard]");
@@ -106,6 +122,7 @@ function closeImporter(page) {
   page.querySelector("[data-routine-import-wizard]")?.setAttribute("hidden", "");
   page.querySelector("[data-workout-home]")?.removeAttribute("hidden");
   importState = null;
+  sourceVideo = null;
 }
 
 function showPaste(page) {
@@ -156,7 +173,7 @@ async function buildReview(page) {
   }
   const parsed = parseRoutineText(text);
   if (!parsed.days.length) { if (message) message.textContent = "No exercises were recognized. Try lines such as Bench Press - 3x8-12."; return; }
-  importState = { name: suggestedName(parsed.days), rawText: text, days: parsed.days, skipped: parsed.skipped };
+  importState = { name: sourceVideo?.title || suggestedName(parsed.days), rawText: text, days: parsed.days, skipped: parsed.skipped };
   renderReview(page);
 }
 
@@ -269,10 +286,12 @@ function moveExercise(button, page) {
 
 function saveRoutine(button, page) {
   const name = String(importState.name || "Imported Routine").trim() || "Imported Routine";
-  const plan = { id: `import-${Date.now()}`, name, days: importState.days.map(day => ({ name: day.name, exercises: day.exercises.map(item => ({ id: item.match.exerciseId, sets: item.sets, reps: item.reps })) })), importedRoutine: { version: 1, sourceUrl: null, originalText: importState.rawText, importedAt: new Date().toISOString() } };
+  const plan = { id: `import-${Date.now()}`, name, days: importState.days.map(day => ({ name: day.name, exercises: day.exercises.map(item => ({ id: item.match.exerciseId, sets: item.sets, reps: item.reps })) })), importedRoutine: { version: 1, sourceUrl: sourceVideo?.url || null, originalText: importState.rawText, importedAt: new Date().toISOString() } };
+  if (sourceVideo) { plan.sourceVideo = { ...sourceVideo }; plan.sourceType = "instagram"; plan.savedAt = new Date().toISOString(); }
   const plans = readPlans();
   plans.push(plan);
   localStorage.setItem(PLAN_KEY, JSON.stringify(plans));
+  if (sourceVideo) sessionStorage.setItem("level_up_open_my_routines_v1", "1");
   button.disabled = true;
   button.textContent = "Saved ✓";
   window.setTimeout(() => { closeImporter(page); document.querySelector('.nav-btn[data-page="workout"]')?.click(); }, 250);

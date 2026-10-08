@@ -18,6 +18,7 @@ const LAST_SYNC_KEY =
     "level_up_drive_last_sync";
 
 const BACKUP_KEYS = [
+    "level_up_instagram_videos_v1",
     "forge_workout_plans",
     "forge_workout_sessions",
     "level_up_circuit_sessions_v1",
