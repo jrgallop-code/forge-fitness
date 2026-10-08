@@ -1,5 +1,6 @@
+import { openCustomExerciseForImport } from "./workouts.js?v=saved-plan-edit-2";
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
-import { parseRoutineText } from "./routine-import-parser.js?v=exercise-match-1";
+import { parseRoutineText, suggestWorkoutType } from "./routine-import-parser.js?v=exercise-match-1";
 import { formatSetCredits, getWeeklyPlanVolume } from "./plan-muscle-volume.js?v=plan-volume-shared-1";
 import { extractSharedWorkoutCode, getSharedWorkoutStats, importSharedWorkoutPackage, resolveSharedWorkoutFromText } from "./workout-sharing.js?v=ios-share-workout-2";
 
@@ -62,7 +63,7 @@ function renderShell() {
 }
 
 function renderPasteStage() {
-  return `<div class="routine-import-paste-card"><label for="routine-import-text">Routine text</label><textarea id="routine-import-text" maxlength="100000" placeholder="Paste a routine from ChatGPT or another source…&#10;&#10;Push Day&#10;Bench Press - 3x6-8&#10;Cable Fly - 3x12-15"></textarea><div class="routine-import-tools"><button class="secondary-btn" type="button" data-routine-paste>Paste from Clipboard</button><button class="routine-import-text-action" type="button" data-routine-example>Use example</button><button class="routine-import-text-action" type="button" data-routine-clear>Clear</button><small data-routine-count>0 / 100,000</small></div>${window.Capacitor?.getPlatform?.() === "ios" ? `<button type="button" class="secondary-btn" data-routine-screenshot>Or import screenshot of the text</button><p>Reads written exercises on your iPhone. Review the extracted text before building.</p>` : ""}<p class="routine-import-message" data-routine-message aria-live="polite"></p><button class="primary-btn routine-import-build" type="button" data-routine-build>Build Pasted Routine</button></div>`;
+  return `<div class="routine-import-paste-card"><label>Workout type<select data-routine-kind><option value="">Choose circuit or regular workout</option><option value="circuit">Circuit — repeat the exercise list each round</option><option value="regular">Regular workout — separate sets per exercise</option></select></label><p data-routine-type-hint></p><div data-routine-circuit-options hidden><label>Rounds<input type="number" min="1" max="20" data-routine-rounds placeholder="Number of rounds"></label><label>Rest between rounds (seconds)<input type="number" min="0" max="600" data-routine-rest value="0"></label></div><label for="routine-import-text">Routine text</label><textarea id="routine-import-text" maxlength="100000" placeholder="Paste a routine from ChatGPT or another source…&#10;&#10;Push Day&#10;Bench Press - 3x6-8&#10;Cable Fly - 3x12-15"></textarea><div class="routine-import-tools"><button class="secondary-btn" type="button" data-routine-paste>Paste from Clipboard</button><button class="routine-import-text-action" type="button" data-routine-example>Use example</button><button class="routine-import-text-action" type="button" data-routine-clear>Clear</button><small data-routine-count>0 / 100,000</small></div>${window.Capacitor?.getPlatform?.() === "ios" ? `<button type="button" class="secondary-btn" data-routine-screenshot>Or import screenshot of the text</button><p>Reads written exercises on your iPhone. Review the extracted text before building.</p>` : ""}<p class="routine-import-message" data-routine-message aria-live="polite"></p><button class="primary-btn routine-import-build" type="button" data-routine-build>Build Pasted Routine</button></div>`;
 }
 
 function handleClick(event, page) {
@@ -76,6 +77,7 @@ function handleClick(event, page) {
   if (button.matches("[data-routine-screenshot]")) return importScreenshot(page, button);
   if (button.matches("[data-routine-build]")) return buildReview(page);
   if (button.matches("[data-routine-back]")) return showPaste(page);
+  if (button.matches("[data-routine-create-custom]")) return createMissingExercise(button, page);
   if (button.matches("[data-routine-confirm]")) return confirmMatch(button, page);
   if (button.matches("[data-routine-remove]")) return removeExercise(button, page);
   if (button.matches("[data-routine-up], [data-routine-down]")) return moveExercise(button, page);
@@ -84,6 +86,7 @@ function handleClick(event, page) {
 }
 
 function handleChange(event, page) {
+  if (event.target.matches("[data-routine-kind]")) { page.querySelector("[data-routine-circuit-options]").hidden = event.target.value !== "circuit"; return; }
   const select = event.target.closest("[data-routine-match]");
   if (!select || !importState) return;
   const item = findItem(select.dataset.day, select.dataset.exercise);
@@ -103,8 +106,9 @@ function handleInput(event, page) {
   if (field.matches("[data-routine-name]")) { importState.name = field.value; return; }
   const item = findItem(field.dataset.day, field.dataset.exercise);
   if (!item) return;
-  if (field.matches("[data-routine-sets]")) item.sets = Math.max(1, Math.min(20, Number(field.value || 1)));
+  if (field.matches("[data-routine-sets]")) item.sets = field.value === "" ? null : Math.max(1, Math.min(20, Number(field.value)));
   else item.reps = field.value.trim();
+  updateSaveEligibility(page);
 }
 
 function openImporter(page) {
@@ -133,6 +137,10 @@ function showPaste(page) {
   if (importState) {
     const textarea = page.querySelector("#routine-import-text");
     if (textarea) textarea.value = importState.rawText || "";
+    page.querySelector('[data-routine-kind]').value=importState.kind || '';
+    page.querySelector('[data-routine-circuit-options]').hidden=importState.kind !== 'circuit';
+    page.querySelector('[data-routine-rounds]').value=importState.rounds || '';
+    page.querySelector('[data-routine-rest]').value=importState.rest || 0;
   }
   updateCounter(page);
 }
@@ -174,9 +182,15 @@ async function buildReview(page) {
       return;
     }
   }
-  const parsed = parseRoutineText(text);
-  if (!parsed.days.length) { if (message) message.textContent = "No exercises were recognized. Try lines such as Bench Press - 3x8-12."; return; }
-  importState = { name: sourceVideo?.title || suggestedName(parsed.days), rawText: text, days: parsed.days, skipped: parsed.skipped };
+  const kind = page.querySelector('[data-routine-kind]')?.value;
+  if (!kind) { if(message) message.textContent = 'Choose Circuit or Regular workout before building.'; return; }
+  const rounds = Number(page.querySelector('[data-routine-rounds]')?.value);
+  const rest = Number(page.querySelector('[data-routine-rest]')?.value || 0);
+  if (kind === 'circuit' && (!Number.isInteger(rounds) || rounds < 1 || rounds > 20 || !Number.isFinite(rest) || rest < 0 || rest > 600)) { if(message) message.textContent = 'Enter 1–20 rounds and 0–600 seconds of rest.'; return; }
+  const parsed = parseRoutineText(text, {allowExerciseLists:true});
+  if (kind === 'circuit') parsed.days = [{name:'Circuit',exercises:parsed.days.flatMap(day=>day.exercises).map(item=>({...item,sets:rounds}))}].filter(day=>day.exercises.length);
+  if (!parsed.days.length) { if (message) message.textContent = "No exercises were recognized. Put each exercise on its own line, such as Goblet Squat or Bench Press - 3x8-12."; return; }
+  importState = { name: sourceVideo?.title || suggestedName(parsed.days), rawText: text, kind, rounds:kind === "circuit" ? rounds : null, rest, days: parsed.days, skipped: parsed.skipped };
   renderReview(page);
 }
 
@@ -230,10 +244,12 @@ function renderReview(page) {
   const stage = page.querySelector("[data-routine-import-stage]");
   const total = importState.days.reduce((sum, day) => sum + day.exercises.length, 0);
   const uncertain = importState.days.flatMap(day => day.exercises).filter(item => !item.match.confirmed).length;
-  stage.innerHTML = `<div class="routine-import-review"><div class="routine-import-review-head"><div><span class="eyebrow">IMPORT REVIEW</span><h3>${importState.days.length} days · ${total} exercises</h3><p>${uncertain ? `${uncertain} match${uncertain === 1 ? "" : "es"} need your confirmation.` : "Everything is ready to save."}</p></div><button class="secondary-btn" type="button" data-routine-back>← Edit Paste</button></div><label class="routine-import-name">Routine name<input type="text" maxlength="80" value="${escapeHtml(importState.name)}" data-routine-name></label>${importState.skipped.length ? `<div class="routine-import-skipped"><strong>${importState.skipped.length} line${importState.skipped.length === 1 ? " was" : "s were"} not imported</strong><small>Headers, notes, and progression instructions are kept in the original import text.</small></div>` : ""}<div class="routine-import-days">${importState.days.map(renderDay).join("")}</div>${renderImportSummary()}<div class="routine-import-savebar"><div><strong>${uncertain ? "Confirm highlighted matches" : "Ready to save"}</strong><small>Your original routine remains unchanged until you save.</small></div><button class="primary-btn" type="button" data-routine-save ${uncertain ? "disabled" : ""}>Save Routine</button></div></div>`;
+  const incomplete = !canSaveImport();
+  stage.innerHTML = `<div class="routine-import-review"><div class="routine-import-review-head"><div><span class="eyebrow">IMPORT REVIEW</span><h3>${importState.days.length} days · ${total} exercises</h3><p>${uncertain ? `${uncertain} match${uncertain === 1 ? "" : "es"} need your confirmation.` : (incomplete ? "Add sets and rep targets to the regular workout." : "Everything is ready to save.")}</p></div><button class="secondary-btn" type="button" data-routine-back>← Edit Paste</button></div><label class="routine-import-name">Routine name<input type="text" maxlength="80" value="${escapeHtml(importState.name)}" data-routine-name></label>${importState.skipped.length ? `<div class="routine-import-skipped"><strong>${importState.skipped.length} line${importState.skipped.length === 1 ? " was" : "s were"} not imported</strong><small>Headers, notes, and progression instructions are kept in the original import text.</small></div>` : ""}<div class="routine-import-days">${importState.days.map(renderDay).join("")}</div>${renderImportSummary()}<div class="routine-import-savebar"><div><strong>${uncertain ? "Confirm highlighted matches" : incomplete ? "Add missing sets and rep targets" : "Ready to save"}</strong><small>Your original routine remains unchanged until you save.</small></div><button class="primary-btn" type="button" data-routine-save ${incomplete ? "disabled" : ""}>Save Routine</button></div></div>`;
 }
 
 function renderImportSummary() {
+  if(importState.kind === 'circuit')return `<section class="routine-import-summary"><h4>Circuit · ${importState.rounds} rounds</h4><p>${importState.days.flatMap(d=>d.exercises).length} exercises per round · ${importState.rest} seconds rest between rounds</p><small>Rep targets are optional. Uses the circuit round logger and separate circuit history.</small></section>`;
   let workingSets = 0;
   importState.days.forEach(day => day.exercises.forEach(item => {
     const sets = Number(item.sets || 0);
@@ -258,7 +274,7 @@ function renderExercise(item, dayIndex, exerciseIndex) {
   const uncertain = !item.match.confirmed;
   const hasSuggestion = Boolean(item.match.exerciseId);
   const all = getAllExercises().slice().sort((a, b) => a.name.localeCompare(b.name));
-  return `<article class="routine-import-exercise ${uncertain ? "needs-review" : ""}"><div class="routine-import-match"><div><strong>${escapeHtml(item.name)}</strong><small>${uncertain ? (hasSuggestion ? "Check this match" : "Choose an exercise") : "Matched"}</small></div><select data-routine-match data-day="${dayIndex}" data-exercise="${exerciseIndex}" aria-label="Exercise match for ${escapeHtml(item.name)}">${hasSuggestion ? "" : `<option value="" selected disabled>Choose an exercise</option>`}${all.map(exercise => `<option value="${exercise.id}" ${exercise.id === item.match.exerciseId ? "selected" : ""}>${escapeHtml(exercise.name)}</option>`).join("")}</select>${uncertain && hasSuggestion ? `<button type="button" data-routine-confirm data-day="${dayIndex}" data-exercise="${exerciseIndex}">Use suggestion</button>` : ""}</div><div class="routine-import-fields"><label>Sets<input type="number" min="1" max="20" value="${item.sets}" data-routine-sets data-day="${dayIndex}" data-exercise="${exerciseIndex}"></label><label>Reps<input type="text" maxlength="20" value="${escapeHtml(item.reps)}" data-routine-reps data-day="${dayIndex}" data-exercise="${exerciseIndex}"></label><div class="routine-import-row-actions"><button type="button" data-routine-up data-day="${dayIndex}" data-exercise="${exerciseIndex}" aria-label="Move exercise up">↑</button><button type="button" data-routine-down data-day="${dayIndex}" data-exercise="${exerciseIndex}" aria-label="Move exercise down">↓</button><button type="button" data-routine-remove data-day="${dayIndex}" data-exercise="${exerciseIndex}">Remove</button></div></div>${item.notes ? `<p class="routine-import-note">${escapeHtml(item.notes)}</p>` : ""}</article>`;
+  return `<article class="routine-import-exercise ${uncertain ? "needs-review" : ""}"><div class="routine-import-match"><div><strong>${escapeHtml(item.name)}</strong><small>${uncertain ? (hasSuggestion ? "Check this match" : "Choose an exercise") : "Matched"}</small></div><select data-routine-match data-day="${dayIndex}" data-exercise="${exerciseIndex}" aria-label="Exercise match for ${escapeHtml(item.name)}">${hasSuggestion ? "" : `<option value="" selected disabled>Choose an exercise</option>`}${all.map(exercise => `<option value="${exercise.id}" ${exercise.id === item.match.exerciseId ? "selected" : ""}>${escapeHtml(exercise.name)}</option>`).join("")}</select>${uncertain && hasSuggestion ? `<button type="button" data-routine-confirm data-day="${dayIndex}" data-exercise="${exerciseIndex}">Use suggestion</button>` : ""}</div><button type="button" class="secondary-btn" data-routine-create-custom data-day="${dayIndex}" data-exercise="${exerciseIndex}">Create new exercise</button><div class="routine-import-fields"><label>${importState.kind === "circuit" ? "Rounds" : "Sets"}<input ${importState.kind === "circuit" ? "readonly" : ""} type="number" min="1" max="20" value="${item.sets ?? ""}" data-routine-sets data-day="${dayIndex}" data-exercise="${exerciseIndex}"></label><label>${importState.kind === "circuit" ? "Reps / seconds (optional)" : "Rep target"}<input type="text" maxlength="20" value="${escapeHtml(item.reps)}" data-routine-reps data-day="${dayIndex}" data-exercise="${exerciseIndex}"></label><div class="routine-import-row-actions"><button type="button" data-routine-up data-day="${dayIndex}" data-exercise="${exerciseIndex}" aria-label="Move exercise up">↑</button><button type="button" data-routine-down data-day="${dayIndex}" data-exercise="${exerciseIndex}" aria-label="Move exercise down">↓</button><button type="button" data-routine-remove data-day="${dayIndex}" data-exercise="${exerciseIndex}">Remove</button></div></div>${item.notes ? `<p class="routine-import-note">${escapeHtml(item.notes)}</p>` : ""}</article>`;
 }
 
 function confirmMatch(button, page) {
@@ -291,6 +307,12 @@ function saveRoutine(button, page) {
   const name = String(importState.name || "Imported Routine").trim() || "Imported Routine";
   const plan = { id: `import-${Date.now()}`, name, days: importState.days.map(day => ({ name: day.name, exercises: day.exercises.map(item => ({ id: item.match.exerciseId, sets: item.sets, reps: item.reps })) })), importedRoutine: { version: 1, sourceUrl: sourceVideo?.url || null, originalText: importState.rawText, importedAt: new Date().toISOString() } };
   if (sourceVideo) { plan.sourceVideo = { ...sourceVideo }; plan.sourceType = "instagram"; plan.savedAt = new Date().toISOString(); }
+  if (!canSaveImport()) return;
+  if (importState.kind === 'circuit') {
+    plan.id = `level-up-circuit-import-${Date.now()}`;
+    Object.assign(plan,{circuitId:plan.id,trainingContext:'circuit',trainingType:'circuit',catalogueCategory:'circuit',rounds:importState.rounds,circuitRestSeconds:importState.rest,daysPerWeek:1});
+    for(const day of plan.days) for(const exercise of day.exercises) Object.assign(exercise,{sets:plan.rounds,trainingContext:'circuit',circuitId:plan.id,supersetGroup:plan.id});
+  }
   const plans = readPlans();
   plans.push(plan);
   localStorage.setItem(PLAN_KEY, JSON.stringify(plans));
@@ -302,7 +324,7 @@ function saveRoutine(button, page) {
 
 function findItem(dayIndex, exerciseIndex) { return importState?.days?.[Number(dayIndex)]?.exercises?.[Number(exerciseIndex)] || null; }
 function suggestedName(days) { return days.length === 1 ? `${days[0].name} Routine` : `${days.length}-Day Imported Routine`; }
-function updateCounter(page) { const text = page.querySelector("#routine-import-text")?.value || ""; const counter = page.querySelector("[data-routine-count]"); if (counter) counter.textContent = `${text.length.toLocaleString()} / 100,000`; }
+function updateCounter(page) { updateImportTypeHint(page); const text = page.querySelector("#routine-import-text")?.value || ""; const counter = page.querySelector("[data-routine-count]"); if (counter) counter.textContent = `${text.length.toLocaleString()} / 100,000`; }
 function readPlans() { try { const value = JSON.parse(localStorage.getItem(PLAN_KEY) || "[]"); return Array.isArray(value) ? value : []; } catch { return []; } }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character])); }
 
@@ -318,4 +340,25 @@ async function importScreenshot(page, button) {
     if (message) message.textContent = 'Screenshot text added. Correct anything unclear, then tap Build Pasted Routine.';
   } catch (e) { if (message) message.textContent = e.message || 'Could not read this screenshot.'; }
   finally { button.disabled = false; }
+}
+
+function canSaveImport() {
+ const rows=importState?.days?.flatMap(day=>day.exercises) || [];
+ return rows.length > 0 && rows.every(item=>item.match.confirmed && item.match.exerciseId && (importState.kind === 'circuit' || (Number.isInteger(item.sets) && item.sets > 0 && String(item.reps || '').trim())));
+}
+function updateSaveEligibility(page) { const b=page.querySelector('[data-routine-save]'); if(b)b.disabled=!canSaveImport(); }
+function createMissingExercise(button,page) {
+ const item=findItem(button.dataset.day,button.dataset.exercise);
+ if(!item)return;
+ openCustomExerciseForImport({name:item.name,onSave:exercise=>{
+   item.match={exerciseId:exercise.id,exerciseName:exercise.name,confirmed:true,confidence:1,alternatives:[]};
+   if(importState.kind!=='circuit'){item.sets=item.sets || exercise.defaultSets;item.reps=item.reps || exercise.recommendedReps;}
+   renderReview(page);
+ }});
+}
+function updateImportTypeHint(page) {
+ const text=page.querySelector('#routine-import-text')?.value || '';
+ const hint=page.querySelector('[data-routine-type-hint]');
+ const rounds=page.querySelector('[data-routine-rounds]');const roundMatch=text.match(/\b(\d+)\s*rounds?\b/i);if(rounds && !rounds.value && roundMatch)rounds.value=Math.min(20,Math.max(1,Number(roundMatch[1])));
+ if(hint)hint.textContent=suggestWorkoutType(text)==='circuit'?'This looks like a circuit. Confirm the workout type above.':'An exercise list can be either type. Choose the format you want.';
 }

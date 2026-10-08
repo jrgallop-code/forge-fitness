@@ -136,6 +136,23 @@ export function initializeWorkoutBuilder() {
 }
 
 
+let importedExerciseDialog = null;
+export function openCustomExerciseForImport({name,onSave}) {
+    const form=document.getElementById('custom-exercise-form');
+    if(!form) { window.alert('The exercise form is unavailable. Return to Workout and try again.'); return; }
+    if(importedExerciseDialog)return;
+    const parent=form.parentNode,next=form.nextSibling;
+    const dialog=document.createElement('dialog');dialog.className='ig-dialog';
+    dialog.innerHTML='<div class="ig-top"><h2>Create exercise</h2><button type="button" aria-label="Close">✕</button></div>';
+    document.body.appendChild(dialog);dialog.appendChild(form);form.hidden=false;
+    importedExerciseDialog={dialog,form,parent,next};
+    customExerciseTarget={onImportSave:onSave};
+    document.getElementById('custom-exercise-name').value=name || '';
+    const message=document.getElementById('custom-exercise-message');if(message)message.textContent='';
+    const cleanup=()=>{const context=importedExerciseDialog;if(!context)return;context.form.hidden=true;context.parent.insertBefore(context.form,context.next?.parentNode===context.parent?context.next:null);importedExerciseDialog=null;customExerciseTarget=null;dialog.remove();};
+    dialog.onclose=cleanup;dialog.querySelector('button').onclick=()=>dialog.close();dialog.showModal();
+}
+
 function showCustomExerciseForm() {
 
     const form =
@@ -164,6 +181,7 @@ function showCustomExerciseForm() {
 
 
 function hideCustomExerciseForm() {
+    if(importedExerciseDialog) { importedExerciseDialog.dialog.close(); return; }
 
     const form =
         document.getElementById(
@@ -269,6 +287,13 @@ function saveCustomExercise() {
         return;
     }
 
+
+    if (customExerciseTarget?.onImportSave) {
+        const callback=customExerciseTarget.onImportSave;
+        hideCustomExerciseForm();
+        callback(exercise);
+        return;
+    }
 
     const target =
         workingPlan

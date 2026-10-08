@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 globalThis.localStorage = { getItem: () => null };
-const { parseRoutineText, parseExerciseLine, matchExerciseName } = await import("../js/workouts/routine-import-parser.js?v=routine-import-1");
+const { parseRoutineText, parseExerciseLine, matchExerciseName, suggestWorkoutType } = await import("../js/workouts/routine-import-parser.js?v=routine-import-1");
 
 test("parses common copied routine formats into workout days", () => {
   const result = parseRoutineText(`Push Day
@@ -64,4 +64,26 @@ test("splits exercise rows collapsed by ChatGPT or iPhone paste", () => {
     "Face Pulls"
   ]);
   assert.deepEqual(result.skipped, []);
+});
+
+
+test("exercise-only circuit lists retain missing targets and unknown movements for review", () => {
+  const result = parseRoutineText("Circuit\n3 rounds\n1. Goblet Squat\n2. Zorbulator\nRest 60 seconds", {allowExerciseLists:true});
+  assert.deepEqual(result.days[0].exercises.map(({name,sets,reps})=>({name,sets,reps})), [
+    {name:"Goblet Squat",sets:null,reps:""}, {name:"Zorbulator",sets:null,reps:""}
+  ]);
+  assert.equal(result.days[0].exercises[1].match.exerciseId,null);
+  assert.deepEqual(result.skipped,["Circuit","3 rounds","Rest 60 seconds"]);
+});
+
+test("list import preserves rep and timed targets alongside regular prescriptions", () => {
+ const result=parseRoutineText("Goblet Squat - 10 reps\nPlank 30 sec\nBench Press - 3x8-12",{allowExerciseLists:true});
+ assert.deepEqual(result.days[0].exercises.map(({name,sets,reps})=>({name,sets,reps})),[
+ {name:"Goblet Squat",sets:null,reps:"10"},{name:"Plank",sets:null,reps:"30 sec"},{name:"Bench Press",sets:3,reps:"8-12"}]);
+});
+
+test("circuit hints leave unmarked exercise lists undecided", () => {
+ assert.equal(suggestWorkoutType("Repeat for 3 rounds"),"circuit");
+ assert.equal(suggestWorkoutType("Goblet Squat\nPush Up"),null);
+ assert.equal(parseRoutineText("Zorbulator").days.length,0);
 });

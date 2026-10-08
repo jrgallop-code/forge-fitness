@@ -11,7 +11,7 @@ const EXERCISE_ALIASES = new Map([
 ]);
 const MIN_SUGGESTION_SCORE = 0.2;
 
-export function parseRoutineText(text) {
+export function parseRoutineText(text, { allowExerciseLists = false } = {}) {
   const lines = String(text || "").split(/(?:\r\n|[\n\r\u2028\u2029])/).flatMap(expandLine).map(cleanLine).filter(Boolean);
   const days = [];
   let current = null;
@@ -24,7 +24,7 @@ export function parseRoutineText(text) {
       days.push(current);
       continue;
     }
-    const parsed = parseExerciseLine(line);
+    const parsed = parseExerciseLine(line) || (allowExerciseLists ? parseExerciseListLine(line) : null);
     if (!parsed) { skipped.push(line); continue; }
     if (!current) {
       current = { name: "Workout 1", exercises: [] };
@@ -154,4 +154,16 @@ function normalizeReps(value) {
 
 function titleCase(value) {
   return String(value || "").trim().replace(/\b\w/g, character => character.toUpperCase());
+}
+
+export function suggestWorkoutType(text) {
+  return /\b(circuit|rounds?|amrap|emom|repeat|work\s*\/\s*rest)\b/i.test(String(text || '')) ? 'circuit' : null;
+}
+export function parseExerciseListLine(line) {
+  const value = cleanLine(line);
+  if (!value || value.length > 100 || /https?:|[@#]|[.!?]/.test(value) || /^(?:\d+\s*(?:rounds?|sets?|reps?|seconds?|sec|minutes?)|rest\b|repeat\b|circuit\b|amrap\b|emom\b|workout\b|round\b|save\b|follow\b|like\b)/i.test(value)) return null;
+  const match = value.match(/^(.*?)\s*[-–—:]?\s+(\d+(?:-\d+)?)(?:\s*(reps?|seconds?|secs?|s))?$/i);
+  const name = (match ? match[1] : value).replace(/\s*[-–—:]\s*$/, '').trim();
+  if (!/[a-z]/i.test(name) || name.split(/\s+/).length > 10) return null;
+  return {name,sets:null,reps:match ? match[2] + (/^(seconds?|secs?|s)$/i.test(match[3] || '') ? ' sec' : '') : '',notes:''};
 }
