@@ -241,6 +241,7 @@ function updateCatalogueHeading(section) {
     const text = String(summary.textContent || "")
         .replace(/^\d+ saved plans? shown first\s*·\s*/i, "")
         .replace(/\s*·\s*\d+ saved plans? shown first$/i, "")
+        .replace(/(?:\s*·\s*Find another plan)+$/i, "")
         .trim();
 
     summary.textContent = showingAll

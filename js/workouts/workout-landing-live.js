@@ -410,6 +410,8 @@ function openCataloguePlan({ content, landing, planId }) {
 }
 
 function openSavedPlan({ content, landing, planId }) {
+    const saved = readSavedPlans().find(plan => String(plan.id) === String(planId));
+    if (saved?.trainingContext === 'circuit' && openCircuitTemplate(planId, landing, saved)) return;
     const card = content.querySelector(`[data-custom-plan-id="${cssEscape(planId)}"]`);
     if (!card) {
         showToast("That saved plan could not be opened.");
