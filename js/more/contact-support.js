@@ -1,4 +1,4 @@
-import { openFeatureBoard } from "./feature-board.js?v=1";
+import { openFeatureBoard } from "./feature-board.js?v=owner-feature-review-1";
 const SUPPORT_ENDPOINT = "https://formsubmit.co/ajax/jrgallop@gmail.com";
 const CLOUD_ENDPOINT = "https://api.leveluphypertrophy.com";
 const SUPPORT_ICON = '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H9l-5 4V4Zm2 2v9.2l2.3-1.2H18V6H6Zm5 2h2v4h-2V8Zm0 5h2v2h-2v-2Z"/></svg>';
@@ -240,3 +240,4 @@ ensureSupportStyles();
 const helpStyle = document.createElement("style");
 helpStyle.textContent = '.more-menu-card{text-decoration:none!important} #feature-list{display:grid;gap:12px;margin:18px 0}.support-thread-button{display:block;width:100%;padding:12px;text-align:left;font:inherit;background:transparent;color:inherit;border:1px solid rgba(128,128,128,.3);border-radius:10px}.support-thread-button small{display:block;margin-top:6px}.support-message{padding:14px;border-radius:12px;background:rgba(128,128,128,.12)}.support-message time{display:block;font-size:12px;opacity:.7}.support-message p{overflow-wrap:anywhere}#feature-search,#feature-title,#feature-body,#feature-comment-body{box-sizing:border-box;width:100%;padding:12px;font:inherit;color:inherit;background:transparent;border:1px solid rgba(128,128,128,.45);border-radius:12px}#feature-body,#feature-comment-body{min-height:120px}';
 document.head.appendChild(helpStyle);
+

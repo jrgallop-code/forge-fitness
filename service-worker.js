@@ -1,9 +1,11 @@
-const CACHE_VERSION = "forge-overview-supersets-20261008";
+const CACHE_VERSION = "forge-feature-review-20261008";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
+    "./css/feature-board.css?v=owner-feature-review-1",
+    "./js/more/feature-board.js?v=owner-feature-review-1",
     "./js/nutrition/expenditure-changes-summary.js?v=expenditure-changes-1",
     "./css/lifting-goals.css?v=compact-dashboard-210",
     "./css/circuit-library.css",
@@ -221,4 +223,5 @@ self.addEventListener("notificationclick", event => {
         })
     );
 });
+
 

@@ -6,8 +6,16 @@ export async function featureBoard(request, env, user, admin, readJson) {
  const name = value => text(value,40).split(/\s+/)[0] || 'Member';
  const get = async () => env.DB.prepare('SELECT * FROM feature_requests WHERE id=?').bind(id).first();
  if (!id && request.method==='GET') {
-  const {results} = await env.DB.prepare(`SELECT r.*, u.display_name, (SELECT COUNT(*) FROM feature_votes WHERE request_id=r.id) AS votes, (SELECT COUNT(*) FROM feature_comments WHERE request_id=r.id) AS comments, EXISTS(SELECT 1 FROM feature_votes WHERE request_id=r.id AND user_id=?) AS voted FROM feature_requests r JOIN users u ON u.id=r.user_id WHERE r.published=1 OR r.user_id=? OR ?=1 ORDER BY votes DESC,r.created_at DESC LIMIT 200`).bind(user?.id || '',user?.id || '',admin?1:0).all();
-  return reply({requests:results.map(({display_name,user_id,...r})=>({...r,author:name(display_name),own:user_id===user?.id})),admin});
+  const view=url.searchParams.get('view');
+  if(view && (!user || !admin))return reply({error:'Admin access required.'},403);
+  if(view && !['pending','published'].includes(view))return reply({error:'Invalid review filter.'},400);
+  const offset=Number(url.searchParams.get('offset')||0);
+  if(!Number.isSafeInteger(offset)||offset<0)return reply({error:'Invalid page.'},400);
+  const where=view==='pending'?'r.published=0':view==='published'?'r.published=1':'(r.published=1 OR r.user_id=? OR ?=1)';
+  const bindings=[user?.id||'',...(view?[]:[user?.id||'',admin?1:0]),view?50:200,view?offset:0];
+  const {results} = await env.DB.prepare(`SELECT r.*, u.display_name, (SELECT COUNT(*) FROM feature_votes WHERE request_id=r.id) AS votes, (SELECT COUNT(*) FROM feature_comments WHERE request_id=r.id) AS comments, EXISTS(SELECT 1 FROM feature_votes WHERE request_id=r.id AND user_id=?) AS voted FROM feature_requests r JOIN users u ON u.id=r.user_id WHERE ${where} ORDER BY ${view==='pending'?'r.created_at ASC,r.id ASC':'votes DESC,r.created_at DESC,r.id ASC'} LIMIT ? OFFSET ?`).bind(...bindings).all();
+  const counts=admin?await env.DB.prepare('SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN published=0 THEN 1 ELSE 0 END),0) AS pending, COALESCE(SUM(CASE WHEN published=1 THEN 1 ELSE 0 END),0) AS published FROM feature_requests').first():undefined;
+  return reply({requests:results.map(({display_name,user_id,...r})=>({...r,author:name(display_name),own:user_id===user?.id})),admin,...(counts?{counts}:{}),...(view?{offset,hasMore:offset+results.length<counts[view]}:{})});
  }
  if (!user) return reply({error:'Sign in under More → Account & Cloud to participate.'},401);
  if (!id && request.method==='POST') {
@@ -22,6 +30,7 @@ export async function featureBoard(request, env, user, admin, readJson) {
  if(!action && request.method==='PATCH') {
   if(!admin)return reply({error:'Admin access required.'},403);const b=await input();
   if(!['Under review','Planned','In progress','Released'].includes(b.status))return reply({error:'Invalid status.'},400);
+  if(typeof b.published!=='boolean')return reply({error:'Choose whether to publish this request.'},400);
   await env.DB.prepare('UPDATE feature_requests SET status=?,published=? WHERE id=?').bind(b.status,b.published?1:0,id).run();return reply({ok:true});
  }
  if(action==='comments' && request.method==='GET') {
@@ -44,3 +53,4 @@ export async function featureBoard(request, env, user, admin, readJson) {
  }
  return reply({error:'Not found.'},404);
 }
+

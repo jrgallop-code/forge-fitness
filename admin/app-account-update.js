@@ -1,3 +1,4 @@
+import { renderFeatureRequests, initializeFeatureRequests } from "./feature-requests.js?v=owner-feature-review-1";
 import { renderAdminAnalytics, initializeAdminAnalytics } from "./admin-analytics-account-update.js?v=3";
 import { initializeOwnerProductInsights } from "./product-insights.js?v=user-demographics-2";
 import { initializeDailyUserQuery } from "./daily-user-query.js?v=platform-acquisition-2";
@@ -28,7 +29,7 @@ function renderLogin(message = "Sign in with your owner Google account.", tone =
   root.innerHTML = `
     <section class="owner-login-card">
       <span class="eyebrow">OWNER ACCESS</span>
-      <h1>Level Up Analytics</h1>
+      <h1>Level Up Owner Console</h1>
       <p>This dashboard is separate from the consumer app and is intended only for Level Up administration.</p>
       <div id="owner-google-button" class="owner-google-button"></div>
       <div id="owner-auth-status" class="owner-auth-status${tone ? ` is-${tone}` : ""}">${escapeHtml(message)}</div>
@@ -117,7 +118,12 @@ function showDashboard(user) {
       <div><span class="eyebrow">SIGNED IN</span><strong>${escapeHtml(user.name || user.email || "Level Up owner")}</strong></div>
       <span>${escapeHtml(user.email || "")}</span>
     </section>
-    <div id="owner-analytics-root"></div>`;
+    <nav class="owner-console-nav" aria-label="Owner console sections">
+      <button type="button" data-owner-section="analytics" aria-pressed="true">Analytics</button>
+      <button type="button" data-owner-section="features" aria-pressed="false">Feature Requests</button>
+    </nav>
+    <div id="owner-analytics-root"></div>
+    <div id="owner-features-root" hidden></div>`;
   signOutButton?.toggleAttribute("hidden", false);
   const target = document.getElementById("owner-analytics-root");
   if (target) target.innerHTML = renderAdminAnalytics();
@@ -125,6 +131,19 @@ function showDashboard(user) {
   initializeAdminAnalytics();
   initializeOwnerProductInsights();
   initializeDailyUserQuery();
+  const features = document.getElementById("owner-features-root");
+  let featuresInitialized = false;
+  root.querySelectorAll("[data-owner-section]").forEach(button => button.addEventListener("click", () => {
+    const showFeatures = button.dataset.ownerSection === "features";
+    target.hidden = showFeatures;
+    features.hidden = !showFeatures;
+    root.querySelectorAll("[data-owner-section]").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
+    if (showFeatures && !featuresInitialized) {
+      featuresInitialized = true;
+      features.innerHTML = renderFeatureRequests();
+      initializeFeatureRequests(features, api);
+    }
+  }));
 }
 
 async function signOut() {
@@ -185,3 +204,4 @@ function escapeHtml(value) {
     "'": "&#39;"
   }[character]));
 }
+
