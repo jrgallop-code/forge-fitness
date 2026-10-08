@@ -32,13 +32,13 @@ export function initializeWorkoutPerformance() {
     document.addEventListener("click", event => {
         const button = event.target.closest?.("#save-session-btn");
         const logger = button?.closest("#workout-session-logger");
-        if (!button || !logger || logger.dataset.editingSessionId) return;
+        if (!button || !logger || logger.dataset.editingSessionId || logger.dataset.trainingContext === "circuit") return;
         setTimeout(() => showCompletedSummary(logger), 0);
     }, true);
 }
 
 function showCompletedSummary(logger) {
-    if (!document.body.contains(logger)) return;
+    if (!document.body.contains(logger) || logger.dataset.trainingContext === "circuit") return;
     const sessions = getSessions();
     const latest = sessions[0];
     if (!latest || latest.status === "in_progress") return;

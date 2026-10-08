@@ -23,3 +23,6 @@
 .ig-routine-import .routine-import-topbar h3{font-size:17px;line-height:1.3;margin:0}
 .ig-routine-import [data-routine-import-close]{align-self:center!important;padding:8px 12px;font-size:14px;min-width:60px}
 .ig-routine-import .routine-import-review-head h3{font-size:18px}
+
+.ig-dialog select{width:100%;box-sizing:border-box;padding:12px;min-height:44px;border:1px solid var(--card-border);border-radius:10px;background:var(--surface-raised);color:var(--heading);font:inherit;font-size:16px}
+.ig-dialog [data-new-folder][hidden]{display:none}

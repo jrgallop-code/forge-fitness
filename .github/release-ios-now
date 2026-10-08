@@ -413,3 +413,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-08: Release compact import review, complete saved routine library, and top-level My Videos tab.
 
 2026-10-08: Release saved circuit cards and shared circuit overview routing fix.
+
+2026-10-08: Release folder picker and circuit completion summary isolation.
