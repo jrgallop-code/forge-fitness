@@ -1,3 +1,4 @@
+import { linkedRoutines } from "./routine-video-links.js";
 import { VIDEO_KEY, normalizeInstagramLink, mergeVideo } from './instagram-video-model.js';
 import { openRoutineFromVideo } from './routine-importer.js?v=launcher-grid-hotfix-1';
 const logo = `<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.4" cy="6.6" r=".9" fill="currentColor" stroke="none"/></svg>`;
@@ -68,7 +69,15 @@ function editVideo(video, refresh) {
 function showVideo(video, refresh) {
     if (!video) return;
     const shell = modal('Saved video');
-    shell.querySelector('[data-body]').innerHTML = `<div class="ig-cover">${cover(video)}</div><h3>${esc(video.title)}</h3><p>${logo} Instagram · ${esc(video.folder)}</p><button class="ig-primary" data-watch>▶ Watch on Instagram</button><button class="ig-secondary" data-create>Create routine from text or screenshot</button><p class="ig-notes">${esc(video.notes)}</p><button class="ig-secondary" data-edit>Rename / move to folder</button><button class="ig-delete" data-delete>Delete saved video</button>`;
+    let plans = []; try { plans = JSON.parse(localStorage.getItem('forge_workout_plans') || '[]'); } catch {}
+    const linked = linkedRoutines(video, Array.isArray(plans) ? plans : []);
+    shell.querySelector('[data-body]').innerHTML = `<div class="ig-cover">${cover(video)}</div><h3>${esc(video.title)}</h3><p>${logo} Instagram · ${esc(video.folder)}</p><button class="ig-primary" data-watch>▶ Watch on Instagram</button>${linked.length ? `<section class="ig-linked-routines"><h3>Linked routines</h3>${linked.map(plan=>`<button class="ig-secondary" data-linked-routine="${esc(plan.id)}">${esc(plan.name)} ↗</button>`).join('')}</section>` : ''}<button class="ig-secondary" data-create>${linked.length ? 'Create another routine' : 'Create routine from text or screenshot'}</button><p class="ig-notes">${esc(video.notes)}</p><button class="ig-secondary" data-edit>Rename / move to folder</button><button class="ig-delete" data-delete>Delete saved video</button>`;
+    shell.querySelectorAll('[data-linked-routine]').forEach(button => button.onclick = () => {
+        const planId = button.dataset.linkedRoutine;
+        shell.close();
+        document.dispatchEvent(new CustomEvent('levelup:routine-saved', {detail:{planId}}));
+        document.dispatchEvent(new CustomEvent('levelup:open-linked-routine', {detail:{planId}}));
+    });
     shell.querySelector('[data-watch]').onclick = () => { const url = normalizeInstagramLink(video.url); if (url) window.open(url, '_blank', 'noopener,noreferrer'); };
     shell.querySelector('[data-edit]').onclick = () => { shell.close(); editVideo(video,refresh); };
     shell.querySelector('[data-create]').onclick = () => { shell.close(); openRoutineFromVideo(video); };

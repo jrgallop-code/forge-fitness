@@ -1,3 +1,4 @@
+import { renderRoutineSourcePreview } from "./routine-video-links.js";
 import { normalizeInstagramLink } from "./instagram-video-model.js";
 import { getPresetPlan } from "./workout-plans.js";
 import { getExerciseById } from "./exercise-library.js";
@@ -468,7 +469,7 @@ function showPlanDetails({ plan, type, card }) {
             <span class="eyebrow">${type === "template" ? "LEVEL UP TEMPLATE" : "WORKOUT PLAN"}</span>
             <h2>${escapeHtml(plan?.name || "Workout Plan")}</h2>
             ${plan?.description ? `<p>${escapeHtml(plan.description)}</p>` : ""}
-            ${normalizeInstagramLink(plan?.sourceVideo?.url) ? `<a class="plan-source-link" href="${escapeHtml(normalizeInstagramLink(plan.sourceVideo.url))}" target="_blank" rel="noopener noreferrer">Watch attached Instagram workout ↗</a>` : ""}
+            ${renderRoutineSourcePreview(plan)}
             ${type === "template" && plan?.sourceUrl ? `<a class="plan-source-link" href="${escapeHtml(plan.sourceUrl)}" target="_blank" rel="noopener noreferrer">View documented training source ↗</a>` : ""}
         </div>
 
@@ -619,4 +620,11 @@ function escapeHtml(value) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+export function openSavedPlanDetails(planId) {
+ const plan = getSavedPlans().find(item => String(item?.id) === String(planId));
+ if (!plan) return false;
+ showPlanDetails({plan,type:'custom',card:null});
+ return true;
 }

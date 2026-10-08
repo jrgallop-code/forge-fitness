@@ -1,3 +1,4 @@
+import { renderRoutineSourceLabel } from "./routine-video-links.js";
 import { buildWorkoutLibraryRows } from "./workout-library-rows.js";
 import { isBodyweightPlan } from './workout-equipment-filter.js';
 import { circuitTemplates } from './circuit-templates.js';
@@ -9,7 +10,7 @@ import { celebrityWorkoutPlans } from "./celebrity-workout-plans.js?v=celebrity-
 import { bodybuilderWorkoutPlans } from "./bodybuilder-workout-plans.js?v=bodybuilder-library-3";
 import { celebrityExpansionPlans } from "./celebrity-expansion-plans.js?v=celebrity-expansion-2";
 import { getPlanArtwork } from "./workout-art-manifest.js?v=workout-art-direction-1";
-import "./workout-plan-details.js?v=saved-plan-edit-2";
+import { openSavedPlanDetails } from "./workout-plan-details.js?v=saved-plan-edit-2";
 
 const PLAN_KEY = "forge_workout_plans";
 const STYLE_ID = "workout-landing-live-styles";
@@ -49,6 +50,7 @@ export function initializeWorkoutLandingLive(content = document) {
 
     const render = () => renderLanding({ content, page, sourceHome, landing, state });
     render();
+    document.addEventListener("levelup:open-linked-routine", event => openSavedPlan({content,landing,planId:event.detail?.planId}), {signal:controller.signal});
     document.addEventListener("levelup:routine-saved", () => showLanding({ landing, render }), { signal: controller.signal });
 
     content.addEventListener("click", event => {
@@ -258,7 +260,7 @@ function renderPlanRow(plan, index) {
                 <img src="${escapeHtml(artwork.src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1745329532593-53a9ec306787?auto=format&fit=crop&w=1200&q=82'">
                 <span class="workout-live-row-copy">
                     <small>${isSaved ? "YOUR PLAN" : escapeHtml(plan.sourceLabel || "LEVEL UP")}</small>
-                    <strong>${escapeHtml(plan.name || "Workout Plan")}</strong>
+                    <strong>${escapeHtml(plan.name || "Workout Plan")}</strong>${renderRoutineSourceLabel(plan)}
                     <em>${escapeHtml(shortDescription(plan.description || "Your saved workout plan."))}</em>
                     <span class="workout-live-row-meta">
                         <b>${calendarIcon()} ${stats.days}d/wk</b>
@@ -412,14 +414,9 @@ function openCataloguePlan({ content, landing, planId }) {
 function openSavedPlan({ content, landing, planId }) {
     const saved = readSavedPlans().find(plan => String(plan.id) === String(planId));
     if (saved?.trainingContext === 'circuit' && openCircuitTemplate(planId, landing, saved)) return;
-    const card = content.querySelector(`[data-custom-plan-id="${cssEscape(planId)}"]`);
-    if (!card) {
-        showToast("That saved plan could not be opened.");
-        return;
-    }
+    if (!openSavedPlanDetails(planId)) { showToast("That saved plan could not be opened."); return; }
     landing.hidden = true;
-    card.click();
-    verifyDestination(landing);
+
 }
 
 function verifyDestination(landing) {
