@@ -142,7 +142,7 @@ function activePhaseEvents(phase, status, bounds, handledState, today) {
                 : status.state === "waiting"
                     ? "waiting"
                     : "upcoming";
-        } else if (date < today) {
+        } else if (date <= today) {
             state = latestHandledDate && date <= latestHandledDate ? "handled" : "past";
         } else {
             state = "upcoming";
@@ -151,6 +151,15 @@ function activePhaseEvents(phase, status, bounds, handledState, today) {
         date = shiftDate(date, CADENCE_DAYS);
     }
 
+    // Preserve the actual completion date when a delayed review changes the
+    // weekly anchor. Replace that day's scheduled marker rather than adding
+    // another check-in to the denominator.
+    if (latestHandledDate && latestHandledDate >= bounds.start && latestHandledDate <= lastDate && latestHandledDate <= today) {
+        const completed = eventFor({ date: latestHandledDate, phase, state: "handled" });
+        const index = events.findIndex(event => event.date === latestHandledDate);
+        if (index >= 0) events[index] = completed;
+        else events.push(completed);
+    }
     return events;
 }
 
