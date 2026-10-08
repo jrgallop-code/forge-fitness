@@ -1,3 +1,4 @@
+import { renderCircuitRounds, bindCircuitRounds } from "./circuit-round-logger.js";
 import { showCircuitCompletion } from './circuit-completion.js';
 import { ensureCircuitStyles } from './circuit-styles.js';
 import { CIRCUIT_PROGRESS_NOTE, isCircuit, readCircuitSessions, sessionStorageKey, tagCircuitSession, circuitPreviousPerformance } from './circuit-history.js';
@@ -764,13 +765,25 @@ function renderSessionExercises({
     `;
 
 
+    if (isCircuit(plan)) {
+        container.innerHTML = `${editingSessionId ? '' : renderRestTimerPanel(session)}${renderCircuitRounds({plan, session, exerciseName:id=>getExerciseById(id)?.name || 'Exercise', unit:massUnit(UNIT_KINDS.LIFTING_WEIGHT)})}<div class="session-completion-actions"><button id="save-session-btn" class="primary-btn" type="button">${editingSessionId ? 'Update Saved Circuit' : 'Complete Circuit'}</button>${editingSessionId ? '' : '<button id="discard-session-btn" class="secondary-btn" type="button">Discard Circuit</button>'}</div>`;
+        bindCircuitRounds({container,session,editing:Boolean(editingSessionId),inputValue:canonicalInputValue,startRest:startRestTimer,restSeconds:()=>Number(getActiveWorkout()?.planSnapshot?.circuitRestSeconds ?? plan.circuitRestSeconds)||0,persist:()=>{
+            if (!editingSessionId) {
+                const latest=getActiveWorkout(); if(latest?.id!==session.id)return;
+                session.restTimer=latest.restTimer;session.planSnapshot=latest.planSnapshot;
+                saveActiveWorkout(session);
+            }
+        }});
+    } else {
     bindSessionInputs({
         logger,
         session,
         editingSessionId
     });
 
-    if (editingSessionId) {
+    }
+
+    if (editingSessionId && !isCircuit(plan)) {
         bindEditWorkoutExerciseControls({
             plan,
             logger,
