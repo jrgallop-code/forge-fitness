@@ -1,4 +1,4 @@
-import { isStaticHold, holdTrackingType, holdTarget, holdTimeField, holdLoadControl, bindHoldRows, stopHoldTimer } from "./static-holds.js";
+import { isStaticHold, holdTrackingType, holdTarget, holdTimeField, holdLoadControl, holdTimerControl, bindHoldRows, stopHoldTimer } from "./static-holds.js";
 import { renderCircuitRounds, bindCircuitRounds } from "./circuit-round-logger.js";
 import { showCircuitCompletion } from './circuit-completion.js';
 import { ensureCircuitStyles } from './circuit-styles.js';
@@ -757,6 +757,7 @@ function renderSessionExercises({
                             </div>
                         `;
                     }).join("")}
+                    ${isStaticHold(plannedExercise) ? holdTimerControl() : ""}
                 </article>
             `;
         }).join("")}

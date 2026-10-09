@@ -5,3 +5,7 @@ Applies only to Plank, Side Plank and Copenhagen Plank. Standard logger controls
 Progress metrics: best hold and total time at the same selected load, or highest added load held for an editable minimum duration. Circuit history remains separate.
 
 Validation: 36 focused tests pass; native asset build passes. Full suite has 876 passes and 72 existing failures, with no introduced failures against unchanged HEAD. Physical-device visual verification remains outstanding.
+
+## Follow-up: compact timer and Progress picker
+
+One shared stopwatch now sits below all set rows. It follows the focused unfinished set, stays with a running set, and advances on completion. Time cells use the standard input layout with a short sec placeholder. Progress list rebuilds include holds without requiring weight and reps; saved workouts chart entered duration even when the individual set checkbox was not used. Draft workouts remain excluded. Focused regression coverage: 41 checks passing. Physical-device visual verification remains outstanding.

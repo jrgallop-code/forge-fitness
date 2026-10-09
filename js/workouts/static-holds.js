@@ -24,9 +24,23 @@ export function stopHoldTimer(set, now = Date.now()) {
   set.durationSeconds = elapsedHoldSeconds(set, now);
   delete set.holdStartedAt;
 }
+export function activeHoldSetIndex(state, indices = (state.sets || []).map((_,index) => index)) {
+  const running = indices.find(index => state.sets[index]?.holdStartedAt);
+  if (running !== undefined) return running;
+  const selected = Number(state.currentHoldSetIndex);
+  if (Number.isInteger(selected) && indices.includes(selected) && !state.sets[selected]?.completed) return selected;
+  return indices.find(index => !state.sets[index]?.completed) ?? -1;
+}
+export function holdTimerControl() {
+  return `<div class="hold-stopwatch"><div class="hold-stopwatch-copy"><strong data-hold-current-set>Set 1</strong><span data-hold-clock>00:00</span></div><button type="button" class="secondary-btn" data-hold-timer>Start timer</button></div>`;
+}
 export function bindHoldRows(container, state, persist) {
   const rows = container.matches('[data-hold-set]') ? [container] : [...container.querySelectorAll('[data-hold-set]')];
+  const indices = rows.map(row => Number(row.dataset.holdSet));
   const mode = container.querySelector('[data-hold-load-mode]');
+  const button = container.querySelector('[data-hold-timer]');
+  const currentLabel = container.querySelector('[data-hold-current-set]');
+  const clock = container.querySelector('[data-hold-clock]');
   const syncMode = () => {
     rows.forEach(row => {
       const set = state.sets[Number(row.dataset.holdSet)];
@@ -41,33 +55,55 @@ export function bindHoldRows(container, state, persist) {
     syncMode(); persist();
   });
   rows.forEach(row => {
-    const set = state.sets[Number(row.dataset.holdSet)];
+    const index = Number(row.dataset.holdSet);
+    const set = state.sets[index];
     const input = row.querySelector('[data-hold-time]');
-    const button = row.querySelector('[data-hold-timer]');
-    input?.addEventListener('input', () => { delete set.holdStartedAt; set.durationSeconds = holdSeconds(input.value); persist(); });
-    button?.addEventListener('click', () => {
-      if (set.holdStartedAt) stopHoldTimer(set);
-      else set.holdStartedAt = Date.now();
-      persist(); refresh();
-    });
-    row.querySelector('.complete-set-btn')?.addEventListener('click', () => { stopHoldTimer(set); refresh(); }, true);
-    row.querySelector('[data-round-check]')?.addEventListener('change', () => { stopHoldTimer(set); refresh(); }, true);
+    const select = () => { state.currentHoldSetIndex = index; refresh(); persist(); };
+    input?.addEventListener('focus', select);
+    row.querySelector('.session-weight')?.addEventListener('focus', select);
+    input?.addEventListener('input', () => { delete set.holdStartedAt; set.durationSeconds = holdSeconds(input.value); state.currentHoldSetIndex = index; persist(); refresh(); });
+    const complete = () => { stopHoldTimer(set); queueMicrotask(refresh); };
+    row.querySelector('.complete-set-btn')?.addEventListener('click', complete, true);
+    row.querySelector('[data-round-check]')?.addEventListener('change', complete, true);
+  });
+  button?.addEventListener('click', () => {
+    const index = activeHoldSetIndex(state, indices);
+    if (index < 0) return;
+    const set = state.sets[index];
+    state.currentHoldSetIndex = index;
+    if (set.holdStartedAt) stopHoldTimer(set);
+    else set.holdStartedAt = Date.now();
+    persist(); refresh();
   });
   function refresh() {
+    const current = activeHoldSetIndex(state, indices);
     rows.forEach(row => {
-      const set = state.sets[Number(row.dataset.holdSet)];
+      const index = Number(row.dataset.holdSet);
+      const set = state.sets[index];
       const input = row.querySelector('[data-hold-time]');
-      const button = row.querySelector('[data-hold-timer]');
       if (input && document.activeElement !== input) input.value = elapsedHoldSeconds(set) ?? '';
-      if (button) { button.textContent = set.holdStartedAt ? 'Stop' : 'Timer'; button.disabled = Boolean(set.completed); }
+      row.classList.toggle('hold-current-set', index === current);
     });
+    const set = state.sets[current];
+    const label = current < 0 ? 'All sets completed' : `Set ${current + 1}`;
+    if (currentLabel && currentLabel.textContent !== label) currentLabel.textContent = label;
+    if (clock) {
+      const seconds = elapsedHoldSeconds(set) || 0;
+      const time = `${String(Math.floor(seconds / 60)).padStart(2,'0')}:${String(seconds % 60).padStart(2,'0')}`;
+      if (clock.textContent !== time) clock.textContent = time;
+    }
+    if (button) {
+      const text = set?.holdStartedAt ? 'Stop timer' : 'Start timer';
+      if (button.textContent !== text) button.textContent = text;
+      if (button.disabled !== (current < 0)) button.disabled = current < 0;
+    }
   }
   syncMode(); refresh();
   const tick = () => { if (!container.isConnected) return; refresh(); setTimeout(tick, 250); };
   setTimeout(tick, 250);
 }
 export function holdTimeField(set, index) {
-  return `<div class="hold-time-entry"><input class="session-duration" data-hold-time type="number" inputmode="numeric" min="0" step="1" value="${elapsedHoldSeconds(set) ?? ''}" placeholder="Seconds" aria-label="Set ${index + 1} time in seconds"><button type="button" class="secondary-btn hold-timer-btn" data-hold-timer>${set.holdStartedAt ? 'Stop' : 'Timer'}</button></div>`;
+  return `<input class="session-duration" data-hold-time type="number" inputmode="numeric" min="0" step="1" value="${elapsedHoldSeconds(set) ?? ''}" placeholder="sec" aria-label="Set ${index + 1} time in seconds">`;
 }
 export function holdLoadControl(state) {
   const mode = state.loadMode || (state.sets?.some(set => Number(set.weight) > 0) ? 'weighted' : 'bodyweight');

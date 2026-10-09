@@ -79,6 +79,7 @@ function bindOnce(element, eventName, handler) {
 }
 
 function renderExerciseProgressV2() {
+    addAllHistoryExercises();
     const host = document.getElementById("exercise-strength-chart-v2");
     const select = document.getElementById("exercise-progress-select");
     const history = document.getElementById("exercise-history-body");
@@ -652,7 +653,7 @@ function renderHoldProgress(host, history, id) {
     let filter = document.getElementById('hold-progress-filter');
     if (!filter) { filter = document.createElement('label'); filter.id = 'hold-progress-filter'; host.before(filter); }
     const sessions = getSessions();
-    const loads = [...new Set([0,...sessions.flatMap(session => (session.exercises || []).filter(exercise => exercise.exerciseId === id).flatMap(exercise => (exercise.sets || []).filter(set => set.completed && Number(set.durationSeconds) > 0).map(set => Number(set.weight || 0))))])].sort((a,b)=>a-b);
+    const loads = [...new Set([0,...sessions.flatMap(session => (session.exercises || []).filter(exercise => exercise.exerciseId === id).flatMap(exercise => (exercise.sets || []).filter(set => Number(set.durationSeconds) > 0).map(set => Number(set.weight || 0))))])].sort((a,b)=>a-b);
     filter.innerHTML = selectedMetric === 'weight'
         ? `Minimum hold time (seconds)<input type="number" min="1" step="1" value="${selectedHoldTarget}" aria-label="Minimum hold time">`
         : `Compare at added weight<select aria-label="Hold added weight">${loads.map(load => `<option value="${load}" ${load === selectedHoldLoad ? 'selected' : ''}>${load ? formatMass(load,1) + ' added' : 'Bodyweight'}</option>`).join('')}</select>`;

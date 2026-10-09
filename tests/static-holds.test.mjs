@@ -23,13 +23,13 @@ test('holds never contribute repetition tonnage',()=>{
   assert.equal(calculateSetVolume({weight:10,reps:60},'plank'),0);
   assert.equal(calculateSetVolume({weight:10,reps:12},'dumbbell-bench-press'),240);
 });
-test('hold progression compares completed sets at the same load, not reps or unfinished sets',()=>{
+test('hold progression compares recorded time at the same load and ignores legacy reps',()=>{
  const sessions=[{date:'2026-10-09',exercises:[{exerciseId:'plank',sets:[
  {completed:true,weight:0,durationSeconds:60},{completed:true,weight:10,durationSeconds:40},
  {completed:true,weight:10,durationSeconds:35},{completed:false,weight:10,durationSeconds:99},
  {completed:true,weight:10,reps:80},{completed:true,weight:20,durationSeconds:20}]}]}];
  let records=holdProgressRecords(sessions,'plank',{load:10});
- assert.equal(records[0].bestSeconds,40);assert.equal(records[0].totalSeconds,75);assert.equal(records[0].sets,2);
+ assert.equal(records[0].bestSeconds,99);assert.equal(records[0].totalSeconds,174);assert.equal(records[0].sets,3);
  assert.equal(holdProgressRecords(sessions,'plank',{load:0})[0].bestSeconds,60);
  assert.equal(holdProgressRecords(sessions,'plank',{metric:'weight',minimumSeconds:30})[0].addedWeight,10);
  assert.equal(holdProgressRecords(sessions,'pallof-press').length,0);
@@ -59,4 +59,73 @@ test('session cleanup retains bodyweight holds and does not reinterpret legacy r
  const sessions=sanitizeExistingWorkoutSessions();
  assert.equal(sessions[0].exercises.length,2);assert.equal(sessions[0].exercises[0].sets[0].durationSeconds,45);
  assert.equal(sessions[0].exercises[1].sets[0].reps,30);assert.equal(sessions[0].exercises[1].sets[0].durationSeconds,undefined);
+});
+
+test('shared stopwatch follows focused set, retains a running set, and advances on completion',async()=>{
+ const {activeHoldSetIndex,holdTimeField,holdTimerControl}=await import('../js/workouts/static-holds.js');
+ const state={sets:[{completed:false},{completed:false},{completed:false}]};
+ assert.equal(activeHoldSetIndex(state),0);
+ state.currentHoldSetIndex=1; assert.equal(activeHoldSetIndex(state),1);
+ state.sets[1].holdStartedAt=100;state.currentHoldSetIndex=2;
+ assert.equal(activeHoldSetIndex(state),1);
+ stopHoldTimer(state.sets[1],30100);state.sets[1].completed=true;
+ assert.equal(state.sets[1].durationSeconds,30);assert.equal(activeHoldSetIndex(state),2);
+ state.sets.forEach(set=>set.completed=true);assert.equal(activeHoldSetIndex(state),-1);
+ state.sets[1].completed=false;assert.equal(activeHoldSetIndex(state),1);
+ assert.equal(activeHoldSetIndex(state,[2]),-1);
+ assert.doesNotMatch(holdTimeField({},0),/data-hold-timer|<div/);
+ assert.equal((holdTimerControl().match(/data-hold-timer/g)||[]).length,1);
+});
+
+test('Progress exercise picker retains completed bodyweight and weighted holds without weight x reps',async()=>{
+ const {hasExerciseProgressData}=await import('../js/progress/hold-progress-model.js');
+ assert.equal(hasExerciseProgressData({exerciseId:'plank',trackingType:'duration',sets:[{completed:true,weight:0,reps:null,durationSeconds:30}]}),true);
+ assert.equal(hasExerciseProgressData({exerciseId:'side-plank',sets:[{completed:true,weight:10,durationSeconds:45}]}),true);
+ assert.equal(hasExerciseProgressData({exerciseId:'copenhagen-plank',sets:[{completed:true,reps:30}]}),true);
+ assert.equal(hasExerciseProgressData({exerciseId:'plank',sets:[{completed:false,durationSeconds:45}]}),true);
+ assert.equal(hasExerciseProgressData({exerciseId:'plank',sets:[{completed:true}]}),false);
+ assert.equal(hasExerciseProgressData({exerciseId:'dumbbell-curl',sets:[{weight:20,reps:12}]}),true);
+});
+
+test('real Progress picker preserves Plank through repeated range rebuilds',async()=>{
+ const {readFileSync}=await import('node:fs');const vm=await import('node:vm');
+ const {hasExerciseProgressData}=await import('../js/progress/hold-progress-model.js');
+ const select={value:'plank',innerHTML:''};
+ const sandbox={hasExerciseProgressData,document:{getElementById:()=>select},getExerciseById:id=>({name:id})};
+ vm.createContext(sandbox);
+ const source=readFileSync(new URL('../js/progress/training-progress.js',import.meta.url),'utf8').replace(/^import\s[\s\S]*?;\n/gm,'').replace(/^export /gm,'');
+ vm.runInContext(source+'\nglobalThis.populate=populateExerciseSelector;',sandbox);
+ const sessions=[{exercises:[{exerciseId:'plank',sets:[{weight:0,durationSeconds:30,completed:true}]},{exerciseId:'dumbbell-curl',sets:[{weight:20,reps:10,completed:true}]}]}];
+ sandbox.populate(sessions);assert.match(select.innerHTML,/value="plank"/);assert.equal(select.value,'plank');
+ sandbox.populate(sessions);assert.match(select.innerHTML,/value="plank"/);assert.equal(select.value,'plank');
+});
+
+test('shared stopwatch writes into the selected row and follows the completion control',async()=>{
+ const {bindHoldRows}=await import('../js/workouts/static-holds.js');
+ const element=value=>({value,handlers:{},classList:{toggle(){}},addEventListener(name,fn){this.handlers[name]=fn;}});
+ const inputs=[element(''),element('')],weights=[element(''),element('')],checks=[element(''),element('')];
+ const button=element(''),label=element(''),clock=element('');
+ const rows=inputs.map((input,index)=>({dataset:{holdSet:String(index)},classList:{toggle(){}},querySelector:selector=>({'[data-hold-time]':input,'.session-weight':weights[index],'.complete-set-btn':checks[index]}[selector]||null)}));
+ const container={isConnected:false,matches:()=>false,querySelectorAll:()=>rows,querySelector:selector=>({'[data-hold-timer]':button,'[data-hold-current-set]':label,'[data-hold-clock]':clock}[selector]||null)};
+ globalThis.document={activeElement:null};
+ const state={sets:[{completed:false},{completed:false}]};let saves=0;let now=10000;
+ const original=Date.now;Date.now=()=>now;
+ try{
+  bindHoldRows(container,state,()=>saves++);
+  assert.equal(label.textContent,'Set 1');inputs[1].handlers.focus();assert.equal(label.textContent,'Set 2');
+  button.handlers.click();now=40500;button.handlers.click();
+  assert.equal(state.sets[1].durationSeconds,30);assert.equal(state.sets[0].durationSeconds,undefined);
+  assert.equal(clock.textContent,'00:30');
+  button.handlers.click();now=75500;checks[1].handlers.click();state.sets[1].completed=true;await Promise.resolve();
+  assert.equal(state.sets[1].durationSeconds,35);assert.equal(label.textContent,'Set 1');assert.equal(button.textContent,'Start timer');
+  inputs[0].value='42';inputs[0].handlers.input();assert.equal(state.sets[0].durationSeconds,42);assert.ok(saves>0);
+ }finally{Date.now=original;}
+});
+
+test('finished workout charts entered seconds even without ticking each set; active drafts stay excluded',()=>{
+ const exercise={exerciseId:'plank',trackingType:'duration',sets:[{completed:false,weight:0,durationSeconds:30,reps:null}]};
+ const saved={date:'2026-10-09',completedAt:'2026-10-09T20:00:00Z',exercises:[exercise]};
+ assert.equal(holdProgressRecords([saved],'plank')[0].bestSeconds,30);
+ assert.equal(holdProgressRecords([{...saved,status:'in_progress'}],'plank').length,0);
+ assert.equal(holdProgressRecords([{...saved,status:'draft'}],'plank').length,0);
 });
