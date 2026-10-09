@@ -22,15 +22,33 @@ test('every new guide includes primary targets and all normal instruction sectio
  assert.deepEqual(createGeneratedExerciseGuide(videoLibraryExercises.find(e=>e.id==='kettlebell-deadlift')).primary,['Hamstrings','Glutes']);
  assert.deepEqual(createGeneratedExerciseGuide(videoLibraryExercises.find(e=>e.id==='dumbbell-concentration-curl')).primary,['Biceps']);
 });
-test('new video guides resolve to the exact male/female Drive files instead of invented media paths',async()=>{
+test('new video guides resolve to the exact male/female MP4 sources for the native looping player',async()=>{
  const {getFormGuideVideo}=await import('../js/workouts/exercise-guide-video-resolver.js');
  for(const e of videoLibraryExercises){
  for(const sex of ['male','female']){
  globalThis.window={__levelUpAnatomySexPreview:sex};
  const video=getFormGuideVideo(e.id),source=videoLibraryMedia[e.id];
  const expected=source.driveVideos[sex]||source.driveVideos.male||source.driveVideos.female;
- assert.equal(video.provider,'google-drive');assert.equal(video.src,`https://drive.google.com/file/d/${expected}/preview`);
+ assert.equal(video.provider,'mp4');assert.equal(video.src,`https://drive.usercontent.google.com/download?id=${expected}&export=download&confirm=t`);
  assert.ok(video.sourceUrl.endsWith('/view'));
  }
+ }
+});
+test('every new target muscle resolves to actual highlighted male and female anatomy paths',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const {getFormGuideMuscleVisual,renderFormGuideMuscleSvg}=await import('../js/workouts/form-guide-anatomy.js');
+ for(const sex of ['male','female']){
+  globalThis.window={__levelUpAnatomySexPreview:sex};
+  for(const exercise of videoLibraryExercises){
+   const guide=createGeneratedExerciseGuide(exercise);
+   for(const muscle of [...guide.primary,...guide.secondary]){
+    const config=getFormGuideMuscleVisual(muscle);
+    assert.ok(config,`${exercise.id}: ${sex} ${muscle}`);
+    assert.equal(config.anatomy.sex,sex);
+    const asset=readFileSync(new URL('../'+config.anatomy.asset.split('?')[0],import.meta.url),'utf8');
+    for(const id of config.ids)assert.ok(asset.includes(`id="${id}"`),`${sex}: missing SVG path ${id}`);
+    assert.ok(renderFormGuideMuscleSvg(config).includes('form-guide-muscle-highlight'));
+   }
+  }
  }
 });

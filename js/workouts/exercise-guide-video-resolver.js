@@ -117,7 +117,7 @@ export function getFormGuideVideo(exerciseId) {
     if (libraryVideo) {
         const sex = getAnatomySex();
         const driveId = libraryVideo.driveVideos[sex] || libraryVideo.driveVideos.male || libraryVideo.driveVideos.female;
-        return driveId ? {provider:'google-drive',src:`https://drive.google.com/file/d/${driveId}/preview`,sourceUrl:`https://drive.google.com/file/d/${driveId}/view`,sourceName:libraryVideo.sourceName,sex} : null;
+        return driveId ? {provider:'mp4',src:`https://drive.usercontent.google.com/download?id=${driveId}&export=download&confirm=t`,sourceUrl:`https://drive.google.com/file/d/${driveId}/view`,sourceName:libraryVideo.sourceName,sex} : null;
     }
     const config = MANIFEST_VIDEOS[exerciseId];
     return config ? resolveVideo(config) : null;
