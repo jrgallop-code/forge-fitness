@@ -1,4 +1,4 @@
-import { renderRoutineSourceLabel } from "./routine-video-links.js";
+import { renderRoutineSourceLabel, routineVideoThumbnail } from "./routine-video-links.js";
 import { buildWorkoutLibraryRows } from "./workout-library-rows.js";
 import { isBodyweightPlan } from './workout-equipment-filter.js';
 import { circuitTemplates } from './circuit-templates.js';
@@ -232,7 +232,7 @@ function renderRecommendedCard(plan, index) {
     const badge = index === 0 ? "BEST MATCH" : index === 1 ? "POPULAR" : index === 2 ? "TRENDING" : "FOR YOU";
     return `
         <article class="workout-live-program-card" data-workout-live-plan-card="${escapeHtml(plan.id)}" data-art-family="${escapeHtml(artwork.family)}" tabindex="0" role="button" aria-label="Open ${escapeHtml(plan.name)}">
-            <img src="${escapeHtml(artwork.src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1745329532593-53a9ec306787?auto=format&fit=crop&w=1200&q=82'">
+            <img src="${escapeHtml(thumbnail || artwork.src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1745329532593-53a9ec306787?auto=format&fit=crop&w=1200&q=82'">
             <div class="workout-live-program-shade"></div>
             <span class="workout-live-program-badge">${badge}</span>
             <div class="workout-live-program-copy">
@@ -252,12 +252,13 @@ function renderPlanRow(plan, index) {
     const stats = planStats(plan);
     const isSaved = Boolean(plan.isSavedPlan);
     const artwork = getPlanArtwork(plan, index + 9);
+    const thumbnail = routineVideoThumbnail(plan);
     const next = plan.days?.[0]?.name?.replace(/^Day\s*\d+\s*[-–:]?\s*/i, "") || "Workout A";
     const attr = isSaved ? "data-workout-live-saved-plan" : "data-workout-live-catalogue-plan";
     return `
         <article class="workout-live-plan-row${isSaved ? " is-saved" : ""}" data-art-family="${escapeHtml(artwork.family)}">
             <button class="workout-live-row-main" type="button" ${attr}="${escapeHtml(plan.id)}">
-                <img src="${escapeHtml(artwork.src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1745329532593-53a9ec306787?auto=format&fit=crop&w=1200&q=82'">
+                <img src="${escapeHtml(thumbnail || artwork.src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1745329532593-53a9ec306787?auto=format&fit=crop&w=1200&q=82'">
                 <span class="workout-live-row-copy">
                     <small>${isSaved ? "YOUR PLAN" : escapeHtml(plan.sourceLabel || "LEVEL UP")}</small>
                     <strong>${escapeHtml(plan.name || "Workout Plan")}</strong>${renderRoutineSourceLabel(plan)}

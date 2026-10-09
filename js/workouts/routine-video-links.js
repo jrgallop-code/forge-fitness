@@ -24,3 +24,8 @@ export function renderRoutineSourcePreview(plan) {
  const thumbnail = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(video.cover || '') ? `<img src="${video.cover}" alt="Source video thumbnail">` : `<span class="routine-video-placeholder">${icon}</span>`;
  return `<aside class="routine-video-source">${thumbnail}<div><small>${icon} FROM INSTAGRAM</small><strong>${escape(video.title || 'Saved workout video')}</strong><a href="${escape(normalizeInstagramLink(video.url))}" target="_blank" rel="noopener noreferrer">Watch original video ↗</a></div></aside>`;
 }
+
+export function routineVideoThumbnail(plan) {
+ const video = resolveRoutineVideo(plan);
+ return /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(video?.cover || '') ? video.cover : '';
+}

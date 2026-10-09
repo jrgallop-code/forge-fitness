@@ -2,13 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import { renderRoutineSourceLabel, renderRoutineSourcePreview } from '../js/workouts/routine-video-links.js';
+import { renderRoutineSourceLabel, renderRoutineSourcePreview, routineVideoThumbnail } from '../js/workouts/routine-video-links.js';
 function harness(){
  const source=readFileSync(new URL('../js/workouts/circuit-library.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace(/^export \{.*;\n/gm,'').replace(/export function/g,'function');
  const handlers={};let started;
  const screen={querySelector:selector=>selector==='[data-circuit-template-rest]'?{value:'45'}:{addEventListener:(type,fn)=>{handlers[selector]=fn}},remove(){},scrollIntoView(){}};
  const page={querySelector:()=>null,classList:{add(){},remove(){}},appendChild(){}};
- const context={renderRoutineSourceLabel,renderRoutineSourcePreview,JSON,Number,String,Set,circuitTemplates:[],ensureCircuitStyles(){},readCircuitSessions:()=>[],circuitRoundsCompleted:()=>0,CIRCUIT_PROGRESS_NOTE:'Separate circuit history',getExerciseById:id=>({name:id}),openWorkoutLogger:plan=>{started=plan},document:{createElement:()=>screen}};
+ const context={renderRoutineSourceLabel,renderRoutineSourcePreview,routineVideoThumbnail,JSON,Number,String,Set,circuitTemplates:[],ensureCircuitStyles(){},readCircuitSessions:()=>[],circuitRoundsCompleted:()=>0,CIRCUIT_PROGRESS_NOTE:'Separate circuit history',getExerciseById:id=>({name:id}),openWorkoutLogger:plan=>{started=plan},document:{createElement:()=>screen}};
  vm.createContext(context);vm.runInContext(source,context);
  return {context,screen,handlers,landing:{closest:()=>page},started:()=>started};
 }

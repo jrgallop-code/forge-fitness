@@ -13,3 +13,11 @@ test('renaming a source updates its label, and deleted videos retain the origina
  globalThis.localStorage={getItem:()=> '[]'};assert.equal(resolveRoutineVideo(plan).title,'Morning workout');
  assert.equal(renderRoutineSourcePreview({sourceVideo:{url:'javascript:alert(1)'}}),'');
 });
+
+test('routine cards use the current saved thumbnail and safely fall back when missing',async()=>{
+ const {routineVideoThumbnail}=await import('../js/workouts/routine-video-links.js');
+ globalThis.localStorage={getItem:()=>JSON.stringify([{...video,cover:'data:image/png;base64,YQ=='}])};
+ assert.equal(routineVideoThumbnail({sourceVideo:video}),'data:image/png;base64,YQ==');
+ globalThis.localStorage={getItem:()=> '[]'};
+ assert.equal(routineVideoThumbnail({sourceVideo:{...video,cover:'javascript:alert(1)'}}),'');
+});

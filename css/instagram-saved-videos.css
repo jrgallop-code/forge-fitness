@@ -29,3 +29,5 @@
 
 .routine-video-origin{display:flex!important;align-items:center;gap:6px;color:var(--accent-text)!important}.routine-video-origin svg{flex-shrink:0}
 .routine-video-source{display:flex;gap:14px;margin:16px 0;padding:12px;border:1px solid var(--card-border);border-radius:14px;background:var(--surface-raised)}.routine-video-source>img,.routine-video-placeholder{width:100px;height:90px;object-fit:cover;border-radius:10px;flex-shrink:0}.routine-video-placeholder{display:grid;place-items:center;background:var(--card)}.routine-video-source>div{display:grid;gap:8px;align-content:center;min-width:0}.routine-video-source small{display:flex;gap:5px;align-items:center;color:var(--muted);font-size:11px}.routine-video-source strong{color:var(--heading);overflow-wrap:anywhere}.routine-video-source a{color:var(--accent-text);font-weight:700;font-size:14px}
+
+.workout-live-page .circuit-library-row .routine-video-card-cover{width:76px;height:84px;object-fit:cover;border-radius:12px;flex-shrink:0}

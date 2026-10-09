@@ -63,12 +63,17 @@ function renderShell() {
 }
 
 function renderPasteStage() {
-  return `<div class="routine-import-paste-card"><label>Workout type<select data-routine-kind><option value="">Choose circuit or regular workout</option><option value="circuit">Circuit — repeat the exercise list each round</option><option value="regular">Regular workout — separate sets per exercise</option></select></label><p data-routine-type-hint></p><div data-routine-circuit-options hidden><label>Rounds<input type="number" min="1" max="20" data-routine-rounds placeholder="Number of rounds"></label><label>Rest between rounds (seconds)<input type="number" min="0" max="600" data-routine-rest value="0"></label></div><label for="routine-import-text">Routine text</label><textarea id="routine-import-text" maxlength="100000" placeholder="Paste a routine from ChatGPT or another source…&#10;&#10;Push Day&#10;Bench Press - 3x6-8&#10;Cable Fly - 3x12-15"></textarea><div class="routine-import-tools"><button class="secondary-btn" type="button" data-routine-paste>Paste from Clipboard</button><button class="routine-import-text-action" type="button" data-routine-example>Use example</button><button class="routine-import-text-action" type="button" data-routine-clear>Clear</button><small data-routine-count>0 / 100,000</small></div>${window.Capacitor?.getPlatform?.() === "ios" ? `<button type="button" class="secondary-btn" data-routine-screenshot>Or import screenshot of the text</button><p>Reads written exercises on your iPhone. Review the extracted text before building.</p>` : ""}<p class="routine-import-message" data-routine-message aria-live="polite"></p><button class="primary-btn routine-import-build" type="button" data-routine-build>Build Pasted Routine</button></div>`;
+  return `<div class="routine-import-paste-card"><fieldset class="routine-import-type-choice"><legend>What are you importing?</legend><div><button type="button" data-routine-type="regular" aria-pressed="false">Regular workout<small>Separate sets for each exercise</small></button><button type="button" data-routine-type="circuit" aria-pressed="false">Circuit<small>Repeat the exercise list each round</small></button></div><select data-routine-kind hidden aria-label="Workout type"><option value="">Choose workout type</option><option value="regular">Regular workout</option><option value="circuit">Circuit</option></select></fieldset><p data-routine-type-hint></p><div data-routine-circuit-options hidden><label>Rounds<input type="number" min="1" max="20" data-routine-rounds placeholder="Number of rounds"></label><label>Rest between rounds (seconds)<input type="number" min="0" max="600" data-routine-rest value="0"></label></div><label for="routine-import-text">Routine text</label><textarea id="routine-import-text" maxlength="100000" placeholder="Paste a routine from ChatGPT or another source…&#10;&#10;Push Day&#10;Bench Press - 3x6-8&#10;Cable Fly - 3x12-15"></textarea><div class="routine-import-tools"><button class="secondary-btn" type="button" data-routine-paste>Paste from Clipboard</button><button class="routine-import-text-action" type="button" data-routine-example>Use example</button><button class="routine-import-text-action" type="button" data-routine-clear>Clear</button><small data-routine-count>0 / 100,000</small></div>${window.Capacitor?.getPlatform?.() === "ios" ? `<button type="button" class="secondary-btn" data-routine-screenshot>Or import screenshot of the text</button><p>Reads written exercises on your iPhone. Review the extracted text before building.</p>` : ""}<p class="routine-import-message" data-routine-message aria-live="polite"></p><button class="primary-btn routine-import-build" type="button" data-routine-build>Build Pasted Routine</button></div>`;
 }
 
 function handleClick(event, page) {
   const button = event.target.closest("button");
   if (!button || !page.contains(button)) return;
+  if (button.matches("[data-routine-type]")) {
+    page.querySelector('[data-routine-kind]').value = button.dataset.routineType;
+    syncWorkoutTypeChoice(page);
+    return;
+  }
   if (button.matches("[data-routine-import-open]")) return openImporter(page);
   if (button.matches("[data-routine-import-close]")) return closeImporter(page);
   if (button.matches("[data-routine-example]")) return setPasteText(page, EXAMPLE);
@@ -142,6 +147,7 @@ function showPaste(page) {
     page.querySelector('[data-routine-rounds]').value=importState.rounds || '';
     page.querySelector('[data-routine-rest]').value=importState.rest || 0;
   }
+  syncWorkoutTypeChoice(page);
   updateCounter(page);
 }
 
@@ -362,4 +368,11 @@ function updateImportTypeHint(page) {
  const hint=page.querySelector('[data-routine-type-hint]');
  const rounds=page.querySelector('[data-routine-rounds]');const roundMatch=text.match(/\b(\d+)\s*rounds?\b/i);if(rounds && !rounds.value && roundMatch)rounds.value=Math.min(20,Math.max(1,Number(roundMatch[1])));
  if(hint)hint.textContent=suggestWorkoutType(text)==='circuit'?'This looks like a circuit. Confirm the workout type above.':'An exercise list can be either type. Choose the format you want.';
+}
+
+function syncWorkoutTypeChoice(page) {
+ const kind = page.querySelector('[data-routine-kind]')?.value;
+ page.querySelectorAll('[data-routine-type]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.routineType === kind)));
+ const options = page.querySelector('[data-routine-circuit-options]');
+ if (options) options.hidden = kind !== 'circuit';
 }

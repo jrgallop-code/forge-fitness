@@ -1,4 +1,4 @@
-import { renderRoutineSourceLabel, renderRoutineSourcePreview } from "./routine-video-links.js";
+import { renderRoutineSourceLabel, renderRoutineSourcePreview, routineVideoThumbnail } from "./routine-video-links.js";
 import { ensureCircuitStyles } from './circuit-styles.js';
 export { ensureCircuitStyles } from './circuit-styles.js';
 import { circuitTemplates } from './circuit-templates.js';
@@ -9,9 +9,10 @@ const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp
 export function renderCircuitLibraryRow(plan) {
  const isSaved=Boolean(plan.isSavedPlan);
  const attr=isSaved?'data-workout-live-saved-plan':'data-workout-live-catalogue-plan';
+ const thumbnail=routineVideoThumbnail(plan);
  const duration=Number(plan.durationMinutes)>0?`<b>~${escape(plan.durationMinutes)} min</b>`:'';
  const preview=plan.days[0].exercises.map(exercise=>getExerciseById(exercise.id)?.name || exercise.name).join(' · ');
- return `<article class="workout-live-plan-row circuit-library-row${isSaved?' is-saved':''}"><button class="workout-live-row-main" type="button" ${attr}="${escape(plan.id)}"><span class="circuit-library-icon" aria-hidden="true">↻</span><span class="workout-live-row-copy"><small>${isSaved?'SAVED CIRCUIT':'LEVEL UP CIRCUIT'}</small><strong>${escape(plan.name)}</strong>${renderRoutineSourceLabel(plan)}<em>${escape(preview)}</em><span class="workout-live-row-meta"><b>${plan.rounds} rounds</b>${duration}${plan.equipment?`<b>${escape(plan.equipment)}</b>`:''}</span><em>Separate circuit progress</em></span></button><button class="workout-live-row-action" type="button" ${attr}="${escape(plan.id)}">View</button></article>`;
+ return `<article class="workout-live-plan-row circuit-library-row${isSaved?' is-saved':''}"><button class="workout-live-row-main" type="button" ${attr}="${escape(plan.id)}">${thumbnail?`<img class="routine-video-card-cover" src="${thumbnail}" alt="Source workout video">`:'<span class="circuit-library-icon" aria-hidden="true">↻</span>'}<span class="workout-live-row-copy"><small>${isSaved?'SAVED CIRCUIT':'LEVEL UP CIRCUIT'}</small><strong>${escape(plan.name)}</strong>${renderRoutineSourceLabel(plan)}<em>${escape(preview)}</em><span class="workout-live-row-meta"><b>${plan.rounds} rounds</b>${duration}${plan.equipment?`<b>${escape(plan.equipment)}</b>`:''}</span><em>Separate circuit progress</em></span></button><button class="workout-live-row-action" type="button" ${attr}="${escape(plan.id)}">View</button></article>`;
 }
 export function openCircuitTemplate(planId, landing, savedPlan = null) {
  const template=savedPlan || circuitTemplates.find(plan=>plan.id===planId);if(!template)return false;
