@@ -17,3 +17,5 @@ Hold progress now uses the existing three-stat improvement card layout: latest, 
 Hold stopwatch now starts an elapsed iOS Live Activity, with exercise and set, theme/icon matching existing timers. Stop, manual overwrite, set completion, removal, and discard cancel it. No countdown notification is scheduled. Lock Screen opens the workout for controls.
 
 Progress simplified to Best hold only; latest/previous/improvement stay. Total time and added weight metrics and columns removed. Best hold uses longest timed set per workout across loads; weighted/bodyweight logger retained.
+
+Best hold now filters by Bodyweight or each recorded added load; graph and improvement compare the selected load only. Best hold remains the only metric.

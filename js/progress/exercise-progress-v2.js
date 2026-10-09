@@ -645,19 +645,34 @@ function formatDate(value) { const date = parseDate(value); return date ? new In
 function formatShortDate(value) { const date = parseDate(value); return date ? new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date) : ""; }
 function escapeHtml(value) { return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 
+let selectedHoldLoad = 0;
 function renderHoldProgress(host, history, id) {
+    if (selectedExerciseId !== id) selectedHoldLoad = 0;
     selectedExerciseId = id;
     selectedMetric = 'strength';
     document.querySelectorAll('[data-exercise-metric]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.exerciseMetric === 'strength')));
     document.getElementById('exercise-equipment-filter')?.closest('label')?.setAttribute('hidden','');
     const machineControls = document.getElementById('exercise-machine-view-controls'); if (machineControls) machineControls.hidden = true;
     const legend = document.getElementById('exercise-equipment-legend'); if (legend) legend.innerHTML = '';
-    document.getElementById('hold-progress-filter')?.remove();
-    const records = filterRange(holdProgressRecords(getSessions(),id,{load:null,metric:'strength'}));
+    const sessions = getSessions();
+    const loggedSets = sessions.filter(session => !['in_progress','draft'].includes(session.status))
+        .flatMap(session => (session.exercises || []).filter(exercise => exercise.exerciseId === id))
+        .flatMap(exercise => exercise.sets || [])
+        .filter(set => !set.isWarmup && !set.warmup && Number(set.durationSeconds) > 0);
+    const loads = [...new Set([0,...loggedSets.map(set => Number(set.weight || 0))])].sort((a,b)=>a-b);
+    if (!loads.includes(selectedHoldLoad)) selectedHoldLoad = 0;
+    let filter = document.getElementById('hold-progress-filter');
+    if (!filter) { filter = document.createElement('label'); filter.id = 'hold-progress-filter'; host.before(filter); }
+    filter.innerHTML = `Load<select aria-label="Hold load">${loads.map(load => `<option value="${load}" ${load === selectedHoldLoad ? 'selected' : ''}>${load ? formatMass(load,1) + ' added' : 'Bodyweight'}</option>`).join('')}</select>`;
+    filter.querySelector('select').onchange = event => {
+        selectedHoldLoad = Number(event.target.value) || 0;
+        renderExerciseProgressV2();
+    };
+    const records = filterRange(holdProgressRecords(sessions,id,{load:selectedHoldLoad,metric:'strength'}));
     const value = record => record.bestSeconds;
     const label = 'Best hold (sec)';
     const note = document.getElementById('exercise-progress-note');
-    if (note) note.textContent = 'Longest hold per workout. Added load can affect hold time.';
+    if (note) note.textContent = 'Longest hold per workout at the selected load.';
     const comparison = document.getElementById('exercise-volume-comparison');
     renderHoldComparison(comparison, records);
     const header = history.previousElementSibling;
