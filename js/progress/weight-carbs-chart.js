@@ -11,12 +11,10 @@ import "../nutrition/tdee-energy-balance-summary.js?v=energy-balance-range-3";
 import "../nutrition/tdee-expenditure-swipe-card.js?v=energy-card-height-1";
 import { initializeWeightCarbsChartV3 } from "./weight-chart-carousel-v3.js?v=weight-chart-edge-snap-1";
 import { initializeWeightCarbsInteractionEnhancements } from "./weight-carbs-interaction-enhancements.js?v=weight-carbs-interaction-2";
-import { initializeWeightCalorieContextV2 } from "./weight-calorie-context-v2.js?v=weight-theme-accent-1";
 
 export function initializeWeightCarbsChart(root = document) {
     initializeWeightCarbsChartV3(root);
     initializeWeightCarbsInteractionEnhancements(root);
-    initializeWeightCalorieContextV2(root);
     initializeWeeklyCalorieRateCard(root);
     bindPagerFallback();
 }

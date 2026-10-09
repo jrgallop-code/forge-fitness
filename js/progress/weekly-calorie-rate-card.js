@@ -1,7 +1,7 @@
-import {buildWeeklyCalorieRate} from './weekly-calorie-rate-model.js';
+import {buildWeeklyCalorieRate,weeklyComparisonWindow} from './weekly-calorie-rate-model.js';
 import {readFoodLog} from '../nutrition/food-log-data.js?v=fatsecret-progress-calories-1';
 import {displayMass,massUnit} from '../core/unit-system.js?v=granular-units-1';
-let weeks=8,selected=null,bound=false;
+let selected=null,bound=false;
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))||fallback;}catch{return fallback;}};
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
 const short=d=>new Date(d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'});
@@ -12,12 +12,11 @@ export function initializeWeeklyCalorieRateCard(root=document){
  let slide=track.querySelector('[data-weight-graph-slide-v2="weekly-calorie-rate"]');
  if(!slide){
   slide=document.createElement('section');slide.className='weight-graph-carousel-slide-v2 weekly-calorie-rate';slide.dataset.weightGraphSlideV2='weekly-calorie-rate';
-  slide.innerHTML='<h3>Calories &amp; Weight Change</h3><p>Weekly average intake · weekly trend rate</p><div class="weekly-rate-controls" role="group" aria-label="Comparison period"><button data-weekly-rate-range="8">8 weeks</button><button data-weekly-rate-range="12">12 weeks</button><button data-weekly-rate-range="26">6 months</button></div><div data-weekly-rate-plot></div><p class="weekly-rate-legend"><span>━ Average calories</span><span>┄ Weight change rate</span></p><div data-weekly-rate-detail aria-live="polite"></div><p class="weekly-rate-note">Tap a week for values and logging coverage. Calories average logged days; at least 4 food-logging days are needed. Weight rate uses the existing trend calculation at each week’s end. Separate scales; line crossings have no meaning.</p>';
+  slide.innerHTML='<h3>Calories &amp; Weight Change</h3><p>Weekly average intake · weekly trend rate</p><div data-weekly-rate-plot></div><p class="weekly-rate-legend"><span>━ Average calories</span><span>┄ Weight change rate</span></p><div data-weekly-rate-detail aria-live="polite"></div><p class="weekly-rate-note">Tap a week for values and logging coverage. Calories average logged days; at least 4 food-logging days are needed. Weight rate uses the existing trend calculation at each week’s end. Separate scales; line crossings have no meaning.</p>';
   track.append(slide);
   const button=document.createElement('button');button.type='button';button.dataset.weightGraphPageV2=String([...track.children].indexOf(slide));button.textContent='Calories + Rate';button.setAttribute('aria-pressed','false');pager.append(button);
   pager.style.gridTemplateColumns=`repeat(${track.children.length},minmax(0,1fr))`;
   slide.addEventListener('click',event=>{
-   const range=event.target.closest('[data-weekly-rate-range]');if(range){weeks=Number(range.dataset.weeklyRateRange);selected=null;render(slide);}
    const point=event.target.closest('[data-weekly-rate-week]');if(point){selected=point.dataset.weeklyRateWeek;render(slide);}
   });
   slide.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.matches('[data-weekly-rate-week]')){event.preventDefault();event.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
@@ -32,14 +31,17 @@ export function initializeWeeklyCalorieRateCard(root=document){
   },{passive:true});
  }
  if(!document.getElementById('weekly-calorie-rate-style')){
-  const style=document.createElement('style');style.id='weekly-calorie-rate-style';style.textContent='.weekly-calorie-rate{padding:4px 2px;color:var(--text)}.weekly-calorie-rate h3{margin:5px 0;font-size:18px}.weekly-calorie-rate p{font-size:12px;color:var(--muted)}.weekly-rate-controls{display:flex;gap:6px;margin:14px 0}.weekly-rate-controls button{flex:1;min-height:36px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text)}.weekly-rate-controls button[aria-pressed=true]{background:var(--accent);color:var(--on-accent,#fff)}.weekly-calorie-rate svg{display:block;width:100%;height:auto}.weekly-rate-legend{display:flex;justify-content:space-between;gap:8px}.weekly-rate-legend span:first-child{color:var(--accent)}.weekly-rate-legend span:last-child{color:#e99532}.weekly-rate-detail{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-raised);font-size:13px;line-height:1.6}.weekly-rate-note{line-height:1.5}.weekly-calorie-rate [data-weekly-rate-week]{cursor:pointer;outline-color:var(--accent)}';document.head.append(style);
+  const style=document.createElement('style');style.id='weekly-calorie-rate-style';style.textContent='.weekly-calorie-rate{padding:4px 2px;color:var(--text)}.weekly-calorie-rate h3{margin:5px 0;font-size:18px}.weekly-calorie-rate p{font-size:12px;color:var(--muted)}.weekly-calorie-rate svg{display:block;width:100%;height:auto}.weekly-rate-legend{display:flex;justify-content:space-between;gap:8px}.weekly-rate-legend span:first-child{color:var(--accent)}.weekly-rate-legend span:last-child{color:#e99532}.weekly-rate-detail{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-raised);font-size:13px;line-height:1.6}.weekly-rate-note{line-height:1.5}.weekly-calorie-rate [data-weekly-rate-week]{cursor:pointer;outline-color:var(--accent)}';document.head.append(style);
  }
  render(slide);
- if(!bound){bound=true;['levelup:food-log-updated','levelup:weight-updated','levelup:units-changed','levelup:nutrition-updated','levelup:nutrition-phase-updated'].forEach(name=>window.addEventListener(name,()=>initializeWeeklyCalorieRateCard()));}
+ if(!bound){bound=true;document.addEventListener('click',event=>{if(event.target.closest('button[data-weight-chart-range]')){selected=null;setTimeout(()=>initializeWeeklyCalorieRateCard(),0);}});['levelup:food-log-updated','levelup:weight-updated','levelup:units-changed','levelup:nutrition-updated','levelup:nutrition-phase-updated'].forEach(name=>window.addEventListener(name,()=>initializeWeeklyCalorieRateCard()));}
 }
 function render(slide){
- const rows=buildWeeklyCalorieRate({weights:read('forge_weight_entries',[]),foodLog:readFoodLog(),completeDays:read('level_up_food_log_complete_days_v1',{}),today:today(),weeks});
- slide.querySelectorAll('[data-weekly-rate-range]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.weeklyRateRange)===weeks)));
+ const weights=read('forge_weight_entries',[]);
+ const phases=read('level_up_nutrition_phases',[]);
+ const phase=[...phases].reverse().find(p=>p?.startDate&&!p.endDate);
+ const window=weeklyComparisonWindow({range:localStorage.getItem('level_up_weight_chart_range')||'3m',today:today(),weights,phase});
+ const rows=buildWeeklyCalorieRate({weights,foodLog:readFoodLog(),completeDays:read('level_up_food_log_complete_days_v1',{}),...window});
  const values=rows.map(r=>r.calories).filter(Number.isFinite),rates=rows.map(r=>Number.isFinite(r.rate)?displayMass(r.rate,2):null).filter(Number.isFinite);
  const cMin=values.length?Math.max(0,Math.floor((Math.min(...values)-100)/100)*100):0,cMax=values.length?Math.max(cMin+200,Math.ceil((Math.max(...values)+100)/100)*100):3000;
  const rMin=Math.min(-.5,...rates)-.1,rMax=Math.max(.5,...rates)+.1;
