@@ -18,3 +18,8 @@ export function nearestWeeklyPoint(rows,ratio){
  rows.forEach((row,i)=>{if(row.calories==null&&row.rate==null)return;const delta=Math.abs(i-index);if(delta<distance){best=row;distance=delta;}});
  return best;
 }
+
+export function swipePage(start,delta,width,count){
+ const step=Math.abs(delta)>=Math.max(30,width*.12)?(delta<0?1:-1):0;
+ return Math.max(0,Math.min(count-1,start+step));
+}

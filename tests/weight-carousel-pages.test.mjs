@@ -18,3 +18,11 @@ test('taps skip weeks with no values and handle a completely empty plot',()=>{
  const rows=[{calories:2000,rate:null},{calories:null,rate:null},{calories:null,rate:.5}];
  assert.equal(nearestWeeklyPoint(rows,.8),rows[2]);assert.equal(nearestWeeklyPoint([{calories:null,rate:null}],.5),null);
 });
+test('swipe completion always selects a whole neighbouring page or returns to the starting page',async()=>{
+ const {swipePage}=await import('../js/progress/weight-carousel-pages.js');
+ assert.equal(swipePage(0,-100,390,4),1);
+ assert.equal(swipePage(1,100,390,4),0);
+ assert.equal(swipePage(1,-15,390,4),1);
+ assert.equal(swipePage(0,100,390,4),0);
+ assert.equal(swipePage(3,-100,390,4),3);
+});

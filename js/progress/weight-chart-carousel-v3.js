@@ -1,4 +1,4 @@
-import { syncWeightCarouselPages } from "./weight-carousel-pages.js";
+import { syncWeightCarouselPages, swipePage } from "./weight-carousel-pages.js";
 import { calculateTrendWeightSeries, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
 
@@ -165,23 +165,44 @@ function nearestCarouselPage(track) {
         Math.abs(offset - track.scrollLeft) < Math.abs(offsets[best] - track.scrollLeft) ? index : best, 0);
 }
 function bindCarouselSettling(card, track) {
-    let timer = 0, touching = false;
-    const settle = () => {
-        clearTimeout(timer);
-        if (touching || !track.isConnected || !track.clientWidth) return;
-        delete track.dataset.scrolling;
-        syncPager(card);
+    let gesture=null,timer=0,animating=false,landing=null;
+    const finish=()=>{
+        if(gesture)return;
+        if(landing!==null&&Math.abs(track.scrollLeft-landing)>1)track.scrollTo({left:landing,behavior:'instant'});
+        landing=null;animating=false;track.style.scrollSnapType='x mandatory';
+        delete track.dataset.scrolling;syncPager(card);
     };
-    const queue = () => { clearTimeout(timer); timer = setTimeout(settle, 180); };
-    track.addEventListener("touchstart", () => { touching = true; clearTimeout(timer); track.dataset.scrolling = "1"; }, { passive: true });
-    const release = () => { touching = false; queue(); };
-    track.addEventListener("touchend", release, { passive: true });
-    track.addEventListener("touchcancel", release, { passive: true });
-    track.addEventListener("scroll", () => {
-        track.dataset.scrolling = "1";
-        queue();
-    }, { passive: true });
-    track.addEventListener("scrollend", settle, { passive: true });
+    track.addEventListener('touchstart',event=>{
+        if(event.touches.length!==1)return;
+        clearTimeout(timer);animating=false;landing=null;
+        gesture={x:event.touches[0].clientX,y:event.touches[0].clientY,left:track.scrollLeft,page:nearestCarouselPage(track),axis:null,delta:0};
+    },{passive:true});
+    track.addEventListener('touchmove',event=>{
+        if(!gesture||event.touches.length!==1)return;
+        const dx=event.touches[0].clientX-gesture.x,dy=event.touches[0].clientY-gesture.y;
+        if(!gesture.axis&&Math.max(Math.abs(dx),Math.abs(dy))>8)gesture.axis=Math.abs(dx)>Math.abs(dy)?'x':'y';
+        if(gesture.axis!=='x')return;
+        event.preventDefault();gesture.delta=dx;
+        track.style.scrollSnapType='none';track.dataset.scrolling='1';
+        track.scrollLeft=gesture.left-dx;
+    },{passive:false,capture:true});
+    const release=event=>{
+        if(!gesture)return;
+        const current=gesture;gesture=null;
+        if(current.axis!=='x'){finish();return;}
+        const page=event.type==='touchcancel'?current.page:swipePage(current.page,current.delta,track.clientWidth,track.children.length);
+        animating=true;
+        landing=carouselOffsets(track)[page]||0;
+        track.scrollTo({left:landing,behavior:'smooth'});
+        clearTimeout(timer);timer=setTimeout(finish,450);
+    };
+    track.addEventListener('touchend',release,{passive:true});
+    track.addEventListener('touchcancel',release,{passive:true});
+    track.addEventListener('scrollend',()=>{if(!gesture){clearTimeout(timer);finish();}},{passive:true});
+    track.addEventListener('scroll',()=>{
+        if(gesture||animating)return;
+        clearTimeout(timer);timer=setTimeout(finish,180);
+    },{passive:true});
 }
 
 function syncCarouselHeight(card) {

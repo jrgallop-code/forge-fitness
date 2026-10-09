@@ -14,10 +14,11 @@ export function initializeWeeklyCalorieRateCard(root=document){
  if(!slide){
   slide=document.createElement('section');slide.className='weight-graph-carousel-slide-v2 weekly-calorie-rate';slide.dataset.weightGraphSlideV2='weekly-calorie-rate';
   slide.innerHTML='<h3>Calories &amp; Weight Change</h3><p>Weekly average intake · weekly trend rate</p><div data-weekly-rate-plot></div><p class="weekly-rate-legend"><span>━ Average calories</span><span>┄ Weight change rate</span></p><div data-weekly-rate-detail aria-live="polite"></div><p class="weekly-rate-note">Tap a week for values and logging coverage. Calories average logged days; at least 4 food-logging days are needed. Weight rate uses the existing trend calculation at each week’s end. Separate scales; line crossings have no meaning.</p>';
-  track.prepend(slide);
+  const trend=track.querySelector('[data-weight-graph-slide-v2="trend"]');
+  trend.insertAdjacentElement("afterend",slide);
   const button=document.createElement('button');button.type='button';button.dataset.weightGraphPageV2=String([...track.children].indexOf(slide));button.textContent='Calories + Rate';button.setAttribute('aria-pressed','false');pager.prepend(button);
   syncWeightCarouselPages(card);
-  requestAnimationFrame(()=>track.scrollTo({left:track.clientWidth,behavior:'instant'}));
+
   pager.style.gridTemplateColumns=`repeat(${track.children.length},minmax(0,1fr))`;
   slide.addEventListener('click',event=>{
    const point=event.target.closest('[data-weekly-rate-week]');if(point){selected=point.dataset.weeklyRateWeek;updateSelection(slide);}

@@ -433,3 +433,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-09: Use shared bottom range controls for calorie/rate comparison and remove the previous daily weight/calorie card.
 
 2026-10-09: Remove competing scripted carousel snaps, place comparison beside Weight, synchronize page indices and add plot-wide weekly selection without graph rebuilding.
+
+2026-10-09: Restore Weight first and comparison second; use one gesture owner with exact-page settling.
