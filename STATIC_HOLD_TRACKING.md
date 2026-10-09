@@ -19,3 +19,5 @@ Hold stopwatch now starts an elapsed iOS Live Activity, with exercise and set, t
 Progress simplified to Best hold only; latest/previous/improvement stay. Total time and added weight metrics and columns removed. Best hold uses longest timed set per workout across loads; weighted/bodyweight logger retained.
 
 Best hold now filters by Bodyweight or each recorded added load; graph and improvement compare the selected load only. Best hold remains the only metric.
+
+Dashboard performance now includes recorded static holds, comparing best time at each same added load to the most recent matching completed workout. Rep-only legacy sets and warmups excluded. First load establishes baseline. Both dashboard and completion footnotes explain timed holds do not use estimated 1RM.

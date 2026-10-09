@@ -1,3 +1,4 @@
+import { isStaticHold } from '../workouts/static-holds.js';
 import { resolveSessionExerciseIdentity } from "../workouts/session-exercise-identity.js?v=repair-generic-exercise-1";
 import { UNIT_KINDS, formatMass as formatUnitMass } from "../core/unit-system.js?v=granular-units-1";
 import { getExerciseById } from "../workouts/exercise-library.js";
@@ -21,7 +22,7 @@ export function renderWorkoutPerformanceDashboard() {
         ${result.topImprovement ? `<div class="performance-top"><span>Top improvement</span><strong>${escapeHtml(result.topImprovement.name)}</strong><small>${escapeHtml(result.topImprovement.detail)}</small></div>` : ""}
         <button class="performance-toggle" type="button" data-performance-toggle aria-expanded="false" ${result.exercises.length ? "" : "hidden"}>View exercise breakdown</button>
         <div class="performance-breakdown" data-performance-panel hidden>${result.exercises.map(renderExerciseRow).join("")}</div>
-        <p class="performance-note">Each lift is compared with its most recent logged performance. Weight and estimated 1RM records use the same PR rules as your workout logger. New exercises are not scored.</p>
+        <p class="performance-note">Lifts compare with their most recent logged performance using the workout logger’s PR rules. Static holds compare best hold time with the most recent workout at the same added load; longer holds count as improvement, without an estimated 1RM. First-time exercises or loads establish a baseline and are not scored.</p>
     </section>`;
 }
 
@@ -54,7 +55,7 @@ function showCompletedSummary(logger) {
         ${result.topImprovement ? `<div class="performance-top"><span>Top improvement</span><strong>${escapeHtml(result.topImprovement.name)}</strong><small>${escapeHtml(result.topImprovement.detail)}</small></div>` : ""}
         <button class="performance-toggle" type="button" data-performance-toggle aria-expanded="false" ${result.exercises.length ? "" : "hidden"}>View exercise breakdown</button>
         <div class="performance-breakdown" data-performance-panel hidden>${result.exercises.map(renderExerciseRow).join("")}</div>
-        <p class="performance-note">Each lift is compared with its most recent logged performance. Normal day-to-day changes are expected.</p>
+        <p class="performance-note">Lifts compare with their most recent logged performance. Static holds compare best hold time at the same added load, without an estimated 1RM. First-time exercises or loads establish a baseline. Normal day-to-day changes are expected.</p>
         <button class="primary-btn performance-done" type="button" data-performance-done>Done</button>
     </div>`;
     bindToggles(logger);
@@ -76,6 +77,33 @@ export function calculatePerformance(session, allSessions) {
         const definition = getExerciseById(current.exerciseId);
         const identity = resolveSessionExerciseIdentity(current, session.planSnapshot?.days?.[session.trainingDayIndex || 0]?.exercises?.[(session.exercises || []).indexOf(current)]);
         if (definition?.trackingType === "notes" || current.trackingType === "notes") return;
+        if (isStaticHold(current)) {
+            const sets = timedHoldSets(current);
+            plannedSets += Array.isArray(current.sets) ? current.sets.length : 0;
+            completedSets += sets.length;
+            if (!sets.length) {
+                exercises.push({name: identity.name, status: "Incomplete", detail: "No recorded timed holds"});
+                return;
+            }
+            const loads = [...new Set(sets.map(set => Number(set.weight || 0)))];
+            for (const load of loads) {
+                const best = Math.max(...sets.filter(set => Number(set.weight || 0) === load).map(set => Number(set.durationSeconds)));
+                let previous = null;
+                for (const prior of older) {
+                    if (['in_progress','draft'].includes(prior.status)) continue;
+                    const matching = (prior.exercises || []).filter(exercise => exerciseMatches(current,exercise))
+                        .flatMap(exercise => timedHoldSets(exercise)).filter(set => Number(set.weight || 0) === load);
+                    if (matching.length) { previous = Math.max(...matching.map(set => Number(set.durationSeconds))); break; }
+                }
+                const loadLabel = load > 0 ? `${formatUnitMass(load,1,UNIT_KINDS.LIFTING_WEIGHT)} added` : 'Bodyweight';
+                const change = previous === null ? null : (best - previous) / previous;
+                const difference = previous === null ? null : best - previous;
+                exercises.push({name: identity.name, status: previous === null ? 'Baseline' : difference > 0 ? 'Improved' : difference < 0 ? 'Declined' : 'Maintained',
+                    isPr: false, change: change || 0,
+                    detail: `${loadLabel} · Best hold ${best} sec${previous === null ? ' · First recorded hold at this load' : ` · Previous ${previous} sec · ${difference > 0 ? '+' : ''}${difference} sec (${change > 0 ? '+' : ''}${Math.round(change * 100)}%)`}`});
+            }
+            return;
+        }
         const currentSets = completedSetsOnly(current.sets);
         const previousExercise = findPreviousExercisePerformance(older, current);
         const previousSets = completedSetsOnly(previousExercise?.sets);
@@ -164,6 +192,10 @@ function bindToggles(root) {
             button.textContent = panel.hidden ? "View exercise breakdown" : "Hide exercise breakdown";
         });
     });
+}
+function timedHoldSets(exercise) {
+    return (Array.isArray(exercise?.sets) ? exercise.sets : []).filter(set =>
+        !set.isWarmup && !set.warmup && Number(set.durationSeconds) > 0 && Number(set.weight || 0) >= 0);
 }
 function completedSetsOnly(sets) {
     return (Array.isArray(sets) ? sets : []).filter(set => set?.completed && Number(set.weight) >= 0 && Number(set.reps) > 0);

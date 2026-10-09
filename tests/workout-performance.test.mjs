@@ -67,3 +67,31 @@ test("dashboard set comparisons follow lifting units independently of body weigh
  assert.equal(calculatePerformance(current,[current,previous]).exercises[0].detail,"110 lb × 10 · Previous 100 lb × 10");
  preferences = {...preferences, bodyWeight:"lb"};
 });
+
+const holdSession = (id,date,sets) => ({id,completedAt:date,exercises:[{exerciseId:'plank',sets}]});
+test('dashboard counts timed bodyweight holds and compares best time without estimated 1RM',()=>{
+ const prior=holdSession('old','2026-10-08T12:00:00Z',[{durationSeconds:30,weight:0}]);
+ const current=holdSession('new','2026-10-09T12:00:00Z',[{durationSeconds:45,weight:0},{durationSeconds:20,weight:0}]);
+ const result=calculatePerformance(current,[current,prior]);
+ assert.equal(result.completedSets,2); assert.equal(result.improved,1);
+ assert.match(result.exercises[0].detail,/Best hold 45 sec.*Previous 30 sec.*\+15 sec \(\+50%\)/);
+ assert.equal(result.topImprovement.name,'Plank'); assert.equal(result.prs,0);
+});
+test('holds use most recent matching load, excluding drafts, warmups and rep-only legacy sets',()=>{
+ const old=holdSession('old','2026-10-01T12:00:00Z',[{durationSeconds:40,weight:10}]);
+ const recent=holdSession('recent','2026-10-08T12:00:00Z',[{durationSeconds:90,weight:0}]);
+ const draft={...holdSession('draft','2026-10-08T14:00:00Z',[{durationSeconds:200,weight:10}]),status:'draft'};
+ const current=holdSession('new','2026-10-09T12:00:00Z',[{durationSeconds:50,weight:10},{durationSeconds:99,weight:10,isWarmup:true},{reps:80,weight:10}]);
+ const result=calculatePerformance(current,[current,recent,draft,old]);
+ assert.equal(result.completedSets,1); assert.equal(result.improved,1);
+ assert.match(result.exercises[0].detail,/Previous 40 sec/);
+ const baseline=calculatePerformance(current,[current,recent]);
+ assert.equal(baseline.exercises[0].status,'Baseline'); assert.equal(baseline.score,null);
+});
+test('static hold recap reports maintained and declined time',()=>{
+ const prior=holdSession('old','2026-10-08T12:00:00Z',[{durationSeconds:30}]);
+ for (const [seconds,status] of [[30,'Maintained'],[20,'Declined']]) {
+ const current=holdSession('new','2026-10-09T12:00:00Z',[{durationSeconds:seconds}]);
+ assert.equal(calculatePerformance(current,[current,prior]).exercises[0].status,status);
+ }
+});
