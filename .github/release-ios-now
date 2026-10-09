@@ -439,3 +439,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-09: Track Plank, Side Plank and Copenhagen Plank with seconds in the standard logger and builder; add manual/stopwatch time, bodyweight/added-load controls and hold-specific progress charts.
 
 2026-10-09: Move hold stopwatch below all sets and follow the active set; retain Plank in refreshed Progress lists and chart entered hold time from saved workouts.
+
+2026-10-09: Compact hold progress labels and show latest/previous improvement cards with absolute, percentage and baseline changes.

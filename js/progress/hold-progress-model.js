@@ -24,3 +24,16 @@ export function hasExerciseProgressData(exercise) {
     return Number(set.weight) > 0 && Number(set.reps) > 0;
   });
 }
+
+export function holdComparison(records, metric = 'strength') {
+  const value = record => metric === 'weight' ? record.addedWeight : metric === 'volume' ? record.totalSeconds : record.bestSeconds;
+  const latest = records.at(-1), previous = records.at(-2), first = records[0];
+  if (!latest) return null;
+  const latestValue = value(latest), previousValue = previous ? value(previous) : null;
+  const baselineValue = value(first);
+  const change = previous ? latestValue - previousValue : null;
+  const baselineChange = previous ? latestValue - baselineValue : null;
+  return {latest, previous, first, latestValue, previousValue, baselineValue, change, baselineChange,
+    percent: previousValue > 0 ? change / previousValue * 100 : null,
+    baselinePercent: previous && baselineValue > 0 ? baselineChange / baselineValue * 100 : null};
+}

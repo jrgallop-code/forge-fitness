@@ -129,3 +129,25 @@ test('finished workout charts entered seconds even without ticking each set; act
  assert.equal(holdProgressRecords([{...saved,status:'in_progress'}],'plank').length,0);
  assert.equal(holdProgressRecords([{...saved,status:'draft'}],'plank').length,0);
 });
+
+test('hold improvement compares latest, previous and baseline without fabricating zero-load percentages',async()=>{
+ const {holdComparison}=await import('../js/progress/hold-progress-model.js');
+ const records=[{date:'2026-10-08',bestSeconds:6,totalSeconds:6,addedWeight:0,sets:1},{date:'2026-10-09',bestSeconds:30,totalSeconds:30,addedWeight:10,sets:1}];
+ const time=holdComparison(records,'volume');assert.equal(time.latestValue,30);assert.equal(time.previousValue,6);assert.equal(time.change,24);assert.equal(time.percent,400);assert.equal(time.baselineChange,24);
+ const load=holdComparison(records,'weight');assert.equal(load.change,10);assert.equal(load.percent,null);assert.equal(load.baselinePercent,null);
+ assert.equal(holdComparison(records.slice(0,1)).change,null);assert.equal(holdComparison([]),null);
+ const decline=holdComparison([...records].reverse());assert.equal(decline.change,-24);assert.equal(decline.percent,-80);
+});
+
+test('hold summary renders compact improvement cards instead of a narrow text column',async()=>{
+ const {readFileSync}=await import('node:fs');const vm=await import('node:vm');
+ const {holdComparison}=await import('../js/progress/hold-progress-model.js');
+ const sandbox={holdComparison};vm.createContext(sandbox);
+ const source=readFileSync(new URL('../js/progress/exercise-progress-v2.js',import.meta.url),'utf8').replace(/^import\s[\s\S]*?;\n/gm,'').replace(/^export /gm,'');
+ vm.runInContext(source+'\nglobalThis.render=(container,records)=>renderHoldComparison(container,records);',sandbox);
+ const container={classList:{add(){}},innerHTML:'',hidden:true};
+ sandbox.render(container,[{date:'2026-10-08',totalSeconds:6,sets:1},{date:'2026-10-09',totalSeconds:30,sets:1}]);
+ assert.equal(container.hidden,false);assert.equal((container.innerHTML.match(/exercise-volume-stat is-summary/g)||[]).length,3);
+ assert.match(container.innerHTML,/Latest/);assert.match(container.innerHTML,/Previous/);assert.match(container.innerHTML,/\+24 sec/);assert.match(container.innerHTML,/\+400.0%/);
+ assert.match(container.innerHTML,/Since baseline/);assert.match(container.innerHTML,/1 set<\/small>/);assert.doesNotMatch(container.innerHTML,/1 sets|Total hold time \(seconds\)/);
+});

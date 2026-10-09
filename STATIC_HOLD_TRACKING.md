@@ -9,3 +9,7 @@ Validation: 36 focused tests pass; native asset build passes. Full suite has 876
 ## Follow-up: compact timer and Progress picker
 
 One shared stopwatch now sits below all set rows. It follows the focused unfinished set, stays with a running set, and advances on completion. Time cells use the standard input layout with a short sec placeholder. Progress list rebuilds include holds without requiring weight and reps; saved workouts chart entered duration even when the individual set checkbox was not used. Draft workouts remain excluded. Focused regression coverage: 41 checks passing. Physical-device visual verification remains outstanding.
+
+## Compact improvement summary
+
+Hold progress now uses the existing three-stat improvement card layout: latest, previous and change, with a dated baseline comparison. Time changes are seconds and percentage; added-load changes respect lifting units and omit percentages when the previous load was zero. Time comparisons still filter to the same load; total time explicitly notes its dependence on set count. Labels are shortened to Total time, Load and sec. Model and rendered-card checks pass.
