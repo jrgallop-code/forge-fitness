@@ -104,6 +104,22 @@ function createVideoCard(exerciseId, config) {
         </figcaption>
     `;
 
+    if (config.provider === 'google-drive') {
+        const frame = document.createElement('iframe');
+        frame.src = config.src;
+        frame.title = 'Form demonstration';
+        frame.allow = 'autoplay; fullscreen';
+        frame.allowFullscreen = true;
+        frame.style.cssText = 'display:block;width:100%;height:280px;border:0;background:#000';
+        const link = document.createElement('a');
+        link.href = config.sourceUrl;
+        link.target = '_blank';link.rel = 'noopener noreferrer';
+        link.textContent = 'Open demonstration video ↗';
+        link.style.cssText = 'display:block;padding:12px;color:var(--accent-text);font-weight:700';
+        figure.querySelector('figcaption span').textContent = 'Video guide';
+        figure.append(frame,link);
+        return figure;
+    }
     const video = document.createElement("video");
     video.src = config.src;
     video.muted = true;

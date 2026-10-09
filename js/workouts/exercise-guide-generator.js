@@ -1,3 +1,4 @@
+import { videoLibraryGuides } from "./video-library-guides.js";
 const groupMuscles = {
     Chest: { primary: ["Chest"], secondary: ["Triceps", "Front Delts"] },
     Back: { primary: ["Lats", "Upper Back"], secondary: ["Biceps", "Rear Delts"] },
@@ -748,6 +749,7 @@ function genericGroupGuide(exercise) {
 
 export function createGeneratedExerciseGuide(exercise) {
     if (!exercise) return null;
+    if (videoLibraryGuides[exercise.id]) return videoLibraryGuides[exercise.id];
     const id = String(exercise.id || "");
     const n = normalizedName(exercise);
     const group = String(exercise.muscleGroup || "");
