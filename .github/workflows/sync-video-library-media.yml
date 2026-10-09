@@ -1,4 +1,4 @@
-name: Sync exercise demonstration videos
+name: Validate exercise demonstration videos
 on:
   push:
     branches: [ios/capacitor-app-store]
@@ -12,17 +12,7 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: '22'
-      - name: Install video transfer tools
-        run: |
-          pip install gdown
-          npm install --no-save wrangler@4.127.0
-      - name: Transfer and validate demonstration clips
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      - name: Validate direct MP4 playback
         run: python tools/sync-video-library-media.py
       - uses: actions/upload-artifact@v4
         if: always()
