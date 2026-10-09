@@ -229,6 +229,7 @@ function bindLandingActions({ content, page, sourceHome, landing, state, render 
 function renderRecommendedCard(plan, index) {
     const stats = planStats(plan);
     const artwork = getPlanArtwork(plan, index);
+    const thumbnail = routineVideoThumbnail(plan);
     const badge = index === 0 ? "BEST MATCH" : index === 1 ? "POPULAR" : index === 2 ? "TRENDING" : "FOR YOU";
     return `
         <article class="workout-live-program-card" data-workout-live-plan-card="${escapeHtml(plan.id)}" data-art-family="${escapeHtml(artwork.family)}" tabindex="0" role="button" aria-label="Open ${escapeHtml(plan.name)}">

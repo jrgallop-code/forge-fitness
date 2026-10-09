@@ -419,3 +419,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-08: Release visible source videos and bidirectional linked routines.
 
 2026-10-09: Release source video thumbnails on routines and explicit importer workout-type choices.
+
+2026-10-09: Fix recommended-card thumbnail reference blocking Workout page rendering.
