@@ -114,7 +114,7 @@ function renderSlide() {
 function syncPager(card) {
     const track = card.querySelector("[data-weight-graph-carousel-track-v2]");
     if (!track) return;
-    const index = Math.max(0, Math.min(3, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
+    const index = Math.max(0, Math.min(track.children.length - 1, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
     card.querySelectorAll("[data-weight-graph-page-v2]").forEach(button => {
         button.setAttribute("aria-pressed", String(Number(button.dataset.weightGraphPageV2) === index));
     });

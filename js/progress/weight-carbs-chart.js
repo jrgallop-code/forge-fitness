@@ -1,3 +1,4 @@
+import { initializeWeeklyCalorieRateCard } from "./weekly-calorie-rate-card.js";
 import "../core/contextual-tutorial-theme.js?v=contextual-tutorial-theme-1";
 import "../core/contextual-tutorial-lifecycle.js?v=contextual-lifecycle-1";
 import "./weight-visible-trend-sync-v2.js?v=smoothed-visible-trend-5";
@@ -16,6 +17,7 @@ export function initializeWeightCarbsChart(root = document) {
     initializeWeightCarbsChartV3(root);
     initializeWeightCarbsInteractionEnhancements(root);
     initializeWeightCalorieContextV2(root);
+    initializeWeeklyCalorieRateCard(root);
     bindPagerFallback();
 }
 

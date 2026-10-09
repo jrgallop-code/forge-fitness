@@ -427,3 +427,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-09: Anchor exercise selection controls to the screen bottom and replace Drive embeds with verified native looping MP4 videos; validate female anatomy coverage.
 
 2026-10-09: Offer editable exercise-specific defaults for missing sets and reps in regular text/screenshot imports; keep circuit targets unchanged.
+
+2026-10-09: Add swipe-accessible weekly calorie intake and weight-change-rate comparison card while preserving existing weight views and controls.
