@@ -1,3 +1,4 @@
+import { isStaticHold, holdTrackingType } from "./static-holds.js";
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=history-rir-edit-1';
 import './exercise-library-expansion.js?v=exercise-library-expansion-1';
 import { addCustomExercise, getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
@@ -56,7 +57,7 @@ function hasEnteredData(state) {
   if (state.trackingType === 'notes') {
     return Boolean(Number(state.durationMinutes) > 0 || String(state.distance || '').trim() || String(state.notes || '').trim());
   }
-  return (state.sets || []).some(set => Number(set?.weight) > 0 || Number(set?.reps) > 0 || set?.completed);
+  return (state.sets || []).some(set => Number(set?.durationSeconds) > 0 || Boolean(set?.holdStartedAt) || Number(set?.weight) > 0 || Number(set?.reps) > 0 || set?.completed);
 }
 
 function createReplacementState(exercise, priorState) {
@@ -77,7 +78,7 @@ function createReplacementState(exercise, priorState) {
   return {
     exerciseId: exercise.id,
     ...metadata,
-    trackingType: 'reps',
+    trackingType: holdTrackingType(exercise),
     notes: '',
     sets: Array.from({ length: setCount }, () => ({ weight: null, reps: null, rir: null, completed: false }))
   };
@@ -87,7 +88,7 @@ function getEligibleExercises(currentExercise) {
   const trackingType = currentExercise?.trackingType || 'reps';
   return getAllExercises()
     .filter(exercise => exercise?.id && exercise.id !== currentExercise?.id)
-    .filter(exercise => (exercise.trackingType || 'reps') === trackingType)
+    .filter(exercise => isStaticHold(exercise) === isStaticHold(currentExercise) && (exercise.trackingType || 'reps') === trackingType)
     .sort((a, b) => {
       const aSame = a.muscleGroup === currentExercise?.muscleGroup ? 0 : 1;
       const bSame = b.muscleGroup === currentExercise?.muscleGroup ? 0 : 1;
@@ -898,7 +899,7 @@ function createSupersetButton(card, logger, heading) {
 }
 
 function ensureExerciseOverflow(card) {
-  if (!card || card.dataset.trackingType !== 'reps') return;
+  if (!card || card.dataset.trackingType === 'notes') return;
   const header = card.querySelector('.compact-exercise-header');
   const headerActions = header?.querySelector('.compact-exercise-actions');
   if (!header || !headerActions) return;
@@ -1063,7 +1064,7 @@ function enhanceActiveLogger() {
     if (!editingSavedWorkout) ensureInlineActions(card, logger);
     ensureExerciseOverflow(card);
   });
-  logger.querySelectorAll('.session-exercise-card[data-tracking-type="reps"]').forEach(card => {
+  logger.querySelectorAll('.session-exercise-card:not([data-tracking-type="notes"])').forEach(card => {
     if (card.querySelector('.session-add-exercise-btn')) return;
     const addSet = card.querySelector('.compact-add-set-btn');
     if (!addSet) return;

@@ -435,3 +435,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-09: Remove competing scripted carousel snaps, place comparison beside Weight, synchronize page indices and add plot-wide weekly selection without graph rebuilding.
 
 2026-10-09: Restore Weight first and comparison second; use one gesture owner with exact-page settling.
+
+2026-10-09: Track Plank, Side Plank and Copenhagen Plank with seconds in the standard logger and builder; add manual/stopwatch time, bodyweight/added-load controls and hold-specific progress charts.

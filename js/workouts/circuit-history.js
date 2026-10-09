@@ -34,7 +34,7 @@ export function circuitPreviousPerformance(circuitId, exerciseId, excludedId = n
     .sort((a,b) => String(b.completedAt || b.date || '').localeCompare(String(a.completedAt || a.date || '')));
   for (const session of sessions) {
     const exercise = session.exercises?.find(item => item.exerciseId === exerciseId);
-    if (exercise?.sets?.some(set => set.completed && Number(set.reps) > 0)) return { ...exercise, sets: exercise.sets.map(set => set.completed ? set : {}) };
+    if (exercise?.sets?.some(set => set.completed && (Number(set.reps) > 0 || Number(set.durationSeconds) > 0))) return { ...exercise, sets: exercise.sets.map(set => set.completed ? set : {}) };
   }
   return null;
 }

@@ -1,3 +1,4 @@
+import { isStaticHold, holdTrackingType, holdTarget, holdTimeField, holdLoadControl, bindHoldRows, stopHoldTimer } from "./static-holds.js";
 import { renderCircuitRounds, bindCircuitRounds } from "./circuit-round-logger.js";
 import { showCircuitCompletion } from './circuit-completion.js';
 import { ensureCircuitStyles } from './circuit-styles.js';
@@ -589,7 +590,7 @@ function createExerciseState(day) {
             return {
                 exerciseId: plannedExercise.id,
                 ...exerciseStateMetadata(exercise, plannedExercise),
-                trackingType: "reps",
+                trackingType: holdTrackingType(plannedExercise),
                 notes: "",
                 ...getInitialEquipmentProfile(exercise),
                 sets:
@@ -598,6 +599,8 @@ function createExerciseState(day) {
                         () => ({
                             weight: null,
                             reps: null,
+                            durationSeconds: null,
+                            loadMode: isStaticHold(plannedExercise) ? "bodyweight" : undefined,
                             rir: null,
                             completed: false
                         })
@@ -696,6 +699,7 @@ function renderSessionExercises({
                     editingSessionId || session.resumedFromSessionId
                 );
 
+            if (isStaticHold(plannedExercise)) state.trackingType = "duration";
             if (state.trackingType === "notes") {
                 return `
                     <article class="session-exercise-card cardio-session-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-tracking-type="notes">
@@ -721,9 +725,9 @@ function renderSessionExercises({
             }
 
             return `
-                <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-equipment-profile-id="${escapeHtml(state.equipmentProfileId || "default")}" data-tracking-type="reps">
+                <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-equipment-profile-id="${escapeHtml(state.equipmentProfileId || "default")}" data-tracking-type="${isStaticHold(plannedExercise) ? "duration" : "reps"}">
                     <h4>${escapeHtml(exercise?.name || "Exercise")}</h4>
-                    <p class="session-target">Target: ${state.sets.length} ${isCircuit(plan) ? "rounds" : "sets"} × ${escapeHtml(plannedExercise.reps || "—")} reps</p>
+                    <p class="session-target">Target: ${state.sets.length} ${isCircuit(plan) ? "rounds" : "sets"} × ${escapeHtml(isStaticHold(plannedExercise) ? holdTarget(plannedExercise.reps, "—") : (plannedExercise.reps || "—") + " reps")}</p>
                     <div class="session-lifting-note ${String(state.notes || "").trim() ? "has-note" : ""}">
                         <button class="session-note-preview" type="button" aria-expanded="false">
                             <span class="session-note-empty-icon" aria-hidden="true">+</span>
@@ -738,16 +742,17 @@ function renderSessionExercises({
                         </div>
                     </div>
                     <div class="previous-performance"><strong>Previous workout</strong><span>${formatPrevious(previous)}</span></div>
-                    <div class="session-set-header"><span>Set</span><span>Last Workout</span><span>Weight (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})</span><span>Reps</span></div>
+                    ${isStaticHold(plannedExercise) ? holdLoadControl(state) : ""}
+                    <div class="session-set-header"><span>Set</span><span>Last Workout</span><span>Weight (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})</span><span>${isStaticHold(plannedExercise) ? "Time (sec)" : "Reps"}</span></div>
                     ${state.sets.map((set, setIndex) => {
                         const previousSet =
                             previous?.sets?.[setIndex];
                         return `
-                            <div class="session-set-row ${set.completed ? "completed" : ""}" data-set-index="${setIndex}">
+                            <div class="session-set-row ${set.completed ? "completed" : ""}" data-set-index="${setIndex}" ${isStaticHold(plannedExercise) ? `data-hold-set="${setIndex}"` : ""}>
                                 <strong>${setIndex + 1}</strong>
                                 <span class="previous-set-value">${previousSet ? formatPreviousSet(previousSet) : "Hasn't started"}</span>
                                 <input class="session-weight" type="number" inputmode="decimal" min="0" step="0.5" value="${set.weight ?? ""}" placeholder="${previousSet?.weight ?? "Weight"}" aria-label="Set ${setIndex + 1} weight">
-                                <input class="session-reps" type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ""}" placeholder="${previousSet?.reps ?? "Reps"}" aria-label="Set ${setIndex + 1} reps">
+                                ${isStaticHold(plannedExercise) ? holdTimeField(set, setIndex) : `<input class="session-reps" type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ""}" placeholder="${previousSet?.reps ?? "Reps"}" aria-label="Set ${setIndex + 1} reps">`}
                                 <button class="complete-set-btn secondary-btn" type="button">${set.completed ? "✓ Completed" : "Complete Set"}</button>
                             </div>
                         `;
@@ -918,7 +923,7 @@ function bindEditWorkoutExerciseControls({
             const set = state?.sets?.[setIndex];
             if (!state?.sets || state.sets.length <= 1 || !set) return false;
             const hasRir = set.rir !== null && set.rir !== "" && set.rir !== undefined;
-            const hasData = set.weight !== null || set.reps !== null || hasRir || set.completed || (set.dropSets || []).length;
+            const hasData = set.durationSeconds != null || set.weight !== null || set.reps !== null || hasRir || set.completed || (set.dropSets || []).length;
             if (hasData && !window.confirm(`Remove set ${setIndex + 1} and its recorded data?`)) return false;
             state.sets.splice(setIndex, 1);
             day.exercises[exerciseIndex].sets = state.sets.length;
@@ -1135,6 +1140,7 @@ function bindSessionInputs({
                     }
                 );
 
+            if (isStaticHold(session.exercises[exerciseIndex])) bindHoldRows(card, session.exercises[exerciseIndex], persist);
             card
                 .querySelectorAll(".session-set-row")
                 .forEach(row => {
@@ -1307,6 +1313,7 @@ function saveCompletedSession({
         session.date ||
         getLocalDateValue();
 
+    for (const exercise of session.exercises || []) for (const set of exercise.sets || []) stopHoldTimer(set);
     const durationMs =
         editingSessionId
             ? Number(session.durationMs) || 0
@@ -1372,7 +1379,7 @@ function saveCompletedSession({
 
     if (!editingSessionId) {
         clearActiveWorkout();
-        const workingSets = completed.exercises.reduce((total, exercise) => total + (exercise.sets || []).filter(set => Number(set.reps) > 0).length, 0);
+        const workingSets = completed.exercises.reduce((total, exercise) => total + (exercise.sets || []).filter(set => (Number(set.reps) > 0 || Number(set.durationSeconds) > 0)).length, 0);
         window.dispatchEvent(new CustomEvent("levelup:workout-completed", { detail: { sessionId: completed.id, planId: completed.planId, workoutSource: completed.workoutSource, workingSets, durationMinutes: completed.durationMinutes } }));
     }
 
@@ -1980,6 +1987,7 @@ function formatPrevious(previous) {
             )
             .map(set => {
                 const rir = normalizeRirValue(set.rir);
+                if (set.durationSeconds != null) return formatPreviousSet(set);
                 return `${formatPreviousWeight(set.weight)} × ${set.reps ?? "—"}${rir === null ? "" : ` · RIR ${rir >= 4 ? "4+" : rir}`}`;
             }) || [];
     return sets.length
@@ -1988,6 +1996,7 @@ function formatPrevious(previous) {
 }
 
 function formatPreviousSet(set) {
+    if (set.durationSeconds != null) return `${Number(set.weight) > 0 ? formatPreviousWeight(set.weight) + " added" : "Bodyweight"} · ${set.durationSeconds} sec`;
     const rir = normalizeRirValue(set.rir);
     const main = `${formatPreviousWeight(set.weight)} × ${set.reps ?? "—"}${rir === null ? "" : ` · RIR ${rir >= 4 ? "4+" : rir}`}`;
     const drops = (Array.isArray(set.dropSets) ? set.dropSets : [])

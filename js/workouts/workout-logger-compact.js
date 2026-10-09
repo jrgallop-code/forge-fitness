@@ -442,7 +442,7 @@ function enhanceLogger(logger) {
 
   const initialEnhancement = logger.dataset.compactEnhanced !== 'true';
   const unenhancedCards = logger.querySelectorAll(
-    '.session-exercise-card[data-tracking-type="reps"]:not([data-compact-card-enhanced="true"])'
+    '.session-exercise-card[data-tracking-type]:not([data-tracking-type="notes"]):not([data-compact-card-enhanced="true"])'
   );
 
   if (!initialEnhancement && !unenhancedCards.length) {
@@ -585,7 +585,7 @@ function enhanceLogger(logger) {
 
     const setHeader = card.querySelector('.session-set-header');
     if (setHeader) {
-      setHeader.innerHTML = `<span>${logger.dataset.trainingContext === 'circuit' ? 'Round' : 'Set'}</span><span>Previous</span><span>lbs</span><span>Reps</span><span>✓</span><span aria-label="Remove set">−</span>`;
+      setHeader.innerHTML = `<span>${logger.dataset.trainingContext === 'circuit' ? 'Round' : 'Set'}</span><span>Previous</span><span>lbs</span><span>${card.dataset.trackingType === "duration" ? "Time (sec)" : "Reps"}</span><span>✓</span><span aria-label="Remove set">−</span>`;
     }
 
     [...card.querySelectorAll('.session-set-row')].forEach(row => {
@@ -651,7 +651,7 @@ function enhanceLogger(logger) {
         const active = getActive();
         const state = active?.exercises?.[exerciseIndex];
         if (!state || !Array.isArray(state.sets)) return;
-        state.sets.push({ weight: null, reps: null, rir: null, completed: false });
+        state.sets.push({ weight: null, reps: null, durationSeconds: null, loadMode: state.loadMode, rir: null, completed: false });
         const planned = active.planSnapshot?.days?.[active.trainingDayIndex]?.exercises?.[exerciseIndex];
         if (planned) planned.sets = state.sets.length;
         saveActive(active);

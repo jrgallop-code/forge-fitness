@@ -1,3 +1,4 @@
+import { stopHoldTimer } from "../js/workouts/static-holds.js";
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -14,7 +15,7 @@ const sample=()=>circuits.tagCircuitSession({id:'active-circuit',status:'in_prog
 const storage=()=>{const data=new Map([['forge_workout_sessions',JSON.stringify([regular])]]);return {data,getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};};
 function harness(){
  const localStorage=storage();globalThis.localStorage=localStorage;
- const sandbox={...circuits,showCircuitCompletion(){},createResumedWorkout,resumeProgressionHistory,localStorage,getExerciseById,repairWorkoutSessionList:sessions=>({sessions,changed:false}),resolveSessionExerciseIdentity:()=>({}),classifyWorkoutSource:()=> 'circuit',window:{confirm:()=>true,dispatchEvent:()=>{}},document:{getElementById:()=>null},CustomEvent:class{constructor(type,o){this.type=type;this.detail=o.detail;}},clearInterval(){},console,Date,JSON};vm.createContext(sandbox);
+ const sandbox={stopHoldTimer,...circuits,showCircuitCompletion(){},createResumedWorkout,resumeProgressionHistory,localStorage,getExerciseById,repairWorkoutSessionList:sessions=>({sessions,changed:false}),resolveSessionExerciseIdentity:()=>({}),classifyWorkoutSource:()=> 'circuit',window:{confirm:()=>true,dispatchEvent:()=>{}},document:{getElementById:()=>null},CustomEvent:class{constructor(type,o){this.type=type;this.detail=o.detail;}},clearInterval(){},console,Date,JSON};vm.createContext(sandbox);
  const source=readFileSync(new URL('../js/workouts/workout-session.js',import.meta.url),'utf8').replace(/^import\s[\s\S]*?;\n/gm,'').replace(/^export /gm,'');
  vm.runInContext(source+'\nrenderActiveWorkoutBanner=()=>{};renderWorkoutLogger=()=>{};resumeRuntimeTimers=()=>{};globalThis.api={saveCompletedSession,getWorkoutSessions,deleteCompletedWorkout,resumeCompletedWorkout,getPreviousPerformance,getActiveWorkout};',sandbox);
  return {localStorage,api:sandbox.api};

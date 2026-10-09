@@ -103,7 +103,7 @@ function renderPreviewExercise(exercise) {
         const cardioDetails = [Number(exercise.durationMinutes) > 0 ? `${Number(exercise.durationMinutes)} min` : "", String(exercise.distance || "").trim(), String(exercise.notes || "").trim()].filter(Boolean);
         return `<section class="workout-preview-exercise"><div class="workout-preview-exercise-heading"><div><h3>${escapeHtml(details.name)}</h3><p class="workout-preview-exercise-meta">${escapeHtml(formatExerciseMeta(details, true))}</p></div><span class="workout-preview-type-pill">Cardio</span></div><p class="workout-preview-cardio">${cardioDetails.map(escapeHtml).join(" • ") || "Recorded"}</p></section>`;
     }
-    const sets = (exercise.sets || []).filter(set => set.completed || set.weight !== null || set.reps !== null).filter(set => Number.isFinite(Number(set.weight)) || Number.isFinite(Number(set.reps)));
+    const sets = (exercise.sets || []).filter(set => set.completed || Number(set.durationSeconds) > 0 || set.weight !== null || set.reps !== null).filter(set => Number.isFinite(Number(set.weight)) || Number.isFinite(Number(set.reps)));
     return `<section class="workout-preview-exercise"><div class="workout-preview-exercise-heading"><div><h3>${escapeHtml(details.name)}</h3><p class="workout-preview-exercise-meta">${escapeHtml(formatExerciseMeta(details, false))}</p></div><span class="workout-preview-type-pill">${escapeHtml(capitalize(details.type || "Resistance"))}</span></div><div class="workout-preview-set-list">${sets.map((set, index) => renderPreviewSet(set, index)).join("") || `<p>No completed sets</p>`}</div></section>`;
 }
 
@@ -151,10 +151,11 @@ function countRecordedDropSets(session) {
 
 function hasRecordedExerciseData(exercise) {
     if (exercise?.trackingType === "notes") return Number(exercise.durationMinutes) > 0 || String(exercise.distance || "").trim() || String(exercise.notes || "").trim();
-    return (exercise?.sets || []).some(set => set.completed || set.weight !== null || set.reps !== null);
+    return (exercise?.sets || []).some(set => set.completed || Number(set.durationSeconds) > 0 || set.weight !== null || set.reps !== null);
 }
 
 function formatSet(set) {
+    if (set.durationSeconds != null) return `${Number(set.weight) > 0 ? formatUnitMass(Number(set.weight), 1, UNIT_KINDS.LIFTING_WEIGHT) + " added" : "Bodyweight"} · ${set.durationSeconds} sec`;
     const weight = Number(set.weight); const reps = Number(set.reps);
     const rir = set.rir !== null && set.rir !== "" && set.rir !== undefined && Number.isFinite(Number(set.rir))
         ? ` · RIR ${Number(set.rir) >= 4 ? "4+" : Math.max(0, Math.round(Number(set.rir)))}`
@@ -170,7 +171,7 @@ function refreshHistory() { const content = document.getElementById("content"); 
 function isOneOff(session) { return Boolean(session?.isOneOff || session?.planSnapshot?.isOneOff || String(session?.planId || "").startsWith("one-off-")); }
 function formatProgress(session) {
     const sets = (session.exercises || []).flatMap(exercise => exercise.sets || []);
-    const completed = sets.filter(set => set.completed || set.weight !== null || set.reps !== null).length;
+    const completed = sets.filter(set => set.completed || Number(set.durationSeconds) > 0 || set.weight !== null || set.reps !== null).length;
     const cardioEntries = (session.exercises || []).filter(exercise => exercise.trackingType === "notes" && (Number(exercise.durationMinutes) > 0 || String(exercise.distance || "").trim() || String(exercise.notes || "").trim())).length;
     if (!sets.length) return `${cardioEntries} ${cardioEntries === 1 ? "entry" : "entries"}`;
     return `${completed}/${sets.length} sets`;

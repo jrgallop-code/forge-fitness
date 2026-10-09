@@ -1,3 +1,5 @@
+import { isStaticHold } from "../workouts/static-holds.js";
+import { holdProgressRecords } from "./hold-progress-model.js";
 import { UNIT_KINDS, displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { calculateSetVolume } from "../workouts/volume-calculator.js?v=two-dumbbells-1";
@@ -81,6 +83,13 @@ function renderExerciseProgressV2() {
     const select = document.getElementById("exercise-progress-select");
     const history = document.getElementById("exercise-history-body");
     if (!host || !select || !history) return;
+    const hold = isStaticHold(select.value);
+    document.querySelectorAll('[data-exercise-metric]').forEach(button => {
+        const metric = button.dataset.exerciseMetric;
+        button.textContent = hold ? ({volume:'Total hold time', strength:'Best hold', weight:'Added weight'}[metric]) : ({volume:'Session Volume', strength:'Estimated 1RM', weight:'Weight & reps'}[metric]);
+    });
+    if (hold) { renderHoldProgress(host, history, select.value); return; }
+    document.getElementById('hold-progress-filter')?.remove();
     const allRecords = getExerciseRecords(select.value).filter(record => selectedMetric !== "weight" || record.weightSet);
     const profiles = getProfiles(allRecords);
     if (selectedExerciseId !== select.value) {
@@ -146,7 +155,7 @@ function getExerciseRecords(exerciseId) {
     return getSessions().flatMap(session => {
         const grouped = new Map();
         (session.exercises || [])
-            .filter(exercise => exercise?.exerciseId === exerciseId && exercise?.trackingType !== "notes")
+            .filter(exercise => exercise?.exerciseId === exerciseId && exercise?.trackingType !== "notes" && !isStaticHold(exercise))
             .forEach(exercise => {
                 const profileId = exercise.equipmentProfileId || "default";
                 const current = grouped.get(profileId) || {
@@ -631,3 +640,39 @@ function parseDate(value) { if (!value) return null; const date = new Date(`${St
 function formatDate(value) { const date = parseDate(value); return date ? new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" }).format(date) : "Unknown"; }
 function formatShortDate(value) { const date = parseDate(value); return date ? new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date) : ""; }
 function escapeHtml(value) { return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+
+let selectedHoldLoad = 0;
+let selectedHoldTarget = 30;
+function renderHoldProgress(host, history, id) {
+    if (selectedExerciseId !== id) { selectedExerciseId = id; selectedMetric = 'strength'; selectedHoldLoad = 0; }
+    document.querySelectorAll('[data-exercise-metric]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.exerciseMetric === selectedMetric)));
+    document.getElementById('exercise-equipment-filter')?.closest('label')?.setAttribute('hidden','');
+    const machineControls = document.getElementById('exercise-machine-view-controls'); if (machineControls) machineControls.hidden = true;
+    const legend = document.getElementById('exercise-equipment-legend'); if (legend) legend.innerHTML = '';
+    let filter = document.getElementById('hold-progress-filter');
+    if (!filter) { filter = document.createElement('label'); filter.id = 'hold-progress-filter'; host.before(filter); }
+    const sessions = getSessions();
+    const loads = [...new Set([0,...sessions.flatMap(session => (session.exercises || []).filter(exercise => exercise.exerciseId === id).flatMap(exercise => (exercise.sets || []).filter(set => set.completed && Number(set.durationSeconds) > 0).map(set => Number(set.weight || 0))))])].sort((a,b)=>a-b);
+    filter.innerHTML = selectedMetric === 'weight'
+        ? `Minimum hold time (seconds)<input type="number" min="1" step="1" value="${selectedHoldTarget}" aria-label="Minimum hold time">`
+        : `Compare at added weight<select aria-label="Hold added weight">${loads.map(load => `<option value="${load}" ${load === selectedHoldLoad ? 'selected' : ''}>${load ? formatMass(load,1) + ' added' : 'Bodyweight'}</option>`).join('')}</select>`;
+    filter.querySelector('select,input').onchange = event => {
+        if (selectedMetric === 'weight') selectedHoldTarget = Math.max(1,Number(event.target.value)||30);
+        else selectedHoldLoad = Number(event.target.value)||0;
+        renderExerciseProgressV2();
+    };
+    const records = filterRange(holdProgressRecords(sessions,id,{load:selectedHoldLoad,minimumSeconds:selectedHoldTarget,metric:selectedMetric}));
+    const value = record => selectedMetric === 'weight' ? displayMass(record.addedWeight,1,UNIT_KINDS.LIFTING_WEIGHT) : selectedMetric === 'volume' ? record.totalSeconds : record.bestSeconds;
+    const label = selectedMetric === 'weight' ? `Added weight (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})` : selectedMetric === 'volume' ? 'Total hold time (seconds)' : 'Best hold (seconds)';
+    const note = document.getElementById('exercise-progress-note');
+    if (note) note.textContent = selectedMetric === 'weight' ? `Highest added weight held for at least ${selectedHoldTarget} seconds. Bodyweight records have zero added load.` : 'Completed holds at the same added weight. Total time also depends on how many sets you complete.';
+    const comparison = document.getElementById('exercise-volume-comparison');
+    if (comparison) { comparison.hidden = false; comparison.textContent = records.length ? `${label}: ${value(records.at(-1))}${selectedMetric === 'weight' ? '' : ' sec'} · ${records.at(-1).sets} sets` : 'Complete a timed hold to start tracking progress. Previous rep entries remain in workout history.'; }
+    const header = history.previousElementSibling;
+    if (header?.classList.contains('exercise-history-header')) header.innerHTML = '<span>Date</span><span>Best hold</span><span>Total time</span><span>Added weight</span><span>Sets</span>';
+    history.innerHTML = records.map(record => `<div class="exercise-history-row"><span>${formatDate(record.date)}</span><span>${record.bestSeconds} sec</span><span>${record.totalSeconds} sec</span><span>${record.addedWeight ? formatMass(record.addedWeight,1) : 'Bodyweight'}</span><span>${record.sets}</span></div>`).reverse().join('');
+    if (!records.length) { host.innerHTML = '<p class="empty-state">No completed timed holds in this range.</p>'; return; }
+    const max = Math.max(1,...records.map(value));
+    const points = records.map((record,index) => ({...record,x:records.length === 1 ? 210 : 45+index/(records.length-1)*330,y:220-value(record)/max*165}));
+    host.innerHTML = `<svg viewBox="0 0 400 265" role="img" aria-label="${label}"><text x="45" y="22" fill="var(--muted)" font-size="11">${label}</text>${[0,.5,1].map(f=>`<line x1="45" x2="375" y1="${220-f*165}" y2="${220-f*165}" stroke="var(--line)"/><text x="38" y="${224-f*165}" text-anchor="end" fill="var(--muted)" font-size="10">${Math.round(max*f*10)/10}</text>`).join('')}<polyline points="${points.map(point=>`${point.x},${point.y}`).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="3"/>${points.map((point,index)=>`<circle cx="${point.x}" cy="${point.y}" r="5" fill="var(--accent)"><title>${formatDate(point.date)}: ${value(point)}</title></circle>${index === 0 || index === points.length-1 ? `<text x="${point.x}" y="245" text-anchor="middle" fill="var(--muted)" font-size="10">${formatShortDate(point.date)}</text>` : ''}`).join('')}</svg>`;
+}

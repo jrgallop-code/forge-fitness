@@ -87,6 +87,7 @@ function isPerformedSet(set) {
         return false;
     }
 
+    if (Number(set.durationSeconds) > 0) return true;
     const reps = Number(set.reps);
     return Number.isFinite(reps) && reps > 0;
 }

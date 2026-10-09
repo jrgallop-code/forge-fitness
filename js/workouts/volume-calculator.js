@@ -1,3 +1,4 @@
+import { isStaticHold } from "./static-holds.js";
 // Level Up logs the weight of one dumbbell; each logged rep uses two dumbbells here.
 const TWO_DUMBBELL_EXERCISE_IDS = new Set([
     "dumbbell-bench-press",
@@ -32,6 +33,7 @@ function loadRepetitionVolume(entry) {
 }
 
 export function calculateSetVolume(set, exercise) {
+    if (isStaticHold(exercise) || set?.durationSeconds != null) return 0;
     const multiplier = getVolumeLoadMultiplier(exercise);
     const workingVolume = loadRepetitionVolume(set);
     const dropVolume = (Array.isArray(set?.dropSets) ? set.dropSets : [])

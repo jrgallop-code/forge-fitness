@@ -15,7 +15,7 @@ const generatedMaleChest = fs.readFileSync('assets/exercise-anatomy/male-chest.s
 const generatedFemaleShoulders = fs.readFileSync('assets/exercise-anatomy/female-shoulders.svg', 'utf8');
 
 test('rep exercises own persistent optional notes', () => {
-  assert.match(session, /trackingType:\s*"reps",\s*notes:\s*""/s);
+  assert.match(session, /trackingType:\s*holdTrackingType\(plannedExercise\),\s*notes:\s*""/s);
   assert.match(session, /class="session-lifting-note/);
   assert.match(session, /class="session-note-preview"/);
   assert.match(session, /class="session-note-editor" hidden/);
