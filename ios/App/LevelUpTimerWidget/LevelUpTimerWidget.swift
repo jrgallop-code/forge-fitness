@@ -228,11 +228,13 @@ struct LevelUpTimerLiveActivity: Widget {
     }
 
     private func activityHeading(_ context: ActivityViewContext<LevelUpTimerAttributes>) -> String {
+        if context.attributes.kind == "hold" { return "HOLD TIMER" }
         if context.attributes.kind == "cardio" { return "CARDIO TIMER" }
         return "REST TIMER"
     }
 
     private func activityTitle(_ context: ActivityViewContext<LevelUpTimerAttributes>) -> String {
+        if context.attributes.kind == "hold" { return context.attributes.exerciseName }
         let workout = context.attributes.workoutName.trimmingCharacters(in: .whitespacesAndNewlines)
         if !workout.isEmpty && workout != "Workout" { return workout }
         let exercise = context.attributes.exerciseName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -240,6 +242,7 @@ struct LevelUpTimerLiveActivity: Widget {
     }
 
     private func activityDetails(_ context: ActivityViewContext<LevelUpTimerAttributes>) -> String {
+        if context.attributes.kind == "hold" { return "Set \(context.attributes.setNumber) · Elapsed time" }
         let exercise = context.attributes.exerciseName.trimmingCharacters(in: .whitespacesAndNewlines)
         if context.attributes.kind == "cardio" {
             return exercise.isEmpty ? context.attributes.detail : exercise
@@ -263,7 +266,7 @@ struct LevelUpTimerLiveActivity: Widget {
         } else {
             Text(
                 timerInterval: context.state.startedAt...context.state.endAt,
-                countsDown: true
+                countsDown: context.attributes.kind != "hold"
             )
                 .font(font).monospacedDigit().fontWeight(.heavy).foregroundStyle(palette.accent)
         }
@@ -329,7 +332,11 @@ struct LevelUpTimerLiveActivity: Widget {
 
     @ViewBuilder
     private func dismissControl(context: ActivityViewContext<LevelUpTimerAttributes>, palette: TimerPalette) -> some View {
-        if #available(iOS 17.0, *) {
+        if context.attributes.kind == "hold" {
+            Link(destination: URL(string: "leveluphypertrophy://workout")!) {
+                Text("Open workout").font(.caption.weight(.semibold)).foregroundStyle(palette.accent)
+            }
+        } else if #available(iOS 17.0, *) {
             Button(intent: SkipLevelUpTimerIntent(timerID: context.attributes.timerID)) {
                 Image(systemName: "xmark").font(.caption.weight(.bold)).frame(width: 24, height: 24)
             }

@@ -1,3 +1,13 @@
+import { startNativeHoldTimer, cancelNativeAlarm } from '../core/native-capabilities.js';
+// Serialize lifecycle calls so a fast stop cannot race a pending Activity request.
+let nativeHoldQueue = Promise.resolve();
+function enqueueHold(action) { nativeHoldQueue = nativeHoldQueue.then(action).catch(() => {}); }
+export function startHoldTimer(set, exerciseName, setNumber, now = Date.now()) {
+  set.holdStartedAt = now;
+  set.holdTimerKey = `hold-${now}-${Math.random().toString(36).slice(2)}`;
+  const key = set.holdTimerKey;
+  enqueueHold(() => startNativeHoldTimer({ key, startedAt: now, exerciseName, setNumber }));
+}
 // Only confirmed static holds use seconds. Dynamic exercises retain repetitions.
 export const STATIC_HOLD_IDS = new Set(['plank', 'side-plank', 'copenhagen-plank']);
 export function isStaticHold(exercise) {
@@ -23,6 +33,11 @@ export function stopHoldTimer(set, now = Date.now()) {
   if (!set?.holdStartedAt) return;
   set.durationSeconds = elapsedHoldSeconds(set, now);
   delete set.holdStartedAt;
+  if (set.holdTimerKey) {
+    const key = set.holdTimerKey;
+    delete set.holdTimerKey;
+    enqueueHold(() => cancelNativeAlarm(key));
+  }
 }
 export function activeHoldSetIndex(state, indices = (state.sets || []).map((_,index) => index)) {
   const running = indices.find(index => state.sets[index]?.holdStartedAt);
@@ -61,7 +76,7 @@ export function bindHoldRows(container, state, persist) {
     const select = () => { state.currentHoldSetIndex = index; refresh(); persist(); };
     input?.addEventListener('focus', select);
     row.querySelector('.session-weight')?.addEventListener('focus', select);
-    input?.addEventListener('input', () => { delete set.holdStartedAt; set.durationSeconds = holdSeconds(input.value); state.currentHoldSetIndex = index; persist(); refresh(); });
+    input?.addEventListener('input', () => { stopHoldTimer(set); set.durationSeconds = holdSeconds(input.value); state.currentHoldSetIndex = index; persist(); refresh(); });
     const complete = () => { stopHoldTimer(set); queueMicrotask(refresh); };
     row.querySelector('.complete-set-btn')?.addEventListener('click', complete, true);
     row.querySelector('[data-round-check]')?.addEventListener('change', complete, true);
@@ -72,7 +87,7 @@ export function bindHoldRows(container, state, persist) {
     const set = state.sets[index];
     state.currentHoldSetIndex = index;
     if (set.holdStartedAt) stopHoldTimer(set);
-    else set.holdStartedAt = Date.now();
+    else startHoldTimer(set, state.name || ({plank:'Plank','side-plank':'Side Plank','copenhagen-plank':'Copenhagen Plank'}[state.exerciseId]) || 'Static hold', index + 1);
     persist(); refresh();
   });
   function refresh() {

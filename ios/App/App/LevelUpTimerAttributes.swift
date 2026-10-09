@@ -75,6 +75,9 @@ enum LevelUpTimerStateStore {
 
     static func contentState(for record: LevelUpTimerRecord, now: Date = Date()) -> LevelUpTimerAttributes.ContentState {
         let remaining = currentRemainingSeconds(record, now: now)
+        if record.kind == "hold" {
+            return .init(startedAt: record.startedAt, endAt: record.startedAt.addingTimeInterval(8 * 3600), status: record.status, remainingSeconds: 0)
+        }
         let endAt = record.status == "running"
             ? (record.endAt ?? now.addingTimeInterval(TimeInterval(remaining)))
             : now.addingTimeInterval(TimeInterval(remaining))

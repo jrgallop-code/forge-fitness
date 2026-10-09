@@ -151,3 +151,23 @@ test('hold summary renders compact improvement cards instead of a narrow text co
  assert.match(container.innerHTML,/Latest/);assert.match(container.innerHTML,/Previous/);assert.match(container.innerHTML,/\+24 sec/);assert.match(container.innerHTML,/\+400.0%/);
  assert.match(container.innerHTML,/Since baseline/);assert.match(container.innerHTML,/1 set<\/small>/);assert.doesNotMatch(container.innerHTML,/1 sets|Total hold time \(seconds\)/);
 });
+
+test('native hold starts an elapsed activity and stop cancels the same activity in order', async () => {
+ const calls=[];
+ globalThis.window={Capacitor:{isNativePlatform:()=>true,Plugins:{LevelUpTimer:{
+   startHold:async args=>{calls.push(['start',args]);},cancel:async args=>{calls.push(['cancel',args]);}
+ }}}};
+ globalThis.document={documentElement:{dataset:{theme:'arctic'}}};
+ globalThis.localStorage={getItem:()=>null};
+ try {
+  const {startHoldTimer}=await import('../js/workouts/static-holds.js');
+  const set={}; startHoldTimer(set,'Plank',2,10000); const key=set.holdTimerKey;
+  stopHoldTimer(set,42000);
+  await new Promise(resolve=>setTimeout(resolve,0));
+  assert.equal(set.durationSeconds,32);
+  assert.equal(calls[0][0],'start'); assert.equal(calls[0][1].startedAt,10000);
+  assert.equal(calls[0][1].exerciseName,'Plank'); assert.equal(calls[0][1].setNumber,2);
+  assert.equal(calls[0][1].at,undefined);
+  assert.deepEqual(calls[1],['cancel',{key}]);
+ } finally { delete globalThis.window; delete globalThis.document; delete globalThis.localStorage; }
+});

@@ -313,6 +313,7 @@ export function discardActiveWorkout() {
     }
 
 
+    for (const exercise of active.exercises || []) for (const set of exercise.sets || []) stopHoldTimer(set);
     clearActiveWorkout();
     return true;
 
@@ -926,6 +927,7 @@ function bindEditWorkoutExerciseControls({
             const hasRir = set.rir !== null && set.rir !== "" && set.rir !== undefined;
             const hasData = set.durationSeconds != null || set.weight !== null || set.reps !== null || hasRir || set.completed || (set.dropSets || []).length;
             if (hasData && !window.confirm(`Remove set ${setIndex + 1} and its recorded data?`)) return false;
+            stopHoldTimer(set);
             state.sets.splice(setIndex, 1);
             day.exercises[exerciseIndex].sets = state.sets.length;
             session.currentExerciseIndex = exerciseIndex;
@@ -938,6 +940,7 @@ function bindEditWorkoutExerciseControls({
             if (!plannedExercise || day.exercises.length <= 1) return false;
             const exerciseName = getExerciseById(plannedExercise.id)?.name || "this exercise";
             if (!window.confirm(`Remove ${exerciseName} and its recorded data from this workout?`)) return false;
+            for (const set of session.exercises[exerciseIndex]?.sets || []) stopHoldTimer(set);
             day.exercises.splice(exerciseIndex, 1);
             session.exercises.splice(exerciseIndex, 1);
             session.currentExerciseIndex = Math.max(0, Math.min(exerciseIndex, session.exercises.length - 1));

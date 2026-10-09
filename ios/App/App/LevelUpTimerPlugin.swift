@@ -10,6 +10,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
     let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "requestPermissions", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "checkPermissions", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "startHold", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "schedule", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "update", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getState", returnType: CAPPluginReturnPromise),
@@ -51,6 +52,24 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
             @unknown default: display = "prompt"
             }
             call.resolve(["display": display])
+        }
+    }
+
+    @objc func startHold(_ call: CAPPluginCall) {
+        guard #available(iOS 16.1, *), let key = call.getString("key"),
+              let started = call.getDouble("startedAt") else {
+            call.resolve(["liveActivity": false])
+            return
+        }
+        var record = timerRecord(call: call, key: key, title: "Hold timer",
+                                 detail: call.getString("exerciseName") ?? "Static hold", endAt: Date())
+        record.kind = "hold"
+        record.startedAt = Date(timeIntervalSince1970: started / 1000)
+        record.endAt = nil
+        LevelUpTimerStateStore.save(record)
+        Task { @MainActor in
+            let result = await self.startLiveActivity(record: record)
+            call.resolve(["liveActivity": result.started])
         }
     }
 
@@ -178,7 +197,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         let remaining = LevelUpTimerStateStore.currentRemainingSeconds(record)
-        let status = record.status == "running" && remaining == 0 ? "finished" : record.status
+        let status = record.kind != "hold" && record.status == "running" && remaining == 0 ? "finished" : record.status
         var result: [String: Any] = [
             "found": true,
             "key": record.timerID,
@@ -253,7 +272,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
         let state = LevelUpTimerStateStore.contentState(for: record)
         if let existing = Activity<LevelUpTimerAttributes>.activities.first(where: { $0.attributes.timerID == record.timerID }) {
             if #available(iOS 16.2, *) {
-                await existing.update(ActivityContent(state: state, staleDate: state.endAt.addingTimeInterval(60)))
+                await existing.update(ActivityContent(state: state, staleDate: record.kind == "hold" ? nil : state.endAt.addingTimeInterval(60)))
             } else {
                 await existing.update(using: state)
             }
@@ -286,7 +305,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
         )
         do {
             if #available(iOS 16.2, *) {
-                _ = try Activity.request(attributes: attributes, content: ActivityContent(state: state, staleDate: state.endAt.addingTimeInterval(60)), pushType: nil)
+                _ = try Activity.request(attributes: attributes, content: ActivityContent(state: state, staleDate: record.kind == "hold" ? nil : state.endAt.addingTimeInterval(60)), pushType: nil)
             } else {
                 _ = try Activity.request(attributes: attributes, contentState: state, pushType: nil)
             }
@@ -312,7 +331,7 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc private func cleanupExpiredLiveActivities() {
         guard #available(iOS 16.1, *) else { return }
-        for activity in Activity<LevelUpTimerAttributes>.activities {
+        for activity in Activity<LevelUpTimerAttributes>.activities where activity.attributes.kind != "hold" {
             let endAt: Date
             if #available(iOS 16.2, *) { endAt = activity.content.state.endAt }
             else { endAt = activity.contentState.endAt }

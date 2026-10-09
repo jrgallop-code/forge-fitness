@@ -1,4 +1,4 @@
-const isNative = () => Boolean(window.Capacitor?.isNativePlatform?.());
+const isNative = () => Boolean(typeof window !== "undefined" && window.Capacitor?.isNativePlatform?.());
 const plugin = name => window.Capacitor?.Plugins?.[name] || null;
 
 export async function shareNativeJsonFile({ content, filename }) {
@@ -253,6 +253,10 @@ function bindNativeTouchFeedback() {
         void appPlugin?.addListener?.("appUrlOpen", event => {
             try {
                 const url = new URL(event?.url || "");
+                if (url.protocol === "leveluphypertrophy:" && url.hostname === "workout") {
+                    void import("../workouts/workout-session.js?v=native-navigation-stability-1").then(module => module.openActiveWorkout());
+                    return;
+                }
                 if (url.protocol !== "leveluphypertrophy:" || url.hostname !== "timer" || url.pathname !== "/dismiss") return;
                 const key = url.searchParams.get("key");
                 if (key) void cancelNativeAlarm(key);
@@ -277,5 +281,15 @@ function bindNativeTouchFeedback() {
     void syncNativeRestTimerState();
 }
 
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bindNativeTouchFeedback, { once: true });
+if (typeof document === "undefined") { /* Native bridge is inactive outside the app. */ }
+else if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bindNativeTouchFeedback, { once: true });
 else bindNativeTouchFeedback();
+
+// Holds are elapsed stopwatches: no deadline, notification, or countdown alarm.
+export async function startNativeHoldTimer({ key, startedAt, exerciseName, setNumber }) {
+    if (!isNative() || !plugin("LevelUpTimer")?.startHold) return;
+    try {
+        await plugin("LevelUpTimer").startHold({ key, startedAt, exerciseName, setNumber,
+            theme: liveActivityAppearance(), icon: selectedHomeIcon() });
+    } catch {}
+}

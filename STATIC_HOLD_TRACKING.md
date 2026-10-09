@@ -13,3 +13,5 @@ One shared stopwatch now sits below all set rows. It follows the focused unfinis
 ## Compact improvement summary
 
 Hold progress now uses the existing three-stat improvement card layout: latest, previous and change, with a dated baseline comparison. Time changes are seconds and percentage; added-load changes respect lifting units and omit percentages when the previous load was zero. Time comparisons still filter to the same load; total time explicitly notes its dependence on set count. Labels are shortened to Total time, Load and sec. Model and rendered-card checks pass.
+
+Hold stopwatch now starts an elapsed iOS Live Activity, with exercise and set, theme/icon matching existing timers. Stop, manual overwrite, set completion, removal, and discard cancel it. No countdown notification is scheduled. Lock Screen opens the workout for controls.
