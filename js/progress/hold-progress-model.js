@@ -6,7 +6,7 @@ export function holdProgressRecords(sessions, exerciseId, {load = 0, minimumSeco
     const sets = (session.exercises || []).filter(exercise => exercise.exerciseId === exerciseId)
       .flatMap(exercise => exercise.sets || [])
       .filter(set => !set.isWarmup && !set.warmup && Number(set.durationSeconds) > 0);
-    const matching = sets.filter(set => metric === 'weight' ? Number(set.durationSeconds) >= minimumSeconds : Number(set.weight || 0) === Number(load));
+    const matching = sets.filter(set => load === null || (metric === 'weight' ? Number(set.durationSeconds) >= minimumSeconds : Number(set.weight || 0) === Number(load)));
     if (!matching.length) return [];
     return [{ date: session.date, completedAt: session.completedAt || '', sets: matching.length,
       bestSeconds: Math.max(...matching.map(set => Number(set.durationSeconds))),

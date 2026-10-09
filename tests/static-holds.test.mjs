@@ -171,3 +171,9 @@ test('native hold starts an elapsed activity and stop cancels the same activity 
   assert.deepEqual(calls[1],['cancel',{key}]);
  } finally { delete globalThis.window; delete globalThis.document; delete globalThis.localStorage; }
 });
+
+test('best hold only view includes the longest timed set across loads',()=>{
+ const sessions=[{date:'2026-10-09',exercises:[{exerciseId:'plank',sets:[{durationSeconds:6,weight:0},{durationSeconds:45,weight:10}]}]}];
+ const records=holdProgressRecords(sessions,'plank',{load:null});
+ assert.equal(records[0].bestSeconds,45); assert.equal(records[0].sets,2);
+});

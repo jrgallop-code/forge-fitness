@@ -87,10 +87,12 @@ function renderExerciseProgressV2() {
     const hold = isStaticHold(select.value);
     document.querySelectorAll('[data-exercise-metric]').forEach(button => {
         const metric = button.dataset.exerciseMetric;
+        button.hidden = hold && metric !== 'strength';
         button.textContent = hold ? ({volume:'Total time', strength:'Best hold', weight:'Added weight'}[metric]) : ({volume:'Session Volume', strength:'Estimated 1RM', weight:'Weight & reps'}[metric]);
     });
     if (hold) { renderHoldProgress(host, history, select.value); return; }
     document.getElementById('hold-progress-filter')?.remove();
+    history.previousElementSibling?.classList.remove('hold-best-history');
     document.getElementById('exercise-volume-comparison')?.classList.remove('hold-progress-summary');
     const allRecords = getExerciseRecords(select.value).filter(record => selectedMetric !== "weight" || record.weightSet);
     const profiles = getProfiles(allRecords);
@@ -643,36 +645,27 @@ function formatDate(value) { const date = parseDate(value); return date ? new In
 function formatShortDate(value) { const date = parseDate(value); return date ? new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date) : ""; }
 function escapeHtml(value) { return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 
-let selectedHoldLoad = 0;
-let selectedHoldTarget = 30;
 function renderHoldProgress(host, history, id) {
-    if (selectedExerciseId !== id) { selectedExerciseId = id; selectedMetric = 'strength'; selectedHoldLoad = 0; }
-    document.querySelectorAll('[data-exercise-metric]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.exerciseMetric === selectedMetric)));
+    selectedExerciseId = id;
+    selectedMetric = 'strength';
+    document.querySelectorAll('[data-exercise-metric]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.exerciseMetric === 'strength')));
     document.getElementById('exercise-equipment-filter')?.closest('label')?.setAttribute('hidden','');
     const machineControls = document.getElementById('exercise-machine-view-controls'); if (machineControls) machineControls.hidden = true;
     const legend = document.getElementById('exercise-equipment-legend'); if (legend) legend.innerHTML = '';
-    let filter = document.getElementById('hold-progress-filter');
-    if (!filter) { filter = document.createElement('label'); filter.id = 'hold-progress-filter'; host.before(filter); }
-    const sessions = getSessions();
-    const loads = [...new Set([0,...sessions.flatMap(session => (session.exercises || []).filter(exercise => exercise.exerciseId === id).flatMap(exercise => (exercise.sets || []).filter(set => Number(set.durationSeconds) > 0).map(set => Number(set.weight || 0))))])].sort((a,b)=>a-b);
-    filter.innerHTML = selectedMetric === 'weight'
-        ? `Minimum time (sec)<input type="number" min="1" step="1" value="${selectedHoldTarget}" aria-label="Minimum hold time">`
-        : `Load<select aria-label="Hold added weight">${loads.map(load => `<option value="${load}" ${load === selectedHoldLoad ? 'selected' : ''}>${load ? formatMass(load,1) + ' added' : 'Bodyweight'}</option>`).join('')}</select>`;
-    filter.querySelector('select,input').onchange = event => {
-        if (selectedMetric === 'weight') selectedHoldTarget = Math.max(1,Number(event.target.value)||30);
-        else selectedHoldLoad = Number(event.target.value)||0;
-        renderExerciseProgressV2();
-    };
-    const records = filterRange(holdProgressRecords(sessions,id,{load:selectedHoldLoad,minimumSeconds:selectedHoldTarget,metric:selectedMetric}));
-    const value = record => selectedMetric === 'weight' ? displayMass(record.addedWeight,1,UNIT_KINDS.LIFTING_WEIGHT) : selectedMetric === 'volume' ? record.totalSeconds : record.bestSeconds;
-    const label = selectedMetric === 'weight' ? `Added weight (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})` : selectedMetric === 'volume' ? 'Total time (sec)' : 'Best hold (sec)';
+    document.getElementById('hold-progress-filter')?.remove();
+    const records = filterRange(holdProgressRecords(getSessions(),id,{load:null,metric:'strength'}));
+    const value = record => record.bestSeconds;
+    const label = 'Best hold (sec)';
     const note = document.getElementById('exercise-progress-note');
-    if (note) note.textContent = selectedMetric === 'weight' ? `Added weight held for at least ${selectedHoldTarget} sec.` : selectedMetric === 'volume' ? 'Same load. Total time also depends on set count.' : 'Longest hold at the same added weight.';
+    if (note) note.textContent = 'Longest hold per workout. Added load can affect hold time.';
     const comparison = document.getElementById('exercise-volume-comparison');
     renderHoldComparison(comparison, records);
     const header = history.previousElementSibling;
-    if (header?.classList.contains('exercise-history-header')) header.innerHTML = '<span>Date</span><span>Best hold</span><span>Total time</span><span>Added weight</span><span>Sets</span>';
-    history.innerHTML = records.map(record => `<div class="exercise-history-row"><span>${formatDate(record.date)}</span><span>${record.bestSeconds} sec</span><span>${record.totalSeconds} sec</span><span>${record.addedWeight ? formatMass(record.addedWeight,1) : 'Bodyweight'}</span><span>${record.sets}</span></div>`).reverse().join('');
+    if (header?.classList.contains('exercise-history-header')) {
+        header.classList.add('hold-best-history');
+        header.innerHTML = '<span>Date</span><span>Best hold</span><span>Sets</span>';
+    }
+    history.innerHTML = records.map(record => `<div class="exercise-history-row hold-best-history"><span>${formatDate(record.date)}</span><span>${record.bestSeconds} sec</span><span>${record.sets}</span></div>`).reverse().join('');
     if (!records.length) { host.innerHTML = '<p class="empty-state">No completed timed holds in this range.</p>'; return; }
     const max = Math.max(1,...records.map(value));
     const points = records.map((record,index) => ({...record,x:records.length === 1 ? 210 : 45+index/(records.length-1)*330,y:220-value(record)/max*165}));

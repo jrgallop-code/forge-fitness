@@ -94,3 +94,5 @@
 .hold-progress-summary .exercise-progress-baseline strong{font-size:12px}
 .hold-progress-summary>.empty-state{grid-column:1/-1}
 #hold-progress-filter{display:grid;gap:5px;margin-top:10px;font-size:12px;color:var(--muted)}
+
+.exercise-history-header.hold-best-history, .exercise-history-row.hold-best-history { grid-template-columns: 1.5fr 1fr .6fr; }
