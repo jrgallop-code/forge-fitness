@@ -1,7 +1,9 @@
 export function setHasRecordedData(set) {
   if (!set) return false;
   const hasValue = value => value !== null && value !== undefined && value !== '';
-  return hasValue(set.weight)
+  return hasValue(set.durationSeconds)
+    || Boolean(set.holdStartedAt)
+    || hasValue(set.weight)
     || hasValue(set.reps)
     || hasValue(set.rir)
     || Boolean(set.completed)

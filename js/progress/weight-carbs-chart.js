@@ -1,3 +1,4 @@
+import { initializeWeeklyCalorieRateCard } from "./weekly-calorie-rate-card.js";
 import "../core/contextual-tutorial-theme.js?v=contextual-tutorial-theme-1";
 import "../core/contextual-tutorial-lifecycle.js?v=contextual-lifecycle-1";
 import "./weight-visible-trend-sync-v2.js?v=smoothed-visible-trend-5";
@@ -10,12 +11,11 @@ import "../nutrition/tdee-energy-balance-summary.js?v=energy-balance-range-3";
 import "../nutrition/tdee-expenditure-swipe-card.js?v=energy-card-height-1";
 import { initializeWeightCarbsChartV3 } from "./weight-chart-carousel-v3.js?v=weight-chart-edge-snap-1";
 import { initializeWeightCarbsInteractionEnhancements } from "./weight-carbs-interaction-enhancements.js?v=weight-carbs-interaction-2";
-import { initializeWeightCalorieContextV2 } from "./weight-calorie-context-v2.js?v=pwa-goal-carousel-1";
 
 export function initializeWeightCarbsChart(root = document) {
     initializeWeightCarbsChartV3(root);
     initializeWeightCarbsInteractionEnhancements(root);
-    initializeWeightCalorieContextV2(root);
+    initializeWeeklyCalorieRateCard(root);
     bindPagerFallback();
 }
 

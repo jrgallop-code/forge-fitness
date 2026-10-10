@@ -1,3 +1,4 @@
+import { hasExerciseProgressData } from "./hold-progress-model.js";
 import {
     exercises,
     getExerciseById
@@ -355,13 +356,7 @@ function populateExerciseSelector(
                 sessions.flatMap(
                     session =>
                         session.exercises
-                            ?.filter(exercise =>
-                                exercise.sets
-                                    ?.some(set =>
-                                        Number(set.weight) > 0 &&
-                                        Number(set.reps) > 0
-                                    )
-                            )
+                            ?.filter(hasExerciseProgressData)
                             .map(
                                 exercise =>
                                     exercise.exerciseId

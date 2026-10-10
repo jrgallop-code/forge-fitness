@@ -149,7 +149,7 @@ function enhanceAvailableCards() {
   const logger = document.getElementById('workout-session-logger');
   if (!logger) return;
   ensureHiddenRestSelect(logger);
-  logger.querySelectorAll('.session-exercise-card[data-tracking-type="reps"]').forEach(card => addTimerMenu(card, logger));
+  logger.querySelectorAll('.session-exercise-card:not([data-tracking-type="notes"])').forEach(card => addTimerMenu(card, logger));
 
   if (logger.dataset.timerConsistencyCloseBound !== 'true') {
     logger.dataset.timerConsistencyCloseBound = 'true';

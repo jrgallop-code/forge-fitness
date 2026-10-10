@@ -63,7 +63,7 @@ function tidyCompleteButtons(logger) {
 }
 
 function polishExerciseHeader(card, index, total) {
-    if (!card || card.dataset.trackingType !== "reps") return;
+    if (!card || card.dataset.trackingType === "notes") return;
 
     const header = card.querySelector(".compact-exercise-header");
     const heading = header?.querySelector("h4");

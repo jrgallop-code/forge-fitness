@@ -1,3 +1,5 @@
+import { isStaticHold } from "../workouts/static-holds.js";
+import { holdProgressRecords, holdComparison } from "./hold-progress-model.js";
 import { UNIT_KINDS, displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { calculateSetVolume } from "../workouts/volume-calculator.js?v=two-dumbbells-1";
@@ -77,10 +79,21 @@ function bindOnce(element, eventName, handler) {
 }
 
 function renderExerciseProgressV2() {
+    addAllHistoryExercises();
     const host = document.getElementById("exercise-strength-chart-v2");
     const select = document.getElementById("exercise-progress-select");
     const history = document.getElementById("exercise-history-body");
     if (!host || !select || !history) return;
+    const hold = isStaticHold(select.value);
+    document.querySelectorAll('[data-exercise-metric]').forEach(button => {
+        const metric = button.dataset.exerciseMetric;
+        button.hidden = hold && metric !== 'strength';
+        button.textContent = hold ? ({volume:'Total time', strength:'Best hold', weight:'Added weight'}[metric]) : ({volume:'Session Volume', strength:'Estimated 1RM', weight:'Weight & reps'}[metric]);
+    });
+    if (hold) { renderHoldProgress(host, history, select.value); return; }
+    document.getElementById('hold-progress-filter')?.remove();
+    history.previousElementSibling?.classList.remove('hold-best-history');
+    document.getElementById('exercise-volume-comparison')?.classList.remove('hold-progress-summary');
     const allRecords = getExerciseRecords(select.value).filter(record => selectedMetric !== "weight" || record.weightSet);
     const profiles = getProfiles(allRecords);
     if (selectedExerciseId !== select.value) {
@@ -146,7 +159,7 @@ function getExerciseRecords(exerciseId) {
     return getSessions().flatMap(session => {
         const grouped = new Map();
         (session.exercises || [])
-            .filter(exercise => exercise?.exerciseId === exerciseId && exercise?.trackingType !== "notes")
+            .filter(exercise => exercise?.exerciseId === exerciseId && exercise?.trackingType !== "notes" && !isStaticHold(exercise))
             .forEach(exercise => {
                 const profileId = exercise.equipmentProfileId || "default";
                 const current = grouped.get(profileId) || {
@@ -631,3 +644,66 @@ function parseDate(value) { if (!value) return null; const date = new Date(`${St
 function formatDate(value) { const date = parseDate(value); return date ? new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" }).format(date) : "Unknown"; }
 function formatShortDate(value) { const date = parseDate(value); return date ? new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date) : ""; }
 function escapeHtml(value) { return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+
+let selectedHoldLoad = 0;
+function renderHoldProgress(host, history, id) {
+    if (selectedExerciseId !== id) selectedHoldLoad = 0;
+    selectedExerciseId = id;
+    selectedMetric = 'strength';
+    document.querySelectorAll('[data-exercise-metric]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.exerciseMetric === 'strength')));
+    document.getElementById('exercise-equipment-filter')?.closest('label')?.setAttribute('hidden','');
+    const machineControls = document.getElementById('exercise-machine-view-controls'); if (machineControls) machineControls.hidden = true;
+    const legend = document.getElementById('exercise-equipment-legend'); if (legend) legend.innerHTML = '';
+    const sessions = getSessions();
+    const loggedSets = sessions.filter(session => !['in_progress','draft'].includes(session.status))
+        .flatMap(session => (session.exercises || []).filter(exercise => exercise.exerciseId === id))
+        .flatMap(exercise => exercise.sets || [])
+        .filter(set => !set.isWarmup && !set.warmup && Number(set.durationSeconds) > 0);
+    const loads = [...new Set([0,...loggedSets.map(set => Number(set.weight || 0))])].sort((a,b)=>a-b);
+    if (!loads.includes(selectedHoldLoad)) selectedHoldLoad = 0;
+    let filter = document.getElementById('hold-progress-filter');
+    if (!filter) { filter = document.createElement('label'); filter.id = 'hold-progress-filter'; host.before(filter); }
+    filter.innerHTML = `Load<select aria-label="Hold load">${loads.map(load => `<option value="${load}" ${load === selectedHoldLoad ? 'selected' : ''}>${load ? formatMass(load,1) + ' added' : 'Bodyweight'}</option>`).join('')}</select>`;
+    filter.querySelector('select').onchange = event => {
+        selectedHoldLoad = Number(event.target.value) || 0;
+        renderExerciseProgressV2();
+    };
+    const records = filterRange(holdProgressRecords(sessions,id,{load:selectedHoldLoad,metric:'strength'}));
+    const value = record => record.bestSeconds;
+    const label = 'Best hold (sec)';
+    const note = document.getElementById('exercise-progress-note');
+    if (note) note.textContent = 'Longest hold per workout at the selected load.';
+    const comparison = document.getElementById('exercise-volume-comparison');
+    renderHoldComparison(comparison, records);
+    const header = history.previousElementSibling;
+    if (header?.classList.contains('exercise-history-header')) {
+        header.classList.add('hold-best-history');
+        header.innerHTML = '<span>Date</span><span>Best hold</span><span>Sets</span>';
+    }
+    history.innerHTML = records.map(record => `<div class="exercise-history-row hold-best-history"><span>${formatDate(record.date)}</span><span>${record.bestSeconds} sec</span><span>${record.sets}</span></div>`).reverse().join('');
+    if (!records.length) { host.innerHTML = '<p class="empty-state">No completed timed holds in this range.</p>'; return; }
+    const max = Math.max(1,...records.map(value));
+    const points = records.map((record,index) => ({...record,x:records.length === 1 ? 210 : 45+index/(records.length-1)*330,y:220-value(record)/max*165}));
+    host.innerHTML = `<svg viewBox="0 0 400 265" role="img" aria-label="${label}"><text x="45" y="22" fill="var(--muted)" font-size="11">${label}</text>${[0,.5,1].map(f=>`<line x1="45" x2="375" y1="${220-f*165}" y2="${220-f*165}" stroke="var(--line)"/><text x="38" y="${224-f*165}" text-anchor="end" fill="var(--muted)" font-size="10">${Math.round(max*f*10)/10}</text>`).join('')}<polyline points="${points.map(point=>`${point.x},${point.y}`).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="3"/>${points.map((point,index)=>`<circle cx="${point.x}" cy="${point.y}" r="5" fill="var(--accent)"><title>${formatDate(point.date)}: ${value(point)}</title></circle>${index === 0 || index === points.length-1 ? `<text x="${point.x}" y="245" text-anchor="middle" fill="var(--muted)" font-size="10">${formatShortDate(point.date)}</text>` : ''}`).join('')}</svg>`;
+}
+
+function renderHoldComparison(container, records) {
+    if (!container) return;
+    container.hidden = false;
+    container.classList.add('hold-progress-summary');
+    const summary = holdComparison(records, selectedMetric);
+    if (!summary) {
+        container.innerHTML = '<p class="empty-state">Log a timed hold to establish your baseline.</p>';
+        return;
+    }
+    const formatValue = value => selectedMetric === 'weight' ? formatMass(value,1) : `${Number(value).toLocaleString()} sec`;
+    const signedValue = value => `${value > 0 ? '+' : value < 0 ? '−' : ''}${formatValue(Math.abs(value))}`;
+    const percent = value => value === null ? '' : `<small class="${changeToneClass(value)}">${signedPercent(value)}</small>`;
+    const {latest, previous, first, latestValue, previousValue, baselineValue, change, baselineChange} = summary;
+    const sets = count => `${count} ${count === 1 ? 'set' : 'sets'}`;
+    container.innerHTML = `
+        <div class="exercise-volume-stat is-summary"><span>Latest</span><strong>${formatValue(latestValue)}</strong><small>${sets(latest.sets)}</small></div>
+        <div class="exercise-volume-stat is-summary"><span>Previous</span><strong>${previous ? formatValue(previousValue) : '—'}</strong><small>${previous ? sets(previous.sets) : 'First workout'}</small></div>
+        <div class="exercise-volume-stat is-summary"><span>Change</span><strong class="${changeToneClass(change)}">${change === null ? '—' : signedValue(change)}</strong>${percent(summary.percent)}</div>
+        <p class="exercise-progress-baseline"><span>Since baseline</span><strong class="${changeToneClass(baselineChange)}">${baselineChange === null ? 'Baseline set' : `${signedValue(baselineChange)}${summary.baselinePercent === null ? '' : ` · ${signedPercent(summary.baselinePercent)}`}`}</strong><small>${formatValue(baselineValue)} · ${formatDate(first.date)}</small></p>`;
+}

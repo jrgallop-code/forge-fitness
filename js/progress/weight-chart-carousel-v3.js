@@ -1,3 +1,4 @@
+import { syncWeightCarouselPages, swipePage } from "./weight-carousel-pages.js";
 import { calculateTrendWeightSeries, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
 
@@ -98,6 +99,7 @@ function ensureCarousel(card) {
     const watchedSlides = new WeakSet();
     const resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(() => syncCarouselHeight(card)) : null;
     const watchSlides = () => {
+        syncWeightCarouselPages(card);
         [...track.children].forEach(slide => {
             if (!watchedSlides.has(slide)) { watchedSlides.add(slide); resizeObserver?.observe(slide); }
         });
@@ -163,38 +165,45 @@ function nearestCarouselPage(track) {
         Math.abs(offset - track.scrollLeft) < Math.abs(offsets[best] - track.scrollLeft) ? index : best, 0);
 }
 function bindCarouselSettling(card, track) {
-    let timer = 0, touching = false, aligning = false;
-    const settle = () => {
-        clearTimeout(timer);
-        if (touching || aligning || !track.isConnected || !track.clientWidth) return;
-        const page = nearestCarouselPage(track);
-        const target = carouselOffsets(track)[page] || 0;
-        aligning = true;
-        // Avoid WebKit native snap/inertia competing with a second smooth scroll.
-        const snap = track.style.scrollSnapType;
-        const behavior = track.style.scrollBehavior;
-        track.style.scrollSnapType = "none";
-        track.style.scrollBehavior = "auto";
-        track.scrollTo({ left: target, behavior: "instant" });
-        delete track.dataset.scrolling;
-        syncPager(card);
-        requestAnimationFrame(() => {
-            track.style.scrollSnapType = snap;
-            track.style.scrollBehavior = behavior;
-            aligning = false;
-        });
+    let gesture=null,timer=0,animating=false,landing=null;
+    const finish=()=>{
+        if(gesture)return;
+        if(landing===null) landing=carouselOffsets(track)[nearestCarouselPage(track)] || 0;
+        if(Math.abs(track.scrollLeft-landing)>1)track.scrollTo({left:landing,behavior:'instant'});
+        landing=null;animating=false;track.style.scrollSnapType='x mandatory';
+        delete track.dataset.scrolling;syncPager(card);
     };
-    const queue = () => { clearTimeout(timer); timer = setTimeout(settle, 180); };
-    track.addEventListener("touchstart", () => { touching = true; clearTimeout(timer); track.dataset.scrolling = "1"; }, { passive: true });
-    const release = () => { touching = false; queue(); };
-    track.addEventListener("touchend", release, { passive: true });
-    track.addEventListener("touchcancel", release, { passive: true });
-    track.addEventListener("scroll", () => {
-        if (aligning) return;
-        track.dataset.scrolling = "1";
-        queue();
-    }, { passive: true });
-    track.addEventListener("scrollend", settle, { passive: true });
+    track.addEventListener('touchstart',event=>{
+        if(event.touches.length!==1)return;
+        clearTimeout(timer);animating=false;landing=null;
+        gesture={x:event.touches[0].clientX,y:event.touches[0].clientY,left:track.scrollLeft,page:nearestCarouselPage(track),axis:null,delta:0};
+    },{passive:true});
+    track.addEventListener('touchmove',event=>{
+        if(!gesture||event.touches.length!==1)return;
+        const dx=event.touches[0].clientX-gesture.x,dy=event.touches[0].clientY-gesture.y;
+        if(!gesture.axis&&Math.max(Math.abs(dx),Math.abs(dy))>8)gesture.axis=Math.abs(dx)>Math.abs(dy)?'x':'y';
+        if(gesture.axis!=='x')return;
+        event.preventDefault();gesture.delta=dx;
+        track.style.scrollSnapType='none';track.dataset.scrolling='1';
+        track.scrollLeft=gesture.left-dx;
+    },{passive:false,capture:true});
+    const release=event=>{
+        if(!gesture)return;
+        const current=gesture;gesture=null;
+        if(current.axis!=='x'){finish();return;}
+        const page=event.type==='touchcancel'?current.page:swipePage(current.page,current.delta,track.clientWidth,track.children.length);
+        animating=true;
+        landing=carouselOffsets(track)[page]||0;
+        track.scrollTo({left:landing,behavior:'smooth'});
+        clearTimeout(timer);timer=setTimeout(finish,450);
+    };
+    track.addEventListener('touchend',release,{passive:true});
+    track.addEventListener('touchcancel',release,{passive:true});
+    track.addEventListener('scrollend',()=>{if(!gesture){clearTimeout(timer);finish();}},{passive:true});
+    track.addEventListener('scroll',()=>{
+        if(gesture||animating)return;
+        clearTimeout(timer);timer=setTimeout(finish,180);
+    },{passive:true});
 }
 
 function syncCarouselHeight(card) {
@@ -212,12 +221,12 @@ function syncPager(card) {
     if (!track) return;
     const maxPage = Math.max(0, card.querySelectorAll("[data-weight-graph-slide-v2]").length - 1);
     const index = Math.max(0, Math.min(maxPage, nearestCarouselPage(track)));
-    card.dataset.weightGraphView = index === 0 ? "trend" : "carbs";
+    card.dataset.weightGraphView = track.children[index]?.dataset.weightGraphSlideV2 === "trend" ? "trend" : "carbs";
     syncCarouselHeight(card);
     card.querySelectorAll("[data-weight-graph-page-v2]").forEach(button => {
         button.setAttribute("aria-pressed", String(Number(button.dataset.weightGraphPageV2) === index));
     });
-    if (index === 2) scheduleRefresh(card);
+    if (track.children[index]?.dataset.weightGraphSlideV2 === "carbs") scheduleRefresh(card);
 }
 
 function bindRefreshes(card) {
@@ -607,7 +616,7 @@ function ensureStyles() {
     style.id = STYLE_ID;
     style.textContent = `
         #weight-progress .weight-chart-card{overflow:hidden}
-        #weight-progress .weight-graph-carousel-track-v2{display:flex;align-items:flex-start;width:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-padding:0;gap:0;padding:0;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+        #weight-progress .weight-graph-carousel-track-v2{display:flex;align-items:flex-start;width:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-padding:0;gap:0;padding:0;transition:height 180ms ease;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
         #weight-progress .weight-graph-carousel-track-v2::-webkit-scrollbar{display:none}
         #weight-progress .weight-graph-carousel-slide-v2{flex:0 0 100%!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box;margin:0;scroll-margin:0;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden}
         #weight-progress .weight-graph-carousel-slide-v2.is-carbs{padding:0 1px}

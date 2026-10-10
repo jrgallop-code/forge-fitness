@@ -61,7 +61,7 @@ function sessionTrainingTime(session) {
 function performedSetCount(exercise) {
   if (exercise?.trackingType === 'notes') return 0;
   return (exercise?.sets || []).filter(set =>
-    set?.completed === true || Number(set?.reps) > 0 || Number(set?.duration) > 0 || Number(set?.durationMinutes) > 0
+    set?.completed === true || Number(set?.reps) > 0 || Number(set?.durationSeconds) > 0 || Number(set?.duration) > 0 || Number(set?.durationMinutes) > 0
   ).length;
 }
 

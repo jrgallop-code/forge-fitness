@@ -84,7 +84,7 @@ function compareSessionsNewest(a, b) {
 }
 
 function hasRecordedSetData(set) {
-  return set && (set.weight !== null && set.weight !== '' && set.weight !== undefined ||
+  return set && (Number(set.durationSeconds) > 0 || set.weight !== null && set.weight !== '' && set.weight !== undefined ||
     set.reps !== null && set.reps !== '' && set.reps !== undefined);
 }
 
@@ -129,6 +129,7 @@ function findPreviousPerformance(exerciseId, equipmentProfileId = 'default', exc
 }
 
 function formatPreviousSet(set) {
+  if (set?.durationSeconds != null) return `${Number(set.weight) > 0 ? formatLoad(Number(set.weight)) + " added" : "Bodyweight"} · ${set.durationSeconds} sec`;
   if (!set) return "Hasn't started";
   const weight = set.weight === null || set.weight === undefined || set.weight === ''
     ? '—'

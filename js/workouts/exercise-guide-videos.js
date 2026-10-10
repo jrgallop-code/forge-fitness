@@ -132,6 +132,10 @@ function createVideoCard(exerciseId, config) {
         resumePlayback();
     }, { once: true });
     video.addEventListener("canplay", resumePlayback);
+    video.addEventListener("ended", () => {
+        video.currentTime = 0;
+        resumePlayback();
+    });
 
     const handleVideoError = () => {
         if (
@@ -145,6 +149,15 @@ function createVideoCard(exerciseId, config) {
             return;
         }
 
+        if (config.sourceUrl) {
+            video.removeEventListener("error", handleVideoError);
+            video.remove();
+            const link = document.createElement('a');
+            link.href = config.sourceUrl; link.target = '_blank'; link.rel = 'noopener noreferrer';
+            link.textContent = 'Watch form demonstration';
+            link.className = 'secondary-btn'; figure.appendChild(link);
+            return;
+        }
         failedVideos.add(exerciseId);
         figure.remove();
         video.removeEventListener("error", handleVideoError);

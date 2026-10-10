@@ -1,9 +1,10 @@
-const CACHE_VERSION = "forge-feature-review-20261008";
+const CACHE_VERSION = "forge-shared-ios-parity-20261009";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
+    "./css/circuit-round-logger.css?v=pwa-shared-oct09",
     "./css/feature-board.css?v=owner-feature-review-1",
     "./js/more/feature-board.js?v=owner-feature-review-1",
     "./js/nutrition/expenditure-changes-summary.js?v=expenditure-changes-1",

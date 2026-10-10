@@ -1,3 +1,4 @@
+import {syncWeightCarouselPages} from "./weight-carousel-pages.js";
 import { calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { getGoalTimelineViewModel } from "../dashboard/dashboard-goal-timeline.js?v=goal-timeline-1";
 
@@ -122,10 +123,10 @@ function mountInCarousel(section,card) {
     let slide=track.querySelector('[data-weight-graph-slide-v2="goal"]');
     if(!slide){slide=document.createElement("section");slide.className="weight-graph-carousel-slide-v2 is-goal";slide.dataset.weightGraphSlideV2="goal";track.insertBefore(slide,carbs);}
     if(card.parentElement!==slide)slide.appendChild(card);
-    let button=pager.querySelector('[data-weight-graph-page-v2="1"]');
+    let button=[...pager.querySelectorAll("button")].find(b=>(b.getAttribute("aria-label")||b.textContent.trim())==="Goal");
     if(!button||button.getAttribute("aria-label")!=="Goal"){
         button=document.createElement("button");button.type="button";button.dataset.weightGraphPageV2="1";button.textContent="Goal";button.setAttribute("aria-pressed","false");pager.insertBefore(button,pager.firstElementChild?.nextSibling||null);
-        button.addEventListener("click",()=>track.scrollTo({left:track.clientWidth,behavior:"smooth"}));
+        button.addEventListener("click",()=>track.scrollTo({left:slide.getBoundingClientRect().left-track.getBoundingClientRect().left+track.scrollLeft,behavior:"smooth"}));
     }
     pager.querySelectorAll("button").forEach(item=>{
         if(item===button)return;
@@ -134,6 +135,7 @@ function mountInCarousel(section,card) {
     });
     const calories=track.querySelector('[data-weight-graph-slide-v2="calories"]');
     if(calories&&calories.previousElementSibling!==carbs)track.append(calories);
+    syncWeightCarouselPages(chart);
     card.style.margin="0";
     pager.classList.add("weight-graph-dot-pager");
     pager.querySelectorAll("button").forEach(item=>{const name=item.getAttribute("aria-label")||item.textContent.trim();item.setAttribute("aria-label",name);item.title=name;item.textContent="";});

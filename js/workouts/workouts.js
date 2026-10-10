@@ -1,3 +1,4 @@
+import { isStaticHold, holdTarget } from "./static-holds.js";
 import { initializeManualSupersetBuilder, beginSupersetEditing, decorateBuilder, applySupersetsToPlan, removePairingSlot } from "./manual-superset-builder.js?v=manual-superset-builder-2";
 
 import {
@@ -725,15 +726,15 @@ function renderWorkoutDays() {
 
 
                                                     <label>
-                                                        Reps
+                                                        ${isStaticHold(plannedExercise) ? "Time (seconds)" : "Reps"}
 
                                                         <input
                                                             class="exercise-reps"
                                                             data-day-index="${dayIndex}"
                                                             data-exercise-index="${exerciseIndex}"
                                                             type="text"
-                                                            value="${plannedExercise.reps}"
-                                                            placeholder="8-12"
+                                                            value="${isStaticHold(plannedExercise) ? holdTarget(plannedExercise.reps, exercise?.recommendedReps || "20-60 sec") : plannedExercise.reps}"
+                                                            placeholder="${isStaticHold(plannedExercise) ? "20-60 sec" : "8-12"}"
                                                         >
                                                     </label>
 
@@ -754,7 +755,7 @@ function renderWorkoutDays() {
                                                         <strong>
                                                             ${exercise.trackingType === "notes"
                                                                 ? "Record the session details in your notes."
-                                                                : `Suggested: ${exercise.recommendedReps} reps`
+                                                                : `Suggested: ${exercise.recommendedReps}${isStaticHold(exercise) ? "" : " reps"}`
                                                             }
                                                         </strong>
                                                     `
@@ -1095,7 +1096,7 @@ function attachBuilderListeners() {
                                 exerciseIndex
                             ]
                             .reps =
-                            input.value;
+                            isStaticHold(workingPlan.days[dayIndex].exercises[exerciseIndex]) ? holdTarget(input.value) : input.value;
 
                     }
                 );

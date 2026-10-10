@@ -1,4 +1,6 @@
+import { videoLibraryExercises } from "./video-library-exercises.js";
 export const exercises = [
+    ...videoLibraryExercises,
     {
         "id": "barbell-bench-press",
         "name": "Barbell Bench Press",

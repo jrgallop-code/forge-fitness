@@ -1,3 +1,4 @@
+import { videoLibraryMedia } from "./video-library-media.js";
 import { FORM_GUIDE_VIDEOS as MANIFEST_VIDEOS } from "./exercise-guide-video-manifest.js?v=form-videos-3";
 import { getAnatomySex } from "../core/anatomy-profile.js?v=female-form-videos-1";
 
@@ -112,6 +113,12 @@ export const FORM_GUIDE_VIDEOS = Object.freeze(Object.fromEntries(
 ));
 
 export function getFormGuideVideo(exerciseId) {
+    const libraryVideo = videoLibraryMedia[exerciseId];
+    if (libraryVideo) {
+        const sex = getAnatomySex();
+        const driveId = libraryVideo.driveVideos[sex] || libraryVideo.driveVideos.male || libraryVideo.driveVideos.female;
+        return driveId ? {provider:'mp4',src:`https://drive.usercontent.google.com/download?id=${driveId}&export=download&confirm=t`,sourceUrl:`https://drive.google.com/file/d/${driveId}/view`,sourceName:libraryVideo.sourceName,sex} : null;
+    }
     const config = MANIFEST_VIDEOS[exerciseId];
     return config ? resolveVideo(config) : null;
 }
