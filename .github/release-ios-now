@@ -451,3 +451,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-09: Include static hold improvements in dashboard recap and footnotes.
 
 2026-10-12: Direct saved-workout summary flow, consistent recorded-set cards, fractional weights, stable energy navigation, latest prior meal reuse, and timed-hold labels.
+
+2026-10-12: One haptic per real dashboard tap; ignore synthetic navigation clicks, deduplicate native touch handlers, and activate recovery/volume destination tabs once.

@@ -319,12 +319,20 @@ function openMuscleMode(mode) {
     document.querySelector('.nav-btn[data-page="progress"]')?.click();
 
     let attempts = 0;
+    let liftingActivated = false;
+    let trainingActivated = false;
     const open = () => {
         const liftingTab = document.getElementById("lifting-tab");
-        if (liftingTab && !liftingTab.classList.contains("active")) liftingTab.click();
+        if (liftingTab && !liftingActivated) {
+            liftingActivated = true;
+            if (!liftingTab.classList.contains("active")) liftingTab.click();
+        }
 
         const trainingTab = document.querySelector('.training-progress-tab[data-view="training"]');
-        if (trainingTab && !trainingTab.classList.contains("active")) trainingTab.click();
+        if (trainingTab && !trainingActivated) {
+            trainingActivated = true;
+            if (!trainingTab.classList.contains("active")) trainingTab.click();
+        }
 
         const modeButton = document.querySelector(`[data-muscle-overview-mode="${mode === "recovery" ? "recovery" : "volume"}"]`);
         if (modeButton) {
