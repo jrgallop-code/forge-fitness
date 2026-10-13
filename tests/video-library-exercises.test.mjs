@@ -22,7 +22,7 @@ test('every new guide includes primary targets and all normal instruction sectio
  assert.deepEqual(createGeneratedExerciseGuide(videoLibraryExercises.find(e=>e.id==='kettlebell-deadlift')).primary,['Hamstrings','Glutes']);
  assert.deepEqual(createGeneratedExerciseGuide(videoLibraryExercises.find(e=>e.id==='dumbbell-concentration-curl')).primary,['Biceps']);
 });
-test('expanded guides use uploaded male footage, existing clips, or exact female-only Drive sources',async()=>{
+test('expanded guides use Cloudflare only and omit videos awaiting upload',async()=>{
  const {getFormGuideVideo}=await import('../js/workouts/exercise-guide-video-resolver.js');
  const {FORM_GUIDE_VIDEOS}=await import('../js/workouts/exercise-guide-video-manifest.js');
  const norm=x=>x.toLowerCase().replace(/\s*\(\d+\)(?=\.mp4$)/,'').replace(/[^a-z0-9]/g,'');
@@ -34,6 +34,7 @@ test('expanded guides use uploaded male footage, existing clips, or exact female
  for(const sex of ['male','female']){
  globalThis.window={__levelUpAnatomySexPreview:sex};
  const video=getFormGuideVideo(e.id);
+ if(video){assert.equal(new URL(video.src).hostname,'media.leveluphypertrophy.com');assert.equal(video.sourceUrl,undefined);}
  if(existing){
    assert.equal(video.objectKey,existing.objectKey,e.id);
    assert.ok(video.src.startsWith('https://media.leveluphypertrophy.com/'));
@@ -42,10 +43,9 @@ test('expanded guides use uploaded male footage, existing clips, or exact female
    assert.equal(video.src,`https://media.leveluphypertrophy.com/form-videos/${e.id}.mp4`);
    assert.equal(video.fallbackSrc,`https://media.leveluphypertrophy.com/form-videos/male/${e.id}.mp4`);
    assert.equal(video.sex,'male');
-   assert.ok(video.sourceUrl.includes(source.driveVideos.male));
+   assert.equal(video.sourceUrl,undefined);
  }else{
-   assert.equal(video.src,`https://drive.usercontent.google.com/download?id=${source.driveVideos.female}&export=download&confirm=t`);
-   assert.equal(video.sex,'female');
+   assert.equal(video,null,e.id);
  }
  }
  }

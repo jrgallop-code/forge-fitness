@@ -23,3 +23,8 @@ test("form guide demonstrations resume after guide and app visibility changes", 
     assert.match(source, /if \(video\?\.paused\) void video\.play\(\)\.catch/);
     assert.match(source, /document\.addEventListener\("visibilitychange"/);
 });
+
+ test("form guide renderer never offers external source links", () => {
+ const source=readFileSync("js/workouts/exercise-guide-videos.js", "utf8");
+ assert.doesNotMatch(source, /config\.sourceUrl|Watch form demonstration|drive\.google|drive\.usercontent/);
+ });
