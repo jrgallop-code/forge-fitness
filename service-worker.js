@@ -1,4 +1,4 @@
-const CACHE_VERSION = "forge-feature-review-20261008";
+const CACHE_VERSION = "forge-completion-fixes-ios-20261012";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;

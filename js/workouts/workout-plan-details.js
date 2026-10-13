@@ -1,5 +1,6 @@
 import { renderRoutineSourcePreview } from "./routine-video-links.js";
 import { normalizeInstagramLink } from "./instagram-video-model.js";
+import { isStaticHold, holdTarget } from "./static-holds.js";
 import { getPresetPlan } from "./workout-plans.js";
 import { getExerciseById } from "./exercise-library.js";
 import { openWorkoutLogger } from "./workout-session.js?v=native-navigation-stability-1";
@@ -408,7 +409,7 @@ function renderDay(day, index) {
                             ${superset ? `<span class="plan-overview-superset-label">Superset ${superset.label} · ${superset.label}${superset.position}</span>` : ""}
                             <span class="plan-detail-exercise-target">
                                 ${Number(exercise?.sets) || 0} sets
-                                ${exercise?.reps ? ` × ${escapeHtml(exercise.reps)} reps` : ""}
+                                ${exercise?.reps ? ` × ${escapeHtml(isStaticHold(exercise) ? holdTarget(exercise.reps) : `${exercise.reps} reps`)}` : ""}
                             </span>
                         </span>
                     </${tag}>

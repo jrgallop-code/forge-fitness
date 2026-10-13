@@ -15,6 +15,7 @@ import {
     readCustomFoods,
     readSavedMeals,
     recentFoods,
+    readFoodLog,
     removeEntry,
     removeSavedMeal,
     saveCustomFood,
@@ -356,7 +357,7 @@ function renderFoodCalendar() {
 
 function renderDay() {
     const entries = entriesForDate(selectedDate);
-    const yesterdayEntries = entriesForDate(previousDateKey(selectedDate));
+    const log = readFoodLog();
     const totals = summarizeEntries(entries);
     const target = activeTargets();
     const date = new Date(`${selectedDate}T12:00:00`);
@@ -374,7 +375,7 @@ function renderDay() {
         completion.querySelector("button")?.addEventListener("click", () => setFoodDayComplete(selectedDate, !complete));
     }
     const meals = document.querySelector("[data-food-meals]");
-    if (meals) meals.innerHTML = MEALS.map(meal => mealMarkup(meal, entries.filter(entry => entry.meal === meal), yesterdayEntries.filter(entry => entry.meal === meal))).join("");
+    if (meals) meals.innerHTML = MEALS.map(meal => mealMarkup(meal, entries.filter(entry => entry.meal === meal), latestMealSource(log, selectedDate, meal))).join("");
     meals?.querySelectorAll(".food-meal > summary").forEach(summary => {
         const details = summary.parentElement;
         summary.setAttribute("aria-expanded", String(Boolean(details?.open)));
@@ -422,9 +423,19 @@ function macroTile(label, value, target) {
     return `<div class="food-macro-total food-macro-total--${label.toLowerCase()}"><span>${label}</span><strong>${roundOne(value)} g${targetText}</strong><i role="progressbar" aria-label="${escapeHtml(label)} target progress" aria-valuemin="0" aria-valuemax="${safeTarget}" aria-valuenow="${Math.max(0, Number(value) || 0)}"><b style="width:${progress}%"></b></i></div>`;
 }
 
-function mealMarkup(meal, entries, yesterdayEntries) {
+function latestMealSource(log, beforeDate, meal) {
+    for (const date of Object.keys(log).filter(date => date < beforeDate).sort().reverse()) {
+        const entries = Array.isArray(log[date]) ? log[date].filter(entry => entry?.meal === meal) : [];
+        if (entries.length) return { date, entries };
+    }
+    return { date: null, entries: [] };
+}
+
+function mealMarkup(meal, entries, source) {
+    const yesterdayEntries = source.entries;
+    const sourceLabel = source.date === previousDateKey(selectedDate) ? "Yesterday’s" : "Most recent";
     const totals = summarizeEntries(entries);
-    const yesterdayCopied = hasCopiedMeal(entries, previousDateKey(selectedDate), meal);
+    const yesterdayCopied = hasCopiedMeal(entries, source.date, meal);
     const showYesterday = yesterdayEntries.length > 0 && !yesterdayCopied;
     const expanded = expandedMealKeys.has(mealExpansionKey(selectedDate, meal));
     return `
@@ -432,7 +443,7 @@ function mealMarkup(meal, entries, yesterdayEntries) {
             <summary aria-expanded="${expanded}"><span><strong>${meal}</strong><small>${entries.length ? `${entries.length} item${entries.length === 1 ? "" : "s"}` : "Nothing logged"}</small></span><b>${Math.round(totals.calories)} kcal</b></summary>
             <div class="food-meal-body">
                 ${entries.length ? `<div class="food-meal-macros">${macroBreakdownMarkup(totals, `${meal} total · ${entries.length} item${entries.length === 1 ? "" : "s"}`)}</div>` : ""}
-                ${showYesterday ? `<button type="button" class="food-copy-yesterday" data-copy-yesterday="${meal}"><span><strong>Yesterday’s ${meal}</strong><small>${escapeHtml(mealPreview(yesterdayEntries))}</small></span><b>Swipe right <i>→</i></b></button>` : ""}
+                ${showYesterday ? `<button type="button" class="food-copy-yesterday" data-copy-yesterday="${meal}" data-copy-source-date="${source.date}"><span><strong>${sourceLabel} ${meal}</strong><small>${escapeHtml(mealPreview(yesterdayEntries))}</small></span><b>Swipe right <i>→</i></b></button>` : ""}
                 ${entries.map(entry => `<div class="food-entry"><button type="button" class="food-entry-edit" data-food-edit="${escapeHtml(entry.id)}" aria-label="Edit ${escapeHtml(entry.name)}"><span class="food-entry-emoji" aria-hidden="true">${getFoodEmoji(entry)}</span><span><strong>${escapeHtml(entry.name)}</strong><small>${escapeHtml(entry.brand ? `${entry.brand} · ` : "")}${escapeHtml(totalServingLabel(entry.quantity, entry.servingLabel))}</small></span><b>${Math.round(entry.nutrition?.calories || 0)} kcal</b><i aria-hidden="true">›</i></button><button type="button" class="food-entry-remove" data-food-remove="${escapeHtml(entry.id)}" aria-label="Remove ${escapeHtml(entry.name)}">×</button></div>`).join("")}
                 ${entries.length ? `<button type="button" class="food-save-diary-meal" data-save-diary-meal="${meal}">Save ${meal} as My Meal</button>` : ""}
                 <button type="button" class="food-add-meal" data-food-add-meal="${meal}">+ Add to ${meal}</button>
@@ -1317,11 +1328,12 @@ function bindYesterdayCopy(button) {
     let tracking = false;
     const copy = () => {
         const meal = button.dataset.copyYesterday;
-        const sourceDate = previousDateKey(selectedDate);
+        const sourceDate = button.dataset.copySourceDate;
+        if (!sourceDate || sourceDate >= selectedDate) return;
         const source = entriesForDate(sourceDate).filter(entry => entry.meal === meal);
         if (!source.length) return;
         saveEntries(selectedDate, cloneEntriesForMeal(source, meal, { dateKey: sourceDate, meal }));
-        showFoodToast(`Yesterday’s ${meal.toLowerCase()} added.`);
+        showFoodToast(`${sourceDate === previousDateKey(selectedDate) ? "Yesterday’s" : "Most recent"} ${meal.toLowerCase()} added.`);
     };
     button.addEventListener("click", () => {
         if (button.dataset.swiped === "true") return;

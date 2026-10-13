@@ -1,6 +1,5 @@
 import { evaluateLiveWorkoutPrs } from "./workout-pr-badges.js";
 import { renderSessionBadges } from '../goals/lifting-goals-ui.js';
-import { resumeCompletedWorkout, getActiveWorkout } from "./workout-session.js?v=history-rir-edit-1";
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { calculateWorkoutVolume } from "./volume-calculator.js?v=two-dumbbells-1";
 import { repairWorkoutSessionList, resolveSessionExerciseIdentity } from "./session-exercise-identity.js?v=repair-generic-exercise-1";
@@ -25,37 +24,11 @@ const SHARE_PALETTES = {
 };
 const INSTAGRAM_ICON = `<svg viewBox="0 0 44 44" aria-hidden="true"><defs><radialGradient id="recap-instagram-gradient" cx="13" cy="39" r="43" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD600"/><stop offset=".45" stop-color="#FF3A6D"/><stop offset="1" stop-color="#833AB4"/></radialGradient></defs><rect x="3" y="3" width="38" height="38" rx="11" fill="url(#recap-instagram-gradient)"/><rect x="10.5" y="10.5" width="23" height="23" rx="7" fill="none" stroke="#fff" stroke-width="3"/><circle cx="22" cy="22" r="5.8" fill="none" stroke="#fff" stroke-width="3"/><circle cx="30.4" cy="13.8" r="1.8" fill="#fff"/></svg>`;
 const SHARE_ICON = `<svg viewBox="0 0 44 44" aria-hidden="true"><path d="M22 27V7m0 0-7 7m7-7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 19h-3a3 3 0 0 0-3 3v13a3 3 0 0 0 3 3h22a3 3 0 0 0 3-3V22a3 3 0 0 0-3-3h-3" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-let completionClickAt = 0;
-
-document.addEventListener("click", event => {
-  const button = event.target.closest?.("#save-session-btn");
-  if (!button) return;
-  const logger = button.closest("#workout-session-logger");
-  if (!logger || logger.dataset.editingSessionId || logger.dataset.trainingContext === "circuit") return;
-  completionClickAt = Date.now();
-  window.setTimeout(showLatestCompletedWorkout, 160);
-}, true);
-
-window.addEventListener("levelup:workout-completed", event => {
-  const sessionId = event.detail?.sessionId;
-  window.setTimeout(() => {
-    const sessions = readSessions();
-    const completed = sessions.find(session => session.id === sessionId);
-    if (completed) renderRecap(completed, sessions.filter(session => session.id !== completed.id));
-  }, 0);
-});
-
-function showLatestCompletedWorkout() {
-  const sessions = readSessions();
-  const latest = [...sessions].filter(s => s?.completedAt).sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt))[0];
-  if (!latest) return;
-  const completedAt = new Date(latest.completedAt).getTime();
-  if (!Number.isFinite(completedAt) || Math.abs(completedAt - completionClickAt) > 6000) return;
-  renderRecap(latest, sessions.filter(session => session.id !== latest.id));
+export function showCompletedWorkoutRecap(session, history = readSessions(), { resumeWorkout } = {}) {
+  renderRecap(session, history.filter(item => item.id !== session.id), resumeWorkout);
 }
 
-function renderRecap(session, history) {
-  if (getActiveWorkout()?.resumedFromSessionId === session.id) return;
+function renderRecap(session, history, resumeWorkout) {
   const existing = document.querySelector("[data-workout-complete-recap]");
   if (existing?.dataset.recapSessionId === session.id) return;
   existing?.remove();
@@ -103,9 +76,9 @@ function renderRecap(session, history) {
   document.body.classList.add("workout-recap-open");
   overlay.querySelectorAll("[data-recap-done]").forEach(button => button.addEventListener("click", closeRecap));
   overlay.querySelector("[data-recap-undo]")?.addEventListener("click", () => {
-    completionClickAt = 0;
     closeRecap();
-    resumeCompletedWorkout(session.id);
+    if (resumeWorkout) resumeWorkout(session.id);
+    else import("./workout-session.js?v=history-rir-edit-1").then(module => module.resumeCompletedWorkout(session.id));
   });
   initializeBackgroundChoices(overlay, payload);
   initializeCarousel(overlay);
@@ -125,11 +98,11 @@ function renderTopSetsSlide(data) { const rows=data.topSets.length?data.topSets.
 
 export function completedExerciseRows(session, history = []) {
   return (session.exercises || []).flatMap((exercise, index) => {
-    const sets = (exercise.sets || []).filter(set => set?.completed === true && !set.isWarmup && set.type !== "warmup");
+    const sets = (exercise.sets || []).filter(set => isWorkingSet(set));
     if (!sets.length) return [];
     const planned = session.planSnapshot?.days?.[session.trainingDayIndex || 0]?.exercises?.[index];
     const identity = resolveSessionExerciseIdentity(exercise, planned);
-    const cleanHistory = history.filter(old => old.id !== session.id && new Date(old.completedAt || old.date).getTime() < new Date(session.completedAt || session.date).getTime()).map(old => ({...old, exercises:(old.exercises||[]).map(item=>({...item, sets:(item.sets||[]).filter(set=>set.completed===true&&!set.isWarmup&&set.type!=="warmup")}))}));
+    const cleanHistory = history.filter(old => old.id !== session.id && new Date(old.completedAt || old.date).getTime() < new Date(session.completedAt || session.date).getTime()).map(old => ({...old, exercises:(old.exercises||[]).map(item=>({...item, sets:(item.sets||[]).filter(set=>isWorkingSet(set))}))}));
     const pr = evaluateLiveWorkoutPrs({...session, exercises:[{...exercise, sets}]}, cleanHistory).details.get(exercise.exerciseId || exercise.id);
     const previousSets = cleanHistory.flatMap(old=>(old.exercises||[]).filter(item=>(item.exerciseId||item.id)===(exercise.exerciseId||exercise.id)&&(item.equipmentProfileId||"default")===(exercise.equipmentProfileId||"default")).flatMap(item=>item.sets||[]));
     const types = pr ? (pr.types || ["reps"]) : [];
@@ -219,8 +192,8 @@ function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);}
 function hexWithAlpha(color,alpha){return /^#[0-9a-f]{6}$/i.test(color)?`${color}${alpha}`:"rgba(225,6,0,.25)";}
 
 function renderConfetti(){return Array.from({length:18},(_,i)=>`<i style="--i:${i};--x:${(i*37)%96}%;--d:${(i%7)*.12}s"></i>`).join("");}
-function isCompletedSet(set){return Boolean(set?.completed||(Number(set?.reps)>0&&set?.weight!==null));}
-function isWorkingSet(set){return isCompletedSet(set)&&!set?.isWarmup&&set?.type!=="warmup";}
+function isCompletedSet(set){return Boolean(set && (Number(set.durationSeconds)>0 || (Number(set.reps)>0 && set.weight!=null && Number(set.weight)>=0)));}
+function isWorkingSet(set){return isCompletedSet(set)&&!set?.isWarmup&&!set?.warmup&&set?.type!=="warmup";}
 function summarizeSession(session){let workingSets=0,exerciseCount=0,totalReps=0;(session.exercises||[]).forEach(item=>{if(item.trackingType==="notes"){if(Number(item.durationMinutes)>0)exerciseCount+=1;return;}const sets=(item.sets||[]).filter(isWorkingSet);if(sets.length)exerciseCount+=1;workingSets+=sets.length;totalReps+=sets.reduce((sum,set)=>sum+(Number(set.reps)||0),0);});return{workingSets,totalReps,volume:calculateWorkoutVolume(session),exerciseCount};}
 function getMuscleSetStats(session){const totals=new Map();(session.exercises||[]).forEach(item=>{const count=item.trackingType==="notes"?0:(item.sets||[]).filter(isWorkingSet).length;if(!count)return;getExerciseImpacts(item).forEach((credit,muscle)=>{const current=totals.get(muscle)||{muscle,sets:0,primarySets:0,secondarySets:0};const credited=count*credit;current.sets+=credited;if(credit>=1)current.primarySets+=credited;else current.secondarySets+=credited;totals.set(muscle,current);});});return[...totals.values()].sort((a,b)=>b.sets-a.sets||b.primarySets-a.primarySets||a.muscle.localeCompare(b.muscle));}
 function getTopSets(session){const best=new Map();(session.exercises||[]).forEach(item=>{if(item.trackingType==="notes")return;const name=resolveSessionExerciseIdentity(item).name;(item.sets||[]).filter(isWorkingSet).forEach(set=>{const weight=Number(set.weight)||0,reps=Number(set.reps)||0;if(!weight||!reps)return;const estimatedOneRepMax=weight*(1+reps/30);if(!best.has(name)||estimatedOneRepMax>best.get(name).estimatedOneRepMax)best.set(name,{name,weight,reps,estimatedOneRepMax});});});return[...best.values()].sort((a,b)=>b.estimatedOneRepMax-a.estimatedOneRepMax);}
@@ -234,7 +207,7 @@ function downloadBlob(blob,name){const url=URL.createObjectURL(blob),link=docume
 function slug(value){return String(value||"workout").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"workout";}
 function normalizeMuscle(value){const key=String(value||"").trim().toLowerCase();if(["abs","abdominals","obliques"].includes(key))return"core";if(["lats","upper back","lower back","traps"].includes(key))return"back";if(["delts","deltoids"].includes(key))return"shoulders";if(key==="rear deltoids")return"rear delts";if(key==="quadriceps")return"quads";return key;}
 function closeRecap(){document.querySelector("[data-workout-complete-recap]")?.remove();document.body.classList.remove("workout-recap-open");document.querySelector("#workout-session-logger")?.remove();document.querySelector('.nav-btn[data-page="workout"]')?.click();}
-function readSessions(){try{const parsed=JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY)||"[]");if(!Array.isArray(parsed))return[];const repaired=repairWorkoutSessionList(parsed);if(repaired.changed)localStorage.setItem(SESSION_STORAGE_KEY,JSON.stringify(repaired.sessions));return repaired.sessions;}catch{return[];}}
+function readSessions(){try{const parsed=JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY)||"[]");if(!Array.isArray(parsed))return[];const repaired=repairWorkoutSessionList(parsed);if(repaired.changed){try{localStorage.setItem(SESSION_STORAGE_KEY,JSON.stringify(repaired.sessions));}catch{ /* Repairs remain usable even when persistence is unavailable. */ }}return repaired.sessions;}catch{return[];}}
 function formatDurationShort(ms){const total=Math.max(0,Math.round((Number(ms)||0)/60000));return`${total} min`;}
 function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
 

@@ -5,7 +5,6 @@ import { getExerciseById } from "../workouts/exercise-library.js";
 import { evaluateLiveWorkoutPrs } from "../workouts/workout-pr-badges.js";
 
 const SESSION_KEY = "forge_workout_sessions";
-let completionHandlerBound = false;
 
 export function renderWorkoutPerformanceDashboard() {
     const sessions = getSessions();
@@ -28,39 +27,6 @@ export function renderWorkoutPerformanceDashboard() {
 
 export function initializeWorkoutPerformance() {
     bindToggles(document);
-    if (completionHandlerBound) return;
-    completionHandlerBound = true;
-    document.addEventListener("click", event => {
-        const button = event.target.closest?.("#save-session-btn");
-        const logger = button?.closest("#workout-session-logger");
-        if (!button || !logger || logger.dataset.editingSessionId || logger.dataset.trainingContext === "circuit") return;
-        setTimeout(() => showCompletedSummary(logger), 0);
-    }, true);
-}
-
-function showCompletedSummary(logger) {
-    if (!document.body.contains(logger) || logger.dataset.trainingContext === "circuit") return;
-    const sessions = getSessions();
-    const latest = sessions[0];
-    if (!latest || latest.status === "in_progress") return;
-    const result = calculatePerformance(latest, sessions);
-    logger.innerHTML = `<div class="performance-complete-card">
-        <div class="performance-complete-kicker">WORKOUT COMPLETE</div>
-        <div class="performance-compact-head">
-            <div><h3>${escapeHtml(latest.trainingDayName || latest.planName || "Workout")}</h3><p>${escapeHtml(result.label)}</p></div>
-            ${renderScore(result)}
-        </div>
-        ${renderStatusStrip(result)}
-        <div class="performance-facts"><span><strong>${result.completedSets}</strong> working sets</span><span><strong>${result.prs}</strong> PR${result.prs === 1 ? "" : "s"}</span><span><strong>${formatDuration(latest)}</strong> duration</span></div>
-        ${result.topImprovement ? `<div class="performance-top"><span>Top improvement</span><strong>${escapeHtml(result.topImprovement.name)}</strong><small>${escapeHtml(result.topImprovement.detail)}</small></div>` : ""}
-        <button class="performance-toggle" type="button" data-performance-toggle aria-expanded="false" ${result.exercises.length ? "" : "hidden"}>View exercise breakdown</button>
-        <div class="performance-breakdown" data-performance-panel hidden>${result.exercises.map(renderExerciseRow).join("")}</div>
-        <p class="performance-note">Lifts compare with their most recent logged performance. Static holds compare best hold time at the same added load, without an estimated 1RM. First-time exercises or loads establish a baseline. Normal day-to-day changes are expected.</p>
-        <button class="primary-btn performance-done" type="button" data-performance-done>Done</button>
-    </div>`;
-    bindToggles(logger);
-    logger.querySelector("[data-performance-done]")?.addEventListener("click", () => logger.remove());
-    logger.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 export function calculatePerformance(session, allSessions) {

@@ -258,10 +258,14 @@ function openProgressGraph(kind) {
     localStorage.setItem(TDEE_RANGE_KEY, "1w");
     document.querySelector('.nav-btn[data-page="progress"]')?.click();
     let attempts = 0;
+    let nutritionTabOpened = false;
     const reveal = () => {
         attempts += 1;
         const tab = document.getElementById("nutrition-progress-tab");
-        if (tab) tab.click();
+        if (tab && !nutritionTabOpened) {
+            nutritionTabOpened = true;
+            tab.click();
+        }
         const range = document.querySelector('[data-tdee-chart-range="1w"]');
         if (range && range.getAttribute("aria-pressed") !== "true") range.click();
         const target = kind === "comparison"
