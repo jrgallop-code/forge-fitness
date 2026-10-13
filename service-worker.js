@@ -4,41 +4,15 @@ const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
-    "./css/circuit-round-logger.css?v=pwa-shared-oct09",
     "./css/feature-board.css?v=owner-feature-review-1",
     "./js/more/feature-board.js?v=owner-feature-review-1",
     "./js/nutrition/expenditure-changes-summary.js?v=expenditure-changes-1",
-    "./css/lifting-goals.css?v=compact-dashboard-210",
-    "./css/circuit-library.css",
-    "./js/goals/lifting-goals-ui.js?v=balanced-goals-209",
-    "./js/workouts/circuit-library.js",
-    "./js/nutrition/calorie-range-card.js?v=calorie-range-1",
     "./",
     "./index.html",
     "./manifest.webmanifest",
-    "./css/machine-profile.css?v=machine-profile-sheet-pwa-1",
-    "./assets/games/gym-chopper/couch-potato-a.png?v=1",
-    "./assets/games/gym-chopper/couch-potato-b.png?v=1",
-    "./assets/games/gym-chopper/couch-potato-c.png?v=1",
-    "./assets/games/gym-chopper/couch-potato-d.png?v=1",
-    "./assets/games/gym-chopper/helicopter-a.png?v=1",
-    "./assets/audio/arcade/menu-select.wav",
-    "./assets/audio/arcade/game-start.wav",
-    "./assets/audio/arcade/protein-pickup.wav",
-    "./assets/audio/arcade/power-up.wav",
-    "./assets/audio/arcade/whey-shot.wav",
-    "./assets/audio/arcade/couch-hit.wav",
-    "./assets/audio/arcade/ghost-crush.wav",
-    "./assets/audio/arcade/enemy-explosion.wav",
-    "./assets/audio/arcade/player-hit.wav",
-    "./assets/audio/arcade/helicopter-rotor.wav",
-    "./assets/audio/arcade/damage-grunt-1.wav",
-    "./assets/audio/arcade/damage-grunt-2.wav",
-    "./assets/audio/arcade/damage-grunt-3.wav",
-    "./assets/audio/arcade/game-over-scream.wav",
     "./js/account/cloud-backup-history-ui.js?v=backup-history-ui-1",
-    "./js/account/cloud-background-sync.js?v=backup-lifecycle-2",
-    "./js/analytics/product-state.js?v=user-demographics-1",
+    "./js/account/cloud-background-sync.js",
+    "./js/analytics/product-state.js?v=owner-product-insights-1",
     "./js/core/body-composition.js?v=female-body-fat-ranges-1",
     "./js/core/muscle-map-colors.js?v=muscle-map-colors-3",
     "./js/core/muscle-map-rendering-fix.js?v=muscle-map-rendering-fix-5",
@@ -51,7 +25,6 @@ const CORE_ASSETS = [
     "./js/progress/progress-initial-tab-stability.js?v=progress-initial-tab-stability-1",
     "./js/progress/weight-history-goal-colors.js?v=weight-history-neutral-1",
     "./css/progress-edge-layout.css?v=progress-edge-cards-1",
-    "./css/monthly-report.css?v=pwa-monthly-reports-1",
     "./css/appearance-volume-goals-fix.css?v=appearance-volume-goals-3",
     "./js/more/body-composition-health-records.js?v=body-comp-health-records-2",
     "./js/more/interactive-workout-tutorial-v5.js?v=browser-form-guide-pointer-1",
@@ -224,5 +197,3 @@ self.addEventListener("notificationclick", event => {
         })
     );
 });
-
-
