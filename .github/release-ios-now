@@ -455,3 +455,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-12: One haptic per real dashboard tap; ignore synthetic navigation clicks, deduplicate native touch handlers, and activate recovery/volume destination tabs once.
 
 2026-10-13: Connect all uploaded expanded male form-guide videos to Cloudflare and reuse existing source clips; preserve Drive links for female-only demonstrations awaiting upload.
+
+2026-10-13: Remove all Google Drive form-guide video sources and external fallback links; retain Cloudflare demonstrations and written guides awaiting upload.
