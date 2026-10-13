@@ -637,7 +637,7 @@ function signedMass(value, digits = 0) { return `${value > 0 ? "+" : ""}${format
 function signedNumber(value) { return `${value > 0 ? "+" : ""}${value}`; }
 function signedPercent(value) { return Number.isFinite(value) ? `${value > 0 ? "+" : ""}${value.toFixed(1)}%` : "—"; }
 function changeToneClass(value) { return value > 0 ? "is-positive" : value < 0 ? "is-negative" : ""; }
-function formatSet(set) { if (!set) return "—"; return `${formatMass(Number(set.weight))} × ${Number(set.reps)}`; }
+function formatSet(set) { if (!set) return "—"; return `${formatMass(Number(set.weight), 1)} × ${Number(set.reps)}`; }
 function formatAxis(value) { return Math.abs(value) >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k` : Math.round(value); }
 function niceStep(value) { const power = 10 ** Math.floor(Math.log10(Math.max(1, value))); const normalized = value / power; return (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * power; }
 function parseDate(value) { if (!value) return null; const date = new Date(`${String(value).slice(0, 10)}T12:00:00`); return Number.isFinite(date.getTime()) ? date : null; }
