@@ -113,8 +113,11 @@ export async function cancelNativeAlarm(key) {
 }
 
 function bindNativeTouchFeedback() {
-    if (!isNative()) return;
+    if (!isNative() || window.__levelUpNativeTouchFeedbackBound) return;
+    window.__levelUpNativeTouchFeedbackBound = true;
     document.addEventListener("click", event => {
+        // Navigation uses synthetic clicks to reveal tabs; only real taps get touch feedback.
+        if (!event.isTrusted) return;
         const control = event.target.closest("button, [role='button'], .nav-btn");
         if (!control || control.disabled) return;
         const strong = control.matches(".complete-set-btn,.complete-warmup-btn,.primary-btn,.level-up-email-submit");

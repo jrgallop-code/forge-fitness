@@ -1,4 +1,4 @@
-const CACHE_VERSION = "forge-completion-fixes-20261012";
+const CACHE_VERSION = "forge-dashboard-touch-fix-20261012";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
