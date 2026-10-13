@@ -112,12 +112,41 @@ export const FORM_GUIDE_VIDEOS = Object.freeze(Object.fromEntries(
     ])
 ));
 
+// The October Drive expansion shares 15 source clips with the original library.
+// Reuse those objects rather than requiring duplicate uploads under new IDs.
+const normalizeSourceName = value => String(value || "").toLowerCase()
+    .replace(/\s*\(\d+\)(?=\.mp4$)/, "").replace(/[^a-z0-9]/g, "");
+const existingSourceVideos = new Map(Object.values(MANIFEST_VIDEOS)
+    .map(config => [normalizeSourceName(config.sourceName), config]));
+
 export function getFormGuideVideo(exerciseId) {
     const libraryVideo = videoLibraryMedia[exerciseId];
     if (libraryVideo) {
-        const sex = getAnatomySex();
-        const driveId = libraryVideo.driveVideos[sex] || libraryVideo.driveVideos.male || libraryVideo.driveVideos.female;
-        return driveId ? {provider:'mp4',src:`https://drive.usercontent.google.com/download?id=${driveId}&export=download&confirm=t`,sourceUrl:`https://drive.google.com/file/d/${driveId}/view`,sourceName:libraryVideo.sourceName,sex} : null;
+        const existing = existingSourceVideos.get(normalizeSourceName(libraryVideo.sourceName));
+        if (existing) return resolveVideo(existing);
+
+        const { male, female } = libraryVideo.driveVideos;
+        // Only the male batch has been uploaded. Use it for either profile until
+        // the female batch is available; female-only sources stay on Drive.
+        if (male) {
+            return Object.freeze({
+                provider: "mp4",
+                src: `${FORM_VIDEO_LIBRARY_BASE_URL}/${exerciseId}.mp4`,
+                fallbackSrc: `${FORM_VIDEO_LIBRARY_BASE_URL}/male/${exerciseId}.mp4`,
+                sourceUrl: `https://drive.google.com/file/d/${male}/view`,
+                sourceName: libraryVideo.sourceName,
+                objectKey: `${exerciseId}.mp4`,
+                storagePath: "form-videos",
+                sex: "male"
+            });
+        }
+        return female ? Object.freeze({
+            provider: "mp4",
+            src: `https://drive.usercontent.google.com/download?id=${female}&export=download&confirm=t`,
+            sourceUrl: `https://drive.google.com/file/d/${female}/view`,
+            sourceName: libraryVideo.sourceName,
+            sex: "female"
+        }) : null;
     }
     const config = MANIFEST_VIDEOS[exerciseId];
     return config ? resolveVideo(config) : null;

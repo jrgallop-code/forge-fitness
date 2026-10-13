@@ -1,6 +1,6 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-guides-1";
 import { expandedExercises } from "./exercise-library-expansion.js?v=exercise-library-expansion-video-1";
-import { getFormGuideVideo } from "./exercise-guide-video-resolver.js?v=female-form-videos-1";
+import { getFormGuideVideo } from "./exercise-guide-video-resolver.js?v=drive-cloudflare-male-1";
 
 const STYLE_ID = "level-up-form-guide-video-styles";
 const failedVideos = new Set();
@@ -149,6 +149,15 @@ function createVideoCard(exerciseId, config) {
             return;
         }
 
+        if (config.sourceUrl) {
+            video.removeEventListener("error", handleVideoError);
+            video.remove();
+            const link = document.createElement('a');
+            link.href = config.sourceUrl; link.target = '_blank'; link.rel = 'noopener noreferrer';
+            link.textContent = 'Watch form demonstration';
+            link.className = 'secondary-btn'; figure.appendChild(link);
+            return;
+        }
         failedVideos.add(exerciseId);
         figure.remove();
         video.removeEventListener("error", handleVideoError);
