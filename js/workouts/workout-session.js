@@ -1,3 +1,4 @@
+import { showCompletedWorkoutRecap } from "./workout-complete-recap.js?v=completion-flow-20261012";
 import { isStaticHold, holdTrackingType, holdTarget, holdTimeField, holdLoadControl, holdTimerControl, bindHoldRows, stopHoldTimer } from "./static-holds.js";
 import { renderCircuitRounds, bindCircuitRounds } from "./circuit-round-logger.js";
 import { getBadgeWeeklyTarget } from '../goals/lifting-goals-engine.js';
@@ -1390,6 +1391,27 @@ function saveCompletedSession({
 
     renderActiveWorkoutBanner();
     if (!editingSessionId && isCircuit(completed)) showCircuitCompletion(completed);
+    else if (!editingSessionId) {
+        const showSummary = () => {
+            try {
+                showCompletedWorkoutRecap(completed, sessions, { resumeWorkout: resumeCompletedWorkout });
+                logger.querySelector("[data-retry-workout-summary]")?.remove();
+            } catch (error) {
+                console.error("Workout saved, but summary could not render", error);
+                if (message) message.textContent = "Workout saved. Your summary couldn't open. Tap below to retry.";
+                if (!logger.querySelector("[data-retry-workout-summary]")) {
+                    const retry = document.createElement("button");
+                    retry.type = "button";
+                    retry.className = "primary-btn";
+                    retry.dataset.retryWorkoutSummary = "true";
+                    retry.textContent = "Open workout summary";
+                    retry.addEventListener("click", showSummary);
+                    logger.appendChild(retry);
+                }
+            }
+        };
+        showSummary();
+    }
 
 }
 

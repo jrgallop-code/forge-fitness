@@ -41,9 +41,9 @@ test("food picker clears the bottom navigation and keeps content scrollable", as
     assert.match(styles, /food-sheet-scroll\{[^}]*overflow-y:auto/);
 });
 
-test("yesterday meals support swipe copy and preview the food names", async () => {
+test("recent meals support swipe copy and preview the food names", async () => {
     const module = await read("../js/nutrition/food-log.js");
-    assert.match(module, /Yesterday’s \$\{meal\}/);
+    assert.match(module, /\$\{sourceLabel\} \$\{meal\}/);
     assert.match(module, /mealPreview\(yesterdayEntries\)/);
     assert.match(module, /touchstart/);
     assert.match(module, /touchmove/);
