@@ -22,17 +22,34 @@ test('every new guide includes primary targets and all normal instruction sectio
  assert.deepEqual(createGeneratedExerciseGuide(videoLibraryExercises.find(e=>e.id==='kettlebell-deadlift')).primary,['Hamstrings','Glutes']);
  assert.deepEqual(createGeneratedExerciseGuide(videoLibraryExercises.find(e=>e.id==='dumbbell-concentration-curl')).primary,['Biceps']);
 });
-test('new video guides resolve to the exact male/female MP4 sources for the native looping player',async()=>{
+test('expanded guides use uploaded male footage, existing clips, or exact female-only Drive sources',async()=>{
  const {getFormGuideVideo}=await import('../js/workouts/exercise-guide-video-resolver.js');
+ const {FORM_GUIDE_VIDEOS}=await import('../js/workouts/exercise-guide-video-manifest.js');
+ const norm=x=>x.toLowerCase().replace(/\s*\(\d+\)(?=\.mp4$)/,'').replace(/[^a-z0-9]/g,'');
+ const old=new Map(Object.values(FORM_GUIDE_VIDEOS).map(v=>[norm(v.sourceName),v]));
+ let uploaded=0,reused=0,femaleOnly=0;
  for(const e of videoLibraryExercises){
+ const source=videoLibraryMedia[e.id],existing=old.get(norm(source.sourceName));
+ if(existing)reused++;else if(source.driveVideos.male)uploaded++;else femaleOnly++;
  for(const sex of ['male','female']){
  globalThis.window={__levelUpAnatomySexPreview:sex};
- const video=getFormGuideVideo(e.id),source=videoLibraryMedia[e.id];
- const expected=source.driveVideos[sex]||source.driveVideos.male||source.driveVideos.female;
- assert.equal(video.provider,'mp4');assert.equal(video.src,`https://drive.usercontent.google.com/download?id=${expected}&export=download&confirm=t`);
- assert.ok(video.sourceUrl.endsWith('/view'));
+ const video=getFormGuideVideo(e.id);
+ if(existing){
+   assert.equal(video.objectKey,existing.objectKey,e.id);
+   assert.ok(video.src.startsWith('https://media.leveluphypertrophy.com/'));
+ }else if(source.driveVideos.male){
+   assert.equal(video.provider,'mp4');
+   assert.equal(video.src,`https://media.leveluphypertrophy.com/form-videos/${e.id}.mp4`);
+   assert.equal(video.fallbackSrc,`https://media.leveluphypertrophy.com/form-videos/male/${e.id}.mp4`);
+   assert.equal(video.sex,'male');
+   assert.ok(video.sourceUrl.includes(source.driveVideos.male));
+ }else{
+   assert.equal(video.src,`https://drive.usercontent.google.com/download?id=${source.driveVideos.female}&export=download&confirm=t`);
+   assert.equal(video.sex,'female');
  }
  }
+ }
+ assert.equal(uploaded,147);assert.equal(reused,15);assert.equal(femaleOnly,25);
 });
 test('every new target muscle resolves to actual highlighted male and female anatomy paths',async()=>{
  const {readFileSync}=await import('node:fs');
