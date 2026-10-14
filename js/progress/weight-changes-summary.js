@@ -89,7 +89,8 @@ function directionIcon(direction) {
 function summaryForWindow(series, days) {
     const end = series.at(-1);
     if (!end) return { ready: false, points: [], delta: null, direction: "stable", label: "Need data" };
-    const startDate = shiftDate(end.date, -days);
+    // Match chart presets: N calendar dates including today (e.g. Oct 8–14).
+    const startDate = shiftDate(localDate(), -(days - 1));
     const start = series.find(point => point.date === startDate);
     const points = series.filter(point => point.date >= startDate && point.date <= end.date);
     if (!start || !Number.isFinite(start.weight) || !Number.isFinite(end.weight)) {
