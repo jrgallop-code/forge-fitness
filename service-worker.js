@@ -1,4 +1,4 @@
-const CACHE_VERSION = "forge-form-guide-cloudflare-only-20261013";
+const CACHE_VERSION = "forge-inclusive-weight-change-20261014";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
