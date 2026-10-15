@@ -477,3 +477,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-15: Match food logging pie, legend and bar macro colors to the dashboard and diary.
 
 2026-10-15: Add Reps/Time tracking metric to custom exercise creation using existing static hold logging and progress. iOS only.
+
+2026-10-15: Start new food quantities blank, clear quantities when switching units, and show reference weight per portion.
