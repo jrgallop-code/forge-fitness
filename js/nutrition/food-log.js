@@ -1028,15 +1028,14 @@ function renderFoodPortionPanel(food, warning = "") {
     panel.innerHTML = `
         ${foodHeroMarkup(food)}
         <div class="food-portion-heading"><div><span class="eyebrow">${addContext === "edit" ? "EDIT LOGGED FOOD" : editingMealItemIndex !== null ? "EDIT MEAL ITEM" : "ADD FOOD"}</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="${addContext === "edit" ? "Close food editor" : "Back to results"}">×</button></div>
-        ${addContext === "meal-builder" ? `<div class="food-builder-destination">${editingMealItemIndex !== null ? "Updating an item in your saved meal" : "Adding to your saved meal"}</div>` : `<label>Meal<select data-food-meal>${MEALS.map(meal => `<option${meal === selectedMeal ? " selected" : ""}>${meal}</option>`).join("")}</select></label>`}
+        ${addContext === "meal-builder" ? `<div class="food-builder-destination">${editingMealItemIndex !== null ? "Updating an item in your saved meal" : "Adding to your saved meal"}</div>` : `<label class="food-detail-meal">Meal<select data-food-meal>${MEALS.map(meal => `<option${meal === selectedMeal ? " selected" : ""}>${meal}</option>`).join("")}</select></label>`}
         ${warning ? `<p class="food-portion-warning">${escapeHtml(warning)}</p>` : ""}
         ${foodAmountMarkup(food)}
-        <div class="food-portion-preview" data-food-preview hidden></div>
         <button type="button" class="primary-btn" data-food-confirm>${addContext === "meal-builder" ? (editingMealItemIndex !== null ? "Update Item" : "Add to Meal") : addContext === "edit" ? "Save Changes" : "Add to Food Log"}</button>
         ${addContext === "edit" ? '<button type="button" class="food-edit-remove" data-food-edit-remove>Remove Food</button>' : ""}
     `;
     panel.querySelector("[data-food-portion-close]")?.addEventListener("click", closeFoodPortionPanel);
-    bindFoodAmountEditor(panel, food, { onUpdate: updatePortionPreview });
+    bindFoodAmountEditor(panel, food, { onUpdate: updatePortionPreview, getTargets: activeTargets });
     panel.querySelector("[data-food-confirm]")?.addEventListener("click", addSelectedFood);
     panel.querySelector("[data-food-edit-remove]")?.addEventListener("click", removeEditedFood);
     updatePortionPreview();
@@ -1121,7 +1120,7 @@ function bindMealItemDetails(panel) {
             const amount = Math.max(.01, Number(quantity?.value) || 1);
             if (preview) preview.innerHTML = foodMacroBreakdown(portion.nutrition || {}, amount, portion.label);
         };
-        bindFoodAmountEditor(details, food, {servingSelector:'[data-meal-item-serving]',quantitySelector:'[data-meal-item-quantity]',saveSelector:'[data-meal-item-save]',onUpdate:updatePreview});
+        bindFoodAmountEditor(details, food, {servingSelector:'[data-meal-item-serving]',quantitySelector:'[data-meal-item-quantity]',saveSelector:'[data-meal-item-save]',onUpdate:updatePreview,getTargets:activeTargets});
         updatePreview();
         details.addEventListener("toggle", () => {
             if (!details.open) return;

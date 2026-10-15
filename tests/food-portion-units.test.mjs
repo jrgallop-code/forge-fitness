@@ -38,7 +38,7 @@ test('empty, zero, negative and nonfinite quantities cannot be saved',()=>{
 test('category photos match specific food names before a broad category',()=>{
  assert.equal(foodPhotoIndex({name:'Chicken burger'}),9);
  assert.equal(foodPhotoIndex({name:'Grilled chicken breast'}),0);
- assert.equal(foodPhotoIndex({name:'Unknown food'}),15);
+ assert.equal(foodPhotoIndex({name:'Unknown food'}),null);
 });
 
 test('the bound editor preserves calories across units and blocks invalid saves', async()=>{

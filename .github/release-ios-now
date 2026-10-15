@@ -461,3 +461,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-14: Match Weight Changes to the chart's inclusive calendar windows (October 8–14 for 1W).
 
 2026-10-15: iOS-only food editor trial: representative photos, direct amount and unit controls, live macros and offline visual portion guide. Keep production PWA unchanged pending testing.
+
+2026-10-15: iOS-only nutrition polish: compact photo-header layout, theme-aware swipeable macro pie/bars, corrected food-photo matching including blueberries, and shorter swipeable portion-reference sheet.
