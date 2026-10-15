@@ -42,7 +42,7 @@ test('multi-item source portions and bread slices preserve explicit item counts'
  assert.equal(food.portions[selected.index].nutrition.calories,90);
 });
 
-test('bound egg size controls update count, grams and macros together without conversion drift',async()=>{
+test('egg size switches clear the amount and show the per-portion weight',async()=>{
  const {bindFoodAmountEditor}=await import('../js/nutrition/food-portion-editor.js');
  const food=withFoodWeightUnits(egg),map=new Map();
  const node=(value='')=>({value,textContent:'',hidden:true,disabled:false,handlers:{},dataset:{},setAttribute(){},addEventListener(k,fn){this.handlers[k]=fn;}});
@@ -51,11 +51,10 @@ test('bound egg size controls update count, grams and macros together without co
  const root={querySelector:s=>map.get(s),querySelectorAll:()=>[]};bindFoodAmountEditor(root,food);
  const select=map.get('[data-food-serving]'),input=map.get('[data-food-quantity]');
  const change=index=>{select.value=String(index);select.handlers.change();};
- change(1);assert.equal(input.value,'2');assert.equal(map.get('[data-food-equivalent]').textContent,'2 medium eggs · 88 g');assert.equal(map.get('[data-food-live-calories]').textContent,'136');
- const g=food.portions.findIndex(p=>p.inputUnit==='g'),oz=food.portions.findIndex(p=>p.inputUnit==='oz');
- change(g);assert.equal(input.value,'88');change(oz);change(g);assert.equal(input.value,'88');
- change(0);assert.equal(input.value,'1.76'); // 88 g converted to a 50 g large egg.
- change(1);assert.equal(input.value,'1.76'); // Changing size preserves the chosen count.
+ change(1);assert.equal(input.value,'');assert.match(map.get('[data-food-equivalent]').textContent,/Weight: 44 g per medium egg/);assert.equal(map.get('[data-food-live-calories]').textContent,'—');
+ input.value='2';input.handlers.input();assert.match(map.get('[data-food-equivalent]').textContent,/2 medium eggs · 88 g/);assert.equal(map.get('[data-food-live-calories]').textContent,'136');
+ const g=food.portions.findIndex(p=>p.inputUnit==='g');
+ change(g);assert.equal(input.value,'');assert.match(map.get('[data-food-equivalent]').textContent,/Weight: 1 g per g/);
 });
 
 test('source egg-white portions never display as whole eggs',()=>{

@@ -41,7 +41,7 @@ test('category photos match specific food names before a broad category',()=>{
  assert.equal(foodPhotoIndex({name:'Unknown food'}),null);
 });
 
-test('the bound editor preserves calories across units and blocks invalid saves', async()=>{
+test('the bound editor clears changed units and blocks blank saves', async()=>{
  const {bindFoodAmountEditor}=await import('../js/nutrition/food-portion-editor.js');
  const food=withFoodWeightUnits(original);
  const controls=new Map();
@@ -54,13 +54,13 @@ test('the bound editor preserves calories across units and blocks invalid saves'
  const root={querySelector:s=>controls.get(s),querySelectorAll:()=>[chip]};
  bindFoodAmountEditor(root,food);
  assert.equal(controls.get('[data-food-live-calories]').textContent,'289');
- chip.handlers.click();assert.equal(controls.get('[data-food-live-calories]').textContent,'289');
- assert.ok(Math.abs(Number(controls.get('[data-food-quantity]').value)-6.17294)<.001);
+ chip.handlers.click();assert.equal(controls.get('[data-food-live-calories]').textContent,'—');
+ assert.equal(controls.get('[data-food-quantity]').value,'');
  const input=controls.get('[data-food-quantity]');input.value='';input.handlers.input();assert.equal(controls.get('[data-food-confirm]').disabled,true);
  input.value='2';input.handlers.input();assert.equal(controls.get('[data-food-confirm]').disabled,false);
 });
 
-test('repeated g/oz/lb changes restore source text exactly and respect edits',async()=>{
+test('repeated unit switches stay blank until a new amount is entered',async()=>{
  const {bindFoodAmountEditor}=await import('../js/nutrition/food-portion-editor.js');
  const food=withFoodWeightUnits(original), map=new Map();
  const node=(value='')=>({value,textContent:'',hidden:true,disabled:false,handlers:{},dataset:{},setAttribute(){},addEventListener(k,fn){this.handlers[k]=fn;}});
@@ -69,9 +69,9 @@ test('repeated g/oz/lb changes restore source text exactly and respect edits',as
  const root={querySelector:s=>map.get(s),querySelectorAll:()=>[]};bindFoodAmountEditor(root,food);
  const select=map.get('[data-food-serving]'),input=map.get('[data-food-quantity]');
  const change=index=>{select.value=String(index);select.handlers.change();};
- for(let i=0;i<30;i++){change(oz);change(lb);change(g);assert.equal(input.value,'130');}
- input.value='130.25';input.handlers.input();change(oz);change(g);assert.equal(input.value,'130.25');
- change(oz);input.value='5';input.handlers.input();change(g);assert.equal(input.value,'141.75');change(oz);assert.equal(input.value,'5');
+ for(let i=0;i<30;i++){change(oz);change(lb);change(g);assert.equal(input.value,'');}
+ input.value='130.25';input.handlers.input();change(oz);assert.equal(input.value,'');
+ input.value='5';input.handlers.input();change(g);assert.equal(input.value,'');
 });
 
 test('legacy conversion artifacts display as useful gram precision',async()=>{
@@ -87,4 +87,20 @@ test('expanded guide library contains thirteen distinct bundled references',asyn
  assert.equal(FOOD_PORTION_GUIDES.length,13);
  assert.equal(new Set(FOOD_PORTION_GUIDES.map(g=>g.index)).size,13);
  for(const guide of FOOD_PORTION_GUIDES)assert.ok(existsSync(`assets/food/guide-${guide.index}.webp`),guide.title);
+});
+
+test('new entries start blank while explicit saved quantities are restored',async()=>{
+ const {foodAmountMarkup,bindFoodAmountEditor,restoreFoodAmount}=await import('../js/nutrition/food-portion-editor.js');
+ const food=withFoodWeightUnits(original);
+ assert.match(foodAmountMarkup(food),/aria-label="Food amount"[^>]*value=""/);
+ const nodes=new Map();
+ const node=value=>({value,textContent:'',hidden:true,handlers:{},setAttribute(){},addEventListener(k,fn){this.handlers[k]=fn;}});
+ nodes.set('[data-food-serving]',node('0'));nodes.set('[data-food-quantity]',node(''));
+ nodes.set('[data-food-amount-error]',node(''));nodes.set('[data-food-confirm]',node(''));
+ const root={querySelector:s=>nodes.get(s),querySelectorAll:()=>[]};bindFoodAmountEditor(root,food);
+ assert.equal(nodes.get('[data-food-amount-error]').hidden,true);
+ assert.equal(nodes.get('[data-food-confirm]').disabled,true);
+ const g=food.portions.findIndex(p=>p.inputUnit==='g');restoreFoodAmount(root,food,g,175);
+ assert.equal(nodes.get('[data-food-quantity]').value,'175');
+ assert.equal(nodes.get('[data-food-confirm]').disabled,false);
 });
