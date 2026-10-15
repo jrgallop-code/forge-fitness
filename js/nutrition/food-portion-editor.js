@@ -1,3 +1,4 @@
+import { nutrientMarkup, updateNutrients, bindNutrients } from './food-nutrients.js';
 import { countedPortionLabel, countedPortionSummary } from "./food-counted-portions.js";
 import { FOOD_PORTION_GUIDES as guides } from "./food-portion-guide-data.js";
 import { macroCarouselMarkup, updateMacroCarousel, bindMacroCarousel } from "./food-macro-chart.js";
@@ -16,7 +17,7 @@ export function foodAmountMarkup(food, {index=0,quantity=null,servingAttr='data-
  <p class="food-equivalent" data-food-equivalent aria-live="polite" hidden></p>
  <p class="food-amount-error" data-food-amount-error role="alert" hidden>Enter an amount from 0.01 to 10,000.</p>
  <div class="food-unit-chips" role="group" aria-label="Quick units">${unitChips}<button type="button" class="food-guide-open" data-food-guide-open>Portion<br>guide</button></div>
- ${macroCarouselMarkup()}`;
+ ${macroCarouselMarkup()}${nutrientMarkup()}`;
 }
 export function foodHeroMarkup(food) {
  const index=foodPhotoIndex(food);
@@ -34,6 +35,7 @@ export function bindFoodAmountEditor(root, food, {servingSelector='[data-food-se
   text('[data-food-selected-unit]',countedPortionLabel(p));
   text('[data-food-live-calories]',previewValid?Math.round((Number(p.nutrition?.calories)||0)*previewQuantity).toLocaleString():'—');
   updateMacroCarousel(root,p.nutrition,previewQuantity,getTargets(),previewValid);
+  updateNutrients(root,p.nutrition,previewValid?previewQuantity:null,input.value==='');
   const grams=portionMeasure(p,'grams'), volume=portionMeasure(p,'milliliters');
   const reference=grams>0 ? `Weight: ${Number(grams.toFixed(2))} g per ${countedPortionLabel(p)}` : volume>0 ? `Volume: ${Number(volume.toFixed(2))} mL per ${countedPortionLabel(p)}` : `Portion: ${countedPortionLabel(p)}`;
   const summary=valid?countedPortionSummary(food,p,q):'';
@@ -54,6 +56,7 @@ export function bindFoodAmountEditor(root, food, {servingSelector='[data-food-se
  root.querySelectorAll('[data-food-unit]').forEach(button=>button.addEventListener('click',()=>{if(select.value===button.dataset.foodUnit)return;select.value=button.dataset.foodUnit;changedUnit();}));
  root.querySelector('[data-food-guide-open]')?.addEventListener('click',()=>openPortionGuide(root));
  bindMacroCarousel(root);
+ bindNutrients(root,refresh);
  root.foodAmountRefresh=refresh;
  root.foodAmountRebase=refresh;
  refresh();

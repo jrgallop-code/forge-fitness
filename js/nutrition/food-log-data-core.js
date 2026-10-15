@@ -272,7 +272,7 @@ export function prioritizeLoggedFoodMatches(query, databaseFoods = [], limit = 5
 
 export function scaledNutrition(nutrition, quantity = 1) {
     const multiplier = Math.max(0, Number(quantity) || 0);
-    return ["calories", "protein", "carbs", "fat", "fiber"].reduce((totals, key) => {
+    return [...new Set(["calories", "protein", "carbs", "fat", "fiber", ...Object.keys(nutrition || {}).filter(key => nutrition[key] !== null && nutrition[key] !== "" && Number.isFinite(Number(nutrition[key])))])].reduce((totals, key) => {
         totals[key] = Math.max(0, Number(nutrition?.[key]) || 0) * multiplier;
         return totals;
     }, {});

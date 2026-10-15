@@ -1,9 +1,10 @@
-const CACHE_VERSION = "forge-food-portion-preview-20261015";
+const CACHE_VERSION = "forge-food-nutrients-20261015";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
+    "./js/nutrition/food-nutrients.js",
     "./assets/food/category-12.webp",
     "./assets/food/category-15.webp",
     "./assets/food/category-20.webp",

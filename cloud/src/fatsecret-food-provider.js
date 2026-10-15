@@ -1,3 +1,4 @@
+import {extraFatSecretNutrition} from './food-extra-nutrients.js';
 import { isPlausibleZeroCalorieFood } from "./barcode-food-quality.js";
 
 const FATSECRET_TOKEN_URL = "https://oauth.fatsecret.com/connect/token";
@@ -378,7 +379,7 @@ function normalizeServing(serving, food = {}) {
         label,
         ...(grams > 0 ? { grams } : {}),
         ...(milliliters > 0 ? { milliliters } : {}),
-        nutrition: { calories, protein, carbs, fat, fiber }
+        nutrition: { ...extraFatSecretNutrition(serving), calories, protein, carbs, fat, fiber }
     };
 }
 

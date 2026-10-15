@@ -1,3 +1,4 @@
+import {extraUsdaNutrition,extraUsdaLabelNutrition,extraOpenFoodFactsNutrition} from './food-extra-nutrients.js';
 import { featureBoard } from "./feature-board.js";
 import { SWISS_CHALET_FOODS } from "./data/swiss-chalet-foods.js";
 import { PUR_SIMPLE_FOODS } from "./data/pur-simple-foods.js";
@@ -1320,8 +1321,8 @@ export function normalizeOpenFoodFactsProduct(product, barcode) {
         fat: openFoodFactsNutrient(legacyNutriments, "fat_serving"),
         fiber: openFoodFactsNutrient(legacyNutriments, "fiber_serving")
     };
-    const explicitPer100 = hundredGramSet ? openFoodFactsSetNutrition(hundredGramSet) : legacyPer100;
-    const perServing = servingSet ? openFoodFactsSetNutrition(servingSet) : legacyPerServing;
+    const explicitPer100 = {...extraOpenFoodFactsNutrition(legacyNutriments,"100g"), ...(hundredGramSet ? openFoodFactsSetNutrition(hundredGramSet) : legacyPer100)};
+    const perServing = {...extraOpenFoodFactsNutrition(legacyNutriments,"serving"), ...(servingSet ? openFoodFactsSetNutrition(servingSet) : legacyPerServing)};
     const servingSize = limitedText(product?.serving_size, 80);
     const servingGrams = openFoodFactsServingGrams(product?.serving_quantity || servingSet?.per_quantity, servingSize);
     const plausibleZero = isPlausibleZeroCalorieFood({ name, brand: product?.brands, category: product?.categories });
@@ -1385,7 +1386,9 @@ function openFoodFactsSetNutrition(set) {
         if (unit === "mg") return Number((value / 1000).toFixed(3));
         return Number(value.toFixed(3));
     };
+    const optional = Object.fromEntries(Object.entries(nutrients).filter(([,n])=>n?.value!==null && n?.value!==undefined && n?.value!=='' && Number.isFinite(Number(n.value)) && Number(n.value)>=0).map(([key,n])=>[`${key}_100g`,Number(n.value)*(String(n.unit).toLowerCase()==='mg'?.001:1)]));
     return {
+        ...extraOpenFoodFactsNutrition(optional,"100g"),
         calories: read("energy-kcal"),
         protein: read("proteins"),
         carbs: read("carbohydrates"),
@@ -1979,7 +1982,7 @@ async function getUsdaFoodDetails(fdcId, request, env) {
     const detailsUrl = new URL(`https://api.nal.usda.gov/fdc/v1/food/${fdcId}`);
     detailsUrl.searchParams.set("api_key", env.USDA_FDC_API_KEY);
     detailsUrl.searchParams.set("format", "full");
-    detailsUrl.searchParams.set("nutrients", "203,204,205,208,291,1003,1004,1005,1008,1079");
+    // Full detail nutrients are needed for the food nutrient panel.
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
     try {
@@ -2036,6 +2039,7 @@ export function normalizeUsdaFood(food) {
     if (!Number.isFinite(fdcId) || !name) return null;
 
     const per100 = {
+        ...extraUsdaNutrition(food),
         calories: usdaNutrient(food, ["208", "1008"], ["energy"], "KCAL"),
         protein: usdaNutrient(food, ["203", "1003"], ["protein"]),
         carbs: usdaNutrient(food, ["205", "1005"], ["carbohydrate, by difference", "carbohydrate"]),
@@ -2050,7 +2054,7 @@ export function normalizeUsdaFood(food) {
         portions.push({
             label: foodServingLabel(limitedText(food?.householdServingFullText, 80) || `${formatFoodNumber(servingSize)} g`, servingSize),
             grams: servingSize,
-            nutrition: usdaLabelNutrition(food) || scaleUsdaNutrition(per100, multiplier)
+            nutrition: { ...scaleUsdaNutrition(per100, multiplier), ...(usdaLabelNutrition(food) || {}) }
         });
     }
     const detailedPortions = [...(Array.isArray(food?.foodPortions) ? food.foodPortions : []), ...(Array.isArray(food?.foodMeasures) ? food.foodMeasures : [])]
@@ -2128,7 +2132,7 @@ function usdaLabelNutrition(food) {
     };
     const calories = read("calories");
     if (!(calories > 0)) return null;
-    return { calories, protein: read("protein"), carbs: read("carbohydrates"), fat: read("fat"), fiber: read("fiber") };
+    return { ...extraUsdaLabelNutrition(labels), calories, protein: read("protein"), carbs: read("carbohydrates"), fat: read("fat"), fiber: read("fiber") };
 }
 
 function usdaNutrient(food, numbers, names, requiredUnit = "") {

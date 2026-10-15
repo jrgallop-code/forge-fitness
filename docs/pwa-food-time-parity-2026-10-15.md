@@ -17,3 +17,7 @@ New food quantities start blank. Changing any unit or serving clears and focuses
 ## Nutrition preview with an empty quantity
 
 An empty quantity now previews calories and macros for one selected portion. Unit changes keep the input empty and preview one of the new unit. Entered valid quantities scale the totals; invalid entries show no totals. Saving still requires a valid entered amount. Applies to both iOS and PWA.
+
+## Food nutrients
+
+Added an open, collapsible nutrient section with Popular/All filters, striped rows and indented fat/carbohydrate details. Values scale with selected units and quantities, previewing one portion when blank. Missing optional nutrients display a dash, not zero. Added optional source nutrient normalization for USDA, FatSecret and Open Food Facts, preserving values through conversions and saved entries. Removed the bottom Back/Cancel navigation from the food detail; X remains. Existing logged foods may lack nutrients until refreshed from their source. No food grades or unconfigured daily value percentages are invented.
