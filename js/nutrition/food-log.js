@@ -482,7 +482,6 @@ function openFoodSheet(meal) {
     renderSavedMeals();
     renderCustomFoods();
     showFoodMode("recent");
-    window.setTimeout(() => document.querySelector("[data-food-search-form] input")?.focus(), 50);
 }
 
 function closeFoodSheet() {
@@ -854,7 +853,7 @@ async function openVoiceSwap(index=null,unresolvedIndex=null){
         });
       }catch(error){if(request===version&&mealDraft===draft&&error?.name!=='AbortError')status.textContent=error.message||'Search failed. Try again.';}
     };
-    host.querySelector('form').addEventListener('submit',search);host.querySelector('input').focus();void search();
+    host.querySelector('form').addEventListener('submit',search);void search();
 }
 
 async function searchFoods(event) {
@@ -936,6 +935,7 @@ function foodResultMarkup(food, index) {
 }
 
 async function chooseFood(food) {
+    dismissFoodKeyboard();
     const requestId = ++foodSelectionRequest;
     foodDetailController?.abort();
     if (food?.source === "usda" && food?.fdcId && !food.detailsLoaded) {
@@ -1049,7 +1049,13 @@ function closeFoodPortionPanel() {
     }
 }
 
+function dismissFoodKeyboard(){
+    const active=document.activeElement;
+    if(active?.matches?.('input,textarea,[contenteditable="true"]'))active.blur();
+}
+
 function renderFoodPortionPanel(food, warning = "") {
+    dismissFoodKeyboard();
     food = withFoodWeightUnits(withUsefulLiquidPortions(food));
     selectedFood = food;
     const panel = document.querySelector("[data-food-portion]");
@@ -1059,11 +1065,12 @@ function renderFoodPortionPanel(food, warning = "") {
     panel.innerHTML = `
         ${foodHeroMarkup(food)}
         <div class="food-portion-heading"><div><span class="eyebrow">${addContext === "edit" ? "EDIT LOGGED FOOD" : editingMealItemIndex !== null ? "EDIT MEAL ITEM" : "ADD FOOD"}</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="${addContext === "edit" ? "Close food editor" : "Back to results"}">×</button></div>
-        ${addContext === "meal-builder" ? `<div class="food-builder-destination">${editingMealItemIndex !== null ? "Updating an item in your saved meal" : "Adding to your saved meal"}</div>` : `<label class="food-detail-meal">Meal<select data-food-meal>${MEALS.map(meal => `<option${meal === selectedMeal ? " selected" : ""}>${meal}</option>`).join("")}</select></label>`}
+        ${addContext === "meal-builder" ? `<div class="food-builder-destination">${editingMealItemIndex !== null ? "Updating meal item" : "Adding to your meal"}</div>` : `<label class="food-detail-meal">Meal<select data-food-meal>${MEALS.map(meal => `<option${meal === selectedMeal ? " selected" : ""}>${meal}</option>`).join("")}</select></label>`}
         ${warning ? `<p class="food-portion-warning">${escapeHtml(warning)}</p>` : ""}
         ${foodAmountMarkup(food)}
         <button type="button" class="primary-btn" data-food-confirm>${addContext === "meal-builder" ? (editingMealItemIndex !== null ? "Update Item" : "Add to Meal") : addContext === "edit" ? "Save Changes" : "Add to Food Log"}</button>
         ${addContext === "edit" ? '<button type="button" class="food-edit-remove" data-food-edit-remove>Remove Food</button>' : ""}
+        ${addContext==='meal-builder' && editingMealItemIndex!==null ? '<div class="food-detail-item-actions"><button type="button" data-food-meal-item-swap>Swap food</button><button type="button" data-food-meal-item-remove>Remove Food</button></div>' : ''}
     `;
     const dismiss = panel.querySelector(".food-portion-heading [data-food-portion-close]");
     if (dismiss) {
@@ -1074,6 +1081,10 @@ function renderFoodPortionPanel(food, warning = "") {
     bindFoodAmountEditor(panel, food, { onUpdate: updatePortionPreview, getTargets: activeTargets });
     panel.querySelector("[data-food-confirm]")?.addEventListener("click", addSelectedFood);
     panel.querySelector("[data-food-edit-remove]")?.addEventListener("click", removeEditedFood);
+    panel.querySelector('[data-food-meal-item-swap]')?.addEventListener('click',()=>{const index=editingMealItemIndex;closeFoodPortionPanel();void openVoiceSwap(index);});
+    panel.querySelector('[data-food-meal-item-remove]')?.addEventListener('click',()=>{mealDraft.items.splice(editingMealItemIndex,1);closeFoodPortionPanel();});
+    panel.scrollTop=0;
+    dismiss?.focus({preventScroll:true});
     updatePortionPreview();
 }
 
@@ -1125,60 +1136,31 @@ function mealFoodForEntry(entry) {
     };
 }
 
-function mealItemDetailsMarkup(entry, index, {allowSwap=false}={}) {
-    const food = withFoodWeightUnits(withUsefulLiquidPortions(mealFoodForEntry(entry)));
+function mealItemDetailsMarkup(entry, index) {
     const quantity = Math.max(.01, Number(entry?.quantity) || 1);
-    const portions = food.portions || [];
-    const servingIndex = Math.max(0, portions.findIndex(portion => portion?.label === entry?.servingLabel));
-    const portion = portions[servingIndex] || portions[0] || {};
     return `<details class="food-builder-item-details" data-meal-item-details="${index}">
         <summary><span><strong>${escapeHtml(entry?.name || "Food")}</strong><small>${escapeHtml(entry?.brand?entry.brand+" · ":"")}${escapeHtml(totalServingLabel(quantity, entry?.servingLabel))}</small></span><b>${Math.round(entry?.nutrition?.calories || 0)} kcal</b><i aria-hidden="true">›</i></summary>
-        <div class="food-builder-item-editor">
-            <div class="food-builder-item-edit-heading"><span class="eyebrow">EDIT ITEM</span><strong>Serving and quantity</strong></div>
-            ${allowSwap && entry.voiceIngredient?.unit==='serving' && entry.voiceIngredient?.assumed ? '<p class="food-voice-review-copy">Amount not heard · using 1 serving. Check the amount.</p>' : ''}
-            ${foodAmountMarkup(food, {index: servingIndex, quantity, servingAttr: 'data-meal-item-serving', quantityAttr: 'data-meal-item-quantity'})}
-            <div class="food-portion-preview food-portion-preview--macros" data-meal-item-preview>${foodMacroBreakdown(portion.nutrition || {}, quantity, portion.label)}</div>
-            <div class="food-builder-item-actions"><button type="button" data-meal-item-remove>Remove Item</button><button type="button" class="primary-btn" data-meal-item-save>Update Item</button>${allowSwap?`<button type="button" class="food-builder-item-swap" data-voice-swap="${index}">Swap food</button>`:""}</div>
-        </div>
     </details>`;
 }
 
+function openMealItemEditor(index){
+    const entry=mealDraft?.items?.[index];
+    if(!entry || mealDraft.importing || mealDraft.voiceListening || mealDraft.voiceQueueRunning)return;
+    dismissFoodKeyboard();
+    editingMealItemIndex=index;addContext='meal-builder';
+    voiceSwapRequest={itemIndex:index,unresolvedIndex:null,ingredient:entry.voiceIngredient};
+    document.querySelector('[data-meal-builder]')?.setAttribute('hidden','');
+    renderFoodPortionPanel(mealFoodForEntry(entry));
+    const servingIndex=Math.max(0,selectedFood.portions.findIndex(p=>p.label===entry.servingLabel));
+    restoreFoodAmount(document.querySelector('[data-food-portion]'),selectedFood,servingIndex,entry.quantity);
+    updatePortionPreview();
+}
+
 function bindMealItemDetails(panel) {
-    panel.querySelectorAll("[data-meal-item-details]").forEach(details => {
-        const index = Number(details.dataset.mealItemDetails);
-        const entry = mealDraft?.items?.[index];
-        if (!entry) return;
-        const food = withFoodWeightUnits(withUsefulLiquidPortions(mealFoodForEntry(entry)));
-        const serving = details.querySelector("[data-meal-item-serving]");
-        const quantity = details.querySelector("[data-meal-item-quantity]");
-        const preview = details.querySelector("[data-meal-item-preview]");
-        const updatePreview = () => {
-            const portion = food.portions?.[Number(serving?.value)] || food.portions?.[0] || {};
-            const amount = Math.max(.01, Number(quantity?.value) || 1);
-            if (preview) preview.innerHTML = foodMacroBreakdown(portion.nutrition || {}, amount, portion.label);
-        };
-        bindFoodAmountEditor(details, food, {servingSelector:'[data-meal-item-serving]',quantitySelector:'[data-meal-item-quantity]',saveSelector:'[data-meal-item-save]',onUpdate:updatePreview,getTargets:activeTargets});
-        updatePreview();
-        details.addEventListener("toggle", () => {
-            if (!details.open) return;
-            panel.querySelectorAll("[data-meal-item-details][open]").forEach(item => {
-                if (item !== details) item.removeAttribute("open");
-            });
-        });
-        details.querySelector("[data-meal-item-save]")?.addEventListener("click", () => {
-            const portion = food.portions?.[Number(serving?.value)] || food.portions?.[0];
-            if (!portion) return;
-            if (!validFoodAmount(quantity?.value)) return;
-            const amount = Number(quantity.value);
-            const updated = createLogEntry({ meal: selectedMeal, food, portion, quantity: amount });
-            if (entry.pasteImported) updated.pasteImported = true;
-            if(entry.voiceIngredient)updated.voiceIngredient=entry.voiceIngredient;
-            mealDraft.items.splice(index, 1, updated);
-            renderMealBuilder();
-        });
-        details.querySelector("[data-meal-item-remove]")?.addEventListener("click", () => {
-            mealDraft.items.splice(index, 1);
-            renderMealBuilder();
+    panel.querySelectorAll('[data-meal-item-details]').forEach(details=>{
+        details.querySelector('summary')?.addEventListener('click',event=>{
+            event.preventDefault();
+            openMealItemEditor(Number(details.dataset.mealItemDetails));
         });
     });
 }
@@ -1579,7 +1561,7 @@ function renderMealBuilder() {
         ${voiceMode ? voiceReviewMarkup() : `<label>Meal name<input type="text" maxlength="100" value="${escapeHtml(mealDraft.name)}" placeholder="Post-workout lunch" data-meal-name></label><div class="food-builder-photo"><button type="button" data-meal-photo-pick>${mealDraft.photoDataUrl ? `<img src="${escapeHtml(mealDraft.photoDataUrl)}" alt="Meal thumbnail"><span>Change photo</span>` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>'}</button>${mealDraft.photoDataUrl ? '<button type="button" data-meal-photo-remove>Remove</button>' : ""}<input type="file" accept="image/*" data-meal-photo-input hidden></div>`}
         ${voiceMode?"":pastedIngredientsMarkup()}
         <div class="food-builder-macros food-portion-preview food-portion-preview--macros">${macroBreakdownMarkup(totals, `Whole meal · ${mealDraft.items.length} item${mealDraft.items.length === 1 ? "" : "s"}`)}</div>
-        <div class="food-builder-items">${mealDraft.items.map((entry, index) => mealItemDetailsMarkup(entry,index,{allowSwap:voiceMode})).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
+        <div class="food-builder-items">${mealDraft.items.map((entry, index) => mealItemDetailsMarkup(entry,index)).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
         <button type="button" class="food-builder-add" data-meal-builder-add${voiceMode&&(mealDraft.voiceListening||mealDraft.importing)?' disabled':''}>+ Add Food</button>
         <button type="button" class="primary-btn" data-meal-builder-save ${mealDraft.items.length && !mealDraft.importing && !mealDraft.voiceListening && !mealDraft.voiceQueueRunning && (!voiceMode || !mealDraft.importUnresolved.length) ? "" : "disabled"}>${voiceMode ? `Log to ${escapeHtml(selectedMeal)}` : editingMeal ? "Save Changes" : "Save to My Meals"}</button>`;
     panel.querySelector("[data-meal-name]")?.addEventListener("input", event => { mealDraft.name = event.currentTarget.value; });

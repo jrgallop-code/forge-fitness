@@ -110,6 +110,27 @@ test('voice review uses the manual meal row with no injected image or extra acti
  assert.equal(voice.replace('<button type="button" class="food-builder-item-swap" data-voice-swap="0">Swap food</button>',''),manual);
  assert.doesNotMatch(voice,/<img|food-voice-item|food-voice-thumb/);
  assert.match(voice,/<summary><span>.*<\/span><b>57 kcal<\/b><i /);
- assert.match(voice,/data-meal-item-remove/);assert.match(voice,/data-meal-item-save/);
+ assert.doesNotMatch(voice,/food-builder-item-editor|data-meal-item-save/);
+ assert.match(source,/renderFoodPortionPanel\(mealFoodForEntry\(entry\)\)/);
  assert.doesNotMatch(source,/voiceItemMarkup|data-voice-edit|data-voice-remove/);
+});
+
+test('opening a meal item uses full food details and restores its quantity without focusing an input',async()=>{
+ const {readFileSync}=await import('node:fs');const vm=await import('node:vm');const source=readFileSync('js/nutrition/food-log.js','utf8');
+ const a=source.indexOf('function openMealItemEditor('),b=source.indexOf('\nfunction bindMealItemDetails(',a);let blurred=0,restored;
+ const entry={quantity:1.4,servingLabel:'100 g',food:food('Blueberries'),voiceIngredient:{name:'blueberries',amount:140,unit:'g'}};
+ const panel={setAttribute(){this.hidden=true;}};
+ const sandbox={mealDraft:{items:[entry]},selectedFood:null,mealFoodForEntry:e=>e.food,document:{querySelector:()=>panel},dismissFoodKeyboard:()=>blurred++,renderFoodPortionPanel:f=>{sandbox.selectedFood=f;},restoreFoodAmount:(root,f,i,q)=>{restored={i,q};},updatePortionPreview(){}};
+ vm.createContext(sandbox);vm.runInContext(source.slice(a,b)+'\nglobalThis.open=openMealItemEditor;',sandbox);sandbox.open(0);
+ assert.equal(sandbox.addContext,'meal-builder');assert.equal(sandbox.editingMealItemIndex,0);assert.equal(panel.hidden,true);assert.equal(blurred,1);assert.equal(restored.i,0);assert.equal(restored.q,1.4);
+});
+
+test('opening the food sheet never schedules text-field focus',async()=>{
+ const {readFileSync}=await import('node:fs');const vm=await import('node:vm');const source=readFileSync('js/nutrition/food-log.js','utf8');
+ const a=source.indexOf('function openFoodSheet('),b=source.indexOf('\nfunction closeFoodSheet(',a);let focused=0;
+ const node={setAttribute(){},focus(){focused++;},hidden:true};
+ const sandbox={MEALS:['Dinner'],document:{querySelector:()=>node,body:{classList:{add(){}}}},selectTargetMeal(){},renderRecents(){},renderSavedMeals(){},renderCustomFoods(){},showFoodMode(){},window:{setTimeout:fn=>fn()}};
+ vm.createContext(sandbox);vm.runInContext(source.slice(a,b)+'\nglobalThis.open=openFoodSheet;',sandbox);sandbox.open('Dinner');assert.equal(focused,0);
+ const render=source.slice(source.indexOf('function renderFoodPortionPanel('),source.indexOf('\nfunction updatePortionPreview(',source.indexOf('function renderFoodPortionPanel(')));
+ assert.doesNotMatch(render,/input[^\n]*\.focus|setTimeout/);assert.match(render,/dismissFoodKeyboard\(\)/);
 });

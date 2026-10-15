@@ -69,3 +69,9 @@ Validation: 151 focused tests pass, including lists without conjunctions, multi-
 ## Voice review layout correction
 
 Voice results now call the exact manual meal item renderer. Removed voice-only thumbnails, wrappers and always-visible Edit/Swap/Remove footers that broke the summary grid and crowded actions. Tap the standard name/brand/amount/calorie row to expand the existing portion editor. Swap food appears as a full-width action beneath Update/Remove inside that editor. Unknown amounts remain labelled for review. Validation: 152 focused checks pass, including comparing manual and voice markup.
+
+## Shared full food editor and keyboard correction
+
+Tapping any voice/manual meal draft row now navigates to the same full food detail panel used for diary/recent foods, restoring its exact selected portion and quantity. The inline portion editor is removed. Update replaces the draft item, X returns without saving, and Swap/Remove use compact controls on the full detail page.
+
+Removed the delayed search-field autofocus in openFoodSheet that reopened the keyboard after saved-food details appeared. Food selection explicitly blurs text inputs, scrolls details to the top and focuses the non-text close control. Quantity fields still open the keyboard when intentionally tapped. Validation: 154 focused checks pass, including full editor navigation, quantity restoration and no scheduled text focus. iOS only.

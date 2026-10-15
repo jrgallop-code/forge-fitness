@@ -93,3 +93,4 @@
 .food-search .food-search-entry{grid-template-columns:minmax(0,1fr)!important}
 
 .food-builder-item-actions .food-builder-item-swap{grid-column:1/-1;color:var(--accent-text)!important;background:var(--accent-soft)!important;border-color:var(--line)!important}
+.food-detail-item-actions{order:7;display:grid;grid-template-columns:1fr 1fr;gap:10px}.food-detail-item-actions button{min-height:44px;min-width:0;border:1px solid var(--line);border-radius:14px;padding:10px;background:var(--surface-raised);color:var(--accent-text);font-family:inherit;font-size:13px;touch-action:manipulation}

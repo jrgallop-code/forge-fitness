@@ -493,3 +493,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-15: Use paired Barcode/Voice icons beneath search and fix continuous food dictation, phrase matching and transcript retention without requiring “and”.
 
 2026-10-15: Use standard manual meal rows for voice results, remove thumbnails and crowded footer actions, retain Swap food inside the portion editor.
+
+2026-10-15: Open meal draft items in the standard full food editor and remove default keyboard activation when opening food details.
