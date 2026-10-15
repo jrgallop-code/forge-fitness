@@ -1,7 +1,7 @@
 import { withCountedFoodPortions } from "./food-counted-portions.js";
 // Local portion normalization: never requires a food API round-trip.
 const OZ = 28.349523125;
-const scale = (nutrition, factor) => Object.fromEntries(['calories','protein','carbs','fat','fiber'].map(key => [key, Math.max(0, Number(nutrition?.[key]) || 0) * factor]));
+const scale = (nutrition, factor) => Object.fromEntries([...new Set(['calories','protein','carbs','fat','fiber',...Object.keys(nutrition || {}).filter(k=>nutrition[k]!==null && nutrition[k]!=='' && Number.isFinite(Number(nutrition[k])))])].map(key => [key, Math.max(0, Number(nutrition?.[key]) || 0) * factor]));
 export function portionMeasure(portion, kind) {
     const stored = Number(portion?.[kind]);
     if (stored > 0 && Number.isFinite(stored)) return stored;

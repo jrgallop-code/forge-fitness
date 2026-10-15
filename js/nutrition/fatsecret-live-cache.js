@@ -173,7 +173,7 @@ function sessionToken() {
 }
 
 function scaledNutrition(nutrition, quantity) {
-    return ["calories", "protein", "carbs", "fat", "fiber"].reduce((result, key) => {
+    return [...new Set(["calories", "protein", "carbs", "fat", "fiber", ...Object.keys(nutrition || {}).filter(key => nutrition[key] !== null && nutrition[key] !== "" && Number.isFinite(Number(nutrition[key])))])].reduce((result, key) => {
         result[key] = Math.max(0, Number(nutrition?.[key]) || 0) * quantity;
         return result;
     }, {});

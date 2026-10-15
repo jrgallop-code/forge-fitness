@@ -1032,7 +1032,6 @@ function renderFoodPortionPanel(food, warning = "") {
         ${warning ? `<p class="food-portion-warning">${escapeHtml(warning)}</p>` : ""}
         ${foodAmountMarkup(food)}
         <button type="button" class="primary-btn" data-food-confirm>${addContext === "meal-builder" ? (editingMealItemIndex !== null ? "Update Item" : "Add to Meal") : addContext === "edit" ? "Save Changes" : "Add to Food Log"}</button>
-        <button type="button" class="food-detail-back" data-food-portion-close>${addContext === "edit" ? "Cancel" : addContext === "meal-builder" ? "Back to meal" : "Back to foods"}</button>
         ${addContext === "edit" ? '<button type="button" class="food-edit-remove" data-food-edit-remove>Remove Food</button>' : ""}
     `;
     const dismiss = panel.querySelector(".food-portion-heading [data-food-portion-close]");

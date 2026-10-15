@@ -1,5 +1,5 @@
 const nutrients = ['calories','protein','carbs','fat','fiber'];
-const scale = (n,f) => Object.fromEntries(nutrients.map(k=>[k,Math.max(0,Number(n?.[k])||0)*f]));
+const scale = (n,f) => Object.fromEntries([...new Set([...nutrients,...Object.keys(n || {}).filter(k=>n[k]!==null && n[k]!=='' && Number.isFinite(Number(n[k])))])].map(k=>[k,Math.max(0,Number(n?.[k])||0)*f]));
 const sizes = '(?:extra[ -]large|small|medium|large|jumbo)';
 const number = value => Number(Number(value).toFixed(2)).toString();
 function wholeEgg(food) {

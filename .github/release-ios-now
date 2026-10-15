@@ -481,3 +481,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-15: Start new food quantities blank, clear quantities when switching units, and show reference weight per portion.
 
 2026-10-15: Preview calories and macros for one selected portion while leaving the quantity blank.
+
+2026-10-15: Add collapsible nutrient breakdown, preserve source nutrient values and remove redundant bottom food navigation.
