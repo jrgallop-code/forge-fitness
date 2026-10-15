@@ -57,3 +57,11 @@ Accuracy changes: spoken hundreds/fractions and decimal quantities retain their 
 Validation: 148 focused tests pass, including speech completion/cancellation, multi-batch draft retention, decimal/fraction parsing, brand rejection, swap quantities and unresolved-save gating. Native compilation is checked by the signed iOS workflow; physical microphone accuracy and layout require TestFlight testing.
 
 Apple speech API reference: https://developer.apple.com/documentation/speech/sfspeechaudiobufferrecognitionrequest
+
+## Voice continuity and compact shortcuts
+
+The food search form now has a full-width field with paired circular Barcode and Voice SVG shortcuts below. The recorder also uses a microphone icon with an accessible Start/Stop label. Colors inherit the active appearance.
+
+A new measured quantity or count separates spoken foods even without “and” or punctuation. Native speech commits completed or paused phrases, retains their full transcript, and starts a fresh recognition request while the microphone remains active. A 1.8-second pause submits the stable phrase for matching. Each phrase has a unique ID; duplicate callbacks cannot import it twice. Matching runs in order, independently from recording, and prior phrases remain visible with match status. Stop remains available during a lookup. New foods cannot be logged until recording and queued lookups finish and unresolved foods are reviewed.
+
+Validation: 151 focused tests pass, including lists without conjunctions, multi-phrase transcription, duplicate callback suppression, queued matching order and visible history preservation. Real microphone timing still needs TestFlight verification.

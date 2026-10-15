@@ -18,8 +18,14 @@ final class LevelUpFoodSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
     private var recognizer: SFSpeechRecognizer?
     private var sessionID: String?
     private var transcript = ""
+    private var completedTranscript = ""
+    private var currentTranscript = ""
+    private var stopping = false
+    private var taskID = UUID()
+    private var utterance = 0
     private var tapped = false
     private var deadline: DispatchWorkItem?
+    private var silenceDeadline: DispatchWorkItem?
     private var backgroundObserver: NSObjectProtocol?
 
     override func load() {
@@ -55,31 +61,16 @@ final class LevelUpFoodSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
             }
             self.recognizer = recognizer
             transcript = ""
+            completedTranscript = ""; currentTranscript = ""; stopping = false; utterance = 0
             let audio = AVAudioSession.sharedInstance()
             try audio.setCategory(.record, mode: .measurement, options: [.duckOthers])
             try audio.setActive(true)
-            let request = SFSpeechAudioBufferRecognitionRequest()
-            request.shouldReportPartialResults = true
-            request.taskHint = .dictation
-            if recognizer.supportsOnDeviceRecognition { request.requiresOnDeviceRecognition = true }
-            request.contextualStrings = ["grams", "ounces", "tablespoons", "blueberries", "Greek yogurt", "Kirkland", "chicken breast"]
-            self.request = request
             let input = engine.inputNode
             let format = input.outputFormat(forBus: 0)
             guard format.sampleRate > 0, format.channelCount > 0 else { finish(); call.reject("No microphone is available."); return }
-            input.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in request.append(buffer) }
+            input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in self?.request?.append(buffer) }
             tapped = true
-            task = recognizer.recognitionTask(with: request) { [weak self] result, error in
-                DispatchQueue.main.async {
-                    guard let self, self.sessionID == id else { return }
-                    if let result {
-                        self.transcript = result.bestTranscription.formattedString
-                        self.notifyListeners("speechResult", data: ["sessionID": id, "transcript": self.transcript, "final": false])
-                        if result.isFinal { self.finish(); return }
-                    }
-                    if error != nil { self.finish(error: self.transcript.isEmpty ? "Speech could not be understood. Try again or type your meal." : nil) }
-                }
-            }
+            beginUtterance(id: id)
             engine.prepare()
             try engine.start()
             let limit = DispatchWorkItem { [weak self] in self?.finish() }
@@ -88,8 +79,51 @@ final class LevelUpFoodSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
             call.resolve(["sessionID": id])
         } catch { finish(); call.reject("The microphone could not start. Try again or type your meal.") }
     }
+    private func beginUtterance(id: String) {
+        guard sessionID == id, let recognizer else { return }
+        let token = UUID(); taskID = token
+        currentTranscript = ""
+        let request = SFSpeechAudioBufferRecognitionRequest()
+        request.shouldReportPartialResults = true
+        request.taskHint = .dictation
+        if recognizer.supportsOnDeviceRecognition { request.requiresOnDeviceRecognition = true }
+        request.contextualStrings = ["grams", "ounces", "tablespoons", "blueberries", "Greek yogurt", "Kirkland", "chicken breast"]
+        self.request = request
+        task = recognizer.recognitionTask(with: request) { [weak self] result, error in
+            DispatchQueue.main.async {
+                guard let self, self.sessionID == id, self.taskID == token else { return }
+                if let result {
+                    self.currentTranscript = result.bestTranscription.formattedString
+                    self.transcript = [self.completedTranscript, self.currentTranscript].filter { !$0.isEmpty }.joined(separator: "; ")
+                    self.notifyListeners("speechResult", data: ["sessionID": id, "transcript": self.transcript, "pendingTranscript": self.currentTranscript, "final": false])
+                    if result.isFinal { self.completeUtterance(id: id, token: token); return }
+                    self.silenceDeadline?.cancel()
+                    if !self.stopping && !self.currentTranscript.isEmpty {
+                        let pause = DispatchWorkItem { [weak self] in self?.completeUtterance(id: id, token: token) }
+                        self.silenceDeadline = pause
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8, execute: pause)
+                    }
+                }
+                if error != nil { self.finish(error: self.transcript.isEmpty ? "Speech could not be understood. Try again or type your meal." : nil) }
+            }
+        }
+    }
+    private func completeUtterance(id: String, token: UUID) {
+        guard sessionID == id, taskID == token else { return }
+        silenceDeadline?.cancel(); silenceDeadline = nil
+        let text = currentTranscript
+        completedTranscript = transcript
+        currentTranscript = ""
+        utterance += 1
+        taskID = UUID() // Retire the old callback before cancelling its task.
+        request?.endAudio(); task?.cancel()
+        notifyListeners("speechResult", data: ["sessionID": id, "transcript": transcript, "pendingTranscript": "", "utteranceText": text, "utteranceID": utterance, "final": false])
+        if stopping { finish() } else { beginUtterance(id: id) }
+    }
     @objc func stop(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
+            self.stopping = true
+            self.silenceDeadline?.cancel()
             self.stopAudio()
             self.request?.endAudio()
             let id = self.sessionID
@@ -108,11 +142,12 @@ final class LevelUpFoodSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
         guard let id = sessionID else { return }
         sessionID = nil
         deadline?.cancel(); deadline = nil
+        silenceDeadline?.cancel(); silenceDeadline = nil
         stopAudio()
         request?.endAudio(); request = nil
         task?.cancel(); task = nil; recognizer = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        if notify { notifyListeners("speechResult", data: ["sessionID": id, "transcript": transcript, "final": true, "error": error ?? ""]) }
+        if notify { notifyListeners("speechResult", data: ["sessionID": id, "transcript": transcript, "pendingTranscript": currentTranscript, "final": true, "error": error ?? ""]) }
         transcript = ""
     }
 }

@@ -489,3 +489,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-15: Rebuild voice logging with distinct native speech project references.
 
 2026-10-15: Verify counted voice portions against multi-item source servings before release.
+
+2026-10-15: Use paired Barcode/Voice icons beneath search and fix continuous food dictation, phrase matching and transcript retention without requiring “and”.

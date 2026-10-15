@@ -71,3 +71,31 @@ test('spoken counts use item counts rather than multiplying multi-item serving c
  assert.equal(picked.quantity*picked.portion.nutrition.calories,180);
  assert.equal(voicePortion({name:'blueberries',amount:2,unit:'item'},{name:'Blueberries',portions:[{label:'1 serving',nutrition:{calories:70}}]}),null);
 });
+
+test('speech lists split each new quantity without requiring and or punctuation',()=>{
+ assert.deepEqual(voiceIngredients('two bananas 100 grams blueberries 200.5 grams Greek yogurt').map(i=>[i.name,i.amount,i.unit]),[['bananas',2,'item'],['blueberries',100,'g'],['Greek yogurt',200.5,'g']]);
+ assert.deepEqual(voiceIngredients('100 grams blueberries two eggs').map(i=>i.name),['blueberries','eggs']);
+});
+
+test('native completed phrases are delivered once while later partials retain the full transcript',async()=>{
+ const old=globalThis.window,oldNavigator=Object.getOwnPropertyDescriptor(globalThis,'navigator');let listener,id;const utterances=[],texts=[],ends=[];
+ const native={addListener:async(_,fn)=>{listener=fn;return {remove:async()=>{}};},start:async args=>{id=args.sessionID;},cancel:async()=>{}};
+ globalThis.window={Capacitor:{isNativePlatform:()=>true,Plugins:{LevelUpFoodSpeech:native}}};Object.defineProperty(globalThis,'navigator',{configurable:true,value:{language:'en-CA'}});
+ try{
+  const session=createFoodSpeechSession({onText:t=>texts.push(t),onUtterance:t=>utterances.push(t),onEnd:(t,p)=>ends.push([t,p]),onError:()=>{}});await session.start();
+  const first={sessionID:id,transcript:'two bananas',pendingTranscript:'',utteranceID:1,utteranceText:'two bananas',final:false};listener(first);listener(first);
+  listener({sessionID:id,transcript:'two bananas; 100 grams blueberries',pendingTranscript:'100 grams blueberries',final:false});
+  listener({sessionID:id,transcript:'two bananas; 100 grams blueberries',pendingTranscript:'100 grams blueberries',final:true});
+  assert.deepEqual(utterances,['two bananas']);assert.equal(texts.at(-1),'two bananas; 100 grams blueberries');assert.deepEqual(ends,[['two bananas; 100 grams blueberries','100 grams blueberries']]);
+ }finally{if(old===undefined)delete globalThis.window;else globalThis.window=old;if(oldNavigator)Object.defineProperty(globalThis,'navigator',oldNavigator);else delete globalThis.navigator;}
+});
+
+test('voice queue processes completed phrases in order and retains their visible history',async()=>{
+ const {readFileSync}=await import('node:fs');const vm=await import('node:vm');const source=readFileSync('js/nutrition/food-log.js','utf8');
+ const begin=source.indexOf('function queueVoiceFoods('),end=source.indexOf('\nfunction voiceReviewMarkup()',begin);let release;
+ const draft={voiceMode:true,voiceHistory:[],voiceQueue:[],voiceQueueRunning:false,items:[],importUnresolved:[]};let calls=0;
+ const sandbox={mealDraft:draft,voiceIngredients,renderMealBuilder(){},async importPastedIngredients(){calls++;if(calls===1)await new Promise(r=>{release=r;});draft.items.push(draft.pasteText);}};
+ vm.createContext(sandbox);vm.runInContext(source.slice(begin,end)+'\nglobalThis.enqueue=queueVoiceFoods;',sandbox);
+ sandbox.enqueue('two bananas');sandbox.enqueue('100 grams blueberries');assert.equal(calls,1);assert.equal(draft.voiceHistory.length,2);release();
+ await new Promise(resolve=>setTimeout(resolve,0));assert.equal(calls,2);assert.equal(draft.items.length,2);assert.equal(draft.voiceQueueRunning,false);assert.deepEqual(draft.voiceHistory.map(h=>h.text),['two bananas','100 grams blueberries']);
+});

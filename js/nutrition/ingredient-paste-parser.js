@@ -41,7 +41,10 @@ export function parseSpokenIngredientText(value, limit = 20) {
     return normalized
         .replace(/(?<!\d)\.|\.(?!\d)|[!?]+/g, ";")
         .replace(/\s*,\s*/g, ";")
-        .replace(new RegExp(`\\s+and\\s+${amountAhead}`, "gi"), ";")
+        .replace(new RegExp(`\\s+(?:and|plus|then)\\s+${amountAhead}`, "gi"), ";")
+        // A new measured amount starts a food even without punctuation or "and".
+        .replace(new RegExp(`([a-z)])\\s+(?=${NUMBER_PATTERN}\\s*(?:${UNIT_PATTERN})\\b)`, "gi"), '$1;')
+        .replace(/([a-z)])\s+(?=\d+(?:\.\d+)?\s+(?!(?:g|kg|oz|lb|ml|cups?|tbsp|tsp)\b)[a-z])/gi, '$1;')
         .split(/\n|;/)
         .map(part => part.trim())
         .filter(Boolean)

@@ -51,6 +51,8 @@ import {
 import { getFoodEmoji } from "./food-emoji.js?v=food-artwork-polish-1";
 import { initializeRestaurantMenu, openRestaurantMenu } from "./restaurant-menu.js?v=eating-out-9";
 
+const FOOD_MIC_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/></svg>';
+const FOOD_BARCODE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V3h4M17 3h4v4M21 17v4h-4M7 21H3v-4M7 7v10M10 7v10M13 7v10M17 7v10"/></svg>';
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
 const CALORIES_TAB_KEY = "level_up_calories_tab_v1";
@@ -132,10 +134,10 @@ function renderFoodSheet() {
                     <div role="radiogroup">${MEALS.map(meal => `<button type="button" role="radio" aria-checked="false" data-food-target-meal="${meal}">${meal}</button>`).join("")}</div>
                 </div>
                 <form class="food-search" data-food-search-form>
-                    <div class="food-search-entry"><div class="food-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.2 16.2 4 4"/></svg><input type="search" name="query" minlength="2" maxlength="80" autocomplete="off" placeholder="Search foods" aria-label="Search foods"></div><button type="button" class="food-barcode-open" data-barcode-open aria-label="Scan a food barcode" title="Scan barcode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7 5v14M10 5v14M14 5v14M17 5v14M20 5v14M2.5 5h2M19.5 5h2M2.5 19h2M19.5 19h2"/></svg></button></div>
+                    <div class="food-search-entry"><div class="food-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.2 16.2 4 4"/></svg><input type="search" name="query" minlength="2" maxlength="80" autocomplete="off" placeholder="Search foods" aria-label="Search foods"></div></div>
                     <button type="submit" class="primary-btn food-search-submit">Search</button>
                 </form>
-                <button type="button" class="food-voice-entry" data-food-voice>🎙 Log by voice</button>
+                <div class="food-search-shortcuts" role="group" aria-label="Food logging shortcuts"><button type="button" data-barcode-open aria-label="Scan a food barcode"><span>${FOOD_BARCODE_ICON}</span><small>Barcode</small></button><button type="button" data-food-voice aria-label="Log food by voice"><span>${FOOD_MIC_ICON}</span><small>Voice</small></button></div>
                 <button type="button" class="food-eating-out-entry" data-food-eating-out>
                     <span class="food-eating-out-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3v6M8 3v6M11 3v6M5 9c0 1.7 1.3 3 3 3s3-1.3 3-3M8 12v9M18 3v18M18 3c-2.5 2.7-3.7 5.7-3.7 9H18"/></svg></span>
                     <span><strong>Eating Out</strong><small>Browse restaurant menus by calories and protein</small></span>
@@ -768,10 +770,12 @@ async function toggleFoodVoiceInput() {
     const session=createFoodSpeechSession({
         onText:text=>{if(mealDraft!==draft)return;draft.voiceTranscript=text;const input=document.querySelector('[data-voice-transcript]');if(input)input.value=text;},
         onError:message=>{if(mealDraft!==draft)return;draft.voiceError=message;},
-        onEnd:text=>{
+        onUtterance:text=>{if(mealDraft===draft)queueVoiceFoods(text);},
+        onEnd:(text,pending)=>{
             if(mealDraft!==draft)return;
-            foodVoiceRecognition=null;draft.voiceListening=false;draft.voiceTranscript=text;renderMealBuilder();
-            if(text.trim())void importVoiceTranscript();
+            foodVoiceRecognition=null;draft.voiceListening=false;draft.voiceTranscript='';
+            if(pending?.trim())queueVoiceFoods(pending);
+            renderMealBuilder();
         }
     });
     foodVoiceRecognition=session;draft.voiceListening=true;renderMealBuilder();
@@ -782,14 +786,33 @@ function setFoodVoiceState(){ /* The recording control is rendered from its draf
 async function importVoiceTranscript(){
     if(!mealDraft?.voiceMode||mealDraft.importing||mealDraft.voiceListening)return;
     const input=document.querySelector('[data-voice-transcript]');
-    mealDraft.voiceTranscript=input?.value || mealDraft.voiceTranscript || '';
-    const ingredients=voiceIngredients(mealDraft.voiceTranscript);
-    if(!ingredients.length){mealDraft.voiceError='Say or type a food and its amount.';renderMealBuilder();return;}
-    mealDraft.pasteText=ingredients.map(i=>i.original).join('\n');
-    await importPastedIngredients();
-    if(mealDraft?.voiceMode && !mealDraft.voiceError)mealDraft.voiceTranscript='';
-    if(mealDraft?.voiceMode)renderMealBuilder();
+    const text=input?.value || mealDraft.voiceTranscript || '';
+    if(!voiceIngredients(text).length){mealDraft.voiceError='Say or type a food and its amount.';renderMealBuilder();return;}
+    mealDraft.voiceTranscript='';queueVoiceFoods(text);
 }
+function queueVoiceFoods(text){
+    if(!mealDraft?.voiceMode || !text.trim())return;
+    const history={text:text.trim(),status:'Finding foods…'};
+    mealDraft.voiceHistory.push(history);mealDraft.voiceQueue.push({text:text.trim(),history});
+    if(!mealDraft.voiceQueueRunning)void processVoiceQueue(mealDraft);
+    renderMealBuilder();
+}
+async function processVoiceQueue(draft){
+    if(draft.voiceQueueRunning)return;
+    draft.voiceQueueRunning=true;
+    while(mealDraft===draft && draft.voiceQueue.length){
+        const batch=draft.voiceQueue.shift(),before=draft.items.length,missing=draft.importUnresolved.length;
+        draft.pasteText=voiceIngredients(batch.text).map(i=>i.original).join('\n');
+        await importPastedIngredients();
+        if(mealDraft!==draft)return;
+        const added=draft.items.length-before;
+        batch.history.status=added?`${added} food${added===1?'':'s'} added to review${draft.importUnresolved.length>missing?' · some need a match':''}`:'Choose a match below';
+        renderMealBuilder();
+    }
+    draft.voiceQueueRunning=false;
+    if(mealDraft===draft)renderMealBuilder();
+}
+
 function voiceReviewMarkup(){
     const d=mealDraft;
     return `<label class="food-voice-meal">Log to<select data-voice-meal>${MEALS.map(m=>`<option${m===selectedMeal?' selected':''}>${m}</option>`).join('')}</select></label>
@@ -797,8 +820,9 @@ function voiceReviewMarkup(){
       <strong data-voice-state>${d.voiceListening?'Listening…':d.importing?'Finding your foods…':'What did you eat?'}</strong>
       <p>Say the amount, food and brand: “Two bananas and 150 grams of Kirkland blueberries.”</p>
       <textarea data-voice-transcript rows="3" maxlength="2000" aria-label="Meal transcript" placeholder="Your words appear here. You can also type or correct them."${d.voiceListening?' readonly':''}>${escapeHtml(d.voiceTranscript||'')}</textarea>
-      <div class="food-voice-recorder-actions"><button type="button" data-voice-record aria-pressed="${Boolean(d.voiceListening)}"${d.importing?' disabled':''}>${d.voiceListening?'■ Stop recording':'🎙 '+(d.items.length?'Record more':'Record meal')}</button><button type="button" data-voice-match${d.importing||d.voiceListening?' disabled':''}>Find foods</button></div>
-      <p role="status" aria-live="polite">${escapeHtml(d.voiceError||d.importStatus||'Review the matches below before logging.')}</p>
+      <div class="food-voice-recorder-actions"><button type="button" class="food-voice-mic" data-voice-record aria-label="${d.voiceListening?'Stop recording':'Start recording'}" title="${d.voiceListening?'Stop recording':'Start recording'}" aria-pressed="${Boolean(d.voiceListening)}"${d.importing&&!d.voiceListening?' disabled':''}>${FOOD_MIC_ICON}</button><button type="button" data-voice-match${d.importing||d.voiceListening?' disabled':''}>Find foods</button></div>
+      <p role="status" aria-live="polite">${escapeHtml(d.voiceError||d.importStatus||'Tap the microphone and speak. Pause between foods or say them in a list.')}</p>
+      ${d.voiceHistory.length?`<ol class="food-voice-history" aria-label="Heard foods">${d.voiceHistory.map(h=>`<li><span>${escapeHtml(h.text)}</span><small>${escapeHtml(h.status)}</small></li>`).join('')}</ol>`:''}
     </section>
     ${d.importUnresolved.length?`<div class="food-voice-unresolved"><strong>Choose a match</strong>${d.importUnresolved.map((text,i)=>`<div><span>${escapeHtml(text)}</span><button type="button" data-voice-resolve="${i}">Find food</button><button type="button" data-voice-dismiss="${i}" aria-label="Remove ${escapeHtml(text)}">×</button></div>`).join('')}</div>`:''}`;
 }
@@ -1416,7 +1440,7 @@ function openMealBuilder(entries = [], name = "", savedMeal = null, options = {}
         pasteOpen: Boolean(options.pasteOpen),
         pasteText: String(options.pasteText || ""),
         voiceMode: Boolean(options.voiceMode),
-        voiceTranscript: "", voiceError: "", voiceListening: false,
+        voiceTranscript: "", voiceError: "", voiceListening: false, voiceHistory: [], voiceQueue: [], voiceQueueRunning: false,
         importStatus: "",
         importUnresolved: [],
         importing: false
@@ -1562,8 +1586,8 @@ function renderMealBuilder() {
         ${voiceMode?"":pastedIngredientsMarkup()}
         <div class="food-builder-macros food-portion-preview food-portion-preview--macros">${macroBreakdownMarkup(totals, `Whole meal · ${mealDraft.items.length} item${mealDraft.items.length === 1 ? "" : "s"}`)}</div>
         <div class="food-builder-items">${mealDraft.items.map((entry, index) => voiceMode?voiceItemMarkup(entry,index):mealItemDetailsMarkup(entry, index)).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
-        <button type="button" class="food-builder-add" data-meal-builder-add>+ Add Food</button>
-        <button type="button" class="primary-btn" data-meal-builder-save ${mealDraft.items.length && !mealDraft.importing && !mealDraft.voiceListening && (!voiceMode || !mealDraft.importUnresolved.length) ? "" : "disabled"}>${voiceMode ? `Log to ${escapeHtml(selectedMeal)}` : editingMeal ? "Save Changes" : "Save to My Meals"}</button>`;
+        <button type="button" class="food-builder-add" data-meal-builder-add${voiceMode&&(mealDraft.voiceListening||mealDraft.importing)?' disabled':''}>+ Add Food</button>
+        <button type="button" class="primary-btn" data-meal-builder-save ${mealDraft.items.length && !mealDraft.importing && !mealDraft.voiceListening && !mealDraft.voiceQueueRunning && (!voiceMode || !mealDraft.importUnresolved.length) ? "" : "disabled"}>${voiceMode ? `Log to ${escapeHtml(selectedMeal)}` : editingMeal ? "Save Changes" : "Save to My Meals"}</button>`;
     panel.querySelector("[data-meal-name]")?.addEventListener("input", event => { mealDraft.name = event.currentTarget.value; });
     panel.querySelector("[data-meal-photo-pick]")?.addEventListener("click", () => panel.querySelector("[data-meal-photo-input]")?.click());
     panel.querySelector("[data-meal-photo-input]")?.addEventListener("change", event => { if (event.currentTarget.files?.[0]) void setMealDraftPhoto(event.currentTarget.files[0]); });
@@ -1590,7 +1614,7 @@ function renderMealBuilder() {
 
 function saveMealDraft() {
     if (mealDraft?.voiceMode) {
-        if(mealDraft.importing || mealDraft.voiceListening || mealDraft.importUnresolved.length || !mealDraft.items.length)return;
+        if(mealDraft.importing || mealDraft.voiceListening || mealDraft.voiceQueueRunning || mealDraft.importUnresolved.length || !mealDraft.items.length)return;
         const items = mealDraft.items.map(entry => ({ ...entry, meal: selectedMeal }));
         saveEntries(selectedDate, [...entriesForDate(selectedDate), ...items]);
         const count = items.length;
