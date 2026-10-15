@@ -169,11 +169,12 @@ export function ingredientPortionSelection(ingredient, food) {
         return null;
     }
 
-    const unitPattern = new RegExp(`\\b${unit === "item" ? "(?:item|piece|breast|fillet|potato|egg|patty|bar|burger|sandwich)" : unit}s?\\b`, "i");
-    const matching = portions.find(portion => unitPattern.test(String(portion.label || "")));
-    const genericCount = unit === "item" ? portions.find(portion => /^1\s+(?!g\b|mL\b|oz\b|cups?\b|tbsp\b|tsp\b)/i.test(String(portion.label || ""))) : null;
+    const unitPattern = new RegExp(`\\b${unit === "item" ? "(?:item|piece|breast|fillet|potato|egg|patty|bar|burger|sandwich|banana|apple|orange)" : unit}s?\\b`, "i");
+    const countOf=portion=>Number(portion.count)||Number(String(portion.label || '').match(/^(\d+(?:\.\d+)?)/)?.[1])||1;
+    const matching = portions.find(portion => unitPattern.test(String(portion.label || "")) && countOf(portion)===1) || portions.find(portion => unitPattern.test(String(portion.label || "")));
+    const genericCount = unit === "item" ? portions.find(portion => /^1\s+(?!g\b|mL\b|oz\b|cups?\b|tbsp\b|tsp\b|servings?\b)/i.test(String(portion.label || ""))) : null;
     if (unit === "item" && !matching && !genericCount) return null;
-    return { portion: matching || genericCount || portions[0], quantity: amount, estimated: !matching && !genericCount && unit !== "serving" };
+    return { portion: matching || genericCount || portions[0], quantity: unit==='serving'?amount:amount/countOf(matching || genericCount || portions[0]), estimated: !matching && !genericCount && unit !== "serving" };
 }
 
 function portionGrams(portion) {

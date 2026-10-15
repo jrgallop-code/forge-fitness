@@ -54,6 +54,6 @@ Cards show food/brand, portion, calories and a representative thumbnail with Edi
 
 Accuracy changes: spoken hundreds/fractions and decimal quantities retain their numeric meaning; cooking qualifiers are retained; explicit brand and food words must match; composite foods such as muffins cannot silently substitute for plain blueberries; unsupported mass/volume conversions remain unresolved. Quantity omissions are marked as one serving for review. This does not implement conversational voice commands to edit/delete a previous item: those actions use explicit card controls.
 
-Validation: 146 focused tests pass, including speech completion/cancellation, multi-batch draft retention, decimal/fraction parsing, brand rejection, swap quantities and unresolved-save gating. Native compilation is checked by the signed iOS workflow; physical microphone accuracy and layout require TestFlight testing.
+Validation: 148 focused tests pass, including speech completion/cancellation, multi-batch draft retention, decimal/fraction parsing, brand rejection, swap quantities and unresolved-save gating. Native compilation is checked by the signed iOS workflow; physical microphone accuracy and layout require TestFlight testing.
 
 Apple speech API reference: https://developer.apple.com/documentation/speech/sfspeechaudiobufferrecognitionrequest

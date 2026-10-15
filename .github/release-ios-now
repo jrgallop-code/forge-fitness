@@ -487,3 +487,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-15: Add native iOS voice meal recording, live transcript, meal selection, reviewed food cards and food/brand swapping with accurate measured portions.
 
 2026-10-15: Rebuild voice logging with distinct native speech project references.
+
+2026-10-15: Verify counted voice portions against multi-item source servings before release.

@@ -64,3 +64,10 @@ test('native speech source is registered once with unique Xcode object identifie
  assert.match(project,/LevelUpFoodSpeechPlugin.swift in Sources/);
  assert.match(readFileSync('ios/App/App/LevelUpBridgeViewController.swift','utf8'),/registerPluginInstance\(LevelUpFoodSpeechPlugin\(\)\)/);
 });
+
+test('spoken counts use item counts rather than multiplying multi-item serving counts',()=>{
+ const bread={name:'Bread',portions:[{label:'2 slices (70 g)',grams:70,nutrition:{calories:180}}]};
+ const picked=voicePortion({name:'bread',amount:2,unit:'slice'},bread);
+ assert.equal(picked.quantity*picked.portion.nutrition.calories,180);
+ assert.equal(voicePortion({name:'blueberries',amount:2,unit:'item'},{name:'Blueberries',portions:[{label:'1 serving',nutrition:{calories:70}}]}),null);
+});
