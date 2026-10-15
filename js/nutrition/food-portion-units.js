@@ -54,3 +54,9 @@ export function validFoodAmount(value) {
     const n=Number(value);
     return Number.isFinite(n) && n>=.01 && n<=10000;
 }
+
+export function formatConvertedPortionAmount(value, portion) {
+    // Weight/volume entry uses useful precision; source text is retained separately for round trips.
+    const decimals = ['g', 'mL'].includes(portion?.inputUnit) ? 2 : 4;
+    return Number(Number(value).toFixed(decimals)).toString();
+}

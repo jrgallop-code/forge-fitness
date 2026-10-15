@@ -59,3 +59,32 @@ test('the bound editor preserves calories across units and blocks invalid saves'
  const input=controls.get('[data-food-quantity]');input.value='';input.handlers.input();assert.equal(controls.get('[data-food-confirm]').disabled,true);
  input.value='2';input.handlers.input();assert.equal(controls.get('[data-food-confirm]').disabled,false);
 });
+
+test('repeated g/oz/lb changes restore source text exactly and respect edits',async()=>{
+ const {bindFoodAmountEditor}=await import('../js/nutrition/food-portion-editor.js');
+ const food=withFoodWeightUnits(original), map=new Map();
+ const node=(value='')=>({value,textContent:'',hidden:true,disabled:false,handlers:{},dataset:{},setAttribute(){},addEventListener(k,fn){this.handlers[k]=fn;}});
+ const g=food.portions.findIndex(p=>p.inputUnit==='g'),oz=food.portions.findIndex(p=>p.inputUnit==='oz'),lb=food.portions.findIndex(p=>p.inputUnit==='lb');
+ map.set('[data-food-serving]',node(String(g)));map.set('[data-food-quantity]',node('130'));
+ const root={querySelector:s=>map.get(s),querySelectorAll:()=>[]};bindFoodAmountEditor(root,food);
+ const select=map.get('[data-food-serving]'),input=map.get('[data-food-quantity]');
+ const change=index=>{select.value=String(index);select.handlers.change();};
+ for(let i=0;i<30;i++){change(oz);change(lb);change(g);assert.equal(input.value,'130');}
+ input.value='130.25';input.handlers.input();change(oz);change(g);assert.equal(input.value,'130.25');
+ change(oz);input.value='5';input.handlers.input();change(g);assert.equal(input.value,'141.75');change(oz);assert.equal(input.value,'5');
+});
+
+test('legacy conversion artifacts display as useful gram precision',async()=>{
+ const {formatConvertedPortionAmount}=await import('../js/nutrition/food-portion-units.js');
+ assert.equal(formatConvertedPortionAmount(129.999999999,{inputUnit:'g'}),'130');
+ assert.equal(formatConvertedPortionAmount(130.250000001,{inputUnit:'g'}),'130.25');
+ assert.equal(formatConvertedPortionAmount(5.000000001,{inputUnit:'oz'}),'5');
+});
+
+test('expanded guide library contains thirteen distinct bundled references',async()=>{
+ const {FOOD_PORTION_GUIDES}=await import('../js/nutrition/food-portion-guide-data.js');
+ const {existsSync}=await import('node:fs');
+ assert.equal(FOOD_PORTION_GUIDES.length,13);
+ assert.equal(new Set(FOOD_PORTION_GUIDES.map(g=>g.index)).size,13);
+ for(const guide of FOOD_PORTION_GUIDES)assert.ok(existsSync(`assets/food/guide-${guide.index}.webp`),guide.title);
+});

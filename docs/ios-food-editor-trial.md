@@ -17,3 +17,9 @@ The next iOS build replaces boxed amount/macros with a compact photo-header edit
 The portion guide is now a shorter bottom sheet with wooden reference cards, neighboring-card previews, dots, one close control and one accuracy note. Additional photo assets include blueberries, strawberries, bananas, apples, cheddar, oatmeal, shrimp, black coffee and milk. Photo matching uses the food name only; ambiguous/unsupported names and composite foods use a neutral plate illustration instead of an unrelated food. The old hidden preview row is removed to prevent redundant totals.
 
 Validation: 116 unit/UI/native packaging tests passing. Local visual browser navigation was blocked by connection refusal; physical TestFlight review remains necessary for mobile layout and gestures. This follow-up remains iOS-only.
+
+## Controls, conversion precision and guide expansion
+
+Food quantity now has a flexible wider column. The photo owns the close button below the native status area, with a separate bottom Cancel/Back button. Closing an edited diary item returns to the diary; other contexts return to food selection or meal building. Unit conversion retains the original quantity and text rather than repeatedly converting rounded display values; manual edits and restored entries establish a fresh reference. Converted gram/mL amounts display up to two decimals, and ounces/pounds up to four, without trailing zeroes.
+
+The offline guide now contains 13 examples: meat/cards, rice/tennis ball, cheese/dice, peanut butter/spoon, rice/fist, takeaway container, butter/teaspoon/die, cheese/batteries, pasta/fist, vegetables/fist, nuts/hand, fish/cards, and tablespoon/teaspoon. The additional photos are original generated assets. These are approximate references; hand and container sizes vary. The guide never automatically assigns a portion to a logged food.

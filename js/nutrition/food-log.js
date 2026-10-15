@@ -1032,9 +1032,15 @@ function renderFoodPortionPanel(food, warning = "") {
         ${warning ? `<p class="food-portion-warning">${escapeHtml(warning)}</p>` : ""}
         ${foodAmountMarkup(food)}
         <button type="button" class="primary-btn" data-food-confirm>${addContext === "meal-builder" ? (editingMealItemIndex !== null ? "Update Item" : "Add to Meal") : addContext === "edit" ? "Save Changes" : "Add to Food Log"}</button>
+        <button type="button" class="food-detail-back" data-food-portion-close>${addContext === "edit" ? "Cancel" : addContext === "meal-builder" ? "Back to meal" : "Back to foods"}</button>
         ${addContext === "edit" ? '<button type="button" class="food-edit-remove" data-food-edit-remove>Remove Food</button>' : ""}
     `;
-    panel.querySelector("[data-food-portion-close]")?.addEventListener("click", closeFoodPortionPanel);
+    const dismiss = panel.querySelector(".food-portion-heading [data-food-portion-close]");
+    if (dismiss) {
+        dismiss.classList.add("food-detail-dismiss");
+        panel.querySelector(".food-detail-photo")?.appendChild(dismiss);
+    }
+    panel.querySelectorAll("[data-food-portion-close]").forEach(button => button.addEventListener("click", closeFoodPortionPanel));
     bindFoodAmountEditor(panel, food, { onUpdate: updatePortionPreview, getTargets: activeTargets });
     panel.querySelector("[data-food-confirm]")?.addEventListener("click", addSelectedFood);
     panel.querySelector("[data-food-edit-remove]")?.addEventListener("click", removeEditedFood);

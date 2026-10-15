@@ -63,3 +63,19 @@
 @media(max-width:350px){.food-macro-pie-page{grid-template-columns:100px minmax(0,1fr);column-gap:16px}.food-macro-pie{width:100px;height:100px}.food-live-calories strong{font-size:24px}.food-direct-entry select{max-width:100px!important}}
 @media(max-height:650px){.food-detail-photo{height:160px}.food-detail-v2 .food-portion-heading{top:104px}.food-detail-v2 .food-portion-heading button{top:-88px}.food-guide-photo{height:200px}}
 @media(prefers-reduced-motion:reduce){.food-macro-track i{transition:none}}
+
+/* Keep close controls below the native status area; the hero, not the title, owns the hit target. */
+.food-detail-photo:after{pointer-events:none}
+.food-detail-photo>.food-detail-dismiss{position:absolute;top:max(64px,calc(env(safe-area-inset-top,0px) + 10px));right:12px;z-index:6;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:1px solid #ffffff55;border-radius:50%;background:#0009!important;color:#fff!important;font-size:28px;line-height:1;pointer-events:auto;touch-action:manipulation}
+.food-detail-photo>span{top:max(66px,calc(env(safe-area-inset-top,0px) + 12px));left:16px;right:auto;max-width:calc(100% - 90px)}
+.food-direct-entry{display:grid;grid-template-columns:minmax(0,1fr) minmax(46px,.65fr);gap:8px}
+.food-direct-amount{width:100%;min-width:0;max-width:none;flex:initial}
+.food-portion-panel .food-direct-amount input,.food-builder-item-editor .food-direct-amount input{box-sizing:border-box;width:100%;min-width:0;font-size:24px;padding:0 2px 0 0!important;appearance:textfield;-moz-appearance:textfield}
+.food-direct-amount input::-webkit-inner-spin-button,.food-direct-amount input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.food-portion-panel .food-direct-entry select,.food-builder-item-editor .food-direct-entry select{box-sizing:border-box;width:100%;max-width:100%;min-width:0;font-size:13px}
+.food-detail-v2 .food-detail-back{order:7;min-height:44px;border:0;background:transparent;color:var(--accent-text);font:inherit;font-size:14px;padding:8px;touch-action:manipulation}
+.food-detail-v2 [data-food-edit-remove]{order:8}
+@media(max-width:350px){.food-direct-amount input{font-size:22px!important}.food-direct-entry{grid-template-columns:minmax(0,1fr) minmax(40px,.55fr);gap:4px}}
+/* A larger reference library must not make the sheet wider than the phone. */
+.food-guide-pager{flex-wrap:wrap;padding:0 14px;max-width:100%;box-sizing:border-box}
+.food-guide-pager button{min-width:20px;min-height:30px}

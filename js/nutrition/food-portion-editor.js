@@ -1,21 +1,15 @@
+import { FOOD_PORTION_GUIDES as guides } from "./food-portion-guide-data.js";
 import { macroCarouselMarkup, updateMacroCarousel, bindMacroCarousel } from "./food-macro-chart.js";
 import { foodPhotoIndex } from './food-photo.js';
-import { portionMeasure, convertPortionAmount, directPortionSelection, validFoodAmount } from './food-portion-units.js';
+import { portionMeasure, convertPortionAmount, directPortionSelection, validFoodAmount, formatConvertedPortionAmount } from './food-portion-units.js';
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt = value => Number(Number(value).toFixed(4)).toString();
-const guides=[
- {title:'Cooked meat',amount:'A deck of cards ≈ 85 g (3 oz)',copy:'Cooked meat',index:0},
- {title:'Cooked rice',amount:'A tennis ball ≈ ½ cup',copy:'Cooked rice',index:1},
- {title:'Hard cheese',amount:'Compare a small piece with two dice',copy:'Hard cheese',index:2},
- {title:'Peanut butter',amount:'Use a level tablespoon to measure',copy:'Ping-pong ball shown for scale',index:3}
-];
 export function foodAmountMarkup(food, {index=0,quantity=1,servingAttr='data-food-serving',quantityAttr='data-food-quantity'}={}) {
  const chosen=directPortionSelection(food,index,quantity);
  const options=food.portions.map((p,i)=>`<option value="${i}"${i===chosen.index?' selected':''}>${escape(p.inputUnit || p.label)}</option>`).join('');
  const servingIndex=food.portions.findIndex(p=>!/^\d+(?:\.\d+)?\s*(?:g|kg|oz|lb|ml|l)\b/i.test(p.label));
  const servingChip=servingIndex>=0?`<button type="button" data-food-unit="${servingIndex}" aria-pressed="${servingIndex===chosen.index}">serving</button>`:'';
  const unitChips=servingChip+food.portions.map((p,i)=>p.inputUnit?`<button type="button" data-food-unit="${i}" aria-pressed="${i===chosen.index}">${escape(p.inputUnit)}</button>`:'').join('');
- return `<div class="food-amount-top"><div class="food-direct-entry"><label class="food-direct-amount"><span class="food-visually-hidden">Amount</span><input ${quantityAttr} aria-label="Food amount" type="number" inputmode="decimal" min="0.01" max="10000" step="any" value="${fmt(chosen.quantity)}"></label><select ${servingAttr} aria-label="Food unit or serving">${options}</select></div><div class="food-live-calories"><strong data-food-live-calories>—</strong><span>kcal</span></div></div>
+ return `<div class="food-amount-top"><div class="food-direct-entry"><label class="food-direct-amount"><span class="food-visually-hidden">Amount</span><input ${quantityAttr} aria-label="Food amount" type="number" inputmode="decimal" min="0.01" max="10000" step="any" value="${formatConvertedPortionAmount(chosen.quantity,food.portions[chosen.index])}"></label><select ${servingAttr} aria-label="Food unit or serving">${options}</select></div><div class="food-live-calories"><strong data-food-live-calories>—</strong><span>kcal</span></div></div>
  <p class="food-equivalent" data-food-equivalent aria-live="polite" hidden></p>
  <p class="food-amount-error" data-food-amount-error role="alert" hidden>Enter an amount from 0.01 to 10,000.</p>
  <div class="food-unit-chips" role="group" aria-label="Quick units">${unitChips}<button type="button" class="food-guide-open" data-food-guide-open>Portion<br>guide</button></div>
@@ -23,13 +17,15 @@ export function foodAmountMarkup(food, {index=0,quantity=1,servingAttr='data-foo
 }
 export function foodHeroMarkup(food) {
  const index=foodPhotoIndex(food);
- if(index===null) return `<div class="food-detail-photo food-photo-neutral" role="img" aria-label="No matching food photo"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="32"/><circle cx="50" cy="50" r="23"/><path d="M7 15v21m6-21v21m-9-9h12M10 36v49M90 15v70m0-70c-12 13-12 27 0 27"/></svg></div>`;
- return `<div class="food-detail-photo" role="img" aria-label="Representative food photo" style="background-image:url(assets/food/category-${index}.webp)"><span>Representative photo</span></div>`;
+ if(index===null) return `<div class="food-detail-photo food-photo-neutral" role="group" aria-label="No matching food photo"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="32"/><circle cx="50" cy="50" r="23"/><path d="M7 15v21m6-21v21m-9-9h12M10 36v49M90 15v70m0-70c-12 13-12 27 0 27"/></svg></div>`;
+ return `<div class="food-detail-photo" role="group" aria-label="Representative food photo" style="background-image:url(assets/food/category-${index}.webp)"><span>Representative photo</span></div>`;
 }
 export function bindFoodAmountEditor(root, food, {servingSelector='[data-food-serving]',quantitySelector='[data-food-quantity]',saveSelector='[data-food-confirm]',onUpdate=()=>{},getTargets=()=>({})}={}) {
  const select=root.querySelector(servingSelector), input=root.querySelector(quantitySelector);
  if(!select||!input) return;
- let previous=Number(select.value), notice='';
+ let notice='';
+ let basis={portion:food.portions[Number(select.value)],quantity:Number(input.value),text:input.value};
+ const rebase=()=>{basis={portion:food.portions[Number(select.value)],quantity:Number(input.value),text:input.value};};
  const refresh=()=>{
   const p=food.portions[Number(select.value)] || {}, q=Number(input.value), valid=validFoodAmount(input.value);
   const text=(selector,value)=>{const node=root.querySelector(selector);if(node)node.textContent=value;};
@@ -43,28 +39,29 @@ export function bindFoodAmountEditor(root, food, {servingSelector='[data-food-se
   const error=root.querySelector('[data-food-amount-error]');if(error)error.hidden=valid;
   input.setAttribute('aria-invalid',String(!valid));
   const save=root.querySelector(saveSelector);if(save)save.disabled=!valid;
-  previous=Number(select.value);
  };
  const changedUnit=()=>{
-  const converted=convertPortionAmount(Number(input.value),food.portions[previous],food.portions[Number(select.value)]);
+  const target=food.portions[Number(select.value)];
+  const converted=convertPortionAmount(basis.quantity,basis.portion,target);
   notice='';
-  if(converted!==null && validFoodAmount(input.value))input.value=fmt(converted);
-  else {input.value='1';notice='No measured conversion available. Amount set to 1 for this serving.';}
+  if(converted!==null && validFoodAmount(input.value))input.value=target===basis.portion?basis.text:formatConvertedPortionAmount(converted,target);
+  else {input.value='1';rebase();notice='No measured conversion available. Amount set to 1 for this serving.';}
   refresh();onUpdate();
  };
  select.addEventListener('change',changedUnit);
- input.addEventListener('input',()=>{notice='';refresh();onUpdate();});
+ input.addEventListener('input',()=>{notice='';rebase();refresh();onUpdate();});
  root.querySelectorAll('[data-food-unit]').forEach(button=>button.addEventListener('click',()=>{if(select.value===button.dataset.foodUnit)return;select.value=button.dataset.foodUnit;changedUnit();}));
  root.querySelector('[data-food-guide-open]')?.addEventListener('click',()=>openPortionGuide(root));
  bindMacroCarousel(root);
  root.foodAmountRefresh=refresh;
+ root.foodAmountRebase=()=>{rebase();refresh();};
  refresh();
 }
 export function restoreFoodAmount(root,food,index,quantity) {
  const chosen=directPortionSelection(food,index,quantity);
  const select=root.querySelector('[data-food-serving]'),input=root.querySelector('[data-food-quantity]');
- if(select)select.value=String(chosen.index);if(input)input.value=fmt(chosen.quantity);
- root.foodAmountRefresh?.();
+ if(select)select.value=String(chosen.index);if(input)input.value=formatConvertedPortionAmount(chosen.quantity,food.portions[chosen.index]);
+ root.foodAmountRebase?.();
 }
 export function openPortionGuide(root) {
  root.querySelector('.food-portion-guide')?.remove();
