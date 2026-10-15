@@ -1,3 +1,4 @@
+import { countedPortionLabel, countedPortionSummary } from "./food-counted-portions.js";
 import { FOOD_PORTION_GUIDES as guides } from "./food-portion-guide-data.js";
 import { macroCarouselMarkup, updateMacroCarousel, bindMacroCarousel } from "./food-macro-chart.js";
 import { foodPhotoIndex } from './food-photo.js';
@@ -9,7 +10,7 @@ export function foodAmountMarkup(food, {index=0,quantity=1,servingAttr='data-foo
  const directGrams=food.portions.some(p=>p.inputUnit==='g');
  const choices=food.portions.map((p,i)=>({portion:p,index:i})).filter(({portion:p})=>p.inputUnit || (!/^quantity not specified/i.test(p.label) && !(directGrams && /^\d+(?:\.\d+)?\s*(?:g|kg|oz|lb)\b/i.test(p.label))));
  if(!choices.length && food.portions.length)choices.push({portion:food.portions[0],index:0});
- const unitLabel=p=>p?.inputUnit || String(p?.label || 'serving').replace(/\s*\([^)]*\)/g,'').replace(/^1\s+/,'');
+ const unitLabel=countedPortionLabel;
  const unitChips=choices.map(({portion:p,index:i})=>`<button type="button" data-food-unit="${i}" aria-label="${escape(p.label)}" aria-pressed="${i===chosen.index}">${escape(unitLabel(p))}</button>`).join('');
  return `<div class="food-amount-top"><div class="food-direct-entry"><label class="food-direct-amount"><span class="food-visually-hidden">Amount</span><input ${quantityAttr} aria-label="Food amount" type="number" inputmode="decimal" min="0.01" max="10000" step="any" value="${formatConvertedPortionAmount(chosen.quantity,food.portions[chosen.index])}"></label><span class="food-direct-unit" data-food-selected-unit>${escape(unitLabel(food.portions[chosen.index]))}</span><select ${servingAttr} hidden aria-hidden="true" tabindex="-1">${options}</select></div><div class="food-live-calories"><strong data-food-live-calories>—</strong><span>kcal</span></div></div>
  <p class="food-equivalent" data-food-equivalent aria-live="polite" hidden></p>
@@ -26,29 +27,34 @@ export function bindFoodAmountEditor(root, food, {servingSelector='[data-food-se
  const select=root.querySelector(servingSelector), input=root.querySelector(quantitySelector);
  if(!select||!input) return;
  let notice='';
+ let currentPortion=food.portions[Number(select.value)];
  let basis={portion:food.portions[Number(select.value)],quantity:Number(input.value),text:input.value};
  const rebase=()=>{basis={portion:food.portions[Number(select.value)],quantity:Number(input.value),text:input.value};};
  const refresh=()=>{
   const p=food.portions[Number(select.value)] || {}, q=Number(input.value), valid=validFoodAmount(input.value);
   const text=(selector,value)=>{const node=root.querySelector(selector);if(node)node.textContent=value;};
-  text('[data-food-selected-unit]',p.inputUnit || String(p.label || 'serving').replace(/\s*\([^)]*\)/g,'').replace(/^1\s+/,''));
+  text('[data-food-selected-unit]',countedPortionLabel(p));
   text('[data-food-live-calories]',valid?Math.round((Number(p.nutrition?.calories)||0)*q).toLocaleString():'—');
   updateMacroCarousel(root,p.nutrition,q,getTargets(),valid);
   const grams=portionMeasure(p,'grams')*q;
-  const equivalent=notice || (!valid || !(grams>0) || p.inputUnit==='g' ? '' : `Weight: ${Number(grams.toFixed(1))} g${p.estimatedVolume?' · estimated':''}`);
+  const countSummary=valid?countedPortionSummary(food,p,q):'';
+  const equivalent=notice || countSummary || (!valid || !(grams>0) || p.inputUnit==='g' ? '' : `Weight: ${Number(grams.toFixed(1))} g${p.estimatedVolume?' · estimated':''}`);
   text('[data-food-equivalent]',equivalent);
-  const equivalentNode=root.querySelector('[data-food-equivalent]');if(equivalentNode)equivalentNode.hidden=!equivalent;
+  const equivalentNode=root.querySelector('[data-food-equivalent]');if(equivalentNode){equivalentNode.hidden=!equivalent;equivalentNode.classList?.toggle('is-counted',!!countSummary);}
   root.querySelectorAll('[data-food-unit]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.foodUnit===select.value)));
   const error=root.querySelector('[data-food-amount-error]');if(error)error.hidden=valid;
   input.setAttribute('aria-invalid',String(!valid));
   const save=root.querySelector(saveSelector);if(save)save.disabled=!valid;
+  currentPortion=p;
  };
  const changedUnit=()=>{
   const target=food.portions[Number(select.value)];
-  const converted=convertPortionAmount(basis.quantity,basis.portion,target);
+  const countResize=currentPortion?.countUnit && currentPortion.countUnit===target?.countUnit;
+  const converted=countResize?convertPortionAmount(Number(input.value),currentPortion,target):convertPortionAmount(basis.quantity,basis.portion,target,{preserveCount:false});
   notice='';
-  if(converted!==null && validFoodAmount(input.value))input.value=target===basis.portion?basis.text:formatConvertedPortionAmount(converted,target);
+  if(converted!==null && validFoodAmount(input.value))input.value=!countResize && target===basis.portion?basis.text:formatConvertedPortionAmount(converted,target);
   else {input.value='1';rebase();notice='No measured conversion available. Amount set to 1 for this serving.';}
+  if(countResize)rebase();
   refresh();onUpdate();
  };
  select.addEventListener('change',changedUnit);

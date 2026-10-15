@@ -1,3 +1,4 @@
+import { withCountedFoodPortions } from "./food-counted-portions.js";
 // Local portion normalization: never requires a food API round-trip.
 const OZ = 28.349523125;
 const scale = (nutrition, factor) => Object.fromEntries(['calories','protein','carbs','fat','fiber'].map(key => [key, Math.max(0, Number(nutrition?.[key]) || 0) * factor]));
@@ -11,9 +12,10 @@ export function portionMeasure(portion, kind) {
     return Number(match[1]) * units[match[2].toLowerCase()];
 }
 export function withFoodWeightUnits(food) {
-    const portions = (food?.portions || []).map(p => ({...p,
+    let portions = (food?.portions || []).map(p => ({...p,
         ...(portionMeasure(p,'grams') ? {grams:portionMeasure(p,'grams')} : {}),
         ...(portionMeasure(p,'milliliters') ? {milliliters:portionMeasure(p,'milliliters')} : {})}));
+    portions = withCountedFoodPortions({...food,portions}).portions;
     for (const [kind, measures] of [
         ['grams', [['1 g',1,'g'], ['1 oz',OZ,'oz'], ['1 lb',OZ*16,'lb']]],
         ['milliliters', [['1 mL',1,'mL']]]
@@ -32,8 +34,9 @@ export function withFoodWeightUnits(food) {
     }
     return {...food, portions};
 }
-export function convertPortionAmount(amount, from, to) {
+export function convertPortionAmount(amount, from, to, {preserveCount=true}={}) {
     if (from === to) return amount;
+    if (preserveCount && from?.countUnit && from.countUnit===to?.countUnit && from.count>0 && to.count>0) return amount*from.count/to.count;
     for (const kind of ['grams','milliliters']) {
         const a=portionMeasure(from,kind), b=portionMeasure(to,kind);
         if (a>0 && b>0) return amount*a/b;
@@ -42,6 +45,15 @@ export function convertPortionAmount(amount, from, to) {
 }
 export function directPortionSelection(food, index=0, quantity=1) {
     const portion=food.portions[index];
+    if (portion?.count>1) {
+        const oneIndex=food.portions.findIndex(p=>p.count===1 && p.countUnit===portion.countUnit && p.countSize===portion.countSize);
+        if(oneIndex>=0)return {index:oneIndex,quantity:quantity*portion.count};
+    }
+    // Prefer an explicit one-item count for eggs when opening a mass-based source portion.
+    if (food.portions.some(p=>p.countUnit==='egg') && /^\d+(?:\.\d+)?\s*g$/i.test(portion?.label || '')) {
+        const eggIndex=food.portions.findIndex(p=>p.countUnit==='egg'&&p.count===1&&p.countSize==='large'&&Number(p.grams)>0);
+        if(eggIndex>=0 && Number(portion.grams)>0)return {index:eggIndex,quantity:quantity*portion.grams/food.portions[eggIndex].grams};
+    }
     // A database's 100 g basis is not a useful user-facing amount unit.
     if (/^100\s*g$/i.test(portion?.label || '')) {
         const gramsIndex=food.portions.findIndex(p=>p.inputUnit==='g');

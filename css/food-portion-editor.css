@@ -83,3 +83,4 @@
 .food-direct-entry select[hidden]{display:none!important;pointer-events:none}
 .food-direct-unit{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;color:var(--text)}
 .food-unit-chips>button{white-space:normal;overflow-wrap:anywhere}
+.food-equivalent.is-counted{font-size:13px;font-weight:600;color:var(--text-secondary,var(--text))}
