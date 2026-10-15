@@ -1,7 +1,12 @@
-// Only confirmed static holds use seconds. Dynamic exercises retain repetitions.
+import { getExerciseById } from './exercise-library.js';
+// Built-in holds and explicitly timed custom exercises share the hold logger.
 export const STATIC_HOLD_IDS = new Set(['plank', 'side-plank', 'copenhagen-plank']);
 export function isStaticHold(exercise) {
-  return STATIC_HOLD_IDS.has(typeof exercise === 'string' ? exercise : exercise?.exerciseId || exercise?.id);
+  const id = typeof exercise === 'string' ? exercise : exercise?.exerciseId || exercise?.id;
+  if (STATIC_HOLD_IDS.has(id) || exercise?.trackingType === 'duration') return true;
+  return typeof id === 'string' && id.startsWith('custom-') && typeof localStorage !== 'undefined'
+    ? getExerciseById(id)?.trackingType === 'duration'
+    : false;
 }
 export function holdTrackingType(exercise) { return isStaticHold(exercise) ? 'duration' : 'reps'; }
 export function holdSeconds(value) {

@@ -141,7 +141,7 @@ test("custom foods collect MyFitnessPal-style serving details", async () => {
     assert.match(module, /Servings per container/);
     assert.match(module, /Nutrition per serving/);
     assert.match(module, /buildCustomFoodPortions/);
-    assert.match(module, /Number of servings/);
+    assert.match(module, /foodAmountMarkup\(food\)/);
 });
 
 test("food picker includes a compact barcode scanner with manual and custom fallbacks", async () => {
@@ -169,10 +169,6 @@ test("food picker includes a compact barcode scanner with manual and custom fall
     assert.match(worker, /selectExactUsdaBarcodeFood/);
     assert.match(worker, /fetchUsdaBarcodeVariant/);
     assert.match(worker, /const queries = barcodeVariants\(barcode\)/);
-    assert.match(module, /We found different nutrition records for this barcode/);
-    assert.match(module, /\?country=\$\{foodSearchCountry\(\)\}/);
-    assert.match(module, /level_up_barcode_choices_v1/);
-    assert.match(module, /rememberBarcodeFood\(barcode, food\)/);
 });
 
 

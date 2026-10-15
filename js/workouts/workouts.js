@@ -128,6 +128,15 @@ export function initializeWorkoutBuilder() {
         );
 
 
+    document.getElementById('custom-exercise-tracking')?.addEventListener('change', event => {
+        const timed = event.target.value === 'duration';
+        document.getElementById('custom-exercise-target-label').textContent = timed ? 'Time Range (seconds)' : 'Rep Range';
+        const target = document.getElementById('custom-exercise-reps');
+        target.dataset[timed ? 'repsTarget' : 'timeTarget'] = target.value;
+        target.value = target.dataset[timed ? 'timeTarget' : 'repsTarget'] || (timed ? '20-60' : '8-12');
+        target.placeholder = timed ? '20-60' : '8-12';
+    });
+
     initializeManualSupersetBuilder();
 
     renderSavedPlans();
@@ -248,6 +257,8 @@ function saveCustomExercise() {
                         "custom-exercise-type"
                     )
                     ?.value,
+
+            trackingType: document.getElementById('custom-exercise-tracking')?.value || 'reps',
 
             recommendedReps:
                 document
