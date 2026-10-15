@@ -13,3 +13,7 @@ Validation: 128 focused tests pass. Full suite: 898 pass / 67 fail, versus basel
 ## Blank food quantities
 
 New food quantities start blank. Changing any unit or serving clears and focuses the input. A reference weight/volume for one selected portion remains visible below, including 1 g for grams. Blank quantities show no validation error, leave calories/macros empty and disable saving. Reopening existing entries restores their saved amount. 114 focused food tests pass. This behavior also ships to iOS.
+
+## Nutrition preview with an empty quantity
+
+An empty quantity now previews calories and macros for one selected portion. Unit changes keep the input empty and preview one of the new unit. Entered valid quantities scale the totals; invalid entries show no totals. Saving still requires a valid entered amount. Applies to both iOS and PWA.

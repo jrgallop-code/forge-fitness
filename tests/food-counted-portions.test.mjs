@@ -51,7 +51,7 @@ test('egg size switches clear the amount and show the per-portion weight',async(
  const root={querySelector:s=>map.get(s),querySelectorAll:()=>[]};bindFoodAmountEditor(root,food);
  const select=map.get('[data-food-serving]'),input=map.get('[data-food-quantity]');
  const change=index=>{select.value=String(index);select.handlers.change();};
- change(1);assert.equal(input.value,'');assert.match(map.get('[data-food-equivalent]').textContent,/Weight: 44 g per medium egg/);assert.equal(map.get('[data-food-live-calories]').textContent,'—');
+ change(1);assert.equal(input.value,'');assert.match(map.get('[data-food-equivalent]').textContent,/Weight: 44 g per medium egg/);assert.equal(map.get('[data-food-live-calories]').textContent,'68');
  input.value='2';input.handlers.input();assert.match(map.get('[data-food-equivalent]').textContent,/2 medium eggs · 88 g/);assert.equal(map.get('[data-food-live-calories]').textContent,'136');
  const g=food.portions.findIndex(p=>p.inputUnit==='g');
  change(g);assert.equal(input.value,'');assert.match(map.get('[data-food-equivalent]').textContent,/Weight: 1 g per g/);
