@@ -29,7 +29,7 @@
 .food-detail-v2 .food-detail-meal{order:4;display:flex;align-items:center;gap:6px;width:fit-content;color:var(--muted);font-size:11px;font-weight:500}
 .food-detail-v2 .food-detail-meal select{width:auto;min-height:34px;padding:4px 24px 4px 8px;background:var(--accent-soft)!important;color:var(--accent-text)!important;border:0!important;border-radius:20px;font-size:12px}
 .food-detail-v2 .food-portion-warning,.food-detail-v2 .food-builder-destination{order:4}
-.food-macro-section{order:5;min-width:0;--food-protein:var(--accent);--food-carbs:color-mix(in srgb,var(--accent) 32%,#7897dd);--food-fat:color-mix(in srgb,var(--accent) 25%,#d3a247)}
+.food-macro-section{order:5;min-width:0;--food-protein:#39d7ae;--food-carbs:#4fa8ff;--food-fat:#8b7cf6}
 .food-macro-section h4{margin:4px 0 12px;font-size:16px;color:var(--text);font-weight:650}
 .food-macro-pages{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;min-width:0}.food-macro-pages::-webkit-scrollbar{display:none}
 .food-macro-page{box-sizing:border-box;flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always;min-height:164px;padding:0 2px}

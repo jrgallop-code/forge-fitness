@@ -35,3 +35,7 @@ For plain whole/boiled/poached/raw eggs with mass-only data, a large-egg referen
 All 13 guide cards now name the food, amount and visual reference together. Captions explain matching thickness, loose filling or container capacity. Four photos were replaced so cheese/dice, cheese/matchbox, peanut butter/ball and the 500 mL carton agree with their labels. The guide remains approximate and never changes the selected food amount.
 
 References: Ohio State Extension (https://livesmartohio.osu.edu/food/homonai-3osu-edu/how-to-perceive-your-portions/), NHS cheese/matchbox guidance (https://www.myhealthlondon.nhs.uk/resources/internal/dairy-foods/), National Jewish Health peanut butter, meat, nuts and butter comparisons (https://www.nationaljewish.org/education/health-information/nutrition/healthy-weight/serving-size-vs-portion-size).
+
+## Consistent macro colors
+
+The food editor pie, legend and swipeable bars now match the dashboard, diary and macro goals: carbs #4fa8ff, protein #39d7ae, fat #8b7cf6. These macro identities stay consistent across appearances; surrounding surfaces and text retain the active theme.
