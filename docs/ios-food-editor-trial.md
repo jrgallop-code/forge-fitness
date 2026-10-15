@@ -29,3 +29,9 @@ The offline guide now contains 13 examples: meat/cards, rice/tennis ball, cheese
 Source portions now carry count, item noun and size metadata where the source label supports it. The editor shows examples such as “2 large eggs · 100 g” and “2 slices · 70 g”. Weight entry can display an approximate item equivalent from a known source serving. Source egg sizes appear as buttons; changing the egg size preserves the number of eggs and changes nutrition accordingly. Switching between mass and count still uses measured weights. Multi-item source portions gain a normalized one-item option without reordering old saved portions.
 
 For plain whole/boiled/poached/raw eggs with mass-only data, a large-egg reference of 50 g edible weight may be supplied and is marked “estimated”; source-provided weights always win. The reference comes from USDA Nutritive Value of Foods, Table 9 (https://www.ars.usda.gov/ARSUserFiles/80400525/data/hg72/hg72_2002.pdf). No generic whole-egg conversion is generated for egg whites/yolks, recipes, fried mass-only records or substitutes.
+
+## Direct portion equivalents
+
+All 13 guide cards now name the food, amount and visual reference together. Captions explain matching thickness, loose filling or container capacity. Four photos were replaced so cheese/dice, cheese/matchbox, peanut butter/ball and the 500 mL carton agree with their labels. The guide remains approximate and never changes the selected food amount.
+
+References: Ohio State Extension (https://livesmartohio.osu.edu/food/homonai-3osu-edu/how-to-perceive-your-portions/), NHS cheese/matchbox guidance (https://www.myhealthlondon.nhs.uk/resources/internal/dairy-foods/), National Jewish Health peanut butter, meat, nuts and butter comparisons (https://www.nationaljewish.org/education/health-information/nutrition/healthy-weight/serving-size-vs-portion-size).

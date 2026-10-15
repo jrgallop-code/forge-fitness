@@ -1,16 +1,16 @@
-// Visual examples only: these do not change a logged amount or imply exact food density.
+// Approximate visual estimates; these never change a logged portion automatically.
 export const FOOD_PORTION_GUIDES = [
- {title:'Cooked meat',amount:'A deck of cards ≈ 85 g (3 oz)',copy:'Cooked meat',index:0},
- {title:'Cooked rice',amount:'A tennis ball ≈ ½ cup',copy:'Cooked rice',index:1},
- {title:'Hard cheese',amount:'Compare a small piece with two dice',copy:'Hard cheese',index:2},
- {title:'Peanut butter',amount:'Use a level tablespoon to measure',copy:'Ping-pong ball shown for scale',index:3},
- {title:'Rice & a fist',amount:'A closed adult fist ≈ 1 cup',copy:'Hand sizes vary · approximately 250 mL',index:4},
- {title:'Takeaway container',amount:'Compare a 2-cup (500 mL) portion',copy:'Container capacities vary: check the size',index:5},
- {title:'Butter',amount:'1 teaspoon ≈ a small die',copy:'Use a level 5 mL measuring spoon',index:6},
- {title:'Cheese & batteries',amount:'Compare cheese with two 9V batteries',copy:'A rough size reference, not an exact weight',index:7},
- {title:'Cooked pasta',amount:'A closed fist ≈ 1 cup of pasta',copy:'Pasta shapes and hand sizes vary',index:8},
- {title:'Vegetables',amount:'A closed fist ≈ 1 cup of vegetables',copy:'Loose pieces and tightly packed cups differ',index:9},
- {title:'Nuts',amount:'A small handful ≈ ¼ cup',copy:'Hands and nut shapes vary',index:10},
- {title:'Cooked fish',amount:'A deck of cards ≈ 85 g (3 oz)',copy:'Cooked fish · thickness matters',index:11},
- {title:'Measuring spoons',amount:'1 tablespoon = 3 teaspoons',copy:'Level measures: 15 mL and 5 mL',index:12}
+ {title:'Cooked meat',amount:'85 g (3 oz) cooked meat ≈ a deck of cards',copy:'Match the length, width and thickness',index:0},
+ {title:'Cooked rice',amount:'½ cup cooked rice ≈ a tennis ball',copy:'About 125 mL · compare the whole mound',index:1},
+ {title:'Hard cheese',amount:'28 g (1 oz) hard cheese ≈ 4 dice',copy:'Match the combined size of all four dice',index:2},
+ {title:'Peanut butter',amount:'2 tbsp peanut butter ≈ a ping-pong ball',copy:'About 30 mL · compare the whole mound',index:3},
+ {title:'Rice & a fist',amount:'1 cup cooked rice ≈ a closed fist',copy:'About 250 mL · adult hand sizes vary',index:4},
+ {title:'Takeaway container',amount:'2 cups rice ≈ a full 500 mL box',copy:'Check that your container holds 500 mL',index:5},
+ {title:'Butter',amount:'1 tsp butter ≈ one small die',copy:'About 5 mL · compare all three dimensions',index:6},
+ {title:'Cheese & a matchbox',amount:'30 g hard cheese ≈ a small matchbox',copy:'About 1 oz · match the thickness too',index:7},
+ {title:'Cooked pasta',amount:'1 cup cooked pasta ≈ a closed fist',copy:'About 250 mL · pasta shapes and hands vary',index:8},
+ {title:'Vegetables',amount:'1 cup vegetables ≈ a closed fist',copy:'About 250 mL · loosely filled, not compressed',index:9},
+ {title:'Nuts',amount:'28 g (1 oz) nuts ≈ one loose handful',copy:'A small handful · adult hand sizes vary',index:10},
+ {title:'Cooked fish',amount:'85 g (3 oz) cooked fish ≈ a deck of cards',copy:'Match the length, width and thickness',index:11},
+ {title:'Measuring spoons',amount:'1 tbsp oil = 3 tsp (15 mL)',copy:'Standard measuring spoons: 15 mL and 5 mL',index:12}
 ];
