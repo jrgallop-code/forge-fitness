@@ -28,10 +28,12 @@ export function bindFoodAmountEditor(root, food, {servingSelector='[data-food-se
  if(!select||!input) return;
  const refresh=()=>{
   const p=food.portions[Number(select.value)] || {}, q=Number(input.value), valid=validFoodAmount(input.value);
+  const previewValid=valid || input.value==='';
+  const previewQuantity=input.value===''?1:q;
   const text=(selector,value)=>{const node=root.querySelector(selector);if(node)node.textContent=value;};
   text('[data-food-selected-unit]',countedPortionLabel(p));
-  text('[data-food-live-calories]',valid?Math.round((Number(p.nutrition?.calories)||0)*q).toLocaleString():'—');
-  updateMacroCarousel(root,p.nutrition,q,getTargets(),valid);
+  text('[data-food-live-calories]',previewValid?Math.round((Number(p.nutrition?.calories)||0)*previewQuantity).toLocaleString():'—');
+  updateMacroCarousel(root,p.nutrition,previewQuantity,getTargets(),previewValid);
   const grams=portionMeasure(p,'grams'), volume=portionMeasure(p,'milliliters');
   const reference=grams>0 ? `Weight: ${Number(grams.toFixed(2))} g per ${countedPortionLabel(p)}` : volume>0 ? `Volume: ${Number(volume.toFixed(2))} mL per ${countedPortionLabel(p)}` : `Portion: ${countedPortionLabel(p)}`;
   const summary=valid?countedPortionSummary(food,p,q):'';

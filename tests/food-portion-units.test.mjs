@@ -54,8 +54,9 @@ test('the bound editor clears changed units and blocks blank saves', async()=>{
  const root={querySelector:s=>controls.get(s),querySelectorAll:()=>[chip]};
  bindFoodAmountEditor(root,food);
  assert.equal(controls.get('[data-food-live-calories]').textContent,'289');
- chip.handlers.click();assert.equal(controls.get('[data-food-live-calories]').textContent,'—');
+ chip.handlers.click();assert.equal(controls.get('[data-food-live-calories]').textContent,String(Math.round(food.portions[oz].nutrition.calories)));
  assert.equal(controls.get('[data-food-quantity]').value,'');
+ assert.equal(controls.get('[data-food-live-protein]').textContent,`${Number(food.portions[oz].nutrition.protein.toFixed(1))} g`);
  const input=controls.get('[data-food-quantity]');input.value='';input.handlers.input();assert.equal(controls.get('[data-food-confirm]').disabled,true);
  input.value='2';input.handlers.input();assert.equal(controls.get('[data-food-confirm]').disabled,false);
 });
