@@ -6,10 +6,12 @@ const escape = value => String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;'
 export function foodAmountMarkup(food, {index=0,quantity=1,servingAttr='data-food-serving',quantityAttr='data-food-quantity'}={}) {
  const chosen=directPortionSelection(food,index,quantity);
  const options=food.portions.map((p,i)=>`<option value="${i}"${i===chosen.index?' selected':''}>${escape(p.inputUnit || p.label)}</option>`).join('');
- const servingIndex=food.portions.findIndex(p=>!/^\d+(?:\.\d+)?\s*(?:g|kg|oz|lb|ml|l)\b/i.test(p.label));
- const servingChip=servingIndex>=0?`<button type="button" data-food-unit="${servingIndex}" aria-pressed="${servingIndex===chosen.index}">serving</button>`:'';
- const unitChips=servingChip+food.portions.map((p,i)=>p.inputUnit?`<button type="button" data-food-unit="${i}" aria-pressed="${i===chosen.index}">${escape(p.inputUnit)}</button>`:'').join('');
- return `<div class="food-amount-top"><div class="food-direct-entry"><label class="food-direct-amount"><span class="food-visually-hidden">Amount</span><input ${quantityAttr} aria-label="Food amount" type="number" inputmode="decimal" min="0.01" max="10000" step="any" value="${formatConvertedPortionAmount(chosen.quantity,food.portions[chosen.index])}"></label><select ${servingAttr} aria-label="Food unit or serving">${options}</select></div><div class="food-live-calories"><strong data-food-live-calories>—</strong><span>kcal</span></div></div>
+ const directGrams=food.portions.some(p=>p.inputUnit==='g');
+ const choices=food.portions.map((p,i)=>({portion:p,index:i})).filter(({portion:p})=>p.inputUnit || (!/^quantity not specified/i.test(p.label) && !(directGrams && /^\d+(?:\.\d+)?\s*(?:g|kg|oz|lb)\b/i.test(p.label))));
+ if(!choices.length && food.portions.length)choices.push({portion:food.portions[0],index:0});
+ const unitLabel=p=>p?.inputUnit || String(p?.label || 'serving').replace(/\s*\([^)]*\)/g,'').replace(/^1\s+/,'');
+ const unitChips=choices.map(({portion:p,index:i})=>`<button type="button" data-food-unit="${i}" aria-label="${escape(p.label)}" aria-pressed="${i===chosen.index}">${escape(unitLabel(p))}</button>`).join('');
+ return `<div class="food-amount-top"><div class="food-direct-entry"><label class="food-direct-amount"><span class="food-visually-hidden">Amount</span><input ${quantityAttr} aria-label="Food amount" type="number" inputmode="decimal" min="0.01" max="10000" step="any" value="${formatConvertedPortionAmount(chosen.quantity,food.portions[chosen.index])}"></label><span class="food-direct-unit" data-food-selected-unit>${escape(unitLabel(food.portions[chosen.index]))}</span><select ${servingAttr} hidden aria-hidden="true" tabindex="-1">${options}</select></div><div class="food-live-calories"><strong data-food-live-calories>—</strong><span>kcal</span></div></div>
  <p class="food-equivalent" data-food-equivalent aria-live="polite" hidden></p>
  <p class="food-amount-error" data-food-amount-error role="alert" hidden>Enter an amount from 0.01 to 10,000.</p>
  <div class="food-unit-chips" role="group" aria-label="Quick units">${unitChips}<button type="button" class="food-guide-open" data-food-guide-open>Portion<br>guide</button></div>
@@ -29,6 +31,7 @@ export function bindFoodAmountEditor(root, food, {servingSelector='[data-food-se
  const refresh=()=>{
   const p=food.portions[Number(select.value)] || {}, q=Number(input.value), valid=validFoodAmount(input.value);
   const text=(selector,value)=>{const node=root.querySelector(selector);if(node)node.textContent=value;};
+  text('[data-food-selected-unit]',p.inputUnit || String(p.label || 'serving').replace(/\s*\([^)]*\)/g,'').replace(/^1\s+/,''));
   text('[data-food-live-calories]',valid?Math.round((Number(p.nutrition?.calories)||0)*q).toLocaleString():'—');
   updateMacroCarousel(root,p.nutrition,q,getTargets(),valid);
   const grams=portionMeasure(p,'grams')*q;

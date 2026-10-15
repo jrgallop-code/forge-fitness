@@ -79,3 +79,7 @@
 /* A larger reference library must not make the sheet wider than the phone. */
 .food-guide-pager{flex-wrap:wrap;padding:0 14px;max-width:100%;box-sizing:border-box}
 .food-guide-pager button{min-width:20px;min-height:30px}
+/* Unit selection lives only in the buttons; the select retains internal save compatibility. */
+.food-direct-entry select[hidden]{display:none!important;pointer-events:none}
+.food-direct-unit{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;color:var(--text)}
+.food-unit-chips>button{white-space:normal;overflow-wrap:anywhere}

@@ -467,3 +467,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-15: Fix clipped food amounts with a flexible input column; move the close button below the native status area and add a bottom Cancel/Back action.
 
 2026-10-15: Expand the offline portion guide from 4 to 13 examples and preserve original quantities across repeated unit changes, removing conversion decimal artifacts.
+
+2026-10-15: Remove the duplicate food unit dropdown. Show the selected unit as plain text and keep unit/serving changes in the buttons below.
