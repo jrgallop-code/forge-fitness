@@ -45,3 +45,15 @@ The food editor pie, legend and swipeable bars now match the dashboard, diary an
 Create exercise now offers Reps or Time (seconds). Time shows a duration target range and saves trackingType=duration. Custom exercise IDs resolve their stored tracking type through the existing hold detector so plan rows, timers, circuits, history, progress and hold summaries use the static hold behavior. Existing custom exercises remain rep based. Repetition and duration target drafts are retained separately while switching the form selector.
 
 Validation: 34 hold/custom exercise/native packaging checks passed, including persistence, plan ID resolution, hold progress and exclusion from repetition tonnage.
+
+## iOS voice meal review
+
+Log by voice opens a meal selector and recording panel. Native Speech/AVAudioEngine transcription reports live text, supports stop/cancel and ends recording after 55 seconds or backgrounding. On-device recognition is requested where supported. No audio files are saved. Transcripts can also be typed or corrected. Stopping a recording matches the batch; results remain a draft until Log to [meal] is pressed.
+
+Cards show food/brand, portion, calories and a representative thumbnail with Edit amount, Swap food and Remove actions. Search-based swaps open the regular amount editor and preserve requested/edited mass, count or volume when supported. Unmatched foods require manual selection or removal before logging. Recording more appends a new batch without replacing reviewed foods. This is an iOS trial; PWA remains unchanged.
+
+Accuracy changes: spoken hundreds/fractions and decimal quantities retain their numeric meaning; cooking qualifiers are retained; explicit brand and food words must match; composite foods such as muffins cannot silently substitute for plain blueberries; unsupported mass/volume conversions remain unresolved. Quantity omissions are marked as one serving for review. This does not implement conversational voice commands to edit/delete a previous item: those actions use explicit card controls.
+
+Validation: 146 focused tests pass, including speech completion/cancellation, multi-batch draft retention, decimal/fraction parsing, brand rejection, swap quantities and unresolved-save gating. Native compilation is checked by the signed iOS workflow; physical microphone accuracy and layout require TestFlight testing.
+
+Apple speech API reference: https://developer.apple.com/documentation/speech/sfspeechaudiobufferrecognitionrequest

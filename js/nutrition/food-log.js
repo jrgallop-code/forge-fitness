@@ -1,3 +1,6 @@
+import {foodPhotoIndex} from './food-photo.js';
+import {createFoodSpeechSession} from './food-speech.js';
+import {voiceIngredients,accurateVoiceMatch,voicePortion,replacementVoicePortion} from './voice-food-model.js';
 import { withFoodWeightUnits, validFoodAmount } from "./food-portion-units.js";
 import { foodAmountMarkup, foodHeroMarkup, bindFoodAmountEditor, restoreFoodAmount } from "./food-portion-editor.js";
 import {
@@ -77,6 +80,7 @@ let zxingLoadPromise = null;
 let mealImportController = null;
 let foodVoiceRecognition = null;
 let foodVoiceTranscript = "";
+let voiceSwapRequest = null;
 const foodDetailCache = new Map();
 const barcodeFoodCache = new Map();
 const expandedMealKeys = new Set();
@@ -131,6 +135,7 @@ function renderFoodSheet() {
                     <div class="food-search-entry"><div class="food-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.2 16.2 4 4"/></svg><input type="search" name="query" minlength="2" maxlength="80" autocomplete="off" placeholder="Search foods" aria-label="Search foods"></div><button type="button" class="food-barcode-open" data-barcode-open aria-label="Scan a food barcode" title="Scan barcode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7 5v14M10 5v14M14 5v14M17 5v14M20 5v14M2.5 5h2M19.5 5h2M2.5 19h2M19.5 19h2"/></svg></button></div>
                     <button type="submit" class="primary-btn food-search-submit">Search</button>
                 </form>
+                <button type="button" class="food-voice-entry" data-food-voice>🎙 Log by voice</button>
                 <button type="button" class="food-eating-out-entry" data-food-eating-out>
                     <span class="food-eating-out-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3v6M8 3v6M11 3v6M5 9c0 1.7 1.3 3 3 3s3-1.3 3-3M8 12v9M18 3v18M18 3c-2.5 2.7-3.7 5.7-3.7 9H18"/></svg></span>
                     <span><strong>Eating Out</strong><small>Browse restaurant menus by calories and protein</small></span>
@@ -266,6 +271,7 @@ export function initializeFoodLog() {
         if (String(event.currentTarget.value || "").trim().length < 2) return;
         foodSearchTimer = window.setTimeout(() => foodSearchForm.requestSubmit(), 300);
     });
+    initializeFoodVoiceInput();
     initializeRestaurantMenu({
         getContext: () => ({
             dateKey: selectedDate,
@@ -484,6 +490,7 @@ function closeFoodSheet() {
     foodSelectionRequest += 1;
     foodSearchController?.abort();
     foodDetailController?.abort();
+    mealImportController?.abort();
     if (foodVoiceRecognition) {
         foodVoiceTranscript = "";
         try { foodVoiceRecognition.abort(); } catch {}
@@ -749,81 +756,88 @@ function showFoodMode(mode) {
     if (mode === "custom") renderCustomFoods();
 }
 
-function speechRecognitionConstructor() {
-    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
-}
-
 function initializeFoodVoiceInput() {
-    const button = document.querySelector("[data-food-voice]");
-    if (!button) return;
-    const Recognition = speechRecognitionConstructor();
-    button.hidden = !Recognition;
-    if (Recognition) button.addEventListener("click", toggleFoodVoiceInput);
+    document.querySelector('[data-food-voice]')?.addEventListener('click',()=>openMealBuilder([], '', null, {voiceMode:true}));
 }
-
-function toggleFoodVoiceInput() {
-    if (foodVoiceRecognition) {
-        foodVoiceRecognition.stop();
-        return;
-    }
-    const Recognition = speechRecognitionConstructor();
-    if (!Recognition) return;
-    const recognition = new Recognition();
-    foodVoiceRecognition = recognition;
-    foodVoiceTranscript = "";
-    recognition.lang = navigator.language || "en-CA";
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
-    recognition.onstart = () => setFoodVoiceState(true, "Listening… Say each ingredient and its amount.");
-    recognition.onresult = event => {
-        let transcript = "";
-        for (let index = 0; index < event.results.length; index += 1) transcript += `${event.results[index][0]?.transcript || ""} `;
-        foodVoiceTranscript = transcript.trim();
-        setText("[data-food-search-status]", foodVoiceTranscript || "Listening…");
-    };
-    recognition.onerror = event => {
-        const messages = {
-            "not-allowed": "Microphone access was not allowed. You can still type or paste ingredients.",
-            "audio-capture": "No microphone was available.",
-            "no-speech": "No ingredients were heard. Tap the microphone and try again."
-        };
-        setText("[data-food-search-status]", messages[event.error] || "Voice input stopped. Please try again.");
-    };
-    recognition.onend = () => {
-        const transcript = foodVoiceTranscript.trim();
-        foodVoiceRecognition = null;
-        setFoodVoiceState(false);
-        if (transcript) openVoiceIngredientReview(transcript);
-    };
-    showFoodMode("search");
-    try { recognition.start(); }
-    catch {
-        foodVoiceRecognition = null;
-        setFoodVoiceState(false, "Voice input could not start. Please try again.");
-    }
-}
-
-function setFoodVoiceState(listening, message = "") {
-    const button = document.querySelector("[data-food-voice]");
-    button?.classList.toggle("is-listening", listening);
-    button?.setAttribute("aria-pressed", String(listening));
-    if (button) button.setAttribute("aria-label", listening ? "Stop listening" : "Log ingredients by voice");
-    if (message) setText("[data-food-search-status]", message);
-}
-
-function openVoiceIngredientReview(transcript) {
-    const ingredients = parseSpokenIngredientText(transcript);
-    if (!ingredients.length) {
-        setText("[data-food-search-status]", "No ingredients could be understood. Try saying an amount before each food.");
-        return;
-    }
-    openMealBuilder([], "", null, {
-        pasteOpen: true,
-        pasteText: ingredients.map(item => item.original).join("\n"),
-        voiceMode: true
+async function toggleFoodVoiceInput() {
+    if(foodVoiceRecognition){foodVoiceRecognition.stop();return;}
+    if(!mealDraft?.voiceMode || mealDraft.importing)return;
+    const draft=mealDraft;
+    draft.voiceError='';
+    draft.voiceTranscript='';
+    const session=createFoodSpeechSession({
+        onText:text=>{if(mealDraft!==draft)return;draft.voiceTranscript=text;const input=document.querySelector('[data-voice-transcript]');if(input)input.value=text;},
+        onError:message=>{if(mealDraft!==draft)return;draft.voiceError=message;},
+        onEnd:text=>{
+            if(mealDraft!==draft)return;
+            foodVoiceRecognition=null;draft.voiceListening=false;draft.voiceTranscript=text;renderMealBuilder();
+            if(text.trim())void importVoiceTranscript();
+        }
     });
-    void importPastedIngredients();
+    foodVoiceRecognition=session;draft.voiceListening=true;renderMealBuilder();
+    try {await session.start();}
+    catch(error){if(mealDraft!==draft)return;session.abort();foodVoiceRecognition=null;draft.voiceListening=false;draft.voiceError=error?.message||'Voice could not start. Type your foods below.';renderMealBuilder();}
+}
+function setFoodVoiceState(){ /* The recording control is rendered from its draft. */ }
+async function importVoiceTranscript(){
+    if(!mealDraft?.voiceMode||mealDraft.importing||mealDraft.voiceListening)return;
+    const input=document.querySelector('[data-voice-transcript]');
+    mealDraft.voiceTranscript=input?.value || mealDraft.voiceTranscript || '';
+    const ingredients=voiceIngredients(mealDraft.voiceTranscript);
+    if(!ingredients.length){mealDraft.voiceError='Say or type a food and its amount.';renderMealBuilder();return;}
+    mealDraft.pasteText=ingredients.map(i=>i.original).join('\n');
+    await importPastedIngredients();
+    if(mealDraft?.voiceMode && !mealDraft.voiceError)mealDraft.voiceTranscript='';
+    if(mealDraft?.voiceMode)renderMealBuilder();
+}
+function voiceReviewMarkup(){
+    const d=mealDraft;
+    return `<label class="food-voice-meal">Log to<select data-voice-meal>${MEALS.map(m=>`<option${m===selectedMeal?' selected':''}>${m}</option>`).join('')}</select></label>
+    <section class="food-voice-recorder" aria-label="Describe your meal">
+      <strong data-voice-state>${d.voiceListening?'Listening…':d.importing?'Finding your foods…':'What did you eat?'}</strong>
+      <p>Say the amount, food and brand: “Two bananas and 150 grams of Kirkland blueberries.”</p>
+      <textarea data-voice-transcript rows="3" maxlength="2000" aria-label="Meal transcript" placeholder="Your words appear here. You can also type or correct them."${d.voiceListening?' readonly':''}>${escapeHtml(d.voiceTranscript||'')}</textarea>
+      <div class="food-voice-recorder-actions"><button type="button" data-voice-record aria-pressed="${Boolean(d.voiceListening)}"${d.importing?' disabled':''}>${d.voiceListening?'■ Stop recording':'🎙 '+(d.items.length?'Record more':'Record meal')}</button><button type="button" data-voice-match${d.importing||d.voiceListening?' disabled':''}>Find foods</button></div>
+      <p role="status" aria-live="polite">${escapeHtml(d.voiceError||d.importStatus||'Review the matches below before logging.')}</p>
+    </section>
+    ${d.importUnresolved.length?`<div class="food-voice-unresolved"><strong>Choose a match</strong>${d.importUnresolved.map((text,i)=>`<div><span>${escapeHtml(text)}</span><button type="button" data-voice-resolve="${i}">Find food</button><button type="button" data-voice-dismiss="${i}" aria-label="Remove ${escapeHtml(text)}">×</button></div>`).join('')}</div>`:''}`;
+}
+function voiceItemMarkup(entry,index){
+    const assumed=entry.voiceIngredient?.unit==='serving' && entry.voiceIngredient?.assumed;
+    const photo=foodPhotoIndex(entry);
+    const item=mealItemDetailsMarkup(entry,index).replace('<summary>',`<summary>${photo===null?'<span class="food-voice-thumb" aria-hidden="true">🍽</span>':`<img class="food-voice-thumb" src="assets/food/category-${photo}.webp" alt="">`}`);
+    return `<article class="food-voice-item">${item}${assumed?'<small class="food-voice-assumption">Amount not heard · using 1 serving. Check the amount.</small>':''}<div class="food-voice-item-actions"><button type="button" data-voice-edit="${index}">Edit amount</button><button type="button" data-voice-swap="${index}">Swap food</button><button type="button" data-voice-remove="${index}">Remove</button></div></article>`;
+}
+async function openVoiceSwap(index=null,unresolvedIndex=null){
+    if(!mealDraft || mealDraft.importing || mealDraft.voiceListening)return;
+    const draft=mealDraft,entry=index!==null?draft.items[index]:null;
+    const ingredient=entry?.voiceIngredient || voiceIngredients(draft.importUnresolved[unresolvedIndex]||'')[0];
+    const panel=document.querySelector('[data-meal-builder]');
+    const old=panel.querySelector('.food-voice-swap');old?.remove();
+    const host=document.createElement('section');host.className='food-voice-swap';host.setAttribute('aria-label','Find a replacement food');
+    host.innerHTML=`<header><strong>${entry?'Swap '+escapeHtml(entry.name):'Find food'}</strong><button type="button" data-swap-close aria-label="Close food swap">×</button></header><form><input type="search" aria-label="Search food and brand" placeholder="Food name and brand" value="${escapeHtml(ingredient?.name||entry?.name||'')}"><button type="submit">Search</button></form><p role="status" data-swap-status>Search for the food and brand you want.</p><div data-swap-results></div>`;
+    panel.appendChild(host);host.scrollIntoView({block:'nearest',behavior:'smooth'});
+    let controller,version=0;
+    const close=()=>{version++;controller?.abort();host.remove();};
+    host.querySelector('[data-swap-close]').addEventListener('click',close);
+    const search=async event=>{
+      event?.preventDefault();const query=host.querySelector('input').value.trim();if(query.length<2)return;
+      const request=++version;controller?.abort();controller=new AbortController();
+      const status=host.querySelector('[data-swap-status]');status.textContent='Searching…';
+      let foods=matchingLoggedFoods(query,20);
+      try{const token=sessionToken();if(token){const r=await fetch(`${API_URL}/v1/foods/search?q=${encodeURIComponent(query)}`,{headers:{Authorization:`Bearer ${token}`},signal:controller.signal});const payload=await r.json();if(!r.ok)throw Error(payload.error||'Search unavailable.');foods=prioritizeLoggedFoodMatches(query,payload.foods||[],30);}
+        if(mealDraft!==draft||request!==version||!host.isConnected)return;
+        status.textContent=foods.length?'Choose a food, then check its amount.':sessionToken()?'No matches. Try a shorter name.':'Sign in to search more foods, or choose a previously logged food.';
+        renderFoodResults(host.querySelector('[data-swap-results]'),foods,async food=>{
+          if(mealDraft!==draft)return;close();voiceSwapRequest={itemIndex:index,unresolvedIndex,ingredient};editingMealItemIndex=index;addContext='meal-builder';
+          panel.hidden=true;await chooseFood(food);if(mealDraft!==draft)return;
+          const normalized=withFoodWeightUnits(withUsefulLiquidPortions(selectedFood));
+          const selection=entry?replacementVoicePortion(entry,normalized):voicePortion(ingredient||{amount:1,unit:'serving'},normalized);
+          if(selection?.portion){restoreFoodAmount(document.querySelector('[data-food-portion]'),selectedFood,selectedFood.portions.findIndex(p=>p.label===selection.portion.label),selection.quantity);updatePortionPreview();}
+        });
+      }catch(error){if(request===version&&mealDraft===draft&&error?.name!=='AbortError')status.textContent=error.message||'Search failed. Try again.';}
+    };
+    host.querySelector('form').addEventListener('submit',search);host.querySelector('input').focus();void search();
 }
 
 async function searchFoods(event) {
@@ -1101,7 +1115,7 @@ function mealItemDetailsMarkup(entry, index) {
     const servingIndex = Math.max(0, portions.findIndex(portion => portion?.label === entry?.servingLabel));
     const portion = portions[servingIndex] || portions[0] || {};
     return `<details class="food-builder-item-details" data-meal-item-details="${index}">
-        <summary><span><strong>${escapeHtml(entry?.name || "Food")}</strong><small>${escapeHtml(totalServingLabel(quantity, entry?.servingLabel))}</small></span><b>${Math.round(entry?.nutrition?.calories || 0)} kcal</b><i aria-hidden="true">›</i></summary>
+        <summary><span><strong>${escapeHtml(entry?.name || "Food")}</strong><small>${escapeHtml(entry?.brand?entry.brand+" · ":"")}${escapeHtml(totalServingLabel(quantity, entry?.servingLabel))}</small></span><b>${Math.round(entry?.nutrition?.calories || 0)} kcal</b><i aria-hidden="true">›</i></summary>
         <div class="food-builder-item-editor">
             <div class="food-builder-item-edit-heading"><span class="eyebrow">EDIT ITEM</span><strong>Serving and quantity</strong></div>
             ${foodAmountMarkup(food, {index: servingIndex, quantity, servingAttr: 'data-meal-item-serving', quantityAttr: 'data-meal-item-quantity'})}
@@ -1140,6 +1154,7 @@ function bindMealItemDetails(panel) {
             const amount = Number(quantity.value);
             const updated = createLogEntry({ meal: selectedMeal, food, portion, quantity: amount });
             if (entry.pasteImported) updated.pasteImported = true;
+            if(entry.voiceIngredient)updated.voiceIngredient=entry.voiceIngredient;
             mealDraft.items.splice(index, 1, updated);
             renderMealBuilder();
         });
@@ -1164,6 +1179,10 @@ function addSelectedFood() {
         return;
     }
     if (addContext === "meal-builder") {
+        if(voiceSwapRequest && mealDraft?.voiceMode){
+            entry.voiceIngredient=voiceSwapRequest.ingredient;
+            if(voiceSwapRequest.unresolvedIndex!==null)mealDraft.importUnresolved.splice(voiceSwapRequest.unresolvedIndex,1);
+        }
         if (editingMealItemIndex !== null) mealDraft.items.splice(editingMealItemIndex, 1, entry);
         else mealDraft.items.push(entry);
         editingMealItemIndex = null;
@@ -1397,6 +1416,7 @@ function openMealBuilder(entries = [], name = "", savedMeal = null, options = {}
         pasteOpen: Boolean(options.pasteOpen),
         pasteText: String(options.pasteText || ""),
         voiceMode: Boolean(options.voiceMode),
+        voiceTranscript: "", voiceError: "", voiceListening: false,
         importStatus: "",
         importUnresolved: [],
         importing: false
@@ -1423,7 +1443,7 @@ async function importPastedIngredients() {
     const draft = mealDraft;
     const input = document.querySelector("[data-meal-paste-input]");
     mealDraft.pasteText = String(input?.value || mealDraft.pasteText || "").trim();
-    const ingredients = parseIngredientText(mealDraft.pasteText);
+    const ingredients = mealDraft.voiceMode ? voiceIngredients(mealDraft.pasteText) : parseIngredientText(mealDraft.pasteText);
     if (!ingredients.length) {
         mealDraft.importStatus = "Add at least one ingredient. Put each ingredient on its own line.";
         renderMealBuilder();
@@ -1434,14 +1454,17 @@ async function importPastedIngredients() {
     mealImportController = new AbortController();
     mealDraft.importing = true;
     mealDraft.importStatus = `Matching ${ingredients.length} ingredient${ingredients.length === 1 ? "" : "s"}…`;
-    mealDraft.importUnresolved = [];
+    if(!draft.voiceMode)mealDraft.importUnresolved = [];
     renderMealBuilder();
 
     const token = sessionToken();
     const imported = [];
     const unresolved = [];
+    let processed=0;
     try {
         for (const ingredient of ingredients) {
+            processed++;
+            if(mealDraft!==draft || mealImportController.signal.aborted)return;
             const historyFoods = matchingLoggedFoods(ingredient.name, 8);
             let foods = historyFoods;
             if (token) {
@@ -1452,27 +1475,34 @@ async function importPastedIngredients() {
                 const payload = await response.json().catch(() => ({}));
                 if (response.ok) foods = prioritizeLoggedFoodMatches(ingredient.name, payload.foods || [], 20);
             }
-            const matched = chooseIngredientFood(ingredient, foods);
-            const food = matched ? withUsefulLiquidPortions(matched) : null;
-            const selection = ingredientPortionSelection(ingredient, food);
+            const matched = draft.voiceMode ? accurateVoiceMatch(ingredient,foods) : chooseIngredientFood(ingredient, foods);
+            let detailed=matched;
+            if(draft.voiceMode && matched){
+              try{if(matched.source==='usda'&&matched.fdcId&&!matched.detailsLoaded)detailed=await loadFoodDetails(matched);
+              else if(matched.source==='fatsecret'&&matched.fatSecretFoodId&&!hasFatSecretServingId(matched))detailed=await loadFatSecretFoodDetails(matched);}catch(error){if(error?.name==='AbortError')return;detailed=null;}
+            }
+            if(mealDraft!==draft)return;
+            const food = detailed ? withFoodWeightUnits(withUsefulLiquidPortions(detailed)) : null;
+            const selection = food ? ingredientPortionSelection(ingredient, food) : null;
             if (!food || !selection?.portion) {
                 unresolved.push(ingredient.original);
                 continue;
             }
             const entry = createLogEntry({ meal: selectedMeal, food, portion: selection.portion, quantity: selection.quantity });
             entry.pasteImported = true;
+            if(draft.voiceMode)entry.voiceIngredient=ingredient;
             imported.push(entry);
         }
     }
     catch (error) {
         if (error?.name === "AbortError") return;
-        unresolved.push(...ingredients.slice(imported.length).map(item => item.original));
+        unresolved.push(...ingredients.slice(Math.max(0,processed-1)).map(item => item.original));
     }
     finally {
         if (!mealDraft || mealDraft !== draft) return;
-        mealDraft.items = [...mealDraft.items.filter(item => !item?.pasteImported), ...imported];
+        mealDraft.items = [...(draft.voiceMode?mealDraft.items:mealDraft.items.filter(item => !item?.pasteImported)), ...imported];
         mealDraft.importing = false;
-        mealDraft.importUnresolved = [...new Set(unresolved)];
+        mealDraft.importUnresolved = [...new Set([...(draft.voiceMode?mealDraft.importUnresolved:[]),...unresolved])];
         mealDraft.importStatus = imported.length
             ? `Matched ${imported.length} of ${ingredients.length}. Review the foods and weights below before saving.`
             : token
@@ -1525,14 +1555,15 @@ function renderMealBuilder() {
     const totals = summarizeEntries(mealDraft.items);
     const editingMeal = Boolean(mealDraft.id);
     const voiceMode = Boolean(mealDraft.voiceMode);
+    voiceSwapRequest=null;
     panel.innerHTML = `
         <header class="food-builder-heading"><div><span class="eyebrow">${voiceMode ? "VOICE LOG" : "MY MEALS"}</span><h3>${voiceMode ? "Review Ingredients" : editingMeal ? "Edit Meal" : "Build a Meal"}</h3></div><button type="button" data-meal-builder-close aria-label="Close meal builder">×</button></header>
-        ${voiceMode ? '<p class="food-voice-review-copy">Check every food and amount before logging. Level Up uses matched foods for macros and never invents nutrition values.</p>' : `<label>Meal name<input type="text" maxlength="100" value="${escapeHtml(mealDraft.name)}" placeholder="Post-workout lunch" data-meal-name></label><div class="food-builder-photo"><button type="button" data-meal-photo-pick>${mealDraft.photoDataUrl ? `<img src="${escapeHtml(mealDraft.photoDataUrl)}" alt="Meal thumbnail"><span>Change photo</span>` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>'}</button>${mealDraft.photoDataUrl ? '<button type="button" data-meal-photo-remove>Remove</button>' : ""}<input type="file" accept="image/*" data-meal-photo-input hidden></div>`}
-        ${pastedIngredientsMarkup()}
+        ${voiceMode ? voiceReviewMarkup() : `<label>Meal name<input type="text" maxlength="100" value="${escapeHtml(mealDraft.name)}" placeholder="Post-workout lunch" data-meal-name></label><div class="food-builder-photo"><button type="button" data-meal-photo-pick>${mealDraft.photoDataUrl ? `<img src="${escapeHtml(mealDraft.photoDataUrl)}" alt="Meal thumbnail"><span>Change photo</span>` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>'}</button>${mealDraft.photoDataUrl ? '<button type="button" data-meal-photo-remove>Remove</button>' : ""}<input type="file" accept="image/*" data-meal-photo-input hidden></div>`}
+        ${voiceMode?"":pastedIngredientsMarkup()}
         <div class="food-builder-macros food-portion-preview food-portion-preview--macros">${macroBreakdownMarkup(totals, `Whole meal · ${mealDraft.items.length} item${mealDraft.items.length === 1 ? "" : "s"}`)}</div>
-        <div class="food-builder-items">${mealDraft.items.map((entry, index) => mealItemDetailsMarkup(entry, index)).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
+        <div class="food-builder-items">${mealDraft.items.map((entry, index) => voiceMode?voiceItemMarkup(entry,index):mealItemDetailsMarkup(entry, index)).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
         <button type="button" class="food-builder-add" data-meal-builder-add>+ Add Food</button>
-        <button type="button" class="primary-btn" data-meal-builder-save ${mealDraft.items.length ? "" : "disabled"}>${voiceMode ? `Log to ${escapeHtml(selectedMeal)}` : editingMeal ? "Save Changes" : "Save to My Meals"}</button>`;
+        <button type="button" class="primary-btn" data-meal-builder-save ${mealDraft.items.length && !mealDraft.importing && !mealDraft.voiceListening && (!voiceMode || !mealDraft.importUnresolved.length) ? "" : "disabled"}>${voiceMode ? `Log to ${escapeHtml(selectedMeal)}` : editingMeal ? "Save Changes" : "Save to My Meals"}</button>`;
     panel.querySelector("[data-meal-name]")?.addEventListener("input", event => { mealDraft.name = event.currentTarget.value; });
     panel.querySelector("[data-meal-photo-pick]")?.addEventListener("click", () => panel.querySelector("[data-meal-photo-input]")?.click());
     panel.querySelector("[data-meal-photo-input]")?.addEventListener("change", event => { if (event.currentTarget.files?.[0]) void setMealDraftPhoto(event.currentTarget.files[0]); });
@@ -1540,14 +1571,26 @@ function renderMealBuilder() {
     panel.querySelector("[data-meal-paste]")?.addEventListener("toggle", event => { mealDraft.pasteOpen = event.currentTarget.open; });
     panel.querySelector("[data-meal-paste-input]")?.addEventListener("input", event => { mealDraft.pasteText = event.currentTarget.value; });
     panel.querySelector("[data-meal-paste-analyze]")?.addEventListener("click", () => { void importPastedIngredients(); });
-    panel.querySelector("[data-meal-builder-close]")?.addEventListener("click", () => { panel.hidden = true; addContext = "log"; editingMealItemIndex = null; showFoodMode("meals"); });
+    panel.querySelector("[data-meal-builder-close]")?.addEventListener("click", () => { foodVoiceRecognition?.abort();foodVoiceRecognition=null;mealImportController?.abort();mealDraft=null;panel.hidden = true; addContext = "log"; editingMealItemIndex = null; showFoodMode("recent"); });
     panel.querySelector("[data-meal-builder-add]")?.addEventListener("click", () => { panel.hidden = true; addContext = "meal-builder"; editingMealItemIndex = null; showFoodMode("recent"); });
     bindMealItemDetails(panel);
+    if(voiceMode){
+      panel.querySelector('[data-voice-record]')?.addEventListener('click',()=>{void toggleFoodVoiceInput();});
+      panel.querySelector('[data-voice-match]')?.addEventListener('click',()=>{void importVoiceTranscript();});
+      panel.querySelector('[data-voice-transcript]')?.addEventListener('input',event=>{mealDraft.voiceTranscript=event.target.value;});
+      panel.querySelector('[data-voice-meal]')?.addEventListener('change',event=>{selectedMeal=event.target.value;renderMealBuilder();});
+      panel.querySelectorAll('[data-voice-swap]').forEach(b=>b.addEventListener('click',()=>{void openVoiceSwap(Number(b.dataset.voiceSwap));}));
+      panel.querySelectorAll('[data-voice-resolve]').forEach(b=>b.addEventListener('click',()=>{void openVoiceSwap(null,Number(b.dataset.voiceResolve));}));
+      panel.querySelectorAll('[data-voice-dismiss]').forEach(b=>b.addEventListener('click',()=>{mealDraft.importUnresolved.splice(Number(b.dataset.voiceDismiss),1);renderMealBuilder();}));
+      panel.querySelectorAll('[data-voice-remove]').forEach(b=>b.addEventListener('click',()=>{mealDraft.items.splice(Number(b.dataset.voiceRemove),1);renderMealBuilder();}));
+      panel.querySelectorAll('[data-voice-edit]').forEach(b=>b.addEventListener('click',()=>{const details=panel.querySelector(`[data-meal-item-details="${b.dataset.voiceEdit}"]`);if(details){details.open=!details.open;if(details.open)details.querySelector('input')?.focus();}}));
+    }
     panel.querySelector("[data-meal-builder-save]")?.addEventListener("click", saveMealDraft);
 }
 
 function saveMealDraft() {
     if (mealDraft?.voiceMode) {
+        if(mealDraft.importing || mealDraft.voiceListening || mealDraft.importUnresolved.length || !mealDraft.items.length)return;
         const items = mealDraft.items.map(entry => ({ ...entry, meal: selectedMeal }));
         saveEntries(selectedDate, [...entriesForDate(selectedDate), ...items]);
         const count = items.length;

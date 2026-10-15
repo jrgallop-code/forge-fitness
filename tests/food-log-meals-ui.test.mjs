@@ -74,10 +74,11 @@ test("My Meals can build a reusable meal from pasted ingredients", async () => {
     assert.match(styles, /\.food-builder-paste/);
 });
 
-test("food search removes the microphone while keeping paste ingredients available", async () => {
+test("food search provides a separate voice flow while keeping paste ingredients available", async () => {
     const module = await read("../js/nutrition/food-log.js");
     assert.doesNotMatch(module, /class="food-voice-open"/);
-    assert.doesNotMatch(module, /initializeFoodVoiceInput\(\);/);
+    assert.match(module, /initializeFoodVoiceInput\(\);/);
+    assert.match(module, /data-food-voice/);
     assert.match(module, /data-paste-meal/);
     assert.match(module, /Paste Ingredients/);
 });

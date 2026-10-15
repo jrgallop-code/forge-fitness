@@ -12,7 +12,7 @@ const UNIT_ALIASES = new Map([
     ["slice", "slice"], ["slices", "slice"], ["can", "can"], ["cans", "can"]
 ]);
 
-const NUMBER_PATTERN = "(?:\\d+(?:\\.\\d+)?|\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|[¼½¾⅓⅔⅛⅜⅝⅞])";
+const NUMBER_PATTERN = "(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+(?:\\.\\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])";
 const UNIT_PATTERN = "(?:kg|kilograms?|g|grams?|lbs?|pounds?|oz|ounces?|ml|millilit(?:er|re)s?|cups?|tbsp|tablespoons?|tsp|teaspoons?|servings?|items?|pieces?|slices?|cans?)";
 const LEADING_AMOUNT = new RegExp(`^(${NUMBER_PATTERN})\\s*(${UNIT_PATTERN})\\b\\s*(?:of\\s+)?(.+)$`, "i");
 const TRAILING_AMOUNT = new RegExp(`^(.+?)\\s*(?:[-–—,:]\\s*)?(${NUMBER_PATTERN})\\s*(${UNIT_PATTERN})$`, "i");
@@ -39,7 +39,7 @@ export function parseSpokenIngredientText(value, limit = 20) {
     const normalized = normalizeSpokenNumbers(String(value || ""));
     const amountAhead = `(?=(?:${NUMBER_PATTERN})\\s*(?:${UNIT_PATTERN})?\\b)`;
     return normalized
-        .replace(/[.!?]+/g, ";")
+        .replace(/(?<!\d)\.|\.(?!\d)|[!?]+/g, ";")
         .replace(/\s*,\s*/g, ";")
         .replace(new RegExp(`\\s+and\\s+${amountAhead}`, "gi"), ";")
         .split(/\n|;/)
@@ -51,13 +51,28 @@ export function parseSpokenIngredientText(value, limit = 20) {
 }
 
 function normalizeSpokenNumbers(value) {
-    return value.replace(/\b(a|an|one|two|three|four|five|six|seven|eight|nine|ten|half|quarter)\b/gi, word => SPOKEN_NUMBERS[word.toLowerCase()] || word);
+    const units={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
+    const numberWord=Object.keys(units).join('|')+'|hundred|thousand|half|quarter';
+    return value.replace(/\b(half|quarter) (?:a|an)\b/gi,'$1').replace(/\b(one|two|three|four|five) and (?:a )?(half|quarter)\b/gi,(_,n,f)=>String(units[n.toLowerCase()]+(f.toLowerCase()==='half'?.5:.25)))
+        .replace(/\b(?:a|an) (half|quarter)\b/gi,'$1')
+        .replace(new RegExp(`\\b(?:${numberWord})(?:(?:[ -]+| and )(?:(?:${numberWord})))*\\b`, 'gi'),text=>{
+            let total=0,current=0;
+            for(const w of text.toLowerCase().split(/[ -]+/)) {
+                if(w==='and')continue;
+                if(w==='hundred')current=(current||1)*100;
+                else if(w==='thousand'){total+=(current||1)*1000;current=0;}
+                else if(w==='half')current+=.5;
+                else if(w==='quarter')current+=.25;
+                else current+=units[w]||0;
+            }
+            return String(total+current);
+        }).replace(/\b(a|an)\b/gi,'1');
 }
 
 export function parseIngredientLine(value) {
     const original = String(value || "").trim();
     const line = original
-        .replace(/^\s*(?:[-*•▪◦]|\d+[.)])\s*/, "")
+        .replace(/^\s*(?:[-*•▪◦]\s*|\d+[.)]\s+)/, "")
         .replace(/\s+/g, " ")
         .trim();
     if (!line) return null;
@@ -84,7 +99,7 @@ function ingredientResult(original, name, amount, unit, assumed) {
 function cleanIngredientName(value) {
     return String(value || "")
         .replace(/^of\s+/i, "")
-        .replace(/\s*,?\s*(?:cooked|raw|drained|chopped|diced|sliced|to taste)$/i, "")
+        .replace(/\s*,?\s*to taste$/i, "")
         .trim();
 }
 
@@ -145,11 +160,13 @@ export function ingredientPortionSelection(ingredient, food) {
         const candidates = portions.map(portion => ({ portion, basis: portionGrams(portion) })).filter(item => item.basis > 0);
         const best = candidates.sort((a, b) => Math.abs(a.basis - 1) - Math.abs(b.basis - 1))[0];
         if (best) return { portion: best.portion, quantity: gramTarget / best.basis, estimated: false };
+        return null;
     }
     if (volumeTarget > 0) {
         const candidates = portions.map(portion => ({ portion, basis: portionMilliliters(portion) })).filter(item => item.basis > 0);
         const best = candidates.sort((a, b) => Math.abs(a.basis - volumeTarget) - Math.abs(b.basis - volumeTarget))[0];
         if (best) return { portion: best.portion, quantity: volumeTarget / best.basis, estimated: Boolean(best.portion.estimatedVolume) };
+        return null;
     }
 
     const unitPattern = new RegExp(`\\b${unit === "item" ? "(?:item|piece|breast|fillet|potato|egg|patty|bar|burger|sandwich)" : unit}s?\\b`, "i");
