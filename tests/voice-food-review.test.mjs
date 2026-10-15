@@ -99,3 +99,17 @@ test('voice queue processes completed phrases in order and retains their visible
  sandbox.enqueue('two bananas');sandbox.enqueue('100 grams blueberries');assert.equal(calls,1);assert.equal(draft.voiceHistory.length,2);release();
  await new Promise(resolve=>setTimeout(resolve,0));assert.equal(calls,2);assert.equal(draft.items.length,2);assert.equal(draft.voiceQueueRunning,false);assert.deepEqual(draft.voiceHistory.map(h=>h.text),['two bananas','100 grams blueberries']);
 });
+
+test('voice review uses the manual meal row with no injected image or extra action footer',async()=>{
+ const {readFileSync}=await import('node:fs');const vm=await import('node:vm');const source=readFileSync('js/nutrition/food-log.js','utf8');
+ const start=source.indexOf('function mealItemDetailsMarkup('),end=source.indexOf('\nfunction bindMealItemDetails(',start);
+ const sandbox={withFoodWeightUnits:f=>f,withUsefulLiquidPortions:f=>f,mealFoodForEntry:e=>e.food,escapeHtml:s=>String(s),totalServingLabel:()=> '100 g',foodAmountMarkup:()=>'<div>Amount editor</div>',foodMacroBreakdown:()=> 'Macros'};
+ vm.createContext(sandbox);vm.runInContext(source.slice(start,end)+'\nglobalThis.row=mealItemDetailsMarkup;',sandbox);
+ const entry={name:'Blueberries',brand:'Example brand',quantity:1,servingLabel:'100 g',nutrition:{calories:57},food:food('Blueberries')};
+ const manual=sandbox.row(entry,0),voice=sandbox.row(entry,0,{allowSwap:true});
+ assert.equal(voice.replace('<button type="button" class="food-builder-item-swap" data-voice-swap="0">Swap food</button>',''),manual);
+ assert.doesNotMatch(voice,/<img|food-voice-item|food-voice-thumb/);
+ assert.match(voice,/<summary><span>.*<\/span><b>57 kcal<\/b><i /);
+ assert.match(voice,/data-meal-item-remove/);assert.match(voice,/data-meal-item-save/);
+ assert.doesNotMatch(source,/voiceItemMarkup|data-voice-edit|data-voice-remove/);
+});

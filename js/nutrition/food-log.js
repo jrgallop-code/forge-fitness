@@ -1,4 +1,3 @@
-import {foodPhotoIndex} from './food-photo.js';
 import {createFoodSpeechSession} from './food-speech.js';
 import {voiceIngredients,accurateVoiceMatch,voicePortion,replacementVoicePortion} from './voice-food-model.js';
 import { withFoodWeightUnits, validFoodAmount } from "./food-portion-units.js";
@@ -826,12 +825,6 @@ function voiceReviewMarkup(){
     </section>
     ${d.importUnresolved.length?`<div class="food-voice-unresolved"><strong>Choose a match</strong>${d.importUnresolved.map((text,i)=>`<div><span>${escapeHtml(text)}</span><button type="button" data-voice-resolve="${i}">Find food</button><button type="button" data-voice-dismiss="${i}" aria-label="Remove ${escapeHtml(text)}">×</button></div>`).join('')}</div>`:''}`;
 }
-function voiceItemMarkup(entry,index){
-    const assumed=entry.voiceIngredient?.unit==='serving' && entry.voiceIngredient?.assumed;
-    const photo=foodPhotoIndex(entry);
-    const item=mealItemDetailsMarkup(entry,index).replace('<summary>',`<summary>${photo===null?'<span class="food-voice-thumb" aria-hidden="true">🍽</span>':`<img class="food-voice-thumb" src="assets/food/category-${photo}.webp" alt="">`}`);
-    return `<article class="food-voice-item">${item}${assumed?'<small class="food-voice-assumption">Amount not heard · using 1 serving. Check the amount.</small>':''}<div class="food-voice-item-actions"><button type="button" data-voice-edit="${index}">Edit amount</button><button type="button" data-voice-swap="${index}">Swap food</button><button type="button" data-voice-remove="${index}">Remove</button></div></article>`;
-}
 async function openVoiceSwap(index=null,unresolvedIndex=null){
     if(!mealDraft || mealDraft.importing || mealDraft.voiceListening)return;
     const draft=mealDraft,entry=index!==null?draft.items[index]:null;
@@ -1132,7 +1125,7 @@ function mealFoodForEntry(entry) {
     };
 }
 
-function mealItemDetailsMarkup(entry, index) {
+function mealItemDetailsMarkup(entry, index, {allowSwap=false}={}) {
     const food = withFoodWeightUnits(withUsefulLiquidPortions(mealFoodForEntry(entry)));
     const quantity = Math.max(.01, Number(entry?.quantity) || 1);
     const portions = food.portions || [];
@@ -1142,9 +1135,10 @@ function mealItemDetailsMarkup(entry, index) {
         <summary><span><strong>${escapeHtml(entry?.name || "Food")}</strong><small>${escapeHtml(entry?.brand?entry.brand+" · ":"")}${escapeHtml(totalServingLabel(quantity, entry?.servingLabel))}</small></span><b>${Math.round(entry?.nutrition?.calories || 0)} kcal</b><i aria-hidden="true">›</i></summary>
         <div class="food-builder-item-editor">
             <div class="food-builder-item-edit-heading"><span class="eyebrow">EDIT ITEM</span><strong>Serving and quantity</strong></div>
+            ${allowSwap && entry.voiceIngredient?.unit==='serving' && entry.voiceIngredient?.assumed ? '<p class="food-voice-review-copy">Amount not heard · using 1 serving. Check the amount.</p>' : ''}
             ${foodAmountMarkup(food, {index: servingIndex, quantity, servingAttr: 'data-meal-item-serving', quantityAttr: 'data-meal-item-quantity'})}
             <div class="food-portion-preview food-portion-preview--macros" data-meal-item-preview>${foodMacroBreakdown(portion.nutrition || {}, quantity, portion.label)}</div>
-            <div class="food-builder-item-actions"><button type="button" data-meal-item-remove>Remove Item</button><button type="button" class="primary-btn" data-meal-item-save>Update Item</button></div>
+            <div class="food-builder-item-actions"><button type="button" data-meal-item-remove>Remove Item</button><button type="button" class="primary-btn" data-meal-item-save>Update Item</button>${allowSwap?`<button type="button" class="food-builder-item-swap" data-voice-swap="${index}">Swap food</button>`:""}</div>
         </div>
     </details>`;
 }
@@ -1585,7 +1579,7 @@ function renderMealBuilder() {
         ${voiceMode ? voiceReviewMarkup() : `<label>Meal name<input type="text" maxlength="100" value="${escapeHtml(mealDraft.name)}" placeholder="Post-workout lunch" data-meal-name></label><div class="food-builder-photo"><button type="button" data-meal-photo-pick>${mealDraft.photoDataUrl ? `<img src="${escapeHtml(mealDraft.photoDataUrl)}" alt="Meal thumbnail"><span>Change photo</span>` : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l1.5-2h7L17 7h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>'}</button>${mealDraft.photoDataUrl ? '<button type="button" data-meal-photo-remove>Remove</button>' : ""}<input type="file" accept="image/*" data-meal-photo-input hidden></div>`}
         ${voiceMode?"":pastedIngredientsMarkup()}
         <div class="food-builder-macros food-portion-preview food-portion-preview--macros">${macroBreakdownMarkup(totals, `Whole meal · ${mealDraft.items.length} item${mealDraft.items.length === 1 ? "" : "s"}`)}</div>
-        <div class="food-builder-items">${mealDraft.items.map((entry, index) => voiceMode?voiceItemMarkup(entry,index):mealItemDetailsMarkup(entry, index)).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
+        <div class="food-builder-items">${mealDraft.items.map((entry, index) => mealItemDetailsMarkup(entry,index,{allowSwap:voiceMode})).join("") || '<p class="empty-state">Add foods to create a reusable meal.</p>'}</div>
         <button type="button" class="food-builder-add" data-meal-builder-add${voiceMode&&(mealDraft.voiceListening||mealDraft.importing)?' disabled':''}>+ Add Food</button>
         <button type="button" class="primary-btn" data-meal-builder-save ${mealDraft.items.length && !mealDraft.importing && !mealDraft.voiceListening && !mealDraft.voiceQueueRunning && (!voiceMode || !mealDraft.importUnresolved.length) ? "" : "disabled"}>${voiceMode ? `Log to ${escapeHtml(selectedMeal)}` : editingMeal ? "Save Changes" : "Save to My Meals"}</button>`;
     panel.querySelector("[data-meal-name]")?.addEventListener("input", event => { mealDraft.name = event.currentTarget.value; });
@@ -1606,8 +1600,6 @@ function renderMealBuilder() {
       panel.querySelectorAll('[data-voice-swap]').forEach(b=>b.addEventListener('click',()=>{void openVoiceSwap(Number(b.dataset.voiceSwap));}));
       panel.querySelectorAll('[data-voice-resolve]').forEach(b=>b.addEventListener('click',()=>{void openVoiceSwap(null,Number(b.dataset.voiceResolve));}));
       panel.querySelectorAll('[data-voice-dismiss]').forEach(b=>b.addEventListener('click',()=>{mealDraft.importUnresolved.splice(Number(b.dataset.voiceDismiss),1);renderMealBuilder();}));
-      panel.querySelectorAll('[data-voice-remove]').forEach(b=>b.addEventListener('click',()=>{mealDraft.items.splice(Number(b.dataset.voiceRemove),1);renderMealBuilder();}));
-      panel.querySelectorAll('[data-voice-edit]').forEach(b=>b.addEventListener('click',()=>{const details=panel.querySelector(`[data-meal-item-details="${b.dataset.voiceEdit}"]`);if(details){details.open=!details.open;if(details.open)details.querySelector('input')?.focus();}}));
     }
     panel.querySelector("[data-meal-builder-save]")?.addEventListener("click", saveMealDraft);
 }

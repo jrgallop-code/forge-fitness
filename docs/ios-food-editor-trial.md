@@ -65,3 +65,7 @@ The food search form now has a full-width field with paired circular Barcode and
 A new measured quantity or count separates spoken foods even without “and” or punctuation. Native speech commits completed or paused phrases, retains their full transcript, and starts a fresh recognition request while the microphone remains active. A 1.8-second pause submits the stable phrase for matching. Each phrase has a unique ID; duplicate callbacks cannot import it twice. Matching runs in order, independently from recording, and prior phrases remain visible with match status. Stop remains available during a lookup. New foods cannot be logged until recording and queued lookups finish and unresolved foods are reviewed.
 
 Validation: 151 focused tests pass, including lists without conjunctions, multi-phrase transcription, duplicate callback suppression, queued matching order and visible history preservation. Real microphone timing still needs TestFlight verification.
+
+## Voice review layout correction
+
+Voice results now call the exact manual meal item renderer. Removed voice-only thumbnails, wrappers and always-visible Edit/Swap/Remove footers that broke the summary grid and crowded actions. Tap the standard name/brand/amount/calorie row to expand the existing portion editor. Swap food appears as a full-width action beneath Update/Remove inside that editor. Unknown amounts remain labelled for review. Validation: 152 focused checks pass, including comparing manual and voice markup.
