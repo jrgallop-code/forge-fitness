@@ -59,7 +59,7 @@ test('recording another batch retains reviewed items and unresolved foods, and u
 test('native speech source is registered once with unique Xcode object identifiers',async()=>{
  const {readFileSync}=await import('node:fs');
  const project=readFileSync('ios/App/App.xcodeproj/project.pbxproj','utf8');
- const ids=[...project.matchAll(/^\s*([A-F0-9]{24})(?:\s+\/\*.*?\*\/)?\s*=/gm)].map(m=>m[1]);
+ const ids=[...project.matchAll(/^\s*([A-F0-9]{24})(?:\s+\/\*.*?\*\/)?\s*=\s*\{\s*isa\s*=/gm)].map(m=>m[1]);
  assert.equal(new Set(ids).size,ids.length);
  assert.match(project,/LevelUpFoodSpeechPlugin.swift in Sources/);
  assert.match(readFileSync('ios/App/App/LevelUpBridgeViewController.swift','utf8'),/registerPluginInstance\(LevelUpFoodSpeechPlugin\(\)\)/);
