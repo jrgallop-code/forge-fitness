@@ -347,7 +347,15 @@ export function renderWorkoutBuilder() {
                         </label>
 
                         <label>
-                            Rep Range
+                            Tracking Metric
+                            <select id="custom-exercise-tracking">
+                                <option value="reps">Reps</option>
+                                <option value="duration">Time (seconds)</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            <span id="custom-exercise-target-label">Rep Range</span>
                             <input
                                 id="custom-exercise-reps"
                                 type="text"

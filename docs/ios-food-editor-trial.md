@@ -39,3 +39,9 @@ References: Ohio State Extension (https://livesmartohio.osu.edu/food/homonai-3os
 ## Consistent macro colors
 
 The food editor pie, legend and swipeable bars now match the dashboard, diary and macro goals: carbs #4fa8ff, protein #39d7ae, fat #8b7cf6. These macro identities stay consistent across appearances; surrounding surfaces and text retain the active theme.
+
+## Custom exercise time metric (iOS trial)
+
+Create exercise now offers Reps or Time (seconds). Time shows a duration target range and saves trackingType=duration. Custom exercise IDs resolve their stored tracking type through the existing hold detector so plan rows, timers, circuits, history, progress and hold summaries use the static hold behavior. Existing custom exercises remain rep based. Repetition and duration target drafts are retained separately while switching the form selector.
+
+Validation: 34 hold/custom exercise/native packaging checks passed, including persistence, plan ID resolution, hold progress and exclusion from repetition tonnage.

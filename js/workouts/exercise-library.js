@@ -854,7 +854,8 @@ export function addCustomExercise({
     equipment,
     type,
     recommendedReps,
-    defaultSets
+    defaultSets,
+    trackingType = "reps"
 }) {
 
     const cleanName =
@@ -900,7 +901,7 @@ export function addCustomExercise({
         recommendedReps:
             String(
                 recommendedReps ||
-                "8-12"
+                (trackingType === "duration" ? "20-60 sec" : "8-12")
             ),
 
         defaultSets:
@@ -913,7 +914,7 @@ export function addCustomExercise({
             ),
 
         trackingType:
-            "reps",
+            trackingType === "duration" ? "duration" : "reps",
 
         isCustom:
             true
