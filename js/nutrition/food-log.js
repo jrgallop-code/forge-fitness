@@ -1,3 +1,5 @@
+import { withFoodWeightUnits, validFoodAmount } from "./food-portion-units.js";
+import { foodAmountMarkup, foodHeroMarkup, bindFoodAmountEditor, restoreFoodAmount } from "./food-portion-editor.js";
 import {
     MEALS,
     buildCustomFoodPortions,
@@ -1017,23 +1019,24 @@ function closeFoodPortionPanel() {
 }
 
 function renderFoodPortionPanel(food, warning = "") {
-    food = withUsefulLiquidPortions(food);
+    food = withFoodWeightUnits(withUsefulLiquidPortions(food));
     selectedFood = food;
     const panel = document.querySelector("[data-food-portion]");
     if (!panel) return;
     panel.hidden = false;
+    panel.classList.add("food-detail-v2");
     panel.innerHTML = `
+        ${foodHeroMarkup(food)}
         <div class="food-portion-heading"><div><span class="eyebrow">${addContext === "edit" ? "EDIT LOGGED FOOD" : editingMealItemIndex !== null ? "EDIT MEAL ITEM" : "ADD FOOD"}</span><h3>${escapeHtml(food.name)}</h3><small>${escapeHtml(food.brand || "")}</small></div><button type="button" data-food-portion-close aria-label="${addContext === "edit" ? "Close food editor" : "Back to results"}">×</button></div>
         ${addContext === "meal-builder" ? `<div class="food-builder-destination">${editingMealItemIndex !== null ? "Updating an item in your saved meal" : "Adding to your saved meal"}</div>` : `<label>Meal<select data-food-meal>${MEALS.map(meal => `<option${meal === selectedMeal ? " selected" : ""}>${meal}</option>`).join("")}</select></label>`}
         ${warning ? `<p class="food-portion-warning">${escapeHtml(warning)}</p>` : ""}
-        <label>Serving size<select data-food-serving>${(food.portions || []).map((portion, index) => `<option value="${index}">${escapeHtml(portion.label)}</option>`).join("")}</select></label>
-        <label>Number of servings<input data-food-quantity type="number" inputmode="decimal" min="0.01" max="10000" step="0.01" value="1"></label>
-        <div class="food-portion-preview" data-food-preview></div>
+        ${foodAmountMarkup(food)}
+        <div class="food-portion-preview" data-food-preview hidden></div>
         <button type="button" class="primary-btn" data-food-confirm>${addContext === "meal-builder" ? (editingMealItemIndex !== null ? "Update Item" : "Add to Meal") : addContext === "edit" ? "Save Changes" : "Add to Food Log"}</button>
         ${addContext === "edit" ? '<button type="button" class="food-edit-remove" data-food-edit-remove>Remove Food</button>' : ""}
     `;
     panel.querySelector("[data-food-portion-close]")?.addEventListener("click", closeFoodPortionPanel);
-    panel.querySelectorAll("select,input").forEach(input => input.addEventListener("input", updatePortionPreview));
+    bindFoodAmountEditor(panel, food, { onUpdate: updatePortionPreview });
     panel.querySelector("[data-food-confirm]")?.addEventListener("click", addSelectedFood);
     panel.querySelector("[data-food-edit-remove]")?.addEventListener("click", removeEditedFood);
     updatePortionPreview();
@@ -1041,6 +1044,7 @@ function renderFoodPortionPanel(food, warning = "") {
 
 function updatePortionPreview() {
     if (!selectedFood) return;
+    document.querySelector("[data-food-portion]")?.foodAmountRefresh?.();
     const portion = selectedFood.portions?.[Number(document.querySelector("[data-food-serving]")?.value)] || selectedFood.portions?.[0];
     const quantity = Math.max(0, Number(document.querySelector("[data-food-quantity]")?.value) || 0);
     const n = portion?.nutrition || {};
@@ -1087,7 +1091,7 @@ function mealFoodForEntry(entry) {
 }
 
 function mealItemDetailsMarkup(entry, index) {
-    const food = withUsefulLiquidPortions(mealFoodForEntry(entry));
+    const food = withFoodWeightUnits(withUsefulLiquidPortions(mealFoodForEntry(entry)));
     const quantity = Math.max(.01, Number(entry?.quantity) || 1);
     const portions = food.portions || [];
     const servingIndex = Math.max(0, portions.findIndex(portion => portion?.label === entry?.servingLabel));
@@ -1096,8 +1100,7 @@ function mealItemDetailsMarkup(entry, index) {
         <summary><span><strong>${escapeHtml(entry?.name || "Food")}</strong><small>${escapeHtml(totalServingLabel(quantity, entry?.servingLabel))}</small></span><b>${Math.round(entry?.nutrition?.calories || 0)} kcal</b><i aria-hidden="true">›</i></summary>
         <div class="food-builder-item-editor">
             <div class="food-builder-item-edit-heading"><span class="eyebrow">EDIT ITEM</span><strong>Serving and quantity</strong></div>
-            <label>Serving size<select data-meal-item-serving>${portions.map((item, portionIndex) => `<option value="${portionIndex}"${portionIndex === servingIndex ? " selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label>
-            <label>Quantity<input data-meal-item-quantity type="number" inputmode="decimal" min="0.01" max="10000" step="0.01" value="${quantity}"></label>
+            ${foodAmountMarkup(food, {index: servingIndex, quantity, servingAttr: 'data-meal-item-serving', quantityAttr: 'data-meal-item-quantity'})}
             <div class="food-portion-preview food-portion-preview--macros" data-meal-item-preview>${foodMacroBreakdown(portion.nutrition || {}, quantity, portion.label)}</div>
             <div class="food-builder-item-actions"><button type="button" data-meal-item-remove>Remove Item</button><button type="button" class="primary-btn" data-meal-item-save>Update Item</button></div>
         </div>
@@ -1109,7 +1112,7 @@ function bindMealItemDetails(panel) {
         const index = Number(details.dataset.mealItemDetails);
         const entry = mealDraft?.items?.[index];
         if (!entry) return;
-        const food = withUsefulLiquidPortions(mealFoodForEntry(entry));
+        const food = withFoodWeightUnits(withUsefulLiquidPortions(mealFoodForEntry(entry)));
         const serving = details.querySelector("[data-meal-item-serving]");
         const quantity = details.querySelector("[data-meal-item-quantity]");
         const preview = details.querySelector("[data-meal-item-preview]");
@@ -1118,8 +1121,8 @@ function bindMealItemDetails(panel) {
             const amount = Math.max(.01, Number(quantity?.value) || 1);
             if (preview) preview.innerHTML = foodMacroBreakdown(portion.nutrition || {}, amount, portion.label);
         };
-        serving?.addEventListener("input", updatePreview);
-        quantity?.addEventListener("input", updatePreview);
+        bindFoodAmountEditor(details, food, {servingSelector:'[data-meal-item-serving]',quantitySelector:'[data-meal-item-quantity]',saveSelector:'[data-meal-item-save]',onUpdate:updatePreview});
+        updatePreview();
         details.addEventListener("toggle", () => {
             if (!details.open) return;
             panel.querySelectorAll("[data-meal-item-details][open]").forEach(item => {
@@ -1129,7 +1132,8 @@ function bindMealItemDetails(panel) {
         details.querySelector("[data-meal-item-save]")?.addEventListener("click", () => {
             const portion = food.portions?.[Number(serving?.value)] || food.portions?.[0];
             if (!portion) return;
-            const amount = Math.max(.01, Number(quantity?.value) || 1);
+            if (!validFoodAmount(quantity?.value)) return;
+            const amount = Number(quantity.value);
             const updated = createLogEntry({ meal: selectedMeal, food, portion, quantity: amount });
             if (entry.pasteImported) updated.pasteImported = true;
             mealDraft.items.splice(index, 1, updated);
@@ -1146,7 +1150,9 @@ function addSelectedFood() {
     if (!selectedFood) return;
     const portion = selectedFood.portions?.[Number(document.querySelector("[data-food-serving]")?.value)] || selectedFood.portions?.[0];
     const meal = document.querySelector("[data-food-meal]")?.value || selectedMeal;
-    const quantity = Number(document.querySelector("[data-food-quantity]")?.value);
+    const rawAmount = document.querySelector("[data-food-quantity]")?.value;
+    if (!validFoodAmount(rawAmount)) return;
+    const quantity = Number(rawAmount);
     const entry = createLogEntry({ meal, food: selectedFood, portion, quantity });
     if (addContext === "edit" && editingEntryId) {
         updateEntry(selectedDate, editingEntryId, entry);
@@ -1188,6 +1194,7 @@ function openLoggedFoodEditor(entryId) {
     const mealSelect = document.querySelector("[data-food-meal]");
     if (serving) serving.value = String(servingIndex);
     if (quantityInput) quantityInput.value = String(quantity);
+    restoreFoodAmount(document.querySelector('[data-food-portion]'),selectedFood,servingIndex,quantity);
     if (mealSelect) mealSelect.value = entry.meal;
     updatePortionPreview();
 }
