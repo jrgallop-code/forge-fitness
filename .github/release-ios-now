@@ -501,3 +501,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-16: Compact strength empty states, retire the per-set stats switch, and add native App Store review requests plus Rate Level Up in More.
 
 2026-10-16: Expand food nutrient details to 35 fields, retain microgram precision and refresh older database details. Missing nutrient values retain the existing dash display.
+
+2026-10-16: Compact right-aligned Barcode and Voice shortcut chips below food search, retaining theme colors and 44-point touch targets.
