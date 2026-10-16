@@ -503,3 +503,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-16: Expand food nutrient details to 35 fields, retain microgram precision and refresh older database details. Missing nutrient values retain the existing dash display.
 
 2026-10-16: Compact right-aligned Barcode and Voice shortcut chips below food search, retaining theme colors and 44-point touch targets.
+
+2026-10-16: Left-align the compact Barcode and Voice shortcuts below food search.
