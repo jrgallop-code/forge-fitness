@@ -12,15 +12,15 @@ test('legacy context comes from saved snapshot and snapshot stays authoritative'
  assert.equal(exerciseContext({},e),'standalone');
  assert.equal(matchesStrengthContext(s,e,'all'),true);
 });
-test('exclusions preserve recorded sets while making them ineligible for strength',()=>{
+test('legacy exclusion flags no longer hide working sets',()=>{
  const set={weight:25,reps:10,completed:true,excludeFromStrength:true};
- assert.equal(eligibleStrengthSet(set),false);
+ assert.equal(eligibleStrengthSet(set),true);
  assert.equal(set.weight*set.reps,250);
  assert.equal(eligibleStrengthSet({...set,excludeFromStrength:false}),true);
  assert.equal(eligibleStrengthSet({isWarmup:true}),false);
  assert.equal(eligibleStrengthSet({completed:false}),false);
 });
-test('superset records cannot beat standalone records and exclusions cannot earn PRs',()=>{
+test('superset records remain separate while retired exclusion flags are ignored',()=>{
  const a=session('10',exercise(20));
  const b=session('11',exercise(30),'A');
  const c=session('12',exercise(22));
@@ -30,10 +30,10 @@ test('superset records cannot beat standalone records and exclusions cannot earn
  assert.equal(counts.get('11'),0);
  assert.equal(counts.get('12'),1);
  assert.equal(counts.get('13'),1);
- assert.equal(counts.get('14'),0);
+ assert.equal(counts.get('14'),1);
 });
 
-test('chart keeps excluded and superset work in volume but separates strength records', async()=>{
+test('chart retains all working sets and separates superset strength records', async()=>{
  const {getExerciseRecords}=await import('../js/progress/exercise-progress-v2.js');
  const a=session('10',exercise(20));
  const b=session('11',exercise(30),'A');
@@ -42,10 +42,10 @@ test('chart keeps excluded and superset work in volume but separates strength re
  const volume=getExerciseRecords('dumbbell-curl',{metric:'volume'});
  assert.equal(volume.length,3);
  assert.equal(volume[2].completedSets,1);
- assert.equal(getExerciseRecords('dumbbell-curl',{metric:'strength',context:'standalone'}).length,1);
+ assert.equal(getExerciseRecords('dumbbell-curl',{metric:'strength',context:'standalone'}).length,2);
  const supersets=getExerciseRecords('dumbbell-curl',{metric:'strength',context:'superset'});
  assert.equal(supersets.length,1); assert.equal(supersets[0].bestSet.weight,30);
- assert.equal(getExerciseRecords('dumbbell-curl',{metric:'strength',context:'all'}).length,2);
+ assert.equal(getExerciseRecords('dumbbell-curl',{metric:'strength',context:'all'}).length,3);
 });
 
 test('context controls stay absent until this exercise has recorded superset work',async()=>{

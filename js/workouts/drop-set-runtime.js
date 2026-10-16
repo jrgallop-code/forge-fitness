@@ -1,4 +1,3 @@
-import { isStaticHold } from "./static-holds.js";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-cardio-3";
 import { canonicalInputValue, setCanonicalUnitPlaceholder } from "../core/unit-system.js?v=granular-units-1";
 
@@ -240,11 +239,6 @@ function updateSetMenu(row) {
         button.classList.toggle("selected", selected);
         button.setAttribute("aria-pressed", String(selected));
     });
-    const strength = menu.querySelector('[data-strength-include]');
-    if (strength) {
-        strength.checked = set?.excludeFromStrength !== true;
-        strength.closest("label").hidden = isStaticHold(getContext(row).exerciseId);
-    }
     const clear = menu.querySelector("[data-clear-set-rir]");
     if (clear) clear.hidden = current === null;
     const addDropButton = menu.querySelector("[data-add-drop-set]");
@@ -361,7 +355,6 @@ function enhanceRow(row) {
             ${[0, 1, 2, 3, 4].map(value => `<button type="button" data-set-rir-value="${value}" data-rir-tone="${value}" aria-pressed="false">${value === 4 ? "4+" : value}</button>`).join("")}
         </div>
         <button class="clear-set-rir" type="button" data-clear-set-rir hidden>Clear RIR</button>
-        <label class="strength-set-option"><span>Use for strength stats<small>Volume and history always retained</small></span><input type="checkbox" data-strength-include checked></label>
         <button class="add-drop-set-from-menu" type="button" data-add-drop-set>Add Drop Set</button>`;
     row.insertAdjacentElement("afterend", menu);
 
@@ -392,17 +385,6 @@ function enhance() {
 }
 
 document.addEventListener("click", event => {
-    const strength = event.target.closest("[data-strength-include]");
-    if (strength) {
-        const row = rowForDropControl(strength.closest(".drop-set-menu"));
-        if (!row) return;
-        const { active, card, exerciseIndex, setIndex, set } = getContext(row);
-        if (!set) return;
-        set.excludeFromStrength = !strength.checked;
-        persistRuntimeSession(row, active);
-        card.closest("#workout-session-logger")?.dispatchEvent(new CustomEvent("levelup:set-strength-changed", { detail: { exerciseIndex, setIndex, excluded: set.excludeFromStrength } }));
-        return;
-    }
     const trigger = event.target.closest(".drop-set-menu-trigger");
     if (trigger) {
         const row = trigger.closest(".session-set-row");

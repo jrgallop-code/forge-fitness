@@ -10,7 +10,7 @@ export function exerciseContext(session, exercise) {
     return exercise?.supersetGroup ? 'superset' : 'standalone';
 }
 export function eligibleStrengthSet(set) {
-    return Boolean(set && set.excludeFromStrength !== true && set.completed !== false && !set.isWarmup && !set.warmup && !['warmup'].includes(set.type || set.setType));
+    return Boolean(set && set.completed !== false && !set.isWarmup && !set.warmup && !['warmup'].includes(set.type || set.setType));
 }
 export function matchesStrengthContext(session, exercise, context = 'standalone') {
     return context === 'all' || exerciseContext(session, exercise) === context;

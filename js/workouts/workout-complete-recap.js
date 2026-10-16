@@ -76,7 +76,7 @@ function renderRecap(session, history, resumeWorkout) {
   document.body.classList.add("workout-recap-open");
   overlay.querySelectorAll("[data-recap-done]").forEach(button => button.addEventListener("click", closeRecap));
   overlay.querySelector("[data-recap-undo]")?.addEventListener("click", () => {
-    closeRecap();
+    closeRecap({ resumed: true });
     if (resumeWorkout) resumeWorkout(session.id);
     else import("./workout-session.js?v=history-rir-edit-1").then(module => module.resumeCompletedWorkout(session.id));
   });
@@ -206,7 +206,7 @@ function shareText(data){return`${data.dayName} complete: ${data.stats.workingSe
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=name;link.style.display="none";document.body.appendChild(link);link.click();link.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1500);}
 function slug(value){return String(value||"workout").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"workout";}
 function normalizeMuscle(value){const key=String(value||"").trim().toLowerCase();if(["abs","abdominals","obliques"].includes(key))return"core";if(["lats","upper back","lower back","traps"].includes(key))return"back";if(["delts","deltoids"].includes(key))return"shoulders";if(key==="rear deltoids")return"rear delts";if(key==="quadriceps")return"quads";return key;}
-function closeRecap(){document.querySelector("[data-workout-complete-recap]")?.remove();document.body.classList.remove("workout-recap-open");document.querySelector("#workout-session-logger")?.remove();document.querySelector('.nav-btn[data-page="workout"]')?.click();}
+function closeRecap(options = {}){const sessionId = document.querySelector("[data-workout-complete-recap]")?.dataset.recapSessionId; document.querySelector("[data-workout-complete-recap]")?.remove();document.body.classList.remove("workout-recap-open");document.querySelector("#workout-session-logger")?.remove();document.querySelector('.nav-btn[data-page="workout"]')?.click(); window.dispatchEvent(new CustomEvent("levelup:workout-recap-dismissed", {detail:{sessionId, resumed:options.resumed === true}}));}
 function readSessions(){try{const parsed=JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY)||"[]");if(!Array.isArray(parsed))return[];const repaired=repairWorkoutSessionList(parsed);if(repaired.changed){try{localStorage.setItem(SESSION_STORAGE_KEY,JSON.stringify(repaired.sessions));}catch{ /* Repairs remain usable even when persistence is unavailable. */ }}return repaired.sessions;}catch{return[];}}
 function formatDurationShort(ms){const total=Math.max(0,Math.round((Number(ms)||0)/60000));return`${total} min`;}
 function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}

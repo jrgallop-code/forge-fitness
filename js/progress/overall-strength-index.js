@@ -94,7 +94,7 @@ function ensureStrengthIndexCard() {
 
             <div id="overall-strength-index-chart-view">
                 <p class="analytics-note">
-                    Tracks standalone strength using one representative lift from each of six major movement categories. Superset and manually excluded sets stay in your training volume.
+                    Tracks standalone strength using one representative lift from each of six major movement categories. Superset sets stay in your training volume.
                 </p>
                 <canvas
                     id="overall-strength-index-chart"

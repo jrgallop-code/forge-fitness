@@ -191,7 +191,7 @@ export function updateStrengthContextControls(exerciseId, host, metric = selecte
             controls.appendChild(button);
         }
         const note = document.createElement("small");
-        note.textContent = "Strength comparisons use the selected context. Volume includes all working sets.";
+        note.textContent = "Volume includes all sets.";
         controls.appendChild(note);
         (document.getElementById("exercise-volume-comparison") || host).before(controls);
     }
@@ -376,7 +376,7 @@ function updateControls(hasMachineBreakdown = false) {
     else {
         note.textContent = selectedMetric === "volume"
             ? "Two-dumbbell exercises count both dumbbells; other loads use weight × reps."
-            : selectedMetric === "weight" ? "Heaviest working set with reps. More weight and more reps are separate milestones; weight alone does not prove a strength gain." : "Best-set Epley estimate—not a tested maximum.";
+            : selectedMetric === "weight" ? "Heaviest working set and reps." : "Best-set Epley estimate—not a tested maximum.";
     }
 }
 
@@ -385,7 +385,7 @@ function renderComparison(records) {
     if (!container) return;
     container.hidden = false;
     if (!records.length) {
-        container.innerHTML = `<p class="empty-state">Log this exercise to establish your first ${selectedMetric === "volume" ? "session volume" : selectedMetric === "weight" ? "working weight" : "estimated 1RM"}.</p>`;
+        container.innerHTML = `<p class="empty-state">${selectedMetric === "volume" || selectedStrengthContext === "all" ? "No recorded sets yet." : `No ${selectedStrengthContext} sets yet.`}</p>`;
         return;
     }
     const latest = records.at(-1);

@@ -1,3 +1,4 @@
+import { initializeAppReviews } from "./feedback/app-reviews.js";
 import "./core/appearance-theme.js?v=appearance-themes-3";
 import { navigate } from "./core/router.js?v=progress-insight-rate-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=history-editor-route-1";
@@ -11,6 +12,7 @@ import { initializeSatisfactionSurvey } from "./feedback/satisfaction-survey.js?
 import { applyAppFeaturePreferences } from "./core/app-feature-preferences.js?v=nutrition-feature-choice-1";
 
 initializeSatisfactionSurvey();
+initializeAppReviews();
 applyAppFeaturePreferences();
 
 const FILLED_ICON = paths => `<svg class="app-inline-icon" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;

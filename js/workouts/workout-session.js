@@ -1020,13 +1020,6 @@ function bindSessionInputs({
         persist();
     });
 
-    logger.addEventListener("levelup:set-strength-changed", event => {
-        const set = session.exercises?.[Number(event.detail?.exerciseIndex)]?.sets?.[Number(event.detail?.setIndex)];
-        if (!set) return;
-        set.excludeFromStrength = event.detail.excluded === true;
-        persist();
-    });
-
     logger.addEventListener("levelup:set-rir-changed", event => {
         const detail = event.detail || {};
         const exerciseIndex = Number(detail.exerciseIndex);

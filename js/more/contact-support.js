@@ -1,3 +1,4 @@
+import { appReviewCardMarkup } from "../feedback/app-reviews.js";
 import { openFeatureBoard } from "./feature-board.js?v=owner-feature-review-1";
 const SUPPORT_ENDPOINT = "https://formsubmit.co/ajax/jrgallop@gmail.com";
 const CLOUD_ENDPOINT = "https://api.leveluphypertrophy.com";
@@ -13,7 +14,7 @@ function ensureSupportStyles() {
 }
 
 export function supportCardMarkup() {
-    return `<button class="more-menu-card" type="button" data-contact-support-card><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Contact Support</strong><small>Report an issue and follow up in the app.</small></span></button><button class="more-menu-card" type="button" data-help-center><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Help Center</strong><small>Guides to workouts, nutrition, progress and your account.</small></span></button><button class="more-menu-card" type="button" data-feature-board><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Request a Feature</strong><small>Suggest ideas, vote and join the discussion.</small></span></button>`;
+    return `<button class="more-menu-card" type="button" data-contact-support-card><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Contact Support</strong><small>Report an issue and follow up in the app.</small></span></button><button class="more-menu-card" type="button" data-help-center><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Help Center</strong><small>Guides to workouts, nutrition, progress and your account.</small></span></button><button class="more-menu-card" type="button" data-feature-board><span class="more-menu-icon">${SUPPORT_ICON}</span><span><strong>Request a Feature</strong><small>Suggest ideas, vote and join the discussion.</small></span></button>${appReviewCardMarkup()}`;
 }
 
 function renderContactSupport() {

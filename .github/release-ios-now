@@ -497,3 +497,5 @@ Circuits: full exercise list on each swipeable round page, optional weight/reps 
 2026-10-15: Open meal draft items in the standard full food editor and remove default keyboard activation when opening food details.
 
 2026-10-15: Separate standalone and superset strength comparisons, show context tabs only for exercises with superset history, preserve all volume and add compact per-set strength exclusions.
+
+2026-10-16: Compact strength empty states, retire the per-set stats switch, and add native App Store review requests plus Rate Level Up in More.

@@ -71,13 +71,11 @@ export function calculatePerformance(session, allSessions) {
             }
             return;
         }
-        const allCompletedSets = (current.sets || []).filter(set => set?.completed);
         const currentSets = completedSetsOnly(current.sets);
         const previousExercise = findPreviousExercisePerformance(older, current, session);
         const previousSets = completedSetsOnly(previousExercise?.sets);
         plannedSets += Array.isArray(current.sets) ? current.sets.length : 0;
-        completedSets += allCompletedSets.length;
-        if (allCompletedSets.length && !currentSets.length) { exercises.push({name: identity.name, status: "Excluded", detail: "Excluded from strength comparisons · volume retained"}); return; }
+        completedSets += currentSets.length;
         if (!currentSets.length) {
             exercises.push({ name: identity.name, status: "Incomplete", detail: "No completed working sets" });
             return;
