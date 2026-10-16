@@ -1,3 +1,4 @@
+import {extraUsdaNutrition,extraUsdaLabelNutrition,extraOpenFoodFactsNutrition,extraOpenFoodFactsSetNutrition} from "./food-extra-nutrients.js";
 import { SWISS_CHALET_FOODS } from "./data/swiss-chalet-foods.js";
 import { PUR_SIMPLE_FOODS } from "./data/pur-simple-foods.js";
 import { NORTH_AMERICAN_CHAIN_FOODS } from "./data/north-american-chain-foods.js";
@@ -984,7 +985,7 @@ async function getFoodByBarcode(value, request, env, ctx) {
 }
 
 const OPEN_FOOD_FACTS_CACHE_DAYS = 30;
-const OPEN_FOOD_FACTS_CACHE_SCHEMA = 2;
+const OPEN_FOOD_FACTS_CACHE_SCHEMA = 4;
 const OPEN_FOOD_FACTS_USER_AGENT = "LevelUpHypertrophy/1.0 (support@leveluphypertrophy.com)";
 
 async function fetchOpenFoodFactsBarcode(barcode) {
@@ -1083,8 +1084,8 @@ export function normalizeOpenFoodFactsProduct(product, barcode) {
         fat: openFoodFactsNutrient(legacyNutriments, "fat_serving"),
         fiber: openFoodFactsNutrient(legacyNutriments, "fiber_serving")
     };
-    const explicitPer100 = hundredGramSet ? openFoodFactsSetNutrition(hundredGramSet) : legacyPer100;
-    const perServing = servingSet ? openFoodFactsSetNutrition(servingSet) : legacyPerServing;
+    const explicitPer100 = { ...extraOpenFoodFactsNutrition(legacyNutriments,"100g"), ...(hundredGramSet ? openFoodFactsSetNutrition(hundredGramSet) : legacyPer100) };
+    const perServing = { ...extraOpenFoodFactsNutrition(legacyNutriments,"serving"), ...(servingSet ? openFoodFactsSetNutrition(servingSet) : legacyPerServing) };
     const servingSize = limitedText(product?.serving_size, 80);
     const servingGrams = openFoodFactsServingGrams(product?.serving_quantity || servingSet?.per_quantity, servingSize);
     const per100 = explicitPer100.calories > 0
@@ -1113,6 +1114,7 @@ export function normalizeOpenFoodFactsProduct(product, barcode) {
     const countryCode = countries.includes("en:canada") ? "CA" : countries.includes("en:united-states") ? "US" : "";
     return {
         source: "openfoodfacts",
+        nutrientSchemaVersion: 2,
         barcode: normalizedBarcode,
         name,
         brand: limitedText(String(product?.brands || "").split(",")[0], 120),
@@ -1146,6 +1148,7 @@ function openFoodFactsSetNutrition(set) {
         return Number(value.toFixed(3));
     };
     return {
+        ...extraOpenFoodFactsSetNutrition(set),
         calories: read("energy-kcal"),
         protein: read("proteins"),
         carbs: read("carbohydrates"),
@@ -1715,7 +1718,7 @@ async function getUsdaFoodDetails(fdcId, request, env) {
     const detailsUrl = new URL(`https://api.nal.usda.gov/fdc/v1/food/${fdcId}`);
     detailsUrl.searchParams.set("api_key", env.USDA_FDC_API_KEY);
     detailsUrl.searchParams.set("format", "full");
-    detailsUrl.searchParams.set("nutrients", "203,204,205,208,291,1003,1004,1005,1008,1079");
+    // Preserve the complete source nutrient list for food details.
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
     try {
@@ -1772,6 +1775,7 @@ export function normalizeUsdaFood(food) {
     if (!Number.isFinite(fdcId) || !name) return null;
 
     const per100 = {
+        ...extraUsdaNutrition(food),
         calories: usdaNutrient(food, ["208", "1008"], ["energy"], "KCAL"),
         protein: usdaNutrient(food, ["203", "1003"], ["protein"]),
         carbs: usdaNutrient(food, ["205", "1005"], ["carbohydrate, by difference", "carbohydrate"]),
@@ -1786,7 +1790,7 @@ export function normalizeUsdaFood(food) {
         portions.push({
             label: foodServingLabel(limitedText(food?.householdServingFullText, 80) || `${formatFoodNumber(servingSize)} g`, servingSize),
             grams: servingSize,
-            nutrition: usdaLabelNutrition(food) || scaleUsdaNutrition(per100, multiplier)
+            nutrition: { ...scaleUsdaNutrition(per100, multiplier), ...(usdaLabelNutrition(food) || {}) }
         });
     }
     const detailedPortions = [...(Array.isArray(food?.foodPortions) ? food.foodPortions : []), ...(Array.isArray(food?.foodMeasures) ? food.foodMeasures : [])]
@@ -1801,6 +1805,7 @@ export function normalizeUsdaFood(food) {
 
     return {
         source: "usda",
+        nutrientSchemaVersion: 2,
         fdcId,
         barcode: limitedText(food?.gtinUpc, 40),
         name,
@@ -1864,7 +1869,7 @@ function usdaLabelNutrition(food) {
     };
     const calories = read("calories");
     if (!(calories > 0)) return null;
-    return { calories, protein: read("protein"), carbs: read("carbohydrates"), fat: read("fat"), fiber: read("fiber") };
+    return { ...extraUsdaLabelNutrition(labels), calories, protein: read("protein"), carbs: read("carbohydrates"), fat: read("fat"), fiber: read("fiber") };
 }
 
 function usdaNutrient(food, numbers, names, requiredUnit = "") {
@@ -1881,7 +1886,7 @@ function usdaNutrient(food, numbers, names, requiredUnit = "") {
 }
 
 function scaleUsdaNutrition(nutrition, multiplier) {
-    return Object.fromEntries(Object.entries(nutrition).map(([key, value]) => [key, Number((value * multiplier).toFixed(3))]));
+    return Object.fromEntries(Object.entries(nutrition).map(([key, value]) => [key, Number((value * multiplier).toPrecision(12))]));
 }
 
 function formatFoodNumber(value) {

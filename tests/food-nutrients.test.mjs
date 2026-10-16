@@ -28,3 +28,12 @@ test('food detail keeps X dismissal and removes the redundant bottom navigation'
  const source=readFileSync('js/nutrition/food-log.js','utf8');
  assert.ok(source.includes('data-food-portion-close'));assert.ok(!source.includes('class="food-detail-back"'));
 });
+
+test('expanded nutrient list displays micrograms and keeps missing values as dashes',()=>{
+ const rows=nutrientRows({vitaminD:2.5,vitaminB12:.04,addedSugars:0},2,'all');
+ assert.equal(rows.length,35);
+ assert.equal(rows.find(row=>row.key==='vitaminD').text,'5 µg');
+ assert.equal(rows.find(row=>row.key==='vitaminB12').text,'0.08 µg');
+ assert.equal(rows.find(row=>row.key==='addedSugars').text,'0 g');
+ assert.equal(rows.find(row=>row.key==='selenium').text,'—');
+});

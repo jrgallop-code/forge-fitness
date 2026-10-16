@@ -1,3 +1,4 @@
+import {extraFatSecretNutrition} from "./food-extra-nutrients.js";
 const FATSECRET_TOKEN_URL = "https://oauth.fatsecret.com/connect/token";
 const FATSECRET_API_ROOT = "https://platform.fatsecret.com/rest";
 const AUTO_SCOPE = "auto";
@@ -180,6 +181,7 @@ export function normalizeFatSecretFood(food, options = {}) {
 
     return {
         source: "fatsecret",
+        nutrientSchemaVersion: 2,
         catalogueId: `fatsecret:${foodId}`,
         fatSecretFoodId: foodId,
         name,
@@ -375,7 +377,7 @@ function normalizeServing(serving) {
         label,
         ...(grams > 0 ? { grams } : {}),
         ...(milliliters > 0 ? { milliliters } : {}),
-        nutrition: { calories, protein, carbs, fat, fiber }
+        nutrition: { ...extraFatSecretNutrition(serving), calories, protein, carbs, fat, fiber }
     };
 }
 

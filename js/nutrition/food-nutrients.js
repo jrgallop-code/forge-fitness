@@ -2,7 +2,14 @@ export const FOOD_NUTRIENTS = [
  ['fat','Total Fat','g',false,true],['saturatedFat','Saturated Fat','g',true,true],['transFat','Trans Fat','g',true,false],
  ['carbs','Total Carbs','g',false,true],['fiber','Dietary Fibre','g',true,true],['sugars','Sugars','g',true,true],
  ['protein','Protein','g',false,true],['sodium','Sodium','mg',false,true],['cholesterol','Cholesterol','mg',false,true],
- ['calcium','Calcium','mg',false,false],['iron','Iron','mg',false,false],['potassium','Potassium','mg',false,false],['vitaminC','Vitamin C','mg',false,false]
+ ['monounsaturatedFat','Monounsaturated Fat','g',true,false],['polyunsaturatedFat','Polyunsaturated Fat','g',true,false],['addedSugars','Added Sugars','g',true,false],
+ ['calcium','Calcium','mg',false,false],['iron','Iron','mg',false,false],['potassium','Potassium','mg',false,false],['vitaminC','Vitamin C','mg',false,false],
+ ['magnesium','Magnesium','mg',false,false],['phosphorus','Phosphorus','mg',false,false],['zinc','Zinc','mg',false,false],
+ ['copper','Copper','mg',false,false],['manganese','Manganese','mg',false,false],['selenium','Selenium','µg',false,false],
+ ['vitaminA','Vitamin A','µg',false,false],['vitaminD','Vitamin D','µg',false,false],['vitaminE','Vitamin E','mg',false,false],['vitaminK','Vitamin K','µg',false,false],
+ ['thiamin','Thiamin (B1)','mg',false,false],['riboflavin','Riboflavin (B2)','mg',false,false],['niacin','Niacin (B3)','mg',false,false],
+ ['pantothenicAcid','Pantothenic Acid (B5)','mg',false,false],['vitaminB6','Vitamin B6','mg',false,false],['vitaminB12','Vitamin B12','µg',false,false],
+ ['folate','Folate','µg',false,false],['folateDFE','Folate (DFE)','µg',false,false],['choline','Choline','mg',false,false]
 ];
 const available=value=>value!==null && value!==undefined && value!=='' && Number.isFinite(Number(value)) && Number(value)>=0;
 export function nutrientRows(nutrition={},quantity=1,filter='popular') {

@@ -938,7 +938,7 @@ async function chooseFood(food) {
     dismissFoodKeyboard();
     const requestId = ++foodSelectionRequest;
     foodDetailController?.abort();
-    if (food?.source === "usda" && food?.fdcId && !food.detailsLoaded) {
+    if (food?.source === "usda" && food?.fdcId && (!food.detailsLoaded || food.nutrientSchemaVersion !== 2)) {
         renderFoodLoading(food);
         try {
             const detailed = await loadFoodDetails(food);
@@ -951,7 +951,7 @@ async function chooseFood(food) {
         }
         return;
     }
-    if (food?.source === "fatsecret" && food?.fatSecretFoodId && !hasFatSecretServingId(food)) {
+    if (food?.source === "fatsecret" && food?.fatSecretFoodId && (!hasFatSecretServingId(food) || food.nutrientSchemaVersion !== 2)) {
         renderFoodLoading(food);
         try {
             const detailed = await loadFatSecretFoodDetails(food);
