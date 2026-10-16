@@ -1,3 +1,4 @@
+import { eligibleStrengthSet } from "../workouts/strength-context.js";
 import { NUTRITION_BADGES, nutritionEnabled, nutritionBadgeMetrics, nutritionTargets } from './nutrition-badges.js';
 import { isCircuit } from '../workouts/circuit-history.js';
 import { calculatePrCounts } from '../workouts/workout-pr-badges.js';
@@ -209,7 +210,7 @@ export function readGoals(storage = localStorage) {
 export function matchingSets(sessions, exerciseId, equipmentProfileId = 'default', since = null) {
   return completedSessions(sessions).filter(s => !isCircuit(s) && (!since || Date.parse(s.completedAt) >= Date.parse(since))).flatMap(session =>
     (session.exercises || []).filter(e => !isCircuit(e) && (e.exerciseId || e.id) === exerciseId && (e.equipmentProfileId || 'default') === equipmentProfileId)
-      .flatMap(e => (e.sets || []).filter(validWorkingSet).map(set => ({ weight: Number(set.weight), reps: Number(set.reps), date: session.date, sessionId: session.id })))
+      .flatMap(e => (e.sets || []).filter(set => validWorkingSet(set) && eligibleStrengthSet(set)).map(set => ({ weight: Number(set.weight), reps: Number(set.reps), date: session.date, sessionId: session.id })))
   );
 }
 export const estimatedGoalStrength = set => Number(set.weight) * (1 + Number(set.reps) / 30);

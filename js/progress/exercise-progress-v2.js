@@ -1,3 +1,4 @@
+import { exerciseContext, eligibleStrengthSet } from "../workouts/strength-context.js";
 import { isStaticHold } from "../workouts/static-holds.js";
 import { holdProgressRecords, holdComparison } from "./hold-progress-model.js";
 import { UNIT_KINDS, displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
@@ -9,6 +10,7 @@ import { supportsEquipmentProfiles } from "../workouts/equipment-profiles.js";
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
 let unitListenerBound = false;
 let selectedMetric = "volume";
+let selectedStrengthContext = "standalone";
 let selectedEquipment = "all";
 let selectedExerciseId = "";
 let selectedMachineView = "combined";
@@ -90,10 +92,12 @@ function renderExerciseProgressV2() {
         button.hidden = hold && metric !== 'strength';
         button.textContent = hold ? ({volume:'Total time', strength:'Best hold', weight:'Added weight'}[metric]) : ({volume:'Session Volume', strength:'Estimated 1RM', weight:'Weight & reps'}[metric]);
     });
-    if (hold) { renderHoldProgress(host, history, select.value); return; }
+    if (hold) { document.getElementById("exercise-context-record")?.remove(); document.getElementById("exercise-strength-context")?.remove(); renderHoldProgress(host, history, select.value); return; }
     document.getElementById('hold-progress-filter')?.remove();
     history.previousElementSibling?.classList.remove('hold-best-history');
     document.getElementById('exercise-volume-comparison')?.classList.remove('hold-progress-summary');
+    if (selectedExerciseId !== select.value) selectedStrengthContext = "standalone";
+    updateStrengthContextControls(select.value, host);
     const allRecords = getExerciseRecords(select.value).filter(record => selectedMetric !== "weight" || record.weightSet);
     const profiles = getProfiles(allRecords);
     if (selectedExerciseId !== select.value) {
@@ -101,6 +105,7 @@ function renderExerciseProgressV2() {
         selectedEquipment = "all";
         selectedMachineView = "combined";
     }
+    renderContextRecord(allRecords, host);
     updateEquipmentFilter(profiles);
     if (!supportsEquipmentProfiles(getExerciseById(select.value))) { selectedEquipment = "all"; selectedMachineView = "combined"; }
     const hasMachineBreakdown = selectedEquipment === "all" && profiles.length > 1 && supportsEquipmentProfiles(getExerciseById(select.value));
@@ -154,20 +159,70 @@ function updateMachineViewControls(visible, canCompare) {
     );
 }
 
-function getExerciseRecords(exerciseId) {
+function renderContextRecord(records, host) {
+    document.getElementById("exercise-context-record")?.remove();
+    if (!document.getElementById("exercise-strength-context") || selectedMetric === "volume") return;
+    const relevant = records.filter(record => selectedEquipment === "all" || record.profileId === selectedEquipment);
+    const best = relevant.reduce((winner, record) => !winner || rawMetricValue(record) > rawMetricValue(winner) ? record : winner, null);
+    if (!best) return;
+    const set = metricSet(best);
+    const card = document.createElement("div");
+    card.id = "exercise-context-record";
+    card.className = "exercise-context-record";
+    const label = selectedStrengthContext === "superset" ? "Best superset set" : selectedStrengthContext === "all" ? "Best set · all contexts" : "Best standalone set";
+    card.innerHTML = `<small>${label}</small><strong>${displayMass(Number(set.weight), 1, UNIT_KINDS.LIFTING_WEIGHT)} ${massUnit(UNIT_KINDS.LIFTING_WEIGHT)} × ${Number(set.reps)} reps</strong><small>${escapeHtml(best.date || "")}${best.partnerNames?.length ? ` · Paired with ${escapeHtml(best.partnerNames.join(" + "))}` : ""}</small>`;
+    host.after(card);
+}
+
+export function updateStrengthContextControls(exerciseId, host, metric = selectedMetric) {
+    const hasSupersets = getSessions().some(session => (session.exercises || []).some(exercise => exercise.exerciseId === exerciseId && exerciseContext(session, exercise) === "superset" && (exercise.sets || []).some(isWorkingSet)));
+    let controls = document.getElementById("exercise-strength-context");
+    if (!hasSupersets || metric === "volume") { controls?.remove(); selectedStrengthContext = "standalone"; return; }
+    if (!controls) {
+        controls = document.createElement("div");
+        controls.id = "exercise-strength-context";
+        controls.className = "exercise-strength-context";
+        controls.setAttribute("role", "group");
+        controls.setAttribute("aria-label", "Training context");
+        for (const [value, label] of [["standalone", "Standalone"], ["superset", "Superset"], ["all", "All"]]) {
+            const button = document.createElement("button");
+            button.type = "button"; button.dataset.context = value; button.textContent = label;
+            button.addEventListener("click", () => { selectedStrengthContext = value; renderExerciseProgressV2(); });
+            controls.appendChild(button);
+        }
+        const note = document.createElement("small");
+        note.textContent = "Strength comparisons use the selected context. Volume includes all working sets.";
+        controls.appendChild(note);
+        (document.getElementById("exercise-volume-comparison") || host).before(controls);
+    }
+    controls.querySelectorAll("button").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.context === selectedStrengthContext)));
+}
+
+function supersetPartnerNames(session, exercise) {
+    const day = session.planSnapshot?.days?.[Number(session.trainingDayIndex) || 0];
+    const planned = day?.exercises || [];
+    const index = (session.exercises || []).indexOf(exercise);
+    const current = planned[index]?.id === exercise.exerciseId ? planned[index] : planned.find(item => item.id === exercise.exerciseId);
+    const group = current?.supersetGroup || exercise.supersetGroup;
+    return group ? planned.filter(item => item !== current && item.supersetGroup === group).map(item => getExerciseById(item.id)?.name || item.name || item.id) : [];
+}
+
+export function getExerciseRecords(exerciseId, { metric = selectedMetric, context = selectedStrengthContext } = {}) {
     if (!exerciseId) return [];
     return getSessions().flatMap(session => {
         const grouped = new Map();
         (session.exercises || [])
             .filter(exercise => exercise?.exerciseId === exerciseId && exercise?.trackingType !== "notes" && !isStaticHold(exercise))
             .forEach(exercise => {
+                if (metric !== "volume" && context !== "all" && exerciseContext(session, exercise) !== context) return;
                 const profileId = exercise.equipmentProfileId || "default";
                 const current = grouped.get(profileId) || {
                     profileId,
                     profileName: resolveEquipmentLabel(exerciseId, profileId, exercise.equipmentProfileName),
-                    sets: []
+                    sets: [],
+                    partnerNames: exerciseContext(session, exercise) === "superset" ? supersetPartnerNames(session, exercise) : []
                 };
-                current.sets.push(...(Array.isArray(exercise.sets) ? exercise.sets : []).filter(isWorkingSet));
+                current.sets.push(...(Array.isArray(exercise.sets) ? exercise.sets : []).filter(set => isWorkingSet(set) && (metric === "volume" || eligibleStrengthSet(set))));
                 grouped.set(profileId, current);
             });
 
@@ -176,6 +231,7 @@ function getExerciseRecords(exerciseId) {
             const ranked = group.sets.map(set => ({ set, oneRepMax: estimateOneRepMax(set) })).sort((a, b) => b.oneRepMax - a.oneRepMax);
             return {
                 date: session.date,
+                partnerNames: group.partnerNames,
                 completedAt: session.completedAt || session.updatedAt || "",
                 profileId: group.profileId,
                 profileName: group.profileName,
@@ -272,7 +328,7 @@ function rawMetricValue(record) {
 function metricSet(record) { return selectedMetric === "weight" ? record.weightSet : record.bestSet; }
 
 function isWorkingSet(set) {
-    if (!set || set.isWarmup || set.warmup || set.type === "warmup" || set.setType === "warmup") return false;
+    if (!set || set.completed === false || set.isWarmup || set.warmup || set.type === "warmup" || set.setType === "warmup") return false;
     const reps = Number(set.reps);
     const weight = Number(set.weight);
     return Number.isFinite(reps) && reps > 0 && Number.isFinite(weight) && weight > 0;
@@ -456,7 +512,7 @@ function renderMultiEquipmentStrengthChart(host, records, profiles) {
     const values = records.map(record => displayMass(rawMetricValue(record), 1, UNIT_KINDS.LIFTING_WEIGHT));
     const axisLabel = `Estimated 1RM (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})`;
     if (!values.length) {
-        host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="No exercise progress data"><text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="var(--muted)" font-size="12">No completed weighted sets to plot</text></svg>`;
+        host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="No exercise progress data"><text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="var(--muted)" font-size="12">${selectedMetric !== "volume" && selectedStrengthContext !== "all" ? `No ${selectedStrengthContext} strength sets recorded` : "No completed weighted sets to plot"}</text></svg>`;
         return;
     }
     const minValue = Math.min(...values);
@@ -592,7 +648,7 @@ function renderSvgChart(host, records) {
     const axisLabel = `${isVolume ? "Session Volume" : selectedMetric === "weight" ? "Working weight" : "Estimated 1RM"} (${massUnit(UNIT_KINDS.LIFTING_WEIGHT)})`;
     host.setAttribute("aria-label", `${axisLabel} across logged sessions`);
     if (!values.length) {
-        host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="No exercise progress data"><text x="${padding.left}" y="20" fill="var(--accent-text)" font-size="10" font-weight="800" letter-spacing="1.2">${axisLabel.toUpperCase()}</text><line x1="${padding.left}" y1="${padding.top}" x2="${width - padding.right}" y2="${padding.top}" stroke="var(--line)"/><line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="var(--line)"/><text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="var(--muted)" font-size="12">No completed weighted sets to plot</text></svg>`;
+        host.innerHTML = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="No exercise progress data"><text x="${padding.left}" y="20" fill="var(--accent-text)" font-size="10" font-weight="800" letter-spacing="1.2">${axisLabel.toUpperCase()}</text><line x1="${padding.left}" y1="${padding.top}" x2="${width - padding.right}" y2="${padding.top}" stroke="var(--line)"/><line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="var(--line)"/><text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="var(--muted)" font-size="12">${selectedMetric !== "volume" && selectedStrengthContext !== "all" ? `No ${selectedStrengthContext} strength sets recorded` : "No completed weighted sets to plot"}</text></svg>`;
         return;
     }
     const minValue = Math.min(...values);

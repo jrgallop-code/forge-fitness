@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
+import { eligibleStrengthSet, exerciseContext } from '../js/workouts/strength-context.js';
 
 const source = await readFile(new URL('../js/workouts/progression-prompt-v2.js', import.meta.url), 'utf8');
 function fixture(reps = 15, completed = true) {
   const context = vm.createContext({
+    eligibleStrengthSet, exerciseContext,
     UNIT_KINDS: { LIFTING_WEIGHT: 'liftingWeight' },
     getExerciseById: () => ({ equipment: 'Cable' }),
     canonicalInputValue: input => input.value === '' ? null : Number(input.value) / 0.45359237,

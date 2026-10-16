@@ -95,3 +95,14 @@ test('static hold recap reports maintained and declined time',()=>{
  assert.equal(calculatePerformance(current,[current,prior]).exercises[0].status,status);
  }
 });
+
+test('dashboard compares supersets with superset history and retains excluded set counts',()=>{
+ const prior={id:'a',completedAt:'2026-10-01T12:00:00Z',exercises:[{exerciseId:'barbell-curl',sets:[completedSet(100,10)]}]};
+ const current={id:'b',completedAt:'2026-10-02T12:00:00Z',exercises:[{exerciseId:'barbell-curl',supersetGroup:'A',sets:[completedSet(80,10)]}]};
+ assert.equal(calculatePerformance(current,[prior,current]).score,null);
+ const paired={...prior,id:'paired',exercises:[{...prior.exercises[0],supersetGroup:'A',sets:[completedSet(70,10)]}]};
+ assert.equal(calculatePerformance(current,[paired,current]).improved,1);
+ current.exercises[0].sets[0].excludeFromStrength=true;
+ const excluded=calculatePerformance(current,[paired,current]);
+ assert.equal(excluded.completedSets,1); assert.equal(excluded.exercises[0].status,'Excluded'); assert.equal(excluded.score,null);
+});

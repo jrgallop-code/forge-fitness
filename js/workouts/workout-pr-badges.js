@@ -1,3 +1,4 @@
+import { exerciseContext, eligibleStrengthSet } from "./strength-context.js";
 import { isCircuit } from './circuit-history.js';
 import { resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
@@ -109,7 +110,7 @@ export function evaluateLiveWorkoutPrs(activeSession, historicalSessions = []) {
             .filter(({ set }) => isValidRecordedSet(set));
         if (!validSets.length) return;
 
-        const profileKey = getExerciseProfileKey(exercise);
+        const profileKey = getExerciseProfileKey(exercise, activeSession);
         const previous = records.get(profileKey) || {};
         const weighted = validSets
             .filter(({ set }) => Number(set.weight) > 0 && Number(set.reps) > 0)
@@ -136,7 +137,7 @@ export function evaluateLiveWorkoutPrs(activeSession, historicalSessions = []) {
             }
         }
 
-        if (result) details.set(exerciseId, result);
+        if (result) { result.strengthContext = exerciseContext(activeSession, exercise); details.set(exerciseId, result); }
     });
 
     return { count: details.size, details };
@@ -179,7 +180,7 @@ function getSessionExerciseScores(session) {
         const weightedScores = sets
             .filter(set => Number(set.weight) > 0 && Number(set.reps) > 0)
             .map(estimateOneRepMax);
-        const profileKey = getExerciseProfileKey(exercise);
+        const profileKey = getExerciseProfileKey(exercise, session);
         const current = scores.get(profileKey) || { weighted: null, maxWeight: null, reps: null };
 
         if (weightedScores.length) {
@@ -199,14 +200,14 @@ function getSessionExerciseScores(session) {
     return scores;
 }
 
-function getExerciseProfileKey(exercise) {
+function getExerciseProfileKey(exercise, session) {
     const exerciseId = exercise?.exerciseId || exercise?.id || "";
     const profileId = exercise?.equipmentProfileId || "default";
-    return `${exerciseId}::${profileId}`;
+    return `${exerciseId}::${profileId}::${exerciseContext(session, exercise)}`;
 }
 
 function isValidRecordedSet(set) {
-    if (!set || isCircuit(set) || set.completed === false) return false;
+    if (!eligibleStrengthSet(set) || isCircuit(set)) return false;
     const reps = Number(set.reps);
     const weight = Number(set.weight);
     return reps > 0 || weight > 0;

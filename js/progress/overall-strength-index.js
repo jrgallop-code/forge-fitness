@@ -1,3 +1,4 @@
+import { matchesStrengthContext, eligibleStrengthSet } from "../workouts/strength-context.js";
 import { drawStrengthIndexChart, renderStrengthIndexSummary } from "./strength-index-chart-renderer.js?v=analytics-summary-polish-1";
 
 const SESSION_STORAGE_KEY = "forge_workout_sessions";
@@ -93,7 +94,7 @@ function ensureStrengthIndexCard() {
 
             <div id="overall-strength-index-chart-view">
                 <p class="analytics-note">
-                    Tracks overall strength using one representative lift from each of six major movement categories.
+                    Tracks standalone strength using one representative lift from each of six major movement categories. Superset and manually excluded sets stay in your training volume.
                 </p>
                 <canvas
                     id="overall-strength-index-chart"
@@ -248,9 +249,9 @@ function collectExerciseRecords(sessions) {
     sessions.forEach(session => {
         session.exercises?.forEach(exercise => {
             const exerciseId = String(exercise?.exerciseId || "");
-            if (!exerciseId) return;
+            if (!exerciseId || !matchesStrengthContext(session, exercise)) return;
 
-            const validSets = (exercise.sets || []).filter(set => Number(set?.weight) > 0 && Number(set?.reps) > 0);
+            const validSets = (exercise.sets || []).filter(set => eligibleStrengthSet(set) && Number(set?.weight) > 0 && Number(set?.reps) > 0);
             if (!validSets.length) return;
 
             const bestEstimatedOneRepMax = Math.max(...validSets.map(estimateOneRepMax));

@@ -1,3 +1,4 @@
+import { exerciseContext, eligibleStrengthSet } from "../workouts/strength-context.js";
 import { isStaticHold } from '../workouts/static-holds.js';
 import { resolveSessionExerciseIdentity } from "../workouts/session-exercise-identity.js?v=repair-generic-exercise-1";
 import { UNIT_KINDS, formatMass as formatUnitMass } from "../core/unit-system.js?v=granular-units-1";
@@ -21,7 +22,7 @@ export function renderWorkoutPerformanceDashboard() {
         ${result.topImprovement ? `<div class="performance-top"><span>Top improvement</span><strong>${escapeHtml(result.topImprovement.name)}</strong><small>${escapeHtml(result.topImprovement.detail)}</small></div>` : ""}
         <button class="performance-toggle" type="button" data-performance-toggle aria-expanded="false" ${result.exercises.length ? "" : "hidden"}>View exercise breakdown</button>
         <div class="performance-breakdown" data-performance-panel hidden>${result.exercises.map(renderExerciseRow).join("")}</div>
-        <p class="performance-note">Lifts compare with their most recent logged performance using the workout logger’s PR rules. Static holds compare best hold time with the most recent workout at the same added load; longer holds count as improvement, without an estimated 1RM. First-time exercises or loads establish a baseline and are not scored.</p>
+        <p class="performance-note">Lifts compare with their most recent performance in the same standalone or superset context using the workout logger’s PR rules. Static holds compare best hold time with the most recent workout at the same added load; longer holds count as improvement, without an estimated 1RM. First-time exercises or loads establish a baseline and are not scored.</p>
     </section>`;
 }
 
@@ -70,11 +71,13 @@ export function calculatePerformance(session, allSessions) {
             }
             return;
         }
+        const allCompletedSets = (current.sets || []).filter(set => set?.completed);
         const currentSets = completedSetsOnly(current.sets);
-        const previousExercise = findPreviousExercisePerformance(older, current);
+        const previousExercise = findPreviousExercisePerformance(older, current, session);
         const previousSets = completedSetsOnly(previousExercise?.sets);
         plannedSets += Array.isArray(current.sets) ? current.sets.length : 0;
-        completedSets += currentSets.length;
+        completedSets += allCompletedSets.length;
+        if (allCompletedSets.length && !currentSets.length) { exercises.push({name: identity.name, status: "Excluded", detail: "Excluded from strength comparisons · volume retained"}); return; }
         if (!currentSets.length) {
             exercises.push({ name: identity.name, status: "Incomplete", detail: "No completed working sets" });
             return;
@@ -98,7 +101,7 @@ export function calculatePerformance(session, allSessions) {
             isPr,
             prTypes: pr?.types || (pr?.mode === "reps" ? ["reps"] : []),
             change,
-            detail: `${formatBestSet(currentSets)} · Previous ${formatBestSet(previousSets)}`
+            detail: `${exerciseContext(session, current) === "superset" ? "Superset · " : ""}${formatBestSet(currentSets)} · Previous ${formatBestSet(previousSets)}`
         });
     });
 
@@ -121,10 +124,10 @@ export function calculatePerformance(session, allSessions) {
     return { score, label: getLabel(score), improved, maintained, declined, prs, completedSets, exercises, topImprovement };
 }
 
-function findPreviousExercisePerformance(olderSessions, currentExercise) {
+function findPreviousExercisePerformance(olderSessions, currentExercise, currentSession) {
     for (const priorSession of olderSessions) {
         const match = (priorSession.exercises || []).find(exercise =>
-            exerciseMatches(currentExercise, exercise) && completedSetsOnly(exercise.sets).length
+            exerciseMatches(currentExercise, exercise) && exerciseContext(priorSession, exercise) === exerciseContext(currentSession, currentExercise) && completedSetsOnly(exercise.sets).length
         );
         if (match) return match;
     }
@@ -164,7 +167,7 @@ function timedHoldSets(exercise) {
         !set.isWarmup && !set.warmup && Number(set.durationSeconds) > 0 && Number(set.weight || 0) >= 0);
 }
 function completedSetsOnly(sets) {
-    return (Array.isArray(sets) ? sets : []).filter(set => set?.completed && Number(set.weight) >= 0 && Number(set.reps) > 0);
+    return (Array.isArray(sets) ? sets : []).filter(set => eligibleStrengthSet(set) && set?.completed && Number(set.weight) >= 0 && Number(set.reps) > 0);
 }
 function getSetMetric(sets) {
     return sets.reduce((best, set) => {

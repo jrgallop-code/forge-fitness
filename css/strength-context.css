@@ -1,0 +1,12 @@
+.exercise-strength-context { display:flex; flex-wrap:wrap; gap:4px; margin:12px 0; padding:4px; border-radius:12px; background:var(--surface-alt, rgba(128,128,128,.08)); }
+.exercise-strength-context button { flex:1; min-width:0; min-height:36px; padding:7px 10px; border:0; border-radius:9px; background:transparent; color:var(--text); font:inherit; font-size:13px; }
+.exercise-strength-context button[aria-pressed="true"] { background:var(--accent); color:var(--accent-contrast,#fff); }
+.exercise-strength-context small { flex-basis:100%; padding:6px; color:var(--muted); font-size:12px; line-height:1.4; }
+.drop-set-menu .strength-set-option { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:8px 0; padding:9px 0; border-top:1px solid var(--line); font-size:13px; cursor:pointer; }
+.strength-set-option small { display:block; color:var(--muted); font-size:11px; margin-top:3px; }
+.drop-set-menu .strength-set-option input { width:20px; height:20px; min-height:20px; margin:0; accent-color:var(--accent); }
+.exercise-context-record { display:grid; gap:5px; padding:12px 14px; margin:10px 0; border:1px solid var(--line); border-radius:12px; background:var(--card); }
+.exercise-context-record strong { font-size:17px; color:var(--text); }
+.exercise-context-record small { font-size:12px; color:var(--muted); }
+
+.drop-set-menu .strength-set-option[hidden] { display:none; }

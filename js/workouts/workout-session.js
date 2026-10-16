@@ -617,6 +617,7 @@ function exerciseStateMetadata(definition, plannedExercise = {}) {
     return {
         name,
         exerciseName: name,
+        supersetGroup: plannedExercise.supersetGroup || null,
         muscleGroup: definition?.muscleGroup || plannedExercise?.muscleGroup || "",
         type: definition?.type || plannedExercise?.type || "",
         equipment: definition?.equipment || plannedExercise?.equipment || ""
@@ -628,6 +629,7 @@ function enrichCompletedExercise(exercise, plannedExercise = {}) {
     return {
         ...exercise,
         ...identity,
+        supersetGroup: plannedExercise.supersetGroup || null,
         sets: (exercise?.sets || []).map(normalizeSavedSet)
     };
 }
@@ -1015,6 +1017,13 @@ function bindSessionInputs({
         set.dropSets = event.detail.dropSets.map(drop => ({ ...drop }));
         session.currentExerciseIndex = exerciseIndex;
         session.currentSetIndex = setIndex;
+        persist();
+    });
+
+    logger.addEventListener("levelup:set-strength-changed", event => {
+        const set = session.exercises?.[Number(event.detail?.exerciseIndex)]?.sets?.[Number(event.detail?.setIndex)];
+        if (!set) return;
+        set.excludeFromStrength = event.detail.excluded === true;
         persist();
     });
 
