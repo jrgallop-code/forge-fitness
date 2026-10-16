@@ -257,7 +257,7 @@ test("Level Up verified matches rank before USDA and replace exact duplicates", 
 
 test("manual search finds products previously discovered by barcode", () => {
     const cached = {
-        cacheSchema: 3,
+        cacheSchema: 4,
         source: "openfoodfacts",
         barcode: "12345670",
         name: "Pomme de terre rouge",

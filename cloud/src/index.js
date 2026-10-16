@@ -1,4 +1,4 @@
-import {extraUsdaNutrition,extraUsdaLabelNutrition,extraOpenFoodFactsNutrition} from './food-extra-nutrients.js';
+import {extraUsdaNutrition,extraUsdaLabelNutrition,extraOpenFoodFactsNutrition,extraOpenFoodFactsSetNutrition} from './food-extra-nutrients.js';
 import { featureBoard } from "./feature-board.js";
 import { SWISS_CHALET_FOODS } from "./data/swiss-chalet-foods.js";
 import { PUR_SIMPLE_FOODS } from "./data/pur-simple-foods.js";
@@ -1222,7 +1222,7 @@ async function getFoodByBarcode(value, request, env, ctx) {
 }
 
 const OPEN_FOOD_FACTS_CACHE_DAYS = 30;
-const OPEN_FOOD_FACTS_CACHE_SCHEMA = 3;
+const OPEN_FOOD_FACTS_CACHE_SCHEMA = 4;
 const OPEN_FOOD_FACTS_USER_AGENT = "LevelUpHypertrophy/1.0 (support@leveluphypertrophy.com)";
 
 async function fetchOpenFoodFactsBarcode(barcode) {
@@ -1354,6 +1354,7 @@ export function normalizeOpenFoodFactsProduct(product, barcode) {
     const countryCode = countries.includes("en:canada") ? "CA" : countries.includes("en:united-states") ? "US" : "";
     return {
         source: "openfoodfacts",
+        nutrientSchemaVersion: 2,
         barcode: normalizedBarcode,
         name,
         brand: limitedText(String(product?.brands || "").split(",")[0], 120),
@@ -1386,9 +1387,9 @@ function openFoodFactsSetNutrition(set) {
         if (unit === "mg") return Number((value / 1000).toFixed(3));
         return Number(value.toFixed(3));
     };
-    const optional = Object.fromEntries(Object.entries(nutrients).filter(([,n])=>n?.value!==null && n?.value!==undefined && n?.value!=='' && Number.isFinite(Number(n.value)) && Number(n.value)>=0).map(([key,n])=>[`${key}_100g`,Number(n.value)*(String(n.unit).toLowerCase()==='mg'?.001:1)]));
+
     return {
-        ...extraOpenFoodFactsNutrition(optional,"100g"),
+        ...extraOpenFoodFactsSetNutrition(set),
         calories: read("energy-kcal"),
         protein: read("proteins"),
         carbs: read("carbohydrates"),
@@ -2069,6 +2070,7 @@ export function normalizeUsdaFood(food) {
 
     return {
         source: "usda",
+        nutrientSchemaVersion: 2,
         fdcId,
         barcode: limitedText(food?.gtinUpc, 40),
         name,
@@ -2149,7 +2151,7 @@ function usdaNutrient(food, numbers, names, requiredUnit = "") {
 }
 
 function scaleUsdaNutrition(nutrition, multiplier) {
-    return Object.fromEntries(Object.entries(nutrition).map(([key, value]) => [key, Number((value * multiplier).toFixed(3))]));
+    return Object.fromEntries(Object.entries(nutrition).map(([key, value]) => [key, Number((value * multiplier).toPrecision(12))]));
 }
 
 function formatFoodNumber(value) {

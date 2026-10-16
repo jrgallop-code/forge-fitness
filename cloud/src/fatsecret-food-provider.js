@@ -184,6 +184,7 @@ export function normalizeFatSecretFood(food, options = {}) {
 
     return {
         source: "fatsecret",
+        nutrientSchemaVersion: 2,
         catalogueId: `fatsecret:${foodId}`,
         fatSecretFoodId: foodId,
         name,
