@@ -53,6 +53,26 @@ const FEMALE_MUSCLE_VIEWBOXES = {
     "Calves": "330 1225 420 525"
 };
 
+// The source SVG's broad groups combine unrelated paths (for example the
+// whole back and upper arms). Form guides need individual muscle regions.
+const femalePaths = (side, ...numbers) => numbers.map(n =>
+    `muscle_female_${side}_${String(n).padStart(3, "0")}`);
+const FEMALE_GUIDE_TARGETS = {
+    "Chest": femalePaths("front", 11, 12),
+    "Shoulders": femalePaths("front", 5, 6, 7, 8),
+    "Front Delts": femalePaths("front", 5, 6),
+    "Side Delts": femalePaths("front", 7, 8),
+    "Rear Delts": femalePaths("back", 6, 7),
+    "Upper Back": femalePaths("back", 4, 5, 8, 9),
+    "Lats": femalePaths("back", 12, 13),
+    "Spinal Erectors": femalePaths("back", 20, 21),
+    "Biceps": femalePaths("front", 13, 14),
+    "Triceps": femalePaths("back", 10, 11, 14, 15, 16, 17),
+    "Forearms": femalePaths("front", 27, 28, 29, 34, 35, 36, 37, 38, 39, 40, 41, 42),
+    "Rectus Abdominis": femalePaths("front", 21, 22, 25, 26, 32, 33),
+    "Obliques": femalePaths("front", 15, 16, 17, 18, 23, 24, 30, 31)
+};
+
 const FORM_GUIDE_MUSCLES = {
     "Chest": { view: "front", ids: ["muscle_front_011", "muscle_front_012"], crop: "upper", femaleRegion: "Chest" },
     "Shoulders": { view: "front", ids: ["muscle_front_009", "muscle_front_010"], crop: "upper", femaleRegion: "Shoulders" },
@@ -129,7 +149,7 @@ export function getFormGuideMuscleVisual(muscleName) {
 
     const anatomy = getAnatomyConfig(source.view);
     if (anatomy.sex === "female") {
-        const ids = [...(anatomy.regions[source.femaleRegion] || [])];
+        const ids = [...(FEMALE_GUIDE_TARGETS[name] || anatomy.regions[source.femaleRegion] || [])];
         if (!ids.length) return null;
         return { muscle: name, view: source.view, ids, crop: source.crop, anatomy };
     }

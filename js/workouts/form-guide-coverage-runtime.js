@@ -4,7 +4,7 @@ import { createGeneratedExerciseGuide } from "./exercise-guide-generator.js?v=fu
 import {
     getFormGuideMuscleVisual,
     renderFormGuideMuscleSvg
-} from "./form-guide-anatomy.js?v=form-guide-anatomy-2";
+} from "./form-guide-anatomy.js?v=female-muscle-targets-2";
 
 const RUNTIME_ATTR = "data-form-guide-runtime-ready";
 const STYLE_ID = "form-guide-runtime-anatomy-styles";

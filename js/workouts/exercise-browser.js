@@ -1,5 +1,5 @@
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
-import { renderFormGuideMuscleSvg } from "./form-guide-anatomy.js?v=isolated-carousel-1";
+import { renderFormGuideMuscleSvg } from "./form-guide-anatomy.js?v=female-muscle-targets-2";
 
 if (typeof document !== "undefined" && !document.querySelector('link[data-exercise-browser-styles]')) {
   const link = document.createElement("link");
