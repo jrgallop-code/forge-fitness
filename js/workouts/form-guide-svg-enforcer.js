@@ -4,7 +4,7 @@ import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-p
 import {
     getFormGuideMuscleVisual,
     renderFormGuideMuscleSvg
-} from "./form-guide-anatomy.js?v=female-muscle-targets-2";
+} from "./form-guide-anatomy.js?v=female-centered-crops-3";
 
 const STYLE_ID = "form-guide-direct-recovery-svg-styles";
 

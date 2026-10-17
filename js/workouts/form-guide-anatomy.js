@@ -167,9 +167,16 @@ export function getFormGuideMuscleViewBox(config) {
     if (!config) return "0 0 960 1920";
     const anatomy = config.anatomy || getAnatomyConfig(config.view);
     const cropKey = `${config.view}-${config.crop}`;
-    return anatomy.sex === "female"
-        ? (FEMALE_MUSCLE_VIEWBOXES[config.muscle] || anatomy.viewBox)
-        : (CROP_VIEWBOXES[cropKey] || anatomy.viewBox);
+    if (anatomy.sex === "female") {
+        // The female front and back traces have different anatomical midlines
+        // within their 960-unit canvases. Center the crop on the body, not the
+        // canvas or an individual muscle; retain each region's zoom and height.
+        const [, y, width, height] = (FEMALE_MUSCLE_VIEWBOXES[config.muscle] || anatomy.viewBox)
+            .split(/\s+/).map(Number);
+        const centerX = config.view === "back" ? 540 : 420;
+        return `${centerX - width / 2} ${y} ${width} ${height}`;
+    }
+    return CROP_VIEWBOXES[cropKey] || anatomy.viewBox;
 }
 
 export function renderFormGuideMuscleSvg(configOrMuscleName) {

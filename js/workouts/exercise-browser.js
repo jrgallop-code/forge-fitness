@@ -1,5 +1,5 @@
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
-import { renderFormGuideMuscleSvg } from "./form-guide-anatomy.js?v=female-muscle-targets-2";
+import { renderFormGuideMuscleSvg, getFormGuideMuscleViewBox } from "./form-guide-anatomy.js?v=female-centered-crops-3";
 
 if (typeof document !== "undefined" && !document.querySelector('link[data-exercise-browser-styles]')) {
   const link = document.createElement("link");
@@ -50,7 +50,7 @@ export function renderCustomExerciseFields() {
 function renderMuscleFigure(item) {
   const config = getAnatomyConfig(item.facing);
   const label = item.id ? `${item.label} highlighted on ${config.sex} anatomy` : `${config.sex} anatomy`;
-  const figure = item.id ? renderFormGuideMuscleSvg(item.id) : `<svg class="form-guide-muscle-svg" viewBox="${config.viewBox}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escapeHtml(label)}" focusable="false" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><image class="form-guide-anatomy-base" href="${config.asset}" xlink:href="${config.asset}" x="${config.imageX}" y="0" width="960" height="1920" preserveAspectRatio="xMidYMid meet"/></svg>`;
+  const figure = item.id ? renderFormGuideMuscleSvg(item.id) : `<svg class="form-guide-muscle-svg" viewBox="${getFormGuideMuscleViewBox({ view: item.facing, anatomy: config })}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escapeHtml(label)}" focusable="false" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><image class="form-guide-anatomy-base" href="${config.asset}" xlink:href="${config.asset}" x="${config.imageX}" y="0" width="960" height="1920" preserveAspectRatio="xMidYMid meet"/></svg>`;
   return `<span class="exercise-filter-figure" aria-hidden="true">${figure}</span>`;
 }
 
