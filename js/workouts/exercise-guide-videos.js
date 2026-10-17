@@ -1,6 +1,6 @@
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-guides-1";
 import { expandedExercises } from "./exercise-library-expansion.js?v=exercise-library-expansion-video-1";
-import { getFormGuideVideo } from "./exercise-guide-video-resolver.js?v=cloudflare-only-form-videos-1";
+import { getFormGuideVideo } from "./exercise-guide-video-resolver.js?v=uploaded-form-videos-2";
 
 const STYLE_ID = "level-up-form-guide-video-styles";
 const failedVideos = new Set();
@@ -103,6 +103,20 @@ function createVideoCard(exerciseId, config) {
             <span>Looping example</span>
         </figcaption>
     `;
+
+    if (config.credits) {
+        const credit = document.createElement("figcaption");
+        credit.className = "exercise-guide-video-credits";
+        credit.style.cssText = "padding:8px 12px;font-size:11px;line-height:1.5;color:#8f8f94";
+        const source = document.createElement("a");
+        source.href = config.credits.sourcePage;
+        source.textContent = `${config.credits.author} / wger`;
+        const license = document.createElement("a");
+        license.href = config.credits.licenseUrl;
+        license.textContent = config.credits.license;
+        credit.append(source, " · ", license, `. ${config.credits.changes}`);
+        figure.append(credit);
+    }
 
     const video = document.createElement("video");
     video.src = config.src;

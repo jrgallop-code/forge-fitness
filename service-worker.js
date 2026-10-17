@@ -1,4 +1,4 @@
-const CACHE_VERSION = "forge-food-nutrients-20261015";
+const CACHE_VERSION = "forge-form-muscles-videos-20261017";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;

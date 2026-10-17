@@ -22,7 +22,7 @@ test('every new guide includes primary targets and all normal instruction sectio
  assert.deepEqual(createGeneratedExerciseGuide(videoLibraryExercises.find(e=>e.id==='kettlebell-deadlift')).primary,['Hamstrings','Glutes']);
  assert.deepEqual(createGeneratedExerciseGuide(videoLibraryExercises.find(e=>e.id==='dumbbell-concentration-curl')).primary,['Biceps']);
 });
-test('expanded guides use Cloudflare only and omit videos awaiting upload',async()=>{
+test('expanded guides use uploaded Cloudflare footage for both profiles',async()=>{
  const {getFormGuideVideo}=await import('../js/workouts/exercise-guide-video-resolver.js');
  const {FORM_GUIDE_VIDEOS}=await import('../js/workouts/exercise-guide-video-manifest.js');
  const norm=x=>x.toLowerCase().replace(/\s*\(\d+\)(?=\.mp4$)/,'').replace(/[^a-z0-9]/g,'');
@@ -45,7 +45,8 @@ test('expanded guides use Cloudflare only and omit videos awaiting upload',async
    assert.equal(video.sex,'male');
    assert.equal(video.sourceUrl,undefined);
  }else{
-   assert.equal(video,null,e.id);
+   assert.equal(video.src,`https://media.leveluphypertrophy.com/form-videos/female/${e.id}.mp4`);
+   assert.equal(video.sex,"female");
  }
  }
  }

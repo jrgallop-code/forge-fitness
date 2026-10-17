@@ -119,7 +119,21 @@ const normalizeSourceName = value => String(value || "").toLowerCase()
 const existingSourceVideos = new Map(Object.values(MANIFEST_VIDEOS)
     .map(config => [normalizeSourceName(config.sourceName), config]));
 
+const UPLOADED_DEMONSTRATIONS = {
+    "face-pull": { sourcePage: "https://wger.de/en/exercise/overview/222" },
+    "hip-thrust": { sourcePage: "https://wger.de/en/exercise/overview/294" }
+};
+
 export function getFormGuideVideo(exerciseId) {
+    const uploaded = UPLOADED_DEMONSTRATIONS[exerciseId];
+    if (uploaded) return {
+        provider: "mp4", objectKey: `${exerciseId}.mp4`,
+        src: `${FORM_VIDEO_LIBRARY_BASE_URL}/${exerciseId}.mp4`,
+        storagePath: "form-videos", sex: "male",
+        credits: { ...uploaded, author: "Goulart", license: "CC BY-SA 4.0",
+            licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+            changes: "Adapted: H.264 MP4, resized to 720p, audio removed." }
+    };
     const libraryVideo = videoLibraryMedia[exerciseId];
     if (libraryVideo) {
         const existing = existingSourceVideos.get(normalizeSourceName(libraryVideo.sourceName));
@@ -139,6 +153,15 @@ export function getFormGuideVideo(exerciseId) {
                 sex: "male"
             });
         }
+        // These 25 entries have female footage only. Share that demonstration
+        // with either profile without duplicating or relabelling its files.
+        if (libraryVideo.driveVideos.female) return Object.freeze({
+            provider: "mp4",
+            src: `${FEMALE_FORM_VIDEO_BASE_URL}/${exerciseId}.mp4`,
+            sourceName: libraryVideo.sourceName,
+            objectKey: `${exerciseId}.mp4`,
+            storagePath: "form-videos/female", sex: "female"
+        });
         return null;
     }
     const config = MANIFEST_VIDEOS[exerciseId];
