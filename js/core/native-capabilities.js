@@ -1,5 +1,5 @@
 const isNative = () => Boolean(typeof window !== "undefined" && window.Capacitor?.isNativePlatform?.());
-const plugin = name => window.Capacitor?.Plugins?.[name] || null;
+const plugin = name => window.__levelUpNutritionPractice ? null : window.Capacitor?.Plugins?.[name] || null;
 
 export async function shareNativeJsonFile({ content, filename }) {
     const exporter = plugin("LevelUpFileExport");
