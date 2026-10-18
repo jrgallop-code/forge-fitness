@@ -221,3 +221,22 @@ test("FatSecret attribution is attached to food and public login surfaces", () =
     assert.match(cacheSource, /\.food-data-credit/);
     assert.match(cacheSource, /#level-up-login-gate \.level-up-login-panel/);
 });
+
+
+test("direct grams remain grams through food-log and saved-meal persistence", async () => {
+    storage.clear();
+    const { withFoodWeightUnits } = await import("../js/nutrition/food-portion-units.js");
+    const food = withFoodWeightUnits({source:"fatsecret",fatSecretFoodId:"54321",name:"Chicken",portions:[{servingId:"9876",label:"1 serving (100 g)",grams:100,nutrition:{calories:200,protein:25}}]});
+    const portion = food.portions.find(p => p.inputUnit === "g");
+    const entry = data.createLogEntry({meal:"Lunch",food,portion,quantity:350});
+    data.saveEntry("2026-10-18",entry);
+    const raw = JSON.parse(localStorage.getItem(data.FOOD_LOG_KEY))["2026-10-18"][0];
+    assert.deepEqual(raw.fatSecretPortion,{unit:"g"});
+    const restored = data.readFoodLog()["2026-10-18"][0];
+    assert.equal(restored.servingLabel,"1 g");
+    assert.equal(restored.nutrition.calories,700);
+    const copies = data.cloneEntriesForMeal([restored],"Dinner");
+    assert.deepEqual(copies[0].fatSecretPortion,{unit:"g"});
+    data.saveEntries("2026-10-19",copies);
+    assert.equal(data.readFoodLog()["2026-10-19"][0].nutrition.calories,700);
+});

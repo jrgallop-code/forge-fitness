@@ -1,3 +1,4 @@
+import { withFoodWeightUnits } from "./food-portion-units.js";
 const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
 const FOOD_LOG_KEY = "level_up_food_log_v1";
@@ -30,6 +31,21 @@ export function fatSecretServingId(entry) {
     return /^\d+$/.test(value) ? value : "";
 }
 
+// Persist only the user's measure choice, not provider nutrition or food snapshots.
+export function fatSecretPortionSelection(entry, selectedPortion = null) {
+    const saved = entry?.fatSecretPortion;
+    const portion = selectedPortion || (entry?.food?.portions || []).find(p => p.label === entry?.servingLabel);
+    const unit = saved?.unit || portion?.inputUnit;
+    if (["g", "oz", "lb", "mL"].includes(unit)) return { unit };
+    const count = Number(saved?.count ?? portion?.count);
+    const countUnit = String(saved?.countUnit || portion?.countUnit || "");
+    const countSize = String(saved?.countSize || portion?.countSize || "");
+    if (count > 0 && Number.isFinite(count) && /^[a-z ]{1,40}$/i.test(countUnit) && /^[a-z -]{0,30}$/i.test(countSize)) {
+        return { count, countUnit, countSize };
+    }
+    return null;
+}
+
 export function rememberFatSecretEntry(entry) {
     const foodId = fatSecretFoodId(entry);
     if (!foodId) return entry;
@@ -45,11 +61,13 @@ export function sanitizeFatSecretEntry(entry) {
     if (!foodId) return entry;
     rememberFatSecretEntry(entry);
     const servingId = fatSecretServingId(entry);
+    const selection = fatSecretPortionSelection(entry);
     const result = {
         source: "fatsecret",
         catalogueId: `fatsecret:${foodId}`,
         fatSecretFoodId: foodId,
         ...(servingId ? { fatSecretServingId: servingId } : {}),
+        ...(selection ? { fatSecretPortion: selection } : {}),
         quantity: Math.max(.01, Number(entry.quantity) || 1)
     };
     ["id", "meal", "createdAt", "updatedAt", "copiedFromDate", "copiedFromMeal"].forEach(key => {
@@ -62,7 +80,9 @@ export function hydrateFatSecretEntry(entry, { queueMissing = false } = {}) {
     if (!entry || typeof entry !== "object") return entry;
     const foodId = fatSecretFoodId(entry);
     if (!foodId) return entry;
-    const food = foods.get(foodId);
+    const cachedFood = foods.get(foodId);
+    const selection = fatSecretPortionSelection(entry);
+    const food = cachedFood && selection ? withFoodWeightUnits(cachedFood) : cachedFood;
     if (!food) {
         if (queueMissing) void queueFood(foodId);
         return {
@@ -80,7 +100,10 @@ export function hydrateFatSecretEntry(entry, { queueMissing = false } = {}) {
     }
     const wantedServing = String(entry.fatSecretServingId || "");
     const portions = Array.isArray(food.portions) ? food.portions : [];
-    const portion = portions.find(item => String(item?.servingId || "") === wantedServing) || portions[0];
+    const portion = selection
+        ? portions.find(item => selection.unit ? item.inputUnit === selection.unit
+            : item.count === selection.count && item.countUnit === selection.countUnit && (item.countSize || "") === selection.countSize)
+        : portions.find(item => String(item?.servingId || "") === wantedServing) || portions[0];
     if (!portion) return { ...entry, fatSecretPending: true, nutrition: emptyNutrition(), food: null };
     const quantity = Math.max(.01, Number(entry.quantity) || 1);
     return {
@@ -89,6 +112,7 @@ export function hydrateFatSecretEntry(entry, { queueMissing = false } = {}) {
         catalogueId: `fatsecret:${foodId}`,
         fatSecretFoodId: foodId,
         fatSecretServingId: String(portion.servingId || wantedServing || "") || null,
+        ...(selection ? { fatSecretPortion: selection } : {}),
         name: String(food.name || "FatSecret food"),
         brand: String(food.brand || ""),
         quantity,
