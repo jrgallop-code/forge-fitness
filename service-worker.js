@@ -1,9 +1,12 @@
-const CACHE_VERSION = "forge-female-centered-crops-20261017";
+const CACHE_VERSION = "forge-nutrition-practice-20261018";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
+    "./js/more/interactive-nutrition-tutorial.js?v=1",
+    "./js/more/nutrition-tutorial-demo.js",
+    "./css/nutrition-practice-tour.css?v=1",
     "./js/nutrition/food-nutrients.js",
     "./assets/food/category-12.webp",
     "./assets/food/category-15.webp",
