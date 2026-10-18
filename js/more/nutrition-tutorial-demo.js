@@ -14,7 +14,7 @@ export function saveDemoWeight(state,value,unit) {
 }
 function food(id,name,grams,nutrition) {
  const portions=[{label:'serving',grams,nutrition}];
- for(const [inputUnit,size] of [['g',1],['oz',28.349523125]])portions.push({label:inputUnit,inputUnit,grams:size,nutrition:Object.fromEntries(Object.entries(nutrition).map(([k,v])=>[k,v*size/grams]))});
+ for(const [inputUnit,size] of [['g',1],['oz',28.349523125]])portions.push({label:`1 ${inputUnit}`,inputUnit,grams:size,nutrition:Object.fromEntries(Object.entries(nutrition).map(([k,v])=>[k,v*size/grams]))});
  return {id,name,description:name,portions};
 }
 export const DEMO_FOODS=[

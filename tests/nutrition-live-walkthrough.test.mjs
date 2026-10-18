@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
+import {withFoodWeightUnits} from '../js/nutrition/food-portion-units.js';
+import {DEMO_FOODS} from '../js/more/nutrition-tutorial-demo.js';
 import {nutritionPracticeSeed} from '../js/more/nutrition-tutorial-demo.js';
 import {NUTRITION_WALKTHROUGH_STEPS as steps} from '../js/more/nutrition-walkthrough-steps.js';
 const bootstrap=readFileSync(new URL('../js/more/nutrition-practice-bootstrap.js',import.meta.url),'utf8');
@@ -34,4 +36,8 @@ test('walkthrough includes real food, goal, weight, trend and rate controls',()=
  for(const id of ['goals','goal-weight','search','grams','macros','nutrients','weight','trend','rate','progress'])assert.ok(steps.some(s=>s.id===id));
  const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');assert.ok(index.indexOf('nutrition-practice-bootstrap')<index.indexOf('localStorage.getItem'));
  const app=readFileSync(new URL('../js/app.js',import.meta.url),'utf8');assert.match(app,/!window.__levelUpNutritionPractice && "serviceWorker"/);
+});
+
+test('practice foods normalize to one chip for each direct weight unit',()=>{
+ for(const food of DEMO_FOODS){const normalized=withFoodWeightUnits(food);for(const unit of ['g','oz','lb'])assert.equal(normalized.portions.filter(p=>p.inputUnit===unit).length,1);}
 });

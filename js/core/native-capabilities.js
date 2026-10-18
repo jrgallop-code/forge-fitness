@@ -1,5 +1,5 @@
 const isNative = () => Boolean(window.Capacitor?.isNativePlatform?.());
-const plugin = name => window.Capacitor?.Plugins?.[name] || null;
+const plugin = name => window.__levelUpNutritionPractice ? null : window.Capacitor?.Plugins?.[name] || null;
 
 export function nativeNotificationId(value) {
     let hash = 2166136261;

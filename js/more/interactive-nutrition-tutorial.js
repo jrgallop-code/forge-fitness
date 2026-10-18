@@ -9,11 +9,11 @@ export function startNutritionTutorial(){
  const frame=dialog.querySelector('iframe'),coach=dialog.querySelector('.nt-coach');
  const preferences={};for(const key of ['level_up_appearance_settings','level_up_unit_preferences_v2','level_up_unit_system']){const value=localStorage.getItem(key);if(value!==null)preferences[key]=value;}
  frame.name='level-up-nutrition-practice:'+JSON.stringify(nutritionPracticeSeed(preferences));
- let index=0,route='',generation=0,ready=false,closed=false,highlight=null,collapsed=false;
+ let index=0,route='',generation=0,ready=false,closed=false,highlight=null,collapsed=false,preparing=false;
  const close=()=>{closed=true;generation++;dialog.close();frame.src='about:blank';dialog.remove();active=false;previous?.focus?.();};
  dialog.querySelector('[data-nt-close]').onclick=close;dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
  function paint(message=''){
-  const s=steps[index];coach.innerHTML=`<div class="nt-coach-heading"><small>${index+1} / ${steps.length}</small><h2>${s.title}</h2><button data-nt-collapse aria-label="${collapsed?'Expand':'Collapse'} instructions" aria-expanded="${!collapsed}">${collapsed?'+':'−'}</button></div>${collapsed?'':`<p>${s.body}</p>`}<p role="status" class="nt-status">${esc(message)}</p><nav><button data-nt-back ${index===0||!ready?'disabled':''}>Back</button><button data-nt-retry ${!ready?'disabled':''}>Show me</button><button class="nt-primary" data-nt-next ${!ready?'disabled':''}>${index===steps.length-1?'Finish':'Next'}</button></nav>`;
+  const s=steps[index];coach.innerHTML=`<div class="nt-coach-heading"><small>${index+1} / ${steps.length}</small><h2>${s.title}</h2><button data-nt-collapse aria-label="${collapsed?'Expand':'Collapse'} instructions" aria-expanded="${!collapsed}">${collapsed?'+':'−'}</button></div>${collapsed?'':`<p>${s.body}</p>`}<p role="status" class="nt-status">${esc(message)}</p><nav><button data-nt-back ${index===0||!ready||preparing?'disabled':''}>Back</button><button data-nt-retry ${!ready||preparing?'disabled':''}>Show me</button><button class="nt-primary" data-nt-next ${!ready||preparing?'disabled':''}>${index===steps.length-1?'Finish':'Next'}</button></nav>`;
   coach.querySelector('[data-nt-collapse]').onclick=()=>{collapsed=!collapsed;paint();};coach.querySelector('[data-nt-back]').onclick=()=>show(index-1);coach.querySelector('[data-nt-retry]').onclick=()=>show(index);coach.querySelector('[data-nt-next]').onclick=()=>index===steps.length-1?close():show(index+1);
  }
  const doc=()=>frame.contentDocument;
@@ -22,9 +22,11 @@ export function startNutritionTutorial(){
  function setValue(selector,value){const n=doc()?.querySelector(selector);if(n){n.value=value;n.dispatchEvent(new frame.contentWindow.Event('input',{bubbles:true}));}}
  async function prepare(s,token){
   const d=doc();d.querySelectorAll('dialog[open]').forEach(n=>n.close());
-  if(route!==s.route){frame.contentWindow.document.dispatchEvent(new frame.contentWindow.CustomEvent('levelup:navigate',{detail:{page:s.route}}));route=s.route;await waitFor('#content',token);d.querySelectorAll('.nav-btn[data-page]').forEach(n=>n.classList.toggle('active',n.dataset.page===s.route));}
+  if(route!==s.route){frame.contentWindow.document.dispatchEvent(new frame.contentWindow.CustomEvent('levelup:navigate',{detail:{page:s.route}}));route=s.route;await waitFor('#content',token);await new Promise(r=>setTimeout(r,200));d.querySelectorAll('.nav-btn[data-page]').forEach(n=>n.classList.toggle('active',n.dataset.page===s.route));}
   if(s.route==='progress'){
    click(s.prepare==='calorie-stats'?'#nutrition-progress-tab':'#weight-tab');
+   if(s.id==='weight'){await waitFor('.weight-add-toggle',token);click('.weight-add-toggle[aria-expanded="false"]');}
+   if(s.id==='trend'){await waitFor('[data-weight-chart-range="all"]',token);click('[data-weight-chart-range="all"]');}
    if(s.prepare==='trajectory'){await waitFor('[data-weight-graph-page-v2][aria-label="Goal"]',token);click('[data-weight-graph-page-v2][aria-label="Goal"]');}
   }else{
    if(s.prepare==='plan'){
@@ -41,14 +43,16 @@ export function startNutritionTutorial(){
     if(s.prepare==='search')click('[data-food-portion-close]');
     if(['food','amount'].includes(s.prepare)&&d.querySelector('[data-food-portion]')?.hidden){click('[data-food-mode="recent"]');await waitFor('[data-food-recents] [data-food-result]',token);[...d.querySelectorAll('[data-food-recents] [data-food-result]')].find(n=>/blueberries/i.test(n.textContent))?.click();}
     if(s.prepare==='amount'&&!Number(d.querySelector('[data-food-quantity]')?.value)){click('[data-food-unit][aria-label="1 g"]');setValue('[data-food-quantity]','100');}
-   }else{if(s.prepare==='review'&&!d.querySelector('[data-food-sheet]')?.hidden){click('[data-food-confirm]:not(:disabled)');}click('[data-food-close]');click('[data-calories-tab="log"]');}
+   }else{if(s.prepare==='review'&&!d.querySelector('[data-food-sheet]')?.hidden){click('[data-food-confirm]:not(:disabled)');}click('[data-food-close]');click('[data-calories-tab="log"]');
+    if(s.prepare==='review')d.querySelectorAll('[data-food-meal]').forEach(n=>{if(n.querySelector('[data-food-edit]')&&!n.open)n.querySelector('summary')?.click();});
+   }
   }
  }
  async function show(next){
   if(closed)return;index=Math.max(0,Math.min(steps.length-1,next));const token=++generation;
-  highlight?.classList.remove('nt-live-highlight');paint('Opening this step…');
-  try{await prepare(steps[index],token);const target=await waitFor(steps[index].target,token);if(closed||token!==generation)return;paint(target?'':'Explore this screen, or use Next to continue.');if(target){highlight=target;target.classList.add('nt-live-highlight');target.scrollIntoView({block:'center',behavior:'smooth'});}}
-  catch{if(!closed)paint('This screen could not open. Use Show me to retry, or Next to continue.');}
+  highlight?.classList.remove('nt-live-highlight');preparing=true;paint('Opening this step…');
+  try{await prepare(steps[index],token);const target=await waitFor(steps[index].target,token);if(closed||token!==generation)return;preparing=false;paint(target?'':'Explore this screen, or use Next to continue.');if(target){highlight=target;target.classList.add('nt-live-highlight');target.scrollIntoView({block:'center',behavior:'smooth'});}}
+  catch{preparing=false;if(!closed)paint('This screen could not open. Use Show me to retry, or Next to continue.');}
  }
  frame.addEventListener('load',async()=>{
   if(closed||frame.src==='about:blank')return;
