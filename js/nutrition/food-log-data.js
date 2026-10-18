@@ -1,6 +1,7 @@
 import * as core from "./food-log-data-core.js?v=fatsecret-live-1";
 import {
     fatSecretFoodId,
+    fatSecretPortionSelection,
     fatSecretServingId,
     hasPendingFatSecretEntries,
     hydrateFatSecretEntry,
@@ -166,6 +167,7 @@ function mealItemSnapshot(entry) {
         fdcId: hydrated.fdcId || hydrated.food?.fdcId || null,
         ...(fatSecretFoodId(hydrated) ? { fatSecretFoodId: fatSecretFoodId(hydrated) } : {}),
         ...(fatSecretServingId(hydrated) ? { fatSecretServingId: fatSecretServingId(hydrated) } : {}),
+        ...(fatSecretPortionSelection(hydrated) ? { fatSecretPortion: fatSecretPortionSelection(hydrated) } : {}),
         name: String(hydrated.name || hydrated.food?.name || "Food").slice(0, 180),
         brand: String(hydrated.brand || hydrated.food?.brand || "").slice(0, 120),
         quantity: Math.max(.01, Number(hydrated.quantity) || 1),
@@ -289,7 +291,8 @@ export function createLogEntry({ meal, food, portion, quantity }) {
         source: "fatsecret",
         catalogueId: foodId ? `fatsecret:${foodId}` : entry.catalogueId,
         fatSecretFoodId: foodId || null,
-        fatSecretServingId: /^\d+$/.test(servingId) ? servingId : null
+        fatSecretServingId: /^\d+$/.test(servingId) ? servingId : null,
+        ...(fatSecretPortionSelection(entry, portion) ? { fatSecretPortion: fatSecretPortionSelection(entry, portion) } : {})
     };
 }
 
