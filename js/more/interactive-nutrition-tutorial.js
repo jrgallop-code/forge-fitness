@@ -22,15 +22,16 @@ export function startNutritionTutorial(){
  function setValue(selector,value){const n=doc()?.querySelector(selector);if(n){n.value=value;n.dispatchEvent(new frame.contentWindow.Event('input',{bubbles:true}));}}
  async function prepare(s,token){
   const d=doc();d.querySelectorAll('dialog[open]').forEach(n=>n.close());
-  if(route!==s.route){frame.contentWindow.document.dispatchEvent(new frame.contentWindow.CustomEvent('levelup:navigate',{detail:{page:s.route}}));route=s.route;await waitFor('#content',token);}
+  if(route!==s.route){frame.contentWindow.document.dispatchEvent(new frame.contentWindow.CustomEvent('levelup:navigate',{detail:{page:s.route}}));route=s.route;await waitFor('#content',token);d.querySelectorAll('.nav-btn[data-page]').forEach(n=>n.classList.toggle('active',n.dataset.page===s.route));}
   if(s.route==='progress'){
    click(s.prepare==='calorie-stats'?'#nutrition-progress-tab':'#weight-tab');
    if(s.prepare==='trajectory'){await waitFor('[data-weight-graph-page-v2][aria-label="Goal"]',token);click('[data-weight-graph-page-v2][aria-label="Goal"]');}
   }else{
-   if(s.prepare==='plan'){click('[data-food-close]');click('[data-calories-tab="plan"]');}
+   if(s.prepare==='plan'){click('[data-food-close]');click('[data-calories-tab="plan"]');click('[data-nutrition-view="goals"]');}
    else if(['search','food','amount'].includes(s.prepare)){
     click('[data-calories-tab="log"]');
     if(d.querySelector('[data-food-sheet]')?.hidden)click('[data-food-add]');
+    if(s.prepare==='search')click('[data-food-portion-close]');
     if(['food','amount'].includes(s.prepare)&&d.querySelector('[data-food-portion]')?.hidden){click('[data-food-mode="recent"]');await waitFor('[data-food-recents] [data-food-result]',token);[...d.querySelectorAll('[data-food-recents] [data-food-result]')].find(n=>/blueberries/i.test(n.textContent))?.click();}
     if(s.prepare==='amount'&&!Number(d.querySelector('[data-food-quantity]')?.value)){click('[data-food-unit][aria-label="1 g"]');setValue('[data-food-quantity]','100');}
    }else{if(s.prepare==='review'&&!d.querySelector('[data-food-sheet]')?.hidden){click('[data-food-confirm]:not(:disabled)');}click('[data-food-close]');click('[data-calories-tab="log"]');}
