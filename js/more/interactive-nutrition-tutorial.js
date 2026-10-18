@@ -17,8 +17,8 @@ export function startNutritionTutorial(){
   coach.querySelector('[data-nt-collapse]').onclick=()=>{collapsed=!collapsed;paint();};coach.querySelector('[data-nt-back]').onclick=()=>show(index-1);coach.querySelector('[data-nt-retry]').onclick=()=>show(index);coach.querySelector('[data-nt-next]').onclick=()=>index===steps.length-1?close():show(index+1);
  }
  const doc=()=>frame.contentDocument;
- async function waitFor(selector,token){for(let n=0;n<60;n++){if(closed||token!==generation)return null;const node=doc()?.querySelector(selector);if(node && !node.closest('[hidden]'))return node;await new Promise(r=>setTimeout(r,80));}return null;}
- function click(selector){const n=doc()?.querySelector(selector);if(n&&!n.closest('[hidden]'))n.click();return n;}
+ async function waitFor(selector,token){for(let n=0;n<60;n++){if(closed||token!==generation)return null;const node=doc()?.querySelector(selector);if(node && node.getClientRects().length && !node.closest('[hidden]'))return node;await new Promise(r=>setTimeout(r,80));}return null;}
+ function click(selector){const n=doc()?.querySelector(selector);if(n&&n.getClientRects().length&&!n.closest('[hidden]'))n.click();return n;}
  function setValue(selector,value){const n=doc()?.querySelector(selector);if(n){n.value=value;n.dispatchEvent(new frame.contentWindow.Event('input',{bubbles:true}));}}
  async function prepare(s,token){
   const d=doc();d.querySelectorAll('dialog[open]').forEach(n=>n.close());
@@ -27,7 +27,14 @@ export function startNutritionTutorial(){
    click(s.prepare==='calorie-stats'?'#nutrition-progress-tab':'#weight-tab');
    if(s.prepare==='trajectory'){await waitFor('[data-weight-graph-page-v2][aria-label="Goal"]',token);click('[data-weight-graph-page-v2][aria-label="Goal"]');}
   }else{
-   if(s.prepare==='plan'){click('[data-food-close]');click('[data-calories-tab="plan"]');click('[data-nutrition-view="goals"]');}
+   if(s.prepare==='plan'){
+    click('[data-food-close]');
+    if(!d.querySelector('#unified-goals-calories-card')?.getClientRects().length){
+     click('[data-calories-tab="plan"]');await waitFor('[data-nutrition-view="goals"]',token);
+     await new Promise(r=>setTimeout(r,80));click('[data-nutrition-view="goals"]');
+    }
+    if(s.id==='goal-weight'){await waitFor('#unified-goals-calories-card',token);click('.streamlined-plan-settings:not([open]) > summary');}
+   }
    else if(['search','food','amount'].includes(s.prepare)){
     click('[data-calories-tab="log"]');
     if(d.querySelector('[data-food-sheet]')?.hidden)click('[data-food-add]');
