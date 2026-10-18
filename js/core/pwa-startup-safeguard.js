@@ -20,7 +20,7 @@
     installInteractiveWorkoutTutorial();
     const nutritionTour = document.createElement("script");
     nutritionTour.type = "module";
-    nutritionTour.src = "js/more/interactive-nutrition-tutorial.js?v=1";
+    nutritionTour.src = "js/more/interactive-nutrition-tutorial.js?v=2";
     document.head.appendChild(nutritionTour);
     installWorkoutTutorialPrompt();
     installInteractiveTutorialVisualFix();

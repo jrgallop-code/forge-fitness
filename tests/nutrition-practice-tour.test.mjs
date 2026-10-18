@@ -20,8 +20,9 @@ test('food portions and meal review use the same scaled nutrition',()=>{
  const totals=demoMealTotals([{food:1,portion:1,quantity:100},{food:0,portion:0,quantity:1}]);assert.equal(Math.round(totals.calories),157);assert.equal(totals.protein,17.7);
  assert.equal(f.portions[0].nutrition.sodium,undefined);
 });
-test('practice module has no persistence, sync, recording or production-save calls',()=>{
+test('walkthrough embeds the actual app with isolated storage and shared step definitions',()=>{
  const source=readFileSync(new URL('../js/more/interactive-nutrition-tutorial.js',import.meta.url),'utf8');
- assert.doesNotMatch(source,/localStorage\.(setItem|removeItem|clear)|fetch\(|getUserMedia|data-food-confirm|saveWeightEntry/);
- assert.match(source,/bindFoodAmountEditor/);assert.match(source,/dialog.showModal/);assert.match(source,/dialog.addEventListener\('cancel'/);
+ assert.doesNotMatch(source,/localStorage\.(setItem|removeItem|clear)|getUserMedia/);
+ assert.match(source,/index.html\?nutrition-practice=1/);assert.match(source,/nutritionPracticeSeed/);assert.match(source,/NUTRITION_WALKTHROUGH_STEPS/);
+ assert.match(source,/dialog.showModal/);assert.match(source,/dialog.addEventListener\('cancel'/);
 });
