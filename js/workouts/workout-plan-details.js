@@ -3,6 +3,7 @@ import { normalizeInstagramLink } from "./instagram-video-model.js";
 import { isStaticHold, holdTarget } from "./static-holds.js";
 import { getPresetPlan } from "./workout-plans.js";
 import { getExerciseById } from "./exercise-library.js";
+import { exerciseThumbnail } from "./exercise-thumbnails.js";
 import { openWorkoutLogger } from "./workout-session.js?v=native-navigation-stability-1";
 import { createGeneratedExerciseGuide } from "./exercise-guide-generator.js?v=full-library-guides-1";
 import { editSavedWorkoutPlan } from "./workouts.js?v=saved-plan-edit-2";
@@ -221,28 +222,6 @@ function exerciseName(id) {
         .join(" ");
 }
 
-function exerciseThumbnail(id) {
-    const exercise = getExerciseById(id);
-    const isCardio =
-        exercise?.muscleGroup === "Cardio" ||
-        exercise?.trackingType === "notes";
-
-    if (isCardio) {
-        return `
-            <svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M32 52S10 39 10 23c0-7 5-12 12-12 5 0 8 3 10 7 2-4 5-7 10-7 7 0 12 5 12 12 0 16-22 29-22 29Z"/>
-            </svg>
-        `;
-    }
-
-    return `
-        <svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 27h7v10H9V27Zm7-5h7v20h-7V22Zm7 10h18M41 22h7v20h-7V22Zm7 5h7v10h-7V27Z"/>
-        </svg>
-    `;
-}
-
-
 
 function muscleCropClass(muscle) {
     if (["Rectus Abdominis", "Obliques", "Deep Core", "Calves"].includes(muscle)) return "crop-core";
@@ -402,7 +381,7 @@ function renderDay(day, index) {
                     return `
                     <${tag} class="plan-detail-exercise-row ${superset ? "is-overview-superset" : ""} ${hasGuide ? "has-exercise-guide" : ""}" ${hasGuide ? `type="button" data-exercise-guide="${escapeHtml(exercise.id)}" aria-label="Open ${escapeHtml(exerciseName(exercise.id))} exercise guide"` : ""}>
                         <span class="plan-detail-exercise-thumb" aria-hidden="true">
-                            ${exerciseThumbnail(exercise?.id)}
+                            ${exerciseThumbnail(getExerciseById(exercise?.id) || exercise)}
                         </span>
                         <span class="plan-detail-exercise-copy">
                             <span class="plan-detail-exercise-name">${escapeHtml(exerciseName(exercise?.id))}${hasGuide ? '<span class="exercise-guide-label">Form guide</span>' : ""}</span>
