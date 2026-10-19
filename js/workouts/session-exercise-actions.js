@@ -1,4 +1,5 @@
 import { isStaticHold, holdTrackingType } from "./static-holds.js";
+import { exerciseThumbnail } from "./exercise-thumbnails.js";
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=history-rir-edit-1';
 import './exercise-library-expansion.js?v=exercise-library-expansion-1';
 import { addCustomExercise, getAllExercises, getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
@@ -606,6 +607,14 @@ function ensureAddExerciseSheet(logger) {
     <input class="session-add-search" type="search" placeholder="Search exercises" aria-label="Search exercises">
     ${renderMuscleCarousel('', 'data-session-muscle')}
     <section class="exercise-browser-custom-form" data-session-custom-form hidden><h5>Add Custom Exercise</h5>${renderCustomExerciseFields()}<p class="exercise-browser-custom-message" aria-live="polite"></p><div class="exercise-browser-custom-actions"><button class="secondary-btn" type="button" data-session-custom-cancel>Cancel</button><button class="primary-btn" type="button" data-session-custom-save>Save & Add</button></div></section>
+    <style>
+      .session-add-results [data-session-add-id]{display:grid;grid-template-columns:44px minmax(0,1fr) 28px;align-items:center;gap:11px;min-height:64px;text-align:left}
+      .session-add-results [data-session-add-id]>.routine-thumbnail{width:44px;height:44px;min-width:44px;border-radius:10px;overflow:hidden;display:grid;place-items:center}
+      .session-add-results [data-session-add-id]>.routine-thumbnail img{width:100%;height:100%;object-fit:cover}
+      .session-add-results [data-session-add-id]>.routine-thumbnail svg{width:24px;height:24px}
+      .session-add-item-copy{min-width:0;display:grid;gap:3px}
+      .session-add-item-copy strong,.session-add-item-copy small{overflow-wrap:anywhere;white-space:normal}
+    </style>
     <div class="session-add-results" data-session-add-results></div>
   </div>`;
   logger.appendChild(sheet);
@@ -627,7 +636,7 @@ function ensureAddExerciseSheet(logger) {
       ))
       .filter(item => matchesExerciseBrowser(item, { muscle: sheet.dataset.muscle, query }))
       .sort((a, b) => String(a.muscleGroup).localeCompare(String(b.muscleGroup)) || String(a.name).localeCompare(String(b.name)));
-    sheet.querySelector('[data-session-add-results]').innerHTML = results.length ? results.map(item => `<button type="button" data-session-add-id="${escapeHtml(item.id)}"><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml([item.muscleGroup, item.equipment].filter(Boolean).join(' · '))}</small></span><b>+</b></button>`).join('') : '<p>No matching exercises.</p>';
+    sheet.querySelector('[data-session-add-results]').innerHTML = results.length ? results.map(item => `<button type="button" data-session-add-id="${escapeHtml(item.id)}" aria-label="${sheet.dataset.selectionMode === 'swap' ? 'Replace with' : 'Add'} ${escapeHtml(item.name)}">${exerciseThumbnail(item)}<span class="session-add-item-copy"><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml([item.muscleGroup, item.equipment].filter(Boolean).join(' · '))}</small></span><b aria-hidden="true">+</b></button>`).join('') : '<p>No matching exercises.</p>';
   };
   sheet.querySelector('.session-swap-close')?.addEventListener('click', close);
   sheet.querySelector('.session-add-search')?.addEventListener('input', render);
