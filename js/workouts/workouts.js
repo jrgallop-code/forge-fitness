@@ -813,6 +813,54 @@ function renderWorkoutDays() {
 
 
     attachBuilderListeners();
+    // Shared editor model: keep legacy sets/reps fields while storing individual targets.
+    container.querySelectorAll(".exercise-builder-row").forEach(row => {
+        const selector = row.querySelector(".exercise-select");
+        if (!selector) return;
+        const di = Number(selector.dataset.dayIndex), ei = Number(selector.dataset.exerciseIndex);
+        const item = workingPlan.days[di]?.exercises[ei];
+        if (!item) return;
+        const controls = document.createElement("div");
+        controls.className = "manual-extra-controls";
+        const count = Math.max(1, Math.min(10, Number(item.sets) || 3));
+        const targets = Array.isArray(item.setTargets) ? item.setTargets : [];
+        const safe = v => String(v ?? "").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+        const rows = Array.from({length:count}, (_, i) => {
+            const t = targets[i] || {};
+            return '<label class="manual-target-row"><span>Set '+(i+1)+'</span><input aria-label="Set '+(i+1)+' weight" type="number" min="0" step="0.5" data-set-weight="'+i+'" placeholder="Weight" value="'+safe(t.weight)+'"><input aria-label="Set '+(i+1)+' target" type="text" data-set-target="'+i+'" value="'+safe(t.target ?? item.reps)+'"></label>';
+        }).join("");
+        controls.innerHTML = '<div class="manual-extra-header"><strong>Set targets</strong><button type="button" data-manual-add-set>+ Add Set</button></div>'+rows+'<label class="manual-field">Routine note<textarea data-manual-note placeholder="Instructions for this exercise">'+safe(item.routineNote || "")+'</textarea></label><label class="manual-field">Rest (seconds)<input type="number" min="0" step="5" data-manual-rest value="'+safe(item.restSeconds ?? "")+'" placeholder="Use workout default"></label><div class="manual-reorder-controls"><button type="button" data-manual-move="-1">↑ Move</button><button type="button" data-manual-move="1">↓ Move</button></div>';
+        row.append(controls);
+        controls.addEventListener("change", event => {
+            const input = event.target;
+            if (input.matches("[data-manual-note]")) item.routineNote = input.value;
+            if (input.matches("[data-manual-rest]")) item.restSeconds = input.value === "" ? null : Math.max(0, Number(input.value) || 0);
+            if (input.matches("[data-set-weight],[data-set-target]")) {
+                item.setTargets = Array.from({length:Math.max(1,Number(item.sets)||3)}, (_, i) => ({...(item.setTargets?.[i] || {}), target: item.setTargets?.[i]?.target ?? item.reps}));
+                const idx = Number(input.dataset.setWeight ?? input.dataset.setTarget);
+                if (input.hasAttribute("data-set-weight")) item.setTargets[idx].weight = input.value === "" ? null : Number(input.value);
+                else item.setTargets[idx].target = input.value;
+            }
+        });
+        controls.addEventListener("click", event => {
+            const button = event.target.closest("button");
+            if (!button) return;
+            if (button.hasAttribute("data-manual-add-set")) {
+                item.sets = Math.min(10, (Number(item.sets)||1)+1);
+                renderWorkoutDays();
+            }
+            if (button.hasAttribute("data-manual-move")) {
+                const direction = Number(button.dataset.manualMove);
+                const dest = ei + direction;
+                const items = workingPlan.days[di]?.exercises;
+                if (!items || dest < 0 || dest >= items.length) return;
+                // Do not detach part of an existing superset from its group.
+                if (item.supersetGroup || items[dest].supersetGroup) return;
+                items.splice(dest,0,items.splice(ei,1)[0]);
+                renderWorkoutDays();
+            }
+        });
+    });
     decorateBuilder(container);
     document.dispatchEvent(new CustomEvent("levelup:plan-builder-rendered"));
 
