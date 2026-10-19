@@ -597,8 +597,8 @@ function createExerciseState(day) {
                 sets:
                     Array.from(
                         { length: setCount },
-                        () => ({
-                            weight: null,
+                        (_, index) => ({
+                            weight: Number.isFinite(Number(plannedExercise.setTargets?.[index]?.weight)) && plannedExercise.setTargets?.[index]?.weight !== null && plannedExercise.setTargets?.[index]?.weight !== "" ? Number(plannedExercise.setTargets[index].weight) : null,
                             reps: null,
                             durationSeconds: null,
                             loadMode: isStaticHold(plannedExercise) ? "bodyweight" : undefined,
@@ -729,6 +729,8 @@ function renderSessionExercises({
                 <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-equipment-profile-id="${escapeHtml(state.equipmentProfileId || "default")}" data-tracking-type="${isStaticHold(plannedExercise) ? "duration" : "reps"}">
                     <h4>${escapeHtml(exercise?.name || "Exercise")}</h4>
                     <p class="session-target">Target: ${state.sets.length} ${isCircuit(plan) ? "rounds" : "sets"} × ${escapeHtml(isStaticHold(plannedExercise) ? holdTarget(plannedExercise.reps, "—") : (plannedExercise.reps || "—") + " reps")}</p>
+                    ${String(plannedExercise.routineNote || "").trim() ? `<p class="session-routine-instructions"><strong>Routine instructions:</strong> ${escapeHtml(plannedExercise.routineNote)}</p>` : ""}
+                    ${plannedExercise.restSeconds != null ? `<p class="session-routine-rest">Planned rest: ${Math.max(0,Number(plannedExercise.restSeconds)||0)} seconds</p>` : ""}
                     <div class="session-lifting-note ${String(state.notes || "").trim() ? "has-note" : ""}">
                         <button class="session-note-preview" type="button" aria-expanded="false">
                             <span class="session-note-empty-icon" aria-hidden="true">+</span>
@@ -750,10 +752,10 @@ function renderSessionExercises({
                             previous?.sets?.[setIndex];
                         return `
                             <div class="session-set-row ${set.completed ? "completed" : ""}" data-set-index="${setIndex}" ${isStaticHold(plannedExercise) ? `data-hold-set="${setIndex}"` : ""}>
-                                <strong>${setIndex + 1}</strong>
+                                <strong title="${escapeHtml(String(plannedExercise.setTargets?.[setIndex]?.target ?? plannedExercise.reps ?? ""))}">${setIndex + 1}</strong>
                                 <span class="previous-set-value">${previousSet ? formatPreviousSet(previousSet) : "Hasn't started"}</span>
                                 <input class="session-weight" type="number" inputmode="decimal" min="0" step="0.5" value="${set.weight ?? ""}" placeholder="${previousSet?.weight ?? "Weight"}" aria-label="Set ${setIndex + 1} weight">
-                                ${isStaticHold(plannedExercise) ? holdTimeField(set, setIndex) : `<input class="session-reps" type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ""}" placeholder="${previousSet?.reps ?? "Reps"}" aria-label="Set ${setIndex + 1} reps">`}
+                                ${isStaticHold(plannedExercise) ? holdTimeField(set, setIndex) : `<input class="session-reps" type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ""}" placeholder="${escapeHtml(String(plannedExercise.setTargets?.[setIndex]?.target ?? previousSet?.reps ?? "Reps"))}" aria-label="Set ${setIndex + 1} reps">`}
                                 <button class="complete-set-btn secondary-btn" type="button">${set.completed ? "✓ Completed" : "Complete Set"}</button>
                             </div>
                         `;
