@@ -1,3 +1,5 @@
+import { initializeRoutineEditor } from './manual-plan-setup.js';
+import { replaceRoutineExercise } from './routine-builder-model.js';
 import { isStaticHold, holdTarget } from "./static-holds.js";
 import { initializeManualSupersetBuilder, beginSupersetEditing, decorateBuilder, applySupersetsToPlan, removePairingSlot } from "./manual-superset-builder.js?v=manual-superset-builder-2";
 
@@ -25,7 +27,7 @@ import {
     initializeActiveWorkoutUI,
     openWorkoutLogger
 }
-from "./workout-session.js?v=equipment-profiles-1";
+from "./workout-session.js?v=native-navigation-stability-1";
 
 
 const PLAN_STORAGE_KEY =
@@ -146,6 +148,23 @@ export function initializeWorkoutBuilder() {
 }
 
 
+let importedExerciseDialog = null;
+export function openCustomExerciseForImport({name,onSave}) {
+    const form=document.getElementById('custom-exercise-form');
+    if(!form) { window.alert('The exercise form is unavailable. Return to Workout and try again.'); return; }
+    if(importedExerciseDialog)return;
+    const parent=form.parentNode,next=form.nextSibling;
+    const dialog=document.createElement('dialog');dialog.className='ig-dialog';
+    dialog.innerHTML='<div class="ig-top"><h2>Create exercise</h2><button type="button" aria-label="Close">✕</button></div>';
+    document.body.appendChild(dialog);dialog.appendChild(form);form.hidden=false;
+    importedExerciseDialog={dialog,form,parent,next};
+    customExerciseTarget={onImportSave:onSave};
+    document.getElementById('custom-exercise-name').value=name || '';
+    const message=document.getElementById('custom-exercise-message');if(message)message.textContent='';
+    const cleanup=()=>{const context=importedExerciseDialog;if(!context)return;context.form.hidden=true;context.parent.insertBefore(context.form,context.next?.parentNode===context.parent?context.next:null);importedExerciseDialog=null;customExerciseTarget=null;dialog.remove();};
+    dialog.onclose=cleanup;dialog.querySelector('button').onclick=()=>dialog.close();dialog.showModal();
+}
+
 function showCustomExerciseForm() {
 
     const form =
@@ -174,6 +193,7 @@ function showCustomExerciseForm() {
 
 
 function hideCustomExerciseForm() {
+    if(importedExerciseDialog) { importedExerciseDialog.dialog.close(); return; }
 
     const form =
         document.getElementById(
@@ -281,6 +301,13 @@ function saveCustomExercise() {
         return;
     }
 
+
+    if (customExerciseTarget?.onImportSave) {
+        const callback=customExerciseTarget.onImportSave;
+        hideCustomExerciseForm();
+        callback(exercise);
+        return;
+    }
 
     const target =
         workingPlan
@@ -657,7 +684,7 @@ function renderWorkoutDays() {
                         class="day-name-input"
                         data-day-index="${dayIndex}"
                         type="text"
-                        value="${day.name}"
+                        value="${escapeBuilderHtml(day.name)}"
                     >
 
 
@@ -713,7 +740,7 @@ function renderWorkoutDays() {
                                                             data-day-index="${dayIndex}"
                                                             data-exercise-index="${exerciseIndex}"
                                                             placeholder="Example: 20 min, 4 km, moderate pace, resistance 6"
-                                                        >${plannedExercise.notes || ""}</textarea>
+                                                        >${escapeBuilderHtml(plannedExercise.notes || "")}</textarea>
                                                     </label>
 
                                                 </div>
@@ -744,7 +771,7 @@ function renderWorkoutDays() {
                                                             data-day-index="${dayIndex}"
                                                             data-exercise-index="${exerciseIndex}"
                                                             type="text"
-                                                            value="${isStaticHold(plannedExercise) ? holdTarget(plannedExercise.reps, exercise?.recommendedReps || "20-60 sec") : plannedExercise.reps}"
+                                                            value="${isStaticHold(plannedExercise) ? holdTarget(plannedExercise.reps, exercise?.recommendedReps || "20-60 sec") : escapeBuilderHtml(plannedExercise.reps)}"
                                                             placeholder="${isStaticHold(plannedExercise) ? "20-60 sec" : "8-12"}"
                                                         >
                                                     </label>
@@ -814,6 +841,7 @@ function renderWorkoutDays() {
 
     attachBuilderListeners();
     decorateBuilder(container);
+    initializeRoutineEditor({plan: workingPlan, render: renderWorkoutDays, remove: removeExercise, duplicate: di => {const original=workingPlan.days[di];if(!original)return;const copied=structuredClone(original);copied.name=original.name+' (Repeat)';workingPlan.days.push(copied);beginSupersetEditing(workingPlan);renderWorkoutDays();}, changed: () => beginSupersetEditing(workingPlan)});
     document.dispatchEvent(new CustomEvent("levelup:plan-builder-rendered"));
 
 }
@@ -970,8 +998,9 @@ function attachBuilderListeners() {
                             );
 
 
-                        current.id =
-                            select.value;
+                        const replacement = replaceRoutineExercise(current, exercise || {id: select.value});
+                        Object.keys(current).forEach(key => delete current[key]);
+                        Object.assign(current, replacement);
 
 
                         if (exercise) {
@@ -1147,8 +1176,48 @@ function attachBuilderListeners() {
 
 
 function savePlan() {
+    if (!workingPlan.days.length || workingPlan.days.some(day => !day.exercises.length || day.exercises.some(ex => !ex.id))) {
+        showMessage("Add at least one exercise to each day before saving."); return;
+    }
+    for (const day of workingPlan.days) for (const ex of day.exercises) {
+        if ((ex.setTargets || []).some(t => t.weight != null && (!Number.isFinite(t.weight) || t.weight < 0)) ||
+            (ex.cardioTarget?.durationMinutes != null && (ex.cardioTarget.durationMinutes < 0 || ex.cardioTarget.durationMinutes > 1440))) {
+            showMessage("Check your exercise targets. Weights and times must be valid positive values."); return;
+        }
+    }
+
 
     applySupersetsToPlan(workingPlan);
+
+    // Full-day circuits use the same data contract and dedicated logger as
+    // Level Up's circuit templates. Mixed plans remain ordinary lifting plans.
+    const circuitDay = workingPlan.days.length === 1 ? workingPlan.days[0] : null;
+    const allCircuit = Boolean(circuitDay && circuitDay.exercises.length >= 2 &&
+        circuitDay.exercises.every(ex => ex.groupType === 'circuit' &&
+            ex.supersetGroup === circuitDay.exercises[0].supersetGroup));
+    if (allCircuit) {
+        workingPlan.trainingContext = 'circuit';
+        workingPlan.trainingType = 'circuit';
+        workingPlan.circuitId = workingPlan.id || 'custom-circuit-' + Date.now();
+        workingPlan.rounds = Math.max(1, Number(circuitDay.exercises[0].sets) || 3);
+        workingPlan.circuitRestSeconds = Number.isFinite(Number(workingPlan.circuitRestSeconds))
+            ? Number(workingPlan.circuitRestSeconds) : 60;
+        circuitDay.exercises.forEach(ex => {
+            ex.sets = workingPlan.rounds;
+            ex.trainingContext = 'circuit';
+            ex.circuitId = workingPlan.circuitId;
+        });
+    } else if (workingPlan.circuitId?.startsWith('custom-circuit-')) {
+        delete workingPlan.trainingContext;
+        delete workingPlan.trainingType;
+        delete workingPlan.circuitId;
+        delete workingPlan.rounds;
+        delete workingPlan.circuitRestSeconds;
+        for (const day of workingPlan.days) for (const ex of day.exercises) {
+            delete ex.trainingContext;
+            delete ex.circuitId;
+        }
+    }
 
     const nameInput =
         document.getElementById(
@@ -1666,3 +1735,5 @@ function showMessage(message) {
     }
 
 }
+
+function escapeBuilderHtml(value) { return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"}[c])); }
