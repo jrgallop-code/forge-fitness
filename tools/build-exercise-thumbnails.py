@@ -4,7 +4,37 @@ from concurrent.futures import ThreadPoolExecutor,as_completed
 from PIL import Image,ImageChops
 root=Path(__file__).resolve().parent.parent;out=root/'assets/exercise-thumbnails';out.mkdir(exist_ok=True)
 jobs=json.load(open(root/'thumbnail-jobs.json'));unique={j['src']:j for j in jobs};good={};failed=[];errors={}
-def extract(item):
+def fetch_video(url,destination):
+ # Cloudflare allows byte-range playback requests but rejected urllib's
+ # bare full-object downloads with HTTP 403 on the runner.
+ chunk=4*1024*1024
+ offset=0
+ max_bytes=120*1024*1024
+ with open(destination,'wb') as output:
+  while offset<max_bytes:
+   request=urllib.request.Request(url,headers={
+    'User-Agent':'Mozilla/5.0 (compatible; LevelUpThumbnailBuilder/1.0)',
+    'Accept':'video/mp4,*/*;q=0.8',
+    'Range':f'bytes={offset}-{offset+chunk-1}'
+   })
+   with urllib.request.urlopen(request,timeout=30) as response:
+    data=response.read()
+    if not data:break
+    if response.status==200:
+     if offset:raise ValueError('Media server ignored range on resumed download')
+     output.write(data)
+     break
+    if response.status!=206:raise ValueError(f'Unexpected response: {response.status}')
+    content_range=response.headers.get('Content-Range','')
+    import re
+    match=re.match(r'bytes (\\d+)-(\\d+)/(\\d+|\\*)',content_range)
+    if not match or int(match[1])!=offset:raise ValueError(f'Invalid Content-Range: {content_range}')
+    output.write(data)
+    offset+=len(data)
+    if match[3]!='*' and offset>=int(match[3]):break
+    if len(data)<chunk:raise ValueError('Incomplete range response')
+  else:raise ValueError('Video exceeded thumbnail extraction size limit')
+\ndef extract(item):
  url,j=item;key=hashlib.sha1(url.encode()).hexdigest()[:14];dest=out/(key+'.webp')
  if dest.exists():return url,str(dest.relative_to(root))
  with tempfile.TemporaryDirectory() as d:
@@ -12,7 +42,7 @@ def extract(item):
   for u in [url,j.get('fallbackSrc')]:
    if not u:continue
    try:
-    data=urllib.request.urlopen(u,timeout=20).read();p.write_bytes(data)
+    fetch_video(u,p)
     subprocess.run(['ffmpeg','-y','-loglevel','error','-ss','0.5','-i',str(p),'-frames:v','1',str(f)],check=True,timeout=15,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     im=Image.open(f).convert('RGB');bg=Image.new('RGB',im.size,im.getpixel((0,0)));diff=ImageChops.difference(im,bg).convert('L').point(lambda x:255 if x>35 else 0);box=diff.getbbox()
     if box:im=im.crop((max(0,box[0]-8),max(0,box[1]-8),min(im.width,box[2]+8),min(im.height,box[3]+8)))
