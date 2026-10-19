@@ -27,14 +27,15 @@ def fetch_video(url,destination):
     if response.status!=206:raise ValueError(f'Unexpected response: {response.status}')
     content_range=response.headers.get('Content-Range','')
     import re
-    match=re.match(r'bytes (\\d+)-(\\d+)/(\\d+|\\*)',content_range)
+    match=re.match(r'bytes (\d+)-(\d+)/(\d+|\*)',content_range)
     if not match or int(match[1])!=offset:raise ValueError(f'Invalid Content-Range: {content_range}')
     output.write(data)
     offset+=len(data)
     if match[3]!='*' and offset>=int(match[3]):break
     if len(data)<chunk:raise ValueError('Incomplete range response')
   else:raise ValueError('Video exceeded thumbnail extraction size limit')
-\ndef extract(item):
+
+def extract(item):
  url,j=item;key=hashlib.sha1(url.encode()).hexdigest()[:14];dest=out/(key+'.webp')
  if dest.exists():return url,str(dest.relative_to(root))
  with tempfile.TemporaryDirectory() as d:
