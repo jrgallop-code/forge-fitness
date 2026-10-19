@@ -1,12 +1,10 @@
-import { renderRoutineSourcePreview } from "./routine-video-links.js";
-import { normalizeInstagramLink } from "./instagram-video-model.js";
 import { isStaticHold, holdTarget } from "./static-holds.js";
 import { getPresetPlan } from "./workout-plans.js";
 import { getExerciseById } from "./exercise-library.js";
-import { openWorkoutLogger } from "./workout-session.js?v=native-navigation-stability-1";
+import { openWorkoutLogger } from "./workout-session.js?v=equipment-profiles-1";
 import { createGeneratedExerciseGuide } from "./exercise-guide-generator.js?v=full-library-guides-1";
 import { editSavedWorkoutPlan } from "./workouts.js?v=saved-plan-edit-2";
-import { shareWorkoutPlan } from "./workout-sharing.js?v=ios-share-workout-1";
+import { shareWorkoutPlan } from "./workout-sharing.js?v=pwa-share-workout-1";
 
 const PLAN_STORAGE_KEY = "forge_workout_plans";
 let bypassNextPlanClick = false;
@@ -223,12 +221,21 @@ function exerciseName(id) {
 
 function exerciseThumbnail(id) {
     const exercise = getExerciseById(id);
-    const group = String(exercise?.muscleGroup || '').toLowerCase();
-    const isCardio = group === 'cardio' || exercise?.trackingType === 'notes';
-    const svg = isCardio ? '<circle cx="32" cy="32" r="21"/><path d="M32 18v15l9 6"/>' : '<path d="M9 27h7v10H9V27Zm7-5h7v20h-7V22Zm7 10h18M41 22h7v20h-7V22Zm7 5h7v10h-7V27Z"/>';
-    return `<svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${svg}</svg>`;
-}
-Zm7-5h7v20h-7V22Zm7 10h18M41 22h7v20h-7V22Zm7 5h7v10h-7V27Z"/>
+    const isCardio =
+        exercise?.muscleGroup === "Cardio" ||
+        exercise?.trackingType === "notes";
+
+    if (isCardio) {
+        return `
+            <svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M32 52S10 39 10 23c0-7 5-12 12-12 5 0 8 3 10 7 2-4 5-7 10-7 7 0 12 5 12 12 0 16-22 29-22 29Z"/>
+            </svg>
+        `;
+    }
+
+    return `
+        <svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 27h7v10H9V27Zm7-5h7v20h-7V22Zm7 10h18M41 22h7v20h-7V22Zm7 5h7v10h-7V27Z"/>
         </svg>
     `;
 }
@@ -461,7 +468,6 @@ function showPlanDetails({ plan, type, card }) {
             <span class="eyebrow">${type === "template" ? "LEVEL UP TEMPLATE" : "WORKOUT PLAN"}</span>
             <h2>${escapeHtml(plan?.name || "Workout Plan")}</h2>
             ${plan?.description ? `<p>${escapeHtml(plan.description)}</p>` : ""}
-            ${renderRoutineSourcePreview(plan)}
             ${type === "template" && plan?.sourceUrl ? `<a class="plan-source-link" href="${escapeHtml(plan.sourceUrl)}" target="_blank" rel="noopener noreferrer">View documented training source ↗</a>` : ""}
         </div>
 
@@ -528,7 +534,7 @@ function showPlanDetails({ plan, type, card }) {
             if (result.method === "copy") {
                 const status = document.createElement("p");
                 status.className = "workout-message";
-                status.textContent = "Workout share message copied.";
+                status.textContent = "Workout share link copied.";
                 screen.querySelector(".plan-detail-header")?.appendChild(status);
                 window.setTimeout(() => status.remove(), 2200);
             }
@@ -612,11 +618,4 @@ function escapeHtml(value) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
-}
-
-export function openSavedPlanDetails(planId) {
- const plan = getSavedPlans().find(item => String(item?.id) === String(planId));
- if (!plan) return false;
- showPlanDetails({plan,type:'custom',card:null});
- return true;
 }
