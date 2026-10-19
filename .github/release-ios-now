@@ -527,3 +527,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-19: Retry TestFlight after Apple rejected upload with ITMS-90062; marketing version raised to 1.0.4 across all six Xcode configurations.
 
 2026-10-19: TestFlight build for full-day manual circuit template-style logging and local guide-image thumbnail fallback.
+
+2026-10-19: Release verified video thumbnails: 308 WebP images for 249 exercises; enforce thumbnail coverage gate before signing.
