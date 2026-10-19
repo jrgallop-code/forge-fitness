@@ -1189,6 +1189,36 @@ function savePlan() {
 
     applySupersetsToPlan(workingPlan);
 
+    // Full-day circuits use the same data contract and dedicated logger as
+    // Level Up's circuit templates. Mixed plans remain ordinary lifting plans.
+    const circuitDay = workingPlan.days.length === 1 ? workingPlan.days[0] : null;
+    const allCircuit = Boolean(circuitDay && circuitDay.exercises.length >= 2 &&
+        circuitDay.exercises.every(ex => ex.groupType === 'circuit' &&
+            ex.supersetGroup === circuitDay.exercises[0].supersetGroup));
+    if (allCircuit) {
+        workingPlan.trainingContext = 'circuit';
+        workingPlan.trainingType = 'circuit';
+        workingPlan.circuitId = workingPlan.id || 'custom-circuit-' + Date.now();
+        workingPlan.rounds = Math.max(1, Number(circuitDay.exercises[0].sets) || 3);
+        workingPlan.circuitRestSeconds = Number.isFinite(Number(workingPlan.circuitRestSeconds))
+            ? Number(workingPlan.circuitRestSeconds) : 60;
+        circuitDay.exercises.forEach(ex => {
+            ex.sets = workingPlan.rounds;
+            ex.trainingContext = 'circuit';
+            ex.circuitId = workingPlan.circuitId;
+        });
+    } else if (workingPlan.circuitId?.startsWith('custom-circuit-')) {
+        delete workingPlan.trainingContext;
+        delete workingPlan.trainingType;
+        delete workingPlan.circuitId;
+        delete workingPlan.rounds;
+        delete workingPlan.circuitRestSeconds;
+        for (const day of workingPlan.days) for (const ex of day.exercises) {
+            delete ex.trainingContext;
+            delete ex.circuitId;
+        }
+    }
+
     const nameInput =
         document.getElementById(
             "plan-name"
