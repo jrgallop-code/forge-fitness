@@ -1,5 +1,6 @@
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
 
+// iOS test-branch experiment: show every editable exercise card together.
 const currentByDay = new Map();
 const countByDay = new Map();
 let queued = false;
@@ -7,10 +8,10 @@ let queued = false;
 const css = `
 #plan-builder.manual-catalogue .manual-ex-head{display:none!important}
 #plan-builder.manual-catalogue .exercise-builder-list{display:block}
-#plan-builder.manual-catalogue .exercise-builder-row{display:none!important}
+#plan-builder.manual-catalogue .exercise-builder-row{display:grid!important}
 #plan-builder.manual-catalogue .exercise-builder-row.manual-setup-current{display:grid!important;gap:9px;padding:12px 10px;margin:0;background:var(--card,#18181d);border:1px solid var(--card-border,rgba(255,255,255,.08));border-radius:14px;color:var(--text,#f7f7f8)}
 #plan-builder.manual-catalogue .exercise-recommendation{display:none!important}
-#plan-builder.manual-catalogue .manual-setup-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+#plan-builder.manual-catalogue .manual-setup-actions{position:relative}.manual-setup-menu{position:absolute;right:0;top:100%;z-index:8;min-width:155px;padding:5px;border:1px solid var(--line);border-radius:10px;background:var(--card);box-shadow:var(--shadow)}.manual-setup-menu button{display:block;width:100%;min-height:34px;text-align:left;border:0;background:transparent;color:var(--text)}.manual-setup-menu[hidden]{display:none!important}#plan-builder.manual-catalogue .manual-extra-controls{display:grid;gap:8px;padding-top:8px;border-top:1px solid var(--line)}.manual-extra-header,.manual-reorder-controls{display:flex;justify-content:space-between;align-items:center;gap:8px}.manual-extra-controls button{min-height:30px;padding:5px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface-raised);color:var(--text)}.manual-target-row{display:grid;grid-template-columns:48px minmax(0,1fr) minmax(0,1.5fr);gap:6px;align-items:center;font-size:.76rem}.manual-target-row input,.manual-field input,.manual-field textarea{width:100%;min-width:0;box-sizing:border-box;padding:8px;border:1px solid var(--line);border-radius:8px;color:var(--text);background:var(--input-bg)}.manual-field{display:grid;gap:4px;font-size:.76rem;color:var(--text-secondary)}.manual-reorder-controls{justify-content:flex-end}#plan-builder.manual-catalogue .manual-setup-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 #plan-builder.manual-catalogue .manual-setup-copy{min-width:0}.manual-setup-copy h4{margin:0;color:var(--heading,#f7f7f8);font-size:1.08rem;line-height:1.18;white-space:normal;overflow-wrap:anywhere}.manual-setup-copy small{display:block;margin-top:3px;color:var(--muted,#92929c);font-size:.7rem;white-space:normal;overflow-wrap:anywhere}
 #plan-builder.manual-catalogue .manual-setup-head button{min-height:32px;padding:6px 9px;border-radius:9px;font-size:.72rem}
 #plan-builder.manual-catalogue .manual-setup-target{margin:0;color:var(--text-secondary,#a6a6af);font-size:.72rem}
@@ -160,7 +161,9 @@ function patch() {
     index = Math.max(0, Math.min(index, all.length - 1));
     currentByDay.set(di, index);
 
-    renderExerciseIndex(card, di, all, index);
+    // All exercise cards remain visible for quick routine-wide editing.
+    // The legacy index is removed rather than showing a redundant second list.
+    card.querySelector(".manual-setup-index")?.remove();
 
     all.forEach((row, ei) => {
       const exercise = getExerciseById(row.querySelector(".exercise-select")?.value);
@@ -168,7 +171,7 @@ function patch() {
 
       row.classList.add("manual-setup-card");
       row.classList.remove("session-exercise-card", "active-exercise-card");
-      row.classList.toggle("manual-setup-current", ei === index);
+      row.classList.add("manual-setup-current");
       if (row.dataset.setupDay !== String(di)) row.dataset.setupDay = String(di);
       if (row.dataset.setupIndex !== String(ei)) row.dataset.setupIndex = String(ei);
 
@@ -176,14 +179,14 @@ function patch() {
       if (!head) {
         head = document.createElement("div");
         head.className = "manual-setup-head";
-        head.innerHTML = '<div class="manual-setup-copy"><h4></h4><small></small></div><button class="secondary-btn" type="button" data-manual-replace>Swap</button>';
+        head.innerHTML = '<div class="manual-setup-copy"><h4></h4><small></small></div><div class="manual-setup-actions"><button class="secondary-btn" type="button" data-setup-menu-toggle aria-label="Exercise options" aria-expanded="false">⋯</button><div class="manual-setup-menu" hidden><button type="button" data-setup-action="swap">Swap exercise</button><button type="button" data-setup-action="superset">Superset with next</button><button type="button" data-setup-action="guide">Form guide</button><button type="button" data-setup-action="remove">Remove exercise</button></div></div>';
         row.insertAdjacentElement("afterbegin", head);
       }
       setText(head.querySelector("h4"), exercise.name);
       setText(head.querySelector("small"), `${exercise.muscleGroup || "Other"} · ${exercise.equipment || "Equipment not specified"}`);
-      const swap = head.querySelector("[data-manual-replace]");
-      if (swap.dataset.day !== String(di)) swap.dataset.day = String(di);
-      if (swap.dataset.index !== String(ei)) swap.dataset.index = String(ei);
+      head.querySelector('[data-setup-action="superset"]').hidden = ei >= all.length - 1;
+      const existingSwap = row.querySelector(":scope>.manual-ex-head [data-manual-replace]");
+      if (existingSwap) { existingSwap.dataset.day = String(di); existingSwap.dataset.index = String(ei); }
       let target = row.querySelector(":scope>.manual-setup-target");
       if (!target) {
         target = document.createElement("p");
@@ -258,6 +261,22 @@ document.addEventListener("click", event => {
     currentByDay.clear();
     countByDay.clear();
     queueMicrotask(queue);
+  } else if (button.matches("[data-setup-menu-toggle]")) {
+    event.preventDefault();
+    const menu = button.nextElementSibling;
+    const open = menu.hidden;
+    document.querySelectorAll(".manual-setup-menu").forEach(m => { m.hidden = true; m.previousElementSibling?.setAttribute("aria-expanded", "false"); });
+    menu.hidden = !open;
+    button.setAttribute("aria-expanded", String(open));
+  } else if (button.matches("[data-setup-action]")) {
+    event.preventDefault();
+    const row = button.closest(".exercise-builder-row");
+    const action = button.dataset.setupAction;
+    button.closest(".manual-setup-menu").hidden = true;
+    if (action === "swap") row?.querySelector(":scope>.manual-ex-head [data-manual-replace]")?.click();
+    if (action === "remove") row?.querySelector(".remove-exercise-btn")?.click();
+    if (action === "guide") row?.querySelector(".builder-exercise-guide")?.click();
+    if (action === "superset") row?.querySelector("[data-manual-superset-pair]")?.click();
   } else if (button.matches("[data-setup-select]")) {
     event.preventDefault();
     selectExercise(button);
