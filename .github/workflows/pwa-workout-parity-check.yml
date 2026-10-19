@@ -3,13 +3,13 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - pwa/ios-routine-thumbnails-parity-20261019
+      - pwa/ios-parity-safe-20261019
     paths:
       - .github/workflows/pwa-workout-parity-check.yml
       - js/workouts/**
       - css/routine-builder.css
 permissions:
-  contents: write
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -35,11 +35,3 @@ jobs:
           PY
       - name: Run workout regression tests
         run: node --test tests/live-set-progression.test.mjs tests/capacitor-ios-packaging.test.mjs tests/native-app-shell.test.mjs tests/strength-context.test.mjs tests/workout-performance.test.mjs
-      - name: Record successful web parity checks
-        run: |
-          echo "Validated on commit $GITHUB_SHA" > .pwa-workout-parity-validated
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .pwa-workout-parity-validated
-          git commit -m "Record validated PWA routine and thumbnail port"
-          git push origin HEAD:pwa/ios-routine-thumbnails-parity-20261019
