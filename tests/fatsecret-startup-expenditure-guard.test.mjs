@@ -14,9 +14,10 @@ test("Missing FatSecret nutrition must not be treated as a real zero-calorie TDE
   assert.match(maintenance, /const prior = readJson\(WEEKLY_ESTIMATE_KEY, null\)/);
 });
 
-test("Calorie progress waits for rehydration before reporting incomplete weekly totals", () => {
-  assert.match(progress, /const pendingFoodDays = Object\.values\(readFoodLog\(\)\)/);
-  assert.match(progress, /if \(pendingFoodDays\) \{/);
-  assert.match(progress, /data-food-hydration-notice/);
-  assert.match(progress, /Your logs are preserved/);
+test("Calorie Progress remains accessible and holds complete daily aggregates while food refreshes", () => {
+  assert.doesNotMatch(progress, /data-food-hydration-notice/);
+  assert.match(progress, /level_up_calorie_daily_totals_cache_v1/);
+  assert.match(progress, /pending && prior\?\.signature === signature/);
+  assert.match(progress, /if \(!pending\)/);
+  assert.match(progress, /const daysForRange = stableCalorieDays/);
 });
