@@ -1,0 +1,49 @@
+name: iOS Thumbnail Diagnostics
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ios/capacitor-app-store
+    paths:
+      - .github/workflows/ios-thumbnail-diagnostics.yml
+permissions:
+  contents: read
+jobs:
+  inspect-media:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install extraction dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg python3-pil
+      - name: Test media HTTP response
+        run: |
+          python3 - <<'PY'
+          import urllib.request
+          url = 'https://media.leveluphypertrophy.com/form-videos/barbell-bench-press.mp4'
+          try:
+              with urllib.request.urlopen(urllib.request.Request(url,headers={'Range':'bytes=0-1023','User-Agent':'LevelUpThumbnailBuilder/1.0'}),timeout=25) as response:
+                  print('HTTP:',response.status,'content-type:',response.headers.get('Content-Type'),'final-url:',response.url)
+                  print('magic:',repr(response.read(32)))
+          except Exception as e:
+              print('VIDEO ACCESS ERROR:',repr(e))
+          PY
+      - name: Extract exercise thumbnails and diagnostics
+        run: |
+          node tools/exercise-thumbnail-jobs.mjs
+          /usr/bin/python3 tools/build-exercise-thumbnails.py
+          cat thumbnail-report.json | python3 -c 'import json,sys; d=json.load(sys.stdin); print("Extracted",d["images"],"images for",d["exercises"],"exercises; failed",len(d["failed"]))'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thumbnail-diagnostics
+          path: |
+            thumbnail-report.json
+            js/workouts/exercise-thumbnail-manifest.js
+            assets/exercise-thumbnails/
+          retention-days: 7
