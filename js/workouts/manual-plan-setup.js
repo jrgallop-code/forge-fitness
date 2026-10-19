@@ -1,5 +1,6 @@
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
 
+// iOS test-branch experiment: show every editable exercise card together.
 const currentByDay = new Map();
 const countByDay = new Map();
 let queued = false;
@@ -7,7 +8,7 @@ let queued = false;
 const css = `
 #plan-builder.manual-catalogue .manual-ex-head{display:none!important}
 #plan-builder.manual-catalogue .exercise-builder-list{display:block}
-#plan-builder.manual-catalogue .exercise-builder-row{display:none!important}
+#plan-builder.manual-catalogue .exercise-builder-row{display:grid!important}
 #plan-builder.manual-catalogue .exercise-builder-row.manual-setup-current{display:grid!important;gap:9px;padding:12px 10px;margin:0;background:var(--card,#18181d);border:1px solid var(--card-border,rgba(255,255,255,.08));border-radius:14px;color:var(--text,#f7f7f8)}
 #plan-builder.manual-catalogue .exercise-recommendation{display:none!important}
 #plan-builder.manual-catalogue .manual-setup-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
@@ -160,7 +161,9 @@ function patch() {
     index = Math.max(0, Math.min(index, all.length - 1));
     currentByDay.set(di, index);
 
-    renderExerciseIndex(card, di, all, index);
+    // All exercise cards remain visible for quick routine-wide editing.
+    // The legacy index is removed rather than showing a redundant second list.
+    card.querySelector(".manual-setup-index")?.remove();
 
     all.forEach((row, ei) => {
       const exercise = getExerciseById(row.querySelector(".exercise-select")?.value);
@@ -168,7 +171,7 @@ function patch() {
 
       row.classList.add("manual-setup-card");
       row.classList.remove("session-exercise-card", "active-exercise-card");
-      row.classList.toggle("manual-setup-current", ei === index);
+      row.classList.add("manual-setup-current");
       if (row.dataset.setupDay !== String(di)) row.dataset.setupDay = String(di);
       if (row.dataset.setupIndex !== String(ei)) row.dataset.setupIndex = String(ei);
 
