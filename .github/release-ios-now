@@ -529,3 +529,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-19: TestFlight build for full-day manual circuit template-style logging and local guide-image thumbnail fallback.
 
 2026-10-19: Release verified video thumbnails: 308 WebP images for 249 exercises; enforce thumbnail coverage gate before signing.
+
+2026-10-19: Release exercise-aware SVG fallback icons for cardio, holds and major muscle groups, with verified video thumbnail pipeline.
