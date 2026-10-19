@@ -3,7 +3,6 @@ import { normalizeInstagramLink } from "./instagram-video-model.js";
 import { isStaticHold, holdTarget } from "./static-holds.js";
 import { getPresetPlan } from "./workout-plans.js";
 import { getExerciseById } from "./exercise-library.js";
-import { exerciseThumbnail as renderExerciseThumbnail } from "./exercise-thumbnails.js";
 import { openWorkoutLogger } from "./workout-session.js?v=native-navigation-stability-1";
 import { createGeneratedExerciseGuide } from "./exercise-guide-generator.js?v=full-library-guides-1";
 import { editSavedWorkoutPlan } from "./workouts.js?v=saved-plan-edit-2";
@@ -223,7 +222,11 @@ function exerciseName(id) {
 }
 
 function exerciseThumbnail(id) {
-    return renderExerciseThumbnail(getExerciseById(id) || { id });
+    const exercise = getExerciseById(id);
+    const group = String(exercise?.muscleGroup || '').toLowerCase();
+    const isCardio = group === 'cardio' || exercise?.trackingType === 'notes';
+    const svg = isCardio ? '<circle cx="32" cy="32" r="21"/><path d="M32 18v15l9 6"/>' : '<path d="M9 27h7v10H9V27Zm7-5h7v20h-7V22Zm7 10h18M41 22h7v20h-7V22Zm7 5h7v10h-7V27Z"/>';
+    return `<svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${svg}</svg>`;
 }
 Zm7-5h7v20h-7V22Zm7 10h18M41 22h7v20h-7V22Zm7 5h7v10h-7V27Z"/>
         </svg>
