@@ -3,6 +3,7 @@ import { matchesExerciseBrowser, renderMuscleCarousel } from "./exercise-browser
 
 let active = false;
 let picker = null;
+const isCardio = x => /cardio|distance|pace/i.test(String(x?.trackingType || "") + " " + String(x?.muscleGroup || ""));
 let bypassAdd = false;
 let customDay = null;
 let patchQueued = false;
@@ -19,8 +20,8 @@ const css = `
 .manual-picker-count{display:grid;place-items:center;min-width:38px;height:38px;padding:0 10px;border-radius:999px;background:var(--accent-soft,rgba(255,49,95,.14));color:var(--accent-text,#ff315f);font-weight:800}
 .manual-picker-search,.manual-picker select{width:100%;min-height:44px;border:1px solid var(--line,rgba(255,255,255,.13));border-radius:12px;background:var(--input-bg,#111114);color:var(--text,#f4f4f6);padding:0 12px}
 .manual-picker-search{min-height:48px;font-size:16px}.manual-picker-filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.manual-picker-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--muted,#8f8f98);font-size:.8rem}
-.manual-picker-list{display:grid;gap:8px;padding-bottom:calc(112px + env(safe-area-inset-bottom))}
-.manual-pick{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px;padding:12px 13px;border:1px solid var(--line,rgba(255,255,255,.1));border-radius:14px;background:var(--surface-raised,#101012);color:var(--text,#f5f5f7);text-align:left}
+.manual-picker-type{display:flex;gap:6px}.manual-picker-type button{flex:1;min-height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface-raised);color:var(--text);font-weight:750}.manual-picker-type button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text)}.manual-pick-thumb{width:42px;height:42px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text-secondary);font-size:20px}.manual-picker-list{display:grid;gap:8px;padding-bottom:calc(112px + env(safe-area-inset-bottom))}
+.manual-pick{width:100%;display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line,rgba(255,255,255,.1));border-radius:14px;background:var(--surface-raised,#101012);color:var(--text,#f5f5f7);text-align:left}
 .manual-pick-copy{display:grid;gap:3px;min-width:0;padding:0;border:0;background:transparent;color:inherit;text-align:left}.manual-pick-copy strong{display:block;color:var(--heading);font-size:.86rem;line-height:1.3;white-space:normal;overflow-wrap:anywhere}.manual-pick-copy small{color:var(--muted,#8d8d97);font-size:.72rem;line-height:1.35;white-space:normal;overflow-wrap:anywhere}
 .manual-pick-guide{min-height:32px;padding:6px 8px;border:1px solid var(--line,rgba(255,255,255,.15));border-radius:9px;background:var(--surface);color:var(--text-secondary,#d7d7dc);font:inherit;font-size:.64rem;font-weight:850;letter-spacing:.025em}.manual-pick-guide:active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-text)}
 .manual-pick-mark{display:grid;place-items:center;min-width:32px;height:32px;padding:0 7px;border:1px solid var(--line,rgba(255,255,255,.17));border-radius:9px;background:var(--surface);color:inherit;font:inherit;font-weight:800}
@@ -118,7 +119,7 @@ function hideEditor(value) {
 
 function openPicker(di, mode = "add", ei = null) {
   if (!active || picker || !dayCard(di)) return;
-  picker = { di, mode, ei, selected: new Set(), q: "", muscle: "", equipment: "" };
+  picker = { di, mode, ei, selected: new Set(), q: "", muscle: "", equipment: "", type: "all" };
   hideEditor(true);
   renderPicker();
   planBuilder()?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -155,6 +156,7 @@ function renderPicker() {
       <span class="manual-picker-count" data-manual-count>0</span>
     </div>
     <input class="manual-picker-search" type="search" placeholder="Search exercises" data-manual-search>
+    <div class="manual-picker-type" role="group" aria-label="Exercise type">${["all","strength","cardio"].map(t=>`<button type="button" data-manual-type="${t}" aria-pressed="${t === state.type}">${t[0].toUpperCase()+t.slice(1)}</button>`).join("")}</div>
     ${renderMuscleCarousel(state.muscle, "data-manual-muscle")}
     <div class="manual-picker-filters">
       <select data-manual-equipment><option value="">All equipment</option>${equipment.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("")}</select>
@@ -166,6 +168,7 @@ function renderPicker() {
 
   e.insertAdjacentElement("beforebegin", section);
   section.querySelector("[data-manual-search]").oninput = ev => { state.q = ev.target.value; renderList(); };
+  section.querySelectorAll("[data-manual-type]").forEach(button => button.onclick = () => { state.type = button.dataset.manualType; section.querySelectorAll("[data-manual-type]").forEach(b => b.setAttribute("aria-pressed", String(b === button))); renderList(); });
   section.querySelectorAll("[data-manual-muscle]").forEach(button => button.onclick = () => {
     state.muscle = button.dataset.manualMuscle || "";
     section.querySelectorAll("[data-manual-muscle]").forEach(item => {
@@ -191,7 +194,7 @@ function renderList() {
 
   const used = existingIds(state.di, state.mode === "replace" ? state.ei : null);
   const q = state.q.trim().toLowerCase();
-  const matches = exercises().filter(x => matchesExerciseBrowser(x, {
+  const matches = exercises().filter(x => (state.type === "all" || (state.type === "cardio" ? isCardio(x) : !isCardio(x))) && matchesExerciseBrowser(x, {
     muscle: state.muscle,
     equipment: state.equipment,
     query: q
@@ -201,7 +204,7 @@ function renderList() {
     ? matches.map(x => {
         const added = used.has(x.id);
         const selected = state.selected.has(x.id);
-        return `<div class="manual-pick ${selected ? "selected" : ""} ${added ? "added" : ""}"><button class="manual-pick-copy" type="button" data-manual-select data-id="${esc(x.id)}" ${added ? "disabled" : ""}><strong>${esc(x.name)}</strong><small>${esc(x.muscleGroup || "Other")} · ${esc(x.equipment || "Equipment not specified")}</small></button><button class="manual-pick-guide" type="button" data-manual-guide data-exercise-id="${esc(x.id)}" aria-label="Open form guide for ${esc(x.name)}">Form Guide</button><button class="manual-pick-mark" type="button" data-manual-select data-id="${esc(x.id)}" aria-label="${added ? `${esc(x.name)} already added` : `Select ${esc(x.name)}`}" ${added ? "disabled" : ""}>${added ? "Added" : selected ? "✓" : "+"}</button></div>`;
+        return `<div class="manual-pick ${selected ? "selected" : ""} ${added ? "added" : ""}"><button class="manual-pick-thumb" type="button" data-manual-guide data-exercise-id="${esc(x.id)}" aria-label="Form guide for ${esc(x.name)}">${isCardio(x) ? "♥" : "◈"}</button><button class="manual-pick-copy" type="button" data-manual-select data-id="${esc(x.id)}" ${added ? "disabled" : ""}><strong>${esc(x.name)}</strong><small>${esc(x.muscleGroup || "Other")} · ${esc(x.equipment || "Equipment not specified")}</small></button><button class="manual-pick-mark" type="button" data-manual-select data-id="${esc(x.id)}" aria-label="${added ? `${esc(x.name)} already added` : `Select ${esc(x.name)}`}" ${added ? "disabled" : ""}>${added ? "Added" : selected ? "✓" : "+"}</button></div>`;
       }).join("")
     : '<div class="manual-picker-empty">No exercises match those filters.</div>';
 
