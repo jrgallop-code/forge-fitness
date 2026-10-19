@@ -1,6 +1,11 @@
 import { calculateDisplayWeightTrend, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=tdee-smoothed-weight-rate-1";
 import { estimateTissueEnergyPerLb } from "../core/body-composition.js?v=body-composition-1";
 import { readFoodLog } from "./food-log-data.js?v=fatsecret-progress-calories-1";
+import { hasPendingFatSecretEntries } from "./fatsecret-live-cache.js?v=food-search-freeze-fix-1";
+
+function hasIncompleteNutrition(log) {
+    return Object.values(log || {}).some(entries => hasPendingFatSecretEntries(entries));
+}
 
 const WEIGHT_KEY = "forge_weight_entries";
 const WEEKLY_ESTIMATE_KEY = "level_up_weekly_tdee_estimate_v1";
@@ -80,7 +85,7 @@ function sharedWeightTrend(weights, endKey) {
     const smoothed = calculateVisibleWeightTrend(normalized, {
         endDate: endKey,
         rateDays: 20,
-        // Preserve expenditure weighting while evaluating the recent-rate method.
+        // Keep expenditure on its existing intake-matched window during the rate experiment.
         rateWeighting: "equal",
         minEntries: 3,
         minSpanDays: 5,
@@ -170,6 +175,12 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], endDa
 
 export function getCalculatedMaintenanceEstimate(profileEstimate = null) {
     const foodLog = readFoodLog();
+    if (hasIncompleteNutrition(foodLog)) {
+        // A pending FatSecret lookup is missing data, not a zero-calorie meal.
+        // Never persist a new TDEE estimate from this incomplete intake snapshot.
+        const prior = readJson(WEEKLY_ESTIMATE_KEY, null);
+        return prior?.estimate ? { ...prior.estimate, dataRefreshing: true } : { status: "loading", dataRefreshing: true, maintenanceCalories: null };
+    }
     const weights = readJson(WEIGHT_KEY, []);
     const today = new Date();
     const liveEstimate = calculateMaintenanceEstimate({ foodLog, weights, endDate: today, profileEstimate });
@@ -245,6 +256,7 @@ export function calculateMaintenanceHistory({ foodLog = {}, weights = [], snapsh
 export function getCalculatedMaintenanceHistory(profileEstimate = null, { startDate = null } = {}) {
     const today = new Date();
     const foodLog = readFoodLog();
+    if (hasIncompleteNutrition(foodLog)) return maintenanceHistoryCache?.points || [];
     const foodFingerprint = JSON.stringify(foodLog);
     const weightRaw = localStorage.getItem(WEIGHT_KEY) || "";
     const historyRaw = localStorage.getItem(WEEKLY_HISTORY_KEY) || "";
