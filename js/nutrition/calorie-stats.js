@@ -598,17 +598,6 @@ function currentVisibleWeightRate() {
 }
 
 function renderStats(panel) {
-    // Do not report zero-calorie placeholder values while FatSecret foods rehydrate.
-    const pendingFoodDays = Object.values(readFoodLog()).filter(entries => hasPendingFatSecretEntries(entries)).length;
-    if (pendingFoodDays) {
-        if (!panel.querySelector("[data-food-hydration-notice]")) {
-            panel.innerHTML = `<section class="calorie-stat-card" data-food-hydration-notice role="status" aria-live="polite"><strong>Refreshing saved food nutrition…</strong><p>Waiting for ${pendingFoodDays} day${pendingFoodDays === 1 ? "" : "s"} of food data before showing calorie totals and expenditure. Your logs are preserved.</p></section>`;
-        } else {
-            const note = panel.querySelector("[data-food-hydration-notice] p");
-            if (note) note.textContent = `Waiting for ${pendingFoodDays} day${pendingFoodDays === 1 ? "" : "s"} of food data before showing calorie totals and expenditure. Your logs are preserved.`;
-        }
-        return;
-    }
     const count = ranges[localStorage.getItem(RANGE_KEY)] || 7;
     const targets = activeTargets();
     const days = daysForRange(count);
