@@ -21,6 +21,8 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg python3-pil
+      - name: Validate Python thumbnail extractor
+        run: python3 -m py_compile tools/build-exercise-thumbnails.py
       - name: Test media HTTP response
         run: |
           python3 - <<'PY'
@@ -47,3 +49,5 @@ jobs:
             js/workouts/exercise-thumbnail-manifest.js
             assets/exercise-thumbnails/
           retention-days: 7
+
+# Re-run 2026-10-19: verify HTTP range video downloader against Cloudflare 403 response.
