@@ -6,6 +6,7 @@ import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-c
 import { getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=calendar-checkin-day-1";
 import { readFoodLog } from "./food-log-data.js?v=fatsecret-progress-calories-1";
+import { hasPendingFatSecretEntries } from "./fatsecret-live-cache.js?v=food-search-freeze-fix-1";
 import { completeTutorial, dismissTutorial, getTutorial, getTutorialState, setTutorialStep, shouldShowTutorial } from "../core/tutorials.js?v=food-log-macro-bars-1";
 import { calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { phaseWeightInsight } from "./weight-phase-insight.js?v=progress-insight-rate-1";
@@ -92,7 +93,57 @@ export function calorieDaysForRange(count) {
     });
 }
 
-const daysForRange = calorieDaysForRange;
+const DAILY_TOTALS_KEY = "level_up_calorie_daily_totals_cache_v1";
+
+function foodDaySignature(entries) {
+    // This signature detects edits without storing provider nutrition or food details.
+    return JSON.stringify(entries.map(entry => [
+        entry?.id, entry?.catalogueId || entry?.fatSecretFoodId || entry?.name,
+        entry?.quantity, entry?.fatSecretFoodId ? JSON.stringify(entry?.fatSecretPortion || null) : entry?.servingLabel,
+        entry?.updatedAt || entry?.createdAt
+    ]));
+}
+
+function stableCalorieDays(count) {
+    const log = readFoodLog();
+    const completedDays = readJson(FOOD_COMPLETE_KEY, {});
+    const snapshots = readJson(DAILY_TOTALS_KEY, {});
+    let modified = false;
+    const days = Array.from({ length: count }, (_, index) => {
+        const date = dateKeyOffset(index - count + 1);
+        const entries = Array.isArray(log?.[date]) ? log[date] : [];
+        const signature = foodDaySignature(entries);
+        const pending = hasPendingFatSecretEntries(entries);
+        const prior = snapshots?.[date];
+        if (pending && prior?.signature === signature && prior?.totals) {
+            return { ...prior.totals, date, complete: completedDays?.[date] === true, refreshing: true };
+        }
+        const mealCalories = entries.reduce((totals, entry) => {
+            const meal = String(entry?.meal || "Other");
+            totals[meal] = (totals[meal] || 0) + Math.max(0, Number(entry?.nutrition?.calories) || 0);
+            return totals;
+        }, {});
+        const totals = { date, logged: entries.length > 0, complete: completedDays?.[date] === true,
+            mealCalories, ...summarize(entries) };
+        if (!pending) {
+            if (snapshots[date]?.signature !== signature || JSON.stringify(snapshots[date]?.totals) !== JSON.stringify(totals)) {
+                snapshots[date] = { signature, totals };
+                modified = true;
+            }
+        } else {
+            totals.refreshing = true;
+        }
+        return totals;
+    });
+    if (modified) {
+        // Retain only recent aggregate totals, not provider food records.
+        const keep = Object.keys(snapshots).sort().slice(-120);
+        try { localStorage.setItem(DAILY_TOTALS_KEY, JSON.stringify(Object.fromEntries(keep.map(key => [key, snapshots[key]])))); } catch {}
+    }
+    return days;
+}
+
+const daysForRange = stableCalorieDays;
 
 function average(days, key) {
     const logged = days.filter(day => day.logged);
