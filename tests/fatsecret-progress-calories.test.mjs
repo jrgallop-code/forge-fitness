@@ -9,7 +9,7 @@ globalThis.localStorage = {
     removeItem: key => storage.delete(key)
 };
 globalThis.window = { addEventListener() {}, dispatchEvent() {} };
-globalThis.document = { addEventListener() {}, querySelector() { return null; }, getElementById() { return null; } };
+globalThis.document = { documentElement: { dataset: {} }, addEventListener() {}, querySelector() { return null; }, getElementById() { return null; } };
 globalThis.CustomEvent = class CustomEvent {
     constructor(type, options) { this.type = type; this.detail = options?.detail; }
 };
