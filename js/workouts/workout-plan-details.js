@@ -3,6 +3,7 @@ import { normalizeInstagramLink } from "./instagram-video-model.js";
 import { isStaticHold, holdTarget } from "./static-holds.js";
 import { getPresetPlan } from "./workout-plans.js";
 import { getExerciseById } from "./exercise-library.js";
+import { exerciseThumbnail as renderExerciseThumbnail } from "./exercise-thumbnails.js";
 import { openWorkoutLogger } from "./workout-session.js?v=native-navigation-stability-1";
 import { createGeneratedExerciseGuide } from "./exercise-guide-generator.js?v=full-library-guides-1";
 import { editSavedWorkoutPlan } from "./workouts.js?v=saved-plan-edit-2";
@@ -222,22 +223,9 @@ function exerciseName(id) {
 }
 
 function exerciseThumbnail(id) {
-    const exercise = getExerciseById(id);
-    const isCardio =
-        exercise?.muscleGroup === "Cardio" ||
-        exercise?.trackingType === "notes";
-
-    if (isCardio) {
-        return `
-            <svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M32 52S10 39 10 23c0-7 5-12 12-12 5 0 8 3 10 7 2-4 5-7 10-7 7 0 12 5 12 12 0 16-22 29-22 29Z"/>
-            </svg>
-        `;
-    }
-
-    return `
-        <svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 27h7v10H9V27Zm7-5h7v20h-7V22Zm7 10h18M41 22h7v20h-7V22Zm7 5h7v10h-7V27Z"/>
+    return renderExerciseThumbnail(getExerciseById(id) || { id });
+}
+Zm7-5h7v20h-7V22Zm7 10h18M41 22h7v20h-7V22Zm7 5h7v10h-7V27Z"/>
         </svg>
     `;
 }
