@@ -99,7 +99,7 @@ function foodDaySignature(entries) {
     // This signature detects edits without storing provider nutrition or food details.
     return JSON.stringify(entries.map(entry => [
         entry?.id, entry?.catalogueId || entry?.fatSecretFoodId || entry?.name,
-        entry?.quantity, entry?.servingLabel || entry?.fatSecretServingId,
+        entry?.quantity, entry?.fatSecretServingId || entry?.servingLabel,
         entry?.updatedAt || entry?.createdAt
     ]));
 }
