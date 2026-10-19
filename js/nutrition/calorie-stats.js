@@ -93,7 +93,57 @@ export function calorieDaysForRange(count) {
     });
 }
 
-const daysForRange = calorieDaysForRange;
+const DAILY_TOTALS_KEY = "level_up_calorie_daily_totals_cache_v1";
+
+function foodDaySignature(entries) {
+    // This signature detects edits without storing provider nutrition or food details.
+    return JSON.stringify(entries.map(entry => [
+        entry?.id, entry?.catalogueId || entry?.fatSecretFoodId || entry?.name,
+        entry?.quantity, entry?.fatSecretFoodId ? JSON.stringify(entry?.fatSecretPortion || null) : entry?.servingLabel,
+        entry?.updatedAt || entry?.createdAt
+    ]));
+}
+
+function stableCalorieDays(count) {
+    const log = readFoodLog();
+    const completedDays = readJson(FOOD_COMPLETE_KEY, {});
+    const snapshots = readJson(DAILY_TOTALS_KEY, {});
+    let modified = false;
+    const days = Array.from({ length: count }, (_, index) => {
+        const date = dateKeyOffset(index - count + 1);
+        const entries = Array.isArray(log?.[date]) ? log[date] : [];
+        const signature = foodDaySignature(entries);
+        const pending = hasPendingFatSecretEntries(entries);
+        const prior = snapshots?.[date];
+        if (pending && prior?.signature === signature && prior?.totals) {
+            return { ...prior.totals, date, complete: completedDays?.[date] === true, refreshing: true };
+        }
+        const mealCalories = entries.reduce((totals, entry) => {
+            const meal = String(entry?.meal || "Other");
+            totals[meal] = (totals[meal] || 0) + Math.max(0, Number(entry?.nutrition?.calories) || 0);
+            return totals;
+        }, {});
+        const totals = { date, logged: entries.length > 0, complete: completedDays?.[date] === true,
+            mealCalories, ...summarize(entries) };
+        if (!pending) {
+            if (snapshots[date]?.signature !== signature || JSON.stringify(snapshots[date]?.totals) !== JSON.stringify(totals)) {
+                snapshots[date] = { signature, totals };
+                modified = true;
+            }
+        } else {
+            totals.refreshing = true;
+        }
+        return totals;
+    });
+    if (modified) {
+        // Retain only recent aggregate totals, not provider food records.
+        const keep = Object.keys(snapshots).sort().slice(-120);
+        try { localStorage.setItem(DAILY_TOTALS_KEY, JSON.stringify(Object.fromEntries(keep.map(key => [key, snapshots[key]])))); } catch {}
+    }
+    return days;
+}
+
+const daysForRange = stableCalorieDays;
 
 function average(days, key) {
     const logged = days.filter(day => day.logged);
@@ -598,17 +648,6 @@ function currentVisibleWeightRate() {
 }
 
 function renderStats(panel) {
-    // Do not report zero-calorie placeholder values while FatSecret foods rehydrate.
-    const pendingFoodDays = Object.values(readFoodLog()).filter(entries => hasPendingFatSecretEntries(entries)).length;
-    if (pendingFoodDays) {
-        if (!panel.querySelector("[data-food-hydration-notice]")) {
-            panel.innerHTML = `<section class="calorie-stat-card" data-food-hydration-notice role="status" aria-live="polite"><strong>Refreshing saved food nutrition…</strong><p>Waiting for ${pendingFoodDays} day${pendingFoodDays === 1 ? "" : "s"} of food data before showing calorie totals and expenditure. Your logs are preserved.</p></section>`;
-        } else {
-            const note = panel.querySelector("[data-food-hydration-notice] p");
-            if (note) note.textContent = `Waiting for ${pendingFoodDays} day${pendingFoodDays === 1 ? "" : "s"} of food data before showing calorie totals and expenditure. Your logs are preserved.`;
-        }
-        return;
-    }
     const count = ranges[localStorage.getItem(RANGE_KEY)] || 7;
     const targets = activeTargets();
     const days = daysForRange(count);
