@@ -535,3 +535,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-19: targeted iOS progression placeholder fix; active per-set recommendations override builder fallback ranges.
 
 2026-10-19: restore original generic dumbbell fallback for missing workout thumbnails.
+
+2026-10-19: TestFlight review build — prevent partial FatSecret food hydration from altering displayed expenditure.
