@@ -3,7 +3,8 @@ const API_URL = "https://api.leveluphypertrophy.com";
 const SESSION_KEY = "level_up_cloud_session";
 const FOOD_LOG_KEY = "level_up_food_log_v1";
 const SAVED_MEALS_KEY = "level_up_saved_meals_v1";
-const MAX_STARTUP_FOODS = 30;
+const MAX_PARALLEL_STARTUP_FOODS = 4;
+let startupRefreshActive = false;
 const FATSECRET_ATTRIBUTION = '<a href="https://platform.fatsecret.com">Powered by fatsecret Platform API</a>';
 
 const foods = new Map();
@@ -207,8 +208,8 @@ function emptyNutrition() {
     return { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
 }
 
-function queuePersistedIds() {
-    if (!globalThis.localStorage) return;
+async function queuePersistedIds() {
+    if (!globalThis.localStorage || startupRefreshActive) return;
     const ids = new Set();
     try {
         const log = JSON.parse(localStorage.getItem(FOOD_LOG_KEY) || "{}");
@@ -225,7 +226,23 @@ function queuePersistedIds() {
         });
     }
     catch {}
-    [...ids].slice(0, MAX_STARTUP_FOODS).forEach(id => void queueFood(id));
+    // The former 30-food cap left older saved meals permanently unresolved.
+    // Refresh all referenced IDs with bounded concurrency to avoid overwhelming the API.
+    const remaining = [...ids].filter(id => !foods.has(id));
+    if (!remaining.length) return;
+    startupRefreshActive = true;
+    try {
+        let cursor = 0;
+        const work = async () => {
+            while (cursor < remaining.length) {
+                const id = remaining[cursor++];
+                await queueFood(id);
+            }
+        };
+        await Promise.all(Array.from({ length: Math.min(MAX_PARALLEL_STARTUP_FOODS, remaining.length) }, work));
+    } finally {
+        startupRefreshActive = false;
+    }
 }
 
 function ensureAttribution(root = globalThis.document) {
