@@ -68,6 +68,10 @@ test("all active Progress calorie consumers use the hydrated food-log reader", a
     const sources = await Promise.all(paths.map(path => readFile(new URL(`../${path}`, import.meta.url), "utf8")));
 
     sources.forEach((source, index) => {
+        if (paths[index].endsWith("tdee-calorie-expenditure-carousel.js")) {
+            assert.match(source, /getEnergyBalanceState/, "carousel must delegate to the shared hydrated energy state");
+            return;
+        }
         assert.match(source, /import \{[^}]*readFoodLog[^}]*\}/, `${paths[index]} must import the hydrated reader`);
         assert.match(source, /const foodLog = readFoodLog\(\)|const log = readFoodLog\(\)|foodLog: readFoodLog\(\)/, `${paths[index]} must use the hydrated reader`);
     });
