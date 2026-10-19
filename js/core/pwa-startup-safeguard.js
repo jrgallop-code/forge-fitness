@@ -18,10 +18,6 @@
     installMuscleMapColors();
     installMuscleMapRenderingFix();
     installInteractiveWorkoutTutorial();
-    const nutritionTour = document.createElement("script");
-    nutritionTour.type = "module";
-    nutritionTour.src = "js/more/interactive-nutrition-tutorial.js?v=4";
-    document.head.appendChild(nutritionTour);
     installWorkoutTutorialPrompt();
     installInteractiveTutorialVisualFix();
 
