@@ -160,8 +160,24 @@
 }
 
 .plan-detail-exercise-thumb svg {
-    width:36px;
-    height:36px;
+    width:30px;
+    height:30px;
+}
+.plan-detail-exercise-thumb .routine-thumbnail {
+    display:grid;
+    place-items:center;
+    position:relative;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    border-radius:inherit;
+}
+.plan-detail-exercise-thumb .routine-thumbnail img {
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
 }
 
 .plan-detail-exercise-copy {
