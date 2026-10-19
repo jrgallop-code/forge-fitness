@@ -514,6 +514,7 @@ function renderCard(card) {
       return;
     }
 
+    applyProgressionPlaceholders(card, reduction.suggestedLoad, repRange.lower);
     prompt.classList.add('progression-prompt-down');
     prompt.innerHTML = `
       <span class="progression-arrow">↓</span>
