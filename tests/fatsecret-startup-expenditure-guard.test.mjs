@@ -21,3 +21,10 @@ test("Calorie Progress remains accessible and holds complete daily aggregates wh
   assert.match(progress, /if \(!pending\)/);
   assert.match(progress, /const daysForRange = stableCalorieDays/);
 });
+
+test("Startup hydration refreshes every saved provider ID without unbounded concurrency", () => {
+  assert.doesNotMatch(foodCache, /MAX_STARTUP_FOODS/);
+  assert.match(foodCache, /MAX_PARALLEL_STARTUP_FOODS = 4/);
+  assert.match(foodCache, /const remaining = \[\.\.\.ids\]\.filter/);
+  assert.match(foodCache, /await Promise\.all\(Array\.from/);
+});
