@@ -6,6 +6,7 @@ import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-c
 import { getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=calendar-checkin-day-1";
 import { readFoodLog } from "./food-log-data.js?v=fatsecret-progress-calories-1";
+import { hasPendingFatSecretEntries } from "./fatsecret-live-cache.js?v=food-search-freeze-fix-1";
 import { completeTutorial, dismissTutorial, getTutorial, getTutorialState, setTutorialStep, shouldShowTutorial } from "../core/tutorials.js?v=food-log-macro-bars-1";
 import { calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { phaseWeightInsight } from "./weight-phase-insight.js?v=progress-insight-rate-1";
@@ -597,6 +598,17 @@ function currentVisibleWeightRate() {
 }
 
 function renderStats(panel) {
+    // Do not report zero-calorie placeholder values while FatSecret foods rehydrate.
+    const pendingFoodDays = Object.values(readFoodLog()).filter(entries => hasPendingFatSecretEntries(entries)).length;
+    if (pendingFoodDays) {
+        if (!panel.querySelector("[data-food-hydration-notice]")) {
+            panel.innerHTML = `<section class="calorie-stat-card" data-food-hydration-notice role="status" aria-live="polite"><strong>Refreshing saved food nutrition…</strong><p>Waiting for ${pendingFoodDays} day${pendingFoodDays === 1 ? "" : "s"} of food data before showing calorie totals and expenditure. Your logs are preserved.</p></section>`;
+        } else {
+            const note = panel.querySelector("[data-food-hydration-notice] p");
+            if (note) note.textContent = `Waiting for ${pendingFoodDays} day${pendingFoodDays === 1 ? "" : "s"} of food data before showing calorie totals and expenditure. Your logs are preserved.`;
+        }
+        return;
+    }
     const count = ranges[localStorage.getItem(RANGE_KEY)] || 7;
     const targets = activeTargets();
     const days = daysForRange(count);
