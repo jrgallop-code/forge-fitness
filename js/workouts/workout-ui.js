@@ -343,6 +343,7 @@ export function renderWorkoutBuilder() {
                             <select id="custom-exercise-type">
                                 <option value="compound">Compound</option>
                                 <option value="isolation">Isolation</option>
+                                <option value="cardio">Cardio</option>
                             </select>
                         </label>
 

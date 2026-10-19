@@ -42,7 +42,8 @@ test('circuit mixes time for holds and reps for dynamic exercises without adding
 test('creating a workout session preserves timed holds and normal repetitions',async()=>{
  const {readFileSync}=await import('node:fs');const vm=await import('node:vm');
  const helpers=await import('../js/workouts/static-holds.js');
- const sandbox={...helpers,getExerciseById:id=>({id,name:id,equipment:'Bodyweight'}),supportsEquipmentProfiles:()=>false};
+ const model=await import('../js/workouts/routine-builder-model.js');
+ const sandbox={...model,structuredClone,...helpers,getExerciseById:id=>({id,name:id,equipment:'Bodyweight'}),supportsEquipmentProfiles:()=>false};
  vm.createContext(sandbox);
  const source=readFileSync(new URL('../js/workouts/workout-session.js',import.meta.url),'utf8').replace(/^import\s[\s\S]*?;\n/gm,'').replace(/^export /gm,'');
  vm.runInContext(source+'\nglobalThis.create=createExerciseState;',sandbox);

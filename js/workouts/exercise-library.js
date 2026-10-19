@@ -914,7 +914,7 @@ export function addCustomExercise({
             ),
 
         trackingType:
-            trackingType === "duration" ? "duration" : "reps",
+            type === "cardio" ? "notes" : trackingType === "duration" ? "duration" : "reps",
 
         isCustom:
             true

@@ -1,3 +1,4 @@
+import { effectiveRestSetting, restOptions } from './exercise-rest-settings.js';
 const TIMER_SETTINGS_KEY = 'level_up_exercise_rest_settings';
 
 function readSettings() {
@@ -31,7 +32,7 @@ function ensureHiddenRestSelect(logger) {
 }
 
 function applyTimerSetting(logger, exerciseId) {
-  const setting = readSettings()[exerciseId] || { enabled: false, seconds: 120 };
+  const setting = effectiveRestSetting(exerciseId, JSON.parse(localStorage.getItem('level_up_active_workout') || 'null'));
   const select = ensureHiddenRestSelect(logger);
   select.value = setting.enabled ? String(setting.seconds || 120) : '0';
 }
@@ -95,7 +96,7 @@ function addTimerMenu(card, logger) {
   if (!shell) return;
 
   const { menu } = shell;
-  const current = readSettings()[exerciseId] || { enabled: false, seconds: 120 };
+  const current = effectiveRestSetting(exerciseId, JSON.parse(localStorage.getItem('level_up_active_workout') || 'null'));
 
   if (!menu.querySelector('.exercise-option-row')) {
     menu.insertAdjacentHTML('afterbegin', `
@@ -109,10 +110,7 @@ function addTimerMenu(card, logger) {
       <label class="exercise-duration-row">
         <span>Rest period</span>
         <select class="exercise-rest-duration" aria-label="Suggested rest period">
-          <option value="60" ${current.seconds === 60 ? 'selected' : ''}>1:00</option>
-          <option value="90" ${current.seconds === 90 ? 'selected' : ''}>1:30</option>
-          <option value="120" ${current.seconds === 120 ? 'selected' : ''}>2:00</option>
-          <option value="180" ${current.seconds === 180 ? 'selected' : ''}>3:00 (optimal for hypertrophy)</option>
+          ${restOptions(current.seconds)}
         </select>
       </label>
     `);
@@ -127,6 +125,9 @@ function addTimerMenu(card, logger) {
       seconds: Number(duration?.value) || 120
     };
     saveSettings(settings);
+    const active = JSON.parse(localStorage.getItem('level_up_active_workout') || 'null');
+    const planned = active?.planSnapshot?.days?.[active.trainingDayIndex || 0]?.exercises?.[Number(card.dataset.exerciseIndex)];
+    if (active?.status === 'in_progress' && planned) { planned.restSetting = {...settings[exerciseId]}; localStorage.setItem('level_up_active_workout',JSON.stringify(active)); }
   };
 
   if (toggle && toggle.dataset.timerPersistBound !== 'true') {

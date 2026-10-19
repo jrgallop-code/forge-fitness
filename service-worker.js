@@ -1,9 +1,14 @@
-const CACHE_VERSION = "forge-remove-nutrition-tour-ios-remove-nutrition-tour-20261019";
+const CACHE_VERSION = "forge-ios-routine-builder-20261019-1";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
+    "./css/routine-builder.css?v=ios-routine-1",
+    "./js/workouts/routine-builder-model.js",
+    "./js/workouts/exercise-rest-settings.js",
+    "./js/workouts/exercise-thumbnails.js",
+    "./js/workouts/exercise-thumbnail-manifest.js",
     "./css/feature-board.css?v=owner-feature-review-1",
     "./js/more/feature-board.js?v=owner-feature-review-1",
     "./js/nutrition/expenditure-changes-summary.js?v=expenditure-changes-1",

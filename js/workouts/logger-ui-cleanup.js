@@ -257,8 +257,8 @@ function renderWarmupRows(card) {
         row.innerHTML = `
             <strong aria-label="Warm-up set">W</strong>
             <span class="previous-set-value warmup-set-context">${escapeHtml(context)}</span>
-            <input class="session-warmup-weight" type="number" inputmode="decimal" min="0" step="0.5" value="${set.weight ?? ""}" placeholder="Weight" aria-label="Warm-up set ${warmupIndex + 1} weight">
-            <input class="session-warmup-reps" type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ""}" placeholder="Reps" aria-label="Warm-up set ${warmupIndex + 1} reps">
+            <input class="session-warmup-weight" type="number" inputmode="decimal" min="0" step="0.5" value="${set.weight ?? ""}" placeholder="${set.targetWeight ?? "Weight"}" aria-label="Warm-up set ${warmupIndex + 1} weight">
+            <input class="session-warmup-reps" type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ""}" placeholder="${set.targetReps ?? "Reps"}" aria-label="Warm-up set ${warmupIndex + 1} reps">
             <button class="complete-warmup-btn secondary-btn" type="button" aria-label="${set.completed ? "Warm-up set completed" : "Complete warm-up set"}"></button>
             <button class="logger-remove-set-btn logger-remove-warmup-btn" type="button" aria-label="Remove warm-up set ${warmupIndex + 1}">−</button>
         `;

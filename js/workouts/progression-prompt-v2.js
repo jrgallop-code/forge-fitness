@@ -170,8 +170,8 @@ function syncPreviousDisplay(card, source) {
     if (value) value.textContent = formatPreviousSet(previousSet);
     const weight = row.querySelector('.session-weight');
     const reps = row.querySelector('.session-reps');
-    if (weight) setCanonicalUnitPlaceholder(weight, previousSet?.weight ?? 'Weight');
-    if (reps) reps.placeholder = previousSet?.reps ?? 'Reps';
+    if (weight) setCanonicalUnitPlaceholder(weight, row.dataset.routineTargetWeight || previousSet?.weight || 'Weight');
+    if (reps) reps.placeholder = row.dataset.routineTargetReps || previousSet?.reps || 'Reps';
   });
 }
 
@@ -180,8 +180,8 @@ function applyProgressionPlaceholders(card, suggestedLoad, minimumReps) {
   card.querySelectorAll('.session-set-row').forEach(row => {
     const weight = row.querySelector('.session-weight');
     const reps = row.querySelector('.session-reps');
-    if (weight && !weight.value) setCanonicalUnitPlaceholder(weight, suggestedLoad);
-    if (reps && !reps.value) reps.placeholder = formatLoad(minimumReps);
+    if (weight && !weight.value) setCanonicalUnitPlaceholder(weight, row.dataset.routineTargetWeight || suggestedLoad);
+    if (reps && !reps.value) reps.placeholder = row.dataset.routineTargetReps || formatLoad(minimumReps);
   });
 }
 
@@ -208,10 +208,10 @@ function applyRepGoalPlaceholders(card, goals, suggestedWeight = null) {
     const weight = row.querySelector('.session-weight');
     const reps = row.querySelector('.session-reps');
     if (weight && !weight.value && Number.isFinite(suggestedWeight)) {
-      setCanonicalUnitPlaceholder(weight, suggestedWeight);
+      setCanonicalUnitPlaceholder(weight, row.dataset.routineTargetWeight || suggestedWeight);
     }
     if (reps && !reps.value && Number.isFinite(goals[index])) {
-      reps.placeholder = formatLoad(goals[index]);
+      reps.placeholder = row.dataset.routineTargetReps || formatLoad(goals[index]);
     }
   });
 }
@@ -365,8 +365,8 @@ function renderLiveSetPrompt(card, prompt, repRange, exerciseId) {
   remaining.forEach(row => {
     const weight = row.querySelector('.session-weight');
     const reps = row.querySelector('.session-reps');
-    if (weight && !weight.value) setCanonicalUnitPlaceholder(weight, nextWeight);
-    if (reps && !reps.value) reps.placeholder = String(target.reps);
+    if (weight && !weight.value) setCanonicalUnitPlaceholder(weight, row.dataset.routineTargetWeight || nextWeight);
+    if (reps && !reps.value) reps.placeholder = row.dataset.routineTargetReps || String(target.reps);
   });
   prompt.classList.toggle('progression-prompt-down', target.belowTarget);
   prompt.innerHTML = `

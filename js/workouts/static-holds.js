@@ -123,7 +123,7 @@ export function bindHoldRows(container, state, persist) {
   setTimeout(tick, 250);
 }
 export function holdTimeField(set, index) {
-  return `<input class="session-duration" data-hold-time type="number" inputmode="numeric" min="0" step="1" value="${elapsedHoldSeconds(set) ?? ''}" placeholder="sec" aria-label="Set ${index + 1} time in seconds">`;
+  return `<input class="session-duration" data-hold-time type="number" inputmode="numeric" min="0" step="1" value="${elapsedHoldSeconds(set) ?? ''}" placeholder="${String(set.targetReps || "sec").replace(/\s*sec(?:onds)?/i, "")}" aria-label="Set ${index + 1} time in seconds">`;
 }
 export function holdLoadControl(state) {
   const mode = state.loadMode || (state.sets?.some(set => Number(set.weight) > 0) ? 'weighted' : 'bodyweight');

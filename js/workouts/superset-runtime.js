@@ -1,3 +1,4 @@
+import { normalizeRest } from './routine-builder-model.js';
 import { canonicalInputValue } from '../core/unit-system.js?v=granular-units-1';
 import { isCircuit, circuitRoundTransition, tagCircuitSession } from './circuit-history.js';
 import { ACTIVE_WORKOUT_STORAGE_KEY } from "./workout-session.js?v=native-navigation-stability-1";
@@ -49,6 +50,8 @@ function getGroupLetter(active, group) {
     return index < 26 ? String.fromCharCode(65 + index) : `S${index + 1}`;
 }
 
+function groupLabel(active, group) { return getGroupMembers(active, group).some(m => m.exercise?.groupType === 'circuit') ? 'Circuit' : 'Superset'; }
+
 function getExerciseName(id) {
     return getExerciseById(id)?.name || "Exercise";
 }
@@ -64,7 +67,7 @@ function getSupersetRestSeconds(groupMembers) {
     try {
         const settings = JSON.parse(localStorage.getItem(TIMER_SETTINGS_KEY) || "{}");
         for (const member of groupMembers) {
-            const setting = settings?.[member.exercise?.id];
+            const setting = member.exercise?.restSetting || settings?.[member.exercise?.id];
             if (setting?.enabled && Number(setting.seconds) > 0) {
                 return Number(setting.seconds);
             }
@@ -72,10 +75,12 @@ function getSupersetRestSeconds(groupMembers) {
     } catch {
         // Fall through to the superset default.
     }
+    if (groupMembers.some(member => member.exercise?.restSetting)) return 0;
     return 90;
 }
 
 function startSupersetRest(active, seconds) {
+    if (!seconds) { active.restTimer = null; return; }
     active.restTimer = {
         status: "running",
         durationSeconds: seconds,
@@ -252,7 +257,7 @@ function annotateLogger(logger = document.getElementById("workout-session-logger
         card.dataset.supersetGroup = group;
 
         const position = members.findIndex(member => member.index === index);
-        const partner = members.find(member => member.index !== index);
+        const partner = members[(position + 1) % members.length];
         const groupLetter = getGroupLetter(active, group);
         const exerciseCode = `${groupLetter}${position + 1}`;
         const partnerPosition = members.findIndex(member => member.index === partner?.index);
@@ -276,8 +281,8 @@ function annotateLogger(logger = document.getElementById("workout-session-logger
         banner.className = "superset-runtime-banner";
         banner.innerHTML = `
             <span class="superset-runtime-label">${escapeHtml(exerciseCode)}</span>
-            <strong>Superset</strong>
-            <small>${position === 0 ? `Then ${escapeHtml(partnerCode)}` : `Paired with ${escapeHtml(partnerCode)}`} · ${escapeHtml(getExerciseName(partner?.exercise?.id))}${position === 0 ? " — no rest" : " — rest after this exercise"}</small>
+            <strong>${groupLabel(active, group)}</strong>
+            <small>${position < members.length - 1 ? `Then ${escapeHtml(partnerCode)}` : `Next round: ${escapeHtml(partnerCode)}`} · ${escapeHtml(getExerciseName(partner?.exercise?.id))}${position < members.length - 1 ? " — no rest" : " — rest after this exercise"}</small>
             <button type="button" data-superset-go-index="${partner?.index}" aria-label="Go to ${escapeHtml(getExerciseName(partner?.exercise?.id))}">Go to ${escapeHtml(partnerCode)}</button>
         `;
 
@@ -374,7 +379,7 @@ function handleClick(event) {
 
     if (!completing) {
         saveActive(active);
-        showCue(logger, `<strong>Superset ${escapeHtml(getGroupLetter(active, group))}</strong><span>Set marked incomplete.</span>`, "neutral");
+        showCue(logger, `<strong>${groupLabel(active, group)} ${escapeHtml(getGroupLetter(active, group))}</strong><span>Set marked incomplete.</span>`, "neutral");
         return;
     }
 
@@ -393,7 +398,7 @@ function handleClick(event) {
         saveActive(active);
         showCue(
             logger,
-            `<span class="superset-cue-kicker">SUPERSET ${escapeHtml(groupLetter)}</span><strong>Go directly to ${escapeHtml(groupLetter)}${partnerPosition + 1} · ${escapeHtml(getExerciseName(partnerForRound.exercise.id))}</strong><span>Set ${setIndex + 1} • no rest yet</span>`,
+            `<span class="superset-cue-kicker">${groupLabel(active, group).toUpperCase()} ${escapeHtml(groupLetter)}</span><strong>Go directly to ${escapeHtml(groupLetter)}${partnerPosition + 1} · ${escapeHtml(getExerciseName(partnerForRound.exercise.id))}</strong><span>Set ${setIndex + 1} • no rest yet</span>`,
             "next"
         );
         setTimeout(() => goToExercise(logger, partnerForRound.index), 0);
@@ -413,7 +418,7 @@ function handleClick(event) {
     const nextName = next ? getExerciseName(day.exercises?.[next.exerciseIndex]?.id) : "finish the remaining workout";
     showCue(
         logger,
-        `<span class="superset-cue-kicker">SUPERSET ${escapeHtml(groupLetter)} ROUND COMPLETE</span><strong>Rest ${formatSeconds(restSeconds)}</strong><span>${next ? `Next: ${escapeHtml(nextName)} • Set ${next.setIndex + 1}` : "Superset complete"}</span>`,
+        `<span class="superset-cue-kicker">${groupLabel(active, group).toUpperCase()} ${escapeHtml(groupLetter)} ROUND COMPLETE</span><strong>Rest ${formatSeconds(restSeconds)}</strong><span>${next ? `Next: ${escapeHtml(nextName)} • Set ${next.setIndex + 1}` : `${groupLabel(active, group)} complete`}</span>`,
         "rest"
     );
     if (next) setTimeout(() => goToExercise(logger, next.exerciseIndex), 0);

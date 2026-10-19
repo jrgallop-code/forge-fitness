@@ -1,3 +1,4 @@
+import { effectiveRestSetting, restOptions } from './exercise-rest-settings.js';
 import { isCircuit, readCircuitSessions } from './circuit-history.js';
 import { resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
 import { openActiveWorkout, ACTIVE_WORKOUT_STORAGE_KEY } from './workout-session.js?v=history-rir-edit-1';
@@ -63,7 +64,7 @@ function ensureHiddenRestSelect(logger) {
 }
 
 function applyExerciseTimerToCore(logger, exerciseId) {
-  const setting = getTimerSettings()[exerciseId] || { enabled: false, seconds: 120 };
+  const setting = effectiveRestSetting(exerciseId, getActive());
   const select = ensureHiddenRestSelect(logger);
   select.value = String(setting.enabled ? setting.seconds : 0);
   if (!setting.enabled) {
@@ -522,7 +523,7 @@ function enhanceLogger(logger) {
     });
 
     const settings = getTimerSettings();
-    const current = settings[exerciseId] || { enabled: false, seconds: 120 };
+    const current = effectiveRestSetting(exerciseId, getActive());
 
     const menu = document.createElement('div');
     menu.className = 'exercise-timer-popover';
@@ -538,10 +539,7 @@ function enhanceLogger(logger) {
       <label class="exercise-duration-row">
         <span>Rest period</span>
         <select class="exercise-rest-duration" aria-label="Suggested rest period">
-          <option value="60" ${current.seconds === 60 ? 'selected' : ''}>1:00</option>
-          <option value="90" ${current.seconds === 90 ? 'selected' : ''}>1:30</option>
-          <option value="120" ${current.seconds === 120 ? 'selected' : ''}>2:00</option>
-          <option value="180" ${current.seconds === 180 ? 'selected' : ''}>3:00 (optimal for hypertrophy)</option>
+          ${restOptions(current.seconds)}
         </select>
       </label>
     `;
@@ -566,6 +564,11 @@ function enhanceLogger(logger) {
         seconds: Number(timerDuration?.value) || 120
       };
       saveTimerSettings(all);
+      const active = JSON.parse(localStorage.getItem('level_up_active_workout') || 'null');
+      if (active?.status === 'in_progress') {
+        const planned = active.planSnapshot?.days?.[active.trainingDayIndex || 0]?.exercises?.[Number(card.dataset.exerciseIndex)];
+        if (planned) { planned.restSetting = {...all[exerciseId]}; localStorage.setItem('level_up_active_workout', JSON.stringify(active)); }
+      }
       updateAddSetLabel(card, exerciseId);
     };
     timerToggle?.addEventListener('change', persistSetting);
@@ -603,7 +606,7 @@ function enhanceLogger(logger) {
 
         complete.addEventListener('click', () => {
           setTimeout(() => {
-            const setting = getTimerSettings()[exerciseId] || { enabled: false, seconds: 120 };
+            const setting = effectiveRestSetting(exerciseId, getActive());
             const active = getActive();
             if (!active) return;
             active.currentExerciseIndex = exerciseIndex;

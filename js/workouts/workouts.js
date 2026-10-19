@@ -1,3 +1,5 @@
+import { initializeRoutineEditor } from './manual-plan-setup.js';
+import { replaceRoutineExercise } from './routine-builder-model.js';
 import { isStaticHold, holdTarget } from "./static-holds.js";
 import { initializeManualSupersetBuilder, beginSupersetEditing, decorateBuilder, applySupersetsToPlan, removePairingSlot } from "./manual-superset-builder.js?v=manual-superset-builder-2";
 
@@ -682,7 +684,7 @@ function renderWorkoutDays() {
                         class="day-name-input"
                         data-day-index="${dayIndex}"
                         type="text"
-                        value="${day.name}"
+                        value="${escapeBuilderHtml(day.name)}"
                     >
 
 
@@ -738,7 +740,7 @@ function renderWorkoutDays() {
                                                             data-day-index="${dayIndex}"
                                                             data-exercise-index="${exerciseIndex}"
                                                             placeholder="Example: 20 min, 4 km, moderate pace, resistance 6"
-                                                        >${plannedExercise.notes || ""}</textarea>
+                                                        >${escapeBuilderHtml(plannedExercise.notes || "")}</textarea>
                                                     </label>
 
                                                 </div>
@@ -769,7 +771,7 @@ function renderWorkoutDays() {
                                                             data-day-index="${dayIndex}"
                                                             data-exercise-index="${exerciseIndex}"
                                                             type="text"
-                                                            value="${isStaticHold(plannedExercise) ? holdTarget(plannedExercise.reps, exercise?.recommendedReps || "20-60 sec") : plannedExercise.reps}"
+                                                            value="${isStaticHold(plannedExercise) ? holdTarget(plannedExercise.reps, exercise?.recommendedReps || "20-60 sec") : escapeBuilderHtml(plannedExercise.reps)}"
                                                             placeholder="${isStaticHold(plannedExercise) ? "20-60 sec" : "8-12"}"
                                                         >
                                                     </label>
@@ -839,6 +841,7 @@ function renderWorkoutDays() {
 
     attachBuilderListeners();
     decorateBuilder(container);
+    initializeRoutineEditor({plan: workingPlan, render: renderWorkoutDays, remove: removeExercise, duplicate: di => {const original=workingPlan.days[di];if(!original)return;const copied=structuredClone(original);copied.name=original.name+' (Repeat)';workingPlan.days.push(copied);beginSupersetEditing(workingPlan);renderWorkoutDays();}, changed: () => beginSupersetEditing(workingPlan)});
     document.dispatchEvent(new CustomEvent("levelup:plan-builder-rendered"));
 
 }
@@ -995,8 +998,9 @@ function attachBuilderListeners() {
                             );
 
 
-                        current.id =
-                            select.value;
+                        const replacement = replaceRoutineExercise(current, exercise || {id: select.value});
+                        Object.keys(current).forEach(key => delete current[key]);
+                        Object.assign(current, replacement);
 
 
                         if (exercise) {
@@ -1172,6 +1176,16 @@ function attachBuilderListeners() {
 
 
 function savePlan() {
+    if (!workingPlan.days.length || workingPlan.days.some(day => !day.exercises.length || day.exercises.some(ex => !ex.id))) {
+        showMessage("Add at least one exercise to each day before saving."); return;
+    }
+    for (const day of workingPlan.days) for (const ex of day.exercises) {
+        if ((ex.setTargets || []).some(t => t.weight != null && (!Number.isFinite(t.weight) || t.weight < 0)) ||
+            (ex.cardioTarget?.durationMinutes != null && (ex.cardioTarget.durationMinutes < 0 || ex.cardioTarget.durationMinutes > 1440))) {
+            showMessage("Check your exercise targets. Weights and times must be valid positive values."); return;
+        }
+    }
+
 
     applySupersetsToPlan(workingPlan);
 
@@ -1691,3 +1705,5 @@ function showMessage(message) {
     }
 
 }
+
+function escapeBuilderHtml(value) { return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"}[c])); }

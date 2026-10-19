@@ -1,3 +1,4 @@
+import { effectiveRestSetting } from './exercise-rest-settings.js';
 import { isCircuit } from './circuit-history.js';
 import { cancelNativeAlarm, finishNativeAlarm, hapticNotification, scheduleNativeAlarm } from "../core/native-capabilities.js?v=lock-screen-timers-3";
 import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
@@ -39,12 +40,9 @@ function readTimerSettings() {
 }
 
 export function getExerciseRestSetting(exerciseId) {
-    const stored = readTimerSettings()[String(exerciseId || "")];
-    const seconds = Number(stored?.seconds);
-    return {
-        enabled: stored?.enabled === true,
-        seconds: [60, 90, 120, 180].includes(seconds) ? seconds : 120
-    };
+    const active = readActiveWorkout();
+    const index = active?.exercises?.[active.currentExerciseIndex]?.exerciseId === exerciseId ? active.currentExerciseIndex : undefined;
+    return effectiveRestSetting(exerciseId, active, index);
 }
 
 function makeTimerId(active, sourceKey) {
