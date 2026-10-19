@@ -1,0 +1,45 @@
+name: PWA Import Verified Exercise Thumbnails
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - pwa/ios-routine-thumbnails-parity-20261019
+    paths:
+      - .github/workflows/pwa-import-exercise-thumbnails.yml
+permissions:
+  contents: write
+jobs:
+  import-thumbnails:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pwa/ios-routine-thumbnails-parity-20261019
+      - uses: actions/download-artifact@v4
+        with:
+          name: thumbnail-diagnostics
+          run-id: 39296609056
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .
+      - name: Verify generated thumbnail coverage
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          paths=list(Path('assets/exercise-thumbnails').glob('*.webp'))
+          text=Path('js/workouts/exercise-thumbnail-manifest.js').read_text()
+          match=re.search(r'EXERCISE_THUMBNAILS\s*=\s*(\{.*\})\s*;',text,re.S)
+          count=len(json.loads(match.group(1))) if match else 0
+          print(f'Import: {len(paths)} images for {count} exercises')
+          if len(paths)<300 or count<240:
+            raise SystemExit('Thumbnail artifact failed coverage checks')
+          PY
+      - name: Commit verified WebP library
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/exercise-thumbnails js/workouts/exercise-thumbnail-manifest.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Import 308 verified exercise thumbnails for PWA"
+            git push origin HEAD:pwa/ios-routine-thumbnails-parity-20261019
+          fi

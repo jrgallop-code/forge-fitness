@@ -1,0 +1,45 @@
+name: PWA Workout Parity Checks
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - pwa/ios-routine-thumbnails-parity-20261019
+    paths:
+      - .github/workflows/pwa-workout-parity-check.yml
+      - js/workouts/**
+      - css/routine-builder.css
+permissions:
+  contents: write
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - name: Validate changed JavaScript
+        run: |
+          for file in js/workouts/{workouts,workout-session,workout-plan-details,manual-plan-setup,manual-builder-catalogue,routine-builder-model,exercise-thumbnails,exercise-thumbnail-manifest,exercise-rest-settings,circuit-round-logger,progression-prompt-v2}.js; do node --check "$file"; done
+      - name: Verify thumbnail assets are present
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          text=Path('js/workouts/exercise-thumbnail-manifest.js').read_text()
+          data=json.loads(re.search(r'EXERCISE_THUMBNAILS\s*=\s*(\{.*\})\s*;',text,re.S).group(1))
+          missing=[p for m in data.values() for p in m.values() if not Path(p).exists()]
+          print(len(data),'exercises;',len(list(Path('assets/exercise-thumbnails').glob('*.webp'))),'thumbnail images;',len(missing),'missing mappings')
+          if len(data)<240 or missing:raise SystemExit('Thumbnail parity validation failed')
+          PY
+      - name: Run workout regression tests
+        run: node --test tests/live-set-progression.test.mjs tests/capacitor-ios-packaging.test.mjs tests/native-app-shell.test.mjs tests/strength-context.test.mjs tests/workout-performance.test.mjs
+      - name: Record successful web parity checks
+        run: |
+          echo "Validated on commit $GITHUB_SHA" > .pwa-workout-parity-validated
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .pwa-workout-parity-validated
+          git commit -m "Record validated PWA routine and thumbnail port"
+          git push origin HEAD:pwa/ios-routine-thumbnails-parity-20261019
