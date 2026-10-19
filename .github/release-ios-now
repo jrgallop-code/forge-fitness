@@ -531,3 +531,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-19: Release verified video thumbnails: 308 WebP images for 249 exercises; enforce thumbnail coverage gate before signing.
 
 2026-10-19: Release exercise-aware SVG fallback icons for cardio, holds and major muscle groups, with verified video thumbnail pipeline.
+
+2026-10-19: TestFlight release with real video exercise thumbnails in saved workout View overview and compact 44px image styling.
