@@ -1,3 +1,4 @@
+import { exerciseContext, eligibleStrengthSet } from "./strength-context.js";
 import { isProgressiveOverloadEnabled, PROGRESSIVE_OVERLOAD_KEY, PROGRESSIVE_OVERLOAD_EVENT } from "../core/progressive-overload-preferences.js?v=progressive-overload-toggle-1";
 import { resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
 import { getExerciseById } from './exercise-library.js';
@@ -90,7 +91,7 @@ function hasRecordedSetData(set) {
 
 function getPreferredRecordedSets(performance) {
   const recorded = Array.isArray(performance?.sets)
-    ? performance.sets.filter(hasRecordedSetData)
+    ? performance.sets.filter(set => hasRecordedSetData(set) && eligibleStrengthSet(set))
     : [];
   const completed = recorded.filter(set => set?.completed);
   return completed.length ? completed : recorded;
@@ -121,8 +122,11 @@ function findExercisePerformance(session, exerciseId, equipmentProfileId = 'defa
 function findPreviousPerformance(exerciseId, equipmentProfileId = 'default', excludedSessionId = null) {
   const sessions = resumeProgressionHistory(readJson(SESSION_STORAGE_KEY, []), readJson(ACTIVE_WORKOUT_STORAGE_KEY, null));
   if (!Array.isArray(sessions)) return null;
+  const active = readJson(ACTIVE_WORKOUT_STORAGE_KEY, null);
+  const current = active?.exercises?.find(item => item.exerciseId === exerciseId && (item.equipmentProfileId || 'default') === equipmentProfileId);
   for (const session of [...sessions].filter(item => item?.id !== excludedSessionId && item?.adaptiveGuidance?.isDeload !== true).sort(compareSessionsNewest)) {
     const performance = findExercisePerformance(session, exerciseId, equipmentProfileId);
+    if (current && exerciseContext(active, current) !== exerciseContext(session, performance)) continue;
     if (hasValidPerformance(performance)) return { session, performance };
   }
   return null;
@@ -166,8 +170,8 @@ function syncPreviousDisplay(card, source) {
     if (value) value.textContent = formatPreviousSet(previousSet);
     const weight = row.querySelector('.session-weight');
     const reps = row.querySelector('.session-reps');
-    if (weight) setCanonicalUnitPlaceholder(weight, previousSet?.weight ?? 'Weight');
-    if (reps) reps.placeholder = previousSet?.reps ?? 'Reps';
+    if (weight) setCanonicalUnitPlaceholder(weight, row.dataset?.routineTargetWeight || previousSet?.weight || 'Weight');
+    if (reps) reps.placeholder = row.dataset?.routineTargetReps || previousSet?.reps || 'Reps';
   });
 }
 
@@ -176,8 +180,8 @@ function applyProgressionPlaceholders(card, suggestedLoad, minimumReps) {
   card.querySelectorAll('.session-set-row').forEach(row => {
     const weight = row.querySelector('.session-weight');
     const reps = row.querySelector('.session-reps');
-    if (weight && !weight.value) setCanonicalUnitPlaceholder(weight, suggestedLoad);
-    if (reps && !reps.value) reps.placeholder = formatLoad(minimumReps);
+    if (weight && !weight.value) setCanonicalUnitPlaceholder(weight, row.dataset?.routineTargetWeight || suggestedLoad);
+    if (reps && !reps.value) reps.placeholder = row.dataset?.routineTargetReps || formatLoad(minimumReps);
   });
 }
 
@@ -204,10 +208,10 @@ function applyRepGoalPlaceholders(card, goals, suggestedWeight = null) {
     const weight = row.querySelector('.session-weight');
     const reps = row.querySelector('.session-reps');
     if (weight && !weight.value && Number.isFinite(suggestedWeight)) {
-      setCanonicalUnitPlaceholder(weight, suggestedWeight);
+      setCanonicalUnitPlaceholder(weight, row.dataset?.routineTargetWeight || suggestedWeight);
     }
     if (reps && !reps.value && Number.isFinite(goals[index])) {
-      reps.placeholder = formatLoad(goals[index]);
+      reps.placeholder = row.dataset?.routineTargetReps || formatLoad(goals[index]);
     }
   });
 }
@@ -361,8 +365,8 @@ function renderLiveSetPrompt(card, prompt, repRange, exerciseId) {
   remaining.forEach(row => {
     const weight = row.querySelector('.session-weight');
     const reps = row.querySelector('.session-reps');
-    if (weight && !weight.value) setCanonicalUnitPlaceholder(weight, nextWeight);
-    if (reps && !reps.value) reps.placeholder = String(target.reps);
+    if (weight && !weight.value) setCanonicalUnitPlaceholder(weight, row.dataset?.routineTargetWeight || nextWeight);
+    if (reps && !reps.value) reps.placeholder = row.dataset?.routineTargetReps || String(target.reps);
   });
   prompt.classList.toggle('progression-prompt-down', target.belowTarget);
   prompt.innerHTML = `
