@@ -3,7 +3,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor,as_completed
 from PIL import Image,ImageChops
 root=Path(__file__).resolve().parent.parent;out=root/'assets/exercise-thumbnails';out.mkdir(exist_ok=True)
-jobs=json.load(open(root/'thumbnail-jobs.json'));unique={j['src']:j for j in jobs};good={};failed=[]
+jobs=json.load(open(root/'thumbnail-jobs.json'));unique={j['src']:j for j in jobs};good={};failed=[];errors={}
 def extract(item):
  url,j=item;key=hashlib.sha1(url.encode()).hexdigest()[:14];dest=out/(key+'.webp')
  if dest.exists():return url,str(dest.relative_to(root))
@@ -18,7 +18,8 @@ def extract(item):
     if box:im=im.crop((max(0,box[0]-8),max(0,box[1]-8),min(im.width,box[2]+8),min(im.height,box[3]+8)))
     im.thumbnail((144,144),Image.Resampling.LANCZOS);canvas=Image.new('RGB',(160,160),(245,245,245));canvas.paste(im,((160-im.width)//2,(160-im.height)//2));canvas.save(dest,'WEBP',quality=78,method=4)
     return url,str(dest.relative_to(root))
-   except Exception:pass
+   except Exception as exc:
+    errors.setdefault(url,[]).append({'url':u,'error':str(exc)[:240]})
  return url,None
 with ThreadPoolExecutor(max_workers=8) as pool:
  for n,f in enumerate(as_completed([pool.submit(extract,item) for item in unique.items()]),1):
@@ -30,6 +31,7 @@ manifest={}
 for j in jobs:
  if j['src'] in good:manifest.setdefault(j['id'],{})[j['sex']]=good[j['src']]
 (root/'js/workouts/exercise-thumbnail-manifest.js').write_text('export const EXERCISE_THUMBNAILS = '+json.dumps(manifest,separators=(',',':'))+';\n')
-Path('thumbnail-report.json').write_text(json.dumps({'images':len(good),'exercises':len(manifest),'failed':failed},indent=2));print('DONE',len(good),'images,',len(manifest),'exercises',flush=True)
+Path('thumbnail-report.json').write_text(json.dumps({'images':len(good),'exercises':len(manifest),'failed':failed,'diagnostics':errors},indent=2));print('DONE',len(good),'images,',len(manifest),'exercises',flush=True)
+for url in failed[:8]: print('SOURCE FAILED:',url,errors.get(url),flush=True)
 
 if not good: print('WARNING: media sources unavailable; exerciseThumbnail() will use its existing image/SVG fallbacks. Continue native packaging.', flush=True)
