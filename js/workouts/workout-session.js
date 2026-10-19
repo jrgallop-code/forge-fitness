@@ -1,15 +1,13 @@
-import { plannedSessionFields, sessionTargetState } from './routine-builder-model.js';
 import { showCompletedWorkoutRecap } from "./workout-complete-recap.js?v=completion-flow-20261012";
 import { isStaticHold, holdTrackingType, holdTarget, holdTimeField, holdLoadControl, holdTimerControl, bindHoldRows, stopHoldTimer } from "./static-holds.js";
 import { renderCircuitRounds, bindCircuitRounds } from "./circuit-round-logger.js";
+import { getBadgeWeeklyTarget } from '../goals/lifting-goals-engine.js';
 import { showCircuitCompletion } from './circuit-completion.js';
 import { ensureCircuitStyles } from './circuit-styles.js';
 import { CIRCUIT_PROGRESS_NOTE, isCircuit, readCircuitSessions, sessionStorageKey, tagCircuitSession, circuitPreviousPerformance } from './circuit-history.js';
-import { captureSetSong, finishSongCaptures, clearSetSong, watchMusicSession } from "../music/spotify.js";
 import { createResumedWorkout, resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
-import { getBadgeWeeklyTarget } from '../goals/lifting-goals-engine.js';
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
-import "./machine-profile-ui.js?v=machine-profile-sheet-ios-1";
+import "./machine-profile-ui.js?v=machine-profile-sheet-pwa-1";
 
 import {
     getExerciseById
@@ -575,7 +573,6 @@ function createExerciseState(day) {
                 return {
                     exerciseId: plannedExercise.id,
                     ...exerciseStateMetadata(exercise, plannedExercise),
-                    ...plannedSessionFields(plannedExercise),
                     trackingType: "notes",
                     durationMinutes: null,
                     distance: "",
@@ -597,13 +594,10 @@ function createExerciseState(day) {
                 trackingType: holdTrackingType(plannedExercise),
                 notes: "",
                 ...getInitialEquipmentProfile(exercise),
-                ...plannedSessionFields(plannedExercise),
-                warmupSets: (plannedExercise.warmupTargets || []).map(t => ({weight:null,reps:null,completed:false,targetWeight:t.weight,targetReps:t.reps})),
                 sets:
                     Array.from(
                         { length: setCount },
-                        (_, targetIndex) => ({
-                            ...sessionTargetState(plannedExercise, targetIndex),
+                        () => ({
                             weight: null,
                             reps: null,
                             durationSeconds: null,
@@ -622,7 +616,6 @@ function exerciseStateMetadata(definition, plannedExercise = {}) {
     return {
         name,
         exerciseName: name,
-        supersetGroup: plannedExercise.supersetGroup || null,
         muscleGroup: definition?.muscleGroup || plannedExercise?.muscleGroup || "",
         type: definition?.type || plannedExercise?.type || "",
         equipment: definition?.equipment || plannedExercise?.equipment || ""
@@ -634,7 +627,6 @@ function enrichCompletedExercise(exercise, plannedExercise = {}) {
     return {
         ...exercise,
         ...identity,
-        supersetGroup: plannedExercise.supersetGroup || null,
         sets: (exercise?.sets || []).map(normalizeSavedSet)
     };
 }
@@ -713,17 +705,17 @@ function renderSessionExercises({
                 return `
                     <article class="session-exercise-card cardio-session-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-tracking-type="notes">
                         <h4>${escapeHtml(exercise?.name || "Cardio")}</h4>
-                        <p class="session-target">${plannedExercise.cardioTarget?.durationMinutes ? `Target: ${escapeHtml(plannedExercise.cardioTarget.durationMinutes)} min${plannedExercise.cardioTarget.distance ? ` · ${escapeHtml(plannedExercise.cardioTarget.distance)}` : ""}` : "Record your cardio time, with optional distance, effort and notes."}</p>${plannedExercise.notes ? `<div class="session-routine-note"><small>ROUTINE NOTE</small><br>${escapeHtml(plannedExercise.notes)}</div>` : ""}${plannedExercise.cardioTarget?.details ? `<p class="session-planned-extras">${escapeHtml(plannedExercise.cardioTarget.details)}</p>` : ""}
+                        <p class="session-target">Record your cardio time, with optional distance, effort and notes.</p>
                         <div class="previous-performance"><strong>Previous workout</strong><span>${escapeHtml(formatCardioPrevious(previous))}</span></div>
                         <div class="cardio-metrics-grid cardio-metrics-grid-with-rpe">
                             <label>Time (minutes)
-                                <input class="session-cardio-duration" type="number" inputmode="decimal" min="0" step="0.1" value="${state.durationMinutes ?? ""}" placeholder="${escapeHtml(plannedExercise.cardioTarget?.durationMinutes || 20)}">
+                                <input class="session-cardio-duration" type="number" inputmode="decimal" min="0" step="0.1" value="${state.durationMinutes ?? ""}" placeholder="20">
                             </label>
                             <label>Distance (optional)
-                                <input class="session-cardio-distance" type="text" maxlength="40" value="${escapeHtml(state.distance || "")}" placeholder="${escapeHtml(plannedExercise.cardioTarget?.distance || "5 km, 3 mi or 1500 m")}">
+                                <input class="session-cardio-distance" type="text" maxlength="40" value="${escapeHtml(state.distance || "")}" placeholder="5 km, 3 mi or 1500 m">
                             </label>
                             <label>Effort (RPE)
-                                <input class="session-cardio-rpe" type="number" inputmode="decimal" min="1" max="10" step="0.5" value="${state.rpe ?? ""}" placeholder="${escapeHtml(plannedExercise.cardioTarget?.rpe || "1–10")}">
+                                <input class="session-cardio-rpe" type="number" inputmode="decimal" min="1" max="10" step="0.5" value="${state.rpe ?? ""}" placeholder="1–10">
                             </label>
                         </div>
                         <label class="cardio-notes-label">Notes (optional)
@@ -737,8 +729,6 @@ function renderSessionExercises({
                 <article class="session-exercise-card" data-exercise-index="${exerciseIndex}" data-exercise-id="${escapeHtml(plannedExercise.id || "")}" data-equipment-profile-id="${escapeHtml(state.equipmentProfileId || "default")}" data-tracking-type="${isStaticHold(plannedExercise) ? "duration" : "reps"}">
                     <h4>${escapeHtml(exercise?.name || "Exercise")}</h4>
                     <p class="session-target">Target: ${state.sets.length} ${isCircuit(plan) ? "rounds" : "sets"} × ${escapeHtml(isStaticHold(plannedExercise) ? holdTarget(plannedExercise.reps, "—") : (plannedExercise.reps || "—") + " reps")}</p>
-                    ${plannedExercise.notes ? `<div class="session-routine-note"><small>ROUTINE NOTE</small><br>${escapeHtml(plannedExercise.notes)}</div>` : ""}
-                    ${(plannedExercise.warmupTargets || []).length ? `<p class="session-planned-extras">${plannedExercise.warmupTargets.length} warm-up sets planned</p>` : ""}
                     <div class="session-lifting-note ${String(state.notes || "").trim() ? "has-note" : ""}">
                         <button class="session-note-preview" type="button" aria-expanded="false">
                             <span class="session-note-empty-icon" aria-hidden="true">+</span>
@@ -759,11 +749,11 @@ function renderSessionExercises({
                         const previousSet =
                             previous?.sets?.[setIndex];
                         return `
-                            <div class="session-set-row ${set.completed ? "completed" : ""}" data-set-index="${setIndex}" data-routine-target-weight="${set.targetWeight ?? ""}" data-routine-target-reps="${escapeHtml(set.targetReps || "")}" ${isStaticHold(plannedExercise) ? `data-hold-set="${setIndex}"` : ""}>
+                            <div class="session-set-row ${set.completed ? "completed" : ""}" data-set-index="${setIndex}" ${isStaticHold(plannedExercise) ? `data-hold-set="${setIndex}"` : ""}>
                                 <strong>${setIndex + 1}</strong>
                                 <span class="previous-set-value">${previousSet ? formatPreviousSet(previousSet) : "Hasn't started"}</span>
-                                <input class="session-weight" type="number" inputmode="decimal" min="0" step="0.5" value="${set.weight ?? ""}" placeholder="${set.targetWeight ?? previousSet?.weight ?? "Weight"}" aria-label="Set ${setIndex + 1} weight">
-                                ${isStaticHold(plannedExercise) ? holdTimeField(set, setIndex) : `<input class="session-reps" type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ""}" placeholder="${escapeHtml(set.targetReps || previousSet?.reps || "Reps")}" aria-label="Set ${setIndex + 1} reps">`}
+                                <input class="session-weight" type="number" inputmode="decimal" min="0" step="0.5" value="${set.weight ?? ""}" placeholder="${previousSet?.weight ?? "Weight"}" aria-label="Set ${setIndex + 1} weight">
+                                ${isStaticHold(plannedExercise) ? holdTimeField(set, setIndex) : `<input class="session-reps" type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ""}" placeholder="${previousSet?.reps ?? "Reps"}" aria-label="Set ${setIndex + 1} reps">`}
                                 <button class="complete-set-btn secondary-btn" type="button">${set.completed ? "✓ Completed" : "Complete Set"}</button>
                             </div>
                         `;
@@ -814,11 +804,9 @@ function renderSessionExercises({
     }
 
     let completionRequested = false;
-    const completeWorkout = async () => {
+    const completeWorkout = () => {
         if (completionRequested) return;
         completionRequested = true;
-        await finishSongCaptures();
-        if (!editingSessionId && getActiveWorkout()?.id !== session.id) return;
         saveCompletedSession({
             plan,
             logger,
@@ -1001,7 +989,6 @@ function bindSessionInputs({
     editingSessionId
 }) {
 
-    watchMusicSession(session);
     const persist = () => {
         if (!editingSessionId && isCircuit(session)) {
             const latest = getActiveWorkout();
@@ -1197,10 +1184,6 @@ function bindSessionInputs({
                             () => {
                                 set.completed =
                                     !set.completed;
-                                if (!editingSessionId) {
-                                    if (set.completed) captureSetSong(set, persist, () => getActiveWorkout()?.id === session.id);
-                                    else clearSetSong(set);
-                                }
                                 row.classList.toggle(
                                     "completed",
                                     set.completed
@@ -2106,3 +2089,5 @@ function escapeHtml(value) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
+
