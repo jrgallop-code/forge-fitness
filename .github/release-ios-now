@@ -535,3 +535,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-19: TestFlight release with real video exercise thumbnails in saved workout View overview and compact 44px image styling.
 
 2026-10-19: emergency TestFlight startup hotfix; remove eager thumbnail import on overview load.
+
+2026-10-19: emergency iOS recovery: restore seven stable workout modules after shared startup failure; preserve local app data.
