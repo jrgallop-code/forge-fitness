@@ -537,3 +537,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-19: restore original generic dumbbell fallback for missing workout thumbnails.
 
 2026-10-19: TestFlight review build — prevent partial FatSecret food hydration from altering displayed expenditure.
+
+2026-10-19: iOS TestFlight review — nonblocking cached calorie summaries and bounded FatSecret refresh.
