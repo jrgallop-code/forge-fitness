@@ -519,3 +519,5 @@ Actual-screen nutrition and weight guided walkthrough — 2026-10-18
 Remove nutrition in-app tutorial; retain workout tutorial and food fixes — 2026-10-19
 
 iOS compact routine builder, shared rest intervals, cardio and video thumbnails — 2026-10-19
+
+2026-10-19: Retry iOS compact routine builder TestFlight upload with nonblocking exercise thumbnail fallbacks after media-host extraction failed.
