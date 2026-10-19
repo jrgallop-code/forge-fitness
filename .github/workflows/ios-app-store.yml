@@ -60,6 +60,19 @@ jobs:
           name: thumbnail-diagnostics
           path: thumbnail-report.json
           if-no-files-found: ignore
+      - name: Require usable exercise thumbnails before packaging
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          files=list(Path('assets/exercise-thumbnails').glob('*.webp'))
+          manifest=Path('js/workouts/exercise-thumbnail-manifest.js').read_text()
+          match=re.search(r'EXERCISE_THUMBNAILS\s*=\s*(\{.*\})\s*;',manifest,re.S)
+          mapped=len(json.loads(match.group(1))) if match else 0
+          print(f'Thumbnail quality gate: {len(files)} images, {mapped} exercises')
+          if len(files)<250 or mapped<200:
+              raise SystemExit('Insufficient thumbnail coverage. Refusing to package an empty or partial image library.')
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: exercise-thumbnails
