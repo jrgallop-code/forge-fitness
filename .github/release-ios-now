@@ -521,3 +521,5 @@ Remove nutrition in-app tutorial; retain workout tutorial and food fixes — 202
 iOS compact routine builder, shared rest intervals, cardio and video thumbnails — 2026-10-19
 
 2026-10-19: Retry iOS compact routine builder TestFlight upload with nonblocking exercise thumbnail fallbacks after media-host extraction failed.
+
+2026-10-19: Retry native TestFlight release after fixing missing row dataset in live-set progression tests; previous macOS job failed 4 regression tests before signing.
