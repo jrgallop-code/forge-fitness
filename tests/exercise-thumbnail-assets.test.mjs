@@ -4,7 +4,7 @@ import { readFileSync, statSync } from 'node:fs';
 
 function readManifest() {
   const text = readFileSync('js/workouts/exercise-thumbnail-manifest.js', 'utf8');
-  const match = text.match(/EXERCISE_THUMBNAILS\\s*=\\s*(\\{.*\\})\\s*;/s);
+  const match = text.match(/EXERCISE_THUMBNAILS\s*=\s*(\{.*\})\s*;/s);
   assert.ok(match, 'thumbnail manifest must export an object');
   return JSON.parse(match[1]);
 }
@@ -15,7 +15,7 @@ test('all exercise thumbnail paths point to real, nonempty images', () => {
   for (const [id, versions] of Object.entries(entries)) {
     assert.ok(versions.male || versions.female, `no usable variant for ${id}`);
     for (const [sex, path] of Object.entries(versions)) {
-      assert.match(path, /^assets\\/exercise-thumbnails\\/[a-z0-9-]+\\.webp$/i, `unsafe image path for ${id} ${sex}`);
+      assert.match(path, /^assets\/exercise-thumbnails\/[a-z0-9-]+\.webp$/i, `unsafe image path for ${id} ${sex}`);
       const bytes = statSync(path).size;
       assert.ok(bytes > 100, `empty thumbnail ${path}`);
       assert.equal(readFileSync(path).toString('ascii', 0, 4), 'RIFF', `invalid WebP: ${path}`);
