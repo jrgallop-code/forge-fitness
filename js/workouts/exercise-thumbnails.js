@@ -18,7 +18,7 @@ function fallbackArtwork(exercise) {
  const paths = isCardio
   ? '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>'
   : '<path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"/>';
- return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" aria-hidden="true">' + paths + '</svg>';
+ return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" aria-hidden="true">' + paths + '</svg>';
 }
 
 export function exerciseThumbnail(exercise) {
@@ -27,7 +27,7 @@ export function exerciseThumbnail(exercise) {
  // The Capacitor app can render this component from nested routes. Resolve packaged
  // thumbnail assets at the app root instead of against the current page's path.
  const resolvedSrc = src && !/^(?:https?:|data:|blob:)/i.test(src) ? '/' + String(src).replace(/^\/+/, '') : src;
- return `<span class="routine-thumbnail" aria-hidden="true">${fallbackArtwork(exercise)}${resolvedSrc ? `<img src="${resolvedSrc}" alt="" width="44" height="44" loading="lazy" decoding="async" data-thumb-exercise="${String(exercise?.id || '')}">` : ''}</span>`;
+ return `<span class="routine-thumbnail" aria-hidden="true" style="position:relative;display:inline-grid;place-items:center;width:44px;height:44px;overflow:hidden">${fallbackArtwork(exercise)}${resolvedSrc ? `<img src="${resolvedSrc}" alt="" width="44" height="44" loading="lazy" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1" data-thumb-exercise="${String(exercise?.id || '')}">` : ''}</span>`;
 }
 if (typeof document !== 'undefined') document.addEventListener('error', event => {
  if (event.target.matches?.('.routine-thumbnail img')) {
