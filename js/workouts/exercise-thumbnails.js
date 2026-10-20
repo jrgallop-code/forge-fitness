@@ -26,7 +26,7 @@ export function exerciseThumbnail(exercise) {
  const src = paths?.[sex] || paths?.male || paths?.female || LOCAL_GUIDE_IMAGES[exercise?.id];
  // The Capacitor app can render this component from nested routes. Resolve packaged
  // thumbnail assets at the app root instead of against the current page's path.
- const resolvedSrc = src && !/^(?:https?:|data:|blob:)/i.test(src) ? '/' + String(src).replace(/^\\/+/, '') : src;
+ const resolvedSrc = src && !/^(?:https?:|data:|blob:)/i.test(src) ? '/' + String(src).replace(/^\/+/, '') : src;
  return `<span class="routine-thumbnail" aria-hidden="true">${fallbackArtwork(exercise)}${resolvedSrc ? `<img src="${resolvedSrc}" alt="" width="44" height="44" loading="lazy" decoding="async" data-thumb-exercise="${String(exercise?.id || '')}">` : ''}</span>`;
 }
 if (typeof document !== 'undefined') document.addEventListener('error', event => {
