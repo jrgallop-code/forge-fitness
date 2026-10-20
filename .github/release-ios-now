@@ -561,3 +561,4 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-20: Build approved thumbnail SVG loading fallback, male/female existing video frames, and Modify Workout layering fixes.
 
 2026-10-20: Build native iOS bundle after verifying 308 committed video thumbnails and tricep-pushdown manifest.
+\nThumbnail completion release: 70804b9827fb05b81d9698c0d262cba384ca8b17\n
