@@ -551,3 +551,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-19: final iOS thumbnail overlay and complete video coverage audit with renderer tests.
 
 2026-10-20: TestFlight review build — remove Target effort (RIR) menu from manual workout builder.
+
+2026-10-20: retry TestFlight upload — routine builder without Target effort RIR and latest thumbnail fixes.
