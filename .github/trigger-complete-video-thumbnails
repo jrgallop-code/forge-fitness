@@ -5,3 +5,5 @@ Run updated completion pipeline and chain native TestFlight packaging.
 Run with corrected manifest preservation logic.
 
 Dispatch TestFlight directly after image extraction.
+
+Run with concurrency-safe release workflow.
