@@ -4,6 +4,9 @@ on:
     branches: [ios/capacitor-app-store]
     paths: [.github/trigger-complete-video-thumbnails]
   workflow_dispatch:
+concurrency:
+  group: ios-thumbnail-completion
+  cancel-in-progress: true
 permissions:
   contents: write
   actions: write
