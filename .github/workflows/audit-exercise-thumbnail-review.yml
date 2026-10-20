@@ -1,0 +1,30 @@
+name: Audit exercise thumbnails for review
+on:
+  push:
+    branches:
+      - audit/exercise-thumbnail-inventory-20261020
+permissions:
+  contents: read
+  actions: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: exercise-thumbnails
+          run-id: 39307499476
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .
+      - name: Compare all exercises, mapped form videos and packaged images
+        run: node tools/audit-exercise-thumbnails.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: full-exercise-thumbnail-audit
+          path: |
+            thumbnail-audit.json
+            thumbnail-audit.csv
