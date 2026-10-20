@@ -543,3 +543,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-19: TestFlight add-exercise thumbnail picker review release.
 
 2026-10-19: TestFlight build — saved workout overview exercise thumbnails.
+
+2026-10-19: audit full video thumbnail coverage and regenerate stale cache v3; block incomplete images.
