@@ -68,7 +68,14 @@ with ThreadPoolExecutor(max_workers=8) as pool:
   if path:good[url]=path
   else:failed.append(url)
   if n%30==0:print(n,'/',len(unique),'complete;',len(good),'ready',flush=True)
-manifest={}
+# Preserve the already shipped 249 exercise mappings when a remote media
+# source is temporarily inaccessible; fill missing entries incrementally.
+manifest_file=root/'js/workouts/exercise-thumbnail-manifest.js'
+import re
+prior=manifest_file.read_text() if manifest_file.exists() else ''
+match=re.search(r'EXERCISE_THUMBNAILS\\s*=\\s*(\\{.*\\})\\s*;',prior,re.S)
+manifest=json.loads(match.group(1)) if match else {}
+manifest={id:{sex:path for sex,path in entries.items() if (root/path).is_file()} for id,entries in manifest.items()}
 for j in jobs:
  if j['src'] in good:manifest.setdefault(j['id'],{})[j['sex']]=good[j['src']]
 (root/'js/workouts/exercise-thumbnail-manifest.js').write_text('export const EXERCISE_THUMBNAILS = '+json.dumps(manifest,separators=(',',':'))+';\n')
