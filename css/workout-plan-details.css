@@ -422,3 +422,31 @@
 .plan-adapted-source .plan-source-link {
     margin-top:4px;
 }
+
+/* Keep exercise artwork in the day carousel below the sticky workout actions. */
+#workout-plan-detail-screen .plan-detail-days,
+#workout-plan-detail-screen .plan-detail-day,
+#workout-plan-detail-screen .plan-detail-exercise-row,
+#workout-plan-detail-screen .plan-detail-exercise-thumb {
+    position:relative;
+    z-index:0;
+}
+#workout-plan-detail-screen .plan-detail-exercise-thumb,
+#workout-plan-detail-screen .routine-thumbnail {
+    overflow:hidden;
+    isolation:isolate;
+}
+#workout-plan-detail-screen .plan-detail-bottom-actions {
+    z-index:30;
+    isolation:isolate;
+}
+#workout-plan-detail-screen .plan-detail-bottom-actions button {
+    position:relative;
+    z-index:1;
+}
+
+/* The existing video-frame thumbnails use a white studio background. */
+#workout-plan-detail-screen .plan-detail-exercise-thumb .routine-thumbnail,
+#workout-plan-detail-screen .plan-detail-exercise-thumb .routine-thumbnail img {
+    background-color:#fff;
+}
