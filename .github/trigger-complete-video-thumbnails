@@ -9,3 +9,5 @@ Dispatch TestFlight directly after image extraction.
 Run with concurrency-safe release workflow.
 
 October 20, 2026: retry extraction after manifest integrity release check; preserve existing WebP assets.
+
+2026-10-20: regenerate remaining video frames after committing approved artwork and real-WebP integrity tests. Preserve valid manifest entries.
