@@ -563,3 +563,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-20: Build native iOS bundle after verifying 308 committed video thumbnails and tricep-pushdown manifest.
 \nThumbnail completion release: 70804b9827fb05b81d9698c0d262cba384ca8b17\n
 2026-10-20: package seven custom illustrations; fix thumbnail module URL resolution and verify native TestFlight upload.
+
+2026-10-20: release after fixing broken thumbnail test regex and custom path validation.
