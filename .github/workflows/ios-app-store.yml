@@ -70,8 +70,14 @@ jobs:
           files=list(Path('assets/exercise-thumbnails').glob('*.webp'))
           manifest=Path('js/workouts/exercise-thumbnail-manifest.js').read_text()
           match=re.search(r'EXERCISE_THUMBNAILS\s*=\s*(\{.*\})\s*;',manifest,re.S)
-          mapped=len(json.loads(match.group(1))) if match else 0
-          print(f'Thumbnail quality gate: {len(files)} images, {mapped} exercises')
+          mappings=json.loads(match.group(1)) if match else {}
+          mapped=len(mappings)
+          paths={path for variants in mappings.values() for path in variants.values()}
+          missing=sorted(path for path in paths if not Path(path).is_file())
+          print(f'Thumbnail quality gate: {len(files)} images, {mapped} exercises, {len(missing)} missing referenced assets')
+          if missing:
+              print('Broken thumbnail manifest entries:', *missing[:30], sep='\\n')
+              raise SystemExit('Thumbnail manifest references files absent from the iOS build.')
           if len(files)<250 or mapped<200:
               raise SystemExit('Insufficient thumbnail coverage. Refusing an empty image library.')
           PY
