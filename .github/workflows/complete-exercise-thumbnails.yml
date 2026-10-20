@@ -1,0 +1,44 @@
+name: Complete missing video thumbnails
+on:
+  push:
+    branches: [ios/capacitor-app-store]
+    paths: [.github/trigger-complete-video-thumbnails]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  complete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ios/capacitor-app-store
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg python3-pil
+      - name: Extract missing male and female frames without discarding existing images
+        run: |
+          node tools/exercise-thumbnail-jobs.mjs
+          /usr/bin/python3 tools/build-exercise-thumbnails.py
+      - name: Verify thumbnail manifest references real files
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          s=Path('js/workouts/exercise-thumbnail-manifest.js').read_text()
+          m=json.loads(re.search(r'EXERCISE_THUMBNAILS\s*=\s*(\{.*\})\s*;',s,re.S).group(1))
+          missing=[p for sexes in m.values() for p in sexes.values() if not Path(p).is_file()]
+          print(len(m),'exercise mappings;',len(missing),'missing image files')
+          if len(m)<249 or missing: raise SystemExit('Thumbnail integrity validation failed')
+          PY
+      - name: Commit actual extracted images
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/exercise-thumbnails js/workouts/exercise-thumbnail-manifest.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Add additional video-derived male and female exercise thumbnails"
+            git pull --rebase origin ios/capacitor-app-store
+            git push origin HEAD:ios/capacitor-app-store
+          fi
