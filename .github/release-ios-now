@@ -557,3 +557,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-20: publish requested iOS TestFlight build — routine builder RIR removal and thumbnail fixes.
 
 2026-10-20: retry TestFlight release using known-good thumbnail packaging after run 308 failed.
+
+2026-10-20: Build approved thumbnail SVG loading fallback, male/female existing video frames, and Modify Workout layering fixes.
