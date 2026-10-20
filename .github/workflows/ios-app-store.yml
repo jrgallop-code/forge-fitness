@@ -24,44 +24,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - uses: actions/cache/restore@v4
-        id: thumbnail-cache
-        with:
-          path: |
-            assets/exercise-thumbnails
-            js/workouts/exercise-thumbnail-manifest.js
-            thumbnail-report.json
-          key: ios-exercise-thumbnails-v2-${{ hashFiles('js/workouts/exercise-guide-video-resolver.js', 'js/workouts/exercise-guide-video-manifest.js', 'js/workouts/video-library-media.js') }}
-      - name: Extract video thumbnails once
-        if: steps.thumbnail-cache.outputs.cache-hit != 'true'
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg python3-pil
-          node tools/exercise-thumbnail-jobs.mjs
-          /usr/bin/python3 tools/build-exercise-thumbnails.py
-      - name: Cache only real extracted thumbnails
-        if: steps.thumbnail-cache.outputs.cache-hit != 'true'
-        id: thumbnail-quality
-        run: |
-          if [ -f thumbnail-report.json ] && [ "$(python3 -c 'import json; print(json.load(open("thumbnail-report.json"))["images"])')" -gt 0 ]; then
-            echo "has_images=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::No video frames extracted; see thumbnail diagnostics artifact. Empty image cache will NOT be saved."
-          fi
-      - uses: actions/cache/save@v4
-        if: steps.thumbnail-quality.outputs.has_images == 'true'
-        with:
-          path: |
-            assets/exercise-thumbnails
-            js/workouts/exercise-thumbnail-manifest.js
-            thumbnail-report.json
-          key: ios-exercise-thumbnails-v2-${{ hashFiles('js/workouts/exercise-guide-video-resolver.js', 'js/workouts/exercise-guide-video-manifest.js', 'js/workouts/video-library-media.js') }}
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: thumbnail-diagnostics
-          path: thumbnail-report.json
-          if-no-files-found: ignore
+      # Use the exact committed manifest and WebP files. Restoring an old cache
+      # could silently replace newer mappings and hide thumbnails in TestFlight.
       - name: Require usable exercise thumbnails before packaging
         run: |
           python3 - <<'PY'
