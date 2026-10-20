@@ -1,3 +1,4 @@
+import { initializeRoutineEditor } from './manual-plan-setup.js';
 import { isStaticHold, holdTarget } from "./static-holds.js";
 import { initializeManualSupersetBuilder, beginSupersetEditing, decorateBuilder, applySupersetsToPlan, removePairingSlot } from "./manual-superset-builder.js?v=manual-superset-builder-2";
 
@@ -814,6 +815,7 @@ function renderWorkoutDays() {
 
     attachBuilderListeners();
     decorateBuilder(container);
+    initializeRoutineEditor({plan: workingPlan, render: renderWorkoutDays, remove: removeExercise, duplicate: di => { const original=workingPlan.days[di]; if (!original) return; const copied=structuredClone(original); copied.name=original.name+" (Repeat)"; workingPlan.days.push(copied); beginSupersetEditing(workingPlan); renderWorkoutDays(); }, changed: () => beginSupersetEditing(workingPlan)});
     document.dispatchEvent(new CustomEvent("levelup:plan-builder-rendered"));
 
 }
