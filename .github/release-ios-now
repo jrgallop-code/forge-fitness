@@ -565,3 +565,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-20: package seven custom illustrations; fix thumbnail module URL resolution and verify native TestFlight upload.
 
 2026-10-20: release after fixing broken thumbnail test regex and custom path validation.
+
+2026-10-20: rerun iOS TestFlight after fixing single-quoted user's test title syntax error in thumbnail rendering checks.
