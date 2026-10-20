@@ -30,6 +30,7 @@ jobs:
           path: |
             assets/exercise-thumbnails
             js/workouts/exercise-thumbnail-manifest.js
+            thumbnail-report.json
           key: ios-exercise-thumbnails-v3-complete-${{ hashFiles('js/workouts/exercise-guide-video-resolver.js', 'js/workouts/exercise-guide-video-manifest.js', 'js/workouts/video-library-media.js') }}
       - name: Extract video thumbnails once
         if: steps.thumbnail-cache.outputs.cache-hit != 'true'
@@ -53,6 +54,7 @@ jobs:
           path: |
             assets/exercise-thumbnails
             js/workouts/exercise-thumbnail-manifest.js
+            thumbnail-report.json
           key: ios-exercise-thumbnails-v3-complete-${{ hashFiles('js/workouts/exercise-guide-video-resolver.js', 'js/workouts/exercise-guide-video-manifest.js', 'js/workouts/video-library-media.js') }}
       - uses: actions/upload-artifact@v4
         if: always()
