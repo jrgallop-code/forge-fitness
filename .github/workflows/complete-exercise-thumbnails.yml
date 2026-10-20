@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: write
 jobs:
   complete:
     runs-on: ubuntu-latest
@@ -42,10 +43,8 @@ jobs:
             git pull --rebase origin ios/capacitor-app-store
             git push origin HEAD:ios/capacitor-app-store
           fi
-      - name: Start TestFlight release after image import
+      - name: Dispatch iOS TestFlight release after asset import
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git pull --rebase origin ios/capacitor-app-store
-          printf '\\nThumbnail completion release: %s\\n' "$GITHUB_SHA" >> .github/release-ios-now
-          git add .github/release-ios-now
-          git commit -m "Release iOS after video thumbnail completion"
-          git push origin HEAD:ios/capacitor-app-store
+          gh workflow run ios-app-store.yml --ref ios/capacitor-app-store
