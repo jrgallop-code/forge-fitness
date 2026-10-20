@@ -73,7 +73,7 @@ with ThreadPoolExecutor(max_workers=8) as pool:
 manifest_file=root/'js/workouts/exercise-thumbnail-manifest.js'
 import re
 prior=manifest_file.read_text() if manifest_file.exists() else ''
-match=re.search(r'EXERCISE_THUMBNAILS\\s*=\\s*(\\{.*\\})\\s*;',prior,re.S)
+match=re.search(r'EXERCISE_THUMBNAILS\s*=\s*(\{.*\})\s*;',prior,re.S)
 manifest=json.loads(match.group(1)) if match else {}
 manifest={id:{sex:path for sex,path in entries.items() if (root/path).is_file()} for id,entries in manifest.items()}
 for j in jobs:
