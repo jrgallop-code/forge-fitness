@@ -4,6 +4,10 @@ from concurrent.futures import ThreadPoolExecutor,as_completed
 from PIL import Image,ImageChops
 root=Path(__file__).resolve().parent.parent;out=root/'assets/exercise-thumbnails';out.mkdir(exist_ok=True)
 jobs=json.load(open(root/'thumbnail-jobs.json'));unique={j['src']:j for j in jobs};good={};failed=[];errors={}
+# Capture both preferred and alternate media locations for every source.
+source_alternates={}
+for job in jobs:
+ source_alternates.setdefault(job['src'],set()).add(job.get('fallbackSrc'))
 def fetch_video(url,destination):
  # Cloudflare allows byte-range playback requests but rejected urllib's
  # bare full-object downloads with HTTP 403 on the runner.
@@ -40,11 +44,17 @@ def extract(item):
  if dest.exists():return url,str(dest.relative_to(root))
  with tempfile.TemporaryDirectory() as d:
   p=Path(d)/'source.mp4';f=Path(d)/'frame.png'
-  for u in [url,j.get('fallbackSrc')]:
+  for u in [url,*sorted(x for x in source_alternates.get(url,set()) if x)]:
    if not u:continue
    try:
     fetch_video(u,p)
-    subprocess.run(['ffmpeg','-y','-loglevel','error','-ss','0.5','-i',str(p),'-frames:v','1',str(f)],check=True,timeout=15,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    frame_ok=False
+    for seconds in ('0.5','1.5','0'):
+     try:
+      subprocess.run(['ffmpeg','-y','-loglevel','error','-ss',seconds,'-i',str(p),'-frames:v','1',str(f)],check=True,timeout=30,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+      if f.exists() and f.stat().st_size: frame_ok=True;break
+     except (subprocess.CalledProcessError,subprocess.TimeoutExpired):pass
+    if not frame_ok:raise ValueError('No decodable frame at sampled timestamps')
     im=Image.open(f).convert('RGB');bg=Image.new('RGB',im.size,im.getpixel((0,0)));diff=ImageChops.difference(im,bg).convert('L').point(lambda x:255 if x>35 else 0);box=diff.getbbox()
     if box:im=im.crop((max(0,box[0]-8),max(0,box[1]-8),min(im.width,box[2]+8),min(im.height,box[3]+8)))
     im.thumbnail((144,144),Image.Resampling.LANCZOS);canvas=Image.new('RGB',(160,160),(245,245,245));canvas.paste(im,((160-im.width)//2,(160-im.height)//2));canvas.save(dest,'WEBP',quality=78,method=4)
@@ -62,7 +72,8 @@ manifest={}
 for j in jobs:
  if j['src'] in good:manifest.setdefault(j['id'],{})[j['sex']]=good[j['src']]
 (root/'js/workouts/exercise-thumbnail-manifest.js').write_text('export const EXERCISE_THUMBNAILS = '+json.dumps(manifest,separators=(',',':'))+';\n')
-Path('thumbnail-report.json').write_text(json.dumps({'images':len(good),'exercises':len(manifest),'failed':failed,'diagnostics':errors},indent=2));print('DONE',len(good),'images,',len(manifest),'exercises',flush=True)
+unmapped=sorted({j['id'] for j in jobs if j['id'] not in manifest or j['sex'] not in manifest[j['id']]})
+Path('thumbnail-report.json').write_text(json.dumps({'images':len(good),'exercises':len(manifest),'jobs':len(jobs),'unmappedExerciseIds':unmapped,'failed':failed,'diagnostics':errors},indent=2));print('DONE',len(good),'images,',len(manifest),'exercises',flush=True)
 for url in failed[:8]: print('SOURCE FAILED:',url,errors.get(url),flush=True)
 
 if not good: print('WARNING: media sources unavailable; exerciseThumbnail() will use its existing image/SVG fallbacks. Continue native packaging.', flush=True)

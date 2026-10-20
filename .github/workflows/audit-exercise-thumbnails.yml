@@ -1,0 +1,37 @@
+name: Audit exercise video thumbnail coverage
+on:
+  push:
+    branches:
+      - fix/ios-complete-video-thumbnail-coverage-20261019
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg python3-pil
+          node tools/exercise-thumbnail-jobs.mjs
+          /usr/bin/python3 tools/build-exercise-thumbnails.py
+      - name: Report missing mapped videos
+        run: |
+          python3 - <<'PY'
+          import json
+          a=json.load(open('thumbnail-report.json'))
+          print('Video jobs:',a.get('jobs'),'Images:',a['images'],'Exercises:',a['exercises'])
+          print('Missing exercise IDs:',a['unmappedExerciseIds'])
+          if a['unmappedExerciseIds']:raise SystemExit('Mapped videos are missing thumbnail images')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: complete-thumbnail-audit
+          path: |
+            thumbnail-report.json
+            thumbnail-jobs.json
