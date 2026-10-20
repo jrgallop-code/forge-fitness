@@ -96,7 +96,7 @@ function openMachine(p) {
 }
 function openOptions(di,ei) {
  const p=context.plan.days[di].exercises[ei],ex=definition(p),kind=exerciseKind(ex,p);
- const actions=[['swap','Swap exercise'],['reorder','Reorder exercises'],...(kind!=='cardio'?[['superset','Add to superset'],['circuit','Add to circuit'],...(p.supersetGroup?[['ungroup','Remove grouping']]:[]),['warmups','Warm-up sets'],['drops','Drop sets'],['effort','Target effort (RIR)']]:[]),...(supportsEquipmentProfiles(ex)?[['machine','Machine']]:[]),['rest','Rest timer'],['note','Routine note'],['guide','Form Guide'],['remove','Remove exercise']];
+ const actions=[['swap','Swap exercise'],['reorder','Reorder exercises'],...(kind!=='cardio'?[['superset','Add to superset'],['circuit','Add to circuit'],...(p.supersetGroup?[['ungroup','Remove grouping']]:[]),['warmups','Warm-up sets'],['drops','Drop sets']]:[]),...(supportsEquipmentProfiles(ex)?[['machine','Machine']]:[]),['rest','Rest timer'],['note','Routine note'],['guide','Form Guide'],['remove','Remove exercise']];
  const d=sheet(ex.name,actions.map(([key,label])=>`<button type="button" class="routine-action ${key==='remove'?'is-danger':''}" data-action="${key}">${label}<span>›</span></button>`).join(''));
  d.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{d.close();switch(b.dataset.action){
  case 'swap': {const row=cards()[di].querySelectorAll('.exercise-builder-row')[ei];row.querySelector('[data-manual-replace]')?.click();break;}
@@ -105,7 +105,7 @@ function openOptions(di,ei) {
  case 'ungroup':ungroupExercise(context.plan.days[di],ei);update(true);break;
  case 'warmups':openWarmups(p);break;
  case 'drops':openDrops(p);break;
- case 'effort':sheet('Target effort','<label>Reps in reserve<select data-rir><option value="">No target</option>'+[0,1,2,3,4].map(n=>`<option value="${n}" ${p.setTargets?.[0]?.rir===n?'selected':''}>${n===4?'4+':n}</option>`).join('')+'</select></label>',d=>{const v=d.querySelector('select').value;p.setTargets.forEach(t=>t.rir=v===''?null:Number(v));update(true);});break;
+
  case 'machine':openMachine(p);break;
  case 'rest':openRest(p);break;
  case 'note':openNote(p);break;
