@@ -815,7 +815,12 @@ function renderWorkoutDays() {
 
     attachBuilderListeners();
     decorateBuilder(container);
-    initializeRoutineEditor({plan: workingPlan, render: renderWorkoutDays, remove: removeExercise, duplicate: di => { const original=workingPlan.days[di]; if (!original) return; const copied=structuredClone(original); copied.name=original.name+" (Repeat)"; workingPlan.days.push(copied); beginSupersetEditing(workingPlan); renderWorkoutDays(); }, changed: () => beginSupersetEditing(workingPlan)});
+    try {
+    initializeRoutineEditor({plan: workingPlan, render: renderWorkoutDays, remove: removeExercise, duplicate: di => { const original=workingPlan.days[di]; if (!original) return; const copied=structuredClone(original); copied.name=original.name+" (Repeat)"; workingPlan.days.push(copied); beginSupersetEditing(workingPlan); renderWorkoutDays(); }, changed: () => beginSupersetEditing(workingPlan)}); 
+    } catch (error) {
+      console.error('PWA routine layout failed; retaining original exercise builder:', error);
+      document.getElementById('plan-builder')?.classList.remove('routine-builder');
+    }
     document.dispatchEvent(new CustomEvent("levelup:plan-builder-rendered"));
 
 }
