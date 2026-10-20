@@ -559,3 +559,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-20: retry TestFlight release using known-good thumbnail packaging after run 308 failed.
 
 2026-10-20: Build approved thumbnail SVG loading fallback, male/female existing video frames, and Modify Workout layering fixes.
+
+2026-10-20: Build native iOS bundle after verifying 308 committed video thumbnails and tricep-pushdown manifest.
