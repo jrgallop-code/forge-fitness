@@ -7,3 +7,5 @@ Run with corrected manifest preservation logic.
 Dispatch TestFlight directly after image extraction.
 
 Run with concurrency-safe release workflow.
+
+October 20, 2026: retry extraction after manifest integrity release check; preserve existing WebP assets.
