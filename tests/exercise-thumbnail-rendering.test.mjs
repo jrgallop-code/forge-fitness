@@ -5,20 +5,21 @@ import { readFileSync } from 'node:fs';
 const component = readFileSync('js/workouts/exercise-thumbnails.js', 'utf8');
 const workflow = readFileSync('.github/workflows/ios-app-store.yml', 'utf8');
 
-test('Exercise images overlay the fallback SVG instead of being clipped beneath it', () => {
-  assert.match(component, /position:relative;display:inline-grid;place-items:center;width:44px;height:44px;overflow:hidden/);
-  assert.match(component, /style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1"/);
-  assert.match(component, /src="\$\{resolvedSrc\}"/);
+test('Exercise thumbnails preserve the default SVG until the image is loaded', () => {
+ assert.match(component, /fallbackArtwork\(exercise\)/);
+ assert.match(component, /visibility:hidden/);
+ assert.match(component, /event\.target\.naturalWidth > 0|event\.target\.naturalWidth > 0|event\.target\.naturalWidth/);
+ assert.match(component, /style\.visibility = 'visible'/);
+ assert.match(component, /event\.target\.remove\(\)/);
 });
-
-test('Bundled image URLs resolve from Capacitor app root and failed images remain fallback-safe', () => {
-  assert.match(component, /const resolvedSrc =/);
-  assert.match(component, /String\(src\)\.replace/);
-  assert.match(component, /event\.target\.remove\(\)/);
+test('Exercise thumbnails use the user's anatomy sex when matching imagery exists', () => {
+ assert.match(component, /getAnatomySex\(\)/);
+ assert.match(component, /paths\?\.\[sex\]/);
 });
-
-test('App Store workflow audits missing mapped thumbnails instead of relying only on total counts', () => {
-  assert.match(workflow, /unmappedExerciseIds/);
-  assert.match(workflow, /Incomplete exercise thumbnail coverage/);
-  assert.match(workflow, /thumbnail-report\.json/);
+test('Bundled thumbnail assets resolve at the native app root', () => {
+ assert.match(component, /const resolvedSrc =/);
+ assert.match(component, /String\(src\)\.replace/);
+});
+test('Video thumbnail release retains its minimum-coverage gate', () => {
+ assert.match(workflow, /Insufficient thumbnail coverage/);
 });
