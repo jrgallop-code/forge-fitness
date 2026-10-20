@@ -545,3 +545,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-19: TestFlight build — saved workout overview exercise thumbnails.
 
 2026-10-19: audit full video thumbnail coverage and regenerate stale cache v3; block incomplete images.
+
+2026-10-19: rebuild iOS exercise thumbnails with absolute app-root asset URLs and complete coverage audit.
