@@ -1,0 +1,22 @@
+import {writeFileSync,readFileSync,existsSync} from 'node:fs';
+globalThis.localStorage={getItem:()=>null};
+globalThis.window={__levelUpAnatomySexPreview:'male'};
+const {getAllExercises}=await import('../js/workouts/exercise-library.js');
+await import('../js/workouts/exercise-library-expansion.js');
+const {getFormGuideVideo}=await import('../js/workouts/exercise-guide-video-resolver.js');
+const {EXERCISE_THUMBNAILS}=await import('../js/workouts/exercise-thumbnail-manifest.js');
+const list=getAllExercises().filter(x=>x?.id).sort((a,b)=>a.name.localeCompare(b.name));
+const root='./';
+const rows=list.map(ex=>{
+ const video=getFormGuideVideo(ex.id);
+ const shots=EXERCISE_THUMBNAILS[ex.id]||{};
+ const files=Object.fromEntries(['male','female'].map(sex=>[sex,Boolean(shots[sex]&&existsSync(root+shots[sex]))]));
+ const mapped=Boolean(shots.male||shots.female);
+ const image=Boolean(files.male||files.female);
+ return {id:ex.id,name:ex.name,muscleGroup:ex.muscleGroup||'',equipment:ex.equipment||'',video:Boolean(video),videoSrc:video?.src||'',maleThumbnail:shots.male||'',femaleThumbnail:shots.female||'',maleFile:files.male,femaleFile:files.female,issue:video?(image?'asset_present_verify_ui':'extract_video_frame'):(image?'asset_present_verify_ui':'generate_exercise_art')};
+});
+const csv=x=>'"'+String(x??'').replaceAll('"','""')+'"';
+const fields=['id','name','muscleGroup','equipment','video','videoSrc','maleThumbnail','femaleThumbnail','maleFile','femaleFile','issue'];
+writeFileSync('thumbnail-audit.json',JSON.stringify({created:new Date().toISOString(),count:rows.length,summary:{videoMissingImage:rows.filter(x=>x.issue==='extract_video_frame').length,noVideoMissingImage:rows.filter(x=>x.issue==='generate_exercise_art').length,hasImage:rows.filter(x=>x.issue==='asset_present_verify_ui').length},rows},null,2));
+writeFileSync('thumbnail-audit.csv',[fields.join(','),...rows.map(x=>fields.map(k=>csv(x[k])).join(','))].join('\n')+'\n');
+console.log('EXERCISE_THUMBNAIL_AUDIT',JSON.stringify({total:rows.length,videoMissingImage:rows.filter(x=>x.issue==='extract_video_frame').length,noVideoMissingImage:rows.filter(x=>x.issue==='generate_exercise_art').length,hasImage:rows.filter(x=>x.issue==='asset_present_verify_ui').length}));
