@@ -1,0 +1,47 @@
+name: Package verified exercise thumbnails in iOS source
+on:
+  push:
+    branches:
+      - ios/capacitor-app-store
+    paths:
+      - .github/trigger-thumbnail-import
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ios/capacitor-app-store
+      - uses: actions/download-artifact@v4
+        with:
+          name: exercise-thumbnails
+          run-id: 39307499476
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .
+      - name: Validate every mapped thumbnail asset exists
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          t=Path('js/workouts/exercise-thumbnail-manifest.js').read_text()
+          m=re.search(r'EXERCISE_THUMBNAILS\s*=\s*(\{.*\})\s*;',t,re.S)
+          if not m: raise SystemExit('Missing generated thumbnail manifest')
+          data=json.loads(m.group(1))
+          missing=[p for x in data.values() for p in x.values() if not Path(p).is_file()]
+          count=len(list(Path('assets/exercise-thumbnails').glob('*.webp')))
+          print(f'{len(data)} exercise IDs, {count} frames, {len(missing)} missing paths')
+          if len(data)<249 or count<308 or missing: raise SystemExit('Packaged asset validation failed')
+          PY
+      - name: Commit verified video screenshots into native iOS source
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/exercise-thumbnails js/workouts/exercise-thumbnail-manifest.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Bundle verified video-frame thumbnails for 249 exercises"
+            git push origin HEAD:ios/capacitor-app-store
+          fi
