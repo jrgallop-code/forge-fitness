@@ -444,3 +444,9 @@
     position:relative;
     z-index:1;
 }
+
+/* The existing video-frame thumbnails use a white studio background. */
+#workout-plan-detail-screen .plan-detail-exercise-thumb .routine-thumbnail,
+#workout-plan-detail-screen .plan-detail-exercise-thumb .routine-thumbnail img {
+    background-color:#fff;
+}
