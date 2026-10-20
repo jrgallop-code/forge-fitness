@@ -3,3 +3,5 @@ Extract and commit all remaining accessible exercise video frames without overwr
 Run updated completion pipeline and chain native TestFlight packaging.
 
 Run with corrected manifest preservation logic.
+
+Dispatch TestFlight directly after image extraction.
