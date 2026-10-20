@@ -12,7 +12,7 @@ test('Exercise thumbnails preserve the default SVG until the image is loaded', (
  assert.match(component, /style\.visibility = 'visible'/);
  assert.match(component, /event\.target\.remove\(\)/);
 });
-test('Exercise thumbnails use the user's anatomy sex when matching imagery exists', () => {
+test("Exercise thumbnails use the user's anatomy sex when matching imagery exists", () => {
  assert.match(component, /getAnatomySex\(\)/);
  assert.match(component, /paths\?\.\[sex\]/);
 });
