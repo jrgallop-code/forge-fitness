@@ -24,6 +24,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Validate thumbnail renderer and coverage policy
+        run: |
+          node --check js/workouts/exercise-thumbnails.js
+          node --test tests/exercise-thumbnail-rendering.test.mjs
       - uses: actions/cache/restore@v4
         id: thumbnail-cache
         with:
