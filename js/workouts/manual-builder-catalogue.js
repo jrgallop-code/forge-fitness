@@ -1,3 +1,5 @@
+const exerciseThumbnail = exercise => '<span class="routine-thumbnail" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"/></svg></span>';
+import { exerciseKind } from './routine-builder-model.js';
 import { getAllExercises, getExerciseById } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { matchesExerciseBrowser, renderMuscleCarousel } from "./exercise-browser.js?v=isolated-carousel-1";
 
@@ -118,7 +120,8 @@ function hideEditor(value) {
 
 function openPicker(di, mode = "add", ei = null) {
   if (!active || picker || !dayCard(di)) return;
-  picker = { di, mode, ei, selected: new Set(), q: "", muscle: "", equipment: "" };
+  picker = { di, mode, ei, selected: new Set(), q: "", muscle: "", equipment: "", category: "all", limit: 60 };
+  document.dispatchEvent(new CustomEvent("levelup:routine-day-selected",{detail:{dayIndex:di}}));
   hideEditor(true);
   renderPicker();
   planBuilder()?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -155,6 +158,7 @@ function renderPicker() {
       <span class="manual-picker-count" data-manual-count>0</span>
     </div>
     <input class="manual-picker-search" type="search" placeholder="Search exercises" data-manual-search>
+    <div class="routine-picker-types" aria-label="Exercise type">${[["all","All"],["strength","Strength"],["cardio","Cardio"]].map(([id,label])=>`<button type="button" data-picker-type="${id}" aria-pressed="${state.category===id}">${label}</button>`).join("")}</div>
     ${renderMuscleCarousel(state.muscle, "data-manual-muscle")}
     <div class="manual-picker-filters">
       <select data-manual-equipment><option value="">All equipment</option>${equipment.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("")}</select>
@@ -176,6 +180,7 @@ function renderPicker() {
     renderList();
   });
   section.querySelector("[data-manual-equipment]").onchange = ev => { state.equipment = ev.target.value; renderList(); };
+  section.querySelectorAll("[data-picker-type]").forEach(button => button.onclick = () => { state.category=button.dataset.pickerType; state.limit=60; section.querySelectorAll("[data-picker-type]").forEach(b=>b.setAttribute("aria-pressed",String(b===button))); renderList(); });
   section.querySelector("[data-manual-back]").onclick = () => closePicker();
   section.querySelector("[data-manual-confirm]").onclick = () => closePicker(true);
   section.querySelector("[data-exercise-browser-custom]").onclick = () => startCustom(state.di);
@@ -191,20 +196,21 @@ function renderList() {
 
   const used = existingIds(state.di, state.mode === "replace" ? state.ei : null);
   const q = state.q.trim().toLowerCase();
-  const matches = exercises().filter(x => matchesExerciseBrowser(x, {
+  const matches = exercises().filter(x => (state.category === "all" || (state.category === "cardio" ? exerciseKind(x) === "cardio" : exerciseKind(x) !== "cardio")) && matchesExerciseBrowser(x, {
     muscle: state.muscle,
     equipment: state.equipment,
     query: q
   }));
 
   list.innerHTML = matches.length
-    ? matches.map(x => {
+    ? matches.slice(0,state.limit).map(x => {
         const added = used.has(x.id);
         const selected = state.selected.has(x.id);
-        return `<div class="manual-pick ${selected ? "selected" : ""} ${added ? "added" : ""}"><button class="manual-pick-copy" type="button" data-manual-select data-id="${esc(x.id)}" ${added ? "disabled" : ""}><strong>${esc(x.name)}</strong><small>${esc(x.muscleGroup || "Other")} · ${esc(x.equipment || "Equipment not specified")}</small></button><button class="manual-pick-guide" type="button" data-manual-guide data-exercise-id="${esc(x.id)}" aria-label="Open form guide for ${esc(x.name)}">Form Guide</button><button class="manual-pick-mark" type="button" data-manual-select data-id="${esc(x.id)}" aria-label="${added ? `${esc(x.name)} already added` : `Select ${esc(x.name)}`}" ${added ? "disabled" : ""}>${added ? "Added" : selected ? "✓" : "+"}</button></div>`;
+        return `<div class="manual-pick ${selected ? "selected" : ""} ${added ? "added" : ""}"><button class="manual-pick-guide" type="button" data-manual-guide data-exercise-id="${esc(x.id)}" aria-label="Open form guide for ${esc(x.name)}">${exerciseThumbnail(x)}</button><button class="manual-pick-copy" type="button" data-manual-select data-id="${esc(x.id)}" ${added ? "disabled" : ""}><strong>${esc(x.name)}</strong><small>${esc(x.muscleGroup || "Other")} · ${esc(x.equipment || "Equipment not specified")}</small></button><button class="manual-pick-mark" type="button" data-manual-select data-id="${esc(x.id)}" aria-label="${added ? `${esc(x.name)} already added` : `Select ${esc(x.name)}`}" ${added ? "disabled" : ""}>${added ? "Added" : selected ? "✓" : "+"}</button></div>`;
       }).join("")
     : '<div class="manual-picker-empty">No exercises match those filters.</div>';
 
+  if(matches.length > state.limit) { const more=document.createElement("button"); more.type="button"; more.textContent="Show more exercises"; more.onclick=()=>{state.limit+=60;renderList();};list.append(more); }
   list.querySelectorAll("[data-manual-select]").forEach(btn => {
     btn.onclick = () => {
       const id = btn.dataset.id;
