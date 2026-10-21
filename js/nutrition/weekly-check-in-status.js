@@ -86,7 +86,8 @@ function readHandledCheck(phase) {
 function authoritativeReviewReady(checkIn) {
     const shared = document.documentElement.dataset.weeklyCalorieReviewReady;
     if (shared === "true") return true;
-    // Recompute after returning from manual mode; ignore stale false flags.
+    // Only a confirmed review is actionable. An explicit false flag keeps a due review pending.
+    if (shared === "false") return false;
     return checkIn?.ready === true;
 }
 
