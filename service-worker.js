@@ -1,4 +1,4 @@
-const CACHE_VERSION = "forge-ios-routine-builder-20261019-1";
+const CACHE_VERSION = "weekly-checkin-recovery-20261021-ios";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
