@@ -569,3 +569,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-20: rerun iOS TestFlight after fixing single-quoted user's test title syntax error in thumbnail rendering checks.
 
 2026-10-20: Release complete 343/343 exercise thumbnail library after successful browser validation run 39523032891 (686 sex selections loaded; SVG fallback verified); include 49 custom illustrations and corrected expanded video extraction.
+
+2026-10-20: Verify all 343 exercise images byte-for-byte inside the signed IPA and confirm Apple processing/TestFlight availability through App Store Connect after upload.

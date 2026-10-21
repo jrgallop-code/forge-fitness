@@ -260,6 +260,7 @@ jobs:
 
           codesign --verify --deep --strict --verbose=4 "$app_path"
           codesign -d --verbose=4 "$app_path"
+          python3 tools/verify-ipa-thumbnails.py "$ipa_path"
 
       - name: Upload build to App Store Connect
         id: upload
@@ -276,6 +277,13 @@ jobs:
           xcrun altool --upload-app --type ios --file "$ipa_path" \
             --apiKey "$APP_STORE_CONNECT_KEY_ID" \
             --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+
+      - name: Confirm Apple processing and TestFlight availability
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          TESTFLIGHT_BUILD_NUMBER: ${{ github.run_number }}
+        run: node scripts/verify-testflight.mjs
 
       - name: Remove temporary Apple credential
         if: always()
