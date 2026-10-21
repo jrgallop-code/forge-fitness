@@ -89,7 +89,7 @@ try {
     localStorage.setItem('forge_weight_entries',JSON.stringify(Array.from({length:43},(_,i)=>({date:day(i-42),weight:170+i/7}))));
     window.dispatchEvent(new CustomEvent('levelup:food-log-updated'));
   });
-  await page.waitForFunction(() => document.documentElement.dataset.weeklyCalorieReviewReady === 'true' && Number(document.getElementById('nutrition-current-phase').dataset.fullAdjustmentCalories) < 2750);
+  await page.waitForFunction(() => document.documentElement.dataset.weeklyCalorieReviewReady === 'true' && parseInt(document.querySelector('#nutrition-current-phase [data-phase-calorie-suggestion] strong').textContent,10) < 2750);
   const statusModule=await page.evaluate(async () => {
     const status=await import('/js/nutrition/weekly-check-in-status.js');
     const value=status.getWeeklyCheckInStatus();
