@@ -2,7 +2,7 @@ import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phas
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=independent-tdee-staged-target-1";
 import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calendar-checkin-day-1";
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=calendar-checkin-day-1";
-import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
+import { getLoggedCalorieWindow, readFoodLog, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
 
 const FIRST_INFORMATIONAL_CHECK_DAY = 7;
 const FIRST_CALORIE_REVIEW_DAY = 14;
@@ -126,6 +126,9 @@ export function getWeeklyCheckInStatus() {
     const handledCurrentCheck = Number.isFinite(checkDay)
         && Number(handled?.lastHandledCheckDay) === checkDay;
     const foodDays = Math.max(0, Number(food?.loggedDays) || 0);
+    const sevenDayLog = readFoodLog();
+    const loggedDates = Object.keys(sevenDayLog).filter(date => date >= food.startDate && date <= food.endDate && Array.isArray(sevenDayLog[date]) && sevenDayLog[date].length).sort();
+    const excludedDays = loggedDates.length - foodDays;
     const foodNeeded = Math.max(0, MIN_COMPLETE_FOOD_DAYS - foodDays);
     const recentWeighIns = Math.max(0, Number(checkIn?.recentWeighIns ?? estimate?.recentWeighIns ?? estimate?.weighIns) || 0);
     const needsWeighIn = metrics?.status === "AWAITING WEIGH-IN" || recentWeighIns < 1;
@@ -256,6 +259,8 @@ export function getWeeklyCheckInStatus() {
         phaseDay,
         foodDays,
         foodNeeded,
+        excludedDays: Math.max(0, excludedDays),
+        foodWindow: `${formatDate(food.startDate)}–${formatDate(food.endDate)}`,
         recentWeighIns,
         needsWeighIn,
         currentTarget: Number.isFinite(currentTarget) ? Math.round(currentTarget) : null
@@ -291,6 +296,7 @@ function mainCardMarkup(status) {
         </header>
         <div class="weekly-checkin-progress" aria-label="Weekly check-in progress"><i><b style="width:${status.progress}%"></b></i><small>${progressCopy(status)}</small></div>
         ${dataMarkup(status)}
+        <p class="weekly-checkin-food-window">Food review window: ${status.foodWindow}.${status.excludedDays ? ` ${status.excludedDays} logged day${status.excludedDays === 1 ? "" : "s"} excluded due to unresolved or incomplete food entries.` : ""}</p>
         <div class="weekly-checkin-context"><p>${status.context}</p><small>Weekly check-ins start Day 7 · first calorie review Day 14 · then every 7 days.</small></div>
         ${status.reviewReady ? '<button type="button" class="weekly-checkin-review-btn" data-weekly-checkin-review>Review now</button>' : ""}
     </section>`;
