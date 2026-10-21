@@ -83,7 +83,7 @@ function readHandledCheck(phase) {
 function authoritativeReviewReady(checkIn) {
     const shared = document.documentElement.dataset.weeklyCalorieReviewReady;
     if (shared === "true") return true;
-    if (shared === "false") return false;
+    // A stale readiness flag must not suppress a newly recomputed overdue review.
     return checkIn?.ready === true;
 }
 
@@ -131,6 +131,7 @@ export function getWeeklyCheckInStatus() {
     const needsWeighIn = metrics?.status === "AWAITING WEIGH-IN" || recentWeighIns < 1;
     const reviewReady = phaseDay >= FIRST_CALORIE_REVIEW_DAY
         && mode !== "track"
+        && !handledCurrentCheck
         && authoritativeReviewReady(checkIn);
     const firstInformationalDate = shiftDateKey(phase.startDate, FIRST_INFORMATIONAL_CHECK_DAY - 1);
     const firstCalorieReviewDate = shiftDateKey(phase.startDate, FIRST_CALORIE_REVIEW_DAY - 1);
@@ -277,7 +278,7 @@ function dataMarkup(status) {
     const foodClass = status.foodNeeded > 0 ? " is-needed" : "";
     const weightClass = status.needsWeighIn ? " is-needed" : "";
     return `<div class="weekly-checkin-data" aria-label="Check-in data status">
-        <span class="weekly-checkin-data-chip${foodClass}"><small>COMPLETE FOOD DAYS</small><strong>${status.foodDays}/${MIN_COMPLETE_FOOD_DAYS} min</strong></span>
+        <span class="weekly-checkin-data-chip${foodClass}"><small>LOGGED FOOD DAYS · LAST 7 DAYS</small><strong>${status.foodDays}/${MIN_COMPLETE_FOOD_DAYS} min</strong></span>
         <span class="weekly-checkin-data-chip${weightClass}"><small>RECENT WEIGH-INS</small><strong>${status.recentWeighIns}${status.needsWeighIn ? " · new one needed" : ""}</strong></span>
     </div>`;
 }
