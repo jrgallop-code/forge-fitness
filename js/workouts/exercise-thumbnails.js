@@ -29,7 +29,7 @@ export function exerciseThumbnail(exercise) {
  // The Capacitor app can render this component from nested routes. Resolve packaged
  // thumbnail assets at the app root instead of against the current page's path.
  const resolvedSrc = src && !/^(?:https?:|data:|blob:)/i.test(src) ? new URL(String(src).replace(/^\/+/, ''), new URL('./', import.meta.url).href.replace(/js\/workouts\/$/, '')).href : src;
- return `<span class="routine-thumbnail" aria-hidden="true" style="position:relative;display:inline-grid;place-items:center;width:44px;height:44px;overflow:hidden">${fallbackArtwork(exercise)}${resolvedSrc ? `<img src="${resolvedSrc}" alt="" width="44" height="44" loading="eager" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;visibility:hidden" onload="this.style.visibility='visible'" onerror="this.remove()" data-thumb-exercise="${String(exercise?.id || '')}">` : ''}</span>`;
+ return `<span class="routine-thumbnail" aria-hidden="true" style="position:relative;display:inline-grid;place-items:center;width:44px;height:44px;overflow:hidden">${fallbackArtwork(exercise)}${resolvedSrc ? `<img src="${resolvedSrc}" alt="" width="44" height="44" loading="eager" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;visibility:hidden" onload="this.style.visibility='visible'" onerror="this.remove()" data-thumb-exercise="${thumbnailId || ''}">` : ''}</span>`;
 }
 // Keep the original SVG visible until a valid image has loaded; unavailable
 // thumbnails (including assets still awaiting generation) never create blank cards.

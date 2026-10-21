@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveExerciseThumbnailId } from '../js/workouts/exercise-thumbnail-identity.js';
+import { exerciseThumbnail } from '../js/workouts/exercise-thumbnails.js';
 
 test('saved workout exerciseId resolves without requiring id', () => {
  assert.equal(resolveExerciseThumbnailId({ exerciseId:'good-morning' }), 'good-morning');
@@ -12,4 +13,10 @@ test('imported copies with an exact built-in name reuse its exercise-specific im
 test('unfamiliar custom exercises and related but different variations keep the fallback', () => {
  assert.equal(resolveExerciseThumbnailId({ id:'custom-123', name:'Good Morning With Resistance Band' }), null);
  assert.equal(resolveExerciseThumbnailId({ id:'custom-456', name:'My special exercise' }), null);
+});
+test('matched imports render only the canonical ID in image markup', () => {
+ globalThis.window = { __levelUpAnatomySexPreview:'male' };
+ const html=exerciseThumbnail({ id:'custom-" onmouseover="bad', name:'Good Morning' });
+ assert.match(html,/data-thumb-exercise="good-morning"/);
+ assert.doesNotMatch(html,/onmouseover/);
 });
