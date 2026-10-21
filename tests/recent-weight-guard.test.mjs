@@ -86,8 +86,8 @@ test('aggressive bulk is a distinct one-pound preset after the existing bulk cho
     assert.deepEqual(Object.keys(GOAL_PRESETS).filter(k => k.startsWith('bulk_')), ['bulk_conservative', 'bulk_standard', 'bulk_aggressive']);
 });
 
-test("unconfirmed historical food logs do not imply complete intake evidence", () => {
-    assert.equal(evidence({ completedDays: {} }).confidence, "insufficient");
+test("past logged days remain eligible without completion markers", () => {
+    assert.equal(evidence({ completedDays: {} }).confidence, "available");
 });
 
  test('guard rounds an eligible 2841 average to 2850 and falls back without intake', () => {

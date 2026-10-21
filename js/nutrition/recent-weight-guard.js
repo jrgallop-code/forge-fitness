@@ -23,7 +23,7 @@ export function buildRecentWeightEvidence({weights=[],foodLog={},completedDays={
     const foodDates=Array.from({length:7},(_,i)=>shift(foodStart,i));
     const foodDays=foodDates.filter(date=>completedDays[date]!==false&&Array.isArray(foodLog[date])&&foodLog[date].length>0).length;
     const confirmedFoodDays=foodDates.filter(date=>completedDays[date]===true&&Array.isArray(foodLog[date])&&foodLog[date].length>0).length;
-    const adequate=count>=rules.minWeighIns&&baselineCovered&&staleDays<=rules.maxStaleDays&&confirmedFoodDays>=rules.minFoodDays&&recent!==null&&long!==null&&target!==null;
+    const adequate=count>=rules.minWeighIns&&baselineCovered&&staleDays<=rules.maxStaleDays&&foodDays>=rules.minFoodDays&&recent!==null&&long!==null&&target!==null;
     const difference=recent!==null&&long!==null?Math.abs(long-recent):null;
     return {confidence:adequate?'available':'insufficient',reason:adequate?null:'coverage',recentRate:recent,longRate:long,targetRate:target,difference,recentNearGoal:recent!==null&&target!==null&&Math.abs(recent-target)<=rules.nearGoal+1e-9,disagrees:difference!==null&&difference>=rules.disagreement-1e-9,weighIns:count,baselineCovered,staleDays,foodDays,confirmedFoodDays,startDate:baseline,endDate:end};
 }
@@ -36,7 +36,7 @@ export function decideRecentWeightGuard(evidence,requestedChange) {
     return {...evidence,hold:conflict,confidence:conflict?'conflicting':'supported'};
 }
 export function recentWeightGuardCopy(guard,calories) {
-    if(guard?.confidence==='insufficient')return `Keep ${Math.round(calories)} kcal/day this week. Recent weigh-ins or completed food logs are too limited to confirm a calorie change. Continue logging and mark finished food days complete and reassess at your next weekly check-in.`;
+    if(guard?.confidence==='insufficient')return `Keep ${Math.round(calories)} kcal/day this week. Recent weigh-ins or past food logs are too limited to confirm a calorie change. Continue logging and reassess at your next weekly check-in.`;
     const rate=v=>(v>=0?'+':'−')+Math.abs(v).toFixed(2)+' lb/week';
     return `Your three-week trend is ${rate(guard.longRate)}, but your latest seven-day trend is ${rate(guard.recentRate)} versus a goal of ${rate(guard.targetRate)}. Recent changes can reflect water weight or a changing pace. Keep ${Math.round(calories)} kcal/day this week and reassess at your next weekly check-in.`;
 }
