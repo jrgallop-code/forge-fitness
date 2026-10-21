@@ -130,7 +130,7 @@ test("scheduled calorie reviews are calendar-based and do not require a same-day
 test("the Nutrition dot uses the exact actionable review state", () => {
     const alert = readFileSync("js/nutrition/maintenance-check-in.js", "utf8");
     const display = readFileSync("js/nutrition/calories-full-adjustment-display.js", "utf8");
-    assert.match(display, /setWeeklyReviewReadyState\(reviewReady\)/);
+    assert.match(display, /setWeeklyReviewReadyState\(reviewReady, reviewReason\)/);
     assert.match(display, /levelup:weekly-calorie-review-readiness/);
     assert.match(display, /setWeeklyReviewReadyState\(false\)/);
     assert.match(alert, /weeklyCalorieReviewReady === "true"/);

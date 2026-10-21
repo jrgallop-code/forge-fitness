@@ -1,4 +1,5 @@
 import { EXERCISE_THUMBNAILS } from './exercise-thumbnail-manifest.js';
+import { resolveExerciseThumbnailId } from './exercise-thumbnail-identity.js';
 import { getAnatomySex } from '../core/anatomy-profile.js?v=female-form-videos-1';
 const LOCAL_GUIDE_IMAGES = Object.freeze({
  'barbell-bench-press':'assets/exercise-guides/performance/barbell-bench-press-guide.webp?v=1',
@@ -22,8 +23,9 @@ function fallbackArtwork(exercise) {
 }
 
 export function exerciseThumbnail(exercise) {
- const paths = EXERCISE_THUMBNAILS[exercise?.id], sex = getAnatomySex();
- const src = paths?.[sex] || paths?.male || paths?.female || LOCAL_GUIDE_IMAGES[exercise?.id];
+ const thumbnailId = resolveExerciseThumbnailId(exercise);
+ const paths = EXERCISE_THUMBNAILS[thumbnailId], sex = getAnatomySex();
+ const src = paths?.[sex] || paths?.male || paths?.female || LOCAL_GUIDE_IMAGES[thumbnailId];
  // The Capacitor app can render this component from nested routes. Resolve packaged
  // thumbnail assets at the app root instead of against the current page's path.
  const resolvedSrc = src && !/^(?:https?:|data:|blob:)/i.test(src) ? new URL(String(src).replace(/^\/+/, ''), new URL('./', import.meta.url).href.replace(/js\/workouts\/$/, '')).href : src;

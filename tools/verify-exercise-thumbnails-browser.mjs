@@ -47,6 +47,39 @@ try {
   });
   await page.waitForFunction(() => !document.querySelector('.routine-thumbnail img'));
   assert.equal(await page.locator('.routine-thumbnail svg').evaluate(el => getComputedStyle(el).visibility), 'visible');
-  await fs.writeFile('thumbnail-browser-results/results.json', JSON.stringify({ results, errorFallback:true }, null, 2));
+  await page.unroute('**/assets/exercise-thumbnails/**');
+  // Exercise the alternate identities stored by workout sessions and imports.
+  await page.evaluate(() => {
+    document.body.innerHTML = window.thumbnailAudit.exercises.map(e =>
+      window.thumbnailAudit.render({ exerciseId:e.id }) +
+      window.thumbnailAudit.render({ id:`imported-${e.id}`, name:e.name })
+    ).join('');
+  });
+  await page.waitForFunction(() => document.querySelectorAll('.routine-thumbnail img').length === 686 && [...document.querySelectorAll('.routine-thumbnail img')].every(img => img.complete && img.naturalWidth > 0 && getComputedStyle(img).visibility === 'visible'));
+  // A mature phase must recalculate immediately when Manual is switched back
+  // to Coach, without another food entry, weigh-in, or app restart.
+  await page.goto(base + '/privacy.html');
+  await page.evaluate(async () => {
+    localStorage.clear();
+    const day = offset => {const d=new Date();d.setDate(d.getDate()+offset);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+    localStorage.setItem('forge_weight_entries',JSON.stringify(Array.from({length:42},(_,i)=>({date:day(i-41),weight:170}))));
+    const phase={id:'resume-test-phase',goalId:'bulk_standard',startDate:day(-41),targetWeeklyRate:0.5,maintenanceCalories:2500,startCalories:2750,currentCalories:2750};
+    localStorage.setItem('level_up_nutrition_phases',JSON.stringify([phase]));
+    const log={},complete={};for(let i=1;i<=42;i++){log[day(-i)]=[{nutrition:{calories:2750}}];complete[day(-i)]=true;}
+    localStorage.setItem('level_up_food_log_v1',JSON.stringify(log));
+    localStorage.setItem('level_up_food_log_complete_days_v1',JSON.stringify(complete));
+    localStorage.setItem('level_up_maintenance_update_mode_v1','track');
+    document.body.innerHTML='<div id="nutrition-current-phase"><div data-phase-calorie-suggestion><span></span><strong></strong><small></small></div></div>';
+    window.coachMode=await import('/js/nutrition/maintenance-check-in.js?v=calendar-checkin-day-1');
+    await import('/js/nutrition/calories-full-adjustment-display.js');
+  });
+  await page.waitForFunction(() => document.documentElement.dataset.weeklyCalorieReviewReason === 'manual');
+  await page.evaluate(() => window.coachMode.setMaintenanceUpdateMode('review'));
+  await page.waitForFunction(() => document.documentElement.dataset.weeklyCalorieReviewReady === 'true');
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('level_up_nutrition_phases'))[0].id),'resume-test-phase');
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('level_up_nutrition_phases'))[0].currentCalories),2750);
+  await page.evaluate(() => window.coachMode.setMaintenanceUpdateMode('track'));
+  await page.waitForFunction(() => document.documentElement.dataset.weeklyCalorieReviewReason === 'manual' && document.documentElement.dataset.weeklyCalorieReviewReady === 'false');
+  await fs.writeFile('thumbnail-browser-results/results.json', JSON.stringify({ results, errorFallback:true, savedAndImportedSelections:686, coachResume:true }, null, 2));
   console.log('Browser verified: 343 male + 343 female selections loaded; SVG error fallback visible.');
 } finally { await browser.close(); server.close(); }

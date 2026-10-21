@@ -65,7 +65,8 @@ function recentFoodWindow() {
     return getLoggedCalorieWindow({
         startDate,
         endDate,
-        minLoggedDays: MIN_COMPLETE_FOOD_DAYS
+        minLoggedDays: MIN_COMPLETE_FOOD_DAYS,
+        requireCompleted: true
     });
 }
 
@@ -218,7 +219,7 @@ export function getWeeklyCheckInStatus() {
             ? "Your latest assessment did not call for a calorie change. Level Up will check again next week."
             : "Your last weekly check-in has been handled. Keep logging normally until the next review.";
         progress = clamp(((WEEKLY_CADENCE_DAYS - Math.min(WEEKLY_CADENCE_DAYS, remaining)) / WEEKLY_CADENCE_DAYS) * 100);
-    } else if (metrics?.recommendationReady && foodNeeded === 0) {
+    } else if (metrics?.recommendationReady && foodNeeded === 0 && document.documentElement.dataset.weeklyCalorieReviewReason === "no-change") {
         state = "upcoming";
         reviewDate = nextCheckDate;
         const remaining = Math.max(0, daysBetween(today, reviewDate) ?? WEEKLY_CADENCE_DAYS);
@@ -226,6 +227,13 @@ export function getWeeklyCheckInStatus() {
         detail = `${remaining} day${remaining === 1 ? "" : "s"} remaining · ${formatDate(reviewDate)}`;
         context = "Your latest assessment did not produce a target change. Level Up will reassess on the next weekly check-in.";
         progress = clamp(((WEEKLY_CADENCE_DAYS - Math.min(WEEKLY_CADENCE_DAYS, remaining)) / WEEKLY_CADENCE_DAYS) * 100);
+    } else if (metrics?.recommendationReady && foodNeeded === 0) {
+        state = "waiting";
+        reviewDate = currentCheckDate || today;
+        headline = "Check-in due — review pending";
+        detail = "Your scheduled calorie review has not produced a confirmed decision yet.";
+        context = "This check-in stays pending until a recommendation or a keep-current-target decision is available.";
+        progress = 100;
     } else if (phaseDay >= FIRST_CALORIE_REVIEW_DAY && (metrics?.status === "NEED MORE DATA" || foodNeeded > 0 || needsWeighIn)) {
         state = "waiting";
         reviewDate = currentCheckDate || today;

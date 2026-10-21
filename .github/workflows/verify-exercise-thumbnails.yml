@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: 24
       - run: node tools/audit-exercise-thumbnails.mjs
-      - run: node --test tests/exercise-thumbnail-assets.test.mjs tests/exercise-thumbnail-rendering.test.mjs
+      - run: node --test tests/exercise-thumbnail-assets.test.mjs tests/exercise-thumbnail-rendering.test.mjs tests/exercise-thumbnail-identity.test.mjs tests/coach-resume-check-in.test.mjs tests/shared-weekly-calorie-review.test.mjs
       - run: npm run build:native
       - run: npm install --no-save --package-lock=false playwright@1.58.2
       - run: npx playwright install --with-deps chromium

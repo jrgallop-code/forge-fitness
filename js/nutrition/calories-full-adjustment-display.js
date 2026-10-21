@@ -9,7 +9,7 @@ import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/wei
 import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
 import { buildCoordinatedWeeklyUpdate, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=calendar-checkin-day-1";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=independent-tdee-staged-target-1";
-import { markMaintenanceCheckInReviewed, readMaintenanceCheckInState } from "./maintenance-check-in.js?v=calendar-checkin-day-1";
+import { getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, readMaintenanceCheckInState } from "./maintenance-check-in.js?v=calendar-checkin-day-1";
 import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=all-calorie-requirements-1";
 
 const FIRST_CHECK_DAY = 14;
@@ -43,10 +43,12 @@ function setSuggestionHeading(value) {
     setText(document.querySelector("#nutrition-current-phase [data-phase-calorie-suggestion] > span"), value);
 }
 
-function setWeeklyReviewReadyState(ready) {
+function setWeeklyReviewReadyState(ready, reason = ready ? "ready" : "unavailable") {
     const next = Boolean(ready);
+    const previousReason = document.documentElement.dataset.weeklyCalorieReviewReason;
     document.documentElement.dataset.weeklyCalorieReviewReady = String(next);
-    if (weeklyReviewReadyState === next) return;
+    document.documentElement.dataset.weeklyCalorieReviewReason = reason;
+    if (weeklyReviewReadyState === next && previousReason === reason) return;
     weeklyReviewReadyState = next;
     window.dispatchEvent(new CustomEvent("levelup:weekly-calorie-review-readiness", {
         detail: { ready: next }
@@ -92,6 +94,7 @@ function closeWeeklyReviewModal() {
 }
 
 function openWeeklyReviewModal(event = {}) {
+    if (getMaintenanceUpdateMode() === "track") return;
     const phase = getActiveNutritionPhase();
     if (!phase) return;
     const liveMetrics = getActivePhaseMetrics(phase, { rolling: true });
@@ -491,7 +494,11 @@ function syncSuggestedCalories(metrics, phase) {
         && Number.isFinite(actual)
         && Number.isFinite(target)
     );
-    setWeeklyReviewReadyState(reviewReady);
+    const reviewReason = hold ? "hold" : handled ? "handled"
+        : !metrics.recommendationReady ? "weight-data"
+        : !baseline.useLoggedAverage ? "food-data"
+        : reviewReady ? "ready" : sharedRecommendation ? "no-change" : "unavailable";
+    setWeeklyReviewReadyState(reviewReady, reviewReason);
 
     if (hold) {
         primary = `${Math.round(currentCalories)} kcal/day`;
@@ -539,6 +546,7 @@ function syncSuggestedCalories(metrics, phase) {
 }
 
 function applyFullAdjustment(event, context = {}) {
+    if (getMaintenanceUpdateMode() === "track") return;
     const apply = event.target.closest?.("#weekly-coach-apply, #goal-check-in-apply, #weekly-modal-review-apply");
     if (!apply) return;
 
@@ -633,6 +641,13 @@ function applyFullAdjustment(event, context = {}) {
 }
 
 function refresh() {
+    if (getMaintenanceUpdateMode() === "track") {
+        setWeeklyReviewReadyState(false, "manual");
+        closeWeeklyReviewModal();
+        hideWeightReview();
+        hideCoachActions();
+        return;
+    }
     let phase = getActiveNutritionPhase();
     if (!phase) return;
     let metrics = getActivePhaseMetrics(phase, { rolling: true });
@@ -697,6 +712,9 @@ document.addEventListener("click", event => {
     }
 }, true);
 window.addEventListener("levelup:nutrition-updated", scheduleRefresh);
+window.addEventListener("levelup:maintenance-mode-updated", scheduleRefresh);
+window.addEventListener("levelup:nutrition-mode-updated", scheduleRefresh);
+window.addEventListener("levelup:maintenance-check-in-updated", scheduleRefresh);
 window.addEventListener("levelup:nutrition-phase-updated", scheduleRefresh);
 window.addEventListener("levelup:calorie-target-applied", event => {
     syncAppliedTargetAcrossSurfaces(event?.detail?.calories);
