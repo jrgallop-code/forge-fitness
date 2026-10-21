@@ -83,7 +83,8 @@ function readHandledCheck(phase) {
 function authoritativeReviewReady(checkIn) {
     const shared = document.documentElement.dataset.weeklyCalorieReviewReady;
     if (shared === "true") return true;
-    // A stale readiness flag must not suppress a newly recomputed overdue review.
+    // An explicit false readiness flag means the review is still pending.
+    if (shared === "false") return false;
     return checkIn?.ready === true;
 }
 
