@@ -66,7 +66,9 @@ function recentFoodWindow() {
         startDate,
         endDate,
         minLoggedDays: MIN_COMPLETE_FOOD_DAYS,
-        requireCompleted: true
+        // Past logged days remain eligible without an explicit completion tap.
+        // Today is excluded by endDate, so partial current-day intake is not used.
+        requireCompleted: false
     });
 }
 
@@ -96,8 +98,8 @@ function holdReviewDate(hold) {
 function missingDataCopy({ foodNeeded, needsWeighIn }) {
     const items = [];
     if (needsWeighIn) items.push("a new weigh-in");
-    if (foodNeeded > 0) items.push(`${foodNeeded} more complete nutrition day${foodNeeded === 1 ? "" : "s"}`);
-    if (!items.length) return "Keep logging completed nutrition days and weigh-ins so Level Up can finish the review.";
+    if (foodNeeded > 0) items.push(`${foodNeeded} more logged nutrition day${foodNeeded === 1 ? "" : "s"}`);
+    if (!items.length) return "Keep logging logged nutrition days and weigh-ins so Level Up can finish the review.";
     if (items.length === 1) return `Log ${items[0]} to finish this check-in.`;
     return `Log ${items[0]} and ${items[1]} to finish this check-in.`;
 }
@@ -166,7 +168,7 @@ export function getWeeklyCheckInStatus() {
         headline = mode === "automatic" ? "Your weekly update is ready" : "Your calorie review is ready";
         detail = mode === "automatic"
             ? "Level Up will apply the coordinated weekly update automatically."
-            : "Your latest Trend Weight and completed nutrition days are ready to review.";
+            : "Your latest Trend Weight and logged nutrition days are ready to review.";
         context = "Review one recommended daily calorie target, then Level Up waits seven days before another change.";
         progress = 100;
     } else if (phaseDay < FIRST_INFORMATIONAL_CHECK_DAY) {
@@ -207,7 +209,7 @@ export function getWeeklyCheckInStatus() {
         reviewDate = currentCheckDate || today;
         headline = "Check-in due — nutrition data needed";
         detail = missingDataCopy({ foodNeeded, needsWeighIn: false });
-        context = `Level Up needs at least ${MIN_COMPLETE_FOOD_DAYS} complete nutrition days from the previous 7 days before changing calories.`;
+        context = `Level Up needs at least ${MIN_COMPLETE_FOOD_DAYS} logged nutrition days from the previous 7 days before changing calories.`;
         progress = 100;
     } else if (handledCurrentCheck || (metrics?.recommendationReady && ["ON TRACK", "MAINTAINING"].includes(metrics.status))) {
         state = "upcoming";
@@ -249,7 +251,7 @@ export function getWeeklyCheckInStatus() {
         const remaining = Math.max(0, daysBetween(today, reviewDate) ?? WEEKLY_CADENCE_DAYS);
         headline = remaining === 1 ? "Check-in tomorrow" : remaining === 0 ? "Check-in today" : `Next check-in ${formatWeekday(reviewDate)}`;
         detail = remaining === 0 ? formatDate(reviewDate) : `${remaining} day${remaining === 1 ? "" : "s"} remaining · ${formatDate(reviewDate)}`;
-        context = "Keep logging completed nutrition days and regular weigh-ins so the next review is ready on schedule.";
+        context = "Keep logging logged nutrition days and regular weigh-ins so the next review is ready on schedule.";
         progress = remaining === 0 ? 100 : clamp(((WEEKLY_CADENCE_DAYS - Math.min(WEEKLY_CADENCE_DAYS, remaining)) / WEEKLY_CADENCE_DAYS) * 100);
     }
 
@@ -287,7 +289,7 @@ function dataMarkup(status) {
     const foodClass = status.foodNeeded > 0 ? " is-needed" : "";
     const weightClass = status.needsWeighIn ? " is-needed" : "";
     return `<div class="weekly-checkin-data" aria-label="Check-in data status">
-        <span class="weekly-checkin-data-chip${foodClass}"><small>COMPLETE FOOD DAYS</small><strong>${status.foodDays}/${MIN_COMPLETE_FOOD_DAYS} min</strong></span>
+        <span class="weekly-checkin-data-chip${foodClass}"><small>LOGGED FOOD DAYS</small><strong>${status.foodDays}/${MIN_COMPLETE_FOOD_DAYS} min</strong></span>
         <span class="weekly-checkin-data-chip${weightClass}"><small>RECENT WEIGH-INS</small><strong>${status.recentWeighIns}${status.needsWeighIn ? " · new one needed" : ""}</strong></span>
     </div>`;
 }
@@ -460,10 +462,30 @@ function ensureStyles() {
     document.head.appendChild(style);
 }
 
-function openNutritionPlan() {
+export function openNutritionPlan() {
     document.querySelector('.nav-btn[data-page="energy"]')?.click();
-    window.setTimeout(() => document.querySelector('[data-calories-tab="plan"]')?.click(), 100);
-    scheduleRefresh(180);
+    // Navigation can mount the nutrition hub asynchronously. Open both levels
+    // before scrolling, rather than stopping at the planner's menu of cards.
+    let attempts = 0;
+    const reveal = () => {
+        const tab = document.querySelector('[data-calories-tab="plan"]');
+        const goals = document.querySelector('[data-nutrition-view="goals"]');
+        if (tab && goals) {
+            tab.click();
+            goals.click();
+            refresh();
+            window.setTimeout(() => {
+                const card = document.querySelector('[data-weekly-checkin-surface="nutrition"]');
+                if (card && !card.closest('[hidden]')) {
+                    card.style.scrollMarginTop = "24px";
+                    card.scrollIntoView({ block: "start", behavior: "smooth" });
+                    card.tabIndex = -1;
+                    card.focus({ preventScroll: true });
+                }
+            }, 180);
+        } else if (++attempts < 40) window.setTimeout(reveal, 75);
+    };
+    reveal();
 }
 
 function refresh() {

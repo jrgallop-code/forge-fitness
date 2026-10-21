@@ -279,7 +279,9 @@ function getAdaptiveCalorieBaseline(metrics, currentCalories) {
         startDate,
         endDate,
         minLoggedDays: 4,
-        requireCompleted: true
+        // Past logged days remain eligible without an explicit completion tap.
+        // Today is excluded by endDate, so partial current-day intake is not used.
+        requireCompleted: false
     });
     const useLoggedAverage = intake.sufficient && Number.isFinite(Number(intake.averageCalories));
     return {
@@ -301,7 +303,7 @@ function calorieBaselineCopy(baseline) {
 function pendingFoodLogCopy(baseline) {
     const logged = Math.max(0, Math.round(Number(baseline?.intake?.loggedDays) || 0));
     const needed = Math.max(0, 4 - logged);
-    return `No calorie recommendation yet · Log ${needed} more complete food day${needed === 1 ? "" : "s"} in the current 7-day window (${logged}/4)`;
+    return `No calorie recommendation yet · Log ${needed} more logged food day${needed === 1 ? "" : "s"} in the current 7-day window (${logged}/4)`;
 }
 
 function hideCoachActions() {
@@ -450,7 +452,7 @@ function syncCoach(metrics, phase) {
     card.dataset.fullAdjustmentDelta = String(recommendation.targetChange);
     card.dataset.fullAdjustmentCheckDay = String(checkDay);
 
-    setText(messageNode, `Current weekly trend: ${formatRate(actual)} · Target: ${formatRate(target)}. This review applies the trend gap once to your completed-day calorie average, then waits 7 days.`);
+    setText(messageNode, `Current weekly trend: ${formatRate(actual)} · Target: ${formatRate(target)}. This review applies the trend gap once to your logged-day calorie average, then waits 7 days.`);
     setText(suggestionNode, `Logged average ${recommendation.weeklyAverageCalories} · pace correction ${formatSignedCalories(recommendation.requestedPaceCorrection)} → ${recommendation.targetCalories} kcal/day.`);
 
     const apply = document.getElementById(weeklyCoach ? "weekly-coach-apply" : "goal-check-in-apply");

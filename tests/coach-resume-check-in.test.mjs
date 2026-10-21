@@ -20,9 +20,9 @@ function seed(completed = 0) {
  localStorage.setItem('level_up_food_log_v1',JSON.stringify(log));
  localStorage.setItem('level_up_food_log_complete_days_v1',JSON.stringify(complete));
 }
-test('logged but unfinished food days cannot look complete or postpone a due review', () => {
+test('past logged days count without a separate completion marker', () => {
  seed(2); const status=getWeeklyCheckInStatus();
- assert.equal(status.state,'waiting'); assert.equal(status.foodDays,2); assert.equal(status.foodNeeded,2);
+ assert.equal(status.state,'waiting'); assert.equal(status.foodDays,7); assert.equal(status.foodNeeded,0);
  assert.equal(status.reviewDate,day(0));
 });
 test('returning from manual to coach preserves the phase and reopens the due check-in', () => {
@@ -44,4 +44,21 @@ test('insufficient trend history keeps an established phase review due', () => {
  localStorage.setItem('forge_weight_entries',JSON.stringify(Array.from({length:7},(_,i)=>({date:day(i-6),weight:170}))));
  const status=getWeeklyCheckInStatus();
  assert.equal(status.state,'waiting'); assert.equal(status.reviewDate,day(0));
+});
+
+test('an overdue review uses existing logged days and preserves yesterday as its due date', () => {
+ seed(0);
+ const phases=JSON.parse(localStorage.getItem('level_up_nutrition_phases'));
+ phases[0].startDate=day(-42);
+ localStorage.setItem('level_up_nutrition_phases',JSON.stringify(phases));
+ const status=getWeeklyCheckInStatus();
+ assert.equal(status.foodDays,7); assert.equal(status.foodNeeded,0);
+ assert.equal(status.reviewDate,day(-1));
+});
+test('today does not replace missing historical food days', () => {
+ seed(0);
+ const log={}; for(let i=0;i<4;i++) log[day(-i)]=[{nutrition:{calories:2800}}];
+ localStorage.setItem('level_up_food_log_v1',JSON.stringify(log));
+ const status=getWeeklyCheckInStatus();
+ assert.equal(status.foodDays,3); assert.equal(status.foodNeeded,1);
 });
