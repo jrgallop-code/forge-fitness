@@ -577,3 +577,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-21: Final coach-resume and thumbnail-identity release: preserve unresolved due reviews, canonical import markup and null fallback; require 133 release checks after browser validation run 39601420510.
 
 2026-10-21: Rebuild iOS TestFlight with recovered manual-to-coach weekly review, explicit food eligibility window, and check-in card navigation.
+
+2026-10-21: Retry check-in TestFlight release after restoring explicit review-readiness gate; fixes 3 coach-resume regression tests from run 39607168395.
