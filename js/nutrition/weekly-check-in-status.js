@@ -459,19 +459,28 @@ function ensureStyles() {
 
 function openNutritionPlan() {
     document.querySelector('.nav-btn[data-page="energy"]')?.click();
-    const revealCheckIn = (attempt = 0) => {
-        document.querySelector('[data-calories-tab="plan"]')?.click();
-        scheduleRefresh(0);
-        window.setTimeout(() => {
-            const card = document.querySelector('[data-weekly-checkin-surface="nutrition"]');
-            if (card && card.getClientRects().length) {
-                card.scrollIntoView({ behavior: "smooth", block: "center" });
-                return;
-            }
-            if (attempt < 8) revealCheckIn(attempt + 1);
-        }, 140);
+    // Navigation can mount the nutrition hub asynchronously. Open both levels
+    // before scrolling, rather than stopping at the planner's menu of cards.
+    let attempts = 0;
+    const reveal = () => {
+        const tab = document.querySelector('[data-calories-tab="plan"]');
+        const goals = document.querySelector('[data-nutrition-view="goals"]');
+        if (tab && goals) {
+            tab.click();
+            goals.click();
+            refresh();
+            window.setTimeout(() => {
+                const card = document.querySelector('[data-weekly-checkin-surface="nutrition"]');
+                if (card && !card.closest('[hidden]')) {
+                    card.style.scrollMarginTop = "24px";
+                    card.scrollIntoView({ block: "start", behavior: "smooth" });
+                    card.tabIndex = -1;
+                    card.focus({ preventScroll: true });
+                }
+            }, 180);
+        } else if (++attempts < 40) window.setTimeout(reveal, 75);
     };
-    revealCheckIn();
+    reveal();
 }
 
 function refresh() {
