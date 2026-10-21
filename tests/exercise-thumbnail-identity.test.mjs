@@ -11,6 +11,8 @@ test('imported copies with an exact built-in name reuse its exercise-specific im
  assert.equal(resolveExerciseThumbnailId({ id:'imported-abc', exerciseName:'Single Leg Romanian Deadlift' }), 'single-leg-romanian-deadlift');
 });
 test('unfamiliar custom exercises and related but different variations keep the fallback', () => {
+ assert.equal(resolveExerciseThumbnailId(null), null);
+ assert.equal(resolveExerciseThumbnailId(undefined), null);
  assert.equal(resolveExerciseThumbnailId({ id:'custom-123', name:'Good Morning With Resistance Band' }), null);
  assert.equal(resolveExerciseThumbnailId({ id:'custom-456', name:'My special exercise' }), null);
 });

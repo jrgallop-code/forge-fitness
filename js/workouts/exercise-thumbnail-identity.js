@@ -8,6 +8,7 @@ const normalize = value => String(value || '').normalize('NFKD').toLowerCase()
 // Saved sessions use exerciseId; imported/custom copies may have a new ID but
 // retain the exact catalogue name. Never use substring or fuzzy muscle matches.
 export function resolveExerciseThumbnailId(exercise = {}) {
+ if (!exercise || typeof exercise !== 'object') return null;
  for (const id of [exercise.exerciseId, exercise.id, exercise.canonicalExerciseId]) {
   if (id && EXERCISE_THUMBNAILS[id]) return id;
  }
