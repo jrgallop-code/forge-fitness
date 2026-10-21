@@ -39,3 +39,9 @@ test('a missing recommendation is not presented as a completed no-change assessm
  document.documentElement.dataset.weeklyCalorieReviewReason='no-change';
  assert.equal(getWeeklyCheckInStatus().state,'upcoming');
 });
+test('insufficient trend history keeps an established phase review due', () => {
+ seed(7);
+ localStorage.setItem('forge_weight_entries',JSON.stringify(Array.from({length:7},(_,i)=>({date:day(i-6),weight:170}))));
+ const status=getWeeklyCheckInStatus();
+ assert.equal(status.state,'waiting'); assert.equal(status.reviewDate,day(0));
+});

@@ -234,11 +234,13 @@ export function getWeeklyCheckInStatus() {
         detail = "Your scheduled calorie review has not produced a confirmed decision yet.";
         context = "This check-in stays pending until a recommendation or a keep-current-target decision is available.";
         progress = 100;
-    } else if (phaseDay >= FIRST_CALORIE_REVIEW_DAY && (metrics?.status === "NEED MORE DATA" || foodNeeded > 0 || needsWeighIn)) {
+    } else if (phaseDay >= FIRST_CALORIE_REVIEW_DAY && (!metrics?.recommendationReady || foodNeeded > 0 || needsWeighIn)) {
         state = "waiting";
         reviewDate = currentCheckDate || today;
         headline = "Check-in due — more data needed";
-        detail = missingDataCopy({ foodNeeded, needsWeighIn });
+        detail = !metrics?.recommendationReady && foodNeeded === 0 && !needsWeighIn
+            ? "More weight-trend history is needed before Level Up can finish this review."
+            : missingDataCopy({ foodNeeded, needsWeighIn });
         context = "The scheduled date has arrived, but Level Up will not make a calorie decision from incomplete data.";
         progress = 100;
     } else {
