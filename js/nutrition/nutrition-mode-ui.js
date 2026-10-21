@@ -266,10 +266,11 @@ function setPrimaryMode(mode) {
     const current = getMaintenanceUpdateMode();
     if (mode === "manual") {
         seedManualTarget();
-        clearPendingMaintenanceReview();
+        // Keep pending weekly reviews while manual mode is enabled.
         setMaintenanceUpdateMode("track");
     } else {
         setMaintenanceUpdateMode(current === "automatic" ? "automatic" : "review");
+        window.dispatchEvent(new CustomEvent("levelup:weekly-calorie-review-readiness"));
     }
     applyModeToDocument();
     window.dispatchEvent(new CustomEvent("levelup:nutrition-mode-updated", { detail: { mode } }));
@@ -296,7 +297,6 @@ function saveManualTarget(button) {
     }
 
     localStorage.setItem(MANUAL_TARGET_KEY, String(calories));
-    clearPendingMaintenanceReview();
     setMaintenanceUpdateMode("track");
     enforceManualTarget();
     applyModeToDocument();
