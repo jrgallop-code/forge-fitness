@@ -452,8 +452,19 @@ function ensureStyles() {
 
 function openNutritionPlan() {
     document.querySelector('.nav-btn[data-page="energy"]')?.click();
-    window.setTimeout(() => document.querySelector('[data-calories-tab="plan"]')?.click(), 100);
-    scheduleRefresh(180);
+    const revealCheckIn = (attempt = 0) => {
+        document.querySelector('[data-calories-tab="plan"]')?.click();
+        scheduleRefresh(0);
+        window.setTimeout(() => {
+            const card = document.querySelector('[data-weekly-checkin-surface="nutrition"]');
+            if (card && card.getClientRects().length) {
+                card.scrollIntoView({ behavior: "smooth", block: "center" });
+                return;
+            }
+            if (attempt < 8) revealCheckIn(attempt + 1);
+        }, 140);
+    };
+    revealCheckIn();
 }
 
 function refresh() {
