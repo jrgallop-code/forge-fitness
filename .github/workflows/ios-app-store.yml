@@ -28,6 +28,7 @@ jobs:
       # could silently replace newer mappings and hide thumbnails in TestFlight.
       - name: Require usable exercise thumbnails before packaging
         run: |
+          node tools/audit-exercise-thumbnails.mjs # Insufficient thumbnail coverage blocks release
           python3 - <<'PY'
           import json,re
           from pathlib import Path

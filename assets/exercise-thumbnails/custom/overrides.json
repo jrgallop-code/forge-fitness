@@ -1,0 +1,177 @@
+{
+  "weighted-pull-up": {
+    "male": "assets/exercise-thumbnails/custom/weighted-pull-up.webp"
+  },
+  "glute-bridge": {
+    "male": "assets/exercise-thumbnails/custom/glute-bridge.webp"
+  },
+  "face-pull": {
+    "male": "assets/exercise-thumbnails/custom/face-pull.webp",
+    "female": "assets/exercise-thumbnails/custom/face-pull.webp"
+  },
+  "bulgarian-split-squat": {
+    "male": "assets/exercise-thumbnails/custom/bulgarian-split-squat.webp",
+    "female": "assets/exercise-thumbnails/custom/bulgarian-split-squat.webp"
+  },
+  "nordic-hamstring-curl": {
+    "male": "assets/exercise-thumbnails/custom/nordic-hamstring-curl.webp",
+    "female": "assets/exercise-thumbnails/custom/nordic-hamstring-curl.webp"
+  },
+  "pallof-press": {
+    "male": "assets/exercise-thumbnails/custom/pallof-press.webp",
+    "female": "assets/exercise-thumbnails/custom/pallof-press.webp"
+  },
+  "step-up": {
+    "male": "assets/exercise-thumbnails/custom/step-up.webp",
+    "female": "assets/exercise-thumbnails/custom/step-up.webp"
+  },
+  "conventional-deadlift": {
+    "male": "assets/exercise-thumbnails/custom/conventional-deadlift.webp",
+    "female": "assets/exercise-thumbnails/custom/conventional-deadlift.webp"
+  },
+  "hip-thrust": {
+    "male": "assets/exercise-thumbnails/custom/hip-thrust.webp",
+    "female": "assets/exercise-thumbnails/custom/hip-thrust.webp"
+  },
+  "smith-machine-bench-press": {
+    "male": "assets/exercise-thumbnails/custom/smith-machine-bench-press.webp"
+  },
+  "smith-machine-incline-press": {
+    "male": "assets/exercise-thumbnails/custom/smith-machine-incline-press.webp"
+  },
+  "weighted-push-up": {
+    "male": "assets/exercise-thumbnails/custom/weighted-push-up.webp"
+  },
+  "low-to-high-cable-fly": {
+    "male": "assets/exercise-thumbnails/custom/low-to-high-cable-fly.webp"
+  },
+  "leaning-cable-lateral-raise": {
+    "male": "assets/exercise-thumbnails/custom/leaning-cable-lateral-raise.webp"
+  },
+  "cuffed-cable-lateral-raise": {
+    "male": "assets/exercise-thumbnails/custom/cuffed-cable-lateral-raise.webp"
+  },
+  "smith-machine-shrug": {
+    "male": "assets/exercise-thumbnails/custom/smith-machine-shrug.webp"
+  },
+  "ez-bar-preacher-curl": {
+    "male": "assets/exercise-thumbnails/custom/ez-bar-preacher-curl.webp"
+  },
+  "cable-preacher-curl": {
+    "male": "assets/exercise-thumbnails/custom/cable-preacher-curl.webp"
+  },
+  "single-arm-overhead-cable-extension": {
+    "male": "assets/exercise-thumbnails/custom/single-arm-overhead-cable-extension.webp"
+  },
+  "weighted-dip": {
+    "male": "assets/exercise-thumbnails/custom/weighted-dip.webp"
+  },
+  "single-leg-leg-curl": {
+    "male": "assets/exercise-thumbnails/custom/single-leg-leg-curl.webp"
+  },
+  "hip-abduction-machine": {
+    "male": "assets/exercise-thumbnails/custom/hip-abduction-machine.webp"
+  },
+  "trap-bar-deadlift": {
+    "male": "assets/exercise-thumbnails/custom/trap-bar-deadlift.webp"
+  },
+  "good-morning": {
+    "male": "assets/exercise-thumbnails/custom/good-morning.webp"
+  },
+  "single-leg-romanian-deadlift": {
+    "male": "assets/exercise-thumbnails/custom/single-leg-romanian-deadlift.webp"
+  },
+  "dead-bug": {
+    "male": "assets/exercise-thumbnails/custom/dead-bug.webp"
+  },
+  "bird-dog": {
+    "male": "assets/exercise-thumbnails/custom/bird-dog.webp"
+  },
+  "ab-wheel-rollout": {
+    "male": "assets/exercise-thumbnails/custom/ab-wheel-rollout.webp"
+  },
+  "indoor-rower": {
+    "male": "assets/exercise-thumbnails/custom/indoor-rower.webp"
+  },
+  "ski-erg": {
+    "male": "assets/exercise-thumbnails/custom/ski-erg.webp"
+  },
+  "pike-push-up": {
+    "male": "assets/exercise-thumbnails/custom/pike-push-up.webp"
+  },
+  "one-arm-machine-row": {
+    "male": "assets/exercise-thumbnails/custom/one-arm-machine-row.webp"
+  },
+  "dumbbell-pullover": {
+    "male": "assets/exercise-thumbnails/custom/dumbbell-pullover.webp"
+  },
+  "meadows-row": {
+    "male": "assets/exercise-thumbnails/custom/meadows-row.webp"
+  },
+  "cable-y-raise": {
+    "male": "assets/exercise-thumbnails/custom/cable-y-raise.webp"
+  },
+  "bayesian-cable-curl": {
+    "male": "assets/exercise-thumbnails/custom/bayesian-cable-curl.webp"
+  },
+  "reverse-curl": {
+    "male": "assets/exercise-thumbnails/custom/reverse-curl.webp"
+  },
+  "cross-body-cable-triceps-extension": {
+    "male": "assets/exercise-thumbnails/custom/cross-body-cable-triceps-extension.webp"
+  },
+  "pendulum-squat": {
+    "male": "assets/exercise-thumbnails/custom/pendulum-squat.webp"
+  },
+  "reverse-nordic-curl": {
+    "male": "assets/exercise-thumbnails/custom/reverse-nordic-curl.webp"
+  },
+  "belt-squat": {
+    "male": "assets/exercise-thumbnails/custom/belt-squat.webp"
+  },
+  "heel-elevated-squat": {
+    "male": "assets/exercise-thumbnails/custom/heel-elevated-squat.webp"
+  },
+  "reverse-lunge": {
+    "male": "assets/exercise-thumbnails/custom/reverse-lunge.webp"
+  },
+  "single-leg-leg-press": {
+    "male": "assets/exercise-thumbnails/custom/single-leg-leg-press.webp"
+  },
+  "smith-machine-romanian-deadlift": {
+    "male": "assets/exercise-thumbnails/custom/smith-machine-romanian-deadlift.webp"
+  },
+  "glute-ham-raise": {
+    "male": "assets/exercise-thumbnails/custom/glute-ham-raise.webp"
+  },
+  "machine-hip-thrust": {
+    "male": "assets/exercise-thumbnails/custom/machine-hip-thrust.webp"
+  },
+  "smith-machine-hip-thrust": {
+    "male": "assets/exercise-thumbnails/custom/smith-machine-hip-thrust.webp"
+  },
+  "copenhagen-plank": {
+    "male": "assets/exercise-thumbnails/custom/copenhagen-plank.webp"
+  },
+  "tibialis-raise": {
+    "male": "assets/exercise-thumbnails/custom/tibialis-raise.webp"
+  },
+  "wrist-roller": {
+    "male": "assets/exercise-thumbnails/custom/wrist-roller.webp"
+  },
+  "incline-treadmill-walk": {
+    "male": "assets/exercise-thumbnails/custom/incline-treadmill-walk.webp"
+  },
+  "stair-climber": {
+    "male": "assets/exercise-thumbnails/custom/stair-climber.webp"
+  },
+  "swimming": {
+    "male": "assets/exercise-thumbnails/custom/swimming.webp"
+  },
+  "seated-twist-straight-arm": {
+    "male": "assets/exercise-thumbnails/custom/seated-twist-straight-arm.webp"
+  },
+  "assault-bike": {
+    "male": "assets/exercise-thumbnails/custom/assault-bike.webp"
+  }
+}

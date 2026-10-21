@@ -6,6 +6,7 @@ const component = readFileSync('js/workouts/exercise-thumbnails.js', 'utf8');
 const workflow = readFileSync('.github/workflows/ios-app-store.yml', 'utf8');
 
 test('Exercise thumbnails preserve the default SVG until the image is loaded', () => {
+ assert.doesNotMatch(readFileSync('css/routine-builder.css', 'utf8'), /\.routine-thumbnail:has\(img\)>svg\{visibility:hidden\}/);
  assert.match(component, /fallbackArtwork\(exercise\)/);
  assert.match(component, /visibility:hidden/);
  assert.match(component, /event\.target\.naturalWidth > 0|event\.target\.naturalWidth > 0|event\.target\.naturalWidth/);

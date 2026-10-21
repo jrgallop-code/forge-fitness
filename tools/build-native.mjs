@@ -1,4 +1,4 @@
-import { cp, mkdir, rm, stat } from "node:fs/promises";
+import { cp, mkdir, rm, stat, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -19,4 +19,12 @@ for (const relativePath of [...files, ...directories]) {
     });
 }
 
-console.log(`Prepared Capacitor web assets in ${path.relative(root, output)}/`);
+// Validate the files actually copied into the native bundle, not just the source.
+const { EXERCISE_THUMBNAILS } = await import('../js/workouts/exercise-thumbnail-manifest.js');
+for (const file of new Set(Object.values(EXERCISE_THUMBNAILS).flatMap(Object.values))) {
+    const bundled = await readFile(path.join(output, file));
+    if (bundled.toString('ascii', 0, 4) !== 'RIFF' || bundled.toString('ascii', 8, 12) !== 'WEBP') {
+        throw new Error(`Invalid packaged exercise thumbnail: ${file}`);
+    }
+}
+console.log(`Prepared Capacitor web assets in ${path.relative(root, output)}/; verified ${Object.keys(EXERCISE_THUMBNAILS).length} exercise thumbnail mappings`);

@@ -1,0 +1,251 @@
+{
+  "generator": "built-in image_gen",
+  "style": "Medical fitness textbook. Grayscale anatomical male, opaque gray shorts, white background, red/orange target muscles. No text, panels or gym scenery.",
+  "exercises": [
+    [
+      "trap-bar-deadlift",
+      "Trap-Bar Deadlift",
+      ""
+    ],
+    [
+      "good-morning",
+      "Good Morning",
+      "standing with barbell across upper back, knees softly bent, hips hinged back and torso inclined forward, neutral spine; hamstrings glutes red"
+    ],
+    [
+      "single-leg-romanian-deadlift",
+      "Single-Leg Romanian Deadlift",
+      "standing on one softly bent leg, hinging forward, opposite leg extended behind, holding two dumbbells below shoulders; glutes hamstrings red"
+    ],
+    [
+      "dead-bug",
+      "Dead Bug",
+      "lying supine, opposite arm extended overhead and opposite leg extended low above floor, other hip and knee flexed 90 degrees; abs red"
+    ],
+    [
+      "bird-dog",
+      "Bird Dog",
+      "on hands and knees, one arm reaching forward and opposite leg extended straight back, level spine; back glutes red"
+    ],
+    [
+      "ab-wheel-rollout",
+      "Ab Wheel Rollout",
+      "kneeling, gripping small ab wheel ahead with straight arms and body extended diagonally, neutral spine; abs red"
+    ],
+    [
+      "indoor-rower",
+      "Indoor Rower",
+      "seated on rowing ergometer at finish, legs extended, handle pulled to lower ribs; back legs red"
+    ],
+    [
+      "ski-erg",
+      "Ski Erg",
+      "standing facing upright ski erg machine, hinging hips pulling twin overhead cable handles downward beside knees; lats core red"
+    ],
+    [
+      "pike-push-up",
+      "Pike Push-Up",
+      "hands and feet on floor, hips raised inverted V, elbows bent lowering head between hands; shoulders triceps red"
+    ],
+    [
+      "one-arm-machine-row",
+      "One-Arm Machine Row",
+      "seated upright chest supported by pad, pulling one independent machine handle toward ribs with elbow close to torso; lats red"
+    ],
+    [
+      "dumbbell-pullover",
+      "Dumbbell Pullover",
+      "lying lengthwise on flat bench, feet floor, holding single dumbbell with both hands behind head with slightly bent elbows; lats red"
+    ],
+    [
+      "meadows-row",
+      "Meadows Row",
+      "staggered stance beside landmine barbell, torso hinged, one hand pulling thick sleeve toward hip, other hand braced on thigh; lats upper back red"
+    ],
+    [
+      "cable-y-raise",
+      "Cable Y-Raise",
+      "standing between two low cable pulleys, arms raised diagonally overhead in Y, holding opposite cable handles; shoulders lower traps red"
+    ],
+    [
+      "bayesian-cable-curl",
+      "Bayesian Cable Curl",
+      "standing back to low cable pulley, working upper arm slightly behind torso, elbow flexed holding cable handle palm up; biceps red"
+    ],
+    [
+      "reverse-curl",
+      "Reverse Curl",
+      "standing holding EZ bar with palms down, elbows close to torso flexed to lift bar; forearms brachialis red"
+    ],
+    [
+      "cross-body-cable-triceps-extension",
+      "Cross-Body Cable Triceps Extension",
+      "standing beside high cable pulley, upper arm close to torso, one arm extending handle diagonally across body downward; triceps red"
+    ],
+    [
+      "pendulum-squat",
+      "Pendulum Squat",
+      "side view of pendulum squat machine with large overhead pivot and long swinging lever arm carrying shoulder pads, back supported, knees deeply bent standing on fixed angled footplate; quads red"
+    ],
+    [
+      "reverse-nordic-curl",
+      "Reverse Nordic Curl",
+      "kneeling upright, knees flexed, straight line from knees through hips to shoulders leaning backward, arms crossed; quads red"
+    ],
+    [
+      "belt-squat",
+      "Belt Squat",
+      "standing on belt squat platform with belt around hips chained to load between feet, deep squat with upright torso; quads glutes red"
+    ],
+    [
+      "heel-elevated-squat",
+      "Heel-Elevated Squat",
+      "heels on small wedge, holding dumbbell goblet at chest, deep squat knees forward and torso upright; quads red"
+    ],
+    [
+      "reverse-lunge",
+      "Reverse Lunge",
+      "holding two dumbbells, one foot stepped backward with rear knee hovering near floor and front knee bent; quads glutes red"
+    ],
+    [
+      "single-leg-leg-press",
+      "Single-Leg Leg Press",
+      "seated in 45 degree sled leg press, one foot on platform knee bent, other foot safely off platform; quads glutes red"
+    ],
+    [
+      "smith-machine-romanian-deadlift",
+      "Smith Machine Romanian Deadlift",
+      "standing inside smith machine gripping guided bar at shin height, hips hinged back with softly bent knees and neutral spine; hamstrings glutes red"
+    ],
+    [
+      "glute-ham-raise",
+      "Glute Ham Raise",
+      "on GHD machine ankles secured, knees on curved pad, torso extended horizontally forward with neutral hips; hamstrings red"
+    ],
+    [
+      "machine-hip-thrust",
+      "Machine Hip Thrust",
+      "shoulder blades on hip thrust machine back pad, hips under padded lap belt, feet planted knees bent and hips extended; glutes red"
+    ],
+    [
+      "smith-machine-hip-thrust",
+      "Smith Machine Hip Thrust",
+      "shoulder blades against bench, smith machine bar padded across hips, feet floor knees bent hips extended; glutes red"
+    ],
+    [
+      "copenhagen-plank",
+      "Copenhagen Plank",
+      "side plank on forearm, top ankle supported on bench, lower leg lifted below, body straight; adductors obliques red"
+    ],
+    [
+      "tibialis-raise",
+      "Tibialis Raise",
+      "standing leaning back against wall, heels planted ahead, toes lifted toward shins; front shin muscles red"
+    ],
+    [
+      "wrist-roller",
+      "Wrist Roller",
+      "standing holding wrist roller cylinder at chest level arms forward, rope unwinding to small weight plate below; forearms red"
+    ],
+    [
+      "incline-treadmill-walk",
+      "Incline Treadmill Walk",
+      "walking upright on treadmill visibly inclined uphill, natural arm swing; legs glutes red"
+    ],
+    [
+      "stair-climber",
+      "Stair Climber",
+      "stepping upward on rotating stair climbing machine, one foot on higher step; quads glutes red"
+    ],
+    [
+      "assault-bike",
+      "Assault Bike",
+      "seated on fan air bike, hands gripping moving upright handles, feet pedaling; legs shoulders red"
+    ],
+    [
+      "swimming",
+      "Swimming",
+      "horizontal front crawl pose, one arm forward and other pulling back, subtle gray water line only, full body visible; lats shoulders red"
+    ],
+    [
+      "seated-twist-straight-arm",
+      "Seated Twist (straight arm)",
+      "seated on floor knees bent feet planted, torso rotated to one side, both arms straight extended forward at chest height; obliques red"
+    ],
+    [
+      "glute-bridge",
+      "Glute Bridge",
+      "lying supine on floor with shoulders and arms on floor, knees bent feet planted, pelvis lifted so knees hips shoulders form straight diagonal; glutes red"
+    ],
+    [
+      "hip-abduction-machine",
+      "Hip Abduction Machine",
+      "seated upright on hip abduction machine, thighs opened outward against outer knee pads, both feet on foot supports; outer hips red"
+    ],
+    [
+      "single-leg-leg-curl",
+      "Single-Leg Leg Curl",
+      "lying prone on leg curl machine, one knee flexed lifting ankle roller while other leg remains straight; hamstrings red"
+    ],
+    [
+      "smith-machine-bench-press",
+      "Smith Machine Bench Press",
+      "lying flat on bench inside smith machine, gripping guided barbell lowered to chest, clear vertical guide rails and hooks; chest red"
+    ],
+    [
+      "smith-machine-incline-press",
+      "Smith Machine Incline Press",
+      "lying on incline bench inside smith machine, pressing guided barbell above upper chest, vertical guide rails clearly visible; upper chest red"
+    ],
+    [
+      "weighted-push-up",
+      "Weighted Push-Up",
+      "push-up position with a secured weight plate across upper back, elbows bent and body straight; chest triceps red"
+    ],
+    [
+      "weighted-pull-up",
+      "Weighted Pull-Up",
+      "hanging from pullup bar palms forward with elbows flexed, dip belt and visible weight plate hanging between legs; lats red"
+    ],
+    [
+      "weighted-dip",
+      "Weighted Dip",
+      "parallel bar dip with elbows bent, torso inclined forward and dip belt with visible weight plate between legs; chest triceps red"
+    ],
+    [
+      "low-to-high-cable-fly",
+      "Low-to-High Cable Fly",
+      "standing between LOW cable pulleys, handles raised upward and together in front of upper chest with slightly bent elbows; upper chest red"
+    ],
+    [
+      "leaning-cable-lateral-raise",
+      "Leaning Cable Lateral Raise",
+      "one hand holding cable upright for support and body leaning AWAY from it, other hand raising low cable handle laterally to shoulder height; shoulder red"
+    ],
+    [
+      "cuffed-cable-lateral-raise",
+      "Cuffed Cable Lateral Raise",
+      "standing side on to low cable pulley, cable attached to wrist CUFF, working arm raised sideways to shoulder height, no handle; shoulder red"
+    ],
+    [
+      "cable-preacher-curl",
+      "Cable Preacher Curl",
+      "seated behind preacher arm pad, upper arms resting on pad, hands curling short bar attached by cable to LOW pulley in front; biceps red"
+    ],
+    [
+      "ez-bar-preacher-curl",
+      "EZ-Bar Preacher Curl",
+      "seated with upper arms resting on inclined preacher pad, holding distinct zigzag EZ bar with plates with elbows flexed; biceps red"
+    ],
+    [
+      "single-arm-overhead-cable-extension",
+      "Single-Arm Overhead Cable Extension",
+      "standing back to cable machine, one upper arm vertical beside head, working elbow flexed holding SINGLE cable handle behind head, free arm resting at side; triceps red"
+    ],
+    [
+      "smith-machine-shrug",
+      "Smith Machine Shrug",
+      "standing within smith machine holding guided bar at thighs with straight arms, shoulders elevated, clear guide rails and hooks; traps red"
+    ]
+  ]
+}

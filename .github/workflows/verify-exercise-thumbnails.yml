@@ -1,0 +1,27 @@
+name: Verify complete exercise thumbnail library
+on:
+  push:
+    branches: [ios/capacitor-app-store]
+    paths: [.github/verify-exercise-thumbnails]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node tools/audit-exercise-thumbnails.mjs
+      - run: node --test tests/exercise-thumbnail-assets.test.mjs tests/exercise-thumbnail-rendering.test.mjs
+      - run: npm run build:native
+      - run: npm install --no-save --package-lock=false playwright@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - run: node tools/verify-exercise-thumbnails-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: thumbnail-browser-validation
+          path: thumbnail-browser-results
+          retention-days: 14

@@ -78,6 +78,13 @@ manifest=json.loads(match.group(1)) if match else {}
 manifest={id:{sex:path for sex,path in entries.items() if (root/path).is_file()} for id,entries in manifest.items()}
 for j in jobs:
  if j['src'] in good:manifest.setdefault(j['id'],{})[j['sex']]=good[j['src']]
+# Custom images are reviewed replacements for missing or unsuitable videos.
+# Preserve them on subsequent extraction runs, including both sex fallbacks.
+overrides_file=root/'assets/exercise-thumbnails/custom/overrides.json'
+if overrides_file.exists():
+ for id,variants in json.loads(overrides_file.read_text()).items():
+  if not all((root/p).is_file() for p in variants.values()):raise ValueError(f'Missing custom artwork for {id}')
+  manifest[id]=variants
 (root/'js/workouts/exercise-thumbnail-manifest.js').write_text('export const EXERCISE_THUMBNAILS = '+json.dumps(manifest,separators=(',',':'))+';\n')
 unmapped=sorted({j['id'] for j in jobs if j['id'] not in manifest or j['sex'] not in manifest[j['id']]})
 Path('thumbnail-report.json').write_text(json.dumps({'images':len(good),'exercises':len(manifest),'jobs':len(jobs),'unmappedExerciseIds':unmapped,'failed':failed,'diagnostics':errors},indent=2));print('DONE',len(good),'images,',len(manifest),'exercises',flush=True)

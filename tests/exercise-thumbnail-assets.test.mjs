@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, statSync } from 'node:fs';
+import { inventory } from '../tools/audit-exercise-thumbnails.mjs';
+
+test('the complete expanded exercise catalogue has thumbnail coverage', () => {
+  assert.equal(inventory.length, 343, 'catalogue changes require a thumbnail audit');
+  assert.deepEqual(inventory.filter(exercise => !exercise.valid).map(exercise => exercise.id), []);
+});
 
 function readManifest() {
   const text = readFileSync('js/workouts/exercise-thumbnail-manifest.js', 'utf8');

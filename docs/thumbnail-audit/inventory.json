@@ -1,0 +1,4412 @@
+[
+  {
+    "id": "45-degree-bicycle-twisting-crunch",
+    "name": "45 Degree Bicycle Twisting Crunch",
+    "variants": {
+      "male": "assets/exercise-thumbnails/5d19fb395f6ab1.webp",
+      "female": "assets/exercise-thumbnails/5d19fb395f6ab1.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/45-degree-bicycle-twisting-crunch.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/45-degree-bicycle-twisting-crunch.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "45-degree-side-bend",
+    "name": "45 Degree Side Bend",
+    "variants": {
+      "male": "assets/exercise-thumbnails/7193013e975fe4.webp",
+      "female": "assets/exercise-thumbnails/7193013e975fe4.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/45-degree-side-bend.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/45-degree-side-bend.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "air-twisting-crunch",
+    "name": "Air Twisting Crunch",
+    "variants": {
+      "male": "assets/exercise-thumbnails/f135ee2a0f431e.webp",
+      "female": "assets/exercise-thumbnails/f135ee2a0f431e.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/air-twisting-crunch.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/air-twisting-crunch.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "ball-sit-up-on-stability-ball",
+    "name": "Ball Sit-up (on stability ball)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/1a9b76cac17b6c.webp",
+      "female": "assets/exercise-thumbnails/1a9b76cac17b6c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/ball-sit-up-on-stability-ball.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/ball-sit-up-on-stability-ball.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-assisted-pull-up",
+    "name": "Band Assisted Pull-up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ddd68c3290d76d.webp",
+      "female": "assets/exercise-thumbnails/ddd68c3290d76d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-assisted-pull-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-assisted-pull-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-bent-over-hip-extension",
+    "name": "Band Bent Over Hip Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a08e4eaf580ed6.webp",
+      "female": "assets/exercise-thumbnails/a08e4eaf580ed6.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-bent-over-hip-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-bent-over-hip-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-bent-over-rear-lateral-raise",
+    "name": "Band Bent-over Rear Lateral Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/30add82f4af839.webp",
+      "female": "assets/exercise-thumbnails/30add82f4af839.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-bent-over-rear-lateral-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-bent-over-rear-lateral-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-bent-over-row",
+    "name": "Band Bent-over Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/fda2b9d1bc641b.webp",
+      "female": "assets/exercise-thumbnails/fda2b9d1bc641b.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-bent-over-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-bent-over-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-decline-sit-ups",
+    "name": "Band Decline Sit-ups",
+    "variants": {
+      "male": "assets/exercise-thumbnails/8ce8076d92ccf1.webp",
+      "female": "assets/exercise-thumbnails/8ce8076d92ccf1.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-decline-sit-ups.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-decline-sit-ups.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-high-fly",
+    "name": "Band High Fly",
+    "variants": {
+      "male": "assets/exercise-thumbnails/b25ec34fe8482a.webp",
+      "female": "assets/exercise-thumbnails/b25ec34fe8482a.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-high-fly.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-high-fly.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-hip-abduction",
+    "name": "Band Hip Abduction",
+    "variants": {
+      "male": "assets/exercise-thumbnails/fc195a3de20d75.webp",
+      "female": "assets/exercise-thumbnails/fc195a3de20d75.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-hip-abduction.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-hip-abduction.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-hip-adduction",
+    "name": "Band Hip Adduction",
+    "variants": {
+      "male": "assets/exercise-thumbnails/753eb079369e99.webp",
+      "female": "assets/exercise-thumbnails/753eb079369e99.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-hip-adduction.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-hip-adduction.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-kneeling-one-arm-pulldown",
+    "name": "Band Kneeling One Arm Pulldown",
+    "variants": {
+      "male": "assets/exercise-thumbnails/6f776f91b760c9.webp",
+      "female": "assets/exercise-thumbnails/6f776f91b760c9.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-kneeling-one-arm-pulldown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-kneeling-one-arm-pulldown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-leg-curl",
+    "name": "Band Leg Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/3926377aa3aaf6.webp",
+      "female": "assets/exercise-thumbnails/3926377aa3aaf6.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-leg-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-leg-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-one-arm-forward-raise",
+    "name": "Band One Arm Forward Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/e23c17719b6ac0.webp",
+      "female": "assets/exercise-thumbnails/e23c17719b6ac0.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-one-arm-forward-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-one-arm-forward-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-one-arm-twisting-seated-row",
+    "name": "Band One Arm Twisting Seated Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/0177bb97a3b3a0.webp",
+      "female": "assets/exercise-thumbnails/0177bb97a3b3a0.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-one-arm-twisting-seated-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-one-arm-twisting-seated-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-one-leg-kickback-bent-position",
+    "name": "Band One Leg Kickback Bent Position",
+    "variants": {
+      "male": "assets/exercise-thumbnails/972cc967db1591.webp",
+      "female": "assets/exercise-thumbnails/972cc967db1591.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-one-leg-kickback-bent-position.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-one-leg-kickback-bent-position.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-overhead-triceps-extension",
+    "name": "Band Overhead Triceps Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/220947ad2951e2.webp",
+      "female": "assets/exercise-thumbnails/220947ad2951e2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-overhead-triceps-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-overhead-triceps-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-pull-through",
+    "name": "Band Pull Through",
+    "variants": {
+      "male": "assets/exercise-thumbnails/d8dd051925cbef.webp",
+      "female": "assets/exercise-thumbnails/47ffd64d9fb4b3.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/cable-pull-through.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-pull-through.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-seated-leg-extension",
+    "name": "Band Seated Leg Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/3fb9b26976e192.webp",
+      "female": "assets/exercise-thumbnails/3fb9b26976e192.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-seated-leg-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-seated-leg-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-seated-row",
+    "name": "Band Seated Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/1d2efc0ed058bf.webp",
+      "female": "assets/exercise-thumbnails/1d2efc0ed058bf.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-seated-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-seated-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-side-bend",
+    "name": "Band Side Bend",
+    "variants": {
+      "male": "assets/exercise-thumbnails/836291c6f43155.webp",
+      "female": "assets/exercise-thumbnails/836291c6f43155.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-side-bend.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-side-bend.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-side-triceps-pushdown",
+    "name": "Band Side Triceps Pushdown",
+    "variants": {
+      "male": "assets/exercise-thumbnails/cd762515bf059c.webp",
+      "female": "assets/exercise-thumbnails/cd762515bf059c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-side-triceps-pushdown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-side-triceps-pushdown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-standing-calf-raise",
+    "name": "Band Standing Calf Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/e50c9577f8432c.webp",
+      "female": "assets/exercise-thumbnails/e50c9577f8432c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-standing-calf-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-standing-calf-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-standing-crunch",
+    "name": "Band Standing Crunch",
+    "variants": {
+      "male": "assets/exercise-thumbnails/d60a414cffd07d.webp",
+      "female": "assets/exercise-thumbnails/d60a414cffd07d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-standing-crunch.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-standing-crunch.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-standing-hip-extension",
+    "name": "Band Standing Hip Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/872225cab7820a.webp",
+      "female": "assets/exercise-thumbnails/872225cab7820a.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-standing-hip-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-standing-hip-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-standing-leg-curl",
+    "name": "Band Standing Leg Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/993d74ee920be9.webp",
+      "female": "assets/exercise-thumbnails/993d74ee920be9.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-standing-leg-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-standing-leg-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-standing-lift",
+    "name": "Band Standing Lift",
+    "variants": {
+      "male": "assets/exercise-thumbnails/0de421abeb6dc6.webp",
+      "female": "assets/exercise-thumbnails/0de421abeb6dc6.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-standing-lift.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-standing-lift.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-standing-rear-delt-row",
+    "name": "Band Standing Rear Delt Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/3924c4fff8275e.webp",
+      "female": "assets/exercise-thumbnails/3924c4fff8275e.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-standing-rear-delt-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-standing-rear-delt-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-straight-back-seated-row",
+    "name": "Band Straight Back Seated Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/1687473d46d0b8.webp",
+      "female": "assets/exercise-thumbnails/1687473d46d0b8.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-straight-back-seated-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-straight-back-seated-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-triceps-pushdown",
+    "name": "Band Triceps Pushdown",
+    "variants": {
+      "male": "assets/exercise-thumbnails/9a6e32ef1a0438.webp",
+      "female": "assets/exercise-thumbnails/9a6e32ef1a0438.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-triceps-pushdown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-triceps-pushdown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-twist",
+    "name": "Band Twist",
+    "variants": {
+      "male": "assets/exercise-thumbnails/1a1d55af65ed2b.webp",
+      "female": "assets/exercise-thumbnails/1a1d55af65ed2b.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-twist.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-twist.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "band-twist-up-down",
+    "name": "Band Twist (Up-down)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/fdc3cef17acf6b.webp",
+      "female": "assets/exercise-thumbnails/fdc3cef17acf6b.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/band-twist-up-down.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/band-twist-up-down.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-clean-and-press",
+    "name": "Barbell Clean And Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/0f8aaf32473d80.webp",
+      "female": "assets/exercise-thumbnails/0f8aaf32473d80.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-clean-and-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/barbell-clean-and-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-decline-bench-press",
+    "name": "Barbell Decline Bench Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ca3986e903fcd3.webp",
+      "female": "assets/exercise-thumbnails/ca3986e903fcd3.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-decline-bench-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/barbell-decline-bench-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-drag-curl",
+    "name": "Barbell Drag Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/d2a4ffafadf780.webp",
+      "female": "assets/exercise-thumbnails/d2a4ffafadf780.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-drag-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/barbell-drag-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-front-raise",
+    "name": "Barbell Front Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/2bf2b7ba369afa.webp",
+      "female": "assets/exercise-thumbnails/2bf2b7ba369afa.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-front-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/barbell-front-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-lunge",
+    "name": "Barbell Lunge",
+    "variants": {
+      "male": "assets/exercise-thumbnails/89250452ff87b2.webp",
+      "female": "assets/exercise-thumbnails/89250452ff87b2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-lunge.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/barbell-lunge.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-prone-incline-curl",
+    "name": "Barbell Prone Incline Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/abe28995688e74.webp",
+      "female": "assets/exercise-thumbnails/abe28995688e74.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-prone-incline-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/barbell-prone-incline-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-rear-delt-raise",
+    "name": "Barbell Rear Delt Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/20d9042149f2d6.webp",
+      "female": "assets/exercise-thumbnails/20d9042149f2d6.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-rear-delt-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/barbell-rear-delt-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-reverse-wrist-curl-over-grip",
+    "name": "Barbell Reverse Wrist Curl (over-grip)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/d1c83b88cc7a8c.webp",
+      "female": "assets/exercise-thumbnails/696494372df8ee.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/reverse-wrist-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/reverse-wrist-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-seated-behind-head-military-press",
+    "name": "Barbell Seated Behind Head Military Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/da1c894a2d2a7c.webp",
+      "female": "assets/exercise-thumbnails/da1c894a2d2a7c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-seated-behind-head-military-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/barbell-seated-behind-head-military-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-shrug",
+    "name": "Barbell Shrug",
+    "variants": {
+      "male": "assets/exercise-thumbnails/6d1ebceb06b620.webp",
+      "female": "assets/exercise-thumbnails/4dad0b57a86414.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/smith-machine-shrug.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/smith-machine-shrug.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-standing-back-wrist-curl",
+    "name": "Barbell Standing Back Wrist Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/43a5c2779fc759.webp",
+      "female": "assets/exercise-thumbnails/43a5c2779fc759.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-standing-back-wrist-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/barbell-standing-back-wrist-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-underhand-bent-over-row",
+    "name": "Barbell Underhand Bent-over Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/8525d03814e50e.webp",
+      "female": "assets/exercise-thumbnails/8525d03814e50e.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-underhand-bent-over-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/barbell-underhand-bent-over-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-upright-row-wide-grip",
+    "name": "Barbell Upright Row (wide-grip)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/3661badf5da1b5.webp",
+      "female": "assets/exercise-thumbnails/7b9460ed73c8bf.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/upright-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/upright-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "battling-ropes",
+    "name": "Battling Ropes",
+    "variants": {
+      "male": "assets/exercise-thumbnails/64a3b4def79293.webp",
+      "female": "assets/exercise-thumbnails/64a3b4def79293.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/battling-ropes.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/battling-ropes.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "bench-dips",
+    "name": "Bench Dips",
+    "variants": {
+      "male": "assets/exercise-thumbnails/cc27777e9eb9d2.webp",
+      "female": "assets/exercise-thumbnails/cc27777e9eb9d2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/bench-dips.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/bench-dips.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "bench-leg-raise",
+    "name": "Bench Leg Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/3d7e4abfd183c6.webp",
+      "female": "assets/exercise-thumbnails/3d7e4abfd183c6.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/bench-leg-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/bench-leg-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "bench-pull-ups",
+    "name": "Bench Pull-ups",
+    "variants": {
+      "male": "assets/exercise-thumbnails/40a420ea4265be.webp",
+      "female": "assets/exercise-thumbnails/40a420ea4265be.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/bench-pull-ups.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/bench-pull-ups.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "bent-knee-lying-twist",
+    "name": "Bent Knee Lying Twist",
+    "variants": {
+      "male": "assets/exercise-thumbnails/61f3209665b5ca.webp",
+      "female": "assets/exercise-thumbnails/61f3209665b5ca.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/bent-knee-lying-twist.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/bent-knee-lying-twist.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "bent-knee-lying-twist-on-stability-ball",
+    "name": "Bent knee Lying  twist (On Stability Ball)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/9b2771ba7f38ed.webp",
+      "female": "assets/exercise-thumbnails/9b2771ba7f38ed.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/bent-knee-lying-twist-on-stability-ball.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/bent-knee-lying-twist-on-stability-ball.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "burpee",
+    "name": "Burpee",
+    "variants": {
+      "male": "assets/exercise-thumbnails/eb36c8e475cf90.webp",
+      "female": "assets/exercise-thumbnails/eb36c8e475cf90.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/burpee.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/burpee.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-front-raise",
+    "name": "Cable Front Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/57c7c2b89e3540.webp",
+      "female": "assets/exercise-thumbnails/57c7c2b89e3540.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-front-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/cable-front-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-lying-fly-flat-bench-cable-fly",
+    "name": "Cable Lying Fly, Flat Bench Cable Fly",
+    "variants": {
+      "male": "assets/exercise-thumbnails/0705a0a67125d2.webp",
+      "female": "assets/exercise-thumbnails/0705a0a67125d2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-lying-fly-flat-bench-cable-fly.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/cable-lying-fly-flat-bench-cable-fly.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-one-arm-curl",
+    "name": "Cable One Arm Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a9b4c294a53e42.webp",
+      "female": "assets/exercise-thumbnails/f9031cf85826b2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-one-arm-forward-raise",
+    "name": "Cable One Arm Forward Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/9d64f1b8b81033.webp",
+      "female": "assets/exercise-thumbnails/9d64f1b8b81033.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-one-arm-forward-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/cable-one-arm-forward-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-one-arm-twisting-seated-row",
+    "name": "Cable One Arm Twisting Seated Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ef5b042ba6275d.webp",
+      "female": "assets/exercise-thumbnails/ef5b042ba6275d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-one-arm-twisting-seated-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/cable-one-arm-twisting-seated-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-rear-delt-row-with-rope",
+    "name": "Cable Rear Delt Row (with rope)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/4c1641c99e607d.webp",
+      "female": "assets/exercise-thumbnails/4c1641c99e607d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-rear-delt-row-with-rope.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/cable-rear-delt-row-with-rope.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-seated-high-row-v-bar",
+    "name": "Cable Seated High Row (V-bar)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/357dbbe0df5388.webp",
+      "female": "assets/exercise-thumbnails/357dbbe0df5388.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-seated-high-row-v-bar.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/cable-seated-high-row-v-bar.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-standing-crunch",
+    "name": "Cable Standing Crunch",
+    "variants": {
+      "male": "assets/exercise-thumbnails/8d3de8e1413251.webp",
+      "female": "assets/exercise-thumbnails/8d3de8e1413251.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-standing-crunch.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/cable-standing-crunch.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-standing-inner-curl",
+    "name": "Cable Standing Inner Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/d7026969df1d7c.webp",
+      "female": "assets/exercise-thumbnails/d7026969df1d7c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-standing-inner-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/cable-standing-inner-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-standing-lift",
+    "name": "Cable Standing Lift",
+    "variants": {
+      "male": "assets/exercise-thumbnails/3919a7ba5953f2.webp",
+      "female": "assets/exercise-thumbnails/3919a7ba5953f2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-standing-lift.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/cable-standing-lift.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-straight-back-seated-high-row-reverse-grip",
+    "name": "Cable Straight Back Seated High Row (reverse-grip)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/f0d26f8896b432.webp",
+      "female": "assets/exercise-thumbnails/f0d26f8896b432.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-straight-back-seated-high-row-reverse-grip.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/cable-straight-back-seated-high-row-reverse-grip.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-twist-up-down",
+    "name": "Cable Twist (up-down)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/b37f810e8b5cf7.webp",
+      "female": "assets/exercise-thumbnails/b37f810e8b5cf7.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-twist-up-down.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/cable-twist-up-down.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "chest-lift-with-rotation",
+    "name": "Chest Lift with Rotation",
+    "variants": {
+      "male": "assets/exercise-thumbnails/cb7e1366c43a96.webp",
+      "female": "assets/exercise-thumbnails/cb7e1366c43a96.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/chest-lift-with-rotation.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/chest-lift-with-rotation.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "chin-ups-narrow-parallel-grip",
+    "name": "Chin-ups (narrow parallel grip)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/d5a353992f7fcb.webp",
+      "female": "assets/exercise-thumbnails/d5a353992f7fcb.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/chin-ups-narrow-parallel-grip.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/chin-ups-narrow-parallel-grip.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "close-feet-leg-press",
+    "name": "Close Feet Leg Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/f66e92b15cd18f.webp",
+      "female": "assets/exercise-thumbnails/f66e92b15cd18f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/close-feet-leg-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/close-feet-leg-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "close-grip-push-ups",
+    "name": "Close Grip Push-ups",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a25b45275c5d0e.webp",
+      "female": "assets/exercise-thumbnails/a25b45275c5d0e.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/close-grip-push-ups.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/close-grip-push-ups.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "commando-pull-up",
+    "name": "Commando Pull-up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/f4c1d0a1a08e63.webp",
+      "female": "assets/exercise-thumbnails/f4c1d0a1a08e63.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/commando-pull-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/commando-pull-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "corkscrew-pilates",
+    "name": "Corkscrew Pilates",
+    "variants": {
+      "male": "assets/exercise-thumbnails/c7f5513e985caf.webp",
+      "female": "assets/exercise-thumbnails/c7f5513e985caf.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/corkscrew-pilates.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/corkscrew-pilates.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "crunch-leg-raise",
+    "name": "Crunch (leg raise)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/850ef07224379f.webp",
+      "female": "assets/exercise-thumbnails/850ef07224379f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/crunch-leg-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/crunch-leg-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "crunch-legs-on-stability-ball",
+    "name": "Crunch (legs on stability ball)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/9e557d28c0285a.webp",
+      "female": "assets/exercise-thumbnails/9e557d28c0285a.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/crunch-legs-on-stability-ball.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/crunch-legs-on-stability-ball.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "crunch-on-bench",
+    "name": "Crunch (on bench)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/13a1ef24fa202a.webp",
+      "female": "assets/exercise-thumbnails/13a1ef24fa202a.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/crunch-on-bench.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/crunch-on-bench.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "crunch-straight-leg-up",
+    "name": "Crunch (straight leg up)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/f4f43d7291dc4a.webp",
+      "female": "assets/exercise-thumbnails/f4f43d7291dc4a.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/crunch-straight-leg-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/crunch-straight-leg-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "crunch-floor",
+    "name": "Crunch Floor",
+    "variants": {
+      "male": "assets/exercise-thumbnails/196482722e0f82.webp",
+      "female": "assets/exercise-thumbnails/196482722e0f82.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/crunch-floor.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/crunch-floor.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "decline-dumbbell-bench-press-45-degree",
+    "name": "Decline Dumbbell Bench Press (45 degree)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/1037d85810459d.webp",
+      "female": "assets/exercise-thumbnails/1037d85810459d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/decline-dumbbell-bench-press-45-degree.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/decline-dumbbell-bench-press-45-degree.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "donkey-calf-raise",
+    "name": "Donkey Calf Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/225019a9a2fcfc.webp",
+      "female": "assets/exercise-thumbnails/225019a9a2fcfc.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/donkey-calf-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/donkey-calf-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-bar-grip-sumo-squat",
+    "name": "Dumbbell Bar Grip Sumo Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/92566970a8c31a.webp",
+      "female": "assets/exercise-thumbnails/92566970a8c31a.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-bar-grip-sumo-squat.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-bar-grip-sumo-squat.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-behind-back-wrist-curl",
+    "name": "Dumbbell Behind Back Wrist Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/78186b3760d68e.webp",
+      "female": "assets/exercise-thumbnails/78186b3760d68e.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-behind-back-wrist-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-behind-back-wrist-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-bent-over-row",
+    "name": "Dumbbell Bent-over Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/0c5042694f47f4.webp",
+      "female": "assets/exercise-thumbnails/7dc2eb78b90991.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/single-arm-dumbbell-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/single-arm-dumbbell-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-close-grip-press",
+    "name": "Dumbbell Close Grip Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/b1238b3fd40bae.webp",
+      "female": "assets/exercise-thumbnails/b1238b3fd40bae.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-close-grip-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-close-grip-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-concentration-curl",
+    "name": "Dumbbell Concentration Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/46990c9abafd29.webp",
+      "female": "assets/exercise-thumbnails/46990c9abafd29.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-concentration-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-concentration-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-deadlift",
+    "name": "Dumbbell Deadlift",
+    "variants": {
+      "male": "assets/exercise-thumbnails/794dff3cb5eb28.webp",
+      "female": "assets/exercise-thumbnails/794dff3cb5eb28.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-deadlift.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-deadlift.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-decline-fly-45-degree",
+    "name": "Dumbbell Decline Fly (45 degree)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ba12397b71b662.webp",
+      "female": "assets/exercise-thumbnails/ba12397b71b662.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-decline-fly-45-degree.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-decline-fly-45-degree.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-fly-on-exercise-ball",
+    "name": "Dumbbell Fly On Exercise Ball",
+    "variants": {
+      "male": "assets/exercise-thumbnails/3ba47403c81f1b.webp",
+      "female": "assets/exercise-thumbnails/3ba47403c81f1b.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-fly-on-exercise-ball.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-fly-on-exercise-ball.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-front-raise",
+    "name": "Dumbbell Front Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/4ee74349c25412.webp",
+      "female": "assets/exercise-thumbnails/4ee74349c25412.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-front-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-front-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-front-squat",
+    "name": "Dumbbell Front Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/30e027058ee541.webp",
+      "female": "assets/exercise-thumbnails/30e027058ee541.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-front-squat.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-front-squat.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-hammer-grip-incline-bench-row",
+    "name": "Dumbbell Hammer Grip Incline Bench Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/b385b5e2678586.webp",
+      "female": "assets/exercise-thumbnails/b385b5e2678586.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-hammer-grip-incline-bench-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-hammer-grip-incline-bench-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-incline-fly-on-exercise-ball",
+    "name": "Dumbbell Incline Fly On Exercise Ball",
+    "variants": {
+      "male": "assets/exercise-thumbnails/c6a43e750e6d8a.webp",
+      "female": "assets/exercise-thumbnails/c6a43e750e6d8a.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-incline-fly-on-exercise-ball.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-incline-fly-on-exercise-ball.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-incline-hammer-curl",
+    "name": "Dumbbell Incline Hammer Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/4ba1602a9092bc.webp",
+      "female": "assets/exercise-thumbnails/4ba1602a9092bc.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-incline-hammer-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-incline-hammer-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-incline-hammer-press",
+    "name": "Dumbbell Incline Hammer Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/c2cd7ef56174ba.webp",
+      "female": "assets/exercise-thumbnails/c2cd7ef56174ba.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-incline-hammer-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-incline-hammer-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-incline-rear-lateral-raise",
+    "name": "Dumbbell Incline Rear Lateral Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/c9a8887b50ec41.webp",
+      "female": "assets/exercise-thumbnails/c9a8887b50ec41.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-incline-rear-lateral-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-incline-rear-lateral-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-incline-row",
+    "name": "Dumbbell Incline Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/60467fea79ba95.webp",
+      "female": "assets/exercise-thumbnails/5c314e05fac990.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/chest-supported-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/chest-supported-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-incline-shrug",
+    "name": "Dumbbell Incline Shrug",
+    "variants": {
+      "male": "assets/exercise-thumbnails/407ed42cdb56a4.webp",
+      "female": "assets/exercise-thumbnails/407ed42cdb56a4.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-incline-shrug.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-incline-shrug.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-incline-triceps-extension",
+    "name": "Dumbbell Incline Triceps Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a06cce1413503c.webp",
+      "female": "assets/exercise-thumbnails/a06cce1413503c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-incline-triceps-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-incline-triceps-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-iron-cross",
+    "name": "Dumbbell Iron Cross",
+    "variants": {
+      "male": "assets/exercise-thumbnails/f2b8b9b880b310.webp",
+      "female": "assets/exercise-thumbnails/f2b8b9b880b310.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-iron-cross.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-iron-cross.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-kickback",
+    "name": "Dumbbell Kickback",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ef7f8c926a1210.webp",
+      "female": "assets/exercise-thumbnails/ef7f8c926a1210.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-kickback.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-kickback.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-lying-alternate-extension",
+    "name": "Dumbbell Lying Alternate Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/2b4b464f7b20f2.webp",
+      "female": "assets/exercise-thumbnails/2b4b464f7b20f2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-lying-alternate-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-lying-alternate-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-lying-leg-curl",
+    "name": "Dumbbell Lying Leg Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/930e5967ca08f2.webp",
+      "female": "assets/exercise-thumbnails/930e5967ca08f2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-lying-leg-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-lying-leg-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-lying-hammer-press",
+    "name": "Dumbbell Lying Hammer Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a608990b1f917a.webp",
+      "female": "assets/exercise-thumbnails/a608990b1f917a.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-lying-hammer-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-lying-hammer-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-lying-rear-delt-row",
+    "name": "Dumbbell Lying Rear Delt Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/db2761e65ec9f1.webp",
+      "female": "assets/exercise-thumbnails/6f9747b3636818.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/chest-supported-rear-delt-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/chest-supported-rear-delt-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-lying-triceps-extension",
+    "name": "Dumbbell Lying Triceps Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/f0c9ce934ab747.webp",
+      "female": "assets/exercise-thumbnails/f0c9ce934ab747.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-lying-triceps-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-lying-triceps-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-one-arm-lateral-raise",
+    "name": "Dumbbell One Arm Lateral Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/9ed78a283700d3.webp",
+      "female": "assets/exercise-thumbnails/9ed78a283700d3.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-one-arm-lateral-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-one-arm-lateral-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-one-arm-triceps-extension",
+    "name": "Dumbbell One Arm Triceps Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/7cdfea3d8cce10.webp",
+      "female": "assets/exercise-thumbnails/7cdfea3d8cce10.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-one-arm-triceps-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-one-arm-triceps-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-one-arm-zottman-preacher-curl",
+    "name": "Dumbbell One Arm Zottman Preacher Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/e42d5a9a1c629f.webp",
+      "female": "assets/exercise-thumbnails/e42d5a9a1c629f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-one-arm-zottman-preacher-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-one-arm-zottman-preacher-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-palm-rotational-bent-over-row",
+    "name": "Dumbbell Palm Rotational Bent Over Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ee425f53c00335.webp",
+      "female": "assets/exercise-thumbnails/ee425f53c00335.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-palm-rotational-bent-over-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-palm-rotational-bent-over-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-preacher-curl-over-exercise-ball",
+    "name": "Dumbbell Preacher Curl Over Exercise Ball",
+    "variants": {
+      "male": "assets/exercise-thumbnails/f7abd531ed570f.webp",
+      "female": "assets/exercise-thumbnails/f7abd531ed570f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-preacher-curl-over-exercise-ball.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-preacher-curl-over-exercise-ball.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-pronate-grip-triceps-extension",
+    "name": "Dumbbell Pronate-grip Triceps Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a62cfcc5bb63d9.webp",
+      "female": "assets/exercise-thumbnails/a62cfcc5bb63d9.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-pronate-grip-triceps-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-pronate-grip-triceps-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-prone-incline-curl",
+    "name": "Dumbbell Prone Incline Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/3f61a80790efdd.webp",
+      "female": "assets/exercise-thumbnails/6339302355e8ad.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/spider-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/spider-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-rear-delt-row",
+    "name": "Dumbbell Rear Delt Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/5a88fb2e79539f.webp",
+      "female": "assets/exercise-thumbnails/5a88fb2e79539f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-rear-delt-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-rear-delt-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-reverse-grip-row",
+    "name": "Dumbbell Reverse Grip Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/7e7cd2c3e541b1.webp",
+      "female": "assets/exercise-thumbnails/7e7cd2c3e541b1.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-reverse-grip-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-reverse-grip-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-seated-calf-raise",
+    "name": "Dumbbell Seated Calf Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ab4c2f054f8dee.webp",
+      "female": "assets/exercise-thumbnails/ab4c2f054f8dee.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-seated-calf-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-seated-calf-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-seated-front-raise",
+    "name": "Dumbbell Seated Front Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/86f51ee03f764a.webp",
+      "female": "assets/exercise-thumbnails/86f51ee03f764a.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-seated-front-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-seated-front-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-seated-kickback",
+    "name": "Dumbbell Seated Kickback",
+    "variants": {
+      "male": "assets/exercise-thumbnails/4a7629fe43ac3b.webp",
+      "female": "assets/exercise-thumbnails/4a7629fe43ac3b.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-seated-kickback.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-seated-kickback.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-seated-lateral-raise",
+    "name": "Dumbbell Seated Lateral Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/17126b174d6f7f.webp",
+      "female": "assets/exercise-thumbnails/17126b174d6f7f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-seated-lateral-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-seated-lateral-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-seated-neutral-wrist-curl",
+    "name": "Dumbbell Seated Neutral Wrist Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/d61234dcdd41ae.webp",
+      "female": "assets/exercise-thumbnails/d61234dcdd41ae.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-seated-neutral-wrist-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-seated-neutral-wrist-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-side-bend",
+    "name": "Dumbbell Side Bend",
+    "variants": {
+      "male": "assets/exercise-thumbnails/8100c3d0f08f99.webp",
+      "female": "assets/exercise-thumbnails/8100c3d0f08f99.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-side-bend.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-side-bend.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-single-leg-calf-raise",
+    "name": "Dumbbell Single Leg Calf Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/0a89dc7dd5e146.webp",
+      "female": "assets/exercise-thumbnails/57ee01887eb113.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/single-leg-calf-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/single-leg-calf-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-single-leg-squat",
+    "name": "Dumbbell Single Leg Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/b876b2f17282a0.webp",
+      "female": "assets/exercise-thumbnails/b876b2f17282a0.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-single-leg-squat.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-single-leg-squat.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-squat",
+    "name": "Dumbbell Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/6ef3f754250fe0.webp",
+      "female": "assets/exercise-thumbnails/6ef3f754250fe0.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-squat.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-squat.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-standing-calf-raise",
+    "name": "Dumbbell Standing Calf Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/e07880cd23fede.webp",
+      "female": "assets/exercise-thumbnails/e07880cd23fede.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-standing-calf-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-standing-calf-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-upright-row",
+    "name": "Dumbbell Upright Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/3bb952e37be4c2.webp",
+      "female": "assets/exercise-thumbnails/3bb952e37be4c2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-upright-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/dumbbell-upright-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "ez-barbell-anti-gravity-press",
+    "name": "EZ Barbell Anti Gravity Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/325dcdc0cdb262.webp",
+      "female": "assets/exercise-thumbnails/325dcdc0cdb262.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/ez-barbell-anti-gravity-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/ez-barbell-anti-gravity-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "ez-barbell-biceps-curl",
+    "name": "EZ Barbell Biceps Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/33c2047266bffd.webp",
+      "female": "assets/exercise-thumbnails/33c2047266bffd.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/ez-barbell-biceps-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/ez-barbell-biceps-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "hammer-grip-pull-up",
+    "name": "Hammer Grip Pull-up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/cfb005ce504781.webp",
+      "female": "assets/exercise-thumbnails/cfb005ce504781.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/hammer-grip-pull-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/hammer-grip-pull-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "hundred-pilates",
+    "name": "Hundred Pilates",
+    "variants": {
+      "male": "assets/exercise-thumbnails/b40045f827b018.webp",
+      "female": "assets/exercise-thumbnails/b40045f827b018.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/hundred-pilates.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/hundred-pilates.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "incline-leg-hip-raise",
+    "name": "Incline Leg Hip Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/259160c20bdba7.webp",
+      "female": "assets/exercise-thumbnails/259160c20bdba7.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/incline-leg-hip-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/incline-leg-hip-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "incline-push-ups",
+    "name": "Incline Push-Ups",
+    "variants": {
+      "male": "assets/exercise-thumbnails/38e6294a58d9cd.webp",
+      "female": "assets/exercise-thumbnails/38e6294a58d9cd.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/incline-push-ups.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/incline-push-ups.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "inverted-row-between-chairs",
+    "name": "Inverted Row Between Chairs",
+    "variants": {
+      "male": "assets/exercise-thumbnails/e4767059faac91.webp",
+      "female": "assets/exercise-thumbnails/e4767059faac91.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/inverted-row-between-chairs.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/inverted-row-between-chairs.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "inverted-row-with-straps",
+    "name": "Inverted Row With Straps",
+    "variants": {
+      "male": "assets/exercise-thumbnails/f3c5d9a06750b2.webp",
+      "female": "assets/exercise-thumbnails/f3c5d9a06750b2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/inverted-row-with-straps.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/inverted-row-with-straps.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "jack-split-crunches",
+    "name": "Jack Split Crunches",
+    "variants": {
+      "male": "assets/exercise-thumbnails/0322219df55c43.webp",
+      "female": "assets/exercise-thumbnails/0322219df55c43.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/jack-split-crunches.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/jack-split-crunches.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "jackknife-floor",
+    "name": "Jackknife Floor",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a0ea8be8e56837.webp",
+      "female": "assets/exercise-thumbnails/a0ea8be8e56837.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/jackknife-floor.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/jackknife-floor.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "jackknife-pilates",
+    "name": "Jackknife Pilates",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a69f354f793a47.webp",
+      "female": "assets/exercise-thumbnails/a69f354f793a47.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/jackknife-pilates.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/jackknife-pilates.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "jump-rope",
+    "name": "Jump Rope",
+    "variants": {
+      "male": "assets/exercise-thumbnails/6aba61fab7ca79.webp",
+      "female": "assets/exercise-thumbnails/6aba61fab7ca79.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/jump-rope.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/jump-rope.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "jump-step-up",
+    "name": "Jump Step-up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/9c13b52fb11ac8.webp",
+      "female": "assets/exercise-thumbnails/9c13b52fb11ac8.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/jump-step-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/jump-step-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "jumping-jack",
+    "name": "Jumping Jack",
+    "variants": {
+      "male": "assets/exercise-thumbnails/b263b0b91d9353.webp",
+      "female": "assets/exercise-thumbnails/b263b0b91d9353.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/jumping-jack.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/jumping-jack.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "kettlebell-deadlift",
+    "name": "Kettlebell Deadlift",
+    "variants": {
+      "male": "assets/exercise-thumbnails/d77f74ddbd3088.webp",
+      "female": "assets/exercise-thumbnails/d77f74ddbd3088.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/kettlebell-deadlift.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/kettlebell-deadlift.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "landmine-180",
+    "name": "Landmine 180",
+    "variants": {
+      "male": "assets/exercise-thumbnails/e50ea90dc01ae1.webp",
+      "female": "assets/exercise-thumbnails/e50ea90dc01ae1.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/landmine-180.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/landmine-180.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "leg-curl-on-stability-ball",
+    "name": "Leg Curl (on stability ball)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/7aef54242d5411.webp",
+      "female": "assets/exercise-thumbnails/7aef54242d5411.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/leg-curl-on-stability-ball.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/leg-curl-on-stability-ball.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "leg-raise-hip-lift",
+    "name": "Leg Raise Hip Lift",
+    "variants": {
+      "male": "assets/exercise-thumbnails/9b09985fc628f4.webp",
+      "female": "assets/exercise-thumbnails/9b09985fc628f4.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/leg-raise-hip-lift.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/leg-raise-hip-lift.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-back-extension",
+    "name": "Machine Back Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/f7caff9809231d.webp",
+      "female": "assets/exercise-thumbnails/f7caff9809231d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/machine-back-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/machine-back-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-horizontal-leg-press",
+    "name": "Machine Horizontal Leg Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ffadf50ee41735.webp",
+      "female": "assets/exercise-thumbnails/51dd11df05837d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/leg-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/leg-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-kneeling-leg-curl",
+    "name": "Machine Kneeling Leg Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/0970f4af45bf1b.webp",
+      "female": "assets/exercise-thumbnails/426caedd30e575.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/single-leg-leg-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/single-leg-leg-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-lying-chest-press",
+    "name": "Machine Lying Chest Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/010ad69bc01678.webp",
+      "female": "assets/exercise-thumbnails/010ad69bc01678.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/machine-lying-chest-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/machine-lying-chest-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-reverse-hyperextension",
+    "name": "Machine Reverse Hyperextension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/cd14a7b4a193d7.webp",
+      "female": "assets/exercise-thumbnails/cd14a7b4a193d7.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/machine-reverse-hyperextension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/machine-reverse-hyperextension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-seated-leg-raise-crunch",
+    "name": "Machine Seated Leg Raise Crunch",
+    "variants": {
+      "male": "assets/exercise-thumbnails/0615e71955b5ae.webp",
+      "female": "assets/exercise-thumbnails/0615e71955b5ae.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/machine-seated-leg-raise-crunch.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/machine-seated-leg-raise-crunch.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-shrug",
+    "name": "Machine Shrug",
+    "variants": {
+      "male": "assets/exercise-thumbnails/e1e2afefd59a42.webp",
+      "female": "assets/exercise-thumbnails/e1e2afefd59a42.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/machine-shrug.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/machine-shrug.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-standing-hip-extension",
+    "name": "Machine Standing Hip Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/23373f3029be0e.webp",
+      "female": "assets/exercise-thumbnails/23373f3029be0e.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/machine-standing-hip-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/machine-standing-hip-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-standing-rear-kick",
+    "name": "Machine Standing Rear Kick",
+    "variants": {
+      "male": "assets/exercise-thumbnails/c5b1d979edec33.webp",
+      "female": "assets/exercise-thumbnails/4aec2c96c9333f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/cable-glute-kickback.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-glute-kickback.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-t-bar-row",
+    "name": "Machine T-bar Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/de2e817e7328d6.webp",
+      "female": "assets/exercise-thumbnails/cd55a2f398ebea.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/t-bar-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/t-bar-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-triceps-extension",
+    "name": "Machine Triceps Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/191f08fb3643d7.webp",
+      "female": "assets/exercise-thumbnails/191f08fb3643d7.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/machine-triceps-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/machine-triceps-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-triceps-extension-neutral-grip",
+    "name": "Machine Triceps Extension (neutral grip)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/494260d717c5aa.webp",
+      "female": "assets/exercise-thumbnails/494260d717c5aa.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/machine-triceps-extension-neutral-grip.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/machine-triceps-extension-neutral-grip.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "lying-floor-leg-raise",
+    "name": "Lying Floor Leg Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/9e2153231886b4.webp",
+      "female": "assets/exercise-thumbnails/9e2153231886b4.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/lying-floor-leg-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/lying-floor-leg-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "lying-hip-lift-on-stability-ball",
+    "name": "Lying Hip Lift (on stability ball)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/fde75ba11d055a.webp",
+      "female": "assets/exercise-thumbnails/fde75ba11d055a.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/lying-hip-lift-on-stability-ball.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/lying-hip-lift-on-stability-ball.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "lying-scissor-kick",
+    "name": "Lying Scissor Kick",
+    "variants": {
+      "male": "assets/exercise-thumbnails/973f28251bdcf6.webp",
+      "female": "assets/exercise-thumbnails/973f28251bdcf6.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/lying-scissor-kick.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/lying-scissor-kick.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "lying-straight-leg-raise",
+    "name": "Lying Straight Leg Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/9e82628c2300a7.webp",
+      "female": "assets/exercise-thumbnails/9e82628c2300a7.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/lying-straight-leg-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/lying-straight-leg-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "lying-supine-dumbbell-curl",
+    "name": "Lying Supine Dumbbell Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/7a0477bd6e9ba7.webp",
+      "female": "assets/exercise-thumbnails/7a0477bd6e9ba7.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/lying-supine-dumbbell-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/lying-supine-dumbbell-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "medicine-ball-sit-up-wall",
+    "name": "Medicine Ball Sit-up (wall)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/cb901a1ac3f533.webp",
+      "female": "assets/exercise-thumbnails/cb901a1ac3f533.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/medicine-ball-sit-up-wall.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/medicine-ball-sit-up-wall.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "otis-ups",
+    "name": "Otis-ups",
+    "variants": {
+      "male": "assets/exercise-thumbnails/449abac7858a6f.webp",
+      "female": "assets/exercise-thumbnails/449abac7858a6f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/otis-ups.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/otis-ups.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "pull-up-wide-back-grip",
+    "name": "Pull-up (wide back grip)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/809956b8b643b7.webp",
+      "female": "assets/exercise-thumbnails/809956b8b643b7.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/pull-up-wide-back-grip.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/pull-up-wide-back-grip.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "rear-decline-bridge",
+    "name": "Rear Decline Bridge",
+    "variants": {
+      "male": "assets/exercise-thumbnails/0dbf9829ea18ff.webp",
+      "female": "assets/exercise-thumbnails/0dbf9829ea18ff.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/rear-decline-bridge.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/rear-decline-bridge.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "reverse-crunch",
+    "name": "Reverse Crunch",
+    "variants": {
+      "male": "assets/exercise-thumbnails/2b6bb14c73bb0f.webp",
+      "female": "assets/exercise-thumbnails/2b6bb14c73bb0f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/reverse-crunch.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/reverse-crunch.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "reverse-grip-machine-lat-pulldown",
+    "name": "Reverse Grip Machine Lat Pulldown",
+    "variants": {
+      "male": "assets/exercise-thumbnails/8c5a5f32abdabe.webp",
+      "female": "assets/exercise-thumbnails/8c5a5f32abdabe.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/reverse-grip-machine-lat-pulldown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/reverse-grip-machine-lat-pulldown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "ring-high-row",
+    "name": "Ring High Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/eee3fb1bacba76.webp",
+      "female": "assets/exercise-thumbnails/eee3fb1bacba76.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/ring-high-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/ring-high-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "rotate-push-up",
+    "name": "Rotate Push up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/3ad51e01589ce6.webp",
+      "female": "assets/exercise-thumbnails/3ad51e01589ce6.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/rotate-push-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/rotate-push-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "russian-twist-on-stability-ball-arms-straight",
+    "name": "Russian Twist (on stability ball arms straight)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/00468b7028cb0e.webp",
+      "female": "assets/exercise-thumbnails/00468b7028cb0e.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/russian-twist-on-stability-ball-arms-straight.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/russian-twist-on-stability-ball-arms-straight.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "scapula-dips",
+    "name": "Scapula Dips",
+    "variants": {
+      "male": "assets/exercise-thumbnails/b4227205fd4327.webp",
+      "female": "assets/exercise-thumbnails/b4227205fd4327.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/scapula-dips.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/scapula-dips.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "seated-twist-on-stability-ball",
+    "name": "Seated Twist (on stability ball)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/6498cb231ed9dd.webp",
+      "female": "assets/exercise-thumbnails/6498cb231ed9dd.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/seated-twist-on-stability-ball.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/seated-twist-on-stability-ball.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "seated-twist-straight-arm",
+    "name": "Seated Twist (straight arm)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/seated-twist-straight-arm.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/seated-twist-straight-arm.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/seated-twist-straight-arm.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "side-bend-on-stability-ball",
+    "name": "Side Bend (on stability ball)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/d2c0ebb7524cae.webp",
+      "female": "assets/exercise-thumbnails/d2c0ebb7524cae.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/side-bend-on-stability-ball.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/side-bend-on-stability-ball.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "sit-up",
+    "name": "Sit-Up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ff05139baf8a1c.webp",
+      "female": "assets/exercise-thumbnails/ff05139baf8a1c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/sit-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/sit-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "sit-up-on-exercise-ball",
+    "name": "Sit-up On Exercise Ball",
+    "variants": {
+      "male": "assets/exercise-thumbnails/b8be7f3d00aaef.webp",
+      "female": "assets/exercise-thumbnails/b8be7f3d00aaef.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/sit-up-on-exercise-ball.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/sit-up-on-exercise-ball.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "sled-45-degree-leg-wide-press",
+    "name": "Sled 45 Degree Leg Wide Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/6c9739447befdb.webp",
+      "female": "assets/exercise-thumbnails/6c9739447befdb.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/sled-45-degree-leg-wide-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/sled-45-degree-leg-wide-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "smith-calf-raise",
+    "name": "Smith Calf Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/71272e47b9a187.webp",
+      "female": "assets/exercise-thumbnails/71272e47b9a187.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/smith-calf-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/smith-calf-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "smith-chair-squat",
+    "name": "Smith Chair Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/07224f56600709.webp",
+      "female": "assets/exercise-thumbnails/0428c0fdadc7ab.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/smith-machine-squat.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/smith-machine-squat.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "smith-deadlift-deadlift",
+    "name": "Smith Deadlift - Deadlift",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a36e8238d96dca.webp",
+      "female": "assets/exercise-thumbnails/a36e8238d96dca.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/smith-deadlift-deadlift.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/smith-deadlift-deadlift.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "smith-leg-press",
+    "name": "Smith Leg Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ccb484beb7266d.webp",
+      "female": "assets/exercise-thumbnails/ccb484beb7266d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/smith-leg-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/smith-leg-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "spell-caster",
+    "name": "Spell Caster",
+    "variants": {
+      "male": "assets/exercise-thumbnails/b737ca8975a2a4.webp",
+      "female": "assets/exercise-thumbnails/b737ca8975a2a4.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/spell-caster.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/spell-caster.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "treadmill-running",
+    "name": "Treadmill Running",
+    "variants": {
+      "male": "assets/exercise-thumbnails/60f8a79b57326f.webp",
+      "female": "assets/exercise-thumbnails/60f8a79b57326f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/treadmill-running.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/treadmill-running.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "twisting-crunch",
+    "name": "Twisting Crunch",
+    "variants": {
+      "male": "assets/exercise-thumbnails/62c7a46632937f.webp",
+      "female": "assets/exercise-thumbnails/62c7a46632937f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/twisting-crunch.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/twisting-crunch.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "v-up",
+    "name": "V-up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/5940b53079021c.webp",
+      "female": "assets/exercise-thumbnails/5940b53079021c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/v-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/v-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "vertical-leg-raise-on-parallel-bars",
+    "name": "Vertical Leg Raise (on parallel bars)",
+    "variants": {
+      "male": "assets/exercise-thumbnails/30def1d70a8ae0.webp",
+      "female": "assets/exercise-thumbnails/30def1d70a8ae0.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/vertical-leg-raise-on-parallel-bars.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/vertical-leg-raise-on-parallel-bars.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "weighted-leg-extension-crunch",
+    "name": "Weighted Leg Extension Crunch",
+    "variants": {
+      "male": "assets/exercise-thumbnails/8ee5939c1e254a.webp",
+      "female": "assets/exercise-thumbnails/8ee5939c1e254a.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/weighted-leg-extension-crunch.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/weighted-leg-extension-crunch.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "weighted-lying-twist",
+    "name": "Weighted Lying Twist",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ab8d7e77e61358.webp",
+      "female": "assets/exercise-thumbnails/ab8d7e77e61358.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/female/weighted-lying-twist.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/weighted-lying-twist.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "weighted-sissy-squat",
+    "name": "Weighted Sissy Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/45534d84ccc515.webp",
+      "female": "assets/exercise-thumbnails/45534d84ccc515.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/weighted-sissy-squat.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/weighted-sissy-squat.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "wide-grip-push-ups",
+    "name": "Wide Grip Push-ups",
+    "variants": {
+      "male": "assets/exercise-thumbnails/7a8d194acc95cb.webp",
+      "female": "assets/exercise-thumbnails/7a8d194acc95cb.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/wide-grip-push-ups.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/wide-grip-push-ups.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-bench-press",
+    "name": "Barbell Bench Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/82b355756bcbaa.webp",
+      "female": "assets/exercise-thumbnails/2f22e216cbcaae.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-bench-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/barbell-bench-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-bench-press",
+    "name": "Dumbbell Bench Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a74dbe6233d4b9.webp",
+      "female": "assets/exercise-thumbnails/20f6b1c9beb708.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-bench-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/dumbbell-bench-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "incline-barbell-press",
+    "name": "Incline Barbell Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/2ec1e2bfad1f87.webp",
+      "female": "assets/exercise-thumbnails/134496e633540e.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/incline-barbell-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/incline-barbell-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "incline-dumbbell-press",
+    "name": "Incline Dumbbell Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/1bdcbcda615ca8.webp",
+      "female": "assets/exercise-thumbnails/3eca3bc5ab7d91.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/incline-dumbbell-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/incline-dumbbell-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-chest-press",
+    "name": "Machine Chest Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/667b2fd8b7c9f0.webp",
+      "female": "assets/exercise-thumbnails/1e4149770dbacb.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/machine-chest-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/machine-chest-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-fly",
+    "name": "Cable Fly",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a2362ae04d3337.webp",
+      "female": "assets/exercise-thumbnails/034df71374ba9c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-fly.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-fly.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "pec-deck",
+    "name": "Pec Deck",
+    "variants": {
+      "male": "assets/exercise-thumbnails/6e401a8e9cc49d.webp",
+      "female": "assets/exercise-thumbnails/a1141fd49033f4.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/pec-deck.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/pec-deck.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "push-up",
+    "name": "Push-Up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/e0284e53ae19d9.webp",
+      "female": "assets/exercise-thumbnails/ac0088bdd26bb6.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/push-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/push-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "pull-up",
+    "name": "Pull-Up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/38e1979d945f97.webp",
+      "female": "assets/exercise-thumbnails/11714a8b6cfd8c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/pull-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/pull-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "weighted-pull-up",
+    "name": "Weighted Pull-Up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/weighted-pull-up.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/pull-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/pull-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "chin-up",
+    "name": "Chin-Up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/4df6696320d352.webp",
+      "female": "assets/exercise-thumbnails/816fed6587dbf6.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/chin-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/chin-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "lat-pulldown",
+    "name": "Lat Pulldown",
+    "variants": {
+      "male": "assets/exercise-thumbnails/83d5b343048626.webp",
+      "female": "assets/exercise-thumbnails/9963954e2206f8.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/lat-pulldown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/lat-pulldown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-row",
+    "name": "Barbell Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/2522f53548df0b.webp",
+      "female": "assets/exercise-thumbnails/d19e2e70121974.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/barbell-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "single-arm-dumbbell-row",
+    "name": "Single-Arm Dumbbell Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/0c5042694f47f4.webp",
+      "female": "assets/exercise-thumbnails/7dc2eb78b90991.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/single-arm-dumbbell-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/single-arm-dumbbell-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "chest-supported-row",
+    "name": "Chest-Supported Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/60467fea79ba95.webp",
+      "female": "assets/exercise-thumbnails/5c314e05fac990.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/chest-supported-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/chest-supported-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "seated-cable-row",
+    "name": "Seated Cable Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/0f5515eeb1d71b.webp",
+      "female": "assets/exercise-thumbnails/2b2897ebd4846b.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/seated-cable-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/seated-cable-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-row",
+    "name": "Machine Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ceaa7bb7396a39.webp",
+      "female": "assets/exercise-thumbnails/b1f87b5b17ea35.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/plate-loaded-high-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/plate-loaded-high-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "straight-arm-pulldown",
+    "name": "Straight-Arm Pulldown",
+    "variants": {
+      "male": "assets/exercise-thumbnails/130b203bdc2ff4.webp",
+      "female": "assets/exercise-thumbnails/8ccb70d47c88b2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/straight-arm-pulldown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/straight-arm-pulldown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-lat-pullover",
+    "name": "Cable Lat Pullover",
+    "variants": {
+      "male": "assets/exercise-thumbnails/130b203bdc2ff4.webp",
+      "female": "assets/exercise-thumbnails/8ccb70d47c88b2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/straight-arm-pulldown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/straight-arm-pulldown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "back-extension",
+    "name": "Back Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/299e9758108bc4.webp",
+      "female": "assets/exercise-thumbnails/f774268391bcc5.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/back-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/back-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "overhead-press",
+    "name": "Overhead Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/26ced5be1cfa4c.webp",
+      "female": "assets/exercise-thumbnails/03b975d62bb756.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/overhead-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/overhead-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-shoulder-press",
+    "name": "Dumbbell Shoulder Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/5246b61bcac196.webp",
+      "female": "assets/exercise-thumbnails/eaebbc79c91648.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-shoulder-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/dumbbell-shoulder-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-shoulder-press",
+    "name": "Machine Shoulder Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/f1658556d77f3b.webp",
+      "female": "assets/exercise-thumbnails/f8f0b732f5863b.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/machine-shoulder-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/machine-shoulder-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "lateral-raise",
+    "name": "Lateral Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/24f6891c70c113.webp",
+      "female": "assets/exercise-thumbnails/0220e731617238.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/lateral-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/lateral-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-lateral-raise",
+    "name": "Cable Lateral Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/5348ca10330631.webp",
+      "female": "assets/exercise-thumbnails/7dfdb291555a91.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-lateral-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-lateral-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "reverse-pec-deck",
+    "name": "Reverse Pec Deck",
+    "variants": {
+      "male": "assets/exercise-thumbnails/9ef5cd48ca900f.webp",
+      "female": "assets/exercise-thumbnails/e834f1dd573843.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/reverse-pec-deck.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/reverse-pec-deck.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "face-pull",
+    "name": "Face Pull",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/face-pull.webp",
+      "female": "assets/exercise-thumbnails/custom/face-pull.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/face-pull.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/face-pull.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "rear-delt-fly",
+    "name": "Rear-Delt Fly",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a2704e88ef3a0f.webp",
+      "female": "assets/exercise-thumbnails/59929026c2d8ce.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/rear-delt-fly.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/rear-delt-fly.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "upright-row",
+    "name": "Upright Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/3661badf5da1b5.webp",
+      "female": "assets/exercise-thumbnails/7b9460ed73c8bf.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/upright-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/upright-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "barbell-curl",
+    "name": "Barbell Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/35904c042a9b9e.webp",
+      "female": "assets/exercise-thumbnails/cf213c0622e459.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/barbell-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-curl",
+    "name": "Dumbbell Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a786ba7b64688f.webp",
+      "female": "assets/exercise-thumbnails/00cfbeb76bb7f2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/dumbbell-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/dumbbell-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "hammer-curl",
+    "name": "Hammer Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/b28f4230e52da0.webp",
+      "female": "assets/exercise-thumbnails/04a50854c875f1.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/hammer-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/hammer-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "incline-dumbbell-curl",
+    "name": "Incline Dumbbell Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/c61ae64fa26b27.webp",
+      "female": "assets/exercise-thumbnails/cda5ee7c17d4fe.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/incline-dumbbell-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/incline-dumbbell-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "preacher-curl",
+    "name": "Preacher Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/f2b09c3164dc70.webp",
+      "female": "assets/exercise-thumbnails/f40ba5451b788c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/preacher-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/preacher-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-curl",
+    "name": "Cable Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a9b4c294a53e42.webp",
+      "female": "assets/exercise-thumbnails/f9031cf85826b2.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "tricep-pushdown",
+    "name": "Triceps Pushdown",
+    "variants": {
+      "male": "assets/exercise-thumbnails/934befd6c6dc17.webp",
+      "female": "assets/exercise-thumbnails/8e962ff1f86dd9.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/tricep-pushdown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/tricep-pushdown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "overhead-tricep-extension",
+    "name": "Overhead Cable Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/c7276e6666d7eb.webp",
+      "female": "assets/exercise-thumbnails/136352914dc10e.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/overhead-tricep-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/overhead-tricep-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "skull-crusher",
+    "name": "Skull Crusher",
+    "variants": {
+      "male": "assets/exercise-thumbnails/1e3167361b3b31.webp",
+      "female": "assets/exercise-thumbnails/71274c785eabee.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/skull-crusher.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/skull-crusher.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "close-grip-bench-press",
+    "name": "Close-Grip Bench Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/7e087c936fad9f.webp",
+      "female": "assets/exercise-thumbnails/7e087c936fad9f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/close-grip-bench-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/close-grip-bench-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-overhead-extension",
+    "name": "Dumbbell Overhead Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/55fbc3fbef4189.webp",
+      "female": "assets/exercise-thumbnails/d5491d6ca1533d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/dumbbell-overhead-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/dumbbell-overhead-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dip",
+    "name": "Assisted or Bodyweight Dip",
+    "variants": {
+      "male": "assets/exercise-thumbnails/719e930f8fc259.webp",
+      "female": "assets/exercise-thumbnails/767b9d6712baf9.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/dip.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/dip.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "back-squat",
+    "name": "Back Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/d907960ab61126.webp",
+      "female": "assets/exercise-thumbnails/4e609a14f7369e.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/back-squat.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/back-squat.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "front-squat",
+    "name": "Front Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/9ca9b39eb07d01.webp",
+      "female": "assets/exercise-thumbnails/083d7ef2ec58d5.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/front-squat.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/front-squat.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "leg-press",
+    "name": "Leg Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ffadf50ee41735.webp",
+      "female": "assets/exercise-thumbnails/51dd11df05837d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/leg-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/leg-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "hack-squat",
+    "name": "Hack Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/c0082db5bb9d0d.webp",
+      "female": "assets/exercise-thumbnails/7d26106c17a735.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/hack-squat.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/hack-squat.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "bulgarian-split-squat",
+    "name": "Bulgarian Split Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/bulgarian-split-squat.webp",
+      "female": "assets/exercise-thumbnails/custom/bulgarian-split-squat.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "lunge",
+    "name": "Lunge",
+    "variants": {
+      "male": "assets/exercise-thumbnails/60172a46de0314.webp",
+      "female": "assets/exercise-thumbnails/5df2e2fcde99cf.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/lunge.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/lunge.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "leg-extension",
+    "name": "Leg Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/4c7ba340c0c9eb.webp",
+      "female": "assets/exercise-thumbnails/3f587e7cf0f25b.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/leg-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/leg-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "step-up",
+    "name": "Step-Up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/step-up.webp",
+      "female": "assets/exercise-thumbnails/custom/step-up.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "romanian-deadlift",
+    "name": "Romanian Deadlift",
+    "variants": {
+      "male": "assets/exercise-thumbnails/bf81935d9f1e76.webp",
+      "female": "assets/exercise-thumbnails/3a4fd56cef5d09.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/romanian-deadlift.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/romanian-deadlift.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "conventional-deadlift",
+    "name": "Conventional Deadlift",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/conventional-deadlift.webp",
+      "female": "assets/exercise-thumbnails/custom/conventional-deadlift.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "trap-bar-deadlift",
+    "name": "Trap-Bar Deadlift",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/trap-bar-deadlift.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "hip-thrust",
+    "name": "Hip Thrust",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/hip-thrust.webp",
+      "female": "assets/exercise-thumbnails/custom/hip-thrust.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/hip-thrust.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/hip-thrust.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "glute-bridge",
+    "name": "Glute Bridge",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/glute-bridge.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/glute-bridge.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/glute-bridge.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "leg-curl",
+    "name": "Lying Leg Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/2a52bd2ef1c9dc.webp",
+      "female": "assets/exercise-thumbnails/830783f7567088.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/leg-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/leg-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "seated-leg-curl",
+    "name": "Seated Leg Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/35a089acfc1cc0.webp",
+      "female": "assets/exercise-thumbnails/22c4ff67f1915f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/seated-leg-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/seated-leg-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "good-morning",
+    "name": "Good Morning",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/good-morning.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-pull-through",
+    "name": "Cable Pull-Through",
+    "variants": {
+      "male": "assets/exercise-thumbnails/d8dd051925cbef.webp",
+      "female": "assets/exercise-thumbnails/47ffd64d9fb4b3.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/cable-pull-through.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-pull-through.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "single-leg-romanian-deadlift",
+    "name": "Single-Leg Romanian Deadlift",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/single-leg-romanian-deadlift.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "standing-calf-raise",
+    "name": "Standing Calf Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/54fb07a925bd5e.webp",
+      "female": "assets/exercise-thumbnails/0906a454fd0ded.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/standing-calf-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/standing-calf-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "seated-calf-raise",
+    "name": "Seated Calf Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/535286ec8f9cb3.webp",
+      "female": "assets/exercise-thumbnails/52f9ad041a7c1d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/seated-calf-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/seated-calf-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "leg-press-calf-raise",
+    "name": "Leg-Press Calf Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/13ffa62ae2c9ac.webp",
+      "female": "assets/exercise-thumbnails/fcc3a9d434d629.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/leg-press-calf-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/leg-press-calf-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "single-leg-calf-raise",
+    "name": "Single-Leg Calf Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/0a89dc7dd5e146.webp",
+      "female": "assets/exercise-thumbnails/57ee01887eb113.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/single-leg-calf-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/single-leg-calf-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "plank",
+    "name": "Plank",
+    "variants": {
+      "male": "assets/exercise-thumbnails/cc2d0e8c5e3015.webp",
+      "female": "assets/exercise-thumbnails/b0b2a5b1a35c1f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/plank.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/plank.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "side-plank",
+    "name": "Side Plank",
+    "variants": {
+      "male": "assets/exercise-thumbnails/15cfd5de43defd.webp",
+      "female": "assets/exercise-thumbnails/785d10da98ce0c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/side-plank.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/side-plank.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dead-bug",
+    "name": "Dead Bug",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/dead-bug.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "bird-dog",
+    "name": "Bird Dog",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/bird-dog.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-crunch",
+    "name": "Cable Crunch",
+    "variants": {
+      "male": "assets/exercise-thumbnails/9082407e5a80dd.webp",
+      "female": "assets/exercise-thumbnails/ed00e8eb28037a.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/cable-crunch.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-crunch.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "pallof-press",
+    "name": "Pallof Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/pallof-press.webp",
+      "female": "assets/exercise-thumbnails/custom/pallof-press.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "hanging-knee-raise",
+    "name": "Hanging Knee Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/e744e1ea1075d8.webp",
+      "female": "assets/exercise-thumbnails/b70e0f12a9657f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/hanging-knee-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/hanging-knee-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "ab-wheel-rollout",
+    "name": "Ab Wheel Rollout",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/ab-wheel-rollout.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "indoor-rower",
+    "name": "Indoor Rower",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/indoor-rower.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "ski-erg",
+    "name": "Ski Erg",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/ski-erg.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "stationary-bike",
+    "name": "Stationary Bike",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a9080cd3595a62.webp",
+      "female": "assets/exercise-thumbnails/9f44fbc3033847.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/stationary-bike.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/stationary-bike.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "running",
+    "name": "Running",
+    "variants": {
+      "male": "assets/exercise-thumbnails/6b198de602c3d1.webp",
+      "female": "assets/exercise-thumbnails/6f46ebd830547e.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/running.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/running.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "goblet-squat",
+    "name": "Goblet Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a28a791027ec25.webp",
+      "female": "assets/exercise-thumbnails/4c6c12d0fdd062.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/goblet-squat.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/goblet-squat.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "bodyweight-squat",
+    "name": "Bodyweight Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/e27d8eee421767.webp",
+      "female": "assets/exercise-thumbnails/d752bb8fc6f4f7.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/bodyweight-squat.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/bodyweight-squat.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "pike-push-up",
+    "name": "Pike Push-Up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/pike-push-up.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "smith-machine-bench-press",
+    "name": "Smith Machine Bench Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/smith-machine-bench-press.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/barbell-bench-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/barbell-bench-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "smith-machine-incline-press",
+    "name": "Smith Machine Incline Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/smith-machine-incline-press.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/incline-barbell-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/incline-barbell-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "incline-machine-chest-press",
+    "name": "Incline Machine Chest Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/d8a3a0c5532f57.webp",
+      "female": "assets/exercise-thumbnails/570bed140d8610.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/incline-machine-chest-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/incline-machine-chest-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "converging-chest-press",
+    "name": "Converging Chest Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/667b2fd8b7c9f0.webp",
+      "female": "assets/exercise-thumbnails/1e4149770dbacb.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/machine-chest-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/machine-chest-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "deficit-push-up",
+    "name": "Deficit Push-Up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/20a80fe3ad3c05.webp",
+      "female": "assets/exercise-thumbnails/9328efeb1f7c45.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/deficit-push-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/deficit-push-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "weighted-push-up",
+    "name": "Weighted Push-Up",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/weighted-push-up.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/push-up.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/push-up.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-fly",
+    "name": "Dumbbell Fly",
+    "variants": {
+      "male": "assets/exercise-thumbnails/33ca908101c1d6.webp",
+      "female": "assets/exercise-thumbnails/a7f2dfc9588c87.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/dumbbell-fly.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/dumbbell-fly.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "incline-dumbbell-fly",
+    "name": "Incline Dumbbell Fly",
+    "variants": {
+      "male": "assets/exercise-thumbnails/13288812646808.webp",
+      "female": "assets/exercise-thumbnails/47d554dfe470ad.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/incline-dumbbell-fly.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/incline-dumbbell-fly.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "low-to-high-cable-fly",
+    "name": "Low-to-High Cable Fly",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/low-to-high-cable-fly.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-fly.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-fly.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "high-to-low-cable-fly",
+    "name": "High-to-Low Cable Fly",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a2362ae04d3337.webp",
+      "female": "assets/exercise-thumbnails/034df71374ba9c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-fly.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-fly.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "single-arm-cable-lat-pulldown",
+    "name": "Single-Arm Cable Lat Pulldown",
+    "variants": {
+      "male": "assets/exercise-thumbnails/1f509bae283210.webp",
+      "female": "assets/exercise-thumbnails/eacafd956a78c9.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/single-arm-cable-lat-pulldown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/single-arm-cable-lat-pulldown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "neutral-grip-lat-pulldown",
+    "name": "Neutral-Grip Lat Pulldown",
+    "variants": {
+      "male": "assets/exercise-thumbnails/9d0538348613c3.webp",
+      "female": "assets/exercise-thumbnails/bdad9f5e7764a0.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/neutral-grip-lat-pulldown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/neutral-grip-lat-pulldown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "wide-grip-lat-pulldown",
+    "name": "Wide-Grip Lat Pulldown",
+    "variants": {
+      "male": "assets/exercise-thumbnails/4dc3e79cfae8e1.webp",
+      "female": "assets/exercise-thumbnails/ca2b799f78a4bd.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/wide-grip-lat-pulldown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/wide-grip-lat-pulldown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "underhand-lat-pulldown",
+    "name": "Underhand Lat Pulldown",
+    "variants": {
+      "male": "assets/exercise-thumbnails/c72d29f2604c48.webp",
+      "female": "assets/exercise-thumbnails/c588b85987ffaa.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/underhand-lat-pulldown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/underhand-lat-pulldown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "chest-supported-t-bar-row",
+    "name": "Chest-Supported T-Bar Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/de2e817e7328d6.webp",
+      "female": "assets/exercise-thumbnails/cd55a2f398ebea.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/t-bar-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/t-bar-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "plate-loaded-high-row",
+    "name": "Plate-Loaded High Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/ceaa7bb7396a39.webp",
+      "female": "assets/exercise-thumbnails/b1f87b5b17ea35.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/plate-loaded-high-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/plate-loaded-high-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "one-arm-machine-row",
+    "name": "One-Arm Machine Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/one-arm-machine-row.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-pullover",
+    "name": "Dumbbell Pullover",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/dumbbell-pullover.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "t-bar-row",
+    "name": "T-Bar Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/de2e817e7328d6.webp",
+      "female": "assets/exercise-thumbnails/cd55a2f398ebea.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/t-bar-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/t-bar-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "seal-row",
+    "name": "Seal Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/96f5598e6c24bd.webp",
+      "female": "assets/exercise-thumbnails/1903bb0bf775df.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/seal-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/seal-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "meadows-row",
+    "name": "Meadows Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/meadows-row.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "wide-grip-cable-row",
+    "name": "Wide-Grip Cable Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/009f244d19f86e.webp",
+      "female": "assets/exercise-thumbnails/79c5d978ddf3f4.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/wide-grip-cable-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/wide-grip-cable-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-lateral-raise",
+    "name": "Machine Lateral Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/379e64a19876ca.webp",
+      "female": "assets/exercise-thumbnails/679365ec95432c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/machine-lateral-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/machine-lateral-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "leaning-cable-lateral-raise",
+    "name": "Leaning Cable Lateral Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/leaning-cable-lateral-raise.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-lateral-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-lateral-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cuffed-cable-lateral-raise",
+    "name": "Cuffed Cable Lateral Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/cuffed-cable-lateral-raise.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/cable-lateral-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-lateral-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "smith-machine-shoulder-press",
+    "name": "Smith Machine Shoulder Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/6cfba3e1225c80.webp",
+      "female": "assets/exercise-thumbnails/53cf8a9374de80.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/smith-machine-shoulder-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/smith-machine-shoulder-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "arnold-press",
+    "name": "Arnold Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/f3875d430e00f8.webp",
+      "female": "assets/exercise-thumbnails/d3b575b5621d3d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/arnold-press.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/arnold-press.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-y-raise",
+    "name": "Cable Y-Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/cable-y-raise.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-rear-delt-fly",
+    "name": "Cable Rear-Delt Fly",
+    "variants": {
+      "male": "assets/exercise-thumbnails/c5f497d5aae977.webp",
+      "female": "assets/exercise-thumbnails/1a3981ce7e5a18.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/cable-rear-delt-fly.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-rear-delt-fly.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "chest-supported-rear-delt-row",
+    "name": "Chest-Supported Rear-Delt Row",
+    "variants": {
+      "male": "assets/exercise-thumbnails/db2761e65ec9f1.webp",
+      "female": "assets/exercise-thumbnails/6f9747b3636818.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/chest-supported-rear-delt-row.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/chest-supported-rear-delt-row.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-shrug",
+    "name": "Dumbbell Shrug",
+    "variants": {
+      "male": "assets/exercise-thumbnails/c05ddbceae8b71.webp",
+      "female": "assets/exercise-thumbnails/8c238e56ab0c3e.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/dumbbell-shrug.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/dumbbell-shrug.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "smith-machine-shrug",
+    "name": "Smith Machine Shrug",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/smith-machine-shrug.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/smith-machine-shrug.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/smith-machine-shrug.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "bayesian-cable-curl",
+    "name": "Bayesian Cable Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/bayesian-cable-curl.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-preacher-curl",
+    "name": "Dumbbell Preacher Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/eeecc194eb64aa.webp",
+      "female": "assets/exercise-thumbnails/0b097983904d2e.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/dumbbell-preacher-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/dumbbell-preacher-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "ez-bar-preacher-curl",
+    "name": "EZ-Bar Preacher Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/ez-bar-preacher-curl.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/preacher-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/preacher-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-preacher-curl",
+    "name": "Cable Preacher Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/cable-preacher-curl.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/preacher-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/preacher-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-preacher-curl",
+    "name": "Machine Preacher Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/fb0f3cd6e05edb.webp",
+      "female": "assets/exercise-thumbnails/5e860c250af71c.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/machine-preacher-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/machine-preacher-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cross-body-hammer-curl",
+    "name": "Cross-Body Hammer Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/069604928b2fd9.webp",
+      "female": "assets/exercise-thumbnails/312044ae4befe9.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/cross-body-hammer-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cross-body-hammer-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "spider-curl",
+    "name": "Spider Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/3f61a80790efdd.webp",
+      "female": "assets/exercise-thumbnails/6339302355e8ad.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/spider-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/spider-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "reverse-curl",
+    "name": "Reverse Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/reverse-curl.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "single-arm-overhead-cable-extension",
+    "name": "Single-Arm Overhead Cable Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/single-arm-overhead-cable-extension.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/overhead-tricep-extension.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/overhead-tricep-extension.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "cross-body-cable-triceps-extension",
+    "name": "Cross-Body Cable Triceps Extension",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/cross-body-cable-triceps-extension.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-skull-crusher",
+    "name": "Cable Skull Crusher",
+    "variants": {
+      "male": "assets/exercise-thumbnails/61cac919da9250.webp",
+      "female": "assets/exercise-thumbnails/774a55498ead9d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/cable-skull-crusher.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-skull-crusher.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "ez-bar-skull-crusher",
+    "name": "EZ-Bar Skull Crusher",
+    "variants": {
+      "male": "assets/exercise-thumbnails/997560f20b908a.webp",
+      "female": "assets/exercise-thumbnails/4d896124f2d273.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/ez-bar-skull-crusher.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/ez-bar-skull-crusher.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-dip",
+    "name": "Machine Dip",
+    "variants": {
+      "male": "assets/exercise-thumbnails/6656d6a83dc171.webp",
+      "female": "assets/exercise-thumbnails/2f1a2b846a04d7.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/machine-dip.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/machine-dip.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "weighted-dip",
+    "name": "Weighted Dip",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/weighted-dip.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/dip.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/dip.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "single-arm-triceps-pushdown",
+    "name": "Single-Arm Triceps Pushdown",
+    "variants": {
+      "male": "assets/exercise-thumbnails/934befd6c6dc17.webp",
+      "female": "assets/exercise-thumbnails/8e962ff1f86dd9.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/tricep-pushdown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/tricep-pushdown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "rope-triceps-pushdown",
+    "name": "Rope Triceps Pushdown",
+    "variants": {
+      "male": "assets/exercise-thumbnails/3218db04e33281.webp",
+      "female": "assets/exercise-thumbnails/78216e57319d20.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/rope-triceps-pushdown.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/rope-triceps-pushdown.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "pendulum-squat",
+    "name": "Pendulum Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/pendulum-squat.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "smith-machine-squat",
+    "name": "Smith Machine Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/07224f56600709.webp",
+      "female": "assets/exercise-thumbnails/0428c0fdadc7ab.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/smith-machine-squat.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/smith-machine-squat.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "reverse-nordic-curl",
+    "name": "Reverse Nordic Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/reverse-nordic-curl.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "belt-squat",
+    "name": "Belt Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/belt-squat.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "heel-elevated-squat",
+    "name": "Heel-Elevated Squat",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/heel-elevated-squat.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "walking-lunge",
+    "name": "Walking Lunge",
+    "variants": {
+      "male": "assets/exercise-thumbnails/60172a46de0314.webp",
+      "female": "assets/exercise-thumbnails/5df2e2fcde99cf.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/form-videos/lunge.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/lunge.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "reverse-lunge",
+    "name": "Reverse Lunge",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/reverse-lunge.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "single-leg-leg-press",
+    "name": "Single-Leg Leg Press",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/single-leg-leg-press.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "single-leg-leg-curl",
+    "name": "Single-Leg Leg Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/single-leg-leg-curl.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/single-leg-leg-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/single-leg-leg-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "nordic-hamstring-curl",
+    "name": "Nordic Hamstring Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/nordic-hamstring-curl.webp",
+      "female": "assets/exercise-thumbnails/custom/nordic-hamstring-curl.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "smith-machine-romanian-deadlift",
+    "name": "Smith Machine Romanian Deadlift",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/smith-machine-romanian-deadlift.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "dumbbell-romanian-deadlift",
+    "name": "Dumbbell Romanian Deadlift",
+    "variants": {
+      "male": "assets/exercise-thumbnails/5bb84b0b5ee025.webp",
+      "female": "assets/exercise-thumbnails/20265a6064b630.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/dumbbell-romanian-deadlift.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/dumbbell-romanian-deadlift.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "glute-ham-raise",
+    "name": "Glute-Ham Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/glute-ham-raise.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-hip-thrust",
+    "name": "Machine Hip Thrust",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/machine-hip-thrust.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "smith-machine-hip-thrust",
+    "name": "Smith Machine Hip Thrust",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/smith-machine-hip-thrust.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "cable-glute-kickback",
+    "name": "Cable Glute Kickback",
+    "variants": {
+      "male": "assets/exercise-thumbnails/c5b1d979edec33.webp",
+      "female": "assets/exercise-thumbnails/4aec2c96c9333f.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/cable-glute-kickback.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/cable-glute-kickback.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "hip-abduction-machine",
+    "name": "Hip Abduction Machine",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/hip-abduction-machine.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/hip-abduction-machine.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/hip-abduction-machine.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "hip-adduction-machine",
+    "name": "Hip Adduction Machine",
+    "variants": {
+      "male": "assets/exercise-thumbnails/b3bb023c0f6d03.webp",
+      "female": "assets/exercise-thumbnails/93932c0f3ff66d.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/hip-adduction-machine.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/hip-adduction-machine.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "copenhagen-plank",
+    "name": "Copenhagen Plank",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/copenhagen-plank.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "tibialis-raise",
+    "name": "Tibialis Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/tibialis-raise.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "hanging-leg-raise",
+    "name": "Hanging Leg Raise",
+    "variants": {
+      "male": "assets/exercise-thumbnails/715187728c15c9.webp",
+      "female": "assets/exercise-thumbnails/77f248c4cab5cd.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/hanging-leg-raise.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/hanging-leg-raise.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "machine-crunch",
+    "name": "Machine Crunch",
+    "variants": {
+      "male": "assets/exercise-thumbnails/37030bd18b08fb.webp",
+      "female": "assets/exercise-thumbnails/d29b22268f4138.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/machine-crunch.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/machine-crunch.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "wrist-curl",
+    "name": "Wrist Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/a4b1e2b85327a2.webp",
+      "female": "assets/exercise-thumbnails/c5e6be2bd2b448.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/wrist-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/wrist-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "reverse-wrist-curl",
+    "name": "Reverse Wrist Curl",
+    "variants": {
+      "male": "assets/exercise-thumbnails/d1c83b88cc7a8c.webp",
+      "female": "assets/exercise-thumbnails/696494372df8ee.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/reverse-wrist-curl.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/reverse-wrist-curl.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "wrist-roller",
+    "name": "Wrist Roller",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/wrist-roller.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "incline-treadmill-walk",
+    "name": "Incline Treadmill Walk",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/incline-treadmill-walk.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "elliptical",
+    "name": "Elliptical",
+    "variants": {
+      "male": "assets/exercise-thumbnails/37d5d879110602.webp",
+      "female": "assets/exercise-thumbnails/de26de557785ff.webp"
+    },
+    "videos": {
+      "male": "https://media.leveluphypertrophy.com/elliptical.mp4",
+      "female": "https://media.leveluphypertrophy.com/form-videos/female/elliptical.mp4"
+    },
+    "valid": true
+  },
+  {
+    "id": "stair-climber",
+    "name": "Stair Climber",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/stair-climber.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "assault-bike",
+    "name": "Assault Bike",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/assault-bike.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  },
+  {
+    "id": "swimming",
+    "name": "Swimming",
+    "variants": {
+      "male": "assets/exercise-thumbnails/custom/swimming.webp"
+    },
+    "videos": {
+      "male": null,
+      "female": null
+    },
+    "valid": true
+  }
+]

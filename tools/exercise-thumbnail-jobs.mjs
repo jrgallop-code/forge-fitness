@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 globalThis.localStorage={getItem:()=>null};globalThis.window={__levelUpAnatomySexPreview:'male'};
-const {getAllExercises}=await import('../js/workouts/exercise-library.js');
+const {getAllExercises}=await import('../js/workouts/exercise-library.js?v=exercise-library-catalogue-2');
 await import('../js/workouts/exercise-library-expansion.js');
 const {getFormGuideVideo}=await import('../js/workouts/exercise-guide-video-resolver.js');
 const jobs=[];
