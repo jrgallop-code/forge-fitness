@@ -1,4 +1,4 @@
-import { getMuscleMapColor } from "./muscle-map-colors.js?v=muscle-map-colors-3";
+import { getMuscleMapColor } from "./muscle-map-colors.js?v=set-spectrum-1";
 
 const STYLE_ID = "level-up-muscle-map-rendering-fix";
 

@@ -8,7 +8,7 @@ import {
     getThemeDefaultMuscleMapColors,
     resetMuscleMapColors,
     setMuscleMapColor
-} from "../core/muscle-map-colors.js?v=muscle-map-colors-2";
+} from "../core/muscle-map-colors.js?v=set-spectrum-1";
 
 const PALETTE_ICON = `<svg class="app-silhouette-icon more-appearance-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1.3a2.3 2.3 0 0 0 0-4.6H12a1.8 1.8 0 0 1 0-3.6h3.1A5.9 5.9 0 0 0 21 6.9C18.9 4.4 15.8 3 12 3Z"/><circle cx="7.2" cy="11.8" r="1"/><circle cx="8.7" cy="7.7" r="1"/><circle cx="13" cy="6.2" r="1"/><circle cx="16.8" cy="8.4" r="1"/></svg>`;
 const HOME_ICON_KEY = "level_up_home_icon";
@@ -164,7 +164,7 @@ function renderMuscleMapColors(colors) {
         <header>
             <small>MUSCLE MAPS</small>
             <h3 id="muscle-map-colors-heading">Choose your muscle colours</h3>
-            <p>${themeName} supplies the starting colours. A manual colour stays selected even when you switch themes.</p>
+            <p>${themeName} supplies the starting colours. Recovery supports a custom colour. Set distribution uses the shared lower-to-higher palette.</p>
         </header>
         <div class="appearance-muscle-color-grid">
             ${renderMuscleColorCard("recovery", colors.recovery, colors.recoveryMode)}
@@ -180,11 +180,11 @@ function renderMuscleColorCard(kind, color, mode) {
     const title = recovery ? "Recovery" : "Set distribution";
     const description = recovery
         ? "Strongest colour = most fatigued. It fades toward neutral as recovery reaches 100%."
-        : "Colour intensity rises continuously from lower volume to 12+ set credits.";
+        : "Cool to warm colours show lower to higher volume, reaching the warmest colour at 12+ set credits.";
     const previewScale = recovery ? "var(--muscle-recovery-scale)" : "var(--muscle-set-scale)";
     const previewColor = recovery ? "var(--muscle-recovery-accent)" : "var(--muscle-set-accent)";
     return `<article class="appearance-muscle-color-card" data-muscle-color-card="${kind}">
-        <header><strong>${title}</strong><b class="appearance-muscle-mode" data-muscle-color-mode>${mode === "custom" ? "Custom" : "Theme default"}</b><small>${description}</small></header>
+        <header><strong>${title}</strong><b class="appearance-muscle-mode" data-muscle-color-mode>${recovery && mode === "custom" ? "Custom" : "Theme default"}</b><small>${description}</small></header>
         <div class="appearance-muscle-preview" style="--preview-color:${previewColor};--preview-scale:${previewScale}">
             ${musclePreviewBodies()}
             <div class="appearance-muscle-preview-copy">
@@ -193,10 +193,10 @@ function renderMuscleColorCard(kind, color, mode) {
                 <small>${recovery ? "Uses the same Recovery SVGs as Progress." : "Uses the same muscle SVGs as 7-day volume and Plan Target Maps."}</small>
             </div>
         </div>
-        <div class="appearance-muscle-swatch-grid" role="group" aria-label="${title} colour presets">
+        ${recovery ? `<div class="appearance-muscle-swatch-grid" role="group" aria-label="${title} colour presets">
             ${MUSCLE_COLOR_PRESETS.map(preset => `<button type="button" class="appearance-muscle-swatch${preset.color.toUpperCase() === color.toUpperCase() ? " is-selected" : ""}" style="--swatch-color:${preset.color}" data-muscle-color-kind="${kind}" data-muscle-color-choice="${preset.color}" aria-label="${preset.name}" title="${preset.name}" aria-pressed="${preset.color.toUpperCase() === color.toUpperCase()}"></button>`).join("")}
         </div>
-        <label class="appearance-muscle-custom">Custom colour <input type="color" value="${color}" data-muscle-custom-color="${kind}" aria-label="Custom ${title.toLowerCase()} colour"></label>
+        <label class="appearance-muscle-custom">Custom colour <input type="color" value="${color}" data-muscle-custom-color="${kind}" aria-label="Custom ${title.toLowerCase()} colour"></label>` : ""}
     </article>`;
 }
 

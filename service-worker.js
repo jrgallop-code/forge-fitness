@@ -1,4 +1,4 @@
-const CACHE_VERSION = "weekly-checkin-recovery-20261021-pwa";
+const CACHE_VERSION = "set-distribution-spectrum-20261025";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -91,7 +91,7 @@ const CORE_ASSETS = [
     "./js/account/cloud-background-sync.js?v=backup-lifecycle-2",
     "./js/analytics/product-state.js?v=user-demographics-1",
     "./js/core/body-composition.js?v=female-body-fat-ranges-1",
-    "./js/core/muscle-map-colors.js?v=muscle-map-colors-3",
+    "./js/core/muscle-map-colors.js?v=set-spectrum-1",
     "./js/core/muscle-map-rendering-fix.js?v=muscle-map-rendering-fix-5",
     "./js/progress/recovery-secondary-muscles.js?v=recovery-secondary-8",
     "./js/progress/body-composition-ui.js?v=female-body-fat-selector-1",

@@ -27,6 +27,28 @@ export const THEME_MUSCLE_MAP_DEFAULTS = {
     pulse: { recovery: "#FF3EB5", sets: "#8B5CFF" }
 };
 
+// Shared by male/female anatomy, summaries and exported cards. Position retains
+// each view's existing normalization; only its visual colour encoding changes.
+export const SET_DISTRIBUTION_PALETTES = {
+    arctic: ['#6558A6','#427BC4','#23A7BE','#62B86C','#E6CC55','#E99A43','#DC655D'],
+    'level-up': ['#8170C9','#5598EC','#35C3D3','#83CF70','#F1D65A','#F3A24B','#F27768'],
+    midnight: ['#8B80D6','#68A9F2','#48CAD8','#8ED481','#F4DB70','#FFB366','#FF8A7D'],
+    pulse: ['#7862B7','#5688C9','#36AABD','#75BA82','#D8C65C','#E79B61','#D96B86']
+};
+export function getSetDistributionPalette(theme = getAppearanceTheme()) {
+    const effective = resolveAppearanceTheme(theme);
+    const key = ['pure', 'ocean'].includes(effective) ? 'arctic' : effective === 'slate' ? 'midnight' : effective;
+    return SET_DISTRIBUTION_PALETTES[key] || SET_DISTRIBUTION_PALETTES['level-up'];
+}
+export function getSetDistributionColor(intensity, theme = getAppearanceTheme()) {
+    const palette = getSetDistributionPalette(theme);
+    const amount = Math.max(0, Math.min(1, Number(intensity) || 0));
+    if (!amount) return ['arctic','pure','ocean'].includes(resolveAppearanceTheme(theme)) ? '#E2E8F0' : '#353D49';
+    const position = amount * (palette.length - 1);
+    const index = Math.min(palette.length - 2, Math.floor(position));
+    return mix(palette[index], palette[index + 1], position - index);
+}
+
 export const DEFAULT_MUSCLE_MAP_COLORS = { ...THEME_MUSCLE_MAP_DEFAULTS["level-up"] };
 
 const LEGACY_DEFAULTS = { recovery: "#55D85A", sets: "#2F80FF" };
@@ -82,6 +104,9 @@ export function applyMuscleMapColors({ announce = false } = {}) {
     root.style.setProperty("--muscle-set-accent", settings.sets);
     root.style.setProperty("--muscle-recovery-scale", recoveryScale(settings.recovery));
     root.style.setProperty("--muscle-set-scale", setScale(settings.sets));
+    root.style.setProperty('--muscle-set-low', getSetDistributionPalette()[0]);
+    root.style.setProperty('--muscle-set-high', getSetDistributionPalette().at(-1));
+    root.style.setProperty('--muscle-set-mid', getSetDistributionColor(.5));
     queueRenderedSync();
     if (announce) {
         window.dispatchEvent(new CustomEvent("levelup:muscle-map-colors-changed", { detail: settings }));
@@ -159,7 +184,7 @@ function recoveryScale(base) {
 }
 
 function setScale(base) {
-    return `linear-gradient(90deg,${NEUTRAL} 0%,${mix(NEUTRAL, base, .48)} 52%,${base} 100%)`;
+    return `linear-gradient(90deg,${getSetDistributionPalette().join(",")})`;
 }
 
 function percentFromRecoveryNode(node) {
@@ -181,25 +206,23 @@ function syncRenderedMaps() {
         node.style.setProperty("--dashboard-muscle-fill", settings.recovery, "important");
     });
 
-    document.querySelectorAll("[data-seven-day-muscle]").forEach(node => {
-        node.style.setProperty("--seven-day-volume-fill", settings.sets, "important");
-    });
-
-    document.querySelectorAll("[data-plan-target-muscle]").forEach(node => {
-        node.style.setProperty("--plan-target-fill", settings.sets, "important");
-    });
-
-    document.querySelectorAll(".dashboard-muscle-card.is-volume .dashboard-muscle-region").forEach(node => {
-        node.style.setProperty("--dashboard-muscle-fill", settings.sets, "important");
-    });
-
-    document.querySelectorAll(".volume-cell").forEach(cell => {
-        const sets = Number.parseFloat(cell.textContent || "0") || 0;
-        const intensity = Math.max(0, Math.min(1, sets / 12));
-        const backgroundAlpha = sets > 0 ? .08 + intensity * .38 : .045;
-        const borderAlpha = sets > 0 ? .12 + intensity * .38 : .08;
-        cell.style.setProperty("background", rgba(settings.sets, backgroundAlpha), "important");
-        cell.style.setProperty("border-color", rgba(settings.sets, borderAlpha), "important");
+    const layers = [
+        ['[data-seven-day-muscle]', '--seven-day-volume-intensity'],
+        ['[data-plan-target-muscle]', '--plan-target-intensity'],
+        ['.dashboard-muscle-card.is-volume .dashboard-muscle-region', '--dashboard-muscle-opacity'],
+        ['.monthly-anatomy-muscle', '--monthly-muscle-intensity']
+    ];
+    layers.forEach(([selector, property]) => document.querySelectorAll(selector).forEach(node => {
+        const intensity = Number.parseFloat(node.style.getPropertyValue(property)) || 0;
+        node.style.setProperty('fill', getSetDistributionColor(intensity), 'important');
+        node.style.setProperty('fill-opacity', intensity > 0 ? '1' : '0', 'important');
+        node.style.setProperty('stroke-opacity', intensity > 0 ? '1' : '0', 'important');
+    }));
+    document.querySelectorAll('.volume-cell').forEach(cell => {
+        const sets = Number.parseFloat(cell.textContent || '0') || 0;
+        const color = getSetDistributionColor(sets / 12);
+        cell.style.setProperty('background', rgba(color, sets > 0 ? .3 : .045), 'important');
+        cell.style.setProperty('border-color', rgba(color, .55), 'important');
     });
 
     document.querySelectorAll(".recovery-map-note").forEach(note => {
@@ -207,8 +230,8 @@ function syncRenderedMaps() {
         note.textContent = "0% means recently trained and shows the strongest selected highlight. As recovery rises, the chosen colour fades toward the neutral body at 100%. Recovery timing still uses Level Up's current 72-hour model.";
     });
     document.querySelectorAll(".seven-day-volume-note").forEach(note => {
-        if (!/green intensity/i.test(note.textContent || "")) return;
-        note.textContent = "Same scale as Plan Target Maps: 0 sets stays neutral grey; your selected set-distribution colour increases continuously to full intensity at 12+ set credits.";
+        if (!/green intensity|selected set-distribution colour/i.test(note.textContent || "")) return;
+        note.textContent = "Same scale as Plan Target Maps: 0 sets stays neutral grey; the colour scale runs from lower to higher set volume, reaching its warmest colour at 12+ set credits.";
     });
 }
 
@@ -260,13 +283,19 @@ function ensureStyles() {
             box-shadow:0 0 12px color-mix(in srgb,var(--muscle-set-accent) 24%,transparent)!important;
         }
         .volume-intensity-legend .legend-some {
-            background:color-mix(in srgb,var(--muscle-set-accent) 42%,transparent)!important;
+            background:var(--muscle-set-low)!important;
             border-color:color-mix(in srgb,var(--muscle-set-accent) 52%,transparent)!important;
         }
         .volume-intensity-legend .legend-more {
             background:var(--muscle-set-accent)!important;
             border-color:var(--muscle-set-accent)!important;
         }
+        .monthly-graph-legend .is-muscle-low { background:var(--muscle-set-low)!important; }
+        .monthly-graph-legend .is-muscle-high,
+        .volume-intensity-legend .legend-more { background:var(--muscle-set-high)!important; }
+        .appearance-muscle-color-card[data-muscle-color-card="sets"] .appearance-anatomy-muscle { fill:var(--muscle-set-high)!important; opacity:1!important; }
+        .appearance-muscle-color-card[data-muscle-color-card="sets"] .appearance-anatomy-muscle.is-mid { fill:${'var(--muscle-set-mid)'}!important; }
+        .appearance-muscle-color-card[data-muscle-color-card="sets"] .appearance-anatomy-muscle.is-low { fill:var(--muscle-set-low)!important; }
         .appearance-muscle-colors {
             display:grid;
             gap:14px;
