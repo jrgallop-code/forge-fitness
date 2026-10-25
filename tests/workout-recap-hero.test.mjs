@@ -37,13 +37,12 @@ test('workout recap uses the revised first and second card copy', () => {
   assert.match(recapSource, /TODAY'S WORKOUT/);
 });
 
-test('workout recap distinguishes shared primary and secondary muscle credits', () => {
+test('workout recap retains weighted credits and shows the lower-to-higher set palette', () => {
   assert.match(recapSource, /getExerciseImpacts/);
   assert.match(recapSource, /credit>=1/);
-  assert.match(recapSource, /is-primary/);
-  assert.match(recapSource, /is-secondary/);
-  assert.match(recapSource, /Primary · 1\.0/);
-  assert.match(recapSource, /Secondary · 0\.5/);
+  assert.match(recapSource, /getSetDistributionColor\(sets\/12\)/);
+  assert.match(recapSource, />Lower</);
+  assert.match(recapSource, />Higher</);
 });
 
 test('achievement cards render every detected personal record', () => {
