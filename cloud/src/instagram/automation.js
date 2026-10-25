@@ -104,7 +104,7 @@ export async function instagramCallback(request,env) {
   const existing=await connection(env);if(existing&&existing.account_id!==account)return new Response('Disconnect the existing Instagram account before switching accounts.',{status:409});
   await graph(env,long.access_token,`${account}/subscribed_apps`,'POST',{subscribed_fields:'comments'});
   await env.DB.prepare('INSERT OR REPLACE INTO instagram_connection VALUES(1,?,?,?,?,?,1)').bind(account,String(profile.username||''),await seal(long.access_token,env),now()+Number(long.expires_in||5184000)*1000,now()).run();
-  return new Response(null,{status:303,headers:{Location:'https://leveluphypertrophy.com/admin/?instagram=connected','Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
+  return new Response(null,{status:303,headers:{Location:'https://app.leveluphypertrophy.com/admin/?instagram=connected','Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
  }catch{return new Response('Instagram could not be connected. Check the Meta app permissions and try again from the owner console.',{status:502});}
 }
 export async function validSignature(raw,signature,secret) {

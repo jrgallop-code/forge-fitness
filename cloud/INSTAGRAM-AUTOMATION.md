@@ -1,6 +1,6 @@
 # Level Up Instagram automation
 
-Owner dashboard: https://leveluphypertrophy.com/admin/?instagram=setup
+Owner dashboard: https://app.leveluphypertrophy.com/admin/?instagram=setup
 
 Uses the existing owner Google session and server-side ADMIN_EMAILS authorization. No Instagram tokens or app secrets are exposed to the browser. No change to consumer workouts or nutrition.
 
