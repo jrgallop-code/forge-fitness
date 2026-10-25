@@ -1,3 +1,4 @@
+import { instagramScheduled } from './instagram/automation.js';
 import fatSecretWorker from "./fatsecret-enabled-worker.js";
 
 const FOOD_SEARCH_PATH = "/v1/foods/search";
@@ -9,6 +10,7 @@ const OWNER_ADMIN_EMAIL_B64 = "anJnYWxsb3BAZ21haWwuY29t";
 const APPEARANCE_THEMES = new Set(["system", "level-up", "arctic", "pure", "ocean", "midnight", "slate", "pulse"]);
 
 export default {
+    async scheduled(event, env, ctx) { ctx.waitUntil(instagramScheduled(env)); },
     async fetch(request, env, ctx) {
         const url = new URL(request.url);
         const authorizedEnv = withOwnerAdminAuthorization(env);

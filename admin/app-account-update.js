@@ -1,3 +1,4 @@
+import { renderInstagram, initializeInstagram } from './instagram.js?v=1';
 import { renderFeatureRequests, initializeFeatureRequests } from "./feature-requests.js?v=owner-feature-review-1";
 import { renderAdminAnalytics, initializeAdminAnalytics } from "./admin-analytics-account-update.js?v=3";
 import { initializeOwnerProductInsights } from "./product-insights.js?v=user-demographics-2";
@@ -121,9 +122,11 @@ function showDashboard(user) {
     <nav class="owner-console-nav" aria-label="Owner console sections">
       <button type="button" data-owner-section="analytics" aria-pressed="true">Analytics</button>
       <button type="button" data-owner-section="features" aria-pressed="false">Feature Requests</button>
+      <button type="button" data-owner-section="instagram" aria-pressed="false">Instagram</button>
     </nav>
     <div id="owner-analytics-root"></div>
-    <div id="owner-features-root" hidden></div>`;
+    <div id="owner-features-root" hidden></div>
+    <div id="owner-instagram-root" hidden></div>`;
   signOutButton?.toggleAttribute("hidden", false);
   const target = document.getElementById("owner-analytics-root");
   if (target) target.innerHTML = renderAdminAnalytics();
@@ -133,9 +136,18 @@ function showDashboard(user) {
   initializeDailyUserQuery();
   const features = document.getElementById("owner-features-root");
   let featuresInitialized = false;
+  let instagramInitialized = false;
+  const instagram = document.getElementById("owner-instagram-root");
   root.querySelectorAll("[data-owner-section]").forEach(button => button.addEventListener("click", () => {
     const showFeatures = button.dataset.ownerSection === "features";
-    target.hidden = showFeatures;
+    const showInstagram = button.dataset.ownerSection === 'instagram';
+    target.hidden = showFeatures || showInstagram;
+    instagram.hidden = !showInstagram;
+    if (showInstagram && !instagramInitialized) {
+      instagramInitialized = true;
+      instagram.innerHTML = renderInstagram();
+      initializeInstagram(instagram, api);
+    }
     features.hidden = !showFeatures;
     root.querySelectorAll("[data-owner-section]").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
     if (showFeatures && !featuresInitialized) {
@@ -144,6 +156,7 @@ function showDashboard(user) {
       initializeFeatureRequests(features, api);
     }
   }));
+  if (new URLSearchParams(location.search).has('instagram')) root.querySelector('[data-owner-section="instagram"]')?.click();
 }
 
 async function signOut() {

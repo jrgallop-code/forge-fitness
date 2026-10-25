@@ -1,3 +1,4 @@
+import { instagramAdmin, instagramWebhook, instagramCallback } from './instagram/automation.js';
 import {extraUsdaNutrition,extraUsdaLabelNutrition,extraOpenFoodFactsNutrition,extraOpenFoodFactsSetNutrition} from './food-extra-nutrients.js';
 import { featureBoard } from "./feature-board.js";
 import { SWISS_CHALET_FOODS } from "./data/swiss-chalet-foods.js";
@@ -124,9 +125,16 @@ async function handleRequest(request, env, ctx) {
         const result = await featureBoard(request, env, user, user ? isAdminUser(user, env) : false, readJson);
         return json(result.data, result.status, request, env);
     }
+    if (url.pathname === '/v1/instagram/webhook') return instagramWebhook(request, env);
+    if (url.pathname === '/v1/instagram/callback' && request.method === 'GET') return instagramCallback(request, env);
     const user = await requireUser(request, env);
     if (!user) return json({ error: "Sign in required." }, 401, request, env);
 
+    if (url.pathname.startsWith('/v1/admin/instagram/')) {
+        if (!isAdminUser(user, env)) return json({error:'Admin access required.'},403,request,env);
+        const response = await instagramAdmin(request,env,readJson);
+        return json(response.data,response.status,request,env);
+    }
     if (url.pathname === "/v1/me" && request.method === "GET") {
         return json({ user: { ...publicUser(user), isAdmin: isAdminUser(user, env) } }, 200, request, env);
     }
