@@ -581,3 +581,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-21: Retry check-in TestFlight release after restoring explicit review-readiness gate; fixes 3 coach-resume regression tests from run 39607168395.
 
 2026-10-25: TestFlight review — theme-aware lower-to-higher set distribution palettes across male/female anatomy, summaries and exports; preserve existing layouts and set credits.
+
+2026-10-25: Restore original completion-card primary/secondary appearance colours and legend, including share exports; retain spectral set-distribution palettes elsewhere.
