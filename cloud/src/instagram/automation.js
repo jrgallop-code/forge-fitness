@@ -66,7 +66,22 @@ export async function instagramAdmin(request,env,readJson) {
   let rule;try{rule=validateRule(await readJson(request,8192));}catch(e){return result({error:e.message},400);}
   const c=await connection(env);
   if(rule.enabled&&(!c||c.expires_at<=now()||!c.subscribed))return result({error:'Connect Instagram before enabling a rule. You can save a paused rule now.'},409);
-  if(c){const post=await graph(env,await unseal(c.token_cipher,env),`${rule.media_id}?fields=id,owner`);if(String(post.owner?.id)!==c.account_id)return result({error:'Choose a post owned by your connected account.'},400);}
+  if(c){
+   // The account's media edge is the same source as the post picker. Media.owner
+   // may be absent or use a different ID representation from the login subject.
+   const token=await unseal(c.token_cipher,env);
+   let after='',owned=false,complete=false;
+   const seen=new Set();
+   for(let page=0;page<20;page++){
+    const media=await graph(env,token,`${c.account_id}/media?fields=id&limit=100${after?'&after='+encodeURIComponent(after):''}`);
+    if((media.data||[]).some(post=>String(post.id)===rule.media_id)){owned=true;break;}
+    const next=media.paging?.next?media.paging?.cursors?.after:null;
+    if(!next){complete=true;break;}
+    if(seen.has(next))break;
+    seen.add(next);after=next;
+   }
+   if(!owned)return result({error:complete?'Choose a post from your connected Instagram account. Refresh the post list and try again.':'This older post could not be verified yet. Choose a more recent post and try again.'},complete?400:409);
+  }
   const id=edit?edit[1]:crypto.randomUUID();
   if(edit){
    const existing=await env.DB.prepare('SELECT id FROM instagram_rules WHERE id=?').bind(id).first();

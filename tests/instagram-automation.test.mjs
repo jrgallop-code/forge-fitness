@@ -24,3 +24,25 @@ test('Instagram admin routes reject anonymous and non-admin sessions',async()=>{
  assert.equal((await worker.fetch(new Request(url,{headers:{Authorization:'Bearer test-session'}}),env,{})).status,403);
 });
 test('paused rules skip all upstream delivery calls',async()=>{const env=await setup();await instagramWebhook(await signed(event),env);await env.DB.prepare('UPDATE instagram_rules SET enabled=0').run();const row=await env.DB.prepare('SELECT * FROM instagram_deliveries').first(),c=await env.DB.prepare('SELECT * FROM instagram_connection').first();const original=globalThis.fetch;globalThis.fetch=async()=>{throw new Error('Should not call Meta');};try{await processDelivery(env,c,row,'token');assert.equal((await env.DB.prepare('SELECT status FROM instagram_deliveries').first()).status,'skipped');}finally{globalThis.fetch=original;}});
+
+test('save accepts picker media without relying on a media owner field',async()=>{
+ const env=await setup(),original=globalThis.fetch;let calls=0;
+ globalThis.fetch=async(url)=>{calls++;assert.ok(url.includes('/111/media?'));assert.ok(!url.includes('owner'));return Response.json({data:[{id:'123'}]});};
+ try{const r=await instagramAdmin(new Request('https://api.leveluphypertrophy.com/v1/admin/instagram/rules',{method:'POST'}),env,async()=>rule);assert.equal(r.status,201);assert.equal(calls,1);}finally{globalThis.fetch=original;}
+});
+test('save searches subsequent media pages and edit uses the same ownership proof',async()=>{
+ const env=await setup(),original=globalThis.fetch;let calls=0;
+ globalThis.fetch=async(url)=>{calls++;return Response.json(url.includes('after=next-page')?{data:[{id:'123'}]}:{data:[{id:'999'}],paging:{next:'https://graph.instagram.com/ignored',cursors:{after:'next-page'}}});};
+ try{const created=await instagramAdmin(new Request('https://api.leveluphypertrophy.com/v1/admin/instagram/rules',{method:'POST'}),env,async()=>rule);assert.equal(created.status,201);
+ const edited=await instagramAdmin(new Request('https://api.leveluphypertrophy.com/v1/admin/instagram/rules/'+created.data.id,{method:'PUT'}),env,async()=>({...rule,title:'Updated'}));assert.equal(edited.status,200);assert.equal(calls,4);
+ }finally{globalThis.fetch=original;}
+});
+test('save rejects foreign media even if it is otherwise readable by Meta',async()=>{
+ const env=await setup(),original=globalThis.fetch;
+ globalThis.fetch=async()=>Response.json({data:[{id:'999'}]});
+ try{const r=await instagramAdmin(new Request('https://api.leveluphypertrophy.com/v1/admin/instagram/rules',{method:'POST'}),env,async()=>rule);assert.equal(r.status,400);assert.equal((await env.DB.prepare('SELECT * FROM instagram_rules').all()).results.length,1);}finally{globalThis.fetch=original;}
+});
+test('Meta failures do not bypass post ownership validation',async()=>{
+ const env=await setup(),original=globalThis.fetch;globalThis.fetch=async()=>Response.json({error:{code:190}},{status:400});
+ try{await assert.rejects(instagramAdmin(new Request('https://api.leveluphypertrophy.com/v1/admin/instagram/rules',{method:'POST'}),env,async()=>rule));assert.equal((await env.DB.prepare('SELECT * FROM instagram_rules').all()).results.length,1);}finally{globalThis.fetch=original;}
+});
