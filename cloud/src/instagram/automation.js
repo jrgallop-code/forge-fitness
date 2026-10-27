@@ -19,7 +19,7 @@ export function validateRule(b) {
 async function graph(env,token,path,method='GET',body) {
  const r=await fetch(`${API}/${path}`,{method,headers:{Authorization:`Bearer ${token}`,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(15000)});
  const data=await r.json();
- if(!r.ok||data.error) {const error=new Error(`Meta request failed (${data.error?.code||r.status}). Check account permissions and connection.`);error.code=data.error?.code||r.status;throw error;}
+ if(!r.ok||data.error) {const code=Number(data.error?.code||r.status),subcode=Number(data.error?.error_subcode)||0;const error=new Error(`Meta request failed (${code}${subcode?'/'+subcode:''}). Check account permissions and connection.`);error.code=code;error.subcode=subcode;throw error;}
  return data;
 }
 async function key(env) {
@@ -40,6 +40,12 @@ const ready=env=>Boolean(env.INSTAGRAM_APP_ID&&env.INSTAGRAM_APP_SECRET&&env.INS
 const callback='https://api.leveluphypertrophy.com/v1/instagram/callback';
 export async function instagramAdmin(request,env,readJson) {
  const url=new URL(request.url), action=url.pathname.slice('/v1/admin/instagram'.length);
+ if(action==='/process'&&request.method==='POST') {
+  const c=await connection(env);
+  if(!ready(env)||!c||!c.subscribed||c.expires_at<=now())return result({error:'Connect Instagram before processing queued replies.'},409);
+  try{await instagramScheduled(env,0);return result({ok:true});}
+  catch{return result({error:'The reply worker could not run. Reconnect Instagram if the app secret was changed.'},502);}
+ }
  if(action==='/status'&&request.method==='GET') {
   const c=await connection(env);
   const {results:rules}=await env.DB.prepare('SELECT * FROM instagram_rules ORDER BY created_at DESC LIMIT 200').all();
@@ -127,7 +133,7 @@ export async function validSignature(raw,signature,secret) {
  const key=await crypto.subtle.importKey('raw',enc.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['verify']);
  return crypto.subtle.verify('HMAC',key,Uint8Array.from(signature.slice(7).match(/../g),x=>parseInt(x,16)),enc.encode(raw));
 }
-export async function instagramWebhook(request,env) {
+export async function instagramWebhook(request,env,ctx) {
  const url=new URL(request.url);
  if(request.method==='GET')return env.INSTAGRAM_VERIFY_TOKEN&&url.searchParams.get('hub.mode')==='subscribe'&&url.searchParams.get('hub.verify_token')===env.INSTAGRAM_VERIFY_TOKEN?new Response(url.searchParams.get('hub.challenge')||''):new Response('Forbidden',{status:403});
  if(request.method!=='POST')return new Response('Method not allowed',{status:405});
@@ -147,6 +153,7 @@ export async function instagramWebhook(request,env) {
   }
  }
  // Durable rows exist before acknowledgement. Cron drains them even if this request stops.
+ if(ctx?.waitUntil)ctx.waitUntil(instagramScheduled(env,0).catch(()=>{console.error('Instagram reply worker failed; queued replies retained.');}));
  return new Response('EVENT_RECEIVED');
 }
 export async function processDelivery(env,c,row,token) {
@@ -155,18 +162,18 @@ export async function processDelivery(env,c,row,token) {
  const rule=await env.DB.prepare('SELECT * FROM instagram_rules WHERE id=? AND enabled=1').bind(row.rule_id).first();
  if(!rule||row.account_id!==c.account_id)return finish('skipped','Rule paused or account changed.');
  let comment;
- try{comment=await graph(env,token,`${row.comment_id}?fields=id,text,timestamp,media,from`);}catch{return finish('failed','Could not verify the comment.');}
+ try{comment=await graph(env,token,`${row.comment_id}?fields=id,text,timestamp,media,from`);}catch(e){return finish('failed',`Could not verify the comment.${e.code?' Meta error '+e.code+(e.subcode?'/'+e.subcode:'')+'.':''}`);}
  const age=now()-Date.parse(comment.timestamp);
  if(!Number.isFinite(age)||age< -60000||age>=7*86400000||String(comment.media?.id)!==rule.media_id||String(comment.from?.id)===c.account_id||!keywordMatches(comment.text,JSON.parse(rule.keywords)))return finish('skipped','Comment is ineligible, changed or outside the seven-day window.');
  // Persist before send: an interrupted/ambiguous request is never blindly resent.
  await finish('sending');
  try {
   await graph(env,token,`${c.account_id}/messages`,'POST',{recipient:{comment_id:row.comment_id},message:{text:rule.message+'\n\n'+rule.routine_url}});
- }catch(e){return finish(e.code===429||e.code===4||e.code===32||e.code===613?'queued':'unknown',e.code?'Meta could not confirm delivery.':'Delivery could not be confirmed; not automatically resent.');}
+ }catch(e){return finish(e.code===429||e.code===4||e.code===32||e.code===613?'queued':'unknown',e.code?'Meta could not confirm delivery. Error '+e.code+(e.subcode?'/'+e.subcode:'')+'.':'Delivery could not be confirmed; not automatically resent.');}
  await finish('sent');
  if(rule.public_reply)try{await graph(env,token,`${row.comment_id}/replies`,'POST',{message:rule.public_reply});}catch{await finish('sent','DM sent; public reply failed.');}
 }
-export async function instagramScheduled(env) {
+export async function instagramScheduled(env,minAgeMs=30000) {
  if(!ready(env))return;
  let c=await connection(env);if(!c||!c.subscribed||c.expires_at<=now())return;
  let token=await unseal(c.token_cipher,env);
@@ -176,7 +183,7 @@ export async function instagramScheduled(env) {
  }
  await env.DB.prepare("UPDATE instagram_deliveries SET status='unknown',detail='Interrupted send; not resent automatically.' WHERE status='sending' AND updated_at<?").bind(now()-600000).run();
  await env.DB.prepare("UPDATE instagram_deliveries SET status='queued' WHERE status='checking' AND updated_at<?").bind(now()-600000).run();
- const {results}=await env.DB.prepare("SELECT * FROM instagram_deliveries WHERE status='queued' AND updated_at<? ORDER BY created_at LIMIT 10").bind(now()-30000).all();
+ const {results}=await env.DB.prepare("SELECT * FROM instagram_deliveries WHERE status='queued' AND updated_at<=? ORDER BY created_at LIMIT 10").bind(now()-minAgeMs).all();
  for(const row of results)await processDelivery(env,c,row,token);
  await env.DB.prepare('DELETE FROM instagram_deliveries WHERE created_at<?').bind(now()-90*86400000).run();
  await env.DB.prepare('DELETE FROM instagram_oauth_states WHERE expires_at<?').bind(now()).run();

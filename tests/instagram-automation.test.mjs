@@ -46,3 +46,17 @@ test('Meta failures do not bypass post ownership validation',async()=>{
  const env=await setup(),original=globalThis.fetch;globalThis.fetch=async()=>Response.json({error:{code:190}},{status:400});
  try{await assert.rejects(instagramAdmin(new Request('https://api.leveluphypertrophy.com/v1/admin/instagram/rules',{method:'POST'}),env,async()=>rule));assert.equal((await env.DB.prepare('SELECT * FROM instagram_rules').all()).results.length,1);}finally{globalThis.fetch=original;}
 });
+
+test('webhook dispatches a fresh durable match without waiting for cron and deduplicates sends',async()=>{
+ const env=await setup(),original=globalThis.fetch,tasks=[];let sends=0;
+ globalThis.fetch=async(url,options)=>{if(options.method==='GET')return Response.json({id:'456',text:'PLAN',timestamp:new Date().toISOString(),media:{id:'123'},from:{id:'222'}});sends++;return Response.json({message_id:'sent'});};
+ try{const ctx={waitUntil:p=>tasks.push(p)};assert.equal((await instagramWebhook(await signed(event),env,ctx)).status,200);await Promise.all(tasks);await instagramWebhook(await signed(event),env,ctx);await Promise.all(tasks);assert.equal(sends,1);assert.equal((await env.DB.prepare('SELECT status FROM instagram_deliveries').first()).status,'sent');}finally{globalThis.fetch=original;}
+});
+test('owner queue processing drains fresh queued replies but never resends unknown delivery',async()=>{
+ const env=await setup(),original=globalThis.fetch;await instagramWebhook(await signed(event),env);let sends=0;
+ globalThis.fetch=async(url,options)=>{if(options.method==='GET')return Response.json({text:'PLAN',timestamp:new Date().toISOString(),media:{id:'123'}});sends++;return Response.json({error:{code:200,error_subcode:2534066}},{status:403});};
+ try{const request=()=>new Request('https://api.leveluphypertrophy.com/v1/admin/instagram/process',{method:'POST'});assert.equal((await instagramAdmin(request(),env)).status,200);assert.equal((await instagramAdmin(request(),env)).status,200);const row=await env.DB.prepare('SELECT status,detail FROM instagram_deliveries').first();assert.equal(row.status,'unknown');assert.match(row.detail,/200\/2534066/);assert.equal(sends,1);}finally{globalThis.fetch=original;}
+});
+test('queue processing requires a connected account',async()=>{
+ const env=await setup();await env.DB.prepare('DELETE FROM instagram_connection').run();assert.equal((await instagramAdmin(new Request('https://api.leveluphypertrophy.com/v1/admin/instagram/process',{method:'POST'}),env)).status,409);
+});

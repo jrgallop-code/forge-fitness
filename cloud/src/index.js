@@ -125,7 +125,7 @@ async function handleRequest(request, env, ctx) {
         const result = await featureBoard(request, env, user, user ? isAdminUser(user, env) : false, readJson);
         return json(result.data, result.status, request, env);
     }
-    if (url.pathname === '/v1/instagram/webhook') return instagramWebhook(request, env);
+    if (url.pathname === '/v1/instagram/webhook') return instagramWebhook(request, env, ctx);
     if (url.pathname === '/v1/instagram/callback' && request.method === 'GET') return instagramCallback(request, env);
     const user = await requireUser(request, env);
     if (!user) return json({ error: "Sign in required." }, 401, request, env);
