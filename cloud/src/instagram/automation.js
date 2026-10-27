@@ -40,6 +40,14 @@ const ready=env=>Boolean(env.INSTAGRAM_APP_ID&&env.INSTAGRAM_APP_SECRET&&env.INS
 const callback='https://api.leveluphypertrophy.com/v1/instagram/callback';
 export async function instagramAdmin(request,env,readJson) {
  const url=new URL(request.url), action=url.pathname.slice('/v1/admin/instagram'.length);
+ if(action==='/public-replies'&&request.method==='POST') {
+  const c=await connection(env);
+  if(!ready(env)||!c||!c.subscribed||c.expires_at<=now())return result({error:'Connect Instagram first.'},409);
+  const token=await unseal(c.token_cipher,env);
+  const {results:rows}=await env.DB.prepare("SELECT * FROM instagram_deliveries WHERE status='sent' AND account_id=? ORDER BY created_at DESC LIMIT 10").bind(c.account_id).all();
+  for(const row of rows)await repairPublicReply(env,c,row,token);
+  return result({ok:true});
+ }
  if(action==='/process'&&request.method==='POST') {
   const c=await connection(env);
   if(!ready(env)||!c||!c.subscribed||c.expires_at<=now())return result({error:'Connect Instagram before processing queued replies.'},409);
@@ -171,7 +179,29 @@ export async function processDelivery(env,c,row,token) {
   await graph(env,token,`${c.account_id}/messages`,'POST',{recipient:{comment_id:row.comment_id},message:{text:rule.message+'\n\n'+rule.routine_url}});
  }catch(e){return finish(e.code===429||e.code===4||e.code===32||e.code===613?'queued':'unknown',e.code?'Meta could not confirm delivery. Error '+e.code+(e.subcode?'/'+e.subcode:'')+'.':'Delivery could not be confirmed; not automatically resent.');}
  await finish('sent');
- if(rule.public_reply)try{await graph(env,token,`${row.comment_id}/replies`,'POST',{message:rule.public_reply});}catch{await finish('sent','DM sent; public reply failed.');}
+ if(rule.public_reply)try{await graph(env,token,`${row.comment_id}/replies`,'POST',{message:rule.public_reply});await finish('sent','DM sent; public reply sent.');}catch(e){await finish('sent','DM sent; public reply could not be confirmed.'+(e.code?' Meta error '+e.code+(e.subcode?'/'+e.subcode:'')+'.':''));}
+}
+export async function repairPublicReply(env,c,row,token) {
+ if(row.status!=='sent'||row.account_id!==c.account_id||/public reply (?:sent|verified|could not be confirmed)|Checking public reply\./.test(row.detail))return;
+ const rule=await env.DB.prepare('SELECT * FROM instagram_rules WHERE id=? AND enabled=1').bind(row.rule_id).first();
+ if(!rule?.public_reply||Date.now()-row.created_at>=7*86400000)return;
+ const claimed=await env.DB.prepare("UPDATE instagram_deliveries SET detail='Checking public reply.',updated_at=? WHERE comment_id=? AND status='sent' AND detail=? RETURNING comment_id").bind(now(),row.comment_id,row.detail).first();if(!claimed)return;
+ const finish=detail=>env.DB.prepare('UPDATE instagram_deliveries SET detail=?,updated_at=? WHERE comment_id=?').bind(detail,now(),row.comment_id).run();
+ let after='',complete=false;
+ try {
+  for(let page=0;page<5;page++) {
+   const replies=await graph(env,token,`${row.comment_id}/replies?fields=id,text,username&limit=50${after?'&after='+encodeURIComponent(after):''}`);
+   if((replies.data||[]).some(reply=>String(reply.username||'').toLowerCase()===c.username.toLowerCase()&&reply.text===rule.public_reply))return finish('DM sent; public reply verified.');
+   if((replies.data||[]).some(reply=>reply.text===rule.public_reply&&!reply.username))return finish('DM sent; public reply author could not be verified. No duplicate reply sent.');
+   after=replies.paging?.next?replies.paging?.cursors?.after:'';
+   if(!after){complete=true;break;}
+  }
+ }catch(e){return finish('DM sent; public reply check failed.'+(e.code?' Meta error '+e.code+(e.subcode?'/'+e.subcode:'')+'.':''));}
+ if(!complete)return finish('DM sent; public reply check incomplete. No duplicate reply sent.');
+ // Record the attempt before sending. Ambiguous outcomes are not retried automatically.
+ await finish('DM sent; public reply could not be confirmed.');
+ try{await graph(env,token,`${row.comment_id}/replies`,'POST',{message:rule.public_reply});return finish('DM sent; public reply sent.');}
+ catch(e){return finish('DM sent; public reply could not be confirmed.'+(e.code?' Meta error '+e.code+(e.subcode?'/'+e.subcode:'')+'.':''));}
 }
 export async function instagramScheduled(env,minAgeMs=30000) {
  if(!ready(env))return;
