@@ -190,8 +190,8 @@ export async function repairPublicReply(env,c,row,token) {
  let after='',complete=false;
  try {
   for(let page=0;page<5;page++) {
-   const replies=await graph(env,token,`${row.comment_id}/replies?fields=id,text,username&limit=50${after?'&after='+encodeURIComponent(after):''}`);
-   if((replies.data||[]).some(reply=>String(reply.username||'').toLowerCase()===c.username.toLowerCase()&&reply.text===rule.public_reply))return finish('DM sent; public reply verified.');
+   const replies=await graph(env,token,`${row.comment_id}/replies?fields=id,text,username,from&limit=50${after?'&after='+encodeURIComponent(after):''}`);
+   if((replies.data||[]).some(reply=>(String(reply.from?.id||'')===c.account_id||String(reply.username||reply.from?.username||'').toLowerCase()===c.username.toLowerCase())&&reply.text===rule.public_reply))return finish('DM sent; public reply verified.');
    if((replies.data||[]).some(reply=>reply.text===rule.public_reply&&!reply.username))return finish('DM sent; public reply author could not be verified. No duplicate reply sent.');
    after=replies.paging?.next?replies.paging?.cursors?.after:'';
    if(!after){complete=true;break;}
