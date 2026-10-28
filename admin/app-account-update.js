@@ -1,4 +1,4 @@
-import { renderInstagram, initializeInstagram } from './instagram.js?v=public-replies-2';
+import { renderInstagram, initializeInstagram } from './instagram.js?v=drafts-20261028';
 import { renderFeatureRequests, initializeFeatureRequests } from "./feature-requests.js?v=owner-feature-review-1";
 import { renderAdminAnalytics, initializeAdminAnalytics } from "./admin-analytics-account-update.js?v=3";
 import { initializeOwnerProductInsights } from "./product-insights.js?v=user-demographics-2";

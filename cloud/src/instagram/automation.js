@@ -10,11 +10,13 @@ export function keywordMatches(text, words) {
  return w && new RegExp('(?:^|[^\\p{L}\\p{N}_])'+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?=$|[^\\p{L}\\p{N}_])','u').test(normalized);});
 }
 export function validateRule(b) {
+ const media_id=String(b.media_id||'').trim();
+ if((media_id&&!idValid(media_id))||(b.enabled===true&&!media_id))throw new Error('Choose a published post before activating. Leave the post blank to save a draft.');
  const title=String(b.title||'').trim(), message=String(b.message||'').trim(), routine_url=String(b.routine_url||'').trim();
  const keywords=Array.isArray(b.keywords)?b.keywords.map(x=>String(x).trim()).filter(Boolean):[];
  let link;try{link=new URL(routine_url);}catch{}
- if(!idValid(b.media_id)||!title||title.length>100||!message||!link||link.protocol!=='https:'||link.username||link.password||routine_url.length>500||message.length+routine_url.length+2>900||!keywords.length||keywords.length>20||keywords.some(x=>x.length>50)||String(b.public_reply||'').length>300)throw new Error('Choose a post, add up to 20 keywords, a short message and an HTTPS workout link (900 characters total).');
- return {media_id:b.media_id,title,keywords:JSON.stringify(keywords),message,routine_url,public_reply:String(b.public_reply||'').trim(),enabled:b.enabled===true?1:0};
+ if(!title||title.length>100||!message||!link||link.protocol!=='https:'||link.username||link.password||routine_url.length>500||message.length+routine_url.length+2>900||!keywords.length||keywords.length>20||keywords.some(x=>x.length>50)||String(b.public_reply||'').length>300)throw new Error('Add a name, up to 20 keywords, a short message and an HTTPS workout link (900 characters total).');
+ return {media_id,title,keywords:JSON.stringify(keywords),message,routine_url,public_reply:String(b.public_reply||'').trim(),enabled:b.enabled===true?1:0};
 }
 async function graph(env,token,path,method='GET',body) {
  const r=await fetch(`${API}/${path}`,{method,headers:{Authorization:`Bearer ${token}`,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(15000)});
@@ -80,7 +82,7 @@ export async function instagramAdmin(request,env,readJson) {
   let rule;try{rule=validateRule(await readJson(request,8192));}catch(e){return result({error:e.message},400);}
   const c=await connection(env);
   if(rule.enabled&&(!c||c.expires_at<=now()||!c.subscribed))return result({error:'Connect Instagram before enabling a rule. You can save a paused rule now.'},409);
-  if(c){
+  if(c&&rule.media_id){
    // The account's media edge is the same source as the post picker. Media.owner
    // may be absent or use a different ID representation from the login subject.
    const token=await unseal(c.token_cipher,env);
@@ -107,6 +109,9 @@ export async function instagramAdmin(request,env,readJson) {
  const match=action.match(/^\/rules\/([0-9a-f-]{36})$/);
  if(match&&request.method==='PATCH') {
   const b=await readJson(request,1024);if(typeof b.enabled!=='boolean')return result({error:'Provide enabled.'},400);
+  const existing=await env.DB.prepare('SELECT media_id FROM instagram_rules WHERE id=?').bind(match[1]).first();
+  if(!existing)return result({error:'Rule not found.'},404);
+  if(b.enabled&&!idValid(existing.media_id))return result({error:'Choose a published post before activating this draft.'},409);
   const c=await connection(env);if(b.enabled&&(!c||!c.subscribed||c.expires_at<=now()))return result({error:'Connect Instagram first.'},409);
   await env.DB.prepare('UPDATE instagram_rules SET enabled=? WHERE id=?').bind(b.enabled?1:0,match[1]).run();return result({ok:true});
  }

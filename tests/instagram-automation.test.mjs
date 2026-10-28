@@ -65,3 +65,26 @@ async function publicSetup(){const env=await setup();await instagramWebhook(awai
 test('public repair verifies existing own reply without posting duplicates',async()=>{const {env,c,row}=await publicSetup(),original=globalThis.fetch;globalThis.fetch=async(url,options)=>{assert.equal(options.method,'GET');return Response.json({data:[{id:'789',text:'Sent! Check your DMs.',username:'levelup'}]});};try{await repairPublicReply(env,c,row,'token');assert.match((await env.DB.prepare('SELECT detail FROM instagram_deliveries').first()).detail,/verified/);}finally{globalThis.fetch=original;}});
 test('public repair checks all pages and posts only one missing reply without resending DM',async()=>{const {env,c,row}=await publicSetup(),original=globalThis.fetch;let sends=0;globalThis.fetch=async(url,options)=>{if(options.method==='GET')return Response.json(url.includes('after=second')?{data:[]}:{data:[{text:'Sent! Check your DMs.',username:'someone-else'}],paging:{next:'ignored',cursors:{after:'second'}}});assert.ok(url.endsWith('/456/replies'));sends++;return Response.json({id:'789'});};try{await Promise.all([repairPublicReply(env,c,row,'token'),repairPublicReply(env,c,row,'token')]);assert.equal(sends,1);assert.match((await env.DB.prepare('SELECT detail FROM instagram_deliveries').first()).detail,/public reply sent/);}finally{globalThis.fetch=original;}});
 test('ambiguous public reply is not resent by recovery',async()=>{const {env,c,row}=await publicSetup(),original=globalThis.fetch;let sends=0;globalThis.fetch=async(url,options)=>{if(options.method==='GET')return Response.json({data:[]});sends++;throw Error('timeout');};try{await repairPublicReply(env,c,row,'token');const updated=await env.DB.prepare('SELECT * FROM instagram_deliveries').first();await repairPublicReply(env,c,updated,'token');assert.equal(sends,1);assert.match(updated.detail,/could not be confirmed/);}finally{globalThis.fetch=original;}});
+
+test('drafts save without an Instagram connection or a media lookup',async()=>{
+ const env=await setup();await env.DB.prepare('DELETE FROM instagram_connection').run();const original=globalThis.fetch;
+ globalThis.fetch=async()=>{throw Error('Draft must not contact Meta');};
+ try{const response=await instagramAdmin(new Request('https://api.leveluphypertrophy.com/v1/admin/instagram/rules',{method:'POST'}),env,async()=>({...rule,media_id:'',enabled:false}));assert.equal(response.status,201);const draft=await env.DB.prepare('SELECT * FROM instagram_rules WHERE id=?').bind(response.data.id).first();assert.equal(draft.media_id,'');assert.equal(draft.enabled,0);assert.equal(draft.message,rule.message);}finally{globalThis.fetch=original;}
+});
+test('draft activation requires a post on both save and enable routes',async()=>{
+ const env=await setup();const created=await instagramAdmin(new Request('https://api.leveluphypertrophy.com/v1/admin/instagram/rules',{method:'POST'}),env,async()=>({...rule,media_id:'',enabled:false}));
+ const path='https://api.leveluphypertrophy.com/v1/admin/instagram/rules/'+created.data.id;
+ assert.equal((await instagramAdmin(new Request(path,{method:'PUT'}),env,async()=>({...rule,media_id:'',enabled:true}))).status,400);
+ assert.equal((await instagramAdmin(new Request(path,{method:'PATCH'}),env,async()=>({enabled:true}))).status,409);
+ assert.equal((await env.DB.prepare('SELECT enabled FROM instagram_rules WHERE id=?').bind(created.data.id).first()).enabled,0);
+});
+test('a draft activates only after verifying the selected post belongs to the account',async()=>{
+ const env=await setup(),original=globalThis.fetch;const created=await instagramAdmin(new Request('https://api.leveluphypertrophy.com/v1/admin/instagram/rules',{method:'POST'}),env,async()=>({...rule,media_id:'',enabled:false}));const request=()=>new Request('https://api.leveluphypertrophy.com/v1/admin/instagram/rules/'+created.data.id,{method:'PUT'});
+ globalThis.fetch=async()=>Response.json({data:[{id:'999'}]});
+ try{assert.equal((await instagramAdmin(request(),env,async()=>rule)).status,400);globalThis.fetch=async()=>Response.json({data:[{id:rule.media_id}]});assert.equal((await instagramAdmin(request(),env,async()=>rule)).status,200);const saved=await env.DB.prepare('SELECT * FROM instagram_rules WHERE id=?').bind(created.data.id).first();assert.equal(saved.enabled,1);assert.equal(saved.media_id,rule.media_id);}finally{globalThis.fetch=original;}
+});
+test('duplicated draft preserves campaign content and cannot match a live comment',async()=>{
+ const env=await setup();const body={...rule,title:'Upper (copy)',media_id:'',enabled:false,public_reply:'Sent!'};const response=await instagramAdmin(new Request('https://api.leveluphypertrophy.com/v1/admin/instagram/rules',{method:'POST'}),env,async()=>body);
+ assert.equal(response.status,201);assert.notEqual(response.data.id,'rule');const draft=await env.DB.prepare('SELECT * FROM instagram_rules WHERE id=?').bind(response.data.id).first();assert.equal(draft.public_reply,'Sent!');assert.equal(draft.routine_url,rule.routine_url);assert.deepEqual(JSON.parse(draft.keywords),rule.keywords);
+ await env.DB.prepare("UPDATE instagram_rules SET enabled=0 WHERE id='rule'").run();await instagramWebhook(await signed(event),env);assert.equal((await env.DB.prepare('SELECT * FROM instagram_deliveries').all()).results.length,0);
+});
