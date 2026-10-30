@@ -1,4 +1,4 @@
-const CACHE_VERSION = "set-distribution-spectrum-20261025";
+const CACHE_VERSION = "cardio-fit-20261030-pwa";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
