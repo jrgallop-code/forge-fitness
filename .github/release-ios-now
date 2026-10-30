@@ -583,3 +583,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-25: TestFlight review — theme-aware lower-to-higher set distribution palettes across male/female anatomy, summaries and exports; preserve existing layouts and set credits.
 
 2026-10-25: Restore original completion-card primary/secondary appearance colours and legend, including share exports; retain spectral set-distribution palettes elsewhere.
+
+2026-10-30: Fit long-range cardio charts and summary cards within the phone viewport.
