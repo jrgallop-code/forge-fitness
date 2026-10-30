@@ -1,4 +1,4 @@
-const CACHE_VERSION = "cardio-fit-20261030-ios";
+const CACHE_VERSION = "ios-recorded-set-defaults-20261030";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;

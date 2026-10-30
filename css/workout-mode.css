@@ -32,3 +32,6 @@ body.levelup-workout-mode-active{overflow:hidden}
     border-radius:0!important;
   }
 }
+
+/* Suggested values must remain distinct from entered values in every theme. */
+#workout-session-logger .session-set-row input::placeholder{color:var(--text-secondary,#a1a1aa)!important;opacity:.3!important;-webkit-text-fill-color:currentColor!important}

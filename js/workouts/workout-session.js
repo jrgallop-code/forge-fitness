@@ -1,3 +1,4 @@
+import { recordedSetDefaults } from "./recorded-set-defaults.js";
 import { plannedSessionFields, sessionTargetState } from './routine-builder-model.js';
 import { showCompletedWorkoutRecap } from "./workout-complete-recap.js?v=completion-flow-20261012";
 import { isStaticHold, holdTrackingType, holdTarget, holdTimeField, holdLoadControl, holdTimerControl, bindHoldRows, stopHoldTimer } from "./static-holds.js";
@@ -20,6 +21,7 @@ import { openWorkoutMode } from "./workout-mode.js?v=native-navigation-stability
 import {
     UNIT_KINDS,
     canonicalInputValue,
+    displayMass,
     formatMass as formatUnitMass,
     massUnit
 } from "../core/unit-system.js?v=granular-units-1";
@@ -1195,6 +1197,35 @@ function bindSessionInputs({
                         ?.addEventListener(
                             "click",
                             () => {
+                                if (!set.completed && !isStaticHold(session.exercises[exerciseIndex])) {
+                                    const exercise = session.exercises[exerciseIndex];
+                                    const history = resumeProgressionHistory(getSavedSessions(), session)
+                                        .filter(saved => saved.id !== editingSessionId && saved.id !== session.id &&
+                                            saved.adaptiveGuidance?.isDeload !== true)
+                                        .sort(compareSessionsNewest)
+                                        .map(saved => saved.exercises?.find(item =>
+                                            item.exerciseId === exercise.exerciseId &&
+                                            (item.equipmentProfileId || "default") === (exercise.equipmentProfileId || "default")))
+                                        .find(item => item?.sets?.some(s => s.completed !== false &&
+                                            Number.isFinite(s.weight) && s.weight >= 0 && Number.isFinite(s.reps) && s.reps > 0));
+                                    const defaults = recordedSetDefaults(exercise.sets, setIndex, history?.sets);
+                                    const weightInput = row.querySelector(".session-weight");
+                                    const repsInput = row.querySelector(".session-reps");
+                                    const weight = weightInput?.value === "" ? defaults?.weight : canonicalInputValue(weightInput);
+                                    const reps = repsInput?.value === "" ? defaults?.reps : Number(repsInput?.value);
+                                    if (!Number.isFinite(weight) || weight < 0 || !Number.isFinite(reps) || reps <= 0) {
+                                        const message = logger.querySelector("#session-message");
+                                        if (message) message.textContent = "Enter weight and reps before completing this set.";
+                                        (weightInput?.value === "" ? weightInput : repsInput)?.focus();
+                                        return;
+                                    }
+                                    set.weight = weight;
+                                    set.reps = reps;
+                                    if (weightInput) weightInput.value = String(displayMass(weight, 2, UNIT_KINDS.LIFTING_WEIGHT));
+                                    if (repsInput) repsInput.value = String(reps);
+                                    const message = logger.querySelector("#session-message");
+                                    if (message) message.textContent = "";
+                                }
                                 set.completed =
                                     !set.completed;
                                 if (!editingSessionId) {
