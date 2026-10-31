@@ -258,32 +258,9 @@ export function renderProgress() {
 
                         <input id="progress-range" type="hidden" value="70">
 
-                        <button
-                            id="load-training-demo"
-                            class="secondary-btn"
-                            type="button"
-                        >
-                            Load 12-Week Sample
-                        </button>
-
-                        <button
-                            id="remove-training-demo"
-                            class="secondary-btn"
-                            type="button"
-                        >
-                            Remove Sample Data
-                        </button>
-
                     </div>
 
                 </div>
-
-
-                <p
-                    id="training-demo-message"
-                    class="workout-message"
-                    aria-live="polite"
-                ></p>
 
 
                 <div class="training-summary-grid">
@@ -549,3 +526,4 @@ export function renderProgress() {
     `;
 
 }
+
