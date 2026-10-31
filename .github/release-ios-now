@@ -593,3 +593,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-30: iOS fixed half-set colour bands, dot legends and matching Progress/workout overview bars; male/female parity; preserve completion cards.
 
 2026-10-30: Lock Progress anatomy to rolling seven days; retain selected-range bars; prepare dashboard muscle destination before reveal and cache unchanged anatomy markup.
+
+2026-10-30: Preserve fixed set-band colours through overview theme overrides; match Smart Builder breakdown bars; completion cards unchanged.

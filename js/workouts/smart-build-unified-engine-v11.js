@@ -1,3 +1,4 @@
+import { setBandStyle } from "../core/muscle-map-colors.js?v=set-spectrum-1";
 import { MAX_WORKING_SETS, clampWorkingSets, normalizeGeneratedDayNames } from "./smart-build-constraints.js?v=builder-four-sets-1";
 import { getAllExercises } from "./exercise-library.js?v=exercise-library-catalogue-2";
 import { getTrainingPreferences } from "../core/training-preferences.js?v=onboarding-1";
@@ -1106,7 +1107,7 @@ function renderMuscleSetBreakdown(effective = {}) {
     .sort((a, b) => b[1] - a[1] || displayMuscle(a[0]).localeCompare(displayMuscle(b[0])));
   const maximum = Math.max(1, ...rows.map(([, sets]) => sets));
 
-  return `<section class="smart-set-breakdown" aria-label="Weekly muscle set breakdown"><div class="smart-set-breakdown-heading"><span class="eyebrow">WEEKLY SET DISTRIBUTION</span><h4>Muscle Breakdown</h4><p>Primary 1.0 · Secondary 0.5</p></div><div class="smart-set-breakdown-list">${rows.map(([muscle, sets]) => `<div class="smart-set-breakdown-row"><div><strong>${escapeHtml(displayMuscle(muscle))}</strong><span>${formatNumber(sets)} sets</span></div><i aria-hidden="true"><b style="width:${(sets / maximum * 100).toFixed(1)}%"></b></i></div>`).join("")}</div></section>`;
+  return `<section class="smart-set-breakdown" aria-label="Weekly muscle set breakdown"><div class="smart-set-breakdown-heading"><span class="eyebrow">WEEKLY SET DISTRIBUTION</span><h4>Muscle Breakdown</h4><p>Primary 1.0 · Secondary 0.5</p></div><div class="smart-set-breakdown-list">${rows.map(([muscle, sets]) => `<div class="smart-set-breakdown-row"><div><strong>${escapeHtml(displayMuscle(muscle))}</strong><span>${formatNumber(sets)} sets</span></div><i aria-hidden="true"><b style="${setBandStyle(sets)};width:${(sets / maximum * 100).toFixed(1)}%"></b></i></div>`).join("")}</div></section>`;
 }
 
 function savePlan(button) {
