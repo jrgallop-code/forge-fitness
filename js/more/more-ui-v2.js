@@ -1,3 +1,4 @@
+import { renderStrengthComparisonSettings, initializeStrengthComparisonSettings } from "../core/strength-comparisons.js";
 import { renderProgressiveOverloadSettings, initializeProgressiveOverloadSettings } from "./progressive-overload-settings.js?v=progressive-overload-toggle-1";
 import { supportCardMarkup, initializeSupportControls } from "./contact-support.js?v=help-navigation-2";
 import { navigate } from "../core/router.js?v=native-navigation-stability-1";
@@ -53,6 +54,7 @@ export function renderMore() {
     ${widgetCard}
     ${gameCard}
     <button class="more-menu-card" type="button" data-more-page="units"><span class="more-menu-icon">${ICONS.units}</span><span><strong>Units</strong><small>Choose body weight, workout weight, distance and measurement units separately.</small></span></button>
+    <button class="more-menu-card" type="button" data-more-page="strength-comparisons"><span class="more-menu-icon">${ICONS.progression}</span><span><strong>Strength comparisons</strong><small>Choose whether to show optional strength ratings. Off by default.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="progressive-overload"><span class="more-menu-icon">${ICONS.progression}</span><span><strong>Progressive Overload</strong><small>Turn suggested weight and rep targets on or off.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="dynamic-warmups"><span class="more-menu-icon">${ICONS.warmup}</span><span><strong>Dynamic Warm-Ups</strong><small>Turn optional video-guided movement preparation on or off.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Body Profile</strong><small>Update your name, personal details, training experience and anatomy appearance.</small></span></button>
@@ -84,6 +86,14 @@ export function initializeMore() {
         }
         if (page === "learn") {
             openLessonLibrary();
+            return;
+        }
+        if (page === "strength-comparisons") {
+            const content = document.getElementById("content");
+            if (!content) return;
+            content.innerHTML = renderStrengthComparisonSettings();
+            initializeStrengthComparisonSettings(content, () => { content.innerHTML = renderMore(); initializeMore(); });
+            window.scrollTo({top:0,behavior:"auto"});
             return;
         }
         if (page === "appearance") {
@@ -203,3 +213,4 @@ export function initializeMore() {
         navigate(page);
     }));
 }
+

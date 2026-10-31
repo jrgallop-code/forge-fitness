@@ -66,6 +66,7 @@ jobs:
       - run: npm install --no-save --package-lock=false playwright@1.56.1
       - run: npx playwright install --with-deps firefox
       - run: node tests/muscle-map-viewport.browser.mjs
+      - run: node tests/strength-profile.browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -135,7 +136,7 @@ jobs:
           PY
 
       - name: Run iOS packaging checks
-        run: node --test tests/overview-set-bar-colors.test.mjs tests/muscle-navigation-stability.test.mjs tests/dashboard-touch-navigation.test.mjs tests/native-navigation-stability.test.mjs tests/set-range-ui.test.mjs tests/set-distribution-colors.test.mjs tests/exercise-thumbnail-assets.test.mjs tests/exercise-thumbnail-rendering.test.mjs tests/exercise-thumbnail-identity.test.mjs tests/coach-resume-check-in.test.mjs tests/recent-weight-guard.test.mjs tests/shared-weekly-calorie-review.test.mjs tests/instagram-video-model.test.mjs tests/spotify-pr-tagging.test.mjs tests/live-set-progression.test.mjs tests/capacitor-ios-packaging.test.mjs tests/ios-cloud-build.test.mjs tests/native-app-shell.test.mjs tests/nutrition-badges.test.mjs tests/training-badge-expanded-rules.test.mjs tests/lifting-goals-badges.test.mjs tests/lifting-goals-ui.test.mjs tests/lifting-goals-balanced-score.test.mjs tests/dashboard-badges-scroll-stability.test.mjs tests/strength-context.test.mjs tests/workout-performance.test.mjs tests/app-reviews.test.mjs tests/food-nutrients.test.mjs tests/expanded-food-nutrients.test.mjs
+        run: node --test tests/strength-comparisons.test.mjs tests/strength-profile.test.mjs tests/overview-set-bar-colors.test.mjs tests/muscle-navigation-stability.test.mjs tests/dashboard-touch-navigation.test.mjs tests/native-navigation-stability.test.mjs tests/set-range-ui.test.mjs tests/set-distribution-colors.test.mjs tests/exercise-thumbnail-assets.test.mjs tests/exercise-thumbnail-rendering.test.mjs tests/exercise-thumbnail-identity.test.mjs tests/coach-resume-check-in.test.mjs tests/recent-weight-guard.test.mjs tests/shared-weekly-calorie-review.test.mjs tests/instagram-video-model.test.mjs tests/spotify-pr-tagging.test.mjs tests/live-set-progression.test.mjs tests/capacitor-ios-packaging.test.mjs tests/ios-cloud-build.test.mjs tests/native-app-shell.test.mjs tests/nutrition-badges.test.mjs tests/training-badge-expanded-rules.test.mjs tests/lifting-goals-badges.test.mjs tests/lifting-goals-ui.test.mjs tests/lifting-goals-balanced-score.test.mjs tests/dashboard-badges-scroll-stability.test.mjs tests/strength-context.test.mjs tests/workout-performance.test.mjs tests/app-reviews.test.mjs tests/food-nutrients.test.mjs tests/expanded-food-nutrients.test.mjs
 
       - name: Create temporary App Store Connect key
         shell: bash
@@ -338,3 +339,4 @@ jobs:
           if [[ -n "${AUTH_KEY_PATH:-}" ]]; then
             rm -f "$AUTH_KEY_PATH"
           fi
+

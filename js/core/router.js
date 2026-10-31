@@ -1,3 +1,4 @@
+import { renderStrengthProfile, initializeStrengthProfile, mountStrengthProfileEntry, mountStrengthDashboard } from "../progress/strength-profile.js";
 import { initializeMuscleOverviewDestination } from "../progress/muscle-overview-v2.js?v=female-anatomy-2";
 import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=proven-template-builder-1";
 import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=saved-plan-edit-2";
@@ -100,6 +101,7 @@ export function navigate(page) {
                 safeInitialize("Workout performance", initializeWorkoutPerformance);
                 safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
                 safeInitialize("Monthly report prompt", () => initializeMonthlyReportDashboardPrompt(content));
+                safeInitialize("Strength snapshot", () => mountStrengthDashboard(content, () => navigate("strength-profile")));
                 safeInitialize("Backup manager", initializeBackupManager);
                 safeInitialize("Google Drive sync", initializeGoogleDriveSync);
                 if (!safeInitialize("What's New", showWhatsNewIfEligible)) {
@@ -132,7 +134,9 @@ export function navigate(page) {
                 break;
             }
             case "progress":
-                content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Progress photos", initializePhotoJournal); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); if (isNutritionEnabled()) { safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); } safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); safeInitialize("Monthly reports", () => initializeMonthlyReports(content)); if (muscleMode) routeDestination = initializeMuscleOverviewDestination(muscleMode); break;
+                content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Progress photos", initializePhotoJournal); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); if (isNutritionEnabled()) { safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); } safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); safeInitialize("Monthly reports", () => initializeMonthlyReports(content)); safeInitialize("Strength Profile entry", () => mountStrengthProfileEntry(content, () => navigate("strength-profile"))); if (muscleMode) routeDestination = initializeMuscleOverviewDestination(muscleMode); break;
+            case "strength-profile":
+                content.innerHTML = renderStrengthProfile(); initializeStrengthProfile(content, () => navigate("progress")); break;
             case "sleep":
                 content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>Track sleep duration, quality and recovery notes.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
             case "measurements":
@@ -253,3 +257,4 @@ function openManualBuildMenu(content) {
 }
 
 function safeInitialize(name, initializer) { try { return initializer(); } catch (error) { console.error(`${name} failed to initialize:`, error); return undefined; } }
+
