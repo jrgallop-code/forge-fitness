@@ -12,3 +12,50 @@
 .training-progress-view[data-view="training"] > .muscle-overview-volume-content {
     order:-10;
 }
+
+/* Wider history charts must never set the width of the seven-day anatomy. */
+#lifting-progress,
+#lifting-progress .training-progress-view,
+.muscle-overview-volume-content,
+[data-seven-day-volume-root],
+[data-muscle-volume-analytics] {
+    min-width:0;
+    max-width:100%;
+    width:100%;
+    box-sizing:border-box;
+}
+#lifting-progress .training-progress-view,
+.muscle-overview-volume-content,
+[data-muscle-volume-analytics] {
+    grid-template-columns:minmax(0,1fr);
+}
+#lifting-progress .analytics-card,
+#lifting-progress .training-analytics-carousel,
+#lifting-progress .training-analytics-carousel-track,
+#lifting-progress .training-analytics-slide,
+#lifting-progress .volume-heatmap-wrap,
+#lifting-progress .weekly-muscle-volume {
+    min-width:0;
+    max-width:100%;
+    box-sizing:border-box;
+}
+#lifting-progress .volume-heatmap-wrap {
+    overflow-x:auto;
+    overscroll-behavior-x:contain;
+}
+.seven-day-volume-map-card,
+.seven-day-volume-breakdown,
+.seven-day-volume-bodies,
+.seven-day-volume-figure {
+    min-width:0;
+    max-width:100%;
+    box-sizing:border-box;
+}
+.seven-day-volume-map-card,
+.seven-day-volume-breakdown,
+.seven-day-volume-bodies { width:100%; }
+.seven-day-volume-bodies {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.seven-day-volume-anatomy { max-width:100%; }
+.seven-day-volume-breakdown-heading { flex-wrap:wrap; }
