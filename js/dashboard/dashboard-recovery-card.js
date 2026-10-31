@@ -316,36 +316,10 @@ function ensureMuscleSnapshot() {
 }
 
 function openMuscleMode(mode) {
-    document.querySelector('.nav-btn[data-page="progress"]')?.click();
-
-    let attempts = 0;
-    let liftingActivated = false;
-    let trainingActivated = false;
-    const open = () => {
-        const liftingTab = document.getElementById("lifting-tab");
-        if (liftingTab && !liftingActivated) {
-            liftingActivated = true;
-            if (!liftingTab.classList.contains("active")) liftingTab.click();
-        }
-
-        const trainingTab = document.querySelector('.training-progress-tab[data-view="training"]');
-        if (trainingTab && !trainingActivated) {
-            trainingActivated = true;
-            if (!trainingTab.classList.contains("active")) trainingTab.click();
-        }
-
-        const modeButton = document.querySelector(`[data-muscle-overview-mode="${mode === "recovery" ? "recovery" : "volume"}"]`);
-        if (modeButton) {
-            modeButton.click();
-            document.querySelector(".muscle-overview-shell")?.scrollIntoView({ behavior: "smooth", block: "start" });
-            return;
-        }
-
-        attempts += 1;
-        if (attempts < 20) requestAnimationFrame(open);
-    };
-
-    requestAnimationFrame(open);
+    const progress = document.querySelector('.nav-btn[data-page="progress"]');
+    if (!progress) return;
+    window.__levelUpProgressMuscleMode = mode === "recovery" ? "recovery" : "volume";
+    progress.click();
 }
 
 function queueEnsureMuscleSnapshot() {
@@ -375,3 +349,4 @@ window.addEventListener("focus", queueEnsureMuscleSnapshot);
 
 installStyles();
 queueEnsureMuscleSnapshot();
+

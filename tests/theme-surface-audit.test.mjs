@@ -174,8 +174,8 @@ test('smart-plan muscle bars and exercise icons use the selected appearance', ()
   assert.match(styles, /color:\s*inherit\s*!important/);
 });
 
-test('Level Up black restores the original green muscle-volume bars only for that appearance', () => {
-  assert.match(styles, /html\[data-theme="level-up"\] :is\(\.smart-set-breakdown-row > i > b, \.plan-muscle-breakdown-row > i > b\)\s*\{[^}]*background: #45cb75 !important/);
+test('Level Up black preserves per-set band colours before its green fallback', () => {
+  assert.match(styles, /html\[data-theme="level-up"\] :is\(\.smart-set-breakdown-row > i > b, \.plan-muscle-breakdown-row > i > b\)\s*\{[^}]*background: var\(--set-band-color, #45cb75\) !important/);
   assert.doesNotMatch(styles, /html\[data-theme="(?:arctic|pure|ocean|midnight|slate|pulse)"\][^{]*\.plan-muscle-breakdown-row > i > b[^}]*#45cb75/);
 });
 
@@ -193,3 +193,4 @@ test('late-loaded Routine Import controls cannot leak dark surfaces into light a
 test('theme surface release advances the offline cache', () => {
   assert.match(worker, /2026-09-08-282/);
 });
+

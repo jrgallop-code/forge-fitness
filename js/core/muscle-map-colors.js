@@ -49,6 +49,24 @@ export function getSetDistributionColor(intensity, theme = getAppearanceTheme())
     return mix(palette[index], palette[index + 1], position - index);
 }
 
+// Fixed set bands for Progress and plan overviews only. Completion/export
+// cards retain getSetDistributionColor's existing continuous scale.
+export const SET_RANGE_LABELS = ["0", "0.5–2", "2.5–4", "4.5–6", "6.5–8", "8.5–10", "10.5–12", "12.5+"];
+export function getSetBandIndex(value) {
+    const sets = Number(value);
+    return !Number.isFinite(sets) || sets <= 0 ? 0 : Math.min(7, Math.ceil(sets / 2));
+}
+export function getSetBandColor(value, theme = getAppearanceTheme()) {
+    const index = getSetBandIndex(value);
+    return index ? getSetDistributionPalette(theme)[index - 1] : getSetDistributionColor(0, theme);
+}
+export function setBandStyle(value) {
+    return `--set-band-color:var(--set-band-${getSetBandIndex(value)})`;
+}
+export function renderSetRangeLegend() {
+    return `<div class="set-range-legend" aria-label="Sets per muscle group colour ranges"><strong>Sets</strong><div>${SET_RANGE_LABELS.map((label, index) => `<span><b aria-hidden="true" style="background:var(--set-band-${index})"></b>${label}</span>`).join("")}</div><small>Primary muscles count as 1 set; secondary muscles as 0.5.</small></div>`;
+}
+
 export const DEFAULT_MUSCLE_MAP_COLORS = { ...THEME_MUSCLE_MAP_DEFAULTS["level-up"] };
 
 const LEGACY_DEFAULTS = { recovery: "#55D85A", sets: "#2F80FF" };
@@ -107,6 +125,8 @@ export function applyMuscleMapColors({ announce = false } = {}) {
     root.style.setProperty('--muscle-set-low', getSetDistributionPalette()[0]);
     root.style.setProperty('--muscle-set-high', getSetDistributionPalette().at(-1));
     root.style.setProperty('--muscle-set-mid', getSetDistributionColor(.5));
+    root.style.setProperty('--set-band-0', getSetDistributionColor(0));
+    getSetDistributionPalette().forEach((color, index) => root.style.setProperty(`--set-band-${index + 1}`, color));
     queueRenderedSync();
     if (announce) {
         window.dispatchEvent(new CustomEvent("levelup:muscle-map-colors-changed", { detail: settings }));
@@ -214,13 +234,14 @@ function syncRenderedMaps() {
     ];
     layers.forEach(([selector, property]) => document.querySelectorAll(selector).forEach(node => {
         const intensity = Number.parseFloat(node.style.getPropertyValue(property)) || 0;
-        node.style.setProperty('fill', getSetDistributionColor(intensity), 'important');
+        const recordedSets = node.dataset?.completedSets ?? node.dataset?.plannedSets;
+        node.style.setProperty('fill', recordedSets !== undefined ? getSetBandColor(recordedSets) : getSetDistributionColor(intensity), 'important');
         node.style.setProperty('fill-opacity', intensity > 0 ? '1' : '0', 'important');
         node.style.setProperty('stroke-opacity', intensity > 0 ? '1' : '0', 'important');
     }));
     document.querySelectorAll('.volume-cell').forEach(cell => {
         const sets = Number.parseFloat(cell.textContent || '0') || 0;
-        const color = getSetDistributionColor(sets / 12);
+        const color = getSetBandColor(sets);
         cell.style.setProperty('background', rgba(color, sets > 0 ? .3 : .045), 'important');
         cell.style.setProperty('border-color', rgba(color, .55), 'important');
     });
@@ -276,7 +297,17 @@ function ensureStyles() {
         .seven-day-volume-legend i,
         .plan-target-map-legend i { background:var(--muscle-set-scale)!important; }
         .seven-day-volume-fill,
-        .plan-muscle-breakdown-row > i > b,
+        .plan-muscle-breakdown-row > i > b {
+            background:var(--set-band-color,var(--muscle-set-accent))!important;
+            box-shadow:none!important;
+        }
+        .set-range-legend { display:grid;gap:10px;width:100%;box-sizing:border-box;margin:16px 0 4px; }
+        .set-range-legend > strong { font-size:12px;color:var(--text-secondary,var(--muted)); }
+        .set-range-legend > div { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 6px; }
+        .set-range-legend > div > span { display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:11px;color:var(--text-secondary,var(--muted)); }
+        .set-range-legend b { display:inline-block;width:9px;height:9px;border-radius:50%;flex:0 0 9px; }
+        .set-range-legend small { color:var(--text-secondary,var(--muted));font-size:11px;line-height:1.5; }
+        @media(max-width:350px){.set-range-legend > div{grid-template-columns:repeat(3,minmax(0,1fr))}}
         .frequency-fill,
         .overall-week-bar {
             background:var(--muscle-set-accent)!important;
@@ -435,3 +466,4 @@ if (typeof document !== "undefined") {
     window.addEventListener("levelup:appearance-change", () => applyMuscleMapColors({ announce: false }));
     window.addEventListener("pageshow", () => applyMuscleMapColors({ announce: false }));
 }
+

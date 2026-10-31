@@ -1,3 +1,4 @@
+import { getSetBandColor, getSetBandIndex, SET_RANGE_LABELS } from "../core/muscle-map-colors.js?v=set-spectrum-1";
 const STYLE_ID = "appearance-volume-goals-fix-styles";
 const STYLE_HREF = "css/appearance-volume-goals-fix.css?v=appearance-volume-goals-3";
 const NO_TRAINER_STYLE_ID = "smart-build-no-trainers";
@@ -72,41 +73,14 @@ function applyBandStyles(cell, bandClass) {
 function enhanceHeatmap() {
     const container = document.getElementById("weekly-muscle-volume");
     if (!container) return;
-
-    const cells = [...container.querySelectorAll(".volume-cell")];
-    cells.forEach(cell => {
-        const value = Number.parseFloat(cell.textContent || "0");
-        if (!Number.isFinite(value)) return;
-        const [bandClass, label] = volumeBand(value);
+    container.querySelectorAll(".volume-cell").forEach(cell => {
+        const sets = Number.parseFloat(cell.textContent || "0") || 0;
         BAND_CLASSES.forEach(name => cell.classList.remove(name));
-        cell.classList.add(bandClass);
-        applyBandStyles(cell, bandClass);
-        cell.dataset.volumeStatus = label;
-        cell.setAttribute("aria-label", `${cell.title || "Weekly muscle volume"}. ${label}.`);
+        cell.style.setProperty("background", `color-mix(in srgb,${getSetBandColor(sets)} 30%,var(--card))`, "important");
+        cell.style.setProperty("color", "var(--text)", "important");
+        cell.dataset.volumeStatus = `${SET_RANGE_LABELS[getSetBandIndex(sets)]} sets`;
+        cell.setAttribute("aria-label", `${cell.title || "Weekly muscle sets"}. ${cell.dataset.volumeStatus}.`);
     });
-
-    const note = container.querySelector(".weekly-volume-note");
-    if (note && !container.querySelector(".volume-goal-guide")) {
-        note.insertAdjacentHTML("afterend", `
-            <div class="volume-goal-guide">
-                <strong>Level Up volume guide:</strong> 10–20 weekly muscle-set credits is the target zone for this view. If a priority muscle is repeatedly below 10, consider reviewing its weekly volume; values above 20 are a cue to check recovery and performance before adding more.
-            </div>
-        `);
-    }
-
-    const legend = container.querySelector(".volume-intensity-legend");
-    if (legend && legend.dataset.goalLegend !== "true") {
-        legend.dataset.goalLegend = "true";
-        legend.classList.add("volume-goal-legend");
-        legend.innerHTML = `
-            <span><i class="legend-guide-none"></i> 0 · None</span>
-            <span><i class="legend-guide-very-low"></i> 1–4.9 · Very low</span>
-            <span><i class="legend-guide-below"></i> 5–9.9 · Below target</span>
-            <span><i class="legend-guide-target"></i> 10–20 · Target</span>
-            <span><i class="legend-guide-high"></i> 20.5–24.9 · High</span>
-            <span><i class="legend-guide-very-high"></i> 25+ · Very high</span>
-        `;
-    }
 }
 
 function enhanceWeeklySetsChart() {
@@ -245,3 +219,4 @@ window.addEventListener("levelup:appearance-change", scheduleEnhancements);
 window.addEventListener("resize", scheduleEnhancements);
 
 scheduleEnhancements();
+

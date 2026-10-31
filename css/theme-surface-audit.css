@@ -967,13 +967,13 @@ html[data-theme] :is(.smart-set-breakdown-row > i, .plan-muscle-breakdown-row > 
 }
 
 html[data-theme] :is(.smart-set-breakdown-row > i > b, .plan-muscle-breakdown-row > i > b) {
-    background: var(--accent) !important;
+    background: var(--set-band-color, var(--accent)) !important;
     box-shadow: none !important;
 }
 
-/* The original Level Up black appearance keeps its signature green muscle-volume bars. */
+/* Set-count colours take precedence over the legacy Classic green fallback. */
 html[data-theme="level-up"] :is(.smart-set-breakdown-row > i > b, .plan-muscle-breakdown-row > i > b) {
-    background: #45cb75 !important;
+    background: var(--set-band-color, #45cb75) !important;
 }
 
 html[data-theme] .smart-set-breakdown-heading .eyebrow {
@@ -1072,3 +1072,4 @@ html[data-theme] .routine-import-match > button {
     color: var(--warning-text) !important;
     -webkit-text-fill-color: var(--warning-text) !important;
 }
+

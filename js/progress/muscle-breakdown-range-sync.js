@@ -1,3 +1,4 @@
+import { renderSetRangeLegend, setBandStyle } from "../core/muscle-map-colors.js?v=set-spectrum-1";
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { createGeneratedExerciseGuide } from "../workouts/exercise-guide-generator.js?v=full-library-guides-1";
 
@@ -155,7 +156,7 @@ function renderRow(muscle, sets, maximum) {
                 <span>${escapeHtml(formatSets(sets))} sets</span>
             </div>
             <div class="seven-day-volume-track" aria-hidden="true">
-                <div class="seven-day-volume-fill" style="width:${width.toFixed(1)}%"></div>
+                <div class="seven-day-volume-fill" style="${setBandStyle(sets)};width:${width.toFixed(1)}%"></div>
             </div>
         </div>
     `;
@@ -252,3 +253,4 @@ function escapeHtml(value) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+

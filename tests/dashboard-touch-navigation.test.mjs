@@ -13,11 +13,11 @@ test('real taps get one haptic while synthetic navigation is silent across dupli
  assert.deepEqual(impacts,['LIGHT']);control.disabled=true;listeners[0]({isTrusted:true,target:{closest:()=>control}});assert.equal(impacts.length,1);
 });
 
-for(const mode of ['recovery','volume'])test(`${mode} readiness retries activate each destination tab once`,()=>{
+for(const mode of ['recovery','volume'])test(`${mode} destination is requested before one synchronous navigation`,()=>{
  const source=read('js/dashboard/dashboard-recovery-card.js');const start=source.indexOf('function openMuscleMode(');const fn=source.slice(start,source.indexOf('\nfunction queueEnsureMuscleSnapshot',start));
- let lifting=0,training=0,selected=0,frames=0;const queue=[];
- const tab=counter=>({classList:{contains:()=>false},click:counter});
- const context={document:{getElementById:()=>tab(()=>lifting++),querySelector:selector=>selector.startsWith('.nav-btn')?{click(){}}:selector.startsWith('.training-progress-tab')?tab(()=>training++):selector.startsWith('[data-muscle-overview-mode=')&&frames>=5?{click:()=>selected++}:null},requestAnimationFrame:fn=>queue.push(fn)};
- vm.createContext(context);vm.runInContext(fn,context);context.openMuscleMode(mode);while(queue.length){frames++;queue.shift()();}
- assert.equal(lifting,1);assert.equal(training,1);assert.equal(selected,1);
+ let navigations=0;const window={};
+ const context={window,document:{querySelector:()=>({click(){navigations++;assert.equal(window.__levelUpProgressMuscleMode,mode);}})}};
+ vm.createContext(context);vm.runInContext(fn,context);context.openMuscleMode(mode);
+ assert.equal(navigations,1);assert.doesNotMatch(fn,/requestAnimationFrame|scrollIntoView/);
 });
+
