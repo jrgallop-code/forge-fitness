@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 const source=fs.readFileSync('js/progress/strength-profile.js','utf8').replace(/^import .*;\n/gm,'').replace(/export /g,'');
 let css='';const c=vm.createContext({document:{getElementById:()=>null,createElement:()=>({}),head:{appendChild:s=>css=s.textContent}},window:{addEventListener(){}},STRENGTH_COMPARISONS_EVENT:'change',UNIT_KINDS:{LIFTING_WEIGHT:'liftingWeight'},formatMass:n=>n+' lb'});
 vm.runInContext(source,c);c.ensureStyles();
-const card=c.liftCard({name:'Barbell Bench Press',weight:150,reps:7,estimatedOneRepMax:185},{tier:'Intermediate',tierIndex:2,percentile:68,sampleSize:100});
+const card=c.liftCard({name:'Barbell Bench Press',weight:150,reps:7,estimatedOneRepMax:185},{tier:'Intermediate',tierIndex:2,model:true,percentile:null,sampleSize:null,nextTier:'Advanced',nextWeight:130});
 const recapSource=fs.readFileSync('js/workouts/workout-complete-recap.js','utf8').replace(/^import .*;\n/gm,'').replace(/export /g,'');
 const r=vm.createContext({UNIT_KINDS:{LIFTING_WEIGHT:'liftingWeight'},formatUnitMass:n=>n+' lb'});vm.runInContext(recapSource,r);
 const recap=r.renderTopSetsSlide({topSets:Array.from({length:3},()=>({name:'Barbell Bench Press',weight:150,reps:7,estimatedOneRepMax:185})),profileName:'John'});

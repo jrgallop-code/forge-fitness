@@ -603,3 +603,6 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 
 2026-10-31: Fix existing-lift recognition, higher-rep sets, logged bodyweight and comparison-service diagnostics.
 
+
+2026-10-31: Connect FitnessVolt model tables independently of gym percentiles; calculate levels on-device for exact exercise variants.
+

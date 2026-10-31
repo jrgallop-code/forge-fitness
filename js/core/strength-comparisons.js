@@ -98,8 +98,8 @@ export function renderStrengthComparisonSettings() {
       <span><strong>Show strength comparisons</strong><br><small>Optional ratings on supported lifts and workout completion cards.</small></span>
       <input type="checkbox" role="switch" data-strength-comparisons-toggle ${strengthComparisonsEnabled()?'checked':''}>
     </label><p>Off by default. Turning this off hides comparison levels, percentiles and comparison targets. Your personal records, estimated 1RM and training history stay visible.</p>
-    <p>When enabled, supported lift estimates, bodyweight, sex and available age are sent to FitnessVolt for comparison. Your name and workout history are not sent.</p>
-    <p>Completion cards show a compact gym-lifter rating only. These ratings describe individual lifts, not your experience or worth.</p>
+    <p>Model levels are calculated on your device from public FitnessVolt reference tables. For supported population percentiles, lift estimates, bodyweight, sex and available age are sent to FitnessVolt. Your name and workout history are not sent.</p>
+    <p>Completion cards show a compact strength level. Model standards are separate from population percentiles. These ratings describe individual lifts, not your experience or worth.</p>
     <a href="https://fitnessvolt.com/strength-standards/" target="_blank" rel="noopener">Strength standards data by FitnessVolt</a>
     <p data-strength-comparisons-status role="status"></p>
     <button type="button" class="secondary-btn" data-strength-comparisons-back>Back to More</button></section>`;

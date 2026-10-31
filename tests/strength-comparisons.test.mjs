@@ -54,7 +54,7 @@ test('completion display and image export both respect the preference; cards hav
  assert.ok(recap.includes('data-recap-strength="${index}" hidden'));
  assert.ok(recap.includes('strengthComparisonsEnabled()?data.strengthRatings?.[i]:null'));
  assert.ok(recap.includes('await payload.strengthReady'));
- assert.ok(recap.includes('Gym ratings · Powered by FitnessVolt'));
+ assert.ok(recap.includes('Strength standards · Powered by FitnessVolt'));
  assert.ok(recap.includes('STRENGTH_COMPARISONS_EVENT, refresh'));
 });
 

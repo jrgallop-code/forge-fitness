@@ -24,6 +24,11 @@ test('profile card includes both swipe views, explicit source, and no invented n
 
 test('13–15 rep training and unsupported weighted lifts remain visible instead of a false empty state',()=>{
  const c=load();const rows=c.recentComparisonSets([session([{weight:150,reps:14}]),{completedAt:'2026-10-30',exercises:[{name:'Dumbbell Bench Press',sets:[{weight:50,reps:13}]}]}],now);
- assert.equal(rows.length,2);assert.equal(rows[0].reps,14);assert.ok(c.unratedCard(rows[1],'unsupported').includes('does not provide a matching gym percentile'));
+ assert.equal(rows.length,2);assert.equal(rows[0].reps,14);assert.ok(c.unratedCard(rows[1],'unsupported').includes('not a claim that FitnessVolt has no standards'));
  assert.ok(c.unratedCard(rows[0],'service').includes('no additional workout logs are needed'));
+});
+
+test('model-only ratings keep level and next target while percentile view explains unavailable data',()=>{
+ const c=load();const html=c.liftCard({name:'Dumbbell Bench Press',weight:70,reps:10,estimatedOneRepMax:94},{tier:'Intermediate',tierIndex:2,model:true,percentile:null,nextTier:'Advanced',nextWeight:130});
+ assert.ok(html.includes('FitnessVolt model standard'));assert.ok(html.includes('No population percentile'));assert.ok(html.includes('Next level:'));assert.ok(!html.includes('null percentile'));assert.ok(!html.includes('strength-curve'));
 });

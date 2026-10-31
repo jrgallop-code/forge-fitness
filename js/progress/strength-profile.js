@@ -1,3 +1,4 @@
+import { getStrengthComparison, modelExercise, modelProfileReady } from "../core/strength-model-standards.js";
 import { strengthComparisonsEnabled, getGymComparison, comparisonLift, comparisonProfile, comparisonStatus, STRENGTH_COMPARISONS_EVENT } from '../core/strength-comparisons.js';
 import { getNutritionProfile } from '../nutrition/nutrition-storage.js?v=profile-appearance-1';
 import { resolveSessionExerciseIdentity } from '../workouts/session-exercise-identity.js?v=repair-generic-exercise-1';
@@ -53,7 +54,7 @@ export function renderStrengthProfile() {
   return `<section class="section-card strength-profile" data-strength-profile><div class="strength-profile-header"><div><span class="eyebrow">PROGRESS</span><h2>Strength Profile</h2></div><button type="button" class="secondary-btn" data-strength-back>Back to Progress</button></div>
   <p class="section-description">Best qualifying estimated 1RM from the last 30 days. Gym-lifter comparisons are optional.</p>
   <button type="button" class="secondary-btn" data-strength-retry>Retry comparisons</button><div data-strength-profile-results role="status">Loading your lifts…</div>
-  <details><summary>How these comparisons work</summary><p>Ratings and percentiles here both come from FitnessVolt’s self-reported gym dataset. They are not its separate model-based level tables or competition ratings. Comparison groups use available bodyweight, sex and age information. An estimated 1RM is an estimate, not a tested maximum.</p><p>Only supported exact exercise matches and sets of 1–30 reps are compared. Estimates above 12 reps are less certain. Warm-ups are excluded; lifts without population standards still show your recorded performance. A rating describes one lift, not your training experience.</p><p>The curve is a standard-normal percentile illustration. It does not show the actual distribution of weights lifted.</p></details></section>`;
+  <details><summary>How these comparisons work</summary><p>Strength levels use FitnessVolt’s model tables for the closest bodyweight row and sex. They are model benchmarks, not population percentiles, and are not age-adjusted here. Available gym percentiles are calculated separately from self-reported gym data. Comparison groups use available bodyweight, sex and age information. An estimated 1RM is an estimate, not a tested maximum.</p><p>Only supported exact exercise matches and sets of 1–30 reps are compared. Estimates above 12 reps are less certain. Warm-ups are excluded; lifts without population standards still show your recorded performance. A rating describes one lift, not your training experience.</p><p>The curve is a standard-normal percentile illustration. It does not show the actual distribution of weights lifted.</p></details></section>`;
 }
 export function percentileCurve(percentile) {
   // Invert a normal-CDF approximation to place a percentile on a schematic
@@ -68,15 +69,19 @@ export function percentileCurve(percentile) {
 }
 function liftCard(item,rating) {
   const mass=formatMass(item.estimatedOneRepMax,0,UNIT_KINDS.LIFTING_WEIGHT);
+  const hasPercentile=Number.isFinite(rating.percentile);
+  const source=rating.model?'FitnessVolt model standard · Sex and bodyweight':'Self-reported gym-lifter rating';
+  const next=rating.model&&rating.nextTier?`<p class="strength-small">Next level: <strong>${rating.nextTier}</strong> · ${esc(formatMass(rating.nextWeight,0,UNIT_KINDS.LIFTING_WEIGHT))} estimated 1RM</p>`:'';
+  const comparison=hasPercentile?`<div class="strength-big">${rating.percentile}<small style="font-size:15px"> percentile</small></div>${percentileCurve(rating.percentile)}<p class="strength-small">Above approximately ${rating.percentile}% of results in the matched gym-lifter sample.</p><p class="strength-small">${Number(rating.sampleSize).toLocaleString()} sample results · Matched using your Body Profile.</p><p class="strength-small">Schematic percentile illustration</p>`:'<h3>No population percentile</h3><p class="strength-small">Your strength level uses FitnessVolt’s model standards. A measured gym-lifter percentile is not available for this exercise or profile. This does not affect your strength level.</p>';
   return `<article class="strength-lift" style="--strength-color:${tierColors[rating.tierIndex]}"><h3>${esc(item.name)}</h3><div class="strength-pages">
     <section aria-label="Strength level"><span class="strength-tier">${rating.tier}</span><div class="strength-big">${esc(mass)}</div><div class="strength-small">Estimated 1RM${item.reps>12?" · Higher-rep estimate; less certain":""}</div>
     <div class="strength-bands" aria-hidden="true">${tierColors.map((c,i)=>`<i class="${i===rating.tierIndex?'active':''}" style="--band:${c}"></i>`).join('')}</div>
-    <div class="strength-legend">${tierNames.map((t,i)=>`<span style="--band:${tierColors[i]}"><i></i>${t}</span>`).join('')}</div><p class="strength-small">${esc(formatMass(item.weight,1,UNIT_KINDS.LIFTING_WEIGHT))} × ${item.reps} reps<br>Self-reported gym-lifter rating</p></section>
-    <section aria-label="Percentile"><div class="strength-big">${rating.percentile}<small style="font-size:15px"> percentile</small></div>${percentileCurve(rating.percentile)}<p class="strength-small">Above approximately ${rating.percentile}% of results in the matched gym-lifter sample.</p><p class="strength-small">${rating.sampleSize.toLocaleString()} sample results · Matched using your Body Profile.</p><p class="strength-small">Schematic percentile illustration</p></section></div>
+    <div class="strength-legend">${tierNames.map((t,i)=>`<span style="--band:${tierColors[i]}"><i></i>${t}</span>`).join('')}</div><p class="strength-small">${esc(formatMass(item.weight,1,UNIT_KINDS.LIFTING_WEIGHT))} × ${item.reps} reps<br>${source}</p>${rating.belowBeginner?'<p class="strength-small">Working toward the listed Beginner benchmark.</p>':''}${next}</section>
+    <section aria-label="Percentile">${comparison}</section></div>
     <div class="strength-page-controls"><button type="button" data-strength-page="0" aria-pressed="true">Level</button><button type="button" data-strength-page="1" aria-pressed="false">Percentile →</button></div></article>`;
 }
 function unratedCard(item,status) {
-  const messages={unsupported:'Your lift is recorded. FitnessVolt does not provide a matching gym percentile for this exercise; it is not compared with a different exercise.',profile:'Your lift is recorded. Add your sex and a valid bodyweight in More → Body Profile, or log a weigh-in.',service:'Your lift is recorded. The comparison service could not be reached. Tap Retry comparisons; no additional workout logs are needed.',coverage:'Your lift is recorded. The provider has no qualifying comparison sample for this profile.'};
+  const messages={unsupported:'Your lift is recorded. A matching reference table could not be loaded. This is not a claim that FitnessVolt has no standards for this exercise.',profile:'Your lift is recorded. Add your sex and a valid bodyweight in More → Body Profile, or log a weigh-in.',service:'Your lift is recorded. The comparison service could not be reached. Tap Retry comparisons; no additional workout logs are needed.',coverage:'Your lift is recorded. The provider has no qualifying comparison sample for this profile.'};
   return `<article class="strength-lift"><h3>${esc(item.name)}</h3><div class="strength-big">${esc(formatMass(item.estimatedOneRepMax,0,UNIT_KINDS.LIFTING_WEIGHT))}</div><div class="strength-small">Estimated 1RM${item.reps>12?' · Higher-rep estimate; less certain':''}</div><p class="strength-small">${esc(formatMass(item.weight,1,UNIT_KINDS.LIFTING_WEIGHT))} × ${item.reps} reps</p><p class="strength-small">${messages[status]||messages.coverage}</p></article>`;
 }
 function bindCards(root) {
@@ -88,8 +93,8 @@ function bindCards(root) {
 }
 const credit=()=>'<a class="strength-profile-credit" href="https://fitnessvolt.com/strength-standards/" target="_blank" rel="noopener">Strength standards data by FitnessVolt</a>';
 async function ratedSets(limit=Infinity) {
-  const profile=comparisonProfile(getNutritionProfile()||{}),sets=readSets().sort((a,b)=>Number(Boolean(b.lift))-Number(Boolean(a.lift))).slice(0,limit);
-  return Promise.all(sets.map(async item=>{const rating=await getGymComparison(item,profile);return {item,rating,status:rating?'ready':comparisonStatus(item,profile)};}));
+  const profile=comparisonProfile(getNutritionProfile()||{}),sets=readSets().sort((a,b)=>Number(Boolean(modelExercise(b)||b.lift))-Number(Boolean(modelExercise(a)||a.lift))).slice(0,limit);
+  return Promise.all(sets.map(async item=>{const rating=await getStrengthComparison(item,profile);return {item,rating,status:rating?'ready':!modelProfileReady(profile)?'profile':modelExercise(item)?'service':comparisonStatus(item,profile)};}));
 }
 export async function initializeStrengthProfile(root,onBack) {
   ensureStyles();const back=root.querySelector('[data-strength-back]');if(back)back.onclick=onBack;const retry=root.querySelector('[data-strength-retry]');if(retry)retry.onclick=()=>initializeStrengthProfile(root,onBack);
@@ -113,7 +118,7 @@ export async function mountStrengthDashboard(root,open) {
   const anchor=root.querySelector('.dashboard-detail-grid');if(anchor)anchor.before(section);else root.append(section);
   const rows=(await ratedSets(3)).filter(row=>row.rating);if(!section.isConnected||!strengthComparisonsEnabled())return;
   if(!rows.length){section.remove();return;}
-  section.querySelector('.strength-dashboard-slots').innerHTML=rows.map(({item,rating})=>`<button type="button" style="--strength-color:${tierColors[rating.tierIndex]}"><strong>${esc(item.name)}</strong><small>${rating.tier}</small><small>${rating.percentile} percentile</small></button>`).join('');
+  section.querySelector('.strength-dashboard-slots').innerHTML=rows.map(({item,rating})=>`<button type="button" style="--strength-color:${tierColors[rating.tierIndex]}"><strong>${esc(item.name)}</strong><small>${rating.tier}</small><small>${Number.isFinite(rating.percentile)?rating.percentile+" percentile":"Model standard"}</small></button>`).join('');
   section.querySelectorAll('.strength-dashboard-slots button').forEach(b=>b.addEventListener('click',open));section.insertAdjacentHTML('beforeend',credit());
 }
 if(typeof window!=='undefined')window.addEventListener(STRENGTH_COMPARISONS_EVENT,()=>{

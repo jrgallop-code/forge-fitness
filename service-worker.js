@@ -1,4 +1,4 @@
-const CACHE_VERSION = "strength-profile-data-fix-20261031-ios";
+const CACHE_VERSION = "strength-model-tables-20261031-ios";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -202,5 +202,6 @@ self.addEventListener("notificationclick", event => {
         })
     );
 });
+
 
 
