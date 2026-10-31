@@ -6,9 +6,9 @@ const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 function load(){const c=vm.createContext({window:{addEventListener(){}},STRENGTH_COMPARISONS_EVENT:'change',UNIT_KINDS:{LIFTING_WEIGHT:'liftingWeight'},comparisonLift:n=>({'Bench Press':'bench-press','Deadlift':'deadlift'})[n]||null,formatMass:n=>n+' lb'});vm.runInContext(read('js/progress/strength-profile.js').replace(/^import .*;\n/gm,'').replace(/export /g,''),c);return c;}
 const now=Date.parse('2026-10-31T12:00:00Z');
 const session=(sets,date='2026-10-30')=>({completedAt:date,exercises:[{name:'Bench Press',sets}]});
-test('recent profile takes best eligible actual set; excludes old logs, warmups, incomplete, high reps and drop sets',()=>{
+test('recent profile takes best eligible actual set; excludes old logs, warmups, incomplete, invalid reps and drop sets',()=>{
  const c=load();const rows=c.recentComparisonSets([
-  session([{weight:150,reps:7},{weight:1000,reps:1,isWarmup:true},{weight:900,reps:1,completed:false},{weight:800,reps:1,type:'drop'},{weight:700,reps:20}]),
+  session([{weight:150,reps:7},{weight:1000,reps:1,isWarmup:true},{weight:900,reps:1,completed:false},{weight:800,reps:1,type:'drop'},{weight:700,reps:31}]),
   session([{weight:500,reps:1}],'2025-10-30'),session([{weight:100,reps:5}])],now);
  assert.equal(rows.length,1);assert.equal(rows[0].weight,150);assert.equal(rows[0].estimatedOneRepMax,185);
 });
@@ -20,4 +20,10 @@ test('curve places median centrally and higher percentiles rightward; says schem
 test('profile card includes both swipe views, explicit source, and no invented next-level targets',()=>{
  const c=load(),html=c.liftCard({name:'Bench Press',weight:150,reps:7,estimatedOneRepMax:185},{tier:'Novice',tierIndex:1,percentile:34,sampleSize:100});
  assert.ok(html.includes('data-strength-page="0"'));assert.ok(html.includes('data-strength-page="1"'));assert.ok(html.includes('matched gym-lifter sample'));assert.ok(html.includes('Self-reported gym-lifter rating'));assert.ok(!html.includes('Next level'));
+});
+
+test('13–15 rep training and unsupported weighted lifts remain visible instead of a false empty state',()=>{
+ const c=load();const rows=c.recentComparisonSets([session([{weight:150,reps:14}]),{completedAt:'2026-10-30',exercises:[{name:'Dumbbell Bench Press',sets:[{weight:50,reps:13}]}]}],now);
+ assert.equal(rows.length,2);assert.equal(rows[0].reps,14);assert.ok(c.unratedCard(rows[1],'unsupported').includes('does not provide a matching gym percentile'));
+ assert.ok(c.unratedCard(rows[0],'service').includes('no additional workout logs are needed'));
 });

@@ -1,4 +1,4 @@
-import { strengthComparisonsEnabled, getGymComparison, STRENGTH_COMPARISONS_EVENT } from "../core/strength-comparisons.js";
+import { strengthComparisonsEnabled, getGymComparison, comparisonProfile, STRENGTH_COMPARISONS_EVENT } from "../core/strength-comparisons.js";
 import { evaluateLiveWorkoutPrs } from "./workout-pr-badges.js";
 import { renderSessionBadges } from '../goals/lifting-goals-ui.js';
 import "./exercise-library-expansion.js?v=exercise-library-expansion-1";
@@ -225,7 +225,7 @@ function initializeRecapStrengthComparisons(overlay, payload) {
     overlay.querySelectorAll('[data-recap-strength]').forEach(node => { node.hidden = true; node.style.removeProperty('display'); node.textContent = ''; });
     overlay.querySelector('[data-recap-strength-credit]')?.remove();
     if (!strengthComparisonsEnabled()) { payload.strengthReady = Promise.resolve(); return; }
-    const profile = getNutritionProfile();
+    const profile = comparisonProfile(getNutritionProfile()||{});
     const generation = payload.strengthGeneration = (payload.strengthGeneration || 0) + 1;
     payload.strengthReady = Promise.all(payload.topSets.slice(0,3).map(async (item,index) => {
       const rating = await getGymComparison(item, profile);
@@ -254,3 +254,4 @@ function initializeRecapStrengthComparisons(overlay, payload) {
   window.addEventListener(STRENGTH_COMPARISONS_EVENT, refresh, {signal:controller.signal});
   refresh();
 }
+

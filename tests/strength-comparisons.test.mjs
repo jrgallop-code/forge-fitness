@@ -24,16 +24,16 @@ test('toggle persists and announces changes',()=>{
 });
 test('only exact supported exercises map; dumbbell, machine and assisted variants are excluded',()=>{
  const {context:c}=harness();assert.equal(c.comparisonLift('Barbell Bench Press'),'bench-press');
- for(const name of ['Dumbbell Bench Press','Smith Machine Bench Press','Assisted Pull-Up','Incline Bench Press','Hip Thrust'])assert.equal(c.comparisonLift(name),null);
+ for(const name of ['Dumbbell Bench Press','Smith Machine Bench Press','Assisted Pull-Up','Hip Thrust'])assert.equal(c.comparisonLift(name),null);
 });
 test('canonical pounds are sent for both bodyweight unit preferences; no names or logs sent',()=>{
  const {context:c}=harness();const input=c.comparisonInput(item,profile);assert.equal(input.weight,185);assert.equal(input.bodyweight,165);assert.equal(input.reps,1);
  const metric=c.comparisonInput(item,{sex:'female',weightKg:60});assert.ok(Math.abs(metric.bodyweight-132.277)<.01);assert.equal(metric.sex,'female');
  assert.deepEqual(Object.keys(input).sort(),['age','bodyweight','lift','reps','sex','unit','weight']);
 });
-test('missing profile, unsupported set and higher rep estimates have no comparison',()=>{
+test('missing profile and estimates beyond 30 reps have no comparison',()=>{
  const {context:c}=harness();for(const p of [{},{sex:'male'},{sex:'unknown',weightLb:165}])assert.equal(c.comparisonInput(item,p),null);
- assert.equal(c.comparisonInput({...item,reps:20},profile),null);
+ assert.equal(c.comparisonInput({...item,reps:31},profile),null);
 });
 test('gym rating is parsed independently from competition; no fallback to headline tier',()=>{
  const {context:c}=harness();assert.equal(c.parseGymComparison(response).tier,'Novice');
@@ -56,4 +56,22 @@ test('completion display and image export both respect the preference; cards hav
  assert.ok(recap.includes('await payload.strengthReady'));
  assert.ok(recap.includes('Gym ratings · Powered by FitnessVolt'));
  assert.ok(recap.includes('STRENGTH_COMPARISONS_EVENT, refresh'));
+});
+
+test('existing 13–15 rep workouts are accepted and exercise punctuation/IDs match',()=>{
+ const {context:c}=harness();for(const reps of [13,14,15])assert.ok(c.comparisonInput({...item,reps},profile));
+ assert.equal(c.comparisonLift('Bench Press (Barbell)'),'bench-press');
+ assert.equal(c.comparisonLift('Saved name',{exerciseId:'front-squat',equipment:'Barbell'}),'front-squat');
+ assert.equal(c.comparisonLift('Incline Barbell Bench Press'),'incline-bench-press');
+ assert.equal(c.comparisonLift('Incline Bench Press',{equipment:'Dumbbells'}),null);
+});
+test('logged bodyweight is used without requiring a duplicated Body Profile weight',()=>{
+ const {context:c,storage}=harness();storage.set('forge_weight_entries',JSON.stringify([{date:'2026-01-01',weight:170},{date:'2026-01-02',weight:165}]));
+ const p=c.comparisonProfile({sex:'male'});assert.equal(p.weightLb,165);assert.ok(c.comparisonInput(item,p));
+});
+test('network and unsupported coverage are distinguished from missing logs',async()=>{
+ const {context:c}=harness(true);c.fetch=async()=>{throw Error('timeout')};await c.getGymComparison(item,profile);
+ assert.equal(c.comparisonStatus(item,profile),'service');
+ assert.equal(c.comparisonStatus({...item,name:'Dumbbell Bench Press'},profile),'unsupported');
+ assert.equal(c.comparisonStatus(item,{}),'profile');
 });
