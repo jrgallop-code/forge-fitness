@@ -1,3 +1,4 @@
+import { renderSetRangeLegend, setBandStyle } from "../core/muscle-map-colors.js?v=set-spectrum-1";
 import { getPresetPlan } from "./workout-plans.js";
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
 import { formatSetCredits, getWeeklyPlanVolume } from "./plan-muscle-volume.js?v=plan-volume-shared-1";
@@ -140,11 +141,7 @@ function renderTargetMapSlide(side) {
             <div class="plan-target-map-body">
                 ${anatomyMarkup(side)}
             </div>
-            <div class="plan-target-map-legend" aria-label="Planned set volume from lower to higher">
-                <span>Lower</span>
-                <i aria-hidden="true"></i>
-                <span>Higher</span>
-            </div>
+            ${renderSetRangeLegend()}
         </section>
     `;
 }
@@ -158,7 +155,7 @@ function renderMuscleBreakdownSlide(volume) {
         <section class="plan-detail-day plan-muscle-breakdown-slide" data-plan-muscle-breakdown aria-label="Plan muscle breakdown">
             <div class="plan-muscle-breakdown-heading">
                 <span class="eyebrow">PLAN SET DISTRIBUTION</span>
-                <h3>Muscle Breakdown</h3>
+                <h3>Sets per Muscle Group</h3>
                 <p>Primary 1.0 · Secondary 0.5</p>
             </div>
             <div class="plan-muscle-breakdown-list">
@@ -167,12 +164,12 @@ function renderMuscleBreakdownSlide(volume) {
                     return `
                         <div class="plan-muscle-breakdown-row">
                             <div><strong>${escapeHtml(muscle)}</strong><span>${formatSetCredits(sets)}</span></div>
-                            <i aria-hidden="true"><b style="width:${width}%"></b></i>
+                            <i aria-hidden="true"><b style="${setBandStyle(sets)};width:${width}%"></b></i>
                         </div>
                     `;
                 }).join("") : '<p class="plan-muscle-breakdown-empty">No weighted muscle sets were found in this plan.</p>'}
             </div>
-            <p class="plan-muscle-breakdown-note">Bars use the same 12-set scale as the Front and Back target maps.</p>
+            <p class="plan-muscle-breakdown-note">Bar colours match the fixed set ranges on the Front and Back maps.</p>
         </section>
     `;
 }
@@ -240,6 +237,7 @@ function initializePlanTargetCarousel(screen, dayCount) {
 }
 
 function inferPlanFromScreen(screen) {
+    if (screen.__levelUpOverviewPlan) return screen.__levelUpOverviewPlan;
     if (pendingPlanInfo?.plan) return pendingPlanInfo.plan;
     const name = screen.querySelector(".plan-detail-header h2")?.textContent?.trim();
     if (!name) return null;

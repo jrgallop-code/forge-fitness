@@ -433,6 +433,7 @@ function showPlanDetails({ plan, type, card }) {
     const stats = getPlanStats(plan);
     const days = Array.isArray(plan?.days) ? plan.days : [];
     const screen = document.createElement("section");
+    screen.__levelUpOverviewPlan = plan;
     screen.id = "workout-plan-detail-screen";
     screen.className = "workout-plan-detail-screen";
     screen.innerHTML = `

@@ -1,3 +1,4 @@
+import { renderSetRangeLegend, setBandStyle } from "../core/muscle-map-colors.js?v=set-spectrum-1";
 import "../workouts/exercise-library-expansion.js?v=exercise-library-expansion-1";
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { createGeneratedExerciseGuide } from "../workouts/exercise-guide-generator.js?v=full-library-guides-1";
@@ -138,11 +139,7 @@ function renderWeeklyMuscleChart(card, muscleData, weeks) {
                 `).join("")}
             </div>
         </div>
-        <div class="volume-legend volume-intensity-legend">
-            <span><i class="legend-none"></i> None</span>
-            <span><i class="legend-some"></i> Lower</span>
-            <span><i class="legend-more"></i> Higher</span>
-        </div>
+        ${renderSetRangeLegend()}
     `;
 }
 

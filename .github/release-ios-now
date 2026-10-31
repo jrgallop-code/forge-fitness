@@ -589,3 +589,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-10-30: Fainter logger placeholders; complete blank strength sets from recorded sets/history only, with manual-entry priority.
 
 2026-10-30: Release 1.0.5; Apple closed 1.0.4. Includes cardio viewport and recorded-set completion fixes.
+
+2026-10-30: iOS fixed half-set colour bands, dot legends and matching Progress/workout overview bars; male/female parity; preserve completion cards.

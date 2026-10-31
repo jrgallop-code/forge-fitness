@@ -1,3 +1,5 @@
+import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
+import { renderSetRangeLegend, setBandStyle } from "../core/muscle-map-colors.js?v=set-spectrum-1";
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { createGeneratedExerciseGuide } from "../workouts/exercise-guide-generator.js?v=full-library-guides-1";
 
@@ -182,10 +184,7 @@ function getLastSevenDayVolume() {
 
 function anatomyMarkup(side) {
     const front = side === "front";
-    const asset = front ? FRONT_ASSET : BACK_ASSET;
-    const regions = front ? FRONT_REGIONS : BACK_REGIONS;
-    const viewBox = front ? "0 0 960 1920" : "960 0 960 1920";
-    const imageX = front ? 0 : 960;
+    const { asset, regions, viewBox, imageX } = getAnatomyConfig(side);
 
     const overlays = Object.entries(regions).flatMap(([muscle, ids]) =>
         ids.map(id => {
@@ -218,8 +217,8 @@ function renderSevenDayVolume() {
         <div class="seven-day-volume-heading">
             <div>
                 <span class="eyebrow">MUSCLE VOLUME</span>
-                <h4>Your Last 7 Days</h4>
-                <p>Completed hypertrophy volume by muscle group.</p>
+                <h4>Sets per Muscle Group</h4>
+                <p>Last 7 days · Completed sets by muscle group.</p>
             </div>
             <strong class="seven-day-volume-window">${escapeHtml(formatDateWindow(startDate, endDate))}</strong>
         </div>
@@ -229,15 +228,13 @@ function renderSevenDayVolume() {
                 ${anatomyMarkup("front")}
                 ${anatomyMarkup("back")}
             </div>
-            <div class="seven-day-volume-legend" aria-label="Completed set volume from lower to higher">
-                <span>Lower</span><i aria-hidden="true"></i><span>Higher</span>
-            </div>
-            <p class="seven-day-volume-note">Same scale as Plan Target Maps: 0 sets stays neutral grey; green intensity increases continuously to full intensity at 12+ set credits.</p>
+            ${renderSetRangeLegend()}
+            
         </div>
 
         <div class="seven-day-volume-breakdown">
             <div class="seven-day-volume-breakdown-heading">
-                <h4>Muscle Breakdown</h4>
+                <h4>Sets by Muscle</h4>
                 <span>Primary 1.0 · Secondary 0.5</span>
             </div>
             ${entries.length ? entries.map(([muscle, sets]) => renderVolumeRow(muscle, sets)).join("") : '<p class="empty-state">Complete working sets to populate your 7-day muscle map.</p>'}
@@ -262,7 +259,7 @@ function renderVolumeRow(muscle, sets) {
                 <span>${escapeHtml(formatSets(sets))} sets</span>
             </div>
             <div class="seven-day-volume-track" aria-hidden="true">
-                <div class="seven-day-volume-fill" style="width:${(intensity * 100).toFixed(1)}%"></div>
+                <div class="seven-day-volume-fill" style="${setBandStyle(sets)};width:${(intensity * 100).toFixed(1)}%"></div>
             </div>
         </div>
     `;
