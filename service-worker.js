@@ -1,4 +1,4 @@
-const CACHE_VERSION = "strength-model-tables-20261031-ios";
+const CACHE_VERSION = "personal-progress-only-20261031-ios";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
