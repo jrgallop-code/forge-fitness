@@ -167,16 +167,6 @@ function syncBreakdownToSelectedRange() {
     if (!breakdown) return;
 
     const { window, volume } = calculateSelectedVolume();
-    // Keep the selected-period map and breakdown on the same numeric totals.
-    document.querySelectorAll("[data-seven-day-muscle]").forEach(node => {
-        const sets = volume.get(node.dataset.sevenDayMuscle) || 0;
-        node.dataset.completedSets = String(sets);
-        node.style.setProperty("--seven-day-volume-intensity", String(Math.max(0, Math.min(1, sets / 12))));
-    });
-    const heading = document.querySelector(".seven-day-volume-heading p");
-    if (heading) heading.textContent = `${window.option.label} selected · Completed sets by muscle group.`;
-    const dates = document.querySelector(".seven-day-volume-window");
-    if (dates) dates.textContent = `${window.startDate} – ${window.endDate}`;
     const entries = [...volume.entries()]
         .filter(([, sets]) => sets > 0)
         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));

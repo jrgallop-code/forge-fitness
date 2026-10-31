@@ -19,7 +19,7 @@ test("route changes reset document scrolling before rendering", () => {
 
 test("route replacement is hidden only during the synchronous render transaction", () => {
     assert.match(router, /classList\.add\("levelup-route-changing"\)/);
-    assert.match(router, /finally \{\s*finishRouteChange\(\);\s*\}/s);
+    assert.match(router, /finally \{\s*finishRouteChange\(routeDestination\);\s*\}/s);
     assert.match(styles, /html\.levelup-route-changing #content\s*\{\s*visibility:hidden;/s);
     assert.match(styles, /#content\s*\{[^}]*overflow-anchor:none;/s);
 });

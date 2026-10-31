@@ -1,3 +1,4 @@
+import { initializeMuscleOverviewDestination } from "../progress/muscle-overview-v2.js?v=female-anatomy-2";
 import { renderWorkoutBuilder } from "../workouts/workout-ui.js?v=proven-template-builder-1";
 import { initializeWorkoutBuilder } from "../workouts/workouts.js?v=saved-plan-edit-2";
 import { initializeOneOffWorkout } from "../workouts/one-off-workout.js?v=cardio-rpe-1";
@@ -59,11 +60,12 @@ function beginRouteChange(content) {
     document.body.scrollTop = 0;
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 
-    return () => {
+    return (destination = null) => {
         root.scrollTop = 0;
         document.documentElement.scrollTop = 0;
         document.body.scrollTop = 0;
         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        destination?.scrollIntoView({ block: "start", behavior: "auto" });
         content.removeAttribute("aria-busy");
         document.documentElement.classList.remove("levelup-route-changing");
 
@@ -72,6 +74,7 @@ function beginRouteChange(content) {
             root.scrollTop = 0;
             document.documentElement.scrollTop = 0;
             document.body.scrollTop = 0;
+            destination?.scrollIntoView({ block: "start", behavior: "auto" });
             root.style.scrollBehavior = previousScrollBehavior;
         });
     };
@@ -85,6 +88,9 @@ export function navigate(page) {
     const content = document.getElementById("content");
     if (!content) return;
     if (["nutrition", "energy"].includes(page) && !isNutritionEnabled()) page = "home";
+    const muscleMode = page === "progress" ? window.__levelUpProgressMuscleMode : null;
+    delete window.__levelUpProgressMuscleMode;
+    let routeDestination = null;
     const finishRouteChange = beginRouteChange(content);
     try {
         switch (page) {
@@ -126,7 +132,7 @@ export function navigate(page) {
                 break;
             }
             case "progress":
-                content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Progress photos", initializePhotoJournal); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); if (isNutritionEnabled()) { safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); } safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); safeInitialize("Monthly reports", () => initializeMonthlyReports(content)); break;
+                content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Progress photos", initializePhotoJournal); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); if (isNutritionEnabled()) { safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); } safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); safeInitialize("Monthly reports", () => initializeMonthlyReports(content)); if (muscleMode) routeDestination = initializeMuscleOverviewDestination(muscleMode); break;
             case "sleep":
                 content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>Track sleep duration, quality and recovery notes.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
             case "measurements":
@@ -152,7 +158,7 @@ export function navigate(page) {
         content.innerHTML = `<section class="section-card"><h2>Page could not load</h2><p class="section-description">The page hit an initialization error. Navigation is still available below.</p></section>`;
     }
     finally {
-        finishRouteChange();
+        finishRouteChange(routeDestination);
     }
 }
 

@@ -248,7 +248,7 @@ function applyProgressLiftingPriority() {
 
     tabs.dataset.liftingPriorityApplied = "true";
     requestAnimationFrame(() => {
-        if (document.body.contains(liftingButton)) liftingButton.click();
+        if (document.body.contains(liftingButton) && !liftingButton.classList.contains("active")) liftingButton.click();
     });
 }
 

@@ -1,4 +1,4 @@
-import { renderSetRangeLegend, setBandStyle } from "../core/muscle-map-colors.js?v=set-spectrum-1";
+import { renderSetRangeLegend, setBandStyle, getSetBandColor } from "../core/muscle-map-colors.js?v=set-spectrum-1";
 import { getExerciseById } from "../workouts/exercise-library.js";
 import { createGeneratedExerciseGuide } from "../workouts/exercise-guide-generator.js?v=full-library-guides-1";
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
@@ -201,6 +201,8 @@ function renderSevenDayVolume() {
     const root = document.querySelector("[data-seven-day-volume-root]");
     if (!root) return;
 
+    const key = `${localDateValue()}|${getAnatomyConfig("front").sex}|${localStorage.getItem(SESSION_STORAGE_KEY) || "[]"}`;
+    if (root.__sevenDayVolumeKey === key) return;
     const { startDate, endDate, volume } = getLastSevenDayVolume();
     const entries = [...volume.entries()]
         .filter(([, sets]) => sets > 0)
@@ -240,7 +242,11 @@ function renderSevenDayVolume() {
         node.style.setProperty("--seven-day-volume-fill", TARGET_GREEN);
         node.style.setProperty("--seven-day-volume-intensity", String(intensity));
         node.dataset.completedSets = formatSets(sets);
+        node.style.setProperty("fill", getSetBandColor(sets), "important");
+        node.style.setProperty("fill-opacity", sets > 0 ? "1" : "0", "important");
+        node.style.setProperty("stroke-opacity", sets > 0 ? "1" : "0", "important");
     });
+    root.__sevenDayVolumeKey = key;
 }
 
 function renderVolumeRow(muscle, sets) {
@@ -344,7 +350,7 @@ function hideSharedNav(nav) {
     if (nav) nav.hidden = true;
 }
 
-function enhanceMuscleOverview() {
+function enhanceMuscleOverview(requestedMode) {
     const lifting = document.getElementById("lifting-progress");
     const tabs = lifting?.querySelector(".training-progress-tabs");
     const trainingView = lifting?.querySelector('.training-progress-view[data-view="training"]');
@@ -382,7 +388,7 @@ function enhanceMuscleOverview() {
 
     const activeTab = tabs.querySelector(".training-progress-tab.active")?.dataset.view;
     if (activeTab === "training") {
-        setMode(nav, trainingView, recoveryView, volumeContent, nav.dataset.muscleMode || "volume");
+        setMode(nav, trainingView, recoveryView, volumeContent, typeof requestedMode === "string" ? requestedMode : nav.dataset.muscleMode || "volume");
     }
     else {
         hideSharedNav(nav);
@@ -391,9 +397,30 @@ function enhanceMuscleOverview() {
     renderSevenDayVolume();
 }
 
+let enhancementQueued = false;
 function queueEnhancement() {
-    requestAnimationFrame(enhanceMuscleOverview);
-    window.setTimeout(enhanceMuscleOverview, 80);
+    if (enhancementQueued) return;
+    enhancementQueued = true;
+    requestAnimationFrame(() => {
+        enhancementQueued = false;
+        enhanceMuscleOverview();
+    });
+}
+
+// The router calls this before revealing a dashboard muscle destination.
+export function initializeMuscleOverviewDestination(mode) {
+    document.querySelectorAll(".progress-tab").forEach(button => button.classList.toggle("active", button.id === "lifting-tab"));
+    for (const id of ["weight-progress", "calorie-progress", "cardio-progress", "photo-log-progress"]) {
+        const panel = document.getElementById(id);
+        if (panel) panel.hidden = true;
+    }
+    const lifting = document.getElementById("lifting-progress");
+    if (!lifting) return null;
+    lifting.hidden = false;
+    lifting.querySelectorAll(".training-progress-tab").forEach(button => button.classList.toggle("active", button.dataset.view === "training"));
+    lifting.querySelectorAll(".training-progress-view").forEach(panel => panel.hidden = panel.dataset.view !== "training");
+    enhanceMuscleOverview(mode === "recovery" ? "recovery" : "volume");
+    return lifting.querySelector(":scope > .muscle-overview-shell");
 }
 
 document.addEventListener("click", event => {
@@ -435,6 +462,8 @@ if (contentRoot) {
     new MutationObserver(queueEnhancement).observe(contentRoot, { childList: true });
 }
 
+window.addEventListener("levelup:workout-completed", renderSevenDayVolume);
+window.addEventListener("levelup:profile-updated", renderSevenDayVolume);
 window.addEventListener("storage", event => {
     if (event.key === SESSION_STORAGE_KEY) renderSevenDayVolume();
 });
