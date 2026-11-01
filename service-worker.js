@@ -1,4 +1,4 @@
-const CACHE_VERSION = "shared-ui-20261031-pwa";
+const CACHE_VERSION = "report-theme-muscles-20261101-pwa";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -102,7 +102,7 @@ const CORE_ASSETS = [
     "./js/progress/progress-initial-tab-stability.js?v=progress-initial-tab-stability-1",
     "./js/progress/weight-history-goal-colors.js?v=weight-history-neutral-1",
     "./css/progress-edge-layout.css?v=progress-edge-cards-1",
-    "./css/monthly-report.css?v=pwa-monthly-reports-1",
+    "./css/monthly-report.css?v=pwa-monthly-reports-2",
     "./css/appearance-volume-goals-fix.css?v=appearance-volume-goals-3",
     "./js/more/body-composition-health-records.js?v=body-comp-health-records-2",
     "./js/more/interactive-workout-tutorial-v5.js?v=browser-form-guide-pointer-1",

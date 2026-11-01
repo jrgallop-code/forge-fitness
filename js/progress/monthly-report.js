@@ -1,4 +1,3 @@
-import { getSetDistributionColor, getSetDistributionPalette } from "../core/muscle-map-colors.js?v=set-spectrum-1";
 import { getAllExercises } from "../workouts/exercise-library.js?v=exercise-library-catalogue-2";
 import { getExerciseImpacts } from "../workouts/plan-muscle-volume.js?v=plan-volume-shared-1";
 import { calculatePrCounts } from "../workouts/workout-pr-badges.js?v=monthly-report-1";
@@ -95,7 +94,7 @@ function ensureStyles() {
     const link = document.createElement("link");
     link.id = STYLE_ID;
     link.rel = "stylesheet";
-    link.href = "css/monthly-report.css?v=pwa-monthly-reports-1";
+    link.href = "css/monthly-report.css?v=pwa-monthly-reports-2";
     document.head.appendChild(link);
 }
 
@@ -452,19 +451,21 @@ function renderMuscles(report) {
             '<button class="monthly-anatomy-flip" type="button" data-monthly-anatomy-flip data-side="front" aria-label="Show back muscle view">' + monthlyAnatomyMarkup(report, "front") + '</button>' +
             '<div class="monthly-muscle-bars">' + barRows(monthly.map(function (row) { return { label: row.name, value: row.sets, suffix: " sets" }; }), monthly.length) + '</div>' +
         '</div>' +
-        '<div class="monthly-graph-legend"><span><i class="is-muscle-low"></i>Lower monthly volume</span><span><i class="is-muscle-high"></i>Higher monthly volume</span></div>' +
     '</section>';
+}
+
+function reportMuscleColor() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#e51b26";
 }
 
 function monthlyAnatomyMarkup(report, side) {
     const config = getAnatomyConfig(side);
     const volume = new Map(report.muscles.rows.map(function (row) { return [row.name, row.sets]; }));
-    const monthlyScale = Math.max(12, 12 * Math.max(1, report.muscles.weeks));
     const overlays = Object.entries(config.regions).flatMap(function (entry) {
         const muscle = entry[0];
         const ids = entry[1];
-        const sets = Number(volume.get(muscle) || (muscle === "Rear Delts" ? volume.get("Shoulders") || 0 : 0));
-        const intensity = Math.max(0, Math.min(1, sets / monthlyScale));
+        const sets = Number(volume.get(muscle) || 0);
+        const intensity = sets > 0 ? 1 : 0;
         return ids.map(function (id) {
             const href = config.asset + "#" + id;
             return '<use href="' + href + '" xlink:href="' + href + '" class="monthly-anatomy-muscle" style="--monthly-muscle-intensity:' + intensity.toFixed(3) + '"/>';
@@ -974,21 +975,20 @@ async function buildPdfAnatomyData(report, side) {
     svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
 
     const volume = new Map(report.muscles.rows.map(function (row) { return [row.name, row.sets]; }));
-    const monthlyScale = Math.max(12, 12 * Math.max(1, report.muscles.weeks));
     const overlay = documentValue.createElementNS("http://www.w3.org/2000/svg", "g");
     overlay.setAttribute("id", "level-up-monthly-volume-overlay");
 
     Object.entries(config.regions || {}).forEach(function (entry) {
         const muscle = entry[0];
         const ids = entry[1];
-        const sets = Number(volume.get(muscle) || (muscle === "Rear Delts" ? volume.get("Shoulders") || 0 : 0));
-        const intensity = Math.max(0, Math.min(1, sets / monthlyScale));
+        const sets = Number(volume.get(muscle) || 0);
+        const intensity = sets > 0 ? 1 : 0;
         if (!(intensity > 0)) return;
         ids.forEach(function (id) {
             const use = documentValue.createElementNS("http://www.w3.org/2000/svg", "use");
             use.setAttribute("href", "#" + id);
             use.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#" + id);
-            use.setAttribute("fill", getSetDistributionColor(intensity));
+            use.setAttribute("fill", reportMuscleColor());
             use.setAttribute("fill-opacity", "1");
             use.setAttribute("stroke", "#222");
             use.setAttribute("stroke-width", "1.2");
@@ -1072,7 +1072,6 @@ function buildPdfHtml(report, markSvg, anatomy = {}) {
             '</div><div class="pdf-bars">' +
                 pdfBarRows(report.muscles.rows.map(function (row) { return { label: row.name, value: row.sets, suffix: " sets" }; })) +
             '</div></div>' +
-            '<div class="pdf-legend"><span><i class="volume-low"></i>Lower monthly volume</span><span><i class="volume-high"></i>Higher monthly volume</span></div>' +
             '<p class="pdf-note">Primary muscles receive 1.0 set credit and secondary muscles receive partial credit, matching the in-app volume calculation.</p>' +
             pdfFooter(report, pdfPage++) + '</section>');
     }
@@ -1302,7 +1301,7 @@ function pdfCss() {
     '.pdf-bars{display:grid;gap:8px;margin:12px 0 22px}.pdf-bar{display:grid;grid-template-columns:minmax(170px,1.2fr) minmax(150px,1.4fr) 64px;align-items:center;gap:10px;font-size:10px}.pdf-bar>span{min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.25}.pdf-bar-track{height:10px;border-radius:999px;background:#e7e7e9;overflow:hidden}.pdf-bar-fill{height:100%;background:#e51b26}.pdf-bar strong{text-align:right;white-space:nowrap}' +
     '.pdf-chart{margin:12px 0 8px;padding:12px;border:1px solid #ddd;border-radius:12px}.pdf-chart svg{display:block;width:100%;height:210px}.pdf-chart .grid line{stroke:#ddd}.pdf-chart .trend{stroke:#e51b26;stroke-width:3}.pdf-chart .second{stroke:#111}.pdf-chart circle{fill:#e51b26}.pdf-chart .target{stroke:#777;stroke-dasharray:5 4}.pdf-legend{display:flex;gap:14px;margin:0 0 18px;color:#555;font-size:9px;font-weight:750}.pdf-legend span{display:inline-flex;align-items:center;gap:5px}.pdf-legend i{display:inline-block;width:16px;height:4px;border-radius:999px;background:#ddd}.pdf-legend .trend-weight{background:#e51b26}.pdf-legend .goal-weight{height:2px;background:repeating-linear-gradient(90deg,#777 0 5px,transparent 5px 8px)}.pdf-legend .calories{width:10px;height:10px;border-radius:2px;background:#e51b26;opacity:.55}.pdf-legend .expenditure{height:3px;background:#111}' +
     '.pdf-insight{padding:16px;border-left:5px solid #e51b26;background:#f6f6f7;margin-top:18px}.pdf-insight b{font-size:11px;text-transform:uppercase;letter-spacing:.7px}.pdf-insight p{margin:6px 0 0;line-height:1.5}' +
-    '.pdf-section-intro{margin-bottom:16px}.pdf-section-intro>span{color:#e51b26;font-size:9px;font-weight:900;letter-spacing:1.2px}.pdf-section-intro h2{margin:4px 0 4px;font-size:20px}.pdf-section-intro p{margin:0;color:#666;font-size:11px;line-height:1.45}.pdf-overview-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px}.pdf-calendar-weekdays,.pdf-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}.pdf-calendar-weekdays{margin:12px 0 7px}.pdf-calendar-weekdays span{text-align:center;color:#777;font-size:8px;font-weight:800}.pdf-calendar-grid span{display:grid;place-items:center;height:42px;border:1px solid #ddd;border-radius:50%;background:#f6f6f7;color:#555;font-size:10px;font-weight:800}.pdf-calendar-grid .is-workout{border-color:#e51b26;background:#e51b26;color:#fff}.pdf-calendar-grid .is-empty{visibility:hidden}.pdf-pr-count{display:flex;align-items:end;gap:8px;margin:8px 0 14px}.pdf-pr-count b{font-size:36px}.pdf-pr-count span{padding-bottom:5px;color:#666;font-size:10px}.pdf-volume-layout{display:grid;grid-template-columns:230px 1fr;gap:18px;align-items:center}.pdf-anatomy-pair{display:grid;grid-template-columns:1fr 1fr;gap:7px}.pdf-anatomy-pair figure{margin:0;display:grid;gap:4px;min-width:0}.pdf-anatomy-pair figure>span{color:#555;font-size:8px;font-weight:850;text-align:center;text-transform:uppercase;letter-spacing:.7px}.pdf-anatomy-pair img{display:block;width:100%;height:250px;object-fit:contain}.pdf-note{margin-top:14px;color:#666;font-size:9px;line-height:1.45}.pdf-improvement-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}.pdf-improvement-grid article{padding:13px;border:1px solid #ddd;border-radius:12px;background:#f7f7f8}.pdf-improvement-grid span{display:block;color:#e51b26;font-size:8px;font-weight:900;text-transform:uppercase}.pdf-improvement-grid b{display:block;margin-top:5px;font-size:16px}.pdf-improvement-grid p{margin:4px 0 0;color:#666;font-size:9px}.pdf-chart .daily{stroke:rgba(69,203,117,.38);stroke-width:1.4}.pdf-chart .daily-point{fill:rgba(69,203,117,.78)}.pdf-chart .trend-weight-line{stroke:#45CB75;stroke-width:3}.pdf-chart .calorie-bar{fill:#e51b26;fill-opacity:.52}.pdf-chart .expenditure-line{stroke:#111;stroke-width:2.5}.pdf-chart .axis-label{fill:#666;font-size:9px;font-weight:650}.pdf-chart .axis-title{fill:#444;font-size:9px;font-weight:850;letter-spacing:.4px}.pdf-chart .goal-label{fill:#555;font-size:9px;font-weight:850}.pdf-legend .daily-weight{height:3px;background:rgba(69,203,117,.65)}.pdf-legend .workout-day{width:10px;height:10px;border-radius:50%;background:#e51b26}.pdf-legend .strength-gain{background:#e51b26}.pdf-legend .volume-low{background:' + getSetDistributionPalette()[0] + '}.pdf-legend .volume-high{background:' + getSetDistributionPalette().at(-1) + '}' +'.pdf-focus-list{display:grid;gap:14px}.pdf-focus-list article{display:grid;grid-template-columns:48px 1fr;gap:14px;padding:16px;border:1px solid #ddd;border-radius:14px}.pdf-focus-list article>b{display:grid;place-items:center;width:42px;height:42px;border-radius:10px;background:#e51b26;color:#fff}.pdf-focus-list h2{font-size:16px;margin:0 0 5px}.pdf-focus-list p{font-size:11px;line-height:1.45;color:#555;margin:0 0 8px}.pdf-focus-list strong{font-size:10px;color:#e51b26}' +
+    '.pdf-section-intro{margin-bottom:16px}.pdf-section-intro>span{color:#e51b26;font-size:9px;font-weight:900;letter-spacing:1.2px}.pdf-section-intro h2{margin:4px 0 4px;font-size:20px}.pdf-section-intro p{margin:0;color:#666;font-size:11px;line-height:1.45}.pdf-overview-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px}.pdf-calendar-weekdays,.pdf-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}.pdf-calendar-weekdays{margin:12px 0 7px}.pdf-calendar-weekdays span{text-align:center;color:#777;font-size:8px;font-weight:800}.pdf-calendar-grid span{display:grid;place-items:center;height:42px;border:1px solid #ddd;border-radius:50%;background:#f6f6f7;color:#555;font-size:10px;font-weight:800}.pdf-calendar-grid .is-workout{border-color:#e51b26;background:#e51b26;color:#fff}.pdf-calendar-grid .is-empty{visibility:hidden}.pdf-pr-count{display:flex;align-items:end;gap:8px;margin:8px 0 14px}.pdf-pr-count b{font-size:36px}.pdf-pr-count span{padding-bottom:5px;color:#666;font-size:10px}.pdf-volume-layout{display:grid;grid-template-columns:230px 1fr;gap:18px;align-items:center}.pdf-anatomy-pair{display:grid;grid-template-columns:1fr 1fr;gap:7px}.pdf-anatomy-pair figure{margin:0;display:grid;gap:4px;min-width:0}.pdf-anatomy-pair figure>span{color:#555;font-size:8px;font-weight:850;text-align:center;text-transform:uppercase;letter-spacing:.7px}.pdf-anatomy-pair img{display:block;width:100%;height:250px;object-fit:contain}.pdf-note{margin-top:14px;color:#666;font-size:9px;line-height:1.45}.pdf-improvement-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}.pdf-improvement-grid article{padding:13px;border:1px solid #ddd;border-radius:12px;background:#f7f7f8}.pdf-improvement-grid span{display:block;color:#e51b26;font-size:8px;font-weight:900;text-transform:uppercase}.pdf-improvement-grid b{display:block;margin-top:5px;font-size:16px}.pdf-improvement-grid p{margin:4px 0 0;color:#666;font-size:9px}.pdf-chart .daily{stroke:rgba(69,203,117,.38);stroke-width:1.4}.pdf-chart .daily-point{fill:rgba(69,203,117,.78)}.pdf-chart .trend-weight-line{stroke:#45CB75;stroke-width:3}.pdf-chart .calorie-bar{fill:#e51b26;fill-opacity:.52}.pdf-chart .expenditure-line{stroke:#111;stroke-width:2.5}.pdf-chart .axis-label{fill:#666;font-size:9px;font-weight:650}.pdf-chart .axis-title{fill:#444;font-size:9px;font-weight:850;letter-spacing:.4px}.pdf-chart .goal-label{fill:#555;font-size:9px;font-weight:850}.pdf-legend .daily-weight{height:3px;background:rgba(69,203,117,.65)}.pdf-legend .workout-day{width:10px;height:10px;border-radius:50%;background:#e51b26}.pdf-legend .strength-gain{background:#e51b26}' +'.pdf-focus-list{display:grid;gap:14px}.pdf-focus-list article{display:grid;grid-template-columns:48px 1fr;gap:14px;padding:16px;border:1px solid #ddd;border-radius:14px}.pdf-focus-list article>b{display:grid;place-items:center;width:42px;height:42px;border-radius:10px;background:#e51b26;color:#fff}.pdf-focus-list h2{font-size:16px;margin:0 0 5px}.pdf-focus-list p{font-size:11px;line-height:1.45;color:#555;margin:0 0 8px}.pdf-focus-list strong{font-size:10px;color:#e51b26}' +
     '.pdf-keep{margin-top:22px;padding:18px;background:#f4f4f5;border-radius:12px}.pdf-keep h2{margin:0 0 8px}.pdf-keep p{margin:6px 0;font-size:11px}.pdf-closing{margin-top:26px;font-size:24px;font-weight:950;letter-spacing:-.5px}.pdf-footer{position:absolute;left:38px;right:38px;bottom:24px;display:flex;justify-content:space-between;border-top:1px solid #ddd;padding-top:8px;font-size:7px;color:#777;letter-spacing:.8px}';
 }
 
