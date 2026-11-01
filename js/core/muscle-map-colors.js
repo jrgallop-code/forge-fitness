@@ -229,8 +229,7 @@ function syncRenderedMaps() {
     const layers = [
         ['[data-seven-day-muscle]', '--seven-day-volume-intensity'],
         ['[data-plan-target-muscle]', '--plan-target-intensity'],
-        ['.dashboard-muscle-card.is-volume .dashboard-muscle-region', '--dashboard-muscle-opacity'],
-        ['.monthly-anatomy-muscle', '--monthly-muscle-intensity']
+        ['.dashboard-muscle-card.is-volume .dashboard-muscle-region', '--dashboard-muscle-opacity']
     ];
     layers.forEach(([selector, property]) => document.querySelectorAll(selector).forEach(node => {
         const intensity = Number.parseFloat(node.style.getPropertyValue(property)) || 0;
