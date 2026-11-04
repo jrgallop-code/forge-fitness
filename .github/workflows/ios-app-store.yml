@@ -76,7 +76,7 @@ jobs:
   archive-and-upload:
     needs: [exercise-thumbnails, muscle-map-viewport]
     name: Sign and upload to App Store Connect
-    runs-on: macos-26
+    runs-on: macos-26-intel
     timeout-minutes: 45
     environment: app-store
 

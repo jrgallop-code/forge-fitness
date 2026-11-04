@@ -616,3 +616,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-11-04: Base calorie adjustments on three-week weight trend; remove recent-week safeguard overrides.
 
 2026-11-04: Open weekly calorie review when the recommended target is unchanged; allow confirming the current target.
+
+2026-11-04: Retry calorie review release on the Intel macOS 26 runner pool after repeated arm64 capacity failures.
