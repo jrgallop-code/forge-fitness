@@ -1,4 +1,4 @@
-const CACHE_VERSION = "report-theme-muscles-20261101-pwa";
+const CACHE_VERSION = "three-week-calorie-decisions-20261104";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;

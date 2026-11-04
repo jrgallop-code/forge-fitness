@@ -116,7 +116,7 @@ function openWeeklyReviewModal(event = {}) {
     modal.dataset.weeklyCalorieModal = "1";
     modal.innerHTML = `
         <section class="weekly-calorie-modal-card" role="dialog" aria-modal="true" aria-labelledby="weekly-calorie-modal-title">
-            <header><div><span>${preview ? "TEST PREVIEW · " : ""}WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">${recommendation.guardedHold ? "Hold your recent average this week" : "Your recommended target"}</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
+            <header><div><span>${preview ? "TEST PREVIEW · " : ""}WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">${recommendation.guardedHold ? "Keep your current target this week" : "Your recommended target"}</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
             <p>${preview ? "This demonstrates what the review would show using your current data. Nothing in this preview will be saved." : "Your logged week, full calculation and recommended change now."}</p>
             ${recommendation.guardedHold ? `<p class="weekly-calorie-modal-cap">${recentWeightGuardCopy(recommendation.recentTrendGuard, recommendation.targetCalories)}</p>` : ""}
             ${!preview && !hasTodaysWeighIn() ? `<small class="weekly-calorie-modal-cap">For the best estimate, weigh in today before reviewing. This is optional—you can still use the recommendation below.</small>` : ""}
@@ -124,7 +124,6 @@ function openWeeklyReviewModal(event = {}) {
                 <div><span>Current saved target</span><strong>${recommendation.previousTarget} kcal/day</strong></div>
                 <div><span>Logged weekly average${recommendation.weeklyAverageLoggedDays ? ` (${recommendation.weeklyAverageLoggedDays}/${recommendation.weeklyAverageTotalDays || 7} days)` : ""}</span><strong>${Number.isFinite(recommendation.weeklyAverageCalories) ? `${recommendation.weeklyAverageCalories} kcal/day` : "Not enough logged days"}</strong></div>
                 <div><span>${getVisibleTrend(metrics)?.windowDays || 21}-day weight trend</span><strong>${formatRate(recommendation.actualRate)}</strong></div>
-                ${Number.isFinite(recommendation.recentTrendGuard?.recentRate) ? `<div><span>Recent seven-day trend</span><strong>${formatRate(recommendation.recentTrendGuard.recentRate)}</strong></div>` : ""}
                 <div><span>Goal weight trend</span><strong>${formatRate(recommendation.targetRate)}</strong></div>
                 ${!recommendation.guardedHold ? `<div><span>${recommendation.goalDailyAdjustment > 0 ? "Goal-pacing surplus" : recommendation.goalDailyAdjustment < 0 ? "Goal-pacing deficit" : "Goal-pacing adjustment"}</span><strong>${formatSignedCalories(recommendation.goalDailyAdjustment)} cal/day</strong></div>
                 <div><span>Calories needed for goal pace</span><strong>${formatSignedCalories(recommendation.requestedPaceCorrection)} cal/day</strong></div>
@@ -237,7 +236,6 @@ function buildSharedRecommendation(metrics, phase, { preview = false } = {}) {
         proposedMaintenance,
         currentTarget,
         actualRate: metrics?.actualRateLbPerWeek,
-        recentTrendGuard: metrics?.recentTrendGuard,
         targetRate: metrics?.targetRateLbPerWeek,
         adaptiveReady: metrics?.recommendationReady === true && !["ON TRACK", "MAINTAINING"].includes(metrics?.status),
         actualIntakeCalories: baseline.useLoggedAverage ? baseline.calories : null,
@@ -573,7 +571,7 @@ function applyFullAdjustment(event, context = {}) {
                 setText(document.querySelector("[data-weekly-modal-status]"), "The target did not save. Please try again.");
                 return;
             }
-            setCurrentCalories(recommendation.targetCalories, "weekly review rounded logged average hold");
+            setCurrentCalories(recommendation.targetCalories, "weekly review saved target hold");
             window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));
         }
         markCheckHandled(phase, checkDay, "recent-trend-held");

@@ -1,5 +1,3 @@
-import { buildRecentWeightEvidence } from './recent-weight-guard.js?v=recent-weight-guard-1';
-import { readFoodLog, readCompletedFoodDays } from './food-log-data.js?v=fatsecret-progress-calories-1';
 import { GOAL_PRESETS, roundCalorieTarget } from "./tdee-calculator.js?v=calorie-target-rounding-1";
 import { calculatePhaseMovingAverageTrend, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-phase-authority-1";
 
@@ -150,7 +148,6 @@ export function getActivePhaseMetrics(phase = getActiveNutritionPhase(), options
 
     const actual = finiteNumber(trend?.weeklyChange);
     const target = finiteNumber(phase.targetWeeklyRate);
-    metadata.recentTrendGuard = buildRecentWeightEvidence({ weights: allWeights, foodLog: readFoodLog(), completedDays: readCompletedFoodDays(), asOfDate, longRate: actual, targetRate: target });
     const referenceWeight = finiteNumber(trend?.currentAverage) ?? trendWeight(allWeights.filter(e => e.date <= asOfDate)) ?? startingTrendWeight;
     const bodyweightTolerance = Number.isFinite(referenceWeight)
         ? referenceWeight * BODYWEIGHT_TOLERANCE_PCT
@@ -224,7 +221,6 @@ function buildMetrics(status, trend, actual, target, tolerance, referenceWeight,
         referenceWeight: Number.isFinite(referenceWeight) ? referenceWeight : null,
         recommendationReady: Boolean(recommendationReady),
         asOfDate: metadata.asOfDate || null,
-        recentTrendGuard: metadata.recentTrendGuard || null,
         isFutureTest: metadata.isFutureTest === true
     };
 }
