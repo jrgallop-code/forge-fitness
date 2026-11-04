@@ -111,7 +111,7 @@ function openWeeklyReviewModal(event = {}) {
         ? { ...liveMetrics, recommendationReady: true, status: "NEEDS ATTENTION", actualRateLbPerWeek: previewActual, targetRateLbPerWeek: targetRate }
         : liveMetrics;
     const recommendation = buildSharedRecommendation(metrics, phase, { preview });
-    if ((!preview && !metrics?.recommendationReady) || !recommendation || (!preview && recommendation.targetChange === 0 && !recommendation.guardedHold)) return;
+    if ((!preview && !metrics?.recommendationReady) || !recommendation) return;
 
     closeWeeklyReviewModal();
     const modal = document.createElement("div");
@@ -119,8 +119,9 @@ function openWeeklyReviewModal(event = {}) {
     modal.dataset.weeklyCalorieModal = "1";
     modal.innerHTML = `
         <section class="weekly-calorie-modal-card" role="dialog" aria-modal="true" aria-labelledby="weekly-calorie-modal-title">
-            <header><div><span>${preview ? "TEST PREVIEW · " : ""}WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">${recommendation.guardedHold ? "Keep your current target this week" : "Your recommended target"}</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
+            <header><div><span>${preview ? "TEST PREVIEW · " : ""}WEEKLY CALORIE REVIEW</span><h2 id="weekly-calorie-modal-title">${recommendation.guardedHold || recommendation.targetChange === 0 ? "Keep your current target this week" : "Your recommended target"}</h2></div><button type="button" data-weekly-modal-close aria-label="Close review">×</button></header>
             <p>${preview ? "This demonstrates what the review would show using your current data. Nothing in this preview will be saved." : "Your logged week, full calculation and recommended change now."}</p>
+            ${!recommendation.guardedHold && recommendation.targetChange === 0 ? `<p class="weekly-calorie-modal-cap">Your three-week weight trend and logged intake support keeping your saved target of ${recommendation.previousTarget} kcal/day. No calorie change is needed this week.</p>` : ""}
             ${recommendation.guardedHold ? `<p class="weekly-calorie-modal-cap">${recentWeightGuardCopy(recommendation.recentTrendGuard, recommendation.targetCalories)}</p>` : ""}
             ${!preview && !hasTodaysWeighIn() ? `<small class="weekly-calorie-modal-cap">For the best estimate, weigh in today before reviewing. This is optional—you can still use the recommendation below.</small>` : ""}
             <div class="weekly-calorie-modal-breakdown">
@@ -136,7 +137,7 @@ function openWeeklyReviewModal(event = {}) {
             ${recommendation.isStagedTarget ? `<small class="weekly-calorie-modal-cap">This is a staged target. Level Up limits each weekly change and will reassess your progress next week.</small>` : ""}
             ${recommendation.capped ? `<small class="weekly-calorie-modal-cap">Limited to ${formatSignedCalories(recommendation.behavioralChange ?? recommendation.targetChange)} calories from ${Number.isFinite(recommendation.actualIntakeCalories) ? `your ${recommendation.actualIntakeCalories} weekly average` : "your current target"}. The saved target changes by ${formatSignedCalories(recommendation.targetChange)}. Level Up will reassess next week.</small>` : ""}
             <div class="weekly-calorie-modal-actions">
-                <button id="weekly-modal-review-apply" class="primary-btn" type="button">${preview ? `Test update to ${recommendation.targetCalories}` : recommendation.guardedHold ? `Use ${recommendation.targetCalories} and reassess next week` : `Update to ${recommendation.targetCalories}`}</button>
+                <button id="weekly-modal-review-apply" class="primary-btn" type="button">${preview ? `Test update to ${recommendation.targetCalories}` : recommendation.guardedHold ? `Use ${recommendation.targetCalories} and reassess next week` : recommendation.targetChange === 0 ? "Confirm current target" : `Update to ${recommendation.targetCalories}`}</button>
                 <button id="weekly-modal-review-keep" class="secondary-btn" type="button">${preview ? "Close preview" : `Keep ${recommendation.previousTarget}`}</button>
             </div>
             <small data-weekly-modal-status aria-live="polite"></small>
@@ -490,7 +491,6 @@ function syncSuggestedCalories(metrics, phase) {
         : null;
     const reviewReady = Boolean(
         sharedRecommendation
-        && (sharedRecommendation.targetChange !== 0 || sharedRecommendation.guardedHold)
         && Number.isFinite(actual)
         && Number.isFinite(target)
     );

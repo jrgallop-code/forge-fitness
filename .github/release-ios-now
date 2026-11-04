@@ -614,3 +614,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-11-01: Reports only: solid appearance accent on targeted muscles, no volume legend, matching PDF anatomy.
 
 2026-11-04: Base calorie adjustments on three-week weight trend; remove recent-week safeguard overrides.
+
+2026-11-04: Open weekly calorie review when the recommended target is unchanged; allow confirming the current target.
