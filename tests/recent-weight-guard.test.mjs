@@ -59,26 +59,6 @@ test('today and explicitly incomplete food logs do not count; empty completed da
     assert.equal(evidence({ foodLog: {}, completedDays: Object.fromEntries(Object.keys(foodLog).map(d => [d, true])) }).foodDays, 0);
 });
 
-test('guard holds logged intake while preserving maintenance without double counting', () => {
-    const update = buildCoordinatedWeeklyUpdate({ currentMaintenance: 2300, proposedMaintenance: 2400, currentTarget: 2700, actualIntakeCalories: 2600, actualRate: 1.1, targetRate: .5, adaptiveReady: true, recentTrendGuard: decision(1.1, .4) });
-    assert.equal(update.guardedHold, true);
-    assert.equal(update.targetCalories, 2600);
-    assert.equal(update.maintenanceCalories, 2300);
-    assert.equal(update.targetChange, -100);
-    assert.equal(update.behavioralChange, 0);
-});
-
-test('guard compares the intended behavioral correction even when intake exceeds the saved target', () => {
-    const update = buildCoordinatedWeeklyUpdate({ currentMaintenance: 2300, proposedMaintenance: 2400, currentTarget: 2400, actualIntakeCalories: 2800, actualRate: 1, targetRate: .5, adaptiveReady: true, recentTrendGuard: decision(1, .5) });
-    assert.equal(update.guardedHold, true);
-    assert.equal(update.targetCalories, 2800);
-});
-
-test('automatic maintenance cannot bypass a conflicting recent trend', () => {
-    const result = buildAutomaticMaintenanceUpdate({ ready: true, currentMaintenance: 2300, proposedMaintenance: 2400, currentTarget: 2700, adaptiveMetrics: { recommendationReady: true, actualRateLbPerWeek: 1.1, targetRateLbPerWeek: .5, recentTrendGuard: decision(1.1, .4) } });
-    assert.equal(result, null);
-});
-
 test('aggressive bulk is a distinct one-pound preset after the existing bulk choices', () => {
     assert.equal(GOAL_PRESETS.bulk_aggressive.weeklyWeightChangeLb, 1);
     assert.equal(GOAL_PRESETS.bulk_aggressive.dailyCalorieAdjustment, 500);
@@ -86,13 +66,35 @@ test('aggressive bulk is a distinct one-pound preset after the existing bulk cho
     assert.deepEqual(Object.keys(GOAL_PRESETS).filter(k => k.startsWith('bulk_')), ['bulk_conservative', 'bulk_standard', 'bulk_aggressive']);
 });
 
-test("past logged days remain eligible without completion markers", () => {
-    assert.equal(evidence({ completedDays: {} }).confidence, "available");
+test("unconfirmed historical food logs do not imply complete intake evidence", () => {
+    assert.equal(evidence({ completedDays: {} }).confidence, "insufficient");
 });
 
- test('guard rounds an eligible 2841 average to 2850 and falls back without intake', () => {
- const args = {currentMaintenance:2300, proposedMaintenance:2400,currentTarget:2700,actualRate:1.1,targetRate:.5,adaptiveReady:true,recentTrendGuard:decision(1.1,.4)};
- assert.equal(buildCoordinatedWeeklyUpdate({...args,actualIntakeCalories:2841}).targetCalories,2850);
- assert.equal(buildCoordinatedWeeklyUpdate(args).targetCalories,2700);
- assert.equal(buildCoordinatedWeeklyUpdate({...args,actualIntakeCalories:2812.5}).targetCalories,2825);
+ test('four completed days unlock matching evidence; three days explain the hold', () => {
+ const days = Object.keys(foodLog);
+ const four = Object.fromEntries(days.slice(0,4).map(d=>[d,true]));
+ assert.equal(evidence({completedDays:four}).confidence,'available');
+ const three = Object.fromEntries(days.slice(0,3).map(d=>[d,true]));
+ const insufficient = evidence({completedDays:three});
+ assert.equal(insufficient.confidence,'insufficient');
+ assert.match(recentWeightGuardCopy(insufficient,2800), /3\/4/);
  });
+ test('screenshot regression keeps 2800 with supported and insufficient evidence', () => {
+ const args={currentMaintenance:2530,proposedMaintenance:2530,currentTarget:2800,actualIntakeCalories:2937,actualRate:.75,targetRate:.5,adaptiveReady:true};
+ const supported=buildCoordinatedWeeklyUpdate({...args,recentTrendGuard:decision(.75,.70)});
+ assert.equal(supported.targetCalories,2800);
+ assert.equal(supported.guardedHold,undefined);
+ const held=buildCoordinatedWeeklyUpdate({...args,recentTrendGuard:{confidence:'insufficient'}});
+ assert.equal(held.targetCalories,2800);
+ assert.equal(held.targetChange,0);
+ assert.equal(held.guardedHold,undefined);
+ });
+
+test('seven-day disagreement cannot override the three-week pace calculation', () => {
+ const args={currentMaintenance:2530,proposedMaintenance:2530,currentTarget:2800,actualIntakeCalories:2937,actualRate:1.1,targetRate:.5,adaptiveReady:true};
+ const baseline=buildCoordinatedWeeklyUpdate(args);
+ assert.equal(baseline.targetCalories,2625);
+ for(const recentTrendGuard of [decision(1.1,.4),{confidence:'insufficient'}]){
+   assert.deepEqual(buildCoordinatedWeeklyUpdate({...args,recentTrendGuard}),baseline);
+ }
+});

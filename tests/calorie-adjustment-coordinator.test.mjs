@@ -130,3 +130,11 @@ test("weekly adjustment hold reports one day on the sixth local calendar date", 
     assert.equal(result?.daysElapsed, 6);
     assert.equal(result?.daysRemaining, 1);
 });
+
+test("retired recent-trend holds do not block a three-week review", () => {
+ const phase={id:"phase-1",currentCalories:2800};
+ const hold={phaseId:phase.id,calories:2800,source:"recent-weight-guard",appliedAt:new Date().toISOString()};
+ assert.equal(withHold(hold,()=>readAdjustmentHold({phase})),null);
+ hold.source="accepted-weekly-calorie-review";
+ assert.equal(withHold(hold,()=>readAdjustmentHold({phase})).daysRemaining,7);
+});
