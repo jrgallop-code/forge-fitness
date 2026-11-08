@@ -1,6 +1,7 @@
 import { isProgressiveOverloadEnabled, PROGRESSIVE_OVERLOAD_KEY, PROGRESSIVE_OVERLOAD_EVENT } from "../core/progressive-overload-preferences.js?v=progressive-overload-toggle-1";
 import { resumeProgressionHistory } from "./workout-resume.js?v=resume-workout-1";
-import { getExerciseById } from './exercise-library.js';
+import './exercise-library-expansion.js?v=exercise-library-expansion-1';
+import { getExerciseById } from './exercise-library.js?v=exercise-library-catalogue-2';
 import { buildBodyweightProgression, isBodyweightEquipment, isWeightedBodyweightEquipment } from './bodyweight-progression.js?v=bodyweight-progression-1';
 import {
   UNIT_KINDS,
@@ -45,28 +46,13 @@ function getPracticalIncrement(exerciseId) {
   return 5;
 }
 
-function getRecommendedLoadRange(currentWeight, exerciseId) {
+function getSuggestedProgressionLoad(currentWeight, exerciseId) {
   const current = Number(currentWeight);
   if (!Number.isFinite(current) || current <= 0) return null;
-  const minimumIncrease = getPracticalIncrement(exerciseId);
-  const thresholdIncrease = Math.floor((current * 0.11 + 1e-9) / minimumIncrease) * minimumIncrease;
-  const maximumIncrease = Math.max(minimumIncrease, thresholdIncrease);
-  return {
-    minimumIncrease,
-    maximumIncrease,
-    minimumLoad: Number((current + minimumIncrease).toFixed(1)),
-    maximumLoad: Number((current + maximumIncrease).toFixed(1))
-  };
-}
-
-function getSuggestedProgressionLoad(range, exerciseId) {
-  if (!range) return null;
-  const minimumLoad = Number(range.minimumLoad);
-  const maximumLoad = Number(range.maximumLoad);
-  if (!Number.isFinite(minimumLoad) || !Number.isFinite(maximumLoad)) return null;
   const increment = getPracticalIncrement(exerciseId);
-  const midpoint = minimumLoad + ((maximumLoad - minimumLoad) * 0.5);
-  return Number((Math.round(midpoint / increment) * increment).toFixed(1));
+  const maximumSteps = Math.max(1, Math.floor((current * 0.11 + 1e-9) / increment));
+  const suggestedSteps = Math.round((1 + maximumSteps) / 2);
+  return Number((current + suggestedSteps * increment).toFixed(1));
 }
 
 function getRecommendedReducedLoad(currentWeight, exerciseId) {
@@ -335,8 +321,7 @@ function shouldUseLiveSetGuidance(card, source, repRange, exerciseId) {
     set.rir !== undefined && Number(set.rir) === 0).length;
   const allAtTop = sets.length >= 2 && sets.every(set => Number(set.reps) >= repRange.upper);
   const heaviest = sets.length ? Math.max(...sets.map(set => Number(set.weight))) : null;
-  const range = allAtTop ? getRecommendedLoadRange(heaviest, exerciseId) : null;
-  const increasedLoad = range && failures <= 1 ? getSuggestedProgressionLoad(range, exerciseId) : null;
+  const increasedLoad = allAtTop && failures <= 1 ? getSuggestedProgressionLoad(heaviest, exerciseId) : null;
   const majorityBelow = sets.filter(set => Number(set.reps) < repRange.lower).length > sets.length / 2;
   const reducedLoad = !allAtTop && majorityBelow ? getRecommendedReducedLoad(heaviest, exerciseId)?.suggestedLoad : null;
   const rows = [...card.querySelectorAll('.session-set-row')];
@@ -539,15 +524,11 @@ function renderCard(card) {
   }
 
   const currentWeight = Number(sourceSet.weight);
-  const range = getRecommendedLoadRange(currentWeight, exerciseId);
-  if (!range) {
+  const suggestedLoad = getSuggestedProgressionLoad(currentWeight, exerciseId);
+  if (suggestedLoad === null) {
     hidePrompt(prompt);
     return;
   }
-  const loadRange = range.minimumLoad === range.maximumLoad
-    ? `${formatLoad(range.minimumLoad)} lb`
-    : `${formatLoad(range.minimumLoad)}–${formatLoad(range.maximumLoad)} lb`;
-  const suggestedLoad = getSuggestedProgressionLoad(range, exerciseId);
   const recordedRir = completedSets
     .map((set, index) => ({ raw: set.rir, value: Number(set.rir), index }))
     .filter(item => item.raw !== null && item.raw !== '' && item.raw !== undefined && Number.isFinite(item.value) && item.value >= 0);
@@ -587,8 +568,8 @@ function renderCard(card) {
       <strong>${finalSetAtFailure ? 'Progress available' : 'Increase weight this session'}</strong>
       ${finalSetAtFailure ? '<p>Final set reached <b>0 RIR</b>.</p>' : ''}
       <p>${completionSummary}</p>
-      <p><b>Try ${loadRange} today.</b></p>
-      <small>${skippedSetNote}Suggested load: ${formatLoad(suggestedLoad)} lb. Minimum target: ${formatLoad(repRange.lower)} reps per set · Goal: build toward ${formatLoad(repRange.upper)} reps.</small>
+      <p><b>Try ${formatUnitMass(suggestedLoad, 1, UNIT_KINDS.LIFTING_WEIGHT)} today.</b></p>
+      <small>${skippedSetNote}Start at ${formatLoad(repRange.lower)} reps per set and build toward ${formatLoad(repRange.upper)} reps.</small>
     </div>
   `;
   showPrompt(prompt, source, exerciseId);

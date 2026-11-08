@@ -46,5 +46,5 @@ test('the logger keeps the established weighted-exercise progression path', () =
   assert.match(source, /isBodyweightEquipment\(exercise\?\.equipment\)/);
   assert.match(source, /\(isBodyweight \|\| Number\(set\.weight\) > 0\)/);
   assert.match(source, /if \(isBodyweight && renderBodyweightTopRangePrompt/);
-  assert.match(source, /const range = getRecommendedLoadRange\(currentWeight, exerciseId\)/);
+  assert.match(source, /const suggestedLoad = getSuggestedProgressionLoad\(currentWeight, exerciseId\)/);
 });

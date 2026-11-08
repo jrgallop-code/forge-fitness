@@ -74,7 +74,7 @@ test('110 lb instead of prescribed 100 activates live guidance', () => {
 test('following an initially prescribed increase does not activate live guidance', () => {
   const f = fixture();
   const source = { performance: { sets: [{weight:100,reps:15,completed:true}, {weight:100,reps:15,completed:true}] } };
-  const prescribed = f.context.getSuggestedProgressionLoad(f.context.getRecommendedLoadRange(100, 'fly'), 'fly');
+  const prescribed = f.context.getSuggestedProgressionLoad(100, 'fly');
   f.rows[0].weight.value = String(prescribed * 0.45359237);
   assert.equal(f.context.shouldUseLiveSetGuidance(f.card, source, {lower:8,upper:15}, 'fly'), false);
 });
@@ -90,4 +90,52 @@ test('mixed working weights move a topped-out lighter set to the heavier load at
  assert.equal(f.context.getMixedWeightProgression([{weight:20,reps:12},{weight:20,reps:14}],{lower:12,upper:20}),null);
  assert.equal(f.context.getMixedWeightProgression([{weight:15,reps:19},{weight:20,reps:12}],{lower:12,upper:20}),null);
  assert.equal(f.context.getMixedWeightProgression([{weight:15,reps:20},{weight:20,reps:8}],{lower:12,upper:20}),null);
+});
+
+test('progression adds whole equipment steps to the previous load', () => {
+  const { context } = fixture();
+  assert.equal(context.getSuggestedProgressionLoad(37.5, 'rope-triceps-pushdown'), 40);
+  context.getExerciseById = () => ({ equipment: 'Machine' });
+  assert.equal(context.getSuggestedProgressionLoad(37.5, 'machine'), 42.5);
+});
+
+test('rope pushdown card and all three set targets recommend 40 lb × 12', async () => {
+  const { context, card, prompt, rows } = fixture(15, false);
+  const expansion = source.match(/import ['"]([^'"]*exercise-library-expansion[^'"]*)['"]/);
+  if (expansion) await import(new URL(expansion[1], new URL('../js/workouts/', import.meta.url)));
+  const catalog = source.match(/import \{ getExerciseById \} from ['"]([^'"]+)['"]/);
+  const { getExerciseById } = await import(new URL(catalog[1], new URL('../js/workouts/', import.meta.url)));
+  const storage = globalThis.localStorage;
+  globalThis.localStorage = { getItem: () => null };
+  try {
+    context.getExerciseById = getExerciseById;
+    context.isBodyweightEquipment = () => false;
+    context.isWeightedBodyweightEquipment = () => false;
+    context.isProgressiveOverloadEnabled = () => true;
+    context.readJson = () => ({ trainingDayIndex: 0, planSnapshot: { days: [{ exercises: [{ reps: '12–15' }] }] } });
+    context.findPreviousPerformance = () => ({
+      performance: { sets: [15, 15, 16].map(reps => ({ weight: 37.5, reps, completed: true })) }
+    });
+    context.formatUnitMass = value => `${value} lb`;
+    context.setCanonicalUnitPlaceholder = (input, value) => { input.placeholder = String(value); };
+    card.dataset = { exerciseId: 'rope-triceps-pushdown', exerciseIndex: '0', trackingType: 'reps' };
+    card.closest = () => ({ dataset: {} });
+    card.querySelector = selector => selector === '.progression-prompt' ? prompt : null;
+    prompt.classList.remove = () => {};
+    rows.forEach(row => {
+      row.weight.value = '';
+      row.repInput.value = '';
+      row.querySelector = selector => ({ '.session-weight': row.weight, '.session-reps': row.repInput })[selector] ?? null;
+    });
+
+    context.renderCard(card);
+
+    assert.match(prompt.innerHTML, /Try 40 lb today/);
+    assert.deepEqual(rows.map(row => [row.weight.placeholder, row.repInput.placeholder]), [
+      ['40', '12'], ['40', '12'], ['40', '12']
+    ]);
+  } finally {
+    if (storage === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = storage;
+  }
 });
