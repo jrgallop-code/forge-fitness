@@ -122,6 +122,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Level Up uses the camera to scan food barcodes and capture meal or progress photos.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Level Up reads workouts from Apple Health so you can view recent activities from Garmin and other workout sources.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Level Up uses the microphone when you choose voice-assisted food logging.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

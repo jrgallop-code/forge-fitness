@@ -16,6 +16,7 @@ import { appearanceMenuIcon, renderAppearanceSettings, initializeAppearanceSetti
 import { renderAppFeatureSettings, initializeAppFeatureSettings } from "./app-feature-settings.js?v=nutrition-feature-choice-1";
 import { renderHomeScreenWidgets, initializeHomeScreenWidgets } from "./home-screen-widgets.js?v=home-widget-live-3";
 import { isNativeIOS } from "../core/home-screen-widgets.js?v=home-widget-live-3";
+import { renderHealthWorkouts, initializeHealthWorkouts } from "./health-workouts.js";
 import { renderRestTimerGameSettings, initializeRestTimerGameSettings } from "./rest-timer-game-settings.js?v=protein-run-1";
 
 const ICONS = {
@@ -58,6 +59,7 @@ export function renderMore() {
     <button class="more-menu-card" type="button" data-more-page="profile-setup"><span class="more-menu-icon">${ICONS.profile}</span><span><strong>Body Profile</strong><small>Update your name, personal details, training experience and anatomy appearance.</small></span></button>
     </div>
     <div class="more-menu-group" data-more-group="health"><h3>Health &amp; records</h3>
+    ${isNativeIOS() ? `<button class="more-menu-card" type="button" data-more-page="health-workouts"><span class="more-menu-icon">${ICONS.history}</span><span><strong>Garmin &amp; Apple Health</strong><small>View recent workouts from your watch.</small></span></button>` : ""}
     <button class="more-menu-card" type="button" data-more-page="app-features"><span class="more-menu-icon">${ICONS.features}</span><span><strong>Nutrition Tracking</strong><small>Turn nutrition tracking on or off without deleting your data.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="history"><span class="more-menu-icon">${ICONS.history}</span><span><strong>Workout History</strong><small>Review completed workouts, summaries and training details.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="monthly-reports"><span class="more-menu-icon">${ICONS.reports}</span><span><strong>Monthly Reports</strong><small>Open your current report and previous monthly performance reports.</small></span></button>
@@ -93,6 +95,15 @@ export function initializeMore() {
             content.innerHTML = renderAppearanceSettings();
             initializeAppearanceSettings({ onBack: showMore });
             window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+        }
+        if (page === "health-workouts") {
+            const content = document.getElementById("content");
+            if (!content) return;
+            const showMore = () => { content.innerHTML = renderMore(); initializeMore(); window.scrollTo({ top: 0 }); };
+            content.innerHTML = renderHealthWorkouts();
+            initializeHealthWorkouts({ onBack: showMore });
+            window.scrollTo({ top: 0 });
             return;
         }
         if (page === "home-widgets") {

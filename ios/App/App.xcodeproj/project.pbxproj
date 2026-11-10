@@ -17,6 +17,7 @@
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6822FE993A50072D4E8 /* SceneDelegate.swift */; };
 		A11C00012FF0000100000001 /* LevelUpBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00022FF0000100000001 /* LevelUpBridgeViewController.swift */; };
+		A11C00A12FF0000100000001 /* LevelUpHealthPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00A22FF0000100000001 /* LevelUpHealthPlugin.swift */; };
 		A11C00032FF0000100000001 /* LevelUpAppIconPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00042FF0000100000001 /* LevelUpAppIconPlugin.swift */; };
 		A11C00112FF0000100000011 /* LevelUpTimerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00122FF0000100000011 /* LevelUpTimerPlugin.swift */; };
 		A11C00132FF0000100000011 /* LevelUpTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11C00142FF0000100000011 /* LevelUpTimerAttributes.swift */; };
@@ -60,6 +61,7 @@
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		9582B6822FE993A50072D4E8 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		A11C00022FF0000100000001 /* LevelUpBridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpBridgeViewController.swift; sourceTree = "<group>"; };
+		A11C00A22FF0000100000001 /* LevelUpHealthPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpHealthPlugin.swift; sourceTree = "<group>"; };
 		A11C00042FF0000100000001 /* LevelUpAppIconPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpAppIconPlugin.swift; sourceTree = "<group>"; };
 		A11C00122FF0000100000011 /* LevelUpTimerPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpTimerPlugin.swift; sourceTree = "<group>"; };
 		A11C00142FF0000100000011 /* LevelUpTimerAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpTimerAttributes.swift; sourceTree = "<group>"; };
@@ -128,6 +130,7 @@ B16A00000000000000000003,
 				9582B6822FE993A50072D4E8 /* SceneDelegate.swift */,
                 A11C00A42FF00001000000A1 /* LevelUpSpotifyPlugin.swift */,
 				A11C00022FF0000100000001 /* LevelUpBridgeViewController.swift */,
+				A11C00A22FF0000100000001 /* LevelUpHealthPlugin.swift */,
 				A11C00042FF0000100000001 /* LevelUpAppIconPlugin.swift */,
 				A11C00122FF0000100000011 /* LevelUpTimerPlugin.swift */,
 				A11C00142FF0000100000011 /* LevelUpTimerAttributes.swift */,
@@ -206,6 +209,7 @@ B16A0000000000000000000C,
 					504EC3031FED79650016851F = {
 						CreatedOnToolsVersion = 9.2;
 						LastSwiftMigration = 1100;
+						SystemCapabilities = { com.apple.HealthKit = { enabled = 1; }; };
 						ProvisioningStyle = Automatic;
 					};
 					A11C00202FF0000100000011 = { CreatedOnToolsVersion = 26.0; ProvisioningStyle = Automatic; };
@@ -263,6 +267,7 @@ B16A00000000000000000006,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
                 A11C00A32FF00001000000A1 /* LevelUpSpotifyPlugin.swift in Sources */,
 				A11C00012FF0000100000001 /* LevelUpBridgeViewController.swift in Sources */,
+				A11C00A12FF0000100000001 /* LevelUpHealthPlugin.swift in Sources */,
 				A11C00032FF0000100000001 /* LevelUpAppIconPlugin.swift in Sources */,
 				A11C00112FF0000100000011 /* LevelUpTimerPlugin.swift in Sources */,
 				A11C00132FF0000100000011 /* LevelUpTimerAttributes.swift in Sources */,
