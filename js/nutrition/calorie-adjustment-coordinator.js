@@ -37,6 +37,27 @@ export function buildAdaptivePaceCorrection({ actualRate, targetRate } = {}) {
     return Math.round(raw / 25) * 25;
 }
 
+export function buildLiveExpenditureUpdate({ currentMaintenance, currentTarget, expenditure, targetRate }) {
+    const maintenance = finite(expenditure);
+    const target = finite(currentTarget);
+    if (maintenance === null || maintenance <= 0 || target === null || target <= 0
+        || targetRate == null || targetRate === "" || finite(targetRate) === null) return null;
+
+    const goalDailyAdjustment = Number(targetRate) * 500;
+    const targetCalories = roundTo25(maintenance + goalDailyAdjustment);
+    if (targetCalories <= 0) return null;
+
+    return {
+        previousMaintenance: currentMaintenance,
+        previousTarget: target,
+        maintenanceCalories: Math.round(maintenance),
+        targetCalories,
+        targetChange: targetCalories - target,
+        goalDailyAdjustment,
+        usesLiveExpenditure: true
+    };
+}
+
 export function buildCoordinatedWeeklyUpdate({
     currentMaintenance,
     proposedMaintenance,
