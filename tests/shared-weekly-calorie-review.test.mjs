@@ -68,7 +68,7 @@ test("the actionable coach review keeps TDEE independent while saving a staged t
     assert.match(source, /isStagedTarget/);
     assert.match(source, /goalPacingTarget/);
     assert.match(source, /markMaintenanceCheckInReviewed/);
-    assert.match(source, /markCheckHandled\(phase, checkDay, "coordinated-weekly-review"\)/);
+    assert.match(source, /markCheckHandled\(phase, checkDay, recommendation\.usesLiveExpenditure\s*\? "live-expenditure-weekly-review"\s*:\s*"coordinated-weekly-review"\)/);
     assert.match(source, /startAdjustmentHold\(/);
     assert.match(source, /const endDate = previousDateKey\(localDateKey\(\)\)/);
     assert.match(source, /for \(let day = 1; day < 7; day \+= 1\)/);
