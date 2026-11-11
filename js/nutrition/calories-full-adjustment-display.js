@@ -111,7 +111,7 @@ function openWeeklyReviewModal(event = {}) {
         ? { ...liveMetrics, recommendationReady: true, status: "NEEDS ATTENTION", actualRateLbPerWeek: previewActual, targetRateLbPerWeek: targetRate }
         : liveMetrics;
     const recommendation = buildSharedRecommendation(metrics, phase, { preview });
-    if ((!preview && !metrics?.recommendationReady) || !recommendation) return;
+    if ((!preview && !metrics?.recommendationReady && !canReopenAcceptedReview(phase, metrics, recommendation)) || !recommendation) return;
 
     closeWeeklyReviewModal();
     const modal = document.createElement("div");
@@ -189,6 +189,14 @@ function getHandledCheck(phase, checkDay) {
     const key = String(phase?.id || `${phase?.goalId || "phase"}|${phase?.startDate || ""}`);
     const record = readCheckState()?.[key];
     return Number(record?.lastHandledCheckDay) === Number(checkDay) ? record : null;
+}
+
+function canReopenAcceptedReview(phase, metrics, recommendation) {
+    const handled = getHandledCheck(phase, metrics?.trend?.checkDay);
+    if (handled?.action !== "coordinated-weekly-review" || !recommendation?.usesLiveExpenditure
+        || recommendation.targetChange === 0 || !Number.isFinite(recommendation.weeklyAverageCalories)) return false;
+    const handledAt = new Date(handled.handledAt);
+    return Number.isFinite(handledAt.getTime()) && localDateKey(handledAt) === localDateKey(new Date());
 }
 
 function markCheckHandled(phase, checkDay, action) {
@@ -501,18 +509,22 @@ function syncSuggestedCalories(metrics, phase) {
     const sharedRecommendation = metrics.recommendationReady && baseline.useLoggedAverage && !hold && !handled
         ? buildSharedRecommendation(metrics, phase)
         : null;
-    const reviewReady = Boolean(
+    const acceptedRecommendation = handled ? buildSharedRecommendation(metrics, phase) : null;
+    const canReopen = canReopenAcceptedReview(phase, metrics, acceptedRecommendation);
+    const reviewReady = canReopen || Boolean(
         sharedRecommendation
         && Number.isFinite(actual)
         && Number.isFinite(target)
     );
-    const reviewReason = hold ? "hold" : handled ? "handled"
+    const reviewReason = canReopen ? "ready" : hold ? "hold" : handled ? "handled"
         : !metrics.recommendationReady ? "weight-data"
         : !baseline.useLoggedAverage ? "food-data"
         : reviewReady ? "ready" : sharedRecommendation ? "no-change" : "unavailable";
     setWeeklyReviewReadyState(reviewReady, reviewReason);
 
-    if (hold) {
+    if (canReopen) {
+        secondary = "A corrected recommendation is available. Reopen today’s calorie review.";
+    } else if (hold) {
         primary = `${Math.round(currentCalories)} kcal/day`;
         secondary = `${hold.source === "recent-weight-guard" ? "Calories held" : "Adjustment applied"} · reassess in ${hold.daysRemaining} day${hold.daysRemaining === 1 ? "" : "s"}`;
     } else if (metrics.status === "AWAITING WEIGH-IN") {
@@ -630,7 +642,9 @@ function applyFullAdjustment(event, context = {}) {
     }
     localStorage.setItem("level_up_manual_maintenance_calories", String(independentMaintenance));
     setCurrentCalories(recommendation.targetCalories, "shared weekly TDEE and phase-pace adjustment");
-    markCheckHandled(phase, checkDay, "coordinated-weekly-review");
+    markCheckHandled(phase, checkDay, recommendation.usesLiveExpenditure
+        ? "live-expenditure-weekly-review"
+        : "coordinated-weekly-review");
     markMaintenanceCheckInReviewed({ proposedMaintenance: independentMaintenance }, "coordinated-weekly-review");
     startAdjustmentHold({
         phase,
