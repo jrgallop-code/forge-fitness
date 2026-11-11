@@ -630,3 +630,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-11-11: Reopen today’s accepted review when the corrected calorie target differs.
 
 2026-11-11: Retry the calorie review release with a Firefox-compatible CI runner.
+
+2026-11-11: Retry after updating the packaging assertion for the corrected review action.
