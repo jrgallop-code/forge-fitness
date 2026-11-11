@@ -7,7 +7,7 @@ import {
 import { setCurrentCalories } from "./nutrition-storage.js?v=weekly-ma-coach-1";
 import { calculateDisplayWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=nutrition-display-regression-1";
 import { getLoggedCalorieWindow, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
-import { buildCoordinatedWeeklyUpdate, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=calendar-checkin-day-1";
+import { buildCoordinatedWeeklyUpdate, buildLiveExpenditureUpdate, markPhaseCheckHandled, readAdjustmentHold, startAdjustmentHold, WEEKLY_ADJUSTMENT_CAP } from "./calorie-adjustment-coordinator.js?v=live-expenditure-target-1";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=independent-tdee-staged-target-1";
 import { getMaintenanceUpdateMode, markMaintenanceCheckInReviewed, readMaintenanceCheckInState } from "./maintenance-check-in.js?v=calendar-checkin-day-1";
 import { buildPendingCalorieCheckMessage } from "./calorie-check-feedback.js?v=all-calorie-requirements-1";
@@ -130,7 +130,9 @@ function openWeeklyReviewModal(event = {}) {
                 <div><span>${getVisibleTrend(metrics)?.windowDays || 21}-day weight trend</span><strong>${formatRate(recommendation.actualRate)}</strong></div>
                 <div><span>Goal weight trend</span><strong>${formatRate(recommendation.targetRate)}</strong></div>
                 ${!recommendation.guardedHold ? `<div><span>${recommendation.goalDailyAdjustment > 0 ? "Goal-pacing surplus" : recommendation.goalDailyAdjustment < 0 ? "Goal-pacing deficit" : "Goal-pacing adjustment"}</span><strong>${formatSignedCalories(recommendation.goalDailyAdjustment)} cal/day</strong></div>
-                <div><span>Calories needed for goal pace</span><strong>${formatSignedCalories(recommendation.requestedPaceCorrection)} cal/day</strong></div>
+                ${recommendation.usesLiveExpenditure
+                    ? `<div><span>Current expenditure</span><strong>${recommendation.fullMaintenanceCalories} kcal/day</strong></div>`
+                    : `<div><span>Calories needed for goal pace</span><strong>${formatSignedCalories(recommendation.requestedPaceCorrection)} cal/day</strong></div>`}
                 <div><span>Full goal-pacing estimate</span><strong>${recommendation.goalPacingTarget} kcal/day</strong></div>` : ""}
                 <div class="weekly-calorie-modal-result"><span>${recommendation.isStagedTarget ? "Recommended staged target now" : "Recommended target now"}</span><strong>${recommendation.targetCalories} kcal/day</strong></div>
             </div>
@@ -235,7 +237,13 @@ function buildSharedRecommendation(metrics, phase, { preview = false } = {}) {
             intake: { ...(liveBaseline.intake || {}), loggedDays: 7, totalDays: 7, averageCalories: currentTarget }
         }
         : liveBaseline;
-    const update = buildCoordinatedWeeklyUpdate({
+    const liveUpdate = buildLiveExpenditureUpdate({
+        currentMaintenance,
+        currentTarget,
+        expenditure: estimate?.liveMaintenanceCalories ?? estimate?.maintenanceCalories,
+        targetRate: metrics?.targetRateLbPerWeek
+    });
+    const update = liveUpdate ?? buildCoordinatedWeeklyUpdate({
         currentMaintenance,
         proposedMaintenance,
         currentTarget,
@@ -250,14 +258,14 @@ function buildSharedRecommendation(metrics, phase, { preview = false } = {}) {
         ? Math.round(Number(update.fullRequestedTarget) / 25) * 25
         : update.targetCalories;
     const rawTargetRate = metrics?.targetRateLbPerWeek;
-    const goalDailyAdjustment = rawTargetRate !== null && rawTargetRate !== undefined && rawTargetRate !== "" && Number.isFinite(Number(rawTargetRate))
+    const goalDailyAdjustment = liveUpdate?.goalDailyAdjustment ?? (rawTargetRate !== null && rawTargetRate !== undefined && rawTargetRate !== "" && Number.isFinite(Number(rawTargetRate))
         ? Math.round(Number(rawTargetRate) * 500 / 25) * 25
-        : 0;
-    const goalPacingTarget = Math.round((proposedMaintenance + goalDailyAdjustment) / 25) * 25;
+        : 0);
+    const goalPacingTarget = liveUpdate?.targetCalories ?? Math.round((proposedMaintenance + goalDailyAdjustment) / 25) * 25;
     return {
         ...update,
         estimate,
-        fullMaintenanceCalories: Math.round(proposedMaintenance),
+        fullMaintenanceCalories: liveUpdate?.maintenanceCalories ?? Math.round(proposedMaintenance),
         fullTargetCalories,
         goalDailyAdjustment,
         goalPacingTarget,
@@ -451,8 +459,12 @@ function syncCoach(metrics, phase) {
     card.dataset.fullAdjustmentDelta = String(recommendation.targetChange);
     card.dataset.fullAdjustmentCheckDay = String(checkDay);
 
-    setText(messageNode, `Current weekly trend: ${formatRate(actual)} · Target: ${formatRate(target)}. This review applies the trend gap once to your logged-day calorie average, then waits 7 days.`);
-    setText(suggestionNode, `Logged average ${recommendation.weeklyAverageCalories} · pace correction ${formatSignedCalories(recommendation.requestedPaceCorrection)} → ${recommendation.targetCalories} kcal/day.`);
+    setText(messageNode, recommendation.usesLiveExpenditure
+        ? `Current weekly trend: ${formatRate(actual)} · Target: ${formatRate(target)}. Level Up adds your goal adjustment to current expenditure.`
+        : `Current weekly trend: ${formatRate(actual)} · Target: ${formatRate(target)}. This review applies the trend gap once to your logged-day calorie average, then waits 7 days.`);
+    setText(suggestionNode, recommendation.usesLiveExpenditure
+        ? `Current expenditure ${recommendation.fullMaintenanceCalories} · goal adjustment ${formatSignedCalories(recommendation.goalDailyAdjustment)} → ${recommendation.targetCalories} kcal/day.`
+        : `Logged average ${recommendation.weeklyAverageCalories} · pace correction ${formatSignedCalories(recommendation.requestedPaceCorrection)} → ${recommendation.targetCalories} kcal/day.`);
 
     const apply = document.getElementById(weeklyCoach ? "weekly-coach-apply" : "goal-check-in-apply");
     if (apply) {
