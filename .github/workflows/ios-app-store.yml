@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - ios/capacitor-app-store
+      - ios/local-data-recovery
     paths:
       - .github/release-ios-now
 
