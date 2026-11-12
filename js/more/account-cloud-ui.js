@@ -278,7 +278,7 @@ function renderSession() {
         ? account.email
         : "Sign in or create an account to activate private cloud backup.");
     const autoState = readJson(AUTO_STATE_KEY);
-    const needsAttention = autoState?.status === "newer-cloud-backup";
+    const needsAttention = ["newer-cloud-backup", "safety-blocked", "auth-required", "retry-pending"].includes(autoState?.status);
     setText("account-cloud-badge", signedIn ? needsAttention ? "ACTION NEEDED" : "AUTO BACKUP" : "LOCAL ONLY");
     renderAnalyticsChoice(signedIn);
 }
@@ -297,12 +297,22 @@ function renderAnalyticsChoice(signedIn) {
 }
 
 function renderRemoteMeta(remote) {
+    const autoState = readJson(AUTO_STATE_KEY);
+    const backupMessages = {
+        "retry-pending": "The last automatic backup failed. Level Up will retry while the app is open and online.",
+        "auth-required": "Automatic backup needs you to sign in again.",
+        "safety-blocked": "Automatic backup paused because this device appears to have less history. Check Backup History before replacing any copy."
+    };
+    if (Object.hasOwn(backupMessages, autoState?.status)) {
+        setMessage(backupMessages[autoState.status], "error");
+        setText("account-cloud-updated", remote ? `Last cloud copy saved ${formatDate(remote.updated_at)}` : "No cloud backup is available.");
+        return;
+    }
     if (!remote) {
         setMessage("Signed in. Your first automatic backup is being prepared.");
         setText("account-cloud-updated", "You can also use Back Up Now at any time.");
         return;
     }
-    const autoState = readJson(AUTO_STATE_KEY);
     if (autoState?.status === "newer-cloud-backup") {
         setMessage("A newer cloud backup is available. Automatic upload is paused.");
         setText("account-cloud-updated", "Download the newer copy, or use Back Up Now after confirming this device should replace it.");
