@@ -636,3 +636,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-11-12: Release automatic backup timeouts, retries, and sync failure status.
 
 2026-11-12: Upload the read-only local SQLite recovery build to TestFlight.
+
+2026-11-12: Retry recovery build with packaging checks for read-only native startup.

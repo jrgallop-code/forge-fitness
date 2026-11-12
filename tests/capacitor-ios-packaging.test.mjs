@@ -68,7 +68,10 @@ test("native iOS provides haptics, background alarms, selectable app icons, and 
     assert.match(appearance, /LevelUpAppIcon\?\.setIcon/);
     assert.match(info, /CFBundleAlternateIcons/);
     assert.match(plugin, /setAlternateIconName/);
-    assert.match(sceneDelegate, /LevelUpBridgeViewController/);
+    assert.match(sceneDelegate, /rootViewController = RecoveryViewController\(\)/);
+    assert.doesNotMatch(sceneDelegate, /LevelUpBridgeViewController\(/);
+    assert.match(sceneDelegate, /SQLITE_OPEN_READONLY/);
+    assert.doesNotMatch(info, /<key>(UISceneStoryboardFile|UIMainStoryboardFile)<\/key>/);
     assert.match(timerPlugin, /UNTimeIntervalNotificationTrigger/);
     assert.match(timerPlugin, /level-up-alarm\.wav/);
     assert.match(timerPlugin, /interruptionLevel = \.timeSensitive/);
