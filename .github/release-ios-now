@@ -636,3 +636,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-11-12: Release automatic backup timeouts, retries, and sync failure status.
 
 2026-11-12: Release verified cloud snapshot comparison for automatic backups.
+
+2026-11-12: Release daily on-device SQLite recovery history for workouts, weigh-ins, and food logs.

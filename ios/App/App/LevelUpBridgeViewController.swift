@@ -114,6 +114,15 @@ final class LevelUpSQLiteStorePlugin: CAPPlugin, CAPBridgedPlugin {
 
                 try self.execute(db, sql: "BEGIN IMMEDIATE TRANSACTION;")
                 do {
+                    // Keep the first pre-write copy each day, including before a restore.
+                    try self.execute(db, sql: """
+                        INSERT OR IGNORE INTO recovery_history (day, key, value)
+                        SELECT date('now'), key, value FROM kv_store
+                        WHERE key IN (
+                            'forge_workout_sessions', 'forge_weight_entries', 'level_up_food_log_v1'
+                        );
+                        DELETE FROM recovery_history WHERE day < date('now', '-30 days');
+                    """)
                     try self.execute(db, sql: "DELETE FROM kv_store;")
 
                     var statement: OpaquePointer?
@@ -221,6 +230,12 @@ final class LevelUpSQLiteStorePlugin: CAPPlugin, CAPBridgedPlugin {
                 );
             """)
             try execute(db, sql: """
+                CREATE TABLE IF NOT EXISTS recovery_history (
+                    day TEXT NOT NULL,
+                    key TEXT NOT NULL,
+                    value TEXT NOT NULL,
+                    PRIMARY KEY (day, key)
+                );
                 CREATE TABLE IF NOT EXISTS metadata (
                     key TEXT PRIMARY KEY NOT NULL,
                     value TEXT NOT NULL
