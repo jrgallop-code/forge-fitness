@@ -28,7 +28,8 @@ final class LevelUpSQLiteStorePlugin: CAPPlugin, CAPBridgedPlugin {
     let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "loadStore", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "replaceStore", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "health", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "health", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "inspectRecovery", returnType: CAPPluginReturnPromise)
     ]
 
     private let queue = DispatchQueue(label: "com.leveluphypertrophy.sqlite-store", qos: .utility)
@@ -173,6 +174,66 @@ final class LevelUpSQLiteStorePlugin: CAPPlugin, CAPBridgedPlugin {
             }
             catch {
                 call.reject("Native SQLite data could not be saved.", nil, error)
+            }
+        }
+    }
+
+    @objc func inspectRecovery(_ call: CAPPluginCall) {
+        queue.async {
+            do {
+                let url = try self.databaseURL()
+                var db: OpaquePointer?
+                defer { sqlite3_close(db) }
+                guard sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
+                    throw SQLiteStoreError.database(self.message(db))
+                }
+                let sql = """
+                    SELECT 'Active', key, value FROM kv_store WHERE key IN (
+                        'forge_workout_sessions', 'forge_weight_entries', 'level_up_food_log_v1'
+                    )
+                    UNION ALL
+                    SELECT day, key, value FROM recovery_history
+                    WHERE day >= date('now', '-30 days')
+                    ORDER BY 1 DESC, 2;
+                """
+                var statement: OpaquePointer?
+                defer { sqlite3_finalize(statement) }
+                guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+                    throw SQLiteStoreError.database(self.message(db))
+                }
+                var rows: [[String: Any]] = []
+                var step = sqlite3_step(statement)
+                while step == SQLITE_ROW {
+                    if let copy = sqlite3_column_text(statement, 0),
+                       let key = sqlite3_column_text(statement, 1),
+                       let raw = sqlite3_column_text(statement, 2) {
+                        let data = Data(String(cString: raw).utf8)
+                        let value = try JSONSerialization.jsonObject(with: data)
+                        let dates: [String]
+                        let count: Int
+                        if let records = value as? [[String: Any]] {
+                            count = records.count
+                            dates = records.compactMap { $0["date"] as? String }
+                        } else if let days = value as? [String: Any] {
+                            count = days.count
+                            dates = Array(days.keys)
+                        } else {
+                            count = 0
+                            dates = []
+                        }
+                        rows.append([
+                            "copy": String(cString: copy),
+                            "key": String(cString: key),
+                            "count": count,
+                            "latest": dates.map { String($0.prefix(10)) }.max() ?? ""
+                        ])
+                    }
+                    step = sqlite3_step(statement)
+                }
+                guard step == SQLITE_DONE else { throw SQLiteStoreError.database(self.message(db)) }
+                call.resolve(["rows": rows])
+            } catch {
+                call.reject("On-device SQLite history could not be read.", nil, error)
             }
         }
     }
