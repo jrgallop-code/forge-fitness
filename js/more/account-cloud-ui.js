@@ -65,7 +65,7 @@ export function renderAccountCloud() {
         <span class="eyebrow">BACKUP SAFETY</span><h3>Automatic backup with version protection</h3>
         <p>Level Up backs up signed-in app data after changes. If another device has a newer cloud version, automatic upload pauses instead of overwriting it. You can still back up or restore manually here.</p>\n        <div class="account-cloud-links"><a href="privacy.html">Privacy Policy</a><a href="mailto:support@leveluphypertrophy.com">Contact Support</a></div>
     </section>
-    ${isNativeIOS() && window.Capacitor?.Plugins?.LevelUpSQLiteStore?.inspectRecovery ? `
+    ${isNativeIOS() ? `
     <section class="section-card">
         <h3>On-device SQLite</h3>
         <button class="secondary-btn" id="account-sqlite-check" type="button">Check on-device history</button>
@@ -440,7 +440,12 @@ async function inspectOnDeviceHistory() {
         level_up_food_log_v1: "Food-log days"
     };
     try {
-        const { rows } = await window.Capacitor.Plugins.LevelUpSQLiteStore.inspectRecovery();
+        const store = window.Capacitor?.Plugins?.LevelUpSQLiteStore;
+        if (typeof store?.inspectRecovery !== "function") {
+            results.textContent = "This iOS build does not have the SQLite diagnostic. Update Level Up in TestFlight.";
+            return;
+        }
+        const { rows } = await store.inspectRecovery();
         results.textContent = rows.map(row => {
             const copy = row.copy === "Active" ? "Active copy" : `Saved copy ${row.copy} (UTC)`;
             const latest = row.latest ? `, latest ${row.latest}` : "";

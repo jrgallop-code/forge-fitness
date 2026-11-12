@@ -640,3 +640,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-11-12: Release daily on-device SQLite recovery history for workouts, weigh-ins, and food logs.
 
 2026-11-12: Release read-only on-device SQLite history diagnostics in Account & Cloud.
+
+2026-11-12: Show the on-device history diagnostic on iOS and report unavailable native support explicitly.
