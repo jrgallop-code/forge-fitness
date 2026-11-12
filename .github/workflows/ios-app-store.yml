@@ -7,6 +7,7 @@ on:
       - ios/capacitor-app-store
     paths:
       - .github/release-ios-now
+      - .github/workflows/ios-app-store.yml
 
 permissions:
   contents: read
@@ -16,7 +17,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  recheck-build-357:
+    if: github.event_name == 'push' && github.event.head_commit.message == 'Recheck uploaded TestFlight build 357'
+    runs-on: ubuntu-latest
+    environment: app-store
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check Apple processing and TestFlight availability
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          TESTFLIGHT_BUILD_NUMBER: "357"
+        run: |
+          umask 077
+          export AUTH_KEY_PATH="$(mktemp)"
+          trap 'rm -f "$AUTH_KEY_PATH"' EXIT
+          printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$AUTH_KEY_PATH"
+          node scripts/verify-testflight.mjs
+
   exercise-thumbnails:
+    if: github.event.head_commit.message != 'Recheck uploaded TestFlight build 357'
     name: Prepare compact exercise images
     runs-on: ubuntu-latest
     steps:
@@ -54,6 +78,7 @@ jobs:
             js/workouts/exercise-thumbnail-manifest.js
           retention-days: 7
   muscle-map-viewport:
+    if: github.event.head_commit.message != 'Recheck uploaded TestFlight build 357'
     name: Check fixed seven-day map layout
     runs-on: ubuntu-24.04
     timeout-minutes: 10
