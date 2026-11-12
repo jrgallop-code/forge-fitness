@@ -124,10 +124,10 @@ export function summarizeEnergyRange({
 export function getEnergyBalanceState({ startDate = null, endDate = energyDateKey() } = {}) {
     const profileEstimate = profileMaintenance();
     const current = getCalculatedMaintenanceEstimate(profileEstimate);
-    const historyStart = startDate ? shiftEnergyDateKey(startDate, -28) : null;
+    const currentLive = positive(current?.liveMaintenanceCalories);
+    const historyStart = startDate && currentLive !== null ? shiftEnergyDateKey(startDate, -28) : null;
     const history = getCalculatedMaintenanceHistory(profileEstimate, { startDate: historyStart }).map(point => ({ ...point }));
     const today = energyDateKey();
-    const currentLive = positive(current?.liveMaintenanceCalories);
 
     if (currentLive !== null && history.at(-1)?.date === today) {
         history[history.length - 1].liveMaintenanceCalories = currentLive;
@@ -141,8 +141,16 @@ export function getEnergyBalanceState({ startDate = null, endDate = energyDateKe
         endDate,
         today
     });
-    const currentExpenditure = currentLive ?? positive(current?.maintenanceCalories);
+    const lastEstimate = history.findLast(point => point.date <= today && (
+        positive(point.liveMaintenanceCalories) !== null ||
+        (point.recorded && positive(point.maintenanceCalories) !== null)
+    ));
+    const currentExpenditure = currentLive
+        ?? positive(lastEstimate?.liveMaintenanceCalories)
+        ?? positive(lastEstimate?.maintenanceCalories)
+        ?? positive(current?.maintenanceCalories);
+    const heldEstimateDate = currentLive === null ? lastEstimate?.date ?? current?.lastReviewedAt ?? null : null;
     const currentMode = currentLive !== null ? "updating" : currentExpenditure !== null ? "holding" : "learning";
 
-    return { ...state, profileEstimate, current, currentLive, currentExpenditure, currentMode };
+    return { ...state, profileEstimate, current, currentLive, currentExpenditure, currentMode, heldEstimateDate };
 }

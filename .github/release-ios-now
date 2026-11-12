@@ -642,3 +642,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-11-12: Release read-only on-device SQLite history diagnostics in Account & Cloud.
 
 2026-11-12: Show the on-device history diagnostic on iOS and report unavailable native support explicitly.
+
+2026-11-12: Release dashed estimated weight trends and dated expenditure fallback.
