@@ -1,3 +1,4 @@
+import { splitWeightTrendSegments } from "./weight-trend-segments.js";
 import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
 import { calculateTrendWeightSeries, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 
@@ -279,17 +280,17 @@ function drawChart(canvas, entries, trendSeries, goalWeight, window, totalEntrie
         context.save();
         context.shadowColor = weightAccent();
         context.shadowBlur = 8;
-        context.beginPath();
-        trendSeries.forEach((entry, index) => {
-            const xx = x(entry.date);
-            const yy = y(entry.weight);
-            if (index === 0) context.moveTo(xx, yy); else context.lineTo(xx, yy);
-        });
         context.strokeStyle = weightAccent();
         context.lineWidth = 3;
         context.lineJoin = "round";
         context.lineCap = "round";
-        context.stroke();
+        for (const { estimated, entries } of splitWeightTrendSegments(trendSeries)) {
+            context.setLineDash(estimated ? [5, 6] : []);
+            context.beginPath();
+            context.moveTo(x(entries[0].date), y(entries[0].weight));
+            entries.slice(1).forEach(entry => context.lineTo(x(entry.date), y(entry.weight)));
+            context.stroke();
+        }
         context.restore();
     }
 

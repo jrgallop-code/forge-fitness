@@ -1,4 +1,4 @@
-import { getEnergyBalanceState } from "./energy-balance-state.js?v=energy-summary-1";
+import { getEnergyBalanceState } from "./energy-balance-state.js?v=held-history-1";
 
 const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
 const STYLE_ID = "level-up-live-daily-expenditure-styles";
@@ -157,7 +157,7 @@ function patchCurrentCard(state) {
     const card = document.querySelector("#calorie-progress .calculated-maintenance-card");
     if (!card) return;
 
-    const displayValue = state.currentLive ?? positive(state.current?.maintenanceCalories);
+    const displayValue = state.currentExpenditure;
     const valueBlock = card.querySelector(".expenditure-summary-value:not(.is-strategy)");
     setText(valueBlock?.querySelector("strong"), displayValue !== null ? formatNumber(displayValue) : "—");
 
@@ -166,7 +166,9 @@ function patchCurrentCard(state) {
     if (state.currentMode === "updating") {
         setText(copyBlocks[0]?.querySelector("p"), "Your current daily expenditure estimate from logged intake and smoothed Trend Weight.");
     } else if (state.currentMode === "holding") {
-        setText(copyBlocks[0]?.querySelector("p"), "Your last usable expenditure estimate is being held until enough recent evidence is available to calculate a fresh value.");
+        const date = state.heldEstimateDate ? ` from ${formatDate(state.heldEstimateDate)}` : "";
+        setText(copyBlocks[0]?.querySelector("p"), `Using your last estimate${date} while Level Up collects new weigh-ins and food logs.`);
+        setText(card.querySelector(".expenditure-card-heading b"), "Previous estimate");
     } else {
         setText(copyBlocks[0]?.querySelector("p"), "Keep logging nutrition and body weight to establish your expenditure estimate.");
     }

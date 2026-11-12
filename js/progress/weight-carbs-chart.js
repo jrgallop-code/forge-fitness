@@ -1,15 +1,15 @@
 import { initializeWeeklyCalorieRateCard } from "./weekly-calorie-rate-card.js";
 import "../core/contextual-tutorial-theme.js?v=contextual-tutorial-theme-1";
 import "../core/contextual-tutorial-lifecycle.js?v=contextual-lifecycle-1";
-import "./weight-visible-trend-sync-v2.js?v=smoothed-visible-trend-5";
+import "./weight-visible-trend-sync-v2.js?v=weight-gap-expenditure-1";
 import "./trend-weight-tutorial-inline-fix.js?v=trend-weight-inline-fix-3";
 import "../nutrition/tdee-tutorial-controller.js?v=tdee-tutorial-controller-2";
 import "../nutrition/tdee-breakdown-cleanup.js?v=tdee-breakdown-cleanup-1";
-import "../nutrition/tdee-live-daily-expenditure.js?v=energy-summary-1";
+import "../nutrition/tdee-live-daily-expenditure.js?v=weight-gap-expenditure-1";
 import "../nutrition/tdee-calorie-expenditure-carousel.js?v=energy-balance-range-3";
 import "../nutrition/tdee-energy-balance-summary.js?v=energy-balance-range-3";
 import "../nutrition/tdee-expenditure-swipe-card.js?v=energy-card-height-1";
-import { initializeWeightCarbsChartV3 } from "./weight-chart-carousel-v3.js?v=weight-chart-edge-snap-1";
+import { initializeWeightCarbsChartV3 } from "./weight-chart-carousel-v3.js?v=weight-gap-expenditure-1";
 import { initializeWeightCarbsInteractionEnhancements } from "./weight-carbs-interaction-enhancements.js?v=weight-carbs-interaction-2";
 
 export function initializeWeightCarbsChart(root = document) {

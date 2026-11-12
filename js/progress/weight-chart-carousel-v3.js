@@ -1,3 +1,4 @@
+import { splitWeightTrendSegments } from "./weight-trend-segments.js";
 import { syncWeightCarouselPages, swipePage } from "./weight-carousel-pages.js";
 import { calculateTrendWeightSeries, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
@@ -429,7 +430,6 @@ function drawChart(canvas, state, activeDate) {
     });
 
     if (trendSeries.length > 1) {
-        const points = trendSeries.map(day => ({ x: x(day.date), y: yWeight(day.weight) }));
         context.save();
         context.shadowColor = weightTint(30);
         context.shadowBlur = 8;
@@ -437,9 +437,13 @@ function drawChart(canvas, state, activeDate) {
         context.lineWidth = 3;
         context.lineJoin = "round";
         context.lineCap = "round";
-        context.beginPath();
-        traceSmoothLine(context, points);
-        context.stroke();
+        for (const { estimated, entries } of splitWeightTrendSegments(trendSeries)) {
+            const points = entries.map(day => ({ x: x(day.date), y: yWeight(day.weight) }));
+            context.setLineDash(estimated ? [5, 6] : []);
+            context.beginPath();
+            traceSmoothLine(context, points);
+            context.stroke();
+        }
         context.restore();
     }
 

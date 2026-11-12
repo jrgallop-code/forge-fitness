@@ -62,7 +62,7 @@ function ensureInteractionStyles() {
 function syncCopy(section) {
     setText(section.querySelector(".weight-chart-kicker"), "SMOOTHED TREND WEIGHT");
     setText(section.querySelector(".weight-chart-card .chart-header p"), "Daily measurements · weighted smoothed trend");
-    setText(section.querySelector(".weight-history-help"), "Trend Weight fills gaps only between real weigh-ins, then gives recent days more influence to reduce normal scale noise. Weekly Trend is calculated from that same smoothed signal.");
+    setText(section.querySelector(".weight-history-help"), "Trend Weight fills gaps only between real weigh-ins, then gives recent days more influence to reduce normal scale noise. Dashed trend segments estimate the stretch between weigh-ins. Weekly Trend needs enough recent weigh-ins.");
 
     const header = section.querySelector(".weight-table-header");
     setText(header?.children?.[2], "Trend Weight");
@@ -87,7 +87,7 @@ function syncTopSummary(weights) {
 
     const rateNode = document.getElementById("actual-weekly-weight-change");
     if (rateNode) {
-        setText(rateNode, Number.isFinite(trend.weeklyChange) ? formatRate(trend.weeklyChange) : "Need more data");
+        setText(rateNode, Number.isFinite(trend.weeklyChange) ? formatRate(trend.weeklyChange) : "Not enough recent weigh-ins");
         setText(rateNode.closest(".metric-card")?.querySelector("h3"), trend.label || "Weekly Trend");
     }
 }
@@ -114,7 +114,7 @@ function syncHistory(section, weights) {
         const trend = calculateVisibleWeightTrend(weights, { endDate: entry.date });
         const shownWeight = Number.isFinite(trendWeight) ? displayMass(trendWeight) : null;
         setText(cells[2], Number.isFinite(shownWeight) ? `${shownWeight.toFixed(1)} ${massUnit()}` : "--");
-        setText(cells[3], formatRate(trend.weeklyChange));
+        setText(cells[3], Number.isFinite(trend.weeklyChange) ? formatRate(trend.weeklyChange) : "Not enough recent weigh-ins");
         cells[3].classList.remove("trend-up", "trend-down", "trend-neutral");
         cells[3].classList.add("weight-history-trend", directionClass(trend.weeklyChange));
     });
