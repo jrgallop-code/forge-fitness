@@ -166,7 +166,10 @@ async function runAutomaticBackup() {
             });
         }
 
-        if (state.fingerprint === fingerprint && Number(state.version || 0) === Number(remote?.version || 0)) return;
+        if (remote && state.fingerprint === fingerprint && Number(state.version) === Number(remote.version)) {
+            if (state.status !== "synced") saveAutoState({ ...state, status: "synced" });
+            return;
+        }
 
         if (remote && Number(state.version || 0) !== Number(remote.version)) {
             saveAutoState({
@@ -238,7 +241,14 @@ async function runAutomaticBackup() {
                 checkedAt: new Date().toISOString()
             });
         }
-        else console.warn("Level Up automatic backup was deferred:", error.message);
+        else {
+            saveAutoState({
+                ...readJson(AUTO_STATE_KEY),
+                status: "retry-pending",
+                checkedAt: new Date().toISOString()
+            });
+            console.warn("Level Up automatic backup was deferred:", error.message);
+        }
     }
     finally {
         backupInFlight = false;
@@ -384,6 +394,7 @@ async function api(path, { method = "GET", body } = {}) {
     if (!token) throw Object.assign(new Error("Sign in required."), { status: 401 });
     const response = await fetch(`${API_URL}${path}`, {
         method,
+        signal: AbortSignal.timeout(30_000),
         headers: {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json"
