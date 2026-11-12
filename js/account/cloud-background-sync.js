@@ -53,9 +53,7 @@ function startCloudBackgroundSync() {
         void recordActivity();
         scheduleBackup(750);
     });
-    window.addEventListener("levelup:cloud-sync-complete", event => {
-        void adoptCompletedSync(event.detail);
-    });
+    window.addEventListener("levelup:cloud-sync-complete", () => scheduleBackup(0));
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
             void recordActivity();
@@ -161,10 +159,16 @@ async function runAutomaticBackup() {
         const remote = meta.backup;
 
         if (canAdoptCompletedSync(completedSync, state, remote)) {
+            const saved = await api("/v1/backup");
+            if (Number(saved.version) !== Number(remote.version)) {
+                scheduleBackup(0);
+                return;
+            }
+            verifyBackupSnapshot(saved.backup);
             state = saveAutoState({
-                version: Number(remote.version),
-                fingerprint,
-                summary,
+                version: Number(saved.version),
+                fingerprint: await backupFingerprint(saved.backup),
+                summary: backupSafetySummary(saved.backup),
                 updatedAt: remote.updated_at,
                 completedAt: completedSync.completedAt,
                 status: "synced"
@@ -261,26 +265,6 @@ async function runAutomaticBackup() {
             backupRequestedWhileInFlight = false;
             scheduleBackup(1_000);
         }
-    }
-}
-
-async function adoptCompletedSync(detail) {
-    if (!detail?.version || isRecoveryLaunch() || isLocalDataSandbox()) return;
-    try {
-        const backup = await createBackupSnapshot();
-        if (isLocalDataSandbox()) return;
-        verifyBackupSnapshot(backup);
-        saveAutoState({
-            version: Number(detail.version),
-            fingerprint: await backupFingerprint(backup),
-            summary: backupSafetySummary(backup),
-            updatedAt: detail.updatedAt || null,
-            completedAt: detail.completedAt || new Date().toISOString(),
-            status: "synced"
-        });
-    }
-    catch (error) {
-        console.warn("Level Up could not record the completed cloud sync:", error.message);
     }
 }
 
