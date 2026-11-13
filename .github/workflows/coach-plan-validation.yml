@@ -53,7 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           cd cloud
-          npx wrangler d1 migrations apply DB --local --persist-to /tmp/coach-d1-staging --yes
+          npx wrangler d1 migrations apply DB --local --persist-to /tmp/coach-d1-staging
           npx wrangler d1 execute DB --local --persist-to /tmp/coach-d1-staging --command "SELECT name FROM sqlite_master WHERE name IN ('coach_training_links','coach_program_assignments','coach_assignment_versions','coach_assignment_decisions','coach_client_nutrition_selection') ORDER BY name;" --json > /tmp/coach-d1-tables.json
           node -e 'const fs=require("fs"); const s=JSON.stringify(JSON.parse(fs.readFileSync("/tmp/coach-d1-tables.json","utf8"))); for(const n of ["coach_training_links","coach_program_assignments","coach_assignment_versions","coach_assignment_decisions","coach_client_nutrition_selection"])if(!s.includes(n))throw Error("D1 migration missing "+n); console.log("Isolated D1 coach schema verified")'
       - name: Run full suite (baseline checked separately)
