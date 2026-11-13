@@ -4,6 +4,7 @@ import {
     verifyBackupSnapshot
 } from "../core/backup-manager.js?v=backup-complete-7";
 import { analyticsRuntimeContext } from "../analytics/runtime-context.js?v=platform-analytics-1";
+import { renderCoachProgramInbox, initializeCoachProgramInbox } from "./coach-assigned-programs.js?v=coach-assignment-pilot-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
@@ -46,6 +47,7 @@ export function renderAccountCloud() {
         </div>
         <p class="account-cloud-transfer-message" id="account-cloud-transfer-message" aria-live="polite"></p>
     </section>
+    ${renderCoachProgramInbox()}
     <section class="section-card account-cloud-safety">
         <span class="eyebrow">BETA SAFETY</span><h3>Automatic backup with version protection</h3>
         <p>Level Up backs up signed-in app data after changes. If another device has a newer cloud version, automatic upload pauses instead of overwriting it. You can still back up or restore manually here.</p>\n        <div class="account-cloud-links"><a href="https://leveluphypertrophy.com/privacy.html" target="_blank" rel="noopener">Privacy Policy ↗</a><a href="mailto:support@leveluphypertrophy.com">Contact Support</a></div>
@@ -70,6 +72,7 @@ export function initializeAccountCloud({ onBack } = {}) {
     document.getElementById("account-cloud-transfer-create")?.addEventListener("click", createTransferCode);
     document.getElementById("account-cloud-transfer-copy")?.addEventListener("click", copyTransferCode);
     renderSession();
+    initializeCoachProgramInbox();
     if (getSession()?.token) refreshAccount();
     else initializeGoogleButton();
 }
