@@ -41,7 +41,7 @@ function renderVolume(name,root){root.append(safe("h3",{text:"Weekly muscle volu
 const grid=safe("div",{className:"coach-volume-grid"});for(const [muscle,sets] of volume[name]||[]){const index=Math.max(0,Math.min(COLORS.length-1,Math.ceil(sets/2)-1));const color=sets>0?COLORS[index]:"#e2e8f0";const line=safe("div",{className:"coach-volume-row"},[safe("strong",{text:muscle}),safe("div",{className:"coach-volume-track"},[safe("div",{className:"coach-volume-fill"})]),safe("span",{text:sets+" sets"})]);line.querySelector(".coach-volume-fill").style.width=Math.min(100,sets/16*100)+"%";line.querySelector(".coach-volume-fill").style.background=color;grid.append(line)}root.append(grid,safe("p",{className:"sub",text:"Based on the app's set-range palette; actual secondary-muscle credit and recorded-set calculations must come from Level Up's shared training analytics."}))}
 function update(event){const {name,tab,container}=event.detail||{};if(!name||!container)return;
 // Measurements are entered in the Level Up client app; coach-side editing is disabled.
-if(tab==="photos"){const sec=safe("section",{className:"card coach-profile-extra"});renderPhotos(name,sec);container.append(sec)}
+// Progress Photos are rendered exclusively by the connected-client gallery module.
 // The shared volume SVG module mounts the full anatomy and exact set-band breakdown on the training tab.
 if(tab==="nutrition"){const sec=safe("section",{className:"card coach-profile-extra"});renderFood(name,sec);container.append(sec)}}
 document.addEventListener("levelup:coach-client-profile-rendered",update);
