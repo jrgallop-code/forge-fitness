@@ -73,7 +73,7 @@ final class LevelUpBridgeViewController: CAPBridgeViewController {
 final class LevelUpTabGlassPlugin: CAPPlugin, CAPBridgedPlugin {
     let identifier = "LevelUpTabGlassPlugin"
     let jsName = "LevelUpTabGlass"
-    let pluginMethods = [CAPPluginMethod(name: "update", returnType: CAPPluginReturnPromise)]
+    let pluginMethods: [CAPPluginMethod] = [CAPPluginMethod(name: "update", returnType: CAPPluginReturnPromise)]
 
     @objc func update(_ call: CAPPluginCall) {
         let coordinates = ["x", "y", "width", "height"].compactMap { call.getDouble($0) }
