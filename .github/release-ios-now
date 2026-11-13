@@ -656,3 +656,5 @@ Use the shared weekly weight trend for the expenditure correction.
 2026-11-13: Retry the Liquid Glass TestFlight build with explicit Capacitor method typing.
 
 2026-11-13: TestFlight revision for the sliding iOS tab pill and splash layering.
+
+2026-11-13: TestFlight build for the interactive sliding tab selection.
