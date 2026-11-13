@@ -15,7 +15,6 @@ const group=h('div',{className:'library-nav-group'},[
 h('div',{className:'nav-heading',text:'LIBRARY'}),
 h('button',{className:'nav-sub',text:'Exercise library',onClick:()=>go('exercises')}),
 h('button',{className:'nav-sub',text:'Program library',onClick:()=>document.dispatchEvent(new Event('levelup:open-program-library'))}),
-h('button',{className:'nav-sub',text:'Nutrition templates',onClick:()=>go('nutrition')})
 ]);b?.replaceWith(group);
 const newNav=[['calendar','▦ Calendar'],['inbox','✉ Messages']];
 const checkout=nav.querySelector('[data-view="checkins"]');const wrap=h('div',{className:'nav-group'});newNav.forEach(([id,text])=>wrap.append(h('button',{'data-view':id,text,onClick:()=>go(id)})));checkout?.before(wrap);
