@@ -79,10 +79,10 @@ periodChart(content.firstChild,series);
 content.firstChild.append(el("p",{className:"sub",text:clientId?"Calculated from actual completed Level Up workout sets using the shared primary 1.0 / secondary 0.5 credit rules. Updated after the app cloud backup.":"Illustrative data only — authorize a Level Up client to display real completed training volume."}))}
 period.onchange=update;update()});
 document.addEventListener("levelup:coach-live-data-updated",ev=>{if(!ev.detail?.clientId)return;const active=document.querySelector("#clients .coach-client-tabs button.active");if(active?.textContent?.trim()==="Training")active.click()});
-let currentPlan={name:"New Coaching Program",days:[{name:"Workout A",exercises:[]}]};
+let currentPlan={name:"New Coaching Program",days:[{name:"Workout A",exercises:[]}]},activeBuilderDay=0;
 function renderBuilder(){const root=document.getElementById("coach-full-builder-volume");if(!root)return;root.replaceChildren();const toolbar=el("div",{className:"coach-volume-controls"}),filter=el("select",{"aria-label":"Workout volume scope"});
 filter.append(el("option",{value:"all",text:"Entire weekly program"}));(currentPlan.days||[]).forEach((day,i)=>filter.append(el("option",{value:String(i),text:day.name||"Day "+(i+1)})));
-toolbar.append(el("strong",{text:"Volume scope"}),filter);const graph=el("div");root.append(toolbar,graph);
-const update=()=>{const val=filter.value,source=val==="all"?currentPlan:{days:[currentPlan.days[Number(val)]]};renderCoachVolume(graph,source,{title:val==="all"?"Weekly planned volume":"Planned volume · "+currentPlan.days[Number(val)].name})};filter.onchange=update;update()}
-document.addEventListener("levelup:coach-program-rendered",event=>{if(!event.detail?.plan)return;currentPlan=event.detail.plan;renderBuilder()});
+filter.value=activeBuilderDay>=0&&activeBuilderDay<(currentPlan.days||[]).length?String(activeBuilderDay):"all";toolbar.append(el("strong",{text:"Volume scope"}),filter);const graph=el("div");root.append(toolbar,graph);
+const update=()=>{const val=filter.value,chosen=currentPlan.days?.[Number(val)],source=val==="all"||!chosen?currentPlan:{days:[chosen]};renderCoachVolume(graph,source,{title:val==="all"||!chosen?"Weekly planned volume":"Planned volume · "+chosen.name})};filter.onchange=()=>{const i=Number(filter.value);if(filter.value!=="all"&&Number.isInteger(i))document.dispatchEvent(new CustomEvent("levelup:coach-select-day",{detail:{index:i}}));else update()};update()}
+document.addEventListener("levelup:coach-program-rendered",event=>{if(!event.detail?.plan)return;currentPlan=event.detail.plan;activeBuilderDay=Number.isInteger(event.detail.dayIndex)?event.detail.dayIndex:activeBuilderDay;renderBuilder()});
 renderBuilder();
