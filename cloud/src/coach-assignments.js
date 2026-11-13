@@ -41,7 +41,7 @@ if(path==="/v1/coach/assignments"&&method==="POST"){
  return json({assignment:serialize(row)},found?200:201,request,env)
 }
 if(path==="/v1/client/coach-assignments"&&method==="GET"){
- const rows=await env.DB.prepare("SELECT * FROM coach_program_assignments WHERE client_user_id=? AND status='published' ORDER BY published_at DESC LIMIT 60").bind(user.id).all();
+ const rows=await env.DB.prepare("SELECT a.* FROM coach_program_assignments a WHERE a.client_user_id=? AND a.status='published' AND (a.coach_user_id=a.client_user_id OR EXISTS (SELECT 1 FROM coach_training_links l WHERE l.coach_user_id=a.coach_user_id AND l.client_user_id=a.client_user_id AND l.revoked_at IS NULL AND l.training_permission=1)) ORDER BY a.published_at DESC LIMIT 60").bind(user.id).all();
  return json({assignments:(rows.results||[]).map(row=>serialize(row))},200,request,env)
 }
 const id=path.match(/^\/v1\/coach\/assignments\/([0-9a-f-]{36})$/i);
