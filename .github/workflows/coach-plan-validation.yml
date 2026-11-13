@@ -10,6 +10,7 @@ on:
       - 'cloud/src/index.js'
       - 'cloud/migrations/*coach*.sql'
       - 'tests/coach-assignment-api.test.mjs'
+      - 'tests/coach-schema-smoke.py'
       - 'js/dashboard/nutrition-target-card.js'
       - 'js/dashboard/dashboard-nutrition-sync.js'
       - 'js/nutrition/active-plan-display-sync.js'
@@ -33,6 +34,7 @@ jobs:
       - run: node --check js/more/coach-assigned-programs.js
       - run: node --check cloud/src/coach-assignments.js
       - run: node --test tests/coach-managed-targets.test.mjs tests/coach-assignment-api.test.mjs
+      - run: python3 tests/coach-schema-smoke.py
       - name: Run full suite (baseline checked separately)
         run: npm test > /tmp/coach-branch-tests.log 2>&1 || true
       - name: Compare existing failure baseline
