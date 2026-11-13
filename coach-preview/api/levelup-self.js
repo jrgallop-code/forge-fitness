@@ -47,6 +47,25 @@ if(input.action==="me"){
  if(response.status>=400)return finish(res,response.status,{error:response.data.error||"Session expired."});
  return finish(res,200,{user:response.data.user||null});
 }
+if(input.action==="publish"){
+ const identity=await fromCloud("/v1/me","GET",null,bearer);
+ if(identity.status>=400||!identity.data?.user?.id)return finish(res,401,{error:"Unable to verify your Level Up session."});
+ const ownId=identity.data.user.id;
+ if(input.approved!==true)return finish(res,400,{error:"Confirm publishing the plan to your own account."});
+ const training=input.training;
+ if(!training||!Array.isArray(training.days)||!training.days.length)return finish(res,400,{error:"Create a workout program before publishing."});
+ const body={clientId:ownId,sourcePlanId:short(input.sourcePlanId||"self-test",120),training,goals:{goalWeightLb:input.goalWeightLb??null,stepGoal:input.stepGoal??null},includeNutrition:input.includeNutrition===true,nutrition:input.nutrition||null,expectedVersion:input.expectedVersion??null};
+ const result=await fromCloud("/v1/coach/assignments","POST",body,bearer);
+ if(result.status>=400)return finish(res,result.status,{error:result.data.error||"Coach assignment API not yet available."});
+ return finish(res,result.status,{assignment:result.data.assignment})
+}
+if(input.action==="assignments"){
+ const identity=await fromCloud("/v1/me","GET",null,bearer);
+ if(identity.status>=400)return finish(res,401,{error:"Sign in again."});
+ const result=await fromCloud("/v1/client/coach-assignments","GET",null,bearer);
+ if(result.status>=400)return finish(res,result.status,{error:result.data.error||"Coach assignment API not yet available."});
+ return finish(res,200,{assignments:result.data.assignments||[]})
+}
 if(input.action==="snapshot"){
  if(input.approved!==true)return finish(res,400,{error:"You must approve reading your own cloud backup."});
  const response=await fromCloud("/v1/backup","GET",null,bearer);
