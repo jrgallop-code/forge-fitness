@@ -1,0 +1,579 @@
+const DAY_MS = 86400000;
+const MOVING_AVERAGE_DAYS = 7;
+const MIN_WINDOW_ENTRIES = 4;
+const FIRST_PHASE_TREND_DAY = 7;
+const FIRST_PHASE_CHECK_DAY = 14;
+const PHASE_CHECK_CADENCE_DAYS = 7;
+const WEIGHT_STORAGE_KEY = "forge_weight_entries";
+
+// Raw regression used by the existing TDEE / maintenance estimator. Keep this
+// separate from the visible Trend Weight model so expenditure logic is not
+// changed when the user-facing smoothing model changes.
+const DISPLAY_TREND_DAYS = 21;
+const DISPLAY_TREND_MIN_ENTRIES = 3;
+const DISPLAY_TREND_MIN_SPAN_DAYS = 5;
+const DISPLAY_TREND_FULL_ENTRIES = 6;
+const DISPLAY_TREND_FULL_SPAN_DAYS = 14;
+
+// User-facing Trend Weight model. Missing dates between real weigh-ins are
+// linearly interpolated, then an exponentially weighted moving average gives
+// recent days more influence without allowing one scale reading to dominate.
+const VISIBLE_TREND_ALPHA = 0.15;
+const VISIBLE_RATE_DAYS = 21;
+const VISIBLE_TREND_MIN_ENTRIES = 3;
+const VISIBLE_TREND_MIN_SPAN_DAYS = 5;
+const VISIBLE_TREND_FULL_ENTRIES = 6;
+const VISIBLE_TREND_FULL_SPAN_DAYS = 14;
+
+export function calculateWeightTrend(entries, options = {}) {
+    const normalized = normalizeWeightEntries(entries);
+    const minEntriesPerWindow = positiveInteger(options.minEntriesPerWindow, MIN_WINDOW_ENTRIES);
+    const endDate = validDate(options.endDate)
+        ? String(options.endDate)
+        : normalized.at(-1)?.date || null;
+
+    if (!endDate) {
+        return buildMovingAverageResult({ status: "insufficient", allEntries: normalized, minEntriesPerWindow });
+    }
+
+    const current = calculateSevenDayAverage(normalized, endDate);
+    const previousEndDate = shiftDate(endDate, -MOVING_AVERAGE_DAYS);
+    const previous = calculateSevenDayAverage(normalized, previousEndDate);
+    const enoughCurrent = current.entries >= minEntriesPerWindow;
+    const enoughPrevious = previous.entries >= minEntriesPerWindow;
+
+    if (!enoughCurrent || !enoughPrevious || !Number.isFinite(current.average) || !Number.isFinite(previous.average)) {
+        return buildMovingAverageResult({
+            status: "insufficient",
+            allEntries: normalized,
+            current,
+            previous,
+            endDate,
+            minEntriesPerWindow
+        });
+    }
+
+    const weeklyChange = current.average - previous.average;
+    return buildMovingAverageResult({
+        status: "actual",
+        weeklyChange,
+        allEntries: normalized,
+        current,
+        previous,
+        endDate,
+        minEntriesPerWindow
+    });
+}
+
+export function calculatePhaseMovingAverageTrend(entries, options = {}) {
+    const phaseStartDate = validDate(options.phaseStartDate) ? String(options.phaseStartDate) : null;
+    const asOfDate = validDate(options.asOfDate)
+        ? String(options.asOfDate)
+        : localDate();
+    const minEntriesPerWindow = positiveInteger(options.minEntriesPerWindow, MIN_WINDOW_ENTRIES);
+    const startingTrendWeight = finiteNumber(options.startingTrendWeight);
+    const rolling = options.rolling === true;
+    const provided = normalizeWeightEntries(entries).filter(entry => entry.date <= asOfDate);
+    const normalized = provided.filter(entry => !phaseStartDate || entry.date >= phaseStartDate);
+    const rollingContext = rolling ? getRollingContextEntries(provided, asOfDate) : normalized;
+
+    if (!phaseStartDate) {
+        return {
+            ...calculateWeightTrend([], { minEntriesPerWindow }),
+            reason: "missing-phase-start",
+            phaseDay: null,
+            dataPhaseDay: null,
+            latestEntryDate: null,
+            measurementDate: null,
+            checkDay: null,
+            checkDate: null,
+            nextTrendDay: FIRST_PHASE_TREND_DAY,
+            nextTrendDate: null,
+            nextCheckDay: FIRST_PHASE_CHECK_DAY,
+            nextCheckDate: null,
+            daysUntilTrend: null,
+            daysUntilCheck: null
+        };
+    }
+
+    const phaseDay = Math.max(1, Math.floor((dateMs(asOfDate) - dateMs(phaseStartDate)) / DAY_MS) + 1);
+    const firstTrendDate = shiftDate(phaseStartDate, FIRST_PHASE_TREND_DAY - 1);
+    const latestEntryDate = normalized.at(-1)?.date || null;
+    const dataPhaseDay = validDate(latestEntryDate)
+        ? Math.max(1, Math.floor((dateMs(latestEntryDate) - dateMs(phaseStartDate)) / DAY_MS) + 1)
+        : 0;
+    const rollingEndDate = getRollingPhaseEndDate(normalized, firstTrendDate, asOfDate);
+
+    if (phaseDay < FIRST_PHASE_TREND_DAY) {
+        return {
+            ...calculateWeightTrend([], { minEntriesPerWindow }),
+            reason: "before-first-trend",
+            phaseDay,
+            dataPhaseDay,
+            latestEntryDate,
+            measurementDate: null,
+            checkDay: null,
+            checkDate: null,
+            nextTrendDay: FIRST_PHASE_TREND_DAY,
+            nextTrendDate: firstTrendDate,
+            nextCheckDay: FIRST_PHASE_CHECK_DAY,
+            nextCheckDate: shiftDate(phaseStartDate, FIRST_PHASE_CHECK_DAY - 1),
+            daysUntilTrend: FIRST_PHASE_TREND_DAY - phaseDay,
+            daysUntilCheck: FIRST_PHASE_CHECK_DAY - phaseDay,
+            totalEntries: normalized.length
+        };
+    }
+
+    if (phaseDay < FIRST_PHASE_CHECK_DAY) {
+        const trendDate = rolling ? rollingEndDate : firstTrendDate;
+        const current = calculateSevenDayAverage(normalized, trendDate);
+        const enoughCurrent = current.entries >= minEntriesPerWindow;
+
+        if (!enoughCurrent || !Number.isFinite(current.average) || !Number.isFinite(startingTrendWeight)) {
+            return {
+                ...buildMovingAverageResult({
+                    status: "insufficient",
+                    allEntries: normalized,
+                    current,
+                    previous: {
+                        average: startingTrendWeight,
+                        entries: 0,
+                        startDate: null,
+                        endDate: phaseStartDate
+                    },
+                    endDate: trendDate,
+                    minEntriesPerWindow
+                }),
+                reason: "insufficient-preliminary-data",
+                phaseDay,
+                dataPhaseDay,
+                latestEntryDate,
+                measurementDate: trendDate,
+                checkDay: null,
+                checkDate: null,
+                nextTrendDay: FIRST_PHASE_TREND_DAY,
+                nextTrendDate: trendDate,
+                nextCheckDay: FIRST_PHASE_CHECK_DAY,
+                nextCheckDate: shiftDate(phaseStartDate, FIRST_PHASE_CHECK_DAY - 1),
+                daysUntilTrend: 0,
+                daysUntilCheck: FIRST_PHASE_CHECK_DAY - phaseDay
+            };
+        }
+
+        const weeklyChange = current.average - startingTrendWeight;
+        return {
+            ...buildMovingAverageResult({
+                status: "preliminary",
+                weeklyChange,
+                allEntries: normalized,
+                current,
+                previous: {
+                    average: startingTrendWeight,
+                    entries: 0,
+                    startDate: null,
+                    endDate: phaseStartDate
+                },
+                endDate: trendDate,
+                minEntriesPerWindow
+            }),
+            reason: null,
+            phaseDay,
+            dataPhaseDay,
+            latestEntryDate,
+            measurementDate: trendDate,
+            checkDay: null,
+            checkDate: null,
+            nextTrendDay: FIRST_PHASE_TREND_DAY,
+            nextTrendDate: trendDate,
+            nextCheckDay: FIRST_PHASE_CHECK_DAY,
+            nextCheckDate: shiftDate(phaseStartDate, FIRST_PHASE_CHECK_DAY - 1),
+            daysUntilTrend: 0,
+            daysUntilCheck: FIRST_PHASE_CHECK_DAY - phaseDay
+        };
+    }
+
+    // Phase age and check eligibility use in-phase weigh-ins only. The measured
+    // rolling rate, however, needs complete 7-day comparison windows. When the
+    // previous rolling window reaches before the phase start, include available
+    // pre-phase weigh-ins as context instead of silently shortening that window.
+    const calendarCheckDay = phaseDay >= FIRST_PHASE_CHECK_DAY
+        ? FIRST_PHASE_CHECK_DAY
+            + (Math.floor((phaseDay - FIRST_PHASE_CHECK_DAY) / PHASE_CHECK_CADENCE_DAYS) * PHASE_CHECK_CADENCE_DAYS)
+        : FIRST_PHASE_CHECK_DAY;
+    const checkDay = calendarCheckDay;
+    const checkDate = shiftDate(phaseStartDate, checkDay - 1);
+    const trendDate = rolling ? rollingEndDate : checkDate;
+    const result = calculateWeightTrend(rolling ? rollingContext : normalized, { endDate: trendDate, minEntriesPerWindow });
+    const nextCheckDay = checkDay + PHASE_CHECK_CADENCE_DAYS;
+    const nextCheckDate = shiftDate(phaseStartDate, nextCheckDay - 1);
+
+    return {
+        ...result,
+        reason: result.status === "actual" ? null : "insufficient-window-data",
+        phaseDay,
+        dataPhaseDay,
+        latestEntryDate,
+        measurementDate: trendDate,
+        checkDay,
+        checkDate,
+        nextTrendDay: null,
+        nextTrendDate: null,
+        nextCheckDay,
+        nextCheckDate,
+        daysUntilTrend: 0,
+        daysUntilCheck: Math.max(0, nextCheckDay - phaseDay),
+        // A same-day weigh-in improves the estimate, but the calendar-based
+        // check-in remains available with the most recent usable trend.
+        awaitingNewWeighIn: false,
+        hasCheckDayWeighIn: dataPhaseDay >= checkDay
+    };
+}
+
+export function calculateSevenDayAverage(entries, endDate) {
+    const normalized = normalizeWeightEntries(entries);
+    if (!validDate(endDate)) return emptyWindow(null, null);
+    const end = String(endDate);
+    const start = shiftDate(end, -(MOVING_AVERAGE_DAYS - 1));
+    const rows = normalized.filter(entry => entry.date >= start && entry.date <= end);
+    const average = rows.length
+        ? rows.reduce((sum, entry) => sum + entry.weight, 0) / rows.length
+        : null;
+    return {
+        average: Number.isFinite(average) ? average : null,
+        entries: rows.length,
+        startDate: start,
+        endDate: end
+    };
+}
+
+export function calculateRegressionWeeklyChange(entries) {
+    const normalized = normalizeWeightEntries(entries);
+    if (normalized.length < 2) return null;
+    const origin = dateMs(normalized[0].date);
+    const points = normalized.map(entry => ({ x: (dateMs(entry.date) - origin) / DAY_MS, y: entry.weight }));
+    const meanX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
+    const meanY = points.reduce((sum, point) => sum + point.y, 0) / points.length;
+    const numerator = points.reduce((sum, point) => sum + ((point.x - meanX) * (point.y - meanY)), 0);
+    const denominator = points.reduce((sum, point) => sum + ((point.x - meanX) ** 2), 0);
+    if (!Number.isFinite(denominator) || denominator <= 0) return null;
+    const dailySlope = numerator / denominator;
+    return Number.isFinite(dailySlope) ? dailySlope * 7 : null;
+}
+
+// Existing raw regression path retained for TDEE and other conservative
+// nutrition calculations. Its behavior is intentionally unchanged.
+export function calculateDisplayWeightTrend(entries, options = {}) {
+    const normalized = normalizeWeightEntries(entries);
+    const allowFuture = options.allowFuture === true;
+    const today = localDate();
+    const eligible = allowFuture
+        ? normalized
+        : normalized.filter(entry => entry.date <= today);
+    const requestedEndDate = validDate(options.endDate) ? String(options.endDate) : null;
+    const endDate = requestedEndDate && (allowFuture || requestedEndDate <= today)
+        ? requestedEndDate
+        : eligible.at(-1)?.date || null;
+    const windowDays = positiveInteger(options.windowDays, DISPLAY_TREND_DAYS);
+    const minEntries = positiveInteger(options.minEntries, DISPLAY_TREND_MIN_ENTRIES);
+    const minSpanDays = positiveInteger(options.minSpanDays, DISPLAY_TREND_MIN_SPAN_DAYS);
+    const fullEntries = positiveInteger(options.fullEntries, DISPLAY_TREND_FULL_ENTRIES);
+    const fullSpanDays = positiveInteger(options.fullSpanDays, DISPLAY_TREND_FULL_SPAN_DAYS);
+
+    if (!endDate) {
+        return { status: "insufficient", label: "Weekly Trend", weeklyChange: null, entries: 0, spanDays: 0, windowDays };
+    }
+
+    const startDate = shiftDate(endDate, -(windowDays - 1));
+    const windowEntries = eligible.filter(entry => entry.date >= startDate && entry.date <= endDate);
+    const firstDate = windowEntries[0]?.date || null;
+    const lastDate = windowEntries.at(-1)?.date || null;
+    const spanDays = firstDate && lastDate
+        ? Math.floor((dateMs(lastDate) - dateMs(firstDate)) / DAY_MS) + 1
+        : 0;
+    const weeklyChange = calculateRegressionWeeklyChange(windowEntries);
+    const ready = windowEntries.length >= minEntries
+        && spanDays >= minSpanDays
+        && Number.isFinite(weeklyChange);
+
+    if (!ready) {
+        return {
+            status: "insufficient",
+            label: "Weekly Trend",
+            weeklyChange: null,
+            entries: windowEntries.length,
+            spanDays,
+            windowDays,
+            windowStart: startDate,
+            windowEnd: endDate
+        };
+    }
+
+    const status = windowEntries.length >= fullEntries && spanDays >= fullSpanDays
+        ? "actual"
+        : "preliminary";
+    return {
+        status,
+        label: status === "preliminary" ? "Preliminary Trend" : "Weekly Trend",
+        weeklyChange,
+        entries: windowEntries.length,
+        spanDays,
+        windowDays,
+        windowStart: firstDate,
+        windowEnd: lastDate
+    };
+}
+
+export function interpolateWeightEntries(entries, options = {}) {
+    const allowFuture = options.allowFuture === true;
+    const today = localDate();
+    const normalized = normalizeWeightEntries(entries).filter(entry => allowFuture || entry.date <= today);
+    const requestedEndDate = validDate(options.endDate) ? String(options.endDate) : null;
+    const endDate = requestedEndDate && (allowFuture || requestedEndDate <= today)
+        ? requestedEndDate
+        : normalized.at(-1)?.date || null;
+    const eligible = endDate ? normalized.filter(entry => entry.date <= endDate) : normalized;
+    if (!eligible.length) return [];
+    if (eligible.length === 1) return [{ ...eligible[0], actual: true }];
+
+    const series = [];
+    for (let index = 0; index < eligible.length - 1; index++) {
+        const current = eligible[index];
+        const next = eligible[index + 1];
+        const days = Math.max(1, Math.round((dateMs(next.date) - dateMs(current.date)) / DAY_MS));
+
+        if (index === 0) series.push({ ...current, actual: true });
+        for (let offset = 1; offset <= days; offset++) {
+            const fraction = offset / days;
+            series.push({
+                date: shiftDate(current.date, offset),
+                weight: current.weight + ((next.weight - current.weight) * fraction),
+                actual: offset === days
+            });
+        }
+    }
+    return series;
+}
+
+export function calculateTrendWeightSeries(entries, options = {}) {
+    const alphaOption = Number(options.alpha);
+    const alpha = Number.isFinite(alphaOption) && alphaOption > 0 && alphaOption <= 1
+        ? alphaOption
+        : VISIBLE_TREND_ALPHA;
+    const interpolated = interpolateWeightEntries(entries, options);
+    if (!interpolated.length) return [];
+
+    let trend = interpolated[0].weight;
+    return interpolated.map((entry, index) => {
+        if (index > 0) trend = (alpha * entry.weight) + ((1 - alpha) * trend);
+        return {
+            date: entry.date,
+            weight: trend,
+            observedWeight: entry.weight,
+            actual: entry.actual === true
+        };
+    });
+}
+
+export function calculateTrendWeight(entries, options = {}) {
+    const series = calculateTrendWeightSeries(entries, options);
+    const value = Number(series.at(-1)?.weight);
+    return Number.isFinite(value) ? value : null;
+}
+
+/** Calendar-age weights for the experimental 60/30/10 weekly-rate fit.
+ * Each full seven-day block receives 60%, 30%, or 10% of total influence.
+ * Partial histories retain per-day weights; missing days do not count as evidence.
+ */
+export function recentWeekRegressionWeight(date, endDate) {
+    const age = Math.round((dateMs(endDate) - dateMs(date)) / DAY_MS);
+    if (!Number.isFinite(age) || age < 0 || age >= 21) return 0;
+    return (age < 7 ? 0.60 : age < 14 ? 0.30 : 0.10) / 7;
+}
+
+export function calculateRecentWeightedWeeklyChange(entries, endDate) {
+    const points = entries.filter(entry => Number.isFinite(Number(entry.weight)))
+        .map(entry => ({ x: (dateMs(entry.date) - dateMs(endDate)) / DAY_MS,
+            y: Number(entry.weight), w: recentWeekRegressionWeight(entry.date, endDate) }))
+        .filter(point => point.w > 0 && Number.isFinite(point.x));
+    const total = points.reduce((sum, point) => sum + point.w, 0);
+    if (points.length < 2 || !total) return null;
+    const meanX = points.reduce((sum, point) => sum + point.w * point.x, 0) / total;
+    const meanY = points.reduce((sum, point) => sum + point.w * point.y, 0) / total;
+    let numerator = 0;
+    let denominator = 0;
+    for (const point of points) {
+        numerator += point.w * (point.x - meanX) * (point.y - meanY);
+        denominator += point.w * (point.x - meanX) ** 2;
+    }
+    return denominator > 0 ? 7 * numerator / denominator : null;
+}
+
+export function calculateVisibleWeightTrend(entries, options = {}) {
+    const allowFuture = options.allowFuture === true;
+    const today = localDate();
+    const normalized = normalizeWeightEntries(entries).filter(entry => allowFuture || entry.date <= today);
+    const requestedEndDate = validDate(options.endDate) ? String(options.endDate) : null;
+    const endDate = requestedEndDate && (allowFuture || requestedEndDate <= today)
+        ? requestedEndDate
+        : normalized.at(-1)?.date || null;
+    const rateDays = positiveInteger(options.rateDays, VISIBLE_RATE_DAYS);
+    const minEntries = positiveInteger(options.minEntries, VISIBLE_TREND_MIN_ENTRIES);
+    const minSpanDays = positiveInteger(options.minSpanDays, VISIBLE_TREND_MIN_SPAN_DAYS);
+    const fullEntries = positiveInteger(options.fullEntries, VISIBLE_TREND_FULL_ENTRIES);
+    const fullSpanDays = positiveInteger(options.fullSpanDays, VISIBLE_TREND_FULL_SPAN_DAYS);
+
+    if (!endDate) {
+        return {
+            status: "insufficient",
+            label: "Weekly Trend",
+            weeklyChange: null,
+            trendWeight: null,
+            entries: 0,
+            spanDays: 0,
+            rateDays,
+            series: []
+        };
+    }
+
+    const eligible = normalized.filter(entry => entry.date <= endDate);
+    const rateStart = shiftDate(endDate, -(rateDays - 1));
+    const actualWindow = eligible.filter(entry => entry.date >= rateStart && entry.date <= endDate);
+    const firstDate = actualWindow[0]?.date || null;
+    const lastDate = actualWindow.at(-1)?.date || null;
+    const spanDays = firstDate && lastDate
+        ? Math.floor((dateMs(lastDate) - dateMs(firstDate)) / DAY_MS) + 1
+        : 0;
+    const series = calculateTrendWeightSeries(eligible, { ...options, endDate, allowFuture });
+    const rateSeries = series.filter(entry => entry.date >= rateStart && entry.date <= endDate);
+    const weeklyChange = options.rateWeighting === "equal"
+        ? calculateRegressionWeeklyChange(rateSeries)
+        : calculateRecentWeightedWeeklyChange(rateSeries, endDate);
+    const trendWeight = Number(series.at(-1)?.weight);
+    const ready = actualWindow.length >= minEntries
+        && spanDays >= minSpanDays
+        && Number.isFinite(weeklyChange);
+
+    if (!ready) {
+        return {
+            status: "insufficient",
+            label: "Weekly Trend",
+            weeklyChange: null,
+            trendWeight: Number.isFinite(trendWeight) ? trendWeight : null,
+            entries: actualWindow.length,
+            spanDays,
+            rateDays,
+            windowStart: rateStart,
+            windowEnd: endDate,
+            series
+        };
+    }
+
+    const status = actualWindow.length >= fullEntries && spanDays >= fullSpanDays
+        ? "actual"
+        : "preliminary";
+    return {
+        status,
+        label: status === "preliminary" ? "Preliminary Trend" : "Weekly Trend",
+        weeklyChange,
+        trendWeight: Number.isFinite(trendWeight) ? trendWeight : null,
+        entries: actualWindow.length,
+        spanDays,
+        rateDays,
+        windowStart: firstDate,
+        windowEnd: lastDate,
+        series
+    };
+}
+
+export function normalizeWeightEntries(entries) {
+    if (!Array.isArray(entries)) return [];
+    const byDate = new Map();
+    entries.forEach(entry => {
+        const date = String(entry?.date || "");
+        const weight = Number(entry?.weight);
+        if (!validDate(date) || !Number.isFinite(weight) || weight <= 0) return;
+        byDate.set(date, { date, weight });
+    });
+    return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function getRollingContextEntries(provided, asOfDate) {
+    let stored = [];
+    try {
+        if (typeof globalThis?.localStorage !== "undefined") {
+            stored = normalizeWeightEntries(JSON.parse(globalThis.localStorage.getItem(WEIGHT_STORAGE_KEY) || "[]"))
+                .filter(entry => entry.date <= asOfDate);
+        }
+    } catch {
+        stored = [];
+    }
+    if (!stored.length) return provided;
+    return normalizeWeightEntries([...stored, ...provided]).filter(entry => entry.date <= asOfDate);
+}
+
+function getRollingPhaseEndDate(entries, firstTrendDate, asOfDate) {
+    const latestDate = entries.at(-1)?.date || null;
+    if (!validDate(firstTrendDate)) return latestDate;
+    if (!validDate(latestDate) || latestDate < firstTrendDate) return firstTrendDate;
+    return latestDate > asOfDate ? asOfDate : latestDate;
+}
+
+function buildMovingAverageResult({ status, weeklyChange = null, allEntries = [], current = emptyWindow(null, null), previous = emptyWindow(null, null), endDate = null, minEntriesPerWindow = MIN_WINDOW_ENTRIES }) {
+    const windowEntries = Number(current.entries || 0) + Number(previous.entries || 0);
+    return {
+        status,
+        label: status === "preliminary" ? "Preliminary Trend" : "Weekly Trend",
+        weeklyChange: Number.isFinite(weeklyChange) ? weeklyChange : null,
+        previousAverage: Number.isFinite(previous.average) ? previous.average : null,
+        currentAverage: Number.isFinite(current.average) ? current.average : null,
+        previousEntries: Number(previous.entries || 0),
+        currentEntries: Number(current.entries || 0),
+        previousWindowStart: previous.startDate || null,
+        previousWindowEnd: previous.endDate || null,
+        currentWindowStart: current.startDate || null,
+        currentWindowEnd: current.endDate || endDate || null,
+        totalEntries: allEntries.length,
+        windowEntries,
+        windowDays: status === "preliminary" ? MOVING_AVERAGE_DAYS : MOVING_AVERAGE_DAYS * 2,
+        windowStart: previous.startDate || null,
+        windowEnd: current.endDate || endDate || null,
+        minimumActualDays: MOVING_AVERAGE_DAYS * 2,
+        maximumWindowDays: MOVING_AVERAGE_DAYS * 2,
+        movingAverageDays: MOVING_AVERAGE_DAYS,
+        minEntriesPerWindow
+    };
+}
+
+function emptyWindow(startDate, endDate) {
+    return { average: null, entries: 0, startDate, endDate };
+}
+
+function positiveInteger(value, fallback) {
+    const number = Math.round(Number(value));
+    return Number.isFinite(number) && number > 0 ? number : fallback;
+}
+
+function finiteNumber(value) {
+    if (value === null || value === undefined || value === "") return null;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+}
+
+function validDate(value) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) && Number.isFinite(dateMs(String(value)));
+}
+
+function shiftDate(value, days) {
+    if (!validDate(value)) return null;
+    const date = new Date(`${value}T12:00:00`);
+    date.setDate(date.getDate() + Number(days || 0));
+    return localDate(date);
+}
+
+function localDate(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function dateMs(date) {
+    return new Date(`${date}T12:00:00`).getTime();
+}
