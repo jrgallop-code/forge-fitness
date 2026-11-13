@@ -36,16 +36,19 @@ export function saveNutritionGoal(goal) {
 }
 
 export function getNutritionMacroPreference() {
+    const coach = getCoachTargets();
+    if (coach) return { useManual: true, manualMacros: { protein: coach.targets.protein, carbs: coach.targets.carbs, fat: coach.targets.fat }, coachManaged: true };
     return readObject(NUTRITION_MACRO_KEY);
 }
 
 export function saveNutritionMacroPreference(preference) {
+    if (getCoachTargets()) return;
     localStorage.setItem(NUTRITION_MACRO_KEY, JSON.stringify(preference));
 }
 
 export function getNutritionPlan() {
     const coach = getCoachTargets();
-    if (coach) return { calculatedCalories: coach.targets.calorieTarget, currentCalories: coach.targets.calorieTarget, adjustmentHistory: [], coachManaged: true };
+    if (coach) return { calculatedCalories: coach.targets.calorieTarget, currentCalories: coach.targets.calorieTarget, adjustmentHistory: readObject(NUTRITION_PLAN_KEY)?.adjustmentHistory || [], coachManaged: true };
     const plan = readObject(NUTRITION_PLAN_KEY);
     const calculated = Number(plan?.calculatedCalories);
     const legacyCurrent = Number(plan?.currentCalories);
