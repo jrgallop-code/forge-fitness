@@ -1,0 +1,61 @@
+import {getAllExercises} from "./js/workouts/exercise-library.js";
+import "./js/workouts/exercise-library-expansion.js";
+import {parseRoutineText} from "./js/workouts/routine-import-parser.js";
+import {normalizeTargets,syncTargets,moveRoutineExercise,groupRoutineExercises,ungroupExercise,replaceRoutineExercise,exerciseKind} from "./js/workouts/routine-builder-model.js";
+const $=id=>document.getElementById(id), ALL=getAllExercises(), BY_ID=new Map(ALL.map(x=>[x.id,x]));
+const KEY="levelup_coach_full_editor_v1";
+const el=(tag,props={},kids=[])=>{const node=document.createElement(tag);Object.entries(props).forEach(([k,v])=>{if(k==="text")node.textContent=v;else if(k==="className")node.className=v;else if(k==="onClick")node.addEventListener("click",v);else node.setAttribute(k,v)});node.append(...kids);return node};
+const button=(txt,fn)=>el("button",{className:"btn light",type:"button",text:txt,onClick:fn});
+const field=(text,node)=>el("label",{className:"coach-editor-field"},[el("small",{text}),node]);
+const box=(type,val)=>{const n=el("input",{type});if(val!=null)n.value=val;return n};
+let plan={name:"New Coaching Program",days:[{name:"Workout A",exercises:[]}]},dayIndex=-1,selected=new Set();
+try{const parsed=JSON.parse(localStorage.getItem(KEY)||"null");if(parsed&&Array.isArray(parsed.days)&&parsed.days.length)plan=parsed}catch{}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(plan))}catch{}};
+const root=$("builder"),old=$("coach-build-extension"),oldPanel=$("builder-panel"),legacyModes=root?.querySelector(".mode-grid");
+if(!root)throw Error("Builder view unavailable");
+if(old)old.hidden=true;if(oldPanel)oldPanel.hidden=true;if(legacyModes)legacyModes.hidden=true;
+const shell=el("div",{className:"coach-editor-shell"}),top=el("div",{className:"card"}),tabs=el("div",{className:"coach-editor-tabs"}),summary=el("div"),work=el("div"),notice=el("p",{className:"sub",text:"Draft only — not assigned to any athlete."});
+legacyModes.after(shell);shell.append(top,tabs,summary,work,notice);
+const veil=el("div",{className:"coach-editor-overlay"});document.body.append(veil);
+function close(){veil.classList.remove("active");veil.replaceChildren()}
+veil.addEventListener("click",event=>{if(event.target===veil)close()});
+function dialog(title){veil.replaceChildren();const card=el("div",{className:"coach-editor-modal"},[el("div",{className:"row between"},[el("h2",{text:title}),button("Close",close)])]);veil.append(card);veil.classList.add("active");return card}
+function notify(s){notice.textContent=s}
+function allCount(){return plan.days.reduce((n,d)=>n+(d.exercises||[]).length,0)}
+function render(){
+top.replaceChildren();const title=box("text",plan.name);title.maxLength=110;title.oninput=()=>{plan.name=title.value;save()};top.append(el("div",{},[el("span",{className:"eyebrow",text:"Level Up Coach · Full routine editor"}),el("h2",{text:plan.days.length+" complete workout days · "+allCount()+" exercises"})]),field("Program title",title),el("div",{className:"coach-editor-actions"},[button("Add exercise",()=>pickExercise(def=>addExercise(def))),button("Import program",importPlan),button("Export JSON",exportJson)]));
+tabs.replaceChildren();tabs.append(button("All days",()=>{dayIndex=-1;render()}));
+plan.days.forEach((d,i)=>{const b=button((i+1)+". "+d.name+" ("+d.exercises.length+")",()=>{dayIndex=i;selected.clear();render()});if(i===dayIndex)b.classList.add("active");tabs.append(b)});
+tabs.append(button("+ Workout day",()=>{plan.days.push({name:"Workout "+(plan.days.length+1),exercises:[]});dayIndex=plan.days.length-1;save();render()}));
+summary.replaceChildren();work.replaceChildren();
+if(dayIndex<0){summary.append(el("h3",{text:"Full plan overview — every exercise in every day"}));plan.days.forEach((d,i)=>{const card=el("div",{className:"card coach-editor-day"});card.append(el("div",{className:"row between"},[el("h3",{text:d.name+" · "+d.exercises.length+" exercises"}),button("Edit day",()=>{dayIndex=i;render()})]));d.exercises.forEach((x,j)=>card.append(el("div",{className:"coach-editor-overview-line",text:(j+1)+". "+(BY_ID.get(x.id)?.name||x.id)+" — "+x.sets+" sets × "+(x.reps||"duration")+(x.supersetGroup?" · "+(x.groupType||"superset"):"")})));summary.append(card)});return}
+const d=plan.days[dayIndex],name=box("text",d.name);name.maxLength=90;name.oninput=()=>{d.name=name.value;save()};
+summary.append(el("div",{className:"card coach-editor-toolbar"},[field("Workout name",name),button("Duplicate day",()=>{plan.days.splice(dayIndex+1,0,structuredClone(d));plan.days[dayIndex+1].name+=" (Copy)";dayIndex++;save();render()}),button("Remove day",()=>{if(plan.days.length===1){notify("At least one day is required.");return}plan.days.splice(dayIndex,1);dayIndex=-1;save();render()})]));
+summary.append(el("p",{className:"sub",text:d.exercises.length+" exercises · "+d.exercises.reduce((n,x)=>n+(Number(x.sets)||0),0)+" planned sets"}));
+summary.append(el("div",{className:"coach-editor-actions"},[button("Superset selected",()=>group("superset")),button("Circuit selected",()=>group("circuit")),button("Ungroup selected",()=>{[...selected].forEach(i=>ungroupExercise(d,i));selected.clear();save();render()})]));
+if(!d.exercises.length)work.append(el("div",{className:"card",text:"No exercises. Add an exercise, import a program, or use Smart Coach."}));
+d.exercises.forEach((x,i)=>renderExercise(d,x,i));
+}
+function group(type){const d=plan.days[dayIndex],indices=[...selected].sort((a,b)=>a-b);if(indices.length<2){notify("Choose at least two exercise checkboxes.");return}groupRoutineExercises(d,indices,type);selected.clear();save();render()}
+function renderExercise(d,item,i){
+const def=BY_ID.get(item.id),card=el("article",{className:"card coach-editor-exercise"}),head=el("div",{className:"row between"});
+const label=el("div"),checkbox=box("checkbox");checkbox.checked=selected.has(i);checkbox.onchange=()=>checkbox.checked?selected.add(i):selected.delete(i);
+label.append(el("div",{className:"row"},[checkbox,el("strong",{text:(i+1)+". "+(def?.name||item.id)})]),el("p",{className:"sub",text:(def?.muscleGroup||"Other")+" · "+(def?.equipment||"Other")+(item.supersetGroup?" · "+(item.groupType||"superset"):"")}));
+head.append(label,el("div",{className:"coach-editor-actions"},[button("Swap",()=>pickExercise(next=>{d.exercises[i]=replaceRoutineExercise(item,next);save();render();notify("Swapped exercise using Level Up routine model; review target values.")})),button("↑",()=>move(i,i-1)),button("↓",()=>move(i,i+1)),button("Remove",()=>{d.exercises.splice(i,1);selected.clear();save();render()})]));card.append(head);
+const kind=exerciseKind(def,item),fields=el("div",{className:"coach-editor-fields"});
+const sets=box("number",item.sets||3);sets.min=1;sets.max=20;sets.onchange=()=>{item.sets=Math.max(1,Math.min(20,Math.round(Number(sets.value)||3)));syncTargets(item,normalizeTargets(item,def));save();render()};
+const reps=box("text",item.reps||def?.recommendedReps||"8-12");reps.onchange=()=>{item.reps=reps.value;const targets=normalizeTargets(item,def);targets.forEach(t=>t.reps=reps.value);syncTargets(item,targets);save();render()};
+const rest=box("number",item.restSetting?.enabled?item.restSetting.seconds:120);rest.min=0;rest.max=600;rest.onchange=()=>{item.restSetting={enabled:Number(rest.value)>0,seconds:[60,90,120,180].includes(Number(rest.value))?Number(rest.value):120};save()};
+fields.append(field("Sets",sets),field(kind==="duration"?"Duration":"Reps",reps),field("Rest (seconds)",rest));
+const notes=el("textarea",{rows:"2"});notes.value=item.notes||"";notes.onchange=()=>{item.notes=notes.value;save()};fields.append(field("Coach notes",notes));card.append(fields);
+const targets=normalizeTargets(item,def);
+if(targets.length){const targetBox=el("div",{className:"coach-editor-targets"},[el("h3",{text:"Per-set targets"})]);
+targets.forEach((target,j)=>{const line=el("div",{className:"coach-editor-set-row"},[el("strong",{text:"Set "+(j+1)})]);for(const [key,label,type] of [["reps",kind==="duration"?"Seconds":"Reps","text"],["weight","Weight (lb)","number"],["rir","RIR","number"]]){const control=box(type,target[key]??"");control.onchange=()=>{const values=normalizeTargets(item,def);values[j][key]=key==="reps"?control.value:control.value===""?null:Number(control.value);syncTargets(item,values);save()};line.append(field(label,control))}targetBox.append(line)});card.append(targetBox)}
+work.append(card)}
+function move(i,j){const d=plan.days[dayIndex];if(j<0||j>=d.exercises.length)return;moveRoutineExercise(d,i,j);selected.clear();save();render()}
+function addExercise(def){const d=plan.days[Math.max(0,dayIndex)];const item={id:def.id,sets:def.defaultSets||3,reps:def.recommendedReps||"8-12",notes:""};item.setTargets=normalizeTargets(item,def);d.exercises.push(item);dayIndex=Math.max(0,dayIndex);save();render()}
+function pickExercise(choose){const dialogBox=dialog("Choose from full Level Up exercise library"),q=box("search");q.placeholder="Search any exercise or equipment";dialogBox.append(q);const results=el("div",{className:"coach-editor-picks"});dialogBox.append(results);function fill(){results.replaceChildren();const term=q.value.toLowerCase();ALL.filter(def=>[def.name,def.equipment,def.muscleGroup].join(" ").toLowerCase().includes(term)).slice(0,120).forEach(def=>results.append(el("button",{className:"coach-editor-pick",text:def.name+" · "+def.equipment,onClick:()=>{choose(def);close()}})))}q.oninput=fill;fill();q.focus()}
+function importPlan(){const modalBox=dialog("Import complete workout program"),area=el("textarea",{rows:"10"});area.placeholder="Upper Body A\nBench Press 3x8\nLat Pulldown 3x10\n\nLower Body A\nLeg Press 4x10";modalBox.append(area,button("Import all workout days",()=>{const parsed=parseRoutineText(area.value);if(!parsed.days.length){modalBox.append(el("p",{text:"No workout days recognized. Use headings and exercise lines with sets x reps."}));return}let missed=0;plan.days=parsed.days.map(d=>({name:d.name,exercises:d.exercises.map(x=>{const id=x.match?.confirmed?x.match.exerciseId:ALL.find(y=>y.name.toLowerCase()===x.name.toLowerCase())?.id;if(!id){missed++;return null}const item={id,sets:x.sets,reps:x.reps,notes:x.notes||""};item.setTargets=normalizeTargets(item,BY_ID.get(id));return item}).filter(Boolean)}));plan.name="Imported Coaching Program";dayIndex=-1;selected.clear();save();render();close();notify("Imported "+plan.days.length+" days, "+allCount()+" matching exercises. "+missed+" unmatched exercises require review.")}))}
+function exportJson(){const payload={schema:"level-up-coach-draft-v1",plan,warning:"Not yet assigned to a real Level Up athlete account"};const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}));const a=el("a",{href:url,download:"level-up-coach-program.json"});a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+document.addEventListener("levelup:coach-smart-generated",event=>{const source=event.detail;if(!source?.days?.length)return;plan={name:source.name,days:source.days.map(d=>({name:d.name,exercises:(d.exercises||[]).map(x=>({...x,setTargets:normalizeTargets(x,BY_ID.get(x.id))}))}))};dayIndex=-1;selected.clear();save();render();notify("Complete Smart Coach result loaded: "+plan.days.length+" days and "+allCount()+" exercises. All days are shown above.")});
+render();
