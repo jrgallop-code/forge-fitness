@@ -12,6 +12,7 @@ on:
       - 'tests/coach-assignment-api.test.mjs'
       - 'tests/coach-schema-smoke.py'
       - 'tests/coach-real-sql-integration.test.mjs'
+      - 'tests/coach-local-http-e2e.mjs'
       - 'js/dashboard/nutrition-target-card.js'
       - 'js/dashboard/dashboard-nutrition-sync.js'
       - 'js/nutrition/active-plan-display-sync.js'
@@ -57,6 +58,21 @@ jobs:
           npx wrangler d1 migrations apply DB --local --persist-to /tmp/coach-d1-staging
           npx wrangler d1 execute DB --local --persist-to /tmp/coach-d1-staging --command "SELECT name FROM sqlite_master WHERE name IN ('coach_training_links','coach_program_assignments','coach_assignment_versions','coach_assignment_decisions','coach_client_nutrition_selection') ORDER BY name;" --json > /tmp/coach-d1-tables.json
           node -e 'const fs=require("fs"); const s=JSON.stringify(JSON.parse(fs.readFileSync("/tmp/coach-d1-tables.json","utf8"))); for(const n of ["coach_training_links","coach_program_assignments","coach_assignment_versions","coach_assignment_decisions","coach_client_nutrition_selection"])if(!s.includes(n))throw Error("D1 migration missing "+n); console.log("Isolated D1 coach schema verified")'
+      - name: Test authenticated coach API over local HTTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/coach-local-http-e2e.mjs seed
+          cd cloud
+          npx wrangler d1 execute DB --local --persist-to /tmp/coach-d1-staging --file /tmp/coach-local-e2e-seed.sql
+          npx wrangler dev --local --port 8787 --persist-to /tmp/coach-d1-staging --var ADMIN_EMAILS:coach@example.test >/tmp/coach-local-worker.log 2>&1 &
+          WORKER_PID=$!
+          trap 'kill $WORKER_PID 2>/dev/null || true' EXIT
+          cd ..
+          if ! node tests/coach-local-http-e2e.mjs run; then
+            tail -120 /tmp/coach-local-worker.log
+            exit 1
+          fi
       - name: Run full suite (baseline checked separately)
         run: npm test > /tmp/coach-branch-tests.log 2>&1 || true
       - name: Compare existing failure baseline
