@@ -23,8 +23,8 @@ export async function coachAnalyticsRoute({request,env,user,url}){
  if(path==="/v1/coach/self-connect"&&method==="POST"){
   if(!isCoach(user,env))return fail(403,"Coach authorization required.",request,env);
   const data=await bodyJson(request);if(data?.approve!==true)return fail(400,"Explicit consent required.",request,env);
-  await env.DB.prepare("INSERT INTO coach_training_links (coach_user_id,client_user_id,training_permission,accepted_at,revoked_at) VALUES (?,?,1,?,NULL) ON CONFLICT(coach_user_id,client_user_id) DO UPDATE SET training_permission=1,accepted_at=excluded.accepted_at,revoked_at=NULL").bind(user.id,user.id,now).run();
-  return response({connected:true,self:true,scopes:{training:true,nutrition:false}},200,request,env)
+  await env.DB.prepare("INSERT INTO coach_training_links (coach_user_id,client_user_id,training_permission,nutrition_permission,accepted_at,revoked_at) VALUES (?,?,1,?,?,NULL) ON CONFLICT(coach_user_id,client_user_id) DO UPDATE SET training_permission=1,nutrition_permission=excluded.nutrition_permission,accepted_at=excluded.accepted_at,revoked_at=NULL").bind(user.id,user.id,data?.nutrition===true?1:0,now).run();
+  return response({connected:true,self:true,scopes:{training:true,nutrition:data?.nutrition===true}},200,request,env)
  }
  if(path==="/v1/coach/invites"&&method==="POST"){
   if(!isCoach(user,env))return fail(403,"Coach authorization required.",request,env);
@@ -40,11 +40,11 @@ export async function coachAnalyticsRoute({request,env,user,url}){
   if(data?.consent!==true)return fail(400,"Explicit training history consent required.",request,env);
   const done=await env.DB.prepare("UPDATE coach_training_invitations SET consumed_at=? WHERE id=? AND consumed_at IS NULL").bind(now,row.id).run();
   if(Number(done?.meta?.changes)!==1)return fail(409,"Invitation already used.",request,env);
-  await env.DB.prepare("INSERT INTO coach_training_links (coach_user_id,client_user_id,training_permission,accepted_at,revoked_at) VALUES (?,?,1,?,NULL) ON CONFLICT(coach_user_id,client_user_id) DO UPDATE SET training_permission=1,accepted_at=excluded.accepted_at,revoked_at=NULL").bind(row.coach_user_id,user.id,now).run();
-  return response({connected:true,scopes:{training:true,nutrition:false}},200,request,env)
+  await env.DB.prepare("INSERT INTO coach_training_links (coach_user_id,client_user_id,training_permission,nutrition_permission,accepted_at,revoked_at) VALUES (?,?,1,?,?,NULL) ON CONFLICT(coach_user_id,client_user_id) DO UPDATE SET training_permission=1,nutrition_permission=excluded.nutrition_permission,accepted_at=excluded.accepted_at,revoked_at=NULL").bind(row.coach_user_id,user.id,data?.nutrition===true?1:0,now).run();
+  return response({connected:true,scopes:{training:true,nutrition:data?.nutrition===true}},200,request,env)
  }
  if(path==="/v1/client/coach-links"&&method==="GET"){
-  const links=await env.DB.prepare("SELECT l.coach_user_id,coalesce(u.display_name,u.email) coach_name,l.training_permission,l.accepted_at FROM coach_training_links l JOIN users u ON u.id=l.coach_user_id WHERE l.client_user_id=? AND l.revoked_at IS NULL").bind(user.id).all();return response({links:links.results||[]},200,request,env)
+  const links=await env.DB.prepare("SELECT l.coach_user_id,coalesce(u.display_name,u.email) coach_name,l.training_permission,l.nutrition_permission,l.accepted_at FROM coach_training_links l JOIN users u ON u.id=l.coach_user_id WHERE l.client_user_id=? AND l.revoked_at IS NULL").bind(user.id).all();return response({links:links.results||[]},200,request,env)
  }
  const revoke=path.match(/^\/v1\/client\/coach-links\/([0-9a-f-]{36})$/i);
  if(revoke&&method==="DELETE"){
@@ -52,17 +52,17 @@ export async function coachAnalyticsRoute({request,env,user,url}){
  }
  if(path==="/v1/coach/clients"&&method==="GET"){
   if(!isCoach(user,env))return fail(403,"Coach authorization required.",request,env);
-  const clients=await env.DB.prepare("SELECT l.client_user_id AS id,coalesce(u.display_name,u.email) name,l.training_permission,l.accepted_at FROM coach_training_links l JOIN users u ON u.id=l.client_user_id WHERE l.coach_user_id=? AND l.revoked_at IS NULL AND l.training_permission=1 ORDER BY l.accepted_at DESC").bind(user.id).all();return response({clients:clients.results||[]},200,request,env)
+  const clients=await env.DB.prepare("SELECT l.client_user_id AS id,coalesce(u.display_name,u.email) name,l.training_permission,l.nutrition_permission,l.accepted_at FROM coach_training_links l JOIN users u ON u.id=l.client_user_id WHERE l.coach_user_id=? AND l.revoked_at IS NULL AND l.training_permission=1 ORDER BY l.accepted_at DESC").bind(user.id).all();return response({clients:clients.results||[]},200,request,env)
  }
  const view=path.match(/^\/v1\/coach\/clients\/([0-9a-f-]{36})\/analytics$/i);
  if(view&&method==="GET"){
   if(!isCoach(user,env))return fail(403,"Coach authorization required.",request,env);
-  const link=await env.DB.prepare("SELECT training_permission FROM coach_training_links WHERE coach_user_id=? AND client_user_id=? AND revoked_at IS NULL").bind(user.id,view[1]).first();
+  const link=await env.DB.prepare("SELECT training_permission,nutrition_permission FROM coach_training_links WHERE coach_user_id=? AND client_user_id=? AND revoked_at IS NULL").bind(user.id,view[1]).first();
   if(!link?.training_permission)return fail(403,"Client has not authorized training access.",request,env);
   const row=await env.DB.prepare("SELECT payload,updated_at FROM backups WHERE user_id=?").bind(view[1]).first();
   if(!row)return fail(404,"Client has not synchronized an app backup yet.",request,env);
   let backup;try{backup=JSON.parse(row.payload)}catch{return fail(500,"Unable to read cloud snapshot.",request,env)}
-  return response({clientId:view[1],cloudUpdatedAt:row.updated_at,...scopedAnalytics(backup,{training:true,nutrition:false})},200,request,env)
+  return response({clientId:view[1],cloudUpdatedAt:row.updated_at,...scopedAnalytics(backup,{training:true,nutrition:!!link.nutrition_permission})},200,request,env)
  }
  return fail(404,"Not found.",request,env)
 }
