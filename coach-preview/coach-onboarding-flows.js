@@ -1,0 +1,57 @@
+/* Coach-authored onboarding flow templates. Private preview only.
+ * Drafts are local; there is no live client form assignment or automated send.
+ */
+const KEY="levelup_coach_onboarding_flows_v1";
+const E=(tag,props={},kids=[])=>{const n=document.createElement(tag);for(const [k,v]of Object.entries(props)){if(k==="text")n.textContent=v;else if(k==="className")n.className=v;else if(k==="onClick")n.addEventListener("click",v);else if(k==="checked")n.checked=!!v;else n.setAttribute(k,v)}n.append(...kids);return n};
+const button=(text,click,kind="btn light")=>E("button",{type:"button",className:kind,text,onClick:click});
+const input=(type,value)=>{const node=E("input",{type});if(value!==undefined&&value!==null)node.value=value;return node};
+const field=(title,node)=>E("label",{className:"coach-flow-field"},[E("span",{text:title}),node]);
+const newId=()=>Date.now().toString(36)+"-"+Math.random().toString(36).slice(2);
+const PRESETS=[
+{id:"welcome",title:"Standard Coaching",subtitle:"Training onboarding, goals, schedule and welcome message",form:[
+{title:"What is your main fitness goal?",type:"single",required:true,options:["Build muscle","Get stronger","Lose fat","Improve fitness"]},
+{title:"How many days can you train each week?",type:"single",required:true,options:["2","3","4","5+"]},
+{title:"What equipment do you have access to?",type:"single",required:true,options:["Full gym","Home gym","Bodyweight only"]},
+{title:"Anything you want your coach to know?",type:"long",required:false,options:[]}],message:"Welcome to Level Up! I'm excited to work together. Complete your profile and let me know if anything needs changing.",program:null,includeNutrition:false,includePhotos:false,checkinDays:7},
+{id:"online",title:"Online Training + Nutrition",subtitle:"Goals, food logging preferences, remote check-ins",form:[
+{title:"What is your main fitness goal?",type:"single",required:true,options:["Build muscle","Lose weight","Maintain","Performance"]},
+{title:"What is your training experience?",type:"single",required:true,options:["New","Intermediate","Advanced"]},
+{title:"Would you like nutrition coaching?",type:"single",required:true,options:["Yes","No"]},
+{title:"What food preferences should we consider?",type:"long",required:false,options:[]}],message:"Welcome! We'll review your training and nutrition goals and set up your initial plan together.",program:null,includeNutrition:true,includePhotos:false,checkinDays:7},
+{id:"group",title:"Group Training",subtitle:"Session availability, goals and group welcome",form:[
+{title:"Which class days suit you best?",type:"multiple",required:true,options:["Monday","Tuesday","Wednesday","Thursday","Friday","Weekend"]},
+{title:"What is your training experience?",type:"single",required:true,options:["Beginner","Intermediate","Advanced"]},
+{title:"Any preferred training focus?",type:"single",required:false,options:["Strength","Hypertrophy","General fitness"]}],message:"Welcome to the Level Up group! Please review the schedule and introduce yourself.",program:null,includeNutrition:false,includePhotos:false,checkinDays:14},
+{id:"blank",title:"Blank Custom Flow",subtitle:"Build your own onboarding from scratch",form:[],message:"",program:null,includeNutrition:false,includePhotos:false,checkinDays:7}
+];
+const initial=template=>{const item=structuredClone(template||PRESETS[0]);return {...item,id:"flow-"+newId(),name:item.title,enabled:{forms:true,messages:true,assignments:false,photos:false,checkins:true},createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),isDefault:false,status:"draft"}};
+function read(){try{const data=JSON.parse(localStorage.getItem(KEY)||"[]");return Array.isArray(data)?data:[]}catch{return[]}}
+function saveList(v){try{localStorage.setItem(KEY,JSON.stringify(v));return true}catch{return false}}
+let all=read(),active=all[0]?.id||null;
+const root=document.getElementById("coach-extra-views")||document.querySelector(".body"),nav=document.getElementById("nav");
+const page=E("section",{className:"view",id:"onboarding-flows"}),head=E("div",{className:"head"},[E("div",{},[E("span",{className:"eyebrow",text:"AUTOMATION · ONBOARDING"}),E("h1",{text:"Client Onboarding Flows"}),E("p",{className:"muted",text:"Start from Level Up templates or build your own: welcome forms, messages, program assignment and check-ins."})])]);
+const warning=E("p",{className:"sub",text:"Preview only. Saving a flow does not publish, send messages, or assign programs to real Level Up client accounts."});
+const toolbar=E("div",{className:"coach-flow-toolbar"}),list=E("div",{className:"coach-flow-list"}),editor=E("div",{className:"coach-flow-editor"});page.append(head,warning,toolbar,list,editor);root.append(page);
+const link=button("Onboarding Flows",open,"coach-onboard-nav");nav?.append(link);
+function open(){document.querySelectorAll(".view").forEach(x=>x.classList.toggle("active",x===page));document.querySelectorAll("#nav button").forEach(x=>x.classList.toggle("active",x===link));const crumb=document.getElementById("crumb");if(crumb)crumb.textContent="Client Onboarding Flows";render();window.scrollTo(0,0)}
+function current(){return all.find(x=>x.id===active)}
+function persist(){const ok=saveList(all);renderList();return ok}
+function create(template){const newFlow=initial(template);all.unshift(newFlow);active=newFlow.id;persist();render()}
+function duplicate(source){const item=structuredClone(source);item.id="flow-"+newId();item.name+=" (Copy)";item.isDefault=false;item.status="draft";item.createdAt=new Date().toISOString();item.updatedAt=item.createdAt;all.unshift(item);active=item.id;persist();render()}
+function remove(source){if(!confirm("Delete this saved onboarding flow?"))return;all=all.filter(x=>x.id!==source.id);active=all[0]?.id||null;persist();render()}
+function renderList(){list.replaceChildren();all.forEach(f=>{const row=E("div",{className:"coach-flow-row"},[E("div",{},[E("strong",{text:f.name}),E("p",{className:"sub",text:(f.isDefault?"Default · ":"")+f.form.length+" questions · "+f.status})]),button("Edit",()=>{active=f.id;render()}),button("Duplicate",()=>duplicate(f)),button("Delete",()=>remove(f))]);if(f.id===active)row.classList.add("active");list.append(row)})}
+function render(){toolbar.replaceChildren();editor.replaceChildren();renderList();if(!all.length)toolbar.append(E("p",{className:"sub",text:"Choose a template to create your first onboarding flow."}));for(const t of PRESETS)toolbar.append(button("+ "+t.title,()=>create(t),t.id==="welcome"?"btn":"btn light"));const flow=current();if(!flow)return;
+const wrap=E("div",{className:"card coach-flow-builder"}),top=E("div",{className:"row between"},[E("h2",{text:"Edit onboarding flow"}),E("span",{className:"sub",text:"Draft · local preview"})]);wrap.append(top);
+const name=input("text",flow.name);name.maxLength=100;name.oninput=()=>{flow.name=name.value;flow.updatedAt=new Date().toISOString();saveList(all)};
+wrap.append(field("Flow name",name));
+const sections=E("div",{className:"coach-flow-stages"});wrap.append(sections);
+function stage(key,title,description){const card=E("section",{className:"coach-flow-stage"});const toggle=input("checkbox");toggle.checked=!!flow.enabled[key];const body=E("div",{className:"coach-flow-stage-body"}),header=E("div",{className:"coach-flow-stage-title"},[E("label",{},[toggle,E("strong",{text:title})]),E("p",{className:"sub",text:description})]);toggle.onchange=()=>{flow.enabled[key]=toggle.checked;body.hidden=!toggle.checked;flow.updatedAt=new Date().toISOString();saveList(all)};body.hidden=!toggle.checked;card.append(header,body);sections.append(card);return body}
+const form=stage("forms","1. Welcome form","Edit questions, answer options and required fields. Clients will answer in Level Up when syncing exists.");
+function renderQuestions(){form.replaceChildren();flow.form.forEach((q,i)=>{const row=E("div",{className:"coach-flow-question"}),text=input("text",q.title),type=E("select");for(const [value,label] of [["short","Short answer"],["long","Long answer"],["single","Single choice"],["multiple","Multiple choice"],["number","Number"]])type.append(E("option",{value,text:label}));type.value=q.type;const required=input("checkbox");required.checked=!!q.required;const opts=E("textarea",{rows:"2",placeholder:"One choice per line"});opts.value=(q.options||[]).join("\n");text.oninput=()=>{q.title=text.value;saveList(all)};type.onchange=()=>{q.type=type.value;saveList(all);renderQuestions()};required.onchange=()=>{q.required=required.checked;saveList(all)};opts.onchange=()=>{q.options=opts.value.split("\n").map(v=>v.trim()).filter(Boolean).slice(0,20);saveList(all)};row.append(E("div",{className:"row between"},[E("strong",{text:"Question "+(i+1)}),button("Remove",()=>{flow.form.splice(i,1);saveList(all);renderQuestions()})]),field("Question",text),field("Answer type",type),E("label",{},[required,E("span",{text:"Required"})]));if(["single","multiple"].includes(q.type))row.append(field("Choices",opts));form.append(row)});form.append(button("+ Add question",()=>{flow.form.push({title:"",type:"short",required:false,options:[]});saveList(all);renderQuestions()}))}
+renderQuestions();
+const messages=stage("messages","2. Welcome message","Editable coach welcome; variable {first_name} can personalize future delivery.");const msg=E("textarea",{rows:"5"});msg.value=flow.message;msg.oninput=()=>{flow.message=msg.value;saveList(all)};messages.append(field("Message text",msg));
+const assigns=stage("assignments","3. Initial training program","Optionally select an existing saved program or Level Up template.");const program=E("select");program.append(E("option",{value:"",text:"No program assigned"}));let presets=[];try{const stored=JSON.parse(localStorage.getItem("level_up_coach_program_library_v1")||"[]");presets=Array.isArray(stored)?stored:[]}catch{}presets.forEach(p=>program.append(E("option",{value:p.id,text:p.plan?.name||"Unnamed Program"})));program.value=flow.program||"";program.onchange=()=>{flow.program=program.value||null;saveList(all)};assigns.append(field("Initial program",program),E("p",{className:"sub",text:"Actual assignment requires secure client connections and plan delivery."}));
+const photos=stage("photos","4. Progress photo check-in","Optional client-provided photo request; never access photos without client sharing.");photos.append(E("p",{className:"sub",text:"Clients choose whether to share individual photos. No implicit access to device photos."}));
+const checkins=stage("checkins","5. Weekly check-ins","Review cadence after clients consent to coaching.");const days=E("select");for(const n of [7,14,21,30])days.append(E("option",{value:n,text:n===7?"Every week":n+" days"}));days.value=flow.checkinDays;days.onchange=()=>{flow.checkinDays=Number(days.value);saveList(all)};checkins.append(field("Frequency",days));
+const note=E("p",{className:"sub",role:"status"});wrap.append(E("div",{className:"coach-flow-footer"},[button("Save Draft",()=>{if(!flow.name.trim()){note.textContent="Enter a flow name.";return}flow.updatedAt=new Date().toISOString();note.textContent=persist()?"Saved locally. Not published.":"Browser storage unavailable."},"btn"),button("Set as Default Draft",()=>{all.forEach(x=>x.isDefault=x.id===flow.id);persist();note.textContent="Default for this browser preview; no client is assigned."}),button("Preview Client Questions",()=>{note.textContent=flow.form.filter(q=>q.title.trim()).map(x=>x.title).join(" • ")||"No active questions."})]),note);editor.append(wrap)}
+render();
