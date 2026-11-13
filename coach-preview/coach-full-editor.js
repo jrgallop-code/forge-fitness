@@ -10,12 +10,12 @@ const field=(text,node)=>el("label",{className:"coach-editor-field"},[el("small"
 const box=(type,val)=>{const n=el("input",{type});if(val!=null)n.value=val;return n};
 let plan={name:"New Coaching Program",days:[{name:"Workout A",exercises:[]}]},dayIndex=-1,selected=new Set();
 try{const parsed=JSON.parse(localStorage.getItem(KEY)||"null");if(parsed&&Array.isArray(parsed.days)&&parsed.days.length)plan=parsed}catch{}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(plan))}catch{}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(plan))}catch{};document.dispatchEvent(new CustomEvent("levelup:coach-program-rendered",{detail:{plan:structuredClone(plan)}}))};
 const root=$("builder"),old=$("coach-build-extension"),oldPanel=$("builder-panel"),legacyModes=root?.querySelector(".mode-grid");
 if(!root)throw Error("Builder view unavailable");
 if(old)old.hidden=true;if(oldPanel)oldPanel.hidden=true;if(legacyModes)legacyModes.hidden=true;
-const shell=el("div",{className:"coach-editor-shell"}),top=el("div",{className:"card"}),tabs=el("div",{className:"coach-editor-tabs"}),summary=el("div"),work=el("div"),notice=el("p",{className:"sub",text:"Draft only — not assigned to any athlete."});
-legacyModes.after(shell);shell.append(top,tabs,summary,work,notice);
+const shell=el("div",{className:"coach-editor-shell"}),top=el("div",{className:"card"}),tabs=el("div",{className:"coach-editor-tabs"}),summary=el("div"),volume=el("div",{id:"coach-full-builder-volume",className:"card coach-volume-host"}),work=el("div"),notice=el("p",{className:"sub",text:"Draft only — not assigned to any athlete."});
+legacyModes.after(shell);shell.append(top,tabs,summary,volume,work,notice);
 const veil=el("div",{className:"coach-editor-overlay"});document.body.append(veil);
 function close(){veil.classList.remove("active");veil.replaceChildren()}
 veil.addEventListener("click",event=>{if(event.target===veil)close()});
@@ -23,6 +23,7 @@ function dialog(title){veil.replaceChildren();const card=el("div",{className:"co
 function notify(s){notice.textContent=s}
 function allCount(){return plan.days.reduce((n,d)=>n+(d.exercises||[]).length,0)}
 function render(){
+document.dispatchEvent(new CustomEvent("levelup:coach-program-rendered",{detail:{plan:structuredClone(plan)}}));
 top.replaceChildren();const title=box("text",plan.name);title.maxLength=110;title.oninput=()=>{plan.name=title.value;save()};top.append(el("div",{},[el("span",{className:"eyebrow",text:"Level Up Coach · Full routine editor"}),el("h2",{text:plan.days.length+" complete workout days · "+allCount()+" exercises"})]),field("Program title",title),el("div",{className:"coach-editor-actions"},[button("New manual program",()=>{if(allCount()>0&&!confirm("Start a new program? Your current working draft will be replaced. Save it to the library first."))return;plan={name:"New Coaching Program",days:[{name:"Workout A",exercises:[]}]};dayIndex=0;selected.clear();save();render();notify("Manual builder ready. Add any exercise from the full Level Up library.")}),button("Add exercise",()=>pickExercise(def=>addExercise(def))),button("Import program",importPlan),button("Save to library",()=>document.dispatchEvent(new CustomEvent("levelup:coach-save-program",{detail:{plan:structuredClone(plan)}}))),button("Program library",()=>document.querySelector("[data-coach-program-library]")?.click()),button("Export JSON",exportJson)]));
 tabs.replaceChildren();tabs.append(button("All days",()=>{dayIndex=-1;render()}));
 plan.days.forEach((d,i)=>{const b=button((i+1)+". "+d.name+" ("+d.exercises.length+")",()=>{dayIndex=i;selected.clear();render()});if(i===dayIndex)b.classList.add("active");tabs.append(b)});
