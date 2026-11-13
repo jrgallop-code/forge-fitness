@@ -100,6 +100,14 @@ actions.append(h('button',{className:'btn light',text:'↑',onClick:()=>{if(i){[
 box.append(fields,actions);rows.append(box)})}
 day.onchange=()=>{activeDay=Number(day.value);renderProgram()};dayTitle.oninput=()=>{targetName().name=dayTitle.value;const o=day.options[activeDay];if(o)o.textContent=dayTitle.value};add.onclick=()=>{const name=exerciseSelect.value.trim();const match=E.find(e=>e.name.toLowerCase()===name.toLowerCase());if(!match){notice.textContent='Choose an exact exercise name from the Level Up library.';return}targetName().items.push({id:match.id,sets:match.defaultSets||3,reps:match.recommendedReps||'8-12',rest:'120',group:'None'});exerciseSelect.value='';renderProgram()};
 importBtn.onclick=()=>{const parsed=parseRoutineText(importBox.value);if(!parsed.days.length){notice.textContent='No workouts parsed. Try a format such as "Bench Press 3x8".';return}plan.days=parsed.days.map(d=>({name:d.name,items:d.exercises.map(x=>({id:(x.match?.confirmed ? x.match.exerciseId : null)||E.find(e=>e.name.toLowerCase()===x.name.toLowerCase())?.id,sets:x.sets,reps:x.reps,notes:x.notes,rest:'120',group:'None'})).filter(x=>x.id)}));activeDay=0;renderProgram();notice.textContent='Imported '+parsed.days.length+' workout(s) through the existing Level Up parser. Review any unmatched exercises ('+parsed.skipped.length+' skipped lines).'};
+document.addEventListener('levelup:coach-smart-generated',event=>{
+ const result=event.detail;
+ if(!result||!Array.isArray(result.days))return;
+ plan={name:result.name||'Smart Coaching Plan',days:result.days.map(day=>({name:day.name,items:(day.exercises||[]).map(ex=>({id:ex.id,sets:ex.sets,reps:ex.reps,rest:'120',group:ex.supersetGroup?'Superset':'None'}))}))};
+ activeDay=0;
+ renderProgram();
+ notice.textContent='Generated using Level Up Smart Builder v3 logic. This is an unsaved coach draft; review and export before assigning.';
+});
 renderProgram();
 }
 builderShell();
