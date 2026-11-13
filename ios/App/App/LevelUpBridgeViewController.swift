@@ -1,10 +1,60 @@
 import Foundation
 import SQLite3
 import Capacitor
+import UIKit
 
 final class LevelUpBridgeViewController: CAPBridgeViewController {
+    private var tabGlass: UIVisualEffectView?
+    private var tabGlassAnimator: UIViewPropertyAnimator?
+
+    @MainActor
+    fileprivate func updateTabGlass(_ frame: CGRect?, pressed: Bool) {
+        guard #available(iOS 26.0, *), let webView = bridge?.webView else { return }
+        guard let frame else {
+            tabGlassAnimator?.stopAnimation(true)
+            tabGlass?.isHidden = true
+            return
+        }
+
+        let glass: UIVisualEffectView
+        if let tabGlass {
+            glass = tabGlass
+        } else {
+            let effect = UIGlassEffect(style: .clear)
+            glass = UIVisualEffectView(effect: effect)
+            glass.isUserInteractionEnabled = false
+            glass.accessibilityElementsHidden = true
+            glass.isHidden = true
+            view.addSubview(glass)
+            tabGlass = glass
+        }
+        let target = webView.convert(frame, to: view)
+        let animate = !glass.isHidden && !UIAccessibility.isReduceMotionEnabled
+        let visibleFrame = glass.layer.presentation()?.frame ?? glass.frame
+        tabGlassAnimator?.stopAnimation(true)
+        glass.frame = visibleFrame
+        glass.isHidden = false
+        let update = {
+            glass.frame = target
+            glass.layer.cornerRadius = target.height / 2
+            glass.clipsToBounds = true
+            glass.alpha = pressed ? 0.46 : 0.28
+        }
+        if animate {
+            let animator = UIViewPropertyAnimator(duration: 0.22, dampingRatio: 0.83, animations: update)
+            tabGlassAnimator = animator
+            animator.startAnimation()
+        } else {
+            update()
+        }
+    }
+
+
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
+        if #available(iOS 26.0, *) {
+            bridge?.registerPluginInstance(LevelUpTabGlassPlugin())
+        }
         bridge?.registerPluginInstance(LevelUpAppIconPlugin())
         bridge?.registerPluginInstance(LevelUpTimerPlugin())
         bridge?.registerPluginInstance(LevelUpDashboardWidgetPlugin())
@@ -16,6 +66,26 @@ final class LevelUpBridgeViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(LevelUpSQLiteStorePlugin())
         bridge?.registerPluginInstance(LevelUpSpotifyPlugin())
         bridge?.registerPluginInstance(LevelUpFoodSpeechPlugin())
+    }
+}
+
+@objc(LevelUpTabGlassPlugin)
+final class LevelUpTabGlassPlugin: CAPPlugin, CAPBridgedPlugin {
+    let identifier = "LevelUpTabGlassPlugin"
+    let jsName = "LevelUpTabGlass"
+    let pluginMethods = [CAPPluginMethod(name: "update", returnType: CAPPluginReturnPromise)]
+
+    @objc func update(_ call: CAPPluginCall) {
+        let coordinates = ["x", "y", "width", "height"].compactMap { call.getDouble($0) }
+        let frame: CGRect? = coordinates.count == 4 && coordinates.allSatisfy(\.isFinite)
+            && coordinates[2] > 0 && coordinates[3] > 0
+            ? CGRect(x: coordinates[0], y: coordinates[1], width: coordinates[2], height: coordinates[3])
+            : nil
+        let pressed = call.getBool("pressed") ?? false
+        DispatchQueue.main.async { [weak self] in
+            (self?.bridge?.viewController as? LevelUpBridgeViewController)?.updateTabGlass(frame, pressed: pressed)
+            call.resolve()
+        }
     }
 }
 

@@ -48,6 +48,55 @@ export function renderNavbar() {
 }
 
 
+function initializeNativeTabGlass(nav) {
+    const capacitor = window.Capacitor;
+    const glass = capacitor?.Plugins?.LevelUpTabGlass;
+    if (capacitor?.getPlatform?.() !== "ios" || !glass?.update) return;
+
+    let pressed = null;
+    let frameRequest = 0;
+    let previous = "";
+    const sync = () => {
+        frameRequest = 0;
+        const active = nav.querySelector(".nav-btn.active");
+        const rect = active?.getBoundingClientRect();
+        const visible = rect?.width && rect.height && rect.top >= 0
+            && rect.bottom <= window.innerHeight && active.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
+        const state = visible ? {
+            x: rect.x + 3, y: rect.y + 4,
+            width: rect.width - 6, height: rect.height - 8,
+            pressed: pressed === active
+        } : {};
+        const key = JSON.stringify(state);
+        if (key === previous) return;
+        previous = key;
+        glass.update(state).catch(() => {});
+    };
+    const schedule = () => {
+        if (!frameRequest) frameRequest = requestAnimationFrame(sync);
+    };
+    const clearPress = () => {
+        pressed = null;
+        schedule();
+    };
+
+    nav.addEventListener("pointerdown", event => {
+        pressed = event.target.closest(".nav-btn");
+        schedule();
+    });
+    window.addEventListener("pointerup", clearPress);
+    window.addEventListener("pointercancel", clearPress);
+    window.addEventListener("resize", schedule);
+    document.addEventListener("visibilitychange", clearPress);
+    const observer = new MutationObserver(schedule);
+    observer.observe(nav, { subtree: true, childList: true, attributes: true, attributeFilter: ["class", "style", "hidden"] });
+    for (let parent = nav.parentElement; parent; parent = parent.parentElement) {
+        observer.observe(parent, { attributes: true, attributeFilter: ["class", "style", "hidden"] });
+    }
+    new ResizeObserver(schedule).observe(nav);
+    schedule();
+}
+
 export function initializeNavbar() {
     const nav =
         document.querySelector(".bottom-nav");
@@ -57,6 +106,7 @@ export function initializeNavbar() {
     }
 
     nav.dataset.bound = "true";
+    initializeNativeTabGlass(nav);
 
     nav.addEventListener(
         "click",
