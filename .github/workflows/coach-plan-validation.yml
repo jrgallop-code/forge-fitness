@@ -7,6 +7,12 @@ on:
       - 'js/nutrition/maintenance-check-in.js'
       - 'js/more/coach-assigned-programs.js'
       - 'cloud/src/coach-assignments.js'
+      - 'cloud/src/index.js'
+      - 'cloud/migrations/*coach*.sql'
+      - 'tests/coach-assignment-api.test.mjs'
+      - 'js/dashboard/nutrition-target-card.js'
+      - 'js/dashboard/dashboard-nutrition-sync.js'
+      - 'js/nutrition/active-plan-display-sync.js'
       - 'tests/coach-managed-targets.test.mjs'
       - '.github/workflows/coach-plan-validation.yml'
   workflow_dispatch:
@@ -26,5 +32,5 @@ jobs:
       - run: node --check js/nutrition/nutrition-storage.js
       - run: node --check js/more/coach-assigned-programs.js
       - run: node --check cloud/src/coach-assignments.js
-      - run: node --test tests/coach-managed-targets.test.mjs
+      - run: node --test tests/coach-managed-targets.test.mjs tests/coach-assignment-api.test.mjs
       - run: npm test
