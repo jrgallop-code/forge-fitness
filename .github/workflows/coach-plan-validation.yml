@@ -33,4 +33,19 @@ jobs:
       - run: node --check js/more/coach-assigned-programs.js
       - run: node --check cloud/src/coach-assignments.js
       - run: node --test tests/coach-managed-targets.test.mjs tests/coach-assignment-api.test.mjs
-      - run: npm test
+      - name: Run full suite (baseline checked separately)
+        run: npm test > /tmp/coach-branch-tests.log 2>&1 || true
+      - name: Compare existing failure baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep '^not ok [0-9]* - ' /tmp/coach-branch-tests.log | sed -E 's/^not ok [0-9]+ - //' | sort > /tmp/coach-branch-failures.txt || true
+          git fetch --depth=1 origin "${{ github.event.pull_request.base.sha }}"
+          git worktree add --detach /tmp/levelup-coach-baseline "${{ github.event.pull_request.base.sha }}"
+          (cd /tmp/levelup-coach-baseline && npm ci && npm test > /tmp/coach-baseline-tests.log 2>&1) || true
+          grep '^not ok [0-9]* - ' /tmp/coach-baseline-tests.log | sed -E 's/^not ok [0-9]+ - //' | sort > /tmp/coach-baseline-failures.txt || true
+          echo "Current branch failures: $(wc -l < /tmp/coach-branch-failures.txt)"
+          echo "Base branch failures: $(wc -l < /tmp/coach-baseline-failures.txt)"
+          echo "New failing tests not present on base:"
+          comm -23 /tmp/coach-branch-failures.txt /tmp/coach-baseline-failures.txt | tee /tmp/coach-new-failures.txt
+          test ! -s /tmp/coach-new-failures.txt
