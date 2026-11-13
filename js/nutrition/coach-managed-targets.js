@@ -5,7 +5,7 @@ const PREFIX="level_up_coach_active_targets_v1_";
 function accountId(){try{return JSON.parse(localStorage.getItem("level_up_cloud_account")||"null")?.id||null}catch{return null}}
 function key(){const id=accountId();return id?PREFIX+id:null}
 export function getCoachTargets(){const k=key();if(!k)return null;try{const value=JSON.parse(localStorage.getItem(k)||"null");return value?.mode==="coach"&&value?.accountId===accountId()?value:null}catch{return null}}
-function integer(value,min,max){const n=Number(value);return Number.isInteger(n)&&n>=min&&n<=max?n:null}
+function integer(value,min,max){if(value===null||value===undefined||value==="")return null;const n=Number(value);return Number.isInteger(n)&&n>=min&&n<=max?n:null}
 export function validateCoachTargets(assignment){
  const nutrition=assignment?.nutrition,goals=assignment?.goals||{};
  if(!assignment?.id||!Number.isSafeInteger(Number(assignment.version))||!nutrition)throw Error("A versioned assignment with coach nutrition is required.");
