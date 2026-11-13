@@ -4,6 +4,7 @@ import {
     verifyBackupSnapshot
 } from "../core/backup-manager.js?v=backup-complete-7";
 import { analyticsRuntimeContext } from "../analytics/runtime-context.js?v=platform-analytics-1";
+import { initializeCoachAccess } from "./coach-access-ui.js?v=coach-consent-1";
 
 const API_URL = "https://api.leveluphypertrophy.com";
 const GOOGLE_CLIENT_ID = "969450620287-gh455asc7c3lh67j7llq6f55rdpla0j3.apps.googleusercontent.com";
@@ -70,6 +71,7 @@ export function initializeAccountCloud({ onBack } = {}) {
     document.getElementById("account-cloud-transfer-create")?.addEventListener("click", createTransferCode);
     document.getElementById("account-cloud-transfer-copy")?.addEventListener("click", copyTransferCode);
     renderSession();
+    initializeCoachAccess();
     if (getSession()?.token) refreshAccount();
     else initializeGoogleButton();
 }
