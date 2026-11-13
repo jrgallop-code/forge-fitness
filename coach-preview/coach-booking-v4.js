@@ -1,6 +1,7 @@
 /* Level Up Coach private booking workspace. Browser-local scheduling only; no live notifications. */
 const KEY="level_up_coach_booking_v4",TODAY=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const dateAdd=(s,n)=>{const [y,m,d]=s.split("-").map(Number);const x=new Date(y,m-1,d+n);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
+const monthShift=(date,n)=>{const [y,m,d]=date.split("-").map(Number),first=new Date(y,m-1+n,1),last=new Date(first.getFullYear(),first.getMonth()+1,0).getDate(),x=new Date(first.getFullYear(),first.getMonth(),Math.min(last,d));return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
 const pretty=(s)=>new Date(s+"T12:00:00").toLocaleDateString("en-CA",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
 const mins=s=>{const [h,m]=s.split(":").map(Number);return h*60+m},time=n=>String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0");
 const E=(tag,a={},children=[])=>{const n=document.createElement(tag);for(const [k,v] of Object.entries(a)){if(k==="text")n.textContent=v;else if(k==="className")n.className=v;else if(k==="onClick")n.onclick=v;else if(k==="value")n.value=v;else n.setAttribute(k,v)}n.append(...children);return n};
@@ -38,7 +39,7 @@ function sessions(day){return store.bookings.filter(x=>x.date===day&&x.status!==
 function sessionButton(b){return E("button",{className:"booking-item",text:b.start+" "+typeBy(b.typeId)?.name+" · "+b.clients.map(x=>x.split(" ")[0]).join(", "),onClick:()=>editBooking(b.id)})}
 function renderCalendar(){
 heading("Calendar","Month, week and hourly day views with shared trainer availability.",btn("+ Book a session",()=>editBooking(null)));
-const back=btn("←",()=>{chosen=dateAdd(chosen,calendarMode==="month"?-28:calendarMode==="week"?-7:-1);render()}),next=btn("→",()=>{chosen=dateAdd(chosen,calendarMode==="month"?28:calendarMode==="week"?7:1);render()}),today=btn("Today",()=>{chosen=TODAY();render()});
+const back=btn("←",()=>{chosen=calendarMode==="month"?monthShift(chosen,-1):dateAdd(chosen,calendarMode==="week"?-7:-1);render()}),next=btn("→",()=>{chosen=calendarMode==="month"?monthShift(chosen,1):dateAdd(chosen,calendarMode==="week"?7:1);render()}),today=btn("Today",()=>{chosen=TODAY();render()});
 const mode=select([["Month","month"],["Week","week"],["Day / Hour","day"]],calendarMode);mode.onchange=()=>{calendarMode=mode.value;render()};
 const coaches=select([["All coaches","all"],...store.coaches.map(x=>[x.name,x.id])],coachFilter);coaches.onchange=()=>{coachFilter=coaches.value;render()};
 const clients=select([["All clients","all"],...store.clients.map(x=>[x,x])],clientFilter);clients.onchange=()=>{clientFilter=clients.value;render()};
