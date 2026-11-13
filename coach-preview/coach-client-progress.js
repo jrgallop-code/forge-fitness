@@ -42,6 +42,6 @@ const grid=safe("div",{className:"coach-volume-grid"});for(const [muscle,sets] o
 function update(event){const {name,tab,container}=event.detail||{};if(!name||!container)return;
 if(tab==="progress"){const sec=safe("section",{className:"card coach-profile-extra"});renderMeasurement(name,sec);container.append(sec)}
 if(tab==="photos"){const sec=safe("section",{className:"card coach-profile-extra"});renderPhotos(name,sec);container.append(sec)}
-if(tab==="training"){const sec=safe("section",{className:"card coach-profile-extra"});renderVolume(name,sec);container.append(sec)}
+// The shared volume SVG module mounts the full anatomy and exact set-band breakdown on the training tab.
 if(tab==="nutrition"){const sec=safe("section",{className:"card coach-profile-extra"});renderFood(name,sec);container.append(sec)}}
 document.addEventListener("levelup:coach-client-profile-rendered",update);
