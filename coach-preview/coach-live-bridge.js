@@ -34,3 +34,7 @@ if(!approved){state.textContent="Select the approval checkbox, then Connect & Lo
 document.dispatchEvent(new CustomEvent("levelup:coach-live-client",{detail:{id,name:user.name||"My Level Up Account"}}));document.dispatchEvent(new CustomEvent("levelup:coach-live-data-updated",{detail:{clientId:id,data:profile}}));state.textContent="Your Level Up data is linked for this browser session. Select your connected profile below to view analytics."}catch(err){state.textContent="Cloud sync failed: "+err.message+". Confirm your account has a cloud backup and try Refresh."}finally{refresh.disabled=false;update.disabled=false}}
 function signOut(){token="";user=null;approved=false;nutritionApproved=false;sessionStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(APPROVAL_KEY);liveData.clear();summary.replaceChildren();draw();state.textContent="Disconnected. Coach preview no longer holds your session token or data.";document.dispatchEvent(new Event("levelup:coach-self-disconnected"))}
 draw();if(token&&approved)connect(false);
+// Level Up cloud backups sync after app changes. Refresh the self-view when
+// returning from the app, and periodically while this tab is visible.
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&token&&approved)void connect(false)});
+setInterval(()=>{if(!document.hidden&&token&&approved)void connect(false)},120000);
