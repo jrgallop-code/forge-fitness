@@ -1,3 +1,4 @@
+import { getCoachTargets } from "../nutrition/coach-managed-targets.js";
 import { splitWeightTrendSegments } from "./weight-trend-segments.js";
 import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
 import { calculateTrendWeightSeries, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
@@ -65,6 +66,8 @@ function readActiveNutritionPhase() {
 }
 
 function readGoalWeight() {
+    const coach = getCoachTargets()?.targets?.goalWeightLb;
+    if (coach != null) return coach;
     const phase = readActiveNutritionPhase();
     const phaseValue = Number(phase?.goalWeight ?? phase?.targetWeight);
     if (Number.isFinite(phaseValue) && phaseValue > 0) return phaseValue;

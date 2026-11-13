@@ -1,3 +1,4 @@
+import { getCoachTargets } from "./coach-managed-targets.js";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=independent-tdee-staged-target-1";
 import { getActiveNutritionPhase, getActivePhaseMetrics, saveNutritionPhase } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { setCurrentCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
@@ -52,11 +53,13 @@ export function readMaintenanceCheckInState() {
 }
 
 export function getMaintenanceUpdateMode() {
+    if (getCoachTargets()) return "track"; // Preserve TDEE tracking, disable automatic app target recommendations.
     const mode = localStorage.getItem(MODE_KEY);
     return MODES.has(mode) ? mode : "review";
 }
 
 export function setMaintenanceUpdateMode(mode) {
+    if (getCoachTargets()) return "track";
     const next = MODES.has(mode) ? mode : "review";
     localStorage.setItem(MODE_KEY, next);
     window.dispatchEvent(new CustomEvent("levelup:maintenance-mode-updated", { detail: { mode: next } }));
@@ -113,6 +116,7 @@ export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTar
 }
 
 export function queueMaintenanceReview(checkIn) {
+    if (getCoachTargets()) return false;
     if (!checkIn?.ready || !Number.isFinite(checkIn.proposedMaintenance)) return false;
     localStorage.setItem(PENDING_KEY, JSON.stringify({
         maintenanceCalories: checkIn.proposedMaintenance,
@@ -144,6 +148,7 @@ export function markMaintenanceCheckInReviewed(checkIn, action = "kept") {
 }
 
 export function buildAutomaticMaintenanceUpdate(checkIn, maximumChange = MAXIMUM_AUTOMATIC_CHANGE) {
+    if (getCoachTargets()) return null;
     if (!checkIn?.ready) return null;
     const fallbackProposed = Number(checkIn?.currentMaintenance) + Number(checkIn?.change);
     const update = buildCoordinatedWeeklyUpdate({
@@ -163,6 +168,7 @@ export function buildAutomaticMaintenanceUpdate(checkIn, maximumChange = MAXIMUM
 }
 
 function applyAutomaticMaintenanceUpdate(checkIn, phase) {
+    if (getCoachTargets()) return false;
     const update = buildAutomaticMaintenanceUpdate(checkIn);
     if (!update || !phase?.goalId) return false;
     markMaintenanceCheckInReviewed(checkIn, "automatic");

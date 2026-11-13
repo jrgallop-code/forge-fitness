@@ -1,3 +1,4 @@
+import { getCoachTargets } from "../nutrition/coach-managed-targets.js";
 import { calculateWeightTrend, normalizeWeightEntries } from "./weight-trend.js?v=current-goal-1";
 
 const CURRENT_GOAL_KEY = "level_up_current_goal";
@@ -15,11 +16,14 @@ export const CURRENT_GOAL_TYPES = {
 };
 
 export function getCurrentGoal() {
+    const coachTargetWeight = getCoachTargets()?.targets?.goalWeightLb;
     const stored = readObject(CURRENT_GOAL_KEY);
     if (stored?.id && stored?.type && !stored.endDate && stored.status !== "archived") {
-        return normalizeGoal(stored);
+        const goal = normalizeGoal(stored);
+        return goal && coachTargetWeight != null ? { ...goal, targetWeight: coachTargetWeight, coachManaged: true } : goal;
     }
-    return migrateLegacyGoal();
+    const legacy = migrateLegacyGoal();
+    return legacy && coachTargetWeight != null ? { ...legacy, targetWeight: coachTargetWeight, coachManaged: true } : legacy;
 }
 
 export function startCurrentGoal(input = {}) {

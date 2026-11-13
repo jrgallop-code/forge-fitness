@@ -1,3 +1,4 @@
+import { getCoachTargets } from "../nutrition/coach-managed-targets.js";
 import {
     getNutritionProfile,
     getNutritionGoal,
@@ -114,7 +115,7 @@ function renderDashboardNutritionSummary() {
 
     const phaseCalories = Number(phase?.currentCalories ?? phase?.startCalories);
     const savedCalories = Number(plan.currentCalories ?? plan.calculatedCalories);
-    const calories = Number.isFinite(phaseCalories) && phaseCalories > 0 ? phaseCalories : savedCalories;
+    const calories = getCoachTargets()?.targets.calorieTarget ?? (Number.isFinite(phaseCalories) && phaseCalories > 0 ? phaseCalories : savedCalories);
     if (!Number.isFinite(calories) || calories <= 0) return;
 
     const macros = getDashboardMacros({

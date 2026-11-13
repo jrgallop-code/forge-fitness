@@ -1,3 +1,4 @@
+import { getCoachTargets } from "./coach-managed-targets.js";
 import {
     ACTIVITY_LEVELS,
     GOAL_PRESETS,
@@ -836,9 +837,7 @@ function refreshPlannerSummary() {
         }
     }
 
-    const goalWeight = Number(
-        localStorage.getItem(GOAL_WEIGHT_STORAGE_KEY)
-    );
+    const goalWeight = getCoachTargets()?.targets?.goalWeightLb ?? Number(localStorage.getItem(GOAL_WEIGHT_STORAGE_KEY));
 
     setText("planner-summary-calories", calorieText);
     setText("planner-summary-protein", proteinText);

@@ -1,3 +1,4 @@
+import { getCoachTargets } from "../nutrition/coach-managed-targets.js";
 import { calculateGoalTimeline } from "../core/goal-timeline.js?v=goal-timeline-1";
 import { calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
@@ -27,6 +28,7 @@ export function getGoalTimelineViewModel() {
     const currentGoal = readJson(CURRENT_GOAL_KEY, null);
     const current = firstPositive(trend.trendWeight, series.at(-1)?.weight, weights.at(-1)?.weight);
     const goal = firstPositive(
+        getCoachTargets()?.targets?.goalWeightLb,
         phase?.goalWeight,
         phase?.targetWeight,
         currentGoal?.targetWeight,

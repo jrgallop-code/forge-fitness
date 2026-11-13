@@ -32,17 +32,80 @@ if(path==="/v1/coach/assignments"&&method==="POST"){
  const found=await env.DB.prepare("SELECT id,version FROM coach_program_assignments WHERE coach_user_id=? AND client_user_id=? AND source_plan_id=?").bind(user.id,clientId,sourcePlanId).first();
  const expected=input.expectedVersion==null?null:Number(input.expectedVersion);
  if((found&&expected!==Number(found.version))||(!found&&expected!==null))return err(409,"The program has a newer version. Refresh before publishing.",request,env);
+ if(input.includeNutrition===true&&!self){const permission=await env.DB.prepare("SELECT nutrition_permission FROM coach_training_links WHERE coach_user_id=? AND client_user_id=? AND revoked_at IS NULL").bind(user.id,clientId).first();if(!permission?.nutrition_permission)return err(403,"The athlete has not approved nutrition coaching access.",request,env)}
  const goals=sanitizeGoals(input.goals||{});const nutrition=input.includeNutrition===true?sanitizeNutrition(input.nutrition||{}):null;
+ if(input.includeNutrition===true){const n=nutrition;if(!n||![n.calorieTarget,n.protein,n.carbs,n.fat].every(Number.isInteger)||Math.abs(n.calorieTarget-(n.protein*4+n.carbs*4+n.fat*9))>25)return err(400,"Coach nutrition requires complete, consistent calorie and macro targets.",request,env)}
  const planJson=JSON.stringify(training),goalJson=JSON.stringify(goals),nutritionJson=nutrition?JSON.stringify(nutrition):null;
  if(planJson.length>110000||goalJson.length>3000||(nutritionJson&&nutritionJson.length>10000))return err(413,"This plan exceeds the size limit.",request,env);
- if(found){const outcome=await env.DB.prepare("UPDATE coach_program_assignments SET name=?,plan_json=?,goals_json=?,nutrition_json=?,version=version+1,status='published',published_at=?,updated_at=? WHERE id=? AND version=?").bind(training.name,planJson,goalJson,nutritionJson,now,now,found.id,found.version).run();if(Number(outcome.meta?.changes)!==1)return err(409,"The program was updated elsewhere. Refresh first.",request,env)}
- else{try{await env.DB.prepare("INSERT INTO coach_program_assignments (id,coach_user_id,client_user_id,source_plan_id,name,plan_json,goals_json,nutrition_json,version,status,published_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,1,'published',?,?,?)").bind(crypto.randomUUID(),user.id,clientId,sourcePlanId,training.name,planJson,goalJson,nutritionJson,now,now,now).run()}catch{return err(409,"Program already exists. Refresh before publishing.",request,env)}}
+ if(found){
+  const results=await env.DB.batch([
+    env.DB.prepare("UPDATE coach_program_assignments SET name=?,plan_json=?,goals_json=?,nutrition_json=?,version=version+1,status='published',published_at=?,updated_at=? WHERE id=? AND version=?").bind(training.name,planJson,goalJson,nutritionJson,now,now,found.id,found.version),
+    env.DB.prepare("INSERT INTO coach_assignment_versions (assignment_id,version,name,plan_json,goals_json,nutrition_json,published_at) SELECT id,version,name,plan_json,goals_json,nutrition_json,published_at FROM coach_program_assignments WHERE id=? AND version=?").bind(found.id,Number(found.version)+1)
+  ]);
+  if(Number(results[0]?.meta?.changes)!==1||Number(results[1]?.meta?.changes)!==1)return err(409,"The program was updated elsewhere. Refresh first.",request,env);
+ }else{
+  const id=crypto.randomUUID();
+  try{await env.DB.batch([
+    env.DB.prepare("INSERT INTO coach_program_assignments (id,coach_user_id,client_user_id,source_plan_id,name,plan_json,goals_json,nutrition_json,version,status,published_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,1,'published',?,?,?)").bind(id,user.id,clientId,sourcePlanId,training.name,planJson,goalJson,nutritionJson,now,now,now),
+    env.DB.prepare("INSERT INTO coach_assignment_versions (assignment_id,version,name,plan_json,goals_json,nutrition_json,published_at) VALUES (?,1,?,?,?,?,?)").bind(id,training.name,planJson,goalJson,nutritionJson,now)
+  ])}catch{return err(409,"Program already exists. Refresh before publishing.",request,env)}
+ }
  const row=await env.DB.prepare("SELECT * FROM coach_program_assignments WHERE coach_user_id=? AND client_user_id=? AND source_plan_id=?").bind(user.id,clientId,sourcePlanId).first();
  return json({assignment:serialize(row)},found?200:201,request,env)
 }
 if(path==="/v1/client/coach-assignments"&&method==="GET"){
  const rows=await env.DB.prepare("SELECT a.* FROM coach_program_assignments a WHERE a.client_user_id=? AND a.status='published' AND (a.coach_user_id=a.client_user_id OR EXISTS (SELECT 1 FROM coach_training_links l WHERE l.coach_user_id=a.coach_user_id AND l.client_user_id=a.client_user_id AND l.revoked_at IS NULL AND l.training_permission=1)) ORDER BY a.published_at DESC LIMIT 60").bind(user.id).all();
- return json({assignments:(rows.results||[]).map(row=>serialize(row))},200,request,env)
+ const decisions=await env.DB.prepare("SELECT assignment_id,version,decision FROM coach_assignment_decisions WHERE client_user_id=? ORDER BY version DESC").bind(user.id).all();
+ const byAssignment=new Map();for(const d of decisions.results||[]){if(!byAssignment.has(d.assignment_id))byAssignment.set(d.assignment_id,d)}
+ return json({assignments:(rows.results||[]).map(row=>({...serialize(row),latestDecision:byAssignment.get(row.id)||null}))},200,request,env)
+}
+// Authoritative cross-device nutrition selection. Never return coach targets after consent revocation.
+if(path==="/v1/client/coach-nutrition"&&method==="GET"){
+ const state=await env.DB.prepare("SELECT * FROM coach_client_nutrition_selection WHERE client_user_id=?").bind(user.id).first();
+ if(!state?.enabled)return json({enabled:false},200,request,env);
+ const row=await env.DB.prepare("SELECT v.*,a.client_user_id,a.coach_user_id,a.status FROM coach_assignment_versions v JOIN coach_program_assignments a ON a.id=v.assignment_id JOIN coach_assignment_decisions d ON d.assignment_id=v.assignment_id AND d.version=v.version AND d.client_user_id=? AND d.decision='accepted' WHERE v.assignment_id=? AND v.version=? AND a.client_user_id=? AND a.status='published'").bind(user.id,state.assignment_id,state.version,user.id).first();
+ if(!row||(!row.nutrition_json))return json({enabled:false},200,request,env);
+ if(row.coach_user_id!==user.id){
+  const permission=await env.DB.prepare("SELECT nutrition_permission,training_permission FROM coach_training_links WHERE coach_user_id=? AND client_user_id=? AND revoked_at IS NULL").bind(row.coach_user_id,user.id).first();
+  if(!permission?.nutrition_permission||!permission?.training_permission)return json({enabled:false},200,request,env);
+ }
+ return json({enabled:true,assignment:{id:row.assignment_id,version:row.version,goals:JSON.parse(row.goals_json||"{}"),nutrition:JSON.parse(row.nutrition_json)}},200,request,env);
+}
+if(path==="/v1/client/coach-nutrition"&&method==="POST"){
+ const input=await read(request);if(!permitted(input)||typeof input.enabled!=="boolean")return err(400,"Explicit enabled flag required.",request,env);
+ if(!input.enabled){
+  await env.DB.prepare("INSERT INTO coach_client_nutrition_selection (client_user_id,assignment_id,version,enabled,updated_at) VALUES (?,NULL,NULL,0,?) ON CONFLICT(client_user_id) DO UPDATE SET assignment_id=NULL,version=NULL,enabled=0,updated_at=excluded.updated_at").bind(user.id,now).run();
+  return json({enabled:false},200,request,env);
+ }
+ const id=clean(input.assignmentId,64),version=Number(input.version);
+ if(!/^[0-9a-f-]{36}$/i.test(id)||!Number.isSafeInteger(version)||version<1)return err(400,"Valid assignment and version required.",request,env);
+ const row=await env.DB.prepare("SELECT v.*,a.client_user_id,a.coach_user_id,a.version AS latest_version,a.status FROM coach_assignment_versions v JOIN coach_program_assignments a ON a.id=v.assignment_id JOIN coach_assignment_decisions d ON d.assignment_id=v.assignment_id AND d.version=v.version AND d.client_user_id=? AND d.decision='accepted' WHERE v.assignment_id=? AND v.version=? AND a.client_user_id=? AND a.status='published'").bind(user.id,id,version,user.id).first();
+ if(!row||!row.nutrition_json)return err(403,"Accept the coach plan with complete nutrition targets first.",request,env);
+ if(row.coach_user_id!==user.id){
+  const permission=await env.DB.prepare("SELECT nutrition_permission,training_permission FROM coach_training_links WHERE coach_user_id=? AND client_user_id=? AND revoked_at IS NULL").bind(row.coach_user_id,user.id).first();
+  if(!permission?.nutrition_permission||!permission?.training_permission)return err(403,"Nutrition coaching consent is not active.",request,env);
+ }
+ await env.DB.prepare("INSERT INTO coach_client_nutrition_selection (client_user_id,assignment_id,version,enabled,updated_at) VALUES (?,?,?,?,?) ON CONFLICT(client_user_id) DO UPDATE SET assignment_id=excluded.assignment_id,version=excluded.version,enabled=1,updated_at=excluded.updated_at").bind(user.id,id,version,1,now).run();
+ return json({enabled:true,assignment:{id,version,goals:JSON.parse(row.goals_json||"{}"),nutrition:JSON.parse(row.nutrition_json)}},200,request,env);
+}
+// Athlete acceptance is explicit, version-scoped and does not mutate any workout, food or weight data.
+const decisionPath=path.match(/^\/v1\/coach\/assignments\/([0-9a-f-]{36})\/decision$/i);
+if(decisionPath&&method==="POST"){
+ const input=await read(request);
+ const decision=clean(input?.decision,24);
+ if(!["accepted","declined"].includes(decision))return err(400,"Decision must be accepted or declined.",request,env);
+ const row=await env.DB.prepare("SELECT id,client_user_id,coach_user_id,version,status FROM coach_program_assignments WHERE id=? AND client_user_id=?").bind(decisionPath[1],user.id).first();
+ if(!row||row.status!=="published")return err(404,"Active assignment not found.",request,env);
+ if(row.coach_user_id!==user.id){
+  const link=await env.DB.prepare("SELECT training_permission FROM coach_training_links WHERE coach_user_id=? AND client_user_id=? AND revoked_at IS NULL").bind(row.coach_user_id,user.id).first();
+  if(!link?.training_permission)return err(403,"Coaching connection is not active.",request,env);
+ }
+ const requested=Number(input?.version);
+ if(!Number.isSafeInteger(requested)||requested!==Number(row.version))return err(409,"This revision is out of date. Refresh your plans.",request,env);
+ const existing=await env.DB.prepare("SELECT decision FROM coach_assignment_decisions WHERE assignment_id=? AND client_user_id=? AND version=?").bind(row.id,user.id,requested).first();
+ if(existing&&existing.decision!==decision)return err(409,"This revision already has a different recorded decision.",request,env);
+ await env.DB.prepare("INSERT OR IGNORE INTO coach_assignment_decisions (assignment_id,client_user_id,version,decision,responded_at) VALUES (?,?,?,?,?)").bind(row.id,user.id,requested,decision,now).run();
+ return json({assignmentId:row.id,version:requested,decision},200,request,env);
 }
 const id=path.match(/^\/v1\/coach\/assignments\/([0-9a-f-]{36})$/i);
 if(id&&method==="GET"){if(!coachAllowed(user,env))return err(403,"Coach authorization required.",request,env);const row=await env.DB.prepare("SELECT * FROM coach_program_assignments WHERE id=? AND coach_user_id=?").bind(id[1],user.id).first();if(!row)return err(404,"Assignment not found.",request,env);return json({assignment:serialize(row)},200,request,env)}

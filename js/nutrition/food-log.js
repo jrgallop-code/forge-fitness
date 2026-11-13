@@ -1,3 +1,4 @@
+import { getCoachTargets } from "./coach-managed-targets.js";
 import { withFoodWeightUnits, validFoodAmount } from "./food-portion-units.js";
 import { foodAmountMarkup, foodHeroMarkup, bindFoodAmountEditor, restoreFoodAmount } from "./food-portion-editor.js";
 import {
@@ -1622,6 +1623,8 @@ function renderSavedMeals() {
 }
 
 function activeTargets() {
+    const coach = getCoachTargets();
+    if (coach) return { calories: coach.targets.calorieTarget, protein: coach.targets.protein, carbs: coach.targets.carbs, fat: coach.targets.fat };
     const plan = readJson("level_up_nutrition_plan", {});
     const phases = readJson("level_up_nutrition_phases", []);
     const active = Array.isArray(phases) ? [...phases].reverse().find(phase => !phase?.endDate) : null;

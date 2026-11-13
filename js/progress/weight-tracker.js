@@ -1,3 +1,4 @@
+import { getCoachTargets } from "../nutrition/coach-managed-targets.js";
 import {
     getNutritionGoal
 }
@@ -122,9 +123,10 @@ function prepareGoalWeightControls() {
     }
 
     if (button) {
-        button.textContent =
-            "Save Goal Weight";
+        button.textContent = getCoachTargets()?.targets?.goalWeightLb != null ? "Coach Managed" : "Save Goal Weight";
+        button.disabled = getCoachTargets()?.targets?.goalWeightLb != null;
     }
+    if(input && getCoachTargets()?.targets?.goalWeightLb != null){input.value=String(getCoachTargets().targets.goalWeightLb);input.disabled=true}
 }
 
 
@@ -161,6 +163,8 @@ function migrateLegacyReferenceWeight() {
 
 
 function getGoalWeight() {
+    const coach = getCoachTargets()?.targets?.goalWeightLb;
+    if (coach != null) return coach;
     const value =
         Number(
             localStorage.getItem(
@@ -176,6 +180,7 @@ function getGoalWeight() {
 
 
 function saveGoalWeight() {
+    if (getCoachTargets()?.targets?.goalWeightLb != null) return;
     const input =
         document.getElementById(
             "reference-weight"
