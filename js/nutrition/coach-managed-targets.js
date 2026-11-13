@@ -8,7 +8,7 @@ export function getCoachTargets(){const k=key();if(!k)return null;try{const valu
 function integer(value,min,max){if(value===null||value===undefined||value==="")return null;const n=Number(value);return Number.isInteger(n)&&n>=min&&n<=max?n:null}
 export function validateCoachTargets(assignment){
  const nutrition=assignment?.nutrition,goals=assignment?.goals||{};
- if(!assignment?.id||!Number.isSafeInteger(Number(assignment.version))||!nutrition)throw Error("A versioned assignment with coach nutrition is required.");
+ if(!assignment?.id||!Number.isSafeInteger(Number(assignment.version))||Number(assignment.version)<1||!nutrition)throw Error("A versioned assignment with coach nutrition is required.");
  const calorieTarget=integer(nutrition.calorieTarget,500,10000);
  const protein=integer(nutrition.protein,0,1500),carbs=integer(nutrition.carbs,0,1500),fat=integer(nutrition.fat,0,1500);
  if([calorieTarget,protein,carbs,fat].some(x=>x===null))throw Error("Complete calorie and macro targets are required.");
