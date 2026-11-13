@@ -59,17 +59,26 @@ const DEMO={
 "Katie Lee":[["Chest",6],["Back",8],["Shoulders",6],["Biceps",3],["Triceps",3],["Quads",8],["Hamstrings",6],["Glutes",6],["Calves",3],["Core",5]]
 };
 function periodChart(host,series){const block=el("div",{className:"coach-volume-period-chart"});block.append(el("h3",{text:"Effective sets by week"}));const max=Math.max(1,...series.map(x=>x[1]));const graph=el("div",{className:"coach-volume-week-graph"});series.forEach(([date,count])=>{const cell=el("div",{className:"coach-volume-week-column"}),bar=el("div",{className:"coach-volume-week-track"},[el("div",{className:"coach-volume-week-bar"})]);bar.firstChild.style.height=Math.round(count/max*100)+"%";bar.firstChild.style.background=color(count/10);cell.append(el("strong",{text:format(count)}),bar,el("small",{text:date}));graph.append(cell)});block.append(graph);host.append(block)}
+const localDay=(d)=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const offsetDay=(key,n)=>{const d=new Date(key+"T12:00:00");d.setDate(d.getDate()+n);return localDay(d)};
+function fromSessions(sessions,first,last){const days=sessions.filter(x=>x.date>=first&&x.date<=last).map(session=>({name:session.date,exercises:(session.exercises||[]).map(ex=>({id:ex.exerciseId||ex.id,sets:(ex.sets||[]).filter(set=>Number(set.reps)>0||set.completed===true).length})).filter(x=>x.id&&x.sets>0)}));return getWeeklyPlanVolume({days})}
 document.addEventListener("levelup:coach-client-profile-rendered",event=>{
-const {name,tab,container}=event.detail||{};if(tab!=="training"||!container)return;
+const {name,clientId,tab,container}=event.detail||{};if(tab!=="training"||!container)return;
 const host=el("div",{className:"card coach-volume-host"});container.append(host);
 const toolbar=el("div",{className:"coach-volume-controls"}),period=el("select",{"aria-label":"Volume time range"});
 for(const [label,value] of [["7 days","1"],["4 weeks","4"],["12 weeks","12"]])period.append(el("option",{value,text:label}));
 const content=el("div");toolbar.append(el("strong",{text:"Time range"}),period);host.append(toolbar,content);
-function update(){const weeks=Number(period.value);const base=new Map(DEMO[name]||[]),volume=new Map([...base].map(([m,n])=>[m,n]));const label=weeks===1?"7-day recorded volume":"Average weekly volume · last "+weeks+" weeks";
-renderCoachVolume(content,volume,{title:label,demo:true});
-const series=Array.from({length:weeks},(_,i)=>{const anchor=new Date("2026-11-09T12:00:00");anchor.setDate(anchor.getDate()-7*(weeks-1-i));const factor=1+(.1*Math.sin(i*1.2+(name?.length||0)));return [anchor.toLocaleDateString("en-CA",{month:"short",day:"numeric"}),Math.round([...base.values()].reduce((n,x)=>n+x,0)*factor*10)/10]});
-periodChart(content.firstChild,series);const note=el("p",{className:"sub",text:"Illustrative volume timeline only. Connected client data must use completed sets from Level Up's workout sessions, not generated sample values."});content.firstChild.append(note)}
+function update(){const weeks=Number(period.value),data=clientId?window.levelupCoachLiveData?.get(clientId):null,sessions=data?.sessions||[];
+if(clientId&&!data){content.replaceChildren(el("p",{className:"sub",text:"Waiting for the athlete's authorized Level Up workout history. The chart will appear after cloud sync."}));return}
+const today=localDay(new Date()),volumes=[],series=[];
+for(let i=weeks-1;i>=0;i--){const last=offsetDay(today,-i*7),first=offsetDay(last,-6);const map=clientId?fromSessions(sessions,first,last):new Map(DEMO[name]||[]);volumes.push(map);const total=[...map.values()].reduce((n,x)=>n+x,0);series.push([new Date(first+"T12:00:00").toLocaleDateString("en-CA",{month:"short",day:"numeric"}),Math.round(total*10)/10])}
+const total=new Map();volumes.forEach(v=>v.forEach((sets,muscle)=>total.set(muscle,(total.get(muscle)||0)+sets)));
+if(weeks>1)total.forEach((sets,muscle)=>total.set(muscle,sets/weeks));
+renderCoachVolume(content,total,{title:weeks===1?"Completed sets · last 7 days":"Average completed sets per week · "+weeks+" weeks",demo:!clientId});
+periodChart(content.firstChild,series);
+content.firstChild.append(el("p",{className:"sub",text:clientId?"Calculated from actual completed Level Up workout sets using the shared primary 1.0 / secondary 0.5 credit rules. Updated after the app cloud backup.":"Illustrative data only — authorize a Level Up client to display real completed training volume."}))}
 period.onchange=update;update()});
+document.addEventListener("levelup:coach-live-data-updated",ev=>{if(!ev.detail?.clientId)return;const active=document.querySelector("#clients .coach-client-tabs button.active");if(active?.textContent?.trim()==="Training")active.click()});
 let currentPlan={name:"New Coaching Program",days:[{name:"Workout A",exercises:[]}]};
 function renderBuilder(){const root=document.getElementById("coach-full-builder-volume");if(!root)return;root.replaceChildren();const toolbar=el("div",{className:"coach-volume-controls"}),filter=el("select",{"aria-label":"Workout volume scope"});
 filter.append(el("option",{value:"all",text:"Entire weekly program"}));(currentPlan.days||[]).forEach((day,i)=>filter.append(el("option",{value:String(i),text:day.name||"Day "+(i+1)})));
