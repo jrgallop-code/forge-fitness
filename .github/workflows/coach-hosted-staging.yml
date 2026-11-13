@@ -119,6 +119,10 @@ jobs:
           }
           trap finish EXIT
           node ../tests/coach-local-http-e2e.mjs run
+          finish
+          trap - EXIT
+          # Separate synthetic demo identities are retained only on staging for private phone QA.
+          npx wrangler d1 execute DB --remote --config wrangler.coach-staging.json --file ../tests/fixtures/coach-staging-demo.sql
           echo "Hosted staging endpoint verified: $COACH_BASE_URL"
           echo "STAGING_COACH_URL=$COACH_BASE_URL" >> "$GITHUB_ENV"
       - name: Summarize safe staging result
