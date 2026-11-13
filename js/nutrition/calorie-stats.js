@@ -1,5 +1,5 @@
 import { initializeCalorieRangeCard } from "./calorie-range-card.js?v=calorie-range-1";
-import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "./calculated-maintenance.js?v=food-log-macro-bars-1";
+import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "./calculated-maintenance.js?v=closed-food-day-1";
 import { calculateTdee } from "./tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "./nutrition-storage.js?v=nutrition-phase-1";
 import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calendar-checkin-day-1";
@@ -192,7 +192,10 @@ function maintenanceCard(estimate, checkIn) {
             : estimate.weeklyReviewDue && !estimate.weeklyDataReady
                 ? "Waiting for enough recent data to complete the next weekly review."
                 : `Held steady between weekly reviews${Number.isFinite(estimate.daysUntilReview) ? ` · next review in ${estimate.daysUntilReview} day${estimate.daysUntilReview === 1 ? "" : "s"}` : ""}.`;
-    const signedRate = Number.isFinite(estimate.weightRateLbPerWeek) ? `${estimate.weightRateLbPerWeek > 0 ? "+" : ""}${estimate.weightRateLbPerWeek.toFixed(2)} lb/week` : "Need more weigh-ins";
+    const weeklyRate = currentVisibleWeightRate();
+    const signedRate = Number.isFinite(weeklyRate) ? `${weeklyRate > 0 ? "+" : ""}${weeklyRate.toFixed(2)} lb/week` : "Need more weigh-ins";
+    const correctionRate = estimate.weightRateLbPerWeek;
+    const correctionBasis = Number.isFinite(correctionRate) ? ` (${correctionRate > 0 ? "+" : ""}${correctionRate.toFixed(2)} lb/week)` : "";
     const correction = Number.isFinite(estimate.energyCorrection) ? `${estimate.energyCorrection > 0 ? "+" : ""}${formatNumber(estimate.energyCorrection)} cal/day` : "—";
     const progress = Math.min(100, Math.round(Math.min(1, estimate.foodDays / 15) * .55 * 100 + Math.min(1, estimate.weighIns / 9) * .45 * 100));
     const uncapped = Number(estimate.uncappedMaintenanceCalories);
@@ -207,8 +210,8 @@ function maintenanceCard(estimate, checkIn) {
         ${estimate.status === "learning" || estimate.status === "early" || estimate.status === "preliminary" ? `<div class="calculated-maintenance-progress"><i><b style="width:${progress}%"></b></i><span>Confidence improves with complete logs · ${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</span></div>` : ""}
         <details><summary>How this was calculated <span>›</span></summary><div class="calculated-maintenance-breakdown">
             <div><span>Average intake</span><strong>${Number.isFinite(estimate.averageIntake) ? `${formatNumber(estimate.averageIntake)} cal/day` : "—"}</strong></div>
-            <div><span>Current ${estimate.weightTrendLabel || "Weekly Trend"}</span><strong>${signedRate}</strong></div>
-            <div><span>TDEE correction from weight change</span><strong>${correction}</strong></div>
+            <div><span>Current Weekly Trend</span><strong>${signedRate}</strong></div>
+            <div><span>TDEE correction from intake-matched trend${correctionBasis}</span><strong>${correction}</strong></div>
             <div><span>Usable data</span><strong>${estimate.foodDays} food days · ${estimate.weighIns} weigh-ins</strong></div>
             ${Number.isFinite(uncapped) && uncapped !== result ? `<div><span>Weekly stability limit</span><strong>${formatNumber(uncapped)} → ${formatNumber(result)} cal/day</strong></div>` : ""}
             <small>Food intake uses completed days through yesterday. The current weight trend uses your latest non-future weigh-in and matches Weight Progress exactly. Level Up holds the displayed TDEE between seven-day reviews, requires 7 food days and a 14-day weight span, and limits each update to 50 calories while confidence is building or 100 calories at high confidence.</small>

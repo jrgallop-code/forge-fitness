@@ -1,6 +1,6 @@
 import { calculateDisplayWeightTrend, calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=tdee-smoothed-weight-rate-1";
 import { estimateTissueEnergyPerLb } from "../core/body-composition.js?v=body-composition-1";
-import { readFoodLog } from "./food-log-data.js?v=fatsecret-progress-calories-1";
+import { readCompletedFoodDays, readFoodLog } from "./food-log-data.js?v=fatsecret-progress-calories-1";
 import { hasPendingFatSecretEntries } from "./fatsecret-live-cache.js?v=food-search-freeze-fix-1";
 
 function hasIncompleteNutrition(log) {
@@ -101,12 +101,12 @@ function sharedWeightTrend(weights, endKey) {
     };
 }
 
-export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], endDate = new Date(), profileEstimate = null } = {}) {
+export function calculateMaintenanceEstimate({ foodLog = {}, completedDays = {}, weights = [], endDate = new Date(), profileEstimate = null } = {}) {
     const asOf = new Date(endDate);
     asOf.setHours(12, 0, 0, 0);
     const asOfKey = dateKey(asOf);
     const end = new Date(asOf);
-    end.setDate(end.getDate() - 1);
+    if (completedDays[asOfKey] !== true) end.setDate(end.getDate() - 1);
     const dates = Array.from({ length: 21 }, (_, index) => {
         const day = new Date(end);
         day.setDate(end.getDate() - (20 - index));
@@ -175,6 +175,7 @@ export function calculateMaintenanceEstimate({ foodLog = {}, weights = [], endDa
 
 export function getCalculatedMaintenanceEstimate(profileEstimate = null) {
     const foodLog = readFoodLog();
+    const completedDays = readCompletedFoodDays();
     if (hasIncompleteNutrition(foodLog)) {
         // A pending FatSecret lookup is missing data, not a zero-calorie meal.
         // Never persist a new TDEE estimate from this incomplete intake snapshot.
@@ -183,10 +184,10 @@ export function getCalculatedMaintenanceEstimate(profileEstimate = null) {
     }
     const weights = readJson(WEIGHT_KEY, []);
     const today = new Date();
-    const liveEstimate = calculateMaintenanceEstimate({ foodLog, weights, endDate: today, profileEstimate });
+    const liveEstimate = calculateMaintenanceEstimate({ foodLog, completedDays, weights, endDate: today, profileEstimate });
     const previousDay = new Date(today);
     previousDay.setDate(previousDay.getDate() - 1);
-    const previousEstimate = calculateMaintenanceEstimate({ foodLog, weights, endDate: previousDay, profileEstimate });
+    const previousEstimate = calculateMaintenanceEstimate({ foodLog, completedDays, weights, endDate: previousDay, profileEstimate });
     const stored = readJson(WEEKLY_ESTIMATE_KEY, null);
     const stabilized = stabilizeMaintenanceEstimate({ liveEstimate, previousEstimate, snapshot: stored, today });
     if (stabilized.snapshot) {
@@ -196,7 +197,7 @@ export function getCalculatedMaintenanceEstimate(profileEstimate = null) {
     return stabilized.estimate;
 }
 
-export function calculateMaintenanceHistory({ foodLog = {}, weights = [], snapshotHistory = [], startDate = null, endDate = new Date(), profileEstimate = null } = {}) {
+export function calculateMaintenanceHistory({ foodLog = {}, completedDays = {}, weights = [], snapshotHistory = [], startDate = null, endDate = new Date(), profileEstimate = null } = {}) {
     const end = new Date(endDate);
     end.setHours(12, 0, 0, 0);
     if (!Number.isFinite(end.getTime())) return [];
@@ -217,7 +218,7 @@ export function calculateMaintenanceHistory({ foodLog = {}, weights = [], snapsh
 
     while (cursor <= end) {
         const cursorKey = dateKey(cursor);
-        const liveEstimate = calculateMaintenanceEstimate({ foodLog, weights, endDate: cursor, profileEstimate });
+        const liveEstimate = calculateMaintenanceEstimate({ foodLog, completedDays, weights, endDate: cursor, profileEstimate });
         const storedSnapshot = storedByDate.get(cursorKey);
         const stabilized = storedSnapshot
             ? {
@@ -256,8 +257,9 @@ export function calculateMaintenanceHistory({ foodLog = {}, weights = [], snapsh
 export function getCalculatedMaintenanceHistory(profileEstimate = null, { startDate = null } = {}) {
     const today = new Date();
     const foodLog = readFoodLog();
+    const completedDays = readCompletedFoodDays();
     if (hasIncompleteNutrition(foodLog)) return maintenanceHistoryCache?.points || [];
-    const foodFingerprint = JSON.stringify(foodLog);
+    const foodFingerprint = JSON.stringify([foodLog, completedDays]);
     const weightRaw = localStorage.getItem(WEIGHT_KEY) || "";
     const historyRaw = localStorage.getItem(WEEKLY_HISTORY_KEY) || "";
     const snapshotRaw = localStorage.getItem(WEEKLY_ESTIMATE_KEY) || "";
@@ -278,7 +280,7 @@ export function getCalculatedMaintenanceHistory(profileEstimate = null, { startD
     let weights = [];
     try { weights = JSON.parse(weightRaw || "[]") || []; } catch { weights = []; }
     const snapshotHistory = readStoredMaintenanceHistory();
-    const points = calculateMaintenanceHistory({ foodLog, weights, snapshotHistory, startDate, endDate: today, profileEstimate });
+    const points = calculateMaintenanceHistory({ foodLog, completedDays, weights, snapshotHistory, startDate, endDate: today, profileEstimate });
     maintenanceHistoryCache = {
         date: dateKey(today),
         startDate,
