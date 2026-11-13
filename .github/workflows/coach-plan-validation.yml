@@ -14,6 +14,14 @@ on:
       - 'js/dashboard/nutrition-target-card.js'
       - 'js/dashboard/dashboard-nutrition-sync.js'
       - 'js/nutrition/active-plan-display-sync.js'
+      - 'js/progress/weight-tracker.js'
+      - 'js/progress/weight-trend-chart.js'
+      - 'js/dashboard/dashboard-goal-timeline.js'
+      - 'js/nutrition/energy-profile.js'
+      - 'js/core/current-goal.js'
+      - 'js/core/router.js'
+      - 'js/more/more-ui-v2.js'
+      - 'js/more/account-cloud-ui.js'
       - 'tests/coach-managed-targets.test.mjs'
       - '.github/workflows/coach-plan-validation.yml'
   workflow_dispatch:
@@ -33,6 +41,10 @@ jobs:
       - run: node --check js/nutrition/nutrition-storage.js
       - run: node --check js/more/coach-assigned-programs.js
       - run: node --check cloud/src/coach-assignments.js
+      - run: node --check js/progress/weight-tracker.js
+      - run: node --check js/progress/weight-trend-chart.js
+      - run: node --check js/dashboard/dashboard-goal-timeline.js
+      - run: node --check js/nutrition/energy-profile.js
       - run: node --test tests/coach-managed-targets.test.mjs tests/coach-assignment-api.test.mjs
       - run: python3 tests/coach-schema-smoke.py
       - name: Run full suite (baseline checked separately)
