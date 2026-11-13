@@ -57,6 +57,7 @@ function initializeNativeTabGlass(nav) {
     pill.setAttribute("aria-hidden", "true");
     nav.prepend(pill);
 
+    let gesture = null;
     let frame = 0;
     const sync = () => {
         frame = 0;
@@ -65,7 +66,15 @@ function initializeNativeTabGlass(nav) {
             pill.hidden = true;
             return;
         }
-        pill.style.setProperty("--glass-x", `${active.offsetLeft + 2}px`);
+        const tabs = visibleTabs();
+        const restX = active.offsetLeft + 2;
+        const dragX = gesture?.dragging
+            ? Math.max(tabs[0].offsetLeft + 2, Math.min(
+                tabs.at(-1).offsetLeft + tabs.at(-1).offsetWidth - active.offsetWidth + 2,
+                restX + gesture.x - gesture.startX
+            ))
+            : restX;
+        pill.style.setProperty("--glass-x", `${dragX}px`);
         pill.style.setProperty("--glass-y", `${active.offsetTop + 2}px`);
         pill.style.width = `${active.offsetWidth - 4}px`;
         pill.style.height = `${active.offsetHeight - 4}px`;
@@ -80,10 +89,38 @@ function initializeNativeTabGlass(nav) {
         subtree: true, attributes: true, attributeFilter: ["class"]
     });
     new ResizeObserver(schedule).observe(nav);
+    const visibleTabs = () => [...nav.querySelectorAll(".nav-btn")].filter(tab => tab.offsetWidth);
     nav.addEventListener("pointerdown", event => {
-        if (event.target.closest(".nav-btn")) pill.classList.add("is-pressed");
+        const button = event.target.closest(".nav-btn");
+        if (!event.isPrimary || event.button !== 0 || !button) return;
+        gesture = { id: event.pointerId, startX: event.clientX, x: event.clientX, dragging: false };
+        pill.classList.add("is-pressed");
     });
-    const release = () => pill.classList.remove("is-pressed");
+    window.addEventListener("pointermove", event => {
+        if (gesture?.id !== event.pointerId) return;
+        gesture.x = event.clientX;
+        if (!gesture.dragging && Math.abs(gesture.x - gesture.startX) >= 8) {
+            gesture.dragging = true;
+            pill.classList.add("is-dragging");
+            nav.setPointerCapture(event.pointerId);
+        }
+        if (gesture.dragging) schedule();
+    });
+    const release = event => {
+        if (!gesture || (event.type !== "blur" && event.pointerId !== gesture.id)) return;
+        const dragged = gesture.dragging;
+        gesture = null;
+        pill.classList.remove("is-pressed", "is-dragging");
+        if (dragged && event.type === "pointerup") {
+            const tab = visibleTabs().find(button => {
+                const rect = button.getBoundingClientRect();
+                return event.clientX >= rect.left && event.clientX <= rect.right
+                    && event.clientY >= rect.top - 16 && event.clientY <= rect.bottom + 16;
+            });
+            tab?.click();
+        }
+        schedule();
+    };
     window.addEventListener("pointerup", release);
     window.addEventListener("pointercancel", release);
     window.addEventListener("blur", release);
