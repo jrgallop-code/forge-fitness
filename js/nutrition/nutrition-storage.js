@@ -77,6 +77,9 @@ export function getNutritionPlan() {
 }
 
 export function saveNutritionPlan(plan) {
+    // Coach prescriptions are an overlay; never let adaptive or manual legacy writers
+    // mutate the saved personal calorie target while coach mode is active.
+    if (getCoachTargets()) return;
     const requested = Number(plan?.calculatedCalories);
     const legacyRequested = Number(plan?.currentCalories);
     const calories = Number.isFinite(requested) && requested > 0
@@ -99,6 +102,7 @@ export function saveNutritionPlan(plan) {
 }
 
 export function syncCalculatedCalories(calculatedCalories) {
+    if (getCoachTargets()) return getNutritionPlan();
     const calories = roundCalorieTarget(calculatedCalories);
     if (!Number.isFinite(calories) || calories <= 0) {
         return getNutritionPlan();
@@ -117,6 +121,7 @@ export function syncCalculatedCalories(calculatedCalories) {
 
 // Backward-compatible function: any adjustment now changes the single calculated target.
 export function setCurrentCalories(newCalories, reason = "Manual adjustment") {
+    if (getCoachTargets()) return getNutritionPlan();
     const calories = roundCalorieTarget(newCalories);
     if (!Number.isFinite(calories) || calories <= 0) return null;
 
