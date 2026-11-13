@@ -22,12 +22,12 @@ export function activateCoachTargets(assignment){
  const targets=validateCoachTargets(assignment);
  const active={mode:"coach",accountId:accountId(),assignmentId:String(assignment.id),version:Number(assignment.version),targets,activatedAt:new Date().toISOString()};
  localStorage.setItem(k,JSON.stringify(active));
- if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("levelup:coach-targets-updated",{detail:{active:true}}));
+ if(typeof window!=="undefined"){window.dispatchEvent(new CustomEvent("levelup:coach-targets-updated",{detail:{active:true}}));window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));window.dispatchEvent(new CustomEvent("levelup:current-goal-updated"))}
  return active;
 }
 export function stopCoachTargets(){
  const k=key();if(!k)return false;
  localStorage.removeItem(k);
- if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("levelup:coach-targets-updated",{detail:{active:false}}));
+ if(typeof window!=="undefined"){window.dispatchEvent(new CustomEvent("levelup:coach-targets-updated",{detail:{active:false}}));window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));window.dispatchEvent(new CustomEvent("levelup:current-goal-updated"))}
  return true;
 }
