@@ -1,8 +1,8 @@
 name: Level Up Coach Hosted Staging
 on:
-  push:
+  pull_request:
     branches:
-      - feature/coach-plan-approval-v1
+      - main
     paths:
       - '.github/workflows/coach-hosted-staging.yml'
   workflow_dispatch:
