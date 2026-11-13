@@ -58,6 +58,22 @@ const DEMO={
 "Mike Johnson":[["Chest",10],["Back",12],["Shoulders",8],["Biceps",4],["Triceps",6],["Quads",12],["Hamstrings",8],["Glutes",10],["Calves",5],["Core",4]],
 "Katie Lee":[["Chest",6],["Back",8],["Shoulders",6],["Biceps",3],["Triceps",3],["Quads",8],["Hamstrings",6],["Glutes",6],["Calves",3],["Core",5]]
 };
-document.addEventListener("levelup:coach-client-profile-rendered",event=>{const {name,tab,container}=event.detail||{};if(tab!=="training"||!container)return;const host=el("div",{className:"card coach-volume-host"});container.append(host);renderCoachVolume(host,new Map(DEMO[name]||[]),{title:"Client weekly training volume",demo:true});});
-document.addEventListener("levelup:coach-program-rendered",event=>{const plan=event.detail?.plan,root=document.getElementById("coach-full-builder-volume");if(!root||!plan)return;renderCoachVolume(root,plan,{title:"Workout program · Weekly volume"})});
-try{const draft=JSON.parse(localStorage.getItem("levelup_coach_full_editor_v1")||"null");const root=document.getElementById("coach-full-builder-volume");if(draft?.days&&root)renderCoachVolume(root,draft,{title:"Workout program · Weekly volume"})}catch{}
+function periodChart(host,series){const block=el("div",{className:"coach-volume-period-chart"});block.append(el("h3",{text:"Effective sets by week"}));const max=Math.max(1,...series.map(x=>x[1]));const graph=el("div",{className:"coach-volume-week-graph"});series.forEach(([date,count])=>{const cell=el("div",{className:"coach-volume-week-column"}),bar=el("div",{className:"coach-volume-week-track"},[el("div",{className:"coach-volume-week-bar"})]);bar.firstChild.style.height=Math.round(count/max*100)+"%";bar.firstChild.style.background=color(count/10);cell.append(el("strong",{text:format(count)}),bar,el("small",{text:date}));graph.append(cell)});block.append(graph);host.append(block)}
+document.addEventListener("levelup:coach-client-profile-rendered",event=>{
+const {name,tab,container}=event.detail||{};if(tab!=="training"||!container)return;
+const host=el("div",{className:"card coach-volume-host"});container.append(host);
+const toolbar=el("div",{className:"coach-volume-controls"}),period=el("select",{"aria-label":"Volume time range"});
+for(const [label,value] of [["7 days","1"],["4 weeks","4"],["12 weeks","12"]])period.append(el("option",{value,text:label}));
+const content=el("div");toolbar.append(el("strong",{text:"Time range"}),period);host.append(toolbar,content);
+function update(){const weeks=Number(period.value);const base=new Map(DEMO[name]||[]),volume=new Map([...base].map(([m,n])=>[m,n]));const label=weeks===1?"7-day recorded volume":"Average weekly volume · last "+weeks+" weeks";
+renderCoachVolume(content,volume,{title:label,demo:true});
+const series=Array.from({length:weeks},(_,i)=>{const anchor=new Date("2026-11-09T12:00:00");anchor.setDate(anchor.getDate()-7*(weeks-1-i));const factor=1+(.1*Math.sin(i*1.2+(name?.length||0)));return [anchor.toLocaleDateString("en-CA",{month:"short",day:"numeric"}),Math.round([...base.values()].reduce((n,x)=>n+x,0)*factor*10)/10]});
+periodChart(content.firstChild,series);const note=el("p",{className:"sub",text:"Illustrative volume timeline only. Connected client data must use completed sets from Level Up's workout sessions, not generated sample values."});content.firstChild.append(note)}
+period.onchange=update;update()});
+let currentPlan={name:"New Coaching Program",days:[{name:"Workout A",exercises:[]}]};
+function renderBuilder(){const root=document.getElementById("coach-full-builder-volume");if(!root)return;root.replaceChildren();const toolbar=el("div",{className:"coach-volume-controls"}),filter=el("select",{"aria-label":"Workout volume scope"});
+filter.append(el("option",{value:"all",text:"Entire weekly program"}));(currentPlan.days||[]).forEach((day,i)=>filter.append(el("option",{value:String(i),text:day.name||"Day "+(i+1)})));
+toolbar.append(el("strong",{text:"Volume scope"}),filter);const graph=el("div");root.append(toolbar,graph);
+const update=()=>{const val=filter.value,source=val==="all"?currentPlan:{days:[currentPlan.days[Number(val)]]};renderCoachVolume(graph,source,{title:val==="all"?"Weekly planned volume":"Planned volume · "+currentPlan.days[Number(val)].name})};filter.onchange=update;update()}
+document.addEventListener("levelup:coach-program-rendered",event=>{if(!event.detail?.plan)return;currentPlan=event.detail.plan;renderBuilder()});
+renderBuilder();
