@@ -28,6 +28,7 @@ export function getGoalTimelineViewModel() {
     const currentGoal = readJson(CURRENT_GOAL_KEY, null);
     const current = firstPositive(trend.trendWeight, series.at(-1)?.weight, weights.at(-1)?.weight);
     const goal = firstPositive(
+        getCoachTargets()?.targets?.goalWeightLb,
         phase?.goalWeight,
         phase?.targetWeight,
         currentGoal?.targetWeight,
