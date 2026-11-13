@@ -50,51 +50,44 @@ export function renderNavbar() {
 
 function initializeNativeTabGlass(nav) {
     const capacitor = window.Capacitor;
-    const glass = capacitor?.Plugins?.LevelUpTabGlass;
-    if (capacitor?.getPlatform?.() !== "ios" || !glass?.update) return;
+    if (!capacitor?.isNativePlatform?.() || capacitor.getPlatform?.() !== "ios") return;
 
-    let pressed = null;
-    let frameRequest = 0;
-    let previous = "";
+    const pill = document.createElement("span");
+    pill.className = "ios-tab-glass";
+    pill.setAttribute("aria-hidden", "true");
+    nav.prepend(pill);
+
+    let frame = 0;
     const sync = () => {
-        frameRequest = 0;
+        frame = 0;
         const active = nav.querySelector(".nav-btn.active");
-        const rect = active?.getBoundingClientRect();
-        const visible = rect?.width && rect.height && rect.top >= 0
-            && rect.bottom <= window.innerHeight && active.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
-        const state = visible ? {
-            x: rect.x + 3, y: rect.y + 4,
-            width: rect.width - 6, height: rect.height - 8,
-            pressed: pressed === active
-        } : {};
-        const key = JSON.stringify(state);
-        if (key === previous) return;
-        previous = key;
-        glass.update(state).catch(() => {});
+        if (!active?.offsetWidth) {
+            pill.hidden = true;
+            return;
+        }
+        pill.style.setProperty("--glass-x", `${active.offsetLeft + 2}px`);
+        pill.style.setProperty("--glass-y", `${active.offsetTop + 2}px`);
+        pill.style.width = `${active.offsetWidth - 4}px`;
+        pill.style.height = `${active.offsetHeight - 4}px`;
+        pill.hidden = false;
+        nav.classList.add("has-ios-tab-glass");
     };
     const schedule = () => {
-        if (!frameRequest) frameRequest = requestAnimationFrame(sync);
-    };
-    const clearPress = () => {
-        pressed = null;
-        schedule();
+        if (!frame) frame = requestAnimationFrame(sync);
     };
 
-    nav.addEventListener("pointerdown", event => {
-        pressed = event.target.closest(".nav-btn");
-        schedule();
+    new MutationObserver(schedule).observe(nav, {
+        subtree: true, attributes: true, attributeFilter: ["class"]
     });
-    window.addEventListener("pointerup", clearPress);
-    window.addEventListener("pointercancel", clearPress);
-    window.addEventListener("resize", schedule);
-    document.addEventListener("visibilitychange", clearPress);
-    const observer = new MutationObserver(schedule);
-    observer.observe(nav, { subtree: true, childList: true, attributes: true, attributeFilter: ["class", "style", "hidden"] });
-    for (let parent = nav.parentElement; parent; parent = parent.parentElement) {
-        observer.observe(parent, { attributes: true, attributeFilter: ["class", "style", "hidden"] });
-    }
     new ResizeObserver(schedule).observe(nav);
-    schedule();
+    nav.addEventListener("pointerdown", event => {
+        if (event.target.closest(".nav-btn")) pill.classList.add("is-pressed");
+    });
+    const release = () => pill.classList.remove("is-pressed");
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    window.addEventListener("blur", release);
+    sync();
 }
 
 export function initializeNavbar() {

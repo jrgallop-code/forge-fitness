@@ -663,3 +663,35 @@ input[type="radio"] {
 /* Circuits: all exercises together, one swipeable page per round. */
 .circuit-round-pager nav{display:flex;gap:8px;overflow:auto;padding:8px 0}.circuit-round-pager nav button{white-space:nowrap;padding:10px 14px;min-height:44px;border:1px solid var(--card-border);border-radius:12px;background:var(--card);color:var(--heading)}.circuit-round-pager nav button.active{background:var(--accent);color:var(--on-accent,#fff)}
 .circuit-round-pager>p{font-size:13px;color:var(--muted)}.circuit-round-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;align-items:flex-start;position:relative;overscroll-behavior-x:contain}.circuit-round-page{flex:0 0 100%;min-width:0;box-sizing:border-box;scroll-snap-align:start;padding:16px;background:var(--card);border:1px solid var(--card-border);border-radius:16px}.circuit-round-page h3{margin:0 0 16px;color:var(--heading)}.circuit-round-page h3 small{font-size:13px;color:var(--muted)}.circuit-round-exercise{padding:14px 0;border-top:1px solid var(--card-border)}.circuit-round-name{display:flex;gap:12px;align-items:center}.circuit-round-name>b{display:grid;place-items:center;min-width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text)}.circuit-round-name>div{display:grid;gap:4px}.circuit-round-name strong{font-size:15px;color:var(--heading)}.circuit-round-name span{font-size:13px;color:var(--muted)}.circuit-round-fields{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:12px;align-items:end}.circuit-round-fields label{font-size:11px;display:grid;gap:5px;color:var(--muted);min-width:0}.circuit-round-fields input[type=number]{width:100%;box-sizing:border-box;min-height:44px;font-size:16px;padding:8px;background:var(--surface-raised);color:var(--heading);border:1px solid var(--card-border);border-radius:10px}.circuit-round-check{min-height:44px;justify-content:center}.circuit-round-check input{width:24px;height:24px;accent-color:var(--accent)}.circuit-round-navigation{display:flex;gap:8px;margin-top:12px}.circuit-round-navigation button{flex:1;min-height:44px;font-size:12px}.circuit-round-page>[data-complete-round]{width:100%;margin-top:12px;min-height:46px}
+
+.bottom-nav.has-ios-tab-glass .nav-btn.active {
+    background: transparent !important;
+}
+
+.bottom-nav.has-ios-tab-glass .nav-btn.nav-pulse {
+    animation: none;
+}
+
+.ios-tab-glass {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: 999px;
+    background: linear-gradient(155deg, rgba(255,255,255,.20), rgba(255,255,255,.04) 62%, rgba(255,255,255,.11));
+    box-shadow: inset 0 1px 1px rgba(255,255,255,.34), inset 0 -1px 1px rgba(255,255,255,.16), 0 2px 8px rgba(0,0,0,.18);
+    backdrop-filter: blur(12px) saturate(150%);
+    transform: translate3d(var(--glass-x), var(--glass-y), 0);
+    transition: transform 250ms cubic-bezier(.22,.8,.24,1), width 250ms, height 250ms, filter 120ms;
+}
+
+.ios-tab-glass.is-pressed {
+    transform: translate3d(var(--glass-x), var(--glass-y), 0) scale(1.06);
+    filter: brightness(1.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ios-tab-glass { transition: none; }
+    .ios-tab-glass.is-pressed { transform: translate3d(var(--glass-x), var(--glass-y), 0); }
+}
