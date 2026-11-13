@@ -7,7 +7,7 @@ import {FORM_GUIDE_VIDEOS} from './js/workouts/exercise-guide-video-manifest.js'
 const byId=id=>document.getElementById(id);
 const E=getAllExercises(),users=['Sarah Carter','Mike Johnson','Katie Lee'],coaches=['Head Coach','Assistant Coach'];
 const h=(tag,props={},children=[])=>{const el=document.createElement(tag);Object.entries(props).forEach(([k,v])=>{if(k==='className')el.className=v;else if(k==='text')el.textContent=v;else if(k==='onClick')el.addEventListener('click',v);else if(k==='value')el.value=v;else el.setAttribute(k,v)});for(const c of children)el.append(c);return el};
-const viewIds=['calendar','inbox','formreviews'];
+const viewIds=['calendar','inbox'];
 const isView=id=>document.getElementById(id)?.classList.contains('active');
 const nav=byId('nav');
 const b=nav.querySelector('[data-view="exercises"]');
@@ -17,16 +17,16 @@ h('button',{className:'nav-sub',text:'Exercise library',onClick:()=>go('exercise
 h('button',{className:'nav-sub',text:'Program library',onClick:()=>document.dispatchEvent(new Event('levelup:open-program-library'))}),
 h('button',{className:'nav-sub',text:'Nutrition templates',onClick:()=>go('nutrition')})
 ]);b?.replaceWith(group);
-const newNav=[['calendar','▦ Calendar'],['inbox','✉ Messages'],['formreviews','▣ Form Videos']];
+const newNav=[['calendar','▦ Calendar'],['inbox','✉ Messages']];
 const checkout=nav.querySelector('[data-view="checkins"]');const wrap=h('div',{className:'nav-group'});newNav.forEach(([id,text])=>wrap.append(h('button',{'data-view':id,text,onClick:()=>go(id)})));checkout?.before(wrap);
 const appBody=document.querySelector('.body');const views=h('div',{id:'coach-extra-views'});
 appBody.append(views);
-function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('#nav button').forEach(el=>el.classList.toggle('active',el.dataset.view===id));byId('crumb').textContent=({calendar:'Calendar',inbox:'Messages',formreviews:'Form video review',exercises:'Exercise library',builder:'Program builder',clients:'Client analytics',nutrition:'Nutrition'})[id]||'Overview';window.scrollTo(0,0);if(id==='calendar')renderCalendar();if(id==='inbox')renderInbox();if(id==='formreviews')renderVideo();if(id==='nutrition')renderNutrition();}
+function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('#nav button').forEach(el=>el.classList.toggle('active',el.dataset.view===id));byId('crumb').textContent=({calendar:'Calendar',inbox:'Messages',formreviews:'Form video review',exercises:'Exercise library',builder:'Program builder',clients:'Client analytics',nutrition:'Nutrition'})[id]||'Overview';window.scrollTo(0,0);if(id==='calendar')renderCalendar();if(id==='inbox')renderInbox();if(id==='nutrition')renderNutrition();}
 nav.querySelectorAll('[data-view]').forEach(el=>el.addEventListener('click',()=>{const id=el.dataset.view;if(!viewIds.includes(id)&&id!=='exercises')go(id)}));
 function section(id,heading,body){const s=h('section',{className:'view',id},[h('div',{className:'head'},[h('div',{},[h('span',{className:'eyebrow',text:'Level Up Coach · Private prototype'}),h('h1',{text:heading}),h('p',{className:'muted',text:body})])])]);views.append(s);return s;}
 const cview=section('calendar','Calendar','Schedule client appointments, coaching tasks, check-ins and coaches on one shared calendar.');
 const inbox=section('inbox','Messages','Coach–client communication, with video attachments and private feedback.');
-const review=section('formreviews','Form review','Review client-submitted lifting videos, timestamp notes and coaching feedback.');
+// Form-video review is now handled within each client Messages thread.
 const calbar=h('div',{className:'card cal-controls'}),calendar=h('div',{className:'card'}),calEditor=h('div',{className:'card'});
 cview.append(calbar,h('div',{className:'two calendar-layout'},[calendar,calEditor]));
 const cstate={month:new Date(2026,10,1),view:'month',filter:'all',coach:'all'};
@@ -57,7 +57,7 @@ let msgPerson=users[0];let inVideoUrl=null;let videos=storage('levelup_coach_dem
 ]);
 function renderInbox(){
 inbox.querySelector('.msg-shell')?.remove();const shell=h('div',{className:'msg-shell'});const left=h('div',{className:'card msg-list'}),right=h('div',{className:'card'});users.forEach(person=>left.append(h('button',{className:'clientpick'+(msgPerson===person?' active':''),text:person,onClick:()=>{msgPerson=person;renderInbox()}})));right.append(h('h2',{text:'Conversation · '+msgPerson}),h('p',{className:'sub',text:'Local prototype only. Messages are not delivered to Level Up users.'}));const stream=h('div',{className:'msg-stream'});(msgData[msgPerson]||[]).forEach(m=>stream.append(h('div',{className:'chat '+(m.from==='coach'?'outgoing':''),text:m.text})));right.append(stream);
-const form=h('form',{className:'formrow'}),field=h('textarea',{placeholder:'Write a message…',rows:'2','aria-label':'Message text'}),send=h('button',{className:'btn',type:'submit',text:'Add demo message'});form.append(field,send);form.onsubmit=e=>{e.preventDefault();const msg=field.value.trim();if(!msg)return;(msgData[msgPerson] ||= []).push({from:'coach',text:msg});localStorage.setItem('levelup_coach_demo_messages_v2',JSON.stringify(msgData));renderInbox()};right.append(form);right.append(h('button',{className:'btn light',text:'View form-video reviews →',onClick:()=>go('formreviews')}));shell.append(left,right);inbox.append(shell);
+const form=h('form',{className:'formrow'}),field=h('textarea',{placeholder:'Write a message…',rows:'2','aria-label':'Message text'}),send=h('button',{className:'btn',type:'submit',text:'Add demo message'});form.append(field,send);form.onsubmit=e=>{e.preventDefault();const msg=field.value.trim();if(!msg)return;(msgData[msgPerson] ||= []).push({from:'coach',text:msg});localStorage.setItem('levelup_coach_demo_messages_v2',JSON.stringify(msgData));renderInbox()};right.append(form);shell.append(left,right);inbox.append(shell);document.dispatchEvent(new CustomEvent('levelup:coach-messages-open',{detail:{client:msgPerson,section:inbox}}));
 }
 function renderVideo(){
 review.querySelector('.video-shell')?.remove();const shell=h('div',{className:'two video-shell'}),list=h('div',{className:'card'}),detail=h('div',{className:'card'});list.append(h('h2',{text:'Client form-video inbox'}),h('p',{className:'sub',text:'Clips are supplied by clients in the future app flow; this preview can play a file locally.'}));
