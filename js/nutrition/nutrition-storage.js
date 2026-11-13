@@ -1,3 +1,4 @@
+import { getCoachTargets } from "./coach-managed-targets.js";
 import { roundCalorieTarget } from "./tdee-calculator.js?v=calorie-target-rounding-1";
 
 const NUTRITION_PROFILE_KEY = "level_up_nutrition_profile";
@@ -43,6 +44,8 @@ export function saveNutritionMacroPreference(preference) {
 }
 
 export function getNutritionPlan() {
+    const coach = getCoachTargets();
+    if (coach) return { calculatedCalories: coach.targets.calorieTarget, currentCalories: coach.targets.calorieTarget, adjustmentHistory: [], coachManaged: true };
     const plan = readObject(NUTRITION_PLAN_KEY);
     const calculated = Number(plan?.calculatedCalories);
     const legacyCurrent = Number(plan?.currentCalories);
