@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS coach_training_links (
   accepted_at TEXT NOT NULL,
   revoked_at TEXT,
   PRIMARY KEY(coach_user_id, client_user_id),
-  CHECK (coach_user_id != client_user_id)
+  CHECK (length(coach_user_id) > 0 AND length(client_user_id) > 0)
 );
 CREATE INDEX IF NOT EXISTS idx_coach_training_links_client ON coach_training_links(client_user_id, revoked_at);
 CREATE INDEX IF NOT EXISTS idx_coach_training_links_coach ON coach_training_links(coach_user_id, revoked_at);
+
+-- Self-testing is allowed only through an explicitly accepted self-link. Coach and client can revoke access at any time.
