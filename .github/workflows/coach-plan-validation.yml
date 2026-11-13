@@ -47,6 +47,15 @@ jobs:
       - run: node --check js/nutrition/energy-profile.js
       - run: node --test tests/coach-managed-targets.test.mjs tests/coach-assignment-api.test.mjs
       - run: python3 tests/coach-schema-smoke.py
+      - name: Install isolated Cloudflare D1 CLI
+        run: npm ci --prefix cloud
+      - name: Apply migrations to disposable local D1 (never remote)
+        run: |
+          set -euo pipefail
+          cd cloud
+          npx wrangler d1 migrations apply DB --local --persist-to /tmp/coach-d1-staging --yes
+          npx wrangler d1 execute DB --local --persist-to /tmp/coach-d1-staging --command "SELECT name FROM sqlite_master WHERE name IN ('coach_training_links','coach_program_assignments','coach_assignment_versions','coach_assignment_decisions','coach_client_nutrition_selection') ORDER BY name;" --json > /tmp/coach-d1-tables.json
+          node -e 'const fs=require("fs"); const s=JSON.stringify(JSON.parse(fs.readFileSync("/tmp/coach-d1-tables.json","utf8"))); for(const n of ["coach_training_links","coach_program_assignments","coach_assignment_versions","coach_assignment_decisions","coach_client_nutrition_selection"])if(!s.includes(n))throw Error("D1 migration missing "+n); console.log("Isolated D1 coach schema verified")'
       - name: Run full suite (baseline checked separately)
         run: npm test > /tmp/coach-branch-tests.log 2>&1 || true
       - name: Compare existing failure baseline
