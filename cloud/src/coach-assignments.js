@@ -32,6 +32,7 @@ if(path==="/v1/coach/assignments"&&method==="POST"){
  const found=await env.DB.prepare("SELECT id,version FROM coach_program_assignments WHERE coach_user_id=? AND client_user_id=? AND source_plan_id=?").bind(user.id,clientId,sourcePlanId).first();
  const expected=input.expectedVersion==null?null:Number(input.expectedVersion);
  if((found&&expected!==Number(found.version))||(!found&&expected!==null))return err(409,"The program has a newer version. Refresh before publishing.",request,env);
+ if(input.includeNutrition===true&&!self){const permission=await env.DB.prepare("SELECT nutrition_permission FROM coach_training_links WHERE coach_user_id=? AND client_user_id=? AND revoked_at IS NULL").bind(user.id,clientId).first();if(!permission?.nutrition_permission)return err(403,"The athlete has not approved nutrition coaching access.",request,env)}
  const goals=sanitizeGoals(input.goals||{});const nutrition=input.includeNutrition===true?sanitizeNutrition(input.nutrition||{}):null;
  const planJson=JSON.stringify(training),goalJson=JSON.stringify(goals),nutritionJson=nutrition?JSON.stringify(nutrition):null;
  if(planJson.length>110000||goalJson.length>3000||(nutritionJson&&nutritionJson.length>10000))return err(413,"This plan exceeds the size limit.",request,env);
