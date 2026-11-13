@@ -39,3 +39,6 @@ else renderPhotos(wrap,data,live);
 mounts.set(clientId||name,{container,tab,name,clientId})}
 document.addEventListener("levelup:coach-client-profile-rendered",mount);
 document.addEventListener("levelup:coach-live-data-updated",event=>{const clientId=event.detail?.clientId;if(!clientId)return;const old=mounts.get(clientId);if(old&&old.container?.isConnected)mount({detail:old})});
+
+// Client layout is rendered before this module is loaded; remount the visible overview.
+document.querySelector('#clients .coach-client-tabs button')?.click();
