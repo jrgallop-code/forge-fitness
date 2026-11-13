@@ -11,6 +11,7 @@ on:
       - 'cloud/migrations/*coach*.sql'
       - 'tests/coach-assignment-api.test.mjs'
       - 'tests/coach-schema-smoke.py'
+      - 'tests/coach-real-sql-integration.test.mjs'
       - 'js/dashboard/nutrition-target-card.js'
       - 'js/dashboard/dashboard-nutrition-sync.js'
       - 'js/nutrition/active-plan-display-sync.js'
@@ -45,7 +46,7 @@ jobs:
       - run: node --check js/progress/weight-trend-chart.js
       - run: node --check js/dashboard/dashboard-goal-timeline.js
       - run: node --check js/nutrition/energy-profile.js
-      - run: node --test tests/coach-managed-targets.test.mjs tests/coach-assignment-api.test.mjs
+      - run: node --test tests/coach-managed-targets.test.mjs tests/coach-assignment-api.test.mjs tests/coach-real-sql-integration.test.mjs
       - run: python3 tests/coach-schema-smoke.py
       - name: Install isolated Cloudflare D1 CLI
         run: npm ci --prefix cloud
