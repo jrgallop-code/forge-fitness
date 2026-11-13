@@ -134,7 +134,8 @@ test("the Nutrition dot uses the exact actionable review state", () => {
     assert.match(display, /levelup:weekly-calorie-review-readiness/);
     assert.match(display, /setWeeklyReviewReadyState\(false\)/);
     assert.match(alert, /weeklyCalorieReviewReady === "true"/);
-    assert.match(alert, /checkIn\.ready \|\| sharedReady/);
+    assert.match(alert, /const showBadge = mode !== "track" && sharedReady;/);
+    assert.match(alert, /if \(showBadge && !badge\)/);
     assert.match(alert, /levelup:weekly-calorie-review-readiness/);
 });
 
