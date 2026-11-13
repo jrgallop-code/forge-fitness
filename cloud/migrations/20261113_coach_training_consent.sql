@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS coach_training_links (
   coach_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   client_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   training_permission INTEGER NOT NULL DEFAULT 1 CHECK (training_permission IN (0,1)),
+  nutrition_permission INTEGER NOT NULL DEFAULT 0 CHECK (nutrition_permission IN (0,1)),
   accepted_at TEXT NOT NULL,
   revoked_at TEXT,
   PRIMARY KEY(coach_user_id, client_user_id),
