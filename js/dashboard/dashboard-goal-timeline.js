@@ -1,3 +1,4 @@
+import { getCoachTargets } from "../nutrition/coach-managed-targets.js";
 import { calculateGoalTimeline } from "../core/goal-timeline.js?v=goal-timeline-1";
 import { calculateVisibleWeightTrend, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
