@@ -1,3 +1,4 @@
+import { getCoachTargets } from "./coach-managed-targets.js";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=independent-tdee-staged-target-1";
 import { getActiveNutritionPhase, getActivePhaseMetrics, saveNutritionPhase } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { setCurrentCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
@@ -52,11 +53,13 @@ export function readMaintenanceCheckInState() {
 }
 
 export function getMaintenanceUpdateMode() {
+    if (getCoachTargets()) return "track"; // Preserve TDEE tracking, disable automatic app target recommendations.
     const mode = localStorage.getItem(MODE_KEY);
     return MODES.has(mode) ? mode : "review";
 }
 
 export function setMaintenanceUpdateMode(mode) {
+    if (getCoachTargets()) return "track";
     const next = MODES.has(mode) ? mode : "review";
     localStorage.setItem(MODE_KEY, next);
     window.dispatchEvent(new CustomEvent("levelup:maintenance-mode-updated", { detail: { mode: next } }));
