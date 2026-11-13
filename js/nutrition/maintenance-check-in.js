@@ -314,17 +314,18 @@ export function initializeMaintenanceCheckInAlert() {
         const previewReady = sessionStorage.getItem(WEEKLY_REVIEW_PREVIEW_KEY) === "1";
         const shouldAlert = mode !== "track" && (checkIn.ready || sharedReady || previewReady);
         const displayedCheckIn = shouldAlert === checkIn.ready ? checkIn : { ...checkIn, ready: shouldAlert };
-        nav.classList.toggle("has-maintenance-check-in", shouldAlert);
+        const showBadge = mode !== "track" && sharedReady;
+        nav.classList.toggle("has-maintenance-check-in", showBadge);
         let badge = nav.querySelector(".maintenance-nav-badge");
-        if (shouldAlert && !badge) {
+        if (showBadge && !badge) {
             badge = document.createElement("span");
             badge.className = "maintenance-nav-badge";
             badge.setAttribute("aria-hidden", "true");
             nav.appendChild(badge);
-        } else if (!shouldAlert) {
+        } else if (!showBadge) {
             badge?.remove();
         }
-        nav.setAttribute("aria-label", shouldAlert ? "Nutrition — weekly calorie review ready" : "Nutrition");
+        nav.setAttribute("aria-label", showBadge ? "Nutrition — weekly calorie review ready" : "Nutrition");
         renderNutritionHubAlert(displayedCheckIn, mode);
         renderProgressReviewAlert(displayedCheckIn, mode);
     };
