@@ -31,3 +31,40 @@ export function stopCoachTargets(){
  if(typeof window!=="undefined"){window.dispatchEvent(new CustomEvent("levelup:coach-targets-updated",{detail:{active:false}}));window.dispatchEvent(new CustomEvent("levelup:nutrition-updated"));window.dispatchEvent(new CustomEvent("levelup:current-goal-updated"))}
  return true;
 }
+
+let inFlightSync=null;
+export async function syncCoachTargetsFromCloud(){
+ if(inFlightSync)return inFlightSync;
+ let token=null;
+ try{token=JSON.parse(localStorage.getItem("level_up_cloud_session")||"null")?.token}catch{}
+ const userId=accountId();
+ if(!userId||!token)return null;
+ inFlightSync=(async()=>{
+  const response=await fetch("https://api.leveluphypertrophy.com/v1/client/coach-nutrition",{headers:{Authorization:"Bearer "+token},cache:"no-store"});
+  if(!response.ok)throw Error("Coach nutrition synchronization failed.");
+  const data=await response.json();
+  // Ignore an in-flight response if another person signed in on this device.
+  let currentToken=null;
+  try{currentToken=JSON.parse(localStorage.getItem("level_up_cloud_session")||"null")?.token}catch{}
+  if(accountId()!==userId||currentToken!==token)return null;
+  if(!data.enabled){
+   if(getCoachTargets())stopCoachTargets();
+   return null;
+  }
+  const assignment=data.assignment;
+  const valid=validateCoachTargets(assignment);
+  const current=getCoachTargets();
+  if(!current||current.assignmentId!==String(assignment.id)||current.version!==Number(assignment.version)||JSON.stringify(current.targets)!==JSON.stringify(valid)){
+   activateCoachTargets(assignment);
+  }
+  return getCoachTargets();
+ })();
+ try{return await inFlightSync}finally{inFlightSync=null}
+}
+if(typeof window!=="undefined"&&typeof window.addEventListener==="function"){
+ // Refresh at startup and after resuming an installed PWA. Offline errors leave
+ // the previously accepted local overlay intact until the next successful sync.
+ const refresh=()=>{void syncCoachTargetsFromCloud().catch(()=>{})};
+ window.addEventListener("pageshow",refresh);
+ window.addEventListener("online",refresh);
+}
