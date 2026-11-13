@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 
 const coachId='11111111-1111-4111-8111-111111111111';
 const athleteId='22222222-2222-4222-8222-222222222222';
-const coachToken='coach-testing-only-fake-bearer';
-const athleteToken='athlete-testing-only-fake-bearer';
-const base='http://127.0.0.1:8787';
+const coachToken=process.env.COACH_TEST_TOKEN || 'coach-testing-only-fake-bearer';
+const athleteToken=process.env.ATHLETE_TEST_TOKEN || 'athlete-testing-only-fake-bearer';
+const base=process.env.COACH_BASE_URL || 'http://127.0.0.1:8787';
 const hash=token=>createHash('sha256').update(token).digest('hex');
 const time='2026-11-13T00:00:00.000Z';
 const hashSql=token=>"'"+hash(token)+"'";
