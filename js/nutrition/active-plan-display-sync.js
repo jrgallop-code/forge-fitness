@@ -1,3 +1,4 @@
+import { getCoachTargets } from "./coach-managed-targets.js";
 import {
     getNutritionProfile,
     getNutritionGoal,
@@ -31,7 +32,7 @@ function syncActivePlanDisplays() {
     const phase = getActiveNutritionPhase();
     const phaseCalories = Number(phase?.currentCalories ?? phase?.startCalories);
     const savedCalories = Number(plan.calculatedCalories);
-    const calories = Number.isFinite(phaseCalories) && phaseCalories > 0 ? phaseCalories : savedCalories;
+    const calories = getCoachTargets()?.targets.calorieTarget ?? (Number.isFinite(phaseCalories) && phaseCalories > 0 ? phaseCalories : savedCalories);
 
     if (!profile || (!phase && !goal?.goalId) || !Number.isFinite(calories) || calories <= 0) {
         return;
@@ -40,7 +41,7 @@ function syncActivePlanDisplays() {
     const macroPreference = getNutritionMacroPreference();
     const macroPreset = macroPreference?.macroPreset || "balanced";
     const manualMacroEditorActive = isManualMacroEditorActive();
-    const macros = calculateMacroTargets({
+    const macros = getCoachTargets()?.targets || calculateMacroTargets({
         calories,
         weightKg: poundsToKg(Number(profile.weightLb)),
         macroPreset
