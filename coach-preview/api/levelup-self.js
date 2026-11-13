@@ -7,7 +7,7 @@
 const CLOUD="https://api.leveluphypertrophy.com";
 const isDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(String(s||""));
 const list=x=>Array.isArray(x)?x:[];
-const num=x=>{const n=Number(x);return Number.isFinite(n)?n:null};
+const num=x=>{if(x===null||x===undefined||x==="")return null;const n=Number(x);return Number.isFinite(n)?n:null};
 const clamp=(x,min,max)=>Math.min(max,Math.max(min,x));
 const short=(x,size=140)=>String(x??"").slice(0,size);
 const headers={"Cache-Control":"no-store, private, max-age=0","X-Content-Type-Options":"nosniff","Content-Type":"application/json; charset=utf-8"};
