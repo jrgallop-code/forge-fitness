@@ -60,3 +60,4 @@ const DEMO={
 };
 document.addEventListener("levelup:coach-client-profile-rendered",event=>{const {name,tab,container}=event.detail||{};if(tab!=="training"||!container)return;const host=el("div",{className:"card coach-volume-host"});container.append(host);renderCoachVolume(host,new Map(DEMO[name]||[]),{title:"Client weekly training volume",demo:true});});
 document.addEventListener("levelup:coach-program-rendered",event=>{const plan=event.detail?.plan,root=document.getElementById("coach-full-builder-volume");if(!root||!plan)return;renderCoachVolume(root,plan,{title:"Workout program · Weekly volume"})});
+try{const draft=JSON.parse(localStorage.getItem("levelup_coach_full_editor_v1")||"null");const root=document.getElementById("coach-full-builder-volume");if(draft?.days&&root)renderCoachVolume(root,draft,{title:"Workout program · Weekly volume"})}catch{}
