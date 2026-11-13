@@ -1,31 +1,50 @@
-/* Unified coaching program builder: demo storage only. */
+/* Level Up Coach client-specific program header and save workflow.
+   IMPORTANT: stored in preview browser only, not cloud-assigned to athlete. */
 const $=id=>document.getElementById(id);
-const el=(tag,props={},children=[])=>{const n=document.createElement(tag);for(const [key,val] of Object.entries(props)){if(key==="className")n.className=val;else if(key==="text")n.textContent=val;else if(key==="onClick")n.addEventListener("click",val);else n.setAttribute(key,val)}n.append(...children);return n};
-const button=(name,fn)=>el("button",{type:"button",className:"btn",text:name,onClick:fn});
-const load=key=>{try{return JSON.parse(localStorage.getItem(key)||"{}")||{}}catch{return {}}};
-const WORKING="levelup_coach_full_editor_v1",CAL="levelup_coach_calorie_plan_drafts_v1",MACRO="levelup_coach_macro_drafts_v1",SAVED="levelup_coach_combined_plans_v2";
-const page=$("builder");if(!page)throw Error("Builder not found");
-const section=el("section",{id:"coach-unified-nutrition",className:"card coach-unified-section"}),title=el("div",{},[el("span",{className:"eyebrow",text:"COMPLETE CLIENT PLAN"}),el("h2",{text:"Nutrition · Calories · Macros · Meals"}),el("p",{className:"sub",text:"Nutrition is part of Program Builder. Workouts and nutrition save as one package."})]);
-const choices=el("select",{"aria-label":"Client for complete plan"});
-for(const name of ["Sarah Carter","Mike Johnson","Katie Lee"])choices.append(el("option",{value:name,text:name}));
-const guidance=el("textarea",{rows:"5",placeholder:"Planned meals, nutrition guidance, timing and food preferences…"});
-const field=(label,input)=>el("label",{className:"coach-complete-field"},[el("span",{text:label}),input]);
-section.append(title,field("Client",choices));
-const original=$("nutrition"),calorie=original?.querySelector(".coach-calorie-plan"),macro=$("coach-macro-editor");
-if(calorie)section.append(calorie);
-if(macro)section.append(macro);
-section.append(field("Meal plan and nutrition notes",guidance));
-const details=el("div",{className:"coach-complete-summary"}),notice=el("p",{className:"sub",text:"This is a browser-local draft; no athlete has received it."}),actions=el("div",{className:"coach-editor-actions"});
-section.append(details,actions,notice);
-const volume=$("coach-full-builder-volume");
-if(volume)volume.after(section);else page.append(section);
-function plan(){const training=load(WORKING),cal=load(CAL)[choices.value]||null,macro=load(MACRO)[choices.value]||null;return {schema:"levelup.coach.complete-plan.v2",recipient:choices.value,training:Array.isArray(training.days)?training:null,nutrition:{calories:cal,macros:macro,mealGuidance:guidance.value.trim()},deliveryStatus:"not_sent",savedAt:new Date().toISOString()}}
-function render(){const p=plan();details.replaceChildren();const dayCount=p.training?.days?.length||0,exerciseCount=p.training?.days?.reduce((total,day)=>total+(day.exercises?.length||0),0)||0;for(const [key,value] of [["Workouts",dayCount+" days, "+exerciseCount+" exercises"],["Calories",p.nutrition.calories?.calories?String(p.nutrition.calories.calories)+" kcal":"Not saved"],["Macros",p.nutrition.macros?.value?String(p.nutrition.macros.value.protein)+"g P · "+String(p.nutrition.macros.value.carbs)+"g C · "+String(p.nutrition.macros.value.fat)+"g F":"Not saved"],["Goal weight",p.nutrition.calories?.goalWeightLb?String(p.nutrition.calories.goalWeightLb)+" lb":"Not set"]])details.append(el("div",{},[el("small",{text:key}),el("strong",{text:value})]))}
-function save(){const p=plan();if(!p.training?.days?.some(day=>day.exercises?.length)){notice.textContent="Add exercises to a workout day before saving the complete plan.";return}const data=load(SAVED);data[choices.value]=p;try{localStorage.setItem(SAVED,JSON.stringify(data));notice.textContent="Complete program saved locally for "+choices.value+". This has not been sent to the client.";render()}catch{notice.textContent="Unable to save combined plan in browser storage."}}
-function exportFile(){const p=load(SAVED)[choices.value]||plan(),url=URL.createObjectURL(new Blob([JSON.stringify(p,null,2)],{type:"application/json"}));el("a",{href:url,download:"level-up-complete-client-plan.json"}).click();setTimeout(()=>URL.revokeObjectURL(url),1200)}
-const saveButton=button("Save Complete Plan",save),exportButton=button("Export Complete Plan",exportFile),send=button("Send to Client App",()=>{notice.textContent="Not sent. Secure client authorization and the shared assignment API are required before sending."});
-send.title="Client synchronization is not available in this prototype.";
-actions.append(saveButton,exportButton,send);
-choices.onchange=()=>{const name=choices.value;for(const selector of [".coach-calorie-plan select","#coach-macro-editor select"]){const input=section.querySelector(selector);if(input&&[...input.options].some(x=>x.value===name)){input.value=name;input.dispatchEvent(new Event("change",{bubbles:true}))}}guidance.value=load(SAVED)[name]?.nutrition?.mealGuidance||"";render()};
-document.addEventListener("levelup:coach-program-rendered",render);
-section.addEventListener("change",()=>requestAnimationFrame(render));render();
+const e=(tag,props={},children=[])=>{const n=document.createElement(tag);for(const [k,v] of Object.entries(props)){if(k==="className")n.className=v;else if(k==="text")n.textContent=v;else if(k==="onClick")n.addEventListener("click",v);else if(k==="checked")n.checked=!!v;else n.setAttribute(k,v)}n.append(...children);return n};
+const btn=(text,fn,secondary=false)=>e("button",{type:"button",className:"btn"+(secondary?" light":""),text,onClick:fn});
+const field=(title,control)=>e("label",{className:"coach-plan-field"},[e("span",{text:title}),control]);
+const STORAGE="levelup_coach_client_programs_v1",WORKING="levelup_coach_full_editor_v1",CAL="levelup_coach_calorie_plan_drafts_v1",MACRO="levelup_coach_macro_drafts_v1",LASTCLIENT="levelup_coach_selected_client_v1";
+const clients=["Sarah Carter","Mike Johnson","Katie Lee"];
+function read(key,fallback){try{const x=JSON.parse(localStorage.getItem(key)||"null");return x??fallback}catch{return fallback}}
+const getProfiles=()=>read(STORAGE,{});
+function writeProfiles(value){try{localStorage.setItem(STORAGE,JSON.stringify(value));return true}catch{return false}}
+const builder=$("builder");if(!builder)throw Error("Program Builder view is not available");
+const root=e("section",{id:"coach-program-client-plan",className:"card coach-program-client-plan"}),heading=e("div",{className:"coach-plan-heading"},[e("span",{className:"eyebrow",text:"LEVEL UP COACH · CLIENT PROGRAM"}),e("h2",{text:"Build a client program"}),e("p",{className:"sub",text:"Name the plan for this client, optionally include nutrition, then save it to the client's coach profile."})]);
+const name=e("input",{type:"text",maxlength:"120",placeholder:"e.g. Sarah — Upper / Lower Phase 1","aria-label":"Client-specific program name"}),person=e("select",{"aria-label":"Select client"});clients.forEach(client=>person.append(e("option",{value:client,text:client})));
+try{const previous=localStorage.getItem(LASTCLIENT);if(clients.includes(previous))person.value=previous}catch{}
+const nutritional=e("input",{type:"checkbox",checked:false}),choice=e("label",{className:"coach-plan-nutrition-choice"},[nutritional,e("span",{text:"Include nutrition with this program"})]);
+root.append(heading,field("Program name",name),field("Client",person),choice);
+builder.querySelector(".head")?.after(root);
+if(!root.parentElement)builder.prepend(root);
+const editor=$("coach-full-builder");
+const nutrition=e("section",{id:"coach-unified-nutrition",className:"card coach-plan-nutrition"}),nutritionHead=e("div",{},[e("h2",{text:"Nutrition plan"}),e("p",{className:"sub",text:"Optional · calorie target, expenditure, macros, goal weight and meal guidance"})]);
+nutrition.append(nutritionHead);
+const calories=$("nutrition")?.querySelector(".coach-calorie-plan"),macros=$("coach-macro-editor");
+if(calories)nutrition.append(calories);
+if(macros)nutrition.append(macros);
+const meals=e("textarea",{rows:"4",placeholder:"Meal schedule, example foods, dietary preferences and nutrition coaching notes…" });
+nutrition.append(field("Meal guidance",meals));
+const volume=$("coach-full-builder-volume");if(volume)volume.after(nutrition);else builder.append(nutrition);
+const old=$("coach-unified-nutrition");if(old&&old!==nutrition)old.remove();
+const summary=e("div",{className:"coach-plan-summary"}),actions=e("div",{className:"coach-plan-actions"}),status=e("p",{className:"sub",role:"status",text:"Preview only: saving keeps the program in this browser. It does not send anything to the client app."});
+const footer=e("section",{className:"card coach-plan-footer"},[e("h2",{text:"Review & save"}),summary,actions,status]);nutrition.after(footer);
+let program=read(WORKING,{name:"New Coaching Program",days:[{name:"Workout A",exercises:[]}]}),activeId=null,changingName=false,customNamed=false;
+name.value=program?.name||"New Coaching Program";
+function nutritionEnabled(){return nutritional.checked}
+function updateNutrition(){nutrition.hidden=!nutritionEnabled();root.classList.toggle("nutrition-selected",nutritional.checked);updateSummary()}
+function selectClient(client){if(!clients.includes(client))return;person.value=client;try{localStorage.setItem(LASTCLIENT,client)}catch{};for(const node of [calories,macros]){const select=node?.querySelector("select");if(select&&[...select.options].some(opt=>opt.value===client)){select.value=client;select.dispatchEvent(new Event("change",{bubbles:true}))}}updateSummary()}
+function packageData(){const training=structuredClone(program||read(WORKING,{}));training.name=name.value.trim();const yes=nutritionEnabled();return {id:activeId||("cp-"+Date.now()+"-"+Math.random().toString(36).slice(2)),name:training.name,clientName:person.value,training,includeNutrition:yes,nutrition:yes?{caloriePlan:read(CAL,{})[person.value]||null,macroPlan:read(MACRO,{})[person.value]||null,mealGuidance:meals.value.trim()}:null,status:"coach_draft",deliveryStatus:"not_sent",updatedAt:new Date().toISOString()}}
+function updateSummary(){const days=Array.isArray(program?.days)?program.days:[],count=days.reduce((n,d)=>n+(d.exercises?.length||0),0);summary.replaceChildren();for(const [label,value] of [["Client",person.value],["Training",days.length+" days · "+count+" exercises"],["Nutrition",nutritional.checked?"Included":"Not included"],["Delivery","Not sent"]])summary.append(e("div",{},[e("small",{text:label}),e("strong",{text:value})]))}
+function save(){const payload=packageData();if(!payload.name){status.textContent="Enter a program name before saving.";name.focus();return}if(!payload.training?.days?.some(d=>d.exercises?.length)){status.textContent="Add at least one exercise to the workout program before saving.";return}const all=getProfiles(),records=Array.isArray(all[person.value])?all[person.value]:[],idx=records.findIndex(x=>x.id===payload.id);if(idx>=0){payload.createdAt=records[idx].createdAt||payload.updatedAt;records[idx]=payload}else{payload.createdAt=payload.updatedAt;records.unshift(payload)}all[person.value]=records;if(!writeProfiles(all)){status.textContent="Unable to save: browser storage is unavailable or full.";return}activeId=payload.id;status.textContent="Saved "+payload.name+" to "+person.value+"'s Coach Profile (in this browser only).";document.dispatchEvent(new CustomEvent("levelup:coach-client-program-saved",{detail:{clientName:person.value,planId:payload.id}}))}
+function exportFile(){const payload=packageData();const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),link=e("a",{href:url,download:"level-up-client-plan.json"});link.click();setTimeout(()=>URL.revokeObjectURL(url),1500)}
+function loadSaved(detail){const {clientName,id}=detail||{};if(!clients.includes(clientName))return;const saved=(getProfiles()[clientName]||[]).find(x=>x.id===id);if(!saved)return;activeId=saved.id;name.value=saved.name||saved.training?.name||"";customNamed=true;selectClient(clientName);nutritional.checked=!!saved.includeNutrition;meals.value=saved.nutrition?.mealGuidance||"";updateNutrition();document.dispatchEvent(new CustomEvent("levelup:coach-load-program",{detail:{plan:structuredClone(saved.training)}}));document.querySelector('[data-view="builder"]')?.click();status.textContent="Editing saved "+saved.name+" for "+clientName+". Save to update the client's coach profile."}
+name.addEventListener("input",()=>{customNamed=true;const label=name.value.trim();if(label){changingName=true;document.dispatchEvent(new CustomEvent("levelup:coach-rename-program",{detail:{name:label}}));changingName=false}});
+person.addEventListener("change",()=>{activeId=null;selectClient(person.value)});
+nutritional.addEventListener("change",updateNutrition);
+document.addEventListener("levelup:coach-program-rendered",ev=>{if(ev.detail?.plan){program=structuredClone(ev.detail.plan);if(!changingName){if(!customNamed)name.value=program.name||name.value;else if(program.name===name.value){}else{program.name=name.value.trim()||program.name}}updateSummary()}});
+document.addEventListener("levelup:coach-new-program",()=>{activeId=null;customNamed=false;name.value="New Coaching Program";meals.value="";nutritional.checked=false;updateNutrition()});
+document.addEventListener("levelup:coach-open-client-program",ev=>loadSaved(ev.detail));
+actions.append(btn("Save to Client Profile",save),btn("Export Plan",exportFile,true),btn("Send to Client App",()=>{status.textContent="Not sent. Client app syncing requires secure coach–client authorization and a real assignment API."},true));
+nutrition.addEventListener("change",updateSummary);
+selectClient(person.value);updateNutrition();
