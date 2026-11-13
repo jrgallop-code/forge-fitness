@@ -14,7 +14,7 @@ const b=nav.querySelector('[data-view="exercises"]');
 const group=h('div',{className:'library-nav-group'},[
 h('div',{className:'nav-heading',text:'LIBRARY'}),
 h('button',{className:'nav-sub',text:'Exercise library',onClick:()=>go('exercises')}),
-h('button',{className:'nav-sub',text:'Program library',onClick:()=>go('builder')}),
+h('button',{className:'nav-sub',text:'Program library',onClick:()=>document.dispatchEvent(new Event('levelup:open-program-library'))}),
 h('button',{className:'nav-sub',text:'Nutrition templates',onClick:()=>go('nutrition')})
 ]);b?.replaceWith(group);
 const newNav=[['calendar','▦ Calendar'],['inbox','✉ Messages'],['formreviews','▣ Form Videos']];
