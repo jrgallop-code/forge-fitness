@@ -1,3 +1,4 @@
+import { getCoachTargets } from "../nutrition/coach-managed-targets.js";
 import {
     getNutritionProfile,
     getNutritionMacroPreference,
@@ -29,13 +30,14 @@ function syncDashboardNutrition() {
         const value = calorieCard.querySelector("p");
         if (value) value.textContent = `${Math.round(calories)} kcal`;
         const source = calorieCard.querySelector("small");
-        if (source) source.textContent = "Saved Target";
+        if (source) source.textContent = getCoachTargets() ? "Coach Managed" : "Saved Target";
     }
 
     if (!profile || !Number.isFinite(Number(profile.weightLb))) return;
 
     const macroPreset = getNutritionMacroPreference()?.macroPreset || "balanced";
-    const macros = calculateMacroTargets({
+    const coach = getCoachTargets();
+    const macros = coach ? coach.targets : calculateMacroTargets({
         calories,
         weightKg: poundsToKg(Number(profile.weightLb)),
         macroPreset
