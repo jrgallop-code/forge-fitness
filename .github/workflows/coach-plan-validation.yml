@@ -1,0 +1,30 @@
+name: Coach plan safety checks
+on:
+  pull_request:
+    paths:
+      - 'js/nutrition/coach-managed-targets.js'
+      - 'js/nutrition/nutrition-storage.js'
+      - 'js/nutrition/maintenance-check-in.js'
+      - 'js/more/coach-assigned-programs.js'
+      - 'cloud/src/coach-assignments.js'
+      - 'tests/coach-managed-targets.test.mjs'
+      - '.github/workflows/coach-plan-validation.yml'
+  workflow_dispatch:
+jobs:
+  coach-safety:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node --check js/nutrition/coach-managed-targets.js
+      - run: node --check js/nutrition/nutrition-storage.js
+      - run: node --check js/more/coach-assigned-programs.js
+      - run: node --check cloud/src/coach-assignments.js
+      - run: node --test tests/coach-managed-targets.test.mjs
+      - run: npm test
