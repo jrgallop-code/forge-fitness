@@ -116,6 +116,7 @@ export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTar
 }
 
 export function queueMaintenanceReview(checkIn) {
+    if (getCoachTargets()) return false;
     if (!checkIn?.ready || !Number.isFinite(checkIn.proposedMaintenance)) return false;
     localStorage.setItem(PENDING_KEY, JSON.stringify({
         maintenanceCalories: checkIn.proposedMaintenance,
@@ -147,6 +148,7 @@ export function markMaintenanceCheckInReviewed(checkIn, action = "kept") {
 }
 
 export function buildAutomaticMaintenanceUpdate(checkIn, maximumChange = MAXIMUM_AUTOMATIC_CHANGE) {
+    if (getCoachTargets()) return null;
     if (!checkIn?.ready) return null;
     const fallbackProposed = Number(checkIn?.currentMaintenance) + Number(checkIn?.change);
     const update = buildCoordinatedWeeklyUpdate({
@@ -166,6 +168,7 @@ export function buildAutomaticMaintenanceUpdate(checkIn, maximumChange = MAXIMUM
 }
 
 function applyAutomaticMaintenanceUpdate(checkIn, phase) {
+    if (getCoachTargets()) return false;
     const update = buildAutomaticMaintenanceUpdate(checkIn);
     if (!update || !phase?.goalId) return false;
     markMaintenanceCheckInReviewed(checkIn, "automatic");
