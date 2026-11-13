@@ -1,5 +1,6 @@
 import { instagramAdmin, instagramWebhook, instagramCallback } from './instagram/automation.js';
 import { coachAnalyticsRoute } from './coach-analytics.js';
+import { coachAssignmentRoute } from './coach-assignments.js';
 import {extraUsdaNutrition,extraUsdaLabelNutrition,extraOpenFoodFactsNutrition,extraOpenFoodFactsSetNutrition} from './food-extra-nutrients.js';
 import { featureBoard } from "./feature-board.js";
 import { SWISS_CHALET_FOODS } from "./data/swiss-chalet-foods.js";
@@ -135,6 +136,9 @@ async function handleRequest(request, env, ctx) {
         if (!isAdminUser(user, env)) return json({error:'Admin access required.'},403,request,env);
         const response = await instagramAdmin(request,env,readJson);
         return json(response.data,response.status,request,env);
+    }
+    if (url.pathname === "/v1/coach/assignments" || url.pathname.startsWith("/v1/coach/assignments/") || url.pathname === "/v1/client/coach-assignments") {
+        return coachAssignmentRoute({request, env, user, url});
     }
     if (url.pathname.startsWith("/v1/coach/") || url.pathname.startsWith("/v1/client/coach-links")) {
         return coachAnalyticsRoute({request, env, user, url});
