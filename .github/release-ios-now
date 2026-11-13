@@ -646,3 +646,5 @@ iOS compact routine builder, shared rest intervals, cardio and video thumbnails 
 2026-11-12: Release dashed estimated weight trends and dated expenditure fallback.
 
 2026-11-12: Retry TestFlight with a fresh build after 357 verification timed out.
+
+2026-11-12: Count closed food days immediately and align the displayed weekly weight trend.
