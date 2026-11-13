@@ -658,7 +658,10 @@ function applyFullAdjustment(event, context = {}) {
 
 function refresh() {
     let phase = getActiveNutritionPhase();
-    if (!phase) return;
+    if (!phase) {
+        setWeeklyReviewReadyState(false);
+        return;
+    }
     let metrics = getActivePhaseMetrics(phase, { rolling: true });
     const restoredPhase = restoreIndependentReviewMaintenance(phase);
     if (restoredPhase !== phase) {
