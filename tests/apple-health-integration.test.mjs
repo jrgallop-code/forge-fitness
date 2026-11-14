@@ -32,6 +32,6 @@ test("Sleep is read-only and keeps historical manual data untouched", () => {
 test("onboarding and More include Apple Health connection", () => {
     assert.match(onboarding, /"apple-health"/);
     assert.match(onboarding, /data-apple-health-connect/);
-    assert.match(ui, /data\.appleHealthSettings/);
+    assert.match(ui, /dataset\.appleHealthSettings/);
     assert.match(ui, /data-apple-health-open-steps/);
 });
