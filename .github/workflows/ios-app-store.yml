@@ -168,6 +168,13 @@ jobs:
       - name: Resolve Swift packages
         run: xcodebuild -resolvePackageDependencies -project ios/App/App.xcodeproj -scheme App
 
+      - name: Inspect Apple Distribution certificates
+        shell: bash
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: node scripts/app-store-signing.mjs inspect-certificates
+
       - name: Create temporary App Store signing assets
         id: signing
         shell: bash
