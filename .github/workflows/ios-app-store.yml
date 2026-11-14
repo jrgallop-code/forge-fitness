@@ -301,9 +301,36 @@ jobs:
             echo "No IPA was produced."
             exit 1
           fi
-          xcrun altool --upload-app --type ios --file "$ipa_path" \
-            --apiKey "$APP_STORE_CONNECT_KEY_ID" \
-            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+          # Capture Apple's complete transporter response for diagnosis. Retry only
+          # network/server/rate-limit failures, never Apple's validation rejections.
+          upload_log="$RUNNER_TEMP/level-up-appstore-upload.log"
+          for attempt in 1 2 3; do
+            echo "App Store Connect upload attempt $attempt/3"
+            set +e
+            xcrun altool --upload-app --type ios --file "$ipa_path" \
+              --apiKey "$APP_STORE_CONNECT_KEY_ID" \
+              --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" 2>&1 | tee "$upload_log"
+            upload_status=${PIPESTATUS[0]}
+            set -e
+            if [[ "$upload_status" -eq 0 ]]; then
+              echo "Upload was accepted by App Store Connect."
+              exit 0
+            fi
+            if grep -Eiq 'ITMS-|ERROR ITMS|ERROR:.*(bundle|entitlement|provision|privacy|invalid|signature|version|asset)' "$upload_log"; then
+              echo "::error::Apple rejected this build. Review the exact ITMS diagnostic above; retrying the same IPA will not resolve validation."
+              exit "$upload_status"
+            fi
+            if ! grep -Eiq 'timed out|timeout|temporar|connection|network|unavailable|429|50[0234]|rate limit|service.*busy|try again|transport error' "$upload_log"; then
+              echo "::error::Upload failed without a confirmed transient error; see the complete log above."
+              exit "$upload_status"
+            fi
+            if [[ "$attempt" -eq 3 ]]; then
+              echo "::error::Upload failed after three attempts."
+              exit "$upload_status"
+            fi
+            echo "Retrying transient upload failure after $((attempt * 30)) seconds."
+            sleep "$((attempt * 30))"
+          done
 
       - name: Remove temporary Apple credential
         if: always()
