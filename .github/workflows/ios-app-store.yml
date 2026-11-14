@@ -184,6 +184,11 @@ jobs:
           APP_BUNDLE_IDENTIFIER: com.leveluphypertrophy.app
           APP_EXTENSION_BUNDLE_IDENTIFIER: com.leveluphypertrophy.app.timer
           SIGNING_DIR: ${{ runner.temp }}/level-up-signing
+          # One-time retirement of the certificate created during rejected run #377.
+          # Exact ID, serial and expiry verified against Apple's API inventory.
+          LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE: 22RJ2NFU6L
+          LEVEL_UP_CI_CERTIFICATE_SERIAL_TO_REVOKE: 7CD2CDF0543A881F4BC69153070CC4BF
+          LEVEL_UP_CI_CERTIFICATE_EXPIRATION_TO_REVOKE: 2027-11-14T16:22:19.000+00:00
         run: |
           echo "SIGNING_DIR=$SIGNING_DIR" >> "$GITHUB_ENV"
           echo "SIGNING_STATE_PATH=$SIGNING_DIR/state.json" >> "$GITHUB_ENV"
