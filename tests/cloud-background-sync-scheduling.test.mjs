@@ -18,7 +18,7 @@ test("an earlier backup cannot be postponed by later UI activity", () => {
 test("changes made during an upload trigger a follow-up backup", () => {
     assert.match(source, /backupRequestedWhileInFlight = true/);
     assert.match(source, /if \(backupRequestedWhileInFlight\)/);
-    assert.match(source, /scheduleBackup\(1_000\)/);
+    assert.match(source, /scheduleBackup\(delay\)/);
 });
 
 test("backgrounding starts backup immediately instead of relying on a timer", () => {
