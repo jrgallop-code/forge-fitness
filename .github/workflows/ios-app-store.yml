@@ -332,6 +332,28 @@ jobs:
             sleep "$((attempt * 30))"
           done
 
+      - name: Summarize Apple upload error
+        if: failure()
+        shell: bash
+        run: |
+          log="$RUNNER_TEMP/level-up-appstore-upload.log"
+          if [[ -f "$log" ]]; then
+            echo "## App Store Connect upload failure" >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~text' >> "$GITHUB_STEP_SUMMARY"
+            grep -Ei -A 3 -B 2 'ITMS-|error|rejected|invalid|failed|upload' "$log" | tail -100 >> "$GITHUB_STEP_SUMMARY" || true
+            echo '~~~' >> "$GITHUB_STEP_SUMMARY"
+            echo "See the uploaded transporter log artifact for complete details." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Save failed upload diagnostic
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: appstore-upload-error
+          path: ${{ runner.temp }}/level-up-appstore-upload.log
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Remove temporary Apple credential
         if: always()
         shell: bash
@@ -339,14 +361,10 @@ jobs:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         run: |
-          # Apple validates the distribution certificate asynchronously after
-          # altool accepts the upload. Revoking it here caused ITMS-90035.
-          # Only revoke server-side assets when no build was successfully sent.
-          if [[ "${{ steps.upload.outcome }}" != "success" ]]; then
-            node scripts/app-store-signing.mjs cleanup
-          else
-            echo "Keeping App Store signing assets active while Apple processes the uploaded build."
-          fi
+          # Apple's validation can continue after an upload returns an error.
+          # Never revoke certificates automatically: a previous ITMS-90035
+          # failure was caused by invalidating signing assets too early.
+          echo "Leaving server-side signing assets intact pending Apple processing/reconciliation."
           if [[ -n "${INSTALLED_PROFILE_PATH:-}" ]]; then
             rm -f "$INSTALLED_PROFILE_PATH"
           fi
