@@ -48,16 +48,19 @@ test("App Store releases use cloud signing and clean up the private key", () => 
     assert.match(releaseWorkflow, /xcrun altool --upload-app/);
     assert.match(releaseWorkflow, /codesign --verify --deep --strict/);
     assert.match(releaseWorkflow, /if:\s*always\(\)/);
-    assert.match(releaseWorkflow, /node scripts\/app-store-signing\.mjs cleanup/);
-    assert.match(releaseWorkflow, /steps\.upload\.outcome.*!=.*success/);
-    assert.match(releaseWorkflow, /Keeping App Store signing assets active while Apple processes/);
+    assert.doesNotMatch(releaseWorkflow, /node scripts\/app-store-signing\.mjs cleanup/);
+    assert.match(releaseWorkflow, /Leaving server-side signing assets intact pending Apple processing/);
+    assert.match(releaseWorkflow, /appstore-upload-error/);
+    assert.match(releaseWorkflow, /signed-entitlements\.plist/);
     assert.match(releaseWorkflow, /security delete-keychain/);
     assert.match(releaseWorkflow, /rm -f \"\$AUTH_KEY_PATH\"/);
 });
 
-test("App Store signing rotates the previous CI distribution certificate on the next release", () => {
+test("App Store signing refuses unsafe bulk certificate rotation", () => {
   assert.match(signingScript, /reachedCertificateLimit/);
   assert.match(signingScript, /filter%5BcertificateType%5D=DISTRIBUTION/);
-  assert.match(signingScript, /api\(`\/certificates\/\$\{item\.id\}`,[\s\S]*method: 'DELETE'/);
-  assert.match(signingScript, /certificate = await api\('\/certificates', certificateRequest\)/);
+  assert.match(signingScript, /LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE/);
+  assert.match(signingScript, /selectedCertificateId/);
+  assert.doesNotMatch(signingScript, /for \\(const item of distributionCertificates\\)/);
+  assert.match(signingScript, /certificate = await api\\('\/certificates', certificateRequest\\)/);
 });
