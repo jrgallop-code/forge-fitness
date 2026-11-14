@@ -79,19 +79,26 @@ function renderDashboard(data){
     const rows=data.steps?.slice(-7)||[];
     const available=rows.some(r=>r.steps !== null);
     const total=rows.reduce((sum,r)=>sum+Number(r.steps||0),0);
-    card.querySelector("[data-apple-step-total]").textContent=available?number(total):"—";
-    card.querySelector("[data-apple-step-average]").textContent=available?`Daily average: ${number(Math.round(total/7))} · Apple Health`:"Connect Apple Health to view steps";
+    const totalNode=card.querySelector("[data-apple-step-total]");
+    const averageNode=card.querySelector("[data-apple-step-average]");
+    const totalLabel=available?number(total):"—";
+    const averageLabel=available?`Daily average: ${number(Math.round(total/7))} · Apple Health`:"Connect Apple Health to view steps";
+    if(totalNode.textContent!==totalLabel)totalNode.textContent=totalLabel;
+    if(averageNode.textContent!==averageLabel)averageNode.textContent=averageLabel;
     // Existing manual sleep dashboard metric must not imply it is from Apple Health.
     const sleepCard=[...host.querySelectorAll(".metric-card")].find(el=>el.textContent?.includes("Latest Sleep Duration"));
     if(sleepCard){
        const value=sleepCard.querySelector("strong, .metric-value, h3 + p");
-       if(value)value.textContent=data.sleep?.length?Number(data.sleep.at(-1).hours).toFixed(1)+"h":"—";
+       if(value){
+           const label=data.sleep?.length?Number(data.sleep.at(-1).hours).toFixed(1)+"h":"—";
+           if(value.textContent!==label)value.textContent=label;
+       }
        sleepCard.setAttribute("title","Apple Health sleep (read-only)");
     }
 }
 function showSteps(){
     const content=document.getElementById("content");if(!content)return;
-    content.innerHTML=`<section class="section-card lu-health-view"><button type="button" class="secondary-btn" data-apple-health-back>← Dashboard</button><h2>Steps</h2><p>Daily activity from Apple Health</p><div data-apple-step-detail>Loading activity…</div><button class="secondary-btn" data-apple-health-refresh type="button">Refresh from Apple Health</button></section>`;
+    content.innerHTML=`<section class="section-card lu-health-view"><button type="button" class="secondary-btn" data-apple-health-back="dashboard">← Dashboard</button><h2>Steps</h2><p>Daily activity from Apple Health</p><div data-apple-step-detail>Loading activity…</div><button class="secondary-btn" data-apple-health-refresh type="button">Refresh from Apple Health</button></section>`;
     void refreshAppleHealth().then(renderStepDetail).catch(e=>{const n=content.querySelector("[data-apple-step-detail]");if(n)n.textContent=e.message});
 }
 function renderStepDetail(data){
@@ -103,7 +110,7 @@ function renderStepDetail(data){
 }
 function openSettings(){
  const content=document.getElementById("content");if(!content)return;
- content.innerHTML=`<section class="section-card lu-health-view"><button class="secondary-btn" data-apple-health-back type="button">← More</button><h2>Apple Health</h2><p>Allow Level Up to read your steps and sleep. Garmin data appears here once Garmin Connect has written it into Apple Health.</p>
+ content.innerHTML=`<section class="section-card lu-health-view"><button class="secondary-btn" data-apple-health-back="more" type="button">← More</button><h2>Apple Health</h2><p>Allow Level Up to read your steps and sleep. Garmin data appears here once Garmin Connect has written it into Apple Health.</p>
  <button type="button" class="primary-btn" data-apple-health-connect>Connect Apple Health</button>
  <button type="button" class="secondary-btn" data-apple-health-refresh>Refresh data</button>
  <p data-apple-health-message aria-live="polite"></p><small>Read-only. Level Up does not send HealthKit steps or sleep to its cloud backup.</small></section>`;
@@ -125,7 +132,7 @@ document.addEventListener("click", async event=>{
  const target=event.target.closest("button");if(!target)return;
  if(target.matches("[data-apple-health-settings]")){event.preventDefault();openSettings();}
  else if(target.matches("[data-apple-health-open-steps]")){event.preventDefault();showSteps();}
- else if(target.matches("[data-apple-health-back]")){event.preventDefault();document.querySelector('.bottom-nav .nav-btn[data-page="more"]')?.click() || window.location.reload();}
+ else if(target.matches("[data-apple-health-back]")){event.preventDefault();const page=target.dataset.appleHealthBack==="dashboard"?"dashboard":"more";document.querySelector(`.bottom-nav .nav-btn[data-page="${page}"]`)?.click();}
  else if(target.matches("[data-apple-health-connect]")){
    event.preventDefault();const status=await connectAppleHealth();
    document.querySelectorAll("[data-apple-health-message]").forEach(e=>e.textContent=status.message);
