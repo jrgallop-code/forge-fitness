@@ -672,3 +672,5 @@ Use the shared weekly weight trend for the expenditure correction.
 2026-11-14: Verify Level Up 1.0.6 App Store Connect API credentials explicitly before signing, distinguish uploader authorization from binary validation, and capture detailed failure logs.
 
 2026-11-14: Read-only Apple Distribution certificate inventory to identify obsolete CI signing identity without revoking unrelated certificates; Level Up 1.0.6 HealthKit release.
+
+2026-11-14: User-requested release of Level Up 1.0.6 including HealthKit Steps and Sleep, with corrected privacy description and protected distribution signing.
