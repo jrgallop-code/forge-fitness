@@ -135,7 +135,9 @@ async function createSigningAssets() {
     const selected = (existing?.data || []).find(item =>
       item.id === selectedCertificateId &&
       item.attributes?.certificateType === 'DISTRIBUTION' &&
-      /Level Up CI Distribution/i.test(String(item.attributes?.displayName || item.attributes?.name || ''))
+      (item.attributes?.displayName || item.attributes?.name) === 'John Gallop' &&
+      item.attributes?.serialNumber === (process.env.LEVEL_UP_CI_CERTIFICATE_SERIAL_TO_REVOKE || '') &&
+      item.attributes?.expirationDate === (process.env.LEVEL_UP_CI_CERTIFICATE_EXPIRATION_TO_REVOKE || '')
     );
     if (!selected) {
       throw new Error('Specified certificate was not verifiably a Level Up CI Distribution certificate. No certificates were revoked.');
