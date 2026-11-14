@@ -287,6 +287,12 @@ jobs:
 
           codesign --verify --deep --strict --verbose=4 "$app_path"
           codesign -d --verbose=4 "$app_path"
+          # HealthKit must be present both in the final signature and the
+          # embedded App Store provisioning profile, not just the source plist.
+          codesign -d --entitlements :- "$app_path" > "$RUNNER_TEMP/signed-entitlements.plist" 2>/dev/null
+          /usr/libexec/PlistBuddy -c 'Print :com.apple.developer.healthkit' "$RUNNER_TEMP/signed-entitlements.plist" | grep -qx 'true'
+          security cms -D -i "$app_path/embedded.mobileprovision" > "$RUNNER_TEMP/embedded-profile.plist"
+          /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.developer.healthkit' "$RUNNER_TEMP/embedded-profile.plist" | grep -qx 'true'
           python3 tools/verify-ipa-thumbnails.py "$ipa_path"
 
       - name: Upload build to App Store Connect
