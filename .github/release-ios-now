@@ -664,3 +664,5 @@ Use the shared weekly weight trend for the expenditure correction.
 2026-11-14: Build and upload Level Up iOS HealthKit integration: read-only Steps and Sleep, dashboard card, More connection controls, and optional onboarding permission step. Enable HealthKit on the App ID before signing.
 
 2026-11-14: Retry Apple Health TestFlight build with detailed App Store Connect upload diagnostics and transient transport retry handling.
+
+2026-11-14: Safe Apple Health TestFlight retry: prevent bulk distribution-certificate revocation, preserve signing identity during Apple processing, verify signed HealthKit entitlements, and save complete ITMS failure logs.
