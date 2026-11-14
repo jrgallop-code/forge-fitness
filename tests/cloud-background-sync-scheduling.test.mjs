@@ -18,7 +18,7 @@ test("an earlier backup cannot be postponed by later UI activity", () => {
 test("changes made during an upload trigger a follow-up backup", () => {
     assert.match(source, /backupRequestedWhileInFlight = true/);
     assert.match(source, /if \(backupRequestedWhileInFlight\)/);
-    assert.match(source, /scheduleBackup\(1_000\)/);
+    assert.match(source, /scheduleBackup\(delay\)/);
 });
 
 test("backgrounding starts backup immediately instead of relying on a timer", () => {
@@ -26,4 +26,19 @@ test("backgrounding starts backup immediately instead of relying on a timer", ()
     assert.match(source, /pagehide/);
     assert.match(source, /appStateChange/);
     assert.match(source, /else \{[\s\S]*void runAutomaticBackup\(\)/);
+});
+
+test("backup recovers when a renewed cloud token is observed", () => {
+    assert.match(source, /function recoverSessionIfChanged\(\)/);
+    assert.match(source, /currentToken === rejectedSessionToken/);
+});
+
+test("transient errors automatically request a bounded retry", () => {
+    assert.match(source, /scheduleRetryAfterFailure\(\)/);
+    assert.match(source, /pendingRetryDelayMs \?\? 1_000/);
+});
+
+test("remote versions are adopted only if backup contents match", () => {
+    assert.match(source, /remoteFingerprint === fingerprint/);
+    assert.match(source, /verifyBackupSnapshot\(saved\.backup\)/);
 });
