@@ -74,7 +74,7 @@ function renderDashboard(data){
     if(!card){
         card=document.createElement("article");card.className="metric-card lu-health-steps";card.dataset.levelupStepsCard="1";
         card.innerHTML='<button type="button" data-apple-health-open-steps><span>👟 Steps · Last 7 Days</span><strong data-apple-step-total>—</strong><small data-apple-step-average>Apple Health · Connect to view</small></button>';
-        host.appendChild(card);
+        host.insertBefore(card, host.querySelector('.metric-card'));
     }
     const rows=data.steps?.slice(-7)||[];
     const available=rows.some(r=>r.steps !== null);
