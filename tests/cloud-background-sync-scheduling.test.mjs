@@ -27,3 +27,22 @@ test("backgrounding starts backup immediately instead of relying on a timer", ()
     assert.match(source, /appStateChange/);
     assert.match(source, /else \{[\s\S]*void runAutomaticBackup\(\)/);
 });
+
+test("a renewed cloud session can resume automatic backups after a 401", () => {
+    assert.match(source, /function recoverSessionIfChanged\(\)/);
+    assert.match(source, /currentToken === rejectedSessionToken/);
+    assert.match(source, /rejectedSessionToken = getSession\(\)\?\.token/);
+    assert.match(source, /recoverSessionIfChanged\(\);/);
+});
+
+test("transient backup failures request an exponential-backoff retry", () => {
+    assert.match(source, /scheduleRetryAfterFailure\(\);/);
+    assert.match(source, /Math\.min\(MAX_RETRY_DELAY_MS, retryDelayMs \* 2\)/);
+    assert.match(source, /pendingRetryDelayMs \?\? 1_000/);
+});
+
+test("a different remote version is adopted only when full backup contents match", () => {
+    assert.match(source, /remoteFingerprint === fingerprint/);
+    assert.match(source, /status: "newer-cloud-backup"/);
+    assert.match(source, /verifyBackupSnapshot\(saved\.backup\)/);
+});
