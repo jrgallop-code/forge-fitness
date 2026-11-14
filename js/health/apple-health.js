@@ -78,12 +78,13 @@ function renderDashboard(data){
         host.insertBefore(card, host.querySelector('.metric-card'));
     }
     const rows=data.steps?.slice(-7)||[];
-    const available=rows.some(r=>r.steps !== null);
-    const total=rows.reduce((sum,r)=>sum+Number(r.steps||0),0);
+    const measured=rows.filter(r=>Number.isFinite(r.steps) && r.steps>=0);
+    const available=measured.length>0;
+    const total=measured.reduce((sum,r)=>sum+r.steps,0);
     const totalNode=card.querySelector("[data-apple-step-total]");
     const averageNode=card.querySelector("[data-apple-step-average]");
     const totalLabel=available?`Weekly total: ${number(total)} · Apple Health`:"Connect Apple Health to view steps";
-    const averageLabel=available?number(Math.round(total/7))+" steps/day":"—";
+    const averageLabel=available?number(Math.round(total/measured.length))+" steps/day":"—";
     if(totalNode.textContent!==totalLabel)totalNode.textContent=totalLabel;
     if(averageNode.textContent!==averageLabel)averageNode.textContent=averageLabel;
     // Existing manual sleep dashboard metric must not imply it is from Apple Health.
