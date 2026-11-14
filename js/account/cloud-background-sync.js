@@ -20,12 +20,16 @@ let backupInFlight = false;
 let backupRequestedWhileInFlight = false;
 let syncStarted = false;
 let authBlocked = false;
+let rejectedSessionToken = null;
+let retryDelayMs = 5_000;
+const MAX_RETRY_DELAY_MS = 5 * 60 * 1000;
 
 initializeCloudBackgroundSync();
 
 function initializeCloudBackgroundSync() {
     window.addEventListener("levelup:cloud-session-started", () => {
         authBlocked = false;
+        rejectedSessionToken = null;
         startCloudBackgroundSync();
     });
     if (!isRecoveryLaunch() && getSession()) startCloudBackgroundSync();
@@ -43,14 +47,19 @@ function startCloudBackgroundSync() {
     scheduleBackup(5_000);
 
     window.setInterval(() => void recordActivity(), ACTIVITY_INTERVAL_MS);
-    window.setInterval(() => scheduleBackup(0), BACKUP_CHECK_INTERVAL_MS);
+    window.setInterval(() => {
+        recoverSessionIfChanged();
+        scheduleBackup(0);
+    }, BACKUP_CHECK_INTERVAL_MS);
     window.addEventListener("online", () => {
+        recoverSessionIfChanged();
         void recordActivity();
         scheduleBackup(750);
     });
     window.addEventListener("levelup:cloud-sync-complete", () => scheduleBackup(0));
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
+            recoverSessionIfChanged();
             void recordActivity();
             scheduleBackup(1_000);
         }
@@ -90,6 +99,7 @@ function bindNativeLifecycleBackup() {
         if (!appPlugin?.addListener) return;
         void appPlugin.addListener("appStateChange", event => {
             if (event?.isActive) {
+                recoverSessionIfChanged();
                 void recordActivity();
                 scheduleBackup(750);
             }
@@ -105,6 +115,7 @@ function bindNativeLifecycleBackup() {
 }
 
 function scheduleBackup(delay) {
+    recoverSessionIfChanged();
     if (authBlocked || isRecoveryLaunch() || isLocalDataSandbox() || !getSession() || !navigator.onLine) return;
     const dueAt = Date.now() + Math.max(0, Number(delay) || 0);
     if (backupInFlight) {
@@ -134,6 +145,7 @@ async function recordActivity() {
 }
 
 async function runAutomaticBackup() {
+    recoverSessionIfChanged();
     if (backupInFlight) {
         backupRequestedWhileInFlight = true;
         return;
@@ -176,6 +188,25 @@ async function runAutomaticBackup() {
         }
 
         if (remote && Number(state.version || 0) !== Number(remote.version)) {
+            // Another device or a manual backup changed the cloud version.
+            // Adopt it only if the complete remote contents already match local data.
+            // Never overwrite an unknown remote version automatically.
+            const saved = await api("/v1/backup");
+            if (Number(saved.version) === Number(remote.version)) {
+                verifyBackupSnapshot(saved.backup);
+                const remoteFingerprint = await backupFingerprint(saved.backup);
+                if (remoteFingerprint === fingerprint) {
+                    saveAutoState({
+                        version: Number(saved.version),
+                        fingerprint,
+                        summary,
+                        updatedAt: remote.updated_at,
+                        completedAt: new Date().toISOString(),
+                        status: "synced"
+                    });
+                    return;
+                }
+            }
             saveAutoState({
                 ...state,
                 status: "newer-cloud-backup",
@@ -215,6 +246,7 @@ async function runAutomaticBackup() {
             version: result.version,
             completedAt
         }));
+        retryDelayMs = 5_000;
         saveAutoState({
             version: Number(result.version),
             fingerprint,
@@ -252,13 +284,16 @@ async function runAutomaticBackup() {
                 checkedAt: new Date().toISOString()
             });
             console.warn("Level Up automatic backup was deferred:", error.message);
+            scheduleRetryAfterFailure();
         }
     }
     finally {
         backupInFlight = false;
         if (backupRequestedWhileInFlight) {
             backupRequestedWhileInFlight = false;
-            scheduleBackup(1_000);
+            const delay = pendingRetryDelayMs ?? 1_000;
+            pendingRetryDelayMs = null;
+            scheduleBackup(delay);
         }
     }
 }
@@ -411,7 +446,28 @@ function isLocalDataSandbox() {
     return document.documentElement.dataset.localDataSandbox === "true";
 }
 
+function recoverSessionIfChanged() {
+    if (!authBlocked) return;
+    const currentToken = getSession()?.token || null;
+    if (!currentToken || currentToken === rejectedSessionToken) return;
+    authBlocked = false;
+    rejectedSessionToken = null;
+    retryDelayMs = 5_000;
+    scheduleBackup(750);
+}
+
+function scheduleRetryAfterFailure() {
+    const delay = retryDelayMs;
+    retryDelayMs = Math.min(MAX_RETRY_DELAY_MS, retryDelayMs * 2);
+    // The retry must be scheduled after the current upload releases its lock.
+    backupRequestedWhileInFlight = true;
+    pendingRetryDelayMs = delay;
+}
+
+let pendingRetryDelayMs = null;
+
 function markAuthenticationRequired() {
+    rejectedSessionToken = getSession()?.token || null;
     authBlocked = true;
     window.clearTimeout(backupTimer);
     backupTimer = null;
