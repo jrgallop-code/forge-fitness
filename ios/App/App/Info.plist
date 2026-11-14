@@ -120,6 +120,8 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Level Up does not write to Apple Health. It only reads steps and sleep with your permission to display activity and recovery trends.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Level Up reads your steps and sleep from Apple Health to show activity and recovery trends. It never writes health data.</string>
 	<key>NSCameraUsageDescription</key>
