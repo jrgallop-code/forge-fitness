@@ -145,6 +145,8 @@ async function createSigningAssets() {
     const bundleId = bundleIds?.data?.find((item) => item.attributes?.identifier === bundleIdentifier)?.id;
     if (!bundleId) throw new Error(`No registered App ID found for ${bundleIdentifier}`);
 
+    // HealthKit is read-only (steps and sleep), enabled before creating the new distribution profile.
+    await ensureBundleCapability(bundleId, 'HEALTHKIT');
     await ensureBundleCapability(bundleId, 'APPLE_ID_AUTH', [{ key: 'APPLE_ID_AUTH_APP_CONSENT', options: [{ key: 'PRIMARY_APP_CONSENT', enabled: true }] }]);
 
     const extensionIdentifier = required('APP_EXTENSION_BUNDLE_IDENTIFIER');
