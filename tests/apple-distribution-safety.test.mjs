@@ -25,3 +25,11 @@ test("the signed binary and profile must contain HealthKit", () => {
   assert.match(workflow, /embedded\.mobileprovision/);
   assert.match(workflow, /com\.apple\.developer\.healthkit/);
 });
+
+test("the release verifies Apple credentials independently of IPA upload", () => {
+  assert.match(signing, /command === 'verify-auth'/);
+  assert.match(signing, /App Store Connect API authentication verified/);
+  assert.match(workflow, /Verify App Store Connect authentication/);
+  assert.match(workflow, /app-store-signing\.mjs verify-auth/);
+  assert.match(workflow, /transporter authentication or upload authorization failed/);
+});
