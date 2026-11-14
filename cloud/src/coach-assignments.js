@@ -22,6 +22,20 @@ function serialize(row,includePlan=true){const result={id:row.id,sourcePlanId:ro
 export async function coachAssignmentRoute({request,env,user,url}){
 const path=url.pathname,method=request.method,now=new Date().toISOString();
 if(!user?.id)return err(401,"Sign in required.",request,env);
+if(path==="/v1/coach/clients"&&method==="GET"){
+ if(!coachAllowed(user,env))return err(403,"Coach authorization required.",request,env);
+ // Never list arbitrary users: include only the coach's own account and
+ // athletes who explicitly approved training access and have not revoked it.
+ const linked=await env.DB.prepare(
+  "SELECT u.id,u.display_name,u.email,u.avatar_url,l.accepted_at FROM coach_training_links l JOIN users u ON u.id=l.client_user_id WHERE l.coach_user_id=? AND l.training_permission=1 AND l.revoked_at IS NULL ORDER BY LOWER(COALESCE(NULLIF(u.display_name,''),u.email)) LIMIT 250"
+ ).bind(user.id).all();
+ const clients=[{id:user.id,name:user.display_name||user.email||"My account",email:user.email||null,avatarUrl:user.avatar_url||null,isSelf:true,linked:true}];
+ for(const row of linked.results||[]){
+  if(row.id===user.id)continue;
+  clients.push({id:row.id,name:row.display_name||row.email||"Athlete",email:row.email||null,avatarUrl:row.avatar_url||null,isSelf:false,linked:true,linkedAt:row.accepted_at});
+ }
+ return json({clients},200,request,env);
+}
 if(path==="/v1/coach/assignments"&&method==="POST"){
  if(!coachAllowed(user,env))return err(403,"Coach authorization required.",request,env);
  const input=await read(request);if(!permitted(input))return err(400,"Invalid assignment JSON.",request,env);
