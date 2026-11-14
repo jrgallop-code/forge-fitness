@@ -666,3 +666,5 @@ Use the shared weekly weight trend for the expenditure correction.
 2026-11-14: Retry Apple Health TestFlight build with detailed App Store Connect upload diagnostics and transient transport retry handling.
 
 2026-11-14: Safe Apple Health TestFlight retry: prevent bulk distribution-certificate revocation, preserve signing identity during Apple processing, verify signed HealthKit entitlements, and save complete ITMS failure logs.
+
+2026-11-14: Build Level Up 1.0.6 with updated packaging assertions for safe Apple signing and Apple Health steps/sleep.
