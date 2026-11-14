@@ -136,7 +136,7 @@ async function handleRequest(request, env, ctx) {
         const response = await instagramAdmin(request,env,readJson);
         return json(response.data,response.status,request,env);
     }
-    if (url.pathname === "/v1/coach/assignments" || url.pathname.startsWith("/v1/coach/assignments/") || url.pathname === "/v1/client/coach-assignments") {
+    if (url.pathname === "/v1/coach/clients" || url.pathname === "/v1/coach/assignments" || url.pathname.startsWith("/v1/coach/assignments/") || url.pathname === "/v1/client/coach-assignments") {
         return coachAssignmentRoute({request, env, user, url});
     }
     if (url.pathname === "/v1/me" && request.method === "GET") {
