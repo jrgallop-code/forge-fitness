@@ -674,3 +674,5 @@ Use the shared weekly weight trend for the expenditure correction.
 2026-11-14: Read-only Apple Distribution certificate inventory to identify obsolete CI signing identity without revoking unrelated certificates; Level Up 1.0.6 HealthKit release.
 
 2026-11-14: User-requested release of Level Up 1.0.6 including HealthKit Steps and Sleep, with corrected privacy description and protected distribution signing.
+
+2026-11-14: Level Up 1.0.6 release with exact-match Apple CI certificate recovery (ID/serial/expiry) and corrected HealthKit 90683 purpose string.
