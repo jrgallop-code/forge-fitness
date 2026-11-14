@@ -1,6 +1,7 @@
 import Foundation
 import SQLite3
 import Capacitor
+import HealthKit
 
 final class LevelUpBridgeViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
@@ -16,6 +17,7 @@ final class LevelUpBridgeViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(LevelUpSQLiteStorePlugin())
         bridge?.registerPluginInstance(LevelUpSpotifyPlugin())
         bridge?.registerPluginInstance(LevelUpFoodSpeechPlugin())
+        bridge?.registerPluginInstance(LevelUpHealthKitPlugin())
     }
 }
 
@@ -354,6 +356,145 @@ private enum SQLiteStoreError: LocalizedError {
         switch self {
         case .database(let message):
             return message
+        }
+    }
+}
+
+ 
+// Read-only Apple Health bridge. Data stays on the phone and is queried on demand.
+@objc(LevelUpHealthKitPlugin)
+final class LevelUpHealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
+    let identifier = "LevelUpHealthKitPlugin"
+    let jsName = "LevelUpHealthKit"
+    let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "availability", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "connect", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "readActivity", returnType: CAPPluginReturnPromise)
+    ]
+
+    private let healthStore = HKHealthStore()
+    private let iso = ISO8601DateFormatter()
+
+    private var readTypes: Set<HKObjectType> {
+        [HKObjectType.quantityType(forIdentifier: .stepCount)!,
+         HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!]
+    }
+
+    @objc func availability(_ call: CAPPluginCall) {
+        call.resolve(["available": HKHealthStore.isHealthDataAvailable()])
+    }
+
+    @objc func connect(_ call: CAPPluginCall) {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            call.reject("Apple Health is unavailable on this device.")
+            return
+        }
+        healthStore.requestAuthorization(toShare: [], read: readTypes) { success, error in
+            if let error = error {
+                call.reject("Apple Health authorization could not be completed.", nil, error)
+                return
+            }
+            // HealthKit intentionally does not reveal whether a user denied read access.
+            call.resolve(["requested": success])
+        }
+    }
+
+    @objc func readActivity(_ call: CAPPluginCall) {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            call.reject("Apple Health is unavailable on this device.")
+            return
+        }
+        let requestedDays = min(max(call.getInt("days") ?? 14, 7), 90)
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        guard let start = calendar.date(byAdding: .day, value: -(requestedDays - 1), to: today),
+              let end = calendar.date(byAdding: .day, value: 1, to: today),
+              let quantity = HKObjectType.quantityType(forIdentifier: .stepCount),
+              let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            call.reject("Apple Health data types are unavailable.")
+            return
+        }
+        let formatter = DateFormatter()
+        formatter.calendar = calendar
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+
+        let lock = NSLock()
+        var steps: [String: Int] = [:]
+        var sleepIntervals: [String: [(Date, Date)]] = [:]
+        var firstError: Error?
+        let group = DispatchGroup()
+        group.enter()
+        let stepsQuery = HKStatisticsCollectionQuery(
+            quantityType: quantity,
+            quantitySamplePredicate: HKQuery.predicateForSamples(withStart: start, end: end),
+            options: .cumulativeSum,
+            anchorDate: today,
+            intervalComponents: DateComponents(day: 1)
+        )
+        stepsQuery.initialResultsHandler = { _, collection, error in
+            lock.lock()
+            if let error = error { firstError = error }
+            collection?.enumerateStatistics(from: start, to: end) { statistic, _ in
+                if let total = statistic.sumQuantity()?.doubleValue(for: HKUnit.count()) {
+                    steps[formatter.string(from: statistic.startDate)] = max(0, Int(total.rounded()))
+                }
+            }
+            lock.unlock()
+            group.leave()
+        }
+        healthStore.execute(stepsQuery)
+
+        group.enter()
+        // Include overnight samples whose start precedes the displayed day.
+        let sleepStart = calendar.date(byAdding: .day, value: -1, to: start) ?? start
+        let sleepQuery = HKSampleQuery(
+            sampleType: sleepType,
+            predicate: HKQuery.predicateForSamples(withStart: sleepStart, end: end),
+            limit: HKObjectQueryNoLimit,
+            sortDescriptors: nil
+        ) { _, samples, error in
+            lock.lock()
+            if let error = error { firstError = error }
+            for sample in (samples as? [HKCategorySample] ?? []) {
+                // 0 = in bed, 2 = awake. Both must be excluded.
+                // 1 = asleep unspecified, 3/4/5 = core/deep/REM.
+                guard [1, 3, 4, 5].contains(sample.value) else { continue }
+                let day = formatter.string(from: sample.endDate)
+                sleepIntervals[day, default: []].append((sample.startDate, sample.endDate))
+            }
+            lock.unlock()
+            group.leave()
+        }
+        healthStore.execute(sleepQuery)
+        group.notify(queue: .main) {
+            if let error = firstError {
+                call.reject("Unable to read Apple Health activity.", nil, error)
+                return
+            }
+            var stepRows: [[String: Any]] = []
+            var sleepRows: [[String: Any]] = []
+            for offset in 0..<requestedDays {
+                guard let date = calendar.date(byAdding: .day, value: offset, to: start) else { continue }
+                let day = formatter.string(from: date)
+                stepRows.append(["date": day, "steps": steps[day] as Any? ?? NSNull()])
+                let sorted = (sleepIntervals[day] ?? []).sorted { $0.0 < $1.0 }
+                var merged: [(Date, Date)] = []
+                for (begin, finish) in sorted {
+                    if let last = merged.last, begin <= last.1 {
+                        merged[merged.count - 1].1 = max(last.1, finish)
+                    } else {
+                        merged.append((begin, finish))
+                    }
+                }
+                if !merged.isEmpty {
+                    sleepRows.append([
+                        "date": day,
+                        "hours": (merged.reduce(0.0) { $0 + $1.1.timeIntervalSince($1.0) }) / 3600.0
+                    ])
+                }
+            }
+            call.resolve(["steps": stepRows, "sleep": sleepRows, "readAt": self.iso.string(from: Date())])
         }
     }
 }
