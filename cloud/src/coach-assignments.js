@@ -39,8 +39,10 @@ if(path==="/v1/coach/clients"&&method==="GET"){
 if(path==="/v1/coach/assignments"&&method==="POST"){
  if(!coachAllowed(user,env))return err(403,"Coach authorization required.",request,env);
  const input=await read(request);if(!permitted(input))return err(400,"Invalid assignment JSON.",request,env);
- const clientId=clean(input.clientId,64),sourcePlanId=clean(input.sourcePlanId,120),training=sanitizePlan(input.training);
- if(!/^[0-9a-f-]{36}$/i.test(clientId)||!sourcePlanId||!training||!training.days.some(d=>d.exercises.length))return err(400,"A valid client, source plan, and workout are required.",request,env);
+ const clientId=clean(input.clientId,160),sourcePlanId=clean(input.sourcePlanId,120),training=sanitizePlan(input.training);
+ // User IDs are provider-scoped (e.g. email:<uuid>), not necessarily plain UUIDs.
+ // Authorization below checks the authenticated owner or an approved coaching link.
+ if(!clientId||!sourcePlanId||!training||!training.days.some(d=>d.exercises.length))return err(400,"A valid client, source plan, and workout are required.",request,env);
  const self=user.id===clientId;
  if(!self){const link=await env.DB.prepare("SELECT training_permission FROM coach_training_links WHERE coach_user_id=? AND client_user_id=? AND revoked_at IS NULL").bind(user.id,clientId).first();if(!link?.training_permission)return err(403,"The client has not approved this coach.",request,env)}
  const found=await env.DB.prepare("SELECT id,version FROM coach_program_assignments WHERE coach_user_id=? AND client_user_id=? AND source_plan_id=?").bind(user.id,clientId,sourcePlanId).first();
