@@ -265,10 +265,17 @@ async function cleanupSigningAssets() {
 }
 
 const command = process.argv[2];
-if (command === 'create') {
+if (command === 'verify-auth') {
+  const bundleIdentifier = required('APP_BUNDLE_IDENTIFIER');
+  const result = await api(`/bundleIds?filter%5Bidentifier%5D=${encodeURIComponent(bundleIdentifier)}&limit=20`);
+  if (!result?.data?.some(item => item.attributes?.identifier === bundleIdentifier)) {
+    throw new Error('App Store Connect API credentials work, but the Level Up App ID is not accessible.');
+  }
+  console.log('App Store Connect API authentication verified; Level Up App ID is accessible.');
+} else if (command === 'create') {
   await createSigningAssets();
 } else if (command === 'cleanup') {
   await cleanupSigningAssets();
 } else {
-  throw new Error('Usage: node scripts/app-store-signing.mjs <create|cleanup>');
+  throw new Error('Usage: node scripts/app-store-signing.mjs <verify-auth|create|cleanup>');
 }
