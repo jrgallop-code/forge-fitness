@@ -119,19 +119,28 @@ async function createSigningAssets() {
       /App Store Connect 409:.*(?:current Distribution certificate|pending certificate request)/i.test(error.message);
     if (!reachedCertificateLimit) throw error;
 
-    // Successful uploads keep their temporary distribution certificate active
-    // while Apple validates the binary. On the next release that certificate's
-    // private key is no longer available because the prior runner was destroyed,
-    // so rotate the prior CI certificate before creating this run's replacement.
-    const existing = await api('/certificates?filter%5BcertificateType%5D=DISTRIBUTION&limit=200');
-    const distributionCertificates = (existing?.data || [])
-      .filter(item => item.attributes?.certificateType === 'DISTRIBUTION');
-    if (!distributionCertificates.length) throw error;
-
-    for (const item of distributionCertificates) {
-      await api(`/certificates/${item.id}`, { method: 'DELETE' });
+    // Never revoke every distribution certificate in the developer account.
+    // Doing so invalidates other apps and can invalidate an IPA that Apple is
+    // still processing. A CI-only certificate may be rotated explicitly by ID,
+    // after confirming no pending uploads depend on it.
+    const selectedCertificateId = (process.env.LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE || '').trim();
+    if (!selectedCertificateId) {
+      throw new Error(
+        'Apple distribution certificate limit reached. No certificates were revoked. ' +
+        'Confirm that App Store Connect finished processing earlier uploads, then ' +
+        'set LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE to a verified obsolete Level Up CI certificate ID.'
+      );
     }
-
+    const existing = await api('/certificates?filter%5BcertificateType%5D=DISTRIBUTION&limit=200');
+    const selected = (existing?.data || []).find(item =>
+      item.id === selectedCertificateId &&
+      item.attributes?.certificateType === 'DISTRIBUTION' &&
+      /Level Up CI Distribution/i.test(String(item.attributes?.displayName || item.attributes?.name || ''))
+    );
+    if (!selected) {
+      throw new Error('Specified certificate was not verifiably a Level Up CI Distribution certificate. No certificates were revoked.');
+    }
+    await api(`/certificates/${selected.id}`, { method: 'DELETE' });
     await new Promise(resolve => setTimeout(resolve, 1500));
     certificate = await api('/certificates', certificateRequest);
   }
