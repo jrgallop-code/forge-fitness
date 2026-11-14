@@ -120,6 +120,8 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Level Up reads your steps and sleep from Apple Health to show activity and recovery trends. It never writes health data.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Level Up uses the camera to scan food barcodes and capture meal or progress photos.</string>
 	<key>NSMicrophoneUsageDescription</key>
