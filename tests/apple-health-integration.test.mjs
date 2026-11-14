@@ -14,6 +14,7 @@ const signer = read("scripts/app-store-signing.mjs");
 test("Apple Health capability is added to fresh signing profiles", () => {
     assert.match(entitlements, /com\.apple\.developer\.healthkit/);
     assert.match(plist, /NSHealthShareUsageDescription/);
+    assert.match(plist, /NSHealthUpdateUsageDescription/);
     assert.match(signer, /ensureBundleCapability\(bundleId, 'HEALTHKIT'\)/);
 });
 test("native HealthKit reads steps and sleep without requesting write authorization", () => {
