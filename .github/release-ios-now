@@ -658,3 +658,5 @@ Use the shared weekly weight trend for the expenditure correction.
 2026-11-13: TestFlight revision for the sliding iOS tab pill and splash layering.
 
 2026-11-13: TestFlight build for the interactive sliding tab selection.
+
+2026-11-14: TestFlight build for resilient automatic cloud backups (session renewal, bounded retry, matching cloud version adoption).
