@@ -13,8 +13,28 @@ if(raw.restSetting&&permitted(raw.restSetting))out.restSetting={enabled:raw.rest
 if(Array.isArray(raw.setTargets))out.setTargets=raw.setTargets.slice(0,30).map(x=>{if(!permitted(x))return null;const target={};for(const key of ["reps","weight","rir","seconds","duration","restSeconds"]){if(x[key]!==undefined){if(key==="reps"&&typeof x[key]==="string")target[key]=clean(x[key],60);else{const n=number(x[key]);if(n!==null&&n>=0&&n<=10000)target[key]=n}}}return target}).filter(Boolean);
 return out}
 function sanitizePlan(plan){if(!permitted(plan)||!Array.isArray(plan.days)||!plan.days.length||plan.days.length>14)return null;
-const days=plan.days.map(day=>{if(!permitted(day)||!Array.isArray(day.exercises)||day.exercises.length>60)return null;const exercises=day.exercises.map(sanitizeExercise);if(exercises.some(x=>!x))return null;return{name:clean(day.name||"Workout Day",120),exercises}});if(days.some(x=>!x))return null;return{name:clean(plan.name||"Client Coaching Plan",120),days}}
-function sanitizeGoals(input){const goals={};const weight=number(input?.goalWeightLb);if(weight!==null&&weight>0&&weight<=1000)goals.goalWeightLb=Math.round(weight*10)/10;const steps=number(input?.stepGoal);if(steps!==null&&steps>=1000&&steps<=50000)goals.stepGoal=Math.round(steps);return goals}
+const days=plan.days.map(day=>{if(!permitted(day)||!Array.isArray(day.exercises)||day.exercises.length>60)return null;const exercises=day.exercises.map(sanitizeExercise);if(exercises.some(x=>!x))return null;return{name:clean(day.name||"Workout Day",120),exercises}});if(days.some(x=>!x))return null;const settings=permitted(plan.settings)?plan.settings:{};
+const allowedEquipment=new Set(["Full Gym","Dumbbells","Barbell","Machines & Cables","Bodyweight"]);
+const allowedMuscles=new Set(["Chest","Back","Shoulders","Biceps","Triceps","Quads","Hamstrings","Glutes","Calves","Core"]);
+const options={
+ trainingGoal:["muscle","strength","hybrid","maintain"].includes(settings.trainingGoal)?settings.trainingGoal:"muscle",
+ experience:["beginner","intermediate","advanced"].includes(settings.experience)?settings.experience:"intermediate",
+ split:["auto","full-body","upper-lower","push-pull-legs"].includes(settings.split)?settings.split:"auto",
+ duration:[30,45,60,75,90].includes(Number(settings.duration))?Number(settings.duration):60,
+ daysPerWeek:[2,3,4,5,6].includes(Number(settings.daysPerWeek))?Number(settings.daysPerWeek):days.length,
+ equipment:Array.isArray(settings.equipment)?settings.equipment.filter(x=>allowedEquipment.has(x)).slice(0,5):[],
+ musclePriorities:Array.isArray(settings.musclePriorities)?settings.musclePriorities.filter(x=>allowedMuscles.has(x)).slice(0,3):[],
+ supersets:settings.supersets===true
+};
+return{name:clean(plan.name||"Client Coaching Plan",120),days,settings:options}}
+function sanitizeGoals(input){const goals={};const weight=number(input?.goalWeightLb);if(weight!==null&&weight>0&&weight<=1000)goals.goalWeightLb=Math.round(weight*10)/10;const steps=number(input?.stepGoal);if(steps!==null&&steps>=1000&&steps<=50000)goals.stepGoal=Math.round(steps);
+const goalIds=["maintain","cut_gentle","cut_moderate","bulk_conservative","bulk_standard","bulk_aggressive"];
+if(goalIds.includes(input?.goalId))goals.goalId=input.goalId;
+const weekly=number(input?.weeklyWeightChangeLb);
+if(weekly!==null&&weekly>=-3&&weekly<=3)goals.weeklyWeightChangeLb=weekly;
+const maintenance=number(input?.estimatedMaintenance);
+if(maintenance!==null&&maintenance>=500&&maintenance<=10000)goals.estimatedMaintenance=Math.round(maintenance);
+return goals}
 function sanitizeNutrition(raw){if(!permitted(raw))return null;const out={};const meal=clean(raw.mealGuidance,3000);if(meal)out.mealGuidance=meal;const cal=number(raw.calorieTarget);if(cal!==null&&cal>=500&&cal<=10000)out.calorieTarget=Math.round(cal);for(const key of ["protein","carbs","fat"]){const n=number(raw[key]);if(n!==null&&n>=0&&n<=1500)out[key]=Math.round(n)}return out}
 async function read(req){try{const body=await req.text();if(body.length>160000)return null;return JSON.parse(body)}catch{return null}}
 const coachAllowed=(user,env)=>String(env.ADMIN_EMAILS||"").split(",").map(v=>v.trim().toLowerCase()).includes(String(user?.email||"").toLowerCase());
