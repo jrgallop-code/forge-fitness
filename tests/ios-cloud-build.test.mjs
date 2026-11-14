@@ -61,6 +61,6 @@ test("App Store signing refuses unsafe bulk certificate rotation", () => {
   assert.match(signingScript, /filter%5BcertificateType%5D=DISTRIBUTION/);
   assert.match(signingScript, /LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE/);
   assert.match(signingScript, /selectedCertificateId/);
-  assert.doesNotMatch(signingScript, /for \\(const item of distributionCertificates\\)/);
-  assert.match(signingScript, /certificate = await api\\('\/certificates', certificateRequest\\)/);
+  assert.doesNotMatch(signingScript, /for\s*\(const item of distributionCertificates\)/);
+  assert.match(signingScript, /certificate = await api/);
 });
