@@ -264,8 +264,24 @@ async function cleanupSigningAssets() {
   }
 }
 
+async function inspectDistributionCertificates() {
+  const result = await api('/certificates?filter%5BcertificateType%5D=DISTRIBUTION&limit=200');
+  const list = (result?.data || []).map(item => ({
+    id: item.id,
+    name: item.attributes?.displayName || item.attributes?.name || '',
+    type: item.attributes?.certificateType || '',
+    serial: item.attributes?.serialNumber || '',
+    expires: item.attributes?.expirationDate || '',
+    platform: item.attributes?.platform || ''
+  }));
+  console.log('Apple Distribution certificate inventory (no keys or secrets):');
+  console.log(JSON.stringify(list, null, 2));
+}
+
 const command = process.argv[2];
-if (command === 'verify-auth') {
+if (command === 'inspect-certificates') {
+  await inspectDistributionCertificates();
+} else if (command === 'verify-auth') {
   const bundleIdentifier = required('APP_BUNDLE_IDENTIFIER');
   const result = await api(`/bundleIds?filter%5Bidentifier%5D=${encodeURIComponent(bundleIdentifier)}&limit=20`);
   if (!result?.data?.some(item => item.attributes?.identifier === bundleIdentifier)) {
