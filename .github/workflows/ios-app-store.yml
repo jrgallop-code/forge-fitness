@@ -157,6 +157,14 @@ jobs:
           printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$key_path"
           chmod 600 "$key_path"
 
+      - name: Verify App Store Connect authentication
+        shell: bash
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_BUNDLE_IDENTIFIER: com.leveluphypertrophy.app
+        run: node scripts/app-store-signing.mjs verify-auth
+
       - name: Resolve Swift packages
         run: xcodebuild -resolvePackageDependencies -project ios/App/App.xcodeproj -scheme App
 
@@ -322,6 +330,10 @@ jobs:
             if [[ "$upload_status" -eq 0 ]]; then
               echo "Upload was accepted by App Store Connect."
               exit 0
+            fi
+            if grep -Eiq 'authentication failed|not authorized|unauthorized|forbidden|401|403|invalid.*(issuer|key|api key)|ERROR.*authentication' "$upload_log"; then
+              echo "::error::App Store Connect transporter authentication or upload authorization failed. Check key role, issuer, and upload permissions."
+              exit "$upload_status"
             fi
             if grep -Eiq 'ITMS-|ERROR ITMS|ERROR:.*(bundle|entitlement|provision|privacy|invalid|signature|version|asset)' "$upload_log"; then
               echo "::error::Apple rejected this build. Review the exact ITMS diagnostic above; retrying the same IPA will not resolve validation."
