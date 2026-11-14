@@ -404,7 +404,7 @@ final class LevelUpHealthKitPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Apple Health is unavailable on this device.")
             return
         }
-        let requestedDays = min(max(call.getInt("days") ?? 14, 7), 90)
+        let requestedDays = min(max(call.getInt("days") ?? 14, 7), 365)
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         guard let start = calendar.date(byAdding: .day, value: -(requestedDays - 1), to: today),
