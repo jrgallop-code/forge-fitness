@@ -794,7 +794,15 @@ export function selectProgressTab(name, { center = true } = {}) {
     });
     const tabStrip = document.querySelector(".progress-tabs");
     if (tabStrip) tabStrip.dataset.currentTab = name;
-    if (center) tabs[name].scrollIntoView?.({ behavior: "auto", block: "nearest", inline: "center" });
+    // Center the selected tab horizontally without scrolling the whole page.
+    // scrollIntoView on an offscreen tab can jump the Progress page vertically.
+    if (name === "steps" && tabStrip) {
+        const button = tabs.steps;
+        const target = Math.max(0, button.offsetLeft - (tabStrip.clientWidth - button.offsetWidth) / 2);
+        tabStrip.scrollLeft = target;
+    } else if (center) {
+        tabs[name].scrollIntoView?.({ behavior: "auto", block: "nearest", inline: "center" });
+    }
     if (name === "weight") requestAnimationFrame(updateWeightDisplay);
     if (name === "lifting") window.dispatchEvent(new Event("resize"));
     if (name === "steps") window.dispatchEvent(new CustomEvent("levelup:steps-progress-opened"));
