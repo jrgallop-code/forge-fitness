@@ -1,0 +1,33 @@
+name: Dashboard Steps direct navigation browser test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ios/capacitor-app-store
+    paths:
+      - .github/workflows/steps-navigation-test.yml
+      - tests/steps-direct-route.browser.mjs
+      - js/core/router.js
+      - js/app.js
+      - js/progress/progress-ui.js
+      - js/progress/steps-progress-carousel.js
+      - js/progress/weight-tracker.js
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm install --no-save --package-lock=false playwright@1.56.1
+      - run: npx playwright install --with-deps firefox
+      - name: Browser test Dashboard Steps route and selected panel
+        run: node tests/steps-direct-route.browser.mjs
