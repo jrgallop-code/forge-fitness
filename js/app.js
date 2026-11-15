@@ -35,7 +35,7 @@ document.addEventListener("levelup:navigate",event=>{
     if(!page)return;
     const navPage=page==="program-builder"?"workout":page;
     document.querySelectorAll(".nav-btn[data-page]").forEach(button=>button.classList.toggle("active",button.dataset.page===navPage));
-    navigate(page);
+    navigate(page, { tab: event.detail?.tab || null });
 });
 if(content)new MutationObserver(()=>scheduleIconDecoration(()=>decorateAppIcons(content))).observe(content,{childList:true,subtree:true});
 navigate("home");
