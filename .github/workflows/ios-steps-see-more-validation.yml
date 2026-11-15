@@ -12,6 +12,8 @@ on:
       - 'js/progress/weight-carbs-chart.js'
       - 'js/core/router.js'
       - 'js/progress/progress-ui.js'
+      - 'css/native-ios-polish.css'
+      - 'js/dashboard/dashboard-weight-trend-card.js'
       - 'js/progress/weight-tracker.js'
       - 'js/progress/progress-initial-tab-stability.js'
       - 'js/dashboard/dashboard-insights-analytics.js'
