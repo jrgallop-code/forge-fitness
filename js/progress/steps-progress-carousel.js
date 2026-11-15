@@ -9,7 +9,7 @@ function daysInWindow(days){
  return Array.from({length:days},(_,i)=>{const d=new Date(now);d.setDate(d.getDate()-days+i+1);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");});
 }
 export function stepsChartModel(data,range="1W",dates=daysInWindow(WINDOWS[range]||7)){
- const lookup=new Map((data?.steps||[]).filter(r=>typeof r?.date==="string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(r.date) && r.steps!==null && r.steps!==undefined && Number.isFinite(Number(r.steps)) && Number(r.steps)>=0).map(r=>[r.date,Number(r.steps)]));
+ const lookup=new Map((data?.steps||[]).filter(r=>typeof r?.date==="string" && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && r.steps!==null && r.steps!==undefined && Number.isFinite(Number(r.steps)) && Number(r.steps)>=0).map(r=>[r.date,Number(r.steps)]));
  const rows=dates.map(date=>({date,value:lookup.has(date)?lookup.get(date):null}));
  const valid=rows.filter(r=>r.value!==null);
  const total=valid.reduce((sum,r)=>sum+r.value,0);
