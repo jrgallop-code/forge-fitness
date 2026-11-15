@@ -767,41 +767,56 @@ function updateHistory(
 }
 
 
+// Single authoritative Progress tab selector, shared by manual tabs and
+// Dashboard deep links. It updates panels and tab state in the same turn.
+export function selectProgressTab(name, { center = true } = {}) {
+    const ids = {
+        weight: ["weight-tab", "weight-progress"],
+        lifting: ["lifting-tab", "lifting-progress"],
+        nutrition: ["nutrition-progress-tab", "calorie-progress"],
+        cardio: ["cardio-progress-tab", "cardio-progress"],
+        steps: ["steps-progress-tab", "steps-progress"],
+        photo: ["photo-log-tab", "photo-log-progress"]
+    };
+    if (!Object.hasOwn(ids, name)) return false;
+    const tabs = Object.fromEntries(Object.entries(ids).map(([key, value]) =>
+        [key, document.getElementById(value[0])]));
+    const panels = Object.fromEntries(Object.entries(ids).map(([key, value]) =>
+        [key, document.getElementById(value[1])]));
+    if (!tabs[name] || !panels[name]) return false;
+    Object.entries(panels).forEach(([key, panel]) => {
+        if (panel) panel.hidden = key !== name;
+    });
+    Object.entries(tabs).forEach(([key, tab]) => {
+        if (!tab) return;
+        tab.classList.toggle("active", key === name);
+        tab.setAttribute("aria-selected", String(key === name));
+    });
+    const tabStrip = document.querySelector(".progress-tabs");
+    if (tabStrip) tabStrip.dataset.currentTab = name;
+    if (center) tabs[name].scrollIntoView?.({ behavior: "auto", block: "nearest", inline: "center" });
+    if (name === "weight") requestAnimationFrame(updateWeightDisplay);
+    if (name === "lifting") window.dispatchEvent(new Event("resize"));
+    if (name === "steps") window.dispatchEvent(new CustomEvent("levelup:steps-progress-opened"));
+    if (name === "nutrition") window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: "progress-nutrition-opened" } }));
+    return true;
+}
+
 function initializeProgressTabs() {
-    const buttons = {
-        weight: document.getElementById("weight-tab"),
-        lifting: document.getElementById("lifting-tab"),
-        nutrition: document.getElementById("nutrition-progress-tab"),
-        cardio: document.getElementById("cardio-progress-tab"),
-        steps: document.getElementById("steps-progress-tab"),
-        photo: document.getElementById("photo-log-tab")
+    const ids = {
+        weight: "weight-tab", lifting: "lifting-tab", nutrition: "nutrition-progress-tab",
+        cardio: "cardio-progress-tab", steps: "steps-progress-tab", photo: "photo-log-tab"
     };
-    const sections = {
-        weight: document.getElementById("weight-progress"),
-        lifting: document.getElementById("lifting-progress"),
-        nutrition: document.getElementById("calorie-progress"),
-        cardio: document.getElementById("cardio-progress"),
-        steps: document.getElementById("steps-progress"),
-        photo: document.getElementById("photo-log-progress")
-    };
-    if (Object.values(buttons).some(button => !button) || Object.values(sections).some(section => !section)) return;
-
-    const show = name => {
-        Object.entries(sections).forEach(([key, section]) => { section.hidden = key !== name; });
-        Object.entries(buttons).forEach(([key, button]) => button.classList.toggle("active", key === name));
-        buttons[name]?.scrollIntoView?.({ behavior: "smooth", block: "nearest", inline: "center" });
-        if (name === "weight") requestAnimationFrame(updateWeightDisplay);
-        if (name === "lifting") window.dispatchEvent(new Event("resize"));
-        if (name === "steps") window.dispatchEvent(new CustomEvent("levelup:steps-progress-opened"));
-        if (name === "nutrition") window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: "progress-nutrition-opened" } }));
-    };
-
-    buttons.weight.addEventListener("click", () => show("weight"));
-    buttons.lifting.addEventListener("click", () => show("lifting"));
-    buttons.nutrition.addEventListener("click", () => show("nutrition"));
-    buttons.cardio.addEventListener("click", () => show("cardio"));
-    buttons.steps.addEventListener("click", () => show("steps"));
-    buttons.photo.addEventListener("click", () => show("photo"));
+    for (const [name, id] of Object.entries(ids)) {
+        const button = document.getElementById(id);
+        if (!button || button.dataset.progressTabBound === "true") continue;
+        button.dataset.progressTabBound = "true";
+        button.addEventListener("click", () => selectProgressTab(name));
+    }
+    // A Steps deep link explicitly selects the content panel before first paint.
+    if (window.__levelUpProgressInitialTab === "steps") {
+        selectProgressTab("steps", { center: false });
+    }
 }
 
 function drawWeightChart(
