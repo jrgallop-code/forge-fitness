@@ -142,3 +142,12 @@ test("Steps deep link carries explicit tab through Dashboard event and first Pro
     assert.match(html, /id="lifting-progress"\s+hidden/);
     assert.match(html, /id="weight-progress"\s+hidden/);
 });
+
+test("Steps shortcut bypasses generic overview and scrolls to visible Steps tab",()=>{
+    assert.match(router,/case "progress-steps":/);
+    assert.match(router,/routeDestination = content\.querySelector\("\.progress-tabs"\)/);
+    assert.match(router,/renderProgress\(\{ initialTab: page === "progress-steps"/);
+    assert.match(weightTracker,/tabStrip\.scrollLeft = target/);
+    assert.match(weightTracker,/if \(name === "steps" && tabStrip\)/);
+    assert.match(app,/page==="progress-steps"\?"progress":page/);
+});
