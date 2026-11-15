@@ -12,9 +12,9 @@ test("Steps no longer inserts a standalone metric card in the dashboard grid",()
 test("Steps is a compact See More card next to expenditure, without spanning columns",()=>{
  assert.match(insights,/\.dashboard-preview-steps\{grid-column:auto/);
  const markup=insights.slice(insights.indexOf('function screenMarkup()'),insights.indexOf('function cleanupOldDashboardActions()'));
- assert.ok(markup.indexOf('data-dashboard-open-progress=\\\"expenditure\\\"')>=0);
- assert.ok(markup.indexOf('${stepsPreviewCardMarkup()}')>markup.indexOf('data-dashboard-open-progress=\\\"expenditure\\\"'));
- assert.ok(markup.indexOf('${stepsPreviewCardMarkup()}')<markup.indexOf('data-dashboard-open-progress=\\\"comparison\\\"'));
+ assert.ok(markup.indexOf('data-dashboard-open-progress="expenditure"')>=0);
+ assert.ok(markup.indexOf('${stepsPreviewCardMarkup()}')>markup.indexOf('data-dashboard-open-progress="expenditure"'));
+ assert.ok(markup.indexOf('${stepsPreviewCardMarkup()}')<markup.indexOf('data-dashboard-open-progress="comparison"'));
  assert.match(insights,/data-insights-step-average/);
  assert.match(insights,/data-insights-step-total/);
 });
