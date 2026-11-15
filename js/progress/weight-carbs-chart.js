@@ -9,7 +9,7 @@ import "../nutrition/tdee-live-daily-expenditure.js?v=weight-gap-expenditure-1";
 import "../nutrition/tdee-calorie-expenditure-carousel.js?v=energy-balance-range-3";
 import "../nutrition/tdee-energy-balance-summary.js?v=energy-balance-range-3";
 import "../nutrition/tdee-expenditure-swipe-card.js?v=energy-card-height-1";
-import { initializeWeightCarbsChartV3 } from "./weight-chart-carousel-v3.js?v=weight-gap-expenditure-1";
+import { initializeWeightCarbsChartV3 } from "./weight-chart-carousel-v3.js?v=steps-progress-axis-1";
 import { initializeWeightCarbsInteractionEnhancements } from "./weight-carbs-interaction-enhancements.js?v=weight-carbs-interaction-2";
 
 export function initializeWeightCarbsChart(root = document) {
