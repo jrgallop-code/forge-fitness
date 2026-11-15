@@ -18,20 +18,21 @@ function stabilizeInitialProgressTab(root = document) {
 
     if (!liftingButton || !weightButton || !lifting || !weight) return false;
 
-    // Progress is a lifting-first destination. Set the authoritative initial
-    // state synchronously in the same mutation turn that mounts the page so
-    // Safari never paints Weight for one frame before another module clicks
-    // over to Lifting.
+    // Dashboard Steps deep links are rendered with Steps selected before the
+    // first paint. Preserve that initial selection instead of briefly forcing
+    // Weight/Lifting while other Progress modules mount.
+    const openStepsInitially = !!stepsButton?.classList.contains("active") && steps?.hidden === false;
     [weightButton, nutritionButton, cardioButton, stepsButton, photoButton].forEach(button =>
         button?.classList.remove("active")
     );
-    liftingButton.classList.add("active");
+    liftingButton.classList.toggle("active", !openStepsInitially);
+    if (openStepsInitially) stepsButton.classList.add("active");
 
     weight.hidden = true;
-    lifting.hidden = false;
+    lifting.hidden = openStepsInitially;
     if (nutrition) nutrition.hidden = true;
     if (cardio) cardio.hidden = true;
-    if (steps) steps.hidden = true;
+    if (steps) steps.hidden = !openStepsInitially;
     if (photo) photo.hidden = true;
 
     tabs.dataset.initialTabStabilized = "true";
