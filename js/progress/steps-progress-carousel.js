@@ -1,4 +1,4 @@
-import { getCachedAppleHealth, refreshAppleHealth } from "../health/apple-health.js?v=healthkit-steps-sleep-1";
+import { getCachedAppleHealth, refreshAppleHealth } from "../health/apple-health.js?v=steps-progress-y-axis-1";
 
 const WINDOWS = Object.freeze({ "1W": 7, "1M": 30, "3M": 90, "6M": 180, "1Y": 365 });
 const STYLE_ID = "levelup-progress-steps-carousel-styles";
