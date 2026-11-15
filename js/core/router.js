@@ -12,7 +12,8 @@ import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from 
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=onboarding-training-days-1";
 import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=saved-plan-edit-2";
 import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-live-polish.js?v=workout-landing-live-polish-2";
-import { renderProgress } from "../progress/progress-ui.js?v=steps-tab-cardio-1";
+import { renderProgress, renderStepsProgressDestination } from "../progress/progress-ui.js?v=steps-tab-cardio-1";
+import { initializeStepsProgress } from "../progress/steps-progress-carousel.js?v=steps-progress-standalone-2";
 import { initializeMonthlyReports, initializeMonthlyReportDashboardPrompt } from "../progress/monthly-report.js?v=monthly-lifecycle-1";
 import { initializeWeightTracker, selectProgressTab } from "../progress/weight-tracker.js?v=steps-tab-cardio-1";
 import { initializePhotoJournal } from "../progress/photo-journal.js?v=progress-photo-share-1";
@@ -131,9 +132,30 @@ export function navigate(page, { tab = null } = {}) {
                 }
                 break;
             }
-            case "progress-steps":
+            case "progress-steps": {
+                // Dedicated destination, not the generic Progress overview.
+                content.innerHTML = renderStepsProgressDestination();
+                safeInitialize("Apple Health Steps", () => initializeStepsProgress(content));
+                const strip = content.querySelector(".progress-tabs");
+                const stepsButton = content.querySelector("#steps-progress-tab");
+                if (strip && stepsButton) {
+                    // Reveal the Steps tab inside the horizontal tab strip.
+                    strip.scrollLeft = Math.max(0, stepsButton.offsetLeft - (strip.clientWidth - stepsButton.offsetWidth) / 2);
+                }
+                // Allow the user to switch to any normal Progress tab from here.
+                content.querySelectorAll("[data-progress-destination-tab]").forEach(button => {
+                    button.addEventListener("click", () => {
+                        const selected = button.dataset.progressDestinationTab;
+                        if (selected === "steps") return;
+                        navigate("progress", { tab: selected });
+                    });
+                });
+                routeDestination = content.querySelector("#steps-progress");
+                break;
+            }
             case "progress":
-                content.innerHTML = renderProgress({ initialTab: page === "progress-steps" || tab === "steps" ? "steps" : "lifting" }); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Progress photos", initializePhotoJournal); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); if (isNutritionEnabled()) { safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); } safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); safeInitialize("Monthly reports", () => initializeMonthlyReports(content)); if (page === "progress-steps" || tab === "steps") { selectProgressTab("steps", { center: false }); routeDestination = content.querySelector(".progress-tabs"); } if (muscleMode) routeDestination = initializeMuscleOverviewDestination(muscleMode); break;
+                content.innerHTML = renderProgress({ initialTab: tab === "steps" ? "steps" : "lifting" }); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Progress photos", initializePhotoJournal); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); if (isNutritionEnabled()) { safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); } safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); safeInitialize("Monthly reports", () => initializeMonthlyReports(content)); if (tab && tab !== "lifting") selectProgressTab(tab, { center: false });
+                if (tab === "steps") routeDestination = content.querySelector(".progress-tabs"); if (muscleMode) routeDestination = initializeMuscleOverviewDestination(muscleMode); break;
             case "sleep":
                 content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>View your sleep automatically from Apple Health. No manual entry.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
             case "measurements":
