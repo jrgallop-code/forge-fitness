@@ -144,7 +144,7 @@ jobs:
           node --check js/health/apple-health.js
           node --check js/progress/sleep-tracker.js
           node --check js/onboarding/onboarding.js
-          node --test tests/apple-health-integration.test.mjs tests/steps-direct-navigation-onboarding-health.test.mjs tests/steps-today.test.mjs
+          node --test tests/apple-health-integration.test.mjs tests/steps-direct-navigation-onboarding-health.test.mjs tests/steps-today.test.mjs tests/dashboard-sleep-insights.test.mjs
 
       - name: Create temporary App Store Connect key
         shell: bash
