@@ -14,7 +14,7 @@ export function renderProgress() {
             </p>
 
 
-            <div class="progress-tabs">
+            <div class="progress-tabs" data-initial-tab="${initialSteps ? "steps" : "lifting"}">
 
                 <button
                     class="progress-tab ${initialSteps ? "" : "active"}"
