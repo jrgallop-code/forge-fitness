@@ -9,13 +9,16 @@ const progress = read("js/progress/progress-ui.js");
 const stability = read("js/progress/progress-initial-tab-stability.js");
 const insights = read("js/dashboard/dashboard-insights-analytics-v5.js");
 const router = read("js/core/router.js");
+const app = read("js/app.js");
 const weightTracker = read("js/progress/weight-tracker.js");
 const onboarding = read("js/onboarding/onboarding.js");
 const onboardingCss = read("css/onboarding.css");
 
 test("Dashboard Steps opens Progress with the Steps tab requested synchronously", () => {
     assert.match(insights, /closeDashboardInsights\(\); openStepsInProgress\(\)/);
-    assert.match(steps, /__levelUpProgressInitialTab = "steps"/);
+    assert.match(steps, /detail: \{ page: "progress", tab: "steps" \}/);
+    assert.doesNotMatch(steps, /__levelUpProgressInitialTab/);
+    assert.match(app, /navigate\(page, \{ tab: event\.detail\?\.tab \|\| null \}\)/);
     assert.match(steps, /new CustomEvent\("levelup:navigate"/);
     assert.doesNotMatch(steps, /window\.setTimeout\(open,\s*60\)/);
     assert.match(steps, /const stepsTab = document\.getElementById\("steps-progress-tab"\)/);
@@ -25,7 +28,8 @@ test("Dashboard Steps opens Progress with the Steps tab requested synchronously"
 });
 
 test("Progress markup is rendered in Steps mode without showing Weight first", () => {
-    assert.match(progress, /const initialSteps = window\.__levelUpProgressInitialTab === "steps"/);
+    assert.match(progress, /const initialSteps = initialTab === "steps"/);
+    assert.match(progress, /export function renderProgress\(\{ initialTab = "lifting" \} = \{\}\)/);
     assert.match(progress, /id="steps-progress-tab"/);
     assert.match(progress, /id="steps-progress" \$\{initialSteps \? "" : "hidden"\}/);
     assert.match(progress, /id="weight-progress" \$\{initialSteps \? "hidden" : ""\}/);
@@ -45,8 +49,11 @@ test("Apple Health onboarding uses a recognizable, accessible Health icon", () =
 
 test("route and real tab controller both select Steps after all initializers", () => {
     assert.match(router, /selectProgressTab\("steps", \{ center: false \}\)/);
+    assert.match(router, /renderProgress\(\{ initialTab: tab === "steps" \? "steps" : "lifting" \}\)/);
+    assert.match(router, /export function navigate\(page, \{ tab = null \} = \{\}\)/);
     assert.match(weightTracker, /export function selectProgressTab\(name,/);
     assert.match(weightTracker, /selectProgressTab\("steps", \{ center: false \}\)/);
+    assert.match(weightTracker, /dataset\.initialTab === "steps"/);
     assert.match(weightTracker, /panel\.hidden = key !== name/);
     assert.match(weightTracker, /tab\.classList\.toggle\("active", key === name\)/);
 });
