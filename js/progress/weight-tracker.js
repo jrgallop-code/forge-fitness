@@ -1,3 +1,4 @@
+import { initializeStepsProgress } from "./steps-progress-carousel.js?v=steps-progress-standalone-2";
 import {
     getNutritionGoal
 }
@@ -77,6 +78,7 @@ export function initializeWeightTracker() {
 
     ensureWeightRateSummary();
     initializeProgressTabs();
+    initializeStepsProgress();
     updateWeightDisplay();
 }
 
