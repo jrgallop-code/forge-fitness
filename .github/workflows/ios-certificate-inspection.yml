@@ -41,3 +41,5 @@ jobs:
 # Reinspect current certificate inventory before next signed TestFlight release (2026-11-15).
 
 # Read-only certificate check before dedicated Progress Steps TestFlight release 2026-11-15.
+
+# Read-only certificate audit ahead of Steps Today TestFlight release 2026-11-15.
