@@ -2,7 +2,7 @@ import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=progress-ins
 import { renderPhotoJournal } from "./photo-journal.js?v=progress-photo-share-1";
 
 export function renderProgress() {
-
+    const initialSteps = window.__levelUpProgressInitialTab === "steps";
     return `
 
         <section class="section-card progress-page">
@@ -17,7 +17,7 @@ export function renderProgress() {
             <div class="progress-tabs">
 
                 <button
-                    class="progress-tab active"
+                    class="progress-tab ${initialSteps ? "" : "active"}"
                     id="weight-tab"
                     type="button"
                 >
@@ -49,7 +49,7 @@ export function renderProgress() {
                 </button>
 
                 <button
-                    class="progress-tab"
+                    class="progress-tab ${initialSteps ? "active" : ""}"
                     id="steps-progress-tab"
                     type="button"
                 >
@@ -67,7 +67,7 @@ export function renderProgress() {
             </div>
 
 
-            <div id="weight-progress">
+            <div id="weight-progress" ${initialSteps ? "hidden" : ""}>
 
                 <div class="weight-section-header">
 
@@ -525,7 +525,7 @@ export function renderProgress() {
                 </section>
             </div>
 
-            <div id="steps-progress" hidden>
+            <div id="steps-progress" ${initialSteps ? "" : "hidden"}>
                 <section class="cardio-progress-shell">
                     <div data-levelup-steps-detail></div>
                 </section>
