@@ -122,6 +122,16 @@ export function openStepsInProgress(){
   } finally {
     delete window.__levelUpProgressInitialTab;
   }
+  // Progress's actual tab controller is bound synchronously by
+  // initializeWeightTracker during navigate(). Activate it as well: merely
+  // marking a tab active in markup does not invoke that controller.
+  const stepsTab = document.getElementById("steps-progress-tab");
+  const stepsPanel = document.getElementById("steps-progress");
+  if (stepsTab && stepsPanel) {
+    stepsTab.click();
+  } else {
+    console.warn("Steps shortcut could not locate the Progress Steps tab.");
+  }
   initializeStepsProgress();
   window.dispatchEvent(new Event("levelup:steps-progress-opened"));
 }
