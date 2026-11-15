@@ -680,3 +680,5 @@ Use the shared weekly weight trend for the expenditure correction.
 2026-11-14: User-requested TestFlight build after successful iOS Capacitor validation #605; full-width Insights Steps card, 1W–1Y chart and overlay back-navigation fix.
 
 2026-11-14: User-requested TestFlight deployment of compact Dashboard Steps tile, Progress carousel Steps chart with numeric Y-axis and five date ranges; merged PR #810 (ebd488d).
+
+2026-11-15: User-requested TestFlight upload after PR #813 merge ca32f699: full-width Steps below Goal Timeline, restore Expenditure layout, and Steps as dedicated Progress tab immediately after Cardio.
