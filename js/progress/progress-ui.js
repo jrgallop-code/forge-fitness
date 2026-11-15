@@ -1,8 +1,8 @@
 import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=progress-insight-rate-1";
 import { renderPhotoJournal } from "./photo-journal.js?v=progress-photo-share-1";
 
-export function renderProgress() {
-    const initialSteps = window.__levelUpProgressInitialTab === "steps";
+export function renderProgress({ initialTab = "lifting" } = {}) {
+    const initialSteps = initialTab === "steps";
     return `
 
         <section class="section-card progress-page">
