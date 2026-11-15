@@ -1,4 +1,5 @@
 import { getCachedAppleHealth, refreshAppleHealth } from "../health/apple-health.js?v=steps-progress-y-axis-1";
+import { stepsForToday, getDailyStepsGoal, setDailyStepsGoal } from "../health/steps-summary.js?v=steps-today-1";
 
 const WINDOWS = Object.freeze({ "1W": 7, "1M": 30, "3M": 90, "6M": 180, "1Y": 365 });
 const STYLE_ID = "levelup-progress-steps-carousel-styles";
@@ -54,6 +55,10 @@ function draw(model){
 }
 function markup(){
  return '<div class="lu-sp-title"><span class="weight-chart-kicker">APPLE HEALTH ACTIVITY</span><h3>Steps</h3><p>Daily movement over time</p></div>'+
+  '<section class="lu-sp-today-card" aria-label="Steps today"><div class="lu-sp-today-top"><div><span class="lu-sp-today-label">Today</span><strong data-lu-sp-today>—</strong><small data-lu-sp-today-context>Apple Health</small></div>'+
+  '<div class="lu-sp-goal"><span>Daily target</span><strong data-lu-sp-goal>10,000</strong><button type="button" data-lu-sp-goal-edit>Edit target</button></div></div>'+
+  '<div class="lu-sp-today-track" role="progressbar" aria-label="Today steps toward target" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i data-lu-sp-goal-bar style="width:0%"></i></div>'+
+  '<form data-lu-sp-goal-form hidden><label>Daily step target <input type="number" inputmode="numeric" min="1000" max="100000" step="500" data-lu-sp-goal-input></label><button type="submit">Save</button><button type="button" data-lu-sp-goal-cancel>Cancel</button></form></section>'+
   '<div class="lu-sp-summary"><div><small>Average steps/day</small><strong data-lu-sp-average>—</strong></div><div><small>Total steps</small><strong data-lu-sp-total>—</strong><small data-lu-sp-recorded>— recorded days</small></div></div>'+
   '<div class="lu-sp-ranges" role="group" aria-label="Step chart range">'+Object.keys(WINDOWS).map(x=>'<button type="button" data-lu-sp-range="'+x+'" aria-pressed="'+(activeRange===x)+'">'+x+'</button>').join("")+'</div>'+
   '<div class="lu-sp-chart" data-lu-sp-chart>Loading Apple Health steps…</div>'+
@@ -75,6 +80,11 @@ export function initializeStepsProgress(root=document){
     host.querySelectorAll("[data-lu-sp-range]").forEach(el=>el.setAttribute("aria-pressed",String(el.dataset.luSpRange===activeRange)));
     updateStepsProgress();
    }
+   if(event.target.closest("[data-lu-sp-goal-edit]")){
+    const form=host.querySelector("[data-lu-sp-goal-form]");
+    if(form){form.hidden=false;form.querySelector("input").value=getDailyStepsGoal();form.querySelector("input").focus();}
+   }
+   if(event.target.closest("[data-lu-sp-goal-cancel]"))host.querySelector("[data-lu-sp-goal-form]")?.setAttribute("hidden","");
    if(event.target.closest("[data-lu-sp-refresh]")){
     void refreshAppleHealth(true).then(()=>updateStepsProgress()).catch(()=>{
      const chart=host.querySelector("[data-lu-sp-chart]");
@@ -82,14 +92,25 @@ export function initializeStepsProgress(root=document){
     });
    }
   });
+  host.querySelector("[data-lu-sp-goal-form]")?.addEventListener("submit",event=>{
+   event.preventDefault();
+   const form=event.currentTarget;
+   const input=form.querySelector("[data-lu-sp-goal-input]");
+   if(!setDailyStepsGoal(input?.value)){input?.setCustomValidity("Choose 1,000 to 100,000 steps.");input?.reportValidity();return;}
+   input.setCustomValidity("");
+   form.hidden=true;
+   updateStepsProgress();
+  });
  }
  ensureStyles();
  if(!attached && typeof window!=="undefined"){
   attached=true;
   window.addEventListener("levelup:apple-health-refreshed",updateStepsProgress);
   window.addEventListener("levelup:steps-progress-opened",updateStepsProgress);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden && document.querySelector(STEP_PANEL_SELECTOR))void refreshAppleHealth(true).then(updateStepsProgress).catch(()=>{});});
  }
  updateStepsProgress();
+ void refreshAppleHealth(true).then(updateStepsProgress).catch(()=>{});
  return true;
 }
 export function updateStepsProgress(){
@@ -103,6 +124,19 @@ export function updateStepsProgress(){
   });
   return;
  }
+ const today=stepsForToday(data);
+ const goal=getDailyStepsGoal();
+ const todayNode=host.querySelector("[data-lu-sp-today]");
+ const goalNode=host.querySelector("[data-lu-sp-goal]");
+ const context=host.querySelector("[data-lu-sp-today-context]");
+ const bar=host.querySelector("[data-lu-sp-goal-bar]");
+ const progress=host.querySelector(".lu-sp-today-track");
+ const percent=today===null?0:Math.min(100,Math.round(100*today/goal));
+ if(todayNode)todayNode.textContent=today===null?"—":fmt(today);
+ if(goalNode)goalNode.textContent=fmt(goal);
+ if(context)context.textContent=today===null?"No steps recorded yet in Apple Health":today>=goal?"Daily target reached!":fmt(goal-today)+" to target";
+ if(bar)bar.style.width=percent+"%";
+ if(progress)progress.setAttribute("aria-valuenow",String(percent));
  const model=stepsChartModel(data,activeRange);
  const avg=host.querySelector("[data-lu-sp-average]"),total=host.querySelector("[data-lu-sp-total]"),recorded=host.querySelector("[data-lu-sp-recorded]"),chart=host.querySelector("[data-lu-sp-chart]"),note=host.querySelector("[data-lu-sp-note]");
  if(avg)avg.textContent=model.average===null?"—":fmt(model.average);
@@ -130,6 +164,21 @@ function ensureStyles(){
  const style=document.createElement("style");style.id=STYLE_ID;
  style.textContent=[
  '#steps-progress .is-steps{min-width:0;padding:0 2px 10px}',
+ '#steps-progress .lu-sp-today-card{border:1px solid var(--line);border-radius:16px;padding:18px;background:linear-gradient(135deg,var(--card),var(--surface-raised,var(--card)));margin:14px 0}',
+ '#steps-progress .lu-sp-today-top{display:flex;align-items:center;justify-content:space-between;gap:14px}',
+ '#steps-progress .lu-sp-today-label{display:block;font-size:12px;color:var(--muted)}',
+ '#steps-progress .lu-sp-today-top strong{display:block;font-size:36px;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--heading,var(--text))}',
+ '#steps-progress .lu-sp-today-top small{display:block;font-size:11px;color:var(--muted);margin-top:4px}',
+ '#steps-progress .lu-sp-goal{border-left:1px solid var(--line);padding-left:14px;text-align:right}',
+ '#steps-progress .lu-sp-goal span{display:block;font-size:11px;color:var(--muted)}',
+ '#steps-progress .lu-sp-goal strong{font-size:19px}',
+ '#steps-progress .lu-sp-goal button{display:block;margin-left:auto;border:0;background:none;padding:6px 0;color:var(--accent);font-size:11px;font-weight:700}',
+ '#steps-progress .lu-sp-today-track{height:10px;background:var(--surface-raised,var(--line));border-radius:99px;overflow:hidden;margin-top:17px}',
+ '#steps-progress .lu-sp-today-track i{display:block;height:100%;border-radius:inherit;background:var(--accent);transition:width .2s}',
+ '#steps-progress [data-lu-sp-goal-form]:not([hidden]){display:flex;flex-wrap:wrap;align-items:end;gap:8px;margin-top:12px}',
+ '#steps-progress [data-lu-sp-goal-form] label{font-size:11px;flex:1;min-width:120px}',
+ '#steps-progress [data-lu-sp-goal-form] input{display:block;width:100%;margin-top:5px;padding:8px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:8px}',
+ '#steps-progress [data-lu-sp-goal-form] button{padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font-size:12px}',
  '#steps-progress .lu-sp-title h3{font-size:20px;margin:4px 0;color:var(--heading,var(--text))}',
  '#steps-progress .lu-sp-title p{font-size:12px;color:var(--muted);margin:3px 0 13px}',
  '#steps-progress .lu-sp-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:13px 0}',
