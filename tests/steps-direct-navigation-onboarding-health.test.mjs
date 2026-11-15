@@ -15,7 +15,9 @@ const onboarding = read("js/onboarding/onboarding.js");
 const onboardingCss = read("css/onboarding.css");
 
 test("Dashboard Steps opens Progress with the Steps tab requested synchronously", () => {
-    assert.match(insights, /closeDashboardInsights\(\); openStepsInProgress\(\)/);
+    assert.match(insights, /screen\.addEventListener\("click", event => \{/);
+    assert.match(insights, /event\.stopImmediatePropagation\(\)/);
+    assert.match(insights, /openStepsInProgress\(\);\s*closeDashboardInsights\(\)/);
     assert.match(steps, /detail: \{ page: "progress-steps" \}/);
     assert.doesNotMatch(steps, /__levelUpProgressInitialTab/);
     assert.match(app, /navigate\(page, \{ tab: event\.detail\?\.tab \|\| null \}\)/);
