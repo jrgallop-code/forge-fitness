@@ -3,6 +3,7 @@ import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutriti
 import { getGoalTimelineViewModel, goalTimelinePreviewMarkup } from "./dashboard-goal-timeline.js?v=goal-timeline-2";
 import { getCachedAppleHealth, refreshAppleHealth } from "../health/apple-health.js?v=steps-progress-y-axis-1";
 import { lastSevenDaysSteps, getDailyStepsGoal } from "../health/steps-summary.js?v=steps-today-1";
+import { sleepSummary, formatSleepDuration } from "../health/sleep-summary.js?v=sleep-card-1";
 import { openStepsInProgress } from "../progress/steps-progress-carousel.js?v=steps-progress-standalone-2";
 
 const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
@@ -202,6 +203,46 @@ function hydrateStepsPreview(root) {
     document.addEventListener("visibilitychange",onForeground);
 }
 
+function sleepPreviewCardMarkup() {
+    return `<button type="button" class="dashboard-preview-card dashboard-preview-steps dashboard-preview-sleep" data-insights-sleep-open aria-label="Open Sleep and Recovery detail">
+      <span class="lu-insights-steps-heading"><h3>Sleep</h3><span class="dashboard-preview-chevron">›</span></span>
+      <div class="lu-insights-steps-today">
+        <span><span class="sub">Latest night</span><strong data-insights-sleep-latest>—</strong><small data-insights-sleep-date>Apple Health · Read-only</small></span>
+        <span class="lu-insights-steps-spark" data-insights-sleep-spark aria-hidden="true"></span>
+      </div>
+      <div class="lu-insights-steps-footer">
+        <span><small>7-night average</small><strong data-insights-sleep-average>—</strong></span>
+        <span><small>Recorded nights</small><strong data-insights-sleep-nights>—</strong></span>
+      </div>
+    </button>`;
+}
+function hydrateSleepPreview(root) {
+    const update = data => {
+        const card=root.querySelector("[data-insights-sleep-open]");
+        if(!card)return;
+        const summary=sleepSummary(data);
+        const latest=card.querySelector("[data-insights-sleep-latest]");
+        const avg=card.querySelector("[data-insights-sleep-average]");
+        const nights=card.querySelector("[data-insights-sleep-nights]");
+        const date=card.querySelector("[data-insights-sleep-date]");
+        if(latest)latest.textContent=summary.latest?formatSleepDuration(summary.latest.hours):"—";
+        if(avg)avg.textContent=summary.average===null?"—":formatSleepDuration(summary.average);
+        if(nights)nights.textContent=String(summary.nights);
+        if(date)date.textContent=summary.latest?new Date(summary.latest.date+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric"})+" · Apple Health":"No sleep records · Apple Health";
+        const spark=card.querySelector("[data-insights-sleep-spark]");
+        if(spark){
+            const max=Math.max(1,...summary.recent.map(r=>r.hours));
+            spark.innerHTML=summary.recent.map((r,i)=>`<i class="${i===summary.recent.length-1?"current":""}" style="height:${Math.max(5,Math.round(100*r.hours/max))}%"></i>`).join("");
+        }
+    };
+    const cached=getCachedAppleHealth();
+    if(cached)update(cached);
+    // Steps and Sleep share one HealthKit refresh, avoiding extra native reads.
+    if(!cached)void refreshAppleHealth().then(update).catch(()=>update(null));
+    const sync=()=>update(getCachedAppleHealth());
+    window.addEventListener("levelup:apple-health-refreshed",sync);
+    root.__sleepUnsubscribe=()=>window.removeEventListener("levelup:apple-health-refreshed",sync);
+}
 function screenMarkup() {
     const energy = sevenDayEnergy();
     const goal = getGoalTimelineViewModel();
@@ -213,7 +254,7 @@ function screenMarkup() {
         ? `kcal/day ${balance > 0 ? "surplus" : balance < 0 ? "deficit" : "balanced"}`
         : "energy balance";
 
-    return `<header class="dashboard-preview-header"><button class="dashboard-preview-back" type="button" data-dashboard-insights-close aria-label="Back">‹</button><div><small>Dashboard</small><h2>Insights &amp; Analytics</h2></div></header><main class="dashboard-preview-body"><h3 class="dashboard-preview-section-title">All</h3><div class="dashboard-preview-grid"><button type="button" class="dashboard-preview-card" data-dashboard-open-progress="expenditure"><h3>Expenditure</h3><span class="sub">Last 7 Days</span>${expenditureSvg(energy)}<div class="value"><strong>${Number.isFinite(energy.averageExpenditure) ? formatNumber(energy.averageExpenditure) : "--"}</strong><span>kcal/day avg</span></div><span class="dashboard-preview-chevron">›</span></button><button type="button" class="dashboard-preview-card" data-dashboard-open-progress="comparison"><h3>Calories vs Expenditure</h3><span class="sub">Last 7 Days</span>${comparisonSvg(energy)}<div class="value"><strong>${balanceValue}</strong><span>${balanceLabel}</span></div><span class="dashboard-preview-chevron">›</span></button>${goalTimelinePreviewMarkup(goal)}${stepsPreviewCardMarkup()}</div><p class="dashboard-preview-hint">Tap a card to open more detail.</p></main>`;
+    return `<header class="dashboard-preview-header"><button class="dashboard-preview-back" type="button" data-dashboard-insights-close aria-label="Back">‹</button><div><small>Dashboard</small><h2>Insights &amp; Analytics</h2></div></header><main class="dashboard-preview-body"><h3 class="dashboard-preview-section-title">All</h3><div class="dashboard-preview-grid"><button type="button" class="dashboard-preview-card" data-dashboard-open-progress="expenditure"><h3>Expenditure</h3><span class="sub">Last 7 Days</span>${expenditureSvg(energy)}<div class="value"><strong>${Number.isFinite(energy.averageExpenditure) ? formatNumber(energy.averageExpenditure) : "--"}</strong><span>kcal/day avg</span></div><span class="dashboard-preview-chevron">›</span></button><button type="button" class="dashboard-preview-card" data-dashboard-open-progress="comparison"><h3>Calories vs Expenditure</h3><span class="sub">Last 7 Days</span>${comparisonSvg(energy)}<div class="value"><strong>${balanceValue}</strong><span>${balanceLabel}</span></div><span class="dashboard-preview-chevron">›</span></button>${goalTimelinePreviewMarkup(goal)}${stepsPreviewCardMarkup()}${sleepPreviewCardMarkup()}</div><p class="dashboard-preview-hint">Tap a card to open more detail.</p></main>`;
 }
 
 function cleanupOldDashboardActions() {
@@ -317,6 +358,13 @@ export function openDashboardInsights() {
     // document-level Dashboard/Progress click handler to intercept this tap and
     // replace the requested Steps route with the generic Progress overview.
     screen.addEventListener("click", event => {
+        if (event.target.closest?.("[data-insights-sleep-open]")) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            document.dispatchEvent(new CustomEvent("levelup:navigate",{detail:{page:"sleep"}}));
+            closeDashboardInsights();
+            return;
+        }
         if (!event.target.closest?.("[data-insights-steps-open]")) return;
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -327,12 +375,14 @@ export function openDashboardInsights() {
     document.body.classList.add("dashboard-insights-open");
     requestAnimationFrame(() => animatePreviewLines(screen));
     hydrateStepsPreview(screen);
+    hydrateSleepPreview(screen);
 }
 
 export function closeDashboardInsights() {
     const old=document.getElementById(SCREEN_ID);
     if(old?.__stepsOnForeground)document.removeEventListener("visibilitychange",old.__stepsOnForeground);
     old?.__stepsUnsubscribe?.();
+    old?.__sleepUnsubscribe?.();
     old?.remove();
     document.body.classList.remove("dashboard-insights-open");
 }
