@@ -10,7 +10,7 @@ export function renderProgress() {
             <h2>📈 Progress</h2>
 
             <p class="section-description">
-                Track body weight, lifting, nutrition, cardio and progress photos over time.
+                Track weight, lifting, nutrition, cardio, daily steps and progress photos over time.
             </p>
 
 
@@ -46,6 +46,14 @@ export function renderProgress() {
                     type="button"
                 >
                     Cardio
+                </button>
+
+                <button
+                    class="progress-tab"
+                    id="steps-progress-tab"
+                    type="button"
+                >
+                    Steps
                 </button>
 
                 <button
@@ -514,6 +522,12 @@ export function renderProgress() {
                         <h4>Recent Cardio</h4>
                         <div class="cardio-recent-list" data-cardio-recent></div>
                     </article>
+                </section>
+            </div>
+
+            <div id="steps-progress" hidden>
+                <section class="cardio-progress-shell">
+                    <div data-levelup-steps-detail></div>
                 </section>
             </div>
 

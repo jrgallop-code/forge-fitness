@@ -401,6 +401,24 @@ input[type="radio"] {
         inset 0 1px 0 rgba(255, 255, 255, .08);
 }
 
+/* Six Progress destinations stay readable on narrow iPhones. Users can swipe
+   the tab strip; the currently selected tab scrolls into view. */
+.progress-page > .progress-tabs{
+    display:flex;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    scroll-snap-type:x proximity;
+}
+.progress-page > .progress-tabs::-webkit-scrollbar{display:none}
+.progress-page > .progress-tabs > .progress-tab{
+    flex:0 0 auto;
+    min-width:max-content;
+    white-space:nowrap;
+    scroll-snap-align:center;
+}
+
 /* Native-style tab bar, preserving existing destinations and markup */
 .bottom-nav {
     background: rgba(22, 22, 24, .82);

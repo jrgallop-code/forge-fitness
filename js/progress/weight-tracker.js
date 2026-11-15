@@ -1,3 +1,4 @@
+import { initializeStepsProgress } from "./steps-progress-carousel.js?v=steps-progress-standalone-2";
 import {
     getNutritionGoal
 }
@@ -77,6 +78,7 @@ export function initializeWeightTracker() {
 
     ensureWeightRateSummary();
     initializeProgressTabs();
+    initializeStepsProgress();
     updateWeightDisplay();
 }
 
@@ -771,6 +773,7 @@ function initializeProgressTabs() {
         lifting: document.getElementById("lifting-tab"),
         nutrition: document.getElementById("nutrition-progress-tab"),
         cardio: document.getElementById("cardio-progress-tab"),
+        steps: document.getElementById("steps-progress-tab"),
         photo: document.getElementById("photo-log-tab")
     };
     const sections = {
@@ -778,6 +781,7 @@ function initializeProgressTabs() {
         lifting: document.getElementById("lifting-progress"),
         nutrition: document.getElementById("calorie-progress"),
         cardio: document.getElementById("cardio-progress"),
+        steps: document.getElementById("steps-progress"),
         photo: document.getElementById("photo-log-progress")
     };
     if (Object.values(buttons).some(button => !button) || Object.values(sections).some(section => !section)) return;
@@ -788,6 +792,7 @@ function initializeProgressTabs() {
         buttons[name]?.scrollIntoView?.({ behavior: "smooth", block: "nearest", inline: "center" });
         if (name === "weight") requestAnimationFrame(updateWeightDisplay);
         if (name === "lifting") window.dispatchEvent(new Event("resize"));
+        if (name === "steps") window.dispatchEvent(new CustomEvent("levelup:steps-progress-opened"));
         if (name === "nutrition") window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: "progress-nutrition-opened" } }));
     };
 
@@ -795,6 +800,7 @@ function initializeProgressTabs() {
     buttons.lifting.addEventListener("click", () => show("lifting"));
     buttons.nutrition.addEventListener("click", () => show("nutrition"));
     buttons.cardio.addEventListener("click", () => show("cardio"));
+    buttons.steps.addEventListener("click", () => show("steps"));
     buttons.photo.addEventListener("click", () => show("photo"));
 }
 

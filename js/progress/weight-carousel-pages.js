@@ -1,4 +1,4 @@
-const labels={'Weight':'trend','Goal':'goal','Weight + Carbs':'carbs','Calories + Rate':'weekly-calorie-rate','Steps':'steps'};
+const labels={'Weight':'trend','Goal':'goal','Weight + Carbs':'carbs','Calories + Rate':'weekly-calorie-rate'};
 export function syncWeightCarouselPages(card){
  const track=card.querySelector('[data-weight-graph-carousel-track-v2]'),pager=card.querySelector('.weight-graph-carousel-pager-v2');
  if(!track||!pager)return;

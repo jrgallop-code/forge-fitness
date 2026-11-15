@@ -60,26 +60,51 @@ function markup(){
   '<p class="lu-sp-note" data-lu-sp-note>Missing HealthKit records are excluded from averages, not counted as zero.</p>'+
   '<button type="button" class="secondary-btn" data-lu-sp-refresh>Refresh Apple Health steps</button>';
 }
-export function addStepsSlide(card,track,pager){
- if(track.querySelector('[data-weight-graph-slide-v2="steps"]'))return;
- const slide=document.createElement("section");slide.className="weight-graph-carousel-slide-v2 is-steps";slide.dataset.weightGraphSlideV2="steps";slide.innerHTML=markup();
- track.append(slide);
- const tab=document.createElement("button");tab.type="button";tab.textContent="Steps";tab.setAttribute("aria-label","Steps");tab.setAttribute("aria-pressed","false");tab.dataset.weightGraphKind="steps";tab.dataset.weightGraphPageV2=String(track.children.length-1);pager.append(tab);
+const STEP_PANEL_SELECTOR="#steps-progress [data-levelup-steps-detail]";
+let attached=false;
+export function initializeStepsProgress(root=document){
+ const host=root.querySelector?.(STEP_PANEL_SELECTOR) || document.querySelector(STEP_PANEL_SELECTOR);
+ if(!host)return false;
+ if(!host.dataset.stepsInitialized){
+  host.dataset.stepsInitialized="true";
+  host.innerHTML=markup();
+  host.addEventListener("click",event=>{
+   const range=event.target.closest("[data-lu-sp-range]");
+   if(range){
+    activeRange=range.dataset.luSpRange;
+    host.querySelectorAll("[data-lu-sp-range]").forEach(el=>el.setAttribute("aria-pressed",String(el.dataset.luSpRange===activeRange)));
+    updateStepsProgress();
+   }
+   if(event.target.closest("[data-lu-sp-refresh]")){
+    void refreshAppleHealth(true).then(()=>updateStepsProgress()).catch(()=>{
+     const chart=host.querySelector("[data-lu-sp-chart]");
+     if(chart)chart.textContent="Unable to read steps from Apple Health.";
+    });
+   }
+  });
+ }
  ensureStyles();
- slide.addEventListener("click",event=>{
-  const button=event.target.closest("[data-lu-sp-range]");
-  if(button){activeRange=button.dataset.luSpRange;slide.querySelectorAll("[data-lu-sp-range]").forEach(el=>el.setAttribute("aria-pressed",String(el.dataset.luSpRange===activeRange)));updateStepsSlide(card);}
-  if(event.target.closest("[data-lu-sp-refresh]"))void refreshAppleHealth(true).then(()=>updateStepsSlide(card)).catch(()=>{const chart=slide.querySelector("[data-lu-sp-chart]");if(chart)chart.textContent="Unable to read Apple Health steps.";});
- });
- window.addEventListener("levelup:apple-health-refreshed",()=>updateStepsSlide(card));
- updateStepsSlide(card);
+ if(!attached && typeof window!=="undefined"){
+  attached=true;
+  window.addEventListener("levelup:apple-health-refreshed",updateStepsProgress);
+  window.addEventListener("levelup:steps-progress-opened",updateStepsProgress);
+ }
+ updateStepsProgress();
+ return true;
 }
-export function updateStepsSlide(card){
- const slide=card?.querySelector('[data-weight-graph-slide-v2="steps"]');if(!slide)return;
+export function updateStepsProgress(){
+ const host=document.querySelector(STEP_PANEL_SELECTOR);
+ if(!host)return;
  const data=getCachedAppleHealth();
- if(!data){void refreshAppleHealth().then(()=>updateStepsSlide(card)).catch(()=>{});return;}
+ if(!data){
+  void refreshAppleHealth().then(()=>updateStepsProgress()).catch(()=>{
+   const chart=host.querySelector("[data-lu-sp-chart]");
+   if(chart)chart.textContent="Unable to read steps from Apple Health.";
+  });
+  return;
+ }
  const model=stepsChartModel(data,activeRange);
- const avg=slide.querySelector("[data-lu-sp-average]"),total=slide.querySelector("[data-lu-sp-total]"),recorded=slide.querySelector("[data-lu-sp-recorded]"),chart=slide.querySelector("[data-lu-sp-chart]"),note=slide.querySelector("[data-lu-sp-note]");
+ const avg=host.querySelector("[data-lu-sp-average]"),total=host.querySelector("[data-lu-sp-total]"),recorded=host.querySelector("[data-lu-sp-recorded]"),chart=host.querySelector("[data-lu-sp-chart]"),note=host.querySelector("[data-lu-sp-note]");
  if(avg)avg.textContent=model.average===null?"—":fmt(model.average);
  if(total)total.textContent=model.recorded?fmt(model.total):"—";
  if(recorded)recorded.textContent=model.recorded+" of "+model.period+" days recorded";
@@ -87,15 +112,27 @@ export function updateStepsSlide(card){
  if(note)note.textContent=model.recorded?(model.period<=30?"Bars show daily totals. ":"Bars show average daily steps per group. ")+"Missing days are not counted as zero.":"No Apple Health step records in this range. Check Health → Steps → Show All Data.";
 }
 export function openStepsInProgress(){
+ // Navigating to Progress can remount its content asynchronously. Wait for the
+ // actual Steps tab rather than scrolling the Weight carousel into view.
  document.querySelector('.bottom-nav .nav-btn[data-page="progress"], .nav-btn[data-page="progress"]')?.click();
  let attempts=0;
  const open=()=>{
-  const card=document.querySelector("#weight-progress .weight-chart-card"),track=card?.querySelector("[data-weight-graph-carousel-track-v2]"),slide=track?.querySelector('[data-weight-graph-slide-v2="steps"]');
-  if(!slide){if(attempts++<25)window.setTimeout(open,100);return;}
-  document.getElementById("weight-tab")?.click();
-  const pager=card.querySelector('[data-weight-graph-kind="steps"]');
-  if(pager)pager.click();else track.scrollTo({left:[...track.children].indexOf(slide)*track.clientWidth,behavior:"smooth"});
-  card.scrollIntoView({behavior:"smooth",block:"start"});updateStepsSlide(card);
+  const tab=document.getElementById("steps-progress-tab");
+  const host=document.querySelector(STEP_PANEL_SELECTOR);
+  if(!tab || !host){
+   if(attempts++<35)window.setTimeout(open,100);
+   return;
+  }
+  initializeStepsProgress();
+  tab.click();
+  // A newly mounted Progress page can expose its markup before tab listeners
+  // attach. Confirm that only Steps is visible before completing navigation.
+  const panel=document.getElementById("steps-progress");
+  if(panel?.hidden && attempts++<35){
+   window.setTimeout(open,100);
+   return;
+  }
+  host.scrollIntoView({behavior:"smooth",block:"nearest"});
  };
  window.setTimeout(open,60);
 }
@@ -103,22 +140,20 @@ function ensureStyles(){
  if(document.getElementById(STYLE_ID))return;
  const style=document.createElement("style");style.id=STYLE_ID;
  style.textContent=[
- '#weight-progress .is-steps{min-width:0;padding:0 2px 10px}',
- '#weight-progress .lu-sp-title h3{font-size:20px;margin:4px 0;color:var(--heading,var(--text))}',
- '#weight-progress .lu-sp-title p{font-size:12px;color:var(--muted);margin:3px 0 13px}',
- '#weight-progress .lu-sp-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:13px 0}',
- '#weight-progress .lu-sp-summary>div{min-width:0;display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:12px}',
- '#weight-progress .lu-sp-summary small{color:var(--muted);font-size:10px}',
- '#weight-progress .lu-sp-summary strong{font-size:23px;line-height:1.2;color:var(--heading,var(--text))}',
- '#weight-progress .lu-sp-ranges{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:14px 0}',
- '#weight-progress .lu-sp-ranges button{font-size:11px;font-weight:800;padding:9px 0;border:1px solid var(--line);border-radius:9px;color:var(--text);background:var(--card);min-width:0}',
- '#weight-progress .lu-sp-ranges button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:white}',
- '#weight-progress .lu-sp-svg{display:block;width:100%;max-height:260px}',
- '#weight-progress .lu-sp-axis{font:10px system-ui,sans-serif;fill:var(--muted)}',
- '#weight-progress .lu-sp-grid{stroke:var(--line);stroke-width:.8}',
- '#weight-progress .lu-sp-bar{fill:var(--accent)}',
- '#weight-progress .lu-sp-note{font-size:11px;line-height:1.4;color:var(--muted)}',
- '#weight-progress .weight-graph-carousel-pager-v2:has([data-weight-graph-kind="steps"]){display:flex;grid-template-columns:none}',
- '#weight-progress .weight-graph-carousel-pager-v2:has([data-weight-graph-kind="steps"])>button{flex:1;min-width:0;padding:0 3px}'
+ '#steps-progress .is-steps{min-width:0;padding:0 2px 10px}',
+ '#steps-progress .lu-sp-title h3{font-size:20px;margin:4px 0;color:var(--heading,var(--text))}',
+ '#steps-progress .lu-sp-title p{font-size:12px;color:var(--muted);margin:3px 0 13px}',
+ '#steps-progress .lu-sp-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:13px 0}',
+ '#steps-progress .lu-sp-summary>div{min-width:0;display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:12px}',
+ '#steps-progress .lu-sp-summary small{color:var(--muted);font-size:10px}',
+ '#steps-progress .lu-sp-summary strong{font-size:23px;line-height:1.2;color:var(--heading,var(--text))}',
+ '#steps-progress .lu-sp-ranges{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:14px 0}',
+ '#steps-progress .lu-sp-ranges button{font-size:11px;font-weight:800;padding:9px 0;border:1px solid var(--line);border-radius:9px;color:var(--text);background:var(--card);min-width:0}',
+ '#steps-progress .lu-sp-ranges button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:white}',
+ '#steps-progress .lu-sp-svg{display:block;width:100%;max-height:260px}',
+ '#steps-progress .lu-sp-axis{font:10px system-ui,sans-serif;fill:var(--muted)}',
+ '#steps-progress .lu-sp-grid{stroke:var(--line);stroke-width:.8}',
+ '#steps-progress .lu-sp-bar{fill:var(--accent)}',
+ '#steps-progress .lu-sp-note{font-size:11px;line-height:1.4;color:var(--muted)}',
  ].join("\n");document.head.append(style);
 }

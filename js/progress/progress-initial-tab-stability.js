@@ -6,12 +6,14 @@ function stabilizeInitialProgressTab(root = document) {
     const weightButton = root.querySelector?.("#weight-tab");
     const nutritionButton = root.querySelector?.("#nutrition-progress-tab");
     const cardioButton = root.querySelector?.("#cardio-progress-tab");
+    const stepsButton = root.querySelector?.("#steps-progress-tab");
     const photoButton = root.querySelector?.("#photo-log-tab");
 
     const lifting = root.querySelector?.("#lifting-progress");
     const weight = root.querySelector?.("#weight-progress");
     const nutrition = root.querySelector?.("#calorie-progress");
     const cardio = root.querySelector?.("#cardio-progress");
+    const steps = root.querySelector?.("#steps-progress");
     const photo = root.querySelector?.("#photo-log-progress");
 
     if (!liftingButton || !weightButton || !lifting || !weight) return false;
@@ -20,7 +22,7 @@ function stabilizeInitialProgressTab(root = document) {
     // state synchronously in the same mutation turn that mounts the page so
     // Safari never paints Weight for one frame before another module clicks
     // over to Lifting.
-    [weightButton, nutritionButton, cardioButton, photoButton].forEach(button =>
+    [weightButton, nutritionButton, cardioButton, stepsButton, photoButton].forEach(button =>
         button?.classList.remove("active")
     );
     liftingButton.classList.add("active");
@@ -29,6 +31,7 @@ function stabilizeInitialProgressTab(root = document) {
     lifting.hidden = false;
     if (nutrition) nutrition.hidden = true;
     if (cardio) cardio.hidden = true;
+    if (steps) steps.hidden = true;
     if (photo) photo.hidden = true;
 
     tabs.dataset.initialTabStabilized = "true";
