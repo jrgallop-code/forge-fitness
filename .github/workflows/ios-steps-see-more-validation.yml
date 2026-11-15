@@ -1,0 +1,24 @@
+name: iOS Steps See More layout validation
+on:
+  pull_request:
+    branches:
+      - ios/capacitor-app-store
+    paths:
+      - 'js/health/apple-health.js'
+      - 'js/dashboard/dashboard-insights-analytics-v5.js'
+      - 'tests/ios-step-see-more-layout.test.mjs'
+      - '.github/workflows/ios-steps-see-more-validation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  steps-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check js/health/apple-health.js
+      - run: node --check js/dashboard/dashboard-insights-analytics-v5.js
+      - run: node --test tests/ios-step-see-more-layout.test.mjs
