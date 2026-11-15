@@ -1,5 +1,6 @@
 import { splitWeightTrendSegments } from "./weight-trend-segments.js";
 import { syncWeightCarouselPages, swipePage } from "./weight-carousel-pages.js";
+import { addStepsSlide } from "./steps-progress-carousel.js?v=steps-axis-progress-1";
 import { calculateTrendWeightSeries, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
 import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
 
@@ -86,6 +87,8 @@ function ensureCarousel(card) {
         <button type="button" data-weight-graph-page-v2="1" aria-pressed="false">Weight + Carbs</button>
     `;
     card.appendChild(pager);
+    addStepsSlide(card, track, pager);
+    syncWeightCarouselPages(card);
 
     pager.addEventListener("click", event => {
         const button = event.target.closest?.("[data-weight-graph-page-v2]");
