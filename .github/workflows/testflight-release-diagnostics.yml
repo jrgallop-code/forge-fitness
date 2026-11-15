@@ -17,8 +17,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh api "repos/$GH_REPO/actions/workflows/ios-app-store.yml/runs?per_page=8" --jq '.workflow_runs[]|{id,run_number,status,conclusion,created_at,head_sha,event,html_url}'
-          for id in $(gh api "repos/$GH_REPO/actions/workflows/ios-app-store.yml/runs?per_page=5" --jq '.workflow_runs[].id'); do
+          gh api "repos/$GH_REPO/actions/workflows/ios-app-store.yml/runs?per_page=12" --jq '.workflow_runs[]|{id,run_number,status,conclusion,created_at,head_sha,event,html_url}'
+          for id in $(gh api "repos/$GH_REPO/actions/workflows/ios-app-store.yml/runs?per_page=6" --jq '.workflow_runs[].id'); do
             echo "RELEASE RUN $id"
             gh api "repos/$GH_REPO/actions/runs/$id/jobs?per_page=100" --jq '.jobs[]|{id,name,status,conclusion,failed_steps:[.steps[]|select(.conclusion=="failure")|.name]}' || true
           done
