@@ -2,6 +2,7 @@ import { energyDateKey, getEnergyBalanceState, shiftEnergyDateKey } from "../nut
 import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-dashboard-visibility-1";
 import { getGoalTimelineViewModel, goalTimelinePreviewMarkup } from "./dashboard-goal-timeline.js?v=goal-timeline-2";
 import { getCachedAppleHealth, refreshAppleHealth } from "../health/apple-health.js?v=steps-progress-y-axis-1";
+import { lastSevenDaysSteps, getDailyStepsGoal } from "../health/steps-summary.js?v=steps-today-1";
 import { openStepsInProgress } from "../progress/steps-progress-carousel.js?v=steps-progress-standalone-2";
 
 const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
@@ -52,6 +53,20 @@ function ensureStyles() {
         .dashboard-preview-steps-bar{height:8px;border-radius:99px;background:var(--surface-raised);overflow:hidden}
         .dashboard-preview-steps-bar i{display:block;height:100%;background:var(--accent);border-radius:inherit;transition:width .2s}
         .dashboard-preview-step-total{font-size:.58rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .dashboard-preview-steps{display:flex;flex-direction:column;gap:10px;min-height:200px}
+        .lu-insights-steps-heading{display:flex;align-items:center;justify-content:space-between}
+        .lu-insights-steps-heading .dashboard-preview-chevron{position:static}
+        .lu-insights-steps-today{display:flex;justify-content:space-between;align-items:flex-end;min-width:0;gap:12px}
+        .lu-insights-steps-today>span:first-child{min-width:0}
+        .lu-insights-steps-today strong{display:block;font-size:2rem;line-height:1.12;color:var(--heading,var(--text));font-variant-numeric:tabular-nums}
+        .lu-insights-steps-today small{display:block;font-size:.57rem;color:var(--muted);margin-top:4px}
+        .lu-insights-steps-spark{display:flex;align-items:flex-end;justify-content:flex-end;gap:5px;height:46px;flex:1}
+        .lu-insights-steps-spark i{width:9px;max-width:12%;min-height:2px;background:var(--accent);border-radius:3px 3px 0 0;opacity:.55}
+        .lu-insights-steps-spark i.current{opacity:1}
+        .lu-insights-steps-footer{border-top:1px solid var(--line);padding-top:9px;display:grid;grid-template-columns:1fr 1fr;gap:9px}
+        .lu-insights-steps-footer span+span{border-left:1px solid var(--line);padding-left:12px}
+        .lu-insights-steps-footer small{display:block;font-size:.57rem;color:var(--muted);margin-bottom:4px}
+        .lu-insights-steps-footer strong{font-size:1.03rem;color:var(--heading,var(--text));font-variant-numeric:tabular-nums}
         .dashboard-preview-hint{margin:12px 0 0;color:var(--muted);font-size:.58rem;text-align:center}
         @media(max-width:380px){.dashboard-preview-body{padding-left:12px;padding-right:12px}.dashboard-preview-grid{gap:8px}.dashboard-preview-card{min-height:158px;padding:12px}.dashboard-preview-card h3{font-size:.8rem}.dashboard-preview-card .value strong{font-size:1.12rem}.dashboard-preview-card .value span{font-size:.5rem}}
     `;
@@ -137,31 +152,54 @@ function comparisonSvg(state) {
 }
 
 function stepsPreviewCardMarkup() {
-    return `<button type="button" class="dashboard-preview-card dashboard-preview-steps" data-insights-steps-open aria-label="Open Apple Health step history">
-      <h3>Steps</h3><span class="sub">Last 7 Days · Apple Health</span>
-      <div class="dashboard-preview-chart"><div class="dashboard-preview-steps-bar"><i data-insights-step-progress style="width:0%"></i></div>
-      <small class="dashboard-preview-step-total" data-insights-step-total>— total steps</small></div>
-      <div class="value"><strong data-insights-step-average>—</strong><span>steps/day avg</span></div>
-      <span class="dashboard-preview-chevron">›</span>
+    return `<button type="button" class="dashboard-preview-card dashboard-preview-steps" data-insights-steps-open aria-label="Open Steps in Progress">
+      <span class="lu-insights-steps-heading"><h3>Steps</h3><span class="dashboard-preview-chevron">›</span></span>
+      <div class="lu-insights-steps-today">
+        <span><span class="sub">Today</span><strong data-insights-step-today>—</strong><small data-insights-step-status>Apple Health · Updates when refreshed</small></span>
+        <span class="lu-insights-steps-spark" data-insights-step-spark aria-hidden="true"></span>
+      </div>
+      <div class="dashboard-preview-steps-bar" role="progressbar" aria-label="Today's steps toward daily target" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i data-insights-step-progress style="width:0%"></i></div>
+      <span class="lu-insights-steps-footer">
+        <span><small>7-day average</small><strong data-insights-step-average>—</strong></span>
+        <span><small>7-day total</small><strong data-insights-step-total>—</strong></span>
+      </span>
     </button>`;
 }
 function hydrateStepsPreview(root) {
     const update = data => {
         const card = root.querySelector("[data-insights-steps-open]");
-        if (!card || !data?.steps) return;
-        const rows = data.steps.slice(-7), valid = rows.filter(r=>Number.isFinite(r.steps) && r.steps>=0);
-        const total = valid.reduce((n,r)=>n+r.steps,0);
-        const dailyAverage = valid.length ? Math.round(total/valid.length):null;
-        const avgNode = card.querySelector("[data-insights-step-average]");
-        const totalNode = card.querySelector("[data-insights-step-total]");
-        if(avgNode) avgNode.textContent=dailyAverage===null?"—":formatNumber(dailyAverage);
-        if(totalNode) totalNode.textContent=valid.length ? formatNumber(total)+" total steps":"— total steps";
-        const bar=card.querySelector("[data-insights-step-progress]");
-        if(bar) bar.style.width=dailyAverage===null?"0%":Math.min(100,Math.round(dailyAverage/10000*100))+"%";
+        if (!card) return;
+        const summary = lastSevenDaysSteps(data);
+        const todayNode=card.querySelector("[data-insights-step-today]");
+        const avgNode=card.querySelector("[data-insights-step-average]");
+        const totalNode=card.querySelector("[data-insights-step-total]");
+        const statusNode=card.querySelector("[data-insights-step-status]");
+        const goal=getDailyStepsGoal();
+        const today=summary.today;
+        if(todayNode)todayNode.textContent=today===null?"—":formatNumber(today);
+        if(avgNode)avgNode.textContent=summary.recordedDays?formatNumber(summary.average):"—";
+        if(totalNode)totalNode.textContent=summary.recordedDays?formatNumber(summary.total):"—";
+        if(statusNode)statusNode.textContent=today===null?"No steps recorded yet · Apple Health":`Daily target: ${formatNumber(goal)} steps`;
+        const progress=card.querySelector("[data-insights-step-progress]");
+        const pct=today===null?0:Math.min(100,Math.round(today/goal*100));
+        if(progress)progress.style.width=pct+"%";
+        const track=card.querySelector('[role="progressbar"]');
+        if(track)track.setAttribute("aria-valuenow",String(pct));
+        const spark=card.querySelector("[data-insights-step-spark]");
+        if(spark){
+            const max=Math.max(1,...summary.values.map(n=>n??0));
+            spark.innerHTML=summary.values.map((n,i)=>`<i class="${i===6?"current":""}" style="height:${n===null?2:Math.max(5,Math.round(n/max*100))}%"></i>`).join("");
+        }
     };
     const cached=getCachedAppleHealth();
     if(cached)update(cached);
-    void refreshAppleHealth().then(update).catch(()=>{});
+    void refreshAppleHealth(true).then(update).catch(()=>{ if(!cached) update(null); });
+    const sync=()=>{const data=getCachedAppleHealth();if(data)update(data)};
+    window.addEventListener("levelup:apple-health-refreshed",sync);
+    root.__stepsUnsubscribe=()=>window.removeEventListener("levelup:apple-health-refreshed",sync);
+    const onForeground=()=>{if(!document.hidden && root.isConnected)void refreshAppleHealth(true).then(update).catch(()=>{});};
+    root.__stepsOnForeground=onForeground;
+    document.addEventListener("visibilitychange",onForeground);
 }
 
 function screenMarkup() {
@@ -292,7 +330,10 @@ export function openDashboardInsights() {
 }
 
 export function closeDashboardInsights() {
-    document.getElementById(SCREEN_ID)?.remove();
+    const old=document.getElementById(SCREEN_ID);
+    if(old?.__stepsOnForeground)document.removeEventListener("visibilitychange",old.__stepsOnForeground);
+    old?.__stepsUnsubscribe?.();
+    old?.remove();
     document.body.classList.remove("dashboard-insights-open");
 }
 
