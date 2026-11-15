@@ -814,7 +814,7 @@ function initializeProgressTabs() {
         button.addEventListener("click", () => selectProgressTab(name));
     }
     // A Steps deep link explicitly selects the content panel before first paint.
-    if (window.__levelUpProgressInitialTab === "steps") {
+    if (document.querySelector(".progress-tabs")?.dataset.initialTab === "steps") {
         selectProgressTab("steps", { center: false });
     }
 }
