@@ -16,7 +16,7 @@ const onboardingCss = read("css/onboarding.css");
 
 test("Dashboard Steps opens Progress with the Steps tab requested synchronously", () => {
     assert.match(insights, /closeDashboardInsights\(\); openStepsInProgress\(\)/);
-    assert.match(steps, /detail: \{ page: "progress", tab: "steps" \}/);
+    assert.match(steps, /detail: \{ page: "progress-steps" \}/);
     assert.doesNotMatch(steps, /__levelUpProgressInitialTab/);
     assert.match(app, /navigate\(page, \{ tab: event\.detail\?\.tab \|\| null \}\)/);
     assert.match(steps, /new CustomEvent\("levelup:navigate"/);
@@ -49,8 +49,10 @@ test("Apple Health onboarding uses a recognizable, accessible Health icon", () =
 
 test("route and real tab controller both select Steps after all initializers", () => {
     assert.match(router, /selectProgressTab\("steps", \{ center: false \}\)/);
-    assert.match(router, /renderProgress\(\{ initialTab: tab === "steps" \? "steps" : "lifting" \}\)/);
+    assert.match(router, /renderProgress\(\{ initialTab: page === "progress-steps" \|\| tab === "steps" \? "steps" : "lifting" \}\)/);
     assert.match(router, /export function navigate\(page, \{ tab = null \} = \{\}\)/);
+    assert.match(router, /case "progress-steps":/);
+    assert.match(app, /page==="progress-steps"\?"progress":page/);
     assert.match(weightTracker, /export function selectProgressTab\(name,/);
     assert.match(weightTracker, /selectProgressTab\("steps", \{ center: false \}\)/);
     assert.match(weightTracker, /dataset\.initialTab === "steps"/);
@@ -125,15 +127,15 @@ test("Steps deep link carries explicit tab through Dashboard event and first Pro
     runInNewContext(fn+"\nopenStepsInProgress()",scope);
     assert.equal(eventLog.length,1);
     assert.equal(eventLog[0].type,"levelup:navigate");
-    assert.equal(eventLog[0].detail.page,"progress");
-    assert.equal(eventLog[0].detail.tab,"steps");
+    assert.equal(eventLog[0].detail.page,"progress-steps");
+    assert.equal(eventLog[0].detail.tab,undefined);
 
     const progressBody = progress.replace(/^import .*;\s*$/gm, "").replace("export function renderProgress","function renderProgress");
     const render = runInNewContext(progressBody+"\nrenderProgress",{
        renderCalorieStats:()=>"", renderPhotoJournal:()=>"",
        window:{}
     });
-    const html = render({initialTab:eventLog[0].detail.tab});
+    const html = render({initialTab:eventLog[0].detail.page==="progress-steps"?"steps":"lifting"});
     assert.match(html, /data-initial-tab="steps"/);
     assert.match(html, /class="progress-tab active"\s+id="steps-progress-tab"/);
     assert.match(html, /id="steps-progress"\s*>/);
