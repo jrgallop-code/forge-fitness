@@ -275,6 +275,16 @@ export function openDashboardInsights() {
     screen.setAttribute("aria-modal", "true");
     screen.setAttribute("aria-label", "Insights and Analytics");
     screen.innerHTML = screenMarkup();
+    // Handle the Steps tap on the overlay in capture phase. Never allow a
+    // document-level Dashboard/Progress click handler to intercept this tap and
+    // replace the requested Steps route with the generic Progress overview.
+    screen.addEventListener("click", event => {
+        if (!event.target.closest?.("[data-insights-steps-open]")) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        openStepsInProgress();
+        closeDashboardInsights();
+    }, true);
     document.body.appendChild(screen);
     document.body.classList.add("dashboard-insights-open");
     requestAnimationFrame(() => animatePreviewLines(screen));
@@ -326,7 +336,6 @@ document.addEventListener("click", event => {
         closeDashboardInsights();
         return;
     }
-    if(event.target.closest("[data-insights-steps-open]")) { closeDashboardInsights(); openStepsInProgress(); return; }
     const graph = event.target.closest("[data-dashboard-open-progress]");
     if (graph) openProgressGraph(graph.dataset.dashboardOpenProgress);
 });
