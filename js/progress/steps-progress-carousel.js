@@ -112,22 +112,15 @@ export function updateStepsProgress(){
  if(note)note.textContent=model.recorded?(model.period<=30?"Bars show daily totals. ":"Bars show average daily steps per group. ")+"Missing days are not counted as zero.":"No Apple Health step records in this range. Check Health → Steps → Show All Data.";
 }
 export function openStepsInProgress(){
-  // Ask the router to render Steps active in the first Progress frame.
-  // Never paint Weight/Lifting while waiting for an asynchronous tab click.
-  window.__levelUpProgressInitialTab = "steps";
-  try {
-    document.dispatchEvent(new CustomEvent("levelup:navigate", {
-      detail: { page: "progress" }
-    }));
-  } finally {
-    delete window.__levelUpProgressInitialTab;
-  }
-  // The Progress router and weight-tracker controller select the destination
-  // during navigation, without any delayed or synthetic tab clicks.
+  // Navigate with an explicit tab destination: no global flags, synthetic
+  // click, polling, or intermediate Progress overview.
+  document.dispatchEvent(new CustomEvent("levelup:navigate", {
+    detail: { page: "progress", tab: "steps" }
+  }));
   const stepsTab = document.getElementById("steps-progress-tab");
   const stepsPanel = document.getElementById("steps-progress");
   if (!stepsTab?.classList.contains("active") || stepsPanel?.hidden) {
-    console.error("Steps deep link did not activate its Progress tab.");
+    console.error("Steps deep link failed to activate Steps on first render.");
   }
   initializeStepsProgress();
   window.dispatchEvent(new Event("levelup:steps-progress-opened"));
