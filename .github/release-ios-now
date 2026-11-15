@@ -684,3 +684,5 @@ Use the shared weekly weight trend for the expenditure correction.
 2026-11-15: User-requested TestFlight upload after PR #813 merge ca32f699: full-width Steps below Goal Timeline, restore Expenditure layout, and Steps as dedicated Progress tab immediately after Cardio.
 
 2026-11-15: Fix dashboard Steps shortcut to activate the real Progress Steps tab synchronously; regression coverage; TestFlight release.
+
+2026-11-15: Correct Dashboard Steps deep link by centralizing Progress tab selection and preserving the Steps destination through initial mount; behavioral regression tested.
