@@ -2,7 +2,7 @@ import { energyDateKey, getEnergyBalanceState, shiftEnergyDateKey } from "../nut
 import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-dashboard-visibility-1";
 import { getGoalTimelineViewModel, goalTimelinePreviewMarkup } from "./dashboard-goal-timeline.js?v=goal-timeline-2";
 import { getCachedAppleHealth, refreshAppleHealth } from "../health/apple-health.js?v=steps-progress-y-axis-1";
-import { openStepsInProgress } from "../progress/steps-progress-carousel.js?v=steps-axis-progress-1";
+import { openStepsInProgress } from "../progress/steps-progress-carousel.js?v=steps-progress-standalone-2";
 
 const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
 const SCREEN_ID = "dashboard-insights-analytics-screen";
@@ -47,7 +47,7 @@ function ensureStyles() {
         .dashboard-preview-goal-track{width:100%;height:12px;overflow:hidden;border-radius:999px;background:var(--surface-raised)}.dashboard-preview-goal-track span{display:block;height:100%;border-radius:inherit;background:var(--success,#22c55e)}
         .dashboard-preview-goal .value strong{font-size:1.25rem}.dashboard-preview-goal .value span{overflow:hidden;text-overflow:ellipsis}
         /* Steps follows Goal Timeline with matching full-width card dimensions. */
-        .dashboard-preview-steps{grid-column:1/-1;min-height:200px;padding:16px;text-align:left}
+        .dashboard-preview-goal,.dashboard-preview-steps{min-height:200px}\n        .dashboard-preview-steps{grid-column:1/-1;padding:16px;text-align:left}
         .dashboard-preview-steps .dashboard-preview-chart{flex-direction:column;align-items:stretch;justify-content:center;gap:9px}
         .dashboard-preview-steps-bar{height:8px;border-radius:99px;background:var(--surface-raised);overflow:hidden}
         .dashboard-preview-steps-bar i{display:block;height:100%;background:var(--accent);border-radius:inherit;transition:width .2s}
