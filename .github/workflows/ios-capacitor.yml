@@ -19,7 +19,9 @@ on:
       - package-lock.json
       - tests/capacitor-ios-packaging.test.mjs
       - tests/ios-cloud-build.test.mjs
-      - tests/native-app-shell.test.mjs tests/apple-health-steps-insights.test.mjs tests/steps-direct-navigation-onboarding-health.test.mjs
+      - tests/native-app-shell.test.mjs
+      - tests/apple-health-steps-insights.test.mjs
+      - tests/steps-direct-navigation-onboarding-health.test.mjs
       - tools/build-native.mjs
   pull_request:
     branches:
