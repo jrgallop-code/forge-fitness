@@ -11,6 +11,10 @@ on:
       - 'js/progress/weight-carousel-pages.js'
       - 'js/progress/weight-carbs-chart.js'
       - 'js/core/router.js'
+      - 'js/progress/progress-ui.js'
+      - 'js/progress/weight-tracker.js'
+      - 'js/progress/progress-initial-tab-stability.js'
+      - 'js/dashboard/dashboard-insights-analytics.js'
       - 'tests/ios-step-see-more-layout.test.mjs'
       - '.github/workflows/ios-steps-see-more-validation.yml'
   workflow_dispatch:
@@ -27,5 +31,8 @@ jobs:
       - run: node --check js/health/apple-health.js
       - run: node --check js/progress/steps-progress-carousel.js
       - run: node --check js/progress/weight-chart-carousel-v3.js
+      - run: node --check js/progress/progress-ui.js
+      - run: node --check js/progress/weight-tracker.js
+      - run: node --check js/progress/progress-initial-tab-stability.js
       - run: node --check js/dashboard/dashboard-insights-analytics-v5.js
       - run: node --test tests/ios-step-see-more-layout.test.mjs
