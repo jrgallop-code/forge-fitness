@@ -1,7 +1,8 @@
 import { energyDateKey, getEnergyBalanceState, shiftEnergyDateKey } from "../nutrition/energy-balance-state.js?v=energy-summary-1";
 import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-dashboard-visibility-1";
 import { getGoalTimelineViewModel, goalTimelinePreviewMarkup } from "./dashboard-goal-timeline.js?v=goal-timeline-2";
-import { getCachedAppleHealth, refreshAppleHealth, openStepsDetail } from "../health/apple-health.js?v=healthkit-steps-sleep-1";
+import { getCachedAppleHealth, refreshAppleHealth } from "../health/apple-health.js?v=healthkit-steps-sleep-1";
+import { openStepsInProgress } from "../progress/steps-progress-carousel.js?v=steps-axis-progress-1";
 
 const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
 const SCREEN_ID = "dashboard-insights-analytics-screen";
@@ -325,7 +326,7 @@ document.addEventListener("click", event => {
         closeDashboardInsights();
         return;
     }
-    if(event.target.closest("[data-insights-steps-open]")) { openStepsDetail(); return; }
+    if(event.target.closest("[data-insights-steps-open]")) { closeDashboardInsights(); openStepsInProgress(); return; }
     const graph = event.target.closest("[data-dashboard-open-progress]");
     if (graph) openProgressGraph(graph.dataset.dashboardOpenProgress);
 });
