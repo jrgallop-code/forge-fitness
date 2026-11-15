@@ -101,3 +101,42 @@ test("real tab selector changes visible panel from Lifting to Steps", () => {
     assert.equal(strip.dataset.currentTab,"steps");
     assert.ok(events.includes("levelup:steps-progress-opened"));
 });
+
+test("Steps deep link carries explicit tab through Dashboard event and first Progress render", () => {
+    const start = steps.indexOf("export function openStepsInProgress(){");
+    const end = steps.indexOf("function ensureStyles(){", start);
+    assert.ok(start >= 0 && end > start);
+    const eventLog=[];
+    class FakeCustomEvent {
+      constructor(type,options){this.type=type;this.detail=options.detail;}
+    }
+    const scope = {
+      document: {
+        dispatchEvent(e){eventLog.push(e);},
+        getElementById(id){return id==="steps-progress-tab"?{classList:{contains:()=>true}}:{hidden:false};}
+      },
+      CustomEvent: FakeCustomEvent,
+      Event: class {constructor(type){this.type=type}},
+      window: {dispatchEvent(){}},
+      initializeStepsProgress(){},
+      console
+    };
+    const fn = steps.slice(start,end).replace("export function","function");
+    runInNewContext(fn+"\nopenStepsInProgress()",scope);
+    assert.equal(eventLog.length,1);
+    assert.equal(eventLog[0].type,"levelup:navigate");
+    assert.equal(eventLog[0].detail.page,"progress");
+    assert.equal(eventLog[0].detail.tab,"steps");
+
+    const progressBody = progress.replace(/^import .*;\s*$/gm, "").replace("export function renderProgress","function renderProgress");
+    const render = runInNewContext(progressBody+"\nrenderProgress",{
+       renderCalorieStats:()=>"", renderPhotoJournal:()=>"",
+       window:{}
+    });
+    const html = render({initialTab:eventLog[0].detail.tab});
+    assert.match(html, /data-initial-tab="steps"/);
+    assert.match(html, /class="progress-tab active"\s+id="steps-progress-tab"/);
+    assert.match(html, /id="steps-progress"\s*>/);
+    assert.match(html, /id="lifting-progress"\s+hidden/);
+    assert.match(html, /id="weight-progress"\s+hidden/);
+});
