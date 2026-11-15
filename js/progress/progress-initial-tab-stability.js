@@ -21,7 +21,7 @@ function stabilizeInitialProgressTab(root = document) {
     // Dashboard Steps deep links are rendered with Steps selected before the
     // first paint. Preserve that initial selection instead of briefly forcing
     // Weight/Lifting while other Progress modules mount.
-    const openStepsInitially = !!stepsButton?.classList.contains("active") && steps?.hidden === false;
+    const openStepsInitially = tabs.dataset.initialTab === "steps" || tabs.dataset.currentTab === "steps" || (!!stepsButton?.classList.contains("active") && steps?.hidden === false);
     [weightButton, nutritionButton, cardioButton, stepsButton, photoButton].forEach(button =>
         button?.classList.remove("active")
     );
