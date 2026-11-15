@@ -170,3 +170,12 @@ body.levelup-onboarding-open .bottom-nav{opacity:0!important;visibility:hidden!i
 @media(max-width:560px){.levelup-onboarding{padding:0}.levelup-onboarding-shell{width:100%;height:100%;border:0;border-radius:0}.levelup-onboarding-topbar{padding-top:max(15px,env(safe-area-inset-top));padding-left:max(18px,env(safe-area-inset-left));padding-right:max(18px,env(safe-area-inset-right))}.levelup-onboarding-progress{margin-left:max(18px,env(safe-area-inset-left));margin-right:max(18px,env(safe-area-inset-right))}.levelup-onboarding-body{padding-left:max(18px,env(safe-area-inset-left));padding-right:max(18px,env(safe-area-inset-right))}.levelup-onboarding-footer{padding-left:max(18px,env(safe-area-inset-left));padding-right:max(18px,env(safe-area-inset-right))}}
 @media(max-width:370px){.levelup-onboarding-body{padding-top:15px}.onboarding-screen{gap:13px}.onboarding-screen h1{font-size:1.75rem}.onboarding-screen h2{font-size:1.48rem}.onboarding-screen-intro>p{font-size:.87rem}.onboarding-progress-preview{padding:11px}.onboarding-preview-grid{gap:6px}.onboarding-preview-grid article{padding:8px}.onboarding-goal-card{min-height:126px;padding:11px}.onboarding-feature-strip span{font-size:.59rem}.onboarding-profile-grid{gap:7px}.onboarding-theme-card .appearance-theme-preview{height:78px}}
 @media(prefers-reduced-motion:reduce){.onboarding-screen,.preview-line,.preview-trend,.onboarding-preview-grid circle,.onboarding-complete-mark,.onboarding-build-sequence>div{animation:none!important}}
+
+
+/* Apple Health pairing: familiar white app tile with gradient heart. */
+.onboarding-apple-health-identity{display:flex;justify-content:center;margin:8px 0 20px}
+.onboarding-apple-health-logo{display:grid;width:88px;height:88px;place-items:center;border-radius:22px;background:#fff;box-shadow:0 12px 32px rgba(0,0,0,.16),inset 0 0 0 1px rgba(0,0,0,.05)}
+.onboarding-apple-health-logo svg{display:block;width:65px;height:65px}
+.onboarding-apple-health-screen .onboarding-screen-intro{text-align:center}
+.onboarding-apple-health-screen .onboarding-screen-intro p{max-width:360px;margin-left:auto;margin-right:auto}
+.onboarding-apple-health-connect{text-align:center}
