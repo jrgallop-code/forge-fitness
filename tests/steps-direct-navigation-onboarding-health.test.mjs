@@ -15,7 +15,9 @@ test("Dashboard Steps opens Progress with the Steps tab requested synchronously"
     assert.match(steps, /__levelUpProgressInitialTab = "steps"/);
     assert.match(steps, /new CustomEvent\("levelup:navigate"/);
     assert.doesNotMatch(steps, /window\.setTimeout\(open,\s*60\)/);
-    assert.doesNotMatch(steps, /tab\.click\(\)/);
+    assert.match(steps, /const stepsTab = document\.getElementById\("steps-progress-tab"\)/);
+    assert.match(steps, /stepsTab\.click\(\)/);
+    assert.match(steps, /stepsTab\.click\(\);[\s\S]*initializeStepsProgress\(\)/);
 });
 
 test("Progress markup is rendered in Steps mode without showing Weight first", () => {
