@@ -112,29 +112,18 @@ export function updateStepsProgress(){
  if(note)note.textContent=model.recorded?(model.period<=30?"Bars show daily totals. ":"Bars show average daily steps per group. ")+"Missing days are not counted as zero.":"No Apple Health step records in this range. Check Health → Steps → Show All Data.";
 }
 export function openStepsInProgress(){
- // Navigating to Progress can remount its content asynchronously. Wait for the
- // actual Steps tab rather than scrolling the Weight carousel into view.
- document.querySelector('.bottom-nav .nav-btn[data-page="progress"], .nav-btn[data-page="progress"]')?.click();
- let attempts=0;
- const open=()=>{
-  const tab=document.getElementById("steps-progress-tab");
-  const host=document.querySelector(STEP_PANEL_SELECTOR);
-  if(!tab || !host){
-   if(attempts++<35)window.setTimeout(open,100);
-   return;
+  // Ask the router to render Steps active in the first Progress frame.
+  // Never paint Weight/Lifting while waiting for an asynchronous tab click.
+  window.__levelUpProgressInitialTab = "steps";
+  try {
+    document.dispatchEvent(new CustomEvent("levelup:navigate", {
+      detail: { page: "progress" }
+    }));
+  } finally {
+    delete window.__levelUpProgressInitialTab;
   }
   initializeStepsProgress();
-  tab.click();
-  // A newly mounted Progress page can expose its markup before tab listeners
-  // attach. Confirm that only Steps is visible before completing navigation.
-  const panel=document.getElementById("steps-progress");
-  if(panel?.hidden && attempts++<35){
-   window.setTimeout(open,100);
-   return;
-  }
-  host.scrollIntoView({behavior:"smooth",block:"nearest"});
- };
- window.setTimeout(open,60);
+  window.dispatchEvent(new Event("levelup:steps-progress-opened"));
 }
 function ensureStyles(){
  if(document.getElementById(STYLE_ID))return;
