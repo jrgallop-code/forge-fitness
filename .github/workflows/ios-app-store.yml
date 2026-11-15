@@ -63,6 +63,8 @@ jobs:
       - run: npm install --no-save --package-lock=false playwright@1.56.1
       - run: npx playwright install --with-deps firefox
       - run: node tests/muscle-map-viewport.browser.mjs
+      - name: Verify Dashboard Steps opens Steps (not Progress overview)
+        run: node tests/steps-direct-route.browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -187,9 +189,9 @@ jobs:
           # One-time rotation of the newer Level Up CI certificate after build #396 completed TestFlight processing.
           # Match ID, serial and expiration against read-only inventory workflow #2 (2026-11-15).
           # Do not touch older certificate 2PQXW64273 or any nonmatching certificate.
-          LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE: AVK69JH464
-          LEVEL_UP_CI_CERTIFICATE_SERIAL_TO_REVOKE: CEE5480281AEFBB048474955692E9D6
-          LEVEL_UP_CI_CERTIFICATE_EXPIRATION_TO_REVOKE: 2027-11-15T14:16:49.000+00:00
+          LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE: DAG7KZ7CW7
+          LEVEL_UP_CI_CERTIFICATE_SERIAL_TO_REVOKE: 7F1FC532D570AFCEB9485F387F9FB568
+          LEVEL_UP_CI_CERTIFICATE_EXPIRATION_TO_REVOKE: 2027-11-15T14:48:10.000+00:00
         run: |
           echo "SIGNING_DIR=$SIGNING_DIR" >> "$GITHUB_ENV"
           echo "SIGNING_STATE_PATH=$SIGNING_DIR/state.json" >> "$GITHUB_ENV"
