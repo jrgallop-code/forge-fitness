@@ -115,7 +115,7 @@ export function openStepsInProgress(){
   // Navigate with an explicit tab destination: no global flags, synthetic
   // click, polling, or intermediate Progress overview.
   document.dispatchEvent(new CustomEvent("levelup:navigate", {
-    detail: { page: "progress", tab: "steps" }
+    detail: { page: "progress-steps" }
   }));
   const stepsTab = document.getElementById("steps-progress-tab");
   const stepsPanel = document.getElementById("steps-progress");
