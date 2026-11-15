@@ -24,3 +24,5 @@ jobs:
           done
 
 # Read-only audit refresh for Steps tab TestFlight release, November 15 2026.
+
+# Read-only refresh after signing fix for TestFlight build 390.
