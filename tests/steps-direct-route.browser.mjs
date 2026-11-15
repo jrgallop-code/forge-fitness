@@ -7,7 +7,7 @@ const progressSource=readFileSync('js/progress/progress-ui.js','utf8');
 const weightSource=readFileSync('js/progress/weight-tracker.js','utf8');
 const stepsSource=readFileSync('js/progress/steps-progress-carousel.js','utf8');
 const strip = code => code.replace(/^import .*;\s*$/gm,'').replace(/^export /gm,'');
-const render=vm.runInNewContext(strip(progressSource)+'\nrenderProgress',{
+const render=vm.runInNewContext(strip(progressSource)+'\nrenderStepsProgressDestination',{
   renderCalorieStats:()=>'',renderPhotoJournal:()=>''
 });
 const selectorStart=weightSource.indexOf('export function selectProgressTab(');
@@ -39,13 +39,13 @@ try {
      document.addEventListener('levelup:navigate',e=>{
         const page=e.detail.page;
         const tab=page==='progress-steps'||e.detail.tab==='steps'?'steps':'lifting';
-        document.getElementById('content').innerHTML=window.__renderedProgress[tab];
-        if(tab==='steps')selectProgressTab('steps',{center:false});
+        document.getElementById('content').innerHTML=tab==='steps'?window.__renderedSteps:window.__renderedOverview;
+        if(tab==='steps')document.querySelector('#steps-progress [data-levelup-steps-detail]').innerHTML='<h3>Steps</h3><div data-lu-sp-chart>Steps chart</div>';
      });
      document.getElementById('dashboard-steps').addEventListener('click',openStepsInProgress);
    `});
-   await page.evaluate(markup=>{window.__renderedProgress=markup;},{
-     steps:render({initialTab:'steps'}),lifting:render({initialTab:'lifting'})
+   await page.evaluate(markup=>{window.__renderedSteps=markup.steps;window.__renderedOverview=markup.lifting;},{
+     steps:render(),lifting:'<section>Generic Progress overview</section>'
    });
    await page.locator('#dashboard-steps').click();
    const state=await page.evaluate(()=>({
@@ -58,8 +58,10 @@ try {
    }));
    assert.equal(state.selected,'steps-progress-tab',JSON.stringify(state));
    assert.equal(state.stepsHidden,false,JSON.stringify(state));
-   assert.equal(state.liftingHidden,true,JSON.stringify(state));
+   assert.equal(await page.locator('#lifting-progress').count(),0,'Lifting must not even be mounted');
+   assert.equal(await page.locator('#weight-progress').count(),0,'Weight overview must not even be mounted');
    assert.equal(state.stepsShown,true,JSON.stringify(state));
+   assert.equal(await page.locator('#steps-progress [data-lu-sp-chart]').innerText(),'Steps chart');
    console.log('PASS: Dashboard Steps routes directly to visible Progress Steps at '+width+'px',state);
    await page.close();
  }
