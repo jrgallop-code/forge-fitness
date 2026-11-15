@@ -62,3 +62,9 @@ test("Existing Apple Health history screen remains intact", () => {
  assert.match(health, /Garmin history must first be written into Apple Health/);
  assert.match(health, /getStepRange\(data,days\)/);
 });
+
+test("iOS Progress tabs remain horizontally scrollable with Cardio and Steps adjacent",()=>{
+ const css=read("css/native-ios-polish.css");
+ assert.match(css,/\.progress-page > \.progress-tabs\{[\s\S]*?overflow-x:auto/);
+ assert.match(css,/\.progress-page > \.progress-tabs > \.progress-tab\{[\s\S]*?white-space:nowrap/);
+});
