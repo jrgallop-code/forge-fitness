@@ -50,6 +50,14 @@ export function renderProgress() {
 
                 <button
                     class="progress-tab"
+                    id="steps-progress-tab"
+                    type="button"
+                >
+                    Steps
+                </button>
+
+                <button
+                    class="progress-tab"
                     id="photo-log-tab"
                     type="button"
                 >
@@ -514,6 +522,12 @@ export function renderProgress() {
                         <h4>Recent Cardio</h4>
                         <div class="cardio-recent-list" data-cardio-recent></div>
                     </article>
+                </section>
+            </div>
+
+            <div id="steps-progress" hidden>
+                <section class="cardio-progress-shell">
+                    <div data-levelup-steps-detail></div>
                 </section>
             </div>
 
