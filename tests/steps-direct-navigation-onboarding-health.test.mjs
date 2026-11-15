@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
 
 const read = path => readFileSync(path, "utf8");
 const steps = read("js/progress/steps-progress-carousel.js");
@@ -48,4 +49,48 @@ test("route and real tab controller both select Steps after all initializers", (
     assert.match(weightTracker, /selectProgressTab\("steps", \{ center: false \}\)/);
     assert.match(weightTracker, /panel\.hidden = key !== name/);
     assert.match(weightTracker, /tab\.classList\.toggle\("active", key === name\)/);
+});
+
+test("real tab selector changes visible panel from Lifting to Steps", () => {
+    const start=weightTracker.indexOf("export function selectProgressTab(");
+    const end=weightTracker.indexOf("\nfunction initializeProgressTabs()",start);
+    assert.ok(start>=0 && end>start);
+    const tabIds={
+        weight:["weight-tab","weight-progress"],
+        lifting:["lifting-tab","lifting-progress"],
+        nutrition:["nutrition-progress-tab","calorie-progress"],
+        cardio:["cardio-progress-tab","cardio-progress"],
+        steps:["steps-progress-tab","steps-progress"],
+        photo:["photo-log-tab","photo-log-progress"]
+    };
+    const nodes=new Map();
+    const classList=initial=>{
+        const values=new Set(initial);
+        return {
+            toggle(key,on){if(on)values.add(key);else values.delete(key);},
+            contains(key){return values.has(key);}
+        };
+    };
+    for(const [key,[tab,panel]] of Object.entries(tabIds)){
+        nodes.set(tab,{classList:classList(key==="lifting"?["active"]:[]),setAttribute(k,v){this[k]=v},scrollIntoView(){}});
+        nodes.set(panel,{hidden:key!=="lifting"});
+    }
+    const strip={dataset:{}};
+    const events=[];
+    const scope={
+        document:{getElementById:id=>nodes.get(id),querySelector:q=>q===".progress-tabs"?strip:null},
+        window:{dispatchEvent:e=>events.push(e.type)},
+        Event,CustomEvent:class {constructor(type){this.type=type}},
+        requestAnimationFrame:fn=>fn(),
+        updateWeightDisplay(){}
+    };
+    const fn=weightTracker.slice(start,end).replace("export function","function");
+    const select=runInNewContext(fn+"\nselectProgressTab",scope);
+    assert.equal(select("steps",{center:false}),true);
+    assert.equal(nodes.get("steps-progress").hidden,false);
+    assert.equal(nodes.get("lifting-progress").hidden,true);
+    assert.equal(nodes.get("steps-progress-tab").classList.contains("active"),true);
+    assert.equal(nodes.get("lifting-tab").classList.contains("active"),false);
+    assert.equal(strip.dataset.currentTab,"steps");
+    assert.ok(events.includes("levelup:steps-progress-opened"));
 });
