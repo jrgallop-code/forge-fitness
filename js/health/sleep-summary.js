@@ -1,7 +1,7 @@
 /* Read-only summaries from Apple Health, without persisting sleep records. */
 export function sleepSummary(data) {
   const valid=(Array.isArray(data?.sleep)?data.sleep:[])
-    .filter(row=>row && typeof row.date==="string" && /^\d{4}-\d{2}-\d{2}$/.test(row.date) && Number.isFinite(Number(row.hours)) && Number(row.hours)>=0)
+    .filter(row=>row && typeof row.date==="string" && /^\d{4}-\d{2}-\d{2}$/.test(row.date) && row.hours !== null && row.hours !== undefined && row.hours !== "" && Number.isFinite(Number(row.hours)) && Number(row.hours)>=0)
     .map(row=>({date:row.date,hours:Number(row.hours)}))
     .sort((a,b)=>a.date.localeCompare(b.date));
   // HealthKit may include more than one item per day; keep latest day values
