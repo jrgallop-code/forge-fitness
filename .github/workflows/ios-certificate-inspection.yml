@@ -37,3 +37,5 @@ jobs:
           export AUTH_KEY_PATH="$key_path"
           node scripts/app-store-signing.mjs inspect-certificates
           rm -f "$key_path"
+
+# Reinspect current certificate inventory before next signed TestFlight release (2026-11-15).
