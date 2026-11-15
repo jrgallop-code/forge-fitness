@@ -125,6 +125,13 @@ export function openStepsInProgress(){
   }
   initializeStepsProgress();
   tab.click();
+  // A newly mounted Progress page can expose its markup before tab listeners
+  // attach. Confirm that only Steps is visible before completing navigation.
+  const panel=document.getElementById("steps-progress");
+  if(panel?.hidden && attempts++<35){
+   window.setTimeout(open,100);
+   return;
+  }
   host.scrollIntoView({behavior:"smooth",block:"nearest"});
  };
  window.setTimeout(open,60);
