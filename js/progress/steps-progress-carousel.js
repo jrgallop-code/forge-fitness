@@ -84,7 +84,10 @@ export function initializeStepsProgress(root=document){
     const form=host.querySelector("[data-lu-sp-goal-form]");
     if(form){form.hidden=false;form.querySelector("input").value=getDailyStepsGoal();form.querySelector("input").focus();}
    }
-   if(event.target.closest("[data-lu-sp-goal-cancel]"))host.querySelector("[data-lu-sp-goal-form]")?.setAttribute("hidden","");
+   if(event.target.closest("[data-lu-sp-goal-cancel]")){
+     const form=host.querySelector("[data-lu-sp-goal-form]");
+     if(form){form.querySelector("input")?.setCustomValidity("");form.hidden=true;}
+   }
    if(event.target.closest("[data-lu-sp-refresh]")){
     void refreshAppleHealth(true).then(()=>updateStepsProgress()).catch(()=>{
      const chart=host.querySelector("[data-lu-sp-chart]");
@@ -92,6 +95,7 @@ export function initializeStepsProgress(root=document){
     });
    }
   });
+  host.querySelector("[data-lu-sp-goal-input]")?.addEventListener("input",event=>event.currentTarget.setCustomValidity(""));
   host.querySelector("[data-lu-sp-goal-form]")?.addEventListener("submit",event=>{
    event.preventDefault();
    const form=event.currentTarget;
