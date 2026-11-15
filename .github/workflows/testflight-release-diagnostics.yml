@@ -22,3 +22,5 @@ jobs:
             echo "RELEASE RUN $id"
             gh api "repos/$GH_REPO/actions/runs/$id/jobs?per_page=100" --jq '.jobs[]|{id,name,status,conclusion,failed_steps:[.steps[]|select(.conclusion=="failure")|.name]}' || true
           done
+
+# Read-only audit refresh for Steps tab TestFlight release, November 15 2026.
