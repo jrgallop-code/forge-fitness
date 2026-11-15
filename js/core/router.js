@@ -84,7 +84,7 @@ if ("scrollRestoration" in history) {
     history.scrollRestoration = "manual";
 }
 
-export function navigate(page) {
+export function navigate(page, { tab = null } = {}) {
     const content = document.getElementById("content");
     if (!content) return;
     if (["nutrition", "energy"].includes(page) && !isNutritionEnabled()) page = "home";
@@ -132,7 +132,7 @@ export function navigate(page) {
                 break;
             }
             case "progress":
-                content.innerHTML = renderProgress(); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Progress photos", initializePhotoJournal); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); if (isNutritionEnabled()) { safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); } safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); safeInitialize("Monthly reports", () => initializeMonthlyReports(content)); if (window.__levelUpProgressInitialTab === "steps") selectProgressTab("steps", { center: false }); if (muscleMode) routeDestination = initializeMuscleOverviewDestination(muscleMode); break;
+                content.innerHTML = renderProgress({ initialTab: tab === "steps" ? "steps" : "lifting" }); safeInitialize("Weight tracker", initializeWeightTracker); safeInitialize("Progress photos", initializePhotoJournal); safeInitialize("Compact weight progress", initializeWeightProgressCompact); safeInitialize("Training progress", initializeTrainingProgress); safeInitialize("Exercise session volume", initializeExerciseProgressV2); safeInitialize("Overall strength index", initializeOverallStrengthIndex); safeInitialize("Weekly muscle volume", initializeWeeklyMuscleVolume); safeInitialize("Muscle recovery map", initializeMuscleRecoveryMap); if (isNutritionEnabled()) { safeInitialize("Nutrition stats", () => initializeCalorieStats(content)); safeInitialize("Weight and carbs chart", () => initializeWeightCarbsChart(content)); } safeInitialize("Cardio analytics", () => initializeCardioAnalytics(content)); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); safeInitialize("Monthly reports", () => initializeMonthlyReports(content)); if (tab === "steps") selectProgressTab("steps", { center: false }); if (muscleMode) routeDestination = initializeMuscleOverviewDestination(muscleMode); break;
             case "sleep":
                 content.innerHTML = `<section class="section-card"><div class="training-progress-header"><div><span class="eyebrow">RECOVERY</span><h2>Sleep</h2><p>View your sleep automatically from Apple Health. No manual entry.</p></div></div>${renderSleepTracker()}</section>`; safeInitialize("Sleep tracker", initializeSleepTracker); break;
             case "measurements":
