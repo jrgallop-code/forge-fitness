@@ -35,7 +35,7 @@ test("the two views display today prominently and retain history metrics",()=>{
  assert.match(progress,/data-lu-sp-goal-edit/);
  assert.match(progress,/stepsForToday\(data\)/);
  assert.match(progress,/data-lu-sp-average/);
- assert.match(progress,/class=\\"lu-sp-ranges\\"/);
+ assert.match(progress,/class="lu-sp-ranges"/);
  assert.match(progress,/refreshAppleHealth\(true\)/);
 });
 
