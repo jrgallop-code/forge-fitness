@@ -33,7 +33,7 @@ const content=document.getElementById("content");
 document.addEventListener("levelup:navigate",event=>{
     const page=String(event.detail?.page||"");
     if(!page)return;
-    const navPage=page==="program-builder"?"workout":page;
+    const navPage=page==="program-builder"?"workout":page==="progress-steps"?"progress":page;
     document.querySelectorAll(".nav-btn[data-page]").forEach(button=>button.classList.toggle("active",button.dataset.page===navPage));
     navigate(page, { tab: event.detail?.tab || null });
 });
