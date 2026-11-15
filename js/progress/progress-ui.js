@@ -1,6 +1,29 @@
 import { renderCalorieStats } from "../nutrition/calorie-stats.js?v=progress-insight-rate-1";
 import { renderPhotoJournal } from "./photo-journal.js?v=progress-photo-share-1";
 
+// Direct Dashboard Steps destination: a genuine Progress → Steps surface.
+// Do not mount Weight, Lifting, or the general Progress overview on this route.
+export function renderStepsProgressDestination() {
+    return `
+      <section class="section-card progress-page progress-steps-destination" data-progress-destination="steps">
+        <h2>📈 Progress</h2>
+        <div class="progress-tabs" data-initial-tab="steps" data-current-tab="steps" role="tablist" aria-label="Progress sections">
+          <button type="button" class="progress-tab" data-progress-destination-tab="weight" role="tab" aria-selected="false">⚖️ Weight</button>
+          <button type="button" class="progress-tab" data-progress-destination-tab="lifting" role="tab" aria-selected="false">🏋️ Lifting</button>
+          <button type="button" class="progress-tab" data-progress-destination-tab="nutrition" role="tab" aria-selected="false">Nutrition</button>
+          <button type="button" class="progress-tab" data-progress-destination-tab="cardio" role="tab" aria-selected="false">Cardio</button>
+          <button type="button" class="progress-tab active" id="steps-progress-tab" data-progress-destination-tab="steps" role="tab" aria-selected="true">Steps</button>
+          <button type="button" class="progress-tab" data-progress-destination-tab="photo" role="tab" aria-selected="false">📷 Photos</button>
+        </div>
+        <div id="steps-progress" role="tabpanel" aria-labelledby="steps-progress-tab">
+           <section class="cardio-progress-shell">
+             <div data-levelup-steps-detail></div>
+           </section>
+        </div>
+      </section>
+    `;
+}
+
 export function renderProgress({ initialTab = "lifting" } = {}) {
     const initialSteps = initialTab === "steps";
     return `
