@@ -71,22 +71,9 @@ function renderDashboard(data){
     if(!content?.querySelector(".dashboard-welcome"))return;
     const host=content.querySelector(".dashboard");
     if(!host || !host.querySelector(".metric-card"))return;
-    let card=host.querySelector("[data-levelup-steps-card]");
-    if(!card){
-        card=document.createElement("article");card.className="metric-card lu-health-steps";card.dataset.levelupStepsCard="1";
-        card.innerHTML='<button type="button" data-apple-health-open-steps><span>👟 Steps · Last 7 Days</span><strong data-apple-step-average>—</strong><small data-apple-step-total>Weekly total: — · Apple Health</small></button>';
-        host.insertBefore(card, host.querySelector('.metric-card'));
-    }
-    const rows=data.steps?.slice(-7)||[];
-    const measured=rows.filter(r=>Number.isFinite(r.steps) && r.steps>=0);
-    const available=measured.length>0;
-    const total=measured.reduce((sum,r)=>sum+r.steps,0);
-    const totalNode=card.querySelector("[data-apple-step-total]");
-    const averageNode=card.querySelector("[data-apple-step-average]");
-    const totalLabel=available?`Weekly total: ${number(total)} · Apple Health`:"Connect Apple Health to view steps";
-    const averageLabel=available?number(Math.round(total/measured.length))+" steps/day":"—";
-    if(totalNode.textContent!==totalLabel)totalNode.textContent=totalLabel;
-    if(averageNode.textContent!==averageLabel)averageNode.textContent=averageLabel;
+    // Steps live inside Dashboard → See More beside the expenditure insights.
+    // Clean up any legacy standalone tile so it cannot distort the main grid.
+    host.querySelectorAll("[data-levelup-steps-card]").forEach(card => card.remove());
     // Existing manual sleep dashboard metric must not imply it is from Apple Health.
     const sleepCard=[...host.querySelectorAll(".metric-card")].find(el=>el.textContent?.includes("Latest Sleep Duration"));
     if(sleepCard){
@@ -165,13 +152,16 @@ function renderStepDetail(data){
  if(data.unavailable){host.innerHTML='<p>Apple Health steps are available in the Level Up iOS app only.</p>';return;}
  const days=STEP_WINDOWS[activeStepWindow]||7;
  const {rows,total,average,weeklyAverage,recordedDays}=getStepRange(data,days);
- if(!recordedDays){host.innerHTML='<p>No steps found for this range. Confirm that Apple Health has step records and Level Up has Steps read permission.</p><button type="button" class="primary-btn" data-apple-health-connect>Connect Apple Health</button>';return;}
+ const allRecorded=(data.steps||[]).filter(r=>Number.isFinite(r.steps)&&r.steps>=0);
+ const oldest=allRecorded[0]?.date, newest=allRecorded.at(-1)?.date;
+ const coverage=allRecorded.length ? `${allRecorded.length} recorded day${allRecorded.length===1?"":"s"} in Apple Health · ${oldest} to ${newest}` : "No recorded step days were returned by Apple Health.";
+ if(!recordedDays){host.innerHTML='<p>No steps found for this range. Check Apple Health → Steps → Show All Data. If Garmin Connect only recently gained access, earlier Garmin history may not be present in Apple Health.</p><button type="button" class="primary-btn" data-apple-health-connect>Connect Apple Health</button>';return;}
  host.innerHTML=`<div class="lu-step-stats">
    <div><small>Daily average</small><strong>${number(average)}</strong><span>steps / day</span></div>
    <div><small>Weekly average</small><strong>${number(weeklyAverage)}</strong><span>steps / week</span></div>
    <div><small>Total steps</small><strong>${number(total)}</strong><span>over ${recordedDays} recorded days</span></div>
    </div>${renderStepsChart(rows,days)}
-   <p class="lu-step-source-note">Missing days are excluded from averages. Steps remain read-only on your device.</p>`;
+   <p class="lu-step-source-note">${coverage}. ${recordedDays} day${recordedDays===1?"":"s"} measured within this range. Missing days are excluded from averages. Garmin history must first be written into Apple Health; Level Up cannot retrieve missing past records from Garmin through HealthKit.</p>`;
 }
 function openSettings(){
  const content=document.getElementById("content");if(!content)return;

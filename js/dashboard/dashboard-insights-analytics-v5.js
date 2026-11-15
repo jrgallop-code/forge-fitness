@@ -1,7 +1,8 @@
 import { energyDateKey, getEnergyBalanceState, shiftEnergyDateKey } from "../nutrition/energy-balance-state.js?v=energy-summary-1";
 import { isNutritionEnabled } from "../core/app-feature-preferences.js?v=nutrition-dashboard-visibility-1";
 import { getGoalTimelineViewModel, goalTimelinePreviewMarkup } from "./dashboard-goal-timeline.js?v=goal-timeline-2";
-import { getCachedAppleHealth, refreshAppleHealth, openStepsDetail } from "../health/apple-health.js?v=healthkit-steps-sleep-1";
+import { getCachedAppleHealth, refreshAppleHealth } from "../health/apple-health.js?v=steps-progress-y-axis-1";
+import { openStepsInProgress } from "../progress/steps-progress-carousel.js?v=steps-axis-progress-1";
 
 const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
 const SCREEN_ID = "dashboard-insights-analytics-screen";
@@ -45,16 +46,12 @@ function ensureStyles() {
         .dashboard-preview-goal-visual{display:flex;height:58px;margin:10px 0 8px;align-items:center}
         .dashboard-preview-goal-track{width:100%;height:12px;overflow:hidden;border-radius:999px;background:var(--surface-raised)}.dashboard-preview-goal-track span{display:block;height:100%;border-radius:inherit;background:var(--success,#22c55e)}
         .dashboard-preview-goal .value strong{font-size:1.25rem}.dashboard-preview-goal .value span{overflow:hidden;text-overflow:ellipsis}
-        .dashboard-preview-steps{grid-column:1/-1;min-height:172px;padding:17px 18px;text-align:left}
-        .dashboard-preview-steps-top{display:flex;justify-content:space-between;align-items:flex-start}
-        .dashboard-preview-steps .dashboard-preview-chevron{right:16px;top:16px;bottom:auto}
-        .dashboard-preview-steps-stats{margin-top:16px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
-        .dashboard-preview-steps-stats strong{display:block;font-size:2rem;line-height:1.05;letter-spacing:-.025em}
-        .dashboard-preview-steps-stats small{display:block;margin-top:6px;font-size:.63rem;color:var(--muted)}
-        .dashboard-preview-steps-total{text-align:right}
-        .dashboard-preview-steps-total strong{font-size:1.12rem}
-        .dashboard-preview-steps-bar{height:8px;margin:15px 0 0;border-radius:99px;background:var(--surface-raised);overflow:hidden}
-        .dashboard-preview-steps-bar i{display:block;height:100%;background:var(--accent);border-radius:inherit}
+        /* Match Expenditure: Steps is a normal half-width insight card, never a grid-spanning tile. */
+        .dashboard-preview-steps{grid-column:auto;min-height:166px;padding:14px;text-align:left}
+        .dashboard-preview-steps .dashboard-preview-chart{flex-direction:column;align-items:stretch;justify-content:center;gap:9px}
+        .dashboard-preview-steps-bar{height:8px;border-radius:99px;background:var(--surface-raised);overflow:hidden}
+        .dashboard-preview-steps-bar i{display:block;height:100%;background:var(--accent);border-radius:inherit;transition:width .2s}
+        .dashboard-preview-step-total{font-size:.58rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .dashboard-preview-hint{margin:12px 0 0;color:var(--muted);font-size:.58rem;text-align:center}
         @media(max-width:380px){.dashboard-preview-body{padding-left:12px;padding-right:12px}.dashboard-preview-grid{gap:8px}.dashboard-preview-card{min-height:158px;padding:12px}.dashboard-preview-card h3{font-size:.8rem}.dashboard-preview-card .value strong{font-size:1.12rem}.dashboard-preview-card .value span{font-size:.5rem}}
     `;
@@ -141,13 +138,11 @@ function comparisonSvg(state) {
 
 function stepsPreviewCardMarkup() {
     return `<button type="button" class="dashboard-preview-card dashboard-preview-steps" data-insights-steps-open aria-label="Open Apple Health step history">
-      <span class="dashboard-preview-steps-top"><span><h3>Steps</h3><span class="sub">Last 7 Days · Apple Health</span></span>
-        <span class="dashboard-preview-chevron">›</span></span>
-      <span class="dashboard-preview-steps-stats">
-        <span><strong data-insights-step-average>—</strong><small>average steps / day</small></span>
-        <span class="dashboard-preview-steps-total"><strong data-insights-step-total>—</strong><small>total steps</small></span>
-      </span>
-      <span class="dashboard-preview-steps-bar"><i data-insights-step-progress style="width:0%"></i></span>
+      <h3>Steps</h3><span class="sub">Last 7 Days · Apple Health</span>
+      <div class="dashboard-preview-chart"><div class="dashboard-preview-steps-bar"><i data-insights-step-progress style="width:0%"></i></div>
+      <small class="dashboard-preview-step-total" data-insights-step-total>— total steps</small></div>
+      <div class="value"><strong data-insights-step-average>—</strong><span>steps/day avg</span></div>
+      <span class="dashboard-preview-chevron">›</span>
     </button>`;
 }
 function hydrateStepsPreview(root) {
@@ -160,7 +155,7 @@ function hydrateStepsPreview(root) {
         const avgNode = card.querySelector("[data-insights-step-average]");
         const totalNode = card.querySelector("[data-insights-step-total]");
         if(avgNode) avgNode.textContent=dailyAverage===null?"—":formatNumber(dailyAverage);
-        if(totalNode) totalNode.textContent=valid.length ? formatNumber(total):"—";
+        if(totalNode) totalNode.textContent=valid.length ? formatNumber(total)+" total steps":"— total steps";
         const bar=card.querySelector("[data-insights-step-progress]");
         if(bar) bar.style.width=dailyAverage===null?"0%":Math.min(100,Math.round(dailyAverage/10000*100))+"%";
     };
@@ -180,7 +175,7 @@ function screenMarkup() {
         ? `kcal/day ${balance > 0 ? "surplus" : balance < 0 ? "deficit" : "balanced"}`
         : "energy balance";
 
-    return `<header class="dashboard-preview-header"><button class="dashboard-preview-back" type="button" data-dashboard-insights-close aria-label="Back">‹</button><div><small>Dashboard</small><h2>Insights &amp; Analytics</h2></div></header><main class="dashboard-preview-body"><h3 class="dashboard-preview-section-title">All</h3><div class="dashboard-preview-grid"><button type="button" class="dashboard-preview-card" data-dashboard-open-progress="expenditure"><h3>Expenditure</h3><span class="sub">Last 7 Days</span>${expenditureSvg(energy)}<div class="value"><strong>${Number.isFinite(energy.averageExpenditure) ? formatNumber(energy.averageExpenditure) : "--"}</strong><span>kcal/day avg</span></div><span class="dashboard-preview-chevron">›</span></button><button type="button" class="dashboard-preview-card" data-dashboard-open-progress="comparison"><h3>Calories vs Expenditure</h3><span class="sub">Last 7 Days</span>${comparisonSvg(energy)}<div class="value"><strong>${balanceValue}</strong><span>${balanceLabel}</span></div><span class="dashboard-preview-chevron">›</span></button>${goalTimelinePreviewMarkup(goal)}${stepsPreviewCardMarkup()}</div><p class="dashboard-preview-hint">Tap a card to open more detail.</p></main>`;
+    return `<header class="dashboard-preview-header"><button class="dashboard-preview-back" type="button" data-dashboard-insights-close aria-label="Back">‹</button><div><small>Dashboard</small><h2>Insights &amp; Analytics</h2></div></header><main class="dashboard-preview-body"><h3 class="dashboard-preview-section-title">All</h3><div class="dashboard-preview-grid"><button type="button" class="dashboard-preview-card" data-dashboard-open-progress="expenditure"><h3>Expenditure</h3><span class="sub">Last 7 Days</span>${expenditureSvg(energy)}<div class="value"><strong>${Number.isFinite(energy.averageExpenditure) ? formatNumber(energy.averageExpenditure) : "--"}</strong><span>kcal/day avg</span></div><span class="dashboard-preview-chevron">›</span></button>${stepsPreviewCardMarkup()}<button type="button" class="dashboard-preview-card" data-dashboard-open-progress="comparison"><h3>Calories vs Expenditure</h3><span class="sub">Last 7 Days</span>${comparisonSvg(energy)}<div class="value"><strong>${balanceValue}</strong><span>${balanceLabel}</span></div><span class="dashboard-preview-chevron">›</span></button>${goalTimelinePreviewMarkup(goal)}</div><p class="dashboard-preview-hint">Tap a card to open more detail.</p></main>`;
 }
 
 function cleanupOldDashboardActions() {
@@ -331,7 +326,7 @@ document.addEventListener("click", event => {
         closeDashboardInsights();
         return;
     }
-    if(event.target.closest("[data-insights-steps-open]")) { openStepsDetail(); return; }
+    if(event.target.closest("[data-insights-steps-open]")) { closeDashboardInsights(); openStepsInProgress(); return; }
     const graph = event.target.closest("[data-dashboard-open-progress]");
     if (graph) openProgressGraph(graph.dataset.dashboardOpenProgress);
 });
