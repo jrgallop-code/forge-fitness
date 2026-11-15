@@ -10,7 +10,7 @@ export function renderProgress() {
             <h2>📈 Progress</h2>
 
             <p class="section-description">
-                Track body weight, lifting, nutrition, cardio and progress photos over time.
+                Track weight, lifting, nutrition, cardio, daily steps and progress photos over time.
             </p>
 
 
