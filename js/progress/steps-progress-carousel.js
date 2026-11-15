@@ -9,7 +9,7 @@ function daysInWindow(days){
  return Array.from({length:days},(_,i)=>{const d=new Date(now);d.setDate(d.getDate()-days+i+1);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");});
 }
 export function stepsChartModel(data,range="1W",dates=daysInWindow(WINDOWS[range]||7)){
- const lookup=new Map((data?.steps||[]).filter(r=>r?.date && r.steps!==null && Number.isFinite(Number(r.steps)) && Number(r.steps)>=0).map(r=>[r.date,Number(r.steps)]));
+ const lookup=new Map((data?.steps||[]).filter(r=>typeof r?.date==="string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(r.date) && r.steps!==null && r.steps!==undefined && Number.isFinite(Number(r.steps)) && Number(r.steps)>=0).map(r=>[r.date,Number(r.steps)]));
  const rows=dates.map(date=>({date,value:lookup.has(date)?lookup.get(date):null}));
  const valid=rows.filter(r=>r.value!==null);
  const total=valid.reduce((sum,r)=>sum+r.value,0);
@@ -118,6 +118,7 @@ function ensureStyles(){
  '#weight-progress .lu-sp-grid{stroke:var(--line);stroke-width:.8}',
  '#weight-progress .lu-sp-bar{fill:var(--accent)}',
  '#weight-progress .lu-sp-note{font-size:11px;line-height:1.4;color:var(--muted)}',
- '#weight-progress .weight-graph-carousel-pager-v2:has([data-weight-graph-kind="steps"]){grid-template-columns:repeat(auto-fit,minmax(0,1fr))}'
+ '#weight-progress .weight-graph-carousel-pager-v2:has([data-weight-graph-kind="steps"]){display:flex;grid-template-columns:none}',
+ '#weight-progress .weight-graph-carousel-pager-v2:has([data-weight-graph-kind="steps"])>button{flex:1;min-width:0;padding:0 3px}'
  ].join("\n");document.head.append(style);
 }
