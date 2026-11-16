@@ -1,6 +1,7 @@
 /* Level Up Coach metrics presentation: compact Everfit-style overview plus
  * clickable detail charts / calendar / dated entries. No synthetic athlete data. */
 import {normalizeWeightEntries,calculateTrendWeightSeries} from "./js/core/weight-trend.js";
+import {renderCoachSharedWeightProgress,injectCoachSharedWeightStyles} from "./coach-shared-weight-progress.js";
 const E=(tag,host,attrs={})=>{const node=document.createElement(tag);for(const [k,v]of Object.entries(attrs)){if(k==="text")node.textContent=v;else if(k==="className")node.className=v;else node.setAttribute(k,v)}host?.append(node);return node};
 const toNum=v=>v===undefined||v===null||v===""?null:Number.isFinite(Number(v))?Number(v):null;
 const arr=v=>Array.isArray(v)?v:[];
@@ -150,6 +151,11 @@ export function renderCoachMetricDetail(host,profile,id,onBack,initialView="grap
  const header=E("div",wrap,{className:"cf-detail-title"});
  const nav=E("button",header,{type:"button",text:"← All metrics"});nav.onclick=onBack;
  E("h2",header,{text:metric.title+" — Detailed Metrics"});
+ if(id==="weight"){
+  injectCoachSharedWeightStyles();
+  renderCoachSharedWeightProgress(wrap,profile);
+  return;
+ }
  const subtitle=E("p",wrap,{className:"cf-muted",text:"Level Up athlete data · read-only · select a chart area to see its recorded value"});
  const controls=E("div",wrap,{className:"cf-detail-controls"});
  const range=E("select",controls,{"aria-label":"Metric date range"});
