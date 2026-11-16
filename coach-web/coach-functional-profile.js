@@ -32,37 +32,61 @@ function showClientList(){
  if(detail)detail.hidden=true;
  renderClientDirectory();
 }
-function showClientDetail(){
+function showClientDetail(tab="overview"){
  clientView="detail";
  const listPage=$("cf-directory"),detail=$("cf-detail");
  if(listPage)listPage.hidden=true;
  if(detail)detail.hidden=false;
- switchTab("overview");
+ switchTab(tab);
 }
+function clientLabel(c){return c.isSelf?"My Account — "+c.name:c.name}
+function secondaryIdentifier(c){return c.email||"Athlete ID · "+String(c.id).slice(-12)}
+function matchingClients(q){const term=String(q||"").trim().toLowerCase();return clients.filter(c=>!term||(c.name+" "+(c.email||"")+" "+c.id).toLowerCase().includes(term))}
+function openAthlete(id,tab="overview"){if(!clients.some(c=>c.id===id))return false;showClientDetail(tab);void choose(id,tab);return true}
+const directoryProgramState=new Map();
+let directoryGeneration=0;
 function renderClientDirectory(){
  const host=$("cf-directory-rows");if(!host)return;host.replaceChildren();
- const term=($("cf-directory-search")?.value||"").trim().toLowerCase();
- const filtered=clients.filter(c=>!term||(c.name+" "+(c.email||"")).toLowerCase().includes(term));
- $("cf-directory-count").textContent=filtered.length+" connected client"+(filtered.length===1?"":"s");
- if(!filtered.length)return note(host,"No matching connected athletes. Demo profiles are not displayed.");
+ const filtered=matchingClients($("cf-directory-search")?.value);
+ $("cf-directory-count").textContent=filtered.length+" of "+clients.length+" connected athletes";
+ if(!filtered.length)return note(host,clients.length?"No matching athletes.":"No approved athletes connected.");
  for(const c of filtered){
-  const item=el("button",host,{type:"button",className:"cf-directory-row"});
-  const avatar=el("span",item,{className:"cf-directory-avatar",text:c.name?.trim()?.slice(0,1)?.toUpperCase()||"?"});
-  const identification=el("span",item,{className:"cf-directory-identification"});el("strong",identification,{text:c.isSelf?"My Account — "+c.name:c.name});
-  el("small",identification,{text:c.email||"Connected Level Up athlete"});
-  el("span",item,{className:"cf-directory-status",text:"Connected"});
+  const item=btn(host,"",()=>openAthlete(c.id),"cf-directory-row");
+  const initials=String(c.name||"?").trim().split(/\s+/).slice(0,2).map(x=>x.charAt(0)).join("").toUpperCase();
+  el("span",item,{className:"cf-directory-avatar",text:initials||"?"});
+  const identification=el("span",item,{className:"cf-directory-identification"});
+  el("strong",identification,{text:clientLabel(c)});
+  el("small",identification,{text:secondaryIdentifier(c)});
+  const state=directoryProgramState.get(c.id);
+  el("span",item,{className:"cf-directory-status",text:state?.status==="published"?state.count+" assigned":state?.status==="none"?"Needs programming":state?.status==="error"?"Unable to check":"Checking…"});
   el("span",item,{className:"cf-directory-open",text:"View profile ›"});
-  item.onclick=async()=>{showClientDetail();await choose(c.id)};
  }
 }
-
-function renderSidebar(){const area=$("cf-client-list");if(!area)return;area.replaceChildren();
- const search=($("cf-client-search")?.value||"").trim().toLowerCase();
- for(const c of clients.filter(x=>!search||(x.name+" "+(x.email||"")).toLowerCase().includes(search))){
-  const button=btn(area,(c.isSelf?"● ":"")+c.name,()=>{showClientDetail();void choose(c.id)},"cf-client-item"+(c.id===clientId?" current":""));
-  button.title=c.email||c.name;
+function renderSidebar(){
+ const area=$("cf-client-list");if(!area)return;area.replaceChildren();
+ for(const c of matchingClients($("cf-client-search")?.value)){
+  const b=btn(area,clientLabel(c),()=>openAthlete(c.id,clientView==="detail"?section:"overview"),"cf-client-item"+(c.id===clientId?" current":""));
+  b.title=secondaryIdentifier(c);el("small",b,{text:secondaryIdentifier(c)});
+  if(c.id===clientId)b.setAttribute("aria-current","true");
  }
  if(!area.childElementCount)note(area,clients.length?"No matching clients.":"No connected athletes.");
+}
+async function loadDirectoryStatuses(){
+ const generation=++directoryGeneration,rosterSnapshot=clients.slice();
+ let next=0;
+ async function worker(){
+  while(next<rosterSnapshot.length){
+   const c=rosterSnapshot[next++];
+   try{
+    const r=await fetchJson("/api/coach-programs?"+new URLSearchParams({action:"list",clientId:c.id}));
+    if(generation!==directoryGeneration)return;
+    const count=arr(r.assignments).filter(p=>p.status==="published"&&p.clientId===c.id).length;
+    directoryProgramState.set(c.id,{status:count?"published":"none",count});
+   }catch{if(generation!==directoryGeneration)return;directoryProgramState.set(c.id,{status:"error",count:0})}
+   if(generation===directoryGeneration)renderClientDirectory();
+  }
+ }
+ await Promise.all(Array.from({length:Math.min(4,rosterSnapshot.length)},()=>worker()));
 }
 async function roster(){try{
  let result;
@@ -74,9 +98,47 @@ async function roster(){try{
   result=await accountApi("clients");
  }
  $("cf-login").hidden=true;
- clients=arr(result.clients).filter(c=>c.id);const select=$("cf-client");select.replaceChildren();for(const c of clients)el("option",select,{value:c.id,text:c.isSelf?"My Account — "+c.name:c.name});const chosen=clients.find(x=>x.id===clientId)||clients.find(x=>x.isSelf)||clients[0];if(chosen)await choose(chosen.id);else status("No linked Level Up athlete. Add and invite a client to connect one.",true);renderSidebar();renderClientDirectory()}catch(e){status("Cannot load connected athletes: "+e.message+". Your saved programs and account links have not been erased.",true);if(e.status===401)$("cf-login").hidden=false}}
-async function choose(id){const c=clients.find(x=>x.id===id);if(!c)return;clientId=c.id;editor=null;selectedMetric=null;trainingMode="editor";calendar=null;calendarDraft=null;calendarLoadError=null;$("cf-client").value=c.id;$("cf-name").textContent=c.name;$("cf-email").textContent=c.email||"Connected Level Up athlete";connectBuilder(c);renderSidebar();await refresh()}
-async function refresh(){const id=clientId,seq=++loadSequence;status("Loading published programs and "+person()?.name+"'s profile…");const [a,b]=await Promise.allSettled([fetchJson("/api/coach-phase1?"+new URLSearchParams({action:"summary",clientId:id})),programsApi("list")]);if(clientId!==id||seq!==loadSequence)return;profile=a.status==="fulfilled"?a.value:null;assignments=b.status==="fulfilled"?arr(b.value.assignments):[];renderOverview();renderProgress();if(section==="training")drawTraining();if(a.status==="rejected"||b.status==="rejected")status([a.status==="rejected"?"Profile: "+a.reason.message:"",b.status==="rejected"?"Programs: "+b.reason.message:""].filter(Boolean).join(" · "),true);else status("Connected as "+person().name+" · last data sync "+(profile?.backup?.syncedAt?new Date(profile.backup.syncedAt).toLocaleString("en-CA"):"not yet available"))}
+ clients=arr(result.clients).filter(c=>c.id);const select=$("cf-client");select.replaceChildren();
+ for(const c of clients)el("option",select,{value:c.id,text:clientLabel(c)+" · "+secondaryIdentifier(c)});
+ const chosen=clients.find(x=>x.id===clientId)||clients.find(x=>x.isSelf)||clients[0];
+ if(chosen)await choose(chosen.id);else status("No linked Level Up athlete. Add and invite a client to connect one.",true);
+ renderSidebar();renderClientDirectory();void loadDirectoryStatuses()}catch(e){status("Cannot load connected athletes: "+e.message+". Your saved programs and account links have not been erased.",true);if(e.status===401)$("cf-login").hidden=false}}
+async function choose(id,preferredTab=null){
+ const c=clients.find(x=>x.id===id);if(!c)return;
+ if(clientId!==c.id){
+  ++loadSequence;profile=null;assignments=[];editor=null;selectedMetric=null;
+  calendar=null;calendarDraft=null;trainingMode="editor";
+  for(const key of ["overview","training","progress","notes"])$("cf-view-"+key)?.replaceChildren();
+  $("cf-profile-glance")?.replaceChildren();
+ }
+ clientId=c.id;$("cf-client").value=c.id;
+ $("cf-name").textContent=c.name;$("cf-email").textContent=secondaryIdentifier(c);
+ connectBuilder(c);renderSidebar();if(preferredTab)switchTab(preferredTab);
+ status("Loading "+c.name+"'s athlete data…");
+ await refresh();
+}
+async function refresh(){const id=clientId,seq=++loadSequence;status("Loading published programs and "+person()?.name+"'s profile…");const [a,b]=await Promise.allSettled([fetchJson("/api/coach-phase1?"+new URLSearchParams({action:"summary",clientId:id})),fetchJson("/api/coach-programs?"+new URLSearchParams({action:"list",clientId:id}))]);if(clientId!==id||seq!==loadSequence)return;profile=a.status==="fulfilled"?a.value:null;assignments=b.status==="fulfilled"?arr(b.value.assignments).filter(x=>x.clientId===id):[];renderOverview();renderProgress();renderProfileGlance();if(section==="training")drawTraining();if(a.status==="rejected"||b.status==="rejected")status([a.status==="rejected"?"Profile: "+a.reason.message:"",b.status==="rejected"?"Programs: "+b.reason.message:""].filter(Boolean).join(" · "),true);else status("Connected as "+person().name+" · last data sync "+(profile?.backup?.syncedAt?new Date(profile.backup.syncedAt).toLocaleString("en-CA"):"not yet available"))}
+function renderProfileGlance(){
+ const host=$("cf-profile-glance");if(!host||!person())return;host.replaceChildren();
+ const current=active().slice().sort((a,b)=>String(b.publishedAt||"").localeCompare(String(a.publishedAt||"")))[0];
+ const target=current?.goals?.goalWeightLb!=null?current.goals.goalWeightLb+" lb":current?.goals?.stepGoal!=null?Number(current.goals.stepGoal).toLocaleString("en-CA")+" steps/day":"Not assigned";
+ const items=[["Current goal",target],["Assigned program",current?.name||"Needs programming"],["Latest check-in","Not available"],["Next workout","Not scheduled"]];
+ for(const [label,value]of items){const x=el("div",host,{className:"cf-glance-item"});el("small",x,{text:label});el("strong",x,{text:value})}
+ if(current){const athleteId=clientId,assignmentId=current.id;
+  fetchJson("/api/coach-programs?"+new URLSearchParams({action:"calendar",clientId:athleteId,assignmentId})).then(result=>{
+   if(clientId!==athleteId||!active().some(p=>p.id===assignmentId))return;
+   const cal=result.schedule;if(!cal?.startDate||!Array.isArray(cal.days))return;
+   const start=new Date(cal.startDate+"T12:00:00Z"),todayDate=new Date().toISOString().slice(0,10);
+   for(let i=0;i<Math.min(364,Number(cal.weeks||0)*7);i++){
+    const day=new Date(start.getTime()+86400000*i).toISOString().slice(0,10);
+    if(day<todayDate)continue;
+    const weekday=(new Date(day+"T12:00:00Z").getUTCDay()+6)%7;
+    const event=cal.overrides?.[day]||cal.days[weekday];
+    if(event?.type==="workout"){const target=host.querySelectorAll(".cf-glance-item")[3]?.querySelector("strong");if(target)target.textContent=day;break}
+   }
+  }).catch(()=>{});
+ }
+}
 function renderOverview(){
  const root=$("cf-view-overview");if(!root||!person())return;
  root.replaceChildren();
@@ -139,9 +201,9 @@ function renderProgress(){
  c=panel(right,"Recent sessions","Completed workouts");const workouts=arr(profile?.training?.recentWorkouts).slice(-12).reverse();if(!workouts.length)note(c,"No completed workouts in cloud.");for(const x of workouts)info(c,x.name||"Workout",displayDate(x.date));if(analytics)analytics.renderCoachProgressAnalytics(root,profile);
  if(muscleMaps)muscleMaps.renderCoachMuscleMaps(root,profile);
 }
-async function notes(){const root=$("cf-view-notes");root.replaceChildren();const c=panel(root,"Coach notes","Athlete-linked, private to the coach");const inp=field(c,"Notes","textarea",{rows:"5",maxlength:"6000"});const limitations=field(c,"Limitations / accommodations","textarea",{rows:"4",maxlength:"6000"});let saved=null;
- try{const res=await fetchJson("/api/coach-phase1?"+new URLSearchParams({action:"drafts",clientId}));saved=arr(res.drafts).find(d=>d.id==="coach-profile-notes-v1")||null;inp.value=saved?.content?.notes||"";limitations.value=saved?.content?.limitations||""}catch(e){note(c,"Notes not available: "+e.message)}
- btn(c,"Save notes",async()=>{try{const result=await fetchJson("/api/coach-phase1?"+new URLSearchParams({action:"save",clientId,draftId:"coach-profile-notes-v1"}),"PUT",{name:"Private Coach Notes",content:{kind:"private-coach-notes",notes:inp.value,limitations:limitations.value},expectedVersion:saved?.version??null});saved={version:result.version};status("Notes saved to the athlete-linked Coach workspace.")}catch(e){status("Notes not saved: "+e.message,true)}});
+async function notes(targetId=clientId){const root=$("cf-view-notes");root.replaceChildren();const c=panel(root,"Coach notes","Athlete-linked, private to the coach");const inp=field(c,"Notes","textarea",{rows:"5",maxlength:"6000"});const limitations=field(c,"Limitations / accommodations","textarea",{rows:"4",maxlength:"6000"});let saved=null;
+ try{const res=await fetchJson("/api/coach-phase1?"+new URLSearchParams({action:"drafts",clientId:targetId}));if(clientId!==targetId)return;saved=arr(res.drafts).find(d=>d.id==="coach-profile-notes-v1")||null;inp.value=saved?.content?.notes||"";limitations.value=saved?.content?.limitations||""}catch(e){note(c,"Notes not available: "+e.message)}
+ btn(c,"Save notes",async()=>{if(clientId!==targetId)return status("Athlete changed; reopen notes to save.",true);try{const result=await fetchJson("/api/coach-phase1?"+new URLSearchParams({action:"save",clientId:targetId,draftId:"coach-profile-notes-v1"}),"PUT",{name:"Private Coach Notes",content:{kind:"private-coach-notes",notes:inp.value,limitations:limitations.value},expectedVersion:saved?.version??null});saved={version:result.version};status("Notes saved to the athlete-linked Coach workspace.")}catch(e){status("Notes not saved: "+e.message,true)}});
 }
 const defaultProgram=()=>({id:null,sourcePlanId:"coach-program-"+cryptoSafe(),version:null,name:"New Workout Program",days:[{name:"Workout A",exercises:[]}],goals:{},includeNutrition:false});
 function cryptoSafe(){return String(Date.now())+"-"+Math.random().toString(36).slice(2,8)}
@@ -216,6 +278,7 @@ function drawTraining(){const root=$("cf-view-training");if(!root||section!=="tr
  }
 }
 function mount(){const host=$("clients");if(!host||$("coach-functional-profile"))return;const style=el("style",document.head,{id:"cf-style"});style.textContent="#clients> :not(#coach-functional-profile){display:none!important}#coach-functional-profile{display:block!important;visibility:visible!important;padding:12px;background:#f6f8fc;color:#213a59}#coach-functional-profile *{box-sizing:border-box}#coach-functional-profile .cf-head,#coach-functional-profile .cf-actions,#coach-functional-profile .cf-between{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}#coach-functional-profile .cf-head h2{margin:0;font-size:24px}#coach-functional-profile .cf-head p,#coach-functional-profile .cf-muted{color:#647e9a;font-size:12px}#coach-functional-profile .cf-tabs{display:flex;gap:8px;border-bottom:1px solid #dbe4ef;margin:12px 0 17px}#coach-functional-profile .cf-tabs button{background:transparent;color:#647c98;border:0;border-radius:0}#coach-functional-profile .cf-tabs button.active{color:#1b67da;border-bottom:3px solid #1b67da}#coach-functional-profile .cf-card{background:#fff;border:1px solid #d7e2ee;border-radius:12px;margin:0 0 14px;overflow:hidden}#coach-functional-profile .cf-card header{background:#f3f7fc;padding:13px 16px;display:flex;justify-content:space-between}#coach-functional-profile .cf-card header small{color:#70869c}#coach-functional-profile .cf-body{padding:14px 16px}#coach-functional-profile .cf-columns{display:grid;grid-template-columns:minmax(250px,.85fr) minmax(330px,1.15fr);gap:14px}#coach-functional-profile .cf-info{display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid #eef1f6;padding:8px 0;font-size:12px}#coach-functional-profile .cf-info span{color:#69809a}#coach-functional-profile .cf-program,#coach-functional-profile .cf-workout-day{border:1px solid #dbe5ef;border-radius:9px;padding:12px;margin:10px 0}#coach-functional-profile .cf-button{background:#266fe2;color:white;border:0;border-radius:8px;padding:9px 13px;cursor:pointer;font-weight:700}#coach-functional-profile .cf-button.subtle{background:#eaf0fb;color:#28548a}#coach-functional-profile .cf-button.danger{background:#fcebed;color:#ac3444}#coach-functional-profile .cf-button.link{background:transparent;color:#1b68d8;padding:3px 0}#coach-functional-profile .cf-pill{background:#e4f7ec;color:#207649;padding:4px 8px;border-radius:40px;font-size:11px}#coach-functional-profile .cf-actions{justify-content:flex-start;margin:10px 0}#coach-functional-profile .cf-field{display:grid;gap:4px;font-size:12px;font-weight:650;margin:7px 0}#coach-functional-profile input,#coach-functional-profile select,#coach-functional-profile textarea{padding:9px;border:1px solid #c7d4e3;border-radius:7px;background:#fff;color:#203b5a;font:inherit}#coach-functional-profile .cf-inline{display:flex;gap:12px;align-items:end;flex-wrap:wrap}#coach-functional-profile .cf-exercise{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e7edf6;flex-wrap:wrap}#coach-functional-profile .cf-metrics{display:grid;grid-template-columns:repeat(3,minmax(110px,1fr));gap:10px;margin:12px 0}#coach-functional-profile .cf-metric{display:grid;gap:5px;background:#ecf3ff;padding:12px;border-radius:8px}#coach-functional-profile .cf-calendar-scroll{overflow-x:auto}#coach-functional-profile .cf-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(135px,1fr));gap:8px;min-width:950px;margin:12px 0}#coach-functional-profile .cf-calendar-day{padding:10px;background:#edf1f7;border-radius:9px;display:grid;gap:8px;align-content:start;min-height:160px}#coach-functional-profile .cf-calendar-day.training{background:#f7faff;border:1px solid #cbdff8}#coach-functional-profile .cf-calendar-day strong{font-size:12px}#coach-functional-profile .cf-calendar-day select{width:100%;font-size:11px}#coach-functional-profile [hidden]{display:none!important}.cf-summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;align-items:stretch;margin-bottom:15px}.cf-summary-grid>.cf-card{margin:0;min-width:0;display:flex;flex-direction:column;height:100%}.cf-summary-grid>.cf-card .cf-body{flex:1;min-width:0}.cf-summary-grid>.cf-summary-wide{grid-column:1 / -1}.cf-summary-grid>.cf-card header{min-height:45px;align-items:center}.cf-summary-grid>.cf-card .cf-program{margin-top:4px}@media(max-width:800px){.cf-summary-grid{grid-template-columns:1fr}.cf-summary-grid>.cf-summary-wide{grid-column:auto}}#coach-functional-profile .cf-directory-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 20px}#coach-functional-profile .cf-directory-head h2{font-size:24px;margin:0}#coach-functional-profile .cf-directory-search-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:10px 0 16px}#coach-functional-profile #cf-directory-search{min-width:220px;width:100%;max-width:420px}#coach-functional-profile .cf-directory-rows{display:grid;gap:9px}#coach-functional-profile button.cf-directory-row{display:flex;width:100%;align-items:center;gap:13px;text-align:left;padding:15px;background:#fff;border:1px solid #d6e2ef;border-radius:12px;color:#243d5a;cursor:pointer}#coach-functional-profile .cf-directory-row:hover{background:#f0f6ff;border-color:#91b6e9}#coach-functional-profile .cf-directory-avatar{display:grid;place-items:center;flex:0 0 41px;width:41px;height:41px;border-radius:50%;background:#e6efff;color:#2566bc;font-size:18px;font-weight:800}#coach-functional-profile .cf-directory-identification{display:grid;gap:4px;flex:1;min-width:0}#coach-functional-profile .cf-directory-identification strong{font-size:14px}#coach-functional-profile .cf-directory-identification small{font-size:12px;color:#7b8b9f}#coach-functional-profile .cf-directory-status{font-size:11px;color:#287249;background:#e5f5eb;padding:5px 9px;border-radius:30px}#coach-functional-profile .cf-directory-open{font-size:12px;color:#2e68bd;font-weight:750}#coach-functional-profile .cf-back-to-clients{margin-bottom:14px}#coach-functional-profile #cf-detail[hidden],#coach-functional-profile #cf-directory[hidden]{display:none!important}@media(max-width:650px){#coach-functional-profile .cf-directory-open{display:none}}#coach-functional-profile .cf-structure{display:grid;grid-template-columns:205px minmax(0,1fr);gap:17px;align-items:start}#coach-functional-profile .cf-client-sidebar{position:sticky;top:80px;max-height:calc(100vh - 95px);overflow-y:auto;min-width:0;padding:15px;border:1px solid #d3dfed;border-radius:12px;background:white}#coach-functional-profile .cf-client-sidebar h3{margin:0 0 12px;font-size:16px}#coach-functional-profile .cf-client-sidebar input{width:100%;font-size:12px;margin-bottom:10px}#coach-functional-profile .cf-client-list{display:grid;gap:5px;margin:10px 0}#coach-functional-profile .cf-client-list .cf-client-item{width:100%;text-align:left;background:#f4f7fc;color:#33506f;padding:10px 9px;font-size:12px;overflow-wrap:anywhere}#coach-functional-profile .cf-client-list .cf-client-item.current{background:#e5f0ff;color:#1759b6;border:1px solid #a9c8ee}#coach-functional-profile .cf-client-main{min-width:0}#coach-functional-profile .cf-analytics-stat{background:#eef5ff}@media(max-width:950px){#coach-functional-profile .cf-structure{grid-template-columns:1fr}#coach-functional-profile .cf-client-sidebar{position:static;max-height:none}#coach-functional-profile .cf-client-list{display:flex;flex-wrap:wrap}}@media(max-width:850px){#coach-functional-profile .cf-columns{grid-template-columns:1fr}#coach-functional-profile .cf-metrics{grid-template-columns:1fr 1fr}}";
+ style.textContent+="#coach-functional-profile .cf-client-item small{display:block;font-size:11px;font-weight:400;overflow-wrap:anywhere}#coach-functional-profile .cf-glance-item{padding:13px;border:1px solid #dbe5ef;background:#fff;border-radius:10px;display:grid;gap:6px}#coach-functional-profile .cf-glance-item small{color:#637c96}#coach-functional-profile .cf-profile-glance{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:14px 0}#coach-functional-profile .cf-directory-identification small{overflow-wrap:anywhere}@media(max-width:820px){#coach-functional-profile .cf-profile-glance{grid-template-columns:repeat(2,minmax(0,1fr))}#coach-functional-profile .cf-client-sidebar{display:none}}";
  const app=el("section",host,{id:"coach-functional-profile"});
  const structure=el("div",app,{className:"cf-structure"}),sidebar=el("aside",structure,{className:"cf-client-sidebar"});
  el("h3",sidebar,{text:"My Clients"});
@@ -233,6 +296,7 @@ function mount(){const host=$("clients");if(!host||$("coach-functional-profile")
  el("div",directory,{id:"cf-directory-rows",className:"cf-directory-rows"});
  const detail=el("section",main,{id:"cf-detail"});detail.hidden=true;
  const back=btn(detail,"← All clients",showClientList,"subtle");back.classList.add("cf-back-to-clients");
+ const glance=el("div",detail,{id:"cf-profile-glance",className:"cf-profile-glance"});
  const head=el("div",detail,{className:"cf-head"}),title=el("div",head);el("h2",title,{id:"cf-name",text:"Client profile"});el("p",title,{id:"cf-email",text:"Connected Level Up account"});
  const controls=el("div",head);const client=el("select",controls,{id:"cf-client","aria-label":"Select athlete"});btn(controls,"Refresh data",roster,"subtle");
  const login=el("section",app,{id:"cf-login",className:"cf-card"});login.hidden=true;
@@ -242,7 +306,9 @@ function mount(){const host=$("clients");if(!host||$("coach-functional-profile")
  btn(loginCard,"Sign in to Level Up Coach",async()=>{try{await accountApi("login",{email:email.value.trim(),password:password.value});password.value="";login.hidden=true;await roster()}catch(e){status("Sign in failed: "+e.message,true)}});
  el("p",detail,{id:"cf-status",className:"cf-muted",text:"Loading connected athlete…"});const tabs=el("div",detail,{className:"cf-tabs"});for(const [key,label]of [["overview","Overview"],["training","Training"],["progress","Weightlifting Progress"],["notes","Notes"]]){const b=btn(tabs,label,()=>{switchTab(key);if(key==="notes")notes()},"");b.id="cf-tab-"+key}
  for(const key of ["overview","training","progress","notes"])el("div",detail,{id:"cf-view-"+key});
- client.onchange=()=>{showClientDetail();void choose(client.value)};switchTab("overview");showClientList();void roster();void loadExercises();
+ client.onchange=()=>openAthlete(client.value,section);
+ window.LevelUpCoachClientUI={openAthlete,showClientList,refreshRoster:roster};
+ switchTab("overview");showClientList();void roster();void loadExercises();
  void import("./coach-analytics.js").then(module=>{
    analytics=module;analytics.injectCoachAnalyticsStyles();
    if(person()){renderOverview();renderProgress()}
