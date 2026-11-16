@@ -56,6 +56,18 @@ if(path==="/v1/coach/clients"&&method==="GET"){
  }
  return json({clients},200,request,env);
 }
+if(path==="/v1/coach/assignments"&&method==="GET"){
+ if(!coachAllowed(user,env))return err(403,"Coach authorization required.",request,env);
+ const selected=url.searchParams.get("clientId");
+ if(selected&&selected.length>160)return err(400,"Client ID is too long.",request,env);
+ const query=selected
+  ?"SELECT * FROM coach_program_assignments WHERE coach_user_id=? AND client_user_id=? ORDER BY updated_at DESC LIMIT 100"
+  :"SELECT * FROM coach_program_assignments WHERE coach_user_id=? ORDER BY updated_at DESC LIMIT 150";
+ const rows=selected
+  ?await env.DB.prepare(query).bind(user.id,selected).all()
+  :await env.DB.prepare(query).bind(user.id).all();
+ return json({assignments:(rows.results||[]).map(row=>serialize(row,false))},200,request,env);
+}
 if(path==="/v1/coach/assignments"&&method==="POST"){
  if(!coachAllowed(user,env))return err(403,"Coach authorization required.",request,env);
  const input=await read(request);if(!permitted(input))return err(400,"Invalid assignment JSON.",request,env);
