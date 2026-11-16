@@ -315,6 +315,7 @@ function mount(){const host=$("clients");if(!host||$("coach-functional-profile")
  const directoryHead=el("div",directory,{className:"cf-directory-head"});const dirTitle=el("div",directoryHead);
  el("h2",dirTitle,{text:"Clients"});el("p",dirTitle,{className:"cf-muted",text:"Select a connected client to view their overview, training calendar, progress and notes."});
  btn(directoryHead,"Refresh clients",roster,"subtle");
+ btn(directoryHead,"Invite athlete",()=>{if(window.LevelUpCoachSoloDashboard?.openInvite)window.LevelUpCoachSoloDashboard.openInvite();else status("Open Dashboard to invite a client.",true)},"subtle");
  const searchRow=el("div",directory,{className:"cf-directory-search-row"});const dirSearch=el("input",searchRow,{id:"cf-directory-search",type:"search",placeholder:"Search by client name or email…","aria-label":"Search clients"});
  dirSearch.oninput=renderClientDirectory;el("span",searchRow,{id:"cf-directory-count",className:"cf-muted",text:"Loading client roster…"});
  el("div",directory,{id:"cf-directory-rows",className:"cf-directory-rows"});
