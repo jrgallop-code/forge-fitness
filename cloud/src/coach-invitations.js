@@ -46,9 +46,9 @@ export async function coachInviteRoute({request,env,user,url}){
  if(path==="/v1/coach/invitation/preview"&&method==="POST"){
   const p=await body(request),token=str(p?.token,128);
   if(!/^[a-f0-9]{64}$/.test(token))return J({error:"Invitation link invalid"},400);
-  const row=await env.DB.prepare("SELECT id,first_name,last_name,coaching_type,status,expires_at FROM coach_client_invites WHERE token_hash=?").bind(await hash(token)).first();
+  const row=await env.DB.prepare("SELECT i.id,i.first_name,i.last_name,i.email,i.coaching_type,i.status,i.expires_at,COALESCE(NULLIF(u.display_name,\'\'),\'Your Level Up coach\') AS coach_name FROM coach_client_invites i LEFT JOIN users u ON u.id=i.coach_user_id WHERE i.token_hash=?").bind(await hash(token)).first();
   if(!row||row.status!=="pending"||row.expires_at<=now)return J({error:"Invitation has expired or is no longer valid"},404);
-  return J({firstName:row.first_name,coachingType:row.coaching_type,expiresAt:row.expires_at});
+  return J({firstName:row.first_name,coachName:row.coach_name,contactEmail:row.email,coachingType:row.coaching_type,expiresAt:row.expires_at});
  }
  if(path==="/v1/client/coach-invitation/accept"&&method==="POST"){
   if(!user?.id)return J({error:"Sign in to Level Up to accept"},401);
@@ -57,7 +57,12 @@ export async function coachInviteRoute({request,env,user,url}){
   const digest=await hash(token);
   const row=await env.DB.prepare("SELECT * FROM coach_client_invites WHERE token_hash=?").bind(digest).first();
   if(!row||row.status!=="pending"||row.expires_at<=now)return J({error:"Invitation has expired or was already used"},404);
-  if(String(user.email||"").trim().toLowerCase()!==row.email)return J({error:"Sign in using the invited email address to accept this coaching invitation"},403);
+  const emailMatches=String(user.email||"").trim().toLowerCase()===row.email;
+  // Email can differ for Apple Hide My Email. Require the original invitation
+  // secret, an authenticated Level Up account, a review of both addresses,
+  // and an affirmative existing-account identity confirmation.
+  if(!emailMatches && !(p.acceptVia==="existing_account" && p.confirmContactEmailMismatch===true && p.confirmAccountId===user.id))
+   return J({error:"The invitation contact email differs from your Level Up account. Open More → Level Up Coach in your signed-in app and confirm both addresses before linking."},403);
   if(p.approveTraining!==true||p.approveNutrition!==true||p.approveDataSharing!==true)
    return J({error:"Coaching requires explicit approval to share training, body metrics and nutrition data. You may decline the invitation instead."},400);
   if(p.consentVersion!==COACH_CONSENT_VERSION)
