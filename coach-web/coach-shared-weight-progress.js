@@ -23,6 +23,7 @@ export function renderCoachSharedWeightProgress(host,profile){
  const rateInterval=field(controls,"Weight change over",units);
  rateInterval.value="21";
  const rateUnit=field(controls,"Display rate as",[["day","Per day"],["week","Per week"],["month","Per month"]]);rateUnit.value="week";
+ E("p",card,{className:"cw-source",text:"21-day rate uses the same smoothed, recent-weighted Level Up app calculation. Other intervals use the same smoothed history with regression."});
  const zoomGroup=E("div",controls,{className:"cw-zoom"});
  const back=E("button",zoomGroup,{type:"button",text:"← Earlier"});
  const zoomIn=E("button",zoomGroup,{type:"button",text:"Zoom +"});
@@ -44,8 +45,8 @@ export function renderCoachSharedWeightProgress(host,profile){
   const trend=calculateTrendWeightSeries(entries.filter(x=>localDate(x.date)<=end)).filter(x=>localDate(x.date)>=start);
   const rateDays=Number(rateInterval.value);
   const computed=calculateVisibleWeightTrend(entries,{endDate:date(end),rateDays});
-  const rateRaw=entries.filter(x=>localDate(x.date)<=end&&localDate(x.date)>=end-(rateDays-1)*day);
-  const intervalSeries=calculateTrendWeightSeries(rateRaw);
+  const intervalSeries=calculateTrendWeightSeries(entries.filter(x=>localDate(x.date)<=end))
+   .filter(x=>localDate(x.date)>=end-(rateDays-1)*day);
   const intervalWeeklyRate=rateDays===21?computed.weeklyChange:calculateRegressionWeeklyChange(intervalSeries);
   const factor=rateUnit.value==="day"?1/7:rateUnit.value==="month"?30.44/7:1;
   const suffix=rateUnit.value==="day"?"lb/day":rateUnit.value==="month"?"lb/month":"lb/week";
@@ -54,7 +55,7 @@ export function renderCoachSharedWeightProgress(host,profile){
   function pill(name,value){const el=E("div",pills,{className:"cw-stat"});E("small",el,{text:name});E("strong",el,{text:value})}
   pill("Latest recorded",current?fmt(current.weight,1)+" lb":"Unavailable");
   pill("Trend weight",trend.length?fmt(trend.at(-1).weight,1)+" lb":"Unavailable");
-  const rate=Number.isFinite(intervalWeeklyRate)?intervalWeeklyRate*factor:null;
+  const rate=Number.isFinite(intervalWeeklyRate)&&(rateDays!==21||computed.status!=="insufficient")?intervalWeeklyRate*factor:null;
   pill(rateDays+"-day trend rate",rate===null?"Insufficient data":(rate>=0?"+":"")+fmt(rate)+" "+suffix);
   pill("Change during selected window",selected.length>=2?(selected.at(-1).weight>=selected[0].weight?"+":"")+fmt(selected.at(-1).weight-selected[0].weight,1)+" lb":"Insufficient data");
   drawSharedWeightTrendChart(canvas,{entries:selected,trendSeries:trend,goalWeight:null,startDate:date(start),endDate:date(end),label:period.value.toUpperCase()});
