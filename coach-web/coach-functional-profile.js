@@ -42,7 +42,7 @@ function showClientDetail(tab="overview"){
 function clientLabel(c){return c.isSelf?"My Account — "+c.name:c.name}
 function secondaryIdentifier(c){return c.email||"Athlete ID · "+String(c.id).slice(-12)}
 function matchingClients(q){const term=String(q||"").trim().toLowerCase();return clients.filter(c=>!term||(c.name+" "+(c.email||"")+" "+c.id).toLowerCase().includes(term))}
-function openAthlete(id,tab="overview"){if(!clients.some(c=>c.id===id))return false;showClientDetail(tab);void choose(id,tab);if(tab==="notes")void notes(id);return true}
+function openAthlete(id,tab="overview"){if(!clients.some(c=>c.id===id))return false;void choose(id,tab);showClientDetail(tab);if(tab==="notes")void notes(id);return true}
 const directoryProgramState=new Map();
 let directoryGeneration=0;
 function renderClientDirectory(){
@@ -208,9 +208,33 @@ async function notes(targetId=clientId){const root=$("cf-view-notes");root.repla
 const defaultProgram=()=>({id:null,sourcePlanId:"coach-program-"+cryptoSafe(),version:null,name:"New Workout Program",days:[{name:"Workout A",exercises:[]}],goals:{},includeNutrition:false});
 function cryptoSafe(){return String(Date.now())+"-"+Math.random().toString(36).slice(2,8)}
 function create(){editor=defaultProgram();trainingMode="editor";calendar=null;calendarDraft=null;switchTab("training");drawTraining()}
-async function edit(pid){trainingMode="editor";switchTab("training");status("Opening published workout…");try{const d=await programsApi("detail",pid);const p=d.assignment;if(!p?.training?.days)throw Error("Published training days are missing");editor={id:p.id,sourcePlanId:p.sourcePlanId,version:p.version,name:p.name,days:structuredClone(p.training.days),goals:p.goals||{},includeNutrition:p.includeNutrition};calendar=null;calendarDraft=null;drawTraining();status("Editing "+p.name+" · version "+p.version)}catch(e){status("Cannot open workout: "+e.message,true)}}
-async function open(pid){await edit(pid);if(!editor)return;trainingMode="calendar";const title=editor.name;try{const result=await programsApi("calendar",pid);calendar=result.schedule||null;calendarDraft=calendar?structuredClone(calendar):null;status("Opened "+title+". The program can be edited even if no calendar is saved.")}catch(e){calendar=null;calendarDraft=null;status("Workout opened. Calendar unavailable: "+e.message,true)}drawTraining()}
-async function archive(program){if(!confirm("Archive "+program.name+"? This removes the assignment but preserves completed workouts."))return;try{await programsApi("archive",program.id,"DELETE");if(editor?.id===program.id){editor=null;calendar=null;calendarDraft=null}status("Program archived; completed history preserved.");await refresh()}catch(e){status("Could not archive: "+e.message,true)}}
+async function edit(pid){
+ const athleteId=clientId;trainingMode="editor";switchTab("training");status("Opening published workout…");
+ try{const d=await fetchJson("/api/coach-programs?"+new URLSearchParams({action:"detail",clientId:athleteId,assignmentId:pid}));
+  if(clientId!==athleteId)return false;const p=d.assignment;
+  if(p?.clientId!==athleteId||!p?.training?.days)throw Error("Published training days unavailable for this athlete");
+  editor={id:p.id,sourcePlanId:p.sourcePlanId,version:p.version,name:p.name,days:structuredClone(p.training.days),goals:p.goals||{},includeNutrition:p.includeNutrition};
+  calendar=null;calendarDraft=null;drawTraining();status("Editing "+p.name+" · version "+p.version);return true;
+ }catch(e){if(clientId===athleteId)status("Cannot open workout: "+e.message,true);return false}
+}
+async function open(pid){
+ const athleteId=clientId;
+ if(!await edit(pid)||clientId!==athleteId||editor?.id!==pid)return;
+ trainingMode="calendar";const title=editor.name;
+ try{const result=await fetchJson("/api/coach-programs?"+new URLSearchParams({action:"calendar",clientId:athleteId,assignmentId:pid}));
+  if(clientId!==athleteId||editor?.id!==pid)return;
+  calendar=result.schedule||null;calendarDraft=calendar?structuredClone(calendar):null;
+  status("Opened "+title+". You can edit the workout separately from its schedule.");
+ }catch(e){if(clientId!==athleteId||editor?.id!==pid)return;calendar=null;calendarDraft=null;status("Workout opened; calendar unavailable: "+e.message,true)}
+ drawTraining();
+}
+async function archive(program){
+ const athleteId=clientId;if(!confirm("Archive "+program.name+" from "+person()?.name+"? This preserves workout history."))return;
+ try{await fetchJson("/api/coach-programs?"+new URLSearchParams({action:"archive",assignmentId:program.id,clientId:athleteId}),"DELETE");
+  if(athleteId!==clientId)return;if(editor?.id===program.id){editor=null;calendar=null;calendarDraft=null}
+  status("Program archived; completed history preserved.");await refresh();
+ }catch(e){if(athleteId===clientId)status("Could not archive: "+e.message,true)}
+}
 function exerciseEditor(root,day,dayIndex){
  const heading=el("div",root,{className:"cf-between"});const name=field(heading,"Workout day name","input",{value:day.name});name.value=day.name;name.oninput=()=>{day.name=name.value};
  btn(heading,"Remove day",()=>{if(editor.days.length<=1)return status("At least one day is required.",true);editor.days.splice(dayIndex,1);drawTraining()},"danger");
