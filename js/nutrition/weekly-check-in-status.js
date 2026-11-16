@@ -136,6 +136,7 @@ export function getWeeklyCheckInStatus() {
     const reviewReady = phaseDay >= FIRST_CALORIE_REVIEW_DAY
         && mode !== "track"
         && !handledCurrentCheck
+        && checkIn?.due === true
         && authoritativeReviewReady(checkIn);
     const firstInformationalDate = shiftDateKey(phase.startDate, FIRST_INFORMATIONAL_CHECK_DAY - 1);
     const firstCalorieReviewDate = shiftDateKey(phase.startDate, FIRST_CALORIE_REVIEW_DAY - 1);
@@ -158,8 +159,11 @@ export function getWeeklyCheckInStatus() {
         progress = 0;
     } else if (hold) {
         state = "upcoming";
-        reviewDate = holdReviewDate(hold) || shiftDateKey(today, hold.daysRemaining || WEEKLY_CADENCE_DAYS);
-        const remaining = Math.max(0, Number(hold.daysRemaining) || 0);
+        const earliestDate = holdReviewDate(hold) || shiftDateKey(today, hold.daysRemaining || WEEKLY_CADENCE_DAYS);
+        // A hold is a minimum cooldown, not a new repeating weekday.
+        reviewDate = firstCalorieReviewDate;
+        while (reviewDate < earliestDate) reviewDate = shiftDateKey(reviewDate, WEEKLY_CADENCE_DAYS);
+        const remaining = Math.max(0, daysBetween(today, reviewDate) ?? Number(hold.daysRemaining) ?? 0);
         headline = remaining === 1 ? "Check-in tomorrow" : `Next check-in ${formatWeekday(reviewDate)}`;
         detail = `${remaining} day${remaining === 1 ? "" : "s"} remaining · ${formatDate(reviewDate)}`;
         context = "Your current calorie target is being held steady while Level Up measures the response.";
