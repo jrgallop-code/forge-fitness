@@ -42,7 +42,7 @@ function showClientDetail(tab="overview"){
 function clientLabel(c){return c.isSelf?"My Account — "+c.name:c.name}
 function secondaryIdentifier(c){return c.email||"Athlete ID · "+String(c.id).slice(-12)}
 function matchingClients(q){const term=String(q||"").trim().toLowerCase();return clients.filter(c=>!term||(c.name+" "+(c.email||"")+" "+c.id).toLowerCase().includes(term))}
-function openAthlete(id,tab="overview"){if(!clients.some(c=>c.id===id))return false;showClientDetail(tab);void choose(id,tab);return true}
+function openAthlete(id,tab="overview"){if(!clients.some(c=>c.id===id))return false;showClientDetail(tab);void choose(id,tab);if(tab==="notes")void notes(id);return true}
 const directoryProgramState=new Map();
 let directoryGeneration=0;
 function renderClientDirectory(){
