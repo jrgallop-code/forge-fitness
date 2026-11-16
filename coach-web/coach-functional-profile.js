@@ -115,14 +115,6 @@ function renderOverview(){
  info(c,"Last 30 days",profile?.training?.last30Days??"Not shared");
  info(c,"Latest workout",displayDate(profile?.training?.lastCompletedDate));
  btn(c,"View progress",()=>switchTab("progress"),"subtle");
- // Third row: paired expenditure and smoothed weight progress cards.
- if(analytics){
-  analytics.renderCoachExpenditure(grid,profile);
-  analytics.renderCoachWeightTrend(grid,profile);
- }else{
-  c=panel(grid,"Calculated Expenditure","From Level Up app");note(c,"Loading synced expenditure…");
-  c=panel(grid,"Weight Trend","Synced weigh-ins");note(c,"Loading weight chart…");
- }
  // Final row: updates occupies the width without creating an uneven short column.
  c=panel(grid,"Updates & Synchronization","Latest client activity");
  note(c,"Profile sync: "+(profile?.backup?.syncedAt?new Date(profile.backup.syncedAt).toLocaleString("en-CA"):"No cloud backup yet"));
@@ -248,7 +240,7 @@ function mount(){const host=$("clients");if(!host||$("coach-functional-profile")
  const email=field(loginCard,"Your Level Up email","input",{type:"email",autocomplete:"username"});
  const password=field(loginCard,"Password","input",{type:"password",autocomplete:"current-password"});
  btn(loginCard,"Sign in to Level Up Coach",async()=>{try{await accountApi("login",{email:email.value.trim(),password:password.value});password.value="";login.hidden=true;await roster()}catch(e){status("Sign in failed: "+e.message,true)}});
- el("p",detail,{id:"cf-status",className:"cf-muted",text:"Loading connected athlete…"});const tabs=el("div",detail,{className:"cf-tabs"});for(const [key,label]of [["overview","Overview"],["training","Training"],["progress","Progress"],["notes","Notes"]]){const b=btn(tabs,label,()=>{switchTab(key);if(key==="notes")notes()},"");b.id="cf-tab-"+key}
+ el("p",detail,{id:"cf-status",className:"cf-muted",text:"Loading connected athlete…"});const tabs=el("div",detail,{className:"cf-tabs"});for(const [key,label]of [["overview","Overview"],["training","Training"],["progress","Weightlifting Progress"],["notes","Notes"]]){const b=btn(tabs,label,()=>{switchTab(key);if(key==="notes")notes()},"");b.id="cf-tab-"+key}
  for(const key of ["overview","training","progress","notes"])el("div",detail,{id:"cf-view-"+key});
  client.onchange=()=>{showClientDetail();void choose(client.value)};switchTab("overview");showClientList();void roster();void loadExercises();
  void import("./coach-analytics.js").then(module=>{
