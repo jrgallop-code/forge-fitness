@@ -4,7 +4,7 @@
 const out=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"Content-Type":"application/json","Cache-Control":"private,no-store","X-Content-Type-Options":"nosniff"}});
 const allowedCoach=(user,env)=>String(env.ADMIN_EMAILS||"").toLowerCase().split(",").map(x=>x.trim()).includes(String(user?.email||"").toLowerCase());
 const day=s=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&Number.isFinite(Date.parse(s+"T12:00:00Z"));
-const serial=row=>row?{assignmentId:row.assignment_id,clientId:row.client_user_id,startDate:row.start_date,weeks:row.weeks,days:JSON.parse(row.week_pattern_json),version:Number(row.version),updatedAt:row.updated_at}:null;
+const serial=row=>row?{assignmentId:row.assignment_id,clientId:row.client_user_id,startDate:row.start_date,weeks:row.weeks,days:JSON.parse(row.week_pattern_json),overrides:JSON.parse(row.overrides_json||'{}'),version:Number(row.version),updatedAt:row.updated_at}:null;
 async function body(request){try{const t=await request.text();return t.length<20000?JSON.parse(t):null}catch{return null}}
 export async function coachCalendarRoute({request,env,user,url}){
  if(!user?.id)return out({error:"Sign in required"},401);
@@ -18,7 +18,7 @@ export async function coachCalendarRoute({request,env,user,url}){
   if(method==="GET")return out({schedule:serial(existing),assignmentId:assignment.id});
   if(method!=="PUT")return out({error:"Method not allowed"},405);
   if(assignment.status!=="published")return out({error:"Only published programs can be scheduled"},409);
-  const input=await body(request),weeks=Number(input?.weeks),pattern=input?.days,expected=input?.expectedVersion;
+  const input=await body(request),weeks=Number(input?.weeks),pattern=input?.days,expected=input?.expectedVersion,overrides=input?.overrides??{};
   if(!day(input?.startDate)||!Number.isInteger(weeks)||weeks<1||weeks>52)return out({error:"Choose a valid start date and 1–52 weeks"},400);
   if(!Array.isArray(pattern)||pattern.length!==7)return out({error:"Exactly seven weekdays are required"},400);
   const clean=pattern.map((x,index)=>{
@@ -31,15 +31,24 @@ export async function coachCalendarRoute({request,env,user,url}){
   if(clean.some(x=>x===null))return out({error:"Each day must be a valid workout or rest day"},400);
   let training;try{training=JSON.parse(assignment.plan_json||"{}")}catch{return out({error:"Published workout plan is invalid"},503)}
   if(clean.some(x=>x.type==="workout"&&!training.days?.[x.dayIndex]))return out({error:"A scheduled workout references a missing day in the published program"},400);
+  if(!overrides||typeof overrides!=="object"||Array.isArray(overrides)||Object.keys(overrides).length>364)return out({error:"Invalid scheduled day overrides"},400);
+  const cleanedOverrides={};const start=Date.parse(input.startDate+"T12:00:00Z"),end=start+weeks*7*86400000;
+  for(const [key,item]of Object.entries(overrides)){
+   const timestamp=Date.parse(key+"T12:00:00Z");
+   if(!day(key)||!Number.isFinite(timestamp)||timestamp<start||timestamp>=end||!item||!["rest","workout"].includes(item.type))return out({error:"Invalid workout date override"},400);
+   const index=Number(item.dayIndex);
+   if(item.type==="workout"&&(!Number.isInteger(index)||index<0||!training.days?.[index]))return out({error:"Override references a missing workout day"},400);
+   cleanedOverrides[key]=item.type==="rest"?{type:"rest"}:{type:"workout",dayIndex:index};
+  }
   if(existing&&Number(expected)!==Number(existing.version)||!existing&&expected!==null)return out({error:"Calendar was edited in another session. Reload before saving.",currentVersion:existing?.version??null},409);
-  const now=new Date().toISOString(),encoded=JSON.stringify(clean);
+  const now=new Date().toISOString(),encoded=JSON.stringify(clean),changes=JSON.stringify(cleanedOverrides);
   if(existing){
-   const updated=await env.DB.prepare("UPDATE coach_assignment_schedules SET start_date=?,weeks=?,week_pattern_json=?,version=version+1,updated_at=? WHERE assignment_id=? AND coach_user_id=? AND version=?").bind(input.startDate,weeks,encoded,now,assignment.id,user.id,Number(expected)).run();
+   const updated=await env.DB.prepare("UPDATE coach_assignment_schedules SET start_date=?,weeks=?,week_pattern_json=?,overrides_json=?,version=version+1,updated_at=? WHERE assignment_id=? AND coach_user_id=? AND version=?").bind(input.startDate,weeks,encoded,changes,now,assignment.id,user.id,Number(expected)).run();
    if(Number(updated.meta?.changes)!==1)return out({error:"Calendar version conflict"},409);
   }else{
-   await env.DB.prepare("INSERT INTO coach_assignment_schedules (assignment_id,coach_user_id,client_user_id,start_date,weeks,week_pattern_json,version,updated_at,created_at) VALUES (?,?,?,?,?,?,1,?,?)").bind(assignment.id,user.id,assignment.client_user_id,input.startDate,weeks,encoded,now,now).run();
+   await env.DB.prepare("INSERT INTO coach_assignment_schedules (assignment_id,coach_user_id,client_user_id,start_date,weeks,week_pattern_json,overrides_json,version,updated_at,created_at) VALUES (?,?,?,?,?,?,?,1,?,?)").bind(assignment.id,user.id,assignment.client_user_id,input.startDate,weeks,encoded,changes,now,now).run();
   }
-  return out({schedule:{assignmentId:assignment.id,clientId:assignment.client_user_id,startDate:input.startDate,weeks,days:clean,version:existing?Number(existing.version)+1:1,updatedAt:now}},existing?200:201);
+  return out({schedule:{assignmentId:assignment.id,clientId:assignment.client_user_id,startDate:input.startDate,weeks,days:clean,overrides:cleanedOverrides,version:existing?Number(existing.version)+1:1,updatedAt:now}},existing?200:201);
  }
  if(pathname==="/v1/client/coach-calendars"&&method==="GET"){
   const rows=await env.DB.prepare("SELECT s.* FROM coach_assignment_schedules s JOIN coach_program_assignments a ON a.id=s.assignment_id WHERE s.client_user_id=? AND a.status='published' AND (a.coach_user_id=a.client_user_id OR EXISTS(SELECT 1 FROM coach_training_links l WHERE l.coach_user_id=a.coach_user_id AND l.client_user_id=a.client_user_id AND l.training_permission=1 AND l.revoked_at IS NULL)) ORDER BY s.updated_at DESC LIMIT 80").bind(user.id).all();
