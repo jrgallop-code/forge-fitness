@@ -149,8 +149,8 @@ function renderOverview(){
  // First row: matching profile and published-plan cards.
  let c=panel(grid,"Client Profile","Linked Level Up account");
  info(c,"Name",person().name);info(c,"Email",person().email||"—");
- info(c,"Height",profile?.profile?.heightCm?profile.profile.heightCm+" cm":"Not shared");
- info(c,"Current weight",profile?.weight?.latest?profile.weight.latest+" lb":"Not shared");
+ info(c,"Height",profile?.profile?.heightCm!=null?profile.profile.heightCm+" cm":"Not shared");
+ info(c,"Current weight",profile?.weight?.latest!=null?profile.weight.latest+" lb":"Not shared");
  info(c,"Last cloud sync",profile?.backup?.syncedAt?new Date(profile.backup.syncedAt).toLocaleString("en-CA"):"Not synced");
  c=panel(grid,"Assigned Workout Programs","Published to this athlete's Level Up account");
  if(!active().length)note(c,"No published workout assigned. Create and publish one to display it here.");
@@ -195,7 +195,7 @@ function renderProgress(){
  btn(tools,"Metric Calendar",()=>{
    selectedMetric="weight";metricViewMode="calendar";renderProgress();
  },"subtle");
- const top=el("div",root,{className:"cf-metrics"});for(const [k,v]of [["Weight",profile?.weight?.latest?profile.weight.latest+" lb":"Not shared"],["Sessions",profile?.training?.completedCount??"—"],["Last 30 days",profile?.training?.last30Days??"—"]]){const m=el("div",top,{className:"cf-metric"});el("small",m,{text:k});el("strong",m,{text:String(v)})}
+ const top=el("div",root,{className:"cf-metrics"});for(const [k,v]of [["Weight",profile?.weight?.latest!=null?profile.weight.latest+" lb":"Not shared"],["Sessions",profile?.training?.completedCount??"—"],["Last 30 days",profile?.training?.last30Days??"—"]]){const m=el("div",top,{className:"cf-metric"});el("small",m,{text:k});el("strong",m,{text:String(v)})}
  const two=el("div",root,{className:"cf-columns"}),left=el("div",two),right=el("div",two);
  let c=panel(left,"Weight entries","Latest synced weigh-ins");const weights=arr(profile?.weight?.history).slice(-15).reverse();if(!weights.length)note(c,"No weigh-ins synced.");for(const x of weights)info(c,displayDate(x.date),x.weight+" lb");
  c=panel(right,"Recent sessions","Completed workouts");const workouts=arr(profile?.training?.recentWorkouts).slice(-12).reverse();if(!workouts.length)note(c,"No completed workouts in cloud.");for(const x of workouts)info(c,x.name||"Workout",displayDate(x.date));if(analytics)analytics.renderCoachProgressAnalytics(root,profile);
