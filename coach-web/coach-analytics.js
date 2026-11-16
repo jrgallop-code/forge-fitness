@@ -64,45 +64,7 @@ function strengthChart(host,profile){
  };
  select.onchange=draw;draw();
 }
-function heatmap(host,profile){
- const body=box(host,"Weekly Sets by Muscle Group","Level Up-style heat map · Monday–Sunday training weeks");
- const exercises=arr(profile?.training?.recentExerciseSets);
- if(!exercises.length)return text(body,"No completed sets in this athlete's available recent cloud history.");
- const weekStart=date=>{const d=new Date(date+"T12:00:00Z");d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));return d.toISOString().slice(0,10)};
- const thisWeek=weekStart(new Date().toISOString().slice(0,10));
- const weeks=Array.from({length:10},(_,i)=>{const d=new Date(thisWeek+"T12:00:00Z");d.setUTCDate(d.getUTCDate()-(9-i)*7);return d.toISOString().slice(0,10)});
- const totals=new Map();
- for(const entry of exercises){
-  if(!entry?.date||!entry?.exerciseId||!(Number(entry.sets)>0))continue;
-  const week=weekStart(entry.date);if(!weeks.includes(week))continue;
-  for(const [muscle,credit]of getExerciseImpacts({id:entry.exerciseId})){
-   if(!muscle||muscle==="Other")continue;
-   const key=muscle+"|"+week;totals.set(key,(totals.get(key)||0)+credit*Number(entry.sets));
-  }
- }
- const muscles=[...new Set([...totals.keys()].map(x=>x.split("|")[0]))].sort();
- if(!muscles.length)return text(body,"No supported muscle attribution is available for the synced exercises.");
- const wrapper=h("div",body,{className:"cf-heatmap-scroll"}),grid=h("div",wrapper,{className:"cf-weekly-heatmap"});
- grid.style.gridTemplateColumns="minmax(115px,1.4fr) repeat(10,minmax(43px,1fr))";
- h("strong",grid,{text:"Muscle"});
- for(const w of weeks)h("small",grid,{text:w.slice(5)});
- const palette=["#e2e8f0","#8170C9","#5598EC","#35C3D3","#83CF70","#F1D65A","#F3A24B","#F27768"];
- const labels=["0","0.5–2","2.5–4","4.5–6","6.5–8","8.5–10","10.5–12","12.5+"];
- for(const muscle of muscles){
-  h("span",grid,{className:"cf-muscle-name",text:muscle});
-  for(const week of weeks){
-   const value=Math.round((totals.get(muscle+"|"+week)||0)*10)/10;
-   const band=value>0?Math.min(7,Math.ceil(value/2)):0;
-   const cell=h("div",grid,{className:"cf-weekly-cell",text:String(value)});
-   cell.style.background=palette[band];cell.style.color=band===0?"#597189":band<=2?"#fff":"#263044";
-   cell.title=muscle+" · week of "+week+" · "+value+" credited sets";
-  }
- }
- const legend=h("div",body,{className:"cf-heatmap-legend"});h("strong",legend,{text:"Sets"});
- for(let i=0;i<labels.length;i++){const item=h("span",legend);const swatch=h("i",item);swatch.style.background=palette[i];h("small",item,{text:labels[i]})}
- text(body,"Primary muscles receive 1.0 credit and secondary muscles 0.5 per completed set. Earlier weeks may be incomplete if the cloud backup lacks historical sessions.");
-}
-export function renderCoachOverviewAnalytics(host,profile){
+export function renderCoachExpenditure(host,profile){
  if(!host)return;
  const exp=box(host,"Calculated Expenditure","From Level Up's synced weight and nutrition history");
  const kcal=profile?.expenditure?.calories;
@@ -112,6 +74,8 @@ export function renderCoachOverviewAnalytics(host,profile){
   if(Number.isFinite(profile.expenditure.weightRateLbPerWeek))stat(row,"Weight rate",num(profile.expenditure.weightRateLbPerWeek)+" lb/week");
   if(profile?.backup?.syncedAt)text(exp,"Last Level Up cloud sync: "+new Date(profile.backup.syncedAt).toLocaleString("en-CA"));
  }else text(exp,"No calculated expenditure in this athlete's latest synced Level Up backup.");
+}
+export function renderCoachWeightTrend(host,profile){
  const weight=box(host,"Weight Trend","App weight smoothing, based on recorded weigh-ins");
  const samples=normalizeWeightEntries(profile?.weight?.history||[]);const trend=calculateTrendWeightSeries(samples);
  svgChart(weight,trend.map(x=>({date:x.date,value:x.weight})),{unit:" lb"});
@@ -119,7 +83,10 @@ export function renderCoachOverviewAnalytics(host,profile){
 export function renderCoachProgressAnalytics(host,profile){
  if(!host)return;
  strengthChart(host,profile);
- heatmap(host,profile);
+}
+export function renderCoachOverviewAnalytics(host,profile){
+ renderCoachExpenditure(host,profile);
+ renderCoachWeightTrend(host,profile);
 }
 export function injectCoachAnalyticsStyles(){
  if(document.getElementById("cf-analytics-styles"))return;
