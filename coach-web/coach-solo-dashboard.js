@@ -94,6 +94,15 @@ async function sendInvite(event){
  status.textContent="Sending invitation…";
  try{await api("/api/coach?action=invite","POST",data);form.reset();form.hidden=true;status.textContent="Invitation request accepted; refresh to see delivery status.";await refresh()}catch(e){status.textContent="Invitation was not sent: "+e.message;status.style.color="#a43842"}
 }
+function openInvite(){
+ const form=$("solo-invite-form");if(!form)return;
+ const buttons=[...document.querySelectorAll("aside button, nav button, .sidebar button")];
+ const dashboardButton=buttons.find(b=>/^dashboard$/i.test((b.textContent||"").trim()));
+ if(dashboardButton)dashboardButton.click();
+ else if($("dashboard"))$("dashboard").hidden=false;
+ form.hidden=false;
+ form.querySelector('[name="firstName"]')?.focus();
+}
 function mount(){
  const dashboard=$("dashboard");if(!dashboard||$("solo-coach-dashboard"))return;
  const style=el("style",document.head,{id:"solo-dashboard-style"});
@@ -105,6 +114,7 @@ function mount(){
  for(const [field,label,type]of [["firstName","First name","text"],["lastName","Last name","text"],["email","Email address","email"]]){
   const wrap=el("label",invite);el("span",wrap,{text:label});el("input",wrap,{name:field,type,required:"required",maxlength:"254"})}
  const submit=el("button",invite,{type:"submit",className:"solo-button primary",text:"Send invitation"});invite.onsubmit=sendInvite;
+ window.LevelUpCoachSoloDashboard={openInvite,refresh};
  el("div",root,{id:"solo-dashboard-content"});void refresh();
 }
 if(document.body)mount();
