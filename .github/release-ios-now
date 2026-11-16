@@ -686,3 +686,5 @@ Use the shared weekly weight trend for the expenditure correction.
 2026-11-15: Fix dashboard Steps shortcut to activate the real Progress Steps tab synchronously; regression coverage; TestFlight release.
 
 2026-11-15: Correct Dashboard Steps deep link by centralizing Progress tab selection and preserving the Steps destination through initial mount; behavioral regression tested.
+
+2026-11-16: User-requested TestFlight build for fixed Wednesday weekly check-in calendar, eligibility and countdown; preserve all iOS branch features.
