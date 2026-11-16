@@ -123,7 +123,6 @@ function renderCalendar(){
    menu.value=workout?String(ev.dayIndex):"rest";menu.onchange=()=>changeEvent(day,menu.value,$("cu-repeat").checked);
   }
  }
- }
  const footer=el("div",root,{className:"cu-nav"});button(footer,"Save Calendar to Cloud",saveCalendar);
  muted(footer,"This changes future scheduling only; previously completed workouts are not changed.");
  if(!calendar)muted(root,"Not yet scheduled. Choose workout/rest days and save.");
