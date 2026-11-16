@@ -38,9 +38,36 @@ function profileSummary(data){
  };
 }
 function trainingSummary(data){
- const sessions=safeArray(data.forge_workout_sessions);
- const workouts=sessions.map(x=>({date:dateText(String(x?.completedAt||x?.endedAt||x?.date||x?.startTime||"").slice(0,10)),name:String(x?.name||x?.planName||x?.title||"Workout").slice(0,100)})).filter(x=>x.date).sort((a,b)=>a.date.localeCompare(b.date));
- return{completedCount:sessions.length,recentWorkouts:workouts.slice(-30)};
+ const sessions=safeArray(data.forge_workout_sessions).filter(x=>x?.id!=="level-up-recap-preview-session");
+ const workouts=sessions.map(x=>({
+   date:dateText(String(x?.completedAt||x?.endedAt||x?.date||x?.startTime||"").slice(0,10)),
+   name:String(x?.trainingDayName||x?.planName||x?.name||x?.title||"Workout").slice(0,100),
+   exerciseCount:safeArray(x.exercises).length
+ })).filter(x=>x.date).sort((a,b)=>a.date.localeCompare(b.date));
+ const series=[];
+ for(const session of sessions){
+   const date=dateText(String(session?.completedAt||session?.endedAt||session?.date||session?.startTime||"").slice(0,10));
+   if(!date)continue;
+   for(const exercise of safeArray(session.exercises)){
+     if(exercise?.trackingType==="notes")continue;
+     const id=String(exercise?.exerciseId||exercise?.id||"").slice(0,120);if(!id)continue;
+     for(const set of safeArray(exercise.sets)){
+       if(set?.completed===false)continue;
+       const weight=positive(set.weight),reps=positive(set.reps);
+       if(weight===null||reps===null||reps>50)continue;
+       series.push({date,exerciseId:id,weight:Math.round(weight*100)/100,reps:Math.round(reps),estimated1rm:Math.round(weight*(1+reps/30)*10)/10});
+     }
+   }
+ }
+ series.sort((a,b)=>a.date.localeCompare(b.date));
+ const latestByExercise=new Map();
+ for(const set of series)latestByExercise.set(set.exerciseId,set);
+ const recordedSets=series.slice(-250);
+ const last30=new Date(Date.now()-30*86400000).toISOString().slice(0,10);
+ return{completedCount:sessions.length,last30Days:workouts.filter(x=>x.date>=last30).length,
+  lastCompletedDate:workouts.at(-1)?.date||null,recentWorkouts:workouts.slice(-30),
+  recordedSetsCount:series.length,recentSets:recordedSets,
+  exerciseLatest:[...latestByExercise.values()].slice(-40)};
 }
 export async function coachClientDataRoute({request,env,user,url}){
  if(request.method!=="GET")return response({error:"Method not allowed"},405);
