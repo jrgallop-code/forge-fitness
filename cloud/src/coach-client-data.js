@@ -63,11 +63,37 @@ function trainingSummary(data){
  const latestByExercise=new Map();
  for(const set of series)latestByExercise.set(set.exerciseId,set);
  const recordedSets=series.slice(-250);
+ // Coach analytics read model: exact daily best logged estimated 1RM per lift,
+ // and daily completed-set credit for muscle-volume attribution in the app.
+ const exerciseHistoryMap=new Map();
+ const exerciseCounts=[];
+ for(const session of sessions){
+   const date=dateText(String(session?.completedAt||session?.endedAt||session?.date||session?.startTime||"").slice(0,10));
+   if(!date)continue;
+   for(const exercise of safeArray(session.exercises)){
+     const exerciseId=String(exercise?.exerciseId||exercise?.id||"").slice(0,120);
+     if(!exerciseId)continue;
+     const sets=safeArray(exercise.sets).filter(x=>x?.completed!==false);
+     const best=sets.map(x=>{const w=positive(x?.weight),r=positive(x?.reps);return w!==null&&r!==null&&r<=50?w*(1+r/30):null}).filter(x=>x!==null);
+     if(best.length){
+       const key=date+"|"+exerciseId,estimate=Math.max(...best);
+       if(!exerciseHistoryMap.has(key)||exerciseHistoryMap.get(key).estimated1rm<estimate){
+         exerciseHistoryMap.set(key,{date,exerciseId,estimated1rm:Math.round(estimate*10)/10});
+       }
+     }
+     const setCount=sets.length;
+     if(setCount)exerciseCounts.push({date,exerciseId,sets:Math.min(30,setCount)});
+   }
+ }
+ const exerciseHistory=[...exerciseHistoryMap.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-1600);
+ const setCutoff=new Date(Date.now()-28*86400000).toISOString().slice(0,10);
+ const recentExerciseSets=exerciseCounts.filter(x=>x.date>=setCutoff).slice(-1000);
  const last30=new Date(Date.now()-30*86400000).toISOString().slice(0,10);
  return{completedCount:sessions.length,last30Days:workouts.filter(x=>x.date>=last30).length,
   lastCompletedDate:workouts.at(-1)?.date||null,recentWorkouts:workouts.slice(-30),
   recordedSetsCount:series.length,recentSets:recordedSets,
-  exerciseLatest:[...latestByExercise.values()].slice(-40)};
+  exerciseLatest:[...latestByExercise.values()].slice(-40),
+  exerciseHistory,recentExerciseSets};
 }
 export async function coachClientDataRoute({request,env,user,url}){
  if(request.method!=="GET")return response({error:"Method not allowed"},405);
