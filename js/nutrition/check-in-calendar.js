@@ -102,55 +102,16 @@ function canonicalPhaseEvents(phase, bounds, handledState, today) {
 function activePhaseEvents(phase, status, bounds, handledState, today) {
     if (!phase?.startDate || status?.mode === "track") return [];
 
-    const informationalDate = shiftDate(phase.startDate, FIRST_INFORMATIONAL_CHECK_DAY - 1);
-    const firstReviewDate = shiftDate(phase.startDate, FIRST_CALORIE_REVIEW_DAY - 1);
-    let anchor = status?.reviewDate || firstReviewDate;
-    if (!anchor) return [];
-
-    // The live check-in status is authoritative. Once a review is delayed or
-    // accepted on a different day, anchor the whole visible monthly sequence to
-    // that date so the calendar can never show two competing weekly cadences.
-    while (anchor < firstReviewDate) anchor = shiftDate(anchor, CADENCE_DAYS);
-
-    let date = anchor;
-    while (shiftDate(date, -CADENCE_DAYS) >= firstReviewDate) {
-        const previous = shiftDate(date, -CADENCE_DAYS);
-        if (previous < bounds.start) break;
-        date = previous;
-    }
-    while (date < bounds.start) date = shiftDate(date, CADENCE_DAYS);
-
-    const handled = handledState[phaseKey(phase)];
-    const latestHandledDate = handledDate(handled);
-    const events = [];
-    const activeEnd = phase.endDate || bounds.end;
-    const lastDate = activeEnd < bounds.end ? activeEnd : bounds.end;
-    if (informationalDate >= bounds.start && informationalDate <= lastDate) {
-        events.push(eventFor({
-            date: informationalDate,
-            checkDay: FIRST_INFORMATIONAL_CHECK_DAY,
-            phase,
-            state: "informational"
-        }));
-    }
-
-    while (date && date <= lastDate) {
-        let state;
-        if (date === status?.reviewDate) {
-            state = status.state === "ready"
-                ? "ready"
-                : status.state === "waiting"
-                    ? "waiting"
-                    : "upcoming";
-        } else if (date < today) {
-            state = latestHandledDate && date <= latestHandledDate ? "handled" : "past";
-        } else {
-            state = "upcoming";
+    // Scheduling is anchored to the original phase week, never to the day
+    // a late review or a troubleshooting calorie adjustment was accepted.
+    const events = canonicalPhaseEvents(phase, bounds, handledState, today);
+    if (status?.reviewDate && (status.state === "ready" || status.state === "waiting")) {
+        const scheduled = events.find(event => event.date === status.reviewDate);
+        if (scheduled) {
+            scheduled.state = status.state;
+            scheduled.label = stateLabel(status.state);
         }
-        events.push(eventFor({ date, phase, state }));
-        date = shiftDate(date, CADENCE_DAYS);
     }
-
     return events;
 }
 
