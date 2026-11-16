@@ -28,7 +28,7 @@ test("coach invitation email contains separate Apple and review URLs without cla
   assert.match(html,/>Sign in with Apple<\/a>/);
   assert.match(html,/\?invite=[a-f0-9]{64}&amp;auth=apple/);
   assert.match(text,/Sign in with Apple/);
-  assert.match(html,/You will review and approve coaching data sharing/);
+  assert.match(html,/review and approve the coaching connection before sharing/);
   assert.doesNotMatch(html,/Sign in using private-contact@example.com/);
   assert.ok(writes.some(x=>x.sql.includes("INSERT INTO coach_client_invites")));
  }finally{globalThis.fetch=original}
