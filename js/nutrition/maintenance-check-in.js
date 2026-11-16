@@ -86,7 +86,24 @@ export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTar
     const reviewed = parseDate(state?.reviewedAt);
     const now = new Date(today); now.setHours(12, 0, 0, 0);
     const daysSinceReview = reviewed === null ? Infinity : Math.floor((now.getTime() - reviewed) / DAY);
-    const due = daysSinceReview >= CHECK_IN_DAYS;
+    // A completed review imposes a seven-day cooldown, but does not change
+    // the phase's weekday. Wait for the next original phase check-in date
+    // after that cooldown rather than triggering on the cooldown expiry day.
+    const earliestReviewDate = reviewed === null ? null : localDateKey(new Date(reviewed + CHECK_IN_DAYS * DAY));
+    const scheduledCheckDate = adaptiveMetrics?.trend?.checkDate;
+    const nextScheduledCheckDate = adaptiveMetrics?.trend?.nextCheckDate;
+    let nextEligibleScheduledDate = scheduledCheckDate;
+    if (earliestReviewDate && nextEligibleScheduledDate) {
+        while (nextEligibleScheduledDate < earliestReviewDate) {
+            const date = new Date(`${nextEligibleScheduledDate}T12:00:00`);
+            date.setDate(date.getDate() + CHECK_IN_DAYS);
+            nextEligibleScheduledDate = localDateKey(date);
+        }
+    } else if (earliestReviewDate) {
+        nextEligibleScheduledDate = nextScheduledCheckDate || earliestReviewDate;
+    }
+    const due = daysSinceReview >= CHECK_IN_DAYS
+        && (!nextEligibleScheduledDate || localDateKey(now) >= nextEligibleScheduledDate);
     const coordinatedTargetChange = Number(coordinatedUpdate?.targetCalories) - Number(target);
     // A review is meaningful when either maintenance moved or measured pace
     // calls for a target change. Requiring a TDEE change hid valid reviews.
