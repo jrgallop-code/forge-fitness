@@ -1,0 +1,41 @@
+name: Verify PWA coach invitation live
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/verify-pwa-coach-live.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify published PWA and invitation landing
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in "https://app.leveluphypertrophy.com/js/more/coach-invite-pwa.js" "https://leveluphypertrophy.com/coach-join.html"; do
+            echo "Checking $path"
+            curl -fSL --retry 6 --retry-delay 5 --max-time 25 -H "Cache-Control: no-cache" "$path" -o /tmp/check-public.html
+            if [[ "$path" == *coach-invite-pwa.js ]]; then
+              grep -q 'confirmContactEmailMismatch' /tmp/check-public.html
+              grep -q 'Connect to your coach' /tmp/check-public.html
+            else
+              grep -q 'existing-pwa-join' /tmp/check-public.html
+            fi
+          done
+      - name: Read Cloudflare production deploy status without secrets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GH_REPO/actions/workflows/deploy-cloud-worker.yml/runs?branch=main&per_page=6" --jq '.workflow_runs[]|{id,status,conclusion,head_sha,created_at,html_url}'
+      - name: Confirm public API is reachable and authentication-required
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/coach-check-api.json -w "%{http_code}" "https://api.leveluphypertrophy.com/v1/me")
+          test "$code" = "401"
+          echo "Public API requires authentication (HTTP $code)."
