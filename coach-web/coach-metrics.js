@@ -1,6 +1,7 @@
 /* Level Up Coach metrics presentation: compact Everfit-style overview plus
  * clickable detail charts / calendar / dated entries. No synthetic athlete data. */
-import {normalizeWeightEntries,calculateTrendWeightSeries} from "./js/core/weight-trend.js";
+import {normalizeWeightEntries,calculateTrendWeightSeries,calculateVisibleWeightTrend} from "./js/core/weight-trend.js";
+import {renderCoachSharedWeightProgress,injectCoachSharedWeightStyles} from "./coach-shared-weight-progress.js";
 const E=(tag,host,attrs={})=>{const node=document.createElement(tag);for(const [k,v]of Object.entries(attrs)){if(k==="text")node.textContent=v;else if(k==="className")node.className=v;else node.setAttribute(k,v)}host?.append(node);return node};
 const toNum=v=>v===undefined||v===null||v===""?null:Number.isFinite(Number(v))?Number(v):null;
 const arr=v=>Array.isArray(v)?v:[];
@@ -104,7 +105,10 @@ export function renderCoachMetricOverview(host,profile,onOpen){
   E("div",tile,{className:"cf-body-metric-number",text:valueToString(metric,value)});
   if(metric.id==="steps"){
    const goal=toNum(profile?.dailyMetrics?.steps?.goal);
-   const latest7=history.slice(-7);E("p",tile,{className:"cf-muted",text:goal?"Goal "+fmt(goal,0)+" · last 7 logged days avg "+(latest7.length?fmt(avg(latest7),0):"—"):"No synced step goal or recorded steps"});
+   const latest7=history.slice(-7);
+   E("p",tile,{className:"cf-muted",text:(goal!==null?"Goal "+fmt(goal,0)+" · ":"")+(latest7.length?"Last "+latest7.length+" synced days average "+fmt(avg(latest7),0):"No dated step counts synced")});
+   if(!latest7.length)E("p",tile,{className:"cf-metric-stale",text:"Your athlete app may display device steps that have not been uploaded to Level Up Cloud."});
+   else E("p",tile,{className:"cf-muted",text:"Latest steps: "+history.at(-1).date});
   }else if(metric.id==="sleep"){
    const last7=history.slice(-7),latest=history.at(-1)?.date||null;
    E("p",tile,{className:"cf-muted",text:last7.length?"Last "+last7.length+" logged nights avg "+sleepLabel(avg(last7)):"No synced sleep entries"});
@@ -120,7 +124,9 @@ export function renderCoachMetricOverview(host,profile,onOpen){
    if(latest?.pendingCount)E("p",tile,{className:"cf-metric-stale",text:latest.pendingCount+" pending food entries may not have finalized nutrition values."});
   }else if(metric.id==="expenditure"){E("p",tile,{className:"cf-muted",text:"Weekly predicted / calculated expenditure"})}
   else{
-   const rate=toNum(profile?.expenditure?.weightRateLbPerWeek);
+   const raw=normalizeWeightEntries(profile?.weight?.history||[]);
+   const trendRate=calculateVisibleWeightTrend(raw,{endDate:raw.at(-1)?.date});
+   const rate=trendRate.status==="insufficient"?null:toNum(trendRate.weeklyChange);
    E("p",tile,{className:"cf-muted",text:"Smoothed weight trend"+(rate!==null?" · "+(rate>=0?"+":"")+fmt(rate,2)+" lb/week":"")});
   }
   if(history.length)summaryGraph(tile,metric,history,{goal:metric.id==="steps"?toNum(profile?.dailyMetrics?.steps?.goal):null,projected:metric.id==="expenditure"});
@@ -150,6 +156,11 @@ export function renderCoachMetricDetail(host,profile,id,onBack,initialView="grap
  const header=E("div",wrap,{className:"cf-detail-title"});
  const nav=E("button",header,{type:"button",text:"← All metrics"});nav.onclick=onBack;
  E("h2",header,{text:metric.title+" — Detailed Metrics"});
+ if(id==="weight"){
+  injectCoachSharedWeightStyles();
+  renderCoachSharedWeightProgress(wrap,profile);
+  return;
+ }
  const subtitle=E("p",wrap,{className:"cf-muted",text:"Level Up athlete data · read-only · select a chart area to see its recorded value"});
  const controls=E("div",wrap,{className:"cf-detail-controls"});
  const range=E("select",controls,{"aria-label":"Metric date range"});
