@@ -3,10 +3,10 @@
  * No athlete entries or localStorage keys are written.
  */
 import {drawSharedWeightTrendChart} from "./js/progress/weight-trend-chart.js";
-import {normalizeWeightEntries,calculateTrendWeightSeries,calculateVisibleWeightTrend,calculateRegressionWeeklyChange} from "./js/core/weight-trend.js";
+import {normalizeWeightEntries,calculateTrendWeightSeries,calculateVisibleWeightTrend} from "./js/core/weight-trend.js";
 
-const ranges=[["1w","1W",7],["1m","1M",30],["3m","3M",90],["6m","6M",180],["1y","1Y",365],["all","ALL",null]];
-const units=[["7","7 days"],["14","14 days"],["21","21 days"],["30","30 days"],["60","60 days"],["90","90 days"]];
+// Matches js/progress/weight-trend-chart.js: RANGE_OPTIONS and the 3M initial range.
+const ranges=[["1w","1W",7],["1m","1M",30],["3m","3M",90],["6m","6M",180],["1y","1Y",365],["phase","PHASE",null],["all","ALL",null]];
 const day=86400000,localDate=s=>new Date(s+"T12:00:00Z").getTime();
 const date=t=>new Date(t).toISOString().slice(0,10);
 const fmt=(n,d=2)=>Number(n).toLocaleString("en-CA",{maximumFractionDigits:d});
@@ -19,11 +19,18 @@ export function renderCoachSharedWeightProgress(host,profile){
  E("p",card,{className:"cw-source",text:"Shared Level Up weight trend engine · recorded and smoothed values · athlete history remains read-only"});
  if(entries.length<2){E("p",card,{className:"cw-empty",text:"At least two synced weigh-ins are needed to display weight-change trends."});return}
  const controls=E("div",card,{className:"cw-controls"});
- const period=field(controls,"Chart timeframe",ranges.map(([id,label])=>[id,label]));period.value="3m";
- const rateInterval=field(controls,"Weight change over",units);
- rateInterval.value="21";
- const rateUnit=field(controls,"Display rate as",[["day","Per day"],["week","Per week"],["month","Per month"]]);rateUnit.value="week";
- E("p",card,{className:"cw-source",text:"21-day rate uses the same smoothed, recent-weighted Level Up app calculation. Other intervals use the same smoothed history with regression."});
+ const rangeBar=E("div",controls,{className:"cw-app-ranges",role:"group","aria-label":"Weight chart timeframe"});
+ let selectedRange="3m";
+ const phase=profile?.weight?.currentPhase;
+ const activePhase=phase?.startDate&&!phase?.endDate?phase:null;
+ const buttons=new Map();
+ for(const [id,label]of ranges){
+  const button=E("button",rangeBar,{type:"button",text:label,"data-range":id});
+  button.disabled=id==="phase"&&!activePhase;
+  if(button.disabled)button.title="No active nutrition phase synced";
+  button.onclick=()=>{selectedRange=id;shift=0;scale=1;draw()};
+  buttons.set(id,button);
+ }
  const zoomGroup=E("div",controls,{className:"cw-zoom"});
  const back=E("button",zoomGroup,{type:"button",text:"← Earlier"});
  const zoomIn=E("button",zoomGroup,{type:"button",text:"Zoom +"});
@@ -38,27 +45,28 @@ export function renderCoachSharedWeightProgress(host,profile){
  const latest=entries.at(-1).date;
  const pointAt=(x,points)=>points.reduce((best,p)=>Math.abs(p.t-x)<Math.abs(best.t-x)?p:best,points[0]);
  function draw(){
-  const total=ranges.find(x=>x[0]===period.value)?.[2]||null;
-  const displayed=Math.max(2,Math.round((total||Math.max(2,(localDate(latest)-localDate(entries[0].date))/day+1))/scale));
+  for(const [id,b]of buttons)b.setAttribute("aria-pressed",String(selectedRange===id));
+  const selectedOption=ranges.find(x=>x[0]===selectedRange);
+  const span=selectedRange==="phase"&&activePhase
+   ?Math.max(2,Math.round((localDate(latest)-localDate(activePhase.startDate))/day)+1)
+   :selectedOption?.[2]||Math.max(2,Math.round((localDate(latest)-localDate(entries[0].date))/day)+1);
+  const displayed=Math.max(2,Math.round(span/scale));
   const end=localDate(latest)-shift*day,start=end-(displayed-1)*day;
   const selected=entries.filter(x=>localDate(x.date)>=start&&localDate(x.date)<=end);
   const trend=calculateTrendWeightSeries(entries.filter(x=>localDate(x.date)<=end)).filter(x=>localDate(x.date)>=start);
-  const rateDays=Number(rateInterval.value);
-  const computed=calculateVisibleWeightTrend(entries,{endDate:date(end),rateDays});
-  const intervalSeries=calculateTrendWeightSeries(entries.filter(x=>localDate(x.date)<=end))
-   .filter(x=>localDate(x.date)>=end-(rateDays-1)*day);
-  const intervalWeeklyRate=rateDays===21?computed.weeklyChange:calculateRegressionWeeklyChange(intervalSeries);
-  const factor=rateUnit.value==="day"?1/7:rateUnit.value==="month"?30.44/7:1;
-  const suffix=rateUnit.value==="day"?"lb/day":rateUnit.value==="month"?"lb/month":"lb/week";
+  // Exactly the athlete app's displayed Weekly Trend:
+  // calculateVisibleWeightTrend(weights, { endDate: latestEntryDate }).
+  // The algorithm chooses its native 21-day lookback and readiness rules.
+  const computed=calculateVisibleWeightTrend(entries.filter(x=>localDate(x.date)<=end),{endDate:date(end)});
   const current=selected.at(-1);
   pills.replaceChildren();
   function pill(name,value){const el=E("div",pills,{className:"cw-stat"});E("small",el,{text:name});E("strong",el,{text:value})}
   pill("Latest recorded",current?fmt(current.weight,1)+" lb":"Unavailable");
   pill("Trend weight",trend.length?fmt(trend.at(-1).weight,1)+" lb":"Unavailable");
-  const rate=Number.isFinite(intervalWeeklyRate)&&(rateDays!==21||computed.status!=="insufficient")?intervalWeeklyRate*factor:null;
-  pill(rateDays+"-day trend rate",rate===null?"Insufficient data":(rate>=0?"+":"")+fmt(rate)+" "+suffix);
+  const rate=computed.status==="insufficient"?null:computed.weeklyChange;
+  pill(computed.label||"Weekly Trend",Number.isFinite(rate)?(rate>=0?"+":"")+fmt(rate)+" lb/wk":"Need more data");
   pill("Change during selected window",selected.length>=2?(selected.at(-1).weight>=selected[0].weight?"+":"")+fmt(selected.at(-1).weight-selected[0].weight,1)+" lb":"Insufficient data");
-  drawSharedWeightTrendChart(canvas,{entries:selected,trendSeries:trend,goalWeight:null,startDate:date(start),endDate:date(end),label:period.value.toUpperCase()});
+  drawSharedWeightTrendChart(canvas,{entries:selected,trendSeries:trend,goalWeight:null,startDate:date(start),endDate:date(end),label:selectedRange.toUpperCase()});
   const points=trend.map(x=>({t:localDate(x.date),date:x.date,value:x.weight,raw:x.observedWeight}));
   chart.onpointermove=event=>{
    if(!points.length)return;
@@ -81,17 +89,14 @@ export function renderCoachSharedWeightProgress(host,profile){
    E("td",row,{text:byDate.has(p.date)?fmt(byDate.get(p.date),1):"—"});
   }
  }
- period.onchange=()=>{shift=0;scale=1;draw()};
- rateInterval.onchange=draw;
- rateUnit.onchange=draw;
  zoomIn.onclick=()=>{scale=Math.min(32,scale*2);draw()};
  zoomOut.onclick=()=>{scale=Math.max(1,scale/2);draw()};
- back.onclick=()=>{shift+=Math.max(1,Math.floor((ranges.find(x=>x[0]===period.value)?.[2]||90)/scale/2));draw()};
- forward.onclick=()=>{shift=Math.max(0,shift-Math.max(1,Math.floor((ranges.find(x=>x[0]===period.value)?.[2]||90)/scale/2)));draw()};
+ back.onclick=()=>{shift+=Math.max(1,Math.floor((ranges.find(x=>x[0]===selectedRange)?.[2]||90)/scale/2));draw()};
+ forward.onclick=()=>{shift=Math.max(0,shift-Math.max(1,Math.floor((ranges.find(x=>x[0]===selectedRange)?.[2]||90)/scale/2)));draw()};
  draw();
 }
 export function injectCoachSharedWeightStyles(){
  if(document.getElementById("cw-shared-weight-style"))return;
  const css=E("style",document.head,{id:"cw-shared-weight-style"});
- css.textContent="#coach-functional-profile .cw-shared-progress{background:white;border:1px solid #e3eaf4;border-radius:17px;padding:18px}#coach-functional-profile .cw-source{font-size:12px;color:#71839b}#coach-functional-profile .cw-controls{display:flex;align-items:end;gap:11px;flex-wrap:wrap;margin:15px 0}#coach-functional-profile .cw-field{display:grid;gap:5px;font-size:12px;font-weight:650}#coach-functional-profile .cw-field select{min-width:110px;border-radius:12px}#coach-functional-profile .cw-zoom{display:flex;gap:7px;flex-wrap:wrap}#coach-functional-profile .cw-zoom button{background:#eaf1ff;color:#26569b;border:1px solid #d5e3f7;border-radius:12px;padding:9px 12px}#coach-functional-profile .cw-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}#coach-functional-profile .cw-stat{padding:13px;background:#f5f8fe;border:1px solid #e7eef8;border-radius:12px;display:grid;gap:6px}#coach-functional-profile .cw-stat small{font-size:11px;color:#6d829d}#coach-functional-profile .cw-stat strong{font-size:18px}#coach-functional-profile .cw-chart{position:relative;margin-top:16px;min-width:0}#coach-functional-profile .cw-chart canvas{width:100%!important;display:block}#coach-functional-profile .cw-hover{font-size:12px;color:#2a5c9b;margin:10px 0}#coach-functional-profile .cw-table-wrap{max-height:420px;overflow:auto;margin-top:20px}#coach-functional-profile .cw-table{width:100%;border-collapse:collapse;font-size:12px}#coach-functional-profile .cw-table th,#coach-functional-profile .cw-table td{padding:12px;border-bottom:1px solid #e3eaf4;text-align:left}#coach-functional-profile .cw-table th{position:sticky;top:0;background:#f4f7fc}@media(max-width:650px){#coach-functional-profile .cw-zoom button{padding:8px}#coach-functional-profile .cw-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}";
+ css.textContent="#coach-functional-profile .cw-app-ranges{display:flex;gap:5px;flex-wrap:wrap;padding:5px;background:#f3f6fc;border:1px solid #e2e8f3;border-radius:13px}#coach-functional-profile .cw-app-ranges button{border:0;border-radius:9px;background:transparent;color:#5a7494;padding:10px 14px;font-size:12px;font-weight:750;cursor:pointer}#coach-functional-profile .cw-app-ranges button[aria-pressed=true]{background:#245ff1;color:white}#coach-functional-profile .cw-app-ranges button:disabled{opacity:.35;cursor:not-allowed}#coach-functional-profile .cw-shared-progress{background:white;border:1px solid #e3eaf4;border-radius:17px;padding:18px}#coach-functional-profile .cw-source{font-size:12px;color:#71839b}#coach-functional-profile .cw-controls{display:flex;align-items:end;gap:11px;flex-wrap:wrap;margin:15px 0}#coach-functional-profile .cw-field{display:grid;gap:5px;font-size:12px;font-weight:650}#coach-functional-profile .cw-field select{min-width:110px;border-radius:12px}#coach-functional-profile .cw-zoom{display:flex;gap:7px;flex-wrap:wrap}#coach-functional-profile .cw-zoom button{background:#eaf1ff;color:#26569b;border:1px solid #d5e3f7;border-radius:12px;padding:9px 12px}#coach-functional-profile .cw-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}#coach-functional-profile .cw-stat{padding:13px;background:#f5f8fe;border:1px solid #e7eef8;border-radius:12px;display:grid;gap:6px}#coach-functional-profile .cw-stat small{font-size:11px;color:#6d829d}#coach-functional-profile .cw-stat strong{font-size:18px}#coach-functional-profile .cw-chart{position:relative;margin-top:16px;min-width:0}#coach-functional-profile .cw-chart canvas{width:100%!important;display:block}#coach-functional-profile .cw-hover{font-size:12px;color:#2a5c9b;margin:10px 0}#coach-functional-profile .cw-table-wrap{max-height:420px;overflow:auto;margin-top:20px}#coach-functional-profile .cw-table{width:100%;border-collapse:collapse;font-size:12px}#coach-functional-profile .cw-table th,#coach-functional-profile .cw-table td{padding:12px;border-bottom:1px solid #e3eaf4;text-align:left}#coach-functional-profile .cw-table th{position:sticky;top:0;background:#f4f7fc}@media(max-width:650px){#coach-functional-profile .cw-zoom button{padding:8px}#coach-functional-profile .cw-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}";
 }
