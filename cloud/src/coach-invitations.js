@@ -1,13 +1,15 @@
 /* Owner Coach client invitation: email-bound, explicit consent; no automatic access. */
 const J=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{"Content-Type":"application/json","Cache-Control":"private,no-store","X-Content-Type-Options":"nosniff"}});
 const str=(s,n=180)=>String(s??"").trim().slice(0,n);
+const COACH_CONSENT_VERSION="coach-sharing-v1-2026-11-16";
+const COACH_CONSENT_SCOPE="training_progress_body_metrics_nutrition";
 const validEmail=s=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)&&s.length<=254;
 const canCoach=(user,env)=>String(env.ADMIN_EMAILS||"").split(",").map(s=>s.trim().toLowerCase()).includes(String(user?.email||"").toLowerCase());
 const hash=async v=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)))).map(b=>b.toString(16).padStart(2,"0")).join("");
 const random=()=>Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,"0")).join("");
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 async function body(request){try{return await request.json()}catch{return null}}
-function inviteSummary(row){return {id:row.id,firstName:row.first_name,lastName:row.last_name,email:row.email,coachingType:row.coaching_type,status:row.status,expiresAt:row.expires_at,acceptedAt:row.accepted_at,createdAt:row.created_at,emailedAt:row.emailed_at}}
+function inviteSummary(row){return {id:row.id,firstName:row.first_name,lastName:row.last_name,email:row.email,coachingType:row.coaching_type,status:row.status,expiresAt:row.expires_at,acceptedAt:row.accepted_at,createdAt:row.created_at,emailedAt:row.emailed_at,consentVersion:row.consent_version||null,consentScope:row.consent_scope||null}}
 export async function coachInviteRoute({request,env,user,url}){
  const path=url.pathname,method=request.method,now=new Date().toISOString(),coach=canCoach(user,env);
  if(path==="/v1/coach/invitations"&&method==="GET"){
@@ -56,14 +58,17 @@ export async function coachInviteRoute({request,env,user,url}){
   const row=await env.DB.prepare("SELECT * FROM coach_client_invites WHERE token_hash=?").bind(digest).first();
   if(!row||row.status!=="pending"||row.expires_at<=now)return J({error:"Invitation has expired or was already used"},404);
   if(String(user.email||"").trim().toLowerCase()!==row.email)return J({error:"Sign in using the invited email address to accept this coaching invitation"},403);
-  if(p.approveTraining!==true)return J({error:"You must explicitly approve training access"},400);
-  await env.DB.prepare("INSERT INTO coach_training_links (coach_user_id,client_user_id,training_permission,nutrition_permission,accepted_at,revoked_at) VALUES (?,?,1,?,?,NULL) ON CONFLICT(coach_user_id,client_user_id) DO UPDATE SET training_permission=1,nutrition_permission=excluded.nutrition_permission,accepted_at=excluded.accepted_at,revoked_at=NULL").bind(row.coach_user_id,user.id,p.approveNutrition===true?1:0,now).run();
-  await env.DB.prepare("UPDATE coach_client_invites SET status='accepted',accepted_at=?,accepted_user_id=? WHERE id=? AND status='pending'").bind(now,user.id,row.id).run();
-  return J({accepted:true,coachId:row.coach_user_id,trainingPermission:true,nutritionPermission:p.approveNutrition===true});
+  if(p.approveTraining!==true||p.approveNutrition!==true||p.approveDataSharing!==true)
+   return J({error:"Coaching requires explicit approval to share training, body metrics and nutrition data. You may decline the invitation instead."},400);
+  if(p.consentVersion!==COACH_CONSENT_VERSION)
+   return J({error:"Please review the current coaching data-sharing disclosure before accepting."},400);
+  await env.DB.prepare("INSERT INTO coach_training_links (coach_user_id,client_user_id,training_permission,nutrition_permission,accepted_at,revoked_at,consent_version,consent_scope) VALUES (?,?,1,1,?,NULL,?,?) ON CONFLICT(coach_user_id,client_user_id) DO UPDATE SET training_permission=1,nutrition_permission=1,accepted_at=excluded.accepted_at,revoked_at=NULL,consent_version=excluded.consent_version,consent_scope=excluded.consent_scope").bind(row.coach_user_id,user.id,now,COACH_CONSENT_VERSION,COACH_CONSENT_SCOPE).run();
+  await env.DB.prepare("UPDATE coach_client_invites SET status='accepted',accepted_at=?,accepted_user_id=?,consent_version=?,consent_scope=? WHERE id=? AND status='pending'").bind(now,user.id,COACH_CONSENT_VERSION,COACH_CONSENT_SCOPE,row.id).run();
+  return J({accepted:true,coachId:row.coach_user_id,trainingPermission:true,nutritionPermission:true,consentVersion:COACH_CONSENT_VERSION});
  }
  if(path==="/v1/client/coach-links"&&method==="GET"){
-  const rows=await env.DB.prepare("SELECT l.coach_user_id,l.training_permission,l.nutrition_permission,l.accepted_at,u.display_name,u.email FROM coach_training_links l JOIN users u ON u.id=l.coach_user_id WHERE l.client_user_id=? AND l.revoked_at IS NULL").bind(user.id).all();
-  return J({coaches:(rows.results||[]).map(x=>({coachId:x.coach_user_id,name:x.display_name||x.email,training:!!x.training_permission,nutrition:!!x.nutrition_permission,acceptedAt:x.accepted_at}))});
+  const rows=await env.DB.prepare("SELECT l.coach_user_id,l.training_permission,l.nutrition_permission,l.accepted_at,l.consent_version,u.display_name,u.email FROM coach_training_links l JOIN users u ON u.id=l.coach_user_id WHERE l.client_user_id=? AND l.revoked_at IS NULL").bind(user.id).all();
+  return J({coaches:(rows.results||[]).map(x=>({coachId:x.coach_user_id,name:x.display_name||x.email,training:!!x.training_permission,nutrition:!!x.nutrition_permission,acceptedAt:x.accepted_at,consentVersion:x.consent_version||null}))});
  }
  const disconnect=path.match(/^\/v1\/client\/coach-links\/([^/]+)\/revoke$/);
  if(disconnect&&method==="POST"){
