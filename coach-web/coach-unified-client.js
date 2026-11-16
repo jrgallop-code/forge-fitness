@@ -67,9 +67,9 @@ function notesTab(){
 }
 async function loadNotes(){notes=null;const selected=id;try{const r=await details("drafts");if(selected!==id)return;notes=arr(r.drafts).find(x=>x.id==="coach-profile-notes-v1")||null;notesTab()}catch(e){if(id===selected){notesTab();$("cu-notes-status").textContent=e.message}}}
 async function saveNotes(){
- try{const selected=id,content={kind:"private-coach-notes",notes:$("cu-note").value,limitations:$("cu-lim").value};
- const url="/api/coach-phase1?"+new URLSearchParams({action:"save",clientId:selected,draftId:"coach-profile-notes-v1"});
- const r=await q(url,"PUT",{name:"Private Coach Notes",content,expectedVersion:notes?.version??null});if(selected!==id)return;notes={version:r.version,content};notesTab();message("Notes saved to "+selected().name)}catch(e){message("Notes not saved: "+e.message,true)}
+ try{const clientKey=id,content={kind:"private-coach-notes",notes:$("cu-note").value,limitations:$("cu-lim").value};
+ const url="/api/coach-phase1?"+new URLSearchParams({action:"save",clientId:clientKey,draftId:"coach-profile-notes-v1"});
+ const r=await q(url,"PUT",{name:"Private Coach Notes",content,expectedVersion:notes?.version??null});if(clientKey!==id)return;notes={version:r.version,content};notesTab();message("Notes saved to "+selected().name)}catch(e){message("Notes not saved: "+e.message,true)}
 }
 function defaultDays(days){const slots=days.length===2?[0,3]:days.length===3?[0,2,4]:days.length===4?[0,1,3,4]:[0,1,2,3,4,5,6];return Array.from({length:7},(_,weekday)=>{const idx=slots.indexOf(weekday);return idx>=0&&idx<days.length?{weekday,type:"workout",dayIndex:idx}:{weekday,type:"rest"}})}
 async function openProgram(pid){
@@ -111,7 +111,7 @@ function renderCalendar(){
  for(let w=0;w<Math.min(view,working.weeks-week);w++){
   const idx=week+w,grid=el("div",days,{className:"cu-week"});el("small",grid,{className:"cu-week-title",text:"WEEK "+(idx+1)});
   for(let d=0;d<7;d++){
-   const day=plus(working.startDate,idx*7+d),ev=eventAt(day),workout=ev?.type==="workout"?working.plan.training.days[ev.dayIndex]:null;
+   const day=plus(monday(working.startDate),idx*7+d),ev=eventAt(day),workout=ev?.type==="workout"?working.plan.training.days[ev.dayIndex]:null;
    const cell=el("div",grid,{className:"cu-day "+(workout?"cu-day-workout":"cu-day-rest")});
    el("small",cell,{text:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][(D(day).getUTCDay()+6)%7]+" · "+short(day)});
    el("strong",cell,{text:workout?.name||"Rest day"});
