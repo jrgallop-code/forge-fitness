@@ -37,6 +37,10 @@ document.addEventListener("levelup:navigate",event=>{
 });
 if(content)new MutationObserver(()=>scheduleIconDecoration(()=>decorateAppIcons(content))).observe(content,{childList:true,subtree:true});
 navigate("home");
+if(!window.Capacitor?.isNativePlatform?.() && /^[a-f0-9]{64}$/i.test(new URLSearchParams(location.search).get("invite")||"")){
+    navigate("more");
+    document.querySelector('[data-more-page="coach-invite"]')?.click();
+}
 decorateAppIcons(content||document);
 
 if("serviceWorker" in navigator && !window.Capacitor?.isNativePlatform?.()){
