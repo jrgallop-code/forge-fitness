@@ -15,19 +15,21 @@ function coachTargets(plan) {
         targets.macros = Object.fromEntries(macros.map(key => [key, Math.round(Number(raw[key]))]));
     }
     if (validTarget(plan?.goals?.goalWeightLb, 1, 1000)) targets.goalWeightLb = Number(plan.goals.goalWeightLb);
+    if (validTarget(plan?.goals?.stepGoal, 1000, 50000)) targets.stepGoal = Math.round(Number(plan.goals.stepGoal));
     return targets;
 }
 function targetSummary(targets) {
     return [
         targets.calories ? targets.calories + " kcal/day" : "",
         targets.macros ? ["protein", "carbs", "fat"].map(k => targets.macros[k] + "g " + k).join(" · ") : "",
-        targets.goalWeightLb ? "Goal weight " + targets.goalWeightLb + " lb" : ""
+        targets.goalWeightLb ? "Goal weight " + targets.goalWeightLb + " lb" : "",
+        targets.stepGoal ? "Step goal " + targets.stepGoal + "/day" : ""
     ].filter(Boolean).join(" · ");
 }
 export function applyCoachNutritionTargets(plan, storage = localStorage) {
     const targets = coachTargets(plan);
-    if (!Object.keys(targets).length) throw Error("This assignment has no usable nutrition or goal-weight targets.");
-    const keys = ["level_up_nutrition_plan", "level_up_nutrition_macro", "level_up_nutrition_phases", "level_up_goal_weight", "level_up_current_goal"];
+    if (!Object.keys(targets).length) throw Error("This assignment has no usable nutrition, goal-weight or step targets.");
+    const keys = ["level_up_nutrition_plan", "level_up_nutrition_macro", "level_up_nutrition_phases", "level_up_goal_weight", "level_up_current_goal", "level_up_coach_step_goal_v1"];
     const previous = new Map(keys.map(k => [k, storage.getItem(k)]));
     const read = key => { try { return JSON.parse(storage.getItem(key) || "null"); } catch { return null; } };
     const now = new Date().toISOString();
@@ -48,6 +50,11 @@ export function applyCoachNutritionTargets(plan, storage = localStorage) {
             const current = read("level_up_nutrition_macro") || {};
             storage.setItem("level_up_nutrition_macro", JSON.stringify({
                 ...current, macroPreset: "manual", useManual: true, manualMacros: targets.macros, updatedAt: now
+            }));
+        }
+        if (targets.stepGoal) {
+            storage.setItem("level_up_coach_step_goal_v1", JSON.stringify({
+                target: targets.stepGoal, assignmentId: plan.id, version: plan.version, updatedAt: now
             }));
         }
         if (targets.goalWeightLb) {
@@ -125,7 +132,7 @@ if (Object.keys(targets).length) {
             const updated = imported(user.id);
             updated[plan.id] = {...(updated[plan.id]||{}), targetsVersion: version, targetsAppliedAt: new Date().toISOString()};
             localStorage.setItem(key(user.id), JSON.stringify(updated));
-            status.textContent = "Coach calorie, macro and goal-weight targets applied. Previous logs and workouts are unchanged.";
+            status.textContent = "Coach calorie, macro, weight and step targets applied. Previous logs and workouts are unchanged.";
             void load();
         } catch (error) { status.textContent = "Unable to apply coach targets: " + error.message; }
     };
