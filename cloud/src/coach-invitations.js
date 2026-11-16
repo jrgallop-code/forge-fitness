@@ -25,13 +25,14 @@ export async function coachInviteRoute({request,env,user,url}){
   const existing=await env.DB.prepare("SELECT id FROM coach_client_invites WHERE coach_user_id=? AND email=? AND status='pending' AND expires_at>? LIMIT 1").bind(user.id,email,now).first();
   if(existing)return J({error:"An invitation is already pending for this email. Revoke it before creating a new one."},409);
   const token=random(),digest=await hash(token),id=crypto.randomUUID(),expiresAt=new Date(Date.now()+14*86400000).toISOString();
-  const inviteBase="https://levelup-coach-private-preview.vercel.app/coach-join.html";
+  const inviteBase="https://leveluphypertrophy.com/coach-join.html";
   const link=inviteBase+"?invite="+encodeURIComponent(token);
   const text="You're invited to Level Up coaching by "+(user.display_name||"your coach")+".\n\nAccept invitation: "+link+"\n\nSign in with the same Level Up account email ("+email+") to accept. This link expires in 14 days.\n\nOnce connected, get the Level Up iPhone app: https://apps.apple.com/ca/app/level-up-workout-nutrition/id6810024008";
+  await env.DB.prepare("INSERT INTO coach_client_invites (id,coach_user_id,first_name,last_name,email,coaching_type,token_hash,status,expires_at,created_at) VALUES (?,?,?,?,?,? ,?,'pending',?,?)").bind(id,user.id,first,last,email,type,digest,expiresAt,now).run();
   const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":"Bearer "+env.RESEND_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({from:"Level Up <support@leveluphypertrophy.com>",to:[email],subject:"Your invitation to Level Up coaching",text,html:'<div style="font-family:system-ui;max-width:560px;margin:auto"><h1>Welcome to Level Up</h1><p>'+escape(first)+', your coach has invited you to connect your Level Up account.</p><p><a href="'+escape(link)+'" style="background:#2467dc;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">Accept invitation</a></p><p>Sign in using '+escape(email)+' on the next screen. Your coach will only gain access to the information you approve.</p><p>Invitation expires in 14 days.</p></div>',tags:[{name:"category",value:"coach_invitation"}]})}).catch(()=>null);
   const details=await response?.json().catch(()=>({}));
-  if(!response?.ok)return J({error:"Invitation email was not accepted by the email service. No invitation was saved."},502);
-  await env.DB.prepare("INSERT INTO coach_client_invites (id,coach_user_id,first_name,last_name,email,coaching_type,token_hash,status,expires_at,created_at,emailed_at) VALUES (?,?,?,?,?,? ,?,'pending',?,?,?)").bind(id,user.id,first,last,email,type,digest,expiresAt,now,now).run();
+  if(!response?.ok){await env.DB.prepare("DELETE FROM coach_client_invites WHERE id=? AND status='pending'").bind(id).run();return J({error:"Email service rejected the invitation. Nothing was added to the roster."},502);}
+  await env.DB.prepare("UPDATE coach_client_invites SET emailed_at=? WHERE id=?").bind(now,id).run();
   return J({invitation:{id,firstName:first,lastName:last,email,coachingType:type,status:"pending",expiresAt,emailedAt:now},emailQueued:true},201);
  }
  const revoke=path.match(/^\/v1\/coach\/invitations\/([0-9a-f-]{36})\/revoke$/i);
