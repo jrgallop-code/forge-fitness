@@ -46,7 +46,14 @@ export function initializeCoachInvitePwa({onBack}={}){
    $("coach-invite-account-name").textContent=user.display_name||user.name||account?.name||"Level Up member";
    $("coach-invite-account-email").textContent=user.email||"Signed-in account";
    const candidate=new URLSearchParams(location.search).get("invite");
-   if(tokenPattern.test(candidate||"")){$("coach-invite-token").value=candidate;void preview()}
+   if(tokenPattern.test(candidate||"")){
+    $("coach-invite-token").value=candidate;
+    // Remove invitation credentials from browser history/address bar immediately.
+    const clean=new URL(location.href);
+    clean.searchParams.delete("invite");
+    history.replaceState(history.state,"",clean.pathname+clean.search+clean.hash);
+    void preview();
+   }
    await refreshLinks();
   }catch(e){user=null;$("coach-invite-account-name").textContent="Sign in required";$("coach-invite-signin-help").hidden=false;status("Please sign in to your existing Level Up account first.",true);$("coach-invite-links").textContent="Sign in to view coaches."}
  };
