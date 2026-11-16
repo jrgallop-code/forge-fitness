@@ -9,7 +9,7 @@ function database(){
    first:async()=>sql.includes("FROM coach_program_assignments")?{id:"11111111-1111-4111-8111-111111111111",coach_user_id:coach.id,client_user_id:client.id,status:"published",plan_json:JSON.stringify({name:"Upper Lower",days:[{name:"Upper",exercises:[{id:"bench"}]},{name:"Lower",exercises:[{id:"squat"}]}]})}:sql.includes("FROM coach_assignment_schedules")?schedule:null,
    all:async()=>({results:schedule?[schedule]:[]}),
    run:async()=>{if(sql.startsWith("INSERT")){schedule={assignment_id:args[0],coach_user_id:args[1],client_user_id:args[2],start_date:args[3],weeks:args[4],week_pattern_json:args[5],overrides_json:args[6],version:1,updated_at:args[7]};return{meta:{changes:1}}}
-    if(sql.startsWith("UPDATE")){if(schedule.version!==Number(args[8]))return{meta:{changes:0}};schedule={...schedule,start_date:args[0],weeks:args[1],week_pattern_json:args[2],overrides_json:args[3],updated_at:args[4],version:schedule.version+1};return{meta:{changes:1}}}
+    if(sql.startsWith("UPDATE")){if(schedule.version!==Number(args[7]))return{meta:{changes:0}};schedule={...schedule,start_date:args[0],weeks:args[1],week_pattern_json:args[2],overrides_json:args[3],updated_at:args[4],version:schedule.version+1};return{meta:{changes:1}}}
     throw Error("Unexpected SQL "+sql)}
   }}}}
  }
