@@ -64,7 +64,7 @@ function trainingSummary(data){
  for(const set of series)latestByExercise.set(set.exerciseId,set);
  const recordedSets=series.slice(-250);
  // Coach analytics read model: exact daily best logged estimated 1RM per lift,
- // and daily completed-set credit for muscle-volume attribution in the app.
+ // and completed-set credit for muscle-volume attribution in the app.
  const exerciseHistoryMap=new Map();
  const exerciseCounts=[];
  for(const session of sessions){
@@ -86,8 +86,8 @@ function trainingSummary(data){
    }
  }
  const exerciseHistory=[...exerciseHistoryMap.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-1600);
- const setCutoff=new Date(Date.now()-28*86400000).toISOString().slice(0,10);
- const recentExerciseSets=exerciseCounts.filter(x=>x.date>=setCutoff).slice(-1000);
+ const setCutoff=new Date(Date.now()-74*86400000).toISOString().slice(0,10);
+ const recentExerciseSets=exerciseCounts.filter(x=>x.date>=setCutoff).slice(-2500);
  const last30=new Date(Date.now()-30*86400000).toISOString().slice(0,10);
  return{completedCount:sessions.length,last30Days:workouts.filter(x=>x.date>=last30).length,
   lastCompletedDate:workouts.at(-1)?.date||null,recentWorkouts:workouts.slice(-30),
