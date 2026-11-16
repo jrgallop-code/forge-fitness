@@ -6,7 +6,7 @@ const fetchJson=async(url,method="GET",body)=>{const response=await fetch(url,{m
 const accountApi=(action,body)=>fetchJson("/api/coach?action="+action,body?"POST":"GET",body);
 const programsApi=(action,assignmentId,method="GET",body)=>fetchJson("/api/coach-programs?"+new URLSearchParams({action,assignmentId:assignmentId||"",clientId:clientId||""}),method,body);
 const arr=x=>Array.isArray(x)?x:[], today=()=>new Date().toISOString().slice(0,10);
-let clients=[],clientId=null,profile=null,assignments=[],editor=null,exerciseList=[],catalogue=new Map(),section="overview",clientView="list",trainingMode="editor",analytics=null,muscleMaps=null,metricUI=null,selectedMetric=null,calendar=null,calendarDraft=null,calendarLoadError=null,week=0,viewWeeks=2,loadSequence=0,busy=false;
+let clients=[],clientId=null,profile=null,assignments=[],editor=null,exerciseList=[],catalogue=new Map(),section="overview",clientView="list",trainingMode="editor",analytics=null,muscleMaps=null,metricUI=null,selectedMetric=null,metricViewMode="graph",calendar=null,calendarDraft=null,calendarLoadError=null,week=0,viewWeeks=2,loadSequence=0,busy=false;
 const person=()=>clients.find(x=>x.id===clientId)||null;
 const active=()=>assignments.filter(x=>x.status==="published");
 const panel=(parent,title,description)=>{const wrapper=el("section",parent,{className:"cf-card"}),h=el("header",wrapper);el("strong",h,{text:title});if(description)el("small",h,{text:description});return el("div",wrapper,{className:"cf-body"})};
@@ -76,7 +76,7 @@ function renderOverview(){
  const root=$("cf-view-overview");if(!root||!person())return;
  root.replaceChildren();
  if(metricUI)metricUI.renderCoachMetricOverview(root,profile,metricId=>{
-  selectedMetric=metricId;switchTab("progress");renderProgress();
+  selectedMetric=metricId;metricViewMode="graph";switchTab("progress");renderProgress();
  });
  const grid=el("div",root,{className:"cf-summary-grid"});
  // First row: matching profile and published-plan cards.
@@ -128,10 +128,14 @@ function renderProgress(){
  const root=$("cf-view-progress");if(!root)return;root.replaceChildren();
  if(selectedMetric&&metricUI){
    metricUI.renderCoachMetricDetail(root,profile,selectedMetric,()=>{
-     selectedMetric=null;renderProgress();
-   });
+     selectedMetric=null;metricViewMode="graph";renderProgress();
+   },metricViewMode);
    return;
  }
+ const tools=el("div",root,{className:"cf-actions"});
+ btn(tools,"Metric Calendar",()=>{
+   selectedMetric="weight";metricViewMode="calendar";renderProgress();
+ },"subtle");
  const top=el("div",root,{className:"cf-metrics"});for(const [k,v]of [["Weight",profile?.weight?.latest?profile.weight.latest+" lb":"Not shared"],["Sessions",profile?.training?.completedCount??"—"],["Last 30 days",profile?.training?.last30Days??"—"]]){const m=el("div",top,{className:"cf-metric"});el("small",m,{text:k});el("strong",m,{text:String(v)})}
  const two=el("div",root,{className:"cf-columns"}),left=el("div",two),right=el("div",two);
  let c=panel(left,"Weight entries","Latest synced weigh-ins");const weights=arr(profile?.weight?.history).slice(-15).reverse();if(!weights.length)note(c,"No weigh-ins synced.");for(const x of weights)info(c,displayDate(x.date),x.weight+" lb");
