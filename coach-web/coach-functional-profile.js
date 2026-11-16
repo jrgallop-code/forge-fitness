@@ -8,6 +8,25 @@ const programsApi=(action,assignmentId,method="GET",body)=>fetchJson("/api/coach
 const arr=x=>Array.isArray(x)?x:[], today=()=>new Date().toISOString().slice(0,10);
 let clients=[],clientId=null,profile=null,assignments=[],editor=null,exerciseList=[],catalogue=new Map(),section="overview",clientView="list",trainingMode="editor",analytics=null,muscleMaps=null,metricUI=null,selectedMetric=null,metricViewMode="graph",calendar=null,calendarDraft=null,calendarLoadError=null,week=0,viewWeeks=2,loadSequence=0,busy=false;
 const person=()=>clients.find(x=>x.id===clientId)||null;
+const programStates=new Map();
+let directoryQueryToken=0;
+async function refreshDirectoryProgramming(){
+ const token=++directoryQueryToken,snapshot=clients.slice();let cursor=0;
+ async function worker(){
+  while(cursor<snapshot.length){
+   const c=snapshot[cursor++];
+   try{
+    const data=await fetchJson("/api/coach-programs?"+new URLSearchParams({action:"list",clientId:c.id}));
+    if(token!==directoryQueryToken)return;
+    const count=arr(data.assignments).filter(p=>p.clientId===c.id&&p.status==="published").length;
+    programStates.set(c.id,{state:"known",count});
+   }catch{if(token!==directoryQueryToken)return;programStates.set(c.id,{state:"unavailable",count:null})}
+   if(token===directoryQueryToken)renderClientDirectory();
+  }
+ }
+ await Promise.all(Array.from({length:Math.min(snapshot.length,3)},()=>worker()));
+}
+
 const active=()=>assignments.filter(x=>x.status==="published");
 function metricProfile(){
  const stepGoal=active().find(x=>Number(x.goals?.stepGoal)>0)?.goals?.stepGoal;
@@ -73,9 +92,10 @@ function renderClientDirectory(){
  for(const c of filtered){
   const item=el("button",host,{type:"button",className:"cf-directory-row"});
   const avatar=el("span",item,{className:"cf-directory-avatar",text:c.name?.trim()?.slice(0,1)?.toUpperCase()||"?"});
-  const identification=el("span",item,{className:"cf-directory-identification"});el("strong",identification,{text:c.isSelf?"My Account — "+c.name:c.name});
+  const identification=el("span",item,{className:"cf-directory-identification"});el("strong",identification,{text:(c.isSelf?"My Account — ":"")+c.name+" · "+(c.email||"ID "+String(c.id).slice(-10))});
   el("small",identification,{text:c.email||"Account ID · "+String(c.id).slice(-12)});
-  el("span",item,{className:"cf-directory-status",text:"Connected"});
+  const programming=programStates.get(c.id);
+   el("span",item,{className:"cf-directory-status",text:programming?.state==="known"?programming.count?programming.count+" assigned":"Needs programming":programming?.state==="unavailable"?"Status unavailable":"Connected · Checking"});
   el("span",item,{className:"cf-directory-open",text:"View profile ›"});
   item.onclick=async()=>{showClientDetail();await choose(c.id)};
  }
@@ -100,9 +120,13 @@ async function roster(){try{
   result=await accountApi("clients");
  }
  $("cf-login").hidden=true;
- clients=arr(result.clients).filter(c=>c.id);const select=$("cf-client");select.replaceChildren();for(const c of clients)el("option",select,{value:c.id,text:c.isSelf?"My Account — "+c.name:c.name});const chosen=clients.find(x=>x.id===clientId)||clients.find(x=>x.isSelf)||clients[0];if(chosen)await choose(chosen.id);else status("No linked Level Up athlete. Add and invite a client to connect one.",true);renderSidebar();renderClientDirectory()}catch(e){status("Cannot load connected athletes: "+e.message+". Your saved programs and account links have not been erased.",true);if(e.status===401)$("cf-login").hidden=false}}
-async function choose(id){const c=clients.find(x=>x.id===id);if(!c)return;clientId=c.id;editor=null;selectedMetric=null;trainingMode="editor";calendar=null;calendarDraft=null;calendarLoadError=null;$("cf-client").value=c.id;$("cf-name").textContent=c.name;$("cf-email").textContent=c.email||"Connected Level Up athlete";connectBuilder(c);renderSidebar();await refresh()}
-async function refresh(){const id=clientId,seq=++loadSequence;status("Loading published programs and "+person()?.name+"'s profile…");const [a,b]=await Promise.allSettled([fetchJson("/api/coach-phase1?"+new URLSearchParams({action:"summary",clientId:id})),programsApi("list")]);if(clientId!==id||seq!==loadSequence)return;profile=a.status==="fulfilled"?a.value:null;assignments=b.status==="fulfilled"?arr(b.value.assignments):[];renderOverview();renderProgress();if(section==="training")drawTraining();if(a.status==="rejected"||b.status==="rejected")status([a.status==="rejected"?"Profile: "+a.reason.message:"",b.status==="rejected"?"Programs: "+b.reason.message:""].filter(Boolean).join(" · "),true);else status("Connected as "+person().name+" · last data sync "+(profile?.backup?.syncedAt?new Date(profile.backup.syncedAt).toLocaleString("en-CA"):"not yet available"))}
+ clients=arr(result.clients).filter(c=>c.id);const select=$("cf-client");select.replaceChildren();for(const c of clients)el("option",select,{value:c.id,text:c.isSelf?"My Account — "+c.name:c.name});const chosen=clients.find(x=>x.id===clientId)||clients.find(x=>x.isSelf)||clients[0];if(chosen)await choose(chosen.id);else status("No linked Level Up athlete. Add and invite a client to connect one.",true);renderSidebar();renderClientDirectory();void refreshDirectoryProgramming()}catch(e){status("Cannot load connected athletes: "+e.message+". Your saved programs and account links have not been erased.",true);if(e.status===401)$("cf-login").hidden=false}}
+async function choose(id){const c=clients.find(x=>x.id===id);if(!c)return;if(clientId!==c.id){
+ ++loadSequence;profile=null;assignments=[];
+ for(const tab of ["overview","progress","training","notes"])$("cf-view-"+tab)?.replaceChildren();
+}
+ clientId=c.id;editor=null;selectedMetric=null;trainingMode="editor";calendar=null;calendarDraft=null;calendarLoadError=null;$("cf-client").value=c.id;$("cf-name").textContent=c.name;$("cf-email").textContent=c.email||"Connected Level Up athlete";connectBuilder(c);renderSidebar();await refresh()}
+async function refresh(){const id=clientId,seq=++loadSequence;status("Loading published programs and "+person()?.name+"'s profile…");const [a,b]=await Promise.allSettled([fetchJson("/api/coach-phase1?"+new URLSearchParams({action:"summary",clientId:id})),fetchJson("/api/coach-programs?"+new URLSearchParams({action:"list",clientId:id}))]);if(clientId!==id||seq!==loadSequence)return;profile=a.status==="fulfilled"?a.value:null;assignments=b.status==="fulfilled"?arr(b.value.assignments).filter(x=>x.clientId===id):[];renderOverview();renderProgress();if(section==="training")drawTraining();if(a.status==="rejected"||b.status==="rejected")status([a.status==="rejected"?"Profile: "+a.reason.message:"",b.status==="rejected"?"Programs: "+b.reason.message:""].filter(Boolean).join(" · "),true);else status("Connected as "+person().name+" · last data sync "+(profile?.backup?.syncedAt?new Date(profile.backup.syncedAt).toLocaleString("en-CA"):"not yet available"))}
 function renderOverview(){
  const root=$("cf-view-overview");if(!root||!person())return;
  root.replaceChildren();
