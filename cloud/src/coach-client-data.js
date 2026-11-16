@@ -25,7 +25,7 @@ function profileSummary(data){
  const prior=safeArray(data.level_up_weekly_tdee_history_v1).filter(x=>positive(x?.maintenanceCalories??x?.estimate?.maintenanceCalories)!==null).sort((a,b)=>String(a.date||a.reviewedAt||"").localeCompare(String(b.date||b.reviewedAt||""))).at(-1);
  const tdee=positive(est.liveMaintenanceCalories)??positive(est.maintenanceCalories)??positive(prior?.maintenanceCalories??prior?.estimate?.maintenanceCalories);
  const rawFood=validObject(data.level_up_food_log_v1)?data.level_up_food_log_v1:{};
- const days=Object.entries(rawFood).filter(([k,v])=>dateText(k)&&Array.isArray(v)&&v.length).sort((a,b)=>a[0].localeCompare(b[0])).slice(-21);
+ const days=Object.entries(rawFood).filter(([k,v])=>dateText(k)&&Array.isArray(v)&&v.length).sort((a,b)=>a[0].localeCompare(b[0])).slice(-120);
  const calories=days.map(([date,items])=>({date,calories:Math.round(items.reduce((sum,x)=>sum+Math.max(0,num(x?.nutrition?.calories)||0),0))})).filter(x=>x.calories>0);
  const macros=validObject(data.level_up_nutrition_macro)?data.level_up_nutrition_macro:{};
  const plan=validObject(data.level_up_nutrition_plan)?data.level_up_nutrition_plan:{};
@@ -36,6 +36,39 @@ function profileSummary(data){
   expenditure:{calories:tdee?Math.round(tdee):null,source:tdee?(positive(est.liveMaintenanceCalories)?"live":positive(est.maintenanceCalories)?"saved":"history"):null,weightRateLbPerWeek:rate},
   nutrition:{currentTarget:positive(plan.currentCalories)??positive(plan.calculatedCalories),macroTargets:validObject(macros.manualMacros)?{protein:num(macros.manualMacros.protein),carbs:num(macros.manualMacros.carbs),fat:num(macros.manualMacros.fat)}:null,loggedDays:calories.length,averageLoggedCalories:calories.length?round(calories.reduce((s,x)=>s+x.calories,0)/calories.length):null,calorieHistory:calories}
  };
+}
+/* Read-only metric histories explicitly extracted from athlete-owned backups.
+ * No fake defaults; absent provider data stays absent.
+ */
+function dailyMetrics(data){
+ const sleep=safeArray(data.level_up_sleep_entries).map(item=>({
+  date:dateText(item?.date),value:num(item?.duration),
+  bedtime:typeof item?.bedtime==="string"?item.bedtime:null,
+  wakeTime:typeof item?.wakeTime==="string"?item.wakeTime:null,
+  quality:num(item?.quality)
+ })).filter(x=>x.date&&x.value!==null&&x.value>0&&x.value<=24).sort((a,b)=>a.date.localeCompare(b.date)).slice(-180);
+ // Only confirmed cloud keys are inspected. Missing steps are reported as unavailable.
+ const possible=[data.level_up_steps_entries_v1,data.level_up_steps_entries,data.level_up_daily_steps_v1,data.forge_steps_entries];
+ const stepData=possible.find(x=>Array.isArray(x))||[];
+ const steps=stepData.map(x=>({date:dateText(x?.date),value:num(x?.steps??x?.count??x?.value)}))
+  .filter(x=>x.date&&x.value!==null&&x.value>=0&&x.value<=150000)
+  .sort((a,b)=>a.date.localeCompare(b.date)).slice(-180);
+ const goalSource=validObject(data.level_up_steps_goal_v1)?data.level_up_steps_goal_v1:{};
+ const goal=positive(goalSource.goal??goalSource.dailyGoal??goalSource.steps)??positive(data.level_up_coach_step_goal_v1?.target);
+ const historical=safeArray(data.level_up_weekly_tdee_history_v1).map(x=>({
+  date:dateText(String(x?.date||x?.reviewedAt||"").slice(0,10)),
+  value:positive(x?.maintenanceCalories??x?.estimate?.maintenanceCalories),
+  projected:positive(x?.predictedExpenditure??x?.predictedMaintenance??x?.estimate?.predictedMaintenance)
+ })).filter(x=>x.date&&x.value!==null).sort((a,b)=>a.date.localeCompare(b.date));
+ const current=validObject(data.level_up_weekly_tdee_estimate_v1)?data.level_up_weekly_tdee_estimate_v1:{};
+ const lastDate=dateText(String(current?.date||current?.reviewedAt||current?.updatedAt||"").slice(0,10));
+ const currentValue=positive(current?.estimate?.liveMaintenanceCalories??current?.estimate?.maintenanceCalories??current?.liveMaintenanceCalories??current?.maintenanceCalories);
+ if(lastDate&&currentValue!==null)historical.push({date:lastDate,value:currentValue,projected:positive(current?.estimate?.predictedMaintenance??current?.predictedExpenditure)});
+ const byDate=new Map();for(const item of historical)byDate.set(item.date,item);
+ const expenditure=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-104);
+ return{sleep:{history:sleep,latest:sleep.at(-1)?.value??null},
+  steps:{history:steps,goal,sourceAvailable:stepData.length>0},
+  expenditure:{history:expenditure}};
 }
 function trainingSummary(data){
  const sessions=safeArray(data.forge_workout_sessions).filter(x=>x?.id!=="level-up-recap-preview-session");
@@ -63,6 +96,17 @@ function trainingSummary(data){
  const latestByExercise=new Map();
  for(const set of series)latestByExercise.set(set.exerciseId,set);
  const recordedSets=series.slice(-250);
+ let totalVolumeLb=0, completedWeightedSets=0,trainingMinutes=0;
+ const bestByExercise=new Map();
+ for(const session of sessions){
+  const minutes=num(session?.durationMinutes)??(num(session?.durationSeconds)!==null?num(session.durationSeconds)/60:null);
+  if(minutes!==null&&minutes>0&&minutes<1000)trainingMinutes+=minutes;
+ }
+ for(const set of series){
+  totalVolumeLb+=set.weight*set.reps;completedWeightedSets++;
+  const previous=bestByExercise.get(set.exerciseId);
+  if(!previous||set.estimated1rm>previous)bestByExercise.set(set.exerciseId,set.estimated1rm);
+ }
  // Coach analytics read model: exact daily best logged estimated 1RM per lift,
  // and completed-set credit for muscle-volume attribution in the app.
  const exerciseHistoryMap=new Map();
@@ -89,7 +133,7 @@ function trainingSummary(data){
  const setCutoff=new Date(Date.now()-74*86400000).toISOString().slice(0,10);
  const recentExerciseSets=exerciseCounts.filter(x=>x.date>=setCutoff).slice(-2500);
  const last30=new Date(Date.now()-30*86400000).toISOString().slice(0,10);
- return{completedCount:sessions.length,last30Days:workouts.filter(x=>x.date>=last30).length,
+ return{completedCount:sessions.length,last30Days:workouts.filter(x=>x.date>=last30).length,trainingMinutes:Math.round(trainingMinutes),totalVolumeLb:Math.round(totalVolumeLb),completedWeightedSets,personalBestExercises:bestByExercise.size,
   lastCompletedDate:workouts.at(-1)?.date||null,recentWorkouts:workouts.slice(-30),
   recordedSetsCount:series.length,recentSets:recordedSets,
   exerciseLatest:[...latestByExercise.values()].slice(-40),
@@ -112,5 +156,6 @@ export async function coachClientDataRoute({request,env,user,url}){
  let decoded;try{decoded=JSON.parse(row.payload)}catch{return response({...base,error:"Cloud backup could not be decoded"},503)}
  const data=validObject(decoded?.data)?decoded.data:{};
  const metrics=permissions.nutrition?profileSummary(data):null;
- return response({...base,training:permissions.training?trainingSummary(data):null,profile:metrics?.profile??null,weight:metrics?.weight??null,expenditure:metrics?.expenditure??null,nutrition:metrics?.nutrition??null});
+ const daily=permissions.nutrition?dailyMetrics(data):null;
+ return response({...base,training:permissions.training?trainingSummary(data):null,profile:metrics?.profile??null,weight:metrics?.weight??null,expenditure:metrics?.expenditure??null,nutrition:metrics?.nutrition??null,dailyMetrics:daily});
 }

@@ -6,7 +6,7 @@ const fetchJson=async(url,method="GET",body)=>{const response=await fetch(url,{m
 const accountApi=(action,body)=>fetchJson("/api/coach?action="+action,body?"POST":"GET",body);
 const programsApi=(action,assignmentId,method="GET",body)=>fetchJson("/api/coach-programs?"+new URLSearchParams({action,assignmentId:assignmentId||"",clientId:clientId||""}),method,body);
 const arr=x=>Array.isArray(x)?x:[], today=()=>new Date().toISOString().slice(0,10);
-let clients=[],clientId=null,profile=null,assignments=[],editor=null,exerciseList=[],catalogue=new Map(),section="overview",clientView="list",trainingMode="editor",analytics=null,muscleMaps=null,calendar=null,calendarDraft=null,calendarLoadError=null,week=0,viewWeeks=2,loadSequence=0,busy=false;
+let clients=[],clientId=null,profile=null,assignments=[],editor=null,exerciseList=[],catalogue=new Map(),section="overview",clientView="list",trainingMode="editor",analytics=null,muscleMaps=null,metricUI=null,selectedMetric=null,metricViewMode="graph",calendar=null,calendarDraft=null,calendarLoadError=null,week=0,viewWeeks=2,loadSequence=0,busy=false;
 const person=()=>clients.find(x=>x.id===clientId)||null;
 const active=()=>assignments.filter(x=>x.status==="published");
 const panel=(parent,title,description)=>{const wrapper=el("section",parent,{className:"cf-card"}),h=el("header",wrapper);el("strong",h,{text:title});if(description)el("small",h,{text:description});return el("div",wrapper,{className:"cf-body"})};
@@ -70,11 +70,14 @@ async function roster(){try{
  }
  $("cf-login").hidden=true;
  clients=arr(result.clients).filter(c=>c.id);const select=$("cf-client");select.replaceChildren();for(const c of clients)el("option",select,{value:c.id,text:c.isSelf?"My Account — "+c.name:c.name});const chosen=clients.find(x=>x.id===clientId)||clients.find(x=>x.isSelf)||clients[0];if(chosen)await choose(chosen.id);else status("No linked Level Up athlete. Add and invite a client to connect one.",true);renderSidebar();renderClientDirectory()}catch(e){status("Cannot load connected athletes: "+e.message+". Your saved programs and account links have not been erased.",true);if(e.status===401)$("cf-login").hidden=false}}
-async function choose(id){const c=clients.find(x=>x.id===id);if(!c)return;clientId=c.id;editor=null;trainingMode="editor";calendar=null;calendarDraft=null;calendarLoadError=null;$("cf-client").value=c.id;$("cf-name").textContent=c.name;$("cf-email").textContent=c.email||"Connected Level Up athlete";connectBuilder(c);renderSidebar();await refresh()}
+async function choose(id){const c=clients.find(x=>x.id===id);if(!c)return;clientId=c.id;editor=null;selectedMetric=null;trainingMode="editor";calendar=null;calendarDraft=null;calendarLoadError=null;$("cf-client").value=c.id;$("cf-name").textContent=c.name;$("cf-email").textContent=c.email||"Connected Level Up athlete";connectBuilder(c);renderSidebar();await refresh()}
 async function refresh(){const id=clientId,seq=++loadSequence;status("Loading published programs and "+person()?.name+"'s profile…");const [a,b]=await Promise.allSettled([fetchJson("/api/coach-phase1?"+new URLSearchParams({action:"summary",clientId:id})),programsApi("list")]);if(clientId!==id||seq!==loadSequence)return;profile=a.status==="fulfilled"?a.value:null;assignments=b.status==="fulfilled"?arr(b.value.assignments):[];renderOverview();renderProgress();if(section==="training")drawTraining();if(a.status==="rejected"||b.status==="rejected")status([a.status==="rejected"?"Profile: "+a.reason.message:"",b.status==="rejected"?"Programs: "+b.reason.message:""].filter(Boolean).join(" · "),true);else status("Connected as "+person().name+" · last data sync "+(profile?.backup?.syncedAt?new Date(profile.backup.syncedAt).toLocaleString("en-CA"):"not yet available"))}
 function renderOverview(){
  const root=$("cf-view-overview");if(!root||!person())return;
  root.replaceChildren();
+ if(metricUI)metricUI.renderCoachMetricOverview(root,profile,metricId=>{
+  selectedMetric=metricId;metricViewMode="graph";switchTab("progress");renderProgress();
+ });
  const grid=el("div",root,{className:"cf-summary-grid"});
  // First row: matching profile and published-plan cards.
  let c=panel(grid,"Client Profile","Linked Level Up account");
@@ -122,7 +125,18 @@ function renderOverview(){
  c.parentElement.classList.add("cf-summary-wide");
 }
 function renderProgress(){
- const root=$("cf-view-progress");if(!root)return;root.replaceChildren();const top=el("div",root,{className:"cf-metrics"});for(const [k,v]of [["Weight",profile?.weight?.latest?profile.weight.latest+" lb":"Not shared"],["Sessions",profile?.training?.completedCount??"—"],["Last 30 days",profile?.training?.last30Days??"—"]]){const m=el("div",top,{className:"cf-metric"});el("small",m,{text:k});el("strong",m,{text:String(v)})}
+ const root=$("cf-view-progress");if(!root)return;root.replaceChildren();
+ if(selectedMetric&&metricUI){
+   metricUI.renderCoachMetricDetail(root,profile,selectedMetric,()=>{
+     selectedMetric=null;metricViewMode="graph";renderProgress();
+   },metricViewMode);
+   return;
+ }
+ const tools=el("div",root,{className:"cf-actions"});
+ btn(tools,"Metric Calendar",()=>{
+   selectedMetric="weight";metricViewMode="calendar";renderProgress();
+ },"subtle");
+ const top=el("div",root,{className:"cf-metrics"});for(const [k,v]of [["Weight",profile?.weight?.latest?profile.weight.latest+" lb":"Not shared"],["Sessions",profile?.training?.completedCount??"—"],["Last 30 days",profile?.training?.last30Days??"—"]]){const m=el("div",top,{className:"cf-metric"});el("small",m,{text:k});el("strong",m,{text:String(v)})}
  const two=el("div",root,{className:"cf-columns"}),left=el("div",two),right=el("div",two);
  let c=panel(left,"Weight entries","Latest synced weigh-ins");const weights=arr(profile?.weight?.history).slice(-15).reverse();if(!weights.length)note(c,"No weigh-ins synced.");for(const x of weights)info(c,displayDate(x.date),x.weight+" lb");
  c=panel(right,"Recent sessions","Completed workouts");const workouts=arr(profile?.training?.recentWorkouts).slice(-12).reverse();if(!workouts.length)note(c,"No completed workouts in cloud.");for(const x of workouts)info(c,x.name||"Workout",displayDate(x.date));if(analytics)analytics.renderCoachProgressAnalytics(root,profile);
@@ -240,6 +254,10 @@ function mount(){const host=$("clients");if(!host||$("coach-functional-profile")
    muscleMaps=module;muscleMaps.injectCoachMuscleStyles();
    if(person())renderProgress();
  }).catch(e=>status("Muscle heat maps unavailable: "+e.message,true));
+ void import("./coach-metrics.js").then(module=>{
+   metricUI=module;metricUI.injectCoachMetricStyles();
+   if(person()){renderOverview();renderProgress()}
+ }).catch(e=>status("Workout and body metric cards unavailable: "+e.message,true));
 }
 async function loadExercises(){try{const m=await import("./js/workouts/exercise-library.js");await import("./js/workouts/exercise-library-expansion.js");exerciseList=arr(m.getAllExercises()).filter(x=>x.id).map(x=>({id:String(x.id),name:String(x.name||x.id)}));catalogue=new Map(exerciseList.map(x=>[x.id,x.name]))}catch(e){status("Exercise library unavailable: "+e.message,true)}}
 if(document.body){mount();new MutationObserver(m=>{if(!$("coach-functional-profile")&&m.some(x=>x.addedNodes?.length))mount()}).observe(document.body,{childList:true,subtree:true})}
