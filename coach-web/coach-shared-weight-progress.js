@@ -57,15 +57,14 @@ export function renderCoachSharedWeightProgress(host,profile){
   // Exactly the athlete app's displayed Weekly Trend:
   // calculateVisibleWeightTrend(weights, { endDate: latestEntryDate }).
   // The algorithm chooses its native 21-day lookback and readiness rules.
-  const computed=calculateVisibleWeightTrend(entries.filter(x=>localDate(x.date)<=end),{endDate:date(end)});
-  const current=selected.at(-1);
+  const computed=calculateVisibleWeightTrend(entries,{endDate:latest});
   pills.replaceChildren();
   function pill(name,value){const el=E("div",pills,{className:"cw-stat"});E("small",el,{text:name});E("strong",el,{text:value})}
-  pill("Latest recorded",current?fmt(current.weight,1)+" lb":"Unavailable");
-  pill("Trend weight",trend.length?fmt(trend.at(-1).weight,1)+" lb":"Unavailable");
+  pill("Latest recorded",fmt(entries.at(-1).weight,1)+" lb");
+  pill("Trend weight",Number.isFinite(computed.trendWeight)?fmt(computed.trendWeight,1)+" lb":"Unavailable");
   const rate=computed.status==="insufficient"?null:computed.weeklyChange;
   pill(computed.label||"Weekly Trend",Number.isFinite(rate)?(rate>=0?"+":"")+fmt(rate)+" lb/wk":"Need more data");
-  pill("Change during selected window",selected.length>=2?(selected.at(-1).weight>=selected[0].weight?"+":"")+fmt(selected.at(-1).weight-selected[0].weight,1)+" lb":"Insufficient data");
+  
   drawSharedWeightTrendChart(canvas,{entries:selected,trendSeries:trend,goalWeight:null,startDate:date(start),endDate:date(end),label:selectedRange.toUpperCase()});
   const points=trend.map(x=>({t:localDate(x.date),date:x.date,value:x.weight,raw:x.observedWeight}));
   chart.onpointermove=event=>{
