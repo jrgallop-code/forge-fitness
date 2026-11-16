@@ -4,6 +4,7 @@
  */
 import {getSetBandColor,renderSetRangeLegend} from "./js/core/muscle-map-colors.js";
 import {getExerciseImpacts} from "./js/workouts/plan-muscle-volume.js";
+import "./js/workouts/exercise-library-expansion.js";
 const MALE_FRONT={
   Shoulders:["muscle_front_009","muscle_front_010"], Chest:["muscle_front_011","muscle_front_012"], Biceps:["muscle_front_015","muscle_front_016"], Triceps:["muscle_front_013","muscle_front_014"],
   Forearms:["muscle_front_033","muscle_front_034","muscle_front_037","muscle_front_038","muscle_front_041","muscle_front_042"], Back:["muscle_front_007","muscle_front_008"],
@@ -76,7 +77,7 @@ export function renderCoachMuscleMaps(host,profile){
   if(!result.records){create("p",detail,{text:"No completed exercise sets available for this period in the athlete's synced backup."});return}
   const sex=profile?.profile?.sex==="female"?"female":"male";
   anatomyFigure(figureArea,sex,"front",result.totals);anatomyFigure(figureArea,sex,"back",result.totals);
-  const legend=document.createElement("div");legend.className="cf-anatomy-legend";legend.innerHTML=renderSetRangeLegend();detail.append(legend);
+  const legend=document.createElement("div");legend.className="cf-anatomy-legend";legend.innerHTML=renderSetRangeLegend();for(let i=0;i<8;i++){const swatch=legend.querySelectorAll(".set-range-legend b")[i];if(swatch)swatch.style.background=getSetBandColor(i===0?0:i*2)}detail.append(legend);
   create("p",detail,{text:"Primary muscles receive 1 set credit, secondary muscles 0.5. Based on completed logged sets; missing sync history is not treated as zero."});
  }
  range.onchange=redraw;redraw();
