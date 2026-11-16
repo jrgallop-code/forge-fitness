@@ -2,7 +2,7 @@
  * set bands, and completed set credits as the Level Up athlete app.
  * Rendering is scoped to the selected athlete's synced data.
  */
-import {getSetBandColor,renderSetRangeLegend} from "./js/core/muscle-map-colors.js";
+import {getSetBandColor,renderSetRangeLegend} from "./coach-set-colors.js";
 import {getExerciseImpacts} from "./js/workouts/plan-muscle-volume.js";
 import "./js/workouts/exercise-library-expansion.js";
 const MALE_FRONT={
