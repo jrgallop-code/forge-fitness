@@ -20,6 +20,7 @@ jobs:
             if [[ "$path" == *coach-invite-pwa.js ]]; then
               grep -q 'confirmContactEmailMismatch' /tmp/check-public.html
               grep -q 'Connect to your coach' /tmp/check-public.html
+              grep -q 'clean.searchParams.delete("invite")' /tmp/check-public.html
             else
               grep -q 'existing-pwa-join' /tmp/check-public.html
             fi
