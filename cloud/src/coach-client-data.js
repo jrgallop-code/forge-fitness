@@ -26,7 +26,12 @@ function profileSummary(data){
  const tdee=positive(est.liveMaintenanceCalories)??positive(est.maintenanceCalories)??positive(prior?.maintenanceCalories??prior?.estimate?.maintenanceCalories);
  const rawFood=validObject(data.level_up_food_log_v1)?data.level_up_food_log_v1:{};
  const days=Object.entries(rawFood).filter(([k,v])=>dateText(k)&&Array.isArray(v)&&v.length).sort((a,b)=>a[0].localeCompare(b[0])).slice(-120);
- const calories=days.map(([date,items])=>({date,calories:Math.round(items.reduce((sum,x)=>sum+Math.max(0,num(x?.nutrition?.calories)||0),0))})).filter(x=>x.calories>0);
+ const completedDays=validObject(data.level_up_food_log_complete_days_v1)?data.level_up_food_log_complete_days_v1:{};
+ const calories=days.map(([date,items])=>({
+  date,calories:Math.round(items.reduce((sum,x)=>sum+Math.max(0,num(x?.nutrition?.calories)||0),0)),
+  entryCount:items.length,complete:completedDays[date]===true,
+  pendingCount:items.filter(x=>x?.fatSecretPending===true).length
+ })).filter(x=>x.calories>0);
  const macros=validObject(data.level_up_nutrition_macro)?data.level_up_nutrition_macro:{};
  const plan=validObject(data.level_up_nutrition_plan)?data.level_up_nutrition_plan:{};
  const rate=num(est.weightRateLbPerWeek);
@@ -34,7 +39,7 @@ function profileSummary(data){
   profile:{age:num(p.age),sex:["male","female"].includes(p.sex)?p.sex:null,heightCm:heightCm?Math.round(heightCm*10)/10:null,weightLb:weightLb?Math.round(weightLb*10)/10:null,activity:p.activity||null},
   weight:{latest:positive(last?.weight),latestDate:dateText(last?.date),weighIns:weighIns.length,history:weighIns.slice(-90).map(x=>({date:x.date,weight:Number(x.weight)}))},
   expenditure:{calories:tdee?Math.round(tdee):null,source:tdee?(positive(est.liveMaintenanceCalories)?"live":positive(est.maintenanceCalories)?"saved":"history"):null,weightRateLbPerWeek:rate},
-  nutrition:{currentTarget:positive(plan.currentCalories)??positive(plan.calculatedCalories),macroTargets:validObject(macros.manualMacros)?{protein:num(macros.manualMacros.protein),carbs:num(macros.manualMacros.carbs),fat:num(macros.manualMacros.fat)}:null,loggedDays:calories.length,averageLoggedCalories:calories.length?round(calories.reduce((s,x)=>s+x.calories,0)/calories.length):null,calorieHistory:calories}
+  nutrition:{currentTarget:positive(plan.currentCalories)??positive(plan.calculatedCalories),macroTargets:validObject(macros.manualMacros)?{protein:num(macros.manualMacros.protein),carbs:num(macros.manualMacros.carbs),fat:num(macros.manualMacros.fat)}:null,loggedDays:calories.length,averageLoggedCalories:calories.length?round(calories.reduce((s,x)=>s+x.calories,0)/calories.length):null,latestCompletedCalorieDay:calories.filter(x=>x.complete).at(-1)||null,latestCalorieDay:calories.at(-1)||null,calorieHistory:calories}
  };
 }
 /* Read-only metric histories explicitly extracted from athlete-owned backups.
@@ -66,7 +71,7 @@ function dailyMetrics(data){
  if(lastDate&&currentValue!==null)historical.push({date:lastDate,value:currentValue,projected:positive(current?.estimate?.predictedMaintenance??current?.predictedExpenditure)});
  const byDate=new Map();for(const item of historical)byDate.set(item.date,item);
  const expenditure=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(-104);
- return{sleep:{history:sleep,latest:sleep.at(-1)?.value??null},
+ return{sleep:{history:sleep,latest:sleep.at(-1)?.value??null,latestDate:sleep.at(-1)?.date??null},
   steps:{history:steps,goal,sourceAvailable:stepData.length>0},
   expenditure:{history:expenditure}};
 }
