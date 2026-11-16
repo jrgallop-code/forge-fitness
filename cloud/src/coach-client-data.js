@@ -25,7 +25,7 @@ function profileSummary(data){
  const prior=safeArray(data.level_up_weekly_tdee_history_v1).filter(x=>positive(x?.maintenanceCalories??x?.estimate?.maintenanceCalories)!==null).sort((a,b)=>String(a.date||a.reviewedAt||"").localeCompare(String(b.date||b.reviewedAt||""))).at(-1);
  const tdee=positive(est.liveMaintenanceCalories)??positive(est.maintenanceCalories)??positive(prior?.maintenanceCalories??prior?.estimate?.maintenanceCalories);
  const rawFood=validObject(data.level_up_food_log_v1)?data.level_up_food_log_v1:{};
- const days=Object.entries(rawFood).filter(([k,v])=>dateText(k)&&Array.isArray(v)&&v.length).sort((a,b)=>a[0].localeCompare(b[0])).slice(-21);
+ const days=Object.entries(rawFood).filter(([k,v])=>dateText(k)&&Array.isArray(v)&&v.length).sort((a,b)=>a[0].localeCompare(b[0])).slice(-120);
  const calories=days.map(([date,items])=>({date,calories:Math.round(items.reduce((sum,x)=>sum+Math.max(0,num(x?.nutrition?.calories)||0),0))})).filter(x=>x.calories>0);
  const macros=validObject(data.level_up_nutrition_macro)?data.level_up_nutrition_macro:{};
  const plan=validObject(data.level_up_nutrition_plan)?data.level_up_nutrition_plan:{};
