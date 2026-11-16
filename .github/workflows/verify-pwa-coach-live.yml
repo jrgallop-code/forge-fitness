@@ -49,3 +49,5 @@ jobs:
           code=$(curl -sS -o /tmp/coach-check-api.json -w "%{http_code}" "https://api.leveluphypertrophy.com/v1/me")
           test "$code" = "401"
           echo "Public API requires authentication (HTTP $code)."
+
+# Read-only refresh to verify newly configured Apple Services ID for Level Up coaching.
