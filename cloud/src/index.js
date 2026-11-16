@@ -1,5 +1,7 @@
 import { instagramAdmin, instagramWebhook, instagramCallback } from './instagram/automation.js';
 import { coachAssignmentRoute } from "./coach-assignments.js";
+import { coachClientDataRoute } from "./coach-client-data.js";
+import { coachDraftRoute } from "./coach-client-drafts.js";
 import { coachInviteRoute } from "./coach-invitations.js";
 import {extraUsdaNutrition,extraUsdaLabelNutrition,extraOpenFoodFactsNutrition,extraOpenFoodFactsSetNutrition} from './food-extra-nutrients.js';
 import { featureBoard } from "./feature-board.js";
@@ -142,6 +144,12 @@ async function handleRequest(request, env, ctx) {
     }
     if (url.pathname === "/v1/coach/invitations" || url.pathname.startsWith("/v1/coach/invitations/") || url.pathname === "/v1/coach/invitation/preview" || url.pathname === "/v1/client/coach-invitation/accept" || url.pathname === "/v1/client/coach-links" || url.pathname.startsWith("/v1/client/coach-links/")) {
         return coachInviteRoute({request,env,user,url});
+    }
+    if (/^\/v1\/coach\/clients\/[^/]+\/summary$/.test(url.pathname)) {
+        return coachClientDataRoute({request,env,user,url});
+    }
+    if (/^\/v1\/coach\/clients\/[^/]+\/drafts(?:\/[^/]+)?$/.test(url.pathname)) {
+        return coachDraftRoute({request,env,user,url});
     }
     if (url.pathname === "/v1/me" && request.method === "GET") {
         return json({ user: { ...publicUser(user), isAdmin: isAdminUser(user, env) } }, 200, request, env);
