@@ -22,6 +22,7 @@ export function renderCoachSharedWeightProgress(host,profile){
  const period=field(controls,"Chart timeframe",ranges.map(([id,label])=>[id,label]));period.value="3m";
  const rateInterval=field(controls,"Weight change over",units);
  rateInterval.value="21";
+ const rateUnit=field(controls,"Display rate as",[["day","Per day"],["week","Per week"],["month","Per month"]]);rateUnit.value="week";
  const zoomGroup=E("div",controls,{className:"cw-zoom"});
  const back=E("button",zoomGroup,{type:"button",text:"← Earlier"});
  const zoomIn=E("button",zoomGroup,{type:"button",text:"Zoom +"});
@@ -43,13 +44,18 @@ export function renderCoachSharedWeightProgress(host,profile){
   const trend=calculateTrendWeightSeries(entries.filter(x=>localDate(x.date)<=end)).filter(x=>localDate(x.date)>=start);
   const rateDays=Number(rateInterval.value);
   const computed=calculateVisibleWeightTrend(entries,{endDate:date(end),rateDays});
+  const rateRaw=entries.filter(x=>localDate(x.date)<=end&&localDate(x.date)>=end-(rateDays-1)*day);
+  const intervalSeries=calculateTrendWeightSeries(rateRaw);
+  const intervalWeeklyRate=rateDays===21?computed.weeklyChange:calculateRegressionWeeklyChange(intervalSeries);
+  const factor=rateUnit.value==="day"?1/7:rateUnit.value==="month"?30.44/7:1;
+  const suffix=rateUnit.value==="day"?"lb/day":rateUnit.value==="month"?"lb/month":"lb/week";
   const current=selected.at(-1);
   pills.replaceChildren();
   function pill(name,value){const el=E("div",pills,{className:"cw-stat"});E("small",el,{text:name});E("strong",el,{text:value})}
   pill("Latest recorded",current?fmt(current.weight,1)+" lb":"Unavailable");
   pill("Trend weight",trend.length?fmt(trend.at(-1).weight,1)+" lb":"Unavailable");
-  const rate=Number.isFinite(computed.weeklyChange)?computed.weeklyChange:null;
-  pill(rateDays+"-day trend rate",rate===null?"Insufficient data":(rate>=0?"+":"")+fmt(rate)+" lb/week");
+  const rate=Number.isFinite(intervalWeeklyRate)?intervalWeeklyRate*factor:null;
+  pill(rateDays+"-day trend rate",rate===null?"Insufficient data":(rate>=0?"+":"")+fmt(rate)+" "+suffix);
   pill("Change during selected window",selected.length>=2?(selected.at(-1).weight>=selected[0].weight?"+":"")+fmt(selected.at(-1).weight-selected[0].weight,1)+" lb":"Insufficient data");
   drawSharedWeightTrendChart(canvas,{entries:selected,trendSeries:trend,goalWeight:null,startDate:date(start),endDate:date(end),label:period.value.toUpperCase()});
   const points=trend.map(x=>({t:localDate(x.date),date:x.date,value:x.weight,raw:x.observedWeight}));
@@ -76,6 +82,7 @@ export function renderCoachSharedWeightProgress(host,profile){
  }
  period.onchange=()=>{shift=0;scale=1;draw()};
  rateInterval.onchange=draw;
+ rateUnit.onchange=draw;
  zoomIn.onclick=()=>{scale=Math.min(32,scale*2);draw()};
  zoomOut.onclick=()=>{scale=Math.max(1,scale/2);draw()};
  back.onclick=()=>{shift+=Math.max(1,Math.floor((ranges.find(x=>x[0]===period.value)?.[2]||90)/scale/2));draw()};
