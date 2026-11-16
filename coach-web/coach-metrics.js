@@ -104,7 +104,7 @@ export function renderCoachMetricOverview(host,profile,onOpen){
   E("div",tile,{className:"cf-body-metric-number",text:valueToString(metric,value)});
   if(metric.id==="steps"){
    const goal=toNum(profile?.dailyMetrics?.steps?.goal);
-   const latest7=history.slice(-7);E("p",tile,{className:"cf-muted",text:goal?"Goal "+fmt(goal,0)+" · last 7 logged days avg "+(latest7.length?fmt(avg(latest7),0):"—"):"No synced step goal or recorded steps"});
+   const latest7=history.slice(-7);E("p",tile,{className:"cf-muted",text:goal!==null?"Goal "+fmt(goal,0)+" · last "+latest7.length+" logged days avg "+(latest7.length?fmt(avg(latest7),0):"Unavailable"):"No assigned step goal"});
   }else if(metric.id==="sleep"){
    const last7=history.slice(-7),latest=history.at(-1)?.date||null;
    E("p",tile,{className:"cf-muted",text:last7.length?"Last "+last7.length+" logged nights avg "+sleepLabel(avg(last7)):"No synced sleep entries"});
@@ -124,6 +124,8 @@ export function renderCoachMetricOverview(host,profile,onOpen){
    E("p",tile,{className:"cf-muted",text:"Smoothed weight trend"+(rate!==null?" · "+(rate>=0?"+":"")+fmt(rate,2)+" lb/week":"")});
   }
   if(history.length)summaryGraph(tile,metric,history,{goal:metric.id==="steps"?toNum(profile?.dailyMetrics?.steps?.goal):null,projected:metric.id==="expenditure"});
+  if(history.length)E("p",tile,{className:"cf-muted",text:"Recorded "+history[0].date+" to "+history.at(-1).date});
+  const sync=profile?.backup?.syncedAt;if(sync)E("p",tile,{className:"cf-muted",text:"Cloud sync: "+new Date(sync).toLocaleDateString("en-CA")});
   else E("div",tile,{className:"cf-no-graph",text:"No synced history"});
   tile.onclick=()=>onOpen(metric.id);
  }
