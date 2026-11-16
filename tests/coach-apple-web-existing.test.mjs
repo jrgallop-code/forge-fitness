@@ -6,7 +6,7 @@ import {coachInviteRoute} from "../cloud/src/coach-invitations.js";
 test("coach invitation email contains separate Apple and review URLs without claiming email identity matching",async()=>{
  const original=globalThis.fetch;
  const calls=[];const writes=[];
- const env={ADMIN_EMAILS:"coach@example.com",RESEND_API_KEY:"fake-resend-test-key",DB:{
+ const env={ADMIN_EMAILS:"coach@example.com",RESEND_API_KEY:"fake-resend-test-key",APPLE_WEB_CLIENT_ID:"com.leveluphypertrophy.web",APPLE_WEB_REDIRECT_URI:"https://leveluphypertrophy.com/coach-join.html",DB:{
   prepare(sql){return{bind(...params){return{
    async first(){return null},
    async run(){writes.push({sql,params});return{meta:{changes:1}}}
