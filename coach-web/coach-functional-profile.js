@@ -77,7 +77,8 @@ async function submitInvite(ev){
  const submit=form.querySelector('[type="submit"]');if(submit)submit.disabled=true;
  message.textContent="Sending invitation through Level Up Cloud…";
  try{
-  await accountApi("invite",{firstName,lastName,email,coachingType:"online"});
+  const coachingType=form.querySelector('[name="coachingType"]')?.value||"online";
+  await accountApi("invite",{firstName,lastName,email,coachingType});
   message.textContent="Invitation request accepted for "+email+". The client must accept the link before appearing as connected.";
   form.reset();
  }catch(e){message.textContent="Invitation not sent: "+e.message}
@@ -313,6 +314,9 @@ function mount(){const host=$("clients");if(!host||$("coach-functional-profile")
  for(const [key,label,type]of [["firstName","First name","text"],["lastName","Last name","text"],["email","Email address","email"]]){
   const f=field(inviteForm,label,"input",{name:key,type,required:"required",autocomplete:key==="email"?"email":key==="firstName"?"given-name":"family-name",maxlength:key==="email"?"254":"80"});
  }
+ const coachingField=el("label",inviteForm,{className:"cf-field"});el("span",coachingField,{text:"Coaching type"});
+ const coachingSelect=el("select",coachingField,{name:"coachingType","aria-label":"Coaching type"});
+ for(const [value,label]of [["online","Online"],["in_person","In-person"],["hybrid","Hybrid"]])el("option",coachingSelect,{value,text:label});
  el("p",inviteForm,{className:"cf-muted",text:"Invitees join through the existing secure Level Up invitation and consent flow. No separate coach or staff accounts are created."});
  const inviteStatus=el("p",inviteForm,{id:"cf-invite-status",className:"cf-muted",role:"status","aria-live":"polite"});
  el("button",inviteForm,{type:"submit",className:"cf-button cf-primary",text:"Send Invitation"});
