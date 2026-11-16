@@ -36,6 +36,13 @@ export function initializeCoachInvitePwa({onBack}={}){
  const ready=()=>{accept.disabled=pending||!verified||!user||!consent.checked||(verified.mismatch&&!mismatch.checked)};
  const clearPreview=()=>{verified=null;activeToken="";$("coach-invite-consent").hidden=true;consent.checked=false;mismatch.checked=false;ready()};
  const init=async()=>{
+  const candidate=new URLSearchParams(location.search).get("invite");
+  if(tokenPattern.test(candidate||"")){
+   $("coach-invite-token").value=candidate;
+   const clean=new URL(location.href);
+   clean.searchParams.delete("invite");
+   history.replaceState(history.state,"",clean.pathname+clean.search+clean.hash);
+  }
   const stored=getStored(SESSION_KEY),account=getStored(ACCOUNT_KEY);
   sessionToken=stored?.token||"";
   if(!sessionToken){$("coach-invite-account-name").textContent="Not signed in";$("coach-invite-signin-help").hidden=false;status("Sign in to Level Up first, then return here.",true);$("coach-invite-links").textContent="Sign in to see connected coaches.";return}
@@ -45,15 +52,7 @@ export function initializeCoachInvitePwa({onBack}={}){
    if(!user?.id)throw new Error("Account identity unavailable");
    $("coach-invite-account-name").textContent=user.display_name||user.name||account?.name||"Level Up member";
    $("coach-invite-account-email").textContent=user.email||"Signed-in account";
-   const candidate=new URLSearchParams(location.search).get("invite");
-   if(tokenPattern.test(candidate||"")){
-    $("coach-invite-token").value=candidate;
-    // Remove invitation credentials from browser history/address bar immediately.
-    const clean=new URL(location.href);
-    clean.searchParams.delete("invite");
-    history.replaceState(history.state,"",clean.pathname+clean.search+clean.hash);
-    void preview();
-   }
+   if(tokenPattern.test($("coach-invite-token").value))void preview();
    await refreshLinks();
   }catch(e){user=null;$("coach-invite-account-name").textContent="Sign in required";$("coach-invite-signin-help").hidden=false;status("Please sign in to your existing Level Up account first.",true);$("coach-invite-links").textContent="Sign in to view coaches."}
  };

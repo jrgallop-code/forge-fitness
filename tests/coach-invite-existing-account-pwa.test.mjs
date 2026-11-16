@@ -65,3 +65,11 @@ test("PWA More route requires signed-in cloud identity and full consent; never c
  assert.doesNotMatch(ui,/setItem\(ACCOUNT_KEY/);
  assert.doesNotMatch(ui,/importSharedWorkoutPackage/);
 });
+
+test("PWA removes invitation token before checking sign-in state",()=>{
+ const code=readFileSync(new URL("../js/more/coach-invite-pwa.js",import.meta.url),"utf8");
+ const init=code.indexOf("const init=async()=>");
+ const clean=code.indexOf('clean.searchParams.delete("invite")',init);
+ const auth=code.indexOf('if(!sessionToken)',init);
+ assert.ok(init>=0&&clean>init&&auth>clean);
+});
