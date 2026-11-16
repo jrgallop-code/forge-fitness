@@ -22,7 +22,7 @@ jobs:
               grep -q 'Connect to your coach' /tmp/check-public.html
               grep -q 'clean.searchParams.delete("invite")' /tmp/check-public.html
             else
-              grep -q 'existing-pwa-join' /tmp/check-public.html
+              grep -q '/assets/level-up-logo.svg' /tmp/check-public.html
             fi
           done
       - name: Verify Apple web sign-in route and gated UI
