@@ -105,9 +105,23 @@ export function renderCoachProgramInbox(){return '<section class="section-card c
 export function initializeCoachProgramInbox(){const host=document.getElementById("coach-assigned-programs"),list=host?.querySelector("#coach-assigned-program-list"),status=host?.querySelector("#coach-assigned-status"),refresh=host?.querySelector("#coach-assigned-refresh");if(!host||!list||!refresh)return;
 async function load(){const {user,session}=account();list.replaceChildren();if(!user?.id||!session?.token){list.append(E("p",{text:"Sign in to Level Up Account & Cloud to view assigned coaching programs."}));return}
 refresh.disabled=true;status.textContent="Checking for coaching programs…";
-try{const response=await fetch(API+"/v1/client/coach-assignments",{headers:{Authorization:"Bearer "+session.token},cache:"no-store"}),data=await response.json().catch(()=>({}));if(!response.ok)throw Error(data.error||"Coach assignments are not available yet.");const assignments=Array.isArray(data.assignments)?data.assignments:[];if(!assignments.length)list.append(E("p",{text:"No coaching programs assigned yet."}));
+try{const response=await fetch(API+"/v1/client/coach-assignments",{headers:{Authorization:"Bearer "+session.token},cache:"no-store"}),data=await response.json().catch(()=>({}));if(!response.ok)throw Error(data.error||"Coach assignments are not available yet.");const assignments=Array.isArray(data.assignments)?data.assignments:[];
+let coachCalendars=[];
+try{const schedules=await fetch(API+"/v1/client/coach-calendars",{headers:{Authorization:"Bearer "+session.token},cache:"no-store"});if(schedules.ok){const payload=await schedules.json();coachCalendars=Array.isArray(payload.schedules)?payload.schedules:[]}}catch{}
+if(!assignments.length)list.append(E("p",{text:"No coaching programs assigned yet."}));
 for(const plan of assignments){const previous=Number(imported(user.id)[plan.id]?.version)||0,version=Number(plan.version)||1,card=E("article",{className:"coach-assigned-card"});card.append(E("strong",{text:plan.name||"Coach Program"}),E("p",{text:(plan.training?.days?.length||0)+" workout days · Version "+version+(previous>=version?" · Already added":previous?" · Updated version":" · New")}));
 const goals=[plan.goals?.goalWeightLb?"Goal weight: "+plan.goals.goalWeightLb+" lb":"",plan.goals?.stepGoal?"Step goal: "+plan.goals.stepGoal:"",plan.includeNutrition?"Nutrition included":"Training only"].filter(Boolean);card.append(E("p",{text:goals.join(" · ")}));
+const calendar=coachCalendars.find(x=>x.assignmentId===plan.id);
+if(calendar){
+ const labels=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+ const scheduled=(calendar.days||[]).map((d,index)=>{
+  const workout=d?.type==="workout"?plan.training?.days?.[d.dayIndex]:null;
+  return labels[index]+": "+(workout?.name||"Rest");
+ }).join(" · ");
+ card.append(E("p",{text:"Training schedule (from "+calendar.startDate+", "+calendar.weeks+" weeks): "+scheduled}));
+ const specific=Object.keys(calendar.overrides||{}).length;
+ if(specific)card.append(E("p",{text:specific+" date-specific workout/rest adjustment"+(specific===1?"":"s")+" included."}));
+}
 const button=E("button",{className:"secondary-btn",type:"button",text:previous>=version?"Add Another Copy":previous?"Add Updated Program":"Add to Workout Library"});button.onclick=()=>{if(!confirm("Add this assigned program to your workout library? Your existing workout plans and history will not be replaced."))return;try{const known=new Set(getAllExercises().map(ex=>String(ex.id)));const missing=[...new Set((plan.training?.days||[]).flatMap(day=>day.exercises||[]).map(ex=>String(ex.id||"")).filter(id=>!known.has(id)))];if(missing.length)throw Error("This plan contains exercise IDs that aren't in your Level Up library: "+missing.slice(0,4).join(", ")+". Ask your coach to update the plan.");const packageValue={kind:"levelup-workout",version:1,plan:{...structuredClone(plan.training),sourceType:"coach-assigned",coachAssignmentId:plan.id,coachAssignmentVersion:version},customExercises:[]};const added=importSharedWorkoutPackage(packageValue),updated=imported(user.id);updated[plan.id]={version,planId:added.id,importedAt:new Date().toISOString()};localStorage.setItem(key(user.id),JSON.stringify(updated));status.textContent="Added "+added.name+" to Workout Library. Previous plans and completed workouts are unchanged.";void load()}catch(error){status.textContent="Unable to add plan: "+error.message}};card.append(button);
 const targets = coachTargets(plan);
 if (Object.keys(targets).length) {
