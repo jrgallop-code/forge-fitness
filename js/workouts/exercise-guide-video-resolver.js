@@ -25,7 +25,6 @@ export const ROOT_UPLOADED_OBJECT_KEYS = Object.freeze([
     "dumbbell-overhead-extension.mp4",
     "dip.mp4",
     "front-squat.mp4",
-    "glute-bridge.mp4",
     "plank.mp4",
     "cable-crunch.mp4",
     "incline-machine-chest-press.mp4",
@@ -81,11 +80,14 @@ function resolveMaleVideo(config) {
     const rootSrc = `${FORM_VIDEO_ORIGIN}/${config.objectKey}`;
     const librarySrc = `${FORM_VIDEO_LIBRARY_BASE_URL}/${config.objectKey}`;
     const preferRoot = rootUploadedObjectKeys.has(config.objectKey);
+    // The root glute-bridge upload shows a forearm plank, not a bridge.
+    // Use the separate legacy library object and never fall back to the mislabeled root clip.
+    const knownWrongRootDemo = config.objectKey === "glute-bridge.mp4";
 
     return Object.freeze({
         ...config,
         src: preferRoot ? rootSrc : librarySrc,
-        fallbackSrc: preferRoot ? librarySrc : rootSrc,
+        fallbackSrc: knownWrongRootDemo ? null : (preferRoot ? librarySrc : rootSrc),
         storagePath: preferRoot ? "root" : "form-videos"
     });
 }
