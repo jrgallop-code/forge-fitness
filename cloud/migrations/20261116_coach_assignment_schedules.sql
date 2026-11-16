@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS coach_assignment_schedules (
  start_date TEXT NOT NULL,
  weeks INTEGER NOT NULL CHECK(weeks BETWEEN 1 AND 52),
  week_pattern_json TEXT NOT NULL,
+ overrides_json TEXT NOT NULL DEFAULT '{}',
  version INTEGER NOT NULL DEFAULT 1,
  updated_at TEXT NOT NULL,
  created_at TEXT NOT NULL
