@@ -19,7 +19,7 @@ function profileSummary(data){
  const weighIns=safeArray(data.forge_weight_entries).filter(x=>dateText(x?.date)&&positive(x?.weight)!==null).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
  const last=weighIns.at(-1);
  const heightCm=positive(p.heightCm)??(positive(p.heightFeet)!==null?((Number(p.heightFeet)*12)+(num(p.heightInches)||0))*2.54:null);
- const weightLb=positive(last?.weight)??(positive(p.weightKg)!==null?Number(p.weightKg)/0.45359237:null);
+ const weightLb=positive(last?.weight)??positive(p.weightLb)??(positive(p.weightKg)!==null?Number(p.weightKg)/0.45359237:null);
  const snapshots=validObject(data.level_up_weekly_tdee_estimate_v1)?data.level_up_weekly_tdee_estimate_v1:{};
  const est=validObject(snapshots.estimate)?snapshots.estimate:snapshots;
  const prior=safeArray(data.level_up_weekly_tdee_history_v1).filter(x=>positive(x?.maintenanceCalories??x?.estimate?.maintenanceCalories)!==null).sort((a,b)=>String(a.date||a.reviewedAt||"").localeCompare(String(b.date||b.reviewedAt||""))).at(-1);
