@@ -8,7 +8,6 @@ const ROOT_OBJECT_KEYS = [
   "dumbbell-overhead-extension.mp4",
   "dip.mp4",
   "front-squat.mp4",
-  "glute-bridge.mp4",
   "plank.mp4",
   "cable-crunch.mp4",
   "incline-machine-chest-press.mp4",
@@ -56,15 +55,15 @@ const ROOT_OBJECT_KEYS = [
   "hanging-knee-raise.mp4"
 ];
 
-test("51 newly uploaded Cloudflare form videos prefer the bucket root", () => {
+test("50 verified root Cloudflare form videos prefer the bucket root", () => {
   const source = readFileSync("js/workouts/exercise-guide-video-resolver.js", "utf8");
-  assert.equal(ROOT_OBJECT_KEYS.length, 51);
+  assert.equal(ROOT_OBJECT_KEYS.length, 50);
   for (const key of ROOT_OBJECT_KEYS) {
     assert.ok(source.includes(`\"${key}\"`), `missing root object key ${key}`);
   }
   assert.match(source, /rootUploadedObjectKeys\.has\(config\.objectKey\)/);
   assert.match(source, /src: preferRoot \? rootSrc : librarySrc/);
-  assert.match(source, /fallbackSrc: preferRoot \? librarySrc : rootSrc/);
+  assert.match(source, /fallbackSrc: knownWrongRootDemo \? null : \(preferRoot \? librarySrc : rootSrc\)/);
 });
 
 test("legacy form videos keep form-videos as their preferred path", () => {
@@ -77,4 +76,12 @@ test("form guide renderer retries the alternate Cloudflare path before hiding a 
   assert.match(source, /config\.fallbackSrc/);
   assert.match(source, /formGuideFallbackTried/);
   assert.match(source, /video\.load\(\)/);
+});
+
+test("glute bridge excludes the mislabeled root plank clip", () => {
+  const source = readFileSync("js/workouts/exercise-guide-video-resolver.js", "utf8");
+  const rootKeys = source.match(/ROOT_UPLOADED_OBJECT_KEYS = Object\.freeze\(\[([\s\S]*?)\]\)/)?.[1] || "";
+  assert.doesNotMatch(rootKeys, /"glute-bridge\.mp4"/);
+  assert.match(source, /knownWrongRootDemo = config\.objectKey === "glute-bridge\.mp4"/);
+  assert.match(source, /fallbackSrc: knownWrongRootDemo \? null/);
 });
