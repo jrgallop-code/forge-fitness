@@ -14,10 +14,14 @@ test("invites offer existing authorized coaching types",()=>{
  for(const [id,label]of [["online","Online"],["in_person","In-person"],["hybrid","Hybrid"]])assert.match(profile,new RegExp('\\["'+id+'","'+label+'"\\]'));
  assert.match(profile,/accountApi\("invite",\{firstName,lastName,email,coachingType\}\)/);
 });
-test("weight rate mirrors athlete visible trend and full-history smoothed regression",()=>{
+test("weight chart reuses native timeframes and fixed native 21-day trend rate",()=>{
  assert.match(metrics,/calculateVisibleWeightTrend\(raw,\{endDate:raw\.at\(-1\)\?\.date\}\)/);
  assert.doesNotMatch(metrics,/const rate=toNum\(profile\?\.expenditure\?\.weightRateLbPerWeek\)/);
- assert.match(weight,/rateDays===21\?computed\.weeklyChange/);
+ assert.match(weight,/\["phase","PHASE",null\]/);
+ assert.match(weight,/\["3m","3M",90\]/);
+ assert.match(weight,/let selectedRange="3m"/);
+ assert.match(weight,/calculateVisibleWeightTrend\(entries,\{endDate:latest\}\)/);
+ assert.doesNotMatch(weight,/rateInterval|rateUnit|Per day|Per month/);
  assert.match(weight,/calculateTrendWeightSeries\(entries\.filter/);
  assert.match(worker,/weighIns\.slice\(-730\)/);
 });
