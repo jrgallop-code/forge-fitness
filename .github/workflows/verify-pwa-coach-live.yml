@@ -25,6 +25,15 @@ jobs:
               grep -q 'existing-pwa-join' /tmp/check-public.html
             fi
           done
+      - name: Verify Apple web sign-in route and gated UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL -H "Cache-Control: no-cache" "https://leveluphypertrophy.com/coach-join.html" -o /tmp/coach-apple-live.html
+          grep -q 'id="appleLogin"' /tmp/coach-apple-live.html
+          grep -q '/v1/session/apple/existing' /tmp/coach-apple-live.html
+          curl -fsSL "https://api.leveluphypertrophy.com/v1/coach/apple-web/config" -o /tmp/coach-apple-config.json
+          node -e 'const d=require("/tmp/coach-apple-config.json");if(typeof d.enabled!=="boolean")throw Error("Apple config response invalid");console.log("Apple web login configuration enabled:",d.enabled)'
       - name: Read Cloudflare production deploy status without secrets
         env:
           GH_TOKEN: ${{ github.token }}
