@@ -33,7 +33,8 @@ jobs:
           grep -q 'id="appleLogin"' /tmp/coach-apple-live.html
           grep -q '/assets/level-up-logo.svg' /tmp/coach-apple-live.html
           ! grep -q 'This PWA-first test' /tmp/coach-apple-live.html
-          curl -fsSL 'https://leveluphypertrophy.com/assets/level-up-logo.svg' | grep -q 'Level Up hypertrophy training app logo'
+          curl -fsSL 'https://leveluphypertrophy.com/assets/level-up-logo.svg' -o /tmp/level-up-coach-logo.svg
+          grep -q 'Level Up hypertrophy training app logo' /tmp/level-up-coach-logo.svg
           grep -q '/v1/session/apple/existing' /tmp/coach-apple-live.html
           curl -fsSL "https://api.leveluphypertrophy.com/v1/coach/apple-web/config" -o /tmp/coach-apple-config.json
           node -e 'const d=require("/tmp/coach-apple-config.json");if(typeof d.enabled!=="boolean")throw Error("Apple config response invalid");console.log("Apple web login configuration enabled:",d.enabled)'
