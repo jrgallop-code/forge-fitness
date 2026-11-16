@@ -40,7 +40,7 @@ const btn=(parent,name,action,variant="")=>{const button=el("button",parent,{typ
 const field=(parent,title,type="input",props={})=>{const label=el("label",parent,{className:"cf-field"});el("span",label,{text:title});return el(type,label,props)};
 const displayDate=s=>{if(!s)return"—";const d=new Date(s.length===10?s+"T12:00:00":s);return Number.isFinite(d.getTime())?d.toLocaleDateString("en-CA",{month:"short",day:"numeric",year:"numeric"}):"—"};
 const status=(s,error=false)=>{const out=$("cf-status");if(out){out.textContent=s;out.style.color=error?"#ac3142":"#506a83"}};
-function switchTab(name){section=name;for(const tab of ["overview","training","progress","notes"]){$("cf-tab-"+tab)?.classList.toggle("active",tab===name);if($("cf-view-"+tab))$("cf-view-"+tab).hidden=tab!==name}if(name==="training")drawTraining()}
+function switchTab(name){section=name;for(const tab of ["overview","training","progress","bodymetrics","notes"]){$("cf-tab-"+tab)?.classList.toggle("active",tab===name);if($("cf-view-"+tab))$("cf-view-"+tab).hidden=tab!==name}if(name==="training")drawTraining();if(name==="bodymetrics")renderBodyMetrics()}
 function workoutSelection(){const header=$("coach-program-client-plan");return[...(header?.querySelectorAll("select")||[])].find(s=>[...s.options].some(o=>o.value==="My Account"||o.value==="Sarah Carter"))}
 function connectBuilder(c){const selection=workoutSelection();if(!selection)return;const value=c.isSelf?"My Account":c.id;if(![...selection.options].some(o=>o.value===value))el("option",selection,{value,text:c.name+" (Connected)"});if(selection.value!==value){selection.value=value;selection.dispatchEvent(new Event("change",{bubbles:true}))}}
 
@@ -132,15 +132,15 @@ async function roster(){try{
  renderSidebar();renderClientDirectory();void refreshDirectoryProgramming()}catch(e){status("Cannot load connected athletes: "+e.message+". Your saved programs and account links have not been erased.",true);if(e.status===401){$("cf-login").hidden=false;showClientList();const fallback=$("cf-directory-account");if(fallback)fallback.textContent="Sign-in required";}}}
 async function choose(id){const c=clients.find(x=>x.id===id);if(!c)return;if(clientId!==c.id){
  ++loadSequence;profile=null;assignments=[];
- for(const tab of ["overview","progress","training","notes"])$("cf-view-"+tab)?.replaceChildren();
+ for(const tab of ["overview","progress","training","bodymetrics","notes"])$("cf-view-"+tab)?.replaceChildren();
 }
  clientId=c.id;editor=null;selectedMetric=null;trainingMode="editor";calendar=null;calendarDraft=null;calendarLoadError=null;$("cf-client").value=c.id;$("cf-name").textContent=c.name;$("cf-email").textContent=c.email||"Connected Level Up athlete";connectBuilder(c);renderSidebar();await refresh()}
-async function refresh(){const id=clientId,seq=++loadSequence;status("Loading published programs and "+person()?.name+"'s profile…");const [a,b]=await Promise.allSettled([fetchJson("/api/coach-phase1?"+new URLSearchParams({action:"summary",clientId:id})),fetchJson("/api/coach-programs?"+new URLSearchParams({action:"list",clientId:id}))]);if(clientId!==id||seq!==loadSequence)return;profile=a.status==="fulfilled"?a.value:null;assignments=b.status==="fulfilled"?arr(b.value.assignments).filter(x=>x.clientId===id):[];renderOverview();renderProgress();if(section==="training")drawTraining();if(a.status==="rejected"||b.status==="rejected")status([a.status==="rejected"?"Profile: "+a.reason.message:"",b.status==="rejected"?"Programs: "+b.reason.message:""].filter(Boolean).join(" · "),true);else status("Connected as "+person().name+" · last data sync "+(profile?.backup?.syncedAt?new Date(profile.backup.syncedAt).toLocaleString("en-CA"):"not yet available"))}
+async function refresh(){const id=clientId,seq=++loadSequence;status("Loading published programs and "+person()?.name+"'s profile…");const [a,b]=await Promise.allSettled([fetchJson("/api/coach-phase1?"+new URLSearchParams({action:"summary",clientId:id})),fetchJson("/api/coach-programs?"+new URLSearchParams({action:"list",clientId:id}))]);if(clientId!==id||seq!==loadSequence)return;profile=a.status==="fulfilled"?a.value:null;assignments=b.status==="fulfilled"?arr(b.value.assignments).filter(x=>x.clientId===id):[];renderOverview();renderProgress();renderBodyMetrics();if(section==="training")drawTraining();if(a.status==="rejected"||b.status==="rejected")status([a.status==="rejected"?"Profile: "+a.reason.message:"",b.status==="rejected"?"Programs: "+b.reason.message:""].filter(Boolean).join(" · "),true);else status("Connected as "+person().name+" · last data sync "+(profile?.backup?.syncedAt?new Date(profile.backup.syncedAt).toLocaleString("en-CA"):"not yet available"))}
 function renderOverview(){
  const root=$("cf-view-overview");if(!root||!person())return;
  root.replaceChildren();
  if(metricUI)metricUI.renderCoachMetricOverview(root,metricProfile(),metricId=>{
-  selectedMetric=metricId;metricViewMode="graph";switchTab("progress");renderProgress();
+  selectedMetric=metricId;metricViewMode="graph";switchTab("bodymetrics");renderBodyMetrics();
  });
  const grid=el("div",root,{className:"cf-summary-grid"});
  // First row: matching profile and published-plan cards.
@@ -180,18 +180,26 @@ function renderOverview(){
  note(c,"Published workout programs: "+active().length);
  c.parentElement.classList.add("cf-summary-wide");
 }
+function renderBodyMetrics(){
+ const root=$("cf-view-bodymetrics");if(!root)return;root.replaceChildren();
+ if(!metricUI)return note(root,"Loading Body Metrics…");
+ const athleteId=clientId;
+ if(selectedMetric){
+  metricUI.renderCoachMetricDetail(root,metricProfile(),selectedMetric,()=>{
+   if(clientId!==athleteId)return;
+   selectedMetric=null;metricViewMode="graph";renderBodyMetrics();
+  },metricViewMode);
+  return;
+ }
+ metricUI.renderCoachMetricOverview(root,metricProfile(),metricId=>{
+  if(clientId!==athleteId)return;
+  selectedMetric=metricId;metricViewMode="graph";renderBodyMetrics();
+ });
+}
 function renderProgress(){
  const root=$("cf-view-progress");if(!root)return;root.replaceChildren();
- if(selectedMetric&&metricUI){
-   metricUI.renderCoachMetricDetail(root,metricProfile(),selectedMetric,()=>{
-     selectedMetric=null;metricViewMode="graph";renderProgress();
-   },metricViewMode);
-   return;
- }
  const tools=el("div",root,{className:"cf-actions"});
- btn(tools,"Metric Calendar",()=>{
-   selectedMetric="weight";metricViewMode="calendar";renderProgress();
- },"subtle");
+ btn(tools,"Open Body Metrics",()=>{selectedMetric="weight";switchTab("bodymetrics");renderBodyMetrics()},"subtle");
  const top=el("div",root,{className:"cf-metrics"});for(const [k,v]of [["Weight",profile?.weight?.latest?profile.weight.latest+" lb":"Not shared"],["Sessions",profile?.training?.completedCount??"—"],["Last 30 days",profile?.training?.last30Days??"—"]]){const m=el("div",top,{className:"cf-metric"});el("small",m,{text:k});el("strong",m,{text:String(v)})}
  const two=el("div",root,{className:"cf-columns"}),left=el("div",two),right=el("div",two);
  let c=panel(left,"Weight entries","Latest synced weigh-ins");const weights=arr(profile?.weight?.history).slice(-15).reverse();if(!weights.length)note(c,"No weigh-ins synced.");for(const x of weights)info(c,displayDate(x.date),x.weight+" lb");
@@ -328,16 +336,16 @@ function mount(){const host=$("clients");if(!host||$("coach-functional-profile")
  const email=field(loginCard,"Your Level Up email","input",{type:"email",autocomplete:"username"});
  const password=field(loginCard,"Password","input",{type:"password",autocomplete:"current-password"});
  btn(loginCard,"Sign in to Level Up Coach",async()=>{try{await accountApi("login",{email:email.value.trim(),password:password.value});password.value="";login.hidden=true;await roster()}catch(e){status("Sign in failed: "+e.message,true)}});
- el("p",detail,{id:"cf-status",className:"cf-muted",text:"Loading connected athlete…"});const tabs=el("div",detail,{className:"cf-tabs"});for(const [key,label]of [["overview","Overview"],["training","Training"],["progress","Weightlifting Progress"],["notes","Notes"]]){const b=btn(tabs,label,()=>{switchTab(key);if(key==="notes")notes()},"");b.id="cf-tab-"+key}
- for(const key of ["overview","training","progress","notes"])el("div",detail,{id:"cf-view-"+key});
+ el("p",detail,{id:"cf-status",className:"cf-muted",text:"Loading connected athlete…"});const tabs=el("div",detail,{className:"cf-tabs"});for(const [key,label]of [["overview","Overview"],["training","Training"],["progress","Weightlifting Progress"],["bodymetrics","Body Metrics"],["notes","Notes"]]){const b=btn(tabs,label,()=>{switchTab(key);if(key==="notes")notes()},"");b.id="cf-tab-"+key}
+ for(const key of ["overview","training","progress","bodymetrics","notes"])el("div",detail,{id:"cf-view-"+key});
  client.onchange=()=>{showClientDetail();void choose(client.value)};switchTab("overview");showClientList();void roster();void loadExercises();
  void import("./coach-analytics.js").then(module=>{
    analytics=module;analytics.injectCoachAnalyticsStyles();
-   if(person()){renderOverview();renderProgress()}
+   if(person()){renderOverview();renderProgress();renderBodyMetrics()}
  }).catch(e=>status("Expenditure and weight charts unavailable: "+e.message,true));
  void import("./coach-muscle-maps.js").then(module=>{
    muscleMaps=module;muscleMaps.injectCoachMuscleStyles();
-   if(person())renderProgress();
+   if(person()){renderProgress();renderBodyMetrics()}
  }).catch(e=>status("Muscle heat maps unavailable: "+e.message,true));
  void import("./coach-metrics.js").then(module=>{
    metricUI=module;metricUI.injectCoachMetricStyles();
