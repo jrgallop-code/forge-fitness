@@ -65,23 +65,42 @@ function strengthChart(host,profile){
  select.onchange=draw;draw();
 }
 function heatmap(host,profile){
- const body=box(host,"Muscle Volume Heat Map","Completed sets, last 28 days · primary 1 set, secondary 0.5 set");
+ const body=box(host,"Weekly Sets by Muscle Group","Level Up-style heat map · Monday–Sunday training weeks");
  const exercises=arr(profile?.training?.recentExerciseSets);
- if(!exercises.length)return text(body,"No completed exercise sets found in the latest synced 28-day window.");
- const volume=new Map();
+ if(!exercises.length)return text(body,"No completed sets in this athlete's available recent cloud history.");
+ const weekStart=date=>{const d=new Date(date+"T12:00:00Z");d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));return d.toISOString().slice(0,10)};
+ const thisWeek=weekStart(new Date().toISOString().slice(0,10));
+ const weeks=Array.from({length:10},(_,i)=>{const d=new Date(thisWeek+"T12:00:00Z");d.setUTCDate(d.getUTCDate()-(9-i)*7);return d.toISOString().slice(0,10)});
+ const totals=new Map();
  for(const entry of exercises){
-  const impacts=getExerciseImpacts({id:entry.exerciseId});
-  for(const [muscle,credit]of impacts)volume.set(muscle,(volume.get(muscle)||0)+credit*Number(entry.sets||0));
+  if(!entry?.date||!entry?.exerciseId||!(Number(entry.sets)>0))continue;
+  const week=weekStart(entry.date);if(!weeks.includes(week))continue;
+  for(const [muscle,credit]of getExerciseImpacts({id:entry.exerciseId})){
+   if(!muscle||muscle==="Other")continue;
+   const key=muscle+"|"+week;totals.set(key,(totals.get(key)||0)+credit*Number(entry.sets));
+  }
  }
- if(!volume.size)return text(body,"Exercise-muscle mapping is unavailable for these logged exercises.");
- const entries=[...volume].sort((a,b)=>b[1]-a[1]),grid=h("div",body,{className:"cf-muscle-grid"});
- for(const [name,sets]of entries){
-  const cell=h("div",grid,{className:"cf-muscle-cell"});
-  const alpha=sets>=16?.95:sets>=10?.72:sets>=5?.48:.24;
-  cell.style.background="rgba(38,105,215,"+alpha+")";cell.style.color=sets>=10?"#fff":"#173557";
-  h("strong",cell,{text:name});h("span",cell,{text:num(sets)+" credited sets"});
+ const muscles=[...new Set([...totals.keys()].map(x=>x.split("|")[0]))].sort();
+ if(!muscles.length)return text(body,"No supported muscle attribution is available for the synced exercises.");
+ const wrapper=h("div",body,{className:"cf-heatmap-scroll"}),grid=h("div",wrapper,{className:"cf-weekly-heatmap"});
+ grid.style.gridTemplateColumns="minmax(115px,1.4fr) repeat(10,minmax(43px,1fr))";
+ h("strong",grid,{text:"Muscle"});
+ for(const w of weeks)h("small",grid,{text:w.slice(5)});
+ const palette=["#e2e8f0","#8170C9","#5598EC","#35C3D3","#83CF70","#F1D65A","#F3A24B","#F27768"];
+ const labels=["0","0.5–2","2.5–4","4.5–6","6.5–8","8.5–10","10.5–12","12.5+"];
+ for(const muscle of muscles){
+  h("span",grid,{className:"cf-muscle-name",text:muscle});
+  for(const week of weeks){
+   const value=Math.round((totals.get(muscle+"|"+week)||0)*10)/10;
+   const band=value>0?Math.min(7,Math.ceil(value/2)):0;
+   const cell=h("div",grid,{className:"cf-weekly-cell",text:String(value)});
+   cell.style.background=palette[band];cell.style.color=band===0?"#597189":band<=2?"#fff":"#263044";
+   cell.title=muscle+" · week of "+week+" · "+value+" credited sets";
+  }
  }
- text(body,"Volume is estimated from completed workouts and the app's exercise-to-muscle attribution. It is not a measure of muscle growth.");
+ const legend=h("div",body,{className:"cf-heatmap-legend"});h("strong",legend,{text:"Sets"});
+ for(let i=0;i<labels.length;i++){const item=h("span",legend);const swatch=h("i",item);swatch.style.background=palette[i];h("small",item,{text:labels[i]})}
+ text(body,"Primary muscles receive 1.0 credit and secondary muscles 0.5 per completed set. Earlier weeks may be incomplete if the cloud backup lacks historical sessions.");
 }
 export function renderCoachOverviewAnalytics(host,profile){
  if(!host)return;
@@ -105,5 +124,5 @@ export function renderCoachProgressAnalytics(host,profile){
 export function injectCoachAnalyticsStyles(){
  if(document.getElementById("cf-analytics-styles"))return;
  const style=h("style",document.head,{id:"cf-analytics-styles"});
- style.textContent="#coach-functional-profile .cf-analytics-stats{display:flex;flex-wrap:wrap;gap:10px}#coach-functional-profile .cf-analytics-stat{background:#eef5ff;padding:13px 16px;border-radius:9px;display:grid;gap:3px;min-width:150px}#coach-functional-profile .cf-analytics-stat small{color:#607d9c}#coach-functional-profile .cf-analytics-stat strong{font-size:19px}#coach-functional-profile .cf-analytics-stat span{font-size:11px;color:#617a94}#coach-functional-profile .cf-strength-filter{margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}#coach-functional-profile .cf-strength-filter label{font-size:12px;font-weight:700}#coach-functional-profile .cf-strength-filter select{min-width:230px;max-width:100%}#coach-functional-profile .cf-muscle-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}#coach-functional-profile .cf-muscle-cell{padding:12px;border-radius:9px;display:grid;gap:4px;min-height:72px;align-content:center}#coach-functional-profile .cf-muscle-cell span{font-size:11px}";
+ style.textContent="#coach-functional-profile .cf-analytics-stats{display:flex;flex-wrap:wrap;gap:10px}#coach-functional-profile .cf-analytics-stat{background:#eef5ff;padding:13px 16px;border-radius:9px;display:grid;gap:3px;min-width:150px}#coach-functional-profile .cf-analytics-stat small{color:#607d9c}#coach-functional-profile .cf-analytics-stat strong{font-size:19px}#coach-functional-profile .cf-analytics-stat span{font-size:11px;color:#617a94}#coach-functional-profile .cf-strength-filter{margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}#coach-functional-profile .cf-strength-filter label{font-size:12px;font-weight:700}#coach-functional-profile .cf-strength-filter select{min-width:230px;max-width:100%}#coach-functional-profile .cf-muscle-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}#coach-functional-profile .cf-muscle-cell{padding:12px;border-radius:9px;display:grid;gap:4px;min-height:72px;align-content:center}#coach-functional-profile .cf-muscle-cell span{font-size:11px}#coach-functional-profile .cf-heatmap-scroll{overflow-x:auto}#coach-functional-profile .cf-weekly-heatmap{display:grid;align-items:stretch;gap:4px;min-width:710px;margin:12px 0}#coach-functional-profile .cf-weekly-heatmap>strong,#coach-functional-profile .cf-weekly-heatmap>small{font-size:10px;color:#68819d;padding:7px 2px;text-align:center}#coach-functional-profile .cf-muscle-name{font-size:11px;padding:9px 3px;color:#35506e}#coach-functional-profile .cf-weekly-cell{border-radius:5px;min-height:31px;display:grid;place-items:center;font-size:10px;font-weight:750}#coach-functional-profile .cf-heatmap-legend{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-top:12px}#coach-functional-profile .cf-heatmap-legend>span{display:flex;gap:3px;align-items:center;font-size:10px}#coach-functional-profile .cf-heatmap-legend i{display:inline-block;width:11px;height:11px;border-radius:2px}";
 }
