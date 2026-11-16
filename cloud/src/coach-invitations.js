@@ -29,9 +29,21 @@ export async function coachInviteRoute({request,env,user,url}){
   const token=random(),digest=await hash(token),id=crypto.randomUUID(),expiresAt=new Date(Date.now()+14*86400000).toISOString();
   const inviteBase="https://leveluphypertrophy.com/coach-join.html";
   const link=inviteBase+"?invite="+encodeURIComponent(token);
-  const text="You're invited to Level Up coaching by "+(user.display_name||"your coach")+".\n\nAccept invitation: "+link+"\n\nSign in with the same Level Up account email ("+email+") to accept. This link expires in 14 days.\n\nOnce connected, get the Level Up iPhone app: https://apps.apple.com/ca/app/level-up-workout-nutrition/id6810024008";
+  const appleLink=link+"&auth=apple";
+  const appleAvailable=!!String(env.APPLE_WEB_CLIENT_ID||"").trim() &&
+    String(env.APPLE_WEB_REDIRECT_URI||"").trim()==="https://leveluphypertrophy.com/coach-join.html";
+  const text="You are invited to Level Up coaching by "+(user.display_name||"your coach")+
+    ".\\n\\nReview invitation: "+link+
+    (appleAvailable?"\\n\\nSign in with Apple: "+appleLink:"")+
+    "\\n\\nUse your existing Level Up account. If you previously used Apple Hide My Email, use the SAME Apple account once web Apple sign-in is enabled. You must explicitly approve coaching data sharing. Invitation expires in 14 days.";
+  const appleAction=appleAvailable?
+    '<p><a href="'+escape(appleLink)+'" style="display:inline-block;background:#111;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">Sign in with Apple</a></p>':"";
+  const inviteHtml='<div style="font-family:system-ui;max-width:560px;margin:auto"><h1>Welcome to Level Up</h1><p>'+escape(first)+', your coach invited you to connect your existing Level Up account.</p>'+
+    '<p><a href="'+escape(link)+'" style="display:inline-block;background:#2467dc;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">Review invitation</a></p>'+appleAction+
+    '<p>If you use Apple Hide My Email, sign in with the same Apple account used in Level Up. You must review and approve the coaching connection before sharing.</p>'+
+    '<p>Or sign in using your existing Google/email account. Invitation expires in 14 days.</p></div>';
   await env.DB.prepare("INSERT INTO coach_client_invites (id,coach_user_id,first_name,last_name,email,coaching_type,token_hash,status,expires_at,created_at) VALUES (?,?,?,?,?,? ,?,'pending',?,?)").bind(id,user.id,first,last,email,type,digest,expiresAt,now).run();
-  const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":"Bearer "+env.RESEND_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({from:"Level Up <support@leveluphypertrophy.com>",to:[email],subject:"Your invitation to Level Up coaching",text,html:'<div style="font-family:system-ui;max-width:560px;margin:auto"><h1>Welcome to Level Up</h1><p>'+escape(first)+', your coach has invited you to connect your Level Up account.</p><p><a href="'+escape(link)+'" style="background:#2467dc;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">Accept invitation</a></p><p>Sign in using '+escape(email)+' on the next screen. Your coach will only gain access to the information you approve.</p><p>Invitation expires in 14 days.</p></div>',tags:[{name:"category",value:"coach_invitation"}]})}).catch(()=>null);
+  const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":"Bearer "+env.RESEND_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({from:"Level Up <support@leveluphypertrophy.com>",to:[email],subject:"Your invitation to Level Up coaching",text,html:inviteHtml,tags:[{name:"category",value:"coach_invitation"}]})}).catch(()=>null);
   const details=await response?.json().catch(()=>({}));
   if(!response?.ok){await env.DB.prepare("DELETE FROM coach_client_invites WHERE id=? AND status='pending'").bind(id).run();return J({error:"Email service rejected the invitation. Nothing was added to the roster."},502);}
   await env.DB.prepare("UPDATE coach_client_invites SET emailed_at=? WHERE id=?").bind(now,id).run();

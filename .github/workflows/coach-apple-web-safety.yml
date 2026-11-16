@@ -1,0 +1,22 @@
+name: Coach Apple web sign-in safety
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'cloud/src/index.js'
+      - 'cloud/src/coach-invitations.js'
+      - 'tests/coach-apple-web-existing.test.mjs'
+      - '.github/workflows/coach-apple-web-safety.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cloud/src/index.js
+      - run: node --check cloud/src/coach-invitations.js
+      - run: node --test tests/coach-required-consent.test.mjs tests/coach-invite-existing-account-pwa.test.mjs tests/coach-apple-web-existing.test.mjs

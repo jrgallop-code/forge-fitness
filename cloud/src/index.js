@@ -95,6 +95,16 @@ async function handleRequest(request, env, ctx) {
         const body = await readJson(request, 64 * 1024);
         return createGoogleSession(body, request, env);
     }
+    if (url.pathname === "/v1/coach/apple-web/config" && request.method === "GET") {
+        const clientId = String(env.APPLE_WEB_CLIENT_ID || "").trim();
+        const redirectURI = String(env.APPLE_WEB_REDIRECT_URI || "").trim();
+        const enabled = !!clientId && redirectURI === "https://leveluphypertrophy.com/coach-join.html";
+        return json({ enabled, ...(enabled ? { clientId, redirectURI } : {}) }, 200, request, env);
+    }
+    if (url.pathname === "/v1/session/apple/existing" && request.method === "POST") {
+        const body = await readJson(request, 32 * 1024);
+        return createExistingAppleWebSession(body, request, env);
+    }
     if (url.pathname === "/v1/session/apple" && request.method === "POST") {
         const body = await readJson(request, 64 * 1024);
         return createAppleSession(body, request, env);
@@ -440,6 +450,45 @@ async function createGoogleSession(body, request, env) {
     );
 }
 
+// Web coaching login intentionally never creates a user or matches users by email.
+// Only a verified Apple identifier already used by the native Level Up app can sign in.
+async function createExistingAppleWebSession(body, request, env) {
+    const clientId = String(env.APPLE_WEB_CLIENT_ID || "").trim();
+    const redirectURI = String(env.APPLE_WEB_REDIRECT_URI || "").trim();
+    if (!clientId || redirectURI !== "https://leveluphypertrophy.com/coach-join.html") {
+        return json({ error: "Sign in with Apple for the website is not configured." }, 503, request, env);
+    }
+    const identityToken = typeof body?.identityToken === "string" ? body.identityToken : "";
+    const authorizationCode = typeof body?.authorizationCode === "string" ? body.authorizationCode : "";
+    const nonce = typeof body?.nonce === "string" ? body.nonce : "";
+    if (!identityToken || identityToken.length > 16000 ||
+        !authorizationCode || authorizationCode.length > 8000 ||
+        !/^[a-f0-9]{64}$/.test(nonce)) {
+        return json({ error: "A valid Apple web sign-in is required." }, 400, request, env);
+    }
+    let claims;
+    try {
+        claims = await verifyAppleIdentityToken(identityToken, nonce, env, clientId);
+        // A one-time authorization code must be redeemed successfully to prevent
+        // repeated use of a captured ID token before its expiry.
+        const tokenResponse = await exchangeAppleAuthorizationCode(authorizationCode, env, clientId, redirectURI);
+        if (typeof tokenResponse?.id_token !== "string") throw new Error("Missing exchanged identity token");
+        const exchanged = await verifyAppleIdentityToken(tokenResponse.id_token, nonce, env, clientId);
+        if (exchanged.sub !== claims.sub) throw new Error("Apple identity mismatch");
+    } catch (error) {
+        console.error(JSON.stringify({ event: "apple_coach_web_signin_failed", message: String(error?.message || error) }));
+        return json({ error: "Apple sign-in could not be verified." }, 401, request, env);
+    }
+    const existing = await env.DB.prepare(
+        "SELECT id,email,display_name,avatar_url FROM users WHERE id=? LIMIT 1"
+    ).bind(`apple:${claims.sub}`).first();
+    if (!existing) return json({
+        error: "This Apple ID is not linked to an existing Level Up account. Sign in with the same Apple ID used in the iOS app; no new account was created."
+    }, 404, request, env);
+    return issueSession(existing.id, { ...existing, beta_status: "active" },
+        request, env, { platform: "pwa" });
+}
+
 async function createAppleSession(body, request, env) {
     const identityToken = typeof body?.identityToken === "string" ? body.identityToken : "";
     const authorizationCode = typeof body?.authorizationCode === "string" ? body.authorizationCode : "";
@@ -517,7 +566,7 @@ async function createAppleSession(body, request, env) {
     }, request, env, { ...body, platform: "ios" });
 }
 
-async function verifyAppleIdentityToken(token, nonce, env) {
+async function verifyAppleIdentityToken(token, nonce, env, audienceOverride = "") {
     const parts = token.split(".");
     if (parts.length !== 3) throw new Error("Malformed Apple identity token");
     const header = JSON.parse(new TextDecoder().decode(base64UrlToBytes(parts[0])));
@@ -540,7 +589,7 @@ async function verifyAppleIdentityToken(token, nonce, env) {
     if (!validSignature) throw new Error("Invalid Apple token signature");
 
     const now = Math.floor(Date.now() / 1000);
-    const expectedAudience = env.APPLE_CLIENT_ID || "com.leveluphypertrophy.app";
+    const expectedAudience = audienceOverride || env.APPLE_CLIENT_ID || "com.leveluphypertrophy.app";
     const audiences = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
     if (claims.iss !== APPLE_TOKEN_ISSUER || !audiences.includes(expectedAudience) || Number(claims.exp) <= now || Number(claims.iat) > now + 60 || !claims.sub) {
         throw new Error("Apple token claims are not valid");
@@ -560,9 +609,9 @@ async function appleVerificationKeys() {
     return keys;
 }
 
-async function exchangeAppleAuthorizationCode(authorizationCode, env) {
-    const clientId = env.APPLE_CLIENT_ID || "com.leveluphypertrophy.app";
-    const clientSecret = env.APPLE_CLIENT_SECRET || await createAppleClientSecret(env, clientId);
+async function exchangeAppleAuthorizationCode(authorizationCode, env, clientOverride = "", redirectURI = "") {
+    const clientId = clientOverride || env.APPLE_CLIENT_ID || "com.leveluphypertrophy.app";
+    const clientSecret = clientOverride ? await createAppleClientSecret(env, clientId) : env.APPLE_CLIENT_SECRET || await createAppleClientSecret(env, clientId);
     const response = await fetch("https://appleid.apple.com/auth/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -570,14 +619,15 @@ async function exchangeAppleAuthorizationCode(authorizationCode, env) {
             client_id: clientId,
             client_secret: clientSecret,
             code: authorizationCode,
-            grant_type: "authorization_code"
+            grant_type: "authorization_code",
+            ...(redirectURI ? { redirect_uri: redirectURI } : {})
         })
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || typeof payload?.refresh_token !== "string") {
         throw new Error(payload?.error || "Apple did not return a refresh token");
     }
-    return payload.refresh_token;
+    return clientOverride ? payload : payload.refresh_token;
 }
 
 async function revokeStoredAppleCredential(userId, env) {
