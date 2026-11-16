@@ -39,6 +39,31 @@ function showClientDetail(){
  if(detail)detail.hidden=false;
  switchTab("overview");
 }
+function openInviteForm(){
+ const form=$("cf-invite-form");if(!form)return;
+ form.hidden=false;form.querySelector('[name="firstName"]')?.focus();
+}
+function closeInviteForm(){
+ const form=$("cf-invite-form");if(!form)return;form.hidden=true;
+ const message=$("cf-invite-status");if(message)message.textContent="";
+}
+async function submitInvite(ev){
+ ev.preventDefault();const form=$("cf-invite-form"),message=$("cf-invite-status");
+ if(!form||!message)return;
+ const firstName=form.querySelector('[name="firstName"]')?.value.trim()||"";
+ const lastName=form.querySelector('[name="lastName"]')?.value.trim()||"";
+ const email=form.querySelector('[name="email"]')?.value.trim()||"";
+ if(!firstName||!lastName||!email){message.textContent="Enter the client's name and email address.";return}
+ if(!confirm("Send a Level Up Coach invitation to "+email+"?"))return;
+ const submit=form.querySelector('[type="submit"]');if(submit)submit.disabled=true;
+ message.textContent="Sending invitation through Level Up Cloud…";
+ try{
+  await accountApi("invite",{firstName,lastName,email,coachingType:"online"});
+  message.textContent="Invitation request accepted for "+email+". The client must accept the link before appearing as connected.";
+  form.reset();
+ }catch(e){message.textContent="Invitation not sent: "+e.message}
+ finally{if(submit)submit.disabled=false}
+}
 function renderClientDirectory(){
  const host=$("cf-directory-rows");if(!host)return;host.replaceChildren();
  const term=($("cf-directory-search")?.value||"").trim().toLowerCase();
@@ -49,7 +74,7 @@ function renderClientDirectory(){
   const item=el("button",host,{type:"button",className:"cf-directory-row"});
   const avatar=el("span",item,{className:"cf-directory-avatar",text:c.name?.trim()?.slice(0,1)?.toUpperCase()||"?"});
   const identification=el("span",item,{className:"cf-directory-identification"});el("strong",identification,{text:c.isSelf?"My Account — "+c.name:c.name});
-  el("small",identification,{text:c.email||"Connected Level Up athlete"});
+  el("small",identification,{text:c.email||"Account ID · "+String(c.id).slice(-12)});
   el("span",item,{className:"cf-directory-status",text:"Connected"});
   el("span",item,{className:"cf-directory-open",text:"View profile ›"});
   item.onclick=async()=>{showClientDetail();await choose(c.id)};
@@ -60,7 +85,8 @@ function renderSidebar(){const area=$("cf-client-list");if(!area)return;area.rep
  const search=($("cf-client-search")?.value||"").trim().toLowerCase();
  for(const c of clients.filter(x=>!search||(x.name+" "+(x.email||"")).toLowerCase().includes(search))){
   const button=btn(area,(c.isSelf?"● ":"")+c.name,()=>{showClientDetail();void choose(c.id)},"cf-client-item"+(c.id===clientId?" current":""));
-  button.title=c.email||c.name;
+  button.title=c.email||String(c.id);
+  el("small",button,{text:c.email||"ID · "+String(c.id).slice(-12)});
  }
  if(!area.childElementCount)note(area,clients.length?"No matching clients.":"No connected athletes.");
 }
@@ -223,11 +249,25 @@ function mount(){const host=$("clients");if(!host||$("coach-functional-profile")
  search.oninput=renderSidebar;
  el("div",sidebar,{id:"cf-client-list",className:"cf-client-list"});
  btn(sidebar,"Refresh clients",roster,"subtle");
+ btn(sidebar,"+ Invite Client",()=>{showClientList();openInviteForm()},"cf-primary");
  const main=el("main",structure,{className:"cf-client-main"});
  const directory=el("section",main,{id:"cf-directory"});
  const directoryHead=el("div",directory,{className:"cf-directory-head"});const dirTitle=el("div",directoryHead);
  el("h2",dirTitle,{text:"Clients"});el("p",dirTitle,{className:"cf-muted",text:"Select a connected client to view their overview, training calendar, progress and notes."});
- btn(directoryHead,"Refresh clients",roster,"subtle");
+ const directoryActions=el("div",directoryHead,{className:"cf-directory-actions"});
+ btn(directoryActions,"Refresh clients",roster,"subtle");
+ btn(directoryActions,"+ Invite Client",openInviteForm,"cf-primary");
+ const inviteForm=el("form",directory,{id:"cf-invite-form",className:"cf-invite-form"});inviteForm.hidden=true;
+ const inviteHeader=el("div",inviteForm,{className:"cf-between"});
+ el("strong",inviteHeader,{text:"Invite a new athlete"});
+ btn(inviteHeader,"Close",closeInviteForm,"subtle");
+ for(const [key,label,type]of [["firstName","First name","text"],["lastName","Last name","text"],["email","Email address","email"]]){
+  const f=field(inviteForm,label,"input",{name:key,type,required:"required",autocomplete:key==="email"?"email":key==="firstName"?"given-name":"family-name",maxlength:key==="email"?"254":"80"});
+ }
+ el("p",inviteForm,{className:"cf-muted",text:"Invitees join through the existing secure Level Up invitation and consent flow. No separate coach or staff accounts are created."});
+ const inviteStatus=el("p",inviteForm,{id:"cf-invite-status",className:"cf-muted",role:"status","aria-live":"polite"});
+ el("button",inviteForm,{type:"submit",className:"cf-button cf-primary",text:"Send Invitation"});
+ inviteForm.onsubmit=submitInvite;
  const searchRow=el("div",directory,{className:"cf-directory-search-row"});const dirSearch=el("input",searchRow,{id:"cf-directory-search",type:"search",placeholder:"Search by client name or email…","aria-label":"Search clients"});
  dirSearch.oninput=renderClientDirectory;el("span",searchRow,{id:"cf-directory-count",className:"cf-muted",text:"Loading client roster…"});
  el("div",directory,{id:"cf-directory-rows",className:"cf-directory-rows"});
