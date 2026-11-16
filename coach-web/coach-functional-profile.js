@@ -9,6 +9,11 @@ const arr=x=>Array.isArray(x)?x:[], today=()=>new Date().toISOString().slice(0,1
 let clients=[],clientId=null,profile=null,assignments=[],editor=null,exerciseList=[],catalogue=new Map(),section="overview",clientView="list",trainingMode="editor",analytics=null,muscleMaps=null,metricUI=null,selectedMetric=null,metricViewMode="graph",calendar=null,calendarDraft=null,calendarLoadError=null,week=0,viewWeeks=2,loadSequence=0,busy=false;
 const person=()=>clients.find(x=>x.id===clientId)||null;
 const active=()=>assignments.filter(x=>x.status==="published");
+function metricProfile(){
+ const stepGoal=active().find(x=>Number(x.goals?.stepGoal)>0)?.goals?.stepGoal;
+ if(!profile||!stepGoal||Number(profile.dailyMetrics?.steps?.goal)>0)return profile;
+ return{...profile,dailyMetrics:{...(profile.dailyMetrics||{}),steps:{...(profile.dailyMetrics?.steps||{}),history:profile.dailyMetrics?.steps?.history||[],goal:Number(stepGoal)}}};
+}
 const panel=(parent,title,description)=>{const wrapper=el("section",parent,{className:"cf-card"}),h=el("header",wrapper);el("strong",h,{text:title});if(description)el("small",h,{text:description});return el("div",wrapper,{className:"cf-body"})};
 const info=(parent,label,value)=>{const line=el("div",parent,{className:"cf-info"});el("span",line,{text:label});el("b",line,{text:value==null?"—":String(value)})};
 const note=(parent,s)=>el("p",parent,{className:"cf-muted",text:s});
@@ -75,7 +80,7 @@ async function refresh(){const id=clientId,seq=++loadSequence;status("Loading pu
 function renderOverview(){
  const root=$("cf-view-overview");if(!root||!person())return;
  root.replaceChildren();
- if(metricUI)metricUI.renderCoachMetricOverview(root,profile,metricId=>{
+ if(metricUI)metricUI.renderCoachMetricOverview(root,metricProfile(),metricId=>{
   selectedMetric=metricId;metricViewMode="graph";switchTab("progress");renderProgress();
  });
  const grid=el("div",root,{className:"cf-summary-grid"});
@@ -127,7 +132,7 @@ function renderOverview(){
 function renderProgress(){
  const root=$("cf-view-progress");if(!root)return;root.replaceChildren();
  if(selectedMetric&&metricUI){
-   metricUI.renderCoachMetricDetail(root,profile,selectedMetric,()=>{
+   metricUI.renderCoachMetricDetail(root,metricProfile(),selectedMetric,()=>{
      selectedMetric=null;metricViewMode="graph";renderProgress();
    },metricViewMode);
    return;
