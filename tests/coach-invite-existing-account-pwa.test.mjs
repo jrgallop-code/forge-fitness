@@ -37,7 +37,7 @@ test("Valid invitation possession + signed-in relay account + reviewed mismatch 
  assert.equal(r.body.accepted,true);
  assert.equal(r.writes.length,2);
  assert.equal(r.writes[0].params[1],relay.id,"Use existing account ID, not contact email");
- assert.equal(r.writes[1].params[2],relay.id);
+ assert.equal(r.writes[1].params[1],relay.id);
 });
 test("Existing account route does not bypass expired, revoked or consumed invitation",async()=>{
  const payload={...approved,acceptVia:"existing_account",confirmContactEmailMismatch:true,confirmAccountId:relay.id};
