@@ -1,5 +1,6 @@
 import { instagramAdmin, instagramWebhook, instagramCallback } from './instagram/automation.js';
 import { coachAssignmentRoute } from "./coach-assignments.js";
+import { coachCalendarRoute } from "./coach-calendar.js";
 import { coachClientDataRoute } from "./coach-client-data.js";
 import { coachDraftRoute } from "./coach-client-drafts.js";
 import { coachInviteRoute } from "./coach-invitations.js";
@@ -138,6 +139,9 @@ async function handleRequest(request, env, ctx) {
         if (!isAdminUser(user, env)) return json({error:'Admin access required.'},403,request,env);
         const response = await instagramAdmin(request,env,readJson);
         return json(response.data,response.status,request,env);
+    }
+    if (/^\/v1\/coach\/assignments\/[0-9a-f-]{36}\/calendar$/i.test(url.pathname) || url.pathname === "/v1/client/coach-calendars") {
+        return coachCalendarRoute({request,env,user,url});
     }
     if (url.pathname === "/v1/coach/clients" || url.pathname === "/v1/coach/assignments" || url.pathname.startsWith("/v1/coach/assignments/") || url.pathname === "/v1/client/coach-assignments") {
         return coachAssignmentRoute({request, env, user, url});
