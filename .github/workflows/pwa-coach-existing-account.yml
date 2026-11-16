@@ -1,0 +1,26 @@
+name: PWA coach invitation - existing account
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'cloud/src/coach-invitations.js'
+      - 'js/more/coach-invite-pwa.js'
+      - 'js/more/more-ui-v2.js'
+      - 'js/core/router.js'
+      - 'tests/coach-invite-existing-account-pwa.test.mjs'
+      - '.github/workflows/pwa-coach-existing-account.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cloud/src/coach-invitations.js
+      - run: node --check js/more/coach-invite-pwa.js
+      - run: node --check js/more/more-ui-v2.js
+      - run: node --check js/core/router.js
+      - run: node --test tests/coach-required-consent.test.mjs tests/coach-invite-existing-account-pwa.test.mjs
