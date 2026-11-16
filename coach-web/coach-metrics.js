@@ -38,7 +38,15 @@ function buildSvg(host,points,metric,{goal=null,projected=false,small=false}={})
  const add=(tag,attributes,content)=>{const n=document.createElementNS(svg.namespaceURI,tag);for(const[k,v]of Object.entries(attributes))n.setAttribute(k,String(v));if(content!==undefined)n.textContent=content;svg.append(n);return n};
  if(!small){for(let i=0;i<5;i++){const y=pad.t+i*(h-pad.t-pad.b)/4;add("line",{x1:pad.l,y1:y,x2:w-pad.r,y2:y,stroke:"#e2eaf3","stroke-width":1});add("text",{x:pad.l-8,y:y+4,"text-anchor":"end","font-size":11,fill:"#7990a6"},fmt(max-i*range/4,metric.id==="weight"?1:0))}}
  if(goal!==null){const y=py(goal);add("line",{x1:pad.l,y1:y,x2:w-pad.r,y2:y,stroke:"#d98f32","stroke-dasharray":"5 4","stroke-width":1.5});if(!small)add("text",{x:w-pad.r,y:y-5,"text-anchor":"end","font-size":11,fill:"#b77e2d"},"Goal "+fmt(goal,0))}
- if(projected){const predicted=points.filter(x=>toNum(x.projected)!==null);if(predicted.length>1)add("path",{d:predicted.map((x,i)=>(i?"L":"M")+px(x)+","+py(x.projected)).join(" "),fill:"none",stroke:"#e09b44","stroke-width":2,"stroke-dasharray":"6 4"})}
+ if(projected){
+  const predicted=points.filter(x=>toNum(x.projected)!==null);
+  if(predicted.length>1)add("path",{d:predicted.map((x,i)=>(i?"L":"M")+px(x)+","+py(x.projected)).join(" "),fill:"none",stroke:"#e09b44","stroke-width":2,"stroke-dasharray":"6 4"});
+  if(predicted.length===1){
+   const item=predicted[0];
+   add("line",{x1:px(item),y1:py(item.value),x2:px(item),y2:py(item.projected),stroke:"#e09b44","stroke-dasharray":"4 3","stroke-width":2});
+   add("circle",{cx:px(item),cy:py(item.projected),r:small?3:6,fill:"#e09b44"});
+  }
+}
  if(metric.id==="steps"||metric.id==="sleep"||metric.id==="calories"){
   const width=Math.max(2,Math.min(small?11:32,(w-pad.l-pad.r)/Math.max(1,points.length)*.7));
   for(const x of points)add("rect",{x:px(x)-width/2,y:py(x.value),width,height:Math.max(1,h-pad.b-py(x.value)),rx:small?1:3,fill:metric.tone,opacity:.88});
