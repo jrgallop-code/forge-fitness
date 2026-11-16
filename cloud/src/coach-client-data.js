@@ -18,6 +18,9 @@ function profileSummary(data){
  const p=validObject(data.level_up_nutrition_profile)?data.level_up_nutrition_profile:{};
  const weighIns=safeArray(data.forge_weight_entries).filter(x=>dateText(x?.date)&&positive(x?.weight)!==null).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
  const last=weighIns.at(-1);
+ const nutritionPhases=safeArray(data.level_up_nutrition_phases);
+ const activePhase=[...nutritionPhases].reverse().find(x=>dateText(x?.startDate)&&!x?.endDate);
+ const currentPhase=activePhase?{startDate:activePhase.startDate,endDate:null}:null;
  const heightCm=positive(p.heightCm)??(positive(p.heightFeet)!==null?((Number(p.heightFeet)*12)+(num(p.heightInches)||0))*2.54:null);
  const weightLb=positive(last?.weight)??positive(p.weightLb)??(positive(p.weightKg)!==null?Number(p.weightKg)/0.45359237:null);
  const snapshots=validObject(data.level_up_weekly_tdee_estimate_v1)?data.level_up_weekly_tdee_estimate_v1:{};
@@ -37,7 +40,7 @@ function profileSummary(data){
  const rate=num(est.weightRateLbPerWeek);
  return{
   profile:{age:num(p.age),sex:["male","female"].includes(p.sex)?p.sex:null,heightCm:heightCm?Math.round(heightCm*10)/10:null,weightLb:weightLb?Math.round(weightLb*10)/10:null,activity:p.activity||null},
-  weight:{latest:positive(last?.weight),latestDate:dateText(last?.date),weighIns:weighIns.length,history:weighIns.slice(-730).map(x=>({date:x.date,weight:Number(x.weight)}))},
+  weight:{latest:positive(last?.weight),latestDate:dateText(last?.date),weighIns:weighIns.length,history:weighIns.slice(-730).map(x=>({date:x.date,weight:Number(x.weight)})),currentPhase},
   expenditure:{calories:tdee?Math.round(tdee):null,source:tdee?(positive(est.liveMaintenanceCalories)?"live":positive(est.maintenanceCalories)?"saved":"history"):null,weightRateLbPerWeek:rate},
   nutrition:{currentTarget:positive(plan.currentCalories)??positive(plan.calculatedCalories),macroTargets:validObject(macros.manualMacros)?{protein:num(macros.manualMacros.protein),carbs:num(macros.manualMacros.carbs),fat:num(macros.manualMacros.fat)}:null,loggedDays:calories.length,averageLoggedCalories:calories.length?round(calories.reduce((s,x)=>s+x.calories,0)/calories.length):null,latestCompletedCalorieDay:calories.filter(x=>x.complete).at(-1)||null,latestCalorieDay:calories.at(-1)||null,calorieHistory:calories}
  };
