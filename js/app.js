@@ -1,5 +1,5 @@
 import "./core/appearance-theme.js?v=appearance-themes-3";
-import { navigate } from "./core/router.js?v=progress-insight-rate-1";
+import { navigate } from "./core/router.js?v=pwa-coach-link-1";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=history-editor-route-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=equipment-profiles-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
@@ -37,6 +37,10 @@ document.addEventListener("levelup:navigate",event=>{
 });
 if(content)new MutationObserver(()=>scheduleIconDecoration(()=>decorateAppIcons(content))).observe(content,{childList:true,subtree:true});
 navigate("home");
+if(!window.Capacitor?.isNativePlatform?.() && /^[a-f0-9]{64}$/i.test(new URLSearchParams(location.search).get("invite")||"")){
+    navigate("more");
+    document.querySelector('[data-more-page="coach-invite"]')?.click();
+}
 decorateAppIcons(content||document);
 
 if("serviceWorker" in navigator && !window.Capacitor?.isNativePlatform?.()){

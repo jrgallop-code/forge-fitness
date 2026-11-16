@@ -7,6 +7,7 @@ import { initializeGoogleDriveSync } from "../core/google-drive-sync-v2.js?v=vis
 import { initializeDataSpreadsheetExport } from "../core/data-spreadsheet-export.js?v=full-data-export-1";
 import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-medical-sources-1";
 import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.js?v=coach-assignment-inbox-2";
+import { renderCoachInvitePwa, initializeCoachInvitePwa } from "./coach-invite-pwa.js?v=pwa-coach-existing-account-1";
 import { openWhatsNew } from "../dashboard/whats-new.js?v=ios-launch-1";
 import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=more-units-miles-1";
 import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-display-name-1";
@@ -46,6 +47,7 @@ export function renderMore() {
     </div>
     <div class="more-menu-group" data-more-group="account"><h3>Account &amp; app</h3>
     <button class="more-menu-card" type="button" data-more-page="account-cloud"><span class="more-menu-icon">${ICONS.account}</span><span><strong>Account & Cloud</strong><small>Sign in for private beta cloud backup and device transfer.</small></span></button>
+    ${window.Capacitor?.getPlatform?.() === "ios" ? "" : `<button class="more-menu-card" type="button" data-more-page="coach-invite"><span class="more-menu-icon">${ICONS.account}</span><span><strong>Level Up Coach</strong><small>Accept your coach invitation using your existing signed-in account.</small></span></button>`}
     ${window.Capacitor?.getPlatform?.() === "ios" ? "" : `<button class="more-menu-card" type="button" data-more-page="ios-transfer"><span class="more-menu-icon">${ICONS.iphone}</span><span><strong>iPhone app &amp; transfer</strong><small>Get the iOS app and move your web data safely.</small></span></button>`}
     <button class="more-menu-card" type="button" data-more-page="appearance"><span class="more-menu-icon">${ICONS.appearance}</span><span><strong>Appearance</strong><small>Choose from light, dark and system-aware Level Up themes.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="rest-game"><span class="more-menu-icon">${ICONS.game}</span><span><strong>Rest Timer Games</strong><small>Show or hide Protein Run and Gym Chopper.</small></span></button>
@@ -179,6 +181,15 @@ export function initializeMore() {
             content.innerHTML = renderDynamicWarmupSettings();
             initializeDynamicWarmupSettings({ onBack: showMore });
             window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+        }
+        if (page === "coach-invite") {
+            const content=document.getElementById("content");
+            if(!content)return;
+            const showMore=()=>{content.innerHTML=renderMore();initializeMore();window.scrollTo({top:0,behavior:"smooth"})};
+            content.innerHTML=renderCoachInvitePwa();
+            initializeCoachInvitePwa({onBack:showMore});
+            window.scrollTo({top:0,behavior:"smooth"});
             return;
         }
         if (page === "account-cloud") {

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "weekly-checkin-calendar-20261116";
+const CACHE_VERSION = "pwa-coach-existing-account-20261116";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
