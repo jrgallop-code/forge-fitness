@@ -945,7 +945,7 @@ function ensureExerciseOverflow(card) {
         <span>Reorder Exercises</span><small>Press, hold, and arrange this workout day</small>
       </button>
       <button type="button" data-session-overflow-action="remove" hidden>
-        <span>Remove Exercise</span><small>Delete it from this saved workout</small>
+        <span>Remove Exercise</span><small>Remove from this session only</small>
       </button>
     `;
     menu.appendChild(actions);
@@ -984,7 +984,11 @@ function ensureExerciseOverflow(card) {
   const reorderAction = actions.querySelector('[data-session-overflow-action="reorder"]');
   if (reorderAction) reorderAction.hidden = editingSavedWorkout || (getSessionDay(readActiveWorkout())?.exercises?.length || 0) < 2;
   const removeAction = actions.querySelector('[data-session-overflow-action="remove"]');
-  if (removeAction) removeAction.hidden = !editingSavedWorkout;
+  if (removeAction) {
+    removeAction.hidden = !editingSavedWorkout && !readActiveWorkout();
+    const detail = removeAction.querySelector('small');
+    if (detail) detail.textContent = editingSavedWorkout ? 'Remove from this saved workout' : 'Remove from this session only';
+  }
 
   trigger.textContent = '•••';
   trigger.setAttribute('aria-label', 'Open exercise actions');
@@ -1109,7 +1113,11 @@ document.addEventListener('click', event => {
     }
     if (action === 'remove') {
       const logger = card?.closest('#workout-session-logger');
-      logger?.__levelUpEditApi?.removeExercise(Number(card?.dataset.exerciseIndex));
+      if (logger?.dataset.editingSessionId) {
+        logger.__levelUpEditApi?.removeExercise(Number(card?.dataset.exerciseIndex));
+      } else if (card) {
+        removeExerciseForToday(card);
+      }
       return;
     }
     const selector = action === 'superset'
