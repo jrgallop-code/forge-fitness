@@ -12,6 +12,50 @@ async function body(request){try{return await request.json()}catch{return null}}
 function inviteSummary(row){return {id:row.id,firstName:row.first_name,lastName:row.last_name,email:row.email,coachingType:row.coaching_type,status:row.status,expiresAt:row.expires_at,acceptedAt:row.accepted_at,createdAt:row.created_at,emailedAt:row.emailed_at,consentVersion:row.consent_version||null,consentScope:row.consent_scope||null}}
 export async function coachInviteRoute({request,env,user,url}){
  const path=url.pathname,method=request.method,now=new Date().toISOString(),coach=canCoach(user,env);
+ if(path==="/v1/coach/roster"&&method==="GET"){
+  if(!coach)return J({error:"Coach permission required"},403);
+  // Single Everfit-style roster. Pending invitations are people on the roster,
+  // not permissioned clients. Never use an invitation ID as an athlete user ID.
+  const [links,inviteRows]=await Promise.all([
+   env.DB.prepare("SELECT u.id,u.display_name,u.email,u.avatar_url,l.accepted_at FROM coach_training_links l JOIN users u ON u.id=l.client_user_id WHERE l.coach_user_id=? AND l.training_permission=1 AND l.revoked_at IS NULL ORDER BY LOWER(COALESCE(NULLIF(u.display_name,''),u.email)) LIMIT 250").bind(user.id).all(),
+   env.DB.prepare("SELECT id,first_name,last_name,email,coaching_type,status,expires_at,accepted_user_id,created_at,emailed_at FROM coach_client_invites WHERE coach_user_id=? ORDER BY created_at DESC LIMIT 500").bind(user.id).all()
+  ]);
+  const joined=(links.results||[]).filter(row=>row.id!==user.id);
+  const invitations=inviteRows.results||[];
+  const latestByUser=new Map();
+  for(const inv of invitations)if(inv.accepted_user_id&&!latestByUser.has(inv.accepted_user_id))latestByUser.set(inv.accepted_user_id,inv);
+  const records=joined.map(row=>{
+   const inv=latestByUser.get(row.id);
+   return {id:"client:"+row.id,clientId:row.id,invitationId:inv?.id||null,
+    name:str(row.display_name||[inv?.first_name,inv?.last_name].filter(Boolean).join(" ")||row.email||"Client",160),
+    email:row.email||null,contactEmail:inv?.email||null,
+    coachingType:inv?.coaching_type||"online",status:"Connected",linked:true,
+    canRevoke:false,connectedAt:row.accepted_at||null,invitedAt:inv?.emailed_at||null};
+  });
+  const connectedIds=new Set(joined.map(row=>row.id));
+  const connectedEmails=new Set(joined.map(row=>String(row.email||"").toLowerCase()));
+  const seen=new Set();
+  for(const inv of invitations){
+   if(inv.accepted_user_id&&connectedIds.has(inv.accepted_user_id))continue;
+   const email=String(inv.email||"").trim().toLowerCase();
+   if(connectedEmails.has(email)||seen.has(email))continue;
+   seen.add(email);
+   const pending=inv.status==="pending"&&inv.expires_at>now;
+   records.push({id:"invitation:"+inv.id,clientId:null,invitationId:inv.id,
+    name:str([inv.first_name,inv.last_name].filter(Boolean).join(" ")||email||"Client",160),
+    email:email||null,contactEmail:email||null,coachingType:inv.coaching_type||"online",
+    status:pending?"Pending":"Offline",linked:false,canRevoke:pending,
+    invitationStatus:pending?"pending":inv.status==="pending"?"expired":inv.status,
+    invitedAt:inv.emailed_at||inv.created_at||null,expiresAt:inv.expires_at||null});
+  }
+  const order={Pending:0,Connected:1,Offline:2};
+  records.sort((a,b)=>(order[a.status]-order[b.status])||a.name.localeCompare(b.name));
+  return J({clients:records,counts:{
+   all:records.length,connected:records.filter(x=>x.status==="Connected").length,
+   pending:records.filter(x=>x.status==="Pending").length,
+   offline:records.filter(x=>x.status==="Offline").length
+  }});
+ }
  if(path==="/v1/coach/invitations"&&method==="GET"){
   if(!coach)return J({error:"Coach permission required"},403);
   const rows=await env.DB.prepare("SELECT * FROM coach_client_invites WHERE coach_user_id=? ORDER BY created_at DESC LIMIT 200").bind(user.id).all();
