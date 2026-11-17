@@ -1,0 +1,27 @@
+name: Coach unified roster and invite revocation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'cloud/src/coach-invitations.js'
+      - 'cloud/src/index.js'
+      - 'coach-web/coach-ui-polish.js'
+      - 'coach-web/api/coach-roster.js'
+      - 'tests/coach-unified-roster-status.test.mjs'
+      - 'tests/coach-client-roster-ui.test.mjs'
+      - '.github/workflows/coach-unified-roster.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cloud/src/coach-invitations.js
+      - run: node --check cloud/src/index.js
+      - run: node --check coach-web/coach-ui-polish.js
+      - run: node --check coach-web/api/coach-roster.js
+      - run: node --test tests/coach-unified-roster-status.test.mjs tests/coach-client-roster-ui.test.mjs tests/coach-required-consent.test.mjs
