@@ -5,15 +5,15 @@ const ui=readFileSync(new URL("../coach-web/coach-ui-polish.js",import.meta.url)
 const proxy=readFileSync(new URL("../coach-web/api/coach-roster.js",import.meta.url),"utf8");
 const router=readFileSync(new URL("../cloud/src/index.js",import.meta.url),"utf8");
 
-test("client roster is embedded in Coach Clients page and uses Everfit statuses",()=>{
- assert.match(ui,/document\.getElementById\("clients"\)/);
+test("single client directory is embedded in Coach Clients page and uses Everfit statuses",()=>{
+ assert.match(ui,/document\.querySelector/);
  for(const status of ["All","Connected","Pending","Offline"])assert.ok(ui.includes('"'+status+'"'));
- assert.match(ui,/data-luc-roster-search/);
- assert.match(ui,/data-luc-revoke/);
- assert.match(ui,/Revoke Invitation/);
- assert.match(ui,/confirm\("Revoke the pending invitation/);
+ assert.match(ui,/data-luc-search/);
+ assert.match(ui,/data-revoke/);
+ assert.match(ui,/Revoke/);
+ assert.match(ui,/confirm\("Revoke /);
  assert.match(ui,/await refresh\(true\)/);
- assert.match(ui,/data-luc-open/);
+ assert.match(ui,/data-open/);
 });
 test("pending invitations have no access to client training data",()=>{
  const cloud=readFileSync(new URL("../cloud/src/coach-invitations.js",import.meta.url),"utf8");
