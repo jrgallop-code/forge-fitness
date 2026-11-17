@@ -334,7 +334,7 @@
  }
  const style=document.createElement("style");
  style.id="luc-everfit-directory-styles";
- style.textContent=String.raw\`
+ style.textContent=`
  #clients.luc-single-client-view{display:block}
  #clients.luc-single-client-view .cf-client-sidebar{display:none!important}
  #clients .luc-single-directory>:not(#luc-everfit-directory):not(#cf-detail){display:none!important}
@@ -369,7 +369,7 @@
  .luc-directory-message{min-height:16px;font-size:12px;color:#237a49;margin:11px 0 0}
  .luc-directory-message.error{color:#af3447}
  @media(max-width:800px){#luc-everfit-directory{padding:16px 12px}.luc-filters input{margin-left:0;width:100%}.luc-heading-actions{width:100%}.luc-heading-actions button{flex:1}}
- \`;
+ `;
  document.head.append(style);
  const mo=new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;mount()})});
  mo.observe(document.documentElement,{subtree:true,childList:true});
