@@ -64,3 +64,5 @@ jobs:
 # Read-only refresh to verify newly configured Apple Services ID for Level Up coaching.
 
 # Read-only verification of merged Everfit-style roster, November 16 2026.
+
+# Audit Everfit single-client-directory release for PR 837; read-only.
