@@ -17,7 +17,7 @@ export async function coachInviteRoute({request,env,user,url}){
   // Single Everfit-style roster. Pending invitations are people on the roster,
   // not permissioned clients. Never use an invitation ID as an athlete user ID.
   const [links,inviteRows]=await Promise.all([
-   env.DB.prepare("SELECT u.id,u.display_name,u.email,u.avatar_url,l.accepted_at FROM coach_training_links l JOIN users u ON u.id=l.client_user_id WHERE l.coach_user_id=? AND l.training_permission=1 AND l.revoked_at IS NULL ORDER BY LOWER(COALESCE(NULLIF(u.display_name,''),u.email)) LIMIT 250").bind(user.id).all(),
+   env.DB.prepare("SELECT u.id,u.display_name,u.email,u.avatar_url,u.last_active_at,l.accepted_at FROM coach_training_links l JOIN users u ON u.id=l.client_user_id WHERE l.coach_user_id=? AND l.training_permission=1 AND l.revoked_at IS NULL ORDER BY LOWER(COALESCE(NULLIF(u.display_name,''),u.email)) LIMIT 250").bind(user.id).all(),
    env.DB.prepare("SELECT id,first_name,last_name,email,coaching_type,status,expires_at,accepted_user_id,created_at,emailed_at FROM coach_client_invites WHERE coach_user_id=? ORDER BY created_at DESC LIMIT 500").bind(user.id).all()
   ]);
   const joined=(links.results||[]).filter(row=>row.id!==user.id);
@@ -30,7 +30,7 @@ export async function coachInviteRoute({request,env,user,url}){
     name:str(row.display_name||[inv?.first_name,inv?.last_name].filter(Boolean).join(" ")||row.email||"Client",160),
     email:row.email||null,contactEmail:inv?.email||null,
     coachingType:inv?.coaching_type||"online",status:"Connected",linked:true,
-    canRevoke:false,connectedAt:row.accepted_at||null,invitedAt:inv?.emailed_at||null};
+    canRevoke:false,connectedAt:row.accepted_at||null,lastActiveAt:row.last_active_at||null,invitedAt:inv?.emailed_at||null};
   });
   const connectedIds=new Set(joined.map(row=>row.id));
   const connectedEmails=new Set(joined.map(row=>String(row.email||"").toLowerCase()));
