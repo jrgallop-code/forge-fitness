@@ -1,0 +1,22 @@
+name: Everfit-style single Clients directory
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'coach-web/coach-ui-polish.js'
+      - 'cloud/src/coach-invitations.js'
+      - 'tests/coach-everfit-single-directory.test.mjs'
+      - '.github/workflows/coach-everfit-single-directory.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check coach-web/coach-ui-polish.js
+      - run: node --check cloud/src/coach-invitations.js
+      - run: node --test tests/coach-everfit-single-directory.test.mjs tests/coach-unified-roster-status.test.mjs tests/coach-client-roster-ui.test.mjs
