@@ -46,6 +46,13 @@ jobs:
         run: |
           set -euo pipefail
           gh api "repos/$GH_REPO/actions/workflows/deploy-cloud-worker.yml/runs?branch=main&per_page=6" --jq '.workflow_runs[]|{id,status,conclusion,head_sha,created_at,html_url}'
+      - name: Verify unified coach roster is protected
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl -sS -o /tmp/coach-roster-auth.json -w "%{http_code}" "https://api.leveluphypertrophy.com/v1/coach/roster")
+          test "$status" = "401"
+          echo "Unified roster requires authentication (HTTP $status)."
       - name: Confirm public API is reachable and authentication-required
         shell: bash
         run: |
@@ -55,3 +62,5 @@ jobs:
           echo "Public API requires authentication (HTTP $code)."
 
 # Read-only refresh to verify newly configured Apple Services ID for Level Up coaching.
+
+# Read-only verification of merged Everfit-style roster, November 16 2026.
