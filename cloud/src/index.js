@@ -156,7 +156,7 @@ async function handleRequest(request, env, ctx) {
     if (url.pathname === "/v1/coach/clients" || url.pathname === "/v1/coach/assignments" || url.pathname.startsWith("/v1/coach/assignments/") || url.pathname === "/v1/client/coach-assignments") {
         return coachAssignmentRoute({request, env, user, url});
     }
-    if (url.pathname === "/v1/coach/invitations" || url.pathname.startsWith("/v1/coach/invitations/") || url.pathname === "/v1/coach/invitation/preview" || url.pathname === "/v1/client/coach-invitation/accept" || url.pathname === "/v1/client/coach-links" || url.pathname.startsWith("/v1/client/coach-links/")) {
+    if (url.pathname === "/v1/coach/roster" || url.pathname === "/v1/coach/invitations" || url.pathname.startsWith("/v1/coach/invitations/") || url.pathname === "/v1/coach/invitation/preview" || url.pathname === "/v1/client/coach-invitation/accept" || url.pathname === "/v1/client/coach-links" || url.pathname.startsWith("/v1/client/coach-links/")) {
         return coachInviteRoute({request,env,user,url});
     }
     if (/^\/v1\/coach\/clients\/[^/]+\/summary$/.test(url.pathname)) {

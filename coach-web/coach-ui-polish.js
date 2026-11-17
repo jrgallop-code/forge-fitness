@@ -1,6 +1,5 @@
-/* Everfit-inspired interaction polish for existing Level Up Coach.
- * CSS-only enhancements; never replaces, hides or re-mounts the dashboard.
- * Brand remains Level Up blue and all existing sections remain intact.
+/* Everfit-inspired styling and unified client-roster enhancement.
+ * Preserve all existing Coach dashboard features, athlete data and detail views.
  */
 (()=>{
  "use strict";
@@ -144,6 +143,152 @@
  @media(prefers-reduced-motion:reduce){
   #dashboard button,#clients button{transition:none!important;transform:none!important}
  }
+ `;
+ document.head.append(style);
+})();
+
+
+/* The roster supplements existing client detail views without creating client accounts
+   or exposing training data for invitations that have not been accepted. */
+(()=>{
+ "use strict";
+ if(window.__lucUnifiedRosterInstalled)return;
+ window.__lucUnifiedRosterInstalled=true;
+ let records=[],current="All",busy=false,lastRefresh=0,root=null,queued=false;
+ const esc=s=>String(s??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+ const api=async(action,data)=>{
+  const url="/api/coach-roster"+(action?"?action="+encodeURIComponent(action):"");
+  const res=await fetch(url,{method:data?"POST":"GET",credentials:"same-origin",
+   headers:{"Accept":"application/json",...(data?{"Content-Type":"application/json"}:{})},
+   ...(data?{body:JSON.stringify(data)}:{})});
+  const result=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(result.error||"Coach roster request failed");
+  return result;
+ };
+ const className=status=>status==="Connected"?"connected":status==="Pending"?"pending":"offline";
+ function renderList(){
+  if(!root)return;
+  const input=root.querySelector("[data-luc-roster-search]");
+  const query=String(input?.value||"").trim().toLowerCase();
+  const filtered=records.filter(x=>(current==="All"||x.status===current)&&
+   [x.name,x.email,x.contactEmail].some(s=>String(s||"").toLowerCase().includes(query)));
+  const table=root.querySelector("[data-luc-roster-table]");
+  if(!table)return;
+  if(!filtered.length){table.innerHTML='<p class="luc-roster-empty">No clients match this filter.</p>';return}
+  table.innerHTML='<div class="luc-roster-head"><span>Client</span><span>Status</span><span>Coaching</span><span>Actions</span></div>'+
+   filtered.map(x=>'<div class="luc-roster-item" data-luc-client="'+esc(x.id)+'">'+
+    '<div class="luc-roster-person"><strong>'+esc(x.name)+'</strong><small>'+esc(x.contactEmail||x.email||"")+'</small></div>'+
+    '<span><span class="luc-roster-state '+className(x.status)+'">'+esc(x.status)+'</span></span>'+
+    '<span class="luc-roster-type">'+esc((x.coachingType||"online").replace(/_/g," ").replace(/\b\w/g,s=>s.toUpperCase()))+'</span>'+
+    '<span class="luc-roster-actions">'+(x.canRevoke?
+     '<button type="button" class="luc-roster-revoke" data-luc-revoke="'+esc(x.invitationId)+'">Revoke Invitation</button>':
+     x.linked?'<button type="button" data-luc-open="'+esc(x.clientId)+'">Open Profile</button>':
+     '<span class="luc-roster-muted">Not connected</span>')+'</span></div>').join("");
+ }
+ function setCounts(){
+  if(!root)return;
+  for(const button of root.querySelectorAll("[data-luc-status]")){
+   const status=button.dataset.lucStatus;
+   const count=status==="All"?records.length:records.filter(x=>x.status===status).length;
+   button.textContent=status+" ("+count+")";
+   button.setAttribute("aria-pressed",String(status===current));
+  }
+ }
+ function message(value,error=false){
+  const el=root?.querySelector("[data-luc-message]");
+  if(el){el.textContent=value;el.classList.toggle("error",error)}
+ }
+ async function refresh(force=false){
+  if(!root||busy)return;
+  if(!force&&Date.now()-lastRefresh<12000)return;
+  busy=true;
+  try{
+   const result=await api("",null);
+   records=Array.isArray(result.clients)?result.clients:[];
+   lastRefresh=Date.now();
+   setCounts();renderList();message("");
+  }catch(e){message(e.message,true)}
+  finally{busy=false}
+ }
+ function openProfile(id){
+  const user=records.find(r=>r.clientId===id&&r.linked);
+  if(!user)return;
+  const original=[...document.querySelectorAll("#cf-directory button.cf-directory-row,#clients button.cf-directory-row")];
+  const found=original.find(b=>b.dataset?.clientId===id||b.dataset?.id===id)||
+   original.find(b=>b.textContent?.toLowerCase().includes(String(user.name||"").toLowerCase()));
+  if(found){found.click();document.querySelector("#cf-detail")?.scrollIntoView({block:"start",behavior:"smooth"})}
+  else message("This athlete is connected. Select their profile in the original client details below.");
+ }
+ async function revoke(id,button){
+  const target=records.find(x=>x.invitationId===id&&x.canRevoke);
+  if(!target)return;
+  if(!confirm("Revoke the pending invitation for "+target.name+"? Their invitation link will stop working. Their Level Up account and training data will not be deleted."))return;
+  button.disabled=true;
+  try{
+   const result=await api("revoke",{invitationId:id});
+   if(!result.ok)throw new Error("Invitation was already revoked or is no longer pending.");
+   await refresh(true);
+   message("Invitation revoked. "+target.name+" is now Offline.");
+  }catch(e){message(e.message,true);button.disabled=false}
+ }
+ function mount(){
+  const host=document.getElementById("clients");
+  if(!host||!host.isConnected)return;
+  if(root?.isConnected){void refresh();return}
+  const directory=host.querySelector("#cf-directory")||host;
+  root=document.createElement("section");
+  root.id="luc-unified-roster";
+  root.className="luc-unified-roster";
+  root.innerHTML='<div class="luc-roster-top"><div><h2>Clients</h2><p>Connected athletes and coaching invitations in one place</p></div>'+
+   '<input type="search" aria-label="Search clients" placeholder="Search clients" data-luc-roster-search></div>'+
+   '<div class="luc-roster-filters" aria-label="Filter clients by connection status">'+
+   ["All","Connected","Pending","Offline"].map(s=>'<button type="button" data-luc-status="'+s+'" aria-pressed="false">'+s+'</button>').join("")+'</div>'+
+   '<div data-luc-roster-table><p class="luc-roster-empty">Loading your client roster…</p></div>'+
+   '<p class="luc-roster-message" data-luc-message role="status" aria-live="polite"></p>';
+  directory.prepend(root);
+  root.addEventListener("input",event=>{if(event.target.matches("[data-luc-roster-search]"))renderList()});
+  root.addEventListener("click",event=>{
+   const filter=event.target.closest("[data-luc-status]");
+   if(filter){current=filter.dataset.lucStatus;setCounts();renderList();return}
+   const revokeBtn=event.target.closest("[data-luc-revoke]");
+   if(revokeBtn){void revoke(revokeBtn.dataset.lucRevoke,revokeBtn);return}
+   const open=event.target.closest("[data-luc-open]");
+   if(open)openProfile(open.dataset.lucOpen);
+  });
+  setCounts();void refresh(true);
+ }
+ const observer=new MutationObserver(()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;mount()})});
+ observer.observe(document.documentElement,{childList:true,subtree:true});
+ document.addEventListener("visibilitychange",()=>{if(!document.hidden)void refresh(true)});
+ window.addEventListener("focus",()=>void refresh(true));
+ window.addEventListener("levelup:coach-roster-refresh",()=>void refresh(true));
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",mount,{once:true});else mount();
+ const style=document.createElement("style");
+ style.textContent=`
+ #luc-unified-roster{background:white;border:1px solid #e1e8f1;border-radius:16px;padding:18px;margin:0 0 18px;box-shadow:0 3px 14px #223a670c}
+ .luc-roster-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+ .luc-roster-top h2{margin:0;font-size:21px;font-weight:800}
+ .luc-roster-top p{margin:3px 0;color:#6e839f;font-size:12px}
+ .luc-roster-top input{padding:10px 12px;border:1px solid #cbd6e7;border-radius:9px;min-width:190px}
+ .luc-roster-filters{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0}
+ .luc-roster-filters button{background:#f4f7fc;color:#345271;border:1px solid #e1e8f1;border-radius:30px;padding:7px 11px;font-weight:650}
+ .luc-roster-filters button[aria-pressed="true"]{background:#245ff1;color:white;border-color:#245ff1}
+ .luc-roster-head,.luc-roster-item{display:grid;grid-template-columns:minmax(150px,2fr) minmax(95px,.8fr) minmax(95px,.8fr) minmax(130px,1fr);gap:12px;align-items:center;padding:12px;border-bottom:1px solid #eaf0f7}
+ .luc-roster-head{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#7b8a9f;background:#f8fafd}
+ .luc-roster-item{min-height:65px}
+ .luc-roster-person strong,.luc-roster-person small{display:block}
+ .luc-roster-person small{font-size:12px;color:#7889a0;overflow-wrap:anywhere}
+ .luc-roster-state{display:inline-block;border-radius:30px;padding:4px 9px;font-size:12px;font-weight:750}
+ .luc-roster-state.connected{background:#e4f8eb;color:#237346}
+ .luc-roster-state.pending{background:#fff3d5;color:#946007}
+ .luc-roster-state.offline{background:#eff2f6;color:#66758a}
+ .luc-roster-type{color:#596c80;font-size:12px}
+ .luc-roster-actions button{border:1px solid #d8e4f3;border-radius:8px;padding:7px 10px;background:#f6faff;color:#2455a0;font-weight:700}
+ .luc-roster-actions button.luc-roster-revoke{background:#fff1f3;border-color:#ffccd4;color:#ab3447}
+ .luc-roster-actions button:disabled{opacity:.5;cursor:default}
+ .luc-roster-muted,.luc-roster-empty{color:#8090a4;font-size:12px}
+ .luc-roster-message{font-size:12px;color:#267349;min-height:18px}.luc-roster-message.error{color:#af3447}
+ @media(max-width:700px){.luc-roster-head{display:none}.luc-roster-item{grid-template-columns:1fr 1fr;gap:9px}.luc-roster-item>div:first-child{grid-column:1/-1}.luc-roster-top input{width:100%}}
  `;
  document.head.append(style);
 })();
