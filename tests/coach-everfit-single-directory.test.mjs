@@ -6,7 +6,8 @@ const roster=readFileSync(new URL("../cloud/src/coach-invitations.js",import.met
 test("one Everfit-inspired client list replaces duplicated original panels",()=>{
  assert.match(ui,/id="luc-everfit-directory"/);
  assert.match(ui,/All Clients/);
- assert.match(ui,/luc-single-directory>:not\(#luc-everfit-directory\)/);
+ assert.match(ui,/clientsSection\.prepend\(root\)/);
+ assert.match(ui,/\.luc-legacy-directory\{display:none!important\}/);
  assert.match(ui,/cf-client-sidebar\{display:none!important\}/);
  assert.doesNotMatch(ui,/id="luc-unified-roster"/);
  assert.match(ui,/data-luc-filter-status/);
