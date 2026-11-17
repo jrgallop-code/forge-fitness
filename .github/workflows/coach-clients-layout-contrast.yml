@@ -1,0 +1,20 @@
+name: Coach client layout and selected tab contrast
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'coach-web/coach-ui-polish.js'
+      - 'tests/coach-clients-layout-contrast.test.mjs'
+      - '.github/workflows/coach-clients-layout-contrast.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check coach-web/coach-ui-polish.js
+      - run: node --test tests/coach-clients-layout-contrast.test.mjs tests/coach-everfit-single-directory.test.mjs

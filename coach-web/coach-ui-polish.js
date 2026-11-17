@@ -251,6 +251,9 @@
   if(!x)return;
   const button=originalProfile(id,x.name);
   if(button){
+   const section=$("#clients");
+   section?.classList.add("luc-profile-open");
+   section?.classList.remove("luc-invite-open");
    button.click();
    const panel=$("#cf-detail");
    panel?.scrollIntoView({behavior:"smooth",block:"start"});
@@ -264,6 +267,8 @@
   if(invite)invite.click();
   const form=$("#clients .cf-invite-form");
   if(!form){message("Use Add Client to send another invitation.");return}
+  $("#clients")?.classList.add("luc-invite-open");
+  $("#clients")?.classList.remove("luc-profile-open");
   form.hidden=false;
   const fields=[...form.querySelectorAll("input")];
   const byName=name=>form.querySelector('input[name="'+name+'"]');
@@ -293,7 +298,6 @@
   if(!clientsSection||!clientsSection.isConnected)return;
   if(root?.isConnected){void refresh();return}
   const original=$("#cf-directory");
-  const host=original||clientsSection;
   root=document.createElement("section");
   root.id="luc-everfit-directory";
   root.innerHTML='<div class="luc-heading"><h2 data-luc-title>All Clients</h2>'+
@@ -306,9 +310,20 @@
    '<div class="luc-table-scroll"><table class="luc-table"><thead><tr><th>Client</th><th>Status</th><th>Category</th><th>Last activity</th><th>Invited</th><th>Actions</th></tr></thead>'+
    '<tbody data-luc-rows><tr><td colspan="6" class="luc-empty">Loading client directory…</td></tr></tbody></table></div>'+
    '<p role="status" aria-live="polite" class="luc-directory-message" data-luc-message></p>';
-  host.prepend(root);
-  if(original)original.classList.add("luc-single-directory");
+  clientsSection.prepend(root);
+  if(original)original.classList.add("luc-legacy-directory");
   clientsSection.classList.add("luc-single-client-view");
+  const detail=$("#cf-detail");
+  if(detail&&!detail.querySelector(".luc-back-clients")){
+   const back=document.createElement("button");
+   back.type="button";back.className="luc-back-clients";
+   back.textContent="← Back to all clients";
+   back.addEventListener("click",()=>{
+    clientsSection.classList.remove("luc-profile-open");
+    root.scrollIntoView({block:"start",behavior:"smooth"});
+   });
+   detail.prepend(back);
+  }
   root.addEventListener("input",e=>{if(e.target.matches("[data-luc-search]"))paint()});
   root.addEventListener("change",e=>{
    if(e.target.matches("[data-luc-filter-status]"))filter=e.target.value;
@@ -322,6 +337,8 @@
    if(target.matches("[data-luc-refresh]")){void refresh(true);return}
    if(target.matches("[data-luc-add]")){
     const original=[...clientsSection.querySelectorAll("button")].find(b=>b!==target&&/invite client/i.test(b.textContent||""));
+    clientsSection.classList.add("luc-invite-open");
+    clientsSection.classList.remove("luc-profile-open");
     if(original)original.click();
     clientsSection.querySelector(".cf-invite-form")?.scrollIntoView({block:"center",behavior:"smooth"});
     return;
@@ -335,9 +352,43 @@
  const style=document.createElement("style");
  style.id="luc-everfit-directory-styles";
  style.textContent=`
- #clients.luc-single-client-view{display:block}
+ #clients.luc-single-client-view{display:flex!important;flex-direction:column!important;align-items:stretch!important;min-width:0;width:100%}
  #clients.luc-single-client-view .cf-client-sidebar{display:none!important}
- #clients .luc-single-directory>:not(#luc-everfit-directory):not(#cf-detail){display:none!important}
+ #clients.luc-single-client-view > #luc-everfit-directory{order:0;width:100%;max-width:none;min-width:0}
+ #clients.luc-single-client-view #cf-directory{width:100%;max-width:none;min-width:0;grid-column:1/-1}
+ #clients.luc-single-client-view #cf-detail{width:100%!important;max-width:none!important;min-width:0!important;grid-column:1/-1;flex:1 1 auto;overflow:visible}
+ #clients.luc-single-client-view #cf-detail .cf-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));width:100%;min-width:0}
+ #clients.luc-single-client-view #cf-detail .cf-card,
+ #clients.luc-single-client-view #cf-detail .cf-metric-section,
+ #clients.luc-single-client-view #cf-detail .cf-highlight-tile{min-width:0;max-width:100%;overflow-wrap:anywhere}
+ #clients.luc-single-client-view #cf-detail .cf-tabs{display:flex;flex-wrap:wrap;width:100%;max-width:100%;gap:7px}
+ #clients.luc-single-client-view #cf-detail .cf-tabs button{white-space:normal}
+ #clients.luc-single-client-view:not(.luc-profile-open) #cf-detail{display:none!important}
+ #clients.luc-single-client-view .luc-legacy-directory{display:none!important}
+ #clients.luc-single-client-view.luc-invite-open .luc-legacy-directory{display:block!important}
+ #clients.luc-single-client-view.luc-invite-open .luc-legacy-directory > :not(.cf-invite-form){display:none!important}
+ #clients.luc-single-client-view.luc-invite-open .luc-legacy-directory .cf-invite-form{display:grid!important;width:100%;max-width:100%}
+ #clients.luc-single-client-view.luc-profile-open #cf-detail{display:block!important}
+ #clients.luc-single-client-view .luc-back-clients{background:#edf3fe;border:1px solid #cddcf5;color:#174886;border-radius:9px;padding:9px 16px;font-weight:750;margin:0 0 14px;cursor:pointer}
+ /* Selected controls must be legible on the pale-blue selected surface. */
+ #clients .cf-tabs button.active,
+ #clients .cf-tabs button[aria-selected="true"],
+ #clients .cf-detail-controls button.active,
+ #clients .cf-detail-controls button[aria-selected="true"],
+ #clients .cf-detail-title button.active,
+ #clients .cf-detail-title button[aria-selected="true"],
+ #clients .cf-client-sidebar button.active,
+ #clients .cf-client-sidebar button[aria-selected="true"]{
+  background:#e6efff!important;color:#173b72!important;border:1px solid #a9c5f4!important;
+  box-shadow:inset 0 -2px 0 #3978da!important
+ }
+ #clients .cf-tabs button.active *,
+ #clients .cf-tabs button[aria-selected="true"] *,
+ #clients .cf-detail-controls button.active *,
+ #clients .cf-detail-controls button[aria-selected="true"] *{color:#173b72!important}
+ #clients [role="tab"][aria-selected="true"]{background:#e6efff!important;color:#173b72!important;border-color:#a9c5f4!important}
+ #clients [role="tab"][aria-selected="true"] *{color:#173b72!important}
+ 
  #luc-everfit-directory{background:white;padding:25px 24px 18px;border:1px solid #e3eaf4;border-radius:13px;margin:0 0 24px;box-shadow:0 2px 10px #293e6108}
  .luc-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:19px;flex-wrap:wrap}
  .luc-heading h2{font-size:24px;line-height:1.3;margin:0;font-weight:790;color:#162c49}
