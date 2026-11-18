@@ -690,3 +690,5 @@ Use the shared weekly weight trend for the expenditure correction.
 2026-11-16: User-requested TestFlight build for fixed Wednesday weekly check-in calendar, eligibility and countdown; preserve all iOS branch features.
 
 Release request 2026-11-17: TestFlight build with session-only Remove Exercise in active workout menu.
+
+Release Arctic More icons: improve icon contrast and match Apple Health heart to outlined icon style.
