@@ -692,3 +692,5 @@ Use the shared weekly weight trend for the expenditure correction.
 Release request 2026-11-17: TestFlight build with session-only Remove Exercise in active workout menu.
 
 Release Arctic More icons: improve icon contrast and match Apple Health heart to outlined icon style.
+
+Release Arctic Apple Health source correction: native heart SVG drawn directly in js/health/apple-health.js; remove observer workaround; ensure outlined stroke.
