@@ -444,6 +444,16 @@ html[data-theme="arctic"] .more-menu-group .more-menu-icon svg.app-silhouette-ic
     fill: currentColor !important;
 }
 
+/* Health is a line icon, not a solid silhouette, in every appearance. */
+html[data-theme] .more-menu-group .more-menu-icon .apple-health-heart-icon,
+html[data-theme] .more-menu-group .more-menu-icon .apple-health-heart-icon path {
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+
 html[data-theme] .more-appearance-icon {
     fill: none !important;
     stroke: currentColor !important;
