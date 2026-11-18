@@ -434,6 +434,16 @@ html[data-theme] .more-menu-group .more-menu-icon .app-silhouette-icon {
     opacity: 1 !important;
 }
 
+/* Arctic More icons: readable blue on the existing pale-blue tiles. */
+html[data-theme="arctic"] .more-menu-group .more-menu-icon,
+html[data-theme="arctic"] .more-menu-group .more-menu-icon :is(svg, .app-silhouette-icon) {
+    color: #245996 !important;
+    opacity: 1 !important;
+}
+html[data-theme="arctic"] .more-menu-group .more-menu-icon svg.app-silhouette-icon {
+    fill: currentColor !important;
+}
+
 html[data-theme] .more-appearance-icon {
     fill: none !important;
     stroke: currentColor !important;
