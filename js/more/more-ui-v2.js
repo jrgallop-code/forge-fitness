@@ -73,8 +73,42 @@ export function renderMore() {
     </section>`;
 }
 
+/* Native Apple Health inserts its More row after the web menu has rendered.
+ * Normalize only the icon markup, leaving the native card and click handlers alone.
+ * Use the same 24px SVG silhouette system as the surrounding More entries. */
+const APPLE_HEALTH_OUTLINE_ICON = '<svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5 10.55 19.2C5.45 14.57 2 11.44 2 7.6 2 4.48 4.42 2 7.5 2c1.74 0 3.41.81 4.5 2.09A5.95 5.95 0 0 1 16.5 2C19.58 2 22 4.48 22 7.6c0 3.84-3.45 6.97-8.55 11.6L12 20.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+let appleHealthIconObserver;
+
+function normalizeAppleHealthMenuIcon(root) {
+    if (!root) return;
+    root.querySelectorAll(".more-menu-card").forEach(card => {
+        const label = card.querySelector("strong");
+        if (label?.textContent?.trim() !== "Apple Health") return;
+        const tile = card.querySelector(".more-menu-icon");
+        if (!tile || tile.dataset.appleHealthOutline === "true") return;
+        tile.innerHTML = APPLE_HEALTH_OUTLINE_ICON;
+        tile.dataset.appleHealthOutline = "true";
+    });
+}
+
+function observeAppleHealthMenuIcon() {
+    const content = document.getElementById("content");
+    appleHealthIconObserver?.disconnect();
+    if (!content) return;
+    normalizeAppleHealthMenuIcon(content);
+    appleHealthIconObserver = new MutationObserver(() => {
+        if (!content.querySelector(".more-menu-grid")) {
+            appleHealthIconObserver?.disconnect();
+            return;
+        }
+        normalizeAppleHealthMenuIcon(content);
+    });
+    appleHealthIconObserver.observe(content, { childList: true, subtree: true });
+}
+
 export function initializeMore() {
     initializeSupportControls();
+    observeAppleHealthMenuIcon();
     document.querySelectorAll("[data-more-page]").forEach(button => button.addEventListener("click", () => {
         const page = button.dataset.morePage;
         if (page === "ios-transfer") {
