@@ -174,7 +174,7 @@ function ensureMoreCard(){
  const group=document.querySelector('.more-menu-group[data-more-group="health"]');
  if(!group || group.querySelector("[data-apple-health-settings]"))return;
  const card=document.createElement("button");card.className="more-menu-card";card.type="button";card.dataset.appleHealthSettings="1";
- card.innerHTML='<span class="more-menu-icon" aria-hidden="true">♥</span><span><strong>Apple Health</strong><small>Connect steps and sleep · Manage access</small></span>';
+ card.innerHTML='<span class="more-menu-icon" aria-hidden="true"><svg class="app-silhouette-icon apple-health-heart-icon" viewBox="0 0 24 24"><path d="M12 20.5 10.55 19.2C5.45 14.57 2 11.44 2 7.6 2 4.48 4.42 2 7.5 2c1.74 0 3.41.81 4.5 2.09A5.95 5.95 0 0 1 16.5 2C19.58 2 22 4.48 22 7.6c0 3.84-3.45 6.97-8.55 11.6L12 20.5Z"/></svg></span><span><strong>Apple Health</strong><small>Connect steps and sleep · Manage access</small></span>';
  group.appendChild(card);
 }
 function reconcile(){
