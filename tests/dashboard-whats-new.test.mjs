@@ -2,63 +2,43 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const feature = fs.readFileSync('js/dashboard/whats-new.js', 'utf8');
-const styles = fs.readFileSync('css/dashboard-whats-new.css', 'utf8');
-const router = fs.readFileSync('js/core/router.js', 'utf8');
-const app = fs.readFileSync('js/app.js', 'utf8');
-const navbar = fs.readFileSync('js/components/navbar.js', 'utf8');
-const index = fs.readFileSync('index.html', 'utf8');
+const read = p => fs.readFileSync(p,'utf8');
+const feature = read('js/dashboard/whats-new.js');
+const styles = read('css/dashboard-whats-new.css');
+const router = read('js/core/router.js');
+const menu = read('js/more/more-ui-v2.js');
+const index = read('index.html');
 
-test("What's New is a versioned dashboard dialog limited to two views", () => {
-  assert.match(feature, /level_up_whats_new_2026_09_views/);
-  assert.match(feature, /const MAX_VIEWS = 2/);
-  assert.match(feature, /if \(views >= MAX_VIEWS\) return false/);
-  assert.match(feature, /const nextView = views \+ 1/);
-  assert.match(feature, /storeViews\(nextView\)/);
-  assert.match(feature, /role", "dialog/);
-  assert.match(feature, /aria-modal", "true/);
+test("iOS release notes are versioned, once per version, and native-only", () => {
+  assert.match(feature, /RELEASE_VERSION = "1\.0\.6"/);
+  assert.match(feature, /level_up_whats_new_seen_ios_/);
+  assert.match(feature, /const MAX_VIEWS = 1/);
+  assert.match(feature, /window\.Capacitor\?\.getPlatform\?\.\(\) === "ios"/);
+  assert.match(feature, /if \(!isIOS\(\)\) return false/);
+  assert.match(feature, /if \(!force && \(!isOnboarded\(\) \|\| alreadySeen\(\)\)\) return false/);
+  assert.match(feature, /markSeen\(\)/);
+  assert.match(feature, /aria-modal/);
   assert.match(feature, /data-whats-new-close/);
-  assert.match(feature, /aria-label="Close What's New"/);
-  assert.match(feature, /event\.key === "Escape"/);
 });
 
-test("What's New summarizes the major user-facing improvements", () => {
-  [
-    'Make Level Up yours',
-    'Explore the research',
-    'Programs built around you',
-    'See progress more clearly',
-    'Understand weight changes',
-    'Smoother workouts and form guides'
-  ].forEach(heading => assert.match(feature, new RegExp(heading)));
-  assert.match(feature, /System mode now follows your local day and night/);
-  assert.match(feature, /estimated 1RM/);
-  assert.match(feature, /Smart Swap/);
+test("release page uses true iOS features and an authentic CSS Quick Log preview", () => {
+  for (const heading of ['What\\\'s New','Apple Health integration','Meet Quick Log','Better active workouts','A smoother experience']) {
+    assert.ok(feature.includes(heading), heading);
+  }
+  assert.match(feature, /View your steps and sleep from Apple Health/);
+  assert.match(feature, /logging workouts, food, and nutrition/);
+  assert.match(feature, /Smart Build, manual workouts, imports, and photo logging/);
+  assert.match(feature, /whats-new-plus/);
+  assert.match(styles, /\.whats-new-preview-action/);
+  assert.doesNotMatch(feature, /https?:\/\//);
+  assert.doesNotMatch(feature, /<img/);
 });
 
-test("What's New waits until sign-in and onboarding are complete", () => {
-  assert.match(feature, /level_up_cloud_session/);
-  assert.match(feature, /level_up_training_preferences/);
-  assert.match(feature, /if \(!signedIn\) return false/);
-  assert.match(feature, /onboardingComplete \|\| preferences\?\.onboardingSkipped/);
-  assert.match(feature, /if \(!isSignedInAndOnboarded\(\)\) return false/);
-});
-
-test("What's New runs before the satisfaction survey on dashboard routes", () => {
-  assert.match(router, /showWhatsNewIfEligible/);
-  assert.equal((router.match(/safeInitialize\("What's New", showWhatsNewIfEligible\)/g) || []).length, 2);
-  assert.match(router, /if \(!safeInitialize\("What's New", showWhatsNewIfEligible\)\) \{\s*safeInitialize\("Satisfaction survey"/);
-  assert.match(router, /function safeInitialize\(name, initializer\) \{ try \{ return initializer\(\)/);
-});
-
-test("What's New uses theme tokens and production cache keys", () => {
-  assert.match(styles, /background: var\(--body-background\)/);
-  assert.match(styles, /background: var\(--card\)/);
-  assert.match(styles, /color: var\(--heading\) !important/);
-  assert.match(styles, /color: var\(--text-secondary\) !important/);
-  assert.match(index, /dashboard-whats-new\.css\?v=whats-new-1/);
-  assert.match(index, /js\/app\.js\?v=food-log-macro-bars-1/);
-  assert.match(app, /router\.js\?v=food-log-macro-bars-1/);
-  assert.match(app, /navbar\.js\?v=first-launch-cleanup-1/);
-  assert.match(navbar, /router\.js\?v=first-launch-cleanup-1/);
+test("iOS entry is automatic on dashboard and reviewable from More", () => {
+  assert.match(router,/showWhatsNewIfEligible/);
+  assert.equal((router.match(/safeInitialize\("What's New", showWhatsNewIfEligible\)/g) || []).length,2);
+  assert.match(menu,/data-more-page="whats-new-release"/);
+  assert.match(menu,/openWhatsNew\(\{ force: true \}\)/);
+  assert.match(index,/dashboard-whats-new\.css\?v=ios-release-notes-106/);
+  assert.match(router,/whats-new\.js\?v=ios-release-notes-106/);
 });
