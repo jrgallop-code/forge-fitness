@@ -696,3 +696,5 @@ Release Arctic More icons: improve icon contrast and match Apple Health heart to
 Release Arctic Apple Health source correction: native heart SVG drawn directly in js/health/apple-health.js; remove observer workaround; ensure outlined stroke.
 
 Retry Arctic HealthKit icon iOS TestFlight delivery — 2026-11-18. Preserve signed IPA and existing diagnostic handling; examine the exact transporter log if upload fails.
+
+Release request 2026-11-19: iOS Quick Log central plus button, dashboard direct Log Weight shortcut, native weight entry sheet; keep PWA unchanged. Trigger signed App Store Connect/TestFlight upload.
