@@ -9,6 +9,7 @@ import { renderBmiCard, initializeBmiCard } from "./bmi-card.js?v=bmi-medical-so
 import { renderAccountCloud, initializeAccountCloud } from "./account-cloud-ui.js?v=coach-assignment-inbox-2";
 import { renderCoachInvitePwa, initializeCoachInvitePwa } from "./coach-invite-pwa.js?v=pwa-coach-existing-account-2";
 import { openWhatsNew } from "../dashboard/whats-new.js?v=ios-launch-1";
+import { openWhatsNew as openPWAReleaseNotes } from "../dashboard/pwa-release-notes.js?v=pwa-release-20261119";
 import { renderUnitSettings, initializeUnitSettings } from "./unit-settings.js?v=more-units-miles-1";
 import { renderProfileAppearance, initializeProfileAppearance } from "./profile-appearance.js?v=profile-display-name-1";
 import { renderDynamicWarmupSettings, initializeDynamicWarmupSettings } from "./dynamic-warmup-settings.js?v=dynamic-warmup-settings-1";
@@ -65,7 +66,7 @@ export function renderMore() {
     <button class="more-menu-card" type="button" data-more-page="measurements"><span class="more-menu-icon">${ICONS.measurements}</span><span><strong>Measurements</strong><small>Track body measurements and directional changes over time.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="water"><span class="more-menu-icon">${ICONS.water}</span><span><strong>Water Log</strong><small>Record daily water and review recent entries.</small></span></button>
     </div>
-    <div class="more-menu-group" data-more-group="app-data"><h3>Support &amp; data</h3>
+    <div class="more-menu-group" data-more-group="app-data"><h3>Support &amp; data</h3>\n    <button class="more-menu-card" type="button" data-more-page="pwa-release-notes"><span class="more-menu-icon">${ICONS.learn}</span><span><strong>What’s New</strong><small>See what changed in the latest web update.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="learn"><span class="more-menu-icon">${ICONS.learn}</span><span><strong>Tutorials</strong><small>Restart in-app tutorials and open walkthroughs for workouts, nutrition and progress.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="exports-backup"><span class="more-menu-icon">${ICONS.backup}</span><span><strong>Exports & Backup</strong><small>Export, restore and transfer your Level Up data with Google Drive.</small></span></button>
     </div>
@@ -111,6 +112,7 @@ export function initializeMore() {
     observeAppleHealthMenuIcon();
     document.querySelectorAll("[data-more-page]").forEach(button => button.addEventListener("click", () => {
         const page = button.dataset.morePage;
+        if (page === "pwa-release-notes") { openPWAReleaseNotes({ force: true }); return; }
         if (page === "ios-transfer") {
             openWhatsNew();
             return;
