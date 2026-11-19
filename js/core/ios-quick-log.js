@@ -381,6 +381,12 @@ function handleClick(event) {
         return;
     }
     const action = event.target.closest("[data-ql-action]")?.dataset.qlAction;
+    if (action) {
+        // This is a Quick Log action, not a normal navigation click. Keep
+        // delegated page handlers from re-routing after the destination opens.
+        event.preventDefault();
+        event.stopPropagation();
+    }
     if (action === "weight") openWeight();
     else if (action === "workout") openQuickWorkout();
     else if (action) openExisting(action);
