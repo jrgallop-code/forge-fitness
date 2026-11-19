@@ -1,6 +1,6 @@
 import { initializeAppReviews } from "./feedback/app-reviews.js";
 import "./core/appearance-theme.js?v=appearance-themes-3";
-import { navigate } from "./core/router.js?v=progress-insight-rate-1";
+import { navigate } from "./core/router.js?v=ios-photo-direct-7";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=history-editor-route-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=history-rir-edit-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
@@ -55,5 +55,5 @@ initializeNavbar();
 initializeMaintenanceCheckInAlert();
 decorateAppIcons(document);
 import "./core/non-timer-notification-cleanup.js?v=remove-non-timer-notifications-1";
-import { initializeIOSQuickLog } from "./core/ios-quick-log.js?v=ios-quick-workout-6";
+import { initializeIOSQuickLog } from "./core/ios-quick-log.js?v=ios-photo-direct-7";
 initializeIOSQuickLog();
