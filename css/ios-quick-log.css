@@ -42,3 +42,101 @@ html[data-ios-quick-log-installed="1"] #weight-progress .weight-section-header .
 .ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-field-label { margin:6px 0 3px; }
 .ios-ql-keyboard-visible .ios-quick-log-weight input { min-height:43px; font-size:18px; }
 .ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-save { min-height:44px; margin-top:10px; }
+
+
+/* iOS Quick Log polish: override the native tab bar's generic span typography. */
+.bottom-nav.ios-quick-log-nav-enabled .ios-quick-log-nav > span {
+    box-sizing: border-box;
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    min-height: 58px;
+    padding: 0 0 4px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    font-size: 48px;
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: 0;
+    text-align: center;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 50%;
+    background: var(--accent, #e11c2c);
+    box-shadow: 0 3px 11px rgba(0,0,0,.22);
+}
+.bottom-nav.ios-quick-log-nav-enabled .ios-quick-log-nav > small {
+    font-size: 10px;
+    line-height: 13px;
+}
+
+/* Equal edge alignment and native-looking, consistent form controls. */
+.ios-quick-log-weight #ios-quick-log-weight-form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+.ios-quick-log-weight #ios-quick-log-number,
+.ios-quick-log-weight #ios-quick-log-date {
+    display: block;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 56px;
+    min-height: 56px;
+    margin: 0;
+    padding: 0 16px;
+    box-sizing: border-box;
+    border: 1px solid rgba(132, 132, 143, .32);
+    border-radius: 14px;
+    background: var(--ios-surface-2, #16161a);
+    color: inherit;
+    text-align: left;
+    font-size: 19px;
+    font-weight: 500;
+    line-height: normal;
+    box-shadow: none;
+}
+.ios-quick-log-weight #ios-quick-log-date {
+    font-family: inherit;
+    color-scheme: dark;
+}
+.ios-quick-log-weight #ios-quick-log-date::-webkit-date-and-time-value {
+    text-align: left;
+    min-height: 1lh;
+}
+.ios-quick-log-weight #ios-quick-log-date::-webkit-datetime-edit {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    text-align: left;
+}
+.ios-quick-log-weight #ios-quick-log-number::-webkit-inner-spin-button,
+.ios-quick-log-weight #ios-quick-log-number::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.ios-quick-log-weight .ios-quick-log-field-label {
+    margin: 14px 0 7px;
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 600;
+}
+.ios-quick-log-weight .ios-quick-log-save {
+    box-sizing: border-box;
+    width: 100%;
+    margin-top: 20px;
+    border-radius: 14px;
+}
+.ios-ql-keyboard-visible .ios-quick-log-weight #ios-quick-log-number,
+.ios-ql-keyboard-visible .ios-quick-log-weight #ios-quick-log-date {
+    height: 45px;
+    min-height: 45px;
+    font-size: 17px;
+}
+.ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-field-label {
+    margin: 7px 0 4px;
+}
