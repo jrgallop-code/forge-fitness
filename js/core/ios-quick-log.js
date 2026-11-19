@@ -136,9 +136,15 @@ function openExisting(destination) {
     const page = destination === "food" ? "energy" : destination === "photos" ? "progress" : destination;
     document.querySelectorAll(".bottom-nav .nav-btn[data-page]").forEach(btn =>
         btn.classList.toggle("active", btn.dataset.page === page));
-    navigate(page);
+    // Use the real Progress tab deep link. The old selector targeted elements
+    // that do not exist, so Photos silently opened the default Progress tab.
+    navigate(page, destination === "photos" ? { tab: "photo" } : {});
     if (destination === "photos") {
-        document.querySelector('[data-progress-photos], [data-photo-progress], #photos-tab')?.click();
+        const strip = document.querySelector(".progress-tabs");
+        const photoTab = document.getElementById("photo-log-tab");
+        if (strip && photoTab) {
+            strip.scrollLeft = Math.max(0, photoTab.offsetLeft - (strip.clientWidth - photoTab.offsetWidth) / 2);
+        }
     }
 }
 function ensureNavigation() {
