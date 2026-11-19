@@ -39,7 +39,7 @@ import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-7
 import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-drive-backup-3";
 import { getCurrentGoal } from "./current-goal.js?v=current-goal-1";
 import { showSatisfactionSurveyIfEligible } from "../feedback/satisfaction-survey.js?v=satisfaction-survey-1";
-import { showWhatsNewIfEligible } from "../dashboard/whats-new.js?v=ios-launch-1";
+import { showPWAReleaseIfEligible as showPWAReleaseIfEligible } from "../dashboard/pwa-release-notes.js?v=pwa-release-20261119";
 import { isNutritionEnabled } from "./app-feature-preferences.js?v=nutrition-feature-choice-1";
 
 getCurrentGoal();
@@ -101,7 +101,7 @@ export function navigate(page) {
                 safeInitialize("Backup manager", initializeBackupManager);
                 safeInitialize("Google Drive sync", initializeGoogleDriveSync);
                 safeInitialize("Monthly report prompt", () => initializeMonthlyReportDashboardPrompt(content));
-                if (!safeInitialize("What's New", showWhatsNewIfEligible)) {
+                if (!safeInitialize("What's New", showPWAReleaseIfEligible)) {
                     safeInitialize("Satisfaction survey", () => showSatisfactionSurveyIfEligible(content));
                 }
                 break;
@@ -148,7 +148,7 @@ export function navigate(page) {
                 content.innerHTML = renderDashboardWithPerformance(); safeInitialize("Dashboard nutrition targets", initializeDashboardNutritionTargets); safeInitialize("Workout performance", initializeWorkoutPerformance);
                 safeInitialize("Workout schedule", () => initializeWorkoutSchedule(content));
                 safeInitialize("Monthly report prompt", () => initializeMonthlyReportDashboardPrompt(content));
-                if (!safeInitialize("What's New", showWhatsNewIfEligible)) {
+                if (!safeInitialize("What's New", showPWAReleaseIfEligible)) {
                     safeInitialize("Satisfaction survey", () => showSatisfactionSurveyIfEligible(content));
                 }
         }
