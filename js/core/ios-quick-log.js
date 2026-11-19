@@ -6,6 +6,24 @@ const isIOS = () => Boolean(window.Capacitor?.isNativePlatform?.() && window.Cap
 const STORAGE = "forge_weight_entries";
 let sheet = null;
 let priorFocus = null;
+const ICON_PATHS = {
+    weight: '<path d="M5 5h14l2 15H3L5 5Z"/><circle cx="12" cy="10" r="3"/><path d="m12 10 1.7-1.5"/>',
+    food: '<path d="M4 3v6a3 3 0 0 0 6 0V3M7 3v18M17 3v18M17 3c-3 3-3 6 0 8h3"/>',
+    water: '<path d="M12 2s-7 8-7 13a7 7 0 0 0 14 0C19 10 12 2 12 2Z"/><path d="M8 15a4 4 0 0 0 4 4"/>',
+    measurements: '<path d="M4 6h16v12H4zM8 6v5m4-5v3m4-3v5M7 18v-4"/>',
+    photos: '<rect x="3" y="5" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m4 18 5-5 3 3 4-5 5 6"/>',
+    workout: '<path d="M2.5 9h2v6h-2zM5 7h3v10H5zM8 11h8v2H8zM16 7h3v10h-3zM19.5 9h2v6h-2z"/>'
+};
+function icon(name) {
+    return '<svg class="ios-ql-svg" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + (ICON_PATHS[name] || ICON_PATHS.workout) + '</svg>';
+}
+function syncKeyboardViewport() {
+    if (!sheet) return;
+    const viewport = window.visualViewport;
+    sheet.style.top = Math.max(0, viewport?.offsetTop || 0) + "px";
+    sheet.style.height = Math.max(240, viewport?.height || window.innerHeight) + "px";
+}
+
 
 function today() {
     const d = new Date();
@@ -54,6 +72,7 @@ function openWeight() {
       </section>`;
     document.body.append(sheet);
     document.body.classList.add("ios-quick-log-open");
+    syncKeyboardViewport();
     sheet.querySelector("form").addEventListener("submit", event => {
         event.preventDefault();
         const input = sheet?.querySelector("#ios-quick-log-number");
@@ -83,7 +102,7 @@ function openWeight() {
             document.dispatchEvent(new CustomEvent("levelup:ios-quick-log-saved", { detail: { type: "weight" } }));
         }
     });
-    sheet.querySelector("#ios-quick-log-number")?.focus({ preventScroll: true });
+    // Keep keyboard closed until the user chooses to edit the weight.
 }
 function openMenu() {
     closeSheet();
@@ -94,15 +113,16 @@ function openMenu() {
       <section class="ios-quick-log-sheet" role="dialog" aria-modal="true" aria-labelledby="ios-ql-heading">
         <div class="ios-quick-log-handle"></div><div class="ios-quick-log-heading"><h2 id="ios-ql-heading">Quick Log</h2><button type="button" aria-label="Close quick log" data-ql-close>×</button></div>
         <div class="ios-quick-log-grid">
-          <button type="button" data-ql-action="weight"><span>⚖</span><strong>Weight</strong></button>
-          <button type="button" data-ql-action="food"><span>♨</span><strong>Food</strong></button>
-          <button type="button" data-ql-action="water"><span>◉</span><strong>Water</strong></button>
-          <button type="button" data-ql-action="measurements"><span>▤</span><strong>Body Metrics</strong></button>
-          <button type="button" data-ql-action="photos"><span>▣</span><strong>Progress Photos</strong></button>
-          <button type="button" data-ql-action="workout"><span>⌁</span><strong>Workout</strong></button>
+          <button type="button" data-ql-action="weight">${icon("weight")}<strong>Weight</strong></button>
+          <button type="button" data-ql-action="food">${icon("food")}<strong>Nutrition</strong></button>
+          <button type="button" data-ql-action="water">${icon("water")}<strong>Water</strong></button>
+          <button type="button" data-ql-action="measurements">${icon("measurements")}<strong>Body Metrics</strong></button>
+          <button type="button" data-ql-action="photos">${icon("photos")}<strong>Progress Photos</strong></button>
+          <button type="button" data-ql-action="workout">${icon("workout")}<strong>Workout</strong></button>
         </div></section>`;
     document.body.append(sheet);
     document.body.classList.add("ios-quick-log-open");
+    syncKeyboardViewport();
     haptic();
     sheet.querySelector('[data-ql-action="weight"]')?.focus({ preventScroll: true });
 }
@@ -119,6 +139,8 @@ function openExisting(destination) {
 function ensureNavigation() {
     const nav = document.querySelector(".bottom-nav");
     if (!nav || nav.querySelector(".ios-quick-log-nav")) return;
+    // Keep existing nutrition routing; remove only its redundant bottom tab on iOS.
+    nav.querySelector('[data-page="energy"]')?.remove();
     nav.classList.add("ios-quick-log-nav-enabled");
     const button = document.createElement("button");
     button.type = "button";
@@ -127,6 +149,10 @@ function ensureNavigation() {
     button.innerHTML = '<span aria-hidden="true">+</span><small>Log</small>';
     const progress = nav.querySelector('[data-page="progress"]');
     nav.insertBefore(button, progress);
+}
+function hideProgressAddWeight() {
+    // Retain history editing; only hide the redundant new-entry control.
+    document.querySelector("#weight-progress .weight-section-header .weight-add-toggle")?.classList.add("ios-ql-redundant-weight-add");
 }
 function ensureDashboardShortcut() {
     const dashboard = document.querySelector("#content .dashboard");
@@ -174,6 +200,9 @@ export function initializeIOSQuickLog() {
         if (event.key === "Escape" && sheet) closeSheet();
     });
     document.addEventListener("levelup:ios-quick-log-saved", updateDashboardWeight);
+    window.visualViewport?.addEventListener("resize", syncKeyboardViewport);
+    window.visualViewport?.addEventListener("scroll", syncKeyboardViewport);
     const content = document.getElementById("content");
-    if (content) new MutationObserver(() => ensureDashboardShortcut()).observe(content, { childList: true, subtree: false });
+    if (content) new MutationObserver(() => { ensureDashboardShortcut(); hideProgressAddWeight(); }).observe(content, { childList: true, subtree: false });
+    hideProgressAddWeight();
 }
