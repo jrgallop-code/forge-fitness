@@ -12,7 +12,7 @@ import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from 
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=onboarding-training-days-1";
 import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=saved-plan-edit-2";
 import { initializeWorkoutLandingLivePolish } from "../workouts/workout-landing-live-polish.js?v=workout-landing-live-polish-2";
-import { renderProgress, renderStepsProgressDestination } from "../progress/progress-ui.js?v=steps-tab-cardio-1";
+import { renderProgress, renderStepsProgressDestination, renderPhotosProgressDestination } from "../progress/progress-ui.js?v=steps-tab-cardio-1";
 import { initializeStepsProgress } from "../progress/steps-progress-carousel.js?v=steps-progress-standalone-2";
 import { initializeMonthlyReports, initializeMonthlyReportDashboardPrompt } from "../progress/monthly-report.js?v=monthly-lifecycle-1";
 import { initializeWeightTracker, selectProgressTab } from "../progress/weight-tracker.js?v=steps-tab-cardio-1";
@@ -151,6 +151,27 @@ export function navigate(page, { tab = null } = {}) {
                     });
                 });
                 routeDestination = content.querySelector("#steps-progress");
+                break;
+            }
+            case "progress-photos": {
+                // Dedicated Progress → Photos destination. Render Photos as the
+                // selected tab from the first paint, not a generic overview
+                // followed by a delayed tab click that can be reset.
+                content.innerHTML = renderPhotosProgressDestination();
+                safeInitialize("Progress photos", initializePhotoJournal);
+                const strip = content.querySelector(".progress-tabs");
+                const selectedTab = content.querySelector("#photo-log-tab");
+                if (strip && selectedTab) {
+                    strip.scrollLeft = Math.max(0, selectedTab.offsetLeft - (strip.clientWidth - selectedTab.offsetWidth) / 2);
+                }
+                content.querySelectorAll("[data-progress-destination-tab]").forEach(button => {
+                    button.addEventListener("click", () => {
+                        const selected = button.dataset.progressDestinationTab;
+                        if (selected === "photo") return;
+                        navigate("progress", { tab: selected });
+                    });
+                });
+                routeDestination = content.querySelector("#photo-log-progress");
                 break;
             }
             case "progress":
