@@ -17,12 +17,14 @@ test("Dashboard Steps click takes dedicated route exactly once",()=>{
  assert.match(insights,/event\.stopImmediatePropagation\(\)/);
  assert.match(insights,/openStepsInProgress\(\);\s*closeDashboardInsights\(\)/);
  assert.match(steps,/detail: \{ page: "progress-steps" \}/);
- assert.match(app,/page==="progress-steps"\?"progress":page/);
+ assert.match(app,/page==="progress-steps"/);
+ assert.match(app,/page==="progress-photos"/);
+ assert.match(app,/\?"progress":page/);
 });
 
 test("Dedicated Steps destination cannot show Progress overview or Lifting",()=>{
  const start=progress.indexOf("export function renderStepsProgressDestination()");
- const end=progress.indexOf("export function renderProgress(",start);
+ const end=progress.indexOf("export function renderPhotosProgressDestination(",start);
  assert.ok(start>=0 && end>start);
  const renderer=runInNewContext(progress.slice(start,end).replace("export function","function")+"\nrenderStepsProgressDestination");
  const html=renderer();
