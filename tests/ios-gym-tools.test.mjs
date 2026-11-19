@@ -6,6 +6,7 @@ import { epley1RM, convertGymWeight } from "../js/core/gym-tools-math.js";
 const read = file => fs.readFileSync(file,"utf8");
 const gym = read("js/core/ios-gym-tools.js");
 const quick = read("js/core/ios-quick-log.js");
+const plate = read("js/workouts/plate-calculator.js");
 const native = read("ios/App/App/LevelUpTimerPlugin.swift");
 const state = read("ios/App/App/LevelUpTimerAttributes.swift");
 const widget = read("ios/App/LevelUpTimerWidget/LevelUpTimerWidget.swift");
@@ -31,7 +32,13 @@ test("Machine kg to lb and reverse conversion use consistent factors", () => {
 test("Gym Tools are exclusive to iOS Quick Log and omit back-off sets", () => {
   assert.match(quick,/data-ql-action="gym-tools"/);
   assert.match(quick,/openGymTools\(\)/);
-  assert.match(gym,/calculatePlateSolution/);
+  assert.match(gym,/openStandalonePlateCalculator/);
+  assert.match(plate,/export function openStandalonePlateCalculator/);
+  assert.match(plate,/renderPlateVisual\(solution\)/);
+  assert.match(plate,/BAR_WEIGHT_PRESETS\[liftingUnit\]/);
+  assert.match(plate,/plate-calculator-bar-options/);
+  assert.match(plate,/plate-calculator-plate-options/);
+  assert.match(plate,/const STANDALONE_ID/);
   assert.match(gym,/\["oneRM", "1RM"\]/);
   assert.match(gym,/\["stopwatch", "Stopwatch"\]/);
   assert.doesNotMatch(gym,/Back-Off Sets/);
