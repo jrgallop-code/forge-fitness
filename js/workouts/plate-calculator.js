@@ -2,6 +2,8 @@ import { getExerciseById } from "./exercise-library.js?v=exercise-library-3";
 import { canonicalInputValue, canonicalMass, displayMass, massUnit, UNIT_KINDS } from "../core/unit-system.js?v=granular-units-1";
 
 const SETTINGS_KEY = "level_up_plate_calculator_settings";
+const STANDALONE_ID = "level-up-standalone-barbell-plate-calculator";
+let standaloneLoad = 135;
 const STYLESHEET_HREF = "css/plate-calculator.css?v=refined-equipment-controls-4";
 const PLATE_PRESETS = {
     lb: { defaults: [45, 25, 10, 5, 2.5], options: [45, 35, 25, 10, 5, 2.5, 1.25] },
@@ -64,6 +66,12 @@ function writeSettings(settings) {
 }
 
 function loadingProfile(exerciseId) {
+    if (exerciseId === STANDALONE_ID) return {
+        kind: "barbell", defaultBaseWeight: 45, defaultIncludeBase: true,
+        baseLabel: "Bar", settingsLabel: "Bar weight",
+        toggleLabel: "Include bar weight",
+        toggleHelp: "Turn this off when loading a barless plate-loaded machine."
+    };
     const exercise = getExerciseById(exerciseId);
     if (!exercise) return null;
 
@@ -416,7 +424,7 @@ function renderSheet() {
     if (!sheetContext) return;
     const { card, row, profile, exerciseId } = sheetContext;
     const input = row?.querySelector(".session-weight");
-    const enteredLoad = canonicalInputValue(input);
+    const enteredLoad = exerciseId === STANDALONE_ID ? standaloneLoad : canonicalInputValue(input);
     const settings = getExerciseSettings(exerciseId, profile);
     const baseWeight = effectiveBaseWeight(settings);
     const calculationTotal = calculationTotalForProfile(enteredLoad, profile, settings);
@@ -442,6 +450,15 @@ function renderSheet() {
         : null;
 
     body.innerHTML = `
+        ${exerciseId === STANDALONE_ID ? `
+          <label class="plate-calculator-standalone-load">
+            <span>Total loaded weight</span>
+            <span class="plate-calculator-number-wrap">
+              <input class="plate-calculator-standalone-input" data-unit-input-ignore type="number" inputmode="decimal" min="0.1" max="1500" step="any" value="${formatWeight(displayedWeight(standaloneLoad))}" aria-label="Total loaded weight in ${liftingUnit}">
+              <b>${liftingUnit}</b>
+            </span>
+            <small>Enter the combined weight including the bar, then choose the bar and plates below.</small>
+          </label>` : ""}
         <div class="plate-calculator-card">
             ${renderPlateVisual(solution)}
             <div class="plate-calculator-summary">
@@ -493,6 +510,19 @@ function renderSheet() {
             <p>Saved for this exercise on this device.</p>
         </div>
     `;
+
+    body.querySelector(".plate-calculator-standalone-input")?.addEventListener("change", event => {
+        const raw = String(event.target.value).trim();
+        const number = Number(raw);
+        if (!raw || !Number.isFinite(number) || number <= 0 || number > 1500) {
+            event.target.setCustomValidity("Enter a weight between 0 and 1500.");
+            event.target.reportValidity();
+            return;
+        }
+        event.target.setCustomValidity("");
+        standaloneLoad = canonicalMass(number, UNIT_KINDS.LIFTING_WEIGHT);
+        renderSheet();
+    });
 
     body.querySelector(".plate-calculator-settings-toggle")?.addEventListener("click", event => {
         const button = event.currentTarget;
@@ -551,6 +581,25 @@ function renderSheet() {
         renderSheet();
         refreshCard(card);
     });
+}
+
+// Open the exact workout-logger plate UI from Quick Log without requiring an active workout.
+// Uses the same renderSheet, bar presets, plate availability, visualization, and preferences.
+export function openStandalonePlateCalculator() {
+    ensureStylesheet();
+    const exerciseId = STANDALONE_ID;
+    const profile = loadingProfile(exerciseId);
+    if (!profile) return false;
+    const settings = getExerciseSettings(exerciseId, profile);
+    standaloneLoad = Math.max(effectiveBaseWeight(settings), standaloneLoad);
+    sheetContext = { card: { dataset: { exerciseId } }, row: null, profile, exerciseId };
+    settingsExpanded = false;
+    const overlay = createSheet();
+    renderSheet();
+    overlay.hidden = false;
+    document.documentElement.classList.add("plate-calculator-open");
+    requestAnimationFrame(() => overlay.classList.add("open"));
+    return true;
 }
 
 function openSheet(card, requestedRow) {
