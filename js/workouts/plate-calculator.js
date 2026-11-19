@@ -178,7 +178,7 @@ function formattedDisplayedWeight(value) {
     return `${formatWeight(displayedWeight(value))} ${massUnit(UNIT_KINDS.LIFTING_WEIGHT)}`;
 }
 
-function calculatePlateSolution(totalWeight, baseWeight, plates) {
+export function calculatePlateSolution(totalWeight, baseWeight, plates) {
     const total = Number(totalWeight);
     const base = Math.max(0, Number(baseWeight) || 0);
     const available = [...new Set((plates || []).map(Number))]
