@@ -75,8 +75,11 @@ enum LevelUpTimerStateStore {
 
     static func contentState(for record: LevelUpTimerRecord, now: Date = Date()) -> LevelUpTimerAttributes.ContentState {
         let remaining = currentRemainingSeconds(record, now: now)
-        if record.kind == "hold" {
-            return .init(startedAt: record.startedAt, endAt: record.startedAt.addingTimeInterval(8 * 3600), status: record.status, remainingSeconds: 0)
+        if record.kind == "hold" || record.kind == "stopwatch" {
+            let running = record.status == "running"
+            let elapsed = running ? max(0, Int(now.timeIntervalSince(record.startedAt))) : max(0, record.remainingSeconds)
+            let started = running ? record.startedAt : now.addingTimeInterval(-TimeInterval(elapsed))
+            return .init(startedAt: started, endAt: started.addingTimeInterval(24 * 3600), status: record.status, remainingSeconds: elapsed)
         }
         let endAt = record.status == "running"
             ? (record.endAt ?? now.addingTimeInterval(TimeInterval(remaining)))
@@ -108,7 +111,7 @@ enum LevelUpTimerStateStore {
         let state = contentState(for: record)
         for activity in Activity<LevelUpTimerAttributes>.activities where activity.attributes.timerID == record.timerID {
             if #available(iOS 16.2, *) {
-                await activity.update(ActivityContent(state: state, staleDate: state.endAt.addingTimeInterval(60)))
+                await activity.update(ActivityContent(state: state, staleDate: (record.kind == "hold" || record.kind == "stopwatch") ? nil : state.endAt.addingTimeInterval(60)))
             } else {
                 await activity.update(using: state)
             }
@@ -170,7 +173,23 @@ enum LevelUpTimerStateStore {
 
     @available(iOS 17.0, *)
     static func togglePause(timerID: String) async {
-        guard var record = record(for: timerID), record.kind == "rest", record.status != "finished" else { return }
+        guard var record = record(for: timerID),
+              (record.kind == "rest" || record.kind == "stopwatch"),
+              record.status != "finished" && record.status != "skipped" else { return }
+        if record.kind == "stopwatch" {
+            let now = Date()
+            if record.status == "running" {
+                record.remainingSeconds = max(0, Int(now.timeIntervalSince(record.startedAt)))
+                record.status = "paused"
+            } else {
+                record.startedAt = now.addingTimeInterval(-TimeInterval(record.remainingSeconds))
+                record.status = "running"
+            }
+            record.endAt = nil
+            save(record)
+            await updateActivities(for: record)
+            return
+        }
         let now = Date()
         let remaining = currentRemainingSeconds(record, now: now)
         record.remainingSeconds = remaining
