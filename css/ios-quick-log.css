@@ -34,3 +34,11 @@ html[data-ios-quick-log-installed="1"] #weight-progress .weight-section-header .
 .ios-quick-log-weight { scroll-padding-bottom:16px; }
 .ios-quick-log-weight input:focus-visible { outline:2px solid var(--accent,#218bff); outline-offset:2px; }
 @media (max-height:420px) { .ios-quick-log-weight { padding-top:7px; } .ios-quick-log-weight .ios-quick-log-handle { margin-bottom:8px; } .ios-quick-log-weight .ios-quick-log-save { margin-top:12px; } }
+
+.ios-ql-keyboard-visible .ios-quick-log-weight { padding-top:7px; padding-bottom:8px; }
+.ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-handle { margin-bottom:6px; }
+.ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-heading { margin-bottom:3px; }
+.ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-last { margin-bottom:5px; }
+.ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-field-label { margin:6px 0 3px; }
+.ios-ql-keyboard-visible .ios-quick-log-weight input { min-height:43px; font-size:18px; }
+.ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-save { min-height:44px; margin-top:10px; }
