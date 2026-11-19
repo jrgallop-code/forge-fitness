@@ -694,3 +694,5 @@ Release request 2026-11-17: TestFlight build with session-only Remove Exercise i
 Release Arctic More icons: improve icon contrast and match Apple Health heart to outlined icon style.
 
 Release Arctic Apple Health source correction: native heart SVG drawn directly in js/health/apple-health.js; remove observer workaround; ensure outlined stroke.
+
+Retry Arctic HealthKit icon iOS TestFlight delivery — 2026-11-18. Preserve signed IPA and existing diagnostic handling; examine the exact transporter log if upload fails.
