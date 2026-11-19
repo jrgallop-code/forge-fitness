@@ -35,3 +35,4 @@ jobs:
           export AUTH_KEY_PATH="$auth_key_path"
           trap 'rm -f "$auth_key_path"' EXIT
           node scripts/app-store-signing.mjs inspect-certificates
+# Read-only certificate inventory refresh for Gym Tools plate-calculator release — 2026-11-19.
