@@ -12,3 +12,8 @@
 .gym-tools-timer-actions .gym-tools-secondary{background:var(--surface-raised,var(--card));box-shadow:none}
 @media (max-width:350px){.gym-tools-clock{font-size:clamp(48px,14vw,70px)}.gym-tools-stopwatch-panel{padding-left:7px;padding-right:7px}}
 @media (prefers-reduced-motion:no-preference){.gym-tools-stopwatch-panel:has(.gym-tools-clock.is-running) .gym-tools-live-dot{animation:gym-stopwatch-pulse 1.8s ease-in-out infinite}@keyframes gym-stopwatch-pulse{50%{box-shadow:0 0 0 7px #ef405711,0 0 20px #ef4057bb}}}
+
+/* Quick Log retains even, balanced tiles with or without nutrition enabled. */
+.ios-quick-log-grid:not(.is-five) > [data-ql-action="gym-tools"]{grid-column:1/-1;min-height:66px;flex-direction:row;gap:12px}
+.ios-quick-log-grid.is-five{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ios-quick-log-grid.is-five > button,.ios-quick-log-grid.is-five > button:nth-child(4){grid-column:auto}
