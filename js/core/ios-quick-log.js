@@ -1,5 +1,4 @@
 import { canonicalMass, displayMass, massUnit } from "./unit-system.js?v=granular-units-1";
-import { selectProgressTab } from "../progress/weight-tracker.js?v=steps-tab-cardio-1";
 import { isNutritionEnabled } from "./app-feature-preferences.js?v=nutrition-feature-choice-1";
 import { getActiveWorkout, getWorkoutSessions, openActiveWorkout, openWorkoutLogger } from "../workouts/workout-session.js?v=native-navigation-stability-1";
 
@@ -315,36 +314,15 @@ function handleQuickWorkout(action, source) {
 
 function openExisting(destination) {
     closeSheet();
-    const page = destination === "food" ? "energy" : destination === "photos" ? "progress" : destination;
+    // Photos is a dedicated Progress destination, like Steps. Render the
+    // Photos journal as the initial visible panel, not the generic overview.
+    const page = destination === "food" ? "energy" : destination === "photos" ? "progress-photos" : destination;
+    const navPage = page === "progress-photos" ? "progress" : page;
     document.querySelectorAll(".bottom-nav .nav-btn[data-page]").forEach(btn =>
-        btn.classList.toggle("active", btn.dataset.page === page));
-    // Route via the same app-level navigation event as the rest of Level Up.
-    // Importing router.js under a different cache-version URL creates an
-    // independent router instance, so direct navigate() was unreliable here.
+        btn.classList.toggle("active", btn.dataset.page === navPage));
     document.dispatchEvent(new CustomEvent("levelup:navigate", {
-        detail: { page, tab: destination === "photos" ? "photo" : null }
+        detail: { page }
     }));
-    if (destination === "photos") {
-        // Click the actual Progress Photos tab, rather than only setting the
-        // route. This uses the existing tab's own click handler and panel state.
-        const activate = () => {
-            const button = document.getElementById("photo-log-tab");
-            const panel = document.getElementById("photo-log-progress");
-            if (!button || !panel) return;
-            button.click();
-            const strip = document.querySelector(".progress-tabs");
-            if (strip) {
-                strip.scrollLeft = Math.max(0, button.offsetLeft - (strip.clientWidth - button.offsetWidth) / 2);
-            }
-            // Ensure the journal itself is the visible destination.
-            if (panel.hidden || !button.classList.contains("active")) {
-                selectProgressTab("photo", { center: false });
-            }
-            panel.scrollIntoView?.({ block: "start", behavior: "auto" });
-        };
-        activate();
-        requestAnimationFrame(activate);
-    }
 }
 function ensureNavigation() {
     const nav = document.querySelector(".bottom-nav");
