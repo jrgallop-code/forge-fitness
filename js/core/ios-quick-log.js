@@ -16,7 +16,10 @@ const ICON_PATHS = {
     water: '<path d="M12 2s-7 8-7 13a7 7 0 0 0 14 0C19 10 12 2 12 2Z"/><path d="M8 15a4 4 0 0 0 4 4"/>',
     measurements: '<path d="M4 6h16v12H4zM8 6v5m4-5v3m4-3v5M7 18v-4"/>',
     photos: '<rect x="3" y="5" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m4 18 5-5 3 3 4-5 5 6"/>',
-    workout: '<path d="M2.5 9h2v6h-2zM5 7h3v10H5zM8 11h8v2H8zM16 7h3v10h-3zM19.5 9h2v6h-2z"/>'
+    workout: '<path d="M2.5 9h2v6h-2zM5 7h3v10H5zM8 11h8v2H8zM16 7h3v10h-3zM19.5 9h2v6h-2z"/>',
+    smart: '<path d="m12 2 1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2Z"/><path d="m19 17 .7 2.3L22 20l-2.3.7L19 23l-.7-2.3L16 20l2.3-.7L19 17Z"/>',
+    manual: '<path d="m4 20 4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"/><path d="m14.5 7.5 3 3"/>',
+    import: '<path d="M12 16V3m0 0L7 8m5-5 5 5"/><path d="M4 14v6h16v-6"/>'
 };
 function icon(name) {
     return '<svg class="ios-ql-svg" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + (ICON_PATHS[name] || ICON_PATHS.workout) + '</svg>';
@@ -235,8 +238,15 @@ function openQuickWorkout() {
         ${!active && last ? `<button class="ios-ql-workout-option" type="button" data-ql-workout="repeat">
           ${icon("workout")}<span><strong>Repeat Last Workout</strong><small>${escapeWorkoutText(last.trainingDayName || last.planName || "Previous workout")}</small></span><b aria-hidden="true">›</b>
         </button>` : ""}
-        ${!active ? `<button class="ios-ql-workout-option" type="button" data-ql-workout="empty">
-          ${icon("workout")}<span><strong>Empty Workout</strong><small>Choose exercises and start logging</small></span><b aria-hidden="true">›</b>
+        ${!active ? `
+        <button class="ios-ql-workout-option" type="button" data-ql-workout="smart">
+          ${icon("smart")}<span><strong>Smart Build</strong><small>Build a personalized program for your goals and equipment</small></span><b aria-hidden="true">›</b>
+        </button>
+        <button class="ios-ql-workout-option" type="button" data-ql-workout="manual">
+          ${icon("manual")}<span><strong>Create Manually</strong><small>Choose days, exercises, sets and rep targets</small></span><b aria-hidden="true">›</b>
+        </button>
+        <button class="ios-ql-workout-option" type="button" data-ql-workout="import">
+          ${icon("import")}<span><strong>Import Routine</strong><small>Paste a routine from Notes, Reddit or ChatGPT</small></span><b aria-hidden="true">›</b>
         </button>` : ""}
         ${routines.length && !active ? `<div class="ios-ql-workout-routines">
           <h3>My Routines</h3>
@@ -254,7 +264,7 @@ function openQuickWorkout() {
     document.body.classList.add("ios-quick-log-open");
     syncKeyboardViewport();
     sheet.__workoutOptions = { active, scheduled, last, routines };
-    sheet.querySelector('[data-ql-workout="resume"], [data-ql-workout="today"], [data-ql-workout="empty"]')?.focus({ preventScroll:true });
+    sheet.querySelector('[data-ql-workout="resume"], [data-ql-workout="today"], [data-ql-workout="smart"]')?.focus({ preventScroll:true });
     haptic();
 }
 function handleQuickWorkout(action, source) {
@@ -286,12 +296,21 @@ function handleQuickWorkout(action, source) {
         if (plan?.days?.[dayIndex]) startWorkoutPlan(plan, dayIndex);
         return;
     }
-    if (action === "empty") {
+    if (["smart", "manual", "import"].includes(action)) {
         closeSheet();
-        navigate("workout");
-        document.querySelectorAll(".bottom-nav .nav-btn[data-page]").forEach(btn =>
-            btn.classList.toggle("active", btn.dataset.page === "workout"));
-        openOneOffBuilder();
+        // Use the full app's existing navigation and New Plan entry actions.
+        // These invoke the established builder and importer, preserving editing,
+        // validation and saved routine functionality.
+        document.dispatchEvent(new CustomEvent("levelup:navigate", { detail: { page: "workout" } }));
+        const createPlanButton = document.querySelector("[data-workout-live-new-plan]");
+        if (!createPlanButton) {
+            console.warn("Quick Workout: new-plan actions were not available.");
+            return;
+        }
+        createPlanButton.click();
+        const selected = document.querySelector('[data-workout-live-create-action="' + action + '"]');
+        if (selected) selected.click();
+        else console.warn("Quick Workout: requested creation action missing:", action);
         haptic();
     }
 }
@@ -301,19 +320,29 @@ function openExisting(destination) {
     const page = destination === "food" ? "energy" : destination === "photos" ? "progress" : destination;
     document.querySelectorAll(".bottom-nav .nav-btn[data-page]").forEach(btn =>
         btn.classList.toggle("active", btn.dataset.page === page));
-    navigate(page, destination === "photos" ? { tab: "photo" } : {});
+    // Route via the same app-level navigation event as the rest of Level Up.
+    // Importing router.js under a different cache-version URL creates an
+    // independent router instance, so direct navigate() was unreliable here.
+    document.dispatchEvent(new CustomEvent("levelup:navigate", {
+        detail: { page, tab: destination === "photos" ? "photo" : null }
+    }));
     if (destination === "photos") {
-        // Explicitly select the real Photos panel even when another Progress
-        // initialization or post-navigation layout pass resets the active tab.
+        // Click the actual Progress Photos tab, rather than only setting the
+        // route. This uses the existing tab's own click handler and panel state.
         const activate = () => {
-            const panel = document.getElementById("photo-log-progress");
-            if (!panel) return;
-            selectProgressTab("photo", { center: false });
-            const strip = document.querySelector(".progress-tabs");
             const button = document.getElementById("photo-log-tab");
-            if (strip && button) {
+            const panel = document.getElementById("photo-log-progress");
+            if (!button || !panel) return;
+            button.click();
+            const strip = document.querySelector(".progress-tabs");
+            if (strip) {
                 strip.scrollLeft = Math.max(0, button.offsetLeft - (strip.clientWidth - button.offsetWidth) / 2);
             }
+            // Ensure the journal itself is the visible destination.
+            if (panel.hidden || !button.classList.contains("active")) {
+                selectProgressTab("photo", { center: false });
+            }
+            panel.scrollIntoView?.({ block: "start", behavior: "auto" });
         };
         activate();
         requestAnimationFrame(activate);
