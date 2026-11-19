@@ -1,0 +1,33 @@
+name: Inspect iOS distribution certificates
+
+on:
+  push:
+    branches:
+      - ios/capacitor-app-store
+    paths:
+      - .github/workflows/ios-certificate-inspect.yml
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    environment: app-store
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Inspect Apple signing inventory without modifying certificates
+        shell: bash
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          umask 077
+          export AUTH_KEY_PATH="$(mktemp)"
+          trap 'rm -f "$AUTH_KEY_PATH"' EXIT
+          printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$AUTH_KEY_PATH"
+          node scripts/app-store-signing.mjs inspect-certificates
