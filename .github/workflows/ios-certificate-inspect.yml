@@ -32,4 +32,4 @@ jobs:
           printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$AUTH_KEY_PATH"
           node scripts/app-store-signing.mjs inspect-certificates
 
-# Verify certificate inventory before Quick Log Photos TestFlight release, 2026-11-19.
+# Verify certificate inventory before Quick Workout TestFlight release, 2026-11-19.
