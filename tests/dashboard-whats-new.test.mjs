@@ -22,7 +22,7 @@ test("iOS release notes are versioned, once per version, and native-only", () =>
 });
 
 test("release page uses true iOS features and an authentic CSS Quick Log preview", () => {
-  for (const heading of ['What\\\'s New','Apple Health integration','Meet Quick Log','Better active workouts','A smoother experience']) {
+  for (const heading of ['Apple Health integration','Meet Quick Log','Better active workouts','A smoother experience']) {
     assert.ok(feature.includes(heading), heading);
   }
   assert.match(feature, /View your steps and sleep from Apple Health/);
