@@ -55,6 +55,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  quick-log-regression:
+    name: Verify iOS Quick Log Photos routing
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Verify direct Photos destination and Quick Workout
+        run: |
+          node --check js/core/ios-quick-log.js
+          node --check js/core/router.js
+          node --check js/progress/progress-ui.js
+          node --test tests/ios-quick-workout.test.mjs
+
   build-ios:
     name: Build iOS on Xcode 26
     runs-on: macos-26
