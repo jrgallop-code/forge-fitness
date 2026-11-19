@@ -1,9 +1,7 @@
-import { navigate } from "../core/router.js?v=pwa-coach-link-1";
 import { canonicalMass, displayMass, massUnit } from "./unit-system.js?v=granular-units-1";
 import { selectProgressTab } from "../progress/weight-tracker.js?v=steps-tab-cardio-1";
 import { isNutritionEnabled } from "./app-feature-preferences.js?v=nutrition-feature-choice-1";
 import { getActiveWorkout, getWorkoutSessions, openActiveWorkout, openWorkoutLogger } from "../workouts/workout-session.js?v=native-navigation-stability-1";
-import { openOneOffBuilder } from "../workouts/one-off-workout.js?v=cardio-rpe-1";
 
 // iOS only: the PWA retains its existing five-button navigation.
 const isIOS = () => Boolean(window.Capacitor?.isNativePlatform?.() && window.Capacitor?.getPlatform?.() === "ios");
