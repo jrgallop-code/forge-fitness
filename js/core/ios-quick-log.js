@@ -1,5 +1,8 @@
 import { navigate } from "../core/router.js?v=pwa-coach-link-1";
 import { canonicalMass, displayMass, massUnit } from "./unit-system.js?v=granular-units-1";
+import { selectProgressTab } from "../progress/weight-tracker.js?v=steps-tab-cardio-1";
+import { getActiveWorkout, getWorkoutSessions, openActiveWorkout, openWorkoutLogger } from "../workouts/workout-session.js?v=native-navigation-stability-1";
+import { openOneOffBuilder } from "../workouts/one-off-workout.js?v=cardio-rpe-1";
 
 // iOS only: the PWA retains its existing five-button navigation.
 const isIOS = () => Boolean(window.Capacitor?.isNativePlatform?.() && window.Capacitor?.getPlatform?.() === "ios");
@@ -131,20 +134,187 @@ function openMenu() {
     haptic();
     sheet.querySelector('[data-ql-action="weight"]')?.focus({ preventScroll: true });
 }
+
+const PLAN_KEY = "forge_workout_plans";
+const SCHEDULE_KEY = "level_up_workout_schedule_v1";
+function readJSON(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key) || "null") ?? fallback; }
+    catch { return fallback; }
+}
+function savedRoutines() {
+    const plans = readJSON(PLAN_KEY, []);
+    return Array.isArray(plans) ? plans.filter(plan => Array.isArray(plan?.days) && plan.days.length) : [];
+}
+function escapeWorkoutText(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[char]));
+}
+function lastCompletedWorkout() {
+    return getWorkoutSessions().filter(item => item && item.status !== "in_progress")
+        .sort((a,b) => String(b.completedAt || b.endedAt || b.startedAt || b.date || "")
+            .localeCompare(String(a.completedAt || a.endedAt || a.startedAt || a.date || "")))[0] || null;
+}
+function scheduledWorkout(plans) {
+    const schedule = readJSON(SCHEDULE_KEY, null);
+    const plan = plans.find(item => String(item.id) === String(schedule?.planId));
+    if (!plan) return null;
+    const date = today();
+    const day = new Date(date + "T12:00:00").getDay();
+    const exception = schedule.exceptions?.[date];
+    const index = exception ? exception.dayIndex : schedule.weekly?.[day];
+    if (index === null || index === undefined || exception?.status === "skipped") return null;
+    const selectedDay = plan.days[Number(index)];
+    if (!selectedDay) return null;
+    const alreadyCompleted = getWorkoutSessions().some(item =>
+        item.date === date && String(item.planId) === String(plan.id)
+        && Number(item.trainingDayIndex) === Number(index) && item.status !== "in_progress");
+    return alreadyCompleted ? null : { plan, dayIndex: Number(index), day: selectedDay };
+}
+function planFromHistory(session, plans) {
+    if (Array.isArray(session?.planSnapshot?.days) && session.planSnapshot.days.length) return session.planSnapshot;
+    const saved = plans.find(item => String(item.id) === String(session?.planId));
+    if (saved) return saved;
+    const index = Math.max(0, Number(session?.trainingDayIndex) || 0);
+    const day = {
+        name: session?.trainingDayName || "Previous Workout",
+        exercises: (session?.exercises || []).filter(item => item?.exerciseId).map(item => ({
+            id: item.exerciseId,
+            sets: Math.max(1, item.sets?.length || 1),
+            reps: "8-12"
+        }))
+    };
+    if (!day.exercises.length) return null;
+    return {
+        id: "quick-repeat-" + String(session.id || Date.now()),
+        name: session.planName || "Repeat Workout",
+        days: Array.from({ length: index + 1 }, (_, i) =>
+            i === index ? day : { name: "Day " + (i + 1), exercises: [] })
+    };
+}
+function startWorkoutPlan(plan, dayIndex = 0) {
+    closeSheet();
+    if (getActiveWorkout()) { openActiveWorkout(); return; }
+    if (!plan?.days?.[dayIndex]) return;
+    // Use Level Up's existing logger/session creation path. No second workout storage.
+    openWorkoutLogger(plan);
+    const selector = document.querySelector("#workout-session-logger #session-day-select");
+    if (selector) selector.value = String(dayIndex);
+    document.querySelector("#workout-session-logger #begin-session-btn")?.click();
+    haptic();
+}
+function openQuickWorkout() {
+    closeSheet();
+    priorFocus = document.activeElement;
+    const active = getActiveWorkout();
+    const routines = savedRoutines();
+    const scheduled = active ? null : scheduledWorkout(routines);
+    const last = active ? null : lastCompletedWorkout();
+    sheet = document.createElement("div");
+    sheet.className = "ios-quick-log-overlay";
+    sheet.innerHTML = `<div class="ios-quick-log-scrim" data-ql-close></div>
+      <section class="ios-quick-log-sheet ios-ql-workout-sheet" role="dialog" aria-modal="true" aria-labelledby="ios-ql-workout-heading">
+        <div class="ios-quick-log-handle"></div>
+        <div class="ios-quick-log-heading">
+          <h2 id="ios-ql-workout-heading">Quick Workout</h2>
+          <button type="button" data-ql-close aria-label="Close Quick Workout">×</button>
+        </div>
+        ${active ? `<div class="ios-ql-workout-feature">
+          <small>WORKOUT IN PROGRESS</small>
+          <strong>${escapeWorkoutText(active.planName || "Active Workout")}</strong>
+          <span>${escapeWorkoutText(active.trainingDayName || "Resume where you left off")}</span>
+          <button type="button" data-ql-workout="resume">Resume Workout</button>
+        </div>` : scheduled ? `<div class="ios-ql-workout-feature">
+          <small>TODAY'S WORKOUT</small>
+          <strong>${escapeWorkoutText(scheduled.day.name || scheduled.plan.name)}</strong>
+          <span>${escapeWorkoutText(scheduled.plan.name)} · ${scheduled.day.exercises?.length || 0} exercises</span>
+          <button type="button" data-ql-workout="today">Start Workout</button>
+        </div>` : `<p class="ios-ql-workout-hint">Start training without opening your workout plans.</p>`}
+        ${!active && last ? `<button class="ios-ql-workout-option" type="button" data-ql-workout="repeat">
+          ${icon("workout")}<span><strong>Repeat Last Workout</strong><small>${escapeWorkoutText(last.trainingDayName || last.planName || "Previous workout")}</small></span><b aria-hidden="true">›</b>
+        </button>` : ""}
+        ${!active ? `<button class="ios-ql-workout-option" type="button" data-ql-workout="empty">
+          ${icon("workout")}<span><strong>Empty Workout</strong><small>Choose exercises and start logging</small></span><b aria-hidden="true">›</b>
+        </button>` : ""}
+        ${routines.length && !active ? `<div class="ios-ql-workout-routines">
+          <h3>My Routines</h3>
+          ${routines.map((plan,index) => `<div class="ios-ql-workout-routine">
+            <div><strong>${escapeWorkoutText(plan.name || "Saved routine")}</strong>
+              <small>${plan.days.length} training ${plan.days.length === 1 ? "day" : "days"}</small></div>
+            <select aria-label="Training day for ${escapeWorkoutText(plan.name || "routine")}" data-ql-routine-day="${index}">
+              ${plan.days.map((day,i)=>`<option value="${i}">${escapeWorkoutText(day.name || "Day "+(i+1))}</option>`).join("")}
+            </select>
+            <button type="button" data-ql-workout="routine" data-ql-routine-index="${index}">Start</button>
+          </div>`).join("")}
+        </div>` : ""}
+      </section>`;
+    document.body.append(sheet);
+    document.body.classList.add("ios-quick-log-open");
+    syncKeyboardViewport();
+    sheet.__workoutOptions = { active, scheduled, last, routines };
+    sheet.querySelector('[data-ql-workout="resume"], [data-ql-workout="today"], [data-ql-workout="empty"]')?.focus({ preventScroll:true });
+    haptic();
+}
+function handleQuickWorkout(action, source) {
+    const options = sheet?.__workoutOptions;
+    if (!options) return;
+    if (action === "resume") {
+        closeSheet();
+        openActiveWorkout();
+        return;
+    }
+    if (getActiveWorkout()) {
+        closeSheet();
+        openActiveWorkout();
+        return;
+    }
+    if (action === "today" && options.scheduled) {
+        startWorkoutPlan(options.scheduled.plan, options.scheduled.dayIndex);
+        return;
+    }
+    if (action === "repeat" && options.last) {
+        const plan = planFromHistory(options.last, options.routines);
+        if (plan) startWorkoutPlan(plan, Math.max(0, Number(options.last.trainingDayIndex) || 0));
+        return;
+    }
+    if (action === "routine") {
+        const index = Number(source.dataset.qlRoutineIndex);
+        const plan = options.routines[index];
+        const dayIndex = Number(sheet.querySelector('[data-ql-routine-day="' + index + '"]')?.value || 0);
+        if (plan?.days?.[dayIndex]) startWorkoutPlan(plan, dayIndex);
+        return;
+    }
+    if (action === "empty") {
+        closeSheet();
+        navigate("workout");
+        document.querySelectorAll(".bottom-nav .nav-btn[data-page]").forEach(btn =>
+            btn.classList.toggle("active", btn.dataset.page === "workout"));
+        openOneOffBuilder();
+        haptic();
+    }
+}
+
 function openExisting(destination) {
     closeSheet();
     const page = destination === "food" ? "energy" : destination === "photos" ? "progress" : destination;
     document.querySelectorAll(".bottom-nav .nav-btn[data-page]").forEach(btn =>
         btn.classList.toggle("active", btn.dataset.page === page));
-    // Use the real Progress tab deep link. The old selector targeted elements
-    // that do not exist, so Photos silently opened the default Progress tab.
     navigate(page, destination === "photos" ? { tab: "photo" } : {});
     if (destination === "photos") {
-        const strip = document.querySelector(".progress-tabs");
-        const photoTab = document.getElementById("photo-log-tab");
-        if (strip && photoTab) {
-            strip.scrollLeft = Math.max(0, photoTab.offsetLeft - (strip.clientWidth - photoTab.offsetWidth) / 2);
-        }
+        // Explicitly select the real Photos panel even when another Progress
+        // initialization or post-navigation layout pass resets the active tab.
+        const activate = () => {
+            const panel = document.getElementById("photo-log-progress");
+            if (!panel) return;
+            selectProgressTab("photo", { center: false });
+            const strip = document.querySelector(".progress-tabs");
+            const button = document.getElementById("photo-log-tab");
+            if (strip && button) {
+                strip.scrollLeft = Math.max(0, button.offsetLeft - (strip.clientWidth - button.offsetWidth) / 2);
+            }
+        };
+        activate();
+        requestAnimationFrame(activate);
     }
 }
 function ensureNavigation() {
@@ -197,8 +367,15 @@ function handleClick(event) {
     }
     if (!sheet) return;
     if (event.target.closest("[data-ql-close]")) { closeSheet(); return; }
+    const workoutButton = event.target.closest("[data-ql-workout]");
+    if (workoutButton) {
+        event.preventDefault();
+        handleQuickWorkout(workoutButton.dataset.qlWorkout, workoutButton);
+        return;
+    }
     const action = event.target.closest("[data-ql-action]")?.dataset.qlAction;
     if (action === "weight") openWeight();
+    else if (action === "workout") openQuickWorkout();
     else if (action) openExisting(action);
 }
 export function initializeIOSQuickLog() {
