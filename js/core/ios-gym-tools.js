@@ -10,6 +10,9 @@ let unit = massUnit(UNIT_KINDS.LIFTING_WEIGHT) === "kg" ? "kg" : "lb";
 let startTime = 0;
 let elapsed = 0;
 let timer = null;
+const STOPWATCH_KEY = "gym-tools-stopwatch";
+const nativeTimer = () => window.Capacitor?.Plugins?.LevelUpTimer;
+const now = () => Date.now();
 let previousFocus = null;
 const convert = (value, from, to) => from === to ? value : from === "kg" ? value * FACTOR : value / FACTOR;
 const fmt = value => Number.isFinite(value) ? Number(value.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—";
@@ -71,7 +74,7 @@ function updateResults() {
   }
 }
 function refreshClock() {
-  const ms = elapsed + (startTime ? performance.now() - startTime : 0);
+  const ms = startTime ? Math.max(0, now() - startTime) : elapsed;
   const tenths = Math.floor(ms / 100) % 10;
   const seconds = Math.floor(ms / 1000) % 60;
   const minutes = Math.floor(ms / 60000);
@@ -82,10 +85,56 @@ function refreshClock() {
   const toggle = overlay?.querySelector('[data-gym-timer="toggle"]');
   if (toggle) toggle.textContent = startTime ? "Pause" : (elapsed ? "Resume" : "Start");
 }
+async function updateNativeStopwatch(status) {
+  const plugin = nativeTimer();
+  if (!plugin) return;
+  const seconds = Math.floor((startTime ? now() - startTime : elapsed) / 1000);
+  try {
+    const state = await plugin.getState?.({ key: STOPWATCH_KEY });
+    if (!state?.found || state.status === "skipped" || state.status === "finished") {
+      if (status === "running") {
+        await plugin.startHold?.({
+          key: STOPWATCH_KEY, kind: "stopwatch",
+          startedAt: startTime, exerciseName: "Gym Stopwatch", setNumber: 0,
+          theme: document.documentElement.dataset.theme || "level-up",
+          icon: document.documentElement.dataset.theme || "level-up"
+        });
+      }
+      return;
+    }
+    await plugin.update?.({
+      key: STOPWATCH_KEY, status, startedAt: startTime || now() - elapsed,
+      remainingSeconds: seconds
+    });
+  } catch (error) { console.warn("Gym Stopwatch Live Activity sync failed:", error); }
+}
+async function syncFromNativeStopwatch() {
+  if (!nativeTimer()?.getState) return;
+  try {
+    const state = await nativeTimer().getState({ key: STOPWATCH_KEY });
+    if (!state?.found) return;
+    if (state.status === "skipped" || state.status === "finished") {
+      elapsed = 0; startTime = 0;
+    } else if (state.status === "paused") {
+      elapsed = Math.max(0, Number(state.remainingSeconds) || 0) * 1000;
+      startTime = 0;
+    } else if (state.status === "running") {
+      startTime = Number(state.startedAt) || now();
+      elapsed = 0;
+    }
+    clearInterval(timer); timer = startTime && overlay ? setInterval(refreshClock, 100) : null;
+    refreshClock();
+  } catch (error) { console.warn("Gym Stopwatch state check failed:", error); }
+}
+window.addEventListener("focus", () => { void syncFromNativeStopwatch(); });
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) void syncFromNativeStopwatch();
+});
+
 function onKeydown(event) { if (event.key === "Escape") closeGymTools(); }
 export function closeGymTools() {
   if (!overlay) return;
-  clearInterval(timer); timer = null; startTime = 0; elapsed = 0;
+  clearInterval(timer); timer = null;
   overlay.remove(); overlay = null;
   document.body.classList.remove("gym-tools-open");
   document.removeEventListener("keydown", onKeydown);
@@ -110,11 +159,19 @@ export function openGymTools() {
     }
     const command = event.target.closest("[data-gym-timer]")?.dataset.gymTimer;
     if (command === "toggle") {
-      if (startTime) { elapsed += performance.now() - startTime; startTime = 0; clearInterval(timer); timer = null; }
-      else { startTime = performance.now(); timer = setInterval(refreshClock, 100); }
+      if (startTime) {
+        elapsed = Math.max(0, now() - startTime);
+        startTime = 0;
+        clearInterval(timer); timer = null;
+        void updateNativeStopwatch("paused");
+      } else {
+        startTime = now() - elapsed;
+        timer = setInterval(refreshClock, 100);
+        void updateNativeStopwatch("running");
+      }
       refreshClock();
     } else if (command === "reset") {
-      startTime = 0; elapsed = 0; clearInterval(timer); timer = null; refreshClock();
+      startTime = 0; elapsed = 0; clearInterval(timer); timer = null; void nativeTimer()?.cancel?.({ key: STOPWATCH_KEY }); refreshClock();
     }
   });
   overlay.addEventListener("input", updateResults);
@@ -123,6 +180,8 @@ export function openGymTools() {
   });
   document.addEventListener("keydown", onKeydown);
   renderContents(); syncTabs();
+  void syncFromNativeStopwatch();
+  if (startTime && !timer) timer = setInterval(refreshClock, 100);
   overlay.querySelector("[data-gym-close]")?.focus({ preventScroll: true });
 }
 function syncTabs() {
