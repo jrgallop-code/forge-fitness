@@ -57,3 +57,5 @@ initializeNavbar();
 initializeMaintenanceCheckInAlert();
 decorateAppIcons(document);
 import "./core/non-timer-notification-cleanup.js?v=remove-non-timer-notifications-1";
+import { initializeIOSQuickLog } from "./core/ios-quick-log.js?v=ios-quick-log-1";
+initializeIOSQuickLog();
