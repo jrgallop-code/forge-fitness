@@ -321,8 +321,9 @@ function openExisting(destination) {
     document.querySelectorAll(".bottom-nav .nav-btn[data-page]").forEach(btn =>
         btn.classList.toggle("active", btn.dataset.page === navPage));
     document.dispatchEvent(new CustomEvent("levelup:navigate", {
-        detail: { page: page === "progress-photos" ? "progress" : page, tab: page === "progress-photos" ? "photos" : null }
+        detail: { page: page === "progress-photos" ? "progress" : page }
     }));
+    if (page === "progress-photos") document.getElementById("photo-log-tab")?.click();
 }
 function ensureNavigation() {
     const nav = document.querySelector(".bottom-nav");
