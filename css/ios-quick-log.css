@@ -102,7 +102,7 @@ html[data-ios-quick-log-installed="1"] #weight-progress .weight-section-header .
 }
 .ios-quick-log-weight #ios-quick-log-date {
     font-family: inherit;
-    color-scheme: dark;
+    color-scheme: inherit;
 }
 .ios-quick-log-weight #ios-quick-log-date::-webkit-date-and-time-value {
     text-align: left;
