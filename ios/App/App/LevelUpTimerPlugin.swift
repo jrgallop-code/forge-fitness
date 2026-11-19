@@ -207,7 +207,8 @@ final class LevelUpTimerPlugin: CAPPlugin, CAPBridgedPlugin {
             "found": true,
             "key": record.timerID,
             "status": status,
-            "remainingSeconds": remaining
+            "remainingSeconds": remaining,
+            "startedAt": record.startedAt.timeIntervalSince1970 * 1000
         ]
         if let endAt = record.endAt {
             result["endAt"] = endAt.timeIntervalSince1970 * 1000
