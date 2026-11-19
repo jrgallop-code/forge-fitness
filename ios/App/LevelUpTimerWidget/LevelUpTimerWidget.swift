@@ -213,7 +213,7 @@ struct LevelUpTimerLiveActivity: Widget {
                                 Text(activityDetails(context)).font(.caption2).foregroundStyle(palette.muted).lineLimit(1)
                             }
                             Spacer()
-                            if context.attributes.kind != "rest" { dismissControl(context: context, palette: palette) }
+                            if context.attributes.kind != "rest" && context.attributes.kind != "stopwatch" { dismissControl(context: context, palette: palette) }
                         }
                         if context.attributes.kind == "rest" { restControls(context: context, palette: palette) }
                         if context.attributes.kind == "stopwatch" { stopwatchControls(context: context, palette: palette) }
@@ -312,7 +312,7 @@ struct LevelUpTimerLiveActivity: Widget {
                             palette: palette)
             }
         } else {
-            Link(destination: URL(string: "leveluphypertrophy://timer/dismiss?key=gym-tools-stopwatch")!) {
+            Link(destination: URL(string: "leveluphypertrophy://gym/tools")!) {
                 Text("Open Level Up").font(.caption.weight(.semibold))
                     .frame(maxWidth: .infinity)
             }.foregroundStyle(palette.accent)
