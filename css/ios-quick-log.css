@@ -1,0 +1,24 @@
+/* Only activated inside the Capacitor iOS shell. */
+.bottom-nav.ios-quick-log-nav-enabled { display:grid!important; grid-template-columns:repeat(6,minmax(0,1fr))!important; align-items:stretch; }
+.bottom-nav.ios-quick-log-nav-enabled > .nav-btn { min-width:0; }
+.ios-quick-log-nav { appearance:none; border:0; background:transparent; color:var(--text-primary,#fff); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:4px 0; font:inherit; cursor:pointer; min-width:0; }
+.ios-quick-log-nav > span { display:grid; place-items:center; width:42px; height:42px; border-radius:50%; background:var(--accent,#147dff); color:#fff; font-size:31px; font-weight:400; box-shadow:0 3px 12px #0003; }
+.ios-quick-log-nav > small { font-size:10px; color:inherit; }
+.ios-quick-log-card-action { display:block; margin:8px 0 0; width:max-content; max-width:100%; padding:7px 12px; border:1px solid currentColor; border-radius:12px; background:transparent; color:var(--accent,#218bff); font-size:12px; font-weight:700; cursor:pointer; }
+.ios-quick-log-open { overflow:hidden; }
+.ios-quick-log-overlay { position:fixed; inset:0; z-index:2147482000; display:flex; align-items:flex-end; justify-content:center; color:var(--text-primary,#fff); }
+.ios-quick-log-scrim { position:absolute; inset:0; background:#0009; }
+.ios-quick-log-sheet { position:relative; width:100%; max-width:540px; background:var(--surface,#1b1b20); background:var(--ios-surface-1,var(--card-bg,#1b1b20)); border:1px solid #7775; border-radius:24px 24px 0 0; box-shadow:0 -10px 40px #0005; padding:12px 20px calc(20px + env(safe-area-inset-bottom)); }
+.ios-quick-log-handle { height:5px; width:38px; border-radius:9px; margin:0 auto 16px; background:#9998; }
+.ios-quick-log-heading { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.ios-quick-log-heading h2 { margin:0; color:inherit; font-size:23px; }
+.ios-quick-log-heading button { appearance:none; border:0; background:transparent; color:inherit; font-size:28px; padding:2px 9px; }
+.ios-quick-log-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.ios-quick-log-grid button { min-height:92px; border:1px solid #8884; border-radius:15px; background:var(--ios-surface-2,#25252a); color:inherit; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:7px; font:inherit; }
+.ios-quick-log-grid span { font-size:26px; color:var(--accent,#3c9cff); }
+.ios-quick-log-grid strong { font-size:14px; }
+.ios-quick-log-last { font-size:13px; opacity:.72; margin:0 0 15px; }
+.ios-quick-log-field-label { display:block; margin:12px 0 6px; font-size:13px; font-weight:600; }
+.ios-quick-log-weight input { display:block; width:100%; box-sizing:border-box; min-height:54px; border:1px solid #9997; border-radius:13px; padding:12px; color:inherit; background:var(--ios-surface-2,#29292d); font:inherit; font-size:21px; }
+.ios-quick-log-save { width:100%; min-height:50px; margin-top:20px; border:0; border-radius:12px; background:var(--accent,#167bff); color:#fff; font:inherit; font-weight:700; }
+.ios-quick-log-error { color:#ff7070; margin:10px 0 0; font-size:13px; }
