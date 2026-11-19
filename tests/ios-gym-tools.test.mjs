@@ -13,8 +13,8 @@ const index = read("index.html");
 
 test("Epley 1RM handles low reps and invalid sets", () => {
   assert.equal(epley1RM(100,1),100);
-  assert.equal(epley1RM(100,3),110);
-  assert.equal(epley1RM(90,10),120);
+  assert.ok(Math.abs(epley1RM(100,3)-110) < 1e-9);
+  assert.ok(Math.abs(epley1RM(90,10)-120) < 1e-9);
   assert.equal(epley1RM(100,0),null);
   assert.equal(epley1RM(100,31),null);
   assert.equal(epley1RM(-20,8),null);
