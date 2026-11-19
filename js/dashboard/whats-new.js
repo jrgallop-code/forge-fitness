@@ -1,7 +1,6 @@
 const RELEASE_VERSION = "1.0.6";
 const VIEW_KEY = "level_up_whats_new_seen_ios_" + RELEASE_VERSION;
 const TRAINING_PREFERENCES_KEY = "level_up_training_preferences";
-const SESSION_KEY = "level_up_cloud_session";
 const MAX_VIEWS = 1;
 const isIOS = () => window.Capacitor?.getPlatform?.() === "ios" && window.Capacitor?.isNativePlatform?.() === true;
 
@@ -28,9 +27,8 @@ function markSeen() {
 }
 function isOnboarded() {
   try {
-    const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
     const preferences = JSON.parse(localStorage.getItem(TRAINING_PREFERENCES_KEY) || "null");
-    return Boolean(session?.token && (preferences?.onboardingComplete || preferences?.onboardingSkipped));
+    return Boolean(preferences?.onboardingComplete || preferences?.onboardingSkipped);
   } catch { return false; }
 }
 
