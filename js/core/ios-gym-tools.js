@@ -1,11 +1,10 @@
-import { calculatePlateSolution } from "../workouts/plate-calculator.js?v=gym-tools-1";
+import { openStandalonePlateCalculator } from "../workouts/plate-calculator.js?v=gym-tools-2";
 import { massUnit, UNIT_KINDS } from "./unit-system.js?v=granular-units-1";
 import { epley1RM, convertGymWeight } from "./gym-tools-math.js?v=gym-tools-1";
 
-const PRESETS = { lb: [45, 35, 25, 10, 5, 2.5, 1.25], kg: [25, 20, 15, 10, 5, 2.5, 1.25] };
 const TABS = [["plates", "Plates"], ["convert", "Convert"], ["warmup", "Warm-up"], ["oneRM", "1RM"], ["stopwatch", "Stopwatch"]];
 let overlay = null;
-let tab = "plates";
+let tab = "convert";
 let unit = massUnit(UNIT_KINDS.LIFTING_WEIGHT) === "kg" ? "kg" : "lb";
 let startTime = 0;
 let elapsed = 0;
@@ -30,7 +29,7 @@ function renderContents() {
   if (!overlay) return;
   const body = overlay.querySelector("[data-gym-content]");
   if (tab === "plates") {
-    body.innerHTML = '<p class="gym-tools-help">Find the plates to put on <strong>each side</strong> of the bar, using the same calculation engine as the workout logger.</p><div class="gym-tools-fields">' + field("Total loaded weight", "target", unit === "lb" ? 135 : 60) + field("Bar weight", "bar", unit === "lb" ? 45 : 20) + unitControl() + '</div><div class="gym-tools-results" data-gym-results></div>';
+    body.innerHTML = '<p class="gym-tools-help">Use the full workout plate calculator with the original visual bar loading, bar presets and equipment settings.</p><button type="button" class="gym-tools-secondary" data-gym-open-plates>Open Plate Calculator</button>';
   } else if (tab === "convert") {
     body.innerHTML = '<p class="gym-tools-help">Convert a machine or free-weight load instantly.</p><div class="gym-tools-fields">' + field("Weight", "target", 45) + unitControl() + '</div><div class="gym-tools-results" data-gym-results></div><button type="button" class="gym-tools-secondary" data-gym-swap>Swap units</button>';
   } else if (tab === "warmup") {
@@ -58,15 +57,6 @@ function updateResults() {
     results.innerHTML = estimated === null ? '<p>Enter 1–30 whole-number repetitions.</p>' : '<span class="gym-tools-kicker">Estimated 1RM</span><strong class="gym-tools-result-number">' + fmt(estimated) + ' ' + unit + '</strong><small>Epley: weight × (1 + reps ÷ 30). One rep uses the lifted weight.</small>';
   } else if (tab === "warmup") {
     results.innerHTML = '<span class="gym-tools-kicker">Suggested warm-up sets</span>' + warmUpRamp(value).map(step => '<div class="gym-tools-result-row"><span>' + Math.round(step.p * 100) + '% · ' + step.reps + ' reps</span><strong>' + fmt(step.weight) + ' ' + unit + '</strong></div>').join('') + '<small>Illustrative loads; reduce or skip sets as appropriate.</small>';
-  } else if (tab === "plates") {
-    const barInput = overlay.querySelector('[data-gym-input="bar"]');
-    const bar = Number(barInput?.value);
-    if (barInput?.value === "" || !Number.isFinite(bar) || bar < 0 || bar > value) { results.innerHTML = '<p>Bar weight must be between 0 and the total weight.</p>'; return; }
-    const solution = calculatePlateSolution(value, bar, PRESETS[unit]);
-    if (!solution) { results.innerHTML = '<p>No plate solution available.</p>'; return; }
-    const entries = [...solution.counts.entries()].sort((a,b)=>b[0]-a[0]);
-    results.innerHTML = '<span class="gym-tools-kicker">Plates per side</span>' + (entries.length ? entries.map(([weight,count]) => '<div class="gym-tools-result-row"><span>' + fmt(weight) + ' ' + unit + ' plate</span><strong>× ' + count + '</strong></div>').join('') : '<p>No plates needed.</p>') + '<small>' + (solution.exact ? 'Exact match' : 'Closest achievable load: ' + fmt(solution.closestTotal) + ' ' + unit) + ' · Identical plates on both sides</small>';
-  }
 }
 function refreshClock() {
   const ms = startTime ? Math.max(0, now() - startTime) : elapsed;
@@ -146,7 +136,11 @@ export function openGymTools() {
   overlay.addEventListener("click", event => {
     if (event.target.closest("[data-gym-close]")) { closeGymTools(); return; }
     const chosen = event.target.closest("[data-gym-tab]");
-    if (chosen) { tab = chosen.dataset.gymTab; renderContents(); syncTabs(); return; }
+    if (chosen) {
+      if (chosen.dataset.gymTab === "plates") { closeGymTools(); openStandalonePlateCalculator(); return; }
+      tab = chosen.dataset.gymTab; renderContents(); syncTabs(); return;
+    }
+    if (event.target.closest("[data-gym-open-plates]")) { closeGymTools(); openStandalonePlateCalculator(); return; }
     if (event.target.closest("[data-gym-swap]")) {
       const val = validWeight("target");
       if (val !== null) { unit = unit === "lb" ? "kg" : "lb"; renderContents(); overlay.querySelector('[data-gym-input="target"]').value = convert(val, unit === "lb" ? "kg" : "lb", unit).toFixed(2); updateResults(); }
