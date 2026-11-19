@@ -21,7 +21,12 @@ function syncKeyboardViewport() {
     if (!sheet) return;
     const viewport = window.visualViewport;
     sheet.style.top = Math.max(0, viewport?.offsetTop || 0) + "px";
-    sheet.style.height = Math.max(240, viewport?.height || window.innerHeight) + "px";
+    const height = viewport?.height || window.innerHeight;
+    sheet.style.height = Math.max(240, height) + "px";
+    sheet.classList.toggle("ios-ql-keyboard-visible", height < window.innerHeight - 130);
+    if (height < window.innerHeight - 130 && sheet.querySelector(".ios-quick-log-weight")) {
+        sheet.querySelector(".ios-quick-log-weight input:focus")?.scrollIntoView({ block: "nearest", behavior: "instant" });
+    }
 }
 
 
