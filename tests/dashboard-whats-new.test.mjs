@@ -8,7 +8,7 @@ const router = fs.readFileSync("js/core/router.js", "utf8");
 const styles = fs.readFileSync("css/dashboard-whats-new.css", "utf8");
 const index = fs.readFileSync("index.html", "utf8");
 
-test("iOS launch announcement appears once for onboarded web users and stays in More", () => {
+test("iOS transfer guide remains accessible from More as PWA release notes take automatic display", () => {
     assert.match(feature, /level_up_whats_new_ios_launch_2026_09_views/);
     assert.match(feature, /const MAX_VIEWS = 1/);
     assert.match(feature, /if \(isNativeIOS\(\) \|\| !isOnboarded\(\)\) return false/);
@@ -16,7 +16,7 @@ test("iOS launch announcement appears once for onboarded web users and stays in 
     assert.match(feature, /if \(getStoredViews\(\) >= MAX_VIEWS\) return false/);
     assert.match(more, /data-more-page="ios-transfer"/);
     assert.match(more, /openWhatsNew\(\)/);
-    assert.match(router, /showWhatsNewIfEligible/);
+    assert.match(router, /showPWAReleaseIfEligible/);
 });
 
 test("transfer guide matches the actual backup and code flow", () => {
