@@ -167,7 +167,7 @@ struct LevelUpTimerLiveActivity: Widget {
                         .font(.caption2.weight(.heavy)).tracking(0.8).foregroundStyle(palette.accent)
                         .lineLimit(1).minimumScaleFactor(0.75)
                     Spacer(minLength: 2)
-                    timerText(context: context, palette: palette, font: .title2)
+                    timerText(context: context, palette: palette, font: context.attributes.kind == "stopwatch" ? .system(size: 34, weight: .heavy, design: .rounded) : .title2)
                         .layoutPriority(2)
                 }
                 Text(activityTitle(context))
