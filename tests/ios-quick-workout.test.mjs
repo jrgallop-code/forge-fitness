@@ -14,9 +14,9 @@ function takeFunction(source, start, end) {
 }
 
 test('iOS Log Photos opens the dedicated Progress Photos destination', () => {
-  const open = takeFunction(quickLog, 'function openExisting(destination) {', '\\nfunction ensureNavigation()');
+  const open = takeFunction(quickLog, 'function openExisting(destination) {', '\nfunction ensureNavigation()');
   const source = readFileSync('js/progress/progress-ui.js', 'utf8');
-  const renderPhoto = takeFunction(source, 'export function renderPhotosProgressDestination() {', '\\nexport function renderProgress(');
+  const renderPhoto = takeFunction(source, 'export function renderPhotosProgressDestination() {', '\nexport function renderProgress(');
   const router = readFileSync('js/core/router.js', 'utf8');
   const app = readFileSync('js/app.js', 'utf8');
   const tabs = {};
@@ -30,11 +30,11 @@ test('iOS Log Photos opens the dedicated Progress Photos destination', () => {
     document, closeSheet(){},
     CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } }
   });
-  vm.runInContext(open + '\\nopenExisting("photos");', context);
+  vm.runInContext(open + '\nopenExisting("photos");', context);
   assert.equal(document.navigation.page, 'progress-photos', 'Log shortcut must not navigate to generic Progress');
   assert.equal(tabs.progress, true, 'Bottom Progress tab should be active');
 
-  const html = vm.runInNewContext(renderPhoto + '\\nrenderPhotosProgressDestination()', {
+  const html = vm.runInNewContext(renderPhoto + '\nrenderPhotosProgressDestination()', {
     renderPhotoJournal: () => '<section class="photo-journal"><input id="photo-journal-date"><button id="save-photo-journal-btn">Save Photo</button></section>'
   });
   assert.match(html, /data-progress-destination="photo"/);
