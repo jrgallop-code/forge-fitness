@@ -91,6 +91,11 @@ jobs:
           path.write_bytes(plistlib.dumps(data))
           PY
 
+      - name: Validate iOS Quick Workout and Photos shortcut syntax
+        run: |
+          node --check js/core/ios-quick-log.js
+          node --check js/workouts/one-off-workout.js
+
       - name: Run iOS packaging checks
         run: node --test tests/instagram-video-model.test.mjs tests/spotify-pr-tagging.test.mjs tests/capacitor-ios-packaging.test.mjs tests/native-app-shell.test.mjs
 
