@@ -13,55 +13,40 @@ function takeFunction(source, start, end) {
   return source.slice(a, b).replace(/^export /, '');
 }
 
-test('iOS Log Photos opens the Photos progress panel, not the default overview', () => {
-  const select = takeFunction(tracker, 'export function selectProgressTab(', '\nfunction initializeProgressTabs()');
-  const open = takeFunction(quickLog, 'function openExisting(destination) {', '\nfunction ensureNavigation()');
-  const keys = {
-    weight: ['weight-tab','weight-progress'],
-    lifting: ['lifting-tab','lifting-progress'],
-    nutrition: ['nutrition-progress-tab','calorie-progress'],
-    cardio: ['cardio-progress-tab','cardio-progress'],
-    steps: ['steps-progress-tab','steps-progress'],
-    photo: ['photo-log-tab','photo-log-progress']
-  };
-  const elements = {};
-  for (const [name, [tabId, panelId]] of Object.entries(keys)) {
-    elements[tabId] = {
-      id: tabId, offsetLeft: name === 'photo' ? 550 : 0, offsetWidth: 110,
-      classList: {
-        active: false,
-        toggle(token, enabled) { if (token === 'active') this.active = enabled; },
-        contains(token) { return token === 'active' && this.active; }
-      },
-      setAttribute(name, value) { this[name] = value; },
-      click() { this.clicked = (this.clicked || 0) + 1; if (name === 'photo') selectPhoto(); }
-    };
-    elements[panelId] = { hidden: name !== 'lifting', scrollIntoView() { this.scrolled = true; } };
-  }
-  const strip = {clientWidth: 350, scrollLeft: 0, dataset:{}};
+test('iOS Log Photos opens the dedicated Progress Photos destination', () => {
+  const open = takeFunction(quickLog, 'function openExisting(destination) {', '\\nfunction ensureNavigation()');
+  const source = readFileSync('js/progress/progress-ui.js', 'utf8');
+  const renderPhoto = takeFunction(source, 'export function renderPhotosProgressDestination() {', '\\nexport function renderProgress(');
+  const router = readFileSync('js/core/router.js', 'utf8');
+  const app = readFileSync('js/app.js', 'utf8');
+  const tabs = {};
   const document = {
-    getElementById(id) { return elements[id] || null; },
-    querySelector(selector) { return selector === '.progress-tabs' ? strip : null; },
-    querySelectorAll() { return []; }
+    querySelectorAll() { return [
+      { dataset: { page:'progress' }, classList: { toggle(name, value) { tabs.progress = value; } } }
+    ]; },
+    dispatchEvent(event) { this.navigation = event.detail; }
   };
-  let destination = null;
   const context = vm.createContext({
-    document, window: { dispatchEvent(){} }, requestAnimationFrame: fn => fn(),
-    closeSheet(){},
-    CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options?.detail; } }
+    document, closeSheet(){},
+    CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } }
   });
-  const selectPhoto = () => vm.runInContext('selectProgressTab("photo", { center: false })', context);
-  document.dispatchEvent = event => { destination = event.detail; };
-  vm.runInContext(select + '\n' + open + '\nopenExisting("photos");', context);
-  assert.equal(destination.page, 'progress');
-  assert.equal(destination.tab, 'photo');
-  assert.equal(elements['photo-log-progress'].hidden, false);
-  assert.equal(elements['lifting-progress'].hidden, true);
-  assert.equal(elements['photo-log-tab'].classList.active, true);
-  assert.equal(elements['lifting-tab'].classList.active, false);
-  assert.ok(strip.scrollLeft > 0, 'Photos tab should scroll into view');
-  assert.ok(elements['photo-log-tab'].clicked >= 1, 'The actual Photos tab must be clicked');
-  assert.equal(elements['photo-log-progress'].scrolled, true, 'The Photos journal should be the visible destination');
+  vm.runInContext(open + '\\nopenExisting("photos");', context);
+  assert.equal(document.navigation.page, 'progress-photos', 'Log shortcut must not navigate to generic Progress');
+  assert.equal(tabs.progress, true, 'Bottom Progress tab should be active');
+
+  const html = vm.runInNewContext(renderPhoto + '\\nrenderPhotosProgressDestination()', {
+    renderPhotoJournal: () => '<section class="photo-journal"><input id="photo-journal-date"><button id="save-photo-journal-btn">Save Photo</button></section>'
+  });
+  assert.match(html, /data-progress-destination="photo"/);
+  assert.match(html, /id="photo-log-tab"/);
+  assert.match(html, /class="progress-tab active"\\s+id="photo-log-tab"/);
+  assert.match(html, /id="photo-log-progress"/);
+  assert.match(html, /id="save-photo-journal-btn"/);
+  assert.doesNotMatch(html, /id="lifting-progress"|id="weight-progress"/, 'The overview panels must not be rendered first');
+  assert.match(router, /case "progress-photos":/);
+  assert.match(router, /content\\.innerHTML = renderPhotosProgressDestination\\(\\)/);
+  assert.match(router, /safeInitialize\\("Progress photos", initializePhotoJournal\\)/);
+  assert.match(app, /page==="progress-photos"\\)\\?"progress"/);
 });
 
 test('Quick Workout reuses existing workout functions and preserves the PWA gate', () => {
