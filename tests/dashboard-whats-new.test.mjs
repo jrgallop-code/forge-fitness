@@ -31,7 +31,7 @@ test("release page uses true iOS features and an authentic CSS Quick Log preview
   assert.match(feature, /whats-new-plus/);
   assert.match(styles, /\.whats-new-preview-action/);
   assert.doesNotMatch(feature, /https?:\/\//);
-  assert.doesNotMatch(feature, /<img/);
+  assert.match(feature, /assets\/level-up-logo\.svg/);
 });
 
 test("iOS entry is automatic on dashboard and reviewable from More", () => {
