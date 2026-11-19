@@ -1,4 +1,4 @@
-import { openStandalonePlateCalculator } from "../workouts/plate-calculator.js?v=gym-tools-2";
+import { openStandalonePlateCalculator } from "../workouts/plate-calculator.js?v=refined-equipment-controls-4";
 import { massUnit, UNIT_KINDS } from "./unit-system.js?v=granular-units-1";
 import { epley1RM, convertGymWeight } from "./gym-tools-math.js?v=gym-tools-1";
 
