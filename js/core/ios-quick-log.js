@@ -1,3 +1,4 @@
+import { openGymTools } from "./ios-gym-tools.js?v=gym-tools-1";
 import { canonicalMass, displayMass, massUnit } from "./unit-system.js?v=granular-units-1";
 import { isNutritionEnabled } from "./app-feature-preferences.js?v=nutrition-feature-choice-1";
 import { getActiveWorkout, getWorkoutSessions, openActiveWorkout, openWorkoutLogger } from "../workouts/workout-session.js?v=native-navigation-stability-1";
@@ -129,6 +130,7 @@ function openMenu() {
           <button type="button" data-ql-action="measurements">${icon("measurements")}<strong>Body Metrics</strong></button>
           <button type="button" data-ql-action="photos">${icon("photos")}<strong>Progress Photos</strong></button>
           <button type="button" data-ql-action="workout">${icon("workout")}<strong>Workout</strong></button>
+          <button type="button" data-ql-action="gym-tools">${icon("weight")}<strong>Gym Tools</strong></button>
         </div></section>`;
     document.body.append(sheet);
     document.body.classList.add("ios-quick-log-open");
@@ -389,6 +391,7 @@ function handleClick(event) {
     }
     if (action === "weight") openWeight();
     else if (action === "workout") openQuickWorkout();
+    else if (action === "gym-tools") { closeSheet(); openGymTools(); }
     else if (action) openExisting(action);
 }
 export function initializeIOSQuickLog() {
