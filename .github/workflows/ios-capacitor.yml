@@ -97,7 +97,7 @@ jobs:
           node --check js/workouts/one-off-workout.js
 
       - name: Run iOS packaging checks
-        run: node --test tests/instagram-video-model.test.mjs tests/spotify-pr-tagging.test.mjs tests/capacitor-ios-packaging.test.mjs tests/native-app-shell.test.mjs
+        run: node --test tests/ios-quick-workout.test.mjs tests/instagram-video-model.test.mjs tests/spotify-pr-tagging.test.mjs tests/capacitor-ios-packaging.test.mjs tests/native-app-shell.test.mjs
 
       - name: Report Apple toolchain
         run: xcodebuild -version
