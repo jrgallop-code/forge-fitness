@@ -1,6 +1,7 @@
 import { navigate } from "../core/router.js?v=pwa-coach-link-1";
 import { canonicalMass, displayMass, massUnit } from "./unit-system.js?v=granular-units-1";
 import { selectProgressTab } from "../progress/weight-tracker.js?v=steps-tab-cardio-1";
+import { isNutritionEnabled } from "./app-feature-preferences.js?v=nutrition-feature-choice-1";
 import { getActiveWorkout, getWorkoutSessions, openActiveWorkout, openWorkoutLogger } from "../workouts/workout-session.js?v=native-navigation-stability-1";
 import { openOneOffBuilder } from "../workouts/one-off-workout.js?v=cardio-rpe-1";
 
@@ -115,14 +116,15 @@ function openWeight() {
 function openMenu() {
     closeSheet();
     priorFocus = document.activeElement;
+    const showNutrition = isNutritionEnabled();
     sheet = document.createElement("div");
     sheet.className = "ios-quick-log-overlay";
     sheet.innerHTML = `<div class="ios-quick-log-scrim" data-ql-close></div>
       <section class="ios-quick-log-sheet" role="dialog" aria-modal="true" aria-labelledby="ios-ql-heading">
         <div class="ios-quick-log-handle"></div><div class="ios-quick-log-heading"><h2 id="ios-ql-heading">Quick Log</h2><button type="button" aria-label="Close quick log" data-ql-close>×</button></div>
-        <div class="ios-quick-log-grid">
+        <div class="ios-quick-log-grid${showNutrition ? "" : " is-five"}">
           <button type="button" data-ql-action="weight">${icon("weight")}<strong>Weight</strong></button>
-          <button type="button" data-ql-action="food">${icon("food")}<strong>Nutrition</strong></button>
+          ${showNutrition ? `<button type="button" data-ql-action="food">${icon("food")}<strong>Nutrition</strong></button>` : ""}
           <button type="button" data-ql-action="water">${icon("water")}<strong>Water</strong></button>
           <button type="button" data-ql-action="measurements">${icon("measurements")}<strong>Body Metrics</strong></button>
           <button type="button" data-ql-action="photos">${icon("photos")}<strong>Progress Photos</strong></button>
