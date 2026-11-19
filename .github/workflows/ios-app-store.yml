@@ -186,13 +186,12 @@ jobs:
           APP_BUNDLE_IDENTIFIER: com.leveluphypertrophy.app
           APP_EXTENSION_BUNDLE_IDENTIFIER: com.leveluphypertrophy.app.timer
           SIGNING_DIR: ${{ runner.temp }}/level-up-signing
-          # Rotate the CI certificate created by successful release #406,
-          # whose App Store upload and TestFlight verification both passed.
-          # The signing script compares exact ID, serial, expiration and owner.
-          # Never revoke the older 2PQXW64273 certificate or a mismatched one.
-          LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE: L2H2XR7BF7
-          LEVEL_UP_CI_CERTIFICATE_SERIAL_TO_REVOKE: 1FEDB7780EE8C2337F51F02F48CEA2E8
-          LEVEL_UP_CI_CERTIFICATE_EXPIRATION_TO_REVOKE: 2027-11-17T16:40:02.000+00:00
+          # Rotate only the confirmed CI certificate created by successful
+          # release #411 (TestFlight verified IN_BETA_TESTING). Confirmed in
+          # read-only Apple inventory on 2026-11-19. Never touch older certs.
+          LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE: 67QR9599GH
+          LEVEL_UP_CI_CERTIFICATE_SERIAL_TO_REVOKE: 7D7DA0A3F4B2F8513D89FB150E94B32B
+          LEVEL_UP_CI_CERTIFICATE_EXPIRATION_TO_REVOKE: 2027-11-19T15:30:08.000+00:00
         run: |
           echo "SIGNING_DIR=$SIGNING_DIR" >> "$GITHUB_ENV"
           echo "SIGNING_STATE_PATH=$SIGNING_DIR/state.json" >> "$GITHUB_ENV"
