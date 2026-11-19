@@ -1,9 +1,13 @@
-const CACHE_VERSION = "pwa-coach-existing-account-safe-20261116";
+const CACHE_VERSION = "pwa-quick-log-whats-new-20261119";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
+    "./js/core/pwa-quick-log.js?v=pwa-quick-log-20261119",
+    "./css/pwa-quick-log.css?v=pwa-quick-log-20261119",
+    "./js/dashboard/pwa-release-notes.js?v=pwa-release-20261119",
+    "./css/pwa-release-notes.css?v=pwa-release-20261119",
     "./js/nutrition/food-nutrients.js",
     "./assets/food/category-12.webp",
     "./assets/food/category-15.webp",
