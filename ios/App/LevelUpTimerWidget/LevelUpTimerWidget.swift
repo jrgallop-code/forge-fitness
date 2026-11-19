@@ -179,6 +179,8 @@ struct LevelUpTimerLiveActivity: Widget {
                     .font(.caption2.weight(.medium)).foregroundStyle(palette.muted).lineLimit(1)
                 if context.attributes.kind == "rest" {
                     restControls(context: context, palette: palette)
+                } else if context.attributes.kind == "stopwatch" {
+                    stopwatchControls(context: context, palette: palette)
                 } else {
                     HStack {
                         Spacer()
@@ -214,6 +216,7 @@ struct LevelUpTimerLiveActivity: Widget {
                             if context.attributes.kind != "rest" { dismissControl(context: context, palette: palette) }
                         }
                         if context.attributes.kind == "rest" { restControls(context: context, palette: palette) }
+                        if context.attributes.kind == "stopwatch" { stopwatchControls(context: context, palette: palette) }
                     }
                 }
             } compactLeading: {
@@ -228,12 +231,14 @@ struct LevelUpTimerLiveActivity: Widget {
     }
 
     private func activityHeading(_ context: ActivityViewContext<LevelUpTimerAttributes>) -> String {
+        if context.attributes.kind == "stopwatch" { return "GYM STOPWATCH" }
         if context.attributes.kind == "hold" { return "HOLD TIMER" }
         if context.attributes.kind == "cardio" { return "CARDIO TIMER" }
         return "REST TIMER"
     }
 
     private func activityTitle(_ context: ActivityViewContext<LevelUpTimerAttributes>) -> String {
+        if context.attributes.kind == "stopwatch" { return "Gym Tools" }
         if context.attributes.kind == "hold" { return context.attributes.exerciseName }
         let workout = context.attributes.workoutName.trimmingCharacters(in: .whitespacesAndNewlines)
         if !workout.isEmpty && workout != "Workout" { return workout }
@@ -242,6 +247,7 @@ struct LevelUpTimerLiveActivity: Widget {
     }
 
     private func activityDetails(_ context: ActivityViewContext<LevelUpTimerAttributes>) -> String {
+        if context.attributes.kind == "stopwatch" { return "Elapsed workout time" }
         if context.attributes.kind == "hold" { return "Set \(context.attributes.setNumber) · Elapsed time" }
         let exercise = context.attributes.exerciseName.trimmingCharacters(in: .whitespacesAndNewlines)
         if context.attributes.kind == "cardio" {
@@ -266,7 +272,7 @@ struct LevelUpTimerLiveActivity: Widget {
         } else {
             Text(
                 timerInterval: context.state.startedAt...context.state.endAt,
-                countsDown: context.attributes.kind != "hold"
+                countsDown: context.attributes.kind != "hold" && context.attributes.kind != "stopwatch"
             )
                 .font(font).monospacedDigit().fontWeight(.heavy).foregroundStyle(palette.accent)
         }
@@ -291,6 +297,25 @@ struct LevelUpTimerLiveActivity: Widget {
                 Text("Open Level Up for timer controls").font(.caption.weight(.semibold)).frame(maxWidth: .infinity)
             }
             .foregroundStyle(palette.accent)
+        }
+    }
+
+    @ViewBuilder
+    private func stopwatchControls(context: ActivityViewContext<LevelUpTimerAttributes>, palette: TimerPalette) -> some View {
+        if #available(iOS 17.0, *) {
+            HStack(spacing: 9) {
+                timerButton(context.state.status == "paused" ? "Resume" : "Pause",
+                            intent: ToggleLevelUpTimerIntent(timerID: context.attributes.timerID),
+                            palette: palette, emphasized: true)
+                timerButton("Stop",
+                            intent: SkipLevelUpTimerIntent(timerID: context.attributes.timerID),
+                            palette: palette)
+            }
+        } else {
+            Link(destination: URL(string: "leveluphypertrophy://timer/dismiss?key=gym-tools-stopwatch")!) {
+                Text("Open Level Up").font(.caption.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            }.foregroundStyle(palette.accent)
         }
     }
 
