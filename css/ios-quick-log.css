@@ -242,3 +242,15 @@ html[data-ios-quick-log-installed="1"] #weight-progress .weight-section-header .
   .ios-ql-workout-routine { grid-template-columns:minmax(0,1fr) 100px; }
   .ios-ql-workout-routine > button { grid-column:2; }
 }
+
+
+/* Five active shortcuts: three across, then two centred with identical widths. */
+.ios-quick-log-grid.is-five {
+    grid-template-columns:repeat(6,minmax(0,1fr));
+}
+.ios-quick-log-grid.is-five > button {
+    grid-column:span 2;
+}
+.ios-quick-log-grid.is-five > button:nth-child(4) {
+    grid-column:2 / span 2;
+}
