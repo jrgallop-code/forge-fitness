@@ -1,7 +1,7 @@
 import { calculatePlateSolution } from "../workouts/plate-calculator.js?v=gym-tools-1";
 import { massUnit, UNIT_KINDS } from "./unit-system.js?v=granular-units-1";
+import { epley1RM, convertGymWeight } from "./gym-tools-math.js?v=gym-tools-1";
 
-const FACTOR = 2.20462262185;
 const PRESETS = { lb: [45, 35, 25, 10, 5, 2.5, 1.25], kg: [25, 20, 15, 10, 5, 2.5, 1.25] };
 const TABS = [["plates", "Plates"], ["convert", "Convert"], ["warmup", "Warm-up"], ["oneRM", "1RM"], ["stopwatch", "Stopwatch"]];
 let overlay = null;
@@ -14,13 +14,8 @@ const STOPWATCH_KEY = "gym-tools-stopwatch";
 const nativeTimer = () => window.Capacitor?.Plugins?.LevelUpTimer;
 const now = () => Date.now();
 let previousFocus = null;
-const convert = (value, from, to) => from === to ? value : from === "kg" ? value * FACTOR : value / FACTOR;
+const convert = convertGymWeight;
 const fmt = value => Number.isFinite(value) ? Number(value.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—";
-export function epley1RM(weight, reps) {
-  return Number.isFinite(weight) && weight > 0 && Number.isInteger(reps) && reps >= 1 && reps <= 30
-    ? (reps === 1 ? weight : weight * (1 + reps / 30))
-    : null;
-}
 export function warmUpRamp(target, reps) {
   if (!Number.isFinite(target) || target <= 0) return [];
   // Low-fatigue illustrative ramp, not a prescription.
