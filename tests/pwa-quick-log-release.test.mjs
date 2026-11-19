@@ -33,7 +33,8 @@ test("PWA What's New is distinct from iPhone transfer guide", () => {
   assert.match(release, /Apple Health integration \(iOS only\)/);
   assert.match(release, /not the web version/);
   assert.match(release, /Meet Quick Log/);
-  assert.match(router, /showPWAReleaseIfEligible/);
+  assert.match(router, /import \{ showWhatsNewIfEligible as showPWAReleaseIfEligible \} from/);
+  assert.match(release, /export function showWhatsNewIfEligible\(\)/);
   assert.match(more, /data-more-page="pwa-release-notes"/);
   assert.match(more, /data-more-page="ios-transfer"/);
   assert.match(index, /css\/pwa-release-notes\.css/);
