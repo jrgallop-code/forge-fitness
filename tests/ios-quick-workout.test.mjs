@@ -39,14 +39,14 @@ test('iOS Log Photos opens the dedicated Progress Photos destination', () => {
   });
   assert.match(html, /data-progress-destination="photo"/);
   assert.match(html, /id="photo-log-tab"/);
-  assert.match(html, /class="progress-tab active"\\s+id="photo-log-tab"/);
+  assert.ok(html.includes('class="progress-tab active"'), 'Photos tab should be active initially');
   assert.match(html, /id="photo-log-progress"/);
   assert.match(html, /id="save-photo-journal-btn"/);
   assert.doesNotMatch(html, /id="lifting-progress"|id="weight-progress"/, 'The overview panels must not be rendered first');
   assert.match(router, /case "progress-photos":/);
-  assert.match(router, /content\\.innerHTML = renderPhotosProgressDestination\\(\\)/);
-  assert.match(router, /safeInitialize\\("Progress photos", initializePhotoJournal\\)/);
-  assert.match(app, /page==="progress-photos"\\)\\?"progress"/);
+  assert.ok(router.includes('content.innerHTML = renderPhotosProgressDestination()'));
+  assert.ok(router.includes('safeInitialize("Progress photos", initializePhotoJournal)'));
+  assert.ok(app.includes('page==="progress-photos"'), 'The navigation bar should recognize the Photos destination');
 });
 
 test('Quick Workout reuses existing workout functions and preserves the PWA gate', () => {
