@@ -24,6 +24,35 @@ export function renderStepsProgressDestination() {
     `;
 }
 
+// Direct iOS Quick Log Photos destination: render the actual photo journal as
+// the selected Progress tab, without mounting the generic lifting overview.
+// Other tabs still navigate to the regular Progress experience.
+export function renderPhotosProgressDestination() {
+    const tabs = [
+        ["weight", "⚖️ Weight"],
+        ["lifting", "🏋️ Lifting"],
+        ["nutrition", "Nutrition"],
+        ["cardio", "Cardio"],
+        ["steps", "Steps"],
+        ["photo", "📷 Photos"]
+    ];
+    return `
+      <section class="section-card progress-page progress-photo-destination" data-progress-destination="photo">
+        <h2>📈 Progress</h2>
+        <div class="progress-tabs" data-initial-tab="photo" data-current-tab="photo" role="tablist" aria-label="Progress sections">
+          ${tabs.map(([name, label]) => `<button type="button"
+              class="progress-tab ${name === "photo" ? "active" : ""}"
+              ${name === "photo" ? 'id="photo-log-tab"' : ""}
+              data-progress-destination-tab="${name}"
+              role="tab" aria-selected="${name === "photo"}">${label}</button>`).join("")}
+        </div>
+        <div id="photo-log-progress" role="tabpanel" aria-labelledby="photo-log-tab">
+          ${renderPhotoJournal()}
+        </div>
+      </section>
+    `;
+}
+
 export function renderProgress({ initialTab = "lifting" } = {}) {
     const initialSteps = initialTab === "steps";
     return `
