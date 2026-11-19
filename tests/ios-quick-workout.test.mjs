@@ -67,3 +67,14 @@ test('Quick Workout reuses existing workout functions and preserves the PWA gate
   assert.match(quickLog, /openWorkoutLogger\(plan\)/);
   assert.match(quickLog, /openOneOffBuilder\(\)/);
 });
+
+
+test('Quick Log Nutrition respects the existing feature toggle and balances five tiles', () => {
+  const css = readFileSync('css/ios-quick-log.css', 'utf8');
+  assert.match(quickLog, /import \{ isNutritionEnabled \} from "\.\/app-feature-preferences\.js/);
+  assert.match(quickLog, /const showNutrition = isNutritionEnabled\(\)/);
+  assert.match(quickLog, /ios-quick-log-grid\$\{showNutrition \? "" : " is-five"\}/);
+  assert.match(quickLog, /showNutrition \? `<button type="button" data-ql-action="food"/);
+  assert.match(css, /\.ios-quick-log-grid\.is-five\s*\{\s*grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
+  assert.match(css, /\.ios-quick-log-grid\.is-five > button:nth-child\(4\)/);
+});
