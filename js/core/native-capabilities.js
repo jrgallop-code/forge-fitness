@@ -256,6 +256,10 @@ function bindNativeTouchFeedback() {
         void appPlugin?.addListener?.("appUrlOpen", event => {
             try {
                 const url = new URL(event?.url || "");
+                if (url.protocol === "leveluphypertrophy:" && url.hostname === "gym" && url.pathname === "/tools") {
+                    void import("./ios-gym-tools.js?v=gym-tools-1").then(module => module.openGymTools());
+                    return;
+                }
                 if (url.protocol === "leveluphypertrophy:" && url.hostname === "workout") {
                     void import("../workouts/workout-session.js?v=native-navigation-stability-1").then(module => module.openActiveWorkout());
                     return;
