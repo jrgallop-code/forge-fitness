@@ -17,7 +17,7 @@ export function initializeOneOffWorkout() {
     button.addEventListener("click", openOneOffBuilder);
 }
 
-function openOneOffBuilder() {
+export function openOneOffBuilder() {
     document.getElementById("one-off-workout-builder")?.remove();
     rows = [createRow()];
 
