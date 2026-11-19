@@ -4,6 +4,7 @@
 .whats-new-ios .whats-new-hero{position:relative;isolation:isolate;overflow:hidden;border:0;border-radius:0;background:linear-gradient(135deg,#1b1b22,#101115 76%);box-shadow:none;color:#fff;padding:calc(env(safe-area-inset-top) + 27px) 24px 34px;}
 .whats-new-ios .whats-new-hero:after{content:"";position:absolute;inset:auto -15% -70% 28%;height:260px;background:radial-gradient(ellipse,#cc1e3242,transparent 65%);pointer-events:none;z-index:-1;}
 .whats-new-ios .whats-new-brand{display:inline-flex;align-items:center;gap:8px;color:#fff;font-size:14px;font-weight:900;font-style:italic;letter-spacing:.11em;}
+.whats-new-ios .whats-new-logo{width:28px;height:28px;object-fit:contain;flex:none;border-radius:7px;}
 .whats-new-ios .whats-new-brand-mark{color:#ef3146;font-size:23px;letter-spacing:-.22em;transform:skew(-18deg);display:inline-block;padding-right:8px;}
 .whats-new-ios .whats-new-close{position:absolute;top:calc(env(safe-area-inset-top) + 19px);right:20px;display:grid;place-items:center;width:40px;height:40px;border:1px solid #ffffff32;border-radius:50%;background:#ffffff16;color:#fff;font-size:26px;line-height:1;box-shadow:none;}
 .whats-new-ios .whats-new-eyebrow{margin-top:37px;color:#fe9ba5;font-size:11px;letter-spacing:.14em;font-weight:800;}
