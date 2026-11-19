@@ -1,0 +1,256 @@
+/* Only activated inside the Capacitor iOS shell. */
+.bottom-nav.ios-quick-log-nav-enabled { display:grid!important; grid-template-columns:repeat(5,minmax(0,1fr))!important; align-items:stretch; }
+.bottom-nav.ios-quick-log-nav-enabled > .nav-btn { min-width:0; }
+.ios-quick-log-nav { appearance:none; border:0; background:transparent; color:var(--text-primary,#fff); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:0; font:inherit; cursor:pointer; min-width:0; }
+.ios-quick-log-nav > span { display:grid; place-items:center; width:56px; height:56px; border-radius:50%; background:var(--accent,#147dff); color:#fff; font-size:36px; font-weight:400; line-height:1; box-shadow:0 4px 14px #0004; border:2px solid #fff3; }
+.ios-quick-log-nav > small { font-size:10px; color:inherit; font-weight:600; }
+.ios-quick-log-nav { position:relative; z-index:2; touch-action:manipulation; }
+.ios-quick-log-nav > span { flex:none; }
+.bottom-nav.ios-quick-log-nav-enabled [data-page="energy"] { display:none!important; }
+.ios-quick-log-card-action { display:block; margin:8px 0 0; width:max-content; max-width:100%; padding:7px 12px; border:1px solid currentColor; border-radius:12px; background:transparent; color:var(--accent,#218bff); font-size:12px; font-weight:700; cursor:pointer; }
+.ios-quick-log-open { overflow:hidden; }
+.ios-quick-log-overlay { position:fixed; left:0; right:0; top:0; height:100dvh; z-index:2147482000; display:flex; align-items:flex-end; justify-content:center; color:var(--text-primary,#fff); overflow:hidden; }
+.ios-quick-log-scrim { position:absolute; inset:0; background:#0009; }
+.ios-quick-log-sheet { position:relative; width:100%; max-width:540px; background:var(--surface,#1b1b20); background:var(--ios-surface-1,var(--card-bg,#1b1b20)); border:1px solid #7775; border-radius:24px 24px 0 0; box-shadow:0 -10px 40px #0005; padding:12px 20px calc(20px + env(safe-area-inset-bottom)); max-height:calc(100% - 10px); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+.ios-quick-log-handle { height:5px; width:38px; border-radius:9px; margin:0 auto 16px; background:#9998; }
+.ios-quick-log-heading { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.ios-quick-log-heading h2 { margin:0; color:inherit; font-size:23px; }
+.ios-quick-log-heading button { appearance:none; border:0; background:transparent; color:inherit; font-size:28px; padding:2px 9px; }
+.ios-quick-log-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.ios-quick-log-grid button { min-height:92px; border:1px solid #8884; border-radius:15px; background:var(--ios-surface-2,#25252a); color:inherit; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:7px; font:inherit; }
+.ios-quick-log-grid .ios-ql-svg { width:27px; height:27px; color:var(--accent,#3c9cff); flex:none; }
+.ios-quick-log-grid strong { font-size:14px; }
+.ios-quick-log-last { font-size:13px; opacity:.72; margin:0 0 15px; }
+.ios-quick-log-field-label { display:block; margin:12px 0 6px; font-size:13px; font-weight:600; }
+.ios-quick-log-weight input { display:block; width:100%; box-sizing:border-box; min-height:54px; border:1px solid #9997; border-radius:13px; padding:12px; color:inherit; background:var(--ios-surface-2,#29292d); font:inherit; font-size:21px; }
+.ios-quick-log-save { width:100%; min-height:50px; margin-top:20px; border:0; border-radius:12px; background:var(--accent,#167bff); color:#fff; font:inherit; font-weight:700; }
+.ios-quick-log-error { color:#ff7070; margin:10px 0 0; font-size:13px; }
+
+/* Keep history Edit working while moving new weigh-ins to the central Log button. */
+.bottom-nav.ios-quick-log-nav-enabled ~ #content .weight-add-toggle { display:none!important; }
+html[data-ios-quick-log-installed="1"] #weight-progress .weight-section-header .weight-add-toggle,
+#weight-progress .weight-section-header .ios-ql-redundant-weight-add { display:none!important; }
+/* Preserve readable date, weight and Save controls above the iOS keyboard. */
+.ios-quick-log-weight { scroll-padding-bottom:16px; }
+.ios-quick-log-weight input:focus-visible { outline:2px solid var(--accent,#218bff); outline-offset:2px; }
+@media (max-height:420px) { .ios-quick-log-weight { padding-top:7px; } .ios-quick-log-weight .ios-quick-log-handle { margin-bottom:8px; } .ios-quick-log-weight .ios-quick-log-save { margin-top:12px; } }
+
+.ios-ql-keyboard-visible .ios-quick-log-weight { padding-top:7px; padding-bottom:8px; }
+.ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-handle { margin-bottom:6px; }
+.ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-heading { margin-bottom:3px; }
+.ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-last { margin-bottom:5px; }
+.ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-field-label { margin:6px 0 3px; }
+.ios-ql-keyboard-visible .ios-quick-log-weight input { min-height:43px; font-size:18px; }
+.ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-save { min-height:44px; margin-top:10px; }
+
+
+/* iOS Quick Log polish: override the native tab bar's generic span typography. */
+.bottom-nav.ios-quick-log-nav-enabled .ios-quick-log-nav > span {
+    box-sizing: border-box;
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    min-height: 58px;
+    padding: 0 0 4px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    font-size: 48px;
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: 0;
+    text-align: center;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 50%;
+    background: var(--accent, #e11c2c);
+    box-shadow: 0 3px 11px rgba(0,0,0,.22);
+}
+.bottom-nav.ios-quick-log-nav-enabled .ios-quick-log-nav > small {
+    font-size: 10px;
+    line-height: 13px;
+}
+
+/* Equal edge alignment and native-looking, consistent form controls. */
+.ios-quick-log-weight #ios-quick-log-weight-form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+.ios-quick-log-weight #ios-quick-log-number,
+.ios-quick-log-weight #ios-quick-log-date {
+    display: block;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 56px;
+    min-height: 56px;
+    margin: 0;
+    padding: 0 16px;
+    box-sizing: border-box;
+    border: 1px solid rgba(132, 132, 143, .32);
+    border-radius: 14px;
+    background: var(--ios-surface-2, #16161a);
+    color: inherit;
+    text-align: left;
+    font-size: 19px;
+    font-weight: 500;
+    line-height: normal;
+    box-shadow: none;
+}
+.ios-quick-log-weight #ios-quick-log-date {
+    font-family: inherit;
+    color-scheme: inherit;
+}
+.ios-quick-log-weight #ios-quick-log-date::-webkit-date-and-time-value {
+    text-align: left;
+    min-height: 1lh;
+}
+.ios-quick-log-weight #ios-quick-log-date::-webkit-datetime-edit {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    text-align: left;
+}
+.ios-quick-log-weight #ios-quick-log-number::-webkit-inner-spin-button,
+.ios-quick-log-weight #ios-quick-log-number::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.ios-quick-log-weight .ios-quick-log-field-label {
+    margin: 14px 0 7px;
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 600;
+}
+.ios-quick-log-weight .ios-quick-log-save {
+    box-sizing: border-box;
+    width: 100%;
+    margin-top: 20px;
+    border-radius: 14px;
+}
+.ios-ql-keyboard-visible .ios-quick-log-weight #ios-quick-log-number,
+.ios-ql-keyboard-visible .ios-quick-log-weight #ios-quick-log-date {
+    height: 45px;
+    min-height: 45px;
+    font-size: 17px;
+}
+.ios-ql-keyboard-visible .ios-quick-log-weight .ios-quick-log-field-label {
+    margin: 7px 0 4px;
+}
+
+
+/* iOS Quick Workout: reuse the existing grouped native-sheet visual language. */
+.ios-ql-workout-sheet {
+    padding-bottom: calc(22px + env(safe-area-inset-bottom));
+    max-height: min(85dvh, 780px);
+}
+.ios-ql-workout-feature {
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    padding:16px;
+    margin:4px 0 12px;
+    border:1px solid var(--ios-separator, rgba(125,125,135,.3));
+    border-radius:17px;
+    background:var(--ios-surface-2, rgba(122,122,132,.1));
+}
+.ios-ql-workout-feature > small {
+    font-size:10px;
+    letter-spacing:.10em;
+    font-weight:800;
+    color:var(--accent, #e11c2c);
+}
+.ios-ql-workout-feature > strong { font-size:20px; line-height:1.25; }
+.ios-ql-workout-feature > span { font-size:13px; color:var(--muted, #aaa); }
+.ios-ql-workout-feature > button {
+    min-height:48px;
+    margin-top:6px;
+    border:0;
+    border-radius:12px;
+    color:#fff;
+    background:var(--accent, #e11c2c);
+    font-weight:750;
+    font-size:15px;
+}
+.ios-ql-workout-hint {
+    margin:2px 0 14px;
+    font-size:14px;
+    color:var(--muted, #aaa);
+}
+.ios-ql-workout-option {
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    text-align:left;
+    background:transparent;
+    color:inherit;
+    border:0;
+    border-bottom:1px solid var(--ios-separator, rgba(125,125,135,.3));
+    padding:15px 4px;
+    min-height:69px;
+}
+.ios-ql-workout-option .ios-ql-svg { flex:none; width:24px; height:24px; color:var(--accent, #e11c2c); }
+.ios-ql-workout-option > span { flex:1; display:flex; flex-direction:column; gap:4px; min-width:0; }
+.ios-ql-workout-option strong { font-size:15px; line-height:1.2; }
+.ios-ql-workout-option small { font-size:12px; color:var(--muted, #aaa); line-height:1.3; }
+.ios-ql-workout-option b { font-size:26px; font-weight:400; color:var(--muted, #aaa); }
+.ios-ql-workout-routines { padding-top:12px; }
+.ios-ql-workout-routines h3 { font-size:15px; margin:5px 0 10px; }
+.ios-ql-workout-routine {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(96px,38%) auto;
+    align-items:center;
+    gap:8px;
+    padding:10px 0;
+    border-top:1px solid var(--ios-separator, rgba(125,125,135,.3));
+}
+.ios-ql-workout-routine > div { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.ios-ql-workout-routine strong { font-size:13px; overflow-wrap:anywhere; }
+.ios-ql-workout-routine small { font-size:11px; color:var(--muted, #aaa); }
+.ios-ql-workout-routine select {
+    box-sizing:border-box;
+    width:100%;
+    min-width:0;
+    min-height:39px;
+    padding:6px;
+    border:1px solid var(--ios-separator, rgba(125,125,135,.35));
+    border-radius:10px;
+    color:inherit;
+    background:var(--ios-surface-2, #29292d);
+    font-size:12px;
+}
+.ios-ql-workout-routine > button {
+    min-height:39px;
+    border:1px solid var(--accent, #e11c2c);
+    color:var(--accent, #e11c2c);
+    background:transparent;
+    border-radius:10px;
+    padding:0 10px;
+    font-size:12px;
+    font-weight:750;
+}
+.ios-ql-workout-sheet button:focus-visible,
+.ios-ql-workout-sheet select:focus-visible {
+    outline:2px solid var(--accent, #e11c2c);
+    outline-offset:2px;
+}
+@media (max-width:370px) {
+  .ios-ql-workout-routine { grid-template-columns:minmax(0,1fr) 100px; }
+  .ios-ql-workout-routine > button { grid-column:2; }
+}
+
+
+/* Five active shortcuts: three across, then two centred with identical widths. */
+.ios-quick-log-grid.is-five {
+    grid-template-columns:repeat(6,minmax(0,1fr));
+}
+.ios-quick-log-grid.is-five > button {
+    grid-column:span 2;
+}
+.ios-quick-log-grid.is-five > button:nth-child(4) {
+    grid-column:2 / span 2;
+}
