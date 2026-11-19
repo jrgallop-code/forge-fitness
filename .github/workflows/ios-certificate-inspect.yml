@@ -32,4 +32,4 @@ jobs:
           printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$AUTH_KEY_PATH"
           node scripts/app-store-signing.mjs inspect-certificates
 
-# Inspect current certificate before Quick Workout menu and Photos TestFlight upload.
+# Inspect signing inventory for dedicated Photos navigation release, 2026-11-19.
