@@ -57,6 +57,7 @@ function updateResults() {
     results.innerHTML = estimated === null ? '<p>Enter 1–30 whole-number repetitions.</p>' : '<span class="gym-tools-kicker">Estimated 1RM</span><strong class="gym-tools-result-number">' + fmt(estimated) + ' ' + unit + '</strong><small>Epley: weight × (1 + reps ÷ 30). One rep uses the lifted weight.</small>';
   } else if (tab === "warmup") {
     results.innerHTML = '<span class="gym-tools-kicker">Suggested warm-up sets</span>' + warmUpRamp(value).map(step => '<div class="gym-tools-result-row"><span>' + Math.round(step.p * 100) + '% · ' + step.reps + ' reps</span><strong>' + fmt(step.weight) + ' ' + unit + '</strong></div>').join('') + '<small>Illustrative loads; reduce or skip sets as appropriate.</small>';
+  }
 }
 function refreshClock() {
   const ms = startTime ? Math.max(0, now() - startTime) : elapsed;
