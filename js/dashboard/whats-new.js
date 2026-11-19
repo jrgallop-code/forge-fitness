@@ -66,7 +66,7 @@ export function openWhatsNew({ force = false } = {}) {
   overlay.setAttribute("aria-labelledby", "whats-new-title");
   overlay.innerHTML = '<div class="whats-new-shell">' +
     '<header class="whats-new-hero">' +
-    '<span class="whats-new-brand"><span class="whats-new-brand-mark" aria-hidden="true">Ⅲ</span> LEVEL UP</span>' +
+    '<span class="whats-new-brand"><img class="whats-new-logo" src="assets/level-up-logo.svg" alt=""> LEVEL UP</span>' +
     '<button type="button" class="whats-new-close" data-whats-new-close aria-label="Close What\'s New">×</button>' +
     '<div class="whats-new-eyebrow">NEW IN LEVEL UP</div>' +
     '<h2 id="whats-new-title">What\'s New</h2>' +
