@@ -31,11 +31,11 @@ function renderContents() {
   if (tab === "plates") {
     body.innerHTML = '<p class="gym-tools-help">Use the full workout plate calculator with the original visual bar loading, bar presets and equipment settings.</p><button type="button" class="gym-tools-secondary" data-gym-open-plates>Open Plate Calculator</button>';
   } else if (tab === "convert") {
-    body.innerHTML = '<p class="gym-tools-help">Convert a machine or free-weight load instantly.</p><div class="gym-tools-fields">' + field("Weight", "target", 45) + unitControl() + '</div><div class="gym-tools-results" data-gym-results></div><button type="button" class="gym-tools-secondary" data-gym-swap>Swap units</button>';
+    body.innerHTML = '<p class="gym-tools-help">Convert a machine or free-weight load instantly.</p><div class="gym-tools-fields">' + field("Weight", "target", "") + unitControl() + '</div><div class="gym-tools-results" data-gym-results></div><button type="button" class="gym-tools-secondary" data-gym-swap>Swap units</button>';
   } else if (tab === "warmup") {
-    body.innerHTML = '<p class="gym-tools-help">A suggested warm-up ramp before your working sets. Adjust it to your needs.</p><div class="gym-tools-fields">' + field("Working weight", "target", unit === "lb" ? 135 : 60) + unitControl() + '</div><div class="gym-tools-results" data-gym-results></div>';
+    body.innerHTML = '<p class="gym-tools-help">A suggested warm-up ramp before your working sets. Adjust it to your needs.</p><div class="gym-tools-fields">' + field("Working weight", "target", "") + unitControl() + '</div><div class="gym-tools-results" data-gym-results></div>';
   } else if (tab === "oneRM") {
-    body.innerHTML = '<p class="gym-tools-help">Estimate your one-rep max using the Epley formula. For higher repetitions, estimates become less reliable.</p><div class="gym-tools-fields">' + field("Weight lifted", "target", unit === "lb" ? 135 : 60) + field("Repetitions (1–30)", "reps", 8, { min: 1, max: 30, step: 1 }) + unitControl() + '</div><div class="gym-tools-results" data-gym-results></div>';
+    body.innerHTML = '<p class="gym-tools-help">Estimate your one-rep max using the Epley formula. For higher repetitions, estimates become less reliable.</p><div class="gym-tools-fields">' + field("Weight lifted", "target", "") + field("Repetitions (1–30)", "reps", "", { min: 1, max: 30, step: 1 }) + unitControl() + '</div><div class="gym-tools-results" data-gym-results></div>';
   } else {
     body.innerHTML = '<p class="gym-tools-help">Time planks, carries, hangs, or any exercise without starting a workout.</p><div class="gym-tools-stopwatch-panel"><div class="gym-tools-stopwatch-top"><span class="gym-tools-live-dot"></span><span>SESSION STOPWATCH</span></div><div class="gym-tools-clock" role="timer" aria-live="off" aria-label="Elapsed time" data-gym-clock>00:00.0</div><div class="gym-tools-stopwatch-subtitle">Minutes : Seconds . Tenths</div></div><div class="gym-tools-timer-actions"><button type="button" data-gym-timer="toggle">Start</button><button type="button" data-gym-timer="reset" class="gym-tools-secondary">Reset</button></div>';
     refreshClock();
@@ -128,6 +128,9 @@ export function closeGymTools() {
 }
 export function openGymTools() {
   if (overlay) return;
+  // Every new calculator entry starts blank; do not clear a running stopwatch.
+  tab = "convert";
+  unit = massUnit(UNIT_KINDS.LIFTING_WEIGHT) === "kg" ? "kg" : "lb";
   previousFocus = document.activeElement;
   overlay = document.createElement("div");
   overlay.className = "gym-tools-overlay";
