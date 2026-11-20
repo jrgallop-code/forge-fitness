@@ -40,7 +40,7 @@ test("Gym Tools are exclusive to iOS Quick Log and omit back-off sets", () => {
   assert.match(plate,/plate-calculator-plate-options/);
   assert.match(plate,/const STANDALONE_ID/);
   assert.match(plate,/if \(card\?\.dataset\?\.exerciseId === STANDALONE_ID\) return/);
-  assert.match(gym,/plate-calculator\.js\?v=ios-gym-plates-424/);
+  assert.match(gym,/plate-calculator\.js\?v=plate-theme-parity-20261120/);
   assert.match(quick,/ios-gym-tools\.js\?v=ios-gym-plates-424/);
   assert.match(index,/js\/app\.js\?v=theme-contrast-20261119/);
   assert.match(gym,/\["oneRM", "1RM"\]/);
