@@ -1,4 +1,4 @@
-const CACHE_VERSION = "plate-theme-parity-20261120";
+const CACHE_VERSION = "whats-new-theme-sync-20261120";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
