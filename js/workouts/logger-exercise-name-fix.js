@@ -1,4 +1,4 @@
-import "./plate-calculator.js?v=pwa-gym-20261119";
+import "./plate-calculator.js?v=plate-theme-parity-20261120";
 
 const ACTIVE_WORKOUT_STORAGE_KEY = "level_up_active_workout";
 
