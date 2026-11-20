@@ -32,8 +32,8 @@ test("Standalone plate calculator reuses workout visuals and original bar settin
   assert.match(plate, /plate-calculator-plate-options/);
   assert.match(plate, /plate-calculator-standalone-input/);
   assert.match(plate, /if \(card\?\.dataset\?\.exerciseId === STANDALONE_ID\) return/);
-  assert.match(logger, /plate-calculator\.js\?v=pwa-gym-20261119/);
-  assert.match(gym, /plate-calculator\.js\?v=pwa-gym-20261119/);
+  assert.match(logger, /plate-calculator\.js\?v=plate-theme-parity-20261120/);
+  assert.match(gym, /plate-calculator\.js\?v=plate-theme-parity-20261120/);
 });
 test("Epley and machine unit conversion are accurate", () => {
   assert.equal(epley1RM(100, 1), 100);
