@@ -39,6 +39,6 @@ test("iOS entry is automatic on dashboard and reviewable from More", () => {
   assert.equal((router.match(/safeInitialize\("What's New", showWhatsNewIfEligible\)/g) || []).length,2);
   assert.match(menu,/data-more-page="whats-new-release"/);
   assert.match(menu,/openWhatsNew\(\{ force: true \}\)/);
-  assert.match(index,/dashboard-whats-new\.css\?v=ios-release-notes-107/);
-  assert.match(router,/whats-new\.js\?v=ios-release-notes-107/);
+  assert.match(index,/dashboard-whats-new\.css\?v=theme-sync-20261120/);
+  assert.match(router,/whats-new\.js\?v=theme-sync-20261120/);
 });
