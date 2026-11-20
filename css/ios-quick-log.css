@@ -254,3 +254,44 @@ html[data-ios-quick-log-installed="1"] #weight-progress .weight-section-header .
 .ios-quick-log-grid.is-five > button:nth-child(4) {
     grid-column:2 / span 2;
 }
+
+
+/* Quick Log theme parity: never use hard-coded dark surfaces or white text on light appearances. */
+.ios-quick-log-overlay {
+  color: var(--text, #f7f7f8);
+}
+.ios-quick-log-overlay .ios-quick-log-sheet {
+  color: var(--text, #f7f7f8);
+  background: var(--surface, #121216);
+  border-color: var(--card-border, rgba(255,255,255,.12));
+}
+.ios-quick-log-overlay .ios-quick-log-heading h2,
+.ios-quick-log-overlay .ios-quick-log-heading button,
+.ios-quick-log-overlay .ios-quick-log-grid button strong,
+.ios-quick-log-overlay .ios-ql-workout-option strong,
+.ios-quick-log-overlay .ios-ql-workout-feature strong,
+.ios-quick-log-overlay .ios-ql-workout-routine strong {
+  color: var(--heading, var(--text, #f7f7f8));
+}
+.ios-quick-log-overlay .ios-quick-log-grid button,
+.ios-quick-log-overlay .ios-ql-workout-option,
+.ios-quick-log-overlay .ios-ql-workout-routine {
+  background: var(--surface-raised, #18181d);
+  color: var(--text, #f7f7f8);
+  border-color: var(--card-border, rgba(255,255,255,.12));
+}
+.ios-quick-log-overlay .ios-quick-log-grid .ios-ql-svg,
+.ios-quick-log-overlay .ios-ql-workout-option .ios-ql-svg {
+  color: var(--accent-text, var(--accent, #df141e));
+}
+.ios-quick-log-overlay :is(.ios-quick-log-last,.ios-ql-workout-option small,.ios-ql-workout-routine small,.ios-ql-workout-feature > span) {
+  color: var(--text-secondary, var(--muted, #a8a8b3));
+}
+.ios-quick-log-overlay :is(input,select,textarea) {
+  background: var(--input-bg, var(--surface-raised, #18181d));
+  color: var(--text, #f7f7f8);
+  border-color: var(--line, rgba(255,255,255,.15));
+}
+.ios-quick-log-overlay .ios-quick-log-save {
+  color: var(--accent-contrast, white);
+}
