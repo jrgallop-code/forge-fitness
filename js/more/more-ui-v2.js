@@ -1,5 +1,5 @@
 import { renderProgressiveOverloadSettings, initializeProgressiveOverloadSettings } from "./progressive-overload-settings.js?v=progressive-overload-toggle-1";
-import { openWhatsNew } from "../dashboard/whats-new.js?v=ios-release-notes-107";
+import { openWhatsNew } from "../dashboard/whats-new.js?v=theme-sync-20261120";
 import { supportCardMarkup, initializeSupportControls } from "./contact-support.js?v=help-navigation-2";
 import { navigate } from "../core/router.js?v=native-navigation-stability-1";
 import { renderExportBackup } from "./export-backup-ui.js?v=full-data-export-1";
