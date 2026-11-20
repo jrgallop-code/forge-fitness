@@ -36,3 +36,4 @@ jobs:
           trap 'rm -f "$auth_key_path"' EXIT
           node scripts/app-store-signing.mjs inspect-certificates
 # Read-only certificate inventory refresh for Gym Tools plate-calculator release — 2026-11-19.
+# Inventory refresh for iOS 1.0.7 visual plate calculator release on 2026-11-19.
