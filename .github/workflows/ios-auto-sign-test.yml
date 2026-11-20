@@ -191,10 +191,6 @@ jobs:
           -archivePath "$RUNNER_TEMP/LevelUp.xcarchive"
           DEVELOPMENT_TEAM="$APPLE_TEAM_ID"
           CODE_SIGN_STYLE=Automatic
-          CODE_SIGN_IDENTITY="Apple Distribution"
-          APP_STORE_PROFILE_NAME="$APP_STORE_PROFILE_NAME"
-          TIMER_EXTENSION_PROFILE_NAME="$TIMER_EXTENSION_PROFILE_NAME"
-          SHARE_EXTENSION_PROFILE_NAME="$SHARE_EXTENSION_PROFILE_NAME"
           CURRENT_PROJECT_VERSION="${{ github.run_number }}"
           MARKETING_VERSION="1.0.7"
           -allowProvisioningUpdates
