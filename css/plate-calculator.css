@@ -798,12 +798,12 @@ html[data-theme="pulse"] .plate-calculator-overlay{--plate-accent:#ff2d95;--plat
     flex-direction: column;
     gap: 9px;
     padding: 15px 16px;
-    border: 1px solid rgba(255,255,255,.10);
+    border: 1px solid var(--plate-line);
     border-radius: 18px;
-    background: linear-gradient(180deg,#17171b,#121216);
+    background: var(--plate-card);
 }
 .plate-calculator-standalone-load > span:first-child {
-    color: #f5f5f7;
+    color: var(--plate-heading);
     font-size: 14px;
     font-weight: 800;
 }
@@ -817,16 +817,36 @@ html[data-theme="pulse"] .plate-calculator-overlay{--plate-accent:#ff2d95;--plat
     width: 100%;
     min-height: 45px;
     padding: 8px 12px;
-    border: 1px solid rgba(255,255,255,.19);
+    border: 1px solid var(--plate-line);
     border-radius: 11px;
-    background: #202027;
-    color: #fff;
+    background: var(--input-bg, var(--plate-raised));
+    color: var(--plate-text);
     font-size: 23px;
     font-weight: 850;
     font-variant-numeric: tabular-nums;
 }
 .plate-calculator-standalone-load small {
-    color: #a4a4b1;
+    color: var(--plate-muted);
     line-height: 1.5;
     font-size: 12px;
+}
+
+/* Standalone Gym Tools entry inherits the live appearance, never a dark-only palette.
+   Higher specificity than the shared input/label rules in appearance-themes.css. */
+.plate-calculator-overlay .plate-calculator-standalone-load {
+    background: var(--plate-card) !important;
+    color: var(--plate-text) !important;
+    border-color: var(--plate-line) !important;
+}
+.plate-calculator-overlay .plate-calculator-standalone-load > span:first-child {
+    color: var(--plate-heading) !important;
+}
+.plate-calculator-overlay .plate-calculator-standalone-load .plate-calculator-standalone-input {
+    background: var(--input-bg, var(--plate-raised)) !important;
+    color: var(--plate-text) !important;
+    border-color: var(--plate-line) !important;
+    color-scheme: inherit;
+}
+.plate-calculator-overlay .plate-calculator-standalone-load small {
+    color: var(--plate-muted) !important;
 }
