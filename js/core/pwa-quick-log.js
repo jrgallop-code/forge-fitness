@@ -1,3 +1,4 @@
+import { openGymTools } from "./pwa-gym-tools.js?v=pwa-gym-20261119";
 import { canonicalMass, displayMass, massUnit } from "./unit-system.js?v=granular-units-1";
 import { isNutritionEnabled } from "./app-feature-preferences.js?v=nutrition-feature-choice-1";
 import { getActiveWorkout, getWorkoutSessions, openActiveWorkout, openWorkoutLogger } from "../workouts/workout-session.js?v=native-navigation-stability-1";
@@ -8,6 +9,7 @@ const STORAGE = "forge_weight_entries";
 let sheet = null;
 let priorFocus = null;
 const ICON_PATHS = {
+    calculator: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8v3H8zM8 13h2m4 0h2m-8 4h2m4 0h2"/>',
     weight: '<path d="M5 5h14l2 15H3L5 5Z"/><circle cx="12" cy="10" r="3"/><path d="m12 10 1.7-1.5"/>',
     food: '<path d="M4 3v6a3 3 0 0 0 6 0V3M7 3v18M17 3v18M17 3c-3 3-3 6 0 8h3"/>',
     water: '<path d="M12 2s-7 8-7 13a7 7 0 0 0 14 0C19 10 12 2 12 2Z"/><path d="M8 15a4 4 0 0 0 4 4"/>',
@@ -129,6 +131,7 @@ function openMenu() {
           <button type="button" data-ql-action="measurements">${icon("measurements")}<strong>Body Metrics</strong></button>
           <button type="button" data-ql-action="photos">${icon("photos")}<strong>Progress Photos</strong></button>
           <button type="button" data-ql-action="workout">${icon("workout")}<strong>Workout</strong></button>
+          <button type="button" data-ql-action="gym-tools">${icon("calculator")}<strong>Gym Tools</strong></button>
         </div></section>`;
     document.body.append(sheet);
     document.body.classList.add("ios-quick-log-open");
@@ -390,6 +393,7 @@ function handleClick(event) {
     }
     if (action === "weight") openWeight();
     else if (action === "workout") openQuickWorkout();
+    else if (action === "gym-tools") { closeSheet(); openGymTools(); }
     else if (action) openExisting(action);
 }
 export function initializePWAQuickLog() {
