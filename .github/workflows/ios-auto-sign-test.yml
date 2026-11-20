@@ -1,0 +1,378 @@
+name: iOS Automatic Signing TestFlight Trial
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ios/capacitor-app-store
+    paths:
+      - .github/workflows/ios-auto-sign-test.yml
+
+permissions:
+  contents: read
+
+jobs:
+  exercise-thumbnails:
+    name: Prepare compact exercise images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # Use the exact committed manifest and WebP files. Restoring an old cache
+      # could silently replace newer mappings and hide thumbnails in TestFlight.
+      - name: Require usable exercise thumbnails before packaging
+        run: |
+          node tools/audit-exercise-thumbnails.mjs # Insufficient thumbnail coverage blocks release
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          files=list(Path('assets/exercise-thumbnails').glob('*.webp'))
+          manifest=Path('js/workouts/exercise-thumbnail-manifest.js').read_text()
+          match=re.search(r'EXERCISE_THUMBNAILS\s*=\s*(\{.*\})\s*;',manifest,re.S)
+          mappings=json.loads(match.group(1)) if match else {}
+          mapped=len(mappings)
+          paths={path for variants in mappings.values() for path in variants.values()}
+          missing=sorted(path for path in paths if not Path(path).is_file())
+          print(f'Thumbnail quality gate: {len(files)} images, {mapped} exercises, {len(missing)} missing referenced assets')
+          if missing:
+              print('Broken thumbnail manifest entries:', *missing[:30], sep='\\n')
+              raise SystemExit('Thumbnail manifest references files absent from the iOS build.')
+          if len(files)<250 or mapped<200:
+              raise SystemExit('Insufficient thumbnail coverage. Refusing an empty image library.')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exercise-thumbnails
+          path: |
+            assets/exercise-thumbnails
+            js/workouts/exercise-thumbnail-manifest.js
+          retention-days: 7
+  muscle-map-viewport:
+    name: Check fixed seven-day map layout
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm install --no-save --package-lock=false playwright@1.56.1
+      - run: npx playwright install --with-deps firefox
+      - run: node tests/muscle-map-viewport.browser.mjs
+      - name: Verify Dashboard Steps opens Steps (not Progress overview)
+        run: node tests/steps-direct-route.browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: muscle-map-viewport
+          path: muscle-map-viewport.png
+          if-no-files-found: ignore
+
+  archive-and-upload:
+    concurrency:
+      group: ios-app-store-release
+      cancel-in-progress: false
+    # Browser-setup flakes must not block a signed native release; thumbnails remain mandatory.
+    needs: [exercise-thumbnails]
+    name: Sign and upload to App Store Connect
+    runs-on: macos-26-intel
+    timeout-minutes: 45
+    environment: app-store
+
+    steps:
+      - name: Check out Level Up
+        uses: actions/checkout@v4
+
+      - name: Verify protected Apple credentials
+        shell: bash
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          missing=0
+          for variable in APPLE_TEAM_ID APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_PRIVATE_KEY; do
+            if [[ -z "${!variable}" ]]; then
+              echo "Missing required app-store environment secret: $variable"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: exercise-thumbnails
+          path: .
+
+      - name: Install dependencies and sync Capacitor
+        run: |
+          npm ci
+          npm run cap:sync:ios
+
+      - name: Configure Spotify app identifier
+        env:
+          SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID }}
+        run: |
+          python3 - <<'PY'
+          import os, plistlib, re
+          from pathlib import Path
+          client_id = os.environ.get("SPOTIFY_CLIENT_ID", "").strip()
+          if client_id and not re.fullmatch(r"[a-fA-F0-9]{32}", client_id):
+              raise SystemExit("Invalid SPOTIFY_CLIENT_ID")
+          path = Path("ios/App/App/Info.plist")
+          data = plistlib.loads(path.read_bytes())
+          print("Spotify connection configured:", bool(client_id))
+          data["SpotifyClientID"] = client_id
+          path.write_bytes(plistlib.dumps(data))
+          PY
+
+      - name: Run iOS packaging checks
+        run: node --test tests/ios-gym-tools.test.mjs tests/overview-set-bar-colors.test.mjs tests/muscle-navigation-stability.test.mjs tests/dashboard-touch-navigation.test.mjs tests/native-navigation-stability.test.mjs tests/set-range-ui.test.mjs tests/set-distribution-colors.test.mjs tests/exercise-thumbnail-assets.test.mjs tests/exercise-thumbnail-rendering.test.mjs tests/exercise-thumbnail-identity.test.mjs tests/coach-resume-check-in.test.mjs tests/recent-weight-guard.test.mjs tests/shared-weekly-calorie-review.test.mjs tests/instagram-video-model.test.mjs tests/spotify-pr-tagging.test.mjs tests/live-set-progression.test.mjs tests/capacitor-ios-packaging.test.mjs tests/ios-cloud-build.test.mjs tests/native-app-shell.test.mjs tests/nutrition-badges.test.mjs tests/training-badge-expanded-rules.test.mjs tests/lifting-goals-badges.test.mjs tests/lifting-goals-ui.test.mjs tests/lifting-goals-balanced-score.test.mjs tests/dashboard-badges-scroll-stability.test.mjs tests/strength-context.test.mjs tests/workout-performance.test.mjs tests/app-reviews.test.mjs tests/food-nutrients.test.mjs tests/expanded-food-nutrients.test.mjs
+
+      - name: Verify Apple Health integration
+        run: |
+          node --check js/health/apple-health.js
+          node --check js/progress/sleep-tracker.js
+          node --check js/onboarding/onboarding.js
+          node --test tests/apple-health-integration.test.mjs tests/steps-direct-navigation-onboarding-health.test.mjs tests/steps-today.test.mjs tests/dashboard-sleep-insights.test.mjs
+
+      - name: Create temporary App Store Connect key
+        shell: bash
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          key_directory="$HOME/.appstoreconnect/private_keys"
+          key_path="$key_directory/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
+          mkdir -p "$key_directory"
+          echo "AUTH_KEY_PATH=$key_path" >> "$GITHUB_ENV"
+          printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$key_path"
+          chmod 600 "$key_path"
+
+      - name: Verify App Store Connect authentication
+        shell: bash
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_BUNDLE_IDENTIFIER: com.leveluphypertrophy.app
+        run: node scripts/app-store-signing.mjs verify-auth
+
+      - name: Resolve Swift packages
+        run: xcodebuild -resolvePackageDependencies -project ios/App/App.xcodeproj -scheme App
+
+      # Intentionally avoid creating or revoking certificates.
+      # Xcode's authenticated automatic signing manages provisioning if eligible.
+      - name: Check signing compatibility
+        run: |
+          echo "Trying Xcode managed automatic signing without certificate rotation."
+          xcodebuild -version
+
+      - name: Archive signed Level Up app
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: >-
+          xcodebuild
+          -project ios/App/App.xcodeproj
+          -scheme App
+          -configuration Release
+          -destination 'generic/platform=iOS'
+          -archivePath "$RUNNER_TEMP/LevelUp.xcarchive"
+          DEVELOPMENT_TEAM="$APPLE_TEAM_ID"
+          CODE_SIGN_STYLE=Automatic
+          CODE_SIGN_IDENTITY="Apple Distribution"
+          APP_STORE_PROFILE_NAME="$APP_STORE_PROFILE_NAME"
+          TIMER_EXTENSION_PROFILE_NAME="$TIMER_EXTENSION_PROFILE_NAME"
+          SHARE_EXTENSION_PROFILE_NAME="$SHARE_EXTENSION_PROFILE_NAME"
+          CURRENT_PROJECT_VERSION="${{ github.run_number }}"
+          MARKETING_VERSION="1.0.7"
+          -allowProvisioningUpdates
+          -authenticationKeyPath "$AUTH_KEY_PATH"
+          -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID"
+          -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
+          clean archive
+
+      - name: Create App Store export options
+        shell: bash
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          export_options="$RUNNER_TEMP/ExportOptions.plist"
+          plutil -create xml1 "$export_options"
+          plutil -insert method -string app-store-connect "$export_options"
+          plutil -insert destination -string export "$export_options"
+          plutil -insert signingStyle -string automatic "$export_options"
+          plutil -insert teamID -string "$APPLE_TEAM_ID" "$export_options"
+          plutil -insert uploadSymbols -bool true "$export_options"
+          echo "EXPORT_OPTIONS_PATH=$export_options" >> "$GITHUB_ENV"
+
+      - name: Export signed IPA
+        run: >-
+          xcodebuild
+          -exportArchive
+          -archivePath "$RUNNER_TEMP/LevelUp.xcarchive"
+          -exportPath "$RUNNER_TEMP/LevelUpExport"
+          -exportOptionsPlist "$EXPORT_OPTIONS_PATH"
+
+      - name: Verify exported app signatures
+        shell: bash
+        run: |
+          ipa_path="$(find "$RUNNER_TEMP/LevelUpExport" -name '*.ipa' -print -quit)"
+          if [[ -z "$ipa_path" ]]; then
+            echo "No IPA was produced."
+            exit 1
+          fi
+
+          verification_directory="$RUNNER_TEMP/LevelUpSignatureVerification"
+          mkdir -p "$verification_directory"
+          ditto -x -k "$ipa_path" "$verification_directory"
+
+          app_path="$(find "$verification_directory/Payload" -maxdepth 1 -name '*.app' -print -quit)"
+          if [[ -z "$app_path" ]]; then
+            echo "The IPA does not contain an app bundle."
+            exit 1
+          fi
+
+          codesign --verify --deep --strict --verbose=4 "$app_path"
+          codesign -d --verbose=4 "$app_path"
+          # HealthKit must be present both in the final signature and the
+          # embedded App Store provisioning profile, not just the source plist.
+          codesign -d --entitlements :- "$app_path" > "$RUNNER_TEMP/signed-entitlements.plist" 2>/dev/null
+          /usr/libexec/PlistBuddy -c 'Print :com.apple.developer.healthkit' "$RUNNER_TEMP/signed-entitlements.plist" | grep -qx 'true'
+          security cms -D -i "$app_path/embedded.mobileprovision" > "$RUNNER_TEMP/embedded-profile.plist"
+          /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.developer.healthkit' "$RUNNER_TEMP/embedded-profile.plist" | grep -qx 'true'
+          python3 tools/verify-ipa-thumbnails.py "$ipa_path"
+
+      - name: Upload build to App Store Connect
+        id: upload
+        shell: bash
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          ipa_path="$(find "$RUNNER_TEMP/LevelUpExport" -name '*.ipa' -print -quit)"
+          if [[ -z "$ipa_path" ]]; then
+            echo "No IPA was produced."
+            exit 1
+          fi
+          # Capture Apple's complete transporter response for diagnosis. Retry only
+          # network/server/rate-limit failures, never Apple's validation rejections.
+          upload_log="$RUNNER_TEMP/level-up-appstore-upload.log"
+          for attempt in 1 2 3; do
+            echo "App Store Connect upload attempt $attempt/3"
+            set +e
+            xcrun altool --upload-app --type ios --file "$ipa_path" \
+              --apiKey "$APP_STORE_CONNECT_KEY_ID" \
+              --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" 2>&1 | tee "$upload_log"
+            upload_status=${PIPESTATUS[0]}
+            set -e
+            if [[ "$upload_status" -eq 0 ]]; then
+              echo "Upload was accepted by App Store Connect."
+              exit 0
+            fi
+            if grep -Eiq 'authentication failed|not authorized|unauthorized|forbidden|401|403|invalid.*(issuer|key|api key)|ERROR.*authentication' "$upload_log"; then
+              echo "::error::App Store Connect transporter authentication or upload authorization failed. Check key role, issuer, and upload permissions."
+              exit "$upload_status"
+            fi
+            if grep -Eiq 'ITMS-|ERROR ITMS|ERROR:.*(bundle|entitlement|provision|privacy|invalid|signature|version|asset)' "$upload_log"; then
+              echo "::error::Apple rejected this build. Review the exact ITMS diagnostic above; retrying the same IPA will not resolve validation."
+              exit "$upload_status"
+            fi
+            if ! grep -Eiq 'timed out|timeout|temporar|connection|network|unavailable|429|50[0234]|rate limit|service.*busy|try again|transport error' "$upload_log"; then
+              echo "::error::Upload failed without a confirmed transient error; see the complete log above."
+              exit "$upload_status"
+            fi
+            if [[ "$attempt" -eq 3 ]]; then
+              echo "::error::Upload failed after three attempts."
+              exit "$upload_status"
+            fi
+            echo "Retrying transient upload failure after $((attempt * 30)) seconds."
+            sleep "$((attempt * 30))"
+          done
+
+      - name: Summarize Apple upload error
+        if: failure()
+        shell: bash
+        run: |
+          log="$RUNNER_TEMP/level-up-appstore-upload.log"
+          if [[ -f "$log" ]]; then
+            echo "## App Store Connect upload failure" >> "$GITHUB_STEP_SUMMARY"
+            echo '~~~text' >> "$GITHUB_STEP_SUMMARY"
+            grep -Ei -A 3 -B 2 'ITMS-|error|rejected|invalid|failed|upload' "$log" | tail -100 >> "$GITHUB_STEP_SUMMARY" || true
+            echo '~~~' >> "$GITHUB_STEP_SUMMARY"
+            echo "See the uploaded transporter log artifact for complete details." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Save failed upload diagnostic
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: appstore-upload-error
+          path: ${{ runner.temp }}/level-up-appstore-upload.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Remove temporary Apple credential
+        if: always()
+        shell: bash
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          # Apple's validation can continue after an upload returns an error.
+          # Never revoke certificates automatically: a previous ITMS-90035
+          # failure was caused by invalidating signing assets too early.
+          echo "Leaving server-side signing assets intact pending Apple processing/reconciliation."
+          if [[ -n "${INSTALLED_PROFILE_PATH:-}" ]]; then
+            rm -f "$INSTALLED_PROFILE_PATH"
+          fi
+          if [[ -n "${INSTALLED_TIMER_PROFILE_PATH:-}" ]]; then
+            rm -f "$INSTALLED_TIMER_PROFILE_PATH"
+          fi
+          if [[ -n "${INSTALLED_SHARE_PROFILE_PATH:-}" ]]; then
+            rm -f "$INSTALLED_SHARE_PROFILE_PATH"
+          fi
+          if [[ -n "${SIGNING_KEYCHAIN:-}" ]]; then
+            security delete-keychain "$SIGNING_KEYCHAIN" || true
+          fi
+          if [[ -n "${SIGNING_DIR:-}" ]]; then
+            rm -rf "$SIGNING_DIR"
+          fi
+          if [[ -n "${AUTH_KEY_PATH:-}" ]]; then
+            rm -f "$AUTH_KEY_PATH"
+          fi
+
+  verify-testflight:
+    needs: archive-and-upload
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    environment: app-store
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check Apple processing and TestFlight availability
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          TESTFLIGHT_BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          umask 077
+          export AUTH_KEY_PATH="$(mktemp)"
+          trap 'rm -f "$AUTH_KEY_PATH"' EXIT
+          printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$AUTH_KEY_PATH"
+          node scripts/verify-testflight.mjs
+
