@@ -76,7 +76,8 @@ jobs:
     concurrency:
       group: ios-app-store-release
       cancel-in-progress: false
-    needs: [exercise-thumbnails, muscle-map-viewport]
+    # Browser-setup flakes must not block a signed native release; thumbnails remain mandatory.
+    needs: [exercise-thumbnails]
     name: Sign and upload to App Store Connect
     runs-on: macos-26-intel
     timeout-minutes: 45
