@@ -1,5 +1,5 @@
 import { renderProgressiveOverloadSettings, initializeProgressiveOverloadSettings } from "./progressive-overload-settings.js?v=progressive-overload-toggle-1";
-import { openWhatsNew } from "../dashboard/whats-new.js?v=ios-release-notes-106";
+import { openWhatsNew } from "../dashboard/whats-new.js?v=ios-release-notes-107";
 import { supportCardMarkup, initializeSupportControls } from "./contact-support.js?v=help-navigation-2";
 import { navigate } from "../core/router.js?v=native-navigation-stability-1";
 import { renderExportBackup } from "./export-backup-ui.js?v=full-data-export-1";
@@ -68,7 +68,7 @@ export function renderMore() {
     <button class="more-menu-card" type="button" data-more-page="water"><span class="more-menu-icon">${ICONS.water}</span><span><strong>Water Log</strong><small>Record daily water and review recent entries.</small></span></button>
     </div>
     <div class="more-menu-group" data-more-group="app-data"><h3>Support &amp; data</h3>
-    ${window.Capacitor?.getPlatform?.() === "ios" ? `<button class="more-menu-card" type="button" data-more-page="whats-new-release"><span class="more-menu-icon"><svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.3 7.7L22 12l-7.7 2.3L12 22l-2.3-7.7L2 12l7.7-2.3L12 2Z"/></svg></span><span><strong>What’s New</strong><small>See the latest iOS updates · Version 1.0.6</small></span></button>` : ""}
+    ${window.Capacitor?.getPlatform?.() === "ios" ? `<button class="more-menu-card" type="button" data-more-page="whats-new-release"><span class="more-menu-icon"><svg class="app-silhouette-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.3 7.7L22 12l-7.7 2.3L12 22l-2.3-7.7L2 12l7.7-2.3L12 2Z"/></svg></span><span><strong>What’s New</strong><small>See the latest iOS updates · Version 1.0.7</small></span></button>` : ""}
     <button class="more-menu-card" type="button" data-more-page="learn"><span class="more-menu-icon">${ICONS.learn}</span><span><strong>Tutorials</strong><small>Restart in-app tutorials and open walkthroughs for workouts, nutrition and progress.</small></span></button>
     <button class="more-menu-card" type="button" data-more-page="exports-backup"><span class="more-menu-icon">${ICONS.backup}</span><span><strong>Exports & Backup</strong><small>Export, restore and transfer your Level Up data with Google Drive.</small></span></button>
     </div>
