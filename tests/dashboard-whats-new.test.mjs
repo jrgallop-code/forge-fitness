@@ -10,7 +10,7 @@ const menu = read('js/more/more-ui-v2.js');
 const index = read('index.html');
 
 test("iOS release notes are versioned, once per version, and native-only", () => {
-  assert.match(feature, /RELEASE_VERSION = "1\.0\.6"/);
+  assert.match(feature, /RELEASE_VERSION = "1\.0\.7"/);
   assert.match(feature, /level_up_whats_new_seen_ios_/);
   assert.match(feature, /const MAX_VIEWS = 1/);
   assert.match(feature, /window\.Capacitor\?\.getPlatform\?\.\(\) === "ios"/);
@@ -22,7 +22,7 @@ test("iOS release notes are versioned, once per version, and native-only", () =>
 });
 
 test("release page uses true iOS features and an authentic CSS Quick Log preview", () => {
-  for (const heading of ['Apple Health integration','Meet Quick Log','Better active workouts','A smoother experience']) {
+  for (const heading of ['Apple Health integration','Meet Quick Log','Gym Tools','Better active workouts','A smoother experience']) {
     assert.ok(feature.includes(heading), heading);
   }
   assert.match(feature, /View your steps and sleep from Apple Health/);
@@ -39,6 +39,6 @@ test("iOS entry is automatic on dashboard and reviewable from More", () => {
   assert.equal((router.match(/safeInitialize\("What's New", showWhatsNewIfEligible\)/g) || []).length,2);
   assert.match(menu,/data-more-page="whats-new-release"/);
   assert.match(menu,/openWhatsNew\(\{ force: true \}\)/);
-  assert.match(index,/dashboard-whats-new\.css\?v=ios-release-notes-106/);
-  assert.match(router,/whats-new\.js\?v=ios-release-notes-106/);
+  assert.match(index,/dashboard-whats-new\.css\?v=ios-release-notes-107/);
+  assert.match(router,/whats-new\.js\?v=ios-release-notes-107/);
 });
