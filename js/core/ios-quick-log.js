@@ -1,4 +1,4 @@
-import { openGymTools } from "./ios-gym-tools.js?v=gym-tools-1";
+import { openGymTools } from "./ios-gym-tools.js?v=ios-gym-plates-424";
 import { canonicalMass, displayMass, massUnit } from "./unit-system.js?v=granular-units-1";
 import { isNutritionEnabled } from "./app-feature-preferences.js?v=nutrition-feature-choice-1";
 import { getActiveWorkout, getWorkoutSessions, openActiveWorkout, openWorkoutLogger } from "../workouts/workout-session.js?v=native-navigation-stability-1";
