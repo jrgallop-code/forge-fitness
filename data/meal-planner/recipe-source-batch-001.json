@@ -1,0 +1,1536 @@
+{
+  "schema_version": 1,
+  "source_checked": "2026-11-20",
+  "disclaimer": "These are source-backed staging recipes, not verified for nutritional quality, allergens or commercial publication. Nutrition values from upstream are estimates only.",
+  "count": 13,
+  "recipes": [
+    {
+      "id": "ora-strawberry-overnight-oats",
+      "title": "Strawberry overnight oats",
+      "source": {
+        "repository": "HoChiPants/open-recipe-archive",
+        "url": "https://github.com/HoChiPants/open-recipe-archive/blob/main/recipes/breakfast/strawberry-overnight-oats.json",
+        "upstream_id": "strawberry-overnight-oats",
+        "declared_license": "CC0 1.0 original data, subject to record-specific exceptions",
+        "third_party_source": null
+      },
+      "meal_type": "breakfast",
+      "cuisine": "American",
+      "dietary_claims_unverified": [
+        "vegetarian",
+        "nut-free",
+        "egg-free"
+      ],
+      "allergen_claims_unverified": [
+        "milk"
+      ],
+      "yield": {
+        "quantity": 2,
+        "unit": "servings"
+      },
+      "times": {
+        "prep_minutes": 10,
+        "cook_minutes": 0,
+        "inactive_minutes": 480
+      },
+      "ingredients": [
+        {
+          "name": "rolled oats",
+          "quantity": 1,
+          "unit": "cup",
+          "preparation": null,
+          "source_ingredient_id": "rolled-oats",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "milk",
+          "quantity": 1,
+          "unit": "cup",
+          "preparation": null,
+          "source_ingredient_id": "milk",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tablespoon",
+          "preparation": null,
+          "source_ingredient_id": "honey",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "strawberries",
+          "quantity": 1,
+          "unit": "cup",
+          "preparation": "sliced",
+          "source_ingredient_id": "strawberry",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "kosher salt",
+          "quantity": "1/8",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "kosher-salt",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        }
+      ],
+      "instructions": [
+        "Stir the oats, milk, honey, and salt together in a covered container.",
+        "Fold in half of the strawberries. Cover and refrigerate overnight.",
+        "Stir, divide between two bowls, and finish with the remaining strawberries."
+      ],
+      "nutrition_original_estimate": {
+        "serving_size": "1 bowl",
+        "calories": 310,
+        "protein_g": 10,
+        "carbohydrates_g": 55,
+        "fat_g": 6,
+        "fiber_g": 6,
+        "source": "Estimated"
+      },
+      "nutrition_calculated": null,
+      "photo": null,
+      "rights_review": "pending",
+      "nutrition_review": "pending",
+      "allergen_review": "pending",
+      "health_review": "pending",
+      "publication_status": "staging_only"
+    },
+    {
+      "id": "ora-one-bowl-banana-cake",
+      "title": "One-bowl banana cake",
+      "source": {
+        "repository": "HoChiPants/open-recipe-archive",
+        "url": "https://github.com/HoChiPants/open-recipe-archive/blob/main/recipes/desserts/one-bowl-banana-cake.json",
+        "upstream_id": "one-bowl-banana-cake",
+        "declared_license": "CC0 1.0 original data, subject to record-specific exceptions",
+        "third_party_source": null
+      },
+      "meal_type": "dessert",
+      "cuisine": "American",
+      "dietary_claims_unverified": [
+        "vegetarian",
+        "nut-free"
+      ],
+      "allergen_claims_unverified": [
+        "milk",
+        "eggs",
+        "wheat"
+      ],
+      "yield": {
+        "quantity": 9,
+        "unit": "pieces"
+      },
+      "times": {
+        "prep_minutes": 12,
+        "cook_minutes": 30
+      },
+      "ingredients": [
+        {
+          "name": "very ripe bananas",
+          "quantity": 2,
+          "unit": "medium",
+          "preparation": "mashed",
+          "source_ingredient_id": "banana",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "unsalted butter",
+          "quantity": "1/2",
+          "unit": "cup",
+          "preparation": "melted",
+          "source_ingredient_id": "butter",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "granulated sugar",
+          "quantity": "3/4",
+          "unit": "cup",
+          "preparation": null,
+          "source_ingredient_id": "sugar",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "egg",
+          "quantity": 1,
+          "unit": "large",
+          "preparation": null,
+          "source_ingredient_id": "egg",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "all-purpose flour",
+          "quantity": 1.5,
+          "unit": "cups",
+          "preparation": null,
+          "source_ingredient_id": "flour",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "baking soda",
+          "quantity": 1,
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "baking-soda",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "kosher salt",
+          "quantity": "1/2",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "kosher-salt",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        }
+      ],
+      "instructions": [
+        "Heat the oven to 350°F and line an 8-inch square pan.",
+        "Whisk the bananas, butter, sugar, and egg in a large bowl.",
+        "Fold in the flour, baking soda, and salt just until no dry streaks remain.",
+        "Spread into the pan and bake until the center springs back and a tester has a few moist crumbs."
+      ],
+      "nutrition_original_estimate": null,
+      "nutrition_calculated": null,
+      "photo": null,
+      "rights_review": "pending",
+      "nutrition_review": "pending",
+      "allergen_review": "pending",
+      "health_review": "pending",
+      "publication_status": "staging_only"
+    },
+    {
+      "id": "ora-strawberry-lemon-spritz",
+      "title": "Strawberry lemon spritz",
+      "source": {
+        "repository": "HoChiPants/open-recipe-archive",
+        "url": "https://github.com/HoChiPants/open-recipe-archive/blob/main/recipes/drinks/strawberry-lemon-spritz.json",
+        "upstream_id": "strawberry-lemon-spritz",
+        "declared_license": "CC0 1.0 original data, subject to record-specific exceptions",
+        "third_party_source": null
+      },
+      "meal_type": "drink",
+      "cuisine": null,
+      "dietary_claims_unverified": [
+        "vegetarian",
+        "gluten-free",
+        "dairy-free",
+        "nut-free",
+        "egg-free"
+      ],
+      "allergen_claims_unverified": [],
+      "yield": {
+        "quantity": 4,
+        "unit": "glasses"
+      },
+      "times": {
+        "prep_minutes": 10,
+        "cook_minutes": 0
+      },
+      "ingredients": [
+        {
+          "name": "strawberries",
+          "quantity": 1,
+          "unit": "cup",
+          "preparation": "hulled",
+          "source_ingredient_id": "strawberry",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "fresh lemon juice",
+          "quantity": "1/3",
+          "unit": "cup",
+          "preparation": null,
+          "source_ingredient_id": "lemon",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "honey",
+          "quantity": 2,
+          "unit": "tablespoons",
+          "preparation": null,
+          "source_ingredient_id": "honey",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "sparkling water",
+          "quantity": 3,
+          "unit": "cups",
+          "preparation": "chilled",
+          "source_ingredient_id": "sparkling-water",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "ice",
+          "quantity": 2,
+          "unit": "cups",
+          "preparation": null,
+          "source_ingredient_id": "ice",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        }
+      ],
+      "instructions": [
+        "Crush the strawberries with the lemon juice and honey until juicy.",
+        "Divide the berry mixture and ice among four glasses.",
+        "Top with sparkling water, stir once, and serve."
+      ],
+      "nutrition_original_estimate": null,
+      "nutrition_calculated": null,
+      "photo": null,
+      "rights_review": "pending",
+      "nutrition_review": "pending",
+      "allergen_review": "pending",
+      "health_review": "pending",
+      "publication_status": "staging_only"
+    },
+    {
+      "id": "ora-crisp-arugula-and-orange-fennel-salad",
+      "title": "Crisp Arugula and Orange Fennel Salad",
+      "source": {
+        "repository": "HoChiPants/open-recipe-archive",
+        "url": "https://github.com/HoChiPants/open-recipe-archive/blob/main/recipes/salads/crisp-arugula-and-orange-fennel-salad.json",
+        "upstream_id": "crisp-arugula-and-orange-fennel-salad",
+        "declared_license": "CC0 1.0 original data, subject to record-specific exceptions",
+        "third_party_source": {
+          "name": "Allrecipes",
+          "url": "https://www.allrecipes.com/recipe/174365/arugula-fennel-and-orange-salad/",
+          "adapted": true
+        }
+      },
+      "meal_type": "salad",
+      "cuisine": "American",
+      "dietary_claims_unverified": [
+        "vegetarian"
+      ],
+      "allergen_claims_unverified": [],
+      "yield": {
+        "quantity": 6,
+        "unit": "servings"
+      },
+      "times": {
+        "prep_minutes": 15,
+        "cook_minutes": 0
+      },
+      "ingredients": [
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tablespoon",
+          "preparation": null,
+          "source_ingredient_id": "honey",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "lemon juice",
+          "quantity": 1,
+          "unit": "tablespoon",
+          "preparation": null,
+          "source_ingredient_id": "lemon",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "kosher-salt",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "ground black pepper",
+          "quantity": 0.5,
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "black-pepper",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "olive oil",
+          "quantity": 0.25,
+          "unit": "cup",
+          "preparation": null,
+          "source_ingredient_id": "olive-oil",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "arugula",
+          "quantity": 1,
+          "unit": "bunch",
+          "preparation": null,
+          "source_ingredient_id": "arugula",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "orange",
+          "quantity": 2,
+          "unit": "oranges",
+          "preparation": "peeled and segmented",
+          "source_ingredient_id": "orange",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "fennel bulb",
+          "quantity": 1,
+          "unit": "bulb",
+          "preparation": "thinly sliced",
+          "source_ingredient_id": "fennel-bulb",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "black olives",
+          "quantity": 2,
+          "unit": "tablespoons",
+          "preparation": "sliced",
+          "source_ingredient_id": "black-olives",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        }
+      ],
+      "instructions": [
+        "Whisk honey, lemon juice, salt, and ground black pepper until evenly blended.",
+        "While whisking, stream in olive oil until the dressing is emulsified.",
+        "Toss arugula with sliced fennel, segmented orange, and sliced black olives, coat with dressing, and serve immediately."
+      ],
+      "nutrition_original_estimate": null,
+      "nutrition_calculated": null,
+      "photo": null,
+      "rights_review": "pending",
+      "nutrition_review": "pending",
+      "allergen_review": "pending",
+      "health_review": "pending",
+      "publication_status": "staging_only"
+    },
+    {
+      "id": "ora-dill-marinated-cucumber-tomato-salad",
+      "title": "Dill-marinated cucumber and tomato salad",
+      "source": {
+        "repository": "HoChiPants/open-recipe-archive",
+        "url": "https://github.com/HoChiPants/open-recipe-archive/blob/main/recipes/salads/dill-marinated-cucumber-tomato-salad.json",
+        "upstream_id": "dill-marinated-cucumber-tomato-salad",
+        "declared_license": "CC0 1.0 original data, subject to record-specific exceptions",
+        "third_party_source": {
+          "name": "Allrecipes",
+          "url": "https://www.allrecipes.com/recipe/237984/marinated-cucumber-onion-and-tomato-salad/",
+          "adapted": true
+        }
+      },
+      "meal_type": "salad",
+      "cuisine": null,
+      "dietary_claims_unverified": [
+        "vegetarian",
+        "vegan",
+        "gluten-free",
+        "dairy-free",
+        "nut-free",
+        "egg-free"
+      ],
+      "allergen_claims_unverified": [],
+      "yield": {
+        "quantity": 6,
+        "unit": "servings"
+      },
+      "times": {
+        "prep_minutes": 15,
+        "cook_minutes": 0,
+        "inactive_minutes": 30
+      },
+      "ingredients": [
+        {
+          "name": "cucumbers",
+          "quantity": 2,
+          "unit": "",
+          "preparation": "thinly sliced",
+          "source_ingredient_id": "cucumber",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "tomatoes",
+          "quantity": 3,
+          "unit": "",
+          "preparation": "cut into wedges",
+          "source_ingredient_id": "tomato",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "red onion",
+          "quantity": "1/2",
+          "unit": "",
+          "preparation": "thinly sliced",
+          "source_ingredient_id": "onion",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "apple cider vinegar",
+          "quantity": "1/3",
+          "unit": "cup",
+          "preparation": null,
+          "source_ingredient_id": "apple-cider-vinegar",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "olive oil",
+          "quantity": 3,
+          "unit": "tablespoons",
+          "preparation": null,
+          "source_ingredient_id": "olive-oil",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "sugar",
+          "quantity": 1,
+          "unit": "tablespoon",
+          "preparation": null,
+          "source_ingredient_id": "sugar",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "fresh dill",
+          "quantity": 2,
+          "unit": "tablespoons",
+          "preparation": "chopped",
+          "source_ingredient_id": "fresh-dill",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "kosher salt",
+          "quantity": "3/4",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "kosher-salt",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "black pepper",
+          "quantity": "1/4",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "black-pepper",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        }
+      ],
+      "instructions": [
+        "Whisk the vinegar, olive oil, sugar, dill, salt, and black pepper in a large bowl until the sugar dissolves.",
+        "Add the cucumbers, tomatoes, and red onion and turn them gently through the dressing.",
+        "Refrigerate the salad briefly, then toss once more before serving."
+      ],
+      "nutrition_original_estimate": null,
+      "nutrition_calculated": null,
+      "photo": null,
+      "rights_review": "pending",
+      "nutrition_review": "pending",
+      "allergen_review": "pending",
+      "health_review": "pending",
+      "publication_status": "staging_only"
+    },
+    {
+      "id": "ora-tomato-avocado-feta-salad",
+      "title": "Tomato, avocado, and feta salad",
+      "source": {
+        "repository": "HoChiPants/open-recipe-archive",
+        "url": "https://github.com/HoChiPants/open-recipe-archive/blob/main/recipes/salads/tomato-avocado-feta-salad.json",
+        "upstream_id": "tomato-avocado-feta-salad",
+        "declared_license": "CC0 1.0 original data, subject to record-specific exceptions",
+        "third_party_source": {
+          "name": "Allrecipes",
+          "url": "https://www.allrecipes.com/recipe/87678/avocado-feta-salsa/",
+          "adapted": true
+        }
+      },
+      "meal_type": "salad",
+      "cuisine": null,
+      "dietary_claims_unverified": [
+        "vegetarian",
+        "gluten-free",
+        "nut-free",
+        "egg-free"
+      ],
+      "allergen_claims_unverified": [
+        "milk"
+      ],
+      "yield": {
+        "quantity": 6,
+        "unit": "servings"
+      },
+      "times": {
+        "prep_minutes": 15,
+        "cook_minutes": 0
+      },
+      "ingredients": [
+        {
+          "name": "plum tomatoes",
+          "quantity": 3,
+          "unit": "",
+          "preparation": "chopped",
+          "source_ingredient_id": "tomato",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "ripe avocado",
+          "quantity": 1,
+          "unit": "",
+          "preparation": "pitted, peeled, and chopped",
+          "source_ingredient_id": "ripe-avocado",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "red onion",
+          "quantity": "1/4",
+          "unit": "cup",
+          "preparation": "finely chopped",
+          "source_ingredient_id": "onion",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "crumbled feta",
+          "quantity": 4,
+          "unit": "ounces",
+          "preparation": null,
+          "source_ingredient_id": "crumbled-feta",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "fresh cilantro",
+          "quantity": 2,
+          "unit": "tablespoons",
+          "preparation": "chopped",
+          "source_ingredient_id": "fresh-cilantro",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "lime juice",
+          "quantity": 1,
+          "unit": "tablespoon",
+          "preparation": null,
+          "source_ingredient_id": "lime-juice",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "unit": "tablespoon",
+          "preparation": null,
+          "source_ingredient_id": "olive-oil",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "black pepper",
+          "quantity": "1/4",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "black-pepper",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        }
+      ],
+      "instructions": [
+        "Whisk the lime juice, olive oil, and black pepper in a serving bowl.",
+        "Add the tomatoes, avocado, onion, feta, and cilantro. Fold gently until the dressing lightly coats the salad.",
+        "Serve promptly, while the avocado is fresh and the vegetables retain their texture."
+      ],
+      "nutrition_original_estimate": null,
+      "nutrition_calculated": null,
+      "photo": null,
+      "rights_review": "pending",
+      "nutrition_review": "pending",
+      "allergen_review": "pending",
+      "health_review": "pending",
+      "publication_status": "staging_only"
+    },
+    {
+      "id": "ora-tomato-cucumber-salad",
+      "title": "Tomato cucumber salad",
+      "source": {
+        "repository": "HoChiPants/open-recipe-archive",
+        "url": "https://github.com/HoChiPants/open-recipe-archive/blob/main/recipes/salads/tomato-cucumber-salad.json",
+        "upstream_id": "tomato-cucumber-salad",
+        "declared_license": "CC0 1.0 original data, subject to record-specific exceptions",
+        "third_party_source": null
+      },
+      "meal_type": "salad",
+      "cuisine": "Mediterranean",
+      "dietary_claims_unverified": [
+        "vegetarian",
+        "vegan",
+        "gluten-free",
+        "dairy-free",
+        "nut-free",
+        "egg-free"
+      ],
+      "allergen_claims_unverified": [],
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "times": {
+        "prep_minutes": 15,
+        "cook_minutes": 0
+      },
+      "ingredients": [
+        {
+          "name": "ripe tomatoes",
+          "quantity": 3,
+          "unit": "medium",
+          "preparation": "cut into wedges",
+          "source_ingredient_id": "tomato",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "cucumber",
+          "quantity": 1,
+          "unit": "large",
+          "preparation": "sliced",
+          "source_ingredient_id": "cucumber",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "red onion",
+          "quantity": "1/4",
+          "unit": "whole",
+          "preparation": "thinly sliced",
+          "source_ingredient_id": "onion",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "lemon juice",
+          "quantity": 2,
+          "unit": "tablespoons",
+          "preparation": null,
+          "source_ingredient_id": "lemon",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "extra-virgin olive oil",
+          "quantity": 2,
+          "unit": "tablespoons",
+          "preparation": null,
+          "source_ingredient_id": "olive-oil",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "kosher salt",
+          "quantity": "1/2",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "kosher-salt",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "black pepper",
+          "quantity": "1/4",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "black-pepper",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        }
+      ],
+      "instructions": [
+        "Combine the tomatoes, cucumber, and onion in a wide bowl.",
+        "Whisk the lemon juice, olive oil, salt, and pepper until blended.",
+        "Pour the dressing over the vegetables, toss gently, and serve right away."
+      ],
+      "nutrition_original_estimate": null,
+      "nutrition_calculated": null,
+      "photo": null,
+      "rights_review": "pending",
+      "nutrition_review": "pending",
+      "allergen_review": "pending",
+      "health_review": "pending",
+      "publication_status": "staging_only"
+    },
+    {
+      "id": "ora-caprese-grilled-cheese",
+      "title": "Caprese grilled cheese",
+      "source": {
+        "repository": "HoChiPants/open-recipe-archive",
+        "url": "https://github.com/HoChiPants/open-recipe-archive/blob/main/recipes/sandwiches/caprese-grilled-cheese.json",
+        "upstream_id": "caprese-grilled-cheese",
+        "declared_license": "CC0 1.0 original data, subject to record-specific exceptions",
+        "third_party_source": null
+      },
+      "meal_type": "sandwich",
+      "cuisine": "Italian-American",
+      "dietary_claims_unverified": [
+        "vegetarian",
+        "nut-free",
+        "egg-free"
+      ],
+      "allergen_claims_unverified": [
+        "milk",
+        "wheat"
+      ],
+      "yield": {
+        "quantity": 2,
+        "unit": "sandwiches"
+      },
+      "times": {
+        "prep_minutes": 10,
+        "cook_minutes": 10
+      },
+      "ingredients": [
+        {
+          "name": "sourdough bread",
+          "quantity": 4,
+          "unit": "slices",
+          "preparation": null,
+          "source_ingredient_id": "bread",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "fresh mozzarella",
+          "quantity": 4,
+          "unit": "ounces",
+          "preparation": "thinly sliced",
+          "source_ingredient_id": "mozzarella",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "tomato",
+          "quantity": 1,
+          "unit": "medium",
+          "preparation": "thinly sliced and patted dry",
+          "source_ingredient_id": "tomato",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "fresh basil",
+          "quantity": 8,
+          "unit": "leaves",
+          "preparation": null,
+          "source_ingredient_id": "basil",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "softened butter",
+          "quantity": 2,
+          "unit": "tablespoons",
+          "preparation": null,
+          "source_ingredient_id": "butter",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "kosher salt",
+          "quantity": "1/8",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "kosher-salt",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        }
+      ],
+      "instructions": [
+        "Layer mozzarella, tomato, basil, and a pinch of salt between pairs of bread slices.",
+        "Spread the outside of each sandwich with butter.",
+        "Cook in a covered skillet over medium-low heat until deeply golden on both sides and the cheese has melted."
+      ],
+      "nutrition_original_estimate": null,
+      "nutrition_calculated": null,
+      "photo": null,
+      "rights_review": "pending",
+      "nutrition_review": "pending",
+      "allergen_review": "pending",
+      "health_review": "pending",
+      "publication_status": "staging_only"
+    },
+    {
+      "id": "ora-classic-hummus",
+      "title": "Classic hummus",
+      "source": {
+        "repository": "HoChiPants/open-recipe-archive",
+        "url": "https://github.com/HoChiPants/open-recipe-archive/blob/main/recipes/sides/classic-hummus.json",
+        "upstream_id": "classic-hummus",
+        "declared_license": "CC0 1.0 original data, subject to record-specific exceptions",
+        "third_party_source": null
+      },
+      "meal_type": "side",
+      "cuisine": "Middle Eastern",
+      "dietary_claims_unverified": [
+        "vegetarian",
+        "vegan",
+        "gluten-free",
+        "dairy-free",
+        "nut-free",
+        "egg-free"
+      ],
+      "allergen_claims_unverified": [
+        "sesame"
+      ],
+      "yield": {
+        "quantity": 6,
+        "unit": "servings"
+      },
+      "times": {
+        "prep_minutes": 12,
+        "cook_minutes": 0
+      },
+      "ingredients": [
+        {
+          "name": "cooked chickpeas",
+          "quantity": 2,
+          "unit": "cups",
+          "preparation": "drained and rinsed",
+          "source_ingredient_id": "chickpea",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "tahini",
+          "quantity": "1/3",
+          "unit": "cup",
+          "preparation": null,
+          "source_ingredient_id": "tahini",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "lemon juice",
+          "quantity": 3,
+          "unit": "tablespoons",
+          "preparation": null,
+          "source_ingredient_id": "lemon",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "preparation": "crushed",
+          "source_ingredient_id": "garlic",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "extra-virgin olive oil",
+          "quantity": 2,
+          "unit": "tablespoons",
+          "preparation": null,
+          "source_ingredient_id": "olive-oil",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "kosher salt",
+          "quantity": "1/2",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "kosher-salt",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "ice water",
+          "quantity": 3,
+          "unit": "tablespoons",
+          "preparation": null,
+          "source_ingredient_id": "ice-water",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        }
+      ],
+      "instructions": [
+        "Blend the tahini, lemon juice, garlic, and salt until pale and thick.",
+        "Add the chickpeas and blend, scraping the bowl as needed.",
+        "Stream in the ice water until very smooth, then blend in the olive oil."
+      ],
+      "nutrition_original_estimate": null,
+      "nutrition_calculated": null,
+      "photo": null,
+      "rights_review": "pending",
+      "nutrition_review": "pending",
+      "allergen_review": "pending",
+      "health_review": "pending",
+      "publication_status": "staging_only"
+    },
+    {
+      "id": "ora-ginger-chile-air-fryer-sweet-potatoes",
+      "title": "Ginger-chile air-fryer sweet potatoes",
+      "source": {
+        "repository": "HoChiPants/open-recipe-archive",
+        "url": "https://github.com/HoChiPants/open-recipe-archive/blob/main/recipes/sides/ginger-chile-air-fryer-sweet-potatoes.json",
+        "upstream_id": "ginger-chile-air-fryer-sweet-potatoes",
+        "declared_license": "CC0 1.0 original data, subject to record-specific exceptions",
+        "third_party_source": {
+          "name": "Allrecipes",
+          "url": "https://www.allrecipes.com/recipe/285746/air-fryer-roasted-sweet-potatoes/",
+          "adapted": true
+        }
+      },
+      "meal_type": "side",
+      "cuisine": "American",
+      "dietary_claims_unverified": [
+        "vegetarian",
+        "vegan",
+        "gluten-free",
+        "dairy-free",
+        "nut-free",
+        "egg-free"
+      ],
+      "allergen_claims_unverified": [],
+      "yield": {
+        "quantity": 4,
+        "unit": "servings"
+      },
+      "times": {
+        "prep_minutes": 10,
+        "cook_minutes": 14
+      },
+      "ingredients": [
+        {
+          "name": "sweet potatoes",
+          "quantity": 1,
+          "unit": "pound",
+          "preparation": "peeled and cut into 1-inch cubes",
+          "source_ingredient_id": "sweet-potatoes",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "unit": "tablespoon",
+          "preparation": null,
+          "source_ingredient_id": "olive-oil",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "kosher salt",
+          "quantity": "1/2",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "kosher-salt",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "ground ginger",
+          "quantity": "1/4",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "ground-ginger",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "cayenne pepper",
+          "quantity": "1/8",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "cayenne-pepper",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        }
+      ],
+      "instructions": [
+        "Heat the air fryer to 400°F.",
+        "Toss the sweet potato cubes with the oil, salt, ginger, and cayenne until evenly coated.",
+        "Arrange the cubes in an even layer in the basket. Cook until browned at the edges and tender in the center, shaking the basket once or twice."
+      ],
+      "nutrition_original_estimate": null,
+      "nutrition_calculated": null,
+      "photo": null,
+      "rights_review": "pending",
+      "nutrition_review": "pending",
+      "allergen_review": "pending",
+      "health_review": "pending",
+      "publication_status": "staging_only"
+    },
+    {
+      "id": "ora-lime-black-bean-corn-salsa",
+      "title": "Lime black bean and corn salsa",
+      "source": {
+        "repository": "HoChiPants/open-recipe-archive",
+        "url": "https://github.com/HoChiPants/open-recipe-archive/blob/main/recipes/snacks/lime-black-bean-corn-salsa.json",
+        "upstream_id": "lime-black-bean-corn-salsa",
+        "declared_license": "CC0 1.0 original data, subject to record-specific exceptions",
+        "third_party_source": {
+          "name": "Allrecipes",
+          "url": "https://www.allrecipes.com/recipe/24182/black-bean-salsa/",
+          "adapted": true
+        }
+      },
+      "meal_type": "snack",
+      "cuisine": "Mexican-inspired",
+      "dietary_claims_unverified": [
+        "vegetarian",
+        "vegan",
+        "gluten-free",
+        "dairy-free",
+        "nut-free",
+        "egg-free"
+      ],
+      "allergen_claims_unverified": [],
+      "yield": {
+        "quantity": 8,
+        "unit": "servings"
+      },
+      "times": {
+        "prep_minutes": 15,
+        "cook_minutes": 0,
+        "inactive_minutes": 20
+      },
+      "ingredients": [
+        {
+          "name": "black beans",
+          "quantity": 2,
+          "unit": "15-ounce cans",
+          "preparation": "drained and rinsed",
+          "source_ingredient_id": "black-beans",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "corn kernels",
+          "quantity": 1,
+          "unit": "cup",
+          "preparation": "thawed if frozen",
+          "source_ingredient_id": "corn-kernels",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "tomatoes",
+          "quantity": 2,
+          "unit": "",
+          "preparation": "diced",
+          "source_ingredient_id": "tomato",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "red onion",
+          "quantity": "1/2",
+          "unit": "cup",
+          "preparation": "finely chopped",
+          "source_ingredient_id": "onion",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "jalapeño",
+          "quantity": 1,
+          "unit": "",
+          "preparation": "seeded and minced",
+          "source_ingredient_id": "jalapen-o",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "fresh cilantro",
+          "quantity": "1/2",
+          "unit": "cup",
+          "preparation": "chopped",
+          "source_ingredient_id": "fresh-cilantro",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "lime juice",
+          "quantity": 3,
+          "unit": "tablespoons",
+          "preparation": null,
+          "source_ingredient_id": "lime-juice",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "unit": "tablespoon",
+          "preparation": null,
+          "source_ingredient_id": "olive-oil",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "kosher salt",
+          "quantity": "1/2",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "kosher-salt",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        }
+      ],
+      "instructions": [
+        "Combine the beans, corn, tomatoes, red onion, jalapeño, and cilantro in a large bowl.",
+        "Stir the lime juice, olive oil, and salt together, then pour the dressing over the bean mixture.",
+        "Fold everything together and let the salsa stand briefly before serving."
+      ],
+      "nutrition_original_estimate": null,
+      "nutrition_calculated": null,
+      "photo": null,
+      "rights_review": "pending",
+      "nutrition_review": "pending",
+      "allergen_review": "pending",
+      "health_review": "pending",
+      "publication_status": "staging_only"
+    },
+    {
+      "id": "ora-rosemary-balsamic-roasted-grapes",
+      "title": "Rosemary-balsamic roasted grapes",
+      "source": {
+        "repository": "HoChiPants/open-recipe-archive",
+        "url": "https://github.com/HoChiPants/open-recipe-archive/blob/main/recipes/snacks/rosemary-balsamic-roasted-grapes.json",
+        "upstream_id": "rosemary-balsamic-roasted-grapes",
+        "declared_license": "CC0 1.0 original data, subject to record-specific exceptions",
+        "third_party_source": {
+          "name": "Allrecipes",
+          "url": "https://www.allrecipes.com/recipe/244980/balsamic-roasted-grapes/",
+          "adapted": true
+        }
+      },
+      "meal_type": "snack",
+      "cuisine": null,
+      "dietary_claims_unverified": [
+        "vegetarian",
+        "vegan",
+        "gluten-free",
+        "dairy-free",
+        "nut-free",
+        "egg-free"
+      ],
+      "allergen_claims_unverified": [],
+      "yield": {
+        "quantity": 6,
+        "unit": "servings"
+      },
+      "times": {
+        "prep_minutes": 5,
+        "cook_minutes": 18
+      },
+      "ingredients": [
+        {
+          "name": "seedless grapes",
+          "quantity": 3,
+          "unit": "cups",
+          "preparation": "removed from the stems",
+          "source_ingredient_id": "seedless-grapes",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "unit": "tablespoon",
+          "preparation": null,
+          "source_ingredient_id": "olive-oil",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "fresh rosemary",
+          "quantity": 1,
+          "unit": "teaspoon",
+          "preparation": "finely chopped",
+          "source_ingredient_id": "fresh-rosemary",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "balsamic vinegar",
+          "quantity": 1,
+          "unit": "tablespoon",
+          "preparation": null,
+          "source_ingredient_id": "balsamic-vinegar",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "kosher salt",
+          "quantity": "1/4",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "kosher-salt",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "black pepper",
+          "quantity": "1/4",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "black-pepper",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        }
+      ],
+      "instructions": [
+        "Heat the oven to 400°F and line a rimmed sheet pan.",
+        "Coat the grapes with olive oil, rosemary, salt, and black pepper, then spread them across the pan.",
+        "Roast until some grapes split and their juices begin to thicken.",
+        "Drizzle the hot grapes with balsamic vinegar and serve warm or at room temperature."
+      ],
+      "nutrition_original_estimate": null,
+      "nutrition_calculated": null,
+      "photo": null,
+      "rights_review": "pending",
+      "nutrition_review": "pending",
+      "allergen_review": "pending",
+      "health_review": "pending",
+      "publication_status": "staging_only"
+    },
+    {
+      "id": "ora-everyday-lentil-soup",
+      "title": "Everyday lentil soup",
+      "source": {
+        "repository": "HoChiPants/open-recipe-archive",
+        "url": "https://github.com/HoChiPants/open-recipe-archive/blob/main/recipes/soups/everyday-lentil-soup.json",
+        "upstream_id": "everyday-lentil-soup",
+        "declared_license": "CC0 1.0 original data, subject to record-specific exceptions",
+        "third_party_source": null
+      },
+      "meal_type": "soup",
+      "cuisine": "Mediterranean",
+      "dietary_claims_unverified": [
+        "vegetarian",
+        "vegan",
+        "gluten-free",
+        "dairy-free",
+        "nut-free",
+        "egg-free"
+      ],
+      "allergen_claims_unverified": [],
+      "yield": {
+        "quantity": 6,
+        "unit": "servings"
+      },
+      "times": {
+        "prep_minutes": 12,
+        "cook_minutes": 38
+      },
+      "ingredients": [
+        {
+          "name": "olive oil",
+          "quantity": 2,
+          "unit": "tablespoons",
+          "preparation": null,
+          "source_ingredient_id": "olive-oil",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "yellow onion",
+          "quantity": 1,
+          "unit": "large",
+          "preparation": "diced",
+          "source_ingredient_id": "onion",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "garlic",
+          "quantity": 3,
+          "unit": "cloves",
+          "preparation": "minced",
+          "source_ingredient_id": "garlic",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "brown or green lentils",
+          "quantity": 1.5,
+          "unit": "cups",
+          "preparation": "rinsed",
+          "source_ingredient_id": "lentil",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "vegetable broth",
+          "quantity": 6,
+          "unit": "cups",
+          "preparation": null,
+          "source_ingredient_id": "vegetable-broth",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "kosher salt",
+          "quantity": 1,
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "kosher-salt",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "black pepper",
+          "quantity": "1/2",
+          "unit": "teaspoon",
+          "preparation": null,
+          "source_ingredient_id": "black-pepper",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        },
+        {
+          "name": "lemon juice",
+          "quantity": 2,
+          "unit": "tablespoons",
+          "preparation": null,
+          "source_ingredient_id": "lemon",
+          "food_database_id": null,
+          "grams": null,
+          "allergens_verified": false
+        }
+      ],
+      "instructions": [
+        "Warm the olive oil in a heavy pot. Cook the onion with a pinch of salt until soft.",
+        "Add the garlic and black pepper; stir until fragrant.",
+        "Add the lentils and broth. Bring to a boil, then simmer until the lentils are tender.",
+        "Season with the remaining salt and lemon juice. Add water if a looser soup is preferred."
+      ],
+      "nutrition_original_estimate": null,
+      "nutrition_calculated": null,
+      "photo": null,
+      "rights_review": "pending",
+      "nutrition_review": "pending",
+      "allergen_review": "pending",
+      "health_review": "pending",
+      "publication_status": "staging_only"
+    }
+  ]
+}
