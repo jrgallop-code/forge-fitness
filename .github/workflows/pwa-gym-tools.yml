@@ -1,0 +1,35 @@
+name: PWA Gym Tools checks
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pwa-gym-tools.yml
+      - js/core/pwa-gym-tools.js
+      - js/core/gym-tools-math.js
+      - js/core/pwa-quick-log.js
+      - js/workouts/plate-calculator.js
+      - js/app.js
+      - index.html
+      - css/pwa-gym-tools.css
+      - css/plate-calculator.css
+      - tests/pwa-gym-tools.test.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check JavaScript modules
+        run: |
+          node --check js/core/pwa-gym-tools.js
+          node --check js/core/pwa-quick-log.js
+          node --check js/workouts/plate-calculator.js
+          node --check js/core/gym-tools-math.js
+          node --check js/app.js
+      - name: Check gym calculator, original plate UI and offline integration
+        run: node --test tests/pwa-gym-tools.test.mjs
