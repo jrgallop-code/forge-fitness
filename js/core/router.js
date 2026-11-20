@@ -39,7 +39,7 @@ import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-7
 import { initializeGoogleDriveSync } from "./google-drive-sync-v2.js?v=visible-drive-backup-3";
 import { getCurrentGoal } from "./current-goal.js?v=current-goal-1";
 import { showSatisfactionSurveyIfEligible } from "../feedback/satisfaction-survey.js?v=satisfaction-survey-1";
-import { showWhatsNewIfEligible as showPWAReleaseIfEligible } from "../dashboard/pwa-release-notes.js?v=pwa-release-20261119";
+import { showWhatsNewIfEligible as showPWAReleaseIfEligible } from "../dashboard/pwa-release-notes.js?v=theme-sync-20261120";
 import { isNutritionEnabled } from "./app-feature-preferences.js?v=nutrition-feature-choice-1";
 
 getCurrentGoal();
