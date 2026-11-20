@@ -1,3 +1,5 @@
+import {getFoodEmoji} from "./food-emoji.js?v=food-artwork-polish-1";
+import {hasConsumedMeal,markPlannedMealConsumed,undoPlannedMealConsumed} from "./meal-planner-consumption.js?v=1";
 import {MEAL_CATALOG,MEAL_SLOTS,generatePlan,eligibleMeals,macrosForIngredients,groceryList,replacePlannedMeal,editPlannedIngredient,PLANNER_STORAGE_KEY} from "./meal-planner-data.js?v=1";
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const read=()=>{try{return JSON.parse(localStorage.getItem(PLANNER_STORAGE_KEY)||"null")}catch{return null}};
@@ -36,6 +38,15 @@ function render(root){
   const list=document.createElement("ul");
   for(const item of groceryList(read())){const li=document.createElement("li");li.textContent=item.food+" — "+item.grams+" g";list.append(li)}panel.append(list);
  });
+ root.querySelectorAll("[data-meal-consume]").forEach(button=>button.addEventListener("click",()=>{
+  const {date,slot}=button.dataset;const plan=read();const entry=plan?.entries?.find(item=>item.date===date&&item.slot===slot);if(!entry)return;
+  const result=markPlannedMealConsumed(date,slot,entry.ingredients);
+  if(result.ok)render(root);else if(result.reason!=="already_logged")window.alert("Could not log this meal: "+result.reason);
+ }));
+ root.querySelectorAll("[data-meal-undo]").forEach(button=>button.addEventListener("click",()=>{
+  const {date,slot}=button.dataset;if(!window.confirm("Remove this planned meal’s logged ingredients from Food Log?"))return;
+  const result=undoPlannedMealConsumed(date,slot);if(result.ok)render(root);
+ }));
  root.querySelectorAll("[data-meal-replace]").forEach(select=>select.addEventListener("change",()=>{
    const {date,slot}=select.dataset;const updated=replacePlannedMeal(read(),date,slot,select.value);if(write(updated))render(root);
  }));
@@ -52,8 +63,10 @@ function renderDays(plan){
   entries.map(entry=>{
     const recipe=MEAL_CATALOG.find(x=>x.id===entry.recipeId);
     const options=eligibleMeals(plan.preferences).filter(x=>x.slot===entry.slot);
+    const consumed=hasConsumedMeal(date,entry.slot);
+    const thumbnail=getFoodEmoji({name:recipe?.name||entry.ingredients[0]?.food||"meal"});
     const m=macrosForIngredients(entry.ingredients);
-    return '<article class="lu-meal-card"><label><strong>'+esc(entry.slot)+'</strong><select data-meal-replace data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">'+
+    return '<article class="lu-meal-card"><div class="lu-meal-card-head"><span class="lu-meal-photo" role="img" aria-label="Meal thumbnail">'+esc(thumbnail)+'</span><div class="lu-meal-card-info"><label><strong>'+esc(entry.slot)+'</strong><select '+(consumed?'disabled ':'')+'data-meal-replace data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">'+
       (recipe&&!options.some(x=>x.id===recipe.id)?'<option value="'+esc(recipe.id)+'" selected>'+esc(recipe.name)+'</option>':'')+
       options.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===entry.recipeId?' selected':'')+'>'+esc(x.name)+'</option>').join("")+'</select></label>'+
       (recipe?'<p>≈ '+Math.round(m.calories)+' kcal · P '+Math.round(m.protein)+'g · C '+Math.round(m.carbs)+'g · F '+Math.round(m.fat)+'g</p>':'<p>'+esc(entry.warning||"No matching meal")+'</p>')+
@@ -80,6 +93,17 @@ export function renderMealPlannerShell(){return `
 .lu-meal-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .lu-meal-toolbar button{padding:10px;border-radius:9px;background:var(--surface-2,#444);color:inherit}
 .lu-meal-grocery{margin-top:16px}
+.lu-meal-card-head{display:flex;gap:12px;align-items:flex-start}
+.lu-meal-photo{display:grid;place-items:center;flex-shrink:0;width:70px;height:70px;border-radius:14px;background:var(--surface-2,#444);font-size:37px}
+.lu-meal-card-info{flex:1;min-width:0}
+.lu-meal-ingredient{display:flex!important;flex-direction:row!important;align-items:center;gap:9px;max-width:none!important}
+.lu-meal-food-photo{width:38px;height:38px;border-radius:9px;background:var(--surface-2,#444);display:grid;place-items:center;font-size:22px;flex-shrink:0}
+.lu-meal-ingredient span:nth-child(2){flex:1}
+.lu-meal-ingredient input{width:85px!important}
+.lu-meal-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.lu-meal-actions button{padding:9px 14px;border-radius:9px}
+.lu-meal-eaten{font-weight:700;color:var(--success,#3dbb7a)}
+.lu-meal-note{font-size:.8rem;opacity:.8}
 </style><div data-meal-planner-root></div>`;}
 export function initializeMealPlanner(){
  const root=document.querySelector("[data-meal-planner-root]");if(root)render(root);
