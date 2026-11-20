@@ -8,6 +8,7 @@ const quick = read("js/core/pwa-quick-log.js");
 const gym = read("js/core/pwa-gym-tools.js");
 const plate = read("js/workouts/plate-calculator.js");
 const css = read("css/pwa-gym-tools.css");
+const plateCss = read("css/plate-calculator.css");
 const index = read("index.html");
 const sw = read("service-worker.js");
 const logger = read("js/workouts/logger-exercise-name-fix.js");
@@ -48,6 +49,17 @@ test("Stopwatch is styled for PWA without claiming native lock screen capability
   assert.match(css, /gym-tools-clock/);
   assert.match(css, /gym-tools-stopwatch-panel/);
   assert.match(index, /css\/pwa-gym-tools\.css\?v=theme-contrast-20261119/);
-  assert.match(index, /js\/app\.js\?v=theme-contrast-20261119/);
-  assert.match(sw, /theme-contrast-20261119/);
+  assert.match(index, /js\/app\.js\?v=plate-theme-parity-20261120/);
+  assert.match(sw, /plate-theme-parity-20261120/);
+});
+
+test("Quick Log standalone plate entry always follows selected theme", () => {
+  const standalone = plateCss.slice(plateCss.indexOf("/* Gym Tools standalone entry"));
+  assert.ok(standalone.length > 100, "Standalone style section exists");
+  for (const token of ["--plate-card", "--plate-text", "--plate-heading", "--plate-muted", "--plate-line"]) {
+    assert.ok(standalone.includes("var(" + token + ")"), token + " is used by the standalone card");
+  }
+  assert.doesNotMatch(standalone, /background:\s*linear-gradient\([^;]*#(?:17171b|121216)/);
+  assert.doesNotMatch(standalone, /color:\s*#(?:fff|f5f5f7|a4a4b1)\s*;/);
+  assert.match(plate, /plate-calculator\.css\?v=plate-theme-parity-20261120/);
 });
