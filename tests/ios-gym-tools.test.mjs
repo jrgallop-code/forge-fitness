@@ -41,13 +41,13 @@ test("Gym Tools are exclusive to iOS Quick Log and omit back-off sets", () => {
   assert.match(plate,/plate-calculator-plate-options/);
   assert.match(plate,/const STANDALONE_ID/);
   assert.match(plate,/if \(card\?\.dataset\?\.exerciseId === STANDALONE_ID\) return/);
-  assert.match(gym,/plate-calculator\.js\?v=plate-theme-parity-20261120/);
-  assert.match(quick,/ios-gym-tools\.js\?v=plate-theme-parity-20261120/);
-  assert.match(index,/js\/app\.js\?v=plate-theme-parity-20261120/);
+  assert.match(gym,/plate-calculator\.js\?v=stopwatch-blank-20261120/);
+  assert.match(quick,/ios-gym-tools\.js\?v=stopwatch-blank-20261120/);
+  assert.match(index,/js\/app\.js\?v=stopwatch-blank-20261120/);
   assert.match(gym,/\["oneRM", "1RM"\]/);
   assert.match(gym,/\["stopwatch", "Stopwatch"\]/);
   assert.doesNotMatch(gym,/Back-Off Sets/);
-  assert.match(index,/css\/ios-gym-tools\.css\?v=theme-contrast-20261119/);
+  assert.match(index,/css\/ios-gym-tools\.css\?v=stopwatch-blank-20261120/);
 });
 
 test("Lock screen uses existing native elapsed Live Activity, without alarm", () => {
@@ -75,4 +75,19 @@ test("Quick Log standalone plate entry always follows selected theme", () => {
   assert.doesNotMatch(standalone, /background:\s*linear-gradient\([^;]*#(?:17171b|121216)/);
   assert.doesNotMatch(standalone, /color:\s*#(?:fff|f5f5f7|a4a4b1)\s*;/);
   assert.match(plate, /plate-calculator\.css\?v=plate-theme-parity-20261120/);
+});
+
+test("New Quick Log entry fields are blank and stopwatch uses theme tokens", () => {
+  const quick = read("js/core/ios-quick-log.js");
+  const gym = read("js/core/ios-gym-tools.js");
+  const themeCss = read("css/ios-gym-tools.css");
+  assert.match(quick, /const shown = ""/);
+  assert.doesNotMatch(quick, /value = existingToday\?\.weight/);
+  assert.match(gym, /field\("Weight", "target", ""\)/);
+  assert.match(gym, /field\("Working weight", "target", ""\)/);
+  assert.match(gym, /field\("Repetitions \(1–30\)", "reps", ""/);
+  assert.match(plate, /standaloneLoad = null/);
+  assert.match(themeCss, /gym-tools-stopwatch-panel[\s\S]*?var\(--accent-soft\)/);
+  assert.match(themeCss, /gym-tools-stopwatch-panel \.gym-tools-clock-main[\s\S]*?var\(--heading\)/);
+  assert.match(themeCss, /gym-tools-timer-actions button:first-child[\s\S]*?var\(--accent-contrast\)/);
 });
