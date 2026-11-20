@@ -11,7 +11,7 @@ const ICONS = {
 };
 const CHANGES = [
   ["health", "Apple Health integration (iOS only)", "Steps and sleep from Apple Health are available in the iPhone app, not the web version."],
-  ["quick", "Meet Quick Log", "Tap the new red + button to jump straight into logging workouts, food, and nutrition. Find Smart Build, manual workouts, imports, and photo logging in one place."],
+  ["quick", "Meet Quick Log", "Tap the + button to jump straight into logging workouts, food, and nutrition. Find Smart Build, manual workouts, imports, and photo logging in one place."],
   ["workout", "Better active workouts", "Remove an exercise from your current session without changing your saved routine."],
   ["polish", "A smoother experience", "Refined navigation, quicker logging, and interface improvements across the web app."]
 ];
