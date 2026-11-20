@@ -5,7 +5,6 @@ const write=plan=>{try{localStorage.setItem(PLANNER_STORAGE_KEY,JSON.stringify(p
 const defaultPrefs={goal:"existing",diet:"balanced",coverage:"all",meals:MEAL_SLOTS,allergies:[],dislikes:"",cuisines:["Mediterranean","North American","Mexican"],cooking:"30",prep:"yes",repeats:"3",household:"1",budget:"flexible",priority:"balanced",days:"7"};
 const selectable=(values,selected)=>values.map(x=>'<option value="'+esc(x)+'"'+(selected===x?' selected':'')+'>'+esc(x)+'</option>').join("");
 function prefsMarkup(p){
- const slots=MEAL_SLOTS.map(slot=>'<label class="lu-meal-checkbox"><input type="checkbox" name="slot" value="'+esc(slot)+'" '+(p.meals||[]).includes(slot)?"checked":"").join("");
  return '<form data-meal-planner-options class="lu-meal-preferences">'+
  '<label>Diet <select name="diet">'+selectable(["balanced","vegetarian","vegan","pescatarian"],p.diet)+'</select></label>'+
  '<label>Cuisine <select name="cuisine">'+selectable(["All","Mediterranean","North American","Mexican","Asian"],p.cuisines?.length===1?p.cuisines[0]:"All")+'</select></label>'+
@@ -28,7 +27,7 @@ function render(root){
   event.preventDefault();
   const form=event.currentTarget,fd=new FormData(form);
   const preferences={...p,diet:fd.get("diet"),cuisines:fd.get("cuisine")==="All"?[]:[fd.get("cuisine")],cooking:fd.get("cooking"),days:fd.get("days"),meals:fd.getAll("slot"),dislikes:fd.get("dislikes"),allergies:String(fd.get("allergies")||"").split(",").map(x=>x.trim()).filter(Boolean)};
-  const plan=generatePlan(preferences,new Date().toLocaleDateString("en-CA"));if(write(plan))render(root);
+  const plan=generatePlan(preferences,[new Date().getFullYear(),String(new Date().getMonth()+1).padStart(2,"0"),String(new Date().getDate()).padStart(2,"0")].join("-"));if(write(plan))render(root);
  });
  root.querySelector("[data-meal-groceries]")?.addEventListener("click",()=>{
   const panel=root.querySelector("[data-meal-grocery]");panel.hidden=!panel.hidden;
