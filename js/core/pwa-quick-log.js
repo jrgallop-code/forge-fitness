@@ -338,7 +338,7 @@ function ensureNavigation() {
     button.type = "button";
     button.className = "ios-quick-log-nav";
     button.setAttribute("aria-label", "Quick Log");
-    button.innerHTML = '<span aria-hidden="true">+</span><small>Log</small>';
+    button.innerHTML = '<span aria-hidden="true">+</span>';
     const progress = nav.querySelector('[data-page="progress"]');
     nav.insertBefore(button, progress);
 }
