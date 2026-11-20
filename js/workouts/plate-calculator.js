@@ -4,7 +4,7 @@ import { canonicalInputValue, canonicalMass, displayMass, massUnit, UNIT_KINDS }
 const SETTINGS_KEY = "level_up_plate_calculator_settings";
 const STANDALONE_ID = "level-up-standalone-barbell-plate-calculator";
 let standaloneLoad = 135;
-const STYLESHEET_HREF = "css/plate-calculator.css?v=refined-equipment-controls-4";
+const STYLESHEET_HREF = "css/plate-calculator.css?v=ios-gym-plates-424";
 const PLATE_PRESETS = {
     lb: { defaults: [45, 25, 10, 5, 2.5], options: [45, 35, 25, 10, 5, 2.5, 1.25] },
     kg: { defaults: [20, 15, 10, 5, 2.5], options: [25, 20, 15, 10, 5, 2.5, 1.25] }
@@ -337,6 +337,9 @@ function updateTrigger(card, row, profile) {
 }
 
 function refreshCard(card) {
+    // Standalone Gym Tools uses a virtual card without DOM children.
+    // Its panel is already re-rendered by the caller; never query it as a logger card.
+    if (card?.dataset?.exerciseId === STANDALONE_ID) return;
     if (!card || card.dataset.trackingType !== "reps") return;
     const exerciseId = card.dataset.exerciseId || "";
     const profile = loadingProfile(exerciseId);
