@@ -61,10 +61,9 @@ function openWeight() {
     priorFocus = document.activeElement;
     const history = entries().sort((a,b) => a.date.localeCompare(b.date));
     const last = history.at(-1);
-    const existingToday = history.find(e => e.date === today());
-    const value = existingToday?.weight ?? last?.weight;
+    // New Quick Log entries intentionally start empty; last weight remains reference-only.
     const label = massUnit();
-    const shown = value == null ? "" : String(displayMass(value, 1));
+    const shown = "";
     sheet = document.createElement("div");
     sheet.className = "ios-quick-log-overlay";
     sheet.innerHTML = `<div class="ios-quick-log-scrim" data-ql-close></div>
