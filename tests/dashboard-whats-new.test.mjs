@@ -42,3 +42,12 @@ test("iOS entry is automatic on dashboard and reviewable from More", () => {
   assert.match(index,/dashboard-whats-new\.css\?v=theme-sync-20261120/);
   assert.match(router,/whats-new\.js\?v=theme-sync-20261120/);
 });
+
+test("all What's New feature surfaces inherit the active appearance", () => {
+  assert.match(styles, /whats-new-hero.*background:linear-gradient\(135deg,var\(--surface-raised\),var\(--surface\)/);
+  assert.match(styles, /whats-new-quick-preview.*background:var\(--surface-raised\)/);
+  assert.match(styles, /whats-new-done.*background:var\(--accent\);color:var\(--accent-contrast\)/);
+  assert.match(styles, /whats-new-preview-row.*background:var\(--card\)/);
+  assert.match(styles, /whats-new-version.*background:var\(--accent\)/);
+  assert.doesNotMatch(feature, /new red \+ button/);
+});
