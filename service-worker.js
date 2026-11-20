@@ -10,7 +10,7 @@ const CORE_ASSETS = [
     "./js/core/pwa-quick-log.js?v=plate-theme-parity-20261120",
     "./css/pwa-quick-log.css?v=theme-contrast-20261119",
     "./js/dashboard/pwa-release-notes.js?v=pwa-release-20261119",
-    "./css/pwa-release-notes.css?v=pwa-release-20261119",
+    "./css/pwa-release-notes.css?v=theme-sync-20261120",
     "./js/nutrition/food-nutrients.js",
     "./assets/food/category-12.webp",
     "./assets/food/category-15.webp",
