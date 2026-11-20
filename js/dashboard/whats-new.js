@@ -12,7 +12,7 @@ const ICONS = {
 };
 const CHANGES = [
   ["health", "Apple Health integration", "View your steps and sleep from Apple Health in Level Up."],
-  ["quick", "Meet Quick Log", "Tap the new red + button to jump straight into logging workouts, food, and nutrition. Find Smart Build, manual workouts, imports, and photo logging in one place."],
+  ["quick", "Meet Quick Log", "Tap the + button to jump straight into logging workouts, food, and nutrition. Find Smart Build, manual workouts, imports, and photo logging in one place."],
   ["calculator", "Gym Tools", "Open the original visual Plate Calculator with bar options, convert kg and lb, plan warm-up sets, estimate 1RM, or use the lock-screen stopwatch."],
   ["workout", "Better active workouts", "Remove an exercise from your current session without changing your saved routine."],
   ["polish", "A smoother experience", "Refined navigation, clearer Arctic icons, and smaller interface improvements across the app."]
