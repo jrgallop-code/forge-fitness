@@ -1,4 +1,4 @@
-const CACHE_VERSION = "pwa-gym-tools-20261119";
+const CACHE_VERSION = "theme-contrast-20261119";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -6,9 +6,9 @@ const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 const CORE_ASSETS = [
     "./js/core/pwa-gym-tools.js?v=pwa-gym-20261119",
     "./js/core/gym-tools-math.js",
-    "./css/pwa-gym-tools.css?v=pwa-gym-20261119",
-    "./js/core/pwa-quick-log.js?v=pwa-gym-20261119",
-    "./css/pwa-quick-log.css?v=pwa-gym-20261119",
+    "./css/pwa-gym-tools.css?v=theme-contrast-20261119",
+    "./js/core/pwa-quick-log.js?v=theme-contrast-20261119",
+    "./css/pwa-quick-log.css?v=theme-contrast-20261119",
     "./js/dashboard/pwa-release-notes.js?v=pwa-release-20261119",
     "./css/pwa-release-notes.css?v=pwa-release-20261119",
     "./js/nutrition/food-nutrients.js",
