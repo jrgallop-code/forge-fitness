@@ -68,7 +68,7 @@ jobs:
           node --check js/core/ios-quick-log.js
           node --check js/core/router.js
           node --check js/progress/progress-ui.js
-          node --test tests/ios-quick-workout.test.mjs
+          node --test tests/ios-quick-workout.test.mjs tests/dashboard-whats-new.test.mjs
 
   build-ios:
     name: Build iOS on Xcode 26
