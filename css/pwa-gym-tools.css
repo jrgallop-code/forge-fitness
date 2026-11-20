@@ -17,3 +17,38 @@
 .ios-quick-log-grid:not(.is-five) > [data-ql-action="gym-tools"]{grid-column:1/-1;min-height:66px;flex-direction:row;gap:12px}
 .ios-quick-log-grid.is-five{grid-template-columns:repeat(2,minmax(0,1fr))}
 .ios-quick-log-grid.is-five > button,.ios-quick-log-grid.is-five > button:nth-child(4){grid-column:auto}
+
+
+/* Gym Tools follows the same theme's text/surface palette in all appearances. */
+.gym-tools-overlay { color: var(--text, #f7f7f8); }
+.gym-tools-overlay .gym-tools-sheet {
+  color: var(--text, #f7f7f8);
+  background: var(--surface, #121216);
+  border-color: var(--card-border, rgba(255,255,255,.12));
+}
+.gym-tools-overlay .gym-tools-header h2,
+.gym-tools-overlay .gym-tools-result-number,
+.gym-tools-overlay .gym-tools-result-row strong,
+.gym-tools-overlay .gym-tools-tabs button:not(.is-active) {
+  color: var(--heading, var(--text, #f7f7f8));
+}
+.gym-tools-overlay :is(.gym-tools-tabs button:not(.is-active),.gym-tools-results,.gym-tools-secondary,.gym-tools-timer-actions .gym-tools-secondary) {
+  background: var(--surface-raised, #18181d);
+  color: var(--text, #f7f7f8);
+  border-color: var(--card-border, rgba(255,255,255,.12));
+}
+.gym-tools-overlay :is(.gym-tools-help,.gym-tools-results small,.gym-tools-result-row,.gym-tools-field) {
+  color: var(--text-secondary, #c4c4ca);
+}
+.gym-tools-overlay :is(input, select) {
+  background: var(--input-bg, #15151a);
+  color: var(--text, #f7f7f8);
+  border-color: var(--line, rgba(255,255,255,.15));
+}
+.gym-tools-overlay .gym-tools-tabs button.is-active {
+  background: var(--accent, #df141e);
+  color: var(--accent-contrast, #fff);
+  border-color: var(--accent, #df141e);
+}
+/* Stopwatch deliberately uses its dark high-contrast display regardless of app theme. */
+.gym-tools-overlay .gym-tools-stopwatch-panel .gym-tools-clock { color: #fff; }
