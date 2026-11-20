@@ -42,11 +42,11 @@ test("Gym Tools are exclusive to iOS Quick Log and omit back-off sets", () => {
   assert.match(plate,/if \(card\?\.dataset\?\.exerciseId === STANDALONE_ID\) return/);
   assert.match(gym,/plate-calculator\.js\?v=ios-gym-plates-424/);
   assert.match(quick,/ios-gym-tools\.js\?v=ios-gym-plates-424/);
-  assert.match(index,/js\/app\.js\?v=ios-gym-plates-424/);
+  assert.match(index,/js\/app\.js\?v=theme-contrast-20261119/);
   assert.match(gym,/\["oneRM", "1RM"\]/);
   assert.match(gym,/\["stopwatch", "Stopwatch"\]/);
   assert.doesNotMatch(gym,/Back-Off Sets/);
-  assert.match(index,/css\/ios-gym-tools\.css\?v=ios-gym-plates-424/);
+  assert.match(index,/css\/ios-gym-tools\.css\?v=theme-contrast-20261119/);
 });
 
 test("Lock screen uses existing native elapsed Live Activity, without alarm", () => {
