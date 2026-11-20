@@ -1,4 +1,4 @@
-const RELEASE_VERSION = "1.0.6";
+const RELEASE_VERSION = "1.0.7";
 const VIEW_KEY = "level_up_whats_new_seen_ios_" + RELEASE_VERSION;
 const TRAINING_PREFERENCES_KEY = "level_up_training_preferences";
 const MAX_VIEWS = 1;
@@ -7,11 +7,13 @@ const isIOS = () => window.Capacitor?.getPlatform?.() === "ios" && window.Capaci
 const ICONS = {
   health: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8c0 4.3-5.8 8.7-8.8 11.4C9 16.7 3.2 12.3 3.2 8A4.5 4.5 0 0 1 12 6.2 4.5 4.5 0 0 1 20.8 8Z"/></svg>',
   workout: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h3v6H3zM6 7h3v10H6zM9 11h6v2H9zM15 7h3v10h-3zM18 9h3v6h-3z"/></svg>',
+  calculator: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8v3H8zM8 13h2m4 0h2m-8 4h2"/></svg>',
   polish: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 2.3 7.7L22 12l-7.7 2.3L12 22l-2.3-7.7L2 12l7.7-2.3L12 2Z"/><path d="m19 2 .8 2.2L22 5l-2.2.8L19 8l-.8-2.2L16 5l2.2-.8L19 2Z"/></svg>'
 };
 const CHANGES = [
   ["health", "Apple Health integration", "View your steps and sleep from Apple Health in Level Up."],
   ["quick", "Meet Quick Log", "Tap the new red + button to jump straight into logging workouts, food, and nutrition. Find Smart Build, manual workouts, imports, and photo logging in one place."],
+  ["calculator", "Gym Tools", "Open the original visual Plate Calculator with bar options, convert kg and lb, plan warm-up sets, estimate 1RM, or use the lock-screen stopwatch."],
   ["workout", "Better active workouts", "Remove an exercise from your current session without changing your saved routine."],
   ["polish", "A smoother experience", "Refined navigation, clearer Arctic icons, and smaller interface improvements across the app."]
 ];
