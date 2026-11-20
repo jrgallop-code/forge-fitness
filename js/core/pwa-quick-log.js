@@ -1,4 +1,4 @@
-import { openGymTools } from "./pwa-gym-tools.js?v=pwa-gym-20261119";
+import { openGymTools } from "./pwa-gym-tools.js?v=plate-theme-parity-20261120";
 import { canonicalMass, displayMass, massUnit } from "./unit-system.js?v=granular-units-1";
 import { isNutritionEnabled } from "./app-feature-preferences.js?v=nutrition-feature-choice-1";
 import { getActiveWorkout, getWorkoutSessions, openActiveWorkout, openWorkoutLogger } from "../workouts/workout-session.js?v=native-navigation-stability-1";
