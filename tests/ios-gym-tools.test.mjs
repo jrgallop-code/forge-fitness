@@ -11,6 +11,7 @@ const native = read("ios/App/App/LevelUpTimerPlugin.swift");
 const state = read("ios/App/App/LevelUpTimerAttributes.swift");
 const widget = read("ios/App/LevelUpTimerWidget/LevelUpTimerWidget.swift");
 const index = read("index.html");
+const plateCss = read("css/plate-calculator.css");
 
 test("Epley 1RM handles low reps and invalid sets", () => {
   assert.equal(epley1RM(100,1),100);
@@ -41,8 +42,8 @@ test("Gym Tools are exclusive to iOS Quick Log and omit back-off sets", () => {
   assert.match(plate,/const STANDALONE_ID/);
   assert.match(plate,/if \(card\?\.dataset\?\.exerciseId === STANDALONE_ID\) return/);
   assert.match(gym,/plate-calculator\.js\?v=plate-theme-parity-20261120/);
-  assert.match(quick,/ios-gym-tools\.js\?v=ios-gym-plates-424/);
-  assert.match(index,/js\/app\.js\?v=theme-contrast-20261119/);
+  assert.match(quick,/ios-gym-tools\.js\?v=plate-theme-parity-20261120/);
+  assert.match(index,/js\/app\.js\?v=plate-theme-parity-20261120/);
   assert.match(gym,/\["oneRM", "1RM"\]/);
   assert.match(gym,/\["stopwatch", "Stopwatch"\]/);
   assert.doesNotMatch(gym,/Back-Off Sets/);
@@ -63,4 +64,15 @@ test("Lock screen uses existing native elapsed Live Activity, without alarm", ()
   assert.match(widget,/ToggleLevelUpTimerIntent/);
   assert.match(widget,/SkipLevelUpTimerIntent/);
   assert.match(widget,/countsDown: context\.attributes\.kind != "hold" && context\.attributes\.kind != "stopwatch"/);
+});
+
+test("Quick Log standalone plate entry always follows selected theme", () => {
+  const standalone = plateCss.slice(plateCss.indexOf("/* Gym Tools standalone entry"));
+  assert.ok(standalone.length > 100, "Standalone style section exists");
+  for (const token of ["--plate-card", "--plate-text", "--plate-heading", "--plate-muted", "--plate-line"]) {
+    assert.ok(standalone.includes("var(" + token + ")"), token + " is used by the standalone card");
+  }
+  assert.doesNotMatch(standalone, /background:\s*linear-gradient\([^;]*#(?:17171b|121216)/);
+  assert.doesNotMatch(standalone, /color:\s*#(?:fff|f5f5f7|a4a4b1)\s*;/);
+  assert.match(plate, /plate-calculator\.css\?v=plate-theme-parity-20261120/);
 });
