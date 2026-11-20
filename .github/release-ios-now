@@ -703,3 +703,5 @@ Retry iOS Photos direct-route TestFlight deployment after updating dedicated Ste
 
 Release notes review — 2026-11-19: iOS-only version 1.0.6 What's New onboarding, native Quick Log preview, real Level Up logo, and manual preview from More. PWA unchanged.
 Release request: 2026-11-20 stopwatch appearance parity and blank Quick Log input fields.
+
+Meal Planner TestFlight evaluation trigger — 2026-11-20, merged PR #842, iOS commit acfba2812f2d784ad049bf1ca9119455898a54dd.
