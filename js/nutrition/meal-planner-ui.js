@@ -61,7 +61,26 @@ function renderDays(plan){
   }).join("")+'</section>';
  }).join("");
 }
-export function renderMealPlannerShell(){return '<div data-meal-planner-root></div>';}
+export function renderMealPlannerShell(){return `
+<style>
+.lu-meal-planner{padding:18px 12px;max-width:850px;margin:auto;color:var(--text-primary,var(--text,#eee))}
+.lu-meal-planner h2,.lu-meal-planner h3{margin:.4em 0}
+.lu-meal-planner p{line-height:1.5}
+.lu-meal-preferences{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0}
+.lu-meal-preferences>label,.lu-meal-card label{display:flex;flex-direction:column;gap:6px}
+.lu-meal-preferences input,.lu-meal-preferences select,.lu-meal-card input,.lu-meal-card select{box-sizing:border-box;width:100%;min-height:42px;padding:9px;border:1px solid var(--border-color,#7777);border-radius:10px;background:var(--surface-2,var(--card-bg,#242424));color:inherit}
+.lu-meal-preferences fieldset{grid-column:1/-1;border:1px solid var(--border-color,#7777);border-radius:12px}
+.lu-meal-preferences .lu-meal-checkbox{display:inline-flex;flex-direction:row;align-items:center;margin:6px 10px 6px 0;gap:6px}
+.lu-meal-checkbox input{width:auto;min-height:auto}
+.lu-meal-preferences button{grid-column:1/-1}
+.lu-meal-day{margin-top:20px;padding:12px;border:1px solid var(--border-color,#7775);border-radius:16px;background:var(--surface-1,var(--card-bg,#202020))}
+.lu-meal-card{margin:10px 0;padding:13px;border:1px solid var(--border-color,#7775);border-radius:12px}
+.lu-meal-card details label{max-width:320px;margin:10px 0}
+.lu-meal-total,.lu-meal-disclaimer{font-size:.86rem;opacity:.83}
+.lu-meal-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.lu-meal-toolbar button{padding:10px;border-radius:9px;background:var(--surface-2,#444);color:inherit}
+.lu-meal-grocery{margin-top:16px}
+</style><div data-meal-planner-root></div>`;}
 export function initializeMealPlanner(){
  const root=document.querySelector("[data-meal-planner-root]");if(root)render(root);
 }
