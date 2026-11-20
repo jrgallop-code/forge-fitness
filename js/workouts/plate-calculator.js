@@ -3,7 +3,7 @@ import { canonicalInputValue, canonicalMass, displayMass, massUnit, UNIT_KINDS }
 
 const SETTINGS_KEY = "level_up_plate_calculator_settings";
 const STANDALONE_ID = "level-up-standalone-barbell-plate-calculator";
-let standaloneLoad = 135;
+let standaloneLoad = null;
 const STYLESHEET_HREF = "css/plate-calculator.css?v=plate-theme-parity-20261120";
 const PLATE_PRESETS = {
     lb: { defaults: [45, 25, 10, 5, 2.5], options: [45, 35, 25, 10, 5, 2.5, 1.25] },
@@ -395,6 +395,7 @@ function createSheet() {
 }
 
 function renderPlateVisual(solution) {
+    if (!solution) return '<div class="plate-calculator-empty-visual"><span></span><strong>Enter a load</strong></div>';
     const plates = expandedPlateList(solution).sort((a, b) => a - b);
     if (!plates.length) {
         return `<div class="plate-calculator-empty-visual"><span></span><strong>${solution?.belowBase ? "Below base weight" : "No plates needed"}</strong></div>`;
@@ -457,7 +458,7 @@ function renderSheet() {
           <label class="plate-calculator-standalone-load">
             <span>Total loaded weight</span>
             <span class="plate-calculator-number-wrap">
-              <input class="plate-calculator-standalone-input" data-unit-input-ignore type="number" inputmode="decimal" min="0.1" max="1500" step="any" value="${formatWeight(displayedWeight(standaloneLoad))}" aria-label="Total loaded weight in ${liftingUnit}">
+              <input class="plate-calculator-standalone-input" data-unit-input-ignore type="number" inputmode="decimal" min="0.1" max="1500" step="any" value="${Number.isFinite(standaloneLoad) && standaloneLoad > 0 ? formatWeight(displayedWeight(standaloneLoad)) : ""}" aria-label="Total loaded weight in ${liftingUnit}">
               <b>${liftingUnit}</b>
             </span>
             <small>Enter the combined weight including the bar, then choose the bar and plates below.</small>
@@ -594,7 +595,7 @@ export function openStandalonePlateCalculator() {
     const profile = loadingProfile(exerciseId);
     if (!profile) return false;
     const settings = getExerciseSettings(exerciseId, profile);
-    standaloneLoad = Math.max(effectiveBaseWeight(settings), standaloneLoad);
+    standaloneLoad = null; // Blank for every new Quick Log entry, regardless of previous load.
     sheetContext = { card: { dataset: { exerciseId } }, row: null, profile, exerciseId };
     settingsExpanded = false;
     const overlay = createSheet();
