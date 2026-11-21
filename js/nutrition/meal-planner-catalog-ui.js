@@ -40,19 +40,19 @@ export function recipeCard(recipe,favorite=false){
  '<span class="mp-catalog-text"><strong>'+esc(recipe.name)+'</strong><small>'+Math.round(m.calories)+' kcal · '+Math.round(m.protein)+'g protein · '+recipe.prepMinutes+' min'+(recipe.publishedEstimate?' · source estimate':'')+'</small></span></button>'+
  '<button type="button" class="mp-catalog-heart'+(favorite?" active":"")+'" data-mp-favorite="'+esc(recipe.id)+'" aria-label="'+(favorite?"Remove":"Save")+' favorite">'+(favorite?"♥":"♡")+'</button></article>';
 }
-export function catalogMarkup({slot="All",filter="All recipes",search=""}={}){
+export function catalogMarkup({slot="All",filter="All recipes",search="",favoritesOnly=false}={}){
  const favorites=new Set(storedFavorites());
- const recipes=baseRecipes().filter(recipe=>matchesCatalog(recipe,{slot,filter,search}));
+ const recipes=baseRecipes().filter(recipe=>matchesCatalog(recipe,{slot,filter,search})&&(!favoritesOnly||favorites.has(recipe.id)));
  return '<section class="lu-meal-planner mp-catalog mp-standalone">'+
- '<header class="mp-screen-header"><button type="button" data-mp-open="landing" aria-label="Back to Meal Planner">‹</button><h2>Meal catalog</h2><span></span></header>'+
- '<div class="mp-catalog-content"><p class="mp-catalog-intro">Explore recipe ideas and source-linked meals with complete seasonings</p>'+
+ '<header class="mp-screen-header"><button type="button" data-mp-exit aria-label="Close meal planner">‹</button><h2>Recipes</h2><span></span></header>'+
+ '<div class="mp-catalog-content"><div class="mp-catalog-intro"><h1>What are we cooking?</h1><p>Browse meals, save favourites, then choose when to eat them.</p></div>'+'<div class="mp-catalog-primary-actions"><button type="button" class="primary-btn" data-mp-open="calendar">My week</button><button type="button" data-mp-open="wizard">Generate a plan</button><button type="button" data-mp-open="groceries">Grocery list</button></div>'+'<div class="mp-catalog-mode"><button type="button" data-mp-favorites-filter="all" class="'+(!favoritesOnly?'active':'')+'">All recipes</button><button type="button" data-mp-favorites-filter="favorites" class="'+(favoritesOnly?'active':'')+'">♥ Favourites ('+favorites.size+')</button></div>'+
  '<label class="mp-catalog-search"><span aria-hidden="true">⌕</span><input data-mp-search type="search" placeholder="Search meals or ingredients" value="'+esc(search)+'" aria-label="Search recipes"></label>'+
  '<div class="mp-catalog-chips" role="group" aria-label="Meal type">'+CATALOG_SLOTS.map(x=>'<button type="button" class="'+(slot===x?"active":"")+'" data-mp-slot="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>'+
  '<div class="mp-catalog-chips mp-catalog-secondary" role="group" aria-label="Meal filters">'+CATALOG_FILTERS.map(x=>'<button type="button" class="'+(filter===x?"active":"")+'" data-mp-filter="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>'+
- '<p class="mp-catalog-count">'+recipes.length+' recipes · Calories are for a standard portion</p>'+
+ '<p class="mp-catalog-count">'+recipes.length+' recipe ideas · nutrition values are estimates, not independently verified</p>'+
  '<div class="mp-catalog-grid">'+recipes.map(recipe=>recipeCard(recipe,favorites.has(recipe.id))).join("")+'</div>'+
  (recipes.length?"":'<p class="mp-catalog-empty">No recipes match these filters. Try another meal type or search.</p>')+
- '<p class="mp-disclaimer">Generated photographs illustrate recipe ideas; some recipes share a similar dish image. Final plating may differ. Nutritional values are estimates.</p></div></section>';
+ '<div class="mp-source-note"><strong>Source-backed, complete recipes</strong><p>We are upgrading the catalogue from generic ideas to full recipes with oils, spices, sauces and complete directions. Only the source-linked entries carry that designation; kitchen testing and image review are still outstanding.</p><a href="https://mealprepmanual.com/recipes/" rel="noopener noreferrer" target="_blank">Browse The Meal Prep Manual source catalogue</a></div><p class="mp-disclaimer">Older recipe ideas are not kitchen-tested. Illustrated photos are not guaranteed to match every ingredient; source-linked recipes without reviewed images display a placeholder.</p></div></section>';
 }
 function featuredRecipeDetail(recipe){
  const m=recipe.publishedEstimate;
@@ -63,7 +63,7 @@ function featuredRecipeDetail(recipe){
  groups+'<section><h3>Cooking directions</h3><ol>'+recipe.steps.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol></section>'+
  '<section><h3>Meal prep & storage</h3><p>'+esc(recipe.storage)+'</p></section>'+
  '<section><h3>Source & verification</h3><p>Based on ingredient facts published by '+esc(recipe.sourceName)+'. <a href="'+esc(recipe.sourceUrl)+'" target="_blank" rel="noopener noreferrer">View the original recipe and cooking guidance</a>.</p><p>'+esc(recipe.notes)+'</p></section>'+
- '<p class="mp-disclaimer">Full independent nutrient mapping, food diary compatibility, image review and recipe publication approval are pending. This reference is not currently available for automated plans.</p></div></section>';
+ '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Schedule this recipe</button><p class="mp-disclaimer">Scheduling is available in preview, but this recipe cannot be logged as consumed until food mapping and nutrition review are complete.</p></div></section>';
 }
 export function recipeDetailMarkup(recipe,hasPlan=false){
  if(recipe?.groups)return featuredRecipeDetail(recipe);
@@ -75,6 +75,6 @@ export function recipeDetailMarkup(recipe,hasPlan=false){
  '<div class="mp-recipe-macro-grid">'+[["Calories",Math.round(m.calories)],["Protein",Math.round(m.protein)+"g"],["Carbs",Math.round(m.carbs)+"g"],["Fat",Math.round(m.fat)+"g"]].map(([label,value])=>'<div><strong>'+esc(value)+'</strong><small>'+label+'</small></div>').join("")+'</div>'+
  '<section><h3>Ingredients</h3><ul>'+recipe.ingredients.map(x=>'<li><span>'+esc(x.food)+'</span><strong>'+Math.round(x.grams)+'g</strong></li>').join("")+'</ul></section>'+
  '<section><h3>Cooking instructions</h3><ol>'+recipeSteps(recipe).map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol></section>'+
- (hasPlan?'<button type="button" class="primary-btn mp-recipe-use" data-mp-use-recipe="'+esc(recipe.id)+'">Use for '+esc(displaySlot(recipe.slot))+' today</button>':'<button type="button" class="primary-btn mp-recipe-use" data-mp-open="wizard">Build a meal plan</button>')+
+ '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Choose days &amp; meals</button>'+
  '<p class="mp-disclaimer">AI-generated food photographs are illustrative; some recipes use a similar dish image. Recipes and nutrition remain estimates.</p></div></section>';
 }
