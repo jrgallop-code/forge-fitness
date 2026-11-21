@@ -81,10 +81,9 @@ export function toggleFavorite(id){
 }
 export function photoMarkup(recipe,cls=""){
  if(recipe?.indexOnly)return '<span class="mp-real-photo mp-awaiting-photo '+esc(cls)+'" role="img" aria-label="No recipe-specific photo approved" style="display:flex;align-items:center;justify-content:center;background:var(--surface-2,#384a43);color:var(--text-primary,#fff);padding:18px;text-align:center"><span aria-hidden="true" style="font-size:25px">▤</span></span>';
- if(recipe?.imageStatus)return '<span class="mp-real-photo mp-awaiting-photo '+esc(cls)+'" role="img" aria-label="Recipe-specific photograph pending review" style="display:flex;align-items:center;justify-content:center;background:var(--surface-2,#384a43);color:var(--text-primary,#fff);padding:18px;text-align:center"><span>Recipe photo pending<br><small>Ingredient-accurate image required</small></span></span>';
  const photo=recipePhoto(recipe);
- const style="background-image:url("+photo.primary+");background-size:500% 400%;background-position:"+photo.x+"% "+photo.y+"%;";
- const label="AI-generated photographic illustration of "+String(recipe?.name||"meal");
+ const style="background-image:url("+photo.primary+");background-size:"+photo.backgroundSize+";background-position:"+photo.x+"% "+photo.y+"%;";
+ const label=(photo.exactMatch?"AI-generated image for ":"Illustrative AI image for ")+String(recipe?.name||"meal");
  return '<span class="mp-real-photo mp-ai-photo '+esc(cls)+'" style="'+esc(style)+'" role="img" aria-label="'+esc(label)+'"></span>';
 }
 function displaySlot(slot){return slot==="Meal 4"?"Snacks":slot}
