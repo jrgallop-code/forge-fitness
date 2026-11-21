@@ -13,7 +13,7 @@ test("mark eaten creates ordinary, editable ingredient entries and prevents dupl
  const entries=consumedEntries(date,slot);
  assert.equal(entries.length,2);
  assert.equal(entries[0].meal,"Breakfast");
- assert.equal(entries[0].nutrition.calories,233.4);
+ assert.ok(Math.abs(entries[0].nutrition.calories-233.4)<1e-6);
  assert.equal(markPlannedMealConsumed(date,slot,ingredients).reason,"already_logged");
  assert.equal(entriesForDate(date).length,2);
  assert.equal(undoPlannedMealConsumed(date,slot).ok,true);

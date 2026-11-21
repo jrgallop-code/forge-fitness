@@ -1,0 +1,39 @@
+name: Meal Planner iOS Validation
+
+on:
+  pull_request:
+    branches: [ios/capacitor-app-store]
+    paths:
+      - 'js/nutrition/meal-planner-*.js'
+      - 'js/nutrition/food-log.js'
+      - 'css/meal-planner.css'
+      - 'tests/meal-planner*.test.mjs'
+      - '.github/workflows/meal-planner-ios-check.yml'
+  push:
+    branches: [ios/meal-planner-visual-redesign-20261120]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Validate photo onboarding, recipe catalog and consumed logging
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: node --check js/nutrition/meal-planner-ui.js
+      - run: node --check js/nutrition/meal-planner-data.js
+      - run: node --check js/nutrition/meal-planner-media.js
+      - run: node --check js/nutrition/meal-planner-consumption.js
+      - run: node --test tests/meal-planner.test.mjs tests/meal-planner-consumption.test.mjs
+      - run: npm run build:native
+      - name: Verify the new local photo fallbacks and stylesheet are in the native bundle
+        run: |
+          test -s www/css/meal-planner.css
+          test -s www/js/nutrition/meal-planner-media.js
+          test -s www/assets/food/category-0.webp

@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {MEAL_CATALOG,MEAL_SLOTS,eligibleMeals,macrosForIngredients,generatePlan,editPlannedIngredient,groceryList,replacePlannedMeal} from "../js/nutrition/meal-planner-data.js";
 
-test("500 recipe variants have IDs and ingredients",()=>{
- assert.equal(MEAL_CATALOG.length,500);
- assert.equal(new Set(MEAL_CATALOG.map(meal=>meal.id)).size,500);
+test("800 recipe variants include nine cuisine styles",()=>{
+ assert.equal(MEAL_CATALOG.length,800);
+ assert.equal(new Set(MEAL_CATALOG.map(meal=>meal.id)).size,800);
  for(const recipe of MEAL_CATALOG){
   assert.ok(MEAL_SLOTS.includes(recipe.slot));
   assert.ok(recipe.ingredients.every(x=>x.grams>0));
@@ -40,4 +40,28 @@ test("swap recipe and grocery totals",()=>{
  const swapped=replacePlannedMeal(plan,"2026-11-20","Dinner",alt.id);
  assert.equal(swapped.entries[0].recipeId,alt.id);
  assert.ok(groceryList(swapped).length>0);
+});
+
+test("new Italian, Chinese, Japanese, Thai, and Indian recipes are available",()=>{
+ for(const cuisine of ["Italian","Chinese","Japanese","Thai","Indian"]){
+  assert.ok(eligibleMeals({diet:"balanced",cuisines:[cuisine]}).some(meal=>meal.cuisine===cuisine));
+ }
+});
+test("household servings scale groceries but not personal nutrition",()=>{
+ const single=generatePlan({days:"1",meals:["Dinner"],cuisines:["Italian"],household:1},"2026-11-20");
+ const family=generatePlan({days:"1",meals:["Dinner"],cuisines:["Italian"],household:3},"2026-11-20");
+ assert.equal(single.entries[0].recipeId,family.entries[0].recipeId);
+ assert.equal(family.entries[0].servings,3);
+ assert.equal(macrosForIngredients(single.entries[0].ingredients).calories,macrosForIngredients(family.entries[0].ingredients).calories);
+ const one=groceryList(single),three=groceryList(family);
+ assert.equal(three[0].grams,one[0].grams*3);
+});
+test("cuisine shortage falls back without ignoring vegan restriction",()=>{
+ const plan=generatePlan({days:1,meals:["Breakfast"],cuisines:["Thai"],diet:"vegan"},"2026-11-20");
+ assert.equal(plan.entries.length,1);
+ assert.ok(plan.entries[0].notice||plan.entries[0].warning);
+ if(plan.entries[0].recipeId){
+  const meal=MEAL_CATALOG.find(x=>x.id===plan.entries[0].recipeId);
+  assert.equal(meal.diet,"vegan");
+ }
 });
