@@ -61,7 +61,10 @@ const BASES = [
  ["Thai lime shrimp bowl","Dinner","Thai","pescatarian",[["shrimp",160],["brown rice",165],["bell pepper",120],["lime",35],["ginger",8]]],
  ["Thai chicken pepper rice","Lunch","Thai","omnivore",[["chicken breast",155],["brown rice",155],["bell pepper",120],["lime",25],["garlic",8]]],
  ["Indian chickpea tomato curry","Dinner","Indian","vegan",[["chickpeas",170],["brown rice",150],["tomato",150],["curry powder",8],["spinach",80]]],
- ["Indian lentil spinach bowl","Lunch","Indian","vegan",[["lentils",200],["brown rice",145],["spinach",95],["tomato",100],["curry powder",8]]]
+ ["Indian lentil spinach bowl","Lunch","Indian","vegan",[["lentils",200],["brown rice",145],["spinach",95],["tomato",100],["curry powder",8]]],
+ ["Banana apple oat bowl","Breakfast","North American","vegan",[["oats",65],["banana",95],["apple",95],["pumpkin seeds",16]]],
+ ["Tofu breakfast scramble","Breakfast","North American","vegan",[["tofu",175],["spinach",75],["tomato",100],["whole wheat bread",70],["olive oil",7]]],
+ ["Berry almond breakfast oats","Breakfast","Mediterranean","vegan",[["oats",65],["berries",125],["almonds",20],["banana",80]]]
 ];
 const MODIFIERS = [
  ["Classic",1,0],["Lighter",.8,0],["Hearty",1.25,0],["Extra protein",1.1,1],
@@ -84,7 +87,7 @@ export const MEAL_CATALOG = Object.freeze(BASES.flatMap((base,index)=>MODIFIERS.
  const [title,slot,cuisine,diet,items]=base;
  const ingredients=items.map(([food,grams])=>({food,grams:Math.round(grams*multiplier)}));
  if(extra){const protein=ingredients.find(item=>PROTEIN_FOODS.has(item.food));if(protein)protein.grams+=50;}
- return {id:"lu-meal-"+String(index*20+variant+1).padStart(3,"0"),name:label==="Classic"?title:title+" · "+label,slot,cuisine,diet,prepMinutes:index%5===0?30:20,ingredients,nutritionStatus:"estimated-not-verified",source:"generic-reference-estimate"};
+ return {id:"lu-meal-"+String(index*20+variant+1).padStart(3,"0"),name:label==="Classic"?title:title+" · "+label,slot,cuisine,diet,prepMinutes:index%5===0?30:index%3===0?15:20,ingredients,nutritionStatus:"estimated-not-verified",source:"generic-reference-estimate"};
 })));
 export function macrosForIngredients(items){
  const total={calories:0,protein:0,carbs:0,fat:0};
@@ -121,7 +124,7 @@ export function generatePlan(options={},startDate=new Date().toLocaleDateString(
  const dietarySafePool=eligibleMeals({...options,cuisines:[]});
  const days=Math.min(14,Math.max(1,Number(options.days)||7));
  const usedBases=new Map(),entries=[];
- const lovedFoods=(options.likes||[]).map(x=>String(x).toLowerCase());
+ const lovedFoods=(options.likes||[]).map(x=>String(x).toLowerCase()==="blueberries"?"berries":String(x).toLowerCase());
  const favourites=new Set(options.likedRecipes||[]);
  const highProtein=["high-protein","low-carb"].includes(options.preferredDiet);
  for(let day=0;day<days;day++)for(const slot of slots){
