@@ -11,7 +11,7 @@ on:
       - tests/meal-prep-manual-discovery.test.mjs
       - tests/meal-planner-source-batch-2.test.mjs
       - tests/meal-planner-catalog.test.mjs
-      - tests/food-log-meals-ui.test.mjs tests/meal-planner-unique-image-regression.test.mjs
+      - tests/food-log-meals-ui.test.mjs tests/meal-planner-unique-image-regression.test.mjs tests/meal-planner-cooking-measures.test.mjs
       - css/ios-nutrition-polish.css
   workflow_dispatch:
 permissions:
@@ -33,6 +33,7 @@ jobs:
           node --check js/nutrition/food-log.js
           node --check js/nutrition/meal-planner-ui.js
           node --check js/nutrition/meal-planner-catalog-ui.js
+          node --check js/nutrition/meal-planner-measurements.js
           node --check js/nutrition/meal-planner-photos.js
           node --check js/nutrition/featured-unique-photos.js
           node --check js/nutrition/mpm-review-first-100.js
