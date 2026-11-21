@@ -49,6 +49,7 @@ import {
     poundsToKg
 } from "./tdee-calculator.js?v=food-log-macro-bars-1";
 import { getFoodEmoji } from "./food-emoji.js?v=food-artwork-polish-1";
+import { foodPhotoIndex } from "./food-photo.js";
 import { initializeRestaurantMenu, openRestaurantMenu } from "./restaurant-menu.js?v=eating-out-9";
 
 const FOOD_MIC_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/></svg>';
@@ -86,6 +87,56 @@ let voiceSwapRequest = null;
 const foodDetailCache = new Map();
 const barcodeFoodCache = new Map();
 const expandedMealKeys = new Set();
+
+const DIARY_MEAL_PHOTOS_KEY = "level_up_diary_meal_photos_v1";
+const diaryPhotoKey = (dateKey, meal) => dateKey + "::" + meal;
+function diaryPhotos() {
+    try {
+        const photos = JSON.parse(localStorage.getItem(DIARY_MEAL_PHOTOS_KEY) || "{}");
+        return photos && typeof photos === "object" && !Array.isArray(photos) ? photos : {};
+    } catch { return {}; }
+}
+function diaryMealPhotoMarkup(meal, entries) {
+    const key = diaryPhotoKey(selectedDate, meal);
+    const savedPhoto = diaryPhotos()[key] || "";
+    const imageIndex = entries.map(foodPhotoIndex).find(index => index !== null && index !== undefined);
+    const photoMarkup = savedPhoto
+        ? `<img src="${escapeHtml(savedPhoto)}" alt="Photo of ${escapeHtml(meal)}">`
+        : imageIndex !== undefined
+            ? `<img src="assets/food/category-${imageIndex}.webp" alt="" loading="lazy">`
+            : '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="6" width="18" height="15" rx="3"/><path d="m7 6 2-3h6l2 3"/><circle cx="12" cy="13" r="3"/></svg>';
+    return `<button type="button" class="food-meal-photo" data-diary-meal-photo="${escapeHtml(meal)}" aria-label="${savedPhoto ? "Change" : "Add"} photo for ${escapeHtml(meal)} on ${selectedDate}">${photoMarkup}</button>`;
+}
+function pickDiaryMealPhoto(meal) {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.setAttribute("aria-label", "Choose photo for " + meal);
+    input.hidden = true;
+    document.body.append(input);
+    const cleanup = () => input.remove();
+    input.addEventListener("cancel", cleanup, { once: true });
+    input.addEventListener("change", async () => {
+        try {
+            if (!input.files?.[0]) return;
+            const photo = await compressMealPhoto(input.files[0]);
+            const photos = diaryPhotos();
+            const key = diaryPhotoKey(selectedDate, meal);
+            delete photos[key];
+            photos[key] = photo;
+            const keys = Object.keys(photos);
+            // Bounded thumbnails prevent unbounded local storage growth.
+            keys.slice(0, Math.max(0, keys.length - 45)).forEach(old => delete photos[old]);
+            localStorage.setItem(DIARY_MEAL_PHOTOS_KEY, JSON.stringify(photos));
+            renderDay();
+            showFoodToast(meal + " photo saved.");
+        } catch (error) {
+            showFoodToast(error?.message || "Meal photo could not be saved.");
+        } finally { cleanup(); }
+    }, { once: true });
+    input.click();
+}
+
 
 export function renderCaloriesHub(planMarkup) {
     return `
@@ -389,6 +440,11 @@ function renderDay() {
     }
     const meals = document.querySelector("[data-food-meals]");
     if (meals) meals.innerHTML = MEALS.map(meal => mealMarkup(meal, entries.filter(entry => entry.meal === meal), latestMealSource(log, selectedDate, meal))).join("");
+    meals?.querySelectorAll("[data-diary-meal-photo]").forEach(button => button.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        pickDiaryMealPhoto(button.dataset.diaryMealPhoto);
+    }));
     meals?.querySelectorAll(".food-meal > summary").forEach(summary => {
         const details = summary.parentElement;
         summary.setAttribute("aria-expanded", String(Boolean(details?.open)));
@@ -453,11 +509,11 @@ function mealMarkup(meal, entries, source) {
     const expanded = expandedMealKeys.has(mealExpansionKey(selectedDate, meal));
     return `
         <details class="food-meal" data-food-meal="${meal}"${expanded ? " open" : ""}>
-            <summary aria-expanded="${expanded}"><span><strong>${meal}</strong><small>${entries.length ? `${entries.length} item${entries.length === 1 ? "" : "s"}` : "Nothing logged"}</small></span><b>${Math.round(totals.calories)} kcal</b></summary>
+            <summary aria-expanded="${expanded}">${diaryMealPhotoMarkup(meal, entries)}<span class="food-meal-title"><strong>${meal}</strong><small>${entries.length ? `${entries.length} item${entries.length === 1 ? "" : "s"}` : "Nothing logged"}</small></span><b>${Math.round(totals.calories)} kcal</b></summary>
             <div class="food-meal-body">
                 ${entries.length ? `<div class="food-meal-macros">${macroBreakdownMarkup(totals, `${meal} total · ${entries.length} item${entries.length === 1 ? "" : "s"}`)}</div>` : ""}
                 ${showYesterday ? `<button type="button" class="food-copy-yesterday" data-copy-yesterday="${meal}" data-copy-source-date="${source.date}"><span><strong>${sourceLabel} ${meal}</strong><small>${escapeHtml(mealPreview(yesterdayEntries))}</small></span><b>Swipe right <i>→</i></b></button>` : ""}
-                ${entries.map(entry => `<div class="food-entry"><button type="button" class="food-entry-edit" data-food-edit="${escapeHtml(entry.id)}" aria-label="Edit ${escapeHtml(entry.name)}"><span class="food-entry-emoji" aria-hidden="true">${getFoodEmoji(entry)}</span><span><strong>${escapeHtml(entry.name)}</strong><small>${escapeHtml(entry.brand ? `${entry.brand} · ` : "")}${escapeHtml(totalServingLabel(entry.quantity, entry.servingLabel))}</small></span><b>${Math.round(entry.nutrition?.calories || 0)} kcal</b><i aria-hidden="true">›</i></button><button type="button" class="food-entry-remove" data-food-remove="${escapeHtml(entry.id)}" aria-label="Remove ${escapeHtml(entry.name)}">×</button></div>`).join("")}
+                ${entries.map(entry => `<div class="food-entry"><button type="button" class="food-entry-edit" data-food-edit="${escapeHtml(entry.id)}" aria-label="Edit ${escapeHtml(entry.name)}"><span class="food-entry-emoji" aria-hidden="true">${foodPhotoIndex(entry) !== null ? `<img src="assets/food/category-${foodPhotoIndex(entry)}.webp" alt="" loading="lazy">` : getFoodEmoji(entry)}</span><span><strong>${escapeHtml(entry.name)}</strong><small>${escapeHtml(entry.brand ? `${entry.brand} · ` : "")}${escapeHtml(totalServingLabel(entry.quantity, entry.servingLabel))}</small></span><b>${Math.round(entry.nutrition?.calories || 0)} kcal</b><i aria-hidden="true">›</i></button><button type="button" class="food-entry-remove" data-food-remove="${escapeHtml(entry.id)}" aria-label="Remove ${escapeHtml(entry.name)}">×</button></div>`).join("")}
                 ${entries.length ? `<button type="button" class="food-save-diary-meal" data-save-diary-meal="${meal}">Save ${meal} as My Meal</button>` : ""}
                 <button type="button" class="food-add-meal" data-food-add-meal="${meal}">+ Add to ${meal}</button>
             </div>
