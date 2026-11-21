@@ -4,102 +4,144 @@
 export const mealPrepRecipes = [
   {
     "id": "cilantro-lime-chicken",
-    "name": "Cilantro Lime Chicken & Roasted Veg Bowls",
+    "name": "Creamy Cilantro Lime Chicken Bowls",
     "type": "Chicken",
     "slots": [
       "Lunch",
       "Dinner"
     ],
-    "cuisine": "Mexican",
+    "cuisine": "North American",
     "servings": 5,
     "ingredients": [
       [
         "Chicken thighs (raw)",
-        180,
+        181.6,
         "g",
         "Protein"
       ],
       [
-        "White rice (dry)",
-        55,
+        "White rice (cooked)",
+        90,
         "g",
         "Grains"
       ],
       [
         "Sweet potato",
-        70,
+        68,
         "g",
         "Produce"
       ],
       [
         "Broccoli",
-        60,
+        45.4,
         "g",
         "Produce"
       ],
       [
-        "Plain Greek yogurt",
-        25,
+        "Plain Greek yogurt (2%)",
+        24,
         "g",
         "Dairy"
       ],
       [
         "Cilantro",
-        5,
+        4,
+        "g",
+        "Produce"
+      ],
+      [
+        "Green onions",
+        4,
+        "g",
+        "Produce"
+      ],
+      [
+        "Jalapeño",
+        4,
         "g",
         "Produce"
       ],
       [
         "Lime juice",
-        12,
+        9,
         "mL",
         "Produce"
       ],
       [
-        "Jalapeño",
-        5,
-        "g",
-        "Produce"
+        "Water",
+        6,
+        "mL",
+        "Other"
       ],
       [
-        "Olive oil",
-        8,
+        "Cooking oil",
+        9,
         "g",
         "Seasoning"
       ],
       [
         "Smoked paprika",
-        1,
+        1.2,
         "g",
         "Seasoning"
       ],
       [
         "Garlic powder",
-        1,
+        1.8,
+        "g",
+        "Seasoning"
+      ],
+      [
+        "Onion powder",
+        0.6,
         "g",
         "Seasoning"
       ],
       [
         "Chili powder",
-        0.5,
+        0.6,
         "g",
         "Seasoning"
       ],
       [
         "Ground cumin",
-        0.5,
+        0.2,
         "g",
         "Seasoning"
       ],
       [
         "Salt",
-        1,
+        2,
+        "g",
+        "Seasoning"
+      ],
+      [
+        "Black pepper",
+        0.6,
         "g",
         "Seasoning"
       ]
     ],
     "verified": false,
-    "description": "A batch-friendly cilantro lime chicken & roasted veg bowls meal with measured ingredients and seasonings."
+    "sourceChecked": true,
+    "nutritionSource": "Published recipe estimate, not independently verified",
+    "sourceNutrition": {
+      "calories": 490,
+      "protein": 43,
+      "carbs": 46,
+      "fat": 15
+    },
+    "prepMinutes": 20,
+    "cookMinutes": 60,
+    "description": "Smoky roasted chicken, rice, sweet potato and broccoli with a tangy cilantro-jalapeño yogurt dressing.",
+    "instructions": [
+      "Cook the rice and spread it out briefly so it is ready to portion.",
+      "Season chicken thighs with paprika, garlic and onion powders, chili powder, salt, pepper, lime and a little oil. Roast at 204°C until the centres reach 74°C.",
+      "Cut sweet potato into small cubes. Roast with oil; add small broccoli florets partway through so both vegetables finish tender.",
+      "Blend yogurt, cilantro, green onion, jalapeño, cumin, lime juice and water into a smooth pourable dressing.",
+      "Slice the cooked chicken and divide it with rice and vegetables among five containers. Package the dressing separately until serving."
+    ],
+    "safety": "Refrigerate promptly; use refrigerated portions within 2–3 days or freeze. Reheat chicken and leftovers to 74°C."
   },
   {
     "id": "korean-beef",
