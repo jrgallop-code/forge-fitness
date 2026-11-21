@@ -123,3 +123,6 @@
 
 .mp-landing-close{position:absolute;z-index:4;right:20px;top:calc(env(safe-area-inset-top,0px) + 15px);width:44px;height:44px;background:var(--surface-2,#f4f4f4);color:inherit;border:1px solid var(--border-color,#8884);border-radius:50%;font-size:17px}
 .mp-step:has(input[name="goalMode"][value="existing"]:checked) .mp-goal-box{display:none}
+
+/* The default Nutrition destination is Food Log; never expose fixed meal planner layers inside a hidden tab. */
+[data-calories-panel="meals"][hidden], [data-calories-panel="plan"][hidden], [data-calories-panel="log"][hidden] { display:none !important; }
