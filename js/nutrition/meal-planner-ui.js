@@ -96,7 +96,7 @@ function screenHeader(title,back,action=""){
 function landingMarkup(saved){
  const appGoal=currentMealPlannerGoal();
  return '<section class="mp-landing mp-standalone">'+
- '<div class="mp-landing-image"></div><div class="mp-landing-copy"><span class="eyebrow">LEVEL UP · PERSONALIZED NUTRITION</span>'+
+ '<button class="mp-landing-close" type="button" data-mp-exit aria-label="Close meal planner">✕</button><div class="mp-landing-image"></div><div class="mp-landing-copy"><span class="eyebrow">LEVEL UP · PERSONALIZED NUTRITION</span>'+
  '<h1>Plan meals that<br>fit your goals.</h1><p>Delicious recipes, smart portions, and a weekly plan built for your nutrition targets.</p>'+
  (appGoal.dailyCalories?'<span class="mp-goal-chip">Your current target: '+appGoal.dailyCalories+' kcal/day</span>':'')+'</div>'+
  '<div class="mp-landing-actions">'+(saved?'<button type="button" class="primary-btn" data-mp-open="calendar">View my plan</button><button type="button" data-mp-open="wizard">Edit preferences</button>':
@@ -146,6 +146,7 @@ function render(root){
    '<div class="lu-meal-days">'+renderDays(saved)+'</div>'+
    '<p class="mp-disclaimer">Recipe nutrition and fullness estimates are approximate and do not replace verified food labels.</p></section>';
  }
+ root.querySelector("[data-mp-exit]")?.addEventListener("click",()=>{const tab=document.querySelector('[data-calories-tab="log"]');if(tab)tab.click();});
  root.querySelectorAll("[data-mp-open]").forEach(b=>b.addEventListener("click",()=>{plannerScreen=b.dataset.mpOpen;wizardStep=0;render(root)}));
  root.querySelector("[data-mp-copy]")?.addEventListener("click",async()=>{
   const success=await copyGroceryText(groceryPlainText(read()));
