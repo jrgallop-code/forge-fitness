@@ -13,7 +13,9 @@ export function toggleFavorite(id){
 }
 export function photoMarkup(recipe,cls=""){
  const photo=recipePhoto(recipe);
- return '<span class="mp-real-photo '+esc(cls)+'"><img loading="lazy" decoding="async" src="'+esc(photo.primary)+'" data-photo-fallback="'+esc(photo.fallback)+'" alt="Photographic example of '+esc(recipe.name)+'"></span>';
+ const style="background-image:url("+photo.primary+");background-size:500% 400%;background-position:"+photo.x+"% "+photo.y+"%;";
+ const label="AI-generated photographic illustration of "+String(recipe?.name||"meal");
+ return '<span class="mp-real-photo mp-ai-photo '+esc(cls)+'" style="'+esc(style)+'" role="img" aria-label="'+esc(label)+'"></span>';
 }
 function displaySlot(slot){return slot==="Meal 4"?"Snacks":slot}
 export function matchesCatalog(recipe,{slot="All",filter="All recipes",search=""}={}){
@@ -48,7 +50,7 @@ export function catalogMarkup({slot="All",filter="All recipes",search=""}={}){
  '<p class="mp-catalog-count">'+recipes.length+' recipes · Calories are for a standard portion</p>'+
  '<div class="mp-catalog-grid">'+recipes.map(recipe=>recipeCard(recipe,favorites.has(recipe.id))).join("")+'</div>'+
  (recipes.length?"":'<p class="mp-catalog-empty">No recipes match these filters. Try another meal type or search.</p>')+
- '<p class="mp-disclaimer">Photos illustrate recipe ideas and may differ from your selected serving. Nutritional values are estimates.</p></div></section>';
+ '<p class="mp-disclaimer">Generated photographs illustrate recipe ideas; some recipes share a similar dish image. Final plating may differ. Nutritional values are estimates.</p></div></section>';
 }
 export function recipeDetailMarkup(recipe,hasPlan=false){
  const m=macrosForIngredients(recipe.ingredients);
@@ -60,5 +62,5 @@ export function recipeDetailMarkup(recipe,hasPlan=false){
  '<section><h3>Ingredients</h3><ul>'+recipe.ingredients.map(x=>'<li><span>'+esc(x.food)+'</span><strong>'+Math.round(x.grams)+'g</strong></li>').join("")+'</ul></section>'+
  '<section><h3>Cooking instructions</h3><ol>'+recipeSteps(recipe).map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol></section>'+
  (hasPlan?'<button type="button" class="primary-btn mp-recipe-use" data-mp-use-recipe="'+esc(recipe.id)+'">Use for '+esc(displaySlot(recipe.slot))+' today</button>':'<button type="button" class="primary-btn mp-recipe-use" data-mp-open="wizard">Build a meal plan</button>')+
- '<p class="mp-disclaimer">Food photos are representative, not a guarantee of final plating. Recipes and nutrition remain estimates.</p></div></section>';
+ '<p class="mp-disclaimer">AI-generated food photographs are illustrative; some recipes use a similar dish image. Recipes and nutrition remain estimates.</p></div></section>';
 }
