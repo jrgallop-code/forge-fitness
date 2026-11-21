@@ -1,17 +1,19 @@
 import {MEAL_CATALOG,macrosForIngredients} from "./meal-planner-data.js?v=3";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {MPM_INDEX_RECIPES} from "./meal-prep-manual-discovery.js?v=1";
+import {REVIEW_RECORDS,REVIEW_IMPORT_META,reviewIdForRecipe,getReviewDecision,reviewSummary} from "./mpm-review-first-100.js?v=1";
 import {recipePhoto} from "./meal-planner-photos.js?v=1";
 import {recipeSteps} from "./meal-planner-media.js?v=2";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 export const CATALOG_FAVORITES_KEY="level_up_meal_catalog_favorites_v1";
 export const CATALOG_SLOTS=["All","Breakfast","Lunch","Dinner","Snacks"];
-export const CATALOG_FILTERS=["All recipes","Detailed recipes","Source index only"];
+export const CATALOG_FILTERS=["Review first 100","Needs my review","All recipes","Detailed recipes","Source index only"];
 // Index-listed dishes are individually named; do not surface twenty invented
 // size variants of the same generic concept as distinct recipes.
 export function baseRecipes(){
+ const reviewById=new Map(REVIEW_RECORDS.map(x=>[x.id,x]));
  const promoted=new Set(FEATURED_RECIPES.map(recipe=>recipe.name.toLocaleLowerCase("en")));
- return [...FEATURED_RECIPES,...MPM_INDEX_RECIPES.filter(recipe=>!promoted.has(recipe.name.toLocaleLowerCase("en")))];
+ return [...FEATURED_RECIPES,...MPM_INDEX_RECIPES.filter(recipe=>!promoted.has(recipe.name.toLocaleLowerCase("en"))).map(x=>reviewById.get(x.id)||x)];
 }
 export function storedFavorites(){try{const ids=JSON.parse(localStorage.getItem(CATALOG_FAVORITES_KEY)||"[]");return Array.isArray(ids)?ids.filter(x=>typeof x==="string"):[]}catch{return []}}
 export function toggleFavorite(id){
@@ -33,6 +35,8 @@ export function matchesCatalog(recipe,{slot="All",filter="All recipes",search=""
  const query=String(search).trim().toLowerCase();
  const words=[recipe.name,recipe.cuisine||"",recipe.diet||"",...(recipe.ingredients||featuredIngredients(recipe)).map(x=>x.food)].join(" ").toLowerCase();
  if(query&&!words.includes(query))return false;
+ if(filter==="Review first 100"&&!reviewIdForRecipe(recipe))return false;
+ if(filter==="Needs my review"&&(!reviewIdForRecipe(recipe)||getReviewDecision(reviewIdForRecipe(recipe)).decision!=="unreviewed"))return false;
  if(filter==="Detailed recipes"&&recipe.indexOnly)return false;
  if(filter==="Source index only"&&!recipe.indexOnly)return false;
  return true;
@@ -40,10 +44,13 @@ export function matchesCatalog(recipe,{slot="All",filter="All recipes",search=""
 export function recipeCard(recipe,favorite=false){
  const estimated=recipe.publishedEstimate;
  const info=recipe.indexOnly
-   ?'Source index · ingredients &amp; macros pending'
-   :Math.round(estimated?.calories||0)+' kcal · '+Math.round(estimated?.protein||0)+'g protein · '+recipe.prepMinutes+' min · publisher estimate';
+   ?(recipe.ingredientStatements?.length?recipe.ingredientStatements.length+" source ingredients · review needed":"Source index · ingredient review pending")
+   :Math.round(estimated?.calories||0)+" kcal · "+Math.round(estimated?.protein||0)+"g protein · "+recipe.prepMinutes+" min · publisher estimate";
+ const reviewId=reviewIdForRecipe(recipe);
+ const reviewDecision=reviewId?getReviewDecision(reviewId).decision:null;
+ const reviewLabel=reviewDecision==="looks-good"?"Reviewed":reviewDecision==="needs-changes"?"Needs changes":reviewDecision?"Awaiting your review":"";
  return '<article class="mp-catalog-card"><button type="button" class="mp-catalog-open" data-mp-recipe="'+esc(recipe.id)+'" aria-label="See '+esc(recipe.name)+'">'+photoMarkup(recipe)+
- '<span class="mp-catalog-text"><strong>'+esc(recipe.name)+'</strong><small>'+info+'</small>'+(recipe.sourceUserRating?'<small>★ '+recipe.sourceUserRating.rating.toFixed(2)+' / 5 · '+recipe.sourceUserRating.votes+' publisher-site ratings</small>':'')+'</span></button>'+
+ '<span class="mp-catalog-text"><strong>'+esc(recipe.name)+'</strong><small>'+info+'</small>'+(reviewLabel?'<small>Review: '+esc(reviewLabel)+'</small>':'')+'</span></button>'+
  '<button type="button" class="mp-catalog-heart'+(favorite?" active":"")+'" data-mp-favorite="'+esc(recipe.id)+'" aria-label="'+(favorite?"Remove":"Save")+' favorite">'+(favorite?"♥":"♡")+'</button></article>';
 }
 export function catalogMarkup({slot="All",filter="All recipes",search="",favoritesOnly=false}={}){
@@ -55,8 +62,8 @@ export function catalogMarkup({slot="All",filter="All recipes",search="",favorit
  '<label class="mp-catalog-search"><span aria-hidden="true">⌕</span><input data-mp-search type="search" placeholder="Search meals or ingredients" value="'+esc(search)+'" aria-label="Search recipes"></label>'+
  '<div class="mp-catalog-chips" role="group" aria-label="Meal type">'+CATALOG_SLOTS.map(x=>'<button type="button" class="'+(slot===x?"active":"")+'" data-mp-slot="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>'+
  '<div class="mp-catalog-chips mp-catalog-secondary" role="group" aria-label="Meal filters">'+CATALOG_FILTERS.map(x=>'<button type="button" class="'+(filter===x?"active":"")+'" data-mp-filter="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>'+
- '<p class="mp-catalog-count">'+recipes.length+' unique recipe titles · '+FEATURED_RECIPES.length+' have measured ingredient details · '+MPM_INDEX_RECIPES.length+' public index records total</p>'+
- '<div class="mp-catalog-grid">'+recipes.map(recipe=>recipeCard(recipe,favorites.has(recipe.id))).join("")+'</div>'+
+ '<p class="mp-catalog-count">'+recipes.length+' recipes shown · '+FEATURED_RECIPES.length+' full ingredient records in catalogue · '+REVIEW_RECORDS.length+' in your first review batch</p>'+
+ '<div class="mp-first100-progress"><strong>First 100 review</strong><span>'+reviewSummary().reviewed+' reviewed · '+reviewSummary().needsChanges+' need changes · '+reviewSummary().notReviewed+' remaining</span><small>'+reviewSummary().ingredientLists+' ingredient lists imported from publisher schema · incomplete recipes remain unschedulable</small></div>'+'<div class="mp-catalog-grid">'+recipes.map(recipe=>recipeCard(recipe,favorites.has(recipe.id))).join("")+'</div>'+
  (recipes.length?"":'<p class="mp-catalog-empty">No recipes match these filters. Try another meal type or search.</p>')+
  '<div class="mp-source-note"><strong>Source-indexed recipes are discovery only</strong><p>These are distinct public recipe titles, not full imported recipes. Only detailed entries have measured ingredients. Unreviewed items cannot generate accurate grocery lists, nutrition or meal schedules.</p><a href="https://mealprepmanual.com/recipes/" rel="noopener noreferrer" target="_blank">Visit the publisher catalogue</a></div><p class="mp-disclaimer">No publisher photographs or cooking directions have been copied into this catalogue. Recipe-specific images and rights checks are pending.</p></div></section>';
 }
@@ -69,10 +76,33 @@ function featuredRecipeDetail(recipe){
  groups+(recipe.optionalSeasonings?.length?'<section><h3>Optional seasonings &amp; garnishes</h3><ul>'+recipe.optionalSeasonings.map(item=>'<li>'+esc(item)+'</li>').join("")+'</ul><p class="mp-disclaimer">Quantities were not stated by the source. These additions are not included in scaled groceries or nutrition until measured.</p></section>':'')+'<section><h3>Cooking directions</h3><ol>'+recipe.steps.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol></section>'+
  '<section><h3>Meal prep & storage</h3><p>'+esc(recipe.storage)+'</p></section>'+
  '<section><h3>Source & verification</h3><p>Based on ingredient facts published by '+esc(recipe.sourceName)+'. <a href="'+esc(recipe.sourceUrl)+'" target="_blank" rel="noopener noreferrer">View the original recipe and cooking guidance</a>.</p><p>'+esc(recipe.notes)+'</p></section>'+
- '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Schedule this recipe</button><p class="mp-disclaimer">Scheduling is available in preview, but this recipe cannot be logged as consumed until food mapping and nutrition review are complete.</p></div></section>';
+ '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Schedule this recipe</button>'+reviewControlsMarkup(recipe)+'<p class="mp-disclaimer">Scheduling is available in preview, but this recipe cannot be logged as consumed until food mapping and nutrition review are complete.</p></div></section>';
+}
+function reviewControlsMarkup(recipe){
+ const id=reviewIdForRecipe(recipe);
+ if(!id)return "";
+ const current=getReviewDecision(id);
+ return '<section class="mp-review-section"><h3>Review this recipe</h3><p class="mp-disclaimer">This records your feedback only. It does not certify nutrition, allergens, food safety or use rights.</p>'+
+ '<div class="mp-review-actions"><button type="button" data-mp-review-decision="looks-good" data-mp-review-id="'+esc(id)+'" class="'+(current.decision==="looks-good"?"active":"")+'">✓ Looks good</button>'+
+ '<button type="button" data-mp-review-decision="needs-changes" data-mp-review-id="'+esc(id)+'" class="'+(current.decision==="needs-changes"?"active":"")+'">Needs changes</button>'+
+ '<button type="button" data-mp-review-decision="unreviewed" data-mp-review-id="'+esc(id)+'" class="'+(current.decision==="unreviewed"?"active":"")+'">Reset review</button></div>'+
+ '<label for="mp-review-notes">Review notes</label><textarea id="mp-review-notes" data-mp-review-notes="'+esc(id)+'" rows="4" maxlength="2000" placeholder="Missing spice, incorrect portion, cooking question, or preferred change...">'+esc(current.notes||"")+'</textarea><p class="mp-disclaimer">Notes and decisions currently save on this device only.</p></section>';
+}
+function sourceReviewDetail(recipe){
+ const ingredients=recipe.ingredientStatements||[];
+ const estimated=recipe.publishedEstimate;
+ const label=ingredients.length?'<p>'+ingredients.length+' published ingredient statements captured for review. These quantities are not yet mapped to Level Up food records.</p>':'<p>The publisher ingredient list has not been extracted for this title. Open the source recipe to review it.</p>';
+ const source=recipe.sourceUrl||recipe.sourceIndexUrl;
+ const list=ingredients.length?'<section><h3>Publisher ingredient facts</h3><ul>'+ingredients.map(x=>'<li><span>'+esc(x.description)+'</span></li>').join("")+'</ul></section>':'';
+ const macros=estimated?'<p class="mp-disclaimer">Publisher nutrition estimate: '+(estimated.calories??"?")+' kcal · '+(estimated.protein??"?")+'g protein · '+(estimated.carbs??"?")+'g carbohydrate · '+(estimated.fat??"?")+'g fat. Not independently verified.</p>':'';
+ return '<section class="lu-meal-planner mp-recipe-detail mp-standalone"><header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to catalog">‹</button><h2>Recipe review</h2><span></span></header><div class="mp-recipe-content">'+photoMarkup(recipe,"mp-recipe-hero")+
+ '<h1>'+esc(recipe.name)+'</h1><p>Source: '+esc(recipe.sourceName)+' · Review batch 1–100</p>'+macros+label+list+
+ '<p class="mp-disclaimer">Original cooking directions remain on the publisher website. This item is not available for planning, grocery calculation or food logging until ingredient mapping, rights and safety checks are completed.</p>'+
+ '<a href="'+esc(source)+'" rel="noopener noreferrer" target="_blank">Open original recipe / publisher index</a>'+
+ reviewControlsMarkup(recipe)+'</div></section>';
 }
 export function recipeDetailMarkup(recipe,hasPlan=false){
- if(recipe?.indexOnly)return '<section class="lu-meal-planner mp-recipe-detail mp-standalone"><header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to catalog">‹</button><h2>Recipe source</h2><span></span></header><div class="mp-recipe-content">'+photoMarkup(recipe,"mp-recipe-hero")+'<h1>'+esc(recipe.name)+'</h1><p>Listed by '+esc(recipe.sourceName)+'</p><p class="mp-disclaimer">This is a source-index entry only. Ingredient quantities, seasonings, macros, allergens and preparation instructions have not yet been reviewed. This dish cannot be added to a Level Up meal plan until that review is complete.</p><a href="'+esc(recipe.sourceIndexUrl)+'" rel="noopener noreferrer" target="_blank">Find this recipe in the publisher index (page '+recipe.sourceIndexPage+')</a></div></section>';
+ if(recipe?.indexOnly)return sourceReviewDetail(recipe);
  if(recipe?.groups)return featuredRecipeDetail(recipe);
  const m=macrosForIngredients(recipe.ingredients);
  return '<section class="lu-meal-planner mp-recipe-detail mp-standalone">'+
