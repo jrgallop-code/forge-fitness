@@ -729,3 +729,7 @@ Release refresh 2026-11-21: include photo sprite attribute quoting fix from 2818
 2026-11-21: One-time TestFlight release with verified CI certificate from processed build 440; original manual signing path restored (4ad4fe33).
 
 2026-11-21: TestFlight release for distinct meal photos (40 base + 8 featured), removal of redundant Meal Planner launch banner, and green CI regression checks. Safe CI cert rotation verified via read-only inventory run 44947626665.
+
+
+## iOS Food Log default + recipe kitchen measurements — 2026-11-21
+Release latest native branch, 48 completed recipe cards (40 base, 8 featured), Food Log opens first, tsp/tbsp as leading measures, sharper photos for first 20 base recipes. Apple distribution CI certificate identity verified read-only in run 44964110388. PWA untouched.
