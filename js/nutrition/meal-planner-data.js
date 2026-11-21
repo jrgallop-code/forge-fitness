@@ -89,7 +89,7 @@ export const MEAL_CATALOG = Object.freeze(BASES.flatMap((base,index)=>MODIFIERS.
  const [title,slot,cuisine,diet,items]=base;
  const ingredients=items.map(([food,grams])=>({food,grams:Math.round(grams*multiplier)}));
  if(extra){const protein=ingredients.find(item=>PROTEIN_FOODS.has(item.food));if(protein)protein.grams+=50;}
- return {id:"lu-meal-"+String(index*20+variant+1).padStart(3,"0"),name:label==="Classic"?title:title+" · "+label,slot,cuisine,diet,prepMinutes:index%5===0?30:index%3===0?15:20,ingredients,nutritionStatus:"estimated-not-verified",source:"generic-reference-estimate"};
+ return {id:"lu-meal-"+String(index*20+variant+1).padStart(3,"0"),name:label==="Classic"?title:title+" · "+label,slot,cuisine,diet,prepMinutes:slot==="Meal 4"?10:index%5===0?30:index%3===0?15:20,ingredients,nutritionStatus:"estimated-not-verified",source:"generic-reference-estimate"};
 })));
 export function macrosForIngredients(items){
  const total={calories:0,protein:0,carbs:0,fat:0};
