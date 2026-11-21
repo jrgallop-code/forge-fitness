@@ -178,11 +178,68 @@ jobs:
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         run: node scripts/app-store-signing.mjs inspect-certificates
 
-      # Xcode-managed signing avoids creating/revoking a fresh Distribution
-      # certificate on each CI run. Apple manages signing assets through the
-      # App Store Connect API key already verified above.
-      - name: Use Xcode-managed signing
-        run: echo "Using automatic signing; no certificates will be revoked."
+      - name: Create temporary App Store signing assets
+        id: signing
+        shell: bash
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_BUNDLE_IDENTIFIER: com.leveluphypertrophy.app
+          APP_EXTENSION_BUNDLE_IDENTIFIER: com.leveluphypertrophy.app.timer
+          SIGNING_DIR: ${{ runner.temp }}/level-up-signing
+          # One-time rotation of CI certificate from build 440 after Apple's
+          # verify-testflight job confirmed VALID / IN_BETA_TESTING.
+          # The certificate was created during the successful release run
+          # 44924941838 (before/after inventory comparison).
+          # Never revoke the other Distribution certificates.
+          LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE: 34U4TJ56LR
+          LEVEL_UP_CI_CERTIFICATE_SERIAL_TO_REVOKE: ED9123A01E3E0BE91FFEF4E31EB16E0
+          LEVEL_UP_CI_CERTIFICATE_EXPIRATION_TO_REVOKE: 2027-11-21T16:22:07.000+00:00
+        run: |
+          echo "SIGNING_DIR=$SIGNING_DIR" >> "$GITHUB_ENV"
+          echo "SIGNING_STATE_PATH=$SIGNING_DIR/state.json" >> "$GITHUB_ENV"
+          node scripts/app-store-signing.mjs create
+
+          signing_password="$(openssl rand -hex 24)"
+          signing_keychain="$RUNNER_TEMP/level-up-signing.keychain-db"
+          certificate_pem="$SIGNING_DIR/distribution.pem"
+          certificate_p12="$SIGNING_DIR/distribution.p12"
+
+          openssl x509 -inform DER -in "$SIGNING_DIR/distribution.cer" -out "$certificate_pem"
+          openssl pkcs12 -export -legacy \
+            -inkey "$SIGNING_DIR/distribution.key" \
+            -in "$certificate_pem" \
+            -out "$certificate_p12" \
+            -passout "pass:$signing_password"
+
+          security create-keychain -p "$signing_password" "$signing_keychain"
+          security set-keychain-settings -lut 21600 "$signing_keychain"
+          security unlock-keychain -p "$signing_password" "$signing_keychain"
+          security import "$certificate_p12" -k "$signing_keychain" -P "$signing_password" -A
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$signing_password" "$signing_keychain"
+          security list-keychains -d user -s "$signing_keychain" login.keychain-db
+
+          profile_directory="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$profile_directory"
+          profile_uuid="$(security cms -D -i "$SIGNING_DIR/LevelUp_AppStore.mobileprovision" | plutil -extract UUID raw -)"
+          installed_profile="$profile_directory/$profile_uuid.mobileprovision"
+          cp "$SIGNING_DIR/LevelUp_AppStore.mobileprovision" "$installed_profile"
+
+          timer_profile_uuid="$(security cms -D -i "$SIGNING_DIR/LevelUp_Timer_AppStore.mobileprovision" | plutil -extract UUID raw -)"
+          installed_timer_profile="$profile_directory/$timer_profile_uuid.mobileprovision"
+          cp "$SIGNING_DIR/LevelUp_Timer_AppStore.mobileprovision" "$installed_timer_profile"
+
+          share_profile_uuid="$(security cms -D -i "$SIGNING_DIR/LevelUp_Share_AppStore.mobileprovision" | plutil -extract UUID raw -)"
+          installed_share_profile="$profile_directory/$share_profile_uuid.mobileprovision"
+          cp "$SIGNING_DIR/LevelUp_Share_AppStore.mobileprovision" "$installed_share_profile"
+          echo "INSTALLED_SHARE_PROFILE_PATH=$installed_share_profile" >> "$GITHUB_ENV"
+          echo "SHARE_EXTENSION_PROFILE_NAME=Level Up Share App Store $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+
+          echo "SIGNING_KEYCHAIN=$signing_keychain" >> "$GITHUB_ENV"
+          echo "INSTALLED_PROFILE_PATH=$installed_profile" >> "$GITHUB_ENV"
+          echo "INSTALLED_TIMER_PROFILE_PATH=$installed_timer_profile" >> "$GITHUB_ENV"
+          echo "APP_STORE_PROFILE_NAME=Level Up App Store $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          echo "TIMER_EXTENSION_PROFILE_NAME=Level Up Timer App Store $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
 
       - name: Archive signed Level Up app
         env:
@@ -197,10 +254,11 @@ jobs:
           -destination 'generic/platform=iOS'
           -archivePath "$RUNNER_TEMP/LevelUp.xcarchive"
           DEVELOPMENT_TEAM="$APPLE_TEAM_ID"
-          CODE_SIGN_STYLE=Automatic
-          APP_STORE_PROFILE_NAME=""
-          TIMER_EXTENSION_PROFILE_NAME=""
-          SHARE_EXTENSION_PROFILE_NAME=""
+          CODE_SIGN_STYLE=Manual
+          CODE_SIGN_IDENTITY="Apple Distribution"
+          APP_STORE_PROFILE_NAME="$APP_STORE_PROFILE_NAME"
+          TIMER_EXTENSION_PROFILE_NAME="$TIMER_EXTENSION_PROFILE_NAME"
+          SHARE_EXTENSION_PROFILE_NAME="$SHARE_EXTENSION_PROFILE_NAME"
           CURRENT_PROJECT_VERSION="${{ github.run_number }}"
           MARKETING_VERSION="1.0.7"
           -allowProvisioningUpdates
@@ -218,9 +276,12 @@ jobs:
           plutil -create xml1 "$export_options"
           plutil -insert method -string app-store-connect "$export_options"
           plutil -insert destination -string export "$export_options"
-          plutil -insert signingStyle -string automatic "$export_options"
+          plutil -insert signingStyle -string manual "$export_options"
           plutil -insert signingCertificate -string "Apple Distribution" "$export_options"
           plutil -insert teamID -string "$APPLE_TEAM_ID" "$export_options"
+          plutil -insert provisioningProfiles -xml \
+            "<dict><key>com.leveluphypertrophy.app</key><string>$APP_STORE_PROFILE_NAME</string><key>com.leveluphypertrophy.app.timer</key><string>$TIMER_EXTENSION_PROFILE_NAME</string><key>com.leveluphypertrophy.app.share</key><string>$SHARE_EXTENSION_PROFILE_NAME</string></dict>" \
+            "$export_options"
           plutil -insert uploadSymbols -bool true "$export_options"
           echo "EXPORT_OPTIONS_PATH=$export_options" >> "$GITHUB_ENV"
 
@@ -231,10 +292,6 @@ jobs:
           -archivePath "$RUNNER_TEMP/LevelUp.xcarchive"
           -exportPath "$RUNNER_TEMP/LevelUpExport"
           -exportOptionsPlist "$EXPORT_OPTIONS_PATH"
-          -allowProvisioningUpdates
-          -authenticationKeyPath "$AUTH_KEY_PATH"
-          -authenticationKeyID "${{ secrets.APP_STORE_CONNECT_KEY_ID }}"
-          -authenticationKeyIssuerID "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}"
 
       - name: Verify exported app signatures
         shell: bash
