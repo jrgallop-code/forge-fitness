@@ -35,6 +35,9 @@ jobs:
       - run: node --check js/nutrition/meal-planner-planning.js
       - run: node --check js/nutrition/meal-planner-satiety-db.js
       - run: node --check js/nutrition/meal-planner-food-art.js
+      - run: node --check js/nutrition/recipe-quality-v2.js
+      - run: node --check data/meal-planner/recipe-catalog-v2-staging.js
+      - run: node --test tests/meal-planner-quality-v2.test.mjs
       - run: node --check js/nutrition/meal-planner-catalog-ui.js
       - run: node --check js/nutrition/meal-planner-photos.js
       - run: node --test tests/meal-planner.test.mjs tests/meal-planner-consumption.test.mjs tests/meal-planner-goals.test.mjs tests/meal-planner-art.test.mjs tests/meal-planner-appearance.test.mjs tests/meal-planner-catalog.test.mjs
