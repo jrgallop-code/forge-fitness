@@ -1,3 +1,4 @@
+import {dietRecipeBaseIndex} from "./meal-planner-photos.js?v=2";
 import {photoMarkup,catalogMarkup,recipeDetailMarkup,toggleFavorite,baseRecipes} from "./meal-planner-catalog-ui.js?v=1";
 import {ingredientIllustration,dietIllustration,recipeIllustration} from "./meal-planner-food-art.js?v=2";
 import {MEAL_PLANNER_HERO} from "./meal-planner-hero.js?v=1";
@@ -31,7 +32,7 @@ function prefsMarkup(p){
  const storedGoal=p.goalMode==="custom"?p.goalType:appGoal.goalId;
  const storedCalories=p.goalMode==="custom"?Number(p.dailyCalories):appGoal.dailyCalories;
  const dish=(n)=>mealPhoto({id:"lu-meal-"+String(n*20+1).padStart(3,"0")});
- const styles=DIET_CHOICES.map(([id,name,desc,index])=>'<label class="mp-photo-choice"><input type="radio" name="diet" value="'+esc(id)+'"'+((p.preferredDiet||p.diet)===id?' checked':'')+'>'+photoMarkup(MEAL_CATALOG[index*20])+'<span class="mp-photo-copy"><strong>'+esc(name)+'</strong><small>'+esc(desc)+'</small></span><span class="mp-choice-tick">✓</span></label>').join("");
+ const styles=DIET_CHOICES.map(([id,name,desc,index])=>'<label class="mp-photo-choice"><input type="radio" name="diet" value="'+esc(id)+'"'+((p.preferredDiet||p.diet)===id?' checked':'')+'>'+photoMarkup(MEAL_CATALOG[dietRecipeBaseIndex(id)*20])+'<span class="mp-photo-copy"><strong>'+esc(name)+'</strong><small>'+esc(desc)+'</small></span><span class="mp-choice-tick">✓</span></label>').join("");
  const cuisine=CUISINES.map(x=>pick("cuisine",x,x,(p.preferredCuisines||p.cuisines||[]).includes(x))).join("");
  const produce=PRODUCE.map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-food" value="'+esc(x)+'"'+((p.likes||[]).includes(x)?' checked':'')+'>'+ingredientIllustration(x)+'<span class="mp-photo-copy"><strong>'+esc(x)+'</strong></span><span class="mp-choice-tick">♥</span></label>').join("");
  const ratings=baseRecipes().slice(0,16).map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-recipe" value="'+esc(x.id)+'"'+((p.likedRecipes||[]).includes(x.id)?' checked':'')+'>'+photoMarkup(x)+'<span class="mp-photo-copy"><strong>'+esc(x.name)+'</strong><small>≈ '+Math.round(macrosForIngredients(x.ingredients).calories)+' kcal</small></span><span class="mp-choice-tick">♥</span></label>').join("");
