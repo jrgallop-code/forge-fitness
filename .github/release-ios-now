@@ -715,3 +715,5 @@ Release request 2026-11-21: Meal Prep Planner batch schedule beta, iOS Food Log 
 - Favorites, detail screens, weekly scheduling, groceries and theme-token fixes.
 - PWA planner disabled in main branch; PWA changes not part of this iOS release.
 - This file update explicitly triggers the protected App Store Connect upload workflow.
+
+Release refresh 2026-11-21: include photo sprite attribute quoting fix from 2818b6e7; rebuild latest iOS branch.
