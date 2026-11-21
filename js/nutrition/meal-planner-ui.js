@@ -56,74 +56,185 @@ function showWizardStep(root,next){
  form.querySelector("[data-mp-generate]").hidden=wizardStep!==6;
 }
 
-function render(root){
- const saved=read(),p={...defaultPrefs,...saved?.preferences};
- const start=saved?.startDate;
- root.innerHTML='<section class="lu-meal-planner"><header><span class="eyebrow">NUTRITION · PLANNED</span><h2>Meal Planner</h2><p>Choose meals for upcoming days. Planned meals are <strong>not logged as eaten</strong>.</p></header>'+
- '<details class="mp-pref-section" '+(!saved?'open':'')+'><summary>Personalize meal plan <span>Guided setup · 6 steps</span></summary>'+prefsMarkup(p)+'</details>'+
- '<p class="lu-meal-disclaimer">Evaluation catalog: '+MEAL_CATALOG.length+' portion and preparation variants. Ingredient macros are illustrative estimates, not source-verified food labels. Check allergens and quantities before cooking.</p>'+
- (saved?'<div class="lu-meal-toolbar"><strong>Plan starting '+esc(start)+'</strong><button type="button" data-meal-groceries>Grocery list</button></div><div class="lu-meal-days">'+renderDays(saved)+'</div>':'<p>Generate a plan to see the calendar and editable ingredients.</p>')+
- '<div class="lu-meal-grocery" data-meal-grocery hidden></div></section>';
- showWizardStep(root,0);
- root.querySelector("[data-mp-next]")?.addEventListener("click",()=>showWizardStep(root,wizardStep+1));
- root.querySelector("[data-mp-back]")?.addEventListener("click",()=>showWizardStep(root,wizardStep-1));
- root.querySelector("[data-meal-planner-options]")?.addEventListener("submit",event=>{
-  event.preventDefault();
-  const fd=new FormData(event.currentTarget);
-  const coverage=String(fd.get("coverage")||"all");
-  const slotChoices=coverage==="all"?MEAL_SLOTS:coverage==="lunch-dinner"?["Lunch","Dinner"]:coverage==="dinner"?["Dinner"]:fd.getAll("slot");
-  if(!slotChoices.length){window.alert("Choose at least one meal to plan.");showWizardStep(root,1);return;}
-  const diet=String(fd.get("diet")||"balanced");
-  const rawCuisines=fd.getAll("cuisine");
-  const cuisines=[...new Set(rawCuisines.length?rawCuisines:fd.get("diet")==="mediterranean"?["Mediterranean"]:[])];
-  const preferences={...p,diet:["vegetarian","vegan","pescatarian"].includes(diet)?diet:"balanced",
-   preferredDiet:diet,coverage,cuisines,preferredCuisines:rawCuisines,
-   cooking:fd.get("cooking")||"30",days:fd.get("days")||"7",meals:slotChoices,
-   skill:fd.get("skill")||"Basic",grocery:fd.get("grocery")||"In-store",prep:fd.get("prep")||"yes",
-   leftovers:fd.get("leftovers")||"Sometimes",household:fd.get("household")||"1",
-   budget:fd.get("budget")||"Flexible",likes:fd.getAll("liked-food"),likedRecipes:fd.getAll("liked-recipe"),
-   dislikes:fd.get("dislikes")||"",allergies:fd.getAll("allergy"),
-   mealSizes:Object.fromEntries(MEAL_SLOTS.map(slot=>[slot,Math.max(1,Math.min(6,Number(fd.get("servings-"+slot)||fd.get("household")||1)))])),
-   priorities:[0,1,2,3,4].map(i=>Number(fd.get("priority-"+i)||3))};
-  const today=new Date();
-  const start=[today.getFullYear(),String(today.getMonth()+1).padStart(2,"0"),String(today.getDate()).padStart(2,"0")].join("-");
-  const plan=generatePlan(preferences,start);
-  if(write(plan)){selectedPlanDate=start;render(root);}
-  else window.alert("Could not save your meal plan.");
- });
- root.querySelector("[data-meal-groceries]")?.addEventListener("click",()=>{
-  const panel=root.querySelector("[data-meal-grocery]");panel.hidden=!panel.hidden;
-  panel.replaceChildren();
-  const title=document.createElement("h3");title.textContent="Grocery list";panel.append(title);
-  const list=document.createElement("ul");
-  for(const item of groceryList(read())){const li=document.createElement("li");li.textContent=item.food+" — "+item.grams+" g";list.append(li)}panel.append(list);
- });
+
+let plannerScreen="landing";
+const groceryCategories=[
+ ["Produce",/apple|banana|berries|pineapple|spinach|broccoli|pepper|tomato|cucumber|zucchini|avocado|potato|mushrooms|lime|ginger|garlic|salsa/],
+ ["Meat, fish & protein",/chicken|turkey|beef|salmon|tuna|cod|shrimp|tofu|egg/],
+ ["Dairy & alternatives",/yogurt|milk|cheese|feta/],
+ ["Pantry, grains & legumes",/oats|bread|rice|quinoa|pasta|tortilla|lentils|beans|chickpeas|oil|almonds|nuts|seeds|soy sauce|curry|hummus/]
+];
+function groupedGrocery(plan){
+ const groups=new Map(groceryCategories.map(([label])=>[label,[]]));
+ groups.set("Other",[]);
+ for(const item of groceryList(plan)){
+  const group=groceryCategories.find(([label,regex])=>regex.test(item.food))?.[0]||"Other";
+  groups.get(group).push(item);
+ }
+ return [...groups].filter(([,rows])=>rows.length);
+}
+function groceryPlainText(plan){
+ const lines=["LEVEL UP · GROCERY LIST",plan.startDate+" · "+new Set(plan.entries.map(e=>e.date)).size+" days",""];
+ for(const [section,items] of groupedGrocery(plan)){
+  lines.push(section);
+  for(const item of items)lines.push("• "+item.food+" — "+item.grams+" g");
+  lines.push("");
+ }
+ lines.push("Quantities are estimated. Check servings, labels and pantry stock.");
+ return lines.join("\n");
+}
+function screenHeader(title,back,action=""){
+ return '<header class="mp-screen-header"><button type="button" data-mp-open="'+back+'" aria-label="Go back">‹</button><h2>'+esc(title)+'</h2><span>'+action+'</span></header>';
+}
+function landingMarkup(saved){
+ const appGoal=currentMealPlannerGoal();
+ return '<section class="mp-landing mp-standalone">'+
+ '<div class="mp-landing-image"></div><div class="mp-landing-copy"><span class="eyebrow">LEVEL UP · PERSONALIZED NUTRITION</span>'+
+ '<h1>Plan meals that<br>fit your goals.</h1><p>Delicious recipes, smart portions, and a weekly plan built for your nutrition targets.</p>'+
+ (appGoal.dailyCalories?'<span class="mp-goal-chip">Your current target: '+appGoal.dailyCalories+' kcal/day</span>':'')+'</div>'+
+ '<div class="mp-landing-actions">'+(saved?'<button type="button" class="primary-btn" data-mp-open="calendar">View my plan</button><button type="button" data-mp-open="wizard">Edit preferences</button>':
+ '<button type="button" class="primary-btn" data-mp-open="wizard">Get started</button>')+
+ '</div></section>';
+}
+function groceriesMarkup(saved){
+ if(!saved)return landingMarkup(null);
+ const groups=groupedGrocery(saved);
+ return '<section class="mp-groceries mp-standalone">'+screenHeader("Grocery list","calendar")+
+ '<div class="mp-grocery-intro"><span class="eyebrow">READY TO SHOP</span><h1>Your weekly groceries</h1><p>Combined quantities across every planned meal and household serving.</p></div>'+
+ '<div class="mp-grocery-tools"><button type="button" class="primary-btn" data-mp-copy aria-label="Copy grocery list">⧉ Copy list</button><button type="button" data-mp-share>Share</button></div>'+
+ '<p class="mp-copy-status" role="status" aria-live="polite"></p>'+
+ groups.map(([name,items])=>'<section class="mp-grocery-group"><h3>'+esc(name)+'</h3><ul>'+items.map(item=>'<li><span>'+esc(item.food)+'</span><strong>'+item.grams+' g</strong></li>').join("")+'</ul></section>').join("")+
+ '<p class="mp-disclaimer">Shopping quantities are approximate. Check your pantry, portions and food labels.</p></section>';
+}
+async function copyGroceryText(text){
+ if(navigator.clipboard?.writeText){try{await navigator.clipboard.writeText(text);return true}catch{}}
+ const area=document.createElement("textarea");area.value=text;area.setAttribute("readonly","");area.style.position="fixed";area.style.opacity="0";
+ document.body.append(area);area.focus();area.select();let ok=false;
+ try{ok=document.execCommand("copy")}catch{}
+ area.remove();return ok;
+}
+function bindImages(root){
  root.querySelectorAll(".mp-photo img").forEach(img=>img.addEventListener("error",()=>{
   const fallback=img.dataset.fallback;
   if(fallback&&!img.src.endsWith(fallback))img.src=fallback;
  },{once:true}));
- root.querySelectorAll("[data-mp-date]").forEach(btn=>btn.addEventListener("click",()=>{selectedPlanDate=btn.dataset.mpDate;render(root);}));
+}
+function render(root){
+ const saved=read();
+ const prefs={...defaultPrefs,...saved?.preferences};
+ if(!saved&&plannerScreen==="calendar")plannerScreen="landing";
+ const page=plannerScreen;
+ if(page==="landing")root.innerHTML=landingMarkup(saved);
+ else if(page==="wizard")root.innerHTML='<section class="mp-onboarding mp-standalone">'+screenHeader("Meal preferences",saved?"calendar":"landing")+
+  '<div class="mp-onboarding-content">'+prefsMarkup(prefs)+'</div></section>';
+ else if(page==="groceries")root.innerHTML=groceriesMarkup(saved);
+ else{
+  const allocation=saved?.targetAllocation;
+  root.innerHTML='<section class="lu-meal-planner mp-standalone mp-calendar">'+
+   screenHeader("Your meal plan","landing")+
+   '<div class="mp-calendar-actions"><div><span class="eyebrow">YOUR WEEK</span><h2>Plan & prep</h2>'+
+   (allocation?'<p>Daily goal '+allocation.dailyCalories+' kcal · '+allocation.plannedCalories+' planned · '+allocation.reservedCalories+' flexible</p>':'<p>Planned meals never count as food consumed.</p>')+'</div>'+
+   '<button type="button" data-mp-open="groceries">☷ Grocery list</button><button type="button" data-mp-open="wizard">Preferences</button></div>'+
+   '<div class="lu-meal-days">'+renderDays(saved)+'</div>'+
+   '<p class="mp-disclaimer">Recipe nutrition and fullness estimates are approximate and do not replace verified food labels.</p></section>';
+ }
+ root.querySelectorAll("[data-mp-open]").forEach(b=>b.addEventListener("click",()=>{plannerScreen=b.dataset.mpOpen;wizardStep=0;render(root)}));
+ root.querySelector("[data-mp-copy]")?.addEventListener("click",async()=>{
+  const success=await copyGroceryText(groceryPlainText(read()));
+  const status=root.querySelector(".mp-copy-status");if(status)status.textContent=success?"Copied to clipboard.":"Could not copy automatically. Use Share to export the list.";
+ });
+ root.querySelector("[data-mp-share]")?.addEventListener("click",async()=>{
+  const text=groceryPlainText(read());
+  if(navigator.share){try{await navigator.share({title:"Level Up Grocery List",text});return}catch{}}
+  const status=root.querySelector(".mp-copy-status");
+  if(status)status.textContent=await copyGroceryText(text)?"Copied instead — paste into Notes or another app.":"Sharing is not supported here.";
+ });
+ if(page==="wizard"){
+  showWizardStep(root,wizardStep);
+  root.querySelector("[data-mp-next]")?.addEventListener("click",()=>showWizardStep(root,wizardStep+1));
+  root.querySelector("[data-mp-back]")?.addEventListener("click",()=>showWizardStep(root,wizardStep-1));
+  root.querySelector('input[name="calorieCoverage"]')?.addEventListener("input",e=>{
+   const preview=root.querySelector("[data-mp-coverage-preview]");
+   if(preview)preview.textContent=e.target.value+"%";
+  });
+  root.querySelector("[data-meal-planner-options]")?.addEventListener("submit",event=>{
+   event.preventDefault();
+   const fd=new FormData(event.currentTarget),appGoal=currentMealPlannerGoal();
+   const coverage=String(fd.get("coverage")||"all");
+   const meals=coverage==="all"?MEAL_SLOTS:coverage==="lunch-dinner"?["Lunch","Dinner"]:coverage==="dinner"?["Dinner"]:fd.getAll("slot");
+   if(!meals.length){window.alert("Please choose at least one meal.");showWizardStep(root,2);return;}
+   const mode=String(fd.get("goalMode")||"existing");
+   const target=mode==="custom"?Number(fd.get("dailyCalories")):Number(appGoal.dailyCalories);
+   if(!Number.isFinite(target)||target<800||target>10000){
+    window.alert("Set a valid calorie target in Level Up Goals, or choose a custom daily target (800–10,000 kcal).");
+    showWizardStep(root,0);return;
+   }
+   const diet=String(fd.get("diet")||"balanced");
+   const rawCuisines=fd.getAll("cuisine");
+   const preferences={...prefs,
+    goalMode:mode,goalType:fd.get("goalType")||appGoal.goalId,dailyCalories:target,
+    calorieCoverage:Number(fd.get("calorieCoverage")||0),
+    diet:["vegetarian","vegan","pescatarian"].includes(diet)?diet:"balanced",
+    preferredDiet:diet,coverage,meals,
+    cuisines:[...new Set(rawCuisines.length?rawCuisines:diet==="mediterranean"?["Mediterranean"]:[])],
+    preferredCuisines:rawCuisines,cooking:fd.get("cooking")||"30",
+    days:fd.get("days")||"7",skill:fd.get("skill")||"Basic",
+    grocery:fd.get("grocery")||"In-store",prep:fd.get("prep")||"yes",
+    leftovers:fd.get("leftovers")||"Sometimes",household:fd.get("household")||"1",
+    budget:fd.get("budget")||"Flexible",likes:fd.getAll("liked-food"),likedRecipes:fd.getAll("liked-recipe"),
+    dislikes:fd.get("dislikes")||"",allergies:fd.getAll("allergy"),
+    mealSizes:Object.fromEntries(MEAL_SLOTS.map(slot=>[slot,Math.max(1,Math.min(6,Number(fd.get("servings-"+slot)||fd.get("household")||1)))])),
+    priorities:[0,1,2,3,4].map(i=>Number(fd.get("priority-"+i)||3))
+   };
+   const today=new Date();
+   const date=[today.getFullYear(),String(today.getMonth()+1).padStart(2,"0"),String(today.getDate()).padStart(2,"0")].join("-");
+   const next=generateGoalAwarePlan(preferences,date,appGoal);
+   if(next.error){window.alert("Your calorie target could not be loaded. Enter a custom target.");showWizardStep(root,0);return;}
+   // Existing logged meals must never be silently overwritten by regenerating.
+   if(saved?.entries?.some(e=>hasConsumedMeal(e.date,e.slot))&&!window.confirm("This will replace your planned meals. Already consumed foods will remain in the Food Log. Continue?"))return;
+   if(write(next)){plannerScreen="calendar";selectedPlanDate=date;wizardStep=0;render(root)}
+   else window.alert("Couldn't save your plan on this device.");
+  });
+ }
+ bindImages(root);
+ if(page!=="calendar")return;
+ root.querySelectorAll("[data-mp-date]").forEach(btn=>btn.addEventListener("click",()=>{selectedPlanDate=btn.dataset.mpDate;render(root)}));
  root.querySelectorAll("[data-mp-day-nav]").forEach(btn=>btn.addEventListener("click",()=>{
-  const days=[...new Set(read()?.entries?.map(x=>x.date)||[])];
-  const index=days.indexOf(selectedPlanDate);
-  selectedPlanDate=days[Math.min(days.length-1,Math.max(0,index+Number(btn.dataset.mpDayNav)))]||selectedPlanDate;render(root);
+  const days=[...new Set(read()?.entries?.map(x=>x.date)||[])],index=days.indexOf(selectedPlanDate);
+  selectedPlanDate=days[Math.max(0,Math.min(days.length-1,index+Number(btn.dataset.mpDayNav)))]||selectedPlanDate;
+  render(root);
  }));
  root.querySelectorAll("[data-meal-consume]").forEach(button=>button.addEventListener("click",()=>{
-  const {date,slot}=button.dataset;const plan=read();const entry=plan?.entries?.find(item=>item.date===date&&item.slot===slot);if(!entry)return;
+  const {date,slot}=button.dataset,entry=read()?.entries?.find(x=>x.date===date&&x.slot===slot);
+  if(!entry)return;
   const result=markPlannedMealConsumed(date,slot,entry.ingredients);
-  if(result.ok)render(root);else if(result.reason!=="already_logged")window.alert("Could not log this meal: "+result.reason);
+  if(result.ok)render(root);else if(result.reason!=="already_logged")window.alert("Could not log meal: "+result.reason);
  }));
  root.querySelectorAll("[data-meal-undo]").forEach(button=>button.addEventListener("click",()=>{
-  const {date,slot}=button.dataset;if(!window.confirm("Remove this planned meal’s logged ingredients from Food Log?"))return;
-  const result=undoPlannedMealConsumed(date,slot);if(result.ok)render(root);
+  const {date,slot}=button.dataset;
+  if(window.confirm("Remove food-log entries created by this planned meal?")){
+   const result=undoPlannedMealConsumed(date,slot);if(result.ok)render(root);
+  }
  }));
  root.querySelectorAll("[data-meal-replace]").forEach(select=>select.addEventListener("change",()=>{
-   const {date,slot}=select.dataset;const updated=replacePlannedMeal(read(),date,slot,select.value);if(write(updated))render(root);
+  const {date,slot}=select.dataset;
+  if(hasConsumedMeal(date,slot))return;
+  const plan=read(),entry=plan?.entries?.find(x=>x.date===date&&x.slot===slot);
+  if(!entry)return;
+  let updated=replacePlannedMeal(plan,date,slot,select.value);
+  const refitted=refitRecipeForSlot(select.value,entry.targetCalories);
+  if(refitted)updated={...updated,entries:updated.entries.map(x=>x.date===date&&x.slot===slot?{...x,...refitted}:x)};
+  if(write(updated))render(root);
  }));
  root.querySelectorAll("[data-meal-grams]").forEach(input=>input.addEventListener("change",()=>{
-   const {date,slot,index}=input.dataset;const updated=editPlannedIngredient(read(),date,slot,Number(index),input.value);if(write(updated))render(root);
+  const {date,slot,index}=input.dataset;if(hasConsumedMeal(date,slot))return;
+  const amount=Number(input.value);
+  if(!Number.isFinite(amount)||amount<0||amount>10000){render(root);return}
+  const updated=editPlannedIngredient(read(),date,slot,Number(index),amount);
+  if(write(updated))render(root);
  }));
 }
+
 let selectedPlanDate="";
 function renderDays(plan){
  const dates=[...new Set(plan.entries.map(x=>x.date))];
