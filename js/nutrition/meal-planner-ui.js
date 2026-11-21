@@ -117,7 +117,7 @@ function groceryPlainText(plan){
  const lines=["LEVEL UP · GROCERY LIST",plan.startDate+" · "+new Set(plan.entries.map(e=>e.date)).size+" days",""];
  for(const [section,items] of groupedGrocery(plan)){
   lines.push(section);
-  for(const item of items)lines.push("• "+item.food+" — "+item.grams+" g");
+  for(const item of items)lines.push("• "+item.food+" — "+item.grams+" "+(item.unit||"g"));
   lines.push("");
  }
  lines.push("Quantities are estimated. Check servings, labels and pantry stock.");
@@ -174,7 +174,7 @@ function groceriesMarkup(saved){
  '<div class="mp-grocery-intro"><span class="eyebrow">READY TO SHOP</span><h1>Your weekly groceries</h1><p>Combined quantities across every planned meal and household serving.</p></div>'+
  '<div class="mp-grocery-tools"><button type="button" class="primary-btn" data-mp-copy aria-label="Copy grocery list">⧉ Copy list</button><button type="button" data-mp-share>Share</button></div>'+
  '<p class="mp-copy-status" role="status" aria-live="polite"></p>'+
- groups.map(([name,items])=>'<section class="mp-grocery-group"><h3>'+esc(name)+'</h3><ul>'+items.map(item=>'<li><span>'+esc(item.food)+'</span><strong>'+item.grams+' g</strong></li>').join("")+'</ul></section>').join("")+
+ groups.map(([name,items])=>'<section class="mp-grocery-group"><h3>'+esc(name)+'</h3><ul>'+items.map(item=>'<li><span>'+esc(item.food)+'</span><strong>'+item.grams+' '+esc(item.unit||'g')+'</strong></li>').join("")+'</ul></section>').join("")+
  '<p class="mp-disclaimer">Shopping quantities are approximate. Check your pantry, portions and food labels.</p></section>';
 }
 async function copyGroceryText(text){
